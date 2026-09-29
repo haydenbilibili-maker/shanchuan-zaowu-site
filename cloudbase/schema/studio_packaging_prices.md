@@ -34,6 +34,7 @@ SSOT：`admin/docs/出货算价与工作室结算_Phase1_技术蓝图.md`（v1.2
 | `unit` | string | | `个` / `套` |
 | `status` | string | ✅ | `active` \| `inactive`；停用行不参与匹配 |
 | `note` | string | | 备注 |
+| `image` | string | | 资料图（2026-09-29 起）：云存储 fileID（`cloud://…`，目录 `studio-pricebook/packaging/`），空串 = 无图；只在入参显式带 `image` 时写。只作展示，不进算价、不进出货单快照 |
 | `sort` | number | | 排序（升序） |
 | `deleted` | boolean | | 软删标记 |
 | `createdAt` / `createdBy` / `updatedAt` / `updatedBy` | | | 审计 |

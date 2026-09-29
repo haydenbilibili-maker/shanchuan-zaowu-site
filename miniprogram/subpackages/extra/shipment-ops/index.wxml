@@ -10,7 +10,7 @@
         <text class="sc-role-chip">{{isSuper ? '超管' : '店长 · 本店'}}</text>
         <text class="ops-meta-chip" wx:if="{{dashLoading || loading || libLoading}}">刷新中</text>
       </view>
-      <text class="ops-note">开单、单据、物流流转与原材料 / 包装资料一处完成。账本 ops_shipments；结算状态只读，改结算走「工作室账单」。</text>
+      <text class="ops-note">开单、查单、物流和原材料 / 包装资料都在这里；结算在「工作室账单」里处理。</text>
     </view>
 
     <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
@@ -689,7 +689,7 @@
         <input class="ops-search-input sc-lib-search" value="{{libKeyword}}" bindinput="onLibKeyword" placeholder="搜名称 / 别名" placeholder-class="ops-ph" />
         <view class="sc-lib-add" wx:if="{{isSuper}}" bindtap="openLibForm">＋ 新增</view>
       </view>
-      <text class="sc-lib-note">{{isSuper ? '按此顺序进开单选择器；停用后不进选择器、不参与算价，历史单保留快照；无引用才可删除。' : '只读：开单选择器按此顺序取用，停用项不出现；调整请联系超管。'}}</text>
+      <text class="sc-lib-note">{{isSuper ? '开单时按这个顺序列出；停用的不再出现，已开的单不受影响。' : '只读：开单时按这个顺序列出，需要调整请联系超管。'}}</text>
       <text class="sc-lib-note warn" wx:if="{{libTruncated}}">共 {{libTotal}} 条，仅显示前 200 条：请用搜索定位。</text>
 
       <view class="ops-skeleton" wx:if="{{libLoading && !libList.length}}">
@@ -710,6 +710,8 @@
 
       <block wx:for="{{libList}}" wx:key="_id">
       <view class="sc-lib-row {{item.inactive ? 'is-off' : ''}}">
+        <image class="sc-lib-thumb" wx:if="{{item.thumb}}" src="{{item.thumb}}" mode="aspectFill" lazy-load data-id="{{item._id}}" bindtap="previewLibImage" binderror="onLibThumbError" />
+        <view class="sc-lib-thumb is-empty" wx:else><text>无图</text></view>
         <view class="sc-lib-main">
           <view class="sc-lib-title">
             <text class="sc-lib-name">{{item.name}}</text>
@@ -899,6 +901,7 @@
     <block wx:else>
       <view class="ss-group" wx:for="{{picker.list}}" wx:key="key">
         <view class="ss-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
+          <image class="ss-group-thumb" wx:if="{{item.thumb}}" src="{{item.thumb}}" mode="aspectFill" lazy-load />
           <view class="ss-group-main">
             <text class="ss-group-name">{{item.displayName}}</text>
             <text class="ss-group-meta" wx:if="{{item.aliasesText}}">别名 {{item.aliasesText}}</text>
@@ -962,9 +965,20 @@
         <text class="ss-rate-hint">文本没写{{libForm.kind === 'material' ? '等级' : '尺寸'}}时用这一行取价（同名只能一个）</text>
       </view>
     </view>
-    <view class="ss-row is-last">
+    <view class="ss-row">
       <text class="ss-label">备注</text>
       <input class="ss-input" value="{{libForm.note}}" data-field="note" bindinput="onLibInput" placeholder="可选" placeholder-class="ss-ph" />
+    </view>
+    <view class="ss-row is-last">
+      <text class="ss-label">图片</text>
+      <view class="sc-lib-img-ctl">
+        <image class="sc-lib-img" wx:if="{{libForm.imageThumb}}" src="{{libForm.imageThumb}}" mode="aspectFill" bindtap="previewLibImage" binderror="onLibThumbError" />
+        <view class="sc-lib-img is-empty" wx:else bindtap="chooseLibImage"><text>{{libForm.uploading ? '上传中…' : '＋'}}</text></view>
+        <view class="sc-lib-img-btns">
+          <text class="sc-lib-btn" bindtap="chooseLibImage">{{libForm.uploading ? '上传中…' : (libForm.image ? '换一张' : '上传图片')}}</text>
+          <text class="sc-lib-btn warn" wx:if="{{libForm.image && !libForm.uploading}}" bindtap="removeLibImage">删除图片</text>
+        </view>
+      </view>
     </view>
     <view class="ss-problems" wx:if="{{libForm.problems}}"><text>· {{libForm.problems}}</text></view>
   </scroll-view>
@@ -1036,6 +1050,6 @@
     <text class="ops-meta" wx:if="{{detail.feishuRecordId}}">飞书记录 {{detail.feishuRecordId}}</text>
     <text class="ops-meta" wx:if="{{detail.batchId}}">批次 {{detail.batchId}}</text>
     <view class="ops-chip-btn danger sc-detail-remove" wx:if="{{canWrite}}" data-id="{{detail._id}}" bindtap="onRemove">{{removePendingId === detail._id ? '确认删除（软删）' : '删除此单'}}</view>
-    <text class="ops-settle-note">结算状态由工作室账单流程派生，本页不可改 settleStatus。</text>
+    <text class="ops-settle-note">结算状态跟随「工作室账单」，这里只能查看。</text>
   </scroll-view>
 </view>

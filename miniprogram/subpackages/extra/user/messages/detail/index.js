@@ -66,7 +66,6 @@ Page({
     // 每日日报的结构化视图模型（非日报消息恒为 null → WXML 整块不出现）
     digestView: null,
     digestPayloadMissing: false,
-    showSources: false,
     sectionCollapsed: {},
     letterLoading: false,
     loadError: false,
@@ -182,10 +181,9 @@ Page({
     }
     this.setData({
       selectedMessage: { ...enriched, isUnread: false, read: true },
-      // 从 payload 生成渲染模型：每个数字带口径与来源，且「未取到」与「0」分开显示
+      // 从 payload 生成渲染模型：门店营收逐项按店拆分，且「未取到」与「0」分开显示
       digestView,
       digestPayloadMissing: isDigest && !digestView,
-      showSources: false,
       sectionCollapsed,
       letterLoading: false,
       loadError: false,
@@ -239,11 +237,6 @@ Page({
         this.setData({ letterLoading: false });
       }
     }
-  },
-
-  toggleDigestSources() {
-    this.setData({ showSources: !this.data.showSources });
-    wx.nextTick(() => this.syncScrollPane());
   },
 
   toggleDigestSection(e) {

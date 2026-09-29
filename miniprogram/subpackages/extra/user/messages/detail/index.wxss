@@ -647,9 +647,6 @@ page {
   color: #8A5A2B;
 }
 
-.dg-source.brief {
-  opacity: 0.7;
-}
 
 .dg-tools {
   display: flex;
@@ -898,7 +895,7 @@ page {
   color: #8A5A2B;
 }
 
-.dg-source {
+.dg-row-note {
   display: block;
   margin-top: var(--space-1, 8rpx);
   font-size: var(--fs-18, 18rpx);
@@ -914,59 +911,28 @@ page {
   opacity: 0.9;
 }
 
-.dg-stores {
-  margin-top: var(--space-2, 16rpx);
-  padding: var(--space-2, 16rpx);
-  border-radius: 10rpx;
-  background: rgba(196, 167, 108, 0.08);
+.dg-split {
+  margin-top: var(--space-1, 8rpx);
+  padding-left: var(--space-2, 16rpx);
+  border-left: 2rpx solid rgba(196, 167, 108, 0.45);
 }
 
-.dg-stores-title {
-  display: block;
-  margin-bottom: var(--space-1, 8rpx);
-  font-size: var(--fs-20, 20rpx);
-  font-weight: 600;
-  color: #6B5A24;
-}
-
-.dg-store {
-  padding: 12rpx 0;
-  border-bottom: 1rpx solid rgba(45, 35, 20, 0.06);
-}
-
-.dg-store.is-total {
-  border-bottom: none;
-  border-top: 1rpx solid rgba(139, 111, 71, 0.35);
-}
-
-.dg-store-top {
+.dg-split-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2, 16rpx);
+  padding: 4rpx 0;
 }
 
-.dg-store-name {
+.dg-split-name {
+  font-size: var(--fs-22, 22rpx);
+  color: #6B5A45;
+}
+
+.dg-split-val {
   font-size: var(--fs-24, 24rpx);
-  color: #4A3F2E;
-}
-
-.dg-store.is-total .dg-store-name {
-  font-weight: 600;
-}
-
-.dg-store-rev {
-  font-size: var(--fs-26, 26rpx);
-  font-weight: 600;
   color: #2D2314;
-  font-variant-numeric: tabular-nums;
-}
-
-.dg-store-meta {
-  display: block;
-  margin-top: 4rpx;
-  font-size: var(--fs-20, 20rpx);
-  color: #8B6F47;
   font-variant-numeric: tabular-nums;
 }
 

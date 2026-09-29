@@ -290,6 +290,8 @@
     "check:shipment-sku-page:selftest": "node miniprogram/scripts/check-shipment-sku-page.mjs --selftest",
     "test:shipment-parse": "node miniprogram/scripts/test-shipment-parse.mjs",
     "test:shipment-parse:selftest": "node miniprogram/scripts/test-shipment-parse.mjs --selftest",
+    "check:pricebook-image": "node miniprogram/scripts/check-pricebook-image.mjs",
+    "check:pricebook-image:selftest": "node miniprogram/scripts/check-pricebook-image.mjs --selftest",
     "check:collection-docs": "node miniprogram/scripts/check-collection-docs.mjs",
     "check:collection-docs:selftest": "node miniprogram/scripts/check-collection-docs.mjs --selftest",
     "check:price-import-blocks": "node miniprogram/scripts/check-price-import-blocks.mjs",

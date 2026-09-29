@@ -429,6 +429,8 @@ const METRICS = [
     kind: 'simpleDay',
     collection: 'ops_shipments',
     dayField: 'shipmentDate',
+    // 按门店拆分用：每行的目标门店（门店营收段 storeBreakdown.shipmentCount）；计数口径不变
+    storeField: 'storeId',
     source: 'ops_shipments.shipmentDate === 当日的行数（工作室出货）',
     sources: [
       {

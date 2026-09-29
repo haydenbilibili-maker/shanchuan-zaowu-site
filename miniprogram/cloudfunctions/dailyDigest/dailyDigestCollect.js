@@ -27,14 +27,15 @@ async function collectRaw (db, dayKey, opts = {}) {
   const dateKeyedMetrics = metricsOfKind('dateKeyed').filter((m) => m.phase === 1).filter(want)
   const simpleDayMetrics = metricsOfKind('simpleDay').filter((m) => m.phase === 1).filter(want)
 
+  const simpleDayRows = {}
   const [analytics, orderDays, dateKeyedRows, simpleDay] = await Promise.all([
     collectAnalytics(db, dayKey, analyticsMetrics),
     collectOrderDays(db, dayKey, orderMetrics),
     collectDateKeyed(db, dayKey, dateKeyedMetrics),
-    collectSimpleDay(db, dayKey, simpleDayMetrics)
+    collectSimpleDay(db, dayKey, simpleDayMetrics, simpleDayRows)
   ])
 
-  return { dayKey, analytics, orderDays, dateKeyedRows, simpleDay }
+  return { dayKey, analytics, orderDays, dateKeyedRows, simpleDay, simpleDayRows }
 }
 
 /** analytics_daily：一次 action __in 查询取回当日全部聚合行 */
@@ -196,14 +197,31 @@ async function collectDateKeyed (db, dayKey, metrics) {
   return out
 }
 
-/** simpleDay：直接按日期字段计数 */
-async function collectSimpleDay (db, dayKey, metrics) {
+/**
+ * simpleDay：直接按日期字段计数。
+ * 登记了 storeField 的指标改为取回当日行（只投影门店字段），行数 = 计数（与 count() 同一 where，口径不变），
+ * 行本身写进 rowsOut[metric.id] 供门店营收段按店拆分。
+ */
+async function collectSimpleDay (db, dayKey, metrics, rowsOut) {
   const out = {}
   for (const metric of metrics) {
     const col = metric.collection
     const field = metric.dayField
     if (!col || !field) continue
     try {
+      if (metric.storeField && rowsOut) {
+        const rows = []
+        for (let skip = 0; skip < 5000; skip += 1000) {
+          const res = await db.collection(col).where({ [field]: dayKey })
+            .field({ [metric.storeField]: true }).skip(skip).limit(1000).get()
+          const page = (res && res.data) || []
+          page.forEach((r) => rows.push({ storeId: r && r[metric.storeField] }))
+          if (page.length < 1000) break
+        }
+        rowsOut[metric.id] = rows
+        out[metric.id] = rows.length
+        continue
+      }
       const res = await db.collection(col).where({ [field]: dayKey }).count()
       out[metric.id] = toNumber(res && res.total)
     } catch (e) {

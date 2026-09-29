@@ -37,6 +37,7 @@ SSOT：`admin/docs/出货算价与工作室结算_Phase1_技术蓝图.md`（v1.2
 | `category` | string | | `工具` \| `标本`（与 `studio_raw_inventory` 同枚举） |
 | `status` | string | ✅ | `active` \| `inactive`；**停用行不参与匹配**（历史单靠快照不受影响） |
 | `note` | string | | 备注 |
+| `image` | string | | 资料图（2026-09-29 起，小程序「出货中心 → 资料」上传）：云存储 fileID（`cloud://…`，目录 `studio-pricebook/material/`），空串 = 无图；**只在入参显式带 `image` 时写**，ERP / 批量导入不传则不动。只作展示，不进算价、不进出货单快照 |
 | `sort` | number | | 排序（升序） |
 | `deleted` | boolean | | 软删标记；删除走 `deleted:true` 而非物理删（便于回查历史） |
 | `createdAt` / `createdBy` / `updatedAt` / `updatedBy` | | | 审计 |

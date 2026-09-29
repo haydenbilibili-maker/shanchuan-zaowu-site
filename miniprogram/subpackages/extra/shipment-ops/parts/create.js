@@ -5,6 +5,7 @@
  */
 const { formatCloudFnError } = require('../../utils/memberScan')
 const { SHIPMENT_FN, SETTLEMENT_FN, callCloud, money, yuan, todayStr } = require('./shared')
+const { railUrl } = require('../../../../utils/imageUrl')
 
 const EDIT_DRAFT_KEY = 'shipment_edit_draft_v1'
 const EDIT_PAGE = '/subpackages/extra/shipment-edit/index'
@@ -557,6 +558,7 @@ const methods = {
           key: g.normName || g.name,
           name: g.name,
           displayName: g.displayName || g.name,
+          thumb: g.image ? railUrl(g.image) : '',
           aliasesText: (g.aliases || []).join('、'),
           optionField: g.optionField,
           options: (g.options || []).map((o) => ({

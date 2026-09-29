@@ -317,7 +317,7 @@ function clipText (v, max = DIGEST_STR_MAX) {
 }
 
 const DIGEST_MAX_STORES = 8
-const DIGEST_STORE_KEYS = ['revenueYuan', 'posYuan', 'orderCount', 'refundYuan', 'onlineYuan', 'cashBalanceYuan']
+const DIGEST_STORE_KEYS = ['revenueYuan', 'posYuan', 'orderCount', 'refundYuan', 'onlineYuan', 'cashBalanceYuan', 'shipmentCount']
 
 function numOrNull (v) {
   if (v == null || v === '') return null

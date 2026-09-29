@@ -169,7 +169,7 @@
           </view>
 
           <view class="digest-payload-missing" wx:elif="{{item.isDigest && item.digestPayloadMissing}}">
-            <text class="dpm-text">仅有文字摘要 · 结构化口径未下发</text>
+            <text class="dpm-text">仅有文字摘要</text>
             <text class="message-preview" wx:if="{{item.preview}}">{{item.preview}}</text>
           </view>
 
@@ -198,7 +198,7 @@
               <view class="lamp {{item.statusLampClass}}"></view>
               <text>{{item.statusLabel}}</text>
             </view>
-            <text class="action-hint" wx:if="{{item.isDigest}}">{{item.digestPayloadMissing ? '查看原文' : '查看口径'}}</text>
+            <text class="action-hint" wx:if="{{item.isDigest}}">{{item.digestPayloadMissing ? '查看原文' : '查看详情'}}</text>
             <text class="action-hint" wx:elif="{{item.actionUrl}}">{{item.actionLabel || '打开相关页'}}</text>
           </view>
         </view>

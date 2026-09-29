@@ -112,6 +112,10 @@ function normalizeAliases(raw) {
   return out
 }
 
+/** 资料图（出货中心「资料」页上传）：只收云存储 fileID，空串 = 清除 */
+const IMAGE_FILE_ID_RE = /^cloud:\/\/[^\s]+$/
+const IMAGE_FILE_ID_MAX = 512
+
 function normalizePrice(raw) {
   const n = Number(raw)
   if (!Number.isFinite(n) || n < 0) return null
@@ -166,6 +170,14 @@ function buildRow(input, kind) {
   if (book.kind === KIND.MATERIAL) {
     const category = String(src.category || '').trim()
     row.category = CATEGORY_OPTIONS.includes(category) ? category : ''
+  }
+  // 图片只在入参显式带了才写：ERP / 批量导入不传 image，update 合并时不会冲掉小程序传的图
+  if (src.image !== undefined) {
+    const image = String(src.image == null ? '' : src.image).trim()
+    if (image && !(IMAGE_FILE_ID_RE.test(image) && image.length <= IMAGE_FILE_ID_MAX)) {
+      return { ok: false, msg: `「${name}」图片须为云存储文件（cloud://）` }
+    }
+    row.image = image
   }
   return { ok: true, row }
 }
@@ -477,6 +489,7 @@ function mapRow(doc) {
     category: raw.category || '',
     status: raw.status === STATUS.INACTIVE ? STATUS.INACTIVE : STATUS.ACTIVE,
     note: raw.note || '',
+    image: typeof raw.image === 'string' ? raw.image : '',
     sort: normalizeSort(raw.sort),
     updatedAt: Number(raw.updatedAt) || 0
   }

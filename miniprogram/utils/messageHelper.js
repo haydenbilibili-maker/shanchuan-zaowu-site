@@ -155,7 +155,7 @@ const TYPE_ACTION_LABELS = {
   approval_submitted: '去审批',
   approval_approved: '查看审批',
   approval_rejected: '查看审批',
-  daily_digest: '查看口径',
+  daily_digest: '查看详情',
   activity_notice: '前往相关页'
 };
 
@@ -1053,7 +1053,7 @@ function enrichMessage(msg) {
     typeName,
     formattedTime: formatMessageTime(date),
     actionLabel: isDigest
-      ? '查看口径'
+      ? '查看详情'
       : (isCampaign
         ? (actionUrl ? (TYPE_ACTION_LABELS[msg.type] || '前往相关页') : '')
         : resolveActionLabel({ ...msg, actionUrl, category })),

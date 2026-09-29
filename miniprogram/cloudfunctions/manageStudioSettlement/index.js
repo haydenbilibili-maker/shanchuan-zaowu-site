@@ -418,11 +418,15 @@ async function handleSearchPriceBook(event) {
         unit: r.unit || ''
       }
       if (bySort) opt.sort = Number(r.sort) || 0
+      // 资料图只在有图时带出（无图行的输出与旧版逐字一致）
+      if (typeof r.image === 'string' && r.image) opt.image = r.image
       byName[nk].options.push(opt)
     }
     for (const nk of Object.keys(byName)) {
       const g = byName[nk]
       g.options.sort((a, b) => (a.isDefault === b.isDefault ? 0 : a.isDefault ? -1 : 1))
+      const withImage = g.options.find((o) => o.image)
+      if (withImage) g.image = withImage.image
       groups.push(g)
     }
   }

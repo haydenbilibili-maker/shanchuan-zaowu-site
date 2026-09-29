@@ -176,31 +176,16 @@
                       <text class="dg-label">{{m.label}}</text>
                       <text class="dg-value {{m.missing ? 'is-missing' : ''}} {{m.failed ? 'is-failed' : ''}}">{{m.valueText}}</text>
                     </view>
-                    <text class="dg-source" wx:if="{{showSources && m.sourceText}}">{{m.sourceText}}</text>
-                    <text class="dg-source brief" wx:elif="{{m.sourceBrief}}">{{m.sourceBrief}}</text>
+                    <view class="dg-split" wx:if="{{m.stores}}">
+                      <view class="dg-split-row" wx:for="{{m.stores}}" wx:for-item="st" wx:key="storeId">
+                        <text class="dg-split-name">{{st.name}}</text>
+                        <text class="dg-split-val">{{st.valueText}}</text>
+                      </view>
+                    </view>
                     <text class="dg-caveat" wx:if="{{m.failedText}}">{{m.failedText}}</text>
-                    <text class="dg-caveat" wx:if="{{m.caveat}}">{{m.caveat}}</text>
+                    <text class="dg-row-note" wx:if="{{m.note}}">{{m.note}}</text>
                   </view>
-                  <view class="dg-stores" wx:if="{{sec.storeBreakdown}}">
-                    <text class="dg-stores-title">按门店 · {{sec.storeBreakdown.storeCount}} 家</text>
-                    <view class="dg-store {{st.isTotal ? 'is-total' : ''}}" wx:for="{{sec.storeBreakdown.rows}}" wx:for-item="st" wx:key="storeId">
-                      <view class="dg-store-top">
-                        <text class="dg-store-name">{{st.name}}</text>
-                        <text class="dg-store-rev">{{st.revenueText}}</text>
-                      </view>
-                      <text class="dg-store-meta">POS {{st.posText}} · {{st.orderText}} · 在手现金 {{st.cashText}}{{st.extraText ? ' · ' + st.extraText : ''}}</text>
-                    </view>
-                    <view class="dg-store is-total" wx:if="{{sec.storeBreakdown.total}}">
-                      <view class="dg-store-top">
-                        <text class="dg-store-name">合计</text>
-                        <text class="dg-store-rev">{{sec.storeBreakdown.total.revenueText}}</text>
-                      </view>
-                      <text class="dg-store-meta">POS {{sec.storeBreakdown.total.posText}} · {{sec.storeBreakdown.total.orderText}} · 在手现金 {{sec.storeBreakdown.total.cashText}}{{sec.storeBreakdown.total.extraText ? ' · ' + sec.storeBreakdown.total.extraText : ''}}</text>
-                    </view>
-                    <text class="dg-caveat" wx:if="{{sec.storeBreakdown.balanceWarn}}">{{sec.storeBreakdown.balanceWarn}}</text>
-                    <text class="dg-caveat" wx:if="{{sec.storeBreakdown.failedNote}}">{{sec.storeBreakdown.failedNote}}</text>
-                    <text class="dg-source brief">{{sec.storeBreakdown.note}}</text>
-                  </view>
+                  <text class="dg-caveat" wx:if="{{sec.storeNotice}}">{{sec.storeNotice}}</text>
                 </view>
                 <view class="dg-sec-collapsed" wx:else>
                   <text>{{sec.collapsedHint || '已收起'}}</text>
@@ -208,9 +193,6 @@
               </view>
 
               <view class="dg-tools">
-                <view class="dg-tool" bindtap="toggleDigestSources" hover-class="dg-tool-press" hover-stay-time="80">
-                  <text>{{showSources ? '收起完整口径' : '显示完整口径'}}</text>
-                </view>
                 <view class="dg-tool" bindtap="shareDigestSheet" hover-class="dg-tool-press" hover-stay-time="80">
                   <text>复制 / 分享摘要</text>
                 </view>
@@ -225,8 +207,8 @@
 
             <!-- 日报但无结构化 payload：诚实提示，不假装「没生意」 -->
             <view class="letter-digest-missing" wx:elif="{{digestPayloadMissing}}">
-              <text class="dgm-title">结构化口径未下发</text>
-              <text class="dgm-desc">本期只有文字摘要。常见原因：getUserMessages 未更新部署，或 payload 归一化未放行。数字请以云端修复后再看。</text>
+              <text class="dgm-title">本期只有文字版</text>
+              <text class="dgm-desc">这期日报没有分项数字，请看上面的文字摘要。</text>
             </view>
             <view class="letter-sign">
               <text class="sign-line">{{selectedMessage.senderName}}</text>

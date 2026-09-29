@@ -283,18 +283,28 @@ function digestRows0926 () {
     ],
   }
 }
-const DIGEST_KEYS = ['revenueYuan', 'posYuan', 'orderCount', 'refundYuan', 'onlineYuan', 'cashBalanceYuan']
+/** 当日出货单（ops_shipments 投影出的目标门店）：山川 2 单（含旧编号）、星宸 1 单 */
+const SHIP_ROWS_0926 = [{ storeId: 'store_shanhaizaowu' }, { storeId: 'store_1780146782017_6w0okpr' }, { storeId: 'store_xingchen' }]
+const DIGEST_KEYS = ['revenueYuan', 'posYuan', 'orderCount', 'refundYuan', 'onlineYuan', 'cashBalanceYuan', 'shipmentCount']
 
 /** 小程序每日日报：dailyDigestCore → getUserMessages 白名单 → digestView → 详情页 wxml */
 function runDigestStoreChecks (core, normalizeStoreBreakdown, view, srcs) {
   const out = []
-  const digest = core.buildDigest({ dayKey: '2026-09-26', dateKeyedRows: digestRows0926() })
+  const digest = core.buildDigest({
+    dayKey: '2026-09-26',
+    dateKeyedRows: digestRows0926(),
+    simpleDay: { studio_shipments: 3 },
+    simpleDayRows: { studio_shipments: SHIP_ROWS_0926 },
+  })
   const bd = digest.storeBreakdown
   if (!bd || !Array.isArray(bd.rows)) return ['[日报 按店] 超管日报没有 storeBreakdown（门店营收未按店拆分）']
   const names = bd.rows.map((r) => r.name).join('/')
   if (names !== '山川造物/星宸标本') out.push(`[日报 按店] 应为「山川造物/星宸标本」两行（账本别名 id 与营收主 id 归同一店），实得「${names}」`)
   const sc = bd.rows[0] || {}
   if (!near(sc.revenueYuan, 9812.6) || !near(sc.posYuan, 9812.6) || sc.orderCount !== 150 || !near(sc.cashBalanceYuan, 1549.5)) out.push(`[日报 按店] 山川造物行不对：${JSON.stringify(sc)}`)
+  if (sc.shipmentCount !== 2 || (bd.rows[1] || {}).shipmentCount !== 1) out.push(`[日报 按店] 出货单应按目标门店拆成 山川 2 / 星宸 1（旧编号归山川），实得 ${sc.shipmentCount} / ${(bd.rows[1] || {}).shipmentCount}`)
+  const shipFail = core.buildStoreBreakdown(digestRows0926(), {}, { studio_shipments: { error: 'x' } })
+  if (!shipFail || !shipFail.failedCollections.includes('ops_shipments') || shipFail.total.shipmentCount !== null) out.push('[日报 按店] 出货单取数失败应记进 failedCollections 且显示「—」，不当成 0 单')
   out.push(...checkTotalIsSum('日报', bd.rows, bd.total, DIGEST_KEYS))
   if (!near(bd.total && bd.total.revenueYuan, 12698.92)) out.push(`[日报 按店] 合计营收应为 12698.92，实得 ${bd.total && bd.total.revenueYuan}`)
   if (!Array.isArray(bd.mismatches) || bd.mismatches.length) out.push(`[日报 按店] 按店合计应与门店营收指标对得上，实得 mismatches=${JSON.stringify(bd.mismatches)}`)
@@ -348,17 +358,56 @@ function runDigestStoreChecks (core, normalizeStoreBreakdown, view, srcs) {
   const vt = view.buildStoreBreakdownView(tampered)
   if (!vt || !vt.balanceWarn) out.push('[digestView] 合计 ≠ 各店之和时未给出 balanceWarn')
   if (view.buildStoreBreakdownView(undefined) !== null) out.push('[digestView] 旧日报无 storeBreakdown 应回 null')
-  const dv = view.buildDigestView({
-    payload: {
-      metrics: [{ id: 'store_revenue_yuan', label: '门店营收', unit: 'yuan', value: 12698.92, section: 'store' }],
-      sections: [{ key: 'store', label: '门店营收', ids: ['store_revenue_yuan'] }],
-      storeBreakdown: bd,
-    },
-  })
+  // 详情页：用真实目录（带 source/caveat 开发口径）生成的全量 payload 跑一遍视图
+  const payload = {
+    metrics: digest.metrics,
+    sections: digest.sections.map((s) => ({ key: s.key, label: s.label, ids: s.metrics.map((m) => m.id) })),
+    storeBreakdown: typeof normalizeStoreBreakdown === 'function' ? normalizeStoreBreakdown(JSON.parse(JSON.stringify(bd))) : bd,
+  }
+  const dv = view.buildDigestView({ payload })
   const storeSec = dv && dv.sections.find((s) => s.key === 'store')
-  if (!storeSec || !storeSec.storeBreakdown) out.push('[digestView] 「门店营收」分组未挂 storeBreakdown')
-  if (!/wx:if="\{\{sec\.storeBreakdown\}\}"/.test(srcs.detailWxml) || !/wx:for="\{\{sec\.storeBreakdown\.rows\}\}"/.test(srcs.detailWxml) || !/wx:if="\{\{sec\.storeBreakdown\.total\}\}"/.test(srcs.detailWxml)) {
-    out.push('[详情页 wxml] 未渲染按店行 / 合计行（sec.storeBreakdown）')
+  if (!storeSec || !storeSec.storeBreakdown) return out.concat(['[digestView] 「门店营收」分组未挂 storeBreakdown'])
+  const row = (id) => storeSec.metrics.find((m) => m.id === id) || {}
+  const split = (id) => (row(id).stores || []).map((s) => `${s.name} ${s.valueText}`).join(' / ')
+  const wantSplit = {
+    store_revenue_yuan: '山川造物 ¥9812.60 / 星宸标本 ¥2886.32',
+    store_ledger_pos_yuan: '山川造物 ¥9812.60 / 星宸标本 ¥2886.32',
+    store_ledger_offline_orders: '山川造物 150 单 / 星宸标本 未记单数',
+    studio_shipments: '山川造物 2 单 / 星宸标本 1 单',
+    store_cash_balance: '山川造物 ¥1549.50 / 星宸标本 ¥787.10',
+  }
+  for (const [id, want] of Object.entries(wantSplit)) {
+    if (split(id) !== want) out.push(`[digestView] 门店营收「${row(id).label || id}」应逐店显示「${want}」，实得「${split(id)}」`)
+  }
+  if (row('store_cash_balance').valueText !== '¥2336.60') out.push(`[digestView] 在手现金合计应为 ¥2336.60，实得 ${row('store_cash_balance').valueText}`)
+
+  // 开发侧说明（集合名 / 字段 / 口径辩护 / markdown）只留在 reportCatalog 与代码注释，界面不得出现
+  const DEV_TEXT = /daily_revenues|store_ledger|ops_shipments|order_paid_fen|analytics_daily|totalFen|\*\*|禁止|口径/
+  const shown = []
+  dv.sections.forEach((s) => {
+    shown.push(s.label, s.countText, s.storeNotice || '')
+    s.metrics.forEach((m) => {
+      shown.push(m.label, m.valueText, m.note || '', m.failedText || '')
+      ;(m.stores || []).forEach((st) => shown.push(st.name, st.valueText))
+    })
+  })
+  shown.push(dv.healthSummary, dv.snapshotNote, dv.countNote, dv.missingNote, dv.failedNote)
+  const leaked = shown.filter((t) => DEV_TEXT.test(String(t || '')))
+  if (leaked.length) out.push(`[digestView] 界面文案混入开发侧说明：${leaked.slice(0, 3).join(' | ')}`)
+  const tailLine = core.buildMessageText(digest).split('\n').pop()
+  if (DEV_TEXT.test(tailLine)) out.push(`[日报 正文] 结尾仍是开发侧口径提示：${tailLine}`)
+
+  const old = view.buildDigestView({ payload: { ...payload, storeBreakdown: undefined } })
+  const oldStore = old && old.sections.find((s) => s.key === 'store')
+  if (!oldStore || !/还没有按门店拆分/.test(oldStore.storeNotice || '') || oldStore.metrics.some((m) => m.stores)) {
+    out.push('[digestView] 按店拆分上线前的旧日报应提示「还没有按门店拆分」，且不伪造各店数')
+  }
+
+  const w = srcs.detailWxml
+  if (!/wx:if="\{\{m\.stores\}\}"/.test(w) || !/wx:for="\{\{m\.stores\}\}"/.test(w)) out.push('[详情页 wxml] 门店营收指标未逐店渲染（m.stores）')
+  if (!/\{\{sec\.storeNotice\}\}/.test(w)) out.push('[详情页 wxml] 未渲染门店段提示 sec.storeNotice')
+  for (const k of ['m.caveat', 'm.sourceText', 'm.sourceBrief', 'showSources']) {
+    if (w.includes(k)) out.push(`[详情页 wxml] 仍渲染开发侧口径字段 ${k}（说明应保留在开发侧）`)
   }
   return out
 }
@@ -506,7 +555,7 @@ async function selftest () {
     await expectCaught('日报别名 id 不再归主店', 'digestCore',
       "(s.aliases || []).indexOf(sid) !== -1", 'false')
     await expectCaught('超管日报不再生成 storeBreakdown', 'digestCore',
-      'storeBreakdown = buildStoreBreakdown(dateKeyedRows)', 'storeBreakdown = null')
+      'storeBreakdown = buildStoreBreakdown(dateKeyedRows, raw.simpleDayRows, simpleDay)', 'storeBreakdown = null')
     await expectCaught('合计 ≠ 各店之和不再报出', 'digestCore',
       'out.push(`${c.label}：合计 ${tot} ≠ 各店之和 ${sum}`)', 'void 0')
     await expectCaught('站内信正文不再输出各店行', 'digestCore',
@@ -516,11 +565,22 @@ async function selftest () {
     await expectCaught('getUserMessages 白名单丢掉 storeBreakdown', 'getMessages',
       'storeBreakdown: normalizeStoreBreakdown(raw.storeBreakdown),', '')
     await expectCaught('digestView 不再把按店块挂到「门店营收」分组', 'digestView',
-      "storeBreakdown: String(s && s.key || '') === 'store' ? storeBreakdown : null", 'storeBreakdown: null')
+      'storeBreakdown: isStore ? storeBreakdown : null', 'storeBreakdown: null')
     await expectCaught('digestView 把「有 POS 的 0 单」显示成「0 单」', 'digestView',
       'r && r.orderCount === 0 && toNumber(r.posYuan) > 0 ? null : ', '')
-    await expectCaught('详情页不再渲染合计行', 'detailWxml',
-      'wx:if="{{sec.storeBreakdown.total}}"', 'wx:if="{{false}}"')
+    await expectCaught('详情页门店营收退回只显示合计（不逐店）', 'detailWxml',
+      '<view class="dg-split" wx:if="{{m.stores}}">', '<view class="dg-split" wx:if="{{false}}">')
+    await expectCaught('详情页重新渲染开发侧口径（caveat）', 'detailWxml',
+      '<text class="dg-row-note" wx:if="{{m.note}}">{{m.note}}</text>',
+      '<text class="dg-row-note" wx:if="{{m.note}}">{{m.note}}</text><text class="dg-caveat">{{m.caveat}}</text>')
+    await expectCaught('digestView 门店营收不再逐项挂各店数', 'digestView',
+      'rows.forEach((r) => { if (!r.failed) r.stores = storeSplitFor(r.id, payload.storeBreakdown); });', 'void 0;')
+    await expectCaught('digestView 把目录 caveat（集合名/markdown）当成界面说明', 'digestView',
+      "note: USER_NOTES[m.id] || ''", "note: String(m.caveat || USER_NOTES[m.id] || '')")
+    await expectCaught('digestView 逐店单数把「有 POS 的 0 单」显示成「0 单」', 'digestView',
+      "const noOrders = key === 'orderCount' && v === 0 && toNumber(r.posYuan) > 0;", 'const noOrders = false;')
+    await expectCaught('日报出货单不再按门店计数', 'digestCore',
+      'const v = col.count ? 1 : row && row[col.field]', 'const v = col.count ? 0 : row && row[col.field]')
 
     await expectCaught('金卡合计只取山川一家', 'offlineSummary',
       'const total = round2(stores.reduce((a, s) => a + s.total, 0))', 'const total = stores[0].total')

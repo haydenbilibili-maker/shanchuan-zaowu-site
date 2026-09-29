@@ -44,7 +44,7 @@ const EMPTY_COPY = {
     all: { title: '工作台暂无来信', desc: '日报、待办与审批会按分类出现在上方分档；有未读时角标会亮起' },
     digest: {
       title: '暂无日报',
-      desc: '每日经营快照由云端定时生成（非整点即时算）。生成后会归档在此，可回看约 90 天；若长期为空，请确认 dailyDigest 已部署并配好定时器'
+      desc: '每天自动生成经营日报，归档在这里，可回看约 90 天。'
     },
     ops: { title: '暂无运营待办', desc: '新单启程与藏家候补会放在这一类' },
     system: { title: '暂无审批来信', desc: '审批提交与结果会放在这里' }
@@ -70,7 +70,7 @@ function withDigestCard(message) {
       ...enriched,
       digestCard: null,
       digestPayloadMissing: true,
-      preview: enriched.preview || '本期仅有文字摘要，结构化口径未下发'
+      preview: enriched.preview || '本期只有文字摘要'
     };
   }
   return {
@@ -90,7 +90,7 @@ function buildDigestRailTip(messages, unreadCount) {
     return {
       show: true,
       tone: 'muted',
-      text: '定时快照归档在此。每小时整点后约 20 分尝试生成；同一天同一人不会重复投递。'
+      text: '日报每天自动生成，归档在这里，可回看历史。'
     };
   }
   const top = digests[0];
@@ -99,7 +99,7 @@ function buildDigestRailTip(messages, unreadCount) {
     return {
       show: true,
       tone: 'warn',
-      text: '最新一期只有文字摘要。若长期如此，请确认 getUserMessages 已部署并放行 payload。'
+      text: '最新一期只有文字摘要。'
     };
   }
   const card = top.digestCard || {};

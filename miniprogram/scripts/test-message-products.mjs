@@ -575,7 +575,9 @@ const digestRow = {
     const missingMetric = flat.find((m) => m.id === 'mini_visitors')
     eq('失败项 valueText = 取数失败', failedMetric && failedMetric.valueText, '取数失败')
     eq('失败项不再算 missing', failedMetric && failedMetric.missing, false)
-    check('失败项带出原因', /aggregate failed/.test(failedMetric && failedMetric.failedText), failedMetric && failedMetric.failedText)
+    // 技术原因留在开发侧（failedError 进「复制失败清单」），界面 failedText 只给一句人话
+    check('失败项原因进 failedError（复制给技术）', /aggregate failed/.test(failedMetric && failedMetric.failedError), failedMetric && failedMetric.failedError)
+    check('失败项界面文案不带技术原因', !!(failedMetric && failedMetric.failedText) && !/aggregate failed|Error|collection/i.test(failedMetric.failedText), failedMetric && failedMetric.failedText)
     eq('真没数据项仍是「未取到」', missingMetric && missingMetric.valueText, '未取到')
     eq('真没数据项 missing = true', missingMetric && missingMetric.missing, true)
     eq('真没数据项不算 failed', missingMetric && missingMetric.failed, false)

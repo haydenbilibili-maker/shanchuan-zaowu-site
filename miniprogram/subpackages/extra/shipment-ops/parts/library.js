@@ -4,6 +4,12 @@
  */
 const { formatCloudFnError } = require('../../utils/memberScan')
 const { SETTLEMENT_FN, callCloud, yuan } = require('./shared')
+const { railUrl, detailUrl, onImageError } = require('../../../../utils/imageUrl')
+
+/** 资料图云存储目录：studio-pricebook/<kind>/<时间戳>_<随机>.<ext> */
+const LIB_IMAGE_DIR = 'studio-pricebook'
+/** 上传前按边长压到 ≤ 1280（基础库不支持就只降质量） */
+const LIB_IMAGE_EDGE = 1280
 
 const KIND_META = {
   material: { label: '原材料', optionLabel: '等级', optionKey: 'grade', defaultKey: 'isDefaultGrade' },
@@ -12,6 +18,19 @@ const KIND_META = {
 
 function normKey(name) {
   return String(name || '').replace(/\s+/g, '').toLowerCase()
+}
+
+/** 压缩失败 / 基础库不支持都回落原图；compressedWidth 只在原图更宽时传（它会放大小图） */
+function compressLibImage(src) {
+  return new Promise((resolve) => {
+    if (typeof wx.compressImage !== 'function') return resolve(src)
+    const run = (width) => {
+      const opts = { src, quality: 80, success: (r) => resolve((r && r.tempFilePath) || src), fail: () => resolve(src) }
+      if (width > LIB_IMAGE_EDGE && wx.canIUse && wx.canIUse('compressImage.object.compressedWidth')) opts.compressedWidth = LIB_IMAGE_EDGE
+      wx.compressImage(opts)
+    }
+    wx.getImageInfo({ src, success: (i) => run(Number(i && i.width) || 0), fail: () => run(0) })
+  })
 }
 
 /** mapRow 形状 → priceBook 写入形状（整行） */
@@ -32,11 +51,14 @@ function toPayload(kind, row, patch) {
   out[meta.optionKey] = String(src.option || '').trim()
   out[meta.defaultKey] = src.isDefaultOption === true
   if (kind === 'material') out.category = String(src.category || '')
+  // 行上没有 image 键（旧版云函数的 mapRow）就不送，服务端不动库里的图
+  if (src.image !== undefined) out.image = String(src.image || '')
   return out
 }
 
 function viewRow(r) {
   return Object.assign({}, r, {
+    thumb: r.image ? railUrl(r.image) : '',
     inactive: r.status === 'inactive',
     unitPriceText: '¥' + yuan(Math.round((Number(r.unitPrice) || 0) * 100)),
     aliasesText: (r.aliases || []).join('、'),
@@ -61,6 +83,9 @@ function blankLibForm(kind) {
     category: '',
     isDefault: false,
     note: '',
+    image: '',
+    imageThumb: '',
+    uploading: false,
     problems: ''
   }
 }
@@ -232,7 +257,9 @@ const methods = {
         aliases: (row.aliases || []).join('，'),
         category: row.category || '',
         isDefault: row.isDefaultOption === true,
-        note: row.note || ''
+        note: row.note || '',
+        image: row.image || '',
+        imageThumb: row.image ? railUrl(row.image) : ''
       })
     }
     const catIdx = Math.max(0, (this.data.libCategoryValues || []).indexOf(form.category))
@@ -240,7 +267,7 @@ const methods = {
   },
 
   closeLibForm() {
-    if (this.data.libForm.saving) return
+    if (this.data.libForm.saving || this.data.libForm.uploading) return
     this.setData({ 'libForm.show': false })
   },
 
@@ -262,6 +289,7 @@ const methods = {
   async submitLibForm() {
     const f = this.data.libForm
     if (!this.data.isSuper || f.saving) return
+    if (f.uploading) return this.setData({ 'libForm.problems': '图片还在上传，稍等再保存' })
     const name = String(f.name || '').trim()
     if (!name) return this.setData({ 'libForm.problems': '名称必填' })
     const price = Number(f.unitPrice)
@@ -281,7 +309,8 @@ const methods = {
       aliases: String(f.aliases || '').split(/[，,、\s]+/).map((s) => s.trim()).filter(Boolean),
       category: f.category || '',
       isDefaultOption: isDefault,
-      note: String(f.note || '').trim()
+      note: String(f.note || '').trim(),
+      image: f.image || ''
     }
     if (!base) {
       patch.status = 'active'
@@ -343,6 +372,65 @@ Object.assign(methods, {
   deactivateBlocked(e) {
     this.setData({ 'libBlocked.id': '' })
     this.toggleLibStatus(e)
+  },
+
+  /** 资料图：选 1 张 → 压缩 → 传云存储，表单里只存 fileID，点「保存」才落库 */
+  chooseLibImage() {
+    const f = this.data.libForm
+    if (!this.data.isSuper || f.uploading || f.saving) return
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      sizeType: ['compressed'],
+      sourceType: ['album', 'camera'],
+      success: (res) => {
+        const file = (res.tempFiles || [])[0]
+        if (file && file.tempFilePath) this.uploadLibImage(file.tempFilePath)
+      }
+    })
+  },
+
+  async uploadLibImage(path) {
+    const kind = this.data.libForm.kind
+    this.setData({ 'libForm.uploading': true, 'libForm.problems': '' })
+    try {
+      const local = await compressLibImage(path)
+      const ext = ((/\.(\w+)$/.exec(local) || [])[1] || 'jpg').toLowerCase()
+      const up = await wx.cloud.uploadFile({
+        cloudPath: `${LIB_IMAGE_DIR}/${kind}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`,
+        filePath: local
+      })
+      if (!up || !up.fileID) throw new Error('上传没有返回文件')
+      this.setData({ 'libForm.image': up.fileID, 'libForm.imageThumb': railUrl(up.fileID) })
+    } catch (err) {
+      this.setData({ 'libForm.problems': formatCloudFnError(err, '图片上传失败，请重试') })
+    } finally {
+      this.setData({ 'libForm.uploading': false })
+    }
+  },
+
+  removeLibImage() {
+    if (this.data.libForm.uploading) return
+    this.setData({ 'libForm.image': '', 'libForm.imageThumb': '' })
+  },
+
+  /** 大图：列表行带 data-id；表单里的图不带 id */
+  previewLibImage(e) {
+    const id = String((e.currentTarget.dataset || {}).id || '')
+    const row = id ? this.findLibRow(id) : null
+    const image = row ? row.image : this.data.libForm.image
+    if (!image) return
+    const url = detailUrl(image)
+    wx.previewImage({ current: url, urls: [url] })
+  },
+
+  onLibThumbError() {
+    if (this._libThumbFallback) return
+    this._libThumbFallback = true
+    onImageError()
+    this.applyLibFilter()
+    const image = this.data.libForm.image
+    if (image) this.setData({ 'libForm.imageThumb': railUrl(image) })
   }
 })
 

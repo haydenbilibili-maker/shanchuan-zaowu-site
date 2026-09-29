@@ -14,3 +14,4 @@ npm run check:shipping-rules
 npm run test:feishu-sync
 npm run check:shipment-sku-page
 npm run test:shipment-parse
+npm run check:pricebook-image

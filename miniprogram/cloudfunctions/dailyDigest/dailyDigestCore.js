@@ -129,7 +129,7 @@ function buildDigest (raw = {}) {
 
   let storeBreakdown = null
   if (slice.storeBreakdown && sections.some((s) => s.key === SECTIONS.STORE)) {
-    storeBreakdown = buildStoreBreakdown(dateKeyedRows)
+    storeBreakdown = buildStoreBreakdown(dateKeyedRows, raw.simpleDayRows, simpleDay)
     if (storeBreakdown) storeBreakdown.mismatches = checkStoreBreakdownBalance(storeBreakdown, rows)
   }
 
@@ -241,6 +241,7 @@ function readMetric (metric, bag) {
  * 按店分行的列：key = storeBreakdown 行字段，metricId = 同口径的合计指标（合计行必须等于它）。
  * 营收 / 线上来自 daily_revenues，POS / 单数 / 退款 / 在手现金来自 store_ledger（同一次录入的两个落点）。
  * 在手现金是余额，**不计入营收**，只作为门店关键项展示。
+ * 出货单来自 ops_shipments（simpleDay 指标 studio_shipments 取回的当日行），count: true = 每行计 1。
  */
 const STORE_BREAKDOWN_COLUMNS = [
   { key: 'revenueYuan', label: '营收', unit: 'yuan', collection: 'daily_revenues', field: 'total', metricId: 'store_revenue_yuan' },
@@ -248,8 +249,10 @@ const STORE_BREAKDOWN_COLUMNS = [
   { key: 'orderCount', label: '单数', unit: 'order', collection: 'store_ledger', field: 'orderCount', metricId: 'store_ledger_offline_orders' },
   { key: 'refundYuan', label: '退款', unit: 'yuan', collection: 'store_ledger', field: 'refundAmount', metricId: 'store_refund_yuan' },
   { key: 'onlineYuan', label: '线上', unit: 'yuan', collection: 'daily_revenues', field: 'online', metricId: 'store_online_income_yuan' },
-  { key: 'cashBalanceYuan', label: '在手现金', unit: 'yuan', collection: 'store_ledger', field: 'cashBalance', metricId: '' }
+  { key: 'cashBalanceYuan', label: '在手现金', unit: 'yuan', collection: 'store_ledger', field: 'cashBalance', metricId: '' },
+  { key: 'shipmentCount', label: '出货', unit: 'ship', collection: 'ops_shipments', count: true, metricId: 'studio_shipments' }
 ]
+const SHIPMENT_METRIC_ID = 'studio_shipments'
 
 const round2 = (n) => Math.round(n * 100) / 100
 
@@ -268,7 +271,7 @@ function resolveDigestStore (row) {
  * 门店营收按店分行 + 合计行。合计行**由各店行求和得出**（结构性保证 合计 = Σ 各店），
  * 再由 checkStoreBreakdownBalance 与各指标总数对账。某集合取数失败 → 该列全为 null 并记进 failedCollections。
  */
-function buildStoreBreakdown (dateKeyedRows) {
+function buildStoreBreakdown (dateKeyedRows, simpleDayRows, simpleDay) {
   const bag = dateKeyedRows || {}
   const failedCollections = []
   const usable = {}
@@ -277,6 +280,10 @@ function buildStoreBreakdown (dateKeyedRows) {
     if (Array.isArray(rows)) usable[col] = rows
     else if (rows && rows.error) failedCollections.push(col)
   }
+  const shipRows = simpleDayRows && simpleDayRows[SHIPMENT_METRIC_ID]
+  const shipGot = simpleDay && simpleDay[SHIPMENT_METRIC_ID]
+  if (Array.isArray(shipRows)) usable.ops_shipments = shipRows
+  else if (shipGot && typeof shipGot === 'object' && shipGot.error) failedCollections.push('ops_shipments')
   if (!usable.daily_revenues && !usable.store_ledger) return null
 
   const byStore = new Map()
@@ -292,11 +299,13 @@ function buildStoreBreakdown (dateKeyedRows) {
   for (const col of STORE_BREAKDOWN_COLUMNS) {
     for (const row of usable[col.collection] || []) {
       const target = slot(row)
-      const v = row && row[col.field]
+      const v = col.count ? 1 : row && row[col.field]
       if (v == null || v === '') continue
       target[col.key] = round2((target[col.key] || 0) + toNumber(v))
     }
   }
+  // 出货单取到了（哪怕当日 0 行）→ 没出货的店记 0 单，而不是「无数据」
+  if (usable.ops_shipments) byStore.forEach((r) => { if (r.shipmentCount == null) r.shipmentCount = 0 })
 
   const order = (id) => {
     const i = REPORT_STORES.findIndex((s) => s.storeId === id)
@@ -310,12 +319,12 @@ function buildStoreBreakdown (dateKeyedRows) {
   })
 
   return {
-    columns: STORE_BREAKDOWN_COLUMNS.map((c) => ({ key: c.key, label: c.label, unit: c.unit, source: `${c.collection}.${c.field}` })),
+    columns: STORE_BREAKDOWN_COLUMNS.map((c) => ({ key: c.key, label: c.label, unit: c.unit, source: `${c.collection}.${c.field || 'count'}` })),
     rows,
     total,
     storeCount: rows.length,
     failedCollections,
-    note: '营收 = daily_revenues.total；POS/单数/退款/在手现金 = store_ledger。在手现金是余额，不计入营收。'
+    note: '在手现金是门店现金余额，不算进营收。'
   }
 }
 
@@ -341,7 +350,7 @@ function checkStoreBreakdownBalance (breakdown, metricRows) {
 /** 按店分行里一格的文字（null = 该店当日该来源无数据，区别于 0） */
 function formatBreakdownCell (unit, v) {
   if (v == null) return unit === 'order' ? '单数未记' : '—'
-  if (unit === 'order') return `${Math.round(toNumber(v))} 单`
+  if (unit === 'order' || unit === 'ship') return `${Math.round(toNumber(v))} 单`
   return `¥${toNumber(v).toFixed(2)}`
 }
 
@@ -394,7 +403,7 @@ function buildMessageText (digest) {
   // ⚠️ 2026-09-21 P3-21：正文是**纯文本**（站内信不渲染 markdown），原先写的 `**取数失败**`
   //    会把星号原样显示给读者 —— 已去掉星号，只留 ⚠️ 前缀做视觉强调。
   if (failed) lines.push(`⚠️ ${failed} 项取数失败（数据可能不准，请联系技术）：${(digest.failed || []).map((f) => f.label).join('、')}`)
-  lines.push('', '口径与来源见详情页「数据口径」。')
+  lines.push('', '各门店分项数字见详情页。')
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim()
 }
 

@@ -19,6 +19,7 @@ import { renderWxml } from './lib/wxml-preview.mjs'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
 const EXTRA = join(ROOT, 'miniprogram/subpackages/extra')
+const SAMPLE_IMG = `file://${join(ROOT, 'public/images/price-list/blue-morpho-dome-single.jpg')}`
 
 const argv = process.argv.slice(2)
 const argOf = (n, d) => {
@@ -121,7 +122,7 @@ const scenes = [
     data: {
       ...common, activeTab: 'library', libKind: 'material', libTipTone: 'info',
       libList: [
-        { _id: 'a', name: '大蓝闪蝶', option: 'A1', isDefaultOption: true, unitPriceText: '¥60.00', unit: '只', category: '蝴蝶', refText: '参考采购 ¥42.00', aliasesText: '大蓝闪' },
+        { _id: 'a', name: '大蓝闪蝶', option: 'A1', isDefaultOption: true, unitPriceText: '¥60.00', unit: '只', category: '蝴蝶', refText: '参考采购 ¥42.00', aliasesText: '大蓝闪', thumb: SAMPLE_IMG },
         { _id: 'b', name: '大蓝闪蝶', option: 'A2', unitPriceText: '¥45.00', unit: '只', category: '蝴蝶' },
         { _id: 'c', name: '光明女神闪蝶', option: '默认', isDefaultOption: true, unitPriceText: '¥88.00', unit: '只', category: '蝴蝶' },
         { _id: 'd', name: '枯叶蛱蝶', option: '默认', isDefaultOption: true, inactive: true, unitPriceText: '¥12.00', unit: '只', category: '蝴蝶' }
@@ -130,7 +131,7 @@ const scenes = [
   },
   {
     name: 'after-library-form', wxml: AFTER_WXML, wxss: AFTER_WXSS, h: 1500,
-    data: { ...common, activeTab: 'library', libKind: 'packaging', libList: [], libForm: { show: true, kind: 'packaging', name: '框', option: '10x18', unitPrice: '35', unit: '个', aliases: '', note: '', isDefault: true } }
+    data: { ...common, activeTab: 'library', libKind: 'packaging', libList: [], libForm: { show: true, kind: 'packaging', name: '框', option: '10x18', unitPrice: '35', unit: '个', aliases: '', note: '', isDefault: true, image: 'cloud://x/y.jpg', imageThumb: SAMPLE_IMG } }
   }
 ]
 if (beforeDir) {
