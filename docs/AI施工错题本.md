@@ -408,6 +408,19 @@ shift || true          # ← 无条件执行
 - **机制**：**`npm run check:rpx-zero-slack`**（cross 域）扫全小程序 wxss，新增「calc(百分比 − 定长)」布局宽度即红、白名单条目被删或改值也红（要重核）；
   `check:supplier-desk` 另钉 b2bdesk 指标网格；`render-supplier-desk-preview.mjs --widths 375,414` 可按真机比例出图（精度误差仍模拟不了，已在脚本头注明）。
 
+### E27 · 云函数跨目录 require：本地能跑、线上每次 `Cannot find module`（2026-09-29）
+
+- **症状**：馆藏 tab 约 5 秒。实测发现 `listCategories` **线上每次调用都崩**（`Cannot find module '../seedCategories/categorySeed'`），
+  页面白等 1.3–2.6 s 后走客户端分页兜底 —— 功能「看起来正常」，所以从未被发现。
+- **根因**：`listCategories/categoryTree.js` 写了 `require('../seedCategories/categorySeed')`。仓库里两个目录挨着，本地 `node` 能跑；
+  但 `tcb fn deploy` **只打包本函数目录**，部署包里根本没有那个文件。前端有兜底 → 失败被吞，只剩「慢」。
+- **规矩**
+  1. 云函数之间**不能**跨目录 require；共享代码逐函数留副本，并登记进 `check:shared-modules` 的 `FAMILIES`（逐字一致）。
+  2. 「有兜底所以没报错」≠ 正常：主路径失败必须能被看见（看线上真实调用的返回，而不是页面有没有出内容）。
+  3. 本地 `require` 通过不能证明部署包可用 —— 判断标准是「解析后的路径是否仍在函数目录内」。
+- **机制**：**`npm run check:cloudfn-require-scope`**（cross 域）扫描全部云函数的相对 require，越出本函数目录即红，存量走基线棘轮（当前 0 条）；
+  `check:shared-modules` 登记 `categorySeed.js`（`seedCategories` 为真源，`listCategories` 为副本）。
+
 ---
 
 ## 四、事实核查类
@@ -496,3 +509,4 @@ shift || true          # ← 无条件执行
 | **E24** 多流共享工作区：带函数名仍全量比对（20+ 分钟）/ 误杀别的流的部署进程 / 原地改正在执行的 `.sh` | ✅ + 约定 | **`npm run check:deploy-drifted-scope`**（cross 域，5 个回归注入）钉住「只比对/只部署本流函数、全量须 `--all`」；规矩：只杀自己启动且记录了 PID 的进程；改 `.sh` 走「临时文件 → `mv` 原子替换」 |
 | **E25** 每刀出图（111 次）/ 宽匹配 `pkill -f headless` 误杀别的流 / 守卫成功后被定时器挂住空等 | 机制 + 约定 | `run-guards.mjs` 汇总后打印**耗时排行**（空等会冒到榜首）；收口 `npm run check:fast`；规矩：出图每轮最多 2 次（改前 1 + 交付 1）、只杀自己记了 PID 的进程、守卫判定完冲刷输出后 `process.exit()` |
 | **E26** 离线预览复现不了 rpx 精度误差：`calc(50% - 8rpx)` + `gap` 零余量 → 真机每行一格、右半空白 | ✅ | **`npm run check:rpx-zero-slack`**（cross 域，4 个判红注入 + 2 个不误报反例）：全小程序新增「calc(百分比 − 定长)」列宽即红、白名单改值即红；规矩：百分比 + space-between 留余量，出图不当「真机排得下」的证据 |
+| **E27** 云函数跨目录 require（本地能跑、部署包缺文件 → 线上每次 Cannot find module，前端兜底吞掉只剩「慢」） | ✅ | **`npm run check:cloudfn-require-scope`**（cross 域，4 个判红注入 + 3 个不误报反例）：相对 require 解析后必须在本函数目录内，存量走基线棘轮；共享代码留副本并登记 `check:shared-modules` |

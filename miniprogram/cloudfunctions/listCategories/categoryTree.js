@@ -1,5 +1,6 @@
 /**
  * 与 utils/categoryTree.js 保持同步（云函数部署不包含小程序 utils 目录）
+ * categorySeed.js 是 seedCategories/categorySeed.js 的逐字副本（部署包只含本目录；check:shared-modules 守一致）
  */
 const {
   CANONICAL_ROOT_NAMES,
@@ -7,7 +8,7 @@ const {
   toCanonicalRootName,
   toRootDisplayName,
   formatCategoryDisplayName
-} = require('../seedCategories/categorySeed')
+} = require('./categorySeed')
 
 const PAGE_SIZE = 100
 

@@ -65,7 +65,9 @@ export const FAMILIES = [
   { module: 'settlementNotify.js', kind: 'identical', canonical: 'manageStudioSettlement/settlementNotify.js',
     why: '出货结算通知：出货单生成（manageStoreShipment）与账单状态变更（manageStudioSettlement）两边都要解析同一批收件人（超管 + **指定门店**店长）；各写一份必然出现「一边通知了店长、另一边只通知超管」' },
   { module: 'pricingCore.js', kind: 'identical', canonical: 'manageStoreShipment/pricingCore.js',
-    why: '出货算价内核：价目表**写入方**（manageStudioSettlement）与**算价方**（manageStoreShipment）必须同口径归一化 —— 一边把「大蓝闪 蝶」与「大蓝闪蝶」当两个材料、另一边当一个，就会静默算错价' }
+    why: '出货算价内核：价目表**写入方**（manageStudioSettlement）与**算价方**（manageStoreShipment）必须同口径归一化 —— 一边把「大蓝闪 蝶」与「大蓝闪蝶」当两个材料、另一边当一个，就会静默算错价' },
+  { module: 'categorySeed.js', kind: 'identical', canonical: 'seedCategories/categorySeed.js',
+    why: '分类种子与一级馆别名：listCategories 原先跨目录 require 这份文件，部署包里没有 → 线上每次调用都崩（2026-09-29）；改为本目录副本后两边的馆名/别名口径必须一致' }
 ]
 
 /** 有意分歧、**不纳入本守卫**的家族（登记原因，防后来者「顺手统一」） */

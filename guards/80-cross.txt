@@ -74,3 +74,5 @@ npm run test:secure-data-read
 npm run test:secure-data-write
 # 2026-09-29：零余量多列网格（真机每行一格、离线预览看不出；错题本 E26）
 npm run check:rpx-zero-slack
+# 2026-09-29：云函数禁止 require 函数目录外的相对路径（listCategories 线上每次 Cannot find module，错题本 E27）
+npm run check:cloudfn-require-scope
