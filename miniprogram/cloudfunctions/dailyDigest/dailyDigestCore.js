@@ -12,7 +12,7 @@
  *   `*Count` 是笔数。日报 payload 里每个金额都同时带 `unit`，展示层只按 `unit` 换算。
  */
 
-const { METRICS, ROLE_SLICES, SECTIONS, ROLES } = require('./reportCatalog')
+const { METRICS, ROLE_SLICES, SECTIONS, ROLES, REPORT_STORES } = require('./reportCatalog')
 
 const BJ_OFFSET_MS = 8 * 60 * 60 * 1000
 
@@ -127,6 +127,12 @@ function buildDigest (raw = {}) {
     metrics: rows.filter((r) => r.section === key)
   })).filter((s) => s.metrics.length)
 
+  let storeBreakdown = null
+  if (slice.storeBreakdown && sections.some((s) => s.key === SECTIONS.STORE)) {
+    storeBreakdown = buildStoreBreakdown(dateKeyedRows)
+    if (storeBreakdown) storeBreakdown.mismatches = checkStoreBreakdownBalance(storeBreakdown, rows)
+  }
+
   return {
     dayKey,
     role,
@@ -135,6 +141,7 @@ function buildDigest (raw = {}) {
     sections,
     metrics: rows,
     metricsCount: rows.length,
+    storeBreakdown,
     /** 当日**确实没有数据**（不是取数失败） */
     missing: rows.filter((r) => r.value == null && !r.error).map((r) => r.id),
     /** **取数失败**（聚合报错等）：必须与"当日无数据"分开，且要把原因带回给调用方 */
@@ -230,6 +237,128 @@ function readMetric (metric, bag) {
   return base
 }
 
+/**
+ * 按店分行的列：key = storeBreakdown 行字段，metricId = 同口径的合计指标（合计行必须等于它）。
+ * 营收 / 线上来自 daily_revenues，POS / 单数 / 退款 / 在手现金来自 store_ledger（同一次录入的两个落点）。
+ * 在手现金是余额，**不计入营收**，只作为门店关键项展示。
+ */
+const STORE_BREAKDOWN_COLUMNS = [
+  { key: 'revenueYuan', label: '营收', unit: 'yuan', collection: 'daily_revenues', field: 'total', metricId: 'store_revenue_yuan' },
+  { key: 'posYuan', label: 'POS', unit: 'yuan', collection: 'store_ledger', field: 'pos', metricId: 'store_ledger_pos_yuan' },
+  { key: 'orderCount', label: '单数', unit: 'order', collection: 'store_ledger', field: 'orderCount', metricId: 'store_ledger_offline_orders' },
+  { key: 'refundYuan', label: '退款', unit: 'yuan', collection: 'store_ledger', field: 'refundAmount', metricId: 'store_refund_yuan' },
+  { key: 'onlineYuan', label: '线上', unit: 'yuan', collection: 'daily_revenues', field: 'online', metricId: 'store_online_income_yuan' },
+  { key: 'cashBalanceYuan', label: '在手现金', unit: 'yuan', collection: 'store_ledger', field: 'cashBalance', metricId: '' }
+]
+
+const round2 = (n) => Math.round(n * 100) / 100
+
+/** 行 → 门店（规范 id + 名称）；别名归主店，**无 storeId 一律归山川造物**（与 syncFinanceData 同一惯例） */
+function resolveDigestStore (row) {
+  const sid = String((row && row.storeId) || '').trim()
+  const main = REPORT_STORES[0]
+  if (!sid || sid === 'default') return { storeId: main.storeId, name: main.name }
+  for (const s of REPORT_STORES) {
+    if (s.storeId === sid || (s.aliases || []).indexOf(sid) !== -1) return { storeId: s.storeId, name: s.name }
+  }
+  return { storeId: sid, name: String((row && row.storeName) || '').trim() || sid }
+}
+
+/**
+ * 门店营收按店分行 + 合计行。合计行**由各店行求和得出**（结构性保证 合计 = Σ 各店），
+ * 再由 checkStoreBreakdownBalance 与各指标总数对账。某集合取数失败 → 该列全为 null 并记进 failedCollections。
+ */
+function buildStoreBreakdown (dateKeyedRows) {
+  const bag = dateKeyedRows || {}
+  const failedCollections = []
+  const usable = {}
+  for (const col of ['daily_revenues', 'store_ledger']) {
+    const rows = bag[col]
+    if (Array.isArray(rows)) usable[col] = rows
+    else if (rows && rows.error) failedCollections.push(col)
+  }
+  if (!usable.daily_revenues && !usable.store_ledger) return null
+
+  const byStore = new Map()
+  const slot = (row) => {
+    const s = resolveDigestStore(row)
+    if (!byStore.has(s.storeId)) {
+      const blank = { storeId: s.storeId, name: s.name }
+      STORE_BREAKDOWN_COLUMNS.forEach((c) => { blank[c.key] = null })
+      byStore.set(s.storeId, blank)
+    }
+    return byStore.get(s.storeId)
+  }
+  for (const col of STORE_BREAKDOWN_COLUMNS) {
+    for (const row of usable[col.collection] || []) {
+      const target = slot(row)
+      const v = row && row[col.field]
+      if (v == null || v === '') continue
+      target[col.key] = round2((target[col.key] || 0) + toNumber(v))
+    }
+  }
+
+  const order = (id) => {
+    const i = REPORT_STORES.findIndex((s) => s.storeId === id)
+    return i !== -1 ? i : 500
+  }
+  const rows = Array.from(byStore.values()).sort((a, b) => order(a.storeId) - order(b.storeId))
+  const total = { storeId: '__total__', name: '合计' }
+  STORE_BREAKDOWN_COLUMNS.forEach((c) => {
+    const vals = rows.map((r) => r[c.key]).filter((v) => v != null)
+    total[c.key] = vals.length ? round2(vals.reduce((a, b) => a + b, 0)) : null
+  })
+
+  return {
+    columns: STORE_BREAKDOWN_COLUMNS.map((c) => ({ key: c.key, label: c.label, unit: c.unit, source: `${c.collection}.${c.field}` })),
+    rows,
+    total,
+    storeCount: rows.length,
+    failedCollections,
+    note: '营收 = daily_revenues.total；POS/单数/退款/在手现金 = store_ledger。在手现金是余额，不计入营收。'
+  }
+}
+
+/** 合计 = Σ 各店，且与同口径指标总数一致；返回不一致项（空数组 = 对得上） */
+function checkStoreBreakdownBalance (breakdown, metricRows) {
+  const out = []
+  if (!breakdown) return out
+  for (const c of STORE_BREAKDOWN_COLUMNS) {
+    const vals = breakdown.rows.map((r) => r[c.key]).filter((v) => v != null)
+    const sum = vals.length ? round2(vals.reduce((a, b) => a + b, 0)) : null
+    const tot = breakdown.total[c.key]
+    if ((sum == null) !== (tot == null) || (sum != null && Math.abs(sum - tot) > 0.005)) {
+      out.push(`${c.label}：合计 ${tot} ≠ 各店之和 ${sum}`)
+    }
+    const metric = c.metricId && (metricRows || []).find((m) => m.id === c.metricId)
+    if (metric && metric.value != null && tot != null && Math.abs(toNumber(metric.value) - tot) > 0.005) {
+      out.push(`${c.label}：按店合计 ${tot} ≠ 指标「${metric.label}」${metric.value}`)
+    }
+  }
+  return out
+}
+
+/** 按店分行里一格的文字（null = 该店当日该来源无数据，区别于 0） */
+function formatBreakdownCell (unit, v) {
+  if (v == null) return unit === 'order' ? '单数未记' : '—'
+  if (unit === 'order') return `${Math.round(toNumber(v))} 单`
+  return `¥${toNumber(v).toFixed(2)}`
+}
+
+/** 有 POS 收款却记 0 单 = 门店日报没报单数（星宸日报的常态），显示「单数未记」而不是「0 单」 */
+function breakdownOrderValue (row) {
+  return row.orderCount === 0 && row.posYuan > 0 ? null : row.orderCount
+}
+
+function breakdownLine (row) {
+  const parts = STORE_BREAKDOWN_COLUMNS
+    .filter((c) => !((c.key === 'refundYuan' || c.key === 'onlineYuan') && !row[c.key]))
+    .map((c) => (c.unit === 'order'
+      ? formatBreakdownCell(c.unit, breakdownOrderValue(row))
+      : `${c.label} ${formatBreakdownCell(c.unit, row[c.key])}`))
+  return `· ${row.name}：${parts.join(' · ')}`
+}
+
 /** 金额展示：分 → 元（两位小数），元 → 原样两位小数 */
 function formatValue (metric) {
   const v = metric.value
@@ -248,6 +377,13 @@ function buildMessageText (digest) {
     lines.push(`【${s.label}】`)
     for (const m of s.metrics) {
       lines.push(`· ${m.label}：${formatValue(m)}`)
+    }
+    const bd = digest.storeBreakdown
+    if (s.key === SECTIONS.STORE && bd && bd.rows.length) {
+      lines.push('按门店：')
+      bd.rows.forEach((r) => lines.push(breakdownLine(r)))
+      lines.push(breakdownLine(bd.total))
+      if (bd.mismatches && bd.mismatches.length) lines.push(`⚠️ 按店合计与总数对不上：${bd.mismatches.join('；')}`)
     }
     lines.push('')
   }
@@ -278,6 +414,11 @@ module.exports = {
   toNumber,
   readAnalyticsRow,
   buildDigest,
+  STORE_BREAKDOWN_COLUMNS,
+  resolveDigestStore,
+  buildStoreBreakdown,
+  checkStoreBreakdownBalance,
+  formatBreakdownCell,
   formatValue,
   buildMessageText,
   digestDedupeKey

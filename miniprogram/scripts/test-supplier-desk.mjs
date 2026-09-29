@@ -43,11 +43,13 @@ const API_JS = `${PKG}/utils/deskApi.js`
 const HUB_JS = 'miniprogram/subpackages/extra/supplier/index.js'
 const CFG_REL = 'miniprogram/subpackages/manager/manager/managerPageConfig.js'
 const APP_JSON = 'miniprogram/app.json'
+const DESK_WXSS = `${PKG}/desk-common.wxss`
+const CENTER_WXML = `${PKG}/center/index.wxml`
 const FILES = [
   CORE_REL, INDEX_REL, ACCESS_REL, `${FN}/staffGuard.js`, `${FN}/auditLog.js`,
   CENTER_JS, ORDER_JS, ORDER_WXML, STMT_JS, STMT_WXML, API_JS,
   `${PKG}/partner/index.js`, `${PKG}/price-edit/index.js`,
-  HUB_JS, CFG_REL, APP_JSON
+  HUB_JS, CFG_REL, APP_JSON, DESK_WXSS, CENTER_WXML
 ]
 
 if (argv.includes('--selftest')) selftest()
@@ -476,6 +478,29 @@ t('Hub：对账与物流入口按服务端功能项隐藏（myAccess.features.st
   return s.includes("action: 'myAccess'") && /features\.statement/.test(s) && s.includes('/subpackages/b2bdesk/statement/index')
 })
 
+/* 版式：两列网格必须留余量（2026-09-29 真机「指标卡只占左半宽、单列竖排」）。
+ * 根因：`width: calc(50% - Xrpx)` + 父级 `gap` 让两格加间距恰好 = 100%、零余量，真机 rpx 换算精度一偏就整行折断；
+ * 离线预览 1rpx=1px 精确，永远复现不了 —— 所以只能静态钉住写法。 */
+const ruleBody = (css, sel) => {
+  const m = new RegExp(`(^|\\n)${sel.replace(/[.]/g, '\\.')}\\s*\\{([^}]*)\\}`).exec(css)
+  return m ? m[2] : null
+}
+t('版式：两列网格不写零余量的 calc(百分比 - rpx)，列宽 ≤ 49% 且网格不用 gap', () => {
+  const css = read(DESK_WXSS).replace(/\/\*[\s\S]*?\*\//g, '')
+  if (/width\s*:\s*calc\(\s*\d+(\.\d+)?%\s*-/.test(css)) return false
+  const kpi = ruleBody(css, '.kpi')
+  const grid = ruleBody(css, '.kpi-grid')
+  const w = kpi && /width\s*:\s*(\d+(?:\.\d+)?)%/.exec(kpi)
+  return !!w && Number(w[1]) <= 49 && !!grid && !/\bgap\s*:/.test(grid) && /space-between/.test(grid)
+})
+t('大盘：汇总大卡 + 两列小卡；异常为 0 弱化、有数醒目；点卡片仍跳筛选订单', () => {
+  const w = read(CENTER_WXML)
+  const js = read(CENTER_JS)
+  return w.includes('class="sum-card"') && /class="kpi \{\{item\.tone\}\}"[^>]*bindtap="onDashKpi"/.test(w) &&
+    /tone: m\.overdueCount \? 'alert' : 'mute'/.test(js) && /tone: m\.reviewFen \? 'alert' : 'mute'/.test(js) &&
+    /tone: m\.offlineFen \? 'alert' : 'mute'/.test(js) && /data-key="due" bindtap="onDashKpi"/.test(w)
+})
+
 if (failures.length) {
   console.error(`✗ supplier-desk：${failures.length} 条失败 / ${passed} 条通过`)
   failures.forEach((f) => console.error(`  - ${f}`))
@@ -507,6 +532,9 @@ function selftest() {
     { name: '订单详情页调了写动作', file: ORDER_JS, from: "callDesk('adminGetOrder'", to: "callDesk('adminRemovePriceItem', {}); callDesk('adminGetOrder'", expect: '追踪页只读' },
     { name: '对账页直连集合', file: STMT_JS, from: "callDesk('myStatement'", to: "wx.cloud.database().collection('purchase_orders'); callDesk('myStatement'", expect: '对账页只读' },
     { name: '磁贴仍跳旧预览 Hub', file: CFG_REL, from: '/subpackages/b2bdesk/center/index', to: '/subpackages/extra/supplier/index', expect: '磁贴接线' },
+    { name: '指标卡回到零余量 calc 宽度', file: DESK_WXSS, from: '  width: 48.5%;\n  box-sizing: border-box;\n  margin-bottom: 16rpx;', to: '  width: calc(50% - 8rpx);\n  box-sizing: border-box;\n  margin-bottom: 16rpx;', expect: '零余量' },
+    { name: '指标网格改回 gap', file: DESK_WXSS, from: '  justify-content: space-between;\n  margin-bottom: var(--space-4);\n}\n\n.kpi {', to: '  gap: 16rpx;\n  margin-bottom: var(--space-4);\n}\n\n.kpi {', expect: '零余量' },
+    { name: '超期为 0 也醒目', file: CENTER_JS, from: "tone: m.overdueCount ? 'alert' : 'mute'", to: "tone: 'alert'", expect: '异常为 0 弱化' },
     { name: 'Hub 不按功能项隐藏对账', file: HUB_JS, from: 'features.statement', to: 'true', expect: 'Hub' }
   ]
   let ok = true

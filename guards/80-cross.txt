@@ -72,3 +72,5 @@ npm run check:sensitive-rules
 npm run check:sensitive-direct-read
 npm run test:secure-data-read
 npm run test:secure-data-write
+# 2026-09-29：零余量多列网格（真机每行一格、离线预览看不出；错题本 E26）
+npm run check:rpx-zero-slack

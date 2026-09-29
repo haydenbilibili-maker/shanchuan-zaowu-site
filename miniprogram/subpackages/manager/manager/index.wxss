@@ -366,6 +366,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .sub-metric { display: flex; flex-direction: column; }
 .sub-metric .lbl { font-size: 18rpx; color: var(--gold); opacity: 0.8; margin-bottom: 4rpx; }
 .sub-metric .val { font-family: var(--font-din); font-size: 32rpx; color: #fff; font-weight: bold; }
+.sub-metric .split { font-size: 18rpx; color: var(--gold); opacity: 0.8; margin-top: 4rpx; }
 .v-line { width: 1px; height: 40rpx; background: rgba(255,255,255,0.1); }
 
 /* 网格布局：CSS Grid 稳定 2-1-2，避免 flex+calc(50%-rpx) 在半卡固有宽度下误换行成单列 */
@@ -1133,13 +1134,15 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .report-signal-grid {
   display: flex;
   flex-wrap: wrap;
-  margin: 8rpx -8rpx 0;
+  justify-content: space-between;
+  margin: 8rpx 0 0;
 }
+/* 两列留余量：原 calc(50% - 16rpx) + 负边距 = 恰好 100%，真机 rpx 精度一偏就单列（错题本 E26） */
 .report-signal-item {
   position: relative;
   box-sizing: border-box;
-  width: calc(50% - 16rpx);
-  margin: 8rpx;
+  width: 48.5%;
+  margin: 8rpx 0;
   padding: 20rpx 20rpx 20rpx 24rpx;
   border-radius: var(--radius-md, 16rpx);
   border: 1px solid var(--color-border, #26232066);
@@ -5007,11 +5010,14 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .pstats-cards {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
-  margin-bottom: 16rpx;
+  justify-content: space-between;
+  margin-bottom: 4rpx;
 }
+/* 三列留余量（同上）：原 3×(33.33% - 8rpx) + 2×12rpx ≈ 100% */
 .pstats-card {
-  width: calc(33.33% - 8rpx);
+  box-sizing: border-box;
+  width: 32%;
+  margin-bottom: 12rpx;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(38, 35, 32, 0.8);
   border-radius: 16rpx;

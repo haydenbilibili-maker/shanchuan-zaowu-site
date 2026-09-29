@@ -489,6 +489,7 @@
                 </div>
                 <div class="calendar-grid" id="calGrid"></div>
                 <div class="calendar-stats" id="calendarStats"></div>
+                <div class="store-breakdown" id="storeBreakdown"></div>
             </div>
         </div>
 
@@ -977,7 +978,7 @@ import {
   DEFAULT_FINANCE_STORE_NAME,
 } from '../utils/storeStorage'
 import { parseDailyFinanceText } from '../utils/financeDailyParse'
-import { groupFinanceRecordsByDate, financeRecordStoreLabel } from '../utils/financeDayAggregate'
+import { groupFinanceRecordsByDate, financeRecordStoreLabel, buildFinanceStoreBreakdown } from '../utils/financeDayAggregate'
 import {
   DEFAULT_MALL_THRESHOLD,
   DEFAULT_MALL_RATE,
@@ -3162,6 +3163,10 @@ const app = reactive({
             }
             
             div.onclick = () => {
+                if (day) {
+                    this._breakdownDate = dateStr;
+                    this.renderStoreBreakdown(records, dateStr);
+                }
                 const inputEl = this.safeGetElement('dailyInput');
                 if(inputEl) {
                     inputEl.value = rec ? rec.raw : `${dateStr}，银联POS收款：0`;
@@ -3203,6 +3208,40 @@ const app = reactive({
         } else if(statsEl) {
             statsEl.innerHTML = '<div class="stat-empty">暂无数据</div>';
         }
+
+        const keepDate = this._breakdownDate && this._breakdownDate.startsWith(monthStr) && byDate.has(this._breakdownDate)
+            ? this._breakdownDate : '';
+        this.renderStoreBreakdown(records, keepDate);
+    },
+
+    /** 门店营收按店拆分：选中营业日（默认本月最近一天）+ 本月，每店一行 + 合计行（合计 = Σ 各店） */
+    renderStoreBreakdown(records, date) {
+        const el = this.safeGetElement('storeBreakdown');
+        if (!el) return;
+        const bd = buildFinanceStoreBreakdown(records, { date });
+        if (!bd.month.rows.length) { el.innerHTML = ''; return; }
+        const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const money = (v) => v == null ? '<span class="sb-na">—</span>' : `<span class="money-val">¥${Number(v).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>`;
+        const orders = (r) => r.orderCount != null ? `${r.orderCount} 单` : '<span class="sb-na">单数未记</span>';
+        const dayRow = (r, isTotal) => `<tr class="${isTotal ? 'sb-total' : ''}"><td>${esc(r.name)}</td><td>${money(r.revenue)}</td><td>${money(r.pos)}</td><td>${money(r.online)}</td><td>${money(r.refund)}</td><td>${orders(r)}</td><td>${money(r.cashBalance)}</td></tr>`;
+        const monthRow = (r, isTotal) => `<tr class="${isTotal ? 'sb-total' : ''}"><td>${esc(r.name)}</td><td>${money(r.revenue)}</td><td>${orders(r)}</td><td>${r.days} 天</td><td>${money(r.days ? r.revenue / r.days : null)}</td></tr>`;
+        el.innerHTML = `
+            <div class="sb-head">
+                <span class="sb-title"><i class="fas fa-store"></i> 门店营收 · 按店拆分</span>
+                <span class="sb-hint">营收 = POS + 线上 − 退款；在手现金是余额，不计入营收。点击日历日期切换当日</span>
+            </div>
+            <div class="sb-sub">${esc(bd.date)} 当日</div>
+            <table class="sb-table">
+                <thead><tr><th>门店</th><th>营收</th><th>POS</th><th>线上</th><th>退款</th><th>订单数</th><th>在手现金</th></tr></thead>
+                <tbody>${bd.day.rows.map((r) => dayRow(r, false)).join('')}${dayRow(bd.day.total, true)}</tbody>
+            </table>
+            <div class="sb-sub">本月（${esc(String(bd.date).slice(0, 7))}）</div>
+            <table class="sb-table">
+                <thead><tr><th>门店</th><th>月营收</th><th>订单数</th><th>有数据天数</th><th>日均营收</th></tr></thead>
+                <tbody>${bd.month.rows.map((r) => monthRow(r, false)).join('')}${monthRow(bd.month.total, true)}</tbody>
+            </table>
+        `;
+        this.applyPrivacy();
     },
 
     renderCumulative(data, s) {
@@ -6577,6 +6616,25 @@ onUnmounted(() => {
     flex-wrap: wrap;
     justify-content: center;
 }
+
+.store-breakdown:empty { display: none; }
+.store-breakdown {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(45, 106, 79, 0.1);
+}
+::v-deep .sb-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+::v-deep .sb-title { font-weight: 600; font-size: 15px; color: var(--text-main); }
+::v-deep .sb-hint { font-size: 12px; color: var(--text-light); }
+::v-deep .sb-sub { margin: 12px 0 6px; font-size: 13px; font-weight: 600; color: var(--text-light); }
+::v-deep .sb-table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+::v-deep .sb-table th,
+::v-deep .sb-table td { padding: 7px 10px; text-align: right; border-bottom: 1px solid rgba(45, 106, 79, 0.08); white-space: nowrap; }
+::v-deep .sb-table th:first-child,
+::v-deep .sb-table td:first-child { text-align: left; }
+::v-deep .sb-table th { font-weight: 500; color: var(--text-light); }
+::v-deep .sb-table tr.sb-total td { font-weight: 700; border-top: 1px solid rgba(45, 106, 79, 0.35); border-bottom: none; }
+::v-deep .sb-na { color: var(--text-light); opacity: 0.7; font-weight: 400; }
 
 .stat-item {
     display: flex;

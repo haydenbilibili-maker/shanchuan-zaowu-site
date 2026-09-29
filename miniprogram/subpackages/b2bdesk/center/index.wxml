@@ -32,9 +32,38 @@
       <view class="state-retry" bindtap="retry"><text class="state-retry-text">重试</text></view>
     </view>
     <block wx:elif="{{dash.view}}">
+      <view class="sum-card">
+        <view class="sum-top" hover-class="card-press" data-key="count" bindtap="onDashKpi">
+          <view>
+            <text class="kpi-label">订单数 · {{dash.view.rangeLabel}}</text>
+            <text class="sum-big">{{dash.view.summary.count}}</text>
+          </view>
+          <view class="sum-top-side">
+            <text class="kpi-label">订单金额</text>
+            <text class="sum-amount">{{dash.view.summary.amountText}}</text>
+          </view>
+        </view>
+        <view class="sum-split">
+          <view class="sum-cell" hover-class="card-press" data-key="received" bindtap="onDashKpi">
+            <text class="kpi-label">已收款</text>
+            <text class="sum-mid">{{dash.view.summary.receivedText}}</text>
+            <text class="kpi-sub">{{dash.view.summary.receivedSub}}</text>
+          </view>
+          <view class="sum-cell" hover-class="card-press" data-key="due" bindtap="onDashKpi">
+            <text class="kpi-label">待收款</text>
+            <text class="sum-mid {{dash.view.summary.hasDue ? 'due' : ''}}">{{dash.view.summary.dueText}}</text>
+            <text class="kpi-sub">{{dash.view.summary.dueSub}}</text>
+          </view>
+        </view>
+      </view>
+
+      <text class="grid-title">履约与需关注（点卡片查看对应订单）</text>
       <view class="kpi-grid">
         <view wx:for="{{dash.view.kpis}}" wx:key="key" class="kpi {{item.tone}}" hover-class="card-press" data-key="{{item.key}}" bindtap="onDashKpi">
-          <text class="kpi-label">{{item.label}}</text>
+          <view class="kpi-head">
+            <text class="kpi-label">{{item.label}}</text>
+            <view wx:if="{{item.dot}}" class="kpi-dot"></view>
+          </view>
           <text class="kpi-value">{{item.value}}</text>
           <text class="kpi-sub">{{item.sub}}</text>
         </view>
@@ -46,12 +75,14 @@
       <view class="section">
         <text class="section-title">货款账龄</text>
         <text class="section-sub">未结清的采购商单（待收款 / 对公待确认 / 金额待核对），按下单日到今天的北京时间自然日计。共 {{dash.view.agingTotal}} 单。</text>
-        <view wx:for="{{dash.view.aging}}" wx:key="key" class="bar-row">
-          <text class="bar-label">{{item.label}}</text>
-          <view class="bar-track">
-            <view class="bar-fill {{item.warn ? 'warn' : ''}}" style="width: {{item.pct}}%"></view>
+        <view class="card">
+          <view wx:for="{{dash.view.aging}}" wx:key="key" class="bar-row">
+            <text class="bar-label">{{item.label}}</text>
+            <view class="bar-track">
+              <view class="bar-fill {{item.warn ? 'warn' : ''}}" style="width: {{item.pct}}%"></view>
+            </view>
+            <text class="bar-value">{{item.count}} 单</text>
           </view>
-          <text class="bar-value">{{item.count}} 单</text>
         </view>
       </view>
 
@@ -76,7 +107,8 @@
           <text class="state-body">所选范围内还没有采购商 / 供货方单据。</text>
         </view>
         <view wx:for="{{dash.view.byPartner}}" wx:key="key" class="card" hover-class="card-press" data-key="{{item.key}}" data-name="{{item.name}}" bindtap="onDashPartner">
-          <view class="card-row">
+          <view class="card-row center">
+            <text class="rank">{{item.rank}}</text>
             <view class="card-main">
               <text class="card-title">{{item.name}}</text>
               <text class="card-meta">{{item.kindLabel}} · {{item.count}} 单 {{item.dueText}}</text>

@@ -68,15 +68,23 @@ function dashView(res) {
   const pct = (n) => (openTotal ? Math.max(4, Math.round((n / openTotal) * 100)) : 0)
   return {
     rangeLabel: (d.range && d.range.label) || '',
+    summary: {
+      count: String(o.count || 0),
+      amountText: yuan(o.amountFen),
+      receivedText: yuan(m.receivedFen),
+      receivedSub: `${c.received || 0} 单 · 微信实收`,
+      dueText: yuan(m.dueFen),
+      dueSub: `${c.due || 0} 单未付`,
+      hasDue: !!m.dueFen
+    },
+    // 履约类：有数 = 常规高亮；异常类：有数 = 醒目（alert），为 0 = 弱化（mute）
     kpis: [
-      { key: 'count', label: '订单数', value: String(o.count || 0), sub: `金额 ${yuan(o.amountFen)}`, tone: 'hot' },
-      { key: 'toShip', label: '待发货', value: String(o.toShip || 0), sub: `待确认 ${o.pendingConfirm || 0} 单`, tone: o.toShip ? 'warn' : '' },
-      { key: 'transit', label: '在途', value: String(o.transit || 0), sub: `已签收 ${o.received || 0} 单`, tone: '' },
-      { key: 'received', label: '已收款', value: yuan(m.receivedFen), sub: `${c.received || 0} 单 · 微信实收`, tone: '' },
-      { key: 'due', label: '待收款', value: yuan(m.dueFen), sub: `${c.due || 0} 单未付`, tone: m.dueFen ? 'warn' : '' },
-      { key: 'offline', label: '对公待确认', value: yuan(m.offlineFen), sub: `${c.offline || 0} 单待财务确认`, tone: m.offlineFen ? 'warn' : '' },
-      { key: 'review', label: '金额待核对', value: yuan(m.reviewFen), sub: `${c.review || 0} 单实收≠应收`, tone: m.reviewFen ? 'warn' : '' },
-      { key: 'overdue', label: `超期（>${d.payTermDays || 7} 天）`, value: String(m.overdueCount || 0), sub: yuan(m.overdueFen), tone: m.overdueCount ? 'warn' : '' }
+      { key: 'pendingConfirm', label: '待确认', value: String(o.pendingConfirm || 0), sub: '总部 / 供货方未确认', tone: o.pendingConfirm ? 'hot' : 'mute', dot: false },
+      { key: 'toShip', label: '待发货', value: String(o.toShip || 0), sub: '已确认未发', tone: o.toShip ? 'hot' : 'mute', dot: false },
+      { key: 'transit', label: '在途', value: String(o.transit || 0), sub: `已签收 ${o.received || 0} 单`, tone: o.transit ? '' : 'mute', dot: false },
+      { key: 'offline', label: '对公待确认', value: yuan(m.offlineFen), sub: `${c.offline || 0} 单待财务确认`, tone: m.offlineFen ? 'alert' : 'mute', dot: !!m.offlineFen },
+      { key: 'review', label: '金额待核对', value: yuan(m.reviewFen), sub: `${c.review || 0} 单实收≠应收`, tone: m.reviewFen ? 'alert' : 'mute', dot: !!m.reviewFen },
+      { key: 'overdue', label: `超期（>${d.payTermDays || 7} 天）`, value: String(m.overdueCount || 0), sub: m.overdueCount ? `未结 ${yuan(m.overdueFen)}` : '无超期', tone: m.overdueCount ? 'alert' : 'mute', dot: !!m.overdueCount }
     ],
     extras: [
       m.refundedFen ? `已退款 ${yuan(m.refundedFen)}（${c.refunded || 0} 单）` : '',
@@ -94,7 +102,8 @@ function dashView(res) {
       amountText: yuan(d.payable && d.payable.amountFen),
       note: (d.payable && d.payable.note) || ''
     },
-    byPartner: (d.byPartner || []).map((p) => ({
+    byPartner: (d.byPartner || []).map((p, i) => ({
+      rank: i + 1,
       key: p.key,
       name: p.name,
       kindLabel: p.kind === 'supplier' ? '供货方' : p.kind === 'buyer' ? '采购商' : '门店',
@@ -221,7 +230,7 @@ Page({
   onDashKpi(e) {
     const key = e.currentTarget.dataset.key
     const patch = { stage: '', pay: '' }
-    if (key === 'toShip' || key === 'transit') patch.stage = key
+    if (key === 'toShip' || key === 'transit' || key === 'pendingConfirm') patch.stage = key
     else if (['due', 'offline', 'review', 'overdue', 'received'].indexOf(key) !== -1) patch.pay = key
     this.setData({
       tab: 'orders',

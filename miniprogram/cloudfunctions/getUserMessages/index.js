@@ -316,6 +316,41 @@ function clipText (v, max = DIGEST_STR_MAX) {
   return String(v == null ? '' : v).slice(0, max)
 }
 
+const DIGEST_MAX_STORES = 8
+const DIGEST_STORE_KEYS = ['revenueYuan', 'posYuan', 'orderCount', 'refundYuan', 'onlineYuan', 'cashBalanceYuan']
+
+function numOrNull (v) {
+  if (v == null || v === '') return null
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
+
+/** 日报「门店营收」按店分行（可选字段；历史日报没有 → null，前端不渲染） */
+function normalizeStoreBreakdown (raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.rows)) return null
+  const row = (r) => {
+    const out = { storeId: clipText(r && r.storeId, 64), name: clipText(r && r.name, 24) }
+    DIGEST_STORE_KEYS.forEach((k) => { out[k] = numOrNull(r && r[k]) })
+    return out
+  }
+  return {
+    columns: Array.isArray(raw.columns)
+      ? raw.columns.slice(0, DIGEST_STORE_KEYS.length).map((c) => ({
+        key: clipText(c && c.key, 24),
+        label: clipText(c && c.label, 12),
+        unit: clipText(c && c.unit, 12),
+        source: clipText(c && c.source, 64)
+      }))
+      : [],
+    rows: raw.rows.slice(0, DIGEST_MAX_STORES).map(row),
+    total: raw.total ? row(raw.total) : null,
+    storeCount: Number(raw.storeCount) || 0,
+    failedCollections: Array.isArray(raw.failedCollections) ? raw.failedCollections.slice(0, 4).map((x) => clipText(x, 48)) : [],
+    mismatches: Array.isArray(raw.mismatches) ? raw.mismatches.slice(0, 8).map((x) => clipText(x, 120)) : [],
+    note: clipText(raw.note, 160)
+  }
+}
+
 function normalizeDigestPayload (doc) {
   const type = String((doc && (doc.type || doc.templateCode)) || '')
   if (type !== 'daily_digest') return null
@@ -323,6 +358,7 @@ function normalizeDigestPayload (doc) {
   if (!raw || typeof raw !== 'object') return null
   const metrics = Array.isArray(raw.metrics) ? raw.metrics.slice(0, DIGEST_MAX_METRICS) : []
   return {
+    storeBreakdown: normalizeStoreBreakdown(raw.storeBreakdown),
     v: Number(raw.v) || 1,
     dayKey: clipText(raw.dayKey, 10),
     role: clipText(raw.role, 32),

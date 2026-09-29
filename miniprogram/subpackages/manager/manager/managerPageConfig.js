@@ -140,6 +140,7 @@ const { LEVEL_BENEFITS } = require('../../../utils/profileConstants');
 const { collectCurrentPerkItems, formatDiscount } = require('../../../utils/profileHelper');
 const { skuKey, parseSkuKey, relatedIdsFromSkus, normalizeRelatedSkus } = require('../utils/relatedSku');
 const storeLedger = require('../utils/storeLedger');
+const { sumOfflineByStore } = require('../utils/offlineStoreSummary');
 const {
   computeMallCommission,
   formatMallForUi,
@@ -1352,7 +1353,7 @@ const managerPageConfig = {
       offlineSales: 0, displayOffline: '0',
       orderCount: 0, orderCountFmt: '0', stockCount: 0, totalProfit: '0',
       visitCount: 0, visitCountFmt: '0',
-      onlineTotal: '0', onlineRatio: 0, offlineTotal: '0', offlineRatio: 0, displayGrand: '0',
+      onlineTotal: '0', onlineRatio: 0, offlineTotal: '0', offlineRatio: 0, displayGrand: '0', offlineSplitText: '',
       avgOrderFmt: '—', dailyAvgFmt: '—', momLabel: '—', momClass: 'flat',
       ratioEmpty: true, ordersEmpty: true,
       donutStyle: 'background: #262320;' 
@@ -3022,12 +3023,14 @@ const managerPageConfig = {
       // 字段维护已并入「藏品库 → 分类管理」的子 Tab，不再有 curTab 17（见 setProductLibTab）
   },
 
-  // 🟢 核心：加载线下营收（本月 store_ledger，三源合并；固定主店，勿用 C 端 preferred）
+  // 🟢 核心：加载线下营收（本月 store_ledger，三源合并；山川造物 + 星宸标本两店合计 + 各店拆分，勿用 C 端 preferred）
   async loadOfflineStats() {
     try {
-        const { total: offlineTotal } = await storeLedger.sumMonthOffline(storeLedger.FINANCE_STORE_ID);
-        
+        const summary = await sumOfflineByStore(storeLedger.sumMonthOffline, undefined, storeLedger.formatMoney);
+        const offlineTotal = summary.total;
+
         this.setData({ 
+            'stats.offlineSplitText': summary.splitText,
             'stats.offlineSales': offlineTotal,
             'stats.displayOffline': offlineTotal.toLocaleString(undefined, {
               minimumFractionDigits: 2,
@@ -3127,7 +3130,7 @@ const managerPageConfig = {
         this._fetchPaidOrderAmounts(startOfMonth.getTime()),
         this._fetchPaidOrderAmounts(prevMonthStart.getTime(), prevMonthEnd.getTime()),
         db.collection('bookings').where({ type: 'museum_visit', status: 'used' }).count(),
-        storeLedger.sumMonthOffline(storeLedger.FINANCE_STORE_ID, prevYm).catch(() => ({ total: 0 })),
+        sumOfflineByStore(storeLedger.sumMonthOffline, prevYm).catch(() => ({ total: 0 })),
       ]);
 
       let onlineSales = 0;

@@ -181,6 +181,26 @@
                     <text class="dg-caveat" wx:if="{{m.failedText}}">{{m.failedText}}</text>
                     <text class="dg-caveat" wx:if="{{m.caveat}}">{{m.caveat}}</text>
                   </view>
+                  <view class="dg-stores" wx:if="{{sec.storeBreakdown}}">
+                    <text class="dg-stores-title">按门店 · {{sec.storeBreakdown.storeCount}} 家</text>
+                    <view class="dg-store {{st.isTotal ? 'is-total' : ''}}" wx:for="{{sec.storeBreakdown.rows}}" wx:for-item="st" wx:key="storeId">
+                      <view class="dg-store-top">
+                        <text class="dg-store-name">{{st.name}}</text>
+                        <text class="dg-store-rev">{{st.revenueText}}</text>
+                      </view>
+                      <text class="dg-store-meta">POS {{st.posText}} · {{st.orderText}} · 在手现金 {{st.cashText}}{{st.extraText ? ' · ' + st.extraText : ''}}</text>
+                    </view>
+                    <view class="dg-store is-total" wx:if="{{sec.storeBreakdown.total}}">
+                      <view class="dg-store-top">
+                        <text class="dg-store-name">合计</text>
+                        <text class="dg-store-rev">{{sec.storeBreakdown.total.revenueText}}</text>
+                      </view>
+                      <text class="dg-store-meta">POS {{sec.storeBreakdown.total.posText}} · {{sec.storeBreakdown.total.orderText}} · 在手现金 {{sec.storeBreakdown.total.cashText}}{{sec.storeBreakdown.total.extraText ? ' · ' + sec.storeBreakdown.total.extraText : ''}}</text>
+                    </view>
+                    <text class="dg-caveat" wx:if="{{sec.storeBreakdown.balanceWarn}}">{{sec.storeBreakdown.balanceWarn}}</text>
+                    <text class="dg-caveat" wx:if="{{sec.storeBreakdown.failedNote}}">{{sec.storeBreakdown.failedNote}}</text>
+                    <text class="dg-source brief">{{sec.storeBreakdown.note}}</text>
+                  </view>
                 </view>
                 <view class="dg-sec-collapsed" wx:else>
                   <text>{{sec.collapsedHint || '已收起'}}</text>

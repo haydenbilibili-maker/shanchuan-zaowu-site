@@ -65,7 +65,8 @@ page {
 
 .media-cell,
 .media-add {
-  width: calc(33.333% - 8rpx);
+  /* 留余量：原 3×(33.333% - 8rpx) + 2×12rpx = 恰好 100%（错题本 E26）；行数不定，保留 gap 维持左对齐 */
+  width: 31.8%;
   aspect-ratio: 1;
   border-radius: var(--radius-md);
   overflow: hidden;

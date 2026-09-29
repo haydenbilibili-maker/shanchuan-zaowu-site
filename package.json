@@ -315,6 +315,8 @@
     "check:activity-board:selftest": "node miniprogram/scripts/test-activity-board.mjs --selftest",
     "check:supplier-desk": "node miniprogram/scripts/test-supplier-desk.mjs",
     "check:supplier-desk:selftest": "node miniprogram/scripts/test-supplier-desk.mjs --selftest",
+    "check:rpx-zero-slack": "node miniprogram/scripts/check-rpx-zero-slack.mjs",
+    "check:rpx-zero-slack:selftest": "node miniprogram/scripts/check-rpx-zero-slack.mjs --selftest",
     "check:activity-seats": "node miniprogram/scripts/test-activity-seats.mjs",
     "check:activity-seats:selftest": "node miniprogram/scripts/test-activity-seats.mjs --selftest",
     "check:cloudfn-no-wx": "node miniprogram/scripts/check-cloudfn-no-wx.mjs",

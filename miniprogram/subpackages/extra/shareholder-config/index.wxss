@@ -225,11 +225,14 @@ page {
 .ratio-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 12rpx;
+  justify-content: space-between;
   margin-top: 16rpx;
 }
+/* 两列留余量：原 2×(50% - 6rpx) + 12rpx = 恰好 100%（错题本 E26） */
 .ratio-cell {
-  width: calc(50% - 6rpx);
+  box-sizing: border-box;
+  width: 48.5%;
+  margin-bottom: 12rpx;
   padding: 14rpx 16rpx;
   border-radius: 12rpx;
   background: var(--color-bg-elevated, #262320);

@@ -42,8 +42,102 @@ export function groupFinanceRecordsByDate(records) {
 export function financeRecordStoreLabel(r) {
   const name = String(r?.storeName || '').trim()
   if (name) return name
-  const id = String(r?.storeId || r?.storeCode || '').trim()
-  if (/xingchen/i.test(id)) return '星宸'
-  if (/shanhaizaowu/i.test(id)) return '山川造物'
-  return id || '未标门店'
+  return resolveFinanceStore(r).name
+}
+
+/**
+ * 「门店营收」按店拆分的门店目录（2026-09-29 产品负责人：日报门店营收需要区分门店）。
+ * 与云函数 syncFinanceData 的 REPORT_STORES、dailyDigest/reportCatalog 的 REPORT_STORES 同一份：
+ * `store_1780146782017_6w0okpr` 是 ERP 历史生成的山川造物主店 id。
+ */
+export const FINANCE_REPORT_STORES = [
+  { storeId: 'store_shanhaizaowu', name: '山川造物', aliases: ['store_1780146782017_6w0okpr'] },
+  { storeId: 'store_xingchen', name: '星宸标本', aliases: [] },
+]
+
+/**
+ * 账本行 → 门店：别名归主店；**无 storeId 一律归山川造物**（与 syncFinanceData.resolveDocStoreId 同一惯例，
+ * 2026-09-29 产品负责人拍板：不按店名/原文推断）。
+ */
+export function resolveFinanceStore(r) {
+  const sid = String(r?.storeId || '').trim()
+  const main = FINANCE_REPORT_STORES[0]
+  if (!sid || sid === 'default') return { storeId: main.storeId, name: main.name }
+  for (const s of FINANCE_REPORT_STORES) {
+    if (s.storeId === sid || s.aliases.includes(sid)) return { storeId: s.storeId, name: s.name }
+  }
+  return { storeId: sid, name: String(r?.storeName || '').trim() || sid }
+}
+
+const round2 = (n) => Math.round(n * 100) / 100
+const numOrNull = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v))
+
+/** 当日按店列：营收 = 账本 revenue（POS + 线上 − 退款）；在手现金是余额，不计入营收 */
+export const STORE_DAY_COLUMNS = ['revenue', 'pos', 'online', 'refund', 'orderCount', 'cashBalance']
+/** 本月按店列 */
+export const STORE_MONTH_COLUMNS = ['revenue', 'orderCount', 'days']
+
+function sumColumns(rows, columns) {
+  const total = { storeId: '__total__', name: '合计' }
+  for (const k of columns) {
+    const vals = rows.map((r) => r[k]).filter((v) => v != null)
+    total[k] = vals.length ? round2(vals.reduce((a, b) => a + b, 0)) : null
+  }
+  return total
+}
+
+function storeOrder(id) {
+  const i = FINANCE_REPORT_STORES.findIndex((s) => s.storeId === id)
+  return i !== -1 ? i : 500
+}
+
+/**
+ * 门店营收按店拆分：某一营业日 + 本月（records 已按月份/门店筛选过）。
+ * 合计行一律由各店行求和得出（合计 = Σ 各店，结构性保证；守卫另行断言）。
+ * @returns {{ date: string, day: {rows: object[], total: object}, month: {rows: object[], total: object} }}
+ */
+export function buildFinanceStoreBreakdown(records, { date } = {}) {
+  const list = (records || []).filter((r) => String(r?.date || '').trim())
+  const day = String(date || '').trim() || list.map((r) => r.date).sort().pop() || ''
+
+  const dayMap = new Map()
+  const monthMap = new Map()
+  for (const r of list) {
+    const s = resolveFinanceStore(r)
+    let m = monthMap.get(s.storeId)
+    if (!m) {
+      m = { storeId: s.storeId, name: s.name, revenue: 0, orderCount: null, days: 0, _dates: new Set() }
+      monthMap.set(s.storeId, m)
+    }
+    m.revenue = round2(m.revenue + (Number(r.revenue) || 0))
+    const oc = Number(r.orderCount)
+    if (Number.isFinite(oc) && oc > 0) m.orderCount = (m.orderCount || 0) + oc
+    m._dates.add(r.date)
+    m.days = m._dates.size
+
+    if (r.date !== day) continue
+    let d = dayMap.get(s.storeId)
+    if (!d) {
+      d = { storeId: s.storeId, name: s.name }
+      STORE_DAY_COLUMNS.forEach((k) => { d[k] = null })
+      dayMap.set(s.storeId, d)
+    }
+    for (const k of STORE_DAY_COLUMNS) {
+      const v = k === 'orderCount' ? (Number(r.orderCount) > 0 ? Number(r.orderCount) : null) : numOrNull(r[k])
+      if (v == null) continue
+      d[k] = round2((d[k] || 0) + v)
+    }
+  }
+
+  const dayRows = [...dayMap.values()].sort((a, b) => storeOrder(a.storeId) - storeOrder(b.storeId))
+  const monthRows = [...monthMap.values()]
+    .map(({ _dates, ...rest }) => rest)
+    .sort((a, b) => storeOrder(a.storeId) - storeOrder(b.storeId))
+  const monthTotal = sumColumns(monthRows, STORE_MONTH_COLUMNS)
+  monthTotal.days = new Set(list.map((r) => r.date)).size
+  return {
+    date: day,
+    day: { rows: dayRows, total: sumColumns(dayRows, STORE_DAY_COLUMNS) },
+    month: { rows: monthRows, total: monthTotal },
+  }
 }

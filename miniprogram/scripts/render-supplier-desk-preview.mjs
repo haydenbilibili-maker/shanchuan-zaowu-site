@@ -29,6 +29,10 @@ const argOf = (n, d) => {
 const outDir = argOf('--out-dir', join(tmpdir(), 'supplier-desk-preview'))
 const beforeDir = argOf('--before-dir', join(HERE, '.tmp/supplier-desk-before'))
 const only = argOf('--only', '')
+/** 设备宽度（px）：rpx 按 宽/750 换算，与真机同比例；默认 750（1rpx=1px）。
+ * ⚠️ 真机 rpx 换算的精度误差仍无法离线复现（2026-09-29「指标卡半宽」即此类）—— 零余量网格由 check:supplier-desk 静态拦截。 */
+const widths = argOf('--widths', '750').split(',').map((x) => parseInt(x, 10)).filter((x) => x > 0)
+let RPX = 1
 mkdirSync(outDir, { recursive: true })
 
 const chrome = [
@@ -167,7 +171,7 @@ async function pageData(jsFile, query, after) {
 }
 
 /* ── 渲染 ── */
-const rpx2px = (t) => t.replace(/(\d*\.?\d+)rpx/g, '$1px')
+const rpx2px = (t) => t.replace(/(\d*\.?\d+)rpx/g, (_, n) => `${+(Number(n) * RPX).toFixed(3)}px`)
 function loadWxss(file, seen = new Set()) {
   if (seen.has(file)) return ''
   seen.add(file)
@@ -231,20 +235,20 @@ async function shoot(scene) {
   const css = rpx2px(loadWxss(scene.wxss))
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
 :root { ${appTokens()} }
-html, body { margin: 0; padding: 0; width: 750px; background: #1a1814; color: #fff; font-family: -apple-system, "PingFang SC", sans-serif; }
+html, body { margin: 0; padding: 0; width: ${Math.round(750 * RPX)}px; background: #1a1814; color: #fff; font-family: -apple-system, "PingFang SC", sans-serif; }
 div, span { box-sizing: border-box; }
 span { display: inline; }
 input { display: block; box-sizing: border-box; width: 100%; font: inherit; }
 </style><style>${css.replace(/(^|[^.\w-])page\s*\{/g, '$1body {')}</style></head><body>${body}</body></html>`
   const htmlPath = join(tmpdir(), `supplier-desk-${scene.name}-${process.pid}.html`)
   writeFileSync(htmlPath, html)
-  const out = join(outDir, `${scene.name}.png`)
+  const out = join(outDir, `${scene.name}${RPX === 1 ? '' : '-' + Math.round(750 * RPX)}.png`)
   if (existsSync(out)) rmSync(out)
   const profile = mkdtempSync(join(tmpdir(), 'supplier-desk-preview-'))
   const child = spawn(chrome, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', '--no-default-browser-check', '--allow-file-access-from-files',
     `--user-data-dir=${profile}`, '--hide-scrollbars', '--force-device-scale-factor=1', '--virtual-time-budget=3000',
-    `--window-size=750,${scene.h}`, `--screenshot=${out}`, `file://${htmlPath}`
+    `--window-size=${Math.round(750 * RPX)},${Math.round(scene.h * RPX)}`, `--screenshot=${out}`, `file://${htmlPath}`
   ], { stdio: 'ignore' })
   const deadline = Date.now() + 150000
   let lastSize = -1
@@ -260,4 +264,7 @@ input { display: block; box-sizing: border-box; width: 100%; font: inherit; }
   console.log(`✓ ${scene.name} → ${out}${missing.size ? `（缺字段按空渲染：${[...missing].slice(0, 6).join(', ')}）` : ''}`)
 }
 
-for (const s of scenes) if (!only || only.split(',').includes(s.name)) await shoot(s)
+for (const w of widths) {
+  RPX = w / 750
+  for (const s of scenes) if (!only || only.split(',').includes(s.name)) await shoot(s)
+}

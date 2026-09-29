@@ -164,6 +164,8 @@ exports.main = async (event = {}) => {
     missing: digest.missing,
     // 取数失败单独回传（含原因）—— 故障不许伪装成"当日无数据"
     failed: digest.failed || [],
+    // 门店营收按店分行 + 合计行（可选；旧日报没有此字段，展示层据此不渲染）
+    storeBreakdown: digest.storeBreakdown || null,
     catalogVersion: 'daily-digest-v1'
   }
 

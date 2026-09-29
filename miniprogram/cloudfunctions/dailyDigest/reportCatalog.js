@@ -332,7 +332,7 @@ const METRICS = [
     kind: 'dateKeyed',
     sumField: 'total',
     isPrimary: true,
-    source: 'daily_revenues.date === 当日 的 total 求和（按门店分行）',
+    source: 'daily_revenues.date === 当日 的 total 求和（按门店分行见 storeBreakdown）',
     sources: [
       {
         collection: 'daily_revenues',
@@ -502,12 +502,23 @@ const METRICS = [
   }
 ]
 
-/** 每个角色能看哪些 section + 哪些指标（扩展位的开关点） */
+/**
+ * 「门店营收」按店分行的门店目录（2026-09-29 产品负责人：日报门店营收需要区分门店）。
+ * 与 syncFinanceData/index.js 的 REPORT_STORES 同一份：`store_1780146782017_6w0okpr` 是 ERP 历史生成的
+ * 山川造物主店 id。第一项是主店：行没有 storeId 时一律归它（2026-09-29 产品负责人拍板，沿用 syncFinanceData 惯例）。
+ */
+const REPORT_STORES = [
+  { storeId: 'store_shanhaizaowu', name: '山川造物', aliases: ['store_1780146782017_6w0okpr'] },
+  { storeId: 'store_xingchen', name: '星宸标本', aliases: [] }
+]
+
+/** 每个角色能看哪些 section + 哪些指标（扩展位的开关点）；storeBreakdown = 能看全部门店的按店分行 */
 const ROLE_SLICES = {
   [ROLES.SUPER_ADMIN]: {
     label: '超管日报',
     sections: [SECTIONS.MINIAPP, SECTIONS.ORDERS, SECTIONS.STORE],
-    metrics: METRICS.filter((m) => m.phase === 1).map((m) => m.id)
+    metrics: METRICS.filter((m) => m.phase === 1).map((m) => m.id),
+    storeBreakdown: true
   },
   [ROLES.STORE_MANAGER]: {
     label: '店长日报',
@@ -563,6 +574,7 @@ module.exports = {
   QUERY_KINDS,
   METRICS,
   ROLE_SLICES,
+  REPORT_STORES,
   ENABLED_ROLES,
   RETENTION_DAYS,
   MESSAGE_TYPE,

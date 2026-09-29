@@ -204,6 +204,66 @@ function pickHighlights (byId, failedById, limit) {
   return out;
 }
 
+/** 门店营收按店分行的格子文字：null = 该店当日该来源无数据（区别于 0） */
+function formatStoreCell (unit, v) {
+  if (v == null) return unit === 'order' ? '单数未记' : '—';
+  if (unit === 'order') return `${Math.round(toNumber(v))} 单`;
+  return `¥${toNumber(v).toFixed(2)}`;
+}
+
+/**
+ * payload.storeBreakdown → 按店分行视图（每店一行 + 合计行）。
+ * 合计行用云端给的 total；另在本地复算 Σ 各店，对不上就给出 balanceWarn（不静默吞掉）。
+ * 旧日报没有 storeBreakdown → null。
+ */
+function buildStoreBreakdownView (raw) {
+  if (!raw || typeof raw !== 'object' || !Array.isArray(raw.rows) || !raw.rows.length) return null;
+  const toRow = (r, isTotal) => ({
+    storeId: String((r && r.storeId) || ''),
+    name: String((r && r.name) || ''),
+    isTotal: !!isTotal,
+    revenueText: formatStoreCell('yuan', r && r.revenueYuan),
+    posText: formatStoreCell('yuan', r && r.posYuan),
+    // 有 POS 收款却记 0 单 = 门店日报没报单数，显示「单数未记」而不是「0 单」
+    orderText: formatStoreCell('order', r && r.orderCount === 0 && toNumber(r.posYuan) > 0 ? null : r && r.orderCount),
+    cashText: formatStoreCell('yuan', r && r.cashBalanceYuan),
+    extraText: [
+      r && r.refundYuan ? `退款 ${formatStoreCell('yuan', r.refundYuan)}` : '',
+      r && r.onlineYuan ? `线上 ${formatStoreCell('yuan', r.onlineYuan)}` : ''
+    ].filter(Boolean).join(' · ')
+  });
+  const rows = raw.rows.map((r) => toRow(r, false));
+  const total = raw.total ? toRow(raw.total, true) : null;
+  const warn = [];
+  ['revenueYuan', 'posYuan', 'orderCount', 'cashBalanceYuan'].forEach((k) => {
+    const vals = raw.rows.map((r) => r && r[k]).filter((v) => v != null);
+    if (!raw.total || !vals.length) return;
+    const sum = vals.reduce((a, b) => a + toNumber(b), 0);
+    if (raw.total[k] == null || Math.abs(sum - toNumber(raw.total[k])) > 0.005) warn.push(k);
+  });
+  const mismatches = Array.isArray(raw.mismatches) ? raw.mismatches.filter(Boolean) : [];
+  const failed = Array.isArray(raw.failedCollections) ? raw.failedCollections.filter(Boolean) : [];
+  return {
+    rows,
+    total,
+    storeCount: rows.length,
+    note: '营收 = 门店日报录入的当日营收；在手现金是余额，不计入营收。',
+    balanceWarn: warn.length || mismatches.length
+      ? `按店合计与总数对不上，请核对录入${mismatches.length ? '：' + mismatches.join('；') : ''}`
+      : '',
+    failedNote: failed.length ? `${failed.join('、')} 取数失败，对应列显示「—」` : ''
+  };
+}
+
+function storeBreakdownCopyLines (bd) {
+  if (!bd) return [];
+  const line = (r) => `- ${r.name}：营收 ${r.revenueText} · POS ${r.posText} · ${r.orderText} · 在手现金 ${r.cashText}${r.extraText ? ' · ' + r.extraText : ''}`;
+  const out = ['按门店：'];
+  bd.rows.forEach((r) => out.push(line(r)));
+  if (bd.total) out.push(line(bd.total));
+  return out;
+}
+
 function buildCopyText (dayKey, roleLabel, health, highlights, sections) {
   const lines = [];
   lines.push(`山海造物 · ${dayKey || '日报'}${roleLabel ? ` · ${roleLabel}` : ''}`);
@@ -225,6 +285,7 @@ function buildCopyText (dayKey, roleLabel, health, highlights, sections) {
         if (!m) return;
         lines.push(`- ${m.label} ${m.valueText}`);
       });
+      storeBreakdownCopyLines(sec.storeBreakdown).forEach((l) => lines.push(l));
     });
   }
   lines.push('');
@@ -301,6 +362,7 @@ function buildDigestView (message) {
   if (!payload || typeof payload !== 'object') return null;
   const { metrics, byId, failedList, failedById } = indexMetrics(payload);
   if (!metrics.length) return null;
+  const storeBreakdown = buildStoreBreakdownView(payload.storeBreakdown);
 
   const sections = (Array.isArray(payload.sections) ? payload.sections : []).map((s) => {
     const rows = (Array.isArray(s && s.ids) ? s.ids : [])
@@ -313,7 +375,8 @@ function buildDigestView (message) {
     const secOk = rows.length - secFailed - secMissing;
     const secHealth = resolveHealth(secFailed, secMissing, rows.length);
     // 正常分组默认收起，异常/部分无数据展开 —— 降噪且失败一眼可见
-    const startCollapsed = secHealth.tone === 'ok' && rows.length >= 2;
+    const startCollapsed = secHealth.tone === 'ok' && rows.length >= 2 &&
+      !(String(s && s.key || '') === 'store' && storeBreakdown);
     return {
       key: String(s && s.key || ''),
       label: String(s && s.label || ''),
@@ -326,7 +389,8 @@ function buildDigestView (message) {
       healthLabel: secHealth.label,
       countText: `${rows.length} 项` + (secFailed ? ` · ${secFailed} 失败` : '') + (secMissing ? ` · ${secMissing} 无数据` : ''),
       startCollapsed,
-      collapsedHint: startCollapsed ? `已收起 · 点开查看 ${rows.length} 项` : ''
+      collapsedHint: startCollapsed ? `已收起 · 点开查看 ${rows.length} 项` : '',
+      storeBreakdown: String(s && s.key || '') === 'store' ? storeBreakdown : null
     };
   }).filter(Boolean);
 
@@ -387,6 +451,7 @@ module.exports = {
   DIGEST_CATEGORY,
   HIGHLIGHT_IDS,
   formatDigestValue,
+  buildStoreBreakdownView,
   describeSources,
   describeSourcesBrief,
   describeDayKey,

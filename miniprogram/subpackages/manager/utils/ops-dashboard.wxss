@@ -342,12 +342,13 @@
 .hero-split {
   display: flex;
   flex-wrap: wrap;
-  gap: 10rpx;
+  justify-content: space-between;
   margin-top: 18rpx;
 }
 
+/* 三列留余量：不用 calc(33.33% - Xrpx) + gap（零余量，真机 rpx 精度一偏就折行；见错题本 E26） */
 .hero-split-cell {
-  width: calc(33.33% - 7rpx);
+  width: 32%;
   box-sizing: border-box;
   padding: 14rpx 12rpx;
   background: var(--color-bg);
@@ -596,13 +597,17 @@
 .dash-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 14rpx;
-  margin-bottom: 24rpx;
+  justify-content: space-between;
+  margin-bottom: 10rpx;
+}
+
+.dash-grid .dash-card {
+  margin-bottom: 14rpx;
 }
 
 .dash-card {
   position: relative;
-  width: calc(50% - 7rpx);
+  width: 48.5%;
   box-sizing: border-box;
   padding: 20rpx 18rpx 18rpx;
   background: var(--color-bg-card);

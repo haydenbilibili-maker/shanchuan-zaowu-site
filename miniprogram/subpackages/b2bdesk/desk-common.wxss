@@ -134,17 +134,21 @@ page {
   color: var(--brass-300);
 }
 
-/* 指标卡 */
+/* 指标卡：两列网格
+ * ⚠️ 不用 `width: calc(50% - Xrpx)` + `gap`：两格加间距**恰好 = 100%、零余量**，真机 rpx 换算的精度误差
+ * 只要多出一丝就整行折断 → 每行只剩一张、右半边空白（2026-09-29 真机截图）。离线预览 1rpx=1px 精确，永远复现不了。
+ * 改为百分比宽度 + space-between，留 3% 余量；行距用 margin-bottom（守卫 check:supplier-desk 钉住）。 */
 .kpi-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 16rpx;
+  justify-content: space-between;
   margin-bottom: var(--space-4);
 }
 
 .kpi {
-  width: calc(50% - 8rpx);
+  width: 48.5%;
   box-sizing: border-box;
+  margin-bottom: 16rpx;
   padding: 24rpx;
   border-radius: var(--radius-md);
   border: 1rpx solid rgba(255, 255, 255, 0.07);
@@ -155,8 +159,115 @@ page {
   border-color: rgba(196, 167, 108, 0.4);
 }
 
-.kpi.warn {
-  border-color: rgba(233, 162, 59, 0.45);
+.kpi.warn,
+.kpi.alert {
+  border-color: rgba(233, 162, 59, 0.55);
+  background: rgba(233, 162, 59, 0.07);
+}
+
+.kpi.alert .kpi-value {
+  color: var(--color-warning);
+}
+
+.kpi.mute {
+  border-color: rgba(255, 255, 255, 0.05);
+  background: transparent;
+}
+
+.kpi.mute .kpi-value {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.kpi-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpi-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 999rpx;
+  background: var(--color-warning);
+}
+
+/* 汇总大卡：订单数 + 金额 / 已收 · 待收 */
+.sum-card {
+  margin-bottom: 16rpx;
+  padding: 28rpx;
+  border-radius: var(--radius-md);
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  background: rgba(196, 167, 108, 0.07);
+}
+
+.sum-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid rgba(255, 255, 255, 0.08);
+}
+
+.sum-top-side {
+  text-align: right;
+}
+
+.sum-big {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 56rpx;
+  line-height: 1.1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.sum-amount {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 40rpx;
+  line-height: 1.1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass-300);
+}
+
+.sum-split {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 20rpx;
+}
+
+.sum-cell {
+  width: 48.5%;
+  box-sizing: border-box;
+}
+
+.sum-cell + .sum-cell {
+  padding-left: 24rpx;
+  border-left: 1rpx solid rgba(255, 255, 255, 0.08);
+}
+
+.sum-mid {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 34rpx;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.sum-mid.due {
+  color: var(--color-warning);
+}
+
+.grid-title {
+  display: block;
+  margin: 8rpx 0 12rpx;
+  font-size: 22rpx;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
 }
 
 .kpi-label {
@@ -211,7 +322,7 @@ page {
 }
 
 .bar-label {
-  width: 150rpx;
+  width: 140rpx;
   flex-shrink: 0;
   font-size: 22rpx;
   color: var(--color-text-secondary);
@@ -236,12 +347,25 @@ page {
 }
 
 .bar-value {
-  width: 180rpx;
+  width: 96rpx;
   flex-shrink: 0;
   text-align: right;
   font-size: 22rpx;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
+}
+
+.rank {
+  width: 44rpx;
+  flex-shrink: 0;
+  font-size: 26rpx;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass-400);
+}
+
+.card-row.center {
+  align-items: center;
 }
 
 /* 列表 */

@@ -112,7 +112,7 @@
      <view class="card-row bottom">
         <view class="sub-metric"><text class="lbl">小程序｜GMV</text><text class="val">¥{{stats.onlineTotal}}</text></view>
         <view class="v-line"></view>
-        <view class="sub-metric"><text class="lbl">门店｜STORE</text><text class="val">¥{{stats.offlineTotal}}</text></view>
+        <view class="sub-metric"><text class="lbl">门店｜STORE</text><text class="val">¥{{stats.offlineTotal}}</text><text class="split" wx:if="{{stats.offlineSplitText}}">{{stats.offlineSplitText}}</text></view>
      </view>
   </view>
 
