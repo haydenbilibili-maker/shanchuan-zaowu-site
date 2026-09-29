@@ -2,6 +2,8 @@
  * 店铺管理模块 — 本地聚合存储（与 PRD 逻辑模型对齐，后续可迁云）
  */
 
+import { LEGACY_MAIN_STORE_IDS } from './financeDayAggregate.js'
+
 const STORAGE_KEY = 'sc_store_bundle_v1'
 const DATA_VERSION = 1
 
@@ -121,10 +123,13 @@ export function getStoreSelectOptions(bundle) {
 export function findStoreById(bundle, id) {
   if (!id) return null
   const sid = String(id)
+  const stores = bundle?.stores || []
   return (
-    (bundle?.stores || []).find(
+    stores.find(
       (s) => s.id === sid || String(s.storeId || '') === sid || String(s.code || '') === sid,
-    ) || null
+    ) ||
+    stores.find((s) => !s.storeId && CANONICAL_STORE_IDS[canonicalKeyOfLocalStore(s)] === sid) ||
+    null
   )
 }
 
@@ -136,7 +141,30 @@ export function resolveFinanceStoreWriteId(store) {
   if (!store) return ''
   const canonical = String(store.storeId || '').trim()
   if (canonical) return canonical
+  const key = canonicalKeyOfLocalStore(store)
+  if (key) return CANONICAL_STORE_IDS[key]
   return String(store.id || '').trim()
+}
+
+/**
+ * 本地门店（店铺管理里手建 / Excel 导入，只有 genStoreEntityId 生成的本地 id）能否认出是 canonical 双店之一。
+ * 认不出返回 ''。认得出却写本地 id，就是 store_1780160394767_szo1k77 / store_1780841157244_p48w0bx 的来源：
+ * 每个浏览器各建一次「CCYS001 · 长春这有山1号门店」，账本就多一个门店 id。
+ */
+export function canonicalKeyOfLocalStore(store) {
+  const name = String(store?.name || '').trim()
+  const code = String(store?.code || '').trim().toUpperCase()
+  if (/星宸/.test(name) || code === 'CCYS-XC') return 'xingchen'
+  if (
+    /山海造物|山川造物/.test(name) ||
+    /这有山.*(1号|一号)/.test(name) ||
+    name === DEFAULT_FINANCE_STORE_NAME ||
+    code === 'CCYS001' ||
+    code === 'CCYS-SH'
+  ) {
+    return 'shanhaizaowu'
+  }
+  return ''
 }
 
 /** 同一门店在账本中可能出现的全部 ID（筛选 / 去重匹配） */
@@ -150,7 +178,7 @@ export function financeStoreMatchIds(store) {
   const sn = String(store.name || '')
   if (sid === CANONICAL_STORE_IDS.shanhaizaowu || /山海造物|山川造物/.test(sn) || sn.trim() === DEFAULT_FINANCE_STORE_NAME) {
     ids.add(CANONICAL_STORE_IDS.shanhaizaowu)
-    ids.add('store_1780146782017_6w0okpr')
+    LEGACY_MAIN_STORE_IDS.forEach((id) => ids.add(id))
   }
   if (sid === CANONICAL_STORE_IDS.xingchen || /星宸/.test(sn)) {
     ids.add(CANONICAL_STORE_IDS.xingchen)

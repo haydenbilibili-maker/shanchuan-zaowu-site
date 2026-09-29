@@ -298,12 +298,54 @@
   border-bottom-color: #3A2E12;
 }
 
+/* 墨底跑马灯 · 暗玻璃签条（2026-09-29 产品负责人：米白贴纸在博物黑首页上突兀）
+ *   与入口卡同一套语言：深棕半透明底 + 细铜金描边 + 暖金手写字，不再出现任何亮块。
+ *   · 左右渐隐遮罩：条目从卡边"浮出/隐没"，不再被硬切半个字；分隔线也跟着渐隐成一道金丝。
+ *   · 错落明暗 is-v0/1/2：三档透明度，最暗档文字对底仍 ≥ 6:1。
+ *   · 遮罩断点用百分比：不引入 calc(百分比 − rpx)（E26 真机精度）。 */
 .wish-wall-entry.is-ink .wish-wall-entry-mq {
-  border-top-color: rgba(196, 167, 108, 0.22);
+  margin-top: 16rpx;
+  padding-top: 14rpx;
+  border-top-color: rgba(196, 167, 108, 0.3);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
 }
 
 .wish-wall-entry.is-ink .wish-wall-entry-mq-item {
-  color: #5A4A28;
-  background: linear-gradient(180deg, rgba(250, 246, 237, 0.88) 0%, rgba(232, 223, 204, 0.82) 100%);
-  border-color: rgba(196, 167, 108, 0.42);
+  gap: 10rpx;
+  padding: 7rpx 22rpx 7rpx 16rpx;
+  color: #E8D6A8;
+  background:
+    linear-gradient(180deg, rgba(212, 188, 133, 0.14) 0%, rgba(212, 188, 133, 0.03) 100%),
+    rgba(16, 13, 9, 0.55);
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  border-radius: 999rpx;
+  box-shadow:
+    inset 0 1rpx 0 rgba(240, 226, 184, 0.1),
+    0 4rpx 12rpx rgba(0, 0, 0, 0.32);
+  letter-spacing: 0.04em;
+}
+
+.wish-wall-entry.is-ink .wish-wall-entry-mq-item.is-v1 {
+  opacity: 0.72;
+}
+
+.wish-wall-entry.is-ink .wish-wall-entry-mq-item.is-v2 {
+  opacity: 0.86;
+  border-color: rgba(212, 188, 133, 0.28);
+}
+
+/* 铜钉 → 一粒微光金点（深底上铜钉的高光会变成"脏点"） */
+.wish-wall-entry.is-ink .wish-wall-entry-mq-pin {
+  width: 6rpx;
+  height: 6rpx;
+  background: #D4BC85;
+  box-shadow: 0 0 8rpx rgba(212, 188, 133, 0.6);
+}
+
+/* emoji 降饱和：彩色 emoji 在暗金调里最抢眼，压到与文字同一亮度层 */
+.wish-wall-entry.is-ink .wish-wall-entry-mq-emoji {
+  font-size: 22rpx;
+  opacity: 0.85;
+  filter: saturate(0.55);
 }

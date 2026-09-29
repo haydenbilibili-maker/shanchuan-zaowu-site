@@ -4,7 +4,7 @@
 .hr-body { width: 100%; }
 
 .hr-head { align-items: center; }
-.hr-swap { position: relative; min-height: 56rpx; line-height: 54rpx; padding: 0 24rpx; margin: -12rpx 0; font-size: 22rpx; color: var(--brass-300); letter-spacing: 0.06em; border: 1px solid rgba(196, 167, 108, 0.35); border-radius: 9999px; box-sizing: border-box; }
+.hr-swap { position: relative; min-height: 56rpx; line-height: 54rpx; padding: 0 24rpx; margin: -12rpx 0; font-size: 22rpx; color: var(--brass-300); letter-spacing: 0.06em; border: 1px solid rgba(196,167,108,.35); border-radius: 9999px; box-sizing: border-box; }
 /* 热区扩到 88rpx（胶囊外观不变） */
 .hr-swap::after { content: ''; position: absolute; left: -12rpx; right: -12rpx; top: -17rpx; bottom: -17rpx; }
 .hr-swap.is-busy { opacity: 0.5; }
@@ -20,19 +20,23 @@
 .hr-swiper--row .hr-row { margin-top: 0; }
 
 /* ── 展柜封面：图与展签分区，展签永不压图 ── */
-.hr-cover { display: flex; height: 570rpx; border-radius: 20rpx; overflow: hidden; background: var(--color-bg-elevated); border: 1px solid rgba(196, 167, 108, 0.22); box-sizing: border-box; transition: transform 0.16s ease; }
+.hr-cover { display: flex; height: 570rpx; border-radius: 20rpx; overflow: hidden; background: var(--color-bg-elevated); border: 1px solid rgba(196,167,108,.22); box-sizing: border-box; transition: transform 0.16s ease; }
 .hr-cv-media { position: relative; flex-shrink: 0; overflow: hidden; background: var(--color-bg-card); }
-.hr-label { flex: 1; min-width: 0; min-height: 0; display: flex; box-sizing: border-box; }
+.hr-label { flex: 1; min-width: 0; min-height: 0; display: flex; box-sizing: border-box; background: linear-gradient(160deg, rgba(196,167,108,.07), transparent 46%); }
 .hr-cv-media, .hr-label { transition: opacity 0.25s ease; }
 .hr-kicker { display: flex; align-items: center; gap: 12rpx; height: 30rpx; overflow: hidden; }
-.hr-no { font-size: 20rpx; font-family: var(--font-mono); color: var(--color-text-secondary); letter-spacing: 0.08em; }
+.hr-no { flex-shrink: 0; font-size: 20rpx; font-family: var(--font-mono); color: var(--brass-300); letter-spacing: 0.12em; }
+.hr-kicker-rule { flex: 1; min-width: 24rpx; height: 1px; background: linear-gradient(90deg, rgba(196,167,108,.4), rgba(196,167,108,.08)); }
+.hr-kicker .hr-mark { margin-left: auto; }
+/* 「 悬挂半字，与正文左缘齐 */
+.hr-cv-theme { flex-shrink: 0; font-size: 38rpx; line-height: 52rpx; font-weight: 600; color: var(--brass-300); font-family: var(--font-brand); text-indent: -0.5em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .hr-cover-title { min-width: 0; font-size: 34rpx; line-height: 48rpx; font-weight: 600; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: 0.04em; overflow: hidden; }
 .hr-cv-foot { display: flex; align-items: baseline; gap: 14rpx; }
 .hr-theme { font-size: 24rpx; line-height: 34rpx; color: var(--brass-400); font-family: var(--font-brand); white-space: nowrap; }
 .hr-note { min-width: 0; font-size: 22rpx; line-height: 34rpx; color: var(--color-text-body); overflow: hidden; }
 .hr-latin, .hr-card-sub.is-latin { color: var(--color-text-secondary); font-family: Georgia, 'Times New Roman', serif; font-style: italic; }
 .hr-latin { min-width: 0; font-size: 22rpx; line-height: 34rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hr-go { font-size: 22rpx; line-height: 40rpx; padding: 0 18rpx; color: var(--brass-200); letter-spacing: 0.06em; white-space: nowrap; border: 1px solid rgba(196, 167, 108, 0.45); border-radius: 9999px; }
+.hr-go { font-size: 22rpx; line-height: 40rpx; padding: 0 18rpx; color: var(--brass-200); letter-spacing: 0.06em; white-space: nowrap; border: 1px solid rgba(196,167,108,.45); border-radius: 9999px; box-sizing: border-box; }
 
 /* 横档：展签三行（编号 · 名称+价 · 寓意+说明） */
 .hr-cover--wide { flex-direction: column; }
@@ -42,15 +46,19 @@
 .hr-cover--wide .hr-cover-title { flex: 1; white-space: nowrap; text-overflow: ellipsis; }
 .hr-cover--wide .hr-br { width: 100%; height: 0; }
 .hr-cover--wide .hr-note, .hr-cover--wide .hr-latin { flex: 1; white-space: nowrap; text-overflow: ellipsis; }
-/* 竖档：价签沉底 */
+/* 竖档：主题名为主标，价签沉底 */
 .hr-cover--side .hr-cv-media { position: relative; height: 100%; }
-.hr-cover--side .hr-label { flex-direction: column; padding: 26rpx 22rpx 24rpx; }
-.hr-cover--side .hr-kicker { flex-wrap: wrap; height: auto; max-height: 76rpx; row-gap: 8rpx; margin-bottom: 14rpx; }
-.hr-cover--side .hr-cover-title { flex-shrink: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; margin-bottom: 12rpx; }
+.hr-cover--side .hr-label { flex-direction: column; padding: 26rpx 24rpx 24rpx; border-left: 1px solid rgba(196,167,108,.16); }
+.hr-cover--side .hr-kicker { flex-wrap: wrap; height: auto; max-height: 76rpx; row-gap: 8rpx; margin-bottom: 18rpx; }
+.hr-cover--side .hr-cv-theme { margin-bottom: 6rpx; }
+.hr-cover--side .hr-cover-title { flex-shrink: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; margin-bottom: 14rpx; }
+.hr-cover--side .hr-cover-title.is-sub { font-size: 24rpx; line-height: 36rpx; font-weight: 500; color: var(--color-text-primary); letter-spacing: 0; -webkit-line-clamp: 2; }
 .hr-cover--side .hr-br { display: none; }
-.hr-cover--side .hr-note { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; margin-top: 6rpx; }
-.hr-cover--side .hr-latin { margin-top: 6rpx; }
-.hr-cover--side .hr-cv-foot { order: 9; flex-direction: column; align-items: flex-start; gap: 10rpx; margin-top: auto; padding-top: 16rpx; border-top: 1px solid rgba(196, 167, 108, 0.2); }
+.hr-cover--side .hr-note { flex-shrink: 1; min-height: 0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; font-size: 22rpx; line-height: 36rpx; color: var(--color-text-body); }
+.hr-cover--side .hr-latin { flex-shrink: 0; margin-top: 8rpx; }
+.hr-cover--side .hr-cv-foot { order: 9; flex-shrink: 0; flex-direction: column; align-items: stretch; gap: 14rpx; margin-top: auto; padding-top: 18rpx; border-top: 1px solid rgba(196,167,108,.22); }
+.hr-cover--side .hr-price { font-size: 42rpx; line-height: 50rpx; }
+.hr-cover--side .hr-go { line-height: 58rpx; text-align: center; background: rgba(196,167,108,.08); }
 
 /* 比例未到：整柜走光（同骨架），不露错档的图 */
 .hr-cover.is-pending .hr-cv-media, .hr-cover.is-pending .hr-label { opacity: 0; }
@@ -60,56 +68,45 @@
 .hr-from { font-size: 20rpx; font-weight: 400; color: var(--color-text-latin); margin-left: 2rpx; }
 .hr-soldout { font-size: 20rpx; color: var(--color-text-secondary); letter-spacing: 0.04em; white-space: nowrap; }
 
-/* ── 事实小字（不上图、不是推荐理由） ── */
-.hr-mark { flex-shrink: 0; font-size: 20rpx; line-height: 28rpx; padding: 0 10rpx; border-radius: 4rpx; color: var(--color-text-body); border: 1px solid rgba(160, 154, 144, 0.4); letter-spacing: 0.04em; white-space: nowrap; }
-.hr-mark--wall { color: var(--brass-200); border-color: rgba(196, 167, 108, 0.5); background: rgba(196, 167, 108, 0.12); }
+/* ── 事实小字（不上图、不是推荐理由；统一在首行右端） ── */
+.hr-mark { flex-shrink: 0; font-size: 20rpx; line-height: 28rpx; padding: 0 10rpx; border-radius: 4rpx; color: var(--brass-200); border: 1px solid rgba(196,167,108,.45); letter-spacing: 0.06em; white-space: nowrap; }
+.hr-mark--wall { border-color: rgba(196,167,108,.55); background: rgba(196,167,108,.14); }
 
 /* ── 两列 ── */
-.hr-img-box {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  background: var(--color-bg-elevated);
-}
+.hr-img-box { position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; background: var(--color-bg-elevated); }
 .hr-img { width: 100%; display: block; }
 .hr-aspectFill { height: 100%; }
 .hr-img-ph { width: 100%; height: 100%; background: var(--color-bg-elevated); }
 
 .hr-row { display: flex; gap: 18rpx; margin-top: 18rpx; }
-.hr-card { flex: 1 1 0; min-width: 0; max-width: calc((100% - 18rpx) / 2); background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: 16rpx; overflow: hidden; transition: transform 0.16s ease; }
+.hr-card { flex: 1 1 0; min-width: 0; max-width: calc((100% - 18rpx) / 2); background: linear-gradient(180deg, var(--color-bg-card), var(--color-bg-elevated)); border: 1px solid rgba(196,167,108,.16); border-radius: 16rpx; overflow: hidden; transition: transform 0.16s ease; }
+/* 体高 196 = 16+32+8+72+6+44+18 */
 .hr-card-body { padding: 16rpx 18rpx 18rpx; }
-.hr-card-title { height: 72rpx; font-size: 26rpx; line-height: 36rpx; font-weight: 600; color: var(--color-text-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.hr-card-meta { display: flex; align-items: center; gap: 10rpx; height: 32rpx; margin-top: 8rpx; overflow: hidden; }
-.hr-card-sub { flex: 1; min-width: 0; font-size: 22rpx; color: var(--brass-400); font-family: var(--font-brand); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hr-card-foot { display: flex; align-items: baseline; gap: 8rpx; height: 44rpx; margin-top: 6rpx; }
+.hr-card-meta { display: flex; align-items: center; gap: 10rpx; height: 32rpx; overflow: hidden; }
+.hr-card-sub { flex: 1; min-width: 0; font-size: 22rpx; color: var(--brass-300); font-family: var(--font-brand); text-indent: -0.5em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hr-card-sub.is-latin { text-indent: 0; }
+.hr-card-title { height: 72rpx; margin-top: 8rpx; font-size: 26rpx; line-height: 36rpx; font-weight: 600; color: var(--color-text-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hr-card-foot { display: flex; align-items: baseline; gap: 8rpx; height: 44rpx; margin-top: 6rpx; padding-top: 4rpx; border-top: 1px solid rgba(196,167,108,.1); box-sizing: border-box; }
 
-.hr-tap { transform: scale(0.98); border-color: rgba(196, 167, 108, 0.5); }
+.hr-tap { transform: scale(0.98); border-color: rgba(196,167,108,.5); }
 
 /* ── 底栏：页码点 + 逛全部 ── */
 .hr-foot { display: flex; align-items: center; margin-top: 4rpx; }
 .hr-dots { display: flex; align-items: center; gap: 10rpx; }
-.hr-dot { width: 10rpx; height: 10rpx; border-radius: 9999px; background: rgba(196, 167, 108, 0.3); transition: width 0.3s ease; }
+.hr-dot { width: 10rpx; height: 10rpx; border-radius: 9999px; background: rgba(196,167,108,.3); transition: width 0.3s ease; }
 .hr-dot.is-on { width: 32rpx; background: var(--brass-400); }
 .hr-count { margin-left: 8rpx; font-size: 20rpx; font-family: var(--font-mono); color: var(--color-text-secondary); letter-spacing: 0.08em; }
 .hr-more { margin-left: auto; padding: 22rpx 0 22rpx 24rpx; font-size: 24rpx; color: var(--brass-300); letter-spacing: 0.06em; }
 
 /* ── 三态 ── */
-.hr-sk-why, .hr-sk-cover, .hr-sk-card, .hr-cover.is-pending {
-  background: linear-gradient(90deg, var(--color-bg-card) 25%, var(--color-bg-elevated) 50%, var(--color-bg-card) 75%);
-  background-size: 200% 100%;
-  animation: hr-shimmer 1.5s ease-in-out infinite;
-}
+.hr-sk-why, .hr-sk-cover, .hr-sk-card, .hr-cover.is-pending { background: linear-gradient(90deg, var(--color-bg-card) 25%, var(--color-bg-elevated) 50%, var(--color-bg-card) 75%); background-size: 200% 100%; animation: hr-shimmer 1.5s ease-in-out infinite; }
 .hr-sk-why { width: 360rpx; height: 34rpx; margin: -4rpx 0 22rpx; border-radius: 6rpx; }
 .hr-sk-cover { height: 570rpx; border-radius: 20rpx; }
 .hr-sk-card { flex: 1; height: 532rpx; border-radius: 16rpx; }
-@keyframes hr-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
+@keyframes hr-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
 .hr-error { display: flex; flex-direction: column; align-items: center; padding: 44rpx 24rpx 36rpx; background: var(--color-bg-card); border: 1px dashed rgba(77, 64, 26, 0.6); border-radius: 16rpx; }
 .hr-error-title { font-size: 28rpx; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: 0.06em; }
 .hr-error-desc { margin-top: 8rpx; font-size: 22rpx; color: var(--color-text-secondary); }
-.hr-retry { margin-top: 24rpx; min-height: 88rpx; line-height: 88rpx; padding: 0 48rpx; font-size: 24rpx; color: var(--brass-300); border: 1px solid rgba(196, 167, 108, 0.45); border-radius: 9999px; }
+.hr-retry { margin-top: 24rpx; min-height: 88rpx; line-height: 88rpx; padding: 0 48rpx; font-size: 24rpx; color: var(--brass-300); border: 1px solid rgba(196,167,108,.45); border-radius: 9999px; }
 .hr-empty { padding: 56rpx 24rpx; text-align: center; font-size: 24rpx; color: var(--color-text-secondary); letter-spacing: 0.06em; background: var(--color-bg-card); border: 1px dashed rgba(77, 64, 26, 0.45); border-radius: 16rpx; }

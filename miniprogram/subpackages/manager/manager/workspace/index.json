@@ -5,6 +5,7 @@
   "backgroundColor": "#1A1814",
   "enablePullDownRefresh": true,
   "usingComponents": {
-    "app-toast": "/components/AppToast/index"
+    "app-toast": "/components/AppToast/index",
+    "app-modal": "/components/AppModal/index"
   }
 }

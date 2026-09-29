@@ -168,7 +168,8 @@ Component({
         .map((r) => ({ t: r.t.slice(0, TEXT_MAX), e: r.e }))
         .slice(0, MQ_MAX)
       const items = rows.length >= MQ_MIN
-        ? rows.concat(rows).map((r, i) => ({ i, t: r.t, e: r.e }))
+        // v：墨底版错落明暗的档位，按「第几条心愿」取，第 i 条与第 i+n 条同档（回绕不跳）
+        ? rows.concat(rows).map((r, i) => ({ i, t: r.t, e: r.e, v: (i % rows.length) % 3 }))
         : []
       const chars = rows.map((r) => r.t).join('').length
       const duration = Math.max(14000, Math.min(46000, 10000 + chars * 260))

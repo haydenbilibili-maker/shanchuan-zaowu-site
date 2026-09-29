@@ -8,7 +8,7 @@ const _ = db.command
 const STORE_LEDGER = 'store_ledger'
 
 /** Admin ERP 主店历史 storeId，与 store_shanhaizaowu 同实体 */
-const MAIN_STORE_ALIAS_IDS = ['store_1780146782017_6w0okpr']
+const MAIN_STORE_ALIAS_IDS = ['store_1780146782017_6w0okpr', 'store_1780160394767_szo1k77', 'store_1780841157244_p48w0bx']
 
 const { getPreferredStoreId } = require('../../../utils/storeHelper')
 const { ensureOpenId } = require('../../../utils/orderScope')
@@ -757,7 +757,8 @@ async function mirrorToFinanceCloud(doc) {
   }
 }
 
-async function upsert(storeId, form) {
+// opts.checkDuplicate：同日已有日账则不写，抛 DUPLICATE_ENTRY（err.duplicate）
+async function upsert(storeId, form, o = {}) {
   const sid = normalizeStoreId(storeId)
   const data = buildLedgerDoc(sid, form)
   await ensureCloudUser()
@@ -769,6 +770,8 @@ async function upsert(storeId, form) {
         action: 'upsert_store_ledger_day',
         storeId: sid,
         record: data,
+        checkDuplicate: o.checkDuplicate === true,
+        confirmDuplicate: o.confirmDuplicate === true,
       },
       timeout: 30000,
     })
@@ -790,6 +793,7 @@ async function upsert(storeId, form) {
     }
     const err = new Error(msg)
     err.code = result && result.code
+    if (result && result.duplicate) err.duplicate = result.duplicate
     throw err
   }
   return result.id || (result.date ? `${sid}|${result.date}` : '')

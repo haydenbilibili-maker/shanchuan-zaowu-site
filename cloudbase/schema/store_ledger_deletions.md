@@ -20,14 +20,21 @@
 
 ## 幂等 / 防重
 
-无（审计留痕）
+按 `key`（`<归属后 storeId>|<date>`）一条：同店同日再删一次只更新 `deletedAt` / `deletedBy`。
+
+## 语义（2026-09-29 修正）
+
+`syncFinanceData.buildMergedLedgerList` 合并三源时，**只挡 `_updateTime < deletedAt` 的行**（旧缓存回推、其它集合残留）；
+删除后重新录入的同日账照常显示。修正前是「有标记即整日隐藏」，删过一次的日期永远录不回来 ——
+只因生产环境一直没建本集合（读写报「集合不存在」被吞掉）才没暴露；2026-09-29 建集合前先修正。
 
 ## 字段
 
-> 以下字段由**代码写入点**推断；新增字段请同时更新本文件。
+> 以下字段按 `syncFinanceData.upsertLedgerDeletion` 写入点核对（2026-09-29）；新增字段请同时更新本文件。
 
-- `storeId` 门店
-- `date` 账本日期
-- `deletedRows` 被删行
-- `operator` 操作人
-- `createTime`
+- `key` 去重键 `<storeId>|<date>`
+- `storeId` 归属后门店（别名已归主店）
+- `date` 账本日期 `YYYY-MM-DD`
+- `deletedAt` 删除时间（ms）
+- `deletedBy` 操作人 openid
+- `_createTime` 首次写入时间（ms）

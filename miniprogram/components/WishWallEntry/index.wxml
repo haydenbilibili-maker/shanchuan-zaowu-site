@@ -25,7 +25,8 @@
          入口自身的 aria-label 已说清"这是去哪"，故这里隐藏、语义由 aria-label 承担。 -->
     <view class="wish-wall-entry-mq" wx:if="{{mqItems.length}}">
       <view class="wish-wall-entry-mq-track" style="animation-duration:{{mqDurationMs}}ms" aria-hidden="true">
-        <view class="wish-wall-entry-mq-item" wx:for="{{mqItems}}" wx:key="i">
+        <!-- is-v0/1/2：墨底版错落明暗，档位 item.v 由 index.js 按「第几条心愿」算好 -->
+        <view class="wish-wall-entry-mq-item is-v{{item.v}}" wx:for="{{mqItems}}" wx:key="i">
           <view class="wish-wall-entry-mq-pin" aria-hidden="true"></view>
           <text class="wish-wall-entry-mq-emoji" wx:if="{{item.e}}">{{item.e}}</text>
           <text class="wish-wall-entry-mq-text">{{item.t}}</text>

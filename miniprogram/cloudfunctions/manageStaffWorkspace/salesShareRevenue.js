@@ -21,7 +21,11 @@ const FINANCE_SETTINGS = 'finance_settings'
 const PAID_STATUS = ['paid', 'paid_awaiting_address', 'shipped', 'received', 'ready_pickup']
 const REFUND_STATUS = ['refunded', 'refunding', 'expired_refunding', 'aftersales']
 const FINANCE_STORE_ID = 'store_shanhaizaowu'
-const MAIN_STORE_ALIAS_IDS = ['store_1780146782017_6w0okpr']
+const MAIN_STORE_ALIAS_IDS = [
+  'store_1780146782017_6w0okpr',
+  'store_1780160394767_szo1k77',
+  'store_1780841157244_p48w0bx'
+]
 const REPORT_STORES = [
   { storeId: 'store_shanhaizaowu', name: '山川造物', aliases: MAIN_STORE_ALIAS_IDS },
   { storeId: 'store_xingchen', name: '星宸标本', aliases: [] }

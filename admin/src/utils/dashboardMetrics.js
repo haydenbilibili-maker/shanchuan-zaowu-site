@@ -16,6 +16,7 @@
 
 import { isExchangeOrder } from './orderFilters.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
+import { LEGACY_MAIN_STORE_IDS } from './financeDayAggregate.js'
 import {
   loadStoreBundle,
   recordMatchesFinanceStoreFilter,
@@ -187,7 +188,7 @@ export const REPORT_LEDGER_STORES = [
   {
     storeId: 'store_shanhaizaowu',
     name: '山川造物',
-    aliases: ['store_1780146782017_6w0okpr', 'main', 'default'],
+    aliases: [...LEGACY_MAIN_STORE_IDS, 'main', 'default'],
   },
   { storeId: 'store_xingchen', name: '星宸标本', aliases: [] },
 ]

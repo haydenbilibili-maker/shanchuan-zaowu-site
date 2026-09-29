@@ -14,7 +14,18 @@
     <text class="am-title">{{title}}</text>
     <text class="am-content" wx:if="{{content}}" user-select>{{content}}</text>
 
-    <view class="am-actions">
+    <view class="am-actions is-multi" wx:if="{{actions.length}}">
+      <view
+        wx:for="{{actions}}"
+        wx:key="key"
+        class="am-btn {{item.type === 'primary' || item.type === 'danger' ? 'is-primary' : 'is-ghost'}} {{item.type === 'danger' ? 'is-danger' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="onAction"
+        hover-class="am-btn-press"
+        hover-stay-time="60"
+      >{{item.text}}</view>
+    </view>
+    <view class="am-actions" wx:else>
       <view
         wx:if="{{showCancel}}"
         class="am-btn is-ghost"

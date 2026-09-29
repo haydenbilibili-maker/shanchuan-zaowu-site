@@ -34,6 +34,7 @@ const {
   computeMallCommission,
   formatMallForUi
 } = require('./mallCommission')
+const { compareLedgerEntries, hasLedgerContent } = require('./ledgerDuplicate')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -48,7 +49,11 @@ const DEFAULT_STORE_ID = 'store_shanhaizaowu'
  * Admin ERP 历史生成的主店 storeId，与 store_shanhaizaowu 为同一门店实体。
  * 查询/合并时必须扩展开，否则本月流水会被滤空。
  */
-const MAIN_STORE_ALIAS_IDS = ['store_1780146782017_6w0okpr']
+const MAIN_STORE_ALIAS_IDS = [
+  'store_1780146782017_6w0okpr',
+  'store_1780160394767_szo1k77',
+  'store_1780841157244_p48w0bx'
+]
 /** 投资人 / 超管账本总账：山川造物 + 星宸标本 */
 const REPORT_STORES = [
   { storeId: 'store_shanhaizaowu', name: '山川造物', aliases: MAIN_STORE_ALIAS_IDS },
@@ -650,10 +655,14 @@ async function sumDualStoreLedger(startDate, endDate, { persist = false } = {}) 
   }
 }
 
+/**
+ * 删除标记 key → deletedAt。合并时只挡「删除之前」（_updateTime < deletedAt）的行（旧缓存回推 / 别的集合的残留），
+ * 删除后重新录入的同日账（_updateTime 晚于 deletedAt）照常显示 —— 否则删过一次的日期永远录不回来。
+ */
 async function fetchLedgerDeletionKeys(sid, startDate, endDate) {
   const storeId = normalizeStoreId(sid)
   const ids = expandStoreIds(storeId)
-  const keys = new Set()
+  const keys = new Map()
   try {
     const res = await db
       .collection(LEDGER_DELETIONS)
@@ -666,7 +675,8 @@ async function fetchLedgerDeletionKeys(sid, startDate, endDate) {
     ;(res.data || []).forEach((row) => {
       const d = normalizeDateStr(row.date)
       if (!d) return
-      keys.add(row.key || ledgerKey({ storeId: row.storeId || storeId, date: d }))
+      const key = row.key || ledgerKey({ storeId: row.storeId || storeId, date: d })
+      keys.set(key, Math.max(keys.get(key) || 0, Number(row.deletedAt) || 0))
     })
   } catch (err) {
     if (!isDbCollectionMissing(err)) {
@@ -805,7 +815,7 @@ async function buildMergedLedgerList(sid, startDate, endDate) {
       _updateTime: ts,
     }
     const key = ledgerKey(normalized)
-    if (deletedKeys.has(key)) return
+    if (deletedKeys.has(key) && ts < deletedKeys.get(key)) return
     const prev = mergedMap.get(key)
     if (!prev) {
       mergedMap.set(key, normalized)
@@ -1332,9 +1342,27 @@ async function upsertDailyRevenueCompat(ledgerDoc) {
 }
 
 /**
- * 店长单日录入：store_ledger + daily_revenues 兼容 + finance_records 镜像
+ * 同店（含主店别名 / 空 storeId）同日已有日账：三源合并视图里取一条，逐字段比对本次录入。
+ * @returns {null | { identical, diffs, existing, incoming, date, storeId }}
  */
-async function upsertStoreLedgerDay(sid, record) {
+async function findLedgerDayDuplicate(storeId, doc) {
+  const rows = await buildMergedLedgerList(storeId, doc.date, doc.date)
+  const existing = rows.find((r) => normalizeDateStr(r.date || r.bizDate) === doc.date && hasLedgerContent(r))
+  if (!existing) return null
+  return {
+    ...compareLedgerEntries(existing, doc),
+    date: doc.date,
+    storeId,
+    existingRaw: String(existing.raw || existing.remark || '').slice(0, 2000),
+  }
+}
+
+/**
+ * 店长单日录入：store_ledger + daily_revenues 兼容 + finance_records 镜像
+ * 可选 options.checkDuplicate：同店同日已有日账且未带 confirmDuplicate → 不写入，
+ * 返回 { success:false, code:'DUPLICATE_ENTRY', duplicate }（未传 checkDuplicate 的旧客户端行为不变）。
+ */
+async function upsertStoreLedgerDay(sid, record, options = {}) {
   const storeId = normalizeStoreId(sid)
   const payload = {
     ...(record || {}),
@@ -1346,6 +1374,20 @@ async function upsertStoreLedgerDay(sid, record) {
   }
   // 强制以鉴权门店为准，忽略客户端串改 storeId
   doc.storeId = storeId
+
+  if (options.checkDuplicate === true && options.confirmDuplicate !== true) {
+    const duplicate = await findLedgerDayDuplicate(storeId, doc)
+    if (duplicate) {
+      return {
+        success: false,
+        code: 'DUPLICATE_ENTRY',
+        message: duplicate.identical
+          ? `${doc.date} 已录入过同样的日报`
+          : `${doc.date} 该门店已有一条金额不同的记录`,
+        duplicate,
+      }
+    }
+  }
 
   const ledgerResult = await upsertStoreLedgerRecords([doc])
   const daily = await upsertDailyRevenueCompat(doc)
@@ -1455,7 +1497,10 @@ exports.main = async (event) => {
     // 店长单日录入
     if (action === 'upsert_store_ledger_day') {
       const sid = normalizeStoreId(storeId || DEFAULT_STORE_ID)
-      return await upsertStoreLedgerDay(sid, event.record || event.data || {})
+      return await upsertStoreLedgerDay(sid, event.record || event.data || {}, {
+        checkDuplicate: event.checkDuplicate === true,
+        confirmDuplicate: event.confirmDuplicate === true,
+      })
     }
 
     // 上传账本 → store_ledger + 镜像 finance_records

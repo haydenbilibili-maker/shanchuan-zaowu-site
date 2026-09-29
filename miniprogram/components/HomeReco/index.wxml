@@ -52,16 +52,18 @@
           <view class="hr-label">
             <view class="hr-kicker">
               <text class="hr-no">{{pg.lead.no}}</text>
+              <view class="hr-kicker-rule"></view>
               <text class="hr-mark hr-mark--{{pg.lead.mark.kind}}" wx:if="{{pg.lead.mark}}">{{pg.lead.mark.text}}</text>
             </view>
-            <text class="hr-cover-title">{{pg.lead.title}}</text>
+            <text class="hr-cv-theme" wx:if="{{pg.lead.theme && pg.lead.tier === 'side'}}">{{pg.lead.theme}}</text>
+            <text class="hr-cover-title {{pg.lead.theme && pg.lead.tier === 'side' ? 'is-sub' : ''}}">{{pg.lead.title}}</text>
             <view class="hr-cv-foot">
               <text class="hr-price" wx:if="{{pg.lead.priceText}}">{{pg.lead.priceText}}<text class="hr-from" wx:if="{{pg.lead.priceFrom}}">起</text></text>
               <text class="hr-soldout" wx:if="{{pg.lead.soldOut}}">已售罄</text>
               <text class="hr-go">去看看 →</text>
             </view>
             <view class="hr-br"></view>
-            <text class="hr-theme" wx:if="{{pg.lead.theme}}">{{pg.lead.theme}}</text>
+            <text class="hr-theme" wx:if="{{pg.lead.theme && pg.lead.tier !== 'side'}}">{{pg.lead.theme}}</text>
             <text class="hr-note" wx:if="{{pg.lead.note}}">{{pg.lead.note}}</text>
             <text class="hr-latin" wx:if="{{pg.lead.latin && (pg.lead.tier === 'side' || !pg.lead.note)}}">{{pg.lead.latin}}</text>
           </view>
@@ -87,11 +89,11 @@
               <protected-badge product="{{item}}" size="xs" corner="bl" />
             </view>
             <view class="hr-card-body">
-              <text class="hr-card-title">{{item.title}}</text>
               <view class="hr-card-meta">
-                <text class="hr-mark hr-mark--{{item.mark.kind}}" wx:if="{{item.mark}}">{{item.mark.text}}</text>
                 <text class="hr-card-sub {{item.theme ? '' : 'is-latin'}}">{{item.theme || item.latin}}</text>
+                <text class="hr-mark hr-mark--{{item.mark.kind}}" wx:if="{{item.mark}}">{{item.mark.text}}</text>
               </view>
+              <text class="hr-card-title">{{item.title}}</text>
               <view class="hr-card-foot">
                 <text class="hr-price hr-price--sm" wx:if="{{item.priceText}}">{{item.priceText}}<text class="hr-from" wx:if="{{item.priceFrom}}">起</text></text>
                 <text class="hr-soldout" wx:if="{{item.soldOut}}">售罄</text>

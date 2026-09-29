@@ -34,6 +34,8 @@ const DETAIL_WXML = MP + 'subpackages/feature/detail/index.wxml'
 const HUB_WXML = MP + 'subpackages/feature/gift/hub/index.wxml'
 const HUB_JS = MP + 'subpackages/feature/gift/hub/index.js'
 const GIFT_FN = MP + 'cloudfunctions/getGiftSceneProducts/index.js'
+const FEED_FN = MP + 'cloudfunctions/getEncyclopediaFeed/index.js'
+const CATEGORY_WXML = MP + 'pages/category/index.wxml'
 
 let passed = 0
 let failed = 0
@@ -59,6 +61,8 @@ const detailWxml = read(DETAIL_WXML)
 const hubWxml = read(HUB_WXML)
 const hubJs = stripComments(read(HUB_JS))
 const giftFn = stripComments(read(GIFT_FN))
+const feedFn = stripComments(read(FEED_FN))
+const categoryWxml = read(CATEGORY_WXML)
 
 /* ── ① 字段贯通（静默丢字段是这套白名单的老问题） ───────────────────────── */
 check("★ manageProducts 白名单含 'themeName'/'themeNote'（漏登记 = 保存时静默丢字段）",
@@ -125,6 +129,10 @@ check('★ 详情页展示题记 themeNote（带主题名时才显示）',
 check('★ 礼赠卡展示题记 themeNote', /class="product-theme-note"[^>]*item\.themeNote/.test(hubWxml))
 check('★ 礼赠链路透传 themeName（云函数 leanProduct）', /themeName: row\.themeName \|\| ''/.test(giftFn))
 check('★ 礼赠页映射带上 themeName', /themeName: p\.themeName \|\| ''/.test(hubJs))
+check('★ 馆藏链路透传 themeName（getEncyclopediaFeed 逐字段映射，漏写 = 馆藏卡静默不显示）',
+  /const orphanProducts = rankedProductRows\.map\(\(p\) => \(\{[\s\S]*?themeName: p\.themeName \|\| ''[\s\S]*?\}\)\)/.test(feedFn))
+check('★ 馆藏卡：主题名在标准名与学名之间、无主题名不占位',
+  /class="product-name">\{\{item\.title\}\}<\/text>\s*<text class="product-theme" wx:if="\{\{item\.themeName\}\}">「\{\{item\.themeName\}\}」<\/text>\s*<text class="product-latin"/.test(categoryWxml))
 
 /* ── 输出 / 自检 ───────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
@@ -187,6 +195,18 @@ function selftest() {
       file: GIFT_FN,
       from: "    themeName: row.themeName || '',\n",
       to: ''
+    },
+    {
+      name: '馆藏云函数不再透传 themeName',
+      file: FEED_FN,
+      from: "      themeName: p.themeName || '',\n",
+      to: ''
+    },
+    {
+      name: '馆藏卡主题名无条件占位',
+      file: CATEGORY_WXML,
+      from: '<text class="product-theme" wx:if="{{item.themeName}}">',
+      to: '<text class="product-theme">'
     }
   ]
   let bad = 0

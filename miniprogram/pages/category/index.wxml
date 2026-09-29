@@ -194,6 +194,7 @@
             </view>
             <view class="product-info">
               <text class="product-name">{{item.title}}</text>
+              <text class="product-theme" wx:if="{{item.themeName}}">「{{item.themeName}}」</text>
               <text class="product-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
               <view class="product-craft-tags" wx:if="{{item.craftTags && item.craftTags.length}}">
                 <text class="product-craft-tag" wx:for="{{item.craftTags}}" wx:for-item="tag" wx:key="key">{{tag.label}}</text>

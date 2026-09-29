@@ -1,151 +1,63 @@
 /**
  * 财务账本重复日账检测与清理
- * 规则：canonical 门店 + 日期 唯一；保留 canonical storeId → 较新 _updateTime → 金额较大
+ * 判据见 financeDuplicateCheck.js：归属后同门店 + 同营业日；
+ * 只删「完全重复」的多余副本，「同日同店金额不同」只列出、由人逐条定（2026-09-29 产品负责人）。
  */
 import { COLLECTIONS } from '../cloud.js'
-import { getCdnDatabase, fetchAllFromCollection, cdnRemove } from './cloudbaseCdnDb.js'
+import { fetchAllFromCollection, cdnRemove } from './cloudbaseCdnDb.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
 import { touchLocalFinanceUpdateTime, saveFinanceRecordsToCloud } from './financeSync.js'
-import { ledgerKey } from './storeLedgerSync.js'
-import {
-  CANONICAL_STORE_DEFS,
-  applyDefaultStoreToFinanceRecord,
-  loadStoreBundle,
-  resolveCanonicalStoreKey,
-} from './storeStorage.js'
+import { dedupeFinanceRecords } from './storeLedgerSync.js'
+import { classifyDuplicateGroups, ledgerAmounts } from './financeDuplicateCheck.js'
+import { resolveFinanceStore } from './financeDayAggregate.js'
 
-const canonicalIds = new Set(CANONICAL_STORE_DEFS.map((d) => d.storeId))
-
-/** 与 financeSandboxBridge.dedupeRowsByStoreDate 同序评分 */
-export function recordKeepScore(record) {
-  return [
-    canonicalIds.has(String(record.storeId || '')) ? 1 : 0,
-    Number(record._updateTime || record.syncedAt || 0),
-    Number(record.revenue ?? record.netAmount ?? 0) || 0,
-  ]
-}
-
-export function compareRecordsForKeep(a, b) {
-  const [ac, at, ar] = recordKeepScore(a)
-  const [bc, bt, br] = recordKeepScore(b)
-  if (ac !== bc) return ac > bc ? 1 : -1
-  if (at !== bt) return at > bt ? 1 : -1
-  if (ar !== br) return ar > br ? 1 : -1
-  return 0
-}
-
-export function canonicalStoreDateKey(record, bundle) {
-  const canonical = resolveCanonicalStoreKey(record, bundle)
-  const date = String(record.date || record.bizDate || '').slice(0, 10)
-  return `${canonical}|${date}`
-}
-
-function normalizeRow(row, bundle) {
-  const withStore = applyDefaultStoreToFinanceRecord(row, bundle)
-  const date = String(withStore.date || withStore.bizDate || '').slice(0, 10)
-  if (!date) return null
-  return {
-    ...withStore,
-    date,
-    revenue: Number(withStore.revenue ?? withStore.netAmount ?? 0) || 0,
-    _ledgerKey: ledgerKey({ ...withStore, date }, date),
-  }
-}
-
-const STORE_KEY_LABELS = {
-  shanhaizaowu: '楼上 · 山川造物',
-  xingchen: '楼下 · 星宸标本',
-}
+const brief = (row, index) => ({
+  _id: row._id,
+  storeId: row.storeId,
+  storeCode: row.storeCode,
+  ...ledgerAmounts(row),
+  _updateTime: row._updateTime,
+  _index: index,
+})
 
 /**
- * @returns {Array<{ key, storeKey, date, keep, remove, inflatedRevenue }>}
+ * @returns {Array<{ key, storeKey, storeLabel, date, identical, keep, remove, others, diffs, inflatedRevenue }>}
  */
-export function findDuplicateGroups(rows, bundle = loadStoreBundle()) {
-  const indexed = []
-  rows.forEach((row, index) => {
-    const rec = normalizeRow(row, bundle)
-    if (!rec) return
-    indexed.push({ ...rec, _index: index })
-  })
-
-  const groups = new Map()
-  indexed.forEach((rec) => {
-    const key = canonicalStoreDateKey(rec, bundle)
-    const list = groups.get(key) || []
-    list.push(rec)
-    groups.set(key, list)
-  })
-
-  return [...groups.entries()]
-    .filter(([, list]) => list.length > 1)
-    .map(([key, list]) => {
-      const sorted = [...list].sort((a, b) => compareRecordsForKeep(b, a))
-      const keep = sorted[0]
-      const remove = sorted.slice(1)
-      const inflatedRevenue = remove.reduce((s, r) => s + (Number(r.revenue) || 0), 0)
-      const [storeKey, date] = key.split('|')
-      return {
-        key,
-        storeKey,
-        storeLabel: STORE_KEY_LABELS[storeKey] || storeKey,
-        date,
-        keep,
-        remove,
-        inflatedRevenue,
-      }
-    })
-    .sort((a, b) => a.date.localeCompare(b.date))
+export function findDuplicateGroups(rows) {
+  return classifyDuplicateGroups(rows).map((g) => ({
+    key: g.key,
+    storeKey: g.storeId,
+    storeLabel: resolveFinanceStore({ storeId: g.storeId }).name,
+    date: g.date,
+    identical: g.identical,
+    keep: brief(g.keep.row, g.keep.index),
+    remove: g.remove.map((x) => brief(x.row, x.index)),
+    others: g.others.map((x) => brief(x.row, x.index)),
+    diffs: g.diffs,
+    inflatedRevenue: g.others.reduce((s, x) => s + ledgerAmounts(x.row).revenue, 0),
+  }))
 }
 
-/** 预览：哪些行将被删除、虚增多少 */
+/** 预览：完全重复（将删）与金额不同（待定）分开统计 */
 export function previewDuplicateCleanup(rows) {
   const groups = findDuplicateGroups(rows)
-  const removeIndices = new Set()
-  groups.forEach((g) => g.remove.forEach((r) => removeIndices.add(r._index)))
-
+  const identical = groups.filter((g) => g.identical)
+  const pending = groups.filter((g) => !g.identical)
   return {
     duplicateDayCount: groups.length,
-    removeCount: removeIndices.size,
-    totalInflatedRevenue: groups.reduce((s, g) => s + g.inflatedRevenue, 0),
-    groups: groups.map((g) => ({
-      key: g.key,
-      date: g.date,
-      storeKey: g.storeKey,
-      storeLabel: g.storeLabel,
-      keep: {
-        storeId: g.keep.storeId,
-        storeCode: g.keep.storeCode,
-        revenue: g.keep.revenue,
-        orderCount: g.keep.orderCount,
-        _updateTime: g.keep._updateTime,
-        _id: g.keep._id,
-        _ledgerKey: g.keep._ledgerKey,
-      },
-      remove: g.remove.map((r) => ({
-        storeId: r.storeId,
-        storeCode: r.storeCode,
-        revenue: r.revenue,
-        orderCount: r.orderCount,
-        _updateTime: r._updateTime,
-        _id: r._id,
-        _ledgerKey: r._ledgerKey,
-        _index: r._index,
-      })),
-      inflatedRevenue: g.inflatedRevenue,
-    })),
+    removeCount: identical.reduce((s, g) => s + g.remove.length, 0),
+    totalInflatedRevenue: identical.reduce((s, g) => s + g.inflatedRevenue, 0),
+    pendingCount: pending.length,
+    pendingInflatedRevenue: pending.reduce((s, g) => s + g.inflatedRevenue, 0),
+    groups,
   }
 }
 
-/** 本地数组去重（不访问云端） */
+/** 本地数组去重（不访问云端）：只去掉完全重复的多余副本 */
 export function applyDuplicateCleanup(rows) {
   const preview = previewDuplicateCleanup(rows)
-  if (!preview.removeCount) {
-    return { records: rows, preview, removed: [] }
-  }
-
   const removeIndices = new Set()
   preview.groups.forEach((g) => g.remove.forEach((r) => removeIndices.add(r._index)))
-
   const removed = []
   const kept = []
   rows.forEach((row, i) => {
@@ -155,8 +67,13 @@ export function applyDuplicateCleanup(rows) {
   return { records: kept, preview, removed }
 }
 
+/** 云端 finance_records 原始行（本机缓存已按归属键合并，看不到同日多条，预览必须读云端） */
+export async function fetchCloudFinanceRows() {
+  return fetchAllFromCollection(COLLECTIONS.FINANCE_RECORDS, { orderField: 'date', direction: 'desc' })
+}
+
 /**
- * 一键清理：localStorage shanhai_v12 + CloudBase finance_records
+ * 一键清理：CloudBase finance_records 完全重复副本 + 本机缓存按归属键合并
  * @param {{ dryRun?: boolean, syncCloud?: boolean }} options
  */
 export async function cleanupDuplicateFinanceRecords(options = {}) {
@@ -171,7 +88,8 @@ export async function cleanupDuplicateFinanceRecords(options = {}) {
     localRecords = []
   }
 
-  const preview = previewDuplicateCleanup(localRecords)
+  const cloudRows = syncCloud ? await fetchCloudFinanceRows() : []
+  const preview = previewDuplicateCleanup(syncCloud ? cloudRows : localRecords)
   if (dryRun || !preview.removeCount) {
     return {
       success: true,
@@ -184,23 +102,15 @@ export async function cleanupDuplicateFinanceRecords(options = {}) {
     }
   }
 
-  const { records: cleaned, removed } = applyDuplicateCleanup(localRecords)
+  const cleaned = dedupeFinanceRecords(applyDuplicateCleanup(localRecords).records)
   localStorage.setItem(FINANCE_RECORDS_KEY, JSON.stringify(cleaned))
   touchLocalFinanceUpdateTime()
 
   let cloudRemoved = 0
   let cloudError = null
-
   if (syncCloud) {
     try {
-      const cloudRecords = await fetchAllFromCollection(COLLECTIONS.FINANCE_RECORDS, {
-        orderField: 'date',
-        direction: 'desc',
-      })
-      const cloudPreview = previewDuplicateCleanup(cloudRecords)
-      const db = await getCdnDatabase()
-
-      for (const group of cloudPreview.groups) {
+      for (const group of preview.groups) {
         for (const rec of group.remove) {
           if (rec._id) {
             // 幂等删除：并发下 deleted:0 属良性无操作，刻意不断言（否则制造假失败）
@@ -209,7 +119,6 @@ export async function cleanupDuplicateFinanceRecords(options = {}) {
           }
         }
       }
-
       await saveFinanceRecordsToCloud(cleaned)
     } catch (err) {
       cloudError = err?.message || String(err)
@@ -221,7 +130,7 @@ export async function cleanupDuplicateFinanceRecords(options = {}) {
     preview,
     localCount: localRecords.length,
     mergedCount: cleaned.length,
-    removedCount: removed.length,
+    removedCount: preview.removeCount,
     cloudRemoved,
     cloudError,
   }

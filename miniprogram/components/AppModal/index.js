@@ -17,6 +17,7 @@ Component({
     cancelText: '取消',
     showCancel: true,
     danger: false,
+    actions: [],
     _resolve: null
   },
 
@@ -26,8 +27,11 @@ Component({
     /**
      * 打开弹窗，返回与 `wx.showModal` success 同形的 Promise
      * @param {{title?:string, content?:string, overline?:string, confirmText?:string,
-     *          cancelText?:string, showCancel?:boolean, danger?:boolean}} options
-     * @returns {Promise<{confirm:boolean, cancel:boolean}>}
+     *          cancelText?:string, showCancel?:boolean, danger?:boolean,
+     *          actions?:Array<{key:string, text:string, type?:'primary'|'ghost'|'danger'}>}} options
+     *   actions：多于两个选项时用（如「覆盖已有 / 仍要新增 / 取消」）；传了就替代确定/取消两个按钮，
+     *   结算值多带 `action: key`（key 为 'confirm' / 'cancel' 时 confirm / cancel 同义）
+     * @returns {Promise<{confirm:boolean, cancel:boolean, action?:string}>}
      */
     open(options) {
       const o = options || {}
@@ -45,6 +49,7 @@ Component({
           cancelText: o.cancelText || '取消',
           showCancel: o.showCancel !== false,
           danger: !!o.danger,
+          actions: Array.isArray(o.actions) ? o.actions.filter((a) => a && a.key) : [],
           _resolve: resolve
         })
       })
@@ -57,6 +62,13 @@ Component({
     },
 
     onConfirm() { this.settle(true) },
-    onCancel() { this.settle(false) }
+    onCancel() { this.settle(false) },
+
+    onAction(e) {
+      const key = (e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.key) || 'cancel'
+      const resolve = this.data._resolve
+      this.setData({ visible: false, _resolve: null })
+      if (resolve) resolve({ confirm: key === 'confirm', cancel: key === 'cancel', action: key })
+    }
   }
 })

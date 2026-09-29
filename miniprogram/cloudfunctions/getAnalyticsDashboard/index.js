@@ -41,7 +41,11 @@ const UNPAID_STATUS = ['pending_pay', 'void', 'cancelled', 'closed']
 const REFUND_STATUS = ['refunded', 'refunding', 'expired_refunding', 'aftersales']
 const FINANCE_STORE_ID = 'store_shanhaizaowu'
 /** Admin 历史主店别名，与山川造物同实体，汇总时归入主店避免双计 */
-const MAIN_STORE_ALIAS_IDS = ['store_1780146782017_6w0okpr']
+const MAIN_STORE_ALIAS_IDS = [
+  'store_1780146782017_6w0okpr',
+  'store_1780160394767_szo1k77',
+  'store_1780841157244_p48w0bx'
+]
 /** 超管报表默认双店 */
 const REPORT_STORES = [
   {

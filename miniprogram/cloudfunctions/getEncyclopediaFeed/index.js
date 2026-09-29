@@ -390,6 +390,7 @@ exports.main = async (event) => {
       _id: p._id,
       cardType: 'product',
       title: p.title,
+      themeName: p.themeName || '',
       latinName: p.latinName || '',
       price: p.price,
       displayImage: (p.images && p.images[0]) || '',

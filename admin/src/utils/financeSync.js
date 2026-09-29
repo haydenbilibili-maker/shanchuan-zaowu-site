@@ -5,8 +5,8 @@
 import { COLLECTIONS } from '../cloud'
 import { fetchAllFromCollection, fetchCollectionLimit, cdnRemove, callCdnFunction } from './cloudbaseCdnDb.js'
 import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
+import { classifyDuplicateGroups } from './financeDuplicateCheck.js'
 import {
-  ledgerKey,
   mergeRecords,
   dedupeFinanceRecords,
   pullStoreLedgerIntoFinance,
@@ -98,19 +98,11 @@ export async function saveFinanceRecordsToCloud(records) {
       direction: 'desc',
     })
 
-    // 云端同键多条时只保留最新一条，其余删除
-    const groups = new Map()
-    for (const doc of existingRows) {
-      const key = ledgerKey(doc, doc.date)
-      const list = groups.get(key) || []
-      list.push(doc)
-      groups.set(key, list)
-    }
+    // 云端同店同日多条：只删「完全重复」的多余副本；金额不同的可能是更正或真实多笔，
+    // 留给「清理重复日账」预览由人逐条定（2026-09-29 产品负责人），同步路径绝不自动删
     const pruneOps = []
-    for (const [, docs] of groups) {
-      if (docs.length <= 1) continue
-      docs.sort((a, b) => (b._updateTime || b.syncedAt || 0) - (a._updateTime || a.syncedAt || 0))
-      for (const stale of docs.slice(1)) {
+    for (const group of classifyDuplicateGroups(existingRows)) {
+      for (const { row: stale } of group.remove) {
         if (stale._id) {
           // 幂等删除：并发下 deleted:0 属良性无操作，刻意不断言（否则制造假失败）
           pruneOps.push(cdnRemove(COLLECTIONS.FINANCE_RECORDS, stale._id))

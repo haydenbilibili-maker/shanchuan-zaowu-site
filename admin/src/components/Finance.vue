@@ -830,12 +830,14 @@
                         :closable="false"
                         show-icon
                         style="margin-bottom: 14px;"
-                        title="同一 canonical 门店 + 日期存在多条记录时，将保留 canonical storeId → 较新更新时间 → 金额较大的一条；其余删除。"
+                        title="同门店（旧主店 id / 无门店 id 归山川造物）同日多条：内容完全一致的删除多余副本、保留一条；金额不同的可能是更正或真实多笔，只列出不删除。"
                     />
                     <p style="margin: 0 0 12px; font-size: 13px; color: var(--light-text-secondary);">
                         检测到 <strong>{{ duplicateCleanupPreview.duplicateDayCount }}</strong> 个重复日 ·
-                        拟删除 <strong>{{ duplicateCleanupPreview.removeCount }}</strong> 条 ·
-                        虚增约 <strong>¥{{ duplicateCleanupPreview.totalInflatedRevenue.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong>
+                        完全重复拟删除 <strong>{{ duplicateCleanupPreview.removeCount }}</strong> 条（虚增约
+                        <strong>¥{{ duplicateCleanupPreview.totalInflatedRevenue.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong>）·
+                        金额不同待定 <strong>{{ duplicateCleanupPreview.pendingCount }}</strong> 组（涉及
+                        <strong>¥{{ duplicateCleanupPreview.pendingInflatedRevenue.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong>）
                     </p>
                     <el-table
                         v-if="duplicateCleanupPreview.groups.length"
@@ -852,13 +854,18 @@
                                 <span style="color:#888;font-size:11px;"> · {{ row.keep.storeId || row.keep.storeCode || '—' }}</span>
                             </template>
                         </el-table-column>
-                        <el-table-column label="删除" min-width="160">
+                        <el-table-column label="其余（删除 / 待定）" min-width="200">
                             <template #default="{ row }">
-                                <span v-for="(r, i) in row.remove" :key="i">
+                                <el-tag :type="row.identical ? 'danger' : 'warning'" size="small" disable-transitions>
+                                    {{ row.identical ? '完全重复 · 删除' : '金额不同 · 待定' }}
+                                </el-tag>
+                                <div v-for="(r, i) in row.others" :key="i">
                                     ¥{{ Number(r.revenue || 0).toLocaleString() }}
                                     <span style="color:#888;font-size:11px;"> · {{ r.storeId || r.storeCode || '—' }}</span>
-                                    <br v-if="i < row.remove.length - 1" />
-                                </span>
+                                    <span v-if="row.diffs[i]?.length" style="color:var(--el-color-warning-dark-2);font-size:11px;">
+                                        · {{ row.diffs[i].map((d) => `${d.label} ${d.existing ?? '—'}/${d.incoming ?? '—'}`).join('，') }}
+                                    </span>
+                                </div>
                             </template>
                         </el-table-column>
                         <el-table-column label="虚增" width="90" align="right">
@@ -877,6 +884,41 @@
                     >
                         确认清理（本地 + 云端）
                     </el-button>
+                </template>
+            </el-dialog>
+
+            <el-dialog
+                v-model="duplicateEntryVisible"
+                :title="duplicateEntry?.identical ? '重复录入：与已有记录完全一致' : '该门店当日已有记录'"
+                width="560px"
+                :close-on-click-modal="false"
+                data-testid="finance-duplicate-entry"
+                @closed="settleDuplicateEntry('cancel')"
+            >
+                <div v-if="duplicateEntry">
+                    <el-alert
+                        :type="duplicateEntry.identical ? 'error' : 'warning'"
+                        :closable="false"
+                        show-icon
+                        style="margin-bottom: 12px;"
+                        :title="duplicateEntry.identical
+                            ? `${duplicateEntry.storeName} ${duplicateEntry.date} 已录入过同样的日报，建议取消，避免重复计收。`
+                            : `${duplicateEntry.storeName} ${duplicateEntry.date} 已有一条金额不同的记录：更正请选「覆盖已有」，当天第二笔请选「仍要新增」（金额累加到同一天）。`"
+                    />
+                    <el-table :data="duplicateEntry.rows" size="small" border>
+                        <el-table-column prop="label" label="字段" width="100" />
+                        <el-table-column prop="existing" label="已有记录" />
+                        <el-table-column label="本次录入">
+                            <template #default="{ row }">
+                                <span :style="row.changed ? 'color:var(--el-color-danger);font-weight:600;' : ''">{{ row.incoming }}</span>
+                            </template>
+                        </el-table-column>
+                    </el-table>
+                </div>
+                <template #footer>
+                    <el-button :type="duplicateEntry?.identical ? 'primary' : 'default'" @click="settleDuplicateEntry('cancel')">取消</el-button>
+                    <el-button @click="settleDuplicateEntry('append')">仍要新增</el-button>
+                    <el-button :type="duplicateEntry?.identical ? 'default' : 'warning'" @click="settleDuplicateEntry('overwrite')">覆盖已有</el-button>
                 </template>
             </el-dialog>
             
@@ -963,7 +1005,9 @@ import { ledgerKey, dedupeFinanceRecords } from '../utils/storeLedgerSync'
 import {
   previewDuplicateCleanup,
   cleanupDuplicateFinanceRecords,
+  fetchCloudFinanceRows,
 } from '../utils/financeDuplicateCleanup'
+import { findExistingDuplicate, accumulateLedgerEntry, DUPLICATE_FIELDS } from '../utils/financeDuplicateCheck'
 import { FINANCE_RECORDS_KEY } from '../utils/financeLocalStorageKey'
 import { fetchCollectionSorted, cdnUpdate, COLLECTIONS } from '../cloud'
 import {
@@ -978,7 +1022,7 @@ import {
   DEFAULT_FINANCE_STORE_NAME,
 } from '../utils/storeStorage'
 import { parseDailyFinanceText } from '../utils/financeDailyParse'
-import { groupFinanceRecordsByDate, financeRecordStoreLabel, buildFinanceStoreBreakdown } from '../utils/financeDayAggregate'
+import { groupFinanceRecordsByDate, financeRecordStoreLabel, buildFinanceStoreBreakdown, resolveFinanceStore } from '../utils/financeDayAggregate'
 import {
   DEFAULT_MALL_THRESHOLD,
   DEFAULT_MALL_RATE,
@@ -1145,6 +1189,35 @@ const duplicateCleanupVisible = ref(false)
 const duplicateCleanupLoading = ref(false)
 const duplicateCleanupPreview = ref(null)
 const duplicateCleanupStatus = ref('')
+
+// 录入前重复检测：同店（归属后）同日已有记录 → 弹窗三选一（覆盖已有 / 仍要新增 / 取消）
+const duplicateEntryVisible = ref(false)
+const duplicateEntry = ref(null)
+let duplicateEntryResolve = null
+const fmtDupValue = (v) => (v == null ? '—' : String(v))
+/** @returns {Promise<'overwrite'|'append'|'cancel'>} */
+function askDuplicateEntry(hit, incoming) {
+  if (duplicateEntryResolve) duplicateEntryResolve('cancel')
+  duplicateEntry.value = {
+    identical: hit.identical,
+    date: incoming.date,
+    storeName: resolveFinanceStore(incoming).name,
+    rows: DUPLICATE_FIELDS.map((f) => ({
+      label: f.label,
+      existing: fmtDupValue(hit.existing[f.key]),
+      incoming: fmtDupValue(hit.incoming[f.key]),
+      changed: hit.diffs.some((d) => d.key === f.key),
+    })),
+  }
+  duplicateEntryVisible.value = true
+  return new Promise((resolve) => { duplicateEntryResolve = resolve })
+}
+function settleDuplicateEntry(choice) {
+  const resolve = duplicateEntryResolve
+  duplicateEntryResolve = null
+  duplicateEntryVisible.value = false
+  if (resolve) resolve(choice)
+}
 const activeAnalysisTab = ref('cost-detail')
 const activeCashflowTab = ref('cashflow')
 const dateRange = ref(null)
@@ -1158,6 +1231,7 @@ const financeStorePickOptions = computed(() => {
   const opts = [{ value: '', label: '不关联门店' }]
   ;(b.stores || []).forEach((s) => {
     const value = resolveFinanceStoreWriteId(s) || s.id
+    if (opts.some((o) => o.value === value)) return
     opts.push({ value, label: `${s.code || '—'} · ${s.name}` })
   })
   return opts
@@ -1171,6 +1245,7 @@ const financeStoreLedgerOptions = computed(() => {
   ]
   ;(b.stores || []).forEach((s) => {
     const value = resolveFinanceStoreWriteId(s) || s.id
+    if (opts.some((o) => o.value === value)) return
     opts.push({ value, label: `${s.code || '—'} · ${s.name}` })
   })
   return opts
@@ -1311,9 +1386,7 @@ const openDuplicateCleanupPreview = async () => {
   duplicateCleanupStatus.value = ''
   try {
     await autoSyncFinanceData({ forceDownload: false })
-    const raw = localStorage.getItem(FINANCE_RECORDS_KEY)
-    const rows = raw ? JSON.parse(raw) : []
-    duplicateCleanupPreview.value = previewDuplicateCleanup(Array.isArray(rows) ? rows : [])
+    duplicateCleanupPreview.value = previewDuplicateCleanup(await fetchCloudFinanceRows())
     duplicateCleanupVisible.value = true
   } catch (err) {
     ElMessage.error(`预览失败：${err.message}`)
@@ -3810,7 +3883,7 @@ const app = reactive({
         btn.disabled = false;
     },
 
-    addRecord() {
+    async addRecord() {
         if(!this.tempRecord) {
             ElMessage.warning('请先识别日报内容');
             return;
@@ -3828,12 +3901,23 @@ const app = reactive({
                 return;
             }
             
+            const dup = findExistingDuplicate(this.data, this.tempRecord)
+            let choice = null
+            if (dup) {
+                choice = await askDuplicateEntry(dup, this.tempRecord)
+                if (choice === 'cancel') {
+                    ElMessage.info(dup.identical ? '已取消：该日报已录入过' : '已取消，未改动已有记录')
+                    return
+                }
+            }
             const recordKey = ledgerKey(this.tempRecord, this.tempRecord.date)
             const idx = this.data.findIndex(r => ledgerKey(r, r.date) === recordKey);
             this.tempRecord._updateTime = Date.now()
             if(idx >= 0) {
-                this.data[idx] = this.tempRecord;
-                ElMessage.success('记录已更新');
+                this.data[idx] = choice === 'append'
+                    ? { ...accumulateLedgerEntry(this.data[idx], this.tempRecord), _updateTime: this.tempRecord._updateTime }
+                    : this.tempRecord;
+                ElMessage.success(choice === 'append' ? '已累加到当日记录' : '已覆盖当日记录');
             } else {
                 this.data.push(this.tempRecord);
                 ElMessage.success('记录已添加');

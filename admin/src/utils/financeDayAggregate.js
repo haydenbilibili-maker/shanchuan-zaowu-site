@@ -46,12 +46,24 @@ export function financeRecordStoreLabel(r) {
 }
 
 /**
+ * ERP「店铺管理」本地门店（CCYS001 · 长春这有山1号门店）缺 canonical storeId 时写入账本的本地 id，
+ * 与 store_shanhaizaowu 同一门店实体。每换浏览器 / 清缓存重建门店就会多一个，故是列表不是单值
+ * （2026-09-29 产品负责人拍板归入山川造物）。源头已在 storeStorage.resolveFinanceStoreWriteId 堵住。
+ * **全仓各份归属实现须与此逐字一致**：syncFinanceData / getAnalyticsDashboard / dailyDigest /
+ * manageStaffWorkspace / 小程序 storeLedger.js，由 `npm run test:finance-ledger-integrity` 比对。
+ */
+export const LEGACY_MAIN_STORE_IDS = [
+  'store_1780146782017_6w0okpr',
+  'store_1780160394767_szo1k77',
+  'store_1780841157244_p48w0bx',
+]
+
+/**
  * 「门店营收」按店拆分的门店目录（2026-09-29 产品负责人：日报门店营收需要区分门店）。
  * 与云函数 syncFinanceData 的 REPORT_STORES、dailyDigest/reportCatalog 的 REPORT_STORES 同一份：
- * `store_1780146782017_6w0okpr` 是 ERP 历史生成的山川造物主店 id。
  */
 export const FINANCE_REPORT_STORES = [
-  { storeId: 'store_shanhaizaowu', name: '山川造物', aliases: ['store_1780146782017_6w0okpr'] },
+  { storeId: 'store_shanhaizaowu', name: '山川造物', aliases: LEGACY_MAIN_STORE_IDS },
   { storeId: 'store_xingchen', name: '星宸标本', aliases: [] },
 ]
 

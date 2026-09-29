@@ -96,3 +96,11 @@
   background: linear-gradient(180deg, #B4432F 0%, #93321F 100%);
 }
 .am-btn-press { opacity: 0.86; }
+
+/* 三个及以上选项：按钮等分一行，文字收一档避免四字按钮溢出 */
+.am-actions.is-multi { gap: 14rpx; }
+.am-actions.is-multi .am-btn {
+  min-width: 0;
+  font-size: var(--fs-26);
+  white-space: nowrap;
+}

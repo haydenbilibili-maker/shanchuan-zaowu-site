@@ -5,3 +5,5 @@ npm run check:sfc-dev
 npm run check:nav-sources
 npm run report:data-sources:strict
 npm run test:finance-daily-parse
+npm run test:finance-duplicate
+npm run test:finance-ledger-integrity

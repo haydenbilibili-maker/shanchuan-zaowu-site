@@ -504,11 +504,16 @@ const METRICS = [
 
 /**
  * 「门店营收」按店分行的门店目录（2026-09-29 产品负责人：日报门店营收需要区分门店）。
- * 与 syncFinanceData/index.js 的 REPORT_STORES 同一份：`store_1780146782017_6w0okpr` 是 ERP 历史生成的
- * 山川造物主店 id。第一项是主店：行没有 storeId 时一律归它（2026-09-29 产品负责人拍板，沿用 syncFinanceData 惯例）。
+ * 与 syncFinanceData/index.js 的 REPORT_STORES 同一份：MAIN_STORE_ALIAS_IDS 是 ERP 本地门店写入账本的
+ * 山川造物历史 id（与 admin financeDayAggregate.LEGACY_MAIN_STORE_IDS 逐字一致）。第一项是主店：行没有 storeId 时一律归它（2026-09-29 产品负责人拍板，沿用 syncFinanceData 惯例）。
  */
+const MAIN_STORE_ALIAS_IDS = [
+  'store_1780146782017_6w0okpr',
+  'store_1780160394767_szo1k77',
+  'store_1780841157244_p48w0bx'
+]
 const REPORT_STORES = [
-  { storeId: 'store_shanhaizaowu', name: '山川造物', aliases: ['store_1780146782017_6w0okpr'] },
+  { storeId: 'store_shanhaizaowu', name: '山川造物', aliases: MAIN_STORE_ALIAS_IDS },
   { storeId: 'store_xingchen', name: '星宸标本', aliases: [] }
 ]
 

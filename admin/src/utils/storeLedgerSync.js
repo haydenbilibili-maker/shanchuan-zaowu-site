@@ -7,13 +7,14 @@ import { FINANCE_RECORDS_KEY } from './financeLocalStorageKey.js'
 export const STORE_LEDGER = 'store_ledger'
 const STORE_BUNDLE_KEY = 'sc_store_bundle_v1'
 
-/** 合并键：优先 storeCode（跨 finance_records / store_ledger 一致），否则 storeId，最后 default */
+/**
+ * 合并键：归属后门店 | 营业日（与 syncFinanceData.ledgerKey、日报按店拆分同一规则）。
+ * 旧版用 `storeCode || storeId`：主店行 storeCode 为空、旧主店 id 行带 CCYS001 → 同日两条都计入合计
+ * （2025-11 / 2026-05 共 8 天虚增 ¥45,902.04），且云端删掉一条后本机缓存会把它再推回去。
+ */
 export function ledgerKey(record, dateOverride) {
   const date = String(dateOverride ?? record?.date ?? record?.bizDate ?? '').trim()
-  const code = String(record?.storeCode || '').trim()
-  const id = String(record?.storeId || '').trim()
-  const store = code || id || 'default'
-  return `${store}|${date}`
+  return `${canonicalLedgerStoreId(record)}|${date}`
 }
 
 /** 按 ledgerKey 去重，保留 _updateTime 较新的一条 */
@@ -22,6 +23,7 @@ export function dedupeFinanceRecords(records) {
 }
 
 import { rowNetFromChannels } from './financeDailyParse.js'
+import { canonicalLedgerStoreId, compareForKeep } from './financeDuplicateCheck.js'
 
 export function toFinanceRecord(doc) {
   const date = doc.date || doc.bizDate || ''
@@ -111,13 +113,18 @@ export function toStoreLedgerDoc(record) {
 /** 按 storeId|date 合并，_updateTime 较新者胜出 */
 export function mergeRecords(localRecords, cloudRecords) {
   const map = new Map()
+  // 同键同时间戳（历史批量同步常见）：按主店 canonical id → 有渠道明细 → 金额较大 定去留，不随读取顺序漂移
+  const wins = (rec, ts, existing) =>
+    ts > existing.updateTime || (ts === existing.updateTime && compareForKeep(rec, existing) > 0)
 
   localRecords.forEach((row) => {
     const rec = toFinanceRecord(row)
-    map.set(ledgerKey(rec, rec.date), {
-      ...rec,
-      updateTime: rec._updateTime || 0,
-    })
+    const key = ledgerKey(rec, rec.date)
+    const ts = rec._updateTime || 0
+    const existing = map.get(key)
+    if (!existing || wins(rec, ts, existing)) {
+      map.set(key, { ...rec, updateTime: ts })
+    }
   })
 
   cloudRecords.forEach((row) => {
@@ -137,7 +144,7 @@ export function mergeRecords(localRecords, cloudRecords) {
     ) {
       return
     }
-    if (!existing || ts > existingTs) {
+    if (!existing || wins(rec, ts, existing)) {
       map.set(key, { ...rec, updateTime: ts })
     }
   })

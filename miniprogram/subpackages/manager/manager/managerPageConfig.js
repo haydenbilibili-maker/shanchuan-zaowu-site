@@ -140,6 +140,7 @@ const { LEVEL_BENEFITS } = require('../../../utils/profileConstants');
 const { collectCurrentPerkItems, formatDiscount } = require('../../../utils/profileHelper');
 const { skuKey, parseSkuKey, relatedIdsFromSkus, normalizeRelatedSkus } = require('../utils/relatedSku');
 const storeLedger = require('../utils/storeLedger');
+const { rawPosMismatch } = require('../utils/ledgerFormCheck');
 const { sumOfflineByStore } = require('../utils/offlineStoreSummary');
 const {
   computeMallCommission,
@@ -1042,6 +1043,32 @@ function parseMemberPassScan(raw) {
   const uri = text.match(/(?:shanchuan|shanhai):\/\/member\?(?:[^#]*&)?token=([A-Za-z0-9_-]+)/i);
   if (uri) return { token: uri[1] };
   return null;
+}
+
+/**
+ * 重复录入选「仍要新增」= 同日真实多笔：流水类金额与已有记录累加，在手现金是余额取本次值，原文追加。
+ * 与 ERP financeDuplicateCheck.accumulateLedgerEntry 同一口径；只有店长录入用到，不放进双份镜像的 storeLedger.js。
+ * @param {{ existing: object, existingRaw?: string }} duplicate 云函数 DUPLICATE_ENTRY 返回的对比
+ * @param {object} form 本次录入表单（buildLedgerDoc 入参形状）
+ */
+function accumulateDuplicateForm(duplicate, form) {
+  const ex = (duplicate && duplicate.existing) || {};
+  const n = (v) => parseFloat(v || 0) || 0;
+  const r2 = (v) => Math.round(v * 100) / 100;
+  const hasBalance = form.cashBalance != null && String(form.cashBalance).trim() !== '';
+  const raws = [duplicate && duplicate.existingRaw, form.rawText || form.raw]
+    .map((s) => String(s || '').trim())
+    .filter(Boolean);
+  return Object.assign({}, form, {
+    pos: r2(n(ex.pos) + n(form.pos)),
+    online: r2(n(ex.online) + n(form.online)),
+    refund: r2(n(ex.refund) + n(form.refund)),
+    cash: 0,
+    cashIncome: r2(n(ex.cashIncome) + n(form.cashIncome)),
+    cashBalance: hasBalance ? form.cashBalance : ex.cashBalance != null ? ex.cashBalance : '',
+    orderCount: (Number(ex.orderCount) || 0) + (Number(form.orderCount) || 0),
+    rawText: raws.join('\n—— 同日追加 ——\n'),
+  });
 }
 
 function formatCloudFnError(e, fallback) {
@@ -7361,10 +7388,20 @@ parseRevenueText(e) {
 
   // 🟢 提交营收 → store_ledger + 镜像 finance_records + 兼容 daily_revenues
   async submitRevenue() {
-    const r = this.data.tempRevenue;
+    let r = this.data.tempRevenue;
     
     if(!r.date) {
         return this.showHubTip('日期必填', 'warn');
+    }
+
+    const posGap = rawPosMismatch(r.rawText, r.pos);
+    if (posGap) {
+      const pick = await this.askRawPosMismatch(posGap);
+      if (pick === 'cancel') return;
+      if (pick === 'raw') {
+        r = { ...r, pos: String(posGap.rawPos) };
+        this.setData({ 'tempRevenue.pos': r.pos });
+      }
     }
     
     wx.showLoading({ title: '入账中…', mask: true });
@@ -7373,14 +7410,31 @@ parseRevenueText(e) {
         const sid = storeLedger.normalizeStoreId(
           this.data.ledgerStoreId || storeLedger.FINANCE_STORE_ID,
         );
-        await storeLedger.upsert(sid, {
+        const form = {
           ...r,
           cash: 0,
           cashIncome: 0,
           cashBalance: r.cashBalance,
           orderCount: r.orderCount,
           rawText: r.rawText,
-        });
+        };
+        // 重复录入检测走云函数（三源合并视图 + 主店别名归属）；同店同日已有 → 三选一后再写
+        try {
+          await storeLedger.upsert(sid, form, { checkDuplicate: true });
+        } catch (dupErr) {
+          if (!dupErr || dupErr.code !== 'DUPLICATE_ENTRY' || !dupErr.duplicate) throw dupErr;
+          wx.hideLoading();
+          const choice = await this.askLedgerDuplicate(dupErr.duplicate);
+          if (choice === 'cancel') {
+            this.showHubTip(dupErr.duplicate.identical ? '已取消：该日报已录入过' : '已取消，未改动已有记录', 'info');
+            return;
+          }
+          wx.showLoading({ title: '入账中…', mask: true });
+          const finalForm = choice === 'append'
+            ? accumulateDuplicateForm(dupErr.duplicate, form)
+            : form;
+          await storeLedger.upsert(sid, finalForm, { confirmDuplicate: true });
+        }
         
         wx.hideLoading();
         this.setData({ showRevenueModal: false });
@@ -7396,6 +7450,69 @@ parseRevenueText(e) {
         this.showHubTip('保存失败', 'warn');
     }
 },
+
+  /**
+   * 表单 POS ≠ 原文表头 POS：以原文为准 / 按填写提交 / 取消（自定义弹层，不新增 wx.showModal）
+   * @returns {Promise<'raw'|'form'|'cancel'>}
+   */
+  async askRawPosMismatch(gap) {
+    const host = this.selectComponent && this.selectComponent('#appModal');
+    if (!host || typeof host.open !== 'function') {
+      this.showHubTip(`POS 与日报原文不一致（原文 ¥${gap.rawPos}），请核对`, 'warn');
+      return 'cancel';
+    }
+    const res = await host.open({
+      overline: 'CHECK',
+      title: 'POS 与日报原文不一致',
+      content: `原文「银联POS收款」：¥${gap.rawPos}\n本次填写：¥${gap.formPos}\n\n明细里的件数（如「戒指 39」）不是金额，确认后再提交`,
+      actions: [
+        { key: 'cancel', text: '取消', type: 'ghost' },
+        { key: 'form', text: '按填写提交', type: 'ghost' },
+        { key: 'raw', text: '以原文为准', type: 'primary' },
+      ],
+    });
+    return (res && res.action) || 'cancel';
+  },
+
+  /**
+   * 同店同日已有日账：自定义弹层三选一（原生弹窗受 dialog-ratchet 棘轮约束，不新增 wx.showModal）
+   * @returns {Promise<'overwrite'|'append'|'cancel'>}
+   */
+  async askLedgerDuplicate(dup) {
+    const host = this.selectComponent && this.selectComponent('#appModal');
+    if (!host || typeof host.open !== 'function') {
+      this.showHubTip(dup.identical ? '该日报已录入过' : '当日已有记录，请先到账本核对', 'warn');
+      return 'cancel';
+    }
+    const fields = [
+      ['revenue', '营收'], ['pos', 'POS'], ['online', '线上'], ['refund', '退款'],
+      ['cashIncome', '现金收入'], ['orderCount', '订单数'], ['cashBalance', '在手现金'],
+    ];
+    const ex = dup.existing || {};
+    const inc = dup.incoming || {};
+    const changed = new Set((dup.diffs || []).map((d) => d.key));
+    const fmt = (v) => (v == null ? '—' : String(v));
+    const lines = fields.map(([k, label]) => `${changed.has(k) ? '≠ ' : ''}${label}：${fmt(ex[k])} → ${fmt(inc[k])}`);
+    const res = await host.open({
+      overline: 'DUPLICATE',
+      title: dup.identical ? '与已有记录完全一致' : '该门店当日已有记录',
+      content: `${dup.date}（已有 → 本次）\n${lines.join('\n')}\n\n${dup.identical
+        ? '建议取消，避免重复计收'
+        : '更正选「覆盖已有」；当天第二笔选「仍要新增」（金额累加）'}`,
+      actions: dup.identical
+        ? [
+          { key: 'overwrite', text: '覆盖已有', type: 'ghost' },
+          { key: 'append', text: '仍要新增', type: 'ghost' },
+          { key: 'cancel', text: '取消', type: 'primary' },
+        ]
+        : [
+          { key: 'cancel', text: '取消', type: 'ghost' },
+          { key: 'append', text: '仍要新增', type: 'ghost' },
+          { key: 'overwrite', text: '覆盖已有', type: 'primary' },
+        ],
+    });
+    return (res && res.action) || 'cancel';
+  },
 
   /** 店长手动触发：小程序商城订单写入 mp* 对账字段（仅超管） */
   async reconcileMpOrders() {
