@@ -69,7 +69,7 @@ const USER_NOTES = {
   store_revenue_yuan: '门店当天没录入时显示「未取到」，不是 0。',
   store_ledger_offline_orders: '门店自己记的单数，不含小程序订单。',
   store_online_income_yuan: '门店录入的线上收入，和小程序订单分开统计。',
-  studio_shipments: '出货单可以补录，数字可能随之变化。'
+  studio_shipments: '出货单可以补录，数字会随之变化；已删除的不计入。'
 };
 
 /** 门店营收段：指标 id → storeBreakdown 行字段（按门店逐项展示） */

@@ -429,14 +429,16 @@ const METRICS = [
     kind: 'simpleDay',
     collection: 'ops_shipments',
     dayField: 'shipmentDate',
-    // 按门店拆分用：每行的目标门店（门店营收段 storeBreakdown.shipmentCount）；计数口径不变
+    // 按门店拆分用：每行的目标门店（门店营收段 storeBreakdown.shipmentCount）
     storeField: 'storeId',
-    source: 'ops_shipments.shipmentDate === 当日的行数（工作室出货）',
+    // 软删标记（manageStoreShipment 删除写 deleted: true）；合计与分门店同样排除（2026-09-29 产品负责人拍板）
+    deletedField: 'deleted',
+    source: 'ops_shipments.shipmentDate === 当日且 deleted !== true 的行数（工作室出货，排除已删除）',
     sources: [
       {
         collection: 'ops_shipments',
         timeField: 'shipmentDate',
-        filter: "shipmentDate === '<YYYY-MM-DD>'",
+        filter: "shipmentDate === '<YYYY-MM-DD>' && deleted !== true",
         tz: '门店营业日（写入时强校验格式）'
       }
     ],

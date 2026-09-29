@@ -202,6 +202,13 @@ async function collectDateKeyed (db, dayKey, metrics) {
  * 登记了 storeField 的指标改为取回当日行（只投影门店字段），行数 = 计数（与 count() 同一 where，口径不变），
  * 行本身写进 rowsOut[metric.id] 供门店营收段按店拆分。
  */
+/** simpleDay 查询条件：当日 + （有软删标记时）排除已删除；缺字段的老行视为未删除 */
+function simpleDayWhere (db, metric, dayKey) {
+  const where = { [metric.dayField]: dayKey }
+  if (metric.deletedField) where[metric.deletedField] = db.command.neq(true)
+  return where
+}
+
 async function collectSimpleDay (db, dayKey, metrics, rowsOut) {
   const out = {}
   for (const metric of metrics) {
@@ -209,10 +216,11 @@ async function collectSimpleDay (db, dayKey, metrics, rowsOut) {
     const field = metric.dayField
     if (!col || !field) continue
     try {
+      const where = simpleDayWhere(db, metric, dayKey)
       if (metric.storeField && rowsOut) {
         const rows = []
         for (let skip = 0; skip < 5000; skip += 1000) {
-          const res = await db.collection(col).where({ [field]: dayKey })
+          const res = await db.collection(col).where(where)
             .field({ [metric.storeField]: true }).skip(skip).limit(1000).get()
           const page = (res && res.data) || []
           page.forEach((r) => rows.push({ storeId: r && r[metric.storeField] }))
@@ -222,7 +230,7 @@ async function collectSimpleDay (db, dayKey, metrics, rowsOut) {
         out[metric.id] = rows.length
         continue
       }
-      const res = await db.collection(col).where({ [field]: dayKey }).count()
+      const res = await db.collection(col).where(where).count()
       out[metric.id] = toNumber(res && res.total)
     } catch (e) {
       const msg = (e && e.message) || `${col} count 失败`
@@ -240,5 +248,6 @@ module.exports = {
   collectAnalytics,
   collectOrderDays,
   collectDateKeyed,
-  collectSimpleDay
+  collectSimpleDay,
+  simpleDayWhere
 }

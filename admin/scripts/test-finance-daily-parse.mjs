@@ -38,6 +38,7 @@ const F = {
   mpExtra: join(ROOT, 'miniprogram/subpackages/extra/utils/financeDailyParse.js'),
   catalog: join(ROOT, 'miniprogram/cloudfunctions/dailyDigest/reportCatalog.js'),
   digestCore: join(ROOT, 'miniprogram/cloudfunctions/dailyDigest/dailyDigestCore.js'),
+  digestCollect: join(ROOT, 'miniprogram/cloudfunctions/dailyDigest/dailyDigestCollect.js'),
   digestIndex: join(ROOT, 'miniprogram/cloudfunctions/dailyDigest/index.js'),
   getMessages: join(ROOT, 'miniprogram/cloudfunctions/getUserMessages/index.js'),
   digestView: join(ROOT, 'miniprogram/subpackages/extra/utils/digestView.js'),
@@ -412,6 +413,55 @@ function runDigestStoreChecks (core, normalizeStoreBreakdown, view, srcs) {
   return out
 }
 
+/**
+ * 日报「门店出货单」排除已删除（2026-09-29 产品负责人拍板）：
+ * 生产实测软删标记 = ops_shipments.deleted（布尔，manageStoreShipment 删除写 true；老行可能缺字段 → 视为未删）。
+ * 用按条件过滤的内存假库跑真实 collectSimpleDay，合计（count 路径）与分门店（行路径）必须一致排除。
+ */
+function fakeShipmentDb (rows) {
+  const NEQ = Symbol('neq')
+  const match = (where) => (r) => Object.entries(where).every(([k, v]) =>
+    v && v[NEQ] !== undefined ? r[k] !== v[NEQ] : r[k] === v)
+  return {
+    command: { neq: (v) => ({ [NEQ]: v }) },
+    collection: () => ({
+      where: (w) => {
+        const hit = rows.filter(match(w))
+        const q = { field: () => q, skip: (n) => { q._s = n; return q }, limit: () => q,
+          get: async () => ({ data: hit.slice(q._s || 0, (q._s || 0) + 1000) }),
+          count: async () => ({ total: hit.length }) }
+        return q
+      },
+    }),
+  }
+}
+async function runShipmentDeletedChecks (collect, core, catalog) {
+  const out = []
+  const metric = (catalog.METRICS || []).find((m) => m.id === 'studio_shipments')
+  if (!metric) return ['[日报 出货单] 目录缺 studio_shipments']
+  const day = '2026-09-26'
+  const rows = [
+    { shipmentDate: day, storeId: 'store_shanhaizaowu', deleted: false },
+    { shipmentDate: day, storeId: 'store_shanhaizaowu', deleted: true },
+    { shipmentDate: day, storeId: 'store_xingchen' },
+    { shipmentDate: day, storeId: 'store_xingchen', deleted: false },
+    { shipmentDate: day, storeId: 'store_xingchen', deleted: true },
+    { shipmentDate: '2026-09-25', storeId: 'store_xingchen', deleted: false },
+  ]
+  const db = fakeShipmentDb(rows)
+  const rowsOut = {}
+  const withRows = await collect.collectSimpleDay(db, day, [metric], rowsOut)
+  const countOnly = await collect.collectSimpleDay(db, day, [metric])
+  if (withRows.studio_shipments !== 3) out.push(`[日报 出货单] 合计应排除已删除（deleted: true）= 3 单，实得 ${JSON.stringify(withRows.studio_shipments)}`)
+  if (countOnly.studio_shipments !== 3) out.push(`[日报 出货单] 计数路径也应排除已删除 = 3 单，实得 ${JSON.stringify(countOnly.studio_shipments)}`)
+  const bd = core.buildStoreBreakdown({ daily_revenues: [], store_ledger: [] }, rowsOut, withRows)
+  const byName = {}
+  ;((bd && bd.rows) || []).forEach((r) => { byName[r.name] = r.shipmentCount })
+  if (byName['山川造物'] !== 1 || byName['星宸标本'] !== 2) out.push(`[日报 出货单] 分门店应同样排除已删除：山川 1 / 星宸 2，实得 ${JSON.stringify(byName)}`)
+  if (bd && bd.total && bd.total.shipmentCount !== withRows.studio_shipments) out.push('[日报 出货单] 分门店合计与指标合计不一致')
+  return out
+}
+
 /** 店长首页金卡「门店｜STORE」：两店合计 + 各店拆分（2026-09-29 点名修复：原来只算山川） */
 async function runGoldCardChecks (mod, srcs) {
   const out = []
@@ -471,7 +521,10 @@ async function collect (paths) {
   problems.push(...runAggregateChecks(agg))
   problems.push(...runVueChecks(read(p.vue)))
   problems.push(...runErpStoreChecks(agg))
-  const core = loadCjs(p.digestCore, { './reportCatalog': loadCjs(p.catalog) })
+  const catalog = loadCjs(p.catalog)
+  const core = loadCjs(p.digestCore, { './reportCatalog': catalog })
+  problems.push(...await runShipmentDeletedChecks(
+    loadCjs(p.digestCollect, { './reportCatalog': catalog, './dailyDigestCore': core }), core, catalog))
   const getMessagesSrc = read(p.getMessages)
   problems.push(...runDigestStoreChecks(core, extractNormalizeStoreBreakdown(getMessagesSrc), loadCjs(p.digestView), {
     getMessages: getMessagesSrc,
@@ -579,6 +632,12 @@ async function selftest () {
       "note: USER_NOTES[m.id] || ''", "note: String(m.caveat || USER_NOTES[m.id] || '')")
     await expectCaught('digestView 逐店单数把「有 POS 的 0 单」显示成「0 单」', 'digestView',
       "const noOrders = key === 'orderCount' && v === 0 && toNumber(r.posYuan) > 0;", 'const noOrders = false;')
+    await expectCaught('日报出货单目录去掉软删标记（已删除又被计入）', 'catalog',
+      "deletedField: 'deleted',", '')
+    await expectCaught('日报出货单查询不再排除已删除', 'digestCollect',
+      'if (metric.deletedField) where[metric.deletedField] = db.command.neq(true)', '')
+    await expectCaught('日报出货单只在计数路径排除已删除（分门店没排除）', 'digestCollect',
+      '.where(where)\n            .field(', '.where({ [field]: dayKey })\n            .field(')
     await expectCaught('日报出货单不再按门店计数', 'digestCore',
       'const v = col.count ? 1 : row && row[col.field]', 'const v = col.count ? 0 : row && row[col.field]')
 
