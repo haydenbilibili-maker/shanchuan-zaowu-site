@@ -559,6 +559,7 @@ export const COLLECTIONS = {
   STORED_VALUE_ACCOUNTS: 'stored_value_accounts',               // 储值账户（makeOrder）
   STORED_VALUE_LEDGERS: 'stored_value_ledgers',                 // 储值流水台账（manageStoredValue）
   STORED_VALUE_RECHARGE_ORDERS: 'stored_value_recharge_orders', // 储值充值订单（manageStoredValue）
+  AI_IDENTIFY_LOGS: 'ai_identify_logs',                         // AI 鉴定调用日志：含用户照片，仅云函数可读写（identifySpecimen 写 / aiIdentifyMonitor 超管读）
 };
 
 // =================================================

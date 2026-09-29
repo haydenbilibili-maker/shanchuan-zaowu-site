@@ -9,3 +9,7 @@ npm run check:activity-seats
 npm run check:supplier-desk
 # 2026-09-28：云函数禁用 wx.*（cancelBooking/updateBooking 提醒用 wx.cloud 发不出去的回归防线；全仓云函数范围，理应归 cross，待 cross owner 迁移）
 npm run check:cloudfn-no-wx
+# 2026-09-29：超管工作台「AI 鉴定监测」（miniprogram/docs/超管工作台_AI鉴定监测_2026-09-29.md）：鉴定旁路日志不影响鉴定 + 超管门禁 + 审计先行 + 规则全拒
+npm run test:ai-identify-monitor
+# 2026-09-29：超管工作台「会员调级」+「荣誉馆长」合并为一枚「会员调级」入口，页顶分段互切，旧路径保留
+npm run check:member-curator-hub

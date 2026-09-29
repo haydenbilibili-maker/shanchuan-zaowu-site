@@ -4,7 +4,7 @@
 
 Admin → 小程序配置 → 会员/营销规则 → **会员等级调整**（模块 id `69`）
 
-超管工作台（小程序）→ 快捷「调档」或现场区 **会员等级调整**
+超管工作台（小程序）→ 「会员与触达」区 **会员调级**（2026-09-29 起与「荣誉馆长」合并为一枚磁贴；进入后页顶分段「调级 / 荣誉馆长」互切，两页路径不变，旧深链照常。守卫 `npm run check:member-curator-hub`）
 路径：`/subpackages/extra/member-level-adjust/index`（仅 `super_admin`）
 
 云函数：`manageMemberLevelAdjust`（Admin 须经 `/api/cloud-fn` 代理；小程序直调 callFunction）

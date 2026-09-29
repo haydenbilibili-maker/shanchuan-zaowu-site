@@ -1,0 +1,9 @@
+{
+  "name": "aiIdentifyMonitor",
+  "version": "1.0.0",
+  "description": "超管「AI 鉴定监测」只读：鉴定调用日志概览 / 列表 / 详情（仅超管，查看先写审计）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -124,7 +124,8 @@
         "wish-wall/index",
         "payslip/index",
         "payslip/admin/index",
-        "feishu-sync/index"
+        "feishu-sync/index",
+        "identify-monitor/index"
       ]
     },
     {

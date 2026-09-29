@@ -17,6 +17,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 const { checkImageBuffer, checkFileImage } = require('./contentSecurity')
+const { isIdentifyCall, writeIdentifyLog } = require('./identifyLog')
 const {
   fetchSpeciesKnowledge,
   buildSpeciesProfile,
@@ -610,7 +611,7 @@ async function backfillSpeciesDedup(event) {
   }
 }
 
-exports.main = async (event, context) => {
+const identifyMain = async (event, context) => {
   const wxContext = cloud.getWXContext()
   const { action, image_file_id, use_mock, category_hint, entry_source } = event
 
@@ -1140,4 +1141,24 @@ exports.main = async (event, context) => {
       msg: e.message || '识别失败'
     }
   }
+}
+
+// 旁路：鉴定调用写一条 ai_identify_logs（超管「AI 鉴定监测」）。
+// 返回值必须是 identifyMain 的原对象；日志的任何失败都不得改变出参或抛出。
+exports.main = async (event, context) => {
+  if (!isIdentifyCall(event)) return identifyMain(event, context)
+  const startedAt = Date.now()
+  let openid = ''
+  try {
+    openid = (cloud.getWXContext() || {}).OPENID || ''
+  } catch (e) { /* 取不到身份也照常鉴定 */ }
+  let result
+  try {
+    result = await identifyMain(event, context)
+  } catch (err) {
+    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err })
+    throw err
+  }
+  await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now() })
+  return result
 }

@@ -17,6 +17,8 @@
  *   7. ERP 写网关清单（PROXY_WRITE_COLLECTIONS）≡ secureDataWrite/policy.js WRITE_POLICY，
  *      且不含 writeGatewayForbidden（admin_users/admin_roles 等提权表）；products 须有 allowFields 且不含改价/上下架/入档字段
  *   8. probeControls.writable 不得指向已收紧写的表（探针对照组失效）
+ *   9. serverOnly（仅云函数可读写，如含用户照片的 ai_identify_logs）：read 与全部写字段必须 false，
+ *      不得列入 collections、不得进 ERP 只读 / 写网关
  *
  * --selftest：内存注入（不写盘），每个注入都必须被检出。
  */
@@ -186,7 +188,23 @@ export function checkSensitiveRules(files) {
       if (bad.length) errors.push(`WRITE_POLICY.products 放开了须审批的字段：${bad.join(', ')}`)
     }
   }
+  const serverOnly = list.serverOnly || []
+  const erpWSet = wm ? new Set([...wm[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1])) : new Set()
+  for (const c of serverOnly) {
+    const rule = parseJson(files, `${RULE_DIRS[0]}/${c}.json`, errors)
+    if (!rule) continue
+    if (rule.read !== false) errors.push(`${c}（serverOnly）：read 必须为 false，当前 ${JSON.stringify(rule.read)}`)
+    const openKeys = WRITE_KEYS.filter((k) => k in rule && rule[k] !== false)
+    if (!('write' in rule) && !openKeys.length) errors.push(`${c}（serverOnly）：缺 write:false（缺省语义不明，须显式写出）`)
+    if (openKeys.length) errors.push(`${c}（serverOnly）：${openKeys.map((k) => `${k}=${JSON.stringify(rule[k])}`).join('、')} 必须为 false`)
+    if (collections.includes(c)) errors.push(`${c}（serverOnly）：不得同时列在 collections（那是 ERP 经网关可读的清单）`)
+    if (erpWSet.has(c)) errors.push(`${c}（serverOnly）：不得进 ERP 写网关`)
+  }
   const m = client.match(/PROXY_READ_COLLECTIONS = new Set\(\[([\s\S]*?)\]\)/)
+  if (m) {
+    const proxiedR = new Set([...m[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1]))
+    serverOnly.filter((c) => proxiedR.has(c)).forEach((c) => errors.push(`${c}（serverOnly）：不得进 ERP 只读网关`))
+  }
   if (!m) {
     errors.push(`${CLIENT_PATH}：找不到 PROXY_READ_COLLECTIONS`)
   } else {
@@ -209,7 +227,7 @@ function loadFiles() {
   add(CLIENT_PATH)
   add(WRITE_POLICY_PATH)
   const list = JSON.parse(files[LIST_PATH])
-  for (const c of new Set([...list.collections, ...(list.writeProtectedExtra || [])])) {
+  for (const c of new Set([...list.collections, ...(list.writeProtectedExtra || []), ...(list.serverOnly || [])])) {
     RULE_DIRS.forEach((d) => add(`${d}/${c}.json`))
   }
   const stagedAbs = resolve(ROOT, STAGED_DIR)
@@ -265,6 +283,9 @@ function main() {
       ['探针可写对照组指向已收紧表', editList((l) => ({ ...l, probeControls: { ...l.probeControls, writable: 'notification_templates' } }))],
       ['写网关 products 放开 price', (f) => ({ ...f, [WRITE_POLICY_PATH]: f[WRITE_POLICY_PATH].replace("allowFields: ['stock',", "allowFields: ['price', 'stock',") })],
       ['写网关 products 去掉字段白名单', (f) => ({ ...f, [WRITE_POLICY_PATH]: f[WRITE_POLICY_PATH].replace(/(\n {2}products: \{ ops: \['update'\]), allowFields: \[[^\]]*\]/, '$1') })],
+      ['serverOnly 集合放开客户端读（本人可读）', setRule(RULE_DIRS[0], 'ai_identify_logs', { read: 'doc.openid == auth.openid' })],
+      ['serverOnly 集合放开 create', setRule(RULE_DIRS[0], 'ai_identify_logs', { create: 'auth != null' })],
+      ['serverOnly 集合进 ERP 只读网关', (f) => ({ ...f, [CLIENT_PATH]: f[CLIENT_PATH].replace('PROXY_READ_COLLECTIONS = new Set([\n', "PROXY_READ_COLLECTIONS = new Set([\n  'ai_identify_logs',\n") })],
     ]
     const base = checkSensitiveRules(files)
     if (base.length) {
@@ -289,7 +310,7 @@ function main() {
     process.exit(1)
   }
   const list = JSON.parse(files[LIST_PATH])
-  console.log(`✓ check:sensitive-rules：${list.collections.length} 个敏感集合规则两份一致；读已收紧 ${list.collections.length - list.pendingR1.length} 个、待 ERP 上线后收紧读 ${list.pendingR1.length} 个；写保护 ${new Set([...list.collections, ...(list.writeProtectedExtra || [])]).size} 个、待收紧写 ${list.pendingWrite.length} 个（均只许变小）`)
+  console.log(`✓ check:sensitive-rules：${list.collections.length} 个敏感集合规则两份一致；读已收紧 ${list.collections.length - list.pendingR1.length} 个、待 ERP 上线后收紧读 ${list.pendingR1.length} 个；写保护 ${new Set([...list.collections, ...(list.writeProtectedExtra || [])]).size} 个、待收紧写 ${list.pendingWrite.length} 个（均只许变小）；仅云函数读写 ${(list.serverOnly || []).length} 个`)
 }
 
 main()

@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "AI 鉴定监测",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "enablePullDownRefresh": true,
+  "onReachBottomDistance": 120,
+  "usingComponents": {}
+}

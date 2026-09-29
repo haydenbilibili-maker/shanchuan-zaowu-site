@@ -388,6 +388,13 @@
       "installDependency": true
     },
     {
+      "name": "aiIdentifyMonitor",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "getShareholderObservatory",
       "timeout": 30,
       "runtime": "Nodejs16.13",

@@ -105,6 +105,8 @@
   },
   "_writeGatewayForbiddenDoc": "secureDataWrite 永不开放的集合（提权 / 审计链路）。admin_users/admin_roles 无任何写入方，已 write:false；员工与权限只经 manageStaff。",
   "writeGatewayForbidden": ["admin_users", "admin_roles", "staff_members", "admin_login_logs", "admin_operation_logs", "store_ledger", "orders"],
+  "_serverOnlyDoc": "仅云函数可读写的敏感集合（2026-09-29 起）：规则必须 read:false 且所有写字段 false，且不得进 ERP 只读 / 写网关（ERP 不读）。ai_identify_logs = AI 鉴定调用日志，含用户照片 fileID；读取只经 aiIdentifyMonitor（仅超管、查看先审计）。",
+  "serverOnly": ["ai_identify_logs"],
   "_clientReadBaselineDoc": "check:sensitive-direct-read 的小程序直读基线（文件|集合 → 处数），只许变少。orders 17 处均为 C 端本人/受礼人读取（R2 前须改写为 where 带 _openid 或走云函数，见方案文档 §R2）；店长/超管端 orders 为 0。其余为小程序身份读取（R1 不影响）。生成：node miniprogram/scripts/check-sensitive-direct-read.mjs --print-baseline",
   "clientReadBaseline": {
     "miniprogram/pages/user/index.js|bookings": 1,

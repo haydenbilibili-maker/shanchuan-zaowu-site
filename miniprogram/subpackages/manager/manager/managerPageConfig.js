@@ -2546,6 +2546,19 @@ const managerPageConfig = {
     goMemberLevelAdjust();
   },
 
+  goMemberCuratorHubGuarded() {
+    const role = this.data.workspaceRole;
+    if (canSeeMenu(role, MENU_KEYS.MEMBER_LEVEL_ADJUST)) {
+      goMemberLevelAdjust();
+      return;
+    }
+    if (canSeeMenu(role, MENU_KEYS.HONORARY_CURATORS)) {
+      goHonoraryCurators();
+      return;
+    }
+    this.showHubTip('仅超管可维护会员等级与荣誉馆长', 'warn');
+  },
+
   goWalletConfigGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.WALLET_CONFIG)) {
       this.showHubTip('仅超管可配置钱包', 'warn');
@@ -2634,6 +2647,15 @@ const managerPageConfig = {
   goFeishuSyncGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.FEISHU_SYNC)) return;
     goFeishuSync();
+  },
+
+  /** AI 鉴定监测 —— **仅超管**。同形：磁贴由 menu.aiIdentifyMonitor 控制，页内与云函数各自再判 */
+  goIdentifyMonitorGuarded() {
+    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.AI_IDENTIFY_MONITOR)) return;
+    wx.navigateTo({
+      url: '/subpackages/manager/identify-monitor/index',
+      fail: () => this.showHubTip('页面暂不可用', 'warn')
+    });
   },
 
   goStudioBillsGuarded() {
@@ -2840,6 +2862,7 @@ const managerPageConfig = {
   goHonoraryCurators: function () { this.goHonoraryCuratorsGuarded(); },
   goMemberCrm: function () { this.goMemberCrmGuarded(); },
   goMemberLevelAdjust: function () { this.goMemberLevelAdjustGuarded(); },
+  goMemberCuratorHub: function () { this.goMemberCuratorHubGuarded(); },
   goWalletConfig: function () { this.goWalletConfigGuarded(); },
   goWelcomeGift: function () { this.goWelcomeGiftGuarded(); },
   goBirthdayGift: function () { this.goBirthdayGiftGuarded(); },

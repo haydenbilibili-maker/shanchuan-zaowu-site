@@ -74,7 +74,9 @@ const MENU_KEYS = {
   GRANT_POINTS: 'grantPoints',
   DASHBOARD_KPI: 'dashboardKpi',
   MY_PAYSLIP: 'myPayslip',
-  PAYSLIP_ADMIN: 'payslipAdmin'
+  PAYSLIP_ADMIN: 'payslipAdmin',
+  /** AI 鉴定监测：用户鉴定照片与结果 —— 仅超管（不进任何非超管菜单） */
+  AI_IDENTIFY_MONITOR: 'aiIdentifyMonitor'
 }
 
 /** curTab idx → menu key（仅 manager 页内 switchTab） */
@@ -214,7 +216,8 @@ const HUB_MENU_SECTIONS = {
     MENU_KEYS.VIP,
     MENU_KEYS.SUPPORT,
     MENU_KEYS.MEMBER_LEVEL_ADJUST,
-    MENU_KEYS.HONORARY_CURATORS
+    MENU_KEYS.HONORARY_CURATORS,
+    MENU_KEYS.AI_IDENTIFY_MONITOR
   ],
   /** 组织：员工花名册（聚合 staff_members）+ 权限中心 + 股东配置 */
   ORG: [

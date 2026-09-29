@@ -369,13 +369,14 @@
             </view>
             <text>有信</text>
           </view>
-          <view class="menu-btn" wx:if="{{menu.memberLevelAdjust}}" bindtap="goMemberLevelAdjust">
-            <view class="icon-box"><text class="icon-letter">Lv</text></view>
-            <text>等级调档</text>
-          </view>
-          <view class="menu-btn" wx:if="{{menu.honoraryCurators}}" bindtap="goHonoraryCurators">
+          <!-- 会员调级 = 原「等级调档」+「荣誉馆长」（2026-09-29 合并）；两页路径不变，页顶分段「调级 / 荣誉馆长」互切 -->
+          <view class="menu-btn" wx:if="{{menu.memberLevelAdjust || menu.honoraryCurators}}" bindtap="goMemberCuratorHub">
             <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/medal_gold.png" mode="aspectFit" /></view>
-            <text>荣誉馆长</text>
+            <text>会员调级</text>
+          </view>
+          <view class="menu-btn" wx:if="{{menu.aiIdentifyMonitor}}" bindtap="goIdentifyMonitorGuarded">
+            <view class="icon-box"><image class="menu-icon-img" src="/assets/icons/camera.png" mode="aspectFit" /></view>
+            <text>AI 鉴定</text>
           </view>
         </view>
       </block>
