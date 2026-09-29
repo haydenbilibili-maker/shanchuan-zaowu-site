@@ -12,6 +12,9 @@
  *      小程序 / ERP 源码不得直读该集合
  *   D. 页面与入口：在超管分包、只调 aiIdentifyMonitor、无原生弹窗、可见文案无集合名 / 字段名；
  *      菜单键只有超管可见，Hub 磁贴与跳转判同一菜单键
+ *   E. aiIdentifyRetention 保留期清理：阈值 180 天；只删 identify/ 前缀下的照片（商品图 / 越界路径不动）；
+ *      用户自己的鉴定记录或 180 天内日志仍引用的照片保留；先删文件后删记录、删失败的记录留待重试；
+ *      单批 ≤ 50、单次 ≤ 500；只认定时事件 + 非客户端来源；每日触发器与云函数登记；页面告知保留期
  *
  * --selftest：对源码做内存注入（不写盘），每个注入都必须被检出。
  */
@@ -47,7 +50,10 @@ const PATHS = {
   pageWxml: join(MP, 'subpackages/manager/identify-monitor/index.wxml'),
   roles: join(MP, 'utils/workspaceRoles.js'),
   mpc: join(MP, 'subpackages/manager/manager/managerPageConfig.js'),
-  hubWxml: join(MP, 'subpackages/manager/manager/index.wxml')
+  hubWxml: join(MP, 'subpackages/manager/manager/index.wxml'),
+  retentionIndex: join(MP, 'cloudfunctions/aiIdentifyRetention/index.js'),
+  retentionConfig: join(MP, 'cloudfunctions/aiIdentifyRetention/config.json'),
+  sourceOrigin: join(MP, 'cloudfunctions/aiIdentifyRetention/sourceOrigin.js')
 }
 
 function loadSources() {
@@ -423,6 +429,150 @@ function checkPage(src, t) {
   t.ok('D5 跳转前再判菜单键', !!go && /canSeeMenu\(this\.data\.workspaceRole, MENU_KEYS\.AI_IDENTIFY_MONITOR\)\) return/.test(go[1]) && /identify-monitor\/index/.test(go[1]))
 }
 
+/* ── E. 保留期清理：内存库（只实现清理函数用到的 lt / gte / in、升序、limit、按 _id 批删） ── */
+const RC = {
+  lt: (v) => ({ op: 'lt', v }),
+  gte: (v) => ({ op: 'gte', v }),
+  in: (v) => ({ op: 'in', v })
+}
+function matchCond(val, cond) {
+  if (cond && typeof cond === 'object' && cond.op) {
+    if (cond.op === 'lt') return val < cond.v
+    if (cond.op === 'gte') return val >= cond.v
+    if (cond.op === 'in') return cond.v.includes(val)
+  }
+  return val === cond
+}
+function makeRetentionEnv({ logs, records, source = '', failFiles = [], goneFiles = [] }) {
+  const store = { [LOGS]: logs.map((r) => ({ ...r })), identification_records: records.map((r) => ({ ...r })) }
+  const events = []
+  const filter = (name, where) => store[name].filter((row) => Object.entries(where || {}).every(([k, c]) => matchCond(row[k], c)))
+  const db = {
+    command: RC,
+    collection(name) {
+      const st = { where: null, limit: 100, asc: false }
+      const api = {
+        where(w) { st.where = w; return api },
+        orderBy(f, dir) { st.asc = dir === 'asc'; return api },
+        limit(n) { st.limit = n; return api },
+        field() { return api },
+        async get() {
+          let rows = filter(name, st.where)
+          if (st.asc) rows = [...rows].sort((a, b) => a.created_at - b.created_at)
+          events.push({ op: 'get', coll: name, limit: st.limit, expiredScan: !!(st.where && st.where.created_at && st.where.created_at.op === 'lt') })
+          return { data: rows.slice(0, Math.min(st.limit, 100)).map((r) => ({ ...r })) }
+        },
+        async remove() {
+          const hit = filter(name, st.where)
+          store[name] = store[name].filter((r) => !hit.includes(r))
+          events.push({ op: 'remove', coll: name, ids: hit.map((r) => r._id) })
+          return { stats: { removed: hit.length } }
+        }
+      }
+      return api
+    }
+  }
+  const cloud = {
+    init() {},
+    DYNAMIC_CURRENT_ENV: 'test',
+    database: () => db,
+    getWXContext: () => ({ SOURCE: source }),
+    async deleteFile({ fileList }) {
+      events.push({ op: 'deleteFile', files: [...fileList] })
+      return {
+        fileList: fileList.map((fileID) => {
+          if (failFiles.includes(fileID)) return { fileID, status: -1, errMsg: 'permission denied' }
+          if (goneFiles.includes(fileID)) return { fileID, status: -1, errMsg: 'STORAGE_FILE_NONEXIST' }
+          return { fileID, status: 0, errMsg: 'ok' }
+        })
+      }
+    }
+  }
+  return { db, cloud, store, events }
+}
+function loadRetention(src, cloud) {
+  const origin = compile(PATHS.sourceOrigin, src.sourceOrigin, (id) => (id === 'wx-server-sdk' ? cloud : undefined))
+  return compile(PATHS.retentionIndex, src.retentionIndex, (id) => {
+    if (id === 'wx-server-sdk') return cloud
+    if (id === './sourceOrigin') return origin
+    return undefined
+  })
+}
+
+async function checkRetention(src, t) {
+  const log = console.log
+  console.log = () => {}
+  try { await runRetention(src, t) } finally { console.log = log }
+}
+
+async function runRetention(src, t) {
+  const DAY = 24 * 3600 * 1000
+  const HOUR = 3600 * 1000
+  const now = Date.now()
+  const F = (name) => `cloud://env.b/identify/${name}`
+  const PRODUCT = 'cloud://env.b/products/p.jpg'
+  const TRAVERSE = 'cloud://env.b/identify/../avatars/x.jpg'
+  const logs = [
+    { _id: 'orphan', created_at: now - 200 * DAY, image_file_id: F('a.jpg') },
+    { _id: 'userRec', created_at: now - 190 * DAY, image_file_id: F('b.jpg') },
+    { _id: 'product', created_at: now - 185 * DAY, image_file_id: PRODUCT },
+    { _id: 'traverse', created_at: now - 184 * DAY, image_file_id: TRAVERSE },
+    { _id: 'delFail', created_at: now - 181 * DAY, image_file_id: F('fail.jpg') },
+    { _id: 'gone', created_at: now - 182 * DAY, image_file_id: F('gone.jpg') },
+    { _id: 'sharedOld', created_at: now - 186 * DAY, image_file_id: F('d.jpg') },
+    { _id: 'sharedNew', created_at: now - 10 * DAY, image_file_id: F('d.jpg') },
+    { _id: 'justOver', created_at: now - 180 * DAY - HOUR, image_file_id: F('e.jpg') },
+    { _id: 'justUnder', created_at: now - 180 * DAY + HOUR, image_file_id: F('f.jpg') },
+    { _id: 'fresh', created_at: now - 3 * DAY, image_file_id: F('c.jpg') }
+  ]
+  const records = [{ _id: 'r1', image_url: F('b.jpg') }]
+  const opts = { logs, records, failFiles: [F('fail.jpg')], goneFiles: [F('gone.jpg')] }
+
+  for (const [label, ev, source] of [
+    ['E1 客户端空调用被拒', {}, 'wx_client'],
+    ['E1 客户端伪造定时事件被拒', { Type: 'Timer', TriggerName: 'aiIdentifyRetentionDaily' }, 'wx_client'],
+    ['E1 非定时的服务端调用被拒', { action: 'purge' }, 'scf']
+  ]) {
+    const env = makeRetentionEnv({ ...opts, source })
+    const res = await withTimeout(loadRetention(src, env.cloud).main(ev), 1500)
+    t.ok(label, res && res.success === false && env.events.length === 0, JSON.stringify({ res, events: env.events.length }))
+  }
+
+  const env = makeRetentionEnv({ ...opts, source: '' })
+  const res = await withTimeout(loadRetention(src, env.cloud).main({ Type: 'Timer', TriggerName: 'aiIdentifyRetentionDaily' }), 1500)
+  t.ok('E2 定时触发放行', res && res.success === true && res.retentionDays === 180, JSON.stringify(res))
+  const deleted = env.events.filter((e) => e.op === 'deleteFile').flatMap((e) => e.files)
+  t.ok('E2 只删鉴定目录下的照片', deleted.length > 0 && deleted.every((f) => /^cloud:\/\/[^/]+\/identify\/[^/]+$/.test(f) && !f.includes('..')), deleted.join(','))
+  t.ok('E2 商品图 / 越界路径一个不删', !deleted.includes(PRODUCT) && !deleted.includes(TRAVERSE))
+  t.ok('E3 用户自己的鉴定记录仍在用的照片保留', !deleted.includes(F('b.jpg')), deleted.join(','))
+  t.ok('E3 180 天内日志仍引用的照片保留', !deleted.includes(F('d.jpg')), deleted.join(','))
+  t.ok('E3 无人引用的过期照片删除', deleted.includes(F('a.jpg')) && deleted.includes(F('e.jpg')), deleted.join(','))
+  const left = env.store[LOGS].map((r) => r._id).sort().join(',')
+  t.ok('E4 阈值 180 天（刚过删、未到留）', !left.includes('justOver') && left.includes('justUnder'), left)
+  t.ok('E4 过期记录删除、文件删失败的记录留待重试', left === ['delFail', 'fresh', 'justUnder', 'sharedNew'].sort().join(','), left)
+  const firstDel = env.events.findIndex((e) => e.op === 'deleteFile')
+  const firstRemove = env.events.findIndex((e) => e.op === 'remove')
+  t.ok('E5 先删文件后删记录', firstDel !== -1 && firstRemove !== -1 && firstDel < firstRemove, `deleteFile=${firstDel} remove=${firstRemove}`)
+  t.ok('E5 文件已不存在视为已删（记录照删）', !left.includes('gone'), left)
+
+  const many = Array.from({ length: 1200 }, (_, i) => ({ _id: `m${i}`, created_at: now - 200 * DAY - i, image_file_id: F(`m${i}.jpg`) }))
+  const big = makeRetentionEnv({ logs: many, records: [], source: '' })
+  const r2 = await withTimeout(loadRetention(src, big.cloud).main({ Type: 'Timer' }), 3000)
+  const batches = big.events.filter((e) => e.op === 'deleteFile').map((e) => e.files.length)
+  const removedTotal = big.events.filter((e) => e.op === 'remove').reduce((n, e) => n + e.ids.length, 0)
+  const gets = big.events.filter((e) => e.op === 'get' && e.coll === LOGS && e.expiredScan).map((e) => e.limit)
+  t.ok('E6 单批删文件 ≤ 50', batches.length > 0 && batches.every((n) => n <= 50), batches.join(','))
+  t.ok('E6 单批取记录 ≤ 50', gets.length > 0 && gets.every((n) => n <= 50), gets.join(','))
+  t.ok('E6 单次运行 ≤ 500 条', r2 && r2.success === true && removedTotal > 0 && removedTotal <= 500, `removed=${removedTotal}`)
+
+  let cfg = null
+  try { cfg = JSON.parse(src.retentionConfig) } catch (e) { cfg = null }
+  const trig = cfg && (cfg.triggers || []).find((x) => x.type === 'timer')
+  t.ok('E7 每日定时触发器', !!trig && /^0 \d+ \d+ \* \* \* \*$/.test(trig.config), trig && trig.config)
+  t.ok('E7 cloudbaserc 登记 aiIdentifyRetention', /"name":\s*"aiIdentifyRetention"/.test(src.cloudbaserc || ''))
+  t.ok('E8 页面告知保留 180 天', /记录保留 180 天/.test(src.pageWxml || ''))
+}
+
 async function runAll(src) {
   const t = makeAsserter()
   const guard = async (label, f) => {
@@ -432,6 +582,7 @@ async function runAll(src) {
   await guard('B', () => checkMonitor(src, t))
   await guard('C', () => checkStatic(src, t))
   await guard('D', () => checkPage(src, t))
+  await guard('E', () => checkRetention(src, t))
   return t
 }
 
@@ -453,7 +604,15 @@ const INJECTIONS = [
   ['页面直读日志集合', 'pageJs', (s) => s.replace('  noop() {},', "  noop() {},\n  peek() { return wx.cloud.database().collection('ai_identify_logs').get() },")],
   ['页面改调别的云函数', 'pageJs', (s) => s.replace('return wx.cloud.callFunction({ name: FN, data })', "return wx.cloud.callFunction({ name: 'secureDataRead', data })")],
   ['页面文案露出集合名', 'pageWxml', (s) => s.replace('<text class="ops-empty-title">这个范围内还没有鉴定</text>', '<text class="ops-empty-title">ai_identify_logs 为空</text>')],
-  ['跳转不再判菜单键', 'mpc', (s) => s.replace('    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.AI_IDENTIFY_MONITOR)) return;\n', '')]
+  ['跳转不再判菜单键', 'mpc', (s) => s.replace('    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.AI_IDENTIFY_MONITOR)) return;\n', '')],
+  ['保留期改成 90 天', 'retentionIndex', (s) => s.replace('const RETENTION_DAYS = 180', 'const RETENTION_DAYS = 90')],
+  ['清理不再校验鉴定目录前缀', 'retentionIndex', (s) => s.replace('return IDENTIFY_FILE_RE.test(s) && s.indexOf(\'..\') === -1', "return /^cloud:\\/\\//.test(s)")],
+  ['清理单批放大到 200', 'retentionIndex', (s) => s.replace('const BATCH_SIZE = 50', 'const BATCH_SIZE = 200')],
+  ['清理去掉单次上限', 'retentionIndex', (s) => s.replace('while (sum.rows < MAX_PER_RUN)', 'while (true)')],
+  ['清理不查引用（删用户仍在看的图）', 'retentionIndex', (s) => s.replace('const toDelete = candidates.filter((f) => !kept.has(f))', 'const toDelete = candidates')],
+  ['文件删失败也删记录（留孤儿文件）', 'retentionIndex', (s) => s.replace('const ids = rows.filter((r) => !failed.has(r.image_file_id)).map((r) => r._id)', 'const ids = rows.map((r) => r._id)')],
+  ['清理接受客户端伪造定时事件', 'retentionIndex', (s) => s.replace('if (!(isTimerEvent(event) && isNonClientSource()))', 'if (!isTimerEvent(event))')],
+  ['页面去掉保留期告知', 'pageWxml', (s) => s.split('记录保留 180 天').join('记录会保留')]
 ]
 
 async function main() {
@@ -495,7 +654,7 @@ async function main() {
     process.exitCode = 1
     process.exit()
   }
-  console.log(`✓ test:ai-identify-monitor：${t.pass} 条断言通过（旁路日志三态 + 失败/挂起不影响鉴定、超管门禁 + 审计先行、规则全拒、页面与入口）`)
+  console.log(`✓ test:ai-identify-monitor：${t.pass} 条断言通过（旁路日志三态 + 失败/挂起不影响鉴定、超管门禁 + 审计先行、规则全拒、页面与入口、180 天保留期清理）`)
   process.exit()
 }
 

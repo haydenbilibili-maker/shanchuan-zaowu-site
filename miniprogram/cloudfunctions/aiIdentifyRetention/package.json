@@ -1,0 +1,9 @@
+{
+  "name": "aiIdentifyRetention",
+  "version": "1.0.0",
+  "description": "AI 鉴定记录保留期清理（每日定时，180 天，只删鉴定目录下无人引用的照片）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

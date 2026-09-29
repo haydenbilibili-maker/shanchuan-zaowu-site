@@ -44,7 +44,8 @@
     <view class="ops-skeleton" wx:elif="{{overviewLoading}}">
       <view class="ops-sk-card"><view class="ops-sk-line wide"></view><view class="ops-sk-line"></view></view>
     </view>
-    <text class="im-since" wx:if="{{liveSinceText}}">逐次记录（含失败与复用）始于 {{liveSinceText}}；此前仅保留成功新建的鉴定{{overview.historyTotal ? '（' + overview.historyTotal + ' 条）' : ''}}。</text>
+    <text class="im-since" wx:if="{{liveSinceText}}">逐次记录（含失败与复用）始于 {{liveSinceText}}；此前仅保留成功新建的鉴定{{overview.historyTotal ? '（' + overview.historyTotal + ' 条）' : ''}}。记录保留 180 天，到期自动删除。</text>
+    <text class="im-since" wx:elif="{{overview}}">记录保留 180 天，到期自动删除。</text>
 
     <view class="im-filters">
       <view class="ops-filter-row">
@@ -107,7 +108,7 @@
 
     <view class="ops-empty" wx:elif="{{!list.length}}">
       <text class="ops-empty-title">这个范围内还没有鉴定</text>
-      <text class="ops-empty-sub">新的鉴定会从上线起逐次记录（含失败与复用）。换个日期范围，或清除用户筛选再看。</text>
+      <text class="ops-empty-sub">新的鉴定会从上线起逐次记录（含失败与复用）。换个日期范围，或清除用户筛选再看。记录保留 180 天。</text>
     </view>
 
     <block wx:else>

@@ -395,6 +395,13 @@
       "installDependency": true
     },
     {
+      "name": "aiIdentifyRetention",
+      "timeout": 60,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "getShareholderObservatory",
       "timeout": 30,
       "runtime": "Nodejs16.13",
