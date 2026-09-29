@@ -20,6 +20,30 @@ const KEYWORD_RANK_FETCH_CAP = 200
 
 const CMS_COLLECTION = 'cms_wikis'
 
+/** 馆藏卡只读这些字段（orphanProducts 映射 + 排序用 createTime）；整条记录约 4 倍体积 */
+const PRODUCT_CARD_FIELDS = [
+  'title', 'themeName', 'latinName', 'price', 'images', 'category', 'channel', 'craftType', 'craftProcess',
+  'stock', 'hasSku', 'skus', 'isUnique', 'isOneOfAKind', 'isTreasure', 'protectionType',
+  'sensitiveBlur', 'contentWarning', 'createTime'
+]
+/** 关键词排序（fuzzySearch.itemHaystack / scoreItemAgainstKeyword）额外要读的字段 */
+const KEYWORD_RANK_FIELDS = [
+  ...PRODUCT_FIELDS, 'name', 'englishName', 'rootCategoryName', 'subtitle', 'brief', 'origin', 'description', 'tags'
+]
+
+function toProjection(fields) {
+  const proj = {}
+  fields.forEach((f) => { proj[f] = true })
+  return proj
+}
+
+const PRODUCT_CARD_PROJECTION = toProjection(PRODUCT_CARD_FIELDS)
+const PRODUCT_KEYWORD_PROJECTION = toProjection([...PRODUCT_CARD_FIELDS, ...KEYWORD_RANK_FIELDS])
+
+/** 容器内短缓存：关联档案的商品 ID（cms_wikis 很少变，60s 内复用，冷容器首次照常查） */
+const LINKED_IDS_TTL_MS = 60 * 1000
+const linkedIdsMemo = new Map()
+
 function getProductStock(p) {
   if (p.hasSku && p.skus && p.skus.length) {
     return p.skus.reduce((sum, s) => sum + (parseInt(s.stock, 10) || 0), 0)
@@ -39,6 +63,17 @@ function formatTypeLabel(type) {
   return '标本档案'
 }
 
+async function collectLinkedProductIdsMemo(categoryFilter) {
+  const key = JSON.stringify(categoryFilter || null)
+  const hit = linkedIdsMemo.get(key)
+  if (hit && Date.now() - hit.at < LINKED_IDS_TTL_MS) return new Set(hit.ids)
+  const linked = await collectLinkedProductIds(categoryFilter)
+  if (linked.queryFailed) return linked
+  if (linkedIdsMemo.size > 50) linkedIdsMemo.clear()
+  linkedIdsMemo.set(key, { at: Date.now(), ids: Array.from(linked) })
+  return linked
+}
+
 async function collectLinkedProductIds(categoryFilter) {
   const linked = new Set()
   try {
@@ -56,6 +91,7 @@ async function collectLinkedProductIds(categoryFilter) {
     })
   } catch (e) {
     console.warn('collectLinkedProductIds', e)
+    linked.queryFailed = true
   }
   return linked
 }
@@ -269,9 +305,6 @@ exports.main = async (event) => {
 
   try {
     const categoryFilter = { categoryId: resolvedRootId || categoryId, parentCategory }
-    const linkedIds = await collectLinkedProductIds(
-      parentCategory || resolvedRootId || categoryId ? categoryFilter : null
-    )
 
     // 多维筛只作用于可购商品；档案流保持原品类逻辑
     const contentQuery = buildContentQuery({
@@ -280,11 +313,17 @@ exports.main = async (event) => {
       subCategoryName,
       keyword
     })
-    const contentCountRes = await db.collection(CMS_COLLECTION).where(contentQuery).count()
+    // 关联 ID 与档案计数互不依赖 → 并行
+    const [linkedIds, contentCountRes] = await Promise.all([
+      collectLinkedProductIdsMemo(
+        parentCategory || resolvedRootId || categoryId ? categoryFilter : null
+      ),
+      db.collection(CMS_COLLECTION).where(contentQuery).count()
+    ])
     const contentTotal = contentCountRes.total || 0
 
-    let contentItems = []
-    if (contentLimit > 0) {
+    const loadContentItems = async () => {
+      if (!(contentLimit > 0)) return []
       let rawContent = []
       if (keyword) {
         const fetchCap = Math.min(
@@ -317,7 +356,7 @@ exports.main = async (event) => {
         }
         rawContent = contentRes.data || []
       }
-      contentItems = await Promise.all(rawContent.map(async (item) => {
+      return Promise.all(rawContent.map(async (item) => {
         const hint = await resolveCommerceHint(
           item.relatedProductIds || [],
           item.category || parentCategory,
@@ -357,34 +396,37 @@ exports.main = async (event) => {
         : productCond
     }
 
-    const productCountRes = await db.collection('products').where(productWhere).count()
-    const orphanTotal = productCountRes.total || 0
-
-    let rankedProductRows = []
-    if (productLimit > 0) {
+    // 计数与取数并行。关键词路径原 fetchCap = min(CAP, max(total, skip+limit))：total < CAP 时取回的就是全部命中，
+    // total ≥ CAP 时就是 CAP —— 与直接 limit(CAP) 取回的行集相同，故无需先等计数
+    const loadProductRows = async () => {
+      if (!(productLimit > 0)) return []
       if (keyword) {
-        const fetchCap = Math.min(
-          KEYWORD_RANK_FETCH_CAP,
-          Math.max(orphanTotal, productSkip + productLimit)
-        )
         const productRes = await db.collection('products')
           .where(productWhere)
-          .limit(fetchCap)
+          .field(PRODUCT_KEYWORD_PROJECTION)
+          .limit(KEYWORD_RANK_FETCH_CAP)
           .get()
-        rankedProductRows = rankByKeyword(productRes.data || [], keyword).slice(
+        return rankByKeyword(productRes.data || [], keyword).slice(
           productSkip,
           productSkip + productLimit
         )
-      } else {
-        const productRes = await db.collection('products')
-          .where(productWhere)
-          .orderBy('createTime', 'desc')
-          .skip(productSkip)
-          .limit(productLimit)
-          .get()
-        rankedProductRows = productRes.data || []
       }
+      const productRes = await db.collection('products')
+        .where(productWhere)
+        .field(PRODUCT_CARD_PROJECTION)
+        .orderBy('createTime', 'desc')
+        .skip(productSkip)
+        .limit(productLimit)
+        .get()
+      return productRes.data || []
     }
+
+    const [contentItems, productCountRes, rankedProductRows] = await Promise.all([
+      loadContentItems(),
+      db.collection('products').where(productWhere).count(),
+      loadProductRows()
+    ])
+    const orphanTotal = productCountRes.total || 0
 
     const orphanProducts = rankedProductRows.map((p) => ({
       _id: p._id,

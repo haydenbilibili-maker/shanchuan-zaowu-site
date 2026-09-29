@@ -233,6 +233,13 @@ Page({
 
     this.initData();
     this.loadDisplayFlags();
+    // 首页首屏请求发完后再预取馆藏首屏（1 次云函数 + 分类树，缓存新鲜则跳过），点「馆藏」秒开
+    if (!singlePage) {
+      this._categoryPrefetchTimer = setTimeout(() => {
+        this._categoryPrefetchTimer = null;
+        require('../../utils/categoryFeedCache').prefetchFirstScreen().catch(() => {});
+      }, 2500);
+    }
   },
 
   /**
@@ -414,6 +421,7 @@ Page({
 
   onUnload() {
     this._teardownFeedScrollGuard();
+    if (this._categoryPrefetchTimer) clearTimeout(this._categoryPrefetchTimer);
   },
 
   refreshNewArrivalsList() {

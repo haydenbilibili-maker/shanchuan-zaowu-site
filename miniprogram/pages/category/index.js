@@ -6,7 +6,6 @@ const {
   filterCanonicalRoots,
   CANONICAL_ROOT_NAMES,
   resolveCanonicalRootName,
-  loadCategoryPickerTree,
   toRootDisplayName,
   formatCategoryDisplayName
 } = require('../../utils/categoryTree');
@@ -24,6 +23,8 @@ const {
   isCraftEligibleRoot
 } = require('../../config/productTaxonomy');
 const easterEgg = require('../../utils/easterEgg');
+const feedCache = require('../../utils/categoryFeedCache');
+const { thumbUrl } = require('../../utils/imageUrl');
 
 const EMPTY_FILTERS = {
   categoryValue: '',
@@ -89,6 +90,7 @@ function decorateOrphanProducts(list) {
       || (stockNum != null && !Number.isNaN(stockNum) && stockNum <= 0);
     return {
       ...item,
+      displayImage: item.displayImage ? thumbUrl(item.displayImage) : '',
       soldOut,
       craftTags: buildCraftDisplayTags(item)
     };
@@ -163,7 +165,31 @@ Page({
     } catch (e) {
       this.setData({ statusBarHeight: 44, headerHeight: this.estimateHeaderHeight(44) });
     }
-    this.loadDisplayFlags().finally(() => this.loadCategories());
+    // 开关有缓存时（同步水合）不等网络：分类树与首屏馆藏并行发出；
+    // 首屏先用本地缓存秒开（SWR），后台刷新回来后无感替换，价格/库存以服务端为准
+    const flagsReady = this.loadDisplayFlags();
+    if (!this._flagsHydrated) {
+      flagsReady.finally(() => this.loadCategories());
+      return;
+    }
+    this.hydrateFromCache();
+    if (!app.globalData.targetCategory) this.loadFeed(true, { silent: true });
+    this.loadCategories();
+  },
+
+  /** 同步读首屏缓存：分类树 + 「全部」第一页；带目标馆跳转时不水合馆藏（马上要切馆） */
+  hydrateFromCache() {
+    const tree = feedCache.readTree();
+    if (tree) {
+      this.applyCategoryTreeToPage(tree.data, { preserveSelection: false });
+      this._treeHydrated = true;
+    }
+    if (app.globalData.targetCategory) return;
+    const archiveOn = this.data.showSpecimenArchive === true;
+    const feed = feedCache.readFeed(archiveOn);
+    if (feed) {
+      this.applyFeedResult(feed.data, { reset: true, archiveOn, contentSkip: 0, productSkip: 0 });
+    }
   },
 
   async loadDisplayFlags() {
@@ -171,6 +197,7 @@ Page({
       const { fetchContentDisplayFlags, getCachedContentDisplayFlags } = require('../../utils/contentDisplayFlags');
       const cached = getCachedContentDisplayFlags();
       if (cached && cached.flags) {
+        this._flagsHydrated = true;
         this.setData({
           showSpecimenArchive: cached.flags.showSpecimenArchive === true,
           showSpecimenCustom: cached.flags.showSpecimenCustom === true,
@@ -235,23 +262,14 @@ Page({
       }
     }
     if (this._categoriesBootstrapped) {
-      this.reloadCategoryTree({ preserveSelection: true, reloadFeed: false });
+      const tree = feedCache.readTree();
+      if (!tree || !tree.fresh) this.reloadCategoryTree({ preserveSelection: true, reloadFeed: false });
     }
   },
 
-  async fetchCategoryTree() {
-    try {
-      const res = await wx.cloud.callFunction({
-        name: 'listCategories',
-        data: { canonicalOnly: true }
-      });
-      const result = res.result || {};
-      if (result.success) return result;
-      console.warn('listCategories failed', result.msg);
-    } catch (e) {
-      console.warn('listCategories', e);
-    }
-    return loadCategoryPickerTree(db);
+  /** 云函数优先、失败走客户端分页直读（categoryFeedCache.fetchTree），成功即落首屏缓存 */
+  fetchCategoryTree() {
+    return feedCache.fetchTree(db);
   },
 
   buildSubCategoryList(rootId) {
@@ -380,7 +398,8 @@ Page({
   async loadCategories() {
     try {
       const tree = await this.fetchCategoryTree();
-      this.applyCategoryTreeToPage(tree, { preserveSelection: false });
+      // 已用缓存树水合过：用户可能已点了别的馆，保留当前选择
+      this.applyCategoryTreeToPage(tree, { preserveSelection: this._treeHydrated === true });
       this._categoriesBootstrapped = true;
 
       if (this._pendingTargetCategory) {
@@ -390,9 +409,15 @@ Page({
         return;
       }
 
-      this.loadFeed(true);
+      // 首屏请求已与分类树并行发出（或用户已切馆）时不再重复拉
+      if (!this._feedStarted) this.loadFeed(true);
     } catch (err) {
       console.error('loadCategories', err);
+      if (this._treeHydrated) {
+        this._categoriesBootstrapped = true;
+        if (!this._feedStarted) this.loadFeed(true);
+        return;
+      }
       // 分类树都拿不到 → 页面无可操作内容，给出可重试的错误态而非静默空白
       this.setData({
         listLoading: false,
@@ -613,20 +638,29 @@ Page({
     });
   },
 
-  async loadFeed(reset = false) {
+  /**
+   * @param {boolean} reset
+   * @param {{ silent?: boolean }} [opts] silent：已有（缓存）内容时后台刷新，不清空、不出骨架屏，失败保留旧内容
+   */
+  async loadFeed(reset = false, opts = {}) {
+    const silent = reset && opts.silent === true
+      && (this.data.orphanProducts.length > 0 || this.data.contentItems.length > 0);
     if (reset) {
+      this._feedStarted = true;
       this._feedGen = (this._feedGen || 0) + 1;
       this._feedLoading = false;
-      this.setData({
-        listLoading: true,
-        loadingMore: false,
-        contentItems: [],
-        orphanProducts: [],
-        contentSkip: 0,
-        productSkip: 0,
-        hasMoreContent: true,
-        hasMoreProducts: true
-      });
+      if (!silent) {
+        this.setData({
+          listLoading: true,
+          loadingMore: false,
+          contentItems: [],
+          orphanProducts: [],
+          contentSkip: 0,
+          productSkip: 0,
+          hasMoreContent: true,
+          hasMoreProducts: true
+        });
+      }
     } else if (this._feedLoading || this.data.loadingMore) {
       return;
     } else {
@@ -654,15 +688,16 @@ Page({
         return;
       }
 
+      const requestData = {
+        ...params,
+        contentSkip,
+        contentLimit,
+        productSkip,
+        productLimit
+      };
       const res = await wx.cloud.callFunction({
         name: 'getEncyclopediaFeed',
-        data: {
-          ...params,
-          contentSkip,
-          contentLimit,
-          productSkip,
-          productLimit
-        }
+        data: requestData
       });
 
       if (gen !== (this._feedGen || 0)) return;
@@ -670,38 +705,16 @@ Page({
       const result = res.result || {};
       if (!result.success) throw new Error(result.msg || '加载失败');
 
-      const newContent = archiveOn ? (result.contentItems || []) : [];
-      const newProducts = decorateOrphanProducts(result.orphanProducts || []);
-
-      let sub = this.data.categories[this.data.currentIndex]?.subtitle || '';
-      if (this.data.currentName === '全部') {
-        sub = archiveOn
-          ? `档案 ${result.contentTotal || 0} · 可购 ${result.orphanTotal || 0}`
-          : `可购 ${result.orphanTotal || 0}`;
-      }
-
-      this.setData({
-        contentItems: reset
-          ? mergeUniqueById([], newContent)
-          : mergeUniqueById(this.data.contentItems, newContent),
-        orphanProducts: reset
-          ? mergeUniqueById([], newProducts)
-          : mergeUniqueById(this.data.orphanProducts, newProducts),
-        contentTotal: archiveOn ? (result.contentTotal || 0) : 0,
-        orphanTotal: result.orphanTotal || 0,
-        contentSkip: contentSkip + newContent.length,
-        productSkip: productSkip + newProducts.length,
-        hasMoreContent: archiveOn && !!result.hasMoreContent,
-        hasMoreProducts: !!result.hasMoreProducts,
-        showContentSection: archiveOn && (result.contentTotal || 0) > 0,
-        currentSubtitle: sub,
-        listLoading: false,
-        loadingMore: false
-      });
+      if (reset && feedCache.isFirstScreenRequest(requestData)) feedCache.writeFeed(archiveOn, result);
+      this.applyFeedResult(result, { reset, archiveOn, contentSkip, productSkip });
       if (reset) this.measureHeader();
     } catch (err) {
       console.error('loadFeed', err);
       if (gen !== (this._feedGen || 0)) return;
+      if (silent) {
+        this.setData({ loadingMore: false });
+        return;
+      }
       const firstScreen = !!reset;
       this.setData({
         listLoading: false,
@@ -723,11 +736,45 @@ Page({
     }
   },
 
+  /** 把一页馆藏结果写进页面（网络回包与首屏缓存共用；reset=整页替换，否则按 _id 追加） */
+  applyFeedResult(result, o) {
+    const { reset, archiveOn, contentSkip, productSkip } = o;
+    const newContent = archiveOn ? (result.contentItems || []) : [];
+    const newProducts = decorateOrphanProducts(result.orphanProducts || []);
+
+    let sub = this.data.categories[this.data.currentIndex]?.subtitle || '';
+    if (this.data.currentName === '全部') {
+      sub = archiveOn
+        ? `档案 ${result.contentTotal || 0} · 可购 ${result.orphanTotal || 0}`
+        : `可购 ${result.orphanTotal || 0}`;
+    }
+
+    this.setData({
+      contentItems: reset
+        ? mergeUniqueById([], newContent)
+        : mergeUniqueById(this.data.contentItems, newContent),
+      orphanProducts: reset
+        ? mergeUniqueById([], newProducts)
+        : mergeUniqueById(this.data.orphanProducts, newProducts),
+      contentTotal: archiveOn ? (result.contentTotal || 0) : 0,
+      orphanTotal: result.orphanTotal || 0,
+      contentSkip: contentSkip + newContent.length,
+      productSkip: productSkip + newProducts.length,
+      hasMoreContent: archiveOn && !!result.hasMoreContent,
+      hasMoreProducts: !!result.hasMoreProducts,
+      showContentSection: archiveOn && (result.contentTotal || 0) > 0,
+      currentSubtitle: sub,
+      listLoading: false,
+      loadingMore: false
+    });
+  },
+
   // 错误态「重试」：重置锁定标记后重新走完整的 bootstrap 流程
   onRetryLoad() {
     if (this.data.listLoading) return;
     this.setData({ pageError: false, pageErrorMsg: '', listLoading: true });
     this._feedLoading = false;
+    this._feedStarted = false;
     this._categoriesBootstrapped = false;
     this.loadCategories();
   },

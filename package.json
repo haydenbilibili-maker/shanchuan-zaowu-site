@@ -315,6 +315,8 @@
     "check:main-package-size:selftest": "node miniprogram/scripts/check-main-package-size.mjs --selftest",
     "check:home-reco": "node miniprogram/scripts/test-home-reco.mjs",
     "check:home-reco:selftest": "node miniprogram/scripts/test-home-reco.mjs --selftest",
+    "test:category-feed-cache": "node miniprogram/scripts/test-category-feed-cache.mjs",
+    "test:category-feed-cache:selftest": "node miniprogram/scripts/test-category-feed-cache.mjs --selftest",
     "check:report-day": "node miniprogram/scripts/test-report-day.mjs",
     "check:report-day:selftest": "node miniprogram/scripts/test-report-day.mjs --selftest",
     "check:activity-board": "node miniprogram/scripts/test-activity-board.mjs",

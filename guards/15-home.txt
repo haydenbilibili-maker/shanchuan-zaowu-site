@@ -3,3 +3,5 @@
 # 校验：npm run check:guards-coverage
 # 2026-09-27：首页「为你推荐」全面升级（miniprogram/docs/首页为你推荐_全面升级_2026-09-27.md）
 npm run check:home-reco
+# 2026-09-29：馆藏 tab 加载提速（首屏缓存秒开 / 云函数字段投影 + 并发 / 首页空闲预取）
+npm run test:category-feed-cache
