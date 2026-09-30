@@ -76,7 +76,10 @@
         "miniprogram/scripts/check-wall-monitor.mjs",
         "miniprogram/scripts/render-wall-preview.mjs",
         "miniprogram/scripts/make-ritual-audio.mjs",
-        "miniprogram/scripts/qr-assets/**"
+        "miniprogram/scripts/qr-assets/**",
+        "scripts/wish-wall-seeds/**",
+        "scripts/seed-wish-wall-batch.mjs",
+        "scripts/check-wish-seed-batch.mjs"
       ],
       "consumes": [
         "miniprogram/components/AppModal",
@@ -91,7 +94,8 @@
         "check:bless-tags-sync",
         "check:wall-qr",
         "check:wall-monitor",
-        "test:ritual-profile"
+        "test:ritual-profile",
+        "check:wish-seeds"
       ],
       "switch": "showMaShangYou",
       "invariants": [

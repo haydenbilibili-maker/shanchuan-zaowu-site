@@ -52,6 +52,12 @@
 - 与用户弹幕**同表同字段**，故超管端内容开关面板照常可隐藏/删除 —— 不存在"免治理通道"；
 - 播种入口：超管工作台 → 磁贴「内容开关」→ 祈福墙内容管理 →「AI 生成一批心愿」
   （AI 不可用时自动改用 `manageWishWall/wishSeeds.js` 的人工基线文案）。
+- **按批次预埋**（2026-09-30 起）：文案放 `scripts/wish-wall-seeds/<批次>.json`（守卫 `npm run check:wish-seeds`），
+  由 `node scripts/seed-wish-wall-batch.mjs` 写入（默认 dry-run；`--apply` 写前快照到 `backups/wish-wall-seeds/`、按文案幂等）。
+  字段与 `staffSeedAi` 一致（`source: 'seed'`、`nickname: 山海造物`、`seedBatch` = 批次号、`createTime` = 写入时刻）。
+  整批下线 `--hide` / 恢复 `--show` / 删除 `--remove`；改掉 json 里某条后 `--apply` 补新条、`--prune` 把旧条收起。
+  ⚠️ 公开列表只取最近 `LIST_MAX`（30）条、纯按时间倒序，批次写入后会暂时把更早的用户心愿挤出墙面（数据不删，新心愿照常置于最前）。
+  已写批次：`mashangyou-warm-2026-09-30`（60 条）。
 
 ## 内容治理（业务口径 2026-09-16）
 
