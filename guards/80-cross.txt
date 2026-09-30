@@ -50,6 +50,8 @@ npm run check:caller-openid-gate
 npm run check:api-auth
 npm run test:api-auth
 npm run test:private-asset
+# 2026-09-30：内部资料内容完整性（命理全书 #tab-a 被提前闭合、第 3–40 章在 ERP 不显示，错题本 E28）
+npm run check:private-asset-integrity
 npm run check:site-fallbacks
 npm run check:fn-openapi
 npm run check:dup-modules
