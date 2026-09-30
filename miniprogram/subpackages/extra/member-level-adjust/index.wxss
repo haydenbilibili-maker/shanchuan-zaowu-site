@@ -10,31 +10,6 @@ page {
   box-sizing: border-box;
 }
 
-/* 工作台「会员调级」入口的页顶分段（与 honorary-curators 同款） */
-.hub-seg {
-  display: flex;
-  margin-top: var(--space-4);
-  padding: 6rpx;
-  border-radius: var(--radius-md);
-  border: 1rpx solid var(--color-border);
-  background: var(--color-bg);
-}
-
-.hub-seg-item {
-  flex: 1;
-  text-align: center;
-  font-size: 26rpx;
-  padding: 16rpx 0;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
-}
-
-.hub-seg-item.active {
-  background: var(--color-bg-elevated);
-  color: var(--brass-400);
-  font-weight: 600;
-}
-
 .header {
   padding: var(--space-5) 0 var(--space-2);
 }

@@ -1,10 +1,5 @@
 <view class="container" wx:if="{{ready}}">
 
-  <view class="hub-seg">
-    <view class="hub-seg-item" bindtap="onHubSegTap">调级</view>
-    <view class="hub-seg-item active">荣誉馆长</view>
-  </view>
-
   <view class="header">
     <view class="brand-group">
       <text class="en">HONORARY CURATORS</text>

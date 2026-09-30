@@ -1,10 +1,5 @@
 <view class="container" wx:if="{{ready}}">
 
-  <view class="hub-seg">
-    <view class="hub-seg-item active">调级</view>
-    <view class="hub-seg-item" bindtap="onHubSegTap">荣誉馆长</view>
-  </view>
-
   <view class="header">
     <view class="brand-group">
       <text class="en">MEMBER LEVEL ADJUST</text>
@@ -14,7 +9,7 @@
   </view>
 
   <view class="hint-card info">
-    <text class="hint-text">本页仅调 Lv1–Lv6。荣誉馆长请切到页顶「荣誉馆长」；从馆长调离会同步移出名单。</text>
+    <text class="hint-text">本页仅调 Lv1–Lv6。荣誉馆长名单请从工作台「荣誉馆长」进入；从馆长调离会同步移出名单。</text>
   </view>
 
   <!-- ① 找会员（主操作） -->

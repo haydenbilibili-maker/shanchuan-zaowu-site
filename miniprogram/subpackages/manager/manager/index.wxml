@@ -405,10 +405,14 @@
             </view>
             <text>有信</text>
           </view>
-          <!-- 会员调级 = 原「等级调档」+「荣誉馆长」（2026-09-29 合并）；两页路径不变，页顶分段「调级 / 荣誉馆长」互切 -->
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.memberLevelAdjust || menu.honoraryCurators}}" bindtap="goMemberCuratorHub">
+          <!-- 会员调级 / 荣誉馆长：2026-09-29 曾合并为一枚，2026-09-30 产品负责人要求重新拆成两枚独立入口，各按原权限键 -->
+          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.memberLevelAdjust}}" bindtap="goMemberLevelAdjust">
             <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/medal_gold.png" mode="aspectFit" /></view>
             <text>会员调级</text>
+          </view>
+          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.honoraryCurators}}" bindtap="goHonoraryCurators">
+            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/atlas.png" mode="aspectFit" /></view>
+            <text>荣誉馆长</text>
           </view>
           <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.points}}" bindtap="goStorePoints">
             <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/star.png" mode="aspectFit" /></view>

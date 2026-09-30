@@ -4,7 +4,7 @@
  *
  * 2026-09-30 产品负责人：工作台入口全局改版（七分区 + 待办条 + 合并磁贴二级面板）。
  * 合并与搬家最容易「顺手把一个功能弄丢」或「把权限条件写宽 / 写窄」，本守卫钉住：
- *   1) ORIGINAL 里改版前的 47 个磁贴/链接入口 + 首屏扫码主按钮，每个仍至少有一条可达路径：
+ *   1) ORIGINAL 里改版前的 48 个磁贴/链接入口（会员调级 / 荣誉馆长 09-30 拆回后各算一个） + 首屏扫码主按钮，每个仍至少有一条可达路径：
  *      直接磁贴（bindtap + data-idx / data-tab 一致），或合并磁贴的二级面板子项（hubNav.HUB_GROUPS）；
  *   2) 权限条件不丢：直达磁贴的 wx:if 菜单键集合 = 改版前的集合；面板子项 keys = 改版前集合；
  *      合并磁贴 wx:if = 其子项 keys 之并（任一子功能有权限即显示）；
@@ -66,7 +66,9 @@ const ORIGINAL = [
   { name: '会员 CRM', handlers: ['goMemberCrm', 'goMemberCrmGuarded'], keys: ['memberCrm'] },
   { name: '权益', handlers: ['switchTab'], idx: '6', keys: ['vip'] },
   { name: '有信', handlers: ['switchTab'], idx: '11', keys: ['support'] },
-  { name: '会员调级', handlers: ['goMemberCuratorHub', 'goMemberCuratorHubGuarded'], keys: ['memberLevelAdjust', 'honoraryCurators'] },
+  // 2026-09-30 产品负责人：「会员调级」「荣誉馆长」从合并入口重新拆开，恢复合并前各自的权限键
+  { name: '会员调级', handlers: ['goMemberLevelAdjust', 'goMemberLevelAdjustGuarded'], keys: ['memberLevelAdjust'] },
+  { name: '荣誉馆长', handlers: ['goHonoraryCurators', 'goHonoraryCuratorsGuarded'], keys: ['honoraryCurators'] },
   { name: 'AI 鉴定', handlers: ['goIdentifyMonitorGuarded'], keys: ['aiIdentifyMonitor'] },
   { name: '员工', handlers: ['goStaffDirectory', 'goStaffDirectoryGuarded'], keys: ['staffDirectory'] },
   { name: '权限配置', handlers: ['goStoreStaffPermissions', 'goStoreStaffPermissionsGuarded'], keys: ['staffPermissions'] },
@@ -377,9 +379,10 @@ function judge(src) {
     if (JSON.stringify(mgrOnly) !== JSON.stringify(['orders'])) {
       errs.push(`常用区只含有权限入口：店长配置 [memberCrm, feishu, orders, aiIdentify] 应只剩 [orders]，实际 [${mgrOnly}]`)
     }
-    const mapped = nav.normalizeFavs(['giftOps', 'honoraryCurators', 'shipmentSku', 'giftManage', 'no_such_entry'], superMenu)
-    if (JSON.stringify(mapped) !== JSON.stringify(['gift', 'memberCurator', 'shipment'])) {
-      errs.push(`失效 id 映射 / 过滤不对：[giftOps, honoraryCurators, shipmentSku, giftManage, no_such_entry] 应得 [gift, memberCurator, shipment]，实际 [${mapped}]`)
+    const mapped = nav.normalizeFavs(['giftOps', 'memberCurator', 'honoraryCurators', 'shipmentSku', 'giftManage', 'no_such_entry'], superMenu)
+    const want = ['gift', 'memberLevel', 'curators', 'shipment']
+    if (JSON.stringify(mapped) !== JSON.stringify(want)) {
+      errs.push(`失效 id 映射 / 过滤不对：[giftOps, memberCurator, honoraryCurators, shipmentSku, giftManage, no_such_entry] 应得 [${want}]，实际 [${mapped}]`)
     }
     for (const [from, to] of Object.entries(nav.FAV_ID_ALIASES || {})) {
       if (!nav.findEntry(to)) errs.push(`常用映射 ${from} → ${to} 指向不存在的入口`)
@@ -471,6 +474,7 @@ if (!selftest) {
     ['清单名称与磁贴漂移', rep('hubNav', "{ id: 'ledger', label: '账本'", "{ id: 'ledger', label: '营收'"), /清单与磁贴名称不一致/],
     ['常用不按权限过滤', rep('hubNav', 'if (!entryVisible(findEntry(id), menu)) return', 'if (!findEntry(id)) return'), /常用区只含有权限入口/],
     ['被合并 id 映射丢失', rep('hubNav', "giftOps: 'gift', giftManage: 'gift',", "giftManage: 'gift',"), /失效 id 映射/],
+    ['旧合并入口 memberCurator 映射丢失', rep('hubNav', "memberCurator: 'memberLevel', ", ''), /失效 id 映射/],
     ['常用上限失效', rep('hubNav', 'return out.slice(0, FAV_MAX)', 'return out'), /常用上限未生效/],
     ['店长默认常用被清空', rep('hubNav', "store_manager: ['orders', 'ledger', 'verify', 'approvals', 'workOrders', 'gift', 'products', 'points'],", 'store_manager: [],'), /没有默认常用/],
     ['点常用不再判权限', rep('indexJs', 'if (!entry || !entry.keys.some((k) => this.data.menu && this.data.menu[k])) {', 'if (!entry) {'), /onHubFav 须在进入前再判一次权限/],

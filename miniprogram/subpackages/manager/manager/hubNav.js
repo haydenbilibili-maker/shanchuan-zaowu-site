@@ -102,7 +102,8 @@ const HUB_ENTRIES = [
   { id: 'memberCrm', label: '会员 CRM', icon: ICON + 'user_gold.png', sec: 'members', keys: ['memberCrm'], tap: 'goMemberCrm' },
   { id: 'vip', label: '权益', icon: ICON + 'coupon.png', sec: 'members', keys: ['vip'], tap: 'switchTab', idx: 6, tabTitle: '权益会员' },
   { id: 'support', label: '有信', icon: ICON + 'message.png', sec: 'members', keys: ['support'], tap: 'switchTab', idx: 11, tabTitle: '山海有信', badge: 'supportTickets' },
-  { id: 'memberCurator', label: '会员调级', icon: ICON + 'medal_gold.png', sec: 'members', keys: ['memberLevelAdjust', 'honoraryCurators'], tap: 'goMemberCuratorHub' },
+  { id: 'memberLevel', label: '会员调级', icon: ICON + 'medal_gold.png', sec: 'members', keys: ['memberLevelAdjust'], tap: 'goMemberLevelAdjust' },
+  { id: 'curators', label: '荣誉馆长', icon: ICON + 'atlas.png', sec: 'members', keys: ['honoraryCurators'], tap: 'goHonoraryCurators' },
   { id: 'points', label: '积分', icon: ICON + 'star.png', sec: 'members', keys: ['points'], tap: 'goStorePoints' },
   { id: 'perks', label: '礼包钱包', icon: ICON + 'wallet_gold.png', sec: 'members', keys: ['welcomeGift', 'walletConfig'], tap: 'openHubGroup', group: 'perks' },
   { id: 'studioDashboard', label: '仪表盘', icon: ICON + 'studio-dashboard.png', sec: 'studio', keys: ['studioDashboard'], tap: 'goStudioDashboard' },
@@ -129,7 +130,7 @@ const FAV_STORAGE_KEY = 'manager_hub_favs_v1'
 /** 旧入口 / 被合并入口 → 现行稳定 id（已保存的常用在改版、合并后自动映射） */
 const FAV_ID_ALIASES = {
   giftOps: 'gift', giftManage: 'gift',
-  memberLevelAdjust: 'memberCurator', honoraryCurators: 'memberCurator',
+  memberCurator: 'memberLevel', memberLevelAdjust: 'memberLevel', honoraryCurators: 'curators',
   welcomeGift: 'perks', birthdayGift: 'perks', walletConfig: 'perks',
   framers: 'artisan', framerRecruit: 'artisan', artisanCommission: 'artisan',
   staffDirectory: 'org', staffPermissions: 'org', shareholderConfig: 'org',

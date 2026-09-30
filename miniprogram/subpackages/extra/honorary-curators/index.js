@@ -530,11 +530,5 @@ Page({
     }
   },
 
-  noop() {},
-
-  /** 页顶「调级 / 荣誉馆长」分段：redirectTo 不叠页栈，返回仍回工作台 */
-  onHubSegTap() {
-    const url = '/subpackages/extra/member-level-adjust/index';
-    wx.redirectTo({ url, fail: () => wx.navigateTo({ url }) });
-  }
+  noop() {}
 });
