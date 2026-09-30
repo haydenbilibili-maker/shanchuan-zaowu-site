@@ -329,6 +329,8 @@
     "test:ai-identify-monitor:selftest": "node miniprogram/scripts/test-ai-identify-monitor.mjs --selftest",
     "check:member-curator-hub": "node miniprogram/scripts/check-member-curator-hub.mjs",
     "check:member-curator-hub:selftest": "node miniprogram/scripts/check-member-curator-hub.mjs --selftest",
+    "check:hub-entries": "node miniprogram/scripts/check-hub-entries.mjs",
+    "check:hub-entries:selftest": "node miniprogram/scripts/check-hub-entries.mjs --selftest",
     "check:rpx-zero-slack": "node miniprogram/scripts/check-rpx-zero-slack.mjs",
     "check:rpx-zero-slack:selftest": "node miniprogram/scripts/check-rpx-zero-slack.mjs --selftest",
     "check:activity-seats": "node miniprogram/scripts/test-activity-seats.mjs",

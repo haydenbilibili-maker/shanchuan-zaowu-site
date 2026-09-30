@@ -13,3 +13,5 @@ npm run check:cloudfn-no-wx
 npm run test:ai-identify-monitor
 # 2026-09-29：超管工作台「会员调级」+「荣誉馆长」合并为一枚「会员调级」入口，页顶分段互切，旧路径保留
 npm run check:member-curator-hub
+# 2026-09-30：超管工作台入口全局改版（七分区 + 待办条 + 合并磁贴二级面板）：改版前 47 个入口 + 扫码主按钮仍可达、权限条件不丢、无重复磁贴
+npm run check:hub-entries

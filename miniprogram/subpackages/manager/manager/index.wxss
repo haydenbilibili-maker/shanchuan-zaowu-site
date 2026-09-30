@@ -1,6 +1,7 @@
 /* pages/manager/index.wxss */
 /* 继承 app.wxss */
 @import "../../../styles/badges.wxss";
+@import "./hubNav.wxss";
 
 /*
   page-container 曾注入 page { position/top }，导致 fixed 导航与内容错位、无法滚动。
