@@ -35,6 +35,15 @@
           <text class="row-sub">商场抽成</text>
           <text class="amount-row">-¥{{salesShare.mallFeeFmt}}</text>
         </view>
+        <view class="mall-breakdown" wx:if="{{salesShare.mallFeeFmt && salesShare.mallByStore.length > 1}}">
+          <view class="mall-breakdown-item" wx:for="{{salesShare.mallByStore}}" wx:key="storeId">
+            <view class="mall-breakdown-main">
+              <text class="mall-breakdown-name">{{item.name}}</text>
+              <text class="mall-breakdown-hint">{{item.detailText}}</text>
+            </view>
+            <text class="mall-breakdown-fee">-¥{{item.mallFeeFmt}}</text>
+          </view>
+        </view>
         <view class="row" wx:if="{{salesShare.shareBaseFmt}}">
           <text class="row-sub">分成基数（扣抽成后）</text>
           <text class="amount-row">¥{{salesShare.shareBaseFmt}}</text>

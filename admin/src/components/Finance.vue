@@ -1027,7 +1027,7 @@ import {
   DEFAULT_MALL_THRESHOLD,
   DEFAULT_MALL_RATE,
   FORMULA_NOTE,
-  computeMallCommission,
+  computeMallCommissionByStores,
   computeDailyMallCost,
 } from '../utils/mallCommission'
 
@@ -1309,6 +1309,18 @@ function downloadMonthlyBriefPoster() {
     }
 }
 
+/** 商场抽成只按单店算：按门店归属（无门店归山川造物）分组，各店各自套阈值后相加 */
+function mallCommissionForRecords(records, s) {
+    const groups = new Map()
+    ;(records || []).forEach((r) => {
+        const st = resolveFinanceStore(r)
+        const g = groups.get(st.storeId) || { storeId: st.storeId, name: st.name, revenue: 0 }
+        g.revenue += Number(r.revenue) || 0
+        groups.set(st.storeId, g)
+    })
+    return computeMallCommissionByStores([...groups.values()], s)
+}
+
 function generateMonthlyBriefFromData() {
     const month = document.getElementById('monthSelect')?.value
     if (!month) {
@@ -1323,7 +1335,7 @@ function generateMonthlyBriefFromData() {
     const targetPct = s.target > 0 ? (totalRev / s.target) * 100 : 0
     const [y, mm] = month.split('-').map(Number)
     const label = `${y}年${mm}月`
-    const mall = computeMallCommission(totalRev, s)
+    const mall = mallCommissionForRecords(mData, s)
     const mallAmt = mall.fee
     const parts = [
         `${label}累计营收 ¥${Math.round(totalRev).toLocaleString()}，`,
@@ -1993,14 +2005,19 @@ const app = reactive({
         this.renderAnalysis(totalRev, totalProfit, margin, mData.length, s);
 
         // 商场分成（月累计口径：与 mallCommission SSOT 同源）
-        const mall = computeMallCommission(totalRev, s);
+        const mall = mallCommissionForRecords(mData, s);
         this.setSafeText('mallBriefMonthRev', '¥' + Math.round(mall.reached).toLocaleString());
         this.setSafeText('mallBriefThreshold', '¥' + Math.round(mall.threshold).toLocaleString());
         this.setSafeText('mallBriefExcess', '¥' + Math.round(mall.excess).toLocaleString());
         this.setSafeText('mallBriefAmount', '¥' + Math.round(mall.fee).toLocaleString());
         const mallRateHint = this.safeGetElement('mallBriefRateHint');
         if (mallRateHint) {
-            mallRateHint.innerText = `扣点 ${mall.ratePct}% · 月累计对赌口径`;
+            const perStore = mall.byStore.length > 1
+                ? ' · 按单店计：' + mall.byStore
+                    .map((x) => `${x.name} ¥${Math.round(x.fee).toLocaleString()}（营收 ¥${Math.round(x.reached).toLocaleString()}）`)
+                    .join('，')
+                : '';
+            mallRateHint.innerText = `扣点 ${mall.ratePct}% · 月累计对赌口径${perStore}`;
         }
 
         if (month !== lastLoadedBriefMonth.value) {

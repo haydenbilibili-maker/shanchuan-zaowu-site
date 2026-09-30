@@ -1,7 +1,7 @@
 /**
  * 商场月累计超额抽成（财务 SSOT）
  *
- * 公式：mallFee = max(0, R − threshold) × rate
+ * 公式：mallFee = max(0, R − threshold) × rate（R = 单店月营收；双店合计 = 各店分别计后相加）
  * 默认：阈值 ¥170,000，扣点 15%
  *
  * 与 ERP Finance「商场分成情况」、销售分成 mallCommission 同口径。
@@ -71,6 +71,39 @@ function computeMallCommission(revenue, settings) {
 }
 
 /**
+ * 多店口径：商场抽成只按单店算 —— 每店 max(0, 该店营收 − 阈值) × 扣点，合计 = 各店之和；
+ * 不得把多店营收先加总再套阈值（2026-09-30 产品负责人口径）。
+ * @param {Array<{ storeId?: string, name?: string, revenue?: number, value?: number }>} stores
+ */
+function computeMallCommissionByStores(stores, settings) {
+  const cfg = normalizeMallSettings(settings)
+  const byStore = (stores || []).map((s) => {
+    const one = computeMallCommission(s && (s.revenue != null ? s.revenue : s.value), cfg)
+    return {
+      storeId: (s && s.storeId) || '',
+      name: (s && s.name) || (s && s.storeId) || '',
+      reached: one.reached,
+      excess: one.excess,
+      fee: one.fee
+    }
+  })
+  const reached = round2(byStore.reduce((a, s) => a + s.reached, 0))
+  const excess = round2(byStore.reduce((a, s) => a + s.excess, 0))
+  const fee = round2(byStore.reduce((a, s) => a + s.fee, 0))
+  return {
+    threshold: cfg.mallThreshold,
+    rate: cfg.mallRate,
+    ratePct: Math.round(cfg.mallRate * 1000) / 10,
+    reached,
+    excess,
+    fee,
+    baseAfterMall: round2(Math.max(0, reached - fee)),
+    byStore,
+    formulaNote: `商场抽成按单店算：每店 max(0, 该店营收 − ¥${Math.round(cfg.mallThreshold).toLocaleString()}) × ${(cfg.mallRate * 100).toFixed(0)}%，合计为各店之和`
+  }
+}
+
+/**
  * 成本模型按日折算（与 Finance.vue calcProfit 同口径）
  * 日阈值 = 月阈值 / 30；仅用于日利润估算，不替代月累计 SSOT 展示。
  */
@@ -96,6 +129,9 @@ function formatMallForUi(mall) {
     ratePct: Number(m.ratePct) || 0,
     baseAfterMall: Number(m.baseAfterMall) || 0,
     baseAfterMallFmt: money(m.baseAfterMall),
+    byStore: Array.isArray(m.byStore)
+      ? m.byStore.map((s) => ({ ...s, reachedFmt: money(s.reached), feeFmt: money(s.fee) }))
+      : undefined,
     formulaNote: m.formulaNote || FORMULA_NOTE
   }
 }
@@ -107,6 +143,7 @@ module.exports = {
   normalizeMallSettings,
   computeMonthlyMallFee,
   computeMallCommission,
+  computeMallCommissionByStores,
   computeDailyMallCost,
   formatMallForUi
 }

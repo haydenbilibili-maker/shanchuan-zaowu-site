@@ -602,7 +602,7 @@ async function payslipList(event, openid) {
 
 /**
  * 店员 / 店长销售分成（实时）：(范围内本月营业额 − 商场月累计抽成) × 1%
- * 商场抽成 SSOT：max(0, R − 170000) × 15%（可配置 finance_settings）
+ * 商场抽成 SSOT：单店各自 max(0, 该店 R − 170000) × 15%，多店范围取各店之和（可配置 finance_settings）
  * 权限与工资条一致：viewPayslip（本人查工资条即可看；店长/超管同权）
  * 门店范围：优先按 actor 绑定门店（一般一店 → 该门店）；店长未绑店回落山川造物；
  * 超管已绑店按其门店，未绑店才双店合计兜底

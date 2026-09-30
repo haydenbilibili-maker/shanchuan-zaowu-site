@@ -32,6 +32,7 @@ const {
   DEFAULT_MALL_THRESHOLD,
   DEFAULT_MALL_RATE,
   computeMallCommission,
+  computeMallCommissionByStores,
   formatMallForUi
 } = require('./mallCommission')
 const { compareLedgerEntries, hasLedgerContent } = require('./ledgerDuplicate')
@@ -1431,9 +1432,14 @@ function ensureMallDefaultsInSettings(raw) {
   return s
 }
 
-async function attachMallCommission(payload, monthRevenue) {
+/** 商场抽成只按单店算：传 byStore（双店）时每店各自套阈值再相加 */
+async function attachMallCommission(payload, monthRevenue, byStore) {
   const settings = ensureMallDefaultsInSettings(await loadFinanceSettingsRaw())
-  const mall = formatMallForUi(computeMallCommission(monthRevenue, settings))
+  const mall = formatMallForUi(
+    Array.isArray(byStore) && byStore.length > 1
+      ? computeMallCommissionByStores(byStore, settings)
+      : computeMallCommission(monthRevenue, settings)
+  )
   return {
     ...payload,
     mall,
@@ -1670,7 +1676,7 @@ exports.main = async (event) => {
         event.mode === 'dual'
       ) {
         const dual = await sumDualStoreLedger(startDate, endDate, { persist })
-        return attachMallCommission(dual, dual.total || dual.netAmount || 0)
+        return attachMallCommission(dual, dual.total || dual.netAmount || 0, dual.byStore)
       }
 
       const sid = normalizeStoreId(rawSid)

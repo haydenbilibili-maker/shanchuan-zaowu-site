@@ -7,3 +7,5 @@ npm run report:data-sources:strict
 npm run test:finance-daily-parse
 npm run test:finance-duplicate
 npm run test:finance-ledger-integrity
+# 2026-09-30：商场抽成只按单店算（每店各自 17 万起抽，多店 = 各店之和；工资条 / 双店账本 / ERP 财务页 / 七份副本同判据）
+npm run test:mall-commission-per-store

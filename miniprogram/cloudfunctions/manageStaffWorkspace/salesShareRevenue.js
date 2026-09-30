@@ -2,7 +2,8 @@
  * 店员 / 店长销售分成 — 门店经营额度口径
  *
  * 公式：实时销售分成 = (范围内本月营业额 − 商场月累计抽成) × 1%
- * 商场抽成（SSOT）：mallFee = max(0, R − threshold) × rate（默认阈值 17 万、扣点 15%）
+ * 商场抽成（SSOT）：只按单店算 —— 每店 max(0, 该店 R − threshold) × rate（默认阈值 17 万、扣点 15%），
+ *   多店范围（超管双店合计 / 多店绑定）的抽成 = 各店抽成之和，不得先把营收加总再套阈值
  * 营业额 R = 线上净额 + 对应门店账本净额
  * - 线上净额：已付态订单 totalPrice（支付日，Asia/Shanghai）− 周期退款（退款日）
  * - 排除兑换单 source=exchange；含礼赠 / 定金 / 尾款（不重复计货值）
@@ -12,7 +13,7 @@
  * - 无 storeId 的快递单归入山川造物主店
  * - 与标本师提成（artisan commission）无关
  */
-const { computeMonthlyMallFee, normalizeMallSettings } = require('./mallCommission')
+const { computeMallFeeByStores, normalizeMallSettings } = require('./mallCommission')
 
 const SALES_SHARE_RATE = 0.01
 const RATE_LABEL = '1%'
@@ -368,12 +369,38 @@ function resolveShareStoreScope(actor, boundStoreIds) {
   }
 }
 
+/** 170000 → 「17 万」；非整万回落「¥170,500」 */
+function fmtThreshold(thr) {
+  const n = Math.round(Number(thr) || 0)
+  if (n > 0 && n % 10000 === 0) return `${n / 10000} 万`
+  return `¥${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`
+}
+
+function storeMallDetail(s, thrLabel) {
+  return s.reached
+    ? `营业额 ¥${fmtMoney(s.revenue)}，超出 ${thrLabel} ¥${fmtMoney(s.mallExcess)}`
+    : `营业额 ¥${fmtMoney(s.revenue)}，未达 ${thrLabel}起抽线`
+}
+
+/** 多店范围时商场抽成的分店明细（界面文案，不含技术字段名） */
+function buildMallBreakdownText(mall) {
+  const list = (mall && mall.byStore) || []
+  if (list.length < 2) return ''
+  const thrLabel = fmtThreshold(mall.mallThreshold)
+  return list
+    .map((s) => `${s.name} ¥${fmtMoney(s.mallFee)}（${storeMallDetail(s, thrLabel)}）`)
+    .join(' · ')
+}
+
 function buildScopeNote(scope, yearMonth, mall) {
   const ym = yearMonth || '本月'
-  const thr = mall && mall.mallThreshold != null ? Math.round(mall.mallThreshold) : 170000
+  const thrLabel = fmtThreshold(mall && mall.mallThreshold != null ? mall.mallThreshold : 170000)
   const ratePct = mall && mall.mallRatePct != null ? mall.mallRatePct : 15
+  const multi = scope.storeIds && scope.storeIds.length > 1
   const baseCalc =
-    `本月营业额 = 范围内线上净额（已付实付 − 周期退款，含礼赠/定金/尾款，不含兑换单）+ 对应门店账本净额；无 storeId 的快递单计入山川造物。商场抽成 = max(0, 营业额 − ¥${thr.toLocaleString()}) × ${ratePct}%；分成 = (营业额 − 商场抽成) × 1%。与标本师提成无关。`
+    `营业额 = 线上实收（扣当月退款，含礼赠、定金、尾款，不含兑换单）+ 门店账本；未标门店的快递单计入山川造物。` +
+    `商场抽成按单店算：每家店营业额超过 ${thrLabel}的部分 × ${ratePct}%${multi ? '，合计为各店抽成之和' : ''}。` +
+    `分成 = (营业额 − 商场抽成) × 1%，与标本师提成无关。`
 
   if (scope.mode === 'manager_main') {
     return `口径：店长 · 山川造物门店经营额度 · ${ym}（不含星宸、不按多店合计）。${baseCalc}`
@@ -398,19 +425,11 @@ async function loadMallSettings(db) {
   }
 }
 
-function orderMatchesShareStores(order, storeIds) {
-  if (!storeIds || !storeIds.length) return true
-  const allow = {}
-  storeIds.forEach((id) => {
-    allow[id] = true
-  })
+function orderStoreGroup(order) {
   const sid = String((order && order.storeId) || '').trim()
-  if (!sid) {
-    // 快递单常无 storeId：归入主店，与 getAnalyticsDashboard 一致
-    return !!allow[FINANCE_STORE_ID]
-  }
-  const group = resolveLedgerGroupId(sid)
-  return !!(group && allow[group])
+  // 快递单常无 storeId：归入主店，与 getAnalyticsDashboard 一致
+  if (!sid) return FINANCE_STORE_ID
+  return resolveLedgerGroupId(sid)
 }
 
 function docUpdateMs(doc) {
@@ -660,19 +679,28 @@ async function computeMonthlySalesShare(db, _, opts) {
 
   let gmvPaid = 0
   let refundAmount = 0
+  const onlineByStore = {}
+  scope.storeIds.forEach((id) => {
+    onlineByStore[id] = { gmv: 0, refund: 0 }
+  })
 
   ;(rows || []).forEach((o) => {
     if (isExchangeOrder(o)) return
-    if (!orderMatchesShareStores(o, scope.storeIds)) return
+    const group = orderStoreGroup(o)
+    if (!group || !onlineByStore[group]) return
     const st = String(o.status || '')
     const paidDk = toBizDate(o.paidTime || o.createTime)
     const refundDk = toBizDate(o.refundTime || o.updateTime || o.createTime)
 
     if (PAID_STATUS.indexOf(st) !== -1 && paidDk && dateKeySet[paidDk]) {
-      gmvPaid += parseOrderAmount(o)
+      const amt = parseOrderAmount(o)
+      gmvPaid += amt
+      onlineByStore[group].gmv += amt
     }
     if (REFUND_STATUS.indexOf(st) !== -1 && refundDk && dateKeySet[refundDk]) {
-      refundAmount += parseRefundAmount(o)
+      const amt = parseRefundAmount(o)
+      refundAmount += amt
+      onlineByStore[group].refund += amt
     }
   })
 
@@ -680,11 +708,25 @@ async function computeMonthlySalesShare(db, _, opts) {
   const refundRounded = round2(refundAmount)
   const netOnline = round2(gmvRounded - refundRounded)
   const offlineLedger = round2((ledgerPack && ledgerPack.offlineLedger) || 0)
-  const monthRevenue = round2(netOnline + offlineLedger)
-  const mall = computeMonthlyMallFee(monthRevenue, mallSettings)
+  const ledgerByStoreMap = {}
+  ;((ledgerPack && ledgerPack.byStore) || []).forEach((s) => {
+    ledgerByStoreMap[s.storeId] = Number(s.value) || 0
+  })
+  const storeRevenues = scope.storeIds.map((id) => {
+    const on = onlineByStore[id] || { gmv: 0, refund: 0 }
+    const storeOnline = round2(round2(on.gmv) - round2(on.refund))
+    return {
+      storeId: id,
+      name: storeMetaById(id).name,
+      revenue: round2(storeOnline + (ledgerByStoreMap[id] || 0))
+    }
+  })
+  const mall = computeMallFeeByStores(storeRevenues, mallSettings)
+  const monthRevenue = mall.revenue
   const shareBase = mall.baseAfterMall
   const shareAmount = round2(Math.max(0, shareBase) * SALES_SHARE_RATE)
   const scopeNote = buildScopeNote(scope, yearMonth, mall)
+  const mallBreakdownText = buildMallBreakdownText(mall)
   let storeScopeLabel = `所属门店 · ${scope.storeLabel}`
   if (scope.mode === 'manager_main') {
     storeScopeLabel = '山川造物 · 门店经营额度'
@@ -721,6 +763,18 @@ async function computeMonthlySalesShare(db, _, opts) {
     mallExcessFmt: fmtMoney(mall.mallExcess),
     mallFee: mall.mallFee,
     mallFeeFmt: fmtMoney(mall.mallFee),
+    mallByStore: mall.byStore.map((s) => ({
+      storeId: s.storeId,
+      name: s.name,
+      revenue: s.revenue,
+      revenueFmt: fmtMoney(s.revenue),
+      mallExcess: s.mallExcess,
+      mallFee: s.mallFee,
+      mallFeeFmt: fmtMoney(s.mallFee),
+      reached: s.reached,
+      detailText: storeMallDetail(s, fmtThreshold(mall.mallThreshold))
+    })),
+    mallBreakdownText,
     shareBase,
     shareBaseFmt: fmtMoney(shareBase),
     shareAmount,
@@ -737,12 +791,16 @@ async function computeMonthlySalesShare(db, _, opts) {
     formulaNote:
       mall.mallFee > 0
         ? `销售分成 = (${revenueScopeLabel} ¥${fmtMoney(monthRevenue)} − 商场抽成 ¥${fmtMoney(mall.mallFee)}) × ${RATE_LABEL}`
-        : `销售分成 = ${revenueScopeLabel} ¥${fmtMoney(monthRevenue)} × ${RATE_LABEL}（未超商场抽成阈值）`
+        : `销售分成 = ${revenueScopeLabel} ¥${fmtMoney(monthRevenue)} × ${RATE_LABEL}（${
+            scope.storeIds.length > 1 ? '各店均' : ''
+          }未达商场 ${fmtThreshold(mall.mallThreshold)}起抽线）`
   }
 }
 
 module.exports = {
   SALES_SHARE_RATE,
   computeMonthlySalesShare,
-  resolveShareStoreScope
+  resolveShareStoreScope,
+  buildScopeNote,
+  buildMallBreakdownText
 }

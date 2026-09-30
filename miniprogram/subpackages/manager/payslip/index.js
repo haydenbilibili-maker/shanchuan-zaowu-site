@@ -39,6 +39,7 @@ function emptySalesShare() {
     yearMonth: '',
     monthRevenueFmt: '—',
     mallFeeFmt: '',
+    mallByStore: [],
     shareBaseFmt: '',
     rateLabel: '1%',
     shareAmountFmt: '—',
@@ -194,6 +195,15 @@ Page({
           yearMonth: s.yearMonth || '',
           monthRevenueFmt: s.monthRevenueFmt || '0.00',
           mallFeeFmt: s.mallFeeFmt || '0.00',
+          mallByStore:
+            Array.isArray(s.mallByStore) && s.mallByStore.length > 1
+              ? s.mallByStore.map((m) => ({
+                  storeId: m.storeId || m.name,
+                  name: m.name || '',
+                  mallFeeFmt: m.mallFeeFmt || '0.00',
+                  detailText: m.detailText || ''
+                }))
+              : [],
           shareBaseFmt: s.shareBaseFmt || s.monthRevenueFmt || '0.00',
           rateLabel: s.rateLabel || '1%',
           shareAmountFmt: s.shareAmountFmt || '0.00',

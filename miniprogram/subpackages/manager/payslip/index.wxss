@@ -66,6 +66,44 @@
   line-height: 1.55;
 }
 
+.mall-breakdown {
+  margin: 4rpx 0 var(--space-2);
+  padding: 12rpx 20rpx;
+  border-left: 2rpx solid var(--color-border);
+}
+
+.mall-breakdown-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 8rpx 0;
+}
+
+.mall-breakdown-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.mall-breakdown-name {
+  display: block;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+}
+
+.mall-breakdown-hint {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  line-height: 1.45;
+  color: var(--color-text-muted, #6B6560);
+}
+
+.mall-breakdown-fee {
+  flex-shrink: 0;
+  font-size: 26rpx;
+  color: var(--color-text-secondary);
+}
+
 .page-tip {
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;

@@ -1,14 +1,14 @@
 /**
  * 商场月累计超额抽成 — 多端 SSOT（CJS 镜像，供 Node 脚本引用）
  *
- * 公式：超额 = max(0, 月营收 − 阈值)；抽成 = 超额 × 扣点
+ * 公式：超额 = max(0, 单店月营收 − 阈值)；抽成 = 超额 × 扣点；多店合计 = 各店分别计后相加
  * 默认：阈值 170000 元，扣点 15%
  */
 const DEFAULT_MALL_THRESHOLD = 170000
 const DEFAULT_MALL_RATE = 0.15
 
 const FORMULA_NOTE =
-  '超额 = max(0, 月营收 − 抽成阈值)，抽成 = 超额 × 扣点。默认阈值 ¥170,000、扣点 15%。月累计对赌口径；员工销售分成与股东分红等基数先扣本抽成。成本明细按日折算可并存，分红利润已含日成本故不二次扣除月累计额。'
+  '按单店计：每店超额 = max(0, 该店月营收 − 抽成阈值)，抽成 = 超额 × 扣点；全部门店视图的抽成 = 各店抽成之和（不按合计营收套阈值）。默认阈值 ¥170,000、扣点 15%。月累计对赌口径；员工销售分成与股东分红等基数先扣本抽成。成本明细按日折算可并存，分红利润已含日成本故不二次扣除月累计额。'
 
 function round2(n) {
   return Math.round((Number(n) || 0) * 100) / 100
@@ -42,6 +42,35 @@ function computeMallCommission(monthRevenue, settings) {
   }
 }
 
+/** 多店口径：商场抽成只按单店算，合计 = 各店之和（与 mallCommission.js 同名函数同判据） */
+function computeMallCommissionByStores(stores, settings) {
+  const byStore = (stores || []).map((s) => {
+    const one = computeMallCommission(s && s.revenue, settings)
+    return {
+      storeId: (s && s.storeId) || '',
+      name: (s && s.name) || (s && s.storeId) || '',
+      reached: one.reached,
+      excess: one.excess,
+      fee: one.fee,
+    }
+  })
+  const { threshold, rate } = normalizeMallParams(settings)
+  const reached = round2(byStore.reduce((a, s) => a + s.reached, 0))
+  const excess = round2(byStore.reduce((a, s) => a + s.excess, 0))
+  const fee = round2(byStore.reduce((a, s) => a + s.fee, 0))
+  return {
+    threshold,
+    rate,
+    ratePct: Math.round(rate * 1000) / 10,
+    reached,
+    excess,
+    fee,
+    baseAfterMall: round2(Math.max(0, reached - fee)),
+    byStore,
+    formulaNote: FORMULA_NOTE
+  }
+}
+
 function computeDailyMallCost(dayRevenue, settings) {
   const { threshold, rate } = normalizeMallParams(settings)
   const dailyThreshold = threshold / 30
@@ -70,6 +99,7 @@ module.exports = {
   FORMULA_NOTE,
   normalizeMallParams,
   computeMallCommission,
+  computeMallCommissionByStores,
   computeDailyMallCost,
   formatMallForUi
 }
