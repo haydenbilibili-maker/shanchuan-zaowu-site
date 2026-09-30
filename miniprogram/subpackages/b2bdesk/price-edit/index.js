@@ -2,12 +2,14 @@
  * 供应商管理中心 · 价目编辑（新建 / 编辑 / 上下架 / 删除）
  * 写操作仅超管（服务端 manageSupplierDesk 逐 action 校验）；被单据引用的条目「删除」= 停用，不硬删。
  * 校验错误就地显示在字段下方；删除用「再点一次确认」，不弹原生框。
- * 商品图：上传后表单只存 cloud:// fileID；只有换过 / 移除过图才把 image 送给服务端（没动图不覆盖库里的官网图与多图）。
+ * 商品图（多图，最多 9 张）：与 ERP / 官网同约定——images[0] 即封面，服务端同步 image = images[0]。
+ * 上传后只存 cloud:// fileID；只有增删 / 排序过才把 images 送给服务端（没动图不覆盖库里的官网图与多图）。
  */
 const { callDesk } = require('../utils/deskApi')
-const { thumbOf, absUrl, bigOf, pickAndUpload, preview } = require('../utils/deskImage')
+const { thumbOf, absUrl, bigOf, pickAndUploadMany, preview } = require('../utils/deskImage')
 
 const IMAGE_DIR = 'b2b-price'
+const GALLERY_MAX = 9
 
 const EMPTY = {
   skuId: '',
@@ -24,7 +26,6 @@ const EMPTY = {
   guidePrice: '',
   specs: '',
   note: '',
-  image: '',
   status: 'active'
 }
 
@@ -53,12 +54,24 @@ function formFromItem(it) {
     guidePrice: it.guidePrice != null && typeof it.guidePrice !== 'object' ? String(it.guidePrice) : '',
     specs: it.specs || '',
     note: it.note || '',
-    image: it.image || '',
     status: it.status === 'active' ? 'active' : 'inactive'
   }
 }
 
-function payloadOf(f, imageDirty) {
+/** 同 ERP normalizeImageFields：封面（image）排首位、去重；没有 images 时退回单张 image */
+function galleryFromItem(it) {
+  const list = (Array.isArray(it.images) ? it.images : []).map((u) => String(u || '').trim()).filter(Boolean)
+  const primary = String(it.image || '').trim() || list[0] || ''
+  const out = []
+  ;[primary].concat(list).forEach((u) => { if (u && out.indexOf(u) === -1) out.push(u) })
+  return out
+}
+
+function tile(raw) {
+  return { raw, thumb: thumbOf(raw) }
+}
+
+function payloadOf(f, gallery, galleryDirty) {
   let price = null
   if (f.priceMode === 'fixed') price = f.price
   else if (f.priceMode === 'range') price = { min: f.priceMin, max: f.priceMax }
@@ -76,7 +89,7 @@ function payloadOf(f, imageDirty) {
     note: f.note,
     status: f.status
   }
-  if (imageDirty) out.image = f.image
+  if (galleryDirty) out.images = gallery.map((g) => g.raw)
   return out
 }
 
@@ -94,8 +107,10 @@ Page({
     saving: false,
     removeArmed: false,
     removing: false,
-    imageThumb: '',
-    imageDirty: false,
+    gallery: [],
+    galleryMax: GALLERY_MAX,
+    picked: 0,
+    galleryDirty: false,
     uploading: false,
     flash: '',
     flashErr: false
@@ -122,8 +137,9 @@ Page({
       this.setData({
         loading: false,
         form: formFromItem(it),
-        imageThumb: thumbOf(it.image),
-        imageDirty: false,
+        gallery: galleryFromItem(it).map(tile),
+        picked: 0,
+        galleryDirty: false,
         options: res.options || this.data.options,
         refCount: it.refCount || 0,
         retired: !!it.retired
@@ -149,35 +165,72 @@ Page({
     this.setData({ flash: msg || '', flashErr: !!err })
   },
 
-  onCoverTap() {
-    if (this.data.imageThumb) this.previewImage()
-    else this.chooseImage()
+  setGallery(list, picked) {
+    const n = list.length
+    this.setData({ gallery: list, picked: n ? Math.max(0, Math.min(picked, n - 1)) : 0, galleryDirty: true, 'errors.image': '' })
   },
 
-  async chooseImage() {
-    if (this.data.uploading || this.data.saving) return
+  async addImages() {
+    const room = GALLERY_MAX - this.data.gallery.length
+    if (this.data.uploading || this.data.saving || room <= 0) return
     this.setData({ uploading: true, 'errors.image': '' })
-    const r = await pickAndUpload(IMAGE_DIR)
+    const r = await pickAndUploadMany(IMAGE_DIR, room)
     this.setData({ uploading: false })
     if (r.cancelled) return
-    if (!r.ok) return this.showFlash(r.msg, true)
-    this.setData({ 'form.image': r.fileID, imageThumb: thumbOf(r.fileID), imageDirty: true, flash: '' })
+    const have = this.data.gallery
+    if (r.fileIDs.length) this.setGallery(have.concat(r.fileIDs.slice(0, room).map(tile)), have.length)
+    this.showFlash(r.msg || '', !!r.msg)
   },
 
-  removeImage() {
-    if (this.data.uploading) return
-    this.setData({ 'form.image': '', imageThumb: '', imageDirty: true, 'errors.image': '' })
+  /** 点一下选中；再点已选中的那张 = 预览 */
+  onTileTap(e) {
+    const i = Number(e.currentTarget.dataset.index)
+    if (i === this.data.picked) this.previewPicked()
+    else this.setData({ picked: i })
   },
 
-  previewImage() {
-    const big = bigOf(this.data.form.image)
-    if (big) preview([big])
+  setCover() {
+    const { gallery, picked } = this.data
+    if (this.data.uploading || picked <= 0 || picked >= gallery.length) return
+    const list = gallery.slice()
+    const [g] = list.splice(picked, 1)
+    list.unshift(g)
+    this.setGallery(list, 0)
   },
 
-  /** 缩略图参数不被支持时回落原图；原图也坏就当没图 */
-  onImageError() {
-    const raw = absUrl(this.data.form.image)
-    this.setData({ imageThumb: this.data.imageThumb !== raw ? raw : '' })
+  movePicked(e) {
+    const step = Number(e.currentTarget.dataset.step)
+    const { gallery, picked } = this.data
+    const to = picked + step
+    if (this.data.uploading || !(step === 1 || step === -1) || to < 0 || to >= gallery.length) return
+    const list = gallery.slice()
+    const t = list[picked]
+    list[picked] = list[to]
+    list[to] = t
+    this.setGallery(list, to)
+  },
+
+  removePicked() {
+    const { gallery, picked } = this.data
+    if (this.data.uploading || picked >= gallery.length) return
+    const list = gallery.slice()
+    list.splice(picked, 1)
+    this.setGallery(list, picked)
+  },
+
+  previewPicked() {
+    const { gallery, picked } = this.data
+    const urls = gallery.map((g) => bigOf(g.raw))
+    preview(urls, urls[picked])
+  },
+
+  /** 缩略图参数不被支持时回落原图；原图也坏就当没图（仍保留该项，免得误删库里的地址） */
+  onTileError(e) {
+    const i = Number(e.currentTarget.dataset.index)
+    const g = this.data.gallery[i]
+    if (!g) return
+    const raw = absUrl(g.raw)
+    this.setData({ [`gallery[${i}].thumb`]: g.thumb !== raw ? raw : '' })
   },
 
   goBack() {
@@ -197,7 +250,7 @@ Page({
       return this.showFlash('请先修正标红的字段', true)
     }
     this.setData({ saving: true, flash: '' })
-    callDesk('adminSavePriceItem', { id: this.data.id, data: payloadOf(f, this.data.imageDirty) }).then((res) => {
+    callDesk('adminSavePriceItem', { id: this.data.id, data: payloadOf(f, this.data.gallery, this.data.galleryDirty) }).then((res) => {
       this.setData({ saving: false })
       if (!res.success) {
         const errs = {}

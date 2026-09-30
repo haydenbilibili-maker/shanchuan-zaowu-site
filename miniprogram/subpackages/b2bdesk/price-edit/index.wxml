@@ -28,21 +28,34 @@
         <text class="section-title">商品图</text>
         <text class="panel-side">采购商选货时看到</text>
       </view>
-      <view class="uploader cover {{imageThumb ? 'has' : ''}}" hover-class="card-press" bindtap="onCoverTap">
-        <image wx:if="{{imageThumb}}" class="uploader-img" src="{{imageThumb}}" mode="aspectFill" binderror="onImageError" />
-        <view wx:else class="uploader-empty">
-          <text class="uploader-plus">＋</text>
-          <text class="uploader-tip">上传商品图</text>
-          <text class="uploader-sub">拍照或从相册选 1 张，自动压缩</text>
+      <view class="gallery">
+        <view wx:for="{{gallery}}" wx:key="raw" class="g-tile {{index === picked ? 'on' : ''}}" hover-class="card-press" data-index="{{index}}" bindtap="onTileTap">
+          <view class="g-box">
+            <image wx:if="{{item.thumb}}" class="g-img" src="{{item.thumb}}" mode="aspectFill" data-index="{{index}}" binderror="onTileError" />
+            <view wx:else class="g-broken"><text class="g-broken-text">图片打不开</text></view>
+            <view wx:if="{{index === 0}}" class="g-cover"><text class="g-cover-text">封面</text></view>
+            <view class="g-no"><text class="g-no-text">{{index + 1}}</text></view>
+          </view>
         </view>
-        <view wx:if="{{uploading}}" class="uploader-busy"><text class="uploader-busy-text">正在上传…</text></view>
+        <view wx:if="{{gallery.length < galleryMax}}" class="g-tile" hover-class="card-press" bindtap="addImages">
+          <view class="g-box g-add">
+            <view class="g-add-inner">
+              <text class="uploader-plus">＋</text>
+              <text class="uploader-sub">{{uploading ? '正在上传…' : gallery.length ? '继续添加' : '上传商品图'}}</text>
+            </view>
+          </view>
+        </view>
       </view>
-      <view wx:if="{{imageThumb}}" class="img-actions">
-        <view class="img-act" hover-class="btn-press" bindtap="chooseImage"><text class="img-act-text">更换</text></view>
-        <view class="img-act danger" hover-class="btn-press" bindtap="removeImage"><text class="img-act-text">移除</text></view>
+      <view wx:if="{{gallery.length}}" class="g-tools">
+        <view class="g-tool {{picked === 0 ? 'off' : ''}}" hover-class="btn-press" bindtap="setCover"><text class="g-tool-text">设为封面</text></view>
+        <view class="g-tool {{picked === 0 ? 'off' : ''}}" hover-class="btn-press" data-step="-1" bindtap="movePicked"><text class="g-tool-text">左移</text></view>
+        <view class="g-tool {{picked >= gallery.length - 1 ? 'off' : ''}}" hover-class="btn-press" data-step="1" bindtap="movePicked"><text class="g-tool-text">右移</text></view>
+        <view class="g-tool" hover-class="btn-press" bindtap="previewPicked"><text class="g-tool-text">预览</text></view>
+        <view class="g-tool danger" hover-class="btn-press" bindtap="removePicked"><text class="g-tool-text">删除</text></view>
       </view>
+      <text class="field-hint">{{gallery.length}} / {{galleryMax}} 张 · 第 1 张是封面（报价单与选货列表显示它）。点图选中，再点一次放大看。</text>
       <text wx:if="{{errors.image}}" class="field-err">{{errors.image}}</text>
-      <text wx:if="{{imageDirty}}" class="field-hint">图片已换好，点底部「保存」后生效。</text>
+      <text wx:if="{{galleryDirty}}" class="field-hint">图片有改动，点底部「保存」后生效。</text>
     </view>
 
     <!-- 基本信息 -->

@@ -655,6 +655,28 @@ function nextImages(oldImage, oldImages, image) {
   return [image].concat(rest)
 }
 
+const GALLERY_MAX = 9
+
+/**
+ * 价目多图（与 ERP normalizeImageFields / 官网 priceListCloud 同约定：images[0] 即封面，image = images[0]）。
+ * 新增元素只收 cloud://；库里原有的地址（官网相对路径 / https）允许原样保留。
+ * @param {unknown} raw 入参 images
+ * @param {string[]} existing 该条目库里现有的 image + images
+ */
+function validateGallery(raw, existing) {
+  if (!Array.isArray(raw)) return { ok: false, msg: '图片格式不对，请重新上传' }
+  const keep = new Set((existing || []).map((u) => String(u == null ? '' : u).trim()).filter(Boolean))
+  const list = []
+  for (const x of raw) {
+    const u = String(x == null ? '' : x).trim()
+    if (!u || list.indexOf(u) !== -1) continue
+    if (!isCloudFileId(u) && !keep.has(u)) return { ok: false, msg: '新图片请用「上传图片」添加' }
+    list.push(u)
+  }
+  if (list.length > GALLERY_MAX) return { ok: false, msg: `商品图最多 ${GALLERY_MAX} 张` }
+  return { ok: true, images: list, image: list[0] || '' }
+}
+
 /** 伙伴资料图：logo（门头 / 标志）与资质照；只收显式带了的键，其它键原样不动 */
 function validatePartnerProfile(raw) {
   const d = raw && typeof raw === 'object' ? raw : {}
@@ -755,5 +777,7 @@ module.exports = {
   isCloudFileId,
   nextImages,
   validatePartnerProfile,
-  PARTNER_LICENSE_MAX
+  PARTNER_LICENSE_MAX,
+  validateGallery,
+  GALLERY_MAX
 }

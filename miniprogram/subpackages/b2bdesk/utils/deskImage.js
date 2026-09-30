@@ -40,15 +40,15 @@ function compress(src) {
   })
 }
 
-function chooseOne() {
+function choose(count) {
   return new Promise((resolve) => {
     wx.chooseMedia({
-      count: 1,
+      count,
       mediaType: ['image'],
       sizeType: ['compressed'],
       sourceType: ['album', 'camera'],
-      success: (res) => resolve(((res.tempFiles || [])[0] || {}).tempFilePath || ''),
-      fail: () => resolve('')
+      success: (res) => resolve((res.tempFiles || []).map((f) => (f && f.tempFilePath) || '').filter(Boolean)),
+      fail: () => resolve([])
     })
   })
 }
@@ -58,8 +58,30 @@ function chooseOne() {
  * @returns {Promise<{ ok: boolean, fileID?: string, cancelled?: boolean, msg?: string }>}
  */
 async function pickAndUpload(dir) {
-  const path = await chooseOne()
+  const path = (await choose(1))[0]
   if (!path) return { ok: false, cancelled: true }
+  return uploadOne(dir, path)
+}
+
+/**
+ * 一次选最多 max 张 → 逐张压缩上传（串行，弱网下不互相抢带宽）；部分失败时已传好的照常返回
+ * @returns {Promise<{ ok: boolean, fileIDs: string[], cancelled?: boolean, msg?: string }>}
+ */
+async function pickAndUploadMany(dir, max) {
+  const paths = await choose(Math.max(1, Math.min(9, max || 1)))
+  if (!paths.length) return { ok: false, cancelled: true, fileIDs: [] }
+  const fileIDs = []
+  let msg = ''
+  for (const p of paths) {
+    const r = await uploadOne(dir, p)
+    if (r.ok) fileIDs.push(r.fileID)
+    else msg = r.msg
+  }
+  if (!msg) return { ok: true, fileIDs }
+  return { ok: fileIDs.length > 0, fileIDs, msg: fileIDs.length ? `有 ${paths.length - fileIDs.length} 张没传上去，可再试一次` : msg }
+}
+
+async function uploadOne(dir, path) {
   try {
     const local = await compress(path)
     const ext = ((/\.(\w+)$/.exec(local) || [])[1] || 'jpg').toLowerCase()
@@ -80,4 +102,4 @@ function preview(urls, current) {
   wx.previewImage({ urls: list, current: current || list[0] })
 }
 
-module.exports = { absUrl, thumbOf, bigOf, pickAndUpload, preview }
+module.exports = { absUrl, thumbOf, bigOf, pickAndUpload, pickAndUploadMany, preview }

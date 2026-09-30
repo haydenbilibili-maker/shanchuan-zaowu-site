@@ -38,7 +38,7 @@
 | `specs` | string | 规格 |
 | `note` | string | 备注 |
 | `image` | string | 主图：官网绝对/相对路径或 `cloud://`。小程序「供应商 → 价目」上传写 `cloud://`（云存储 `b2b-price/`）；`manageSupplierDesk` 只在入参显式带 `image` 时写、只收 `cloud://`（2026-09-30） |
-| `images` | string[] | 多图（lightbox）；同步种子含多图 SKU。小程序换封面 = 新图放首位、保留其余图；移除封面 = 清空 |
+| `images` | string[] | 多图（lightbox），**`images[0]` 即封面且 = `image`**（ERP `normalizeImageFields` / 官网 `priceListCloud` 同约定）；同步种子含多图 SKU。小程序「供应商 → 价目」多图编辑（2026-09-30）：入参带 `images` 才写、新图只收 `cloud://`、库里原有地址可保留、≤ 9 张、同步 `image = images[0]`；旧客户端只送 `image` 时换封面 = 新图放首位、保留其余图，移除封面 = 清空 |
 | `imageAlt` | string | 图 alt |
 | `sort` | number | 升序 |
 | `status` | string | `active` \| `inactive` |

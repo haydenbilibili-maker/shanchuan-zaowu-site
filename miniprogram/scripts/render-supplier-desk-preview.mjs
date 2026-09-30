@@ -78,7 +78,7 @@ const shipments = { po1: [{ purchaseOrderId: 'po1', shipmentNo: 'SH-0921-01', lo
 const names = { 'b:oBUY': '令狐采购', 'b:oB2': '青禾文创', 's:SUP1': '云南蝶谷标本社' }
 const priceItems = [
   { _id: 'p1', skuId: 'BF-001', name: '光明女神闪蝶', species: '光明女神闪蝶', packaging: '12cm 玻璃罩', price: 150, guidePrice: 299, status: 'active', sort: 1, refCount: 2, image: '/images/price-list/green-birdwing-collection.jpg' },
-  { _id: 'p2', skuId: 'BF-021', name: '蓝闪蝶蝶翅画', species: '蓝闪蝶', packaging: 'A4 相框', price: { min: 280, max: 360 }, status: 'active', sort: 2, refCount: 1, image: '/images/price-list/blue-morpho-wood-frame.jpg' },
+  { _id: 'p2', skuId: 'BF-021', name: '蓝闪蝶蝶翅画', species: '蓝闪蝶', packaging: 'A4 相框', price: { min: 280, max: 360 }, status: 'active', sort: 2, refCount: 1, image: '/images/price-list/blue-morpho-wood-frame.jpg', images: ['/images/price-list/blue-morpho-wood-frame.jpg', '/images/price-list/blood-ripple-butterfly-dome.jpg', '/images/price-list/blue-banded-velvet-butterfly-dome.jpg', '/images/price-list/blue-morpho-combo-frame.jpg'] },
   { _id: 'p3', skuId: 'SEA-006', name: '海洋贝类冰箱贴', species: '混合贝类', packaging: '单枚吸塑', price: 30, guidePrice: 58, status: 'active', sort: 3, refCount: 1 },
   { _id: 'p4', skuId: 'BT-009', name: '长戟大兜虫', species: '长戟大兜虫', packaging: '收藏级标本盒', price: null, status: 'inactive', sort: 4, refCount: 0, retiredAt: at('2026-09-10T00:00:00Z') }
 ]
@@ -212,6 +212,7 @@ const scenes = [
   { name: 'after-center-partners', h: 1500, wxml: join(DESK, 'center/index.wxml'), wxss: join(DESK, 'center/index.wxss'), data: () => pageData(join(DESK, 'center/index.js'), { tab: 'partners' }) },
   { name: 'after-order', h: 2300, wxml: join(DESK, 'order/index.wxml'), wxss: join(DESK, 'order/index.wxss'), data: () => pageData(join(DESK, 'order/index.js'), { id: 'po1' }) },
   { name: 'after-price-edit', h: 2500, wxml: join(DESK, 'price-edit/index.wxml'), wxss: join(DESK, 'price-edit/index.wxss'), data: () => pageData(join(DESK, 'price-edit/index.js'), { id: 'p2' }, (p) => p.remove()) },
+  { name: 'after-price-edit-gallery', h: 1000, wxml: join(DESK, 'price-edit/index.wxml'), wxss: join(DESK, 'price-edit/index.wxss'), data: () => pageData(join(DESK, 'price-edit/index.js'), { id: 'p2' }, (p) => { p.setData({ picked: 1 }); p.setCover(); p.setData({ picked: 2 }) }) },
   { name: 'after-partner', h: 1800, wxml: join(DESK, 'partner/index.wxml'), wxss: join(DESK, 'partner/index.wxss'), data: () => pageData(join(DESK, 'partner/index.js'), { id: 'st2' }) },
   { name: 'after-statement', h: 2000, wxml: join(DESK, 'statement/index.wxml'), wxss: join(DESK, 'statement/index.wxss'), data: () => pageData(join(DESK, 'statement/index.js'), {}, (p) => p.toggleOpen({ currentTarget: { dataset: { id: 'po1' } } })) },
   {

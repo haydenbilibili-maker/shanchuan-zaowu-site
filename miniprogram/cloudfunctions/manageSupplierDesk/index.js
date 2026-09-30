@@ -489,6 +489,7 @@ function priceRow(r, refs) {
     specs: r.specs || '',
     note: r.note || '',
     image: r.image || '',
+    images: (Array.isArray(r.images) ? r.images : []).map((u) => String(u == null ? '' : u).trim()).filter(Boolean),
     price: r.price == null ? null : r.price,
     guidePrice: r.guidePrice == null ? null : r.guidePrice,
     priceText: core.priceText(r.price),
@@ -545,6 +546,14 @@ function priceWrite(data) {
   return out
 }
 
+/** 入参显式带了 images 才处理（优先于单张 image）；null = 没带，不动库里的图 */
+function galleryOf(raw, existing) {
+  if (!raw || typeof raw !== 'object' || raw.images === undefined) return null
+  const g = core.validateGallery(raw.images, existing)
+  if (!g.ok) return { ok: false, res: fail('INVALID', g.msg, { errors: [{ field: 'image', msg: g.msg }] }) }
+  return g
+}
+
 async function handleSavePriceItem(event, actor) {
   const v = core.validatePriceItem(event.data)
   if (!v.ok) return fail('INVALID', v.errors[0].msg, { errors: v.errors })
@@ -564,16 +573,25 @@ async function handleSavePriceItem(event, actor) {
       })
     }
     if (data.status === 'active' && old.retiredAt) data.retiredAt = null
-    if (data.image !== undefined && data.image !== (old.image || '')) data.images = core.nextImages(old.image || '', old.images, data.image)
+    const gallery = galleryOf(event.data, [old.image].concat(Array.isArray(old.images) ? old.images : []))
+    if (gallery && !gallery.ok) return gallery.res
+    if (gallery) {
+      data.images = gallery.images
+      data.image = gallery.image
+    } else if (data.image !== undefined && data.image !== (old.image || '')) data.images = core.nextImages(old.image || '', old.images, data.image)
     await db.collection(PRICE_COL).doc(id).update({ data: priceWrite({ ...data, updatedAt: t }) })
     await writeAuditLog(db, auditFromActor(actor, { action: 'price_item_update', relatedId: id, relatedType: PRICE_COL, detail: { skuId: data.skuId }, source: 'manageSupplierDesk' }))
     return { success: true, id, msg: '已保存' }
   }
+  const gallery = galleryOf(event.data, [])
+  if (gallery && !gallery.ok) return gallery.res
+  if (gallery) data.image = gallery.image
   if (data.sort == null) {
     const all = (await scan(PRICE_COL, null)).rows
     data.sort = all.reduce((m, r) => Math.max(m, Number(r.sort) || 0), 0) + 1
   }
-  const added = await db.collection(PRICE_COL).add({ data: { ...data, image: data.image || '', images: data.image ? [data.image] : [], createTime: t, updatedAt: t } })
+  const images = gallery ? gallery.images : data.image ? [data.image] : []
+  const added = await db.collection(PRICE_COL).add({ data: { ...data, image: data.image || '', images, createTime: t, updatedAt: t } })
   const newId = (added && (added._id || added.id)) || ''
   await writeAuditLog(db, auditFromActor(actor, { action: 'price_item_create', relatedId: newId, relatedType: PRICE_COL, detail: { skuId: data.skuId }, source: 'manageSupplierDesk' }))
   return { success: true, id: newId, msg: '已新建' }

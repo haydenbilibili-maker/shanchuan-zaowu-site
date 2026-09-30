@@ -64,7 +64,9 @@ function initialOf(name) {
 }
 
 function decoratePrice(r) {
-  return { ...r, thumb: thumbOf(r.image), big: bigOf(r.image), initial: initialOf(r.name) }
+  const big = bigOf(r.image)
+  const rest = (Array.isArray(r.images) ? r.images : []).map(bigOf).filter((u) => u && u !== big)
+  return { ...r, thumb: thumbOf(r.image), big, bigs: big ? [big].concat(rest) : rest, initial: initialOf(r.name) }
 }
 
 function orderFilterCount(o) {
@@ -430,7 +432,7 @@ Page({
     const row = this.findPrice(e.currentTarget.dataset.id)
     if (!row) return
     if (!row.big) return this.editPrice(e)
-    preview([row.big])
+    preview(row.bigs, row.big)
   },
 
   /** 缩略图加载失败（如裁剪参数不被支持）→ 回落原图地址；原图也坏则显示首字占位 */
@@ -476,9 +478,10 @@ Page({
   },
 
   sheetPreview() {
-    const big = this.data.sheet.big
+    const { id, big } = this.data.sheet
+    const row = this.findPrice(id)
     this.closeSheet()
-    preview([big])
+    preview(row ? row.bigs : [big], big)
   },
 
   toggleFoot() {
