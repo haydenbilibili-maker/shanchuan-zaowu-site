@@ -15,3 +15,5 @@ npm run test:ai-identify-monitor
 npm run check:member-curator-hub
 # 2026-09-30：超管工作台入口全局改版（七分区 + 待办条 + 合并磁贴二级面板）：改版前 47 个入口 + 扫码主按钮仍可达、权限条件不丢、无重复磁贴
 npm run check:hub-entries
+# 2026-09-30：超管「供应商」改版（miniprogram/docs/超管工作台_供应商改版_2026-09-30.md）：价目 / 伙伴资料图只收 cloud://、不带不覆盖、页面交互与文案
+npm run check:supplier-desk-images

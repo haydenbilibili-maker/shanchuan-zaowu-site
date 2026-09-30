@@ -5,10 +5,11 @@
 function friendlyError(e) {
   const msg = String((e && (e.errMsg || e.message)) || '')
   if (/FUNCTION_NOT_FOUND|-501000|FunctionName parameter could not be found/i.test(msg)) {
-    return '云函数 manageSupplierDesk 未部署，请先部署后再试'
+    return '供应商服务暂时没开通，请联系技术同事处理'
   }
-  if (/timeout|超时/i.test(msg)) return '请求超时，请检查网络后重试'
-  return msg ? `请求失败：${msg.slice(0, 80)}` : '请求失败，请重试'
+  if (/timeout|超时/i.test(msg)) return '网络有点慢，请检查网络后重试'
+  if (msg) console.warn('manageSupplierDesk call fail', msg)
+  return '没连上服务，请稍后重试'
 }
 
 function callDesk(action, data) {

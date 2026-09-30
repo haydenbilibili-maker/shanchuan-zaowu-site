@@ -1,35 +1,106 @@
-<view class="page">
-  <view wx:if="{{loading}}" class="state">
-    <text class="state-title">正在读取…</text>
+<view class="page with-bar">
+  <view wx:if="{{loading}}" class="skel">
+    <view class="skel-block tall"></view>
+    <view class="skel-block"></view>
+    <view class="skel-block"></view>
   </view>
   <view wx:elif="{{error}}" class="state err">
-    <text class="state-title">加载失败</text>
+    <text class="state-title">没加载出来</text>
     <text class="state-body">{{error}}</text>
     <view class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
   </view>
   <block wx:elif="{{partner}}">
-    <view class="head">
-      <text class="head-en">PARTNER ACCESS</text>
-      <text class="head-cn">{{partner.name}}</text>
-      <text class="head-note">{{partner.sideText}} · 微信尾号 {{partner.openidTail}} · {{partner.orders.count}} 单 {{partner.orders.amountText}}</text>
+    <view class="ptn-hero">
+      <view class="ptn-logo" hover-class="card-press" bindtap="onLogoTap">
+        <image wx:if="{{logoThumb}}" class="avatar-img" src="{{logoThumb}}" mode="aspectFill" binderror="onLogoError" />
+        <text wx:else class="ptn-logo-text">{{initial}}</text>
+        <view wx:if="{{busy === 'logo'}}" class="uploader-busy"><text class="uploader-busy-text">上传中</text></view>
+      </view>
+      <view class="ptn-hero-copy">
+        <text class="head-en">PARTNER</text>
+        <text class="head-cn">{{partner.name}}</text>
+        <view class="tags tight">
+          <view class="tag brass"><text class="tag-text">{{partner.sideText}}</text></view>
+          <view class="tag {{partner.status === 'active' ? 'ok' : 'danger'}}"><text class="tag-text">{{partner.status === 'active' ? '启用中' : '已停用'}}</text></view>
+          <view wx:if="{{!partner.b2bOnly}}" class="tag"><text class="tag-text">兼门店角色</text></view>
+        </view>
+      </view>
+    </view>
+    <view class="ptn-kpis">
+      <view class="ptn-kpi" hover-class="card-press" bindtap="openOrders">
+        <text class="ptn-kpi-value">{{partner.orders.count}}</text>
+        <text class="ptn-kpi-label">单子</text>
+      </view>
+      <view class="ptn-kpi" hover-class="card-press" bindtap="openOrders">
+        <text class="ptn-kpi-value">{{partner.orders.amountText}}</text>
+        <text class="ptn-kpi-label">金额</text>
+      </view>
+      <view class="ptn-kpi" hover-class="card-press" bindtap="openOrders">
+        <text class="ptn-kpi-value {{partner.orders.dueFen ? 'warn' : ''}}">{{partner.orders.dueFen ? partner.orders.dueText : '—'}}</text>
+        <text class="ptn-kpi-label">待收款</text>
+      </view>
     </view>
 
     <view wx:if="{{flash}}" class="flash {{flashErr ? 'err' : ''}}"><text class="flash-text">{{flash}}</text></view>
 
-    <view class="section">
+    <!-- 资料图 -->
+    <view class="panel">
+      <text class="panel-title-en">PHOTOS</text>
+      <view class="panel-head">
+        <text class="section-title">资料图</text>
+        <text class="panel-side">上传即保存 · 只有超管能看</text>
+      </view>
+      <text class="row-label">门头 / 标志</text>
+      <view class="img-row">
+        <view class="uploader tile {{logoThumb ? 'has' : ''}}" hover-class="card-press" bindtap="onLogoTap">
+          <image wx:if="{{logoThumb}}" class="uploader-img" src="{{logoThumb}}" mode="aspectFill" binderror="onLogoError" />
+          <view wx:else class="uploader-empty">
+            <text class="uploader-plus">＋</text>
+            <text class="uploader-sub">门头或标志</text>
+          </view>
+          <view wx:if="{{busy === 'logo'}}" class="uploader-busy"><text class="uploader-busy-text">上传中</text></view>
+        </view>
+        <view wx:if="{{logoThumb}}" class="img-side">
+          <view class="img-act" hover-class="btn-press" bindtap="chooseLogo"><text class="img-act-text">更换</text></view>
+          <view class="img-act danger" hover-class="btn-press" bindtap="removeLogo"><text class="img-act-text">移除</text></view>
+        </view>
+      </view>
+
+      <text class="row-label">资质照（营业执照、许可证等，最多 {{licenseMax}} 张）</text>
+      <view class="img-row wrap">
+        <view wx:for="{{licenses}}" wx:key="*this" class="uploader tile has">
+          <image class="uploader-img" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewLicense" />
+          <view class="tile-del" hover-class="btn-press" data-index="{{index}}" catchtap="removeLicense"><text class="tile-del-text">删除</text></view>
+        </view>
+        <view wx:if="{{licenses.length < licenseMax}}" class="uploader tile" hover-class="card-press" bindtap="addLicense">
+          <view class="uploader-empty">
+            <text class="uploader-plus">＋</text>
+            <text class="uploader-sub">加一张</text>
+          </view>
+          <view wx:if="{{busy === 'license'}}" class="uploader-busy"><text class="uploader-busy-text">上传中</text></view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 账号状态 -->
+    <view class="panel">
+      <text class="panel-title-en">ACCOUNT</text>
       <text class="section-title">账号状态</text>
       <view class="toggle-row" bindtap="toggleStatus">
         <view class="toggle-copy">
           <text class="toggle-title">{{partner.status === 'active' ? '启用中' : '已停用'}}</text>
-          <text class="toggle-desc">{{!partner.b2bOnly ? '兼有门店角色：请到店员花名册启停' : statusArmed ? (partner.status === 'active' ? '再点一次确认停用：该账号的全部 B2B 接口将立即拒绝' : '再点一次确认启用') : '停用后该账号无法进入工作台、下单或查看对账'}}</text>
+          <text class="toggle-desc">{{!partner.b2bOnly ? '兼有门店角色：请到店员花名册启停' : statusArmed ? (partner.status === 'active' ? '再点一次确认停用：该账号马上无法进入工作台' : '再点一次确认启用') : '停用后该账号无法进入工作台、下单或查看对账'}}</text>
         </view>
         <view class="toggle {{partner.status === 'active' ? 'on' : ''}}"><view class="toggle-knob"></view></view>
       </view>
+      <text class="card-meta dim">微信尾号 {{partner.openidTail}}</text>
     </view>
 
-    <view class="section">
-      <text class="section-title">功能项</text>
-      <text class="section-sub">关掉后伙伴工作台隐藏对应入口；「对账与物流」同时由服务端拒绝。价目 / 下单 / 需求的服务端拦截在 B2B 支付修复流的函数里，待其接入（蓝图 CR-1）。</text>
+    <!-- 功能项 -->
+    <view class="panel">
+      <text class="panel-title-en">FEATURES</text>
+      <text class="section-title">工作台功能</text>
+      <text class="section-sub">关掉后伙伴工作台不再显示对应入口；「对账与物流」关掉后连数据也看不到。</text>
       <view wx:for="{{featureRows}}" wx:key="key" class="toggle-row" data-key="{{item.key}}" bindtap="toggleFeature">
         <view class="toggle-copy">
           <text class="toggle-title">{{item.label}}</text>
@@ -39,20 +110,27 @@
       </view>
     </view>
 
-    <view wx:if="{{partner.sides.supplier}}" class="field">
-      <text class="field-label">供货方 ID（采购需求按它归属；留空 = 用微信 openid）</text>
-      <input class="field-input" value="{{supplierId}}" placeholder="字母 / 数字 / - / _" maxlength="80" bindinput="onSupplierId" />
-    </view>
-    <view class="field">
-      <text class="field-label">内部备注（伙伴看不到）</text>
-      <input class="field-input" value="{{note}}" maxlength="120" placeholder="如 合同到期 2027-03" bindinput="onNote" />
+    <view class="panel">
+      <text class="panel-title-en">NOTES</text>
+      <text class="section-title">归属与备注</text>
+      <view wx:if="{{partner.sides.supplier}}" class="field">
+        <text class="field-label">供货方编号（采购需求按它归属；留空则按微信账号）</text>
+        <input class="field-input" value="{{supplierId}}" placeholder="字母 / 数字 / - / _" maxlength="80" bindinput="onSupplierId" />
+      </view>
+      <view class="field">
+        <text class="field-label">内部备注（伙伴看不到）</text>
+        <input class="field-input" value="{{note}}" maxlength="120" placeholder="如 合同到期 2027-03" bindinput="onNote" />
+      </view>
     </view>
 
-    <view class="btn {{saving ? 'busy' : ''}} {{dirty ? '' : 'ghost'}}" hover-class="btn-press" bindtap="save">
-      <text class="btn-text">{{saving ? '保存中…' : dirty ? '保存权限配置' : '已是最新配置'}}</text>
-    </view>
-    <view class="btn ghost" hover-class="btn-press" bindtap="previewStatement"><text class="btn-text">预览 TA 的对账与物流</text></view>
     <view wx:if="{{partner.orders.count}}" class="btn ghost" hover-class="btn-press" bindtap="openOrders"><text class="btn-text">查看 TA 的订单</text></view>
-    <text class="foot">每次保存与启停都会写入操作日志。开通新账号、改角色请到「店员花名册」。</text>
+    <text class="foot">每次保存、启停、改图都会留下操作记录。开通新账号、改角色请到「店员花名册」。</text>
+
+    <view class="bar">
+      <view class="bar-ghost" hover-class="btn-press" bindtap="previewStatement"><text class="bar-ghost-text">预览对账</text></view>
+      <view class="bar-main {{saving ? 'busy' : ''}} {{dirty ? '' : 'idle'}}" hover-class="btn-press" bindtap="save">
+        <text class="bar-main-text">{{saving ? '保存中…' : dirty ? '保存权限配置' : '已是最新配置'}}</text>
+      </view>
+    </view>
   </block>
 </view>

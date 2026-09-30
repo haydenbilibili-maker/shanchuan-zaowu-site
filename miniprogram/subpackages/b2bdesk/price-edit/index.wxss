@@ -1,1 +1,14 @@
 @import '../desk-common.wxss';
+
+.uploader.cover {
+  width: 100%;
+  height: 420rpx;
+}
+
+.panel .field:last-child {
+  margin-bottom: 0;
+}
+
+.danger-zone {
+  border-color: rgba(224, 122, 95, 0.25);
+}

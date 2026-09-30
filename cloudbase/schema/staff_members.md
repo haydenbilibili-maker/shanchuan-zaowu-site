@@ -26,6 +26,7 @@
 | `storeIds` | string[] | 可操作门店范围；超管为空数组=全部门店 |
 | `dailyGrantCap` | number | 单日赠分上限（0 表示用默认） |
 | `status` | string | `active` \| 其它（停用）；`staffGuard` 只认 `active` |
+| `b2bProfile` | object | 仅采购商 / 供货方：`{ logo, licenses[], updatedAt, updatedBy }`，门头 / 标志与资质照（≤ 3），均为 `cloud://`（云存储 `b2b-partner/<staffId>/`）。只经 `manageSupplierDesk.adminSavePartnerProfile`（超管）按键合并写、只经 `adminListPartners`（超管）读出；伙伴端接口不返回（2026-09-30） |
 
 ## 关联
 

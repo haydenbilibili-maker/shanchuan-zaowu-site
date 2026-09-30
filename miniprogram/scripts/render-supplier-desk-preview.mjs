@@ -77,12 +77,12 @@ const orders = [
 const shipments = { po1: [{ purchaseOrderId: 'po1', shipmentNo: 'SH-0921-01', logistics: { carrier: '顺丰', trackingNumber: 'SF1234567890123', shipTime: at('2026-09-21T09:30:00Z') } }] }
 const names = { 'b:oBUY': '令狐采购', 'b:oB2': '青禾文创', 's:SUP1': '云南蝶谷标本社' }
 const priceItems = [
-  { _id: 'p1', skuId: 'BF-001', name: '光明女神闪蝶', species: '光明女神闪蝶', packaging: '12cm 玻璃罩', price: 150, guidePrice: 299, status: 'active', sort: 1, refCount: 2 },
-  { _id: 'p2', skuId: 'BF-021', name: '蓝闪蝶蝶翅画', species: '蓝闪蝶', packaging: 'A4 相框', price: { min: 280, max: 360 }, status: 'active', sort: 2, refCount: 1 },
+  { _id: 'p1', skuId: 'BF-001', name: '光明女神闪蝶', species: '光明女神闪蝶', packaging: '12cm 玻璃罩', price: 150, guidePrice: 299, status: 'active', sort: 1, refCount: 2, image: '/images/price-list/green-birdwing-collection.jpg' },
+  { _id: 'p2', skuId: 'BF-021', name: '蓝闪蝶蝶翅画', species: '蓝闪蝶', packaging: 'A4 相框', price: { min: 280, max: 360 }, status: 'active', sort: 2, refCount: 1, image: '/images/price-list/blue-morpho-wood-frame.jpg' },
   { _id: 'p3', skuId: 'SEA-006', name: '海洋贝类冰箱贴', species: '混合贝类', packaging: '单枚吸塑', price: 30, guidePrice: 58, status: 'active', sort: 3, refCount: 1 },
   { _id: 'p4', skuId: 'BT-009', name: '长戟大兜虫', species: '长戟大兜虫', packaging: '收藏级标本盒', price: null, status: 'inactive', sort: 4, refCount: 0, retiredAt: at('2026-09-10T00:00:00Z') }
 ]
-const priceRow = (r) => ({ ...r, priceText: core.priceText(r.price), guideText: r.guidePrice == null ? '' : core.priceText(r.guidePrice), retired: !!r.retiredAt, prepMethod: '干制', packagingFilter: '玻璃罩', bioFilter: '蝴蝶', specs: '', note: '', image: '' })
+const priceRow = (r) => ({ ...r, priceText: core.priceText(r.price), guideText: r.guidePrice == null ? '' : core.priceText(r.guidePrice), retired: !!r.retiredAt, prepMethod: '干制', packagingFilter: '玻璃罩', bioFilter: '蝴蝶', specs: '', note: '', image: r.image || '' })
 const partnerRow = (staffId, name, openid, roles, extra = {}) => {
   const sides = core.deskSidesOf(roles)
   const keys = [sides.buyer ? `b:${openid}` : '', sides.supplier ? `s:${extra.supplierId || openid}` : ''].filter(Boolean)
@@ -208,6 +208,7 @@ const scenes = [
   { name: 'after-center-dash', h: 2600, wxml: join(DESK, 'center/index.wxml'), wxss: join(DESK, 'center/index.wxss'), data: () => pageData(join(DESK, 'center/index.js'), {}, (p) => p.onDashRange({ currentTarget: { dataset: { key: 'all' } } })) },
   { name: 'after-center-orders', h: 2100, wxml: join(DESK, 'center/index.wxml'), wxss: join(DESK, 'center/index.wxss'), data: () => pageData(join(DESK, 'center/index.js'), { tab: 'orders' }, (p) => p.onOrderFilter({ currentTarget: { dataset: { field: 'range', key: 'all' } } })) },
   { name: 'after-center-price', h: 1500, wxml: join(DESK, 'center/index.wxml'), wxss: join(DESK, 'center/index.wxss'), data: () => pageData(join(DESK, 'center/index.js'), { tab: 'price' }) },
+  { name: 'after-center-price-sheet', h: 1500, wxml: join(DESK, 'center/index.wxml'), wxss: join(DESK, 'center/index.wxss'), data: () => pageData(join(DESK, 'center/index.js'), { tab: 'price' }, (p) => p.openPriceSheet({ currentTarget: { dataset: { id: 'p2' } } })) },
   { name: 'after-center-partners', h: 1500, wxml: join(DESK, 'center/index.wxml'), wxss: join(DESK, 'center/index.wxss'), data: () => pageData(join(DESK, 'center/index.js'), { tab: 'partners' }) },
   { name: 'after-order', h: 2300, wxml: join(DESK, 'order/index.wxml'), wxss: join(DESK, 'order/index.wxss'), data: () => pageData(join(DESK, 'order/index.js'), { id: 'po1' }) },
   { name: 'after-price-edit', h: 2500, wxml: join(DESK, 'price-edit/index.wxml'), wxss: join(DESK, 'price-edit/index.wxss'), data: () => pageData(join(DESK, 'price-edit/index.js'), { id: 'p2' }, (p) => p.remove()) },

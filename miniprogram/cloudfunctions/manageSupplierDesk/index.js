@@ -12,6 +12,7 @@
  *   adminListPartners     B2B 伙伴 + 功能项 + 订单概况
  *   adminSavePartnerAccess 功能项 / supplierId / 备注
  *   adminSetPartnerStatus  启停（仅纯 B2B 伙伴；含门店角色走花名册）
+ *   adminSavePartnerProfile 伙伴资料图（门头 / 标志 + 资质照，只收 cloud://，只写带了的键）
  *   adminListPriceItems / adminSavePriceItem / adminSetPriceStatus / adminMovePriceItem / adminRemovePriceItem
  *
  * 边界：purchase_orders / fulfillment_shipments 在本函数内**只读**；支付字段只由 payB2bPurchase / b2bPayCallback 写。
@@ -320,6 +321,10 @@ async function handleListPartners(event) {
         features: core.normalizeFeatures(r.b2bDesk && r.b2bDesk.features),
         featuresCustomized: !!(r.b2bDesk && r.b2bDesk.features),
         note: pickStr(r.b2bDesk && r.b2bDesk.note, 120),
+        profile: {
+          logo: core.isCloudFileId(r.b2bProfile && r.b2bProfile.logo) ? r.b2bProfile.logo : '',
+          licenses: ((r.b2bProfile && r.b2bProfile.licenses) || []).filter(core.isCloudFileId).slice(0, core.PARTNER_LICENSE_MAX)
+        },
         partnerKeys: keys,
         orders: { ...agg, amountText: core.yuanText(agg.amountFen), dueText: core.yuanText(agg.dueFen), lastText: core.bizDateKey(agg.lastAt) }
       }
@@ -368,6 +373,24 @@ async function handleSavePartnerAccess(event, actor) {
     source: 'manageSupplierDesk'
   }))
   return { success: true, features, msg: '已保存' }
+}
+
+/** 伙伴资料图（门头 / 标志 + 资质照）：只写 b2bProfile 里入参显式带了的键；资质照只经超管动作读出 */
+async function handleSavePartnerProfile(event, actor) {
+  const got = await loadB2bRow(event.staffId)
+  if (!got.ok) return got.res
+  const v = core.validatePartnerProfile(event)
+  if (!v.ok) return fail('INVALID', v.msg)
+  const profile = { ...v.patch, updatedAt: now(), updatedBy: actor.openid || 'admin_web' }
+  await db.collection(STAFF_COL).doc(got.row._id).update({ data: { b2bProfile: profile, updateTime: db.serverDate() } })
+  await writeAuditLog(db, auditFromActor(actor, {
+    action: 'b2b_partner_profile',
+    relatedId: got.row._id,
+    relatedType: STAFF_COL,
+    detail: { keys: Object.keys(v.patch), licenses: (v.patch.licenses || []).length },
+    source: 'manageSupplierDesk'
+  }))
+  return { success: true, profile: v.patch, msg: '图片已保存' }
 }
 
 async function handleSetPartnerStatus(event, actor) {
@@ -529,19 +552,19 @@ async function handleSavePriceItem(event, actor) {
   const data = v.data
   const dup = await db.collection(PRICE_COL).where({ skuId: data.skuId }).limit(5).get()
   if (((dup && dup.data) || []).some((r) => r._id !== id)) {
-    return fail('DUP_SKU', `skuId「${data.skuId}」已存在`, { errors: [{ field: 'skuId', msg: 'skuId 已存在' }] })
+    return fail('DUP_SKU', `货号「${data.skuId}」已存在`, { errors: [{ field: 'skuId', msg: '货号已存在' }] })
   }
   const t = now()
   if (id) {
     const old = await getDoc(PRICE_COL, id)
     if (!old) return fail('NOT_FOUND', '价目不存在')
     if (old.skuId && old.skuId !== data.skuId && (await refCountOf(old.skuId)) > 0) {
-      return fail('SKU_LOCKED', '该 SKU 已被采购 / 出货单引用，skuId 不可修改（可新建一条再停用旧条目）', {
+      return fail('SKU_LOCKED', '该货号已被采购 / 出货单引用，不可修改（可新建一条再停用旧条目）', {
         errors: [{ field: 'skuId', msg: '已被单据引用，不可修改' }]
       })
     }
     if (data.status === 'active' && old.retiredAt) data.retiredAt = null
-    if (data.image !== (old.image || '')) data.images = data.image ? [data.image] : []
+    if (data.image !== undefined && data.image !== (old.image || '')) data.images = core.nextImages(old.image || '', old.images, data.image)
     await db.collection(PRICE_COL).doc(id).update({ data: priceWrite({ ...data, updatedAt: t }) })
     await writeAuditLog(db, auditFromActor(actor, { action: 'price_item_update', relatedId: id, relatedType: PRICE_COL, detail: { skuId: data.skuId }, source: 'manageSupplierDesk' }))
     return { success: true, id, msg: '已保存' }
@@ -550,7 +573,7 @@ async function handleSavePriceItem(event, actor) {
     const all = (await scan(PRICE_COL, null)).rows
     data.sort = all.reduce((m, r) => Math.max(m, Number(r.sort) || 0), 0) + 1
   }
-  const added = await db.collection(PRICE_COL).add({ data: { ...data, images: data.image ? [data.image] : [], createTime: t, updatedAt: t } })
+  const added = await db.collection(PRICE_COL).add({ data: { ...data, image: data.image || '', images: data.image ? [data.image] : [], createTime: t, updatedAt: t } })
   const newId = (added && (added._id || added.id)) || ''
   await writeAuditLog(db, auditFromActor(actor, { action: 'price_item_create', relatedId: newId, relatedType: PRICE_COL, detail: { skuId: data.skuId }, source: 'manageSupplierDesk' }))
   return { success: true, id: newId, msg: '已新建' }
@@ -679,6 +702,7 @@ const ADMIN_ACTIONS = {
   adminListPartners: handleListPartners,
   adminSavePartnerAccess: handleSavePartnerAccess,
   adminSetPartnerStatus: handleSetPartnerStatus,
+  adminSavePartnerProfile: handleSavePartnerProfile,
   adminListPriceItems: handleListPriceItems,
   adminGetPriceItem: handleGetPriceItem,
   adminSavePriceItem: handleSavePriceItem,
@@ -705,6 +729,6 @@ exports.main = async (event) => {
     return fail('UNKNOWN_ACTION', `未知 action: ${action}`)
   } catch (e) {
     console.error('manageSupplierDesk', action, e)
-    return fail('INTERNAL', (e && e.message) || '服务异常')
+    return fail('INTERNAL', '服务开小差了，请稍后重试')
   }
 }

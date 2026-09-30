@@ -2,8 +2,12 @@
  * 供应商管理中心 · 伙伴权限（超管）
  * 功能项存 staff_members.b2bDesk.features；启停 = staff_members.status（resolveActor 只认 active，全部 B2B 接口即刻生效）。
  * 同时有门店角色的账号不在这里启停，避免误停门店权限。
+ * 资料图（门头 / 标志 + 资质照）上传即经 adminSavePartnerProfile 保存；资质照直接用 cloud:// 显示（按云存储权限读，不转公开链接）。
  */
 const { callDesk } = require('../utils/deskApi')
+const { thumbOf, absUrl, bigOf, pickAndUpload, preview } = require('../utils/deskImage')
+
+const LICENSE_MAX = 3
 
 function sideOk(f, sides) {
   return f.side === 'both' || !!(sides && sides[f.side])
@@ -21,6 +25,12 @@ Page({
     saving: false,
     statusArmed: false,
     statusBusy: false,
+    initial: '',
+    logo: '',
+    logoThumb: '',
+    licenses: [],
+    licenseMax: LICENSE_MAX,
+    busy: '',
     flash: '',
     flashErr: false
   },
@@ -45,9 +55,14 @@ Page({
         .filter((f) => sideOk(f, p.sides))
         .map((f) => ({ key: f.key, label: f.label, hint: f.hint, on: p.features[f.key] === true }))
       const sideText = [p.sides && p.sides.buyer ? '采购商' : '', p.sides && p.sides.supplier ? '供货方' : ''].filter(Boolean).join(' / ') || '—'
+      const profile = p.profile || {}
       this.setData({
         loading: false,
         partner: { ...p, sideText },
+        initial: String(p.name || '').trim().charAt(0) || '·',
+        logo: profile.logo || '',
+        logoThumb: thumbOf(profile.logo),
+        licenses: (profile.licenses || []).slice(0, LICENSE_MAX),
         featureRows,
         supplierId: p.supplierId || '',
         note: p.note || '',
@@ -58,6 +73,78 @@ Page({
 
   showFlash(msg, err) {
     this.setData({ flash: msg || '', flashErr: !!err })
+  },
+
+  /** 只送这次改动的那一个键（logo 或 licenses），另一个键服务端原样不动 */
+  saveProfile(patch, kind) {
+    this.setData({ busy: kind })
+    return callDesk('adminSavePartnerProfile', { staffId: this._id, ...patch }).then((res) => {
+      this.setData({ busy: '' })
+      if (!res.success) {
+        this.showFlash(res.msg || '图片没保存上，请重试', true)
+        return false
+      }
+      this.showFlash(res.msg || '图片已保存')
+      return true
+    })
+  },
+
+  onLogoTap() {
+    if (this.data.logo) {
+      const big = bigOf(this.data.logo)
+      if (big) preview([big])
+      return
+    }
+    this.chooseLogo()
+  },
+
+  async chooseLogo() {
+    if (this.data.busy) return
+    this.setData({ busy: 'logo' })
+    const r = await pickAndUpload(`b2b-partner/${this._id}`)
+    if (r.cancelled) return this.setData({ busy: '' })
+    if (!r.ok) {
+      this.setData({ busy: '' })
+      return this.showFlash(r.msg, true)
+    }
+    if (await this.saveProfile({ logo: r.fileID }, 'logo')) {
+      this.setData({ logo: r.fileID, logoThumb: thumbOf(r.fileID) })
+    }
+  },
+
+  async removeLogo() {
+    if (this.data.busy) return
+    if (await this.saveProfile({ logo: '' }, 'logo')) this.setData({ logo: '', logoThumb: '' })
+  },
+
+  onLogoError() {
+    const raw = absUrl(this.data.logo)
+    this.setData({ logoThumb: this.data.logoThumb !== raw ? raw : '' })
+  },
+
+  async addLicense() {
+    if (this.data.busy || this.data.licenses.length >= LICENSE_MAX) return
+    this.setData({ busy: 'license' })
+    const r = await pickAndUpload(`b2b-partner/${this._id}/license`)
+    if (r.cancelled) return this.setData({ busy: '' })
+    if (!r.ok) {
+      this.setData({ busy: '' })
+      return this.showFlash(r.msg, true)
+    }
+    const next = this.data.licenses.concat(r.fileID)
+    if (await this.saveProfile({ licenses: next }, 'license')) this.setData({ licenses: next })
+  },
+
+  async removeLicense(e) {
+    if (this.data.busy) return
+    const i = Number(e.currentTarget.dataset.index)
+    const next = this.data.licenses.filter((_, k) => k !== i)
+    if (await this.saveProfile({ licenses: next }, 'license')) this.setData({ licenses: next })
+  },
+
+  previewLicense(e) {
+    const i = Number(e.currentTarget.dataset.index) || 0
+    preview(this.data.licenses, this.data.licenses[i])
   },
 
   toggleFeature(e) {

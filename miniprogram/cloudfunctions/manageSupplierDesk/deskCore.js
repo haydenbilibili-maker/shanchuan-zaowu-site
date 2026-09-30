@@ -311,7 +311,7 @@ function buildTimeline(po, shipments, nowMs) {
   push('placed', supplier ? '需求下达' : '下单', 'done', orderTime(po), po.orderNo ? `单号 ${po.orderNo}` : '')
 
   if (supplier) {
-    push('pay', '总部付款', 'na', null, '供货方付款字段未建模（蓝图 N-7）')
+    push('pay', '总部付款', 'na', null, '总部付款暂未在系统里登记')
   } else {
     const trades = Array.isArray(po.payTrades) ? po.payTrades.length : 0
     const tradeNote = trades > 1 ? `共发起 ${trades} 次支付` : ''
@@ -351,7 +351,7 @@ function buildTimeline(po, shipments, nowMs) {
   push('receive', '签收', stage === 'received' ? 'done' : stage === 'transit' ? 'current' : stage === 'cancelled' ? 'na' : 'todo', num(po.receivedAt), '')
 
   if (supplier) {
-    push('settle', '结算', 'na', null, '未建模')
+    push('settle', '结算', 'na', null, '暂未在系统里登记')
   } else {
     const settled = bucket === 'received' && stage === 'received'
     push('settle', '结算', settled ? 'done' : isClosedStatus(st) || bucket === 'refunded' ? 'na' : 'todo', null, settled ? '货款已收、货已签收' : '')
@@ -455,7 +455,7 @@ function buildDashboard(orders, opts, nowMs) {
     money: { receivedFen: 0, markedFen: 0, dueFen: 0, offlineFen: 0, reviewFen: 0, refundedFen: 0, overdueCount: 0, overdueFen: 0 },
     counts: { due: 0, offline: 0, review: 0, received: 0, refunded: 0, marked: 0 },
     aging: { '0-7': 0, '8-30': 0, '30+': 0 },
-    payable: { count: 0, amountFen: 0, note: '供货方付款字段未建模：只报应付，不编已付' },
+    payable: { count: 0, amountFen: 0, note: '总部给供货方的付款暂未在系统里登记，这里只算应付' },
     byPartner: [],
     payTermDays: PAY_TERM_DAYS
   }
@@ -599,7 +599,7 @@ function validatePriceItem(raw) {
   const d = raw && typeof raw === 'object' ? raw : {}
   const errors = []
   const skuId = str(d.skuId, 64)
-  if (!SKU_RE.test(skuId)) errors.push({ field: 'skuId', msg: 'skuId 需 2–64 位字母数字、- 或 _' })
+  if (!SKU_RE.test(skuId)) errors.push({ field: 'skuId', msg: '货号需 2–64 位字母、数字、- 或 _' })
   const name = str(d.name, 60)
   if (!name) errors.push({ field: 'name', msg: '请填写品名' })
   const species = str(d.species, 60)
@@ -615,8 +615,11 @@ function validatePriceItem(raw) {
   const bioFilter = BIO_FILTERS.indexOf(d.bioFilter) !== -1 ? d.bioFilter : '昆虫'
   const sortN = parseInt(d.sort, 10)
   const status = d.status === 'inactive' ? 'inactive' : 'active'
+  // 图片只在入参显式带了才写（小程序只在上传 / 移除后才送）；新写入的必须是云存储文件，库里的官网相对路径不受影响
+  const hasImage = d.image !== undefined
+  const image = hasImage ? String(d.image == null ? '' : d.image).trim() : ''
+  if (hasImage && image && !isCloudFileId(image)) errors.push({ field: 'image', msg: '图片请用「上传图片」添加' })
   if (errors.length) return { ok: false, errors }
-  const image = str(d.image, 500)
   const data = {
     skuId,
     name,
@@ -629,12 +632,47 @@ function validatePriceItem(raw) {
     guidePrice: guide.value,
     specs: str(d.specs, 200),
     note: str(d.note, 300),
-    image,
     imageAlt: str(d.imageAlt, 60) || name,
     status
   }
+  if (hasImage) data.image = image
   if (Number.isFinite(sortN)) data.sort = sortN
   return { ok: true, data }
+}
+
+const IMAGE_FILE_ID_RE = /^cloud:\/\/\S+$/
+const IMAGE_FILE_ID_MAX = 512
+const PARTNER_LICENSE_MAX = 3
+
+function isCloudFileId(v) {
+  return typeof v === 'string' && v.length <= IMAGE_FILE_ID_MAX && IMAGE_FILE_ID_RE.test(v)
+}
+
+/** 换主图时保留图集里其余的图（ERP 维护的多图不被小程序换封面冲掉）；移除主图 = 清空 */
+function nextImages(oldImage, oldImages, image) {
+  if (!image) return []
+  const rest = (Array.isArray(oldImages) ? oldImages : []).filter((u) => u && u !== oldImage && u !== image)
+  return [image].concat(rest)
+}
+
+/** 伙伴资料图：logo（门头 / 标志）与资质照；只收显式带了的键，其它键原样不动 */
+function validatePartnerProfile(raw) {
+  const d = raw && typeof raw === 'object' ? raw : {}
+  const patch = {}
+  if (d.logo !== undefined) {
+    const logo = String(d.logo == null ? '' : d.logo).trim()
+    if (logo && !isCloudFileId(logo)) return { ok: false, msg: '门头 / 标志图请用「上传」添加' }
+    patch.logo = logo
+  }
+  if (d.licenses !== undefined) {
+    if (!Array.isArray(d.licenses)) return { ok: false, msg: '资质照格式不对，请重新上传' }
+    const list = d.licenses.map((x) => String(x == null ? '' : x).trim()).filter(Boolean)
+    if (list.length > PARTNER_LICENSE_MAX) return { ok: false, msg: `资质照最多 ${PARTNER_LICENSE_MAX} 张` }
+    if (!list.every(isCloudFileId)) return { ok: false, msg: '资质照请用「上传」添加' }
+    patch.licenses = list
+  }
+  if (!Object.keys(patch).length) return { ok: false, msg: '没有要保存的图片' }
+  return { ok: true, patch }
 }
 
 function priceText(p) {
@@ -713,5 +751,9 @@ module.exports = {
   normalizePrice,
   priceText,
   removalPlan,
-  planMove
+  planMove,
+  isCloudFileId,
+  nextImages,
+  validatePartnerProfile,
+  PARTNER_LICENSE_MAX
 }

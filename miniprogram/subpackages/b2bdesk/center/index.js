@@ -4,6 +4,7 @@
  * 全部数据经 manageSupplierDesk；服务端逐 action 校验超管。本页不直连集合、不调支付函数。
  */
 const { callDesk, yuan } = require('../utils/deskApi')
+const { thumbOf, bigOf, absUrl, preview } = require('../utils/deskImage')
 
 const TABS = [
   { key: 'dash', label: '大盘' },
@@ -58,6 +59,24 @@ function decorateOrder(o) {
   return { ...o, payTone: PAY_TONE[o.payBucket] || '', stageTone: STAGE_TONE[o.stage] || '' }
 }
 
+function initialOf(name) {
+  return String(name || '').trim().charAt(0) || '·'
+}
+
+function decoratePrice(r) {
+  return { ...r, thumb: thumbOf(r.image), big: bigOf(r.image), initial: initialOf(r.name) }
+}
+
+function orderFilterCount(o) {
+  return ['direction', 'stage', 'pay'].filter((k) => !!o[k]).length
+}
+
+function shownPartners(list, keyword) {
+  const kw = String(keyword || '').trim().toLowerCase()
+  if (!kw) return list
+  return list.filter((p) => `${p.name} ${p.supplierId || ''}`.toLowerCase().indexOf(kw) !== -1)
+}
+
 function dashView(res) {
   const d = res.dashboard || {}
   const o = d.orders || {}
@@ -97,6 +116,9 @@ function dashView(res) {
       { key: '30+', label: '30 天以上', count: ag['30+'] || 0, pct: pct(ag['30+'] || 0), warn: true }
     ],
     agingTotal: openTotal,
+    overdueCount: m.overdueCount || 0,
+    toShipCount: o.toShip || 0,
+    alertCount: (m.overdueCount || 0) + (c.review || 0) + (c.offline || 0),
     payable: {
       count: (d.payable && d.payable.count) || 0,
       amountText: yuan(d.payable && d.payable.amountFen),
@@ -122,8 +144,12 @@ function partnerView(p, catalog) {
   const sideLabels = []
   if (p.sides && p.sides.buyer) sideLabels.push('采购商')
   if (p.sides && p.sides.supplier) sideLabels.push('供货方')
+  const profile = p.profile || {}
   return {
     ...p,
+    initial: initialOf(p.name),
+    logoThumb: thumbOf(profile.logo),
+    licenseCount: (profile.licenses || []).length,
     sideText: sideLabels.join(' / ') || '—',
     offCount: (catalog || []).filter((f) => f.def && (f.side === 'both' || (p.sides && p.sides[f.side])) && p.features && p.features[f.key] === false).length
   }
@@ -140,13 +166,16 @@ Page({
     priceStatuses: PRICE_STATUS,
     flash: '',
     flashErr: false,
+    footOpen: false,
+    skelRows: [1, 2, 3],
+    sheet: { show: false, id: '' },
 
     dash: { loading: true, error: '', view: null, range: '30d' },
     orders: { loading: false, loaded: false, error: '', list: [], total: 0, page: 1, hasMore: false, loadingMore: false,
-      range: '30d', direction: '', stage: '', pay: '', keyword: '', partner: '', partnerName: '' },
+      range: '30d', direction: '', stage: '', pay: '', keyword: '', partner: '', partnerName: '', filterOpen: false, filterCount: 0 },
     price: { loading: false, loaded: false, error: '', list: [], total: 0, page: 1, hasMore: false, loadingMore: false,
       status: '', keyword: '', canMove: false, counts: { all: 0, active: 0 }, busyId: '', armedId: '' },
-    partners: { loading: false, loaded: false, error: '', list: [], status: '' }
+    partners: { loading: false, loaded: false, error: '', list: [], shown: [], status: '', keyword: '' }
   },
 
   onLoad(query) {
@@ -236,6 +265,7 @@ Page({
       tab: 'orders',
       'orders.stage': patch.stage,
       'orders.pay': patch.pay,
+      'orders.filterCount': orderFilterCount({ ...this.data.orders, ...patch }),
       'orders.partner': '',
       'orders.partnerName': '',
       'orders.range': key === 'overdue' ? 'all' : this.data.dash.range
@@ -280,7 +310,17 @@ Page({
   onOrderFilter(e) {
     const { field, key } = e.currentTarget.dataset
     if (!field || this.data.orders[field] === key) return
-    this.setData({ [`orders.${field}`]: key })
+    const next = { ...this.data.orders, [field]: key }
+    this.setData({ [`orders.${field}`]: key, 'orders.filterCount': orderFilterCount(next) })
+    this.loadOrders(false, true)
+  },
+
+  toggleOrderFilter() {
+    this.setData({ 'orders.filterOpen': !this.data.orders.filterOpen })
+  },
+
+  clearOrderFilters() {
+    this.setData({ 'orders.direction': '', 'orders.stage': '', 'orders.pay': '', 'orders.filterCount': 0 })
     this.loadOrders(false, true)
   },
 
@@ -314,7 +354,7 @@ Page({
         this.setData({ 'price.loading': false, 'price.loadingMore': false, 'price.error': res.msg || '加载失败' })
         return
       }
-      const rows = res.list || []
+      const rows = (res.list || []).map(decoratePrice)
       this.setData({
         'price.loading': false,
         'price.loadingMore': false,
@@ -382,6 +422,69 @@ Page({
     })
   },
 
+  findPrice(id) {
+    return this.data.price.list.find((r) => r._id === id) || null
+  },
+
+  previewPrice(e) {
+    const row = this.findPrice(e.currentTarget.dataset.id)
+    if (!row) return
+    if (!row.big) return this.editPrice(e)
+    preview([row.big])
+  },
+
+  /** 缩略图加载失败（如裁剪参数不被支持）→ 回落原图地址；原图也坏则显示首字占位 */
+  onPriceThumbError(e) {
+    const id = e.currentTarget.dataset.id
+    const i = this.data.price.list.findIndex((r) => r._id === id)
+    if (i < 0) return
+    const row = this.data.price.list[i]
+    const raw = absUrl(row.image)
+    this.setData({ [`price.list[${i}].thumb`]: row.thumb !== raw ? raw : '' })
+  },
+
+  openPriceSheet(e) {
+    const row = this.findPrice(e.currentTarget.dataset.id)
+    if (!row) return
+    this.setData({
+      sheet: { show: true, id: row._id, name: row.name, priceText: row.priceText, status: row.status, retired: row.retired, thumb: row.thumb, big: row.big, initial: row.initial }
+    })
+  },
+
+  closeSheet() {
+    this.setData({ 'sheet.show': false })
+  },
+
+  noop() {},
+
+  sheetEdit() {
+    const id = this.data.sheet.id
+    this.closeSheet()
+    this.editPrice({ currentTarget: { dataset: { id } } })
+  },
+
+  sheetToggle() {
+    const { id, status } = this.data.sheet
+    this.closeSheet()
+    this.togglePrice({ currentTarget: { dataset: { id, status } } })
+  },
+
+  sheetMove(e) {
+    const id = this.data.sheet.id
+    this.closeSheet()
+    this.movePrice({ currentTarget: { dataset: { id, dir: e.currentTarget.dataset.dir } } })
+  },
+
+  sheetPreview() {
+    const big = this.data.sheet.big
+    this.closeSheet()
+    preview([big])
+  },
+
+  toggleFoot() {
+    this.setData({ footOpen: !this.data.footOpen })
+  },
+
   // ─── 伙伴 ───
   loadPartners() {
     this.setData({ 'partners.loading': true, 'partners.error': '' })
@@ -390,12 +493,19 @@ Page({
         this.setData({ 'partners.loading': false, 'partners.error': res.msg || '加载失败' })
         return
       }
+      const list = (res.list || []).map((p) => partnerView(p, res.catalog))
       this.setData({
         'partners.loading': false,
         'partners.loaded': true,
-        'partners.list': (res.list || []).map((p) => partnerView(p, res.catalog))
+        'partners.list': list,
+        'partners.shown': shownPartners(list, this.data.partners.keyword)
       })
     })
+  },
+
+  onPartnerKeyword(e) {
+    const keyword = String(e.detail.value || '')
+    this.setData({ 'partners.keyword': keyword, 'partners.shown': shownPartners(this.data.partners.list, keyword) })
   },
 
   onPartnerStatus(e) {

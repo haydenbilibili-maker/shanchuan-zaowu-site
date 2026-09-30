@@ -2,8 +2,12 @@
  * 供应商管理中心 · 价目编辑（新建 / 编辑 / 上下架 / 删除）
  * 写操作仅超管（服务端 manageSupplierDesk 逐 action 校验）；被单据引用的条目「删除」= 停用，不硬删。
  * 校验错误就地显示在字段下方；删除用「再点一次确认」，不弹原生框。
+ * 商品图：上传后表单只存 cloud:// fileID；只有换过 / 移除过图才把 image 送给服务端（没动图不覆盖库里的官网图与多图）。
  */
 const { callDesk } = require('../utils/deskApi')
+const { thumbOf, absUrl, bigOf, pickAndUpload, preview } = require('../utils/deskImage')
+
+const IMAGE_DIR = 'b2b-price'
 
 const EMPTY = {
   skuId: '',
@@ -54,11 +58,11 @@ function formFromItem(it) {
   }
 }
 
-function payloadOf(f) {
+function payloadOf(f, imageDirty) {
   let price = null
   if (f.priceMode === 'fixed') price = f.price
   else if (f.priceMode === 'range') price = { min: f.priceMin, max: f.priceMax }
-  return {
+  const out = {
     skuId: f.skuId,
     name: f.name,
     species: f.species,
@@ -70,9 +74,10 @@ function payloadOf(f) {
     guidePrice: f.guidePrice === '' ? null : f.guidePrice,
     specs: f.specs,
     note: f.note,
-    image: f.image,
     status: f.status
   }
+  if (imageDirty) out.image = f.image
+  return out
 }
 
 Page({
@@ -89,6 +94,9 @@ Page({
     saving: false,
     removeArmed: false,
     removing: false,
+    imageThumb: '',
+    imageDirty: false,
+    uploading: false,
     flash: '',
     flashErr: false
   },
@@ -114,6 +122,8 @@ Page({
       this.setData({
         loading: false,
         form: formFromItem(it),
+        imageThumb: thumbOf(it.image),
+        imageDirty: false,
         options: res.options || this.data.options,
         refCount: it.refCount || 0,
         retired: !!it.retired
@@ -139,8 +149,43 @@ Page({
     this.setData({ flash: msg || '', flashErr: !!err })
   },
 
+  onCoverTap() {
+    if (this.data.imageThumb) this.previewImage()
+    else this.chooseImage()
+  },
+
+  async chooseImage() {
+    if (this.data.uploading || this.data.saving) return
+    this.setData({ uploading: true, 'errors.image': '' })
+    const r = await pickAndUpload(IMAGE_DIR)
+    this.setData({ uploading: false })
+    if (r.cancelled) return
+    if (!r.ok) return this.showFlash(r.msg, true)
+    this.setData({ 'form.image': r.fileID, imageThumb: thumbOf(r.fileID), imageDirty: true, flash: '' })
+  },
+
+  removeImage() {
+    if (this.data.uploading) return
+    this.setData({ 'form.image': '', imageThumb: '', imageDirty: true, 'errors.image': '' })
+  },
+
+  previewImage() {
+    const big = bigOf(this.data.form.image)
+    if (big) preview([big])
+  },
+
+  /** 缩略图参数不被支持时回落原图；原图也坏就当没图 */
+  onImageError() {
+    const raw = absUrl(this.data.form.image)
+    this.setData({ imageThumb: this.data.imageThumb !== raw ? raw : '' })
+  },
+
+  goBack() {
+    wx.navigateBack({ fail: () => {} })
+  },
+
   save() {
-    if (this.data.saving) return
+    if (this.data.saving || this.data.uploading) return
     const f = this.data.form
     const errors = {}
     if (f.priceMode === 'fixed' && !(Number(f.price) > 0)) errors.price = '供货价需为大于 0 的数字'
@@ -152,7 +197,7 @@ Page({
       return this.showFlash('请先修正标红的字段', true)
     }
     this.setData({ saving: true, flash: '' })
-    callDesk('adminSavePriceItem', { id: this.data.id, data: payloadOf(f) }).then((res) => {
+    callDesk('adminSavePriceItem', { id: this.data.id, data: payloadOf(f, this.data.imageDirty) }).then((res) => {
       this.setData({ saving: false })
       if (!res.success) {
         const errs = {}

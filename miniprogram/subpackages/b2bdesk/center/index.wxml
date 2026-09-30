@@ -1,13 +1,36 @@
 <view class="page">
-  <view class="head">
-    <text class="head-en">SUPPLIER DESK</text>
-    <text class="head-cn">供应商管理</text>
-    <text class="head-note">采购商与供货方的订单、货款、价目与账号权限。订单与货款只读，改单请走 ERP「出货中心」。</text>
+  <view class="hero">
+    <view class="hero-top">
+      <view class="hero-copy">
+        <text class="head-en">SUPPLIER DESK</text>
+        <text class="hero-title">供应商</text>
+        <text class="hero-sub">采购商与供货方的订单、货款、价目与账号</text>
+      </view>
+      <view class="hero-mark"><text class="hero-mark-text">供</text></view>
+    </view>
+    <view wx:if="{{dash.view}}" class="hero-stats">
+      <view class="hero-stat" hover-class="card-press" data-key="due" bindtap="onDashKpi">
+        <text class="hero-stat-value {{dash.view.summary.hasDue ? 'warn' : ''}}">{{dash.view.summary.dueText}}</text>
+        <text class="hero-stat-label">待收款</text>
+      </view>
+      <view class="hero-stat" hover-class="card-press" data-key="overdue" bindtap="onDashKpi">
+        <text class="hero-stat-value {{dash.view.overdueCount ? 'danger' : ''}}">{{dash.view.overdueCount}}</text>
+        <text class="hero-stat-label">超期未结</text>
+      </view>
+      <view class="hero-stat" hover-class="card-press" data-key="toShip" bindtap="onDashKpi">
+        <text class="hero-stat-value">{{dash.view.toShipCount}}</text>
+        <text class="hero-stat-label">待发货</text>
+      </view>
+    </view>
+    <text wx:else class="hero-note">订单与货款只读，改单请到电脑端「出货中心」。</text>
   </view>
 
   <view class="tabs">
     <view wx:for="{{tabs}}" wx:key="key" class="tab {{tab === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onTab">
       <text class="tab-text">{{item.label}}</text>
+      <text wx:if="{{item.key === 'price' && price.loaded}}" class="tab-count">{{price.counts.all}}</text>
+      <text wx:elif="{{item.key === 'partners' && partners.loaded}}" class="tab-count">{{partners.list.length}}</text>
+      <view wx:elif="{{item.key === 'orders' && dash.view && dash.view.alertCount}}" class="tab-dot"></view>
     </view>
   </view>
 
@@ -17,17 +40,27 @@
 
   <!-- ─── 大盘 ─── -->
   <block wx:if="{{tab === 'dash'}}">
-    <view class="chips">
-      <view wx:for="{{ranges}}" wx:key="key" class="chip {{dash.range === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onDashRange">
-        <text class="chip-text">{{item.label}}</text>
+    <scroll-view scroll-x class="chip-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="chip-line">
+        <view wx:for="{{ranges}}" wx:key="key" class="chip {{dash.range === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onDashRange">
+          <text class="chip-text">{{item.label}}</text>
+        </view>
+      </view>
+    </scroll-view>
+
+    <view wx:if="{{dash.loading && !dash.view}}" class="skel">
+      <view class="skel-block tall"></view>
+      <view class="skel-grid">
+        <view class="skel-block"></view>
+        <view class="skel-block"></view>
+      </view>
+      <view class="skel-grid">
+        <view class="skel-block"></view>
+        <view class="skel-block"></view>
       </view>
     </view>
-
-    <view wx:if="{{dash.loading && !dash.view}}" class="state">
-      <text class="state-title">正在汇总…</text>
-    </view>
     <view wx:elif="{{dash.error}}" class="state err">
-      <text class="state-title">大盘加载失败</text>
+      <text class="state-title">大盘没加载出来</text>
       <text class="state-body">{{dash.error}}</text>
       <view class="state-retry" bindtap="retry"><text class="state-retry-text">重试</text></view>
     </view>
@@ -57,7 +90,7 @@
         </view>
       </view>
 
-      <text class="grid-title">履约与需关注（点卡片查看对应订单）</text>
+      <text class="grid-title">履约与需关注 · 点卡片看对应订单</text>
       <view class="kpi-grid">
         <view wx:for="{{dash.view.kpis}}" wx:key="key" class="kpi {{item.tone}}" hover-class="card-press" data-key="{{item.key}}" bindtap="onDashKpi">
           <view class="kpi-head">
@@ -68,128 +101,155 @@
           <text class="kpi-sub">{{item.sub}}</text>
         </view>
       </view>
-      <view wx:if="{{dash.view.extras.length}}" class="section">
+      <view wx:if="{{dash.view.extras.length}}" class="note-card">
         <text wx:for="{{dash.view.extras}}" wx:key="*this" class="card-meta">· {{item}}</text>
       </view>
 
-      <view class="section">
-        <text class="section-title">货款账龄</text>
-        <text class="section-sub">未结清的采购商单（待收款 / 对公待确认 / 金额待核对），按下单日到今天的北京时间自然日计。共 {{dash.view.agingTotal}} 单。</text>
-        <view class="card">
-          <view wx:for="{{dash.view.aging}}" wx:key="key" class="bar-row">
-            <text class="bar-label">{{item.label}}</text>
-            <view class="bar-track">
-              <view class="bar-fill {{item.warn ? 'warn' : ''}}" style="width: {{item.pct}}%"></view>
-            </view>
-            <text class="bar-value">{{item.count}} 单</text>
+      <view class="panel">
+        <view class="panel-head">
+          <text class="section-title">货款账龄</text>
+          <text class="panel-side">共 {{dash.view.agingTotal}} 单未结清</text>
+        </view>
+        <view wx:for="{{dash.view.aging}}" wx:key="key" class="bar-row">
+          <text class="bar-label">{{item.label}}</text>
+          <view class="bar-track">
+            <view class="bar-fill {{item.warn ? 'warn' : ''}}" style="width: {{item.pct}}%"></view>
           </view>
+          <text class="bar-value">{{item.count}} 单</text>
+        </view>
+        <text class="panel-foot">按下单日到今天计，含待收款、对公待确认、金额待核对。</text>
+      </view>
+
+      <view class="panel">
+        <view class="panel-head">
+          <text class="section-title">应付供货方</text>
+          <text class="card-amount">{{dash.view.payable.amountText}}</text>
+        </view>
+        <text class="card-meta">已发货 / 已签收 {{dash.view.payable.count}} 单 · {{dash.view.payable.note}}</text>
+      </view>
+
+      <view class="panel">
+        <view class="panel-head">
+          <text class="section-title">伙伴排行</text>
+          <text class="panel-side">前 10 · 点击看 TA 的订单</text>
+        </view>
+        <view wx:if="{{!dash.view.byPartner.length}}" class="empty-mini">
+          <text class="state-body">所选时间内还没有采购商 / 供货方的单子。</text>
+        </view>
+        <view wx:for="{{dash.view.byPartner}}" wx:key="key" class="rank-row" hover-class="card-press" data-key="{{item.key}}" data-name="{{item.name}}" bindtap="onDashPartner">
+          <text class="rank {{index < 3 ? 'top' : ''}}">{{item.rank}}</text>
+          <view class="card-main">
+            <text class="card-title">{{item.name}}</text>
+            <text class="card-meta">{{item.kindLabel}} · {{item.count}} 单 {{item.dueText}}</text>
+          </view>
+          <text class="card-amount">{{item.amountText}}</text>
         </view>
       </view>
 
-      <view class="section">
-        <text class="section-title">应付供货方</text>
-        <view class="card">
-          <view class="card-row">
-            <view class="card-main">
-              <text class="card-title">已发货 / 已签收 {{dash.view.payable.count}} 单</text>
-              <text class="card-meta">{{dash.view.payable.note}}</text>
-            </view>
-            <view class="card-side">
-              <text class="card-amount">{{dash.view.payable.amountText}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="section">
-        <text class="section-title">按伙伴（前 10）</text>
-        <view wx:if="{{!dash.view.byPartner.length}}" class="state">
-          <text class="state-body">所选范围内还没有采购商 / 供货方单据。</text>
-        </view>
-        <view wx:for="{{dash.view.byPartner}}" wx:key="key" class="card" hover-class="card-press" data-key="{{item.key}}" data-name="{{item.name}}" bindtap="onDashPartner">
-          <view class="card-row center">
-            <text class="rank">{{item.rank}}</text>
-            <view class="card-main">
-              <text class="card-title">{{item.name}}</text>
-              <text class="card-meta">{{item.kindLabel}} · {{item.count}} 单 {{item.dueText}}</text>
-            </view>
-            <view class="card-side">
-              <text class="card-amount">{{item.amountText}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <view class="section">
+      <view class="panel">
         <text class="section-title">账号与价目</text>
-        <view class="kv"><text class="kv-k">采购商账号</text><text class="kv-v">{{dash.view.partnerStats.buyers}}</text></view>
-        <view class="kv"><text class="kv-k">供货方账号</text><text class="kv-v">{{dash.view.partnerStats.suppliers}}</text></view>
-        <view class="kv"><text class="kv-k">已停用</text><text class="kv-v">{{dash.view.partnerStats.disabled}}</text></view>
-        <view class="kv"><text class="kv-k">价目上架 / 下架</text><text class="kv-v">{{dash.view.priceStats.active}} / {{dash.view.priceStats.inactive}}</text></view>
+        <view class="mini-stats">
+          <view class="mini-stat" data-key="partners" bindtap="onTab">
+            <text class="mini-stat-value">{{dash.view.partnerStats.buyers}}</text>
+            <text class="mini-stat-label">采购商</text>
+          </view>
+          <view class="mini-stat" data-key="partners" bindtap="onTab">
+            <text class="mini-stat-value">{{dash.view.partnerStats.suppliers}}</text>
+            <text class="mini-stat-label">供货方</text>
+          </view>
+          <view class="mini-stat" data-key="price" bindtap="onTab">
+            <text class="mini-stat-value">{{dash.view.priceStats.active}}</text>
+            <text class="mini-stat-label">价目上架</text>
+          </view>
+          <view class="mini-stat" data-key="price" bindtap="onTab">
+            <text class="mini-stat-value dim">{{dash.view.priceStats.inactive}}</text>
+            <text class="mini-stat-label">已下架</text>
+          </view>
+        </view>
+        <text wx:if="{{dash.view.partnerStats.disabled}}" class="card-meta">另有 {{dash.view.partnerStats.disabled}} 个账号已停用</text>
       </view>
 
-      <text class="foot">口径：订单时间取提交时间（无则创建时间），按北京时间自然日；已取消单不计金额；已收款以微信实收（paidFen）为准；「验收标记」是超管旁路，不算真实收款。{{dash.view.truncated ? '单据超过 2000 张，仅统计最近读取的部分。' : ''}}</text>
+      <view class="fold" bindtap="toggleFoot">
+        <text class="fold-title">数字怎么算的</text>
+        <text class="fold-arrow">{{footOpen ? '收起' : '展开'}}</text>
+      </view>
+      <text wx:if="{{footOpen}}" class="foot">订单时间取提交时间（没有就取创建时间），按北京时间自然日；已取消的单不计金额；已收款以微信实际到账为准；「验收标记」只是总部测试用的标记，不算真实收款。{{dash.view.truncated ? '单子超过 2000 张，只统计了最近的部分。' : ''}}</text>
     </block>
   </block>
 
   <!-- ─── 订单（只读）─── -->
   <block wx:elif="{{tab === 'orders'}}">
     <view class="search">
-      <input class="search-input" placeholder="单号 / 公司 / 联系人 / 品名" value="{{orders.keyword}}" confirm-type="search" bindinput="onOrderKeyword" bindconfirm="onOrderSearch" />
-      <view class="search-go" bindtap="onOrderSearch"><text class="search-go-text">搜索</text></view>
+      <view class="search-box">
+        <text class="search-icon">⌕</text>
+        <input class="search-input" placeholder="单号 / 公司 / 联系人 / 品名" value="{{orders.keyword}}" confirm-type="search" bindinput="onOrderKeyword" bindconfirm="onOrderSearch" />
+      </view>
+      <view class="filter-btn {{orders.filterOpen || orders.filterCount ? 'on' : ''}}" bindtap="toggleOrderFilter">
+        <text class="filter-btn-text">筛选{{orders.filterCount ? ' ' + orders.filterCount : ''}}</text>
+      </view>
     </view>
     <view wx:if="{{orders.partner}}" class="flash">
-      <text class="flash-text">只看：{{orders.partnerName || orders.partner}}　</text>
+      <text class="flash-text">只看：{{orders.partnerName || '该伙伴'}}　</text>
       <text class="link" bindtap="onClearPartner">清除</text>
     </view>
-    <text class="row-label">时间</text>
-    <view class="chips">
-      <view wx:for="{{ranges}}" wx:key="key" class="chip {{orders.range === item.key ? 'on' : ''}}" data-field="range" data-key="{{item.key}}" bindtap="onOrderFilter">
-        <text class="chip-text">{{item.label}}</text>
+    <scroll-view scroll-x class="chip-scroll" enhanced show-scrollbar="{{false}}">
+      <view class="chip-line">
+        <view wx:for="{{ranges}}" wx:key="key" class="chip {{orders.range === item.key ? 'on' : ''}}" data-field="range" data-key="{{item.key}}" bindtap="onOrderFilter">
+          <text class="chip-text">{{item.label}}</text>
+        </view>
       </view>
-    </view>
-    <text class="row-label">方向</text>
-    <view class="chips">
-      <view wx:for="{{directions}}" wx:key="key" class="chip {{orders.direction === item.key ? 'on' : ''}}" data-field="direction" data-key="{{item.key}}" bindtap="onOrderFilter">
-        <text class="chip-text">{{item.label}}</text>
+    </scroll-view>
+    <view wx:if="{{orders.filterOpen}}" class="filter-panel">
+      <text class="row-label">方向</text>
+      <view class="chips">
+        <view wx:for="{{directions}}" wx:key="key" class="chip {{orders.direction === item.key ? 'on' : ''}}" data-field="direction" data-key="{{item.key}}" bindtap="onOrderFilter">
+          <text class="chip-text">{{item.label}}</text>
+        </view>
       </view>
-    </view>
-    <text class="row-label">履约</text>
-    <view class="chips">
-      <view wx:for="{{stages}}" wx:key="key" class="chip {{orders.stage === item.key ? 'on' : ''}}" data-field="stage" data-key="{{item.key}}" bindtap="onOrderFilter">
-        <text class="chip-text">{{item.label}}</text>
+      <text class="row-label">履约</text>
+      <view class="chips">
+        <view wx:for="{{stages}}" wx:key="key" class="chip {{orders.stage === item.key ? 'on' : ''}}" data-field="stage" data-key="{{item.key}}" bindtap="onOrderFilter">
+          <text class="chip-text">{{item.label}}</text>
+        </view>
       </view>
-    </view>
-    <text class="row-label">货款</text>
-    <view class="chips">
-      <view wx:for="{{pays}}" wx:key="key" class="chip {{orders.pay === item.key ? 'on' : ''}}" data-field="pay" data-key="{{item.key}}" bindtap="onOrderFilter">
-        <text class="chip-text">{{item.label}}</text>
+      <text class="row-label">货款</text>
+      <view class="chips">
+        <view wx:for="{{pays}}" wx:key="key" class="chip {{orders.pay === item.key ? 'on' : ''}}" data-field="pay" data-key="{{item.key}}" bindtap="onOrderFilter">
+          <text class="chip-text">{{item.label}}</text>
+        </view>
       </view>
+      <view wx:if="{{orders.filterCount}}" class="link-row" bindtap="clearOrderFilters"><text class="link">清空筛选</text></view>
     </view>
 
-    <view wx:if="{{orders.loading}}" class="state">
-      <text class="state-title">正在读取订单…</text>
+    <view wx:if="{{orders.loading}}" class="skel">
+      <view wx:for="{{skelRows}}" wx:key="*this" class="skel-card">
+        <view class="skel-line w60"></view>
+        <view class="skel-line w80"></view>
+        <view class="skel-line w40"></view>
+      </view>
     </view>
     <view wx:elif="{{orders.error}}" class="state err">
-      <text class="state-title">订单加载失败</text>
+      <text class="state-title">订单没加载出来</text>
       <text class="state-body">{{orders.error}}</text>
       <view class="state-retry" bindtap="retry"><text class="state-retry-text">重试</text></view>
     </view>
     <view wx:elif="{{!orders.list.length}}" class="state">
+      <text class="state-mark">单</text>
       <text class="state-title">没有符合条件的订单</text>
       <text class="state-body">放宽时间或筛选条件试试。采购商在「采购商工作台」下单后会出现在这里。</text>
     </view>
     <block wx:else>
       <text class="row-label">共 {{orders.total}} 单</text>
-      <view wx:for="{{orders.list}}" wx:key="_id" class="card" hover-class="card-press" data-id="{{item._id}}" bindtap="openOrder">
+      <view wx:for="{{orders.list}}" wx:key="_id" class="card order-card {{item.stageTone}}" hover-class="card-press" data-id="{{item._id}}" bindtap="openOrder">
         <view class="card-row">
           <view class="card-main">
             <text class="card-title">{{item.partnerName}}</text>
             <text class="card-meta">{{item.title}} · {{item.qty}} 件</text>
-            <text class="card-meta">{{item.dateText}} · {{item.orderNo || item._id}}</text>
+            <text class="card-meta dim">{{item.dateText}} · {{item.orderNo || '无单号'}}</text>
           </view>
           <view class="card-side">
             <text class="card-amount">{{item.amountText}}</text>
+            <text class="card-arrow">›</text>
           </view>
         </view>
         <view class="tags">
@@ -202,107 +262,185 @@
         </view>
       </view>
       <text wx:if="{{orders.loadingMore}}" class="foot">加载更多…</text>
-      <text wx:elif="{{!orders.hasMore}}" class="foot">已到底。{{orders.truncated ? '单据超过 2000 张，仅检索最近读取的部分。' : ''}}</text>
+      <text wx:elif="{{!orders.hasMore}}" class="foot center">已到底{{orders.truncated ? ' · 单子超过 2000 张，只检索了最近的部分' : ''}}</text>
     </block>
   </block>
 
   <!-- ─── 价目 ─── -->
   <block wx:elif="{{tab === 'price'}}">
     <view class="search">
-      <input class="search-input" placeholder="品名 / skuId / 物种" value="{{price.keyword}}" confirm-type="search" bindinput="onPriceKeyword" bindconfirm="onPriceSearch" />
+      <view class="search-box">
+        <text class="search-icon">⌕</text>
+        <input class="search-input" placeholder="品名 / 货号 / 物种" value="{{price.keyword}}" confirm-type="search" bindinput="onPriceKeyword" bindconfirm="onPriceSearch" />
+      </view>
       <view class="search-go" bindtap="onPriceSearch"><text class="search-go-text">搜索</text></view>
     </view>
-    <view class="chips">
-      <view wx:for="{{priceStatuses}}" wx:key="key" class="chip {{price.status === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onPriceStatus">
-        <text class="chip-text">{{item.label}}</text>
+    <view class="seg">
+      <view wx:for="{{priceStatuses}}" wx:key="key" class="seg-item {{price.status === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onPriceStatus">
+        <text class="seg-text">{{item.label}}</text>
+        <text wx:if="{{price.loaded}}" class="seg-count">{{item.key === 'active' ? price.counts.active : item.key === 'inactive' ? price.counts.all - price.counts.active : price.counts.all}}</text>
       </view>
     </view>
-    <view class="btn" hover-class="btn-press" bindtap="newPrice"><text class="btn-text">新建价目</text></view>
 
-    <view wx:if="{{price.loading}}" class="state">
-      <text class="state-title">正在读取价目…</text>
+    <view wx:if="{{price.loading}}" class="skel">
+      <view wx:for="{{skelRows}}" wx:key="*this" class="skel-card row">
+        <view class="skel-thumb"></view>
+        <view class="skel-lines">
+          <view class="skel-line w60"></view>
+          <view class="skel-line w80"></view>
+          <view class="skel-line w40"></view>
+        </view>
+      </view>
     </view>
     <view wx:elif="{{price.error}}" class="state err">
-      <text class="state-title">价目加载失败</text>
+      <text class="state-title">价目没加载出来</text>
       <text class="state-body">{{price.error}}</text>
       <view class="state-retry" bindtap="retry"><text class="state-retry-text">重试</text></view>
     </view>
     <view wx:elif="{{!price.list.length}}" class="state">
-      <text class="state-title">没有符合条件的价目</text>
-      <text class="state-body">点「新建价目」添加；采购商只能看到「上架中」的条目。</text>
+      <text class="state-mark">价</text>
+      <text class="state-title">{{price.keyword || price.status ? '没有符合条件的价目' : '还没有价目'}}</text>
+      <text class="state-body">采购商只能看到「上架中」的条目。可以带上商品图，采购商选货更直观。</text>
+      <view class="state-retry primary" bindtap="newPrice"><text class="state-retry-text">新建价目</text></view>
     </view>
     <block wx:else>
-      <text class="row-label">共 {{price.total}} 条 · 全部 {{price.counts.all}} / 上架 {{price.counts.active}}{{price.canMove ? '' : ' · 清空搜索与筛选后可调整顺序'}}</text>
-      <view wx:for="{{price.list}}" wx:key="_id" class="card">
-        <view class="card-row" hover-class="card-press" data-id="{{item._id}}" bindtap="editPrice">
-          <view class="card-main">
-            <text class="card-title">{{item.name}}</text>
-            <text class="card-meta">{{item.skuId}} · {{item.species}} · {{item.packaging}}</text>
-            <text wx:if="{{item.refCount}}" class="card-meta">已被 {{item.refCount}} 张单据引用（删除将改为停用）</text>
-          </view>
-          <view class="card-side">
-            <text class="card-amount">{{item.priceText}}</text>
-            <text wx:if="{{item.guideText}}" class="card-meta">指导 {{item.guideText}}</text>
+      <text class="row-label">共 {{price.total}} 条{{price.canMove ? ' · 在「更多」里调整顺序' : ''}}</text>
+      <view wx:for="{{price.list}}" wx:key="_id" class="pcard {{item.status === 'active' ? '' : 'off'}}">
+        <view class="pthumb" data-id="{{item._id}}" catchtap="previewPrice">
+          <image wx:if="{{item.thumb}}" class="pthumb-img" src="{{item.thumb}}" mode="aspectFill" lazy-load data-id="{{item._id}}" binderror="onPriceThumbError" />
+          <view wx:else class="pthumb-ph"><text class="pthumb-ph-text">{{item.initial}}</text><text class="pthumb-ph-sub">无图</text></view>
+        </view>
+        <view class="pbody" hover-class="card-press" data-id="{{item._id}}" bindtap="editPrice">
+          <text class="card-title clamp1">{{item.name}}</text>
+          <text class="card-meta clamp1">{{item.species}} · {{item.packaging}}</text>
+          <text class="card-meta dim clamp1">货号 {{item.skuId}}{{item.refCount ? ' · 被 ' + item.refCount + ' 单引用' : ''}}</text>
+          <view class="pfoot">
+            <text class="pprice">{{item.priceText}}</text>
+            <text wx:if="{{item.guideText}}" class="pguide">指导 {{item.guideText}}</text>
+            <view class="pill {{item.status === 'active' ? 'ok' : item.retired ? 'danger' : ''}}">
+              <text class="pill-text">{{price.busyId === item._id ? '处理中' : item.status === 'active' ? '上架中' : item.retired ? '已停用' : '已下架'}}</text>
+            </view>
           </view>
         </view>
-        <view class="tags">
-          <view class="tag {{item.status === 'active' ? 'ok' : ''}}" data-id="{{item._id}}" data-status="{{item.status}}" bindtap="togglePrice">
-            <text class="tag-text">{{price.busyId === item._id ? '处理中…' : item.status === 'active' ? '上架中 · 点此下架' : item.retired ? '已停用 · 点此上架' : '已下架 · 点此上架'}}</text>
-          </view>
-          <view wx:if="{{price.canMove}}" class="tag" data-id="{{item._id}}" data-dir="up" bindtap="movePrice"><text class="tag-text">上移</text></view>
-          <view wx:if="{{price.canMove}}" class="tag" data-id="{{item._id}}" data-dir="down" bindtap="movePrice"><text class="tag-text">下移</text></view>
-          <view class="tag brass" data-id="{{item._id}}" bindtap="editPrice"><text class="tag-text">编辑</text></view>
+        <view class="pmore" hover-class="card-press" data-id="{{item._id}}" catchtap="openPriceSheet">
+          <text class="pmore-text">更多</text>
         </view>
       </view>
       <text wx:if="{{price.loadingMore}}" class="foot">加载更多…</text>
-      <text wx:elif="{{!price.hasMore}}" class="foot">已到底。删除请进入编辑页；被单据引用过的条目只会停用，不会被硬删。</text>
+      <text wx:elif="{{!price.hasMore}}" class="foot center">已到底 · 被单子引用过的条目删除时只会停用</text>
     </block>
+    <view class="fab" hover-class="btn-press" bindtap="newPrice">
+      <text class="fab-plus">＋</text>
+      <text class="fab-text">新建价目</text>
+    </view>
   </block>
 
   <!-- ─── 伙伴 ─── -->
   <block wx:elif="{{tab === 'partners'}}">
-    <view class="chips">
-      <view class="chip {{partners.status === '' ? 'on' : ''}}" data-key="" bindtap="onPartnerStatus"><text class="chip-text">全部</text></view>
-      <view class="chip {{partners.status === 'active' ? 'on' : ''}}" data-key="active" bindtap="onPartnerStatus"><text class="chip-text">启用中</text></view>
-      <view class="chip {{partners.status === 'disabled' ? 'on' : ''}}" data-key="disabled" bindtap="onPartnerStatus"><text class="chip-text">已停用</text></view>
+    <view class="search">
+      <view class="search-box">
+        <text class="search-icon">⌕</text>
+        <input class="search-input" placeholder="伙伴名称" value="{{partners.keyword}}" bindinput="onPartnerKeyword" />
+      </view>
+    </view>
+    <view class="seg">
+      <view class="seg-item {{partners.status === '' ? 'on' : ''}}" data-key="" bindtap="onPartnerStatus"><text class="seg-text">全部</text></view>
+      <view class="seg-item {{partners.status === 'active' ? 'on' : ''}}" data-key="active" bindtap="onPartnerStatus"><text class="seg-text">启用中</text></view>
+      <view class="seg-item {{partners.status === 'disabled' ? 'on' : ''}}" data-key="disabled" bindtap="onPartnerStatus"><text class="seg-text">已停用</text></view>
     </view>
 
-    <view wx:if="{{partners.loading}}" class="state">
-      <text class="state-title">正在读取伙伴…</text>
+    <view wx:if="{{partners.loading}}" class="skel">
+      <view wx:for="{{skelRows}}" wx:key="*this" class="skel-card row">
+        <view class="skel-avatar"></view>
+        <view class="skel-lines">
+          <view class="skel-line w60"></view>
+          <view class="skel-line w40"></view>
+        </view>
+      </view>
     </view>
     <view wx:elif="{{partners.error}}" class="state err">
-      <text class="state-title">伙伴加载失败</text>
+      <text class="state-title">伙伴没加载出来</text>
       <text class="state-body">{{partners.error}}</text>
       <view class="state-retry" bindtap="retry"><text class="state-retry-text">重试</text></view>
     </view>
     <view wx:elif="{{!partners.list.length}}" class="state">
+      <text class="state-mark">伴</text>
       <text class="state-title">还没有采购商 / 供货方账号</text>
-      <text class="state-body">开通账号在「店员花名册」：添加成员时角色选「采购商」或「供货方」。开通后回到这里配置功能项。</text>
-      <view class="state-retry" bindtap="goStaffDirectory"><text class="state-retry-text">去店员花名册</text></view>
+      <text class="state-body">在「店员花名册」添加成员时，角色选「采购商」或「供货方」。开通后回到这里上传门头图、配置功能。</text>
+      <view class="state-retry primary" bindtap="goStaffDirectory"><text class="state-retry-text">去店员花名册</text></view>
+    </view>
+    <view wx:elif="{{!partners.shown.length}}" class="state">
+      <text class="state-title">没有叫「{{partners.keyword}}」的伙伴</text>
+      <text class="state-body">换个关键字试试。</text>
     </view>
     <block wx:else>
-      <view wx:for="{{partners.list}}" wx:key="staffId" class="card" hover-class="card-press" data-id="{{item.staffId}}" bindtap="openPartner">
-        <view class="card-row">
+      <view wx:for="{{partners.shown}}" wx:key="staffId" class="card ptn-card {{item.status === 'active' ? '' : 'off'}}" hover-class="card-press" data-id="{{item.staffId}}" bindtap="openPartner">
+        <view class="ptn-top">
+          <view class="avatar">
+            <image wx:if="{{item.logoThumb}}" class="avatar-img" src="{{item.logoThumb}}" mode="aspectFill" lazy-load />
+            <text wx:else class="avatar-text">{{item.initial}}</text>
+          </view>
           <view class="card-main">
-            <text class="card-title">{{item.name}}</text>
-            <text class="card-meta">{{item.sideText}} · 尾号 {{item.openidTail}}{{item.supplierId ? ' · ' + item.supplierId : ''}}</text>
-            <text class="card-meta">{{item.orders.count}} 单 · 最近 {{item.orders.lastText || '—'}}</text>
+            <text class="card-title clamp1">{{item.name}}</text>
+            <view class="tags tight">
+              <view class="tag brass"><text class="tag-text">{{item.sideText}}</text></view>
+              <view wx:if="{{item.status !== 'active'}}" class="tag danger"><text class="tag-text">已停用</text></view>
+              <view wx:if="{{!item.b2bOnly}}" class="tag"><text class="tag-text">兼门店角色</text></view>
+              <view wx:if="{{item.offCount}}" class="tag warn"><text class="tag-text">关了 {{item.offCount}} 项功能</text></view>
+              <view wx:if="{{item.licenseCount}}" class="tag ok"><text class="tag-text">资质 {{item.licenseCount}} 张</text></view>
+            </view>
           </view>
-          <view class="card-side">
-            <text class="card-amount">{{item.orders.amountText}}</text>
-            <text wx:if="{{item.orders.dueFen}}" class="card-meta">待收 {{item.orders.dueText}}</text>
+          <text class="card-arrow">›</text>
+        </view>
+        <view class="ptn-stats">
+          <view class="ptn-stat">
+            <text class="ptn-stat-value">{{item.orders.amountText}}</text>
+            <text class="ptn-stat-label">{{item.orders.count}} 单金额</text>
+          </view>
+          <view class="ptn-stat">
+            <text class="ptn-stat-value {{item.orders.dueFen ? 'warn' : 'dim'}}">{{item.orders.dueFen ? item.orders.dueText : '—'}}</text>
+            <text class="ptn-stat-label">待收款</text>
+          </view>
+          <view class="ptn-stat">
+            <text class="ptn-stat-value {{item.orders.overdue ? 'danger' : 'dim'}}">{{item.orders.overdue || '—'}}</text>
+            <text class="ptn-stat-label">超期单</text>
           </view>
         </view>
-        <view class="tags">
-          <view class="tag {{item.status === 'active' ? 'ok' : 'danger'}}"><text class="tag-text">{{item.status === 'active' ? '启用中' : '已停用'}}</text></view>
-          <view wx:if="{{item.offCount}}" class="tag warn"><text class="tag-text">关闭 {{item.offCount}} 项功能</text></view>
-          <view wx:if="{{!item.b2bOnly}}" class="tag"><text class="tag-text">兼门店角色</text></view>
-          <view wx:if="{{item.orders.overdue}}" class="tag danger"><text class="tag-text">{{item.orders.overdue}} 单超期</text></view>
-        </view>
+        <text class="card-meta dim">最近下单 {{item.orders.lastText || '暂无'}}</text>
       </view>
       <view class="btn ghost" hover-class="btn-press" bindtap="goStaffDirectory"><text class="btn-text">开通新伙伴（店员花名册）</text></view>
     </block>
   </block>
 
-  <view class="btn ghost" hover-class="btn-press" bindtap="goPreview"><text class="btn-text">以伙伴视角预览工作台</text></view>
+  <view class="preview-link" hover-class="btn-press" bindtap="goPreview">
+    <text class="preview-link-text">以伙伴视角预览工作台 ›</text>
+  </view>
+
+  <!-- 价目「更多」操作（自定义底部弹层，不用原生弹框） -->
+  <view wx:if="{{sheet.show}}" class="sheet-mask" catchtouchmove="noop" bindtap="closeSheet">
+    <view class="sheet" catchtap="noop">
+      <view class="sheet-head">
+        <view class="sheet-thumb">
+          <image wx:if="{{sheet.thumb}}" class="pthumb-img" src="{{sheet.thumb}}" mode="aspectFill" />
+          <text wx:else class="pthumb-ph-text">{{sheet.initial}}</text>
+        </view>
+        <view class="card-main">
+          <text class="card-title clamp1">{{sheet.name}}</text>
+          <text class="card-meta">{{sheet.priceText}} · {{sheet.status === 'active' ? '上架中' : sheet.retired ? '已停用' : '已下架'}}</text>
+        </view>
+      </view>
+      <view class="sheet-item primary" hover-class="sheet-press" bindtap="sheetEdit"><text class="sheet-item-text">编辑资料与图片</text></view>
+      <view class="sheet-item" hover-class="sheet-press" bindtap="sheetToggle">
+        <text class="sheet-item-text">{{sheet.status === 'active' ? '下架' : '重新上架'}}</text>
+        <text class="sheet-item-sub">{{sheet.status === 'active' ? '采购商将看不到这条' : '采购商可以重新选购'}}</text>
+      </view>
+      <block wx:if="{{price.canMove}}">
+        <view class="sheet-item" hover-class="sheet-press" data-dir="up" bindtap="sheetMove"><text class="sheet-item-text">上移一位</text></view>
+        <view class="sheet-item" hover-class="sheet-press" data-dir="down" bindtap="sheetMove"><text class="sheet-item-text">下移一位</text></view>
+      </block>
+      <text wx:else class="sheet-hint">清空搜索与筛选后才能调整顺序</text>
+      <view wx:if="{{sheet.big}}" class="sheet-item" hover-class="sheet-press" bindtap="sheetPreview"><text class="sheet-item-text">查看大图</text></view>
+      <view class="sheet-cancel" hover-class="sheet-press" bindtap="closeSheet"><text class="sheet-cancel-text">取消</text></view>
+    </view>
+  </view>
 </view>

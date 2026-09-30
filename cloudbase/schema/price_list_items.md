@@ -37,8 +37,8 @@
 | `guidePrice` | number \| `{min,max}` \| null | 指导售价 |
 | `specs` | string | 规格 |
 | `note` | string | 备注 |
-| `image` | string | 主图：官网绝对/相对路径或 `cloud://` |
-| `images` | string[] | 多图（lightbox）；同步种子含多图 SKU |
+| `image` | string | 主图：官网绝对/相对路径或 `cloud://`。小程序「供应商 → 价目」上传写 `cloud://`（云存储 `b2b-price/`）；`manageSupplierDesk` 只在入参显式带 `image` 时写、只收 `cloud://`（2026-09-30） |
+| `images` | string[] | 多图（lightbox）；同步种子含多图 SKU。小程序换封面 = 新图放首位、保留其余图；移除封面 = 清空 |
 | `imageAlt` | string | 图 alt |
 | `sort` | number | 升序 |
 | `status` | string | `active` \| `inactive` |

@@ -331,6 +331,8 @@
     "check:activity-board:selftest": "node miniprogram/scripts/test-activity-board.mjs --selftest",
     "check:supplier-desk": "node miniprogram/scripts/test-supplier-desk.mjs",
     "check:supplier-desk:selftest": "node miniprogram/scripts/test-supplier-desk.mjs --selftest",
+    "check:supplier-desk-images": "node miniprogram/scripts/check-supplier-desk-images.mjs",
+    "check:supplier-desk-images:selftest": "node miniprogram/scripts/check-supplier-desk-images.mjs --selftest",
     "test:ai-identify-monitor": "node miniprogram/scripts/test-ai-identify-monitor.mjs",
     "test:ai-identify-monitor:selftest": "node miniprogram/scripts/test-ai-identify-monitor.mjs --selftest",
     "check:member-curator-hub": "node miniprogram/scripts/check-member-curator-hub.mjs",
