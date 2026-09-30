@@ -138,8 +138,51 @@ const INJECTIONS = {
   // 列表不再过滤 status → 被隐藏的弹幕会重新出现在公开墙面
   'list-ignores-status': {
     file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
-    from: ".where({ productKey, status: STATUS_VISIBLE })",
-    to: '.where({ productKey })'
+    from: '.where({ productKey, status: STATUS_VISIBLE, source: _.nin(SEED_SOURCES) })',
+    to: '.where({ productKey, source: _.nin(SEED_SOURCES) })'
+  },
+  // ===== 公开列表混排（2026-09-30）=====
+  // 预埋池不过滤 status → 被隐藏的预埋重新上墙
+  'seed-pool-ignores-status': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: '.where({ productKey, status: STATUS_VISIBLE, source: _.in(SEED_SOURCES) })',
+    to: '.where({ productKey, source: _.in(SEED_SOURCES) })'
+  },
+  // 预埋抢在真实心愿前面占位 → 真实心愿被挤出墙面
+  'mix-seeds-first': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: '  const realTake = Math.min(realRest.length, slots - reserve)',
+    to: '  const realTake = Math.min(realRest.length, slots - ring.length)'
+  },
+  // 不给预埋留位 → 真实心愿多时预埋永远上不了墙
+  'mix-no-reserve': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: 'Math.floor(slots * SEED_RESERVE_RATIO)',
+    to: '0'
+  },
+  // 不轮换 → 永远是同一批预埋
+  'mix-no-rotation': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: '    const start = (Math.floor(nowMs / SEED_ROTATE_MS) * seedTake) % ring.length',
+    to: '    const start = 0'
+  },
+  // 置顶不再最前
+  'mix-pinned-dropped': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: '  return pinned.concat(mixed)',
+    to: '  return mixed.concat(pinned)'
+  },
+  // 第二道闸失效：hidden 混进结果
+  'mix-hidden-kept': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: '  const visible = (d) => d && d.status !== STATUS_HIDDEN',
+    to: '  const visible = (d) => !!d'
+  },
+  // 不穿插 → 预埋堆在末尾成一长串
+  'mix-no-interleave': {
+    file: 'miniprogram/cloudfunctions/manageWishWall/index.js',
+    from: '    const seedHere = Math.floor(((i + 1) * seeds.length) / total) > Math.floor((i * seeds.length) / total)',
+    to: '    const seedHere = i >= reals.length'
   },
   // 丢掉频控 → 可无限刷屏
   'drop-rate-limit': {
@@ -1903,11 +1946,15 @@ let currentOpenid = 'openid-a'
 function makeDb() {
   const cmd = {
     gte: (v) => ({ $gte: v, and: (other) => ({ $gte: v, $lt: other.$lt }) }),
-    lt: (v) => ({ $lt: v })
+    lt: (v) => ({ $lt: v }),
+    in: (arr) => ({ $in: arr }),
+    nin: (arr) => ({ $nin: arr })
   }
   const matches = (doc, where) =>
     Object.keys(where || {}).every((k) => {
       const cond = where[k]
+      if (cond && Array.isArray(cond.$in)) return cond.$in.includes(doc[k])
+      if (cond && Array.isArray(cond.$nin)) return !cond.$nin.includes(doc[k])
       if (cond && typeof cond === 'object' && !Array.isArray(cond) && !(cond instanceof Date)) {
         const t = doc[k] ? new Date(doc[k]).getTime() : 0
         if (cond.$gte != null && t < new Date(cond.$gte).getTime()) return false
@@ -2164,6 +2211,87 @@ check(
   '公开列表带 source（数据侧保留来源，渲染层已不标「馆方」）',
   listAfterSeed.list.some((r) => r.source === 'ai' || r.source === 'seed')
 )
+
+/* ------------------------------------------------------------------ *
+ * 3h) 公开列表混排（2026-09-30 产品负责人点名）：置顶最前 → 真实心愿优先 →
+ *     预埋按 15 分钟时段轮流补位并穿插；隐藏不上墙；全部预埋一天内轮遍
+ * ------------------------------------------------------------------ */
+{
+  const compose = fn.composeWallList
+  check('云函数导出 composeWallList（混排规则可断言）', typeof compose === 'function')
+  const T0 = Date.UTC(2026, 8, 30, 2, 0, 0)
+  const at = (ms) => new Date(ms).toISOString()
+  const mkReal = (n) => Array.from({ length: n }, (_, i) => ({ _id: `r${i}`, text: `真实${i}`, status: 'visible', source: 'user', pinned: false, createTime: at(T0 - i * 60000) }))
+  const seedPool = Array.from({ length: 84 }, (_, i) => ({ _id: `s${i}`, text: `预埋${i}`, status: 'visible', source: i % 7 ? 'seed' : 'ai', pinned: false, createTime: at(T0 - 86400000 * 3) }))
+  const pinnedReal = { _id: 'rp', text: '置顶真实', status: 'visible', source: 'user', pinned: true, createTime: at(T0 - 86400000 * 10) }
+  const hiddenReal = { _id: 'rh', text: '隐藏真实', status: 'hidden', source: 'user', pinned: false, createTime: at(T0 + 1000) }
+  const hiddenSeed = { _id: 'sh', text: '隐藏预埋', status: 'hidden', source: 'seed', pinned: false, createTime: at(T0) }
+  const isSeed = (d) => d.source === 'seed' || d.source === 'ai'
+  const run = (real, seedsIn, limit, nowMs) => compose(real, seedsIn, { limit, nowMs })
+
+  // A. 真实心愿充足（40 条 + 1 置顶）：墙 30 = 置顶 1 + 预埋 floor(29/4)=7 + 真实最新 22
+  const realMany = mkReal(40).concat([pinnedReal, hiddenReal])
+  const wallA = run(realMany, seedPool.concat([hiddenSeed]), 30, T0)
+  eq('★ 混排：墙面条数 = limit', wallA.length, 30)
+  eq('★ 混排：置顶仍在最前', wallA[0] && wallA[0]._id, 'rp')
+  const realA = wallA.slice(1).filter((d) => !isSeed(d))
+  eq('★ 混排：真实心愿充足时预埋只留 1/4 位（7 格）', wallA.filter(isSeed).length, 7)
+  eq('★ 混排：真实心愿取最新 22 条且按时间倒序', realA.map((d) => d._id).join(','), mkReal(22).map((d) => d._id).join(','))
+  check('★ 混排：隐藏的真实/预埋都不上墙（即使查询条件漏了 status）', !wallA.some((d) => d.status === 'hidden'))
+  eq('混排：无重复条目', new Set(wallA.map((d) => d._id)).size, wallA.length)
+  check('★ 混排：预埋穿插（首条非置顶是真实心愿，且没有两条预埋相邻）',
+    !isSeed(wallA[1]) && wallA.every((d, i) => !(i > 0 && isSeed(d) && isSeed(wallA[i - 1]))))
+
+  // B. 真实心愿不足：空位全部由预埋补齐，真实心愿一条不少
+  const wallB = run(mkReal(3), seedPool, 30, T0)
+  eq('★ 混排：真实不足时预埋补齐到 limit', wallB.length, 30)
+  eq('★ 混排：真实不足时真实心愿全部上墙', wallB.filter((d) => !isSeed(d)).length, 3)
+  check('混排：真实不足时首条仍是真实心愿', wallB[0] && !isSeed(wallB[0]))
+
+  // C. 首页 12 条：前 8 条（跑马灯可见段）真实与预埋都有
+  const home = run(realMany, seedPool, 12, T0)
+  eq('混排：首页 12 条中预埋 2 格', home.filter(isSeed).length, 2)
+  const head8 = home.slice(0, 8)
+  check('★ 混排：首页跑马灯前 8 条真实与预埋穿插', head8.some(isSeed) && head8.filter((d) => !isSeed(d)).length >= 5)
+
+  // D. 轮换：一天 96 个时段内，墙面与首页都能轮遍全部 84 条预埋；同时段确定、跨时段变化
+  const ROT = fn.SEED_ROTATE_MS
+  for (const [label, limit] of [['墙面', 30], ['首页', 12]]) {
+    const seen = new Set()
+    for (let k = 0; k < 96; k += 1) run(realMany, seedPool, limit, T0 + k * ROT).filter(isSeed).forEach((d) => seen.add(d._id))
+    eq(`★ 混排：${label}一天内轮遍全部预埋`, seen.size, 84)
+  }
+  const slotStart = Math.floor(T0 / ROT) * ROT
+  eq('★ 混排：同一时段内结果一致（确定性，所有人看到同一面墙）',
+    run(realMany, seedPool, 30, slotStart + 1).map((d) => d._id).join(','),
+    run(realMany, seedPool, 30, slotStart + ROT - 1).map((d) => d._id).join(','))
+  const seedIdsAt = (ms) => run(realMany, seedPool, 30, ms).filter(isSeed).map((d) => d._id).join(',')
+  check('混排：相邻时段预埋窗口不同', seedIdsAt(slotStart) !== '' && seedIdsAt(slotStart) !== seedIdsAt(slotStart + ROT))
+  eq('混排：输入顺序不影响结果', run(realMany.slice().reverse(), seedPool.slice().reverse(), 30, T0).map((d) => d._id).join(','), wallA.map((d) => d._id).join(','))
+
+  // E. 置顶的预埋同样最前；两边都不足时照单全收
+  const pinnedSeed = { ...seedPool[5], _id: 'sp', pinned: true, createTime: at(T0 - 5) }
+  const wallE = run(mkReal(2), seedPool.slice(0, 3).concat([pinnedSeed]), 30, T0)
+  eq('混排：置顶预埋也在最前', wallE[0] && wallE[0]._id, 'sp')
+  eq('混排：两边都不足时全部上墙', wallE.length, 6)
+
+  // F. 查询层：两次查询都必须带 status 过滤（第一道闸；composeWallList 的过滤是第二道）
+  const listSrc = readSrc('miniprogram/cloudfunctions/manageWishWall/index.js')
+  check('★ 混排：真实心愿查询带 status=visible 且排除预埋来源',
+    listSrc.includes('.where({ productKey, status: STATUS_VISIBLE, source: _.nin(SEED_SOURCES) })'))
+  check('★ 混排：预埋池查询带 status=visible 且只取预埋来源',
+    listSrc.includes('.where({ productKey, status: STATUS_VISIBLE, source: _.in(SEED_SOURCES) })'))
+
+  // G. 端到端（内存库）：隐藏预埋不上墙、真实心愿在前
+  docs.push({ _id: 'mixu1', _openid: 'openid-m', productKey: 'mashangyou', text: '混排真实一', status: 'visible', source: 'user', pinned: false, createTime: new Date().toISOString() })
+  docs.push({ _id: 'mixs1', _openid: '', productKey: 'mashangyou', text: '混排隐藏预埋', status: 'hidden', source: 'seed', pinned: false, createTime: new Date().toISOString() })
+  const e2e = await fn.main({ action: 'list', limit: 30 })
+  eq('混排端到端：成功', e2e.success, true)
+  check('★ 混排端到端：隐藏预埋不上墙', !e2e.list.some((r) => r.text === '混排隐藏预埋'))
+  check('混排端到端：真实心愿在墙上且有预埋补位', e2e.list.some((r) => r.text === '混排真实一') && e2e.list.some((r) => r.source === 'seed' || r.source === 'ai'))
+  const idxOf = docs.findIndex((d) => d._id === 'mixs1'); if (idxOf >= 0) docs.splice(idxOf, 1)
+  const idxU = docs.findIndex((d) => d._id === 'mixu1'); if (idxU >= 0) docs.splice(idxU, 1)
+}
 
 /* ------------------------------------------------------------------ *
  * 4) 开关：关闭时 C 端不得发请求 / 云函数默认关

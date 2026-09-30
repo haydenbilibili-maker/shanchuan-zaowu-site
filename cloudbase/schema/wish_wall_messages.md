@@ -56,7 +56,9 @@
   由 `node scripts/seed-wish-wall-batch.mjs` 写入（默认 dry-run；`--apply` 写前快照到 `backups/wish-wall-seeds/`、按文案幂等）。
   字段与 `staffSeedAi` 一致（`source: 'seed'`、`nickname: 山海造物`、`seedBatch` = 批次号、`createTime` = 写入时刻）。
   整批下线 `--hide` / 恢复 `--show` / 删除 `--remove`；改掉 json 里某条后 `--apply` 补新条、`--prune` 把旧条收起。
-  ⚠️ 公开列表只取最近 `LIST_MAX`（30）条、纯按时间倒序，批次写入后会暂时把更早的用户心愿挤出墙面（数据不删，新心愿照常置于最前）。
+  公开列表混排（2026-09-30 起，`manageWishWall.composeWallList`）：置顶最前 → 真实心愿（非 seed/ai）按时间倒序优先 →
+  预埋至少留 1/4 位（真实不足时补齐到 `LIST_MAX`），按 `_id` 哈希成环、每 15 分钟一档轮换窗口（同一档内所有人一致，全部预埋一天内轮遍），
+  并均匀穿插在真实心愿之间。出参字段不变；`mine` 与超管 `staffList` 不受影响。
   已写批次：`mashangyou-warm-2026-09-30`（60 条）。
 
 ## 内容治理（业务口径 2026-09-16）

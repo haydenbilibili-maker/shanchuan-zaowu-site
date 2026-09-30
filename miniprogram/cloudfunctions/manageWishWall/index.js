@@ -10,7 +10,7 @@
  *   命中 risky 直接拒绝。若平台复核或客诉要求补审核，改环境变量即可，**不必改代码发版**。
  *
  * action（C 端）：
- *   list   公开拉取 visible 弹幕（分页，最新在前）
+ *   list   公开拉取 visible 弹幕（置顶 → 真实心愿按时间倒序优先 → 预埋按时段轮流补位并穿插，见 composeWallList）
  *   post   发布一条（openid 归属 + 频控 + 长度校验）
  *   mine   我发布过的（含被隐藏的，便于用户理解为何看不见）
  * action（管理端，超管/店长）：
@@ -329,6 +329,88 @@ function mapStaffItem(doc) {
   }
 }
 
+/* ------------------- 公开列表混排：真实心愿优先，预埋轮流补位 ------------------- */
+
+/** 预埋来源（人工基线 / AI 创作）：不属于任何用户 */
+const SEED_SOURCES = [SOURCE_SEED, SOURCE_AI]
+/**
+ * 真实心愿足够填满时，仍给预埋留的位置比例（向下取整）。
+ * 1/4：30 条的墙留 7 格、首页 12 条留 2 格 —— 真实心愿始终占大头，预埋只是让墙不重样。
+ */
+const SEED_RESERVE_RATIO = 0.25
+/** 预埋轮换时段：同一时段内所有人看到同一窗口；15 分钟一档，首页 2 格 × 96 档/天也能在一天内轮遍 84 条 */
+const SEED_ROTATE_MS = 15 * 60 * 1000
+/** 预埋池一次最多读多少条（远大于现存量；超出部分不参与轮换） */
+const SEED_POOL_MAX = 500
+
+function fnv1a(str) {
+  let hash = 2166136261
+  const s = String(str == null ? '' : str)
+  for (let i = 0; i < s.length; i += 1) {
+    hash ^= s.charCodeAt(i)
+    hash = Math.imul(hash, 16777619) >>> 0
+  }
+  return hash
+}
+
+const timeOf = (doc) => new Date((doc && (doc.createTime || doc._createTime)) || 0).getTime() || 0
+const isSeedDoc = (doc) => SEED_SOURCES.indexOf(doc && doc.source) !== -1
+
+/**
+ * 公开列表的选取与排序（纯函数，时间由调用方传入 → 可断言）。
+ *
+ * 规则：
+ *   1. 置顶（不论来源）最前，按时间倒序，占用名额；
+ *   2. 剩余名额 L：预埋保留 floor(L × SEED_RESERVE_RATIO) 格，真实心愿按时间倒序填其余；
+ *      真实心愿不够时，空出的位置全部由预埋补齐；
+ *   3. 预埋按 `_id` 哈希排成固定环（与写入时间无关，跨批次打散），
+ *      第 k 个时段取环上第 k×n 起的连续 n 条 —— 相邻时段首尾相接，环上每条都会轮到；
+ *   4. 预埋均匀穿插在真实心愿之间（开头总是真实心愿），避免一长串全是预埋。
+ * 输入里的 hidden 一律丢弃（防御：查询条件被改坏时也不上墙）。
+ *
+ * @param {object[]} realDocs 非预埋的 visible 文档（任意顺序）
+ * @param {object[]} seedDocs 预埋 visible 文档（任意顺序）
+ * @param {{limit:number, nowMs?:number}} opts
+ * @returns {object[]} 原始文档（未映射）
+ */
+function composeWallList(realDocs, seedDocs, opts) {
+  const o = opts || {}
+  const limit = Math.max(0, parseInt(o.limit, 10) || 0)
+  const nowMs = Number.isFinite(o.nowMs) ? o.nowMs : Date.now()
+  const visible = (d) => d && d.status !== STATUS_HIDDEN
+  const byTimeDesc = (a, b) => timeOf(b) - timeOf(a)
+  const real = (realDocs || []).filter((d) => visible(d) && !isSeedDoc(d))
+  const pool = (seedDocs || []).filter((d) => visible(d) && isSeedDoc(d))
+
+  const pinned = real.concat(pool).filter((d) => d.pinned === true).sort(byTimeDesc).slice(0, limit)
+  const realRest = real.filter((d) => d.pinned !== true).sort(byTimeDesc)
+  const ring = pool.filter((d) => d.pinned !== true).sort((a, b) =>
+    (fnv1a(a._id) - fnv1a(b._id)) || (String(a._id) < String(b._id) ? -1 : String(a._id) > String(b._id) ? 1 : 0))
+
+  const slots = limit - pinned.length
+  const reserve = Math.min(ring.length, Math.floor(slots * SEED_RESERVE_RATIO))
+  const realTake = Math.min(realRest.length, slots - reserve)
+  const seedTake = Math.min(ring.length, slots - realTake)
+
+  const seeds = []
+  if (seedTake > 0) {
+    const start = (Math.floor(nowMs / SEED_ROTATE_MS) * seedTake) % ring.length
+    for (let i = 0; i < seedTake; i += 1) seeds.push(ring[(start + i) % ring.length])
+  }
+  const reals = realRest.slice(0, realTake)
+
+  const total = reals.length + seeds.length
+  const mixed = []
+  let ri = 0
+  let si = 0
+  for (let i = 0; i < total; i += 1) {
+    const seedHere = Math.floor(((i + 1) * seeds.length) / total) > Math.floor((i * seeds.length) / total)
+    if ((seedHere && si < seeds.length) || ri >= reals.length) mixed.push(seeds[si++])
+    else mixed.push(reals[ri++])
+  }
+  return pinned.concat(mixed)
+}
+
 async function listPublic(event) {
   const productKey = normalizeProductKey(event && event.productKey)
   const limit = Math.min(LIST_MAX, Math.max(1, parseInt((event && event.limit) || 20, 10) || 20))
@@ -339,18 +421,26 @@ async function listPublic(event) {
     count: INSPIRATION_COUNT
   })
   try {
-    const res = await db.collection(COLLECTION)
-      .where({ productKey, status: STATUS_VISIBLE })
-      .orderBy('pinned', 'desc')
-      .orderBy('createTime', 'desc')
-      .limit(limit)
-      .get()
-    const rows = (res.data || []).map(mapPublicItem)
-    // 置顶项在前，其余保持时间倒序（两次 orderBy 在部分索引缺失时会被忽略，这里再稳一次）
-    rows.sort((a, b) => {
-      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1
-      return new Date(b.createTime || 0) - new Date(a.createTime || 0)
-    })
+    // 两次查询并发：真实心愿只需最新 limit 条；预埋池整池读出做轮换。
+    // 预埋池读失败只降级为「没有补位」—— 真实心愿才是墙面的事实，不因补位失败而整墙报错。
+    const [realRes, seedDocs] = await Promise.all([
+      db.collection(COLLECTION)
+        .where({ productKey, status: STATUS_VISIBLE, source: _.nin(SEED_SOURCES) })
+        .orderBy('pinned', 'desc')
+        .orderBy('createTime', 'desc')
+        .limit(limit)
+        .get(),
+      db.collection(COLLECTION)
+        .where({ productKey, status: STATUS_VISIBLE, source: _.in(SEED_SOURCES) })
+        .limit(SEED_POOL_MAX)
+        .get()
+        .then((r) => (r && r.data) || [])
+        .catch((e) => {
+          console.warn('wish wall seed pool read failed:', e && e.message)
+          return []
+        })
+    ])
+    const rows = composeWallList(realRes.data || [], seedDocs, { limit, nowMs: Date.now() }).map(mapPublicItem)
     return { success: true, list: rows, inspiration, productKey }
   } catch (e) {
     // P1-1：查询失败**不是**"墙上一条都没有"。旧写法 `success:true + list:[]` 会让页面
@@ -796,6 +886,9 @@ module.exports.validateWishText = validateWishText
 module.exports.normalizeProductKey = normalizeProductKey
 module.exports.todayRangeShanghai = todayRangeShanghai
 module.exports.shanghaiDayKey = shanghaiDayKey
+module.exports.composeWallList = composeWallList
+module.exports.SEED_RESERVE_RATIO = SEED_RESERVE_RATIO
+module.exports.SEED_ROTATE_MS = SEED_ROTATE_MS
 module.exports.TEXT_MAX = TEXT_MAX
 module.exports.TEXT_MIN = TEXT_MIN
 module.exports.wishTextCount = wishTextCount
