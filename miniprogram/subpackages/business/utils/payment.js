@@ -105,7 +105,8 @@ async function payForOrder(orderId, options = {}) {
                 )
               )
             } else {
-              reject(new Error(raw || '支付失败'))
+              console.warn('[payment] requestPayment fail', raw)
+              reject(new Error('微信支付没有完成，请稍后再试'))
             }
           }
         })

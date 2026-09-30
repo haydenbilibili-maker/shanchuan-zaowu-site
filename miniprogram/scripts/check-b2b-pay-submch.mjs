@@ -15,6 +15,11 @@
  *   S4 统一下单失败 → 返回给门店的文案不含微信原文（/body/xml、sub_mch_id…）
  *   S5 小程序端：PAY_UNAVAILABLE / B2B_PAY_CONFIG_INVALID / 带微信原文的未知码 → 大白话；requestPayment 失败不透出 errMsg
  *
+ * C 端 payOrder（稳定期，2026-09-30 产品负责人点名：只换顾客看到的文案，流程/出参字段/success 语义不动）：
+ *   S6 统一下单软失败 / 抛异常 / 钱包部分抵扣后失败 / 兜底 catch → msg 不含微信原文（原文进日志）；
+ *      出参键集合、code、success 与改前逐一相同；msg 保留「暂不可用」「钱包余额已退回」（前端 orders / order-detail / confirm-order 按此分支）
+ *   S7 两份 utils/payment.js：requestPayment 普通失败不透出 errMsg，且不命中前端弹窗分支（仍走原 toast）；取消仍精确为「已取消支付」
+ *
  * 用法：
  *   node miniprogram/scripts/check-b2b-pay-submch.mjs
  *   node miniprogram/scripts/check-b2b-pay-submch.mjs --selftest   # 内存注入回归 → 必须检出（不写盘）
@@ -29,6 +34,12 @@ const ROOT = resolve(__dirname, '../..')
 const PAY_FN = join(ROOT, 'miniprogram/cloudfunctions/payB2bPurchase/index.js')
 const C_PAY_FN = join(ROOT, 'miniprogram/cloudfunctions/payOrder/index.js')
 const CLIENT = join(ROOT, 'miniprogram/subpackages/extra/supplier/utils/buyerPurchaseOrder.js')
+const C_PAYMENT = [
+  join(ROOT, 'miniprogram/subpackages/business/utils/payment.js'),
+  join(ROOT, 'miniprogram/subpackages/feature/utils/payment.js')
+]
+/** 前端 orders / order-detail 用它决定弹窗（暂无法支付）还是 toast */
+const FRONT_MODAL_RE = /支付未开通|暂不可用|支付服务不可用|支付参数|预支付/
 
 const GOOD_MCH = '1900000109'
 const BAD_MCH = 'b6' + 'a1f0'.repeat(15) + '4f' // 64 位十六进制，模拟误填的回调密钥
@@ -135,6 +146,116 @@ const okUnified = async () => ({
 })
 const failUnified = async () => ({ returnCode: 'FAIL', returnMsg: WX_RAW })
 
+async function runCPayOrder(transform, { unified, wallet = false, getThrows = false }) {
+  const order = { _id: 'o1', _openid: 'u1', status: 'pending_pay', totalFeeFen: 9000, orderNo: 'ORD1', useWalletPay: wallet }
+  const logs = []
+  const cloud = {
+    DYNAMIC_CURRENT_ENV: 'test-env',
+    init() {},
+    getWXContext: () => ({ OPENID: 'u1' }),
+    database: () => ({
+      serverDate: () => new Date(),
+      collection: () => ({
+        doc: () => ({
+          async get() {
+            if (getThrows) throw new Error(`document.get:fail ${WX_RAW}`)
+            return { data: { ...order } }
+          },
+          async update({ data }) { Object.assign(order, data); return { stats: { updated: 1 } } }
+        })
+      })
+    }),
+    callFunction: async ({ data }) => {
+      if (data.action === 'debitForOrder') return { result: { success: true, debitedFen: 1000, wxpayFen: 8000 } }
+      if (data.action === 'refundWalletForOrder') return { result: { success: true } }
+      return { result: { success: false } }
+    },
+    cloudPay: { unifiedOrder: unified }
+  }
+  const prev = { sub: process.env.WX_PAY_SUB_MCH_ID, mock: process.env.ALLOW_MOCK_PAY }
+  process.env.WX_PAY_SUB_MCH_ID = GOOD_MCH
+  delete process.env.ALLOW_MOCK_PAY
+  const quiet = { log: console.log, warn: console.warn, error: console.error }
+  console.log = console.warn = console.error = (...a) =>
+    logs.push(a.map((x) => (typeof x === 'string' ? x : x instanceof Error ? x.message : JSON.stringify(x))).join(' '))
+  try {
+    const fn = loadCjsModule(C_PAY_FN, { stubs: { 'wx-server-sdk': cloud }, transform })
+    return { res: await fn.main({ orderId: 'o1' }), logs }
+  } finally {
+    Object.assign(console, quiet)
+    if (prev.sub === undefined) delete process.env.WX_PAY_SUB_MCH_ID
+    else process.env.WX_PAY_SUB_MCH_ID = prev.sub
+    if (prev.mock !== undefined) process.env.ALLOW_MOCK_PAY = prev.mock
+  }
+}
+
+async function runCPayment(file, transform, errMsg) {
+  const wx = {
+    showLoading() {}, hideLoading() {},
+    cloud: {
+      callFunction: async ({ name }) =>
+        name === 'payOrder'
+          ? { result: { success: true, orderId: 'o1', payment: { timeStamp: '1', nonceStr: 'n', package: 'prepay_id=wx2026093000009', paySign: 's' } } }
+          : { result: { success: false } }
+    },
+    requestPayment: (opts) => opts.fail({ errMsg })
+  }
+  const quiet = console.warn
+  console.warn = () => {}
+  try {
+    const mod = loadCjsModule(file, { transform, globals: { wx } })
+    await mod.payForOrder('o1')
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, message: String((e && e.message) || '') }
+  } finally {
+    console.warn = quiet
+  }
+}
+
+const keysOf = (o) => Object.keys(o || {}).sort().join(',')
+
+async function runCEndChecks(transform, check) {
+  const softFail = async () => ({ returnCode: 'FAIL', returnMsg: WX_RAW })
+  const throwFail = async () => { throw Object.assign(new Error(WX_RAW), { errMsg: `cloudPay.unifiedOrder:fail ${WX_RAW}` }) }
+
+  const a = await runCPayOrder(transform, { unified: softFail })
+  check('S6.soft-no-leak', !WX_LEAK_RE.test(JSON.stringify(a.res)), a.res && a.res.msg)
+  check('S6.soft-shape', keysOf(a.res) === 'code,msg,success,walletPayFen' && a.res.success === false && a.res.code === 'PAY_UNAVAILABLE' && a.res.walletPayFen === 0, keysOf(a.res))
+  check('S6.soft-front-branch', FRONT_MODAL_RE.test(String(a.res.msg || '')), '须保留「暂不可用」，前端据此弹「暂无法支付」')
+  check('S6.soft-logged', a.logs.some((l) => l.includes('sub_mch_id')), '微信原文应进日志')
+
+  const b = await runCPayOrder(transform, { unified: throwFail })
+  check('S6.throw-no-leak', !WX_LEAK_RE.test(JSON.stringify(b.res)), b.res && b.res.msg)
+  check('S6.throw-shape', keysOf(b.res) === 'code,msg,success,walletPayFen' && b.res.code === 'PAY_UNAVAILABLE', keysOf(b.res))
+
+  const c = await runCPayOrder(transform, { unified: softFail, wallet: true })
+  check('S6.wallet-no-leak', !WX_LEAK_RE.test(JSON.stringify(c.res)), c.res && c.res.msg)
+  check('S6.wallet-shape',
+    keysOf(c.res) === 'code,msg,success,walletPayFen,walletRefund,walletRefunded' && c.res.code === 'PAY_UNAVAILABLE' && c.res.walletPayFen === 1000 && c.res.walletRefunded === true,
+    keysOf(c.res))
+  check('S6.wallet-front-branch', /暂不可用/.test(String(c.res.msg || '')) && /钱包余额已退回/.test(String(c.res.msg || '')), c.res && c.res.msg)
+
+  const d = await runCPayOrder(transform, { unified: softFail, getThrows: true })
+  check('S6.catch-no-leak', !WX_LEAK_RE.test(JSON.stringify(d.res)), d.res && d.res.msg)
+  check('S6.catch-shape', keysOf(d.res) === 'msg,success' && d.res.success === false, keysOf(d.res))
+
+  const e = await runCPayOrder(transform, { unified: okUnified })
+  check('S6.success-shape',
+    keysOf(e.res) === 'orderId,orderNo,payment,success,totalFeeFen,walletHeld,walletPayFen,wxpayFen' && e.res.success === true,
+    keysOf(e.res))
+
+  for (const file of C_PAYMENT) {
+    const tag = file.includes('/business/') ? 'business' : 'feature'
+    const f = await runCPayment(file, transform, `requestPayment:fail ${WX_RAW}`)
+    check(`S7.${tag}-no-leak`, !f.ok && f.message && !WX_LEAK_RE.test(f.message) && !/requestPayment:fail/.test(f.message), f.message)
+    check(`S7.${tag}-toast-branch`, !f.ok && !FRONT_MODAL_RE.test(f.message) && f.message.indexOf('已取消支付') !== 0 && f.message.indexOf('钱包') === -1,
+      `普通失败须仍走原 toast 分支：${f.message}`)
+    const cc = await runCPayment(file, transform, 'requestPayment:fail cancel')
+    check(`S7.${tag}-cancel`, !cc.ok && cc.message === '已取消支付', cc.message)
+  }
+}
+
 async function runChecks(transform) {
   const failures = []
   const check = (id, ok, detail) => { if (!ok) failures.push(`${id}${detail ? ` · ${detail}` : ''}`) }
@@ -185,6 +306,8 @@ async function runChecks(transform) {
   const clientSrc = read(CLIENT)
   const failBlock = (clientSrc.match(/wx\.requestPayment\(\{[\s\S]*?\n\s{8}\}\)/) || [''])[0]
   check('S5.request-payment-no-errmsg', failBlock && !/new Error\(\s*raw\b/.test(failBlock), 'requestPayment 失败不得把 errMsg 原文当提示')
+
+  await runCEndChecks(transform, check)
   return failures
 }
 
@@ -199,7 +322,16 @@ const INJECTIONS = [
   ['统一下单失败又透出微信原文', PAY_FN, (s) => s.replace("fail('PAY_UNAVAILABLE', '微信支付暂时拉不起来", "fail('PAY_UNAVAILABLE', lastErr + '微信支付暂时拉不起来")],
   ['前端去掉 PAY_UNAVAILABLE 映射', CLIENT, (s) => s.replace("if (code === 'PAY_UNAVAILABLE' || looksLikeWxInternal(raw)) {", 'if (false) {')],
   ['前端去掉配置错误映射', CLIENT, (s) => s.replace("if (code === 'B2B_PAY_CONFIG_INVALID') {", "if (code === '__none__') {")],
-  ['requestPayment 失败透出 errMsg', CLIENT, (s) => s.replace(/reject\(Object\.assign\(new Error\('微信支付没有完成[^']*'\)/, 'reject(Object.assign(new Error(raw || \'支付失败\')')]
+  ['requestPayment 失败透出 errMsg', CLIENT, (s) => s.replace(/reject\(Object\.assign\(new Error\('微信支付没有完成[^']*'\)/, 'reject(Object.assign(new Error(raw || \'支付失败\')')],
+  ['C 端无钱包失败又拼微信原文', C_PAY_FN, (s) => s.replace("msg: '微信支付暂不可用，请稍后重试',", 'msg: `微信支付暂不可用：${lastErrMsg}`,')],
+  ['C 端钱包失败又拼微信原文', C_PAY_FN, (s) => s.replace("msg: '微信支付暂不可用，钱包余额已退回',", 'msg: `微信支付暂不可用（${lastErrMsg}），钱包余额已退回`,')],
+  ['C 端兜底 catch 透出 err.message', C_PAY_FN, (s) => s.replace("msg: '发起支付失败，请稍后再试' }", "msg: err.message || '发起支付失败' }")],
+  ['C 端文案丢了「暂不可用」（前端分支失效）', C_PAY_FN, (s) => s.replace("msg: '微信支付暂不可用，请稍后重试',", "msg: '微信支付没拉起来，请稍后重试',")],
+  ['C 端出参多带原文字段', C_PAY_FN, (s) => s.replace("code: 'PAY_UNAVAILABLE',\n          walletPayFen: 0", "code: 'PAY_UNAVAILABLE',\n          detail: lastErrMsg,\n          walletPayFen: 0")],
+  ['C 端 payment.js（business）透出 errMsg', C_PAYMENT[0], (s) => s.replace("reject(new Error('微信支付没有完成，请稍后再试'))", "reject(new Error(raw || '支付失败'))")],
+  ['C 端 payment.js（feature）透出 errMsg', C_PAYMENT[1], (s) => s.replace("reject(new Error('微信支付没有完成，请稍后再试'))", "reject(new Error(raw || '支付失败'))")],
+  ['C 端普通失败文案误入弹窗分支', C_PAYMENT[0], (s) => s.replace("reject(new Error('微信支付没有完成，请稍后再试'))", "reject(new Error('微信支付暂不可用'))")],
+  ['C 端取消语义被改', C_PAYMENT[1], (s) => s.replace("reject(new Error('已取消支付'))", "reject(new Error('支付已取消'))")]
 ]
 
 async function selftest() {
@@ -235,6 +367,7 @@ async function main() {
     process.exit(1)
   }
   console.log('✓ B2B 商户号：与 C 端同源 · 格式前置校验（pay/查单/退款）· 日志不打印值 · 门店看不到微信原文')
+  console.log('✓ C 端 payOrder / payment.js：顾客看不到微信原文 · 出参字段与 code 不变 · 前端弹窗/toast/取消分支不变')
 }
 
 main().catch((e) => {

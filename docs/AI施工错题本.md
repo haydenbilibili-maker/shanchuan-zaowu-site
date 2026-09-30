@@ -452,6 +452,8 @@ shift || true          # ← 无条件执行
      CloudBase CLI 3.8 已没有 `--env-mode merge`，走 `manager-node` 的 `functions.updateFunctionConfig`。
 - **机制**：**`npm run check:b2b-pay-submch`**（pay 域，11 个内存注入）真跑云函数真源：误填 64 位密钥时 pay / 查单 / 退款前置拦截、零 cloudPay 调用、日志不含值；
   统一下单失败不透出微信原文；小程序 `friendlyPayError` 与 `requestPayment` 失败为大白话。
+  同日产品负责人点名把 C 端 `payOrder` / `utils/payment.js` 也收口（只换文案）：守卫 S6/S7 同时钉住**出参键集合与 code 不变**、
+  以及前端按 `msg` 做的分支（「暂不可用」→ 弹窗、普通失败 → toast、「已取消支付」精确匹配）不变 —— 改文案前先 `rg` 谁在匹配 `msg`。
 
 ---
 

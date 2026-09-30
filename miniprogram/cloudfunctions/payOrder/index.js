@@ -295,11 +295,10 @@ exports.main = async (event) => {
 
       if (walletHeld) {
         const refund = await refundWalletQuiet(orderId, openid, '微信支付拉起失败·自动回账')
+        // 微信原文只进日志（上方 console.error）；顾客只看大白话，「暂不可用」字样供前端分支匹配，勿删
         return {
           success: false,
-          msg: lastErrMsg
-            ? `微信支付暂不可用（${lastErrMsg}），钱包余额已退回`
-            : '微信支付暂不可用，钱包余额已退回',
+          msg: '微信支付暂不可用，钱包余额已退回',
           code: 'PAY_UNAVAILABLE',
           walletPayFen,
           walletRefunded: !!(refund && refund.success),
@@ -309,9 +308,7 @@ exports.main = async (event) => {
       if (!ALLOW_MOCK_PAY) {
         return {
           success: false,
-          msg: lastErrMsg
-            ? `微信支付暂不可用：${lastErrMsg}`
-            : '微信支付暂不可用，请稍后重试',
+          msg: '微信支付暂不可用，请稍后重试',
           code: 'PAY_UNAVAILABLE',
           walletPayFen: 0
         }
@@ -351,6 +348,6 @@ exports.main = async (event) => {
     }
   } catch (err) {
     console.error('payOrder error:', err)
-    return { success: false, msg: err.message || '发起支付失败' }
+    return { success: false, msg: '发起支付失败，请稍后再试' }
   }
 }
