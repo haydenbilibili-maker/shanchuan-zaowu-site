@@ -87,10 +87,12 @@ function cut(src, startMarks, endMark) {
   return src.slice(s, e)
 }
 
-function segments(src, withSheet) {
+function segments(src, overlay) {
   const cta = cut(src, ['<!-- 首屏主 CTA'], '<!-- 核心指标卡片')
   const menu = cut(src, ['<!-- 功能入口', '<!-- 快捷菜单'], '<!-- 数据图表')
-  const sheet = withSheet ? `${cut(src, ['<!-- 合并磁贴的二级面板'], '\n</view>\n')}\n</view>` : ''
+  let sheet = ''
+  if (overlay === 'group') sheet = `${cut(src, ['<!-- 合并磁贴的二级面板'], '\n</view>\n')}\n</view>`
+  if (overlay === 'fav') sheet = cut(src, ['<!-- 常用编辑面板'], '<!-- 合并磁贴的二级面板')
   return `<view class="container"><view class="content-area dashboard-view">${cta}<view class="dashboard-grid">${menu}</view></view>${sheet}</view>`
 }
 
@@ -125,6 +127,9 @@ function dataFor(role, extra = {}) {
     ...extra
   }
   d.hubTodo = hubNav.buildTodos(d)
+  const favIds = extra.favIds || hubNav.defaultFavs(role, menu)
+  d.hubFav = hubNav.buildFavView(favIds, d)
+  d.hubFavEdit = extra.favEdit ? hubNav.buildFavEditor(favIds, menu) : { open: false, selected: [], groups: [] }
   if (extra.sheet) d.hubSheet = hubNav.buildSheet(extra.sheet, d)
   return d
 }
@@ -138,12 +143,16 @@ if (beforeRev) {
 scenes.push(
   { name: 'after-super', wxml: afterWxml, h: 2700, data: dataFor(roles.WORKSPACE_SUPER_ADMIN) },
   { name: 'after-manager', wxml: afterWxml, h: 1500, data: dataFor(roles.WORKSPACE_STORE_MANAGER) },
-  { name: 'after-sheet', wxml: afterWxml, h: 1334, sheet: true, data: dataFor(roles.WORKSPACE_SUPER_ADMIN, { sheet: 'artisan' }) }
+  { name: 'after-sheet', wxml: afterWxml, h: 1334, overlay: 'group', data: dataFor(roles.WORKSPACE_SUPER_ADMIN, { sheet: 'artisan' }) },
+  {
+    name: 'after-fav-edit', wxml: afterWxml, h: 1500, overlay: 'fav',
+    data: dataFor(roles.WORKSPACE_SUPER_ADMIN, { favEdit: true, favIds: ['orders', 'ledger', 'analytics', 'approvals', 'support', 'gift'] })
+  }
 )
 
 async function shoot(scene) {
   const missing = new Set()
-  let body = renderWxml(segments(scene.wxml, scene.sheet), scene.data, { lenient: true, onMissing: (k) => missing.add(k) })
+  let body = renderWxml(segments(scene.wxml, scene.overlay), scene.data, { lenient: true, onMissing: (k) => missing.add(k) })
   body = body.replace(/src="\/(assets|subpackages)\//g, (_, d) => `src="file://${MP}/${d}/`)
   const css = rpx2px(loadWxss(join(ROOT, REL_WXSS), scene.wxssText != null ? scene.wxssText : null))
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>

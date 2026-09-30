@@ -234,6 +234,34 @@
     
     <!-- 功能入口（2026-09-30 全局改版）：待办条 + 七个分区；分区与合并磁贴的权限口径见 hubNav.js，一致性由 check:hub-entries 守 -->
     <view class="grid-item full-width hub-nav">
+      <!-- 我的常用：按 hubNav.HUB_ENTRIES 渲染、只含有权限入口；「编辑」可增删与排序（上限 8，本地保存） -->
+      <view class="hub-fav">
+        <view class="hub-fav-head">
+          <text class="hub-fav-title">我的常用</text>
+          <text class="hub-fav-edit" bindtap="openFavEditor">编辑</text>
+        </view>
+        <view class="hub-grid" wx:if="{{hubFav.length}}">
+          <view
+            class="hub-tile hub-fav-tile"
+            wx:for="{{hubFav}}"
+            wx:key="id"
+            bindtap="onHubFav"
+            data-id="{{item.id}}"
+            hover-class="hub-press"
+            hover-stay-time="80"
+          >
+            <view class="hub-ico">
+              <image class="hub-ico-img" src="{{item.icon}}" mode="aspectFit" />
+              <view class="hub-badge" wx:if="{{item.badge}}">{{item.badge}}</view>
+            </view>
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+        <view class="hub-fav-empty" wx:else bindtap="openFavEditor">
+          <text>还没有常用入口，点「编辑」从下方分区挑选</text>
+        </view>
+      </view>
+
       <view class="hub-todo" wx:if="{{hubTodo.items.length}}">
         <view class="hub-todo-head">
           <text class="hub-todo-title">待办</text>
@@ -630,6 +658,44 @@
   </view>
   
   <view class="footer-logo">- NATURE'S ADMIN -</view>
+</view>
+
+<!-- 常用编辑面板：已选可上移 / 下移 / 移除，下方按分区加入；保存才生效 -->
+<view class="hub-sheet-mask" wx:if="{{hubFavEdit.open}}" bindtap="closeFavEditor" catchtouchmove="noop"></view>
+<view class="hub-sheet hub-fav-sheet" wx:if="{{hubFavEdit.open}}">
+  <view class="hub-sheet-head">
+    <text class="hub-sheet-title">编辑常用 · {{hubFavEdit.count}}/{{hubFavEdit.max}}</text>
+    <text class="hub-sheet-close" bindtap="closeFavEditor">取消</text>
+  </view>
+  <scroll-view class="hub-fav-scroll" scroll-y>
+    <view class="hub-fav-sel-empty" wx:if="{{!hubFavEdit.selected.length}}"><text>尚未选择，点下方入口加入</text></view>
+    <view class="hub-fav-sel" wx:for="{{hubFavEdit.selected}}" wx:key="id">
+      <image class="hub-fav-sel-ico" src="{{item.icon}}" mode="aspectFit" />
+      <text class="hub-fav-sel-name">{{item.label}}</text>
+      <text class="hub-fav-op {{item.first ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="up">上移</text>
+      <text class="hub-fav-op {{item.last ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="down">下移</text>
+      <text class="hub-fav-op is-remove" bindtap="onFavToggle" data-id="{{item.id}}">移除</text>
+    </view>
+    <view class="hub-fav-full" wx:if="{{hubFavEdit.full}}"><text>已满 {{hubFavEdit.max}} 个，移除后才能再加入</text></view>
+    <view class="hub-fav-group" wx:for="{{hubFavEdit.groups}}" wx:for-item="g" wx:key="id">
+      <text class="hub-fav-group-title">{{g.title}}</text>
+      <view class="hub-fav-chips">
+        <view
+          class="hub-fav-chip {{item.added ? 'is-added' : ''}} {{!item.added && hubFavEdit.full ? 'is-off' : ''}}"
+          wx:for="{{g.items}}"
+          wx:key="id"
+          bindtap="onFavToggle"
+          data-id="{{item.id}}"
+        >
+          <text>{{item.added ? '✓ ' : '+ '}}{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+  <view class="hub-fav-actions">
+    <view class="hub-fav-btn is-ghost" bindtap="onFavReset" hover-class="hub-press" hover-stay-time="80">恢复默认</view>
+    <view class="hub-fav-btn is-primary" bindtap="onFavSave" hover-class="hub-fav-btn-press" hover-stay-time="80">保存</view>
+  </view>
 </view>
 
 <!-- 合并磁贴的二级面板：只列有权限的子项；点按后收起并走原入口 -->

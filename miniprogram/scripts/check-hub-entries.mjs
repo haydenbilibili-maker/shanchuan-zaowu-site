@@ -12,7 +12,10 @@
  *   4) 分区：每枚磁贴都在某个 hub-sec 内，分区 wx:if 用 hubSec.<id>，且 HUB_SECTIONS[id].keys = 区内磁贴菜单键之并；
  *   5) 行为（真跑 hubNav.js + workspaceRoles.js）：超管 / 店长 / 店员 各角色下，改版前可见的入口改版后仍可达，
  *      改版前不可见的入口改版后也不出现；sectionFlags 不藏掉有可见磁贴的分区；单子项面板直接进入；
- *   6) 入口 handler 在页面上真实存在；hub 入口层不弹原生 modal；可见文案无技术字段名。
+ *   6) 入口 handler 在页面上真实存在；hub 入口层不弹原生 modal；可见文案无技术字段名；
+ *   7) 统一清单 hubNav.HUB_ENTRIES ↔ index.wxml 分区磁贴逐枚一致（入口 / 名称 / 图标 / 权限键 / 分区），id 唯一；
+ *   8) 「我的常用」：只含有权限入口、旧 id / 被合并 id 映射到现行 id、未知 id 过滤、上限 8 生效、各角色默认值存在且有效、
+ *      点常用磁贴再判权限、保存前归一化、常用区按清单 wx:for 渲染。
  *
  * 用法：node miniprogram/scripts/check-hub-entries.mjs [--selftest]
  * 自检全部在内存副本上注入，不写盘。
@@ -146,6 +149,7 @@ function parseTiles(wxml, errs) {
     const after = wxml.slice(m.index + tag.length, m.index + tag.length + 900)
     const lm = after.match(/<text>([^<]+)<\/text>/)
     const label = lm ? lm[1].trim() : ''
+    const im = after.match(/<image class="hub-ico-img" src="([^"]+)"/)
     let sec = null
     for (const s of secs) if (s.at < m.index) sec = s.id
     const t = {
@@ -157,7 +161,8 @@ function parseTiles(wxml, errs) {
       idx: attr(tag, 'data-idx'),
       tab: attr(tag, 'data-tab'),
       dataGroup: attr(tag, 'data-group'),
-      wxif: attr(tag, 'wx:if')
+      wxif: attr(tag, 'wx:if'),
+      icon: im ? im[1] : ''
     }
     t.keys = menuKeysOf(t.wxif, errs, `磁贴「${label || tag.slice(0, 60)}」`)
     if (!t.wxif) errs.push(`磁贴「${label}」没有 wx:if 权限条件`)
@@ -337,7 +342,86 @@ function judge(src) {
   for (const t of nav.HUB_TODOS || []) {
     if (!hasMethod(pageCode, t.tap)) errs.push(`待办条「${t.label}」的入口 ${t.tap} 在页面上不存在`)
   }
+  // 7) 统一清单 ↔ 分区磁贴
+  const entries = nav.HUB_ENTRIES || []
+  const ids = entries.map((e) => e.id)
+  if (uniq(ids).length !== ids.length) errs.push('HUB_ENTRIES 的 id 有重复')
+  const entrySig = (e) => `${e.tap}|${e.idx != null ? String(e.idx) : ''}|${e.tab || ''}|${e.group || ''}`
+  for (const e of entries) {
+    const hit = tiles.filter((t) => `${t.bindtap}|${t.idx || ''}|${t.tab || ''}|${t.dataGroup || ''}` === entrySig(e))
+    if (hit.length !== 1) {
+      errs.push(`清单入口 ${e.id}（${e.label}）在分区磁贴里应恰好一枚，实际 ${hit.length}`)
+      continue
+    }
+    const t = hit[0]
+    if (t.label !== e.label) errs.push(`清单与磁贴名称不一致：${e.id} 清单「${e.label}」磁贴「${t.label}」`)
+    if (t.icon !== e.icon) errs.push(`清单与磁贴图标不一致：${e.id}`)
+    if (!setEq(t.keys, uniq(e.keys))) errs.push(`清单与磁贴权限键不一致：${e.id} 清单=[${e.keys}] 磁贴=[${t.keys}]`)
+    if (t.sec !== e.sec) errs.push(`清单与磁贴分区不一致：${e.id} 清单=${e.sec} 磁贴=${t.sec}`)
+  }
+  if (tiles.length !== entries.length) errs.push(`分区磁贴 ${tiles.length} 枚 ≠ 清单 ${entries.length} 条（有磁贴没进清单，常用区就挑不到它）`)
+
+  // 8) 我的常用
+  try {
+    const superMenu = {}
+    const mgrMenu = {}
+    Object.values(roles.MENU_KEYS).forEach((k) => {
+      superMenu[k] = roles.canSeeMenu(roles.WORKSPACE_SUPER_ADMIN, k)
+      mgrMenu[k] = roles.canSeeMenu(roles.WORKSPACE_STORE_MANAGER, k)
+    })
+    if (nav.FAV_MAX !== 8) errs.push(`常用上限应为 8（当前 ${nav.FAV_MAX}）`)
+    const allIds = entries.map((e) => e.id)
+    const capped = nav.normalizeFavs(allIds, superMenu)
+    if (capped.length > 8) errs.push(`常用上限未生效：超管全选后仍有 ${capped.length} 个`)
+    const mgrOnly = nav.normalizeFavs(['memberCrm', 'feishu', 'orders', 'aiIdentify'], mgrMenu)
+    if (JSON.stringify(mgrOnly) !== JSON.stringify(['orders'])) {
+      errs.push(`常用区只含有权限入口：店长配置 [memberCrm, feishu, orders, aiIdentify] 应只剩 [orders]，实际 [${mgrOnly}]`)
+    }
+    const mapped = nav.normalizeFavs(['giftOps', 'honoraryCurators', 'shipmentSku', 'giftManage', 'no_such_entry'], superMenu)
+    if (JSON.stringify(mapped) !== JSON.stringify(['gift', 'memberCurator', 'shipment'])) {
+      errs.push(`失效 id 映射 / 过滤不对：[giftOps, honoraryCurators, shipmentSku, giftManage, no_such_entry] 应得 [gift, memberCurator, shipment]，实际 [${mapped}]`)
+    }
+    for (const [from, to] of Object.entries(nav.FAV_ID_ALIASES || {})) {
+      if (!nav.findEntry(to)) errs.push(`常用映射 ${from} → ${to} 指向不存在的入口`)
+    }
+    for (const g of Object.values(groups)) {
+      for (const it of g.items) {
+        if (!nav.findEntry(it.id) && !(nav.FAV_ID_ALIASES || {})[it.id]) errs.push(`被合并入口 ${it.id} 没有常用映射（旧配置会被静默丢掉）`)
+      }
+    }
+    for (const [role, list] of Object.entries(nav.FAV_DEFAULTS || {})) {
+      for (const id of list) if (!nav.findEntry(id)) errs.push(`默认常用 ${role} 含不存在的入口 ${id}`)
+    }
+    for (const [role, menu] of [[roles.WORKSPACE_SUPER_ADMIN, superMenu], [roles.WORKSPACE_STORE_MANAGER, mgrMenu]]) {
+      const d = nav.defaultFavs(role, menu)
+      if (!d.length) errs.push(`角色 ${role} 没有默认常用`)
+      if (d.length > 8) errs.push(`角色 ${role} 默认常用超过上限`)
+    }
+    const full = allIds.slice(0, 8)
+    if (nav.toggleFav(full, allIds[9]).length !== 8) errs.push('常用已满 8 个时 toggleFav 仍能加入')
+    const view = nav.buildFavView(['orders', 'support'], { menu: superMenu, orders: [1, 2], supportTickets: [] })
+    if (!view[0] || view[0].badge !== '2' || view[1].badge !== '') errs.push('常用区角标与分区磁贴口径不一致（订单 2 / 有信 0）')
+  } catch (e) {
+    errs.push(`常用区逻辑执行失败：${e.message}`)
+  }
+  if (!/<view\s+class="hub-tile hub-fav-tile"\s+wx:for="\{\{hubFav\}\}"[\s\S]{0,120}bindtap="onHubFav"/.test(src.wxml)) {
+    errs.push('常用区须按清单 wx:for="{{hubFav}}" 渲染并绑 onHubFav')
+  }
+  if (!/bindtap="openFavEditor"/.test(src.wxml) || !/bindtap="onFavSave"/.test(src.wxml)) errs.push('常用区缺「编辑」入口或编辑面板的保存')
+  const favTap = (src.indexJs.match(/\n  onHubFav\(e\) \{([\s\S]*?)\n  \},/) || [])[1] || ''
+  if (!/entry\.keys\.some\(/.test(favTap)) errs.push('onHubFav 须在进入前再判一次权限（常用可能来自旧配置）')
+  const favSave = (src.indexJs.match(/\n  onFavSave\(\) \{([\s\S]*?)\n  \},/) || [])[1] || ''
+  if (!/hubNav\.normalizeFavs\(/.test(favSave) || !/setStorageSync\(hubNav\.FAV_STORAGE_KEY/.test(favSave)) {
+    errs.push('onFavSave 须先归一化（映射 / 权限 / 上限）再写本地 storage')
+  }
+  if (!/function loadFavIds[\s\S]{0,300}hubNav\.normalizeFavs\([\s\S]{0,120}hubNav\.defaultFavs\(/.test(src.indexJs)) {
+    errs.push('loadFavIds 须对已保存值归一化、未配置时用角色默认')
+  }
   return errs
+}
+
+function loadNavEntries(src) {
+  try { return evalCjs(src.hubNav).HUB_ENTRIES || [] } catch (e) { return [] }
 }
 
 function run(src) {
@@ -355,7 +439,7 @@ if (!selftest) {
     errs.forEach((e) => console.error('  -', e))
     process.exitCode = 1
   } else {
-    console.log(`${TAG} ✓ 改版前 ${ORIGINAL.length} 个入口均可达、权限条件未变、无重复磁贴、分区与合并面板口径一致（超管 / 店长 / 店员 / 标本师四角色实跑）`)
+    console.log(`${TAG} ✓ 改版前 ${ORIGINAL.length} 个入口均可达、权限条件未变、无重复磁贴、分区与合并面板口径一致、清单 ↔ 磁贴 ${(loadNavEntries(base)).length} 枚逐枚一致、常用区权限 / 映射 / 上限 / 默认值成立（超管 / 店长 / 店员 / 标本师四角色实跑）`)
   }
 } else {
   const rep = (key, from, to) => (s) => {
@@ -363,8 +447,8 @@ if (!selftest) {
     return { ...s, [key]: s[key].replace(from, to) }
   }
   const cases = [
-    // 不误报对照：只改磁贴名、入口与权限仍在 → 必须仍通过
-    ['删掉飞书同步磁贴', rep('wxml', '<text>飞书同步</text>', '<text>飞书</text>'), null],
+    // 不误报对照：清单与磁贴同步改名、入口与权限仍在 → 必须仍通过
+    ['飞书同步同步改名', (s) => rep('hubNav', "label: '飞书同步'", "label: '飞书'")(rep('wxml', '<text>飞书同步</text>', '<text>飞书</text>')(s)), null],
     ['直达磁贴整枚删除', (s) => ({ ...s, wxml: s.wxml.replace(/<view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="\{\{menu\.feishuSync\}\}"[\s\S]*?<\/view>\s*<\/view>\s*<\/view>/, '</view>') }), /入口丢失：改版前的「飞书同步」/],
     ['面板子项生日礼包被删', rep('hubNav', "      { id: 'birthdayGift',", "      // { id: 'birthdayGift',"), /入口丢失：改版前的「生日礼包」/],
     ['重复磁贴（账本复制一枚）', (s) => {
@@ -383,7 +467,15 @@ if (!selftest) {
     ['磁贴移出分区', (s) => ({ ...s, wxml: s.wxml.replace('<view class="hub-todo" wx:if="{{hubTodo.items.length}}">', '<view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.ledger}}" bindtap="goLedgerX"><text>散落</text></view>\n      <view class="hub-todo" wx:if="{{hubTodo.items.length}}">') }), /不在任何 hub-sec 分区内/],
     ['入口层新增原生弹窗', (s) => ({ ...s, indexJs: s.indexJs.replace('  closeHubGroup() {', '  closeHubGroup() {\n    wx.showModal({ title: "x" })') }), /wx\.showModal/],
     ['技术文案回流', rep('hubNav', "desc: '手机号 · 角色分配'", "desc: '手机号 · openid · 角色分配'"), /技术字段「openid」/],
-    ['扫码主按钮丢失', rep('wxml', 'bindtap="goScanMember"', 'bindtap="goScanMemberOff"'), /扫顾客会员码/]
+    ['扫码主按钮丢失', rep('wxml', 'bindtap="goScanMember"', 'bindtap="goScanMemberOff"'), /扫顾客会员码/],
+    ['清单名称与磁贴漂移', rep('hubNav', "{ id: 'ledger', label: '账本'", "{ id: 'ledger', label: '营收'"), /清单与磁贴名称不一致/],
+    ['常用不按权限过滤', rep('hubNav', 'if (!entryVisible(findEntry(id), menu)) return', 'if (!findEntry(id)) return'), /常用区只含有权限入口/],
+    ['被合并 id 映射丢失', rep('hubNav', "giftOps: 'gift', giftManage: 'gift',", "giftManage: 'gift',"), /失效 id 映射/],
+    ['常用上限失效', rep('hubNav', 'return out.slice(0, FAV_MAX)', 'return out'), /常用上限未生效/],
+    ['店长默认常用被清空', rep('hubNav', "store_manager: ['orders', 'ledger', 'verify', 'approvals', 'workOrders', 'gift', 'products', 'points'],", 'store_manager: [],'), /没有默认常用/],
+    ['点常用不再判权限', rep('indexJs', 'if (!entry || !entry.keys.some((k) => this.data.menu && this.data.menu[k])) {', 'if (!entry) {'), /onHubFav 须在进入前再判一次权限/],
+    ['保存不归一化', rep('indexJs', 'const ids = hubNav.normalizeFavs(this.data.hubFavEdit.ids || [], this.data.menu)', 'const ids = this.data.hubFavEdit.ids || []'), /onFavSave 须先归一化/],
+    ['常用编辑新增原生弹窗', (s) => ({ ...s, indexJs: s.indexJs.replace('  onFavReset() {', '  onFavReset() {\n    wx.showModal({ title: "恢复默认？" })') }), /wx\.showModal/]
   ]
   let bad = 0
   const baseline = run(base)
@@ -401,8 +493,8 @@ if (!selftest) {
       continue
     }
     const r = run(s)
-    if (name === '删掉飞书同步磁贴') {
-      if (r.ok) console.log(`${TAG} selftest ✓ 不误报：${name}（只改磁贴名，入口与权限仍在）`)
+    if (name === '飞书同步同步改名') {
+      if (r.ok) console.log(`${TAG} selftest ✓ 不误报：${name}（清单与磁贴同步改名，入口与权限仍在）`)
       else { console.error(`${TAG} selftest ✗ 误报：${name} → ${r.errs[0]}`); bad += 1 }
       continue
     }

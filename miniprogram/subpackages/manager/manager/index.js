@@ -10,6 +10,23 @@ const baseApplyWorkspaceRole = managerPageConfig.applyWorkspaceRole
 const baseRefreshOpsSignals = managerPageConfig.refreshOpsSignals
 const HUB_SHEET_CLOSED = { open: false, id: '', title: '', items: [] }
 const HUB_TODO_EMPTY = { total: 0, totalText: '0', items: [] }
+const HUB_FAV_EDIT_CLOSED = { open: false, ids: [], selected: [], groups: [], full: false, count: 0, max: hubNav.FAV_MAX }
+
+function readFavStore() {
+  try {
+    const v = wx.getStorageSync(hubNav.FAV_STORAGE_KEY)
+    return v && typeof v === 'object' ? v : {}
+  } catch (e) {
+    return {}
+  }
+}
+
+/** 已保存（含保存为空）用保存值，否则按角色默认 */
+function loadFavIds(role, menu) {
+  const saved = readFavStore()[role]
+  if (Array.isArray(saved)) return hubNav.normalizeFavs(saved, menu)
+  return hubNav.defaultFavs(role, menu)
+}
 
 function queryExtras(options) {
   const o = options || {}
@@ -35,20 +52,79 @@ Page({
   ...managerPageConfig,
 
   async onLoad(options) {
-    this.setData({ hubSec: {}, hubSheet: HUB_SHEET_CLOSED, hubTodo: HUB_TODO_EMPTY })
+    this.setData({ hubSec: {}, hubSheet: HUB_SHEET_CLOSED, hubTodo: HUB_TODO_EMPTY, hubFav: [], hubFavEdit: HUB_FAV_EDIT_CLOSED })
     await baseOnLoad.call(this, options)
     redirectEmbeddedModule(this, options)
   },
 
   applyWorkspaceRole(role) {
     baseApplyWorkspaceRole.call(this, role)
-    this.setData({ hubSec: hubNav.sectionFlags(this.data.menu), hubTodo: hubNav.buildTodos(this.data) })
+    this._favIds = loadFavIds(this.data.workspaceRole, this.data.menu)
+    this.setData({
+      hubSec: hubNav.sectionFlags(this.data.menu),
+      hubTodo: hubNav.buildTodos(this.data),
+      hubFav: hubNav.buildFavView(this._favIds, this.data)
+    })
   },
 
   /** 角标计数每次变化后都会走这里，顺带汇总顶部待办条 */
   refreshOpsSignals() {
     baseRefreshOpsSignals.call(this)
-    this.setData({ hubTodo: hubNav.buildTodos(this.data) })
+    this.setData({ hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data) })
+  },
+
+  /* ── 我的常用 ── */
+  onHubFav(e) {
+    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
+    const entry = hubNav.findEntry(id)
+    if (!entry || !entry.keys.some((k) => this.data.menu && this.data.menu[k])) {
+      if (typeof this.showHubTip === 'function') this.showHubTip('无此功能权限', 'warn')
+      return
+    }
+    hubNav.invokeItem(this, entry)
+  },
+
+  openFavEditor() {
+    wx.vibrateShort({ type: 'light' })
+    this.setData({ hubFavEdit: hubNav.buildFavEditor(this._favIds || [], this.data.menu) })
+  },
+
+  onFavToggle(e) {
+    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
+    const cur = this.data.hubFavEdit.ids || []
+    if (cur.indexOf(id) === -1 && cur.length >= hubNav.FAV_MAX) {
+      if (typeof this.showHubTip === 'function') this.showHubTip(`常用最多 ${hubNav.FAV_MAX} 个，先移除一个`, 'warn')
+      return
+    }
+    this.setData({ hubFavEdit: hubNav.buildFavEditor(hubNav.toggleFav(cur, id), this.data.menu) })
+  },
+
+  onFavMove(e) {
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {}
+    const ids = hubNav.moveFav(this.data.hubFavEdit.ids || [], String(ds.id || ''), ds.dir === 'up' ? 'up' : 'down')
+    this.setData({ hubFavEdit: hubNav.buildFavEditor(ids, this.data.menu) })
+  },
+
+  onFavReset() {
+    this.setData({ hubFavEdit: hubNav.buildFavEditor(hubNav.defaultFavs(this.data.workspaceRole, this.data.menu), this.data.menu) })
+  },
+
+  onFavSave() {
+    const ids = hubNav.normalizeFavs(this.data.hubFavEdit.ids || [], this.data.menu)
+    const store = readFavStore()
+    store[this.data.workspaceRole || 'unknown'] = ids
+    try {
+      wx.setStorageSync(hubNav.FAV_STORAGE_KEY, store)
+    } catch (err) {
+      if (typeof this.showHubTip === 'function') this.showHubTip('常用保存失败，请重试', 'warn')
+      return
+    }
+    this._favIds = ids
+    this.setData({ hubFavEdit: HUB_FAV_EDIT_CLOSED, hubFav: hubNav.buildFavView(ids, this.data) })
+  },
+
+  closeFavEditor() {
+    if (this.data.hubFavEdit && this.data.hubFavEdit.open) this.setData({ hubFavEdit: HUB_FAV_EDIT_CLOSED })
   },
 
   onHubTodo(e) {
@@ -108,6 +184,10 @@ Page({
 
   onWorkspaceBack() {
     if (this.data.showCommentReplyModal) return true
+    if (this.data.hubFavEdit && this.data.hubFavEdit.open) {
+      this.closeFavEditor()
+      return true
+    }
     if (this.data.hubSheet && this.data.hubSheet.open) {
       this.closeHubGroup()
       return true
