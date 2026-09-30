@@ -8,3 +8,4 @@ npm run test:member-card-guest
 npm run test:wallet-hub-lifecycle
 npm run test:points-ledger
 npm run test:b2b-pay
+npm run check:b2b-pay-submch

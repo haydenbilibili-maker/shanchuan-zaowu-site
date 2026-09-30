@@ -138,6 +138,8 @@
     "test:points-ledger:selftest": "node miniprogram/scripts/test-points-ledger.mjs --selftest",
     "test:b2b-pay": "node miniprogram/scripts/test-b2b-pay.mjs",
     "test:b2b-pay:selftest": "node miniprogram/scripts/test-b2b-pay.mjs --selftest",
+    "check:b2b-pay-submch": "node miniprogram/scripts/check-b2b-pay-submch.mjs",
+    "check:b2b-pay-submch:selftest": "node miniprogram/scripts/check-b2b-pay-submch.mjs --selftest",
     "check:page-paths": "node miniprogram/scripts/check-page-paths.mjs",
     "check:page-paths:selftest": "node miniprogram/scripts/check-page-paths.mjs --selftest",
     "check:asset-refs": "node miniprogram/scripts/check-asset-refs.mjs",

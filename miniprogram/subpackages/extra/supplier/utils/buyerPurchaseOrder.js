@@ -167,7 +167,10 @@ async function payBuyerOrder(purchaseOrderId, opts) {
           fail: (err) => {
             const raw = (err && err.errMsg) || ''
             if (raw.includes('cancel')) reject(Object.assign(new Error('已取消支付'), { code: 'CANCELLED' }))
-            else reject(Object.assign(new Error(raw || '支付失败'), { code: 'PAY_FAIL' }))
+            else {
+              console.warn('[buyerPurchaseOrder] requestPayment fail', raw)
+              reject(Object.assign(new Error('微信支付没有完成，请稍后再试；着急可点「待对公」登记转账。'), { code: 'PAY_FAIL' }))
+            }
           }
         })
       })
@@ -313,17 +316,26 @@ function friendlyPayError(errOrResult) {
     return { code: 'TIMEOUT', msg: '网络超时，请稍后重试支付或下拉刷新订单。' }
   }
   if (code === 'B2B_PAY_NOT_CONFIGURED') {
+    return { code, msg: '微信支付还没开通。可先点「待对公」登记转账，或联系总部开通。' }
+  }
+  if (code === 'B2B_PAY_CONFIG_INVALID') {
+    return { code, msg: '支付配置有误，请联系总部。期间可点「待对公」登记转账。' }
+  }
+  if (code === 'PAY_UNAVAILABLE' || looksLikeWxInternal(raw)) {
     return {
-      code,
-      msg:
-        raw ||
-        '微信商户未配置（WX_PAY_SUB_MCH_ID）。可点「待对公」或联系总部开通。'
+      code: code || 'PAY_UNAVAILABLE',
+      msg: '微信支付暂时拉不起来，请稍后再试；着急可点「待对公」登记转账。'
     }
   }
   return {
     code: code || 'PAY_FAIL',
     msg: raw || '支付暂不可用，请稍后重试或登记待对公。'
   }
+}
+
+/** 微信/云调用内部报错原文（门店看不懂，也不该看到配置细节） */
+function looksLikeWxInternal(raw) {
+  return /\/body\/xml|sub_mch_id|submchid|WX_PAY_|errCode|cloudPay|规则校验失败/i.test(String(raw || ''))
 }
 
 function createErrorFriendly(err) {

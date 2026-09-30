@@ -53,6 +53,23 @@ function fail(code, msg, extra) {
   return { success: false, code, msg, ...(extra || {}) }
 }
 
+/**
+ * 商户号（cloudPay 的 subMchId）只能是微信支付 mchid：8–12 位纯数字。
+ * 2026-09-30 线上事故：该变量被误填成 64 位回调密钥，微信统一下单报「sub_mch_id 字节数 64 大于最大值 12」，
+ * 原文还被直接透给了门店。日志只记长度与判因，**不打印值**（可能是误填的密钥）。
+ */
+function subMchConfigError(scene) {
+  if (!SUB_MCH_ID) return null
+  if (/^\d{8,12}$/.test(SUB_MCH_ID)) return null
+  console.error(
+    `[payB2bPurchase] ${scene}: WX_PAY_SUB_MCH_ID 格式错误（len=${SUB_MCH_ID.length}，` +
+      `${/^\d+$/.test(SUB_MCH_ID) ? '纯数字但位数不对' : '含非数字字符'}），应为 8–12 位商户号；值不打印`
+  )
+  return fail('B2B_PAY_CONFIG_INVALID', '支付配置有误，请联系总部。期间可点「待对公」登记转账。', {
+    paymentStatus: 'unpaid'
+  })
+}
+
 function isValidPayment(payment) {
   if (!payment || typeof payment !== 'object') return false
   const pkg = String(payment.package || '')
@@ -365,10 +382,12 @@ async function handlePay(purchaseOrderId, openid) {
   if (!SUB_MCH_ID) {
     return fail(
       'B2B_PAY_NOT_CONFIGURED',
-      '微信商户未配置：无法拉起支付。可选「待对公」或联系总部开通 WX_PAY_SUB_MCH_ID。',
+      '微信支付还没开通。可先点「待对公」登记转账，或联系总部开通。',
       { paymentStatus: 'awaiting_config', payFen }
     )
   }
+  const cfgErr = subMchConfigError('pay')
+  if (cfgErr) return { ...cfgErr, payFen }
 
   const attempt = (Number(po.payAttempt) || 0) + 1
   const outTradeNo = buildOutTradeNo()
@@ -421,10 +440,11 @@ async function handlePay(purchaseOrderId, openid) {
     console.error('payB2bPurchase unifiedOrder', payErr)
   }
 
+  console.error('payB2bPurchase unifiedOrder fail', { outTradeNo, lastErr })
   await db.collection(COL).doc(purchaseOrderId).update({
     data: { paymentStatus: 'unpaid', updatedAt: Date.now() }
   })
-  return fail('PAY_UNAVAILABLE', lastErr ? `微信支付暂不可用：${lastErr}` : '微信支付暂不可用', {
+  return fail('PAY_UNAVAILABLE', '微信支付暂时拉不起来，请稍后再试；着急可点「待对公」登记转账。', {
     paymentStatus: 'unpaid',
     payFen
   })
@@ -552,6 +572,8 @@ async function markPaidFromTrade(po, info) {
 
 async function handleAdminReconcile(purchaseOrderId, actor) {
   if (!SUB_MCH_ID) return fail('B2B_PAY_NOT_CONFIGURED', '未配置 WX_PAY_SUB_MCH_ID，无法查单')
+  const cfgErr = subMchConfigError('adminReconcile')
+  if (cfgErr) return cfgErr
   const po = await getPo(purchaseOrderId)
   if (!po) return fail('NOT_FOUND', '采购单不存在')
   if (String(po.paymentStatus) === 'paid') return { success: true, alreadyPaid: true, paymentStatus: 'paid', msg: '该单已是已支付' }
@@ -623,6 +645,8 @@ async function handleAdminConfirmOffline(event, purchaseOrderId, actor) {
 
 async function handleAdminRefund(event, purchaseOrderId, actor) {
   if (!SUB_MCH_ID) return fail('B2B_PAY_NOT_CONFIGURED', '未配置 WX_PAY_SUB_MCH_ID，无法退款')
+  const cfgErr = subMchConfigError('adminRefund')
+  if (cfgErr) return cfgErr
   const po = await getPo(purchaseOrderId)
   if (!po) return fail('NOT_FOUND', '采购单不存在')
   if (pickStr(event.confirmOrderNo, 40) !== String(po.orderNo || '')) {
