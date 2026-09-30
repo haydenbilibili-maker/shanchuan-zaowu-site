@@ -8,7 +8,12 @@
  *   ③ 类别：theme 必须是 SEED_WISHES 的六类之一，六类都要有、各类条数差 ≤ 2；
  *   ④ 去重：批内去重（忽略标点）、与基线 SEED_WISHES 去重、跨批次文件去重；
  *   ⑤ 措辞：禁词（促销话术 / 过度承诺 / 宗教迷信）命中即红；「马上有」开头占比 20%–50%（防句式单一）；
- *   ⑥ 元数据：batch 形如 `mashangyou-<名>-YYYY-MM-DD` 且 ≠ 基线批次（整批下线靠它）、productKey 合法。
+ *   ⑥ 元数据：batch 形如 `mashangyou-<名>-YYYY-MM-DD` 且 ≠ 基线批次（整批下线靠它）、productKey 合法；
+ *   ⑦ 原文照录批次（`sourcing: "verbatim"`，第三方评论原文）：每条须有 sourceText / source（http 链接，
+ *      不得指向 music.163.com —— 不爬其站点）/ song 字段，text 与 sourceText 去标点后逐字相同（只许改标点，
+ *      超长原文不选、不截断改写）；_doc 须写明产品负责人的风险确认。
+ *      只有这类批次可用 `relax` 放宽 ③ 的「六类齐全且均衡」（themeBalance）与 ⑤ 的开头占比（prefixRatio），
+ *      且须写 relaxReason —— 原文不能为凑类别/句式而改写。①②④ 与禁词不放宽。
  *
  * 用法：
  *   node scripts/check-wish-seed-batch.mjs
@@ -48,6 +53,9 @@ const BANNED = [
   '网易', '云村', '歌词'
 ]
 
+const RELAXABLE = ['themeBalance', 'prefixRatio']
+const RISK_ACK = '确认使用第三方用户评论并承担风险'
+
 const graphemes = (t) => [...new Intl.Segmenter('zh', { granularity: 'grapheme' }).segment(t)].length
 const stripPunct = (t) => t.replace(/[\s，,。.、；;：:！!？?…~～·“”"'‘’「」]/g, '')
 
@@ -60,6 +68,14 @@ function checkBatch(batch, fileLabel, others) {
   if (batch.productKey !== 'mashangyou') tag(`productKey 不合法：${batch.productKey}`)
   const items = Array.isArray(batch.items) ? batch.items : []
   if (!items.length) tag('items 为空')
+  const verbatim = batch.sourcing === 'verbatim'
+  if (batch.sourcing !== undefined && !verbatim) tag(`sourcing 不合法：${batch.sourcing}`)
+  const relax = Array.isArray(batch.relax) ? batch.relax : []
+  if (batch.relax !== undefined && !Array.isArray(batch.relax)) tag('relax 须为数组')
+  for (const r of relax) if (!RELAXABLE.includes(r)) tag(`relax 含不可放宽项「${r}」（只允许 ${RELAXABLE.join('/')}）`)
+  if (relax.length && !verbatim) tag('relax 只允许用于原文照录批次（sourcing: "verbatim"）')
+  if (relax.length && !String(batch.relaxReason || '').trim()) tag('relax 缺 relaxReason')
+  if (verbatim && !String(batch._doc || '').includes(RISK_ACK)) tag(`原文照录批次 _doc 未写明「${RISK_ACK}」`)
 
   const seen = new Map()
   const perTheme = Object.fromEntries(THEMES.map((t) => [t, 0]))
@@ -85,14 +101,25 @@ function checkBatch(batch, fileLabel, others) {
     if (BASELINE.has(text)) tag(`${at} 与基线 SEED_WISHES 重复`)
     if (others.has(key)) tag(`${at} 与批次 ${others.get(key)} 重复`)
     if (text.startsWith(seeds.SEED_PREFIX)) prefixed += 1
+    if (verbatim) {
+      const src = String((it && it.sourceText) || '')
+      if (!src.trim()) tag(`${at} 缺 sourceText（原文）`)
+      else if (stripPunct(src) !== stripPunct(text)) tag(`${at} 与原文不一致（只许改标点）：「${src}」`)
+      const url = String((it && it.source) || '')
+      if (!/^https?:\/\/\S+$/.test(url)) tag(`${at} 缺来源链接 source`)
+      else if (/music\.163\.com/i.test(url)) tag(`${at} 来源指向 music.163.com（不得爬取其站点）`)
+      if (!it || !('song' in it)) tag(`${at} 缺 song 字段（未标注写 null）`)
+    }
   })
   if (items.length) {
     const counts = Object.values(perTheme)
     const missing = THEMES.filter((t) => !perTheme[t])
-    if (missing.length) tag(`缺类别：${missing.join('、')}`)
-    if (Math.max(...counts) - Math.min(...counts) > 2) tag(`类别不均衡：${JSON.stringify(perTheme)}`)
+    if (!relax.includes('themeBalance')) {
+      if (missing.length) tag(`缺类别：${missing.join('、')}`)
+      if (Math.max(...counts) - Math.min(...counts) > 2) tag(`类别不均衡：${JSON.stringify(perTheme)}`)
+    }
     const ratio = prefixed / items.length
-    if (ratio < 0.2 || ratio > 0.5) tag(`「${seeds.SEED_PREFIX}」开头占比 ${(ratio * 100).toFixed(0)}% 不在 20%–50%`)
+    if (!relax.includes('prefixRatio') && (ratio < 0.2 || ratio > 0.5)) tag(`「${seeds.SEED_PREFIX}」开头占比 ${(ratio * 100).toFixed(0)}% 不在 20%–50%`)
   }
   return fail
 }
@@ -121,7 +148,13 @@ function selftest() {
   const base = loadAll()
   if (!base.length) { console.error('✗ 自检：没有批次文件'); process.exit(2) }
   const clone = () => JSON.parse(JSON.stringify(base))
-  const first = (bs) => bs[0].data.items
+  const origBatch = (bs) => bs.find((b) => !b.data.sourcing).data
+  const verbBatch = (bs) => {
+    const b = bs.find((x) => x.data.sourcing === 'verbatim')
+    if (!b) { console.error('✗ 自检：没有原文照录批次，⑦ 无从注入'); process.exit(2) }
+    return b.data
+  }
+  const first = (bs) => origBatch(bs).items
   const cases = [
     ['超长（超过一屏宽）', (bs) => { first(bs)[0].text = '愿我在这个很长很长很长的冬天里每天都能好好睡觉' }, /屏宽|字数/],
     ['批内重复（仅标点不同）', (bs) => { first(bs)[1].text = first(bs)[0].text.replace('，', '') }, /重复/],
@@ -132,9 +165,19 @@ function selftest() {
     ['禁词：过度承诺', (bs) => { first(bs)[0].text = '马上有好运，保证发财' }, /禁词/],
     ['禁词：宗教', (bs) => { first(bs)[0].text = '愿菩萨听见我的心愿' }, /禁词/],
     ['以标点结尾', (bs) => { first(bs)[0].text = '愿明天是晴天。' }, /标点结尾/],
-    ['批次号与基线同名', (bs) => { bs[0].data.batch = seeds.SEED_BATCH }, /batch/],
+    ['批次号与基线同名', (bs) => { origBatch(bs).batch = seeds.SEED_BATCH }, /batch/],
     ['类别不均衡', (bs) => { first(bs).forEach((it, i) => { if (i < 8) it.theme = THEMES[1] }) }, /不均衡/],
-    ['句式单一（全是马上有）', (bs) => { first(bs).forEach((it, i) => { it.text = `马上有第${'一二三四五六七八九十'[i % 10]}${'甲乙丙丁戊己庚辛壬癸'[Math.floor(i / 10) % 10]}件好事` }) }, /开头占比/]
+    ['句式单一（全是马上有）', (bs) => { first(bs).forEach((it, i) => { it.text = `马上有第${'一二三四五六七八九十'[i % 10]}${'甲乙丙丁戊己庚辛壬癸'[Math.floor(i / 10) % 10]}件好事` }) }, /开头占比/],
+    ['原创批次偷用 relax', (bs) => { origBatch(bs).relax = ['themeBalance']; origBatch(bs).relaxReason = 'x' }, /relax 只允许/],
+    ['relax 放宽长度等不可放宽项', (bs) => { verbBatch(bs).relax.push('length') }, /不可放宽/],
+    ['relax 缺理由', (bs) => { delete verbBatch(bs).relaxReason }, /relaxReason/],
+    ['原文被改写（改一个字）', (bs) => { const it = verbBatch(bs).items[0]; it.text = it.text.replace(/.$/, '啊') }, /与原文不一致/],
+    ['原文被截断', (bs) => { const it = verbBatch(bs).items[0]; it.text = it.text.slice(0, -2) }, /与原文不一致/],
+    ['缺来源链接', (bs) => { delete verbBatch(bs).items[0].source }, /来源链接/],
+    ['来源指向网易云站点', (bs) => { verbBatch(bs).items[0].source = 'https://music.163.com/#/song?id=1' }, /music\.163\.com/],
+    ['缺 song 字段', (bs) => { delete verbBatch(bs).items[0].song }, /song/],
+    ['缺风险确认', (bs) => { verbBatch(bs)._doc = '第三方评论' }, /承担风险/],
+    ['原文照录批次仍卡长度（超一屏）', (bs) => { const it = verbBatch(bs).items[0]; it.text = it.sourceText = '我在最没有能力的年纪，碰见了最想照顾一生的人' }, /屏宽/]
   ]
   let bad = 0
   const clean = run(clone())
@@ -160,6 +203,8 @@ else {
     console.error(`✗ 祈福墙预埋批次：${fail.length} 处问题\n  ` + fail.join('\n  '))
     process.exit(1)
   }
-  console.log(`✓ 祈福墙预埋批次：${batches.length} 个文件 / ${total} 条；长度 ≤ 屏宽 ${SCREEN_RPX}rpx、类别 ${THEMES.join('/')} 合法且均衡、无重复、无禁词`)
+  const relaxed = batches.filter((b) => b.data && Array.isArray(b.data.relax) && b.data.relax.length)
+  const note = relaxed.length ? `；原文照录批次 ${relaxed.map((b) => `${b.data.batch}（放宽 ${b.data.relax.join('+')}）`).join('、')} 逐字对原文` : ''
+  console.log(`✓ 祈福墙预埋批次：${batches.length} 个文件 / ${total} 条；长度 ≤ 屏宽 ${SCREEN_RPX}rpx、类别 ${THEMES.join('/')} 合法、无重复、无禁词${note}`)
   process.exit()
 }

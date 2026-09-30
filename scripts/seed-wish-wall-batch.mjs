@@ -8,7 +8,7 @@
  * 与用户弹幕同表同字段 → 超管「内容开关 → 祈福墙内容管理」照常可隐藏/删除单条。
  *
  * 安全设计
- *   · 默认不写，只打印将写入的条目与对公开列表（最近 LIST_MAX 条）的影响；
+ *   · 默认不写，只打印将写入的条目、对公开列表（云函数 composeWallList 混排）的影响与预埋轮换周期；
  *   · 写前先跑守卫，守卫不绿不写；再把该墙**全量快照**落 backups/wish-wall-seeds/（.gitignore 覆盖）；
  *   · 幂等：与墙上**全部状态**（含 hidden）的文案比对，已存在的不再插入 → 重复执行不重复；
  *   · 插入顺序按类别轮转：公开列表只取最近 30 条，轮转保证露出的那部分六类均衡。
@@ -104,11 +104,43 @@ function interleave(items) {
   return out
 }
 
-function publicView(rows) {
-  return rows
-    .filter((r) => r.status === 'visible')
-    .sort((a, b) => ((b.pinned === true) - (a.pinned === true)) || (new Date(b.createTime) - new Date(a.createTime)))
-    .slice(0, LIST_MAX)
+/** 用云函数自己的 composeWallList 模拟公开列表（真实心愿优先、预埋轮流补位），避免脚本另写一套口径 */
+function loadWallLogic() {
+  const dir = resolve(ROOT, 'miniprogram/cloudfunctions/manageWishWall')
+  const stubs = {
+    'wx-server-sdk': { init() {}, DYNAMIC_CURRENT_ENV: 'env', database: () => ({ command: {} }), getWXContext: () => ({}) },
+    './wishSeeds': require(resolve(dir, 'wishSeeds.js')),
+    './staffGuard': { ROLE_MANAGER: 'manager', assertStaff: async () => ({ ok: false }) },
+    './qwenText': { callQwenText: async () => '' }
+  }
+  const mod = { exports: {} }
+  const req = (id) => { if (id in stubs) return stubs[id]; throw new Error(`loadWallLogic: 未桩的 require ${id}`) }
+  // eslint-disable-next-line no-new-func
+  new Function('module', 'exports', 'require', readFileSync(resolve(dir, 'index.js'), 'utf8'))(mod, mod.exports, req)
+  return mod.exports
+}
+const wallLogic = loadWallLogic()
+const SEED_SOURCE_SET = new Set(['seed', 'ai'])
+
+function publicView(rows, limit = LIST_MAX, nowMs = Date.now()) {
+  const visible = rows.filter((r) => r.status === 'visible')
+  return wallLogic.composeWallList(
+    visible.filter((r) => !SEED_SOURCE_SET.has(r.source)),
+    visible.filter((r) => SEED_SOURCE_SET.has(r.source)),
+    { limit, nowMs }
+  )
+}
+
+/** 预埋池轮遍一圈要多久：每时段露出的预埋格数 n → ceil(池 / n) 个时段 */
+function rotationReport(rows) {
+  const visible = rows.filter((r) => r.status === 'visible')
+  const pool = visible.filter((r) => SEED_SOURCE_SET.has(r.source) && r.pinned !== true).length
+  const min = wallLogic.SEED_ROTATE_MS / 60000
+  return [LIST_MAX, 12].map((limit) => {
+    const n = publicView(rows, limit).filter((r) => SEED_SOURCE_SET.has(r.source)).length
+    const periods = n ? Math.ceil(pool / n) : Infinity
+    return `limit ${limit}：每档 ${n} 条预埋 → ${periods} 档 × ${min} 分钟 ≈ ${(periods * min / 60).toFixed(2)} 小时轮遍`
+  }).join('；') + `（预埋池 ${pool} 条）`
 }
 
 const tally = (rows) => rows.reduce((m, r) => { const k = `${r.source || 'user'}/${r.status}`; m[k] = (m[k] || 0) + 1; return m }, {})
@@ -154,10 +186,12 @@ const skipped = batch.items.length - todo.length
 console.log(`待写入 ${todo.length} 条（已存在跳过 ${skipped} 条）`)
 
 const now = Date.now()
-const simulated = rows.concat(todo.map((it, i) => ({ text: it.text, status: 'visible', source: 'seed', createTime: new Date(now + i) })))
+const simulated = rows.concat(todo.map((it, i) => ({ _id: `sim-${i}-${it.text}`, text: it.text, status: 'visible', source: 'seed', createTime: new Date(now + i) })))
 const view = publicView(simulated)
 const viewTally = view.reduce((m, r) => { m[r.source || 'user'] = (m[r.source || 'user'] || 0) + 1; return m }, {})
-console.log(`写入后公开列表（最近 ${LIST_MAX} 条）来源构成：${JSON.stringify(viewTally)}`)
+console.log(`写入后公开列表（前 ${LIST_MAX} 条，按云函数混排规则）来源构成：${JSON.stringify(viewTally)}`)
+console.log(`写入前轮换：${rotationReport(rows)}`)
+console.log(`写入后轮换：${rotationReport(simulated)}`)
 
 if (!flag('--apply')) {
   todo.forEach((it, i) => console.log(`  ${String(i + 1).padStart(2)} [${it.theme}] ${it.text}`))
@@ -198,5 +232,6 @@ const resultFile = resolve(BACKUP_DIR, `applied-${BATCH}-${new Date().toISOStrin
 writeFileSync(resultFile, JSON.stringify({ batch: BATCH, inserted }, null, 1))
 console.log(`✓ 写入 ${inserted.length} 条；读回本批 ${afterMine.length} 行 ${JSON.stringify(tally(afterMine))}；明细 ${resultFile}`)
 const liveView = publicView(after)
-console.log(`读回公开列表（最近 ${LIST_MAX} 条）来源构成：${JSON.stringify(liveView.reduce((m, r) => { m[r.source || 'user'] = (m[r.source || 'user'] || 0) + 1; return m }, {}))}`)
+console.log(`读回公开列表（前 ${LIST_MAX} 条，按云函数混排规则）来源构成：${JSON.stringify(liveView.reduce((m, r) => { m[r.source || 'user'] = (m[r.source || 'user'] || 0) + 1; return m }, {}))}`)
+console.log(`读回轮换：${rotationReport(after)}`)
 process.exit(afterMine.length >= batch.items.length ? 0 : 1)
