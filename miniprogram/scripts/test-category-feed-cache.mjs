@@ -183,7 +183,7 @@ async function runChecks(src) {
   /* ── B. 首屏缓存模块 ── */
   try {
     const { helper, wx } = loadHelper(src)
-    const grid = /<view class="product-grid">([\s\S]*?)<view class="empty-tip" wx:if="\{\{orphanProducts\.length === 0\}\}">/.exec(src.wxml)
+    const grid = /<view class="product-grid">([\s\S]*?)<view class="empty-(?:filter|tip)" wx:(?:el)?if="\{\{orphanProducts\.length === 0[^"]*\}\}">/.exec(src.wxml)
     const used = grid ? [...new Set([...grid[1].matchAll(/item\.(\w+)/g)].map((m) => m[1]))].filter((k) => k !== 'craftTags') : []
     const need = [...used, 'craftType', 'craftProcess']
     const missing = need.filter((k) => !helper.PRODUCT_KEYS.includes(k))
