@@ -76,9 +76,9 @@ module.exports.saveLabel = saveLabel;
 
   <block wx:else>
   <view class="sticky-tabs {{showStickyTabs ? 'visible' : ''}}" style="top: {{statusBarHeight + navBarHeight}}px;">
-    <view class="tab-item {{activeTab === 'detail' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="detail">藏品</view>
-    <view class="tab-item {{activeTab === 'archive' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="archive">档案</view>
-    <view class="tab-item {{activeTab === 'review' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="review">评价<text wx:if="{{commentTotal > 0}}" class="tab-count">({{commentTotal}})</text></view>
+    <view class="tab-item {{activeTab === 'detail' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="detail" hover-class="tab-item-press" hover-stay-time="80">藏品</view>
+    <view class="tab-item {{activeTab === 'archive' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="archive" hover-class="tab-item-press" hover-stay-time="80">档案</view>
+    <view class="tab-item {{activeTab === 'review' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="review" hover-class="tab-item-press" hover-stay-time="80">评价<text wx:if="{{commentTotal > 0}}" class="tab-count">({{commentTotal}})</text></view>
   </view>
 
   <!-- 主图轮播 / 冷启动骨架 -->
@@ -699,7 +699,7 @@ module.exports.saveLabel = saveLabel;
             <text class="{{isShippingFree ? 'shipping-free-tag' : ''}}">{{shippingHint}}</text>
           </text>
         </view>
-        <text class="sku-close" bindtap="closeSkuSheet">✕</text>
+        <text class="sku-close" bindtap="closeSkuSheet" hover-class="cta-press" hover-stay-time="80">✕</text>
       </view>
       <block wx:if="{{hasSku && product.skuDimensions && product.skuDimensions.length}}">
         <view class="sku-section" wx:for="{{dimensionOptions}}" wx:key="name">
@@ -711,6 +711,8 @@ module.exports.saveLabel = saveLabel;
               wx:for-item="val"
               wx:key="value"
               bindtap="selectDimension"
+              hover-class="cta-press"
+              hover-stay-time="80"
               data-dim="{{item.name}}"
               data-value="{{val.value}}"
             >{{val.value}}</view>
@@ -725,6 +727,8 @@ module.exports.saveLabel = saveLabel;
             wx:for="{{product.skus}}"
             wx:key="id"
             bindtap="selectSku"
+            hover-class="cta-press"
+            hover-stay-time="80"
             data-id="{{item.id}}"
           >{{item.specLabel}}</view>
         </view>
@@ -736,12 +740,12 @@ module.exports.saveLabel = saveLabel;
       <view class="sku-section qty-section">
         <text class="sku-label">数量</text>
         <view class="qty-stepper">
-          <view class="qty-btn {{buyCount <= 1 ? 'disabled' : ''}}" bindtap="changeBuyCount" data-delta="-1">−</view>
+          <view class="qty-btn {{buyCount <= 1 ? 'disabled' : ''}}" bindtap="changeBuyCount" data-delta="-1" hover-class="cta-press" hover-stay-time="80">−</view>
           <text class="qty-num">{{buyCount}}</text>
-          <view class="qty-btn {{buyCount >= displayStock ? 'disabled' : ''}}" bindtap="changeBuyCount" data-delta="1">+</view>
+          <view class="qty-btn {{buyCount >= displayStock ? 'disabled' : ''}}" bindtap="changeBuyCount" data-delta="1" hover-class="cta-press" hover-stay-time="80">+</view>
         </view>
       </view>
-      <view class="sku-confirm" bindtap="confirmSkuAction">{{skuConfirmText}}</view>
+      <view class="sku-confirm" bindtap="confirmSkuAction" hover-class="sku-confirm-press" hover-stay-time="80">{{skuConfirmText}}</view>
     </view>
   </view>
 
@@ -750,7 +754,7 @@ module.exports.saveLabel = saveLabel;
     <view class="coupon-panel" catchtap="true">
       <view class="coupon-panel-head">
         <text>礼券</text>
-        <text class="sku-close" bindtap="closeCouponSheet">✕</text>
+        <text class="sku-close" bindtap="closeCouponSheet" hover-class="cta-press" hover-stay-time="80">✕</text>
       </view>
       <scroll-view scroll-y class="coupon-panel-body" enhanced show-scrollbar="{{false}}" enable-flex="{{true}}">
         <view class="coupon-section-title" wx:if="{{claimableCoupons.length}}">可领取</view>
@@ -764,6 +768,8 @@ module.exports.saveLabel = saveLabel;
             bindtap="claimCoupon"
             data-id="{{item._id}}"
             data-claimed="{{item.claimed}}"
+            hover-class="{{item.claimed ? 'none' : 'cta-press'}}"
+            hover-stay-time="80"
           >{{item.claimed ? '已领取' : '领取'}}</view>
         </view>
 
@@ -781,8 +787,8 @@ module.exports.saveLabel = saveLabel;
         </view>
       </scroll-view>
       <view class="coupon-panel-foot">
-        <view class="coupon-link-btn" bindtap="goToCoupons">我的礼券夹</view>
-        <view class="coupon-buy-btn" bindtap="buyNowWithCoupon">立即购买</view>
+        <view class="coupon-link-btn" bindtap="goToCoupons" hover-class="cta-press" hover-stay-time="80">我的礼券夹</view>
+        <view class="coupon-buy-btn" bindtap="buyNowWithCoupon" hover-class="cta-press" hover-stay-time="80">立即购买</view>
       </view>
     </view>
   </view>
@@ -802,7 +808,7 @@ module.exports.saveLabel = saveLabel;
   <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
   <view class="poster-modal" wx:if="{{showPosterModal}}" bindtap="closePosterModal">
     <view class="poster-container" catchtap="true">
-      <view class="close-icon-out" bindtap="closePosterModal">✕</view>
+      <view class="close-icon-out" bindtap="closePosterModal" hover-class="cta-press" hover-stay-time="80">✕</view>
       <image src="{{posterImage}}" mode="widthFix" class="generated-img"></image>
       <view class="poster-btns"><button class="save-btn" bindtap="savePoster">保存知识卡</button></view>
     </view>
@@ -821,7 +827,7 @@ module.exports.saveLabel = saveLabel;
           >{{seg.t}}</text>
         </view>
       </view>
-      <view class="refund-sheet-btn" bindtap="closeRefundSheet">知道了</view>
+      <view class="refund-sheet-btn" bindtap="closeRefundSheet" hover-class="cta-press" hover-stay-time="80">知道了</view>
     </view>
   </view>
   </block>

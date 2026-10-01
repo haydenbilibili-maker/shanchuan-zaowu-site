@@ -467,3 +467,5 @@
   </scroll-view>
   <easter-egg-note id="easterEggNote" />
 </view>
+
+<app-modal id="appModal" />

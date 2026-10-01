@@ -7,7 +7,7 @@
   <text class="cd-state-title">内容加载失败</text>
   <text class="cd-state-sub">{{errorMsg || '请检查网络后重试'}}</text>
   <view class="cd-state-btn" bindtap="retryLoad" hover-class="cd-state-btn-press">重新加载</view>
-  <text class="cd-state-link" bindtap="goBack">返回上一页</text>
+  <text class="cd-state-link" bindtap="goBack" hover-class="cd-press" hover-stay-time="80">返回上一页</text>
 </view>
 
 <!-- 加载中 -->
@@ -30,7 +30,7 @@
     <text class="latin-name" wx:if="{{latin.display(wiki.latin_name)}}">{{latin.display(wiki.latin_name)}}</text>
     <text class="cn-name">{{wiki.cn_name}}</text>
     
-    <view class="stats-row">
+    <view class="stats-row" wx:if="{{wiki.stats.views || wiki.stats.likes}}">
       <view class="stat-item">
         <image src="/assets/icons/eye.png" mode="aspectFit" class="icon-gold" style="width: 24rpx; height: 24rpx;"></image>
         <text>{{wiki.stats.views}} 阅读</text>
@@ -61,7 +61,7 @@
     <view class="section-title">VISUAL ARCHIVE / 影像档案</view>
     <scroll-view scroll-x class="gallery-scroll" enable-flex>
       <block wx:for="{{galleryImages}}" wx:key="*this">
-        <view class="gallery-item" bindtap="previewGallery" data-src="{{item}}">
+        <view class="gallery-item" bindtap="previewGallery" data-src="{{item}}" hover-class="cd-press" hover-stay-time="80">
            <image src="{{item}}" mode="aspectFill"></image>
         </view>
       </block>
@@ -72,7 +72,7 @@
   <view class="section-block" wx:if="{{relatedProducts.length > 0}}">
     <view class="section-title">RELATED COLLECTION / 馆藏关联</view>
     <block wx:for="{{relatedProducts}}" wx:key="_id">
-      <view class="product-card-glass" bindtap="goToProduct" data-id="{{item._id}}">
+      <view class="product-card-glass" bindtap="goToProduct" data-id="{{item._id}}" hover-class="cd-press" hover-stay-time="80">
         <!-- 需求 11：敏感形态模糊 -->
         <!-- ⚠️ 图盒必须自建且**已定位**（.p-img-box）：门控组件 :host 是 position:absolute，
              而 .product-card-glass 是 display:flex 且未定位 → 缺此盒封面会被裁掉。 -->
@@ -87,7 +87,7 @@
         </view>
         <view class="p-info">
           <text class="p-name">{{item.title}}</text>
-          <text class="p-price">{{item.price}}</text>
+          <text class="p-price" wx:if="{{item.price}}">¥{{item.price}}</text>
         </view>
         <view class="p-btn">查看</view>
       </view>

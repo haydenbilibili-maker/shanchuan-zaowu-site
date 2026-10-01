@@ -6,7 +6,8 @@
   "disableScroll": true,
   "usingComponents": {
     "easter-egg-note": "/components/EasterEggNote/index",
-    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
+    "app-modal": "/components/AppModal/index"
   },
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",

@@ -5,6 +5,7 @@ const _ = db.command;
 const { trackBehavior } = require('../../../utils/trackBehavior');
 const { getFirstImage, batchTempFileURLs } = require('../../../utils/util');
 const { navigateToProductDetail } = require('../../../utils/productDetailNav');
+const { withAppModal } = require('../../../utils/appModal');
 const { sanitizeLatinName } = require('../../../utils/latinDisplay');
 let easterEgg = { tryKeyword() {}, shouldIgnoreTap() { return false; } };
 try { easterEgg = require('../../../utils/easterEgg'); } catch (e) { /* optional */ }
@@ -100,7 +101,7 @@ function formatPriceText(n) {
   return Number.isInteger(n) ? String(n) : n.toFixed(2);
 }
 
-Page({
+Page(withAppModal({
   data: {
     headerHeight: 64,
     autoFocus: true,
@@ -768,19 +769,16 @@ Page({
     this.setData({ keyword: text, showSuggestions: false }, () => { this.doSearch(); });
   },
 
-  clearHistory() {
+  async clearHistory() {
     wx.vibrateShort({ type: 'medium' });
-    wx.showModal({
+    const res = await this.modal({
       title: '清空最近搜索',
       content: '确定清除本机保存的检索记录吗？',
-      confirmColor: '#C4A76C',
-      success: (res) => {
-        if (res.confirm) {
-          this.setData({ historyList: [] });
-          wx.removeStorageSync('search_history');
-        }
-      }
+      confirmText: '清空'
     });
+    if (!res.confirm) return;
+    this.setData({ historyList: [] });
+    wx.removeStorageSync('search_history');
   },
 
   removeHistory(e) {
@@ -990,4 +988,4 @@ Page({
       fail: () => wx.switchTab({ url: '/pages/index/index' })
     });
   }
-});
+}));

@@ -655,3 +655,5 @@ button.btn-share::after {
   font-size: 28rpx;
   border-radius: 16rpx;
 }
+
+.link-press { opacity: 0.7; }

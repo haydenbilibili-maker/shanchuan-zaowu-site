@@ -13,12 +13,12 @@
   <view class="error" wx:elif="{{loadError}}">
     <text class="error-t">这一页暂时读不到</text>
     <button class="btn-brass" bindtap="loadCard">再试一次</button>
-    <text class="link" bindtap="goAtlas">返回图鉴</text>
+    <text class="link" bindtap="goAtlas" hover-class="link-press" hover-stay-time="80">返回图鉴</text>
   </view>
 
   <block wx:else>
     <view class="crumb">
-      <text class="crumb-link" bindtap="goAtlas">山海图鉴</text>
+      <text class="crumb-link" bindtap="goAtlas" hover-class="link-press" hover-stay-time="80">山海图鉴</text>
       <text class="crumb-sep">/</text>
       <text class="crumb-cur">{{locked ? '未记录' : (card.nameZh || '卡片')}}</text>
     </view>

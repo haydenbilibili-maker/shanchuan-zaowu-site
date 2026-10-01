@@ -150,7 +150,9 @@ const PAGES = {
   home: { wxml: 'pages/index/index.wxml', wxss: 'pages/index/index.wxss' },
   category: { wxml: 'pages/category/index.wxml', wxss: 'pages/category/index.wxss' },
   atelier: { wxml: 'pages/atelier/index.wxml', wxss: 'pages/atelier/index.wxss' },
-  identify: { wxml: 'subpackages/feature/identify/index.wxml', wxss: 'subpackages/feature/identify/index.wxss' }
+  identify: { wxml: 'subpackages/feature/identify/index.wxml', wxss: 'subpackages/feature/identify/index.wxss' },
+  wiki: { wxml: 'subpackages/content/collection-detail/index.wxml', wxss: 'subpackages/content/collection-detail/index.wxss' },
+  detail: { wxml: 'subpackages/feature/detail/index.wxml', wxss: 'subpackages/feature/detail/index.wxss' }
 }
 
 const scenes = [
@@ -161,7 +163,24 @@ const scenes = [
     data: categoryData({ currentId: 'c1', currentSubtitle: 'Kingdom Animalia', filterActiveCount: 2, filterSummary: '玻璃罩 · ¥100–200', orphanProducts: [], orphanTotal: 0, contentItems: [], contentTotal: 0, showContentSection: false })
   },
   { name: 'atelier', page: 'atelier', h: 1500, data: atelierData() },
-  { name: 'identify-loading', page: 'identify', h: 1334, data: { busy: true, loadingText: '正在归档这件标本…', loadingStep: 2, uploadProgress: 62, recentList: [] } }
+  { name: 'identify-loading', page: 'identify', h: 1334, data: { busy: true, loadingText: '正在归档这件标本…', loadingStep: 2, uploadProgress: 62, recentList: [] } },
+  {
+    name: 'collection-detail', page: 'wiki', h: 1700,
+    data: {
+      isLoading: false, loadError: false, galleryImages: [pics[0], pics[1], pics[2]],
+      wiki: { _id: 'w1', cn_name: '枯叶蛱蝶', latin_name: 'Kallima inachus', main_image: pics[0], tags: ['鳞翅目', '拟态'], stats: { views: 0, likes: 0 } },
+      relatedProducts: [{ _id: 'p1', title: '枯叶蛱蝶 · 玻璃罩标本', price: 168, image: pics[1] }, { _id: 'p2', title: '蛱蝶三联框', price: 398, image: pics[2] }]
+    }
+  },
+  {
+    name: 'detail-sku', page: 'detail', h: 1334,
+    data: {
+      productId: 'p1', loadError: false, commerceReady: true, showSkuSheet: true, hasSku: true, displayPrice: '168', displayStock: 6, specSummary: '玻璃罩 · 小号',
+      shippingHint: '满 199 包邮', buyCount: 1, skuConfirmText: '加入购物车', selectedSkuId: 's1', imgView: {},
+      product: { _id: 'p1', images: [pics[1]], skus: [{ id: 's1', specLabel: '玻璃罩 · 小号', stock: 6 }, { id: 's2', specLabel: '玻璃罩 · 大号', stock: 0 }, { id: 's3', specLabel: '实木框', stock: 2 }] },
+      selectedSku: { image: pics[1] }
+    }
+  }
 ]
 
 /** 预览里没有组件实现：只包图的壳按透明容器展开，其余自定义组件仍整棵跳过 */
@@ -170,7 +189,7 @@ const unwrapGate = (s) => s.replace(/<sensitive-blur-gate\b[^>]*>/g, '<block>').
 async function shoot(scene) {
   const missing = new Set()
   const page = PAGES[scene.page]
-  const wxml = unwrapGate(read(join(MP, page.wxml)).replace(/<wxs[^>]*\/>/g, ''))
+  const wxml = unwrapGate(read(join(MP, page.wxml)).replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, ''))
   const latin = { display: (s) => s || '' }
   const body = renderWxml(wxml, { latin, ...scene.data }, { lenient: true, onMissing: (k) => missing.add(k) })
   const css = rpx2px(loadWxss(join(MP, 'app.wxss')) + '\n' + loadWxss(join(MP, page.wxss)))

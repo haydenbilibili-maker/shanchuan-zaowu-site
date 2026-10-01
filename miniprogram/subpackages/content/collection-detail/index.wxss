@@ -160,7 +160,8 @@ page {
   font-size: 26rpx;
   color: var(--brass-400);
 }
-.cd-state-btn-press { opacity: .7; }
+.cd-state-btn-press,
+.cd-press { opacity: .7; }
 .cd-state-link {
   margin-top: 24rpx;
   font-size: 24rpx;
