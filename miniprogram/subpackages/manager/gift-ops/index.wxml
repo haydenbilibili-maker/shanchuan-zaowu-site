@@ -33,7 +33,7 @@
         bindinput="onKeywordInput"
         bindconfirm="onKeywordConfirm"
       />
-      <view class="search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
     </view>
     <text class="sample-note" wx:if="{{note}}">{{note}}</text>
     <text class="filter-note" wx:if="{{keyword && !loading}}">本栏匹配 {{displayList.length}} / {{list.length}} 笔</text>
@@ -41,7 +41,7 @@
 
   <view class="hint-banner" wx:if="{{loadError && list.length}}">
     <text class="muted">刷新失败：{{loadError}}</text>
-    <view class="btn-secondary sm" bindtap="retryLoad">重试</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-secondary sm" bindtap="retryLoad">重试</view>
   </view>
 
   <view class="state-block" wx:if="{{loading && !list.length}}">
@@ -51,19 +51,19 @@
   <view class="state-block" wx:elif="{{loadError && !list.length}}">
     <text class="state-title">未能载入</text>
     <text class="muted">{{loadError}}</text>
-    <view class="btn-secondary" bindtap="retryLoad">再试一次</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-secondary" bindtap="retryLoad">再试一次</view>
   </view>
 
   <view class="state-block" wx:elif="{{!loading && !list.length}}">
     <text class="state-title">{{emptyTitle}}</text>
     <text class="muted">{{emptyHint}}</text>
-    <view class="btn-secondary" wx:if="{{bucket === 'pickup_verify'}}" bindtap="goVerify">去核销台</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-secondary" wx:if="{{bucket === 'pickup_verify'}}" bindtap="goVerify">去核销台</view>
   </view>
 
   <view class="state-block" wx:elif="{{!loading && list.length && !displayList.length}}">
     <text class="state-title">没有匹配单</text>
     <text class="muted">试试换关键词，或清除筛选</text>
-    <view class="btn-secondary" bindtap="clearKeyword">清除筛选</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-secondary" bindtap="clearKeyword">清除筛选</view>
   </view>
 
   <view class="list" wx:else>
@@ -108,15 +108,15 @@
              ⚠️ 副标题里的贴纸尺寸同时是**错的**（写的还是旧的 90×110mm，
              产品负责人 2026-09-20 已裁定白区为 75×75mm 1:1）—— 一并更正。 -->
         <view class="action-row">
-          <view class="mini-btn primary" wx:if="{{item.canShip}}" data-id="{{item.orderId}}" catchtap="goOrderManage">去发货</view>
-          <view class="mini-btn primary" wx:if="{{bucket === 'pickup_verify'}}" catchtap="goVerify">去核销</view>
-          <view class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="mini-btn primary" wx:if="{{item.canShip}}" data-id="{{item.orderId}}" catchtap="goOrderManage">去发货</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="mini-btn primary" wx:if="{{bucket === 'pickup_verify'}}" catchtap="goVerify">去核销</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
           <!-- 印刷用：导出 A6@300dpi 礼笺卡（含题记带）→ **先生成到预览**，看过再决定存/传 -->
-          <view class="mini-btn {{exporting ? 'is-off' : ''}}" data-id="{{item.orderId}}" catchtap="onExportGiftCard">
+          <view hover-class="wb-press" hover-stay-time="80" class="mini-btn {{exporting ? 'is-off' : ''}}" data-id="{{item.orderId}}" catchtap="onExportGiftCard">
             <text>导出礼笺图</text>
           </view>
           <!-- 印刷用：导出热敏不干胶贴纸版（75×75mm 白区，1:1 近方形版式；复用同一画布与导出实现） -->
-          <view class="mini-btn {{exporting ? 'is-off' : ''}}" data-id="{{item.orderId}}" catchtap="onExportGiftSticker">
+          <view hover-class="wb-press" hover-stay-time="80" class="mini-btn {{exporting ? 'is-off' : ''}}" data-id="{{item.orderId}}" catchtap="onExportGiftSticker">
             <text>导出贴纸图</text>
           </view>
         </view>
@@ -134,7 +134,7 @@
         <text class="extra-line muted" wx:if="{{!item.address && bucket === 'awaiting_address'}}">对方尚未留下地址</text>
         <text class="extra-line warn" wx:if="{{item.shipBlockReason}}">{{item.shipBlockReason}}</text>
         <view class="extra-actions" wx:if="{{!item.canShip && bucket !== 'pickup_verify'}}">
-          <view class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="mini-btn" data-no="{{item.orderNo}}" catchtap="copyOrderNo">复制单号</view>
         </view>
       </view>
     </view>
@@ -149,8 +149,8 @@
 
   <view class="foot-spacer"></view>
   <view class="foot-bar">
-    <view class="workbench-btn-outline foot-btn" bindtap="retryLoad">{{loading ? '刷新中…' : '刷新'}}</view>
-    <view class="workbench-btn-outline foot-btn" wx:if="{{bucket === 'pickup_verify'}}" bindtap="goVerify">核销台</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline foot-btn" bindtap="retryLoad">{{loading ? '刷新中…' : '刷新'}}</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline foot-btn" wx:if="{{bucket === 'pickup_verify'}}" bindtap="goVerify">核销台</view>
   </view>
 </view>
 
@@ -176,7 +176,7 @@
         <text class="pp-spec">{{printPreview.specLabel}}</text>
         <text class="pp-note">{{printPreview.specNote}}</text>
       </view>
-      <view class="pp-close" catchtap="closePrintPreview">✕</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="pp-close" catchtap="closePrintPreview">✕</view>
     </view>
 
     <scroll-view scroll-y class="pp-body">
@@ -189,9 +189,9 @@
     </view>
 
     <view class="pp-actions">
-      <view class="pp-act {{printPreview.saving ? 'is-busy' : ''}} {{printPreview.saved ? 'is-done' : ''}}"
+      <view hover-class="wb-press" hover-stay-time="80" class="pp-act {{printPreview.saving ? 'is-busy' : ''}} {{printPreview.saved ? 'is-done' : ''}}"
             catchtap="savePrintToAlbum">{{printPreview.saving ? '保存中…' : (printPreview.saved ? '已存相册 ✓' : '保存到相册')}}</view>
-      <view class="pp-act primary {{printPreview.uploading ? 'is-busy' : ''}} {{printPreview.uploaded ? 'is-done' : ''}}"
+      <view hover-class="wb-press" hover-stay-time="80" class="pp-act primary {{printPreview.uploading ? 'is-busy' : ''}} {{printPreview.uploaded ? 'is-done' : ''}}"
             catchtap="uploadPrintFile">{{printPreview.uploading ? '上传中…' : (printPreview.uploaded ? '已上传 ✓' : '上传印刷文件')}}</view>
     </view>
     <text class="pp-hint" wx:if="{{printPreview.uploaded}}">失败可单独重试；相册里始终留有原图</text>

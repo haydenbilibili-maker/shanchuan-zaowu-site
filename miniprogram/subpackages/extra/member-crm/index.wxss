@@ -1457,3 +1457,8 @@ page {
   border-color: rgba(138, 132, 124, 0.5);
   background: rgba(138, 132, 124, 0.12);
 }
+
+/* 通用按压态（hover-class="wb-press"，与 workbench-nav.wxss 同值；本页不引入它） */
+.wb-press {
+  opacity: 0.72;
+}

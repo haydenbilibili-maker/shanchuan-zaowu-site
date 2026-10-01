@@ -19,7 +19,7 @@
   </view>
 
   <view class="sb-filters">
-    <view
+    <view hover-class="wb-press" hover-stay-time="80"
       class="sb-filter {{filter === item.value ? 'is-on' : ''}}"
       wx:for="{{filters}}"
       wx:key="value"
@@ -32,7 +32,7 @@
 
   <view class="sb-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
-  <view class="sb-create-btn" wx:if="{{isSuper}}" bindtap="openCreate">
+  <view hover-class="wb-press" hover-stay-time="80" class="sb-create-btn" wx:if="{{isSuper}}" bindtap="openCreate">
     <text>＋ 新建账单（勾选未结出货单）</text>
   </view>
 
@@ -40,7 +40,7 @@
   <view class="sb-empty is-error" wx:elif="{{listError && !list.length}}">
     <text>账单未能取回</text>
     <text class="sb-empty-hint">{{tipText || '请下拉刷新重试'}}</text>
-    <view class="sb-retry" bindtap="loadList"><text>重试</text></view>
+    <view hover-class="wb-press" hover-stay-time="80" class="sb-retry" bindtap="loadList"><text>重试</text></view>
   </view>
   <view class="sb-empty" wx:elif="{{!busy && !list.length}}">
     <text>没有账单</text>
@@ -48,7 +48,7 @@
   </view>
 
   <view class="sb-list" wx:else>
-    <view class="sb-card" wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="openBill">
+    <view hover-class="wb-press" hover-stay-time="80" class="sb-card" wx:for="{{list}}" wx:key="_id" data-id="{{item._id}}" bindtap="openBill">
       <view class="sb-card-head">
         <text class="sb-card-no">{{item.billNo}}</text>
         <text class="sb-tag is-{{item.tone}}">{{item.statusLabel}}</text>
@@ -84,7 +84,7 @@
     <view class="sb-tip is-info" wx:if="{{createTip}}"><text>{{createTip}}</text></view>
 
     <scroll-view class="sb-sheet-body" scroll-y>
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="sb-cand {{item.selectable ? '' : 'is-blocked'}} {{item.selected ? 'is-on' : ''}}"
         wx:for="{{candidates}}"
         wx:key="_id"

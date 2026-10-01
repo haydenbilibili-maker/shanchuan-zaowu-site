@@ -562,3 +562,28 @@ page {
   font-size: 24rpx;
   color: #e8dcc0;
 }
+
+/* 首次加载列表骨架：形状对齐 .record（替代一行「加载中…」） */
+.ir-sk-card {
+  padding: var(--space-3) 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+.ir-sk-card:last-child { border-bottom: none; }
+.ir-sk-line {
+  height: 22rpx;
+  width: 40%;
+  margin-top: 12rpx;
+  border-radius: 8rpx;
+  background: var(--color-bg-elevated, #262320);
+  animation: ir-sk-pulse 1.2s ease-in-out infinite;
+}
+.ir-sk-line.wide { width: 68%; height: 28rpx; margin-top: 0; }
+@keyframes ir-sk-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
+}
+
+/* 通用按压态（hover-class="wb-press"，与 workbench-nav.wxss 同值；本页不引入它） */
+.wb-press {
+  opacity: 0.72;
+}

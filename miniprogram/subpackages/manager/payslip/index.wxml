@@ -69,7 +69,7 @@
       <text class="section-note" wx:else>仅展示本人工资条；若为空，请联系店长或超管录入。</text>
     </view>
     <view class="list">
-      <view class="row" wx:for="{{list}}" wx:key="_id" bindtap="openDetail" data-id="{{item._id}}">
+      <view hover-class="wb-press" hover-stay-time="80" class="row" wx:for="{{list}}" wx:key="_id" bindtap="openDetail" data-id="{{item._id}}">
         <view class="row-main">
           <view class="row-title-line">
             <view class="signal-light lamp-forest"></view>
@@ -83,7 +83,7 @@
     <view class="empty is-error" wx:if="{{listError && !list.length}}">
       <text>工资条未能取回</text>
       <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryList">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
     </view>
     <view class="empty" wx:elif="{{list.length === 0 && !loading}}">暂无工资条记录</view>
   </view>
@@ -131,6 +131,6 @@
       </view>
       <text class="section-note" wx:if="{{detail.remark}}">{{detail.remark}}</text>
     </view>
-    <view class="btn-primary" bindtap="closeDetail">关闭</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-primary" bindtap="closeDetail">关闭</view>
   </view>
 </view>

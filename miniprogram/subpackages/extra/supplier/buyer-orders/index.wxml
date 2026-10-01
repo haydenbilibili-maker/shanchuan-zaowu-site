@@ -33,7 +33,7 @@
     </view>
 
     <view class="status-tabs sticky-tabs">
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="status-tab {{filter===item.key?'on':''}}"
         wx:for="{{filters}}"
         wx:key="key"
@@ -55,7 +55,7 @@
     <view class="error-panel" wx:elif="{{loadError}}">
       <text class="error-panel-title">加载失败</text>
       <text class="error-panel-body">无法读取采购单。请确认已登录、花名册已勾选「采购商」，且总部已部署 payB2bPurchase。</text>
-      <view class="retry-btn" bindtap="onRetry">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="retry-btn" bindtap="onRetry">重试</view>
     </view>
 
     <view class="empty-panel rich" wx:elif="{{!loading && !list.length}}">
@@ -66,7 +66,7 @@
         <text class="empty-step">2 确认采购单</text>
         <text class="empty-step">3 支付或待对公</text>
       </view>
-      <view class="retry-btn" bindtap="goCatalog">去选品</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="retry-btn" bindtap="goCatalog">去选品</view>
     </view>
 
     <view class="po-list" wx:else>

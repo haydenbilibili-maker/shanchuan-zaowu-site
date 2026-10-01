@@ -396,11 +396,6 @@ page {
   min-height: 88rpx;
 }
 
-.flex1 {
-  flex: 1;
-  min-width: 0;
-}
-
 /* 列表行内紧凑操作钮（核销等） */
 .row .btn-outline,
 .row .btn-ghost {
@@ -959,14 +954,6 @@ page {
   border-top: 1rpx solid var(--color-border);
 }
 
-.pass-foot-redeem {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding-top: var(--space-3);
-  background: var(--color-bg-card);
-}
-
 .pass-foot-hint {
   display: block;
   margin-top: var(--space-2);
@@ -1474,14 +1461,6 @@ page {
   line-height: 1.3;
 }
 
-.amount-foot-hint {
-  display: block;
-  margin-top: var(--space-2);
-  font-size: 20rpx;
-  color: var(--brass-600);
-  line-height: 1.4;
-}
-
 .amount-input-wrap {
   display: flex;
   align-items: center;
@@ -1710,10 +1689,6 @@ page {
 .modal-pass .pass-foot .btn-ghost {
   margin-top: 0;
   width: 100%;
-}
-
-.modal-ok-btn {
-  margin-top: var(--space-5);
 }
 
 .btn-primary-press {

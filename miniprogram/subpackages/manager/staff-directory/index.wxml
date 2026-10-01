@@ -26,15 +26,15 @@
       </view>
     </view>
     <view class="summary-actions">
-      <view class="btn-secondary" bindtap="goPermissions">去权限配置</view>
-      <view class="btn-primary" bindtap="goPermissions">开通员工</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-secondary" bindtap="goPermissions">去权限配置</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-primary" bindtap="goPermissions">开通员工</view>
     </view>
   </view>
 
   <view class="section filters">
     <scroll-view class="filter-scroll" scroll-x enhanced show-scrollbar="{{false}}">
       <view class="filter-row">
-        <view
+        <view hover-class="wb-press" hover-stay-time="80"
           class="filter-chip {{roleFilter === item.key ? 'on' : ''}}"
           wx:for="{{roleFilters}}"
           wx:key="key"
@@ -44,7 +44,7 @@
       </view>
     </scroll-view>
     <view class="filter-row status-row">
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="filter-chip status {{statusFilter === item.key ? 'on' : ''}}"
         wx:for="{{statusFilters}}"
         wx:key="key"
@@ -62,7 +62,7 @@
     </view>
 
     <view class="row staff-row" wx:for="{{staffList}}" wx:key="_id">
-      <view class="row-main" bindtap="goEditPermissions">
+      <view hover-class="wb-press" hover-stay-time="80" class="row-main" bindtap="goEditPermissions">
         <view class="staff-title-line">
           <view class="signal-light {{item.status === 'active' ? 'lamp-forest' : 'lamp-muted hollow'}}"></view>
           <text class="row-title">{{item.name || '未命名'}}</text>
@@ -74,14 +74,14 @@
         <text class="row-sub muted">…{{item.openidTail}}</text>
       </view>
       <view class="staff-actions">
-        <view class="staff-btn edit" catchtap="goEditPermissions">权限</view>
-        <view
+        <view hover-class="wb-press" hover-stay-time="80" class="staff-btn edit" catchtap="goEditPermissions">权限</view>
+        <view hover-class="wb-press" hover-stay-time="80"
           class="staff-btn danger"
           wx:if="{{item.status === 'active'}}"
           catchtap="disableStaff"
           data-id="{{item._id}}"
         >{{statusPendingId === item._id && statusPendingAction === 'disable' ? '确认停用' : '停用'}}</view>
-        <view
+        <view hover-class="wb-press" hover-stay-time="80"
           class="staff-btn success"
           wx:else
           catchtap="enableStaff"
@@ -93,7 +93,7 @@
     <view class="empty-tip is-error" wx:if="{{listError && !staffList.length && !loading}}">
       <text class="empty-title">员工列表未能取回</text>
       <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryList">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
     </view>
     <view class="empty" wx:elif="{{!loading && !listError && staffList.length === 0}}">{{emptyHint}}</view>
   </view>

@@ -38,7 +38,7 @@
     <view class="error-panel" wx:elif="{{loadError}}">
       <text class="error-panel-title">加载失败</text>
       <text class="error-panel-body">网络或权限异常，暂时无法读取价目。请稍后重试。</text>
-      <view class="retry-btn" bindtap="onRetry">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="retry-btn" bindtap="onRetry">重试</view>
     </view>
 
     <view class="empty-panel" wx:elif="{{!loading && !items.length}}">
@@ -95,7 +95,7 @@
             >{{item.addLabel}}</view>
           </view>
           <view class="cat-ops locked-ops" wx:else>
-            <view class="add-btn muted" data-idx="{{idx}}" bindtap="onAdd">议价不可购</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="add-btn muted" data-idx="{{idx}}" bindtap="onAdd">议价不可购</view>
           </view>
         </view>
       </view>

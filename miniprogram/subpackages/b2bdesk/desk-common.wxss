@@ -1389,3 +1389,8 @@ page {
 .img-act.danger .img-act-text {
   color: #e07a5f;
 }
+
+/* 通用按压态（hover-class="wb-press"，与 workbench-nav.wxss 同值；b2bdesk 分包公共） */
+.wb-press {
+  opacity: 0.72;
+}

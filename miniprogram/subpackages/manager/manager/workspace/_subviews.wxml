@@ -714,7 +714,7 @@
                 </view>
               </view>
             </block>
-            <view class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="orders">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="orders">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
           </view>
           <view class="om-sku-empty" wx:else><text>暂无藏品明细</text></view>
           <!-- 门店自取：自取码（现场核对 / 复制给顾客） -->
@@ -783,11 +783,11 @@
               <text class="om-count-hint">共 {{item.totalCount}} 件</text>
             </view>
             <view class="om-foot-actions" wx:if="{{item.canCompletePickup}}">
-              <view class="om-btn ship" bindtap="completeStorePickup" data-id="{{item._id}}" data-orderno="{{item.orderNo}}" data-code="{{item.pickupCode}}">确认自取</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="om-btn ship" bindtap="completeStorePickup" data-id="{{item._id}}" data-orderno="{{item.orderNo}}" data-code="{{item.pickupCode}}">确认自取</view>
             </view>
             <view class="om-foot-actions" wx:elif="{{item.canShip}}">
-              <view class="om-btn ghost" catchtap="copyShipLabel" data-id="{{item._id}}" data-scope="orders">面单文案</view>
-              <view class="om-btn ship" bindtap="openShipModal" data-id="{{item._id}}" data-orderno="{{item.orderNo}}">确认发货</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="om-btn ghost" catchtap="copyShipLabel" data-id="{{item._id}}" data-scope="orders">面单文案</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="om-btn ship" bindtap="openShipModal" data-id="{{item._id}}" data-orderno="{{item.orderNo}}">确认发货</view>
             </view>
             <view class="om-foot-actions" wx:elif="{{item.isStorePickup}}">
               <view class="om-btn ship disabled">门店自取</view>
@@ -858,7 +858,7 @@
                 </view>
               </view>
             </block>
-            <view class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="shippedOrders">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="shippedOrders">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
           </view>
           <view class="om-sku-empty" wx:else><text>暂无藏品明细</text></view>
           <view class="om-addr om-addr-copyable" wx:if="{{item.address}}" catchtap="copyOrderAddress" data-id="{{item._id}}" data-scope="shippedOrders" hover-class="om-addr-press" hover-stay-time="80">
@@ -954,7 +954,7 @@
                 </view>
               </view>
             </block>
-            <view class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="completedOrders">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="completedOrders">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
           </view>
           <view class="om-sku-empty" wx:else><text>暂无藏品明细</text></view>
           <view class="om-addr om-addr-copyable" wx:if="{{item.address}}" catchtap="copyOrderAddress" data-id="{{item._id}}" data-scope="completedOrders" hover-class="om-addr-press" hover-stay-time="80">
@@ -1049,7 +1049,7 @@
                 </view>
               </view>
             </block>
-            <view class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="refunds">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="refunds">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
           </view>
           <view class="om-refund-box">
             <text class="om-refund-amt">{{item.refundAmountHint || ('退款 ' + item.amountText)}}</text>
@@ -1096,8 +1096,8 @@
               <text class="om-count-hint">共 {{item.totalCount}} 件</text>
             </view>
             <view class="om-foot-actions" wx:if="{{item.status==='refunding' || item.status==='aftersales' || item.status==='expired_refunding'}}">
-              <view class="om-btn ghost" wx:if="{{item.storeReturnPending}}" bindtap="confirmPickupReturn" data-id="{{item._id}}">确认收回藏品</view>
-              <view class="om-btn refund" wx:else bindtap="handleRefund" data-id="{{item._id}}">{{item.status==='expired_refunding' ? '执行过期退款' : '同意退款'}}</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="om-btn ghost" wx:if="{{item.storeReturnPending}}" bindtap="confirmPickupReturn" data-id="{{item._id}}">确认收回藏品</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="om-btn refund" wx:else bindtap="handleRefund" data-id="{{item._id}}">{{item.status==='expired_refunding' ? '执行过期退款' : '同意退款'}}</view>
             </view>
             <text class="om-return-hint" wx:if="{{item.storeReturnPending}}">门店自取逆向：确认已收到顾客送回门店的藏品后才能退款</text>
           </view>
@@ -1164,7 +1164,7 @@
                 </view>
               </view>
             </block>
-            <view class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="pendingPayOrders">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="om-sku-more" wx:if="{{item.skuOverflow}}" catchtap="toggleOrderSkuExpand" data-id="{{item._id}}" data-scope="pendingPayOrders">{{item.skuExpanded ? '收起藏品' : ('展开其余 ' + item.skuHiddenCount + ' 件')}}</view>
           </view>
           <view class="om-sku-empty" wx:else><text>暂无藏品明细</text></view>
           <view class="om-addr om-addr-copyable" wx:if="{{item.address}}" catchtap="copyOrderAddress" data-id="{{item._id}}" data-scope="pendingPayOrders" hover-class="om-addr-press" hover-stay-time="80">
@@ -1182,7 +1182,7 @@
               <text class="om-count-hint">共 {{item.totalCount}} 件</text>
             </view>
             <view class="om-foot-actions" wx:if="{{workspaceRole==='super_admin'}}">
-              <view class="om-btn ship" bindtap="fulfillPaidOrder" data-id="{{item._id}}">补履约</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="om-btn ship" bindtap="fulfillPaidOrder" data-id="{{item._id}}">补履约</view>
             </view>
             <view class="om-foot-actions" wx:else>
               <view class="om-btn ship disabled">仅超管可补履约</view>
@@ -1333,22 +1333,22 @@
             <text class="f-meta muted" wx:else>未绑员工</text>
           </view>
           <view class="f-actions">
-            <view class="f-act" catchtap="openFramerPublic" data-id="{{item._id}}">公开档案</view>
-            <view class="f-act" catchtap="openFramerModal" data-id="{{item._id}}">编辑</view>
-            <view class="f-act" catchtap="openFramerBindSheet" data-id="{{item._id}}">{{item.staffBound ? '换绑' : '绑员工'}}</view>
-            <view
+            <view hover-class="wb-press" hover-stay-time="80" class="f-act" catchtap="openFramerPublic" data-id="{{item._id}}">公开档案</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="f-act" catchtap="openFramerModal" data-id="{{item._id}}">编辑</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="f-act" catchtap="openFramerBindSheet" data-id="{{item._id}}">{{item.staffBound ? '换绑' : '绑员工'}}</view>
+            <view hover-class="wb-press" hover-stay-time="80"
               class="f-act"
               catchtap="toggleFramerActive"
               data-id="{{item._id}}"
               data-active="{{item.active ? '1' : '0'}}"
             >{{item.active ? '下架' : '上架'}}</view>
-            <view
+            <view hover-class="wb-press" hover-stay-time="80"
               class="f-act accent"
               wx:if="{{item.staffBound && !item.isCanonical}}"
               catchtap="pinFramerCanonical"
               data-id="{{item._id}}"
             >设权威</view>
-            <view
+            <view hover-class="wb-press" hover-stay-time="80"
               class="f-act warn"
               wx:if="{{item.isDuplicate && item.staffBound}}"
               catchtap="resolveFramerDuplicates"
@@ -1385,10 +1385,10 @@
         </view>
         <view class="address-box"><text class="addr-detail">{{item.formatTime}}</text></view>
         <view class="btn-row">
-          <view class="btn verify" bindtap="copyFramerRecruitText" data-item="{{item}}">复制详情</view>
-          <view class="btn ship" wx:if="{{item.status==='pending'}}" bindtap="updateFramerRecruitStatus" data-id="{{item._id}}" data-status="contacted">标记已联系</view>
-          <view class="btn ship" wx:if="{{item.status!=='accepted'}}" bindtap="updateFramerRecruitStatus" data-id="{{item._id}}" data-status="accepted">通过</view>
-          <view class="btn ship" wx:if="{{item.status!=='rejected'}}" bindtap="updateFramerRecruitStatus" data-id="{{item._id}}" data-status="rejected">未通过</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn verify" bindtap="copyFramerRecruitText" data-item="{{item}}">复制详情</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='pending'}}" bindtap="updateFramerRecruitStatus" data-id="{{item._id}}" data-status="contacted">标记已联系</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status!=='accepted'}}" bindtap="updateFramerRecruitStatus" data-id="{{item._id}}" data-status="accepted">通过</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status!=='rejected'}}" bindtap="updateFramerRecruitStatus" data-id="{{item._id}}" data-status="rejected">未通过</view>
         </view>
       </view>
     </block>
@@ -1699,10 +1699,10 @@
             <text class="addr-detail">{{item.formatTime}}</text>
           </view>
           <view class="btn-row">
-            <view class="btn verify" bindtap="copyWorkOrder" data-item="{{item}}">复制工单</view>
-            <view class="btn ship" wx:if="{{item.productionStatus==='pending_make' || !item.productionStatus}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="framing">开始装裱</view>
-            <view class="btn ship" wx:if="{{item.productionStatus==='framing'}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="packing">进入包装</view>
-            <view class="btn ship" wx:if="{{item.productionStatus==='packing'}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="shipped">确认发出</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn verify" bindtap="copyWorkOrder" data-item="{{item}}">复制工单</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.productionStatus==='pending_make' || !item.productionStatus}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="framing">开始装裱</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.productionStatus==='framing'}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="packing">进入包装</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.productionStatus==='packing'}}" bindtap="advanceProduction" data-id="{{item._id}}" data-next="shipped">确认发出</view>
           </view>
         </view>
       </block>
@@ -1748,9 +1748,9 @@
           </view>
           <view class="address-box"><text class="addr-detail">{{item.formatTime}}</text></view>
           <view class="btn-row">
-            <view class="btn verify" bindtap="copyInquiryText" data-item="{{item}}">复制详情</view>
-            <view class="btn ship" wx:if="{{item.status==='pending'}}" bindtap="updateInquiryStatus" data-id="{{item._id}}" data-status="contacted">标记已联系</view>
-            <view class="btn ship" wx:if="{{item.status!=='closed'}}" bindtap="updateInquiryStatus" data-id="{{item._id}}" data-status="closed">关闭</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn verify" bindtap="copyInquiryText" data-item="{{item}}">复制详情</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='pending'}}" bindtap="updateInquiryStatus" data-id="{{item._id}}" data-status="contacted">标记已联系</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status!=='closed'}}" bindtap="updateInquiryStatus" data-id="{{item._id}}" data-status="closed">关闭</view>
           </view>
         </view>
       </block>
@@ -1777,14 +1777,14 @@
           </view>
           <view class="address-box"><text class="addr-detail">{{item.formatTime}}</text></view>
           <view class="btn-row">
-            <view class="btn verify" bindtap="copyPetMemorialText" data-item="{{item}}">复制工单</view>
-            <view class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="need_info">需补充</view>
-            <view class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="openPetQuoteModal" data-id="{{item._id}}">填写报价</view>
-            <view class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="accepted">直接承接</view>
-            <view class="btn ship" wx:if="{{item.status==='accepted'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="awaiting_intake">待交接</view>
-            <view class="btn ship" wx:if="{{item.status==='awaiting_intake'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="intake_done">已交接</view>
-            <view class="btn ship" wx:if="{{item.status==='intake_done' || item.status==='awaiting_intake'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="in_production">开始制作</view>
-            <view class="btn ship" wx:if="{{item.status==='in_production'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="completed">已完成</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn verify" bindtap="copyPetMemorialText" data-item="{{item}}">复制工单</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="need_info">需补充</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="openPetQuoteModal" data-id="{{item._id}}">填写报价</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="accepted">直接承接</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='accepted'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="awaiting_intake">待交接</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='awaiting_intake'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="intake_done">已交接</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='intake_done' || item.status==='awaiting_intake'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="in_production">开始制作</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='in_production'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="completed">已完成</view>
           </view>
         </view>
       </block>
@@ -1857,7 +1857,7 @@
         </view>
 
         <view class="btn-row" style="margin-bottom: 24rpx;">
-          <view class="btn verify {{pushAiLoading?'disabled':''}}" bindtap="generateYouxinCopy">AI 撰写文案</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn verify {{pushAiLoading?'disabled':''}}" bindtap="generateYouxinCopy">AI 撰写文案</view>
         </view>
 
         <view class="card card-museum-preview" wx:if="{{pushForm.title || pushForm.content}}">
@@ -1940,8 +1940,8 @@
         <view class="msg-estimate" wx:if="{{pushForm.scope==='all'}}">预估触达约 {{pushEstimate}} 人 · 24h 内限 20 次全局推送</view>
         <view class="msg-estimate" wx:if="{{pushForm.scope==='segment'}}">分群单次最多 500 人 · 24h 内限 30 次分群推送</view>
         <view class="btn-row">
-          <view class="btn verify" bindtap="seedMessageTemplates">初始化模板</view>
-          <view class="btn ship" bindtap="openPushConfirm">预览并发送</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn verify" bindtap="seedMessageTemplates">初始化模板</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn ship" bindtap="openPushConfirm">预览并发送</view>
         </view>
       </view>
     </block>
@@ -1982,7 +1982,7 @@
           <text class="p-name">{{item.message}}</text>
           <text class="addr-detail">{{item.formatTime}}</text>
           <view class="btn-row">
-            <view class="btn ship" bindtap="openTicketReplyModal" data-item="{{item}}">回复并通知</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" bindtap="openTicketReplyModal" data-item="{{item}}">回复并通知</view>
           </view>
         </view>
       </block>
@@ -2065,7 +2065,7 @@
         </view>
 
         <view class="btn-row store-actions">
-          <view class="btn ship" bindtap="openStoreEditModal" data-item="{{activeStore}}">编辑基础信息</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn ship" bindtap="openStoreEditModal" data-item="{{activeStore}}">编辑基础信息</view>
         </view>
       </view>
 
@@ -2156,7 +2156,7 @@
 
       <view class="card cfg-card report-error" wx:elif="{{analyticsError}}">
         <text class="cfg-hint">{{analyticsError}}</text>
-        <view class="btn ship active" style="margin-top:24rpx;" bindtap="loadAnalyticsDashboard">重试</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn ship active" style="margin-top:24rpx;" bindtap="loadAnalyticsDashboard">重试</view>
       </view>
 
       <block wx:elif="{{!analyticsLoading}}">
@@ -3543,11 +3543,11 @@
               <text class="framer-bind-label muted" wx:else>尚未绑定员工账号</text>
             </view>
             <view class="framer-modal-btns">
-              <view class="f-act" bindtap="openFramerBindSheet" data-id="{{editId}}">{{tempFramer.staffBound ? '更换绑定' : '绑定员工'}}</view>
-              <view class="f-act" wx:if="{{tempFramer.staffBound}}" bindtap="unbindFramerStaff" data-id="{{editId}}">解除绑定</view>
-              <view class="f-act accent" wx:if="{{tempFramer.staffBound && !tempFramer.isCanonical}}" bindtap="pinFramerCanonical" data-id="{{editId}}">设为权威</view>
-              <view class="f-act warn" wx:if="{{tempFramer.isDuplicate && tempFramer.staffBound}}" bindtap="resolveFramerDuplicates" data-id="{{editId}}">处理重复</view>
-              <view class="f-act" bindtap="openFramerPublic" data-id="{{editId}}">预览公开档案</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="f-act" bindtap="openFramerBindSheet" data-id="{{editId}}">{{tempFramer.staffBound ? '更换绑定' : '绑定员工'}}</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="f-act" wx:if="{{tempFramer.staffBound}}" bindtap="unbindFramerStaff" data-id="{{editId}}">解除绑定</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="f-act accent" wx:if="{{tempFramer.staffBound && !tempFramer.isCanonical}}" bindtap="pinFramerCanonical" data-id="{{editId}}">设为权威</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="f-act warn" wx:if="{{tempFramer.isDuplicate && tempFramer.staffBound}}" bindtap="resolveFramerDuplicates" data-id="{{editId}}">处理重复</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="f-act" bindtap="openFramerPublic" data-id="{{editId}}">预览公开档案</view>
             </view>
             <text class="framer-modal-hint" wx:if="{{tempFramer.isDuplicate}}">检测到同名档案 {{tempFramer.duplicateCount}} 条。建议选定权威后下架其余，避免访客看到重复主页。</text>
           </view>

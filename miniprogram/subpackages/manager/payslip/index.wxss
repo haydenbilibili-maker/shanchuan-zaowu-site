@@ -1,5 +1,281 @@
-@import "../staff/scene.wxss";
+/* 工资条明细（manager 分包）—— 原先 @import ../staff/scene.wxss（连带约 41 KiB 的核销页样式）；
+   现只内联本页用到的规则，顺序与原级联一致（核销页 → 现场卡片 → 本页） */
 
+/* —— 来自 staff/field/index.wxss —— */
+page {
+  background: var(--color-bg);
+  color: var(--color-text-body);
+  /*
+   * 水平边距：对齐 store-points / staff / approvals 的 container
+   * 使用 32rpx 硬值兜底——勿单独依赖未定义的 --space-5（曾导致整段 padding 失效贴边）
+   */
+  --field-gutter: var(--space-4, 32rpx);
+}
+
+.page-boot {
+  min-height: 100vh;
+  padding: var(--space-8, 64rpx) var(--field-gutter);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.boot-en {
+  font-size: 20rpx;
+  letter-spacing: 0.16em;
+  color: var(--brass-600);
+  text-transform: uppercase;
+}
+
+.boot-cn {
+  font-family: var(--font-brand);
+  font-size: 40rpx;
+  color: var(--color-text-primary);
+  margin-top: 8rpx;
+}
+
+.boot-hint {
+  margin-top: var(--space-3);
+  font-size: 24rpx;
+  color: var(--color-text-muted);
+}
+
+.container {
+  min-height: 100vh;
+  /* 与 store-points / staff/index 一致：左右 32rpx；分拆写法防止 shorthand 被无效变量整段丢弃 */
+  padding-top: 0;
+  padding-right: 32rpx;
+  padding-bottom: var(--space-8, 64rpx);
+  padding-left: 32rpx;
+  box-sizing: border-box;
+}
+
+.section {
+  margin-bottom: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.section-note {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.section > .section-note:first-child {
+  margin-top: 0;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 80rpx;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: 28rpx;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.btn-primary {
+  background: var(--brass-400);
+  color: var(--color-bg);
+  border: 1rpx solid var(--brass-400);
+}
+
+.btn-primary:active {
+  background: var(--brass-500);
+  border-color: var(--brass-500);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.row-title {
+  font-size: 28rpx;
+  color: var(--color-text-primary);
+}
+
+.row-sub {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}
+
+.empty {
+  padding: var(--space-4) 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--color-text-muted);
+}
+
+.empty .empty-hint {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+@keyframes mask-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(20rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 9, 8, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 48rpx 32rpx;
+  box-sizing: border-box;
+  animation: mask-in 180ms ease-out;
+}
+
+.mask .modal {
+  position: relative;
+  z-index: 1;
+}
+
+.modal {
+  width: 100%;
+  max-width: 620rpx;
+  max-height: 82vh;
+  padding: var(--space-6) var(--space-5);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  overflow-y: auto;
+  animation: modal-in 220ms ease-out;
+}
+
+.modal-title {
+  font-size: 30rpx;
+  font-weight: 500;
+}
+
+.modal .btn-primary {
+  margin-top: var(--space-6);
+  width: 100%;
+}
+
+.page-tip {
+  margin: 12rpx 0 8rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+}
+
+.empty.is-error {
+  border: 1rpx solid rgba(196, 92, 74, 0.4);
+  background: rgba(196, 92, 74, 0.08);
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.empty-hint {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}
+
+/* —— 来自 staff/scene.wxss —— */
+.page-boot {
+  min-height: 100vh;
+  padding: var(--space-8) var(--space-4);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.boot-en {
+  font-size: 20rpx;
+  letter-spacing: 0.16em;
+  color: var(--brass-600);
+  text-transform: uppercase;
+}
+
+.boot-cn {
+  font-family: var(--font-brand);
+  font-size: 40rpx;
+  color: var(--color-text-primary);
+  margin-top: 8rpx;
+}
+
+.boot-hint {
+  margin-top: var(--space-3);
+  font-size: 24rpx;
+  color: var(--color-text-muted);
+}
+
+.scene-card {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.scene-tile-arrow {
+  font-size: 24rpx;
+  color: var(--brass-400);
+  margin-left: var(--space-3);
+}
+
+.amount-row {
+  font-family: var(--font-mono);
+  font-size: 40rpx;
+  color: var(--color-text-primary);
+}
+
+/* —— 本页 —— */
 .container {
   min-height: 100vh;
   padding: var(--space-4);
@@ -142,4 +418,9 @@
   border-radius: 999rpx;
   font-size: 24rpx;
   color: #e8dcc0;
+}
+
+/* 通用按压态（hover-class="wb-press"，与 workbench-nav.wxss 同值；本页不引入它） */
+.wb-press {
+  opacity: 0.72;
 }

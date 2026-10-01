@@ -24,7 +24,7 @@
     </view>
 
     <view class="status-tabs">
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="status-tab {{tab===item.key?'on':''}}"
         wx:for="{{tabs}}"
         wx:key="key"
@@ -39,7 +39,7 @@
           <text class="list-title">{{item.title}}</text>
           <text class="list-meta">{{item.meta}}</text>
           <text class="list-hint">{{item.actionHint}}</text>
-          <view
+          <view hover-class="wb-press" hover-stay-time="80"
             class="list-action"
             wx:if="{{item.canConfirm}}"
             data-key="{{item.key}}"
@@ -50,7 +50,7 @@
           <text class="list-qty">{{item.qtyLabel}}</text>
         </view>
       </view>
-      <view class="link-row" wx:if="{{demoOn && tab==='pending_ship'}}" bindtap="goShip">
+      <view hover-class="wb-press" hover-stay-time="80" class="link-row" wx:if="{{demoOn && tab==='pending_ship'}}" bindtap="goShip">
         <text class="link-copy">待发货可去回传运单</text>
         <text class="link-go">发货回传 ›</text>
       </view>
@@ -59,7 +59,7 @@
     <view class="empty-panel" wx:else>
       <text class="empty-panel-title">{{emptyTitle}}</text>
       <text class="empty-panel-body">{{emptyBody}}</text>
-      <view class="retry-btn" wx:if="{{demoOn && tab==='pending_ship'}}" bindtap="goShip">去发货回传</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="retry-btn" wx:if="{{demoOn && tab==='pending_ship'}}" bindtap="goShip">去发货回传</view>
     </view>
   </block>
 </view>

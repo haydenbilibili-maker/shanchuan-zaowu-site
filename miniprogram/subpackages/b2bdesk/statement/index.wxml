@@ -6,7 +6,7 @@
   </view>
 
   <view class="chips">
-    <view wx:for="{{ranges}}" wx:key="key" class="chip {{range === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onRange">
+    <view hover-class="wb-press" hover-stay-time="80" wx:for="{{ranges}}" wx:key="key" class="chip {{range === item.key ? 'on' : ''}}" data-key="{{item.key}}" bindtap="onRange">
       <text class="chip-text">{{item.label}}</text>
     </view>
   </view>
@@ -19,7 +19,7 @@
   <view wx:elif="{{error}}" class="state err">
     <text class="state-title">暂时无法查看</text>
     <text class="state-body">{{error}}</text>
-    <view class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
+    <view hover-class="wb-press" hover-stay-time="80" class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
   </view>
   <view wx:elif="{{needPartner}}" class="state">
     <text class="state-title">请选择一位伙伴</text>
@@ -39,7 +39,7 @@
       <text class="state-body">下单或收到采购需求后会出现在这里。</text>
     </view>
     <view wx:for="{{list}}" wx:key="_id" class="card">
-      <view class="card-row" data-id="{{item._id}}" bindtap="toggleOpen">
+      <view hover-class="wb-press" hover-stay-time="80" class="card-row" data-id="{{item._id}}" bindtap="toggleOpen">
         <view class="card-main">
           <text class="card-title">{{item.title}}</text>
           <text class="card-meta">{{item.dateText}} · {{item.orderNo || item._id}} · {{item.qty}} 件</text>
@@ -52,8 +52,8 @@
         <view class="tag"><text class="tag-text">{{item.stageLabel}}</text></view>
         <view wx:if="{{item.payBucket !== 'na'}}" class="tag {{item.payTone}}"><text class="tag-text">{{item.payLabel}}</text></view>
         <view wx:if="{{item.overdue}}" class="tag danger"><text class="tag-text">已 {{item.agingDays}} 天未结</text></view>
-        <view wx:if="{{item.trackingNo}}" class="tag brass" data-no="{{item.trackingNo}}" bindtap="copyTracking"><text class="tag-text">{{item.carrier}} {{item.trackingNo}} · 复制</text></view>
-        <view class="tag" data-id="{{item._id}}" bindtap="toggleOpen"><text class="tag-text">{{openId === item._id ? '收起进度' : '查看进度'}}</text></view>
+        <view hover-class="wb-press" hover-stay-time="80" wx:if="{{item.trackingNo}}" class="tag brass" data-no="{{item.trackingNo}}" bindtap="copyTracking"><text class="tag-text">{{item.carrier}} {{item.trackingNo}} · 复制</text></view>
+        <view hover-class="wb-press" hover-stay-time="80" class="tag" data-id="{{item._id}}" bindtap="toggleOpen"><text class="tag-text">{{openId === item._id ? '收起进度' : '查看进度'}}</text></view>
       </view>
       <view wx:if="{{openId === item._id}}" class="tl tl-inset">
         <view wx:for="{{item.timeline}}" wx:for-item="node" wx:for-index="ni" wx:key="key" class="tl-node {{node.state}}">

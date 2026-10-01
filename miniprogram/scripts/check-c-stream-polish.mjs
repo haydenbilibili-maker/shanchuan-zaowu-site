@@ -18,11 +18,14 @@
  *   R2-3 店员子页（打卡 / 请假 / 报销 / 清单 / 两个审批）提交按钮有按压态与「…中」文字反馈
  *   R2-4 日报详情「复制摘要」只留底部一处
  *   R2-5 低频配置页不出现「云函数 / status=active / openid」等技术词
+ *   R3-1 中低频功能页（R3_PAGES）可点元素都有 hover-class，用 wb-press 的页面经 @import 链能找到定义；订单卡操作按钮有按压态
+ *   R3-2 发票列表首次加载是骨架、按状态筛空有「切回全部」提示；门店积分规则说明无云函数 / 集合名
+ *   R3-3 工资条明细不再 @import staff/scene.wxss（连带 ~41 KiB 核销页样式）；内联后仍有本页依赖的基础类
  *
  * 用法：node miniprogram/scripts/check-c-stream-polish.mjs [--selftest]
  */
 import { readFileSync, existsSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
+import { resolve, dirname, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -53,20 +56,60 @@ const FILES = {
   digestWxml: `${EXTRA}/user/messages/detail/index.wxml`,
   supportCfgWxml: `${MGR}/support-config/index.wxml`,
   feishuWxml: `${MGR}/feishu-sync/index.wxml`,
-  payslipAdminWxml: `${MGR}/payslip/admin/index.wxml`
+  payslipAdminWxml: `${MGR}/payslip/admin/index.wxml`,
+  invoiceWxml: `${MGR}/invoice-requests/index.wxml`,
+  storePointsWxml: `${MGR}/store-points/index.wxml`,
+  payslipWxss: `${MGR}/payslip/index.wxss`
+}
+
+/** R3：中低频功能页 —— 可点的按钮 / 标签 / 卡片都要有 hover-class，且 .wb-press 经本页 wxss 的 @import 链可达 */
+const B2B = 'miniprogram/subpackages/b2bdesk'
+const R3_PAGES = [
+  `${MGR}/gift-ops`, `${MGR}/deposit-ops`, `${MGR}/store-points`, `${MGR}/invoice-requests`, `${MGR}/studio-bills`,
+  `${MGR}/welcome-gift`, `${MGR}/birthday-gift`, `${MGR}/booking-rules`, `${MGR}/wallet-config`, `${MGR}/wish-wall`,
+  `${MGR}/staff-directory`, `${MGR}/support-config`, `${MGR}/gift-manage`, `${MGR}/payslip`, `${MGR}/payslip/admin`,
+  `${EXTRA}/member-crm`, `${EXTRA}/artisan-commission`, `${EXTRA}/live/studio`, `${EXTRA}/live/broadcast`,
+  `${EXTRA}/supplier/buyer-orders`, `${EXTRA}/supplier/orders`, `${EXTRA}/supplier/ship`, `${EXTRA}/supplier/catalog`,
+  `${B2B}/center`, `${B2B}/price-edit`, `${B2B}/partner`, `${B2B}/statement`
+]
+const NON_BUTTON = ['mask', 'overlay', 'backdrop', 'modal', 'sheet', 'popup', 'panel', 'drawer']
+
+function readRel(rel) {
+  const p = resolve(ROOT, rel)
+  if (!existsSync(p)) {
+    console.error(TAG, '缺少', rel)
+    process.exit(1)
+  }
+  return readFileSync(p, 'utf8')
+}
+
+/** 把页面 wxss 及其 @import 链读进 css 表（键 = 仓库相对路径） */
+function loadCssChain(rel, css) {
+  if (css[rel] !== undefined) return
+  css[rel] = readRel(rel)
+  for (const m of css[rel].matchAll(/@import\s+['"]([^'"]+)['"]/g)) loadCssChain(posix.join(posix.dirname(rel), m[1]), css)
 }
 
 function load() {
   const src = {}
-  for (const [k, rel] of Object.entries(FILES)) {
-    const p = resolve(ROOT, rel)
-    if (!existsSync(p)) {
-      console.error(TAG, '缺少', rel)
-      process.exit(1)
-    }
-    src[k] = readFileSync(p, 'utf8')
+  for (const [k, rel] of Object.entries(FILES)) src[k] = readRel(rel)
+  const pages = {}
+  const css = {}
+  for (const dir of R3_PAGES) {
+    pages[dir] = readRel(`${dir}/index.wxml`)
+    loadCssChain(`${dir}/index.wxss`, css)
   }
+  src.__pages = pages
+  src.__css = css
   return src
+}
+
+/** 在 css 表里沿 @import 链找某个选择器是否有定义 */
+function cssReach(css, rel, sel, seen = new Set()) {
+  if (seen.has(rel) || css[rel] === undefined) return false
+  seen.add(rel)
+  if (new RegExp(`(^|[\\n}])\\s*\\${sel}\\s*\\{`).test(css[rel].replace(/\/\*[\s\S]*?\*\//g, ''))) return true
+  return [...css[rel].matchAll(/@import\s+['"]([^'"]+)['"]/g)].some((m) => cssReach(css, posix.join(posix.dirname(rel), m[1]), sel, seen))
 }
 
 /** 截出 wxml 里从 startMark 起、到下一个同级 `<block wx:if="{{curTab===` 为止的片段 */
@@ -189,6 +232,32 @@ function check(src) {
     }
   }
 
+  // R3-1 中低频页按压态
+  for (const [dir, wxml] of Object.entries(src.__pages)) {
+    const bare = (wxml.match(/<view\b[^>]*?>/gs) || []).filter((tag) => {
+      if (!/\b(bindtap|catchtap)="/.test(tag) || /hover-class=/.test(tag)) return false
+      if (/\b(?:bindtap|catchtap)="(noop|stop|preventTap|catchNoop)"/.test(tag)) return false
+      const cls = (tag.match(/\bclass="([^"]*)"/) || [])[1] || ''
+      return !NON_BUTTON.some((k) => cls.includes(k))
+    })
+    ok(bare.length === 0, `R3-1 ${dir} 有 ${bare.length} 处可点元素缺按压态：${bare.map((t) => (t.match(/class="([^"]*)"/) || [])[1]).slice(0, 3).join(' / ')}`)
+    if (/hover-class="wb-press"/.test(wxml)) ok(cssReach(src.__css, `${dir}/index.wxss`, '.wb-press'), `R3-1 ${dir} 用了 wb-press 但 @import 链里没有 .wb-press 定义`)
+  }
+  ok(/\.wb-press\s*\{/.test(src.hubNavWxss), 'R3-1 hubNav.wxss 缺 .wb-press（功能模块页订单 / 工单按钮用它）')
+  const omBtns = (tabBlock(src.subviews, 2).match(/<view\b[^>]*class="om-btn[^"]*"[^>]*>/g) || []).filter((t) => /\b(bindtap|catchtap)="/.test(t))
+  ok(omBtns.length > 0 && omBtns.every((t) => /hover-class=/.test(t)), 'R3-1 订单卡「发货 / 退款 / 复制面单」按钮缺按压态')
+
+  // R3-2 发票 / 积分
+  ok(/class="ir-skeleton" wx:if="\{\{loading && !list\.length\}\}"/.test(src.invoiceWxml), 'R3-2 发票列表首次加载没有骨架')
+  ok(/statusIndex > 0 \?/.test(src.invoiceWxml), 'R3-2 发票按状态筛空时没有「切回全部」提示')
+  ok(!/云函数|store_point_rules|云端配置/.test(stripComments(src.storePointsWxml)), 'R3-2 门店积分规则说明出现技术词（云函数 / 集合名）')
+
+  // R3-3 工资条样式内联（项目开了 ignoreUploadUnusedFiles：manager/staff 两份镜像无人引用即不随包上传）
+  ok(!/@import\s+['"][^'"]*staff\/scene\.wxss['"]/.test(src.payslipWxss), 'R3-3 工资条又 @import staff/scene.wxss（manager 包多带 ~41 KiB）')
+  for (const sel of ['.page-boot', '.section', '.row', '.row-main', '.row-sub', '.amount-row', '.scene-card', '.mask', '.modal', '.btn-primary']) {
+    ok(new RegExp(`(^|[\\n,])\\${sel}\\s*[,{]`).test(src.payslipWxss), `R3-3 工资条内联样式缺 ${sel}`)
+  }
+
   return fails
 }
 
@@ -230,7 +299,14 @@ function selftest() {
     ['请假提交去掉「提交中…」', (s) => ({ ...s, leaveWxml: s.leaveWxml.replace("{{submitting ? '提交中…' : '提交请假'}}", '提交请假') }), /leave\/index\.wxml 「submit」提交中没有/],
     ['审批通过去掉按压态', (s) => ({ ...s, leaveReviewWxml: s.leaveReviewWxml.replace(/(<view class="btn approve[^"]*") hover-class="btn-primary-press" hover-stay-time="100"/, '$1') }), /leave-review\/index\.wxml 「review」按钮缺按压态/],
     ['日报复制按钮又重复', (s) => ({ ...s, digestWxml: s.digestWxml.replace('<view class="dg-foot">', '<view class="dg-tools"><view class="dg-tool" bindtap="shareDigestSheet"><text>复制 / 分享摘要</text></view></view>\n              <view class="dg-foot">') }), /复制摘要」应只有底部一处/],
-    ['飞书页回到「云函数」', (s) => ({ ...s, feishuWxml: s.feishuWxml.replace('飞书凭据还没配置', '飞书凭据还没配到云函数') }), /feishu-sync\/index\.wxml 界面出现技术词「云函数」/]
+    ['飞书页回到「云函数」', (s) => ({ ...s, feishuWxml: s.feishuWxml.replace('飞书凭据还没配置', '飞书凭据还没配到云函数') }), /feishu-sync\/index\.wxml 界面出现技术词「云函数」/],
+    ['礼赠履约「去发货」去掉按压态', (s) => ({ ...s, __pages: { ...s.__pages, [`${MGR}/gift-ops`]: s.__pages[`${MGR}/gift-ops`].replace(/<view hover-class="wb-press" hover-stay-time="80" (class="mini-btn primary"[^>]*catchtap="goOrderManage")/, '<view $1') } }), /R3-1 .*gift-ops 有 1 处可点元素缺按压态/],
+    ['workbench-nav 丢了 .wb-press', (s) => ({ ...s, __css: { ...s.__css, [`${MGR}/utils/workbench-nav.wxss`]: s.__css[`${MGR}/utils/workbench-nav.wxss`].replace(/\.wb-press\s*\{[^}]*\}/, '') } }), /R3-1 .*welcome-gift 用了 wb-press 但 @import 链里没有/],
+    ['订单卡「发货」去掉按压态', (s) => ({ ...s, subviews: s.subviews.replace(/<view hover-class="wb-press" hover-stay-time="80" (class="om-btn ship")/, '<view $1') }), /R3-1 订单卡/],
+    ['发票列表退回「加载中…」', (s) => ({ ...s, invoiceWxml: s.invoiceWxml.replace('class="ir-skeleton" wx:if="{{loading && !list.length}}"', 'class="loading-hint" wx:if="{{loading}}"') }), /R3-2 发票列表首次加载/],
+    ['工资条回到 @import scene.wxss', (s) => ({ ...s, payslipWxss: '@import "../staff/scene.wxss";\n' + s.payslipWxss }), /R3-3 工资条又 @import/],
+    ['工资条内联漏了 .amount-row', (s) => ({ ...s, payslipWxss: s.payslipWxss.replace(/\n\.amount-row \{[^}]*\}/, '') }), /R3-3 工资条内联样式缺 \.amount-row/],
+    ['积分规则说明回到集合名', (s) => ({ ...s, storePointsWxml: s.storePointsWxml.replace('保存后改按这里的设置执行。', '保存后即写入 store_point_rules。') }), /R3-2 门店积分/]
   ]
   const notes = []
   let bad = 0

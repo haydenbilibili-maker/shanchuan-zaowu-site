@@ -74,8 +74,8 @@
     <view class="workbench-state error" wx:elif="{{loadError}}">
       <text>{{loadError}}</text>
       <view class="warn-actions">
-        <view class="workbench-btn-outline sm state-retry" bindtap="loadLiveDash">重试</view>
-        <view class="workbench-btn-outline sm state-retry" bindtap="goBroadcast">去开播控制台</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm state-retry" bindtap="loadLiveDash">重试</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm state-retry" bindtap="goBroadcast">去开播控制台</view>
       </view>
     </view>
 
@@ -86,12 +86,12 @@
           <text class="next-title">{{nextStepTitle}}</text>
         </view>
         <text class="next-body">{{nextStepBody}}</text>
-        <view class="workbench-btn-outline sm next-cta" bindtap="onNextStepCta">{{nextStepCta}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm next-cta" bindtap="onNextStepCta">{{nextStepCta}}</view>
       </view>
 
       <view class="warn-banner" wx:if="{{adminHint}}">
         <text>{{adminHint}}</text>
-        <view class="workbench-btn-outline sm warn-action" wx:if="{{configActionLabel}}" bindtap="onConfigAction">{{configActionLabel}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm warn-action" wx:if="{{configActionLabel}}" bindtap="onConfigAction">{{configActionLabel}}</view>
       </view>
       <view class="warn-banner" wx:if="{{otherLiveHint}}">
         <view class="warn-banner-head">
@@ -99,8 +99,8 @@
           <text>{{otherLiveHint}}</text>
         </view>
         <view class="warn-actions">
-          <view class="workbench-btn-outline sm warn-action" bindtap="goBroadcast">去控制台查看</view>
-          <view
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm warn-action" bindtap="goBroadcast">去控制台查看</view>
+          <view hover-class="wb-press" hover-stay-time="80"
             class="workbench-btn-outline sm warn-action danger"
             wx:if="{{canForceOther && otherSessionId}}"
             bindtap="forceEndOther"
@@ -250,8 +250,8 @@
         <view class="section-head tight">
           <text class="section-title">本场挂品</text>
           <view class="shelf-head-actions">
-            <view class="workbench-btn-outline sm" bindtap="clearShelf" wx:if="{{shelfPreview.length}}">清空</view>
-            <view class="workbench-btn-outline sm" bindtap="goShelf">{{statusCard.shelfCount ? '继续挂品' : '去挂品'}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="clearShelf" wx:if="{{shelfPreview.length}}">清空</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="goShelf">{{statusCard.shelfCount ? '继续挂品' : '去挂品'}}</view>
           </view>
         </view>
         <view class="workbench-state dashed" wx:if="{{!shelfPreview.length}}">
@@ -265,9 +265,9 @@
               <text class="shelf-chip-warn" wx:if="{{item.warnText}}">{{item.warnText}}</text>
             </view>
             <view class="shelf-row-actions">
-              <view class="ghost-mini {{item.canMoveUp ? '' : 'is-disabled'}}" catchtap="moveShelfItem" data-id="{{item._id}}" data-dir="up">上移</view>
-              <view class="ghost-mini {{item.canMoveDown ? '' : 'is-disabled'}}" catchtap="moveShelfItem" data-id="{{item._id}}" data-dir="down">下移</view>
-              <view class="ghost-mini danger" catchtap="removeShelfItem" data-id="{{item._id}}">下架</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="ghost-mini {{item.canMoveUp ? '' : 'is-disabled'}}" catchtap="moveShelfItem" data-id="{{item._id}}" data-dir="up">上移</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="ghost-mini {{item.canMoveDown ? '' : 'is-disabled'}}" catchtap="moveShelfItem" data-id="{{item._id}}" data-dir="down">下移</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="ghost-mini danger" catchtap="removeShelfItem" data-id="{{item._id}}">下架</view>
             </view>
           </view>
         </view>
@@ -277,8 +277,8 @@
         <view class="section-head tight">
           <text class="section-title">讲解提纲</text>
           <view class="shelf-head-actions">
-            <view class="workbench-btn-outline sm" bindtap="regenerateTalk">按挂品重排</view>
-            <view class="workbench-btn-outline sm" bindtap="copyTalkingPoints">复制全文</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="regenerateTalk">按挂品重排</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="copyTalkingPoints">复制全文</view>
           </view>
         </view>
         <text class="copy-hint" wx:if="{{copyHint}}">{{copyHint}}</text>
@@ -289,7 +289,7 @@
           <view class="talk-seg {{item.spotlight ? 'is-spot' : ''}}" wx:for="{{talkSegments}}" wx:key="key">
             <view class="talk-seg-head">
               <text class="talk-seg-title">{{item.heading}}</text>
-              <view class="ghost-mini" catchtap="copyTalkSegment" data-key="{{item.key}}">复制本段</view>
+              <view hover-class="wb-press" hover-stay-time="80" class="ghost-mini" catchtap="copyTalkSegment" data-key="{{item.key}}">复制本段</view>
             </view>
             <text class="talk-seg-body">{{item.body}}</text>
           </view>
@@ -306,7 +306,7 @@
           placeholder="观众进房可见的短公告（非弹幕）"
           placeholder-class="workbench-ph"
         />
-        <view class="workbench-btn-primary notice-save" bindtap="saveNotice">保存公告</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary notice-save" bindtap="saveNotice">保存公告</view>
       </view>
 
       <view class="group">
@@ -334,7 +334,7 @@
               <text class="session-summary" wx:if="{{item.summary}}">{{item.summary}}</text>
             </view>
             <view class="session-actions">
-              <view
+              <view hover-class="wb-press" hover-stay-time="80"
                 class="status-chip {{item.chipClass}}"
                 catchtap="onSessionEditNotice"
                 data-id="{{item._id}}"
@@ -361,15 +361,15 @@
   </block>
 
   <view class="workbench-footer-bar" wx:if="{{ready}}">
-    <view
+    <view hover-class="wb-press" hover-stay-time="80"
       class="workbench-btn-primary {{creating ? 'is-disabled' : ''}}"
       bindtap="goPrimaryCta"
     >{{creating ? '创建中…' : primaryCtaLabel}}</view>
     <view class="footer-secondary">
-      <view class="workbench-btn-outline {{creating ? 'is-disabled' : ''}}" bindtap="onCreateTap">
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{creating ? 'is-disabled' : ''}}" bindtap="onCreateTap">
         {{creating ? '创建中…' : '新建场次'}}
       </view>
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="workbench-btn-outline footer-end {{(!canEndSession || ending) ? 'is-disabled' : ''}}"
         bindtap="forceEndLive"
       >{{ending ? '结束中…' : '结束本场'}}</view>

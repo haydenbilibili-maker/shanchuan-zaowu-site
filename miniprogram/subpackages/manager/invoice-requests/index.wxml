@@ -16,11 +16,11 @@
         <text class="overview-title">数据概览</text>
         <text class="overview-sub" wx:if="{{overviewReady}}">待办采样 {{overview.totalLoaded}}{{overview.dataCapped ? '（已截断）' : ''}}</text>
       </view>
-      <view class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
     </view>
 
     <view class="sub-tab-row overview-tabs">
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="sub-tab {{overviewTab === item.key ? 'active' : ''}}"
         wx:for="{{overviewTabs}}"
         wx:key="key"
@@ -113,7 +113,7 @@
 
   <view class="section" wx:if="{{list.length}}">
     <view class="record" wx:for="{{list}}" wx:key="_id">
-      <view class="rec-top" bindtap="toggleExpand" data-id="{{item._id}}">
+      <view hover-class="wb-press" hover-stay-time="80" class="rec-top" bindtap="toggleExpand" data-id="{{item._id}}">
         <view class="rec-main">
           <text class="rec-order">{{item.orderNo}}</text>
           <text class="rec-title">{{item.invoiceTypeLabel}} · {{item.title}}</text>
@@ -128,15 +128,15 @@
       </view>
 
       <view class="rec-detail" wx:if="{{expandedId === item._id}}">
-        <view class="detail-row" wx:if="{{item.taxNo}}" bindtap="copyText" data-text="{{item.taxNo}}">
+        <view hover-class="wb-press" hover-stay-time="80" class="detail-row" wx:if="{{item.taxNo}}" bindtap="copyText" data-text="{{item.taxNo}}">
           <text class="detail-label">税号</text>
           <text class="detail-val">{{item.taxNo}}</text>
         </view>
-        <view class="detail-row" wx:if="{{item.phone}}" bindtap="copyText" data-text="{{item.phone}}">
+        <view hover-class="wb-press" hover-stay-time="80" class="detail-row" wx:if="{{item.phone}}" bindtap="copyText" data-text="{{item.phone}}">
           <text class="detail-label">电话</text>
           <text class="detail-val">{{item.phone}}</text>
         </view>
-        <view class="detail-row" wx:if="{{item.email}}" bindtap="copyText" data-text="{{item.email}}">
+        <view hover-class="wb-press" hover-stay-time="80" class="detail-row" wx:if="{{item.email}}" bindtap="copyText" data-text="{{item.email}}">
           <text class="detail-label">邮箱</text>
           <text class="detail-val">{{item.email}}</text>
         </view>
@@ -160,36 +160,39 @@
           <text class="detail-label">处理</text>
           <text class="detail-val">{{item.handledByName || '店长'}} · {{item.handledText}}</text>
         </view>
-        <view class="detail-row" wx:if="{{item.orderId}}" bindtap="copyText" data-text="{{item.orderId}}">
+        <view hover-class="wb-press" hover-stay-time="80" class="detail-row" wx:if="{{item.orderId}}" bindtap="copyText" data-text="{{item.orderId}}">
           <text class="detail-label">订单 ID</text>
           <text class="detail-val mono">{{item.orderId}}</text>
         </view>
       </view>
 
       <view class="rec-actions" wx:if="{{item.status === 'pending'}}">
-        <view class="btn-outline" catchtap="toggleExpand" data-id="{{item._id}}">
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" catchtap="toggleExpand" data-id="{{item._id}}">
           {{expandedId === item._id ? '收起' : '详情'}}
         </view>
-        <view class="btn-danger" catchtap="openReject" data-id="{{item._id}}">驳回</view>
-        <view class="btn-primary" catchtap="openIssue" data-id="{{item._id}}">标记已开具</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-danger" catchtap="openReject" data-id="{{item._id}}">驳回</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-primary" catchtap="openIssue" data-id="{{item._id}}">标记已开具</view>
       </view>
       <view class="rec-actions" wx:else>
-        <view class="btn-outline" catchtap="toggleExpand" data-id="{{item._id}}">
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" catchtap="toggleExpand" data-id="{{item._id}}">
           {{expandedId === item._id ? '收起' : '详情'}}
         </view>
       </view>
     </view>
 
-    <view class="btn-outline load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-outline load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
   </view>
 
   <view class="empty is-error" wx:if="{{listError && !list.length}}">
     <text class="empty-title">开票列表未能取回</text>
     <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
-    <view class="btn-retry" bindtap="onRetryList">重试</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
   </view>
-  <view class="empty" wx:elif="{{!loading && !listError && list.length === 0}}">暂无开票申请</view>
-  <view class="loading-hint" wx:if="{{loading}}">加载中…</view>
+  <view class="empty" wx:elif="{{!loading && !listError && list.length === 0}}">{{statusIndex > 0 ? '「' + statusOptions[statusIndex] + '」下没有开票申请，可切回「全部」看看' : '还没有开票申请'}}</view>
+  <view class="ir-skeleton" wx:if="{{loading && !list.length}}" aria-label="开票列表加载中">
+    <view class="ir-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this"><view class="ir-sk-line wide"></view><view class="ir-sk-line"></view></view>
+  </view>
+  <view class="loading-hint" wx:elif="{{loading}}">加载中…</view>
 
 </view>
 
@@ -208,8 +211,8 @@
       <textarea class="textarea" placeholder="如：已发至邮箱" value="{{staffNote}}" bindinput="onStaffNoteInput" maxlength="500" />
     </view>
     <view class="modal-actions">
-      <view class="btn-outline" bindtap="closeModals">取消</view>
-      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmIssue">{{submitting ? '处理中…' : '确认开具'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" bindtap="closeModals">取消</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmIssue">{{submitting ? '处理中…' : '确认开具'}}</view>
     </view>
   </view>
 </view>
@@ -225,8 +228,8 @@
       <textarea class="textarea" placeholder="如：税号有误、订单未完成支付" value="{{rejectReason}}" bindinput="onRejectReasonInput" maxlength="500" />
     </view>
     <view class="modal-actions">
-      <view class="btn-outline" bindtap="closeModals">取消</view>
-      <view class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmReject">{{submitting ? '处理中…' : '确认驳回'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" bindtap="closeModals">取消</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmReject">{{submitting ? '处理中…' : '确认驳回'}}</view>
     </view>
   </view>
 </view>

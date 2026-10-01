@@ -17,7 +17,7 @@
   <view class="wall-bar" wx:if="{{walls.length > 1}}">
     <text class="wall-bar-label">墙面</text>
     <scroll-view class="wall-bar-scroll" scroll-x enable-flex>
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="wall-chip {{item.productKey === productKey ? 'on' : ''}}"
         wx:for="{{walls}}"
         wx:key="productKey"
@@ -48,7 +48,7 @@
     </view>
     <text class="seed-prefix-hint">给别的墙面生成内容时要改这里 —— 否则第二面墙长出来的是「马上有XX」，那是别的墙的话。自定义前缀没有人工基线兜底，AI 失败时不会自动补。</text>
     <view class="seed-actions">
-      <view class="seed-btn {{seeding ? 'is-disabled' : ''}}" bindtap="seedAi">{{seeding ? '生成中…' : 'AI 生成一批心愿'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="seed-btn {{seeding ? 'is-disabled' : ''}}" bindtap="seedAi">{{seeding ? '生成中…' : 'AI 生成一批心愿'}}</view>
       <text class="seed-note" wx:if="{{seedResult}}">{{seedResult.prefix}} 句式 · AI {{seedResult.counts.ai}} 条 · 基线 {{seedResult.counts.baseline}} 条</text>
     </view>
     <text class="seed-warn" wx:if="{{seedResult && seedResult.aiError}}">AI 未生效：{{seedResult.aiError}}</text>
@@ -64,7 +64,7 @@
   </view>
 
   <view class="filter-row">
-    <view
+    <view hover-class="wb-press" hover-stay-time="80"
       class="filter-tab {{activeStatus === item.id ? 'active' : ''}}"
       wx:for="{{statusTabs}}"
       wx:key="id"
@@ -83,14 +83,14 @@
       bindinput="onKeywordInput"
       bindconfirm="onKeywordConfirm"
     />
-    <view class="search-btn" bindtap="onKeywordConfirm">搜索</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="search-btn" bindtap="onKeywordConfirm">搜索</view>
   </view>
 
   <view class="empty" wx:if="{{loading && !listError}}">同步中…</view>
   <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
     <text class="empty-title">弹幕列表未能取回</text>
     <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-    <view class="btn-retry" bindtap="onRetryList">重试</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
   </view>
   <view class="empty" wx:elif="{{!loading && !listError && !list.length}}">没有符合条件的弹幕</view>
 
@@ -103,27 +103,27 @@
     <text class="wish-meta">{{item.nickname}} · {{item.timeText}}</text>
     <text class="wish-meta" wx:if="{{item.openid}}">openid {{item.openid}}</text>
     <view class="wish-actions">
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="btn-ghost"
         wx:if="{{item.status !== 'hidden'}}"
         bindtap="toggleStatus"
         data-id="{{item._id}}"
         data-next="hidden"
       >隐藏</view>
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="btn-ghost"
         wx:else
         bindtap="toggleStatus"
         data-id="{{item._id}}"
         data-next="visible"
       >恢复展示</view>
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="btn-ghost"
         bindtap="togglePinned"
         data-id="{{item._id}}"
         data-pinned="{{item.pinned}}"
       >{{item.pinned ? '取消置顶' : '置顶'}}</view>
-      <view class="btn-danger" bindtap="removeWish" data-id="{{item._id}}">{{removePendingId === item._id ? '确认删除' : '删除'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-danger" bindtap="removeWish" data-id="{{item._id}}">{{removePendingId === item._id ? '确认删除' : '删除'}}</view>
     </view>
   </view>
 </view>

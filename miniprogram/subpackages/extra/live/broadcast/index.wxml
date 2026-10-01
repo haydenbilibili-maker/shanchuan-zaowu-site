@@ -25,12 +25,12 @@
 
     <view class="workbench-state error panel-pad" wx:elif="{{dashboardLoadError}}">
       <text>{{dashboardLoadError}}</text>
-      <view class="workbench-btn-outline sm state-retry" bindtap="loadDashboard">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm state-retry" bindtap="loadDashboard">重试</view>
     </view>
 
     <view class="workbench-state panel-pad" wx:elif="{{!dashboardLoading && !session}}">
       <text>暂无本人未结束场次。请返回主播工作台新建场次后再开播。</text>
-      <view class="workbench-btn-primary state-cta" bindtap="goCreateSessionHint">返回工作台</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary state-cta" bindtap="goCreateSessionHint">返回工作台</view>
     </view>
 
     <view class="status-card" wx:if="{{session || dashboardLoading || dashboardLoadError}}">
@@ -62,7 +62,7 @@
       <view class="status-actions" wx:if="{{!enabled}}">
         <text class="status-tip">C 端首页不会出现直播入口。请超管打开「内容开关 → 馆内直播」。</text>
       </view>
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="workbench-btn-outline sm status-end-btn"
         wx:if="{{(active && active._id) || (session && (session.status === 'live' || session.status === 'idle'))}}"
         bindtap="forceEndActive"
@@ -117,8 +117,8 @@
           <text>未选封面</text>
         </view>
         <view class="cover-actions">
-          <view class="ghost-light mini" bindtap="chooseCover">上传封面</view>
-          <view class="ghost-light mini" wx:if="{{coverUrl || coverLocal}}" bindtap="clearCover">清除</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="chooseCover">上传封面</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" wx:if="{{coverUrl || coverLocal}}" bindtap="clearCover">清除</view>
         </view>
       </view>
 
@@ -130,8 +130,8 @@
         <picker mode="time" value="{{scheduleTime}}" bindchange="onScheduleTime">
           <view class="picker-chip">{{scheduleTime || '时间'}}</view>
         </picker>
-        <view class="ghost-light mini" bindtap="saveSchedule">保存</view>
-        <view class="ghost-light mini" wx:if="{{scheduleDate}}" bindtap="clearSchedule">清除</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="saveSchedule">保存</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" wx:if="{{scheduleDate}}" bindtap="clearSchedule">清除</view>
       </view>
       <text class="schedule-hint" wx:if="{{scheduleLabel}}">将展示：{{scheduleLabel}}</text>
 
@@ -146,27 +146,27 @@
             <text class="shelf-host-warn" wx:if="{{item.warnText}}">{{item.warnText}}</text>
           </view>
           <view class="shelf-host-actions">
-            <view class="ghost-light mini {{item.canMoveUp ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="up">上移</view>
-            <view class="ghost-light mini {{item.canMoveDown ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="down">下移</view>
-            <view class="ghost-light mini" bindtap="setSpotlightProduct" data-id="{{item._id}}">{{item.spotlight ? '取消讲解' : '讲解中'}}</view>
-            <view class="ghost-light mini" bindtap="removeShelfProduct" data-id="{{item._id}}">下架</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini {{item.canMoveUp ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="up">上移</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini {{item.canMoveDown ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="down">下移</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="setSpotlightProduct" data-id="{{item._id}}">{{item.spotlight ? '取消讲解' : '讲解中'}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="removeShelfProduct" data-id="{{item._id}}">下架</view>
           </view>
         </view>
       </view>
       <view class="shelf-toolbar">
-        <view class="ghost-light full" bindtap="openShelfPicker">从藏品库挂品</view>
-        <view class="ghost-light full danger" wx:if="{{shelfItems.length}}" bindtap="clearShelf">一键清空</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="ghost-light full" bindtap="openShelfPicker">从藏品库挂品</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="ghost-light full danger" wx:if="{{shelfItems.length}}" bindtap="clearShelf">一键清空</view>
       </view>
 
-      <view class="toggle-row" bindtap="toggleBeauty">
+      <view hover-class="wb-press" hover-stay-time="80" class="toggle-row" bindtap="toggleBeauty">
         <text class="toggle-label">美颜</text>
         <text class="toggle-val">{{beautyOn ? '开' : '关（默认）'}}</text>
       </view>
       <view class="actions-row">
-        <view class="workbench-btn-outline" bindtap="switchCamera">翻转镜头</view>
-        <view class="workbench-btn-primary flex-grow {{busy || !configured ? 'is-disabled' : ''}}" bindtap="startLive">{{busy ? '准备中…' : '开始推流'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="switchCamera">翻转镜头</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary flex-grow {{busy || !configured ? 'is-disabled' : ''}}" bindtap="startLive">{{busy ? '准备中…' : '开始推流'}}</view>
       </view>
-      <view class="workbench-btn-outline end-outline" wx:if="{{session && (session.status === 'live' || session.status === 'idle')}}" bindtap="endLive">结束 / 废弃本场</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline end-outline" wx:if="{{session && (session.status === 'live' || session.status === 'idle')}}" bindtap="endLive">结束 / 废弃本场</view>
     </view>
 
     <view class="panel" wx:elif="{{session && pushing}}">
@@ -174,12 +174,12 @@
       <text class="overlay-stats">在线约 {{viewerCount}} · 峰值 {{liveStats.peakViewers}} · 赞 {{liveStats.likeCount}} · 留言 {{liveStats.messageCount}} · 进房 {{liveStats.joinCount}}</text>
       <text class="label">主播置顶公告</text>
       <input class="input" maxlength="80" value="{{notice}}" bindinput="onNoticeInput" placeholder="更新后观众端置顶展示" placeholder-class="ph"/>
-      <view class="workbench-btn-primary sync-notice" bindtap="saveNotice">同步置顶公告</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary sync-notice" bindtap="saveNotice">同步置顶公告</view>
 
       <text class="label">本场挂车（{{shelfCount}}/20）</text>
       <view class="spotlight-switch" wx:if="{{shelfItems.length}}">
-        <view class="ghost-light mini" bindtap="cycleSpotlight" data-dir="prev">上一件讲解</view>
-        <view class="ghost-light mini" bindtap="cycleSpotlight" data-dir="next">下一件讲解</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="cycleSpotlight" data-dir="prev">上一件讲解</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="cycleSpotlight" data-dir="next">下一件讲解</view>
       </view>
       <view class="shelf-host-list" wx:if="{{shelfItems.length}}">
         <view class="shelf-host-row {{item.spotlight ? 'spot' : ''}} {{item.soldOut ? 'sold' : ''}}" wx:for="{{shelfItems}}" wx:key="_id">
@@ -191,27 +191,27 @@
             <text class="shelf-host-warn" wx:if="{{item.warnText}}">{{item.warnText}}</text>
           </view>
           <view class="shelf-host-actions">
-            <view class="ghost-light mini {{item.canMoveUp ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="up">上移</view>
-            <view class="ghost-light mini {{item.canMoveDown ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="down">下移</view>
-            <view class="ghost-light mini" bindtap="setSpotlightProduct" data-id="{{item._id}}">{{item.spotlight ? '取消' : '讲解'}}</view>
-            <view class="ghost-light mini" bindtap="removeShelfProduct" data-id="{{item._id}}">下架</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini {{item.canMoveUp ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="up">上移</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini {{item.canMoveDown ? '' : 'disabled'}}" bindtap="moveShelfProduct" data-id="{{item._id}}" data-dir="down">下移</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="setSpotlightProduct" data-id="{{item._id}}">{{item.spotlight ? '取消' : '讲解'}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="removeShelfProduct" data-id="{{item._id}}">下架</view>
           </view>
         </view>
       </view>
       <view class="shelf-toolbar">
-        <view class="ghost-light full" bindtap="openShelfPicker">挂品 / 搜藏品</view>
-        <view class="ghost-light full danger" wx:if="{{shelfItems.length}}" bindtap="clearShelf">一键清空</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="ghost-light full" bindtap="openShelfPicker">挂品 / 搜藏品</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="ghost-light full danger" wx:if="{{shelfItems.length}}" bindtap="clearShelf">一键清空</view>
       </view>
 
-      <view class="toggle-row compact" bindtap="toggleBeauty">
+      <view hover-class="wb-press" hover-stay-time="80" class="toggle-row compact" bindtap="toggleBeauty">
         <text class="toggle-label">美颜</text>
         <text class="toggle-val">{{beautyOn ? '开' : '关'}}</text>
       </view>
       <view class="actions-row wrap">
-        <view class="workbench-btn-outline" bindtap="switchCamera">翻转</view>
-        <view class="workbench-btn-outline" bindtap="toggleTorch">{{torchOn ? '关手电' : '手电筒'}}</view>
-        <view class="workbench-btn-outline" bindtap="retryPush" wx:if="{{needsRetry}}">重试推流</view>
-        <view class="workbench-btn-danger flex-grow" bindtap="endLive">结束直播</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="switchCamera">翻转</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="toggleTorch">{{torchOn ? '关手电' : '手电筒'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="retryPush" wx:if="{{needsRetry}}">重试推流</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-danger flex-grow" bindtap="endLive">结束直播</view>
       </view>
       <view class="host-msg" wx:if="{{messages.length}}">
         <text class="label">本场留言</text>
@@ -241,7 +241,7 @@
       placeholder="搜索藏品名 / 学名"
       placeholder-class="ph"
     />
-    <view class="ghost-light mini" bindtap="searchProducts">搜索</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="searchProducts">搜索</view>
   </view>
   <scroll-view class="picker-list" scroll-y>
     <view class="picker-row" wx:for="{{productCandidates}}" wx:key="_id">
@@ -250,7 +250,7 @@
         <text class="picker-name">{{item.title}}</text>
         <text class="picker-meta">¥{{item.price}}{{item.onShelf ? '' : ' · 已下架'}}</text>
       </view>
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="ghost-light mini {{item.already ? 'disabled' : ''}}"
         bindtap="addShelfProduct"
         data-id="{{item._id}}"

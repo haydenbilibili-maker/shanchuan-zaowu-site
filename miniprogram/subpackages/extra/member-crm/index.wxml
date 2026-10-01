@@ -17,11 +17,11 @@
         <text class="overview-title">数据概览</text>
         <text class="overview-sub" wx:if="{{overviewReady}}">采样 {{overview.totalLoaded}} 位{{overview.dataCapped ? '（已截断）' : ''}}</text>
       </view>
-      <view class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
     </view>
 
     <view class="sub-tab-row overview-tabs">
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="sub-tab {{overviewTab === item.key ? 'active' : ''}}"
         wx:for="{{overviewTabs}}"
         wx:key="key"
@@ -98,7 +98,7 @@
         </view>
         <view class="ov-section">
           <text class="ov-sec-title">消费排名</text>
-          <view
+          <view hover-class="wb-press" hover-stay-time="80"
             class="ov-rank-row"
             wx:for="{{overview.highValue.rank}}"
             wx:key="_id"
@@ -139,14 +139,14 @@
         bindinput="onKeywordInput"
         bindconfirm="onSearch"
       />
-      <view class="btn-outline search-btn" bindtap="onSearch">{{loading ? '…' : '搜索'}}</view>
-      <view class="btn-outline search-btn" wx:if="{{keyword}}" bindtap="clearKeyword">清空</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-outline search-btn" bindtap="onSearch">{{loading ? '…' : '搜索'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-outline search-btn" wx:if="{{keyword}}" bindtap="clearKeyword">清空</view>
     </view>
   </view>
 
   <scroll-view scroll-x class="seg-scroll" wx:if="{{topSegments.length}}">
     <view class="seg-row">
-      <view
+      <view hover-class="wb-press" hover-stay-time="80"
         class="seg-pill {{segment === item.key ? 'on' : ''}}"
         wx:for="{{topSegments}}"
         wx:key="key"
@@ -164,7 +164,7 @@
   <view class="section empty-find is-error" wx:if="{{listError && !list.length}}">
     <text class="empty-title">会员列表未能取回</text>
     <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
-    <view class="btn-outline" bindtap="loadList" style="margin-top:24rpx;">重试</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" bindtap="loadList" style="margin-top:24rpx;">重试</view>
   </view>
 
   <view class="section" wx:if="{{!loading && list.length}}">
@@ -423,7 +423,7 @@
       <view class="drawer-footer" wx:if="{{!detailLoading && detail}}">
         <view class="cancel-state-bar" wx:if="{{detail.status === 'cancelled'}}">
           <text class="cancel-state-txt">该会员已注销{{detail.cancelMode === 'anonymize' ? '（已匿名化）' : '（可恢复）'}}</text>
-          <view class="btn-outline danger-outline" wx:if="{{detail.cancelMode !== 'anonymize'}}" bindtap="restoreMember">{{restorePending ? '确认恢复' : '恢复会员'}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="btn-outline danger-outline" wx:if="{{detail.cancelMode !== 'anonymize'}}" bindtap="restoreMember">{{restorePending ? '确认恢复' : '恢复会员'}}</view>
         </view>
         <view class="drawer-cta-row" wx:else>
           <view class="btn-primary drawer-cta" bindtap="openAdjust">调整积分</view>
@@ -460,7 +460,7 @@
         auto-height
       />
       <view class="youxin-ai-row">
-        <view
+        <view hover-class="wb-press" hover-stay-time="80"
           class="btn-outline mini {{youxinAiLoading ? 'disabled' : ''}}"
           catchtap="retryYouxinAi"
         >{{youxinAiLoading ? '撰写中…' : '重新 AI 撰写'}}</view>
@@ -468,8 +468,8 @@
       </view>
       <view class="page-tip is-{{formTipTone}}" wx:if="{{formTip}}" style="margin:0 0 16rpx;"><text>{{formTip}}</text></view>
       <view class="modal-actions">
-        <view class="btn-outline" bindtap="closeYouxin">取消</view>
-        <view class="btn-primary {{youxinSending ? 'disabled' : ''}}" catchtap="submitYouxinPush">
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" bindtap="closeYouxin">取消</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-primary {{youxinSending ? 'disabled' : ''}}" catchtap="submitYouxinPush">
           {{youxinSending ? '发送中…' : '发往该会员'}}
         </view>
       </view>
@@ -488,15 +488,15 @@
 
       <text class="modal-desc">选择处理方式（三种都保留操作日志）：</text>
       <view class="cancel-modes">
-        <view class="cancel-mode {{cancelMode === 'soft' ? 'active' : ''}}" data-mode="soft" bindtap="onCancelModeTap">
+        <view hover-class="wb-press" hover-stay-time="80" class="cancel-mode {{cancelMode === 'soft' ? 'active' : ''}}" data-mode="soft" bindtap="onCancelModeTap">
           <text class="cancel-mode-name">软注销</text>
           <text class="cancel-mode-desc">标记停用、保留全部数据，可恢复</text>
         </view>
-        <view class="cancel-mode {{cancelMode === 'anonymize' ? 'active' : ''}}" data-mode="anonymize" bindtap="onCancelModeTap">
+        <view hover-class="wb-press" hover-stay-time="80" class="cancel-mode {{cancelMode === 'anonymize' ? 'active' : ''}}" data-mode="anonymize" bindtap="onCancelModeTap">
           <text class="cancel-mode-name">注销并匿名化</text>
           <text class="cancel-mode-desc">抹除昵称/头像/手机号等身份信息，保留订单与积分流水；不可恢复</text>
         </view>
-        <view class="cancel-mode danger-mode {{cancelMode === 'purge' ? 'active' : ''}}" data-mode="purge" bindtap="onCancelModeTap">
+        <view hover-class="wb-press" hover-stay-time="80" class="cancel-mode danger-mode {{cancelMode === 'purge' ? 'active' : ''}}" data-mode="purge" bindtap="onCancelModeTap">
           <text class="cancel-mode-name">硬删除</text>
           <text class="cancel-mode-desc">直接删除会员记录，不可恢复</text>
         </view>
@@ -512,8 +512,8 @@
 
       <view class="page-tip is-{{formTipTone}}" wx:if="{{formTip}}" style="margin:0 0 16rpx;"><text>{{formTip}}</text></view>
       <view class="modal-actions">
-        <view class="btn-outline" bindtap="closeCancelMember">取消</view>
-        <view class="btn-primary btn-danger {{cancelSubmitting ? 'disabled' : ''}}" bindtap="submitCancelMember">
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" bindtap="closeCancelMember">取消</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-primary btn-danger {{cancelSubmitting ? 'disabled' : ''}}" bindtap="submitCancelMember">
           {{cancelSubmitting ? '处理中…' : (cancelPending ? '再点一次确认注销' : '确认注销')}}
         </view>
       </view>
@@ -534,8 +534,8 @@
       />
       <view class="page-tip is-{{formTipTone}}" wx:if="{{formTip}}" style="margin:0 0 16rpx;"><text>{{formTip}}</text></view>
       <view class="modal-actions">
-        <view class="btn-outline" bindtap="closeAdjust">取消</view>
-        <view class="btn-primary {{adjustSubmitting ? 'disabled' : ''}}" bindtap="submitAdjust">
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" bindtap="closeAdjust">取消</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-primary {{adjustSubmitting ? 'disabled' : ''}}" bindtap="submitAdjust">
           {{adjustSubmitting ? '提交中…' : '确认'}}
         </view>
       </view>

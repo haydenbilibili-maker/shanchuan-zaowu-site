@@ -17,8 +17,8 @@
   <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
   <view class="tab-bar">
-    <view class="tab {{curTab===0?'active':''}}" bindtap="switchTab" data-idx="0">今日</view>
-    <view class="tab {{curTab===1?'active':''}}" wx:if="{{canManageRules}}" bindtap="switchTab" data-idx="1">规则</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="tab {{curTab===0?'active':''}}" bindtap="switchTab" data-idx="0">今日</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="tab {{curTab===1?'active':''}}" wx:if="{{canManageRules}}" bindtap="switchTab" data-idx="1">规则</view>
   </view>
 
   <!-- Tab 0 今日汇总 -->
@@ -28,7 +28,7 @@
       <view class="empty is-error" wx:elif="{{summaryError}}">
         <text class="empty-title">今日汇总未能取回</text>
         <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
-        <view class="btn-retry" bindtap="onRetrySummary">重试</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetrySummary">重试</view>
       </view>
       <block wx:else>
         <view class="kpi-grid">
@@ -54,7 +54,7 @@
         </view>
         <text class="section-note">{{ruleText}}</text>
         <text class="section-note">对账口径：本页「消费金额」之和应不超过营收账本当日 total；差异较大需核查店员录入。</text>
-        <view class="btn-outline audit-jump" bindtap="goApprovalsHub">积分流水 · 小票 · 外部订单 › 审批中心</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-outline audit-jump" bindtap="goApprovalsHub">积分流水 · 小票 · 外部订单 › 审批中心</view>
       </block>
     </view>
   </block>
@@ -66,12 +66,12 @@
     <view class="section empty is-error" wx:elif="{{ruleError}}">
       <text class="empty-title">规则未能取回</text>
       <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryRule">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryRule">重试</view>
     </view>
     <block wx:else>
       <view class="section">
         <text class="rule-current">当前规则：{{ruleText}}</text>
-        <text class="section-note">{{ruleDefault ? '尚未在云端配置，正在使用云函数内的默认规则。保存后即写入 store_point_rules。' : '已使用云端配置。'}}</text>
+        <text class="section-note">{{ruleDefault ? '本店还没保存过规则，目前按系统默认规则发分；保存后改按这里的设置执行。' : '本店按这里保存的规则执行。'}}</text>
       </view>
 
       <view class="section">
@@ -100,7 +100,7 @@
         <view class="field">
           <text class="field-label">奖励模块开关</text>
           <view class="module-list">
-            <view
+            <view hover-class="wb-press" hover-stay-time="80"
               class="module-chip {{ruleForm.modules[item.key] !== false ? 'on' : ''}}"
               wx:for="{{moduleOptions}}"
               wx:key="key"
@@ -111,7 +111,7 @@
           <text class="section-note">关闭后对应入口不发分；分享/评价/签到/浏览/外部订单/小票兑分均受此控制。</text>
         </view>
 
-        <view class="btn-primary rule-save {{ruleSaving ? 'disabled' : ''}}" bindtap="saveRule">{{ruleSaving ? '保存中…' : '保存规则'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-primary rule-save {{ruleSaving ? 'disabled' : ''}}" bindtap="saveRule">{{ruleSaving ? '保存中…' : '保存规则'}}</view>
         <text class="section-note">{{ruleText}}；不足门槛部分不计入，且不叠加会员等级倍率。</text>
       </view>
     </block>

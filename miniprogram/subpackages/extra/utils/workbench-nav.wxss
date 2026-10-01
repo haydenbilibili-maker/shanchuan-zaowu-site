@@ -4,16 +4,6 @@
   flex-shrink: 0;
 }
 
-.workbench-nav-back {
-  position: fixed;
-  left: 24rpx;
-  z-index: 120;
-  min-width: 88rpx;
-  min-height: 88rpx;
-  padding: 0 12rpx;
-  box-sizing: border-box;
-}
-
 /* ---------- 页脚主 CTA ---------- */
 .workbench-footer-bar {
   position: fixed;
@@ -269,20 +259,6 @@
   color: var(--brass-400);
 }
 
-.workbench-row-switch {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.workbench-row-switch .workbench-field-label {
-  margin-bottom: 0;
-}
-
 /* ---------- 空态 / 加载 ---------- */
 .workbench-state {
   padding: var(--space-6) var(--space-4);
@@ -298,4 +274,9 @@
 .workbench-state.loading {
   border-style: solid;
   color: var(--color-text-muted);
+}
+
+/* 通用按压态（hover-class="wb-press"）：真机 :active 不稳，可点的按钮 / 标签 / 卡片统一用它 */
+.wb-press {
+  opacity: 0.72;
 }

@@ -43,8 +43,8 @@
       </view>
       <text class="form-hint">上架后须在时限内付尾款；逾期开放且定金不退。定金与尾款均走微信支付。</text>
       <view class="btn-row" wx:if="{{canEdit}}">
-        <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveRules">{{saving ? '保存中…' : '保存规则'}}</view>
-        <view class="btn ghost {{sweeping ? 'disabled' : ''}}" bindtap="sweepNow">{{sweeping ? '清扫中…' : '清扫逾期'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveRules">{{saving ? '保存中…' : '保存规则'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn ghost {{sweeping ? 'disabled' : ''}}" bindtap="sweepNow">{{sweeping ? '清扫中…' : '清扫逾期'}}</view>
       </view>
     </view>
 
@@ -55,13 +55,13 @@
       </view>
       <scroll-view class="tabs-scroll" scroll-x enable-flex>
         <view class="tabs">
-          <view class="tab {{statusFilter==='all'?'on':''}}" data-status="all" bindtap="setStatusFilter">全部 {{countsTotal}}</view>
-          <view class="tab {{statusFilter==='pending_pay'?'on':''}}" data-status="pending_pay" bindtap="setStatusFilter">待付 {{counts.pending_pay || 0}}</view>
-          <view class="tab {{statusFilter==='deposit_paid'?'on':''}}" data-status="deposit_paid" bindtap="setStatusFilter">已付定金 {{counts.deposit_paid || 0}}</view>
-          <view class="tab {{statusFilter==='awaiting_balance'?'on':''}}" data-status="awaiting_balance" bindtap="setStatusFilter">待尾款 {{counts.awaiting_balance || 0}}</view>
-          <view class="tab {{statusFilter==='forfeited_open'?'on':''}}" data-status="forfeited_open" bindtap="setStatusFilter">已逾期 {{counts.forfeited_open || 0}}</view>
-          <view class="tab {{statusFilter==='settled'?'on':''}}" data-status="settled" bindtap="setStatusFilter">已付清 {{counts.settled || 0}}</view>
-          <view class="tab {{statusFilter==='intent'?'on':''}}" data-status="intent" bindtap="setStatusFilter">意向中 {{counts.intent || 0}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="tab {{statusFilter==='all'?'on':''}}" data-status="all" bindtap="setStatusFilter">全部 {{countsTotal}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="tab {{statusFilter==='pending_pay'?'on':''}}" data-status="pending_pay" bindtap="setStatusFilter">待付 {{counts.pending_pay || 0}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="tab {{statusFilter==='deposit_paid'?'on':''}}" data-status="deposit_paid" bindtap="setStatusFilter">已付定金 {{counts.deposit_paid || 0}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="tab {{statusFilter==='awaiting_balance'?'on':''}}" data-status="awaiting_balance" bindtap="setStatusFilter">待尾款 {{counts.awaiting_balance || 0}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="tab {{statusFilter==='forfeited_open'?'on':''}}" data-status="forfeited_open" bindtap="setStatusFilter">已逾期 {{counts.forfeited_open || 0}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="tab {{statusFilter==='settled'?'on':''}}" data-status="settled" bindtap="setStatusFilter">已付清 {{counts.settled || 0}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="tab {{statusFilter==='intent'?'on':''}}" data-status="intent" bindtap="setStatusFilter">意向中 {{counts.intent || 0}}</view>
         </view>
       </scroll-view>
 
@@ -72,7 +72,7 @@
       <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
         <text class="empty-title">定金意向未能取回</text>
         <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-        <view class="btn-retry" bindtap="onRetryList">重试</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
       </view>
       <view class="empty-tip" wx:elif="{{!loadingList && !listError && !list.length}}">
         <text class="empty-title">{{emptyHint}}</text>
@@ -93,8 +93,8 @@
           </text>
           <text class="intent-meta">会员 {{item.openidShort}}</text>
           <view class="intent-actions">
-            <view class="chip-btn danger" wx:if="{{canEdit && item.canForfeit}}" data-id="{{item._id}}" bindtap="openExpired">{{forfeitPendingId === item._id ? '确认开放' : '逾期开放'}}</view>
-            <view class="chip-btn" wx:if="{{item.showProduct}}" data-pid="{{item.productId}}" bindtap="goProduct">看藏品</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="chip-btn danger" wx:if="{{canEdit && item.canForfeit}}" data-id="{{item._id}}" bindtap="openExpired">{{forfeitPendingId === item._id ? '确认开放' : '逾期开放'}}</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="chip-btn" wx:if="{{item.showProduct}}" data-pid="{{item.productId}}" bindtap="goProduct">看藏品</view>
           </view>
         </view>
       </block>

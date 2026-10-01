@@ -14,7 +14,7 @@
     <view class="empty-tip is-error" wx:if="{{loadError && !loading}}">
       <text class="empty-title">配置未能取回</text>
       <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryConfig">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryConfig">重试</view>
     </view>
 
     <view class="workbench-state" wx:if="{{loading && !ruleText && fromDefault}}">同步配置中…</view>
@@ -69,11 +69,11 @@
       </view>
       <view class="form-row">
         <text class="form-label">生日本月内</text>
-        <view class="toggle {{form.expireMode === 'end_of_month' ? 'on' : ''}}" data-mode="end_of_month" bindtap="setExpireMode">{{form.expireMode === 'end_of_month' ? '已选' : '选用'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="toggle {{form.expireMode === 'end_of_month' ? 'on' : ''}}" data-mode="end_of_month" bindtap="setExpireMode">{{form.expireMode === 'end_of_month' ? '已选' : '选用'}}</view>
       </view>
       <view class="form-row">
         <text class="form-label">固定天数</text>
-        <view class="toggle {{form.expireMode === 'days' ? 'on' : ''}}" data-mode="days" bindtap="setExpireMode">{{form.expireMode === 'days' ? '已选' : '选用'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="toggle {{form.expireMode === 'days' ? 'on' : ''}}" data-mode="days" bindtap="setExpireMode">{{form.expireMode === 'days' ? '已选' : '选用'}}</view>
       </view>
       <view class="form-row" wx:if="{{form.expireMode === 'days'}}">
         <text class="form-label">有效天数</text>
@@ -86,7 +86,7 @@
       <view class="workbench-section-head">
         <text class="section-title">礼券</text>
         <view class="workbench-section-head-action">
-          <view class="workbench-btn-outline sm" bindtap="addCoupon">添加礼券</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="addCoupon">添加礼券</view>
         </view>
       </view>
       <view class="form-row">
@@ -98,7 +98,7 @@
       <view class="row-card" wx:for="{{form.coupons}}" wx:key="id">
         <view class="row-card-head">
           <text class="row-card-title">礼券 {{index + 1}}</text>
-          <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeCoupon">移除</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeCoupon">移除</view>
         </view>
         <view class="row-line">
           <input class="input sm" placeholder="id" value="{{item.id}}" data-index="{{index}}" data-field="id" bindinput="onCouponField" />
@@ -119,7 +119,7 @@
             <text class="field-label">张数</text>
             <input class="input sm" type="number" value="{{item.count}}" data-index="{{index}}" data-field="count" bindinput="onCouponField" />
           </view>
-          <view class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="toggleCoupon">{{item.enabled ? '启用' : '停用'}}</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="toggleCoupon">{{item.enabled ? '启用' : '停用'}}</view>
         </view>
       </view>
     </view>
@@ -128,13 +128,13 @@
   </view>
 
   <view class="workbench-footer-bar">
-    <view
+    <view hover-class="wb-press" hover-stay-time="80"
       class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}"
       bindtap="saveConfig"
     >{{saving ? '保存中…' : '保存礼包'}}</view>
     <view class="workbench-footer-secondary">
-      <view class="workbench-btn-outline {{saving || loading ? 'is-disabled' : ''}}" bindtap="resetDefaults">恢复默认</view>
-      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadConfig">{{loading ? '刷新中…' : '刷新'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{saving || loading ? 'is-disabled' : ''}}" bindtap="resetDefaults">恢复默认</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadConfig">{{loading ? '刷新中…' : '刷新'}}</view>
     </view>
   </view>
 </view>

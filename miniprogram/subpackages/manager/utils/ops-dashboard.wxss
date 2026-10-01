@@ -594,17 +594,6 @@
   min-width: 0;
 }
 
-.dash-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  margin-bottom: 10rpx;
-}
-
-.dash-grid .dash-card {
-  margin-bottom: 14rpx;
-}
-
 .dash-card {
   position: relative;
   width: 48.5%;

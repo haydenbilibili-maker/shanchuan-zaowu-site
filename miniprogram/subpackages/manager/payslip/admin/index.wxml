@@ -29,8 +29,8 @@
           <text class="row-sub muted" wx:if="{{item.updatedByName || item.updatedBy}}">最近 {{item.updatedByName || item.updatedBy}}</text>
         </view>
         <view class="staff-actions">
-          <view class="staff-btn edit" catchtap="openEdit" data-id="{{item._id}}">编辑</view>
-          <view class="staff-btn danger" catchtap="removeRow" data-id="{{item._id}}">删除</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="staff-btn edit" catchtap="openEdit" data-id="{{item._id}}">编辑</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="staff-btn danger" catchtap="removeRow" data-id="{{item._id}}">删除</view>
         </view>
       </view>
       <view class="empty" wx:if="{{list.length === 0 && !loading}}">暂无工资条，可点底部「新建工资条」录入</view>
@@ -40,9 +40,9 @@
   </view>
 
   <view class="workbench-footer-bar" wx:if="{{!showEditor}}">
-    <view class="workbench-btn-primary" bindtap="openCreate">新建工资条</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary" bindtap="openCreate">新建工资条</view>
     <view class="workbench-footer-secondary">
-      <view class="workbench-btn-ghost" bindtap="clearFilter">查看全部</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-ghost" bindtap="clearFilter">查看全部</view>
     </view>
   </view>
 </view>
@@ -81,8 +81,8 @@
       </view>
     </view>
     <view class="workbench-modal-foot">
-      <view class="workbench-btn-outline" bindtap="closeEditor">取消</view>
-      <view class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中' : '保存'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="closeEditor">取消</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中' : '保存'}}</view>
     </view>
   </view>
 </view>

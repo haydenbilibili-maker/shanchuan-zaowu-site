@@ -24,19 +24,19 @@
             <text class="section-title">{{item.name}}</text>
             <text class="section-meta">优先级 {{item.priority}} · FAQ {{item.faqCount}} · 主题 {{item.topicCount}}</text>
           </view>
-          <view class="toggle {{item.status === 'active' ? 'on' : ''}}" data-id="{{item._id}}" data-status="{{item.status}}" bindtap="toggleRow">
+          <view hover-class="wb-press" hover-stay-time="80" class="toggle {{item.status === 'active' ? 'on' : ''}}" data-id="{{item._id}}" data-status="{{item.status}}" bindtap="toggleRow">
             {{item.status === 'active' ? '启用' : '停用'}}
           </view>
         </view>
         <view class="form-hint">{{item.phone || '无电话'}} · {{item.hours || '无营业时间'}}</view>
-        <view class="workbench-btn-outline sm list-edit" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm list-edit" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
       </view>
 
       <view class="workbench-state" wx:if="{{loading && !list.length && !listError}}">列表加载中…</view>
       <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
         <text class="empty-title">列表未能取回</text>
         <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-        <view class="btn-retry" bindtap="onRetryList">重试</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
       </view>
       <view class="form-hint" wx:elif="{{!loading && !listError && !list.length}}">暂无配置，可写入默认或新建。</view>
 
@@ -91,13 +91,13 @@
         <view class="workbench-section-head">
           <text class="section-title">咨询主题</text>
           <view class="workbench-section-head-action">
-            <view class="workbench-btn-outline sm" bindtap="addTopic">添加</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="addTopic">添加</view>
           </view>
         </view>
         <view class="row-card" wx:for="{{form.topics}}" wx:key="id">
           <view class="row-card-head">
             <text class="row-card-title">主题 {{index + 1}}</text>
-            <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeTopic">移除</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeTopic">移除</view>
           </view>
           <view class="row-line">
             <input class="input sm" placeholder="id" value="{{item.id}}" data-index="{{index}}" data-field="id" bindinput="onTopicField" />
@@ -112,13 +112,13 @@
         <view class="workbench-section-head">
           <text class="section-title">FAQ</text>
           <view class="workbench-section-head-action">
-            <view class="workbench-btn-outline sm" bindtap="addFaq">添加</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="addFaq">添加</view>
           </view>
         </view>
         <view class="row-card" wx:for="{{form.faqs}}" wx:key="q">
           <view class="row-card-head">
             <text class="row-card-title">FAQ {{index + 1}}</text>
-            <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeFaq">移除</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeFaq">移除</view>
           </view>
           <input class="input full block-input" placeholder="问题" value="{{item.q}}" data-index="{{index}}" data-field="q" bindinput="onFaqField" />
           <textarea class="textarea" placeholder="回答" value="{{item.a}}" data-index="{{index}}" data-field="a" bindinput="onFaqField" />
@@ -130,17 +130,17 @@
   </view>
 
   <view class="workbench-footer-bar" wx:if="{{mode === 'list'}}">
-    <view class="workbench-btn-primary" bindtap="openCreate">新建配置</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary" bindtap="openCreate">新建配置</view>
     <view class="workbench-footer-secondary">
-      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="seedDefault">写入默认</view>
-      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadList">{{loading ? '刷新中…' : '刷新'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="seedDefault">写入默认</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadList">{{loading ? '刷新中…' : '刷新'}}</view>
     </view>
   </view>
 
   <view class="workbench-footer-bar" wx:if="{{mode === 'edit'}}">
-    <view class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveConfig">{{saving ? '保存中…' : '保存客服配置'}}</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveConfig">{{saving ? '保存中…' : '保存客服配置'}}</view>
     <view class="workbench-footer-secondary">
-      <view class="workbench-btn-outline {{saving ? 'is-disabled' : ''}}" bindtap="backList">返回列表</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{saving ? 'is-disabled' : ''}}" bindtap="backList">返回列表</view>
     </view>
   </view>
 </view>

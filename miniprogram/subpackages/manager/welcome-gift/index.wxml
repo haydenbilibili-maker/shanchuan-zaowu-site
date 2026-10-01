@@ -14,7 +14,7 @@
     <view class="empty-tip is-error" wx:if="{{loadError && !loading}}">
       <text class="empty-title">配置未能取回</text>
       <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryConfig">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryConfig">重试</view>
     </view>
 
     <view class="workbench-state" wx:if="{{loading && !ruleText && fromDefault}}">同步配置中…</view>
@@ -63,8 +63,8 @@
       <view class="workbench-section-head">
         <text class="section-title">礼券</text>
         <view class="workbench-section-head-action">
-          <view class="workbench-btn-outline sm" bindtap="sortCoupons">按门槛排序</view>
-          <view class="workbench-btn-outline sm" bindtap="addCoupon">添加礼券</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="sortCoupons">按门槛排序</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="addCoupon">添加礼券</view>
         </view>
       </view>
       <view class="form-row">
@@ -92,17 +92,17 @@
         <view class="row-card-head">
           <text class="row-card-title">礼券 {{index + 1}}</text>
           <view class="row-actions">
-            <view
+            <view hover-class="wb-press" hover-stay-time="80"
               class="workbench-btn-outline sm {{index === 0 ? 'is-disabled' : ''}}"
               data-index="{{index}}"
               bindtap="moveCouponUp"
             >上移</view>
-            <view
+            <view hover-class="wb-press" hover-stay-time="80"
               class="workbench-btn-outline sm {{index === form.coupons.length - 1 ? 'is-disabled' : ''}}"
               data-index="{{index}}"
               bindtap="moveCouponDown"
             >下移</view>
-            <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeCoupon">移除</view>
+            <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removeCoupon">移除</view>
           </view>
         </view>
         <view class="row-line">
@@ -152,8 +152,8 @@
       <view class="field-block">
         <text class="form-label block">改档位后，「改档前注册」的会员券会不齐（缺新增那一档）。「查」＝列出券不齐的会员；「对齐」＝把未使用券的门槛改成当前配置（幂等）。注意：对齐**不会补发**缺失的那张券（补发走 upsertUserProfile 的 repairRegisterGift，属另一条路）。</text>
         <view class="flex">
-          <view class="workbench-btn-outline sm {{maintBusy ? 'is-disabled' : ''}}" bindtap="onListIncomplete" aria-role="button">查券不齐的会员</view>
-          <view class="workbench-btn-outline sm {{maintBusy ? 'is-disabled' : ''}}" bindtap="onAlignCoupons" aria-role="button">对齐已发券</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm {{maintBusy ? 'is-disabled' : ''}}" bindtap="onListIncomplete" aria-role="button">查券不齐的会员</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm {{maintBusy ? 'is-disabled' : ''}}" bindtap="onAlignCoupons" aria-role="button">对齐已发券</view>
         </view>
         <text class="form-hint block" wx:if="{{maintText}}">{{maintText}}</text>
       </view>
@@ -163,13 +163,13 @@
   </view>
 
   <view class="workbench-footer-bar">
-    <view
+    <view hover-class="wb-press" hover-stay-time="80"
       class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}"
       bindtap="saveConfig"
     >{{saving ? '保存中…' : '保存礼包'}}</view>
     <view class="workbench-footer-secondary">
-      <view class="workbench-btn-outline {{saving || loading ? 'is-disabled' : ''}}" bindtap="resetDefaults">恢复默认</view>
-      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadConfig">{{loading ? '刷新中…' : '刷新'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{saving || loading ? 'is-disabled' : ''}}" bindtap="resetDefaults">恢复默认</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadConfig">{{loading ? '刷新中…' : '刷新'}}</view>
     </view>
   </view>
 </view>

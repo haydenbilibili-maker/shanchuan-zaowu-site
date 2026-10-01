@@ -16,7 +16,7 @@
     <view class="empty-tip is-error" wx:if="{{loadError && !loading}}">
       <text class="empty-title">钱包配置未能取回</text>
       <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryConfig">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryConfig">重试</view>
     </view>
 
     <view class="hint-card info">
@@ -46,7 +46,7 @@
       <view class="workbench-section-head">
         <text class="section-title">充值档位（元）</text>
         <view class="workbench-section-head-action">
-          <view class="workbench-btn-outline sm" bindtap="addPackage">添加</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="addPackage">添加</view>
         </view>
       </view>
 
@@ -55,7 +55,7 @@
       <view class="row-card" wx:for="{{packages}}" wx:key="id">
         <view class="row-card-head">
           <text class="row-card-title">档位 {{index + 1}}</text>
-          <view class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removePackage">移除</view>
+          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" data-index="{{index}}" bindtap="removePackage">移除</view>
         </view>
         <view class="row-line">
           <input class="input sm" placeholder="ID" value="{{item.id}}" data-index="{{index}}" data-field="id" bindinput="onPkgField" />
@@ -70,7 +70,7 @@
             <text class="field-label">排序</text>
             <input class="input sm" type="number" value="{{item.sort}}" data-index="{{index}}" data-field="sort" bindinput="onPkgField" />
           </view>
-          <view class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="togglePkg">
+          <view hover-class="wb-press" hover-stay-time="80" class="toggle {{item.enabled ? 'on' : ''}}" data-index="{{index}}" bindtap="togglePkg">
             {{item.enabled ? '启用' : '停用'}}
           </view>
         </view>
@@ -96,7 +96,7 @@
       <view class="row-line">
         <input class="input flex" placeholder="备注（选填）" value="{{reconcileForm.note}}" data-field="note" bindinput="onReconcileInput" />
       </view>
-      <view class="workbench-btn-outline {{reconciling ? 'is-disabled' : ''}}" bindtap="reconcileRecharge">
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{reconciling ? 'is-disabled' : ''}}" bindtap="reconcileRecharge">
         {{reconciling ? '入账中…' : (reconcilePending ? '再点确认补单入账' : '确认补单入账')}}
       </view>
     </view>
@@ -105,13 +105,13 @@
   </view>
 
   <view class="workbench-footer-bar">
-    <view
+    <view hover-class="wb-press" hover-stay-time="80"
       class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}"
       bindtap="saveConfig"
     >{{saving ? '保存中…' : '保存钱包配置'}}</view>
     <view class="workbench-footer-secondary">
-      <view class="workbench-btn-outline {{saving || loading ? 'is-disabled' : ''}}" bindtap="resetDefaults">恢复默认</view>
-      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadConfig">{{loading ? '刷新中…' : '刷新'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{saving || loading ? 'is-disabled' : ''}}" bindtap="resetDefaults">恢复默认</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="loadConfig">{{loading ? '刷新中…' : '刷新'}}</view>
     </view>
   </view>
 </view>

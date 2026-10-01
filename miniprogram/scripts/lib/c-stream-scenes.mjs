@@ -21,6 +21,21 @@ const fieldBase = {
   ready: true, storeName: '山海造物', member: null, candidates: [], showMemberPassResult: false, pickupCodeInput: '',
   mineSummary: { count: 0, points: 0, amount: '0.00' }, canRevoke: false
 }
+const PAYSLIP = 'subpackages/manager/payslip/index.wxml'
+const payslipData = {
+  ready: true, roleHint: '店员', list: [{ _id: 'p1', month: '2026-09', net: '6,420.00' }, { _id: 'p2', month: '2026-08', net: '6,180.00' }],
+  showSalesShare: true,
+  salesShare: {
+    storeScopeLabel: '山海造物 + 星宸', yearMonth: '2026-09', revenueScopeLabel: '本月营业额', monthRevenueFmt: '238,400.00', mallFeeFmt: '6,840.00',
+    mallByStore: [{ storeId: 'a', name: '山海造物', detailText: '营业额 196,400 · 超 17 万部分 × 26%', mallFeeFmt: '6,864.00' }, { storeId: 'b', name: '星宸', detailText: '营业额 42,000 · 未达 17 万', mallFeeFmt: '0.00' }],
+    shareBaseFmt: '231,560.00', rateLabel: '1.5%', shareAmountFmt: '3,473.40', formulaNote: '分成 = （营业额 − 商场抽成）× 比例'
+  },
+  showDetail: true,
+  detail: { month: '2026-09', hasItems: true, items: [{ name: '基本工资', amount: '5,000.00', kind: 'add' }, { name: '销售分成', amount: '1,620.00', kind: 'add' }, { name: '社保个人', amount: '200.00', kind: 'deduct' }], grossDisplay: '6,620.00', deductDisplay: '200.00', net: '6,420.00' }
+}
+// 工资条样式已内联（第 3 轮）：改前对照图用 HEAD~ 的 @import 链临时出，逐像素一致
+const PAYSLIP_AFTER_CSS = ['subpackages/manager/payslip/index.wxss']
+
 // 页头（门店 / 今日汇总 / 灯语图例）本轮没动，截图隐藏以聚焦 Tab 内容
 const FIELD_FOCUS_CSS = '.header { display: none; }'
 
@@ -131,5 +146,21 @@ export const SCENES = [
     wxss: FIELD_CSS,
     extraCss: FIELD_FOCUS_CSS,
     data: { ...fieldBase, curTab: 2, records: [], recordsLoading: false, recordsError: '' }
-  }
+  },
+  {
+    name: 'r3-invoice-loading',
+    h: 1200,
+    wxml: () => read('subpackages/manager/invoice-requests/index.wxml'),
+    wxss: ['subpackages/manager/invoice-requests/index.wxss'],
+    data: { ready: true, overviewReady: false, overviewLoading: true, statusOptions: ['全部', '待开具', '已开具', '已驳回'], statusIndex: 0, list: [], loading: true, listError: false, hasMore: false }
+  },
+  {
+    name: 'r3-invoice-empty-filtered',
+    h: 1200,
+    wxml: () => read('subpackages/manager/invoice-requests/index.wxml'),
+    wxss: ['subpackages/manager/invoice-requests/index.wxss'],
+    data: { ready: true, overviewReady: false, overviewLoading: false, statusOptions: ['全部', '待开具', '已开具', '已驳回'], statusIndex: 2, list: [], loading: false, listError: false, hasMore: false }
+  },
+  { name: 'r3-payslip-after', h: 1600, wxml: () => read(PAYSLIP), wxss: PAYSLIP_AFTER_CSS, data: payslipData },
+  { name: 'r3-payslip-after-list', h: 1600, wxml: () => read(PAYSLIP), wxss: PAYSLIP_AFTER_CSS, data: { ...payslipData, showDetail: false } }
 ]

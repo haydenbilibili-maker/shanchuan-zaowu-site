@@ -36,7 +36,7 @@
           <text class="list-title">{{item.title}}</text>
           <text class="list-meta">{{item.meta}}</text>
           <text class="list-hint">{{item.needShip ? '待回传运单' : '已回传'}}{{demoOn ? '（演示）' : ''}}</text>
-          <view
+          <view hover-class="wb-press" hover-stay-time="80"
             class="list-action"
             wx:if="{{demoOn && item.needShip}}"
             data-key="{{item.key}}"
@@ -47,7 +47,7 @@
           <text class="list-status">{{item.needShip ? '待发货' : '已发货'}}</text>
         </view>
       </view>
-      <view class="link-row" wx:if="{{demoOn}}" bindtap="goSettlement">
+      <view hover-class="wb-press" hover-stay-time="80" class="link-row" wx:if="{{demoOn}}" bindtap="goSettlement">
         <text class="link-copy">发货后看结算摘要</text>
         <text class="link-go">我的结算 ›</text>
       </view>
@@ -56,7 +56,7 @@
     <view class="empty-panel" wx:else>
       <text class="empty-panel-title">{{emptyTitle}}</text>
       <text class="empty-panel-body">{{emptyBody}}</text>
-      <view class="retry-btn" wx:if="{{demoOn}}" bindtap="goOrders">去采购需求确认</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="retry-btn" wx:if="{{demoOn}}" bindtap="goOrders">去采购需求确认</view>
     </view>
   </block>
 </view>

@@ -7,7 +7,7 @@
   <view wx:elif="{{error}}" class="state err">
     <text class="state-title">没加载出来</text>
     <text class="state-body">{{error}}</text>
-    <view class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
+    <view hover-class="wb-press" hover-stay-time="80" class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
   </view>
   <block wx:elif="{{partner}}">
     <view class="ptn-hero">
@@ -86,7 +86,7 @@
     <view class="panel">
       <text class="panel-title-en">ACCOUNT</text>
       <text class="section-title">账号状态</text>
-      <view class="toggle-row" bindtap="toggleStatus">
+      <view hover-class="wb-press" hover-stay-time="80" class="toggle-row" bindtap="toggleStatus">
         <view class="toggle-copy">
           <text class="toggle-title">{{partner.status === 'active' ? '启用中' : '已停用'}}</text>
           <text class="toggle-desc">{{!partner.b2bOnly ? '兼有门店角色：请到店员花名册启停' : statusArmed ? (partner.status === 'active' ? '再点一次确认停用：该账号马上无法进入工作台' : '再点一次确认启用') : '停用后该账号无法进入工作台、下单或查看对账'}}</text>
@@ -101,7 +101,7 @@
       <text class="panel-title-en">FEATURES</text>
       <text class="section-title">工作台功能</text>
       <text class="section-sub">关掉后伙伴工作台不再显示对应入口；「对账与物流」关掉后连数据也看不到。</text>
-      <view wx:for="{{featureRows}}" wx:key="key" class="toggle-row" data-key="{{item.key}}" bindtap="toggleFeature">
+      <view hover-class="wb-press" hover-stay-time="80" wx:for="{{featureRows}}" wx:key="key" class="toggle-row" data-key="{{item.key}}" bindtap="toggleFeature">
         <view class="toggle-copy">
           <text class="toggle-title">{{item.label}}</text>
           <text class="toggle-desc">{{item.hint}}</text>

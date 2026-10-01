@@ -21,7 +21,7 @@
 
     <view class="hint-card" wx:if="{{loadError}}">
       <text class="hint-text">{{loadError}}</text>
-      <view class="workbench-btn-outline sm" bindtap="loadHub">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm" bindtap="loadHub">重试</view>
     </view>
 
     <view class="readonly-banner" wx:if="{{hasLoaded && !canEdit && !loadError}}">
@@ -209,14 +209,14 @@
   </view>
 
   <view class="workbench-footer-bar">
-    <view
+    <view hover-class="wb-press" hover-stay-time="80"
       wx:if="{{canEdit}}"
       class="workbench-btn-primary {{saving || !dirty ? 'is-disabled' : ''}} {{dirty ? 'has-dirty' : ''}}"
       bindtap="saveSettings"
     >{{saving ? '保存中…' : (dirty ? '保存更改' : '已是最新')}}</view>
     <view class="workbench-footer-secondary">
-      <view class="workbench-btn-outline" bindtap="goOpsBoard">履约看板</view>
-      <view class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="onRefreshTap">{{loading ? '刷新中…' : '刷新'}}</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="goOpsBoard">履约看板</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline {{loading ? 'is-disabled' : ''}}" bindtap="onRefreshTap">{{loading ? '刷新中…' : '刷新'}}</view>
     </view>
   </view>
 </view>

@@ -13,8 +13,8 @@
   <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
 
   <view class="tabs">
-    <view class="tab {{tab==='rule'?'on':''}}" data-tab="rule" bindtap="setTab">规则配置</view>
-    <view class="tab {{tab==='ledger'?'on':''}}" data-tab="ledger" bindtap="setTab">账目明细</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="tab {{tab==='rule'?'on':''}}" data-tab="rule" bindtap="setTab">规则配置</view>
+    <view hover-class="wb-press" hover-stay-time="80" class="tab {{tab==='ledger'?'on':''}}" data-tab="ledger" bindtap="setTab">账目明细</view>
   </view>
 
   <!-- ========== 规则列表 ========== -->
@@ -28,7 +28,7 @@
     <view class="empty-tip is-error" wx:elif="{{listError && !rules.length}}">
       <text class="empty-title">规则列表未能取回</text>
       <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryRules">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryRules">重试</view>
     </view>
     <view class="empty empty-friendly" wx:elif="{{!loading && !listError && !rules.length}}">
       <text class="empty-title">暂无提成规则</text>
@@ -71,9 +71,9 @@
 
     <view class="workbench-page-foot-spacer"></view>
     <view class="workbench-footer-bar">
-      <view class="workbench-btn-primary" bindtap="openCreate">新增规则</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary" bindtap="openCreate">新增规则</view>
       <view class="workbench-footer-secondary">
-        <view class="workbench-btn-outline" bindtap="resetDefaults">{{resetPending ? '确认恢复默认' : '恢复默认规则'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="resetDefaults">{{resetPending ? '确认恢复默认' : '恢复默认规则'}}</view>
       </view>
     </view>
   </block>
@@ -99,7 +99,7 @@
         <text class="block-hint">默认 10%</text>
       </view>
       <view class="rate-row">
-        <view class="rate-btn" data-delta="-1" bindtap="nudgeRate">−</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="rate-btn" data-delta="-1" bindtap="nudgeRate">−</view>
         <view class="rate-display">
           <input
             class="rate-input"
@@ -110,10 +110,10 @@
           />
           <text class="rate-unit">%</text>
         </view>
-        <view class="rate-btn" data-delta="1" bindtap="nudgeRate">+</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="rate-btn" data-delta="1" bindtap="nudgeRate">+</view>
       </view>
       <view class="preset-row">
-        <view
+        <view hover-class="wb-press" hover-stay-time="80"
           class="preset {{form.ratePercent==item?'on':''}}"
           wx:for="{{ratePresets}}"
           wx:key="*this"
@@ -157,7 +157,7 @@
         <text class="block-hint">可多选</text>
       </view>
       <view class="chip-row">
-        <view
+        <view hover-class="wb-press" hover-stay-time="80"
           class="chip {{item.selected?'on':''}}"
           wx:for="{{craftTypeOptions}}"
           wx:key="value"
@@ -205,7 +205,7 @@
         <text class="block-title">限定标本师</text>
         <text class="block-hint">可选</text>
       </view>
-      <view class="btn-ghost filter-btn" bindtap="openArtisanPickerForRule">选择标本师</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-ghost filter-btn" bindtap="openArtisanPickerForRule">选择标本师</view>
     </view>
 
     <view class="rule-block">
@@ -222,7 +222,7 @@
           placeholder="搜索类目名称"
           confirm-type="search"
         />
-        <view class="search-btn" bindtap="searchCategories">搜索</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="search-btn" bindtap="searchCategories">搜索</view>
       </view>
       <view class="hit-list" wx:if="{{categoryHits.length}}">
         <view class="hit-row" wx:for="{{categoryHits}}" wx:key="_id">
@@ -255,7 +255,7 @@
           placeholder="搜索藏品标题"
           confirm-type="search"
         />
-        <view class="search-btn" bindtap="searchProducts">{{productSearching ? '…' : '搜索'}}</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="search-btn" bindtap="searchProducts">{{productSearching ? '…' : '搜索'}}</view>
       </view>
       <view class="hit-list" wx:if="{{productHits.length}}">
         <view class="hit-row" wx:for="{{productHits}}" wx:key="_id">
@@ -274,7 +274,7 @@
       </view>
     </view>
 
-    <view class="advanced-toggle" bindtap="toggleAdvancedIds">
+    <view hover-class="wb-press" hover-stay-time="80" class="advanced-toggle" bindtap="toggleAdvancedIds">
       <text class="advanced-label">{{showAdvancedIds ? '收起高级选项' : '高级：粘贴类目 / 藏品 ID'}}</text>
       <text class="advanced-arrow">{{showAdvancedIds ? '▴' : '▾'}}</text>
     </view>
@@ -301,12 +301,12 @@
 
     <view class="workbench-page-foot-spacer"></view>
     <view class="workbench-footer-bar">
-      <view class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveRule">
+      <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveRule">
         {{saving ? '保存中…' : (savePending ? '再点确认保存' : '保存规则')}}
       </view>
       <view class="workbench-footer-secondary">
-        <view class="workbench-btn-outline" bindtap="closeEditor">取消</view>
-        <view
+        <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="closeEditor">取消</view>
+        <view hover-class="wb-press" hover-stay-time="80"
           class="workbench-btn-outline danger-outline"
           wx:if="{{editDocId && !form.isDefault}}"
           data-id="{{editDocId}}"
@@ -326,7 +326,7 @@
     </view>
 
     <view class="filter-card">
-      <view class="filter-field" bindtap="openArtisanSheet">
+      <view hover-class="wb-press" hover-stay-time="80" class="filter-field" bindtap="openArtisanSheet">
         <text class="filter-label">标本师</text>
         <text class="filter-value {{filterArtisanName?'':'ph'}}">{{filterArtisanName || '全部标本师'}}</text>
         <text class="filter-arrow">选择</text>
@@ -361,14 +361,14 @@
         <text class="filter-clear" wx:if="{{filterTo}}" data-field="filterTo" bindtap="clearDate">清除结束</text>
       </view>
 
-      <view class="btn-ghost filter-btn" bindtap="loadLedger">筛选查询</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-ghost filter-btn" bindtap="loadLedger">筛选查询</view>
     </view>
 
     <view class="empty" wx:if="{{ledgerLoading && !ledgerError}}">加载账目…</view>
     <view class="empty-tip is-error" wx:elif="{{ledgerError && !ledger.length}}">
       <text class="empty-title">账目未能取回</text>
       <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryLedger">重试</view>
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryLedger">重试</view>
     </view>
     <view class="empty empty-friendly" wx:elif="{{!ledgerLoading && !ledgerError && !ledger.length}}">
       <text class="empty-title">暂无提成流水</text>
