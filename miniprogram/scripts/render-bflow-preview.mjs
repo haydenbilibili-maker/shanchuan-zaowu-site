@@ -164,6 +164,46 @@ const ROUNDS = {
     <div class="coupon-opt disabled"><div class="c-left"><span class="c-val">¥50</span><span class="c-min">满 ¥599 可用</span></div><div class="c-right"><span class="c-name">满减礼券</span><span class="c-save is-off">满 ¥599 可用，本单未达门槛</span></div><div class="radio"></div></div>
   </div>
 </div>`, 1100)
+  ],
+  2: () => [
+    panel('预约票 · 标签对比度 / 10 人 / 缺省贵宾', ['subpackages/business/booking/index.wxss'], `
+<div style="padding:40px;height:560px;position:relative">
+ <div class="ticket-face face-front" style="position:relative;height:auto">
+  <div class="tp-header" style="display:flex;justify-content:space-between;padding:30px 40px">
+    <div class="tp-brand"><span class="tp-logo" style="display:block">山海造物</span><span class="tp-tagline" style="display:block">把山海带回家</span><span class="tp-sub" style="display:block">NATURE'S CREATIONS</span></div>
+    <span class="tp-serial">NO.V-2026</span></div>
+  <div class="tp-body">
+    <div class="info-row"><div class="info-item"><span class="label">日期｜DATE</span><span class="val">10 02</span></div>
+      <div class="info-item center"><span class="label">时间｜TIME</span><span class="val highlight">14:30</span></div>
+      <div class="info-item right"><span class="label">贵宾｜HOLDER</span><span class="val-calligraphy">贵宾</span></div></div>
+    <div class="info-row"><div class="info-item"><span class="label">人数｜GUEST</span><span class="val-sm">10 人</span></div>
+      <div class="info-item right"><span class="label">请柬｜ACCESS</span><span class="val-sm">参观</span></div></div>
+  </div>
+  <div class="flip-hint">轻触翻面 ↻</div>
+ </div></div>`, 640),
+    panel('荣誉档案 · 加载中 / 空态', ['subpackages/extra/user/certificates/index.wxss'], `
+<div class="content" style="min-height:0">
+  <div class="header-text"><span class="page-overline">证书收藏夹｜MY CERTIFICATES</span><span class="h1">荣誉档案</span><span class="h2">正在检索档案…</span></div>
+  <div class="empty-state" style="margin-top:80px"><span>还没有收藏证书</span>
+    <span class="empty-sub">藏品签收后，收藏证书会自动签发到这里</span>
+    <div class="btn-go">去逛逛</div></div>
+</div>`, 760),
+    panel('收货地址 · 默认卡无「设为默认」/ 空态色 / 保存中', ['subpackages/business/address/index.wxss'], `
+<div class="page">
+  <div class="addr-card default"><div class="addr-head"><span class="addr-name">王瑛</span><span class="addr-phone">138****0021</span><span class="default-tag">默认</span></div>
+    <span class="addr-detail">上海市 徐汇区 漕河泾街道 宜山路 700 号 B1 栋 12 楼</span>
+    <div class="addr-actions"><div class="act-btn danger">删除</div></div></div>
+  <div class="addr-card addr-card-press"><div class="addr-head"><span class="addr-name">虞博阳</span><span class="addr-phone">139****7788</span></div>
+    <span class="addr-detail">浙江省 杭州市 西湖区 文三路 90 号</span>
+    <div class="addr-actions"><div class="act-btn">设为默认</div><div class="act-btn danger">删除</div></div></div>
+  <div class="empty"><span>还没有收货地址</span><span class="empty-sub">可手动填写，或一键导入微信里的收货地址</span></div>
+  <div class="form-submit is-busy">保存中…</div>
+</div>`, 900),
+    panel('礼赠填址 · 提交中', ['subpackages/feature/gift/address/index.wxss'], `
+<div class="page"><div class="intro"><span class="overline">DELIVER TO</span><span class="title">写下这份珍物的去处</span><span class="desc">仅用于寄送妥投；对方看不到你的手机全号。</span></div>
+  <div class="import-row"><span class="import-lbl">从微信地址导入</span><span class="import-chev"></span></div>
+  <div class="btn-primary disabled">正在记下…</div>
+  <span class="foot-note">提交后馆员将备妥启程；你可随时在礼笺页查看进度。</span></div>`, 700)
   ]
 }
 

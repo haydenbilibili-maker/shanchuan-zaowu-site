@@ -72,13 +72,10 @@
     </view>
 
     <view class="box-scene" aria-hidden="true">
-      <!-- 博物馆暖光 + 底座阴影 -->
       <view class="box-glow"></view>
       <view class="box-shadow"></view>
 
-      <!-- 木礼盒：奇珍柜封缄盒 -->
       <view class="gift-box">
-        <!-- 盒内微露：标本纸礼笺角 -->
         <view class="box-inner">
           <view class="inner-letter">
             <view class="inner-line"></view>
@@ -87,7 +84,6 @@
           </view>
         </view>
 
-        <!-- 盒身 -->
         <view class="box-body">
           <view class="box-wood grain-a"></view>
           <view class="box-wood grain-b"></view>
@@ -112,7 +108,6 @@
           <view class="ribbon-sheen"></view>
         </view>
 
-        <!-- 盒盖（铰链翻开） -->
         <view class="box-lid">
           <view class="lid-face">
             <view class="lid-wood grain-a"></view>
@@ -207,7 +202,7 @@
           <text class="verify-over">领取核验</text>
           <text class="verify-title">送礼人为这份礼赠设了身份核验</text>
           <text class="verify-desc">核验通过后，这份山海才会记在你名下。手机号只用于比对，不会展示给任何人。</text>
-          <view class="btn-primary {{verifyBusy ? 'is-busy' : ''}}" bindtap="verifyByAccount">{{verifyBusy ? '核验中…' : '用我的微信手机号核验'}}</view>
+          <view class="btn-primary {{verifyBusy ? 'is-busy' : ''}}" bindtap="verifyByAccount" hover-class="{{verifyBusy ? '' : 'btn-primary-press'}}">{{verifyBusy ? '核验中…' : '用我的微信手机号核验'}}</view>
           <view class="verify-alt" bindtap="openManualVerify">换一个号码 · 手动输入核验</view>
           <text class="verify-error" wx:if="{{verifyError && !verifySheet}}">{{verifyError}}</text>
         </view>
@@ -220,8 +215,8 @@
           <text class="share-lock-desc">收下需通过好友分享的礼笺链接进入。朋友圈旧卡如无法收下，请对方再转发一次。</text>
         </view>
         <block wx:else>
-          <view class="btn-primary" bindtap="accept" wx:if="{{!accepted}}">收下这份山海</view>
-          <view class="btn-primary" bindtap="goAddress" wx:elif="{{!addressDone}}">留下收件去处</view>
+          <view class="btn-primary" bindtap="accept" hover-class="btn-primary-press" hover-stay-time="80" wx:if="{{!accepted}}">收下这份山海</view>
+          <view class="btn-primary" bindtap="goAddress" hover-class="btn-primary-press" hover-stay-time="80" wx:elif="{{!addressDone}}">留下收件去处</view>
           <view class="addr-done" wx:else>
             <text class="btn-done">去处已记下，即将启程</text>
             <text class="addr-masked" wx:if="{{phoneMasked}}">联系 · {{phoneMasked}}</text>

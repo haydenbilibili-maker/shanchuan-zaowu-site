@@ -14,6 +14,11 @@
  *      （`navigateTo:fail …`、`cloud.callFunction:fail …` 会原样给到顾客）；
  *   B5 礼券门槛：购物车 / 确认下单弹层不得出现「满 0 可用」形态（无门槛券须写「无门槛」）；
  *   B6 订单列表卡片：不得用占位英文 `Specimen` 冒充学名（错题本 E11），缩略图缺图须有占位分支。
+ *   ── 第 2 轮（「我的」子页）──
+ *   B7 预约票：人数不得写死前导 0（`0{{bookCount}}` 在 10 人时成「010 人」），持票人缺省不写英文 Guest；
+ *   B8 荣誉档案：加载中不显示「共收藏 0 件」，入场动画延迟有上限（证书多时最后一张要等数秒才出现）；
+ *   B9 收货地址：默认地址卡不再出现「设为默认」，保存按钮有「保存中…」；
+ *   B10 礼赠填址：提交中按钮文案切换（防「点了没反应」再点）。
  *
  * 自检不写盘：注入在内存副本上做（共享工作区有并行流，写盘注入会覆盖别人的在写内容）。
  *
@@ -35,7 +40,11 @@ const F = {
   ordersWxml: `${B}/orders/index.wxml`,
   ordersJs: `${B}/orders/index.js`,
   cartWxml: 'miniprogram/pages/cart/index.wxml',
-  confirmWxml: `${B}/confirm-order/index.wxml`
+  confirmWxml: `${B}/confirm-order/index.wxml`,
+  bookingWxml: `${B}/booking/index.wxml`,
+  certWxml: 'miniprogram/subpackages/extra/user/certificates/index.wxml',
+  addrWxml: `${B}/address/index.wxml`,
+  giftAddrWxml: 'miniprogram/subpackages/feature/gift/address/index.wxml'
 }
 
 /** B4 扫描范围（逐轮扩充；只加不减） */
@@ -145,6 +154,25 @@ export function runChecks(src) {
   check('B6.no-specimen-placeholder', !/'Specimen'/.test(ow), "订单卡用 'Specimen' 冒充学名")
   check('B6.thumb-placeholder', /prod-img-ph/.test(ow) && /wx:if="\{\{prod\.image\}\}"/.test(ow), '订单卡缩略图缺图无占位分支')
 
+  // B7
+  const bw = src[F.bookingWxml]
+  check('B7.no-hardcoded-leading-zero', !/>0\{\{\s*bookCount\s*\}\}/.test(bw), '预约票人数写死前导 0')
+  check('B7.no-guest-fallback', !/'Guest'/.test(bw), "预约票持票人缺省为英文 'Guest'")
+
+  // B8
+  const cw = src[F.certWxml]
+  check('B8.loading-header', /<text class="h2" wx:if="\{\{loading\}\}">/.test(cw), '荣誉档案加载中仍显示收藏件数')
+  const delay = (cw.match(/animation-delay:\s*\{\{([^}]*)\}\}/) || [])[1] || ''
+  check('B8.stagger-capped', !!delay && /index\s*</.test(delay), `入场延迟无上限：${delay || '（未找到）'}`)
+
+  // B9
+  const aw = src[F.addrWxml]
+  check('B9.default-hides-set-default', /wx:if="\{\{!item\.isDefault\}\}"[^>]*catchtap="setDefault"/.test(aw), '默认地址卡仍显示「设为默认」')
+  check('B9.saving-label', /saving \? '保存中…'/.test(aw), '保存地址按钮无进行中文案')
+
+  // B10
+  check('B10.gift-addr-submitting-label', /submitting \? '正在记下…'/.test(src[F.giftAddrWxml]), '礼赠填址提交按钮无进行中文案')
+
   return { pass, fails }
 }
 
@@ -160,7 +188,7 @@ function report({ pass, fails }) {
     console.error(`✗ check:bflow-polish：${fails.length} 项失败 / ${pass} 项通过`)
     return 1
   }
-  console.log(`✓ check:bflow-polish：${pass} 项通过（折扣文案 / 账单类名 / 支付防重入 / 失败不透原文 / 礼券门槛 / 订单卡占位）`)
+  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10）`)
   return 0
 }
 
@@ -172,7 +200,12 @@ const INJECTIONS = [
   ['B4 跳转失败拼回 errMsg', F.ordersJs, (s) => s.replace("wx.showToast({ title: '暂时打不开订单详情，请稍后再试', icon: 'none' });", "wx.showToast({ title: '跳转失败： ' + (err.errMsg || '未知错误'), icon: 'none' });")],
   ['B4 售后提交透出 err.message', `${B}/aftersale-apply/index.js`, (s) => s.replace("wx.showToast({ title: /上传失败$/.test(m)", "wx.showToast({ title: (err && err.message) || /上传失败$/.test(m)")],
   ['B5 购物车门槛回到「满 0 可用」', F.cartWxml, (s) => s.replace("{{item.minSpend > 0 ? '满 ¥' + item.minSpend + ' 可用' : '无门槛'}}", '满 {{item.minSpend}} 可用')],
-  ['B6 学名回填占位 Specimen', F.ordersWxml, (s) => s.replace('{{prod.latin}}</text>', "{{prod.latin || 'Specimen'}}</text>")]
+  ['B6 学名回填占位 Specimen', F.ordersWxml, (s) => s.replace('{{prod.latin}}</text>', "{{prod.latin || 'Specimen'}}</text>")],
+  ['B7 预约票人数写回前导 0', F.bookingWxml, (s) => s.replace("{{bookCount < 10 ? '0' + bookCount : bookCount}} 人", '0{{bookCount}} 人')],
+  ['B8 入场延迟回到无上限', F.certWxml, (s) => s.replace('{{index < 8 ? index * 0.06 : 0.48}}s', '{{index * 0.1}}s')],
+  ['B8 加载中显示收藏件数', F.certWxml, (s) => s.replace('<text class="h2" wx:if="{{loading}}">正在检索档案…</text>', '')],
+  ['B9 默认卡重新显示设为默认', F.addrWxml, (s) => s.replace('<view class="act-btn" wx:if="{{!item.isDefault}}" catchtap="setDefault"', '<view class="act-btn" catchtap="setDefault"')],
+  ['B10 礼赠填址去掉进行中文案', F.giftAddrWxml, (s) => s.replace("{{submitting ? '正在记下…' : '确认收件去处'}}", '确认收件去处')]
 ]
 
 if (process.argv.includes('--selftest')) {

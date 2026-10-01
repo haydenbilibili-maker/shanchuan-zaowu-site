@@ -31,12 +31,14 @@ view, text { box-sizing: border-box; }
 .addr-detail { font-size: 26rpx; color: #D5D1C8; line-height: 1.5; display: block; }
 
 .addr-actions { display: flex; gap: 32rpx; margin-top: 24rpx; padding-top: 20rpx; border-top: 1px solid rgba(38, 35, 32, 0.6); }
-.act-btn { font-size: 24rpx; color: #A09A90; }
+.addr-card-press { background: #262320; }
+.act-btn { font-size: 24rpx; color: #A09A90; padding: 8rpx 0; }
+.act-btn-press { opacity: 0.6; }
 .act-btn.danger { color: #D64045; }
 
-.empty { text-align: center; padding: 120rpx 0; color: #6B6560; }
-.empty-sub { display: block; font-size: 24rpx; margin-top: 12rpx; }
-.loading { text-align: center; padding: 120rpx 0; color: #6B6560; font-size: 26rpx; }
+.empty { text-align: center; padding: 120rpx 0; color: #D5D1C8; }
+.empty-sub { display: block; font-size: 24rpx; margin-top: 12rpx; color: #A09A90; }
+.loading { text-align: center; padding: 120rpx 0; color: #A09A90; font-size: 26rpx; }
 
 .add-bar {
   position: fixed;
@@ -62,6 +64,8 @@ view, text { box-sizing: border-box; }
   color: #1A1814;
   border: none;
 }
+.add-btn-press { opacity: 0.82; }
+.form-submit.is-busy { opacity: 0.6; }
 
 .form-mask {
   position: fixed;

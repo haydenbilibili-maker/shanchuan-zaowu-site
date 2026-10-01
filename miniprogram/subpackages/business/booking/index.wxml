@@ -16,15 +16,15 @@
           <view class="info-row">
             <view class="info-item"><text class="label">日期｜DATE</text><text class="val">{{ticketInfo.dateStr}}</text></view>
             <view class="info-item center"><text class="label">时间｜TIME</text><text class="val highlight">{{ticketInfo.timeStr}}</text></view>
-            <view class="info-item right"><text class="label">贵宾｜HOLDER</text><text class="val-calligraphy">{{contactName || 'Guest'}}</text></view>
+            <view class="info-item right"><text class="label">贵宾｜HOLDER</text><text class="val-calligraphy">{{contactName || '贵宾'}}</text></view>
           </view>
           <view class="info-row sub">
-            <view class="info-item"><text class="label">人数｜GUEST</text><text class="val-sm">0{{bookCount}} 人</text></view>
+            <view class="info-item"><text class="label">人数｜GUEST</text><text class="val-sm">{{bookCount < 10 ? '0' + bookCount : bookCount}} 人</text></view>
             <view class="info-item right"><text class="label">请柬｜ACCESS</text><text class="val-sm">{{ticketInfo.typeStr}}</text></view>
           </view>
         </view>
         <view class="tp-footer"><view class="security-thread"><view class="scan-light"></view></view><view class="stamp-seal">VALID</view></view>
-        <view class="flip-hint">Tap to Flip ↻</view>
+        <view class="flip-hint">轻触翻面 ↻</view>
       </view>
       <!-- B面：白银 -->
       <view class="ticket-face face-back">
@@ -38,10 +38,10 @@
           <view class="info-row">
             <view class="info-item"><text class="label light">日期｜DATE</text><text class="val light">{{ticketInfo.dateStr}}</text></view>
             <view class="info-item center"><text class="label light">时间｜TIME</text><text class="val highlight light">{{ticketInfo.timeStr}}</text></view>
-            <view class="info-item right"><text class="label light">贵宾｜HOLDER</text><text class="val-calligraphy light">{{contactName || 'Guest'}}</text></view>
+            <view class="info-item right"><text class="label light">贵宾｜HOLDER</text><text class="val-calligraphy light">{{contactName || '贵宾'}}</text></view>
           </view>
           <view class="info-row sub">
-            <view class="info-item"><text class="label light">人数｜GUEST</text><text class="val-sm light">0{{bookCount}} 人</text></view>
+            <view class="info-item"><text class="label light">人数｜GUEST</text><text class="val-sm light">{{bookCount < 10 ? '0' + bookCount : bookCount}} 人</text></view>
             <view class="info-item right"><text class="label light">请柬｜ACCESS</text><text class="val-sm light">{{ticketInfo.typeStr}}</text></view>
           </view>
         </view>
@@ -300,7 +300,7 @@
           </view>
           <view class="tm-invite">
             <text class="tm-label">邀请函｜INVITATION</text>
-            <text class="tm-name">诚邀 {{contactName || '贵宾'}} 先生/女士</text>
+            <text class="tm-name">诚邀 {{contactName ? contactName + ' 先生/女士' : '贵宾'}}</text>
             <text class="tm-desc">欢迎预约到店，慢慢看、慢慢选。</text>
           </view>
           <view class="tm-code-box">

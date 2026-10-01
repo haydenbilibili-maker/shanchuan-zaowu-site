@@ -14,6 +14,8 @@
       wx:key="_id"
       bindtap="onSelectAddress"
       data-index="{{index}}"
+      hover-class="addr-card-press"
+      hover-stay-time="80"
     >
       <view class="addr-head">
         <text class="addr-name">{{item.name}}</text>
@@ -22,20 +24,20 @@
       </view>
       <text class="addr-detail">{{item.region[0]}} {{item.region[1]}} {{item.region[2]}} {{item.detail}}</text>
       <view class="addr-actions" catchtap="true">
-        <text class="act-btn" catchtap="setDefault" data-id="{{item._id}}">设为默认</text>
-        <text class="act-btn danger" catchtap="deleteAddress" data-id="{{item._id}}">删除</text>
+        <view class="act-btn" wx:if="{{!item.isDefault}}" catchtap="setDefault" data-id="{{item._id}}" hover-class="act-btn-press" hover-stop-propagation>设为默认</view>
+        <view class="act-btn danger" catchtap="deleteAddress" data-id="{{item._id}}" hover-class="act-btn-press" hover-stop-propagation>删除</view>
       </view>
     </view>
   </view>
 
   <view class="empty" wx:else>
-    <text>暂无收货地址</text>
-    <text class="empty-sub">可手动填写，或从微信通讯录导入</text>
+    <text>还没有收货地址</text>
+    <text class="empty-sub">可手动填写，或一键导入微信里的收货地址</text>
   </view>
 
   <view class="add-bar" wx:if="{{!loading && !needLogin}}">
-    <view class="add-btn" bindtap="importFromWechat">从微信导入</view>
-    <view class="add-btn primary" bindtap="openManualForm">手动新增</view>
+    <view class="add-btn" bindtap="importFromWechat" hover-class="add-btn-press" hover-stay-time="80">从微信导入</view>
+    <view class="add-btn primary" bindtap="openManualForm" hover-class="add-btn-press" hover-stay-time="80">手动新增</view>
   </view>
 
   <!-- 手动填写地址 -->
@@ -80,7 +82,7 @@
       </view>
 
       <view class="form-footer">
-        <view class="form-submit" bindtap="submitManualAddress">保存地址</view>
+        <view class="form-submit {{saving ? 'is-busy' : ''}}" bindtap="submitManualAddress" hover-class="{{saving ? '' : 'add-btn-press'}}" hover-stay-time="80">{{saving ? '保存中…' : '保存地址'}}</view>
       </view>
     </view>
   </view>

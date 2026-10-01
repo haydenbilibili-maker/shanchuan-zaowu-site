@@ -50,7 +50,7 @@
             <text class="tag deposit" wx:if="{{item.hasDeposit}}">定金意向</text>
           </view>
         </view>
-        <text class="remove" catchtap="removeItem" data-id="{{item._id}}" data-pid="{{item.productId}}">移除</text>
+        <view class="remove" catchtap="removeItem" data-id="{{item._id}}" data-pid="{{item.productId}}" hover-class="remove-press" hover-stop-propagation>移除</view>
       </view>
     </block>
 

@@ -188,9 +188,10 @@ page {
 .remove {
   flex-shrink: 0;
   font-size: 24rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   padding: 12rpx 8rpx;
 }
+.remove-press { opacity: 0.55; }
 
 .empty-state {
   padding: 100rpx 40rpx;
