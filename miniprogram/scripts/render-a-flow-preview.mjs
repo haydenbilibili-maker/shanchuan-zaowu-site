@@ -267,4 +267,93 @@ img:not([src]), img[src=""] { visibility: hidden; }
   console.log(`✓ ${scene.name} → ${out}${missing.size ? `（缺字段按空渲染 ${missing.size} 个：${[...missing].slice(0, 6).join(' / ')}）` : ''}`)
 }
 
-for (const s of scenes) if (!only || only.split(',').includes(s.name)) await shoot(s)
+/**
+ * --devices：首页按真机尺寸逐机型出图 + 量布局（第 5 轮「页面恰好一屏」）
+ * 视口 = 机型逻辑分辨率，rpx 按 宽/750 换算，env(safe-area-inset-*) 换成机型值，navTop 取胶囊 top（状态栏 + 4），
+ * 叠上真 custom-tab-bar 与微信原生状态栏 / 胶囊示意；main-scroll 保持真实高度（不展开）。
+ * 量：文档可滚高度 − 视口（>0 即整页还能被拖动）、滚动区底 vs 底栏顶、头部胶囊 vs 微信胶囊是否相交；
+ * 截图为未滚动的首屏（headless --screenshot 按文档坐标截取，整页滚动后 fixed 元素会错位，故不滚）。
+ */
+const DEVICES = [
+  { name: 'iphone-se', label: 'iPhone SE（无刘海）', w: 375, h: 667, top: 20, bottom: 0 },
+  { name: 'iphone-8plus', label: 'iPhone 8 Plus（无刘海大屏）', w: 414, h: 736, top: 20, bottom: 0 },
+  { name: 'iphone-13-14', label: 'iPhone 13 / 14（刘海）', w: 390, h: 844, top: 47, bottom: 34 },
+  { name: 'iphone-pro-max', label: 'iPhone 14 Pro Max（灵动岛）', w: 430, h: 932, top: 59, bottom: 34 }
+]
+const DEVICE_JS = `(() => {
+  const r = (s) => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null }
+  const de = document.scrollingElement
+  const out = { viewport: innerHeight, docHeight: de.scrollHeight, overflow: de.scrollHeight - innerHeight }
+  const ms = r('.main-scroll'), tb = r('.tab-bar'), hc = r('.header-capsule'), wc = r('#__wxcap')
+  out.scrollTop = ms && Math.round(ms.top); out.scrollBottom = ms && Math.round(ms.bottom); out.tabTop = tb && Math.round(tb.top)
+  out.scrollTabGap = ms && tb ? Math.round(tb.top - ms.bottom) : null
+  out.capsuleOverlap = hc && wc ? !(hc.right <= wc.left || hc.bottom <= wc.top || hc.top >= wc.bottom) : null
+  const sc = document.querySelector('.main-scroll'); out.scrollable = sc ? sc.scrollHeight > sc.clientHeight : null
+  const pre = document.createElement('pre'); pre.id = '__m'; pre.style.display = 'none'; pre.textContent = JSON.stringify(out); document.body.appendChild(pre)
+})()`
+
+function tabBarHtml(px) {
+  const js = read(join(MP, 'custom-tab-bar/index.js'))
+  const lit = js.slice(js.indexOf('list: [') + 6, js.indexOf('\n    ]', js.indexOf('list: [')) + 6)
+  const list = Function(`return ${lit}`)().map((it) => ({
+    ...it, iconPath: `file://${join(MP, it.iconPath)}`, selectedIconPath: `file://${join(MP, it.selectedIconPath)}`
+  }))
+  const wxml = read(join(MP, 'custom-tab-bar/index.wxml'))
+  const html = renderWxml(wxml, { list, selected: 0, hidden: false, color: '#8A857C', selectedColor: '#C4A76C', showCartBadge: false }, { lenient: true })
+  return { html, css: px(loadWxss(join(MP, 'custom-tab-bar/index.wxss'))) }
+}
+
+async function shootDevices() {
+  const page = PAGES.home
+  const wxml = unwrapGate(read(join(MP, page.wxml)).replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, ''))
+  const summary = []
+  for (const d of DEVICES) {
+    const k = d.w / 750
+    const navTop = d.top + 4
+    const px = (t) => t.replace(/(-?\d*\.?\d+)rpx/g, (_, n) => `${+(n * k).toFixed(3)}px`)
+      .replace(/(?:env|constant)\(safe-area-inset-bottom\)/g, `${d.bottom}px`).replace(/(?:env|constant)\(safe-area-inset-top\)/g, `${d.top}px`)
+    const body = renderWxml(wxml, { latin: { display: (s) => s || '' }, ...homeData({ navTop }) }, { lenient: true })
+    const tab = tabBarHtml(px)
+    const css = px(loadWxss(join(MP, 'app.wxss')) + '\n' + loadWxss(join(MP, page.wxss)))
+    const base = (script) => `<!doctype html><html><head><meta charset="utf-8"><style>
+html, body { margin: 0; padding: 0; width: ${d.w}px; background: #1a1814; color: #fff; font-family: -apple-system, "PingFang SC", sans-serif; }
+img { object-fit: cover; } img:not([src]), img[src=""] { visibility: hidden; }
+</style><style>${css.replace(/\bpage\s*\{/g, 'body {')}</style><style>${tab.css}</style><style>
+.main-scroll { overflow-y: auto; } .main-scroll::-webkit-scrollbar { display: none; }
+.floating, .floating-shadow, .slide-up-anim, .blink { animation: none !important; }
+#__wxbar { position: fixed; top: 0; left: 0; right: 0; height: ${d.top}px; z-index: 10001; font: 600 14px -apple-system; display: flex; align-items: center; padding-left: 24px; }
+#__wxcap { position: fixed; right: 7px; top: ${navTop}px; width: 87px; height: 32px; border-radius: 16px; border: 1px solid rgba(255,255,255,.25); background: rgba(0,0,0,.3); z-index: 10001; box-sizing: border-box; }
+#__home { position: fixed; left: 50%; bottom: 8px; width: 134px; height: 5px; margin-left: -67px; border-radius: 3px; background: #fff; z-index: 10002; display: ${d.bottom ? 'block' : 'none'}; }
+</style></head><body>${body}${tab.html}<div id="__wxbar">9:41</div><div id="__wxcap"></div><div id="__home"></div><script>${script}</script></body></html>`
+    const htmlPath = join(tmpdir(), `a-flow-dev-${d.name}-${process.pid}.html`)
+    writeFileSync(htmlPath, base(DEVICE_JS))
+    const flags = ['--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', '--no-default-browser-check', '--allow-file-access-from-files', '--hide-scrollbars', '--force-device-scale-factor=1', '--virtual-time-budget=3000', `--window-size=${d.w},${d.h}`]
+    const p1 = mkdtempSync(join(tmpdir(), 'a-flow-preview-'))
+    const r = spawnSync(chrome, [...flags, `--user-data-dir=${p1}`, '--dump-dom', `file://${htmlPath}`], { encoding: 'utf8', maxBuffer: 1 << 27, timeout: 120000 })
+    try { rmSync(p1, { recursive: true, force: true }) } catch { /* ignore */ }
+    const m = /<pre id="__m"[^>]*>([\s\S]*?)<\/pre>/.exec(r.stdout || '')
+    const res = m ? JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&')) : { error: 'no measure' }
+    summary.push({ device: d.label, size: `${d.w}×${d.h}`, safeTop: d.top, safeBottom: d.bottom, navTop, ...res })
+    const out = join(outDir, `home-${d.name}.png`)
+    if (existsSync(out)) rmSync(out)
+    const p2 = mkdtempSync(join(tmpdir(), 'a-flow-preview-'))
+    writeFileSync(htmlPath, base(''))
+    const child = spawn(chrome, [...flags, `--user-data-dir=${p2}`, `--screenshot=${out}`, `file://${htmlPath}`], { stdio: 'ignore' })
+    const deadline = Date.now() + 120000
+    let last = -1
+    while (Date.now() < deadline) {
+      const size = existsSync(out) ? statSync(out).size : 0
+      if (size > 1000 && size === last) break
+      last = size
+      await new Promise((ok) => setTimeout(ok, 400))
+    }
+    try { child.kill('SIGKILL') } catch { /* ignore */ }
+    try { rmSync(p2, { recursive: true, force: true }) } catch { /* ignore */ }
+    try { rmSync(htmlPath, { force: true }) } catch { /* ignore */ }
+    console.log(`✓ ${d.label} 文档超出视口 ${res.overflow}px · 滚动区底→底栏顶 ${res.scrollTabGap}px · 胶囊相交 ${res.capsuleOverlap} → ${out}`)
+  }
+  writeFileSync(join(outDir, 'home-devices.json'), JSON.stringify(summary, null, 1))
+}
+
+if (argv.includes('--devices')) await shootDevices()
+else for (const s of scenes) if (!only || only.split(',').includes(s.name)) await shoot(s)

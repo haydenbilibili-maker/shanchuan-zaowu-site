@@ -1,0 +1,10 @@
+{
+  "name": "wikiViewStats",
+  "version": "1.0.0",
+  "description": "专题档案页阅读计数（同一用户 30 分钟内重复打开只计一次）",
+  "main": "index.js",
+  "license": "ISC",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

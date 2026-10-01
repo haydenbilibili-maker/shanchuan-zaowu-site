@@ -11,3 +11,5 @@ npm run check:a-flow-polish
 # 2026-10-01：A 流第 4 轮共享层收拢（说明字最低 secondary / care-common 四份一致）
 npm run check:mp-caption-color
 npm run check:care-common-mirrors
+# 2026-10-01：A 流第 5 轮 专题档案页阅读计数（新增旁路 wikiViewStats：防刷窗口 / 并发 / 三处同步）
+npm run test:wiki-view-stats

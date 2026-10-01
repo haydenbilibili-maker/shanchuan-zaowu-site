@@ -138,6 +138,7 @@ Page({
           isLoading: false
         })
         wx.setNavigationBarTitle({ title: wikiData.cn_name || '图鉴详情' })
+        this.loadViewStats(id)
       } else {
         // 降级：直接从 curated_collections 集合查询
         const docRes = await db.collection('curated_collections').doc(id).get();
@@ -172,6 +173,7 @@ Page({
             isLoading: false
           })
           wx.setNavigationBarTitle({ title: cnName })
+          this.loadViewStats(id)
         } else {
           throw new Error('未找到专题数据');
         }
@@ -186,6 +188,17 @@ Page({
     } finally {
       wx.hideLoading();
     }
+  },
+
+  /** 阅读计数走 wikiViewStats（同一用户 30 分钟内重复打开只计一次）；失败静默，计数为 0 时 wxml 不画 */
+  loadViewStats(id) {
+    wx.cloud.callFunction({ name: 'wikiViewStats', data: { action: 'view', wikiId: id } })
+      .then((res) => {
+        const r = res && res.result
+        if (!r || !r.success || this.data.wiki._id !== id) return
+        this.setData({ 'wiki.stats': { views: r.views || 0, likes: r.likes || 0 } })
+      })
+      .catch(() => {})
   },
 
   /** 失败重试：重置状态后重新加载 */

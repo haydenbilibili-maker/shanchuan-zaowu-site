@@ -173,6 +173,15 @@ function checks(s) {
     colorOf(s.identifyWxss, '.ai-privacy-txt') === SEC &&
     ['.gift-panel-sub', '.gift-scene-label', '.coupon-empty', '.param-k'].every((x) => colorOf(s.detailWxss, x) === SEC))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
+
+  // R5-1 首页恰好一屏：容器 100vh 纵向 flex 且裁切，顶部占位 + 滚动区（flex:1）+ 底栏让位 = 视口；不再「占位 + 满屏滚动区」叠高
+  const rule = (css, sel) => ((new RegExp(`\\n\\${sel} \\{([^}]*)\\}`).exec(css)) || [])[1] || ''
+  const ct = rule(s.homeWxss, '.container'), ms = rule(s.homeWxss, '.main-scroll')
+  add('R5-1 首页 .container 为 100vh 纵向 flex、overflow hidden，底部仍让出 --tabbar-offset',
+    /height: 100vh;/.test(ct) && /display: flex;/.test(ct) && /flex-direction: column;/.test(ct) && /overflow: hidden;/.test(ct) && /padding-bottom: var\(--tabbar-offset\);/.test(ct))
+  add('R5-1 首页滚动区 flex:1 + height:0 吃剩余高度，不再写死 100vh 系高度（含单页模式）',
+    /flex: 1;/.test(ms) && /height: 0;/.test(ms) && !/100vh/.test(ms) && !/\.is-single-page \.main-scroll\s*\{/.test(s.homeWxss))
+  add('R5-1 首页整页错误态同样吃剩余高度（flex:1）', /flex: 1;/.test(rule(s.homeWxss, '.page-error')))
   return out
 }
 
@@ -222,6 +231,9 @@ if (process.argv.includes('--selftest')) {
     ['共享骨架丢 bar 行', 'appWxss', (t) => t.replace(/\n\.ui-sk-line\.bar \{[^\n]*/, '')],
     ['工坊卡片说明退回 muted', 'atelierWxss', (t) => t.replace(/(\n\.order-tile-desc \{[^}]*?color: )var\(--color-text-secondary\)/, '$1var(--color-text-muted)')],
     ['详情礼赠说明退回 muted', 'detailWxss', (t) => t.replace('.gift-panel-sub { font-size: 22rpx; color: var(--color-text-secondary); }', '.gift-panel-sub { font-size: 22rpx; color: var(--color-text-muted); }')],
+    ['首页滚动区退回 calc(100vh - 底栏)', 'homeWxss', (t) => t.replace('.main-scroll {\n  flex: 1;\n  height: 0;', '.main-scroll {\n  height: calc(100vh - var(--tabbar-offset));')],
+    ['首页容器去掉 100vh 裁切', 'homeWxss', (t) => t.replace('.container {\n  height: 100vh;\n', '.container {\n')],
+    ['单页模式滚动区写回 100vh', 'homeWxss', (t) => t + '\n.container.is-single-page .main-scroll {\n  height: 100vh;\n}\n'],
     ['工坊描述超长（恢复截断原文）', 'atelierJs', (t) => t.replace("desc: '为陪伴过的伙伴留存纪念，专员评估工艺周期',", "desc: '为陪伴过你的伙伴留存纪念藏品，专员评估工艺与周期',")]
   ]
   let ok = baseOk

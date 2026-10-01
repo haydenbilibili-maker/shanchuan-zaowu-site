@@ -31,11 +31,11 @@
     <text class="cn-name">{{wiki.cn_name}}</text>
     
     <view class="stats-row" wx:if="{{wiki.stats.views || wiki.stats.likes}}">
-      <view class="stat-item">
+      <view class="stat-item" wx:if="{{wiki.stats.views}}">
         <image src="/assets/icons/eye.png" mode="aspectFit" class="icon-gold" style="width: 24rpx; height: 24rpx;"></image>
         <text>{{wiki.stats.views}} 阅读</text>
       </view>
-      <view class="stat-item">
+      <view class="stat-item" wx:if="{{wiki.stats.likes}}">
         <image src="/assets/icons/heart.png" mode="aspectFit" class="icon-gold" style="width: 24rpx; height: 24rpx;"></image>
         <text>{{wiki.stats.likes}} 收藏</text>
       </view>

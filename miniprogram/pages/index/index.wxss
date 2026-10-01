@@ -9,22 +9,21 @@ page {
 }
 
 .container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding-bottom: var(--tabbar-offset);
   background: var(--color-bg);
   position: relative;
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
   box-sizing: border-box;
 }
 
 /* 朋友圈单页：无自定义 tabBar，底部留给微信「前往小程序」栏 */
 .container.is-single-page {
   padding-bottom: 0;
-}
-
-.container.is-single-page .main-scroll {
-  height: 100vh;
 }
 
 .container.is-single-page .scroll-bottom-pad {
@@ -52,8 +51,9 @@ page {
 
 /* 🔧 重写：主滚动区域 */
 .main-scroll {
+  flex: 1;
+  height: 0;
   width: 100%;
-  height: calc(100vh - var(--tabbar-offset));
   box-sizing: border-box;
 }
 
@@ -1491,6 +1491,9 @@ page {
 /* ===== 整页错误态（关键内容全部加载失败）===== */
 /* 与 collection-detail 的 .cd-state 保持同一视觉语言 */
 .page-error {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -983,6 +983,13 @@
       "installDependency": true
     },
     {
+      "name": "wikiViewStats",
+      "timeout": 10,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "manageStudioSettlement",
       "timeout": 60,
       "runtime": "Nodejs16.13",
