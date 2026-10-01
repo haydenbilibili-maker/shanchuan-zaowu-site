@@ -149,7 +149,42 @@ async function listSupportTickets(event) {
     .orderBy('createTime', 'desc')
     .limit(50)
     .get()
-  return { success: true, list: res.data || [] }
+  return { success: true, list: await attachMemberLabels(res.data || []) }
+}
+
+/** 与积分 / 储值 / 定金同算法：openid 末 8 位 → MT-XXXX-XXXX */
+function buildMemberNo(openid) {
+  if (!openid || openid.length < 8) return ''
+  const shortId = openid.substr(openid.length - 8).toUpperCase()
+  return `MT-${shortId.substr(0, 4)}-${shortId.substr(4, 4)}`
+}
+
+/**
+ * 工单卡右上角用昵称 / 会员号代替 openid 片段（2026-10-01 产品负责人真机反馈）：
+ * 只在原行上新增 memberNickName / memberNo 两个出参字段，只读 users 的 nickName / memberNo（不读手机号）；
+ * 读 users 失败不影响列表，会员号回退同算法。
+ */
+async function attachMemberLabels(list) {
+  const rows = Array.isArray(list) ? list : []
+  const _ = db.command
+  const openids = Array.from(new Set(rows.map((r) => r._openid).filter(Boolean)))
+  const users = {}
+  for (let i = 0; i < openids.length; i += 20) {
+    const slice = openids.slice(i, i + 20)
+    try {
+      const res = await db.collection('users').where({ _openid: _.in(slice) })
+        .field({ _openid: true, nickName: true, memberNo: true }).limit(slice.length).get()
+      ;(res.data || []).forEach((u) => { if (u && u._openid) users[u._openid] = u })
+    } catch (e) { /* 只影响展示，回退会员号 */ }
+  }
+  return rows.map((r) => {
+    const u = r._openid ? users[r._openid] : null
+    return {
+      ...r,
+      memberNickName: (u && u.nickName) ? String(u.nickName) : '',
+      memberNo: (u && u.memberNo) ? String(u.memberNo) : buildMemberNo(r._openid)
+    }
+  })
 }
 
 /** ERP 工单页：标记已处理 / 归档（support_tickets 客户端 write:false） */

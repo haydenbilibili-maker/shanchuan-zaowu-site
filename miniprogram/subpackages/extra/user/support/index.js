@@ -335,6 +335,7 @@ Page({
     if (draft && !this.data._draftApplied && !(this.data.messageText || '').trim()) {
       patch.messageText = draft;
       patch._draftApplied = true;
+      patch._draftPrefix = draft.trim();
     }
 
     this.setData(patch);
@@ -591,8 +592,11 @@ Page({
     if (this.data.submitting) return;
 
     const message = (this.data.messageText || '').trim();
-    if (message.length < 5) {
-      wx.showToast({ title: '请至少输入 5 个字', icon: 'none' });
+    // 预填的「关于藏品「…」：」本身就超过 5 字，只提交前缀会让专员看不到问题（2026-10-01 真机 P0）
+    const prefix = this.data._draftPrefix || '';
+    const body = prefix && message.indexOf(prefix) === 0 ? message.slice(prefix.length).trim() : message;
+    if (message.length < 5 || body.length < 2) {
+      wx.showToast({ title: message.length < 5 ? '请至少输入 5 个字' : '请在「：」后面写下想咨询的内容', icon: 'none' });
       return;
     }
     const phone = (this.data.contactPhone || '').trim();

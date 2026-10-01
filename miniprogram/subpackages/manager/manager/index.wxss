@@ -5730,3 +5730,18 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 22rpx;
   color: #e8dcc0;
 }
+
+/* 山海有信 · 留言回复：正文完整换行显示（不能用 .p-name —— 它是单行省略，会把预填前缀后的正文整段藏掉） */
+.ticket-who { max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-secondary, #A09A90); font-weight: 500; }
+.ticket-ctx { display: block; font-size: 24rpx; color: var(--color-text-secondary, #A09A90); margin-bottom: 8rpx; }
+.ticket-msg { display: block; font-size: 28rpx; line-height: 1.6; color: var(--color-text-body, #E8E4DC); white-space: pre-wrap; word-break: break-all; }
+.ticket-msg.is-clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+.ticket-empty { display: block; font-size: 26rpx; line-height: 1.6; color: #E9A23B; }
+.ticket-more { display: inline-block; margin-top: 8rpx; padding: 8rpx 0; font-size: 24rpx; color: var(--gold, #C4A76C); }
+.ticket-imgs { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 16rpx; }
+.ticket-img { width: 160rpx; height: 160rpx; border-radius: 12rpx; background: var(--color-bg-elevated, #262320); }
+.ticket-phone { display: block; font-size: 22rpx; color: var(--color-text-secondary, #A09A90); margin-top: 12rpx; }
+.ticket-origin { padding: 20rpx; margin-bottom: 20rpx; border-radius: 12rpx; background: var(--color-bg-elevated, #262320); }
+.ticket-origin-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10rpx; }
+.ticket-origin-label { font-size: 22rpx; letter-spacing: 2rpx; color: var(--gold, #C4A76C); }
+.ticket-origin-who { font-size: 22rpx; color: var(--color-text-secondary, #A09A90); max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

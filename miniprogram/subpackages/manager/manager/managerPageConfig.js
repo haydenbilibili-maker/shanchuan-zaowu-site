@@ -1789,7 +1789,7 @@ const managerPageConfig = {
     autoMessageLogs: [],
     supportTickets: [],
     showTicketReplyModal: false,
-    tempTicketReply: { ticketId: '', content: '', topicLabel: '' },
+    tempTicketReply: { ticketId: '', content: '', topicLabel: '', who: '', contextLine: '', body: '', bodyEmpty: false, images: [], contactPhone: '', formatTime: '' },
     showPushConfirm: false,
     pushSending: false,
 
@@ -10146,12 +10146,10 @@ bindSubCatChange(e) {
         data: { action: 'listSupportTickets', status: 'pending' }
       });
       const list = (res.result && res.result.list) || [];
+      const { buildTicketView } = require('../utils/supportTicketView');
+      const fmt = (t) => (t ? new Date(t).toLocaleString() : '');
       this.setData({
-        supportTickets: list.map((item) => ({
-          ...item,
-          formatTime: item.createTime ? new Date(item.createTime).toLocaleString() : '',
-          openidMask: item._openid ? `${item._openid.slice(0, 6)}…` : ''
-        }))
+        supportTickets: list.map((item) => buildTicketView(item, fmt))
       });
       this.refreshOpsSignals();
     } catch (e) {
@@ -10427,6 +10425,20 @@ bindSubCatChange(e) {
     }
   },
 
+  toggleTicketExpand(e) {
+    const idx = Number(e.currentTarget.dataset.idx);
+    const row = (this.data.supportTickets || [])[idx];
+    if (!row) return;
+    this.setData({ [`supportTickets[${idx}].expanded`]: !row.expanded });
+  },
+
+  previewTicketImage(e) {
+    const { idx, url } = e.currentTarget.dataset;
+    const row = (this.data.supportTickets || [])[Number(idx)];
+    if (!row || !row.images || !row.images.length) return;
+    wx.previewImage({ current: url, urls: row.images });
+  },
+
   openTicketReplyModal(e) {
     const item = e.currentTarget.dataset.item;
     if (!item) return;
@@ -10435,9 +10447,22 @@ bindSubCatChange(e) {
       tempTicketReply: {
         ticketId: item._id,
         content: '',
-        topicLabel: item.topicLabel || '咨询'
+        topicLabel: item.topicLabel || '咨询',
+        who: item.who || '',
+        contextLine: item.contextLine || '',
+        body: item.body || '',
+        bodyEmpty: !!item.bodyEmpty,
+        images: item.images || [],
+        contactPhone: item.contactPhone || '',
+        formatTime: item.formatTime || ''
       }
     });
+  },
+
+  previewReplyImage(e) {
+    const urls = (this.data.tempTicketReply && this.data.tempTicketReply.images) || [];
+    if (!urls.length) return;
+    wx.previewImage({ current: e.currentTarget.dataset.url, urls });
   },
 
   closeTicketReplyModal() {

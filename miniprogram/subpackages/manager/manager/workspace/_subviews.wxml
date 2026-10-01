@@ -1977,9 +1977,16 @@
         <view class="card">
           <view class="card-top">
             <text class="no">{{item.topicLabel}}</text>
-            <text class="status">{{item.openidMask}}</text>
+            <text class="status ticket-who">{{item.who}}</text>
           </view>
-          <text class="p-name">{{item.message}}</text>
+          <text class="ticket-ctx" wx:if="{{item.contextLine}}">关于{{item.contextLine}}</text>
+          <text class="ticket-msg {{item.canExpand && !item.expanded ? 'is-clamp' : ''}}" user-select wx:if="{{!item.bodyEmpty}}">{{item.body}}</text>
+          <text class="ticket-empty" wx:else>顾客没有写正文，只带入了上面的藏品 / 订单信息。可点「回复并通知」请对方补充说明{{item.contactPhone ? '，或按留的电话回拨' : ''}}。</text>
+          <view class="ticket-more" wx:if="{{item.canExpand}}" hover-class="wb-press" hover-stay-time="80" bindtap="toggleTicketExpand" data-idx="{{index}}">{{item.expanded ? '收起' : '展开全文'}}</view>
+          <view class="ticket-imgs" wx:if="{{item.images.length}}">
+            <image wx:for="{{item.images}}" wx:for-item="url" wx:for-index="imgIdx" wx:key="*this" class="ticket-img" src="{{url}}" mode="aspectFill" lazy-load bindtap="previewTicketImage" data-idx="{{index}}" data-url="{{url}}"/>
+          </view>
+          <text class="ticket-phone" wx:if="{{item.contactPhone}}">联系电话 {{item.contactPhone}}</text>
           <text class="addr-detail">{{item.formatTime}}</text>
           <view class="btn-row">
             <view hover-class="wb-press" hover-stay-time="80" class="btn ship" bindtap="openTicketReplyModal" data-item="{{item}}">回复并通知</view>
@@ -4114,6 +4121,17 @@
     <view class="modal-panel" catchtap="noop">
       <view class="modal-head"><text>回复 · {{tempTicketReply.topicLabel}}</text><view class="close-btn" catchtap="closeTicketReplyModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
+        <view class="ticket-origin">
+          <view class="ticket-origin-head"><text class="ticket-origin-label">顾客原留言</text><text class="ticket-origin-who">{{tempTicketReply.who}}</text></view>
+          <text class="ticket-ctx" wx:if="{{tempTicketReply.contextLine}}">关于{{tempTicketReply.contextLine}}</text>
+          <text class="ticket-msg" user-select wx:if="{{!tempTicketReply.bodyEmpty}}">{{tempTicketReply.body}}</text>
+          <text class="ticket-empty" wx:else>顾客没有写正文，建议回复时请对方补充想咨询的内容。</text>
+          <view class="ticket-imgs" wx:if="{{tempTicketReply.images.length}}">
+            <image wx:for="{{tempTicketReply.images}}" wx:for-item="url" wx:key="*this" class="ticket-img" src="{{url}}" mode="aspectFill" bindtap="previewReplyImage" data-url="{{url}}"/>
+          </view>
+          <text class="ticket-phone" wx:if="{{tempTicketReply.contactPhone}}">联系电话 {{tempTicketReply.contactPhone}} · {{tempTicketReply.formatTime}}</text>
+          <text class="ticket-phone" wx:else>{{tempTicketReply.formatTime}}</text>
+        </view>
         <textarea class="textarea" maxlength="500" value="{{tempTicketReply.content}}" bindinput="bindTicketReplyInput" placeholder="回复内容将推送到用户山海有信" style="height:200rpx"/>
       </scroll-view>
       <view class="modal-foot"><view class="btn-full" bindtap="submitTicketReply">发送回复</view></view>

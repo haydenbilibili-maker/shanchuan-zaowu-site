@@ -199,5 +199,29 @@ export const SCENES = [
         channels: [{ name: '刷卡', pct: 78, valueFmt: '152,300', color: '#2E4A3A' }, { name: '小程序', pct: 22, valueFmt: '42,000', color: '#C4A76C' }]
       }
     }
+  },
+  { name: 'r7-tickets', h: 1500, wxml: () => tabBlock(11), wxss: MGR_CSS, data: { curTab: 11, subTabMessage: 2, supportTickets: ticketRows() } },
+  {
+    name: 'r7-ticket-reply',
+    h: 1334,
+    wxml: () => `<view class="container workspace-leaf">${cutBetween(read(SUB), '<!-- 山海有信：留言回复 -->', '\n  <!--')}</view>`,
+    wxss: MGR_CSS,
+    extraCss: '.modal-mask, .modal-panel { animation: none !important; opacity: 1 !important; transform: none !important; }',
+    data: { showTicketReplyModal: true, tempTicketReply: { ...ticketRows()[1], content: '' } }
   }
 ]
+
+/** 第 1 条 = 2026-10-01 20:06:11 真实工单原样（message 只有预填前缀）；其余为写了正文 / 附图的样例 */
+function ticketRows() {
+  const mod = { exports: {} }
+  new Function('module', 'exports', read('subpackages/manager/utils/supportTicketView.js'))(mod, mod.exports)
+  const { buildTicketView } = mod.exports
+  const fmt = (t) => t
+  const pic = `file://${resolve(MP, '..', 'public/images/price-list/blue-morpho-dome-single.jpg')}`
+  return [
+    { _id: 't1', _openid: 'oa22s5xxxxxxxxxxxxxx3005E033', topicLabel: '藏品鉴赏', message: '关于藏品「忘忧尾蛱蝶植物标本框」：', productName: '忘忧尾蛱蝶植物标本框', createTime: '2026/10/1 20:06:11' },
+    { _id: 't2', _openid: 'oXyz000000000000000000AB12CD34', memberNickName: '林小满', memberNo: 'MT-AB12-CD34', topicLabel: '藏品鉴赏', contactPhone: '13800001234', createTime: '2026/10/1 21:12:40',
+      message: '关于藏品「大蓝闪蝶 · 原木框」：\n想送给父亲做生日礼物，框子能换成胡桃木的吗？\n另外礼盒能不能加一张手写卡，周六前能寄到上海吗？如果来不及我也可以到店自提，麻烦告诉我门店地址和营业时间，谢谢。' },
+    { _id: 't3', _openid: 'oQwe000000000000000000EF56GH78', memberNickName: '', memberNo: '', topicLabel: '标本养护', createTime: '2026/10/1 21:30:02', message: '标本框玻璃里面起雾了，附了照片，请帮忙看看要怎么处理', images: [pic, pic] }
+  ].map((r) => buildTicketView(r, fmt))
+}

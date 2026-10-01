@@ -152,6 +152,7 @@
             maxlength="500"
             value="{{messageText}}"
             bindinput="onMessageInput"
+            bindblur="onMessageInput"
           ></textarea>
           <view class="phone-row">
             <text class="phone-label">联系电话（选填）</text>

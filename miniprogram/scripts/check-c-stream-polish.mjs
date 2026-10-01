@@ -83,7 +83,17 @@ const FILES = {
   permWxml: `${EXTRA}/staff-permissions/index.wxml`,
   permJs: `${EXTRA}/staff-permissions/index.js`,
   mirrors: 'miniprogram/scripts/subpackage-mirrors.json',
-  appWxss: 'miniprogram/app.wxss'
+  appWxss: 'miniprogram/app.wxss',
+  ticketView: `${MGR}/utils/supportTicketView.js`,
+  msgAdminFn: 'miniprogram/cloudfunctions/messageAdmin/index.js',
+  supportJs: `${EXTRA}/user/support/index.js`
+}
+
+/** R7：在内存里执行 supportTicketView 源码（自检注入改的是这份字符串） */
+function loadTicketView(code) {
+  const mod = { exports: {} }
+  try { new Function('module', 'exports', 'require', code)(mod, mod.exports, () => ({})) } catch (e) { return null }
+  return mod.exports
 }
 
 /** R6-1：删掉 .wb-press 同值副本的 8 个文件 */
@@ -454,6 +464,36 @@ function check(src) {
   }
   ok(mutedLeft.length === 0, `R6-3 员工 / 管理端说明字又用 muted（深色面 2.7–3.1:1，应改 secondary）${mutedLeft.length} 处：${mutedLeft.slice(0, 3).join(' / ')}`)
 
+  // R7 山海有信 · 留言回复
+  const ticketTab = (src.subviews.match(/<block wx:if="\{\{subTabMessage===2\}\}">[\s\S]*?暂无待回复留言/) || [''])[0]
+  ok(!!ticketTab, 'R7-1 找不到「留言回复」tab')
+  ok(!/class="p-name"/.test(ticketTab), 'R7-1 留言正文又用 .p-name（单行省略，预填前缀后的正文会被整段藏掉）')
+  ok(/class="ticket-msg \{\{item\.canExpand && !item\.expanded \? 'is-clamp' : ''\}\}"[^>]*>\{\{item\.body\}\}/.test(ticketTab) && /bindtap="toggleTicketExpand"/.test(ticketTab), 'R7-1 留言卡没有完整正文 + 展开全文')
+  ok(/\.ticket-msg \{[^}]*white-space: pre-wrap/.test(src.hubWxss), 'R7-1 .ticket-msg 不是 pre-wrap（换行后的正文看不到）')
+  ok(/bindtap="previewTicketImage"/.test(ticketTab), 'R7-1 留言卡附图不能点开看大图')
+  ok(!/openidMask|_openid/.test(ticketTab) && /\{\{item\.who\}\}/.test(ticketTab), 'R7-4 留言卡右上角又显示 openid 片段（应为昵称 / 会员号）')
+  const replyModal = (src.subviews.match(/<view class="modal-mask" wx:if="\{\{showTicketReplyModal\}\}"[\s\S]*?发送回复/) || [''])[0]
+  ok(/顾客原留言/.test(replyModal) && /\{\{tempTicketReply\.body\}\}/.test(replyModal), 'R7-3 回复弹层看不到顾客原留言')
+  const tv = loadTicketView(src.ticketView)
+  if (!tv || typeof tv.buildTicketView !== 'function') ok(false, 'R7-2 supportTicketView.js 无法执行')
+  else {
+    const real = tv.buildTicketView({ _openid: 'oa22s5xxxxxxxxxxxxxxABCD1234', message: '关于藏品「忘忧尾蛱蝶植物标本框」：', productName: '忘忧尾蛱蝶植物标本框' })
+    ok(real.bodyEmpty === true && real.contextLine === '藏品「忘忧尾蛱蝶植物标本框」', `R7-2 只带前缀的真实工单没识别成「顾客没写正文」（bodyEmpty=${real.bodyEmpty}，contextLine=${real.contextLine}）`)
+    ok(real.who === 'MT-ABCD-1234', `R7-4 无昵称时右上角不是会员号 MT-XXXX-XXXX（实得 ${real.who}）`)
+    const typed = tv.buildTicketView({ _openid: 'o', memberNickName: '小林', memberNo: 'MT-AAAA-BBBB', message: '关于藏品「X」：\n第一行\n第二行', images: ['cloud://a.png'] })
+    ok(typed.body === '第一行\n第二行' && typed.who === '小林 · MT-AAAA-BBBB' && typed.images.length === 1, `R7-2 正文 / 昵称 / 附图拆分不对（body=${JSON.stringify(typed.body)}，who=${typed.who}）`)
+    const long = tv.buildTicketView({ message: '很'.repeat(200) })
+    ok(long.body.length === 200 && long.canExpand === true, 'R7-2 长留言被截断或不能展开')
+  }
+  const listFn = (src.msgAdminFn.match(/async function listSupportTickets[\s\S]*?\n\}/) || [''])[0]
+  ok(/list: await attachMemberLabels\(res\.data \|\| \[\]\)/.test(listFn) && /return \{ success: true, list:/.test(listFn), 'R7-4 listSupportTickets 没补会员标识，或出参结构变了')
+  const ticketAttach = (src.msgAdminFn.match(/async function attachMemberLabels[\s\S]*?\n\}/) || [''])[0]
+  ok(/\.field\(\{ _openid: true, nickName: true, memberNo: true \}\)/.test(ticketAttach) && /\.\.\.r,\n\s*memberNickName:/.test(ticketAttach), 'R7-4 attachMemberLabels 读 users 字段超出昵称 / 会员号，或不是在原行上只新增字段')
+  const submit = (src.supportJs.match(/async submitTicket\(\) \{[\s\S]*?\n  \},/) || [''])[0]
+  const guardAt = submit.indexOf('if (message.length < 5 || body.length < 2)')
+  ok(guardAt > 0 && guardAt < submit.indexOf("name: 'submitSupportTicket'"), 'R7-5 顾客端只提交预填前缀（没写正文）仍能提交')
+  ok(/data: \{\n\s*topic: this\.data\.activeTopic,\n\s*message,\n\s*orderId: this\.data\.orderId,\n\s*orderNo: this\.data\.orderNo,\n\s*productId: this\.data\.productId,\n\s*productName: this\.data\.productName,\n\s*contactPhone: phone\n\s*\}/.test(submit), 'R7-5 submitSupportTicket 入参被改')
+
   return fails
 }
 
@@ -532,6 +572,15 @@ function selftest() {
     ['b2bdesk skel-line 没挂 ui-sk-line', (s) => ({ ...s, __r5: { ...s.__r5, ['miniprogram/subpackages/b2bdesk/center/index.wxml']: s.__r5['miniprogram/subpackages/b2bdesk/center/index.wxml'].replace('ui-sk-line skel-line', 'skel-line') } }), /R6-2 b2bdesk\/center\/index\.wxml 的 skel-\* 没挂 ui-sk-\*/],
     ['运营骨架复活自带呼吸动画', (s) => ({ ...s, __r6css: { ...s.__r6css, [`${EXTRA}/utils/ops-museum.wxss`]: s.__r6css[`${EXTRA}/utils/ops-museum.wxss`] + '\n@keyframes ops-sk-pulse { 50% { opacity: 0.5; } }\n' } }), /R6-2 extra\/utils\/ops-museum\.wxss 又自带骨架行/],
     ['b2bdesk 骨架又写底色', (s) => ({ ...s, __r6css: { ...s.__r6css, ['miniprogram/subpackages/b2bdesk/desk-common.wxss']: s.__r6css['miniprogram/subpackages/b2bdesk/desk-common.wxss'].replace('.skel-line {', '.skel-line { background: #262320;') } }), /R6-2 b2bdesk\/desk-common\.wxss 的骨架规则又写了底色/],
+    ['留言正文退回 .p-name', (s) => ({ ...s, subviews: s.subviews.replace(/<text class="ticket-msg \{\{item\.canExpand[^\n]*/, '<text class="p-name">{{item.message}}</text>') }), /R7-1 留言正文又用 \.p-name/],
+    ['.ticket-msg 去掉 pre-wrap', (s) => ({ ...s, hubWxss: s.hubWxss.replace('white-space: pre-wrap; word-break', 'white-space: nowrap; word-break') }), /R7-1 \.ticket-msg 不是 pre-wrap/],
+    ['右上角回到 openid 片段', (s) => ({ ...s, subviews: s.subviews.replace('{{item.who}}</text>', '{{item.openidMask}}</text>') }), /R7-4 留言卡右上角又显示 openid/],
+    ['回复弹层去掉原留言', (s) => ({ ...s, subviews: s.subviews.replace('<text class="ticket-msg" user-select wx:if="{{!tempTicketReply.bodyEmpty}}">{{tempTicketReply.body}}</text>', '') }), /R7-3 回复弹层看不到顾客原留言/],
+    ['前缀拆分把正文吞掉', (s) => ({ ...s, ticketView: s.ticketView.replace('body: raw.slice(m[0].length).trim()', "body: ''") }), /R7-2 正文 \/ 昵称 \/ 附图拆分不对/],
+    ['长留言被截断', (s) => ({ ...s, ticketView: s.ticketView.replace('const { contextLine, body } = splitTicketMessage(row.message)', 'const { contextLine, body: full } = splitTicketMessage(row.message); const body = full.slice(0, 66)') }), /R7-2 长留言被截断/],
+    ['会员号回退丢失', (s) => ({ ...s, ticketView: s.ticketView.replace('const memberNo = row.memberNo || buildMemberNo(row._openid)', 'const memberNo = row.memberNo') }), /R7-4 无昵称时右上角不是会员号/],
+    ['会员标识顺手读手机号', (s) => ({ ...s, msgAdminFn: s.msgAdminFn.replace('.field({ _openid: true, nickName: true, memberNo: true })', '.field({ _openid: true, nickName: true, memberNo: true, phone: true })') }), /R7-4 attachMemberLabels 读 users 字段超出/],
+    ['顾客端放行只有前缀的留言', (s) => ({ ...s, supportJs: s.supportJs.replace('if (message.length < 5 || body.length < 2) {', 'if (message.length < 5) {') }), /R7-5 顾客端只提交预填前缀/],
     ['工作台说明字退回 muted', (s) => ({ ...s, __r6css: { ...s.__r6css, [FILES.hubWxss]: s.__r6css[FILES.hubWxss].replace(/(\.lo-kpi-hint \{[^}]*?)color: var\(--color-text-secondary, #A09A90\)/, '$1color: var(--color-text-muted)') } }), /R6-3 .*manager\/manager\/index\.wxss \.lo-kpi-hint/]
   ]
   const notes = []
