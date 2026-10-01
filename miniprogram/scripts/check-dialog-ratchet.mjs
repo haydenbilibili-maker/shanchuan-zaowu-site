@@ -72,7 +72,10 @@ if (process.argv.includes('--report')) {
 if (process.argv.includes('--selftest')) {
   const target = join(MP, 'pages/index/index.js')
   const orig = readFileSync(target, 'utf8')
-  writeFileSync(target, orig + "\nwx.showToast({ title: '棘轮自检探针', icon: 'none' })\n")
+  // 基线只许降、不强制收紧：该文件实际数可能低于基线，探针数要盖过余量才必然越线
+  const rel = relative(ROOT, target)
+  const slack = Math.max(0, ((base && base.counts[rel]) || 0) - (now.counts[rel] || 0))
+  writeFileSync(target, orig + "\nwx.showToast({ title: '棘轮自检探针', icon: 'none' })\n".repeat(slack + 1))
   const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
   writeFileSync(target, orig)
   if (readFileSync(target, 'utf8') !== orig) { console.log('✗ 未能逐字还原'); process.exit(1) }
