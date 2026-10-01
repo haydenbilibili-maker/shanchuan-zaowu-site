@@ -24,6 +24,9 @@
  *   B12 订单详情底栏：btn-text / btn-main / hologram-btn 每一枚都挂 hover-class，且 *-press 类在 wxss 有定义
  *      （此前只靠 `:active`，真机 view 上不可靠）；
  *   B13 反馈 / 注册完成按钮有按压反馈（提交中不挂）。
+ *   ── 产品负责人点名（2026-10-01）──
+ *   B14 荣誉档案：对 orders 的每一处查询都经 `fetchAllPages` 分批取完（skip + limit 循环），
+ *      不得裸 `.get()` —— 小程序端单次最多 20 条，签收 >20 件的藏家会静默少证书。
  *
  * 自检不写盘：注入在内存副本上做（共享工作区有并行流，写盘注入会覆盖别人的在写内容）。
  *
@@ -53,7 +56,8 @@ const F = {
   ticketWxml: `${B}/ticket/index.wxml`,
   ticketJs: `${B}/ticket/index.js`,
   feedbackWxml: 'miniprogram/subpackages/extra/user/feedback/index.wxml',
-  onboardingWxml: 'miniprogram/subpackages/extra/user/onboarding/index.wxml'
+  onboardingWxml: 'miniprogram/subpackages/extra/user/onboarding/index.wxml',
+  certJs: 'miniprogram/subpackages/extra/user/certificates/index.js'
 }
 
 /** B4 扫描范围（逐轮扩充；只加不减） */
@@ -205,6 +209,17 @@ export function runChecks(src) {
   check('B13.feedback-press', /bindtap="submitFeedback"/.test(src[F.feedbackWxml]) && /'account-btn-press'\}\}"[^>]*bindtap="submitFeedback"/.test(src[F.feedbackWxml]), '反馈提交按钮无按压反馈')
   check('B13.onboarding-finish-press', /hover-class="\{\{saving \? '' : 'account-btn-press'\}\}"[\s\S]{0,60}bindtap="finishWithGift"/.test(src[F.onboardingWxml]), '注册完成按钮无按压反馈')
 
+
+  // B14
+  const cj = stripJsComments(src[F.certJs])
+  const helperAt = cj.indexOf('async function fetchAllPages(')
+  const helper = helperAt >= 0 ? cj.slice(helperAt, cj.indexOf('\n}', helperAt)) : ''
+  check('B14.helper-paginates', /for\s*\(|while\s*\(/.test(helper) && /\.skip\(/.test(helper) && /\.limit\(/.test(helper) && /\bbreak\b/.test(helper),
+    '荣誉档案缺少 skip + limit 的分批循环（fetchAllPages）')
+  const sites = [...cj.matchAll(/db\.collection\('orders'\)/g)].map((m) => m.index)
+  const unpaged = sites.filter((i) => !/fetchAllPages\(\(\)\s*=>\s*$/.test(cj.slice(Math.max(0, i - 40), i)))
+  check('B14.orders-all-paged', sites.length > 0 && unpaged.length === 0, `荣誉档案有 ${unpaged.length} 处 orders 查询未经分批（单次最多 20 条）`)
+
   return { pass, fails }
 }
 
@@ -220,7 +235,7 @@ function report({ pass, fails }) {
     console.error(`✗ check:bflow-polish：${fails.length} 项失败 / ${pass} 项通过`)
     return 1
   }
-  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13）`)
+  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14）`)
   return 0
 }
 
@@ -243,6 +258,19 @@ const INJECTIONS = [
   ['B4 票据失败拼回 errMsg', F.ticketJs, (s) => s.replace("wx.showToast({ title: '票据没取到，请检查网络后重试', icon: 'none' });", "wx.showToast({ title: err.errMsg || '票据不存在', icon: 'none' });")],
   ['B12 底栏按钮丢 hover-class', F.odWxml, (s) => s.replace('<view class="btn-text cancel" hover-class="btn-text-press" hover-stay-time="80"', '<view class="btn-text cancel"')],
   ['B12 删掉 btn-main-press 定义', F.odWxss, (s) => s.replace('.btn-main:active,\n.btn-main-press {', '.btn-main:active {')],
+  ['B14 证书查询回到裸 get()', F.certJs, (s) => s.replace(`fetchAllPages(() => db.collection('orders')
+          .where({
+            _openid: openid,
+            status: 'received'
+          })
+          .orderBy('createTime', 'desc')),`, `db.collection('orders')
+          .where({
+            _openid: openid,
+            status: 'received'
+          })
+          .orderBy('createTime', 'desc')
+          .get(),`)],
+  ['B14 分批循环丢 skip', F.certJs, (s) => s.replace('.skip(page * PAGE_SIZE)', '')],
   ['B13 反馈按钮丢按压', F.feedbackWxml, (s) => s.replace(` hover-class="{{submitting ? '' : 'account-btn-press'}}" hover-stay-time="80"`, '')]
 ]
 

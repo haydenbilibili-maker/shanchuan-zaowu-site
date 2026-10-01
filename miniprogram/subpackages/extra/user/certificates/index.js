@@ -32,6 +32,21 @@ function certKindOf(order, openid) {
 
 const KIND_LABEL = { holder: '', gift_holder: '受赠', gift_voucher: '赠予凭证' }
 
+// 小程序端单次 get() 最多 20 条：按 skip 分批取完，上限 50 批（1000 单）防异常死循环
+const PAGE_SIZE = 20
+const MAX_PAGES = 50
+
+async function fetchAllPages(buildQuery) {
+  const all = []
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const res = await buildQuery().skip(page * PAGE_SIZE).limit(PAGE_SIZE).get()
+    const batch = (res && res.data) || []
+    all.push(...batch)
+    if (batch.length < PAGE_SIZE) break
+  }
+  return { data: all }
+}
+
 Page({
   data: {
     headerBlockPx: 16,
@@ -62,17 +77,15 @@ Page({
     wx.showLoading({ title: '检索档案…', mask: true });
     try {
       const [res, giftedRes] = await Promise.all([
-        db.collection('orders')
+        fetchAllPages(() => db.collection('orders')
           .where({
             _openid: openid,
             status: 'received'
           })
-          .orderBy('createTime', 'desc')
-          .get(),
-        db.collection('orders')
+          .orderBy('createTime', 'desc')),
+        fetchAllPages(() => db.collection('orders')
           .where({ 'giftMeta.receiverOpenid': openid, status: 'received' })
-          .orderBy('createTime', 'desc')
-          .get()
+          .orderBy('createTime', 'desc'))
           .catch(() => ({ data: [] }))
       ]);
 
