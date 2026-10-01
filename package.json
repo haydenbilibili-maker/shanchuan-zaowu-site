@@ -75,6 +75,7 @@
     "check:nav-dom": "node admin/scripts/check-nav-dom.mjs",
     "check:nav-dom:selftest": "node admin/scripts/check-nav-dom.mjs --selftest",
     "audit:collections": "node admin/scripts/audit-live-collections.mjs",
+    "audit:shared-drift": "node scripts/report-shared-module-drift.mjs",
     "audit:collections:json": "node admin/scripts/audit-live-collections.mjs --json",
     "audit:collections:strict": "node admin/scripts/audit-live-collections.mjs --strict",
     "audit:collections:update": "node admin/scripts/audit-live-collections.mjs --update",

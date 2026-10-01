@@ -54,7 +54,8 @@
     （证明执行器不短路、缺自检与死脚本名会被点名）；
     ⚠️ **`check:admin` 只跑守卫、不跑自检** —— 改了任何「被某条自检注入」的文件后，
     必须**在隔离 worktree 里**跑 `check:admin:selftest`（它会对源码注入→还原，在共享工作区跑会覆盖别人的在写内容）；
-  - **不在清单内**的守卫（需浏览器/凭据，按需手动跑）：`check:nav-dom`、`audit:collections`、`check:cloud-files`、`check:fn-sync`；
+  - **不在清单内**的守卫（需浏览器/凭据，按需手动跑）：`check:nav-dom`、`audit:collections`、`check:cloud-files`、`check:fn-sync`、
+ `audit:shared-drift`（共享副本线上漂移：改了 `staffGuard.js` 等共享文件后、部署收尾时跑，见错题本 E30）；
   - `npm run dev:admin` 起验收环境后 `npm run check:nav-dom`（**真实浏览器 DOM**，唯一能证明界面真画出来的检查）；
   - `npm run build`（ERP → `dist/admin/` + 官网 → `dist/`）；
   - 改配色/主题前先跑 `npm run report:colors`（**只报告不改动**，禁止 find-replace），

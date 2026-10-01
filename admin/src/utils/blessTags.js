@@ -2,13 +2,15 @@
  * 商品「祈运标签」—— `miniprogram/config/blessTags.js` 的**副本**（ERP 构建）。
  * ⚠️ 副本无法共享代码（云函数只能 require 自己目录内的文件；ERP 是独立构建），
  * 所以必须与唯一事实源逐字同源：由 `miniprogram/scripts/check-bless-tags-sync.mjs` 守卫对账。
+ * ⚠️ 本副本必须保持 ESM `export`（同步时只抄函数体，不要抄 `module.exports`）：
+ *   Vite dev 不对 src 下文件做 CJS 互操作，`App.vue` 的具名导入会让整个 ERP 白屏。
  */
 
 
 /** 一个商品最多挂几个祈运标签（标签一多就等于没标签） */
-const MAX_BLESS_TAGS = 3
+export const MAX_BLESS_TAGS = 3
 
-const BLESS_TAGS = [
+export const BLESS_TAGS = [
   {
     key: 'fortune',
     label: '求财',
@@ -48,7 +50,7 @@ const BLESS_TAGS = [
 ]
 
 /** 受控 key（顺序即展示顺序） */
-const BLESS_TAG_KEYS = BLESS_TAGS.map((t) => t.key)
+export const BLESS_TAG_KEYS = BLESS_TAGS.map((t) => t.key)
 
 /**
  * 墙级默认祈运标签（P2-6 选项 B · 2026-09-24 产品点名会默认）
@@ -59,7 +61,7 @@ const BLESS_TAG_KEYS = BLESS_TAGS.map((t) => t.key)
  *
  * 假设：「马上有」默认墙语义偏「求财」（品牌名）；其它墙未登记则不兜底。
  */
-const WALL_DEFAULT_BLESS = {
+export const WALL_DEFAULT_BLESS = {
   mashangyou: ['fortune']
 }
 
@@ -67,7 +69,7 @@ const WALL_DEFAULT_BLESS = {
  * @param {string} productKey
  * @returns {string[]} 受控标签；未知墙返回 []
  */
-function wallDefaultBlessTags(productKey) {
+export function wallDefaultBlessTags(productKey) {
   const key = String(productKey || '').trim() || 'mashangyou'
   const raw = WALL_DEFAULT_BLESS[key]
   return sanitizeBlessTags(raw || [])
@@ -83,7 +85,7 @@ function wallDefaultBlessTags(productKey) {
  * 映射理由（逐条）：乔迁→求安（安顿）；新婚/纪念日→求缘；生日/感恩→求安（愿平安）；
  * 升学→求学；毕业/新工作→求成（一程的收尾与开局）。
  */
-const SCENE_BLESS = {
+export const SCENE_BLESS = {
   housewarming: 'peace',
   wedding: 'bond',
   birthday: 'peace',
@@ -95,13 +97,13 @@ const SCENE_BLESS = {
 }
 
 /** 祈运标签 → 该标签对应的礼赠场景（云函数按场景兜底查询时用） */
-const BLESS_SCENES = BLESS_TAG_KEYS.reduce((acc, key) => {
+export const BLESS_SCENES = BLESS_TAG_KEYS.reduce((acc, key) => {
   acc[key] = Object.keys(SCENE_BLESS).filter((scene) => SCENE_BLESS[scene] === key)
   return acc
 }, {})
 
 /** 从礼赠场景推导祈运标签（受控、去重、按 SSOT 顺序） */
-function blessTagsFromScenes(scenes) {
+export function blessTagsFromScenes(scenes) {
   const list = Array.isArray(scenes) ? scenes : String(scenes || '').split(',')
   const hit = list.map((x) => SCENE_BLESS[String(x || '').trim()]).filter(Boolean)
   return sanitizeBlessTags(hit)
@@ -111,18 +113,18 @@ function blessTagsFromScenes(scenes) {
  * 商品祈运标签（**唯一入口**）：显式 `blessTags` 优先，没有就用礼赠场景兜底推导。
  * 页面 / 入口 / 云函数都用这一个函数，保证三端算出来的是同一组标签。
  */
-function resolveBlessTags(product) {
+export function resolveBlessTags(product) {
   const explicit = sanitizeBlessTags(product && product.blessTags)
   if (explicit.length) return explicit
   return blessTagsFromScenes(product && product.giftScenes)
 }
 
 /** 某个祈运标签对应的礼赠场景（云函数查询兜底用） */
-function scenesForBless(key) {
+export function scenesForBless(key) {
   return (BLESS_SCENES[String(key || '')] || []).slice()
 }
 
-function getBlessTag(key) {
+export function getBlessTag(key) {
   const k = String(key || '').trim().toLowerCase()
   return BLESS_TAGS.find((t) => t.key === k) || null
 }
@@ -132,18 +134,18 @@ function getBlessTag(key) {
  * 否则同一件商品在不同端保存后的顺序不同，diff 与守卫都没法比）。
  * @param {Array|string} list 数组，或逗号分隔的字符串（URL 参数用）
  */
-function sanitizeBlessTags(list) {
+export function sanitizeBlessTags(list) {
   const raw = Array.isArray(list) ? list : String(list || '').split(',')
   const picked = BLESS_TAG_KEYS.filter((key) => raw.map((x) => String(x || '').trim().toLowerCase()).includes(key))
   return picked.slice(0, MAX_BLESS_TAGS)
 }
 
 /** 从商品行读祈运标签（字段缺失/脏数据都容错，返回合法数组） */
-function readBlessTags(row) {
+export function readBlessTags(row) {
   return sanitizeBlessTags(row && row.blessTags)
 }
 
-function blessLabel(key) {
+export function blessLabel(key) {
   const t = getBlessTag(key)
   return t ? t.label : ''
 }
@@ -153,7 +155,7 @@ function blessLabel(key) {
  * 页面据此把玩法瓦片按"这面墙求什么"重排：**只重排，不隐藏** ——
  * 玩法是给用户的自由，标签只影响"先看到哪个"（隐藏玩法等于替用户做决定，也更难解释）。
  */
-function blessPlayIds(keys) {
+export function blessPlayIds(keys) {
   const out = []
   sanitizeBlessTags(keys).forEach((key) => {
     const t = getBlessTag(key)
@@ -166,27 +168,8 @@ function blessPlayIds(keys) {
 }
 
 /** 这面墙的一句祈运提示（取第一个标签；没有标签就返回空串，页面不显示） */
-function blessGuide(keys) {
+export function blessGuide(keys) {
   const first = sanitizeBlessTags(keys)[0]
   const t = getBlessTag(first)
   return t ? t.guide : ''
-}
-
-module.exports = {
-  MAX_BLESS_TAGS,
-  BLESS_TAGS,
-  BLESS_TAG_KEYS,
-  SCENE_BLESS,
-  BLESS_SCENES,
-  WALL_DEFAULT_BLESS,
-  wallDefaultBlessTags,
-  blessTagsFromScenes,
-  resolveBlessTags,
-  scenesForBless,
-  getBlessTag,
-  sanitizeBlessTags,
-  readBlessTags,
-  blessLabel,
-  blessPlayIds,
-  blessGuide
 }
