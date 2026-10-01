@@ -365,8 +365,8 @@
         catchtap="goToComment"
         wx:if="{{order.status === 'received' && order.products && order.products.length > 0 && !isVoucherOrder && !reviewCanAny}}"
       >
-        <text class="od-chip-tick">✓</text>
-        <text>{{reviewSummaryLabel || '已评价'}}</text>
+        <text class="od-chip-tick" wx:if="{{!reviewChipPending}}">✓</text>
+        <text>{{reviewChipPending ? '审核中' : '已评价'}}</text>
       </view>
       <view
         class="btn-text comment-after"

@@ -38,6 +38,13 @@
  *      ④ submitComment.orderStatus 只**新增** myReview（本人评价快照，不带 openid 等身份字段），原有键不变；
  *         同单同藏品多条时按毫秒取最新（updatedAt 审核后是数字、创建时是 Date，不能按字符串比）；
  *      ⑤ 查看态可点元素挂 tap-press(-soft)，说明字至少 secondary。
+ *   ── 产品负责人点名流程改动（2026-10-01 晚）──
+ *   B17 评价检测明确通过即自动展示（**真跑 submitComment 真源**，桩 openapi + 内存库）：
+ *      文本 suggest=pass 且每张图 imgSecCheck errCode=0 → 写 approved；suggest=review / 无 suggest / 报错 / 无 errCode /
+ *      超限 → pending；违规文字或图片 → 拒绝且零写入；被隐藏过的评价改写后不自动展示；评价页「审核中」与提交提示按新流程。
+ *   B18 订单页区分「审核中 / 已评价」：orderReviewMap 真跑（任意单数只查 2 次库、只回本人订单、hidden 算评完、
+ *      审核中单列）；列表 reviewFlags 真跑（评完 / 审核中 / 未回来都不给「写下感受」）且按批调用；
+ *      订单详情底栏标签按 reviewChipPending 显示「审核中」/「✓ 已评价」。
  *
  * 自检不写盘：注入在内存副本上做（共享工作区有并行流，写盘注入会覆盖别人的在写内容）。
  *
@@ -46,6 +53,7 @@
  *   node miniprogram/scripts/check-bflow-polish.mjs --selftest
  */
 import { readFileSync } from 'node:fs'
+import Module from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -133,7 +141,151 @@ function definedClasses(css) {
   return out
 }
 
-export function runChecks(src) {
+/* ── submitComment 真源的运行桩：wx-server-sdk 换成内存实现（openapi / downloadFile / 数据库），不联网不写盘 ── */
+const S = { text: null, images: {}, writes: [], orders: {}, comments: [], gets: 0 }
+const matchQ = (row, q) => Object.entries(q).every(([k, v]) => {
+  if (v && typeof v === 'object' && '$neq' in v) return row[k] !== v.$neq
+  if (v && typeof v === 'object' && '$in' in v) return v.$in.includes(row[k])
+  return row[k] === v
+})
+const STUB_DB = {
+  command: { neq: (v) => ({ $neq: v }), in: (v) => ({ $in: v }) },
+  collection: (name) => ({
+    doc: (id) => ({
+      get: async () => { S.gets += 1; return { data: name === 'orders' ? S.orders[id] : S.comments.find((c) => c._id === id) } },
+      update: async ({ data }) => { S.writes.push({ op: 'update', name, id, data }); return {} }
+    }),
+    add: async ({ data }) => { S.writes.push({ op: 'add', name, data }); return { _id: 'new-comment' } },
+    where: (q) => {
+      const chain = {
+        field: () => chain,
+        limit: () => chain,
+        get: async () => { S.gets += 1; return { data: (name === 'orders' ? Object.values(S.orders) : S.comments).filter((r) => matchQ(r, q)) } }
+      }
+      return chain
+    }
+  })
+}
+const STUB_SDK = {
+  DYNAMIC_CURRENT_ENV: 'stub',
+  init() {},
+  getWXContext: () => ({ OPENID: 'U' }),
+  database: () => STUB_DB,
+  callFunction: async () => ({}),
+  downloadFile: async ({ fileID }) => ({ fileContent: (S.images[fileID] || {}).big ? Buffer.alloc(1024 * 1024 + 1) : Buffer.from(fileID) }),
+  openapi: {
+    security: {
+      msgSecCheck: async () => { if (S.text.throw) throw S.text.throw; return S.text.res },
+      imgSecCheck: async ({ media }) => { const r = S.images[media.value.toString()] || {}; if (r.throw) throw r.throw; return r.res }
+    }
+  }
+}
+let sdkHooked = false
+function loadCloudFn(src) {
+  if (!sdkHooked) {
+    const orig = Module._load
+    Module._load = function (req, ...rest) { return req === 'wx-server-sdk' ? STUB_SDK : orig.call(this, req, ...rest) }
+    sdkHooked = true
+  }
+  const filename = resolve(ROOT, F.cmFn)
+  const m = new Module(filename)
+  m.filename = filename
+  m.paths = Module._nodeModulePaths(dirname(filename))
+  m._compile(src, filename)
+  return m.exports
+}
+
+const TXT = {
+  pass: { res: { errCode: 0, result: { suggest: 'pass' } } },
+  review: { res: { errCode: 0, result: { suggest: 'review' } } },
+  unknown: { res: { errCode: 0 } },
+  risky: { throw: Object.assign(new Error('risky'), { errCode: 87014 }) },
+  error: { throw: new Error('system busy') }
+}
+const IMG = {
+  ok: { res: { errCode: 0 } },
+  nocode: { res: {} },
+  error: { throw: new Error('system busy') },
+  risky: { res: { errCode: 87014 } },
+  big: { big: true }
+}
+
+async function submitCase(fn, text, imgs, extra = {}) {
+  S.text = TXT[text]
+  S.images = {}
+  const images = imgs.map((k, i) => { const id = `cloud://img-${i}-${k}`; S.images[id] = IMG[k]; return id })
+  S.writes = []
+  S.orders = { o1: { _id: 'o1', _openid: 'U', status: 'received', products: [{ id: 'p1', title: '自然小匣' }] } }
+  S.comments = extra.comments || []
+  const event = extra.event || { action: 'submit', targetType: 'product', orderId: 'o1', targetId: 'p1', rating: 5, content: '五个字以上的感受', images }
+  let r
+  try { r = await fn.main(event) } catch (e) { r = { thrown: String(e && e.message) } }
+  return { r, writes: S.writes.slice() }
+}
+
+async function checkModeration(src, check) {
+  let fn = null
+  try { fn = loadCloudFn(src[F.cmFn]) } catch { /* 编译失败按缺失 */ }
+  check('B17.fn-loads', !!fn && typeof fn.main === 'function', 'submitComment 真源无法在桩环境加载')
+  if (!fn) return
+  const written = (c) => (c.writes[0] && c.writes[0].data && c.writes[0].data.status) || ''
+  const expectStatus = async (id, text, imgs, want, why) => {
+    const c = await submitCase(fn, text, imgs)
+    check(id, !!c.r && c.r.success === true && c.r.status === want && written(c) === want && c.writes.length === 1,
+      `${why}：期望 ${want}，出参 ${JSON.stringify(c.r)}，写入 ${written(c) || '（无）'}`)
+  }
+  const expectReject = async (id, text, imgs, why) => {
+    const c = await submitCase(fn, text, imgs)
+    check(id, !!c.r && c.r.success === false && c.writes.length === 0, `${why}：出参 ${JSON.stringify(c.r)}，写入 ${c.writes.length} 次`)
+  }
+  await expectStatus('B17.pass-auto-approved', 'pass', ['ok'], 'approved', '文字 pass + 图片 errCode 0 未自动展示')
+  await expectStatus('B17.pass-no-image', 'pass', [], 'approved', '文字 pass 无图未自动展示')
+  await expectStatus('B17.text-review-pending', 'review', ['ok'], 'pending', '文字 suggest=review（检测不通过）被自动展示')
+  await expectStatus('B17.text-unknown-pending', 'unknown', [], 'pending', '文字无 suggest（结果不确定）被自动展示')
+  await expectStatus('B17.text-error-pending', 'error', [], 'pending', '文字检测报错被自动展示')
+  await expectStatus('B17.img-nocode-pending', 'pass', ['nocode'], 'pending', '图片无 errCode（结果不确定）被自动展示')
+  await expectStatus('B17.img-error-pending', 'pass', ['error'], 'pending', '图片检测报错被自动展示')
+  await expectStatus('B17.img-big-pending', 'pass', ['big'], 'pending', '图片超同步接口上限被自动展示')
+  await expectStatus('B17.img-mixed-pending', 'pass', ['ok', 'error'], 'pending', '多图中一张报错仍被自动展示')
+  await expectReject('B17.text-risky-rejected', 'risky', [], '违规文字未拒绝或写了库')
+  await expectReject('B17.img-risky-rejected', 'pass', ['ok', 'risky'], '违规图片未拒绝或写了库')
+  const hiddenEdit = await submitCase(fn, 'pass', [], {
+    comments: [{ _id: 'g1', targetType: 'activity', targetId: 'a1', userId: 'U', status: 'hidden' }],
+    event: { action: 'submit', targetType: 'activity', targetId: 'a1', rating: 5, content: '五个字以上的感受', images: [] }
+  })
+  check('B17.hidden-edit-pending', hiddenEdit.r && hiddenEdit.r.status === 'pending' && written(hiddenEdit) === 'pending', '被隐藏过的评价改写后被自动重新展示')
+  const okCase = await submitCase(fn, 'pass', [])
+  check('B17.result-keys', okCase.r && ['success', 'msg', 'commentId', 'status'].every((k) => k in okCase.r), `提交出参键变了：${JSON.stringify(okCase.r)}`)
+
+  // B18 orderReviewMap
+  const prod = (id) => ({ id, title: id })
+  S.orders = {
+    oNone: { _id: 'oNone', _openid: 'U', status: 'received', products: [prod('p1')] },
+    oPend: { _id: 'oPend', _openid: 'U', status: 'received', products: [prod('p1')] },
+    oAppr: { _id: 'oAppr', _openid: 'U', status: 'received', products: [prod('p1')] },
+    oHide: { _id: 'oHide', _openid: 'U', status: 'received', products: [prod('p1')] },
+    oPart: { _id: 'oPart', _openid: 'U', status: 'received', products: [prod('p1'), prod('p2')] },
+    oMix: { _id: 'oMix', _openid: 'U', status: 'received', products: [prod('p1'), prod('p2')] },
+    oGift: { _id: 'oGift', _openid: 'X', giftMeta: { receiverOpenid: 'U' }, status: 'received', products: [prod('p1')] },
+    oOther: { _id: 'oOther', _openid: 'X', status: 'received', products: [prod('p1')] },
+    oVoucher: { _id: 'oVoucher', _openid: 'U', status: 'received', products: [{ id: 'v1', price: '100 PTS' }] },
+    oShip: { _id: 'oShip', _openid: 'U', status: 'shipped', products: [prod('p1')] }
+  }
+  const cm = (orderId, targetId, status, userId = 'U') => ({ _id: `${orderId}-${targetId}`, orderId, targetId, status, userId, targetType: 'product' })
+  S.comments = [cm('oPend', 'p1', 'pending'), cm('oAppr', 'p1', 'approved'), cm('oHide', 'p1', 'hidden'), cm('oPart', 'p1', 'approved'),
+    cm('oMix', 'p1', 'approved'), cm('oMix', 'p2', 'pending'), cm('oGift', 'p1', 'approved'), cm('oOther', 'p1', 'approved', 'X')]
+  S.gets = 0
+  let mapRes = null
+  try { mapRes = await fn.main({ action: 'orderReviewMap', orderIds: Object.keys(S.orders) }) } catch { /* 按失败 */ }
+  const st = (id) => mapRes && mapRes.map && mapRes.map[id] ? mapRes.map[id].reviewState : undefined
+  const want = { oNone: 'none', oPend: 'pending', oAppr: 'done', oHide: 'done', oPart: 'partial', oMix: 'pending', oGift: 'done', oVoucher: 'na', oShip: 'na' }
+  const wrong = Object.entries(want).filter(([id, s]) => st(id) !== s).map(([id, s]) => `${id}=${st(id)}（应 ${s}）`)
+  check('B18.map-states', !!mapRes && mapRes.success === true && wrong.length === 0, `orderReviewMap 状态不对：${wrong.join(', ') || JSON.stringify(mapRes)}`)
+  check('B18.map-only-mine', !!mapRes && st('oOther') === undefined, 'orderReviewMap 回了别人的订单')
+  check('B18.map-two-queries', S.gets === 2, `orderReviewMap 查了 ${S.gets} 次库（应为 2 次批量，不随单数增长）`)
+}
+
+export async function runChecks(src) {
   const fails = []
   let pass = 0
   const check = (id, ok, detail) => {
@@ -249,8 +401,42 @@ export function runChecks(src) {
   check('B14.orders-all-paged', sites.length > 0 && unpaged.length === 0, `荣誉档案有 ${unpaged.length} 处 orders 查询未经分批（单次最多 20 条）`)
 
   checkCommentPage(src, check)
+  await checkModeration(src, check)
+  checkOrderReviewUi(src, check)
 
   return { pass, fails }
+}
+
+function checkOrderReviewUi(src, check) {
+  // 评价页文案按新流程
+  const cmJs = stripJsComments(src[F.cmJs])
+  check('B17.pending-copy', /pending:\s*\{\s*statusText:\s*'审核中',\s*statusNote:\s*'正在检测内容/.test(cmJs), '评价页「审核中」说明未按「正在检测内容」新流程')
+  const submit = methodBody(cmJs, 'submitComment')
+  check('B17.submit-toast-by-status', /res\.result\.status === 'approved'/.test(submit) && /'评价已展示'/.test(submit) && /正在检测内容/.test(submit) && !/title:\s*res\.result\.msg/.test(submit),
+    '提交成功提示未按 approved / pending 区分')
+
+  // 订单列表
+  const ow = src[F.ordersWxml]
+  const writeBtn = (ow.match(/<view class="btn-action"[^>]*?catchtap="goToReview"[^>]*>\s*写下感受/) || [''])[0]
+  check('B18.list-write-gated', /item\.reviewCanWrite/.test(writeBtn), '订单列表「写下感受」未按评价状态收起（已评价 / 审核中 / 已隐藏仍显示）')
+  check('B18.list-chip', /class="review-chip[\s\S]{0,200}?wx:elif="[^"]*item\.reviewChip/.test(ow), '订单列表评完后缺状态标签')
+  const oj = stripJsComments(src[F.ordersJs])
+  const fAt = oj.indexOf('function reviewFlags(')
+  let flags = null
+  try { flags = fAt >= 0 ? new Function(`${oj.slice(fAt, oj.indexOf('\n}', fAt) + 2)}\nreturn reviewFlags`)() : null } catch { /* 按缺失 */ }
+  const f = (s) => { try { return flags ? flags(s) : null } catch { return null } }
+  const ok = (s, w, chip) => { const r = f(s); return !!r && r.reviewCanWrite === w && r.reviewChip === chip }
+  check('B18.flags-reviewed-no-write', ok('done', false, '✓ 已评价') && ok('pending', false, '审核中'), '已评价 / 审核中的订单仍给「写下感受」或标签不对')
+  check('B18.flags-writable', ok('none', true, '') && ok('partial', true, '') && ok('unknown', true, ''), '未评 / 部分评 / 查询失败的订单丢了「写下感受」')
+  check('B18.flags-loading-blank', ok(undefined, false, '') && ok('na', false, ''), '评价状态未回来时先闪「写下感受」')
+  const load = methodBody(oj, 'loadReviewStates')
+  check('B18.list-batched', /orderReviewMap/.test(load) && /i \+= REVIEW_MAP_BATCH/.test(load) && /REVIEW_MAP_BATCH = (\d+)/.test(oj) && Number(oj.match(/REVIEW_MAP_BATCH = (\d+)/)[1]) >= 20
+    && /this\.loadReviewStates\(list\)/.test(methodBody(oj, 'loadOrders')), '订单列表评价状态不是按批一次调用')
+
+  // 订单详情底栏标签
+  const odw = src[F.odWxml]
+  check('B18.detail-chip-pending', /\{\{reviewChipPending \? '审核中' : '已评价'\}\}/.test(odw) && /od-chip-tick" wx:if="\{\{!reviewChipPending\}\}"/.test(odw), '订单详情底栏标签不区分「审核中 / 已评价」')
+  check('B18.detail-chip-js', /reviewChipPending:\s*reviewProducts\.some\(\(p\) => p && p\.reviewStatus === 'pending'\)/.test(stripJsComments(src[F.odJs])), '订单详情未按 reviewStatus 计算审核中')
 }
 
 /** 评价页顶层纯函数（Page 之前的部分）真跑：返回 buildViewReview；取不到 / 抛错 → null */
@@ -330,7 +516,7 @@ function report({ pass, fails }) {
     console.error(`✗ check:bflow-polish：${fails.length} 项失败 / ${pass} 项通过`)
     return 1
   }
-  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14 · 底栏改版 B15 · 评价页查看态 B16）`)
+  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14 · 底栏改版 B15 · 评价页查看态 B16 · 检测通过自动展示 B17 · 订单页审核中 / 已评价 B18）`)
   return 0
 }
 
@@ -391,12 +577,31 @@ const INJECTIONS = [
   ['B16 myReview 带出 openid', F.cmFn, (s) => s.replace("status: comment.status || 'pending',", "status: comment.status || 'pending',\n    userId: comment.userId,")],
   ['B16 取最新回到字符串比较', F.cmFn, (s) => s.replace('toMs(c.updatedAt || c.createdAt) > toMs(prev.updatedAt || prev.createdAt)', "String(c.updatedAt || c.createdAt || '') > String(prev.updatedAt || prev.createdAt || '')")],
   ['B16 藏品入口丢按压', F.cmWxml, (s) => s.replace('bindtap="goProduct"\n              hover-class="tap-press"', 'bindtap="goProduct"')],
-  ['B16 说明字回到 muted', F.cmWxss, (s) => s.replace('.review-note {\n  font-size: 24rpx;\n  color: #A09A90;', '.review-note {\n  font-size: 24rpx;\n  color: #6B6560;')]
+  ['B16 说明字回到 muted', F.cmWxss, (s) => s.replace('.review-note {\n  font-size: 24rpx;\n  color: #A09A90;', '.review-note {\n  font-size: 24rpx;\n  color: #6B6560;')],
+  ['B17 文字 review（不通过）也自动展示', F.cmFn, (s) => s.replace("  else if (textCheck.needReview) reviewReasons.push('text_suggest_review')\n", '')
+    .replace("else if (textCheck.suggest !== 'pass')", "else if (!['pass', 'review'].includes(textCheck.suggest))")],
+  ['B17 文字结果不确定当通过', F.cmFn, (s) => s.replace("  else if (textCheck.suggest !== 'pass') reviewReasons.push('text_result_unknown')\n", '')],
+  ['B17 图片无 errCode 当通过', F.cmFn, (s) => s.replace("return !!r && r.ok === true && !r.skipped && (r.errcode === 0 || r.errcode === '0')", 'return !!r && r.ok === true')],
+  ['B17 图片报错不转人工', F.cmFn, (s) => s.replace("    if (!r.ok) reviewReasons.push(r.openapiUnavailable ? 'image_check_openapi_unavailable' : `image_check_${r.reason}`)\n    else if (!imagePassedExplicitly(r))", '    if (r.ok && !imagePassedExplicitly(r))')],
+  ['B17 违规图片不拒绝', F.cmFn, (s) => s.replace("    if (!r.ok && r.reason === 'risky') {\n      return { ok: false, msg: '图片未通过安全检测，请更换后重试' }\n    }\n", '')],
+  ['B17 一律写 approved', F.cmFn, (s) => s.replace('  if (secCheck.autoApprove) return', '  if (true) return')],
+  ['B17 隐藏后改写自动展示', F.cmFn, (s) => s.replace("const moderation = prev.status === 'hidden'", 'const moderation = false')],
+  ['B17 评价页文案回到旧流程', F.cmJs, (s) => s.replace("statusNote: '正在检测内容，稍后展示在藏品页。'", "statusNote: '审核通过后会展示在藏品页，其他藏友就能看到。'")],
+  ['B17 提交提示不分状态', F.cmJs, (s) => s.replace("title: shown ? '评价已展示' : '已提交，正在检测内容，稍后展示'", "title: res.result.msg || '已提交'")],
+  ['B18 隐藏算可重评', F.cmFn, (s) => s.replace("(byProduct[p.productId] ? byProduct[p.productId].status || 'pending' : 'none')", "(byProduct[p.productId] && byProduct[p.productId].status !== 'hidden' ? byProduct[p.productId].status || 'pending' : 'none')")],
+  ['B18 审核中算已评价', F.cmFn, (s) => s.replace("        : statuses.includes('pending')", '        : false')],
+  ['B18 reviewMap 不校验订单归属', F.cmFn, (s) => s.replace('    if (!order || !isOrderActor(order, openid)) return\n', '    if (!order) return\n')],
+  ['B18 reviewMap 逐单查库', F.cmFn, (s) => s.replace('  const map = {}\n  ;(ordersRes.data', "  for (const id of ids) await db.collection('orders').doc(id).get()\n  const map = {}\n  ;(ordersRes.data")],
+  ['B18 列表无条件写下感受', F.ordersWxml, (s) => s.replace(' && !item.isVoucherOrder && item.reviewCanWrite}}"', ' && !item.isVoucherOrder}}"')],
+  ['B18 列表已评价仍可写', F.ordersJs, (s) => s.replace("reviewState === 'unknown',", "reviewState === 'unknown' || reviewState === 'done',")],
+  ['B18 列表状态未回来先给入口', F.ordersJs, (s) => s.replace("reviewCanWrite: reviewState === 'none'", "reviewCanWrite: !reviewState || reviewState === 'none'")],
+  ['B18 列表逐单调用', F.ordersJs, (s) => s.replace('i += REVIEW_MAP_BATCH', 'i += 1')],
+  ['B18 详情标签不分审核中', F.odWxml, (s) => s.replace("{{reviewChipPending ? '审核中' : '已评价'}}", "{{reviewSummaryLabel || '已评价'}}")]
 ]
 
 if (process.argv.includes('--selftest')) {
   const base = loadAll()
-  const clean = runChecks(base)
+  const clean = await runChecks(base)
   if (clean.fails.length) {
     console.error('✗ 自检前置：基线本身不绿')
     process.exit(report(clean))
@@ -408,7 +613,7 @@ if (process.argv.includes('--selftest')) {
       console.error(`  ✗ 注入锚点失效：${name}`)
       continue
     }
-    const r = runChecks({ ...base, [file]: injected })
+    const r = await runChecks({ ...base, [file]: injected })
     if (r.fails.length) {
       ok += 1
       console.log(`  ✓ 检出：${name}`)
@@ -422,4 +627,4 @@ if (process.argv.includes('--selftest')) {
   process.exit(0)
 }
 
-process.exit(report(runChecks(loadAll())))
+process.exit(report(await runChecks(loadAll())))

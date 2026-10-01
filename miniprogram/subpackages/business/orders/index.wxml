@@ -113,14 +113,20 @@
                   确认签收
                 </view>
                 
-                <!-- 已签收 -> 评价 / 详情 -->
+                <!-- 已签收 -> 评价 / 详情（评价状态由 orderReviewMap 批量补齐：可写才给「写下感受」，评完显示状态） -->
                 <view class="btn-action" hover-class="btn-action-press"
-                      wx:if="{{(item.status === 'received' || item.status === 'signed') && !item.isVoucherOrder}}"
+                      wx:if="{{(item.status === 'received' || item.status === 'signed') && !item.isVoucherOrder && item.reviewCanWrite}}"
                       catchtap="goToReview"
                       data-id="{{item._id}}"
                       data-item="{{item}}">
                   写下感受
                 </view>
+                <view class="review-chip {{item.reviewChip === '审核中' ? 'is-pending' : ''}}"
+                      wx:elif="{{(item.status === 'received' || item.status === 'signed') && !item.isVoucherOrder && item.reviewChip}}"
+                      hover-class="tap-press-soft" hover-stay-time="80"
+                      catchtap="goToReview"
+                      data-id="{{item._id}}"
+                      data-item="{{item}}">{{item.reviewChip}}</view>
                 <view class="btn-action gold" hover-class="btn-action-press" 
                       wx:if="{{item.status === 'received' || item.status === 'signed'}}" 
                       catchtap="handleOrderClick" 

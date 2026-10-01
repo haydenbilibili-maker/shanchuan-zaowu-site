@@ -145,6 +145,9 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .btn-action:active { background: #C4A76C; color: #1A1814; border-color: #C4A76C; }
 .btn-action.primary:active { background: #A8903C; border-color: #A8903C; }
 .btn-action.is-busy { opacity: 0.6; }
+/* 评完的状态标签（不占按钮）：已评价 secondary、审核中金色 */
+.review-chip { display: flex; align-items: center; padding: 10rpx 8rpx; font-size: 22rpx; color: #A09A90; letter-spacing: 1rpx; white-space: nowrap; }
+.review-chip.is-pending { color: #C4A76C; }
 .total-box .val.muted { color: #A09A90; font-size: 24rpx; font-weight: 400; letter-spacing: 0.04em; }
 
 .end-mark { text-align: center; margin-top: 40rpx; display: flex; flex-direction: column; align-items: center; }

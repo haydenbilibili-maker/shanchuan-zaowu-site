@@ -152,7 +152,9 @@ Page(withAppModal({
     reviewSummaryLabel: '',
     reviewCanAny: false,
     reviewPendingCount: 0,
-    reviewProducts: []
+    reviewProducts: [],
+    /** 已评完时底栏标签：有审核中的显示「审核中」，否则「✓ 已评价」 */
+    reviewChipPending: false
   },
 
   onLoad(options) {
@@ -625,7 +627,8 @@ Page(withAppModal({
         reviewSummaryLabel: '',
         reviewCanAny: false,
         reviewPendingCount: 0,
-        reviewProducts: []
+        reviewProducts: [],
+        reviewChipPending: false
       });
       
       wx.hideNavigationBarLoading();
@@ -1073,11 +1076,13 @@ Page(withAppModal({
       });
       const result = (res && res.result) || {};
       if (!result.success) return;
+      const reviewProducts = Array.isArray(result.products) ? result.products : [];
       this.setData({
         reviewSummaryLabel: result.summaryLabel || '',
         reviewCanAny: !!result.canReviewAny,
         reviewPendingCount: result.pendingCount || 0,
-        reviewProducts: Array.isArray(result.products) ? result.products : []
+        reviewProducts,
+        reviewChipPending: reviewProducts.some((p) => p && p.reviewStatus === 'pending')
       });
     } catch (e) {
       console.warn('loadReviewStatus', e);

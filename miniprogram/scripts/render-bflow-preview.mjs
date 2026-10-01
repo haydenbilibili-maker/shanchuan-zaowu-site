@@ -15,14 +15,15 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const ROOT = resolve(HERE, '..', '..')
-const MP = resolve(ROOT, 'miniprogram')
 
 const argv = process.argv.slice(2)
 const argOf = (n, d) => {
   const i = argv.indexOf(n)
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
+/** --root <仓库根>：渲染另一棵树（如改前提交的临时 worktree）里的页面，用于改前 / 改后同脚本对照 */
+const ROOT = resolve(argOf('--root', resolve(HERE, '..', '..')))
+const MP = resolve(ROOT, 'miniprogram')
 const round = argOf('--round', '1')
 const out = argOf('--out', join(tmpdir(), `bflow-round${round}.png`))
 
@@ -244,7 +245,8 @@ const ROUNDS = {
   </div></div>`, 420)
   ],
   od: () => orderDetailPanels(),
-  comment: () => commentPanels()
+  comment: () => commentPanels(),
+  review: () => reviewPanels()
 }
 
 /* ── 订单详情：用迷你 WXML 求值器直接渲染**真实 wxml**（wx:if / elif / else、{{表达式}}），按状态逐一出底栏 ── */
@@ -370,6 +372,51 @@ function commentPanels() {
   })
 }
 
+/* ── 评价状态在订单页：列表三张已签收卡（未评 / 审核中 / 已评价）+ 详情底栏两态 + 评价页「审核中」说明（文案取自页内 buildViewReview 真跑） ── */
+function reviewPanels() {
+  const listTree = parseWxml(readFileSync(resolve(MP, 'subpackages/business/orders/index.wxml'), 'utf8'))
+  const card = (id, title, extra) => ({
+    _id: id, orderNo: `SH2026092${id}`, status: 'received', statusStr: '已签收', statusEn: 'SIGNED', showOrderPrice: true,
+    totalPriceDisplay: '268.00', products: [{ id: `p${id}`, title, latin: '', image: 'x' }], ...extra
+  })
+  const orders = [
+    card('1', '自然小匣（未评价）', { reviewCanWrite: true, reviewChip: '' }),
+    card('2', '印尼金锹（审核中）', { reviewCanWrite: false, reviewChip: '审核中' }),
+    card('3', '蒲公英标本（已评价 / 已隐藏）', { reviewCanWrite: false, reviewChip: '✓ 已评价' })
+  ]
+  const listData = { tabs: [{ name: '全部' }, { name: '待付款' }, { name: '待发货' }, { name: '待收货' }, { name: '已签收' }, { name: '售后/退款' }], curTab: 4, loading: false, orders }
+  const panels = [panel('订单列表 · 已签收（上 未评 / 中 审核中 / 下 已评价）', ['subpackages/business/orders/index.wxss'],
+    renderNodes(listTree.children, listData), 1300, 'div,span{box-sizing:border-box}')]
+
+  const odTree = parseWxml(readFileSync(resolve(MP, 'subpackages/business/order-detail/index.wxml'), 'utf8'))
+  const odBase = {
+    loading: false, loadError: false, isDecrypted: true, orderId: 'o1', showOrderPrice: false, showCare: true, certRole: 'holder', showRefundEntry: true,
+    refundEntryLabel: '申请售后', reviewCanAny: false, reviewSummaryLabel: '已评价',
+    order: { _id: 'o1', status: 'received', serialNo: 'ARC-6S4352-2026', archiveDate: '2026.9.21', totalPrice: '468.00', products: [{ title: '自然小匣' }],
+      logistics: { carrier: '顺丰速运', trackingNumber: 'SF0213728671548' }, address: { name: '李月', phone: '181****8650' }, addressLine: '吉林省 辽源市' }
+  }
+  const footerOnly = 'div,span{box-sizing:border-box}.archive-folder{display:none}'
+  for (const [title, pending] of [['订单详情底栏 · 评完且有审核中', true], ['订单详情底栏 · 评完且均已展示 / 隐藏', false]]) {
+    panels.push(panel(title, ['subpackages/business/order-detail/index.wxss'],
+      renderNodes(odTree.children, { ...odBase, reviewChipPending: pending }), 560, footerOnly))
+  }
+
+  const cmDir = 'subpackages/content/comment'
+  const cmJs = readFileSync(resolve(MP, `${cmDir}/index.js`), 'utf8')
+  let viewReview = null
+  try {
+    const build = new Function(`${cmJs.slice(0, cmJs.indexOf('\nPage({'))}\nreturn buildViewReview`)()
+    viewReview = build({ productId: 'p1', canReview: false, reviewStatus: 'pending', rating: 5,
+      myReview: { status: 'pending', rating: 5, content: '金属光泽在灯下很漂亮，包装也很仔细。', images: [], createdAt: Date.parse('2026-10-01T12:20:00Z') } })
+  } catch { /* 改前树没有该函数时留空 */ }
+  const cmTree = parseWxml(readFileSync(resolve(MP, `${cmDir}/index.wxml`), 'utf8'))
+  panels.push(panel('评价页 · 审核中（说明文案取自页内）', [`${cmDir}/index.wxss`], renderNodes(cmTree.children, {
+    loadingGate: false, canReview: false, viewReview, orderId: 'o1', targetId: 'p1', productOptions: [],
+    targetInfo: { title: '印尼金锹', images: ['x'] }, gateMsg: '评价审核中，通过后会展示在藏品页。', rating: 0, content: '', images: []
+  }), 900, 'div,span{box-sizing:border-box}'))
+  return panels
+}
+
 const build = ROUNDS[round]
 if (!build) {
   console.error(`✗ 未定义第 ${round} 轮面板`)
@@ -390,7 +437,7 @@ const child = spawn(chrome, [
   '--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run',
   '--no-default-browser-check', `--user-data-dir=${profile}`,
   '--hide-scrollbars', '--force-device-scale-factor=2',
-  round === 'od' ? `--window-size=${16 + 6 * 391},1720` : round === 'comment' ? `--window-size=${16 + panels.length * 391},760` : `--window-size=${16 + panels.length * 391},820`, '--virtual-time-budget=3000',
+  round === 'od' ? `--window-size=${16 + 6 * 391},1720` : round === 'comment' || round === 'review' ? `--window-size=${16 + panels.length * 391},760` : `--window-size=${16 + panels.length * 391},820`, '--virtual-time-budget=3000',
   `--screenshot=${out}`, `file://${htmlPath}`
 ], { stdio: 'ignore' })
 

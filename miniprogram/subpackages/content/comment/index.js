@@ -10,7 +10,7 @@ function formatTime(ms) {
 }
 
 const REVIEW_VIEW = {
-  pending: { statusText: '审核中', statusNote: '审核通过后会展示在藏品页，其他藏友就能看到。' },
+  pending: { statusText: '审核中', statusNote: '正在检测内容，稍后展示在藏品页。' },
   approved: { statusText: '已展示', statusNote: '这条评价已展示在藏品页。' },
   hidden: { statusText: '未展示', statusNote: '这条评价暂未展示在藏品页，如有疑问可联系专员。' }
 }
@@ -357,9 +357,10 @@ Page({
 
       if (res.result && res.result.success) {
         wx.vibrateShort({ type: 'heavy' })
+        const shown = res.result.status === 'approved'
         wx.showToast({
-          title: res.result.msg || '已提交',
-          icon: 'success',
+          title: shown ? '评价已展示' : '已提交，正在检测内容，稍后展示',
+          icon: shown ? 'success' : 'none',
           duration: 2000
         })
         setTimeout(() => {

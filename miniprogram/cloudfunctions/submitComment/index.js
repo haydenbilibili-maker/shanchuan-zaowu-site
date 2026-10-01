@@ -9,7 +9,7 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
-const { checkText, checkFileImages } = require('./contentSecurity')
+const { checkText, checkFileImage } = require('./contentSecurity')
 
 const ALLOWED_TARGET_TYPES = new Set(['product', 'activity', 'course'])
 const MAX_IMAGES = 3
@@ -101,10 +101,17 @@ function statusLabel(status) {
   return '去评价'
 }
 
+/** imgSecCheck 是同步接口：只有拿到 errCode === 0 才算明确通过；空文件 / 无 errCode / 其他码都不算 */
+function imagePassedExplicitly(r) {
+  return !!r && r.ok === true && !r.skipped && (r.errcode === 0 || r.errcode === '0')
+}
+
 /**
- * 评价内容安全：文本 + 图片。
+ * 评价内容安全：文本 + 图片（产品负责人 2026-10-01 点名：明确通过即自动展示）。
  * - 违规（risky）→ 直接拒绝
- * - 检测报错/图片超限 → 不拒绝但记录原因，评论保持 pending 由人工审核
+ * - 文本 suggest === 'pass' 且每张图 imgSecCheck errCode === 0 → autoApprove（写 approved）
+ * - 其余（suggest=review / 无 suggest / 检测报错 / 权限缺失 / 图片超限 / 非云存储图 / 无 errCode）
+ *   → 记录原因，保持 pending 由人工审核
  */
 async function runCommentChecks(openid, content, images) {
   const reviewReasons = []
@@ -114,14 +121,31 @@ async function runCommentChecks(openid, content, images) {
   }
   if (!textCheck.ok) reviewReasons.push(textCheck.openapiUnavailable ? 'text_check_openapi_unavailable' : 'text_check_error')
   else if (textCheck.needReview) reviewReasons.push('text_suggest_review')
+  else if (textCheck.suggest !== 'pass') reviewReasons.push('text_result_unknown')
 
-  const imgCheck = await checkFileImages(images, 9)
-  if (!imgCheck.ok && imgCheck.reason === 'risky') {
-    return { ok: false, msg: '图片未通过安全检测，请更换后重试' }
+  const list = (Array.isArray(images) ? images : []).filter(Boolean).slice(0, 9)
+  for (const fileID of list) {
+    const r = await checkFileImage(fileID)
+    if (!r.ok && r.reason === 'risky') {
+      return { ok: false, msg: '图片未通过安全检测，请更换后重试' }
+    }
+    if (!r.ok) reviewReasons.push(r.openapiUnavailable ? 'image_check_openapi_unavailable' : `image_check_${r.reason}`)
+    else if (!imagePassedExplicitly(r)) reviewReasons.push('image_result_unknown')
   }
-  if (!imgCheck.ok) reviewReasons.push(imgCheck.openapiUnavailable ? 'image_check_openapi_unavailable' : `image_check_${imgCheck.reason}`)
 
-  return { ok: true, reviewReasons, textSuggest: textCheck.suggest || '' }
+  return { ok: true, reviewReasons, autoApprove: reviewReasons.length === 0, textSuggest: textCheck.suggest || '' }
+}
+
+/** 审核相关的写入字段：明确通过 → approved；否则 pending + 原因（供 ERP 人工审核时参考） */
+function moderationFields(secCheck) {
+  if (secCheck.autoApprove) return { status: 'approved', autoApproved: true, reviewReasons: [] }
+  return { status: 'pending', autoApproved: false, reviewReasons: secCheck.reviewReasons || [] }
+}
+
+function submitResult(commentId, status) {
+  return status === 'approved'
+    ? { success: true, msg: '已展示在藏品页，谢谢分享', commentId, status }
+    : { success: true, msg: '已收到，内容检测后会展示在藏品页', commentId, status }
 }
 
 async function loadOrder(orderId) {
@@ -143,6 +167,76 @@ async function findCommentsForOrder(orderId, userId) {
   return res.data || []
 }
 
+/** 同单同藏品取最新一条（按毫秒比较） */
+function latestByProduct(comments) {
+  const byProduct = {}
+  ;(comments || []).forEach((c) => {
+    const pid = String(c.targetId || '').trim()
+    if (!pid) return
+    const prev = byProduct[pid]
+    if (!prev || toMs(c.updatedAt || c.createdAt) > toMs(prev.updatedAt || prev.createdAt)) {
+      byProduct[pid] = c
+    }
+  })
+  return byProduct
+}
+
+const REVIEW_MAP_MAX = 100
+
+/**
+ * 订单列表用（新增旁路，2026-10-01 产品负责人点名）：一批订单各自的评价状态。
+ * 不论多少单，只查两次库（orders _id in + comments orderId in）；只回本人有权的订单。
+ * reviewState：none（都没评）/ partial（还有可评）/ pending（评完且有审核中）/ done（评完，均已展示或隐藏）/ na（不需评价）
+ */
+async function buildOrderReviewMap(event, openid) {
+  const ids = [...new Set((Array.isArray(event.orderIds) ? event.orderIds : [])
+    .map((x) => String(x || '').trim())
+    .filter(Boolean))].slice(0, REVIEW_MAP_MAX)
+  if (!ids.length) return { success: true, map: {} }
+
+  const [ordersRes, commentsRes] = await Promise.all([
+    db.collection('orders')
+      .where({ _id: _.in(ids) })
+      .field({ _openid: true, openid: true, giftMeta: true, status: true, products: true, source: true })
+      .limit(REVIEW_MAP_MAX)
+      .get(),
+    db.collection('comments')
+      .where({ orderId: _.in(ids), userId: openid, targetType: 'product', status: _.neq('rejected') })
+      .field({ orderId: true, targetId: true, status: true, createdAt: true, updatedAt: true })
+      .limit(1000)
+      .get()
+  ])
+
+  const commentsByOrder = {}
+  ;(commentsRes.data || []).forEach((c) => {
+    const oid = String(c.orderId || '')
+    ;(commentsByOrder[oid] = commentsByOrder[oid] || []).push(c)
+  })
+
+  const map = {}
+  ;(ordersRes.data || []).forEach((order) => {
+    if (!order || !isOrderActor(order, openid)) return
+    const received = order.status === 'received' || order.status === 'signed'
+    const reviewable = listReviewableProducts(order)
+    if (!received || isVoucherOrder(order) || !reviewable.length) {
+      map[order._id] = { reviewState: 'na' }
+      return
+    }
+    const byProduct = latestByProduct(commentsByOrder[order._id])
+    const statuses = reviewable.map((p) => (byProduct[p.productId] ? byProduct[p.productId].status || 'pending' : 'none'))
+    const noneCount = statuses.filter((s) => s === 'none').length
+    const reviewState = noneCount === statuses.length
+      ? 'none'
+      : noneCount > 0
+        ? 'partial'
+        : statuses.includes('pending')
+          ? 'pending'
+          : 'done'
+    map[order._id] = { reviewState }
+  })
+  return { success: true, map }
+}
+
 async function buildOrderStatus(orderId, openid) {
   if (!orderId) return fail('缺少订单 ID')
   const order = await loadOrder(orderId)
@@ -153,15 +247,7 @@ async function buildOrderStatus(orderId, openid) {
   const received = order.status === 'received' || order.status === 'signed'
   const voucher = isVoucherOrder(order)
   const existing = received && !voucher ? await findCommentsForOrder(orderId, openid) : []
-  const byProduct = {}
-  existing.forEach((c) => {
-    const pid = String(c.targetId || '').trim()
-    if (!pid) return
-    const prev = byProduct[pid]
-    if (!prev || toMs(c.updatedAt || c.createdAt) > toMs(prev.updatedAt || prev.createdAt)) {
-      byProduct[pid] = c
-    }
-  })
+  const byProduct = latestByProduct(existing)
 
   const products = reviewable.map((p) => {
     const comment = byProduct[p.productId]
@@ -288,6 +374,7 @@ async function submitProductReview(event, openid) {
 
   const now = new Date()
   const product = eligibility.product || {}
+  const moderation = moderationFields(secCheck)
   const result = await db.collection('comments').add({
     data: {
       targetType: 'product',
@@ -301,7 +388,7 @@ async function submitProductReview(event, openid) {
       likes: 0,
       likedBy: [],
       replies: [],
-      status: 'pending',
+      ...moderation,
       createdAt: now,
       updatedAt: now
     }
@@ -320,12 +407,7 @@ async function submitProductReview(event, openid) {
     console.warn('发放评价奖励失败:', e)
   }
 
-  return {
-    success: true,
-    msg: '已收到，审核通过后会展示在商品页',
-    commentId: result._id,
-    status: 'pending'
-  }
+  return submitResult(result._id, moderation.status)
 }
 
 async function submitGenericReview(event, openid) {
@@ -356,19 +438,25 @@ async function submitGenericReview(event, openid) {
     .get()
 
   if (existingComment.data.length > 0) {
-    const commentId = existingComment.data[0]._id
+    const prev = existingComment.data[0]
+    const commentId = prev._id
+    // 管理员隐藏过的评价改写后不自动重新展示，回人工审核
+    const moderation = prev.status === 'hidden'
+      ? { status: 'pending', autoApproved: false, reviewReasons: ['previously_hidden'] }
+      : moderationFields(secCheck)
     await db.collection('comments').doc(commentId).update({
       data: {
         rating: Math.round(rating),
         content,
         images,
-        status: 'pending',
+        ...moderation,
         updatedAt: new Date()
       }
     })
-    return { success: true, msg: '评价已更新，等待审核', commentId, status: 'pending' }
+    return submitResult(commentId, moderation.status)
   }
 
+  const moderation = moderationFields(secCheck)
   const result = await db.collection('comments').add({
     data: {
       targetType,
@@ -380,18 +468,13 @@ async function submitGenericReview(event, openid) {
       likes: 0,
       likedBy: [],
       replies: [],
-      status: 'pending',
+      ...moderation,
       createdAt: new Date(),
       updatedAt: new Date()
     }
   })
 
-  return {
-    success: true,
-    msg: '评价提交成功，等待审核',
-    commentId: result._id,
-    status: 'pending'
-  }
+  return submitResult(result._id, moderation.status)
 }
 
 exports.main = async (event = {}, context) => {
@@ -407,6 +490,9 @@ exports.main = async (event = {}, context) => {
     }
     if (action === 'orderStatus') {
       return await buildOrderStatus(String(event.orderId || '').trim(), openid)
+    }
+    if (action === 'orderReviewMap') {
+      return await buildOrderReviewMap(event, openid)
     }
     if (action === 'submit') {
       const targetType = String(event.targetType || 'product').trim() || 'product'

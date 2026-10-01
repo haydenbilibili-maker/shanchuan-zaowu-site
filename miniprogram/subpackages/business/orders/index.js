@@ -22,6 +22,20 @@ const ORDER_STATUS = {
   VOID: 'void'                  // 已作废/取消
 };
 
+/**
+ * 订单卡评价入口：reviewState 来自 submitComment.orderReviewMap。
+ * 还没回来（undefined）两样都不显示，免得先闪「写下感受」；查询失败记为 unknown，仍给入口（评价页自己会判资格）。
+ * hidden 在服务端算 done（不允许重评），所以不会出现「写下感受」。
+ */
+function reviewFlags(reviewState) {
+  return {
+    reviewCanWrite: reviewState === 'none' || reviewState === 'partial' || reviewState === 'unknown',
+    reviewChip: reviewState === 'pending' ? '审核中' : reviewState === 'done' ? '✓ 已评价' : ''
+  };
+}
+
+const REVIEW_MAP_BATCH = 100;
+
 /** 合并「我是买家」与「我是礼赠受礼人」两路查询，按 createTime 去重降序 */
 function mergeOrderRows(ownedRows, receivedRows, openid) {
   const map = {};
@@ -220,6 +234,7 @@ Page(withAppModal({
     loadingMore: false,
         loadError: false
       });
+      this.loadReviewStates(list);
 
     } catch (err) {
       console.error(err);
@@ -230,6 +245,39 @@ Page(withAppModal({
     }
   },
   
+  /** 已签收卡片的评价状态：整页一次批量查（每 100 单一次调用），不逐单查 */
+  async loadReviewStates(list) {
+    const ids = (list || [])
+      .filter((o) => o && o.status === ORDER_STATUS.SIGNED && !o.isVoucherOrder)
+      .map((o) => o._id);
+    if (!ids.length) return;
+    const seq = (this._reviewSeq = (this._reviewSeq || 0) + 1);
+    const map = {};
+    for (let i = 0; i < ids.length; i += REVIEW_MAP_BATCH) {
+      const orderIds = ids.slice(i, i + REVIEW_MAP_BATCH);
+      try {
+        const res = await wx.cloud.callFunction({ name: 'submitComment', data: { action: 'orderReviewMap', orderIds } });
+        const result = (res && res.result) || {};
+        orderIds.forEach((id) => {
+          const hit = result.success && result.map && result.map[id];
+          map[id] = hit ? hit.reviewState : 'unknown';
+        });
+      } catch (e) {
+        console.warn('orders loadReviewStates', e);
+        orderIds.forEach((id) => { map[id] = 'unknown'; });
+      }
+    }
+    if (seq !== this._reviewSeq) return;
+    const patch = {};
+    (this.data.orders || []).forEach((o, idx) => {
+      if (!o || !(o._id in map)) return;
+      const flags = reviewFlags(map[o._id]);
+      patch[`orders[${idx}].reviewCanWrite`] = flags.reviewCanWrite;
+      patch[`orders[${idx}].reviewChip`] = flags.reviewChip;
+    });
+    if (Object.keys(patch).length) this.setData(patch);
+  },
+
   getStatusStr(status, { asReceiver, storePickup } = {}) {
     if (storePickup && (status === ORDER_STATUS.PENDING_SHIP || status === 'ready_pickup')) {
       return '待自取'
