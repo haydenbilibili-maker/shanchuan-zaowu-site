@@ -1,4 +1,14 @@
-<view class="container" wx:if="{{ready}}">
+<!-- 首屏骨架：权限与列表回来前不留白 -->
+<view class="container ap-boot" wx:if="{{!ready}}" aria-label="审批中心加载中">
+  <view class="ap-sk-line ap-sk-title"></view>
+  <view class="ap-sk-line ap-sk-bar"></view>
+  <view class="ap-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+    <view class="ap-sk-line ap-sk-wide"></view>
+    <view class="ap-sk-line"></view>
+  </view>
+</view>
+
+<view class="container" wx:else>
 
   <!-- 与 CRM / 核销一致：原生导航栏 + 系统左滑 navigateBack；勿自绘 NavBack / page-container -->
   <view class="header">
@@ -9,7 +19,7 @@
       </view>
     </view>
     <text class="scope-sub" wx:if="{{scopeHint}}">{{scopeHint}}</text>
-    <text class="sla-warn" wx:if="{{!hubFlow && viewMode==='inbox' && overdueCount > 0}}">超时 {{overdueCount}} 条 · SLA {{slaHours}}h</text>
+    <text class="sla-warn" wx:if="{{!hubFlow && viewMode==='inbox' && overdueCount > 0}}">超时 {{overdueCount}} 条 · 时限 {{slaHours}} 小时</text>
   </view>
 
   <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
@@ -62,7 +72,7 @@
             </view>
             <view class="ov-card">
               <text class="ov-val muted">{{overview.pending.withinSla}}</text>
-              <text class="ov-lbl">SLA 内</text>
+              <text class="ov-lbl">时限内</text>
             </view>
           </view>
           <view class="ov-section">
@@ -293,22 +303,24 @@
           <text class="detail-label">执行</text>
           <text class="detail-val">{{item.executeResult.msg}}</text>
         </view>
-        <text class="detail-hint" wx:if="{{!item.detailLines.length && !item.relatedId}}">暂无更多字段</text>
+        <text class="detail-hint" wx:if="{{!item.detailLines.length && !item.relatedId}}">没有更多信息</text>
       </view>
 
-      <view class="card-actions decide" wx:if="{{viewMode==='inbox' && item.canDecide}}" catchtap="noop">
-        <view class="btn-reject" catchtap="rejectItem" data-id="{{item._id}}" data-require="{{item.requireRejectReason ? '1' : '0'}}">驳回</view>
+      <view class="card-actions decide {{deciding ? 'is-busy' : ''}}" wx:if="{{viewMode==='inbox' && item.canDecide}}" catchtap="noop">
+        <view class="btn-reject" catchtap="rejectItem" data-id="{{item._id}}" data-require="{{item.requireRejectReason ? '1' : '0'}}" hover-class="ap-btn-press" hover-stay-time="80">驳回</view>
         <view
           class="btn-ignore"
           wx:if="{{item.canIgnore}}"
           catchtap="ignoreItem"
           data-id="{{item._id}}"
+          hover-class="ap-btn-press"
+          hover-stay-time="80"
         >{{ignorePendingId === item._id ? '确认忽略' : '忽略'}}</view>
-        <view class="btn-approve" catchtap="approveItem" data-id="{{item._id}}">{{approvePendingId === item._id ? '确认通过' : '通过'}}</view>
+        <view class="btn-approve {{approvePendingId === item._id ? 'is-confirm' : ''}}" catchtap="approveItem" data-id="{{item._id}}" hover-class="ap-btn-press" hover-stay-time="80">{{approvePendingId === item._id ? '确认通过' : '通过'}}</view>
       </view>
 
       <view class="card-actions mine" wx:elif="{{viewMode==='mine' && item.canNudge}}" catchtap="noop">
-        <view class="btn-nudge" catchtap="nudgeItem" data-id="{{item._id}}">催办</view>
+        <view class="btn-nudge {{deciding ? 'is-busy' : ''}}" catchtap="nudgeItem" data-id="{{item._id}}" hover-class="ap-btn-press" hover-stay-time="80">催办</view>
       </view>
     </view>
   </view>
@@ -319,13 +331,20 @@
     <view class="btn-retry" bindtap="onRetryList">重试</view>
   </view>
 
-  <view class="empty" wx:elif="{{!loading && !listError}}">
+  <view class="ap-skeleton" wx:elif="{{loading}}">
+    <view class="ap-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="ap-sk-line ap-sk-wide"></view>
+      <view class="ap-sk-line"></view>
+    </view>
+  </view>
+
+  <view class="empty" wx:elif="{{!listError}}">
     <text class="empty-title">{{emptyTitle}}</text>
     <text class="empty-hint">{{emptyHint}}</text>
   </view>
 
   <view class="load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
-  <view class="footer-hint" wx:if="{{loading}}">加载中…</view>
+  <view class="footer-hint" wx:if="{{loading && list.length}}">加载中…</view>
   </block>
 
 </view>

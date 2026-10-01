@@ -31,8 +31,21 @@
 <!-- 仅一处占位：statusBar + navBar，内容紧贴自定义导航下方 -->
 <view class="nav-spacer" style="height: {{navSpacerHeight}}px;"></view>
 
-<view class="workbench-boot" wx:if="{{!workspaceReady}}">
-  <text class="workbench-boot-cn">工作台加载中…</text>
+<!-- 首屏骨架：形状对齐问候行 / 扫码主按钮 / 常用磁贴，数据回来后原位替换，不跳版 -->
+<view class="workbench-boot wb-sk" wx:if="{{!workspaceReady}}" aria-label="工作台加载中">
+  <view class="wb-sk-line wb-sk-title"></view>
+  <view class="wb-sk-line wb-sk-sub"></view>
+  <view class="wb-sk-block wb-sk-cta"></view>
+  <view class="wb-sk-card">
+    <view class="wb-sk-line wb-sk-sub"></view>
+    <view class="wb-sk-tiles">
+      <view class="wb-sk-tile" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
+    </view>
+  </view>
+  <view class="wb-sk-card">
+    <view class="wb-sk-line wb-sk-sub"></view>
+    <view class="wb-sk-line wb-sk-wide"></view>
+  </view>
 </view>
 
 <!-- ==================== 2. 主视图：经营看板 (Dashboard) ==================== -->
@@ -238,7 +251,7 @@
       <view class="hub-fav">
         <view class="hub-fav-head">
           <text class="hub-fav-title">我的常用</text>
-          <text class="hub-fav-edit" bindtap="openFavEditor">编辑</text>
+          <view class="hub-fav-edit" bindtap="openFavEditor" hover-class="hub-press" hover-stay-time="80">编辑</view>
         </view>
         <view class="hub-grid" wx:if="{{hubFav.length}}">
           <view
@@ -652,7 +665,7 @@
           <view class="week-share-track">
              <view class="week-share-fill forest" style="{{trendMeta.weekOfflineBar}}"></view>
           </view>
-          <text class="week-split-hint">线上=小程序已付GMV · 门店=账本净额（不含mp）</text>
+          <text class="week-split-hint">线上 = 小程序已付 GMV · 门店 = 账本净额（不含小程序订单）</text>
        </view>
        <view class="chart-empty" wx:else>
           <text>近 7 日暂无拆分</text>
@@ -669,16 +682,16 @@
 <view class="hub-sheet hub-fav-sheet" wx:if="{{hubFavEdit.open}}">
   <view class="hub-sheet-head">
     <text class="hub-sheet-title">编辑常用 · {{hubFavEdit.count}}/{{hubFavEdit.max}}</text>
-    <text class="hub-sheet-close" bindtap="closeFavEditor">取消</text>
+    <view class="hub-sheet-close" bindtap="closeFavEditor" hover-class="hub-link-press" hover-stay-time="80">取消</view>
   </view>
   <scroll-view class="hub-fav-scroll" scroll-y>
     <view class="hub-fav-sel-empty" wx:if="{{!hubFavEdit.selected.length}}"><text>尚未选择，点下方入口加入</text></view>
     <view class="hub-fav-sel" wx:for="{{hubFavEdit.selected}}" wx:key="id">
       <image class="hub-fav-sel-ico" src="{{item.icon}}" mode="aspectFit" />
       <text class="hub-fav-sel-name">{{item.label}}</text>
-      <text class="hub-fav-op {{item.first ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="up">上移</text>
-      <text class="hub-fav-op {{item.last ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="down">下移</text>
-      <text class="hub-fav-op is-remove" bindtap="onFavToggle" data-id="{{item.id}}">移除</text>
+      <view class="hub-fav-op {{item.first ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="up" hover-class="hub-press" hover-stay-time="80">上移</view>
+      <view class="hub-fav-op {{item.last ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="down" hover-class="hub-press" hover-stay-time="80">下移</view>
+      <view class="hub-fav-op is-remove" bindtap="onFavToggle" data-id="{{item.id}}" hover-class="hub-press" hover-stay-time="80">移除</view>
     </view>
     <view class="hub-fav-full" wx:if="{{hubFavEdit.full}}"><text>已满 {{hubFavEdit.max}} 个，移除后才能再加入</text></view>
     <view class="hub-fav-group" wx:for="{{hubFavEdit.groups}}" wx:for-item="g" wx:key="id">
@@ -690,6 +703,8 @@
           wx:key="id"
           bindtap="onFavToggle"
           data-id="{{item.id}}"
+          hover-class="hub-press"
+          hover-stay-time="80"
         >
           <text>{{item.added ? '✓ ' : '+ '}}{{item.label}}</text>
         </view>
@@ -707,7 +722,7 @@
 <view class="hub-sheet" wx:if="{{hubSheet.open}}" catchtouchmove="noop">
   <view class="hub-sheet-head">
     <text class="hub-sheet-title">{{hubSheet.title}}</text>
-    <text class="hub-sheet-close" bindtap="closeHubGroup">收起</text>
+    <view class="hub-sheet-close" bindtap="closeHubGroup" hover-class="hub-link-press" hover-stay-time="80">收起</view>
   </view>
   <view
     class="hub-sheet-item"

@@ -7259,7 +7259,7 @@ const managerPageConfig = {
       const revenues = await storeLedger.listByMonth(sid, yearMonth);
       await applyRows(revenues, { cloudError: true });
       if (!revenues.length && e && e.message) {
-        this.showHubTip(String(e.message).slice(0, 40), 'warn');
+        this.showHubTip('账本暂时没取到，请检查网络后下拉刷新', 'warn');
       }
     }
   },

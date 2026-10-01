@@ -1,7 +1,13 @@
 <!-- 店长/超管功能模块：系统导航栏 + 原生返回（对标 member-crm） -->
 <view class="container workspace-leaf">
-  <view class="workbench-boot" wx:if="{{!workspaceReady}}">
-    <text class="workbench-boot-cn">加载中…</text>
+  <!-- 首屏骨架：订单 / 账本 / 报表等全部模块共用，形状对齐「页头 + 筛选 + 卡片列表」 -->
+  <view class="workbench-boot wb-sk" wx:if="{{!workspaceReady}}" aria-label="加载中">
+    <view class="wb-sk-line wb-sk-title"></view>
+    <view class="wb-sk-block wb-sk-bar"></view>
+    <view class="wb-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="wb-sk-line wb-sk-wide"></view>
+      <view class="wb-sk-line wb-sk-sub"></view>
+    </view>
   </view>
   <block wx:elif="{{workspaceReady && curTab !== 0}}">
     <include src="_subviews.wxml" />

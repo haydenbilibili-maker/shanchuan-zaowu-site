@@ -20,3 +20,9 @@ page {
 .hub-scan-cta .scan-cta-btn {
   letter-spacing: 0.08em;
 }
+
+/* 场景卡按压态（:active 在部分真机不触发，以 hover-class 为准） */
+.link-btn-press {
+  background: rgba(196, 167, 108, 0.1);
+  border-color: var(--brass-600, #8A7349);
+}

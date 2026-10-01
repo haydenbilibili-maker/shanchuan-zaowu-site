@@ -54,6 +54,8 @@
           wx:key="key"
           bindtap="openScene"
           data-path="{{scene.path}}"
+          hover-class="link-btn-press"
+          hover-stay-time="80"
         >
           <view class="link-btn-head">
             <view class="icon-box">
@@ -69,8 +71,8 @@
     </view>
   </block>
   <view class="empty scene-empty" wx:else>
-    <text>暂无可用来现场场景</text>
-    <text class="section-note">请联系店长或超管在权限配置中开通核销、考勤等能力</text>
+    <text>暂时没有可用的现场功能</text>
+    <text class="section-note">请联系店长或超管开通核销、考勤等权限，开通后下拉刷新即可</text>
   </view>
 
   <view class="footer">

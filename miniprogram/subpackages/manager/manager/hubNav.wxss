@@ -425,3 +425,8 @@
 .hub-fav-btn-press {
   opacity: 0.85;
 }
+
+/* 面板「收起 / 取消」等文字按钮的按压态（磁贴用 .hub-press 的底色，文字按钮只压暗） */
+.hub-link-press {
+  opacity: 0.6;
+}

@@ -17,3 +17,5 @@ npm run check:member-curator-hub
 npm run check:hub-entries
 # 2026-09-30：超管「供应商」改版（miniprogram/docs/超管工作台_供应商改版_2026-09-30.md）：价目 / 伙伴资料图只收 cloud://、不带不覆盖、页面交互与文案
 npm run check:supplier-desk-images
+# 2026-10-01：C 流「细节雕刻」员工与管理端（miniprogram/docs/细节雕刻_C流_2026-10.md）：骨架 / 空态下一步 / 按压态 / 提交中反馈 / 界面无技术词
+npm run check:c-stream-polish

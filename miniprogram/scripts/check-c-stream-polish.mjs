@@ -1,0 +1,187 @@
+#!/usr/bin/env node
+/**
+ * 员工与管理端「细节雕刻」守卫（manager 域，C 流 2026-10）
+ *
+ * 只守展示层与体验层：骨架、空态下一步、按压态、防重复提交的可见反馈、界面不出现技术词。
+ * 不碰契约 / 流程 / 权限 / 金额 —— 断言只读 wxml / wxss 与少量提示文案。
+ * 文档：miniprogram/docs/细节雕刻_C流_2026-10.md
+ *
+ * 断言（每轮追加，条数随轮次增长；守卫条目只有这一条）：
+ *   R1-1 工作台首页 / 功能模块页首屏是骨架（wb-sk），不再是一行「加载中…」
+ *   R1-2 账本：加载中给骨架、旧流水压暗；空态只在数据就绪后出现且带「记一笔」；云端失败提示不透原文
+ *   R1-3 订单：5 档空态都有下一步（清除搜索 / 看全部日期）
+ *   R1-4 审批：首屏与列表骨架；提交中整排按钮压暗不可点；决策按钮有按压态
+ *   R1-5 文案：员工端界面不出现 mp / SLA / 「暂无更多字段」等技术词与错字
+ *
+ * 用法：node miniprogram/scripts/check-c-stream-polish.mjs [--selftest]
+ */
+import { readFileSync, existsSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const HERE = dirname(fileURLToPath(import.meta.url))
+const ROOT = resolve(HERE, '../..')
+const TAG = '[check:c-stream-polish]'
+
+const MGR = 'miniprogram/subpackages/manager'
+const EXTRA = 'miniprogram/subpackages/extra'
+const FILES = {
+  hubWxml: `${MGR}/manager/index.wxml`,
+  hubWxss: `${MGR}/manager/index.wxss`,
+  hubNavWxss: `${MGR}/manager/hubNav.wxss`,
+  wsWxml: `${MGR}/manager/workspace/index.wxml`,
+  subviews: `${MGR}/manager/workspace/_subviews.wxml`,
+  pageCfg: `${MGR}/manager/managerPageConfig.js`,
+  apWxml: `${EXTRA}/approvals/index.wxml`,
+  apWxss: `${EXTRA}/approvals/index.wxss`,
+  staffWxml: `${EXTRA}/staff/index.wxml`
+}
+
+function load() {
+  const src = {}
+  for (const [k, rel] of Object.entries(FILES)) {
+    const p = resolve(ROOT, rel)
+    if (!existsSync(p)) {
+      console.error(TAG, '缺少', rel)
+      process.exit(1)
+    }
+    src[k] = readFileSync(p, 'utf8')
+  }
+  return src
+}
+
+/** 截出 wxml 里从 startMark 起、到下一个同级 `<block wx:if="{{curTab===` 为止的片段 */
+function tabBlock(subviews, n) {
+  const start = subviews.indexOf(`<block wx:if="{{curTab===${n}}}">`)
+  if (start < 0) return ''
+  const next = subviews.indexOf('<block wx:if="{{curTab===', start + 10)
+  return subviews.slice(start, next < 0 ? undefined : next)
+}
+
+function bootBlock(wxml) {
+  const m = wxml.match(/<view class="workbench-boot[^"]*"[^>]*>([\s\S]*?)\n\s*<\/view>\n(?=\s*\n|\s*<)/)
+  return m ? m[0] : ''
+}
+
+/** 去掉 wxml 注释，避免注释里的说明文字触发文案判据 */
+const stripComments = (s) => s.replace(/<!--[\s\S]*?-->/g, '')
+
+function check(src) {
+  const fails = []
+  const ok = (cond, msg) => { if (!cond) fails.push(msg) }
+
+  // R1-1 首屏骨架
+  for (const [k, name] of [['hubWxml', '工作台首页'], ['wsWxml', '功能模块页']]) {
+    const boot = bootBlock(src[k])
+    ok(/wb-sk/.test(boot) && /wb-sk-card/.test(boot), `R1-1 ${name}首屏不是骨架（缺 wb-sk / wb-sk-card）`)
+    ok(!/加载中…<\/text>/.test(boot), `R1-1 ${name}首屏又退回一行「加载中…」文字`)
+  }
+  ok(/\.wb-sk-line[\s\S]*?animation:\s*wb-sk-pulse/.test(src.hubWxss) && /@keyframes wb-sk-pulse/.test(src.hubWxss),
+    'R1-1 骨架样式 / 呼吸动画缺失（manager/index.wxss）')
+
+  // R1-2 账本
+  const ledger = tabBlock(src.subviews, 8)
+  ok(!!ledger, 'R1-2 找不到账本模块（curTab===8）')
+  ok(/class="ledger-overview lo-skeleton" wx:else/.test(ledger), 'R1-2 账本加载中没有骨架（lo-skeleton）')
+  ok(/class="revenue-list \{\{ledgerOverviewReady \? '' : 'is-stale'\}\}"/.test(ledger), 'R1-2 切月份 / 门店时旧流水未压暗（is-stale）')
+  const emptyLedger = (ledger.match(/<view class="empty-ledger"[\s\S]*?<\/view>\s*<\/view>/) || [''])[0]
+  ok(/wx:if="\{\{ledgerOverviewReady && revenues\.length===0\}\}"/.test(emptyLedger), 'R1-2 账本空态在加载中就出现（须等 ledgerOverviewReady）')
+  ok(/bindtap="openRevenueModal"/.test(emptyLedger), 'R1-2 账本空态没有「记一笔」下一步')
+  ok(/class="add-btn-gold"[^>]*hover-class=/.test(ledger), 'R1-2 「记一笔」按钮缺按压态')
+  ok(!/退款｜REFUND/.test(ledger), 'R1-2 账本明细仍是「退款｜REFUND」（与总览「退款｜门店」不一致）')
+  const loadRev = (src.pageCfg.match(/\n  async loadRevenues\(\) \{[\s\S]*?\n  \},\n/) || [''])[0]
+  ok(!!loadRev, 'R1-2 找不到 loadRevenues')
+  ok(!/showHubTip\(\s*String\(e\.message\)/.test(loadRev), 'R1-2 账本云端失败把原始报错直接给员工看')
+
+  // R1-3 订单空态下一步
+  const orders = tabBlock(src.subviews, 2)
+  const empties = orders.match(/<view class="om-empty" [\s\S]*?\n      <\/view>/g) || []
+  ok(empties.length === 5, `R1-3 订单空态应为 5 档，实为 ${empties.length}`)
+  empties.forEach((e, i) => {
+    ok(/bindtap="clearOmQuery"/.test(e), `R1-3 订单第 ${i + 1} 档空态缺「清除搜索」`)
+    ok(/bindtap="setOmDays" data-days="0"/.test(e), `R1-3 订单第 ${i + 1} 档空态缺「看全部日期」`)
+  })
+
+  // R1-4 审批
+  ok(/<view class="container ap-boot" wx:if="\{\{!ready\}\}"/.test(src.apWxml), 'R1-4 审批首屏没有骨架（!ready 时留白）')
+  ok(/<view class="ap-skeleton" wx:elif="\{\{loading\}\}">/.test(src.apWxml), 'R1-4 审批列表首次加载没有骨架')
+  ok(/class="card-actions decide \{\{deciding \? 'is-busy' : ''\}\}"/.test(src.apWxml), 'R1-4 审批提交中按钮没有压暗（deciding → is-busy）')
+  ok(/\.card-actions\.is-busy[\s\S]*?pointer-events:\s*none/.test(src.apWxss), 'R1-4 is-busy 未禁止再次点击')
+  for (const fn of ['rejectItem', 'approveItem', 'ignoreItem']) {
+    const re = new RegExp(`catchtap="${fn}"[^>]*hover-class="ap-btn-press"|catchtap="${fn}"[\\s\\S]{0,120}?hover-class="ap-btn-press"`)
+    ok(re.test(src.apWxml), `R1-4 审批「${fn}」按钮缺按压态`)
+  }
+
+  // R1-5 文案
+  const visible = [
+    ['工作台首页', stripComments(src.hubWxml)],
+    ['功能模块', stripComments(src.subviews)],
+    ['审批中心', stripComments(src.apWxml)],
+    ['店员工作台', stripComments(src.staffWxml)]
+  ]
+  const BANNED = [
+    [/（不含mp）/, '「（不含mp）」'],
+    [/SLA/, '「SLA」'],
+    [/暂无更多字段/, '「暂无更多字段」'],
+    [/暂无可用来/, '错字「暂无可用来现场场景」'],
+    [/支付回调异常/, '「支付回调异常」']
+  ]
+  for (const [name, text] of visible) {
+    for (const [re, label] of BANNED) ok(!re.test(text), `R1-5 ${name}界面出现技术词 / 错字：${label}`)
+  }
+
+  return fails
+}
+
+function run() {
+  const fails = check(load())
+  if (fails.length) {
+    console.error(`${TAG} ✗ ${fails.length} 处不符合：`)
+    fails.forEach((f) => console.error('  -', f))
+    process.exit(1)
+  }
+  console.log(`${TAG} ✓ 员工端细节雕刻：骨架 / 空态下一步 / 按压态 / 提交中反馈 / 文案均在`)
+}
+
+function selftest() {
+  const base = load()
+  const baseFails = check(base)
+  if (baseFails.length) {
+    console.error(`${TAG} 自检前提不成立：真源本身不通过`, baseFails)
+    process.exit(1)
+  }
+  const cases = [
+    ['工作台首屏退回「加载中…」', (s) => ({ ...s, hubWxml: s.hubWxml.replace(/<view class="workbench-boot wb-sk"[\s\S]*?\n<\/view>\n/, '<view class="workbench-boot" wx:if="{{!workspaceReady}}">\n  <text class="workbench-boot-cn">工作台加载中…</text>\n</view>\n') }), /R1-1 工作台首页/],
+    ['功能模块页首屏退回「加载中…」', (s) => ({ ...s, wsWxml: s.wsWxml.replace(/<view class="workbench-boot wb-sk"[\s\S]*?\n  <\/view>\n/, '<view class="workbench-boot" wx:if="{{!workspaceReady}}">\n    <text class="workbench-boot-cn">加载中…</text>\n  </view>\n') }), /R1-1 功能模块页/],
+    ['账本空态在加载中出现', (s) => ({ ...s, subviews: s.subviews.replace('wx:if="{{ledgerOverviewReady && revenues.length===0}}"', 'wx:if="{{revenues.length===0}}"') }), /R1-2 账本空态在加载中/],
+    ['账本空态去掉「记一笔」', (s) => ({ ...s, subviews: s.subviews.replace(/\n\s*<view class="empty-ledger-cta"[^\n]*/, '') }), /R1-2 账本空态没有「记一笔」/],
+    ['账本失败透原文', (s) => ({ ...s, pageCfg: s.pageCfg.replace("this.showHubTip('账本暂时没取到，请检查网络后下拉刷新', 'warn');", "this.showHubTip(String(e.message).slice(0, 40), 'warn');") }), /R1-2 账本云端失败/],
+    ['订单空态少一档「清除搜索」', (s) => ({ ...s, subviews: s.subviews.replace(/\n\s*<view class="om-empty-act" wx:if="\{\{omQuery\}\}"[^\n]*/, '') }), /R1-3 订单第 1 档空态缺「清除搜索」/],
+    ['审批去掉提交中压暗', (s) => ({ ...s, apWxml: s.apWxml.replace("card-actions decide {{deciding ? 'is-busy' : ''}}", 'card-actions decide') }), /R1-4 审批提交中/],
+    ['审批 is-busy 仍可点', (s) => ({ ...s, apWxss: s.apWxss.replace(/(\.card-actions\.is-busy,\n\.btn-nudge\.is-busy \{[^}]*?)pointer-events:\s*none;/, '$1') }), /R1-4 is-busy 未禁止/],
+    ['审批首屏留白', (s) => ({ ...s, apWxml: s.apWxml.replace('<view class="container ap-boot" wx:if="{{!ready}}"', '<view class="container ap-boot" wx:if="{{false}}"') }), /R1-4 审批首屏/],
+    ['「通过」去掉按压态', (s) => ({ ...s, apWxml: s.apWxml.replace(/(catchtap="approveItem" data-id="\{\{item\._id\}\}") hover-class="ap-btn-press" hover-stay-time="80"/, '$1') }), /approveItem」按钮缺按压态/],
+    ['界面回到「不含mp」', (s) => ({ ...s, hubWxml: s.hubWxml.replace('（不含小程序订单）', '（不含mp）') }), /不含mp/],
+    ['审批回到「SLA」', (s) => ({ ...s, apWxml: s.apWxml.replace('<text class="ov-lbl">时限内</text>', '<text class="ov-lbl">SLA 内</text>') }), /SLA/],
+    ['店员工作台错字复活', (s) => ({ ...s, staffWxml: s.staffWxml.replace('暂时没有可用的现场功能', '暂无可用来现场场景') }), /暂无可用来/]
+  ]
+  const notes = []
+  let bad = 0
+  for (const [name, mut, expect] of cases) {
+    const mutated = mut(base)
+    const changed = Object.keys(base).some((k) => base[k] !== mutated[k])
+    if (!changed) { bad += 1; notes.push(`✗ 锚点失效（注入没有改动任何文件）：${name}`); continue }
+    const fails = check(mutated)
+    if (fails.some((f) => expect.test(f))) notes.push(`✓ ★ 被检出：${name}`)
+    else { bad += 1; notes.push(`✗ 未检出：${name}（实得：${fails.join(' | ') || '无'}）`) }
+  }
+  notes.forEach((n) => console.log('  ' + n))
+  if (bad) {
+    console.error(`${TAG} 自检失败 ${bad}/${cases.length}`)
+    process.exit(1)
+  }
+  console.log(`${TAG} 自检通过：${cases.length} 个内存注入全部检出（不写盘）`)
+}
+
+if (process.argv.includes('--selftest')) selftest()
+else run()

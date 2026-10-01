@@ -406,6 +406,40 @@ page {
   background: rgba(196, 167, 108, 0.1);
 }
 
+/* 按压态（:active 在部分真机不触发，以 hover-class 为准） */
+.ap-btn-press { opacity: 0.72; }
+/* 「通过」进入二次确认：描边加亮，提示再点一次 */
+.btn-approve.is-confirm { box-shadow: 0 0 0 2rpx var(--color-bg), 0 0 0 4rpx var(--brass-400); }
+/* 提交中：整排按钮压暗且不可再点（防重复提交的可见反馈） */
+.card-actions.is-busy,
+.btn-nudge.is-busy { opacity: 0.45; pointer-events: none; }
+
+/* 首屏 / 列表骨架 */
+.ap-boot { padding-top: var(--space-5); }
+.ap-skeleton { margin-top: var(--space-3); }
+.ap-sk-line {
+  height: 24rpx;
+  width: 42%;
+  margin-top: 16rpx;
+  border-radius: 8rpx;
+  background: var(--color-bg-elevated, #262320);
+  animation: ap-sk-pulse 1.2s ease-in-out infinite;
+}
+.ap-sk-title { height: 40rpx; width: 40%; margin-top: 0; }
+.ap-sk-bar { height: 72rpx; width: 100%; margin-top: 32rpx; border-radius: 16rpx; }
+.ap-sk-wide { width: 72%; height: 30rpx; margin-top: 0; }
+.ap-sk-card {
+  margin-top: 24rpx;
+  padding: 24rpx;
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1rpx solid rgba(38, 35, 32, 0.66);
+  border-radius: 16rpx;
+}
+@keyframes ap-sk-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
+}
+
 .attach-block {
   margin-top: var(--space-2);
 }
