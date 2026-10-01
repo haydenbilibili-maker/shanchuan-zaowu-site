@@ -68,7 +68,7 @@ page {
 
 .state-hint {
   font-size: 22rpx;
-  color: #6B6560;
+  color: #A09A90;
   line-height: 1.45;
 }
 
@@ -228,7 +228,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: #6B6560;
+  color: #A09A90;
   line-height: 1.45;
 }
 .hero-stats {
@@ -760,7 +760,9 @@ page {
 .card-inactive .snippet {
   color: #6B6560;
 }
-.card-inactive .meta {
+.card-inactive .meta,
+.card-inactive .time,
+.card-inactive .expire {
   color: #6B6560;
 }
 .card-inactive .price {
@@ -863,7 +865,7 @@ page {
 /* 信号灯交由 app.wxss .signal-light；勿在本页重写色板 */
 .status { font-size: 22rpx; color: #A09A90; letter-spacing: 0.02em; }
 .status.hot { color: #C4A76C; }
-.expire { flex-shrink: 0; font-size: 20rpx; color: #6B6560; max-width: 46%; text-align: right; }
+.expire { flex-shrink: 0; font-size: 20rpx; color: #A09A90; max-width: 46%; text-align: right; }
 .expire.urgent { color: #E9A23B; }
 .title {
   font-size: 28rpx;
@@ -889,7 +891,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: #6B6560;
+  color: #A09A90;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -969,7 +971,7 @@ page {
   flex: 1;
   min-width: 0;
   font-size: 22rpx;
-  color: #6B6560;
+  color: #A09A90;
   font-family: 'JetBrains Mono', 'DM Mono', monospace;
 }
 .price {
@@ -1635,7 +1637,7 @@ page {
   display: block;
   margin-top: 12rpx;
   font-size: 20rpx;
-  color: #6B6560;
+  color: #A09A90;
   line-height: 1.45;
 }
 .import-field { margin-top: -4rpx; }

@@ -5,7 +5,7 @@
     <view class="ticket-empty" wx:if="{{loadError}}">
       <text class="ticket-empty-title">票据暂不可用</text>
       <text class="ticket-empty-desc">预约信息不存在或链接已失效</text>
-      <view class="ticket-empty-cta" bindtap="goBack">返回预约</view>
+      <view class="ticket-empty-cta" bindtap="goBack" hover-class="footer-btn-press" hover-stay-time="80">返回预约</view>
     </view>
 
     <view class="ticket-wrap" wx:else>
@@ -22,21 +22,22 @@
             <text class="qr-tip">请向工作人员出示此码</text>
           </view>
           <text class="qr-tip muted" wx:elif="{{booking.status === 'used'}}">已核销，凭证仅供留存</text>
+          <text class="qr-tip muted" wx:elif="{{!booking._id}}">正在取出票据…</text>
           <text class="qr-tip muted" wx:else>该预约已不可核销</text>
           <text class="qr-code">NO. {{bookingShortId}}</text>
         </view>
 
         <view class="info-section">
           <view class="row">
-            <text class="label">PROJECT</text>
+            <text class="label">项目｜PROJECT</text>
             <text class="val">{{booking.title}}</text>
           </view>
           <view class="row">
-            <text class="label">DATE</text>
+            <text class="label">日期｜DATE</text>
             <text class="val">{{booking.date}} {{booking.time}}</text>
           </view>
           <view class="row">
-            <text class="label">GUEST</text>
+            <text class="label">人数｜GUEST</text>
             <text class="val">{{booking.people}} 位</text>
           </view>
         </view>
@@ -54,10 +55,10 @@
 
   <!-- 底部操作栏（固定，不遮挡票券） -->
   <view class="page-footer" wx:if="{{!loadError && booking.status === 'confirmed'}}">
-    <view class="footer-btn outline" bindtap="showCancel">
+    <view class="footer-btn outline" bindtap="showCancel" hover-class="footer-btn-press" hover-stay-time="80">
       <text>取消预约</text>
     </view>
-    <view class="footer-btn primary" bindtap="showReschedule">
+    <view class="footer-btn primary" bindtap="showReschedule" hover-class="footer-btn-press" hover-stay-time="80">
       <view class="icon-calendar"></view>
       <text>改期</text>
     </view>

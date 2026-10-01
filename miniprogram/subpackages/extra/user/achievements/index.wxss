@@ -705,7 +705,7 @@ page {
 
 .progress-label-mini {
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .progress-percent-mini {
@@ -1058,7 +1058,7 @@ page {
 
 .block-label {
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.08em;
 }
 
@@ -1252,7 +1252,7 @@ page {
 
 .unlock-hint {
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   margin-bottom: 28rpx;
   letter-spacing: 0.02em;
 }

@@ -174,7 +174,7 @@ page {
 }
 
 .qr-tip.muted {
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .qr-code {
@@ -293,7 +293,7 @@ page {
   color: var(--color-bg);
 }
 
-.footer-btn:active {
+.footer-btn-press {
   opacity: 0.85;
 }
 

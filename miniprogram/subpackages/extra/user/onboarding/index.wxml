@@ -148,6 +148,8 @@
     <view
       class="account-btn-primary ob-cta {{saving ? 'disabled' : ''}}"
       wx:else
+      hover-class="{{saving ? '' : 'account-btn-press'}}"
+      hover-stay-time="80"
       bindtap="finishWithGift"
     >{{saving ? loadingText + '…' : ctaFinishText}}</view>
   </view>

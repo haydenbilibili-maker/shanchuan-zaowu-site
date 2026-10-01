@@ -595,7 +595,8 @@ button.btn-text {
   transition: opacity 0.3s;
 }
 
-.btn-text:active {
+.btn-text:active,
+.btn-text-press {
   background: rgba(255,255,255,0.08);
   border-color: rgba(255,255,255,0.25);
   transform: scale(0.97);
@@ -604,7 +605,8 @@ button.btn-text {
     inset 0 1rpx 3rpx rgba(255,255,255,0.1);
 }
 
-.btn-text:active::before {
+.btn-text:active::before,
+.btn-text-press::before {
   opacity: 1;
 }
 
@@ -651,12 +653,14 @@ button.btn-text {
   transition: opacity 0.3s;
 }
 
-.btn-main:active {
+.btn-main:active,
+.btn-main-press {
   transform: scale(0.97);
   background: #A8903C;
 }
 
-.btn-main:active::before {
+.btn-main:active::before,
+.btn-main-press::before {
   opacity: 1;
 }
 

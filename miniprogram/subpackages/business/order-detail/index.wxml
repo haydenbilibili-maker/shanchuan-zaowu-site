@@ -311,7 +311,7 @@
   <view class="action-footer safe-area {{(isGiftOrder && (giftAwaitingAddress || giftReceiverNeedsAddress)) ? 'action-footer--gift' : ''}}" wx:if="{{!loadError && order._id}}">
     <!-- 待付款：支付 + 取消（仅买家） -->
     <view class="pending-pay-actions" wx:if="{{order.status === 'pending_pay' && !isGiftReceiver}}">
-      <view class="btn-text cancel" catchtap="handleCancelOrder">取消订单</view>
+      <view class="btn-text cancel" hover-class="btn-text-press" hover-stay-time="80" catchtap="handleCancelOrder">取消订单</view>
       <view class="hologram-btn flex-grow {{paying ? 'is-busy' : ''}}" catchtap="handlePay" hover-class="{{paying ? '' : 'hologram-press'}}">
         <text>{{paying ? '正在拉起支付…' : ((payBtnLabel || '立即支付') + ' ¥' + order.totalPrice)}}</text>
       </view>
@@ -319,17 +319,17 @@
 
     <!-- 已签收：养护 + 证书 + 评价 -->
     <view class="received-actions" wx:if="{{order.status === 'received' && showCare && certRole !== 'giver'}}">
-      <view class="btn-main flex-grow" catchtap="goToCare">
+      <view class="btn-main flex-grow" hover-class="btn-main-press" hover-stay-time="80" catchtap="goToCare">
         <image class="btn-care-icon" src="/subpackages/business/assets/icons/care-on-brass.png" mode="aspectFit"></image>
         <text>标本养护</text>
       </view>
-      <view class="hologram-btn flex-grow" catchtap="viewCertificate">收藏证书</view>
+      <view class="hologram-btn flex-grow" hover-class="hologram-press" hover-stay-time="80" catchtap="viewCertificate">收藏证书</view>
     </view>
-    <view class="hologram-btn" catchtap="viewCertificate" wx:elif="{{order.status === 'received'}}">
+    <view class="hologram-btn" hover-class="hologram-press" hover-stay-time="80" catchtap="viewCertificate" wx:elif="{{order.status === 'received'}}">
       <text>{{certRole === 'giver' ? '查看赠予凭证' : '查看收藏证书'}}</text>
     </view>
     <view
-      class="btn-text comment-after {{reviewCanAny ? '' : 'comment-done'}}"
+      class="btn-text comment-after {{reviewCanAny ? '' : 'comment-done'}}" hover-class="btn-text-press" hover-stay-time="80"
       catchtap="goToComment"
       wx:if="{{order.status === 'received' && order.products && order.products.length > 0 && !isVoucherOrder}}"
     >
@@ -348,10 +348,10 @@
     <!-- 受礼人待填址 -->
     <view class="gift-await-bar" wx:elif="{{isGiftOrder && giftReceiverNeedsAddress}}">
       <text class="gift-await-hint" wx:if="{{giftExpireHint}}">{{giftExpireHint}}</text>
-      <view class="hologram-btn flex-grow" bindtap="goFillGiftAddress">留下收件去处</view>
+      <view class="hologram-btn flex-grow" hover-class="hologram-press" hover-stay-time="80" bindtap="goFillGiftAddress">留下收件去处</view>
     </view>
     <view class="gift-actions" wx:elif="{{isGiftOrder && giftShowPickupClaim}}">
-      <view class="hologram-btn flex-grow" bindtap="goGiftPickupClaim">出示妥投码 {{giftClaimCode}}</view>
+      <view class="hologram-btn flex-grow" hover-class="hologram-press" hover-stay-time="80" bindtap="goGiftPickupClaim">出示妥投码 {{giftClaimCode}}</view>
     </view>
     <!-- 礼赠分享封面离屏 canvas -->
     <canvas
@@ -364,17 +364,17 @@
 
     <!-- 已签收：售后入口 -->
     <view class="btn-group" wx:if="{{order.status === 'received' && showRefundEntry}}">
-      <view class="btn-text" bindtap="requestRefund">{{refundEntryLabel}}</view>
-      <view class="btn-text" bindtap="goToSupport">联系专员</view>
+      <view class="btn-text" hover-class="btn-text-press" hover-stay-time="80" bindtap="requestRefund">{{refundEntryLabel}}</view>
+      <view class="btn-text" hover-class="btn-text-press" hover-stay-time="80" bindtap="goToSupport">联系专员</view>
     </view>
 
     <!-- 未签收订单：自取凭证 + 退款 + 联系专员（礼赠待填址已在上方处理，此处去重） -->
     <view class="btn-group" wx:if="{{order.status !== 'received' && order.status !== 'pending_pay' && !(isGiftOrder && giftAwaitingAddress) && !(isGiftOrder && giftReceiverNeedsAddress)}}">
-      <view class="btn-text brass" bindtap="openPickupPass" wx:if="{{showOrderPickup}}">自取凭证</view>
+      <view class="btn-text brass" hover-class="btn-text-press" hover-stay-time="80" bindtap="openPickupPass" wx:if="{{showOrderPickup}}">自取凭证</view>
       <!-- 支付确认中：钱可能已扣，此前无任何自救入口 → 提供「重新确认支付结果」 -->
-      <view class="btn-text brass" bindtap="retryConfirmPayment" wx:if="{{showPayConfirmRetry}}">{{payConfirmBusy ? '确认中…' : '重新确认支付结果'}}</view>
-      <view class="btn-text" bindtap="requestRefund" wx:if="{{showRefundEntry}}">{{refundEntryLabel}}</view>
-      <view class="btn-text" bindtap="goToSupport">联系专员</view>
+      <view class="btn-text brass" hover-class="btn-text-press" hover-stay-time="80" bindtap="retryConfirmPayment" wx:if="{{showPayConfirmRetry}}">{{payConfirmBusy ? '确认中…' : '重新确认支付结果'}}</view>
+      <view class="btn-text" hover-class="btn-text-press" hover-stay-time="80" bindtap="requestRefund" wx:if="{{showRefundEntry}}">{{refundEntryLabel}}</view>
+      <view class="btn-text" hover-class="btn-text-press" hover-stay-time="80" bindtap="goToSupport">联系专员</view>
     </view>
   </view>
 </view>

@@ -84,7 +84,7 @@
   </scroll-view>
 
   <view class="account-footer account-footer-safe">
-    <view class="account-btn-primary {{submitting ? 'disabled' : ''}}" bindtap="submitFeedback">
+    <view class="account-btn-primary {{submitting ? 'disabled' : ''}}" hover-class="{{submitting ? '' : 'account-btn-press'}}" hover-stay-time="80" bindtap="submitFeedback">
       {{submitting ? '提交中…' : '提交反馈'}}
     </view>
   </view>

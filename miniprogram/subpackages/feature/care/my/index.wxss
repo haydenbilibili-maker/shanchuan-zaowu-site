@@ -132,7 +132,7 @@ page {
 
 .tag-date {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .spec-framing {
@@ -145,7 +145,7 @@ page {
 .spec-summary {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   line-height: 1.5;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -195,7 +195,7 @@ page {
 .empty-desc {
   display: block;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   line-height: 1.55;
   margin-bottom: 32rpx;
 }

@@ -143,7 +143,7 @@ page {
 .field-label {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   margin-bottom: 12rpx;
 }
 
@@ -154,7 +154,7 @@ page {
 .field-hint-inline {
   margin-left: 8rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   font-weight: 400;
 }
 
@@ -370,7 +370,7 @@ page {
 .sheet-hint {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   margin-bottom: 20rpx;
 }
 
@@ -486,5 +486,5 @@ page {
 
 .order-item-time {
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }

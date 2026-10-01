@@ -204,6 +204,44 @@ const ROUNDS = {
   <div class="import-row"><span class="import-lbl">从微信地址导入</span><span class="import-chev"></span></div>
   <div class="btn-primary disabled">正在记下…</div>
   <span class="foot-note">提交后馆员将备妥启程；你可随时在礼笺页查看进度。</span></div>`, 700)
+  ],
+  3: () => [
+    panel('预约票据 · 加载中 / 中文标签 / 按压', ['subpackages/business/ticket/index.wxss'], `
+<div class="page" style="height:auto">
+  <div class="ticket-wrap"><div class="ticket-box">
+    <div class="ticket-header"><span class="header-main">MUSEUM PASS</span><span class="sub">山海造物 · 把山海带回家</span></div>
+    <div class="qr-section"><div class="qr-img" style="width:280px;height:280px;margin:0 auto;background:#262320"></div>
+      <span class="qr-tip muted">正在取出票据…</span><span class="qr-code">NO. </span></div>
+    <div class="info-section">
+      <div class="row"><span class="label">项目｜PROJECT</span><span class="val">标本工坊 · 蝶翼装裱体验</span></div>
+      <div class="row"><span class="label">日期｜DATE</span><span class="val">2026-10-03 14:30</span></div>
+      <div class="row"><span class="label">人数｜GUEST</span><span class="val">2 位</span></div></div>
+  </div></div>
+  <div class="page-footer"><div class="footer-btn outline">取消预约</div><div class="footer-btn primary footer-btn-press">改期</div></div>
+</div>`, 1000),
+    panel('订单详情底栏 · 按压态（右为按下）', ['subpackages/business/order-detail/index.wxss'], `
+<div style="padding:40px 24px">
+  <div class="btn-group" style="display:flex;gap:16px;margin-bottom:24px"><div class="btn-text">联系专员</div><div class="btn-text btn-text-press">申请退款</div></div>
+  <div class="received-actions" style="display:flex;gap:16px"><div class="btn-main flex-grow">标本养护</div><div class="btn-main flex-grow btn-main-press">按下</div></div>
+  <div style="display:flex;gap:16px;margin-top:24px"><div class="hologram-btn flex-grow">收藏证书</div><div class="hologram-btn flex-grow hologram-press">按下</div></div>
+</div>`, 420),
+    panel('我的礼赠 · 卡片说明字（上 进行中 / 下 已失效）', ['subpackages/feature/gift/my-gifts/index.wxss'], `
+<div style="padding:24px">
+ <div class="card metal-card"><div class="metal-edge"></div><div class="cover-wrap"><div class="cover placeholder"><div class="cover-plate"></div></div><div class="role-chip received">收到</div></div>
+  <div class="body"><div class="row-top"><div class="status-plate"><div class="signal-light"></div><span class="status hot">待填写地址</span></div><span class="expire">3 天后失效</span></div>
+   <span class="title">蓝闪蝶 · A1 博物级</span><span class="meta">顺丰寄送</span>
+   <div class="row-bottom"><span class="time">2026-09-28 20:14</span><span class="price">¥468</span></div></div></div>
+ <div class="card metal-card card-inactive" style="margin-top:24px"><div class="metal-edge"></div><div class="cover-wrap"><div class="cover placeholder"><div class="cover-plate"></div></div><div class="role-chip sent">送出</div></div>
+  <div class="body"><div class="row-top"><div class="status-plate"><div class="signal-light"></div><span class="status">已退回</span></div><span class="expire">已过期</span></div>
+   <span class="title">枯叶蛱蝶 · 标准级</span><span class="meta">门店自取</span>
+   <div class="row-bottom"><span class="time">2026-08-02 11:40</span><span class="price">¥268</span></div></div></div>
+</div>`, 620),
+    panel('开票申请 · 表单标签色', ['subpackages/extra/user/invoice-request/index.wxss'], `
+<div class="section" style="padding:24px"><span class="section-title">开票信息</span>
+  <div class="form-card invoice-form">
+    <div class="field-row"><span class="field-label">选择订单 <span class="req">*</span></span><div class="order-picker"><span class="order-picker-placeholder">点击选择可开票订单</span><span class="order-picker-arrow">选择 →</span></div></div>
+    <div class="field-row"><span class="field-label">抬头类型 <span class="req">*</span><span class="field-hint-inline">个人 / 企业</span></span></div>
+  </div></div>`, 420)
   ]
 }
 

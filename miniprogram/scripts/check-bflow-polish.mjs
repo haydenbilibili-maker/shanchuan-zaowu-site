@@ -19,6 +19,11 @@
  *   B8 荣誉档案：加载中不显示「共收藏 0 件」，入场动画延迟有上限（证书多时最后一张要等数秒才出现）；
  *   B9 收货地址：默认地址卡不再出现「设为默认」，保存按钮有「保存中…」；
  *   B10 礼赠填址：提交中按钮文案切换（防「点了没反应」再点）。
+ *   ── 第 3 轮（凭证 / 订单详情底栏 / 账户提交）──
+ *   B11 预约票据：数据回来前不显示「该预约已不可核销」（须有加载分支），字段标签带中文；
+ *   B12 订单详情底栏：btn-text / btn-main / hologram-btn 每一枚都挂 hover-class，且 *-press 类在 wxss 有定义
+ *      （此前只靠 `:active`，真机 view 上不可靠）；
+ *   B13 反馈 / 注册完成按钮有按压反馈（提交中不挂）。
  *
  * 自检不写盘：注入在内存副本上做（共享工作区有并行流，写盘注入会覆盖别人的在写内容）。
  *
@@ -44,7 +49,11 @@ const F = {
   bookingWxml: `${B}/booking/index.wxml`,
   certWxml: 'miniprogram/subpackages/extra/user/certificates/index.wxml',
   addrWxml: `${B}/address/index.wxml`,
-  giftAddrWxml: 'miniprogram/subpackages/feature/gift/address/index.wxml'
+  giftAddrWxml: 'miniprogram/subpackages/feature/gift/address/index.wxml',
+  ticketWxml: `${B}/ticket/index.wxml`,
+  ticketJs: `${B}/ticket/index.js`,
+  feedbackWxml: 'miniprogram/subpackages/extra/user/feedback/index.wxml',
+  onboardingWxml: 'miniprogram/subpackages/extra/user/onboarding/index.wxml'
 }
 
 /** B4 扫描范围（逐轮扩充；只加不减） */
@@ -55,7 +64,8 @@ const NO_RAW_ERROR_FILES = [
   `${B}/order-claim/index.js`,
   `${B}/logistics-track/index.js`,
   'miniprogram/pages/cart/index.js',
-  `${B}/confirm-order/index.js`
+  `${B}/confirm-order/index.js`,
+  F.ticketJs
 ]
 
 const read = (f) => readFileSync(resolve(ROOT, f), 'utf8')
@@ -173,6 +183,28 @@ export function runChecks(src) {
   // B10
   check('B10.gift-addr-submitting-label', /submitting \? '正在记下…'/.test(src[F.giftAddrWxml]), '礼赠填址提交按钮无进行中文案')
 
+  // B11
+  const tw = src[F.ticketWxml]
+  const loadIdx = tw.indexOf('wx:elif="{{!booking._id}}"')
+  const voidIdx = tw.indexOf('该预约已不可核销')
+  check('B11.ticket-loading-branch', loadIdx > 0 && loadIdx < voidIdx, '票据加载中会先闪「该预约已不可核销」')
+  check('B11.ticket-zh-labels', !/<text class="label">(PROJECT|DATE|GUEST)<\/text>/.test(tw), '票据字段标签仍为纯英文')
+
+  // B12
+  const odw = src[F.odWxml]
+  const foot = odw.slice(odw.indexOf('<view class="action-footer'))
+  const css = stripCssComments(src[F.odWxss])
+  const tags = foot.match(/<view\s+class="(?:btn-text|btn-main|hologram-btn)\b[^>]*>/g) || []
+  const bare = tags.filter((t) => !/hover-class=/.test(t))
+  check('B12.footer-hover', tags.length > 0 && bare.length === 0, `订单详情底栏 ${bare.length} 枚按钮无 hover-class：${bare.map((t) => t.slice(0, 48)).join(' | ')}`)
+  for (const cls of ['btn-text-press', 'btn-main-press', 'hologram-press']) {
+    check(`B12.${cls}-defined`, new RegExp(`\\.${cls}\\s*[,{]`).test(css), `wxss 未定义 .${cls}`)
+  }
+
+  // B13
+  check('B13.feedback-press', /bindtap="submitFeedback"/.test(src[F.feedbackWxml]) && /'account-btn-press'\}\}"[^>]*bindtap="submitFeedback"/.test(src[F.feedbackWxml]), '反馈提交按钮无按压反馈')
+  check('B13.onboarding-finish-press', /hover-class="\{\{saving \? '' : 'account-btn-press'\}\}"[\s\S]{0,60}bindtap="finishWithGift"/.test(src[F.onboardingWxml]), '注册完成按钮无按压反馈')
+
   return { pass, fails }
 }
 
@@ -188,7 +220,7 @@ function report({ pass, fails }) {
     console.error(`✗ check:bflow-polish：${fails.length} 项失败 / ${pass} 项通过`)
     return 1
   }
-  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10）`)
+  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13）`)
   return 0
 }
 
@@ -205,7 +237,13 @@ const INJECTIONS = [
   ['B8 入场延迟回到无上限', F.certWxml, (s) => s.replace('{{index < 8 ? index * 0.06 : 0.48}}s', '{{index * 0.1}}s')],
   ['B8 加载中显示收藏件数', F.certWxml, (s) => s.replace('<text class="h2" wx:if="{{loading}}">正在检索档案…</text>', '')],
   ['B9 默认卡重新显示设为默认', F.addrWxml, (s) => s.replace('<view class="act-btn" wx:if="{{!item.isDefault}}" catchtap="setDefault"', '<view class="act-btn" catchtap="setDefault"')],
-  ['B10 礼赠填址去掉进行中文案', F.giftAddrWxml, (s) => s.replace("{{submitting ? '正在记下…' : '确认收件去处'}}", '确认收件去处')]
+  ['B10 礼赠填址去掉进行中文案', F.giftAddrWxml, (s) => s.replace("{{submitting ? '正在记下…' : '确认收件去处'}}", '确认收件去处')],
+  ['B11 票据去掉加载分支', F.ticketWxml, (s) => s.replace('<text class="qr-tip muted" wx:elif="{{!booking._id}}">正在取出票据…</text>', '')],
+  ['B11 票据标签回到纯英文', F.ticketWxml, (s) => s.replace('<text class="label">项目｜PROJECT</text>', '<text class="label">PROJECT</text>')],
+  ['B4 票据失败拼回 errMsg', F.ticketJs, (s) => s.replace("wx.showToast({ title: '票据没取到，请检查网络后重试', icon: 'none' });", "wx.showToast({ title: err.errMsg || '票据不存在', icon: 'none' });")],
+  ['B12 底栏按钮丢 hover-class', F.odWxml, (s) => s.replace('<view class="btn-text cancel" hover-class="btn-text-press" hover-stay-time="80"', '<view class="btn-text cancel"')],
+  ['B12 删掉 btn-main-press 定义', F.odWxss, (s) => s.replace('.btn-main:active,\n.btn-main-press {', '.btn-main:active {')],
+  ['B13 反馈按钮丢按压', F.feedbackWxml, (s) => s.replace(` hover-class="{{submitting ? '' : 'account-btn-press'}}" hover-stay-time="80"`, '')]
 ]
 
 if (process.argv.includes('--selftest')) {

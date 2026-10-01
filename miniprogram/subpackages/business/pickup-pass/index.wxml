@@ -18,8 +18,8 @@
       <text class="pass-sealed-title">{{pass.headline || '该凭证已不可使用'}}</text>
       <text class="pass-sealed-sub">{{pass.hint}}</text>
       <view class="pass-closed-actions">
-        <view class="btn-ghost" bindtap="goOrderDetail">查看订单</view>
-        <view class="btn-ghost" bindtap="goSupport">联系专员</view>
+        <view class="btn-ghost" bindtap="goOrderDetail" hover-class="pass-press" hover-stay-time="80">查看订单</view>
+        <view class="btn-ghost" bindtap="goSupport" hover-class="pass-press" hover-stay-time="80">联系专员</view>
       </view>
     </view>
 

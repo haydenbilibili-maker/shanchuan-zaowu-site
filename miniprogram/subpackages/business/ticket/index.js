@@ -53,8 +53,9 @@ Page(withAppModal({
         drawMemberQr('#ticketQrCanvas', qrPayload, this, 150).catch(() => {});
       });
     } catch (err) {
+      console.warn('[ticket] loadBooking', err);
       this.setData({ loadError: true, booking: {} });
-      wx.showToast({ title: '票据不存在', icon: 'none' });
+      wx.showToast({ title: '票据没取到，请检查网络后重试', icon: 'none' });
     } finally { wx.hideLoading(); }
   },
   goBack() {
