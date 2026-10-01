@@ -21,10 +21,13 @@
         <el-radio-group v-model="statusFilter" @change="refresh">
           <el-radio-button label="all">全部</el-radio-button>
           <el-radio-button label="pending_review">待审核</el-radio-button>
+          <el-radio-button label="need_info">需补充</el-radio-button>
+          <el-radio-button label="quoted">已报价</el-radio-button>
           <el-radio-button label="accepted">已接单</el-radio-button>
           <el-radio-button label="awaiting_intake">待收件</el-radio-button>
           <el-radio-button label="in_production">制作中</el-radio-button>
           <el-radio-button label="completed">已完成</el-radio-button>
+          <el-radio-button label="declined">已婉拒</el-radio-button>
         </el-radio-group>
       </div>
 
@@ -57,6 +60,9 @@
             </div>
             <div class="row-line" v-if="row.quote">
               <span class="lbl">报价</span><span class="val price">¥{{ row.quote.amount }}</span>
+            </div>
+            <div class="row-line" v-if="row.status === 'declined' && row.decline">
+              <span class="lbl">婉拒</span><span class="val">{{ row.decline.reason }}<span class="decline-time" v-if="row.decline.declinedAt"> · {{ fmtTime(row.decline.declinedAt) }}</span></span>
             </div>
           </div>
 
@@ -151,6 +157,11 @@
     </el-dialog>
 
     <el-drawer v-model="detailDrawer" title="订单完整数据" size="600px">
+      <div v-if="currentRow && currentRow.status === 'declined'" class="decline-box">
+        <div class="decline-title">已婉拒</div>
+        <div class="decline-row"><span class="lbl">理由</span><span>{{ currentRow.decline?.reason || '（未记录）' }}</span></div>
+        <div class="decline-row"><span class="lbl">时间</span><span>{{ currentRow.decline?.declinedAt ? fmt(currentRow.decline.declinedAt) : '（未记录）' }}</span></div>
+      </div>
       <pre v-if="currentRow" class="raw-json">{{ JSON.stringify(currentRow, null, 2) }}</pre>
     </el-drawer>
   </div>
@@ -180,13 +191,20 @@ const currentRow = ref(null)
 const quoteForm = ref({ amount: 0, validUntil: '', note: '' })
 const craftForm = ref({ _id: '', craftId: '', name: '', desc: '', estimatedWeeks: '', sort: 1, status: 'active' })
 
+// 须覆盖小程序 petMemorialDefaults.STATUS_LABELS 的全部状态（check:pet-memorial-ops 状态表一致性）
 const STATUS = {
   pending_review: { text: '待审核', type: 'warning' },
+  need_info: { text: '需补充信息', type: 'warning' },
+  quoted: { text: '已报价待确认', type: 'warning' },
   accepted: { text: '已接单', type: '' },
   awaiting_intake: { text: '待收件', type: 'warning' },
+  intake_done: { text: '已交接', type: '' },
   in_production: { text: '制作中', type: '' },
+  quality_check: { text: '质检确认', type: '' },
+  ready: { text: '待取 / 待寄', type: '' },
   completed: { text: '已完成', type: 'success' },
-  cancelled: { text: '已取消', type: 'info' }
+  cancelled: { text: '已取消', type: 'info' },
+  declined: { text: '已婉拒', type: 'info' }
 }
 const statusLabel = (s) => STATUS[s]?.text || s
 const statusType = (s) => STATUS[s]?.type || 'info'
@@ -366,6 +384,11 @@ onMounted(refresh)
 .row-line .lbl { color: #999; width: 50px; }
 .row-line .val { color: #333; flex: 1; }
 .row-line .val.price { color: #d4af37; font-weight: bold; }
+.decline-time { color: var(--el-text-color-secondary); }
+.decline-box { margin-bottom: 16px; padding: 12px 14px; border: 1px solid var(--el-border-color-lighter); border-radius: 8px; background: var(--el-fill-color-light); }
+.decline-title { font-size: 13px; font-weight: bold; color: var(--el-text-color-primary); margin-bottom: 6px; }
+.decline-row { display: flex; gap: 8px; font-size: 13px; color: var(--el-text-color-regular); margin: 4px 0; }
+.decline-row .lbl { color: var(--el-text-color-secondary); width: 40px; flex-shrink: 0; }
 
 .timeline { border-left: 2px solid #f5f5f5; padding-left: 12px; }
 .tl-item { position: relative; margin-bottom: 8px; }

@@ -31,6 +31,41 @@ const PMSS = `${MP}subpackages/manager/manager/workspace/petMemorial.wxss`
 const STATUS_WXML = `${MP}subpackages/feature/custom/pet/status/index.wxml`
 const STATUS_JS = `${MP}subpackages/feature/custom/pet/status/index.js`
 const DEFAULTS = ['business', 'extra', 'feature', 'manager'].map((p) => `${MP}subpackages/${p}/utils/petMemorialDefaults.js`)
+const ERP_PET = 'admin/src/components/PetMemorial.vue'
+
+/**
+ * 状态表一致性（通用）：小程序侧状态字典的**每个键**都必须出现在 ERP 的状态表里，
+ * 否则 ERP 会把新状态显示成英文原值。以后新增一对「小程序状态字典 ↔ ERP 状态表」就在这里加一行。
+ *   mp：小程序模块（全部副本，键集合必须相同）+ 导出名；erp：.vue 文件 + `const <名> = { ... }` 的常量名
+ */
+const STATUS_PARITY = [
+  { name: '伴宠工单', mp: DEFAULTS, mpExport: 'STATUS_LABELS', erp: ERP_PET, erpConst: 'STATUS' }
+]
+
+/** 取 .vue / .js 源码里 `const NAME = { ... }` 顶层键（按花括号配平截取，不数逗号） */
+function constObjectKeys(src, name) {
+  const at = src.search(new RegExp(`const\\s+${name}\\s*=\\s*\\{`))
+  if (at < 0) return null
+  const open = src.indexOf('{', at)
+  let depth = 0
+  let end = -1
+  for (let i = open; i < src.length; i += 1) {
+    if (src[i] === '{') depth += 1
+    else if (src[i] === '}') { depth -= 1; if (depth === 0) { end = i; break } }
+  }
+  if (end < 0) return null
+  const body = src.slice(open + 1, end).replace(/\/\/[^\n]*/g, '')
+  const keys = []
+  let d = 0
+  for (const line of body.split('\n')) {
+    if (d === 0) {
+      const m = /^\s*['"]?([A-Za-z_][\w]*)['"]?\s*:/.exec(line)
+      if (m) keys.push(m[1])
+    }
+    d += (line.match(/\{/g) || []).length - (line.match(/\}/g) || []).length
+  }
+  return keys
+}
 
 function run(overrides = {}) {
   const read = (rel) => (Object.prototype.hasOwnProperty.call(overrides, rel) ? overrides[rel] : readFileSync(join(ROOT, rel), 'utf8'))
@@ -247,6 +282,23 @@ function run(overrides = {}) {
   })
 
   // ⑤ 已婉拒 + 状态机
+  for (const pair of STATUS_PARITY) {
+    t(`状态表一致性（${pair.name}）：小程序 ${pair.mpExport} 各副本键集合相同，且全部出现在 ERP ${pair.erpConst}`, () => {
+      const sets = pair.mp.map((rel) => Object.keys(loadCjs(rel)[pair.mpExport] || {}).sort().join(','))
+      if (!sets[0] || sets.some((x) => x !== sets[0])) throw new Error('小程序副本键集合不一致')
+      const erpKeys = constObjectKeys(read(pair.erp), pair.erpConst)
+      if (!erpKeys || !erpKeys.length) throw new Error(`ERP 找不到 const ${pair.erpConst}`)
+      const missing = sets[0].split(',').filter((k) => erpKeys.indexOf(k) === -1)
+      if (missing.length) throw new Error(`ERP 缺：${missing.join(', ')}`)
+      return true
+    })
+  }
+  t('ERP 伴宠页：已婉拒为已结束色调（info）、筛选有已婉拒、卡片与详情显示拒绝理由和时间', () => {
+    const v = read(ERP_PET)
+    return /declined:\s*\{\s*text:\s*'已婉拒',\s*type:\s*'info'\s*\}/.test(v) && /<el-radio-button label="declined">已婉拒<\/el-radio-button>/.test(v) &&
+      /row\.decline\.reason/.test(v) && /row\.decline\.declinedAt/.test(v) &&
+      /currentRow\.decline\?\.reason/.test(v) && /currentRow\.decline\?\.declinedAt/.test(v)
+  })
   t('四份 STATUS_LABELS：declined = 已婉拒', () => DEFAULTS.every((rel) => /\bdeclined:\s*'已婉拒'/.test(read(rel))))
   t('已婉拒：列表无任何操作按钮、显示理由、沉底在「已结束」之后', () => {
     const fmt = { getStatusLabel: (s) => s, formatQuoteAmount: String }
@@ -304,6 +356,11 @@ const INJECTIONS = [
   { name: '推进按钮被改', rel: NOTICE, from: "intake_done: [{ status: 'in_production', label: '开始制作' }]", to: "intake_done: [{ status: 'completed', label: '已完成' }]" },
   { name: '主操作按钮丢按压态', rel: CARDS, from: 'class="pm-btn main" hover-class="tap-press"', to: 'class="pm-btn main"' },
   { name: '顾客进度页不显示婉拒理由', rel: STATUS_WXML, from: "wx:elif=\"{{order.status === 'declined'}}\"", to: "wx:elif=\"{{order.status === 'declinedX'}}\"" },
+  { name: 'ERP 状态表漏 declined', rel: ERP_PET, from: "  declined: { text: '已婉拒', type: 'info' }\n", to: '' },
+  { name: '小程序四份同时新增状态但 ERP 没跟上', rels: DEFAULTS, expect: /ERP 缺：paused/, from: "  declined: '已婉拒'\n}", to: "  declined: '已婉拒',\n  paused: '已暂停'\n}" },
+  { name: '小程序四份副本键集合不一致', rel: DEFAULTS[3], from: "  ready: '待取 / 待寄',\n", to: '' },
+  { name: 'ERP 筛选丢已婉拒', rel: ERP_PET, from: '<el-radio-button label="declined">已婉拒</el-radio-button>', to: '' },
+  { name: 'ERP 详情不显示拒绝时间', rel: ERP_PET, from: "currentRow.decline?.declinedAt ? fmt(currentRow.decline.declinedAt)", to: "false ? 0" },
   { name: '复制工单顺手发消息', rel: CFG, from: "      data: buildStaffCopyText(item),", to: "      data: buildStaffCopyText(item), x: wx.cloud.callFunction({ name: 'dispatchMessage' })," }
 ]
 
@@ -315,14 +372,21 @@ async function selftest() {
   }
   let bad = 0
   for (const inj of INJECTIONS) {
-    const src = readFileSync(join(ROOT, inj.rel), 'utf8')
-    if (!src.includes(inj.from)) {
+    const overrides = {}
+    let anchored = true
+    for (const rel of inj.rels || [inj.rel]) {
+      const src = readFileSync(join(ROOT, rel), 'utf8')
+      if (!src.includes(inj.from)) anchored = false
+      overrides[rel] = src.replace(inj.from, inj.to)
+    }
+    if (!anchored) {
       console.error(`✗ 注入锚点失效：${inj.name}`)
       bad += 1
       continue
     }
-    const fails = await run({ [inj.rel]: src.replace(inj.from, inj.to) })
-    if (fails.length) console.log(`✓ 注入「${inj.name}」被检出（${fails.length} 条）`)
+    const fails = await run(overrides)
+    if (inj.expect && !fails.some((f) => inj.expect.test(f))) { console.error(`✗ 注入「${inj.name}」未按预期原因检出：${fails.join('；')}`); bad += 1 }
+    else if (fails.length) console.log(`✓ 注入「${inj.name}」被检出（${fails.length} 条）`)
     else { console.error(`✗ 注入「${inj.name}」未被检出`); bad += 1 }
   }
   console.log(bad ? `✗ 自检失败 ${bad}/${INJECTIONS.length}` : `✓ 自检通过：${INJECTIONS.length} 个内存注入全部检出（未写盘）`)
