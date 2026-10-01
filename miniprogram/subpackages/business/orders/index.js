@@ -36,6 +36,28 @@ function reviewFlags(reviewState) {
 
 const REVIEW_MAP_BATCH = 100;
 
+/** 小程序端单次 get() 最多回 20 条，limit 再大也只有 20 —— 翻页只能靠 skip 分页 */
+const OWNED_PAGE = 20;
+const OWNED_MAX_PAGES = 50;
+
+/**
+ * 买家侧前 pages 页（每页 20 条，skip 分页并行取）；某页不足 20 条即到底。
+ * @returns {Promise<{ rows: object[], hasMore: boolean }>}
+ */
+async function fetchOwnedPages(buildQuery, pages) {
+  const n = Math.min(Math.max(1, Math.floor(Number(pages) || 1)), OWNED_MAX_PAGES);
+  const results = await Promise.all(
+    Array.from({ length: n }, (_, i) => buildQuery().skip(i * OWNED_PAGE).limit(OWNED_PAGE).get())
+  );
+  const rows = [];
+  for (const res of results) {
+    const data = (res && res.data) || [];
+    rows.push(...data);
+    if (data.length < OWNED_PAGE) return { rows, hasMore: false };
+  }
+  return { rows, hasMore: n < OWNED_MAX_PAGES };
+}
+
 /** 合并「我是买家」与「我是礼赠受礼人」两路查询，按 createTime 去重降序 */
 function mergeOrderRows(ownedRows, receivedRows, openid) {
   const map = {};
@@ -74,6 +96,10 @@ Page(withAppModal({
     orders: [],
     loading: true,
     loadError: false,
+    /** 买家侧分页：已加载页数（每页 20）与是否还有更多 */
+    ownedPages: 1,
+    ownedHasMore: false,
+    loadingMore: false,
     STATUS: ORDER_STATUS
   },
 
@@ -90,25 +116,26 @@ Page(withAppModal({
   },
   
   onPullDownRefresh() {
+    this.setData({ ownedPages: 1 });
     this.loadOrders().then(() => wx.stopPullDownRefresh());
   },
 
-  /** 触底加载更多（每次 +20 条，直到服务端返回不足一页） */
-  async onReachBottom() {
+  /** 触底加载更多（每次多取一页 20 条，直到某页不足 20 条） */
+  onReachBottom() {
+    return this.loadMoreOwned();
+  },
+
+  /** 加载更多：买家侧多取一页后重载（保持既有合并/排序逻辑不变）；失败退回原页数 */
+  async loadMoreOwned() {
     if (this.data.loadingMore || this.data.curTab !== 0 || !this.data.ownedHasMore) return;
-    this.setData({ loadingMore: true });
+    const pages = Number(this.data.ownedPages) || 1;
+    this.setData({ loadingMore: true, ownedPages: pages + 1 });
     try {
-      await this.loadMoreOwned();
+      await this.loadOrders();
+      if (this.data.loadError) this.setData({ ownedPages: pages });
     } finally {
       this.setData({ loadingMore: false });
     }
-  },
-
-  /** 加载更多：扩大买家侧取数上限后重载（保持既有合并/排序逻辑不变） */
-  loadMoreOwned() {
-    if (this.data.loadingMore || !this.data.ownedHasMore) return Promise.resolve();
-    this.setData({ ownedPageSize: (Number(this.data.ownedPageSize) || 20) + 20 });
-    return this.loadOrders();
   },
 
   switchTab(e) {
@@ -117,7 +144,7 @@ Page(withAppModal({
     
     wx.vibrateShort({ type: 'light' });
     
-    this.setData({ curTab: index, orders: [], loading: true });
+    this.setData({ curTab: index, orders: [], loading: true, ownedPages: 1, ownedHasMore: false });
     
     setTimeout(() => {
       this.loadOrders();
@@ -166,14 +193,12 @@ Page(withAppModal({
       // 买家：客户端按 _openid；受礼人：云函数按 giftMeta.receiverOpenid（权限 + 免客户端嵌套索引）
       // 兑换单（source=exchange，代金券/积分兑换）不属于藏品订单，只在积分中心「我的兑换」展示
       const ownedWhere = { _openid: openid, source: _.neq('exchange'), ...statusFilter };
-      // 显式分页：客户端默认单次只回 20 条，原先无 limit 会让第 21 笔起的历史订单消失。
-      const ownedLimit = Math.max(20, Number(this.data.ownedPageSize) || 20);
-      const [ownedRes, receivedPack] = await Promise.all([
-        db.collection('orders')
-          .where(ownedWhere)
-          .orderBy('createTime', 'desc')
-          .limit(ownedLimit)
-          .get(),
+      // 显式分页：客户端单次最多回 20 条，按页 skip 取前 ownedPages 页（「加载更早」每次 +1 页）。
+      const [ownedPack, receivedPack] = await Promise.all([
+        fetchOwnedPages(
+          () => db.collection('orders').where(ownedWhere).orderBy('createTime', 'desc'),
+          this.data.ownedPages
+        ),
         wx.cloud.callFunction({
           name: 'manageGift',
           data: { action: 'listReceivedOrders' }
@@ -183,9 +208,8 @@ Page(withAppModal({
         })
       ]);
 
-      const ownedRowsRaw = ownedRes.data || [];
-      const ownedHasMore = ownedRowsRaw.length >= ownedLimit;
-      this.setData({ ownedHasMore });
+      const ownedRowsRaw = ownedPack.rows;
+      this.setData({ ownedHasMore: ownedPack.hasMore });
       let receivedRows = ((receivedPack && receivedPack.result) || {}).list || [];
       if (receivedRows.length && this.data.curTab !== 0) {
         receivedRows = receivedRows.filter((item) => this.matchesTabStatus(item.status));
@@ -196,7 +220,7 @@ Page(withAppModal({
       }
 
       // 兜底：历史数据里若有 source 缺失/异常写法，客户端再过滤一次
-      const ownedRows = (ownedRes.data || []).filter(
+      const ownedRows = ownedRowsRaw.filter(
         (row) => !row || String(row.source || '') !== 'exchange'
       );
       const merged = mergeOrderRows(ownedRows, receivedRows, openid);
@@ -228,10 +252,6 @@ Page(withAppModal({
       this.setData({
         orders: list,
         loading: false,
-    /** 买家侧分页：单次条数与是否还有更多 */
-    ownedPageSize: 20,
-    ownedHasMore: false,
-    loadingMore: false,
         loadError: false
       });
       this.loadReviewStates(list);

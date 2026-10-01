@@ -45,6 +45,9 @@
  *   B18 订单页区分「审核中 / 已评价」：orderReviewMap 真跑（任意单数只查 2 次库、只回本人订单、hidden 算评完、
  *      审核中单列）；列表 reviewFlags 真跑（评完 / 审核中 / 未回来都不给「写下感受」）且按批调用；
  *      订单详情底栏标签按 reviewChipPending 显示「审核中」/「✓ 已评价」。
+ *   B19 订单列表「加载更早的订单」（**真跑订单页**，桩库 65 单、单次 get() 最多 20 条）：逐次加载应为 20→40→60→65 到底，
+ *      偏移覆盖 0/20/40/60、单次 limit ≤ 20、不重不漏；成功后页数不被复位；orderReviewMap 覆盖翻页新单；
+ *      下拉刷新 / 切页签回到第 1 页。
  *
  * 自检不写盘：注入在内存副本上做（共享工作区有并行流，写盘注入会覆盖别人的在写内容）。
  *
@@ -403,6 +406,7 @@ export async function runChecks(src) {
   checkCommentPage(src, check)
   await checkModeration(src, check)
   checkOrderReviewUi(src, check)
+  await checkOrderPaging(src, check)
 
   return { pass, fails }
 }
@@ -437,6 +441,100 @@ function checkOrderReviewUi(src, check) {
   const odw = src[F.odWxml]
   check('B18.detail-chip-pending', /\{\{reviewChipPending \? '审核中' : '已评价'\}\}/.test(odw) && /od-chip-tick" wx:if="\{\{!reviewChipPending\}\}"/.test(odw), '订单详情底栏标签不区分「审核中 / 已评价」')
   check('B18.detail-chip-js', /reviewChipPending:\s*reviewProducts\.some\(\(p\) => p && p\.reviewStatus === 'pending'\)/.test(stripJsComments(src[F.odJs])), '订单详情未按 reviewStatus 计算审核中')
+}
+
+/**
+ * 订单列表页真跑（桩 wx / 库 / require）：库里 65 单，客户端每次 get() 最多回 20 条。
+ * 返回 { page, gets, reviewIds }；页面源码跑不起来 → null。
+ */
+function bootOrdersPage(js, total) {
+  const rows = Array.from({ length: total }, (_, i) => ({
+    _id: `o${String(i).padStart(3, '0')}`, _openid: 'oMe', status: 'received', source: 'shop',
+    createTime: new Date(Date.UTC(2026, 0, 1) - i * 60000).toISOString(), items: [{ productId: `p${i}`, name: `藏品${i}`, quantity: 1, price: 1 }]
+  }))
+  const S = { gets: [], reviewIds: new Set() }
+  const query = (skip = 0, limit = 20) => ({
+    where: () => query(skip, limit), orderBy: () => query(skip, limit),
+    skip: (n) => query(n, limit), limit: (n) => query(skip, n),
+    get: async () => { S.gets.push({ skip, limit }); return { data: rows.slice(skip, skip + Math.min(limit, 20)) } }
+  })
+  const noop = () => {}
+  const wx = {
+    cloud: {
+      database: () => ({ command: { neq: (v) => ({ $neq: v }), in: (v) => ({ $in: v }) }, collection: () => query() }),
+      callFunction: async ({ name, data }) => {
+        if (name === 'submitComment' && data.action === 'orderReviewMap') {
+          data.orderIds.forEach((id) => S.reviewIds.add(id))
+          return { result: { success: true, map: Object.fromEntries(data.orderIds.map((id) => [id, { reviewState: 'none' }])) } }
+        }
+        if (name === 'manageGift') return { result: { success: true, list: [] } }
+        return { result: { success: true } }
+      }
+    },
+    showToast: noop, showLoading: noop, hideLoading: noop, vibrateShort: noop, stopPullDownRefresh: noop, navigateTo: noop
+  }
+  const stubs = {
+    '../utils/payment': { payForOrder: async () => ({}) },
+    '../utils/careHelper': { confirmReceiptOnOrder: async () => ({}) },
+    '../../../utils/appModal': { withAppModal: (o) => o },
+    '../../../utils/orderScope': { ensureOpenId: async () => 'oMe', isOrderOwnedBy: (o, id) => !!o && o._openid === id, isGiftReceiverOf: () => false },
+    '../utils/depositOrderDisplay': { resolveDepositDisplay: () => ({}) }
+  }
+  let def = null
+  try {
+    new Function('require', 'wx', 'getApp', 'Page', 'console', js)(
+      (p) => { if (!(p in stubs)) throw new Error(`未桩 require ${p}`); return stubs[p] },
+      wx, () => ({ globalData: {} }), (d) => { def = d }, { log: noop, warn: noop, error: noop })
+  } catch { return null }
+  if (!def) return null
+  const page = Object.create(def)
+  page.data = JSON.parse(JSON.stringify(def.data))
+  page.setData = function (patch) {
+    for (const [k, v] of Object.entries(patch)) {
+      const m = /^(\w+)\[(\d+)\]\.(\w+)$/.exec(k)
+      if (m) { if (this.data[m[1]] && this.data[m[1]][m[2]]) this.data[m[1]][m[2]][m[3]] = v } else this.data[k] = v
+    }
+  }
+  return { page, S }
+}
+
+/** B19 订单列表「加载更早」：真跑页面 65 单能翻到底；翻页后页数/偏移不被复位；刷新 / 切页签从头；评价批查覆盖新单 */
+async function checkOrderPaging(src, check) {
+  const js = src[F.ordersJs]
+  const flush = () => new Promise((r) => setTimeout(r, 0))
+  const boot = bootOrdersPage(js, 65)
+  check('B19.page-boots', !!boot, '订单列表页源码在桩环境里跑不起来')
+  if (!boot) return
+  const { page, S } = boot
+  const seen = []
+  const snap = () => seen.push(`${page.data.orders.length}/${page.data.ownedHasMore ? 'more' : 'end'}`)
+  try {
+    page.onLoad({}); await flush(); await flush(); snap()
+    await page.onReachBottom(); await flush(); snap()
+    for (let i = 0; i < 3; i += 1) { await page.loadMoreOwned(); await flush(); snap() }
+  } catch (e) { seen.push(`抛错 ${e && e.message}`) }
+  const want = ['20/more', '40/more', '60/more', '65/end', '65/end']
+  check('B19.pages-past-40', seen.join(' ') === want.join(' '), `65 单逐次「加载更早」应为 ${want.join(' → ')}，实际 ${seen.join(' → ')}`)
+  check('B19.no-skip-over-limit', S.gets.every((g) => g.limit <= 20), '单次 get() 的 limit 超过 20（小程序端只会回 20 条，多要的被静默截掉）')
+  const offsets = [...new Set(S.gets.map((g) => g.skip))].sort((a, b) => a - b)
+  check('B19.offsets-advance', offsets.join(',') === '0,20,40,60', `翻页偏移应覆盖 0,20,40,60，实际 ${offsets.join(',')}`)
+  const ids = page.data.orders.map((o) => o._id)
+  check('B19.no-dup', new Set(ids).size === ids.length && ids.length === 65, '翻页后订单重复或缺漏')
+  check('B19.review-map-covers', ids.every((id) => S.reviewIds.has(id)) && page.data.orders.every((o) => o.reviewCanWrite === true),
+    `orderReviewMap 未覆盖翻页新加载的订单（查过 ${S.reviewIds.size}/65）`)
+  check('B19.not-loading-after', page.data.loadingMore === false, '加载更多结束后 loadingMore 未复位，按钮卡在「加载中…」')
+
+  let refreshed = ''
+  try {
+    page.onPullDownRefresh(); await flush(); await flush(); await flush()
+    refreshed = `${page.data.ownedPages}/${page.data.orders.length}`
+  } catch (e) { refreshed = `抛错 ${e && e.message}` }
+  check('B19.refresh-from-top', refreshed === '1/20', `下拉刷新应从头加载（页数 1、20 单），实际 ${refreshed}`)
+  try {
+    await page.loadMoreOwned(); await flush()
+    page.switchTab({ currentTarget: { dataset: { index: 1 } } })
+  } catch { /* 按失败 */ }
+  check('B19.switch-tab-from-top', page.data.ownedPages === 1 && page.data.orders.length === 0, '切换页签未把分页复位到第 1 页')
 }
 
 /** 评价页顶层纯函数（Page 之前的部分）真跑：返回 buildViewReview；取不到 / 抛错 → null */
@@ -516,7 +614,7 @@ function report({ pass, fails }) {
     console.error(`✗ check:bflow-polish：${fails.length} 项失败 / ${pass} 项通过`)
     return 1
   }
-  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14 · 底栏改版 B15 · 评价页查看态 B16 · 检测通过自动展示 B17 · 订单页审核中 / 已评价 B18）`)
+  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14 · 底栏改版 B15 · 评价页查看态 B16 · 检测通过自动展示 B17 · 订单页审核中 / 已评价 B18 · 订单分页 B19）`)
   return 0
 }
 
@@ -596,7 +694,15 @@ const INJECTIONS = [
   ['B18 列表已评价仍可写', F.ordersJs, (s) => s.replace("reviewState === 'unknown',", "reviewState === 'unknown' || reviewState === 'done',")],
   ['B18 列表状态未回来先给入口', F.ordersJs, (s) => s.replace("reviewCanWrite: reviewState === 'none'", "reviewCanWrite: !reviewState || reviewState === 'none'")],
   ['B18 列表逐单调用', F.ordersJs, (s) => s.replace('i += REVIEW_MAP_BATCH', 'i += 1')],
-  ['B18 详情标签不分审核中', F.odWxml, (s) => s.replace("{{reviewChipPending ? '审核中' : '已评价'}}", "{{reviewSummaryLabel || '已评价'}}")]
+  ['B18 详情标签不分审核中', F.odWxml, (s) => s.replace("{{reviewChipPending ? '审核中' : '已评价'}}", "{{reviewSummaryLabel || '已评价'}}")],
+  ['B19 成功后复位分页（原缺陷）', F.ordersJs, (s) => s.replace('        loading: false,\n        loadError: false\n      });\n      this.loadReviewStates(list);', '        loading: false,\n        ownedPages: 1,\n        ownedHasMore: false,\n        loadingMore: false,\n        loadError: false\n      });\n      this.loadReviewStates(list);')],
+  ['B19 只复位页数', F.ordersJs, (s) => s.replace('        loading: false,\n        loadError: false\n      });\n      this.loadReviewStates(list);', '        loading: false,\n        ownedPages: 1,\n        loadError: false\n      });\n      this.loadReviewStates(list);')],
+  ['B19 不按偏移分页', F.ordersJs, (s) => s.replace('.skip(i * OWNED_PAGE)', '')],
+  ['B19 改回加大 limit', F.ordersJs, (s) => s.replace('Array.from({ length: n }, (_, i) => buildQuery().skip(i * OWNED_PAGE).limit(OWNED_PAGE).get())', '[buildQuery().limit(OWNED_PAGE * n).get()]')],
+  ['B19 触底先置 loadingMore', F.ordersJs, (s) => s.replace('  onReachBottom() {\n    return this.loadMoreOwned();', '  async onReachBottom() {\n    this.setData({ loadingMore: true });\n    try { await this.loadMoreOwned(); } finally { this.setData({ loadingMore: false }); }')],
+  ['B19 下拉刷新不从头', F.ordersJs, (s) => s.replace('    this.setData({ ownedPages: 1 });\n    this.loadOrders().then', '    this.loadOrders().then')],
+  ['B19 切页签不从头', F.ordersJs, (s) => s.replace("loading: true, ownedPages: 1, ownedHasMore: false });", 'loading: true });')],
+  ['B19 评价批查只覆盖末页', F.ordersJs, (s) => s.replace('      this.loadReviewStates(list);', '      this.loadReviewStates(list.slice(-20));')]
 ]
 
 if (process.argv.includes('--selftest')) {
