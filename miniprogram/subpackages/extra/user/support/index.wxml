@@ -154,6 +154,25 @@
             bindinput="onMessageInput"
             bindblur="onMessageInput"
           ></textarea>
+          <view class="ti-block">
+            <view class="ti-head">
+              <text class="ti-label">附图（选填，最多 {{maxTicketImages}} 张）</text>
+              <text class="ti-count">{{ticketImages.length}}/{{maxTicketImages}}</text>
+            </view>
+            <view class="ti-grid">
+              <view class="ti-cell" wx:for="{{ticketImages}}" wx:key="key">
+                <image class="ti-img" src="{{item.local}}" mode="aspectFill" bindtap="previewTicketImage" data-url="{{item.local}}"/>
+                <view class="ti-mask" wx:if="{{item.status === 'uploading'}}"><text class="ti-mask-text">上传中…</text></view>
+                <view class="ti-mask is-failed" wx:elif="{{item.status === 'failed'}}" hover-class="tap-press-soft" catchtap="retryTicketImage" data-key="{{item.key}}"><text class="ti-mask-text">上传失败</text><text class="ti-mask-text">点此重试</text></view>
+                <view class="ti-del" catchtap="removeTicketImage" data-key="{{item.key}}"><text class="ti-del-x">×</text></view>
+              </view>
+              <view class="ti-cell ti-add" wx:if="{{ticketImages.length < maxTicketImages}}" hover-class="tap-press-soft" bindtap="chooseTicketImages">
+                <text class="ti-add-plus">+</text>
+                <text class="ti-add-text">添加图片</text>
+              </view>
+            </view>
+            <text class="ti-warn" wx:if="{{ticketImgFailed}}">有 {{ticketImgFailed}} 张没传上去，点图片重试或删掉后再提交</text>
+          </view>
           <view class="phone-row">
             <text class="phone-label">联系电话（选填）</text>
             <input
@@ -173,8 +192,8 @@
               hover-stay-time="80"
               bindtap="submitTicket"
               loading="{{submitting}}"
-              disabled="{{submitting}}"
-            >{{submitting ? '提交中…' : '提交留言'}}</button>
+              disabled="{{submitting || ticketImgBusy}}"
+            >{{submitting ? '提交中…' : (ticketImgBusy && !ticketImgFailed ? '图片上传中…' : '提交留言')}}</button>
           </view>
         </view>
       </view>

@@ -11,6 +11,7 @@ const {
 const { trackBehavior } = require('../../../../utils/trackBehavior');
 const { getPageNavInsets } = require('../../utils/pageNav');
 const { getFirstImage, batchTempFileURLs } = require('../../../../utils/util');
+const { MAX_TICKET_IMAGES, ticketImageState, ticketImageMethods } = require('../../utils/ticketImages');
 
 /** 含主行 + 发送卡片提示行；与 .context-strip 实际高度对齐 */
 const CONTEXT_STRIP_RPX = 220;
@@ -135,6 +136,10 @@ Page({
     memberNo: '',
 
     messageText: '',
+    ticketImages: [],
+    ticketImgBusy: false,
+    ticketImgFailed: 0,
+    maxTicketImages: MAX_TICKET_IMAGES,
     contactPhone: '',
     submitting: false,
     showCommunity: false,
@@ -588,8 +593,10 @@ Page({
     });
   },
 
+  ...ticketImageMethods(),
+
   async submitTicket() {
-    if (this.data.submitting) return;
+    if (this.data.submitting || this.data.ticketImgBusy) return;
 
     const message = (this.data.messageText || '').trim();
     // 预填的「关于藏品「…」：」本身就超过 5 字，只提交前缀会让专员看不到问题（2026-10-01 真机 P0）
@@ -605,6 +612,7 @@ Page({
       return;
     }
 
+    const imageIDs = ticketImageState(this.data.ticketImages).fileIDs;
     this.setData({ submitting: true });
     wx.showLoading({ title: '提交中…', mask: true });
     try {
@@ -617,13 +625,14 @@ Page({
           orderNo: this.data.orderNo,
           productId: this.data.productId,
           productName: this.data.productName,
-          contactPhone: phone
+          contactPhone: phone,
+          ...(imageIDs.length ? { images: imageIDs } : {})
         }
       });
       wx.hideLoading();
 
       if (res.result && res.result.success) {
-        this.setData({ messageText: '' });
+        this.setData({ messageText: '', ticketImages: [], ticketImgBusy: false, ticketImgFailed: 0 });
         wx.showToast({ title: '留言已提交', icon: 'success' });
         trackBehavior('support_ticket_submit', 'topic', this.data.activeTopic);
       } else {

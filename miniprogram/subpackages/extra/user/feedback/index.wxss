@@ -1,4 +1,5 @@
 @import '../user-account.wxss';
+@import '../../utils/ticket-images.wxss';
 
 page {
   height: 100vh;

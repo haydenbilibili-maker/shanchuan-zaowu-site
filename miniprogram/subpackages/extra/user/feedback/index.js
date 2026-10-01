@@ -2,6 +2,7 @@
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const { getPageNavInsets } = require('../../utils/pageNav')
 const { measureFixedScroll } = require('../../../../utils/scrollArea')
+const { MAX_TICKET_IMAGES, ticketImageState, ticketImageMethods } = require('../../utils/ticketImages')
 
 const CATEGORIES = [
   { id: 'feature', label: '功能建议' },
@@ -20,6 +21,10 @@ Page({
     activeCategory: 'feature',
     messageText: '',
     contactPhone: '',
+    ticketImages: [],
+    ticketImgBusy: false,
+    ticketImgFailed: 0,
+    maxTicketImages: MAX_TICKET_IMAGES,
     submitting: false
   },
 
@@ -76,8 +81,10 @@ Page({
     })
   },
 
+  ...ticketImageMethods(),
+
   async submitFeedback() {
-    if (this.data.submitting) return
+    if (this.data.submitting || this.data.ticketImgBusy) return
     const message = (this.data.messageText || '').trim()
     if (message.length < 5) {
       wx.showToast({ title: '请至少输入 5 个字', icon: 'none' })
@@ -93,6 +100,7 @@ Page({
       return
     }
 
+    const imageIDs = ticketImageState(this.data.ticketImages).fileIDs
     this.setData({ submitting: true })
     wx.showLoading({ title: '提交中', mask: true })
     try {
@@ -101,14 +109,15 @@ Page({
         data: {
           topic: 'feedback',
           message: payload,
-          contactPhone: phone
+          contactPhone: phone,
+          ...(imageIDs.length ? { images: imageIDs } : {})
         }
       })
       wx.hideLoading()
       const result = res.result || {}
       if (result.success) {
         trackBehavior('feedback_submit', 'category', this.data.activeCategory)
-        this.setData({ messageText: '' })
+        this.setData({ messageText: '', ticketImages: [], ticketImgBusy: false, ticketImgFailed: 0 })
         wx.showToast({ title: '感谢反馈', icon: 'success' })
         setTimeout(() => {
           wx.redirectTo({

@@ -1,0 +1,108 @@
+/* 留言附图（联系专员 / 意见反馈共用；配 utils/ticketImages.js） */
+.ti-block {
+  margin-top: 20rpx;
+}
+
+.ti-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.ti-label,
+.ti-count {
+  font-size: 22rpx;
+  color: var(--color-text-secondary, #A09A90);
+}
+
+.ti-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.ti-cell {
+  position: relative;
+  width: 168rpx;
+  height: 168rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: var(--color-bg-elevated, #262320);
+}
+
+.ti-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ti-mask {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 18, 16, 0.62);
+}
+
+.ti-mask.is-failed {
+  background: rgba(60, 22, 18, 0.72);
+}
+
+.ti-mask-text {
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: #FFFFFF;
+}
+
+.ti-del {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 18, 16, 0.72);
+  border-bottom-left-radius: 16rpx;
+}
+
+.ti-del-x {
+  font-size: 32rpx;
+  line-height: 1;
+  color: #FFFFFF;
+}
+
+.ti-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(196, 167, 108, 0.45);
+  box-sizing: border-box;
+}
+
+.ti-add-plus {
+  font-size: 48rpx;
+  line-height: 1;
+  color: var(--color-gold, #C4A76C);
+}
+
+.ti-add-text {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary, #A09A90);
+}
+
+.ti-warn {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: #E9A23B;
+}

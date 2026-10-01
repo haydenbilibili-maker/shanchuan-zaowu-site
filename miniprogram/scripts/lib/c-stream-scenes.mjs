@@ -208,8 +208,32 @@ export const SCENES = [
     wxss: MGR_CSS,
     extraCss: '.modal-mask, .modal-panel { animation: none !important; opacity: 1 !important; transform: none !important; }',
     data: { showTicketReplyModal: true, tempTicketReply: { ...ticketRows()[1], content: '' } }
+  },
+  {
+    name: 'r8-support-images',
+    h: 1400,
+    wxml: () => `<view class="container">${cutBetween(read('subpackages/extra/user/support/index.wxml'), '<!-- 留言表单 -->', '<!-- 常见问题')}</view>`,
+    wxss: ['subpackages/extra/user/support/index.wxss'],
+    data: { messageText: '关于藏品「大蓝闪蝶 · 原木框」：\n框角这里有一道裂痕，附了照片', contactPhone: '', submitting: false, ...ticketImageData() }
+  },
+  {
+    name: 'r8-feedback-images',
+    h: 1700,
+    wxml: () => read('subpackages/extra/user/feedback/index.wxml'),
+    wxss: ['subpackages/extra/user/feedback/index.wxss'],
+    data: { navPaddingRight: 16, headerBlockPx: 88, scrollHeightPx: 1450, categories: [{ id: 'feature', label: '功能建议' }, { id: 'experience', label: '体验问题' }, { id: 'content', label: '内容纠错' }, { id: 'other', label: '其他' }], activeCategory: 'experience', messageText: '订单页的物流信息刷新很慢，截了两张图', contactPhone: '', submitting: false, ...ticketImageData(true) }
   }
 ]
+
+/** 附图三态样例：已上传 / 上传中 / 失败（done=true 时全部传完，按钮可点） */
+function ticketImageData(done) {
+  const pic = `file://${resolve(MP, '..', 'public/images/price-list/blue-morpho-dome-single.jpg')}`
+  const list = done
+    ? [{ key: 'a', local: pic, fileID: 'cloud://x/support-tickets/a.jpg', status: 'done' }, { key: 'b', local: pic, fileID: 'cloud://x/support-tickets/b.jpg', status: 'done' }]
+    : [{ key: 'a', local: pic, fileID: 'cloud://x/support-tickets/a.jpg', status: 'done' }, { key: 'b', local: pic, fileID: '', status: 'uploading' }, { key: 'c', local: pic, fileID: '', status: 'failed' }]
+  const failed = list.filter((x) => x.status === 'failed').length
+  return { ticketImages: list, maxTicketImages: 3, ticketImgFailed: failed, ticketImgBusy: failed > 0 || list.some((x) => x.status === 'uploading') }
+}
 
 /** 第 1 条 = 2026-10-01 20:06:11 真实工单原样（message 只有预填前缀）；其余为写了正文 / 附图的样例 */
 function ticketRows() {

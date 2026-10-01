@@ -86,7 +86,13 @@ const FILES = {
   appWxss: 'miniprogram/app.wxss',
   ticketView: `${MGR}/utils/supportTicketView.js`,
   msgAdminFn: 'miniprogram/cloudfunctions/messageAdmin/index.js',
-  supportJs: `${EXTRA}/user/support/index.js`
+  supportJs: `${EXTRA}/user/support/index.js`,
+  supportWxml: `${EXTRA}/user/support/index.wxml`,
+  feedbackJs: `${EXTRA}/user/feedback/index.js`,
+  feedbackWxml: `${EXTRA}/user/feedback/index.wxml`,
+  ticketImagesJs: `${EXTRA}/utils/ticketImages.js`,
+  ticketFn: 'miniprogram/cloudfunctions/submitSupportTicket/index.js',
+  ticketsVue: 'admin/src/components/SupportTickets.vue'
 }
 
 /** R7：在内存里执行 supportTicketView 源码（自检注入改的是这份字符串） */
@@ -94,6 +100,28 @@ function loadTicketView(code) {
   const mod = { exports: {} }
   try { new Function('module', 'exports', 'require', code)(mod, mod.exports, () => ({})) } catch (e) { return null }
   return mod.exports
+}
+
+/**
+ * R8：用假 wx-server-sdk 执行 submitSupportTicket 源码。main() 在第一个 await 前同步调用 add()，
+ * 所以同步就能拿到「写进库的 data」；校验失败时 add 根本不会被调用。
+ */
+const R8_IMG = (n) => `cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1300/support-tickets/202610/1759_${n}.jpg`
+function runTicketFn(code, event) {
+  const calls = []
+  const db = {
+    serverDate: () => 'SERVER_DATE',
+    collection: () => ({ add: ({ data }) => { calls.push(data); return Promise.resolve({ _id: 'T1' }) } })
+  }
+  const sdk = { init: () => {}, DYNAMIC_CURRENT_ENV: 'env', database: () => db, getWXContext: () => ({ OPENID: 'o_test' }) }
+  const req = (name) => (name === 'wx-server-sdk' ? sdk : { dispatchInAppMessage: () => Promise.resolve() })
+  const mod = { exports: {} }
+  try {
+    new Function('module', 'exports', 'require', 'console', code)(mod, mod.exports, req, { error() {}, warn() {}, log() {} })
+    const p = mod.exports.main(event)
+    if (p && p.catch) p.catch(() => {})
+  } catch (e) { return { error: e.message, calls } }
+  return { calls }
 }
 
 /** R6-1：删掉 .wb-press 同值副本的 8 个文件 */
@@ -492,7 +520,38 @@ function check(src) {
   const submit = (src.supportJs.match(/async submitTicket\(\) \{[\s\S]*?\n  \},/) || [''])[0]
   const guardAt = submit.indexOf('if (message.length < 5 || body.length < 2)')
   ok(guardAt > 0 && guardAt < submit.indexOf("name: 'submitSupportTicket'"), 'R7-5 顾客端只提交预填前缀（没写正文）仍能提交')
-  ok(/data: \{\n\s*topic: this\.data\.activeTopic,\n\s*message,\n\s*orderId: this\.data\.orderId,\n\s*orderNo: this\.data\.orderNo,\n\s*productId: this\.data\.productId,\n\s*productName: this\.data\.productName,\n\s*contactPhone: phone\n\s*\}/.test(submit), 'R7-5 submitSupportTicket 入参被改')
+  ok(/data: \{\n\s*topic: this\.data\.activeTopic,\n\s*message,\n\s*orderId: this\.data\.orderId,\n\s*orderNo: this\.data\.orderNo,\n\s*productId: this\.data\.productId,\n\s*productName: this\.data\.productName,\n\s*contactPhone: phone,\n\s*\.\.\.\(imageIDs\.length \? \{ images: imageIDs \} : \{\}\)\n\s*\}/.test(submit), 'R7-5 submitSupportTicket 入参被改（原有键须逐字不变，只许追加可选 images）')
+
+  // R8：留言附图（产品负责人 2026-10-01 点名，顾客端新增旁路）
+  const base8 = { message: '想问问这只蝴蝶的产地' }
+  const noImg = runTicketFn(src.ticketFn, base8)
+  ok(noImg.calls.length === 1 && !Object.prototype.hasOwnProperty.call(noImg.calls[0], 'images'), `R8-2 不传 images 时也写了 images 字段（或没写库：${noImg.error || noImg.calls.length}）`)
+  const three = runTicketFn(src.ticketFn, { ...base8, images: [R8_IMG(1), R8_IMG(2), R8_IMG(3)] })
+  ok(three.calls.length === 1 && JSON.stringify(three.calls[0].images) === JSON.stringify([R8_IMG(1), R8_IMG(2), R8_IMG(3)]), 'R8-1 合法的 3 张图没有原样写进 images')
+  const reject8 = [
+    ['4 张', [R8_IMG(1), R8_IMG(2), R8_IMG(3), R8_IMG(4)]],
+    ['https 链接', ['https://example.com/support-tickets/a.jpg']],
+    ['不是 cloud://', ['support-tickets/202610/a.jpg']],
+    ['别的目录', ['cloud://x.y/identify/a.jpg']],
+    ['路径穿越', ['cloud://x.y/support-tickets/../identify/a.jpg']],
+    ['不是数组', R8_IMG(1)]
+  ]
+  for (const [label, images] of reject8) {
+    const r = runTicketFn(src.ticketFn, { ...base8, images })
+    ok(r.calls.length === 0, `R8-1 服务端放行了非法 images（${label}）`)
+  }
+  const plain = runTicketFn(src.ticketFn, { message: '短' })
+  ok(plain.calls.length === 0, 'R8-1 原有「至少 5 个字」校验被破坏')
+  const fbSubmit = (src.feedbackJs.match(/async submitFeedback\(\) \{[\s\S]*?\n  \},/) || [''])[0]
+  ok(/data: \{\n\s*topic: 'feedback',\n\s*message: payload,\n\s*contactPhone: phone,\n\s*\.\.\.\(imageIDs\.length \? \{ images: imageIDs \} : \{\}\)\n\s*\}/.test(fbSubmit), 'R8-3 意见反馈入参被改，或没带上 images')
+  ok(/if \(this\.data\.submitting \|\| this\.data\.ticketImgBusy\) return/.test(fbSubmit) && /if \(this\.data\.submitting \|\| this\.data\.ticketImgBusy\) return;/.test(submit), 'R8-3 图片没传完也能提交')
+  ok(/disabled="\{\{submitting \|\| ticketImgBusy\}\}"/.test(src.supportWxml) && /account-btn-primary \{\{submitting \|\| ticketImgBusy \? 'disabled' : ''\}\}/.test(src.feedbackWxml), 'R8-3 提交按钮在图片上传完之前仍可点')
+  for (const [name, wx] of [['support', src.supportWxml], ['feedback', src.feedbackWxml]]) {
+    ok(/catchtap="retryTicketImage"/.test(wx) && /catchtap="removeTicketImage"/.test(wx) && /上传中…/.test(wx) && /bindtap="chooseTicketImages"/.test(wx) && /ticketImages\.length < maxTicketImages/.test(wx), `R8-3 ${name} 附图缺缩略图 / 删除 / 上传中 / 失败重试之一`)
+  }
+  const ti = src.ticketImagesJs
+  ok(/const MAX_TICKET_IMAGES = 3\b/.test(ti) && /const IMAGE_EDGE = 1280\b/.test(ti) && /width > IMAGE_EDGE[^\n]*compressedWidth = IMAGE_EDGE/.test(ti) && /wx\.chooseMedia\(/.test(ti) && /wx\.cloud\.uploadFile\(/.test(ti) && /const DIR = 'support-tickets'/.test(ti) && /fileID\.indexOf\('cloud:\/\/'\) !== 0/.test(ti), 'R8-4 上传做法偏离（最多 3 张 / 宽 > 1280 压缩 / chooseMedia / uploadFile / support-tickets 目录 / 只收 cloud://）')
+  ok(/loadTicketImages\(t\)/.test(src.ticketsVue) && /getTempFileUrls\(ids\)/.test(src.ticketsVue) && /t\?\.images/.test(src.ticketsVue) && /:preview-src-list="ticketImageUrls"/.test(src.ticketsVue), 'R8-5 ERP 留言工单看不到顾客附图（images）')
 
   return fails
 }
@@ -581,6 +640,16 @@ function selftest() {
     ['会员号回退丢失', (s) => ({ ...s, ticketView: s.ticketView.replace('const memberNo = row.memberNo || buildMemberNo(row._openid)', 'const memberNo = row.memberNo') }), /R7-4 无昵称时右上角不是会员号/],
     ['会员标识顺手读手机号', (s) => ({ ...s, msgAdminFn: s.msgAdminFn.replace('.field({ _openid: true, nickName: true, memberNo: true })', '.field({ _openid: true, nickName: true, memberNo: true, phone: true })') }), /R7-4 attachMemberLabels 读 users 字段超出/],
     ['顾客端放行只有前缀的留言', (s) => ({ ...s, supportJs: s.supportJs.replace('if (message.length < 5 || body.length < 2) {', 'if (message.length < 5) {') }), /R7-5 顾客端只提交预填前缀/],
+    ['服务端放行 4 张图', (s) => ({ ...s, ticketFn: s.ticketFn.replace('raw.length > MAX_TICKET_IMAGES', 'raw.length > 9') }), /R8-1 服务端放行了非法 images（4 张）/],
+    ['服务端不校验 cloud://', (s) => ({ ...s, ticketFn: s.ticketFn.replace("!id || id.indexOf('cloud://') !== 0 || id.indexOf('..') !== -1 || !TICKET_IMAGE_RE.test(id)", '!id') }), /R8-1 服务端放行了非法 images（https 链接）/],
+    ['服务端放行路径穿越', (s) => ({ ...s, ticketFn: s.ticketFn.replace(" || id.indexOf('..') !== -1", '') }), /R8-1 服务端放行了非法 images（路径穿越）/],
+    ['不传 images 也写字段', (s) => ({ ...s, ticketFn: s.ticketFn.replace('...(hasImages ? { images } : {}),', 'images: images || [],') }), /R8-2 不传 images 时也写了/],
+    ['联系专员不带 images', (s) => ({ ...s, supportJs: s.supportJs.replace('contactPhone: phone,\n          ...(imageIDs.length ? { images: imageIDs } : {})', 'contactPhone: phone') }), /R7-5 submitSupportTicket 入参被改/],
+    ['图片上传中按钮可点', (s) => ({ ...s, supportWxml: s.supportWxml.replace('disabled="{{submitting || ticketImgBusy}}"', 'disabled="{{submitting}}"') }), /R8-3 提交按钮在图片上传完之前仍可点/],
+    ['反馈页上传中可提交', (s) => ({ ...s, feedbackJs: s.feedbackJs.replace('if (this.data.submitting || this.data.ticketImgBusy) return', 'if (this.data.submitting) return') }), /R8-3 图片没传完也能提交/],
+    ['反馈页失败不能重试', (s) => ({ ...s, feedbackWxml: s.feedbackWxml.replace(' catchtap="retryTicketImage"', '') }), /R8-3 feedback 附图缺/],
+    ['大图不压缩', (s) => ({ ...s, ticketImagesJs: s.ticketImagesJs.replace('const IMAGE_EDGE = 1280', 'const IMAGE_EDGE = 4096') }), /R8-4 上传做法偏离/],
+    ['ERP 不加载附图', (s) => ({ ...s, ticketsVue: s.ticketsVue.replace('  loadTicketImages(t)\n', '') }), /R8-5 ERP 留言工单看不到/],
     ['工作台说明字退回 muted', (s) => ({ ...s, __r6css: { ...s.__r6css, [FILES.hubWxss]: s.__r6css[FILES.hubWxss].replace(/(\.lo-kpi-hint \{[^}]*?)color: var\(--color-text-secondary, #A09A90\)/, '$1color: var(--color-text-muted)') } }), /R6-3 .*manager\/manager\/index\.wxss \.lo-kpi-hint/]
   ]
   const notes = []

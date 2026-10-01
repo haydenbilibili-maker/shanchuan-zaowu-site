@@ -1,4 +1,5 @@
 /* subpackages/feature/user/support/index.wxss */
+@import '../../utils/ticket-images.wxss';
 page {
   background: var(--color-bg, #1A1814);
   color: var(--color-text-primary, #FFFFFF);

@@ -71,6 +71,7 @@
             <el-tag :type="statusType(t.status)" effect="dark" size="small">{{ statusLabel(t.status) }}</el-tag>
           </div>
           <div class="ti-msg">{{ t.message }}</div>
+          <div v-if="Array.isArray(t.images) && t.images.length" class="ti-img-flag">附图 {{ t.images.length }} 张</div>
           <div class="ti-meta">
             <span>📞 {{ t.contactPhone || '未填' }}</span>
             <span>{{ fmt(t.createTime) }}</span>
@@ -133,6 +134,19 @@
         <div class="msg-block">
           <div class="msg-title">客户留言</div>
           <div class="msg-content">{{ current.message }}</div>
+          <div v-if="ticketImageUrls.length" class="msg-images">
+            <el-image
+              v-for="(url, i) in ticketImageUrls"
+              :key="url"
+              :src="url"
+              :preview-src-list="ticketImageUrls"
+              :initial-index="i"
+              fit="cover"
+              preview-teleported
+              class="msg-image"
+            />
+          </div>
+          <div v-else-if="ticketImagesLoading" class="msg-images-hint">附图加载中…</div>
         </div>
 
         <div class="msg-block" v-if="current.replyContent || current.reply">
@@ -168,7 +182,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { Refresh, Loading } from '@element-plus/icons-vue'
-import { fetchCollectionSorted, fetchCollectionWhere, callCloudFunction } from '../cloud'
+import { fetchCollectionSorted, fetchCollectionWhere, callCloudFunction, getTempFileUrls } from '../cloud'
 import { loadPortraitForOpenid } from '../utils/portraitDataLoad'
 import { ElMessage } from 'element-plus'
 import { buildProfile } from '../utils/userSegmentation'
@@ -293,6 +307,26 @@ const select = (t) => {
   current.value = t
   replyText.value = t.replyContent || t.reply || ''
   loadCustomerProfile(t._openid)
+  loadTicketImages(t)
+}
+
+// 顾客附图（submitSupportTicket 的 images：cloud:// fileID，≤ 3 张）→ 临时链接；竞态保护同画像
+const ticketImageUrls = ref([])
+const ticketImagesLoading = ref(false)
+let imageReqSeq = 0
+const loadTicketImages = async (t) => {
+  const seq = ++imageReqSeq
+  ticketImageUrls.value = []
+  const ids = (Array.isArray(t?.images) ? t.images : []).filter((x) => typeof x === 'string' && x.startsWith('cloud://'))
+  if (!ids.length) return
+  ticketImagesLoading.value = true
+  try {
+    const urls = await getTempFileUrls(ids)
+    if (seq !== imageReqSeq) return
+    ticketImageUrls.value = urls.filter((u) => u && /^https?:/.test(u))
+  } finally {
+    if (seq === imageReqSeq) ticketImagesLoading.value = false
+  }
 }
 
 /**
@@ -379,6 +413,10 @@ onMounted(refresh)
 .msg-block { margin-top: 20px; }
 .msg-title { font-size: 12px; color: var(--light-text-secondary); margin-bottom: 6px; }
 .msg-content { background: #fafafa; padding: 14px; border-radius: 8px; font-size: 14px; line-height: 1.7; color: #333; white-space: pre-wrap; }
+.msg-images { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.msg-image { width: 96px; height: 96px; border-radius: 6px; cursor: zoom-in; }
+.msg-images-hint { margin-top: 8px; font-size: 12px; color: var(--light-text-secondary); }
+.ti-img-flag { margin-top: 4px; font-size: 12px; color: var(--el-color-warning); }
 .msg-content.reply { background: #fdf6ec; border-left: 3px solid #d4af37; }
 .reply-time { color: var(--light-text-secondary); font-size: 12px; margin-top: 4px; text-align: right; }
 
