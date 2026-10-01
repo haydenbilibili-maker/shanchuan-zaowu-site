@@ -134,7 +134,7 @@
     <view class="search-row">
       <input
         class="search-input"
-        placeholder="昵称 / openid / 手机号"
+        placeholder="昵称 / 手机号 / 会员号 / openid"
         value="{{keyword}}"
         bindinput="onKeywordInput"
         bindconfirm="onSearch"
@@ -230,6 +230,10 @@
         <view class="spec-row">
           <text class="spec-label">注册</text>
           <text class="spec-value">{{item.registerAtText || '—'}}</text>
+        </view>
+        <view class="spec-row" wx:if="{{item.memberNo}}">
+          <text class="spec-label">会员号</text>
+          <text class="spec-value">{{item.memberNo}}</text>
         </view>
         <view class="spec-row">
           <text class="spec-label">手机</text>

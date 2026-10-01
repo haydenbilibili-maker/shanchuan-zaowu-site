@@ -161,6 +161,38 @@ function mapIntentRow(row) {
   }
 }
 
+function buildMemberNo(openid) {
+  if (!openid || openid.length < 8) return 'MT-0000-0000'
+  const shortId = openid.substr(openid.length - 8).toUpperCase()
+  return `MT-${shortId.substr(0, 4)}-${shortId.substr(4, 4)}`
+}
+
+/**
+ * 只新增 memberNickName / memberNo 两个出参字段（工作台意向卡展示用，产品负责人 2026-10-01 点名）；
+ * 读 users 失败不影响列表，会员号回退为与积分 / 储值同算法的 MT-XXXX-XXXX。
+ */
+async function attachMemberLabels(list) {
+  const rows = Array.isArray(list) ? list : []
+  const openids = Array.from(new Set(rows.map((r) => r.openid).filter(Boolean)))
+  const users = {}
+  for (let i = 0; i < openids.length; i += 20) {
+    const slice = openids.slice(i, i + 20)
+    try {
+      const res = await db.collection('users').where({ _openid: _.in(slice) })
+        .field({ _openid: true, nickName: true, memberNo: true }).limit(slice.length).get()
+      ;(res.data || []).forEach((u) => { if (u && u._openid) users[u._openid] = u })
+    } catch (e) { /* 只影响展示，回退会员号 */ }
+  }
+  return rows.map((r) => {
+    const u = r.openid ? users[r.openid] : null
+    return {
+      ...r,
+      memberNickName: (u && u.nickName) ? String(u.nickName) : '',
+      memberNo: (u && u.memberNo) ? String(u.memberNo) : (r.openid ? buildMemberNo(r.openid) : '')
+    }
+  })
+}
+
 async function attachOrderStatus(list) {
   const rows = Array.isArray(list) ? list : []
   const orderIds = []
@@ -299,7 +331,7 @@ async function listIntents(event) {
       return tb - ta
     })
 
-  const enriched = await attachOrderStatus(list)
+  const enriched = await attachMemberLabels(await attachOrderStatus(list))
 
   const counts = {
     intent: 0,

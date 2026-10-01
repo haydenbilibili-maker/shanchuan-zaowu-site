@@ -413,6 +413,11 @@ page {
 /* 提交中：整排按钮压暗且不可再点（防重复提交的可见反馈） */
 .card-actions.is-busy,
 .btn-nudge.is-busy { opacity: 0.45; pointer-events: none; }
+/* 正在处理的那张卡不压暗，按钮上的「处理中…」要看得清；仍不可再点 */
+.card-actions.is-busy.is-current,
+.btn-nudge.is-busy.is-current {
+  opacity: 1;
+}
 
 /* 首屏 / 列表骨架 */
 .ap-boot { padding-top: var(--space-5); }

@@ -208,6 +208,7 @@ function serializeProfile(p) {
     _id: p._id,
     openid: p.openid,
     openidMasked: maskOpenid(p.openid),
+    memberNo: profileMemberNo(p),
     nickName: p.nickName,
     avatarUrl: p.avatarUrl,
     phone: String(p.phone || ''),
@@ -252,6 +253,27 @@ function mergeCrmTags(rfmTags, interestTags) {
   return base
 }
 
+/** 会员号与积分 / 储值同算法：MT- + openid 末 8 位大写，4-4 分段 */
+function buildMemberNo(openid) {
+  if (!openid || openid.length < 8) return 'MT-0000-0000'
+  const shortId = openid.substr(openid.length - 8).toUpperCase()
+  return `MT-${shortId.substr(0, 4)}-${shortId.substr(4, 4)}`
+}
+
+/** 「MT-AB12-CD34」「mtab12cd34」「AB12-CD34」→ 规范会员号；认不出返回 ''（openid 末 8 位可能含 - / _） */
+function normalizeMemberNo(value) {
+  const raw = String(value || '').replace(/\s+/g, '').toUpperCase()
+  const m = raw.match(/^MT-([A-Z0-9_-]{4})-([A-Z0-9_-]{4})$/) ||
+    raw.match(/^MT([A-Z0-9_-]{4})([A-Z0-9_-]{4})$/) ||
+    raw.match(/^([A-Z0-9_-]{4})-([A-Z0-9_-]{4})$/)
+  return m ? `MT-${m[1]}-${m[2]}` : ''
+}
+
+function profileMemberNo(profile) {
+  if (profile && profile.memberNo) return String(profile.memberNo)
+  return profile && profile.openid ? buildMemberNo(String(profile.openid)) : ''
+}
+
 function matchKeyword(profile, keyword) {
   const k = String(keyword || '').trim().toLowerCase()
   if (!k) return true
@@ -259,7 +281,10 @@ function matchKeyword(profile, keyword) {
   const oid = String(profile.openid || '').toLowerCase()
   const phone = String(profile.phone || '')
   const id = String(profile._id || '').toLowerCase()
-  return nick.includes(k) || oid.includes(k) || id.includes(k) || phone.includes(k.replace(/\D/g, '') || k)
+  if (nick.includes(k) || oid.includes(k) || id.includes(k) || phone.includes(k.replace(/\D/g, '') || k)) return true
+  // 会员号（2026-10-01 产品负责人点名）：只做「整号相等」的追加匹配，原有昵称 / openid / 手机号匹配不变
+  const memberNo = normalizeMemberNo(keyword)
+  return !!memberNo && profileMemberNo(profile) === memberNo
 }
 
 async function enrichLevelAndBalance(profile) {

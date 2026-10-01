@@ -306,8 +306,8 @@
         <text class="detail-hint" wx:if="{{!item.detailLines.length && !item.relatedId}}">没有更多信息</text>
       </view>
 
-      <view class="card-actions decide {{deciding ? 'is-busy' : ''}}" wx:if="{{viewMode==='inbox' && item.canDecide}}" catchtap="noop">
-        <view class="btn-reject" catchtap="rejectItem" data-id="{{item._id}}" data-require="{{item.requireRejectReason ? '1' : '0'}}" hover-class="ap-btn-press" hover-stay-time="80">驳回</view>
+      <view class="card-actions decide {{deciding ? 'is-busy' : ''}} {{decidingId === item._id ? 'is-current' : ''}}" wx:if="{{viewMode==='inbox' && item.canDecide}}" catchtap="noop">
+        <view class="btn-reject" catchtap="rejectItem" data-id="{{item._id}}" data-require="{{item.requireRejectReason ? '1' : '0'}}" hover-class="ap-btn-press" hover-stay-time="80">{{decidingId === item._id && decidingAction === 'reject' ? '处理中…' : '驳回'}}</view>
         <view
           class="btn-ignore"
           wx:if="{{item.canIgnore}}"
@@ -315,12 +315,12 @@
           data-id="{{item._id}}"
           hover-class="ap-btn-press"
           hover-stay-time="80"
-        >{{ignorePendingId === item._id ? '确认忽略' : '忽略'}}</view>
-        <view class="btn-approve {{approvePendingId === item._id ? 'is-confirm' : ''}}" catchtap="approveItem" data-id="{{item._id}}" hover-class="ap-btn-press" hover-stay-time="80">{{approvePendingId === item._id ? '确认通过' : '通过'}}</view>
+        >{{decidingId === item._id && decidingAction === 'ignore' ? '处理中…' : (ignorePendingId === item._id ? '确认忽略' : '忽略')}}</view>
+        <view class="btn-approve {{approvePendingId === item._id ? 'is-confirm' : ''}}" catchtap="approveItem" data-id="{{item._id}}" hover-class="ap-btn-press" hover-stay-time="80">{{decidingId === item._id && decidingAction === 'approve' ? '处理中…' : (approvePendingId === item._id ? '确认通过' : '通过')}}</view>
       </view>
 
       <view class="card-actions mine" wx:elif="{{viewMode==='mine' && item.canNudge}}" catchtap="noop">
-        <view class="btn-nudge {{deciding ? 'is-busy' : ''}}" catchtap="nudgeItem" data-id="{{item._id}}" hover-class="ap-btn-press" hover-stay-time="80">催办</view>
+        <view class="btn-nudge {{deciding ? 'is-busy' : ''}} {{decidingId === item._id ? 'is-current' : ''}}" catchtap="nudgeItem" data-id="{{item._id}}" hover-class="ap-btn-press" hover-stay-time="80">{{decidingId === item._id && decidingAction === 'nudge' ? '催办中…' : '催办'}}</view>
       </view>
     </view>
   </view>

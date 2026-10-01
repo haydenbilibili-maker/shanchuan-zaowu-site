@@ -200,6 +200,8 @@ Page({
           ...row,
           balanceDueAtText: formatDue(row.balanceDueAt),
           openidShort: row.openid ? `${String(row.openid).slice(0, 6)}…` : '',
+          // 会员昵称 / 会员号由 listIntents 新增字段提供；旧版云函数没有时回退 openid 片段
+          memberLabel: [row.memberNickName, row.memberNo].filter(Boolean).join(' · ') || (row.openid ? `${String(row.openid).slice(0, 6)}…` : '—'),
           statusTone: STATUS_TONE[row.status] || 'muted',
           overdue,
           canForfeit: row.status === 'awaiting_balance' || row.status === 'intent' || row.status === 'pending_pay',

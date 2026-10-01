@@ -386,6 +386,7 @@ function buildProfile({ users, orders, behaviors }) {
     return {
       _id: u._id,
       openid,
+      memberNo: u.memberNo || '',
       nickName: u.nickName || u.name || '未授权用户',
       avatarUrl: u.avatarUrl || '',
       phone: u.phone || '',

@@ -267,11 +267,10 @@ function selftest() {
   t('真实存在的同级引用可解析（payslip → ../../extra/staff/scene.wxss）',
     !!resolveAssetRef(wxssProbe, '../../extra/staff/scene.wxss'))
   t('不存在的路径返回 null', !resolveAssetRef(wxssProbe, './definitely-not-here.wxss'))
-  // 这条断链（manager/payslip 引 extra 的 scene.wxss）已由「分包重基」修好：
-  // 副本被镜像到 manager/staff/scene.wxss，路径从「跨分包」变成「包内」。
-  // 所以这里断言**现在必须能解析**；跨分包一律违规由 check:subpackage-refs 独立兜住。
-  t('★ 重基后 ../staff/scene.wxss 在 manager/payslip 下可解析（镜像副本已就位）',
-    !!resolveAssetRef(wxssProbe, '../staff/scene.wxss'))
+  // manager/payslip 曾 @import 包内镜像 ../staff/scene.wxss；工资条样式内联后镜像无人引用，
+  // 2026-10-01 产品负责人点名删除。包内相对路径的解析改用仍在的同包文件断言；跨分包一律违规由 check:subpackage-refs 独立兜住。
+  t('★ 包内同级引用可解析（manager/payslip → ../staff/utils/pageSetup.js）',
+    !!resolveAssetRef(wxssProbe, '../staff/utils/pageSetup'))
   t('  └ 对照：真正不存在的路径仍必须解析失败',
     !resolveAssetRef(wxssProbe, './definitely-not-here-either.wxss'))
 

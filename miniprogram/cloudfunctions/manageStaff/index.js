@@ -114,6 +114,22 @@ function normalizePhone(value) {
   return String(value || '').replace(/\D/g, '')
 }
 
+/** 会员号与积分 / 储值同算法：MT- + openid 末 8 位大写，4-4 分段 */
+function buildMemberNo(openid) {
+  if (!openid || openid.length < 8) return 'MT-0000-0000'
+  const shortId = openid.substr(openid.length - 8).toUpperCase()
+  return `MT-${shortId.substr(0, 4)}-${shortId.substr(4, 4)}`
+}
+
+/** 「MT-AB12-CD34」「mtab12cd34」「AB12-CD34」→ 规范会员号；认不出返回 ''（openid 末 8 位可能含 - / _） */
+function normalizeMemberNo(value) {
+  const raw = String(value || '').replace(/\s+/g, '').toUpperCase()
+  const m = raw.match(/^MT-([A-Z0-9_-]{4})-([A-Z0-9_-]{4})$/) ||
+    raw.match(/^MT([A-Z0-9_-]{4})([A-Z0-9_-]{4})$/) ||
+    raw.match(/^([A-Z0-9_-]{4})-([A-Z0-9_-]{4})$/)
+  return m ? `MT-${m[1]}-${m[2]}` : ''
+}
+
 const ROLE_LABELS = {
   [ROLE_STAFF]: '店员',
   [ROLE_MANAGER]: '店长',
@@ -546,6 +562,9 @@ async function lookupByPhone(event, openid, adminOpsKey) {
   if (!guard.ok) return { success: false, code: guard.code, msg: guard.msg }
 
   const phone = normalizePhone(event && event.phone)
+  // 可选 memberNo（2026-10-01 产品负责人点名「按会员号查人」）：只在没带手机号时生效，带手机号的旧调用逐字不变
+  const memberNo = !phone ? normalizeMemberNo(event && event.memberNo) : ''
+  if (memberNo) return lookupByMemberNo(memberNo)
   if (!PHONE_RE.test(phone)) return fail('请输入 11 位手机号')
 
   try {
@@ -572,6 +591,40 @@ async function lookupByPhone(event, openid, adminOpsKey) {
   } catch (e) {
     console.error('manageStaff lookupByPhone', e)
     return fail(e.message || '查找失败')
+  }
+}
+
+/** 会员号 → users：先按存量 memberNo 字段精确查，再按 openid 末 8 位查，结果逐条复核会员号 */
+async function lookupByMemberNo(memberNo) {
+  const tail = memberNo.slice(3, 7) + memberNo.slice(8)
+  try {
+    const [byField, byOpenid] = await Promise.all([
+      db.collection('users').where({ memberNo }).limit(10).get().catch(() => ({ data: [] })),
+      db.collection('users').where({ _openid: db.RegExp({ regexp: tail + '$', options: 'i' }) }).limit(10).get()
+    ])
+    const seen = new Set()
+    const candidates = [...(byField.data || []), ...(byOpenid.data || [])]
+      .filter((user) => {
+        const oid = user && user._openid
+        if (!oid || seen.has(oid)) return false
+        seen.add(oid)
+        return String(user.memberNo || '') === memberNo || buildMemberNo(oid) === memberNo
+      })
+      .map((user) => ({
+        openid: user._openid,
+        openidTail: String(user._openid).slice(-8),
+        nickName: user.nickName || '藏家',
+        phoneMasked: maskPhone(user.phone),
+        name: user.name || user.nickName || '',
+        memberNo
+      }))
+    if (!candidates.length) {
+      return { success: true, count: 0, candidates: [], msg: '未找到该会员号，请核对后重试（顾客会员卡上的 MT- 开头编号）' }
+    }
+    return { success: true, count: candidates.length, candidates }
+  } catch (e) {
+    console.error('manageStaff lookupByMemberNo', e)
+    return fail('查找失败，请稍后重试')
   }
 }
 

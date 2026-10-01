@@ -91,7 +91,7 @@
           <text class="intent-meta {{item.overdue ? 'overdue' : ''}}" wx:if="{{item.balanceDueAtText}}">
             尾款截止 {{item.balanceDueAtText}}{{item.overdue ? ' · 已逾期' : ''}}
           </text>
-          <text class="intent-meta">会员 {{item.openidShort}}</text>
+          <text class="intent-meta">会员 {{item.memberLabel}}</text>
           <view class="intent-actions">
             <view hover-class="wb-press" hover-stay-time="80" class="chip-btn danger" wx:if="{{canEdit && item.canForfeit}}" data-id="{{item._id}}" bindtap="openExpired">{{forfeitPendingId === item._id ? '确认开放' : '逾期开放'}}</view>
             <view hover-class="wb-press" hover-stay-time="80" class="chip-btn" wx:if="{{item.showProduct}}" data-pid="{{item.productId}}" bindtap="goProduct">看藏品</view>

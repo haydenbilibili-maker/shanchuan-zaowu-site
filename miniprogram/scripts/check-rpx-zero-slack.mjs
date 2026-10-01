@@ -28,10 +28,8 @@ const MP = resolve(HERE, '..')
 const ALLOW = {
   'subpackages/manager/manager/index.wxss | .link-btn | flex: 1 1 calc(50% - 20rpx)':
     'gap 20rpx：2×20 − 20 = 余 20rpx，且 flex-grow 填满',
-  'subpackages/manager/staff/scene.wxss | .link-btn | flex: 1 1 calc(50% - 16rpx)':
-    'gap var(--space-3)=24rpx：2×16 − 24 = 余 8rpx，且 flex-grow 填满',
   'subpackages/extra/staff/scene.wxss | .link-btn | flex: 1 1 calc(50% - 16rpx)':
-    '同 manager/staff/scene.wxss（双副本）',
+    'gap var(--space-3)=24rpx：2×16 − 24 = 余 8rpx，且 flex-grow 填满',
   'subpackages/extra/investor/index.wxss | .mini-grid.three .mini-cell | flex: 1 1 calc(33.33% - 8rpx)':
     'gap 8rpx：3×8 − 2×8 = 余 8rpx，且 flex-grow 填满',
   'subpackages/extra/investor/index.wxss | .mini-cell | flex: 1 1 calc(50% - 8rpx)':

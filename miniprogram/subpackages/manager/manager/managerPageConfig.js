@@ -1618,6 +1618,7 @@ const managerPageConfig = {
     analyticsLoading: false,
     analyticsError: '',
     analyticsNotesOpen: false,
+    reportDiagOpen: false,
     analytics: {
       summary: { totalEvents: 0, uniqueUsers: 0, pageViews: 0 },
       byModule: [],
@@ -11044,6 +11045,11 @@ bindSubCatChange(e) {
 
   toggleAnalyticsNotes() {
     this.setData({ analyticsNotesOpen: !this.data.analyticsNotesOpen })
+  },
+
+  /** 报表「顾客行为漏斗」：排障信息（查询模式 / 构建指纹 / 原始事件名）默认收起 */
+  toggleReportDiag() {
+    this.setData({ reportDiagOpen: !this.data.reportDiagOpen })
   },
 
   /** 切到单日视图（dayKey 缺省 = 昨日，北京时间自然日） */

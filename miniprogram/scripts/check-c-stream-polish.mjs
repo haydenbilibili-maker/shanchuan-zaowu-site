@@ -21,6 +21,13 @@
  *   R3-1 中低频功能页（R3_PAGES）可点元素都有 hover-class，用 wb-press 的页面经 @import 链能找到定义；订单卡操作按钮有按压态
  *   R3-2 发票列表首次加载是骨架、按状态筛空有「切回全部」提示；门店积分规则说明无云函数 / 集合名
  *   R3-3 工资条明细不再 @import staff/scene.wxss（连带 ~41 KiB 核销页样式）；内联后仍有本页依赖的基础类
+ *   —— R4 为产品负责人 2026-10-01 点名范围 ——
+ *   R4-1 定金意向卡显示「会员昵称 · 会员号」；manageDeposit 只新增 memberNickName / memberNo 出参（展开原行、不读手机号）
+ *   R4-2 审批中心只有被点的那张卡显示「处理中… / 催办中…」；全局 deciding 仍压暗整排防并发
+ *   R4-3 报表行为诊断卡：可见文案无「钩子 / fail_sync / 上云 / 指纹」等技术词，排障项收进「更多」；数据绑定不变
+ *   R4-4 按会员号查人：manageStaff 只新增可选 memberNo（带手机号的旧调用不变、候选只回脱敏手机号）、
+ *        manageMemberCrm 关键词追加会员号整号匹配（原匹配不变）；两份 normalizeMemberNo 逐字一致且行为正确
+ *   R4-6 manager/staff 两份无引用镜像样式已删除，且不得在 subpackage-mirrors.json 复活登记
  *
  * 用法：node miniprogram/scripts/check-c-stream-polish.mjs [--selftest]
  */
@@ -46,7 +53,6 @@ const FILES = {
   staffWxml: `${EXTRA}/staff/index.wxml`,
   fieldWxml: `${EXTRA}/staff/field/index.wxml`,
   fieldWxss: `${EXTRA}/staff/field/index.wxss`,
-  fieldWxssMirror: `${MGR}/staff/field/index.wxss`,
   attendanceWxml: `${EXTRA}/staff/attendance/index.wxml`,
   leaveWxml: `${EXTRA}/staff/leave/index.wxml`,
   reimburseWxml: `${EXTRA}/staff/reimbursements/index.wxml`,
@@ -59,8 +65,21 @@ const FILES = {
   payslipAdminWxml: `${MGR}/payslip/admin/index.wxml`,
   invoiceWxml: `${MGR}/invoice-requests/index.wxml`,
   storePointsWxml: `${MGR}/store-points/index.wxml`,
-  payslipWxss: `${MGR}/payslip/index.wxss`
+  payslipWxss: `${MGR}/payslip/index.wxss`,
+  apJs: `${EXTRA}/approvals/index.js`,
+  depositWxml: `${MGR}/deposit-ops/index.wxml`,
+  depositJs: `${MGR}/deposit-ops/index.js`,
+  depositFn: 'miniprogram/cloudfunctions/manageDeposit/index.js',
+  staffFn: 'miniprogram/cloudfunctions/manageStaff/index.js',
+  crmFn: 'miniprogram/cloudfunctions/manageMemberCrm/index.js',
+  crmWxml: `${EXTRA}/member-crm/index.wxml`,
+  permWxml: `${EXTRA}/staff-permissions/index.wxml`,
+  permJs: `${EXTRA}/staff-permissions/index.js`,
+  mirrors: 'miniprogram/scripts/subpackage-mirrors.json'
 }
+
+/** R4-6：已删除的无引用镜像（产品负责人 2026-10-01 点名删除） */
+const REMOVED_MIRRORS = [`${MGR}/staff/scene.wxss`, `${MGR}/staff/field/index.wxss`]
 
 /** R3：中低频功能页 —— 可点的按钮 / 标签 / 卡片都要有 hover-class，且 .wb-press 经本页 wxss 的 @import 链可达 */
 const B2B = 'miniprogram/subpackages/b2bdesk'
@@ -101,6 +120,7 @@ function load() {
   }
   src.__pages = pages
   src.__css = css
+  src.__existing = REMOVED_MIRRORS.filter((rel) => existsSync(resolve(ROOT, rel)))
   return src
 }
 
@@ -167,7 +187,7 @@ function check(src) {
   // R1-4 审批
   ok(/<view class="container ap-boot" wx:if="\{\{!ready\}\}"/.test(src.apWxml), 'R1-4 审批首屏没有骨架（!ready 时留白）')
   ok(/<view class="ap-skeleton" wx:elif="\{\{loading\}\}">/.test(src.apWxml), 'R1-4 审批列表首次加载没有骨架')
-  ok(/class="card-actions decide \{\{deciding \? 'is-busy' : ''\}\}"/.test(src.apWxml), 'R1-4 审批提交中按钮没有压暗（deciding → is-busy）')
+  ok(/class="card-actions decide \{\{deciding \? 'is-busy' : ''\}\}[^"]*"/.test(src.apWxml), 'R1-4 审批提交中按钮没有压暗（deciding → is-busy）')
   ok(/\.card-actions\.is-busy[\s\S]*?pointer-events:\s*none/.test(src.apWxss), 'R1-4 is-busy 未禁止再次点击')
   for (const fn of ['rejectItem', 'approveItem', 'ignoreItem']) {
     const re = new RegExp(`catchtap="${fn}"[^>]*hover-class="ap-btn-press"|catchtap="${fn}"[\\s\\S]{0,120}?hover-class="ap-btn-press"`)
@@ -202,7 +222,6 @@ function check(src) {
   ok(/class="field-sk" wx:if="\{\{pickupsLoading\}\}"/.test(src.fieldWxml) && /class="field-sk" wx:if="\{\{bookingsLoading\}\}"/.test(src.fieldWxml), 'R2-1 待自取 / 待核销列表缺加载骨架')
   ok(/\{\{granting \? '提交中…'/.test(src.fieldWxml), 'R2-1 赠分提交中没有文字反馈')
   ok(/records\.length === 0 && !recordsLoading\}\}">[\s\S]{0,200}?bindtap="switchTab" data-idx="0"/.test(src.fieldWxml), 'R2-1 流水空态缺「去消费赠分」')
-  ok(src.fieldWxss === src.fieldWxssMirror, 'R2-1 field/index.wxss 与 manager 镜像不一致（subpackage-mirrors.json 要求 identical）')
 
   // R2-2 死样式棘轮
   for (const sel of ['.menu-grid', '.icon-btn-scan', '.cfg-picker', '.cfg-check', '.om-track', '.modal-foot-row', '.nav-back-press', '.cat-dup-group']) {
@@ -252,10 +271,88 @@ function check(src) {
   ok(/statusIndex > 0 \?/.test(src.invoiceWxml), 'R3-2 发票按状态筛空时没有「切回全部」提示')
   ok(!/云函数|store_point_rules|云端配置/.test(stripComments(src.storePointsWxml)), 'R3-2 门店积分规则说明出现技术词（云函数 / 集合名）')
 
-  // R3-3 工资条样式内联（项目开了 ignoreUploadUnusedFiles：manager/staff 两份镜像无人引用即不随包上传）
+  // R3-3 工资条样式内联（manager/staff 两份镜像随后已删，见 R4-6）
   ok(!/@import\s+['"][^'"]*staff\/scene\.wxss['"]/.test(src.payslipWxss), 'R3-3 工资条又 @import staff/scene.wxss（manager 包多带 ~41 KiB）')
   for (const sel of ['.page-boot', '.section', '.row', '.row-main', '.row-sub', '.amount-row', '.scene-card', '.mask', '.modal', '.btn-primary']) {
     ok(new RegExp(`(^|[\\n,])\\${sel}\\s*[,{]`).test(src.payslipWxss), `R3-3 工资条内联样式缺 ${sel}`)
+  }
+
+  // R4-1 定金意向卡会员标识
+  ok(/<text class="intent-meta">会员 \{\{item\.memberLabel\}\}<\/text>/.test(src.depositWxml), 'R4-1 定金意向卡没有显示会员昵称 / 会员号（memberLabel）')
+  ok(!/会员 \{\{item\.openidShort\}\}/.test(src.depositWxml), 'R4-1 定金意向卡又回到显示 openid 片段')
+  ok(/memberLabel: \[row\.memberNickName, row\.memberNo\]/.test(src.depositJs), 'R4-1 deposit-ops 的 memberLabel 不是由 memberNickName / memberNo 拼出')
+  const attach = (src.depositFn.match(/\nasync function attachMemberLabels\(list\) \{[\s\S]*?\n\}\n/) || [''])[0]
+  ok(!!attach, 'R4-1 manageDeposit 缺 attachMemberLabels')
+  ok(/\{\s*\.\.\.r,\s*memberNickName:[^\n]*\n\s*memberNo:[^\n]*\n\s*\}/.test(attach), 'R4-1 attachMemberLabels 不是在原行上只新增字段（须 ...r 展开）')
+  ok(/\.field\(\{ _openid: true, nickName: true, memberNo: true \}\)/.test(attach) && !/phone/.test(attach), 'R4-1 attachMemberLabels 读 users 的字段超出昵称 / 会员号（不得带手机号）')
+  ok(/attachMemberLabels\(await attachOrderStatus\(list\)\)/.test(src.depositFn), 'R4-1 listIntents 没有挂上会员标识')
+
+  // R4-2 审批只点亮被点的卡
+  for (const [fn, label] of [['rejectItem', 'reject'], ['ignoreItem', 'ignore'], ['approveItem', 'approve']]) {
+    ok(new RegExp(`decidingId === item\\._id && decidingAction === '${label}' \\? '处理中…'`).test(src.apWxml), `R4-2 审批「${fn}」的「处理中…」不是只在被点的卡上显示`)
+  }
+  ok(/decidingId === item\._id && decidingAction === 'nudge' \? '催办中…'/.test(src.apWxml), 'R4-2 催办的「催办中…」不是只在被点的卡上显示')
+  ok(!/\{\{deciding \? '处理中…'/.test(src.apWxml), 'R4-2 审批又用全局 deciding 让所有卡一起显示「处理中…」')
+  const onCount = (src.apJs.match(/deciding: true/g) || []).length
+  const onWithId = (src.apJs.match(/deciding: true, decidingId: id, decidingAction: '(approve|reject|ignore|nudge)'/g) || []).length
+  const offCount = (src.apJs.match(/setData\(\{ deciding: false/g) || []).length
+  const offWithId = (src.apJs.match(/setData\(\{ deciding: false, decidingId: '', decidingAction: ''/g) || []).length
+  ok(onCount > 0 && onCount === onWithId, `R4-2 审批 js 有 ${onCount - onWithId} 处置 deciding 时没记下被点的卡`)
+  ok(offCount === offWithId, `R4-2 审批 js 有 ${offCount - offWithId} 处复位 deciding 时没清掉 decidingId`)
+  const curRule = (src.apWxss.match(/\.card-actions\.is-busy\.is-current,\n\.btn-nudge\.is-busy\.is-current \{[^}]*\}/) || [''])[0]
+  ok(/opacity:\s*1/.test(curRule) && !/pointer-events/.test(curRule), 'R4-2 被点的卡须不压暗、且不得放开 pointer-events（防重复提交）')
+
+  // R4-3 报表行为诊断改业务语言
+  const bStart = src.subviews.indexOf('顾客行为漏斗（抽样统计）')
+  const bEnd = src.subviews.indexOf('最常发生的动作（原始事件名，排障用）')
+  ok(bStart > 0 && bEnd > bStart, 'R4-3 找不到行为漏斗区块（标题被改回技术口径？）')
+  const behavior = bStart > 0 && bEnd > bStart
+    ? stripComments(src.subviews.slice(bStart, bEnd)).replace(/<block wx:if="\{\{reportDiagOpen\}\}">[\s\S]*?<\/block>/g, '')
+    : ''
+  const bText = behavior.replace(/\{\{[\s\S]*?\}\}/g, '').replace(/<[^>]+>/g, ' ')
+  for (const w of ['钩子', 'fail_sync', '上云', '指纹', '查询模式', 'analytics_daily', 'step', 'Top 事件']) {
+    ok(!bText.includes(w), `R4-3 行为漏斗可见文案出现技术词「${w}」（应收进「更多」）`)
+  }
+  ok(/wx:if="\{\{reportDiagOpen && analyticsReport\.behavior\.topEvents\.length\}\}"/.test(src.subviews), 'R4-3 原始事件名卡没有收进「更多」')
+  ok(/bindtap="toggleReportDiag"[^>]*>\{\{reportDiagOpen \?/.test(src.subviews) && /\n  toggleReportDiag\(\) \{/.test(src.pageCfg) && /reportDiagOpen: false,/.test(src.pageCfg), 'R4-3 「更多（排障信息）」开关缺失或默认展开')
+  for (const b of ['diag.behaviorsCount', 'funnel.wishWall.gate.show', 'funnel.wishWall.ritualGate.resumeSuccess',
+    'funnel.wishWall.ritualGate.completeRate', 'funnel.wishWall.certGate.resumeSuccess']) {
+    ok(behavior.includes(`analyticsReport.behavior.${b}`), `R4-3 行为漏斗的数据绑定 ${b} 不见了（只许改文案不许改口径）`)
+  }
+
+  // R4-4 会员号查人
+  const norm = (s) => (s.match(/\nfunction normalizeMemberNo\(value\) \{[\s\S]*?\n\}\n/) || [''])[0]
+  const build = (s) => (s.match(/\nfunction buildMemberNo\(openid\) \{[\s\S]*?\n\}\n/) || [''])[0]
+  ok(!!norm(src.staffFn) && norm(src.staffFn) === norm(src.crmFn), 'R4-4 manageStaff 与 manageMemberCrm 的 normalizeMemberNo 不一致')
+  ok(!!build(src.staffFn) && build(src.staffFn) === build(src.crmFn) && build(src.staffFn) === build(src.depositFn), 'R4-4 三个云函数的 buildMemberNo 不一致（会员号须同算法）')
+  if (norm(src.staffFn) && build(src.staffFn)) {
+    try {
+      const { normalizeMemberNo, buildMemberNo } = new Function(`${build(src.staffFn)}${norm(src.staffFn)}return { normalizeMemberNo, buildMemberNo }`)()
+      const oid = 'oAbcdefgh-_xy12zz'
+      const okCases = [['MT-AB12-CD34', 'MT-AB12-CD34'], ['mtab12cd34', 'MT-AB12-CD34'], ['ab12-cd34', 'MT-AB12-CD34'],
+        [buildMemberNo(oid), buildMemberNo(oid)], ['13800001111', ''], ['', ''], ['MT-AB12', '']]
+      for (const [inp, want] of okCases) ok(normalizeMemberNo(inp) === want, `R4-4 normalizeMemberNo(${JSON.stringify(inp)}) 应为 ${JSON.stringify(want)}，实为 ${JSON.stringify(normalizeMemberNo(inp))}`)
+    } catch (e) {
+      ok(false, `R4-4 normalizeMemberNo 无法执行：${e.message}`)
+    }
+  }
+  const lookup = (src.staffFn.match(/\nasync function lookupByPhone\(event, openid, adminOpsKey\) \{[\s\S]*?\n\}\n/) || [''])[0]
+  ok(/const memberNo = !phone \? normalizeMemberNo\(event && event\.memberNo\) : ''\n\s*if \(memberNo\) return lookupByMemberNo\(memberNo\)\n\s*if \(!PHONE_RE\.test\(phone\)\)/.test(lookup), 'R4-4 lookupByPhone 的 memberNo 不是「只在没带手机号时生效」的可选参数')
+  ok(lookup.indexOf('assertStaff') >= 0 && lookup.indexOf('assertStaff') < lookup.indexOf('lookupByMemberNo'), 'R4-4 会员号分支绕过了 lookupByPhone 原有的权限校验')
+  const byNo = (src.staffFn.match(/\nasync function lookupByMemberNo\(memberNo\) \{[\s\S]*?\n\}\n/) || [''])[0]
+  ok(/phoneMasked: maskPhone\(user\.phone\)/.test(byNo) && !/\bphone: /.test(byNo), 'R4-4 会员号查人的候选带出了未脱敏手机号')
+  const mk = (src.crmFn.match(/\nfunction matchKeyword\(profile, keyword\) \{[\s\S]*?\n\}\n/) || [''])[0]
+  ok(/if \(nick\.includes\(k\) \|\| oid\.includes\(k\) \|\| id\.includes\(k\) \|\| phone\.includes\(k\.replace\(\/\\D\/g, ''\) \|\| k\)\) return true/.test(mk), 'R4-4 CRM 关键词原有的昵称 / openid / 手机号匹配被改动')
+  ok(/profileMemberNo\(profile\) === memberNo/.test(mk), 'R4-4 CRM 关键词没有追加会员号匹配')
+  ok(/memberNo: profileMemberNo\(p\),/.test(src.crmFn), 'R4-4 CRM 列表出参缺 memberNo')
+  ok(/placeholder="[^"]*会员号[^"]*"/.test(src.crmWxml) && /\{\{item\.memberNo\}\}/.test(src.crmWxml), 'R4-4 会员 CRM 搜索框未提示会员号 / 列表未显示会员号')
+  ok(/bindtap="lookupStaffByMemberNo"/.test(src.permWxml) && /\{ action: 'lookupByPhone', memberNo \}/.test(src.permJs), 'R4-4 员工权限页缺会员号查找')
+  ok(/\{ action: 'lookupByPhone', phone \}/.test(src.permJs), 'R4-4 员工权限页手机号查找的旧入参被改动')
+
+  // R4-6 无引用镜像已删
+  ok(src.__existing.length === 0, `R4-6 已删除的无引用镜像又出现：${src.__existing.join(' / ')}`)
+  for (const rel of REMOVED_MIRRORS) {
+    ok(!src.mirrors.includes(`"${rel.replace('miniprogram/', '')}"`), `R4-6 subpackage-mirrors.json 又登记了已删镜像 ${rel}`)
   }
 
   return fails
@@ -294,7 +391,6 @@ function selftest() {
     ['店员工作台错字复活', (s) => ({ ...s, staffWxml: s.staffWxml.replace('暂时没有可用的现场功能', '暂无可用来现场场景') }), /暂无可用来/],
     ['核销「交付」去掉按压态', (s) => ({ ...s, fieldWxml: s.fieldWxml.replace('<view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" catchtap="verifyPickupFromList"', '<view class="btn-outline" catchtap="verifyPickupFromList"') }), /verifyPickupFromList」按钮缺按压态/],
     ['待核销预约退回「加载中…」', (s) => ({ ...s, fieldWxml: s.fieldWxml.replace(/<view class="field-sk" wx:if="\{\{bookingsLoading\}\}"[^\n]*/, '<view class="empty empty-compact" wx:if="{{bookingsLoading}}">加载中…</view>') }), /R2-1 待自取 \/ 待核销列表加载又退回/],
-    ['field 镜像漂移', (s) => ({ ...s, fieldWxssMirror: s.fieldWxssMirror + '\n.x {}\n' }), /镜像不一致/],
     ['死样式 .cfg-picker 复活', (s) => ({ ...s, hubWxss: s.hubWxss + '\n.cfg-picker { display: flex; }\n' }), /死样式复活：\.cfg-picker/],
     ['请假提交去掉「提交中…」', (s) => ({ ...s, leaveWxml: s.leaveWxml.replace("{{submitting ? '提交中…' : '提交请假'}}", '提交请假') }), /leave\/index\.wxml 「submit」提交中没有/],
     ['审批通过去掉按压态', (s) => ({ ...s, leaveReviewWxml: s.leaveReviewWxml.replace(/(<view class="btn approve[^"]*") hover-class="btn-primary-press" hover-stay-time="100"/, '$1') }), /leave-review\/index\.wxml 「review」按钮缺按压态/],
@@ -306,7 +402,23 @@ function selftest() {
     ['发票列表退回「加载中…」', (s) => ({ ...s, invoiceWxml: s.invoiceWxml.replace('class="ir-skeleton" wx:if="{{loading && !list.length}}"', 'class="loading-hint" wx:if="{{loading}}"') }), /R3-2 发票列表首次加载/],
     ['工资条回到 @import scene.wxss', (s) => ({ ...s, payslipWxss: '@import "../staff/scene.wxss";\n' + s.payslipWxss }), /R3-3 工资条又 @import/],
     ['工资条内联漏了 .amount-row', (s) => ({ ...s, payslipWxss: s.payslipWxss.replace(/\n\.amount-row \{[^}]*\}/, '') }), /R3-3 工资条内联样式缺 \.amount-row/],
-    ['积分规则说明回到集合名', (s) => ({ ...s, storePointsWxml: s.storePointsWxml.replace('保存后改按这里的设置执行。', '保存后即写入 store_point_rules。') }), /R3-2 门店积分/]
+    ['积分规则说明回到集合名', (s) => ({ ...s, storePointsWxml: s.storePointsWxml.replace('保存后改按这里的设置执行。', '保存后即写入 store_point_rules。') }), /R3-2 门店积分/],
+    ['定金卡回到 openid 片段', (s) => ({ ...s, depositWxml: s.depositWxml.replace('会员 {{item.memberLabel}}', '会员 {{item.openidShort}}') }), /R4-1 定金意向卡没有显示/],
+    ['定金会员标识顺手读手机号', (s) => ({ ...s, depositFn: s.depositFn.replace('.field({ _openid: true, nickName: true, memberNo: true })', '.field({ _openid: true, nickName: true, memberNo: true, phone: true })') }), /R4-1 attachMemberLabels 读 users 的字段超出/],
+    ['定金会员标识不再展开原行', (s) => ({ ...s, depositFn: s.depositFn.replace(/\n      \.\.\.r,\n      memberNickName:/, '\n      openid: r.openid,\n      memberNickName:') }), /R4-1 attachMemberLabels 不是在原行上只新增字段/],
+    ['审批回到全局「处理中…」', (s) => ({ ...s, apWxml: s.apWxml.replace("decidingId === item._id && decidingAction === 'approve' ? '处理中…'", "deciding ? '处理中…'") }), /R4-2 审批「approveItem」的「处理中…」不是只在被点的卡上/],
+    ['审批复位漏清 decidingId', (s) => ({ ...s, apJs: s.apJs.replace("this.setData({ deciding: false, decidingId: '', decidingAction: '' });", 'this.setData({ deciding: false });') }), /R4-2 审批 js 有 1 处复位/],
+    ['被点的卡放开点击', (s) => ({ ...s, apWxss: s.apWxss.replace(/(\.btn-nudge\.is-busy\.is-current \{[^}]*?)opacity: 1;/, '$1opacity: 1; pointer-events: auto;') }), /R4-2 被点的卡须不压暗/],
+    ['行为漏斗回到「注册钩子」', (s) => ({ ...s, subviews: s.subviews.replace('AI 识别 · 保存图鉴时引导注册', 'AI 识别 · 注册钩子') }), /R4-3 行为漏斗可见文案出现技术词「钩子」/],
+    ['构建指纹搬出「更多」', (s) => ({ ...s, subviews: s.subviews.replace('<block wx:if="{{reportDiagOpen}}">', '<view class="visit-stats-row"><text class="visit-stats-name">构建指纹</text></view>\n          <block wx:if="{{reportDiagOpen}}">') }), /R4-3 行为漏斗可见文案出现技术词「指纹」/],
+    ['行为漏斗改了数据绑定', (s) => ({ ...s, subviews: s.subviews.replace('analyticsReport.behavior.funnel.wishWall.ritualGate.resumeSuccess || 0', 'analyticsReport.behavior.funnel.wishWall.ritualGate.resumeTotal || 0') }), /R4-3 行为漏斗的数据绑定 funnel\.wishWall\.ritualGate\.resumeSuccess/],
+    ['会员号覆盖了带手机号的旧调用', (s) => ({ ...s, staffFn: s.staffFn.replace("const memberNo = !phone ? normalizeMemberNo(event && event.memberNo) : ''", 'const memberNo = normalizeMemberNo(event && event.memberNo)') }), /R4-4 lookupByPhone 的 memberNo 不是/],
+    ['会员号候选带出原手机号', (s) => ({ ...s, staffFn: s.staffFn.replace('        phoneMasked: maskPhone(user.phone),\n        name: user.name', '        phoneMasked: maskPhone(user.phone),\n        phone: user.phone,\n        name: user.name') }), /R4-4 会员号查人的候选带出了未脱敏手机号/],
+    ['会员号规范化漏了 - / _', (s) => ({ ...s, staffFn: s.staffFn.replace('([A-Z0-9_-]{4})-([A-Z0-9_-]{4})$/) ||', '([A-Z0-9]{4})-([A-Z0-9]{4})$/) ||'), crmFn: s.crmFn.replace('([A-Z0-9_-]{4})-([A-Z0-9_-]{4})$/) ||', '([A-Z0-9]{4})-([A-Z0-9]{4})$/) ||') }), /R4-4 normalizeMemberNo\("MT--_XY-12ZZ"\)/],
+    ['CRM 原匹配被改', (s) => ({ ...s, crmFn: s.crmFn.replace('if (nick.includes(k) || oid.includes(k) || id.includes(k) ||', 'if (nick.includes(k) || id.includes(k) ||') }), /R4-4 CRM 关键词原有的/],
+    ['员工权限页缺会员号查找', (s) => ({ ...s, permWxml: s.permWxml.replace('bindtap="lookupStaffByMemberNo"', 'bindtap="noop"') }), /R4-4 员工权限页缺会员号查找/],
+    ['已删镜像重新登记', (s) => ({ ...s, mirrors: s.mirrors.replace('[', '[\n  { "source": "subpackages/extra/staff/scene.wxss", "mirror": "subpackages/manager/staff/scene.wxss", "identical": true },') }), /R4-6 subpackage-mirrors\.json 又登记了已删镜像/],
+    ['已删镜像文件复活', (s) => ({ ...s, __existing: [`${MGR}/staff/scene.wxss`] }), /R4-6 已删除的无引用镜像又出现/]
   ]
   const notes = []
   let bad = 0

@@ -65,16 +65,6 @@
     "identical": true
   },
   {
-    "source": "subpackages/extra/staff/field/index.wxss",
-    "mirror": "subpackages/manager/staff/field/index.wxss",
-    "identical": true
-  },
-  {
-    "source": "subpackages/extra/staff/scene.wxss",
-    "mirror": "subpackages/manager/staff/scene.wxss",
-    "identical": true
-  },
-  {
     "source": "subpackages/manager/staff/utils/pageSetup.js",
     "mirror": "subpackages/extra/staff/utils/pageSetup.js",
     "identical": false

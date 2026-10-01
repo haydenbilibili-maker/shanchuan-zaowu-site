@@ -279,6 +279,9 @@ Page({
     scopeHint: '',
     workspaceRole: '',
     deciding: false,
+    // 正在处理的那一条与动作：只用于让被点的卡显示「处理中…」，不参与任何判断
+    decidingId: '',
+    decidingAction: '',
     approvePendingId: '',
     ignorePendingId: '',
     slaHours: 48,
@@ -887,7 +890,7 @@ Page({
       return;
     }
 
-    this.setData({ deciding: true, approvePendingId: '', tipTone: 'info', tipText: '处理中…' });
+    this.setData({ deciding: true, decidingId: id, decidingAction: 'approve', approvePendingId: '', tipTone: 'info', tipText: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageApprovals',
@@ -905,7 +908,7 @@ Page({
     } catch (err) {
       this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '通过失败') });
     } finally {
-      this.setData({ deciding: false });
+      this.setData({ deciding: false, decidingId: '', decidingAction: '' });
     }
   },
 
@@ -931,7 +934,7 @@ Page({
       return;
     }
 
-    this.setData({ deciding: true, tipTone: 'info', tipText: '处理中…' });
+    this.setData({ deciding: true, decidingId: id, decidingAction: 'reject', tipTone: 'info', tipText: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageApprovals',
@@ -953,7 +956,7 @@ Page({
     } catch (err) {
       this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '驳回失败') });
     } finally {
-      this.setData({ deciding: false });
+      this.setData({ deciding: false, decidingId: '', decidingAction: '' });
     }
   },
 
@@ -970,7 +973,7 @@ Page({
       return;
     }
 
-    this.setData({ deciding: true, ignorePendingId: '', tipTone: 'info', tipText: '处理中…' });
+    this.setData({ deciding: true, decidingId: id, decidingAction: 'ignore', ignorePendingId: '', tipTone: 'info', tipText: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageApprovals',
@@ -988,14 +991,14 @@ Page({
     } catch (err) {
       this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '忽略失败') });
     } finally {
-      this.setData({ deciding: false });
+      this.setData({ deciding: false, decidingId: '', decidingAction: '' });
     }
   },
 
   async nudgeItem(e) {
     const id = e.currentTarget.dataset.id;
     if (!id || this.data.deciding) return;
-    this.setData({ deciding: true, tipTone: 'info', tipText: '催办中…' });
+    this.setData({ deciding: true, decidingId: id, decidingAction: 'nudge', tipTone: 'info', tipText: '催办中…' });
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageApprovals',
@@ -1010,7 +1013,7 @@ Page({
     } catch (err) {
       this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '催办失败') });
     } finally {
-      this.setData({ deciding: false });
+      this.setData({ deciding: false, decidingId: '', decidingAction: '' });
     }
   }
 });

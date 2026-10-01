@@ -69,17 +69,25 @@
   <view class="modal" catchtap="noop">
     <view class="modal-head">
       <text class="modal-title">编辑权限</text>
-      <text class="modal-sub">手机号查找或粘贴 openid</text>
+      <text class="modal-sub">手机号 / 会员号查找，或粘贴 openid</text>
     </view>
 
     <view class="modal-body">
       <view class="field">
-        <text class="field-label">手机号查找</text>
+        <text class="field-label">手机号 / 会员号查找</text>
         <view class="phone-toolbar">
           <input class="input phone-input" type="number" maxlength="11"
                  placeholder="对方已授权的 11 位手机号" placeholder-class="ph"
                  value="{{staffForm.phone}}" bindinput="onStaffInput" data-field="phone" />
           <view class="lookup-btn {{staffLookingUp ? 'disabled' : ''}}" bindtap="lookupStaffByPhone">
+            {{staffLookingUp ? '查找中' : '查找'}}
+          </view>
+        </view>
+        <view class="phone-toolbar member-no-toolbar">
+          <input class="input phone-input" maxlength="14"
+                 placeholder="或输入会员号 MT-XXXX-XXXX" placeholder-class="ph"
+                 value="{{staffMemberNoInput}}" bindinput="onStaffMemberNoInput" />
+          <view class="lookup-btn {{staffLookingUp ? 'disabled' : ''}}" bindtap="lookupStaffByMemberNo">
             {{staffLookingUp ? '查找中' : '查找'}}
           </view>
         </view>
@@ -89,6 +97,7 @@
           <text class="match-name">{{staffMatched.nickName || '藏家'}}</text>
           <text class="match-meta" wx:if="{{staffMatched.phoneMasked}}">{{staffMatched.phoneMasked}} · …{{staffMatched.openidTail}}</text>
           <text class="match-meta" wx:else>…{{staffMatched.openidTail}}</text>
+          <text class="match-meta" wx:if="{{staffMatched.memberNo}}">会员号 {{staffMatched.memberNo}}</text>
         </view>
         <view class="candidate-list" wx:if="{{staffCandidates.length > 1}}">
           <text class="field-hint">找到多个账号，点选其一</text>
@@ -96,7 +105,7 @@
                 wx:for="{{staffCandidates}}" wx:key="openid"
                 bindtap="selectStaffCandidate" data-openid="{{item.openid}}">
             <text class="match-name">{{item.nickName || '藏家'}}</text>
-            <text class="match-meta">{{item.phoneMasked}} · …{{item.openidTail}}</text>
+            <text class="match-meta">{{item.phoneMasked || item.memberNo}} · …{{item.openidTail}}</text>
           </view>
         </view>
       </view>
@@ -106,7 +115,7 @@
         <input class="input" placeholder="粘贴微信 openid / users._openid" placeholder-class="ph"
                value="{{staffForm.openid}}" bindinput="onStaffInput" data-field="openid" />
         <text class="field-hint" wx:if="{{staffForm.openid}}">当前 …{{staffForm.openidTail || staffForm.openid}}</text>
-        <text class="field-hint" wx:else>手机号查不到时，可直接粘贴 openid</text>
+        <text class="field-hint" wx:else>手机号、会员号都查不到时，可直接粘贴 openid</text>
       </view>
 
       <view class="field">

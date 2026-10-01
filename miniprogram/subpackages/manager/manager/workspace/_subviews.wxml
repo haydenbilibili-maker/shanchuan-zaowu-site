@@ -2605,16 +2605,20 @@
           <text class="week-split-hint">低库存：在架且 1–{{analyticsReport.catalog.lowStockThreshold}} 件</text>
         </view>
 
-        <!-- 行为漏斗 -->
-        <view class="section-title">行为漏斗（采样）</view>
+        <!-- 行为漏斗：业务语言在前，排障信息（查询模式 / 构建指纹 / 原始事件名）收进「更多」（产品负责人 2026-10-01 点名） -->
+        <view class="section-title">顾客行为漏斗（抽样统计）</view>
         <view class="card" wx:if="{{analyticsReport.behavior.diag}}">
-          <view class="visit-stats-row"><text class="visit-stats-name">查询模式</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.queryMode}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">明细条数</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.behaviorsCount}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">日汇总·鉴定开始</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.dailyIdentifyStart}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">构建指纹</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.build}}</text></view>
-          <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.error}}">告警：{{analyticsReport.behavior.diag.error}}</text>
-          <text class="addr-detail" wx:if="{{!analyticsReport.behavior.diag.behaviorsCount && analyticsReport.behavior.diag.dailyIdentifyStart}}">动作级来自 analytics_daily；注册钩子依赖明细 step，当前明细为空。</text>
-          <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.build != 'funnel-daily-v2'}}">指纹不是 funnel-daily-v2 → 线上云函数很可能未部署本版。</text>
+          <view class="visit-stats-row"><text class="visit-stats-name">本期采集到的顾客行为</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.behaviorsCount || 0}} 条</text></view>
+          <text class="addr-detail" wx:if="{{!analyticsReport.behavior.diag.behaviorsCount && analyticsReport.behavior.diag.dailyIdentifyStart}}">本期只有按天汇总的数据：浏览、鉴定等次数照常，下方「引导注册」类转化暂时算不出来。</text>
+          <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.error || analyticsReport.behavior.diag.build != 'funnel-daily-v2'}}">行为数据读取不完整，下方漏斗可能偏少；可展开「更多」把信息发给技术同事。</text>
+          <view class="report-diag-toggle" hover-class="wb-press" hover-stay-time="80" bindtap="toggleReportDiag">{{reportDiagOpen ? '收起排障信息' : '更多（排障信息）'}}</view>
+          <block wx:if="{{reportDiagOpen}}">
+            <view class="visit-stats-row"><text class="visit-stats-name">查询模式</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.queryMode}}</text></view>
+            <view class="visit-stats-row"><text class="visit-stats-name">日汇总·鉴定开始</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.dailyIdentifyStart}}</text></view>
+            <view class="visit-stats-row"><text class="visit-stats-name">构建指纹</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.build}}</text></view>
+            <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.error}}">告警：{{analyticsReport.behavior.diag.error}}</text>
+            <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.build != 'funnel-daily-v2'}}">指纹不是 funnel-daily-v2 → 线上云函数很可能未部署本版。</text>
+          </block>
         </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.identify}}">
           <view class="card-top"><text class="no">AI 鉴定</text></view>
@@ -2624,7 +2628,7 @@
           <view class="visit-stats-row"><text class="visit-stats-name">保存图鉴</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.saveAtlas || 0}}</text></view>
         </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.identify.gate}}">
-          <view class="card-top"><text class="no">AI 识别 · 注册钩子</text></view>
+          <view class="card-top"><text class="no">AI 识别 · 保存图鉴时引导注册</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">引导曝光（未注册点保存图鉴）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.gate.show || 0}}</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">去注册</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.gate.goRegister || 0}} · {{analyticsReport.behavior.funnel.identify.gate.goRate || 0}}%</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">暂不保存（流失）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.gate.dismiss || 0}} · {{analyticsReport.behavior.funnel.identify.gate.dismissRate || 0}}%</text></view>
@@ -2635,7 +2639,7 @@
         <!-- 祈福墙 · 注册转化（2026-09-18 补：产品反馈"数据报表里没有祈福墙数据"——
              漏斗以前只算了 identify/store/commerce，这一块压根不存在） -->
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.identify.resultGate}}">
-          <view class="card-top"><text class="no">AI 识别 · 看结果注册钩子</text></view>
+          <view class="card-top"><text class="no">AI 识别 · 看结果时引导注册</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">引导曝光（未注册看结果）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.show || 0}}</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">去注册</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.goRegister || 0}} · {{analyticsReport.behavior.funnel.identify.resultGate.goRate || 0}}%</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">暂不保存（流失）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.dismiss || 0}} · {{analyticsReport.behavior.funnel.identify.resultGate.dismissRate || 0}}%</text></view>
@@ -2647,7 +2651,7 @@
           <view class="card-top"><text class="no">祈福墙 · 注册转化</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">进墙（含门店码扫码）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.enter || 0}}</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">参与仪式 / 玩法</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.engage || 0}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">落愿遇注册钩子</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.show || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">落愿时弹出注册引导</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.show || 0}}</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">点「去注册」</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.goRegister || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.goRate || 0}}%</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">先不挂（关掉弹窗）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.dismiss || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.dismissRate || 0}}%</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">注册未完成（授权失败）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.fail || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.failRate || 0}}%</text></view>
@@ -2659,13 +2663,13 @@
         <!-- 祈福墙 · 连灯记录云存钩子（2026-09-20）：与上面同一套口径，但 action 是 wish_ritual_gate。
              没有这张卡 = 埋点发了、报表没有（祈福墙 2026-09-18 已经栽过一次） -->
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.wishWall.ritualGate}}">
-          <view class="card-top"><text class="no">祈福墙 · 连灯云存钩子</text></view>
+          <view class="card-top"><text class="no">祈福墙 · 保存连灯记录时引导注册</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">有可丢进展时曝光</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.ritualGate.show || 0}}</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">点「同意并一键注册」</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.ritualGate.goRegister || 0}} · {{analyticsReport.behavior.funnel.wishWall.ritualGate.goRate || 0}}%</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">先存着（关掉弹窗）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.ritualGate.dismiss || 0}} · {{analyticsReport.behavior.funnel.wishWall.ritualGate.dismissRate || 0}}%</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">注册完成并同步上云</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.ritualGate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.wishWall.ritualGate.completeRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">注册完成并保存记录</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.ritualGate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.wishWall.ritualGate.completeRate || 0}}%</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">去注册→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.ritualGate.resumeRate || 0}}%</text></view>
-          <text class="week-split-hint">口径同上；终点只算「注册完成**且记录已同步上云**」，同步失败走 fail_sync（不计入完成）</text>
+          <text class="week-split-hint">口径同上；只有「注册完成且连灯记录已保存」才算完成，保存失败不计入</text>
         </view>
         <!-- 祈福墙 · 功德证领取钩子（创新钩子 H2，2026-09-20）：与上面同一套口径，但 action 是 muyu_cert_gate。
              没有这张卡 = 埋点发了、报表没有（祈福墙 2026-09-18 已经栽过一次） -->
@@ -2674,9 +2678,9 @@
           <view class="visit-stats-row"><text class="visit-stats-name">里程点入口曝光</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.show || 0}}</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">点「同意并一键注册」</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.goRegister || 0}} · {{analyticsReport.behavior.funnel.wishWall.certGate.goRate || 0}}%</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">先不领（关掉弹窗）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.dismiss || 0}} · {{analyticsReport.behavior.funnel.wishWall.certGate.dismissRate || 0}}%</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">证书已发且同步上云</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.wishWall.certGate.completeRate || 0}}%</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">证书已发且功德已保存</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.wishWall.certGate.completeRate || 0}}%</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">入口曝光→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.certGate.resumeRate || 0}}%</text></view>
-          <text class="week-split-hint">口径同上；终点只算「证书已发**且功德同步上云**」，同步失败走 fail_sync（不计入完成）</text>
+          <text class="week-split-hint">口径同上；只有「证书已发且功德已保存」才算完成，保存失败不计入</text>
         </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.commerce}}">
           <view class="card-top"><text class="no">电商路径</text></view>
@@ -2684,8 +2688,8 @@
           <view class="visit-stats-row"><text class="visit-stats-name">加购</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.addCart || 0}}</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">提交订单</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.orderSubmit || 0}}</text></view>
         </view>
-        <view class="card" wx:if="{{analyticsReport.behavior.topEvents.length}}">
-          <view class="card-top"><text class="no">Top 事件</text></view>
+        <view class="card" wx:if="{{reportDiagOpen && analyticsReport.behavior.topEvents.length}}">
+          <view class="card-top"><text class="no">最常发生的动作（原始事件名，排障用）</text></view>
           <view class="visit-stats-row" wx:for="{{analyticsReport.behavior.topEvents}}" wx:key="key">
             <text class="visit-stats-name">{{item.key}}</text>
             <text class="visit-stats-count">{{item.count}}</text>

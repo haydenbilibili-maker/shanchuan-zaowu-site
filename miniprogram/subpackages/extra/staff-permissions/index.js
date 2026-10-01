@@ -49,6 +49,7 @@ Page({
     staffMatchHint: '',
     staffMatched: null,
     staffCandidates: [],
+    staffMemberNoInput: '',
     staffRoleLabels: ['店员', '店长', '标本师', '直播主播', '投资人', '股东', '采购商', '加盟商', '渠道商', '供货方', '超管'],
     staffRoleValues: ['staff', 'manager', 'specimen_artisan', 'live_host', 'investor', 'shareholder', 'buyer', 'franchisee', 'channel', 'supplier', 'super_admin'],
     staffRoleSelected: { staff: true, manager: false, specimen_artisan: false, live_host: false, investor: false, shareholder: false, buyer: false, franchisee: false, channel: false, supplier: false, super_admin: false },
@@ -197,6 +198,7 @@ Page({
       staffRoleSelected: this.buildStaffRoleSelected(this.data.staffRoleValues, roles),
       staffLookingUp: false,
       staffMatchHint: '',
+      staffMemberNoInput: '',
       staffMatched: item
         ? {
             openid,
@@ -273,7 +275,7 @@ Page({
     if (!candidate || !candidate.openid) return;
     const patch = {
       staffMatched: candidate,
-      staffMatchHint: `已匹配 ${candidate.nickName || '藏家'}（${candidate.phoneMasked || ''}）`,
+      staffMatchHint: `已匹配 ${candidate.nickName || '藏家'}（${candidate.phoneMasked || candidate.memberNo || ''}）`,
       'staffForm.openid': candidate.openid,
       'staffForm.openidTail': candidate.openidTail || String(candidate.openid).slice(-8)
     };
@@ -291,6 +293,10 @@ Page({
     this.applyStaffCandidate(item);
   },
 
+  onStaffMemberNoInput(e) {
+    this.setData({ staffMemberNoInput: String((e && e.detail && e.detail.value) || '') });
+  },
+
   async lookupStaffByPhone() {
     if (this.data.staffLookingUp) return;
     const phone = String(this.data.staffForm.phone || '').replace(/\D/g, '');
@@ -298,6 +304,21 @@ Page({
       this.setData({ formTip: '请输入 11 位手机号' });
       return;
     }
+    await this.runStaffLookup({ action: 'lookupByPhone', phone }, '未找到该手机号用户，请让对方先登录小程序并授权手机号');
+  },
+
+  /** 会员号查人：manageStaff 的 lookupByPhone 只新增可选 memberNo，不带手机号时生效 */
+  async lookupStaffByMemberNo() {
+    if (this.data.staffLookingUp) return;
+    const memberNo = String(this.data.staffMemberNoInput || '').replace(/\s+/g, '').toUpperCase();
+    if (memberNo.length < 9) {
+      this.setData({ formTip: '请输入会员号，如 MT-AB12-CD34' });
+      return;
+    }
+    await this.runStaffLookup({ action: 'lookupByPhone', memberNo }, '未找到该会员号，请核对顾客会员卡上的编号');
+  },
+
+  async runStaffLookup(data, notFoundMsg) {
     this.setData({
       staffLookingUp: true,
       staffMatchHint: '',
@@ -308,7 +329,7 @@ Page({
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageStaff',
-        data: { action: 'lookupByPhone', phone }
+        data
       });
       const result = (res && res.result) || {};
       this.setData({ staffLookingUp: false });
@@ -321,7 +342,7 @@ Page({
         this.setData({
           staffCandidates: [],
           staffMatched: null,
-          staffMatchHint: result.msg || '未找到该手机号用户，请让对方先登录小程序并授权手机号',
+          staffMatchHint: result.msg || notFoundMsg,
           'staffForm.openid': '',
           'staffForm.openidTail': ''
         });
