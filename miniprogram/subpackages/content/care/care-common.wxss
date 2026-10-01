@@ -361,7 +361,7 @@
 .care-empty-desc {
   display: block;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   line-height: 1.55;
   margin-bottom: 32rpx;
 }
