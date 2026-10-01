@@ -29,20 +29,25 @@
 <!-- 仅一处占位：statusBar + navBar，内容紧贴自定义导航下方 -->
 <view class="nav-spacer" style="height: {{navSpacerHeight}}px;"></view>
 
-<!-- 首屏骨架：形状对齐问候行 / 扫码主按钮 / 常用磁贴，数据回来后原位替换，不跳版 -->
+<!-- 首屏骨架：形状对齐问候行 / 待办卡 / 扫码主按钮 / 两行常用磁贴，数据回来后原位替换，不跳版 -->
 <view class="workbench-boot wb-sk" wx:if="{{!workspaceReady}}" aria-label="工作台加载中">
   <view class="ui-sk-line title"></view>
   <view class="ui-sk-line wb-sk-sub"></view>
+  <view class="ui-sk-card">
+    <view class="ui-sk-line wb-sk-sub"></view>
+    <view class="wb-sk-tiles">
+      <view class="ui-sk-line wb-sk-todo" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
+    </view>
+  </view>
   <view class="ui-sk-line bar wb-sk-cta"></view>
   <view class="ui-sk-card">
     <view class="ui-sk-line wb-sk-sub"></view>
     <view class="wb-sk-tiles">
       <view class="ui-sk-line wb-sk-tile" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
     </view>
-  </view>
-  <view class="ui-sk-card">
-    <view class="ui-sk-line wb-sk-sub"></view>
-    <view class="ui-sk-line wide"></view>
+    <view class="wb-sk-tiles">
+      <view class="ui-sk-line wb-sk-tile" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
+    </view>
   </view>
 </view>
 
@@ -98,6 +103,42 @@
     </view>
   </view>
 
+  <!-- 待办卡（2026-10-01 待办优先）：分区磁贴上的每一种计数角标都在这里汇总（hubNav.HUB_TODOS，check:hub-entries 守），点按走原入口 -->
+  <view class="hub-todo" wx:if="{{hubTodo.items.length}}">
+    <view class="hub-todo-head">
+      <view class="hub-titles">
+        <text class="hub-en">TO DO</text>
+        <text class="hub-cn">待处理</text>
+      </view>
+      <view class="hub-todo-total">
+        <text class="hub-todo-num">{{hubTodo.totalText}}</text>
+        <text class="hub-todo-unit">件</text>
+      </view>
+    </view>
+    <view class="hub-todo-cells">
+      <view
+        class="hub-todo-cell"
+        wx:for="{{hubTodo.items}}"
+        wx:key="id"
+        bindtap="onHubTodo"
+        data-id="{{item.id}}"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+      >
+        <text class="hub-todo-cell-num">{{item.count}}</text>
+        <text class="hub-todo-cell-label">{{item.label}}</text>
+        <text class="hub-todo-cell-new" wx:if="{{item.extra}}">{{item.extra}}</text>
+      </view>
+    </view>
+  </view>
+  <view class="hub-todo hub-todo--clear" wx:elif="{{hubTodo.any}}">
+    <view class="hub-titles">
+      <text class="hub-en">TO DO</text>
+      <text class="hub-cn">待处理</text>
+    </view>
+    <text class="hub-todo-ok">已全部处理</text>
+  </view>
+
   <!-- 首屏主 CTA：扫顾客会员码（立刻开相机，成功后再进 field 核销） -->
   <view class="hub-scan-cta" wx:if="{{menu.verify || menu.grantPoints || menu.staffConsole}}">
     <view
@@ -107,6 +148,37 @@
       bindtap="goScanMember"
     >扫顾客会员码</view>
     <text class="hub-scan-hint">核验权益 · 预约票 · 门店礼券 · 礼赠自提</text>
+  </view>
+
+  <!-- 我的常用（首屏核心）：按 hubNav.HUB_ENTRIES 渲染、只含有权限入口；「编辑」增删排序，或在下方「全部功能」长按入口加入 / 移出（上限 8，本地保存） -->
+  <view class="hub-fav">
+    <view class="hub-fav-head">
+      <view class="hub-titles">
+        <text class="hub-en">PINNED</text>
+        <text class="hub-cn">我的常用</text>
+      </view>
+      <view class="hub-fav-edit" bindtap="openFavEditor" hover-class="tap-press" hover-stay-time="80">编辑</view>
+    </view>
+    <view class="hub-grid hub-grid--fav" wx:if="{{hubFav.length}}">
+      <view
+        class="hub-tile hub-fav-tile"
+        wx:for="{{hubFav}}"
+        wx:key="id"
+        bindtap="onHubFav"
+        data-id="{{item.id}}"
+        hover-class="tap-press"
+        hover-stay-time="80"
+      >
+        <view class="hub-ico {{item.group ? 'is-stack' : ''}}">
+          <image class="hub-ico-img" src="{{item.icon}}" mode="aspectFit" />
+          <view class="hub-badge" wx:if="{{item.badge}}">{{item.badge}}</view>
+        </view>
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+    <view class="hub-fav-empty" wx:else bindtap="openFavEditor" hover-class="tap-press-soft" hover-stay-time="80">
+      <text>还没有常用入口：点「编辑」挑选，或在下方「全部功能」长按入口加入</text>
+    </view>
   </view>
 
   <!-- 核心指标卡片 (金卡) -->
@@ -246,288 +318,293 @@
   <!-- 瀑布流布局容器：默认 2 列；极窄 stackCols 时单列 -->
   <view class="dashboard-grid {{chartLayout.stackCols ? 'dash-grid--stack' : ''}}">
     
-    <!-- 功能入口（2026-09-30 全局改版）：待办条 + 七个分区；分区与合并磁贴的权限口径见 hubNav.js，一致性由 check:hub-entries 守 -->
+    <!-- 功能入口（2026-09-30 全局改版；2026-10-01 展示改版）：「全部功能」5 列便当式流排 —— 分区只占可见入口数那么多列，小分区并排；
+         待办卡与我的常用在扫码主按钮上下（首屏）。分区与合并磁贴的权限口径见 hubNav.js，一致性由 check:hub-entries 守 -->
     <view class="grid-item full-width hub-nav">
-      <!-- 我的常用：按 hubNav.HUB_ENTRIES 渲染、只含有权限入口；「编辑」可增删与排序（上限 8，本地保存） -->
-      <view class="hub-fav">
-        <view class="hub-fav-head">
-          <text class="hub-fav-title">我的常用</text>
-          <view class="hub-fav-edit" bindtap="openFavEditor" hover-class="hub-press" hover-stay-time="80">编辑</view>
+      <view class="hub-cat" id="hub-cat">
+        <view class="hub-cat-head">
+          <view class="hub-titles">
+            <text class="hub-en">ALL FUNCTIONS</text>
+            <text class="hub-cn">全部功能</text>
+          </view>
+          <text class="hub-cat-count">{{hubCat.total}} 项</text>
         </view>
-        <view class="hub-grid" wx:if="{{hubFav.length}}">
+        <text class="hub-cat-hint {{hubPinTip ? 'is-tip' : ''}}">{{hubPinTip || '长按入口加入或移出常用 · 双圈图标点开有多项'}}</text>
+        <view class="hub-anchors" wx:if="{{hubCat.anchors.length}}">
           <view
-            class="hub-tile hub-fav-tile"
-            wx:for="{{hubFav}}"
+            class="hub-anchor"
+            wx:for="{{hubCat.anchors}}"
             wx:key="id"
-            bindtap="onHubFav"
+            bindtap="onHubAnchor"
             data-id="{{item.id}}"
-            hover-class="hub-press"
+            hover-class="tap-press"
             hover-stay-time="80"
           >
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="{{item.icon}}" mode="aspectFit" />
-              <view class="hub-badge" wx:if="{{item.badge}}">{{item.badge}}</view>
-            </view>
-            <text>{{item.label}}</text>
+            <text>{{item.title}}</text>
+            <text class="hub-anchor-n">{{item.count}}</text>
           </view>
         </view>
-        <view class="hub-fav-empty" wx:else bindtap="openFavEditor">
-          <text>还没有常用入口，点「编辑」从下方分区挑选</text>
-        </view>
-      </view>
 
-      <view class="hub-todo" wx:if="{{hubTodo.items.length}}">
-        <view class="hub-todo-head">
-          <text class="hub-todo-title">待办</text>
-          <text class="hub-todo-num">{{hubTodo.totalText}}</text>
-        </view>
-        <view class="hub-todo-chips">
-          <view
-            class="hub-todo-chip"
-            wx:for="{{hubTodo.items}}"
-            wx:key="id"
-            bindtap="onHubTodo"
-            data-id="{{item.id}}"
-            hover-class="hub-press"
-            hover-stay-time="80"
-          >
-            <text class="hub-todo-chip-label">{{item.label}}</text>
-            <text class="hub-todo-chip-count">{{item.count}}</text>
+        <view class="hub-cat-grid">
+          <view class="hub-sec span-{{hubSpan.orders}}" wx:if="{{hubSec.orders}}" id="hub-sec-orders">
+            <view class="hub-sec-head"><text class="hub-sec-title">订单履约</text></view>
+            <view class="hub-grid cols-{{hubSpan.orders}}">
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="orders" bindlongpress="onHubPin" wx:if="{{menu.orders}}" bindtap="onOrdersMenuTap" data-idx="2" data-title="订单管理">
+                <view class="hub-ico">
+                  <image class="hub-ico-img" src="/assets/icons/box.png" mode="aspectFit" />
+                  <view class="hub-badge" wx:if="{{newOrderUnreadCount > 0}}">{{newOrderUnreadCount > 99 ? '99+' : newOrderUnreadCount}}</view>
+                  <view class="hub-badge" wx:elif="{{orders.length > 0}}">{{orders.length > 99 ? '99+' : orders.length}}</view>
+                </view>
+                <text>订单</text>
+                <view class="hub-pin" wx:if="{{hubPinned.orders}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="workOrders" bindlongpress="onHubPin" wx:if="{{menu.workOrders}}" bindtap="switchTab" data-idx="10" data-title="工单">
+                <view class="hub-ico">
+                  <image class="hub-ico-img" src="/assets/icons/list.png" mode="aspectFit" />
+                  <view class="hub-badge" wx:if="{{customOrders.length > 0}}">{{customOrders.length > 99 ? '99+' : customOrders.length}}</view>
+                </view>
+                <text>工单</text>
+                <view class="hub-pin" wx:if="{{hubPinned.workOrders}}"></view>
+              </view>
+              <view class="hub-tile is-group" hover-class="tap-press" hover-stay-time="80" data-fid="gift" bindlongpress="onHubPin" wx:if="{{menu.giftOps || menu.giftManage}}" bindtap="openHubGroup" data-group="gift">
+                <view class="hub-ico">
+                  <image class="hub-ico-img" src="/assets/icons/gift.png" mode="aspectFit" />
+                  <view class="hub-badge" wx:if="{{giftTodoCount > 0}}">{{giftTodoCount > 99 ? '99+' : giftTodoCount}}</view>
+                </view>
+                <text>礼赠</text>
+                <view class="hub-pin" wx:if="{{hubPinned.gift}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="invoice" bindlongpress="onHubPin" wx:if="{{menu.invoice}}" bindtap="goInvoiceRequests">
+                <view class="hub-ico">
+                  <image class="hub-ico-img" src="/assets/icons/refund.png" mode="aspectFit" />
+                  <view class="hub-badge" wx:if="{{invoicePendingCount > 0}}">{{invoicePendingCount > 99 ? '99+' : invoicePendingCount}}</view>
+                </view>
+                <text>发票</text>
+                <view class="hub-pin" wx:if="{{hubPinned.invoice}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="approvals" bindlongpress="onHubPin" wx:if="{{menu.approvals}}" bindtap="goApprovals">
+                <view class="hub-ico">
+                  <image class="hub-ico-img" src="/assets/icons/done.png" mode="aspectFit" />
+                  <view class="hub-badge" wx:if="{{approvalPendingCount > 0}}">{{approvalPendingCount > 99 ? '99+' : approvalPendingCount}}</view>
+                </view>
+                <text>审批</text>
+                <view class="hub-pin" wx:if="{{hubPinned.approvals}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="deposit" bindlongpress="onHubPin" wx:if="{{menu.depositOps}}" bindtap="goDepositOps">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/discount.png" mode="aspectFit" /></view>
+                <text>孤品定金</text>
+                <view class="hub-pin" wx:if="{{hubPinned.deposit}}"></view>
+              </view>
+            </view>
           </view>
-        </view>
-      </view>
-      <view class="hub-todo hub-todo--clear" wx:else>
-        <text class="hub-todo-title">待办</text>
-        <text class="hub-todo-ok">已全部处理</text>
-      </view>
 
-      <view class="hub-sec" wx:if="{{hubSec.orders}}">
-        <view class="hub-sec-head"><text class="hub-sec-title">订单履约</text></view>
-        <view class="hub-grid">
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.orders}}" bindtap="onOrdersMenuTap" data-idx="2" data-title="订单管理">
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="/assets/icons/box.png" mode="aspectFit" />
-              <view class="hub-badge" wx:if="{{newOrderUnreadCount > 0}}">{{newOrderUnreadCount > 99 ? '99+' : newOrderUnreadCount}}</view>
-              <view class="hub-badge" wx:elif="{{orders.length > 0}}">{{orders.length > 99 ? '99+' : orders.length}}</view>
+          <view class="hub-sec span-{{hubSpan.biz}}" wx:if="{{hubSec.biz}}" id="hub-sec-biz">
+            <view class="hub-sec-head"><text class="hub-sec-title">经营数据</text></view>
+            <view class="hub-grid cols-{{hubSpan.biz}}">
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="ledger" bindlongpress="onHubPin" wx:if="{{menu.ledger}}" bindtap="switchTab" data-idx="8" data-title="营收账本">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/coin_gold.png" mode="aspectFit" /></view>
+                <text>账本</text>
+                <view class="hub-pin" wx:if="{{hubPinned.ledger}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="analytics" bindlongpress="onHubPin" wx:if="{{menu.analytics}}" bindtap="switchTab" data-idx="13" data-title="数据报表">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/trend.png" mode="aspectFit" /></view>
+                <text>报表</text>
+                <view class="hub-pin" wx:if="{{hubPinned.analytics}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="stores" bindlongpress="onHubPin" wx:if="{{menu.stores}}" bindtap="switchTab" data-idx="12" data-title="门店管理">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/store.png" mode="aspectFit" /></view>
+                <text>门店</text>
+                <view class="hub-pin" wx:if="{{hubPinned.stores}}"></view>
+              </view>
             </view>
-            <text>订单</text>
           </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.workOrders}}" bindtap="switchTab" data-idx="10" data-title="工单">
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="/assets/icons/list.png" mode="aspectFit" />
-              <view class="hub-badge" wx:if="{{customOrders.length > 0}}">{{customOrders.length > 99 ? '99+' : customOrders.length}}</view>
-            </view>
-            <text>工单</text>
-          </view>
-          <view class="hub-tile is-group" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.giftOps || menu.giftManage}}" bindtap="openHubGroup" data-group="gift">
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="/assets/icons/gift.png" mode="aspectFit" />
-              <view class="hub-badge" wx:if="{{giftTodoCount > 0}}">{{giftTodoCount > 99 ? '99+' : giftTodoCount}}</view>
-            </view>
-            <text>礼赠</text>
-            <view class="hub-tile-sub">履约·管理</view>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.invoice}}" bindtap="goInvoiceRequests">
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="/assets/icons/refund.png" mode="aspectFit" />
-              <view class="hub-badge" wx:if="{{invoicePendingCount > 0}}">{{invoicePendingCount > 99 ? '99+' : invoicePendingCount}}</view>
-            </view>
-            <text>发票</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.approvals}}" bindtap="goApprovals">
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="/assets/icons/done.png" mode="aspectFit" />
-              <view class="hub-badge" wx:if="{{approvalPendingCount > 0}}">{{approvalPendingCount > 99 ? '99+' : approvalPendingCount}}</view>
-            </view>
-            <text>审批</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.depositOps}}" bindtap="goDepositOps">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/discount.png" mode="aspectFit" /></view>
-            <text>孤品定金</text>
-          </view>
-        </view>
-      </view>
 
-      <view class="hub-sec" wx:if="{{hubSec.biz}}">
-        <view class="hub-sec-head"><text class="hub-sec-title">经营数据</text></view>
-        <view class="hub-grid">
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.ledger}}" bindtap="switchTab" data-idx="8" data-title="营收账本">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/coin_gold.png" mode="aspectFit" /></view>
-            <text>账本</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.analytics}}" bindtap="switchTab" data-idx="13" data-title="数据报表">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/trend.png" mode="aspectFit" /></view>
-            <text>报表</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.stores}}" bindtap="switchTab" data-idx="12" data-title="门店管理">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/store.png" mode="aspectFit" /></view>
-            <text>门店</text>
-          </view>
-        </view>
-      </view>
-
-      <view class="hub-sec" wx:if="{{hubSec.goods}}">
-        <view class="hub-sec-head"><text class="hub-sec-title">商品内容</text></view>
-        <view class="hub-grid">
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.products}}" bindtap="switchTab" data-idx="1" data-title="藏品库">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>
-            <text>藏品</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.content}}" bindtap="switchTab" data-idx="9" data-title="内容管理">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/article-tab.png" mode="aspectFit" /></view>
-            <text>内容</text>
-          </view>
-          <!-- 磁贴名按产品口径用短名「开关」；可发现性靠「内容管理」(tab 9) 顶部的直达条 —— 见 _subviews.wxml 与 test-wish-wall 可达性断言 -->
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.contentFlags}}" bindtap="switchTab" data-idx="16" data-title="内容开关">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/eye.png" mode="aspectFit" /></view>
-            <text>开关</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.decor}}" bindtap="switchTab" data-idx="4" data-title="店铺装修">
-            <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/edit.png" mode="aspectFit" /></view>
-            <text>装修</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.activities}}" bindtap="switchTab" data-idx="7" data-title="活动课程">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/booking.png" mode="aspectFit" /></view>
-            <text>活动</text>
-          </view>
-          <!-- 馆内直播统一入口：主播工作台（内含开播）；直播中状态见上方信息流 -->
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.live}}" bindtap="goLiveStudio">
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="/assets/icons/video-tab.png" mode="aspectFit" />
-              <view class="hub-badge hub-badge--live" wx:if="{{liveDash.statusTone === 'live'}}">LIVE</view>
+          <view class="hub-sec span-{{hubSpan.goods}}" wx:if="{{hubSec.goods}}" id="hub-sec-goods">
+            <view class="hub-sec-head"><text class="hub-sec-title">商品内容</text></view>
+            <view class="hub-grid cols-{{hubSpan.goods}}">
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="products" bindlongpress="onHubPin" wx:if="{{menu.products}}" bindtap="switchTab" data-idx="1" data-title="藏品库">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>
+                <text>藏品</text>
+                <view class="hub-pin" wx:if="{{hubPinned.products}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="content" bindlongpress="onHubPin" wx:if="{{menu.content}}" bindtap="switchTab" data-idx="9" data-title="内容管理">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/article-tab.png" mode="aspectFit" /></view>
+                <text>内容</text>
+                <view class="hub-pin" wx:if="{{hubPinned.content}}"></view>
+              </view>
+              <!-- 磁贴名按产品口径用短名「开关」；可发现性靠「内容管理」(tab 9) 顶部的直达条 —— 见 _subviews.wxml 与 test-wish-wall 可达性断言 -->
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="contentFlags" bindlongpress="onHubPin" wx:if="{{menu.contentFlags}}" bindtap="switchTab" data-idx="16" data-title="内容开关">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/eye.png" mode="aspectFit" /></view>
+                <text>开关</text>
+                <view class="hub-pin" wx:if="{{hubPinned.contentFlags}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="decor" bindlongpress="onHubPin" wx:if="{{menu.decor}}" bindtap="switchTab" data-idx="4" data-title="店铺装修">
+                <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/edit.png" mode="aspectFit" /></view>
+                <text>装修</text>
+                <view class="hub-pin" wx:if="{{hubPinned.decor}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="activities" bindlongpress="onHubPin" wx:if="{{menu.activities}}" bindtap="switchTab" data-idx="7" data-title="活动课程">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/booking.png" mode="aspectFit" /></view>
+                <text>活动</text>
+                <view class="hub-pin" wx:if="{{hubPinned.activities}}"></view>
+              </view>
+              <!-- 馆内直播统一入口：主播工作台（内含开播）；直播中状态见上方信息流（LIVE 是状态标，不是待办计数） -->
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="live" bindlongpress="onHubPin" wx:if="{{menu.live}}" bindtap="goLiveStudio">
+                <view class="hub-ico">
+                  <image class="hub-ico-img" src="/assets/icons/video-tab.png" mode="aspectFit" />
+                  <view class="hub-badge hub-badge--live" wx:if="{{liveDash.statusTone === 'live'}}">LIVE</view>
+                </view>
+                <text>主播</text>
+                <view class="hub-pin" wx:if="{{hubPinned.live}}"></view>
+              </view>
             </view>
-            <text>主播</text>
           </view>
-        </view>
-      </view>
 
-      <view class="hub-sec" wx:if="{{hubSec.members}}">
-        <view class="hub-sec-head"><text class="hub-sec-title">会员触达</text></view>
-        <view class="hub-grid">
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.memberCrm}}" bindtap="goMemberCrm">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/user_gold.png" mode="aspectFit" /></view>
-            <text>会员 CRM</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.vip}}" bindtap="switchTab" data-idx="6" data-title="权益会员">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/coupon.png" mode="aspectFit" /></view>
-            <text>权益</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.support}}" bindtap="switchTab" data-idx="11" data-title="山海有信">
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="/assets/icons/message.png" mode="aspectFit" />
-              <view class="hub-badge" wx:if="{{supportTickets.length > 0}}">{{supportTickets.length > 99 ? '99+' : supportTickets.length}}</view>
+          <view class="hub-sec span-{{hubSpan.members}}" wx:if="{{hubSec.members}}" id="hub-sec-members">
+            <view class="hub-sec-head"><text class="hub-sec-title">会员触达</text></view>
+            <view class="hub-grid cols-{{hubSpan.members}}">
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="memberCrm" bindlongpress="onHubPin" wx:if="{{menu.memberCrm}}" bindtap="goMemberCrm">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/user_gold.png" mode="aspectFit" /></view>
+                <text>会员 CRM</text>
+                <view class="hub-pin" wx:if="{{hubPinned.memberCrm}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="vip" bindlongpress="onHubPin" wx:if="{{menu.vip}}" bindtap="switchTab" data-idx="6" data-title="权益会员">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/coupon.png" mode="aspectFit" /></view>
+                <text>权益</text>
+                <view class="hub-pin" wx:if="{{hubPinned.vip}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="support" bindlongpress="onHubPin" wx:if="{{menu.support}}" bindtap="switchTab" data-idx="11" data-title="山海有信">
+                <view class="hub-ico">
+                  <image class="hub-ico-img" src="/assets/icons/message.png" mode="aspectFit" />
+                  <view class="hub-badge" wx:if="{{supportTickets.length > 0}}">{{supportTickets.length > 99 ? '99+' : supportTickets.length}}</view>
+                </view>
+                <text>有信</text>
+                <view class="hub-pin" wx:if="{{hubPinned.support}}"></view>
+              </view>
+              <!-- 会员调级 / 荣誉馆长：2026-09-29 曾合并为一枚，2026-09-30 产品负责人要求重新拆成两枚独立入口，各按原权限键 -->
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="memberLevel" bindlongpress="onHubPin" wx:if="{{menu.memberLevelAdjust}}" bindtap="goMemberLevelAdjust">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/medal_gold.png" mode="aspectFit" /></view>
+                <text>会员调级</text>
+                <view class="hub-pin" wx:if="{{hubPinned.memberLevel}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="curators" bindlongpress="onHubPin" wx:if="{{menu.honoraryCurators}}" bindtap="goHonoraryCurators">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/atlas.png" mode="aspectFit" /></view>
+                <text>荣誉馆长</text>
+                <view class="hub-pin" wx:if="{{hubPinned.curators}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="points" bindlongpress="onHubPin" wx:if="{{menu.points}}" bindtap="goStorePoints">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/star.png" mode="aspectFit" /></view>
+                <text>积分</text>
+                <view class="hub-pin" wx:if="{{hubPinned.points}}"></view>
+              </view>
+              <view class="hub-tile is-group" hover-class="tap-press" hover-stay-time="80" data-fid="perks" bindlongpress="onHubPin" wx:if="{{menu.welcomeGift || menu.walletConfig}}" bindtap="openHubGroup" data-group="perks">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/wallet_gold.png" mode="aspectFit" /></view>
+                <text>礼包钱包</text>
+                <view class="hub-pin" wx:if="{{hubPinned.perks}}"></view>
+              </view>
             </view>
-            <text>有信</text>
           </view>
-          <!-- 会员调级 / 荣誉馆长：2026-09-29 曾合并为一枚，2026-09-30 产品负责人要求重新拆成两枚独立入口，各按原权限键 -->
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.memberLevelAdjust}}" bindtap="goMemberLevelAdjust">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/medal_gold.png" mode="aspectFit" /></view>
-            <text>会员调级</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.honoraryCurators}}" bindtap="goHonoraryCurators">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/atlas.png" mode="aspectFit" /></view>
-            <text>荣誉馆长</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.points}}" bindtap="goStorePoints">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/star.png" mode="aspectFit" /></view>
-            <text>积分</text>
-          </view>
-          <view class="hub-tile is-group" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.welcomeGift || menu.walletConfig}}" bindtap="openHubGroup" data-group="perks">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/wallet_gold.png" mode="aspectFit" /></view>
-            <text>礼包钱包</text>
-            <view class="hub-tile-sub">新人·生日·钱包</view>
-          </view>
-        </view>
-      </view>
 
-      <view class="hub-sec" wx:if="{{hubSec.studio}}">
-        <view class="hub-sec-head"><text class="hub-sec-title">工作室</text></view>
-        <view class="hub-grid">
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/studio-dashboard.png" mode="aspectFit" /></view>
-            <text>仪表盘</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.supplierWorkbench}}" bindtap="goSupplierWorkbench">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/group.png" mode="aspectFit" /></view>
-            <text>供应商</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.purchaseOps}}" bindtap="goPurchaseOps">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/cart.png" mode="aspectFit" /></view>
-            <text>采购</text>
-          </view>
-          <!-- 出货中心 = 原「出货单」+「出货开单」（2026-09-28 合并）；超管持全部菜单键，故仅判 shipmentOps 即覆盖原两枚磁贴的可见性 -->
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/ship.png" mode="aspectFit" /></view>
-            <text>出货中心</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.inventoryOps || menu.rawInventoryOps}}" bindtap="goInventoryOps">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/knowledge.png" mode="aspectFit" /></view>
-            <text>库存</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.studioBills}}" bindtap="goStudioBillsGuarded">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/pay.png" mode="aspectFit" /></view>
-            <text>工作室账单</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.propertyCost}}" bindtap="goPropertyCost">
-            <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/location.png" mode="aspectFit" /></view>
-            <text>物业</text>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.feishuSync}}" bindtap="goFeishuSyncGuarded">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/deliver.png" mode="aspectFit" /></view>
-            <text>飞书同步</text>
-          </view>
-          <view class="hub-tile is-group" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.framers || menu.framerRecruit || menu.artisanCommission}}" bindtap="openHubGroup" data-group="artisan">
-            <view class="hub-ico">
-              <image class="hub-ico-img" src="/assets/icons/user.png" mode="aspectFit" />
-              <view class="hub-badge" wx:if="{{menu.framerRecruit && framerRecruitApps.length > 0}}">{{framerRecruitApps.length > 99 ? '99+' : framerRecruitApps.length}}</view>
+          <view class="hub-sec span-{{hubSpan.studio}}" wx:if="{{hubSec.studio}}" id="hub-sec-studio">
+            <view class="hub-sec-head"><text class="hub-sec-title">工作室</text></view>
+            <view class="hub-grid cols-{{hubSpan.studio}}">
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="studioDashboard" bindlongpress="onHubPin" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/studio-dashboard.png" mode="aspectFit" /></view>
+                <text>仪表盘</text>
+                <view class="hub-pin" wx:if="{{hubPinned.studioDashboard}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="supplier" bindlongpress="onHubPin" wx:if="{{menu.supplierWorkbench}}" bindtap="goSupplierWorkbench">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/group.png" mode="aspectFit" /></view>
+                <text>供应商</text>
+                <view class="hub-pin" wx:if="{{hubPinned.supplier}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="purchase" bindlongpress="onHubPin" wx:if="{{menu.purchaseOps}}" bindtap="goPurchaseOps">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/cart.png" mode="aspectFit" /></view>
+                <text>采购</text>
+                <view class="hub-pin" wx:if="{{hubPinned.purchase}}"></view>
+              </view>
+              <!-- 出货中心 = 原「出货单」+「出货开单」（2026-09-28 合并）；超管持全部菜单键，故仅判 shipmentOps 即覆盖原两枚磁贴的可见性 -->
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="shipment" bindlongpress="onHubPin" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/ship.png" mode="aspectFit" /></view>
+                <text>出货中心</text>
+                <view class="hub-pin" wx:if="{{hubPinned.shipment}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="inventory" bindlongpress="onHubPin" wx:if="{{menu.inventoryOps || menu.rawInventoryOps}}" bindtap="goInventoryOps">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/knowledge.png" mode="aspectFit" /></view>
+                <text>库存</text>
+                <view class="hub-pin" wx:if="{{hubPinned.inventory}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="studioBills" bindlongpress="onHubPin" wx:if="{{menu.studioBills}}" bindtap="goStudioBillsGuarded">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/pay.png" mode="aspectFit" /></view>
+                <text>工作室账单</text>
+                <view class="hub-pin" wx:if="{{hubPinned.studioBills}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="property" bindlongpress="onHubPin" wx:if="{{menu.propertyCost}}" bindtap="goPropertyCost">
+                <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/location.png" mode="aspectFit" /></view>
+                <text>物业</text>
+                <view class="hub-pin" wx:if="{{hubPinned.property}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="feishu" bindlongpress="onHubPin" wx:if="{{menu.feishuSync}}" bindtap="goFeishuSyncGuarded">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/deliver.png" mode="aspectFit" /></view>
+                <text>飞书同步</text>
+                <view class="hub-pin" wx:if="{{hubPinned.feishu}}"></view>
+              </view>
+              <view class="hub-tile is-group" hover-class="tap-press" hover-stay-time="80" data-fid="artisan" bindlongpress="onHubPin" wx:if="{{menu.framers || menu.framerRecruit || menu.artisanCommission}}" bindtap="openHubGroup" data-group="artisan">
+                <view class="hub-ico">
+                  <image class="hub-ico-img" src="/assets/icons/user.png" mode="aspectFit" />
+                  <view class="hub-badge" wx:if="{{menu.framerRecruit && framerRecruitApps.length > 0}}">{{framerRecruitApps.length > 99 ? '99+' : framerRecruitApps.length}}</view>
+                </view>
+                <text>标本师</text>
+                <view class="hub-pin" wx:if="{{hubPinned.artisan}}"></view>
+              </view>
             </view>
-            <text>标本师</text>
-            <view class="hub-tile-sub">管理·合作·提成</view>
           </view>
-        </view>
-      </view>
 
-      <view class="hub-sec" wx:if="{{hubSec.org}}">
-        <view class="hub-sec-head"><text class="hub-sec-title">门店组织</text></view>
-        <view class="hub-grid">
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.verify}}" bindtap="goStaffTab" data-tab="verify">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/qrcode.png" mode="aspectFit" /></view>
-            <text>核销验票</text>
+          <view class="hub-sec span-{{hubSpan.org}}" wx:if="{{hubSec.org}}" id="hub-sec-org">
+            <view class="hub-sec-head"><text class="hub-sec-title">门店组织</text></view>
+            <view class="hub-grid cols-{{hubSpan.org}}">
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="verify" bindlongpress="onHubPin" wx:if="{{menu.verify}}" bindtap="goStaffTab" data-tab="verify">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/qrcode.png" mode="aspectFit" /></view>
+                <text>核销验票</text>
+                <view class="hub-pin" wx:if="{{hubPinned.verify}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="staffConsole" bindlongpress="onHubPin" wx:if="{{menu.staffConsole}}" bindtap="goStaffHome">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/checkin.png" mode="aspectFit" /></view>
+                <text>店员工作台</text>
+                <view class="hub-pin" wx:if="{{hubPinned.staffConsole}}"></view>
+              </view>
+              <view class="hub-tile is-group" hover-class="tap-press" hover-stay-time="80" data-fid="org" bindlongpress="onHubPin" wx:if="{{menu.staffDirectory || menu.staffPermissions || menu.shareholderConfig}}" bindtap="openHubGroup" data-group="org">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/lock.png" mode="aspectFit" /></view>
+                <text>组织</text>
+                <view class="hub-pin" wx:if="{{hubPinned.org}}"></view>
+              </view>
+              <view class="hub-tile is-group" hover-class="tap-press" hover-stay-time="80" data-fid="payslip" bindlongpress="onHubPin" wx:if="{{menu.payslipAdmin || menu.myPayslip}}" bindtap="openHubGroup" data-group="payslip">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/calendar_gold.png" mode="aspectFit" /></view>
+                <text>工资</text>
+                <view class="hub-pin" wx:if="{{hubPinned.payslip}}"></view>
+              </view>
+            </view>
           </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.staffConsole}}" bindtap="goStaffHome">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/checkin.png" mode="aspectFit" /></view>
-            <text>店员工作台</text>
-          </view>
-          <view class="hub-tile is-group" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.staffDirectory || menu.staffPermissions || menu.shareholderConfig}}" bindtap="openHubGroup" data-group="org">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/lock.png" mode="aspectFit" /></view>
-            <text>组织</text>
-            <view class="hub-tile-sub">员工·权限·股东</view>
-          </view>
-          <view class="hub-tile is-group" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.payslipAdmin || menu.myPayslip}}" bindtap="openHubGroup" data-group="payslip">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/calendar_gold.png" mode="aspectFit" /></view>
-            <text>工资</text>
-            <view class="hub-tile-sub">工资条·维护</view>
-          </view>
-        </view>
-      </view>
 
-      <view class="hub-sec" wx:if="{{hubSec.system}}">
-        <view class="hub-sec-head"><text class="hub-sec-title">系统监测</text></view>
-        <view class="hub-grid">
-          <view class="hub-tile is-group" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig}}" bindtap="openHubGroup" data-group="rules">
-            <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/clock.png" mode="aspectFit" /></view>
-            <text>规则配置</text>
-            <view class="hub-tile-sub">运费·预约·客服</view>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.orders}}" bindtap="enableStaffOrderWxNotify">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/service.png" mode="aspectFit" /></view>
-            <text>微信通知</text>
-            <view class="hub-tile-sub">订单·工单提醒</view>
-          </view>
-          <view class="hub-tile" hover-class="hub-press" hover-stay-time="80" wx:if="{{menu.aiIdentifyMonitor}}" bindtap="goIdentifyMonitorGuarded">
-            <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/camera.png" mode="aspectFit" /></view>
-            <text>AI 鉴定</text>
-            <view class="hub-tile-sub">鉴定监测</view>
+          <view class="hub-sec span-{{hubSpan.system}}" wx:if="{{hubSec.system}}" id="hub-sec-system">
+            <view class="hub-sec-head"><text class="hub-sec-title">系统监测</text></view>
+            <view class="hub-grid cols-{{hubSpan.system}}">
+              <view class="hub-tile is-group" hover-class="tap-press" hover-stay-time="80" data-fid="rules" bindlongpress="onHubPin" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig}}" bindtap="openHubGroup" data-group="rules">
+                <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/clock.png" mode="aspectFit" /></view>
+                <text>规则配置</text>
+                <view class="hub-pin" wx:if="{{hubPinned.rules}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="wxNotify" bindlongpress="onHubPin" wx:if="{{menu.orders}}" bindtap="enableStaffOrderWxNotify">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/service.png" mode="aspectFit" /></view>
+                <text>微信通知</text>
+                <view class="hub-pin" wx:if="{{hubPinned.wxNotify}}"></view>
+              </view>
+              <view class="hub-tile" hover-class="tap-press" hover-stay-time="80" data-fid="aiIdentify" bindlongpress="onHubPin" wx:if="{{menu.aiIdentifyMonitor}}" bindtap="goIdentifyMonitorGuarded">
+                <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/camera.png" mode="aspectFit" /></view>
+                <text>AI 鉴定</text>
+                <view class="hub-pin" wx:if="{{hubPinned.aiIdentify}}"></view>
+              </view>
+            </view>
           </view>
         </view>
       </view>
@@ -686,16 +763,16 @@
 <view class="hub-sheet hub-fav-sheet" wx:if="{{hubFavEdit.open}}">
   <view class="hub-sheet-head">
     <text class="hub-sheet-title">编辑常用 · {{hubFavEdit.count}}/{{hubFavEdit.max}}</text>
-    <view class="hub-sheet-close" bindtap="closeFavEditor" hover-class="hub-link-press" hover-stay-time="80">取消</view>
+    <view class="hub-sheet-close" bindtap="closeFavEditor" hover-class="tap-press" hover-stay-time="80">取消</view>
   </view>
   <scroll-view class="hub-fav-scroll" scroll-y>
     <view class="hub-fav-sel-empty" wx:if="{{!hubFavEdit.selected.length}}"><text>尚未选择，点下方入口加入</text></view>
     <view class="hub-fav-sel" wx:for="{{hubFavEdit.selected}}" wx:key="id">
       <image class="hub-fav-sel-ico" src="{{item.icon}}" mode="aspectFit" />
       <text class="hub-fav-sel-name">{{item.label}}</text>
-      <view class="hub-fav-op {{item.first ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="up" hover-class="hub-press" hover-stay-time="80">上移</view>
-      <view class="hub-fav-op {{item.last ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="down" hover-class="hub-press" hover-stay-time="80">下移</view>
-      <view class="hub-fav-op is-remove" bindtap="onFavToggle" data-id="{{item.id}}" hover-class="hub-press" hover-stay-time="80">移除</view>
+      <view class="hub-fav-op {{item.first ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="up" hover-class="tap-press" hover-stay-time="80">上移</view>
+      <view class="hub-fav-op {{item.last ? 'is-off' : ''}}" bindtap="onFavMove" data-id="{{item.id}}" data-dir="down" hover-class="tap-press" hover-stay-time="80">下移</view>
+      <view class="hub-fav-op is-remove" bindtap="onFavToggle" data-id="{{item.id}}" hover-class="tap-press" hover-stay-time="80">移除</view>
     </view>
     <view class="hub-fav-full" wx:if="{{hubFavEdit.full}}"><text>已满 {{hubFavEdit.max}} 个，移除后才能再加入</text></view>
     <view class="hub-fav-group" wx:for="{{hubFavEdit.groups}}" wx:for-item="g" wx:key="id">
@@ -707,7 +784,7 @@
           wx:key="id"
           bindtap="onFavToggle"
           data-id="{{item.id}}"
-          hover-class="hub-press"
+          hover-class="tap-press"
           hover-stay-time="80"
         >
           <text>{{item.added ? '✓ ' : '+ '}}{{item.label}}</text>
@@ -716,8 +793,8 @@
     </view>
   </scroll-view>
   <view class="hub-fav-actions">
-    <view class="hub-fav-btn is-ghost" bindtap="onFavReset" hover-class="hub-press" hover-stay-time="80">恢复默认</view>
-    <view class="hub-fav-btn is-primary" bindtap="onFavSave" hover-class="hub-fav-btn-press" hover-stay-time="80">保存</view>
+    <view class="hub-fav-btn is-ghost" bindtap="onFavReset" hover-class="tap-press" hover-stay-time="80">恢复默认</view>
+    <view class="hub-fav-btn is-primary" bindtap="onFavSave" hover-class="tap-press" hover-stay-time="80">保存</view>
   </view>
 </view>
 
@@ -726,7 +803,7 @@
 <view class="hub-sheet" wx:if="{{hubSheet.open}}" catchtouchmove="noop">
   <view class="hub-sheet-head">
     <text class="hub-sheet-title">{{hubSheet.title}}</text>
-    <view class="hub-sheet-close" bindtap="closeHubGroup" hover-class="hub-link-press" hover-stay-time="80">收起</view>
+    <view class="hub-sheet-close" bindtap="closeHubGroup" hover-class="tap-press" hover-stay-time="80">收起</view>
   </view>
   <view
     class="hub-sheet-item"
@@ -734,7 +811,7 @@
     wx:key="id"
     bindtap="onHubGroupItem"
     data-id="{{item.id}}"
-    hover-class="hub-press"
+    hover-class="tap-press-soft"
     hover-stay-time="80"
   >
     <view class="hub-sheet-main">

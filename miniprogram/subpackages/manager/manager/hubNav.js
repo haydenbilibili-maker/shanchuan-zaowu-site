@@ -8,23 +8,27 @@
  * - HUB_ENTRIES：全部磁贴的统一清单（稳定 id）；「我的常用」按它渲染、存 id（本地 storage，按角色分键）。
  * - 与 index.wxml 的一致性（清单 ↔ 磁贴逐枚、每个分区 keys、合并磁贴条件 = 子项 keys 之并、原功能入口不丢）由
  *   `npm run check:hub-entries` 校验。
+ * - 2026-10-01 展示改版（产品负责人点名）：首屏 = 待办卡 + 我的常用；「全部功能」改为 5 列便当式流排 ——
+ *   每个分区只占「可见入口数」列（≤5），小分区在同一行并排，不再一组一张整宽大卡；入口多（> 20）时出分组锚点。
+ *   只改展示：权限过滤、跳转入口、角标来源与上面三份清单一致，不变。
  */
 
 const HUB_SECTIONS = [
-  { id: 'orders', title: '订单履约', keys: ['orders', 'workOrders', 'giftOps', 'giftManage', 'invoice', 'approvals', 'depositOps'] },
-  { id: 'biz', title: '经营数据', keys: ['ledger', 'analytics', 'stores'] },
-  { id: 'goods', title: '商品内容', keys: ['products', 'content', 'contentFlags', 'decor', 'activities', 'live'] },
-  { id: 'members', title: '会员触达', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
+  { id: 'orders', title: '订单履约', short: '订单', keys: ['orders', 'workOrders', 'giftOps', 'giftManage', 'invoice', 'approvals', 'depositOps'] },
+  { id: 'biz', title: '经营数据', short: '经营', keys: ['ledger', 'analytics', 'stores'] },
+  { id: 'goods', title: '商品内容', short: '商品', keys: ['products', 'content', 'contentFlags', 'decor', 'activities', 'live'] },
+  { id: 'members', title: '会员触达', short: '会员', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
   {
     id: 'studio',
     title: '工作室',
+    short: '工作室',
     keys: [
       'studioDashboard', 'supplierWorkbench', 'purchaseOps', 'shipmentOps', 'inventoryOps', 'rawInventoryOps',
       'studioBills', 'propertyCost', 'feishuSync', 'framers', 'framerRecruit', 'artisanCommission'
     ]
   },
-  { id: 'org', title: '门店组织', keys: ['verify', 'staffConsole', 'staffDirectory', 'staffPermissions', 'shareholderConfig', 'payslipAdmin', 'myPayslip'] },
-  { id: 'system', title: '系统监测', keys: ['shipping', 'bookingRules', 'supportConfig', 'orders', 'aiIdentifyMonitor'] }
+  { id: 'org', title: '门店组织', short: '组织', keys: ['verify', 'staffConsole', 'staffDirectory', 'staffPermissions', 'shareholderConfig', 'payslipAdmin', 'myPayslip'] },
+  { id: 'system', title: '系统监测', short: '系统', keys: ['shipping', 'bookingRules', 'supportConfig', 'orders', 'aiIdentifyMonitor'] }
 ]
 
 const HUB_GROUPS = {
@@ -188,7 +192,7 @@ function buildFavView(ids, data) {
   const d = data || {}
   return normalizeFavs(ids, d.menu).map((id) => {
     const e = findEntry(id)
-    return { id, label: e.label, icon: e.icon, badge: entryBadge(e, d) }
+    return { id, label: e.label, icon: e.icon, badge: entryBadge(e, d), group: !!e.group }
   })
 }
 
@@ -228,9 +232,12 @@ function toggleFav(ids, id) {
   return list
 }
 
-/** 顶部待办条：只列有权限且计数 > 0 的项；点按走原入口 */
+/**
+ * 顶部待办卡：只列有权限且计数 > 0 的项；点按走原入口。
+ * 分区磁贴上每一种计数角标都要在这里有对应项（badge 或 extra 同一数据源），由 check:hub-entries 校验。
+ */
 const HUB_TODOS = [
-  { id: 'orders', label: '待发订单', keys: ['orders'], badge: 'orders', tap: 'onOrdersMenuTap', idx: 2, tabTitle: '订单管理' },
+  { id: 'orders', label: '待发订单', keys: ['orders'], badge: 'orders', extra: 'newOrderUnreadCount', extraLabel: '新', tap: 'onOrdersMenuTap', idx: 2, tabTitle: '订单管理' },
   { id: 'support', label: '有信待回', keys: ['support'], badge: 'supportTickets', tap: 'switchTab', idx: 11, tabTitle: '山海有信' },
   { id: 'workOrders', label: '工单', keys: ['workOrders'], badge: 'customOrders', tap: 'switchTab', idx: 10, tabTitle: '工单' },
   { id: 'approvals', label: '审批', keys: ['approvals'], badge: 'approvalPendingCount', tap: 'goApprovals' },
@@ -243,15 +250,73 @@ function buildTodos(data) {
   const d = data || {}
   const m = d.menu || {}
   let total = 0
+  let any = false
   const items = []
   HUB_TODOS.forEach((t) => {
     if (!t.keys.some((k) => m[k] === true)) return
+    any = true
     const n = badgeValue(t.badge, d)
-    if (n <= 0) return
+    const x = t.extra ? badgeValue(t.extra, d) : 0
+    if (n <= 0 && x <= 0) return
     total += n
-    items.push({ id: t.id, label: t.label, count: n > 99 ? '99+' : String(n) })
+    items.push({
+      id: t.id,
+      label: t.label,
+      count: n > 99 ? '99+' : String(n),
+      extra: x > 0 ? `${t.extraLabel}${x > 99 ? '99+' : x}` : ''
+    })
   })
-  return { total, totalText: total > 999 ? '999+' : String(total), items }
+  return { total, totalText: total > 999 ? '999+' : String(total), items, any }
+}
+
+/* ── 全部功能：5 列便当式流排 ── */
+const CAT_COLS = 5
+/** 可见入口超过这个数才出分组锚点（超管约 38 个；店长约 17 个时不出） */
+const ANCHOR_MIN_ENTRIES = 21
+
+/** 每个分区占的列数 = 可见入口数（封顶 5），并给出锚点与「已在常用」标记 */
+function buildCatalog(menu, favIds) {
+  const span = {}
+  const anchors = []
+  let total = 0
+  HUB_SECTIONS.forEach((s) => {
+    const n = HUB_ENTRIES.filter((e) => e.sec === s.id && entryVisible(e, menu)).length
+    span[s.id] = Math.min(Math.max(n, 1), CAT_COLS)
+    total += n
+    if (n) anchors.push({ id: s.id, title: s.short || s.title, count: n })
+  })
+  const pinned = {}
+  normalizeFavs(favIds, menu).forEach((id) => { pinned[id] = true })
+  return {
+    hubSpan: span,
+    hubCat: { total, anchors: total >= ANCHOR_MIN_ENTRIES ? anchors : [] },
+    hubPinned: pinned
+  }
+}
+
+/** 工作台入口区一次算齐：分区开关 + 待办 + 常用 + 全部功能流排 */
+function buildHubView(favIds, data) {
+  const d = data || {}
+  return {
+    hubSec: sectionFlags(d.menu),
+    hubTodo: buildTodos(d),
+    hubFav: buildFavView(favIds, d),
+    ...buildCatalog(d.menu, favIds)
+  }
+}
+
+/** 长按入口加入 / 移出常用：已在常用 → 移出；未满 → 追加到末尾；已满 → 不变并报 full */
+function pinToggle(ids, id, menu) {
+  const list = normalizeFavs(ids, menu)
+  if (!entryVisible(findEntry(id), menu)) return { ids: list, changed: false, added: false, full: false }
+  const i = list.indexOf(id)
+  if (i !== -1) {
+    list.splice(i, 1)
+    return { ids: list, changed: true, added: false, full: false }
+  }
+  if (list.length >= FAV_MAX) return { ids: list, changed: false, added: false, full: true }
+  list.push(id)
+  return { ids: list, changed: true, added: true, full: false }
 }
 
 function findTodo(id) {
@@ -329,6 +394,11 @@ module.exports = {
   HUB_TODOS,
   buildTodos,
   findTodo,
+  CAT_COLS,
+  ANCHOR_MIN_ENTRIES,
+  buildCatalog,
+  buildHubView,
+  pinToggle,
   sectionFlags,
   visibleItems,
   buildSheet,

@@ -66,9 +66,9 @@ function evalCjs(code) {
   return mod.exports
 }
 
-/** 找某枚磁贴所在分区（向前最近的 hub-sec 开标签） */
+/** 找某枚磁贴所在分区（向前最近的 hub-sec 开标签；2026-10-01 起开标签带便当列数 span-{{hubSpan.<id>}} 与锚点 id） */
 function sectionOf(wxml, at) {
-  const re = /<view class="hub-sec" wx:if="\{\{hubSec\.(\w+)\}\}">/g
+  const re = /<view class="hub-sec span-\{\{hubSpan\.\w+\}\}" wx:if="\{\{hubSec\.(\w+)\}\}" id="hub-sec-\w+">/g
   let m
   let sec = null
   while ((m = re.exec(wxml)) && m.index < at) sec = m[1]
@@ -171,7 +171,7 @@ if (selftest) {
     ['馆长磁贴丢失', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<text>荣誉馆长</text>', '<text>馆长</text>') }), /恰好一枚「荣誉馆长」/],
     ['调级磁贴权限写宽', (s) => ({ ...s, hubWxml: s.hubWxml.replace('wx:if="{{menu.memberLevelAdjust}}" bindtap="goMemberLevelAdjust"', 'wx:if="{{menu.memberLevelAdjust || menu.honoraryCurators}}" bindtap="goMemberLevelAdjust"') }), /按 menu\.memberLevelAdjust 单独显示|合并磁贴/],
     ['馆长磁贴绑错入口', (s) => ({ ...s, hubWxml: s.hubWxml.replace('bindtap="goHonoraryCurators"', 'bindtap="goMemberLevelAdjust"') }), /按 menu\.honoraryCurators 单独显示/],
-    ['馆长磁贴移出会员分区', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<view class="hub-sec" wx:if="{{hubSec.members}}">', '<view class="hub-sec" wx:if="{{hubSec.memberz}}">') }), /须在「会员触达」分区/],
+    ['馆长磁贴移出会员分区', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<view class="hub-sec span-{{hubSpan.members}}" wx:if="{{hubSec.members}}" id="hub-sec-members">', '<view class="hub-sec span-{{hubSpan.members}}" wx:if="{{hubSec.memberz}}" id="hub-sec-members">') }), /须在「会员触达」分区/],
     ['馆长门禁判错权限', (s) => ({ ...s, hubJs: s.hubJs.replace(/(goHonoraryCuratorsGuarded\(\) \{\n\s+if \(!canSeeMenu\(this\.data\.workspaceRole, MENU_KEYS\.)HONORARY_CURATORS/, '$1MEMBER_LEVEL_ADJUST') }), /须按 MENU_KEYS\.HONORARY_CURATORS/],
     ['调级入口别名未挂', (s) => ({ ...s, hubJs: s.hubJs.replace('goMemberLevelAdjust: function () { this.goMemberLevelAdjustGuarded(); },', '') }), /goMemberLevelAdjust → goMemberLevelAdjustGuarded/],
     ['旧页从分包摘除', (s) => ({ ...s, appJson: s.appJson.replace('"honorary-curators/index",', '') }), /须登记 honorary-curators\/index/],
