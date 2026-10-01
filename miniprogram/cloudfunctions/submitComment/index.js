@@ -69,6 +69,30 @@ function listReviewableProducts(order) {
   return list
 }
 
+/** createdAt 是 Date、updatedAt 经审核后是毫秒数（moderateComment 写 Date.now()），比较前统一成毫秒 */
+function toMs(value) {
+  if (!value) return 0
+  if (typeof value === 'number') return value
+  if (value instanceof Date) return value.getTime()
+  if (typeof value.getTime === 'function') return value.getTime()
+  if (typeof value === 'object' && value.$date) return new Date(value.$date).getTime()
+  const n = Date.parse(value)
+  return Number.isFinite(n) ? n : 0
+}
+
+/** 本人评价的只读快照（评价页「我的评价」查看态用）；只给本人自己的那条 */
+function myReviewOf(comment) {
+  if (!comment) return null
+  return {
+    status: comment.status || 'pending',
+    rating: Number(comment.rating) || 0,
+    content: String(comment.content || ''),
+    images: Array.isArray(comment.images) ? comment.images.filter(Boolean).slice(0, MAX_IMAGES) : [],
+    createdAt: toMs(comment.createdAt),
+    merchantReply: comment.merchantReply ? String(comment.merchantReply) : ''
+  }
+}
+
 function statusLabel(status) {
   if (status === 'approved') return '已评价'
   if (status === 'pending') return '审核中'
@@ -134,7 +158,7 @@ async function buildOrderStatus(orderId, openid) {
     const pid = String(c.targetId || '').trim()
     if (!pid) return
     const prev = byProduct[pid]
-    if (!prev || String(c.updatedAt || c.createdAt || '') > String(prev.updatedAt || prev.createdAt || '')) {
+    if (!prev || toMs(c.updatedAt || c.createdAt) > toMs(prev.updatedAt || prev.createdAt)) {
       byProduct[pid] = c
     }
   })
@@ -148,7 +172,8 @@ async function buildOrderStatus(orderId, openid) {
       statusLabel: statusLabel(status),
       canReview: received && !voucher && status === 'none',
       commentId: comment ? comment._id : '',
-      rating: comment ? comment.rating : 0
+      rating: comment ? comment.rating : 0,
+      myReview: myReviewOf(comment)
     }
   })
 

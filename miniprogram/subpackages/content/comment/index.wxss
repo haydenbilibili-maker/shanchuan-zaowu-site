@@ -22,6 +22,11 @@ page {
   box-sizing: border-box;
 }
 
+.scroll-container.is-full {
+  height: 100vh;
+  max-height: 100vh;
+}
+
 .content-wrapper {
   padding: 0;
   padding-bottom: 40rpx;
@@ -30,49 +35,6 @@ page {
 
 .bottom-spacer {
   height: calc(160rpx + env(safe-area-inset-bottom));
-}
-
-.custom-navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: calc(88rpx + env(safe-area-inset-top));
-  background: #1A1814;
-  padding: 20rpx 30rpx;
-  padding-top: calc(20rpx + env(safe-area-inset-top));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  border-bottom: 1px solid #26232066;
-  box-sizing: border-box;
-}
-
-.back-btn {
-  position: absolute;
-  left: 16rpx;
-  width: 72rpx;
-  height: 72rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-
-.back-arrow {
-  font-size: 48rpx;
-  color: #C4A76C;
-  line-height: 1;
-  margin-top: -4rpx;
-}
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: 500;
-  color: #FFFFFF;
-  letter-spacing: 0.04em;
 }
 
 .gate-card {
@@ -96,21 +58,6 @@ page {
   font-size: 26rpx;
   color: #A09A90;
   line-height: 1.6;
-}
-
-.gate-actions {
-  margin-top: 16rpx;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16rpx 32rpx;
-  border: 1px solid #C4A76C;
-  border-radius: 16rpx;
-  color: #C4A76C;
-  font-size: 26rpx;
 }
 
 .header-section {
@@ -204,6 +151,129 @@ page {
 .chip-status {
   font-size: 20rpx;
   color: #A09A90;
+}
+
+/* 「我的评价」查看态 */
+.review-card {
+  margin: 0 32rpx 40rpx;
+  padding: 32rpx;
+  background: #1F1D1A;
+  border: 1px solid #26232066;
+  border-radius: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+
+.review-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.review-stars {
+  display: flex;
+  gap: 8rpx;
+}
+
+.review-star {
+  font-size: 36rpx;
+  color: #4A4540;
+  line-height: 1;
+}
+
+.review-star.active {
+  color: #C4A76C;
+}
+
+.review-status {
+  flex-shrink: 0;
+  padding: 6rpx 20rpx;
+  border-radius: 999rpx;
+  border: 1px solid #C4A76C;
+  color: #C4A76C;
+  font-size: 22rpx;
+  letter-spacing: 0.06em;
+}
+
+.review-status.is-approved {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.review-status.is-hidden {
+  border-color: #A09A90;
+  color: #A09A90;
+}
+
+.review-content {
+  font-size: 28rpx;
+  color: #D5D1C8;
+  line-height: 1.7;
+  word-break: break-all;
+}
+
+.review-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+}
+
+.review-image {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 16rpx;
+  background: #262320;
+}
+
+.review-time {
+  font-size: 22rpx;
+  color: #A09A90;
+}
+
+.review-reply {
+  padding: 20rpx 24rpx;
+  background: #262320;
+  border-radius: 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.review-reply-label {
+  font-size: 22rpx;
+  color: #C4A76C;
+  letter-spacing: 0.06em;
+}
+
+.review-reply-text {
+  font-size: 26rpx;
+  color: #D5D1C8;
+  line-height: 1.6;
+}
+
+.review-foot {
+  padding-top: 24rpx;
+  border-top: 1px solid #26232066;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20rpx;
+}
+
+.review-note {
+  font-size: 24rpx;
+  color: #A09A90;
+  line-height: 1.6;
+}
+
+.review-visit {
+  padding: 16rpx 32rpx;
+  border: 1px solid #C4A76C;
+  border-radius: 16rpx;
+  color: #C4A76C;
+  font-size: 26rpx;
 }
 
 .rating-section,

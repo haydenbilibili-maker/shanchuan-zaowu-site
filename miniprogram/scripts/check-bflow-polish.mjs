@@ -30,6 +30,14 @@
  *      ① `.hologram-btn` 基础规则不得写 `flex: 1`（底栏是纵向 flex，flex-basis:0 + overflow:hidden 把按钮压成一条细边）；
  *      ② 礼赠档案排在物流 / 自取卡之后、订单清单之前；③ 已评完不再占大按钮（状态标签）；
  *      ④ 次级行可换行、`.btn-text` 不再 `flex: 0 0 auto` 靠左挤；⑤ 底栏安全区同时写 constant() 与 env()。
+ *   B16 评价页（产品负责人 2026-10-01 真机截图点名：已评价订单仍是「写下感受」+ 三处返回 + 状态说不清）：
+ *      ① 页内无自定义标题栏 / 返回箭头 / 「返回订单」按钮，返回只剩微信导航一处；
+ *      ② index.json 标题不是「发表评价」（已评价订单会先闪撰写态），页内按态设「我的评价 / 发表评价」；
+ *      ③ 已评价走「我的评价」查看态：buildViewReview 只认服务端 reviewStatus，pending→审核中、approved→已展示
+ *         （可去藏品页）、hidden→未展示（不给重评入口）、可评价 / 无记录→null（撰写态 / 资格提示）—— 真跑页内纯函数；
+ *      ④ submitComment.orderStatus 只**新增** myReview（本人评价快照，不带 openid 等身份字段），原有键不变；
+ *         同单同藏品多条时按毫秒取最新（updatedAt 审核后是数字、创建时是 Date，不能按字符串比）；
+ *      ⑤ 查看态可点元素挂 tap-press(-soft)，说明字至少 secondary。
  *
  * 自检不写盘：注入在内存副本上做（共享工作区有并行流，写盘注入会覆盖别人的在写内容）。
  *
@@ -61,7 +69,12 @@ const F = {
   feedbackWxml: 'miniprogram/subpackages/extra/user/feedback/index.wxml',
   onboardingWxml: 'miniprogram/subpackages/extra/user/onboarding/index.wxml',
   certJs: 'miniprogram/subpackages/extra/user/certificates/index.js',
-  appWxss: 'miniprogram/app.wxss'
+  appWxss: 'miniprogram/app.wxss',
+  cmWxml: 'miniprogram/subpackages/content/comment/index.wxml',
+  cmWxss: 'miniprogram/subpackages/content/comment/index.wxss',
+  cmJs: 'miniprogram/subpackages/content/comment/index.js',
+  cmJson: 'miniprogram/subpackages/content/comment/index.json',
+  cmFn: 'miniprogram/cloudfunctions/submitComment/index.js'
 }
 
 /** B4 扫描范围（逐轮扩充；只加不减） */
@@ -235,7 +248,74 @@ export function runChecks(src) {
   const unpaged = sites.filter((i) => !/fetchAllPages\(\(\)\s*=>\s*$/.test(cj.slice(Math.max(0, i - 40), i)))
   check('B14.orders-all-paged', sites.length > 0 && unpaged.length === 0, `荣誉档案有 ${unpaged.length} 处 orders 查询未经分批（单次最多 20 条）`)
 
+  checkCommentPage(src, check)
+
   return { pass, fails }
+}
+
+/** 评价页顶层纯函数（Page 之前的部分）真跑：返回 buildViewReview；取不到 / 抛错 → null */
+function loadBuildViewReview(js) {
+  const head = js.slice(0, js.indexOf('\nPage({'))
+  try {
+    return new Function(`${head}\nreturn typeof buildViewReview === 'function' ? buildViewReview : null`)()
+  } catch {
+    return null
+  }
+}
+
+function checkCommentPage(src, check) {
+  const w = src[F.cmWxml]
+  const js = stripJsComments(src[F.cmJs])
+  const fn = stripJsComments(src[F.cmFn])
+  const css = stripCssComments(src[F.cmWxss])
+  const rule = (sel) => (css.match(new RegExp(`(?:^|})\\s*${sel.replace(/\./g, '\\.')}\\s*\\{([^}]*)\\}`)) || [])[1] || ''
+
+  // ① 返回入口只剩微信导航
+  check('B16.no-custom-navbar', !/custom-navbar|back-btn|back-arrow|bindtap="goBack"/.test(w), '评价页又画了自定义标题栏 / 返回箭头（与微信导航重复）')
+  check('B16.no-back-to-order-btn', !/>\s*返回订单\s*</.test(w) && !/>\s*返回\s*</.test(w), '评价页又出现「返回订单 / 返回」按钮（与微信导航重复）')
+
+  // ② 标题
+  let title = ''
+  try { title = JSON.parse(src[F.cmJson]).navigationBarTitleText || '' } catch { /* 解析失败按空 */ }
+  check('B16.json-title-neutral', !!title && title !== '发表评价' && title !== '写下感受', `index.json 标题为「${title}」：已评价订单会先闪撰写态标题`)
+  const sync = methodBody(js, 'syncTitle')
+  check('B16.dynamic-title', /setNavigationBarTitle/.test(sync) && /'我的评价'/.test(sync) && /'发表评价'/.test(sync), 'syncTitle 未按态设置「我的评价 / 发表评价」')
+  check('B16.title-synced', /this\.syncTitle\(\)/.test(methodBody(js, 'bootstrap')) && /this\.syncTitle\(\)/.test(methodBody(js, 'selectProduct')), '初始化 / 切换藏品后未同步导航标题')
+
+  // ③ 查看态
+  check('B16.view-branch', /wx:elif="\{\{!canReview && !viewReview\}\}"/.test(w) && /<view class="review-card" wx:if="\{\{viewReview\}\}">/.test(w), '已评价藏品未进入「我的评价」查看态（仍落到资格提示卡）')
+  const build = loadBuildViewReview(js)
+  const run = (sel) => { try { return build ? build(sel) : undefined } catch { return undefined } }
+  const p = { productId: 'p1', canReview: false, rating: 4 }
+  const pending = run({ ...p, reviewStatus: 'pending', myReview: { status: 'pending', rating: 4, content: '五个字以上', images: ['cloud://a'], createdAt: 1790000000000 } })
+  const approved = run({ ...p, reviewStatus: 'approved', myReview: { status: 'approved', rating: 5, content: 'x', images: [], createdAt: 1790000000000, merchantReply: '谢谢' } })
+  const hidden = run({ ...p, reviewStatus: 'hidden' })
+  check('B16.view-fn-found', !!build, '评价页顶层缺少 buildViewReview（或无法独立运行）')
+  check('B16.pending-is-pending', !!pending && pending.statusText === '审核中' && pending.canVisit === false && pending.content === '五个字以上' && pending.images.length === 1 && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(pending.timeText),
+    `pending 查看态不对：${JSON.stringify(pending)}`)
+  check('B16.approved-is-shown', !!approved && approved.statusText === '已展示' && approved.canVisit === true && approved.rating === 5 && approved.merchantReply === '谢谢',
+    `approved 被判成「${approved && approved.statusText}」或无藏品入口`)
+  check('B16.hidden-no-revisit', !!hidden && hidden.statusText === '未展示' && hidden.canVisit === false && hidden.rating === 4, `hidden 查看态不对：${JSON.stringify(hidden)}`)
+  check('B16.compose-not-view', run({ ...p, canReview: true, reviewStatus: 'none' }) === null && run({ ...p, reviewStatus: 'none' }) === null && run(null) === null,
+    '可评价 / 无评价记录的藏品被当成查看态')
+  check('B16.no-approved-without-product', (run({ canReview: false, reviewStatus: 'approved' }) || {}).canVisit === false, '无藏品 ID 仍给「去藏品页看看」')
+
+  // ④ 云函数只新增字段
+  const mapAt = fn.indexOf('const products = reviewable.map(')
+  const mapBody = mapAt >= 0 ? fn.slice(mapAt, fn.indexOf('})', mapAt) + 2) : ''
+  const keysKept = ['reviewStatus:', 'statusLabel:', 'canReview:', 'commentId:', 'rating:'].every((k) => mapBody.includes(k))
+  check('B16.fn-keys-kept', keysKept && /myReview:\s*myReviewOf\(comment\)/.test(mapBody), 'orderStatus 的 products 原有键缺失或未新增 myReview')
+  const mrAt = fn.indexOf('function myReviewOf(')
+  const mr = mrAt >= 0 ? fn.slice(mrAt, fn.indexOf('\n}', mrAt)) : ''
+  check('B16.fn-myreview-no-identity', !!mr && !/userId|_openid|openid|likedBy|orderId/.test(mr), 'myReview 快照带出了身份 / 订单字段')
+  check('B16.fn-latest-by-ms', /toMs\(c\.updatedAt \|\| c\.createdAt\)\s*>\s*toMs\(prev\.updatedAt \|\| prev\.createdAt\)/.test(fn) && !/String\(c\.updatedAt/.test(fn),
+    '同单同藏品多条评价仍按字符串比较时间取最新（Date 与毫秒数混排时会取错）')
+
+  // ⑤ 按压与说明字
+  check('B16.visit-press', /class="review-visit"[\s\S]{0,160}?hover-class="tap-press"/.test(w), '「去藏品页看看」无 tap-press')
+  check('B16.chip-press', /class="product-chip[\s\S]{0,300}?hover-class="tap-press-soft"/.test(w), '藏品切换卡无 tap-press-soft')
+  const muted = ['.review-note', '.review-time', '.gate-text'].filter((s) => /#6B6560|text-muted/i.test(rule(s)) || !rule(s))
+  check('B16.caption-secondary', muted.length === 0, `说明字低于 secondary 或缺规则：${muted.join(', ')}`)
 }
 
 function loadAll() {
@@ -250,7 +330,7 @@ function report({ pass, fails }) {
     console.error(`✗ check:bflow-polish：${fails.length} 项失败 / ${pass} 项通过`)
     return 1
   }
-  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14 · 底栏改版 B15）`)
+  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14 · 底栏改版 B15 · 评价页查看态 B16）`)
   return 0
 }
 
@@ -298,7 +378,20 @@ const INJECTIONS = [
           .orderBy('createTime', 'desc')
           .get(),`)],
   ['B14 分批循环丢 skip', F.certJs, (s) => s.replace('.skip(page * PAGE_SIZE)', '')],
-  ['B13 反馈按钮丢按压', F.feedbackWxml, (s) => s.replace(` hover-class="{{submitting ? '' : 'account-btn-press'}}" hover-stay-time="80"`, '')]
+  ['B13 反馈按钮丢按压', F.feedbackWxml, (s) => s.replace(` hover-class="{{submitting ? '' : 'account-btn-press'}}" hover-stay-time="80"`, '')],
+  ['B16 评价页画回自定义标题栏', F.cmWxml, (s) => s.replace('<view class="page-wrapper">', '<view class="page-wrapper">\n  <view class="custom-navbar"><view class="back-btn" bindtap="goBack"><text class="back-arrow">‹</text></view></view>')],
+  ['B16 资格卡加回「返回订单」', F.cmWxml, (s) => s.replace('<text class="gate-text">{{gateMsg}}</text>', '<text class="gate-text">{{gateMsg}}</text>\n        <view class="btn-secondary" bindtap="goOrderDetail">返回订单</view>')],
+  ['B16 标题回到「发表评价」', F.cmJson, (s) => s.replace('"navigationBarTitleText": "评价"', '"navigationBarTitleText": "发表评价"')],
+  ['B16 不再按态改标题', F.cmJs, (s) => s.replace("viewReview ? '我的评价' : ", '')],
+  ['B16 已评价落回资格卡', F.cmWxml, (s) => s.replace('wx:elif="{{!canReview && !viewReview}}"', 'wx:elif="{{!canReview}}"')],
+  ['B16 已通过被判成审核中', F.cmJs, (s) => s.replace("approved: { statusText: '已展示'", "approved: { statusText: '审核中'")],
+  ['B16 非已展示也给藏品入口', F.cmJs, (s) => s.replace("canVisit: status === 'approved' && !!selected.productId", 'canVisit: !!selected.productId')],
+  ['B16 无评价记录也进查看态', F.cmJs, (s) => s.replace("if (!status || status === 'none') return null", 'if (!status) return null')],
+  ['B16 云函数不再给 myReview', F.cmFn, (s) => s.replace(',\n      myReview: myReviewOf(comment)', '')],
+  ['B16 myReview 带出 openid', F.cmFn, (s) => s.replace("status: comment.status || 'pending',", "status: comment.status || 'pending',\n    userId: comment.userId,")],
+  ['B16 取最新回到字符串比较', F.cmFn, (s) => s.replace('toMs(c.updatedAt || c.createdAt) > toMs(prev.updatedAt || prev.createdAt)', "String(c.updatedAt || c.createdAt || '') > String(prev.updatedAt || prev.createdAt || '')")],
+  ['B16 藏品入口丢按压', F.cmWxml, (s) => s.replace('bindtap="goProduct"\n              hover-class="tap-press"', 'bindtap="goProduct"')],
+  ['B16 说明字回到 muted', F.cmWxss, (s) => s.replace('.review-note {\n  font-size: 24rpx;\n  color: #A09A90;', '.review-note {\n  font-size: 24rpx;\n  color: #6B6560;')]
 ]
 
 if (process.argv.includes('--selftest')) {

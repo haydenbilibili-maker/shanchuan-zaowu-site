@@ -1,7 +1,46 @@
 // subpackages/feature/comment/index.js
+
+const pad2 = (n) => (n < 10 ? '0' + n : '' + n)
+
+function formatTime(ms) {
+  if (!ms) return ''
+  const d = new Date(ms)
+  if (isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`
+}
+
+const REVIEW_VIEW = {
+  pending: { statusText: '审核中', statusNote: '审核通过后会展示在藏品页，其他藏友就能看到。' },
+  approved: { statusText: '已展示', statusNote: '这条评价已展示在藏品页。' },
+  hidden: { statusText: '未展示', statusNote: '这条评价暂未展示在藏品页，如有疑问可联系专员。' }
+}
+
+/**
+ * 已评价藏品 → 「我的评价」查看态；未评价 / 无评价记录 → null（走撰写态或资格提示）。
+ * 状态只认 submitComment.orderStatus 回来的 reviewStatus（即 comments.status），不在前端推断。
+ * rejected 不会出现在这里：orderStatus 查询排除了 rejected，那件藏品回到「可评价」。
+ */
+function buildViewReview(selected) {
+  if (!selected || selected.canReview) return null
+  const status = selected.reviewStatus
+  if (!status || status === 'none') return null
+  const mine = selected.myReview || {}
+  const copy = REVIEW_VIEW[status] || { statusText: '已提交', statusNote: '' }
+  return {
+    status,
+    statusText: copy.statusText,
+    statusNote: copy.statusNote,
+    rating: Number(mine.rating || selected.rating) || 0,
+    content: mine.content || '',
+    images: Array.isArray(mine.images) ? mine.images : [],
+    timeText: formatTime(mine.createdAt),
+    merchantReply: mine.merchantReply || '',
+    canVisit: status === 'approved' && !!selected.productId
+  }
+}
+
 Page({
   data: {
-    statusBarHeight: 20,
     targetType: 'product',
     targetId: '',
     orderId: '',
@@ -18,21 +57,26 @@ Page({
     gateCode: '',
     productOptions: [],
     summaryLabel: '',
-    alreadyRating: 0
+    alreadyRating: 0,
+    viewReview: null
   },
 
   onLoad(options) {
     const { targetType, targetId, orderId, productId } = options || {}
-    const { statusBarHeight } = wx.getSystemInfoSync()
 
     this.setData({
-      statusBarHeight,
       targetType: targetType || 'product',
       targetId: targetId || productId || '',
       orderId: orderId || ''
     })
 
     this.bootstrap()
+  },
+
+  syncTitle() {
+    const { loadingGate, canReview, viewReview } = this.data
+    const title = loadingGate ? '评价' : viewReview ? '我的评价' : canReview ? '发表评价' : '评价'
+    wx.setNavigationBarTitle({ title })
   },
 
   async bootstrap() {
@@ -49,9 +93,11 @@ Page({
       this.setData({
         loadingGate: false,
         canReview: false,
+        viewReview: null,
         gateMsg: '暂时无法评价，请稍后从订单详情再试'
       })
     }
+    this.syncTitle()
   },
 
   async prepareProductReview() {
@@ -60,6 +106,7 @@ Page({
       this.setData({
         loadingGate: false,
         canReview: false,
+        viewReview: null,
         gateCode: 'NEED_ORDER',
         gateMsg: '确认签收后，可在订单详情写下对这件藏品的真实感受。'
       })
@@ -75,6 +122,7 @@ Page({
       this.setData({
         loadingGate: false,
         canReview: false,
+        viewReview: null,
         gateMsg: result.msg || '无法确认评价资格'
       })
       return
@@ -89,6 +137,7 @@ Page({
 
     const selected = products.find((p) => p.productId === selectedId) || null
     const canReview = !!(selected && selected.canReview)
+    const viewReview = buildViewReview(selected)
 
     this.setData({
       loadingGate: false,
@@ -96,6 +145,7 @@ Page({
       productOptions: products,
       summaryLabel: result.summaryLabel || '',
       canReview,
+      viewReview,
       gateCode: canReview ? '' : (selected && selected.reviewStatus === 'pending' ? 'PENDING' : selected ? 'ALREADY' : 'NONE'),
       gateMsg: canReview
         ? ''
@@ -119,7 +169,7 @@ Page({
         : null
     })
 
-    if (canReview && selectedId && !selected.image) {
+    if ((canReview || viewReview) && selectedId && !selected.image) {
       this.loadTargetInfo()
     }
   },
@@ -146,9 +196,11 @@ Page({
     const selected = (this.data.productOptions || []).find((p) => p.productId === productId)
     if (!selected) return
     const canReview = !!selected.canReview
+    const viewReview = buildViewReview(selected)
     this.setData({
       targetId: productId,
       canReview,
+      viewReview,
       rating: 0,
       content: '',
       images: [],
@@ -166,7 +218,8 @@ Page({
         latinName: selected.latinName || ''
       }
     })
-    if (canReview && !selected.image) this.loadTargetInfo()
+    this.syncTitle()
+    if ((canReview || viewReview) && !selected.image) this.loadTargetInfo()
   },
 
   selectRating(e) {
@@ -231,8 +284,18 @@ Page({
     }
   },
 
-  goBack() {
-    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) })
+  previewMyImage(e) {
+    const urls = (this.data.viewReview && this.data.viewReview.images) || []
+    const index = e.currentTarget.dataset.index
+    if (urls.length) wx.previewImage({ current: urls[index], urls })
+  },
+
+  goProduct() {
+    const view = this.data.viewReview
+    const productId = this.data.targetId
+    if (!view || !view.canVisit || !productId) return
+    const url = `/subpackages/feature/detail/index?id=${encodeURIComponent(productId)}`
+    wx.navigateTo({ url, fail: () => wx.redirectTo({ url }) })
   },
 
   goOrderDetail() {

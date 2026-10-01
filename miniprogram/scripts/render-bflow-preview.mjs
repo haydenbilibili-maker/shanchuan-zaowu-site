@@ -243,7 +243,8 @@ const ROUNDS = {
     <div class="field-row"><span class="field-label">抬头类型 <span class="req">*</span><span class="field-hint-inline">个人 / 企业</span></span></div>
   </div></div>`, 420)
   ],
-  od: () => orderDetailPanels()
+  od: () => orderDetailPanels(),
+  comment: () => commentPanels()
 }
 
 /* ── 订单详情：用迷你 WXML 求值器直接渲染**真实 wxml**（wx:if / elif / else、{{表达式}}），按状态逐一出底栏 ── */
@@ -335,6 +336,40 @@ function orderDetailPanels() {
   return panels
 }
 
+/* ── 评价页：真实 wxml + wxss，按「审核中 / 已展示 / 未展示 / 未评价」出整屏；顶上画一条原生导航（标题读 index.json 或页内动态标题） ── */
+function commentPanels() {
+  const dir = 'subpackages/content/comment'
+  const wxml = readFileSync(resolve(MP, `${dir}/index.wxml`), 'utf8')
+  const json = JSON.parse(readFileSync(resolve(MP, `${dir}/index.json`), 'utf8'))
+  const dynamicTitle = /setNavigationBarTitle/.test(readFileSync(resolve(MP, `${dir}/index.js`), 'utf8'))
+  const tree = parseWxml(wxml)
+  const product = { productId: 'p1', title: '自然小匣', image: 'x', latinName: '' }
+  const base = {
+    statusBarHeight: 20, targetType: 'product', targetId: 'p1', orderId: 'o1', loadingGate: false,
+    rating: 0, content: '', images: [], submitting: false, productOptions: [product],
+    targetInfo: { title: product.title, images: ['x'], image: 'x', latinName: '' }
+  }
+  const mine = {
+    rating: 5, content: '小匣子比想象中精致，木纹很好看，放在书架上刚刚好。', images: ['x'], timeText: '2026-09-22 11:17'
+  }
+  const STATES = [
+    ['审核中', '我的评价', { canReview: false, gateCode: 'PENDING', gateMsg: '评价审核中，通过后会展示在藏品页。',
+      viewReview: { ...mine, status: 'pending', statusText: '审核中', statusNote: '审核通过后会展示在藏品页，其他藏友就能看到。', canVisit: false } }],
+    ['已展示（含商家回复）', '我的评价', { canReview: false, gateCode: 'ALREADY', gateMsg: '这件藏品已评价过，谢谢你的分享。',
+      viewReview: { ...mine, status: 'approved', statusText: '已展示', statusNote: '这条评价已展示在藏品页。', canVisit: true, merchantReply: '谢谢喜欢，愿它陪你很久。' } }],
+    ['未通过（已隐藏，无原因字段）', '我的评价', { canReview: false, gateCode: 'ALREADY', gateMsg: '这件藏品已评价过，谢谢你的分享。',
+      viewReview: { ...mine, images: [], status: 'hidden', statusText: '未展示', statusNote: '这条评价暂未展示在藏品页，如有疑问可联系专员。', canVisit: false } }],
+    ['未评价（撰写态）', '发表评价', { canReview: true, gateCode: '', gateMsg: '', viewReview: null }]
+  ]
+  const css = [`${dir}/index.wxss`]
+  return STATES.map(([title, nav, data]) => {
+    const navTitle = dynamicTitle ? nav : json.navigationBarTitleText
+    const bar = `<div style="height:44px;background:#1A1814;color:#fff;display:flex;align-items:center;justify-content:center;position:relative;font:500 15px -apple-system,sans-serif"><span style="position:absolute;left:12px;font-size:22px">‹</span>${navTitle}</div>`
+    return panel(`${title} · 导航「${navTitle}」`, css, renderNodes(tree.children, { ...base, ...data }), 1334, 'div,span{box-sizing:border-box}')
+      .replace('<iframe', `${bar}<iframe`)
+  })
+}
+
 const build = ROUNDS[round]
 if (!build) {
   console.error(`✗ 未定义第 ${round} 轮面板`)
@@ -355,7 +390,7 @@ const child = spawn(chrome, [
   '--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run',
   '--no-default-browser-check', `--user-data-dir=${profile}`,
   '--hide-scrollbars', '--force-device-scale-factor=2',
-  round === 'od' ? `--window-size=${16 + 6 * 391},1720` : `--window-size=${16 + panels.length * 391},820`, '--virtual-time-budget=3000',
+  round === 'od' ? `--window-size=${16 + 6 * 391},1720` : round === 'comment' ? `--window-size=${16 + panels.length * 391},760` : `--window-size=${16 + panels.length * 391},820`, '--virtual-time-budget=3000',
   `--screenshot=${out}`, `file://${htmlPath}`
 ], { stdio: 'ignore' })
 
