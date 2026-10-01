@@ -1,3 +1,4 @@
+/* 「注记」长注释原文见 miniprogram/docs/源码注记_A流主包.md */
 /* pages/index/index.wxss */
 page {
   width: 100%;
@@ -134,9 +135,7 @@ page {
   margin-bottom: 20rpx;
 }
 
-/* 祈福墙入口槽位（2026-09-20）：banner 正下方。
-   横向 32rpx 与 .section-box 的既有节奏对齐；上边距只留 4rpx —— hero-section 自己已有 20rpx 底距，
-   两段相加 ≈ 24rpx，才是"紧挨 banner"该有的间距。 */
+/* 祈福墙入口槽位（2026-09-20）：banner 正下方。（注记 PAG-1） */
 .wish-wall-slot-home {
   display: block;
   /* 入口槽：横向与 section 对齐；底距略拉开，让铜系入口在黑底上有独立落点 */
@@ -654,8 +653,7 @@ page {
   padding: 48rpx 24rpx;
   text-align: center;
   font-size: 24rpx;
-  /* 2026-09-21 分子级审计：--color-text-muted 在不透明底 --color-bg-card 上仅 2.93（AA 需 4.5）
-     → 与 ProductList / 分类页空态统一到 --color-text-secondary（6.02） */
+  /* 2026-09-21 分子级审计：--color-text-muted 在不透明底 --color-bg-card 上仅 2.93（AA 需 4.5）（注记 PAG-2） */
   color: var(--color-text-secondary);
   border: 1px dashed #4D401A;
   border-radius: 16rpx;

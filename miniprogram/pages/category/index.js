@@ -960,11 +960,6 @@ Page({
     }
   },
 
-  computeShopCategory(name) {
-    if (!name || name === '全部') return '';
-    return String(name).replace(/馆$/, '');
-  },
-
   switchCategory(e) {
     const { item } = e.currentTarget.dataset;
     if (item) {

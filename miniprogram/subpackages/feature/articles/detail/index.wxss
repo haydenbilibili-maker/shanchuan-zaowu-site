@@ -43,6 +43,7 @@ page {
   color: var(--color-bg);
   border: none;
 }
+.load-error-btn-press { opacity: 0.7; }
 
 /* ── Hero ── */
 .hero-area {

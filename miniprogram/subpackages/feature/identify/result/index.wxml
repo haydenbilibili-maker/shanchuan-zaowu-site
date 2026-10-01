@@ -17,10 +17,10 @@
     <text class="load-error-title">{{loadErrorKind === 'unshared' ? '这份鉴定尚未公开' : '鉴定记录加载失败'}}</text>
     <text class="load-error-desc">{{loadErrorMsg || '请检查网络后重试，或返回重新拍摄'}}</text>
     <view class="load-error-actions">
-      <view class="act primary" wx:if="{{loadErrorKind === 'unshared'}}" bindtap="goIdentifyHome">去拍一件自己的</view>
-      <view class="act ghost" bindtap="retryLoad">重新加载</view>
-      <view class="act ghost" wx:if="{{loadErrorKind !== 'unshared'}}" bindtap="goIdentifyHome">返回鉴定</view>
-      <view class="act ghost" wx:else bindtap="goHomeTab">回到探索</view>
+      <view class="act primary" wx:if="{{loadErrorKind === 'unshared'}}" bindtap="goIdentifyHome" hover-class="act-primary-press" hover-stay-time="80">去拍一件自己的</view>
+      <view class="act ghost" bindtap="retryLoad" hover-class="act-ghost-press" hover-stay-time="80">重新加载</view>
+      <view class="act ghost" wx:if="{{loadErrorKind !== 'unshared'}}" bindtap="goIdentifyHome" hover-class="act-ghost-press" hover-stay-time="80">返回鉴定</view>
+      <view class="act ghost" wx:else bindtap="goHomeTab" hover-class="act-ghost-press" hover-stay-time="80">回到探索</view>
     </view>
   </view>
 

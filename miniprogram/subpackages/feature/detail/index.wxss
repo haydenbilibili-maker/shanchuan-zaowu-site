@@ -89,6 +89,7 @@ view, text, image { box-sizing: border-box; }
   color: var(--color-bg);
   border: none;
 }
+.load-error-btn-press { opacity: 0.7; }
 
 /* 冷启动骨架：非 modal，Museum 黄铜微光 */
 .detail-skel-hero {
@@ -1407,7 +1408,8 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 .custom-btn:active,
 .gift-btn:active,
-.add-cart-btn:active { opacity: 0.85; }
+.add-cart-btn:active,
+.cta-press { opacity: 0.85; }
 .custom-btn.disabled,
 .gift-btn.disabled,
 .add-cart-btn.disabled { opacity: 0.4; pointer-events: none; }
@@ -1430,7 +1432,8 @@ button.nav-share-btn::after { display: none; border: none; }
   border-radius: 16rpx;
   box-sizing: border-box;
 }
-.buy-now-btn:active { background: #A8903C; }
+.buy-now-btn:active,
+.buy-now-btn-press { background: #A8903C; }
 .icon-btn.active .bar-txt {
   color: var(--gold);
 }

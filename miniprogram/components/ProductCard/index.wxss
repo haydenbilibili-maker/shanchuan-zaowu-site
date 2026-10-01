@@ -1,3 +1,4 @@
+/* 「注记」长注释原文见 miniprogram/docs/源码注记_A流主包.md */
 .prod-card {
   --color-bg: #1A1814;
   --color-bg-card: #1F1D1A;
@@ -68,10 +69,7 @@
   z-index: 3;
 }
 .p-info { padding: 20rpx; }
-/* 2026-09-21 分子级审计：`.text-cut` / `.font-num` 定义在 app.wxss，但本组件 json **没有**
-   `styleIsolation`（默认 isolated）→ 全局 class 进不来（同目录 8 个组件都显式 apply-shared /
-   addGlobalClass，本组件没有）。故把这 3 条声明**写进组件自己的规则**：
-   两种读法（isolated 生效 / app.wxss 仍生效）下结果一致，属于「自持样式」。 */
+/* 2026-09-21 分子级审计：`.text-cut` / `.font-num` 定义在 app.wxss，但本组件 json **没有**（注记 COM-1） */
 .p-title { font-size: 26rpx; color: var(--color-text-primary); font-weight: 600; margin-bottom: 4rpx; font-family: var(--font-heading); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .p-latin { font-size: 20rpx; color: var(--color-text-latin); font-family: Georgia, 'Times New Roman', serif; font-style: italic; margin-bottom: 16rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .p-craft-tags {

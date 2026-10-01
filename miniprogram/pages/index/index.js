@@ -1323,8 +1323,6 @@ Page({
     this.setData({ loadingNewArrivals: false });
   },
 
-  updateNewArrivalsCache() {},
-
   // 为你推荐：<home-reco> 自己取数与处理三态（失败不向上抛 —— 与改前一样不参与整页错误态判定）。
   // 这里只把后台「显示数量」交给它，并在下拉刷新 / 重试时让它重取。
   loadRecommendations(config = {}) {
@@ -1486,21 +1484,6 @@ Page({
     const current = e.detail && e.detail.current;
     if (typeof current !== 'number' || current === this.data.currentBannerIndex) return;
     this.setData({ currentBannerIndex: current });
-  },
-
-  // 带重试的数据加载
-  async loadWithRetry(loadFn, maxRetries = 2) {
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        return await loadFn();
-      } catch (e) {
-        if (i === maxRetries - 1) {
-          throw e;
-        }
-        // 等待后重试
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-      }
-    }
   },
 
   onShareAppMessage() {

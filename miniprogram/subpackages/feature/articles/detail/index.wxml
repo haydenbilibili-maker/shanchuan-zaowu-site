@@ -4,8 +4,8 @@
     <text class="load-error-title">笔记加载失败</text>
     <text class="load-error-desc">内容不存在或网络异常</text>
     <view class="load-error-actions">
-      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{articleId}}">重新加载</view>
-      <view class="load-error-btn" bindtap="goBack">返回列表</view>
+      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{articleId}}" hover-class="load-error-btn-press" hover-stay-time="80">重新加载</view>
+      <view class="load-error-btn" bindtap="goBack" hover-class="load-error-btn-press" hover-stay-time="80">返回列表</view>
     </view>
   </view>
 

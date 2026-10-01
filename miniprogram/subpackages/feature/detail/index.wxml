@@ -69,8 +69,8 @@ module.exports.saveLabel = saveLabel;
     <text class="load-error-title">{{loadErrorMsg || '藏品加载失败'}}</text>
     <text class="load-error-desc">请检查网络后重试，或返回馆藏继续浏览</text>
     <view class="load-error-actions">
-      <view class="load-error-btn primary" bindtap="retryLoadProduct" wx:if="{{productId}}">重新加载</view>
-      <view class="load-error-btn" bindtap="goBack">返回馆藏</view>
+      <view class="load-error-btn primary" bindtap="retryLoadProduct" wx:if="{{productId}}" hover-class="load-error-btn-press" hover-stay-time="80">重新加载</view>
+      <view class="load-error-btn" bindtap="goBack" hover-class="load-error-btn-press" hover-stay-time="80">返回馆藏</view>
     </view>
   </view>
 
@@ -612,7 +612,7 @@ module.exports.saveLabel = saveLabel;
       </block>
       <block wx:else>
         <!-- 主 CTA 用到货通知语义，与左侧心形「想要」区分 -->
-        <view class="wishlist-cta {{inWishlist ? 'on' : ''}}" bindtap="toggleWishlist" wx:if="{{displayStock <= 0}}">
+        <view class="wishlist-cta {{inWishlist ? 'on' : ''}}" bindtap="toggleWishlist" wx:if="{{displayStock <= 0}}" hover-class="cta-press" hover-stay-time="80">
           <text class="btn-main">{{inWishlist ? '已候补' : '到货通知'}}</text>
           <text class="btn-wish-sub">优先提醒</text>
         </view>
@@ -620,6 +620,8 @@ module.exports.saveLabel = saveLabel;
           class="deposit-cta {{depositStatus === 'deposit_paid' || depositStatus === 'settled' ? 'on' : ''}}"
           wx:if="{{showDepositCta || canPayBalance}}"
           bindtap="handleDeposit"
+          hover-class="cta-press"
+          hover-stay-time="80"
         >
           <text class="btn-main">
             <block wx:if="{{canPayBalance || depositStatus === 'awaiting_balance'}}">付尾款</block>
@@ -639,16 +641,16 @@ module.exports.saveLabel = saveLabel;
       </block>
     </view>
     <view class="bottom-cta" wx:elif="{{product._id && commerceReady}}">
-      <view class="custom-btn" bindtap="goToCustom" wx:if="{{showSpecimenCustom}}">
+      <view class="custom-btn" bindtap="goToCustom" wx:if="{{showSpecimenCustom}}" hover-class="cta-press" hover-stay-time="80">
         <text class="btn-sub">定制</text>
       </view>
-      <view class="gift-btn" bindtap="goToGift" wx:if="{{showGift && product.giftEligible !== false}}">
+      <view class="gift-btn" bindtap="goToGift" wx:if="{{showGift && product.giftEligible !== false}}" hover-class="cta-press" hover-stay-time="80">
         <text class="btn-sub">送 TA</text>
       </view>
-      <view class="add-cart-btn" bindtap="handleBuy">
+      <view class="add-cart-btn" bindtap="handleBuy" hover-class="cta-press" hover-stay-time="80">
         <text class="btn-sub">加购物车</text>
       </view>
-      <view class="buy-now-btn" bindtap="handleBuyNow">
+      <view class="buy-now-btn" bindtap="handleBuyNow" hover-class="buy-now-btn-press" hover-stay-time="80">
         <text class="btn-main">立即购买</text>
       </view>
     </view>

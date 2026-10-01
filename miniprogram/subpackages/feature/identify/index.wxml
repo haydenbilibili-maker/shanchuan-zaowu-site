@@ -27,14 +27,6 @@
     </scroll-view>
   </view>
 
-  <view class="steps" wx:if="{{busy}}">
-    <view class="step {{loadingStep >= 1 ? 'done' : ''}}">入镜</view>
-    <view class="step-line {{loadingStep >= 2 ? 'done' : ''}}"></view>
-    <view class="step {{loadingStep >= 2 ? 'done' : ''}}">归档</view>
-    <view class="step-line {{loadingStep >= 3 ? 'done' : ''}}"></view>
-    <view class="step {{loadingStep >= 3 ? 'done' : ''}}">解读</view>
-  </view>
-
   <view class="actions">
     <button class="btn primary" bindtap="onTakePhoto" disabled="{{busy}}">
       <image class="btn-ico" src="/assets/icons/camera.png" mode="aspectFit" />
@@ -43,17 +35,10 @@
     <button class="btn ghost" bindtap="onChooseAlbum" disabled="{{busy}}">从相册选择</button>
   </view>
 
-  <view class="progress-wrap" wx:if="{{uploadProgress > 0 && uploadProgress < 100}}">
-    <view class="progress-bar">
-      <view class="progress-fill" style="width: {{uploadProgress}}%;"></view>
-    </view>
-    <text class="progress-txt">{{loadingText}} {{uploadProgress}}%</text>
-  </view>
-
   <view class="recent" wx:if="{{recentList.length && !busy}}">
     <view class="recent-head">
       <text class="recent-title">最近鉴定</text>
-      <view class="recent-link" bindtap="goLog">
+      <view class="recent-link" bindtap="goLog" hover-class="recent-item-press" hover-stay-time="80">
         <text>全部记录 ›</text>
       </view>
     </view>
@@ -72,9 +57,20 @@
   </view>
 
   <view class="loading-mask" wx:if="{{busy}}">
+    <!-- 步骤与进度放进加载卡：放在遮罩下面时被压暗，等待 15–60 秒只看得到一个转圈 -->
     <view class="loading-core">
       <view class="spinner"></view>
       <text class="loading-txt">{{loadingText}}</text>
+      <view class="steps">
+        <view class="step {{loadingStep >= 1 ? 'done' : ''}}">入镜</view>
+        <view class="step-line {{loadingStep >= 2 ? 'done' : ''}}"></view>
+        <view class="step {{loadingStep >= 2 ? 'done' : ''}}">归档</view>
+        <view class="step-line {{loadingStep >= 3 ? 'done' : ''}}"></view>
+        <view class="step {{loadingStep >= 3 ? 'done' : ''}}">解读</view>
+      </view>
+      <view class="progress-bar" wx:if="{{uploadProgress > 0 && uploadProgress < 100}}">
+        <view class="progress-fill" style="width: {{uploadProgress}}%;"></view>
+      </view>
     </view>
   </view>
 

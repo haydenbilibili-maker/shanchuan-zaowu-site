@@ -149,7 +149,8 @@ function atelierData(extra = {}) {
 const PAGES = {
   home: { wxml: 'pages/index/index.wxml', wxss: 'pages/index/index.wxss' },
   category: { wxml: 'pages/category/index.wxml', wxss: 'pages/category/index.wxss' },
-  atelier: { wxml: 'pages/atelier/index.wxml', wxss: 'pages/atelier/index.wxss' }
+  atelier: { wxml: 'pages/atelier/index.wxml', wxss: 'pages/atelier/index.wxss' },
+  identify: { wxml: 'subpackages/feature/identify/index.wxml', wxss: 'subpackages/feature/identify/index.wxss' }
 }
 
 const scenes = [
@@ -159,7 +160,8 @@ const scenes = [
     name: 'category-filter-empty', page: 'category', h: 1100,
     data: categoryData({ currentId: 'c1', currentSubtitle: 'Kingdom Animalia', filterActiveCount: 2, filterSummary: '玻璃罩 · ¥100–200', orphanProducts: [], orphanTotal: 0, contentItems: [], contentTotal: 0, showContentSection: false })
   },
-  { name: 'atelier', page: 'atelier', h: 1500, data: atelierData() }
+  { name: 'atelier', page: 'atelier', h: 1500, data: atelierData() },
+  { name: 'identify-loading', page: 'identify', h: 1334, data: { busy: true, loadingText: '正在归档这件标本…', loadingStep: 2, uploadProgress: 62, recentList: [] } }
 ]
 
 /** 预览里没有组件实现：只包图的壳按透明容器展开，其余自定义组件仍整棵跳过 */

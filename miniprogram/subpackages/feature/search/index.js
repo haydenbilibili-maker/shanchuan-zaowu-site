@@ -817,6 +817,12 @@ Page({
     this.setData({ [`displayList[${index}].imgBroken`]: true });
   },
 
+  onRelatedImgError(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (!Number.isFinite(index) || index < 0) return;
+    this.setData({ [`relatedList[${index}].imgBroken`]: true });
+  },
+
   goToProduct(e) {
     const info = (e && e.detail) || {};
     const id = info.id || info._id;

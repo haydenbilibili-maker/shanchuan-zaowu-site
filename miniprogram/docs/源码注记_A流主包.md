@@ -482,3 +482,128 @@
 让跑马灯在下一次开关判定时**重新拉一次**（下拉刷新 / 错误重试共用）。
 没有它，一次成功之后就永远停在旧心愿上 —— 而首页是 tab 页，会话可以很长。
 ```
+
+## app.wxss
+
+### APP-1 · `--color-error: #D13C41;`
+
+```text
+2026-09-21 分子级审计：error 作为**实心底**承载白字时只有 4.489（AA 需 4.5），
+按同色相只降亮度到 4.74。#D64045 与 #D13C41 的色差 (~5/255) 肉眼不可辨，
+语义与其余 `rgba(214,64,69,*)` 边框/底色仍同族（它们用的是字面量，不受本令牌影响）。
+```
+
+### APP-2 · `/* ⚠️ 必须**单行**：自定义属性值跨行在小程序 WXSS 编译器上是已知风险点（2026-09-19 iOS 实测踩坑） */`
+
+```text
+手写体（毛笔 / 签字笔感）：只给「用户亲手写下」的内容用 —— 祈福墙弹幕与愿签。
+与站点其余字体一样走**系统字体栈**，不下载 webfont（无网络依赖、无首屏闪烁、不新增 CDN 资产）：
+iOS/macOS 命中汉仪手写体与签笔（HanziPen SC / Hannotate SC）；Android 无楷体系列，
+落到思源宋体再落 serif。故手写感在 iOS 最足，Android 是衬线兜底，两端可读性都成立。
+```
+
+### APP-3 · `--fs-16: 16rpx;`
+
+```text
+字阶令牌（契约 C7 · docs/契约C7_设计令牌与交互规范_2026-09-18.md §1）：14 档，命名即尺寸。
+为什么必须令牌化（2026-09-18 实测）：全仓 4469 处 font-size / 49 种取值，令牌 0 条；
+连本轮的统一组件 AppModal/AppToast 自己都带离群值（27rpx/29rpx，report:type:json 直指 orphanValues:2）。
+不先冻令牌，每一个新组件都会固化一批新噪音。
+纪律：**新代码不得写 font-size 字面量**；不在册的取值一律视为离群，按 C7 §1.3 映射表就近归位。
+```
+
+### APP-4 · `button.btn-secondary,`
+
+```text
+次要按钮 — 透明底 + 黄铜描边（与主按钮同 padding，避免双按钮行高度差）
+WeChat：全局 button overflow:hidden + 1rpx 边框在 flex 行内容易吃掉一侧（常见左侧）
+描边按钮用 1px + overflow:visible，并清掉 ::after 默认边框
+```
+
+### APP-5 · `@keyframes signal-blink {`
+
+```text
+==================== 信号灯系统（全平台统一） ====================
+语义文档：docs/signal-lamp.md · 工具：utils/signalLamp.js
+基类：.signal-light 或 .lamp
+Token：lamp-success|warn|error|info|brass|forest|muted + .hollow / .blink / .dim
+历史别名：.blink=绿脉冲 · .on=绿静 · .warn · .danger · .live
+```
+
+## pages/index/index.wxss
+
+### PAG-1 · `.wish-wall-slot-home {`
+
+```text
+祈福墙入口槽位（2026-09-20）：banner 正下方。
+横向 32rpx 与 .section-box 的既有节奏对齐；上边距只留 4rpx —— hero-section 自己已有 20rpx 底距，
+两段相加 ≈ 24rpx，才是"紧挨 banner"该有的间距。
+```
+
+### PAG-2 · `color: var(--color-text-secondary);`
+
+```text
+2026-09-21 分子级审计：--color-text-muted 在不透明底 --color-bg-card 上仅 2.93（AA 需 4.5）
+→ 与 ProductList / 分类页空态统一到 --color-text-secondary（6.02）
+```
+
+## components/WishWallEntry/index.wxss
+
+### COM-1 · `.wish-wall-entry {`
+
+```text
+components/WishWallEntry/index.wxss 需求 28：祈福墙入口
+═══════════════════════════════════════════════════════════════════
+2026-09-26 v2「厅·墙·签」对齐：入口 = 嵌墙迷你铭牌（与墙内 .ww-plate / 双线浅纸同族）
+  · 浅纸双线铜框 + 纤维；「马上有」铜铸铭牌带铆钉
+  · 墨底版仍是「暗房里的纸」（#2C2822 起点守卫钉死），内嵌铜金细框
+═══════════════════════════════════════════════════════════════════
+```
+
+### COM-2 · `.wish-wall-entry-mq {`
+
+```text
+── 跑马灯 ─────────────────────────────────────────────────────
+```
+
+### COM-3 · `.wish-wall-entry.is-ink .wish-wall-entry-mq {`
+
+```text
+墨底跑马灯 · 暗玻璃签条（2026-09-29 产品负责人：米白贴纸在博物黑首页上突兀）
+  与入口卡同一套语言：深棕半透明底 + 细铜金描边 + 暖金手写字，不再出现任何亮块。
+  · 左右渐隐遮罩：条目从卡边"浮出/隐没"，不再被硬切半个字；分隔线也跟着渐隐成一道金丝。
+  · 错落明暗 is-v0/1/2：三档透明度，最暗档文字对底仍 ≥ 6:1。
+  · 遮罩断点用百分比：不引入 calc(百分比 − rpx)（E26 真机精度）。
+```
+
+## components/ProductCard/index.wxss
+
+### COM-1 · `.p-title { font-size: 26rpx; color: var(--color-text-primary); font-weight: 600;`
+
+```text
+2026-09-21 分子级审计：`.text-cut` / `.font-num` 定义在 app.wxss，但本组件 json **没有**
+`styleIsolation`（默认 isolated）→ 全局 class 进不来（同目录 8 个组件都显式 apply-shared /
+addGlobalClass，本组件没有）。故把这 3 条声明**写进组件自己的规则**：
+两种读法（isolated 生效 / app.wxss 仍生效）下结果一致，属于「自持样式」。
+```
+
+## components/SensitiveBlurGate/index.wxss
+
+### COM-1 · `:host {`
+
+```text
+⚠️ 自定义组件宿主默认是 inline、且不会被父级拉伸。
+而卡片的图片外层多是 `padding-top:100%` 的**比例盒**：它的 **content 高度是 0**，
+于是 `.sb-wrap { height: 100% }` 会被算成 0，叠加 `overflow: hidden` 就把卡片图片裁没了
+——真机/模拟器表现就是「卡片空白、只剩深色底」（2026-09-17 商品图不展示的根因）。
+用 absolute 铺满父级的 padding box，才能拿到比例盒的真实高度。
+```
+
+## components/HomeReco/index.wxss
+
+### COM-1 · `.hr-body { width: 100%; }`
+
+```text
+几何（内容宽 686）：封面恒高 570（wide 图 420 + 展签 150 / side 图宽 360~420 + 右签，见 logic.coverGeo）；
+两列卡 532；swiper = 570 + 18 + 532 = 1120，改任一项同步它与骨架（渲染台 --check 会量）。
+```

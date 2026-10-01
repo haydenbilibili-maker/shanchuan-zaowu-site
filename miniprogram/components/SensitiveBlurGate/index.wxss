@@ -1,8 +1,5 @@
-/* ⚠️ 自定义组件宿主默认是 inline、且不会被父级拉伸。
- * 而卡片的图片外层多是 `padding-top:100%` 的**比例盒**：它的 **content 高度是 0**，
- * 于是 `.sb-wrap { height: 100% }` 会被算成 0，叠加 `overflow: hidden` 就把卡片图片裁没了
- * ——真机/模拟器表现就是「卡片空白、只剩深色底」（2026-09-17 商品图不展示的根因）。
- * 用 absolute 铺满父级的 padding box，才能拿到比例盒的真实高度。 */
+/* 「注记」长注释原文见 miniprogram/docs/源码注记_A流主包.md */
+/* ⚠️ 自定义组件宿主默认是 inline、且不会被父级拉伸。（注记 COM-1） */
 :host {
   display: block;
   position: absolute;

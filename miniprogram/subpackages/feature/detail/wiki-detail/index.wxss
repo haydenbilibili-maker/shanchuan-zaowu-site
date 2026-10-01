@@ -48,6 +48,7 @@ page { background: var(--color-bg); color: #fff; }
   border-radius: 16rpx; border: 1px solid var(--gold); color: var(--gold); font-size: 28rpx;
 }
 .load-error-btn.primary { background: var(--gold); color: var(--color-bg); border: none; }
+.load-error-btn-press { opacity: 0.7; }
 
 /* 2. 正文 */
 .article-body { padding: 40rpx; background: var(--color-bg); min-height: 400rpx; }
@@ -222,7 +223,8 @@ page { background: var(--color-bg); color: #fff; }
   font-size: 28rpx;
   font-weight: 500;
 }
-.bottom-buy:active { background: #A8903C; }
+.bottom-buy:active,
+.bottom-buy-press { background: #A8903C; }
 
 /* ================= 注册门禁（2026-09-17） ================= */
 /* 未登录/未注册：整页灰色模糊，且不提供「再看看」。

@@ -19,7 +19,14 @@ const FILES = {
   catWxml: 'pages/category/index.wxml',
   catJs: 'pages/category/index.js',
   atelierWxml: 'pages/atelier/index.wxml',
-  atelierJs: 'pages/atelier/index.js'
+  atelierJs: 'pages/atelier/index.js',
+  identifyWxml: 'subpackages/feature/identify/index.wxml',
+  identifyResultWxml: 'subpackages/feature/identify/result/index.wxml',
+  searchWxml: 'subpackages/feature/search/index.wxml',
+  searchJs: 'subpackages/feature/search/index.js',
+  detailWxml: 'subpackages/feature/detail/index.wxml',
+  wikiWxml: 'subpackages/feature/detail/wiki-detail/index.wxml',
+  articleWxml: 'subpackages/feature/articles/detail/index.wxml'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -78,6 +85,29 @@ function checks(s) {
   const descs = [...s.atelierJs.matchAll(/\n    desc: '([^']*)'/g)].map((m) => m[1])
   const width = (d) => [...d].reduce((w, ch) => w + (/[\x20-\x7e]/.test(ch) ? 0.5 : 1), 0)
   add('R1-4 工坊四格描述显示宽均 ≤ 22 字', descs.length >= 4 && descs.every((d) => width(d) <= 22))
+
+  // R2-1 AI 鉴定等待：步骤与上传进度在加载卡内（遮罩外会被压暗，15–60 秒只看得到转圈）
+  const core = (/<view class="loading-core">([\s\S]*?)\n    <\/view>\n  <\/view>/.exec(s.identifyWxml) || [])[1] || ''
+  add('R2-1 鉴定加载卡内含三步进度与上传进度条',
+    /class="steps"/.test(core) && (core.match(/class="step \{\{/g) || []).length === 3 && /class="progress-bar"/.test(core))
+  add('R2-1 鉴定页「鉴定记录」入口有按压态', /class="recent-link" bindtap="goLog" hover-class="recent-item-press"/.test(s.identifyWxml))
+
+  // R2-2 搜索：相关推荐图片失败退回占位块；标签不再重复「换个词试试」
+  const relImgs = s.searchWxml.match(/wx:if="\{\{item\.image && !item\.imgBroken\}\}"[\s\S]*?binderror="onRelatedImgError"/g) || []
+  add('R2-2 搜索相关卡两处图片都有 binderror 并按 imgBroken 退占位',
+    relImgs.length === 2 && /imgBroken`\]: true/.test(methodBody(s.searchJs, 'onRelatedImgError')))
+  add('R2-2 搜索相关区标签为「相近线索」', /<text class="related-label">相近线索<\/text>/.test(s.searchWxml))
+
+  // R2-3 详情页底部主操作与加载失败按钮有按压态（view 上 :active 真机不可靠）
+  const pressed = (src, re) => /hover-class="[\w-]+"/.test(openTag(src, re))
+  add('R2-3 商品详情底部 CTA（加购/立即购买/定制/送 TA/到货通知/定金）都有 hover-class',
+    ['add-cart-btn', 'buy-now-btn', 'custom-btn', 'gift-btn', 'wishlist-cta', 'deposit-cta'].every((c) => pressed(s.detailWxml, new RegExp(`<view\\s+class="${c}\\b(?![^>]*cta-skel)`))))
+  add('R2-3 详情 / 档案 / 文章 / 鉴定结果的加载失败按钮都有 hover-class',
+    [s.detailWxml, s.wikiWxml, s.articleWxml].every((src) => {
+      const tags = src.match(/<view class="load-error-btn[^>]*>/g) || []
+      return tags.length === 2 && tags.every((t) => /hover-class=/.test(t))
+    }) && (((/<view class="load-error-actions">([\s\S]*?)<\/view>\n  <\/view>/.exec(s.identifyResultWxml) || [])[1] || '').match(/<view class="act [^>]*>/g) || []).filter((t) => /hover-class=/.test(t)).length === 4)
+  add('R2-3 档案页底部「立即购买」有 hover-class', pressed(s.wikiWxml, /<view class="bottom-buy"/))
   return out
 }
 
@@ -99,6 +129,15 @@ if (process.argv.includes('--selftest')) {
     ['馆藏筛选空态去掉清除按钮', 'catWxml', (t) => t.replace(/\n\s*<view class="empty-filter-btn"[^\n]*<\/view>/, '')],
     ['馆藏 applied 改回 const（P0 原形）', 'catJs', (t) => t.replace('\n    let applied = {', '\n    const applied = {')],
     ['工坊进度磁贴去掉按压态', 'atelierWxml', (t) => t.replace('bindtap="goPetOrders" hover-class="order-tile-press" hover-stay-time="80"', 'bindtap="goPetOrders"')],
+    ['鉴定步骤移回遮罩外', 'identifyWxml', (t) => t.replace(/\n      <view class="steps">[\s\S]*?\n      <\/view>/, '')],
+    ['鉴定记录入口去按压态', 'identifyWxml', (t) => t.replace('bindtap="goLog" hover-class="recent-item-press" hover-stay-time="80"', 'bindtap="goLog"')],
+    ['搜索相关卡图片去掉 binderror', 'searchWxml', (t) => t.replace('binderror="onRelatedImgError"', '')],
+    ['搜索相关标签改回「换个词试试」', 'searchWxml', (t) => t.replace('<text class="related-label">相近线索</text>', '<text class="related-label">换个词试试</text>')],
+    ['立即购买去按压态', 'detailWxml', (t) => t.replace('bindtap="handleBuyNow" hover-class="buy-now-btn-press" hover-stay-time="80"', 'bindtap="handleBuyNow"')],
+    ['定金按钮去按压态', 'detailWxml', (t) => t.replace('bindtap="handleDeposit"\n          hover-class="cta-press"\n          hover-stay-time="80"', 'bindtap="handleDeposit"')],
+    ['文章加载失败返回按钮去按压态', 'articleWxml', (t) => t.replace('<view class="load-error-btn" bindtap="goBack" hover-class="load-error-btn-press" hover-stay-time="80">', '<view class="load-error-btn" bindtap="goBack">')],
+    ['鉴定结果重新加载去按压态', 'identifyResultWxml', (t) => t.replace('<view class="act ghost" bindtap="retryLoad" hover-class="act-ghost-press" hover-stay-time="80">', '<view class="act ghost" bindtap="retryLoad">')],
+    ['档案页立即购买去按压态', 'wikiWxml', (t) => t.replace(' hover-class="bottom-buy-press" hover-stay-time="80"', '')],
     ['工坊描述超长（恢复截断原文）', 'atelierJs', (t) => t.replace("desc: '为陪伴过的伙伴留存纪念，专员评估工艺周期',", "desc: '为陪伴过你的伙伴留存纪念藏品，专员评估工艺与周期',")]
   ]
   let ok = baseOk

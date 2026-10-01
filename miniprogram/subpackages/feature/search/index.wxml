@@ -336,6 +336,8 @@
                       src="{{item.image}}"
                       mode="aspectFit"
                       lazy-load
+                      binderror="onRelatedImgError"
+                      data-index="{{index}}"
                     ></image>
                     <view class="ac-img-ph" wx:else></view>
                   </sensitive-blur-gate>
@@ -374,7 +376,7 @@
             >查看全部结果</view>
 
             <view class="related-block empty-related" wx:if="{{resultList.length === 0 && relatedTerms.length}}">
-              <text class="related-label">换个词试试</text>
+              <text class="related-label">相近线索</text>
               <view class="chip-matrix related-chips">
                 <view
                   class="chip chip-hot"
@@ -432,6 +434,8 @@
                         src="{{item.image}}"
                         mode="aspectFit"
                         lazy-load
+                        binderror="onRelatedImgError"
+                        data-index="{{index}}"
                       ></image>
                       <view class="ac-img-ph" wx:else></view>
                     </sensitive-blur-gate>

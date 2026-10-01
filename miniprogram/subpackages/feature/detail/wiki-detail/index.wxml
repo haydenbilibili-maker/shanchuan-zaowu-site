@@ -10,8 +10,8 @@
     <text class="load-error-title">档案加载失败</text>
     <text class="load-error-desc">内容不存在或网络异常，请重试</text>
     <view class="load-error-actions">
-      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{wikiId}}">重新加载</view>
-      <view class="load-error-btn" bindtap="goBack">返回馆藏</view>
+      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{wikiId}}" hover-class="load-error-btn-press" hover-stay-time="80">重新加载</view>
+      <view class="load-error-btn" bindtap="goBack" hover-class="load-error-btn-press" hover-stay-time="80">返回馆藏</view>
     </view>
   </view>
 
@@ -149,7 +149,7 @@
       <text class="bp-label">馆藏价</text>
       <text class="bp-num">¥{{primaryProduct.price}}</text>
     </view>
-    <view class="bottom-buy" bindtap="handleBuyNow">立即购买</view>
+    <view class="bottom-buy" bindtap="handleBuyNow" hover-class="bottom-buy-press" hover-stay-time="80">立即购买</view>
   </view>
 
   <view style="height: 140rpx;"></view>
