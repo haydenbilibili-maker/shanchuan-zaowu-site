@@ -28,10 +28,13 @@
  *   R4-4 按会员号查人：manageStaff 只新增可选 memberNo（带手机号的旧调用不变、候选只回脱敏手机号）、
  *        manageMemberCrm 关键词追加会员号整号匹配（原匹配不变）；两份 normalizeMemberNo 逐字一致且行为正确
  *   R4-6 manager/staff 两份无引用镜像样式已删除，且不得在 subpackage-mirrors.json 复活登记
+ *   R5   中英标签（A 流口径「英文大写小标题 + 中文主标分两行，同一行不中英并列」，2026-10-01）：
+ *        员工 / 管理端 wxml（manager、b2bdesk、extra 除 user/）同一文字节点里不得「中文 / ENGLISH」「中文｜ENGLISH」并列，
+ *        混排的英文词只许业务通用缩写（TERMS）；工作台面板标题 / 金卡 / 页脚 / 账本小标题为两行结构
  *
  * 用法：node miniprogram/scripts/check-c-stream-polish.mjs [--selftest]
  */
-import { readFileSync, existsSync } from 'node:fs'
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import { resolve, dirname, posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -91,6 +94,11 @@ const R3_PAGES = [
   `${EXTRA}/supplier/buyer-orders`, `${EXTRA}/supplier/orders`, `${EXTRA}/supplier/ship`, `${EXTRA}/supplier/catalog`,
   `${B2B}/center`, `${B2B}/price-edit`, `${B2B}/partner`, `${B2B}/statement`
 ]
+/** R5：员工 / 管理端 wxml 扫描范围（B 流的 extra/user 不在内） */
+const R5_ROOTS = [MGR, B2B, EXTRA]
+const R5_SKIP = [`${EXTRA}/user/`, `${MGR}/wish-wall/`]
+/** 可与中文同行出现的业务通用缩写（是术语，不是旁边中文的英译；RATIO / STORE / KPI / TREND 这类英译不在内） */
+const R5_TERMS = new Set(['GMV', 'POS', 'SKU', 'RFM', 'DAU', 'CRM', 'HTML', 'JSON', 'CMS', 'FAQ', 'ERP', 'AI', 'YYYY', 'MM', 'URL', 'PDF', 'VIP'])
 const NON_BUTTON = ['mask', 'overlay', 'backdrop', 'modal', 'sheet', 'popup', 'panel', 'drawer']
 
 function readRel(rel) {
@@ -121,6 +129,17 @@ function load() {
   src.__pages = pages
   src.__css = css
   src.__existing = REMOVED_MIRRORS.filter((rel) => existsSync(resolve(ROOT, rel)))
+  const r5 = {}
+  const walk = (rel) => {
+    for (const name of readdirSync(resolve(ROOT, rel))) {
+      const child = `${rel}/${name}`
+      if (R5_SKIP.some((p) => `${child}/`.startsWith(p))) continue
+      if (statSync(resolve(ROOT, child)).isDirectory()) walk(child)
+      else if (name.endsWith('.wxml')) r5[child] = readRel(child)
+    }
+  }
+  R5_ROOTS.forEach(walk)
+  src.__r5 = r5
   return src
 }
 
@@ -349,6 +368,32 @@ function check(src) {
   ok(/bindtap="lookupStaffByMemberNo"/.test(src.permWxml) && /\{ action: 'lookupByPhone', memberNo \}/.test(src.permJs), 'R4-4 员工权限页缺会员号查找')
   ok(/\{ action: 'lookupByPhone', phone \}/.test(src.permJs), 'R4-4 员工权限页手机号查找的旧入参被改动')
 
+  // R5 中英标签：同一文字节点不中英并列
+  const HAN = /\p{Script=Han}/u
+  const EN_WORD = /\b[A-Z][A-Z'&]{2,}\b/g
+  const PAIR_AFTER = /[\p{Script=Han}）)]\s*(?:\/|｜|·)\s*([A-Z][A-Z'& ]*[A-Z])\b/gu
+  const PAIR_BEFORE = /\b([A-Z][A-Z'& ]*[A-Z])\s*(?:\/|｜|·)\s*\p{Script=Han}/gu
+  const r5Bad = []
+  for (const [rel, wxml] of Object.entries(src.__r5)) {
+    const nodes = stripComments(wxml).match(/>[^<>]+</g) || []
+    for (const raw of nodes) {
+      // 「ATLAS:s1」这类码值示例不算标签
+      const text = raw.slice(1, -1).replace(/\{\{|\}\}/g, ' ').replace(/\b[A-Z]+:[a-z0-9]\w*/g, ' ')
+      if (!HAN.test(text)) continue
+      const pairs = [...text.matchAll(PAIR_AFTER), ...text.matchAll(PAIR_BEFORE)].map((m) => m[1].trim()).filter((w) => !R5_TERMS.has(w))
+      const words = (text.match(EN_WORD) || []).filter((w) => !R5_TERMS.has(w))
+      if (pairs.length || words.length) r5Bad.push(`${rel.replace('miniprogram/subpackages/', '')}「${text.trim().slice(0, 30)}」`)
+    }
+  }
+  ok(r5Bad.length === 0, `R5 同一行中英并列 ${r5Bad.length} 处（应改为英文小标题 + 中文主标两行，或只留中文）：${r5Bad.slice(0, 4).join(' / ')}`)
+  const panelTitles = src.hubWxml.match(/<view class="panel-title[^"]*">[\s\S]*?<\/view>/g) || []
+  ok(panelTitles.length === 5 && panelTitles.every((t) => /<text class="panel-en">[A-Z ]+<\/text><text class="panel-cn">[^<A-Za-z]+<\/text>/.test(t)), 'R5 工作台面板标题不是「英文小标题 + 中文主标」两行结构')
+  ok(/<text class="card-eyebrow">[A-Z ·]+<\/text>\s*<text class="card-label">[^<A-Za-z]+<\/text>/.test(src.hubWxml), 'R5 工作台金卡标题不是两行结构')
+  ok(/<text class="footer-en">[^<]+<\/text>\s*<text class="footer-cn">[^<]+<\/text>/.test(src.hubWxml), 'R5 工作台页脚不是两行结构')
+  ok(/\.panel-title \.panel-en \{[^}]*display: block/.test(src.hubWxss) && /\.lo-ptitle \{[^}]*flex-direction: column/.test(src.hubWxss) && /\.lo-kpi-title \{[^}]*flex-direction: column/.test(src.hubWxss), 'R5 两行标题的样式被改回同行（display: block / flex-direction: column）')
+  const loTitles = src.subviews.match(/<view class="lo-(?:kpi-title|ptitle)">[\s\S]*?<\/view>/g) || []
+  ok(loTitles.length === 4 && loTitles.every((t) => /^<view class="[^"]+"><text class="lo-pt-en">[A-Z ]+<\/text><text class="lo-pt-cn">/.test(t)), 'R5 账本小标题不是「英文在上、中文在下」')
+
   // R4-6 无引用镜像已删
   ok(src.__existing.length === 0, `R4-6 已删除的无引用镜像又出现：${src.__existing.join(' / ')}`)
   for (const rel of REMOVED_MIRRORS) {
@@ -418,7 +463,15 @@ function selftest() {
     ['CRM 原匹配被改', (s) => ({ ...s, crmFn: s.crmFn.replace('if (nick.includes(k) || oid.includes(k) || id.includes(k) ||', 'if (nick.includes(k) || id.includes(k) ||') }), /R4-4 CRM 关键词原有的/],
     ['员工权限页缺会员号查找', (s) => ({ ...s, permWxml: s.permWxml.replace('bindtap="lookupStaffByMemberNo"', 'bindtap="noop"') }), /R4-4 员工权限页缺会员号查找/],
     ['已删镜像重新登记', (s) => ({ ...s, mirrors: s.mirrors.replace('[', '[\n  { "source": "subpackages/extra/staff/scene.wxss", "mirror": "subpackages/manager/staff/scene.wxss", "identical": true },') }), /R4-6 subpackage-mirrors\.json 又登记了已删镜像/],
-    ['已删镜像文件复活', (s) => ({ ...s, __existing: [`${MGR}/staff/scene.wxss`] }), /R4-6 已删除的无引用镜像又出现/]
+    ['已删镜像文件复活', (s) => ({ ...s, __existing: [`${MGR}/staff/scene.wxss`] }), /R4-6 已删除的无引用镜像又出现/],
+    ['工作台面板标题回到「渠道 / RATIO」', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<view class="panel-title"><text class="panel-en">RATIO</text><text class="panel-cn">渠道占比</text></view>', '<view class="panel-title">渠道 / RATIO</view>') }), /R5 工作台面板标题不是/],
+    ['金卡回到「GMV 本月营收」', (s) => ({ ...s, hubWxml: s.hubWxml.replace(/<view class="card-titles">[\s\S]*?<\/view>/, '<text class="card-label">GMV 本月营收</text>') }), /R5 工作台金卡标题不是两行/],
+    ['页脚回到「- NATURE\'S ADMIN -」', (s) => ({ ...s, hubWxml: s.hubWxml.replace(/<view class="footer-logo">[\s\S]*?<\/view>/, '<view class="footer-logo">- NATURE\'S ADMIN -</view>') }), /R5 工作台页脚不是两行/],
+    ['面板小标题样式改回同行', (s) => ({ ...s, hubWxss: s.hubWxss.replace('.panel-title .panel-en { display: block;', '.panel-title .panel-en { display: inline;') }), /R5 两行标题的样式被改回同行/],
+    ['账本小标题回到「商场抽成｜MALL FEE」', (s) => ({ ...s, subviews: s.subviews.replace('<text class="lo-pt-en">MALL FEE</text><text class="lo-pt-cn">商场抽成</text>', '<text class="lo-pt-cn">商场抽成</text><text class="lo-pt-en">｜MALL FEE</text>') }), /R5 账本小标题不是/],
+    ['账本表单回到「退款｜REFUND」', (s) => ({ ...s, __r5: { ...s.__r5, [FILES.subviews]: s.__r5[FILES.subviews].replace('<text>退款｜门店</text><input type="digit" value="{{tempRevenue.refund}}"', '<text>退款｜REFUND</text><input type="digit" value="{{tempRevenue.refund}}"') } }), /R5 同一行中英并列 1 处.*退款｜REFUND/],
+    ['观测台回到「核心指标 / KPI」', (s) => ({ ...s, __r5: { ...s.__r5, [`${EXTRA}/inventory-ops/index.wxml`]: s.__r5[`${EXTRA}/inventory-ops/index.wxml`].replace('<text class="ops-section-label">核心指标</text>', '<text class="ops-section-label">核心指标 / KPI</text>') } }), /R5 同一行中英并列 1 处.*核心指标 \/ KPI/],
+    ['表达式里混入「TOP 明细」', (s) => ({ ...s, __r5: { ...s.__r5, [`${EXTRA}/purchase-ops/index.wxml`]: s.__r5[`${EXTRA}/purchase-ops/index.wxml`].replace("'展开主体 · 状态 · 排行明细'", "'展开主体 · 状态 · TOP 明细'") } }), /R5 同一行中英并列 1 处/]
   ]
   const notes = []
   let bad = 0

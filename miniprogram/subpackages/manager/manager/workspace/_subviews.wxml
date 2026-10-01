@@ -13,7 +13,7 @@
     <view class="ledger-month-bar">
       <picker mode="date" fields="month" value="{{ledgerMonth}}" bindchange="onLedgerMonthChange">
         <view class="ledger-month-picker">
-          <text class="lmp-en">MONTH</text>
+          <text class="lmp-label">月份</text>
           <text class="lmp-value">{{ledgerMonthLabel}}</text>
           <text class="lmp-arrow">▾</text>
         </view>
@@ -79,7 +79,7 @@
 
       <!-- 商场月累计超额抽成（与 ERP 财务核算 / 股东观测台同源） -->
       <view class="lo-mall" wx:if="{{ledgerOverview.mall}}">
-        <view class="lo-kpi-title"><text class="lo-pt-cn">商场抽成</text><text class="lo-pt-en">｜MALL FEE</text></view>
+        <view class="lo-kpi-title"><text class="lo-pt-en">MALL FEE</text><text class="lo-pt-cn">商场抽成</text></view>
         <view class="lo-mall-grid">
           <view class="lo-mall-cell">
             <text class="lo-mall-l">抽成阈值</text>
@@ -102,7 +102,7 @@
       </view>
 
       <view class="lo-kpi">
-        <view class="lo-kpi-title"><text class="lo-pt-cn">订单经营</text><text class="lo-pt-en">｜ORDERS</text></view>
+        <view class="lo-kpi-title"><text class="lo-pt-en">ORDERS</text><text class="lo-pt-cn">订单经营</text></view>
         <view class="lo-kpi-grid">
           <view class="lo-kpi-item">
             <text class="lo-kpi-l">总订单数</text>
@@ -110,7 +110,7 @@
             <text class="lo-kpi-u">单</text>
           </view>
           <view class="lo-kpi-item">
-            <text class="lo-kpi-l">客单价｜AOV</text>
+            <text class="lo-kpi-l">客单价</text>
             <text class="lo-kpi-v {{ledgerOverview.hasOrderData ? '' : 'muted'}}">{{ledgerOverview.hasOrderData ? '¥' : ''}}{{ledgerOverview.avgOrderPriceFmt}}</text>
             <text class="lo-kpi-u">营收/单</text>
           </view>
@@ -128,7 +128,7 @@
         <text class="lo-kpi-hint">{{ledgerOverview.orderHint}}</text>
       </view>
       <view class="lo-panel">
-        <view class="lo-ptitle"><text class="lo-pt-cn">日净额趋势</text><text class="lo-pt-en">｜TREND</text></view>
+        <view class="lo-ptitle"><text class="lo-pt-en">TREND</text><text class="lo-pt-cn">日净额趋势</text></view>
         <view class="lo-trend">
           <block wx:for="{{ledgerOverview.trend}}" wx:key="date">
             <view class="lo-bar-col">
@@ -141,7 +141,7 @@
         </view>
       </view>
       <view class="lo-panel">
-        <view class="lo-ptitle"><text class="lo-pt-cn">渠道占比</text><text class="lo-pt-en">｜CHANNEL</text></view>
+        <view class="lo-ptitle"><text class="lo-pt-en">CHANNEL</text><text class="lo-pt-cn">渠道占比</text></view>
         <view class="lo-channel-row">
           <view class="lo-donut-wrap">
             <view class="lo-donut" style="{{ledgerOverview.donutStyle}}"></view>
@@ -193,7 +193,7 @@
              <view class="bill-body">
                 <view class="bill-main">
                    <view class="bm-left"><text class="bm-day">{{item.day}}</text><text class="bm-date">{{item.date}}</text></view>
-                   <view class="bm-right"><text class="bm-lbl">净额｜NET</text><text class="bm-val">¥{{item.totalFmt}}</text></view>
+                   <view class="bm-right"><text class="bm-lbl">净额</text><text class="bm-val">¥{{item.totalFmt}}</text></view>
                 </view>
                 <view class="bill-detail">
                    <view class="bd-item"><text>刷卡｜POS</text><text>¥{{item.posFmt}}</text></view>
@@ -2072,7 +2072,7 @@
       <!-- 印记码 / 导览点（按当前店过滤） -->
       <view class="card cfg-card atlas-card">
         <view class="card-top">
-          <text class="no">图鉴印记 · ATLAS</text>
+          <text class="no">图鉴印记</text>
           <text class="status">{{atlasSpots.length}} 处</text>
         </view>
         <text class="cfg-hint">与山海图鉴共用印记码（如 ATLAS:s1）。做成二维码贴在柜位；客人扫码后会翻开对应页。点按一行即可复制。</text>
@@ -2439,7 +2439,7 @@
         </view>
 
         <view class="card" wx:if="{{analyticsRangeType!=='day'}}">
-          <view class="card-top"><text class="no">DAU / 日</text></view>
+          <view class="card-top"><text class="no">每日活跃人数</text></view>
           <view class="trend-bars report-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{analyticsReport.charts.dau.length}}">
             <block wx:for="{{analyticsReport.charts.dau}}" wx:key="dateKey">
               <view class="bar-col">
@@ -3023,7 +3023,7 @@
          <view class="form-row"><text>刷卡｜POS</text><input type="digit" value="{{tempRevenue.pos}}" bindinput="bindRevInput" data-field="pos"/></view>
          <view class="form-row"><text>遗留线上｜账本</text><input type="digit" value="{{tempRevenue.online}}" bindinput="bindRevInput" data-field="online" placeholder="勿填小程序GMV；计入门店净额"/></view>
          <view class="form-row"><text>现金余额｜在手</text><input type="digit" value="{{tempRevenue.cashBalance}}" bindinput="bindRevInput" data-field="cashBalance" placeholder="现存现金，非当日收入"/></view>
-         <view class="form-row"><text>退款｜REFUND</text><input type="digit" value="{{tempRevenue.refund}}" bindinput="bindRevInput" data-field="refund" style="color:#ff4d4f"/></view>
+         <view class="form-row"><text>退款｜门店</text><input type="digit" value="{{tempRevenue.refund}}" bindinput="bindRevInput" data-field="refund" style="color:#ff4d4f"/></view>
       </view>
     </scroll-view>
     <view class="modal-foot"><view class="btn-full" bindtap="submitRevenue">确认小钱钱入账</view></view>

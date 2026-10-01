@@ -171,7 +171,7 @@
   <view class="pp-panel">
     <view class="pp-head">
       <view class="pp-head-titles">
-        <text class="pp-overline">GIFT PRINT · 预览</text>
+        <text class="pp-overline">GIFT PRINT · PREVIEW</text>
         <text class="pp-title">{{printPreview.spec === 'sticker' ? '热敏贴纸版' : 'A6 礼笺版'}}</text>
         <text class="pp-spec">{{printPreview.specLabel}}</text>
         <text class="pp-note">{{printPreview.specNote}}</text>

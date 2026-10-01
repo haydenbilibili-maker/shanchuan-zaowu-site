@@ -482,7 +482,7 @@
         </view>
 
         <view class="kpi-section">
-          <text class="ops-section-label">核心指标 / KPI</text>
+          <text class="ops-section-label">核心指标</text>
           <view class="kpi-grid">
             <view class="dash-card accent-brass">
               <view class="dash-accent"></view>
@@ -593,7 +593,7 @@
 
         <view class="card" wx:if="{{charts.byCustomer.length}}">
           <view class="card-top">
-            <text class="card-title">TOP 客户</text>
+            <text class="card-title">客户排行</text>
             <text class="card-meta" wx:if="{{kpis.topShareText}}">首位 {{kpis.topShareText}}</text>
           </view>
           <view class="bar-stack">
@@ -614,7 +614,7 @@
 
         <view class="detail-toggle" bindtap="toggleDetail">
           <text class="detail-toggle-main">{{detailOpen ? '收起门店 · 状态明细' : '展开门店 · 状态明细'}}</text>
-          <text class="detail-toggle-sub">不影响上方核心 KPI</text>
+          <text class="detail-toggle-sub">不影响上方核心指标</text>
         </view>
 
         <view class="detail-panel" wx:if="{{detailOpen}}">

@@ -96,7 +96,7 @@
         </view>
 
         <view class="kpi-section">
-          <text class="ops-section-label">核心指标 / KPI</text>
+          <text class="ops-section-label">核心指标</text>
           <view class="kpi-grid">
             <view class="dash-card accent-brass">
               <view class="dash-accent"></view>
@@ -192,8 +192,8 @@
         </view>
 
         <view class="detail-toggle" bindtap="toggleDetail">
-          <text class="detail-toggle-main">{{detailOpen ? '收起 TOP · 预警明细' : '展开 TOP · 预警明细'}}</text>
-          <text class="detail-toggle-sub">不影响上方核心 KPI</text>
+          <text class="detail-toggle-main">{{detailOpen ? '收起排行 · 预警明细' : '展开排行 · 预警明细'}}</text>
+          <text class="detail-toggle-sub">不影响上方核心指标</text>
         </view>
 
         <view class="detail-panel" wx:if="{{detailOpen}}">
@@ -201,7 +201,7 @@
             <view class="detail-block-head" data-key="finished" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">FINISHED TOP</text>
-                <text class="detail-block-cn">成品件数 TOP</text>
+                <text class="detail-block-cn">成品件数排行</text>
               </view>
               <text class="detail-block-chevron">{{sectionOpen.finished ? '收起' : '展开'}}</text>
             </view>
@@ -230,7 +230,7 @@
             <view class="detail-block-head" data-key="raw" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">RAW TOP</text>
-                <text class="detail-block-cn">原材料价值 TOP</text>
+                <text class="detail-block-cn">原材料价值排行</text>
               </view>
               <text class="detail-block-chevron">{{sectionOpen.raw ? '收起' : '展开'}}</text>
             </view>
@@ -361,7 +361,7 @@
         </block>
 
         <view wx:if="{{snapshots.length}}">
-          <text class="ops-section-label">历史快照 / SNAPSHOTS</text>
+          <text class="ops-section-label">历史快照</text>
           <view
             class="ops-snap-row {{item.inventoryDate === dateFilter ? 'active' : ''}}"
             wx:for="{{snapshots}}"

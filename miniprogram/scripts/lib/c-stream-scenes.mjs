@@ -162,5 +162,42 @@ export const SCENES = [
     data: { ready: true, overviewReady: false, overviewLoading: false, statusOptions: ['全部', '待开具', '已开具', '已驳回'], statusIndex: 2, list: [], loading: false, listError: false, hasMore: false }
   },
   { name: 'r3-payslip-after', h: 1600, wxml: () => read(PAYSLIP), wxss: PAYSLIP_AFTER_CSS, data: payslipData },
-  { name: 'r3-payslip-after-list', h: 1600, wxml: () => read(PAYSLIP), wxss: PAYSLIP_AFTER_CSS, data: { ...payslipData, showDetail: false } }
+  { name: 'r3-payslip-after-list', h: 1600, wxml: () => read(PAYSLIP), wxss: PAYSLIP_AFTER_CSS, data: { ...payslipData, showDetail: false } },
+  {
+    name: 'r5-hub-dashboard',
+    h: 1900,
+    wxml: () => `<view class="container">${cutBetween(read(HUB), '<!-- 核心指标卡片', '<!-- 经营信号')}<view class="dashboard-grid">${cutBetween(read(HUB), '<!-- 数据图表', '<!-- 常用编辑面板')}`,
+    wxss: MGR_CSS,
+    data: {
+      menu: { dashboardKpi: true, products: true }, chartLayout: {}, opsSignals: { mom: 'lamp-green', stock: 'lamp-amber' },
+      stats: {
+        displayGrand: '238,400', onlineTotal: '42,000', offlineTotal: '196,400', offlineSplitText: '山海 152,400 · 星宸 44,000',
+        ratioEmpty: false, donutStyle: 'background: conic-gradient(#C4A76C 0 18%, #2E4A3A 18% 100%);', onlineRatio: 18, offlineRatio: 82,
+        orderCountFmt: '126', avgOrderFmt: '¥333', visitCountFmt: '48', dailyAvgFmt: '7,946', momClass: 'up', momLabel: '+12%'
+      },
+      trendMeta: { empty: false, weekTotalFmt: '55,620', weekOnlineFmt: '9,820', weekOfflineFmt: '45,800', weekOnlineBar: 'width:18%', weekOfflineBar: 'width:82%' },
+      trendData: ['25', '26', '27', '28', '29', '30', '01'].map((day, i) => ({
+        dateKey: day, day, showVal: true, valShort: `${6 + i}k`, styleOnline: `height:${12 + i * 2}%`, styleOffline: `height:${40 + i * 4}%`
+      })),
+      dashStock: { ready: true, empty: false, onShelf: 312, offShelf: 46, stockTotal: 1288, topCats: [{ key: 'a', name: '蝴蝶', count: 128, barStyle: 'width:80%' }, { key: 'b', name: '甲虫', count: 96, barStyle: 'width:60%' }] }
+    }
+  },
+  {
+    name: 'r5-ledger-overview',
+    h: 1700,
+    wxml: () => tabBlock(8),
+    wxss: MGR_CSS,
+    data: {
+      ...ledgerBase, ledgerOverviewReady: true, revenues: [],
+      ledgerOverview: {
+        empty: false, netFmt: '196,400.00', daysWithData: 30, posFmt: '152,300.00', cashBalanceFmt: '2,860.00', mpOnlineFmt: '42,000.00',
+        mpRefundFmt: '0.00', pledgeDueFmt: '420.00', refundFmt: '320.00', dailyRevFmt: '6,546', dailyOrdersFmt: '4.2',
+        totalOrderCountFmt: '126', avgOrderPriceFmt: '333', hasOrderData: true, orderHint: '',
+        mall: { thresholdFmt: '170,000', reachedFmt: '196,400', excessFmt: '26,400', feeFmt: '6,864', formulaNote: '超 17 万部分 × 26%' },
+        trend: ['25', '26', '27', '28', '29', '30'].map((label, i) => ({ label, barStyle: `height:${40 + i * 8}%` })),
+        donutStyle: 'background: conic-gradient(#C4A76C 0 22%, #2E4A3A 22% 100%);',
+        channels: [{ name: '刷卡', pct: 78, valueFmt: '152,300', color: '#2E4A3A' }, { name: '小程序', pct: 22, valueFmt: '42,000', color: '#C4A76C' }]
+      }
+    }
+  }
 ]

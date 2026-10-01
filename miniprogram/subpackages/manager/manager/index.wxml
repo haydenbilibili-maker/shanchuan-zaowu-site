@@ -20,9 +20,7 @@
     ext-class="nav-left nav-back"
     bind:back="leaveWorkbench"
   />
-  <view class="nav-left" wx:else>
-    <text class="app-name">ADMIN DASHBOARD</text>
-  </view>
+  <view class="nav-left" wx:else></view>
 
   <!-- 中间区域：页面标题 -->
   <view class="nav-title">经营概况</view>
@@ -114,7 +112,10 @@
   <!-- 核心指标卡片 (金卡) -->
   <view class="kpi-card gold-card" wx:if="{{menu.dashboardKpi}}">
      <view class="card-row top">
-       <text class="card-label">GMV 本月营收</text>
+       <view class="card-titles">
+         <text class="card-eyebrow">GMV · THIS MONTH</text>
+         <text class="card-label">本月营收</text>
+       </view>
        <image class="card-icon-img" src="/assets/icons/medal_gold.png" mode="aspectFit" />
      </view>
      <view wx:if="{{analyticsError}}" class="kpi-error-row">
@@ -125,7 +126,7 @@
      <view class="card-row bottom">
         <view class="sub-metric"><text class="lbl">小程序｜GMV</text><text class="val">¥{{stats.onlineTotal}}</text></view>
         <view class="v-line"></view>
-        <view class="sub-metric"><text class="lbl">门店｜STORE</text><text class="val">¥{{stats.offlineTotal}}</text><text class="split" wx:if="{{stats.offlineSplitText}}">{{stats.offlineSplitText}}</text></view>
+        <view class="sub-metric"><text class="lbl">门店｜账本</text><text class="val">¥{{stats.offlineTotal}}</text><text class="split" wx:if="{{stats.offlineSplitText}}">{{stats.offlineSplitText}}</text></view>
      </view>
   </view>
 
@@ -534,7 +535,7 @@
 
     <!-- 数据图表：渠道占比 + 本月订单（并排，避免半空行） -->
     <view class="grid-item" wx:if="{{menu.dashboardKpi}}">
-       <view class="panel-title">渠道 / RATIO</view>
+       <view class="panel-title"><text class="panel-en">RATIO</text><text class="panel-cn">渠道占比</text></view>
        <view class="chart-box {{chartLayout.ratioStacked ? 'chart-box--stacked' : ''}}" id="dash-ratio-box" style="{{chartLayout.ratioBoxStyle}}" wx:if="{{!stats.ratioEmpty}}">
           <view class="donut" style="{{stats.donutStyle}}"></view>
           <view class="legend">
@@ -549,7 +550,7 @@
     </view>
 
     <view class="grid-item" wx:if="{{menu.dashboardKpi}}">
-       <view class="panel-title">本月订单 / ORDERS</view>
+       <view class="panel-title"><text class="panel-en">ORDERS</text><text class="panel-cn">本月订单</text></view>
        <view class="kpi-mini">
           <view class="kpi-mini-main">
              <text class="kpi-mini-val">{{stats.orderCountFmt}}</text>
@@ -572,7 +573,7 @@
     <!-- 7 日营收趋势（相对峰值缩放 + 日均/环比） -->
     <view class="grid-item full-width" wx:if="{{menu.dashboardKpi}}">
        <view class="panel-title-row">
-          <view class="panel-title flat">营收趋势 / TREND</view>
+          <view class="panel-title flat"><text class="panel-en">TREND</text><text class="panel-cn">营收趋势</text></view>
           <view class="trend-meta {{chartLayout.narrow ? 'trend-meta--narrow' : ''}}" wx:if="{{!stats.ratioEmpty}}">
              <text class="trend-meta-item">日均 ¥{{stats.dailyAvgFmt}}</text>
              <text class="trend-meta-sep">·</text>
@@ -610,7 +611,7 @@
     <!-- 库存速览 + 近7日渠道拆分 -->
     <view class="grid-item" wx:if="{{menu.dashboardKpi && menu.products}}">
        <view class="panel-title-row">
-          <view class="panel-title flat">库存 / STOCK</view>
+          <view class="panel-title flat"><text class="panel-en">STOCK</text><text class="panel-cn">库存</text></view>
           <view class="stock-signal-wrap" wx:if="{{opsSignals.stock}}">
             <view class="signal-light {{opsSignals.stock}}"></view>
           </view>
@@ -649,7 +650,7 @@
     </view>
 
     <view class="grid-item {{menu.products ? '' : 'full-width'}}" wx:if="{{menu.dashboardKpi}}">
-       <view class="panel-title">近7日 / WEEK</view>
+       <view class="panel-title"><text class="panel-en">WEEK</text><text class="panel-cn">近 7 日</text></view>
        <view class="week-split" wx:if="{{!trendMeta.empty}}">
           <view class="week-split-row">
              <text class="week-split-l">线上（小程序）</text>
@@ -674,7 +675,10 @@
 
   </view>
   
-  <view class="footer-logo">- NATURE'S ADMIN -</view>
+  <view class="footer-logo">
+    <text class="footer-en">NATURE'S ADMIN</text>
+    <text class="footer-cn">山海造物 · 管理工作台</text>
+  </view>
 </view>
 
 <!-- 常用编辑面板：已选可上移 / 下移 / 移除，下方按分区加入；保存才生效 -->

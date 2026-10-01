@@ -84,14 +84,6 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border-radius: var(--radius-md);
   border: 1px solid transparent;
 }
-.app-name {
-  padding-left: 22rpx;
-  font-family: var(--font-din);
-  font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
-  letter-spacing: 2rpx;
-  font-weight: 500;
-}
 .nav-title { font-size: 32rpx; font-weight: bold; color: #fff; }
 
 /* ==================== 2. 看板 (Dashboard) ==================== */
@@ -121,7 +113,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: radial-gradient(circle, rgba(196, 167, 108,0.1) 0%, transparent 60%); pointer-events: none;
 }
 .card-row { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
-.card-label { font-size: 22rpx; color: rgba(255,255,255,0.6); font-weight: bold; letter-spacing: 1rpx; }
+.card-titles { display: flex; flex-direction: column; }
+.card-eyebrow { font-family: var(--font-din); font-size: 18rpx; color: var(--gold); letter-spacing: 2rpx; opacity: 0.85; }
+.card-label { margin-top: 4rpx; font-size: 24rpx; color: rgba(255,255,255,0.75); font-weight: bold; letter-spacing: 1rpx; }
 .card-icon-img { width: 36rpx; height: 36rpx; opacity: 0.85; }
 .card-value-lg { font-family: var(--font-din); font-size: 80rpx; font-weight: bold; color: #fff; margin: 10rpx 0; display: block; position: relative; z-index: 2; }
 
@@ -408,6 +402,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 
 .panel-title { font-size: 22rpx; color: #888; font-weight: bold; margin-bottom: 20rpx; letter-spacing: 1rpx; border-left: 4rpx solid var(--gold); padding-left: 12rpx; }
+/* Museum 口径：英文大写小标题 + 中文主标分两行，不在同一行中英并列 */
+.panel-title .panel-en { display: block; font-family: var(--font-din); font-size: 16rpx; font-weight: 500; color: var(--gold); letter-spacing: 2rpx; }
+.panel-title .panel-cn { display: block; margin-top: 2rpx; font-size: 24rpx; color: rgba(255,255,255,0.82); }
 
 /* 待办计数：视觉走 .badge-info；此处只负责定位 */
 .badge { position: absolute; top: -6rpx; right: -6rpx; background: var(--color-error, #D64045); color: #fff; font-size: 18rpx; padding: 2rpx 10rpx; border-radius: 20rpx; font-family: var(--font-din); }
@@ -800,7 +797,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .week-share-fill.forest { background: #2D5A3F; }
 .week-split-hint { margin-top: 8rpx; font-size: 18rpx; color: #4A4540; }
 
-.footer-logo { text-align: center; color: #333; font-size: 20rpx; margin-top: 60rpx; letter-spacing: 4rpx; font-family: var(--font-din); }
+.footer-logo { text-align: center; color: #333; font-size: 20rpx; margin-top: 60rpx; letter-spacing: 4rpx; }
+.footer-en { display: block; font-family: var(--font-din); font-size: 18rpx; }
+.footer-cn { display: block; margin-top: 6rpx; font-size: 20rpx; color: #4a4640; }
 
 /* ==================== 3. 子页面样式 (Sub Views) ==================== */
 /* 同页 curTab 切换：轻量淡入，与 navigateTo 独立页的系统滑入区分但各自统一 */
@@ -2954,9 +2953,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   align-items: baseline;
   gap: 12rpx;
 }
-.lmp-en {
-  font-family: var(--font-din);
-  font-size: 18rpx;
+.lmp-label {
+  font-size: 20rpx;
   color: var(--gold, #C4A76C);
   letter-spacing: 2rpx;
   font-weight: bold;
@@ -3146,7 +3144,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .lo-kpi-title {
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
   margin-bottom: 16rpx;
 }
 .lo-kpi-grid {
@@ -3193,7 +3191,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .lo-panel + .lo-panel { margin-top: 28rpx; }
 .lo-ptitle {
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
   margin-bottom: 16rpx;
 }
 .lo-pt-cn {
@@ -3201,11 +3199,12 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-weight: 600;
   color: #fff;
 }
+/* 英文大写小标题在上、中文主标在下（Museum 口径，不同行并列） */
 .lo-pt-en {
-  font-size: 18rpx;
+  font-size: 16rpx;
   color: var(--gold, #C4A76C);
-  letter-spacing: 1rpx;
-  margin-left: 4rpx;
+  letter-spacing: 2rpx;
+  margin-bottom: 4rpx;
   font-family: var(--font-din);
 }
 .lo-trend {

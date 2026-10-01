@@ -104,7 +104,7 @@
         </view>
 
         <view class="kpi-section">
-          <text class="ops-section-label">核心指标 / KPI</text>
+          <text class="ops-section-label">核心指标</text>
           <view class="kpi-grid">
             <view class="dash-card accent-brass">
               <view class="dash-accent"></view>
@@ -237,8 +237,8 @@
         </view>
 
         <view class="detail-toggle" bindtap="toggleDetail">
-          <text class="detail-toggle-main">{{detailOpen ? '收起主体 · 状态 · TOP 明细' : '展开主体 · 状态 · TOP 明细'}}</text>
-          <text class="detail-toggle-sub">不影响上方核心 KPI</text>
+          <text class="detail-toggle-main">{{detailOpen ? '收起主体 · 状态 · 排行明细' : '展开主体 · 状态 · 排行明细'}}</text>
+          <text class="detail-toggle-sub">不影响上方核心指标</text>
         </view>
 
         <view class="detail-panel" wx:if="{{detailOpen}}">

@@ -358,7 +358,7 @@
 
         <!-- RFM / 指标 -->
         <view class="block">
-          <text class="block-title">RFM / 指标</text>
+          <text class="block-title">消费指标（RFM）</text>
           <view class="stat-grid">
             <view class="stat-cell"><text class="stat-label">R 近度</text><text class="stat-val">{{detail.R}}/5</text></view>
             <view class="stat-cell"><text class="stat-label">F 频次</text><text class="stat-val">{{detail.F}}/5</text></view>
