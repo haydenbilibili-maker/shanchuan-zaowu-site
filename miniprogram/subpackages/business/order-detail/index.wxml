@@ -26,37 +26,6 @@
 
     <view class="divider-dashed"></view>
 
-    <!-- 礼赠档案（2026-09-21）：订单详情页原来只在**底栏**按状态给礼赠动作，
-         没有"回看这封礼笺 / 看这份礼赠进展"的入口 —— 送礼人付完款就找不到自己写的那封信了。 -->
-    <view class="gift-archive slide-in-delay-1" wx:if="{{isGiftOrder}}">
-      <text class="section-title"><text class="en-label">GIFT NOTE</text> 礼赠档案</text>
-      <view class="ga-card">
-        <view class="ga-head">
-          <view class="ga-who">
-            <text class="ga-label">赠与</text>
-            <text class="ga-name">{{giftRecipientName || '（未留称呼）'}}</text>
-          </view>
-          <text class="ga-status tone-{{giftStatusTone}}">{{giftStatusText}}</text>
-        </view>
-        <view class="ga-note" wx:if="{{giftNotePreview}}">
-          <text class="ga-note-quote">「{{giftNotePreview}}{{giftNotePreview.length >= 48 ? '…' : ''}}」</text>
-        </view>
-        <view class="ga-meta">
-          <text class="ga-meta-item" wx:if="{{giftCardSignature}}">署 · {{giftCardSignature}}</text>
-          <text class="ga-meta-item" wx:if="{{giftHasVoice}}">含语音</text>
-          <text class="ga-meta-item" wx:if="{{giftShareToken}}">礼笺已封缄</text>
-        </view>
-        <view class="ga-entries">
-          <view class="ga-entry primary" bindtap="goGiftEnvelope" hover-class="tap-press-soft" hover-stay-time="70">
-            <text class="ga-entry-text">{{giftEnvelopeLabel}}</text>
-          </view>
-          <view class="ga-entry" bindtap="goGiftDetail" hover-class="tap-press-soft" hover-stay-time="70">
-            <text class="ga-entry-text">礼赠详情</text>
-          </view>
-        </view>
-      </view>
-    </view>
-
     <view class="shipping-label slide-in-delay-1" 
           wx:if="{{order.status === 'shipped' || order.status === 'received'}}">
       
@@ -132,6 +101,37 @@
         <view class="pd-main">
           <text class="pd-title">门店自取已完成</text>
           <text class="pd-sub">{{pickupDoneInfo.claimedAtText ? pickupDoneInfo.claimedAtText + ' · 已由专员核销交付' : '已由专员核销交付'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 礼赠档案（2026-09-21）：订单详情页原来只在**底栏**按状态给礼赠动作，
+         没有"回看这封礼笺 / 看这份礼赠进展"的入口 —— 送礼人付完款就找不到自己写的那封信了。 -->
+    <view class="gift-archive slide-in-delay-1" wx:if="{{isGiftOrder}}">
+      <text class="section-title"><text class="en-label">GIFT NOTE</text> 礼赠档案</text>
+      <view class="ga-card">
+        <view class="ga-head">
+          <view class="ga-who">
+            <text class="ga-label">赠与</text>
+            <text class="ga-name">{{giftRecipientName || '（未留称呼）'}}</text>
+          </view>
+          <text class="ga-status tone-{{giftStatusTone}}">{{giftStatusText}}</text>
+        </view>
+        <view class="ga-note" wx:if="{{giftNotePreview}}">
+          <text class="ga-note-quote">「{{giftNotePreview}}{{giftNotePreview.length >= 48 ? '…' : ''}}」</text>
+        </view>
+        <view class="ga-meta">
+          <text class="ga-meta-item" wx:if="{{giftCardSignature}}">署 · {{giftCardSignature}}</text>
+          <text class="ga-meta-item" wx:if="{{giftHasVoice}}">含语音</text>
+          <text class="ga-meta-item" wx:if="{{giftShareToken}}">礼笺已封缄</text>
+        </view>
+        <view class="ga-entries">
+          <view class="ga-entry primary" bindtap="goGiftEnvelope" hover-class="tap-press-soft" hover-stay-time="70">
+            <text class="ga-entry-text">{{giftEnvelopeLabel}}</text>
+          </view>
+          <view class="ga-entry" bindtap="goGiftDetail" hover-class="tap-press-soft" hover-stay-time="70">
+            <text class="ga-entry-text">礼赠详情</text>
+          </view>
         </view>
       </view>
     </view>
@@ -309,49 +309,43 @@
   </view>
 
   <view class="action-footer safe-area {{(isGiftOrder && (giftAwaitingAddress || giftReceiverNeedsAddress)) ? 'action-footer--gift' : ''}}" wx:if="{{!loadError && order._id}}">
+    <!-- 底栏层级（2026-10-01 产品负责人点名）：上 = 唯一主操作（金底），下 = 次级等分行（自动换行）；不可点的「已评价」降为状态标签 -->
     <!-- 待付款：支付 + 取消（仅买家） -->
     <view class="pending-pay-actions" wx:if="{{order.status === 'pending_pay' && !isGiftReceiver}}">
-      <view class="btn-text cancel" hover-class="btn-text-press" hover-stay-time="80" catchtap="handleCancelOrder">取消订单</view>
-      <view class="hologram-btn flex-grow {{paying ? 'is-busy' : ''}}" catchtap="handlePay" hover-class="{{paying ? '' : 'hologram-press'}}">
+      <view class="btn-text cancel" hover-class="tap-press-soft" hover-stay-time="80" catchtap="handleCancelOrder">取消订单</view>
+      <view class="hologram-btn od-primary flex-grow {{paying ? 'is-busy' : ''}}" catchtap="handlePay" hover-class="{{paying ? '' : 'tap-press-soft'}}" hover-stay-time="80">
         <text>{{paying ? '正在拉起支付…' : ((payBtnLabel || '立即支付') + ' ¥' + order.totalPrice)}}</text>
       </view>
     </view>
 
-    <!-- 已签收：养护 + 证书 + 评价 -->
+    <!-- 已签收：养护 + 证书 -->
     <view class="received-actions" wx:if="{{order.status === 'received' && showCare && certRole !== 'giver'}}">
-      <view class="btn-main flex-grow" hover-class="btn-main-press" hover-stay-time="80" catchtap="goToCare">
+      <view class="btn-main flex-grow" hover-class="tap-press-soft" hover-stay-time="80" catchtap="goToCare">
         <image class="btn-care-icon" src="/subpackages/business/assets/icons/care-on-brass.png" mode="aspectFit"></image>
         <text>标本养护</text>
       </view>
-      <view class="hologram-btn flex-grow" hover-class="hologram-press" hover-stay-time="80" catchtap="viewCertificate">收藏证书</view>
+      <view class="hologram-btn flex-grow" hover-class="tap-press-soft" hover-stay-time="80" catchtap="viewCertificate">收藏证书</view>
     </view>
-    <view class="hologram-btn" hover-class="hologram-press" hover-stay-time="80" catchtap="viewCertificate" wx:elif="{{order.status === 'received'}}">
+    <view class="hologram-btn od-primary" hover-class="tap-press-soft" hover-stay-time="80" catchtap="viewCertificate" wx:elif="{{order.status === 'received'}}">
       <text>{{certRole === 'giver' ? '查看赠予凭证' : '查看收藏证书'}}</text>
-    </view>
-    <view
-      class="btn-text comment-after {{reviewCanAny ? '' : 'comment-done'}}" hover-class="btn-text-press" hover-stay-time="80"
-      catchtap="goToComment"
-      wx:if="{{order.status === 'received' && order.products && order.products.length > 0 && !isVoucherOrder}}"
-    >
-      {{reviewCanAny ? (reviewPendingCount > 1 ? '继续评价' : '写下感受') : (reviewSummaryLabel || '已评价')}}
     </view>
 
     <!-- 礼赠待填址：主操作 = 分享礼笺；次 = 提醒 / 退款；联系专员仅留 aftercare -->
     <view class="gift-await-bar" wx:if="{{isGiftOrder && giftAwaitingAddress}}">
       <text class="gift-await-hint" wx:if="{{giftExpireHint}}">{{giftExpireHint}}</text>
-      <button class="btn-gift-primary share-native" open-type="share">把礼笺交给 TA</button>
+      <button class="btn-gift-primary share-native" open-type="share" hover-class="tap-press-soft">把礼笺交给 TA</button>
       <view class="gift-await-row">
-        <view class="btn-gift-secondary" bindtap="nudgeGift">再轻轻提醒一声</view>
-        <view class="btn-gift-ghost" bindtap="requestRefund" wx:if="{{showRefundEntry}}">{{refundEntryLabel}}</view>
+        <view class="btn-gift-secondary" hover-class="tap-press-soft" hover-stay-time="80" bindtap="nudgeGift">再轻轻提醒一声</view>
+        <view class="btn-gift-ghost" hover-class="tap-press-soft" hover-stay-time="80" bindtap="requestRefund" wx:if="{{showRefundEntry}}">{{refundEntryLabel}}</view>
       </view>
     </view>
     <!-- 受礼人待填址 -->
     <view class="gift-await-bar" wx:elif="{{isGiftOrder && giftReceiverNeedsAddress}}">
       <text class="gift-await-hint" wx:if="{{giftExpireHint}}">{{giftExpireHint}}</text>
-      <view class="hologram-btn flex-grow" hover-class="hologram-press" hover-stay-time="80" bindtap="goFillGiftAddress">留下收件去处</view>
+      <view class="hologram-btn od-primary" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goFillGiftAddress">留下收件去处</view>
     </view>
     <view class="gift-actions" wx:elif="{{isGiftOrder && giftShowPickupClaim}}">
-      <view class="hologram-btn flex-grow" hover-class="hologram-press" hover-stay-time="80" bindtap="goGiftPickupClaim">出示妥投码 {{giftClaimCode}}</view>
+      <view class="hologram-btn od-primary" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goGiftPickupClaim">出示妥投码 {{giftClaimCode}}</view>
     </view>
     <!-- 礼赠分享封面离屏 canvas -->
     <canvas
@@ -362,19 +356,38 @@
       style="width: 500px; height: 400px;"
     ></canvas>
 
-    <!-- 已签收：售后入口 -->
-    <view class="btn-group" wx:if="{{order.status === 'received' && showRefundEntry}}">
-      <view class="btn-text" hover-class="btn-text-press" hover-stay-time="80" bindtap="requestRefund">{{refundEntryLabel}}</view>
-      <view class="btn-text" hover-class="btn-text-press" hover-stay-time="80" bindtap="goToSupport">联系专员</view>
+    <!-- 已签收：评价（可写 = 次级按钮；已评完 = 状态标签，仍可点进查看）+ 售后入口 -->
+    <view class="btn-group" wx:if="{{order.status === 'received' && ((order.products && order.products.length > 0 && !isVoucherOrder) || showRefundEntry)}}">
+      <view
+        class="od-status-chip"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        catchtap="goToComment"
+        wx:if="{{order.status === 'received' && order.products && order.products.length > 0 && !isVoucherOrder && !reviewCanAny}}"
+      >
+        <text class="od-chip-tick">✓</text>
+        <text>{{reviewSummaryLabel || '已评价'}}</text>
+      </view>
+      <view
+        class="btn-text comment-after"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        catchtap="goToComment"
+        wx:elif="{{order.status === 'received' && order.products && order.products.length > 0 && !isVoucherOrder}}"
+      >{{reviewPendingCount > 1 ? '继续评价' : '写下感受'}}</view>
+      <block wx:if="{{showRefundEntry}}">
+        <view class="btn-text" hover-class="tap-press-soft" hover-stay-time="80" bindtap="requestRefund">{{refundEntryLabel}}</view>
+        <view class="btn-text" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToSupport">联系专员</view>
+      </block>
     </view>
 
     <!-- 未签收订单：自取凭证 + 退款 + 联系专员（礼赠待填址已在上方处理，此处去重） -->
     <view class="btn-group" wx:if="{{order.status !== 'received' && order.status !== 'pending_pay' && !(isGiftOrder && giftAwaitingAddress) && !(isGiftOrder && giftReceiverNeedsAddress)}}">
-      <view class="btn-text brass" hover-class="btn-text-press" hover-stay-time="80" bindtap="openPickupPass" wx:if="{{showOrderPickup}}">自取凭证</view>
+      <view class="btn-text brass" hover-class="tap-press-soft" hover-stay-time="80" bindtap="openPickupPass" wx:if="{{showOrderPickup}}">自取凭证</view>
       <!-- 支付确认中：钱可能已扣，此前无任何自救入口 → 提供「重新确认支付结果」 -->
-      <view class="btn-text brass" hover-class="btn-text-press" hover-stay-time="80" bindtap="retryConfirmPayment" wx:if="{{showPayConfirmRetry}}">{{payConfirmBusy ? '确认中…' : '重新确认支付结果'}}</view>
-      <view class="btn-text" hover-class="btn-text-press" hover-stay-time="80" bindtap="requestRefund" wx:if="{{showRefundEntry}}">{{refundEntryLabel}}</view>
-      <view class="btn-text" hover-class="btn-text-press" hover-stay-time="80" bindtap="goToSupport">联系专员</view>
+      <view class="btn-text brass" hover-class="tap-press-soft" hover-stay-time="80" bindtap="retryConfirmPayment" wx:if="{{showPayConfirmRetry}}">{{payConfirmBusy ? '确认中…' : '重新确认支付结果'}}</view>
+      <view class="btn-text" hover-class="tap-press-soft" hover-stay-time="80" bindtap="requestRefund" wx:if="{{showRefundEntry}}">{{refundEntryLabel}}</view>
+      <view class="btn-text" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToSupport">联系专员</view>
     </view>
   </view>
 </view>

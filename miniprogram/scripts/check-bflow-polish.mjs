@@ -21,12 +21,15 @@
  *   B10 礼赠填址：提交中按钮文案切换（防「点了没反应」再点）。
  *   ── 第 3 轮（凭证 / 订单详情底栏 / 账户提交）──
  *   B11 预约票据：数据回来前不显示「该预约已不可核销」（须有加载分支），字段标签带中文；
- *   B12 订单详情底栏：btn-text / btn-main / hologram-btn 每一枚都挂 hover-class，且 *-press 类在 wxss 有定义
- *      （此前只靠 `:active`，真机 view 上不可靠）；
+ *   B12 订单详情底栏：每一枚按钮 / 状态标签都挂 app.wxss 的 tap-press(-soft)（此前只靠 `:active`，真机 view 上不可靠）；
  *   B13 反馈 / 注册完成按钮有按压反馈（提交中不挂）。
  *   ── 产品负责人点名（2026-10-01）──
  *   B14 荣誉档案：对 orders 的每一处查询都经 `fetchAllPages` 分批取完（skip + limit 循环），
  *      不得裸 `.get()` —— 小程序端单次最多 20 条，签收 >20 件的藏家会静默少证书。
+ *   B15 订单详情底栏改版（产品负责人 2026-10-01 真机截图点名）：
+ *      ① `.hologram-btn` 基础规则不得写 `flex: 1`（底栏是纵向 flex，flex-basis:0 + overflow:hidden 把按钮压成一条细边）；
+ *      ② 礼赠档案排在物流 / 自取卡之后、订单清单之前；③ 已评完不再占大按钮（状态标签）；
+ *      ④ 次级行可换行、`.btn-text` 不再 `flex: 0 0 auto` 靠左挤；⑤ 底栏安全区同时写 constant() 与 env()。
  *
  * 自检不写盘：注入在内存副本上做（共享工作区有并行流，写盘注入会覆盖别人的在写内容）。
  *
@@ -57,7 +60,8 @@ const F = {
   ticketJs: `${B}/ticket/index.js`,
   feedbackWxml: 'miniprogram/subpackages/extra/user/feedback/index.wxml',
   onboardingWxml: 'miniprogram/subpackages/extra/user/onboarding/index.wxml',
-  certJs: 'miniprogram/subpackages/extra/user/certificates/index.js'
+  certJs: 'miniprogram/subpackages/extra/user/certificates/index.js',
+  appWxss: 'miniprogram/app.wxss'
 }
 
 /** B4 扫描范围（逐轮扩充；只加不减） */
@@ -198,12 +202,23 @@ export function runChecks(src) {
   const odw = src[F.odWxml]
   const foot = odw.slice(odw.indexOf('<view class="action-footer'))
   const css = stripCssComments(src[F.odWxss])
-  const tags = foot.match(/<view\s+class="(?:btn-text|btn-main|hologram-btn)\b[^>]*>/g) || []
-  const bare = tags.filter((t) => !/hover-class=/.test(t))
-  check('B12.footer-hover', tags.length > 0 && bare.length === 0, `订单详情底栏 ${bare.length} 枚按钮无 hover-class：${bare.map((t) => t.slice(0, 48)).join(' | ')}`)
-  for (const cls of ['btn-text-press', 'btn-main-press', 'hologram-press']) {
-    check(`B12.${cls}-defined`, new RegExp(`\\.${cls}\\s*[,{]`).test(css), `wxss 未定义 .${cls}`)
-  }
+  const tags = foot.match(/<(?:view|button)\s+class="(?:btn-text|btn-main|hologram-btn|btn-gift-\w+|od-status-chip)\b[^>]*>/g) || []
+  const bare = tags.filter((t) => !/hover-class="[^"]*tap-press/.test(t))
+  check('B12.footer-hover', tags.length > 0 && bare.length === 0, `订单详情底栏 ${bare.length} 枚按钮未挂 tap-press：${bare.map((t) => t.slice(0, 48)).join(' | ')}`)
+  check('B12.tap-press-defined', /\.tap-press-soft\s*\{/.test(stripCssComments(src[F.appWxss])), 'app.wxss 未定义 .tap-press-soft')
+
+  // B15
+  const rule = (sel) => (css.match(new RegExp(`(?:^|})\\s*${sel.replace(/\./g, '\\.')}\\s*\\{([^}]*)\\}`)) || [])[1] || ''
+  check('B15.hologram-no-flex1', !!rule('.hologram-btn') && !/(^|;|\s)flex\s*:\s*1\b/.test(rule('.hologram-btn')), '.hologram-btn 基础规则写了 flex: 1（纵向底栏里会被压扁）')
+  check('B15.btn-text-not-squeezed', !!rule('.btn-text') && !/flex\s*:\s*0 0 auto/.test(rule('.btn-text')), '.btn-text 仍为 flex: 0 0 auto（次级按钮靠左挤、不铺满）')
+  check('B15.btn-group-wrap', /flex-wrap\s*:\s*wrap/.test(rule('.btn-group')), '次级行不换行，按钮多时会溢出')
+  const gaAt = odw.indexOf('<view class="gift-archive')
+  const shipAt = odw.indexOf('<view class="shipping-label')
+  const maniAt = odw.indexOf('<view class="manifest-section')
+  check('B15.gift-archive-after-logistics', gaAt > shipAt && gaAt < maniAt, '礼赠档案不在物流卡之后、订单清单之前')
+  check('B15.reviewed-as-chip', /class="od-status-chip"[\s\S]{0,400}?!reviewCanAny\}\}"/.test(foot) && !/comment-done/.test(odw), '已评完仍占一枚大按钮')
+  const footRule = rule('.action-footer')
+  check('B15.safe-area', /constant\(safe-area-inset-bottom\)/.test(footRule) && /env\(safe-area-inset-bottom\)/.test(footRule), '底栏未同时处理 constant()/env() 安全区')
 
   // B13
   check('B13.feedback-press', /bindtap="submitFeedback"/.test(src[F.feedbackWxml]) && /'account-btn-press'\}\}"[^>]*bindtap="submitFeedback"/.test(src[F.feedbackWxml]), '反馈提交按钮无按压反馈')
@@ -235,7 +250,7 @@ function report({ pass, fails }) {
     console.error(`✗ check:bflow-polish：${fails.length} 项失败 / ${pass} 项通过`)
     return 1
   }
-  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14）`)
+  console.log(`✓ check:bflow-polish：${pass} 项通过（交易主链 B1–B6 · 「我的」子页 B7–B10 · 凭证与底栏 B11–B13 · 证书分页 B14 · 底栏改版 B15）`)
   return 0
 }
 
@@ -256,8 +271,20 @@ const INJECTIONS = [
   ['B11 票据去掉加载分支', F.ticketWxml, (s) => s.replace('<text class="qr-tip muted" wx:elif="{{!booking._id}}">正在取出票据…</text>', '')],
   ['B11 票据标签回到纯英文', F.ticketWxml, (s) => s.replace('<text class="label">项目｜PROJECT</text>', '<text class="label">PROJECT</text>')],
   ['B4 票据失败拼回 errMsg', F.ticketJs, (s) => s.replace("wx.showToast({ title: '票据没取到，请检查网络后重试', icon: 'none' });", "wx.showToast({ title: err.errMsg || '票据不存在', icon: 'none' });")],
-  ['B12 底栏按钮丢 hover-class', F.odWxml, (s) => s.replace('<view class="btn-text cancel" hover-class="btn-text-press" hover-stay-time="80"', '<view class="btn-text cancel"')],
-  ['B12 删掉 btn-main-press 定义', F.odWxss, (s) => s.replace('.btn-main:active,\n.btn-main-press {', '.btn-main:active {')],
+  ['B12 底栏按钮丢 hover-class', F.odWxml, (s) => s.replace('<view class="btn-text cancel" hover-class="tap-press-soft" hover-stay-time="80"', '<view class="btn-text cancel"')],
+  ['B12 app.wxss 丢 tap-press-soft', F.appWxss, (s) => s.replace('.tap-press-soft {', '.tap-press-softx {')],
+  ['B15 hologram 回到 flex: 1', F.odWxss, (s) => s.replace('.hologram-btn {\n  background: var(--color-bg-card);', '.hologram-btn {\n  flex: 1;\n  background: var(--color-bg-card);')],
+  ['B15 次级按钮回到 flex: 0 0 auto', F.odWxss, (s) => s.replace('.btn-text {\n  flex: 1 1 0;', '.btn-text {\n  flex: 0 0 auto;')],
+  ['B15 礼赠档案挪回订单编号下', F.odWxml, (s) => {
+    const a = s.indexOf('    <!-- 礼赠档案（2026-09-21）')
+    const b = s.indexOf('    <view class="manifest-section')
+    const blk = s.slice(a, b)
+    const t = s.slice(0, a) + s.slice(b)
+    const at = t.indexOf('    <view class="shipping-label slide-in-delay-1"')
+    return t.slice(0, at) + blk + t.slice(at)
+  }],
+  ['B15 已评价回到大按钮', F.odWxml, (s) => s.replace('class="od-status-chip"', 'class="btn-text comment-after comment-done"')],
+  ['B15 底栏丢 constant() 安全区', F.odWxss, (s) => s.replace('  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));\n', '')],
   ['B14 证书查询回到裸 get()', F.certJs, (s) => s.replace(`fetchAllPages(() => db.collection('orders')
           .where({
             _openid: openid,

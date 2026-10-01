@@ -369,6 +369,7 @@ view, text, image, button { box-sizing: border-box; }
   backdrop-filter: blur(20px);
   border-top: 1px solid var(--color-bg-elevated);
   padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + constant(safe-area-inset-bottom));
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   display: flex; 
   flex-direction: column;
@@ -383,15 +384,29 @@ view, text, image, button { box-sizing: border-box; }
   padding-top: 16rpx;
 }
 
-/* 按钮组 (申请退款、评价商品、联系专员) */
-.btn-group { 
-  display: flex; 
-  gap: 12rpx; 
+/* 次级行（评价 / 售后 / 联系专员 / 自取凭证…）：等分铺满，放不下 3 个即换行 */
+.btn-group {
+  display: flex;
+  gap: 16rpx;
   width: 100%;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-start;
 }
+.btn-group > .btn-text { flex: 1 1 0; min-width: 210rpx; }
+
+/* 「已评价」：不可再写 → 状态标签（仍可点进查看），不占大按钮 */
+.od-status-chip {
+  flex: 0 0 auto;
+  height: 84rpx;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 0 8rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+.od-chip-tick { font-size: 22rpx; color: var(--gold); }
 
 .gift-actions {
   display: flex;
@@ -467,7 +482,7 @@ view, text, image, button { box-sizing: border-box; }
 }
 .btn-gift-primary {
   width: 100%;
-  height: 88rpx;
+  height: 84rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -478,7 +493,7 @@ view, text, image, button { box-sizing: border-box; }
   letter-spacing: 0.04em;
   border-radius: 16rpx;
   border: none !important;
-  line-height: 88rpx;
+  line-height: 84rpx;
   padding: 0;
   margin: 0;
   box-sizing: border-box;
@@ -494,7 +509,7 @@ view, text, image, button { box-sizing: border-box; }
 .btn-gift-ghost {
   flex: 1;
   min-width: 0;
-  height: 80rpx;
+  height: 84rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -535,16 +550,16 @@ view, text, image, button { box-sizing: border-box; }
   opacity: 0;
 }
 
-/* 统一按钮样式 */
+/* 统一按钮样式：高 84 / 圆角 16 / 行距 16；按压态统一用 app.wxss 的 tap-press-soft */
 .btn-text, .btn-main, .hologram-btn {
-  height: 88rpx;
+  height: 84rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 26rpx;
   font-weight: 700;
   letter-spacing: 1rpx;
-  border-radius: 12rpx;
+  border-radius: 16rpx;
   padding: 0;
   margin: 0;
   line-height: 1;
@@ -554,59 +569,17 @@ view, text, image, button { box-sizing: border-box; }
   min-width: 0;
 }
 
-/* 次要按钮 (申请退款、联系专员、评价商品) */
+/* 次级按钮 (申请退款、联系专员、评价商品) */
 .btn-text {
-  flex: 0 0 auto;
-  min-width: 140rpx;
-  padding: 0 24rpx;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 12rpx;
   color: rgba(255,255,255,0.9);
-  border: 1.5px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.03);
-  box-shadow: 
-    0 2rpx 8rpx rgba(0,0,0,0.3),
-    inset 0 1rpx 2rpx rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.04);
   white-space: nowrap;
-  font-size: 24rpx;
-  /* 重置 button 默认样式 */
-  border-radius: 12rpx;
-  outline: none;
-  background-color: rgba(255,255,255,0.03);
-}
-
-/* 重置 button 标签的默认样式 */
-button.btn-text {
-  border: 1.5px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.03);
-  padding: 0 24rpx;
-  margin: 0;
-  line-height: 1;
-  font-size: 24rpx;
-  font-weight: 700;
-  letter-spacing: 1rpx;
-}
-
-.btn-text::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.btn-text:active,
-.btn-text-press {
-  background: rgba(255,255,255,0.08);
-  border-color: rgba(255,255,255,0.25);
-  transform: scale(0.97);
-  box-shadow: 
-    0 1rpx 4rpx rgba(0,0,0,0.4),
-    inset 0 1rpx 3rpx rgba(255,255,255,0.1);
-}
-
-.btn-text:active::before,
-.btn-text-press::before {
-  opacity: 1;
+  font-size: 26rpx;
+  font-weight: 500;
 }
 
 .comment-after {
@@ -614,10 +587,6 @@ button.btn-text {
   color: var(--gold);
 }
 
-.comment-after.comment-done {
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.55);
-}
 
 /* 主按钮 (返回大厅 / 查看证书) */
 .btn-main {
@@ -643,67 +612,36 @@ button.btn-text {
   50% { background-position: 100% 50%; }
 }
 
-.btn-main::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
 
-.btn-main:active,
-.btn-main-press {
-  transform: scale(0.97);
-  background: #A8903C;
-}
-
-.btn-main:active::before,
-.btn-main-press::before {
-  opacity: 1;
-}
-
-/* 证书按钮 */
+/* 证书 / 描金次级按钮。不写 flex:1 —— 底栏是纵向 flex，flex-basis:0 会把高度压成 0
+   （overflow:hidden 使最小高度归零），横排里由 .flex-grow 分宽 */
 .hologram-btn {
-  flex: 1;
-  max-width: 600rpx;
   background: var(--color-bg-card);
   border: 1px solid var(--gold);
   color: var(--gold);
   font-size: 26rpx;
 }
 
-.hologram-btn::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(196, 167, 108, 0.08);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.hologram-btn:active,
-.hologram-press {
-  background: var(--color-bg-elevated);
-  transform: scale(0.97);
-}
-
-.hologram-btn:active::before {
-  opacity: 1;
-}
 .hologram-btn.is-busy { opacity: 0.6; }
+
+/* 每种状态唯一的主操作：金底 */
+.hologram-btn.od-primary {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--color-bg);
+  font-size: 28rpx;
+}
 
 .pending-pay-actions {
   display: flex;
   align-items: center;
-  gap: 24rpx;
+  gap: 16rpx;
   width: 100%;
 }
-.pending-pay-actions .flex-grow { flex: 1; }
+.pending-pay-actions .flex-grow { flex: 1; min-width: 0; }
 .pending-pay-actions .btn-text.cancel {
+  flex: 0 0 200rpx;
   color: var(--color-text-secondary);
-  padding: 24rpx 32rpx;
-  font-size: 28rpx;
 }
 
 .received-actions {

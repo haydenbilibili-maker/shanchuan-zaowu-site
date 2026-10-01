@@ -242,7 +242,97 @@ const ROUNDS = {
     <div class="field-row"><span class="field-label">选择订单 <span class="req">*</span></span><div class="order-picker"><span class="order-picker-placeholder">点击选择可开票订单</span><span class="order-picker-arrow">选择 →</span></div></div>
     <div class="field-row"><span class="field-label">抬头类型 <span class="req">*</span><span class="field-hint-inline">个人 / 企业</span></span></div>
   </div></div>`, 420)
+  ],
+  od: () => orderDetailPanels()
+}
+
+/* ── 订单详情：用迷你 WXML 求值器直接渲染**真实 wxml**（wx:if / elif / else、{{表达式}}），按状态逐一出底栏 ── */
+function parseWxml(src) {
+  const root = { children: [] }
+  const stack = [root]
+  const re = /<!--[\s\S]*?-->|<(\/?)([a-zA-Z][\w-]*)((?:\s+[^\s=>/]+(?:="[^"]*")?)*)\s*(\/?)>|([^<]+)/g
+  let m
+  while ((m = re.exec(src))) {
+    if (m[0].startsWith('<!--')) continue
+    if (m[5] != null) { if (m[5].trim()) stack.at(-1).children.push({ text: m[5] }); continue }
+    if (m[1]) { if (stack.length > 1 && stack.at(-1).tag === m[2]) stack.pop(); continue }
+    const attrs = {}
+    for (const a of m[3].matchAll(/([^\s=]+)(?:="([^"]*)")?/g)) attrs[a[1]] = a[2] == null ? 'true' : a[2]
+    const node = { tag: m[2], attrs, children: [] }
+    stack.at(-1).children.push(node)
+    if (!m[4] && !['image', 'input'].includes(m[2])) stack.push(node)
+  }
+  return root
+}
+function evalExpr(expr, data) {
+  const scope = new Proxy(data, { has: () => true, get: (t, k) => (k === Symbol.unscopables ? undefined : t[k]) })
+  try { return new Function('s', `with (s) { return (${expr}) }`)(scope) } catch { return undefined }
+}
+const interp = (s, data) => {
+  const whole = s.match(/^\{\{([\s\S]*)\}\}$/)
+  if (whole) return evalExpr(whole[1], data)
+  return s.replace(/\{\{([\s\S]*?)\}\}/g, (_, e) => { const v = evalExpr(e, data); return v == null ? '' : String(v) })
+}
+function renderNodes(children, data) {
+  let out = ''
+  let chainMatched = null
+  for (const n of children) {
+    if (n.text != null) { out += interp(n.text, data); continue }
+    const a = n.attrs
+    if ('wx:if' in a) { chainMatched = !!interp(a['wx:if'], data); if (!chainMatched) continue }
+    else if ('wx:elif' in a) { if (chainMatched) continue; chainMatched = !!interp(a['wx:elif'], data); if (!chainMatched) continue }
+    else if ('wx:else' in a) { if (chainMatched) continue; chainMatched = null }
+    else chainMatched = null
+    if (n.tag === 'canvas' || n.tag === 'app-modal') continue
+    if ('wx:for' in a) {
+      const list = interp(a['wx:for'], data) || []
+      const item = a['wx:for-item'] || 'item'
+      list.forEach((it, index) => { out += renderEl(n, { ...data, [item]: it, index }) })
+      continue
+    }
+    out += renderEl(n, data)
+  }
+  return out
+}
+function renderEl(n, data) {
+  if (n.tag === 'block') return renderNodes(n.children, data)
+  const cls = interp(n.attrs.class || '', data)
+  const style = interp(n.attrs.style || '', data)
+  if (n.tag === 'image') return `<span class="${cls}" style="display:inline-block;${style}">${BOX}</span>`
+  const tag = n.tag === 'text' ? 'span' : 'div'
+  return `<${tag} class="${cls}" style="${style}">${renderNodes(n.children, data)}</${tag}>`
+}
+
+function orderDetailPanels() {
+  const wxml = readFileSync(resolve(MP, 'subpackages/business/order-detail/index.wxml'), 'utf8')
+  const tree = parseWxml(wxml)
+  const base = {
+    loading: false, loadError: false, isDecrypted: true, orderId: 'o1', showOrderPrice: false,
+    order: { _id: 'o1', serialNo: 'ARC-6S4352-2026', archiveDate: '2026.9.21', totalPrice: '468.00', products: [{ title: '蓝闪蝶', latin: 'Morpho' }],
+      logistics: { carrier: '顺丰速运', trackingNumber: 'SF0213728671548' }, address: { name: '李月', phone: '18104378650' }, addressLine: '吉林省 辽源市 龙山区 南康街道人民大街3386号' },
+    payBtnLabel: '立即支付', refundEntryLabel: '申请售后', hasTracking: true, canOpenWxTrack: true
+  }
+  const gift = { isGiftOrder: true, giftRecipientName: '厉玥', giftStatusTone: 'done', giftStatusText: '礼物已送达', giftNotePreview: '又一年，祝你生日快乐。柜中挑了一件想让你慢慢看的藏品', giftCardSignature: '大哥', giftHasVoice: true, giftShareToken: 't', giftEnvelopeLabel: '查看礼赠信封' }
+  const st = (status, extra = {}) => ({ ...base, ...extra, order: { ...base.order, status, ...(extra.order || {}) } })
+  const STATES = [
+    ['待付款', st('pending_pay')],
+    ['待发货 · 快递', st('paid', { showRefundEntry: true })],
+    ['待发货 · 门店自取', st('paid', { showRefundEntry: true, showOrderPickup: true, isStorePickup: true })],
+    ['支付确认中 · 自取（按钮最多）', st('paying', { showRefundEntry: true, showOrderPickup: true, showPayConfirmRetry: true })],
+    ['已发货', st('shipped', { showRefundEntry: true })],
+    ['售后中', st('refunding', { showRefundEntry: true, refundEntryLabel: '查看售后进度' })],
+    ['已签收 · 自购（养护 + 待评价）', st('received', { showCare: true, certRole: 'holder', reviewCanAny: true, reviewPendingCount: 1, showRefundEntry: true })],
+    ['已签收 · 礼赠送礼人（真机截图态）', st('received', { ...gift, certRole: 'giver', reviewCanAny: false, reviewSummaryLabel: '已评价', showRefundEntry: true })],
+    ['礼赠 · 送礼人待对方填址', st('paid', { ...gift, giftAwaitingAddress: true, giftExpireHint: '对方 3 天内未填址将自动退款', showRefundEntry: true })],
+    ['礼赠 · 受礼人待填址', st('paid', { ...gift, isGiftReceiver: true, giftReceiverNeedsAddress: true, giftExpireHint: '请在 3 天内留下收件去处' })]
   ]
+  const css = ['subpackages/business/order-detail/index.wxss']
+  // 该页 wxss 的 `view, text, image, button { box-sizing: border-box }` 不匹配 div/span，这里补上，否则次级行按 content-box 提前换行
+  const footerOnly = 'div,span{box-sizing:border-box}.archive-folder{display:none}'
+  const panels = STATES.map(([title, data]) => panel(title, css, renderNodes(tree.children, data), 560, footerOnly))
+  const giftFull = STATES[7][1]
+  panels.push(panel('整页 · 礼赠送礼人已签收（礼赠档案位置）', css, renderNodes(tree.children, giftFull), 2600, 'div,span{box-sizing:border-box}body{padding-bottom:0}'))
+  return panels
 }
 
 const build = ROUNDS[round]
@@ -265,7 +355,7 @@ const child = spawn(chrome, [
   '--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run',
   '--no-default-browser-check', `--user-data-dir=${profile}`,
   '--hide-scrollbars', '--force-device-scale-factor=2',
-  `--window-size=${16 + panels.length * 391},820`, '--virtual-time-budget=3000',
+  round === 'od' ? `--window-size=${16 + 6 * 391},1720` : `--window-size=${16 + panels.length * 391},820`, '--virtual-time-budget=3000',
   `--screenshot=${out}`, `file://${htmlPath}`
 ], { stdio: 'ignore' })
 
