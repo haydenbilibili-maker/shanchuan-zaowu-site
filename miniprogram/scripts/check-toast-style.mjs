@@ -206,8 +206,8 @@ function selftest() {
     {
       name: '母版引用幻影令牌（AppModal 用不在册的 --fs-27）',
       file: MODAL_WXSS,
-      from: '  font-size: var(--fs-26);',
-      to: '  font-size: var(--fs-27);'
+      from: '.am-content {\n  margin-top: 16rpx;\n  font-size: var(--fs-26);',
+      to: '.am-content {\n  margin-top: 16rpx;\n  font-size: var(--fs-27);'
     }
   ]
   let bad = 0
