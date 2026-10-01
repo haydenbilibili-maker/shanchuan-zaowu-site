@@ -11,7 +11,7 @@ const baseRefreshOpsSignals = managerPageConfig.refreshOpsSignals
 const HUB_SHEET_CLOSED = { open: false, id: '', title: '', items: [] }
 const HUB_TODO_EMPTY = { total: 0, totalText: '0', items: [], any: false }
 const HUB_FAV_EDIT_CLOSED = { open: false, ids: [], selected: [], groups: [], full: false, count: 0, max: hubNav.FAV_MAX }
-const HUB_CAT_EMPTY = { total: 0, anchors: [] }
+const HUB_CAT_EMPTY = { total: 0, search: false }
 
 /** 本机常用：{ [workspaceRole]: [入口 id] }，与 2026-09-30 首版同一个 key、同一形状（旧数据原样可读） */
 function readFavStore() {
@@ -30,7 +30,7 @@ function loadFavIds(role, menu) {
   return hubNav.defaultFavs(role, menu)
 }
 
-/** 编辑面板保存与长按加入共用：先归一化（映射 / 权限 / 上限）再按角色写回，其它角色的保存值原样保留 */
+/** 编辑面板保存：先归一化（映射 / 权限 / 上限）再按角色写回，其它角色的保存值原样保留 */
 function persistFavs(page, ids) {
   const clean = hubNav.normalizeFavs(ids, page.data.menu)
   const store = readFavStore()
@@ -73,10 +73,11 @@ Page({
       hubTodo: HUB_TODO_EMPTY,
       hubFav: [],
       hubFavEdit: HUB_FAV_EDIT_CLOSED,
-      hubSpan: {},
       hubCat: HUB_CAT_EMPTY,
-      hubPinned: {},
-      hubPinTip: ''
+      hubFold: {},
+      hubPeek: {},
+      hubQuery: '',
+      hubFound: []
     })
     await baseOnLoad.call(this, options)
     redirectEmbeddedModule(this, options)
@@ -85,18 +86,15 @@ Page({
   applyWorkspaceRole(role) {
     baseApplyWorkspaceRole.call(this, role)
     this._favIds = loadFavIds(this.data.workspaceRole, this.data.menu)
-    this.setData(hubNav.buildHubView(this._favIds, this.data))
-  },
-
-  onUnload() {
-    if (this._pinTipTimer) clearTimeout(this._pinTipTimer)
-    if (typeof managerPageConfig.onUnload === 'function') managerPageConfig.onUnload.call(this)
+    this.setData({ ...hubNav.buildHubView(this._favIds, this.data), hubQuery: '', hubFound: [] })
   },
 
   /** 角标计数每次变化后都会走这里，顺带汇总顶部待办条 */
   refreshOpsSignals() {
     baseRefreshOpsSignals.call(this)
-    this.setData({ hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data) })
+    const patch = { hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data) }
+    if (this.data.hubQuery) patch.hubFound = hubNav.searchEntries(this.data.hubQuery, this.data)
+    this.setData(patch)
   },
 
   /* ── 我的常用 ── */
@@ -145,42 +143,20 @@ Page({
     this.setData({ hubFavEdit: HUB_FAV_EDIT_CLOSED, ...hubNav.buildHubView(ids, this.data) })
   },
 
-  /** 长按「全部功能」里的入口：加入 / 移出常用（就地提示，不弹窗；页顶提示条在长页底部看不见） */
-  onHubPin(e) {
-    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.fid) || '')
-    const entry = hubNav.findEntry(id)
-    if (!entry) return
-    const r = hubNav.pinToggle(this._favIds || [], id, this.data.menu)
-    let tip = ''
-    if (r.full) tip = `常用已满 ${hubNav.FAV_MAX} 个，先在上方「编辑」里移除一个`
-    else if (r.changed) {
-      const ids = persistFavs(this, r.ids)
-      if (!ids) tip = '常用保存失败，请重试'
-      else {
-        this._favIds = ids
-        tip = r.added ? `已加入常用：${entry.label}` : `已移出常用：${entry.label}`
-        this.setData(hubNav.buildHubView(ids, this.data))
-      }
-    }
-    if (!tip) return
-    wx.vibrateShort({ type: 'light' })
-    if (this._pinTipTimer) clearTimeout(this._pinTipTimer)
-    this.setData({ hubPinTip: tip })
-    this._pinTipTimer = setTimeout(() => {
-      this._pinTipTimer = null
-      this.setData({ hubPinTip: '' })
-    }, 1800)
+  /* ── 全部功能：分区折叠 / 搜索 ── */
+  onHubFold(e) {
+    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.sec) || '')
+    if (!id || !this.data.hubSec[id]) return
+    this.setData({ [`hubFold.${id}`]: !this.data.hubFold[id] })
   },
 
-  /** 分组锚点：滚到对应分区（扣掉自绘导航高度） */
-  onHubAnchor(e) {
-    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
-    if (!id) return
-    wx.pageScrollTo({
-      selector: `#hub-sec-${id}`,
-      offsetTop: -((Number(this.data.navSpacerHeight) || 0) + 8),
-      duration: 240
-    })
+  onHubSearch(e) {
+    const q = String((e && e.detail && e.detail.value) || '').slice(0, 20)
+    this.setData({ hubQuery: q, hubFound: hubNav.searchEntries(q, this.data) })
+  },
+
+  onHubSearchClear() {
+    this.setData({ hubQuery: '', hubFound: [] })
   },
 
   closeFavEditor() {

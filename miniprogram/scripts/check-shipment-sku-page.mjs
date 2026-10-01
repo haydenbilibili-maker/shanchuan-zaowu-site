@@ -70,9 +70,9 @@ function collect(s) {
     errs.push('shipment-sku 重定向壳不得再调云函数（逻辑已并入出货中心）')
   }
   // A2 单一磁贴 + staffAuth 同步
-  const tiles = s.hubWxml.match(/<text>出货中心<\/text>/g) || []
+  const tiles = s.hubWxml.match(/<text(?: class="hub-row-name")?>出货中心<\/text>/g) || []
   if (tiles.length !== 1) errs.push(`工作台须恰好一枚「出货中心」磁贴（现 ${tiles.length}）`)
-  if (/<text>出货开单<\/text>|<text>出货单<\/text>/.test(s.hubWxml)) {
+  if (/<text(?: class="hub-row-name")?>(?:出货开单|出货单)<\/text>/.test(s.hubWxml)) {
     errs.push('工作台不得再有独立「出货开单」/「出货单」磁贴')
   }
   if (!/wx:if="\{\{menu\.shipmentOps\}\}"\s+bindtap="goShipmentOps">[\s\S]{0,200}出货中心/.test(s.hubWxml)) {

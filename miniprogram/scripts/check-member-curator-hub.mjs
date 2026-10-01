@@ -66,9 +66,9 @@ function evalCjs(code) {
   return mod.exports
 }
 
-/** 找某枚磁贴所在分区（向前最近的 hub-sec 开标签；2026-10-01 起开标签带便当列数 span-{{hubSpan.<id>}} 与锚点 id） */
+/** 找某个入口所在分区（向前最近的分区开标签；2026-10-01 方案 A 起为可折叠列表组 hub-grp，带锚点 id） */
 function sectionOf(wxml, at) {
-  const re = /<view class="hub-sec span-\{\{hubSpan\.\w+\}\}" wx:if="\{\{hubSec\.(\w+)\}\}" id="hub-sec-\w+">/g
+  const re = /<view class="hub-grp" wx:if="\{\{hubSec\.(\w+)\}\}" id="hub-sec-\w+">/g
   let m
   let sec = null
   while ((m = re.exec(wxml)) && m.index < at) sec = m[1]
@@ -76,9 +76,9 @@ function sectionOf(wxml, at) {
 }
 
 function checkTile(errs, s, label, key, handler) {
-  const tiles = s.hubWxml.match(new RegExp(`<text>${label}</text>`, 'g')) || []
+  const tiles = s.hubWxml.match(new RegExp(`<text class="hub-row-name">${label}</text>`, 'g')) || []
   if (tiles.length !== 1) errs.push(`工作台须恰好一枚「${label}」磁贴（现 ${tiles.length}）`)
-  const re = new RegExp(`wx:if="\\{\\{menu\\.${key}\\}\\}"\\s+bindtap="${handler}">[\\s\\S]{0,200}<text>${label}</text>`)
+  const re = new RegExp(`wx:if="\\{\\{menu\\.${key}\\}\\}"\\s+bindtap="${handler}">[\\s\\S]{0,240}<text class="hub-row-name">${label}</text>`)
   const m = s.hubWxml.match(re)
   if (!m) {
     errs.push(`「${label}」磁贴须按 menu.${key} 单独显示并绑 ${handler}（恢复合并前的权限判断）`)
@@ -168,10 +168,10 @@ if (selftest) {
   // 每条注入只改内存副本，不碰源文件；任何一条没被检出即失败
   const cases = [
     ['合并磁贴复活', (s) => ({ ...s, hubWxml: s.hubWxml + '\n<view class="menu-btn" wx:if="{{menu.memberLevelAdjust || menu.honoraryCurators}}" bindtap="goMemberCuratorHub"><text>会员</text></view>' }), /合并磁贴/],
-    ['馆长磁贴丢失', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<text>荣誉馆长</text>', '<text>馆长</text>') }), /恰好一枚「荣誉馆长」/],
+    ['馆长磁贴丢失', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<text class="hub-row-name">荣誉馆长</text>', '<text class="hub-row-name">馆长</text>') }), /恰好一枚「荣誉馆长」/],
     ['调级磁贴权限写宽', (s) => ({ ...s, hubWxml: s.hubWxml.replace('wx:if="{{menu.memberLevelAdjust}}" bindtap="goMemberLevelAdjust"', 'wx:if="{{menu.memberLevelAdjust || menu.honoraryCurators}}" bindtap="goMemberLevelAdjust"') }), /按 menu\.memberLevelAdjust 单独显示|合并磁贴/],
     ['馆长磁贴绑错入口', (s) => ({ ...s, hubWxml: s.hubWxml.replace('bindtap="goHonoraryCurators"', 'bindtap="goMemberLevelAdjust"') }), /按 menu\.honoraryCurators 单独显示/],
-    ['馆长磁贴移出会员分区', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<view class="hub-sec span-{{hubSpan.members}}" wx:if="{{hubSec.members}}" id="hub-sec-members">', '<view class="hub-sec span-{{hubSpan.members}}" wx:if="{{hubSec.memberz}}" id="hub-sec-members">') }), /须在「会员触达」分区/],
+    ['馆长磁贴移出会员分区', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<view class="hub-grp" wx:if="{{hubSec.members}}" id="hub-sec-members">', '<view class="hub-grp" wx:if="{{hubSec.memberz}}" id="hub-sec-members">') }), /须在「会员触达」分区/],
     ['馆长门禁判错权限', (s) => ({ ...s, hubJs: s.hubJs.replace(/(goHonoraryCuratorsGuarded\(\) \{\n\s+if \(!canSeeMenu\(this\.data\.workspaceRole, MENU_KEYS\.)HONORARY_CURATORS/, '$1MEMBER_LEVEL_ADJUST') }), /须按 MENU_KEYS\.HONORARY_CURATORS/],
     ['调级入口别名未挂', (s) => ({ ...s, hubJs: s.hubJs.replace('goMemberLevelAdjust: function () { this.goMemberLevelAdjustGuarded(); },', '') }), /goMemberLevelAdjust → goMemberLevelAdjustGuarded/],
     ['旧页从分包摘除', (s) => ({ ...s, appJson: s.appJson.replace('"honorary-curators/index",', '') }), /须登记 honorary-curators\/index/],

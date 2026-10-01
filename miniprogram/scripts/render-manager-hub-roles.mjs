@@ -9,6 +9,7 @@
  * 用法：
  *   node miniprogram/scripts/render-manager-hub-roles.mjs --out-dir <目录> [--rev <git 提交>] [--only super,manager,staff]
  *   --rev  从该提交读 wxml / wxss / hubNav.js（出「改前」图），默认读工作区
+ * 「入口」= 常用磁贴 + 全部功能列表行（2026-10-01 方案 A 起）；scroll-view 在预览里是普通 div，横条按真机裁切。
  * 每个角色产出：<角色>.png（整页）、<角色>-first.png（首屏）、<角色>.measure.json（整页高 / 首屏完整可见入口数等）
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -106,6 +107,8 @@ function dataFor(role) {
   d.hubSec = hubNav.sectionFlags(menu)
   d.hubSheet = { open: false, items: [] }
   d.hubPinTip = ''
+  d.hubQuery = ''
+  d.hubFound = []
   d.hubFavEdit = { open: false, selected: [], groups: [] }
   d.hubTodo = hubNav.buildTodos(d)
   const favIds = hubNav.defaultFavs(role, menu)
@@ -117,17 +120,17 @@ function dataFor(role) {
 const MEASURE_JS = `(() => {
   const top = document.querySelector('.dashboard-view').getBoundingClientRect().top
   const vis = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 }
-  const tiles = [...document.querySelectorAll('.hub-tile')].filter(vis)
+  const tiles = [...document.querySelectorAll('.hub-tile, .hub-row')].filter(vis)
   const firstTiles = tiles.filter((el) => el.getBoundingClientRect().bottom - top <= ${FIRST_SCREEN})
   const todo = [...document.querySelectorAll('.hub-todo-chip, .hub-todo-cell')].filter(vis)
   const firstTodo = todo.filter((el) => el.getBoundingClientRect().bottom - top <= ${FIRST_SCREEN})
   const box = (sel) => { const el = document.querySelector(sel); if (!el || !vis(el)) return null; const r = el.getBoundingClientRect(); return { top: Math.round(r.top - top), height: Math.round(r.height) } }
   const out = {
     pageHeight: Math.round(document.querySelector('.dashboard-view').getBoundingClientRect().height),
-    tiles: tiles.length, firstScreenTiles: firstTiles.length, firstScreenTileNames: firstTiles.map((el) => (el.querySelector('text') || {}).textContent || ''),
+    tiles: tiles.length, firstScreenTiles: firstTiles.length, firstScreenTileNames: firstTiles.map((el) => (el.querySelector('.hub-row-name, span') || {}).textContent || ''),
     todoItems: todo.length, firstScreenTodo: firstTodo.length,
     favBox: box('.hub-fav'), todoBox: box('.hub-todo'), catalogBox: box('.hub-cat') || box('.hub-nav'),
-    sections: [...document.querySelectorAll('.hub-sec')].filter(vis).map((el) => { const r = el.getBoundingClientRect(); return { title: (el.querySelector('.hub-sec-title') || {}).textContent || '', w: Math.round(r.width), h: Math.round(r.height), tiles: el.querySelectorAll('.hub-tile').length } })
+    sections: [...document.querySelectorAll('.hub-sec, .hub-grp')].filter(vis).map((el) => { const r = el.getBoundingClientRect(); return { title: (el.querySelector('.hub-sec-title, .hub-grp-title') || {}).textContent || '', w: Math.round(r.width), h: Math.round(r.height), tiles: el.querySelectorAll('.hub-tile, .hub-row').length } })
   }
   const pre = document.createElement('pre'); pre.id = '__m'; pre.textContent = JSON.stringify(out); document.body.appendChild(pre)
 })()`
@@ -144,6 +147,7 @@ function htmlFor(data, tail) {
 :root { --font-mono: "SF Mono", Menlo, monospace; }
 html, body { margin: 0; padding: 0; width: 750px; background: #1a1814; color: #fff; font-family: -apple-system, "PingFang SC", sans-serif; }
 img:not([src]), img[src=""] { visibility: hidden; }
+.hub-todo-strip { overflow: hidden; }
 </style><style>${css.replace(/\bpage\s*\{/g, 'body {')}</style></head><body>${body}${tail}</body></html>`
 }
 

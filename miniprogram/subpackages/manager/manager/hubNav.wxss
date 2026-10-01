@@ -1,5 +1,6 @@
-/* 工作台功能入口（2026-09-30 全局改版；2026-10-01 展示改版）：待办卡 + 我的常用（首屏）+ 「全部功能」5 列便当式流排 + 合并磁贴二级面板。
-   按压态一律用 app.wxss 的 tap-press / tap-press-soft；说明字不低于 secondary（#B9AD96 在深底约 8:1）。 */
+/* 工作台功能入口（2026-09-30 全局改版；2026-10-01 展示改版·方案 A）：搜索（超管）+ 待处理横条 + 我的常用（首屏）
+   + 「全部功能」分区列表（可折叠）+ 二级面板底部 sheet。只有一种标记：红色数字角标。
+   按压态一律用 app.wxss 的 tap-press；说明字不低于 secondary（#B9AD96 在深底约 8:1）。 */
 
 .grid-item.hub-nav {
   background: transparent;
@@ -31,83 +32,111 @@
   color: #F3E9D2;
 }
 
-/* ── 待办卡 ── */
+/* ── 唯一的标记：红色数字角标（常用图标右上角 / 列表行右侧 / 待处理横条同一枚） ── */
+.hub-badge {
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 9rpx;
+  border-radius: 17rpx;
+  background: #C0392B;
+  color: #FFFFFF;
+  font-size: 20rpx;
+  font-weight: bold;
+  line-height: 34rpx;
+  text-align: center;
+  box-sizing: border-box;
+}
+.hub-badge--live {
+  letter-spacing: 1rpx;
+  font-size: 16rpx;
+}
+
+/* ── 功能搜索（超管） ── */
+.hub-search {
+  margin-bottom: 24rpx;
+}
+.hub-search-box {
+  display: flex;
+  align-items: center;
+  height: 80rpx;
+  padding: 0 12rpx 0 28rpx;
+  border-radius: 40rpx;
+  background: #26221B;
+  border: 1rpx solid rgba(196, 167, 108, 0.3);
+}
+.hub-search-ico {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+}
+.hub-search-input {
+  flex: 1;
+  min-width: 0;
+  height: 80rpx;
+  margin-left: 16rpx;
+  background: transparent;
+  font-size: 26rpx;
+  color: #F0E6D2;
+}
+.hub-search-ph {
+  color: #B9AD96;
+}
+.hub-search-clear {
+  flex-shrink: 0;
+  padding: 0 20rpx;
+  height: 56rpx;
+  line-height: 56rpx;
+  border-radius: 28rpx;
+  font-size: 24rpx;
+  color: #E0C58A;
+}
+.hub-found {
+  margin-top: 16rpx;
+}
+.hub-found-empty {
+  padding: 32rpx 24rpx;
+  font-size: 24rpx;
+  color: #B9AD96;
+  text-align: center;
+}
+
+/* ── 待处理横条：一排「名称 + 红色数字」，多了横向滑动 ── */
 .hub-todo {
   background: linear-gradient(135deg, #3B301C 0%, #261F15 100%);
   border: 1rpx solid rgba(196, 167, 108, 0.5);
   border-radius: 24rpx;
-  padding: 22rpx 20rpx 20rpx;
+  padding: 22rpx 0 22rpx 24rpx;
   margin-bottom: 24rpx;
 }
 .hub-todo-head {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 0 4rpx;
+  padding-right: 24rpx;
 }
-.hub-todo-total {
-  display: flex;
-  align-items: baseline;
-}
-.hub-todo-num {
-  font-family: var(--font-din, 'DIN Alternate'), -apple-system, sans-serif;
-  font-size: 60rpx;
-  line-height: 1;
-  font-weight: bold;
-  color: #F3E2B8;
-}
-.hub-todo-unit {
-  margin-left: 6rpx;
-  font-size: 22rpx;
+.hub-todo-sum {
+  font-size: 24rpx;
   color: #B9AD96;
 }
-/* 四格等分：fr 分配剩余宽度，不存在「百分比 + 间距恰好 100%」的真机取整换行（错题本 E26） */
-.hub-todo-cells {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12rpx;
+.hub-todo-strip {
   margin-top: 18rpx;
-}
-.hub-todo-cell {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 0;
-  min-height: 112rpx;
-  padding: 14rpx 6rpx;
-  border-radius: 16rpx;
-  background: rgba(20, 18, 14, 0.5);
-  border: 1rpx solid rgba(196, 167, 108, 0.3);
-}
-.hub-todo-cell-num {
-  font-family: var(--font-din, 'DIN Alternate'), -apple-system, sans-serif;
-  font-size: 40rpx;
-  line-height: 48rpx;
-  font-weight: bold;
-  color: #E8C77A;
-}
-.hub-todo-cell-label {
-  max-width: 100%;
-  margin-top: 6rpx;
-  font-size: 22rpx;
-  color: #F0E6D2;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.hub-todo-cell-new {
-  position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  height: 28rpx;
-  line-height: 28rpx;
-  padding: 0 8rpx;
-  border-radius: 14rpx;
-  background: #C0392B;
-  color: #FFFFFF;
-  font-size: 18rpx;
+.hub-todo-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 72rpx;
+  padding: 0 18rpx 0 24rpx;
+  margin-right: 14rpx;
+  border-radius: 36rpx;
+  background: rgba(20, 18, 14, 0.5);
+  border: 1rpx solid rgba(196, 167, 108, 0.32);
+}
+.hub-todo-label {
+  margin-right: 12rpx;
+  font-size: 26rpx;
+  color: #F0E6D2;
 }
 .hub-todo--clear {
   display: flex;
@@ -122,19 +151,19 @@
   color: #B9AD96;
 }
 
-/* ── 我的常用（首屏核心） ── */
+/* ── 我的常用（首屏核心）：4 列大图标，「编辑」是唯一的增删入口 ── */
 .hub-fav {
   background: #262017;
   border: 1rpx solid rgba(196, 167, 108, 0.4);
   border-radius: 24rpx;
-  padding: 20rpx 16rpx 12rpx;
+  padding: 22rpx 16rpx 12rpx;
   margin-bottom: 28rpx;
 }
 .hub-fav-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 6rpx;
+  padding: 0 8rpx;
   margin-bottom: 12rpx;
 }
 .hub-fav-edit {
@@ -147,7 +176,46 @@
   color: #E0C58A;
 }
 .hub-grid--fav {
+  display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  row-gap: 4rpx;
+}
+.hub-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  height: 156rpx;
+  padding-top: 12rpx;
+  border-radius: 16rpx;
+}
+.hub-tile .hub-ico {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 24rpx;
+}
+.hub-tile .hub-ico-img {
+  width: 46rpx;
+  height: 46rpx;
+}
+.hub-tile .hub-badge {
+  position: absolute;
+  top: -8rpx;
+  right: -14rpx;
+  border: 2rpx solid #262017;
+}
+.hub-tile > text {
+  display: block;
+  max-width: 100%;
+  margin-top: 12rpx;
+  padding: 0 4rpx;
+  font-size: 24rpx;
+  line-height: 34rpx;
+  color: #F0E6D2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .hub-fav-empty {
   padding: 28rpx 8rpx;
@@ -156,192 +224,133 @@
   text-align: center;
 }
 
-/* ── 全部功能：5 列便当式流排。分区卡占「可见入口数」列（span-N），dense 让小分区并排补位 ── */
-.hub-cat-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 0 4rpx;
-}
-.hub-cat-count {
-  font-size: 22rpx;
-  color: #B9AD96;
-}
-.hub-cat-hint {
-  display: block;
-  margin: 8rpx 4rpx 16rpx;
-  font-size: 22rpx;
-  line-height: 32rpx;
-  color: #B9AD96;
-}
-.hub-cat-hint.is-tip {
-  color: #E8C77A;
-}
-.hub-anchors {
-  display: flex;
-  margin-bottom: 16rpx;
-}
-.hub-anchor {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 72rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 36rpx;
-  background: #2A251D;
-  border: 1rpx solid rgba(196, 167, 108, 0.28);
-  font-size: 22rpx;
-  color: #F0E6D2;
-  white-space: nowrap;
-}
-.hub-anchor + .hub-anchor {
-  margin-left: 8rpx;
-}
-.hub-anchor-n {
-  margin-left: 4rpx;
-  font-size: 18rpx;
-  color: #C4A76C;
-}
-.hub-cat-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-auto-flow: row dense;
-  gap: 12rpx;
-}
-.hub-sec {
-  min-width: 0;
-  padding: 14rpx 0 6rpx;
-  background: #211E19;
-  border: 1rpx solid rgba(196, 167, 108, 0.14);
-  border-radius: 20rpx;
-}
-.hub-sec.span-1 { grid-column: span 1; }
-.hub-sec.span-2 { grid-column: span 2; }
-.hub-sec.span-3 { grid-column: span 3; }
-.hub-sec.span-4 { grid-column: span 4; }
-.hub-sec.span-5 { grid-column: span 5; }
-.hub-sec-head {
-  display: flex;
-  align-items: center;
-  height: 32rpx;
-  padding: 0 6rpx 0 12rpx;
-  margin-bottom: 4rpx;
-}
-.hub-sec-head::before {
-  content: '';
-  flex-shrink: 0;
-  width: 4rpx;
-  height: 22rpx;
-  border-radius: 2rpx;
-  background: #C4A76C;
-  margin-right: 8rpx;
-}
-.hub-sec-title {
-  min-width: 0;
-  font-size: 22rpx;
-  font-weight: 600;
-  color: #EADFC8;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-/* 分区内列数 = 分区所占列数、列距同外层 12rpx，磁贴与全局 5 列网格对齐（同宽） */
-.hub-grid {
-  display: grid;
-  column-gap: 12rpx;
-  row-gap: 4rpx;
-}
-.hub-grid.cols-1 { grid-template-columns: minmax(0, 1fr); }
-.hub-grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.hub-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.hub-grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.hub-grid.cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-
-/* ── 统一磁贴：常用区与全部功能同一规格（尺寸只在这里定义，不许按区 / 按入口另设） ── */
-.hub-tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 0;
-  height: 128rpx;
-  padding-top: 10rpx;
-  border-radius: 16rpx;
-}
+/* ── 图标底座（常用 / 列表 / 搜索结果共用；与旧菜单同一枚金色单色滤镜，真机已验证） ── */
 .hub-ico {
   position: relative;
-  width: 68rpx;
-  height: 68rpx;
   flex-shrink: 0;
-  border-radius: 50%;
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 16rpx;
   background: rgba(196, 167, 108, 0.14);
   display: flex;
   align-items: center;
   justify-content: center;
 }
-/* 与旧菜单同一枚金色单色滤镜（真机已验证）：素材色不一，统一成金线图标 */
 .hub-ico-img {
-  width: 38rpx;
-  height: 38rpx;
+  width: 34rpx;
+  height: 34rpx;
   flex-shrink: 0;
   filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
 }
-.hub-tile > text {
-  display: block;
-  max-width: 100%;
-  margin-top: 10rpx;
+
+/* ── 全部功能：分区列表（像系统设置页），组头点按折叠 / 展开 ── */
+.hub-cat-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
   padding: 0 4rpx;
+  margin-bottom: 18rpx;
+}
+.hub-cat-count {
   font-size: 22rpx;
-  line-height: 32rpx;
-  font-weight: 500;
-  color: #F0E6D2;
-  text-align: center;
+  color: #B9AD96;
+}
+.hub-grp {
+  margin-bottom: 16rpx;
+  background: #211E19;
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+.hub-grp-head {
+  display: flex;
+  align-items: center;
+  height: 84rpx;
+  padding: 0 24rpx;
+}
+.hub-grp-title {
+  flex-shrink: 0;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #EADFC8;
+}
+.hub-grp-peek {
+  flex: 1;
+  min-width: 0;
+  margin-left: 20rpx;
+  font-size: 22rpx;
+  color: #B9AD96;
+  text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* 点开有多项（二级面板）：图标双圈。常用区与全部功能同一表达，不再用折角箭头 / 副标题 */
-.hub-tile.is-group .hub-ico,
-.hub-ico.is-stack {
-  border: 2rpx solid rgba(196, 167, 108, 0.6);
-  box-shadow: 0 0 0 5rpx rgba(196, 167, 108, 0.16);
-}
-/* 已在常用：图标左上金点 */
-.hub-pin {
-  position: absolute;
-  top: 8rpx;
-  left: 50%;
-  margin-left: -40rpx;
+/* 折叠箭头：朝下 = 收起，朝上 = 展开 */
+.hub-grp-arrow {
+  flex-shrink: 0;
   width: 14rpx;
   height: 14rpx;
-  border-radius: 50%;
-  background: #E8C77A;
-  border: 2rpx solid #211E19;
+  margin: -6rpx 4rpx 0 18rpx;
+  border-right: 3rpx solid #C4A76C;
+  border-bottom: 3rpx solid #C4A76C;
+  transform: rotate(45deg);
 }
-.hub-badge {
-  position: absolute;
-  top: -6rpx;
-  right: -18rpx;
-  min-width: 30rpx;
-  height: 30rpx;
-  padding: 0 8rpx;
-  border-radius: 15rpx;
-  background: #C0392B;
-  color: #FFFFFF;
-  font-size: 18rpx;
-  font-weight: bold;
-  line-height: 26rpx;
-  text-align: center;
-  border: 2rpx solid #211E19;
+.hub-grp-arrow.is-open {
+  margin-top: 8rpx;
+  transform: rotate(-135deg);
 }
-.hub-badge--live {
-  letter-spacing: 1rpx;
-  font-size: 16rpx;
+.hub-list {
+  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+}
+.hub-found {
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-radius: 24rpx;
+  background: #211E19;
+  overflow: hidden;
+}
+.hub-row {
+  display: flex;
+  align-items: center;
+  min-height: 104rpx;
+  padding: 0 20rpx 0 24rpx;
+}
+.hub-row + .hub-row {
+  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+}
+.hub-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  margin-left: 20rpx;
+}
+.hub-row-name {
+  font-size: 28rpx;
+  line-height: 38rpx;
+  color: #F0E6D2;
+}
+.hub-row-desc {
+  margin-top: 4rpx;
+  font-size: 22rpx;
+  line-height: 30rpx;
+  color: #B9AD96;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hub-row .hub-badge {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+}
+.hub-row-go {
+  flex-shrink: 0;
+  margin-left: 12rpx;
+  font-size: 34rpx;
+  color: #9A8F7C;
 }
 
-/* 首屏骨架：待办格 + 两行常用（行 / 卡片来自 app.wxss 的 ui-sk-*，这里只放尺寸） */
-.ui-sk-line.wb-sk-todo { width: 22%; height: 96rpx; margin-top: 0; border-radius: 16rpx; }
+/* 首屏骨架：待处理横条 + 两行常用（行 / 卡片来自 app.wxss 的 ui-sk-*，这里只放尺寸） */
+.ui-sk-line.wb-sk-todo { width: 26%; height: 64rpx; margin-top: 0; border-radius: 32rpx; }
 .wb-sk-tiles + .wb-sk-tiles { margin-top: 16rpx; }
 
 /* ── 合并磁贴二级面板 ── */
