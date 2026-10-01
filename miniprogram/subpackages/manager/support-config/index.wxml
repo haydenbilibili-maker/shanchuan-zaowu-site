@@ -15,7 +15,7 @@
 
     <block wx:if="{{mode === 'list'}}">
       <view class="hint-card info">
-        <text class="hint-text">C 端读取 status=active 且 priority 最高的一条；未配置时回退云函数默认。</text>
+        <text class="hint-text">顾客端只读取「启用」中优先级最高的一条；一条都没有时使用系统默认设置。</text>
       </view>
 
       <view class="section" wx:for="{{list}}" wx:key="_id">

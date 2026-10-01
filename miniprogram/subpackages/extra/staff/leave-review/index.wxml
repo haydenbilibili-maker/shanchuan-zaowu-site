@@ -23,8 +23,8 @@
       <text class="meta soft" wx:if="{{item.storeName}}">{{item.storeName}} · {{item.createTimeText}}</text>
       <text class="remark" wx:if="{{item.reason}}">{{item.reason}}</text>
       <view class="actions">
-        <view class="btn reject {{reviewingId ? 'disabled' : ''}}" data-id="{{item._id}}" bindtap="review" data-decision="rejected">驳回</view>
-        <view class="btn approve {{reviewingId ? 'disabled' : ''}}" data-id="{{item._id}}" bindtap="review" data-decision="approved">通过</view>
+        <view class="btn reject {{reviewingId ? 'disabled' : ''}}" hover-class="btn-outline-press" hover-stay-time="100" data-id="{{item._id}}" bindtap="review" data-decision="rejected">驳回</view>
+        <view class="btn approve {{reviewingId ? 'disabled' : ''}}" hover-class="btn-primary-press" hover-stay-time="100" data-id="{{item._id}}" bindtap="review" data-decision="approved">{{reviewingId === item._id ? '处理中…' : '通过'}}</view>
       </view>
     </view>
   </view>

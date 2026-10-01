@@ -152,10 +152,6 @@ page {
   background: rgba(196, 167, 108, 0.12);
 }
 
-.seg-icon {
-  display: none;
-}
-
 .seg-name {
   font-size: 22rpx;
   color: var(--color-text-secondary);
@@ -572,64 +568,6 @@ page {
   font-weight: 500;
 }
 
-.user-id {
-  font-size: 20rpx;
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-}
-
-.seg-badge {
-  font-size: 22rpx;
-  font-weight: 500;
-}
-
-.rfm-badge {
-  font-size: 20rpx;
-  font-family: var(--font-mono);
-  color: var(--color-bg);
-  background: linear-gradient(135deg, var(--brass-500), var(--brass-400));
-  padding: 2rpx 10rpx;
-  border-radius: var(--radius-sm);
-}
-
-.meta-line,
-.points-line {
-  font-size: 20rpx;
-  color: var(--color-text-secondary);
-  text-align: right;
-}
-
-.points-line {
-  color: var(--brass-400);
-  font-weight: 500;
-}
-
-.tag-row {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8rpx;
-  overflow: hidden;
-}
-
-.tag-row.wrap {
-  flex-wrap: wrap;
-  gap: 12rpx 12rpx;
-}
-
-.mini-tag {
-  font-size: 20rpx;
-  color: var(--brass-300);
-  background: rgba(196, 167, 108, 0.12);
-  padding: 6rpx 14rpx;
-  border-radius: var(--radius-sm);
-  line-height: 1.35;
-}
-
-.mini-tag.soft {
-  color: var(--color-text-body);
-  background: var(--color-bg-elevated);
-}
-
 .page-tip {
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;
@@ -826,39 +764,6 @@ page {
 .d-hero-val.gold {
   color: var(--brass-400);
   font-weight: 600;
-}
-
-.user-id,
-.d-id {
-  font-size: 20rpx;
-  color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-}
-
-.seg-badge {
-  font-size: 22rpx;
-  font-weight: 500;
-}
-
-.rfm-badge {
-  font-size: 20rpx;
-  font-family: var(--font-mono);
-  color: var(--color-bg);
-  background: linear-gradient(135deg, var(--brass-500), var(--brass-400));
-  padding: 2rpx 10rpx;
-  border-radius: var(--radius-sm);
-}
-
-.meta-line,
-.points-line {
-  font-size: 20rpx;
-  color: var(--color-text-secondary);
-  text-align: right;
-}
-
-.points-line {
-  color: var(--brass-400);
-  font-weight: 500;
 }
 
 .info-rows {
@@ -1061,22 +966,6 @@ page {
   font-family: var(--font-mono);
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
-}
-
-.order-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
-  margin-bottom: var(--space-2);
-}
-
-.order-meta {
-  font-size: 20rpx;
-  color: var(--color-text-secondary);
-}
-
-.d-actions {
-  padding: var(--space-3) 0 var(--space-6);
 }
 
 .drawer-footer-spacer {

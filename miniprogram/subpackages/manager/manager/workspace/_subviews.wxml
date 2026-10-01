@@ -2299,7 +2299,7 @@
                 </view>
               </block>
             </view>
-            <text class="week-split-hint">分时段分布暂无数据源（云函数只按营业日聚合），未展示</text>
+            <text class="week-split-hint">分时段分布暂无数据源（目前只按营业日统计），未展示</text>
           </view>
         </block>
 

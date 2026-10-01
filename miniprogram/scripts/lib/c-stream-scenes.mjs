@@ -15,6 +15,14 @@ const SUB = 'subpackages/manager/manager/workspace/_subviews.wxml'
 const AP = 'subpackages/extra/approvals/index.wxml'
 const MGR_CSS = ['subpackages/manager/manager/workspace/index.wxss']
 const AP_CSS = ['subpackages/extra/approvals/index.wxss']
+const FIELD = 'subpackages/extra/staff/field/index.wxml'
+const FIELD_CSS = ['subpackages/extra/staff/field/index.wxss']
+const fieldBase = {
+  ready: true, storeName: '山海造物', member: null, candidates: [], showMemberPassResult: false, pickupCodeInput: '',
+  mineSummary: { count: 0, points: 0, amount: '0.00' }, canRevoke: false
+}
+// 页头（门店 / 今日汇总 / 灯语图例）本轮没动，截图隐藏以聚焦 Tab 内容
+const FIELD_FOCUS_CSS = '.header { display: none; }'
 
 function cutBetween(src, start, end) {
   const s = src.indexOf(start)
@@ -107,5 +115,21 @@ export const SCENES = [
       list: [apItem('a1', '报销 · 门店耗材'), apItem('a2', '请假 · 10 月 3 日', { actionLabel: '请假', summary: '事假 1 天' })],
       deciding: true, approvePendingId: 'a2', ignorePendingId: '', expandedId: '', loading: false, listError: false
     }
+  },
+  {
+    name: 'r2-field-verify-loading',
+    h: 1100,
+    wxml: () => read(FIELD),
+    wxss: FIELD_CSS,
+    extraCss: FIELD_FOCUS_CSS,
+    data: { ...fieldBase, curTab: 1, canVerifyPickup: true, pickupsLoading: true, bookingsLoading: true, pendingPickups: [], bookings: [] }
+  },
+  {
+    name: 'r2-field-records-empty',
+    h: 1000,
+    wxml: () => read(FIELD),
+    wxss: FIELD_CSS,
+    extraCss: FIELD_FOCUS_CSS,
+    data: { ...fieldBase, curTab: 2, records: [], recordsLoading: false, recordsError: '' }
   }
 ]

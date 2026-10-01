@@ -24,7 +24,7 @@
       <text class="status-strip-hint">{{storeName}} · {{dateKey}} · {{progress.done}} / {{progress.total}}</text>
     </view>
     <text class="last-feedback" wx:if="{{lastSave}}">{{lastSave}}</text>
-    <view class="check-row" wx:for="{{items}}" wx:key="id" bindtap="toggleItem" data-id="{{item.id}}">
+    <view class="check-row" wx:for="{{items}}" wx:key="id" bindtap="toggleItem" data-id="{{item.id}}" hover-class="record-press" hover-stay-time="80">
       <view class="check-box {{item.checked ? 'on' : ''}}"></view>
       <view class="check-label">
         <text>{{item.label}}</text>
@@ -32,6 +32,6 @@
       </view>
     </view>
     <view class="empty" wx:if="{{!items.length}}">本班次暂无清单项，请下拉刷新或联系店长</view>
-    <view class="btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveTodo">保存清单</view>
+    <view class="btn-primary {{saving ? 'disabled' : ''}}" hover-class="btn-primary-press" hover-stay-time="100" bindtap="saveTodo">{{saving ? '保存中…' : '保存清单'}}</view>
   </view>
 </view>

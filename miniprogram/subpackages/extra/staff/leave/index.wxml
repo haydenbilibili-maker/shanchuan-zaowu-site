@@ -62,7 +62,7 @@
              value="{{form.reason}}" bindinput="onInput" data-field="reason" />
     </view>
 
-    <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="submit">提交请假</view>
+    <view class="btn-primary {{submitting ? 'disabled' : ''}}" hover-class="btn-primary-press" hover-stay-time="100" bindtap="submit">{{submitting ? '提交中…' : '提交请假'}}</view>
     <text class="section-note">店员 / 标本师 / 主播由店长审批；店长本人请假由超管审批；超管提交直通通过。</text>
   </view>
 

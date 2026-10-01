@@ -192,12 +192,7 @@
                 </view>
               </view>
 
-              <view class="dg-tools">
-                <view class="dg-tool" bindtap="shareDigestSheet" hover-class="dg-tool-press" hover-stay-time="80">
-                  <text>复制 / 分享摘要</text>
-                </view>
-              </view>
-
+              <!-- 「复制摘要」只留底部操作栏一处（正文末尾曾重复一枚同功能按钮） -->
               <view class="dg-foot">
                 <text class="dg-note">{{digestView.snapshotNote}}</text>
                 <text class="dg-note" wx:if="{{digestView.generatedNote}}">{{digestView.generatedNote}}</text>

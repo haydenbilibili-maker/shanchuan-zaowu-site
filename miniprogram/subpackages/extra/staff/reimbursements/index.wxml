@@ -35,10 +35,10 @@
     <view class="image-thumb-row">
       <image class="thumb" wx:for="{{images}}" wx:key="*this" src="{{item}}" mode="aspectFill"
              bindtap="removeImage" data-idx="{{index}}" />
-      <view class="thumb-add" wx:if="{{images.length < 5}}" bindtap="chooseImage">添加</view>
+      <view class="thumb-add" wx:if="{{images.length < 5}}" hover-class="btn-outline-press" hover-stay-time="100" bindtap="chooseImage">添加</view>
     </view>
 
-    <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="submit">提交报销</view>
+    <view class="btn-primary {{submitting ? 'disabled' : ''}}" hover-class="btn-primary-press" hover-stay-time="100" bindtap="submit">{{submitting ? '提交中…' : '提交报销'}}</view>
   </view>
 
   <view class="section">

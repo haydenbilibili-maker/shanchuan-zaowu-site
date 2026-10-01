@@ -12,6 +12,12 @@
  *   R1-3 订单：5 档空态都有下一步（清除搜索 / 看全部日期）
  *   R1-4 审批：首屏与列表骨架；提交中整排按钮压暗不可点；决策按钮有按压态
  *   R1-5 文案：员工端界面不出现 mp / SLA / 「暂无更多字段」等技术词与错字
+ *   R2-1 核销验票：列表「交付 / 核销」与重试按钮有按压态；待自取 / 待核销列表加载是骨架；赠分提交中有文字反馈；
+ *        流水空态带「去消费赠分」；field 样式与 manager 镜像逐字一致（subpackage-mirrors.json identical）
+ *   R2-2 manager/index.wxss 清掉的死样式不得复活（棘轮）
+ *   R2-3 店员子页（打卡 / 请假 / 报销 / 清单 / 两个审批）提交按钮有按压态与「…中」文字反馈
+ *   R2-4 日报详情「复制摘要」只留底部一处
+ *   R2-5 低频配置页不出现「云函数 / status=active / openid」等技术词
  *
  * 用法：node miniprogram/scripts/check-c-stream-polish.mjs [--selftest]
  */
@@ -34,7 +40,20 @@ const FILES = {
   pageCfg: `${MGR}/manager/managerPageConfig.js`,
   apWxml: `${EXTRA}/approvals/index.wxml`,
   apWxss: `${EXTRA}/approvals/index.wxss`,
-  staffWxml: `${EXTRA}/staff/index.wxml`
+  staffWxml: `${EXTRA}/staff/index.wxml`,
+  fieldWxml: `${EXTRA}/staff/field/index.wxml`,
+  fieldWxss: `${EXTRA}/staff/field/index.wxss`,
+  fieldWxssMirror: `${MGR}/staff/field/index.wxss`,
+  attendanceWxml: `${EXTRA}/staff/attendance/index.wxml`,
+  leaveWxml: `${EXTRA}/staff/leave/index.wxml`,
+  reimburseWxml: `${EXTRA}/staff/reimbursements/index.wxml`,
+  todosWxml: `${EXTRA}/staff/store-todos/index.wxml`,
+  leaveReviewWxml: `${EXTRA}/staff/leave-review/index.wxml`,
+  reimburseReviewWxml: `${EXTRA}/staff/reimburse-review/index.wxml`,
+  digestWxml: `${EXTRA}/user/messages/detail/index.wxml`,
+  supportCfgWxml: `${MGR}/support-config/index.wxml`,
+  feishuWxml: `${MGR}/feishu-sync/index.wxml`,
+  payslipAdminWxml: `${MGR}/payslip/admin/index.wxml`
 }
 
 function load() {
@@ -130,6 +149,46 @@ function check(src) {
     for (const [re, label] of BANNED) ok(!re.test(text), `R1-5 ${name}界面出现技术词 / 错字：${label}`)
   }
 
+  // R2-1 核销验票
+  const H = 'hover-class="btn-outline-press"'
+  for (const fn of ['verifyPickupFromList', 'verifyBooking', 'retryLastVerify', 'loadPendingPickups', 'loadBookings', 'retryScan']) {
+    const tags = src.fieldWxml.match(new RegExp(`<view class="btn-outline"[^>]*(bind|catch)tap="${fn}"[^>]*>`, 'g')) || []
+    ok(tags.length > 0 && tags.every((t) => t.includes(H)), `R2-1 核销页「${fn}」按钮缺按压态`)
+  }
+  ok(!/wx:if="\{\{(pickupsLoading|bookingsLoading)\}\}">加载中…</.test(src.fieldWxml), 'R2-1 待自取 / 待核销列表加载又退回一行「加载中…」')
+  ok(/class="field-sk" wx:if="\{\{pickupsLoading\}\}"/.test(src.fieldWxml) && /class="field-sk" wx:if="\{\{bookingsLoading\}\}"/.test(src.fieldWxml), 'R2-1 待自取 / 待核销列表缺加载骨架')
+  ok(/\{\{granting \? '提交中…'/.test(src.fieldWxml), 'R2-1 赠分提交中没有文字反馈')
+  ok(/records\.length === 0 && !recordsLoading\}\}">[\s\S]{0,200}?bindtap="switchTab" data-idx="0"/.test(src.fieldWxml), 'R2-1 流水空态缺「去消费赠分」')
+  ok(src.fieldWxss === src.fieldWxssMirror, 'R2-1 field/index.wxss 与 manager 镜像不一致（subpackage-mirrors.json 要求 identical）')
+
+  // R2-2 死样式棘轮
+  for (const sel of ['.menu-grid', '.icon-btn-scan', '.cfg-picker', '.cfg-check', '.om-track', '.modal-foot-row', '.nav-back-press', '.cat-dup-group']) {
+    ok(!new RegExp(`(^|\\n)\\${sel}[\\s{.:,>]`).test(src.hubWxss), `R2-2 manager/index.wxss 死样式复活：${sel}`)
+  }
+
+  // R2-3 店员子页提交反馈
+  const busy = [
+    ['attendanceWxml', 'clock', 'clocking'], ['leaveWxml', 'submit', 'submitting'], ['reimburseWxml', 'submit', 'submitting'],
+    ['todosWxml', 'saveTodo', 'saving'], ['leaveReviewWxml', 'review', 'reviewingId'], ['reimburseReviewWxml', 'review', 'reviewingId']
+  ]
+  for (const [k, fn, flag] of busy) {
+    const tags = src[k].match(new RegExp(`<view class="btn[^"]*"[^>]*bindtap="${fn}"[^>]*>[^<]*</view>`, 'g')) || []
+    ok(tags.length > 0 && tags.every((t) => /hover-class="/.test(t)), `R2-3 ${FILES[k]} 「${fn}」按钮缺按压态`)
+    ok(tags.some((t) => new RegExp(`\\{\\{${flag}( === item\\._id)? \\? '[^']*中…'`).test(t)), `R2-3 ${FILES[k]} 「${fn}」提交中没有「…中」文字反馈`)
+  }
+
+  // R2-4 日报详情
+  const digestCopy = (stripComments(src.digestWxml).match(/bindtap="shareDigestSheet"/g) || []).length
+  ok(digestCopy === 1, `R2-4 日报详情「复制摘要」应只有底部一处，实为 ${digestCopy}`)
+
+  // R2-5 低频配置页技术词
+  for (const k of ['supportCfgWxml', 'feishuWxml', 'payslipAdminWxml']) {
+    const text = stripComments(src[k]).replace(/\{\{[\s\S]*?\}\}/g, '').replace(/<[^>]+>/g, ' ')
+    for (const [re, label] of [[/云函数/, '云函数'], [/status=active/, 'status=active'], [/priority/, 'priority'], [/openid/i, 'openid']]) {
+      ok(!re.test(text), `R2-5 ${FILES[k]} 界面出现技术词「${label}」`)
+    }
+  }
+
   return fails
 }
 
@@ -163,7 +222,15 @@ function selftest() {
     ['「通过」去掉按压态', (s) => ({ ...s, apWxml: s.apWxml.replace(/(catchtap="approveItem" data-id="\{\{item\._id\}\}") hover-class="ap-btn-press" hover-stay-time="80"/, '$1') }), /approveItem」按钮缺按压态/],
     ['界面回到「不含mp」', (s) => ({ ...s, hubWxml: s.hubWxml.replace('（不含小程序订单）', '（不含mp）') }), /不含mp/],
     ['审批回到「SLA」', (s) => ({ ...s, apWxml: s.apWxml.replace('<text class="ov-lbl">时限内</text>', '<text class="ov-lbl">SLA 内</text>') }), /SLA/],
-    ['店员工作台错字复活', (s) => ({ ...s, staffWxml: s.staffWxml.replace('暂时没有可用的现场功能', '暂无可用来现场场景') }), /暂无可用来/]
+    ['店员工作台错字复活', (s) => ({ ...s, staffWxml: s.staffWxml.replace('暂时没有可用的现场功能', '暂无可用来现场场景') }), /暂无可用来/],
+    ['核销「交付」去掉按压态', (s) => ({ ...s, fieldWxml: s.fieldWxml.replace('<view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" catchtap="verifyPickupFromList"', '<view class="btn-outline" catchtap="verifyPickupFromList"') }), /verifyPickupFromList」按钮缺按压态/],
+    ['待核销预约退回「加载中…」', (s) => ({ ...s, fieldWxml: s.fieldWxml.replace(/<view class="field-sk" wx:if="\{\{bookingsLoading\}\}"[^\n]*/, '<view class="empty empty-compact" wx:if="{{bookingsLoading}}">加载中…</view>') }), /R2-1 待自取 \/ 待核销列表加载又退回/],
+    ['field 镜像漂移', (s) => ({ ...s, fieldWxssMirror: s.fieldWxssMirror + '\n.x {}\n' }), /镜像不一致/],
+    ['死样式 .cfg-picker 复活', (s) => ({ ...s, hubWxss: s.hubWxss + '\n.cfg-picker { display: flex; }\n' }), /死样式复活：\.cfg-picker/],
+    ['请假提交去掉「提交中…」', (s) => ({ ...s, leaveWxml: s.leaveWxml.replace("{{submitting ? '提交中…' : '提交请假'}}", '提交请假') }), /leave\/index\.wxml 「submit」提交中没有/],
+    ['审批通过去掉按压态', (s) => ({ ...s, leaveReviewWxml: s.leaveReviewWxml.replace(/(<view class="btn approve[^"]*") hover-class="btn-primary-press" hover-stay-time="100"/, '$1') }), /leave-review\/index\.wxml 「review」按钮缺按压态/],
+    ['日报复制按钮又重复', (s) => ({ ...s, digestWxml: s.digestWxml.replace('<view class="dg-foot">', '<view class="dg-tools"><view class="dg-tool" bindtap="shareDigestSheet"><text>复制 / 分享摘要</text></view></view>\n              <view class="dg-foot">') }), /复制摘要」应只有底部一处/],
+    ['飞书页回到「云函数」', (s) => ({ ...s, feishuWxml: s.feishuWxml.replace('飞书凭据还没配置', '飞书凭据还没配到云函数') }), /feishu-sync\/index\.wxml 界面出现技术词「云函数」/]
   ]
   const notes = []
   let bad = 0

@@ -241,13 +241,6 @@
   margin-bottom: 8rpx;
 }
 
-.overlay-notice {
-  display: block;
-  color: #A09A90;
-  font-size: 22rpx;
-  margin-bottom: 12rpx;
-}
-
 .actions-row {
   display: flex;
   gap: 16rpx;
@@ -311,20 +304,6 @@
   box-sizing: border-box;
 }
 
-.cta-inline {
-  flex: 1.5;
-  text-align: center;
-  padding: 22rpx 12rpx;
-  background: #C4A76C;
-  color: #1A1814;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-  box-sizing: border-box;
-}
-
-.cta-inline.disabled { opacity: 0.45; }
-
 .danger {
   flex: 1.3;
   text-align: center;
@@ -335,22 +314,6 @@
   border-radius: 16rpx;
   font-size: 26rpx;
   box-sizing: border-box;
-}
-
-.ghost {
-  margin-top: 20rpx;
-  text-align: center;
-  padding: 20rpx;
-  border: 1px solid #D64045;
-  color: #D64045;
-  border-radius: 16rpx;
-  font-size: 26rpx;
-}
-
-.ghost.compact {
-  margin-top: 16rpx;
-  padding: 16rpx;
-  font-size: 22rpx;
 }
 
 .ghost-light.full {

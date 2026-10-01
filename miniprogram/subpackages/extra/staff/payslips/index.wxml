@@ -2,7 +2,7 @@
   <view class="section">
     <text class="section-note">仅展示本人工资条；若为空，请联系店长或超管录入。</text>
     <view class="list">
-      <view class="row" wx:for="{{list}}" wx:key="_id" bindtap="openDetail" data-id="{{item._id}}">
+      <view class="row" wx:for="{{list}}" wx:key="_id" bindtap="openDetail" data-id="{{item._id}}" hover-class="record-press" hover-stay-time="80">
         <view class="row-main">
           <text class="row-title">{{item.month}}</text>
           <text class="row-sub">实发 ¥{{item.net}}</text>

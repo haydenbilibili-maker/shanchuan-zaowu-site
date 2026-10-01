@@ -25,10 +25,10 @@
     </view>
     <text class="last-feedback" wx:if="{{lastClock}}">{{lastClock}}</text>
     <view class="btn-row">
-      <view class="btn-primary {{canClockIn && !clocking ? '' : 'disabled'}}" bindtap="clock" data-type="in">上班打卡</view>
-      <view class="btn-ghost {{canClockOut && !clocking ? '' : 'disabled'}}" bindtap="clock" data-type="out">下班打卡</view>
+      <view class="btn-primary {{canClockIn && !clocking ? '' : 'disabled'}}" hover-class="btn-primary-press" hover-stay-time="100" bindtap="clock" data-type="in">{{clocking ? '打卡中…' : '上班打卡'}}</view>
+      <view class="btn-ghost {{canClockOut && !clocking ? '' : 'disabled'}}" hover-class="btn-ghost-press" hover-stay-time="100" bindtap="clock" data-type="out">下班打卡</view>
     </view>
-    <view class="btn-ghost leave-entry" bindtap="goLeave">申请请假</view>
+    <view class="btn-ghost leave-entry" hover-class="btn-ghost-press" hover-stay-time="100" bindtap="goLeave">申请请假</view>
     <text class="section-note">上班 09:30 前记为准时；下班 21:00 及以后记为准时。已通过请假覆盖的日期不计异常缺勤。</text>
     <view class="list" wx:if="{{today.length}}">
       <view class="row" wx:for="{{today}}" wx:key="_id">

@@ -648,13 +648,6 @@ page {
 }
 
 
-.dg-tools {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin-top: var(--space-3, 24rpx);
-}
-
 .dg-tool {
   padding: 10rpx 18rpx;
   border-radius: 999rpx;

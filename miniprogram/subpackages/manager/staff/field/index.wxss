@@ -421,6 +421,7 @@ page {
 }
 
 .link {
+  padding: 8rpx 0 8rpx 16rpx;
   font-size: 24rpx;
   color: var(--brass-400);
 }
@@ -555,6 +556,41 @@ page {
 
 .empty-compact {
   padding: var(--space-2) 0 var(--space-1);
+}
+
+.empty .empty-hint {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* 空态的下一步按钮：另起一行居中、不撑满（保留 .btn-outline 的 flex 垂直居中） */
+.empty .empty-next {
+  width: max-content;
+  margin: var(--space-3) auto 0;
+  padding: 0 var(--space-5);
+}
+
+/* 列表加载骨架（待自取 / 待核销预约）：形状对齐 .row，替代一行「加载中…」 */
+.field-sk-row {
+  padding: var(--space-3) 0;
+  border-bottom: 1rpx solid var(--color-border);
+}
+.field-sk-row:last-child { border-bottom: none; }
+.field-sk-line {
+  height: 22rpx;
+  width: 40%;
+  margin-top: 12rpx;
+  border-radius: 8rpx;
+  background: var(--color-bg-elevated, #262320);
+  animation: field-sk-pulse 1.2s ease-in-out infinite;
+}
+.field-sk-line.wide { width: 68%; height: 28rpx; margin-top: 0; }
+@keyframes field-sk-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.85; }
 }
 
 /* ---------------- 顾客识别 ---------------- */

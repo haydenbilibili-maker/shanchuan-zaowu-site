@@ -30,7 +30,7 @@
 
     <block wx:else>
       <view class="ops-card fs-alert" wx:if="{{!creds.configured}}">
-        <text class="ops-card-title">飞书凭据还没配到云函数</text>
+        <text class="ops-card-title">飞书凭据还没配置</text>
         <text class="ops-note">服务端需要 FEISHU_APP_ID / FEISHU_APP_SECRET。没配的话下面所有同步都会失败——这是配置问题，不是数据问题。</text>
       </view>
 
@@ -38,7 +38,7 @@
         <view class="fs-row">
           <view class="fs-row-copy">
             <text class="fs-label">自动同步（每天一次）</text>
-            <text class="ops-note flat">默认关。开启后云函数每天 03:30 拉一次；关闭则只靠下方手动。</text>
+            <text class="ops-note flat">默认关。开启后每天 03:30 自动拉取一次；关闭则只靠下方手动同步。</text>
           </view>
           <switch
             class="fs-switch"

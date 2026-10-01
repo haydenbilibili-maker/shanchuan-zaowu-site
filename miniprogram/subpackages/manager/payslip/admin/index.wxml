@@ -7,7 +7,7 @@
       </view>
       <view class="section-head-row">
         <view class="signal-light {{list.length > 0 ? 'lamp-forest' : 'lamp-muted'}}"></view>
-        <text class="section-note">超管录入或修正员工月度工资条；保存记录操作人 openid。</text>
+        <text class="section-note">超管录入或修正员工月度工资条；保存时会记录操作人。</text>
       </view>
     </view>
 

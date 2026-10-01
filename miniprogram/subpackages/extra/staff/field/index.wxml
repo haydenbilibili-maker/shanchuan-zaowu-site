@@ -89,7 +89,7 @@
     <view class="section scan-fail" wx:if="{{scanFail && scanFail.purpose === 'grant'}}">
       <text class="row-title">{{scanFail.title}}</text>
       <text class="row-sub">{{scanFail.msg}}</text>
-      <view class="btn-outline" bindtap="retryScan">再扫一次</view>
+      <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" bindtap="retryScan">再扫一次</view>
     </view>
 
     <view class="section verify-last" wx:if="{{lastGrant}}">
@@ -108,7 +108,7 @@
         <view class="phone-row">
           <input class="input" type="number" maxlength="4" placeholder="后 4 位" placeholder-class="ph"
                  value="{{phoneTail}}" bindinput="onPhoneTailInput" />
-          <view class="btn-outline" bindtap="searchByPhone">查找</view>
+          <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" bindtap="searchByPhone">查找</view>
         </view>
       </view>
 
@@ -130,7 +130,7 @@
             <text class="member-name">{{member.nickName}}</text>
             <text class="row-sub">{{member.memberNo}}{{member.phoneMasked ? ' · ' + member.phoneMasked : ''}}</text>
           </view>
-          <text class="link" bindtap="resetMember">重选</text>
+          <view class="link" hover-class="btn-outline-press" hover-stay-time="100" bindtap="resetMember">重选</view>
         </view>
         <view class="member-stats">
           <view class="ms-item"><text class="ms-val gold">{{member.points}}</text><text class="ms-label">当前积分</text></view>
@@ -168,8 +168,8 @@
         </view>
 
         <view class="btn-row">
-          <view class="btn-ghost {{previewing ? 'disabled' : ''}}" bindtap="previewGrant">试算积分</view>
-          <view class="btn-primary {{previewPoints === null || granting || !quotaOk ? 'disabled' : ''}}" bindtap="submitGrant">{{canDirectGrant ? '确认赠分' : '提交审核'}}</view>
+          <view class="btn-ghost {{previewing ? 'disabled' : ''}}" hover-class="btn-ghost-press" hover-stay-time="100" bindtap="previewGrant">{{previewing ? '试算中…' : '试算积分'}}</view>
+          <view class="btn-primary {{previewPoints === null || granting || !quotaOk ? 'disabled' : ''}}" hover-class="btn-primary-press" hover-stay-time="100" bindtap="submitGrant">{{granting ? '提交中…' : (canDirectGrant ? '确认赠分' : '提交审核')}}</view>
         </view>
         <text class="section-note">{{ruleText}}</text>
       </view>
@@ -185,7 +185,7 @@
     <view class="section scan-fail" wx:if="{{scanFail && scanFail.purpose !== 'grant'}}">
       <text class="row-title">{{scanFail.title}}</text>
       <text class="row-sub">{{scanFail.msg}}</text>
-      <view class="btn-outline" bindtap="retryScan">再扫一次</view>
+      <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" bindtap="retryScan">再扫一次</view>
     </view>
 
     <!-- 门店自取：待交付订单（顾客不出示凭证也能当面核对交付） -->
@@ -211,10 +211,10 @@
         <view class="btn-outline pickup-input-btn" hover-class="btn-outline-press" hover-stay-time="100" bindtap="submitPickupCode">核销</view>
       </view>
 
-      <view class="empty empty-compact" wx:if="{{pickupsLoading}}">加载中…</view>
+      <view class="field-sk" wx:if="{{pickupsLoading}}" aria-label="待自取订单加载中"><view class="field-sk-row" wx:for="{{[1,2]}}" wx:key="*this"><view class="field-sk-line wide"></view><view class="field-sk-line"></view></view></view>
       <view class="empty empty-compact" wx:elif="{{pickupsError}}">
         <text>{{pickupsError}}</text>
-        <view class="btn-outline" bindtap="loadPendingPickups">重新加载</view>
+        <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" bindtap="loadPendingPickups">重新加载</view>
       </view>
       <view class="list" wx:elif="{{pendingPickups.length}}">
         <view class="row" wx:for="{{pendingPickups}}" wx:key="orderId">
@@ -224,12 +224,13 @@
           </view>
           <view class="row-actions">
             <text class="verify-badge {{item.statusLabel === '可领取' ? 'approved' : 'pending'}}">{{item.statusLabel}}</text>
-            <view class="btn-outline" catchtap="verifyPickupFromList" data-code="{{item.pickupCode}}">交付</view>
+            <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" catchtap="verifyPickupFromList" data-code="{{item.pickupCode}}">交付</view>
           </view>
         </view>
       </view>
       <view class="empty empty-compact" wx:else>
         <text>本店暂无待自取订单</text>
+        <text class="empty-hint">顾客到店出示自取码时，点上方「扫顾客会员码」或手输自取码</text>
       </view>
     </view>
 
@@ -243,7 +244,7 @@
         </view>
         <view class="row-actions">
           <text class="verify-badge {{lastVerify.ok ? 'ok' : 'warn'}}">{{lastVerify.badge}}</text>
-          <view class="btn-outline" wx:if="{{lastVerify.canRetry}}" catchtap="retryLastVerify">再试</view>
+          <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" wx:if="{{lastVerify.canRetry}}" catchtap="retryLastVerify">再试</view>
         </view>
       </view>
     </view>
@@ -256,10 +257,10 @@
         </view>
         <text class="st-count">{{bookings.length}}</text>
       </view>
-      <view class="empty empty-compact" wx:if="{{bookingsLoading}}">加载中…</view>
+      <view class="field-sk" wx:if="{{bookingsLoading}}" aria-label="待核销预约加载中"><view class="field-sk-row" wx:for="{{[1,2]}}" wx:key="*this"><view class="field-sk-line wide"></view><view class="field-sk-line"></view></view></view>
       <view class="empty empty-compact" wx:elif="{{bookingsError}}">
         <text>{{bookingsError}}</text>
-        <view class="btn-outline" bindtap="loadBookings">重新加载</view>
+        <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" bindtap="loadBookings">重新加载</view>
       </view>
       <view class="list" wx:elif="{{bookings.length}}">
         <view class="row" wx:for="{{bookings}}" wx:key="_id">
@@ -269,12 +270,13 @@
           </view>
           <view class="row-actions">
             <text class="verify-badge {{item.statusClass}}">{{item.statusLabel}}</text>
-            <view class="btn-outline" catchtap="verifyBooking" data-id="{{item._id}}">核销</view>
+            <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" catchtap="verifyBooking" data-id="{{item._id}}">核销</view>
           </view>
         </view>
       </view>
       <view class="empty empty-compact" wx:else>
         <text>本店暂无待核销预约</text>
+        <text class="empty-hint">今天的预约会出现在这里，到店后点「核销」即可</text>
       </view>
     </view>
   </block>
@@ -290,7 +292,7 @@
         <view class="sum-item"><text class="sum-val">¥{{mineSummary.amount}}</text><text class="sum-label">我今日金额</text></view>
       </view>
       <text class="section-note">{{canRevoke ? '显示本店全部流水，撤销请在审批中心 · 积分流水中操作' : '仅显示我录入的记录，撤销需店长处理'}}</text>
-      <view class="btn-outline" wx:if="{{canRevoke}}" bindtap="goStorePoints">打开积分流水</view>
+      <view class="btn-outline" hover-class="btn-outline-press" hover-stay-time="100" wx:if="{{canRevoke}}" bindtap="goStorePoints">打开积分流水</view>
     </view>
 
     <view class="section">
@@ -313,7 +315,10 @@
         <text>流水未能取回</text>
         <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
       </view>
-      <view class="empty" wx:elif="{{records.length === 0 && !recordsLoading}}">暂无流水</view>
+      <view class="empty" wx:elif="{{records.length === 0 && !recordsLoading}}">
+        <text>今天还没有赠分记录</text>
+        <view class="btn-outline empty-next" hover-class="btn-outline-press" hover-stay-time="100" bindtap="switchTab" data-idx="0">去消费赠分</view>
+      </view>
     </view>
   </block>
 
