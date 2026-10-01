@@ -5,3 +5,6 @@
 npm run check:home-reco
 # 2026-09-29：馆藏 tab 加载提速（首屏缓存秒开 / 云函数字段投影 + 并发 / 首页空闲预取）
 npm run test:category-feed-cache
+# 2026-10-01：A 流细节雕刻（miniprogram/docs/细节雕刻_A流_2026-10.md）
+npm run check:mp-const-assign
+npm run check:a-flow-polish

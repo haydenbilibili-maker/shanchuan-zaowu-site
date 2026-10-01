@@ -131,6 +131,12 @@ view, text, image, scroll-view { box-sizing: border-box; }
   border: 1px dashed rgba(77,64,26,.45);
   border-radius: 16rpx;
 }
+/* 筛选后无结果：给出原因与「清除筛选」出口，不让用户卡在空白里 */
+.empty-filter { display: flex; flex-direction: column; align-items: center; padding: 56rpx 24rpx; border: 1px dashed rgba(77,64,26,.45); border-radius: 16rpx; }
+.empty-filter-title { font-size: 28rpx; color: var(--color-text-body); }
+.empty-filter-desc { margin-top: 12rpx; font-size: 24rpx; color: var(--color-text-secondary); }
+.empty-filter-btn { margin-top: 32rpx; padding: 14rpx 48rpx; border-radius: 999rpx; border: 1rpx solid var(--gold, #C4A76C); font-size: 26rpx; color: var(--gold, #C4A76C); }
+.empty-filter-btn-press { opacity: .7; }
 .list-footer { text-align: center; padding: 32rpx; font-size: 24rpx; color: var(--color-text-secondary); }
 .list-footer.muted { color: #4A4540; font-size: 22rpx; }
 .skeleton-wrap { padding: 24rpx; }

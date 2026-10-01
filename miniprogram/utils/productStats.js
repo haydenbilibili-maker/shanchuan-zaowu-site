@@ -1,3 +1,4 @@
+// 「注记 X」长注释原文见 miniprogram/docs/源码注记_A流主包.md
 /** 从商品文档解析已售数量（真实值） */
 function getSoldCount(product) {
   if (!product) return 0
@@ -62,13 +63,7 @@ function stableRandomInt(seed, maxInclusive) {
   return (h >>> 0) % (max + 1)
 }
 
-/**
- * 前端展示用销量：
- * - 孤品 / 镇店之宝：返回 null（卡片不展示销量，改打孤品标）
- * - 蝴蝶类：稳定随机 0–50
- * - 甲虫类：稳定随机 0–20
- * - 其它：真实销量
- */
+/** 前端展示用销量：（注记 S1） */
 function getDisplaySoldCount(product) {
   if (!product) return 0
   if (isOneOfAKindProduct(product)) return null
@@ -82,18 +77,10 @@ function getDisplaySoldCount(product) {
 
 /**
  * ── 2026-09-18：新增「已售 0」的诚实展示口径 ──
- *
- * 问题：美化只覆盖昆虫类（蝴蝶随机 0–50 / 甲虫 0–20），**非昆虫的新品**落到真实值 0，
- * 卡片就渲染出「已售 0」；而随机函数取到 0 时昆虫卡同样会显示「已售 0」。
- *
- * 处置（产品负责人 2026-09-18 拍板 方案 A：**零造假**）：
- *   真实销量为 0 时不再显示「已售 0」，改显示**真实成立**的状态 ——
- *   「建档时间在窗口内的新品」打「馆方新藏」标；否则**什么都不显示**（与孤品一致）。
- *
  * ⚠️ 刻意**没有**做的两件事（都写进了 docs/商品销量展示口径_2026-09-18.md）：
- *   1. 不往 DB 的 `soldCount` 写任何默认值 —— `admin/src/utils/b2bFulfillment.js`
- *      会做 `soldCount = 现有 + 数量`，假基数一旦入库就与真实销量永久混合，排序/报表从此不可信；
- *   2. 不回填"随机美化销量"到非昆虫类 —— 展示层虚构在售商品的销售状况仍属虚假宣传。
+ *   1. 不往 DB 的 `soldCount` 写默认值（`admin/src/utils/b2bFulfillment.js` 会累加，假基数入库即永久混合）；
+ *   2. 不回填"随机美化销量"到非昆虫类。
+ * （注记 S2）
  */
 // 2026-09-18 产品负责人定：**7 天内**才算「新藏」。定这个数的实测依据（205 件线上商品）：
 // 窗内占比 1天 8 / 3天 9 / 7天 38 / 14天 186 / 30天 186 —— 14 天以上几乎等价于"全站"，
@@ -101,10 +88,7 @@ function getDisplaySoldCount(product) {
 const NEW_ARRIVAL_DAYS = 7
 const SOLD_LABEL_NEW = '馆方新藏'
 
-/**
- * 解析商品时间字段（云函数回包可能是 `{ $date }`；本仓已有 4 处按此兼容）。
- * 裸 `new Date(obj)` 会得到 Invalid Date → 新品判定静默失效。
- */
+/** 解析商品时间字段（云函数回包可能是 `{ $date }`；本仓已有 4 处按此兼容）。（注记 S3） */
 function productTimeMs(value) {
   if (value == null || value === '') return 0
   if (typeof value === 'number') {
@@ -132,12 +116,7 @@ function productTimeMs(value) {
   return Number.isNaN(t) ? 0 : t
 }
 
-/**
- * 是否新品：以**建档时间** `createTime` 为准。
- * 选它的理由（不是随手挑）：C 端「最新」排序用的也是 `createTime` ——
- * 拿同一字段说「新藏」，与用户已经看到的排序口径一致。
- * 取不到时间 → **不算新品**（宁可什么都不显示，也不乱打标）。
- */
+/** 是否新品：以**建档时间** `createTime` 为准。（注记 S4） */
 function isNewArrival(product, nowMs, days) {
   const limitDays = Number(days) > 0 ? Number(days) : NEW_ARRIVAL_DAYS
   // `_createTime` 是云开发自动字段，部分历史文档只有它
@@ -153,15 +132,7 @@ function isNewArrival(product, nowMs, days) {
   return base - created < limitDays * 86400000
 }
 
-/**
- * 卡片/详情「销量位」的唯一出口。
- * @returns {{kind:'sold'|'new'|'none', text:string, count:number}}
- *   · 孤品/镇店之宝 → none（由孤品角标承载，不显示销量）
- *   · 展示销量 > 0  → sold「已售 N」
- *   · 展示销量 = 0 且是新建档 → new「馆方新藏」
- *   · 其余 → none（**不显示「已售 0」**）
- * 不变量：`text` 永远不可能是「已售 0」（守卫 test:sold-display 钉住）。
- */
+/** 卡片/详情「销量位」的唯一出口。（注记 S5） */
 function getSoldDisplay(product, nowMs) {
   const empty = { kind: 'none', text: '', count: 0 }
   if (!product) return empty

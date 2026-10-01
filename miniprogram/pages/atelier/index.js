@@ -70,7 +70,7 @@ const FEATURES = [
     key: 'pet',
     overline: 'PET MEMORIAL',
     title: '伴宠记忆',
-    desc: '为陪伴过你的伙伴留存纪念藏品，专员评估工艺与周期',
+    desc: '为陪伴过的伙伴留存纪念，专员评估工艺周期',
     flag: 'showPetMemorial',
     defaultOn: true,
     toast: 'pet',

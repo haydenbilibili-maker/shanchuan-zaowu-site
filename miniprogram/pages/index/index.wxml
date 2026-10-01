@@ -37,7 +37,20 @@
     <text class="page-error-hint">也可以下拉刷新</text>
   </view>
 
-  <scroll-view wx:else scroll-y class="main-scroll" bindscroll="onPageScroll" enable-back-to-top>
+  <!-- 内容全在满屏 scroll-view 里，页面级下拉刷新几乎碰不到 → 由 scroll-view 自带下拉承接 -->
+  <scroll-view
+    wx:else
+    scroll-y
+    class="main-scroll"
+    bindscroll="onPageScroll"
+    enable-back-to-top
+    refresher-enabled="{{!isSinglePage}}"
+    refresher-threshold="64"
+    refresher-default-style="white"
+    refresher-background="#1A1814"
+    refresher-triggered="{{homeRefreshing}}"
+    bindrefresherrefresh="onHomeRefresherRefresh"
+  >
     
     <!-- 轮播图模块：有直播时首位抢插「直播中」帧；无直播时恢复 baseBanners -->
     <view class="hero-section" wx:if="{{showBanners || (showLive && liveSession && liveSession.pullUrl)}}">
@@ -86,7 +99,7 @@
                   <text>{{item.badge || '精选'}}</text>
                 </view>
                 <text class="h-title">{{item.title}}</text>
-                <text class="h-sub">{{item.subtitle || '探索未知'}}</text>
+                <text class="h-sub" wx:if="{{item.subtitle}}">{{item.subtitle}}</text>
                 <view class="hero-live-cta" wx:if="{{item.isLive}}">进入直播间 ›</view>
               </view>
             </view>
@@ -264,7 +277,7 @@
             <view class="ec-info">
                <view class="ec-tag">专题</view>
                <text class="ec-title">{{item.title}}</text>
-               <text class="ec-brief text-cut">{{item.brief || '点击查看详情'}}</text>
+               <text class="ec-brief text-cut" wx:if="{{item.brief}}">{{item.brief}}</text>
             </view>
             <view class="ec-hover-mask"></view>
           </view>
@@ -370,7 +383,7 @@
                    </view>
                    <view class="tm-mid">
                      <text class="tm-title text-cut-2">{{item.title}}</text>
-                     <view class="tm-loc-row"><icon type="location" size="10" color="#999"></icon><text class="tm-loc">{{item.location}}</text></view>
+                     <view class="tm-loc-row"><icon type="location" size="10" color="#A09A90"></icon><text class="tm-loc">{{item.location}}</text></view>
                    </view>
                    <view class="tm-bot">
                       <text class="tm-price" wx:if="{{item.price > 0}}">¥{{item.price}}</text>

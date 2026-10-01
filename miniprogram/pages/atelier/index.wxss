@@ -227,7 +227,8 @@ page { background: var(--color-bg); color: #fff; }
   min-height: 160rpx;
 }
 
-.order-tile:active { opacity: 0.9; background: rgba(196, 167, 108, 0.04); }
+.order-tile:active,
+.order-tile-press { opacity: 0.9; background: rgba(196, 167, 108, 0.04); }
 
 .order-tile-label {
   display: block; font-size: 28rpx; font-weight: 600; color: var(--color-text-primary);

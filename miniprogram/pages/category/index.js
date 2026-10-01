@@ -569,9 +569,14 @@ Page({
     this.setData({ filterPanelVisible: false });
   },
 
+  // 筛选无结果时的出口：等同于在面板里「重置 → 确定」
+  onClearFilters() {
+    this.onFilterConfirm({ detail: {} });
+  },
+
   onFilterConfirm(e) {
     const detail = (e && e.detail) || {};
-    const applied = {
+    let applied = {
       categoryValue: detail.categoryValue || '',
       categoryId: detail.categoryId || '',
       channel: detail.channel || '',

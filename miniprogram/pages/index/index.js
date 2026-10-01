@@ -1,3 +1,4 @@
+// 「注记 X」长注释原文见 miniprogram/docs/源码注记_A流主包.md
 // pages/index/index.js
 const app = getApp();
 const db = wx.cloud.database();
@@ -127,6 +128,7 @@ Page({
   data: {
     navTop: 40,
     isScrolled: false,
+    homeRefreshing: false,
     
     // 首页配置
     homeConfig: null,
@@ -242,19 +244,7 @@ Page({
     }
   },
 
-  /**
-   * 首页祈福墙跑马灯（2026-09-20）：取**默认墙**最近的真实心愿文案。
-   *
-   * 四条约束：
-   *   1. **只取真实心愿**（`manageWishWall` 的 list）。失败/空 → `wishWallWishes: []`，
-   *      跑马灯整行不渲染 —— **绝不摆假文案充场面**（本仓硬口径：不许编造社会证明）；
-   *   2. **一个页面会话只拉一次**：开关的水合缓存与 SWR 两条路径都会走到这里；
-   *   3. **不传 productKey** = 默认墙（`manageWishWall` 用 `normalizeProductKey` 兜底到
-   *      DEFAULT_PRODUCT_KEY），所以首页不需要任何商品上下文；
-   *   4. 文案/emoji 都走**共享规则**（`utils/wishWall` 的 `normalizeWishText` / `danmakuEmoji`），
-   *      首页**不另造一套**。为什么正文也必须归一化：换行与零宽字符在 `.trim()` 之后仍然"非空"，
-   *      一条纯零宽的心愿会被当成有效条目凑满条数，跑马灯里就多出一个"看不见字"的假空位。
-   */
+  /** 首页祈福墙跑马灯（2026-09-20）：取**默认墙**最近的真实心愿文案。（注记 H1） */
   async loadWishWallMarquee() {
     if (this._wishWallMarqueeLoaded) return;
     this._wishWallMarqueeLoaded = true;
@@ -281,10 +271,7 @@ Page({
     }
   },
 
-  /**
-   * 让跑马灯在下一次开关判定时**重新拉一次**（下拉刷新 / 错误重试共用）。
-   * 没有它，一次成功之后就永远停在旧心愿上 —— 而首页是 tab 页，会话可以很长。
-   */
+  /** 让跑马灯在下一次开关判定时**重新拉一次**（下拉刷新 / 错误重试共用）。（注记 H2） */
   resetWishWallMarquee() {
     this._wishWallMarqueeLoaded = false;
   },
@@ -893,11 +880,28 @@ Page({
     
     // 重新初始化
     this.setData({ loading: true, loadingConfig: true });
-    this.initData().finally(() => {
+    return this.initData().finally(() => {
       this.refreshNewArrivalsList();
       this.loadDisplayFlags();
       wx.stopPullDownRefresh();
     });
+  },
+
+  // scroll-view 自带下拉：与页面级下拉同一套重置；进行中再拉不重复触发
+  onHomeRefresherRefresh() {
+    if (this._refresherBusy) return;
+    this._refresherBusy = true;
+    this.setData({ homeRefreshing: true });
+    const done = () => {
+      if (!this._refresherBusy) return;
+      this._refresherBusy = false;
+      clearTimeout(this._refresherTimer);
+      this.setData({ homeRefreshing: false });
+    };
+    this._refresherTimer = setTimeout(done, 8000);
+    Promise.resolve()
+      .then(() => this.onPullDownRefresh())
+      .then(done, done);
   },
 
   // 错误态「重试」：复用下拉刷新的重置逻辑（清缓存 + 解锁 + 重新初始化）

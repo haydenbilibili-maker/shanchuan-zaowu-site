@@ -1,17 +1,9 @@
+// 「注记 X」长注释原文见 miniprogram/docs/源码注记_A流主包.md
 const { resolveBlessTags } = require('../config/blessTags')
 // 字数口径的**唯一实现**（按「字」= grapheme，emoji/ZWJ 序列算 1）。
 // 与服务端 `manageWishWall` 内嵌的那份**逐字节相同**；端上任何"算几个字"的地方都必须走它。
 const { wishTextCount } = require('./wishTextCount')
-/**
- * 需求 28：「马上有」弹幕祈福墙 —— 客户端纯函数基座
- *
- * 单独成模块的原因：弹幕布局、文案校验、商品命中判定都是**可测的纯逻辑**，
- * 混在 Page 里就只能靠肉眼在真机上确认。三类逻辑各有历史坑：
- *   1. 轨道分配若随机，同一屏两条会重叠 → 必须确定性分配 + 轨道内错开；
- *   2. 时长若固定，长文案会跑得比短文案快 → 必须按字数换算，保持**视觉匀速**；
- *   3. 商品命中若只看标题子串，未来任一标题含「马上有」的藏品都会长出祈福墙
- *      → 优先看显式字段 `wishWallEnabled`，子串只作过渡兜底。
- */
+/** 需求 28：「马上有」弹幕祈福墙 —— 客户端纯函数基座（注记 W1） */
 
 /** 与云函数 manageWishWall 保持一致（客户端先校验一次，省一次无效请求） */
 const TEXT_MIN = 2
@@ -19,40 +11,24 @@ const TEXT_MAX = 30
 
 /**
  * 弹幕轨道数。
- *
- * 4 → 6（2026-09-18 真机截图）：380rpx 高的浅纸墙只摊 4 行 28rpx 小字，看着空、
- * 同一时刻能看见的心愿也太少。改 6 轨 + 字号 32rpx 后，轨间距 (380-44)/5 ≈ 67rpx、
- * 行盒 32×1.3 ≈ 42rpx（余 ~25rpx），既不挤也不会糊成一片；
- * 26 条心愿下每轨排 4–5 条，墙上同时有 6 条在走。
  * ⚠️ 改这个数必须同时改 `.ww-wall-rail.rail-N` 的条数与百分比（守卫按 LANES 对账）。
+ * （注记 W2）
  */
 const LANES = 6
 
 /** 祈福墙作用域 key（与云函数 DEFAULT_PRODUCT_KEY 一致） */
 const PRODUCT_KEY = 'mashangyou'
 
-/**
- * 一面墙最多回多少条（与云函数 `manageWishWall` 的 `LIST_MAX` **必须相等**）。
- *
- * 两处用途：① 请求 `limit`；② 列表到底时判断该说「共 N 条」还是「仅展示最近 N 条」。
- * 所以它必须与服务端同源 —— 守卫会直接读云函数源码比对，防漂移。
- */
+/** 一面墙最多回多少条（与云函数 `manageWishWall` 的 `LIST_MAX` **必须相等**）。（注记 W3） */
 const LIST_LIMIT = 30
 
 /** 愿签墙列数：两列瀑布，把 30 条的无尽滚动砍掉一半 */
 const TAG_COLUMNS = 2
 
-/**
- * 每人每日可写条数（与云函数 `manageWishWall` 的 `DAILY_LIMIT` **必须相等**）。
- * 客户端只用它做「还能写几条」的预告，**不做拦截** —— 最终判定始终在服务端。
- * 守卫会直接读云函数源码比对，防漂移。
- */
+/** 每人每日可写条数（与云函数 `manageWishWall` 的 `DAILY_LIMIT` **必须相等**）。（注记 W4） */
 const DAILY_LIMIT = 5
 
-/**
- * 今日额度：服务端按 **Asia/Shanghai 自然日 + 本面墙** 统计该 openid 的条数，
- * 且**不分可见 / 已收起**（被馆方收起的也算当天用量）。客户端按同一口径预告。
- */
+/** 今日额度：服务端按 **Asia/Shanghai 自然日 + 本面墙** 统计该 openid 的条数，（注记 W5） */
 function dailyQuota(rows, nowMs, limit) {
   // ⚠️ 不能写 `Number(limit) || DAILY_LIMIT`：显式传 0（"今日不可写"）会被 falsy 吞掉变成 5
   const raw = limit == null ? DAILY_LIMIT : Number(limit)
@@ -66,37 +42,22 @@ function dailyQuota(rows, nowMs, limit) {
   return { used, left, cap, exhausted: used >= cap }
 }
 
-/** 视觉速度：rpx/秒。时长 = (屏宽 + 文案宽) / 速度
- * 2026-09-24：90 → 78 → 72（出图复核偏慢）。
- * 2026-09-26 B 站式：72 → 96 —— 流速更接近滚动弹幕观感；时长仍落在 6–26s 守卫窗内。 */
+/** 视觉速度：rpx/秒。时长 = (屏宽 + 文案宽) / 速度（注记 W6） */
 const SPEED_RPX_PER_SEC = 96
 const SCREEN_RPX = 750
 /**
  * 单字占宽 ≈ 33rpx。
- *
  * ⚠️ 这个数必须跟着 `.ww-danmaku` 的 font-size 走（字号 + 0.02em 字距 ≈ 字号 ×1.03）：
- * 它是**同轨不重叠**的唯一依据（clearMs 按它算），估小了后一条会在前一条尾部还在屏内时进场。
- * 2026-09-18：字号 28 → 32rpx（真机截图里 4 轨 ×28rpx 摊在 380rpx 的浅纸墙上显得空且小），
- * 这里同步 28 → 33。守卫按"字号 ×1.03 ≈ CHAR_RPX"实算断言，两边不会再各自漂移。
+ * （注记 W7）
  */
 const CHAR_RPX = 33
-/**
- * 挂签条左右垫 + 钉头的固定占宽（rpx）。
- * 2026-09-26「活墙」：弹幕从裸字升级为纸签条，几何变宽；若不计入 clearMs，同轨会叠签。
- * 2026-09-26 B 站式：纸签改薄皮（更像弹幕皮肤），垫宽 40 → 28。
- * 只进宽度估算，不改 CHAR_RPX / 字号守卫口径。
- */
+/** 挂签条左右垫 + 钉头的固定占宽（rpx）。（注记 W8） */
 const SLIP_PAD_RPX = 28
 
 /**
  * 同一轨道内两条弹幕之间的**视觉间隙**（毫秒）。
- *
  * ⚠️ 历史事故：这个常量曾经是「两条弹幕的进场间隔」的全部依据，取值 900ms ——
- * 而单条弹幕穿越要 6–26 秒，于是同一条轨道上后面 3 条在前一条还在屏内时就冲进来，
- * 4 条轨道各叠 4 条，整面墙糊成一坨（业务方原话：灾难现场）。
- * 正确口径：下一条必须等**上一条的尾部离开右边缘**才可进场（见 danmakuClearMs），
- * 这个常量只负责「尾部离开后再留一点空白」。
- * 2026-09-26 B 站式：520 → 300 —— 同轨更密，仍靠 clearMs 防撞。
+ * （注记 W9）
  */
 const LANE_GAP_MS = 300
 
@@ -106,16 +67,10 @@ const LANE_GAP_MS = 300
  */
 const LANE_STAGGER_MS = 120
 
-/**
- * 一轮弹幕里，最后一条结束后到重开一轮之间的停顿。
- * 弹幕墙不能一轮播完就死；由页面用定时器重开（纯逻辑只提供这个时刻）。
- */
+/** 一轮弹幕里，最后一条结束后到重开一轮之间的停顿。（注记 W10） */
 const CYCLE_PAUSE_MS = 1100
 
-/**
- * 归一化祈福文案（与云函数同口径）。
- * 弹幕是单行滚动：换行会撑破轨道，零宽字符能让内容在审核视图里「看起来不一样」。
- */
+/** 归一化祈福文案（与云函数同口径）。（注记 W11） */
 function normalizeWishText(raw) {
   return String(raw == null ? '' : raw)
     .replace(/[\u200B-\u200D\uFEFF]/g, '')
@@ -125,13 +80,7 @@ function normalizeWishText(raw) {
     .trim()
 }
 
-/**
- * 归一化作用域 key（与云函数 `normalizeProductKey` 同口径）。
- *
- * 这是「全站拓展」的支点：每面祈福墙由一个字符串作用域隔离，
- * 第二面墙 = 藏品记录上多一个 `wishWallKey`，**不需要改任何代码**。
- * 非 `[a-z0-9_-]` 一律剔除以防注入，超长截断到 40（与集合字段约定一致）。
- */
+/** 归一化作用域 key（与云函数 `normalizeProductKey` 同口径）。（注记 W12） */
 function normalizeProductKey(raw, fallback) {
   const key = String(raw == null ? '' : raw)
     .trim()
@@ -142,22 +91,14 @@ function normalizeProductKey(raw, fallback) {
   return fallback == null ? PRODUCT_KEY : fallback
 }
 
-/**
- * 该藏品所属的祈福墙作用域。
- *
- * 优先显式 `wishWallKey`；没有就落到「马上有」这面墙 ——
- * 与 `isWishWallProduct` 同一思路：显式字段优先，不给未来的墙留隐式耦合。
- */
+/** 该藏品所属的祈福墙作用域。（注记 W13） */
 function resolveWishWallKey(product) {
   const p = product || {}
   if (p.wishWallKey) return normalizeProductKey(p.wishWallKey)
   return PRODUCT_KEY
 }
 
-/**
- * 构建祈福墙跳转 URL（入口组件唯一出口）。
- * 带上 `productKey` 是「全站拓展」的关键：页面据此决定读哪面墙，而不是写死 mashangyou。
- */
+/** 构建祈福墙跳转 URL（入口组件唯一出口）。（注记 W14） */
 function buildWishWallUrl(product, opts) {
   const o = opts || {}
   const p = product || {}
@@ -176,20 +117,7 @@ function buildWishWallUrl(product, opts) {
   return `/subpackages/feature/wish-wall/index?${params.join('&')}`
 }
 
-/**
- * 解析**门店 / 物料小程序码**带进来的 `scene`（wxacode.getUnlimited，≤32 字符）。
- *
- * 为什么做成纯函数：门口立牌上那张码一旦生成就是**印刷品**，改不了 ——
- * 所以"这张码的内容，页面到底认不认"必须能被**自动验证**（见 scripts/check-wall-qr.mjs：
- * 它读 qr-assets 旁边的清单，把里面的 scene 直接喂给本函数，解析不出目标墙就红）。
- *
- * 约定（与 identify / onboarding 两页一致）：scene 是 `k=v&k2=v2` 形式，形如
- *   `from=store_qr&k=mashangyou`
- * 只认白名单里的键，其余忽略；解析不出来就返回空对象（**不猜、不抛**）。
- *
- * @param {string} scene
- * @returns {{from:string, productKey:string}} 缺失字段为空串
- */
+/** 解析**门店 / 物料小程序码**带进来的 `scene`（wxacode.getUnlimited，≤32 字符）。（注记 W15） */
 function parseWishWallScene(scene) {
   const out = { from: '', productKey: '' }
   const raw = String(scene == null ? '' : scene)
@@ -214,10 +142,7 @@ function parseWishWallScene(scene) {
   return out
 }
 
-/**
- * 上海自然日的日期键 `YYYY-MM-DD`（与云函数 `shanghaiDayKey` 同口径）。
- * 仪式彩蛋按天复现：同一天进来看到同一句，跨天才换。
- */
+/** 上海自然日的日期键 `YYYY-MM-DD`（与云函数 `shanghaiDayKey` 同口径）。（注记 W16） */
 function shanghaiDayKey(ms) {
   const t = Number.isFinite(ms) ? ms : Date.now()
   const sh = new Date(t + 8 * 3600 * 1000)
@@ -259,14 +184,7 @@ function previousDayKey(dayKey) {
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
 }
 
-/**
- * 连续点灯天数（含今日）。
- * 今日未点灯即返回 0 —— 「连续」不能靠昨天充数，否则断了也显示连续，仪式就失去反馈。
- *
- * @param {string[]|object} litDays 已点灯的日期键数组，或 { 'YYYY-MM-DD': ... } 映射
- * @param {string} todayKey
- * @returns {number}
- */
+/** 连续点灯天数（含今日）。（注记 W17） */
 function lampStreak(litDays, todayKey) {
   const has = Array.isArray(litDays)
     ? (k) => litDays.indexOf(k) !== -1
@@ -284,25 +202,14 @@ function lampStreak(litDays, todayKey) {
 
 /* ============================ 仪式升级：灯位层级 ============================ */
 
-/**
- * 灯位层级：连续点灯天数 → 点亮的盏数与称号。
- *
- * 为什么要有层级：只有"点亮/没点亮"两种状态时，连续多天来的人得到的反馈和第一天一模一样，
- * 仪式就没有累积感。层级把"坚持"变成看得见的东西（1 盏 → 3 盏 → 5 盏长明）。
- *
- * 阈值刻意低（1/3/7 天）：祈福墙不是养成玩法，第 7 天就该给到顶格反馈。
- */
+/** 灯位层级：连续点灯天数 → 点亮的盏数与称号。（注记 W18） */
 const LAMP_TIERS = [
   { min: 7, tier: 3, lamps: 5, label: '长明' },
   { min: 3, tier: 2, lamps: 3, label: '守夜' },
   { min: 1, tier: 1, lamps: 1, label: '初见' }
 ]
 
-/**
- * @param {number} streak 连续点灯天数（0 = 今日未点灯）
- * @returns {{tier:number, lamps:number, label:string, nextAt:number, daysToNext:number}}
- *   `nextAt` = 下一层级所需天数（0 = 已到顶格），`daysToNext` = 还差几天
- */
+/** @param {number} streak 连续点灯天数（0 = 今日未点灯）（注记 W19） */
 function lampTier(streak) {
   const n = Math.max(0, parseInt(streak, 10) || 0)
   const hit = LAMP_TIERS.find((t) => n >= t.min)
@@ -322,10 +229,8 @@ function lampTier(streak) {
 
 /**
  * 二十四节气（常用日期表）。
- *
  * ⚠️ 这是**公历近似日**（每年可能差 ±1 天，精确值需天文历）。用途是"今天是不是节气"的
- * 仪式提示，不是历法计算 —— 所以固定表就够，且**确定性**（可在测试里断言）。
- * 逐条写出来而不是算：节气算法（太阳黄经）在这个量级上得不偿失。
+ * （注记 W20）
  */
 const SOLAR_TERMS = [
   { name: '小寒', month: 1, day: 5, season: 'winter' },
@@ -395,17 +300,7 @@ function solarTermGap(dayKey) {
 
 /* ============================ 祈福升级：我的心愿 ============================ */
 
-/**
- * 用「我的心愿」（`mine` 接口）给公开列表打标。
- *
- * 为什么要这样做：公开列表**刻意不返回 openid**（最小暴露），所以 C 端无法自己判断
- * 「哪条是我写的」。`mine` 返回的是我自己的记录（含 `_id`），用 `_id` 集合去标记就够了 ——
- * 不必为了一句"我的"把 openid 暴露到公开列表里。
- *
- * @param {Array<object>} items 公开列表（已装饰）
- * @param {Array<object>|Set<string>} mine 我的记录数组，或我的 _id 集合
- * @returns {Array<object>} 带 `isMine` 的新数组（不改原对象）
- */
+/** 用「我的心愿」（`mine` 接口）给公开列表打标。（注记 W21） */
 function markMine(items, mine) {
   const ids = mine instanceof Set
     ? mine
@@ -415,10 +310,7 @@ function markMine(items, mine) {
   }))
 }
 
-/**
- * 「我的心愿」视图的数据：把 `mine` 的记录装饰成与公开列表同构的形状。
- * 含被馆方收起的（`status === 'hidden'`），这样用户能看见"我的哪条没公开"。
- */
+/** 「我的心愿」视图的数据：把 `mine` 的记录装饰成与公开列表同构的形状。（注记 W22） */
 function decorateMineRows(mine, now) {
   const base = Number.isFinite(now) ? now : Date.now()
   return (Array.isArray(mine) ? mine : []).map((row) => ({
@@ -463,12 +355,7 @@ function validateWishText(raw) {
   return { ok: true, text }
 }
 
-/**
- * 该藏品是否挂祈福墙。
- *
- * 优先显式字段（ERP 侧后续可加 `wishWallEnabled`），标题子串只作过渡兜底 ——
- * 否则任何标题带「马上有」的藏品都会长出祈福墙，且改名即失效。
- */
+/** 该藏品是否挂祈福墙。（注记 W23） */
 function isWishWallProduct(product) {
   const p = product || {}
   if (p.wishWallEnabled === true) return true
@@ -494,12 +381,7 @@ function textWidthRpx(text) {
   return normalizeWishText(text).length * CHAR_RPX + SLIP_PAD_RPX
 }
 
-/**
- * 上一条的**尾部离开右边缘**所需时间 —— 这才是同一轨道下一条可以进场的时刻。
- *
- * 几何：弹幕从「头部贴着右边缘」起步，走完全程 (屏宽 + 文案宽) 用 durationMs；
- * 尾部进屏只需要头部走完「文案宽」这一段，故时间为 duration × 文案宽 / (屏宽 + 文案宽)。
- */
+/** 上一条的**尾部离开右边缘**所需时间 —— 这才是同一轨道下一条可以进场的时刻。（注记 W24） */
 function danmakuClearMs(text) {
   const w = textWidthRpx(text)
   const d = danmakuDurationMs(text)
@@ -507,39 +389,13 @@ function danmakuClearMs(text) {
   return Math.round(d * (w / (SCREEN_RPX + w)))
 }
 
-/**
- * 弹幕布局：确定性分配轨道 + **按轨道占用**排期。
- *
- * 两条硬约束（都有过事故）：
- *   1. 同一轨道内，下一条的进场时刻 ≥ 上一条的进场时刻 + clearMs + LANE_GAP_MS
- *      （旧实现只加了 900ms 固定间隔 → 同轨叠 4 条）；
- *   2. 同屏轨道均匀分布且不贴边（避免顶部被导航栏裁、底部被舞台边裁）。
- *
- * 不使用随机数：同一份数据两次渲染必须得到同一布局（否则每次 setData 都会跳位置），
- * 也才能在测试里断言。
- *
- * @param {Array<{_id?:string,text?:string}>} items
- * @param {{lanes?:number, gapMs?:number, cycle?:number, boostId?:string}} [opts]
- *        cycle：重开轮次。会进 key，从而让 DOM 重建、动画重播（同 key 不会重播）。
- *        boostId：刚落愿的那条（B 站「发弹幕即时上墙」）—— 给负 delay 中段曝光 + boost 标记。
- * @returns {Array<object>} 每项含 key/text/lane/topPercent/durationMs/delayMs/clearMs/endAt/isCycleEnd
- */
+/** 弹幕布局：确定性分配轨道 + **按轨道占用**排期。（注记 W25） */
 // 弹幕配色档位与 emoji（2026-09-19）：**必须确定性** —— 用 FNV-1a(rotateIndex) 按 id 取，
 // 绝不能用随机数（否则每次 setData 跳色，且与守卫「确定性布局」铁律冲突 ✗）
 const DANMAKU_TONES = 6
 const DANMAKU_EMOJIS = ['', '🌿', '✨', '🐚', '🌸', '🕯️', '🌙', '🍀']
 
-/**
- * 一条心愿该配哪个 emoji（**唯一规则**）。
- *
- * 2026-09-20 抽出：首页入口的跑马灯也要带 emoji，而规则原本内联在 `buildDanmakuRows` 里 →
- * 复制一份到首页就是"两处规则会漂"。现在 builder 与首页入口都调这里。
- * 盐 `'e:'` 与配色用的盐不同：**刻意让颜色与 emoji 不绑成固定搭配**。
- * 必须确定性（按 id 取，不用随机）—— 否则每次 setData 都会换，且与守卫的确定性铁律冲突。
- *
- * @param {string} seedId 心愿 _id（缺失时调用方给稳定兜底值）
- * @returns {string} emoji 或空串（池里第一项就是空串，即"这条不带 emoji"）
- */
+/** 一条心愿该配哪个 emoji（**唯一规则**）。（注记 W26） */
 function danmakuEmoji(seedId) {
   const id = String(seedId == null ? '' : seedId)
   return DANMAKU_EMOJIS[rotateIndex('e:' + id, DANMAKU_EMOJIS.length)] || ''
@@ -629,12 +485,7 @@ function danmakuCycleEndMs(rows) {
   return (Array.isArray(rows) ? rows : []).reduce((max, r) => Math.max(max, Number(r && r.endAt) || 0), 0)
 }
 
-/**
- * 愿签两列瀑布分列：按下标奇偶（**确定性** —— 两次渲染同一分布，也才能在测试里断言）。
- *
- * 为什么不用 flex-wrap 两列：文案长度 2–30 字差异大，按行对齐会留出成片空洞；
- * 瀑布列内纵向堆叠才贴得住。
- */
+/** 愿签两列瀑布分列：按下标奇偶（**确定性** —— 两次渲染同一分布，也才能在测试里断言）。（注记 W27） */
 function splitTagColumns(items, columns) {
   const n = Math.max(1, Math.min(4, Number(columns) || TAG_COLUMNS))
   const out = Array.from({ length: n }, () => [])
@@ -650,12 +501,8 @@ function isTagListCapped(count, limit) {
 
 /**
  * 时间解析：兼容云函数回包里出现过的全部形态。
- *
  * ⚠️ 历史缺陷：这里原本直接 `new Date(value)`，而云函数回包的日期可能是 `{ $date: … }`
- * （本仓已有 4 处按此兼容：couponHelper / storeLedger / member-crm / live studio）。
- * 该形态下 `new Date(obj)` = Invalid Date → **愿签的时间静默变成空串**，
- * 且「今日额度」会数成 0（明明写满了还提示"还可写 5 条"）——
- * 后者是本轮新增能力，故必须先把这个口径修对。
+ * （注记 W28）
  */
 function wishTimeMs(value) {
   if (value == null || value === '') return 0

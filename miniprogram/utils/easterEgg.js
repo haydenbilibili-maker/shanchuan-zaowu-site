@@ -1,17 +1,5 @@
-/**
- * 山海经彩蛋：发现、持久化、触发。
- * 云同步预留 getSyncPayload / syncToCloud，不改积分账。
- *
- * 触发类型（`config/easterEggs.js` 的 triggers[].type）：
- *   - `longPress` / `secretKeyword` / `tapCount`：**用户主动**动作，已拾得的彩蛋可反复重看；
- *   - `pageEnter` / `wishPosted` / `lampStreak` / `wishCount`：**页面自动**触发。
- *     自动触发必须"只弹一次" —— 否则每次进同一页都会弹窗，
- *     彩蛋就从惊喜变成骚扰。故自动类型走 `skipIfDiscovered`（见 discover）。
- *
- * 后两类是**带门槛**的自动触发：`lampStreak` 需要连续点灯天数够（`minStreak`），
- * `wishCount` 需要我的心愿条数够（`minCount`）。门槛写在注册表里；
- * 页面只负责报事实（`tryLampStreak({ streak })`），调门槛不必改页面。
- */
+// 「注记 X」长注释原文见 miniprogram/docs/源码注记_A流主包.md
+/** 山海经彩蛋：发现、持久化、触发。（注记 G1） */
 const { STORAGE_KEY, LOCAL_ACHIEVEMENT, EGGS } = require('../config/easterEggs')
 
 const tapBuckets = Object.create(null)
@@ -36,10 +24,7 @@ function listEggs() {
   return EGGS.slice()
 }
 
-/**
- * 当前页面路由（`pageEnter` 类触发靠它匹配）。
- * 组件/behavior 里 `this.route` 可能取不到，故回落到 getCurrentPages() 栈顶。
- */
+/** 当前页面路由（`pageEnter` 类触发靠它匹配）。（注记 G2） */
 function currentRoute(page) {
   const target = resolvePage(page)
   if (target && target.route) return String(target.route)
@@ -221,16 +206,7 @@ function tryTrigger(id, extras = {}) {
   return discover(id, extras)
 }
 
-/**
- * 单条 trigger 是否命中当前上下文。
- *
- * 除了"类型 + 路由"，部分类型还带**门槛条件**（连续天数 / 条数）。
- * 条件放在注册表里而不是页面里：页面只报"我现在连续 5 天"，
- * 具体几天算彩蛋由注册表定 —— 调门槛不用改页面。
- *
- * @param {{type?:string,pages?:string[],minStreak?:number,minCount?:number}} trigger
- * @param {{type?:string,route?:string,streak?:number,wishCount?:number}} ctx
- */
+/** 单条 trigger 是否命中当前上下文。（注记 G3） */
 function triggerMatches(trigger, ctx) {
   const t = trigger || {}
   const c = ctx || {}
@@ -249,16 +225,7 @@ function triggerMatches(trigger, ctx) {
   return true
 }
 
-/**
- * 按**触发类型**批量判定（彩蛋注册表驱动，页面只报事件、不认 egg id）。
- *
- * 「全站拓展」就靠这里：新页面接彩蛋 = 在注册表里加一条 trigger，
- * 页面侧只需 `tryPageEnter({ page: this })` 一行，不必改 easterEgg.js。
- *
- * @param {string} type 见 AUTO_TRIGGER_TYPES
- * @param {object} [extras] 透传给 present/discover，如 { page, source }
- * @returns {object|null} 最后一个被触发的记录
- */
+/** 按**触发类型**批量判定（彩蛋注册表驱动，页面只报事件、不认 egg id）。（注记 G4） */
 function tryTriggerType(type, extras = {}) {
   const ctx = {
     type: String(type || ''),

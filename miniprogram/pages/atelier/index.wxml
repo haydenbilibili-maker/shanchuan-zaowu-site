@@ -51,12 +51,12 @@
       <text class="section-overline">MY ORDERS</text>
       <text class="section-title">进度查询</text>
       <view class="orders-grid">
-        <view class="order-tile" bindtap="goPetOrders" wx:if="{{showPetMemorial}}">
+        <view class="order-tile" bindtap="goPetOrders" hover-class="order-tile-press" hover-stay-time="80" wx:if="{{showPetMemorial}}">
           <text class="order-tile-label">伴宠工单</text>
           <text class="order-tile-desc">查看评估进度与报价</text>
           <text class="order-tile-arrow">→</text>
         </view>
-        <view class="order-tile" bindtap="goCustomOrders" wx:if="{{showSpecimenCustom}}">
+        <view class="order-tile" bindtap="goCustomOrders" hover-class="order-tile-press" hover-stay-time="80" wx:if="{{showSpecimenCustom}}">
           <text class="order-tile-label">定制订单</text>
           <text class="order-tile-desc">方案草稿与已下定制单</text>
           <text class="order-tile-arrow">→</text>

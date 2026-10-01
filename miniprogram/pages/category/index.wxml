@@ -207,7 +207,12 @@
           </view>
         </view>
 
-        <view class="empty-tip" wx:if="{{orphanProducts.length === 0}}">暂无可购藏品</view>
+        <view class="empty-filter" wx:if="{{orphanProducts.length === 0 && filterActiveCount > 0}}">
+          <text class="empty-filter-title">没有符合这些条件的藏品</text>
+          <text class="empty-filter-desc">放宽价格或工艺试试，或回到本馆全部</text>
+          <view class="empty-filter-btn" bindtap="onClearFilters" hover-class="empty-filter-btn-press" hover-stay-time="80">清除筛选</view>
+        </view>
+        <view class="empty-tip" wx:elif="{{orphanProducts.length === 0}}">这一类藏品正在整理中</view>
       </view>
 
       <view class="list-footer" wx:if="{{loadingMore}}">加载中…</view>
