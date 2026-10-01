@@ -49,14 +49,14 @@
     </scroll-view>
 
     <view wx:if="{{dash.loading && !dash.view}}" class="skel">
-      <view class="skel-block tall"></view>
+      <view class="ui-sk-line skel-block tall"></view>
       <view class="skel-grid">
-        <view class="skel-block"></view>
-        <view class="skel-block"></view>
+        <view class="ui-sk-line skel-block"></view>
+        <view class="ui-sk-line skel-block"></view>
       </view>
       <view class="skel-grid">
-        <view class="skel-block"></view>
-        <view class="skel-block"></view>
+        <view class="ui-sk-line skel-block"></view>
+        <view class="ui-sk-line skel-block"></view>
       </view>
     </view>
     <view wx:elif="{{dash.error}}" class="state err">
@@ -222,10 +222,10 @@
     </view>
 
     <view wx:if="{{orders.loading}}" class="skel">
-      <view wx:for="{{skelRows}}" wx:key="*this" class="skel-card">
-        <view class="skel-line w60"></view>
-        <view class="skel-line w80"></view>
-        <view class="skel-line w40"></view>
+      <view wx:for="{{skelRows}}" wx:key="*this" class="ui-sk-card skel-card">
+        <view class="ui-sk-line skel-line w60"></view>
+        <view class="ui-sk-line skel-line w80"></view>
+        <view class="ui-sk-line skel-line w40"></view>
       </view>
     </view>
     <view wx:elif="{{orders.error}}" class="state err">
@@ -283,12 +283,12 @@
     </view>
 
     <view wx:if="{{price.loading}}" class="skel">
-      <view wx:for="{{skelRows}}" wx:key="*this" class="skel-card row">
-        <view class="skel-thumb"></view>
+      <view wx:for="{{skelRows}}" wx:key="*this" class="ui-sk-card skel-card row">
+        <view class="ui-sk-line skel-thumb"></view>
         <view class="skel-lines">
-          <view class="skel-line w60"></view>
-          <view class="skel-line w80"></view>
-          <view class="skel-line w40"></view>
+          <view class="ui-sk-line skel-line w60"></view>
+          <view class="ui-sk-line skel-line w80"></view>
+          <view class="ui-sk-line skel-line w40"></view>
         </view>
       </view>
     </view>
@@ -350,11 +350,11 @@
     </view>
 
     <view wx:if="{{partners.loading}}" class="skel">
-      <view wx:for="{{skelRows}}" wx:key="*this" class="skel-card row">
-        <view class="skel-avatar"></view>
+      <view wx:for="{{skelRows}}" wx:key="*this" class="ui-sk-card skel-card row">
+        <view class="ui-sk-line skel-avatar"></view>
         <view class="skel-lines">
-          <view class="skel-line w60"></view>
-          <view class="skel-line w40"></view>
+          <view class="ui-sk-line skel-line w60"></view>
+          <view class="ui-sk-line skel-line w40"></view>
         </view>
       </view>
     </view>

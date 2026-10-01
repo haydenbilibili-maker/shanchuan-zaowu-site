@@ -157,7 +157,7 @@ page {
   margin-top: var(--space-2);
   font-size: 22rpx;
   line-height: 1.6;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* ---------------- KPI ---------------- */
@@ -186,7 +186,7 @@ page {
 .kpi-label {
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .quota-bar {
@@ -402,7 +402,7 @@ page {
 }
 
 .rec-points.revoked {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   text-decoration: line-through;
 }
 
@@ -410,7 +410,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .rec-meta.warn {
@@ -514,7 +514,7 @@ page {
 .row-sub {
   margin-top: 4rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .tag {
@@ -558,7 +558,7 @@ page {
   margin-top: 14rpx;
   font-size: 22rpx;
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .field-hint.warn {
@@ -681,7 +681,7 @@ page {
 
 .adv-toggle-label {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .adv-toggle-action {
@@ -742,7 +742,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .mode-desc {
@@ -776,7 +776,7 @@ page {
 }
 
 .ph {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .empty {
@@ -784,7 +784,7 @@ page {
   text-align: center;
   font-size: 24rpx;
   line-height: 1.6;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* ---------------- 弹窗 ---------------- */
@@ -855,7 +855,7 @@ page {
   border-radius: 9999px;
   border: 1rpx solid rgba(160,154,144,0.35);
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   background: transparent;
 }
 .module-chip.on {
@@ -885,7 +885,7 @@ page {
   padding: 32rpx 16rpx;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 .empty.is-error {
   border: 1rpx solid rgba(196, 92, 74, 0.4);
@@ -903,7 +903,7 @@ page {
 .empty-desc, .empty-hint {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 .btn-retry {

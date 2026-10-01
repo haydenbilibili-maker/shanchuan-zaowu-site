@@ -37,7 +37,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -135,7 +135,7 @@ page {
 .empty-desc {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -220,7 +220,7 @@ page {
   margin-top: 6rpx;
   font-family: var(--font-mono);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .level-pill-row {
@@ -248,7 +248,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .member-actions {
@@ -301,7 +301,7 @@ page {
 .chip-meta {
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
   white-space: nowrap;
 }
@@ -310,7 +310,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -347,7 +347,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .ops-right {
@@ -360,7 +360,7 @@ page {
   padding: var(--space-4) 0;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .btn-primary,
@@ -445,7 +445,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -535,7 +535,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
 

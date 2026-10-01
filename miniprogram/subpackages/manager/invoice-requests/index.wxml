@@ -190,7 +190,7 @@
   </view>
   <view class="empty" wx:elif="{{!loading && !listError && list.length === 0}}">{{statusIndex > 0 ? '「' + statusOptions[statusIndex] + '」下没有开票申请，可切回「全部」看看' : '还没有开票申请'}}</view>
   <view class="ir-skeleton" wx:if="{{loading && !list.length}}" aria-label="开票列表加载中">
-    <view class="ir-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this"><view class="ir-sk-line wide"></view><view class="ir-sk-line"></view></view>
+    <view class="ir-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this"><view class="ui-sk-line wide"></view><view class="ui-sk-line"></view></view>
   </view>
   <view class="loading-hint" wx:elif="{{loading}}">加载中…</view>
 

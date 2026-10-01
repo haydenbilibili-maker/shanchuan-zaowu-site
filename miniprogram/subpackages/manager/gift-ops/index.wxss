@@ -47,7 +47,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -142,7 +142,7 @@ page {
 .filter-note {
   display: block;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   margin-top: var(--space-2);
   line-height: 1.4;
 }
@@ -292,7 +292,7 @@ page {
 
 .expand-hint {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .card-meta {
@@ -304,7 +304,7 @@ page {
 
 .meta {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -325,7 +325,7 @@ page {
   display: block;
   margin-bottom: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
 }
 
@@ -354,7 +354,7 @@ page {
   margin-top: 10rpx;
   font-size: 20rpx;
   line-height: 1.4;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .extra-actions {
@@ -512,7 +512,7 @@ page {
   display: block;
   margin-top: 2rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .pp-close {
@@ -554,7 +554,7 @@ page {
 .pp-file-label {
   display: block;
   font-size: 18rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .pp-file-name {
@@ -603,7 +603,7 @@ page {
   display: block;
   margin-top: 10rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* ==================== 导出按钮：内容居中 + 导出中禁用 ====================

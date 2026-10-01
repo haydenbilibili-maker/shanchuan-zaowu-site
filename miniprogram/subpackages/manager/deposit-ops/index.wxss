@@ -30,7 +30,7 @@ page {
   display: block;
   margin-top: var(--space-2, 16rpx);
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -91,7 +91,7 @@ page {
 
 .section-sub {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .form-row {
@@ -249,7 +249,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 

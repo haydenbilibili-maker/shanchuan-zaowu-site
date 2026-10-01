@@ -7,7 +7,7 @@
  * 文档：miniprogram/docs/细节雕刻_C流_2026-10.md
  *
  * 断言（每轮追加，条数随轮次增长；守卫条目只有这一条）：
- *   R1-1 工作台首页 / 功能模块页首屏是骨架（wb-sk），不再是一行「加载中…」
+ *   R1-1 工作台首页 / 功能模块页首屏是骨架（wb-sk 容器 + app.wxss 的 ui-sk-*），不再是一行「加载中…」
  *   R1-2 账本：加载中给骨架、旧流水压暗；空态只在数据就绪后出现且带「记一笔」；云端失败提示不透原文
  *   R1-3 订单：5 档空态都有下一步（清除搜索 / 看全部日期）
  *   R1-4 审批：首屏与列表骨架；提交中整排按钮压暗不可点；决策按钮有按压态
@@ -18,7 +18,7 @@
  *   R2-3 店员子页（打卡 / 请假 / 报销 / 清单 / 两个审批）提交按钮有按压态与「…中」文字反馈
  *   R2-4 日报详情「复制摘要」只留底部一处
  *   R2-5 低频配置页不出现「云函数 / status=active / openid」等技术词
- *   R3-1 中低频功能页（R3_PAGES）可点元素都有 hover-class，用 wb-press 的页面经 @import 链能找到定义；订单卡操作按钮有按压态
+ *   R3-1 中低频功能页（R3_PAGES）可点元素都有 hover-class，app.wxss 有全局 .wb-press；订单卡操作按钮有按压态
  *   R3-2 发票列表首次加载是骨架、按状态筛空有「切回全部」提示；门店积分规则说明无云函数 / 集合名
  *   R3-3 工资条明细不再 @import staff/scene.wxss（连带 ~41 KiB 核销页样式）；内联后仍有本页依赖的基础类
  *   —— R4 为产品负责人 2026-10-01 点名范围 ——
@@ -31,11 +31,16 @@
  *   R5   中英标签（A 流口径「英文大写小标题 + 中文主标分两行，同一行不中英并列」，2026-10-01）：
  *        员工 / 管理端 wxml（manager、b2bdesk、extra 除 user/）同一文字节点里不得「中文 / ENGLISH」「中文｜ENGLISH」并列，
  *        混排的英文词只许业务通用缩写（TERMS）；工作台面板标题 / 金卡 / 页脚 / 账本小标题为两行结构
+ *   —— R6 接 A 流第 4 轮共享层（ae7e83c：app.wxss 的 tap-press / wb-press 别名与 ui-sk-*）——
+ *   R6-1 8 份 .wb-press 同值副本已删，按压态只来自 app.wxss（页面 wxss 不得再定义 .wb-press）
+ *   R6-2 审批 / 发票 / 运营（两份）/ 工作台 / b2bdesk / 股东配置骨架用 ui-sk-card / ui-sk-line：
+ *        wxml 不再出现旧行类，wxss 不再自带骨架底色与呼吸动画（只留尺寸差异）
+ *   R6-3 员工 / 管理端 wxss 里 muted 作文字色清零（深色面改 secondary；占位 / 分隔符 / 刻意弱化的「无值」态除外，见 R6_CAPTION_KEEP）
  *
  * 用法：node miniprogram/scripts/check-c-stream-polish.mjs [--selftest]
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
-import { resolve, dirname, posix } from 'node:path'
+import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -47,7 +52,6 @@ const EXTRA = 'miniprogram/subpackages/extra'
 const FILES = {
   hubWxml: `${MGR}/manager/index.wxml`,
   hubWxss: `${MGR}/manager/index.wxss`,
-  hubNavWxss: `${MGR}/manager/hubNav.wxss`,
   wsWxml: `${MGR}/manager/workspace/index.wxml`,
   subviews: `${MGR}/manager/workspace/_subviews.wxml`,
   pageCfg: `${MGR}/manager/managerPageConfig.js`,
@@ -78,13 +82,41 @@ const FILES = {
   crmWxml: `${EXTRA}/member-crm/index.wxml`,
   permWxml: `${EXTRA}/staff-permissions/index.wxml`,
   permJs: `${EXTRA}/staff-permissions/index.js`,
-  mirrors: 'miniprogram/scripts/subpackage-mirrors.json'
+  mirrors: 'miniprogram/scripts/subpackage-mirrors.json',
+  appWxss: 'miniprogram/app.wxss'
 }
+
+/** R6-1：删掉 .wb-press 同值副本的 8 个文件 */
+const R6_PRESS_FILES = [
+  `${MGR}/studio-bills/index.wxss`, `${MGR}/payslip/index.wxss`, `${MGR}/manager/hubNav.wxss`, `${MGR}/invoice-requests/index.wxss`,
+  `${MGR}/utils/workbench-nav.wxss`, `${EXTRA}/utils/workbench-nav.wxss`, `${EXTRA}/member-crm/index.wxss`, 'miniprogram/subpackages/b2bdesk/desk-common.wxss'
+]
+/** R6-2：迁到 ui-sk-* 的骨架（wxml 不得再用旧行类；wxss 不得再自带骨架底色 / 呼吸动画） */
+const R6_SK_WXML = [
+  `${EXTRA}/approvals/index.wxml`, `${MGR}/invoice-requests/index.wxml`,
+  `${MGR}/feishu-sync/index.wxml`, `${MGR}/identify-monitor/index.wxml`, `${MGR}/studio-dashboard/index.wxml`,
+  `${EXTRA}/inventory-ops/index.wxml`, `${EXTRA}/purchase-ops/index.wxml`, `${EXTRA}/shipment-ops/index.wxml`,
+  `${MGR}/manager/index.wxml`, `${MGR}/manager/workspace/index.wxml`, `${MGR}/manager/workspace/_subviews.wxml`,
+  'miniprogram/subpackages/b2bdesk/center/index.wxml', 'miniprogram/subpackages/b2bdesk/partner/index.wxml', 'miniprogram/subpackages/b2bdesk/price-edit/index.wxml',
+  `${EXTRA}/shareholder-config/index.wxml`
+]
+const R6_SK_WXSS = [
+  `${EXTRA}/approvals/index.wxss`, `${MGR}/invoice-requests/index.wxss`, `${MGR}/utils/ops-museum.wxss`, `${EXTRA}/utils/ops-museum.wxss`,
+  `${MGR}/manager/index.wxss`, 'miniprogram/subpackages/b2bdesk/desk-common.wxss', `${EXTRA}/shareholder-config/index.wxss`
+]
+const R6_OLD_SK_CLASS = /(?<![\w-])(?:ap-sk-(?:line|card|title|bar|wide)|ir-sk-line|ops-sk-(?:card|line)|wb-sk-(?:line|card|block|title|wide|bar)|skeleton-card|sk-line)(?![\w-])/
+const R6_OLD_SK_CSS = /(?:^|[\n},])\s*\.(?:ap-sk-(?:line|card)|ir-sk-line|ops-sk-(?:card|line)|wb-sk-(?:line|card|block)|skeleton-card|sk-line)\b|@keyframes\s+(?:ap-sk|ir-sk|ops-sk|wb-sk|skel-|sk-)[\w-]*/
+/** R6-3：保留 muted 的选择器 —— 占位提示（-ph）、分隔符 / 圆点、刻意弱化的「无值」态、保存中 / 已用状态 */
+const R6_CAPTION_KEEP = /-ph\b|(?:^|\s)\.ph\b|-sep\b|picker-sep|-dot\b|--muted\b|pf-empty|is-saving|cat-opt-used|is-used/
+/** A 流的四份字节一致镜像（check:care-common-mirrors），不归本流改 */
+const R6_CAPTION_SKIP = [`${EXTRA}/care/care-common.wxss`]
+const CAPTION_EXEMPT = /disabled|placeholder|inactive|soldout|sold-out|claimed|expired|strike|is-off|\.muted\b|\.off\b/i
+const MUTED_TEXT = /(?<![-\w])color:\s*(?:var\(--color-text-muted\b[^;}]*\)|#6b6560\b)/i
 
 /** R4-6：已删除的无引用镜像（产品负责人 2026-10-01 点名删除） */
 const REMOVED_MIRRORS = [`${MGR}/staff/scene.wxss`, `${MGR}/staff/field/index.wxss`]
 
-/** R3：中低频功能页 —— 可点的按钮 / 标签 / 卡片都要有 hover-class，且 .wb-press 经本页 wxss 的 @import 链可达 */
+/** R3：中低频功能页 —— 可点的按钮 / 标签 / 卡片都要有 hover-class（.wb-press 由 app.wxss 全局提供） */
 const B2B = 'miniprogram/subpackages/b2bdesk'
 const R3_PAGES = [
   `${MGR}/gift-ops`, `${MGR}/deposit-ops`, `${MGR}/store-points`, `${MGR}/invoice-requests`, `${MGR}/studio-bills`,
@@ -110,45 +142,28 @@ function readRel(rel) {
   return readFileSync(p, 'utf8')
 }
 
-/** 把页面 wxss 及其 @import 链读进 css 表（键 = 仓库相对路径） */
-function loadCssChain(rel, css) {
-  if (css[rel] !== undefined) return
-  css[rel] = readRel(rel)
-  for (const m of css[rel].matchAll(/@import\s+['"]([^'"]+)['"]/g)) loadCssChain(posix.join(posix.dirname(rel), m[1]), css)
-}
-
 function load() {
   const src = {}
   for (const [k, rel] of Object.entries(FILES)) src[k] = readRel(rel)
   const pages = {}
-  const css = {}
-  for (const dir of R3_PAGES) {
-    pages[dir] = readRel(`${dir}/index.wxml`)
-    loadCssChain(`${dir}/index.wxss`, css)
-  }
+  for (const dir of R3_PAGES) pages[dir] = readRel(`${dir}/index.wxml`)
   src.__pages = pages
-  src.__css = css
   src.__existing = REMOVED_MIRRORS.filter((rel) => existsSync(resolve(ROOT, rel)))
   const r5 = {}
+  const r6css = {}
   const walk = (rel) => {
     for (const name of readdirSync(resolve(ROOT, rel))) {
       const child = `${rel}/${name}`
       if (R5_SKIP.some((p) => `${child}/`.startsWith(p))) continue
       if (statSync(resolve(ROOT, child)).isDirectory()) walk(child)
       else if (name.endsWith('.wxml')) r5[child] = readRel(child)
+      else if (name.endsWith('.wxss')) r6css[child] = readRel(child)
     }
   }
   R5_ROOTS.forEach(walk)
   src.__r5 = r5
+  src.__r6css = r6css
   return src
-}
-
-/** 在 css 表里沿 @import 链找某个选择器是否有定义 */
-function cssReach(css, rel, sel, seen = new Set()) {
-  if (seen.has(rel) || css[rel] === undefined) return false
-  seen.add(rel)
-  if (new RegExp(`(^|[\\n}])\\s*\\${sel}\\s*\\{`).test(css[rel].replace(/\/\*[\s\S]*?\*\//g, ''))) return true
-  return [...css[rel].matchAll(/@import\s+['"]([^'"]+)['"]/g)].some((m) => cssReach(css, posix.join(posix.dirname(rel), m[1]), sel, seen))
 }
 
 /** 截出 wxml 里从 startMark 起、到下一个同级 `<block wx:if="{{curTab===` 为止的片段 */
@@ -174,11 +189,11 @@ function check(src) {
   // R1-1 首屏骨架
   for (const [k, name] of [['hubWxml', '工作台首页'], ['wsWxml', '功能模块页']]) {
     const boot = bootBlock(src[k])
-    ok(/wb-sk/.test(boot) && /wb-sk-card/.test(boot), `R1-1 ${name}首屏不是骨架（缺 wb-sk / wb-sk-card）`)
+    ok(/wb-sk/.test(boot) && /ui-sk-card/.test(boot) && /ui-sk-line/.test(boot), `R1-1 ${name}首屏不是骨架（缺 wb-sk / ui-sk-card / ui-sk-line）`)
     ok(!/加载中…<\/text>/.test(boot), `R1-1 ${name}首屏又退回一行「加载中…」文字`)
   }
-  ok(/\.wb-sk-line[\s\S]*?animation:\s*wb-sk-pulse/.test(src.hubWxss) && /@keyframes wb-sk-pulse/.test(src.hubWxss),
-    'R1-1 骨架样式 / 呼吸动画缺失（manager/index.wxss）')
+  ok(/\.ui-sk-line\s*\{[^}]*animation:\s*ui-sk-pulse/.test(src.appWxss) && /@keyframes ui-sk-pulse/.test(src.appWxss),
+    'R1-1 骨架样式 / 呼吸动画缺失（app.wxss 的 ui-sk-line）')
 
   // R1-2 账本
   const ledger = tabBlock(src.subviews, 8)
@@ -279,9 +294,8 @@ function check(src) {
       return !NON_BUTTON.some((k) => cls.includes(k))
     })
     ok(bare.length === 0, `R3-1 ${dir} 有 ${bare.length} 处可点元素缺按压态：${bare.map((t) => (t.match(/class="([^"]*)"/) || [])[1]).slice(0, 3).join(' / ')}`)
-    if (/hover-class="wb-press"/.test(wxml)) ok(cssReach(src.__css, `${dir}/index.wxss`, '.wb-press'), `R3-1 ${dir} 用了 wb-press 但 @import 链里没有 .wb-press 定义`)
   }
-  ok(/\.wb-press\s*\{/.test(src.hubNavWxss), 'R3-1 hubNav.wxss 缺 .wb-press（功能模块页订单 / 工单按钮用它）')
+  ok(/(^|\n)\.tap-press, \.wb-press \{[^}]*opacity:/.test(src.appWxss), 'R3-1 app.wxss 缺全局 .wb-press（功能模块页与中低频页的按压态都靠它）')
   const omBtns = (tabBlock(src.subviews, 2).match(/<view\b[^>]*class="om-btn[^"]*"[^>]*>/g) || []).filter((t) => /\b(bindtap|catchtap)="/.test(t))
   ok(omBtns.length > 0 && omBtns.every((t) => /hover-class=/.test(t)), 'R3-1 订单卡「发货 / 退款 / 复制面单」按钮缺按压态')
 
@@ -400,6 +414,46 @@ function check(src) {
     ok(!src.mirrors.includes(`"${rel.replace('miniprogram/', '')}"`), `R4-6 subpackage-mirrors.json 又登记了已删镜像 ${rel}`)
   }
 
+  // R6-1 .wb-press 只来自 app.wxss
+  const pressCopies = Object.entries(src.__r6css)
+    .filter(([, css]) => /(^|[\n},])\s*\.wb-press\s*[,{]/.test(css.replace(/\/\*[\s\S]*?\*\//g, '')))
+    .map(([rel]) => rel.replace('miniprogram/subpackages/', ''))
+  ok(pressCopies.length === 0, `R6-1 页面 wxss 又自带 .wb-press（app.wxss 已有全局同值类）：${pressCopies.join(' / ')}`)
+  for (const rel of R6_PRESS_FILES) ok(src.__r6css[rel] !== undefined, `R6-1 找不到 ${rel}`)
+
+  // R6-2 骨架迁到 ui-sk-*
+  for (const rel of R6_SK_WXML) {
+    const wxml = src.__r5[rel]
+    if (wxml === undefined) { ok(false, `R6-2 找不到 ${rel}`); continue }
+    const classes = [...stripComments(wxml).matchAll(/\bclass="([^"]*)"/g)].map((m) => m[1])
+    const old = classes.filter((c) => R6_OLD_SK_CLASS.test(c))
+    ok(old.length === 0, `R6-2 ${rel.replace('miniprogram/subpackages/', '')} 骨架还在用旧行类：${old.slice(0, 2).join(' / ')}`)
+    const skel = classes.filter((c) => /\bskel-(?:block|card|line|thumb|avatar)\b/.test(c) && !/\bui-sk-(?:line|card)\b/.test(c))
+    ok(skel.length === 0, `R6-2 ${rel.replace('miniprogram/subpackages/', '')} 的 skel-* 没挂 ui-sk-*：${skel.slice(0, 2).join(' / ')}`)
+    ok(classes.some((c) => /\bui-sk-line\b/.test(c)), `R6-2 ${rel.replace('miniprogram/subpackages/', '')} 没有 ui-sk-line 骨架行`)
+  }
+  for (const rel of R6_SK_WXSS) {
+    const css = (src.__r6css[rel] || '').replace(/\/\*[\s\S]*?\*\//g, '')
+    const m = css.match(R6_OLD_SK_CSS)
+    ok(!m, `R6-2 ${rel.replace('miniprogram/subpackages/', '')} 又自带骨架行 / 呼吸动画：${m ? m[0].trim() : ''}`)
+    const own = [...css.matchAll(/([^{}]*\b(?:ui-sk-[\w-]+|skel-[\w-]+)\b[^{}]*)\{([^{}]*)\}/g)].filter((r) => /background|animation/.test(r[2]))
+    ok(own.length === 0, `R6-2 ${rel.replace('miniprogram/subpackages/', '')} 的骨架规则又写了底色 / 动画（应只留尺寸）：${own.map((r) => r[1].trim()).slice(0, 2).join(' / ')}`)
+  }
+
+  // R6-3 muted 说明字清零
+  const mutedLeft = []
+  for (const [rel, raw] of Object.entries(src.__r6css)) {
+    if (R6_CAPTION_SKIP.includes(rel)) continue
+    const css = raw.replace(/\/\*[\s\S]*?\*\//g, '')
+    for (const r of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (/@keyframes|^\s*(from|to|\d+%)/.test(r[1]) || !MUTED_TEXT.test(r[2])) continue
+      const sels = r[1].split(',').map((s) => s.trim()).filter(Boolean)
+      if (sels.every((s) => CAPTION_EXEMPT.test(s) || R6_CAPTION_KEEP.test(s))) continue
+      mutedLeft.push(`${rel.replace('miniprogram/subpackages/', '')} ${sels.join(', ').replace(/\s+/g, ' ')}`)
+    }
+  }
+  ok(mutedLeft.length === 0, `R6-3 员工 / 管理端说明字又用 muted（深色面 2.7–3.1:1，应改 secondary）${mutedLeft.length} 处：${mutedLeft.slice(0, 3).join(' / ')}`)
+
   return fails
 }
 
@@ -442,7 +496,7 @@ function selftest() {
     ['日报复制按钮又重复', (s) => ({ ...s, digestWxml: s.digestWxml.replace('<view class="dg-foot">', '<view class="dg-tools"><view class="dg-tool" bindtap="shareDigestSheet"><text>复制 / 分享摘要</text></view></view>\n              <view class="dg-foot">') }), /复制摘要」应只有底部一处/],
     ['飞书页回到「云函数」', (s) => ({ ...s, feishuWxml: s.feishuWxml.replace('飞书凭据还没配置', '飞书凭据还没配到云函数') }), /feishu-sync\/index\.wxml 界面出现技术词「云函数」/],
     ['礼赠履约「去发货」去掉按压态', (s) => ({ ...s, __pages: { ...s.__pages, [`${MGR}/gift-ops`]: s.__pages[`${MGR}/gift-ops`].replace(/<view hover-class="wb-press" hover-stay-time="80" (class="mini-btn primary"[^>]*catchtap="goOrderManage")/, '<view $1') } }), /R3-1 .*gift-ops 有 1 处可点元素缺按压态/],
-    ['workbench-nav 丢了 .wb-press', (s) => ({ ...s, __css: { ...s.__css, [`${MGR}/utils/workbench-nav.wxss`]: s.__css[`${MGR}/utils/workbench-nav.wxss`].replace(/\.wb-press\s*\{[^}]*\}/, '') } }), /R3-1 .*welcome-gift 用了 wb-press 但 @import 链里没有/],
+    ['app.wxss 丢了全局 .wb-press', (s) => ({ ...s, appWxss: s.appWxss.replace('.tap-press, .wb-press {', '.tap-press {') }), /R3-1 app\.wxss 缺全局 \.wb-press/],
     ['订单卡「发货」去掉按压态', (s) => ({ ...s, subviews: s.subviews.replace(/<view hover-class="wb-press" hover-stay-time="80" (class="om-btn ship")/, '<view $1') }), /R3-1 订单卡/],
     ['发票列表退回「加载中…」', (s) => ({ ...s, invoiceWxml: s.invoiceWxml.replace('class="ir-skeleton" wx:if="{{loading && !list.length}}"', 'class="loading-hint" wx:if="{{loading}}"') }), /R3-2 发票列表首次加载/],
     ['工资条回到 @import scene.wxss', (s) => ({ ...s, payslipWxss: '@import "../staff/scene.wxss";\n' + s.payslipWxss }), /R3-3 工资条又 @import/],
@@ -471,7 +525,14 @@ function selftest() {
     ['账本小标题回到「商场抽成｜MALL FEE」', (s) => ({ ...s, subviews: s.subviews.replace('<text class="lo-pt-en">MALL FEE</text><text class="lo-pt-cn">商场抽成</text>', '<text class="lo-pt-cn">商场抽成</text><text class="lo-pt-en">｜MALL FEE</text>') }), /R5 账本小标题不是/],
     ['账本表单回到「退款｜REFUND」', (s) => ({ ...s, __r5: { ...s.__r5, [FILES.subviews]: s.__r5[FILES.subviews].replace('<text>退款｜门店</text><input type="digit" value="{{tempRevenue.refund}}"', '<text>退款｜REFUND</text><input type="digit" value="{{tempRevenue.refund}}"') } }), /R5 同一行中英并列 1 处.*退款｜REFUND/],
     ['观测台回到「核心指标 / KPI」', (s) => ({ ...s, __r5: { ...s.__r5, [`${EXTRA}/inventory-ops/index.wxml`]: s.__r5[`${EXTRA}/inventory-ops/index.wxml`].replace('<text class="ops-section-label">核心指标</text>', '<text class="ops-section-label">核心指标 / KPI</text>') } }), /R5 同一行中英并列 1 处.*核心指标 \/ KPI/],
-    ['表达式里混入「TOP 明细」', (s) => ({ ...s, __r5: { ...s.__r5, [`${EXTRA}/purchase-ops/index.wxml`]: s.__r5[`${EXTRA}/purchase-ops/index.wxml`].replace("'展开主体 · 状态 · 排行明细'", "'展开主体 · 状态 · TOP 明细'") } }), /R5 同一行中英并列 1 处/]
+    ['表达式里混入「TOP 明细」', (s) => ({ ...s, __r5: { ...s.__r5, [`${EXTRA}/purchase-ops/index.wxml`]: s.__r5[`${EXTRA}/purchase-ops/index.wxml`].replace("'展开主体 · 状态 · 排行明细'", "'展开主体 · 状态 · TOP 明细'") } }), /R5 同一行中英并列 1 处/],
+    ['骨架呼吸动画被删', (s) => ({ ...s, appWxss: s.appWxss.replace('animation: ui-sk-pulse 1.2s', 'animation: none; --x: 1.2s') }), /R1-1 骨架样式 \/ 呼吸动画缺失/],
+    ['hubNav 复活 .wb-press 副本', (s) => ({ ...s, __r6css: { ...s.__r6css, [`${MGR}/manager/hubNav.wxss`]: s.__r6css[`${MGR}/manager/hubNav.wxss`] + '\n.wb-press { opacity: 0.72; }\n' } }), /R6-1 页面 wxss 又自带 \.wb-press.*manager\/manager\/hubNav\.wxss/],
+    ['审批骨架回到 ap-sk-line', (s) => ({ ...s, __r5: { ...s.__r5, [`${EXTRA}/approvals/index.wxml`]: s.__r5[`${EXTRA}/approvals/index.wxml`].replace('class="ui-sk-line title"', 'class="ap-sk-line ap-sk-title"') } }), /R6-2 extra\/approvals\/index\.wxml 骨架还在用旧行类/],
+    ['b2bdesk skel-line 没挂 ui-sk-line', (s) => ({ ...s, __r5: { ...s.__r5, ['miniprogram/subpackages/b2bdesk/center/index.wxml']: s.__r5['miniprogram/subpackages/b2bdesk/center/index.wxml'].replace('ui-sk-line skel-line', 'skel-line') } }), /R6-2 b2bdesk\/center\/index\.wxml 的 skel-\* 没挂 ui-sk-\*/],
+    ['运营骨架复活自带呼吸动画', (s) => ({ ...s, __r6css: { ...s.__r6css, [`${EXTRA}/utils/ops-museum.wxss`]: s.__r6css[`${EXTRA}/utils/ops-museum.wxss`] + '\n@keyframes ops-sk-pulse { 50% { opacity: 0.5; } }\n' } }), /R6-2 extra\/utils\/ops-museum\.wxss 又自带骨架行/],
+    ['b2bdesk 骨架又写底色', (s) => ({ ...s, __r6css: { ...s.__r6css, ['miniprogram/subpackages/b2bdesk/desk-common.wxss']: s.__r6css['miniprogram/subpackages/b2bdesk/desk-common.wxss'].replace('.skel-line {', '.skel-line { background: #262320;') } }), /R6-2 b2bdesk\/desk-common\.wxss 的骨架规则又写了底色/],
+    ['工作台说明字退回 muted', (s) => ({ ...s, __r6css: { ...s.__r6css, [FILES.hubWxss]: s.__r6css[FILES.hubWxss].replace(/(\.lo-kpi-hint \{[^}]*?)color: var\(--color-text-secondary, #A09A90\)/, '$1color: var(--color-text-muted)') } }), /R6-3 .*manager\/manager\/index\.wxss \.lo-kpi-hint/]
   ]
   const notes = []
   let bad = 0

@@ -31,18 +31,18 @@
 
 <!-- 首屏骨架：形状对齐问候行 / 扫码主按钮 / 常用磁贴，数据回来后原位替换，不跳版 -->
 <view class="workbench-boot wb-sk" wx:if="{{!workspaceReady}}" aria-label="工作台加载中">
-  <view class="wb-sk-line wb-sk-title"></view>
-  <view class="wb-sk-line wb-sk-sub"></view>
-  <view class="wb-sk-block wb-sk-cta"></view>
-  <view class="wb-sk-card">
-    <view class="wb-sk-line wb-sk-sub"></view>
+  <view class="ui-sk-line title"></view>
+  <view class="ui-sk-line wb-sk-sub"></view>
+  <view class="ui-sk-line bar wb-sk-cta"></view>
+  <view class="ui-sk-card">
+    <view class="ui-sk-line wb-sk-sub"></view>
     <view class="wb-sk-tiles">
-      <view class="wb-sk-tile" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
+      <view class="ui-sk-line wb-sk-tile" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
     </view>
   </view>
-  <view class="wb-sk-card">
-    <view class="wb-sk-line wb-sk-sub"></view>
-    <view class="wb-sk-line wb-sk-wide"></view>
+  <view class="ui-sk-card">
+    <view class="ui-sk-line wb-sk-sub"></view>
+    <view class="ui-sk-line wide"></view>
   </view>
 </view>
 

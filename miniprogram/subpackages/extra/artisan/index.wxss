@@ -67,7 +67,7 @@ page {
 .group-en {
   font-size: 20rpx;
   letter-spacing: 0.14em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .group-cn {

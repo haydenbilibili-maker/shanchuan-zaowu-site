@@ -1,10 +1,10 @@
 <!-- 首屏骨架：权限与列表回来前不留白 -->
 <view class="container ap-boot" wx:if="{{!ready}}" aria-label="审批中心加载中">
-  <view class="ap-sk-line ap-sk-title"></view>
-  <view class="ap-sk-line ap-sk-bar"></view>
-  <view class="ap-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-    <view class="ap-sk-line ap-sk-wide"></view>
-    <view class="ap-sk-line"></view>
+  <view class="ui-sk-line title"></view>
+  <view class="ui-sk-line bar"></view>
+  <view class="ui-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+    <view class="ui-sk-line wide"></view>
+    <view class="ui-sk-line"></view>
   </view>
 </view>
 
@@ -332,9 +332,9 @@
   </view>
 
   <view class="ap-skeleton" wx:elif="{{loading}}">
-    <view class="ap-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-      <view class="ap-sk-line ap-sk-wide"></view>
-      <view class="ap-sk-line"></view>
+    <view class="ui-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+      <view class="ui-sk-line wide"></view>
+      <view class="ui-sk-line"></view>
     </view>
   </view>
 

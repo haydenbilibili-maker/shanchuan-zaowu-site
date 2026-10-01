@@ -38,7 +38,7 @@ page {
 .boot-hint {
   margin-top: var(--space-3);
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .header {
@@ -210,7 +210,7 @@ page {
 .group-en {
   font-size: 20rpx;
   letter-spacing: 0.14em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .group-cn {
@@ -245,7 +245,7 @@ page {
 .group-sub {
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .fold-chevron {
@@ -350,7 +350,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
 }
 
@@ -440,7 +440,7 @@ page {
 
 .list-status {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .empty-panel {
@@ -506,7 +506,7 @@ page {
 
 .foot-note text {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.55;
 }
 
@@ -564,7 +564,7 @@ page {
 .ship-form .form-label {
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .ship-form .form-input {

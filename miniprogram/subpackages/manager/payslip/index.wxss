@@ -39,7 +39,7 @@ page {
 .boot-hint {
   margin-top: var(--space-3);
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .container {
@@ -65,7 +65,7 @@ page {
   margin-top: var(--space-2);
   font-size: 22rpx;
   line-height: 1.6;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .section > .section-note:first-child {
@@ -130,14 +130,14 @@ page {
 .row-sub {
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .empty {
   padding: var(--space-4) 0;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .empty .empty-hint {
@@ -221,7 +221,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* —— 来自 staff/scene.wxss —— */
@@ -252,7 +252,7 @@ page {
 .boot-hint {
   margin-top: var(--space-3);
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .scene-card {
@@ -371,7 +371,7 @@ page {
   margin-top: 4rpx;
   font-size: 22rpx;
   line-height: 1.45;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .mall-breakdown-fee {
@@ -408,7 +408,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 .btn-retry {
   display: inline-block;
@@ -420,7 +420,3 @@ page {
   color: #e8dcc0;
 }
 
-/* 通用按压态（hover-class="wb-press"，与 workbench-nav.wxss 同值；本页不引入它） */
-.wb-press {
-  opacity: 0.72;
-}

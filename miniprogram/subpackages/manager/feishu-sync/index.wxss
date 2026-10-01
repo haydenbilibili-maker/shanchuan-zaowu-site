@@ -51,7 +51,7 @@
 
 .ops-card-meta {
   font-size: 22rpx;
-  color: var(--color-text-muted, #6b6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .ops-note.flat {
@@ -122,7 +122,7 @@
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6b6560);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.45;
 }
 
@@ -179,7 +179,7 @@
   margin-top: 28rpx;
   font-size: 22rpx;
   line-height: 1.7;
-  color: var(--color-text-muted, #6b6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .ops-empty.is-error {

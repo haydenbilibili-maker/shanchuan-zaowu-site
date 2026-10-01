@@ -37,7 +37,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -124,7 +124,7 @@ page {
 .mode-en {
   font-size: 18rpx;
   letter-spacing: 0.06em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   text-transform: uppercase;
 }
 
@@ -144,7 +144,7 @@ page {
 
 .section-meta {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   flex-shrink: 1;
   text-align: right;
 }
@@ -213,7 +213,7 @@ page {
 
 .user-level {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .user-right {
@@ -229,7 +229,7 @@ page {
   padding: 2rpx 10rpx;
   border-radius: var(--radius-sm);
   background: rgba(160, 154, 144, 0.15);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .user-badge.on {
@@ -268,7 +268,7 @@ page {
 .empty-desc {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-4);
 }
@@ -297,7 +297,7 @@ page {
 
 .total-hint {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .picker-inner {
@@ -407,7 +407,7 @@ page {
 
 .rec-status.removed {
   background: rgba(160, 154, 144, 0.12);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .rec-meta-row {
@@ -419,7 +419,7 @@ page {
 
 .rec-meta {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .rec-actions {
@@ -475,7 +475,7 @@ page {
   text-align: center;
   padding: var(--space-6) 0;
   font-size: 26rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .ops-section {
@@ -544,7 +544,7 @@ page {
 
 .ops-meta {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* Modal — 头/可滚内容/底栏分离，避免 input 裁切与键盘遮挡 */
@@ -604,7 +604,7 @@ page {
   margin-top: 16rpx;
   font-size: 22rpx;
   line-height: 1.55;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   word-break: break-all;
 }
 
@@ -714,7 +714,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-refresh {
@@ -737,7 +737,7 @@ page {
   flex: 1;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   padding: 16rpx 0;
   border-radius: var(--radius-sm);
   font-weight: 500;
@@ -752,13 +752,13 @@ page {
   padding: var(--space-5) 0;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-hint {
   display: block;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-3);
 }
@@ -799,7 +799,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
 
@@ -849,7 +849,7 @@ page {
   width: 56rpx;
   text-align: right;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
 
@@ -857,5 +857,5 @@ page {
   padding: var(--space-3) 0;
   text-align: center;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }

@@ -6,9 +6,9 @@
   </view>
 
   <view wx:if="{{loading}}" class="skel">
-    <view class="skel-block tall"></view>
-    <view class="skel-block"></view>
-    <view class="skel-block"></view>
+    <view class="ui-sk-line skel-block tall"></view>
+    <view class="ui-sk-line skel-block"></view>
+    <view class="ui-sk-line skel-block"></view>
   </view>
   <view wx:elif="{{error}}" class="state err">
     <text class="state-title">没加载出来</text>

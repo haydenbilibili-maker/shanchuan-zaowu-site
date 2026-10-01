@@ -55,7 +55,7 @@ page {
   font-size: 20rpx;
   letter-spacing: 0.04em;
   border: 1rpx solid var(--color-border);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .role-pill.edit {
@@ -72,7 +72,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -209,7 +209,7 @@ page {
   display: block;
   margin-top: var(--space-3);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .preview {
@@ -279,7 +279,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 18rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.02em;
 }
 
@@ -315,7 +315,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
 
@@ -339,7 +339,7 @@ page {
 
 .link-en {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -376,7 +376,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
 }
 
@@ -455,7 +455,7 @@ page {
   border-radius: var(--radius-sm);
   border: 1rpx solid var(--color-border);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .toggle.on {
@@ -497,7 +497,7 @@ page {
 .sub-status {
   flex-shrink: 0;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .sub-status.ok {
@@ -540,7 +540,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 .btn-retry {
   display: inline-block;

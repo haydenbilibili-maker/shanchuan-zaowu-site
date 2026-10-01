@@ -185,7 +185,7 @@
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   text-align: center;
 }
 
@@ -326,7 +326,7 @@
 .job-no {
   font-size: 22rpx;
   letter-spacing: 0.06em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .job-title {
@@ -436,7 +436,7 @@
   width: 140rpx;
   flex-shrink: 0;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .fact-v {

@@ -40,7 +40,7 @@
 .sec-en {
   font-size: 18rpx;
   letter-spacing: 0.14em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .sec-cn {
@@ -88,7 +88,7 @@
 
 .cart-thumb.ph text {
   font-size: 18rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .cart-main {
@@ -172,7 +172,7 @@
 .cart-remove {
   flex-shrink: 0;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   padding-top: 8rpx;
 }
 
@@ -197,7 +197,7 @@
   margin-bottom: 8rpx;
   font-size: 20rpx;
   letter-spacing: 0.04em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .form-input {
@@ -240,7 +240,7 @@
 
 .checkout-total-label {
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .checkout-total-val {
@@ -252,7 +252,7 @@
 
 .checkout-hint {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .checkout-actions {

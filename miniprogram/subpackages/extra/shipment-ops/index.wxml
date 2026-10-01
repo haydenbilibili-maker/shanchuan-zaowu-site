@@ -352,10 +352,10 @@
       </view>
 
       <view class="ops-skeleton" wx:if="{{loading && !list.length && !listError}}">
-        <view class="ops-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-          <view class="ops-sk-line wide"></view>
-          <view class="ops-sk-line"></view>
-          <view class="ops-sk-line mid"></view>
+        <view class="ui-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+          <view class="ui-sk-line wide"></view>
+          <view class="ui-sk-line"></view>
+          <view class="ui-sk-line mid"></view>
         </view>
       </view>
 
@@ -419,9 +419,9 @@
       </picker>
 
       <view class="ops-skeleton" wx:if="{{dashLoading && !kpis && !dashError}}">
-        <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
-          <view class="ops-sk-line wide"></view>
-          <view class="ops-sk-line"></view>
+        <view class="ui-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+          <view class="ui-sk-line wide"></view>
+          <view class="ui-sk-line"></view>
         </view>
       </view>
 
@@ -693,9 +693,9 @@
       <text class="sc-lib-note warn" wx:if="{{libTruncated}}">共 {{libTotal}} 条，仅显示前 200 条：请用搜索定位。</text>
 
       <view class="ops-skeleton" wx:if="{{libLoading && !libList.length}}">
-        <view class="ops-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-          <view class="ops-sk-line wide"></view>
-          <view class="ops-sk-line"></view>
+        <view class="ui-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+          <view class="ui-sk-line wide"></view>
+          <view class="ui-sk-line"></view>
         </view>
       </view>
       <view class="ops-empty is-error" wx:elif="{{libError}}">

@@ -29,9 +29,9 @@
       </view>
 
       <view class="ops-skeleton" wx:if="{{dashLoading && !kpis && !dashError}}">
-        <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
-          <view class="ops-sk-line wide"></view>
-          <view class="ops-sk-line"></view>
+        <view class="ui-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+          <view class="ui-sk-line wide"></view>
+          <view class="ui-sk-line"></view>
         </view>
       </view>
 
@@ -321,9 +321,9 @@
         </view>
 
         <view class="ops-skeleton" wx:if="{{loading && !groups.length && !finishedListError}}">
-          <view class="ops-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
-            <view class="ops-sk-line wide"></view>
-            <view class="ops-sk-line"></view>
+          <view class="ui-sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
+            <view class="ui-sk-line wide"></view>
+            <view class="ui-sk-line"></view>
           </view>
         </view>
 
@@ -411,9 +411,9 @@
         </view>
 
         <view class="ops-skeleton" wx:if="{{loading && !rawList.length && !rawListError}}">
-          <view class="ops-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
-            <view class="ops-sk-line wide"></view>
-            <view class="ops-sk-line"></view>
+          <view class="ui-sk-card" wx:for="{{[1,2,3]}}" wx:key="*this">
+            <view class="ui-sk-line wide"></view>
+            <view class="ui-sk-line"></view>
           </view>
         </view>
 

@@ -965,19 +965,12 @@ page {
   color: var(--brass-300);
 }
 
-/* 骨架屏 */
-.skel-block,
-.skel-line,
-.skel-thumb,
-.skel-avatar {
-  border-radius: 12rpx;
-  background: rgba(255, 255, 255, 0.06);
-  animation: skel-pulse 1.4s ease-in-out infinite;
-}
-
+/* 骨架屏：底色与脉动用 app.wxss 的 ui-sk-*，这里只放 b2bdesk 的形状 */
 .skel-block {
+  width: 100%;
   height: 150rpx;
-  margin-bottom: 16rpx;
+  margin: 0 0 16rpx;
+  border-radius: 12rpx;
 }
 
 .skel-block.tall {
@@ -994,10 +987,7 @@ page {
 }
 
 .skel-card {
-  margin-bottom: 16rpx;
-  padding: 24rpx;
-  border-radius: var(--radius-md);
-  border: 1rpx solid rgba(255, 255, 255, 0.05);
+  margin: 0 0 16rpx;
 }
 
 .skel-card.row {
@@ -1005,18 +995,21 @@ page {
   align-items: center;
 }
 
+.skel-thumb,
+.skel-avatar {
+  flex-shrink: 0;
+  margin: 0 24rpx 0 0;
+}
+
 .skel-thumb {
   width: 140rpx;
   height: 140rpx;
-  flex-shrink: 0;
-  margin-right: 24rpx;
+  border-radius: 12rpx;
 }
 
 .skel-avatar {
   width: 88rpx;
   height: 88rpx;
-  flex-shrink: 0;
-  margin-right: 24rpx;
   border-radius: 999rpx;
 }
 
@@ -1026,18 +1019,12 @@ page {
 }
 
 .skel-line {
-  height: 24rpx;
   margin: 12rpx 0;
 }
 
 .skel-line.w40 { width: 40%; }
 .skel-line.w60 { width: 60%; }
 .skel-line.w80 { width: 80%; }
-
-@keyframes skel-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
-}
 
 /* 空态大字徽 */
 .state-mark {
@@ -1102,14 +1089,14 @@ page {
 }
 
 .card-meta.dim {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .card-arrow {
   display: block;
   margin-top: 4rpx;
   font-size: 32rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .tags.tight {
@@ -1152,7 +1139,7 @@ page {
   margin-top: 8rpx;
   font-size: 20rpx;
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .panel-title-en {
@@ -1232,7 +1219,7 @@ page {
   display: block;
   padding: 22rpx 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .sheet-cancel {
@@ -1390,7 +1377,3 @@ page {
   color: #e07a5f;
 }
 
-/* 通用按压态（hover-class="wb-press"，与 workbench-nav.wxss 同值；b2bdesk 分包公共） */
-.wb-press {
-  opacity: 0.72;
-}

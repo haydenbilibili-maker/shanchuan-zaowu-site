@@ -431,7 +431,3 @@
   opacity: 0.6;
 }
 
-/* 功能模块页（订单 / 工单 / 标本师…）行内操作按钮的按压态，与各子页 workbench-nav.wxss 的 .wb-press 同值 */
-.wb-press {
-  opacity: 0.72;
-}

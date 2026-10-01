@@ -181,9 +181,9 @@
 
     <!-- 首次进入 / 切月份 / 切门店：总览位先给骨架，旧流水压暗，避免「上个月的数」被当成本月 -->
     <view class="ledger-overview lo-skeleton" wx:else>
-      <view class="wb-sk-line wb-sk-sub"></view>
-      <view class="wb-sk-line wb-sk-title"></view>
-      <view class="wb-sk-line wb-sk-wide"></view>
+      <view class="ui-sk-line wb-sk-sub"></view>
+      <view class="ui-sk-line title"></view>
+      <view class="ui-sk-line wide"></view>
     </view>
 
     <view class="revenue-list {{ledgerOverviewReady ? '' : 'is-stale'}}">
@@ -655,8 +655,8 @@
     </view>
 
     <view class="om-loading" wx:if="{{(subTab===0 && ordersLoading && !orders.length) || (subTab===1 && shippedOrdersLoading && !shippedOrders.length) || (subTab===2 && completedOrdersLoading && !completedOrders.length) || (subTab===3 && refundsLoading && !refunds.length) || (subTab===4 && pendingPayOrdersLoading && !pendingPayOrders.length)}}">
-      <view class="om-skel"></view>
-      <view class="om-skel short"></view>
+      <view class="ui-sk-line om-skel"></view>
+      <view class="ui-sk-line om-skel short"></view>
       <text class="om-loading-text">加载订单中…</text>
     </view>
 

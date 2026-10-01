@@ -37,7 +37,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -184,7 +184,7 @@ page {
 .section-meta {
   flex: 1;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   text-align: right;
   line-height: 1.4;
 }
@@ -599,7 +599,7 @@ page {
 
 .loading-hint {
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .empty-title {
@@ -612,7 +612,7 @@ page {
 .empty-desc {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -1022,7 +1022,7 @@ page {
 .modal-desc {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-3);
 }
@@ -1087,7 +1087,7 @@ page {
 .youxin-sub {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   margin-top: 4rpx;
 }
 
@@ -1172,7 +1172,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-refresh {
@@ -1195,7 +1195,7 @@ page {
   flex: 1;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   padding: 16rpx 0;
   border-radius: var(--radius-sm);
   font-weight: 500;
@@ -1210,13 +1210,13 @@ page {
   padding: var(--space-5) 0;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-hint {
   display: block;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-3);
 }
@@ -1257,7 +1257,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
 
@@ -1312,7 +1312,7 @@ page {
   width: 56rpx;
   text-align: right;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
 
@@ -1389,14 +1389,14 @@ page {
 .ov-rank-meta {
   display: block;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .ov-empty {
   padding: var(--space-4) 0;
   text-align: center;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* ===== 会员注销（超管）===== */
@@ -1453,12 +1453,8 @@ page {
   background: rgba(214, 64, 69, 0.10);
 }
 .cancel-badge.is-anon {
-  color: var(--color-text-muted, #8A847C);
+  color: var(--color-text-secondary, #A09A90);
   border-color: rgba(138, 132, 124, 0.5);
   background: rgba(138, 132, 124, 0.12);
 }
 
-/* 通用按压态（hover-class="wb-press"，与 workbench-nav.wxss 同值；本页不引入它） */
-.wb-press {
-  opacity: 0.72;
-}

@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const MP = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
+const MP = process.env.C_STREAM_MP || resolve(dirname(fileURLToPath(import.meta.url)), '..', '..')
 const read = (rel) => readFileSync(join(MP, rel), 'utf8')
 
 const HUB = 'subpackages/manager/manager/index.wxml'

@@ -213,7 +213,7 @@
 }
 
 .pay-chip.neutral text {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .po-brief {
@@ -233,7 +233,7 @@
 
 .po-fulfill-label {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.06em;
 }
 
@@ -249,7 +249,7 @@
   border-radius: 10rpx;
   background: rgba(255, 255, 255, 0.03);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.45;
 }
 
@@ -271,7 +271,7 @@
 
 .po-time {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .po-actions {
@@ -298,7 +298,7 @@
 
 .po-btn.ghost {
   border-style: dashed;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .po-btn-press {

@@ -109,7 +109,7 @@
   display: block;
   margin-top: 12rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 

@@ -46,7 +46,7 @@
 }
 
 .rec-meta.soft {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .btn-ghost.sm {

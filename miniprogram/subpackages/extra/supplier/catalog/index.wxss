@@ -185,7 +185,7 @@
 .cat-lock-hint {
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.02em;
 }
 

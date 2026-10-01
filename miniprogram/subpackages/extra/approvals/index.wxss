@@ -51,7 +51,7 @@ page {
   margin-top: var(--space-2);
   padding: 0;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.45;
   word-break: keep-all;
   overflow-wrap: break-word;
@@ -76,7 +76,7 @@ page {
   text-align: center;
   padding: 18rpx 0;
   font-size: 26rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   border-bottom: 2rpx solid transparent;
   margin-bottom: -1px;
 }
@@ -120,7 +120,7 @@ page {
 
 .pill-label {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .pill-value {
@@ -141,7 +141,7 @@ page {
 .filter-count {
   margin-left: auto;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
 
@@ -222,7 +222,7 @@ page {
 
 .status-pill.cancelled {
   background: rgba(106, 101, 96, 0.2);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .card-tags {
@@ -268,7 +268,7 @@ page {
 .card-meta {
   flex: 1;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -279,7 +279,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   opacity: 0.85;
 }
 
@@ -339,7 +339,7 @@ page {
   flex-shrink: 0;
   width: 64rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .detail-val {
@@ -356,7 +356,7 @@ page {
 
 .detail-hint {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* 操作区 */
@@ -422,28 +422,7 @@ page {
 /* 首屏 / 列表骨架 */
 .ap-boot { padding-top: var(--space-5); }
 .ap-skeleton { margin-top: var(--space-3); }
-.ap-sk-line {
-  height: 24rpx;
-  width: 42%;
-  margin-top: 16rpx;
-  border-radius: 8rpx;
-  background: var(--color-bg-elevated, #262320);
-  animation: ap-sk-pulse 1.2s ease-in-out infinite;
-}
-.ap-sk-title { height: 40rpx; width: 40%; margin-top: 0; }
-.ap-sk-bar { height: 72rpx; width: 100%; margin-top: 32rpx; border-radius: 16rpx; }
-.ap-sk-wide { width: 72%; height: 30rpx; margin-top: 0; }
-.ap-sk-card {
-  margin-top: 24rpx;
-  padding: 24rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1rpx solid rgba(38, 35, 32, 0.66);
-  border-radius: 16rpx;
-}
-@keyframes ap-sk-pulse {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.85; }
-}
+.ap-boot .ui-sk-line.bar { margin-top: 32rpx; }
 
 .attach-block {
   margin-top: var(--space-2);
@@ -467,7 +446,7 @@ page {
   display: inline-block;
   padding: 8rpx 16rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-sm);
 }
@@ -534,7 +513,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -549,7 +528,7 @@ page {
   text-align: center;
   padding: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* ===== 数据概览（默认收起；对齐 CRM / 藏品库 pstats） ===== */
@@ -597,7 +576,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -655,7 +634,7 @@ page {
   flex: 1;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   padding: 16rpx 0;
   border-radius: var(--radius-sm);
   font-weight: 500;
@@ -672,13 +651,13 @@ page {
   padding: var(--space-5) 0;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-hint {
   display: block;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-3);
 }
@@ -716,7 +695,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
 
@@ -766,7 +745,7 @@ page {
   width: 56rpx;
   text-align: right;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
 
@@ -774,7 +753,7 @@ page {
   padding: var(--space-3) 0;
   text-align: center;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* —— 审核区入口 —— */
@@ -787,7 +766,7 @@ page {
   display: block;
   font-size: 20rpx;
   letter-spacing: 0.12em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   text-transform: uppercase;
   margin-bottom: var(--space-2);
 }
@@ -863,7 +842,7 @@ page {
   margin: var(--space-2) 0 var(--space-3);
   font-size: 22rpx;
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .flow-list {
@@ -906,13 +885,13 @@ page {
 }
 
 .rec-points.revoked {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   text-decoration: line-through;
 }
 
 .rec-meta {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-top: 6rpx;
 }
@@ -1049,7 +1028,7 @@ page {
   display: block;
   font-size: 22rpx;
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .input {
@@ -1075,7 +1054,7 @@ page {
   border-radius: var(--radius-full);
   border: 1rpx solid rgba(160, 154, 144, 0.35);
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .seg-item.on {

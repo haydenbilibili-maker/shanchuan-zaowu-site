@@ -110,7 +110,7 @@ page {
   margin-top: var(--space-2);
   font-size: 22rpx;
   line-height: 1.6;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .section-note.link-note {
@@ -223,7 +223,7 @@ page {
 .row-sub {
   margin-top: 4rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .tag {
@@ -255,7 +255,7 @@ page {
   margin-top: 14rpx;
   font-size: 22rpx;
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .field-hint.warn {
@@ -395,7 +395,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .input {
@@ -421,7 +421,7 @@ page {
 }
 
 .ph {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .empty {
@@ -429,7 +429,7 @@ page {
   text-align: center;
   font-size: 24rpx;
   line-height: 1.6;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .mask {

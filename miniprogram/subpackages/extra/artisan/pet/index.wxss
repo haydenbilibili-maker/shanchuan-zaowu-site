@@ -32,7 +32,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.6;
 }
 
@@ -46,7 +46,7 @@ page {
 
 .summary-label {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .summary-value {
@@ -93,7 +93,7 @@ page {
 .pet-status {
   flex-shrink: 0;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .pet-status.is-todo { color: var(--color-warning); }
@@ -107,7 +107,7 @@ page {
 .pet-meta {
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .pet-actions {
@@ -144,5 +144,5 @@ page {
   text-align: center;
   padding: var(--space-6) 0;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }

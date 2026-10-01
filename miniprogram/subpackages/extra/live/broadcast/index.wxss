@@ -40,7 +40,7 @@
   display: block;
   margin-top: 16rpx;
   font-size: 22rpx;
-  color: #6B6560;
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -73,7 +73,7 @@
 
 .status-label {
   font-size: 22rpx;
-  color: #6B6560;
+  color: var(--color-text-secondary, #A09A90);
   flex-shrink: 0;
 }
 
@@ -467,7 +467,7 @@
 .shelf-host-warn { display: block; margin-top: 4rpx; font-size: 20rpx; color: #E9A23B; }
 .shelf-host-cover.ph {
   display: flex; align-items: center; justify-content: center;
-  font-size: 20rpx; color: #6B6560;
+  font-size: 20rpx; color: var(--color-text-secondary, #A09A90);
 }
 .shelf-host-actions { display: flex; flex-direction: column; gap: 8rpx; }
 .shelf-toolbar { display: flex; flex-direction: column; gap: 12rpx; }
@@ -521,7 +521,7 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .picker-meta { font-size: 20rpx; color: #A09A90; }
-.picker-empty { padding: 40rpx 0; text-align: center; color: #6B6560; font-size: 24rpx; }
+.picker-empty { padding: 40rpx 0; text-align: center; color: var(--color-text-secondary, #A09A90); font-size: 24rpx; }
 .ghost-light.mini.disabled { opacity: 0.4; pointer-events: none; }
 
 .spotlight-switch {

@@ -29,7 +29,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.45;
 }
 
@@ -79,7 +79,7 @@ page {
   padding: 6rpx 14rpx;
   border-radius: var(--radius-sm);
   border: 1rpx solid var(--color-border);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .status-tag.on {
   color: var(--color-success);
@@ -121,14 +121,14 @@ page {
 }
 .block-hint {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .block-note {
   display: block;
   margin-top: var(--space-3);
   font-size: 22rpx;
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .rate-row {
@@ -212,7 +212,7 @@ page {
   display: block;
   margin-bottom: 10rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .tag-row {
   display: flex;
@@ -242,7 +242,7 @@ page {
   padding: 0 8rpx;
   font-size: 28rpx;
   line-height: 1;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .search-btn {
@@ -265,7 +265,7 @@ page {
   overflow-y: auto;
 }
 .hit-action.dim {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .advanced-toggle {
@@ -276,11 +276,11 @@ page {
 }
 .advanced-label {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .advanced-arrow {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .field-block.first {
   margin-top: 0;
@@ -377,7 +377,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .hit-action {
   flex-shrink: 0;
@@ -404,7 +404,7 @@ page {
 }
 .summary-label {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .summary-value {
   margin-top: 6rpx;
@@ -453,7 +453,7 @@ page {
   flex-shrink: 0;
   width: 88rpx;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .filter-value {
   flex: 1;
@@ -465,7 +465,7 @@ page {
   white-space: nowrap;
 }
 .filter-value.ph {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .filter-arrow {
   flex-shrink: 0;
@@ -481,7 +481,7 @@ page {
 }
 .filter-clear {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .filter-btn {
   flex: none;
@@ -521,14 +521,14 @@ page {
 .ledger-meta {
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .empty {
   text-align: center;
   padding: var(--space-6) 0;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .empty-friendly {
   display: flex;
@@ -543,14 +543,14 @@ page {
 }
 .empty-desc {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 .empty-mini {
   padding: var(--space-3) 0;
   text-align: center;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .sheet-mask {
@@ -620,7 +620,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.45;
 }
 
@@ -686,7 +686,7 @@ page {
 }
 .rule-card-pri {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 .rule-card-actions {
   display: flex;

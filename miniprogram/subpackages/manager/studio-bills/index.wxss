@@ -139,7 +139,3 @@
 .sb-create-sum-label { font-size: 23rpx; color: #a09a90; }
 .sb-create-sum-value { font-size: 34rpx; font-weight: 600; color: #c4a76c; }
 
-/* 通用按压态（hover-class="wb-press"，与 workbench-nav.wxss 同值；本页不引入它） */
-.wb-press {
-  opacity: 0.72;
-}

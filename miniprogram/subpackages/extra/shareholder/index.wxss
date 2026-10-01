@@ -177,7 +177,7 @@ page {
 .verdict-en {
   font-size: 18rpx;
   letter-spacing: 0.1em;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 .verdict-title {
   font-size: 30rpx;
@@ -227,7 +227,7 @@ page {
   justify-content: space-between;
   gap: 12rpx;
 }
-.verdict-meta { font-size: 20rpx; color: var(--color-text-muted, #6B6560); }
+.verdict-meta { font-size: 20rpx; color: var(--color-text-secondary, #A09A90); }
 .legend-toggle {
   font-size: 20rpx;
   color: var(--brass-400, #C4A76C);
@@ -249,7 +249,7 @@ page {
   margin-top: 8rpx;
   font-size: 20rpx;
   line-height: 1.45;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* —— 信号灯网格 —— */
@@ -306,7 +306,7 @@ page {
 }
 .signal-name {
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -323,14 +323,14 @@ page {
 .signal-val.up { color: var(--color-success, #52B788); }
 .signal-val.warn { color: var(--color-warning, #E9A23B); }
 .signal-val.down { color: var(--color-error, #D64045); }
-.signal-val.flat { color: var(--color-text-muted, #6B6560); }
+.signal-val.flat { color: var(--color-text-secondary, #A09A90); }
 .signal-status {
   font-size: 18rpx;
   color: var(--color-text-secondary, #A09A90);
 }
 .signal-reason {
   font-size: 18rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.35;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -366,9 +366,9 @@ page {
   background: var(--color-bg-elevated, #262320);
   border-radius: var(--radius-md, 16rpx);
 }
-.cell-label { display: block; font-size: 20rpx; color: var(--color-text-muted, #6B6560); }
+.cell-label { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); }
 .cell-value { display: block; margin-top: 6rpx; font-size: 28rpx; color: var(--brass-400, #C4A76C); font-family: var(--font-mono); }
-.profile-meta { display: block; margin-top: 14rpx; font-size: 22rpx; color: var(--color-text-muted, #6B6560); }
+.profile-meta { display: block; margin-top: 14rpx; font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
 
 .card-top {
   display: flex;
@@ -378,7 +378,7 @@ page {
   gap: 12rpx;
 }
 .card-title { font-size: 28rpx; color: #fff; font-weight: 500; }
-.card-meta { font-size: 22rpx; color: var(--color-text-muted, #6B6560); }
+.card-meta { font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
 .status-badge {
   padding: 6rpx 14rpx;
   border-radius: var(--radius-sm, 8rpx);
@@ -434,7 +434,7 @@ page {
   border: 1px solid var(--color-border, #26232066);
   border-radius: var(--radius-md, 16rpx);
 }
-.stat-label { display: block; font-size: 20rpx; color: var(--color-text-muted, #6B6560); }
+.stat-label { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); }
 .stat-value { display: block; margin-top: 8rpx; font-size: 26rpx; color: #fff; font-family: var(--font-mono); }
 
 .split-row {
@@ -448,7 +448,7 @@ page {
   background: var(--color-bg-elevated, #262320);
   border-radius: var(--radius-md, 16rpx);
 }
-.split-label { display: block; font-size: 20rpx; color: var(--color-text-muted, #6B6560); }
+.split-label { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); }
 .split-value { display: block; margin-top: 6rpx; font-size: 28rpx; color: #fff; font-family: var(--font-mono); }
 .split-value.brass { color: var(--brass-400, #C4A76C); }
 
@@ -484,14 +484,14 @@ page {
   margin-top: 12rpx;
   font-size: 20rpx;
   line-height: 1.45;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .hint {
   display: block;
   margin-top: 16rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .subhead {
@@ -579,7 +579,7 @@ page {
 .bar-fill.neg { background: var(--color-error, #D64045); opacity: 0.85; }
 .bar-lbl {
   margin-top: 6rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -591,7 +591,7 @@ page {
   padding: 40rpx 0;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .payback-chart { margin-top: 8rpx; }
@@ -623,14 +623,14 @@ page {
   margin-top: 6rpx;
   font-size: 22rpx;
   font-family: var(--font-mono);
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .empty {
   margin-top: 20rpx;
   text-align: center;
   font-size: 24rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .grade {
@@ -683,7 +683,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 .purchase-amt {
   font-family: var(--font-mono, monospace);
@@ -710,7 +710,7 @@ page {
 .notes-item {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: 6rpx;
 }

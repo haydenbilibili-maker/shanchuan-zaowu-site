@@ -68,7 +68,7 @@ page {
   display: block;
   margin-top: var(--space-2, 16rpx);
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -100,7 +100,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 .summary-entities {
   display: flex;
@@ -188,7 +188,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .card {
@@ -325,7 +325,7 @@ page {
 }
 .sheet-close {
   font-size: 24rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
 }
 .sheet-body {
   max-height: 68vh;
@@ -367,6 +367,6 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary, #A09A90);
   font-size: 26rpx;
 }

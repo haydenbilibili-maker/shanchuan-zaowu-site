@@ -33,7 +33,7 @@ page {
   display: block;
   margin-top: var(--space-2);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
 
@@ -60,7 +60,7 @@ page {
 .status-label { font-size: 24rpx; color: var(--color-text-secondary); }
 .status-tag {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   padding: 6rpx 16rpx;
   border-radius: var(--radius-sm);
   border: 1rpx solid var(--color-border);
@@ -87,7 +87,7 @@ page {
   color: var(--color-text-primary);
   font-weight: 500;
 }
-.section-meta { font-size: 22rpx; color: var(--color-text-muted); }
+.section-meta { font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
 
 .textarea {
   width: 100%;
@@ -155,7 +155,7 @@ page {
 
 .form-hint {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   margin-top: var(--space-3);
   margin-bottom: var(--space-3);
   line-height: 1.5;
@@ -194,7 +194,7 @@ page {
 }
 .pkg-row:last-child, .row-line:last-child { margin-bottom: 0; }
 .field { display: flex; align-items: center; gap: 8rpx; }
-.field-label { font-size: 22rpx; color: var(--color-text-muted); }
+.field-label { font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
 
 .row-actions {
   display: flex;
@@ -214,7 +214,7 @@ page {
   padding-top: var(--space-2);
   border-top: 1rpx dashed var(--color-border);
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.02em;
 }
 
@@ -234,7 +234,7 @@ page {
   padding: 12rpx 24rpx;
   border-radius: var(--radius-full);
   border: 1rpx solid var(--color-border);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
   font-size: 24rpx;
 }
 .store-tab.on {

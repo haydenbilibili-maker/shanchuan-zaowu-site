@@ -273,10 +273,6 @@
 
 .workbench-state.loading {
   border-style: solid;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
-/* 通用按压态（hover-class="wb-press"）：真机 :active 不稳，可点的按钮 / 标签 / 卡片统一用它 */
-.wb-press {
-  opacity: 0.72;
-}
