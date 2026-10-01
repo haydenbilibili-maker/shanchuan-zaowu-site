@@ -8,6 +8,8 @@ const { PRODUCTION_STATUS_LABELS } = require('../utils/customDefaults');
 const { buildWorkOrderText, buildInquiryText } = require('../utils/customHelper');
 const { buildStaffCopyText, getStatusLabel, formatQuoteAmount } = require('../utils/petMemorialHelper');
 const { STATUS_LABELS: PET_STATUS_LABELS } = require('../utils/petMemorialDefaults');
+const { decoratePetOrder, sortPetOrders } = require('../utils/petMemorialNotice');
+const { createPetMemorialActions } = require('./petMemorialActions');
 const { buildCategoryDoc } = require('../utils/categoryDefaults');
 const { loadCategoryPickerTree, buildCategoryManageTree, resolveCanonicalRootName, fetchProductCountsByCategoryId } = require('../../../utils/categoryTree');
 const { parseTrackingFromScan, normalizeTrackingInput } = require('../utils/shipHelper');
@@ -1362,6 +1364,7 @@ const managerPageConfig = {
     subTab: 0, subTabReward: 0, subTabCustom: 0,
     showPetQuoteModal: false,
     tempPetQuote: { orderId: '', amount: '', note: '', validUntil: '' },
+    petSheet: { show: false, mode: '', orderId: '', text: '', len: 0, error: '', busy: false },
     showMemberPassResult: false,
     memberPassResult: {
       valid: false,
@@ -6827,13 +6830,7 @@ const managerPageConfig = {
     try {
       const res = await db.collection('pet_memorial_orders').orderBy('createTime', 'desc').limit(50).get();
       this.setData({
-        petMemorialOrders: (res.data || []).map((item) => ({
-          ...item,
-          statusLabel: getStatusLabel(item.status),
-          formatTime: item.createTime ? new Date(item.createTime).toLocaleString() : '',
-          petTitle: item.pet ? `${item.pet.name} · ${item.pet.speciesLabel || item.pet.species}` : '',
-          quoteText: item.quote && item.quote.amount != null ? formatQuoteAmount(item.quote.amount) : ''
-        }))
+        petMemorialOrders: sortPetOrders((res.data || []).map((item) => decoratePetOrder(item, { getStatusLabel, formatQuoteAmount })))
       });
     } catch (e) {
       console.error('loadPetMemorialOrders', e);
@@ -6894,54 +6891,8 @@ const managerPageConfig = {
   onPetQuoteDateChange(e) {
     this.setData({ 'tempPetQuote.validUntil': e.detail.value });
   },
-  async submitPetQuote() {
-    const { orderId, amount, note, validUntil } = this.data.tempPetQuote;
-    if (!orderId || !amount) {
-      this.showHubTip('请填写报价金额', 'warn');
-      return;
-    }
-    const num = parseFloat(amount);
-    if (Number.isNaN(num) || num <= 0) {
-      this.showHubTip('金额无效', 'warn');
-      return;
-    }
-    try {
-      const logEntry = {
-        status: 'quoted',
-        time: new Date().toISOString(),
-        note: `报价 ${formatQuoteAmount(num)}${note ? ' · ' + note : ''}`
-      };
-      await callStoreContent({
-        action: 'update',
-        collection: 'pet_memorial_orders',
-        id: orderId,
-        data: {
-          status: 'quoted',
-          quote: {
-            amount: num,
-            note: (note || '').trim(),
-            quotedAt: new Date().toISOString(),
-            validUntil: validUntil || ''
-          },
-          updateTime: Date.now()
-        },
-        pushFields: { productionLog: [logEntry] }
-      });
-      const order = this.data.petMemorialOrders.find((o) => o._id === orderId);
-      const petName = order && order.pet ? order.pet.name : '伴宠';
-      if (order && order._openid) {
-        dispatchUserMessage('pet_memorial_quoted', order._openid, orderId, {
-          petName,
-          quoteAmount: formatQuoteAmount(num)
-        });
-      }
-      this.showHubTip('报价已发送', 'info');
-      this.setData({ showPetQuoteModal: false });
-      this.loadPetMemorialOrders();
-    } catch (err) {
-      this.showHubTip('保存失败', 'warn');
-    }
-  },
+  // 需补充 / 填写报价 / 直接承接 / 拒绝：写工单后经山海有信通知顾客（见 petMemorialActions.js）
+  ...createPetMemorialActions({ callStoreContent }),
   async advanceProduction(e) {
     const id = e.currentTarget.dataset.id;
     const next = e.currentTarget.dataset.next;

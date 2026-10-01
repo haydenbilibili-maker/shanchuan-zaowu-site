@@ -1,5 +1,6 @@
 @import '../index.wxss';
 @import './activityBoard.wxss';
+@import './petMemorial.wxss';
 
 .workspace-leaf {
   min-height: 100vh;

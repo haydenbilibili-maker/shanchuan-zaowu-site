@@ -1,0 +1,53 @@
+<!-- 工单 → 伴宠：列表卡片（按钮编排见 utils/petMemorialNotice.decoratePetOrder；样式 petMemorial.wxss） -->
+<block wx:for="{{petMemorialOrders}}" wx:key="_id">
+  <view class="pm-divider" wx:if="{{item.firstClosed}}"><text>已结束</text></view>
+  <view class="card pm-card {{item.closed ? 'is-closed' : ''}}">
+    <view class="card-top">
+      <text class="no">{{item.orderNo}}</text>
+      <text class="pm-status tone-{{item.statusTone}}">{{item.statusLabel}}</text>
+    </view>
+    <view class="products">
+      <text class="p-name">{{item.petTitle}}</text>
+      <text class="p-name" wx:if="{{item.craft}}">工艺：{{item.craft.craftName}}</text>
+      <text class="p-name" wx:if="{{item.intake}}">交接：{{item.intake.methodLabel}}</text>
+      <!-- 需求 14：客户指定标本师时的指派与接单状态 -->
+      <text class="p-name gold" wx:if="{{item.artisan && item.artisan.framerName}}">指定标本师：{{item.artisan.framerName}}{{item.artisan.acceptedAt ? '（已接单）' : '（待接单）'}}</text>
+      <text class="p-name" wx:else>指定标本师：未指定（平台指派）</text>
+      <text class="p-name">{{item.contact.name}} · {{item.contact.phone}}</text>
+      <text class="p-name" wx:if="{{item.contact.note}}">补充：{{item.contact.note}}</text>
+      <text class="p-name gold" wx:if="{{item.quoteText}}">报价：{{item.quoteText}}</text>
+    </view>
+    <view class="pm-note" wx:if="{{item.needInfoNote}}">
+      <text class="pm-note-k">已请顾客补充</text>
+      <text class="pm-note-v">{{item.needInfoNote}}</text>
+    </view>
+    <view class="pm-note is-decline" wx:if="{{item.declineReason}}">
+      <text class="pm-note-k">拒绝理由（已发给顾客）</text>
+      <text class="pm-note-v">{{item.declineReason}}</text>
+    </view>
+    <view class="pm-meta">
+      <text class="pm-time">{{item.formatTime}}</text>
+      <view class="pm-tool" wx:if="{{item.canCopy}}" hover-class="tap-press-soft" hover-stay-time="80" bindtap="copyPetMemorialText" data-item="{{item}}">复制工单</view>
+    </view>
+    <view class="pm-actions" wx:if="{{item.canReview}}">
+      <view class="pm-act-row">
+        <view class="pm-btn sub" hover-class="tap-press" hover-stay-time="80" bindtap="openPetSheet" data-id="{{item._id}}" data-mode="need_info">需补充</view>
+        <view class="pm-btn sub" hover-class="tap-press" hover-stay-time="80" bindtap="confirmPetAccept" data-id="{{item._id}}">直接承接</view>
+        <view class="pm-btn quiet" hover-class="tap-press" hover-stay-time="80" bindtap="openPetSheet" data-id="{{item._id}}" data-mode="decline">拒绝</view>
+      </view>
+      <view class="pm-btn main" hover-class="tap-press" hover-stay-time="80" bindtap="openPetQuoteModal" data-id="{{item._id}}">填写报价</view>
+    </view>
+    <view class="pm-actions" wx:elif="{{item.waitingCustomer}}">
+      <view class="pm-act-row">
+        <text class="pm-wait">等顾客确认报价</text>
+        <view class="pm-btn quiet" hover-class="tap-press" hover-stay-time="80" bindtap="openPetSheet" data-id="{{item._id}}" data-mode="decline">拒绝</view>
+      </view>
+    </view>
+    <view class="pm-actions" wx:elif="{{item.stageActions.length}}">
+      <view class="pm-act-row">
+        <view wx:for="{{item.stageActions}}" wx:for-item="act" wx:for-index="ai" wx:key="status" class="pm-btn {{ai === item.stageActions.length - 1 ? 'main' : 'sub'}}" hover-class="tap-press" hover-stay-time="80" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="{{act.status}}">{{act.label}}</view>
+      </view>
+    </view>
+  </view>
+</block>
+<view class="empty-tip" wx:if="{{petMemorialOrders.length===0}}">暂无伴宠工单</view>

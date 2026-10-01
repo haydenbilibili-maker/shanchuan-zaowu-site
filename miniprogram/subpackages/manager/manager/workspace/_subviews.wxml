@@ -1758,37 +1758,7 @@
     </block>
 
     <block wx:if="{{subTabCustom===3}}">
-      <block wx:for="{{petMemorialOrders}}" wx:key="_id">
-        <view class="card">
-          <view class="card-top">
-            <text class="no">{{item.orderNo}}</text>
-            <text class="status used">{{item.statusLabel}}</text>
-          </view>
-          <view class="products">
-            <text class="p-name">{{item.petTitle}}</text>
-            <text class="p-name" wx:if="{{item.craft}}">工艺：{{item.craft.craftName}}</text>
-            <text class="p-name" wx:if="{{item.intake}}">交接：{{item.intake.methodLabel}}</text>
-            <!-- 需求 14：客户指定标本师时的指派与接单状态 -->
-            <text class="p-name gold" wx:if="{{item.artisan && item.artisan.framerName}}">指定标本师：{{item.artisan.framerName}}{{item.artisan.acceptedAt ? '（已接单）' : '（待接单）'}}</text>
-            <text class="p-name" wx:else>指定标本师：未指定（平台指派）</text>
-            <text class="p-name">{{item.contact.name}} · {{item.contact.phone}}</text>
-            <text class="p-name" wx:if="{{item.contact.note}}">补充：{{item.contact.note}}</text>
-            <text class="p-name gold" wx:if="{{item.quoteText}}">报价：{{item.quoteText}}</text>
-          </view>
-          <view class="address-box"><text class="addr-detail">{{item.formatTime}}</text></view>
-          <view class="btn-row">
-            <view hover-class="wb-press" hover-stay-time="80" class="btn verify" bindtap="copyPetMemorialText" data-item="{{item}}">复制工单</view>
-            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="need_info">需补充</view>
-            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="openPetQuoteModal" data-id="{{item._id}}">填写报价</view>
-            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='pending_review' || item.status==='need_info'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="accepted">直接承接</view>
-            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='accepted'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="awaiting_intake">待交接</view>
-            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='awaiting_intake'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="intake_done">已交接</view>
-            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='intake_done' || item.status==='awaiting_intake'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="in_production">开始制作</view>
-            <view hover-class="wb-press" hover-stay-time="80" class="btn ship" wx:if="{{item.status==='in_production'}}" bindtap="updatePetMemorialStatus" data-id="{{item._id}}" data-status="completed">已完成</view>
-          </view>
-        </view>
-      </block>
-      <view class="empty-tip" wx:if="{{petMemorialOrders.length===0}}">暂无伴宠工单</view>
+      <include src="petMemorialCards.wxml" />
     </block>
   </block>
 
@@ -3018,6 +2988,8 @@
     <view class="modal-foot"><view class="btn-full" bindtap="submitPetQuote">发送报价</view></view>
   </view>
 </view>
+
+<include src="petMemorialSheet.wxml" />
 
 <!-- 营收录入弹窗 -->
 <view class="modal-mask" wx:if="{{showRevenueModal}}">

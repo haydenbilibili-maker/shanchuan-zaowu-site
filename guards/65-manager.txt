@@ -19,3 +19,5 @@ npm run check:hub-entries
 npm run check:supplier-desk-images
 # 2026-10-01：C 流「细节雕刻」员工与管理端（miniprogram/docs/细节雕刻_C流_2026-10.md）：骨架 / 空态下一步 / 按压态 / 提交中反馈 / 界面无技术词
 npm run check:c-stream-polish
+# 2026-10-01（产品负责人点名）：工单 → 伴宠 —— 按钮主次 / 文字不折行、新增「拒绝」（理由必填，状态 declined = 已婉拒）、需补充 / 报价 / 承接 / 拒绝经山海有信通知顾客且失败不阻断
+npm run check:pet-memorial-ops

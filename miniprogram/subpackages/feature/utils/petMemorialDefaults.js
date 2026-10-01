@@ -168,7 +168,9 @@ const STATUS_LABELS = {
   quality_check: '质检确认',
   ready: '待取 / 待寄',
   completed: '已完成',
-  cancelled: '已取消'
+  cancelled: '已取消',
+  // 店长「拒绝」后：顾客端与工作台同一口径，理由在工单 decline.reason
+  declined: '已婉拒'
 }
 
 /** 知情条款：短条铜牌模块（标题 + 正文），便于扫读 */
