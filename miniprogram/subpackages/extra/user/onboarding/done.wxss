@@ -194,9 +194,6 @@ page {
   padding: 12rpx 0;
 }
 
-.done-sub-link-press {
-  opacity: 0.7;
-}
 
 .done-footnote {
   display: block;

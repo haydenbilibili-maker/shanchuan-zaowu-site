@@ -69,7 +69,7 @@
                 class="cart-card {{item.selected ? 'selected' : ''}} {{item.invalid ? 'invalid' : ''}}"
                 bindtap="toggleSelect"
                 data-index="{{index}}"
-                hover-class="cart-card-press"
+                hover-class="tap-press-soft"
                 hover-stay-time="80"
               >
                 <view class="gold-checkbox {{item.selected ? 'checked' : ''}} {{item.stock <= 0 || item.invalid ? 'disabled' : ''}}">
@@ -109,9 +109,9 @@
                     <view class="info-btm">
                       <text class="price">¥{{item.price}}</text>
                       <view class="qty-stepper" catchtap="noop" wx:if="{{!item.invalid && item.stock > 0}}">
-                        <view class="qty-btn {{item.count <= 1 ? 'disabled' : ''}}" catchtap="changeCount" data-index="{{index}}" data-type="minus">−</view>
+                        <view class="qty-btn {{item.count <= 1 ? 'disabled' : ''}}" catchtap="changeCount" hover-class="qty-btn-press" hover-stay-time="80" data-index="{{index}}" data-type="minus">−</view>
                         <text class="qty-val">{{item.count}}</text>
-                        <view class="qty-btn {{item.count >= item.stock ? 'disabled' : ''}}" catchtap="changeCount" data-index="{{index}}" data-type="add">+</view>
+                        <view class="qty-btn {{item.count >= item.stock ? 'disabled' : ''}}" catchtap="changeCount" hover-class="qty-btn-press" hover-stay-time="80" data-index="{{index}}" data-type="add">+</view>
                       </view>
                     </view>
                   </view>
@@ -235,23 +235,23 @@
   <view class="checkout-bar safe-area" wx:if="{{!loading && cartList.length > 0}}">
     <!-- 需求 1：结账台「顺手带走一件」——像吧台口香糖，一次点按带走（¥10 以下优先，其次 ¥50 以下） -->
     <view class="addon-strip" wx:if="{{addonPick && addonText}}">
-      <view class="addon-thumb-wrap" bindtap="goToDetail" data-id="{{addonPick.id}}" hover-class="addon-press" hover-stay-time="80">
+      <view class="addon-thumb-wrap" bindtap="goToDetail" data-id="{{addonPick.id}}" hover-class="tap-press" hover-stay-time="80">
         <image class="addon-thumb" wx:if="{{addonPick.image}}" src="{{addonPick.image}}" mode="aspectFill" lazy-load></image>
         <view class="addon-thumb-ph" wx:else>
           <image class="addon-thumb-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
         </view>
       </view>
-      <view class="addon-copy" bindtap="goToDetail" data-id="{{addonPick.id}}" hover-class="addon-press" hover-stay-time="80">
+      <view class="addon-copy" bindtap="goToDetail" data-id="{{addonPick.id}}" hover-class="tap-press" hover-stay-time="80">
         <text class="addon-title">{{addonText.title}}</text>
         <text class="addon-reason">{{addonText.reason}}</text>
       </view>
       <text class="addon-price">{{addonText.priceText}}</text>
-      <view class="addon-cta" catchtap="takeCheckoutAddon" hover-class="addon-cta-press" hover-stay-time="80">
+      <view class="addon-cta" catchtap="takeCheckoutAddon" hover-class="tap-press" hover-stay-time="80">
         <text>{{addonText.cta}}</text>
       </view>
-      <view class="addon-close" catchtap="dismissCheckoutAddon" hover-class="addon-press" hover-stay-time="80">×</view>
+      <view class="addon-close" catchtap="dismissCheckoutAddon" hover-class="tap-press" hover-stay-time="80">×</view>
     </view>
-    <view class="coupon-chip" bindtap="openCouponModal" hover-class="coupon-chip-press">
+    <view class="coupon-chip" bindtap="openCouponModal" hover-class="tap-press">
       <image class="coupon-icon" src="/assets/icons/coupon.png" mode="aspectFit"></image>
       <text wx:if="{{selectedCoupon && selectedCoupon.type === 'freeShipping'}}">免邮券</text>
       <text wx:elif="{{selectedCoupon && couponSaved > 0}}">已减 ¥{{couponSaved}}</text>

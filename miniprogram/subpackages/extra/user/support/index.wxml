@@ -82,7 +82,7 @@
             class="topic-item {{activeTopic === item.id ? 'active' : ''}}"
             wx:for="{{topics}}"
             wx:key="id"
-            hover-class="topic-item-press"
+            hover-class="tap-press-soft"
             bindtap="selectTopic"
             data-id="{{item.id}}"
           >
@@ -114,7 +114,7 @@
             >开始对话</button>
           </view>
 
-          <view class="channel-item" hover-class="channel-item-press" bindtap="callPhone">
+          <view class="channel-item" hover-class="tap-press-soft" bindtap="callPhone">
             <view class="channel-info">
               <text class="channel-name">电话专线</text>
               <text class="channel-desc">{{config.phone}}</text>
@@ -122,7 +122,7 @@
             <text class="channel-arrow">→</text>
           </view>
 
-          <view class="channel-item" hover-class="channel-item-press" bindtap="goMessages">
+          <view class="channel-item" hover-class="tap-press-soft" bindtap="goMessages">
             <view class="channel-info">
               <text class="channel-name">山海有信</text>
               <text class="channel-desc">查看系统通知与留言回执</text>
@@ -130,7 +130,7 @@
             <text class="channel-arrow">→</text>
           </view>
 
-          <view class="channel-item" hover-class="channel-item-press" bindtap="openCommunity">
+          <view class="channel-item" hover-class="tap-press-soft" bindtap="openCommunity">
             <view class="channel-info">
               <text class="channel-name">官方社群</text>
               <text class="channel-desc">添加微信助手后入群</text>
@@ -201,7 +201,7 @@
       <!-- 到店信息 -->
       <view class="section visit-section">
         <text class="section-title">到店咨询</text>
-        <view class="visit-card" hover-class="channel-item-press" bindtap="openMap">
+        <view class="visit-card" hover-class="tap-press-soft" bindtap="openMap">
           <text class="visit-addr">{{config.address || '门店地址加载中'}}</text>
           <text class="visit-link">点击导航 →</text>
         </view>

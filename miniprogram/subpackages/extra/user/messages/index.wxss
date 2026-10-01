@@ -510,7 +510,6 @@ page {
   font-size: 26rpx;
 }
 
-.retry-btn-press { opacity: 0.82; }
 
 .message-list {
   padding: 8rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));

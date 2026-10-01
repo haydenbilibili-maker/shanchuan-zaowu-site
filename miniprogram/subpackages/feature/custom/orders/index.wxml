@@ -22,7 +22,7 @@
         class="item-card"
         wx:for="{{drafts}}"
         wx:key="_id"
-        bindtap="openDraft"
+        bindtap="openDraft" hover-class="item-card-press" hover-stay-time="80"
         data-id="{{item._id}}"
       >
         <view class="item-main">
@@ -40,7 +40,7 @@
           class="item-card"
           wx:for="{{orders}}"
           wx:key="_id"
-          bindtap="openOrder"
+          bindtap="openOrder" hover-class="item-card-press" hover-stay-time="80"
           data-id="{{item._id}}"
         >
           <view class="item-main">

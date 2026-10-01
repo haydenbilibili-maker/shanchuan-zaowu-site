@@ -293,9 +293,6 @@ page {
   color: var(--color-bg);
 }
 
-.footer-btn-press {
-  opacity: 0.85;
-}
 
 /* CSS 日历图标（避免大图溢出） */
 .icon-calendar {

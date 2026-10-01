@@ -9,7 +9,7 @@
         <text class="unread-hint" wx:if="{{unreadCount > 0}}">{{unreadCount}} 封未读</text>
         <text class="unread-hint muted" wx:else>全部已读</text>
       </view>
-      <view class="mark-read-btn" bindtap="markAllRead" wx:if="{{unreadCount > 0}}">
+      <view class="mark-read-btn" bindtap="markAllRead" hover-class="tap-press-soft" hover-stay-time="80" wx:if="{{unreadCount > 0}}">
         <text>全部已读</text>
       </view>
     </view>
@@ -108,7 +108,7 @@
       </view>
       <text class="empty-text">{{activeCategory === 'digest' ? '日报暂时读不到' : '来信暂时读不到'}}</text>
       <text class="empty-desc">线路不稳，请稍后再试。</text>
-      <view class="retry-btn" hover-class="retry-btn-press" hover-stay-time="80" bindtap="retryLoad">再试一次</view>
+      <view class="retry-btn" hover-class="tap-press" hover-stay-time="80" bindtap="retryLoad">再试一次</view>
     </view>
 
     <view class="empty-state" wx:elif="{{messages.length === 0}}">

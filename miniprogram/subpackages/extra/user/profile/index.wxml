@@ -48,7 +48,7 @@
         <view class="profile-hero" id="field-avatar">
           <view
             class="avatar-hit"
-            hover-class="avatar-hit-press"
+            hover-class="tap-press-soft"
             hover-stay-time="80"
             catchtap="onChangeAvatar"
             aria-label="更换头像"
@@ -253,7 +253,7 @@
           class="sensitive-option {{sensitiveBlurPref === item.key ? 'active' : ''}}"
           wx:for="{{sensitiveOptions}}"
           wx:key="key"
-          hover-class="sensitive-option-press"
+          hover-class="tap-press-soft"
           hover-stay-time="80"
           bindtap="selectSensitivePref"
           data-key="{{item.key}}"
@@ -327,21 +327,21 @@
           <text class="plate-overline">PRIVACY</text>
           <text class="plate-title">隐私设置</text>
         </view>
-        <view class="privacy-row" hover-class="privacy-row-press" hover-stay-time="80" bindtap="togglePrivacy" data-key="showMbti">
+        <view class="privacy-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="togglePrivacy" data-key="showMbti">
           <view class="privacy-meta">
             <text class="privacy-label">公开 MBTI</text>
             <text class="privacy-desc">社区与个人主页展示</text>
           </view>
           <view class="privacy-switch {{privacy.showMbti ? 'on' : ''}}"></view>
         </view>
-        <view class="privacy-row" hover-class="privacy-row-press" hover-stay-time="80" bindtap="togglePrivacy" data-key="showZodiac">
+        <view class="privacy-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="togglePrivacy" data-key="showZodiac">
           <view class="privacy-meta">
             <text class="privacy-label">公开星座</text>
             <text class="privacy-desc">社区与个人主页展示</text>
           </view>
           <view class="privacy-switch {{privacy.showZodiac ? 'on' : ''}}"></view>
         </view>
-        <view class="privacy-row last" hover-class="privacy-row-press" hover-stay-time="80" bindtap="togglePrivacy" data-key="showBirthday">
+        <view class="privacy-row last" hover-class="tap-press-soft" hover-stay-time="80" bindtap="togglePrivacy" data-key="showBirthday">
           <view class="privacy-meta">
             <text class="privacy-label">公开生日月日</text>
             <text class="privacy-desc">仅展示月日，不含年份</text>
@@ -356,19 +356,19 @@
           <text class="plate-overline">HELP</text>
           <text class="plate-title">账户与帮助</text>
         </view>
-        <view class="profile-link-row" hover-class="profile-link-press" hover-stay-time="80" bindtap="goFeedback">
+        <view class="profile-link-row" hover-class="tap-press" hover-stay-time="80" bindtap="goFeedback">
           <text class="profile-link-label">反馈与建议</text>
           <text class="profile-link-arrow">→</text>
         </view>
-        <view class="profile-link-row" hover-class="profile-link-press" hover-stay-time="80" bindtap="goSupport">
+        <view class="profile-link-row" hover-class="tap-press" hover-stay-time="80" bindtap="goSupport">
           <text class="profile-link-label">联系专员</text>
           <text class="profile-link-arrow">→</text>
         </view>
-        <view class="profile-link-row" hover-class="profile-link-press" hover-stay-time="80" bindtap="openLegal" data-type="terms">
+        <view class="profile-link-row" hover-class="tap-press" hover-stay-time="80" bindtap="openLegal" data-type="terms">
           <text class="profile-link-label">用户服务协议</text>
           <text class="profile-link-arrow">→</text>
         </view>
-        <view class="profile-link-row last" hover-class="profile-link-press" hover-stay-time="80" bindtap="openLegal" data-type="privacy">
+        <view class="profile-link-row last" hover-class="tap-press" hover-stay-time="80" bindtap="openLegal" data-type="privacy">
           <text class="profile-link-label">隐私政策</text>
           <text class="profile-link-arrow">→</text>
         </view>

@@ -43,7 +43,6 @@ page {
   color: var(--color-bg);
   border: none;
 }
-.load-error-btn-press { opacity: 0.7; }
 
 /* ── Hero ── */
 .hero-area {
@@ -135,12 +134,6 @@ page {
   opacity: 0.88;
 }
 
-.back-btn-press,
-.stat-item-press,
-.control-item-press,
-.related-item-press {
-  opacity: 0.82;
-}
 
 .share-btn {
   margin: 0;
@@ -447,4 +440,3 @@ page {
   font-size: 22rpx;
   color: var(--gold, #C4A76C);
 }
-.source-link-press { opacity: .7; }

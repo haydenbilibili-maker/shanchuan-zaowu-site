@@ -18,8 +18,8 @@
       <text class="pass-sealed-title">{{pass.headline || '该凭证已不可使用'}}</text>
       <text class="pass-sealed-sub">{{pass.hint}}</text>
       <view class="pass-closed-actions">
-        <view class="btn-ghost" bindtap="goOrderDetail" hover-class="pass-press" hover-stay-time="80">查看订单</view>
-        <view class="btn-ghost" bindtap="goSupport" hover-class="pass-press" hover-stay-time="80">联系专员</view>
+        <view class="btn-ghost" bindtap="goOrderDetail" hover-class="tap-press" hover-stay-time="80">查看订单</view>
+        <view class="btn-ghost" bindtap="goSupport" hover-class="tap-press" hover-stay-time="80">联系专员</view>
       </view>
     </view>
 
@@ -48,7 +48,7 @@
           <view class="pass-notch pass-notch-r"></view>
         </view>
 
-        <view class="pass-code-row" bindtap="copyCode" hover-class="pass-press" hover-stay-time="80">
+        <view class="pass-code-row" bindtap="copyCode" hover-class="tap-press" hover-stay-time="80">
           <view class="pass-code-main">
             <text class="pass-code-label">自取码</text>
             <text class="pass-code-value" selectable="true">{{pass.codeText || codeText}}</text>
@@ -77,7 +77,7 @@
         class="pass-nav"
         wx:if="{{storeInfo.canNavigate}}"
         bindtap="goStore"
-        hover-class="pass-press"
+        hover-class="tap-press"
         hover-stay-time="80"
       >导航到店 →</view>
     </view>
@@ -98,9 +98,9 @@
   </view>
 
   <view class="pass-actions">
-    <view class="pass-btn ghost" wx:if="{{showRefundEntry}}" bindtap="requestRefund" hover-class="pass-press" hover-stay-time="80">申请退款</view>
-    <view class="pass-btn primary" bindtap="goOrderDetail" hover-class="pass-press" hover-stay-time="80">订单详情</view>
+    <view class="pass-btn ghost" wx:if="{{showRefundEntry}}" bindtap="requestRefund" hover-class="tap-press" hover-stay-time="80">申请退款</view>
+    <view class="pass-btn primary" bindtap="goOrderDetail" hover-class="tap-press" hover-stay-time="80">订单详情</view>
   </view>
-  <view class="pass-support" bindtap="goSupport" hover-class="pass-press" hover-stay-time="80">需要帮助？联系专员 →</view>
+  <view class="pass-support" bindtap="goSupport" hover-class="tap-press" hover-stay-time="80">需要帮助？联系专员 →</view>
 
 </view>

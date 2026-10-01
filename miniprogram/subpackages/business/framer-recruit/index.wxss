@@ -262,7 +262,6 @@ page {
   color: #C4A76C;
 }
 
-.note-link-press { opacity: 0.72; }
 
 .form-section {
   padding: 16rpx 0 8rpx;
@@ -361,7 +360,6 @@ page {
   border-color: #C4A76C;
 }
 
-.chip-press { opacity: 0.78; }
 
 .form-success {
   margin: 0 32rpx 24rpx;
@@ -452,4 +450,3 @@ page {
 
 .cta-ghost::after { border: none; }
 
-.cta-ghost-press { opacity: 0.75; }

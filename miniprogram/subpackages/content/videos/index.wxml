@@ -14,7 +14,7 @@
       <block wx:for="{{categories}}" wx:key="value">
         <view
           class="category-chip {{activeCategory === item.value ? 'active' : ''}}"
-          hover-class="chip-press"
+          hover-class="tap-press"
           bindtap="switchCategory"
           data-category="{{item.value}}"
         >
@@ -27,7 +27,7 @@
 
   <view class="video-grid">
     <block wx:for="{{videos}}" wx:key="_id">
-      <view class="video-card" hover-class="video-card-press" bindtap="goToVideo" data-id="{{item._id}}">
+      <view class="video-card" hover-class="tap-press-soft" bindtap="goToVideo" data-id="{{item._id}}">
         <view class="video-cover-wrap">
           <image class="video-cover" src="{{item.coverImage || fallbackCover}}" mode="aspectFill" lazy-load binderror="onCoverError" data-index="{{index}}"></image>
           <view class="video-play">
@@ -61,7 +61,7 @@
     <view class="state-box grid-full" wx:if="{{!loading && videos.length === 0}}">
       <text class="state-title">{{loadError ? '影像暂时无法读取' : '暂无影像'}}</text>
       <text class="state-desc">{{loadError ? '请检查网络后重试' : '制作过程与标本展示，将陆续上架'}}</text>
-      <view class="retry-btn" wx:if="{{loadError}}" hover-class="chip-press" bindtap="retryLoad">重试</view>
+      <view class="retry-btn" wx:if="{{loadError}}" hover-class="tap-press" bindtap="retryLoad">重试</view>
     </view>
   </view>
 </view>

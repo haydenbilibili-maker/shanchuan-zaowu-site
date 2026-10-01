@@ -373,7 +373,6 @@ view, text, canvas { box-sizing: border-box; }
   color: var(--color-text-secondary);
   font-size: 24rpx;
 }
-.pass-press { opacity: 0.72; }
 
 /* 凭证失效态的操作区 */
 .pass-closed-actions {

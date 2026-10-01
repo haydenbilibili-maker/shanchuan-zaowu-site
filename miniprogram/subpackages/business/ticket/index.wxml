@@ -5,7 +5,7 @@
     <view class="ticket-empty" wx:if="{{loadError}}">
       <text class="ticket-empty-title">票据暂不可用</text>
       <text class="ticket-empty-desc">预约信息不存在或链接已失效</text>
-      <view class="ticket-empty-cta" bindtap="goBack" hover-class="footer-btn-press" hover-stay-time="80">返回预约</view>
+      <view class="ticket-empty-cta" bindtap="goBack" hover-class="tap-press-soft" hover-stay-time="80">返回预约</view>
     </view>
 
     <view class="ticket-wrap" wx:else>
@@ -55,10 +55,10 @@
 
   <!-- 底部操作栏（固定，不遮挡票券） -->
   <view class="page-footer" wx:if="{{!loadError && booking.status === 'confirmed'}}">
-    <view class="footer-btn outline" bindtap="showCancel" hover-class="footer-btn-press" hover-stay-time="80">
+    <view class="footer-btn outline" bindtap="showCancel" hover-class="tap-press-soft" hover-stay-time="80">
       <text>取消预约</text>
     </view>
-    <view class="footer-btn primary" bindtap="showReschedule" hover-class="footer-btn-press" hover-stay-time="80">
+    <view class="footer-btn primary" bindtap="showReschedule" hover-class="tap-press-soft" hover-stay-time="80">
       <view class="icon-calendar"></view>
       <text>改期</text>
     </view>

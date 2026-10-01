@@ -103,9 +103,6 @@
   border-color: rgba(196, 167, 108, 0.4);
 }
 
-.hint-chip-press {
-  opacity: 0.82;
-}
 
 .actions {
   display: flex;
@@ -361,5 +358,5 @@
 .ai-privacy-txt {
   font-size: 20rpx;
   line-height: 1.6;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }

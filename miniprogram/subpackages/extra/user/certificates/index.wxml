@@ -12,7 +12,7 @@
 
     <view class="cert-grid" wx:if="{{certificates.length}}">
       <block wx:for="{{certificates}}" wx:key="_id">
-        <view class="cert-item stagger-item" style="animation-delay: {{index < 8 ? index * 0.06 : 0.48}}s" hover-class="cert-item-press" bindtap="viewCert" data-id="{{item._id}}">
+        <view class="cert-item stagger-item" style="animation-delay: {{index < 8 ? index * 0.06 : 0.48}}s" hover-class="tap-press-soft" bindtap="viewCert" data-id="{{item._id}}">
           <view class="cert-frame">
             <image src="{{item.displayImage}}" mode="aspectFill" class="c-img" binderror="onThumbError" data-index="{{index}}"></image>
              <view class="c-overlay">

@@ -57,7 +57,7 @@
       class="card-voice is-playable {{voicePlaying ? 'is-playing' : ''}}"
       wx:if="{{hasVoice}}"
       catchtap="toggleVoice"
-      hover-class="card-voice-press"
+      hover-class="tap-press"
       hover-stay-time="70"
       aria-role="button"
       aria-label="{{voicePlaying ? '暂停我录的祝福语' : '播放我录的祝福语'}}"

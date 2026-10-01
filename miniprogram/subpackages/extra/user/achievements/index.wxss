@@ -44,9 +44,6 @@ page {
   flex-shrink: 0;
 }
 
-.share-btn-press {
-  opacity: 0.7;
-}
 
 .nav-brand {
   flex: 1;
@@ -136,9 +133,6 @@ page {
   flex-shrink: 0;
 }
 
-.share-tip-close-press {
-  opacity: 0.65;
-}
 
 .share-tip-close-icon {
   width: 22rpx;
@@ -362,9 +356,6 @@ page {
   background: rgba(196, 167, 108, 0.08);
 }
 
-.filter-chip-press {
-  opacity: 0.82;
-}
 
 .filter-chip-text {
   font-size: 24rpx;
@@ -404,9 +395,6 @@ page {
   border-radius: 12rpx;
 }
 
-.empty-action-press {
-  opacity: 0.75;
-}
 
 .empty-action-text {
   font-size: 24rpx;
@@ -585,9 +573,6 @@ page {
   border-style: dashed;
 }
 
-.achievement-item-press {
-  opacity: 0.88;
-}
 
 .badge-ring {
   width: 80rpx;
@@ -811,9 +796,6 @@ page {
   font-weight: 500;
 }
 
-.retry-btn-press {
-  opacity: 0.75;
-}
 
 /* —— 骨架屏 —— */
 .skeleton-container {
@@ -940,9 +922,6 @@ page {
   z-index: 2;
 }
 
-.modal-close-press {
-  opacity: 0.7;
-}
 
 .modal-close-icon {
   width: 28rpx;
@@ -1126,9 +1105,6 @@ page {
   border: 1px solid var(--brass-400, #C4A76C);
 }
 
-.modal-share-press {
-  opacity: 0.85;
-}
 
 .share-icon-small {
   width: 24rpx;
@@ -1281,9 +1257,6 @@ page {
   border-color: var(--brass-400, #C4A76C);
 }
 
-.unlock-btn-press {
-  opacity: 0.82;
-}
 
 /* —— 山海拾遗 —— */
 .relics-card {
@@ -1421,9 +1394,6 @@ page {
   border-color: #2A2622;
 }
 
-.relic-plate-press {
-  opacity: 0.88;
-}
 
 .relic-roman {
   font-family: Georgia, 'Times New Roman', serif;

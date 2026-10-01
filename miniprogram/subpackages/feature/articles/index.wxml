@@ -12,14 +12,14 @@
 
   <view class="filter-bar">
     <scroll-view scroll-x class="category-scroll" enhanced show-scrollbar="{{false}}">
-      <view class="category-chip {{currentCategory === 'all' ? 'active' : ''}}" hover-class="chip-press" bindtap="switchCategory" data-category="all">
+      <view class="category-chip {{currentCategory === 'all' ? 'active' : ''}}" hover-class="tap-press" bindtap="switchCategory" data-category="all">
         <text>全部</text>
       </view>
       <view
         class="category-chip {{currentCategory === item.id ? 'active' : ''}}"
         wx:for="{{categories}}"
         wx:key="id"
-        hover-class="chip-press"
+        hover-class="tap-press"
         bindtap="switchCategory"
         data-category="{{item.id}}"
       >
@@ -44,11 +44,11 @@
 
     <view class="toolbar">
       <view class="sort-group">
-        <view class="sort-chip {{sortBy === 'createTime' ? 'active' : ''}}" hover-class="chip-press" bindtap="switchSort" data-sort="createTime">最新</view>
-        <view class="sort-chip {{sortBy === 'views' ? 'active' : ''}}" hover-class="chip-press" bindtap="switchSort" data-sort="views">热门</view>
-        <view class="sort-chip {{sortBy === 'likes' ? 'active' : ''}}" hover-class="chip-press" bindtap="switchSort" data-sort="likes">点赞</view>
+        <view class="sort-chip {{sortBy === 'createTime' ? 'active' : ''}}" hover-class="tap-press" bindtap="switchSort" data-sort="createTime">最新</view>
+        <view class="sort-chip {{sortBy === 'views' ? 'active' : ''}}" hover-class="tap-press" bindtap="switchSort" data-sort="views">热门</view>
+        <view class="sort-chip {{sortBy === 'likes' ? 'active' : ''}}" hover-class="tap-press" bindtap="switchSort" data-sort="likes">点赞</view>
       </view>
-      <view class="link-chip" hover-class="chip-press" bindtap="goToVideos">
+      <view class="link-chip" hover-class="tap-press" bindtap="goToVideos">
         <image class="link-icon" src="/assets/icons/video-tab.png" mode="aspectFit"></image>
         <text>影像</text>
       </view>
@@ -57,7 +57,7 @@
 
   <view class="articles-list">
     <block wx:for="{{articles}}" wx:key="_id">
-      <view class="article-card" hover-class="article-card-press" bindtap="goToDetail" data-id="{{item._id}}">
+      <view class="article-card" hover-class="tap-press-soft" bindtap="goToDetail" data-id="{{item._id}}">
         <image class="article-cover" src="{{item.coverImage || fallbackCover}}" mode="aspectFill" lazy-load binderror="onCoverError" data-index="{{index}}"></image>
         <view class="article-body">
           <view class="article-top">

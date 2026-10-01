@@ -10,8 +10,8 @@
     <text class="load-error-title">档案加载失败</text>
     <text class="load-error-desc">内容不存在或网络异常，请重试</text>
     <view class="load-error-actions">
-      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{wikiId}}" hover-class="load-error-btn-press" hover-stay-time="80">重新加载</view>
-      <view class="load-error-btn" bindtap="goBack" hover-class="load-error-btn-press" hover-stay-time="80">返回馆藏</view>
+      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{wikiId}}" hover-class="tap-press" hover-stay-time="80">重新加载</view>
+      <view class="load-error-btn" bindtap="goBack" hover-class="tap-press" hover-stay-time="80">返回馆藏</view>
     </view>
   </view>
 
@@ -96,7 +96,7 @@
     </view>
 
     <block wx:for="{{displayProducts}}" wx:key="_relatedKey">
-      <view class="product-card-mini" bindtap="goToProduct" data-id="{{item._id}}" data-skuid="{{item.relatedSkuId}}" hover-class="product-card-mini-press" hover-stay-time="80">
+      <view class="product-card-mini" bindtap="goToProduct" data-id="{{item._id}}" data-skuid="{{item.relatedSkuId}}" hover-class="tap-press-soft" hover-stay-time="80">
         <!-- 需求 11：敏感形态模糊 -->
         <!-- ⚠️ 图盒必须自建且**已定位**（.p-thumb-box）：门控组件 :host 是 position:absolute，
              而 .product-card-mini 是 display:flex 且未定位 → 缺此盒封面会被裁掉。 -->
@@ -132,7 +132,7 @@
       class="notes-item"
       wx:for="{{relatedArticles}}"
       wx:key="_id"
-      hover-class="notes-item-press"
+      hover-class="tap-press-soft"
       bindtap="goToRelatedArticle"
       data-id="{{item._id}}"
     >

@@ -149,10 +149,10 @@
               </view>
 
               <view class="dg-sec-tools" wx:if="{{digestView.sections.length > 1}}">
-                <view class="dg-tool ghost" bindtap="expandAllDigestSections" hover-class="dg-tool-press" hover-stay-time="80">
+                <view class="dg-tool ghost" bindtap="expandAllDigestSections" hover-class="tap-press" hover-stay-time="80">
                   <text>全部展开</text>
                 </view>
-                <view class="dg-tool ghost" bindtap="collapseOkDigestSections" hover-class="dg-tool-press" hover-stay-time="80">
+                <view class="dg-tool ghost" bindtap="collapseOkDigestSections" hover-class="tap-press" hover-stay-time="80">
                   <text>收起正常组</text>
                 </view>
               </view>
@@ -162,7 +162,7 @@
                   class="dg-sec-head"
                   bindtap="toggleDigestSection"
                   data-key="{{sec.key}}"
-                  hover-class="dg-sec-head-press"
+                  hover-class="tap-press"
                   hover-stay-time="80"
                 >
                   <view class="dg-sec-lamp tone-{{sec.healthTone}}"></view>
@@ -223,7 +223,7 @@
       <button class="btn-primary" bindtap="leaveLetter" wx:if="{{digestView}}">返回工作信息</button>
       <button class="btn-secondary" bindtap="shareDigestSheet" wx:if="{{digestView}}">复制摘要</button>
       <button class="btn-secondary" bindtap="leaveLetter" wx:elif="{{!digestView}}">返回信箱</button>
-      <view class="letter-delete" bindtap="deleteMessage">{{digestView ? '移除本期日报' : '从信箱移除'}}</view>
+      <view class="letter-delete" bindtap="deleteMessage" hover-class="tap-press" hover-stay-time="80">{{digestView ? '移除本期日报' : '从信箱移除'}}</view>
     </view>
   </view>
 
@@ -241,6 +241,6 @@
     </view>
     <text class="empty-text">{{selectedMessage.isDigest || digestPayloadMissing ? '这份日报暂时读不到' : '这封信暂时读不到'}}</text>
     <text class="empty-desc">请先回到工作信息或信箱，稍后再打开。</text>
-    <view class="retry-btn" hover-class="retry-btn-press" hover-stay-time="80" bindtap="leaveLetter">返回列表</view>
+    <view class="retry-btn" hover-class="tap-press" hover-stay-time="80" bindtap="leaveLetter">返回列表</view>
   </view>
 </view>

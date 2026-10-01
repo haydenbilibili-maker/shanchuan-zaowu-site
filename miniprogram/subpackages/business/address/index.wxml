@@ -24,8 +24,8 @@
       </view>
       <text class="addr-detail">{{item.region[0]}} {{item.region[1]}} {{item.region[2]}} {{item.detail}}</text>
       <view class="addr-actions" catchtap="true">
-        <view class="act-btn" wx:if="{{!item.isDefault}}" catchtap="setDefault" data-id="{{item._id}}" hover-class="act-btn-press" hover-stop-propagation>设为默认</view>
-        <view class="act-btn danger" catchtap="deleteAddress" data-id="{{item._id}}" hover-class="act-btn-press" hover-stop-propagation>删除</view>
+        <view class="act-btn" wx:if="{{!item.isDefault}}" catchtap="setDefault" data-id="{{item._id}}" hover-class="tap-press" hover-stop-propagation>设为默认</view>
+        <view class="act-btn danger" catchtap="deleteAddress" data-id="{{item._id}}" hover-class="tap-press" hover-stop-propagation>删除</view>
       </view>
     </view>
   </view>
@@ -36,8 +36,8 @@
   </view>
 
   <view class="add-bar" wx:if="{{!loading && !needLogin}}">
-    <view class="add-btn" bindtap="importFromWechat" hover-class="add-btn-press" hover-stay-time="80">从微信导入</view>
-    <view class="add-btn primary" bindtap="openManualForm" hover-class="add-btn-press" hover-stay-time="80">手动新增</view>
+    <view class="add-btn" bindtap="importFromWechat" hover-class="tap-press" hover-stay-time="80">从微信导入</view>
+    <view class="add-btn primary" bindtap="openManualForm" hover-class="tap-press" hover-stay-time="80">手动新增</view>
   </view>
 
   <!-- 手动填写地址 -->
@@ -82,7 +82,7 @@
       </view>
 
       <view class="form-footer">
-        <view class="form-submit {{saving ? 'is-busy' : ''}}" bindtap="submitManualAddress" hover-class="{{saving ? '' : 'add-btn-press'}}" hover-stay-time="80">{{saving ? '保存中…' : '保存地址'}}</view>
+        <view class="form-submit {{saving ? 'is-busy' : ''}}" bindtap="submitManualAddress" hover-class="{{saving ? '' : 'tap-press'}}" hover-stay-time="80">{{saving ? '保存中…' : '保存地址'}}</view>
       </view>
     </view>
   </view>

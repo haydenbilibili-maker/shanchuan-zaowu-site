@@ -72,6 +72,3 @@ page {
   color: var(--brass-400);
 }
 
-.legal-support-press {
-  opacity: 0.72;
-}

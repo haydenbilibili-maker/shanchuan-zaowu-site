@@ -22,9 +22,6 @@ view, text, scroll-view { box-sizing: border-box; }
   border-radius: 16rpx;
 }
 
-.auth-resume-hint-press {
-  opacity: 0.88;
-}
 
 .auth-resume-hint-text {
   flex: 1;
@@ -78,7 +75,6 @@ view, text, scroll-view { box-sizing: border-box; }
   border-color: rgba(196, 167, 108, 0.55);
   background: rgba(196, 167, 108, 0.08);
 }
-.fulfill-opt-press { opacity: 0.88; }
 .fulfill-opt-title {
   display: block;
   font-size: 28rpx;
@@ -171,9 +167,6 @@ view, text, scroll-view { box-sizing: border-box; }
   margin-top: 8rpx;
   padding-top: 18rpx;
   border-top: 1px solid rgba(77, 64, 26, 0.28);
-}
-.brand-note-press {
-  opacity: 0.72;
 }
 .brand-note-head {
   display: flex;

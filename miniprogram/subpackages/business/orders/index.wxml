@@ -9,7 +9,7 @@
           class="tab-pill {{curTab === index ? 'active' : ''}}" 
           bindtap="switchTab" 
           data-index="{{index}}"
-          hover-class="tab-pill-press"
+          hover-class="tap-press"
           hover-stay-time="80">
           <text>{{item.name}}</text>
         </view>
@@ -134,7 +134,7 @@
         </block>
         
         <!-- 买家侧还有更多：给出可点的加载入口（触底也会自动加载） -->
-        <view class="end-mark load-more" wx:if="{{curTab === 0 && ownedHasMore}}" bindtap="loadMoreOwned">
+        <view class="end-mark load-more" wx:if="{{curTab === 0 && ownedHasMore}}" bindtap="loadMoreOwned" hover-class="tap-press" hover-stay-time="80">
           <text>{{loadingMore ? '加载中…' : '点击加载更早的订单'}}</text>
         </view>
         <view class="end-mark" wx:else>

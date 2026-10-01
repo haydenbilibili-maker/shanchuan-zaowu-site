@@ -20,7 +20,7 @@
           wx:key="id"
           bindtap="onCategoryHint"
           data-id="{{item.id}}"
-          hover-class="hint-chip-press"
+          hover-class="tap-press"
           hover-stay-time="80"
         >{{item.label}}</view>
       </view>

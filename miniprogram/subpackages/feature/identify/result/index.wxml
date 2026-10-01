@@ -95,7 +95,7 @@
             wx:key="id"
             data-id="{{item.id}}"
             bindtap="onArchiveNavTap"
-            hover-class="ency-nav-press"
+            hover-class="tap-press"
             hover-stay-time="80"
           >{{item.title}}</view>
         </view>
@@ -119,7 +119,7 @@
 
       <view class="ency-retry" wx:if="{{profileEnrichError}}">
         <text class="ency-retry-text">百科信息补全失败</text>
-        <view class="ency-retry-btn" bindtap="retryEnrichProfile" hover-class="ency-retry-press" hover-stay-time="80">重试补全</view>
+        <view class="ency-retry-btn" bindtap="retryEnrichProfile" hover-class="tap-press" hover-stay-time="80">重试补全</view>
       </view>
 
       <block wx:for="{{speciesProfile.blocks}}" wx:key="id" wx:for-item="block">
@@ -139,7 +139,7 @@
               wx:if="{{block.type === 'rows' && block.rows.length > 2}}"
               data-id="{{block.id}}"
               bindtap="toggleSection"
-              hover-class="ency-toggle-press"
+              hover-class="tap-press"
               hover-stay-time="80"
             >{{sectionExpanded[block.id] ? '收起' : '展开'}}</text>
           </view>

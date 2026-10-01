@@ -278,7 +278,6 @@ page {
   border: 1px solid rgba(233, 162, 59, 0.42);
   background: linear-gradient(135deg, rgba(233, 162, 59, 0.12) 0%, rgba(196, 167, 108, 0.08) 100%);
 }
-.todo-focus-press { opacity: 0.88; }
 .todo-focus-left {
   flex: 1;
   min-width: 0;
@@ -338,7 +337,6 @@ page {
   background: rgba(196, 167, 108, 0.14);
   box-shadow: inset 0 0 0 1px rgba(196, 167, 108, 0.28);
 }
-.hub-tab-press { opacity: 0.82; }
 .hub-tab-lbl {
   font-size: 28rpx;
   color: #A09A90;
@@ -406,7 +404,6 @@ page {
 .sub-tab text { font-size: 26rpx; color: #A09A90; }
 .sub-tab.on text { color: #C4A76C; font-weight: 500; }
 .sub-tab.on { border-bottom-color: #C4A76C; }
-.sub-tab-press { opacity: 0.8; }
 .sub-n {
   font-size: 18rpx;
   color: #6B6560;
@@ -464,7 +461,6 @@ page {
   border-color: #C4A76C;
   background: rgba(196, 167, 108, 0.14);
 }
-.seg-press { opacity: 0.82; }
 .seg-label { font-size: 22rpx; color: #A09A90; }
 .seg.on .seg-label { color: #C4A76C; }
 .seg-n {
@@ -660,7 +656,6 @@ page {
   border: 1px solid rgba(196, 167, 108, 0.4);
   border-radius: 16rpx;
 }
-.btn-ghost-press { opacity: 0.8; }
 .btn-ghost.danger { color: #D64045; border-color: rgba(214, 64, 69, 0.4); }
 
 /* —— 往来卡片 · 金属描边 —— */
@@ -1206,7 +1201,6 @@ page {
 }
 .plate-card.hot { border-color: rgba(233, 162, 59, 0.55); }
 .plate-card.near { border-color: rgba(196, 167, 108, 0.5); }
-.plate-press { opacity: 0.88; }
 
 .plate-top {
   display: flex;
@@ -1513,7 +1507,6 @@ page {
   border-radius: 12rpx;
   border: 1px solid rgba(224, 207, 163, 0.35);
 }
-.spotlight-cta-press { opacity: 0.88; }
 
 .dates-empty { padding-top: 72rpx; }
 .dates-empty-mark {
@@ -1650,7 +1643,6 @@ page {
   border: 1px solid rgba(196, 167, 108, 0.28);
   background: linear-gradient(160deg, rgba(250, 246, 237, 0.06) 0%, rgba(196, 167, 108, 0.05) 100%);
 }
-.import-row-press { opacity: 0.85; }
 .import-copy { flex: 1; min-width: 0; }
 .import-title {
   display: block;
@@ -1696,7 +1688,6 @@ page {
   color: #C4A76C;
   background: rgba(196, 167, 108, 0.12);
 }
-.chip-press { opacity: 0.82; }
 .sheet-acts {
   display: flex;
   flex-direction: column;

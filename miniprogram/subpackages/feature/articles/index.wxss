@@ -55,10 +55,6 @@ page {
   flex-shrink: 0;
 }
 
-.chip-press,
-.article-card-press {
-  opacity: 0.82;
-}
 
 .filter-bar {
   background: var(--color-bg-card);

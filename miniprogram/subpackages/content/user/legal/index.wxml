@@ -33,7 +33,7 @@
 
     <view class="legal-footer-note">
       <text>如需纸质版本或进一步说明，请联系门店专员。</text>
-      <view class="legal-support-link" hover-class="legal-support-press" bindtap="goSupport">联系专员 →</view>
+      <view class="legal-support-link" hover-class="tap-press" bindtap="goSupport">联系专员 →</view>
     </view>
 
     <view class="account-scroll-pad"></view>

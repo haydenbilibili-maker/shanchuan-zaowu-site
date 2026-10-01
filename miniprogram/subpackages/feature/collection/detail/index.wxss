@@ -285,7 +285,6 @@ page { background: #1A1814; }
   padding: 4rpx 0;
 }
 
-.fact-copy-press { opacity: 0.7; }
 
 .related {
   margin-top: 48rpx;
@@ -314,7 +313,6 @@ page { background: #1A1814; }
   margin-left: 24rpx;
 }
 
-.related-more-press { opacity: 0.72; }
 
 .related-empty {
   display: block;
@@ -345,7 +343,6 @@ page { background: #1A1814; }
   margin-top: 24rpx;
 }
 
-.product-press { opacity: 0.82; }
 
 .product-img {
   width: 120rpx;
@@ -531,7 +528,6 @@ page { background: #1A1814; }
   color: #C4A76C;
 }
 
-.collect-dock-press { opacity: 0.86; }
 
 .series-line,
 .method-line {
@@ -656,4 +652,3 @@ button.btn-share::after {
   border-radius: 16rpx;
 }
 
-.link-press { opacity: 0.7; }

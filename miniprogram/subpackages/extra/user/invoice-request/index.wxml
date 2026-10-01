@@ -24,7 +24,7 @@
           <text class="field-label">选择订单 <text class="req">*</text></text>
           <view
             class="order-picker {{orderNo ? 'has-value' : ''}}"
-            hover-class="order-picker-press"
+            hover-class="tap-press-soft"
             bindtap="openOrderSheet"
           >
             <block wx:if="{{orderNo}}">
@@ -48,13 +48,13 @@
           <view class="type-pills">
             <view
               class="type-pill {{invoiceType === 'personal' ? 'active' : ''}}"
-              hover-class="type-pill-press"
+              hover-class="tap-press-soft"
               bindtap="selectInvoiceType"
               data-type="personal"
             >个人</view>
             <view
               class="type-pill {{invoiceType === 'company' ? 'active' : ''}}"
-              hover-class="type-pill-press"
+              hover-class="tap-press-soft"
               bindtap="selectInvoiceType"
               data-type="company"
             >企业</view>
@@ -162,7 +162,7 @@
           class="order-item {{item.orderNo === orderNo ? 'selected' : ''}}"
           wx:for="{{orders}}"
           wx:key="_id"
-          hover-class="order-item-press"
+          hover-class="tap-press-soft"
           bindtap="selectOrderFromSheet"
           data-index="{{index}}"
         >

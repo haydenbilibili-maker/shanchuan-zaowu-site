@@ -2,7 +2,7 @@
 <wxs src="../../../utils/latinDisplay.wxs" module="latin" />
 <view class="page-wrapper">
   <view class="custom-navbar">
-    <view class="back-btn" bindtap="goBack" hover-class="back-btn-press">
+    <view class="back-btn" bindtap="goBack" hover-class="tap-press">
       <text class="back-arrow">‹</text>
     </view>
     <text class="nav-title">写下感受</text>

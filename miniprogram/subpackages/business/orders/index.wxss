@@ -39,7 +39,6 @@ view, text, image, scroll-view { box-sizing: border-box; }
   background: #C4A76C; color: #1A1814; border-color: #C4A76C; font-weight: bold;
   box-shadow: none;
 }
-.tab-pill-press { opacity: 0.82; }
 
 /* === 2. 列表区域 === */
 .archive-cabinet { padding: 30rpx; width: 100%; }

@@ -49,7 +49,8 @@ page { background: #1A1814; color: #fff; }
   border-radius: 16rpx;
 }
 
-.item-card:active { opacity: 0.92; background: rgba(196, 167, 108, 0.04); }
+.item-card:active,
+.item-card-press { opacity: 0.92; background: rgba(196, 167, 108, 0.04); }
 
 .item-main { flex: 1; min-width: 0; }
 

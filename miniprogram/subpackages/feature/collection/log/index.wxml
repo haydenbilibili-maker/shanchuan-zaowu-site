@@ -7,8 +7,8 @@
   </view>
 
   <view class="modes">
-    <view class="mode {{tab === 'identify' ? 'on' : ''}}" bindtap="onMode" data-tab="identify" hover-class="mode-press" hover-stay-time="80">鉴定记录</view>
-    <view class="mode {{tab === 'notes' ? 'on' : ''}}" bindtap="onMode" data-tab="notes" hover-class="mode-press" hover-stay-time="80">采集笔记</view>
+    <view class="mode {{tab === 'identify' ? 'on' : ''}}" bindtap="onMode" data-tab="identify" hover-class="tap-press-soft" hover-stay-time="80">鉴定记录</view>
+    <view class="mode {{tab === 'notes' ? 'on' : ''}}" bindtap="onMode" data-tab="notes" hover-class="tap-press-soft" hover-stay-time="80">采集笔记</view>
   </view>
 
   <view class="loading" wx:if="{{loading}}">
@@ -54,7 +54,7 @@
         wx:key="id"
         bindtap="onOpenRecord"
         data-id="{{item.id}}"
-        hover-class="record-press"
+        hover-class="tap-press-soft"
         hover-stay-time="80"
       >
         <view class="thumb">
@@ -90,7 +90,7 @@
         bindtap="onOpenLog"
         data-record-id="{{item.recordId}}"
         data-species-id="{{item.speciesId}}"
-        hover-class="row-press"
+        hover-class="tap-press-soft"
         hover-stay-time="80"
       >
         <text class="row-title">{{item.title || '—'}}</text>

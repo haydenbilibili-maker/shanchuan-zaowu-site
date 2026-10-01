@@ -25,7 +25,7 @@
         wx:key="id"
         bindtap="onSeries"
         data-id="{{item.id}}"
-        hover-class="chip-press"
+        hover-class="tap-press"
         hover-stay-time="80"
       >
         <text class="series-name">{{item.name}}</text>
@@ -49,7 +49,7 @@
         wx:key="id"
         bindtap="onFilter"
         data-id="{{item.id}}"
-        hover-class="chip-press"
+        hover-class="tap-press"
         hover-stay-time="80"
       >{{item.label}}</view>
     </view>
@@ -62,7 +62,7 @@
       wx:key="id"
       bindtap="onRarity"
       data-id="{{item.id}}"
-      hover-class="chip-press"
+      hover-class="tap-press"
       hover-stay-time="80"
     >{{item.label}}</view>
   </view>
@@ -78,7 +78,7 @@
       wx:key="id"
       bindtap="onOpenNote"
       data-id="{{item.speciesId}}"
-      hover-class="note-press"
+      hover-class="tap-press"
       hover-stay-time="80"
     >
       <text class="note-title">{{item.title}}</text>
@@ -199,9 +199,9 @@
   </view>
 
   <view class="dock">
-    <view class="dock-btn" bindtap="onScan" hover-class="dock-press" hover-stay-time="80">发现印记</view>
-    <view class="dock-btn primary" bindtap="goIdentify" hover-class="dock-press" hover-stay-time="80" wx:if="{{showAiIdentify}}">拍照采集</view>
-    <view class="dock-btn" bindtap="goLogs" hover-class="dock-press" hover-stay-time="80">采集日志</view>
+    <view class="dock-btn" bindtap="onScan" hover-class="tap-press-soft" hover-stay-time="80">发现印记</view>
+    <view class="dock-btn primary" bindtap="goIdentify" hover-class="tap-press-soft" hover-stay-time="80" wx:if="{{showAiIdentify}}">拍照采集</view>
+    <view class="dock-btn" bindtap="goLogs" hover-class="tap-press-soft" hover-stay-time="80">采集日志</view>
   </view>
 
   <view class="unlock-mask" wx:if="{{unlockSheet.show}}" catchtouchmove="onUnlockStay">
@@ -211,7 +211,7 @@
       <text class="unlock-name">{{unlockSheet.nameZh}}</text>
       <text class="unlock-latin" wx:if="{{unlockSheet.nameLatin}}">{{unlockSheet.nameLatin}}</text>
       <text class="unlock-msg">{{unlockSheet.msg}}</text>
-      <view class="unlock-cta" bindtap="onUnlockOpen" hover-class="dock-press" hover-stay-time="80">去看这一页</view>
+      <view class="unlock-cta" bindtap="onUnlockOpen" hover-class="tap-press-soft" hover-stay-time="80">去看这一页</view>
       <text class="unlock-later" bindtap="onUnlockStay">先留在图鉴</text>
     </view>
   </view>

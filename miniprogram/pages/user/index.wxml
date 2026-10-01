@@ -158,7 +158,7 @@
 
   <!-- 🟢 数据统计预览面板（showMyDataModule 控制显隐） -->
   <view class="panel-box stagger-item" style="animation-delay: 0.15s;" wx:if="{{showMyDataModule}}">
-    <view class="panel-head" bindtap="showStatistics" hover-class="panel-head-press" hover-stay-time="80">
+    <view class="panel-head" bindtap="showStatistics" hover-class="tap-press" hover-stay-time="80">
       <text class="ph-title">我的数据</text>
       <text class="ph-en">STATISTICS</text>
       <text class="ph-more">查看详情 ›</text>
@@ -188,7 +188,7 @@
 
   <!-- 4. 藏品订单 (矩阵入口) -->
   <view class="panel-box stagger-item" style="animation-delay: 0.3s;">
-    <view class="panel-head" bindtap="handleMenuClick" data-path="orders" hover-class="panel-head-press" hover-stay-time="80">
+    <view class="panel-head" bindtap="handleMenuClick" data-path="orders" hover-class="tap-press" hover-stay-time="80">
       <text class="ph-title">藏品订单</text>
       <text class="ph-en">ORDERS</text>
       <text class="ph-more">全部订单 ›</text>
@@ -240,7 +240,7 @@
       <view
         class="wb-marquee"
         wx:if="{{workbenchMarqueeShow}}"
-        hover-class="wb-marquee-press"
+        hover-class="tap-press"
         hover-stay-time="80"
         catchtap="onWorkbenchMarqueeTap"
       >
@@ -478,7 +478,7 @@
       
       <!-- 顶部标题 -->
       <view class="group-header">
-        <view class="group-close" catchtap="closeGroupModal">✕</view>
+        <view class="group-close" catchtap="closeGroupModal" hover-class="group-close-press" hover-stay-time="80">✕</view>
         <text class="group-title">官方社群</text>
         <text class="group-subtitle">COMMUNITY</text>
       </view> 
@@ -515,7 +515,7 @@
     <view class="statistics-content slide-up" catchtap="true">
       <!-- 头部 -->
       <view class="statistics-header">
-        <view class="statistics-close" catchtap="closeStatistics">✕</view>
+        <view class="statistics-close" catchtap="closeStatistics" hover-class="tap-press" hover-stay-time="80">✕</view>
         <text class="statistics-title">我的数据</text>
         <text class="statistics-subtitle">STATISTICS</text>
       </view>

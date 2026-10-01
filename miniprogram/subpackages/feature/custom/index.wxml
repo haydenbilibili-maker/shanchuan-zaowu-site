@@ -97,7 +97,7 @@ module.exports.priceDelta = function(item) {
             class="product-cell {{selectedProduct._id === item._id ? 'selected' : ''}}"
             wx:for="{{filteredProducts}}"
             wx:key="_id"
-            bindtap="selectProductById"
+            bindtap="selectProductById" hover-class="tap-press-soft" hover-stay-time="80"
             data-id="{{item._id}}"
           >
             <view class="product-thumb-wrap">
@@ -320,7 +320,7 @@ module.exports.priceDelta = function(item) {
   </scroll-view>
 
   <view class="footer-bar safe-area" wx:if="{{!loading}}">
-    <view class="support-strip" bindtap="goToSupport">
+    <view class="support-strip" bindtap="goToSupport" hover-class="tap-press-soft" hover-stay-time="80">
       <view class="support-strip-main">
         <text class="support-strip-title">需要专员协助？</text>
         <text class="support-strip-desc">非标尺寸、特殊物料、交期与到店确认</text>

@@ -112,9 +112,6 @@ page {
   -webkit-tap-highlight-color: transparent;
 }
 
-.avatar-hit-press {
-  opacity: 0.88;
-}
 
 .avatar-stack {
   position: relative;
@@ -578,9 +575,6 @@ page {
   padding-bottom: 0;
 }
 
-.profile-link-press {
-  opacity: 0.72;
-}
 
 .profile-link-label {
   font-size: 28rpx;
@@ -646,9 +640,6 @@ page {
   padding-bottom: 0;
 }
 
-.privacy-row-press {
-  opacity: 0.82;
-}
 
 .privacy-meta {
   flex: 1;
@@ -845,9 +836,6 @@ page {
   background: rgba(196, 167, 108, 0.08);
 }
 
-.sensitive-option-press {
-  opacity: 0.88;
-}
 
 .sensitive-option-radio {
   width: 28rpx;

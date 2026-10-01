@@ -129,7 +129,7 @@
       <view
         class="todo-focus"
         wx:if="{{todoFocus && hubTab === 'flow'}}"
-        hover-class="todo-focus-press"
+        hover-class="tap-press-soft"
         hover-stay-time="80"
         bindtap="onTodoFocusTap"
         aria-role="button"
@@ -152,7 +152,7 @@
     <view
       class="hub-tab {{hubTab === 'flow' ? 'on' : ''}}"
       data-tab="flow"
-      hover-class="hub-tab-press"
+      hover-class="tap-press"
       hover-stay-time="70"
       bindtap="onHubTab"
     >
@@ -165,7 +165,7 @@
     <view
       class="hub-tab {{hubTab === 'people' ? 'on' : ''}}"
       data-tab="people"
-      hover-class="hub-tab-press"
+      hover-class="tap-press"
       hover-stay-time="70"
       bindtap="onHubTab"
     >
@@ -175,7 +175,7 @@
     <view
       class="hub-tab {{hubTab === 'dates' ? 'on' : ''}}"
       data-tab="dates"
-      hover-class="hub-tab-press"
+      hover-class="tap-press"
       hover-stay-time="70"
       bindtap="onHubTab"
     >
@@ -193,7 +193,7 @@
       <view
         class="sub-tab {{flowTab === 'sent' ? 'on' : ''}}"
         data-tab="sent"
-        hover-class="sub-tab-press"
+        hover-class="tap-press"
         hover-stay-time="70"
         bindtap="onFlowTab"
       >
@@ -203,7 +203,7 @@
       <view
         class="sub-tab {{flowTab === 'received' ? 'on' : ''}}"
         data-tab="received"
-        hover-class="sub-tab-press"
+        hover-class="tap-press"
         hover-stay-time="70"
         bindtap="onFlowTab"
       >
@@ -224,7 +224,7 @@
         wx:for="{{segments}}"
         wx:key="key"
         data-key="{{item.key}}"
-        hover-class="seg-press"
+        hover-class="tap-press"
         hover-stay-time="70"
         bindtap="onSegmentTap"
       >
@@ -281,14 +281,14 @@
           <view class="btn-brass" hover-class="btn-brass-press" hover-stay-time="80" bindtap="goHub">去选一份山海</view>
           <view
             class="btn-ghost"
-            hover-class="btn-ghost-press"
+            hover-class="tap-press"
             hover-stay-time="80"
             wx:if="{{filterLabel}}"
             bindtap="clearRecipientFilter"
           >查看全部往来</view>
           <view
             class="btn-ghost"
-            hover-class="btn-ghost-press"
+            hover-class="tap-press"
             hover-stay-time="80"
             wx:elif="{{flowTab === 'sent'}}"
             bindtap="onHubTab"
@@ -296,7 +296,7 @@
           >先记下对象</view>
           <view
             class="btn-ghost"
-            hover-class="btn-ghost-press"
+            hover-class="tap-press"
             hover-stay-time="80"
             wx:else
             bindtap="goAtelier"
@@ -428,7 +428,7 @@
       <text class="empty-desc">把常想送礼的人放进名单；也可先去柜中选一份山海，再在礼笺里写上称呼。</text>
       <view class="empty-actions">
         <view class="btn-brass" hover-class="btn-brass-press" hover-stay-time="80" bindtap="openContactForm">添加对象</view>
-        <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="goHub">去选一份山海</view>
+        <view class="btn-ghost" hover-class="tap-press" hover-stay-time="80" bindtap="goHub">去选一份山海</view>
       </view>
     </view>
 
@@ -437,7 +437,7 @@
         <view class="paper-fiber" aria-hidden="true"></view>
         <view class="plate-emboss" aria-hidden="true"></view>
         <view class="specimen-wm sm dark" aria-hidden="true"></view>
-        <view class="plate-top" hover-class="plate-press" hover-stay-time="80" bindtap="editContact" data-id="{{item.id}}">
+        <view class="plate-top" hover-class="tap-press-soft" hover-stay-time="80" bindtap="editContact" data-id="{{item.id}}">
           <view class="plate-avatar">
             <view class="plate-avatar-shine" aria-hidden="true"></view>
             <text>{{item.nameInitial}}</text>
@@ -524,7 +524,7 @@
       </view>
       <view
         class="spotlight-cta"
-        hover-class="spotlight-cta-press"
+        hover-class="tap-press-soft"
         hover-stay-time="80"
         data-name="{{hotSpotlight.contactName}}"
         data-scene="{{hotSpotlight.sceneKey}}"
@@ -546,7 +546,7 @@
         <view class="paper-fiber" aria-hidden="true"></view>
         <view class="plate-emboss" aria-hidden="true"></view>
         <view class="specimen-wm sm dark" aria-hidden="true"></view>
-        <view class="plate-top" hover-class="plate-press" hover-stay-time="80" bindtap="editDate" data-id="{{item.id}}">
+        <view class="plate-top" hover-class="tap-press-soft" hover-stay-time="80" bindtap="editDate" data-id="{{item.id}}">
           <view class="date-badge paper {{item.urgency}}">
             <view class="date-badge-inner" aria-hidden="true"></view>
             <view class="signal-light {{item.signalClass}}"></view>
@@ -604,7 +604,7 @@
       <text class="empty-desc">生日、纪念日、乔迁与节日，都可放在这里。临近七日时，信号灯会轻轻亮起，提醒你选一份山海。</text>
       <view class="empty-actions">
         <view class="btn-brass" hover-class="btn-brass-press" hover-stay-time="80" bindtap="openDateForm">添加日子</view>
-        <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="goEditProfile">完善个人生日</view>
+        <view class="btn-ghost" hover-class="tap-press" hover-stay-time="80" bindtap="goEditProfile">完善个人生日</view>
       </view>
     </view>
 
@@ -618,7 +618,7 @@
         <view class="paper-fiber" aria-hidden="true"></view>
         <view class="plate-emboss" aria-hidden="true"></view>
         <view class="specimen-wm sm dark" aria-hidden="true"></view>
-        <view class="plate-top" hover-class="plate-press" hover-stay-time="80" bindtap="editDate" data-id="{{item.id}}">
+        <view class="plate-top" hover-class="tap-press-soft" hover-stay-time="80" bindtap="editDate" data-id="{{item.id}}">
           <view class="date-badge paper {{item.urgency}}">
             <view class="date-badge-inner" aria-hidden="true"></view>
             <view class="signal-light {{item.signalClass}}"></view>
@@ -683,7 +683,7 @@
             wx:for="{{relationOptions}}"
             wx:key="key"
             data-key="{{item.key}}"
-            hover-class="chip-press"
+            hover-class="tap-press"
             hover-stay-time="70"
             bindtap="onContactRelation"
           >{{item.label}}</view>
@@ -696,8 +696,8 @@
     </view>
     <view class="sheet-acts">
       <view class="btn-brass {{formBusy ? 'disabled' : ''}}" hover-class="btn-brass-press" hover-stay-time="80" bindtap="saveContact">{{formBusy ? '记下…' : '保存'}}</view>
-      <view class="btn-ghost danger" wx:if="{{contactForm.id}}" data-id="{{contactForm.id}}" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="deleteContact">移出名单</view>
-      <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="closeContactForm">取消</view>
+      <view class="btn-ghost danger" wx:if="{{contactForm.id}}" data-id="{{contactForm.id}}" hover-class="tap-press" hover-stay-time="80" bindtap="deleteContact">移出名单</view>
+      <view class="btn-ghost" hover-class="tap-press" hover-stay-time="80" bindtap="closeContactForm">取消</view>
     </view>
     <view class="sheet-safe" aria-hidden="true"></view>
   </view>
@@ -721,7 +721,7 @@
           wx:for="{{dateTypeOptions}}"
           wx:key="key"
           data-key="{{item.key}}"
-          hover-class="chip-press"
+          hover-class="tap-press"
           hover-stay-time="70"
           bindtap="onDateType"
         >{{item.label}}</view>
@@ -733,7 +733,7 @@
         <view
           class="chip {{dateForm.contactId === '' ? 'on' : ''}}"
           data-id=""
-          hover-class="chip-press"
+          hover-class="tap-press"
           hover-stay-time="70"
           bindtap="onDateContact"
         >不关联</view>
@@ -743,7 +743,7 @@
           wx:key="id"
           data-id="{{item.id}}"
           data-name="{{item.name}}"
-          hover-class="chip-press"
+          hover-class="tap-press"
           hover-stay-time="70"
           bindtap="onDateContact"
         >{{item.name}}</view>
@@ -766,7 +766,7 @@
     <view class="field import-field" wx:if="{{dateForm.type === 'birthday'}}">
       <view
         class="import-row"
-        hover-class="import-row-press"
+        hover-class="tap-press-soft"
         hover-stay-time="80"
         bindtap="importProfileBirthday"
       >
@@ -780,8 +780,8 @@
     </view>
     <view class="sheet-acts">
       <view class="btn-brass {{formBusy ? 'disabled' : ''}}" hover-class="btn-brass-press" hover-stay-time="80" bindtap="saveDate">{{formBusy ? '记下…' : '保存'}}</view>
-      <view class="btn-ghost danger" wx:if="{{dateForm.id}}" data-id="{{dateForm.id}}" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="deleteDate">删除</view>
-      <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="closeDateForm">取消</view>
+      <view class="btn-ghost danger" wx:if="{{dateForm.id}}" data-id="{{dateForm.id}}" hover-class="tap-press" hover-stay-time="80" bindtap="deleteDate">删除</view>
+      <view class="btn-ghost" hover-class="tap-press" hover-stay-time="80" bindtap="closeDateForm">取消</view>
     </view>
     <view class="sheet-safe" aria-hidden="true"></view>
   </view>
@@ -800,7 +800,7 @@
     <view
       class="btn-ghost state-back"
       wx:if="{{!checking}}"
-      hover-class="btn-ghost-press"
+      hover-class="tap-press"
       hover-stay-time="80"
       bindtap="goAtelier"
     >回工坊</view>

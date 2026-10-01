@@ -60,9 +60,6 @@ page {
   justify-content: center;
 }
 
-.back-btn-press {
-  opacity: 0.7;
-}
 
 .back-arrow {
   font-size: 48rpx;

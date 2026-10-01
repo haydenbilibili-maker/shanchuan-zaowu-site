@@ -4,8 +4,8 @@
     <text class="load-error-title">笔记加载失败</text>
     <text class="load-error-desc">内容不存在或网络异常</text>
     <view class="load-error-actions">
-      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{articleId}}" hover-class="load-error-btn-press" hover-stay-time="80">重新加载</view>
-      <view class="load-error-btn" bindtap="goBack" hover-class="load-error-btn-press" hover-stay-time="80">返回列表</view>
+      <view class="load-error-btn primary" bindtap="retryLoad" wx:if="{{articleId}}" hover-class="tap-press" hover-stay-time="80">重新加载</view>
+      <view class="load-error-btn" bindtap="goBack" hover-class="tap-press" hover-stay-time="80">返回列表</view>
     </view>
   </view>
 
@@ -86,7 +86,7 @@
         class="source-link"
         wx:if="{{article.sourceUrl}}"
         bindtap="copySourceUrl"
-        hover-class="source-link-press"
+        hover-class="tap-press"
         hover-stay-time="80"
       >复制原文链接</view>
     </view>
@@ -110,7 +110,7 @@
         object-fit="contain"
       ></video>
       <view class="video-controls" wx:if="{{showVideoControls}}">
-        <view class="control-item" hover-class="control-item-press" bindtap="toggleVideoSpeed">
+        <view class="control-item" hover-class="tap-press-soft" bindtap="toggleVideoSpeed">
           <text>{{videoSpeed}}x</text>
         </view>
       </view>
@@ -122,23 +122,23 @@
         <image class="stat-icon" src="{{iconView}}" mode="aspectFit"></image>
         <text class="stat-value">{{article.stats.views || 0}}</text>
       </view>
-      <view class="stat-item" hover-class="stat-item-press" bindtap="toggleLike">
+      <view class="stat-item" hover-class="tap-press-soft" bindtap="toggleLike">
         <image class="stat-icon {{isLiked ? 'liked' : ''}}" 
                src="{{isLiked ? iconLikeActive : iconLike}}" 
                mode="aspectFit"></image>
         <text class="stat-value">{{article.stats.likes || 0}}</text>
       </view>
-      <view class="stat-item" hover-class="stat-item-press" bindtap="toggleCollect">
+      <view class="stat-item" hover-class="tap-press-soft" bindtap="toggleCollect">
         <image class="stat-icon {{isCollected ? 'collected' : ''}}" 
                src="{{isCollected ? iconCollectActive : iconCollect}}" 
                mode="aspectFit"></image>
         <text class="stat-value">收藏</text>
       </view>
-      <button class="stat-item share-btn" open-type="share" hover-class="stat-item-press">
+      <button class="stat-item share-btn" open-type="share" hover-class="tap-press-soft">
         <image class="stat-icon" src="{{iconShare}}" mode="aspectFit"></image>
         <text class="stat-value">转发</text>
       </button>
-      <view class="stat-item" hover-class="stat-item-press" bindtap="saveShareCard">
+      <view class="stat-item" hover-class="tap-press-soft" bindtap="saveShareCard">
         <image class="stat-icon" src="{{iconShare}}" mode="aspectFit"></image>
         <text class="stat-value">{{savingCard ? '保存中' : '分享卡'}}</text>
       </view>
@@ -154,7 +154,7 @@
       </view>
     <view class="related-list">
       <view class="related-item" wx:for="{{relatedArticles}}" wx:key="_id"
-            hover-class="related-item-press"
+            hover-class="tap-press-soft"
             bindtap="goToRelatedArticle" data-id="{{item._id}}">
         <image class="related-cover" src="{{item.coverImage || fallbackCover}}" mode="aspectFill" binderror="onRelatedCoverError" data-index="{{index}}"></image>
         <view class="related-content">

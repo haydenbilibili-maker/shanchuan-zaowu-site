@@ -91,7 +91,7 @@
             wx:for="{{notePresets}}"
             wx:key="id"
             data-id="{{item.id}}"
-            bindtap="onNotePresetTap"
+            bindtap="onNotePresetTap" hover-class="note-preset-press" hover-stay-time="80"
           >
             <text>{{item.label}}</text>
           </view>
@@ -188,7 +188,7 @@
             <view
               class="sig-nick-chip"
               wx:if="{{wxNickName && !cardSignature}}"
-              catchtap="onUseNickName"
+              catchtap="onUseNickName" hover-class="tap-press" hover-stay-time="80"
             >
               <text>用微信昵称</text>
             </view>
@@ -362,7 +362,7 @@
       </view>
       <text class="bottom-note" wx:if="{{memberDiscounted}}">{{memberLevelName}}会员价 · 以结算页为准</text>
     </view>
-    <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="goPay">
+    <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="goPay" hover-class="pay-btn-press" hover-stay-time="80">
       <text>{{paying ? '备妥中…' : '支付并备妥'}}</text>
     </view>
   </view>

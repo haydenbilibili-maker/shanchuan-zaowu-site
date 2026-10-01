@@ -141,7 +141,7 @@
           <view class="photo-row">
             <view class="photo-item" wx:for="{{photos}}" wx:key="*this">
               <image src="{{item}}" mode="aspectFill"></image>
-              <view class="photo-del" hover-class="photo-del-press" bindtap="removePhoto" data-idx="{{index}}">
+              <view class="photo-del" hover-class="tap-press" bindtap="removePhoto" data-idx="{{index}}">
                 <text class="photo-del-x">×</text>
               </view>
             </view>
@@ -157,7 +157,7 @@
       <view class="step-panel step-enter" wx:if="{{currentStep === 3}}">
         <view
           class="craft-card {{craftId === item.craftId ? 'active' : ''}}"
-          hover-class="card-press"
+          hover-class="tap-press-soft"
           wx:for="{{crafts}}"
           wx:key="craftId"
           bindtap="selectOption"
@@ -178,7 +178,7 @@
           <text class="form-hint">不选则由平台指派；指定特邀标本师可能加价并延长交期。提交后由该标本师与您直接沟通</text>
           <view
             class="artisan-card {{artisanId === item.id ? 'active' : ''}}"
-            hover-class="card-press"
+            hover-class="tap-press-soft"
             wx:for="{{artisans}}"
             wx:key="id"
             bindtap="selectArtisan"
@@ -232,7 +232,7 @@
       <view class="step-panel step-enter" wx:if="{{currentStep === 4}}">
         <view
           class="intake-card {{intakeMethod === item.id ? 'active' : ''}} {{item.comingSoon ? 'is-soon' : ''}}"
-          hover-class="{{item.comingSoon ? 'none' : 'card-press'}}"
+          hover-class="{{item.comingSoon ? 'none' : 'tap-press-soft'}}"
           wx:for="{{intakeMethods}}"
           wx:key="id"
           bindtap="{{item.comingSoon ? 'onSoonOptionTap' : 'selectOption'}}"

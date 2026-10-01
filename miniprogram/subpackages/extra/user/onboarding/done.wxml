@@ -67,7 +67,7 @@
 
     <view
       class="done-sub-link"
-      hover-class="done-sub-link-press"
+      hover-class="tap-press"
       bindtap="goBrowse"
       wx:if="{{hasReturn}}"
     >先去逛逛馆 ›</view>

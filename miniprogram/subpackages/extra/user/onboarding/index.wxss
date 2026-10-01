@@ -351,9 +351,6 @@ page {
   pointer-events: none;
 }
 
-.avatar-btn-press {
-  opacity: 0.88;
-}
 
 .avatar-img {
   width: 100%;
@@ -441,9 +438,6 @@ page {
   color: var(--brass-400);
 }
 
-.agree-link-press {
-  opacity: 0.7;
-}
 
 .agree-sep {
   font-size: 22rpx;

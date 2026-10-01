@@ -658,9 +658,6 @@ page {
   font-size: var(--fs-20, 20rpx);
   color: #6B5A24;
 }
-.dg-tool-press {
-  opacity: 0.75;
-}
 
 .letter-digest-missing {
   margin-top: var(--space-4, 32rpx);
@@ -788,9 +785,6 @@ page {
   margin-bottom: var(--space-2, 16rpx);
 }
 
-.dg-sec-head-press {
-  opacity: 0.78;
-}
 
 .dg-sec-lamp {
   width: 14rpx;

@@ -285,7 +285,6 @@ page {
   color: #C4A76C;
 }
 
-.scene-chip-press { opacity: 0.82; }
 
 .scene-guide {
   display: block;
@@ -324,7 +323,6 @@ page {
   padding: 4rpx 0;
   border-bottom: 1px solid rgba(196, 167, 108, 0.4);
 }
-.match-link-press { opacity: 0.75; }
 
 .match-hint {
   display: block;
@@ -441,7 +439,6 @@ page {
   box-sizing: border-box;
   padding: 0 8rpx 16rpx;
 }
-.product-card-press { opacity: 0.88; }
 
 .product-card-inner {
   background: #1F1D1A;

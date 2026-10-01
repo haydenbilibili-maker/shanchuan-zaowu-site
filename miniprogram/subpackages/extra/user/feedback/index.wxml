@@ -66,15 +66,15 @@
     </view>
 
     <view class="account-section-card fb-links">
-      <view class="fb-link-row" hover-class="fb-link-press" bindtap="openLegal" data-type="terms">
+      <view class="fb-link-row" hover-class="tap-press" bindtap="openLegal" data-type="terms">
         <text class="fb-link-label">用户服务协议</text>
         <text class="fb-link-arrow">→</text>
       </view>
-      <view class="fb-link-row" hover-class="fb-link-press" bindtap="openLegal" data-type="privacy">
+      <view class="fb-link-row" hover-class="tap-press" bindtap="openLegal" data-type="privacy">
         <text class="fb-link-label">隐私政策</text>
         <text class="fb-link-arrow">→</text>
       </view>
-      <view class="fb-link-row last" hover-class="fb-link-press" bindtap="goSupport">
+      <view class="fb-link-row last" hover-class="tap-press" bindtap="goSupport">
         <text class="fb-link-label">需要订单/售后帮助？联系专员</text>
         <text class="fb-link-arrow">→</text>
       </view>

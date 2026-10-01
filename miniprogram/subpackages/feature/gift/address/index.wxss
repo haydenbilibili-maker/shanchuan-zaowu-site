@@ -89,7 +89,6 @@ page { background: #1A1814; color: #fff; }
   letter-spacing: 0.04em;
 }
 .btn-primary.disabled { opacity: 0.5; pointer-events: none; }
-.btn-press { opacity: 0.82; }
 
 .foot-note {
   display: block;

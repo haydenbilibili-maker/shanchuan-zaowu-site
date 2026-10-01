@@ -344,10 +344,6 @@ page {
   background: rgba(196, 167, 108, 0.08);
 }
 
-.topic-item-press,
-.channel-item-press {
-  opacity: 0.82;
-}
 
 .topic-icon {
   width: 36rpx;

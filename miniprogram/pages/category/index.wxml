@@ -98,7 +98,7 @@
     </view>
     <text class="page-error-title">馆藏暂时无法抵达</text>
     <text class="page-error-desc">{{pageErrorMsg}}</text>
-    <view class="page-error-btn" bindtap="onRetryLoad" hover-class="page-error-btn-press" hover-stay-time="80">重新加载</view>
+    <view class="page-error-btn" bindtap="onRetryLoad" hover-class="tap-press" hover-stay-time="80">重新加载</view>
   </view>
 
   <scroll-view
@@ -210,7 +210,7 @@
         <view class="empty-filter" wx:if="{{orphanProducts.length === 0 && filterActiveCount > 0}}">
           <text class="empty-filter-title">没有符合这些条件的藏品</text>
           <text class="empty-filter-desc">放宽价格或工艺试试，或回到本馆全部</text>
-          <view class="empty-filter-btn" bindtap="onClearFilters" hover-class="empty-filter-btn-press" hover-stay-time="80">清除筛选</view>
+          <view class="empty-filter-btn" bindtap="onClearFilters" hover-class="tap-press" hover-stay-time="80">清除筛选</view>
         </view>
         <view class="empty-tip" wx:elif="{{orphanProducts.length === 0}}">这一类藏品正在整理中</view>
       </view>

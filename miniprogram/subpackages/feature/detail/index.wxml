@@ -58,7 +58,7 @@ module.exports.saveLabel = saveLabel;
           class="nav-veil-btn"
           wx:if="{{sensitiveBlurEnabled && !sensitiveVeiled}}"
           bindtap="onNavSensitiveVeil"
-          hover-class="nav-veil-press"
+          hover-class="tap-press"
           hover-stay-time="80"
         >{{sensitiveBadgeLabel}}</view>
       </view>
@@ -69,16 +69,16 @@ module.exports.saveLabel = saveLabel;
     <text class="load-error-title">{{loadErrorMsg || '藏品加载失败'}}</text>
     <text class="load-error-desc">请检查网络后重试，或返回馆藏继续浏览</text>
     <view class="load-error-actions">
-      <view class="load-error-btn primary" bindtap="retryLoadProduct" wx:if="{{productId}}" hover-class="load-error-btn-press" hover-stay-time="80">重新加载</view>
-      <view class="load-error-btn" bindtap="goBack" hover-class="load-error-btn-press" hover-stay-time="80">返回馆藏</view>
+      <view class="load-error-btn primary" bindtap="retryLoadProduct" wx:if="{{productId}}" hover-class="tap-press" hover-stay-time="80">重新加载</view>
+      <view class="load-error-btn" bindtap="goBack" hover-class="tap-press" hover-stay-time="80">返回馆藏</view>
     </view>
   </view>
 
   <block wx:else>
   <view class="sticky-tabs {{showStickyTabs ? 'visible' : ''}}" style="top: {{statusBarHeight + navBarHeight}}px;">
-    <view class="tab-item {{activeTab === 'detail' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="detail" hover-class="tab-item-press" hover-stay-time="80">藏品</view>
-    <view class="tab-item {{activeTab === 'archive' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="archive" hover-class="tab-item-press" hover-stay-time="80">档案</view>
-    <view class="tab-item {{activeTab === 'review' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="review" hover-class="tab-item-press" hover-stay-time="80">评价<text wx:if="{{commentTotal > 0}}" class="tab-count">({{commentTotal}})</text></view>
+    <view class="tab-item {{activeTab === 'detail' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="detail" hover-class="tap-press" hover-stay-time="80">藏品</view>
+    <view class="tab-item {{activeTab === 'archive' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="archive" hover-class="tap-press" hover-stay-time="80">档案</view>
+    <view class="tab-item {{activeTab === 'review' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="review" hover-class="tap-press" hover-stay-time="80">评价<text wx:if="{{commentTotal > 0}}" class="tab-count">({{commentTotal}})</text></view>
   </view>
 
   <!-- 主图轮播 / 冷启动骨架 -->
@@ -220,14 +220,14 @@ module.exports.saveLabel = saveLabel;
             hover-class="gift-scene-chip-press"
           >{{item.label}}</view>
         </view>
-        <view class="gift-cta" bindtap="goGiftCompose" hover-class="gift-cta-press">一键送礼 · 写礼笺</view>
+        <view class="gift-cta" bindtap="goGiftCompose" hover-class="tap-press-soft">一键送礼 · 写礼笺</view>
       </view>
 
       <!-- 服务保障 -->
       <view class="service-row">
         <view class="service-item"><text class="service-dot"></text><text>博物级装裱</text></view>
         <view class="service-item"><text class="service-dot"></text><text>正品保障</text></view>
-        <view class="service-item" bindtap="openRefundSheet" hover-class="service-item-press">
+        <view class="service-item" bindtap="openRefundSheet" hover-class="tap-press">
           <text class="service-dot"></text>
           <text>{{refundServiceLabel}}</text>
           <text class="service-more">说明</text>
@@ -287,7 +287,7 @@ module.exports.saveLabel = saveLabel;
         wx:if="{{showAnimalEthics}}"
         bindtap="toggleBrandNote"
         data-field="ethicsExpanded"
-        hover-class="brand-note-press"
+        hover-class="tap-press"
         hover-stay-time="80"
       >
         <view class="brand-note-head">
@@ -301,7 +301,7 @@ module.exports.saveLabel = saveLabel;
         class="brand-note {{pledgeExpanded ? 'is-open' : ''}}"
         bindtap="toggleBrandNote"
         data-field="pledgeExpanded"
-        hover-class="brand-note-press"
+        hover-class="tap-press"
         hover-stay-time="80"
       >
         <view class="brand-note-head">
@@ -381,7 +381,7 @@ module.exports.saveLabel = saveLabel;
             class="detail-spec-tab {{activeDetailGroupId === item.id ? 'active' : ''}}"
             wx:for="{{detailImageGroups}}"
             wx:key="id"
-            bindtap="selectDetailGroup"
+            bindtap="selectDetailGroup" hover-class="tap-press-soft" hover-stay-time="80"
             data-id="{{item.id}}"
           >{{item.label}}</view>
         </scroll-view>
@@ -502,7 +502,7 @@ module.exports.saveLabel = saveLabel;
 
       <block wx:if="{{showProtectionCert}}">
         <view class="section-title">PROVENANCE / 来源说明</view>
-        <view class="cert-card" bindtap="previewCertificate">
+        <view class="cert-card" bindtap="previewCertificate" hover-class="tap-press-soft" hover-stay-time="80">
           <view class="cert-badge">{{protectionLabel}}</view>
           <view class="cert-body">
             <image class="cert-image" src="{{certificateUrl}}" mode="widthFix" />
@@ -684,7 +684,7 @@ module.exports.saveLabel = saveLabel;
   <view class="sku-mask" wx:if="{{showSkuSheet}}" bindtap="closeSkuSheet">
     <view class="sku-panel" catchtap="true">
       <view class="sku-head">
-        <view class="sku-img-wrap" catchtap="previewSkuImage">
+        <view class="sku-img-wrap" catchtap="previewSkuImage" hover-class="tap-press-soft" hover-stay-time="80">
           <image class="sku-img" src="{{imgView[selectedSku.image || product.images[0]] || selectedSku.image || product.images[0]}}" mode="aspectFill"></image>
           <view class="sku-img-hint" aria-hidden="true">
             <image class="sku-img-hint-icon" src="/subpackages/feature/detail/assets/sku-zoom.png" mode="aspectFit"></image>

@@ -42,8 +42,7 @@ page {
   align-items: center;
   justify-content: center;
 }
-.back-icon-press,
-.product-card-press {
+.back-icon-press {
   opacity: 0.82;
 }
 

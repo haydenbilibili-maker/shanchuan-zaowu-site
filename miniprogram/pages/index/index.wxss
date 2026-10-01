@@ -557,9 +557,6 @@ page {
   z-index: 10;
 }
 
-.orb-press {
-  opacity: 0.88;
-}
 
 .orb-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; position: relative; transition: transform 0.4s ease, opacity 0.4s ease; }
 .orb-wrapper.active { transform: scale(1.1); z-index: 20; }
@@ -1536,7 +1533,6 @@ page {
   font-size: 26rpx;
   color: var(--brass-400, #C4A76C);
 }
-.page-error-btn-press { opacity: .7; }
 .page-error-hint {
   margin-top: 24rpx;
   font-size: 22rpx;

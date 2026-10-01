@@ -47,10 +47,10 @@
           <text class="ga-meta-item" wx:if="{{giftShareToken}}">礼笺已封缄</text>
         </view>
         <view class="ga-entries">
-          <view class="ga-entry primary" bindtap="goGiftEnvelope" hover-class="ga-entry-press" hover-stay-time="70">
+          <view class="ga-entry primary" bindtap="goGiftEnvelope" hover-class="tap-press-soft" hover-stay-time="70">
             <text class="ga-entry-text">{{giftEnvelopeLabel}}</text>
           </view>
-          <view class="ga-entry" bindtap="goGiftDetail" hover-class="ga-entry-press" hover-stay-time="70">
+          <view class="ga-entry" bindtap="goGiftDetail" hover-class="tap-press-soft" hover-stay-time="70">
             <text class="ga-entry-text">礼赠详情</text>
           </view>
         </view>
@@ -74,7 +74,7 @@
         <view class="sl-waybill-block">
           <text class="sl-lbl"><text class="en-label">WAYBILL NO.</text> 运单号</text>
           <view class="sl-waybill-row" wx:if="{{hasTracking}}">
-            <view class="sl-waybill-main" bindtap="copyTracking" hover-class="sl-waybill-main-press" hover-stay-time="80">
+            <view class="sl-waybill-main" bindtap="copyTracking" hover-class="tap-press" hover-stay-time="80">
               <text class="sl-val code">{{order.logistics.trackingNumber || '待发货'}}</text>
               <text class="sl-copy-icon" aria-label="复制运单号">❐</text>
             </view>

@@ -61,7 +61,7 @@
       <text class="note-para">分成比例、结算周期、渠道费用与订单分配规则，均以双方签署的合作协议为准。本页只写合作原则，不预设尚未确认的数字。</text>
       <text class="note-para">伴宠记忆等高度定制订单，仍按现有工坊流程：专员与标本师评估后承接，过程中确认方案，成品以保价方式寄出。</text>
       <text class="note-para">藏品来源、制作工艺须符合现行法规。保护物种、来源不明或无法提供合规说明的作品，无法合作。</text>
-      <view class="note-link" hover-class="note-link-press" bindtap="goPetHub">了解伴宠记忆流程 →</view>
+      <view class="note-link" hover-class="tap-press" bindtap="goPetHub">了解伴宠记忆流程 →</view>
     </view>
 
     <view id="recruit-form" class="form-section">
@@ -126,7 +126,7 @@
               class="chip {{item.selected ? 'on' : ''}}"
               wx:for="{{categoryOptions}}"
               wx:key="id"
-              hover-class="chip-press"
+              hover-class="tap-press"
               hover-stay-time="80"
               bindtap="toggleCategory"
               data-id="{{item.id}}"
@@ -153,7 +153,7 @@
               class="chip {{item.selected ? 'on' : ''}}"
               wx:for="{{intentOptions}}"
               wx:key="id"
-              hover-class="chip-press"
+              hover-class="tap-press"
               hover-stay-time="80"
               bindtap="toggleIntent"
               data-id="{{item.id}}"
@@ -177,7 +177,7 @@
       <view class="form-success" wx:else>
         <text class="success-title">意向已收到</text>
         <text class="success-desc">专员将按你留下的手机号联系。也可继续用微信或电话沟通细节。</text>
-        <view class="success-link" hover-class="note-link-press" bindtap="goSupport">去联系专员留言 →</view>
+        <view class="success-link" hover-class="tap-press" bindtap="goSupport">去联系专员留言 →</view>
       </view>
     </view>
 
@@ -201,8 +201,8 @@
         show-message-card="{{true}}"
         bindcontact="onContactTap"
       >微信咨询</button>
-      <view class="cta-ghost" wx:if="{{phone}}" hover-class="cta-ghost-press" bindtap="callPhone">电话沟通</view>
-      <view class="cta-ghost" hover-class="cta-ghost-press" bindtap="goSupport">联系专员</view>
+      <view class="cta-ghost" wx:if="{{phone}}" hover-class="tap-press" bindtap="callPhone">电话沟通</view>
+      <view class="cta-ghost" hover-class="tap-press" bindtap="goSupport">联系专员</view>
     </view>
   </view>
 </view>

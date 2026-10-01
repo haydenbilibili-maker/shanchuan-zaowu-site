@@ -71,7 +71,6 @@ page {
   color: var(--brass-400, #C4A76C);
 }
 
-.tab-press { opacity: 0.85; }
 
 .tab-count {
   font-size: 22rpx;
@@ -119,7 +118,6 @@ page {
   margin-bottom: 20rpx;
 }
 
-.item-card-press { opacity: 0.9; }
 
 .thumb {
   width: 128rpx;
@@ -191,7 +189,6 @@ page {
   color: var(--color-text-secondary, #A09A90);
   padding: 12rpx 8rpx;
 }
-.remove-press { opacity: 0.55; }
 
 .empty-state {
   padding: 100rpx 40rpx;

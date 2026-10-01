@@ -490,7 +490,6 @@ page { background: #1A1814; color: #fff; }
   font-family: inherit;
   letter-spacing: 0.02em;
 }
-.card-voice-press { opacity: 0.7; }
 .voice-play-icon {
   flex-shrink: 0;
   width: 44rpx;

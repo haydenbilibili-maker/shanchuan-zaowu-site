@@ -30,7 +30,14 @@ const FILES = {
   detailWxss: 'subpackages/feature/detail/index.wxss',
   searchJson: 'subpackages/feature/search/index.json',
   cdWxml: 'subpackages/content/collection-detail/index.wxml',
-  atlasWxml: 'subpackages/feature/collection/detail/index.wxml'
+  atlasWxml: 'subpackages/feature/collection/detail/index.wxml',
+  appWxss: 'app.wxss',
+  atelierWxss: 'pages/atelier/index.wxss',
+  catWxss: 'pages/category/index.wxss',
+  homeWxss: 'pages/index/index.wxss',
+  cartWxss: 'pages/cart/index.wxss',
+  userWxss: 'pages/user/index.wxss',
+  identifyWxss: 'subpackages/feature/identify/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -138,12 +145,34 @@ function checks(s) {
   add('R3-3 专题档案页画廊 / 关联藏品 / 返回 + 图鉴卡两处返回链接有 hover-class',
     ['previewGallery', 'goToProduct', 'goBack'].every((h) => tagsWith(s.cdWxml, new RegExp(`bindtap="${h}"`)).every((t) => /hover-class=/.test(t))) &&
     tagsWith(s.atlasWxml, /bindtap="goAtlas"/).every((t) => /hover-class=/.test(t)) &&
-    (s.atlasWxml.match(/bindtap="goAtlas" hover-class="link-press"/g) || []).length === 2)
+    (s.atlasWxml.match(/bindtap="goAtlas" hover-class="tap-press"/g) || []).length === 2)
 
   // R3-4 搜索「清空最近搜索」走样式化 AppModal（不再是白底系统弹窗）
   add('R3-4 搜索页清空历史走 this.modal、页面 withAppModal 包裹、宿主已挂且已注册',
     !/wx\.showModal/.test(s.searchJs) && /await this\.modal\(/.test(methodBody(s.searchJs, 'clearHistory')) &&
     /\nPage\(withAppModal\(\{/.test(s.searchJs) && /<app-modal id="appModal" \/>/.test(s.searchWxml) && /"app-modal": "\/components\/AppModal\/index"/.test(s.searchJson))
+
+  // R4-1 共享按压态：全局 tap-press / tap-press-soft（!important 压过页面 :active 特异性）；主包页面不再自带「只调透明度」的 -press 类
+  add('R4-1 app.wxss 定义 tap-press(+wb-press 别名) 0.72 / tap-press-soft 0.86，均 !important',
+    /\n\.tap-press, \.wb-press \{ opacity: 0\.72 !important; \}/.test(s.appWxss) && /\n\.tap-press-soft \{ opacity: 0\.86 !important; \}/.test(s.appWxss))
+  const localPress = (css) => [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter((m) => /^\s*opacity:\s*[\d.]+;?\s*$/.test(m[2]) && m[1].split(',').every((x) => /^\.[\w-]+-press$/.test(x.trim())))
+  add('R4-1 主包五页（首页/馆藏/工坊/购物车/我的）无本页「只调透明度」的 -press 类',
+    ['homeWxss', 'catWxss', 'atelierWxss', 'cartWxss', 'userWxss'].every((k) => localPress(s[k]).length === 0))
+
+  // R4-2 共享骨架：工作台类骨架统一为 ui-sk-card / ui-sk-line（脉动不闪光）
+  add('R4-2 app.wxss 定义 ui-sk-card / ui-sk-line（wide/title/bar）与 ui-sk-pulse',
+    ['.ui-sk-card {', '.ui-sk-line {', '.ui-sk-line.wide {', '.ui-sk-line.title {', '.ui-sk-line.bar {', '@keyframes ui-sk-pulse {'].every((x) => s.appWxss.includes('\n' + x)))
+
+  // R4-3 说明文字最低用 secondary（muted 在深色面仅 2.7–3.1:1）；占位提示保留 muted
+  const colorOf = (css, sel) => ((new RegExp(`\\n\\${sel} \\{[^}]*?[;\\s{]color: ([^;]+);`).exec(css)) || [])[1]
+  const SEC = 'var(--color-text-secondary)'
+  add('R4-3 工坊 / 馆藏 / 鉴定 / 详情的说明字改用 secondary',
+    ['.intro-overline', '.tile-overline', '.section-overline', '.order-tile-desc'].every((x) => colorOf(s.atelierWxss, x) === SEC) &&
+    ['.nav-sub', '.block-swipe-hint', '.block-meta'].every((x) => colorOf(s.catWxss, x) === SEC) &&
+    colorOf(s.identifyWxss, '.ai-privacy-txt') === SEC &&
+    ['.gift-panel-sub', '.gift-scene-label', '.coupon-empty', '.param-k'].every((x) => colorOf(s.detailWxss, x) === SEC))
+  add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
   return out
 }
 
@@ -171,7 +200,7 @@ if (process.argv.includes('--selftest')) {
     ['搜索相关标签改回「换个词试试」', 'searchWxml', (t) => t.replace('<text class="related-label">相近线索</text>', '<text class="related-label">换个词试试</text>')],
     ['立即购买去按压态', 'detailWxml', (t) => t.replace('bindtap="handleBuyNow" hover-class="buy-now-btn-press" hover-stay-time="80"', 'bindtap="handleBuyNow"')],
     ['定金按钮去按压态', 'detailWxml', (t) => t.replace('bindtap="handleDeposit"\n          hover-class="cta-press"\n          hover-stay-time="80"', 'bindtap="handleDeposit"')],
-    ['文章加载失败返回按钮去按压态', 'articleWxml', (t) => t.replace('<view class="load-error-btn" bindtap="goBack" hover-class="load-error-btn-press" hover-stay-time="80">', '<view class="load-error-btn" bindtap="goBack">')],
+    ['文章加载失败返回按钮去按压态', 'articleWxml', (t) => t.replace('<view class="load-error-btn" bindtap="goBack" hover-class="tap-press" hover-stay-time="80">', '<view class="load-error-btn" bindtap="goBack">')],
     ['鉴定结果重新加载去按压态', 'identifyResultWxml', (t) => t.replace('<view class="act ghost" bindtap="retryLoad" hover-class="act-ghost-press" hover-stay-time="80">', '<view class="act ghost" bindtap="retryLoad">')],
     ['档案页立即购买去按压态', 'wikiWxml', (t) => t.replace(' hover-class="bottom-buy-press" hover-stay-time="80"', '')],
     ['SKU 规格 pill 去按压态', 'detailWxml', (t) => t.replace('              bindtap="selectDimension"\n              hover-class="cta-press"\n', '              bindtap="selectDimension"\n')],
@@ -181,13 +210,18 @@ if (process.argv.includes('--selftest')) {
     ['SKU ✕ 热区回到原大小', 'detailWxss', (t) => t.replace('.sku-head .sku-close { right: -16rpx; top: -16rpx; padding: 24rpx; }', '')],
     ['已领取礼券也给按压态', 'detailWxml', (t) => t.replace("hover-class=\"{{item.claimed ? 'none' : 'cta-press'}}\"", 'hover-class="cta-press"')],
     ['退款说明「知道了」去按压态', 'detailWxml', (t) => t.replace('bindtap="closeRefundSheet" hover-class="cta-press" hover-stay-time="80"', 'bindtap="closeRefundSheet"')],
-    ['吸顶 tab 去按压态', 'detailWxml', (t) => t.replace('data-tab="review" hover-class="tab-item-press" hover-stay-time="80"', 'data-tab="review"')],
+    ['吸顶 tab 去按压态', 'detailWxml', (t) => t.replace('data-tab="review" hover-class="tap-press" hover-stay-time="80"', 'data-tab="review"')],
     ['专题档案价格丢 ¥', 'cdWxml', (t) => t.replace('<text class="p-price" wx:if="{{item.price}}">¥{{item.price}}</text>', '<text class="p-price">{{item.price}}</text>')],
     ['专题档案 0 阅读也画', 'cdWxml', (t) => t.replace('<view class="stats-row" wx:if="{{wiki.stats.views || wiki.stats.likes}}">', '<view class="stats-row">')],
-    ['专题档案关联藏品去按压态', 'cdWxml', (t) => t.replace('bindtap="goToProduct" data-id="{{item._id}}" hover-class="cd-press" hover-stay-time="80"', 'bindtap="goToProduct" data-id="{{item._id}}"')],
-    ['图鉴卡面包屑去按压态', 'atlasWxml', (t) => t.replace('<text class="crumb-link" bindtap="goAtlas" hover-class="link-press" hover-stay-time="80">', '<text class="crumb-link" bindtap="goAtlas">')],
+    ['专题档案关联藏品去按压态', 'cdWxml', (t) => t.replace('bindtap="goToProduct" data-id="{{item._id}}" hover-class="tap-press" hover-stay-time="80"', 'bindtap="goToProduct" data-id="{{item._id}}"')],
+    ['图鉴卡面包屑去按压态', 'atlasWxml', (t) => t.replace('<text class="crumb-link" bindtap="goAtlas" hover-class="tap-press" hover-stay-time="80">', '<text class="crumb-link" bindtap="goAtlas">')],
     ['搜索清空历史退回 wx.showModal', 'searchJs', (t) => t.replace('const res = await this.modal({', 'const res = await wx.showModal({')],
     ['搜索页漏挂 AppModal 宿主', 'searchWxml', (t) => t.replace('<app-modal id="appModal" />', '')],
+    ['全局 tap-press 丢 !important', 'appWxss', (t) => t.replace('.tap-press, .wb-press { opacity: 0.72 !important; }', '.tap-press, .wb-press { opacity: 0.72; }')],
+    ['首页回退本页 -press 类', 'homeWxss', (t) => t + '\n.probe-card-press { opacity: 0.86; }\n'],
+    ['共享骨架丢 bar 行', 'appWxss', (t) => t.replace(/\n\.ui-sk-line\.bar \{[^\n]*/, '')],
+    ['工坊卡片说明退回 muted', 'atelierWxss', (t) => t.replace(/(\n\.order-tile-desc \{[^}]*?color: )var\(--color-text-secondary\)/, '$1var(--color-text-muted)')],
+    ['详情礼赠说明退回 muted', 'detailWxss', (t) => t.replace('.gift-panel-sub { font-size: 22rpx; color: var(--color-text-secondary); }', '.gift-panel-sub { font-size: 22rpx; color: var(--color-text-muted); }')],
     ['工坊描述超长（恢复截断原文）', 'atelierJs', (t) => t.replace("desc: '为陪伴过的伙伴留存纪念，专员评估工艺周期',", "desc: '为陪伴过你的伙伴留存纪念藏品，专员评估工艺与周期',")]
   ]
   let ok = baseOk

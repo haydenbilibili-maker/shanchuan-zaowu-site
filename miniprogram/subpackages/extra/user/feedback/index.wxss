@@ -50,9 +50,6 @@ page {
   border-bottom: none;
 }
 
-.fb-link-press {
-  opacity: 0.72;
-}
 
 .fb-link-label {
   font-size: 26rpx;

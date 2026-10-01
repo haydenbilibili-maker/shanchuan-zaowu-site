@@ -79,7 +79,6 @@ page {
   padding: var(--space-2, 16rpx) var(--space-4, 32rpx);
 }
 
-.store-switcher-press { opacity: 0.88; }
 
 .switcher-main { flex: 1; min-width: 0; }
 
@@ -141,7 +140,6 @@ page {
   vertical-align: top;
 }
 
-.store-pill-press { opacity: 0.88; }
 
 .store-pill.active {
   border-color: var(--brass-400, #C4A76C);
@@ -221,7 +219,6 @@ page {
   border-radius: var(--radius-md, 16rpx);
 }
 
-.picker-item-press { opacity: 0.9; }
 
 .picker-item.active {
   border-color: var(--brass-400, #C4A76C);
@@ -334,7 +331,6 @@ page {
   height: 420rpx;
 }
 
-.hero-press { opacity: 0.97; }
 
 .hero-img,
 .hero-placeholder {
@@ -544,7 +540,6 @@ page {
 .status-chip.closed { color: var(--color-text-secondary, #A09A90); }
 
 .plate-intro-wrap { margin-bottom: var(--space-3, 24rpx); }
-.plate-intro-press { opacity: 0.9; }
 
 .plate-intro {
   display: -webkit-box;
@@ -667,7 +662,6 @@ page {
   padding: 8rpx 0;
 }
 
-.tips-head-press { opacity: 0.88; }
 
 .tips-label {
   font-size: 22rpx;
@@ -720,7 +714,6 @@ page {
   border-top: 1px solid var(--color-border, rgba(38, 35, 32, 0.4));
 }
 
-.web-row-press { opacity: 0.88; }
 
 .web-label {
   flex-shrink: 0;

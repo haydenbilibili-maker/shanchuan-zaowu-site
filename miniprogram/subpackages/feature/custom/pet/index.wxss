@@ -362,7 +362,6 @@
   display: flex; align-items: center; justify-content: center;
 }
 
-.photo-del-press { opacity: 0.75; }
 .photo-del-x { font-size: 28rpx; color: #D5D1C8; line-height: 1; }
 
 .photo-add {
@@ -389,7 +388,6 @@
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.card-press { opacity: 0.92; }
 
 .craft-card.active, .intake-card.active {
   border-color: rgba(196, 167, 108, 0.45);

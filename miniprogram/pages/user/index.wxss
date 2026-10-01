@@ -157,7 +157,6 @@ page {
   border-left: 4rpx solid var(--gold); 
   padding-left: 20rpx;
 }
-.panel-head-press { opacity: 0.78; }
 .ph-title { font-size: 28rpx; font-weight: 600; color: var(--color-text-primary); }
 .ph-en {
   font-size: 18rpx;
@@ -274,9 +273,6 @@ page {
   display: flex;
   align-items: center;
   overflow: hidden;
-}
-.wb-marquee-press {
-  opacity: 0.82;
 }
 .wb-marquee-mask {
   flex: 1;
@@ -775,7 +771,8 @@ page {
   transition: all 0.3s;
   border: 1px solid rgba(255,255,255,0.1);
 }
-.group-close:active {
+.group-close:active,
+.group-close-press {
   background: rgba(255,255,255,0.2);
   transform: scale(0.95);
 }

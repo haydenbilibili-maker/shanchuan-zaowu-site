@@ -38,7 +38,7 @@
           wx:for="{{scenes}}"
           wx:key="key"
           data-key="{{item.key}}"
-          hover-class="scene-chip-press"
+          hover-class="tap-press"
           hover-stay-time="70"
           bindtap="onSceneTap"
         >
@@ -58,7 +58,7 @@
             <text
               class="match-link"
               bindtap="onRefreshBatch"
-              hover-class="match-link-press"
+              hover-class="tap-press"
               hover-stay-time="70"
               wx:if="{{products.length && !loadingProducts}}"
             >换一批</text>
@@ -95,7 +95,7 @@
           wx:for="{{products}}"
           wx:key="_id"
           data-id="{{item._id}}"
-          hover-class="product-card-press"
+          hover-class="tap-press-soft"
           hover-stay-time="80"
           bindtap="onProductTap"
         >

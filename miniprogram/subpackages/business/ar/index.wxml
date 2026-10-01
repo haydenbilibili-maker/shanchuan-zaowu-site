@@ -91,7 +91,7 @@
       </view>
 
       <view class="shutter-row" wx:if="{{!isStaticPreview}}">
-        <view class="shutter-btn" bindtap="takePhoto">
+        <view class="shutter-btn" bindtap="takePhoto" hover-class="shutter-btn-press" hover-stay-time="80">
           <view class="inner"></view>
         </view>
         <text class="shutter-tip">{{isCustomMode ? '拍摄试摆效果' : '保存影像'}}</text>

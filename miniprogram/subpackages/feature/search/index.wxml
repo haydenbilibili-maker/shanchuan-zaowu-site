@@ -61,7 +61,7 @@
 
       <view
         class="cancel-btn"
-        hover-class="cancel-btn-press"
+        hover-class="tap-press"
         hover-stay-time="80"
         bindtap="goBack"
       >取消</view>

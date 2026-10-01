@@ -17,7 +17,7 @@
 
   <view class="tab-bar">
     <block wx:for="{{tabs}}" wx:key="value" wx:for-index="idx">
-      <view class="tab-item {{currentTab === idx ? 'active' : ''}}" bindtap="switchTab" data-index="{{idx}}" hover-class="tab-item-press" hover-stay-time="80">
+      <view class="tab-item {{currentTab === idx ? 'active' : ''}}" bindtap="switchTab" data-index="{{idx}}" hover-class="tap-press" hover-stay-time="80">
         <text class="tab-cn">{{item.name}}</text>
         <text class="tab-en">{{item.en}}</text>
         <view class="tab-indicator" wx:if="{{currentTab === idx}}"></view>

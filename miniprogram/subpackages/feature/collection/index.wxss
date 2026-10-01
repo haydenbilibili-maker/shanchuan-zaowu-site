@@ -205,7 +205,6 @@ page {
   border-color: #4D401A;
 }
 
-.chip-press { opacity: 0.82; }
 
 .error,
 .empty {
@@ -528,7 +527,6 @@ page {
   border: none;
 }
 
-.dock-press { opacity: 0.86; }
 
 .notes {
   margin-bottom: 28rpx;
@@ -561,7 +559,6 @@ page {
   border-top: 1rpx solid #262320;
 }
 
-.note-press { opacity: 0.75; }
 
 .note-title {
   display: block;

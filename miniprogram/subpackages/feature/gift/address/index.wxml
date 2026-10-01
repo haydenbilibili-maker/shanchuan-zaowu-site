@@ -5,7 +5,7 @@
     <text class="desc">仅用于寄送妥投；对方看不到你的手机全号。</text>
   </view>
 
-  <view class="import-row" bindtap="importWxAddress" hover-class="btn-press">
+  <view class="import-row" bindtap="importWxAddress" hover-class="tap-press">
     <text class="import-lbl">从微信地址导入</text>
     <text class="import-chev" aria-hidden="true"></text>
   </view>
@@ -29,7 +29,7 @@
     <textarea class="textarea" maxlength="120" placeholder="街道门牌等，写清楚即可" value="{{detail}}" bindinput="onDetail" />
   </view>
 
-  <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="btn-press">{{submitting ? '正在记下…' : '确认收件去处'}}</view>
+  <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="submit" hover-class="tap-press">{{submitting ? '正在记下…' : '确认收件去处'}}</view>
   <text class="foot-note">提交后馆员将备妥启程；你可随时在礼笺页查看进度。</text>
 </view>
 

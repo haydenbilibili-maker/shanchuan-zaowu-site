@@ -28,11 +28,6 @@ view, text, image, button { box-sizing: border-box; }
   border-radius: 50%;
   border: 1px solid transparent;
 }
-.back-btn-press,
-.icon-btn-press,
-.save-btn-press {
-  opacity: 0.82;
-}
 
 .empty-cert {
   position: absolute;

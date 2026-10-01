@@ -8,3 +8,6 @@ npm run test:category-feed-cache
 # 2026-10-01：A 流细节雕刻（miniprogram/docs/细节雕刻_A流_2026-10.md）
 npm run check:mp-const-assign
 npm run check:a-flow-polish
+# 2026-10-01：A 流第 4 轮共享层收拢（说明字最低 secondary / care-common 四份一致）
+npm run check:mp-caption-color
+npm run check:care-common-mirrors

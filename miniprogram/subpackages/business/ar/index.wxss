@@ -129,7 +129,8 @@ view, text, image, slider { box-sizing: border-box; }
   display: flex; align-items: center; justify-content: center;
   transition: all 0.2s;
 }
-.shutter-btn:active { transform: scale(0.9); opacity: 0.8; }
+.shutter-btn:active,
+.shutter-btn-press { transform: scale(0.9); opacity: 0.8; }
 .inner { width: 110rpx; height: 110rpx; background: #C4A76C; border-radius: 50%; box-shadow: none; }
 
 /* 闪光层 */

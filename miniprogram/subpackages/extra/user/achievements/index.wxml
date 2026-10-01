@@ -7,7 +7,7 @@
         <text class="nav-title">我的成就</text>
         <text class="nav-sub">ACHIEVEMENTS</text>
       </view>
-      <view class="share-btn" hover-class="share-btn-press" hover-stay-time="80" bindtap="shareAchievements">
+      <view class="share-btn" hover-class="tap-press" hover-stay-time="80" bindtap="shareAchievements">
         <image class="share-icon icon-gold" src="/assets/icons/share.png" mode="aspectFit"></image>
       </view>
     </view>
@@ -17,7 +17,7 @@
       <view class="share-tip-body">
         <image class="share-tip-icon icon-gold" src="/assets/icons/share.png" mode="aspectFit"></image>
         <text class="share-tip-text">请点右上角 ··· 分享</text>
-        <view class="share-tip-close" hover-class="share-tip-close-press" catchtap="dismissShareTip">
+        <view class="share-tip-close" hover-class="tap-press" catchtap="dismissShareTip">
           <image class="share-tip-close-icon icon-gold" src="/subpackages/feature/assets/icons/nav-close-brass.png" mode="aspectFit"></image>
         </view>
       </view>
@@ -82,7 +82,7 @@
         class="filter-chip {{viewFilter === item.key ? 'active' : ''}}"
         wx:for="{{filterTabs}}"
         wx:key="key"
-        hover-class="filter-chip-press"
+        hover-class="tap-press"
         hover-stay-time="80"
         bindtap="onFilterChange"
         data-key="{{item.key}}"
@@ -125,7 +125,7 @@
           class="relic-plate {{item.discovered ? 'on' : 'off'}}"
           wx:for="{{relicsCatalog}}"
           wx:key="id"
-          hover-class="relic-plate-press"
+          hover-class="tap-press-soft"
           hover-stay-time="80"
           bindtap="openRelic"
           data-id="{{item.id}}"
@@ -151,7 +151,7 @@
       <view
         class="empty-action"
         wx:if="{{viewFilter === 'unlocked'}}"
-        hover-class="empty-action-press"
+        hover-class="tap-press"
         bindtap="onFilterChange"
         data-key="locked"
       >
@@ -191,7 +191,7 @@
               wx:for="{{section.unlockedList}}"
               wx:key="id"
               wx:for-item="achievement"
-              hover-class="achievement-item-press"
+              hover-class="tap-press-soft"
               bindtap="viewAchievement"
               data-achievement="{{achievement}}"
             >
@@ -227,7 +227,7 @@
               wx:for="{{section.lockedList}}"
               wx:key="id"
               wx:for-item="achievement"
-              hover-class="achievement-item-press"
+              hover-class="tap-press-soft"
               bindtap="viewAchievement"
               data-achievement="{{achievement}}"
             >
@@ -263,7 +263,7 @@
             wx:for="{{section.visible}}"
             wx:key="id"
             wx:for-item="achievement"
-            hover-class="achievement-item-press"
+            hover-class="tap-press-soft"
             bindtap="viewAchievement"
             data-achievement="{{achievement}}"
           >
@@ -322,7 +322,7 @@
       </view>
       <text class="empty-title">档案暂时读不出</text>
       <text class="empty-text">网络不稳或尚未登录时，徽章柜会空着</text>
-      <view class="retry-btn" hover-class="retry-btn-press" bindtap="onRetry">重新读取</view>
+      <view class="retry-btn" hover-class="tap-press" bindtap="onRetry">重新读取</view>
     </view>
 
   </scroll-view>
@@ -330,7 +330,7 @@
   <!-- 成就详情：铜牌说明 -->
   <view class="achievement-modal {{showModal ? 'show' : ''}}" wx:if="{{selectedAchievement}}" catchtap="closeModal">
     <view class="modal-content {{selectedAchievement.unlocked ? 'lit' : 'dim'}}" catchtap="stopPropagation">
-      <view class="modal-close" hover-class="modal-close-press" bindtap="closeModal">
+      <view class="modal-close" hover-class="tap-press" bindtap="closeModal">
         <image class="modal-close-icon icon-gold" src="/subpackages/feature/assets/icons/nav-close-brass.png" mode="aspectFit"></image>
       </view>
 
@@ -379,13 +379,13 @@
       </view>
 
       <view class="modal-actions" wx:if="{{selectedAchievement.unlocked}}">
-        <view class="modal-share-btn" hover-class="modal-share-press" bindtap="shareSingleAchievement">
+        <view class="modal-share-btn" hover-class="tap-press-soft" bindtap="shareSingleAchievement">
           <image class="share-icon-small icon-gold" src="/assets/icons/share.png" mode="aspectFit"></image>
           <text class="share-text">分享这枚徽章</text>
         </view>
       </view>
       <view class="modal-actions" wx:else>
-        <view class="modal-dismiss-btn" hover-class="modal-share-press" bindtap="closeModal">
+        <view class="modal-dismiss-btn" hover-class="tap-press-soft" bindtap="closeModal">
           <text class="dismiss-text">知道了</text>
         </view>
       </view>
@@ -409,8 +409,8 @@
       <text class="unlock-hint" wx:if="{{unlockedAchievement.rewardPoints > 0}}">已计入徽章柜累计积分</text>
       <text class="unlock-hint" wx:else>徽章已收入你的徽章柜</text>
       <view class="unlock-actions">
-        <view class="unlock-btn" hover-class="unlock-btn-press" bindtap="closeUnlockAnimation">知道了</view>
-        <view class="unlock-btn primary" hover-class="unlock-btn-press" bindtap="shareUnlockedAchievement">分享</view>
+        <view class="unlock-btn" hover-class="tap-press" bindtap="closeUnlockAnimation">知道了</view>
+        <view class="unlock-btn primary" hover-class="tap-press" bindtap="shareUnlockedAchievement">分享</view>
       </view>
     </view>
   </view>

@@ -16,7 +16,7 @@
       class="order-card"
       wx:for="{{orders}}"
       wx:key="_id"
-      bindtap="goDetail"
+      bindtap="goDetail" hover-class="tap-press-soft" hover-stay-time="80"
       data-id="{{item._id}}"
     >
       <view class="card-top">

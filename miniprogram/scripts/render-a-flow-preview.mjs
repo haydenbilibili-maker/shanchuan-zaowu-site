@@ -28,6 +28,33 @@ const argOf = (n, d) => {
 const outDir = resolve(argOf('--out-dir', join(tmpdir(), 'a-flow-preview')))
 const rev = argOf('--rev', '')
 const only = argOf('--only', '')
+// --measure：不截图，在真实 Chrome 里量出所有「直接带字」元素的计算色与最近不透明祖先底的对比度（同 report:colors --verify 的算法）
+const measure = argv.includes('--measure')
+const MEASURE_JS = `(() => {
+  const parse = (s) => (String(s).match(/[\\d.]+/g) || []).map(Number)
+  const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]) }
+  const rows = []
+  for (const el of document.body.querySelectorAll('*')) {
+    const own = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join('')
+    if (!own || !el.getClientRects().length) continue
+    const cs = getComputedStyle(el)
+    const layers = []
+    for (let p = el; p; p = p.parentElement) {
+      const c = parse(getComputedStyle(p).backgroundColor)
+      const al = c.length > 3 ? c[3] : 1
+      if (al > 0) layers.push([c[0], c[1], c[2], al])
+      if (al >= 1) break
+    }
+    let b = [26, 24, 20]
+    for (const [r, g, bl, al] of layers.reverse()) b = [r * al + b[0] * (1 - al), g * al + b[1] * (1 - al), bl * al + b[2] * (1 - al)]
+    const fc = parse(cs.color), fa = fc.length > 3 ? fc[3] : 1
+    const a = [0, 1, 2].map((i) => fc[i] * fa + b[i] * (1 - fa))
+    const bg = 'rgb(' + b.map(Math.round).join(', ') + ')'
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x)
+    rows.push({ cls: String(el.className || el.tagName).slice(0, 60), text: own.slice(0, 16), color: cs.color, bg, ratio: Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100, fs: cs.fontSize })
+  }
+  const pre = document.createElement('pre'); pre.id = '__m'; pre.textContent = JSON.stringify(rows); document.body.appendChild(pre)
+})()`
 mkdirSync(outDir, { recursive: true })
 
 function read(abs) {
@@ -201,12 +228,25 @@ img:not([src]), img[src=""] { visibility: hidden; }
 .main-scroll { height: auto !important; position: static !important; overflow: visible !important; }
 .page-ency .sticky-header { position: relative !important; }
 .floating, .floating-shadow, .slide-up-anim, .blink { animation: none !important; }
-</style></head><body>${body}</body></html>`
+</style></head><body>${body}${measure ? `<script>${MEASURE_JS}</script>` : ''}</body></html>`
   const htmlPath = join(tmpdir(), `a-flow-${scene.name}-${process.pid}.html`)
   writeFileSync(htmlPath, html)
   const out = join(outDir, `${scene.name}.png`)
   if (existsSync(out)) rmSync(out)
   const profile = mkdtempSync(join(tmpdir(), 'a-flow-preview-'))
+  if (measure) {
+    const r = spawnSync(chrome, [
+      '--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', '--no-default-browser-check', '--allow-file-access-from-files',
+      `--user-data-dir=${profile}`, '--virtual-time-budget=3000', `--window-size=750,${scene.h}`, '--dump-dom', `file://${htmlPath}`
+    ], { encoding: 'utf8', maxBuffer: 1 << 27, timeout: 120000 })
+    try { rmSync(profile, { recursive: true, force: true }) } catch { /* ignore */ }
+    try { rmSync(htmlPath, { force: true }) } catch { /* ignore */ }
+    const m = /<pre id="__m">([\s\S]*?)<\/pre>/.exec(r.stdout || '')
+    const rows = m ? JSON.parse(m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&')) : []
+    writeFileSync(join(outDir, `${scene.name}.measure.json`), JSON.stringify(rows, null, 1))
+    console.log(`✓ ${scene.name} 实测 ${rows.length} 个带字元素 → ${join(outDir, `${scene.name}.measure.json`)}`)
+    return
+  }
   const child = spawn(chrome, [
     '--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run', '--no-default-browser-check', '--allow-file-access-from-files',
     `--user-data-dir=${profile}`, '--hide-scrollbars', '--force-device-scale-factor=1', '--virtual-time-budget=3000',

@@ -5,7 +5,7 @@
 
   <!-- 顶栏：当前店 + 双店切换 -->
   <view class="sticky-top">
-    <view class="store-switcher" bindtap="toggleStorePicker" hover-class="store-switcher-press" hover-stay-time="80">
+    <view class="store-switcher" bindtap="toggleStorePicker" hover-class="tap-press-soft" hover-stay-time="80">
       <view class="switcher-main">
         <text class="switcher-label">当前门店</text>
         <text class="switcher-name">{{store.name || '这有店'}}</text>
@@ -20,7 +20,7 @@
         wx:key="storeId"
         bindtap="quickSelectStore"
         data-id="{{item.storeId}}"
-        hover-class="store-pill-press"
+        hover-class="tap-press-soft"
         hover-stay-time="80"
       >
         <view class="pill-mark" wx:if="{{item.storeId === store.storeId}}"></view>
@@ -39,7 +39,7 @@
       wx:key="storeId"
       bindtap="selectStore"
       data-id="{{item.storeId}}"
-      hover-class="picker-item-press"
+      hover-class="tap-press-soft"
       hover-stay-time="80"
     >
       <image wx:if="{{item.coverImage}}" class="picker-thumb" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
@@ -54,7 +54,7 @@
 
   <scroll-view scroll-y class="main-scroll" style="top: {{scrollTop}}px;" wx:if="{{!loading && store}}">
     <!-- Hero：一张图 + 店名 + 一句说明 -->
-    <view class="hero {{enterReady ? 'reveal reveal-0' : 'is-entering'}}" bindtap="previewHero" hover-class="hero-press" hover-stay-time="80">
+    <view class="hero {{enterReady ? 'reveal reveal-0' : 'is-entering'}}" bindtap="previewHero" hover-class="tap-press-soft" hover-stay-time="80">
       <image wx:if="{{store.coverImage}}" class="hero-img" src="{{store.coverImage}}" mode="aspectFill"></image>
       <view class="hero-placeholder" wx:else></view>
       <view class="hero-mask"></view>
@@ -110,7 +110,7 @@
           </view>
         </view>
 
-        <view class="plate-intro-wrap" bindtap="toggleIntro" hover-class="plate-intro-press" hover-stay-time="80" wx:if="{{store.intro}}">
+        <view class="plate-intro-wrap" bindtap="toggleIntro" hover-class="tap-press-soft" hover-stay-time="80" wx:if="{{store.intro}}">
           <text class="plate-intro {{introExpanded ? 'expanded' : ''}}">{{store.intro}}</text>
           <text class="plate-intro-toggle">{{introExpanded ? '收起' : '展开'}}</text>
         </view>
@@ -155,7 +155,7 @@
         </view>
 
         <view class="visit-tips" wx:if="{{store.visitTips && store.visitTips.length}}">
-          <view class="tips-head" bindtap="toggleTips" hover-class="tips-head-press" hover-stay-time="80">
+          <view class="tips-head" bindtap="toggleTips" hover-class="tap-press-soft" hover-stay-time="80">
             <text class="tips-label">到店提示</text>
             <text class="tips-toggle-text">{{tipsExpanded ? '收起' : '展开'}}</text>
           </view>
@@ -170,7 +170,7 @@
           <text class="feature-text">{{featuresLine}}</text>
         </view>
 
-        <view class="web-row" bindtap="copyWebsite" hover-class="web-row-press" hover-stay-time="80">
+        <view class="web-row" bindtap="copyWebsite" hover-class="tap-press-soft" hover-stay-time="80">
           <text class="web-label">官网</text>
           <text class="web-val">{{brandWebsite}}</text>
           <text class="fact-action">复制</text>

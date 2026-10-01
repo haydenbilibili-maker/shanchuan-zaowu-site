@@ -76,7 +76,7 @@
       <block wx:if="{{showProfileExtras}}">
         <view
           class="avatar-plate"
-          hover-class="avatar-btn-press"
+          hover-class="tap-press-soft"
           hover-stay-time="80"
           catchtap="onChangeAvatar"
           aria-label="设定头像（选填）"
@@ -117,9 +117,9 @@
           <view class="agree-copy">
             <text class="agree-text">我已阅读并同意</text>
             <view class="agree-links">
-              <text class="agree-link" hover-class="agree-link-press" catchtap="openTerms">《用户服务协议》</text>
+              <text class="agree-link" hover-class="tap-press" catchtap="openTerms">《用户服务协议》</text>
               <text class="agree-sep">与</text>
-              <text class="agree-link" hover-class="agree-link-press" catchtap="openPrivacy">《隐私政策》</text>
+              <text class="agree-link" hover-class="tap-press" catchtap="openPrivacy">《隐私政策》</text>
             </view>
           </view>
         </view>

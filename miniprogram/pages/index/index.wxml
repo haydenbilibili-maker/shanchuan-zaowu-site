@@ -33,7 +33,7 @@
     </view>
     <text class="page-error-title">内容暂时无法抵达</text>
     <text class="page-error-desc">{{pageErrorMsg}}</text>
-    <view class="page-error-btn" bindtap="onRetryLoad" hover-class="page-error-btn-press" hover-stay-time="80">重新加载</view>
+    <view class="page-error-btn" bindtap="onRetryLoad" hover-class="tap-press" hover-stay-time="80">重新加载</view>
     <text class="page-error-hint">也可以下拉刷新</text>
   </view>
 
@@ -147,7 +147,7 @@
           <view class="orb-wrapper {{currentOrbId === item._id ? 'active' : (currentOrbId ? 'dimmed' : '')}}" 
                 bindtap="onOrbClick" 
                 data-id="{{item._id}}"
-                hover-class="orb-press"
+                hover-class="tap-press-soft"
                 hover-stay-time="80">
             <view class="orb-sphere floating" style="animation-delay: {{index * 0.4}}s;">
                <view class="orb-inner-light"></view>

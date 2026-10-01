@@ -13,12 +13,12 @@
   <view class="error" wx:elif="{{loadError}}">
     <text class="error-t">这一页暂时读不到</text>
     <button class="btn-brass" bindtap="loadCard">再试一次</button>
-    <text class="link" bindtap="goAtlas" hover-class="link-press" hover-stay-time="80">返回图鉴</text>
+    <text class="link" bindtap="goAtlas" hover-class="tap-press" hover-stay-time="80">返回图鉴</text>
   </view>
 
   <block wx:else>
     <view class="crumb">
-      <text class="crumb-link" bindtap="goAtlas" hover-class="link-press" hover-stay-time="80">山海图鉴</text>
+      <text class="crumb-link" bindtap="goAtlas" hover-class="tap-press" hover-stay-time="80">山海图鉴</text>
       <text class="crumb-sep">/</text>
       <text class="crumb-cur">{{locked ? '未记录' : (card.nameZh || '卡片')}}</text>
     </view>
@@ -56,10 +56,10 @@
     </view>
 
     <view class="collect-dock dual" wx:if="{{locked}}">
-      <view class="dock-half" bindtap="onScan" hover-class="collect-dock-press" hover-stay-time="80">
+      <view class="dock-half" bindtap="onScan" hover-class="tap-press-soft" hover-stay-time="80">
         <text class="collect-dock-t ghost">发现印记</text>
       </view>
-      <view class="dock-half primary" bindtap="goIdentify" hover-class="collect-dock-press" hover-stay-time="80">
+      <view class="dock-half primary" bindtap="goIdentify" hover-class="tap-press-soft" hover-stay-time="80">
         <text class="collect-dock-t">拍照采集</text>
       </view>
     </view>
@@ -74,7 +74,7 @@
           <text class="fact-k">{{item.k}}</text>
           <view class="fact-row" wx:if="{{item.k === '印记码'}}">
             <text class="fact-v mono">{{item.v}}</text>
-            <text class="fact-copy" bindtap="copyImprint" hover-class="fact-copy-press" hover-stay-time="80">复制</text>
+            <text class="fact-copy" bindtap="copyImprint" hover-class="tap-press" hover-stay-time="80">复制</text>
           </view>
           <text class="fact-v" wx:else>{{item.v}}</text>
         </view>
@@ -83,7 +83,7 @@
       <view class="related" wx:if="{{relatedProducts.length}}">
         <view class="related-head">
           <text class="sec-t">关联藏品</text>
-          <text class="related-more" bindtap="goGallery" hover-class="related-more-press" hover-stay-time="80">去馆藏</text>
+          <text class="related-more" bindtap="goGallery" hover-class="tap-press" hover-stay-time="80">去馆藏</text>
         </view>
         <view
           class="product"
@@ -91,7 +91,7 @@
           wx:key="_id"
           bindtap="goProduct"
           data-id="{{item._id}}"
-          hover-class="product-press"
+          hover-class="tap-press"
           hover-stay-time="80"
         >
           <image wx:if="{{item.image}}" class="product-img" src="{{item.image}}" mode="aspectFill" />
@@ -109,13 +109,13 @@
           <text class="sec-t">关联藏品</text>
         </view>
         <text class="related-empty">馆藏里暂未挂上对应 SKU。可先去同品类看看。</text>
-        <view class="related-cta" bindtap="goGallery" hover-class="collect-dock-press" hover-stay-time="80">浏览馆藏</view>
+        <view class="related-cta" bindtap="goGallery" hover-class="tap-press-soft" hover-stay-time="80">浏览馆藏</view>
       </view>
 
       <view class="logs">
         <view class="logs-head">
           <text class="sec-t">采集记录</text>
-          <text class="logs-more" bindtap="goLogs" hover-class="related-more-press" hover-stay-time="80">全部足迹</text>
+          <text class="logs-more" bindtap="goLogs" hover-class="tap-press" hover-stay-time="80">全部足迹</text>
         </view>
         <block wx:if="{{hasLogs}}">
           <view class="log" wx:for="{{logs}}" wx:key="id">
@@ -141,7 +141,7 @@
       <text class="unlock-title">这一页被翻开了</text>
       <text class="unlock-name">{{card.nameZh}}</text>
       <text class="unlock-latin" wx:if="{{card.nameLatin}}">{{card.nameLatin}}</text>
-      <view class="unlock-cta" bindtap="closeCeremony" hover-class="collect-dock-press" hover-stay-time="80">看这一页</view>
+      <view class="unlock-cta" bindtap="closeCeremony" hover-class="tap-press-soft" hover-stay-time="80">看这一页</view>
     </view>
   </view>
 </view>

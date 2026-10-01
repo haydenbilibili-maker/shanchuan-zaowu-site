@@ -157,9 +157,7 @@ page { background: #1A1814; }
   to { transform: rotate(360deg); }
 }
 
-.mode-press { opacity: 0.85; }
 
-.row-press { opacity: 0.8; }
 
 .empty-t {
   display: block;
@@ -181,7 +179,6 @@ page { background: #1A1814; }
   border-bottom: 1rpx solid #262320;
 }
 
-.record-press { opacity: 0.86; }
 
 .thumb {
   width: 168rpx;

@@ -194,9 +194,6 @@ page {
   border-color: rgba(196, 167, 108, 0.35);
 }
 
-.order-picker-press {
-  opacity: 0.88;
-}
 
 .order-picker-no {
   display: block;
@@ -268,9 +265,6 @@ page {
   font-weight: 500;
 }
 
-.type-pill-press {
-  opacity: 0.85;
-}
 
 .form-actions {
   margin-top: 32rpx;
@@ -438,9 +432,6 @@ page {
   background: rgba(196, 167, 108, 0.1);
 }
 
-.order-item-press {
-  opacity: 0.88;
-}
 
 .order-item-top {
   display: flex;

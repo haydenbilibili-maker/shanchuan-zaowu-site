@@ -128,7 +128,6 @@ page {
   border-right: 1px solid var(--color-border);
 }
 .tab-item:last-child { border-right: none; }
-.tab-item-press { opacity: 0.72; }
 
 .tab-cn {
   font-size: 28rpx;

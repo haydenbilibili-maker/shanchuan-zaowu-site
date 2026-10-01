@@ -453,7 +453,8 @@ page {
   background: transparent;
 }
 
-.note-preset:active {
+.note-preset:active,
+.note-preset-press {
   color: #C4A76C;
   border-color: rgba(196, 167, 108, 0.55);
 }
@@ -1126,7 +1127,8 @@ page {
   border-radius: 16rpx;
 }
 
-.pay-btn:active {
+.pay-btn:active,
+.pay-btn-press {
   background: #A8903C;
 }
 
