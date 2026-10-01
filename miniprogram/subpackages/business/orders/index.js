@@ -48,14 +48,15 @@ Page(withAppModal({
   data: {
     // Tab 配置 (注意顺序：0-全部, 1-待付款, 2-待发货, 3-待收货, 4-已签收, 5-售后)
     tabs: [
-      { name: '全部', key: 'all' },
-      { name: '待付款', key: 'pay' },
-      { name: '待发货', key: 'paid' },
-      { name: '待收货', key: 'shipped' }, 
-      { name: '已签收', key: 'received' }, // 🟢 补全 Tab
-      { name: '售后/退款', key: 'refund' }
+      { name: '全部', key: 'all', emptyTitle: '还没有订单', emptyDesc: '入藏的每一件都会在这里留档' },
+      { name: '待付款', key: 'pay', emptyTitle: '没有待付款的订单', emptyDesc: '下单后未完成支付的会停在这里' },
+      { name: '待发货', key: 'paid', emptyTitle: '没有待发货的订单', emptyDesc: '支付完成后，专员备妥即会发出' },
+      { name: '待收货', key: 'shipped', emptyTitle: '没有在路上的藏品', emptyDesc: '发货后可在这里查看物流与签收' },
+      { name: '已签收', key: 'received', emptyTitle: '还没有签收的藏品', emptyDesc: '签收后可写下感受、查看收藏证书' },
+      { name: '售后/退款', key: 'refund', emptyTitle: '没有售后记录', emptyDesc: '如需售后，可在订单详情里发起' }
     ],
     curTab: 0, 
+    payingId: '',
     orders: [],
     loading: true,
     loadError: false,
@@ -403,11 +404,7 @@ Page(withAppModal({
       },
       fail: (err) => {
         console.error('❌ 跳转失败:', err);
-        wx.showToast({
-          title: '跳转失败： ' + (err.errMsg || '未知错误'),
-          icon: 'none',
-          duration: 3000
-        });
+        wx.showToast({ title: '暂时打不开订单详情，请稍后再试', icon: 'none' });
       }
     });
   },
@@ -444,7 +441,9 @@ Page(withAppModal({
       return;
     }
 
+    if (this.data.payingId) return;
     wx.vibrateShort({ type: 'medium' });
+    this.setData({ payingId: id });
     try {
       await payForOrder(id);
       wx.showToast({ title: '支付成功', icon: 'success' });
@@ -462,6 +461,8 @@ Page(withAppModal({
       } else {
         wx.showToast({ title: msg, icon: 'none' });
       }
+    } finally {
+      this.setData({ payingId: '' });
     }
   },
 

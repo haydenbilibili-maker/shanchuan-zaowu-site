@@ -7,3 +7,4 @@ npm run test:checkout-addon
 npm run check:order-status-enum
 npm run check:order-transition-guard
 npm run check:product-media
+npm run check:bflow-polish

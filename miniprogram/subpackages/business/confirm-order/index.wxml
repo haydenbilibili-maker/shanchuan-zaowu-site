@@ -97,7 +97,10 @@
     <view class="section-label">藏品清单</view>
     <view class="goods-item" wx:for="{{items}}" wx:key="productId">
       <view class="goods-img-wrap">
-        <image class="goods-img" src="{{item.image}}" mode="aspectFill"></image>
+        <image class="goods-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill"></image>
+        <view class="goods-img goods-img-ph" wx:else>
+          <image class="goods-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+        </view>
         <protected-badge product="{{item}}" size="xs" corner="bl" />
       </view>
       <view class="goods-info">
@@ -330,7 +333,7 @@
       >
         <view class="c-left">
           <text class="c-val">{{item.faceLabel || ('¥' + item.value)}}</text>
-          <text class="c-min" wx:if="{{item.minSpend > 0}}">满{{item.minSpend}}可用</text>
+          <text class="c-min">{{item.minSpend > 0 ? '满 ¥' + item.minSpend + ' 可用' : '无门槛'}}</text>
         </view>
         <view class="c-right">
           <text class="c-name">{{item.title || item.name || '礼券'}}</text>

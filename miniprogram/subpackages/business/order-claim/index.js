@@ -286,7 +286,9 @@ Page(withAppModal({
     } catch (e) {
       wx.hideLoading();
       this.setData({ receiptSubmitting: false });
-      wx.showToast({ title: (e && e.message) || '网络错误', icon: 'none' });
+      console.warn('[order-claim] receipt submit', e);
+      const m = String((e && e.message) || '');
+      wx.showToast({ title: /上传失败$/.test(m) ? `${m}，请重试` : '提交没成功，请检查网络后再试', icon: 'none' });
     }
   },
 

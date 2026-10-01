@@ -51,10 +51,7 @@ Page({
         }
       } catch (err) {
         console.warn('[logistics-track] ensureWxExpress', err);
-        this._fail(
-          '同步物流失败',
-          (err && (err.errMsg || err.message)) || '请稍后重试，或复制运单号到快递服务查询。'
-        );
+        this._fail('暂未同步到物流', '请稍后重试，或复制运单号到快递服务查询。');
         return;
       }
     }

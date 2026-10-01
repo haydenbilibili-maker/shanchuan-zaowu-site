@@ -6,6 +6,7 @@ const { withAppModal } = require('../../../utils/appModal');
 // —— 真机 `<image src="cloud://…">` 是空白（本仓 utils/imageUrl.js 头注记录过这个坑，
 //    包装图片流也因此把「渲染态不许有 cloud:// 残留」写成了判据）。
 const { cloudIdToHttps } = require('../../../utils/imageUrl');
+const { formatDiscount } = require('../../../utils/profileHelper');
 
 // 物流查询插件：仅 business 分包 plugins.logisticsPlugin（provider wx9ad912bf20548d92；同 provider 不可多分包/根级重复声明）
 // 官方：requirePlugin + openWaybillTracking({ waybillToken })
@@ -87,6 +88,7 @@ Page(withAppModal({
     orderId: '',
     loading: true,
     loadError: false,
+    paying: false,
     
     // UI 状态控制
     stampClass: '',       // 印章样式类 (warn/active/success/void)
@@ -428,6 +430,7 @@ Page(withAppModal({
           discountAmount: hidePriceForViewer ? 0 : discountAmt,
           couponValue: hidePriceForViewer ? 0 : coupon,
           discountRate: data.discountRate || 1.0,
+          discountText: formatDiscount(data.discountRate || 1.0),
 
           // 🟢 关键：确保物流对象存在，防止 WXML 报错
           logistics: data.logistics || { 
@@ -702,7 +705,9 @@ Page(withAppModal({
       return;
     }
 
+    if (this.data.paying) return;
     wx.vibrateShort({ type: 'medium' });
+    this.setData({ paying: true });
     try {
       const payResult = await payForOrder(orderId);
       const pending = !!(payResult && payResult.pendingConfirm);
@@ -730,6 +735,8 @@ Page(withAppModal({
       } else {
         wx.showToast({ title: msg.replace(/^requestPayment:fail\s*/i, '').slice(0, 40), icon: 'none' });
       }
+    } finally {
+      this.setData({ paying: false });
     }
   },
 
@@ -1140,7 +1147,8 @@ Page(withAppModal({
       }
     } catch (e) {
       wx.hideLoading();
-      wx.showToast({ title: (e && e.message) || '确认失败，请稍后再试', icon: 'none' });
+      console.warn('[order-detail] retryConfirmPayment', e);
+      wx.showToast({ title: '暂未确认到结果，请稍后再试', icon: 'none' });
     } finally {
       this.setData({ payConfirmBusy: false });
     }

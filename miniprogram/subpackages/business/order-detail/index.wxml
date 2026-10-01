@@ -214,7 +214,7 @@
       </view>
       
       <view class="f-row highlight" wx:if="{{order.discountRate < 1}}">
-        <text>会员折扣 （{{order.discountRate * 10}}折）</text>
+        <text>会员折扣（{{order.discountText}}）</text>
         <text>- ¥ {{order.discountAmount}}</text>
       </view>
       <view class="f-row highlight" wx:if="{{order.couponValue > 0}}">
@@ -238,9 +238,9 @@
         <text wx:else>实付金额</text>
         <text class="gold-txt">¥ {{order.totalPrice}}</text>
       </view>
-      <view class="price-row" wx:if="{{depositCredit > 0}}">
+      <view class="f-row highlight" wx:if="{{depositCredit > 0}}">
         <text>已付定金抵扣</text>
-        <text class="gold-txt">-¥ {{depositCredit}}</text>
+        <text>- ¥ {{depositCredit}}</text>
       </view>
       <view class="f-row highlight" wx:if="{{order.refundDeduct > 0}}">
         <text>运输损耗（30%）</text>
@@ -312,8 +312,8 @@
     <!-- 待付款：支付 + 取消（仅买家） -->
     <view class="pending-pay-actions" wx:if="{{order.status === 'pending_pay' && !isGiftReceiver}}">
       <view class="btn-text cancel" catchtap="handleCancelOrder">取消订单</view>
-      <view class="hologram-btn flex-grow" catchtap="handlePay" hover-class="hologram-press">
-        <text>{{payBtnLabel || '立即支付'}} ¥{{order.totalPrice}}</text>
+      <view class="hologram-btn flex-grow {{paying ? 'is-busy' : ''}}" catchtap="handlePay" hover-class="{{paying ? '' : 'hologram-press'}}">
+        <text>{{paying ? '正在拉起支付…' : ((payBtnLabel || '立即支付') + ' ¥' + order.totalPrice)}}</text>
       </view>
     </view>
 

@@ -257,7 +257,8 @@ Page({
       console.error('aftersale submit', err);
       wx.hideLoading();
       this.setData({ submitting: false });
-      wx.showToast({ title: (err && err.message) || '提交失败', icon: 'none' });
+      const m = String((err && err.message) || '');
+      wx.showToast({ title: /上传失败$/.test(m) ? `${m}，请重试` : '提交没成功，请检查网络后再试', icon: 'none' });
     }
   }
 });

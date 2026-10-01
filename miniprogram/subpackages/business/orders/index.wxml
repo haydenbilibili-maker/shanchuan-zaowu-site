@@ -54,11 +54,17 @@
 
             <view class="card-body">
               <block wx:for="{{item.products}}" wx:key="id" wx:for-item="prod" wx:if="{{index < 1}}">
-                <image src="{{prod.image}}" mode="aspectFill" class="prod-img"></image>
+                <view class="prod-img-wrap">
+                  <image wx:if="{{prod.image}}" src="{{prod.image}}" mode="aspectFill" class="prod-img" lazy-load></image>
+                  <view wx:else class="prod-img prod-img-ph">
+                    <image class="prod-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+                  </view>
+                  <view class="prod-more" wx:if="{{item.products.length > 1}}">共 {{item.products.length}} 件</view>
+                </view>
                 <view class="prod-info">
                   <text class="prod-name">{{prod.title}}</text>
-                  <text class="prod-latin">{{prod.latin || 'Specimen'}}</text>
-                  <view class="sku-tag">数量： {{prod.count || item.count || 1}}</view>
+                  <text class="prod-latin" wx:if="{{prod.latin && !item.isVoucherOrder}}">{{prod.latin}}</text>
+                  <view class="sku-tag">× {{prod.count || item.count || 1}}</view>
                   <view class="sku-tag gift" wx:if="{{item.giftTag}}">{{item.giftTag}}</view>
                   <view class="sku-tag gift" wx:elif="{{item.depositTag}}">{{item.depositTag}}</view>
                 </view>
@@ -75,11 +81,11 @@
               <!-- 操作按钮 -->
               <view class="btn-group" style="display:flex; gap:20rpx;">
                  <!-- 待付款 -> 去支付（仅买家） -->
-                 <view class="btn-action primary" hover-class="btn-action-press" 
+                 <view class="btn-action primary {{payingId === item._id ? 'is-busy' : ''}}" hover-class="btn-action-press" 
                       wx:if="{{item.status === 'pending_pay' && !item.isGiftReceiver}}" 
                       catchtap="handlePay" 
                       data-id="{{item._id}}">
-                  {{item.payBtnLabel || '立即支付'}}
+                  {{payingId === item._id ? '支付中…' : (item.payBtnLabel || '立即支付')}}
                 </view>
 
                 <!-- 送礼人：待填址 -> 分享礼笺 -->
@@ -141,8 +147,8 @@
         <view class="safe-box-icon">
            <view class="lock"></view><view class="led"></view>
         </view>
-        <text class="empty-title">{{loadError ? '档案读取失败' : '暂无相关记录'}}</text>
-        <text class="empty-desc">{{loadError ? '请检查网络后重试' : '下单后档案会出现在这里'}}</text>
+        <text class="empty-title">{{loadError ? '档案读取失败' : tabs[curTab].emptyTitle}}</text>
+        <text class="empty-desc">{{loadError ? '请检查网络后重试' : tabs[curTab].emptyDesc}}</text>
         <view class="empty-cta" wx:if="{{loadError}}" bindtap="loadOrders" hover-class="empty-cta-press">重新加载</view>
         <navigator class="empty-cta" wx:else url="/pages/index/index" open-type="switchTab" hover-class="empty-cta-press">去逛逛</navigator>
       </view>

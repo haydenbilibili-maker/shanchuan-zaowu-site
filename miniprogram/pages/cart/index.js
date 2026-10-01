@@ -730,10 +730,15 @@ Page(withAppModal({
       danger: true
     }).then(async (res) => {
       if (res.confirm) {
-        await wx.cloud.callFunction({
-          name: 'toggleCollection',
-          data: { engage: 'cartItem', action: 'removeCart', id: item._id }
-        });
+        try {
+          await wx.cloud.callFunction({
+            name: 'toggleCollection',
+            data: { engage: 'cartItem', action: 'removeCart', id: item._id }
+          });
+        } catch (err) {
+          console.warn('cart remove', err);
+          this.showAppToast({ overline: 'FAILED', title: '没能移除，请稍后再试' });
+        }
         this.loadCollection();
       } else {
         this.data.cartList[idx].isTouchMove = false;
@@ -773,7 +778,7 @@ Page(withAppModal({
       if (!coupon) return;
       const base = this.data.couponBaseAmount || 0;
       if (coupon.minSpend && base < coupon.minSpend) {
-        wx.showToast({ title: `满 ${coupon.minSpend} 可用`, icon: 'none' });
+        wx.showToast({ title: `满 ¥${coupon.minSpend} 可用`, icon: 'none' });
         return;
       }
       this.setData({ selectedCoupon: coupon });

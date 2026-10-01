@@ -267,8 +267,7 @@ page {
 
 .thumb { width: 100%; height: 100%; background: var(--color-bg-elevated); }
 
-/* 缩略图缺图占位（2026-09-20 新增）：与 .thumb 同尺寸同底，让"缺图"读得出来。
-   此前 onCartThumbError 清空 src 后模板没有 wx:else → 那一格直接空白。 */
+/* 缺图占位：onCartThumbError 清空 src 后走 wx:else */
 .thumb-ph {
   width: 100%;
   height: 100%;
@@ -618,9 +617,7 @@ page {
   background: var(--color-bg-elevated);
 }
 
-/* 2026-09-20：原 `opacity: 0.45` 的图标压在 --color-bg-elevated(#262320) 深底上 ≈ 看不见，
-   加载失败时用户看到的是**深色空块**，会被当成渲染 bug（真机反馈）。
-   抬到 0.8 + 补一行文案，让"缺图"这件事自己说出来。 */
+/* 深底上 0.45 看不见（真机），须 ≥ 0.8 */
 .rec-img-ph-icon {
   width: 56rpx;
   height: 56rpx;
@@ -858,7 +855,8 @@ page {
 
 .cp-meta { display: flex; flex-direction: column; gap: 4rpx; min-width: 0; }
 .cp-name { font-size: 26rpx; color: var(--color-text-primary); }
-.cp-cond { font-size: 22rpx; color: var(--color-text-muted); }
+.cp-cond { font-size: 22rpx; color: var(--color-text-secondary); }
+.sheet-empty { padding: 48rpx 0; text-align: center; font-size: 24rpx; color: var(--color-text-secondary); }
 
 .radio {
   width: 36rpx;

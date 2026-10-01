@@ -1,0 +1,206 @@
+#!/usr/bin/env node
+/**
+ * B 流细节雕刻守卫（C 端交易与「我的」展示层）—— 产品负责人 2026-10-01「细节雕刻」。
+ * 记录：miniprogram/docs/细节雕刻_B流_2026-10.md
+ *
+ * 只钉**展示层**里改过、且回退了顾客看得见的几件事（不碰契约 / 流程 / 金额）：
+ *   B1 订单详情折扣：不得再用 `discountRate * 10` 拼「N折」（0.7×10 = 7.000000000000001），
+ *      须用 js 里 formatDiscount 产出的 `order.discountText`；
+ *   B2 订单详情账单区：用到的每个类名都必须在本页 wxss 里有定义
+ *      （「已付定金抵扣」曾用了不存在的 `price-row` → 标签与金额挤成一团）；
+ *   B3 支付防重入：订单列表 / 详情的 handlePay 在调 payForOrder 之前判「进行中」直接返回，
+ *      并在 finally 里复位（否则一次失败后按钮永远卡在「支付中…」）；
+ *   B4 失败提示不透原文：范围内页面的 toast / 失败副标题不得直接拼 `err.errMsg` / `err.message`
+ *      （`navigateTo:fail …`、`cloud.callFunction:fail …` 会原样给到顾客）；
+ *   B5 礼券门槛：购物车 / 确认下单弹层不得出现「满 0 可用」形态（无门槛券须写「无门槛」）；
+ *   B6 订单列表卡片：不得用占位英文 `Specimen` 冒充学名（错题本 E11），缩略图缺图须有占位分支。
+ *
+ * 自检不写盘：注入在内存副本上做（共享工作区有并行流，写盘注入会覆盖别人的在写内容）。
+ *
+ * 用法：
+ *   node miniprogram/scripts/check-bflow-polish.mjs
+ *   node miniprogram/scripts/check-bflow-polish.mjs --selftest
+ */
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+const B = 'miniprogram/subpackages/business'
+
+const F = {
+  odWxml: `${B}/order-detail/index.wxml`,
+  odWxss: `${B}/order-detail/index.wxss`,
+  odJs: `${B}/order-detail/index.js`,
+  ordersWxml: `${B}/orders/index.wxml`,
+  ordersJs: `${B}/orders/index.js`,
+  cartWxml: 'miniprogram/pages/cart/index.wxml',
+  confirmWxml: `${B}/confirm-order/index.wxml`
+}
+
+/** B4 扫描范围（逐轮扩充；只加不减） */
+const NO_RAW_ERROR_FILES = [
+  F.ordersJs,
+  F.odJs,
+  `${B}/aftersale-apply/index.js`,
+  `${B}/order-claim/index.js`,
+  `${B}/logistics-track/index.js`,
+  'miniprogram/pages/cart/index.js',
+  `${B}/confirm-order/index.js`
+]
+
+const read = (f) => readFileSync(resolve(ROOT, f), 'utf8')
+const stripJsComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1')
+const stripCssComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '')
+
+/** 取 Page 方法体：从 `  name(` / `  async name(` 到下一个同缩进方法头（语法边界 —— 错题本 E7） */
+function methodBody(src, name) {
+  const re = new RegExp(`\\n  (?:async )?${name}\\s*\\([^)]*\\)\\s*\\{`)
+  const m = re.exec(src)
+  if (!m) return ''
+  const rest = src.slice(m.index + m[0].length)
+  const next = /\n  (?:async )?[A-Za-z_$][\w$]*\s*\([^)]*\)\s*\{/.exec(rest)
+  return next ? rest.slice(0, next.index) : rest
+}
+
+/** 取 wxml 里以 `class="<cls> …"` 开头的那个 view 块（按 <view>/</view> 配平） */
+function viewBlock(wxml, cls) {
+  const start = wxml.search(new RegExp(`<view[^>]*class="${cls}[\\s"]`))
+  if (start < 0) return ''
+  const re = /<view\b|<\/view>/g
+  re.lastIndex = start
+  let depth = 0
+  let m
+  while ((m = re.exec(wxml))) {
+    depth += m[0] === '</view>' ? -1 : 1
+    if (depth === 0) return wxml.slice(start, m.index + m[0].length)
+  }
+  return wxml.slice(start)
+}
+
+/** 静态类名（去掉 {{…}} 表达式后剩下的 token） */
+function staticClasses(block) {
+  const out = new Set()
+  for (const m of block.matchAll(/class="([^"]*)"/g)) {
+    for (const t of m[1].replace(/\{\{[^}]*\}\}/g, ' ').split(/\s+/)) if (t) out.add(t)
+  }
+  return out
+}
+
+function definedClasses(css) {
+  const out = new Set()
+  for (const m of stripCssComments(css).matchAll(/\.([A-Za-z_][\w-]*)/g)) out.add(m[1])
+  return out
+}
+
+export function runChecks(src) {
+  const fails = []
+  let pass = 0
+  const check = (id, ok, detail) => {
+    if (ok) pass += 1
+    else fails.push(`${id}${detail ? ` —— ${detail}` : ''}`)
+  }
+
+  // B1
+  check('B1.no-float-discount', !/discountRate\s*\*\s*10/.test(src[F.odWxml]), '订单详情 wxml 仍用 discountRate * 10 拼折扣')
+  check('B1.uses-discountText', /order\.discountText/.test(src[F.odWxml]), '订单详情 wxml 未使用 order.discountText')
+  check('B1.js-formatDiscount', /discountText:\s*formatDiscount\(/.test(stripJsComments(src[F.odJs])), '订单详情 js 未用 formatDiscount 产出 discountText')
+
+  // B2
+  const finance = viewBlock(src[F.odWxml], 'finance-section')
+  check('B2.finance-block-found', !!finance, '找不到 finance-section 块')
+  const defined = definedClasses(src[F.odWxss])
+  const missing = [...staticClasses(finance)].filter((c) => !defined.has(c))
+  check('B2.finance-classes-defined', missing.length === 0, `账单区类名在 wxss 中无定义：${missing.join(', ')}`)
+
+  // B3
+  for (const [tag, file, flag, reset] of [
+    ['orders', F.ordersJs, /if\s*\(\s*this\.data\.payingId\s*\)\s*return/, /finally\s*\{[^}]*payingId:\s*''/],
+    ['detail', F.odJs, /if\s*\(\s*this\.data\.paying\s*\)\s*return/, /finally\s*\{[^}]*paying:\s*false/]
+  ]) {
+    const body = stripJsComments(methodBody(src[file], 'handlePay'))
+    const guardAt = body.search(flag)
+    const payAt = body.indexOf('payForOrder(')
+    check(`B3.${tag}-guard-before-pay`, guardAt >= 0 && payAt > guardAt, 'handlePay 调 payForOrder 前没有「进行中即返回」')
+    check(`B3.${tag}-finally-reset`, reset.test(body), 'handlePay 没有在 finally 里复位进行中状态')
+  }
+
+  // B4
+  const RAW = /(?:title|content)\s*:\s*[^\n,]*\b(?:err|e|error)\s*(?:&&\s*(?:err|e|error)\.\w+\s*)?\.(?:errMsg|message)|_fail\([^)]*\b(?:err|e|error)\.(?:errMsg|message)|'[^']*'\s*\+\s*\(?\s*(?:err|e|error)\.(?:errMsg|message)/
+  for (const f of NO_RAW_ERROR_FILES) {
+    const lines = stripJsComments(src[f]).split('\n')
+    const hits = lines.map((l, i) => [i + 1, l]).filter(([, l]) => RAW.test(l))
+    check(`B4.${f.split('/').slice(-2, -1)[0]}`, hits.length === 0, hits.map(([n, l]) => `${f}:${n} ${l.trim()}`).join(' | '))
+  }
+
+  // B5
+  for (const [tag, file] of [['cart', F.cartWxml], ['confirm', F.confirmWxml]]) {
+    const w = src[file]
+    check(`B5.${tag}-no-bare-minspend`, !/满\s*\{\{\s*item\.minSpend\s*\}\}\s*可用/.test(w), '礼券门槛直接插值 minSpend（会出现「满 0 可用」）')
+    check(`B5.${tag}-no-threshold-label`, /无门槛/.test(w), '礼券弹层缺「无门槛」分支')
+  }
+
+  // B6
+  const ow = src[F.ordersWxml]
+  check('B6.no-specimen-placeholder', !/'Specimen'/.test(ow), "订单卡用 'Specimen' 冒充学名")
+  check('B6.thumb-placeholder', /prod-img-ph/.test(ow) && /wx:if="\{\{prod\.image\}\}"/.test(ow), '订单卡缩略图缺图无占位分支')
+
+  return { pass, fails }
+}
+
+function loadAll() {
+  const src = {}
+  for (const f of new Set([...Object.values(F), ...NO_RAW_ERROR_FILES])) src[f] = read(f)
+  return src
+}
+
+function report({ pass, fails }) {
+  for (const f of fails) console.error(`  ✗ ${f}`)
+  if (fails.length) {
+    console.error(`✗ check:bflow-polish：${fails.length} 项失败 / ${pass} 项通过`)
+    return 1
+  }
+  console.log(`✓ check:bflow-polish：${pass} 项通过（折扣文案 / 账单类名 / 支付防重入 / 失败不透原文 / 礼券门槛 / 订单卡占位）`)
+  return 0
+}
+
+const INJECTIONS = [
+  ['B1 折扣回退成浮点拼接', F.odWxml, (s) => s.replace('{{order.discountText}}', '{{order.discountRate * 10}}折')],
+  ['B2 定金抵扣行用回未定义类名', F.odWxml, (s) => s.replace('<view class="f-row highlight" wx:if="{{depositCredit > 0}}">', '<view class="price-row" wx:if="{{depositCredit > 0}}">')],
+  ['B3 列表支付去掉防重入', F.ordersJs, (s) => s.replace('if (this.data.payingId) return;', '')],
+  ['B3 详情支付 finally 不复位', F.odJs, (s) => s.replace('this.setData({ paying: false });', '')],
+  ['B4 跳转失败拼回 errMsg', F.ordersJs, (s) => s.replace("wx.showToast({ title: '暂时打不开订单详情，请稍后再试', icon: 'none' });", "wx.showToast({ title: '跳转失败： ' + (err.errMsg || '未知错误'), icon: 'none' });")],
+  ['B4 售后提交透出 err.message', `${B}/aftersale-apply/index.js`, (s) => s.replace("wx.showToast({ title: /上传失败$/.test(m)", "wx.showToast({ title: (err && err.message) || /上传失败$/.test(m)")],
+  ['B5 购物车门槛回到「满 0 可用」', F.cartWxml, (s) => s.replace("{{item.minSpend > 0 ? '满 ¥' + item.minSpend + ' 可用' : '无门槛'}}", '满 {{item.minSpend}} 可用')],
+  ['B6 学名回填占位 Specimen', F.ordersWxml, (s) => s.replace('{{prod.latin}}</text>', "{{prod.latin || 'Specimen'}}</text>")]
+]
+
+if (process.argv.includes('--selftest')) {
+  const base = loadAll()
+  const clean = runChecks(base)
+  if (clean.fails.length) {
+    console.error('✗ 自检前置：基线本身不绿')
+    process.exit(report(clean))
+  }
+  let ok = 0
+  for (const [name, file, mut] of INJECTIONS) {
+    const injected = mut(base[file])
+    if (injected === base[file]) {
+      console.error(`  ✗ 注入锚点失效：${name}`)
+      continue
+    }
+    const r = runChecks({ ...base, [file]: injected })
+    if (r.fails.length) {
+      ok += 1
+      console.log(`  ✓ 检出：${name}`)
+    } else console.error(`  ✗ 未检出：${name}`)
+  }
+  if (ok !== INJECTIONS.length) {
+    console.error(`✗ 自检：${ok}/${INJECTIONS.length} 条注入被检出`)
+    process.exit(1)
+  }
+  console.log(`✓ 自检：${ok}/${INJECTIONS.length} 条注入全部检出（内存副本，不写盘）`)
+  process.exit(0)
+}
+
+process.exit(report(runChecks(loadAll())))

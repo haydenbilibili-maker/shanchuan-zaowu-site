@@ -80,8 +80,6 @@
 
                 <view class="card-body">
                   <view class="thumb-wrap" catchtap="goToDetail" data-id="{{item.productId}}">
-                    <!-- 2026-09-20：补占位分支。此前 onCartThumbError 只把 image 清空，
-                         而模板里**没有 wx:else** → src 为空 → 那一格直接空白（连"缺图"都看不出来）。 -->
                     <image class="thumb" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" lazy-load binderror="onCartThumbError" data-index="{{index}}"></image>
                     <view class="thumb-ph" wx:else>
                       <image class="thumb-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
@@ -331,8 +329,7 @@
               <text class="cp-val">{{item.faceLabel || ('¥' + item.value)}}</text>
               <view class="cp-meta">
                 <text class="cp-name">{{item.title}}</text>
-                <text class="cp-cond">满 {{item.minSpend}} 可用</text>
-                <!-- 展示本单实际可省，而非券面额 -->
+                <text class="cp-cond">{{item.minSpend > 0 ? '满 ¥' + item.minSpend + ' 可用' : '无门槛'}}</text>
                 <text class="cp-save" wx:if="{{item._save > 0}}">本单可省 ¥{{item._save}}</text>
                 <text class="cp-save is-off" wx:elif="{{item._reason}}">{{item._reason}}</text>
               </view>
@@ -340,6 +337,7 @@
             <view class="radio {{selectedCoupon._id === item._id ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{selectedCoupon._id === item._id}}"></view></view>
           </view>
         </block>
+        <view class="sheet-empty" wx:if="{{!coupons.length}}">暂无可用礼券</view>
       </scroll-view>
     </view>
   </view>
