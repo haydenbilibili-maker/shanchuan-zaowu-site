@@ -88,7 +88,18 @@ const sample = {
   curTab: 0, workspaceReady: true, artisanEmbed: false, greeting: '晚上好', staffName: '李', todayDate: '10月1日 周四',
   orders: N(3), newOrderUnreadCount: 1, customOrders: N(2), supportTickets: N(1), framerRecruitApps: N(1),
   approvalPendingCount: 2, invoicePendingCount: 1, giftTodoCount: 2, liveDash: { statusTone: '' },
-  opsInfoFeed: [], opsSignalExpanded: false,
+  opsInfoFeed: [
+    { id: 'f1', lamp: 'danger', text: '收环比 -12%', target: 'mom' },
+    { id: 'f2', lamp: 'warn', text: '有信待回 1', target: 'support' },
+    { id: 'f3', lamp: 'warn', text: '审批待办 2', target: 'x' }
+  ],
+  opsInfoFeedSets: [[
+    { id: 'f1', lamp: 'danger', text: '收环比 -12%', target: 'mom' },
+    { id: 'f2', lamp: 'warn', text: '有信待回 1', target: 'support' },
+    { id: 'f3', lamp: 'warn', text: '审批待办 2', target: 'x' }
+  ]],
+  opsInfoFeedAnimSec: 0, opsInfoFeedAnimStyle: '',
+  opsSignalExpanded: false,
   opsSignalSummary: { attentionCount: 2, label: '需关注', worstLamp: 'warn', chips: [{ id: 'a', lamp: 'warn', text: '待发 3', target: 'pending' }, { id: 'b', lamp: 'warn', text: '审批 2', target: 'x' }] },
   stats: {
     displayGrand: '128,640', onlineTotal: '86,200', offlineTotal: '42,440', offlineSplitText: '', ratioEmpty: false,
@@ -194,12 +205,10 @@ for (const s of SCENES) {
   const meas = JSON.parse(m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'))
   writeFileSync(join(outDir, `${tag}.measure.json`), JSON.stringify(meas, null, 1))
   writeFileSync(htmlPath, htmlFor(data, ''))
-  // 全部功能样式对照：优先截「全部功能」区块（含上下留白），不够再退回首屏
-  const cat = meas.catalogBox || { top: 0, height: FIRST_SCREEN }
-  const catShotH = Math.min(Math.max(cat.top + cat.height + 40, 900), meas.pageHeight + 40)
-  await screenshot(htmlPath, join(outDir, `${tag}.png`), catShotH)
+  await screenshot(htmlPath, join(outDir, `${tag}.png`), meas.pageHeight + 40)
+  await screenshot(htmlPath, join(outDir, `${tag}-first.png`), FIRST_SCREEN)
   try { rmSync(htmlPath, { force: true }) } catch { /* ignore */ }
   summary[tag] = { pageHeight: meas.pageHeight, tiles: meas.tiles, firstScreenTiles: meas.firstScreenTiles, firstScreenTodo: meas.firstScreenTodo, catalog: meas.catalogBox }
-  console.log(`✓ ${tag}：整页 ${meas.pageHeight}px，入口 ${meas.tiles}，目录区 top=${cat.top} h=${cat.height} → ${outDir}/${tag}.png`)
+  console.log(`✓ ${tag}：整页 ${meas.pageHeight}px，入口 ${meas.tiles}，首屏入口 ${meas.firstScreenTiles} + 待办 ${meas.firstScreenTodo} → ${outDir}`)
 }
 writeFileSync(join(outDir, 'summary.json'), JSON.stringify(summary, null, 1))

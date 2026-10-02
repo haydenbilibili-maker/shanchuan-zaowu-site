@@ -487,7 +487,7 @@ function judge(src) {
  *   N2 每个入口都有一句大白话说明 —— 清单 desc 非空、≤ 16 字、无英文字母与技术词，且与列表行里的说明逐字一致；
  *   N3 待处理横条包含所有带角标的入口 —— 每个入口角标的数据源都映射到 HUB_TODOS（badge / merged），权限键一致；
  *      三角色计数全 > 0 时实跑；新单未读合并在待发订单数里；横条用同一枚 hub-badge 红色数字；
- *      首屏顺序 金卡 → 经营信号 → 搜索（超管）→ 待处理 → 扫码 → 常用 → 全部功能；
+ *      首屏顺序 信息流 → 搜索（超管）→ 待处理 → 金卡 → 经营信号 → 扫码 → 常用 → 全部功能；
  *   N4「编辑」是常用的显式入口（常用区右上角，tap-press，打开编辑面板），全工作台没有长按加入；
  *   N5 搜索只在入口 > 20 的角色出现（超管有、店长 / 店员没有），按名称 / 别名 / 分组名 / 子项名找，只在有权限的入口里找；
  *   N6 超管分区默认折叠（组头用入口图标芯片预览前几项 + 组待办红数字）、店长 / 店员默认全部展开；组头点按切换。
@@ -607,16 +607,17 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
     errs.push('N3 待处理横条须按 hubTodo.items 渲染、绑 onHubTodo、tap-press，计数用同一枚 hub-badge 红色数字')
   }
   const at = (re) => { const m = re.exec(src.wxml); return m ? m.index : -1 }
-  const kpiAt = at(/<view class="kpi-card gold-card"/)
-  const signalAt = at(/<view class="ops-signal-board/)
+  const feedAt = at(/<!-- 信息流跑马灯/)
   const searchAt = at(/<view class="hub-search" wx:if="\{\{hubCat\.search\}\}">/)
   const todoAt = at(/<view class="hub-todo" wx:if="\{\{hubTodo\.items\.length\}\}">/)
+  const kpiAt = at(/<view class="kpi-card gold-card"/)
+  const signalAt = at(/<view class="ops-signal-board/)
   const ctaAt = at(/<view class="hub-scan-cta"/)
   const favAt = at(/<view class="hub-fav">/)
   const catAt = at(/<view class="grid-item full-width hub-nav">/)
-  if ([kpiAt, signalAt, searchAt, todoAt, ctaAt, favAt, catAt].some((x) => x < 0)
-    || !(kpiAt < signalAt && signalAt < searchAt && searchAt < todoAt && todoAt < ctaAt && ctaAt < favAt && favAt < catAt)) {
-    errs.push('N3 首屏顺序须为「金卡 → 经营信号 → 搜索（超管）→ 待处理横条 → 扫码主按钮 → 我的常用 → 全部功能」')
+  if ([feedAt, searchAt, todoAt, kpiAt, signalAt, ctaAt, favAt, catAt].some((x) => x < 0)
+    || !(feedAt < searchAt && searchAt < todoAt && todoAt < kpiAt && kpiAt < signalAt && signalAt < ctaAt && ctaAt < favAt && favAt < catAt)) {
+    errs.push('N3 首屏顺序须为「信息流 → 搜索（超管）→ 待处理横条 → 金卡 → 经营信号 → 扫码主按钮 → 我的常用 → 全部功能」')
   }
 
   // ── N4「编辑」是常用的显式入口 ──
@@ -782,12 +783,12 @@ if (!selftest) {
     ['N3 待办权限键写宽', rep('hubNav', "{ id: 'recruit', label: '合作申请', keys: ['framerRecruit']", "{ id: 'recruit', label: '合作申请', keys: ['framers', 'framerRecruit']"), /N3 待办「合作申请」权限键/],
     ['N3 计数为 1 的项被吞', rep('hubNav', '    if (n <= 0) return\n', '    if (n <= 1) return\n'), /N3 .*待处理横条却没有/],
     ['N3 横条计数换成另一种标记', rep('wxml', '<text class="hub-badge">{{item.count}}</text>', '<text class="hub-todo-num">{{item.count}}</text>'), /N3 待处理横条须按 hubTodo\.items 渲染/],
-    ['N3 待办卡挪到金卡之前', (s) => {
-      const m = s.wxml.match(/  <!-- 待办卡[\s\S]*?\n  <!-- 首屏主 CTA/)
-      if (!m) throw new Error('注入锚点失效：待办卡块')
-      const block = m[0].replace(/\n  <!-- 首屏主 CTA$/, '\n')
-      // 把待办插到金卡之前，破坏「金卡 → … → 待处理」顺序
-      return { ...s, wxml: s.wxml.replace(m[0], '\n  <!-- 首屏主 CTA').replace('  <!-- 核心指标卡片', `${block}  <!-- 核心指标卡片`) }
+    ['N3 搜索待办挪到金卡之后', (s) => {
+      const m = s.wxml.match(/  <!-- 功能搜索[\s\S]*?\n  <!-- 核心指标卡片/)
+      if (!m) throw new Error('注入锚点失效：搜索+待办块')
+      const block = m[0].replace(/\n  <!-- 核心指标卡片$/, '\n')
+      // 把搜索+待办挪到经营信号之后，破坏「信息流 → 搜索 → 待处理 → 金卡」顺序
+      return { ...s, wxml: s.wxml.replace(m[0], '\n  <!-- 核心指标卡片').replace('  <!-- 首屏主 CTA', `${block}  <!-- 首屏主 CTA`) }
     }, /N3 首屏顺序须为/],
     // N4「编辑」入口
     ['N4 编辑按钮被删', rep('wxml', '<view class="hub-fav-edit" bindtap="openFavEditor" hover-class="tap-press" hover-stay-time="80">编辑</view>', ''), /N4 常用区右上角须有「编辑」按钮/],
