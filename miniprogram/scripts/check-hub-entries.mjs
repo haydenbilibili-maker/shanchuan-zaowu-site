@@ -143,8 +143,8 @@ function menuKeysOf(expr, errs, where) {
   return uniq(keys)
 }
 
-/** 分区开标签（2026-10-01 方案 A：可折叠列表组 hub-grp，wx:if 与锚点 id 必须一致） */
-const SEC_RE = /<view class="hub-grp" wx:if="\{\{hubSec\.(\w+)\}\}" id="hub-sec-(\w+)">/g
+/** 分区开标签（2026-10-02：整块手风琴内的 hub-grp，可带 hub-grp--<id> / is-folded|is-open；wx:if 与锚点 id 必须一致） */
+const SEC_RE = /<view class="hub-grp[^"]*" wx:if="\{\{hubSec\.(\w+)\}\}" id="hub-sec-(\w+)">/g
 
 function parseTiles(wxml, errs) {
   const secs = []
@@ -155,7 +155,7 @@ function parseTiles(wxml, errs) {
     secs.push({ id: m[1], at: m.index })
   }
   const looseSecs = (wxml.match(/<view class="hub-grp[\s"]/g) || []).length
-  if (looseSecs !== secs.length) errs.push(`有 ${looseSecs - secs.length} 个分区开标签不是「class="hub-grp" wx:if="{{hubSec.<id>}}" id="hub-sec-<id>"」形态`)
+  if (looseSecs !== secs.length) errs.push(`有 ${looseSecs - secs.length} 个分区开标签不是「class="hub-grp…" wx:if="{{hubSec.<id>}}" id="hub-sec-<id>"」形态`)
   const tiles = []
   const tileRe = /<view class="hub-row"[^>]*>/g
   while ((m = tileRe.exec(wxml))) {
@@ -490,7 +490,7 @@ function judge(src) {
  *      首屏顺序 金卡 → 经营信号 → 搜索（超管）→ 待处理 → 扫码 → 常用 → 全部功能；
  *   N4「编辑」是常用的显式入口（常用区右上角，tap-press，打开编辑面板），全工作台没有长按加入；
  *   N5 搜索只在入口 > 20 的角色出现（超管有、店长 / 店员没有），按名称 / 别名 / 分组名 / 子项名找，只在有权限的入口里找；
- *   N6 超管分区默认折叠（组头列前几个入口名）、店长 / 店员默认全部展开；组头点按切换。
+ *   N6 超管分区默认折叠（组头用入口图标芯片预览前几项 + 组待办红数字）、店长 / 店员默认全部展开；组头点按切换。
  *   另：列表行同一规格（class 只许 hub-row、tap-press 80ms、data-fid = 清单 id），二级面板入口点按走 openHubGroup（底部 sheet）。
  */
 function menuOf(roles, role) {
@@ -660,20 +660,42 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
     const close = closeOf(src.wxml, s.at)
     const body = close > 0 ? src.wxml.slice(s.at, close) : ''
     if (!new RegExp(`<view class="hub-grp-head" bindtap="onHubFold" data-sec="${s.id}" hover-class="tap-press" hover-stay-time="80">`).test(body)) errs.push(`N6 分区 ${s.id} 组头须 bindtap="onHubFold" data-sec="${s.id}"（tap-press）`)
-    if (!body.includes(`{{hubFold.${s.id} ? hubPeek.${s.id} : '收起'}}`)) errs.push(`N6 分区 ${s.id} 折叠时组头须显示前几个入口名（hubPeek.${s.id}）`)
+    if (!new RegExp(`<view class="hub-grp-chips" wx:if="\\{\\{hubFold\\.${s.id}\\}\\}">[\\s\\S]*?wx:for="\\{\\{hubPeek\\.${s.id}\\.chips\\}\\}"`).test(body)) {
+      errs.push(`N6 分区 ${s.id} 折叠时组头须用入口图标芯片预览（hubPeek.${s.id}.chips）`)
+    }
     if (!new RegExp(`<view class="hub-list" wx:if="\\{\\{!hubFold\\.${s.id}\\}\\}">`).test(body)) errs.push(`N6 分区 ${s.id} 列表须 wx:if="{{!hubFold.${s.id}}}"（折叠即收起）`)
   }
   if (!/\n  onHubFold\(e\) \{[\s\S]{0,300}\[`hubFold\.\$\{id\}`\]: !this\.data\.hubFold\[id\]/.test(src.indexJs)) errs.push('N6 onHubFold 须切换该分区的 hubFold')
   for (const [role, label, want] of [[SUPER, '超管', true], [MGR, '店长', false], [STAFF, '店员', false]]) {
     const menu = menuOf(roles, role)
-    const cat = nav.buildCatalog(menu)
+    const cat = nav.buildCatalog(menu, {})
     for (const s of nav.HUB_SECTIONS || []) {
-      const names = entries.filter((e) => e.sec === s.id && e.keys.some((k) => menu[k])).map((e) => e.label)
+      const entries = (nav.HUB_ENTRIES || []).filter((e) => e.sec === s.id && e.keys.some((k) => menu[k]))
+      const names = entries.map((e) => e.label)
       if (!names.length) continue
       if (cat.hubFold[s.id] !== want) errs.push(`N6 ${label}：分区「${s.title}」默认应${want ? '折叠' : '展开'}（hubFold=${cat.hubFold[s.id]}）`)
-      const peek = String(cat.hubPeek[s.id] || '')
-      if (!peek.startsWith(names.slice(0, Math.min(names.length, 3)).join('、'))) errs.push(`N6 ${label}：分区「${s.title}」组头预览须列前几个入口名（当前「${peek}」）`)
+      const peek = cat.hubPeek[s.id] || {}
+      const chips = peek.chips || []
+      const wantChips = entries.slice(0, Math.min(entries.length, 4)).map((e) => e.label)
+      if (chips.map((c) => c.label).join('、') !== wantChips.join('、')) {
+        errs.push(`N6 ${label}：分区「${s.title}」组头芯片须列前几个入口（当前 [${chips.map((c) => c.label)}]）`)
+      }
+      if (!chips.every((c) => c.icon)) errs.push(`N6 ${label}：分区「${s.title}」芯片须带图标`)
+      if (String(peek.labels || '').indexOf(names.slice(0, Math.min(names.length, 3)).join('、')) !== 0) {
+        errs.push(`N6 ${label}：分区「${s.title}」labels 兜底须列前几个入口名（当前「${peek.labels}」）`)
+      }
     }
+  }
+  // 组头待办角标：有计数时写进 hubPeek.<id>.badge（与入口角标同源）
+  try {
+    const sm = menuOf(roles, SUPER)
+    const hot = nav.buildCatalog(sm, {
+      menu: sm, orders: [1, 2], newOrderUnreadCount: 3, customOrders: [1], supportTickets: [1],
+      framerRecruitApps: [1], approvalPendingCount: 2, invoicePendingCount: 1, giftTodoCount: 4
+    })
+    if (!hot.hubPeek.orders || !hot.hubPeek.orders.badge) errs.push('N6 超管订单履约组头在有待办时应显示红色数字角标（hubPeek.orders.badge）')
+  } catch (e) {
+    errs.push(`N6 组头角标实跑失败：${e.message}`)
   }
 }
 
@@ -779,9 +801,10 @@ if (!selftest) {
     // N6 超管默认折叠、店长默认展开
     ['N6 超管不再默认折叠', rep('hubNav', '    fold[s.id] = many\n', '    fold[s.id] = false\n'), /N6 超管：分区「订单履约」默认应折叠/],
     ['N6 店长也被折叠', rep('hubNav', '    fold[s.id] = many\n', '    fold[s.id] = true\n'), /N6 店长：分区「订单履约」默认应展开/],
-    ['N6 组头预览丢了入口名', rep('hubNav', '    peek[s.id] = peekText(names)\n', "    peek[s.id] = `${names.length} 项`\n"), /N6 超管：分区「.*」组头预览须列前几个入口名/],
+    ['N6 组头芯片被清空', rep('hubNav', '    peek[s.id] = buildPeek(entries, data)\n', "    peek[s.id] = { mark: '', n: '0', chips: [], more: 0, labels: `${entries.length} 项`, badge: '' }\n"), /N6 超管：分区「.*」组头芯片须列前几个入口/],
     ['N6 列表不随折叠收起', rep('wxml', '<view class="hub-list" wx:if="{{!hubFold.biz}}">', '<view class="hub-list">'), /N6 分区 biz 列表须/],
-    ['N6 组头不能点', rep('wxml', 'bindtap="onHubFold" data-sec="studio"', 'data-sec="studio"'), /N6 分区 studio 组头须/]
+    ['N6 组头不能点', rep('wxml', 'bindtap="onHubFold" data-sec="studio"', 'data-sec="studio"'), /N6 分区 studio 组头须/],
+    ['N6 组头待办角标不算数', rep('hubNav', '  entries.forEach((e) => { badge += entryBadgeNum(e, data) })\n', '  entries.forEach((e) => { badge += 0 })\n'), /N6 超管订单履约组头在有待办时应显示红色数字角标/]
   ]
   let bad = 0
   const baseline = run(base)

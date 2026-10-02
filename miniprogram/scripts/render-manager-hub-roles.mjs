@@ -33,6 +33,7 @@ const argOf = (n, d) => {
 const outDir = argOf('--out-dir', join(tmpdir(), 'manager-hub-roles'))
 const rev = argOf('--rev', '')
 const only = argOf('--only', '')
+const openSec = argOf('--open', '') // 强制展开某一分区（证明展开态样式），如 orders
 mkdirSync(outDir, { recursive: true })
 
 const read = (rel) => (rev
@@ -114,6 +115,9 @@ function dataFor(role) {
   const favIds = hubNav.defaultFavs(role, menu)
   d.hubFav = hubNav.buildFavView(favIds, d)
   if (typeof hubNav.buildHubView === 'function') Object.assign(d, hubNav.buildHubView(favIds, d))
+  if (openSec && d.hubFold && Object.prototype.hasOwnProperty.call(d.hubFold, openSec)) {
+    d.hubFold = { ...d.hubFold, [openSec]: false }
+  }
   return d
 }
 
@@ -179,20 +183,23 @@ const SCENES = [
 const summary = {}
 for (const s of SCENES) {
   const data = dataFor(s.role)
-  const htmlPath = join(tmpdir(), `hub-roles-${s.name}-${process.pid}.html`)
+  const tag = openSec ? `${s.name}-open-${openSec}` : s.name
+  const htmlPath = join(tmpdir(), `hub-roles-${tag}-${process.pid}.html`)
   writeFileSync(htmlPath, htmlFor(data, `<script>${MEASURE_JS}</script>`))
   const mp = mkdtempSync(join(tmpdir(), 'hub-roles-'))
   const r = spawnSync(chrome, [...FLAGS, `--user-data-dir=${mp}`, '--window-size=750,1448', '--dump-dom', `file://${htmlPath}`], { encoding: 'utf8', maxBuffer: 1 << 27, timeout: 120000 })
   try { rmSync(mp, { recursive: true, force: true }) } catch { /* ignore */ }
   const m = /<pre id="__m">([\s\S]*?)<\/pre>/.exec(r.stdout || '')
-  if (!m) throw new Error(`量版失败：${s.name}`)
+  if (!m) throw new Error(`量版失败：${tag}`)
   const meas = JSON.parse(m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'))
-  writeFileSync(join(outDir, `${s.name}.measure.json`), JSON.stringify(meas, null, 1))
+  writeFileSync(join(outDir, `${tag}.measure.json`), JSON.stringify(meas, null, 1))
   writeFileSync(htmlPath, htmlFor(data, ''))
-  await screenshot(htmlPath, join(outDir, `${s.name}.png`), meas.pageHeight + 40)
-  await screenshot(htmlPath, join(outDir, `${s.name}-first.png`), FIRST_SCREEN)
+  // 全部功能样式对照：优先截「全部功能」区块（含上下留白），不够再退回首屏
+  const cat = meas.catalogBox || { top: 0, height: FIRST_SCREEN }
+  const catShotH = Math.min(Math.max(cat.top + cat.height + 40, 900), meas.pageHeight + 40)
+  await screenshot(htmlPath, join(outDir, `${tag}.png`), catShotH)
   try { rmSync(htmlPath, { force: true }) } catch { /* ignore */ }
-  summary[s.name] = { pageHeight: meas.pageHeight, tiles: meas.tiles, firstScreenTiles: meas.firstScreenTiles, firstScreenTodo: meas.firstScreenTodo, catalog: meas.catalogBox }
-  console.log(`✓ ${s.name}：整页 ${meas.pageHeight}px，入口磁贴 ${meas.tiles} 枚，首屏完整可见磁贴 ${meas.firstScreenTiles} 枚 + 待办 ${meas.firstScreenTodo} 项 → ${outDir}`)
+  summary[tag] = { pageHeight: meas.pageHeight, tiles: meas.tiles, firstScreenTiles: meas.firstScreenTiles, firstScreenTodo: meas.firstScreenTodo, catalog: meas.catalogBox }
+  console.log(`✓ ${tag}：整页 ${meas.pageHeight}px，入口 ${meas.tiles}，目录区 top=${cat.top} h=${cat.height} → ${outDir}/${tag}.png`)
 }
 writeFileSync(join(outDir, 'summary.json'), JSON.stringify(summary, null, 1))

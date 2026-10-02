@@ -10,6 +10,7 @@
  *   `npm run check:hub-entries` 校验。
  * - 2026-10-01 展示改版（产品负责人点名，选定方案 A）：首屏 = 待处理横条 + 我的常用；「全部功能」= 按分区的列表行
  *   （图标 + 名称 + 一句大白话说明 + 角标 + ›），分区可折叠；入口 > 20 的角色（超管）默认折叠、组头列前几个入口名，并出搜索框。
+ * - 2026-10-02 样式升级：全部功能改为整块手风琴；组头 = 色条 + 分区徽章 + 图标芯片预览 + 组待办红数字；行为语义不变。
  *   只改展示：权限过滤、跳转入口、角标来源与上面三份清单一致，不变。
  */
 
@@ -273,23 +274,48 @@ function visibleEntries(menu) {
   return HUB_ENTRIES.filter((e) => entryVisible(e, menu))
 }
 
-/** 组头折叠时列前几个入口名，让人不展开也知道组里有什么 */
+/** 组头折叠时列前几个入口名（守卫 / 文案兜底）；芯片用图标，见 buildPeek */
 function peekText(names) {
   const head = names.slice(0, PEEK_NAMES).join('、')
   return names.length > PEEK_NAMES ? `${head} 等 ${names.length} 项` : head
 }
 
-/** 计数 / 是否出搜索 / 各分区默认折叠与组头预览 */
-function buildCatalog(menu) {
+/** 入口角标数字（订单含新单未读合并，与待处理横条同口径） */
+function entryBadgeNum(entry, data) {
+  if (!entry || !entry.badge) return 0
+  const d = data || {}
+  if (entry.badgeKey && !(d.menu && d.menu[entry.badgeKey])) return 0
+  let n = badgeValue(entry.badge, d)
+  if (entry.id === 'orders') n = Math.max(n, badgeValue('newOrderUnreadCount', d))
+  return n > 0 ? n : 0
+}
+
+/** 组头预览：分区徽章图标 + 2–4 枚入口图标芯片 + 组内待办合计 */
+function buildPeek(entries, data) {
+  const names = entries.map((e) => e.label)
+  let badge = 0
+  entries.forEach((e) => { badge += entryBadgeNum(e, data) })
+  return {
+    mark: (entries[0] && entries[0].icon) || '',
+    n: String(entries.length),
+    chips: entries.slice(0, PEEK_NAMES).map((e) => ({ id: e.id, icon: e.icon, label: e.label })),
+    more: Math.max(0, entries.length - PEEK_NAMES),
+    labels: peekText(names),
+    badge: badge > 0 ? (badge > 99 ? '99+' : String(badge)) : ''
+  }
+}
+
+/** 计数 / 是否出搜索 / 各分区默认折叠与组头预览（芯片 + 角标）；data 供组待办合计 */
+function buildCatalog(menu, data) {
   const vis = visibleEntries(menu)
   const many = vis.length > MANY_ENTRIES
   const fold = {}
   const peek = {}
   HUB_SECTIONS.forEach((s) => {
-    const names = vis.filter((e) => e.sec === s.id).map((e) => e.label)
-    if (!names.length) return
+    const entries = vis.filter((e) => e.sec === s.id)
+    if (!entries.length) return
     fold[s.id] = many
-    peek[s.id] = peekText(names)
+    peek[s.id] = buildPeek(entries, data)
   })
   return { hubCat: { total: vis.length, search: many }, hubFold: fold, hubPeek: peek }
 }
@@ -301,7 +327,7 @@ function buildHubView(favIds, data) {
     hubSec: sectionFlags(d.menu),
     hubTodo: buildTodos(d),
     hubFav: buildFavView(favIds, d),
-    ...buildCatalog(d.menu)
+    ...buildCatalog(d.menu, d)
   }
 }
 

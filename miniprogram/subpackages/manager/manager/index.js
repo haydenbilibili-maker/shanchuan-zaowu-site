@@ -93,6 +93,8 @@ Page({
   refreshOpsSignals() {
     baseRefreshOpsSignals.call(this)
     const patch = { hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data) }
+    const cat = hubNav.buildCatalog(this.data.menu, this.data)
+    patch.hubPeek = cat.hubPeek
     if (this.data.hubQuery) patch.hubFound = hubNav.searchEntries(this.data.hubQuery, this.data)
     this.setData(patch)
   },

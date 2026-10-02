@@ -243,57 +243,165 @@
   filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
 }
 
-/* ── 全部功能：分区列表（像系统设置页），组头点按折叠 / 展开 ── */
+/* ── 全部功能：整块手风琴（Museum 暗色）；组头 = 色条 + 徽章 + 图标芯片；列表嵌在同卡内 ── */
 .hub-cat-head {
   display: flex;
-  align-items: flex-end;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 0 4rpx;
-  margin-bottom: 18rpx;
+  padding: 4rpx 8rpx 16rpx;
+}
+.hub-cat-title {
+  font-size: 26rpx;
+  font-weight: 600;
+  letter-spacing: 2rpx;
+  color: #D8CCB4;
 }
 .hub-cat-count {
   font-size: 22rpx;
   color: #B9AD96;
 }
-.hub-grp {
-  margin-bottom: 16rpx;
-  background: #211E19;
-  border: 1rpx solid rgba(196, 167, 108, 0.14);
-  border-radius: 24rpx;
+.hub-cat-body {
+  background: #1E1B17;
+  border: 1rpx solid rgba(196, 167, 108, 0.18);
+  border-radius: 28rpx;
   overflow: hidden;
+}
+.hub-grp {
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  position: relative;
+}
+.hub-grp + .hub-grp {
+  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+}
+.hub-grp-accent {
+  position: absolute;
+  left: 0;
+  top: 18rpx;
+  bottom: 18rpx;
+  width: 6rpx;
+  border-radius: 0 6rpx 6rpx 0;
+  background: #C4A76C;
+  opacity: 0.55;
+}
+.hub-grp--orders .hub-grp-accent { background: #C4A76C; opacity: 0.9; }
+.hub-grp--biz .hub-grp-accent { background: #8F9A6E; opacity: 0.85; }
+.hub-grp--goods .hub-grp-accent { background: #B08968; opacity: 0.85; }
+.hub-grp--members .hub-grp-accent { background: #A67C52; opacity: 0.9; }
+.hub-grp--studio .hub-grp-accent { background: #6E8B7A; opacity: 0.85; }
+.hub-grp--org .hub-grp-accent { background: #9A8B6E; opacity: 0.85; }
+.hub-grp--system .hub-grp-accent { background: #7A6E62; opacity: 0.9; }
+.hub-grp.is-open {
+  background: rgba(196, 167, 108, 0.045);
 }
 .hub-grp-head {
   display: flex;
   align-items: center;
-  height: 84rpx;
-  padding: 0 24rpx;
+  min-height: 112rpx;
+  padding: 18rpx 22rpx 18rpx 28rpx;
+  box-sizing: border-box;
 }
-.hub-grp-title {
+.hub-grp-mark {
   flex-shrink: 0;
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #EADFC8;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 18rpx;
+  background: rgba(196, 167, 108, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.hub-grp-peek {
+.hub-grp--orders .hub-grp-mark { background: rgba(196, 167, 108, 0.22); }
+.hub-grp--biz .hub-grp-mark { background: rgba(143, 154, 110, 0.22); }
+.hub-grp--goods .hub-grp-mark { background: rgba(176, 137, 104, 0.22); }
+.hub-grp--members .hub-grp-mark { background: rgba(166, 124, 82, 0.22); }
+.hub-grp--studio .hub-grp-mark { background: rgba(110, 139, 122, 0.22); }
+.hub-grp--org .hub-grp-mark { background: rgba(154, 139, 110, 0.22); }
+.hub-grp--system .hub-grp-mark { background: rgba(122, 110, 98, 0.28); }
+.hub-grp-mark-img {
+  width: 34rpx;
+  height: 34rpx;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+}
+.hub-grp-meta {
   flex: 1;
   min-width: 0;
-  margin-left: 20rpx;
-  font-size: 22rpx;
+  margin-left: 18rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+.hub-grp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+}
+.hub-grp-title {
+  flex-shrink: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #F0E6D2;
+  line-height: 36rpx;
+}
+.hub-grp-n {
+  flex-shrink: 0;
+  padding: 0 10rpx;
+  height: 32rpx;
+  line-height: 32rpx;
+  border-radius: 16rpx;
+  background: rgba(196, 167, 108, 0.12);
+  font-size: 20rpx;
   color: #B9AD96;
-  text-align: right;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+.hub-grp-title-row .hub-badge {
+  flex-shrink: 0;
+}
+.hub-grp-chips {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  min-width: 0;
+}
+.hub-grp-chip {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 12rpx;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1rpx solid rgba(196, 167, 108, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hub-grp-chip-img {
+  width: 24rpx;
+  height: 24rpx;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+}
+.hub-grp-more {
+  margin-left: 4rpx;
+  font-size: 20rpx;
+  color: #B9AD96;
+  line-height: 44rpx;
+}
+.hub-grp-state {
+  font-size: 20rpx;
+  color: #B9AD96;
+  line-height: 28rpx;
 }
 /* 折叠箭头：朝下 = 收起，朝上 = 展开 */
 .hub-grp-arrow {
   flex-shrink: 0;
   width: 14rpx;
   height: 14rpx;
-  margin: -6rpx 4rpx 0 18rpx;
+  margin: -6rpx 4rpx 0 16rpx;
   border-right: 3rpx solid #C4A76C;
   border-bottom: 3rpx solid #C4A76C;
   transform: rotate(45deg);
+  opacity: 0.75;
 }
 .hub-grp-arrow.is-open {
   margin-top: 8rpx;
@@ -301,6 +409,8 @@
 }
 .hub-list {
   border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+  padding: 4rpx 0 10rpx;
+  background: rgba(0, 0, 0, 0.12);
 }
 .hub-found {
   border: 1rpx solid rgba(196, 167, 108, 0.14);
@@ -311,28 +421,28 @@
 .hub-row {
   display: flex;
   align-items: center;
-  min-height: 104rpx;
-  padding: 0 20rpx 0 24rpx;
+  min-height: 88rpx;
+  padding: 0 20rpx 0 28rpx;
 }
 .hub-row + .hub-row {
-  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.07);
 }
 .hub-row-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  margin-left: 20rpx;
+  margin-left: 16rpx;
 }
 .hub-row-name {
-  font-size: 28rpx;
-  line-height: 38rpx;
+  font-size: 26rpx;
+  line-height: 34rpx;
   color: #F0E6D2;
 }
 .hub-row-desc {
-  margin-top: 4rpx;
-  font-size: 22rpx;
-  line-height: 30rpx;
+  margin-top: 2rpx;
+  font-size: 20rpx;
+  line-height: 28rpx;
   color: #B9AD96;
   white-space: nowrap;
   overflow: hidden;
@@ -344,9 +454,18 @@
 }
 .hub-row-go {
   flex-shrink: 0;
-  margin-left: 12rpx;
-  font-size: 34rpx;
+  margin-left: 10rpx;
+  font-size: 30rpx;
   color: #9A8F7C;
+}
+.hub-list .hub-ico {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 14rpx;
+}
+.hub-list .hub-ico-img {
+  width: 28rpx;
+  height: 28rpx;
 }
 
 /* 首屏骨架：待处理横条 + 两行常用（行 / 卡片来自 app.wxss 的 ui-sk-*，这里只放尺寸） */
