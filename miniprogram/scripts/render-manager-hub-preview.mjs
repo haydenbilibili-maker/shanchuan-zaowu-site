@@ -88,7 +88,8 @@ function cut(src, startMarks, endMark) {
 }
 
 function segments(src, overlay) {
-  const cta = cut(src, ['<!-- 首屏主 CTA'], '<!-- 核心指标卡片')
+  // 2026-10-02：金卡已上移；扫码 + 常用在搜索 / 待办之后、瀑布流之前
+  const cta = cut(src, ['<!-- 首屏主 CTA'], '<!-- 瀑布流布局容器')
   const menu = cut(src, ['<!-- 功能入口', '<!-- 快捷菜单'], '<!-- 数据图表')
   let sheet = ''
   if (overlay === 'group') sheet = `${cut(src, ['<!-- 合并磁贴的二级面板'], '\n</view>\n')}\n</view>`

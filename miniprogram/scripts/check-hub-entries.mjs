@@ -378,11 +378,12 @@ function judge(src) {
     if (/wx\.showModal\s*\(/.test(code)) errs.push(`${k} 出现 wx.showModal —— 入口层不新增原生弹窗`)
   }
   const texts = []
-  const hubTop = (src.wxml.match(/<!-- 功能搜索[\s\S]*?<!-- 核心指标卡片/) || [''])[0]
-  if (!hubTop) errs.push('找不到首屏入口块（功能搜索 → 核心指标卡片之间；守卫锚点需要同步更新）')
+  // 入口区：搜索 → 待办 → 扫码 → 常用（金卡 / 经营信号在其上方，不进本扫描）+ 全部功能列表
+  const hubTop = (src.wxml.match(/<!-- 功能搜索[\s\S]*?<!-- 瀑布流布局容器/) || [''])[0]
+  if (!hubTop) errs.push('找不到首屏入口块（功能搜索 → 瀑布流布局容器之间；守卫锚点需要同步更新）')
   const hubBlock = hubTop + ((src.wxml.match(/<view class="grid-item full-width hub-nav">[\s\S]*?<!-- 数据图表/) || [''])[0])
   if (!/hub-nav/.test(hubBlock)) errs.push('找不到 hub-nav 入口块（守卫锚点需要同步更新）')
-  hubBlock.replace(/<!-- 核心指标卡片/g, '').replace(/<!--[\s\S]*?-->/g, '').replace(/>([^<>{}]+)</g, (_, t) => { if (t.trim()) texts.push(t.trim()); return '' })
+  hubBlock.replace(/<!--[\s\S]*?-->/g, '').replace(/>([^<>{}]+)</g, (_, t) => { if (t.trim()) texts.push(t.trim()); return '' })
   for (const g of Object.values(groups)) for (const it of g.items) texts.push(it.label, it.desc)
   for (const t of nav.HUB_TODOS || []) texts.push(t.label)
   for (const s of sections) texts.push(s.title)
@@ -485,7 +486,8 @@ function judge(src) {
  *      可见文案里也不再出现「长按」「双圈」之类的说明；列表行内部只有「图标 / 名称 + 说明 / 红色数字角标 / ›」，样式里不加别的点状标记；
  *   N2 每个入口都有一句大白话说明 —— 清单 desc 非空、≤ 16 字、无英文字母与技术词，且与列表行里的说明逐字一致；
  *   N3 待处理横条包含所有带角标的入口 —— 每个入口角标的数据源都映射到 HUB_TODOS（badge / merged），权限键一致；
- *      三角色计数全 > 0 时实跑；新单未读合并在待发订单数里；横条用同一枚 hub-badge 红色数字；首屏顺序 搜索 → 待处理 → 扫码 → 常用 → 金卡；
+ *      三角色计数全 > 0 时实跑；新单未读合并在待发订单数里；横条用同一枚 hub-badge 红色数字；
+ *      首屏顺序 金卡 → 经营信号 → 搜索（超管）→ 待处理 → 扫码 → 常用 → 全部功能；
  *   N4「编辑」是常用的显式入口（常用区右上角，tap-press，打开编辑面板），全工作台没有长按加入；
  *   N5 搜索只在入口 > 20 的角色出现（超管有、店长 / 店员没有），按名称 / 别名 / 分组名 / 子项名找，只在有权限的入口里找；
  *   N6 超管分区默认折叠（组头列前几个入口名）、店长 / 店员默认全部展开；组头点按切换。
@@ -525,7 +527,7 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
     if (re.test(css)) errs.push(`N1 hubNav.wxss 又出现 ${what} 样式（只保留红色数字角标一种标记）`)
   }
   if (/\n  onHubPin\(|pinToggle/.test(src.indexJs) || /pinToggle/.test(src.hubNav)) errs.push('N1 长按加常用（onHubPin / pinToggle）应已移除 —— 常用只经「编辑」管理')
-  const hubTop = (src.wxml.match(/<!-- 功能搜索[\s\S]*?<!-- 核心指标卡片/) || [''])[0]
+  const hubTop = (src.wxml.match(/<!-- 功能搜索[\s\S]*?<!-- 瀑布流布局容器/) || [''])[0]
   const hubCat = (src.wxml.match(/<view class="grid-item full-width hub-nav">[\s\S]*?<!-- 数据图表/) || [''])[0]
   const visible = [hubTop, hubCat].map((b) => b.replace(/<!--[\s\S]*?(-->|$)/g, '')).join('\n')
   for (const w of ['长按', '双圈', '金点']) {
@@ -605,17 +607,20 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
     errs.push('N3 待处理横条须按 hubTodo.items 渲染、绑 onHubTodo、tap-press，计数用同一枚 hub-badge 红色数字')
   }
   const at = (re) => { const m = re.exec(src.wxml); return m ? m.index : -1 }
+  const kpiAt = at(/<view class="kpi-card gold-card"/)
+  const signalAt = at(/<view class="ops-signal-board/)
   const searchAt = at(/<view class="hub-search" wx:if="\{\{hubCat\.search\}\}">/)
   const todoAt = at(/<view class="hub-todo" wx:if="\{\{hubTodo\.items\.length\}\}">/)
   const ctaAt = at(/<view class="hub-scan-cta"/)
   const favAt = at(/<view class="hub-fav">/)
-  const kpiAt = at(/<view class="kpi-card gold-card"/)
-  if ([searchAt, todoAt, ctaAt, favAt, kpiAt].some((x) => x < 0) || !(searchAt < todoAt && todoAt < ctaAt && ctaAt < favAt && favAt < kpiAt)) {
-    errs.push('N3 首屏顺序须为「搜索（超管）→ 待处理横条 → 扫码主按钮 → 我的常用 → 核心指标卡」')
+  const catAt = at(/<view class="grid-item full-width hub-nav">/)
+  if ([kpiAt, signalAt, searchAt, todoAt, ctaAt, favAt, catAt].some((x) => x < 0)
+    || !(kpiAt < signalAt && signalAt < searchAt && searchAt < todoAt && todoAt < ctaAt && ctaAt < favAt && favAt < catAt)) {
+    errs.push('N3 首屏顺序须为「金卡 → 经营信号 → 搜索（超管）→ 待处理横条 → 扫码主按钮 → 我的常用 → 全部功能」')
   }
 
   // ── N4「编辑」是常用的显式入口 ──
-  const favBlock = (src.wxml.match(/<view class="hub-fav">[\s\S]*?<!-- 核心指标卡片/) || [''])[0]
+  const favBlock = (src.wxml.match(/<view class="hub-fav">[\s\S]*?<!-- 瀑布流布局容器/) || [''])[0]
   if (!/<view class="hub-fav-head">[\s\S]{0,300}<view class="hub-fav-edit" bindtap="openFavEditor" hover-class="tap-press" hover-stay-time="80">编辑<\/view>/.test(favBlock)) {
     errs.push('N4 常用区右上角须有「编辑」按钮（hub-fav-edit → openFavEditor，tap-press）—— 加入常用要有显式入口')
   }
@@ -755,11 +760,12 @@ if (!selftest) {
     ['N3 待办权限键写宽', rep('hubNav', "{ id: 'recruit', label: '合作申请', keys: ['framerRecruit']", "{ id: 'recruit', label: '合作申请', keys: ['framers', 'framerRecruit']"), /N3 待办「合作申请」权限键/],
     ['N3 计数为 1 的项被吞', rep('hubNav', '    if (n <= 0) return\n', '    if (n <= 1) return\n'), /N3 .*待处理横条却没有/],
     ['N3 横条计数换成另一种标记', rep('wxml', '<text class="hub-badge">{{item.count}}</text>', '<text class="hub-todo-num">{{item.count}}</text>'), /N3 待处理横条须按 hubTodo\.items 渲染/],
-    ['N3 待办卡挪到核心指标卡之后', (s) => {
+    ['N3 待办卡挪到金卡之前', (s) => {
       const m = s.wxml.match(/  <!-- 待办卡[\s\S]*?\n  <!-- 首屏主 CTA/)
       if (!m) throw new Error('注入锚点失效：待办卡块')
       const block = m[0].replace(/\n  <!-- 首屏主 CTA$/, '\n')
-      return { ...s, wxml: s.wxml.replace(m[0], '\n  <!-- 首屏主 CTA').replace('  <!-- 经营信号', `${block}  <!-- 经营信号`) }
+      // 把待办插到金卡之前，破坏「金卡 → … → 待处理」顺序
+      return { ...s, wxml: s.wxml.replace(m[0], '\n  <!-- 首屏主 CTA').replace('  <!-- 核心指标卡片', `${block}  <!-- 核心指标卡片`) }
     }, /N3 首屏顺序须为/],
     // N4「编辑」入口
     ['N4 编辑按钮被删', rep('wxml', '<view class="hub-fav-edit" bindtap="openFavEditor" hover-class="tap-press" hover-stay-time="80">编辑</view>', ''), /N4 常用区右上角须有「编辑」按钮/],
