@@ -16,11 +16,18 @@
  *    9) 列表卡：有图显示缩略图且点开大图（previewLibImage），无图显示占位；表单有上传 / 删除
  *   10) chooseLibImage 首行拦非超管；页内不新增 wx.showModal
  *   11) 页面可见文案不出现集合名 / 字段名（ops_shipments、settleStatus、studio_*）
+ *  C 出货中心「未定义变量」（2026-10-08 真机「storeById is not defined」：manageStoreShipment 的
+ *    handleCreateFromSkus 调 storeById 却没从 shipmentDefaults 解构，选 SKU 开单一保存就抛 ReferenceError）
+ *   12) TypeScript 绑定器扫 manageStoreShipment / manageStudioSettlement / shipment-ops 页面全部 .js：
+ *       不得有「找不到名字」（TS 2304 / 2552），typescript 缺失即红
+ *   13) 真跑 createFromSkus（隔离副本 + 内存库，不联网不写生产）：山川造物 + 造景 SKU、行级 30% / 造景成本 20
+ *       → success、只写一条 ops_shipments、金额 129.2（全局费率故意设 20%，证明行级 30% 不被保存丢掉）；
+ *       无效门店回「门店无效」而不是抛异常
  *
  * 用法：node miniprogram/scripts/check-pricebook-image.mjs [--selftest]
  */
-import { readFileSync, mkdtempSync, cpSync, writeFileSync, mkdirSync, rmSync } from 'node:fs'
-import { resolve, dirname, join } from 'node:path'
+import { readFileSync, readdirSync, mkdtempSync, cpSync, writeFileSync, mkdirSync, rmSync } from 'node:fs'
+import { resolve, dirname, join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
@@ -193,6 +200,102 @@ async function serverErrs(mutate) {
   return errs
 }
 
+/* ---------- C 未定义变量：静态（TS 绑定器）+ 真跑 createFromSkus ---------- */
+const SHIP_FN_DIR = resolve(ROOT, 'miniprogram/cloudfunctions/manageStoreShipment')
+const UNDEF_DIRS = [SHIP_FN_DIR, FN_DIR, resolve(ROOT, OPS)]
+const UNDEF_SHIM = 'declare var require: any, module: any, exports: any, process: any, __dirname: string, Buffer: any, global: any, wx: any, getApp: any, Page: any, Component: any, Behavior: any, getCurrentPages: any;\n'
+
+function listJs(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    if (e.name === 'node_modules' || e.name.startsWith('.')) return []
+    const p = join(dir, e.name)
+    return e.isDirectory() ? listJs(p) : e.name.endsWith('.js') ? [p] : []
+  })
+}
+
+/** overrides：{ 绝对路径: 文本 } —— selftest 只改内存，不写盘 */
+function undefinedNameErrs(overrides) {
+  let ts
+  try {
+    ts = createRequire(import.meta.url)('typescript')
+  } catch (e) {
+    return ['未定义变量扫描需要 typescript（npm ci --include=dev）']
+  }
+  const files = UNDEF_DIRS.flatMap(listJs)
+  const shim = join(tmpdir(), 'pbi-undef-shim.d.ts')
+  const opts = {
+    allowJs: true, checkJs: true, noEmit: true, noResolve: true, skipLibCheck: true, types: [],
+    moduleDetection: ts.ModuleDetectionKind.Force, lib: ['lib.es2022.d.ts', 'lib.dom.d.ts']
+  }
+  const host = ts.createCompilerHost(opts)
+  const getSourceFile = host.getSourceFile.bind(host)
+  host.getSourceFile = (name, lang, ...rest) => {
+    const p = resolve(name)
+    if (p === shim) return ts.createSourceFile(name, UNDEF_SHIM, lang)
+    if (overrides && overrides[p] !== undefined) return ts.createSourceFile(name, overrides[p], lang)
+    return getSourceFile(name, lang, ...rest)
+  }
+  const program = ts.createProgram([...files, shim], opts, host)
+  const errs = []
+  for (const sf of program.getSourceFiles()) {
+    if (!files.includes(resolve(sf.fileName))) continue
+    for (const d of program.getSemanticDiagnostics(sf)) {
+      if (d.code !== 2304 && d.code !== 2552) continue
+      const { line } = sf.getLineAndCharacterOfPosition(d.start)
+      errs.push(`未定义变量：${relative(ROOT, sf.fileName)}:${line + 1} 「${sf.text.substr(d.start, d.length)}」（运行到这里会抛 ReferenceError）`)
+    }
+  }
+  return errs
+}
+
+const SHIP_SKU = { _id: 'sku1', skuName: '爱神凤蝶 · 玻璃罩 15x22 · 造景', materialId: 'm1', materialName: '爱神凤蝶', materialGrade: '默认', packagingId: 'p1', packagingName: '玻璃罩', packagingSize: '15x22', hasScene: true, sceneCost: 10, laborRatePct: null, status: 'active' }
+
+async function createFromSkusErrs(mutate) {
+  const errs = []
+  const tmp = mkdtempSync(join(tmpdir(), 'pbi-ship-'))
+  try {
+    cpSync(SHIP_FN_DIR, tmp, { recursive: true, filter: (p) => !/node_modules/.test(p) })
+    writeFileSync(join(tmp, 'package.json'), '{"type":"commonjs"}')
+    mkdirSync(join(tmp, 'node_modules/wx-server-sdk'), { recursive: true })
+    writeFileSync(join(tmp, 'node_modules/wx-server-sdk/index.js'), SDK_MOCK.replace('init() {},', 'init() {}, callFunction: async () => ({ result: { success: true } }),'))
+    writeFileSync(join(tmp, 'staffGuard.js'), GUARD_MOCK)
+    for (const [f, fn] of Object.entries(mutate || {})) {
+      const p = join(tmp, f)
+      writeFileSync(p, fn(readFileSync(p, 'utf8')))
+    }
+    const M = (global.__PBI_MOCK = {})
+    const reset = () => Object.assign(M, {
+      role: 'super',
+      writes: [],
+      db: {
+        studio_shipment_skus: [SHIP_SKU],
+        studio_material_prices: [{ _id: 'm1', name: '爱神凤蝶', grade: '默认', isDefaultGrade: true, unitPrice: 60, status: 'active' }],
+        studio_packaging_prices: [{ _id: 'p1', name: '玻璃罩', size: '15x22', isDefaultSize: true, unitPrice: 24, status: 'active' }],
+        configs: [{ _id: 'studio_settlement', enabled: true, laborRatePct: 20, requirePackaging: true }]
+      }
+    })
+    const fn = createRequire(join(tmp, 'index.js'))(join(tmp, 'index.js'))
+    const base = { action: 'createFromSkus', storeId: 'store_shanhaizaowu', shipmentDate: '2026-10-08', note: '去', lines: [{ skuId: 'sku1', qty: 1, laborRatePct: 30, sceneCost: 20 }] }
+
+    reset()
+    let r = await fn.main(base, {})
+    const adds = M.writes.filter((w) => w.op === 'add')
+    if (!r || !r.success) errs.push(`createFromSkus（山川造物 + 造景 SKU）须成功，现：${JSON.stringify(r && { success: r.success, msg: r.msg, code: r.code })}`)
+    else if (adds.length !== 1 || adds[0].name !== 'ops_shipments' || adds[0].data.storeId !== 'store_shanhaizaowu') errs.push(`createFromSkus 须且只写一条 ops_shipments（现 ${adds.map((w) => w.name).join('、') || '无'}）`)
+    else if (Number(r.item && r.item.totalAmount) !== 129.2) errs.push(`createFromSkus 金额口径变了：(60+24)×1.3+20 应为 129.2，现 ${r.item && r.item.totalAmount}`)
+
+    reset()
+    r = await fn.main(Object.assign({}, base, { storeId: 'store_nope' }), {})
+    if (!r || r.success || r.code !== 'BAD_PARAM' || M.writes.length) errs.push(`createFromSkus 无效门店须回 BAD_PARAM「门店无效」且零写入，现：${JSON.stringify(r && { success: r.success, msg: r.msg, code: r.code })}`)
+  } catch (e) {
+    errs.push('createFromSkus 运行时异常：' + ((e && e.message) || e))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+    delete global.__PBI_MOCK
+  }
+  return errs
+}
+
 const src = {}
 for (const [k, rel] of Object.entries(FILES)) src[k] = readFileSync(resolve(ROOT, rel), 'utf8')
 
@@ -215,7 +318,19 @@ if (process.argv.includes('--selftest')) {
     ['选择器无图也带键', { 'index.js': (t) => t.replace("if (typeof r.image === 'string' && r.image) opt.image = r.image", "opt.image = r.image || ''") }, /无图行输出不得出现 image 键/],
     ['店长可写', { 'index.js': (t) => t.replace("'priceBook.update': 1,", '') }, /店长带 image/]
   ]
-  const base = collect(src).concat(await serverErrs())
+  const dropStoreById = (t) => t.replace('  storeById,\n  storeIdsForActor,', '  storeIdsForActor,')
+  const undefCases = [
+    ['云函数漏解构 storeById', join(SHIP_FN_DIR, 'index.js'), dropStoreById, /index\.js:\d+ 「storeById」/],
+    ['页面引用未定义函数', resolve(ROOT, OPS, 'parts/create.js'), (t) => t + '\nfunction __pbiProbe() { return formatShipmentLine(1) }\n', /create\.js:\d+ 「formatShipmentLine」/],
+    ['结算云函数拼错变量', join(FN_DIR, 'index.js'), (t) => t + '\nfunction __pbiProbe() { return SETTLEMNT_TYPO }\n', /「SETTLEMNT_TYPO」/]
+  ]
+  const shipCases = [
+    ['开单漏解构 storeById', { 'index.js': dropStoreById }, /storeById is not defined/],
+    ['开单金额口径变', { 'index.js': (t) => t.replace('if (hasLineScene) item.sceneCost = Number(l.sceneCost) || 0', '') }, /金额口径变了/],
+    ['行级费率被保存丢掉', { 'index.js': (t) => t.replace("if (item.laborRatePct !== undefined) item.laborRateSource = 'line'", '') }, /金额口径变了/],
+    ['无效门店不拦', { 'index.js': (t) => t.replace("if (!store) return fail('门店无效', 'BAD_PARAM')", '') }, /无效门店/]
+  ]
+  const base = collect(src).concat(await serverErrs(), undefinedNameErrs(), await createFromSkusErrs())
   if (base.length) {
     base.forEach((e) => console.error(TAG, '基线不绿，selftest 无意义：', e))
     process.exit(1)
@@ -243,16 +358,40 @@ if (process.argv.includes('--selftest')) {
       bad++
     }
   }
+  for (const [name, file, mutate, expect] of undefCases) {
+    const orig = readFileSync(file, 'utf8')
+    if (mutate(orig) === orig) {
+      console.error(TAG, `selftest 失败：「${name}」注入未生效（锚点失配）`)
+      bad++
+    } else if (!undefinedNameErrs({ [file]: mutate(orig) }).some((e) => expect.test(e))) {
+      console.error(TAG, `selftest 失败：「${name}」未被检出`)
+      bad++
+    }
+  }
+  for (const [name, files, expect] of shipCases) {
+    const f = Object.keys(files)[0]
+    const orig = readFileSync(join(SHIP_FN_DIR, f), 'utf8')
+    if (files[f](orig) === orig) {
+      console.error(TAG, `selftest 失败：「${name}」注入未生效（锚点失配）`)
+      bad++
+      continue
+    }
+    const errs = await createFromSkusErrs(files)
+    if (!errs.some((e) => expect.test(e))) {
+      console.error(TAG, `selftest 失败：「${name}」未被检出`, errs.slice(0, 2))
+      bad++
+    }
+  }
   if (bad) process.exit(1)
-  console.log(TAG, `selftest ok（${cases.length + serverCases.length} 条注入全部检出）`)
+  console.log(TAG, `selftest ok（${cases.length + serverCases.length + undefCases.length + shipCases.length} 条注入全部检出）`)
   process.exit()
 }
 
-const errs = collect(src).concat(await serverErrs())
+const errs = collect(src).concat(await serverErrs(), undefinedNameErrs(), await createFromSkusErrs())
 if (errs.length) {
   errs.forEach((e) => console.error(TAG, e))
   process.exitCode = 1
 } else {
-  console.log(TAG, 'ok（云函数 image 字段 6 项 + 页面 5 项）')
+  console.log(TAG, 'ok（云函数 image 字段 6 项 + 页面 5 项 + 未定义变量扫描 + createFromSkus 实跑）')
 }
 process.exit()

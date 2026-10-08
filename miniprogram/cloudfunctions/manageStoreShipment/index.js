@@ -30,6 +30,7 @@ const {
   STATUS_LABEL,
   STATUS_FLOW,
   CATEGORY_OPTIONS,
+  storeById,
   storeIdsForActor,
   normalizeStatus,
   canTransit,
@@ -587,6 +588,8 @@ async function handleCreateFromSkus(event, actor) {
     const hasLineRate = l.laborRatePct !== undefined && l.laborRatePct !== null && l.laborRatePct !== ''
     if (hasLineRate) item.laborRatePct = Number(l.laborRatePct) || 0
     else if (sku.laborRatePct !== null && sku.laborRatePct !== undefined) item.laborRatePct = sku.laborRatePct
+    // recomputeItemsPricing 只在 laborRateSource === 'line' 时采用行上的费率，否则回落全局费率
+    if (item.laborRatePct !== undefined) item.laborRateSource = 'line'
     // 行级造景成本覆盖（同费率形态：显式传 0 也生效）—— 开单时能当场改这一行的造景成本
     const hasLineScene = l.sceneCost !== undefined && l.sceneCost !== null && l.sceneCost !== ''
     if (hasLineScene) item.sceneCost = Number(l.sceneCost) || 0
