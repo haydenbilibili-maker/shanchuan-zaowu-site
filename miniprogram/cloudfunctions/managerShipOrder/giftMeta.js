@@ -127,15 +127,46 @@ function maskPhone(phone) {
   return `${s.slice(0, 3)}****${s.slice(-4)}`
 }
 
+/** 展示层地址脱敏：详址只留首尾，手机掩码；管理端履约请用原文 */
+function maskAddress(addr) {
+  const a = addr && typeof addr === 'object' ? addr : {}
+  const name = String(a.name || '').trim()
+  const phone = maskPhone(a.phone || '')
+  const region = Array.isArray(a.region)
+    ? a.region.map((x) => String(x || '').trim()).filter(Boolean)
+    : []
+  const detailRaw = String(a.detail || '').trim()
+  let detail = detailRaw
+  if (detailRaw.length > 6) {
+    detail = `${detailRaw.slice(0, 2)}****${detailRaw.slice(-2)}`
+  } else if (detailRaw.length > 2) {
+    detail = `${detailRaw.slice(0, 1)}**`
+  }
+  const line = [region.join(' '), detail].filter(Boolean).join(' ')
+  return {
+    name: name ? `${name.slice(0, 1)}${name.length > 1 ? '**' : ''}` : '',
+    phone,
+    region,
+    detail,
+    line: line || ''
+  }
+}
+
 function buildProductSnapshot(products, { hidePrice = true } = {}) {
-  return (products || []).map((p) => ({
-    title: p.title || p.name || '',
-    latinName: p.latinName || p.latin || '',
-    image: p.image || '',
-    skuLabel: p.skuLabel || '',
-    count: p.count || 1,
-    price: hidePrice ? undefined : p.price
-  }))
+  return (products || []).map((p) => {
+    const rawType = p && p.protectionType
+    const hasType = rawType != null && String(rawType).trim() !== ''
+    return {
+      title: p.title || p.name || '',
+      latinName: p.latinName || p.latin || '',
+      image: p.image || '',
+      skuLabel: p.skuLabel || '',
+      count: p.count || 1,
+      price: hidePrice ? undefined : p.price,
+      productId: p.productId || p.id || p._id || '',
+      ...(hasType ? { protectionType: String(rawType).trim() } : {})
+    }
+  })
 }
 
 function computeExpireAt(fromDate, days) {
@@ -154,6 +185,7 @@ module.exports = {
   isGiftOrder,
   needsAddressBeforeShip,
   maskPhone,
+  maskAddress,
   buildProductSnapshot,
   computeExpireAt
 }

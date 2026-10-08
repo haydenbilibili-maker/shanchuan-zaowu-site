@@ -67,7 +67,9 @@ export const FAMILIES = [
   { module: 'pricingCore.js', kind: 'identical', canonical: 'manageStoreShipment/pricingCore.js',
     why: '出货算价内核：价目表**写入方**（manageStudioSettlement）与**算价方**（manageStoreShipment）必须同口径归一化 —— 一边把「大蓝闪 蝶」与「大蓝闪蝶」当两个材料、另一边当一个，就会静默算错价' },
   { module: 'categorySeed.js', kind: 'identical', canonical: 'seedCategories/categorySeed.js',
-    why: '分类种子与一级馆别名：listCategories 原先跨目录 require 这份文件，部署包里没有 → 线上每次调用都崩（2026-09-29）；改为本目录副本后两边的馆名/别名口径必须一致' }
+    why: '分类种子与一级馆别名：listCategories 原先跨目录 require 这份文件，部署包里没有 → 线上每次调用都崩（2026-09-29）；改为本目录副本后两边的馆名/别名口径必须一致' },
+  { module: 'giftMeta.js', kind: 'identical', canonical: 'manageGift/giftMeta.js',
+    why: '礼赠元数据（状态判定 / 礼笺字数 / 商品快照 / 地址脱敏）：5 份副本（manageGift 真源 + makeOrder / confirmPayment / payCallback / managerShipOrder）；曾出现 3 种内容（缺 protectionType 快照、缺 maskAddress、注释路径未跟 giftShareCard 搬家）—— 口径必须一致，否则下单写的 giftMeta 与履约读的不一致' }
 ]
 
 /** 有意分歧、**不纳入本守卫**的家族（登记原因，防后来者「顺手统一」） */
@@ -189,6 +191,12 @@ function selftest() {
       file: 'getMemberPass/memberLevels.js',
       mutate: (t) => t.replace(/^(const|function)/m, '// $1'),
       expect: /memberLevels\.js/
+    },
+    {
+      name: '把某个 giftMeta 副本改注释路径（礼赠元数据漂移）',
+      file: 'makeOrder/giftMeta.js',
+      mutate: (t) => t.replace('subpackages/feature/gift/giftShareCard.js', 'utils/giftShareCard.js'),
+      expect: /giftMeta\.js/
     }
   ]
   for (const inj of injections) {
@@ -230,7 +238,7 @@ function selftest() {
     console.error(`\n自检失败 ${bad} 项——守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：合成用例 + 真实文件注入（staffGuard / memberLevels）全部拦下，且不误报')
+  console.log('\n自检通过：合成用例 + 真实文件注入（staffGuard / memberLevels / giftMeta）全部拦下，且不误报')
 }
 
 function main() {
