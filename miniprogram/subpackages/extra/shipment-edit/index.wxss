@@ -368,9 +368,12 @@
   left: 0;
   right: 0;
   bottom: 0;
-  max-height: 76vh;
+  max-height: 80vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: border-box;
   background: #211e1a;
   border-top-left-radius: 22rpx;
   border-top-right-radius: 22rpx;
@@ -379,6 +382,7 @@
 }
 
 .se-sheet-head {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -396,6 +400,7 @@
 }
 
 .se-search {
+  flex-shrink: 0;
   padding: 0 28rpx 14rpx;
 }
 
@@ -408,9 +413,10 @@
   color: var(--color-text-primary, #f2ece1);
 }
 
+/* 高度由内联 sheetBodyPx 决定；flex: 1 + 无 min-height 会按内容撑开而滑不动 */
 .se-sheet-body {
-  flex: 1;
-  max-height: 58vh;
+  flex: 0 1 auto;
+  min-height: 0;
   padding: 0 20rpx 28rpx;
   box-sizing: border-box;
 }

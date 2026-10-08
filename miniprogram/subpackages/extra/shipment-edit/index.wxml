@@ -1,3 +1,4 @@
+<page-meta page-style="{{picker.show ? 'overflow: hidden;' : ''}}" />
 <!-- 出货单 · 逐行核对与算价（蓝图裁决 24）
      动线：从 shipment-ops 粘贴解析后带草稿进来 → 逐行核对/修正 → 保存
      金额一律来自云函数 quotePrice（客户端不算钱） -->
@@ -130,13 +131,13 @@
   </view>
 
   <!-- 选择器弹层 -->
-  <view class="se-mask" wx:if="{{picker.show}}" bindtap="closePicker"></view>
+  <view class="se-mask" wx:if="{{picker.show}}" bindtap="closePicker" catchtouchmove="noop"></view>
   <view class="se-sheet" wx:if="{{picker.show}}">
-    <view class="se-sheet-head">
+    <view class="se-sheet-head" catchtouchmove="noop">
       <text class="se-sheet-title">{{picker.title}}</text>
       <view class="se-sheet-close" bindtap="closePicker"><text>关闭</text></view>
     </view>
-    <view class="se-search">
+    <view class="se-search" catchtouchmove="noop">
       <input
         class="se-search-input"
         placeholder="输入名称或别名搜索（如 大蓝闪）"
@@ -145,7 +146,7 @@
         confirm-type="search"
       />
     </view>
-    <scroll-view class="se-sheet-body" scroll-y>
+    <scroll-view class="se-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
       <view class="se-loading" wx:if="{{picker.loading}}"><text>加载中…</text></view>
       <view class="se-empty" wx:elif="{{!picker.list.length}}">
         <text>没有匹配的{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>

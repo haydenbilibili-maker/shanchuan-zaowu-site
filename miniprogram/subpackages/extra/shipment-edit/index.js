@@ -16,6 +16,7 @@
  */
 const { guardStaffPage } = require('../utils/staffAuth')
 const { formatCloudFnError } = require('../utils/memberScan')
+const { sheetBodyPx } = require('../shipment-ops/parts/shared')
 
 const SHIPMENT_FN = 'manageStoreShipment'
 const SETTLEMENT_FN = 'manageStudioSettlement'
@@ -119,6 +120,7 @@ Page({
     tipText: '',
     tipTone: 'info',
     allPriced: false,
+    sheetBodyPx: 420,
     /** 选择器弹层 */
     picker: {
       show: false,
@@ -133,6 +135,7 @@ Page({
   },
 
   onLoad() {
+    this.setData({ sheetBodyPx: sheetBodyPx() })
     guardStaffPage('manager').then((ok) => {
       if (!ok) return
       this.readDraft()
@@ -345,6 +348,8 @@ Page({
   closePicker() {
     this.setData({ 'picker.show': false })
   },
+
+  noop() {},
 
   onPickerInput(e) {
     const keyword = String(e.detail.value || '')

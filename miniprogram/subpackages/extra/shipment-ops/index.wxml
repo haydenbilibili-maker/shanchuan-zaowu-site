@@ -1,4 +1,6 @@
-<!-- 出货中心（2026-09-28 合并）。单价只来自云函数，取不到显示「待核价」 -->
+<page-meta page-style="{{skuPicker.show || skuForm.show || picker.show || libForm.show || showDetail ? 'overflow: hidden;' : ''}}" />
+<!-- 出货中心（2026-09-28 合并）。单价只来自云函数，取不到显示「待核价」
+     底部弹层：遮罩 / 标题 / 搜索 / 底部按钮 catchtouchmove，列表 scroll-view 不加（加了就滑不动）；page-meta 锁背后页面 -->
 <view class="ops-boot" wx:if="{{!ready}}">柜门缓缓开启…</view>
 
 <view class="ops-page sc-page {{activeTab === 'create' ? 'has-dock' : ''}}" wx:if="{{ready}}">
@@ -789,11 +791,11 @@
 <!-- 选已有 SKU -->
 <view class="ss-mask" wx:if="{{skuPicker.show}}" bindtap="closeSkuPicker" catchtouchmove="noop"></view>
 <view class="ss-sheet" wx:if="{{skuPicker.show}}">
-  <view class="ss-sheet-head">
+  <view class="ss-sheet-head" catchtouchmove="noop">
     <text class="ss-sheet-title">选择出货 SKU</text>
     <view class="ss-sheet-close" bindtap="closeSkuPicker"><text>关闭</text></view>
   </view>
-  <view class="ss-search">
+  <view class="ss-search" catchtouchmove="noop">
     <input class="ss-search-input" placeholder="搜 SKU 名（如 大蓝闪蝶）" value="{{skuPicker.keyword}}" bindinput="onSkuKeyword" />
   </view>
   <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
@@ -817,7 +819,7 @@
 <!-- 现场新建 SKU -->
 <view class="ss-mask" wx:if="{{skuForm.show}}" bindtap="closeSkuForm" catchtouchmove="noop"></view>
 <view class="ss-sheet" wx:if="{{skuForm.show}}">
-  <view class="ss-sheet-head">
+  <view class="ss-sheet-head" catchtouchmove="noop">
     <text class="ss-sheet-title">新建出货 SKU</text>
     <view class="ss-sheet-close" bindtap="closeSkuForm"><text>关闭</text></view>
   </view>
@@ -875,7 +877,7 @@
       <text wx:for="{{skuForm.problems}}" wx:key="*this">· {{item}}</text>
     </view>
   </scroll-view>
-  <view class="ss-actions is-in-sheet">
+  <view class="ss-actions is-in-sheet" catchtouchmove="noop">
     <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitSkuForm">
       <text>{{skuForm.saving ? '创建中…' : '创建并加入明细'}}</text>
     </view>
@@ -885,11 +887,11 @@
 <!-- 原材料 / 包装方式选择器 -->
 <view class="ss-mask is-top" wx:if="{{picker.show}}" bindtap="closePicker" catchtouchmove="noop"></view>
 <view class="ss-sheet is-top" wx:if="{{picker.show}}">
-  <view class="ss-sheet-head">
+  <view class="ss-sheet-head" catchtouchmove="noop">
     <text class="ss-sheet-title">选择{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>
     <view class="ss-sheet-close" bindtap="closePicker"><text>关闭</text></view>
   </view>
-  <view class="ss-search">
+  <view class="ss-search" catchtouchmove="noop">
     <input class="ss-search-input" placeholder="输入名称或别名（如 大蓝闪）" value="{{picker.keyword}}" bindinput="onPickerKeyword" />
   </view>
   <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
@@ -924,7 +926,7 @@
 <!-- 资料表单：新增 / 编辑 -->
 <view class="ss-mask" wx:if="{{libForm.show}}" bindtap="closeLibForm" catchtouchmove="noop"></view>
 <view class="ss-sheet" wx:if="{{libForm.show}}">
-  <view class="ss-sheet-head">
+  <view class="ss-sheet-head" catchtouchmove="noop">
     <text class="ss-sheet-title">{{libForm.id ? '编辑' : '新增'}}{{libForm.kind === 'material' ? '原材料' : '包装方式'}}</text>
     <view class="ss-sheet-close" bindtap="closeLibForm"><text>关闭</text></view>
   </view>
@@ -982,7 +984,7 @@
     </view>
     <view class="ss-problems" wx:if="{{libForm.problems}}"><text>· {{libForm.problems}}</text></view>
   </scroll-view>
-  <view class="ss-actions is-in-sheet">
+  <view class="ss-actions is-in-sheet" catchtouchmove="noop">
     <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitLibForm">
       <text>{{libForm.saving ? '保存中…' : '保存'}}</text>
     </view>
@@ -992,7 +994,7 @@
 <!-- 详情：物流 + 状态流转（契约：setStatus / update；结算只读） -->
 <view class="ops-mask" wx:if="{{showDetail}}" bindtap="closeDetail" catchtouchmove="noop"></view>
 <view class="ops-sheet sc-detail-sheet" wx:if="{{showDetail && detail}}">
-  <view class="ops-sheet-head">
+  <view class="ops-sheet-head" catchtouchmove="noop">
     <text class="ops-sheet-title">{{detail.customerLine || detail.storeName}}</text>
     <text class="ops-sheet-close" bindtap="closeDetail">关闭</text>
   </view>

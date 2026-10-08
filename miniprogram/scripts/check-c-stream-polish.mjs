@@ -36,6 +36,11 @@
  *   R6-2 审批 / 发票 / 运营（两份）/ 工作台 / b2bdesk / 股东配置骨架用 ui-sk-card / ui-sk-line：
  *        wxml 不再出现旧行类，wxss 不再自带骨架底色与呼吸动画（只留尺寸差异）
  *   R6-3 员工 / 管理端 wxss 里 muted 作文字色清零（深色面改 secondary；占位 / 分隔符 / 刻意弱化的「无值」态除外，见 R6_CAPTION_KEEP）
+ *   —— R9 产品负责人 2026-10-08 真机：出货中心「选择包装方式 / 原材料」弹层滑不动 ——
+ *   R9   出货中心 / 核对出货单底部弹层：scroll-view 内联 sheetBodyPx 高度且 flex: 0 1 auto + min-height: 0（不许回到 flex: 1 /
+ *        max-height）；弹层 ≤ 80vh + overflow: hidden + 底部安全区；标题 / 搜索 / 底部按钮 flex-shrink: 0 且 catchtouchmove，
+ *        遮罩 catchtouchmove，弹层容器与 scroll-view 不许 catchtouchmove；page-meta 在任一弹层打开时锁背后页面；
+ *        sheetBodyPx 在假 wx 里实跑：整层 ≤ 80% 窗高并扣真实底部安全区（safeArea，不是不存在的 safeAreaInsets）
  *
  * 用法：node miniprogram/scripts/check-c-stream-polish.mjs [--selftest]
  */
@@ -92,7 +97,42 @@ const FILES = {
   feedbackWxml: `${EXTRA}/user/feedback/index.wxml`,
   ticketImagesJs: `${EXTRA}/utils/ticketImages.js`,
   ticketFn: 'miniprogram/cloudfunctions/submitSupportTicket/index.js',
-  ticketsVue: 'admin/src/components/SupportTickets.vue'
+  ticketsVue: 'admin/src/components/SupportTickets.vue',
+  shipOpsWxml: `${EXTRA}/shipment-ops/index.wxml`,
+  shipOpsWxss: `${EXTRA}/shipment-ops/index.wxss`,
+  shipSkuWxss: `${EXTRA}/shipment-ops/sku.wxss`,
+  shipOpsJs: `${EXTRA}/shipment-ops/index.js`,
+  shipShared: `${EXTRA}/shipment-ops/parts/shared.js`,
+  opsMuseumWxss: `${EXTRA}/utils/ops-museum.wxss`,
+  shipEditWxml: `${EXTRA}/shipment-edit/index.wxml`,
+  shipEditWxss: `${EXTRA}/shipment-edit/index.wxss`,
+  shipEditJs: `${EXTRA}/shipment-edit/index.js`
+}
+
+/** R9：按层叠顺序合并若干 [css, 选择器] 的声明（只认独立规则里逐个列出的选择器） */
+function cssDecls(pairs) {
+  const out = {}
+  for (const [css, sel] of pairs) {
+    const body = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/@import[^;]*;/g, '')
+    for (const m of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      if (!m[1].split(',').map((x) => x.trim()).includes(sel)) continue
+      for (const d of m[2].split(';')) {
+        const i = d.indexOf(':')
+        if (i > 0) out[d.slice(0, i).trim()] = d.slice(i + 1).trim()
+      }
+    }
+  }
+  return out
+}
+
+const R9_TAG = /<(view|scroll-view)\b(?:[^>"]|"[^"]*")*>/g
+const r9Classes = (tag) => ((tag.match(/\sclass="([^"]*)"/) || [])[1] || '').split(/\s+/)
+
+/** R9：在内存里跑 sheetBodyPx 源码（假 wx） */
+function runSheetBodyPx(code, fakeWx) {
+  const fn = (code.match(/function sheetBodyPx\(\) \{[\s\S]*?\n\}/) || [''])[0]
+  if (!fn) return NaN
+  try { return new Function('wx', `${fn}\nreturn sheetBodyPx()`)(fakeWx) } catch (e) { return NaN }
 }
 
 /** R7：在内存里执行 supportTicketView 源码（自检注入改的是这份字符串） */
@@ -553,6 +593,82 @@ function check(src) {
   ok(/const MAX_TICKET_IMAGES = 3\b/.test(ti) && /const IMAGE_EDGE = 1280\b/.test(ti) && /width > IMAGE_EDGE[^\n]*compressedWidth = IMAGE_EDGE/.test(ti) && /wx\.chooseMedia\(/.test(ti) && /wx\.cloud\.uploadFile\(/.test(ti) && /const DIR = 'support-tickets'/.test(ti) && /fileID\.indexOf\('cloud:\/\/'\) !== 0/.test(ti), 'R8-4 上传做法偏离（最多 3 张 / 宽 > 1280 压缩 / chooseMedia / uploadFile / support-tickets 目录 / 只收 cloud://）')
   ok(/loadTicketImages\(t\)/.test(src.ticketsVue) && /getTempFileUrls\(ids\)/.test(src.ticketsVue) && /t\?\.images/.test(src.ticketsVue) && /:preview-src-list="ticketImageUrls"/.test(src.ticketsVue), 'R8-5 ERP 留言工单看不到顾客附图（images）')
 
+  // R9 出货中心 / 核对出货单底部弹层可滚动（产品负责人 2026-10-08 真机：选择包装方式 / 原材料滑不动）
+  const r9Pages = [
+    ['shipment-ops', src.shipOpsWxml, src.shipOpsJs],
+    ['shipment-edit', src.shipEditWxml, src.shipEditJs]
+  ]
+  for (const [name, wxml, js] of r9Pages) {
+    const body = stripComments(wxml)
+    const tags = body.match(R9_TAG) || []
+    const scrolls = tags.filter((t) => t.startsWith('<scroll-view') && /\sscroll-y\b/.test(t))
+    ok(scrolls.length > 0, `R9-1 ${name} 找不到弹层 scroll-view`)
+    scrolls.forEach((t) => {
+      ok(/style="[^"]*height:\s*\{\{\s*sheetBodyPx\s*\}\}px/.test(t), `R9-1 ${name} 的 scroll-view 没有内联 height:{{sheetBodyPx}}px：${t.slice(0, 70)}`)
+      ok(!/catchtouchmove/.test(t), `R9-5 ${name} 的 scroll-view 上挂了 catchtouchmove（列表会滑不动）`)
+    })
+    ok(/sheetBodyPx:\s*sheetBodyPx\(\)/.test(js), `R9-1 ${name} 的 onLoad 没写入 sheetBodyPx`)
+    const sheets = tags.filter((t) => r9Classes(t).some((c) => /^(ss|ops|se)-sheet$/.test(c)))
+    ok(sheets.length > 0, `R9-5 ${name} 找不到底部弹层`)
+    sheets.forEach((t) => ok(!/catchtouchmove/.test(t), `R9-5 ${name} 弹层容器挂了 catchtouchmove（会吞掉内部列表滚动）：${t.slice(0, 70)}`))
+    tags.filter((t) => r9Classes(t).some((c) => /^(ss|ops|se)-mask$/.test(c))).forEach((t) => {
+      ok(/catchtouchmove="noop"/.test(t), `R9-5 ${name} 遮罩缺 catchtouchmove（背后页面会跟着滚）：${t.slice(0, 70)}`)
+    })
+    tags.filter((t) => r9Classes(t).some((c) => /^(ss|ops|se)-sheet-head$|^(ss|se)-search$/.test(c)) || /class="ss-actions is-in-sheet"/.test(t)).forEach((t) => {
+      ok(/catchtouchmove="noop"/.test(t), `R9-5 ${name} 弹层固定区（标题 / 搜索 / 底部按钮）缺 catchtouchmove：${t.slice(0, 70)}`)
+    })
+    const meta = body.trimStart().match(/^<page-meta\s+page-style="([^"]*)"/)
+    ok(!!meta && /overflow:\s*hidden/.test(meta[1]), `R9-6 ${name} 第一个节点不是 page-meta 锁背后页面滚动`)
+    sheets.forEach((t) => {
+      const cond = ((t.match(/wx:if="\{\{([^}]*)\}\}"/) || [])[1] || '').split('&&')[0].trim()
+      ok(!!cond && !!meta && meta[1].includes(cond), `R9-6 ${name} 弹层「${cond || '?'}」打开时 page-meta 没锁背后页面`)
+    })
+  }
+  const opsCss = [src.opsMuseumWxss, src.shipSkuWxss, src.shipOpsWxss]
+  const r9Bodies = [
+    ['.ss-sheet-body', opsCss.map((c) => [c, '.ss-sheet-body'])],
+    ['.sc-detail-body', [[src.opsMuseumWxss, '.ops-sheet-body'], [src.shipOpsWxss, '.sc-detail-body']]],
+    ['.se-sheet-body', [[src.shipEditWxss, '.se-sheet-body']]]
+  ]
+  for (const [label, pairs] of r9Bodies) {
+    const d = cssDecls(pairs)
+    ok(/^(0 1 auto|0 0 auto|none)$/.test(d.flex || '') && !d['flex-basis'] && !d['flex-grow'], `R9-2 ${label} 的 flex 不是 0 1 auto（flex: 1 会无视内联高度、按内容撑开而滑不动；实得 ${d.flex || '无'}）`)
+    ok(d['min-height'] === '0', `R9-2 ${label} 缺 min-height: 0`)
+    ok(!d['max-height'] || d['max-height'] === 'none', `R9-2 ${label} 又写了 max-height（${d['max-height']}），高度只认内联 sheetBodyPx`)
+  }
+  const r9Sheets = [
+    ['.ss-sheet', opsCss.map((c) => [c, '.ss-sheet'])],
+    ['.sc-detail-sheet', [[src.opsMuseumWxss, '.ops-sheet'], [src.shipOpsWxss, '.sc-detail-sheet']]],
+    ['.se-sheet', [[src.shipEditWxss, '.se-sheet']]]
+  ]
+  for (const [label, pairs] of r9Sheets) {
+    const d = cssDecls(pairs)
+    const vh = Number(((d['max-height'] || '').match(/^(\d+(?:\.\d+)?)vh$/) || [])[1])
+    ok(vh > 0 && vh <= 80, `R9-3 ${label} 高度上限不是 ≤ 80vh（实得 ${d['max-height'] || '无'}）`)
+    ok(d.overflow === 'hidden', `R9-3 ${label} 缺 overflow: hidden`)
+    ok(/env\(safe-area-inset-bottom\)/.test(d['padding-bottom'] || ''), `R9-3 ${label} 底部没留安全区`)
+  }
+  for (const [label, pairs] of [
+    ['.ss-sheet-head', [[src.shipSkuWxss, '.ss-sheet-head']]],
+    ['.ss-search', [[src.shipSkuWxss, '.ss-search']]],
+    ['.ss-actions.is-in-sheet', [[src.shipSkuWxss, '.ss-actions.is-in-sheet']]],
+    ['.se-sheet-head', [[src.shipEditWxss, '.se-sheet-head']]],
+    ['.se-search', [[src.shipEditWxss, '.se-search']]]
+  ]) {
+    ok(cssDecls(pairs)['flex-shrink'] === '0', `R9-4 ${label} 缺 flex-shrink: 0（标题 / 搜索 / 按钮会被列表挤扁）`)
+  }
+  const r9Devices = [
+    ['iPhone 13（有底部安全区）', { windowHeight: 750, screenHeight: 844, safeArea: { bottom: 810 } }, 34],
+    ['iPhone SE（无安全区）', { windowHeight: 603, screenHeight: 667, safeArea: { bottom: 667 } }, 0]
+  ]
+  for (const [label, info, safe] of r9Devices) {
+    for (const [api, fakeWx] of [['getWindowInfo', { getWindowInfo: () => info }], ['getSystemInfoSync', { getSystemInfoSync: () => info }]]) {
+      const px = runSheetBodyPx(src.shipShared, fakeWx)
+      const cap = Math.floor(info.windowHeight * 0.8)
+      ok(Number.isFinite(px) && px + 120 + safe <= cap && px + 120 + safe >= cap - 40, `R9-7 ${label}（${api}）弹层列表高 ${px}px：整层须 ≤ 80% 窗高且扣掉底部安全区`)
+    }
+  }
+
   return fails
 }
 
@@ -650,7 +766,26 @@ function selftest() {
     ['反馈页失败不能重试', (s) => ({ ...s, feedbackWxml: s.feedbackWxml.replace(' catchtap="retryTicketImage"', '') }), /R8-3 feedback 附图缺/],
     ['大图不压缩', (s) => ({ ...s, ticketImagesJs: s.ticketImagesJs.replace('const IMAGE_EDGE = 1280', 'const IMAGE_EDGE = 4096') }), /R8-4 上传做法偏离/],
     ['ERP 不加载附图', (s) => ({ ...s, ticketsVue: s.ticketsVue.replace('  loadTicketImages(t)\n', '') }), /R8-5 ERP 留言工单看不到/],
-    ['工作台说明字退回 muted', (s) => ({ ...s, __r6css: { ...s.__r6css, [FILES.hubWxss]: s.__r6css[FILES.hubWxss].replace(/(\.lo-kpi-hint \{[^}]*?)color: var\(--color-text-secondary, #A09A90\)/, '$1color: var(--color-text-muted)') } }), /R6-3 .*manager\/manager\/index\.wxss \.lo-kpi-hint/]
+    ['工作台说明字退回 muted', (s) => ({ ...s, __r6css: { ...s.__r6css, [FILES.hubWxss]: s.__r6css[FILES.hubWxss].replace(/(\.lo-kpi-hint \{[^}]*?)color: var\(--color-text-secondary, #A09A90\)/, '$1color: var(--color-text-muted)') } }), /R6-3 .*manager\/manager\/index\.wxss \.lo-kpi-hint/],
+    ['选择器列表去掉内联高度', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace(/(<!-- 原材料 \/ 包装方式选择器 -->[\s\S]*?<scroll-view class="ss-sheet-body" scroll-y) style="height: \{\{sheetBodyPx\}\}px;"/, '$1') }), /R9-1 shipment-ops 的 scroll-view 没有内联/],
+    ['核对页列表去掉内联高度', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('scroll-y style="height: {{sheetBodyPx}}px;"', 'scroll-y') }), /R9-1 shipment-edit 的 scroll-view 没有内联/],
+    ['核对页 onLoad 不写高度', (s) => ({ ...s, shipEditJs: s.shipEditJs.replace('this.setData({ sheetBodyPx: sheetBodyPx() })', '') }), /R9-1 shipment-edit 的 onLoad 没写入/],
+    ['.ss-sheet-body 回到 flex: 1', (s) => ({ ...s, shipSkuWxss: s.shipSkuWxss.replace('.ss-sheet-body { flex: 0 1 auto;', '.ss-sheet-body { flex: 1;') }), /R9-2 \.ss-sheet-body 的 flex 不是/],
+    ['.ss-sheet-body 去掉 min-height: 0', (s) => ({ ...s, shipSkuWxss: s.shipSkuWxss.replace('.ss-sheet-body { flex: 0 1 auto; min-height: 0;', '.ss-sheet-body { flex: 0 1 auto;') }), /R9-2 \.ss-sheet-body 缺 min-height/],
+    ['index.wxss 后写覆盖成 flex: 1', (s) => ({ ...s, shipOpsWxss: s.shipOpsWxss + '\n.ss-sheet-body { flex: 1; }\n' }), /R9-2 \.ss-sheet-body 的 flex 不是/],
+    ['详情列表回到 ops-sheet-body 的 flex: 1', (s) => ({ ...s, shipOpsWxss: s.shipOpsWxss.replace('.sc-detail-body { flex: 0 1 auto; min-height: 0; max-height: none; }', '.sc-detail-body { max-height: none; }') }), /R9-2 \.sc-detail-body 的 flex 不是/],
+    ['.se-sheet-body 回到 max-height 58vh', (s) => ({ ...s, shipEditWxss: s.shipEditWxss.replace('  min-height: 0;\n  padding: 0 20rpx 28rpx;', '  min-height: 0;\n  max-height: 58vh;\n  padding: 0 20rpx 28rpx;') }), /R9-2 \.se-sheet-body 又写了 max-height/],
+    ['弹层上限回到 86vh', (s) => ({ ...s, shipSkuWxss: s.shipSkuWxss.replace('max-height: 80vh; overflow: hidden;', 'max-height: 86vh; overflow: hidden;') }), /R9-3 \.ss-sheet 高度上限/],
+    ['弹层去掉底部安全区', (s) => ({ ...s, shipEditWxss: s.shipEditWxss.replace('  padding-bottom: env(safe-area-inset-bottom);\n', '') }), /R9-3 \.se-sheet 底部没留安全区/],
+    ['搜索框可被挤扁', (s) => ({ ...s, shipSkuWxss: s.shipSkuWxss.replace('.ss-search { flex-shrink: 0;', '.ss-search {') }), /R9-4 \.ss-search 缺 flex-shrink/],
+    ['弹层容器挂 catchtouchmove', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('<view class="ss-sheet is-top" wx:if="{{picker.show}}">', '<view class="ss-sheet is-top" wx:if="{{picker.show}}" catchtouchmove="noop">') }), /R9-5 shipment-ops 弹层容器挂了 catchtouchmove/],
+    ['列表挂 catchtouchmove', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('<scroll-view class="se-sheet-body" scroll-y', '<scroll-view class="se-sheet-body" catchtouchmove="noop" scroll-y') }), /R9-5 shipment-edit 的 scroll-view 上挂了/],
+    ['核对页遮罩不挡穿透', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('bindtap="closePicker" catchtouchmove="noop"></view>', 'bindtap="closePicker"></view>') }), /R9-5 shipment-edit 遮罩缺/],
+    ['搜索行不挡背后滚动', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('<view class="ss-search" catchtouchmove="noop">', '<view class="ss-search">') }), /R9-5 shipment-ops 弹层固定区/],
+    ['page-meta 漏了选择器', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('skuForm.show || picker.show || libForm.show', 'skuForm.show || libForm.show') }), /R9-6 shipment-ops 弹层「picker\.show」/],
+    ['page-meta 被删', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace(/^<page-meta[^\n]*\n/, '') }), /R9-6 shipment-edit 第一个节点不是 page-meta/],
+    ['弹层上限回到 86%', (s) => ({ ...s, shipShared: s.shipShared.replace('Math.floor(winH * 0.8) - 120', 'Math.floor(winH * 0.86) - 120') }), /R9-7 iPhone 13/],
+    ['安全区退回不存在的 safeAreaInsets', (s) => ({ ...s, shipShared: s.shipShared.replace(/const safeBottom = [^\n]*/, 'const safeBottom = Number((sys.safeAreaInsets && sys.safeAreaInsets.bottom) || 0)') }), /R9-7 iPhone 13（有底部安全区）（getWindowInfo）/]
   ]
   const notes = []
   let bad = 0

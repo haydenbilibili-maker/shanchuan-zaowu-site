@@ -37,14 +37,18 @@ function todayStr() {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
-/** 弹层 scroll-view 显式高度（px）：scroll-y 无确定高度会把底栏顶出屏外 */
+/**
+ * 弹层 scroll-view 显式高度（px）：scroll-y 无确定高度会把底栏顶出屏外。
+ * 整层 ≤ 80% 窗高：标题 + 搜索框（或标题 + 底部按钮）≈ 120px，另扣底部安全区（.ss-sheet 的 padding-bottom）。
+ * wxss 侧 scroll-view 须 flex: 0 1 auto + min-height: 0，否则 flex 会无视这里的高度、按内容撑开而滑不动。
+ */
 function sheetBodyPx() {
   try {
-    const sys = wx.getSystemInfoSync() || {}
+    const sys = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()) || {}
     const winH = Number(sys.windowHeight) || 640
-    const safeBottom = Number((sys.safeAreaInsets && sys.safeAreaInsets.bottom) || 0)
-    // 弹层上限 86vh；头部 + 搜索 ≈ 110px；底部按钮区 ≈ 90px + 安全区
-    return Math.max(220, Math.floor(winH * 0.86) - 110 - 90 - safeBottom)
+    const area = sys.safeArea
+    const safeBottom = area && sys.screenHeight ? Math.max(0, Number(sys.screenHeight) - Number(area.bottom) || 0) : 0
+    return Math.max(220, Math.floor(winH * 0.8) - 120 - safeBottom)
   } catch (e) {
     return 420
   }
