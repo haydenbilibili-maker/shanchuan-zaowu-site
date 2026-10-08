@@ -82,6 +82,10 @@ const PROTECTION_LABELS = {
   protected_animal: '保护动物'
 };
 
+/** 规格大图高宽比夹取区间：区间内按原图比例完整铺宽；超出（超长竖图 / 超宽横图）定在边界并 aspectFit 留底色 */
+const SPEC_RATIO_MIN = 0.5;
+const SPEC_RATIO_MAX = 1.25;
+
 /** 售罄底栏 CTA 态本地缓存：避免异步拉到 deposit/wishlist 前先闪「未付」默认态 */
 const DETAIL_CTA_CACHE_PREFIX = 'detail_cta_v1_';
 const DETAIL_CTA_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -514,6 +518,7 @@ Page(withAppModal({
     activeDetailGroupLabel: '',
     activeDetailImages: [],
     activeDetailSlide: 0,
+    specSwiperH: 0,
     descriptionParagraphs: [],
     detailTagStyle: DETAIL_TAG_STYLE,
     detailHtmlContainerStyle: DETAIL_HTML_CONTAINER_STYLE,
@@ -1772,6 +1777,7 @@ Page(withAppModal({
       shippingRuleText: this.buildShippingRuleText(product),
       shippingRuleShort: this.buildShippingRuleShortText(product),
     });
+    if (galleryPatch.activeDetailImages) this.syncSpecSwiperHeight();
     this.refreshDimensionOptions();
     this.updateSpecSummary();
     this.loadProductCoupons(displayPrice);
@@ -1823,12 +1829,37 @@ Page(withAppModal({
       activeDetailImages: group.images,
       activeDetailSlide: 0,
       detailImages: group.images
-    });
+    }, () => this.syncSpecSwiperHeight());
   },
 
   onDetailSwiperChange(e) {
     const idx = (e.detail && e.detail.current) || 0;
-    this.setData({ activeDetailSlide: idx });
+    this.setData({ activeDetailSlide: idx }, () => this.syncSpecSwiperHeight());
+  },
+
+  /** 规格大图加载：记原图高宽比；是当前这张就按比例给 swiper 定高 */
+  onSpecImageLoad(e) {
+    const { width, height } = e.detail || {};
+    const src = e.currentTarget.dataset.src;
+    if (!width || !height || !src) return;
+    (this._specRatio || (this._specRatio = {}))[src] = height / width;
+    if (src === (this.data.activeDetailImages || [])[this.data.activeDetailSlide || 0]) this.syncSpecSwiperHeight();
+  },
+
+  syncSpecSwiperHeight() {
+    const src = (this.data.activeDetailImages || [])[this.data.activeDetailSlide || 0];
+    const ratio = src && this._specRatio && this._specRatio[src];
+    if (!ratio) return;
+    const apply = (w) => {
+      const h = Math.round(w * Math.min(SPEC_RATIO_MAX, Math.max(SPEC_RATIO_MIN, ratio)));
+      if (h !== this.data.specSwiperH) this.setData({ specSwiperH: h });
+    };
+    if (this._specW) return apply(this._specW);
+    this.createSelectorQuery().select('.detail-spec-swiper').boundingClientRect((rect) => {
+      if (!rect || !rect.width) return;
+      this._specW = rect.width;
+      apply(rect.width);
+    }).exec();
   },
 
   selectDimension(e) {

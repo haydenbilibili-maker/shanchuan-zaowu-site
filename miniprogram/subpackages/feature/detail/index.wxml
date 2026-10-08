@@ -386,7 +386,8 @@ module.exports.saveLabel = saveLabel;
           >{{item.label}}</view>
         </scroll-view>
         <swiper
-          class="detail-spec-swiper"
+          class="detail-spec-swiper {{specSwiperH ? '' : 'is-loading'}}"
+          style="{{specSwiperH ? 'height: ' + specSwiperH + 'px;' : ''}}"
           current="{{activeDetailSlide}}"
           bindchange="onDetailSwiperChange"
           indicator-dots="{{activeDetailImages.length > 1}}"
@@ -398,8 +399,10 @@ module.exports.saveLabel = saveLabel;
             <image
               class="detail-spec-slide"
               src="{{imgView[item] || item}}"
-              mode="aspectFill"
+              mode="aspectFit"
               lazy-load
+              bindload="onSpecImageLoad"
+              data-src="{{item}}"
               hover-class="detail-img-press"
               hover-stay-time="80"
               bindtap="previewDetailImage"

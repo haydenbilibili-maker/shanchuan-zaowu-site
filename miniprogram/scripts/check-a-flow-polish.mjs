@@ -25,6 +25,7 @@ const FILES = {
   searchWxml: 'subpackages/feature/search/index.wxml',
   searchJs: 'subpackages/feature/search/index.js',
   detailWxml: 'subpackages/feature/detail/index.wxml',
+  detailJs: 'subpackages/feature/detail/index.js',
   wikiWxml: 'subpackages/feature/detail/wiki-detail/index.wxml',
   articleWxml: 'subpackages/feature/articles/detail/index.wxml',
   detailWxss: 'subpackages/feature/detail/index.wxss',
@@ -182,6 +183,20 @@ function checks(s) {
   add('R5-1 首页滚动区 flex:1 + height:0 吃剩余高度，不再写死 100vh 系高度（含单页模式）',
     /flex: 1;/.test(ms) && /height: 0;/.test(ms) && !/100vh/.test(ms) && !/\.is-single-page \.main-scroll\s*\{/.test(s.homeWxss))
   add('R5-1 首页整页错误态同样吃剩余高度（flex:1）', /flex: 1;/.test(rule(s.homeWxss, '.page-error')))
+
+  // R6 规格大图按原图比例：swiper 动态高度 + aspectFit；禁止固定高 + aspectFill 裁切
+  const slideImg = openTag(s.detailWxml, /<image\b(?:[^>"']|"[^"]*"|'[^']*')*?class="detail-spec-slide"/)
+  const swiperTag = openTag(s.detailWxml, /<swiper\b(?:[^>"']|"[^"]*"|'[^']*')*?class="detail-spec-swiper/)
+  const slideCss = rule(s.detailWxss, '.detail-spec-slide')
+  const swiperCss = rule(s.detailWxss, '.detail-spec-swiper')
+  add('R6 规格大图不用 aspectFill（禁止裁切）', slideImg && !/\bmode="aspectFill"/.test(slideImg))
+  add('R6 规格大图用 aspectFit 完整展示 + bindload 量原图比例', /\bmode="aspectFit"/.test(slideImg) && /bindload="onSpecImageLoad"/.test(slideImg) && /data-src="\{\{item\}\}"/.test(slideImg))
+  add('R6 规格 swiper 用 specSwiperH 动态定高', /specSwiperH/.test(swiperTag) && /specSwiperH \? 'height: ' \+ specSwiperH \+ 'px/.test(swiperTag))
+  add('R6 .detail-spec-slide 高度跟 swiper（100%），不再写死 rpx', /height: 100%;/.test(slideCss) && !/\d+rpx/.test(slideCss))
+  add('R6 .detail-spec-swiper 有 height 过渡，加载前有 is-loading 脉动', /transition: height /.test(swiperCss) && /\.detail-spec-swiper\.is-loading/.test(s.detailWxss))
+  add('R6 SPEC_RATIO_MIN/MAX + onSpecImageLoad/syncSpecSwiperHeight 存在',
+    /const SPEC_RATIO_MIN = 0\.5/.test(s.detailJs) && /const SPEC_RATIO_MAX = 1\.25/.test(s.detailJs) &&
+    /onSpecImageLoad\(e\)/.test(s.detailJs) && /syncSpecSwiperHeight\(\)/.test(s.detailJs))
   return out
 }
 
@@ -234,7 +249,13 @@ if (process.argv.includes('--selftest')) {
     ['首页滚动区退回 calc(100vh - 底栏)', 'homeWxss', (t) => t.replace('.main-scroll {\n  flex: 1;\n  height: 0;', '.main-scroll {\n  height: calc(100vh - var(--tabbar-offset));')],
     ['首页容器去掉 100vh 裁切', 'homeWxss', (t) => t.replace('.container {\n  height: 100vh;\n', '.container {\n')],
     ['单页模式滚动区写回 100vh', 'homeWxss', (t) => t + '\n.container.is-single-page .main-scroll {\n  height: 100vh;\n}\n'],
-    ['工坊描述超长（恢复截断原文）', 'atelierJs', (t) => t.replace("desc: '为陪伴过的伙伴留存纪念，专员评估工艺周期',", "desc: '为陪伴过你的伙伴留存纪念藏品，专员评估工艺与周期',")]
+    ['工坊描述超长（恢复截断原文）', 'atelierJs', (t) => t.replace("desc: '为陪伴过的伙伴留存纪念，专员评估工艺周期',", "desc: '为陪伴过你的伙伴留存纪念藏品，专员评估工艺与周期',")],
+    ['规格大图退回 aspectFill', 'detailWxml', (t) => t.replace('class="detail-spec-slide"\n              src="{{imgView[item] || item}}"\n              mode="aspectFit"', 'class="detail-spec-slide"\n              src="{{imgView[item] || item}}"\n              mode="aspectFill"')],
+    ['规格大图去掉 bindload', 'detailWxml', (t) => t.replace('\n              bindload="onSpecImageLoad"\n              data-src="{{item}}"', '')],
+    ['规格 swiper 去掉动态高度', 'detailWxml', (t) => t.replace("style=\"{{specSwiperH ? 'height: ' + specSwiperH + 'px;' : ''}}\"\n          ", '')],
+    ['规格 slide 写死 520rpx', 'detailWxss', (t) => t.replace('.detail-spec-slide {\n  width: 100%;\n  height: 100%;', '.detail-spec-slide {\n  width: 100%;\n  height: 520rpx;')],
+    ['规格 swiper 去掉高度过渡', 'detailWxss', (t) => t.replace('\n  transition: height 0.25s ease;', '')],
+    ['SPEC_RATIO_MAX 改掉', 'detailJs', (t) => t.replace('const SPEC_RATIO_MAX = 1.25;', '')],
   ]
   let ok = baseOk
   console.log(`${baseOk ? '✓' : '✗'} 基线：真源码全部断言通过`)

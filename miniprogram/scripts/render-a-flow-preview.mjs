@@ -210,13 +210,48 @@ const scenes = [
   }
 ]
 
+/**
+ * 规格画廊三种比例（横 3:2 / 竖 9:16 / 方 1:1）：只渲染详情页「多规格」片段（fragment），image 的 mode 按真机语义映射
+ * （aspectFill→cover / aspectFit→contain / widthFix→高随宽）；页面 JS 定义了 SPEC_RATIO_MIN/MAX 时，
+ * 注入脚本按同一公式模拟 bindload 定高（取图片原始宽高 × 容器宽，夹在区间内）。
+ */
+const SPEC = (name) => `file://${join(ROOT, '.tmp/a-flow/spec-imgs', name)}`
+const specScene = (name, img) => ({
+  name, page: 'detail', h: 1250, fragment: ['<!-- 多规格：', '<!-- 单规格'],
+  data: {
+    detailGalleryMode: 'sku', imgView: {}, imgThumbView: {},
+    detailImageGroups: [{ id: 'g', label: '绿色系' }, { id: 'p', label: '紫色系' }], activeDetailGroupId: 'p', activeDetailGroupLabel: '紫色系',
+    activeDetailImages: [img], activeDetailSlide: 0, selectedSkuSizeText: '',
+    sharedDetailImages: [SPEC('landscape-3x2.jpg'), SPEC('portrait-9x16.jpg'), SPEC('square-1x1.jpg')]
+  }
+})
+scenes.push(specScene('spec-landscape', SPEC('landscape-3x2.jpg')), specScene('spec-portrait', SPEC('portrait-9x16.jpg')), specScene('spec-square', SPEC('square-1x1.jpg')))
+
+function specEmulation() {
+  const js = read(join(MP, 'subpackages/feature/detail/index.js'))
+  const lo = (/const SPEC_RATIO_MIN = ([\d.]+)/.exec(js) || [])[1]
+  const hi = (/const SPEC_RATIO_MAX = ([\d.]+)/.exec(js) || [])[1]
+  if (!lo || !hi) return ''
+  return `<script>(() => {
+    const sw = document.querySelector('.detail-spec-swiper'); const img = sw && sw.querySelector('img')
+    if (!img) return
+    const fit = () => { const r = img.naturalHeight / img.naturalWidth; const h = Math.round(sw.getBoundingClientRect().width * Math.min(${hi}, Math.max(${lo}, r)))
+      sw.style.height = h + 'px'; sw.classList.remove('is-loading'); if (r > ${hi} || r < ${lo}) img.setAttribute('aria-mode', 'aspectFit') }
+    img.complete && img.naturalWidth ? fit() : img.addEventListener('load', fit)
+  })()</script>`
+}
+
 /** 预览里没有组件实现：只包图的壳按透明容器展开，其余自定义组件仍整棵跳过 */
 const unwrapGate = (s) => s.replace(/<sensitive-blur-gate\b[^>]*>/g, '<block>').replace(/<\/sensitive-blur-gate>/g, '</block>')
 
 async function shoot(scene) {
   const missing = new Set()
   const page = PAGES[scene.page]
-  const wxml = unwrapGate(read(join(MP, page.wxml)).replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, ''))
+  let wxml = unwrapGate(read(join(MP, page.wxml)).replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, ''))
+  if (scene.fragment) {
+    const [from, to] = scene.fragment
+    wxml = `<view style="padding: 32rpx;"><view class="detail-content">${wxml.slice(wxml.indexOf(from), wxml.indexOf(to))}</view></view>`.replace(/\bmode="/g, 'aria-mode="')
+  }
   const latin = { display: (s) => s || '' }
   const body = renderWxml(wxml, { latin, ...scene.data }, { lenient: true, onMissing: (k) => missing.add(k) })
   const css = rpx2px(loadWxss(join(MP, 'app.wxss')) + '\n' + loadWxss(join(MP, page.wxss)))
@@ -228,7 +263,9 @@ img:not([src]), img[src=""] { visibility: hidden; }
 .main-scroll { height: auto !important; position: static !important; overflow: visible !important; }
 .page-ency .sticky-header { position: relative !important; }
 .floating, .floating-shadow, .slide-up-anim, .blink { animation: none !important; }
-</style></head><body>${body}${measure ? `<script>${MEASURE_JS}</script>` : ''}</body></html>`
+${scene.fragment ? `img[aria-mode="aspectFill"] { object-fit: cover; } img[aria-mode="aspectFit"] { object-fit: contain; } img[aria-mode="widthFix"] { height: auto !important; }
+.detail-spec-swiper { position: relative; } .detail-spec-swiper > div:not(:first-child) { display: none; } .detail-spec-swiper > div { height: 100%; }` : ''}
+</style></head><body>${body}${measure ? `<script>${MEASURE_JS}</script>` : ''}${scene.fragment ? specEmulation() : ''}</body></html>`
   const htmlPath = join(tmpdir(), `a-flow-${scene.name}-${process.pid}.html`)
   writeFileSync(htmlPath, html)
   const out = join(outDir, `${scene.name}.png`)

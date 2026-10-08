@@ -1033,17 +1033,20 @@ button.nav-share-btn::after { display: none; border: none; }
   color: var(--gold);
 }
 .detail-spec-tab:active { opacity: 0.85; }
+/* 高度由 JS 按当前图原始比例给（夹在 SPEC_RATIO_MIN–MAX）；加载前按 4:3 占位脉动，避免布局跳动 */
 .detail-spec-swiper {
   width: 100%;
-  height: 520rpx;
+  height: 514rpx;
   border-radius: 16rpx;
   overflow: hidden;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(38, 35, 32, 0.9);
+  transition: height 0.25s ease;
 }
+.detail-spec-swiper.is-loading { animation: ui-sk-pulse 1.2s ease-in-out infinite; }
 .detail-spec-slide {
   width: 100%;
-  height: 520rpx;
+  height: 100%;
   display: block;
   background: var(--color-bg-elevated);
 }
