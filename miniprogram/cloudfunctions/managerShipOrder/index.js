@@ -37,6 +37,11 @@ const { isNonClientSource, isClientSource, isInternalSource, sourceSegments, des
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
+/** 买家补同步冷却：避免每次打开订单详情都打微信接口 */
+const ENSURE_RETRY_COOLDOWN_MS = 3 * 60 * 1000
+/** 礼赠物流签收轮询：同一运单状态查询冷却 */
+const GIFT_TRACE_CHECK_COOLDOWN_MS = 25 * 60 * 1000
+const GIFT_DELIVERY_POLL_LIMIT = 40
 
 async function grantPickupPoints(orderId) {
   try {

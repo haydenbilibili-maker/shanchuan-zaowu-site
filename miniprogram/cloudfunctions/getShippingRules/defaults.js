@@ -77,6 +77,35 @@ const DEFAULT_CRAFT_TYPE_RULES = [
 /** 通配符 key（未单独列出的装裱方式都归它） */
 const WILDCARD_CRAFT_TYPE = '*'
 
+/** 显式商品类型标注（与 config/shipping.js、makeOrder/shipping.js 逐字一致） */
+const SHIPPING_KIND = {
+  ACCESSORY: 'accessory',
+  SPECIMEN: 'specimen'
+}
+
+function normalizeExplicitKind(raw) {
+  if (raw == null || raw === '') return ''
+  const s = String(raw).trim().toLowerCase()
+  if (
+    s === SHIPPING_KIND.ACCESSORY ||
+    s === '饰品' ||
+    s === 'merch' ||
+    s === 'jewelry' ||
+    s === 'accessory'
+  ) {
+    return SHIPPING_KIND.ACCESSORY
+  }
+  if (
+    s === SHIPPING_KIND.SPECIMEN ||
+    s === '标本' ||
+    s === 'specimen' ||
+    s === 'display'
+  ) {
+    return SHIPPING_KIND.SPECIMEN
+  }
+  return ''
+}
+
 /**
  * 老文档（没有 `craftTypeRules`）→ 合成规则表，保证**行为逐字不变**：
  * 收费清单里的每一项 → ¥299/¥18；其余 → 通配符档 ¥39/¥10。

@@ -78,3 +78,5 @@ npm run test:secure-data-write
 npm run check:rpx-zero-slack
 # 2026-09-29：云函数禁止 require 函数目录外的相对路径（listCategories 线上每次 Cannot find module，错题本 E27）
 npm run check:cloudfn-require-scope
+# 2026-10-08：全仓未定义变量（TS 绑定器扫小程序 + 全部云函数；storeById / refundOrder 常量 / 礼赠物流常量 / 运费 SHIPPING_KIND / 催领模板 v）
+npm run check:undefined-names

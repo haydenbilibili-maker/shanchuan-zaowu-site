@@ -364,6 +364,8 @@
     "check:cloudfn-no-wx:selftest": "node miniprogram/scripts/check-cloudfn-no-wx.mjs --selftest",
     "check:cloudfn-require-scope": "node miniprogram/scripts/check-cloudfn-require-scope.mjs",
     "check:cloudfn-require-scope:selftest": "node miniprogram/scripts/check-cloudfn-require-scope.mjs --selftest",
+    "check:undefined-names": "node miniprogram/scripts/check-undefined-names.mjs",
+    "check:undefined-names:selftest": "node miniprogram/scripts/check-undefined-names.mjs --selftest",
     "check:sensitive-rules": "node miniprogram/scripts/check-sensitive-rules.mjs",
     "check:sensitive-rules:selftest": "node miniprogram/scripts/check-sensitive-rules.mjs --selftest",
     "check:sensitive-direct-read": "node miniprogram/scripts/check-sensitive-direct-read.mjs",

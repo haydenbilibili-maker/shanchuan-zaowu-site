@@ -135,7 +135,7 @@ const MINI_TEMPLATES = {
     category: 'order',
     title: '还有一份山海等你',
     content: (v) => `有一份标本礼赠，正等你留下收件去处`,
-    actionUrl: (id) => `subpackages/feature/gift/receive/index?orderId=${id}&token=${v.token || ''}`
+    actionUrl: (id, v = {}) => `subpackages/feature/gift/receive/index?orderId=${id}&token=${v.token || ''}`
   },
   gift_shipped: {
     category: 'order',
@@ -191,7 +191,7 @@ function renderMini(eventType, relatedId, vars = {}) {
     category: t.category,
     title: t.title,
     content: typeof t.content === 'function' ? t.content(vars) : t.content,
-    actionUrl: typeof t.actionUrl === 'function' ? t.actionUrl(relatedId) : (t.actionUrl || ''),
+    actionUrl: typeof t.actionUrl === 'function' ? t.actionUrl(relatedId, vars) : (t.actionUrl || ''),
     // 需求 10：fallback 直写路径同样要带「名称 + 图片 + 规格」商品卡，
     // 否则 dispatchMessage 调用失败时信件就退回「只有订单号」的旧形态。
     products: pickMessageProducts(vars.products),

@@ -14,7 +14,11 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+/** 仅开发显式开启；生产禁止对非 mock 订单做本地假退款 */
+const ALLOW_MOCK_PAY = process.env.ALLOW_MOCK_PAY === '1'
+const WALLET_INTERNAL_KEY = process.env.STORED_VALUE_CALLBACK_KEY || process.env.PAY_CALLBACK_INTERNAL_KEY || ''
 
+/** 按原支付渠道拆分退款额（含损耗后的应退总额） */
 function resolveRefundChannels(order, refundYuan) {
   const totalFen = parseYuanToFen(order.totalPrice)
   const refundFen = parseYuanToFen(refundYuan)
