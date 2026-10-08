@@ -69,7 +69,9 @@ export const FAMILIES = [
   { module: 'categorySeed.js', kind: 'identical', canonical: 'seedCategories/categorySeed.js',
     why: '分类种子与一级馆别名：listCategories 原先跨目录 require 这份文件，部署包里没有 → 线上每次调用都崩（2026-09-29）；改为本目录副本后两边的馆名/别名口径必须一致' },
   { module: 'giftMeta.js', kind: 'identical', canonical: 'manageGift/giftMeta.js',
-    why: '礼赠元数据（状态判定 / 礼笺字数 / 商品快照 / 地址脱敏）：5 份副本（manageGift 真源 + makeOrder / confirmPayment / payCallback / managerShipOrder）；曾出现 3 种内容（缺 protectionType 快照、缺 maskAddress、注释路径未跟 giftShareCard 搬家）—— 口径必须一致，否则下单写的 giftMeta 与履约读的不一致' }
+    why: '礼赠元数据（状态判定 / 礼笺字数 / 商品快照 / 地址脱敏）：5 份副本（manageGift 真源 + makeOrder / confirmPayment / payCallback / managerShipOrder）；曾出现 3 种内容（缺 protectionType 快照、缺 maskAddress、注释路径未跟 giftShareCard 搬家）—— 口径必须一致，否则下单写的 giftMeta 与履约读的不一致' },
+  { module: 'fulfillOrder.js', kind: 'identical', canonical: 'payCallback/fulfillOrder.js',
+    why: '支付履约：payCallback（微信回调）与 confirmPayment（客户端确认 / 超管补履约）两路共用；调用方差异只走 opts.source / honorPaidEvidenceOnTimeout 参数。曾漂移 3 周：「超时后才付款不作废」「作废后到账写待人工退款」两段只在 payCallback 一份，confirmPayment 超时分支会把已付款单覆盖成作废（2026-10-08 C 流调查 S4）' }
 ]
 
 /** 有意分歧、**不纳入本守卫**的家族（登记原因，防后来者「顺手统一」） */
@@ -197,6 +199,12 @@ function selftest() {
       file: 'makeOrder/giftMeta.js',
       mutate: (t) => t.replace('subpackages/feature/gift/giftShareCard.js', 'utils/giftShareCard.js'),
       expect: /giftMeta\.js/
+    },
+    {
+      name: '把 confirmPayment 的 fulfillOrder 来源写回硬编码（支付履约漂移）',
+      file: 'confirmPayment/fulfillOrder.js',
+      mutate: (t) => t.replace('postCommissionForOrder(db, _, latest, { source })', "postCommissionForOrder(db, _, latest, { source: 'confirmPayment' })"),
+      expect: /fulfillOrder\.js/
     }
   ]
   for (const inj of injections) {
@@ -238,7 +246,7 @@ function selftest() {
     console.error(`\n自检失败 ${bad} 项——守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：合成用例 + 真实文件注入（staffGuard / memberLevels / giftMeta）全部拦下，且不误报')
+  console.log('\n自检通过：合成用例 + 真实文件注入（staffGuard / memberLevels / giftMeta / fulfillOrder）全部拦下，且不误报')
 }
 
 function main() {

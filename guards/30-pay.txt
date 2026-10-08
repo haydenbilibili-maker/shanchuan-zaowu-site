@@ -9,3 +9,5 @@ npm run test:wallet-hub-lifecycle
 npm run test:points-ledger
 npm run test:b2b-pay
 npm run check:b2b-pay-submch
+# 2026-10-08：支付「超时后才付款」竞态（confirmPayment / payCallback 共用 fulfillOrder：条件作废 / 有流水号不作废 / 超管补履约过期单不抛异常）
+npm run test:pay-timeout-race

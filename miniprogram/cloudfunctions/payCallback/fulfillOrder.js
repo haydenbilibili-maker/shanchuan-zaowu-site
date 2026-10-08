@@ -145,7 +145,41 @@ async function tryReclaimStale(db, orderId) {
   return { ok: true, order, resume: true }
 }
 
-async function fulfillOrder(db, _, orderId, openid) {
+/**
+ * 支付超时关单：只有订单此刻仍是 pending_pay 才写 void（条件更新）。
+ * 抢到之后才回读最新文档去回账 / 释放库存 / 解锁券；没抢到说明另一路已推进状态，交还调用方按最新状态处理。
+ */
+async function claimPayTimeoutVoid(db, _, orderId) {
+  const res = await db.collection('orders').where({
+    _id: orderId,
+    status: 'pending_pay'
+  }).update({
+    data: {
+      status: 'void',
+      cancelReason: '支付超时'
+    }
+  })
+  if (updatedCount(res) !== 1) return false
+  const latestRes = await db.collection('orders').doc(orderId).get()
+  const latest = { ...(latestRes.data || {}), _id: orderId }
+  await releaseHeldWalletOnPayTimeout(orderId, latest)
+  await releaseOrderStockHold(db, _, latest).catch((e) =>
+    console.warn('fulfillOrder timeout stock release', e && e.message)
+  )
+  await unlockCouponOnTimeout(db, _, latest, orderId)
+  return true
+}
+
+/**
+ * @param {object} [opts]
+ * @param {string} [opts.source] 调用方标签（payCallback / confirmPayment），用于日志与分佣来源
+ * @param {boolean} [opts.honorPaidEvidenceOnTimeout=true] 超时但已有微信流水号时是否按已付款继续履约；
+ *   超管补履约（adminFulfill）对过期单的既有语义是「作废」，传 false
+ */
+async function fulfillOrder(db, _, orderId, openid, opts = {}) {
+  const source = String(opts.source || 'fulfillOrder')
+  const honorPaidEvidence = opts.honorPaidEvidenceOnTimeout !== false
+  const depth = Number(opts._depth) || 0
   const orderRes = await db.collection('orders').doc(orderId).get()
   let order = orderRes.data
 
@@ -170,24 +204,21 @@ async function fulfillOrder(db, _, orderId, openid) {
        * 此时绝不能把订单作废（否则「钱已扣、单已取消、货不发、钱不退」），
        * 必须继续完成履约；仅在没有支付证据时才按超时关单。
        */
-      const paidEvidence = String(order.wxTransactionId || '').trim()
+      const paidEvidence = honorPaidEvidence ? String(order.wxTransactionId || '').trim() : ''
       if (!paidEvidence) {
-        await releaseHeldWalletOnPayTimeout(orderId, order)
-        await releaseOrderStockHold(db, _, { ...order, _id: orderId }).catch((e) =>
-          console.warn('fulfillOrder timeout stock release', e && e.message)
-        )
-        await db.collection('orders').doc(orderId).update({
-          data: {
-            status: 'void',
-            cancelReason: '支付超时'
-          }
-        })
-        await unlockCouponOnTimeout(db, _, order, orderId)
-        throw new Error('订单已超时，请重新下单')
+        if (await claimPayTimeoutVoid(db, _, orderId)) {
+          throw new Error('订单已超时，请重新下单')
+        }
+        // 条件更新没命中：另一路（回调 / 清扫 / 并发确认）已改了状态 → 按最新状态重走一遍，不再用开头的旧快照
+        if (depth >= 2) throw new Error('订单状态不可支付')
+        return fulfillOrder(db, _, orderId, openid, { ...opts, _depth: depth + 1 })
       }
       // 已付款：留痕后继续履约（不释放库存/券/钱包）
-      console.warn('[payCallback] 支付晚于 payExpireTime，按已付款强制履约', orderId, paidEvidence)
-      await db.collection('orders').doc(orderId).update({
+      console.warn(`[${source}] 支付晚于 payExpireTime，按已付款强制履约`, orderId, paidEvidence)
+      await db.collection('orders').where({
+        _id: orderId,
+        status: 'pending_pay'
+      }).update({
         data: {
           paidAfterTimeout: true,
           paidAfterTimeoutAt: db.serverDate(),
@@ -230,7 +261,7 @@ async function fulfillOrder(db, _, orderId, openid) {
       // 现在：写失败或没写进去 → 抛错（微信会重试；本分支只写标记，重入是幂等的）。
       const evidence = String(order.wxTransactionId || '').trim()
       if (evidence) {
-        console.error('[payCallback] 已付款但订单不可履约，需人工退款', orderId, order.status, evidence)
+        console.error(`[${source}] 已付款但订单不可履约，需人工退款`, orderId, order.status, evidence)
         let marked = false
         const marker = {
           paidAfterVoid: true,
@@ -249,7 +280,7 @@ async function fulfillOrder(db, _, orderId, openid) {
           }
         } catch (e) {
           console.error(
-            '[payCallback] 待人工退款标记写入失败 —— 本次不返回成功，交给微信重试',
+            `[${source}] 待人工退款标记写入失败 —— 本次不返回成功，交给微信重试`,
             orderId,
             (e && (e.message || e.errMsg)) || e
           )
@@ -528,7 +559,7 @@ async function fulfillOrder(db, _, orderId, openid) {
     const latestRes = await db.collection('orders').doc(orderId).get()
     const latest = (latestRes && latestRes.data) || order
     latest._id = latest._id || orderId
-    await postCommissionForOrder(db, _, latest, { source: 'payCallback' })
+    await postCommissionForOrder(db, _, latest, { source })
   } catch (err) {
     console.warn('artisan commission post failed:', err && err.message)
   }
@@ -538,7 +569,7 @@ async function fulfillOrder(db, _, orderId, openid) {
     const latestRes = await db.collection('orders').doc(orderId).get()
     const latest = (latestRes && latestRes.data) || order
     latest._id = latest._id || orderId
-    await notifyArtisanSkuSold(db, _, latest, dispatchInAppMessage, { source: 'payCallback' })
+    await notifyArtisanSkuSold(db, _, latest, dispatchInAppMessage, { source })
   } catch (err) {
     console.warn('artisan sku sold notify failed:', err && err.message)
   }

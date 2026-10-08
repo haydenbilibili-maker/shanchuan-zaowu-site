@@ -14,7 +14,7 @@
     "report:colors:strict",
     "check:sfc-dev"
   ],
-  "minGuards": 153,
+  "minGuards": 154,
   "crossWith": [
     "visual",
     "home",

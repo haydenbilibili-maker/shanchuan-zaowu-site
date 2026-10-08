@@ -223,7 +223,7 @@ exports.main = async (event) => {
       })
     }
 
-    await fulfillOrder(db, _, order._id, order._openid)
+    await fulfillOrder(db, _, order._id, order._openid, { source: 'payCallback' })
     return { errcode: 0, errmsg: 'SUCCESS' }
   } catch (err) {
     console.error('payCallback fulfill error:', err)

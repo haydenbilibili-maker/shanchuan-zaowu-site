@@ -58,7 +58,22 @@ async function adminFulfillAction(event) {
     }
   }).catch((e) => console.warn('adminFulfill mark paid failed', e && e.message))
 
-  const result = await fulfillOrder(db, _, orderId, order._openid)
+  let result
+  try {
+    result = await fulfillOrder(db, _, orderId, order._openid, {
+      source: 'confirmPayment',
+      honorPaidEvidenceOnTimeout: false
+    })
+  } catch (e) {
+    const msg = String((e && e.message) || e || '')
+    if (/超时/.test(msg)) {
+      return { success: false, code: 'ORDER_EXPIRED_VOID', orderId, msg: '订单已过期作废，请走退款' }
+    }
+    return { success: false, code: 'ADMIN_FULFILL_FAILED', orderId, msg: `补履约失败：${msg || '未知错误'}` }
+  }
+  if (result && result.manualRefundRequired) {
+    return { success: false, code: 'ORDER_EXPIRED_VOID', orderId, msg: '订单已过期作废，请走退款' }
+  }
   return {
     success: true,
     orderId,
@@ -135,7 +150,15 @@ exports.main = async (event) => {
       }
     }
 
-    const result = await fulfillOrder(db, _, orderId, openid)
+    const result = await fulfillOrder(db, _, orderId, openid, { source: 'confirmPayment' })
+    if (result && result.manualRefundRequired) {
+      return {
+        success: false,
+        code: 'PAID_ORDER_VOID',
+        orderId,
+        msg: '订单已超时作废，已付款项将由客服人工退回'
+      }
+    }
     if (result && result.success && order.walletDebitStatus === 'held') {
       await db.collection('orders').doc(orderId).update({
         data: { walletDebitStatus: 'consumed', updateTime: db.serverDate() }
