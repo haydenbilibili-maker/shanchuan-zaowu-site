@@ -797,6 +797,9 @@
   </view>
   <view class="ss-search" catchtouchmove="noop">
     <input class="ss-search-input" placeholder="搜 SKU 名（如 大蓝闪蝶）" value="{{skuPicker.keyword}}" bindinput="onSkuKeyword" />
+    <view class="ss-review-filter {{skuPicker.reviewOnly ? 'on' : ''}}" wx:if="{{skuPicker.reviewCount || skuPicker.reviewOnly}}" bindtap="toggleSkuReviewOnly">
+      <text>{{skuPicker.reviewOnly ? '显示全部' : '只看待复核 ' + skuPicker.reviewCount}}</text>
+    </view>
   </view>
   <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
     <view class="ss-loading" wx:if="{{skuPicker.loading}}"><text>加载中…</text></view>
@@ -807,7 +810,10 @@
     <block wx:else>
       <view class="ss-sku" wx:for="{{skuPicker.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onPickSku">
         <view class="ss-sku-main">
-          <text class="ss-sku-name">{{item.skuName}}</text>
+          <view class="ss-sku-title">
+            <text class="ss-sku-name">{{item.skuName}}</text>
+            <text class="ss-review-tag" wx:if="{{item.needsReview}}">待复核</text>
+          </view>
           <text class="ss-sku-meta">{{item.rateText}}{{item.pricingStatus !== 'priced' ? ' · ' + (item.pricingNote || '待核价') : ''}}</text>
         </view>
         <text class="ss-sku-price {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{item.unitPriceText}}</text>

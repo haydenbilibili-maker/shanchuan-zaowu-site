@@ -31,7 +31,8 @@ function mapSkuForPicker(s, globalRatePct) {
     unitPriceText: priced ? '¥' + yuan(Math.round(s.unitPrice * 100)) : '待核价',
     rateText: rateLabel + (s.hasScene === true ? ' · 造景' : ''),
     pricingStatus: s.pricingStatus,
-    pricingNote: s.pricingNote || ''
+    pricingNote: s.pricingNote || '',
+    needsReview: s.needsReview === true
   }
 }
 
@@ -119,7 +120,7 @@ const data = {
   canSave: false,
   saveHint: '',
 
-  skuPicker: { show: false, keyword: '', loading: false, list: [], total: 0 },
+  skuPicker: { show: false, keyword: '', loading: false, list: [], total: 0, reviewOnly: false, reviewCount: 0 },
   skuForm: blankSkuForm(30),
   /** 原材料 / 包装选择器：target = skuForm（新建 SKU）| single（单条补录的可选字段） */
   picker: { show: false, kind: 'material', target: 'skuForm', keyword: '', loading: false, list: [], expandedKey: '' },
@@ -226,7 +227,11 @@ const methods = {
       this.setData({ createTipTone: 'warn', createTip: '算价未启用，先打开 ERP 价目表开关再选 SKU' })
       return
     }
-    this.setData({ 'skuPicker.show': true, 'skuPicker.keyword': '', 'skuPicker.list': [] }, () => this.searchSkuCatalog(''))
+    this.setData({ 'skuPicker.show': true, 'skuPicker.keyword': '', 'skuPicker.list': [], 'skuPicker.reviewOnly': false }, () => this.searchSkuCatalog(''))
+  },
+
+  toggleSkuReviewOnly() {
+    this.setData({ 'skuPicker.reviewOnly': !this.data.skuPicker.reviewOnly }, () => this.searchSkuCatalog(this.data.skuPicker.keyword))
   },
 
   closeSkuPicker() {
@@ -242,11 +247,17 @@ const methods = {
 
   searchSkuCatalog(keyword) {
     this.setData({ 'skuPicker.loading': true })
-    return callCloud(SETTLEMENT_FN, { action: 'sku.list', keyword: keyword || '', status: 'active', limit: 100 })
+    const reviewOnly = this.data.skuPicker.reviewOnly === true
+    return callCloud(SETTLEMENT_FN, { action: 'sku.list', keyword: keyword || '', status: 'active', limit: 100, reviewOnly })
       .then((r) => {
         const globalRatePct = Number(r.globalRatePct) || this.data.globalRatePct
         const list = (r.list || []).map((s) => mapSkuForPicker(s, globalRatePct))
-        this.setData({ 'skuPicker.loading': false, 'skuPicker.list': list, 'skuPicker.total': r.total || list.length })
+        this.setData({
+          'skuPicker.loading': false,
+          'skuPicker.list': list,
+          'skuPicker.total': r.total || list.length,
+          'skuPicker.reviewCount': Number(r.reviewCount) || 0
+        })
       })
       .catch((e) => {
         this.setData({ 'skuPicker.loading': false, 'skuPicker.list': [], createTipTone: 'warn', createTip: formatCloudFnError(e, 'SKU 加载失败') })

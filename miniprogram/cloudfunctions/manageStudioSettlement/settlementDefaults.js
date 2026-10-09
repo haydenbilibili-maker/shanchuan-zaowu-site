@@ -339,6 +339,9 @@ function mapSku(doc) {
     status: d.status === STATUS.INACTIVE ? STATUS.INACTIVE : STATUS.ACTIVE,
     sort: normalizeSort(d.sort),
     note: d.note || '',
+    /** 批量导入的待复核标记（只读透出；建/改 SKU 的入参不接收这两个字段） */
+    needsReview: d.needsReview === true,
+    importBatch: d.importBatch || '',
     updatedAt: Number(d.updatedAt) || 0
   }
 }

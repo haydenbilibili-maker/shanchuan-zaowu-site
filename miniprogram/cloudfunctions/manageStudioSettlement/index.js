@@ -799,6 +799,8 @@ async function handleSkuList(event) {
 
   let rows = await fetchAll(SKU_COLLECTION, activeWhere())
   rows = rows.filter((r) => (status ? r.status === status : true))
+  const reviewCount = rows.filter((r) => r.needsReview === true).length
+  if (event.reviewOnly === true) rows = rows.filter((r) => r.needsReview === true)
 
   /**
    * 材料名 → 分类。**每次列表都现读价目表**而不是把分类冗余进 SKU：
@@ -842,6 +844,7 @@ async function handleSkuList(event) {
     categories: [...new Set(matRows.map((r) => String(r.category || '')).filter(Boolean))].sort(),
     total: rows.length,
     truncated: rows.length > limit,
+    reviewCount,
     globalRatePct: config.laborRatePct,
     pricingEnabled: config.enabled,
     note: 'SKU 不存价：单价按当前价目表现算，出货时快照进单据'

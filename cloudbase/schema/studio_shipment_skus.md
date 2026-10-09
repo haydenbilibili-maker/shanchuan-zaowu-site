@@ -35,6 +35,9 @@ SSOT：`admin/docs/出货算价与工作室结算_Phase1_技术蓝图.md` §16�
 | `sceneCost` | number | **默认造景成本**（元/件）。**不进唯一键**；`hasScene=false` 时归 0。勾了造景却留空 → 创建接口**拒绝**（不静默写 0）。出货时快照进单据 `items[].sceneCost`，行上还能就地改 |
 | `status` | `active\|inactive` | 停用后开单时不再出现在可选列表（历史单靠快照不受影响） |
 | `sort` / `note` | | 排序 / 备注 |
+| `importBatch` | string | 批量导入批次（如 `feishu-2026-10-09`）；页面新建的 SKU 没有此字段。回滚 / 复核按它筛 |
+| `needsReview` | boolean | 待人工复核（导入时写 true；`sku.list` 透出并支持 `reviewOnly` 筛选；`sku.update` 不改它） |
+| `importRef` | object | 导入来源（飞书表 id + record_id 列表），只供追溯 |
 | `createdAt/By` `updatedAt/By` | | 审计 |
 | `deleted` | boolean | 软删标记 |
 

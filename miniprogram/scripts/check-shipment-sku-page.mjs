@@ -27,6 +27,10 @@
  *   13) 选择器（出货中心 + shipment-edit）与资料列表都传 orderBy:'sort'
  *   14) 云函数运行时（隔离副本 + mock）：不传 orderBy 输出不变；传了按 sort 排且排除停用；
  *       removeIfUnused 有引用（按 id / 按名称+等级 / 已删出货单）必拒 IN_USE，无引用才软删；店长调用被拒
+ *  F 2026-10-09 飞书首批 SKU 导入（needsReview / importBatch，见 miniprogram/docs/出货中心首批SKU导入_2026-10-09.md）
+ *   15) 选 SKU 弹层：带 needsReview 的 SKU 显示「待复核」小标签；有「只看待复核」筛选（sku.list 传 reviewOnly）
+ *   16) 云函数运行时：sku.list 透出 needsReview / importBatch / reviewCount，reviewOnly 只回待复核；
+ *       sku.update（部分更新）不得把 needsReview 冲掉
  */
 import { readFileSync, existsSync, mkdtempSync, cpSync, writeFileSync, mkdirSync, rmSync } from 'node:fs'
 import { resolve, dirname, join } from 'node:path'
@@ -54,6 +58,7 @@ const FILES = {
   hubWxml: 'miniprogram/subpackages/manager/manager/index.wxml',
   settle: 'miniprogram/cloudfunctions/manageStudioSettlement/index.js',
   refsJs: 'miniprogram/cloudfunctions/manageStudioSettlement/priceBookRefs.js',
+  settleDefaults: 'miniprogram/cloudfunctions/manageStudioSettlement/settlementDefaults.js',
   editJs: `${EXTRA}/shipment-edit/index.js`,
   supplier: `${EXTRA}/supplier/index.js`
 }
@@ -173,6 +178,16 @@ function collect(s) {
   if (!/'priceBook\.removeIfUnused':\s*1/.test(s.settle.slice(s.settle.indexOf('SUPER_ONLY_ACTIONS'), s.settle.indexOf('SUPER_ONLY_ACTIONS') + 600))) {
     errs.push('priceBook.removeIfUnused 须在 SUPER_ONLY_ACTIONS（仅超管可删）')
   }
+  // F15 待复核标记
+  if (!/needsReview:\s*d\.needsReview === true/.test(s.settleDefaults)) errs.push('mapSku 须透出 needsReview（待复核标记）')
+  if (!/needsReview:\s*s\.needsReview === true/.test(s.createJs.slice(s.createJs.indexOf('function mapSkuForPicker'), s.createJs.indexOf('function skuLineFrom')))) {
+    errs.push('mapSkuForPicker 须映射 needsReview（待复核标记）')
+  }
+  if (!/action: 'sku\.list'[^}]*reviewOnly/.test(s.createJs)) errs.push('选 SKU 的 sku.list 须传 reviewOnly（只看待复核筛选）')
+  const pickerAt = s.opsWxml.indexOf('<!-- 选已有 SKU -->')
+  const picker = pickerAt < 0 ? '' : s.opsWxml.slice(pickerAt, s.opsWxml.indexOf('<!-- 现场新建 SKU -->'))
+  if (!/<text class="ss-review-tag" wx:if="\{\{item\.needsReview\}\}">待复核<\/text>/.test(picker)) errs.push('选 SKU 弹层须对 needsReview 显示「待复核」标签')
+  if (!/bindtap="toggleSkuReviewOnly"/.test(picker)) errs.push('选 SKU 弹层须有「只看待复核」筛选（toggleSkuReviewOnly）')
   return errs
 }
 
@@ -319,6 +334,28 @@ async function serverErrs(mutateFiles) {
     // 店长可读
     const ml = await call({ action: 'searchPriceBook', kind: 'material', keyword: '', orderBy: 'sort' })
     if (!ml.success) errs.push('店长须可读 searchPriceBook（资料只读 / 开单选择器）')
+    // F16 待复核标记：透出 / 筛选 / 部分更新不冲掉
+    reset()
+    M.db.studio_shipment_skus = [
+      { _id: 'k2', materialId: 'm3', materialName: '光明女神', packagingName: '玻璃罩', status: 'active', needsReview: true, importBatch: 'feishu-2026-10-09' },
+      { _id: 'k3', materialId: 'm5', materialName: '金斑喙凤蝶', packagingName: '玻璃罩', status: 'active' }
+    ]
+    const all = await call({ action: 'sku.list', status: 'active' })
+    const flags = (all.list || []).map((k) => `${k._id}:${k.needsReview}:${k.importBatch}`).join(',')
+    if (!all.success || flags !== 'k2:true:feishu-2026-10-09,k3:false:') errs.push(`sku.list 须透出 needsReview / importBatch（现 ${flags || JSON.stringify(all.msg)}）`)
+    if (all.reviewCount !== 1) errs.push(`sku.list 须回 reviewCount（现 ${all.reviewCount}）`)
+    const only = await call({ action: 'sku.list', status: 'active', reviewOnly: true })
+    const onlyIds = (only.list || []).map((k) => k._id).join(',')
+    if (onlyIds !== 'k2') errs.push(`sku.list reviewOnly 须只回待复核 SKU（现 ${onlyIds}）`)
+    const noFilter = await call({ action: 'sku.list', status: 'active', reviewOnly: 'yes' })
+    if ((noFilter.list || []).length !== 2) errs.push('reviewOnly 只认布尔 true，其它值不得筛选（入参兼容）')
+    M.db.studio_packaging_prices = [{ _id: 'p1', name: '玻璃罩', size: '默认', isDefaultSize: true, status: 'active', unitPrice: 8 }]
+    await call({ action: 'sku.update', id: 'k2', item: { status: 'inactive' } })
+    const up = M.updates.find((x) => x.id === 'k2')
+    if (!up) errs.push('sku.update 部分更新未执行（待复核断言无意义）')
+    else if (Object.prototype.hasOwnProperty.call(up.data, 'needsReview') || Object.prototype.hasOwnProperty.call(up.data, 'importBatch')) {
+      errs.push('sku.update 部分更新不得改写 needsReview / importBatch（会冲掉待复核标记）')
+    }
   } catch (e) {
     errs.push('云函数运行时测试异常：' + ((e && e.stack) || e))
   } finally {
@@ -359,7 +396,11 @@ if (selftest) {
     ['选择器丢排序参数', (s) => ({ ...s, createJs: s.createJs.replace(", orderBy: 'sort' })", ' })') }), /出货中心选择器/],
     ['编辑页丢排序参数', (s) => ({ ...s, editJs: s.editJs.replace(", orderBy: 'sort' }", ' }') }), /shipment-edit 选择器/],
     ['删除绕过引用检查', (s) => ({ ...s, libraryJs: s.libraryJs.replace("'priceBook.removeIfUnused'", "'priceBook.remove'") }), /priceBook\.remove/],
-    ['店长可删（服务端）', (s) => ({ ...s, settle: s.settle.replace("'priceBook.removeIfUnused': 1", "'priceBook.removeIfUnusedX': 1") }), /SUPER_ONLY_ACTIONS/]
+    ['店长可删（服务端）', (s) => ({ ...s, settle: s.settle.replace("'priceBook.removeIfUnused': 1", "'priceBook.removeIfUnusedX': 1") }), /SUPER_ONLY_ACTIONS/],
+    ['待复核标签被删', (s) => ({ ...s, opsWxml: s.opsWxml.replace('wx:if="{{item.needsReview}}">待复核', 'wx:if="{{false}}">待复核') }), /待复核」标签/],
+    ['待复核筛选被删', (s) => ({ ...s, opsWxml: s.opsWxml.replace('bindtap="toggleSkuReviewOnly"', '') }), /只看待复核/],
+    ['选择器丢待复核映射', (s) => ({ ...s, createJs: s.createJs.replace('needsReview: s.needsReview === true', 'needsReviewX: false') }), /mapSkuForPicker 须映射 needsReview/],
+    ['选择器丢 reviewOnly', (s) => ({ ...s, createJs: s.createJs.replace("limit: 100, reviewOnly }", 'limit: 100 }') }), /须传 reviewOnly/]
   ]
   // 运行时注入：只改 tmp 副本里的云函数源码
   const serverCases = [
@@ -369,7 +410,11 @@ if (selftest) {
     ['不传参也重排', { 'index.js': (t) => t.replace('if (bySort) orderGroupsBySort(groups)', 'orderGroupsBySort(groups)') }, /顺序须与旧版一致|不得新增 sort 字段/],
     ['传参不重排', { 'index.js': (t) => t.replace('if (bySort) orderGroupsBySort(groups)', '') }, /须按资料排序/],
     ['停用项进选择器', { 'index.js': (t) => t.replace(/if \(r\.status !== ['"]active['"]\) continue/, '') }, /不得返回停用项/],
-    ['店长可删（运行时）', { 'index.js': (t) => t.replace("'priceBook.removeIfUnused': 1,", '').replace("'priceBook.removeIfUnused': 1", '') }, /店长调用 removeIfUnused 须被拒/]
+    ['店长可删（运行时）', { 'index.js': (t) => t.replace("'priceBook.removeIfUnused': 1,", '').replace("'priceBook.removeIfUnused': 1", '') }, /店长调用 removeIfUnused 须被拒/],
+    ['mapSku 不透出待复核', { 'settlementDefaults.js': (t) => t.replace('needsReview: d.needsReview === true,', '') }, /须透出 needsReview/],
+    ['reviewOnly 不筛选', { 'index.js': (t) => t.replace('if (event.reviewOnly === true) rows = rows.filter((r) => r.needsReview === true)', '') }, /reviewOnly 须只回待复核/],
+    ['reviewOnly 宽松判真', { 'index.js': (t) => t.replace('if (event.reviewOnly === true)', 'if (event.reviewOnly)') }, /只认布尔 true/],
+    ['部分更新冲掉待复核', { 'settlementDefaults.js': (t) => t.replace("note: String(src.note == null ? '' : src.note).trim(),\n    deleted: false", "note: String(src.note == null ? '' : src.note).trim(),\n    needsReview: false,\n    deleted: false") }, /不得改写 needsReview/]
   ]
   const base = collect(src).concat(await serverErrs())
   if (base.length) {
