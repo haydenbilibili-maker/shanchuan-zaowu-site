@@ -46,6 +46,42 @@ function summarizeMemo(doc) {
   }
 }
 
+/**
+ * 已结清历史备忘 → 营收行（产品负责人 2026-10-09 口径；与 getStudioDashboard/settlementKpis.historyRevenueRows 同口径）。
+ * **只**进「营收 / 出货额」类数（出货观测台的营收、月度金额、趋势金额、按客户 / 门店 / 品类的金额分布、净差额）；
+ * 不进笔数、完整度、应收 / 待结算 / 对账 / 提醒。草稿永不计入。行带 historical:true，聚合时只加金额不加笔数。
+ */
+function historyRevenueRows(memos) {
+  return (Array.isArray(memos) ? memos : [])
+    .filter((m) => m && m.kind === KIND.HISTORY && m.deleted !== true)
+    .map((m) => ({
+      _id: m._id,
+      historical: true,
+      shipmentDate: m.shipmentDate || '',
+      storeId: m.storeId || '',
+      storeName: m.storeName || '',
+      customerName: m.customerName || '',
+      category: '历史备忘',
+      totalAmount: summarizeMemo(m).feishuTotal || 0
+    }))
+}
+
+/** 按看板的门店范围读历史备忘；集合不存在视作没有 */
+async function loadHistoryRevenueRows(db, scope) {
+  const _ = db.command
+  const s = scope || {}
+  const where = { kind: KIND.HISTORY, deleted: _.neq(true) }
+  if (s.storeId) where.storeId = s.storeId
+  else if (Array.isArray(s.storeFilter) && s.storeFilter.length) where.storeId = _.in(s.storeFilter)
+  try {
+    const res = await db.collection(MEMO_COLLECTION).where(where).limit(500).get()
+    return historyRevenueRows((res && res.data) || [])
+  } catch (e) {
+    if (/not exist|集合不存在|502005/i.test(String((e && (e.errMsg || e.message)) || e))) return []
+    throw e
+  }
+}
+
 function mapMemo(doc) {
   const d = doc || {}
   return Object.assign(
@@ -223,6 +259,8 @@ function createMemoHandlers(deps) {
 
     const claim = await coll().where({ _id: doc._id, status: MEMO_STATUS.DRAFT }).update({ data: { status: MEMO_STATUS.CONFIRMING, updatedAt: Date.now() } })
     if (!claim || !claim.stats || claim.stats.updated !== 1) return fail('这张草稿正在转正式或已转过，请刷新', 'BAD_STATE')
+    // 导入批次（feishu-*）的草稿是补录旧单：转正式不发「待支付」等通知（产品负责人 2026-10-09）；手工草稿照常通知
+    const silentNotify = /^feishu-/.test(String(doc.importBatch || ''))
     let res
     try {
       res = await createFromSkus({
@@ -230,7 +268,7 @@ function createMemoHandlers(deps) {
         shipmentDate: doc.shipmentDate,
         lines: lines.map((l) => ({ skuId: l.skuId, qty: l.qty })),
         note: ['飞书草稿转正式', doc.note].filter(Boolean).join(' · ')
-      }, actor)
+      }, actor, { silentNotify })
     } catch (e) {
       res = fail((e && e.message) || '开单失败', 'SERVER_ERROR')
     }
@@ -239,7 +277,7 @@ function createMemoHandlers(deps) {
       return res || fail('开单失败')
     }
     await coll().doc(doc._id).update({
-      data: { status: MEMO_STATUS.CONFIRMED, confirmedShipmentId: res.id || '', confirmedAt: Date.now(), confirmedBy: actorName(actor), updatedAt: Date.now() }
+      data: { status: MEMO_STATUS.CONFIRMED, confirmedShipmentId: res.id || '', confirmedAt: Date.now(), confirmedBy: actorName(actor), notifySuppressed: silentNotify, updatedAt: Date.now() }
     })
     return Object.assign({}, res, { memoId: doc._id, msg: '草稿已转为正式出货单' + (res.msg ? '：' + res.msg : '') })
   }
@@ -261,4 +299,4 @@ function createMemoHandlers(deps) {
   }
 }
 
-module.exports = { MEMO_COLLECTION, KIND, MEMO_STATUS, summarizeMemo, mapMemo, applyDraftPatch, createMemoHandlers }
+module.exports = { MEMO_COLLECTION, KIND, MEMO_STATUS, summarizeMemo, mapMemo, applyDraftPatch, historyRevenueRows, loadHistoryRevenueRows, createMemoHandlers }

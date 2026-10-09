@@ -36,6 +36,11 @@
  *       都不得引用 ops_shipment_memos；memo.* 仅超管；「单据」页签草稿箱 / 历史入口仅超管，带「草稿」「已结清·历史」标签
  *   18) 云函数运行时（manageStoreShipment 隔离副本 + 有状态 mock）：list / 编辑 / 删除只写备忘集合、绝不写 ops_shipments；
  *       历史不可改；待匹配不可转正式；**草稿转正式的金额与直接 createFromSkus 逐行一致**；并发双击只开一张；店长被拒
+ *  H 2026-10-09 产品负责人拍板（同文档 §11）
+ *   19) 历史备忘**只进营收 / 出货额类**统计：出货观测台（运行时）营收 / 金额分布含历史、笔数不含、草稿永不含；
+ *       工作室仪表盘（静态）只读 kind:'history'，加进 revenueTotal / shippedAmount，**不进** computeSettlementKpis
+ *       （已结清 / 未收款 / 待确认 / 真毛利）
+ *   20) 导入批次（importBatch 以 feishu- 开头）的草稿转正式**不发通知**；手工草稿与直接开单照常通知；客户端入参关不掉通知
  */
 import { readFileSync, existsSync, mkdtempSync, cpSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs'
 import { resolve, dirname, join, relative } from 'node:path'
@@ -67,11 +72,18 @@ const FILES = {
   editJs: `${EXTRA}/shipment-edit/index.js`,
   supplier: `${EXTRA}/supplier/index.js`,
   memosJs: `${EXTRA}/shipment-ops/parts/memos.js`,
-  shipIndex: 'miniprogram/cloudfunctions/manageStoreShipment/index.js'
+  shipIndex: 'miniprogram/cloudfunctions/manageStoreShipment/index.js',
+  studioDash: 'miniprogram/cloudfunctions/getStudioDashboard/index.js',
+  studioKpis: 'miniprogram/cloudfunctions/getStudioDashboard/settlementKpis.js'
 }
 
 const MEMO_COLL = 'ops_shipment_memos'
-const MEMO_ALLOWED = ['miniprogram/cloudfunctions/manageStoreShipment/shipmentMemos.js', 'admin/src/cloud.js']
+const MEMO_ALLOWED = [
+  'miniprogram/cloudfunctions/manageStoreShipment/shipmentMemos.js',
+  'admin/src/cloud.js',
+  // H19：工作室仪表盘只读 kind:'history' 进营收（判据见 collect）
+  'miniprogram/cloudfunctions/getStudioDashboard/index.js'
+]
 /** 引用备忘集合名的代码文件（不含 node_modules / 文档 / 守卫脚本自身） */
 function memoRefFiles() {
   const out = []
@@ -225,6 +237,13 @@ function collect(s) {
   if (!/if \(this\.data\.skuPicker\.target === 'memo'\) return this\.onMemoSkuPicked\(id\)/.test(s.createJs)) errs.push('选 SKU 弹层在草稿编辑时须回到 onMemoSkuPicked（否则会把 SKU 加进开单行）')
   if (!/memosPart\.methods/.test(s.opsJs)) errs.push('出货中心页须组装 parts/memos.js（memosPart.methods）')
   if (!/action: 'memo\.confirmDraft'/.test(s.memosJs)) errs.push('草稿转正式须走 memo.confirmDraft（服务端复用正式开单）')
+  // H19 工作室仪表盘：历史备忘只进营收 / 出货额，不进结算口径；草稿不读
+  if (!/fetchAll\(OPS_SHIPMENT_MEMOS, \{ kind: 'history', deleted: _\.neq\(true\) \}/.test(s.studioDash)) errs.push("工作室仪表盘读备忘只能读 kind:'history'（草稿不进任何统计）")
+  if (!/\.filter\(\(m\) => m && m\.kind === 'history' && m\.deleted !== true\)/.test(s.studioKpis)) errs.push("historyRevenueRows 须只取 kind:'history'（草稿不进任何统计）")
+  if (!/const revenueTotal = roundMoney\(shipments\.reduce\([^\n]*\+ historyRevenue\)/.test(s.studioDash)) errs.push('工作室仪表盘营收（revenueTotal）须含历史备忘')
+  if (!/shippedAmount: roundMoney\(settlement\.shippedAmount \+ historyRevenue\)/.test(s.studioDash)) errs.push('工作室仪表盘出货额（shippedAmount）须含历史备忘')
+  const kpiCalls = s.studioDash.match(/computeSettlementKpis\([^)]*\)/g) || []
+  if (kpiCalls.length !== 1 || kpiCalls[0] !== 'computeSettlementKpis(shipments)') errs.push(`历史备忘不得进结算口径（已结清 / 未收款 / 待确认 / 真毛利）：computeSettlementKpis 只能吃正式单（现 ${kpiCalls.join('、') || '无'}）`)
   return errs
 }
 
@@ -468,8 +487,10 @@ const MEMO_DB = () => ({
   [MEMO_COLL]: [
     { _id: 'd1', kind: 'draft', status: 'draft', storeId: 'store_shanhaizaowu', storeName: '山川造物', storeMatched: true, shipmentDate: '2026-10-08', deleted: false,
       lines: [{ key: 'r1', rawName: '爱神造景玻璃罩', qty: 2, feishuAmount: 200, match: 'none' }, { key: 'r2', rawName: '小贝壳表', qty: 2, feishuAmount: 292, match: 'none' }] },
+    { _id: 'd2', kind: 'draft', status: 'draft', importBatch: 'feishu-drafts-2026-10-09', storeId: 'store_xingchen', storeName: '星宸标本', storeMatched: true, shipmentDate: '2026-10-01', deleted: false,
+      lines: [{ key: 'q1', rawName: '爱神造景玻璃罩', qty: 1, feishuAmount: 999, match: 'sku', skuId: 'sku1' }] },
     { _id: 'h1', kind: 'history', status: 'history', historical: true, settled: true, storeId: 'store_shanhaizaowu', storeName: '山川造物', storeMatched: true, shipmentDate: '2026-09-19', deleted: false,
-      lines: [{ key: 'x1', rawName: '熊蜂王玻璃罩', qty: 1, feishuAmount: 30, match: 'none' }] }
+      lines: [{ key: 'x1', rawName: '熊蜂王玻璃罩', qty: 1, feishuAmount: 30, match: 'none' }, { key: 'x2', rawName: '已删行', qty: 1, feishuAmount: 7, match: 'none', removed: true }] }
   ]
 })
 const amountsOf = (data) => JSON.stringify({ total: data.totalAmount, items: (data.items || []).map((it) => [it.skuId, it.qty, it.unitPrice, it.totalPrice]) })
@@ -496,7 +517,7 @@ async function memoErrs(mutateFiles) {
 
     const ld = await call({ action: 'memo.list', kind: 'draft' })
     const lh = await call({ action: 'memo.list', kind: 'history' })
-    if (!ld.success || (ld.list || []).map((m) => m._id).join() !== 'd1' || !lh.success || (lh.list || []).map((m) => m._id).join() !== 'h1') {
+    if (!ld.success || (ld.list || []).map((m) => m._id).join() !== 'd1,d2' || !lh.success || (lh.list || []).map((m) => m._id).join() !== 'h1') {
       errs.push(`memo.list 须按 kind 分开回草稿 / 历史（现 ${JSON.stringify({ d: ld.list && ld.list.map((m) => m._id), h: lh.list && lh.list.map((m) => m._id), msg: ld.msg || lh.msg })}）`)
     }
     if (M.writes.length) errs.push(`memo.list 不得写库（现写了 ${M.writes.map((w) => w.name).join('、')}）`)
@@ -516,7 +537,21 @@ async function memoErrs(mutateFiles) {
     if (!r.success || !r.item || r.item.pendingCount !== 0) errs.push(`草稿选 SKU / 删行后须无待匹配（现 ${JSON.stringify(r.item ? { pendingCount: r.item.pendingCount } : { msg: r.msg })}）`)
     if (shipWrites().length) errs.push('草稿编辑不得写 ops_shipments（草稿不进统计）')
 
-    const direct = await call({ action: 'createFromSkus', storeId: 'store_shanhaizaowu', shipmentDate: '2026-10-08', lines: [{ skuId: 'sku1', qty: 2 }] })
+    // H19 出货观测台：历史只进金额、不进笔数；草稿永不进（此刻库里还没有正式单）
+    M.db.ops_shipments = [{ _id: 's0', storeId: 'store_shanhaizaowu', storeName: '山川造物', customerName: '山川造物', shipmentDate: '2026-09-19', status: 'confirmed', totalAmount: 100, items: [] }]
+    const dash = await call({ action: 'dashboard' })
+    const dk = (dash && dash.kpis) || {}
+    if (!dash.success) errs.push(`出货观测台调用失败（${dash.msg}）`)
+    else {
+      if (dk.revenueTotal !== 130 || dk.historyRevenue !== 30) errs.push(`观测台营收须含历史备忘（飞书金额，删行不计）：期望 130 / 历史 30，现 ${dk.revenueTotal} / ${dk.historyRevenue}`)
+      if (dk.revenueTotal > 130) errs.push('草稿不得进营收（观测台）')
+      const counted = ((dash.charts && dash.charts.byStore) || []).reduce((n, x) => n + x.count, 0)
+      if (dk.shipmentCount !== 1 || counted !== 1) errs.push(`历史备忘不得计入笔数（观测台 shipmentCount ${dk.shipmentCount}、门店分布笔数 ${counted}，应为 1）`)
+    }
+    M.db.ops_shipments = []
+
+    const direct = await call({ action: 'createFromSkus', storeId: 'store_shanhaizaowu', shipmentDate: '2026-10-08', lines: [{ skuId: 'sku1', qty: 2 }], silentNotify: true })
+    if (direct.success && direct.notify && direct.notify.skipped === 'IMPORTED_DRAFT') errs.push('客户端入参不得关闭通知（silentNotify 只能由服务端内部传）')
     const directAdd = M.writes.find((w) => w.op === 'add' && w.name === 'ops_shipments')
     if (!direct.success || !directAdd) errs.push(`直接开单基线失败（${direct.msg}）`)
     const r1 = (r.item && r.item.lines || []).find((l) => l.key === 'r1') || {}
@@ -528,10 +563,16 @@ async function memoErrs(mutateFiles) {
     if (both.filter((x) => x.success).length !== 1 || adds.length !== 1 || adds[0].name !== 'ops_shipments') {
       errs.push(`草稿转正式须且只开一张 ops_shipments（并发双击也只开一张；现成功 ${both.filter((x) => x.success).length} 次、写 ${adds.map((w) => w.name).join('、') || '无'}；${both.map((x) => x.msg).join(' / ')}）`)
     } else {
+      const won = both.find((x) => x.success)
+      if (won.notify && won.notify.skipped === 'IMPORTED_DRAFT') errs.push('手工草稿转正式须照常通知（只有 feishu- 导入批次静默）')
       if (directAdd && amountsOf(adds[0].data) !== amountsOf(directAdd.data)) errs.push(`草稿转正式的金额须与直接开单一致：转正式 ${amountsOf(adds[0].data)}，直接 ${amountsOf(directAdd.data)}`)
       const d1 = memo('d1')
       if (d1.status !== 'confirmed' || d1.confirmedShipmentId !== adds[0].id) errs.push(`转正式后草稿须标 confirmed 并记 confirmedShipmentId（现 ${d1.status} / ${d1.confirmedShipmentId}）`)
     }
+    M.writes = []
+    const imp = await call({ action: 'memo.confirmDraft', id: 'd2' })
+    if (!imp.success) errs.push(`导入草稿转正式失败（${imp.msg}）`)
+    else if (!imp.notify || imp.notify.skipped !== 'IMPORTED_DRAFT' || memo('d2').notifySuppressed !== true) errs.push(`导入批次（feishu-）草稿转正式不得通知门店（现 notify=${JSON.stringify(imp.notify)}）`)
     const after = await call({ action: 'memo.list', kind: 'draft' })
     if ((after.list || []).length) errs.push('已转正式的草稿不得再出现在草稿箱')
 
@@ -589,7 +630,12 @@ if (selftest) {
     ['备忘对店长开放（静态）', (s) => ({ ...s, shipIndex: s.shipIndex.replace(/(hasOwnProperty\.call\(memoHandlers, action\)\) \{\s*const auth = await )requireSuperAdmin/, '$1requireWriter') }), /memo\.\* 须仅超管/],
     ['入口不限超管', (s) => ({ ...s, opsWxml: s.opsWxml.replace('<view class="mm-entry-row" wx:if="{{isSuper}}">', '<view class="mm-entry-row">') }), /仅超管可见的「草稿箱」/],
     ['草稿标签被删', (s) => ({ ...s, opsWxml: s.opsWxml.split("item.kind === 'history' ? '已结清·历史' : '草稿'").join("item.kind") }), /已结清·历史」标签/],
-    ['选 SKU 不回草稿', (s) => ({ ...s, createJs: s.createJs.replace("if (this.data.skuPicker.target === 'memo') return this.onMemoSkuPicked(id)\n", '') }), /onMemoSkuPicked/]
+    ['选 SKU 不回草稿', (s) => ({ ...s, createJs: s.createJs.replace("if (this.data.skuPicker.target === 'memo') return this.onMemoSkuPicked(id)\n", '') }), /onMemoSkuPicked/],
+    ['仪表盘读草稿', (s) => ({ ...s, studioDash: s.studioDash.replace("{ kind: 'history', deleted: _.neq(true) }", '{ deleted: _.neq(true) }') }), /只能读 kind:'history'/],
+    ['仪表盘映射吃草稿', (s) => ({ ...s, studioKpis: s.studioKpis.replace("m && m.kind === 'history' && m.deleted !== true", 'm && m.deleted !== true') }), /historyRevenueRows 须只取/],
+    ['仪表盘营收漏历史', (s) => ({ ...s, studioDash: s.studioDash.replace(' + historyRevenue)\n    const shipmentCount', ')\n    const shipmentCount') }), /revenueTotal）须含历史/],
+    ['仪表盘出货额漏历史', (s) => ({ ...s, studioDash: s.studioDash.replace('roundMoney(settlement.shippedAmount + historyRevenue)', 'settlement.shippedAmount') }), /shippedAmount）须含历史/],
+    ['历史进结算口径', (s) => ({ ...s, studioDash: s.studioDash.replace('computeSettlementKpis(shipments)', 'computeSettlementKpis(shipments.concat(historyRows))') }), /不得进结算口径/]
   ]
   // 运行时注入：只改 tmp 副本里的云函数源码
   const serverCases = [
@@ -613,6 +659,12 @@ if (selftest) {
     ['历史可编辑', { 'shipmentMemos.js': (t) => t.replace("if (doc.kind !== KIND.DRAFT || doc.status !== MEMO_STATUS.DRAFT) return fail('只有未转正式的草稿可以修改'", "if (false) return fail('只有未转正式的草稿可以修改'") }, /历史备忘须只读/],
     ['并发双击开两张', { 'shipmentMemos.js': (t) => t.replace("if (!claim || !claim.stats || claim.stats.updated !== 1)", 'if (false)') }, /只开一张/],
     ['删除的行仍进正式单', { 'shipmentMemos.js': (t) => t.replace('const lines = (doc.lines || []).filter((l) => !l.removed)', 'const lines = doc.lines || []') }, /只开一张|金额须与直接开单一致/],
+    ['观测台漏历史营收', { 'shipmentDashboard.js': (t) => t.replace('    revenueTotal = roundMoney(revenueTotal + amt)\n    const mk = shipmentMonthKey(row)\n    if (mk === todayYm) monthAmount', '    const mk = shipmentMonthKey(row)\n    if (mk === todayYm) monthAmount') }, /观测台营收须含历史/],
+    ['草稿进营收', { 'shipmentMemos.js': (t) => t.replace('.filter((m) => m && m.kind === KIND.HISTORY && m.deleted !== true)', '.filter((m) => m && m.deleted !== true)').replace('const where = { kind: KIND.HISTORY, deleted: _.neq(true) }', 'const where = { deleted: _.neq(true) }') }, /草稿不得进营收|观测台营收须含历史/],
+    ['历史计入笔数', { 'shipmentDashboard.js': (t) => t.replace('    if (!r.historical) map[key].count += 1\n  })\n  return Object.keys(map)', '    map[key].count += 1\n  })\n  return Object.keys(map)') }, /不得计入笔数/],
+    ['导入草稿照常通知', { 'shipmentMemos.js': (t) => t.replace('const silentNotify = /^feishu-/', 'const silentNotify = false && /^feishu-/') }, /导入批次（feishu-）草稿转正式不得通知/],
+    ['手工草稿也静默', { 'shipmentMemos.js': (t) => t.replace('const silentNotify = /^feishu-/', 'const silentNotify = true || /^feishu-/') }, /手工草稿转正式须照常通知/],
+    ['客户端可关通知', { 'index.js': (t) => t.replace('opts && opts.silentNotify === true', '((opts && opts.silentNotify === true) || event.silentNotify === true)') }, /客户端入参不得关闭通知/],
     ['备忘对店长开放（运行时）', { 'index.js': (t) => t.replace(/(hasOwnProperty\.call\(memoHandlers, action\)\) \{\s*const auth = await )requireSuperAdmin/, '$1requireWriter') }, /店长调用 memo/]
   ]
   const base = collect(src).concat(await serverErrs(), await memoErrs())

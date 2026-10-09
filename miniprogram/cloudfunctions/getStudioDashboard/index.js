@@ -13,7 +13,7 @@
  * 权限：仅超管
  */
 const cloud = require('wx-server-sdk')
-const { computeSettlementKpis } = require('./settlementKpis')
+const { computeSettlementKpis, historyRevenueRows } = require('./settlementKpis')
 const { assertStaff, STORED_ROLE_SUPER } = require('./staffGuard')
 const {
   BUDGET_POOLS,
@@ -27,6 +27,8 @@ const _ = db.command
 
 const OPS_PURCHASES = 'ops_purchases'
 const OPS_SHIPMENTS = 'ops_shipments'
+/** 已结清历史备忘：只读 kind:'history'，只进营收 / 出货额类数（见 settlementKpis.historyRevenueRows） */
+const OPS_SHIPMENT_MEMOS = 'ops_shipment_memos'
 const RAW_INVENTORY = 'studio_raw_inventory'
 const FINISHED_INVENTORY = 'studio_inventory'
 const CONFIGS = 'configs'
@@ -149,7 +151,7 @@ function groupSum(rows, keyFn, amountFn) {
     const key = keyFn(r) || '未标注'
     if (!map[key]) map[key] = { key, label: key, amount: 0, count: 0 }
     map[key].amount = roundMoney(map[key].amount + amountFn(r))
-    map[key].count += 1
+    if (!r.historical) map[key].count += 1
   })
   return Object.keys(map)
     .map((k) => map[k])
@@ -560,12 +562,13 @@ exports.main = async (event) => {
       (Array.isArray(actor.roles) && actor.roles.indexOf(STORED_ROLE_SUPER) !== -1)
     if (!isSuper) return fail('仅超管可查看工作室仪表盘', 'FORBIDDEN')
 
-    const [pools, purchasesRaw, shipmentsRaw, rawInv, finishedInv] = await Promise.all([
+    const [pools, purchasesRaw, shipmentsRaw, rawInv, finishedInv, historyMemos] = await Promise.all([
       loadBudgetPools(),
       fetchAll(OPS_PURCHASES, { deleted: _.neq(true) }, 2000),
       fetchAll(OPS_SHIPMENTS, { deleted: _.neq(true) }, 2000),
       fetchAll(RAW_INVENTORY, { deleted: _.neq(true) }, 1000),
-      fetchAll(FINISHED_INVENTORY, {}, 1000)
+      fetchAll(FINISHED_INVENTORY, {}, 1000),
+      fetchAll(OPS_SHIPMENT_MEMOS, { kind: 'history', deleted: _.neq(true) }, 500)
     ])
 
     const purchases = purchasesRaw.filter(isActivePurchase)
@@ -584,7 +587,9 @@ exports.main = async (event) => {
         .reduce((n, r) => n + purchaseAmount(r), 0)
     )
 
-    const revenueTotal = roundMoney(shipments.reduce((n, r) => n + shipmentAmount(r), 0))
+    const historyRows = historyRevenueRows(historyMemos)
+    const historyRevenue = roundMoney(historyRows.reduce((n, r) => n + shipmentAmount(r), 0))
+    const revenueTotal = roundMoney(shipments.reduce((n, r) => n + shipmentAmount(r), 0) + historyRevenue)
     const shipmentCount = shipments.length
 
     /**
@@ -716,12 +721,12 @@ exports.main = async (event) => {
     const byItem = groupSum(purchases, (r) => r.itemName || '未命名', purchaseAmount).slice(0, 20)
 
     const byCustomer = groupSum(
-      shipments,
+      shipments.concat(historyRows),
       (r) => r.customerName || r.storeName || '未标注客户',
       shipmentAmount
     )
     const byShipCategory = groupSum(
-      shipments,
+      shipments.concat(historyRows),
       (r) => r.category || '未分类',
       shipmentAmount
     )
@@ -865,7 +870,9 @@ exports.main = async (event) => {
         shipmentCount,
         netProfit,
         // ── 结算口径（裁决 20）──
-        shippedAmount: settlement.shippedAmount,
+        shippedAmount: roundMoney(settlement.shippedAmount + historyRevenue),
+        historyRevenue,
+        historyRevenueCount: historyRows.length,
         settledAmount: settlement.settledAmount,
         outstandingAmount: settlement.outstandingAmount,
         paidPendingAmount: settlement.paidPendingAmount,

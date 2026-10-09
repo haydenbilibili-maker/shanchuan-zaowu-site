@@ -54,6 +54,11 @@ SSOT：`miniprogram/docs/出货中心首批SKU导入_2026-10-09.md` §8–§9
 | `refUnitPrice` / `refAmount` / `diff` | 系统按当时价目表的参考价与「参考 − 飞书」差额，**仅作对照**；算不出为 `null` |
 | `removed` | 草稿里人工删除的行（保留原文，转正式时跳过） |
 
-## 统计口径
+## 统计口径（2026-10-09 产品负责人拍板）
 
-本集合**不进任何统计**（看板、日报、账单、对账、应收、库存、通知）。历史备忘的金额以飞书原始金额为准，只展示不汇入。
+- **草稿**：不进任何统计。
+- **已结清历史备忘**：**只**进「营收 / 出货额」类数（工作室仪表盘 `getStudioDashboard` 的出货额与金额分布、
+  出货观测台 `manageStoreShipment/shipmentDashboard.js` 的营收 / 月度金额 / 趋势 / 金额分布），金额以飞书原始金额为准；
+  **不进**笔数、已结清 / 未收款 / 待确认、真毛利、账单、对账、提醒、日报。
+- 读取方只有 `manageStoreShipment/shipmentMemos.js` 与 `getStudioDashboard/index.js`（只读 `kind:'history'`），守卫锁定。
+- `notifySuppressed`（bool）：草稿转正式时是否因导入批次（`feishu-*`）而未发通知。

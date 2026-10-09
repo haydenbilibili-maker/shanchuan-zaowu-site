@@ -543,7 +543,8 @@ async function handleRepriceShipments(event) {
  *   ③ 写完发同一套「待支付」通知。
  * 价格照旧**服务端重算**，不信前端传的价（recomputeItemsPricing 已在写入前跑）。
  */
-async function handleCreateFromSkus(event, actor) {
+/** opts.silentNotify 只由服务端内部传入（导入草稿转正式）；客户端入参无法触达 */
+async function handleCreateFromSkus(event, actor, opts) {
   const storeId = String(event.storeId || '').trim()
   const shipmentDate = String(event.shipmentDate || '').trim()
   const store = storeById(storeId)
@@ -622,7 +623,9 @@ async function handleCreateFromSkus(event, actor) {
   })
   const addRes = await withCollectionRetry(() => db.collection(COLLECTION).add({ data }))
   const item = mapRow(Object.assign({ _id: addRes._id }, data))
-  const notify = await notifyShipmentPricedQuietly([item])
+  const notify = opts && opts.silentNotify === true
+    ? { sent: 0, failed: 0, targetCount: 0, skipped: 'IMPORTED_DRAFT' }
+    : await notifyShipmentPricedQuietly([item])
   return ok({
     id: addRes._id,
     item,
@@ -1358,7 +1361,7 @@ const memoHandlers = createMemoHandlers({
   withCollectionRetry,
   storeById,
   recomputeItemsPricing,
-  createFromSkus: (ev, actor) => handleCreateFromSkus(ev, actor),
+  createFromSkus: (ev, actor, opts) => handleCreateFromSkus(ev, actor, opts),
   SKU_COLLECTION
 })
 

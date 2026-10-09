@@ -7,6 +7,8 @@
  *   node scripts/import-shipment-skus.mjs --apply              # 先备份整个集合，再逐条 add（不改不删既有记录），最后读回核对
  *   node scripts/import-shipment-skus.mjs --rollback --yes     # 先备份，再软删 importBatch=本批次 的 SKU（与页面「删除 SKU」同形态）
  *   node scripts/import-shipment-skus.mjs --clear-review --yes # 复核通过后：本批次 needsReview → false
+ *   node scripts/import-shipment-skus.mjs --hold-ball --yes    # 产品负责人 10-09：小球玻璃罩≠球形10 → 本批次「玻璃罩 球形10」SKU 停用 + 备注尺寸待确认（保持待复核）
+ *   node scripts/import-shipment-skus.mjs --unhold-ball --yes  # 恢复：上一步停用的 SKU 回到启用、去掉备注前缀（原备注保留）
  *
  * 选项：--plan <json>（默认 .tmp/shipment-sku-batch1/sku-batch1.json，取其中 toWrite[].row）
  * 凭据：admin/.env 的 TCB_SECRET_ID / TCB_SECRET_KEY（不打印）。备份：backups/shipment-sku-batch1/<时间戳>-<动作>/（已 gitignore）。
@@ -31,7 +33,9 @@ const args = process.argv.slice(2)
 const has = (f) => args.includes(f)
 const opt = (f, d) => { const i = args.indexOf(f); return i >= 0 && args[i + 1] ? args[i + 1] : d }
 const PLAN = resolve(ROOT, opt('--plan', '.tmp/shipment-sku-batch1/sku-batch1.json'))
-const MODE = has('--apply') ? 'apply' : has('--rollback') ? 'rollback' : has('--clear-review') ? 'clear-review' : 'dry-run'
+const MODE = has('--apply') ? 'apply' : has('--rollback') ? 'rollback' : has('--clear-review') ? 'clear-review'
+  : has('--hold-ball') ? 'hold-ball' : has('--unhold-ball') ? 'unhold-ball' : 'dry-run'
+const HOLD_NOTE = '玻璃罩尺寸待确认（产品负责人 2026-10-09：小球玻璃罩不是「球形10」，正确尺寸待告知）｜'
 
 function openDb() {
   const env = {}
@@ -172,8 +176,38 @@ async function clearReview(db) {
   console.log(`已清除 ${mine.length} 条待复核标记`)
 }
 
+/**
+ * SKU 必须绑定价目表里的包装行才能保存（checkSkuRefs），没有「包装待确认」这一态；
+ * 影响最小且可恢复的做法 = 停用（status:inactive）：开单选择器只列启用 SKU → 不会被误用，
+ * ERP「出货 SKU 目录」里仍可见，needsReview / 包装 / 材料都不动，一键 --unhold-ball 恢复。
+ */
+async function holdBall(db, hold) {
+  const mine = (await fetchAll(db, SKU_COLLECTION, { importBatch: BATCH_ID })).filter((r) => r.deleted !== true &&
+    r.packagingName === '玻璃罩' && r.packagingSize === '球形10' && (hold ? r.status !== 'inactive' : r.status === 'inactive' && String(r.note || '').startsWith(HOLD_NOTE)))
+  console.log(`本批次${hold ? '待停用' : '待恢复'}的小球玻璃罩 SKU ${mine.length} 条：`)
+  mine.forEach((d) => console.log(`  · ${d.skuName}（${d.status}${d.needsReview ? '·待复核' : ''}${d.note ? '·备注:' + d.note : ''}）`))
+  const used = (await fetchAll(db, 'ops_shipments')).filter((s) => s.deleted !== true && (s.items || []).some((it) => mine.some((d) => d._id === it.skuId)))
+  console.log(`已被出货单引用：${used.length} 张${used.length ? '（单据金额是快照，不受影响）' : ''}`)
+  if (!has('--yes')) { console.log('（未执行；确认请加 --yes）'); return }
+  await backup(db, hold ? 'before-hold-ball' : 'before-unhold-ball')
+  const now = Date.now()
+  const want = {}
+  for (const d of mine) {
+    const note = hold ? HOLD_NOTE + String(d.note || '') : String(d.note || '').slice(HOLD_NOTE.length)
+    want[d._id] = { status: hold ? 'inactive' : 'active', note }
+    await db.collection(SKU_COLLECTION).doc(d._id).update({ status: want[d._id].status, note, updatedAt: now, updatedBy: ACTOR + (hold ? '·尺寸待确认' : '·恢复') })
+  }
+  const back = (await fetchAll(db, SKU_COLLECTION, { importBatch: BATCH_ID })).filter((r) => want[r._id])
+  const bad = back.filter((r) => r.status !== want[r._id].status || r.note !== want[r._id].note || r.needsReview !== true ||
+    ['packagingId', 'packagingSize', 'materialId', 'skuKey'].some((k) => r[k] !== mine.find((d) => d._id === r._id)[k]))
+  console.log(bad.length ? `读回不一致 ${bad.length} 条` : `读回核对通过：${back.length} 条${hold ? '已停用（仍待复核）' : '已恢复启用'}`)
+  if (bad.length) process.exit(1)
+}
+
 const db = openDb()
-if (MODE === 'apply') await apply(db)
+if (MODE === 'hold-ball') await holdBall(db, true)
+else if (MODE === 'unhold-ball') await holdBall(db, false)
+else if (MODE === 'apply') await apply(db)
 else if (MODE === 'rollback') await rollback(db)
 else if (MODE === 'clear-review') await clearReview(db)
 else { printPlan(await plan(db)); console.log('\n（dry-run：未写入。确认无误后加 --apply）') }

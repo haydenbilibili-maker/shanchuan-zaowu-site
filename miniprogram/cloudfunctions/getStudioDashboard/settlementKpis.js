@@ -157,6 +157,30 @@ function computeSettlementKpis(shipments) {
   }
 }
 
+/**
+ * 已结清历史备忘（出货备忘集合里 kind:'history' 的行）→ 营收行（产品负责人 2026-10-09 口径）。
+ * **只**进「营收 / 出货额」类数（出货额、营收、按客户 / 品类的金额分布，及由出货额派生的账户余额、净差额）；
+ * **不**进 computeSettlementKpis（已结清 / 未收款 / 待确认 / 真毛利）、不进笔数、不进任何提醒。
+ * 草稿（kind:'draft'）永不计入。金额以飞书原始金额为准（行 feishuAmount 之和，删除的行与无价行不计）。
+ * 返回的行带 `historical: true`，groupSum 据此只加金额、不加笔数。
+ */
+function historyRevenueRows(memos) {
+  return (Array.isArray(memos) ? memos : [])
+    .filter((m) => m && m.kind === 'history' && m.deleted !== true)
+    .map((m) => ({
+      _id: m._id,
+      historical: true,
+      shipmentDate: m.shipmentDate || '',
+      storeId: m.storeId || '',
+      storeName: m.storeName || '',
+      customerName: m.customerName || '',
+      category: '历史备忘',
+      totalAmount: toYuan(
+        (m.lines || []).filter((l) => l && !l.removed).reduce((n, l) => n + toCents(l.feishuAmount), 0)
+      )
+    }))
+}
+
 module.exports = {
   CENTS,
   toCents,
@@ -164,5 +188,6 @@ module.exports = {
   centsField,
   shipmentTotalCents,
   settleStatusOf,
-  computeSettlementKpis
+  computeSettlementKpis,
+  historyRevenueRows
 }

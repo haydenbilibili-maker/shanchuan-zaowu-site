@@ -3,6 +3,7 @@
  * 数据源：ops_shipments（可选对照 ops_purchases 算净差额）
  */
 const { COLLECTION, STATUS, roundMoney, mapRow } = require('./shipmentDefaults')
+const { loadHistoryRevenueRows } = require('./shipmentMemos')
 
 const OPS_PURCHASES = 'ops_purchases'
 
@@ -124,7 +125,7 @@ function groupSum(rows, keyFn, amountFn) {
     const key = keyFn(r) || '未标注'
     if (!map[key]) map[key] = { key, label: key, amount: 0, count: 0 }
     map[key].amount = roundMoney(map[key].amount + amountFn(r))
-    map[key].count += 1
+    if (!r.historical) map[key].count += 1
   })
   return Object.keys(map)
     .map((k) => map[k])
@@ -138,7 +139,7 @@ function buildMonthTrend(rows, months = 12) {
     if (!key) return
     if (!map[key]) map[key] = { key, label: key, amount: 0, count: 0 }
     map[key].amount = roundMoney(map[key].amount + shipmentAmount(r))
-    map[key].count += 1
+    if (!r.historical) map[key].count += 1
   })
   const todayYm = monthKeyFromDate(shanghaiYmd(Date.now()))
   const keys = []
@@ -537,23 +538,36 @@ async function buildShipmentDashboard(opts) {
     customerSet[cust] = true
   })
 
+  // 已结清历史备忘：只加金额（营收 / 月度金额 / 趋势 / 金额分布 / 净差额），不加笔数、不进完整度
+  const historyRows = await loadHistoryRevenueRows(db, { storeId, storeFilter })
+  let historyRevenue = 0
+  historyRows.forEach((row) => {
+    const amt = shipmentAmount(row)
+    historyRevenue = roundMoney(historyRevenue + amt)
+    revenueTotal = roundMoney(revenueTotal + amt)
+    const mk = shipmentMonthKey(row)
+    if (mk === todayYm) monthAmount = roundMoney(monthAmount + amt)
+    else if (mk === prevYm) prevMonthAmount = roundMoney(prevMonthAmount + amt)
+  })
+  const amountRows = shipments.concat(historyRows)
+
   const count = shipments.length
   const customerCount = Object.keys(customerSet).filter((c) => c && c !== '未标注客户').length
   const incompletePct = pctOrNull(incompleteCount, count)
   const zeroAmountPct = pctOrNull(zeroAmountCount, count)
 
   const byCustomer = groupSum(
-    shipments,
+    amountRows,
     (r) => r.customerName || r.storeName || '未标注客户',
     shipmentAmount
   )
   const byCategory = groupSum(
-    shipments,
+    amountRows,
     (r) => r.category || '未分类',
     shipmentAmount
   )
   const byStore = groupSum(
-    shipments,
+    amountRows,
     (r) => r.storeName || r.storeId || '未标注门店',
     shipmentAmount
   )
@@ -597,7 +611,7 @@ async function buildShipmentDashboard(opts) {
     hasPurchaseSample
   }
   const signals = buildShipmentSignals(signalPack)
-  const trend = buildMonthTrend(shipments, 12)
+  const trend = buildMonthTrend(amountRows, 12)
   const structure = buildCategoryStructure(byCategory, revenueTotal)
 
   const completenessOkPct =
@@ -612,6 +626,8 @@ async function buildShipmentDashboard(opts) {
     kpis: {
       shipmentCount: count,
       revenueTotal,
+      historyRevenue,
+      historyRevenueCount: historyRows.length,
       totalQty,
       customerCount,
       monthCount,
