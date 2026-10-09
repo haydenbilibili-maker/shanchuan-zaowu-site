@@ -1,4 +1,4 @@
-<page-meta page-style="{{skuPicker.show || skuForm.show || picker.show || libForm.show || showDetail ? 'overflow: hidden;' : ''}}" />
+<page-meta page-style="{{skuPicker.show || skuForm.show || picker.show || libForm.show || showDetail || memoBox.show || memoDetail.show ? 'overflow: hidden;' : ''}}" />
 <!-- 出货中心（2026-09-28 合并）。单价只来自云函数，取不到显示「待核价」
      底部弹层：遮罩 / 标题 / 搜索 / 底部按钮 catchtouchmove，列表 scroll-view 不加（加了就滑不动）；page-meta 锁背后页面 -->
 <view class="ops-boot" wx:if="{{!ready}}">柜门缓缓开启…</view>
@@ -300,6 +300,11 @@
       <view class="ops-list-tip is-{{listTipTone}} sc-list-tip" wx:if="{{listTip}}">
         <text class="sc-list-tip-text">{{listTip}}</text>
         <text class="sc-again" wx:if="{{showAgain && listTipTone !== 'warn'}}" bindtap="onCreateAgain">再开一单 ›</text>
+      </view>
+
+      <view class="mm-entry-row" wx:if="{{isSuper}}">
+        <view class="mm-entry" data-kind="draft" bindtap="openMemoBox"><text>草稿箱</text><text class="mm-entry-n">{{memoCounts.draft}}</text></view>
+        <view class="mm-entry" data-kind="history" bindtap="openMemoBox"><text>历史 · 已结清</text><text class="mm-entry-n">{{memoCounts.history}}</text></view>
       </view>
 
       <view class="ops-summary" wx:if="{{!loading || list.length}}">
@@ -785,6 +790,88 @@
   <view class="sc-dock-row" wx:else style="width:100%;box-sizing:border-box;">
     <view class="sc-dock-btn is-ghost" bindtap="resetSingle"><text>清空</text></view>
     <view class="sc-dock-btn {{saving ? 'is-disabled' : ''}}" bindtap="confirmSingle"><text>{{saving ? '写入中…' : '确认写入'}}</text></view>
+  </view>
+</view>
+
+<!-- 草稿箱 / 历史备忘（仅超管；独立旁路集合，不进任何统计） -->
+<view class="ss-mask" wx:if="{{memoBox.show}}" bindtap="closeMemoBox" catchtouchmove="noop"></view>
+<view class="ss-sheet" wx:if="{{memoBox.show}}">
+  <view class="ss-sheet-head" catchtouchmove="noop">
+    <text class="ss-sheet-title">{{memoBox.title}}</text>
+    <view class="ss-sheet-close" bindtap="closeMemoBox"><text>关闭</text></view>
+  </view>
+  <view class="ss-search" catchtouchmove="noop">
+    <text class="mm-note">{{memoBox.kind === 'history' ? '9.21 前的飞书出货单，已结清，只读备忘；不计入任何统计' : '9.21 起的飞书出货单：审核修改后可转为正式出货单，转正式前不计入任何统计'}}</text>
+  </view>
+  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+    <view class="ss-loading" wx:if="{{memoBox.loading}}"><text>加载中…</text></view>
+    <view class="ss-empty" wx:elif="{{memoBox.error}}">
+      <text>{{memoBox.error}}</text>
+      <text class="ss-empty-hint" bindtap="loadMemoBox">点此重试</text>
+    </view>
+    <view class="ss-empty" wx:elif="{{!memoBox.list.length}}"><text>{{memoBox.kind === 'history' ? '暂无历史备忘' : '草稿箱是空的'}}</text></view>
+    <block wx:else>
+      <view class="mm-card" wx:for="{{memoBox.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="openMemo">
+        <view class="mm-top">
+          <text class="mm-title">{{item.title}}</text>
+          <text class="mm-tag {{item.kind === 'history' ? 'is-history' : ''}}">{{item.kind === 'history' ? '已结清·历史' : '草稿'}}</text>
+          <text class="mm-tag is-pending" wx:if="{{item.pendingCount}}">待匹配 {{item.pendingCount}}</text>
+        </view>
+        <text class="mm-meta">{{item.shipmentDate}} · {{item.lineCount}} 行 · {{item.totalQty}} 件{{item.storeMatched && item.customerName ? ' · 飞书客户 ' + item.customerName : ''}}</text>
+        <text class="mm-meta">飞书 {{item.feishuTotalText}}{{item.kind === 'draft' ? ' · 参考 ' + item.refTotalText : ''}}</text>
+      </view>
+    </block>
+  </scroll-view>
+</view>
+
+<view class="ss-mask" wx:if="{{memoDetail.show}}" bindtap="closeMemoDetail" catchtouchmove="noop"></view>
+<view class="ss-sheet" wx:if="{{memoDetail.show}}">
+  <view class="ss-sheet-head" catchtouchmove="noop">
+    <text class="ss-sheet-title">{{memoDetail.item.kind === 'history' ? '历史备忘' : '草稿'}} · {{memoDetail.item.shipmentDate}}</text>
+    <view class="ss-sheet-close" bindtap="closeMemoDetail"><text>关闭</text></view>
+  </view>
+  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+    <view class="mm-head">
+      <view class="mm-top">
+        <text class="mm-tag {{memoDetail.item.kind === 'history' ? 'is-history' : ''}}">{{memoDetail.item.kind === 'history' ? '已结清·历史' : '草稿'}}</text>
+        <picker wx:if="{{memoDetail.item.kind === 'draft'}}" mode="selector" range="{{storeNames}}" bindchange="onMemoStore">
+          <view class="mm-store {{memoDetail.item.storeMatched ? '' : 'is-pending'}}">{{memoDetail.item.storeMatched ? memoDetail.item.storeName : '门店待匹配 · 点选'}} ▾</view>
+        </picker>
+        <text class="mm-title" wx:else>{{memoDetail.item.storeMatched ? memoDetail.item.storeName : '门店待匹配'}}</text>
+      </view>
+      <text class="mm-meta">飞书客户 {{memoDetail.item.customerName || '—'}}</text>
+      <text class="mm-meta">飞书合计 {{memoDetail.item.feishuTotalText}}</text>
+      <text class="mm-meta" wx:if="{{memoDetail.item.kind === 'draft'}}">系统参考 {{memoDetail.item.refTotalText}}{{memoDetail.item.diffTotalText ? ' · ' + memoDetail.item.diffTotalText : ''}}</text>
+      <text class="mm-meta" wx:if="{{memoDetail.item.note}}">备注 {{memoDetail.item.note}}</text>
+    </view>
+    <view class="mm-line {{item.removed ? 'is-removed' : ''}}" wx:for="{{memoDetail.item.lines}}" wx:key="key">
+      <view class="mm-top">
+        <text class="mm-line-name">{{item.rawName}}{{item.rawSpec ? ' · ' + item.rawSpec : ''}}</text>
+        <text class="mm-tag is-pending" wx:if="{{item.pending}}">待匹配</text>
+        <text class="mm-tag" wx:if="{{item.removed}}">已删除</text>
+      </view>
+      <text class="mm-meta">飞书 {{item.qty}} 件 {{item.unitText}} · {{item.feishuText}}{{item.feishuNote ? ' · ' + item.feishuNote : ''}}</text>
+      <text class="mm-meta" wx:if="{{item.match === 'sku'}}">SKU {{item.skuName}} · 参考 {{item.refText}}{{item.diffText ? ' · 差 ' + item.diffText : ''}}</text>
+      <text class="mm-meta" wx:elif="{{item.matchNote}}">{{item.matchNote}}</text>
+      <view class="mm-actions" wx:if="{{memoDetail.item.kind === 'draft'}}">
+        <block wx:if="{{!item.removed}}">
+          <view class="mm-btn" data-key="{{item.key}}" bindtap="onMemoPickSku">{{item.match === 'sku' ? '换 SKU' : '选 SKU'}}</view>
+          <view class="mm-btn" wx:if="{{item.match === 'sku'}}" data-key="{{item.key}}" bindtap="onMemoClearSku">取消匹配</view>
+          <view class="mm-btn" data-key="{{item.key}}" data-delta="-1" bindtap="onMemoQtyStep">−</view>
+          <view class="mm-btn" data-key="{{item.key}}" data-delta="1" bindtap="onMemoQtyStep">＋</view>
+          <view class="mm-btn danger" data-key="{{item.key}}" bindtap="onMemoToggleLine">删行</view>
+        </block>
+        <view class="mm-btn" wx:else data-key="{{item.key}}" bindtap="onMemoToggleLine">恢复此行</view>
+      </view>
+    </view>
+  </scroll-view>
+  <view class="mm-foot" catchtouchmove="noop">
+    <text class="mm-tip" wx:if="{{memoDetail.tip}}">{{memoDetail.tip}}</text>
+    <view class="mm-foot-row" wx:if="{{memoDetail.item.kind === 'draft'}}">
+      <view class="mm-foot-btn is-ghost" bindtap="removeMemo">{{memoDetail.removePending ? '确认删除' : '删除草稿'}}</view>
+      <view class="mm-foot-btn {{memoDetail.busy || memoDetail.item.pendingCount ? 'is-disabled' : ''}}" bindtap="confirmMemo">{{memoDetail.busy ? '处理中…' : (memoDetail.confirmPending ? '确认转正式' : '转为正式出货单')}}</view>
+    </view>
+    <text class="mm-tip" wx:else>已结清的历史备忘，只读；金额以飞书原始金额为准</text>
   </view>
 </view>
 

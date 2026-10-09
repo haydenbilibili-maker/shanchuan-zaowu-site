@@ -7,6 +7,7 @@ const { formatCloudFnError } = require('../utils/memberScan')
 const { SHIPMENT_FN, callCloud, money, sheetBodyPx, materialLine } = require('./parts/shared')
 const createPart = require('./parts/create')
 const libraryPart = require('./parts/library')
+const memosPart = require('./parts/memos')
 
 const TAB_STORAGE_KEY = 'shipment_center_tab_v1'
 const TAB_ALIAS = { sku: 'create', create: 'create', entry: 'create', list: 'list', overview: 'overview', library: 'library', master: 'library' }
@@ -494,6 +495,7 @@ const coreMethods = {
         patch.listTipTone = 'info'
       }
       this.setData(patch)
+      this.loadMemoCounts()
       return { ok: true, list, summary: patch.summary }
     } catch (e) {
       // 失败保留上次列表，勿伪装空柜
@@ -780,9 +782,10 @@ const coreMethods = {
 
 Page(
   Object.assign(
-    { data: Object.assign({}, baseData, createPart.data, libraryPart.data) },
+    { data: Object.assign({}, baseData, createPart.data, libraryPart.data, memosPart.data) },
     coreMethods,
     createPart.methods,
-    libraryPart.methods
+    libraryPart.methods,
+    memosPart.methods
   )
 )

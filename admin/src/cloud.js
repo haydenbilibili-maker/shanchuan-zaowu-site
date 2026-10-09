@@ -491,6 +491,7 @@ export const COLLECTIONS = {
   STUDIO_PACKAGING_PRICES: 'studio_packaging_prices', // 包装价目表（出货算价，manageStudioSettlement）
   OPS_SETTLEMENT_BILLS: 'ops_settlement_bills', // 工作室账单（结算唯一权威，manageStudioSettlement）
   STUDIO_SHIPMENT_SKUS: 'studio_shipment_skus', // 出货 SKU 目录（材料×等级×包装×费率，manageStudioSettlement）
+  OPS_SHIPMENT_MEMOS: 'ops_shipment_memos', // 飞书出货草稿 / 已结清历史备忘（manageStoreShipment memo.*；旁路，不进任何统计）
   PROPERTY_COSTS: 'property_costs', // 物业成本（水电/房租，managePropertyCost）
   FULFILLMENT_SHIPMENTS: 'fulfillment_shipments', // 总部出货单（P1）
   STOCK_MOVEMENTS: 'stock_movements', // 总部成品库存流水（P1）

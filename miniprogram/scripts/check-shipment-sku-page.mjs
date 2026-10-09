@@ -31,9 +31,14 @@
  *   15) 选 SKU 弹层：带 needsReview 的 SKU 显示「待复核」小标签；有「只看待复核」筛选（sku.list 传 reviewOnly）
  *   16) 云函数运行时：sku.list 透出 needsReview / importBatch / reviewCount，reviewOnly 只回待复核；
  *       sku.update（部分更新）不得把 needsReview 冲掉
+ *  G 2026-10-09 飞书出货草稿箱 / 已结清历史备忘（旁路集合 ops_shipment_memos，同文档 §8–§9）
+ *   17) 不进统计：除 manageStoreShipment/shipmentMemos.js 与 admin/src/cloud.js 外，任何云函数 / 小程序 / ERP 代码
+ *       都不得引用 ops_shipment_memos；memo.* 仅超管；「单据」页签草稿箱 / 历史入口仅超管，带「草稿」「已结清·历史」标签
+ *   18) 云函数运行时（manageStoreShipment 隔离副本 + 有状态 mock）：list / 编辑 / 删除只写备忘集合、绝不写 ops_shipments；
+ *       历史不可改；待匹配不可转正式；**草稿转正式的金额与直接 createFromSkus 逐行一致**；并发双击只开一张；店长被拒
  */
-import { readFileSync, existsSync, mkdtempSync, cpSync, writeFileSync, mkdirSync, rmSync } from 'node:fs'
-import { resolve, dirname, join } from 'node:path'
+import { readFileSync, existsSync, mkdtempSync, cpSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs'
+import { resolve, dirname, join, relative } from 'node:path'
 import { tmpdir } from 'node:os'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
@@ -60,7 +65,28 @@ const FILES = {
   refsJs: 'miniprogram/cloudfunctions/manageStudioSettlement/priceBookRefs.js',
   settleDefaults: 'miniprogram/cloudfunctions/manageStudioSettlement/settlementDefaults.js',
   editJs: `${EXTRA}/shipment-edit/index.js`,
-  supplier: `${EXTRA}/supplier/index.js`
+  supplier: `${EXTRA}/supplier/index.js`,
+  memosJs: `${EXTRA}/shipment-ops/parts/memos.js`,
+  shipIndex: 'miniprogram/cloudfunctions/manageStoreShipment/index.js'
+}
+
+const MEMO_COLL = 'ops_shipment_memos'
+const MEMO_ALLOWED = ['miniprogram/cloudfunctions/manageStoreShipment/shipmentMemos.js', 'admin/src/cloud.js']
+/** 引用备忘集合名的代码文件（不含 node_modules / 文档 / 守卫脚本自身） */
+function memoRefFiles() {
+  const out = []
+  const walk = (dir) => {
+    for (const ent of readdirSync(dir, { withFileTypes: true })) {
+      if (ent.name === 'node_modules' || ent.name.startsWith('.')) continue
+      const p = join(dir, ent.name)
+      if (ent.isDirectory()) walk(p)
+      else if (/\.(js|cjs|mjs|ts|vue|wxml|wxs)$/.test(ent.name) && readFileSync(p, 'utf8').includes(MEMO_COLL)) out.push(relative(ROOT, p))
+    }
+  }
+  for (const d of ['miniprogram/cloudfunctions', 'miniprogram/pages', 'miniprogram/subpackages', 'miniprogram/utils', 'miniprogram/components', 'admin/src']) {
+    if (existsSync(resolve(ROOT, d))) walk(resolve(ROOT, d))
+  }
+  return out.sort()
 }
 
 function collect(s) {
@@ -188,6 +214,17 @@ function collect(s) {
   const picker = pickerAt < 0 ? '' : s.opsWxml.slice(pickerAt, s.opsWxml.indexOf('<!-- 现场新建 SKU -->'))
   if (!/<text class="ss-review-tag" wx:if="\{\{item\.needsReview\}\}">待复核<\/text>/.test(picker)) errs.push('选 SKU 弹层须对 needsReview 显示「待复核」标签')
   if (!/bindtap="toggleSkuReviewOnly"/.test(picker)) errs.push('选 SKU 弹层须有「只看待复核」筛选（toggleSkuReviewOnly）')
+  // G17 草稿箱 / 历史备忘：不进统计 + 仅超管 + 标签
+  const strays = (s.memoRefs || []).filter((f) => !MEMO_ALLOWED.includes(f))
+  if (strays.length) errs.push(`${MEMO_COLL} 不得被统计 / 其它代码引用（草稿与历史不进任何统计），越界：${strays.join('、')}`)
+  if (!/hasOwnProperty\.call\(memoHandlers, action\)\) \{\s*const auth = await requireSuperAdmin\(/.test(s.shipIndex)) errs.push('manageStoreShipment 的 memo.* 须仅超管（requireSuperAdmin）')
+  if (!/<view class="mm-entry-row" wx:if="\{\{isSuper\}\}">[\s\S]*?data-kind="draft" bindtap="openMemoBox"[\s\S]*?data-kind="history" bindtap="openMemoBox"/.test(s.opsWxml)) {
+    errs.push('「单据」页签须有仅超管可见的「草稿箱」「历史」入口（mm-entry-row wx:if isSuper → openMemoBox）')
+  }
+  if (!s.opsWxml.includes("item.kind === 'history' ? '已结清·历史' : '草稿'")) errs.push('草稿箱 / 历史列表须带「草稿」「已结清·历史」标签')
+  if (!/if \(this\.data\.skuPicker\.target === 'memo'\) return this\.onMemoSkuPicked\(id\)/.test(s.createJs)) errs.push('选 SKU 弹层在草稿编辑时须回到 onMemoSkuPicked（否则会把 SKU 加进开单行）')
+  if (!/memosPart\.methods/.test(s.opsJs)) errs.push('出货中心页须组装 parts/memos.js（memosPart.methods）')
+  if (!/action: 'memo\.confirmDraft'/.test(s.memosJs)) errs.push('草稿转正式须走 memo.confirmDraft（服务端复用正式开单）')
   return errs
 }
 
@@ -365,6 +402,152 @@ async function serverErrs(mutateFiles) {
   return errs
 }
 
+/* ---------- G18 manageStoreShipment 运行时（有状态 mock：where 真过滤、update 真回写） ---------- */
+const MEMO_SDK_MOCK = `
+const M = global.__SM_MOCK
+const clone = (d) => JSON.parse(JSON.stringify(d))
+function hit(doc, cond) {
+  return Object.entries(cond || {}).every(([k, v]) => {
+    const x = doc[k]
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      if ('neq' in v) return x !== v.neq
+      if ('in' in v) return v.in.includes(x)
+      if ('eq' in v) return x === v.eq
+      return true
+    }
+    return x === v
+  })
+}
+function q(name, cond) {
+  let skip = 0, lim = 1e9
+  const rows = () => (M.db[name] || []).filter((d) => hit(d, cond))
+  const api = {
+    where(c) { return q(name, Object.assign({}, cond, c)) }, orderBy() { return api }, field() { return api },
+    skip(n) { skip = n; return api }, limit(n) { lim = n; return api },
+    get: async () => ({ data: rows().slice(skip, skip + lim).map(clone) }),
+    count: async () => ({ total: rows().length }),
+    update: async ({ data }) => { const r = rows(); r.forEach((d) => Object.assign(d, clone(data))); M.writes.push({ op: 'update', name, where: cond, data }); return { stats: { updated: r.length } } }
+  }
+  return api
+}
+module.exports = {
+  DYNAMIC_CURRENT_ENV: 'x', init() {},
+  callFunction: async () => ({ result: { success: true } }),
+  getWXContext: () => ({ OPENID: 'o-test' }),
+  database: () => ({
+    command: { neq: (v) => ({ neq: v }), in: (a) => ({ in: a }), or: (a) => ({ or: a }), eq: (v) => ({ eq: v }) },
+    serverDate: () => new Date(0),
+    collection(name) {
+      const list = () => (M.db[name] = M.db[name] || [])
+      return Object.assign(q(name, {}), {
+        doc: (id) => ({
+          get: async () => { const d = list().find((r) => r._id === id); if (!d) throw new Error('not found'); return { data: clone(d) } },
+          update: async ({ data }) => { const d = list().find((r) => r._id === id); if (d) Object.assign(d, clone(data)); M.writes.push({ op: 'update', name, id, data }); return { stats: { updated: d ? 1 : 0 } } }
+        }),
+        add: async ({ data }) => { const _id = 'new' + (++M.seq); list().push(Object.assign({ _id }, clone(data))); M.writes.push({ op: 'add', name, id: _id, data }); return { _id } }
+      })
+    }
+  })
+}`
+const MEMO_GUARD_MOCK = `
+const M = global.__SM_MOCK
+module.exports = {
+  ROLE_MANAGER: 'manager', STORED_ROLE_SUPER: 'super', SUPER_ADMIN_OPENIDS: [],
+  hasRole: () => true,
+  assertStaff: async (db, openid, opts) => (M.role === 'manager' && opts && (opts.requireSuperAdmin || opts.permission))
+    ? { ok: false, msg: '仅超管', code: 'FORBIDDEN' }
+    : { ok: true, actor: { openid, name: 't', role: M.role } }
+}`
+const MEMO_SKU = { _id: 'sku1', skuName: '爱神凤蝶 · 玻璃罩 15x22 · 造景', materialId: 'm1', materialName: '爱神凤蝶', materialGrade: '默认', packagingId: 'p1', packagingName: '玻璃罩', packagingSize: '15x22', hasScene: true, sceneCost: 10, laborRatePct: null, status: 'active' }
+const MEMO_DB = () => ({
+  studio_shipment_skus: [MEMO_SKU],
+  studio_material_prices: [{ _id: 'm1', name: '爱神凤蝶', grade: '默认', isDefaultGrade: true, unitPrice: 60, status: 'active' }],
+  studio_packaging_prices: [{ _id: 'p1', name: '玻璃罩', size: '15x22', isDefaultSize: true, unitPrice: 24, status: 'active' }],
+  configs: [{ _id: 'studio_settlement', enabled: true, laborRatePct: 20, requirePackaging: true }],
+  ops_shipments: [],
+  [MEMO_COLL]: [
+    { _id: 'd1', kind: 'draft', status: 'draft', storeId: 'store_shanhaizaowu', storeName: '山川造物', storeMatched: true, shipmentDate: '2026-10-08', deleted: false,
+      lines: [{ key: 'r1', rawName: '爱神造景玻璃罩', qty: 2, feishuAmount: 200, match: 'none' }, { key: 'r2', rawName: '小贝壳表', qty: 2, feishuAmount: 292, match: 'none' }] },
+    { _id: 'h1', kind: 'history', status: 'history', historical: true, settled: true, storeId: 'store_shanhaizaowu', storeName: '山川造物', storeMatched: true, shipmentDate: '2026-09-19', deleted: false,
+      lines: [{ key: 'x1', rawName: '熊蜂王玻璃罩', qty: 1, feishuAmount: 30, match: 'none' }] }
+  ]
+})
+const amountsOf = (data) => JSON.stringify({ total: data.totalAmount, items: (data.items || []).map((it) => [it.skuId, it.qty, it.unitPrice, it.totalPrice]) })
+
+async function memoErrs(mutateFiles) {
+  const errs = []
+  const fnDir = resolve(ROOT, 'miniprogram/cloudfunctions/manageStoreShipment')
+  const tmp = mkdtempSync(join(tmpdir(), 'sm-guard-'))
+  try {
+    cpSync(fnDir, tmp, { recursive: true, filter: (p) => !/node_modules/.test(p) })
+    writeFileSync(join(tmp, 'package.json'), '{"type":"commonjs"}')
+    mkdirSync(join(tmp, 'node_modules/wx-server-sdk'), { recursive: true })
+    writeFileSync(join(tmp, 'node_modules/wx-server-sdk/index.js'), MEMO_SDK_MOCK)
+    writeFileSync(join(tmp, 'staffGuard.js'), MEMO_GUARD_MOCK)
+    for (const [f, fn] of Object.entries(mutateFiles || {})) {
+      const p = join(tmp, f)
+      writeFileSync(p, fn(readFileSync(p, 'utf8')))
+    }
+    const M = (global.__SM_MOCK = { role: 'super', writes: [], seq: 0, db: MEMO_DB() })
+    const fn = createRequire(join(tmp, 'index.js'))(join(tmp, 'index.js'))
+    const call = (ev) => fn.main(ev, {})
+    const shipWrites = () => M.writes.filter((w) => w.name !== MEMO_COLL)
+    const memo = (id) => M.db[MEMO_COLL].find((d) => d._id === id)
+
+    const ld = await call({ action: 'memo.list', kind: 'draft' })
+    const lh = await call({ action: 'memo.list', kind: 'history' })
+    if (!ld.success || (ld.list || []).map((m) => m._id).join() !== 'd1' || !lh.success || (lh.list || []).map((m) => m._id).join() !== 'h1') {
+      errs.push(`memo.list 须按 kind 分开回草稿 / 历史（现 ${JSON.stringify({ d: ld.list && ld.list.map((m) => m._id), h: lh.list && lh.list.map((m) => m._id), msg: ld.msg || lh.msg })}）`)
+    }
+    if (M.writes.length) errs.push(`memo.list 不得写库（现写了 ${M.writes.map((w) => w.name).join('、')}）`)
+
+    M.writes = []
+    let r = await call({ action: 'memo.confirmDraft', id: 'd1' })
+    if (r.success || r.code !== 'PENDING_MATCH' || shipWrites().length || memo('d1').status !== 'draft') errs.push(`有待匹配行的草稿不得转正式（须 PENDING_MATCH 且零写 ops_shipments，现 ${JSON.stringify({ success: r.success, code: r.code })}）`)
+
+    M.writes = []
+    r = await call({ action: 'memo.updateDraft', id: 'h1', patch: { lines: [{ key: 'x1', skuId: 'sku1' }] } })
+    if (r.success || M.writes.length) errs.push('已结清历史备忘须只读（memo.updateDraft 须拒且零写入）')
+    r = await call({ action: 'memo.removeDraft', id: 'h1' })
+    if (r.success || M.writes.length) errs.push('已结清历史备忘不可删除（memo.removeDraft 须拒且零写入）')
+
+    M.writes = []
+    r = await call({ action: 'memo.updateDraft', id: 'd1', patch: { lines: [{ key: 'r1', skuId: 'sku1' }, { key: 'r2', removed: true }] } })
+    if (!r.success || !r.item || r.item.pendingCount !== 0) errs.push(`草稿选 SKU / 删行后须无待匹配（现 ${JSON.stringify(r.item ? { pendingCount: r.item.pendingCount } : { msg: r.msg })}）`)
+    if (shipWrites().length) errs.push('草稿编辑不得写 ops_shipments（草稿不进统计）')
+
+    const direct = await call({ action: 'createFromSkus', storeId: 'store_shanhaizaowu', shipmentDate: '2026-10-08', lines: [{ skuId: 'sku1', qty: 2 }] })
+    const directAdd = M.writes.find((w) => w.op === 'add' && w.name === 'ops_shipments')
+    if (!direct.success || !directAdd) errs.push(`直接开单基线失败（${direct.msg}）`)
+    const r1 = (r.item && r.item.lines || []).find((l) => l.key === 'r1') || {}
+    if (directAdd && Number(r1.refAmount) !== Number(directAdd.data.totalAmount)) errs.push(`草稿参考金额须与直接开单一致（参考 ${r1.refAmount}，直接 ${directAdd.data.totalAmount}）`)
+
+    M.writes = []
+    const both = await Promise.all([call({ action: 'memo.confirmDraft', id: 'd1' }), call({ action: 'memo.confirmDraft', id: 'd1' })])
+    const adds = M.writes.filter((w) => w.op === 'add')
+    if (both.filter((x) => x.success).length !== 1 || adds.length !== 1 || adds[0].name !== 'ops_shipments') {
+      errs.push(`草稿转正式须且只开一张 ops_shipments（并发双击也只开一张；现成功 ${both.filter((x) => x.success).length} 次、写 ${adds.map((w) => w.name).join('、') || '无'}；${both.map((x) => x.msg).join(' / ')}）`)
+    } else {
+      if (directAdd && amountsOf(adds[0].data) !== amountsOf(directAdd.data)) errs.push(`草稿转正式的金额须与直接开单一致：转正式 ${amountsOf(adds[0].data)}，直接 ${amountsOf(directAdd.data)}`)
+      const d1 = memo('d1')
+      if (d1.status !== 'confirmed' || d1.confirmedShipmentId !== adds[0].id) errs.push(`转正式后草稿须标 confirmed 并记 confirmedShipmentId（现 ${d1.status} / ${d1.confirmedShipmentId}）`)
+    }
+    const after = await call({ action: 'memo.list', kind: 'draft' })
+    if ((after.list || []).length) errs.push('已转正式的草稿不得再出现在草稿箱')
+
+    M.role = 'manager'
+    M.writes = []
+    r = await call({ action: 'memo.list', kind: 'draft' })
+    if (r.success) errs.push('店长调用 memo.* 须被拒（仅超管）')
+  } catch (e) {
+    errs.push('草稿箱运行时测试异常：' + ((e && e.stack) || e))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+    delete global.__SM_MOCK
+  }
+  return errs
+}
+
 const src = {}
 for (const [k, rel] of Object.entries(FILES)) {
   const p = resolve(ROOT, rel)
@@ -374,6 +557,7 @@ for (const [k, rel] of Object.entries(FILES)) {
   }
   src[k] = readFileSync(p, 'utf8')
 }
+src.memoRefs = memoRefFiles()
 
 if (selftest) {
   // 每条注入只改内存副本，不碰源文件；任何一条没被检出即失败
@@ -400,7 +584,12 @@ if (selftest) {
     ['待复核标签被删', (s) => ({ ...s, opsWxml: s.opsWxml.replace('wx:if="{{item.needsReview}}">待复核', 'wx:if="{{false}}">待复核') }), /待复核」标签/],
     ['待复核筛选被删', (s) => ({ ...s, opsWxml: s.opsWxml.replace('bindtap="toggleSkuReviewOnly"', '') }), /只看待复核/],
     ['选择器丢待复核映射', (s) => ({ ...s, createJs: s.createJs.replace('needsReview: s.needsReview === true', 'needsReviewX: false') }), /mapSkuForPicker 须映射 needsReview/],
-    ['选择器丢 reviewOnly', (s) => ({ ...s, createJs: s.createJs.replace("limit: 100, reviewOnly }", 'limit: 100 }') }), /须传 reviewOnly/]
+    ['选择器丢 reviewOnly', (s) => ({ ...s, createJs: s.createJs.replace("limit: 100, reviewOnly }", 'limit: 100 }') }), /须传 reviewOnly/],
+    ['统计读到草稿集合', (s) => ({ ...s, memoRefs: s.memoRefs.concat('miniprogram/cloudfunctions/manageStoreShipment/shipmentDashboard.js') }), /不得被统计/],
+    ['备忘对店长开放（静态）', (s) => ({ ...s, shipIndex: s.shipIndex.replace(/(hasOwnProperty\.call\(memoHandlers, action\)\) \{\s*const auth = await )requireSuperAdmin/, '$1requireWriter') }), /memo\.\* 须仅超管/],
+    ['入口不限超管', (s) => ({ ...s, opsWxml: s.opsWxml.replace('<view class="mm-entry-row" wx:if="{{isSuper}}">', '<view class="mm-entry-row">') }), /仅超管可见的「草稿箱」/],
+    ['草稿标签被删', (s) => ({ ...s, opsWxml: s.opsWxml.split("item.kind === 'history' ? '已结清·历史' : '草稿'").join("item.kind") }), /已结清·历史」标签/],
+    ['选 SKU 不回草稿', (s) => ({ ...s, createJs: s.createJs.replace("if (this.data.skuPicker.target === 'memo') return this.onMemoSkuPicked(id)\n", '') }), /onMemoSkuPicked/]
   ]
   // 运行时注入：只改 tmp 副本里的云函数源码
   const serverCases = [
@@ -416,7 +605,17 @@ if (selftest) {
     ['reviewOnly 宽松判真', { 'index.js': (t) => t.replace('if (event.reviewOnly === true)', 'if (event.reviewOnly)') }, /只认布尔 true/],
     ['部分更新冲掉待复核', { 'settlementDefaults.js': (t) => t.replace("note: String(src.note == null ? '' : src.note).trim(),\n    deleted: false", "note: String(src.note == null ? '' : src.note).trim(),\n    needsReview: false,\n    deleted: false") }, /不得改写 needsReview/]
   ]
-  const base = collect(src).concat(await serverErrs())
+  // G18 运行时注入：只改 manageStoreShipment 的 tmp 副本
+  const memoCases = [
+    ['列表写进出货单', { 'shipmentMemos.js': (t) => t.replace('return ok({ kind, list: visible.map(mapMemo), total: visible.length })', "await db.collection('ops_shipments').add({ data: { x: 1 } })\n    return ok({ kind, list: visible.map(mapMemo), total: visible.length })") }, /memo\.list 不得写库/],
+    ['转正式另算金额', { 'shipmentMemos.js': (t) => t.replace('lines: lines.map((l) => ({ skuId: l.skuId, qty: l.qty })),', 'lines: lines.map((l) => ({ skuId: l.skuId, qty: l.qty, sceneCost: 0 })),') }, /金额须与直接开单一致/],
+    ['待匹配也能转正式', { 'shipmentMemos.js': (t) => t.replace(/if \(s\.pendingLines\) return fail\([^\n]*\n/, '') }, /待匹配行的草稿不得转正式/],
+    ['历史可编辑', { 'shipmentMemos.js': (t) => t.replace("if (doc.kind !== KIND.DRAFT || doc.status !== MEMO_STATUS.DRAFT) return fail('只有未转正式的草稿可以修改'", "if (false) return fail('只有未转正式的草稿可以修改'") }, /历史备忘须只读/],
+    ['并发双击开两张', { 'shipmentMemos.js': (t) => t.replace("if (!claim || !claim.stats || claim.stats.updated !== 1)", 'if (false)') }, /只开一张/],
+    ['删除的行仍进正式单', { 'shipmentMemos.js': (t) => t.replace('const lines = (doc.lines || []).filter((l) => !l.removed)', 'const lines = doc.lines || []') }, /只开一张|金额须与直接开单一致/],
+    ['备忘对店长开放（运行时）', { 'index.js': (t) => t.replace(/(hasOwnProperty\.call\(memoHandlers, action\)\) \{\s*const auth = await )requireSuperAdmin/, '$1requireWriter') }, /店长调用 memo/]
+  ]
+  const base = collect(src).concat(await serverErrs(), await memoErrs())
   if (base.length) {
     base.forEach((e) => console.error(TAG, '基线不绿，selftest 无意义：', e))
     process.exit(1)
@@ -438,12 +637,19 @@ if (selftest) {
       bad++
     }
   }
+  for (const [name, files, expect] of memoCases) {
+    const errs = await memoErrs(files)
+    if (!errs.some((e) => expect.test(e))) {
+      console.error(TAG, `selftest 失败：「${name}」未被检出`, errs.slice(0, 2))
+      bad++
+    }
+  }
   if (bad) process.exit(1)
-  console.log(TAG, `selftest ok（${cases.length + serverCases.length} 条注入全部检出）`)
+  console.log(TAG, `selftest ok（${cases.length + serverCases.length + memoCases.length} 条注入全部检出）`)
   process.exit(0)
 }
 
-const errs = collect(src).concat(await serverErrs())
+const errs = collect(src).concat(await serverErrs(), await memoErrs())
 if (errs.length) {
   errs.forEach((e) => console.error(TAG, e))
   process.exit(1)

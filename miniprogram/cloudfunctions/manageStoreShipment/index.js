@@ -10,6 +10,7 @@
  *   meta | list | get | dashboard | parseText | quotePrice | searchSku | create | createFromParsed | createFromSkus
  *   update | setStatus | remove
  *   upsertFromFeishu | syncStatus | syncLogs | bindFeishuRecord | repriceShipments（仅超管）
+ *   memo.list | memo.get | memo.updateDraft | memo.confirmDraft | memo.removeDraft（仅超管；草稿 / 历史备忘走独立旁路集合，见 shipmentMemos.js）
  */
 const cloud = require('wx-server-sdk')
 const {
@@ -52,6 +53,7 @@ const {
   buildShipmentPricedNotice,
   toDispatchVars
 } = require('./settlementNotify')
+const { createMemoHandlers } = require('./shipmentMemos')
 
 /**
  * 算价的三个外部数据源（蓝图 §4）。
@@ -1348,6 +1350,18 @@ async function handleBindFeishuRecord(event, actor) {
   return ok({ item: mapRow(Object.assign({}, res.data, { _id: id })) })
 }
 
+const memoHandlers = createMemoHandlers({
+  db,
+  _,
+  ok,
+  fail,
+  withCollectionRetry,
+  storeById,
+  recomputeItemsPricing,
+  createFromSkus: (ev, actor) => handleCreateFromSkus(ev, actor),
+  SKU_COLLECTION
+})
+
 exports.main = async (event = {}) => {
   const wxContext = cloud.getWXContext()
   const openid = wxContext.OPENID || ''
@@ -1368,6 +1382,12 @@ exports.main = async (event = {}) => {
   }
 
   try {
+    if (Object.prototype.hasOwnProperty.call(memoHandlers, action)) {
+      const auth = await requireSuperAdmin(event, openid)
+      if (!auth.ok) return auth.res
+      return await memoHandlers[action](event, auth.actor)
+    }
+
     if (syncWriteActions[action]) {
       const auth = await requireSuperAdmin(event, openid)
       if (!auth.ok) return auth.res

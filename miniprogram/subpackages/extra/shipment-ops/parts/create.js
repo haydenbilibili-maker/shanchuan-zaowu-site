@@ -120,7 +120,7 @@ const data = {
   canSave: false,
   saveHint: '',
 
-  skuPicker: { show: false, keyword: '', loading: false, list: [], total: 0, reviewOnly: false, reviewCount: 0 },
+  skuPicker: { show: false, target: '', keyword: '', loading: false, list: [], total: 0, reviewOnly: false, reviewCount: 0 },
   skuForm: blankSkuForm(30),
   /** 原材料 / 包装选择器：target = skuForm（新建 SKU）| single（单条补录的可选字段） */
   picker: { show: false, kind: 'material', target: 'skuForm', keyword: '', loading: false, list: [], expandedKey: '' },
@@ -227,7 +227,7 @@ const methods = {
       this.setData({ createTipTone: 'warn', createTip: '算价未启用，先打开 ERP 价目表开关再选 SKU' })
       return
     }
-    this.setData({ 'skuPicker.show': true, 'skuPicker.keyword': '', 'skuPicker.list': [], 'skuPicker.reviewOnly': false }, () => this.searchSkuCatalog(''))
+    this.setData({ 'skuPicker.show': true, 'skuPicker.target': '', 'skuPicker.keyword': '', 'skuPicker.list': [], 'skuPicker.reviewOnly': false }, () => this.searchSkuCatalog(''))
   },
 
   toggleSkuReviewOnly() {
@@ -235,7 +235,7 @@ const methods = {
   },
 
   closeSkuPicker() {
-    this.setData({ 'skuPicker.show': false })
+    this.setData({ 'skuPicker.show': false, 'skuPicker.target': '' })
   },
 
   onSkuKeyword(e) {
@@ -266,6 +266,7 @@ const methods = {
 
   onPickSku(e) {
     const id = String(e.currentTarget.dataset.id || '')
+    if (this.data.skuPicker.target === 'memo') return this.onMemoSkuPicked(id)
     const sku = (this.data.skuPicker.list || []).find((s) => s._id === id)
     if (!sku) return
     const lines = this.data.lines.slice()
