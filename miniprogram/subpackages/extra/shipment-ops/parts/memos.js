@@ -145,7 +145,6 @@ const methods = {
     this.setData({ 'memoDetail.busy': true, 'memoDetail.tip': '' })
     callCloud(SHIPMENT_FN, { action: 'memo.confirmDraft', id: d.item._id })
       .then((r) => {
-        wx.showToast({ title: '已转为正式出货单', icon: 'success' })
         this.setData({ 'memoDetail.show': false, 'memoDetail.busy': false, listTip: r.msg || '草稿已转为正式出货单', listTipTone: 'ok' })
         this.loadMemoBox()
         this.loadList()
