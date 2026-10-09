@@ -113,6 +113,11 @@ function runTests(B) {
     Object.assign({}, base, { storeId: STORE, shipments: [ship('s1', { billId: 'b9' })] })
   )
   ok('B10 已在别的账单里的单不能重复入账', inBill.ok === false)
+  const voidedShip = B.buildBill(
+    Object.assign({}, base, { storeId: STORE, shipments: [ship('s1', { status: 'cancelled' })] })
+  )
+  ok('B10a 已作废（cancelled）的出货单不能入账', voidedShip.ok === false)
+  eq('B10b 已作废的原因码', voidedShip.blocked && voidedShip.blocked[0] && voidedShip.blocked[0].code, 'CANCELLED')
 
   const built = B.buildBill(
     Object.assign({}, base, {
@@ -253,6 +258,10 @@ const INJECTIONS = [
   [
     '不校验门店归属（可把别家门店的单入账）',
     (src) => src.replace("  if (storeId && s.storeId !== storeId) return { code: 'WRONG_STORE', msg: '不属于该门店' }\n", '')
+  ],
+  [
+    '已作废的出货单也能入账（作废单被重复收款）',
+    (src) => src.replace("  if (String(s.status || '') === 'cancelled') return { code: 'CANCELLED', msg: '已作废' }\n", '')
   ],
   [
     '汇总把「元」当「分」累加（单位错，金额缩水 100 倍）',

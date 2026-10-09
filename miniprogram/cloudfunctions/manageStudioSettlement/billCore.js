@@ -94,6 +94,7 @@ function shipmentBlockReason(row, storeId) {
   const s = row || {}
   if (!s._id) return { code: 'NO_ID', msg: '单据缺少 id' }
   if (storeId && s.storeId !== storeId) return { code: 'WRONG_STORE', msg: '不属于该门店' }
+  if (String(s.status || '') === 'cancelled') return { code: 'CANCELLED', msg: '已作废' }
   const settle = String(s.settleStatus || SETTLE_STATUS.UNSETTLED)
   if (settle !== SETTLE_STATUS.UNSETTLED) {
     return { code: 'ALREADY_IN_BILL', msg: `已${billStatusLabel(settle) === '未结' ? '入账' : '结清或入账'}（${settle}）` }

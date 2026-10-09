@@ -1044,8 +1044,8 @@ async function handleBillPreview(event) {
   for (const r of rows) {
     if (r.deleted === true) continue
     const reason = shipmentBlockReason(r, storeId)
-    // 已结清 / 已入账的单不进候选列表（它们不在「待入账」语境里）
-    if (reason && reason.code === 'ALREADY_IN_BILL') continue
+    // 已结清 / 已入账 / 已作废的单不进候选列表（它们不在「待入账」语境里）
+    if (reason && (reason.code === 'ALREADY_IN_BILL' || reason.code === 'CANCELLED')) continue
     candidates.push({
       _id: r._id,
       shipmentNo: r.shipmentNo || '',
