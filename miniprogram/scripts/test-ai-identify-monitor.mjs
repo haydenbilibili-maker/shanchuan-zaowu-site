@@ -6,7 +6,9 @@
  *   A. identifySpecimen 旁路日志：失败 / 成功 / 同物种复用三态落日志；日志写入抛错或挂起时出参逐字不变、
  *      按上限返回；非鉴定动作不写日志；原函数抛错时照样记失败并原样抛出；出参字段集不被加料；
  *      非鉴定动作清单与 index.js 一致；模型名不写死、默认清单有备用且不含已下线模型、
- *      首选模型「Model not exist」时自动切备用（日志记实际模型）、全部不可用时失败并记原因
+ *      首选模型「Model not exist」时自动切备用（日志记实际模型）、全部不可用时失败并记原因；
+ *      识别服务异常出参多一个可选 error_type=ai_service（其它失败不带），识别页据此提示「不是照片问题、稍后再试」，
+ *      没认出来仍用原文案
  *   B. aiIdentifyMonitor：未登录 / 普通用户 / 店长 / 仅持运维口令 一律被拒且零读取日志集合；
  *      超管放行；list / detail 先写审计再读，审计失败即拒且零读取
  *   C. 规则与登记：规则 read/write 全 false、敏感清单 serverOnly、COLLECTIONS、schema、云函数登记；
@@ -41,6 +43,8 @@ const PATHS = {
   identifyIndex: join(ID_DIR, 'index.js'),
   identifyLog: join(ID_DIR, 'identifyLog.js'),
   aiModels: join(ID_DIR, 'aiModels.js'),
+  identifyPage: join(MP, 'subpackages/feature/identify/index.js'),
+  identifyFailure: join(MP, 'subpackages/feature/utils/identifyFailure.js'),
   monitorIndex: join(MON_DIR, 'index.js'),
   rules: join(ROOT, 'cloudbase/rules/ai_identify_logs.json'),
   sensitive: join(ROOT, 'cloudbase/sensitive-collections.json'),
@@ -360,10 +364,52 @@ async function checkIdentify(src, t) {
     console.error = () => {}
     const res2 = await withTimeout(fn2.main({ image_file_id: 'cloud://env.b/identify/a.jpg' }), 1500).finally(() => { console.error = origError })
     t.ok('A9 全部下线 → 失败并带原因', res2 && res2.success === false && res2.msg === 'Model not exist.', JSON.stringify(res2))
+    t.ok('A10 识别服务异常带 error_type=ai_service（只多一个可选字段）', res2 && res2.error_type === modelsMod.AI_SERVICE_ERROR && Object.keys(res2).sort().join(',') === 'error_type,msg,success', JSON.stringify(res2))
     const tried = [...new Set(allGone.seen.map((s) => s.model))]
     t.ok('A9 全部下线前每个视觉模型都试过', (modelsMod.DEFAULT_VISION_MODELS || []).every((m) => tried.includes(m)), tried.join(','))
     const l2 = logsOf(calls2)[0] || {}
     t.ok('A9 全部下线日志记失败', l2.status === 'failed' && l2.error_msg === 'Model not exist.', JSON.stringify({ status: l2.status, error_msg: l2.error_msg }))
+  }
+
+  // A10 失败类型标记：只有识别服务异常带 error_type；其它失败出参不变
+  {
+    const modelsMod = compile(PATHS.aiModels, src.aiModels, () => undefined)
+    const ok = makeHttpsStub((body, path) => (/multimodal/.test(path)
+      ? { status: 200, json: { output: { choices: [{ message: { content: [{ text: VL_OK_TEXT }] } }] } } }
+      : { status: 200, json: { output: { choices: [{ message: { content: SCI_OK_TEXT } }] } } }))
+    const { db } = makeDb({ addBehavior: (n) => (n === 'identification_records' ? 'throw' : 'ok') })
+    const fn = loadIdentify(src, makeCloud(db), ok.stub)
+    const origError = console.error
+    console.error = () => {}
+    const res = await withTimeout(fn.main({ image_file_id: 'cloud://env.b/identify/a.jpg' }), 1500).finally(() => { console.error = origError })
+    t.ok('A10 非识别服务的失败不带 error_type', res && res.success === false && !('error_type' in res), JSON.stringify(res))
+
+    const savedKey = process.env.DASHSCOPE_API_KEY
+    delete process.env.DASHSCOPE_API_KEY
+    const { db: db2 } = makeDb()
+    const res2 = await withTimeout(loadIdentify(src, makeCloud(db2)).main({ image_file_id: 'cloud://env.b/identify/a.jpg' }), 1500)
+    process.env.DASHSCOPE_API_KEY = savedKey
+    t.ok('A10 未配密钥也算识别服务异常', res2 && res2.success === false && res2.error_type === modelsMod.AI_SERVICE_ERROR && /未配置 AI 密钥/.test(res2.msg || ''), JSON.stringify(res2))
+  }
+
+  // A11 小程序识别页：服务异常 ≠ 没认出来；旧云函数不带标记时照旧
+  {
+    const modelsMod = compile(PATHS.aiModels, src.aiModels, () => undefined)
+    const fm = compile(PATHS.identifyFailure, src.identifyFailure, () => undefined)
+    t.ok('A11 前后端标记同值', fm.AI_SERVICE_ERROR === modelsMod.AI_SERVICE_ERROR, `${fm.AI_SERVICE_ERROR} / ${modelsMod.AI_SERVICE_ERROR}`)
+    const svc = fm.identifyFailureCopy(Object.assign(new Error('Model not exist.'), { errorType: fm.AI_SERVICE_ERROR }))
+    t.ok('A11 服务异常提示：不是照片问题、不用重拍、稍后再试', svc && /不是照片/.test(svc.content) && /不用重拍/.test(svc.content) && /稍后/.test(svc.content) && !/角度|换一束光/.test(svc.content), JSON.stringify(svc))
+    const nr = fm.identifyFailureCopy(new Error('该图片未通过安全检测，请更换一张清晰、合规的藏品照片'))
+    t.ok('A11 没认出来仍用原文案', nr && nr.title === '这是还没被记录过的影子' && nr.content === '镜头没有认出这一次。换一束光，或换一个角度。它还在那里。', JSON.stringify(nr))
+    t.ok('A11 两种提示不同', svc && nr && svc.title !== nr.title && svc.content !== nr.content)
+    const legacy = fm.identifyFailureCopy(new Error('Model not exist.'))
+    t.ok('A11 不带标记的失败按没认出来（与旧行为一致）', legacy === nr || (legacy && legacy.title === nr.title), JSON.stringify(legacy))
+    const timeout = fm.identifyFailureCopy({ errMsg: 'cloud.callFunction:fail Error: errCode: -504003 | errMsg: Invoking task timed out after 60 seconds' })
+    t.ok('A11 调用超时按服务异常', timeout && timeout.title === svc.title, JSON.stringify(timeout))
+    const page = String(src.identifyPage)
+    t.ok('A11 识别页把出参 error_type 带进错误', /\.errorType = \(result && result\.error_type\) \|\| ''/.test(page))
+    const modal = (page.match(/wx\.showModal\(\{[\s\S]*?\}\)/g) || []).find((m) => /知道了/.test(m)) || ''
+    t.ok('A11 失败弹窗文案只来自 identifyFailureCopy（不露原始报错）', /title: copy\.title/.test(modal) && /content: copy\.content/.test(modal) && /const copy = identifyFailureCopy\(err\)/.test(page) && !/err\.message|result\.msg|\bmsg\b/.test(modal), modal.slice(0, 160))
   }
 }
 
@@ -681,6 +727,14 @@ const INJECTIONS = [
   ['模型不可用时不换下一个', 'identifyIndex', (s) => s.replace('if (isModelUnavailable(e1)) continue', 'if (isModelUnavailable(e1)) throw e1')],
   ['文本模型失败不换下一个', 'identifyIndex', (s) => s.replace("      console.warn(`文本模型[${model}] 调用失败`, e.message)\n", "      console.warn(`文本模型[${model}] 调用失败`, e.message)\n      throw e\n")],
   ['日志不记实际模型', 'identifyLog', (s) => s.replace('trace.visionModel || ', '')],
+  ['识别服务异常不再打标记', 'identifyIndex', (s) => s.replace('  err.errorType = AI_SERVICE_ERROR\n', '')],
+  ['所有失败都打成服务异常', 'identifyIndex', (s) => s.replace('if (e && e.errorType === AI_SERVICE_ERROR) out.error_type = AI_SERVICE_ERROR', 'out.error_type = AI_SERVICE_ERROR')],
+  ['未配密钥不打标记', 'identifyIndex', (s) => s.replace(",\n      error_type: AI_SERVICE_ERROR\n    }", '\n    }')],
+  ['识别页不带出参标记', 'identifyPage', (s) => s.replace("        failure.errorType = (result && result.error_type) || ''\n", '')],
+  ['识别页弹窗露出原始报错', 'identifyPage', (s) => s.replace('        content: copy.content,', '        content: err.message || copy.content,')],
+  ['提示判断忽略标记', 'identifyFailure', (s) => s.replace('  if (err && err.errorType === AI_SERVICE_ERROR) return true\n', '')],
+  ['服务异常提示仍叫用户换角度重拍', 'identifyFailure', (s) => s.replace("content: '这次不是照片的问题，不用重拍。鉴定服务暂时有些忙，请稍后再试一次。'", "content: '鉴定服务暂时有些忙，换一个角度再拍一次试试。'")],
+  ['没认出来文案被改', 'identifyFailure', (s) => s.replace("content: '镜头没有认出这一次。换一束光，或换一个角度。它还在那里。'", "content: '没有认出来，请重试。'")],
   ['监测去掉超管门禁（店长可读）', 'monitorIndex', (s) => s.replace('assertStaff(db, openid, { requireSuperAdmin: true })', 'assertStaff(db, openid, {})')],
   ['监测接受运维口令免登录', 'monitorIndex', (s) => s.replace("  if (!openid) return fail('UNAUTHORIZED', '请先登录')\n", '').replace('assertStaff(db, openid, { requireSuperAdmin: true })', 'assertStaff(db, openid, { requireSuperAdmin: true, adminOpsKey: event.adminOpsKey })')],
   ['审计不等结果就读数据', 'monitorIndex', (s) => s.replace("await audit(actor, 'view_identify_logs'", "audit(actor, 'view_identify_logs'")],

@@ -1,5 +1,6 @@
 // AI 鉴定入口：拍照 / 相册 → 云函数 identifySpecimen（DashScope 真实识别）
 const { compressToMaxSize, isAllowedImage } = require('../utils/identifyImage')
+const { identifyFailureCopy } = require('../utils/identifyFailure')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const easterEggHost = require('../../../utils/easterEggHost')
 const {
@@ -28,17 +29,6 @@ const PHOTO_TIPS = [
   '若需看清翅脉或纹理，请让主体占满画面后重新拍摄',
   '背景尽量简洁，让主体占画面 60% 以上'
 ]
-
-function formatIdentifyError(err) {
-  const raw = (err && (err.message || err.errMsg)) || ''
-  if (/504003|FUNCTIONS_TIME_LIMIT_EXCEEDED|timed out/i.test(raw)) {
-    return 'AI 识别需要 15–60 秒，当前云函数超时时间过短（默认 3 秒）。请部署最新版 identifySpecimen 云函数后重试。'
-  }
-  if (/未配置 AI 密钥|DASHSCOPE/i.test(raw)) {
-    return raw
-  }
-  return raw || '识别失败，请稍后重试'
-}
 
 Page({
   behaviors: [easterEggHost],
@@ -262,7 +252,9 @@ Page({
       })
       const result = res.result
       if (!result || !result.success) {
-        throw new Error((result && result.msg) || '识别失败')
+        const failure = new Error((result && result.msg) || '识别失败')
+        failure.errorType = (result && result.error_type) || ''
+        throw failure
       }
       if (!result.data || !result.data.record_id) {
         throw new Error('识别结果不完整，请重试')
@@ -304,14 +296,10 @@ Page({
         message: (err && err.message) || '',
         source: this.data.entrySource
       })
-      const msg = formatIdentifyError(err)
+      const copy = identifyFailureCopy(err)
       wx.showModal({
-        title: /云函数超时|未配置 AI 密钥|DASHSCOPE/i.test(msg)
-          ? '识别未成功'
-          : '这是还没被记录过的影子',
-        content: /云函数超时|未配置 AI 密钥|DASHSCOPE/i.test(msg)
-          ? msg
-          : '镜头没有认出这一次。换一束光，或换一个角度。它还在那里。',
+        title: copy.title,
+        content: copy.content,
         confirmText: '知道了',
         showCancel: false
       })

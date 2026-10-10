@@ -7,6 +7,12 @@
  *   IDENTIFY_TEXT_MODELS    科普文案（走 text-generation 接口：qwen3.5/3.6 等新模型在该接口报「url error」，只能放 qwen-flash / qwen-plus 这类纯文本模型）
  * 换模型前先用真实标本图实测能返回合法 JSON；百炼下线公告见 help.aliyun.com/zh/model-studio/model-depreciation
  */
+/**
+ * 出参可选字段 error_type 的取值：识别服务本身不可用（模型全部失败 / 服务商报错 / 未配密钥），不是照片的问题。
+ * 小程序识别页据此提示「稍后再试、不用重拍」；旧版小程序不认该字段，行为不变。
+ */
+const AI_SERVICE_ERROR = 'ai_service'
+
 const DEFAULT_VISION_MODELS = ['qwen3.6-flash', 'qwen3.7-plus']
 const DEFAULT_TEXT_MODELS = ['qwen-flash', 'qwen-plus']
 
@@ -41,6 +47,7 @@ function isModelUnavailable(err) {
 }
 
 module.exports = {
+  AI_SERVICE_ERROR,
   DEFAULT_VISION_MODELS,
   DEFAULT_TEXT_MODELS,
   modelChain,

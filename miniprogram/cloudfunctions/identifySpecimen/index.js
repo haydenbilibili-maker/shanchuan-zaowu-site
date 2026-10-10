@@ -18,7 +18,7 @@ const db = cloud.database()
 const _ = db.command
 const { checkImageBuffer, checkFileImage } = require('./contentSecurity')
 const { isIdentifyCall, writeIdentifyLog } = require('./identifyLog')
-const { visionModels, textModels, isModelUnavailable } = require('./aiModels')
+const { visionModels, textModels, isModelUnavailable, AI_SERVICE_ERROR } = require('./aiModels')
 const {
   fetchSpeciesKnowledge,
   buildSpeciesProfile,
@@ -263,7 +263,9 @@ async function identifyWithVision(tempUrl, fileBuf, apiKey, categoryHint, trace)
       console.warn(`VL[${model}] base64 调用失败`, e2.message)
     }
   }
-  throw lastErr || new Error('视觉模型调用失败')
+  const err = lastErr || new Error('视觉模型调用失败')
+  err.errorType = AI_SERVICE_ERROR
+  throw err
 }
 
 function buildSciencePrompt(species, knowledge) {
@@ -875,7 +877,8 @@ const identifyMain = async (event, context, trace = {}) => {
   if (!forceMock && !apiKey) {
     return {
       success: false,
-      msg: '未配置 AI 密钥：请在云开发控制台 → 云函数 identifySpecimen → 环境变量中添加 DASHSCOPE_API_KEY'
+      msg: '未配置 AI 密钥：请在云开发控制台 → 云函数 identifySpecimen → 环境变量中添加 DASHSCOPE_API_KEY',
+      error_type: AI_SERVICE_ERROR
     }
   }
 
@@ -1148,10 +1151,12 @@ const identifyMain = async (event, context, trace = {}) => {
     }
   } catch (e) {
     console.error('identifySpecimen 失败', e)
-    return {
+    const out = {
       success: false,
       msg: e.message || '识别失败'
     }
+    if (e && e.errorType === AI_SERVICE_ERROR) out.error_type = AI_SERVICE_ERROR
+    return out
   }
 }
 
