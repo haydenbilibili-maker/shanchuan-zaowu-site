@@ -4,11 +4,11 @@
  * 2026-10-10 百炼按公告下线 qwen-vl-plus / qwen-turbo，模型名写死在代码里 → 线上全部「Model not exist.」。
  * 所以：模型名可用云函数环境变量覆盖（逗号分隔，排在默认清单前面），默认清单至少两个、互为备用。
  *   IDENTIFY_VISION_MODELS  看图识别（必须是支持图片输入的模型）
- *   IDENTIFY_TEXT_MODELS    科普文案
+ *   IDENTIFY_TEXT_MODELS    科普文案（走 text-generation 接口：qwen3.5/3.6 等新模型在该接口报「url error」，只能放 qwen-flash / qwen-plus 这类纯文本模型）
  * 换模型前先用真实标本图实测能返回合法 JSON；百炼下线公告见 help.aliyun.com/zh/model-studio/model-depreciation
  */
 const DEFAULT_VISION_MODELS = ['qwen3.6-flash', 'qwen3.7-plus']
-const DEFAULT_TEXT_MODELS = ['qwen3.5-flash', 'qwen-plus']
+const DEFAULT_TEXT_MODELS = ['qwen-flash', 'qwen-plus']
 
 function modelChain(envValue, defaults) {
   const fromEnv = String(envValue || '')

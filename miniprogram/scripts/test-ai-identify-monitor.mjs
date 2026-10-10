@@ -677,7 +677,7 @@ const INJECTIONS = [
   ['原函数抛错被吞成成功', 'identifyIndex', (s) => s.replace('    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err, trace })\n    throw err', '    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err, trace })\n    return { success: false, msg: err.message }')],
   ['视觉模型名写死回代码', 'identifyIndex', (s) => s.replace('  const body = {\n    model,\n    input: {\n      messages: [\n        {\n          role: \'user\',', '  const body = {\n    model: \'qwen3.6-flash\',\n    input: {\n      messages: [\n        {\n          role: \'user\',')],
   ['视觉默认清单只剩一个（无备用）', 'aiModels', (s) => s.replace("const DEFAULT_VISION_MODELS = ['qwen3.6-flash', 'qwen3.7-plus']", "const DEFAULT_VISION_MODELS = ['qwen3.6-flash']")],
-  ['文本默认清单退回已下线的 qwen-turbo', 'aiModels', (s) => s.replace("const DEFAULT_TEXT_MODELS = ['qwen3.5-flash', 'qwen-plus']", "const DEFAULT_TEXT_MODELS = ['qwen-turbo', 'qwen-plus']")],
+  ['文本默认清单退回已下线的 qwen-turbo', 'aiModels', (s) => s.replace("const DEFAULT_TEXT_MODELS = ['qwen-flash', 'qwen-plus']", "const DEFAULT_TEXT_MODELS = ['qwen-turbo', 'qwen-plus']")],
   ['模型不可用时不换下一个', 'identifyIndex', (s) => s.replace('if (isModelUnavailable(e1)) continue', 'if (isModelUnavailable(e1)) throw e1')],
   ['文本模型失败不换下一个', 'identifyIndex', (s) => s.replace("      console.warn(`文本模型[${model}] 调用失败`, e.message)\n", "      console.warn(`文本模型[${model}] 调用失败`, e.message)\n      throw e\n")],
   ['日志不记实际模型', 'identifyLog', (s) => s.replace('trace.visionModel || ', '')],
