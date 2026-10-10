@@ -27,7 +27,7 @@ const HUB_SECTIONS = [
     title: '工作室',
     short: '工作室',
     keys: [
-      'studioDashboard', 'supplierWorkbench', 'purchaseOps', 'shipmentOps', 'inventoryOps', 'rawInventoryOps',
+      'studioDashboard', 'supplierWorkbench', 'purchaseOps', 'shipmentOps', 'shipmentSku', 'inventoryOps', 'rawInventoryOps',
       'studioBills', 'propertyCost', 'feishuSync', 'framers', 'framerRecruit', 'artisanCommission'
     ]
   },
@@ -72,6 +72,7 @@ const HUB_ENTRIES = [
   { id: 'supplier', label: '供应商', desc: '进货的合作商家', alias: ['供货', '供应商', '厂家'], icon: ICON + 'group.png', sec: 'studio', keys: ['supplierWorkbench'], tap: 'goSupplierWorkbench' },
   { id: 'purchase', label: '采购', desc: '给工作室下单进货', alias: ['进货', '采购单'], icon: ICON + 'cart.png', sec: 'studio', keys: ['purchaseOps'], tap: 'goPurchaseOps' },
   { id: 'shipment', label: '出货中心', desc: '工作室打包发货', alias: ['发货', '出库', '出货单'], icon: ICON + 'ship.png', sec: 'studio', keys: ['shipmentOps'], tap: 'goShipmentOps' },
+  { id: 'skuMaintain', label: 'SKU 维护', desc: '出货商品的组合、价格和停用', alias: ['SKU', '商品', '价目', '出货 SKU', '定价'], icon: ICON + 'list.png', sec: 'studio', keys: ['shipmentSku'], tap: 'goSkuMaintain' },
   { id: 'inventory', label: '库存', desc: '成品和原料还剩多少', alias: ['库存', '原料', '成品', '盘点'], icon: ICON + 'knowledge.png', sec: 'studio', keys: ['inventoryOps', 'rawInventoryOps'], tap: 'goInventoryOps' },
   { id: 'studioBills', label: '工作室账单', desc: '工作室的收入和支出', alias: ['账单', '收支', '支出'], icon: ICON + 'pay.png', sec: 'studio', keys: ['studioBills'], tap: 'goStudioBillsGuarded' },
   { id: 'property', label: '物业', desc: '房租、水电和物业费', alias: ['房租', '水电', '物业费'], icon: MGR_ICON + 'location.png', sec: 'studio', keys: ['propertyCost'], tap: 'goPropertyCost' },

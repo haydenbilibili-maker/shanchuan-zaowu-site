@@ -565,6 +565,10 @@
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/ship.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">出货中心</text>
             </view>
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="skuMaintain" wx:if="{{menu.shipmentSku}}" bindtap="goSkuMaintain">
+              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/list.png" mode="aspectFit" /></view>
+              <text class="hub-cell-name">SKU 维护</text>
+            </view>
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="inventory" wx:if="{{menu.inventoryOps || menu.rawInventoryOps}}" bindtap="goInventoryOps">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/knowledge.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">库存</text>

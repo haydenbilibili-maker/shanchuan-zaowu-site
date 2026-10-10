@@ -275,10 +275,13 @@ function optionLabel(o) {
   return `${o.option === '默认' ? '默认' : o.option}（¥${price.toFixed(2)}${o.isDefault ? ' · 默认行' : ''}）`
 }
 
+/** callCloudFunction 是 (name, data) 两参 —— 传成一个对象会绕过 ERP 代理、请求直接失败（列表恒空） */
 async function callFn(data) {
-  const res = await callCloudFunction({ name: FN, data })
+  const res = await callCloudFunction(FN, data)
   const body = res && res.result !== undefined ? res.result : res
-  if (body && body.success === false) throw new Error(body.msg || '请求失败')
+  if (body && body.success === false) {
+    throw Object.assign(new Error(body.msg || '请求失败'), { code: body.code || '' })
+  }
   return body || {}
 }
 
@@ -468,10 +471,14 @@ async function toggleStatus(row) {
   }
 }
 
+/**
+ * 删除 = 服务端引用检查（sku.remove 转给 manageStoreShipment 的 skuAdmin.removeIfUnused，与小程序同一口径）：
+ * 被任何出货单（含作废 / 已删除）或草稿 / 历史备忘引用 → IN_USE、零写入，这里只给「只能停用」。
+ */
 async function removeSku(row) {
   try {
     await ElMessageBox.confirm(
-      `删除「${row.skuName}」？删除是软删（历史出货单的定价快照不受影响），之后开单时不再出现。`,
+      `删除「${row.skuName}」？只有没被任何出货单、草稿或备忘用过的 SKU 才能删；用过的只能停用。`,
       '确认删除',
       { type: 'warning' }
     )
@@ -480,11 +487,29 @@ async function removeSku(row) {
   }
   try {
     await callFn({ action: 'sku.remove', id: row._id })
-    ElMessage.success('已删除')
+    ElMessage.success('已删除（没有任何单据用过它）')
     await loadList()
   } catch (e) {
+    if (e.code === 'IN_USE') return offerDeactivate(row, e.message)
     ElMessage.error(e.message || '删除失败')
   }
+}
+
+async function offerDeactivate(row, reason) {
+  if (row.status !== 'active') {
+    await ElMessageBox.alert(`${reason}。它已经是停用状态，开单时不会再出现。`, '只能停用', { type: 'info' }).catch(() => {})
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      `${reason}。停用后开单时不再出现，历史单据不受影响。`,
+      '只能停用',
+      { type: 'warning', confirmButtonText: '停用', cancelButtonText: '先不动' }
+    )
+  } catch (e) {
+    return
+  }
+  await toggleStatus(row)
 }
 
 onMounted(async () => {

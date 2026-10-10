@@ -130,6 +130,7 @@ const {
   canAccessManagerTab,
   MENU_KEYS,
   HUB_MENU_SECTIONS,
+  SHIPMENT_OPS_PATH,
   WORKSPACE_SUPER_ADMIN,
   WORKSPACE_STORE_MANAGER,
   WORKSPACE_SPECIMEN_ARTISAN
@@ -2647,6 +2648,12 @@ const managerPageConfig = {
     goShipmentSku();
   },
 
+  /** 「SKU 维护」磁贴 —— **仅超管**（与 SKU 模块同一把 menu.shipmentSku），直达出货中心 SKU 目录。拒绝分支同上不弹 toast */
+  goSkuMaintainGuarded() {
+    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.SHIPMENT_SKU)) return;
+    wx.navigateTo({ url: `${SHIPMENT_OPS_PATH}?tab=skus` });
+  },
+
   /** 飞书同步 —— **仅超管**。同形：磁贴由 menu.feishuSync 控制，这里再判一次 */
   goFeishuSyncGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.FEISHU_SYNC)) return;
@@ -2873,6 +2880,7 @@ const managerPageConfig = {
   goDepositOps: function () { this.goDepositOpsGuarded(); },
   goPurchaseOps: function () { this.goPurchaseOpsGuarded(); },
   goShipmentOps: function () { this.goShipmentOpsGuarded(); },
+  goSkuMaintain: function () { this.goSkuMaintainGuarded(); },
   goInventoryOps: function () { this.goInventoryOpsGuarded(); },
   goRawInventoryOps: function () { this.goRawInventoryOpsGuarded(); },
   goStudioDashboard: function () { this.goStudioDashboardGuarded(); },

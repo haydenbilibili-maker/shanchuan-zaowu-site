@@ -85,7 +85,9 @@ const FILES = {
   studioKpis: 'miniprogram/cloudfunctions/getStudioDashboard/settlementKpis.js',
   skusJs: `${EXTRA}/shipment-ops/parts/skus.js`,
   pricingShip: 'miniprogram/cloudfunctions/manageStoreShipment/pricingCore.js',
-  pricingSettle: 'miniprogram/cloudfunctions/manageStudioSettlement/pricingCore.js'
+  pricingSettle: 'miniprogram/cloudfunctions/manageStudioSettlement/pricingCore.js',
+  erpSkus: 'admin/src/components/StudioSkus.vue',
+  skuRules: 'cloudbase/rules/studio_shipment_skus.json'
 }
 
 const MEMO_COLL = 'ops_shipment_memos'
@@ -273,6 +275,22 @@ function collect(s) {
   // I24 公式一份口径 + 弹层锁滚动
   if (s.pricingShip !== s.pricingSettle) errs.push('两份 pricingCore.js 须逐字一致（算价公式只能有一份口径）')
   if (!/<page-meta page-style="\{\{[^"]*skuEdit\.show/.test(s.opsWxml)) errs.push('SKU 编辑弹层须计入 page-meta 锁滚动（skuEdit.show）')
+  // J25 ERP「出货 SKU 目录」删除与小程序同口径：服务端引用检查 + 被引用只能停用
+  if (!/callCloudFunction\(FN, data\)/.test(s.erpSkus) || /callCloudFunction\(\{/.test(s.erpSkus)) {
+    errs.push('ERP StudioSkus 须按两参调用 callCloudFunction(FN, data)（传成一个对象会绕过代理，列表恒空、删除也到不了服务端）')
+  }
+  const removeAt = s.settle.indexOf('async function handleSkuRemove(')
+  const removeBody = removeAt < 0 ? '' : s.settle.slice(removeAt, s.settle.indexOf('\n}\n', removeAt))
+  if (!/action: 'skuAdmin\.removeIfUnused'/.test(removeBody) || /\.update\(|\.remove\(/.test(removeBody)) {
+    errs.push('旧删除 sku.remove 须转 skuAdmin.removeIfUnused 做引用检查，自身不得直接写库')
+  }
+  if (!/if \(e\.code === 'IN_USE'\) return offerDeactivate\(row, e\.message\)/.test(s.erpSkus)) errs.push('ERP 删除被引用（IN_USE）须提示「只能停用」（offerDeactivate）')
+  const offerAt = s.erpSkus.indexOf('async function offerDeactivate(')
+  const offer = offerAt < 0 ? '' : s.erpSkus.slice(offerAt, s.erpSkus.indexOf('\n}\n', offerAt))
+  if (!offer.includes("'只能停用'") || !/await toggleStatus\(row\)/.test(offer)) errs.push('ERP「只能停用」须提供停用操作（offerDeactivate → toggleStatus）')
+  let rule = null
+  try { rule = JSON.parse(s.skuRules) } catch (e) { /* 判红 */ }
+  if (!rule || rule.write !== false) errs.push('studio_shipment_skus 规则须 write:false（网页端不得直删，删除只走带引用检查的云函数）')
   return errs
 }
 
@@ -334,6 +352,11 @@ function q(name, list) {
 module.exports = {
   DYNAMIC_CURRENT_ENV: 'x', init() {},
   getWXContext: () => ({ OPENID: 'o-test' }),
+  callFunction: async (opts) => {
+    M.calls.push(JSON.parse(JSON.stringify(opts)))
+    if (M.callFail) throw new Error('timeout')
+    return { result: M.callResult }
+  },
   database: () => ({
     command: { neq: (v) => ({ neq: v }), in: (a) => ({ in: a }), or: (a) => ({ or: a }), eq: (v) => ({ eq: v }) },
     serverDate: () => new Date(0),
@@ -373,10 +396,13 @@ async function serverErrs(mutateFiles) {
       const p = join(tmp, f)
       writeFileSync(p, fn(readFileSync(p, 'utf8')))
     }
-    const M = (global.__SS_MOCK = { role: 'super', updates: [], db: {} })
+    const M = (global.__SS_MOCK = { role: 'super', updates: [], db: {}, calls: [] })
     const reset = () => {
       M.role = 'super'
       M.updates = []
+      M.calls = []
+      M.callFail = false
+      M.callResult = undefined
       M.db = { studio_material_prices: PRICE_ROWS(), ops_shipments: SHIPMENTS(), studio_shipment_skus: SKUS() }
     }
     reset()
@@ -455,6 +481,28 @@ async function serverErrs(mutateFiles) {
     if (actIds !== 'k4') errs.push(`停用 SKU 不得出现在开单选择器（sku.list status:active 现回 ${actIds || JSON.stringify(act.msg)}）`)
     const cat = await call({ action: 'sku.list', status: '' })
     if ((cat.list || []).length !== 2) errs.push('SKU 目录（sku.list 不传状态）须同时列出启用与停用的 SKU')
+    // J25 旧删除 sku.remove（ERP 用）：转给带引用检查的 skuAdmin.removeIfUnused，被引用零写入，转发失败不删
+    reset()
+    M.callResult = { success: false, code: 'IN_USE', msg: '被 1 张已作废出货单引用，不能删除；请改为停用', refs: { cancelledShipments: 1, total: 1 } }
+    const used = await call({ action: 'sku.remove', id: 'k4', adminOpsKey: 'K' })
+    const fwd = M.calls[0] || {}
+    if (used.success !== false || used.code !== 'IN_USE') errs.push(`旧删除 sku.remove 遇被引用须原样回 IN_USE（现 ${JSON.stringify({ success: used.success, code: used.code })}）`)
+    if (M.updates.length) errs.push('旧删除 sku.remove 被引用时不得写库')
+    if (fwd.name !== 'manageStoreShipment' || !fwd.data || fwd.data.action !== 'skuAdmin.removeIfUnused' || fwd.data.id !== 'k4') {
+      errs.push(`旧删除 sku.remove 须转 manageStoreShipment 的 skuAdmin.removeIfUnused（现 ${JSON.stringify(fwd)}）`)
+    } else if (fwd.data.adminOpsKey !== 'K') errs.push('旧删除转发须带上 adminOpsKey（ERP 通道靠它判超管）')
+    reset()
+    M.callFail = true
+    const down = await call({ action: 'sku.remove', id: 'k4', adminOpsKey: 'K' })
+    if (down.success !== false || M.updates.length) errs.push('引用检查转发失败不得删（fail-closed）')
+    reset()
+    M.callResult = { success: true, _id: 'k4', msg: '无引用，已删除' }
+    const free = await call({ action: 'sku.remove', id: 'k4', adminOpsKey: 'K' })
+    if (!free.success) errs.push('无引用时旧删除 sku.remove 须成功（转发结果原样返回）')
+    reset()
+    M.role = 'manager'
+    const mgrDel = await call({ action: 'sku.remove', id: 'k4' })
+    if (mgrDel.success || M.calls.length) errs.push('店长调 sku.remove 须在本函数就被拒（仅超管）')
   } catch (e) {
     errs.push('云函数运行时测试异常：' + ((e && e.stack) || e))
   } finally {
@@ -794,7 +842,12 @@ if (selftest) {
     ['SKU 写方法不拦店长', (s) => ({ ...s, skusJs: s.skusJs.replace('if (!this.data.isSuper || f.saving || f.busy) return', 'if (f.saving || f.busy) return') }), /submitSkuEdit 须首行拦截/],
     ['SKU 目录对店长可见', (s) => ({ ...s, opsWxml: s.opsWxml.replace("wx:if=\"{{isSuper && libView === 'sku'}}\"", "wx:if=\"{{libView === 'sku'}}\"") }), /isSuper 门下/],
     ['SKU 弹层不锁滚动', (s) => ({ ...s, opsWxml: s.opsWxml.replace(' || skuEdit.show', '') }), /page-meta 锁滚动/],
-    ['两份算价公式漂移', (s) => ({ ...s, pricingShip: s.pricingShip + '\n// drift' }), /pricingCore\.js 须逐字一致/]
+    ['两份算价公式漂移', (s) => ({ ...s, pricingShip: s.pricingShip + '\n// drift' }), /pricingCore\.js 须逐字一致/],
+    ['ERP 调用形状回退', (s) => ({ ...s, erpSkus: s.erpSkus.replace('callCloudFunction(FN, data)', 'callCloudFunction({ name: FN, data })') }), /两参调用/],
+    ['ERP 被引用不给停用', (s) => ({ ...s, erpSkus: s.erpSkus.replace("if (e.code === 'IN_USE') return offerDeactivate(row, e.message)\n", '') }), /只能停用」（offerDeactivate）/],
+    ['ERP 只能停用无停用操作', (s) => ({ ...s, erpSkus: s.erpSkus.replace('  await toggleStatus(row)\n}', '}') }), /须提供停用操作/],
+    ['旧删除直接写库（静态）', (s) => ({ ...s, settle: s.settle.replace("data: { action: 'skuAdmin.removeIfUnused', id,", "data: { action: 'skuAdmin.refs', id,") }), /旧删除 sku\.remove 须转/],
+    ['规则放开网页直删', (s) => ({ ...s, skuRules: '{ "read": false, "write": true }' }), /write:false/]
   ]
   // 运行时注入：只改 tmp 副本里的云函数源码
   const serverCases = [
@@ -809,6 +862,9 @@ if (selftest) {
     ['reviewOnly 不筛选', { 'index.js': (t) => t.replace('if (event.reviewOnly === true) rows = rows.filter((r) => r.needsReview === true)', '') }, /reviewOnly 须只回待复核/],
     ['reviewOnly 宽松判真', { 'index.js': (t) => t.replace('if (event.reviewOnly === true)', 'if (event.reviewOnly)') }, /只认布尔 true/],
     ['停用 SKU 进选择器（运行时）', { 'index.js': (t) => t.replace('rows = rows.filter((r) => (status ? r.status === status : true))\n  const reviewCount', 'rows = rows.filter(() => true)\n  const reviewCount') }, /停用 SKU 不得出现在开单选择器/],
+    ['旧删除不查引用', { 'index.js': (t) => t.replace('async function handleSkuRemove(event) {', "async function handleSkuRemove(event) {\n  await db.collection(SKU_COLLECTION).doc(String(event.id)).update({ data: { deleted: true } })\n  return ok({ _id: event.id })") }, /遇被引用须原样回 IN_USE|被引用时不得写库/],
+    ['转发失败照删', { 'index.js': (t) => t.replace('  } catch (e) {\n    return fail(`引用检查暂不可用', "  } catch (e) {\n    await db.collection(SKU_COLLECTION).doc(id).update({ data: { deleted: true } })\n    return fail(`引用检查暂不可用") }, /fail-closed/],
+    ['转发丢运维口令', { 'index.js': (t) => t.replace("id, adminOpsKey: event.adminOpsKey }", 'id }') }, /须带上 adminOpsKey/],
     ['部分更新冲掉待复核', { 'settlementDefaults.js': (t) => t.replace("note: String(src.note == null ? '' : src.note).trim(),\n    deleted: false", "note: String(src.note == null ? '' : src.note).trim(),\n    needsReview: false,\n    deleted: false") }, /不得改写 needsReview/]
   ]
   // G18 运行时注入：只改 manageStoreShipment 的 tmp 副本

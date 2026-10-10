@@ -12,6 +12,7 @@
  *   meta | config.get | config.save
  *   priceBook.list | priceBook.get | priceBook.create | priceBook.update | priceBook.remove | priceBook.validate
  *   priceBook.removeIfUnused（仅超管；有引用拒删，见 priceBookRefs.js）
+ *   sku.remove（仅超管；转 manageStoreShipment 的 skuAdmin.removeIfUnused，有引用拒删 IN_USE）
  *   searchPriceBook（可选 orderBy:'sort' 按资料排序；不传与原来一致）
  *
  * 权限（蓝图 §8.1 + 裁决 9）：
@@ -62,6 +63,7 @@ const {
 
 const BILL_COLLECTION = 'ops_settlement_bills'
 const SHIPMENT_COLLECTION = 'ops_shipments'
+const SKU_REMOVE_FN = 'manageStoreShipment'
 const {
   NOTIFY_EVENTS,
   resolveRecipients,
@@ -958,15 +960,26 @@ async function handleSkuUpdate(event, actor) {
   return ok({ _id: id, msg: 'SKU 已保存' })
 }
 
-async function handleSkuRemove(event, actor) {
+/**
+ * 删除只认一套引用口径：转给 manageStoreShipment 的 skuAdmin.removeIfUnused
+ * （出货单含作废/已删除 + 草稿/历史备忘；备忘集合按 G17 只能由出货函数读，所以不在这里另算一遍）。
+ * 被引用 → IN_USE、零写入；转发失败一律不删（fail-closed）。
+ */
+async function handleSkuRemove(event) {
   const id = String(event.id || '').trim()
   if (!id) return fail('缺少 id', 'BAD_PARAM')
-  await withCollectionRetry(SKU_COLLECTION, () =>
-    db.collection(SKU_COLLECTION).doc(id).update({
-      data: { deleted: true, deletedAt: Date.now(), updatedAt: Date.now(), updatedBy: actorName(actor) }
+  let body
+  try {
+    const res = await cloud.callFunction({
+      name: SKU_REMOVE_FN,
+      data: { action: 'skuAdmin.removeIfUnused', id, adminOpsKey: event.adminOpsKey }
     })
-  )
-  return ok({ _id: id, msg: 'SKU 已删除（历史出货单的快照不受影响）' })
+    body = res && res.result
+  } catch (e) {
+    return fail(`引用检查暂不可用，未删除：${(e && (e.errMsg || e.message)) || e}`, 'REF_CHECK_UNAVAILABLE')
+  }
+  if (!body || typeof body.success !== 'boolean') return fail('引用检查没有返回结果，未删除', 'REF_CHECK_UNAVAILABLE')
+  return body
 }
 
 // ─────────────────────────── 账单（结算权威） ───────────────────────────
@@ -1309,7 +1322,7 @@ exports.main = async (event) => {
       case 'sku.update':
         return await handleSkuUpdate(event, auth.actor)
       case 'sku.remove':
-        return await handleSkuRemove(event, auth.actor)
+        return await handleSkuRemove(event)
 
       case 'bill.meta':
         return await handleBillMeta()

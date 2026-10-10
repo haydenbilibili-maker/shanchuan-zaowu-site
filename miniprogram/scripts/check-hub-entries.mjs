@@ -592,6 +592,10 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
     if (first('运费') !== 'shipping') errs.push('N5 超管搜「运费」首条须为运费规则')
     if (first('包邮') !== 'shipping') errs.push('N5 超管搜「包邮」须找到运费规则（按别名）')
     if (first('出货') !== 'shipment') errs.push('N5 超管搜「出货」首条须为出货中心')
+    for (const q of ['SKU', 'sku', '商品', '价目']) {
+      if (!nav.searchEntries(q, sm).some((x) => x.id === 'skuMaintain')) errs.push(`N5 超管搜「${q}」须找到「SKU 维护」`)
+    }
+    if (nav.searchEntries('SKU', { menu: menuOf(roles, MGR) }).some((x) => x.id === 'skuMaintain')) errs.push('N5「SKU 维护」仅超管：店长不得搜到')
     const studio = nav.searchEntries('工作室', sm).map((x) => x.id)
     if (!['studioDashboard', 'purchase', 'inventory'].every((id) => studio.includes(id))) errs.push('N5 超管搜分组名「工作室」须列出该组入口')
     if (nav.searchEntries('飞书', { menu: menuOf(roles, MGR) }).length) errs.push('N5 搜索须只在有权限的入口里找（店长搜到了飞书同步）')
@@ -703,8 +707,8 @@ const SPLIT = {
   payslip: ['myPayslip', 'payslipAdmin'],
   rules: ['shipping', 'bookingRules', 'supportConfig']
 }
-/** 入口总数棘轮：只许多不许少（拆分后 48；删入口须产品负责人点名并在此改数） */
-const MIN_ENTRIES = 48
+/** 入口总数棘轮：只许多不许少（拆分后 48；2026-10-10 加「SKU 维护」→ 49；删入口须产品负责人点名并在此改数） */
+const MIN_ENTRIES = 49
 
 function judgeSplit(src, nav, roles, tiles, errs) {
   const entries = nav.HUB_ENTRIES || []
@@ -897,7 +901,8 @@ if (!selftest) {
       const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="wxNotify"[\s\S]*?<text class="hub-cell-sub">订单·工单提醒<\/text>\s*<\/view>/)
       if (!m) throw new Error('注入锚点失效：微信通知磁贴')
       return rep('hubNav', "  { id: 'wxNotify',", "  // { id: 'wxNotify',")({ ...s, wxml: s.wxml.replace(m[0], '') })
-    }, /N7 入口总数 47 < 48/],
+    }, /N7 入口总数 48 < 49/],
+    ['N5 SKU 维护搜不到', rep('hubNav', "alias: ['SKU', '商品', '价目', '出货 SKU', '定价']", "alias: ['出货 SKU']"), /N5 超管搜「商品」须找到「SKU 维护」/],
     ['N7 旧折叠常用映射到无权限子入口', rep('hubNav', 'Array.isArray(to) ? to.find((x) => entryVisible(findEntry(x), menu)) : to', 'Array.isArray(to) ? to[0] : to'), /N7 只有部分子功能权限时/],
     ['N7 子入口丢了角标', rep('hubNav', "tap: 'goGiftOps', badge: 'giftTodoCount' }", "tap: 'goGiftOps' }"), /N7 旧「礼赠」常用映射到礼赠履约后须带上礼赠待办红点/],
     ['N7 磁贴右上角 › 复活', rep('wxml', '<text class="hub-cell-name">预约规则</text>', '<text class="hub-cell-name">预约规则</text>\n              <text class="hub-cell-go">›</text>'), /N7 磁贴又出现右上角 ›/]
