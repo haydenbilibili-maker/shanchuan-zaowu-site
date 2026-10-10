@@ -12,13 +12,20 @@ function money(n) {
   return round2(n).toFixed(2)
 }
 
+function siTag(r) {
+  if (r.advance) return '预扣'
+  if (r.refPeriod) return `参考上期 ${r.refPeriod}`
+  return ''
+}
+
 function siRows(rows) {
   return (Array.isArray(rows) ? rows : [])
     .filter((r) => r && r.name && Number(r.amount) > 0)
     .map((r) => ({
       key: `${r.key || r.name}-${r.period || ''}`,
       name: r.name,
-      period: r.period || '',
+      period: r.periodLabel || r.period || '',
+      tag: siTag(r),
       amountFmt: money(r.amount)
     }))
 }
@@ -29,14 +36,21 @@ function buildSocialInsurance(si, otherDeduction) {
   const company = siRows(si.company)
   if (!personal.length && !company.length) return null
   const hasInjury = (Array.isArray(si.company) ? si.company : []).some((r) => r && r.key === 'injury')
+  const hasRef = personal.concat(company).some((r) => r.tag.indexOf('参考上期') === 0)
+  const split = Number(si.splitHeadcount || si.headcount) || 0
+  const infos = (Array.isArray(si.info) ? si.info : [])
+    .filter((x) => x && x.text && x.kind !== 'missing')
+    .map((x) => x.text)
   return {
     personal,
     company,
+    infos,
     personalTotalFmt: money(si.personalTotal),
     companyTotalFmt: money(si.companyTotal),
     otherDeduction: round2(otherDeduction),
     otherDeductionFmt: money(otherDeduction),
-    splitNote: si.headcount > 1 ? `按缴费记录 ${si.headcount} 人合计 ÷ ${si.headcount} 计入本人` : '',
+    splitNote: split > 1 ? `每人金额 = 缴费记录合计 ÷ ${split}（只用于折算，不限制参保人数）` : '',
+    refNote: hasRef ? '标「参考上期」的品目本月暂无缴费记录，沿用最近一期金额' : '',
     injuryNote: hasInjury ? '工伤保险按政策由公司全额缴纳，个人不扣' : ''
   }
 }

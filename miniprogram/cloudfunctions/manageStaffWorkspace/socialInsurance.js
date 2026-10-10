@@ -1,38 +1,54 @@
 /**
- * 社保扣缴标准（工资条明细改造，2026-10-10 产品负责人点名）
+ * 社保扣缴标准（工资条明细，产品负责人 2026-10-10 点名；同日第 2 轮口径）
  *
  * 口径：
- *   1. 金额取自社保缴费记录（多人合计），每人金额 = 合计 ÷ headcount（按分取整）；
- *   2. 工伤保险按政策个人不扣，只由公司缴纳（companyOnly，个人部分恒为 0）；
- *   3. 「公司为你缴纳」只做展示，不进工资条扣款、不影响实发；
- *   4. cycle=year 的品目（大额医疗互助）全年只扣一次；periodOffset 为相对「社保缴费月」的所属期偏移。
+ *   1. 金额取自社保缴费记录（SI_RECORDS），记录是多人合计：每人金额 = 合计 ÷ splitHeadcount（按分取整）。
+ *      splitHeadcount 只用于把这份记录折算成每人金额，**不是参保人数上限** —— 任何参保员工都按同一每人金额扣
+ *      （2026-09-03 记录为 2 人合计；第三位员工另有缴费记录未提供，按同一每人金额扣）。
+ *   2. 按「所属期 = 工资条月份」分到各自的工资条：9 月工资条只扣所属期 9 月的品目，医疗所属 10 月就进 10 月工资条。
+ *      某月没有该品目的缴费记录 → 沿用最近一期同品目金额，并标「参考上期」；之前也没有 → 不扣，列为提示。
+ *   3. 工伤保险按政策个人不扣，只由公司缴纳；公司缴纳部分只展示，不进扣款、不影响实发。
+ *   4. 年度品目（大额医疗互助）一年只扣一次；系统外已扣的年度写进 SI_EXTERNAL_CHARGES，工资条上注明、不再扣。
+ *   5. 同一员工、同一品目、同一所属期只扣一次：之前工资条（含「预扣」）扣过的，本张列为提示、不再扣。
  *
- * 新增 / 调整标准：在 SI_STANDARDS 追加一条（effectiveFrom 递增），不要改已用过的条目 ——
- * 工资条保存的是计算快照，旧条目改了不会回写，但会让「同一标准」两次算出不同结果。
- *
+ * 新缴费记录 / 金额调整：在 SI_RECORDS 追加一条（不要改已用过的记录）；ERP 副本同步改。
  * 副本：admin/src/utils/socialInsurance.js（ESM，ERP 薪酬模块用），由 test:payslip-social-insurance 逐项比对一致。
  */
-const SI_STANDARDS = [
+const SI_ITEMS = [
+  { key: 'pension', name: '养老保险', item: '企业职工基本养老保险费' },
+  { key: 'medical', name: '医疗保险', item: '基本医疗保险费' },
+  { key: 'medicalMutual', name: '大额医疗互助', item: '基本医疗保险费（职工大额医疗互助保险）', cycle: 'year' },
+  { key: 'unemployment', name: '失业保险', item: '失业保险费' },
+  { key: 'injury', name: '工伤保险', item: '工伤保险费', companyOnly: true }
+]
+
+const SI_RECORDS = [
   {
-    id: 'si-2026-09',
-    label: '2026 年社保（2026-09-03 三方协议缴费）',
-    effectiveFrom: '2026-09',
-    headcount: 2,
-    source: '2026-09-03 社保缴费记录，两人合计',
+    id: 'si-2026-09-03',
+    label: '2026-09-03 三方协议缴费',
+    paidDate: '2026-09-03',
+    splitHeadcount: 2,
+    source: '社保缴费记录截图，两人合计（第三位员工另有缴费记录，按同一每人金额扣）',
     lines: [
-      { key: 'pension', item: '企业职工基本养老保险费', name: '养老保险', personalTotal: 702.92, companyTotal: 1054.36, cycle: 'month', periodOffset: 0 },
-      { key: 'medical', item: '基本医疗保险费', name: '医疗保险', personalTotal: 175.72, companyTotal: 676.56, cycle: 'month', periodOffset: 1 },
-      { key: 'medicalMutual', item: '基本医疗保险费', name: '大额医疗互助', personalTotal: 200, companyTotal: 0, cycle: 'year', periodOffset: 0 },
-      { key: 'unemployment', item: '失业保险费', name: '失业保险', personalTotal: 26.36, companyTotal: 61.5, cycle: 'month', periodOffset: 0 },
-      { key: 'injury', item: '工伤保险费', name: '工伤保险', personalTotal: 0, companyTotal: 28.12, cycle: 'month', periodOffset: 0, companyOnly: true }
+      { key: 'pension', period: '2026-09', personalTotal: 702.92, companyTotal: 1054.36 },
+      { key: 'medical', period: '2026-10', personalTotal: 175.72, companyTotal: 676.56 },
+      { key: 'medicalMutual', period: '2026', personalTotal: 200, companyTotal: 0 },
+      { key: 'unemployment', period: '2026-09', personalTotal: 26.36, companyTotal: 61.5 },
+      { key: 'injury', period: '2026-09', personalTotal: 0, companyTotal: 28.12 }
     ]
   }
 ]
 
-const SI_NOTE_SPLIT = '个人与公司金额均按缴费记录合计 ÷ 参保人数计'
+/** 系统外已扣（工资条上注明、不再扣） */
+const SI_EXTERNAL_CHARGES = [
+  { key: 'medicalMutual', period: '2026', text: '大额医疗互助 2026 年度已于 8 月工资扣缴' }
+]
+
+const SI_NOTE_SPLIT = '每人金额 = 缴费记录合计 ÷ 记录人数；记录人数只用于折算，不限制参保人数'
 const SI_NOTE_INJURY = '工伤保险按政策由公司全额缴纳，个人不扣'
 
 const YM_RE = /^\d{4}-\d{2}$/
+const Y_RE = /^\d{4}$/
 
 function toCents(n) {
   return Math.round((Number(n) || 0) * 100)
@@ -43,91 +59,142 @@ function perHead(total, headcount) {
   return Math.round(toCents(total) / hc) / 100
 }
 
-function addMonths(ym, offset) {
-  const [y, m] = String(ym).split('-').map(Number)
-  const idx = y * 12 + (m - 1) + (Number(offset) || 0)
-  return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`
+function itemOf(key) {
+  return SI_ITEMS.find((i) => i.key === key) || null
 }
 
-function validateStandard(std) {
+function validateRecord(rec) {
   const errors = []
-  if (!std || !std.id) return ['标准缺少 id']
-  if (!(Number(std.headcount) >= 1)) errors.push(`${std.id}：参保人数须 ≥ 1`)
-  if (!YM_RE.test(String(std.effectiveFrom || ''))) errors.push(`${std.id}：起用月份须为 YYYY-MM`)
-  const lines = Array.isArray(std.lines) ? std.lines : []
-  if (!lines.length) errors.push(`${std.id}：没有品目`)
+  if (!rec || !rec.id) return ['缴费记录缺少 id']
+  if (!(Number(rec.splitHeadcount) >= 1)) errors.push(`${rec.id}：记录人数须 ≥ 1`)
+  const lines = Array.isArray(rec.lines) ? rec.lines : []
+  if (!lines.length) errors.push(`${rec.id}：没有品目`)
   lines.forEach((l) => {
-    if (!l || !l.key || !l.name) errors.push(`${std.id}：品目缺少 key / name`)
-    else if (l.key === 'injury' && !l.companyOnly) errors.push(`${std.id}：工伤保险必须标记为仅公司缴纳`)
-    else if (l.companyOnly && toCents(l.personalTotal) !== 0) errors.push(`${std.id}：${l.name} 仅公司缴纳，个人部分必须为 0`)
-    if (l && (toCents(l.personalTotal) < 0 || toCents(l.companyTotal) < 0)) errors.push(`${std.id}：${l.name} 金额不能为负`)
+    const it = l && itemOf(l.key)
+    if (!it) return errors.push(`${rec.id}：未知品目 ${l && l.key}`)
+    const periodOk = it.cycle === 'year' ? Y_RE.test(String(l.period)) : YM_RE.test(String(l.period))
+    if (!periodOk) errors.push(`${rec.id}：${it.name} 所属期格式不对（${l.period}）`)
+    if (it.key === 'injury' && !it.companyOnly) errors.push('工伤保险必须标记为仅公司缴纳')
+    if (it.companyOnly && toCents(l.personalTotal) !== 0) errors.push(`${rec.id}：${it.name} 仅公司缴纳，个人部分必须为 0`)
+    if (toCents(l.personalTotal) < 0 || toCents(l.companyTotal) < 0) errors.push(`${rec.id}：${it.name} 金额不能为负`)
   })
   return errors
 }
 
-function listStandards() {
-  return SI_STANDARDS.map((s) => ({ id: s.id, label: s.label, effectiveFrom: s.effectiveFrom, headcount: s.headcount, source: s.source }))
+function validateAll() {
+  const errors = []
+  if (!SI_ITEMS.some((i) => i.key === 'injury' && i.companyOnly)) errors.push('工伤保险必须标记为仅公司缴纳')
+  SI_RECORDS.forEach((r) => errors.push(...validateRecord(r)))
+  return errors
 }
 
-function findStandard(id) {
-  return SI_STANDARDS.find((s) => s.id === String(id || '').trim()) || null
+/** 所有记录里该品目的行，按所属期、缴费日期排序（同一所属期取最新缴费日期） */
+function linesOf(key) {
+  const out = []
+  SI_RECORDS.forEach((rec) => (rec.lines || []).forEach((l) => {
+    if (l.key === key) out.push({ line: l, rec })
+  }))
+  return out.sort((a, b) =>
+    a.line.period === b.line.period
+      ? (a.rec.paidDate < b.rec.paidDate ? -1 : 1)
+      : (a.line.period < b.line.period ? -1 : 1))
 }
 
-/** 缴费月对应的默认标准：effectiveFrom ≤ 缴费月 中最新的一条 */
-function standardForMonth(paidMonth) {
-  const ym = String(paidMonth || '')
-  const hits = SI_STANDARDS.filter((s) => s.effectiveFrom <= ym).sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))
-  return hits[0] || null
+/** 所属期的金额来源：有当期记录用当期；否则沿用最近一期（refPeriod）；都没有返回 null */
+function lineFor(key, period) {
+  const all = linesOf(key)
+  const exact = all.filter((x) => x.line.period === period)
+  if (exact.length) return { ...exact[exact.length - 1], refPeriod: '' }
+  const before = all.filter((x) => x.line.period < period)
+  if (before.length) {
+    const hit = before[before.length - 1]
+    return { ...hit, refPeriod: hit.line.period }
+  }
+  return null
 }
 
-/** 工资条月份 → 默认社保缴费月（上一个月：本月发的工资扣上月缴的社保） */
-function defaultPaidMonth(payslipMonth) {
-  return YM_RE.test(String(payslipMonth || '')) ? addMonths(payslipMonth, -1) : ''
+function periodLabel(period) {
+  return Y_RE.test(period) ? `${period} 年度` : period
 }
 
 /**
- * 计算一人一份工资条的社保快照。
- * @param {{ standardId: string, paidMonth: string, includeAnnual?: boolean }} input
+ * 计算一张工资条的社保快照。
+ * @param {{ payslipMonth: string, includeAnnual?: boolean, charged?: {key,period,month}[], advance?: {key,period}[] }} input
+ *   charged：该员工其他工资条已扣过的（品目, 所属期）；advance：本张额外预扣的（品目, 所属期），只给补录脚本用
  * @returns {{ ok: true, snapshot: object } | { ok: false, msg: string }}
  */
 function computeSocialInsurance(input) {
-  const std = findStandard(input && input.standardId)
-  if (!std) return { ok: false, msg: '未找到社保扣缴标准' }
-  const errors = validateStandard(std)
+  const errors = validateAll()
   if (errors.length) return { ok: false, msg: errors[0] }
-  const paidMonth = String((input && input.paidMonth) || '').trim()
-  if (!YM_RE.test(paidMonth)) return { ok: false, msg: '社保缴费月须为 YYYY-MM' }
-  if (paidMonth < std.effectiveFrom) return { ok: false, msg: `该标准 ${std.effectiveFrom} 起用，早于此月不可套用` }
-  const includeAnnual = !!(input && input.includeAnnual)
-  const year = paidMonth.slice(0, 4)
+  const ym = String((input && input.payslipMonth) || '').trim()
+  if (!YM_RE.test(ym)) return { ok: false, msg: '工资条月份须为 YYYY-MM' }
+  const year = ym.slice(0, 4)
+  const includeAnnual = input && input.includeAnnual
+  const charged = Array.isArray(input && input.charged) ? input.charged : []
+  const advance = Array.isArray(input && input.advance) ? input.advance : []
   const personal = []
   const company = []
+  const info = []
+  const heads = new Set()
   let annualIncluded = false
-  std.lines.forEach((l) => {
-    const isYear = l.cycle === 'year'
-    if (isYear && !includeAnnual) return
-    const period = isYear ? `${year} 全年` : addMonths(paidMonth, l.periodOffset)
-    const base = { key: l.key, name: l.name, period }
-    const p = l.companyOnly ? 0 : perHead(l.personalTotal, std.headcount)
-    const c = perHead(l.companyTotal, std.headcount)
-    if (p > 0) {
-      personal.push({ ...base, amount: p })
-      if (isYear) annualIncluded = true
-    }
-    if (c > 0) company.push({ ...base, amount: c })
+  let annualAvailable = false
+  let annualBlocked = ''
+
+  const targets = []
+  SI_ITEMS.forEach((it) => targets.push({ it, period: it.cycle === 'year' ? year : ym, advance: false }))
+  advance.forEach((a) => {
+    const it = itemOf(a && a.key)
+    if (it && !it.companyOnly && a.period !== ym) targets.push({ it, period: String(a.period), advance: true })
   })
+
+  targets.forEach(({ it, period, advance: isAdvance }) => {
+    const isYear = it.cycle === 'year'
+    const src = lineFor(it.key, period)
+    if (!src) {
+      if (!isYear) info.push({ key: it.key, name: it.name, period, kind: 'missing', text: `${it.name}（所属期 ${period}）暂无缴费记录，未扣` })
+      return
+    }
+    heads.add(src.rec.splitHeadcount)
+    const base = { key: it.key, name: it.name, period, periodLabel: periodLabel(period) }
+    if (src.refPeriod) base.refPeriod = src.refPeriod
+    const p = it.companyOnly ? 0 : perHead(src.line.personalTotal, src.rec.splitHeadcount)
+    const c = perHead(src.line.companyTotal, src.rec.splitHeadcount)
+    if (p > 0) {
+      const ext = SI_EXTERNAL_CHARGES.find((e) => e.key === it.key && e.period === period)
+      const prior = charged.find((x) => x && x.key === it.key && x.period === period)
+      if (ext) {
+        info.push({ ...base, kind: 'external', text: ext.text })
+        if (isYear) annualBlocked = ext.text
+      } else if (prior) {
+        info.push({ ...base, kind: 'prior', amount: p, month: prior.month || '', text: `${it.name}（所属期 ${periodLabel(period)}）已在 ${prior.month || '之前'} 工资扣过，本张不再扣` })
+        if (isYear) annualBlocked = `${it.name} ${period} 年度已在 ${prior.month || '之前'} 工资扣过，全年只扣一次`
+      } else if (isYear && includeAnnual === false) {
+        annualAvailable = true
+        info.push({ ...base, kind: 'deferred', text: `${it.name}（${periodLabel(period)}）本张暂不扣` })
+      } else {
+        personal.push(isAdvance ? { ...base, amount: p, advance: true } : { ...base, amount: p })
+        if (isAdvance) info.push({ ...base, kind: 'advance', amount: p, text: `${it.name}（所属期 ${periodLabel(period)}）${p.toFixed(2)} 已在本张工资预扣` })
+        if (isYear) { annualIncluded = true; annualAvailable = true }
+      }
+    }
+    if (c > 0 && !isAdvance) company.push({ ...base, amount: c })
+  })
+
+  if (!personal.length && !company.length) return { ok: false, msg: `${ym} 没有可套用的社保缴费记录` }
   const sum = (rows) => Math.round(rows.reduce((s, r) => s + toCents(r.amount), 0)) / 100
   return {
     ok: true,
     snapshot: {
-      standardId: std.id,
-      label: std.label,
-      headcount: std.headcount,
-      paidMonth,
+      version: 2,
+      payslipMonth: ym,
+      splitHeadcount: heads.size === 1 ? [...heads][0] : 0,
       annualYear: year,
       annualIncluded,
+      annualAvailable,
+      annualBlocked,
       personal,
       company,
+      info,
       personalTotal: sum(personal),
       companyTotal: sum(company),
       notes: [SI_NOTE_SPLIT, SI_NOTE_INJURY]
@@ -135,16 +202,29 @@ function computeSocialInsurance(input) {
   }
 }
 
+/** 从其他工资条的社保快照里收集已扣过的（品目, 所属期） */
+function chargedFromSnapshots(rows) {
+  const out = []
+  ;(rows || []).forEach((r) => {
+    const s = r && r.socialInsurance
+    if (!s || !Array.isArray(s.personal)) return
+    s.personal.forEach((p) => {
+      if (p && p.key && p.period) out.push({ key: p.key, period: String(p.period), month: String(r.month || r.yearMonth || '') })
+    })
+  })
+  return out
+}
+
 module.exports = {
-  SI_STANDARDS,
+  SI_ITEMS,
+  SI_RECORDS,
+  SI_EXTERNAL_CHARGES,
   SI_NOTE_SPLIT,
   SI_NOTE_INJURY,
-  validateStandard,
-  listStandards,
-  findStandard,
-  standardForMonth,
-  defaultPaidMonth,
-  addMonths,
+  validateRecord,
+  validateAll,
+  lineFor,
   perHead,
-  computeSocialInsurance
+  computeSocialInsurance,
+  chargedFromSnapshots
 }

@@ -9,11 +9,21 @@ function currentYearMonth() {
 const YM_RE = /^\d{4}-\d{2}$/
 
 function emptySiPreview() {
-  return { loading: false, snapshot: null, annualChargedIn: '', msg: '', personalTotalFmt: '', companyTotalFmt: '', netFmt: '' }
+  return { loading: false, snapshot: null, lines: [], infos: [], legacyMonths: '', msg: '', personalTotalFmt: '', companyTotalFmt: '', netFmt: '' }
 }
 
 function siFormDefaults() {
-  return { siOn: false, siStandardId: '', siPaidMonth: '', siIncludeAnnual: null, siLegacyDeduction: false }
+  return { siOn: false, siIncludeAnnual: null, siLegacyDeduction: false }
+}
+
+function siPreviewLines(snap) {
+  const tag = (r) => (r.advance ? ' · 预扣' : r.refPeriod ? ` · 参考上期 ${r.refPeriod}` : '')
+  const row = (who) => (r) => ({
+    key: `${who}-${r.key}-${r.period}`,
+    label: `${who === 'p' ? '扣' : '公司'} ${r.name}（${r.periodLabel || r.period}${tag(r)}）`,
+    amountFmt: `${who === 'p' ? '-' : ''}¥${Number(r.amount).toFixed(2)}`
+  })
+  return (snap.personal || []).map(row('p')).concat((snap.company || []).map(row('c')))
 }
 
 function estimateNet(form, personalTotal) {
@@ -151,8 +161,6 @@ Page({
         deduction: deduction != null ? String(deduction) : '',
         remark: row.remark || '',
         siOn: !!si,
-        siStandardId: si ? si.standardId : '',
-        siPaidMonth: si ? si.paidMonth : '',
         siIncludeAnnual: si ? !!si.annualIncluded : null,
         siLegacyDeduction: !si && Number(row.deduction) > 0
       },
@@ -179,8 +187,6 @@ Page({
   async refreshSiPreview() {
     const f = this.data.form
     if (!f.siOn || !f.staffOpenid || !YM_RE.test(String(f.month || ''))) return
-    const paidMonth = String(f.siPaidMonth || '').trim()
-    if (paidMonth && !YM_RE.test(paidMonth)) return
     this.setData({ 'siPreview.loading': true })
     try {
       const res = await wx.cloud.callFunction({
@@ -189,11 +195,7 @@ Page({
           action: 'payslipSiPreview',
           staffOpenid: f.staffOpenid,
           month: f.month,
-          socialInsurance: {
-            standardId: f.siStandardId || '',
-            paidMonth,
-            includeAnnual: f.siIncludeAnnual
-          }
+          socialInsurance: { includeAnnual: f.siIncludeAnnual }
         }
       })
       const result = (res && res.result) || {}
@@ -202,15 +204,15 @@ Page({
         siPreview: {
           loading: false,
           snapshot: snap,
-          annualChargedIn: result.annualChargedIn || '',
+          lines: snap ? siPreviewLines(snap) : [],
+          infos: snap ? (snap.info || []).map((x) => x.text) : [],
+          legacyMonths: (result.legacyMonths || []).join('、'),
           msg: result.success === false || !snap ? (result.msg || '暂时算不出社保明细') : '',
           personalTotalFmt: snap ? Number(snap.personalTotal).toFixed(2) : '',
           companyTotalFmt: snap ? Number(snap.companyTotal).toFixed(2) : '',
           netFmt: snap ? estimateNet(f, snap.personalTotal) : ''
         }
       }
-      if (result.standardId) patch['form.siStandardId'] = result.standardId
-      if (!paidMonth && result.paidMonth) patch['form.siPaidMonth'] = result.paidMonth
       if (snap) patch['form.siIncludeAnnual'] = !!snap.annualIncluded
       this.setData(patch)
     } catch (e) {
@@ -229,7 +231,7 @@ Page({
     if (field === 'month') patch['form.siIncludeAnnual'] = null
     this.setData(patch)
     if (!this.data.form.siOn) return
-    if (field === 'month' || field === 'siPaidMonth') {
+    if (field === 'month') {
       if (YM_RE.test(String(e.detail.value || ''))) this.refreshSiPreview()
     } else if (this.data.siPreview.snapshot) {
       this.setData({ 'siPreview.netFmt': estimateNet(this.data.form, this.data.siPreview.snapshot.personalTotal) })
@@ -257,7 +259,7 @@ Page({
       wx.showToast({ title: '请填写员工与月份 YYYY-MM', icon: 'none' })
       return
     }
-    if (f.siOn && (!f.siStandardId || !this.data.siPreview.snapshot)) {
+    if (f.siOn && !this.data.siPreview.snapshot) {
       if (!this.data.siPreview.msg) this.setData({ 'siPreview.msg': '社保明细还没算出来，请稍候再保存' })
       return
     }
@@ -275,7 +277,7 @@ Page({
           deduction: Number(f.deduction) || 0,
           remark: f.remark,
           socialInsurance: f.siOn
-            ? { standardId: f.siStandardId || '', paidMonth: f.siPaidMonth || '', includeAnnual: f.siIncludeAnnual }
+            ? { apply: true, includeAnnual: f.siIncludeAnnual }
             : null
         }
       })

@@ -712,34 +712,41 @@ async function payslipRemove(event, openid) {
   }
 }
 
-/** 该员工同一年度已扣过「全年一次」品目的工资条月份（排除正在编辑的这一张） */
-async function findAnnualChargedMonth(staffOpenid, year, excludeId) {
+/** 该员工其他工资条：已扣过的（品目, 所属期）+ 没有社保明细的旧工资条月份（排除正在编辑的这一张） */
+async function loadSiHistory(staffOpenid, payslipMonth, excludeId) {
   const res = await db.collection(COL_PAY).where({ staffOpenid }).limit(100).get()
-  const hit = (res.data || []).find((r) =>
-    r && r._id !== excludeId && r.socialInsurance && r.socialInsurance.annualIncluded && r.socialInsurance.annualYear === year
-  )
-  return hit ? String(hit.month || '') : ''
+  const rows = res.data || []
+  const others = rows.filter((r) => r && r._id !== excludeId && r.month !== payslipMonth)
+  const own = rows.find((r) => r && r._id === excludeId)
+  const ownPersonal = own && own.socialInsurance && Array.isArray(own.socialInsurance.personal) ? own.socialInsurance.personal : []
+  return {
+    charged: SI.chargedFromSnapshots(others),
+    advance: ownPersonal.filter((p) => p && p.advance).map((p) => ({ key: p.key, period: String(p.period) })),
+    legacyMonths: others
+      .filter((r) => !r.socialInsurance && Number(r.deduction) > 0)
+      .map((r) => String(r.month || ''))
+      .sort()
+  }
 }
 
 /**
- * 工资条的社保快照：raw = { standardId, paidMonth?, includeAnnual? }；不传 standardId = 不套用（旧行为）。
- * includeAnnual 不传时：本年度还没扣过「全年一次」品目就扣；已扣过再要求扣 → 拒绝。
+ * 工资条的社保快照：raw = { apply: true, includeAnnual? }；不传 / apply 为假 = 不套用（旧行为）。
+ * 按「所属期 = 工资条月份」取品目；其他工资条扣过的（品目, 所属期）不再扣；本张已有的预扣行重存时保留；
+ * includeAnnual 不传 = 年度品目本年还没扣就扣；已扣（或系统外已扣）再要求扣 → 拒绝。
  */
 async function resolveSocialInsurance(raw, staffOpenid, payslipMonth, docId) {
-  if (!raw || !raw.standardId) return { snapshot: null, annualChargedIn: '' }
-  const paidMonth = String(raw.paidMonth || '').trim() || SI.defaultPaidMonth(payslipMonth)
-  const year = paidMonth.slice(0, 4)
-  let chargedIn = ''
+  if (!raw || !raw.apply) return { snapshot: null, legacyMonths: [] }
+  let hist
   try {
-    chargedIn = await findAnnualChargedMonth(staffOpenid, year, docId)
+    hist = await loadSiHistory(staffOpenid, payslipMonth, docId)
   } catch (e) {
-    return { error: '暂时读不到该员工往期工资条，请稍后再套用社保标准' }
+    return { error: '暂时读不到该员工往期工资条，请稍后再套用社保标准', legacyMonths: [] }
   }
-  const includeAnnual = raw.includeAnnual == null ? !chargedIn : !!raw.includeAnnual
-  if (includeAnnual && chargedIn) return { error: `大额医疗互助 ${year} 年已在 ${chargedIn} 工资条扣过，全年只扣一次`, annualChargedIn: chargedIn }
-  const r = SI.computeSocialInsurance({ standardId: raw.standardId, paidMonth, includeAnnual })
-  if (!r.ok) return { error: r.msg, annualChargedIn: chargedIn }
-  return { snapshot: r.snapshot, annualChargedIn: chargedIn }
+  const includeAnnual = raw.includeAnnual == null ? undefined : !!raw.includeAnnual
+  const r = SI.computeSocialInsurance({ payslipMonth, includeAnnual, charged: hist.charged, advance: hist.advance })
+  if (!r.ok) return { error: r.msg, legacyMonths: hist.legacyMonths }
+  if (includeAnnual === true && r.snapshot.annualBlocked) return { error: r.snapshot.annualBlocked, legacyMonths: hist.legacyMonths }
+  return { snapshot: r.snapshot, legacyMonths: hist.legacyMonths }
 }
 
 async function payslipSiPreview(event, openid) {
@@ -747,14 +754,11 @@ async function payslipSiPreview(event, openid) {
   if (!guard.ok) return fail(guard.msg, { code: guard.code })
   const targetOpenid = String(event.staffOpenid || '').trim()
   const month = String(event.month || '').trim()
-  const raw = event.socialInsurance || {}
-  const paidMonth = String(raw.paidMonth || '').trim() || SI.defaultPaidMonth(month)
-  const std = raw.standardId ? SI.findStandard(raw.standardId) : SI.standardForMonth(paidMonth)
-  const base = { success: true, standards: SI.listStandards(), standardId: std ? std.id : '', paidMonth }
-  if (!targetOpenid || !/^\d{4}-\d{2}$/.test(month) || !std) return { ...base, snapshot: null, annualChargedIn: '' }
-  const si = await resolveSocialInsurance({ ...raw, standardId: std.id, paidMonth }, targetOpenid, month, `${targetOpenid}_${month}`)
-  if (si.error) return { ...base, snapshot: null, annualChargedIn: si.annualChargedIn || '', msg: si.error }
-  return { ...base, snapshot: si.snapshot, annualChargedIn: si.annualChargedIn }
+  if (!targetOpenid || !/^\d{4}-\d{2}$/.test(month)) return { success: true, snapshot: null, legacyMonths: [] }
+  const raw = { ...(event.socialInsurance || {}), apply: true }
+  const si = await resolveSocialInsurance(raw, targetOpenid, month, `${targetOpenid}_${month}`)
+  if (si.error) return { success: true, snapshot: null, legacyMonths: si.legacyMonths || [], msg: si.error }
+  return { success: true, snapshot: si.snapshot, legacyMonths: si.legacyMonths }
 }
 
 async function payslipUpsert(event, openid) {

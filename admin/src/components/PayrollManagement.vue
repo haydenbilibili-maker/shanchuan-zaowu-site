@@ -138,8 +138,10 @@
             </el-table-column>
           </el-table>
           <p class="si-note">
-            每人金额 = 合计 ÷ {{ siStandard?.headcount || '—' }} 人；工伤保险按政策个人不扣、只由公司缴纳；
-            公司缴纳部分只在工资条上展示，不从实发里扣；大额医疗互助同一年度只扣一次。
+            每人金额 = 合计 ÷ {{ siStandard?.splitHeadcount || '—' }}（只用于折算，不限制参保人数，所有参保员工按同一每人金额扣）；
+            按「所属期 = 工资月」分到各月工资条，某月无记录时沿用最近一期金额；同一品目同一所属期只扣一次；
+            工伤保险按政策个人不扣、只由公司缴纳；公司缴纳部分只展示，不从实发里扣。
+            <template v-for="t in siExternalNotes" :key="t"><br />{{ t }}</template>
           </p>
           <el-form label-width="160px" style="max-width: 640px">
             <el-form-item label="参保员工">
@@ -340,7 +342,7 @@ import {
   appendAuditLog,
 } from '../utils/payrollStorage.js'
 import { generateMonthlySlips, regeneratePartialMonthlySlips } from '../utils/payrollEngine.js'
-import { SI_STANDARDS, perHead } from '../utils/socialInsurance.js'
+import { SI_EXTERNAL_CHARGES, SI_ITEMS, SI_RECORDS, perHead } from '../utils/socialInsurance.js'
 import { UNIFIED_EMPLOYEES_CHANGED } from '../utils/unifiedEmployeeSync.js'
 
 const yearMonth = ref(monthStr(new Date()))
@@ -367,13 +369,19 @@ function monthStr(d) {
 
 const storeSelectOptions = computed(() => getStoreSelectOptions(storeBundle.value))
 
-const siStandard = SI_STANDARDS[SI_STANDARDS.length - 1] || null
-const siStandardRows = (siStandard?.lines || []).map((l) => ({
-  ...l,
-  periodLabel: l.cycle === 'year' ? '全年一次' : l.periodOffset ? `缴费月 +${l.periodOffset}` : '缴费当月',
-  personalEach: l.companyOnly ? 0 : perHead(l.personalTotal, siStandard.headcount),
-  companyEach: perHead(l.companyTotal, siStandard.headcount),
-}))
+const siStandard = SI_RECORDS[SI_RECORDS.length - 1] || null
+const siStandardRows = (siStandard?.lines || []).map((l) => {
+  const item = SI_ITEMS.find((i) => i.key === l.key) || {}
+  return {
+    ...l,
+    name: item.name || l.key,
+    companyOnly: !!item.companyOnly,
+    periodLabel: item.cycle === 'year' ? `${l.period} 年度` : l.period,
+    personalEach: item.companyOnly ? 0 : perHead(l.personalTotal, siStandard.splitHeadcount),
+    companyEach: perHead(l.companyTotal, siStandard.splitHeadcount),
+  }
+})
+const siExternalNotes = SI_EXTERNAL_CHARGES.map((x) => x.text)
 const siEmployeeOptions = computed(() =>
   (payroll.employees || [])
     .filter((e) => e.status !== 'left')

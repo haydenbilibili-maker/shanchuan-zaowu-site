@@ -1,6 +1,6 @@
 import { sumStoreNetRevenueForMonth } from './storeStorage.js'
 import { genPayrollId } from './payrollStorage.js'
-import { computeSocialInsurance, defaultPaidMonth, standardForMonth } from './socialInsurance.js'
+import { chargedFromSnapshots, computeSocialInsurance } from './socialInsurance.js'
 
 function revenueKey(storeId, yearMonth) {
   return `${storeId}::${String(yearMonth).slice(0, 7)}`
@@ -38,23 +38,14 @@ function clerkWeight(emp, defaultRate) {
 
 /**
  * 参保员工的社保快照（标准与小程序工资条同源，见 socialInsurance.js）：
- * 个人部分从实发里扣，公司缴纳只记录展示；大额医疗互助同一年度只扣一次。
+ * 按「所属期 = 工资月」取缴费记录；同一员工同一品目同一所属期只扣一次（含年度品目与系统外已扣）。
+ * 个人部分从实发里扣，公司缴纳只记录展示。
  */
 function socialInsuranceForSlip(settings, existingSlips, employeeId, ym) {
   const enrolled = Array.isArray(settings?.siEnrolledEmployeeIds) ? settings.siEnrolledEmployeeIds.map(String) : []
   if (!enrolled.includes(String(employeeId))) return null
-  const paidMonth = defaultPaidMonth(ym)
-  const std = standardForMonth(paidMonth)
-  if (!std) return null
-  const year = paidMonth.slice(0, 4)
-  const charged = (existingSlips || []).some(
-    (s) =>
-      String(s.employeeId) === String(employeeId) &&
-      s.yearMonth !== ym &&
-      s.socialInsurance?.annualIncluded &&
-      s.socialInsurance.annualYear === year
-  )
-  const r = computeSocialInsurance({ standardId: std.id, paidMonth, includeAnnual: !charged })
+  const others = (existingSlips || []).filter((s) => String(s.employeeId) === String(employeeId) && s.yearMonth !== ym)
+  const r = computeSocialInsurance({ payslipMonth: ym, charged: chargedFromSnapshots(others) })
   return r.ok ? r.snapshot : null
 }
 
