@@ -74,8 +74,6 @@ Page({
       hubFav: [],
       hubFavEdit: HUB_FAV_EDIT_CLOSED,
       hubCat: HUB_CAT_EMPTY,
-      hubFold: {},
-      hubPeek: {},
       hubQuery: '',
       hubFound: []
     })
@@ -93,8 +91,6 @@ Page({
   refreshOpsSignals() {
     baseRefreshOpsSignals.call(this)
     const patch = { hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data) }
-    const cat = hubNav.buildCatalog(this.data.menu, this.data)
-    patch.hubPeek = cat.hubPeek
     if (this.data.hubQuery) patch.hubFound = hubNav.searchEntries(this.data.hubQuery, this.data)
     this.setData(patch)
   },
@@ -145,13 +141,7 @@ Page({
     this.setData({ hubFavEdit: HUB_FAV_EDIT_CLOSED, ...hubNav.buildHubView(ids, this.data) })
   },
 
-  /* ── 全部功能：分区折叠 / 搜索 ── */
-  onHubFold(e) {
-    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.sec) || '')
-    if (!id || !this.data.hubSec[id]) return
-    this.setData({ [`hubFold.${id}`]: !this.data.hubFold[id] })
-  },
-
+  /* ── 全部功能：搜索 ── */
   onHubSearch(e) {
     const q = String((e && e.detail && e.detail.value) || '').slice(0, 20)
     this.setData({ hubQuery: q, hubFound: hubNav.searchEntries(q, this.data) })

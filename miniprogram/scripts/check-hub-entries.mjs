@@ -18,7 +18,7 @@
  *      点常用磁贴再判权限、保存前归一化、常用区按清单 wx:for 渲染；
  *   9) 2026-10-01 展示改版·方案 A（产品负责人点名，见 judgeLayout）：N1 不再有小金点 / 双圈 / 长按这类要解释的暗号、
  *      N2 每个入口都有一句大白话说明、N3 待处理横条包含所有带角标的入口（同一种红色数字）、N4「编辑」是常用的显式入口、
- *      N5 搜索只在入口 > 20 的角色出现、N6 超管分区默认折叠 / 店长默认展开；常用本地 key 不变。
+ *      N5 搜索只在入口 > 20 的角色出现、N6 每个分区单独一块卡片、入口全部直接可见（2026-10-10 撤回手风琴）；常用本地 key 不变。
  *
  * 用法：node miniprogram/scripts/check-hub-entries.mjs [--selftest]
  * 自检全部在内存副本上注入，不写盘。
@@ -143,7 +143,7 @@ function menuKeysOf(expr, errs, where) {
   return uniq(keys)
 }
 
-/** 分区开标签（2026-10-02：整块手风琴内的 hub-grp，可带 hub-grp--<id> / is-folded|is-open；wx:if 与锚点 id 必须一致） */
+/** 分区开标签（hub-grp 独立卡片；wx:if 与锚点 id 必须一致） */
 const SEC_RE = /<view class="hub-grp[^"]*" wx:if="\{\{hubSec\.(\w+)\}\}" id="hub-sec-(\w+)">/g
 
 function parseTiles(wxml, errs) {
@@ -490,7 +490,7 @@ function judge(src) {
  *      首屏顺序 信息流 → 搜索（超管）→ 待处理 → 金卡 → 经营信号 → 扫码 → 常用 → 全部功能；
  *   N4「编辑」是常用的显式入口（常用区右上角，tap-press，打开编辑面板），全工作台没有长按加入；
  *   N5 搜索只在入口 > 20 的角色出现（超管有、店长 / 店员没有），按名称 / 别名 / 分组名 / 子项名找，只在有权限的入口里找；
- *   N6 超管分区默认折叠（组头用入口图标芯片预览前几项 + 组待办红数字）、店长 / 店员默认全部展开；组头点按切换。
+ *   N6 每个分区单独一块描边卡片、组头只有分区名、入口列表无条件显示（所有角色都不折叠；2026-10-10 产品负责人撤回手风琴）。
  *   另：列表行同一规格（class 只许 hub-row、tap-press 80ms、data-fid = 清单 id），二级面板入口点按走 openHubGroup（底部 sheet）。
  */
 function menuOf(roles, role) {
@@ -656,47 +656,31 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
     errs.push(`N5 searchEntries 执行失败：${e.message}`)
   }
 
-  // ── N6 超管默认折叠、店长默认展开 ──
+  // ── N6 每个分区单独一块卡片、入口全部直接可见（2026-10-10 撤回手风琴） ──
+  const catBlock = (src.wxml.match(/<view class="hub-cat" id="hub-cat">[\s\S]*?<!-- 数据图表/) || [''])[0]
+  if (/<view class="hub-cat-body"/.test(catBlock)) errs.push('N6 全部功能又被包进一整块面板（hub-cat-body）—— 每个分区须单独一块卡片')
+  if (!/<view class="hub-cat-head">\s*<view class="hub-titles">\s*<text class="hub-en">ALL FUNCTIONS<\/text>\s*<text class="hub-cn">全部功能<\/text>/.test(catBlock)) {
+    errs.push('N6 全部功能标题须为英文小标题 + 中文主标两行（hub-titles / ALL FUNCTIONS / 全部功能）')
+  }
   for (const s of secs) {
     const close = closeOf(src.wxml, s.at)
     const body = close > 0 ? src.wxml.slice(s.at, close) : ''
-    if (!new RegExp(`<view class="hub-grp-head" bindtap="onHubFold" data-sec="${s.id}" hover-class="tap-press" hover-stay-time="80">`).test(body)) errs.push(`N6 分区 ${s.id} 组头须 bindtap="onHubFold" data-sec="${s.id}"（tap-press）`)
-    if (!new RegExp(`<view class="hub-grp-chips" wx:if="\\{\\{hubFold\\.${s.id}\\}\\}">[\\s\\S]*?wx:for="\\{\\{hubPeek\\.${s.id}\\.chips\\}\\}"`).test(body)) {
-      errs.push(`N6 分区 ${s.id} 折叠时组头须用入口图标芯片预览（hubPeek.${s.id}.chips）`)
-    }
-    if (!new RegExp(`<view class="hub-list" wx:if="\\{\\{!hubFold\\.${s.id}\\}\\}">`).test(body)) errs.push(`N6 分区 ${s.id} 列表须 wx:if="{{!hubFold.${s.id}}}"（折叠即收起）`)
+    const open = (body.match(/^<view [^>]*>/) || [''])[0]
+    if (!/^<view class="hub-grp" wx:if=/.test(open)) errs.push(`N6 分区 ${s.id} 开标签须只用 class="hub-grp"（不带折叠态 class）`)
+    if (!new RegExp(`<view class="hub-grp-head">\\s*<text class="hub-grp-title">[^<]+</text>\\s*</view>`).test(body)) errs.push(`N6 分区 ${s.id} 组头须只有分区名（不能点、无箭头 / 芯片）`)
+    const lists = body.match(/<view class="hub-list"[^>]*>/g) || []
+    if (lists.length !== 1 || lists[0] !== '<view class="hub-list">') errs.push(`N6 分区 ${s.id} 入口列表须恰好一个且无条件显示（<view class="hub-list">）`)
   }
-  if (!/\n  onHubFold\(e\) \{[\s\S]{0,300}\[`hubFold\.\$\{id\}`\]: !this\.data\.hubFold\[id\]/.test(src.indexJs)) errs.push('N6 onHubFold 须切换该分区的 hubFold')
-  for (const [role, label, want] of [[SUPER, '超管', true], [MGR, '店长', false], [STAFF, '店员', false]]) {
+  for (const [code, file] of [[wx, 'index.wxml'], [src.indexJs, 'index.js'], [src.hubNav, 'hubNav.js']]) {
+    const m = code.match(/hubFold|hubPeek|onHubFold|is-folded/)
+    if (m) errs.push(`N6 ${file} 仍有折叠残留「${m[0]}」—— 入口须全部直接可见`)
+  }
+  if (/\.hub-grp-(arrow|chip|accent|peek|mark)|\.hub-cat-body|\.is-folded/.test(css)) errs.push('N6 hubNav.wxss 仍有手风琴专用样式（箭头 / 芯片 / 色条 / 整块面板）')
+  if (!/\.hub-grp \{[^}]*border: 1rpx solid[^}]*border-radius: 24rpx/.test(css)) errs.push('N6 .hub-grp 须是独立描边圆角卡片')
+  for (const [role, label] of ROLES3) {
     const menu = menuOf(roles, role)
-    const cat = nav.buildCatalog(menu, {})
-    for (const s of nav.HUB_SECTIONS || []) {
-      const entries = (nav.HUB_ENTRIES || []).filter((e) => e.sec === s.id && e.keys.some((k) => menu[k]))
-      const names = entries.map((e) => e.label)
-      if (!names.length) continue
-      if (cat.hubFold[s.id] !== want) errs.push(`N6 ${label}：分区「${s.title}」默认应${want ? '折叠' : '展开'}（hubFold=${cat.hubFold[s.id]}）`)
-      const peek = cat.hubPeek[s.id] || {}
-      const chips = peek.chips || []
-      const wantChips = entries.slice(0, Math.min(entries.length, 4)).map((e) => e.label)
-      if (chips.map((c) => c.label).join('、') !== wantChips.join('、')) {
-        errs.push(`N6 ${label}：分区「${s.title}」组头芯片须列前几个入口（当前 [${chips.map((c) => c.label)}]）`)
-      }
-      if (!chips.every((c) => c.icon)) errs.push(`N6 ${label}：分区「${s.title}」芯片须带图标`)
-      if (String(peek.labels || '').indexOf(names.slice(0, Math.min(names.length, 3)).join('、')) !== 0) {
-        errs.push(`N6 ${label}：分区「${s.title}」labels 兜底须列前几个入口名（当前「${peek.labels}」）`)
-      }
-    }
-  }
-  // 组头待办角标：有计数时写进 hubPeek.<id>.badge（与入口角标同源）
-  try {
-    const sm = menuOf(roles, SUPER)
-    const hot = nav.buildCatalog(sm, {
-      menu: sm, orders: [1, 2], newOrderUnreadCount: 3, customOrders: [1], supportTickets: [1],
-      framerRecruitApps: [1], approvalPendingCount: 2, invoicePendingCount: 1, giftTodoCount: 4
-    })
-    if (!hot.hubPeek.orders || !hot.hubPeek.orders.badge) errs.push('N6 超管订单履约组头在有待办时应显示红色数字角标（hubPeek.orders.badge）')
-  } catch (e) {
-    errs.push(`N6 组头角标实跑失败：${e.message}`)
+    const cat = nav.buildCatalog(menu)
+    if (Object.keys(cat).some((k) => k !== 'hubCat')) errs.push(`N6 ${label}：buildCatalog 只应返回 hubCat（当前 ${Object.keys(cat)}）—— 不再有折叠状态`)
   }
 }
 
@@ -719,7 +703,7 @@ if (!selftest) {
     errs.forEach((e) => console.error('  -', e))
     process.exitCode = 1
   } else {
-    console.log(`${TAG} ✓ 改版前 ${ORIGINAL.length} 个入口均可达、权限条件未变、无重复磁贴、分区与合并面板口径一致、清单 ↔ 磁贴 ${(loadNavEntries(base)).length} 枚逐枚一致、常用区权限 / 映射 / 上限 / 默认值成立（超管 / 店长 / 店员 / 标本师四角色实跑）；无暗号标记、每个入口有大白话说明、待处理横条含全部角标入口、「编辑」显式管理常用、搜索只给入口 > 20 的角色、超管默认折叠 / 店长默认展开（三角色实跑）`)
+    console.log(`${TAG} ✓ 改版前 ${ORIGINAL.length} 个入口均可达、权限条件未变、无重复磁贴、分区与合并面板口径一致、清单 ↔ 磁贴 ${(loadNavEntries(base)).length} 枚逐枚一致、常用区权限 / 映射 / 上限 / 默认值成立（超管 / 店长 / 店员 / 标本师四角色实跑）；无暗号标记、每个入口有大白话说明、待处理横条含全部角标入口、「编辑」显式管理常用、搜索只给入口 > 20 的角色、每个分区单独成块且入口全部可见（三角色实跑）`)
   }
 } else {
   const rep = (key, from, to) => (s) => {
@@ -794,18 +778,20 @@ if (!selftest) {
     ['N4 编辑按钮被删', rep('wxml', '<view class="hub-fav-edit" bindtap="openFavEditor" hover-class="tap-press" hover-stay-time="80">编辑</view>', ''), /N4 常用区右上角须有「编辑」按钮/],
     ['N4 空态不再指向编辑', rep('wxml', '<text>还没有常用入口，点右上角「编辑」挑选</text>', '<text>还没有常用入口</text>'), /N4 常用为空时须指向「编辑」/],
     // N5 搜索只在入口 > 20 的角色出现
-    ['N5 搜索给所有角色', rep('hubNav', 'return { hubCat: { total: vis.length, search: many }', 'return { hubCat: { total: vis.length, search: true }'), /N5 店长：可见入口 16 个，搜索框应隐藏/],
+    ['N5 搜索给所有角色', rep('hubNav', 'return { hubCat: { total: vis.length, search: vis.length > MANY_ENTRIES } }', 'return { hubCat: { total: vis.length, search: true } }'), /N5 店长：可见入口 16 个，搜索框应隐藏/],
     ['N5 搜索框不再受开关控制', rep('wxml', '<view class="hub-search" wx:if="{{hubCat.search}}">', '<view class="hub-search">'), /N5 搜索框须 wx:if/],
     ['N5 搜索不按权限过滤', rep('hubNav', '  visibleEntries(d.menu).forEach((e, i) => {', '  HUB_ENTRIES.forEach((e, i) => {'), /N5 搜索须只在有权限的入口里找/],
     ['N5 搜索不认别名', rep('hubNav', 'return [e.label, ...(e.alias || []), sec.title, sec.short, ...subs]', 'return [e.label, sec.title, sec.short]'), /N5 超管搜「运费」/],
     ['N5 搜索不认分组名', rep('hubNav', 'return [e.label, ...(e.alias || []), sec.title, sec.short, ...subs]', 'return [e.label, ...(e.alias || []), ...subs]'), /N5 超管搜分组名「工作室」/],
-    // N6 超管默认折叠、店长默认展开
-    ['N6 超管不再默认折叠', rep('hubNav', '    fold[s.id] = many\n', '    fold[s.id] = false\n'), /N6 超管：分区「订单履约」默认应折叠/],
-    ['N6 店长也被折叠', rep('hubNav', '    fold[s.id] = many\n', '    fold[s.id] = true\n'), /N6 店长：分区「订单履约」默认应展开/],
-    ['N6 组头芯片被清空', rep('hubNav', '    peek[s.id] = buildPeek(entries, data)\n', "    peek[s.id] = { mark: '', n: '0', chips: [], more: 0, labels: `${entries.length} 项`, badge: '' }\n"), /N6 超管：分区「.*」组头芯片须列前几个入口/],
-    ['N6 列表不随折叠收起', rep('wxml', '<view class="hub-list" wx:if="{{!hubFold.biz}}">', '<view class="hub-list">'), /N6 分区 biz 列表须/],
-    ['N6 组头不能点', rep('wxml', 'bindtap="onHubFold" data-sec="studio"', 'data-sec="studio"'), /N6 分区 studio 组头须/],
-    ['N6 组头待办角标不算数', rep('hubNav', '  entries.forEach((e) => { badge += entryBadgeNum(e, data) })\n', '  entries.forEach((e) => { badge += 0 })\n'), /N6 超管订单履约组头在有待办时应显示红色数字角标/]
+    // N6 每个分区单独一块、入口全部可见
+    ['N6 分区列表又被折叠', rep('wxml', '<view class="hub-grp" wx:if="{{hubSec.biz}}" id="hub-sec-biz">\n          <view class="hub-grp-head">\n            <text class="hub-grp-title">经营数据</text>\n          </view>\n          <view class="hub-list">', '<view class="hub-grp" wx:if="{{hubSec.biz}}" id="hub-sec-biz">\n          <view class="hub-grp-head">\n            <text class="hub-grp-title">经营数据</text>\n          </view>\n          <view class="hub-list" wx:if="{{!hubFold.biz}}">'), /N6 分区 biz 入口列表须恰好一个且无条件显示/],
+    ['N6 组头又能点开收起', rep('wxml', '          <view class="hub-grp-head">\n            <text class="hub-grp-title">工作室</text>', '          <view class="hub-grp-head" bindtap="onHubFold" data-sec="studio" hover-class="tap-press" hover-stay-time="80">\n            <text class="hub-grp-title">工作室</text>'), /N6 分区 studio 组头须只有分区名/],
+    ['N6 分区又并进一整块面板', (s) => rep('wxml', '<view class="hub-grp" wx:if="{{hubSec.orders}}"', '<view class="hub-cat-body">\n        <view class="hub-grp" wx:if="{{hubSec.orders}}"')(rep('wxml', '          </view>\n        </view>\n      </view>\n    </view>\n\n    <!-- 数据图表', '          </view>\n        </view>\n        </view>\n      </view>\n    </view>\n\n    <!-- 数据图表')(s)), /N6 全部功能又被包进一整块面板/],
+    ['N6 分区开标签带折叠态', rep('wxml', '<view class="hub-grp" wx:if="{{hubSec.org}}"', "<view class=\"hub-grp {{hubFold.org ? 'is-folded' : 'is-open'}}\" wx:if=\"{{hubSec.org}}\""), /N6 分区 org 开标签须只用 class="hub-grp"/],
+    ['N6 buildCatalog 回流折叠状态', rep('hubNav', '  return { hubCat: { total: vis.length, search: vis.length > MANY_ENTRIES } }', '  const hubFold = {}\n  return { hubCat: { total: vis.length, search: vis.length > MANY_ENTRIES }, hubFold }'), /N6 hubNav\.js 仍有折叠残留|buildCatalog 只应返回 hubCat/],
+    ['N6 手风琴芯片样式回流', (s) => ({ ...s, hubWxss: `${s.hubWxss}\n.hub-grp-chip { width: 44rpx; }\n` }), /N6 hubNav\.wxss 仍有手风琴专用样式/],
+    ['N6 分区卡片去掉描边', rep('hubWxss', '  border: 1rpx solid rgba(196, 167, 108, 0.14);\n  border-radius: 24rpx;\n  overflow: hidden;\n}\n.hub-grp-head', '  border-radius: 24rpx;\n  overflow: hidden;\n}\n.hub-grp-head'), /N6 \.hub-grp 须是独立描边圆角卡片/],
+    ['N6 中英标题并成一行', rep('wxml', '<view class="hub-titles">\n            <text class="hub-en">ALL FUNCTIONS</text>\n            <text class="hub-cn">全部功能</text>\n          </view>', '<text class="hub-cn">全部功能 ALL FUNCTIONS</text>'), /N6 全部功能标题须为英文小标题/]
   ]
   let bad = 0
   const baseline = run(base)

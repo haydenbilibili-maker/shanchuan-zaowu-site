@@ -347,38 +347,22 @@
   <!-- 瀑布流布局容器：默认 2 列；极窄 stackCols 时单列 -->
   <view class="dashboard-grid {{chartLayout.stackCols ? 'dash-grid--stack' : ''}}">
     
-    <!-- 功能入口（2026-09-30 全局改版；2026-10-01 展示改版·方案 A）：「全部功能」= 按分区的列表行（图标 + 名称 + 一句说明 + 角标 + ›），
-         分区可折叠（入口 > 20 的角色默认折叠，组头用入口图标芯片预览 + 组待办角标）；二级面板入口点按统一弹底部 sheet。权限口径见 hubNav.js，一致性由 check:hub-entries 守 -->
+    <!-- 功能入口（2026-09-30 全局改版；2026-10-01 展示改版·方案 A）：「全部功能」= 每个分区单独一块卡片、入口列表行全部直接可见（图标 + 名称 + 一句说明 + 角标 + ›），
+         不折叠（2026-10-10 产品负责人点名撤回手风琴）；二级面板入口点按统一弹底部 sheet。权限口径见 hubNav.js，一致性由 check:hub-entries 守 -->
     <view class="grid-item full-width hub-nav">
       <view class="hub-cat" id="hub-cat">
         <view class="hub-cat-head">
-          <text class="hub-cat-title">全部功能</text>
+          <view class="hub-titles">
+            <text class="hub-en">ALL FUNCTIONS</text>
+            <text class="hub-cn">全部功能</text>
+          </view>
           <text class="hub-cat-count">{{hubCat.total}} 项</text>
         </view>
-        <view class="hub-cat-body">
-        <view class="hub-grp hub-grp--orders {{hubFold.orders ? 'is-folded' : 'is-open'}}" wx:if="{{hubSec.orders}}" id="hub-sec-orders">
-          <view class="hub-grp-head" bindtap="onHubFold" data-sec="orders" hover-class="tap-press" hover-stay-time="80">
-            <view class="hub-grp-accent"></view>
-            <view class="hub-grp-mark">
-              <image class="hub-grp-mark-img" src="{{hubPeek.orders.mark}}" mode="aspectFit" />
-            </view>
-            <view class="hub-grp-meta">
-              <view class="hub-grp-title-row">
-                <text class="hub-grp-title">订单履约</text>
-                <text class="hub-grp-n">{{hubPeek.orders.n}}</text>
-                <view class="hub-badge" wx:if="{{hubPeek.orders.badge}}">{{hubPeek.orders.badge}}</view>
-              </view>
-              <view class="hub-grp-chips" wx:if="{{hubFold.orders}}">
-                <view class="hub-grp-chip" wx:for="{{hubPeek.orders.chips}}" wx:key="id">
-                  <image class="hub-grp-chip-img" src="{{item.icon}}" mode="aspectFit" />
-                </view>
-                <text class="hub-grp-more" wx:if="{{hubPeek.orders.more}}">+{{hubPeek.orders.more}}</text>
-              </view>
-              <text class="hub-grp-state" wx:else>已展开 · 点此收起</text>
-            </view>
-            <view class="hub-grp-arrow {{hubFold.orders ? '' : 'is-open'}}"></view>
+        <view class="hub-grp" wx:if="{{hubSec.orders}}" id="hub-sec-orders">
+          <view class="hub-grp-head">
+            <text class="hub-grp-title">订单履约</text>
           </view>
-          <view class="hub-list" wx:if="{{!hubFold.orders}}">
+          <view class="hub-list">
             <view class="hub-row" hover-class="tap-press" hover-stay-time="80" data-fid="orders" wx:if="{{menu.orders}}" bindtap="onOrdersMenuTap" data-idx="2" data-title="订单管理">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/box.png" mode="aspectFit" /></view>
               <view class="hub-row-main"><text class="hub-row-name">订单</text><text class="hub-row-desc">看新订单、安排发货和售后</text></view>
@@ -418,29 +402,11 @@
           </view>
         </view>
 
-        <view class="hub-grp hub-grp--biz {{hubFold.biz ? 'is-folded' : 'is-open'}}" wx:if="{{hubSec.biz}}" id="hub-sec-biz">
-          <view class="hub-grp-head" bindtap="onHubFold" data-sec="biz" hover-class="tap-press" hover-stay-time="80">
-            <view class="hub-grp-accent"></view>
-            <view class="hub-grp-mark">
-              <image class="hub-grp-mark-img" src="{{hubPeek.biz.mark}}" mode="aspectFit" />
-            </view>
-            <view class="hub-grp-meta">
-              <view class="hub-grp-title-row">
-                <text class="hub-grp-title">经营数据</text>
-                <text class="hub-grp-n">{{hubPeek.biz.n}}</text>
-                <view class="hub-badge" wx:if="{{hubPeek.biz.badge}}">{{hubPeek.biz.badge}}</view>
-              </view>
-              <view class="hub-grp-chips" wx:if="{{hubFold.biz}}">
-                <view class="hub-grp-chip" wx:for="{{hubPeek.biz.chips}}" wx:key="id">
-                  <image class="hub-grp-chip-img" src="{{item.icon}}" mode="aspectFit" />
-                </view>
-                <text class="hub-grp-more" wx:if="{{hubPeek.biz.more}}">+{{hubPeek.biz.more}}</text>
-              </view>
-              <text class="hub-grp-state" wx:else>已展开 · 点此收起</text>
-            </view>
-            <view class="hub-grp-arrow {{hubFold.biz ? '' : 'is-open'}}"></view>
+        <view class="hub-grp" wx:if="{{hubSec.biz}}" id="hub-sec-biz">
+          <view class="hub-grp-head">
+            <text class="hub-grp-title">经营数据</text>
           </view>
-          <view class="hub-list" wx:if="{{!hubFold.biz}}">
+          <view class="hub-list">
             <view class="hub-row" hover-class="tap-press" hover-stay-time="80" data-fid="ledger" wx:if="{{menu.ledger}}" bindtap="switchTab" data-idx="8" data-title="营收账本">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/coin_gold.png" mode="aspectFit" /></view>
               <view class="hub-row-main"><text class="hub-row-name">账本</text><text class="hub-row-desc">每天收了多少钱，一笔笔对得上</text></view>
@@ -459,29 +425,11 @@
           </view>
         </view>
 
-        <view class="hub-grp hub-grp--goods {{hubFold.goods ? 'is-folded' : 'is-open'}}" wx:if="{{hubSec.goods}}" id="hub-sec-goods">
-          <view class="hub-grp-head" bindtap="onHubFold" data-sec="goods" hover-class="tap-press" hover-stay-time="80">
-            <view class="hub-grp-accent"></view>
-            <view class="hub-grp-mark">
-              <image class="hub-grp-mark-img" src="{{hubPeek.goods.mark}}" mode="aspectFit" />
-            </view>
-            <view class="hub-grp-meta">
-              <view class="hub-grp-title-row">
-                <text class="hub-grp-title">商品内容</text>
-                <text class="hub-grp-n">{{hubPeek.goods.n}}</text>
-                <view class="hub-badge" wx:if="{{hubPeek.goods.badge}}">{{hubPeek.goods.badge}}</view>
-              </view>
-              <view class="hub-grp-chips" wx:if="{{hubFold.goods}}">
-                <view class="hub-grp-chip" wx:for="{{hubPeek.goods.chips}}" wx:key="id">
-                  <image class="hub-grp-chip-img" src="{{item.icon}}" mode="aspectFit" />
-                </view>
-                <text class="hub-grp-more" wx:if="{{hubPeek.goods.more}}">+{{hubPeek.goods.more}}</text>
-              </view>
-              <text class="hub-grp-state" wx:else>已展开 · 点此收起</text>
-            </view>
-            <view class="hub-grp-arrow {{hubFold.goods ? '' : 'is-open'}}"></view>
+        <view class="hub-grp" wx:if="{{hubSec.goods}}" id="hub-sec-goods">
+          <view class="hub-grp-head">
+            <text class="hub-grp-title">商品内容</text>
           </view>
-          <view class="hub-list" wx:if="{{!hubFold.goods}}">
+          <view class="hub-list">
             <view class="hub-row" hover-class="tap-press" hover-stay-time="80" data-fid="products" wx:if="{{menu.products}}" bindtap="switchTab" data-idx="1" data-title="藏品库">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>
               <view class="hub-row-main"><text class="hub-row-name">藏品</text><text class="hub-row-desc">藏品上架、下架和改价</text></view>
@@ -518,29 +466,11 @@
           </view>
         </view>
 
-        <view class="hub-grp hub-grp--members {{hubFold.members ? 'is-folded' : 'is-open'}}" wx:if="{{hubSec.members}}" id="hub-sec-members">
-          <view class="hub-grp-head" bindtap="onHubFold" data-sec="members" hover-class="tap-press" hover-stay-time="80">
-            <view class="hub-grp-accent"></view>
-            <view class="hub-grp-mark">
-              <image class="hub-grp-mark-img" src="{{hubPeek.members.mark}}" mode="aspectFit" />
-            </view>
-            <view class="hub-grp-meta">
-              <view class="hub-grp-title-row">
-                <text class="hub-grp-title">会员触达</text>
-                <text class="hub-grp-n">{{hubPeek.members.n}}</text>
-                <view class="hub-badge" wx:if="{{hubPeek.members.badge}}">{{hubPeek.members.badge}}</view>
-              </view>
-              <view class="hub-grp-chips" wx:if="{{hubFold.members}}">
-                <view class="hub-grp-chip" wx:for="{{hubPeek.members.chips}}" wx:key="id">
-                  <image class="hub-grp-chip-img" src="{{item.icon}}" mode="aspectFit" />
-                </view>
-                <text class="hub-grp-more" wx:if="{{hubPeek.members.more}}">+{{hubPeek.members.more}}</text>
-              </view>
-              <text class="hub-grp-state" wx:else>已展开 · 点此收起</text>
-            </view>
-            <view class="hub-grp-arrow {{hubFold.members ? '' : 'is-open'}}"></view>
+        <view class="hub-grp" wx:if="{{hubSec.members}}" id="hub-sec-members">
+          <view class="hub-grp-head">
+            <text class="hub-grp-title">会员触达</text>
           </view>
-          <view class="hub-list" wx:if="{{!hubFold.members}}">
+          <view class="hub-list">
             <view class="hub-row" hover-class="tap-press" hover-stay-time="80" data-fid="memberCrm" wx:if="{{menu.memberCrm}}" bindtap="goMemberCrm">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/user_gold.png" mode="aspectFit" /></view>
               <view class="hub-row-main"><text class="hub-row-name">会员 CRM</text><text class="hub-row-desc">会员是谁、多久没来、谁该回访</text></view>
@@ -581,29 +511,11 @@
           </view>
         </view>
 
-        <view class="hub-grp hub-grp--studio {{hubFold.studio ? 'is-folded' : 'is-open'}}" wx:if="{{hubSec.studio}}" id="hub-sec-studio">
-          <view class="hub-grp-head" bindtap="onHubFold" data-sec="studio" hover-class="tap-press" hover-stay-time="80">
-            <view class="hub-grp-accent"></view>
-            <view class="hub-grp-mark">
-              <image class="hub-grp-mark-img" src="{{hubPeek.studio.mark}}" mode="aspectFit" />
-            </view>
-            <view class="hub-grp-meta">
-              <view class="hub-grp-title-row">
-                <text class="hub-grp-title">工作室</text>
-                <text class="hub-grp-n">{{hubPeek.studio.n}}</text>
-                <view class="hub-badge" wx:if="{{hubPeek.studio.badge}}">{{hubPeek.studio.badge}}</view>
-              </view>
-              <view class="hub-grp-chips" wx:if="{{hubFold.studio}}">
-                <view class="hub-grp-chip" wx:for="{{hubPeek.studio.chips}}" wx:key="id">
-                  <image class="hub-grp-chip-img" src="{{item.icon}}" mode="aspectFit" />
-                </view>
-                <text class="hub-grp-more" wx:if="{{hubPeek.studio.more}}">+{{hubPeek.studio.more}}</text>
-              </view>
-              <text class="hub-grp-state" wx:else>已展开 · 点此收起</text>
-            </view>
-            <view class="hub-grp-arrow {{hubFold.studio ? '' : 'is-open'}}"></view>
+        <view class="hub-grp" wx:if="{{hubSec.studio}}" id="hub-sec-studio">
+          <view class="hub-grp-head">
+            <text class="hub-grp-title">工作室</text>
           </view>
-          <view class="hub-list" wx:if="{{!hubFold.studio}}">
+          <view class="hub-list">
             <view class="hub-row" hover-class="tap-press" hover-stay-time="80" data-fid="studioDashboard" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/studio-dashboard.png" mode="aspectFit" /></view>
               <view class="hub-row-main"><text class="hub-row-name">仪表盘</text><text class="hub-row-desc">工作室整体情况</text></view>
@@ -654,29 +566,11 @@
           </view>
         </view>
 
-        <view class="hub-grp hub-grp--org {{hubFold.org ? 'is-folded' : 'is-open'}}" wx:if="{{hubSec.org}}" id="hub-sec-org">
-          <view class="hub-grp-head" bindtap="onHubFold" data-sec="org" hover-class="tap-press" hover-stay-time="80">
-            <view class="hub-grp-accent"></view>
-            <view class="hub-grp-mark">
-              <image class="hub-grp-mark-img" src="{{hubPeek.org.mark}}" mode="aspectFit" />
-            </view>
-            <view class="hub-grp-meta">
-              <view class="hub-grp-title-row">
-                <text class="hub-grp-title">门店组织</text>
-                <text class="hub-grp-n">{{hubPeek.org.n}}</text>
-                <view class="hub-badge" wx:if="{{hubPeek.org.badge}}">{{hubPeek.org.badge}}</view>
-              </view>
-              <view class="hub-grp-chips" wx:if="{{hubFold.org}}">
-                <view class="hub-grp-chip" wx:for="{{hubPeek.org.chips}}" wx:key="id">
-                  <image class="hub-grp-chip-img" src="{{item.icon}}" mode="aspectFit" />
-                </view>
-                <text class="hub-grp-more" wx:if="{{hubPeek.org.more}}">+{{hubPeek.org.more}}</text>
-              </view>
-              <text class="hub-grp-state" wx:else>已展开 · 点此收起</text>
-            </view>
-            <view class="hub-grp-arrow {{hubFold.org ? '' : 'is-open'}}"></view>
+        <view class="hub-grp" wx:if="{{hubSec.org}}" id="hub-sec-org">
+          <view class="hub-grp-head">
+            <text class="hub-grp-title">门店组织</text>
           </view>
-          <view class="hub-list" wx:if="{{!hubFold.org}}">
+          <view class="hub-list">
             <view class="hub-row" hover-class="tap-press" hover-stay-time="80" data-fid="verify" wx:if="{{menu.verify}}" bindtap="goStaffTab" data-tab="verify">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/qrcode.png" mode="aspectFit" /></view>
               <view class="hub-row-main"><text class="hub-row-name">核销验票</text><text class="hub-row-desc">扫码核销会员券、门票和礼券</text></view>
@@ -700,29 +594,11 @@
           </view>
         </view>
 
-        <view class="hub-grp hub-grp--system {{hubFold.system ? 'is-folded' : 'is-open'}}" wx:if="{{hubSec.system}}" id="hub-sec-system">
-          <view class="hub-grp-head" bindtap="onHubFold" data-sec="system" hover-class="tap-press" hover-stay-time="80">
-            <view class="hub-grp-accent"></view>
-            <view class="hub-grp-mark">
-              <image class="hub-grp-mark-img" src="{{hubPeek.system.mark}}" mode="aspectFit" />
-            </view>
-            <view class="hub-grp-meta">
-              <view class="hub-grp-title-row">
-                <text class="hub-grp-title">系统监测</text>
-                <text class="hub-grp-n">{{hubPeek.system.n}}</text>
-                <view class="hub-badge" wx:if="{{hubPeek.system.badge}}">{{hubPeek.system.badge}}</view>
-              </view>
-              <view class="hub-grp-chips" wx:if="{{hubFold.system}}">
-                <view class="hub-grp-chip" wx:for="{{hubPeek.system.chips}}" wx:key="id">
-                  <image class="hub-grp-chip-img" src="{{item.icon}}" mode="aspectFit" />
-                </view>
-                <text class="hub-grp-more" wx:if="{{hubPeek.system.more}}">+{{hubPeek.system.more}}</text>
-              </view>
-              <text class="hub-grp-state" wx:else>已展开 · 点此收起</text>
-            </view>
-            <view class="hub-grp-arrow {{hubFold.system ? '' : 'is-open'}}"></view>
+        <view class="hub-grp" wx:if="{{hubSec.system}}" id="hub-sec-system">
+          <view class="hub-grp-head">
+            <text class="hub-grp-title">系统监测</text>
           </view>
-          <view class="hub-list" wx:if="{{!hubFold.system}}">
+          <view class="hub-list">
             <view class="hub-row" hover-class="tap-press" hover-stay-time="80" data-fid="rules" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig}}" bindtap="openHubGroup" data-group="rules">
               <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/clock.png" mode="aspectFit" /></view>
               <view class="hub-row-main"><text class="hub-row-name">规则配置</text><text class="hub-row-desc">运费、预约和客服电话</text></view>
@@ -739,7 +615,6 @@
               <text class="hub-row-go">›</text>
             </view>
           </view>
-        </view>
         </view>
       </view>
     </view>

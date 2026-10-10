@@ -33,7 +33,6 @@ const argOf = (n, d) => {
 const outDir = argOf('--out-dir', join(tmpdir(), 'manager-hub-roles'))
 const rev = argOf('--rev', '')
 const only = argOf('--only', '')
-const openSec = argOf('--open', '') // 强制展开某一分区（证明展开态样式），如 orders
 mkdirSync(outDir, { recursive: true })
 
 const read = (rel) => (rev
@@ -126,9 +125,6 @@ function dataFor(role) {
   const favIds = hubNav.defaultFavs(role, menu)
   d.hubFav = hubNav.buildFavView(favIds, d)
   if (typeof hubNav.buildHubView === 'function') Object.assign(d, hubNav.buildHubView(favIds, d))
-  if (openSec && d.hubFold && Object.prototype.hasOwnProperty.call(d.hubFold, openSec)) {
-    d.hubFold = { ...d.hubFold, [openSec]: false }
-  }
   return d
 }
 
@@ -194,7 +190,7 @@ const SCENES = [
 const summary = {}
 for (const s of SCENES) {
   const data = dataFor(s.role)
-  const tag = openSec ? `${s.name}-open-${openSec}` : s.name
+  const tag = s.name
   const htmlPath = join(tmpdir(), `hub-roles-${tag}-${process.pid}.html`)
   writeFileSync(htmlPath, htmlFor(data, `<script>${MEASURE_JS}</script>`))
   const mp = mkdtempSync(join(tmpdir(), 'hub-roles-'))

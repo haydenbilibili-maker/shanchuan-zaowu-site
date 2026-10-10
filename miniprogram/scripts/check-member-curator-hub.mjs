@@ -66,7 +66,7 @@ function evalCjs(code) {
   return mod.exports
 }
 
-/** 找某个入口所在分区（向前最近的分区开标签；2026-10-01 方案 A 起为可折叠列表组 hub-grp，带锚点 id） */
+/** 找某个入口所在分区（向前最近的分区开标签；2026-10-01 方案 A 起为分区卡片 hub-grp，带锚点 id） */
 function sectionOf(wxml, at) {
   const re = /<view class="hub-grp[^"]*" wx:if="\{\{hubSec\.(\w+)\}\}" id="hub-sec-\w+">/g
   let m
