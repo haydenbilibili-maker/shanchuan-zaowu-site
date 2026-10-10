@@ -429,11 +429,6 @@ page {
   font-weight: 500;
   color: var(--brass-400);
 }
-.si-period {
-  margin-top: 4rpx;
-  font-size: 20rpx;
-  color: var(--color-text-secondary, #A09A90);
-}
 .amount-row.si-amount {
   font-size: 30rpx;
 }

@@ -81,7 +81,7 @@
           <switch checked="{{form.siOn}}" color="#C4A76C" bindchange="onSiToggle" />
         </view>
         <block wx:if="{{form.siOn}}">
-          <text class="si-hint">按「所属期 = 本工资条月份」取缴费记录；之前工资条扣过的同期品目不再扣</text>
+          <text class="si-hint">每月按同一份月度扣缴标准扣{{siPreview.standardLabel ? '（' + siPreview.standardLabel + '）' : ''}}；没有新版标准时沿用上一版</text>
           <view class="si-switch-row" wx:if="{{!siPreview.snapshot || siPreview.snapshot.annualAvailable}}">
             <text class="field-label">含大额医疗互助（全年一次）</text>
             <switch checked="{{form.siIncludeAnnual}}" color="#C4A76C" bindchange="onSiAnnualToggle" />
@@ -107,7 +107,6 @@
             </view>
           </view>
           <text class="si-hint" wx:for="{{siPreview.infos}}" wx:key="*this">{{item}}</text>
-          <text class="si-hint is-warn" wx:if="{{siPreview.legacyMonths}}">{{siPreview.legacyMonths}} 的工资条还没有社保明细，系统认不出那几张扣过哪些品目，可能重复扣，请先核对</text>
           <text class="si-hint is-warn" wx:if="{{form.siLegacyDeduction}}">这张工资条原来的扣款可能已含社保，套用标准时请把「其他扣款」改成不含社保的部分，避免重复扣</text>
         </block>
       </view>

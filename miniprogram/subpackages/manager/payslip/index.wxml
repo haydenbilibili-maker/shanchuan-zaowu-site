@@ -128,10 +128,7 @@
       <block wx:if="{{detail.si}}">
         <text class="si-head">社保个人缴纳（从工资里扣）</text>
         <view class="row" wx:for="{{detail.si.personal}}" wx:key="key">
-          <view class="row-main">
-            <text class="row-sub">{{item.name}}</text>
-            <text class="si-period">所属期 {{item.period}}<text wx:if="{{item.tag}}"> · {{item.tag}}</text></text>
-          </view>
+          <text class="row-sub">{{item.name}}</text>
           <text class="amount-row si-amount deduct">-¥{{item.amountFmt}}</text>
         </view>
         <view class="row" wx:if="{{!detail.hasItems && detail.si.otherDeduction > 0}}">
@@ -153,10 +150,7 @@
     <view class="scene-card si-company" wx:if="{{detail.si && detail.si.company.length}}">
       <text class="si-head">公司为你缴纳（不从工资里扣）</text>
       <view class="row" wx:for="{{detail.si.company}}" wx:key="key">
-        <view class="row-main">
-          <text class="row-sub">{{item.name}}</text>
-          <text class="si-period">所属期 {{item.period}}<text wx:if="{{item.tag}}"> · {{item.tag}}</text></text>
-        </view>
+        <text class="row-sub">{{item.name}}</text>
         <text class="amount-row si-amount">¥{{item.amountFmt}}</text>
       </view>
       <view class="row divider">
@@ -165,7 +159,6 @@
       </view>
       <text class="section-note" wx:if="{{detail.si.injuryNote}}">{{detail.si.injuryNote}}</text>
       <text class="section-note" wx:if="{{detail.si.splitNote}}">{{detail.si.splitNote}}</text>
-      <text class="section-note" wx:if="{{detail.si.refNote}}">{{detail.si.refNote}}</text>
     </view>
     <view hover-class="wb-press" hover-stay-time="80" class="btn-primary" bindtap="closeDetail">关闭</view>
   </view>

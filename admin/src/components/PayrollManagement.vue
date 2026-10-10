@@ -123,7 +123,7 @@
           </template>
           <el-table :data="siStandardRows" border size="small" empty-text="暂无社保扣缴标准">
             <el-table-column prop="name" label="品目" min-width="120" />
-            <el-table-column prop="periodLabel" label="所属期" width="110" />
+            <el-table-column prop="periodLabel" label="扣缴频次" width="110" />
             <el-table-column label="合计·个人" width="110" align="right">
               <template #default="{ row }">{{ formatMoney(row.personalTotal) }}</template>
             </el-table-column>
@@ -139,7 +139,7 @@
           </el-table>
           <p class="si-note">
             每人金额 = 合计 ÷ {{ siStandard?.splitHeadcount || '—' }}（只用于折算，不限制参保人数，所有参保员工按同一每人金额扣）；
-            按「所属期 = 工资月」分到各月工资条，某月无记录时沿用最近一期金额；同一品目同一所属期只扣一次；
+            每月扣同样的个人部分（自 {{ siStandard?.effectiveFrom || '—' }} 起生效；以后费率变了追加新版，没有新版时沿用上一版）；大额医疗互助每年只扣一次；
             工伤保险按政策个人不扣、只由公司缴纳；公司缴纳部分只展示，不从实发里扣。
             <template v-for="t in siExternalNotes" :key="t"><br />{{ t }}</template>
           </p>
@@ -342,7 +342,7 @@ import {
   appendAuditLog,
 } from '../utils/payrollStorage.js'
 import { generateMonthlySlips, regeneratePartialMonthlySlips } from '../utils/payrollEngine.js'
-import { SI_EXTERNAL_CHARGES, SI_ITEMS, SI_RECORDS, perHead } from '../utils/socialInsurance.js'
+import { SI_EXTERNAL_CHARGES, SI_ITEMS, SI_STANDARDS, perHead } from '../utils/socialInsurance.js'
 import { UNIFIED_EMPLOYEES_CHANGED } from '../utils/unifiedEmployeeSync.js'
 
 const yearMonth = ref(monthStr(new Date()))
@@ -369,14 +369,14 @@ function monthStr(d) {
 
 const storeSelectOptions = computed(() => getStoreSelectOptions(storeBundle.value))
 
-const siStandard = SI_RECORDS[SI_RECORDS.length - 1] || null
+const siStandard = [...SI_STANDARDS].sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? -1 : 1)).pop() || null
 const siStandardRows = (siStandard?.lines || []).map((l) => {
   const item = SI_ITEMS.find((i) => i.key === l.key) || {}
   return {
     ...l,
     name: item.name || l.key,
     companyOnly: !!item.companyOnly,
-    periodLabel: item.cycle === 'year' ? `${l.period} 年度` : l.period,
+    periodLabel: item.cycle === 'year' ? '每年一次' : '每月',
     personalEach: item.companyOnly ? 0 : perHead(l.personalTotal, siStandard.splitHeadcount),
     companyEach: perHead(l.companyTotal, siStandard.splitHeadcount),
   }

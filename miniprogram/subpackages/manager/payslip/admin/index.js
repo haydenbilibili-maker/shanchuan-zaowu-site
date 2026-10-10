@@ -9,7 +9,7 @@ function currentYearMonth() {
 const YM_RE = /^\d{4}-\d{2}$/
 
 function emptySiPreview() {
-  return { loading: false, snapshot: null, lines: [], infos: [], legacyMonths: '', msg: '', personalTotalFmt: '', companyTotalFmt: '', netFmt: '' }
+  return { loading: false, snapshot: null, lines: [], infos: [], standardLabel: '', msg: '', personalTotalFmt: '', companyTotalFmt: '', netFmt: '' }
 }
 
 function siFormDefaults() {
@@ -17,10 +17,9 @@ function siFormDefaults() {
 }
 
 function siPreviewLines(snap) {
-  const tag = (r) => (r.advance ? ' · 预扣' : r.refPeriod ? ` · 参考上期 ${r.refPeriod}` : '')
   const row = (who) => (r) => ({
-    key: `${who}-${r.key}-${r.period}`,
-    label: `${who === 'p' ? '扣' : '公司'} ${r.name}（${r.periodLabel || r.period}${tag(r)}）`,
+    key: `${who}-${r.key}`,
+    label: `${who === 'p' ? '扣' : '公司'} ${r.name}${r.annual ? '（全年一次）' : ''}`,
     amountFmt: `${who === 'p' ? '-' : ''}¥${Number(r.amount).toFixed(2)}`
   })
   return (snap.personal || []).map(row('p')).concat((snap.company || []).map(row('c')))
@@ -206,7 +205,7 @@ Page({
           snapshot: snap,
           lines: snap ? siPreviewLines(snap) : [],
           infos: snap ? (snap.info || []).map((x) => x.text) : [],
-          legacyMonths: (result.legacyMonths || []).join('、'),
+          standardLabel: snap ? snap.standardLabel || '' : '',
           msg: result.success === false || !snap ? (result.msg || '暂时算不出社保明细') : '',
           personalTotalFmt: snap ? Number(snap.personalTotal).toFixed(2) : '',
           companyTotalFmt: snap ? Number(snap.companyTotal).toFixed(2) : '',

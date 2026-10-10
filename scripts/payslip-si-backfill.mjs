@@ -4,15 +4,15 @@
  * 口径：miniprogram/docs/工资条社保明细_2026-10-10.md
  *
  *   node scripts/payslip-si-backfill.mjs
- *        # dry-run：备份 staff_payslips 全量 → 列出「月份修正」计划 + 两种金额处理的前后对比（含对 10 月工资条的影响）
- *   node scripts/payslip-si-backfill.mjs --apply-month --yes
- *        # 月份修正（产品负责人已授权）：工资条 2026-10 → 2026-09。文档 _id = openid_月份，所以是「按新 _id 建一张、读回逐字段核对、再删旧的」；
- *        # 只动月份，金额 / 明细不动。可重复执行：已改过的跳过；新 _id 已被别的工资条占用 → 整批停下。
- *   node scripts/payslip-si-backfill.mjs --rollback-month --backup <apply 前备份目录> [--yes]
- *        # 撤销月份修正：按新文档原样建回旧 _id（月份改回）、删掉新文档；只动本脚本标记过的
- *
- * 金额处理（方案① 保持 452.50 + 医疗 10 月预扣；方案② 改为 364.64、10 月补发 87.86）**只预演、不写库**，等产品负责人选定。
- * 范围：月份 = 2026-10、没有社保快照、扣款 = 452.50 的工资条；其余只列出不动。
+ *        # dry-run：备份 staff_payslips 全量 → 列出「月份修正」状态 +「补明细」计划
+ *   node scripts/payslip-si-backfill.mjs --apply-detail --yes
+ *        # 补明细（产品负责人已授权）：给 2026-09 的已发工资条写入社保快照（三项个人 + 公司缴纳 + 大额医疗互助 8 月已扣说明）
+ *        # 和 otherDeduction；**扣款 / 实发不写**。补完后的个人社保 + 其他扣款 ≠ 原扣款（即补明细会让金额变）→ 整批停下。
+ *        # 可重复执行：已补过的跳过。写后逐张读回核对扣款 / 实发未变。
+ *   node scripts/payslip-si-backfill.mjs --rollback-detail --backup <apply 前备份目录> [--yes]
+ *        # 撤销补明细：删掉本脚本补写的 socialInsurance / otherDeduction / 标记（只动带本批标记、且备份里没有这些字段的）
+ *   node scripts/payslip-si-backfill.mjs --apply-month --yes                                   # 月份修正（已于 2026-10-10 执行）
+ *   node scripts/payslip-si-backfill.mjs --rollback-month --backup <apply 前备份目录> [--yes]  # 撤销月份修正
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -27,12 +27,15 @@ const FROM = '2026-10'
 const TO = '2026-09'
 const OLD_DEDUCTION = 452.5
 const MONTH_MARK = '工资条月份修正·2026-10→2026-09'
+const DETAIL_MARK = '社保明细补写·2026-10-10'
+const DETAIL_FIELDS = ['socialInsurance', 'otherDeduction', 'siBackfillMark', 'siBackfilledAt']
 const SI = require(resolve(ROOT, 'miniprogram/cloudfunctions/manageStaffWorkspace/socialInsurance.js'))
 
 const args = process.argv.slice(2)
 const has = (f) => args.includes(f)
 const opt = (f, d) => { const i = args.indexOf(f); return i >= 0 && args[i + 1] ? args[i + 1] : d }
-const MODE = has('--apply-month') ? 'apply-month' : has('--rollback-month') ? 'rollback-month' : 'dry-run'
+const MODE = has('--apply-month') ? 'apply-month' : has('--rollback-month') ? 'rollback-month'
+  : has('--apply-detail') ? 'apply-detail' : has('--rollback-detail') ? 'rollback-detail' : 'dry-run'
 
 const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100
 const near = (a, b) => Math.abs(r2(a) - r2(b)) < 0.005
@@ -109,64 +112,88 @@ function monthPlan(all) {
   return out
 }
 
-/** 两种金额处理（只预演）：9 月这张 + 对 10 月工资条的影响 */
-function amountPlans(row) {
-  const gross = r2(row.gross != null ? row.gross : (Number(row.base) || 0) + (Number(row.bonus) || 0))
-  const oldDed = r2(row.deduction)
-  const sep1 = SI.computeSocialInsurance({ payslipMonth: TO, advance: [{ key: 'medical', period: '2026-10' }] })
-  const sep2 = SI.computeSocialInsurance({ payslipMonth: TO })
-  if (!sep1.ok || !sep2.ok) return { skip: sep1.msg || sep2.msg }
-  const s1 = sep1.snapshot
-  const s2 = sep2.snapshot
-  const other1 = r2(oldDed - s1.personalTotal)
-  const other2 = r2(oldDed - s1.personalTotal)
-  const oct1 = SI.computeSocialInsurance({ payslipMonth: '2026-10', charged: SI.chargedFromSnapshots([{ month: TO, socialInsurance: s1 }]) }).snapshot
-  const oct2 = SI.computeSocialInsurance({ payslipMonth: '2026-10', charged: SI.chargedFromSnapshots([{ month: TO, socialInsurance: s2 }]) }).snapshot
-  return {
-    gross,
-    oldDed,
-    oldNet: r2(row.net),
-    plan1: { otherDeduction: other1, deduction: r2(other1 + s1.personalTotal), net: r2(gross - other1 - s1.personalTotal), si: s1, oct: oct1 },
-    plan2: { otherDeduction: other2, deduction: r2(other2 + s2.personalTotal), net: r2(gross - other2 - s2.personalTotal), si: s2, oct: oct2, topUp: r2(s1.personalTotal - s2.personalTotal) }
+/** 补明细计划：2026-09、没有社保快照的已发工资条 → 快照 + 其他扣款；扣款 / 实发不动 */
+function detailPlan(all) {
+  const out = []
+  for (const r of all.filter((x) => x && x.month === TO)) {
+    if (r.siBackfillMark === DETAIL_MARK) { out.push({ row: r, state: 'done' }); continue }
+    if (r.socialInsurance) { out.push({ row: r, state: 'skip', why: '已有社保明细（不是本脚本写的）' }); continue }
+    const c = SI.computeSocialInsurance({ payslipMonth: r.month })
+    if (!c.ok) { out.push({ row: r, state: 'stop', why: c.msg }); continue }
+    const snap = c.snapshot
+    const other = r2(Number(r.deduction) - snap.personalTotal)
+    const gross = r2(r.gross != null ? r.gross : (Number(r.base) || 0) + (Number(r.bonus) || 0))
+    if (snap.annualIncluded) out.push({ row: r, state: 'stop', why: '会扣大额医疗互助，金额会变' })
+    else if (!near(other, 0)) out.push({ row: r, state: 'stop', why: `原扣款 ${f2(r.deduction)} ≠ 月度个人社保 ${f2(snap.personalTotal)}，补明细会改变金额` })
+    else if (!near(gross - Number(r.deduction), r.net)) out.push({ row: r, state: 'stop', why: `应发 − 扣款 ≠ 实发（${f2(gross)} − ${f2(r.deduction)} ≠ ${f2(r.net)}）` })
+    else out.push({ row: r, state: 'todo', patch: { socialInsurance: snap, otherDeduction: 0 } })
   }
-}
-
-function lines(si) {
-  const tag = (x) => (x.advance ? '·预扣' : x.refPeriod ? `·参考上期${x.refPeriod}` : '')
-  return {
-    p: si.personal.map((x) => `${x.name}(${x.period}${tag(x)}) ${f2(x.amount)}`).join(' + '),
-    c: si.company.map((x) => `${x.name} ${f2(x.amount)}`).join(' + '),
-    i: si.info.filter((x) => x.kind !== 'missing').map((x) => x.text).join('；')
-  }
+  return out
 }
 
 function printDryRun(all) {
   const mp = monthPlan(all)
   console.log(`\n${COLL} 共 ${all.length} 张`)
-  console.log(`\n【一】月份修正 ${FROM} → ${TO}（已授权，--apply-month 写入）`)
+  console.log(`\n【一】月份修正 ${FROM} → ${TO}`)
   if (!mp.length) console.log('  没有符合范围的工资条')
   for (const x of mp) {
-    const label = { todo: '待改', half: '上次中断（新文档已建、旧文档未删）', done: '已改过', clash: `冲突，整批不会执行：${x.why}` }[x.state]
-    console.log(`  · ${who(x.row)} ${x.row._id.replace(x.row.staffOpenid, '…' + mask(x.row.staffOpenid))} → ${label}`)
+    const label = { todo: '待改', half: '上次中断（新文档已建、旧文档未删）', done: '已改过', clash: `冲突：${x.why}` }[x.state]
+    console.log(`  · ${who(x.row)} → ${label}`)
   }
-  console.log(`\n【二】金额处理（只预演，不写库；以修正后月份 ${TO} 计）`)
-  for (const x of mp.filter((y) => y.state !== 'clash')) {
-    const row = x.state === 'done' ? x.row : x.row
-    const a = amountPlans(row)
-    if (a.skip) { console.log(`  · ${who(row)}：跳过 —— ${a.skip}`); continue }
-    const l1 = lines(a.plan1.si)
-    const l2 = lines(a.plan2.si)
-    console.log(`\n  · ${who(row)}  现状：应发 ${f2(a.gross)}，扣款 ${f2(a.oldDed)}（未拆项），实发 ${f2(a.oldNet)}`)
-    console.log(`    方案①（建议）9 月：扣款 ${f2(a.plan1.deduction)}，实发 ${f2(a.plan1.net)}（实发不变）`)
-    console.log(`        个人：${l1.p}`)
-    console.log(`        说明：${l1.i}`)
-    console.log(`        10 月工资条将扣：${f2(a.plan1.oct.personalTotal)}（${lines(a.plan1.oct).p}；${lines(a.plan1.oct).i}）`)
-    console.log(`    方案② 9 月：扣款 ${f2(a.plan2.deduction)}，实发 ${f2(a.plan2.net)}（实发 +${f2(a.plan2.net - a.oldNet)}，已发少了这么多 → 10 月补发 ${f2(a.plan2.topUp)}）`)
-    console.log(`        个人：${l2.p}`)
-    console.log(`        10 月工资条将扣：${f2(a.plan2.oct.personalTotal)}（${lines(a.plan2.oct).p}），另补发 ${f2(a.plan2.topUp)}`)
-    console.log(`    两方案 9 月公司缴纳（只展示）：${l1.c}，合计 ${f2(a.plan1.si.companyTotal)}`)
+  const dp = detailPlan(all)
+  console.log(`\n【二】补明细（${TO}，扣款 / 实发不动）`)
+  if (!dp.length) console.log('  没有符合范围的工资条')
+  for (const x of dp) {
+    const r = x.row
+    const head = `  · ${who(r)} 应发 ${f2(r.gross)}，扣款 ${f2(r.deduction)}，实发 ${f2(r.net)}`
+    if (x.state !== 'todo') { console.log(`${head} → ${{ done: '已补过', skip: `跳过：${x.why}`, stop: `停：${x.why}` }[x.state]}`); continue }
+    const s = x.patch.socialInsurance
+    console.log(`${head} → 待补`)
+    console.log(`      个人（从工资扣）：${s.personal.map((y) => `${y.name} ${f2(y.amount)}`).join(' + ')} = ${f2(s.personalTotal)}；其他扣款 0.00`)
+    console.log(`      公司为你缴纳（不扣）：${s.company.map((y) => `${y.name} ${f2(y.amount)}`).join(' + ')} = ${f2(s.companyTotal)}`)
+    console.log(`      说明：${s.info.map((y) => y.text).join('；')}`)
   }
-  return mp
+  return { mp, dp }
+}
+
+async function applyDetail(db, all, dir) {
+  const dp = detailPlan(all)
+  const stop = dp.filter((x) => x.state === 'stop')
+  if (stop.length) {
+    stop.forEach((x) => console.error(`✗ ${who(x.row)}：${x.why}`))
+    throw new Error('补明细会改变金额或口径不明，整批停下，未写库')
+  }
+  const work = dp.filter((x) => x.state === 'todo')
+  console.log(`\n待补 ${work.length} 张，已补过 ${dp.filter((x) => x.state === 'done').length} 张`)
+  if (!has('--yes')) { console.log('未带 --yes：不执行'); return }
+  for (const x of work) {
+    const r = x.row
+    await db.collection(COLL).doc(r._id).update({ ...x.patch, siBackfillMark: DETAIL_MARK, siBackfilledAt: new Date() })
+    const got = await getDoc(db, r._id)
+    const ok = got && got.deduction === r.deduction && got.net === r.net && got.gross === r.gross && got.month === r.month &&
+      got.siBackfillMark === DETAIL_MARK && got.socialInsurance && near(got.socialInsurance.personalTotal + got.otherDeduction, got.deduction)
+    console.log(`${ok ? '✓' : '✗'} ${who(r)}：扣款 ${got && got.deduction} / 实发 ${got && got.net}（未变），个人社保 ${got && got.socialInsurance && got.socialInsurance.personalTotal}，公司缴纳 ${got && got.socialInsurance && got.socialInsurance.companyTotal}`)
+    if (!ok) process.exitCode = 1
+  }
+  console.log(`回滚：node scripts/payslip-si-backfill.mjs --rollback-detail --backup ${dir.replace(ROOT + '/', '')} --yes`)
+}
+
+async function rollbackDetail(db, all) {
+  const dir = opt('--backup', '')
+  const file = dir && resolve(ROOT, dir, `${COLL}.json`)
+  if (!file || !existsSync(file)) throw new Error('须 --backup <--apply-detail 前的备份目录>')
+  const before = Object.fromEntries(JSON.parse(readFileSync(file, 'utf8')).map((r) => [r._id, r]))
+  const mine = all.filter((r) => r.siBackfillMark === DETAIL_MARK && before[r._id] && DETAIL_FIELDS.every((k) => !(k in before[r._id])))
+  console.log(`本脚本补过明细的工资条 ${mine.length} 张，将删掉 ${DETAIL_FIELDS.join(' / ')}`)
+  if (!has('--yes')) { console.log('未带 --yes：只列出，不执行'); return }
+  const _ = db.command
+  for (const r of mine) {
+    await db.collection(COLL).doc(r._id).update(Object.fromEntries(DETAIL_FIELDS.map((k) => [k, _.remove()])))
+    const got = await getDoc(db, r._id)
+    const ok = got && DETAIL_FIELDS.every((k) => !(k in got)) && got.deduction === r.deduction && got.net === r.net
+    console.log(`${ok ? '✓' : '✗'} ${who(r)}：已撤销补明细`)
+    if (!ok) process.exitCode = 1
+  }
 }
 
 async function applyMonth(db, all, dir) {
@@ -229,8 +256,10 @@ async function main() {
   const dir = backup(all, MODE === 'dry-run' ? 'dry-run' : `before-${MODE}`)
   console.log(`已备份 ${all.length} 张到 ${dir.replace(ROOT + '/', '')}`)
   if (MODE === 'rollback-month') return rollbackMonth(db, all)
+  if (MODE === 'rollback-detail') return rollbackDetail(db, all)
   printDryRun(all)
   if (MODE === 'dry-run') { console.log('\ndry-run：未写库。'); return }
+  if (MODE === 'apply-detail') return applyDetail(db, all, dir)
   await applyMonth(db, all, dir)
 }
 
