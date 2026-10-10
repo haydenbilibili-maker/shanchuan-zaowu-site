@@ -239,15 +239,27 @@ App({
         }, 600);
         return;
       }
-      // ⚠️ 商品知识卡（generateShareCard）的码：page=商品详情、scene=商品 _id（同样是 hex）。
-      //    2026-10-10 真机：扫「潮痕」知识卡被下面的 hex 判据抢到鉴定结果页，拿商品 id 读鉴定记录 → 权限拒绝。
-      //    入口页是商品详情时 scene 归详情页自己解析，这里一律让路。
-      const entryPath = String((opts && opts.path) || '').replace(/^\//, '');
-      if (entryPath === 'subpackages/feature/detail/index') return;
+      // 入口页：微信给的 path 可能带前导 `/`、`.html` 或 `?query`，统一成 app.json 的写法再比。
+      let rawEntry = opts && opts.path;
+      if (!rawEntry && typeof wx.getEnterOptionsSync === 'function') {
+        try {
+          const enter = wx.getEnterOptionsSync();
+          rawEntry = enter && enter.path;
+        } catch (e) { /* 拿不到就按无入口页处理 */ }
+      }
+      const entryPath = String(rawEntry || '')
+        .split('?')[0]
+        .replace(/^\/+/, '')
+        .replace(/\.html$/i, '');
       // ① 门店物料码：scene 形如 `from=store_qr`（识别主页）
-      // ② 分享海报码：scene 就是鉴定记录 _id（24 位 hex → 结果页）
+      // ② 鉴定分享海报码（generateSharePoster）：page=鉴定结果页、scene=鉴定记录 _id
+      // ⚠️ 商品知识卡码（generateShareCard）的 scene 是商品 _id —— 生产上商品与鉴定记录的 _id
+      //    **都是 32 位 hex**，单看 scene 长相分不出来（2026-10-10 真机：扫「潮痕」知识卡先进详情、
+      //    600ms 后被 reLaunch 到鉴定百科）。故 ② 按入口页白名单认：只有入口页是鉴定相关页才接管；
+      //    拿不到入口页时保留旧行为（结果页读不到记录会再认一次商品 id，转回商品详情）。
       const isStore = /(?:^|[&?])from=store_qr(?:&|$)/.test(scene);
-      const rid = /^[0-9a-f]{16,32}$/i.test(scene.trim()) ? scene.trim() : '';
+      const identifyEntry = !entryPath || entryPath.indexOf('subpackages/feature/identify/') === 0;
+      const rid = identifyEntry && /^[0-9a-f]{16,32}$/i.test(scene.trim()) ? scene.trim() : '';
       if (!isStore && !rid) return;
       const url = rid
         ? '/subpackages/feature/identify/result/index?record_id=' + encodeURIComponent(rid)

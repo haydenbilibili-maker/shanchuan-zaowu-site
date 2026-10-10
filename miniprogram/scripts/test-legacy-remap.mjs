@@ -407,7 +407,8 @@ export async function scanAppRegisterEntry() {
     t(storeOk.length === 1 && storeOk[0].indexOf('/subpackages/feature/identify/index') === 0,
       `[物料入口] ★ 识别码被误伤（不再进识别页）：${JSON.stringify(storeOk)}`)
     const poster = 'a1b2c3d4e5f60718293a4b5c'
-    const ridOk = await identifyDrive({ path: 'pages/index/index', query: { scene: poster } })
+    // 入口页未知时仍按鉴定海报兜底；入口页是非鉴定页（如商品详情）不接管，见 checkShareCardQr
+    const ridOk = await identifyDrive({ query: { scene: poster } })
     t(ridOk.length === 1 && ridOk[0].indexOf('/subpackages/feature/identify/result/index') === 0,
       `[物料入口] 分享海报码被误伤：${JSON.stringify(ridOk)}`)
   }
@@ -501,49 +502,90 @@ export async function checkShareCardQr(srcs, registered = registeredPages()) {
   }
   t(resolved === PID, `商品详情没把扫码 scene 解析成商品 id（得到「${resolved}」）`)
 
-  // ③ app 级入口路由
-  const relaunch = []
-  let captured = null
+  // ③ app 级入口路由：每个用例独立加载一份 app（各自的 wx 桩 / 路由记录），并行跑
+  // 走真实顺序 onLaunch → onShow，路由调用含 navigateTo / redirectTo / reLaunch
+  const appCode = stripComments(srcs.appSrc)
+  const drive = async (options, enter) => {
+    const nav = []
+    let captured = null
+    const navStub = (kind) => ({ url }) => nav.push(`${kind}:${url}`)
+    const wxStub = {
+      reLaunch: navStub('reLaunch'), redirectTo: navStub('redirectTo'),
+      navigateTo: navStub('navigateTo'), switchTab: navStub('switchTab'),
+      showToast: () => {}, getSystemInfoSync: () => ({}),
+      getMenuButtonBoundingClientRect: () => ({ top: 24, height: 32 }),
+      getEnterOptionsSync: () => enter || options,
+      getLaunchOptionsSync: () => enter || options,
+      getStorageSync: () => '', setStorageSync: () => {},
+      cloud: { init: () => {}, database: () => ({}), callFunction: () => Promise.resolve({ result: {} }) },
+      onError: () => {}
+    }
+    // 依赖模块一律给空实现：异步初始化类返回 Promise，其余返回 undefined
+    const stubModule = new Proxy({}, {
+      get: (_, k) => (k === 'then' ? undefined
+        : () => (/^(prefetch|ensure|check|hydrate|load|fetch)/.test(String(k)) ? Promise.resolve() : undefined))
+    })
+    {
+      try {
+        // eslint-disable-next-line no-new-func
+        new Function('App', 'wx', 'getCurrentPages', 'require', appCode)(
+          (cfg) => { captured = cfg }, wxStub, () => [{ route: DETAIL_PAGE }], () => stubModule
+        )
+      } catch (e) {
+        return [`app.js 加载失败：${e && e.message}`]
+      }
+      if (!captured || typeof captured.maybeOpenIdentifyEntry !== 'function') return ['app.js 里没有 maybeOpenIdentifyEntry']
+      const ctx = Object.assign(Object.create(null), captured)
+      ctx.globalData = Object.assign({}, captured.globalData)
+      ctx.getOpenId = () => {}
+      ctx.ensureHandFontWithRetry = () => {}
+      try { ctx.onLaunch(options) } catch (e) { /* onLaunch 里的初始化与本判据无关 */ }
+      try { ctx.onShow(options) } catch (e) { return [`onShow 抛错：${e && e.message}`] }
+      await new Promise((r) => setTimeout(r, 700))
+    }
+    return nav.filter((u) => /identify/.test(u))
+  }
+  const ENC = PID.split('').map((c) => '%' + c.charCodeAt(0).toString(16)).join('')
+  const cardCases = []
+  for (const p of [DETAIL_PAGE, '/' + DETAIL_PAGE, `${DETAIL_PAGE}.html`, `/${DETAIL_PAGE}.html`, `${DETAIL_PAGE}?scene=${PID}`]) {
+    for (const sc of [1047, 1048, 1049]) {
+      cardCases.push([`path=${p} 场景值 ${sc}`, { path: p, scene: sc, query: { scene: PID } }])
+    }
+    cardCases.push([`path=${p} scene 百分号编码`, { path: p, scene: 1047, query: { scene: ENC } }])
+  }
+  // 热启动：onShow 带旧入口页（或没带 path），本次入口以 getEnterOptionsSync 为准
+  cardCases.push(['onShow 带旧入口页 pages/index/index', { path: 'pages/index/index', scene: 1047, query: { scene: PID } }])
+  cardCases.push(['onShow 没带 path、入口取 getEnterOptionsSync', { scene: 1047, query: { scene: PID } },
+    { path: DETAIL_PAGE, scene: 1047, query: { scene: PID } }])
+  const posterCases = [
+    ['入口页未知', { query: { scene: PID } }, null, 1],
+    ['入口页是识别页', { path: 'subpackages/feature/identify/index', query: { scene: PID } }, null, 1],
+    ['冷启动入口就是结果页（.html 形态）', { path: `${RESULT_PAGE}.html`, scene: 1047, query: { scene: PID } }, null, 0],
+  ]
+  // 被测 app.js 的初始化日志不进守卫输出（并行用例共用一次静音，避免互相还原）
+  const quiet = ['log', 'warn', 'error'].map((k) => [k, console[k]])
+  quiet.forEach(([k]) => { console[k] = () => {} })
+  let results
   try {
-    // eslint-disable-next-line no-new-func
-    new Function('App', 'wx', 'getCurrentPages', 'require', stripComments(srcs.appSrc))(
-      (cfg) => { captured = cfg },
-      {
-        reLaunch: ({ url }) => relaunch.push(url),
-        switchTab: ({ url }) => relaunch.push(`switchTab:${url}`),
-        navigateTo: () => {}, showToast: () => {}, getSystemInfoSync: () => ({}),
-        cloud: { database: () => ({}), callFunction: () => Promise.resolve({ result: {} }) },
-        onError: () => {}
-      },
-      () => [{ route: 'pages/index/index' }],
-      (id) => (String(id).includes('cloudHealth')
-        ? { checkCloudHealth: () => {}, notifyCloudHealthFailure: () => {} }
-        : {})
-    )
-  } catch (e) {
-    problems.push(`[知识卡码] app.js 加载失败：${e && e.message}`)
-    return problems
+    results = await Promise.all([
+      ...cardCases.map(([, o, e]) => drive(o, e)),
+      ...posterCases.map(([, o, e]) => drive(o, e)),
+    ])
+  } finally {
+    quiet.forEach(([k, fn]) => { console[k] = fn })
   }
-  if (!captured || typeof captured.maybeOpenIdentifyEntry !== 'function') {
-    problems.push('[知识卡码] app.js 里没有 maybeOpenIdentifyEntry')
-    return problems
-  }
-  const drive = async (options) => {
-    relaunch.length = 0
-    const ctx = Object.assign(Object.create(null), captured)
-    ctx._identifyEntryKey = ''
-    ctx._identifyEntryAt = 0
-    ctx.maybeOpenIdentifyEntry(options)
-    await new Promise((r) => setTimeout(r, 700))
-    return relaunch.slice()
-  }
-  const card = await drive({ path: DETAIL_PAGE, query: { scene: PID } })
-  t(card.length === 0, `★ 扫商品知识卡被识别路由抢走：${JSON.stringify(card)}`)
-  const card24 = await drive({ path: '/' + DETAIL_PAGE, query: { scene: PID.slice(0, 24) } })
-  t(card24.length === 0, `★ 扫商品知识卡（24 位 id、带前导斜杠的 path）被识别路由抢走：${JSON.stringify(card24)}`)
-  const poster = await drive({ path: 'pages/index/index', query: { scene: PID.slice(0, 24) } })
-  t(poster.length === 1 && poster[0].indexOf('/' + RESULT_PAGE) === 0,
-    `对照：鉴定海报码被误伤（不再进结果页）：${JSON.stringify(poster)}`)
+  cardCases.forEach(([name], i) => {
+    t(results[i].length === 0, `★ 扫商品知识卡（${name}）被带去鉴定页：${JSON.stringify(results[i])}`)
+  })
+  posterCases.forEach(([name, , , want], j) => {
+    const got = results[cardCases.length + j]
+    const ok = want === 0 ? got.length === 0 : got.length === 1 && got[0].indexOf(`reLaunch:/${RESULT_PAGE}`) === 0
+    t(ok, `对照·鉴定海报码（${name}）应${want ? '进结果页' : '不重复跳'}：${JSON.stringify(got)}`)
+  })
+
+  // 商品详情页自身不得跳去任何鉴定页
+  t(!/['"`]\/?subpackages\/feature\/identify\//.test(stripComments(srcs.detailSrc)),
+    '商品详情页源码里出现了跳往鉴定页的路径')
 
   // ④ 结果页兜底
   const resultCode = stripComments(srcs.resultSrc)
@@ -702,8 +744,16 @@ async function selftest() {
       return Object.assign({}, real, { [key]: real[key].replace(from, to) })
     }
     const cases = [
-      ['拆掉 app.js 的商品详情让路（扫知识卡被抢到鉴定结果页）', 'appSrc',
-        "if (entryPath === 'subpackages/feature/detail/index') return;", ''],
+      ['鉴定海报路由退回「编号长得像就接管」（扫知识卡被抢到鉴定结果页）', 'appSrc',
+        'const rid = identifyEntry && ', 'const rid = '],
+      ['白名单退回上次只认「不带 .html 的商品详情」的写法', 'appSrc',
+        'const rid = identifyEntry && ', "const rid = entryPath !== 'subpackages/feature/detail/index' && "],
+      ['入口页不再去掉 .html', 'appSrc', ".replace(/\\.html$/i, '')", ''],
+      ['onShow 没带 path 时不再取 getEnterOptionsSync', 'appSrc',
+        'if (!rawEntry && typeof wx.getEnterOptionsSync', 'if (false && typeof wx.getEnterOptionsSync'],
+      ['商品详情页里加一条跳鉴定结果页', 'detailSrc',
+        'function resolveProductIdFromOptions(options) {',
+        "const __x = '/subpackages/feature/identify/result/index'\nfunction resolveProductIdFromOptions(options) {"],
       ['知识卡码改指向鉴定结果页', 'cardFnSrc',
         "page: 'subpackages/feature/detail/index'", "page: 'subpackages/feature/identify/result/index'"],
       ['商品详情不再把纯 scene 当商品 id', 'detailSrc',
