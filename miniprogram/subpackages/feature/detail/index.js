@@ -44,6 +44,7 @@ const { craftTypeLabel, craftProcessLabel, buildCraftDisplayTags } = require('..
 const { trackBehavior } = require('../../../utils/trackBehavior');
 const { ensureOpenId, markCartDirty, fetchCartCount, updateCartTabBadge } = require('../../../utils/cartHelper');
 const { getCustomNavLayout } = require('../utils/customNav');
+const { getWindowInfo } = require('../../../utils/systemInfo');
 const { buildHeroSlides } = require('../utils/heroMedia');
 const {
   ANIMAL_ETHICS_LABEL,
@@ -86,6 +87,10 @@ const PROTECTION_LABELS = {
 /** 规格大图高宽比夹取区间：区间内按原图比例完整铺宽；超出（超长竖图 / 超宽横图）定在边界并 aspectFit 留底色 */
 const SPEC_RATIO_MIN = 0.5;
 const SPEC_RATIO_MAX = 1.25;
+
+/** 头图盒子相对屏幕高度：约半屏到接近一屏。区间内按原图比例铺满宽度；超出用留白（aspectFit），不裁主体。导航占高从上限里扣除，避免头图连同顶栏一起顶满屏。 */
+const HERO_VIEW_MIN = 0.5;
+const HERO_VIEW_MAX = 0.92;
 
 /** 售罄底栏 CTA 态本地缓存：避免异步拉到 deposit/wishlist 前先闪「未付」默认态 */
 const DETAIL_CTA_CACHE_PREFIX = 'detail_cta_v1_';
@@ -447,6 +452,7 @@ Page(withAppModal({
     activeDetailImages: [],
     activeDetailSlide: 0,
     specSwiperH: 0,
+    heroSwiperH: 0,
     descriptionParagraphs: [],
     detailTagStyle: DETAIL_TAG_STYLE,
     detailHtmlContainerStyle: DETAIL_HTML_CONTAINER_STYLE,
@@ -1421,12 +1427,12 @@ Page(withAppModal({
   },
 
   onSwiperChange(e) {
-    this.setData({ imageIndex: e.detail.current || 0 });
+    this.setData({ imageIndex: e.detail.current || 0 }, () => this.syncHeroHeight());
   },
 
   onHeroMediaChange(e) {
     this.pauseHeroVideos();
-    this.setData({ imageIndex: e.detail.current || 0 });
+    this.setData({ imageIndex: e.detail.current || 0 }, () => this.syncHeroHeight());
   },
 
   pauseHeroVideos() {
@@ -1788,6 +1794,42 @@ Page(withAppModal({
       this._specW = rect.width;
       apply(rect.width);
     }).exec();
+  },
+
+  /** 当前头图（或视频海报）的原始地址，用来对上 bindload 记下的高宽比 */
+  heroSlideSrc(index) {
+    const slides = this.data.heroSlides || [];
+    const idx = index == null ? (this.data.imageIndex || 0) : index;
+    if (slides.length) {
+      const s = slides[idx];
+      if (!s) return '';
+      return s.kind === 'image' ? (s.src || '') : (s.poster || '');
+    }
+    const images = (this.data.product && this.data.product.images) || [];
+    return images[idx] || '';
+  },
+
+  onHeroImageLoad(e) {
+    const { width, height } = e.detail || {};
+    const src = e.currentTarget.dataset.src;
+    if (!width || !height || !src) return;
+    (this._heroRatio || (this._heroRatio = {}))[src] = height / width;
+    if (src === this.heroSlideSrc()) this.syncHeroHeight();
+  },
+
+  /** 头图高度跟当前这张的原比例走，夹在半屏到接近一屏；切换时只改高度，CSS 做过渡 */
+  syncHeroHeight() {
+    const src = this.heroSlideSrc();
+    const ratio = src && this._heroRatio && this._heroRatio[src];
+    if (!ratio) return;
+    const win = getWindowInfo();
+    const w = win.windowWidth || 375;
+    const screenH = win.windowHeight || 667;
+    const navH = this.data.isSinglePage ? 0 : ((Number(this.data.statusBarHeight) || 0) + (Number(this.data.navBarHeight) || 0));
+    const minH = Math.round(screenH * HERO_VIEW_MIN);
+    const maxH = Math.max(minH, Math.round(screenH * HERO_VIEW_MAX - navH));
+    const box = Math.round(Math.min(maxH, Math.max(minH, w * ratio)));
+    if (box !== this.data.heroSwiperH) this.setData({ heroSwiperH: box });
   },
 
   selectDimension(e) {

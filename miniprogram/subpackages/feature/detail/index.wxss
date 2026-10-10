@@ -286,8 +286,19 @@ button.nav-share-btn::after { display: none; border: none; }
   height: 28px;
 }
 
-/* Hero 轮播 */
-.hero-wrapper { position: relative; width: 100%; height: 750rpx; margin-top: 0; }
+/* Hero 轮播：高度由 JS 按当前图原比例写入；加载前先占大约半屏，避免先矮后跳 */
+.hero-wrapper {
+  position: relative;
+  width: 100%;
+  background: var(--color-bg);
+  transition: height 0.28s ease;
+  overflow: hidden;
+}
+.hero-wrapper.is-pending {
+  height: 100vw;
+  min-height: 50vh;
+  max-height: 92vh;
+}
 .hero-wrapper .sb-wrap {
   position: absolute;
   left: 0;
@@ -296,17 +307,17 @@ button.nav-share-btn::after { display: none; border: none; }
   bottom: 0;
   z-index: 1;
 }
-.hero-swiper { width: 100%; height: 100%; }
-.slide-image { width: 100%; height: 100%; }
+.hero-swiper { width: 100%; height: 100%; background: var(--color-bg); }
+.slide-image { width: 100%; height: 100%; background: transparent; }
 .hero-video { background: #111; }
 .hero-live-badge {
-  position: absolute; left: 24rpx; bottom: 24rpx; z-index: 4; padding: 4rpx 14rpx; border-radius: 20rpx;
+  position: absolute; left: 24rpx; bottom: 72rpx; z-index: 4; padding: 4rpx 14rpx; border-radius: 20rpx;
   font-size: 20rpx; letter-spacing: 2rpx; color: #fff; background: rgba(26, 24, 20, 0.6); pointer-events: none;
 }
 .img-counter {
   position: absolute;
   right: 24rpx;
-  bottom: 24rpx;
+  bottom: 72rpx;
   z-index: 4;
   background: rgba(26, 24, 20, 0.72);
   color: var(--color-text-body);
@@ -318,7 +329,7 @@ button.nav-share-btn::after { display: none; border: none; }
 .hero-badge-stack {
   position: absolute;
   left: 24rpx;
-  bottom: 24rpx;
+  bottom: 72rpx;
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -330,36 +341,52 @@ button.nav-share-btn::after { display: none; border: none; }
   z-index: 6;
 }
 .hero-overlay {
-  position: absolute; bottom: 0; left: 0; width: 100%; height: 30%;
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 180rpx;
   background: linear-gradient(to bottom, transparent, var(--color-bg));
   pointer-events: none;
   z-index: 2;
 }
 
-/* 内容区 */
+/* 内容区：圆角信息卡上叠一头图，和头图底部渐隐接成同一页 */
 .content-body {
   padding: 0 24rpx;
   position: relative;
   z-index: 3;
   width: 100%;
+  margin-top: -48rpx;
 }
 
 /* 需求 28：祈福墙入口（头部主图下方）。
    间距作用在**宿主自己的包裹 view** 上（不是组件的 ext-class）：同一元素上组件样式与
    宿主样式都设 margin 时谁生效不保证 —— 切片实测宿主的 margin-top 会被组件样式吃掉。
-   一条规则同时给上下间距；主图底部有 30% 高的渐隐（.hero-overlay），
-   24rpx 的落点正好在"图化入背景"那一段的下方。 */
+   头图底部渐隐，信息卡上叠约 48rpx；这里只留下方间距，避免把卡片再顶开。 */
 .wish-wall-slot {
-  margin: 24rpx 0;
+  margin: 0 0 16rpx;
 }
 
 /* 电商主卡片 */
 .commerce-card {
   background: var(--color-bg-card);
-  border-radius: 24rpx;
+  border-radius: 32rpx 32rpx 24rpx 24rpx;
   padding: 32rpx;
   border: 1px solid rgba(38,35,32,0.8);
   margin-bottom: 24rpx;
+}
+.offer-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 12rpx;
+  margin-top: 8rpx;
+}
+.offer-link,
+.offer-link-dot {
+  font-size: 26rpx;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+}
+.offer-link {
+  padding: 8rpx 4rpx;
 }
 .commerce-card-unique {
   border-color: rgba(77, 64, 26, 0.95);
@@ -1328,7 +1355,8 @@ button.nav-share-btn::after { display: none; border: none; }
   display: flex;
   align-items: center;
   z-index: 90;
-  padding: 16rpx 24rpx;
+  flex-wrap: nowrap;
+  padding: 16rpx 16rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
@@ -1345,7 +1373,7 @@ button.nav-share-btn::after { display: none; border: none; }
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 80rpx;
+  width: 72rpx;
   position: relative;
   padding: 4rpx 0;
   background: transparent;
@@ -1384,15 +1412,15 @@ button.nav-share-btn::after { display: none; border: none; }
 .bottom-cta {
   flex: 1;
   min-width: 0;
-  margin-left: 20rpx;
+  margin-left: 12rpx;
   display: flex;
-  gap: 16rpx;
+  flex-wrap: nowrap;
+  gap: 12rpx;
 }
 
-.custom-btn,
-.gift-btn,
 .add-cart-btn {
-  flex: 0 0 112rpx;
+  flex: 1 1 0;
+  min-width: 0;
   height: 80rpx;
   display: flex;
   align-items: center;
@@ -1400,23 +1428,17 @@ button.nav-share-btn::after { display: none; border: none; }
   border: 1px solid rgba(196, 167, 108, 0.45);
   border-radius: 16rpx;
   box-sizing: border-box;
+  background: transparent;
+  padding: 0 8rpx;
 }
-.custom-btn:active,
-.gift-btn:active,
 .add-cart-btn:active,
 .cta-press { opacity: 0.85; }
-.custom-btn.disabled,
-.gift-btn.disabled,
 .add-cart-btn.disabled { opacity: 0.4; pointer-events: none; }
-.btn-sub { font-size: 24rpx; color: var(--gold); font-weight: 500; }
-
-.gift-btn {
-  background: rgba(196, 167, 108, 0.08);
-  border-color: rgba(196, 167, 108, 0.55);
-}
+.btn-sub { font-size: 28rpx; color: var(--gold); font-weight: 500; white-space: nowrap; }
 
 .buy-now-btn {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   height: 80rpx;
   display: flex;
   flex-direction: row;
@@ -1426,6 +1448,7 @@ button.nav-share-btn::after { display: none; border: none; }
   color: var(--color-bg);
   border-radius: 16rpx;
   box-sizing: border-box;
+  padding: 0 8rpx;
 }
 .buy-now-btn:active,
 .buy-now-btn-press { background: #A8903C; }

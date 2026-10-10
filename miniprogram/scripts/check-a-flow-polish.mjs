@@ -112,8 +112,8 @@ function checks(s) {
 
   // R2-3 详情页底部主操作与加载失败按钮有按压态（view 上 :active 真机不可靠）
   const pressed = (src, re) => /hover-class="[\w-]+"/.test(openTag(src, re))
-  add('R2-3 商品详情底部 CTA（加购/立即购买/定制/送 TA/到货通知/定金）都有 hover-class',
-    ['add-cart-btn', 'buy-now-btn', 'custom-btn', 'gift-btn', 'wishlist-cta', 'deposit-cta'].every((c) => pressed(s.detailWxml, new RegExp(`<view\\s+class="${c}\\b(?![^>]*cta-skel)`))))
+  add('R2-3 商品详情底部 CTA（加购/立即购买/到货通知/定金）都有 hover-class',
+    ['add-cart-btn', 'buy-now-btn', 'wishlist-cta', 'deposit-cta'].every((c) => pressed(s.detailWxml, new RegExp(`<view\\s+class="${c}\\b(?![^>]*cta-skel)`))))
   add('R2-3 详情 / 档案 / 文章 / 鉴定结果的加载失败按钮都有 hover-class',
     [s.detailWxml, s.wikiWxml, s.articleWxml].every((src) => {
       const tags = src.match(/<view class="load-error-btn[^>]*>/g) || []
@@ -197,6 +197,36 @@ function checks(s) {
   add('R6 SPEC_RATIO_MIN/MAX + onSpecImageLoad/syncSpecSwiperHeight 存在',
     /const SPEC_RATIO_MIN = 0\.5/.test(s.detailJs) && /const SPEC_RATIO_MAX = 1\.25/.test(s.detailJs) &&
     /onSpecImageLoad\(e\)/.test(s.detailJs) && /syncSpecSwiperHeight\(\)/.test(s.detailJs))
+
+  // R7 详情底栏：定制 / 送 TA 不再占底栏；加购与立即购买的事件保持原样
+  const bottomBar = ((/<view class="bottom-bar[\s\S]*?\n  <\/view>/.exec(s.detailWxml) || [])[0]) || ''
+  add('R7 底栏不再同时出现定制与送 TA',
+    bottomBar && !/定制/.test(bottomBar) && !/送 TA/.test(bottomBar) && !/class="custom-btn"/.test(bottomBar) && !/class="gift-btn"/.test(bottomBar))
+  add('R7 加购物车与立即购买仍在底栏，事件仍是 handleBuy / handleBuyNow',
+    /class="add-cart-btn"[^>]*bindtap="handleBuy"/.test(bottomBar) &&
+    /class="buy-now-btn"[^>]*bindtap="handleBuyNow"/.test(bottomBar))
+  add('R7 定制与送给 TA 在信息区，仍走 goToCustom / goToGift，不支持则不显示',
+    /class="offer-link"[\s\S]{0,80}bindtap="goToCustom"[\s\S]{0,80}hover-class="tap-press"/.test(s.detailWxml) &&
+    /class="offer-link"[\s\S]{0,80}bindtap="goToGift"[\s\S]{0,80}hover-class="tap-press"/.test(s.detailWxml) &&
+    /supportsCustom !== false/.test(s.detailWxml) &&
+    /giftEligible !== false/.test(s.detailWxml) &&
+    />定制</.test(s.detailWxml) &&
+    />送给 TA</.test(s.detailWxml))
+  add('R7 底栏两个购买按钮等宽且不换行',
+    /flex:\s*1 1 0;/.test(rule(s.detailWxss, '.add-cart-btn')) &&
+    /flex:\s*1 1 0;/.test(rule(s.detailWxss, '.buy-now-btn')) &&
+    /flex-wrap:\s*nowrap;/.test(rule(s.detailWxss, '.bottom-bar')) &&
+    /white-space:\s*nowrap;/.test(rule(s.detailWxss, '.btn-sub')))
+
+  // R8 头图按原比例，夹在半屏到接近一屏，aspectFit 留白不裁主体
+  add('R8 头图两处都用 aspectFit + bindload 量原比例',
+    (s.detailWxml.match(/class="slide-image" mode="aspectFit" bindload="onHeroImageLoad"/g) || []).length === 2)
+  add('R8 头图高度跟 heroSwiperH，盒子有高度过渡',
+    /heroSwiperH/.test(openTag(s.detailWxml, /<view class="hero-wrapper/)) &&
+    /transition: height /.test(rule(s.detailWxss, '.hero-wrapper')))
+  add('R8 HERO_VIEW_MIN/MAX + syncHeroHeight 存在',
+    /const HERO_VIEW_MIN = 0\.5/.test(s.detailJs) && /const HERO_VIEW_MAX = 0\.92/.test(s.detailJs) &&
+    /syncHeroHeight\(\)/.test(s.detailJs) && /onHeroImageLoad\(e\)/.test(s.detailJs))
   return out
 }
 
@@ -222,7 +252,11 @@ if (process.argv.includes('--selftest')) {
     ['鉴定记录入口去按压态', 'identifyWxml', (t) => t.replace('bindtap="goLog" hover-class="recent-item-press" hover-stay-time="80"', 'bindtap="goLog"')],
     ['搜索相关卡图片去掉 binderror', 'searchWxml', (t) => t.replace('binderror="onRelatedImgError"', '')],
     ['搜索相关标签改回「换个词试试」', 'searchWxml', (t) => t.replace('<text class="related-label">相近线索</text>', '<text class="related-label">换个词试试</text>')],
-    ['立即购买去按压态', 'detailWxml', (t) => t.replace('bindtap="handleBuyNow" hover-class="buy-now-btn-press" hover-stay-time="80"', 'bindtap="handleBuyNow"')],
+    ['立即购买去按压态', 'detailWxml', (t) => t.replace('bindtap="handleBuyNow" hover-class="tap-press" hover-stay-time="80"', 'bindtap="handleBuyNow"')],
+    ['底栏重新放回定制', 'detailWxml', (t) => t.replace('<view class="add-cart-btn" bindtap="handleBuy"', '<view class="custom-btn"><text class="btn-sub">定制</text></view>\n      <view class="add-cart-btn" bindtap="handleBuy"')],
+    ['立即购买改掉事件名', 'detailWxml', (t) => t.replace('bindtap="handleBuyNow"', 'bindtap="handleCheckout"')],
+    ['头图退回 aspectFill', 'detailWxml', (t) => t.replace(/class="slide-image" mode="aspectFit"/g, 'class="slide-image" mode="aspectFill"')],
+    ['头图比例上限被删', 'detailJs', (t) => t.replace('const HERO_VIEW_MAX = 0.92;', '')],
     ['定金按钮去按压态', 'detailWxml', (t) => t.replace('bindtap="handleDeposit"\n          hover-class="cta-press"\n          hover-stay-time="80"', 'bindtap="handleDeposit"')],
     ['文章加载失败返回按钮去按压态', 'articleWxml', (t) => t.replace('<view class="load-error-btn" bindtap="goBack" hover-class="tap-press" hover-stay-time="80">', '<view class="load-error-btn" bindtap="goBack">')],
     ['鉴定结果重新加载去按压态', 'identifyResultWxml', (t) => t.replace('<view class="act ghost" bindtap="retryLoad" hover-class="act-ghost-press" hover-stay-time="80">', '<view class="act ghost" bindtap="retryLoad">')],

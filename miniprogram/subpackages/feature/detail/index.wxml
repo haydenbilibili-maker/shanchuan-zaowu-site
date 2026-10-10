@@ -42,7 +42,7 @@ module.exports.saveLabel = saveLabel;
 
 <view class="container {{isSinglePage ? 'is-single-page' : ''}}">
   <!-- 顶部导航：滚动渐显；单页模式隐藏返回（路由不可用） -->
-  <view class="nav-bar-wrap" wx:if="{{!isSinglePage}}" style="padding-top: {{statusBarHeight}}px; background: rgba(26,24,20,{{navOpacity}});">
+  <view class="nav-bar-wrap" wx:if="{{!isSinglePage}}" style="padding-top: {{statusBarHeight}}px; background: rgba(26,24,20,{{navOpacity > 0.72 ? navOpacity : 0.72}});">
     <view class="nav-bar-inner" style="height: {{navBarHeight}}px;">
       <nav-back ext-class="nav-icon-btn back-icon" bind:back="goBack" />
       <text class="nav-title" wx:if="{{navOpacity > 0.5}}">{{product.title}}</text>
@@ -81,8 +81,8 @@ module.exports.saveLabel = saveLabel;
     <view class="tab-item {{activeTab === 'review' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="review" hover-class="tap-press" hover-stay-time="80">评价<text wx:if="{{commentTotal > 0}}" class="tab-count">({{commentTotal}})</text></view>
   </view>
 
-  <!-- 主图轮播 / 冷启动骨架 -->
-  <view class="hero-wrapper">
+  <!-- 主图轮播 / 冷启动骨架。高度由当前图原比例决定（heroSwiperH），顶栏在图上方，不压画面。 -->
+  <view class="hero-wrapper {{heroSwiperH ? '' : 'is-pending'}}" style="margin-top: {{isSinglePage ? 0 : statusBarHeight + navBarHeight}}px;{{heroSwiperH ? 'height:' + heroSwiperH + 'px;' : ''}}">
     <block wx:if="{{detailSkeleton}}">
       <view class="detail-skel-hero skeleton" aria-hidden="true"></view>
     </block>
@@ -98,14 +98,14 @@ module.exports.saveLabel = saveLabel;
       <swiper wx:if="{{!heroSlides.length}}" class="hero-swiper" indicator-dots="{{imageTotal > 1}}" indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#C4A76C" circular="true" bindchange="onSwiperChange">
         <block wx:for="{{product.images}}" wx:key="*this">
           <swiper-item>
-            <image src="{{imgView[item] || item}}" mode="aspectFill" class="slide-image" bindtap="previewImage" data-current="{{item}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
+            <image src="{{imgView[item] || item}}" class="slide-image" mode="aspectFit" bindload="onHeroImageLoad" data-src="{{item}}" bindtap="previewImage" data-current="{{item}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
           </swiper-item>
         </block>
       </swiper>
       <!-- 视频/实况旁路：仅当商品有 media 时渲染；静音、不自动播放、不自动全屏，切走/离页即暂停 -->
       <swiper wx:else class="hero-swiper" indicator-dots="{{imageTotal > 1}}" indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#C4A76C" circular="true" bindchange="onHeroMediaChange">
         <swiper-item wx:for="{{heroSlides}}" wx:key="key">
-          <image wx:if="{{item.kind==='image'}}" src="{{imgView[item.src] || item.src}}" mode="aspectFill" class="slide-image" bindtap="previewImage" data-current="{{item.src}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
+          <image wx:if="{{item.kind==='image'}}" src="{{imgView[item.src] || item.src}}" class="slide-image" mode="aspectFit" bindload="onHeroImageLoad" data-src="{{item.src}}" bindtap="previewImage" data-current="{{item.src}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
           <video wx:else id="{{item.vid}}" class="slide-image hero-video" src="{{item.url}}" poster="{{item.poster}}" muted="{{true}}" autoplay="{{false}}" loop="{{item.kind==='live'}}" controls="{{item.kind!=='live'}}" show-center-play-btn="{{item.kind!=='live'}}" show-mute-btn="{{true}}" object-fit="contain" bindtap="onHeroLiveTap" data-vid="{{item.vid}}" data-kind="{{item.kind}}" bindplay="onHeroVideoPlay" bindpause="onHeroVideoPause" bindended="onHeroVideoPause"></video>
           <view wx:if="{{item.kind==='live'}}" class="hero-live-badge">LIVE{{heroPlaying===item.vid?'':' · 轻点播放'}}</view>
         </swiper-item>
@@ -199,6 +199,31 @@ module.exports.saveLabel = saveLabel;
         <text class="title-theme-note" wx:if="{{product.themeName && product.themeNote}}">{{product.themeNote}}</text>
         <text class="latin-sub" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
         </block>
+      </view>
+
+      <!-- 底栏腾出的次要入口：有货且该商品支持时才出现，点击仍走原来的定制 / 礼赠 -->
+      <view
+        class="offer-links"
+        wx:if="{{product._id && commerceReady && displayStock > 0 && !canPayBalance && ((showSpecimenCustom && product.supportsCustom !== false) || (showGift && product.giftEligible !== false))}}"
+      >
+        <text
+          wx:if="{{showSpecimenCustom && product.supportsCustom !== false}}"
+          class="offer-link"
+          bindtap="goToCustom"
+          hover-class="tap-press"
+          hover-stay-time="80"
+        >定制</text>
+        <text
+          class="offer-link-dot"
+          wx:if="{{showSpecimenCustom && product.supportsCustom !== false && showGift && product.giftEligible !== false}}"
+        >·</text>
+        <text
+          wx:if="{{showGift && product.giftEligible !== false}}"
+          class="offer-link"
+          bindtap="goToGift"
+          hover-class="tap-press"
+          hover-stay-time="80"
+        >送给 TA</text>
       </view>
 
       <!-- 礼赠面板（坪效位）：把「这是什么」变成「适合送什么场合」+ 一键送礼 -->
@@ -566,11 +591,11 @@ module.exports.saveLabel = saveLabel;
   <!-- 底部操作栏：朋友圈单页隐藏交互 CTA（平台底部已有「前往小程序」） -->
   <view class="bottom-bar safe-area" wx:if="{{!isSinglePage}}">
     <view class="bottom-icons">
-      <view class="icon-btn" bindtap="goToSupport" hover-class="icon-btn-press" hover-stay-time="80">
+      <view class="icon-btn" bindtap="goToSupport" hover-class="tap-press" hover-stay-time="80">
         <image class="bar-icon" src="/assets/icons/message.png" mode="aspectFit"></image>
         <text class="bar-txt">客服</text>
       </view>
-      <view class="icon-btn" bindtap="goToCart" hover-class="icon-btn-press" hover-stay-time="80">
+      <view class="icon-btn" bindtap="goToCart" hover-class="tap-press" hover-stay-time="80">
         <image class="bar-icon" src="/assets/icons/tab-cart.png" mode="aspectFit"></image>
         <text class="bar-txt">购物车</text>
         <view class="badge-solid-danger badge-sm bar-badge badge-enter" wx:if="{{cartCount > 0}}">{{cartCount > 99 ? '99+' : cartCount}}</view>
@@ -580,7 +605,7 @@ module.exports.saveLabel = saveLabel;
         wx:if="{{commerceReady && displayStock > 0}}"
         class="icon-btn {{inFavorite ? 'active' : ''}}"
         bindtap="toggleFavorite"
-        hover-class="icon-btn-press"
+        hover-class="tap-press"
         hover-stay-time="80"
       >
         <image class="bar-icon {{inFavorite ? 'wish-on' : ''}}" src="{{inFavorite ? '/assets/icons/star-active.png' : '/assets/icons/star.png'}}" mode="aspectFit"></image>
@@ -590,7 +615,7 @@ module.exports.saveLabel = saveLabel;
         wx:elif="{{commerceReady}}"
         class="icon-btn {{inWishlist ? 'active' : ''}}"
         bindtap="toggleWishlist"
-        hover-class="icon-btn-press"
+        hover-class="tap-press"
         hover-stay-time="80"
       >
         <image class="bar-icon {{inWishlist ? 'wish-on' : ''}}" src="/assets/icons/heart.png" mode="aspectFit"></image>
@@ -644,16 +669,10 @@ module.exports.saveLabel = saveLabel;
       </block>
     </view>
     <view class="bottom-cta" wx:elif="{{product._id && commerceReady}}">
-      <view class="custom-btn" bindtap="goToCustom" wx:if="{{showSpecimenCustom}}" hover-class="cta-press" hover-stay-time="80">
-        <text class="btn-sub">定制</text>
-      </view>
-      <view class="gift-btn" bindtap="goToGift" wx:if="{{showGift && product.giftEligible !== false}}" hover-class="cta-press" hover-stay-time="80">
-        <text class="btn-sub">送 TA</text>
-      </view>
-      <view class="add-cart-btn" bindtap="handleBuy" hover-class="cta-press" hover-stay-time="80">
+      <view class="add-cart-btn" bindtap="handleBuy" hover-class="tap-press" hover-stay-time="80">
         <text class="btn-sub">加购物车</text>
       </view>
-      <view class="buy-now-btn" bindtap="handleBuyNow" hover-class="buy-now-btn-press" hover-stay-time="80">
+      <view class="buy-now-btn" bindtap="handleBuyNow" hover-class="tap-press" hover-stay-time="80">
         <text class="btn-main">立即购买</text>
       </view>
     </view>
