@@ -21,6 +21,8 @@ export function defaultPayrollSettings() {
     storeCommissionRates: {},
     /** 工号公司段：0=甲 … 9=癸，再循环 */
     companyTianGanIndex: 0,
+    /** 参保员工 id：生成薪酬时按社保扣缴标准（socialInsurance.js）扣个人部分 */
+    siEnrolledEmployeeIds: [],
   }
 }
 

@@ -102,7 +102,7 @@
           <text class="row-sub">应发合计</text>
           <text class="amount-row">¥{{detail.grossDisplay}}</text>
         </view>
-        <view class="row">
+        <view class="row" wx:if="{{!detail.si}}">
           <text class="row-sub">扣款合计</text>
           <text class="amount-row deduct">¥{{detail.deductDisplay}}</text>
         </view>
@@ -120,9 +120,27 @@
           <text class="row-sub">应发</text>
           <text class="amount-row">¥{{detail.grossDisplay}}</text>
         </view>
-        <view class="row">
+        <view class="row" wx:if="{{!detail.si}}">
           <text class="row-sub">扣款</text>
           <text class="amount-row deduct">¥{{detail.deduction}}</text>
+        </view>
+      </block>
+      <block wx:if="{{detail.si}}">
+        <text class="si-head">社保个人缴纳（从工资里扣）</text>
+        <view class="row" wx:for="{{detail.si.personal}}" wx:key="key">
+          <view class="row-main">
+            <text class="row-sub">{{item.name}}</text>
+            <text class="si-period">所属期 {{item.period}}</text>
+          </view>
+          <text class="amount-row si-amount deduct">-¥{{item.amountFmt}}</text>
+        </view>
+        <view class="row" wx:if="{{!detail.hasItems && detail.si.otherDeduction > 0}}">
+          <text class="row-sub">其他扣款</text>
+          <text class="amount-row si-amount deduct">-¥{{detail.si.otherDeductionFmt}}</text>
+        </view>
+        <view class="row divider">
+          <text class="row-sub">扣款合计</text>
+          <text class="amount-row deduct">¥{{detail.deductDisplay}}</text>
         </view>
       </block>
       <view class="row">
@@ -130,6 +148,22 @@
         <text class="amount-row gold">¥{{detail.net}}</text>
       </view>
       <text class="section-note" wx:if="{{detail.remark}}">{{detail.remark}}</text>
+    </view>
+    <view class="scene-card si-company" wx:if="{{detail.si && detail.si.company.length}}">
+      <text class="si-head">公司为你缴纳（不从工资里扣）</text>
+      <view class="row" wx:for="{{detail.si.company}}" wx:key="key">
+        <view class="row-main">
+          <text class="row-sub">{{item.name}}</text>
+          <text class="si-period">所属期 {{item.period}}</text>
+        </view>
+        <text class="amount-row si-amount">¥{{item.amountFmt}}</text>
+      </view>
+      <view class="row divider">
+        <text class="row-sub">公司缴纳合计</text>
+        <text class="amount-row si-amount">¥{{detail.si.companyTotalFmt}}</text>
+      </view>
+      <text class="section-note" wx:if="{{detail.si.injuryNote}}">{{detail.si.injuryNote}}</text>
+      <text class="section-note" wx:if="{{detail.si.splitNote}}">{{detail.si.splitNote}}</text>
     </view>
     <view hover-class="wb-press" hover-stay-time="80" class="btn-primary" bindtap="closeDetail">关闭</view>
   </view>

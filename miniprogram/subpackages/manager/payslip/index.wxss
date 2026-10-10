@@ -420,3 +420,23 @@ page {
   color: #e8dcc0;
 }
 
+
+/* 社保明细：个人扣款与公司缴纳分开列 */
+.si-head {
+  display: block;
+  margin-top: var(--space-3);
+  font-size: 24rpx;
+  font-weight: 500;
+  color: var(--brass-400);
+}
+.si-period {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: var(--color-text-secondary, #A09A90);
+}
+.amount-row.si-amount {
+  font-size: 30rpx;
+}
+.si-company .si-head {
+  margin-top: 0;
+}

@@ -6,6 +6,21 @@ function currentYearMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+const YM_RE = /^\d{4}-\d{2}$/
+
+function emptySiPreview() {
+  return { loading: false, snapshot: null, annualChargedIn: '', msg: '', personalTotalFmt: '', companyTotalFmt: '', netFmt: '' }
+}
+
+function siFormDefaults() {
+  return { siOn: false, siStandardId: '', siPaidMonth: '', siIncludeAnnual: null, siLegacyDeduction: false }
+}
+
+function estimateNet(form, personalTotal) {
+  const v = (Number(form.base) || 0) + (Number(form.bonus) || 0) - (Number(form.deduction) || 0) - (Number(personalTotal) || 0)
+  return (Math.round(v * 100) / 100).toFixed(2)
+}
+
 Page({
   data: {
     ready: false,
@@ -25,8 +40,10 @@ Page({
       base: '',
       bonus: '',
       deduction: '',
-      remark: ''
-    }
+      remark: '',
+      ...siFormDefaults()
+    },
+    siPreview: emptySiPreview()
   },
 
   async onLoad() {
@@ -109,8 +126,10 @@ Page({
         base: '',
         bonus: '',
         deduction: '',
-        remark: ''
-      }
+        remark: '',
+        ...siFormDefaults()
+      },
+      siPreview: emptySiPreview()
     })
   },
 
@@ -118,6 +137,8 @@ Page({
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
     const row = (this.data.list || []).find((r) => r._id === id)
     if (!row) return
+    const si = row.socialInsurance || null
+    const deduction = si ? row.otherDeduction : row.deduction
     this.setData({
       showEditor: true,
       form: {
@@ -127,10 +148,74 @@ Page({
         month: row.month || currentYearMonth(),
         base: row.base != null ? String(row.base) : '',
         bonus: row.bonus != null ? String(row.bonus) : '',
-        deduction: row.deduction != null ? String(row.deduction) : '',
-        remark: row.remark || ''
-      }
+        deduction: deduction != null ? String(deduction) : '',
+        remark: row.remark || '',
+        siOn: !!si,
+        siStandardId: si ? si.standardId : '',
+        siPaidMonth: si ? si.paidMonth : '',
+        siIncludeAnnual: si ? !!si.annualIncluded : null,
+        siLegacyDeduction: !si && Number(row.deduction) > 0
+      },
+      siPreview: emptySiPreview()
     })
+    if (si) this.refreshSiPreview()
+  },
+
+  onSiToggle(e) {
+    const on = !!(e.detail && e.detail.value)
+    this.setData({
+      'form.siOn': on,
+      'form.siIncludeAnnual': null,
+      siPreview: emptySiPreview()
+    })
+    if (on) this.refreshSiPreview()
+  },
+
+  onSiAnnualToggle(e) {
+    this.setData({ 'form.siIncludeAnnual': !!(e.detail && e.detail.value) })
+    this.refreshSiPreview()
+  },
+
+  async refreshSiPreview() {
+    const f = this.data.form
+    if (!f.siOn || !f.staffOpenid || !YM_RE.test(String(f.month || ''))) return
+    const paidMonth = String(f.siPaidMonth || '').trim()
+    if (paidMonth && !YM_RE.test(paidMonth)) return
+    this.setData({ 'siPreview.loading': true })
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageStaffWorkspace',
+        data: {
+          action: 'payslipSiPreview',
+          staffOpenid: f.staffOpenid,
+          month: f.month,
+          socialInsurance: {
+            standardId: f.siStandardId || '',
+            paidMonth,
+            includeAnnual: f.siIncludeAnnual
+          }
+        }
+      })
+      const result = (res && res.result) || {}
+      const snap = result.snapshot || null
+      const patch = {
+        siPreview: {
+          loading: false,
+          snapshot: snap,
+          annualChargedIn: result.annualChargedIn || '',
+          msg: result.success === false || !snap ? (result.msg || '暂时算不出社保明细') : '',
+          personalTotalFmt: snap ? Number(snap.personalTotal).toFixed(2) : '',
+          companyTotalFmt: snap ? Number(snap.companyTotal).toFixed(2) : '',
+          netFmt: snap ? estimateNet(f, snap.personalTotal) : ''
+        }
+      }
+      if (result.standardId) patch['form.siStandardId'] = result.standardId
+      if (!paidMonth && result.paidMonth) patch['form.siPaidMonth'] = result.paidMonth
+      if (snap) patch['form.siIncludeAnnual'] = !!snap.annualIncluded
+      this.setData(patch)
+    } catch (e) {
+      this.setData({ siPreview: { ...emptySiPreview(), msg: formatCloudFnError(e, '社保明细加载失败') } })
+    }
   },
 
   closeEditor() {
@@ -140,7 +225,15 @@ Page({
   onFormInput(e) {
     const field = e.currentTarget.dataset.field
     if (!field) return
-    this.setData({ [`form.${field}`]: e.detail.value })
+    const patch = { [`form.${field}`]: e.detail.value }
+    if (field === 'month') patch['form.siIncludeAnnual'] = null
+    this.setData(patch)
+    if (!this.data.form.siOn) return
+    if (field === 'month' || field === 'siPaidMonth') {
+      if (YM_RE.test(String(e.detail.value || ''))) this.refreshSiPreview()
+    } else if (this.data.siPreview.snapshot) {
+      this.setData({ 'siPreview.netFmt': estimateNet(this.data.form, this.data.siPreview.snapshot.personalTotal) })
+    }
   },
 
   onFormStaffPick(e) {
@@ -149,8 +242,10 @@ Page({
     if (!row) return
     this.setData({
       'form.staffOpenid': row.openid,
-      'form.staffName': row.name
+      'form.staffName': row.name,
+      'form.siIncludeAnnual': null
     })
+    if (this.data.form.siOn) this.refreshSiPreview()
   },
 
   async saveForm() {
@@ -160,6 +255,10 @@ Page({
     const month = String(f.month || '').trim()
     if (!staffOpenid || !/^\d{4}-\d{2}$/.test(month)) {
       wx.showToast({ title: '请填写员工与月份 YYYY-MM', icon: 'none' })
+      return
+    }
+    if (f.siOn && (!f.siStandardId || !this.data.siPreview.snapshot)) {
+      if (!this.data.siPreview.msg) this.setData({ 'siPreview.msg': '社保明细还没算出来，请稍候再保存' })
       return
     }
     this.setData({ saving: true })
@@ -174,7 +273,10 @@ Page({
           base: Number(f.base),
           bonus: Number(f.bonus) || 0,
           deduction: Number(f.deduction) || 0,
-          remark: f.remark
+          remark: f.remark,
+          socialInsurance: f.siOn
+            ? { standardId: f.siStandardId || '', paidMonth: f.siPaidMonth || '', includeAnnual: f.siIncludeAnnual }
+            : null
         }
       })
       const result = (res && res.result) || {}

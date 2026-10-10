@@ -21,3 +21,5 @@ npm run check:supplier-desk-images
 npm run check:c-stream-polish
 # 2026-10-01（产品负责人点名）：工单 → 伴宠 —— 按钮主次 / 文字不折行、新增「拒绝」（理由必填，状态 declined = 已婉拒）、需补充 / 报价 / 承接 / 拒绝经山海有信通知顾客且失败不阻断
 npm run check:pet-memorial-ops
+# 2026-10-10（产品负责人点名）：工资条社保明细 —— 个人 = 缴费记录合计 ÷ 参保人数、工伤个人不扣、公司缴纳只展示不进扣款、大额医疗互助全年一次、旧工资条不变；ERP 副本同口径
+npm run test:payslip-social-insurance

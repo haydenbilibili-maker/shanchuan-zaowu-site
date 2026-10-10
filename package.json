@@ -350,6 +350,8 @@
     "check:supplier-desk-images:selftest": "node miniprogram/scripts/check-supplier-desk-images.mjs --selftest",
     "check:c-stream-polish": "node miniprogram/scripts/check-c-stream-polish.mjs",
     "check:c-stream-polish:selftest": "node miniprogram/scripts/check-c-stream-polish.mjs --selftest",
+    "test:payslip-social-insurance": "node miniprogram/scripts/test-payslip-social-insurance.mjs",
+    "test:payslip-social-insurance:selftest": "node miniprogram/scripts/test-payslip-social-insurance.mjs --selftest",
     "check:pet-memorial-ops": "node miniprogram/scripts/check-pet-memorial-ops.mjs",
     "check:pet-memorial-ops:selftest": "node miniprogram/scripts/check-pet-memorial-ops.mjs --selftest",
     "test:ai-identify-monitor": "node miniprogram/scripts/test-ai-identify-monitor.mjs",

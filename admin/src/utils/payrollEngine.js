@@ -1,5 +1,6 @@
 import { sumStoreNetRevenueForMonth } from './storeStorage.js'
 import { genPayrollId } from './payrollStorage.js'
+import { computeSocialInsurance, defaultPaidMonth, standardForMonth } from './socialInsurance.js'
 
 function revenueKey(storeId, yearMonth) {
   return `${storeId}::${String(yearMonth).slice(0, 7)}`
@@ -33,6 +34,38 @@ function clerkWeight(emp, defaultRate) {
   if (!Number.isFinite(num) || num < 0) return 1
   if (!defaultRate) return 1
   return num / defaultRate
+}
+
+/**
+ * 参保员工的社保快照（标准与小程序工资条同源，见 socialInsurance.js）：
+ * 个人部分从实发里扣，公司缴纳只记录展示；大额医疗互助同一年度只扣一次。
+ */
+function socialInsuranceForSlip(settings, existingSlips, employeeId, ym) {
+  const enrolled = Array.isArray(settings?.siEnrolledEmployeeIds) ? settings.siEnrolledEmployeeIds.map(String) : []
+  if (!enrolled.includes(String(employeeId))) return null
+  const paidMonth = defaultPaidMonth(ym)
+  const std = standardForMonth(paidMonth)
+  if (!std) return null
+  const year = paidMonth.slice(0, 4)
+  const charged = (existingSlips || []).some(
+    (s) =>
+      String(s.employeeId) === String(employeeId) &&
+      s.yearMonth !== ym &&
+      s.socialInsurance?.annualIncluded &&
+      s.socialInsurance.annualYear === year
+  )
+  const r = computeSocialInsurance({ standardId: std.id, paidMonth, includeAnnual: !charged })
+  return r.ok ? r.snapshot : null
+}
+
+function siSlipFields(si, grossPay) {
+  if (!si) return { siPersonal: 0, siCompany: 0, socialInsurance: null, netPay: grossPay }
+  return {
+    siPersonal: si.personalTotal,
+    siCompany: si.companyTotal,
+    socialInsurance: si,
+    netPay: Math.round((grossPay - si.personalTotal) * 100) / 100,
+  }
 }
 
 /**
@@ -147,7 +180,7 @@ export function generateMonthlySlips(storeBundle, payrollBundle, yearMonth) {
 
     const allowance = 0
     const grossPay = base + commissionPortion + performanceBonus + allowance - deduction
-    const netPay = grossPay
+    const si = socialInsuranceForSlip(settings, existingSlips, e.id, ym)
 
     slips.push({
       id: genPayrollId('slip'),
@@ -160,7 +193,7 @@ export function generateMonthlySlips(storeBundle, payrollBundle, yearMonth) {
       allowance,
       deduction,
       grossPay,
-      netPay,
+      ...siSlipFields(si, grossPay),
       revenueBaseUsed,
       commissionRateUsed,
       storeId: storeIdSnap,
@@ -320,7 +353,7 @@ export function regeneratePartialMonthlySlips(storeBundle, payrollBundle, yearMo
 
     const allowance = 0
     const grossPay = base + commissionPortion + performanceBonus + allowance - deduction
-    const netPay = grossPay
+    const si = socialInsuranceForSlip(settings, existingSlips, e.id, ym)
 
     const prev = existingSlips.find((s) => s.yearMonth === ym && s.employeeId === e.id)
     rebuilt.push({
@@ -334,7 +367,7 @@ export function regeneratePartialMonthlySlips(storeBundle, payrollBundle, yearMo
       allowance,
       deduction,
       grossPay,
-      netPay,
+      ...siSlipFields(si, grossPay),
       revenueBaseUsed,
       commissionRateUsed,
       storeId: storeIdSnap,

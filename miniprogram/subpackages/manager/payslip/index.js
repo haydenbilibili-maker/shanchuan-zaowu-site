@@ -7,32 +7,7 @@ const {
   hasPermission,
   roleHasStored
 } = require('../utils/staffAuth')
-
-function enrichDetail(raw) {
-  if (!raw) return null
-  const detail = { ...raw }
-  const items = Array.isArray(detail.items) ? detail.items : []
-  detail.hasItems = items.length > 0
-  if (detail.hasItems) {
-    let earn = 0
-    let deduct = 0
-    items.forEach((it) => {
-      if (it && it.kind === 'deduct') deduct += Number(it.amount) || 0
-      else earn += Number(it.amount) || 0
-    })
-    detail.grossDisplay = Math.round(earn * 100) / 100
-    detail.deductDisplay = Math.round(deduct * 100) / 100
-  } else {
-    const base = Number(detail.base) || 0
-    const bonus = Number(detail.bonus) || 0
-    detail.grossDisplay =
-      Number.isFinite(Number(detail.gross)) && detail.gross != null
-        ? Number(detail.gross)
-        : Math.round((base + bonus) * 100) / 100
-    detail.deductDisplay = Number(detail.deduction) || 0
-  }
-  return detail
-}
+const { enrichDetail } = require('./payslipView')
 
 function emptySalesShare() {
   return {

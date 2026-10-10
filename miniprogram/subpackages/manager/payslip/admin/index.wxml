@@ -72,8 +72,44 @@
         <input class="input" type="digit" value="{{form.bonus}}" data-field="bonus" bindinput="onFormInput" />
       </view>
       <view class="field">
-        <text class="field-label">扣款</text>
+        <text class="field-label">{{form.siOn ? '其他扣款（考勤等，不含社保）' : '扣款'}}</text>
         <input class="input" type="digit" value="{{form.deduction}}" data-field="deduction" bindinput="onFormInput" />
+      </view>
+      <view class="field si-box">
+        <view class="si-switch-row">
+          <text class="field-label">套用社保扣缴标准</text>
+          <switch checked="{{form.siOn}}" color="#C4A76C" bindchange="onSiToggle" />
+        </view>
+        <block wx:if="{{form.siOn}}">
+          <text class="field-label">社保缴费月 YYYY-MM</text>
+          <input class="input" value="{{form.siPaidMonth}}" data-field="siPaidMonth" bindinput="onFormInput" />
+          <view class="si-switch-row">
+            <text class="field-label">含大额医疗互助（全年一次）</text>
+            <switch checked="{{form.siIncludeAnnual}}" color="#C4A76C" bindchange="onSiAnnualToggle" />
+          </view>
+          <text class="si-hint" wx:if="{{siPreview.annualChargedIn}}">本年度大额医疗互助已在 {{siPreview.annualChargedIn}} 工资条扣过</text>
+          <text class="si-hint" wx:if="{{siPreview.loading}}">正在计算社保明细…</text>
+          <text class="si-hint is-warn" wx:elif="{{siPreview.msg}}">{{siPreview.msg}}</text>
+          <view class="si-preview" wx:if="{{siPreview.snapshot}}">
+            <view class="si-line" wx:for="{{siPreview.snapshot.personal}}" wx:key="key">
+              <text>{{item.name}} · 所属期 {{item.period}}</text>
+              <text>-¥{{item.amount}}</text>
+            </view>
+            <view class="si-line is-total">
+              <text>个人社保合计（从工资扣）</text>
+              <text>-¥{{siPreview.personalTotalFmt}}</text>
+            </view>
+            <view class="si-line">
+              <text>公司缴纳合计（不扣工资，只展示）</text>
+              <text>¥{{siPreview.companyTotalFmt}}</text>
+            </view>
+            <view class="si-line is-total">
+              <text>预计实发</text>
+              <text>¥{{siPreview.netFmt}}</text>
+            </view>
+          </view>
+          <text class="si-hint is-warn" wx:if="{{form.siLegacyDeduction}}">这张工资条原来的扣款可能已含社保，套用标准时请把「其他扣款」改成不含社保的部分，避免重复扣</text>
+        </block>
       </view>
       <view class="field">
         <text class="field-label">备注</text>

@@ -43,3 +43,51 @@
   width: auto;
   min-width: 0;
 }
+
+/* 社保扣缴：个人扣款预览 + 公司缴纳只展示 */
+.si-box {
+  padding-top: var(--space-2);
+  border-top: 1rpx solid var(--color-border);
+}
+
+.si-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: var(--space-2) 0;
+}
+
+.si-hint {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.si-hint.is-warn {
+  color: #f0c9c0;
+}
+
+.si-preview {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.si-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 6rpx 0;
+  font-size: 24rpx;
+  color: var(--color-text-body);
+}
+
+.si-line.is-total {
+  margin-top: 6rpx;
+  padding-top: 10rpx;
+  border-top: 1rpx solid var(--color-border);
+  color: var(--brass-400);
+}

@@ -39,6 +39,7 @@ const {
   LEAVE_TYPES
 } = require('./defaults')
 const { computeMonthlySalesShare } = require('./salesShareRevenue')
+const SI = require('./socialInsurance')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -711,6 +712,51 @@ async function payslipRemove(event, openid) {
   }
 }
 
+/** 该员工同一年度已扣过「全年一次」品目的工资条月份（排除正在编辑的这一张） */
+async function findAnnualChargedMonth(staffOpenid, year, excludeId) {
+  const res = await db.collection(COL_PAY).where({ staffOpenid }).limit(100).get()
+  const hit = (res.data || []).find((r) =>
+    r && r._id !== excludeId && r.socialInsurance && r.socialInsurance.annualIncluded && r.socialInsurance.annualYear === year
+  )
+  return hit ? String(hit.month || '') : ''
+}
+
+/**
+ * 工资条的社保快照：raw = { standardId, paidMonth?, includeAnnual? }；不传 standardId = 不套用（旧行为）。
+ * includeAnnual 不传时：本年度还没扣过「全年一次」品目就扣；已扣过再要求扣 → 拒绝。
+ */
+async function resolveSocialInsurance(raw, staffOpenid, payslipMonth, docId) {
+  if (!raw || !raw.standardId) return { snapshot: null, annualChargedIn: '' }
+  const paidMonth = String(raw.paidMonth || '').trim() || SI.defaultPaidMonth(payslipMonth)
+  const year = paidMonth.slice(0, 4)
+  let chargedIn = ''
+  try {
+    chargedIn = await findAnnualChargedMonth(staffOpenid, year, docId)
+  } catch (e) {
+    return { error: '暂时读不到该员工往期工资条，请稍后再套用社保标准' }
+  }
+  const includeAnnual = raw.includeAnnual == null ? !chargedIn : !!raw.includeAnnual
+  if (includeAnnual && chargedIn) return { error: `大额医疗互助 ${year} 年已在 ${chargedIn} 工资条扣过，全年只扣一次`, annualChargedIn: chargedIn }
+  const r = SI.computeSocialInsurance({ standardId: raw.standardId, paidMonth, includeAnnual })
+  if (!r.ok) return { error: r.msg, annualChargedIn: chargedIn }
+  return { snapshot: r.snapshot, annualChargedIn: chargedIn }
+}
+
+async function payslipSiPreview(event, openid) {
+  const guard = await assertStaff(db, openid, { requireSuperAdmin: true })
+  if (!guard.ok) return fail(guard.msg, { code: guard.code })
+  const targetOpenid = String(event.staffOpenid || '').trim()
+  const month = String(event.month || '').trim()
+  const raw = event.socialInsurance || {}
+  const paidMonth = String(raw.paidMonth || '').trim() || SI.defaultPaidMonth(month)
+  const std = raw.standardId ? SI.findStandard(raw.standardId) : SI.standardForMonth(paidMonth)
+  const base = { success: true, standards: SI.listStandards(), standardId: std ? std.id : '', paidMonth }
+  if (!targetOpenid || !/^\d{4}-\d{2}$/.test(month) || !std) return { ...base, snapshot: null, annualChargedIn: '' }
+  const si = await resolveSocialInsurance({ ...raw, standardId: std.id, paidMonth }, targetOpenid, month, `${targetOpenid}_${month}`)
+  if (si.error) return { ...base, snapshot: null, annualChargedIn: si.annualChargedIn || '', msg: si.error }
+  return { ...base, snapshot: si.snapshot, annualChargedIn: si.annualChargedIn }
+}
+
 async function payslipUpsert(event, openid) {
   const guard = await assertStaff(db, openid, { requireSuperAdmin: true })
   if (!guard.ok) return fail(guard.msg, { code: guard.code })
@@ -719,6 +765,9 @@ async function payslipUpsert(event, openid) {
   if (!targetOpenid || !/^\d{4}-\d{2}$/.test(month)) return fail('请填写员工 openid 与月份 YYYY-MM')
   const totals = totalsFromPayslipPayload(event)
   if (totals.error) return fail(totals.error)
+  const docId = `${targetOpenid}_${month}`
+  const si = await resolveSocialInsurance(event.socialInsurance, targetOpenid, month, docId)
+  if (si.error) return fail(si.error)
   const now = new Date()
   const doc = {
     staffOpenid: targetOpenid,
@@ -735,7 +784,13 @@ async function payslipUpsert(event, openid) {
     updatedByName: guard.actor.name || ''
   }
   if (totals.items.length) doc.items = totals.items
-  const docId = `${targetOpenid}_${month}`
+  if (si.snapshot) {
+    // 只有个人部分进扣款；公司缴纳部分只存快照供展示
+    doc.otherDeduction = totals.deduction
+    doc.deduction = Math.round((totals.deduction + si.snapshot.personalTotal) * 100) / 100
+    doc.net = Math.round((totals.gross - doc.deduction) * 100) / 100
+    doc.socialInsurance = si.snapshot
+  }
   try {
     await db.collection(COL_PAY).doc(docId).set({ data: doc })
     return { success: true, id: docId }
@@ -883,6 +938,8 @@ exports.main = async (event) => {
       return payslipUpsert(event, openid)
     case 'payslipAdminList':
       return payslipAdminList(event, openid)
+    case 'payslipSiPreview':
+      return payslipSiPreview(event, openid)
     case 'payslipRemove':
       return payslipRemove(event, openid)
     case 'reimburseSubmit':

@@ -115,6 +115,46 @@
             </el-table-column>
           </el-table>
         </el-card>
+
+        <el-card shadow="never" class="inner-card" style="margin-top: 16px">
+          <template #header>
+            <span>社保扣缴标准 · {{ siStandard?.label || '未配置' }}</span>
+            <span class="card-hint">与小程序「工资维护 / 工资条明细」同一份标准；来源：{{ siStandard?.source || '—' }}</span>
+          </template>
+          <el-table :data="siStandardRows" border size="small" empty-text="暂无社保扣缴标准">
+            <el-table-column prop="name" label="品目" min-width="120" />
+            <el-table-column prop="periodLabel" label="所属期" width="110" />
+            <el-table-column label="合计·个人" width="110" align="right">
+              <template #default="{ row }">{{ formatMoney(row.personalTotal) }}</template>
+            </el-table-column>
+            <el-table-column label="合计·单位" width="110" align="right">
+              <template #default="{ row }">{{ formatMoney(row.companyTotal) }}</template>
+            </el-table-column>
+            <el-table-column label="每人·从工资扣" width="120" align="right">
+              <template #default="{ row }">{{ row.companyOnly ? '个人不扣' : formatMoney(row.personalEach) }}</template>
+            </el-table-column>
+            <el-table-column label="每人·公司缴纳" width="120" align="right">
+              <template #default="{ row }">{{ formatMoney(row.companyEach) }}</template>
+            </el-table-column>
+          </el-table>
+          <p class="si-note">
+            每人金额 = 合计 ÷ {{ siStandard?.headcount || '—' }} 人；工伤保险按政策个人不扣、只由公司缴纳；
+            公司缴纳部分只在工资条上展示，不从实发里扣；大额医疗互助同一年度只扣一次。
+          </p>
+          <el-form label-width="160px" style="max-width: 640px">
+            <el-form-item label="参保员工">
+              <el-select
+                v-model="payroll.settings.siEnrolledEmployeeIds"
+                multiple
+                filterable
+                placeholder="选中的员工生成薪酬时按此标准扣个人社保"
+                style="width: 100%"
+              >
+                <el-option v-for="e in siEmployeeOptions" :key="e.id" :label="e.label" :value="e.id" />
+              </el-select>
+            </el-form-item>
+          </el-form>
+        </el-card>
       </el-tab-pane>
 
       <el-tab-pane label="考勤" name="attendance">
@@ -215,6 +255,12 @@
             <el-table-column label="应发" width="100" align="right">
               <template #default="{ row }">{{ formatMoney(row.grossPay) }}</template>
             </el-table-column>
+            <el-table-column label="社保个人扣" width="110" align="right">
+              <template #default="{ row }">{{ row.socialInsurance ? formatMoney(row.siPersonal) : '—' }}</template>
+            </el-table-column>
+            <el-table-column label="公司缴纳(不扣)" width="120" align="right">
+              <template #default="{ row }">{{ row.socialInsurance ? formatMoney(row.siCompany) : '—' }}</template>
+            </el-table-column>
             <el-table-column label="实发" width="100" align="right">
               <template #default="{ row }">{{ formatMoney(row.netPay) }}</template>
             </el-table-column>
@@ -294,6 +340,7 @@ import {
   appendAuditLog,
 } from '../utils/payrollStorage.js'
 import { generateMonthlySlips, regeneratePartialMonthlySlips } from '../utils/payrollEngine.js'
+import { SI_STANDARDS, perHead } from '../utils/socialInsurance.js'
 import { UNIFIED_EMPLOYEES_CHANGED } from '../utils/unifiedEmployeeSync.js'
 
 const yearMonth = ref(monthStr(new Date()))
@@ -319,6 +366,20 @@ function monthStr(d) {
 }
 
 const storeSelectOptions = computed(() => getStoreSelectOptions(storeBundle.value))
+
+const siStandard = SI_STANDARDS[SI_STANDARDS.length - 1] || null
+const siStandardRows = (siStandard?.lines || []).map((l) => ({
+  ...l,
+  periodLabel: l.cycle === 'year' ? '全年一次' : l.periodOffset ? `缴费月 +${l.periodOffset}` : '缴费当月',
+  personalEach: l.companyOnly ? 0 : perHead(l.personalTotal, siStandard.headcount),
+  companyEach: perHead(l.companyTotal, siStandard.headcount),
+}))
+const siEmployeeOptions = computed(() =>
+  (payroll.employees || [])
+    .filter((e) => e.status !== 'left')
+    .map((e) => ({ id: e.id, label: `${e.name || '未命名'}${e.employeeNo ? ` · ${e.employeeNo}` : ''}` }))
+)
+if (!Array.isArray(payroll.settings.siEnrolledEmployeeIds)) payroll.settings.siEnrolledEmployeeIds = []
 
 const payDayHint = computed(() => {
   const d = payroll.settings?.payDayOfMonth
@@ -680,6 +741,8 @@ function exportSlipsCsv() {
     '绩效',
     '考勤扣款',
     '应发',
+    '社保个人扣款',
+    '公司缴纳社保(不扣)',
     '实发',
     '提成基数(店营收)',
     '提点比例',
@@ -699,6 +762,8 @@ function exportSlipsCsv() {
         r.performanceBonus,
         r.deduction,
         r.grossPay,
+        r.socialInsurance ? r.siPersonal : '',
+        r.socialInsurance ? r.siCompany : '',
         r.netPay,
         r.revenueBaseUsed ?? '',
         r.commissionRateUsed != null && Number.isFinite(Number(r.commissionRateUsed))
@@ -733,6 +798,8 @@ function exportSlipsXlsx() {
     绩效: r.performanceBonus,
     考勤扣款: r.deduction,
     应发: r.grossPay,
+    社保个人扣款: r.socialInsurance ? r.siPersonal : '',
+    '公司缴纳社保(不扣)': r.socialInsurance ? r.siCompany : '',
     实发: r.netPay,
     提成基数: r.revenueBaseUsed ?? '',
     提点比例:
@@ -944,6 +1011,12 @@ watch(yearMonth, () => {
   margin-left: 8px;
   font-size: 13px;
   color: var(--light-text-secondary, #606266);
+}
+.si-note {
+  margin: 10px 0 14px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--light-text-secondary);
 }
 .form-hint {
   font-size: 12px;
