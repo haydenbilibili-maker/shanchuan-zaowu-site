@@ -10,6 +10,9 @@
  *   ③ 三态：失败原位可重试（不许退化成模块消失）、骨架、空态；首页不残留旧推荐 WXML/WXSS；
  *   ④ 契约不动：getRecommendations 只传 { limit }；getBlessProducts 只用既有入参；
  *      点击交给页面 goToDetail 时带上 category/tags（否则服务端兴趣标签学不到推荐带来的浏览）。
+ *   ⑤ 博物视觉重构（2026-10-10，docs/首页为你推荐_博物视觉重构_2026-10-10.md）：中英标题分两行、按压态走全局
+ *      tap-press / tap-press-soft + 80ms、缺字段逐项 wx:if 降级、换一批有过渡与加载态、骨架用 ui-sk-*、几何自洽、
+ *      跳转（onCardTap + data-pos）与两个埋点调用逐字不变、纸纹不用图片。
  *
  * 用法：
  *   node miniprogram/scripts/test-home-reco.mjs
@@ -186,8 +189,8 @@ t('降级版式：swiper 按 layout 收高、无封面时不画封面、无两�
   const s = read('components/HomeReco/index.wxss')
   const js = read('components/HomeReco/index.js')
   return /class="hr-swiper hr-swiper--\{\{layout\}\}"/.test(w) && /hr-cover[^"]*" wx:if="\{\{pg\.lead\}\}"/.test(w) &&
-    /class="hr-row" wx:if="\{\{pg\.row\.length\}\}"/.test(w) && /\.hr-swiper--lead \{ height: 570rpx; \}/.test(s) &&
-    /\.hr-swiper--row \{ height: 532rpx; \}/.test(s) && /filter\(\(c\) => c && !this\._exposed\[`\$\{this\._seq\}#\$\{c\._id\}`\]\)/.test(js)
+    /class="hr-row" wx:if="\{\{pg\.row\.length\}\}"/.test(w) && /\.hr-swiper--lead \{ height: 640rpx; \}/.test(s) &&
+    /\.hr-swiper--row \{ height: 578rpx; \}/.test(s) && /filter\(\(c\) => c && !this\._exposed\[`\$\{this\._seq\}#\$\{c\._id\}`\]\)/.test(js)
 })
 t('视图字段：VIEW_KEYS 覆盖 WXML 用到的每个卡片字段（+ 保护徽标的 protectionType），且不带 tags/category 等只给埋点用的字段', () => {
   const js = read('components/HomeReco/index.js')
@@ -230,11 +233,11 @@ t('组件 WXML：swiper 左右滑（bindchange=onPageChange）+ 页码点', () =
   const w = read('components/HomeReco/index.wxml')
   return /<swiper class="hr-swiper[^"]*" current="\{\{pageIndex\}\}"[^>]*bindchange="onPageChange"/.test(w) && /class="hr-dots"/.test(w)
 })
-t('封面分档：横图满宽 / 竖图贴左（2:3 宽 380 不裁；9:16 widthFix 偏上裁；方图 420）；比例未知 = 占位，图挂了 = 满宽', () => {
+t('封面分档：横图满宽 / 竖图贴左（封面 640：2:3 宽 420 轻裁、9:16 宽 360 几乎不裁、1:2 widthFix 偏上裁；方图 420）；比例未知 = 占位，图挂了 = 满宽', () => {
   const g = logic.coverGeo
-  const p23 = g(1.5, true), p916 = g(1.78, true), sq = g(1, true), l32 = g(0.67, true)
-  return p23.tier === 'side' && p23.bw === 380 && p23.cm === 'aspectFill' &&
-    p916.tier === 'side' && p916.bw === 360 && p916.cm === 'widthFix' && p916.mt < 0 &&
+  const p23 = g(1.5, true), p916 = g(1.78, true), p12 = g(2, true), sq = g(1, true), l32 = g(0.67, true)
+  return logic.COVER_H === 640 && p23.tier === 'side' && p23.bw === 420 && p23.cm === 'aspectFill' &&
+    p916.tier === 'side' && p916.bw === 360 && p12.bw === 360 && p12.cm === 'widthFix' && p12.mt < 0 &&
     sq.tier === 'side' && sq.bw === 420 && l32.tier === 'wide' &&
     g(undefined, true).tier === '' && g(-1, true).tier === 'wide' && g(undefined, false).tier === 'wide'
 })
@@ -252,6 +255,73 @@ t('比例来源：封面 / 小卡图 bindload=onImgLoad 回写，组件缓存进
     /hr-cover--\{\{pg\.lead\.tier \|\| 'wide'\}\}/.test(w) && /onImgLoad\(e\)/.test(js) && /setStorageSync\(RATIO_KEY/.test(js) &&
     /ratios: this\._ratios/.test(js)
 })
+
+/* ⑤ 博物视觉重构（2026-10-10） */
+const cssRule = (css, sel) => {
+  const body = css.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').filter((l) => l.startsWith(sel + ' {')).pop()
+  return body || ''
+}
+const pxOf = (rule, prop) => Number((new RegExp(`(?:^|[{;\\s])${prop}: (\\d+)rpx`).exec(rule) || [])[1])
+t('标题分行：英文小标 FOR YOU 与中文「为你推荐」是两个文字节点，且标题容器纵向排列', () => {
+  const w = read('components/HomeReco/index.wxml')
+  const s = read('components/HomeReco/index.wxss')
+  const head = (/<view class="hr-title">([\s\S]*?)<\/view>/.exec(w) || [])[1] || ''
+  const texts = [...head.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1])
+  return texts.length === 2 && texts[0] === 'FOR YOU' && texts[1] === '为你推荐' &&
+    /flex-direction: column/.test(cssRule(s, '.hr-title')) && !texts.some((x) => /[\u4e00-\u9fa5]/.test(x) && /[A-Z]{2}/.test(x))
+})
+t('按压态：每个可点元素 hover-class = tap-press / tap-press-soft 且 hover-stay-time="80"；组件开 addGlobalClass、不自带按压类', () => {
+  const w = read('components/HomeReco/index.wxml')
+  const s = read('components/HomeReco/index.wxss')
+  const js = read('components/HomeReco/index.js')
+  const tags = [...w.matchAll(/<(?:view|text)\b[^>]*\bbindtap="[^"]+"[^>]*>/g)].map((m) => m[0])
+  return tags.length >= 6 && tags.every((tg) => /hover-class="tap-press(?:-soft)?"/.test(tg) && /hover-stay-time="80"/.test(tg)) &&
+    /options: \{ addGlobalClass: true \}/.test(js) && !/\.(?:hr-press|hr-tap|tap-press)\b/.test(s.replace(/\/\*[\s\S]*?\*\//g, ''))
+})
+t('缺字段降级：诗意名 / 卖点 / 学名 / 分类逐项 wx:if（不留占位），次推副行定高 + 学名兜底；缺字段的卡不出现 undefined / —', () => {
+  const w = read('components/HomeReco/index.wxml')
+  const s = read('components/HomeReco/index.wxss')
+  const lines = w.split('\n')
+  const hits = []
+  lines.forEach((l) => {
+    for (const m of l.matchAll(/>\{\{(pg\.lead|item)\.(theme|note|latin|cat)\}\}</g)) hits.push(l.includes(`wx:if="{{${m[1]}.${m[2]}`) || l.includes(`&& ${m[1]}.${m[2]}`) || new RegExp(`wx:if="\\{\\{${m[1].replace('.', '\\.')}\\.${m[2]}\\b`).test(l))
+  })
+  const bare = logic.buildView({ phase: 'ready', pool: logic.buildPool([row('a'), row('b'), row('c')], [], {}) })
+  const c = bare.pages[0].lead
+  const vals = [c.theme, c.note, c.latin, c.cat]
+  return hits.length >= 6 && hits.every(Boolean) && vals.every((v) => v === '') &&
+    /<text class="hr-card-sub[^"]*">\{\{item\.theme \|\| item\.latin\}\}<\/text>/.test(w) &&
+    pxOf(cssRule(s, '.hr-card-sub'), 'height') === 34 && !JSON.stringify(bare.pages).includes('undefined')
+})
+t('跳转与埋点不变：主推 / 次推都 bindtap=onCardTap + data-pos；home_reco_click / home_reco_expose 调用逐字；组件无 showModal', () => {
+  const w = read('components/HomeReco/index.wxml')
+  const js = read('components/HomeReco/index.js')
+  return /bindtap="onCardTap" data-pos="\{\{pg\.lead\.pos\}\}"/.test(w) && /bindtap="onCardTap"\s+data-pos="\{\{item\.pos\}\}"/.test(w) &&
+    /const card = this\._pool\[pos\]/.test(js) &&
+    /trackBehavior\('home_reco_click', 'product', card\._id, \{\s*pos,\s*mode: this\.data\.whyMode,\s*chip: \(card\.mark && card\.mark\.kind\) \|\| ''\s*\}\)/.test(js) &&
+    /trackBehavior\('home_reco_expose', 'reco', this\.data\.whyMode \|\| 'cold', \{\s*page: this\.data\.pageIndex,\s*ids: ids\.join\(','\)\s*\}\)/.test(js) &&
+    !/showModal/.test(js)
+})
+t('换一批：点击转一圈（is-turn）、取数中持续转（is-busy）且仍是翻页；换页时当前页展签淡入', () => {
+  const w = read('components/HomeReco/index.wxml')
+  const s = read('components/HomeReco/index.wxss')
+  const js = read('components/HomeReco/index.js')
+  return /refreshing \? 'is-busy' : ''/.test(w) && /swapping \? 'is-turn' : ''/.test(w) && /class="hr-swap-ico"/.test(w) &&
+    /\.hr-swap\.is-turn \.hr-swap-ico \{ animation:/.test(s) && /\.hr-swap\.is-busy \.hr-swap-ico \{ animation:[^}]*infinite/.test(s) &&
+    /this\.setData\(\{ swapping: true \}\)[\s\S]{0,160}this\._goPage\(\(this\.data\.pageIndex \+ 1\) % this\.data\.pageTotal\)/.test(js) &&
+    /class="hr-page \{\{pi === pageIndex \? 'is-on' : ''\}\}"/.test(w) && /\.hr-page\.is-on \.hr-label[^{]*\{ animation:/.test(s) &&
+    /clearTimeout\(this\._swapT\)\n\s*if \(this\._io\)/.test(js)
+})
+t('骨架与几何：骨架用 ui-sk-card / ui-sk-line；封面 = 骨架封面 = logic.COVER_H，次推骨架 = 两列 swiper 高，满页 swiper = 封面 + 20 + 两列', () => {
+  const w = read('components/HomeReco/index.wxml')
+  const s = read('components/HomeReco/index.wxss')
+  const H = logic.COVER_H
+  const lead = pxOf(cssRule(s, '.hr-swiper--lead'), 'height'), rowH = pxOf(cssRule(s, '.hr-swiper--row'), 'height')
+  return /class="ui-sk-card hr-sk-cover"/.test(w) && /class="ui-sk-card hr-sk-card"/.test(w) && /class="ui-sk-line hr-sk-why"/.test(w) &&
+    pxOf(cssRule(s, '.hr-cover'), 'height') === H && pxOf(cssRule(s, '.hr-sk-cover'), 'height') === H && lead === H &&
+    pxOf(cssRule(s, '.hr-sk-card'), 'height') === rowH && pxOf(cssRule(s, '.hr-swiper'), 'height') === H + pxOf(cssRule(s, '.hr-row'), 'margin-top') + rowH
+})
+t('纸纹 / 细框只用 CSS（组件 wxss 无 url( 图片，主包不长图）', () => !/url\(/.test(read('components/HomeReco/index.wxss')))
 
 /* ③ 三态 */
 t('三态：无内容失败 = error；成功但为空 = empty；加载中 = loading', () => (
@@ -299,7 +369,7 @@ if (failures.length) {
   failures.forEach((f) => console.error(`  ✗ ${f}`))
   process.exit(1)
 }
-console.log('✓ 首页为你推荐：理由诚实 / 展示正确 / 三态齐全 / 契约不动')
+console.log('✓ 首页为你推荐：理由诚实 / 展示正确 / 三态齐全 / 契约不动 / 博物视觉（分行·按压·降级·过渡·几何）')
 
 /* ── 自检：每条注入都必须让对应断言红 ───────────────────────────────── */
 function selftest() {
@@ -317,7 +387,7 @@ function selftest() {
     { name: '补齐从本页起点取（页内重复）', file: 'components/HomeReco/logic.js', from: "for (let k = 0; layout === 'full'", to: "for (let k = p * PAGE_SIZE; layout === 'full'", expect: '切页' },
     { name: '2 件时仍用封面 + 单卡（半边空白）', file: 'components/HomeReco/logic.js', from: "(n === 2 ? 'row' : 'lead')", to: "'lead'", expect: '切页' },
     { name: '补位件的曝光重复计数', file: 'components/HomeReco/index.js', from: 'filter((c) => c && !this._exposed[`${this._seq}#${c._id}`])', to: 'filter(Boolean)', expect: '降级版式' },
-    { name: '单封面页 swiper 不收高', file: 'components/HomeReco/index.wxss', from: '.hr-swiper--lead { height: 570rpx; }', to: '', expect: '降级版式' },
+    { name: '单封面页 swiper 不收高', file: 'components/HomeReco/index.wxss', from: '.hr-swiper--lead { height: 640rpx; }', to: '', expect: '降级版式' },
     { name: '视图字段漏了价格（卡上价格空白）', file: 'components/HomeReco/index.js', from: "'priceText', ", to: '', expect: '视图字段' },
     { name: '视图字段又带上 tags（setData 变胖）', file: 'components/HomeReco/index.js', from: "const VIEW_KEYS = ['_id', ", to: "const VIEW_KEYS = ['_id', 'tags', ", expect: '视图字段' },
     { name: '封面退回 480 档（满宽发糊）', file: 'components/HomeReco/index.js', from: 'if (hero) o.image = thumbUrl(c.rawImage, HERO_W)', to: '', expect: '封面图' },
@@ -332,6 +402,20 @@ function selftest() {
     { name: '留档键漂移', file: 'components/HomeReco/logic.js', from: "const RITUAL_PLAY_STORAGE_KEY = 'shanhai_ritual_play_v1'", to: "const RITUAL_PLAY_STORAGE_KEY = 'shanhai_ritual_play_v2'", expect: '留档键' },
     { name: '祈运件不再去重', file: 'components/HomeReco/logic.js', from: 'if (!card._id || seen[card._id] || bless.length >= BLESS_LIMIT) return', to: 'if (!card._id || bless.length >= BLESS_LIMIT) return', expect: '祈运件' },
     { name: '失败态丢了重试', file: 'components/HomeReco/index.wxml', from: 'class="hr-retry" bindtap="onRetry"', to: 'class="hr-retry"', expect: '失败原位重试' },
+    { name: '标题又并成一行', file: 'components/HomeReco/index.wxss', from: '.hr-title { display: flex; flex-direction: column; }', to: '.hr-title { display: flex; flex-direction: row; }', expect: '标题分行' },
+    { name: '中英塞进同一个文字节点', file: 'components/HomeReco/index.wxml', from: '<text class="hr-t-en">FOR YOU</text>\n      <text class="hr-t-cn">为你推荐</text>', to: '<text class="hr-t-cn">为你推荐 FOR YOU</text>', expect: '标题分行' },
+    { name: '次推卡丢了按压态', file: 'components/HomeReco/index.wxml', from: 'data-pos="{{item.pos}}" hover-class="tap-press-soft" hover-stay-time="80"', to: 'data-pos="{{item.pos}}"', expect: '按压态' },
+    { name: '按压停留改回 60ms', file: 'components/HomeReco/index.wxml', from: 'hover-class="tap-press" hover-stay-time="80">轻点重试', to: 'hover-class="tap-press" hover-stay-time="60">轻点重试', expect: '按压态' },
+    { name: '组件不再继承全局类（tap-press / ui-sk 失效）', file: 'components/HomeReco/index.js', from: 'options: { addGlobalClass: true },', to: 'options: {},', expect: '按压态' },
+    { name: '卖点不再按有无渲染', file: 'components/HomeReco/index.wxml', from: '<text class="hr-note" wx:if="{{pg.lead.note}}">', to: '<text class="hr-note">', expect: '缺字段降级' },
+    { name: '缺分类写成占位', file: 'components/HomeReco/logic.js', from: "    cat: String(it.category || '').trim(),", to: "    cat: String(it.category || '—').trim(),", expect: '缺字段降级' },
+    { name: '次推副行不再定高（两卡错行）', file: 'components/HomeReco/index.wxss', from: '.hr-card-sub { display: block; height: 34rpx;', to: '.hr-card-sub { display: block;', expect: '缺字段降级' },
+    { name: '点击埋点事件名被改', file: 'components/HomeReco/index.js', from: "trackBehavior('home_reco_click',", to: "trackBehavior('home_reco_tap',", expect: '跳转与埋点不变' },
+    { name: '次推卡丢了 data-pos（点哪件都进错详情）', file: 'components/HomeReco/index.wxml', from: ' data-pos="{{item.pos}}"', to: '', expect: '跳转与埋点不变' },
+    { name: '换一批没有转圈过渡', file: 'components/HomeReco/index.wxss', from: '.hr-swap.is-turn .hr-swap-ico { animation: hr-spin 0.48s ease-out; }', to: '', expect: '换一批' },
+    { name: '换页展签不再淡入', file: 'components/HomeReco/index.wxml', from: "class=\"hr-page {{pi === pageIndex ? 'is-on' : ''}}\"", to: 'class="hr-page"', expect: '换一批' },
+    { name: '骨架与真封面不同高（数据到达跳高）', file: 'components/HomeReco/index.wxss', from: '.hr-sk-cover { height: 640rpx; }', to: '.hr-sk-cover { height: 570rpx; }', expect: '骨架与几何' },
+    { name: '纸纹换成图片', file: 'components/HomeReco/index.wxss', append: '\n.hr-paper { background-image: url(/images/paper.png); }\n', expect: '纸纹' },
     { name: '首页残留旧样式', file: 'pages/index/index.wxss', append: '\n.rec-price { color: #C4A76C; }\n', expect: '旧样式' },
     { name: '点击丢了 tags', file: 'components/HomeReco/index.js', from: '        tags: card.tags,\n', to: '', expect: 'tags' },
     { name: '推荐云函数入参被改', file: 'components/HomeReco/index.js', from: "name: 'getRecommendations', data: { limit }", to: "name: 'getRecommendations', data: { limit, userId: 'x' }", expect: '入参只有' }

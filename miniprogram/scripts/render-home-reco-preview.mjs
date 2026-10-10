@@ -14,7 +14,7 @@
  *   … --check            只跑版式不变量（after；非 0 = 违反）
  *   … --check --selftest 证明判据会红（注入只写 .tmp 副本，真源码全程只读）
  *
- * 场景（after）：interest（按常看标签）/ wall（祈福墙信号）/ cold（冷启动）/ loading / error / empty
+ * 场景（after）：interest（按常看标签）/ wall（祈福墙信号）/ cold（冷启动）/ sparse（缺诗意名·学名·卖点·分类 + 长名称）/ loading / error / empty
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
@@ -42,7 +42,7 @@ const argOf = (n, d) => {
   return i >= 0 && argv[i + 1] ? argv[i + 1] : d
 }
 const VARIANT = argOf('--variant', 'after')
-const SCENES = ['interest', 'wall', 'cold', 'loading', 'error', 'empty']
+const SCENES = ['interest', 'wall', 'cold', 'sparse', 'loading', 'error', 'empty']
 const SCENE = argOf('--scene', 'interest')
 if (!SCENES.includes(SCENE)) {
   console.error(`✗ 未知场景 ${SCENE}（可用：${SCENES.join(' / ')}）`)
@@ -165,7 +165,7 @@ function ratioOf(fileUrl) {
 }
 // 样例 = 2026-09-27 真机截图同一组（孔雀标本 / 贝壳时钟长标题 / 场景兜底的祈运件）
 const SAMPLE = [
-  { _id: 'p1', title: '孔雀标本', themeName: '屏开锦程', themeNote: '孔雀开屏，寓意新居前程似锦', price: 4500, images: [existsSync(TALL) ? `file://${TALL}` : IMG('green-banded-peacock-swallowtail-dome.jpg')], tags: ['玻璃罩装'], category: '鸟类', reason: '相近标签', isOneOfAKind: true },
+  { _id: 'p1', title: '孔雀标本', themeName: '屏开锦程', themeNote: '孔雀开屏，寓意新居前程似锦', latinName: 'Pavo cristatus', price: 4500, images: [existsSync(TALL) ? `file://${TALL}` : IMG('green-banded-peacock-swallowtail-dome.jpg')], tags: ['玻璃罩装'], category: '鸟类', reason: '相近标签', isOneOfAKind: true },
   { _id: 'p2', title: '大蓝闪蝶贝壳时钟摆件', themeName: '壳中光阴', latinName: 'Morpho didius', price: 799, images: [IMG('blue-morpho-large-shell-clock.jpg')], tags: ['大蓝闪蝶'], category: '蝴蝶', reason: '相近标签' },
   { _id: 'p3', title: '蝎子螺', themeName: '螺旋日历', price: 88, images: [IMG('shell-photo-frame.jpg')], tags: ['客厅陈设'], category: '贝类', reason: '同品类推荐' },
   { _id: 'p4', title: '蒲公英玻璃罩', themeName: '一口气的愿', price: 99, images: [IMG('dandelion-glass-dome.jpg')], tags: ['植物'], category: '植物', reason: '同品类推荐' },
@@ -213,6 +213,7 @@ function afterData() {
   if (SCENE === 'error') return logic.buildView({ ...base, phase: 'error', pool: [], signals, errorMsg: '网络开小差了' })
   if (SCENE === 'empty') return logic.buildView({ ...base, pool: [], signals })
   let reco = SCENE === 'cold' ? SAMPLE.map((r) => ({ ...r, reason: r.category ? '同品类推荐' : '为你推荐' })) : SAMPLE
+  if (SCENE === 'sparse') reco = SAMPLE.map(({ themeName, themeNote, latinName, category, ...r }, i) => (i === 1 ? { ...r, title: '大蓝闪蝶贝壳时钟摆件（含实木底座与防尘玻璃罩）' } : r))
   if (RATIO) reco = reco.map((r, i) => (i === 0 ? { ...r, images: [`file://${ratioImage(RATIO)}`] } : r))
   let pool = logic.buildPool(reco, signals.wall ? BLESS : [], signals)
   if (POOL_N > 0) pool = pool.slice(0, POOL_N)
@@ -244,6 +245,7 @@ if (VARIANT === 'before') {
 } else {
   const view = afterData()
   view.shownUpTo = view.pageIndex + 1
+  view.swapping = false
   viewMeta = { layout: view.layout || 'full', canSwap: view.canSwap, pageTotal: view.pageTotal, page: ((view.pages || [])[view.pageIndex] || { row: [] }) }
   // 行内 style 里的 rpx（竖档图宽 / widthFix 上提）也按 750 设计宽 1:1 换 px
   const body = renderWxml(unwrapGate(readFileSync(COMP_WXML, 'utf8')), view).replace(/style="([^"]*)"/g, (s, v) => `style="${v.replace(/(-?\d*\.?\d+)rpx/g, '$1px')}"`)
@@ -325,8 +327,8 @@ window.addEventListener('load', () => {
   }
   if (q('.hr-sk-cover')) out.skLead = box(q('.hr-sk-cover'))
   if (q('.hr-sk-card')) out.skCard = box(q('.hr-sk-card'))
-  out.body = document.body.scrollHeight
-  if (out.annot) {
+  out.body = Math.max(document.body.scrollHeight, (q('.main-scroll') || document.body).scrollHeight + 60)
+  if (out.annot && ${!has('--no-annot')}) {
     // 截图标注（量测之后才插入，不影响任何读数）：展品显示框描边 + 占比读数
     const a = out.annot
     const frame = document.createElement('div')
@@ -392,8 +394,9 @@ const m = JSON.parse(mm[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replac
 /* ── 6. 判据（只对 after） ─────────────────────────────────────────── */
 const problems = []
 const COVER_H = VARIANT === 'after' ? loadCjs(LOGIC_JS).COVER_H || 480 : 480
+const CARD_H = 578
 if (VARIANT === 'after') {
-  const content = ['interest', 'wall', 'cold'].includes(SCENE)
+  const content = ['interest', 'wall', 'cold', 'sparse'].includes(SCENE)
   if (m.module && m.module.scrollW > m.module.clientW + 1) problems.push(`推荐区横向溢出（${m.module.scrollW} > ${m.module.clientW}）`)
   if (m.row && m.row.scrollW > m.row.clientW + 1) problems.push(`两列横向溢出（${m.row.scrollW} > ${m.row.clientW}）`)
   if (content) {
@@ -439,9 +442,9 @@ if (VARIANT === 'after') {
   if (SCENE === 'loading') {
     if (!m.skLead || !m.skCard) problems.push('加载态没有骨架')
     else {
-      // 真卡几何（interest 场景实测）：封面 570、两列卡 ≈ 532；骨架与之差 > 16rpx 就会跳高
+      // 真卡几何（interest 场景实测）：封面 = COVER_H、两列卡 ≈ CARD_H；骨架与之差 > 16rpx 就会跳高
       if (Math.abs(m.skLead.h - COVER_H) > 16) problems.push(`骨架封面高 ${m.skLead.h}rpx 与真卡 ${COVER_H}rpx 相差过大（数据到达时跳高）`)
-      if (Math.abs(m.skCard.h - 532) > 16) problems.push(`骨架两列卡高 ${m.skCard.h}rpx 与真卡 532rpx 相差过大（数据到达时跳高）`)
+      if (Math.abs(m.skCard.h - CARD_H) > 16) problems.push(`骨架两列卡高 ${m.skCard.h}rpx 与真卡 ${CARD_H}rpx 相差过大（数据到达时跳高）`)
     }
   }
   if (SCENE === 'error' && (!m.exists['.hr-error'] || !m.exists['.hr-retry'])) problems.push('失败态没有可见的重试入口（会退化成静默空白）')

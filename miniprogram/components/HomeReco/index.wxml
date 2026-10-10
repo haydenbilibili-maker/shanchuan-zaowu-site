@@ -1,98 +1,88 @@
 <view class="hr-body">
-  <view class="section-header-row section-header-compact hr-head">
-    <view class="title-group">
-      <text class="t-cn">为你推荐</text>
-      <text class="t-en">FOR YOU</text>
+  <view class="hr-head">
+    <view class="hr-title">
+      <text class="hr-t-en">FOR YOU</text>
+      <text class="hr-t-cn">为你推荐</text>
     </view>
-    <view
-      class="hr-swap {{refreshing ? 'is-busy' : ''}}"
-      wx:if="{{phase === 'ready' && canSwap}}"
-      aria-role="button"
-      bindtap="onSwap"
-      hover-class="hr-press"
-      hover-stay-time="80"
-    >换一批 ›</view>
+    <view class="hr-swap {{refreshing ? 'is-busy' : ''}} {{swapping ? 'is-turn' : ''}}" wx:if="{{phase === 'ready' && canSwap}}" aria-role="button" bindtap="onSwap" hover-class="tap-press" hover-stay-time="80"><view class="hr-swap-ico"></view><text>{{refreshing ? '更新中' : '换一批'}}</text></view>
   </view>
 
   <view class="hr-sk" wx:if="{{phase === 'loading'}}">
-    <view class="hr-sk-why"></view>
-    <view class="hr-sk-cover"></view>
+    <view class="ui-sk-line hr-sk-why"></view>
+    <view class="ui-sk-card hr-sk-cover"><view class="ui-sk-line hr-sk-img"></view><view class="ui-sk-line title"></view><view class="ui-sk-line wide"></view></view>
     <view class="hr-row">
-      <view class="hr-sk-card"></view>
-      <view class="hr-sk-card"></view>
+      <view class="ui-sk-card hr-sk-card"><view class="ui-sk-line hr-sk-img"></view><view class="ui-sk-line"></view><view class="ui-sk-line wide"></view></view>
+      <view class="ui-sk-card hr-sk-card"><view class="ui-sk-line hr-sk-img"></view><view class="ui-sk-line"></view><view class="ui-sk-line wide"></view></view>
     </view>
   </view>
 
   <view class="hr-error" wx:elif="{{phase === 'error'}}">
     <text class="hr-error-title">推荐没能送到</text>
     <text class="hr-error-desc">{{errorMsg || '网络开小差了'}}</text>
-    <view class="hr-retry" bindtap="onRetry" hover-class="hr-press" hover-stay-time="80">轻点重试</view>
+    <view class="hr-retry" bindtap="onRetry" hover-class="tap-press" hover-stay-time="80">轻点重试</view>
   </view>
 
-  <view class="hr-empty" wx:elif="{{phase === 'empty'}}" bindtap="onMore" hover-class="hr-press" hover-stay-time="80">
+  <view class="hr-empty" wx:elif="{{phase === 'empty'}}" bindtap="onMore" hover-class="tap-press" hover-stay-time="80">
     <text>馆里正在上新 · 先去逛逛全部藏品 →</text>
   </view>
 
   <block wx:else>
     <view class="hr-why-row">
-      <view class="hr-why-rule"></view>
+      <text class="hr-why-tag">策展手记</text>
       <text class="hr-why">{{whyText}}</text>
     </view>
 
     <swiper class="hr-swiper hr-swiper--{{layout}}" current="{{pageIndex}}" duration="360" bindchange="onPageChange">
-      <swiper-item wx:for="{{pages}}" wx:for-item="pg" wx:for-index="pi" wx:key="pi">
-        <view class="hr-cover hr-cover--{{pg.lead.tier || 'wide'}} {{pg.lead.tier ? '' : 'is-pending'}}" wx:if="{{pg.lead}}" aria-role="button" aria-label="{{pg.lead.title}}" bindtap="onCardTap" data-pos="{{pg.lead.pos}}" hover-class="hr-tap" hover-stay-time="60">
-          <view class="hr-cv-media" style="{{pg.lead.tier === 'side' ? 'width:' + pg.lead.bw + 'rpx' : ''}}">
+      <swiper-item class="hr-page {{pi === pageIndex ? 'is-on' : ''}}" wx:for="{{pages}}" wx:for-item="pg" wx:for-index="pi" wx:key="pi">
+        <view class="hr-cover hr-cover--{{pg.lead.tier || 'wide'}} {{pg.lead.tier ? '' : 'is-pending'}}" wx:if="{{pg.lead}}" aria-role="button" aria-label="{{pg.lead.title}}" bindtap="onCardTap" data-pos="{{pg.lead.pos}}" hover-class="tap-press-soft" hover-stay-time="80">
+          <view class="hr-cv-media hr-frame" style="{{pg.lead.tier === 'side' ? 'width:' + pg.lead.bw + 'rpx' : ''}}">
             <sensitive-blur-gate enabled="{{pg.lead.sensitiveBlur}}" product-id="{{pg.lead._id}}" size="card">
               <image class="hr-img hr-{{pg.lead.cm}}" wx:if="{{pi < shownUpTo + 1 && pg.lead.image}}" src="{{pg.lead.image}}" mode="{{pg.lead.cm}}" style="margin-top:{{pg.lead.mt}}rpx" data-key="{{pg.lead.rawImage}}" bindload="onImgLoad" binderror="onImgError" />
               <view class="hr-img-ph" wx:else></view>
             </sensitive-blur-gate>
             <protected-badge product="{{pg.lead}}" size="xs" corner="tl" />
           </view>
-          <view class="hr-label">
+          <view class="hr-label hr-paper">
             <view class="hr-kicker">
               <text class="hr-no">{{pg.lead.no}}</text>
-              <view class="hr-kicker-rule"></view>
+              <view class="hr-rule"></view>
+              <text class="hr-cat" wx:if="{{pg.lead.cat && pg.lead.tier !== 'side'}}">{{pg.lead.cat}}</text>
               <text class="hr-mark hr-mark--{{pg.lead.mark.kind}}" wx:if="{{pg.lead.mark}}">{{pg.lead.mark.text}}</text>
             </view>
-            <text class="hr-cv-theme" wx:if="{{pg.lead.theme && pg.lead.tier === 'side'}}">{{pg.lead.theme}}</text>
-            <text class="hr-cover-title {{pg.lead.theme && pg.lead.tier === 'side' ? 'is-sub' : ''}}">{{pg.lead.title}}</text>
+            <view class="hr-cv-name">
+              <text class="hr-cv-theme" wx:if="{{pg.lead.theme}}">{{pg.lead.theme}}</text>
+              <text class="hr-cover-title {{pg.lead.theme ? 'is-sub' : ''}}">{{pg.lead.title}}</text>
+              <text class="hr-latin" wx:if="{{pg.lead.latin && pg.lead.tier !== 'side'}}">{{pg.lead.latin}}</text>
+            </view>
+            <text class="hr-note" wx:if="{{pg.lead.note}}">{{pg.lead.note}}</text>
+            <view class="hr-spec" wx:if="{{pg.lead.tier === 'side' && (pg.lead.cat || pg.lead.latin)}}">
+              <view class="hr-spec-row" wx:if="{{pg.lead.cat}}"><text class="hr-spec-k">门类</text><text class="hr-spec-v">{{pg.lead.cat}}</text></view>
+              <view class="hr-spec-row" wx:if="{{pg.lead.latin}}"><text class="hr-spec-k">学名</text><text class="hr-spec-v hr-latin">{{pg.lead.latin}}</text></view>
+            </view>
             <view class="hr-cv-foot">
               <text class="hr-price" wx:if="{{pg.lead.priceText}}">{{pg.lead.priceText}}<text class="hr-from" wx:if="{{pg.lead.priceFrom}}">起</text></text>
               <text class="hr-soldout" wx:if="{{pg.lead.soldOut}}">已售罄</text>
-              <text class="hr-go">去看看 →</text>
+              <text class="hr-go">查看展品</text>
             </view>
-            <view class="hr-br"></view>
-            <text class="hr-theme" wx:if="{{pg.lead.theme && pg.lead.tier !== 'side'}}">{{pg.lead.theme}}</text>
-            <text class="hr-note" wx:if="{{pg.lead.note}}">{{pg.lead.note}}</text>
-            <text class="hr-latin" wx:if="{{pg.lead.latin && (pg.lead.tier === 'side' || !pg.lead.note)}}">{{pg.lead.latin}}</text>
           </view>
         </view>
 
         <view class="hr-row" wx:if="{{pg.row.length}}">
-          <view
-            class="hr-card"
-            wx:for="{{pg.row}}"
-            wx:key="_id"
-            aria-role="button"
-            aria-label="{{item.title}}"
-            bindtap="onCardTap"
-            data-pos="{{item.pos}}"
-            hover-class="hr-tap"
-            hover-stay-time="60"
-          >
-            <view class="hr-img-box">
+          <view class="hr-card" wx:for="{{pg.row}}" wx:key="_id" aria-role="button" aria-label="{{item.title}}" bindtap="onCardTap" data-pos="{{item.pos}}" hover-class="tap-press-soft" hover-stay-time="80">
+            <view class="hr-img-box hr-frame">
               <sensitive-blur-gate enabled="{{item.sensitiveBlur}}" product-id="{{item._id}}" size="card">
                 <image class="hr-img hr-{{item.cm}}" wx:if="{{pi < shownUpTo + 1 && item.image}}" src="{{item.image}}" mode="{{item.cm}}" style="margin-top:{{item.mt}}rpx" data-key="{{item.rawImage}}" bindload="onImgLoad" />
                 <view class="hr-img-ph" wx:else></view>
               </sensitive-blur-gate>
               <protected-badge product="{{item}}" size="xs" corner="bl" />
             </view>
-            <view class="hr-card-body">
+            <view class="hr-card-body hr-paper">
               <view class="hr-card-meta">
-                <text class="hr-card-sub {{item.theme ? '' : 'is-latin'}}">{{item.theme || item.latin}}</text>
+                <text class="hr-no">{{item.no}}</text>
+                <text class="hr-cat" wx:if="{{item.cat}}">{{item.cat}}</text>
                 <text class="hr-mark hr-mark--{{item.mark.kind}}" wx:if="{{item.mark}}">{{item.mark.text}}</text>
               </view>
+              <text class="hr-card-sub {{item.theme ? '' : 'is-latin'}}">{{item.theme || item.latin}}</text>
               <text class="hr-card-title">{{item.title}}</text>
               <view class="hr-card-foot">
                 <text class="hr-price hr-price--sm" wx:if="{{item.priceText}}">{{item.priceText}}<text class="hr-from" wx:if="{{item.priceFrom}}">起</text></text>
@@ -109,7 +99,7 @@
         <view class="hr-dot {{pi === pageIndex ? 'is-on' : ''}}" wx:for="{{pages}}" wx:for-index="pi" wx:key="pi"></view>
         <text class="hr-count">{{pageIndex + 1}} / {{pageTotal}}</text>
       </view>
-      <view class="hr-more" bindtap="onMore" hover-class="hr-press" hover-stay-time="80">逛全部藏品 →</view>
+      <view class="hr-more" bindtap="onMore" hover-class="tap-press" hover-stay-time="80">逛全部藏品 →</view>
     </view>
   </block>
 </view>

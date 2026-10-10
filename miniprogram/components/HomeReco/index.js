@@ -4,7 +4,7 @@ const { trackBehavior } = require('../../utils/trackBehavior')
 const { getFirstImage } = require('../../utils/util')
 const { midUrl, thumbUrl } = require('../../utils/imageUrl')
 
-const VIEW_KEYS = ['_id', 'title', 'theme', 'note', 'latin', 'rawImage', 'priceText', 'priceFrom', 'soldOut', 'sensitiveBlur', 'protectionType', 'mark', 'no', 'pos', 'tier', 'bw', 'cm', 'mt']
+const VIEW_KEYS = ['_id', 'title', 'theme', 'note', 'latin', 'rawImage', 'priceText', 'priceFrom', 'soldOut', 'sensitiveBlur', 'protectionType', 'mark', 'cat', 'no', 'pos', 'tier', 'bw', 'cm', 'mt']
 const GEO_KEYS = ['tier', 'bw', 'cm', 'mt']
 /** 封面 686rpx ≈ 3 倍屏 1070px，480 档会糊 */
 const HERO_W = 960
@@ -49,6 +49,7 @@ Component({
     shownUpTo: 1,
     canSwap: false,
     refreshing: false,
+    swapping: false,
     errorMsg: ''
   },
   observers: {
@@ -79,6 +80,7 @@ Component({
       clearTimeout(this._bootTimer)
       clearTimeout(this._ratioT)
       clearTimeout(this._pendT)
+      clearTimeout(this._swapT)
       if (this._io) this._io.disconnect()
     }
   },
@@ -244,6 +246,9 @@ Component({
 
     onSwap() {
       if (!this.data.canSwap) return
+      clearTimeout(this._swapT)
+      this.setData({ swapping: true })
+      this._swapT = setTimeout(() => this.setData({ swapping: false }), 480)
       this._goPage((this.data.pageIndex + 1) % this.data.pageTotal)
     },
 

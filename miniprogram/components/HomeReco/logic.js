@@ -12,7 +12,7 @@ const RITUAL_PLAY_STORAGE_KEY = 'shanhai_ritual_play_v1'
 const SERVER_TAG_REASON = '相近标签'
 
 /** 封面恒高、按 h/w 分 wide / side 档（文档 §7）；比例未知 tier=''，失败 -1 → wide */
-const COVER_H = 570
+const COVER_H = 640
 const SIDE_MIN_W = 360
 const SIDE_MAX_W = 420
 const CARD_W = 334
@@ -122,6 +122,7 @@ function toCard(raw, ctx, fromBless) {
     price: Number.isFinite(Number(it.price)) ? Number(it.price) : null,
     soldOut: stockSoldOut(it),
     category: String(it.category || ''),
+    cat: String(it.category || '').trim(),
     tags: Array.isArray(it.tags) ? it.tags.slice(0, 10) : [],
     protectionType: it.protectionType || 'none',
     sensitiveBlur: isSensitiveBlurProduct(it),
