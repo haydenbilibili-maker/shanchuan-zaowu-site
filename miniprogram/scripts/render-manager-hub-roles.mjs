@@ -118,7 +118,6 @@ function dataFor(role) {
   Object.values(roles.MENU_KEYS).forEach((k) => { menu[k] = roles.canSeeMenu(role, k) })
   const d = { ...sample, menu, workspaceRole: role, isSuperAdmin: role === roles.WORKSPACE_SUPER_ADMIN }
   d.hubSec = hubNav.sectionFlags(menu)
-  d.hubSheet = { open: false, items: [] }
   d.hubPinTip = ''
   d.hubQuery = ''
   d.hubFound = []

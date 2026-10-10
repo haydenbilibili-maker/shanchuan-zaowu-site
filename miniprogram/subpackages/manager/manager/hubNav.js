@@ -3,16 +3,18 @@
  *
  * - HUB_SECTIONS：七个分区（订单履约 → 系统监测，按日常频率排序）；keys = 该分区内全部磁贴 wx:if 用到的菜单键之并，
  *   分区在任一键可见时显示（index.wxml 的 `hubSec.<id>`）。
- * - HUB_GROUPS：合并磁贴点开后的二级面板。磁贴在任一子项有权限时显示；只有一个子项可见时直接进入，
- *   多个时底部面板列出可见子项。子项仍调用原有的 go* / switchTab 入口（旧页面路径、门禁不变）。
  * - HUB_ENTRIES：全部磁贴的统一清单（稳定 id）；「我的常用」按它渲染、存 id（本地 storage，按角色分键）。
- * - 与 index.wxml 的一致性（清单 ↔ 磁贴逐枚、每个分区 keys、合并磁贴条件 = 子项 keys 之并、原功能入口不丢）由
+ *   每个磁贴点一下直达一个功能（2026-10-10 起没有「点开再选」的折叠磁贴，见末条）。
+ * - 与 index.wxml 的一致性（清单 ↔ 磁贴逐枚、每个分区 keys、原功能入口不丢）由
  *   `npm run check:hub-entries` 校验。
  * - 2026-10-01 展示改版（产品负责人点名，选定方案 A）：首屏 = 待处理横条 + 我的常用；「全部功能」= 按分区的列表行
  *   （图标 + 名称 + 一句大白话说明 + 角标 + ›），分区可折叠；入口 > 20 的角色（超管）默认折叠、组头列前几个入口名，并出搜索框。
  * - 2026-10-10 产品负责人点名撤回 10-02 的整块手风琴，同日追加：「全部功能」回到 09-30 首版的按大分类扁平宫格（4 列磁贴，
  *   圆形图标 + 名称 + 可选一行短说明 sub，有下级的右上角 ›，红色数字角标在图标右上角）；分类标题行可点按收起 / 展开，
  *   默认全部展开，收起记录存本机 COLLAPSE_STORAGE_KEY（不分角色），收起时标题行显示入口数与红点合计。只改展示：权限过滤、跳转入口、角标来源与上面三份清单一致，不变。
+ * - 2026-10-10 产品负责人再追加「类似功能折叠的全部展开单独展示」：礼赠 / 礼包钱包 / 标本师 / 组织 / 工资 / 规则配置
+ *   六枚「点开再选」的折叠磁贴拆成 16 枚独立磁贴，留在原分类、各按原子入口的权限键与角标；二级选择面板随之删除。
+ *   已存进常用的旧折叠 id 经 FAV_ID_ALIASES 映射到当前角色第一个有权限的子入口。
  */
 
 const HUB_SECTIONS = [
@@ -33,55 +35,6 @@ const HUB_SECTIONS = [
   { id: 'system', title: '系统监测', short: '系统', keys: ['shipping', 'bookingRules', 'supportConfig', 'orders', 'aiIdentifyMonitor'] }
 ]
 
-const HUB_GROUPS = {
-  gift: {
-    title: '礼赠',
-    items: [
-      { id: 'giftOps', label: '礼赠履约', desc: '待填址 · 待发货 · 自提核销', keys: ['giftOps'], tap: 'goGiftOps', badge: 'giftTodoCount' },
-      { id: 'giftManage', label: '礼赠管理', desc: '待办概况 · 运营规则 · 进度提醒', keys: ['giftManage'], tap: 'goGiftManage' }
-    ]
-  },
-  perks: {
-    title: '礼包与钱包',
-    items: [
-      { id: 'welcomeGift', label: '新会员礼包', desc: '注册即送 · 积分与礼券', keys: ['welcomeGift'], tap: 'goWelcomeGift' },
-      { id: 'birthdayGift', label: '生日礼包', desc: '生日当天 · 积分与礼券', keys: ['welcomeGift'], tap: 'goBirthdayGift' },
-      { id: 'walletConfig', label: '钱包配置', desc: '充值档位 · 文案', keys: ['walletConfig'], tap: 'goWalletConfig' }
-    ]
-  },
-  artisan: {
-    title: '标本师',
-    items: [
-      { id: 'framers', label: '标本师管理', desc: '名册 · 作品 · 状态', keys: ['framers'], tap: 'switchTab', idx: 5, tabTitle: '标本师管理' },
-      { id: 'framerRecruit', label: '合作申请', desc: '入驻申请审核', keys: ['framerRecruit'], tap: 'switchTab', idx: 14, tabTitle: '标本师合作', badge: 'framerRecruitApps' },
-      { id: 'artisanCommission', label: '标本师提成', desc: '比例 · 类目 · 账目', keys: ['artisanCommission'], tap: 'goArtisanCommission' }
-    ]
-  },
-  org: {
-    title: '组织',
-    items: [
-      { id: 'staffDirectory', label: '员工', desc: '店员 · 店长 · 标本师 · 投资人 · 股东 · 超管', keys: ['staffDirectory'], tap: 'goStaffDirectory' },
-      { id: 'staffPermissions', label: '权限配置', desc: '手机号 · 角色分配', keys: ['staffPermissions'], tap: 'goStoreStaffPermissions' },
-      { id: 'shareholderConfig', label: '股东配置', desc: '门店 · 占股 · 回本前后分成', keys: ['shareholderConfig'], tap: 'goShareholderConfig' }
-    ]
-  },
-  payslip: {
-    title: '工资',
-    items: [
-      { id: 'myPayslip', label: '工资条明细', desc: '应发实发 · 经营额度销售分成', keys: ['myPayslip'], tap: 'goMyPayslipGuarded' },
-      { id: 'payslipAdmin', label: '工资维护', desc: '录入 · 修正 · 删除', keys: ['payslipAdmin'], tap: 'goPayslipAdminGuarded' }
-    ]
-  },
-  rules: {
-    title: '规则配置',
-    items: [
-      { id: 'shipping', label: '运费规则', desc: '按装裱方式 · 包邮门槛', keys: ['shipping'], tap: 'switchTab', idx: 15, tabTitle: '运费规则' },
-      { id: 'bookingRules', label: '预约规则', desc: '时段 · 闭店日', keys: ['bookingRules'], tap: 'goBookingRules' },
-      { id: 'supportConfig', label: '客服入口', desc: '电话 · 常见问题', keys: ['supportConfig'], tap: 'goSupportConfig' }
-    ]
-  }
-}
-
 const ICON = '/assets/icons/'
 const MGR_ICON = '/subpackages/manager/assets/icons/'
 
@@ -92,7 +45,8 @@ const MGR_ICON = '/subpackages/manager/assets/icons/'
 const HUB_ENTRIES = [
   { id: 'orders', label: '订单', desc: '看新订单、安排发货和售后', alias: ['发货', '售后', '退款', '物流', '快递'], icon: ICON + 'box.png', sec: 'orders', keys: ['orders'], tap: 'onOrdersMenuTap', idx: 2, tabTitle: '订单管理', badge: 'orders' },
   { id: 'workOrders', label: '工单', desc: '定制和装裱的活儿，进度一目了然', alias: ['定制', '装裱', '伴宠'], icon: ICON + 'list.png', sec: 'orders', keys: ['workOrders'], tap: 'switchTab', idx: 10, tabTitle: '工单', badge: 'customOrders' },
-  { id: 'gift', label: '礼赠', sub: '履约·管理', desc: '礼物寄送、到店自提和规则', alias: ['礼物', '送礼', '自提', '礼赠履约', '礼赠管理'], icon: ICON + 'gift.png', sec: 'orders', keys: ['giftOps', 'giftManage'], tap: 'openHubGroup', group: 'gift', badge: 'giftTodoCount' },
+  { id: 'giftOps', label: '礼赠履约', desc: '待填址、待发货和自提核销', alias: ['礼赠', '礼物', '送礼', '自提', '核销'], icon: ICON + 'gift.png', sec: 'orders', keys: ['giftOps'], tap: 'goGiftOps', badge: 'giftTodoCount' },
+  { id: 'giftManage', label: '礼赠管理', desc: '礼赠待办概况、规则和提醒', alias: ['礼赠', '礼物', '礼赠规则'], icon: ICON + 'care.png', sec: 'orders', keys: ['giftManage'], tap: 'goGiftManage' },
   { id: 'invoice', label: '发票', desc: '顾客申请的发票，开好再回复', alias: ['开票', '报销'], icon: ICON + 'refund.png', sec: 'orders', keys: ['invoice'], tap: 'goInvoiceRequests', badge: 'invoicePendingCount' },
   { id: 'approvals', label: '审批', desc: '等你点头的申请', alias: ['审核', '申请', '批准'], icon: ICON + 'done.png', sec: 'orders', keys: ['approvals'], tap: 'goApprovals', badge: 'approvalPendingCount' },
   { id: 'deposit', label: '孤品定金', desc: '卖完的孤品，顾客交的订金', alias: ['订金', '定金', '孤品'], icon: ICON + 'discount.png', sec: 'orders', keys: ['depositOps'], tap: 'goDepositOps' },
@@ -109,9 +63,11 @@ const HUB_ENTRIES = [
   { id: 'vip', label: '权益', desc: '会员能享受的好处', alias: ['权益', '会员卡', '礼券'], icon: ICON + 'coupon.png', sec: 'members', keys: ['vip'], tap: 'switchTab', idx: 6, tabTitle: '权益会员' },
   { id: 'support', label: '有信', desc: '回复顾客的留言', alias: ['留言', '客服', '回复', '山海有信'], icon: ICON + 'message.png', sec: 'members', keys: ['support'], tap: 'switchTab', idx: 11, tabTitle: '山海有信', badge: 'supportTickets' },
   { id: 'memberLevel', label: '会员调级', desc: '给会员升级或降级', alias: ['等级', '升级', '降级', '调级'], icon: ICON + 'medal_gold.png', sec: 'members', keys: ['memberLevelAdjust'], tap: 'goMemberLevelAdjust' },
-  { id: 'curators', label: '荣誉馆长', desc: '荣誉馆长名单', alias: ['馆长', '荣誉'], icon: ICON + 'atlas.png', sec: 'members', keys: ['honoraryCurators'], tap: 'goHonoraryCurators' },
+  { id: 'curators', label: '荣誉馆长', desc: '荣誉馆长名单', alias: ['馆长', '荣誉'], icon: ICON + 'tab-collection.png', sec: 'members', keys: ['honoraryCurators'], tap: 'goHonoraryCurators' },
   { id: 'points', label: '积分', desc: '发积分、换礼品', alias: ['积分', '兑换'], icon: ICON + 'star.png', sec: 'members', keys: ['points'], tap: 'goStorePoints' },
-  { id: 'perks', label: '礼包钱包', sub: '新人·生日·钱包', desc: '新会员礼、生日礼和充值', alias: ['礼包', '钱包', '充值', '生日', '新会员礼包', '生日礼包', '钱包配置'], icon: ICON + 'wallet_gold.png', sec: 'members', keys: ['welcomeGift', 'walletConfig'], tap: 'openHubGroup', group: 'perks' },
+  { id: 'welcomeGift', label: '新人礼包', desc: '新会员注册就送的积分和礼券', alias: ['礼包', '新会员礼包', '新人', '注册礼'], icon: ICON + 'cart.png', sec: 'members', keys: ['welcomeGift'], tap: 'goWelcomeGift' },
+  { id: 'birthdayGift', label: '生日礼包', desc: '会员生日当天送的积分和礼券', alias: ['礼包', '生日', '生日礼'], icon: ICON + 'booking.png', sec: 'members', keys: ['welcomeGift'], tap: 'goBirthdayGift' },
+  { id: 'walletConfig', label: '钱包配置', desc: '充值档位和充值页文案', alias: ['钱包', '充值', '储值'], icon: ICON + 'wallet_gold.png', sec: 'members', keys: ['walletConfig'], tap: 'goWalletConfig' },
   { id: 'studioDashboard', label: '仪表盘', desc: '工作室整体情况', alias: ['工作室', '总览'], icon: ICON + 'studio-dashboard.png', sec: 'studio', keys: ['studioDashboard'], tap: 'goStudioDashboard' },
   { id: 'supplier', label: '供应商', desc: '进货的合作商家', alias: ['供货', '供应商', '厂家'], icon: ICON + 'group.png', sec: 'studio', keys: ['supplierWorkbench'], tap: 'goSupplierWorkbench' },
   { id: 'purchase', label: '采购', desc: '给工作室下单进货', alias: ['进货', '采购单'], icon: ICON + 'cart.png', sec: 'studio', keys: ['purchaseOps'], tap: 'goPurchaseOps' },
@@ -120,12 +76,19 @@ const HUB_ENTRIES = [
   { id: 'studioBills', label: '工作室账单', desc: '工作室的收入和支出', alias: ['账单', '收支', '支出'], icon: ICON + 'pay.png', sec: 'studio', keys: ['studioBills'], tap: 'goStudioBillsGuarded' },
   { id: 'property', label: '物业', desc: '房租、水电和物业费', alias: ['房租', '水电', '物业费'], icon: MGR_ICON + 'location.png', sec: 'studio', keys: ['propertyCost'], tap: 'goPropertyCost' },
   { id: 'feishu', label: '飞书同步', desc: '把数据自动抄到飞书表格', alias: ['飞书', '表格', '同步'], icon: ICON + 'deliver.png', sec: 'studio', keys: ['feishuSync'], tap: 'goFeishuSyncGuarded' },
-  { id: 'artisan', label: '标本师', sub: '管理·合作·提成', desc: '标本师名单、入驻申请和提成', alias: ['标本师', '合作申请', '提成', '入驻', '标本师管理', '标本师提成'], icon: ICON + 'user.png', sec: 'studio', keys: ['framers', 'framerRecruit', 'artisanCommission'], tap: 'openHubGroup', group: 'artisan', badge: 'framerRecruitApps', badgeKey: 'framerRecruit' },
+  { id: 'framers', label: '标本师', desc: '标本师名单、作品和状态', alias: ['标本师管理', '名册', '作品'], icon: ICON + 'user.png', sec: 'studio', keys: ['framers'], tap: 'switchTab', idx: 5, tabTitle: '标本师管理' },
+  { id: 'framerRecruit', label: '合作申请', desc: '想入驻的标本师，审核申请', alias: ['入驻', '申请', '标本师', '标本师合作'], icon: ICON + 'refund.png', sec: 'studio', keys: ['framerRecruit'], tap: 'switchTab', idx: 14, tabTitle: '标本师合作', badge: 'framerRecruitApps' },
+  { id: 'artisanCommission', label: '标本师提成', desc: '标本师提成比例和账目', alias: ['提成', '分成', '标本师'], icon: ICON + 'discount.png', sec: 'studio', keys: ['artisanCommission'], tap: 'goArtisanCommission' },
   { id: 'verify', label: '核销验票', desc: '扫码核销会员券、门票和礼券', alias: ['核销', '扫码', '验票', '门票'], icon: ICON + 'qrcode.png', sec: 'org', keys: ['verify'], tap: 'goStaffTab', tab: 'verify' },
   { id: 'staffConsole', label: '店员工作台', desc: '打卡和店员每天要做的事', alias: ['店员', '打卡', '排班'], icon: ICON + 'tab-user.png', sec: 'org', keys: ['staffConsole'], tap: 'goStaffHome' },
-  { id: 'org', label: '组织', sub: '员工·权限·股东', desc: '员工、权限和股东', alias: ['员工', '权限', '股东', '权限配置', '股东配置'], icon: ICON + 'lock.png', sec: 'org', keys: ['staffDirectory', 'staffPermissions', 'shareholderConfig'], tap: 'openHubGroup', group: 'org' },
-  { id: 'payslip', label: '工资', sub: '工资条·维护', desc: '看工资条、录入工资', alias: ['工资', '工资条', '薪资', '工资维护', '工资条明细'], icon: ICON + 'calendar_gold.png', sec: 'org', keys: ['payslipAdmin', 'myPayslip'], tap: 'openHubGroup', group: 'payslip' },
-  { id: 'rules', label: '规则配置', sub: '运费·预约·客服', desc: '运费、预约和客服电话', alias: ['运费', '预约', '客服', '包邮', '运费规则', '预约规则', '客服入口'], icon: MGR_ICON + 'clock.png', sec: 'system', keys: ['shipping', 'bookingRules', 'supportConfig'], tap: 'openHubGroup', group: 'rules' },
+  { id: 'staffDirectory', label: '员工', desc: '店员、店长、标本师和股东名单', alias: ['员工名单', '店员', '组织', '通讯录'], icon: ICON + 'group.png', sec: 'org', keys: ['staffDirectory'], tap: 'goStaffDirectory' },
+  { id: 'staffPermissions', label: '权限', desc: '按手机号给员工分配角色', alias: ['权限配置', '角色', '组织'], icon: ICON + 'lock.png', sec: 'org', keys: ['staffPermissions'], tap: 'goStoreStaffPermissions' },
+  { id: 'shareholderConfig', label: '股东', desc: '门店占股和回本前后分成', alias: ['股东配置', '占股', '分成', '组织'], icon: ICON + 'coin_gold.png', sec: 'org', keys: ['shareholderConfig'], tap: 'goShareholderConfig' },
+  { id: 'myPayslip', label: '工资条', desc: '看每月应发、实发和分成', alias: ['工资', '工资条明细', '薪资'], icon: ICON + 'calendar_gold.png', sec: 'org', keys: ['myPayslip'], tap: 'goMyPayslipGuarded' },
+  { id: 'payslipAdmin', label: '工资维护', desc: '录入、修正和删除工资', alias: ['工资', '录工资', '薪资'], icon: MGR_ICON + 'edit.png', sec: 'org', keys: ['payslipAdmin'], tap: 'goPayslipAdminGuarded' },
+  { id: 'shipping', label: '运费规则', desc: '按装裱方式算运费、包邮门槛', alias: ['运费', '包邮', '快递费', '规则配置'], icon: ICON + 'deliver.png', sec: 'system', keys: ['shipping'], tap: 'switchTab', idx: 15, tabTitle: '运费规则' },
+  { id: 'bookingRules', label: '预约规则', desc: '可预约时段和闭店日', alias: ['预约', '时段', '闭店', '规则配置'], icon: MGR_ICON + 'clock.png', sec: 'system', keys: ['bookingRules'], tap: 'goBookingRules' },
+  { id: 'supportConfig', label: '客服入口', desc: '客服电话和常见问题', alias: ['客服', '电话', '常见问题', '规则配置'], icon: ICON + 'phone.png', sec: 'system', keys: ['supportConfig'], tap: 'goSupportConfig' },
   { id: 'wxNotify', label: '微信通知', sub: '订单·工单提醒', desc: '来新订单时微信提醒我', alias: ['通知', '提醒', '微信'], icon: ICON + 'service.png', sec: 'system', keys: ['orders'], tap: 'enableStaffOrderWxNotify' },
   { id: 'aiIdentify', label: 'AI 鉴定', sub: '鉴定监测', desc: '拍照识别用得怎么样', alias: ['识别', '鉴定', '拍照'], icon: ICON + 'camera.png', sec: 'system', keys: ['aiIdentifyMonitor'], tap: 'goIdentifyMonitorGuarded' }
 ]
@@ -133,15 +96,18 @@ const HUB_ENTRIES = [
 /* ── 我的常用 ── */
 const FAV_MAX = 8
 const FAV_STORAGE_KEY = 'manager_hub_favs_v1'
-/** 旧入口 / 被合并入口 → 现行稳定 id（已保存的常用在改版、合并后自动映射） */
+/**
+ * 旧入口 / 被合并入口 → 现行稳定 id（已保存的常用在改版、合并后自动映射）。
+ * 值为数组 = 2026-10-10 拆开的旧折叠磁贴：映射到当前角色**第一个有权限**的子入口（都没权限就丢掉，不留空位）。
+ */
 const FAV_ID_ALIASES = {
-  giftOps: 'gift', giftManage: 'gift',
+  gift: ['giftOps', 'giftManage'],
+  perks: ['welcomeGift', 'birthdayGift', 'walletConfig'],
+  artisan: ['framers', 'framerRecruit', 'artisanCommission'],
+  org: ['staffDirectory', 'staffPermissions', 'shareholderConfig'],
+  payslip: ['myPayslip', 'payslipAdmin'],
+  rules: ['shipping', 'bookingRules', 'supportConfig'],
   memberCurator: 'memberLevel', memberLevelAdjust: 'memberLevel', honoraryCurators: 'curators',
-  welcomeGift: 'perks', birthdayGift: 'perks', walletConfig: 'perks',
-  framers: 'artisan', framerRecruit: 'artisan', artisanCommission: 'artisan',
-  staffDirectory: 'org', staffPermissions: 'org', shareholderConfig: 'org',
-  payslipAdmin: 'payslip', myPayslip: 'payslip',
-  shipping: 'rules', bookingRules: 'rules', supportConfig: 'rules',
   shipmentOps: 'shipment', shipmentSku: 'shipment',
   inventoryOps: 'inventory', rawInventoryOps: 'inventory',
   supplierWorkbench: 'supplier', purchaseOps: 'purchase', propertyCost: 'property',
@@ -150,7 +116,7 @@ const FAV_ID_ALIASES = {
 /** 未配置时的角色默认（再按权限过滤） */
 const FAV_DEFAULTS = {
   super_admin: ['orders', 'ledger', 'analytics', 'approvals', 'support', 'products', 'verify', 'memberCrm'],
-  store_manager: ['orders', 'ledger', 'verify', 'approvals', 'workOrders', 'gift', 'products', 'points'],
+  store_manager: ['orders', 'ledger', 'verify', 'approvals', 'workOrders', 'giftOps', 'products', 'points'],
   store_staff: ['verify', 'approvals', 'staffConsole'],
   specimen_artisan: ['products']
 }
@@ -168,8 +134,9 @@ function entryVisible(entry, menu) {
 function normalizeFavs(ids, menu) {
   const out = []
   ;(Array.isArray(ids) ? ids : []).forEach((raw) => {
-    const id = FAV_ID_ALIASES[raw] || raw
-    if (out.indexOf(id) !== -1) return
+    const to = FAV_ID_ALIASES[raw] || raw
+    const id = Array.isArray(to) ? to.find((x) => entryVisible(findEntry(x), menu)) : to
+    if (!id || out.indexOf(id) !== -1) return
     if (!entryVisible(findEntry(id), menu)) return
     out.push(id)
   })
@@ -184,7 +151,6 @@ function defaultFavs(role, menu) {
 function entryBadgeNum(entry, data) {
   if (!entry || !entry.badge) return 0
   const d = data || {}
-  if (entry.badgeKey && !(d.menu && d.menu[entry.badgeKey])) return 0
   let n = badgeValue(entry.badge, d)
   if (entry.id === 'orders' && Number(d.newOrderUnreadCount) > 0) n = Number(d.newOrderUnreadCount)
   return n > 0 ? n : 0
@@ -251,7 +217,7 @@ const HUB_TODOS = [
   { id: 'workOrders', label: '工单', keys: ['workOrders'], badge: 'customOrders', tap: 'switchTab', idx: 10, tabTitle: '工单' },
   { id: 'approvals', label: '审批', keys: ['approvals'], badge: 'approvalPendingCount', tap: 'goApprovals' },
   { id: 'invoice', label: '发票', keys: ['invoice'], badge: 'invoicePendingCount', tap: 'goInvoiceRequests' },
-  { id: 'gift', label: '礼赠', keys: ['giftOps', 'giftManage'], badge: 'giftTodoCount', tap: 'openHubGroup', dataset: { group: 'gift' } },
+  { id: 'gift', label: '礼赠', keys: ['giftOps'], badge: 'giftTodoCount', tap: 'goGiftOps' },
   { id: 'recruit', label: '合作申请', keys: ['framerRecruit'], badge: 'framerRecruitApps', tap: 'switchTab', idx: 14, tabTitle: '标本师合作' }
 ]
 
@@ -342,14 +308,13 @@ function buildHubView(favIds, data) {
 
 const normText = (s) => String(s || '').toLowerCase().replace(/\s+/g, '')
 
-/** 一个入口能被哪些词搜到：名称、别名、所在分区名（全称 / 简称）、二级面板子项名 */
+/** 一个入口能被哪些词搜到：名称、别名、所在分区名（全称 / 简称） */
 function searchWords(e) {
   const sec = HUB_SECTIONS.find((s) => s.id === e.sec) || {}
-  const subs = e.group && HUB_GROUPS[e.group] ? HUB_GROUPS[e.group].items.map((it) => it.label) : []
-  return [e.label, ...(e.alias || []), sec.title, sec.short, ...subs].map(normText).filter(Boolean)
+  return [e.label, ...(e.alias || []), sec.title, sec.short].map(normText).filter(Boolean)
 }
 
-/** 搜索只在有权限的入口里找；名称命中排前，其次别名 / 子项，最后分区名 */
+/** 搜索只在有权限的入口里找；名称命中排前，其次别名，最后分区名 */
 function searchEntries(query, data) {
   const q = normText(query)
   const d = data || {}
@@ -387,36 +352,12 @@ function badgeValue(src, data) {
   return Number(v) || 0
 }
 
-function visibleItems(groupId, menu) {
-  const g = HUB_GROUPS[groupId]
-  if (!g) return []
-  const m = menu || {}
-  return g.items.filter((it) => it.keys.some((k) => m[k] === true))
-}
-
-function buildSheet(groupId, data) {
-  const g = HUB_GROUPS[groupId]
-  const d = data || {}
-  const items = visibleItems(groupId, d.menu).map((it) => {
-    const n = badgeValue(it.badge, d)
-    return { id: it.id, label: it.label, desc: it.desc, badge: n, badgeText: n > 99 ? '99+' : String(n) }
-  })
-  return { open: true, id: groupId, title: g ? g.title : '', items }
-}
-
-function findItem(groupId, itemId) {
-  const g = HUB_GROUPS[groupId]
-  if (!g) return null
-  return g.items.find((it) => it.id === itemId) || null
-}
-
-/** 子项 → 调原入口（switchTab 需要 dataset.idx / title） */
+/** 常用 / 搜索结果 / 待办 → 调原入口（switchTab 需要 dataset.idx / title） */
 function invokeItem(page, item) {
   if (!page || !item || typeof page[item.tap] !== 'function') return false
   let dataset = item.dataset || {}
   if (!item.dataset) {
-    if (item.group) dataset = { group: item.group }
-    else if (item.tab) dataset = { tab: item.tab }
+    if (item.tab) dataset = { tab: item.tab }
     else if (item.idx) dataset = { idx: String(item.idx), title: item.tabTitle || item.label }
   }
   const evt = { currentTarget: { dataset } }
@@ -426,7 +367,6 @@ function invokeItem(page, item) {
 
 module.exports = {
   HUB_SECTIONS,
-  HUB_GROUPS,
   HUB_ENTRIES,
   FAV_MAX,
   FAV_STORAGE_KEY,
@@ -452,8 +392,5 @@ module.exports = {
   buildHubView,
   searchEntries,
   sectionFlags,
-  visibleItems,
-  buildSheet,
-  findItem,
   invokeItem
 }

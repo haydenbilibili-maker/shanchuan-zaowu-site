@@ -8,7 +8,6 @@ const hubNav = require('./hubNav')
 const baseOnLoad = managerPageConfig.onLoad
 const baseApplyWorkspaceRole = managerPageConfig.applyWorkspaceRole
 const baseRefreshOpsSignals = managerPageConfig.refreshOpsSignals
-const HUB_SHEET_CLOSED = { open: false, id: '', title: '', items: [] }
 const HUB_TODO_EMPTY = { total: 0, totalText: '0', items: [], any: false }
 const HUB_FAV_EDIT_CLOSED = { open: false, ids: [], selected: [], groups: [], full: false, count: 0, max: hubNav.FAV_MAX }
 const HUB_CAT_EMPTY = { total: 0, search: false }
@@ -86,7 +85,6 @@ Page({
   async onLoad(options) {
     this.setData({
       hubSec: {},
-      hubSheet: HUB_SHEET_CLOSED,
       hubTodo: HUB_TODO_EMPTY,
       hubFav: [],
       hubFavEdit: HUB_FAV_EDIT_CLOSED,
@@ -195,34 +193,6 @@ Page({
     hubNav.invokeItem(this, hubNav.findTodo(id))
   },
 
-  /** 合并磁贴：一个可见子项直接进入，多个时打开底部面板 */
-  openHubGroup(e) {
-    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.group) || '')
-    const items = hubNav.visibleItems(id, this.data.menu)
-    if (!items.length) {
-      if (typeof this.showHubTip === 'function') this.showHubTip('无此功能权限', 'warn')
-      return
-    }
-    if (items.length === 1) {
-      hubNav.invokeItem(this, items[0])
-      return
-    }
-    wx.vibrateShort({ type: 'light' })
-    this.setData({ hubSheet: hubNav.buildSheet(id, this.data) })
-  },
-
-  closeHubGroup() {
-    if (this.data.hubSheet && this.data.hubSheet.open) this.setData({ hubSheet: HUB_SHEET_CLOSED })
-  },
-
-  onHubGroupItem(e) {
-    const itemId = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
-    const groupId = (this.data.hubSheet && this.data.hubSheet.id) || ''
-    const item = hubNav.findItem(groupId, itemId)
-    this.setData({ hubSheet: HUB_SHEET_CLOSED })
-    if (item) hubNav.invokeItem(this, item)
-  },
-
   switchTab(e) {
     wx.vibrateShort({ type: 'light' })
     const idx = parseInt(e.currentTarget.dataset.idx, 10)
@@ -249,10 +219,6 @@ Page({
     if (this.data.showCommentReplyModal) return true
     if (this.data.hubFavEdit && this.data.hubFavEdit.open) {
       this.closeFavEditor()
-      return true
-    }
-    if (this.data.hubSheet && this.data.hubSheet.open) {
-      this.closeHubGroup()
       return true
     }
     this.leaveWorkbench()

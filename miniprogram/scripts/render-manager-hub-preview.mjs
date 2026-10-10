@@ -92,8 +92,7 @@ function segments(src, overlay) {
   const cta = cut(src, ['<!-- 首屏主 CTA'], '<!-- 瀑布流布局容器')
   const menu = cut(src, ['<!-- 功能入口', '<!-- 快捷菜单'], '<!-- 数据图表')
   let sheet = ''
-  if (overlay === 'group') sheet = `${cut(src, ['<!-- 合并磁贴的二级面板'], '\n</view>\n')}\n</view>`
-  if (overlay === 'fav') sheet = cut(src, ['<!-- 常用编辑面板'], '<!-- 合并磁贴的二级面板')
+  if (overlay === 'fav') sheet = `${cut(src, ['<!-- 常用编辑面板'], '\n</view>\n\n</view>')}\n</view>`
   return `<view class="container"><view class="content-area dashboard-view">${cta}<view class="dashboard-grid">${menu}</view></view>${sheet}</view>`
 }
 
@@ -124,14 +123,12 @@ function dataFor(role, extra = {}) {
     menuSectionOps: any(secs.OPS), menuSectionStudio: any(secs.STUDIO), menuSectionMembers: any(secs.MEMBERS),
     menuSectionOrg: any(secs.ORG), menuSectionOnSite: any(secs.ON_SITE),
     hubSec: hubNav.sectionFlags(menu),
-    hubSheet: { open: false, items: [] },
     ...extra
   }
   d.hubTodo = hubNav.buildTodos(d)
   const favIds = extra.favIds || hubNav.defaultFavs(role, menu)
   d.hubFav = hubNav.buildFavView(favIds, d)
   d.hubFavEdit = extra.favEdit ? hubNav.buildFavEditor(favIds, menu) : { open: false, selected: [], groups: [] }
-  if (extra.sheet) d.hubSheet = hubNav.buildSheet(extra.sheet, d)
   return d
 }
 
@@ -144,10 +141,9 @@ if (beforeRev) {
 scenes.push(
   { name: 'after-super', wxml: afterWxml, h: 2700, data: dataFor(roles.WORKSPACE_SUPER_ADMIN) },
   { name: 'after-manager', wxml: afterWxml, h: 1500, data: dataFor(roles.WORKSPACE_STORE_MANAGER) },
-  { name: 'after-sheet', wxml: afterWxml, h: 1334, overlay: 'group', data: dataFor(roles.WORKSPACE_SUPER_ADMIN, { sheet: 'artisan' }) },
   {
     name: 'after-fav-edit', wxml: afterWxml, h: 1500, overlay: 'fav',
-    data: dataFor(roles.WORKSPACE_SUPER_ADMIN, { favEdit: true, favIds: ['orders', 'ledger', 'analytics', 'approvals', 'support', 'gift'] })
+    data: dataFor(roles.WORKSPACE_SUPER_ADMIN, { favEdit: true, favIds: ['orders', 'ledger', 'analytics', 'approvals', 'support', 'giftOps'] })
   }
 )
 
