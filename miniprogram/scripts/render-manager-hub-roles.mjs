@@ -7,9 +7,10 @@
  * 离线预览证明不了真机 rpx 取整（错题本 E26）。
  *
  * 用法：
- *   node miniprogram/scripts/render-manager-hub-roles.mjs --out-dir <目录> [--rev <git 提交>] [--only super,manager,staff]
+ *   node miniprogram/scripts/render-manager-hub-roles.mjs --out-dir <目录> [--rev <git 提交>] [--only super,manager,staff] [--collapse orders,members]
  *   --rev  从该提交读 wxml / wxss / hubNav.js（出「改前」图），默认读工作区
- * 「入口」= 常用磁贴 + 全部功能列表行（2026-10-01 方案 A 起）；scroll-view 在预览里是普通 div，横条按真机裁切。
+ *   --collapse  预览这些分类收起后的样子（产物带 -collapsed 后缀）
+ * 「入口」= 常用磁贴 + 全部功能宫格磁贴（2026-10-10 回到分类宫格）；scroll-view 在预览里是普通 div，横条按真机裁切。
  * 每个角色产出：<角色>.png（整页）、<角色>-first.png（首屏）、<角色>.measure.json（整页高 / 首屏完整可见入口数等）
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
@@ -33,6 +34,7 @@ const argOf = (n, d) => {
 const outDir = argOf('--out-dir', join(tmpdir(), 'manager-hub-roles'))
 const rev = argOf('--rev', '')
 const only = argOf('--only', '')
+const collapse = argOf('--collapse', '') // 预览「部分收起」：逗号分隔的分区 id，如 orders,members
 mkdirSync(outDir, { recursive: true })
 
 const read = (rel) => (rev
@@ -125,23 +127,27 @@ function dataFor(role) {
   const favIds = hubNav.defaultFavs(role, menu)
   d.hubFav = hubNav.buildFavView(favIds, d)
   if (typeof hubNav.buildHubView === 'function') Object.assign(d, hubNav.buildHubView(favIds, d))
+  const folded = {}
+  collapse.split(',').filter(Boolean).forEach((id) => { folded[id] = true })
+  d.hubCollapsed = typeof hubNav.normalizeCollapsed === 'function' ? hubNav.normalizeCollapsed(folded) : {}
+  d.hubAllCollapsed = typeof hubNav.allCollapsed === 'function' ? hubNav.allCollapsed(d.hubCollapsed, d.hubSec) : false
   return d
 }
 
 const MEASURE_JS = `(() => {
   const top = document.querySelector('.dashboard-view').getBoundingClientRect().top
   const vis = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 }
-  const tiles = [...document.querySelectorAll('.hub-tile, .hub-row')].filter(vis)
+  const tiles = [...document.querySelectorAll('.hub-tile, .hub-row, .hub-cell')].filter(vis)
   const firstTiles = tiles.filter((el) => el.getBoundingClientRect().bottom - top <= ${FIRST_SCREEN})
   const todo = [...document.querySelectorAll('.hub-todo-chip, .hub-todo-cell')].filter(vis)
   const firstTodo = todo.filter((el) => el.getBoundingClientRect().bottom - top <= ${FIRST_SCREEN})
   const box = (sel) => { const el = document.querySelector(sel); if (!el || !vis(el)) return null; const r = el.getBoundingClientRect(); return { top: Math.round(r.top - top), height: Math.round(r.height) } }
   const out = {
     pageHeight: Math.round(document.querySelector('.dashboard-view').getBoundingClientRect().height),
-    tiles: tiles.length, firstScreenTiles: firstTiles.length, firstScreenTileNames: firstTiles.map((el) => (el.querySelector('.hub-row-name, span') || {}).textContent || ''),
+    tiles: tiles.length, firstScreenTiles: firstTiles.length, firstScreenTileNames: firstTiles.map((el) => (el.querySelector('.hub-cell-name, .hub-row-name, span') || {}).textContent || ''),
     todoItems: todo.length, firstScreenTodo: firstTodo.length,
     favBox: box('.hub-fav'), todoBox: box('.hub-todo'), catalogBox: box('.hub-cat') || box('.hub-nav'),
-    sections: [...document.querySelectorAll('.hub-sec, .hub-grp')].filter(vis).map((el) => { const r = el.getBoundingClientRect(); return { title: (el.querySelector('.hub-sec-title, .hub-grp-title') || {}).textContent || '', w: Math.round(r.width), h: Math.round(r.height), tiles: el.querySelectorAll('.hub-tile, .hub-row').length } })
+    sections: [...document.querySelectorAll('.hub-sec, .hub-grp')].filter(vis).map((el) => { const r = el.getBoundingClientRect(); return { title: (el.querySelector('.hub-sec-title, .hub-grp-title') || {}).textContent || '', w: Math.round(r.width), h: Math.round(r.height), tiles: el.querySelectorAll('.hub-tile, .hub-row, .hub-cell').length } })
   }
   const pre = document.createElement('pre'); pre.id = '__m'; pre.textContent = JSON.stringify(out); document.body.appendChild(pre)
 })()`
@@ -190,7 +196,7 @@ const SCENES = [
 const summary = {}
 for (const s of SCENES) {
   const data = dataFor(s.role)
-  const tag = s.name
+  const tag = collapse ? `${s.name}-collapsed` : s.name
   const htmlPath = join(tmpdir(), `hub-roles-${tag}-${process.pid}.html`)
   writeFileSync(htmlPath, htmlFor(data, `<script>${MEASURE_JS}</script>`))
   const mp = mkdtempSync(join(tmpdir(), 'hub-roles-'))

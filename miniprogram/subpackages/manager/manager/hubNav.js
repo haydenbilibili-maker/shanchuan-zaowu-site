@@ -10,8 +10,9 @@
  *   `npm run check:hub-entries` 校验。
  * - 2026-10-01 展示改版（产品负责人点名，选定方案 A）：首屏 = 待处理横条 + 我的常用；「全部功能」= 按分区的列表行
  *   （图标 + 名称 + 一句大白话说明 + 角标 + ›），分区可折叠；入口 > 20 的角色（超管）默认折叠、组头列前几个入口名，并出搜索框。
- * - 2026-10-10 产品负责人点名撤回 10-02 的整块手风琴：恢复「每个分区单独一块卡片」，并且所有角色入口全部直接可见、不折叠；
- *   角标在单个入口行上（与待处理横条同源）。只改展示：权限过滤、跳转入口、角标来源与上面三份清单一致，不变。
+ * - 2026-10-10 产品负责人点名撤回 10-02 的整块手风琴，同日追加：「全部功能」回到 09-30 首版的按大分类扁平宫格（4 列磁贴，
+ *   圆形图标 + 名称 + 可选一行短说明 sub，有下级的右上角 ›，红色数字角标在图标右上角）；分类标题行可点按收起 / 展开，
+ *   默认全部展开，收起记录存本机 COLLAPSE_STORAGE_KEY（不分角色），收起时标题行显示入口数与红点合计。只改展示：权限过滤、跳转入口、角标来源与上面三份清单一致，不变。
  */
 
 const HUB_SECTIONS = [
@@ -91,7 +92,7 @@ const MGR_ICON = '/subpackages/manager/assets/icons/'
 const HUB_ENTRIES = [
   { id: 'orders', label: '订单', desc: '看新订单、安排发货和售后', alias: ['发货', '售后', '退款', '物流', '快递'], icon: ICON + 'box.png', sec: 'orders', keys: ['orders'], tap: 'onOrdersMenuTap', idx: 2, tabTitle: '订单管理', badge: 'orders' },
   { id: 'workOrders', label: '工单', desc: '定制和装裱的活儿，进度一目了然', alias: ['定制', '装裱', '伴宠'], icon: ICON + 'list.png', sec: 'orders', keys: ['workOrders'], tap: 'switchTab', idx: 10, tabTitle: '工单', badge: 'customOrders' },
-  { id: 'gift', label: '礼赠', desc: '礼物寄送、到店自提和规则', alias: ['礼物', '送礼', '自提', '礼赠履约', '礼赠管理'], icon: ICON + 'gift.png', sec: 'orders', keys: ['giftOps', 'giftManage'], tap: 'openHubGroup', group: 'gift', badge: 'giftTodoCount' },
+  { id: 'gift', label: '礼赠', sub: '履约·管理', desc: '礼物寄送、到店自提和规则', alias: ['礼物', '送礼', '自提', '礼赠履约', '礼赠管理'], icon: ICON + 'gift.png', sec: 'orders', keys: ['giftOps', 'giftManage'], tap: 'openHubGroup', group: 'gift', badge: 'giftTodoCount' },
   { id: 'invoice', label: '发票', desc: '顾客申请的发票，开好再回复', alias: ['开票', '报销'], icon: ICON + 'refund.png', sec: 'orders', keys: ['invoice'], tap: 'goInvoiceRequests', badge: 'invoicePendingCount' },
   { id: 'approvals', label: '审批', desc: '等你点头的申请', alias: ['审核', '申请', '批准'], icon: ICON + 'done.png', sec: 'orders', keys: ['approvals'], tap: 'goApprovals', badge: 'approvalPendingCount' },
   { id: 'deposit', label: '孤品定金', desc: '卖完的孤品，顾客交的订金', alias: ['订金', '定金', '孤品'], icon: ICON + 'discount.png', sec: 'orders', keys: ['depositOps'], tap: 'goDepositOps' },
@@ -110,7 +111,7 @@ const HUB_ENTRIES = [
   { id: 'memberLevel', label: '会员调级', desc: '给会员升级或降级', alias: ['等级', '升级', '降级', '调级'], icon: ICON + 'medal_gold.png', sec: 'members', keys: ['memberLevelAdjust'], tap: 'goMemberLevelAdjust' },
   { id: 'curators', label: '荣誉馆长', desc: '荣誉馆长名单', alias: ['馆长', '荣誉'], icon: ICON + 'atlas.png', sec: 'members', keys: ['honoraryCurators'], tap: 'goHonoraryCurators' },
   { id: 'points', label: '积分', desc: '发积分、换礼品', alias: ['积分', '兑换'], icon: ICON + 'star.png', sec: 'members', keys: ['points'], tap: 'goStorePoints' },
-  { id: 'perks', label: '礼包钱包', desc: '新会员礼、生日礼和充值', alias: ['礼包', '钱包', '充值', '生日', '新会员礼包', '生日礼包', '钱包配置'], icon: ICON + 'wallet_gold.png', sec: 'members', keys: ['welcomeGift', 'walletConfig'], tap: 'openHubGroup', group: 'perks' },
+  { id: 'perks', label: '礼包钱包', sub: '新人·生日·钱包', desc: '新会员礼、生日礼和充值', alias: ['礼包', '钱包', '充值', '生日', '新会员礼包', '生日礼包', '钱包配置'], icon: ICON + 'wallet_gold.png', sec: 'members', keys: ['welcomeGift', 'walletConfig'], tap: 'openHubGroup', group: 'perks' },
   { id: 'studioDashboard', label: '仪表盘', desc: '工作室整体情况', alias: ['工作室', '总览'], icon: ICON + 'studio-dashboard.png', sec: 'studio', keys: ['studioDashboard'], tap: 'goStudioDashboard' },
   { id: 'supplier', label: '供应商', desc: '进货的合作商家', alias: ['供货', '供应商', '厂家'], icon: ICON + 'group.png', sec: 'studio', keys: ['supplierWorkbench'], tap: 'goSupplierWorkbench' },
   { id: 'purchase', label: '采购', desc: '给工作室下单进货', alias: ['进货', '采购单'], icon: ICON + 'cart.png', sec: 'studio', keys: ['purchaseOps'], tap: 'goPurchaseOps' },
@@ -119,14 +120,14 @@ const HUB_ENTRIES = [
   { id: 'studioBills', label: '工作室账单', desc: '工作室的收入和支出', alias: ['账单', '收支', '支出'], icon: ICON + 'pay.png', sec: 'studio', keys: ['studioBills'], tap: 'goStudioBillsGuarded' },
   { id: 'property', label: '物业', desc: '房租、水电和物业费', alias: ['房租', '水电', '物业费'], icon: MGR_ICON + 'location.png', sec: 'studio', keys: ['propertyCost'], tap: 'goPropertyCost' },
   { id: 'feishu', label: '飞书同步', desc: '把数据自动抄到飞书表格', alias: ['飞书', '表格', '同步'], icon: ICON + 'deliver.png', sec: 'studio', keys: ['feishuSync'], tap: 'goFeishuSyncGuarded' },
-  { id: 'artisan', label: '标本师', desc: '标本师名单、入驻申请和提成', alias: ['标本师', '合作申请', '提成', '入驻', '标本师管理', '标本师提成'], icon: ICON + 'user.png', sec: 'studio', keys: ['framers', 'framerRecruit', 'artisanCommission'], tap: 'openHubGroup', group: 'artisan', badge: 'framerRecruitApps', badgeKey: 'framerRecruit' },
+  { id: 'artisan', label: '标本师', sub: '管理·合作·提成', desc: '标本师名单、入驻申请和提成', alias: ['标本师', '合作申请', '提成', '入驻', '标本师管理', '标本师提成'], icon: ICON + 'user.png', sec: 'studio', keys: ['framers', 'framerRecruit', 'artisanCommission'], tap: 'openHubGroup', group: 'artisan', badge: 'framerRecruitApps', badgeKey: 'framerRecruit' },
   { id: 'verify', label: '核销验票', desc: '扫码核销会员券、门票和礼券', alias: ['核销', '扫码', '验票', '门票'], icon: ICON + 'qrcode.png', sec: 'org', keys: ['verify'], tap: 'goStaffTab', tab: 'verify' },
   { id: 'staffConsole', label: '店员工作台', desc: '打卡和店员每天要做的事', alias: ['店员', '打卡', '排班'], icon: ICON + 'tab-user.png', sec: 'org', keys: ['staffConsole'], tap: 'goStaffHome' },
-  { id: 'org', label: '组织', desc: '员工、权限和股东', alias: ['员工', '权限', '股东', '权限配置', '股东配置'], icon: ICON + 'lock.png', sec: 'org', keys: ['staffDirectory', 'staffPermissions', 'shareholderConfig'], tap: 'openHubGroup', group: 'org' },
-  { id: 'payslip', label: '工资', desc: '看工资条、录入工资', alias: ['工资', '工资条', '薪资', '工资维护', '工资条明细'], icon: ICON + 'calendar_gold.png', sec: 'org', keys: ['payslipAdmin', 'myPayslip'], tap: 'openHubGroup', group: 'payslip' },
-  { id: 'rules', label: '规则配置', desc: '运费、预约和客服电话', alias: ['运费', '预约', '客服', '包邮', '运费规则', '预约规则', '客服入口'], icon: MGR_ICON + 'clock.png', sec: 'system', keys: ['shipping', 'bookingRules', 'supportConfig'], tap: 'openHubGroup', group: 'rules' },
-  { id: 'wxNotify', label: '微信通知', desc: '来新订单时微信提醒我', alias: ['通知', '提醒', '微信'], icon: ICON + 'service.png', sec: 'system', keys: ['orders'], tap: 'enableStaffOrderWxNotify' },
-  { id: 'aiIdentify', label: 'AI 鉴定', desc: '拍照识别用得怎么样', alias: ['识别', '鉴定', '拍照'], icon: ICON + 'camera.png', sec: 'system', keys: ['aiIdentifyMonitor'], tap: 'goIdentifyMonitorGuarded' }
+  { id: 'org', label: '组织', sub: '员工·权限·股东', desc: '员工、权限和股东', alias: ['员工', '权限', '股东', '权限配置', '股东配置'], icon: ICON + 'lock.png', sec: 'org', keys: ['staffDirectory', 'staffPermissions', 'shareholderConfig'], tap: 'openHubGroup', group: 'org' },
+  { id: 'payslip', label: '工资', sub: '工资条·维护', desc: '看工资条、录入工资', alias: ['工资', '工资条', '薪资', '工资维护', '工资条明细'], icon: ICON + 'calendar_gold.png', sec: 'org', keys: ['payslipAdmin', 'myPayslip'], tap: 'openHubGroup', group: 'payslip' },
+  { id: 'rules', label: '规则配置', sub: '运费·预约·客服', desc: '运费、预约和客服电话', alias: ['运费', '预约', '客服', '包邮', '运费规则', '预约规则', '客服入口'], icon: MGR_ICON + 'clock.png', sec: 'system', keys: ['shipping', 'bookingRules', 'supportConfig'], tap: 'openHubGroup', group: 'rules' },
+  { id: 'wxNotify', label: '微信通知', sub: '订单·工单提醒', desc: '来新订单时微信提醒我', alias: ['通知', '提醒', '微信'], icon: ICON + 'service.png', sec: 'system', keys: ['orders'], tap: 'enableStaffOrderWxNotify' },
+  { id: 'aiIdentify', label: 'AI 鉴定', sub: '鉴定监测', desc: '拍照识别用得怎么样', alias: ['识别', '鉴定', '拍照'], icon: ICON + 'camera.png', sec: 'system', keys: ['aiIdentifyMonitor'], tap: 'goIdentifyMonitorGuarded' }
 ]
 
 /* ── 我的常用 ── */
@@ -179,12 +180,18 @@ function defaultFavs(role, menu) {
   return normalizeFavs(FAV_DEFAULTS[role] || [], menu)
 }
 
-function entryBadge(entry, data) {
-  if (!entry || !entry.badge) return ''
+/** 入口角标数字（订单有新单未读时显示未读数，与磁贴角标同口径） */
+function entryBadgeNum(entry, data) {
+  if (!entry || !entry.badge) return 0
   const d = data || {}
-  if (entry.badgeKey && !(d.menu && d.menu[entry.badgeKey])) return ''
+  if (entry.badgeKey && !(d.menu && d.menu[entry.badgeKey])) return 0
   let n = badgeValue(entry.badge, d)
   if (entry.id === 'orders' && Number(d.newOrderUnreadCount) > 0) n = Number(d.newOrderUnreadCount)
+  return n > 0 ? n : 0
+}
+
+function entryBadge(entry, data) {
+  const n = entryBadgeNum(entry, data)
   if (n <= 0) return ''
   return n > 99 ? '99+' : String(n)
 }
@@ -265,9 +272,11 @@ function buildTodos(data) {
   return { total, totalText: total > 999 ? '999+' : String(total), items, any }
 }
 
-/* ── 全部功能：分区卡片（入口全部直接可见）+ 搜索 ── */
+/* ── 全部功能：按大分类的扁平宫格（分类可收起，默认全部展开）+ 搜索 ── */
 /** 可见入口超过这个数的角色（超管约 38 个）出搜索框；店长约 16 个不出 */
 const MANY_ENTRIES = 20
+/** 本机记住哪些分类被收起：{ [分区 id]: true }，不分角色；没有记录 = 全部展开 */
+const COLLAPSE_STORAGE_KEY = 'manager_hub_collapsed_v1'
 
 function visibleEntries(menu) {
   return HUB_ENTRIES.filter((e) => entryVisible(e, menu))
@@ -279,13 +288,54 @@ function buildCatalog(menu) {
   return { hubCat: { total: vis.length, search: vis.length > MANY_ENTRIES } }
 }
 
-/** 工作台入口区一次算齐：分区开关 + 待办 + 常用 + 全部功能（计数 / 搜索开关） */
+/** 收起时标题行要显示的：该分类可见入口数 + 红点合计 */
+function buildSecMeta(data) {
+  const d = data || {}
+  const vis = visibleEntries(d.menu)
+  const out = {}
+  HUB_SECTIONS.forEach((s) => {
+    const entries = vis.filter((e) => e.sec === s.id)
+    if (!entries.length) return
+    const n = entries.reduce((sum, e) => sum + entryBadgeNum(e, d), 0)
+    out[s.id] = { n: entries.length, badge: n > 0 ? (n > 99 ? '99+' : String(n)) : '' }
+  })
+  return out
+}
+
+/** 读回的收起记录 → 只留已知分区、值为 true 的项（其余一律展开） */
+function normalizeCollapsed(raw) {
+  const src = raw && typeof raw === 'object' ? raw : {}
+  const out = {}
+  HUB_SECTIONS.forEach((s) => { if (src[s.id] === true) out[s.id] = true })
+  return out
+}
+
+/** 当前角色能看到的分区是否全部收起（决定「全部展开 / 全部收起」开关的文字） */
+function allCollapsed(collapsed, secFlags) {
+  const ids = HUB_SECTIONS.filter((s) => secFlags && secFlags[s.id]).map((s) => s.id)
+  return ids.length > 0 && ids.every((id) => collapsed && collapsed[id] === true)
+}
+
+/** 一键：已全部收起 → 全部展开；否则把当前可见分区全部收起（看不到的分区保留原记录） */
+function toggleAllCollapsed(collapsed, secFlags) {
+  const out = normalizeCollapsed(collapsed)
+  const fold = !allCollapsed(out, secFlags)
+  HUB_SECTIONS.forEach((s) => {
+    if (!secFlags || !secFlags[s.id]) return
+    if (fold) out[s.id] = true
+    else delete out[s.id]
+  })
+  return out
+}
+
+/** 工作台入口区一次算齐：分区开关 + 待办 + 常用 + 全部功能（计数 / 搜索开关 / 各分类入口数与红点） */
 function buildHubView(favIds, data) {
   const d = data || {}
   return {
     hubSec: sectionFlags(d.menu),
     hubTodo: buildTodos(d),
     hubFav: buildFavView(favIds, d),
+    hubSecMeta: buildSecMeta(d),
     ...buildCatalog(d.menu)
   }
 }
@@ -393,7 +443,12 @@ module.exports = {
   buildTodos,
   findTodo,
   MANY_ENTRIES,
+  COLLAPSE_STORAGE_KEY,
   buildCatalog,
+  buildSecMeta,
+  normalizeCollapsed,
+  allCollapsed,
+  toggleAllCollapsed,
   buildHubView,
   searchEntries,
   sectionFlags,

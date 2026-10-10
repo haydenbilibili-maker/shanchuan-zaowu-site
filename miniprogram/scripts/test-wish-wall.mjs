@@ -298,8 +298,8 @@ const INJECTIONS = {
   // 磁贴名被改回全称（产品已定为短名「开关」）→ 名字漂移必须被拦下
   'tile-label-drift': {
     file: 'miniprogram/subpackages/manager/manager/index.wxml',
-    from: '<text class="hub-row-name">开关</text>',
-    to: '<text class="hub-row-name">内容开关</text>'
+    from: '<text class="hub-cell-name">开关</text>',
+    to: '<text class="hub-cell-name">内容开关</text>'
   },
   // 轨道占用退回「固定间隔」→ 同轨叠成一片（这就是业务方说的灾难现场）
   'lane-overlap': {
@@ -2371,7 +2371,7 @@ const hubWxml = readSrc('miniprogram/subpackages/manager/manager/index.wxml')
 // 磁贴名由产品定：**短名「开关」**（曾按"可发现性"改成全称「内容开关」，产品要求改回）。
 // 所以这里锁两件事：① 名字就是产品口径的「开关」，别再反复来回改；
 // ② 门禁仍是 menu.contentFlags。可发现性不靠磁贴名，靠 tab 9 的直达条（见上一节断言）。
-check('工作台有 tab 16「开关」磁贴（产品口径短名）', /data-idx="16"[\s\S]{0,400}<text(?: class="hub-row-name")?>开关<\/text>/.test(hubWxml))
+check('工作台有 tab 16「开关」磁贴（产品口径短名）', /data-idx="16"[\s\S]{0,400}<text(?: class="hub-cell-name")?>开关<\/text>/.test(hubWxml))
 check(
   'tab 16 磁贴仍受 menu.contentFlags 门禁（不能顺手把门禁删了）',
   /wx:if="\{\{menu\.contentFlags\}\}"[\s\S]{0,120}data-idx="16"/.test(hubWxml)

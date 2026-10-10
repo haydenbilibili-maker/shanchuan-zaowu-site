@@ -43,6 +43,23 @@ function persistFavs(page, ids) {
   return clean
 }
 
+/** 本机记住的分类收起状态（不分角色）；读失败 = 全部展开 */
+function readCollapsed() {
+  try {
+    return hubNav.normalizeCollapsed(wx.getStorageSync(hubNav.COLLAPSE_STORAGE_KEY))
+  } catch (e) {
+    return {}
+  }
+}
+
+function persistCollapsed(page, collapsed) {
+  const clean = hubNav.normalizeCollapsed(collapsed)
+  try {
+    wx.setStorageSync(hubNav.COLLAPSE_STORAGE_KEY, clean)
+  } catch (err) { /* 只影响下次进来是否记得，不打断当前操作 */ }
+  page.setData({ hubCollapsed: clean, hubAllCollapsed: hubNav.allCollapsed(clean, page.data.hubSec) })
+}
+
 function queryExtras(options) {
   const o = options || {}
   const parts = []
@@ -74,6 +91,9 @@ Page({
       hubFav: [],
       hubFavEdit: HUB_FAV_EDIT_CLOSED,
       hubCat: HUB_CAT_EMPTY,
+      hubSecMeta: {},
+      hubCollapsed: {},
+      hubAllCollapsed: false,
       hubQuery: '',
       hubFound: []
     })
@@ -84,13 +104,15 @@ Page({
   applyWorkspaceRole(role) {
     baseApplyWorkspaceRole.call(this, role)
     this._favIds = loadFavIds(this.data.workspaceRole, this.data.menu)
-    this.setData({ ...hubNav.buildHubView(this._favIds, this.data), hubQuery: '', hubFound: [] })
+    const view = hubNav.buildHubView(this._favIds, this.data)
+    const collapsed = readCollapsed()
+    this.setData({ ...view, hubCollapsed: collapsed, hubAllCollapsed: hubNav.allCollapsed(collapsed, view.hubSec), hubQuery: '', hubFound: [] })
   },
 
   /** 角标计数每次变化后都会走这里，顺带汇总顶部待办条 */
   refreshOpsSignals() {
     baseRefreshOpsSignals.call(this)
-    const patch = { hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data) }
+    const patch = { hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data), hubSecMeta: hubNav.buildSecMeta(this.data) }
     if (this.data.hubQuery) patch.hubFound = hubNav.searchEntries(this.data.hubQuery, this.data)
     this.setData(patch)
   },
@@ -141,7 +163,20 @@ Page({
     this.setData({ hubFavEdit: HUB_FAV_EDIT_CLOSED, ...hubNav.buildHubView(ids, this.data) })
   },
 
-  /* ── 全部功能：搜索 ── */
+  /* ── 全部功能：分类收起 / 展开 + 搜索 ── */
+  onHubCollapse(e) {
+    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.sec) || '')
+    if (!id || !this.data.hubSec[id]) return
+    const next = { ...this.data.hubCollapsed }
+    if (next[id]) delete next[id]
+    else next[id] = true
+    persistCollapsed(this, next)
+  },
+
+  onHubCollapseAll() {
+    persistCollapsed(this, hubNav.toggleAllCollapsed(this.data.hubCollapsed, this.data.hubSec))
+  },
+
   onHubSearch(e) {
     const q = String((e && e.detail && e.detail.value) || '').slice(0, 20)
     this.setData({ hubQuery: q, hubFound: hubNav.searchEntries(q, this.data) })

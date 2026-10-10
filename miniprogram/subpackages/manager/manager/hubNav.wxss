@@ -1,5 +1,5 @@
 /* 工作台功能入口（2026-09-30 全局改版；2026-10-01 展示改版·方案 A）：搜索（超管）+ 待处理横条 + 我的常用（首屏）
-   + 「全部功能」分区卡片（入口全部可见）+ 二级面板底部 sheet。只有一种标记：红色数字角标。
+   + 「全部功能」按大分类扁平宫格（可收起）+ 二级面板底部 sheet。标记只有两种：红色数字角标、有下级磁贴右上角的 ›。
    按压态一律用 app.wxss 的 tap-press；说明字不低于 secondary（#B9AD96 在深底约 8:1）。 */
 
 .grid-item.hub-nav {
@@ -243,7 +243,7 @@
   filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
 }
 
-/* ── 全部功能：每个分区单独一块卡片（像系统设置页），入口全部直接可见、不折叠 ── */
+/* ── 全部功能：按大分类的扁平宫格（09-30 首版样式）；分类标题行点按收起 / 展开，默认全部展开 ── */
 .hub-cat-head {
   display: flex;
   align-items: flex-end;
@@ -251,32 +251,163 @@
   padding: 0 4rpx;
   margin-bottom: 18rpx;
 }
+.hub-cat-side {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
 .hub-cat-count {
   font-size: 22rpx;
   color: #B9AD96;
 }
+.hub-cat-toggle {
+  margin-left: 16rpx;
+  height: 52rpx;
+  line-height: 50rpx;
+  padding: 0 22rpx;
+  border-radius: 26rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+  font-size: 22rpx;
+  color: #E0C58A;
+}
 .hub-grp {
-  margin-bottom: 16rpx;
   background: #211E19;
   border: 1rpx solid rgba(196, 167, 108, 0.14);
   border-radius: 24rpx;
-  overflow: hidden;
+  padding: 0 18rpx;
+  margin-bottom: 20rpx;
 }
 .hub-grp-head {
   display: flex;
   align-items: center;
-  height: 84rpx;
-  padding: 0 24rpx;
+  min-height: 88rpx;
+  padding: 0 6rpx 0 4rpx;
+}
+.hub-grp-head::before {
+  content: '';
+  flex-shrink: 0;
+  width: 6rpx;
+  height: 28rpx;
+  border-radius: 3rpx;
+  background: #C4A76C;
+  margin-right: 14rpx;
 }
 .hub-grp-title {
   flex-shrink: 0;
-  font-size: 26rpx;
+  font-size: 30rpx;
   font-weight: 600;
   color: #EADFC8;
+  letter-spacing: 2rpx;
 }
-.hub-list {
-  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+.hub-grp-fold {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-end;
 }
+.hub-grp-n {
+  font-size: 22rpx;
+  color: #B9AD96;
+}
+.hub-grp-fold .hub-badge {
+  margin-left: 12rpx;
+}
+/* 箭头：朝上 = 已展开（点按收起），朝下 = 已收起（点按展开） */
+.hub-grp-arrow {
+  flex-shrink: 0;
+  width: 14rpx;
+  height: 14rpx;
+  margin: 8rpx 4rpx 0 auto;
+  border-right: 3rpx solid #C4A76C;
+  border-bottom: 3rpx solid #C4A76C;
+  transform: rotate(-135deg);
+  transition: transform 0.18s ease-out;
+}
+.hub-grp-fold + .hub-grp-arrow {
+  margin-left: 18rpx;
+}
+.hub-grp-arrow.is-collapsed {
+  margin-top: -6rpx;
+  transform: rotate(45deg);
+}
+
+/* 四列：fr 分配剩余宽度，不存在「百分比 + 间距恰好 100%」的真机取整换行（错题本 E26） */
+.hub-grid--cat {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14rpx 12rpx;
+  padding-bottom: 18rpx;
+  animation: hub-cat-in 0.18s ease-out;
+}
+@keyframes hub-cat-in {
+  from { opacity: 0; transform: translateY(-8rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.hub-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  min-height: 160rpx;
+  padding: 18rpx 4rpx 12rpx;
+  background: #2A261F;
+  border: 1rpx solid rgba(196, 167, 108, 0.12);
+  border-radius: 20rpx;
+  box-sizing: border-box;
+}
+.hub-cell .hub-ico {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+}
+.hub-cell .hub-ico-img {
+  width: 46rpx;
+  height: 46rpx;
+}
+.hub-cell .hub-badge {
+  position: absolute;
+  top: -6rpx;
+  right: -20rpx;
+  border: 2rpx solid #2A261F;
+}
+.hub-cell-name {
+  display: block;
+  max-width: 100%;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  line-height: 34rpx;
+  font-weight: 500;
+  color: #F0E6D2;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hub-cell-sub {
+  display: block;
+  max-width: 100%;
+  margin-top: 4rpx;
+  font-size: 18rpx;
+  line-height: 26rpx;
+  color: #B9AD96;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 有下级（点开是底部面板）：右上角一枚 › */
+.hub-cell-go {
+  position: absolute;
+  top: 6rpx;
+  right: 10rpx;
+  font-size: 28rpx;
+  line-height: 28rpx;
+  color: #C4A76C;
+}
+
+/* 搜索结果（超管）：列表行 */
 .hub-found {
   border: 1rpx solid rgba(196, 167, 108, 0.14);
   border-radius: 24rpx;
