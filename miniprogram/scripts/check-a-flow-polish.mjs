@@ -222,8 +222,9 @@ function checks(s) {
   add('R8 头图两处都用 aspectFit + bindload 量原比例',
     (s.detailWxml.match(/class="slide-image" mode="aspectFit" bindload="onHeroImageLoad"/g) || []).length === 2)
   add('R8 头图高度跟 heroSwiperH，盒子有高度过渡',
-    /heroSwiperH/.test(openTag(s.detailWxml, /<view class="hero-wrapper/)) &&
-    /transition: height /.test(rule(s.detailWxss, '.hero-wrapper')))
+    /heroSwiperH/.test(openTag(s.detailWxml, /<view class="hero-stage/)) &&
+    /transition: height /.test(rule(s.detailWxss, '.hero-stage')) &&
+    /<view class="hero-wrapper">/.test(s.detailWxml))
   add('R8 HERO_VIEW_MIN/MAX + syncHeroHeight 存在',
     /const HERO_VIEW_MIN = 0\.5/.test(s.detailJs) && /const HERO_VIEW_MAX = 0\.92/.test(s.detailJs) &&
     /syncHeroHeight\(\)/.test(s.detailJs) && /onHeroImageLoad\(e\)/.test(s.detailJs))

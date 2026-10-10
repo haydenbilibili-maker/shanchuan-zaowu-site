@@ -286,15 +286,16 @@ button.nav-share-btn::after { display: none; border: none; }
   height: 28px;
 }
 
-/* Hero 轮播：高度由 JS 按当前图原比例写入；加载前先占大约半屏，避免先矮后跳 */
-.hero-wrapper {
+/* Hero 轮播：外层只做定位锚点；高度由 JS 写在 .hero-stage 上 */
+.hero-wrapper { position: relative; width: 100%; }
+.hero-stage {
   position: relative;
   width: 100%;
   background: var(--color-bg);
   transition: height 0.28s ease;
   overflow: hidden;
 }
-.hero-wrapper.is-pending {
+.hero-stage.is-pending {
   height: 100vw;
   min-height: 50vh;
   max-height: 92vh;
@@ -361,7 +362,7 @@ button.nav-share-btn::after { display: none; border: none; }
    宿主样式都设 margin 时谁生效不保证 —— 切片实测宿主的 margin-top 会被组件样式吃掉。
    头图底部渐隐，信息卡上叠约 48rpx；这里只留下方间距，避免把卡片再顶开。 */
 .wish-wall-slot {
-  margin: 0 0 16rpx;
+  margin: 24rpx 0;
 }
 
 /* 电商主卡片 */

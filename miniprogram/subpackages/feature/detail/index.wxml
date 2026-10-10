@@ -81,8 +81,9 @@ module.exports.saveLabel = saveLabel;
     <view class="tab-item {{activeTab === 'review' ? 'active' : ''}}" bindtap="scrollToSection" data-tab="review" hover-class="tap-press" hover-stay-time="80">评价<text wx:if="{{commentTotal > 0}}" class="tab-count">({{commentTotal}})</text></view>
   </view>
 
-  <!-- 主图轮播 / 冷启动骨架。高度由当前图原比例决定（heroSwiperH），顶栏在图上方，不压画面。 -->
-  <view class="hero-wrapper {{heroSwiperH ? '' : 'is-pending'}}" style="margin-top: {{isSinglePage ? 0 : statusBarHeight + navBarHeight}}px;{{heroSwiperH ? 'height:' + heroSwiperH + 'px;' : ''}}">
+  <!-- 主图轮播 / 冷启动骨架。外层类名保持 hero-wrapper（视频旁路守卫锚点）；高度写在内层。 -->
+  <view class="hero-wrapper">
+  <view class="hero-stage {{heroSwiperH ? '' : 'is-pending'}}" style="margin-top: {{isSinglePage ? 0 : statusBarHeight + navBarHeight}}px;{{heroSwiperH ? 'height:' + heroSwiperH + 'px;' : ''}}">
     <block wx:if="{{detailSkeleton}}">
       <view class="detail-skel-hero skeleton" aria-hidden="true"></view>
     </block>
@@ -118,6 +119,7 @@ module.exports.saveLabel = saveLabel;
     <view class="img-counter" wx:if="{{imageTotal > 1 && !sensitiveVeiled}}">{{imageIndex + 1}}/{{imageTotal}}</view>
     <view class="hero-overlay"></view>
     </block>
+  </view>
   </view>
 
   <!-- 核心内容区 -->
