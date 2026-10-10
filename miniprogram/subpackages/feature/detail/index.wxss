@@ -296,9 +296,9 @@ button.nav-share-btn::after { display: none; border: none; }
   overflow: hidden;
 }
 .hero-stage.is-pending {
-  height: 100vw;
-  min-height: 50vh;
-  max-height: 92vh;
+  height: 46vh;
+  min-height: 42vh;
+  max-height: 50vh;
 }
 .hero-wrapper .sb-wrap {
   position: absolute;

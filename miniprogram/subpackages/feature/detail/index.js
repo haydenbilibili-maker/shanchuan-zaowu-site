@@ -88,9 +88,10 @@ const PROTECTION_LABELS = {
 const SPEC_RATIO_MIN = 0.5;
 const SPEC_RATIO_MAX = 1.25;
 
-/** 头图盒子相对屏幕高度：约半屏到接近一屏。区间内按原图比例铺满宽度；超出用留白（aspectFit），不裁主体。导航占高从上限里扣除，避免头图连同顶栏一起顶满屏。 */
-const HERO_VIEW_MIN = 0.5;
-const HERO_VIEW_MAX = 0.92;
+/** 头图大约占屏幕上半，夹在 42%–50% 屏高。多图共用区间中部这一截，切换时页面不再被撑高撑矮。
+ *  横图、方图放得下就按宽度铺满，矮于窗口就上下留深色；竖图在这扇窗口里居中，只裁上下边缘，主体留在中间。 */
+const HERO_VIEW_MIN = 0.42;
+const HERO_VIEW_MAX = 0.50;
 
 /** 售罄底栏 CTA 态本地缓存：避免异步拉到 deposit/wishlist 前先闪「未付」默认态 */
 const DETAIL_CTA_CACHE_PREFIX = 'detail_cta_v1_';
@@ -453,6 +454,7 @@ Page(withAppModal({
     activeDetailSlide: 0,
     specSwiperH: 0,
     heroSwiperH: 0,
+    heroFit: 'aspectFit',
     descriptionParagraphs: [],
     detailTagStyle: DETAIL_TAG_STYLE,
     detailHtmlContainerStyle: DETAIL_HTML_CONTAINER_STYLE,
@@ -1817,7 +1819,7 @@ Page(withAppModal({
     if (src === this.heroSlideSrc()) this.syncHeroHeight();
   },
 
-  /** 头图高度跟当前这张的原比例走，夹在半屏到接近一屏；切换时只改高度，CSS 做过渡 */
+  /** 头图高度固定在半屏附近，不跟每张图的比例把页面撑高。竖图超出窗口就居中裁上下边。 */
   syncHeroHeight() {
     const src = this.heroSlideSrc();
     const ratio = src && this._heroRatio && this._heroRatio[src];
@@ -1825,11 +1827,12 @@ Page(withAppModal({
     const win = getWindowInfo();
     const w = win.windowWidth || 375;
     const screenH = win.windowHeight || 667;
-    const navH = this.data.isSinglePage ? 0 : ((Number(this.data.statusBarHeight) || 0) + (Number(this.data.navBarHeight) || 0));
-    const minH = Math.round(screenH * HERO_VIEW_MIN);
-    const maxH = Math.max(minH, Math.round(screenH * HERO_VIEW_MAX - navH));
-    const box = Math.round(Math.min(maxH, Math.max(minH, w * ratio)));
-    if (box !== this.data.heroSwiperH) this.setData({ heroSwiperH: box });
+    const box = Math.round(screenH * (HERO_VIEW_MIN + HERO_VIEW_MAX) / 2);
+    const natural = Math.round(w * ratio);
+    const heroFit = natural > box ? 'aspectFill' : 'aspectFit';
+    if (box !== this.data.heroSwiperH || heroFit !== this.data.heroFit) {
+      this.setData({ heroSwiperH: box, heroFit });
+    }
   },
 
   selectDimension(e) {

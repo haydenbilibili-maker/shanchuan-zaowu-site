@@ -99,14 +99,14 @@ module.exports.saveLabel = saveLabel;
       <swiper wx:if="{{!heroSlides.length}}" class="hero-swiper" indicator-dots="{{imageTotal > 1}}" indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#C4A76C" circular="true" bindchange="onSwiperChange">
         <block wx:for="{{product.images}}" wx:key="*this">
           <swiper-item>
-            <image src="{{imgView[item] || item}}" class="slide-image" mode="aspectFit" bindload="onHeroImageLoad" data-src="{{item}}" bindtap="previewImage" data-current="{{item}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
+            <image src="{{imgView[item] || item}}" class="slide-image" mode="{{heroFit}}" bindload="onHeroImageLoad" data-src="{{item}}" bindtap="previewImage" data-current="{{item}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
           </swiper-item>
         </block>
       </swiper>
       <!-- 视频/实况旁路：仅当商品有 media 时渲染；静音、不自动播放、不自动全屏，切走/离页即暂停 -->
       <swiper wx:else class="hero-swiper" indicator-dots="{{imageTotal > 1}}" indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#C4A76C" circular="true" bindchange="onHeroMediaChange">
         <swiper-item wx:for="{{heroSlides}}" wx:key="key">
-          <image wx:if="{{item.kind==='image'}}" src="{{imgView[item.src] || item.src}}" class="slide-image" mode="aspectFit" bindload="onHeroImageLoad" data-src="{{item.src}}" bindtap="previewImage" data-current="{{item.src}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
+          <image wx:if="{{item.kind==='image'}}" src="{{imgView[item.src] || item.src}}" class="slide-image" mode="{{heroFit}}" bindload="onHeroImageLoad" data-src="{{item.src}}" bindtap="previewImage" data-current="{{item.src}}" lazy-load="{{index > 0}}" binderror="onImageDegrade"></image>
           <video wx:else id="{{item.vid}}" class="slide-image hero-video" src="{{item.url}}" poster="{{item.poster}}" muted="{{true}}" autoplay="{{false}}" loop="{{item.kind==='live'}}" controls="{{item.kind!=='live'}}" show-center-play-btn="{{item.kind!=='live'}}" show-mute-btn="{{true}}" object-fit="contain" bindtap="onHeroLiveTap" data-vid="{{item.vid}}" data-kind="{{item.kind}}" bindplay="onHeroVideoPlay" bindpause="onHeroVideoPause" bindended="onHeroVideoPause"></video>
           <view wx:if="{{item.kind==='live'}}" class="hero-live-badge">LIVE{{heroPlaying===item.vid?'':' · 轻点播放'}}</view>
         </swiper-item>
