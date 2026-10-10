@@ -5,7 +5,8 @@
  * 真跑云函数真源（内存 mock wx-server-sdk，不联网、不写盘）：
  *   A. identifySpecimen 旁路日志：失败 / 成功 / 同物种复用三态落日志；日志写入抛错或挂起时出参逐字不变、
  *      按上限返回；非鉴定动作不写日志；原函数抛错时照样记失败并原样抛出；出参字段集不被加料；
- *      模型名 / 非鉴定动作清单与 index.js 一致
+ *      非鉴定动作清单与 index.js 一致；模型名不写死、默认清单有备用且不含已下线模型、
+ *      首选模型「Model not exist」时自动切备用（日志记实际模型）、全部不可用时失败并记原因
  *   B. aiIdentifyMonitor：未登录 / 普通用户 / 店长 / 仅持运维口令 一律被拒且零读取日志集合；
  *      超管放行；list / detail 先写审计再读，审计失败即拒且零读取
  *   C. 规则与登记：规则 read/write 全 false、敏感清单 serverOnly、COLLECTIONS、schema、云函数登记；
@@ -39,6 +40,7 @@ const LOGS = 'ai_identify_logs'
 const PATHS = {
   identifyIndex: join(ID_DIR, 'index.js'),
   identifyLog: join(ID_DIR, 'identifyLog.js'),
+  aiModels: join(ID_DIR, 'aiModels.js'),
   monitorIndex: join(MON_DIR, 'index.js'),
   rules: join(ROOT, 'cloudbase/rules/ai_identify_logs.json'),
   sensitive: join(ROOT, 'cloudbase/sensitive-collections.json'),
@@ -153,16 +155,51 @@ const PROFILE_STUB = {
 }
 const CS_STUB = { checkImageBuffer: async () => ({ ok: true }), checkFileImage: async () => ({ ok: true }) }
 
-function loadIdentify(src, cloud) {
-  const logMod = compile(PATHS.identifyLog, src.identifyLog, () => undefined)
+function loadIdentify(src, cloud, httpsStub) {
+  const modelsMod = compile(PATHS.aiModels, src.aiModels, () => undefined)
+  const logMod = compile(PATHS.identifyLog, src.identifyLog, (id) => (id === './aiModels' ? modelsMod : undefined))
   return compile(PATHS.identifyIndex, src.identifyIndex, (id) => {
     if (id === 'wx-server-sdk') return cloud
     if (id === './contentSecurity') return CS_STUB
     if (id === './speciesProfile') return PROFILE_STUB
     if (id === './identifyLog') return logMod
+    if (id === './aiModels') return modelsMod
+    if (id === 'https' && httpsStub) return httpsStub
     return undefined
   })
 }
+
+/** 假 DashScope：answer(body) → { status, json }；记录每次请求的 model 与图片传法 */
+function makeHttpsStub(answer) {
+  const seen = []
+  const stub = {
+    request(opts, cb) {
+      let data = ''
+      const handlers = {}
+      return {
+        on(ev, f) { handlers[ev] = f; return this },
+        write(c) { data += c },
+        end() {
+          const body = JSON.parse(data || '{}')
+          const img = (((body.input || {}).messages || [])[0] || {}).content
+          const image = Array.isArray(img) ? (img.find((x) => x && x.image) || {}).image || '' : ''
+          seen.push({ path: opts.path, model: body.model, via: /^data:/.test(image) ? 'base64' : image ? 'url' : 'text' })
+          const { status, json } = answer(body, opts.path)
+          const resHandlers = {}
+          const res = { statusCode: status, on(ev, f) { resHandlers[ev] = f; return res } }
+          setImmediate(() => {
+            cb(res)
+            setImmediate(() => { resHandlers.data && resHandlers.data(JSON.stringify(json)); resHandlers.end && resHandlers.end() })
+          })
+        }
+      }
+    }
+  }
+  return { stub, seen }
+}
+
+const VL_OK_TEXT = JSON.stringify({ species_name_zh: '大蓝闪蝶', species_name_latin: 'Morpho menelaus', taxonomy: { order: '鳞翅目' }, confidence: 0.95, brief_description: '蓝', is_specimen: true, alternatives: [] })
+const SCI_OK_TEXT = JSON.stringify({ content: '科普正文', fun_fact: '冷知识' })
 
 function withTimeout(p, ms) {
   let t
@@ -273,14 +310,60 @@ async function checkIdentify(src, t) {
     t.ok('A7 抛错也记失败', l.status === 'failed' && l.error_msg === 'ctx boom', JSON.stringify(l))
   }
 
-  // A8 静态一致：模型名、非鉴定动作清单
+  // A8 静态：模型名不写死、默认清单有备用且不含已下线模型；非鉴定动作清单
+  // 起因：2026-10-10 百炼下线 qwen-vl-plus / qwen-turbo，代码写死模型名 → 线上全部「Model not exist.」
   {
-    const logMod = compile(PATHS.identifyLog, src.identifyLog, () => undefined)
+    const modelsMod = compile(PATHS.aiModels, src.aiModels, () => undefined)
+    const logMod = compile(PATHS.identifyLog, src.identifyLog, (id) => (id === './aiModels' ? modelsMod : undefined))
     const idx = String(src.identifyIndex)
-    t.ok('A8 视觉模型名与调用处一致', new RegExp(`model: '${logMod.VISION_MODEL}'`).test(idx), logMod.VISION_MODEL)
-    t.ok('A8 文本模型名与调用处一致', new RegExp(`model: '${logMod.TEXT_MODEL}'`).test(idx), logMod.TEXT_MODEL)
+    const literal = idx.match(/model:\s*['"`][^'"`]+['"`]/)
+    t.ok('A8 index.js 不写死模型名（走 aiModels 清单）', !literal, literal && literal[0])
+    const RETIRED = ['qwen-vl-plus', 'qwen-vl-max', 'qwen-turbo', 'qwen3-vl-flash', 'qvq-plus', 'qvq-max']
+    for (const [label, list] of [['视觉', modelsMod.DEFAULT_VISION_MODELS], ['文本', modelsMod.DEFAULT_TEXT_MODELS]]) {
+      const arr = Array.isArray(list) ? list : []
+      t.ok(`A8 ${label}默认清单至少 2 个（互为备用）`, new Set(arr).size >= 2, JSON.stringify(arr))
+      const dead = arr.filter((m) => RETIRED.includes(m))
+      t.ok(`A8 ${label}默认清单不含已下线模型`, dead.length === 0, dead.join(','))
+    }
+    const chain = modelsMod.modelChain(' custom-a, ,qwen3.7-plus ', ['qwen3.6-flash', 'qwen3.7-plus'])
+    t.ok('A8 环境变量排前、默认清单仍作备用且去重', JSON.stringify(chain) === JSON.stringify(['custom-a', 'qwen3.7-plus', 'qwen3.6-flash']), JSON.stringify(chain))
+    t.ok('A8 Model not exist 判为模型不可用', modelsMod.isModelUnavailable(Object.assign(new Error('Model not exist.'), { statusCode: 404, code: 'InvalidParameter' })) && !modelsMod.isModelUnavailable(Object.assign(new Error('Invalid API-key provided.'), { statusCode: 401 })))
     const branchActions = [...idx.matchAll(/if \(action === '([a-z_]+)'\)/g)].map((x) => x[1]).sort().join(',')
     t.ok('A8 非鉴定动作清单 = index.js 分支', branchActions === [...logMod.NON_IDENTIFY_ACTIONS].sort().join(','), `index.js=${branchActions}`)
+  }
+
+  // A9 行为：首选模型下线 → 自动切到备用，鉴定成功，日志记实际模型；全部下线 → 失败并记原因
+  {
+    const modelsMod = compile(PATHS.aiModels, src.aiModels, () => undefined)
+    const [v1, v2] = modelsMod.DEFAULT_VISION_MODELS || []
+    const [t1, t2] = modelsMod.DEFAULT_TEXT_MODELS || []
+    const gone = { status: 404, json: { code: 'InvalidParameter', message: 'Model not exist.' } }
+    const { stub, seen } = makeHttpsStub((body, path) => {
+      if (body.model === v1 || body.model === t1) return gone
+      if (/multimodal/.test(path)) return { status: 200, json: { output: { choices: [{ message: { content: [{ text: VL_OK_TEXT }] } }] } } }
+      return { status: 200, json: { output: { choices: [{ message: { content: SCI_OK_TEXT } }] } } }
+    })
+    const { db, calls } = makeDb()
+    const fn = loadIdentify(src, makeCloud(db), stub)
+    const res = await withTimeout(fn.main({ image_file_id: 'cloud://env.b/identify/a.jpg', entry_source: 'store_qr' }), 1500)
+    t.ok('A9 首选下线自动切备用并成功', res && res.success === true && res.data && res.data.species_info && res.data.species_info.species_name_zh === '大蓝闪蝶' && res.data.ai_content && res.data.ai_content.content === '科普正文', JSON.stringify(res && (res.msg || res.success)))
+    t.ok('A9 出参字段集不变', res && res.data && Object.keys(res.data).sort().join(',') === SUCCESS_KEYS, res && res.data && Object.keys(res.data).join(','))
+    const vlSeen = seen.filter((s) => /multimodal/.test(s.path))
+    t.ok('A9 模型不可用时不再用 base64 重试同一模型', vlSeen.filter((s) => s.model === v1).length === 1, JSON.stringify(vlSeen))
+    const l = logsOf(calls)[0] || {}
+    t.ok('A9 日志记实际成功的模型', l.model === v2 && l.text_model === t2, `model=${l.model} text_model=${l.text_model}`)
+
+    const allGone = makeHttpsStub(() => gone)
+    const { db: db2, calls: calls2 } = makeDb()
+    const fn2 = loadIdentify(src, makeCloud(db2), allGone.stub)
+    const origError = console.error
+    console.error = () => {}
+    const res2 = await withTimeout(fn2.main({ image_file_id: 'cloud://env.b/identify/a.jpg' }), 1500).finally(() => { console.error = origError })
+    t.ok('A9 全部下线 → 失败并带原因', res2 && res2.success === false && res2.msg === 'Model not exist.', JSON.stringify(res2))
+    const tried = [...new Set(allGone.seen.map((s) => s.model))]
+    t.ok('A9 全部下线前每个视觉模型都试过', (modelsMod.DEFAULT_VISION_MODELS || []).every((m) => tried.includes(m)), tried.join(','))
+    const l2 = logsOf(calls2)[0] || {}
+    t.ok('A9 全部下线日志记失败', l2.status === 'failed' && l2.error_msg === 'Model not exist.', JSON.stringify({ status: l2.status, error_msg: l2.error_msg }))
   }
 }
 
@@ -587,12 +670,17 @@ async function runAll(src) {
 }
 
 const INJECTIONS = [
-  ['旁路日志不再兜错（直接写库）', 'identifyIndex', (s) => s.replace('await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now() })', "await db.collection('ai_identify_logs').add({ data: { openid } })")],
+  ['旁路日志不再兜错（直接写库）', 'identifyIndex', (s) => s.replace('await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now(), trace })', "await db.collection('ai_identify_logs').add({ data: { openid } })")],
   ['写日志去掉超时上限', 'identifyLog', (s) => s.replace('await Promise.race([write, timeout])', 'await write')],
-  ['旁路往出参里加料', 'identifyIndex', (s) => s.replace('  await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now() })\n  return result', '  await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now() })\n  if (result && result.data) result.data.logged = true\n  return result')],
+  ['旁路往出参里加料', 'identifyIndex', (s) => s.replace('  await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now(), trace })\n  return result', '  await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now(), trace })\n  if (result && result.data) result.data.logged = true\n  return result')],
   ['非鉴定动作也写日志', 'identifyIndex', (s) => s.replace('  if (!isIdentifyCall(event)) return identifyMain(event, context)\n', '')],
-  ['原函数抛错被吞成成功', 'identifyIndex', (s) => s.replace('    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err })\n    throw err', '    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err })\n    return { success: false, msg: err.message }')],
-  ['日志模型名与调用处漂移', 'identifyLog', (s) => s.replace("const VISION_MODEL = 'qwen-vl-plus'", "const VISION_MODEL = 'qwen-vl-max'")],
+  ['原函数抛错被吞成成功', 'identifyIndex', (s) => s.replace('    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err, trace })\n    throw err', '    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err, trace })\n    return { success: false, msg: err.message }')],
+  ['视觉模型名写死回代码', 'identifyIndex', (s) => s.replace('  const body = {\n    model,\n    input: {\n      messages: [\n        {\n          role: \'user\',', '  const body = {\n    model: \'qwen3.6-flash\',\n    input: {\n      messages: [\n        {\n          role: \'user\',')],
+  ['视觉默认清单只剩一个（无备用）', 'aiModels', (s) => s.replace("const DEFAULT_VISION_MODELS = ['qwen3.6-flash', 'qwen3.7-plus']", "const DEFAULT_VISION_MODELS = ['qwen3.6-flash']")],
+  ['文本默认清单退回已下线的 qwen-turbo', 'aiModels', (s) => s.replace("const DEFAULT_TEXT_MODELS = ['qwen3.5-flash', 'qwen-plus']", "const DEFAULT_TEXT_MODELS = ['qwen-turbo', 'qwen-plus']")],
+  ['模型不可用时不换下一个', 'identifyIndex', (s) => s.replace('if (isModelUnavailable(e1)) continue', 'if (isModelUnavailable(e1)) throw e1')],
+  ['文本模型失败不换下一个', 'identifyIndex', (s) => s.replace("      console.warn(`文本模型[${model}] 调用失败`, e.message)\n", "      console.warn(`文本模型[${model}] 调用失败`, e.message)\n      throw e\n")],
+  ['日志不记实际模型', 'identifyLog', (s) => s.replace('trace.visionModel || ', '')],
   ['监测去掉超管门禁（店长可读）', 'monitorIndex', (s) => s.replace('assertStaff(db, openid, { requireSuperAdmin: true })', 'assertStaff(db, openid, {})')],
   ['监测接受运维口令免登录', 'monitorIndex', (s) => s.replace("  if (!openid) return fail('UNAUTHORIZED', '请先登录')\n", '').replace('assertStaff(db, openid, { requireSuperAdmin: true })', 'assertStaff(db, openid, { requireSuperAdmin: true, adminOpsKey: event.adminOpsKey })')],
   ['审计不等结果就读数据', 'monitorIndex', (s) => s.replace("await audit(actor, 'view_identify_logs'", "audit(actor, 'view_identify_logs'")],

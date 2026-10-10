@@ -8,9 +8,7 @@
 const LOG_COLLECTION = 'ai_identify_logs'
 const LOG_WRITE_TIMEOUT_MS = 1500
 
-/** 与 index.js 里 callQwenVL / callQwenText 的 model 一致（守卫比对，改模型须同步） */
-const VISION_MODEL = 'qwen-vl-plus'
-const TEXT_MODEL = 'qwen-turbo'
+const { visionModels, textModels } = require('./aiModels')
 
 /** index.js 里走独立分支的 action；不在此列的调用都会落到鉴定分支（与原函数判定同口径） */
 const NON_IDENTIFY_ACTIONS = [
@@ -62,6 +60,7 @@ function buildIdentifyLog(event, result, meta) {
   if (meta.error) errorMsg = (meta.error && meta.error.message) || String(meta.error)
   else if (!success) errorMsg = res.msg || '识别失败'
   const created = meta.finishedAt
+  const trace = meta.trace || {}
   return {
     openid: clip(meta.openid, 64),
     image_file_id: clip(ev.image_file_id, 500),
@@ -78,8 +77,9 @@ function buildIdentifyLog(event, result, meta) {
     species_info: data ? data.species_info || null : null,
     ai_content: data ? data.ai_content || null : null,
     related_products: pickProducts(data && data.related_products),
-    model: mock ? 'mock' : VISION_MODEL,
-    text_model: mock ? 'mock' : TEXT_MODEL,
+    // 实际成功的模型；没走到 / 全部失败时记首选，便于从日志看出卡在哪个模型
+    model: mock ? 'mock' : clip(trace.visionModel || visionModels()[0], 60),
+    text_model: mock ? 'mock' : clip(trace.textModel || textModels()[0], 60),
     duration_ms: Math.max(0, created - meta.startedAt),
     entry_source: clip(ev.entry_source, 40),
     category_hint: clip(ev.category_hint, 20),
@@ -110,8 +110,6 @@ async function writeIdentifyLog(db, event, result, meta) {
 module.exports = {
   LOG_COLLECTION,
   LOG_WRITE_TIMEOUT_MS,
-  VISION_MODEL,
-  TEXT_MODEL,
   NON_IDENTIFY_ACTIONS,
   isIdentifyCall,
   buildIdentifyLog,

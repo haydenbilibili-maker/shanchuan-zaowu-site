@@ -1,6 +1,6 @@
 /**
  * AI 标本鉴定主云函数：视觉识别 + 科普文案 + 商品关联 + 识别记录落库
- * 环境变量：DASHSCOPE_API_KEY（阿里云 DashScope / 通义千问）
+ * 环境变量：DASHSCOPE_API_KEY（阿里云 DashScope / 通义千问）；可选 IDENTIFY_VISION_MODELS / IDENTIFY_TEXT_MODELS（见 aiModels.js）
  */
 const cloud = require('wx-server-sdk')
 const https = require('https')
@@ -18,6 +18,7 @@ const db = cloud.database()
 const _ = db.command
 const { checkImageBuffer, checkFileImage } = require('./contentSecurity')
 const { isIdentifyCall, writeIdentifyLog } = require('./identifyLog')
+const { visionModels, textModels, isModelUnavailable } = require('./aiModels')
 const {
   fetchSpeciesKnowledge,
   buildSpeciesProfile,
@@ -81,7 +82,10 @@ function httpsPostJson(path, body, headers) {
           try {
             const j = JSON.parse(raw)
             if (res.statusCode && res.statusCode >= 400) {
-              reject(new Error(j.message || j.msg || raw || `HTTP ${res.statusCode}`))
+              const err = new Error(j.message || j.msg || raw || `HTTP ${res.statusCode}`)
+              err.statusCode = res.statusCode
+              err.code = j.code || ''
+              reject(err)
             } else {
               resolve(j)
             }
@@ -208,21 +212,23 @@ function buildVisionPrompt(categoryHint) {
   return VISION_PROMPT_BASE + extra
 }
 
-async function callQwenVL(imageUrl, apiKey, categoryHint) {
+/** image 传临时 https 链接或 base64 dataUrl 均可 */
+async function callQwenVL(model, image, apiKey, categoryHint) {
   const prompt = buildVisionPrompt(categoryHint)
   const body = {
-    model: 'qwen-vl-plus',
+    model,
     input: {
       messages: [
         {
           role: 'user',
           content: [
-            { image: imageUrl },
+            { image },
             { text: prompt }
           ]
         }
       ]
-    }
+    },
+    parameters: { enable_thinking: false }
   }
   const res = await httpsPostJson(VL_PATH, body, {
     Authorization: `Bearer ${apiKey}`
@@ -235,31 +241,29 @@ async function callQwenVL(imageUrl, apiKey, categoryHint) {
   return normalizeSpecies(parsed)
 }
 
-async function callQwenVLWithBase64(dataUrl, apiKey, categoryHint) {
-  const prompt = buildVisionPrompt(categoryHint)
-  const body = {
-    model: 'qwen-vl-plus',
-    input: {
-      messages: [
-        {
-          role: 'user',
-          content: [
-            { image: dataUrl },
-            { text: prompt }
-          ]
-        }
-      ]
+/** 按 visionModels() 顺序尝试；每个模型先传临时链接、失败再传 base64；模型不可用直接换下一个 */
+async function identifyWithVision(tempUrl, fileBuf, apiKey, categoryHint, trace) {
+  let lastErr = null
+  for (const model of visionModels()) {
+    try {
+      const species = await callQwenVL(model, tempUrl, apiKey, categoryHint)
+      trace.visionModel = model
+      return species
+    } catch (e1) {
+      lastErr = e1
+      console.warn(`VL[${model}] URL 调用失败`, e1.message)
+      if (isModelUnavailable(e1)) continue
+    }
+    try {
+      const species = await callQwenVL(model, bufferToDataUrl(fileBuf), apiKey, categoryHint)
+      trace.visionModel = model
+      return species
+    } catch (e2) {
+      lastErr = e2
+      console.warn(`VL[${model}] base64 调用失败`, e2.message)
     }
   }
-  const res = await httpsPostJson(VL_PATH, body, {
-    Authorization: `Bearer ${apiKey}`
-  })
-  const text = extractVisionText(res)
-  let parsed = parseJsonObject(text)
-  if (!parsed) {
-    throw new Error('视觉模型未返回合法 JSON')
-  }
-  return normalizeSpecies(parsed)
+  throw lastErr || new Error('视觉模型调用失败')
 }
 
 function buildSciencePrompt(species, knowledge) {
@@ -312,19 +316,32 @@ async function sendIdentifyNotification(openid, recordId, speciesInfo) {
   }
 }
 
-async function callQwenText(prompt, apiKey) {
-  const body = {
-    model: 'qwen-turbo',
-    input: {
-      messages: [{ role: 'user', content: prompt }]
-    },
-    parameters: {
-      result_format: 'message'
+async function callQwenText(prompt, apiKey, trace) {
+  let res = null
+  let lastErr = null
+  for (const model of textModels()) {
+    const body = {
+      model,
+      input: {
+        messages: [{ role: 'user', content: prompt }]
+      },
+      parameters: {
+        result_format: 'message',
+        enable_thinking: false
+      }
+    }
+    try {
+      res = await httpsPostJson(TEXT_PATH, body, {
+        Authorization: `Bearer ${apiKey}`
+      })
+      trace.textModel = model
+      break
+    } catch (e) {
+      lastErr = e
+      console.warn(`文本模型[${model}] 调用失败`, e.message)
     }
   }
-  const res = await httpsPostJson(TEXT_PATH, body, {
-    Authorization: `Bearer ${apiKey}`
-  })
+  if (!res) throw lastErr || new Error('文本模型调用失败')
   const text = extractTextGen(res)
   const parsed = parseJsonObject(text)
   if (parsed && parsed.content) {
@@ -611,7 +628,8 @@ async function backfillSpeciesDedup(event) {
   }
 }
 
-const identifyMain = async (event, context) => {
+/** trace：exports.main 传入的旁路对象，回填实际用到的模型名供日志记录，不进出参 */
+const identifyMain = async (event, context, trace = {}) => {
   const wxContext = cloud.getWXContext()
   const { action, image_file_id, use_mock, category_hint, entry_source } = event
 
@@ -976,13 +994,7 @@ const identifyMain = async (event, context) => {
       species_info = { ...MOCK_SPECIES }
       ai_content = { ...MOCK_AI }
     } else {
-      try {
-        species_info = await callQwenVL(tempUrl, apiKey, categoryHint)
-      } catch (e1) {
-        console.warn('VL URL 调用失败，尝试 base64', e1.message)
-        const dataUrl = bufferToDataUrl(fileBuf)
-        species_info = await callQwenVLWithBase64(dataUrl, apiKey, categoryHint)
-      }
+      species_info = await identifyWithVision(tempUrl, fileBuf, apiKey, categoryHint, trace)
 
       const needScience =
         species_info.is_specimen !== false && typeof species_info.confidence === 'number' && species_info.confidence >= 0.6
@@ -990,7 +1002,7 @@ const identifyMain = async (event, context) => {
       if (needScience) {
         try {
           knowledge = await fetchSpeciesKnowledge(db, _, species_info.species_name_zh, species_info.species_name_latin)
-          ai_content = await callQwenText(buildSciencePrompt(species_info, knowledge), apiKey)
+          ai_content = await callQwenText(buildSciencePrompt(species_info, knowledge), apiKey, trace)
         } catch (e) {
           console.error('科普生成失败', e)
           ai_content = {
@@ -1153,12 +1165,13 @@ exports.main = async (event, context) => {
     openid = (cloud.getWXContext() || {}).OPENID || ''
   } catch (e) { /* 取不到身份也照常鉴定 */ }
   let result
+  const trace = {}
   try {
-    result = await identifyMain(event, context)
+    result = await identifyMain(event, context, trace)
   } catch (err) {
-    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err })
+    await writeIdentifyLog(db, event, null, { openid, startedAt, finishedAt: Date.now(), error: err, trace })
     throw err
   }
-  await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now() })
+  await writeIdentifyLog(db, event, result, { openid, startedAt, finishedAt: Date.now(), trace })
   return result
 }
