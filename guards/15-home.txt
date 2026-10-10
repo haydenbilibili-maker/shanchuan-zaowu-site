@@ -13,3 +13,5 @@ npm run check:mp-caption-color
 npm run check:care-common-mirrors
 # 2026-10-01：A 流第 5 轮 专题档案页阅读计数（新增旁路 wikiViewStats：防刷窗口 / 并发 / 三处同步）
 npm run test:wiki-view-stats
+# 2026-10-10：商品知识卡博物卡重构（英文按词折行 / 简介句末收尾 / 学名去重 / 缺字段降级 / 小程序码仍指向商品详情）
+npm run test:knowledge-card

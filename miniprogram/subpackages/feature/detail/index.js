@@ -75,6 +75,7 @@ const {
   hasDetailHtml,
   prepareDetailHtml
 } = require('../utils/detailContent');
+const { pickCaptionSource, drawKnowledgeCard, CARD_W, CARD_H } = require('../utils/knowledgeCard');
 
 const PROTECTION_LABELS = {
   sanyou: '三有保护动物',
@@ -325,79 +326,6 @@ function buildDetailGalleryState(product, preferredSkuId) {
     activeDetailSlide: 0,
     detailImages: flat
   };
-}
-
-/** 知识卡正文：最多约 36 字 / 2 行，宁短勿溢出 */
-const CARD_CAPTION_MAX_CHARS = 36;
-const CARD_CAPTION_CHARS_PER_LINE = 18;
-const CARD_CAPTION_MAX_LINES = 2;
-
-function normalizeCardText(text) {
-  return String(text || '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-/** 在标点或空格处收束，避免半截词 +「…」 */
-function clipCardCaption(text, maxChars = CARD_CAPTION_MAX_CHARS) {
-  const t = normalizeCardText(text);
-  if (!t) return '';
-  if (t.length <= maxChars) return t;
-
-  const window = t.slice(0, maxChars);
-  const punct = /[，。；、！？,.!?;：:…]/;
-  let cut = -1;
-  for (let i = window.length - 1; i >= Math.floor(maxChars * 0.45); i -= 1) {
-    if (punct.test(window[i])) {
-      cut = i + (window[i] === '…' ? 0 : 1);
-      break;
-    }
-  }
-  if (cut > 0) {
-    return window.slice(0, cut).replace(/[，、；：,\s]+$/g, '').trim();
-  }
-
-  const soft = window.replace(/[A-Za-z0-9_\-]+$/g, '').trim();
-  if (soft.length >= Math.floor(maxChars * 0.5)) return soft;
-
-  return `${window.slice(0, Math.max(1, maxChars - 1)).trim()}…`;
-}
-
-/** 优先短卖点/简介，避免大段商品描述 */
-function pickKnowledgeCardCaption(product, remote) {
-  const p = product || {};
-  const r = remote || {};
-  const selling =
-    (Array.isArray(p.sellingPoints) && p.sellingPoints[0]) ||
-    (Array.isArray(p.highlights) && p.highlights[0]) ||
-    '';
-
-  const preferred = [
-    r.cardCaption,
-    p.subtitle,
-    p.sellingPoint,
-    p.slogan,
-    p.highlight,
-    selling,
-    r.brief,
-    p.brief,
-    r.shareText,
-    p.shareText
-  ]
-    .map(normalizeCardText)
-    .filter(Boolean);
-
-  for (let i = 0; i < preferred.length; i += 1) {
-    const item = preferred[i];
-    if (item.length <= CARD_CAPTION_MAX_CHARS) return item;
-  }
-  if (preferred.length) return clipCardCaption(preferred[0]);
-
-  const longDesc = normalizeCardText(r.description || p.description || '');
-  if (longDesc) return clipCardCaption(longDesc);
-
-  return '';
 }
 
 Page(withAppModal({
@@ -2796,17 +2724,14 @@ Page(withAppModal({
     const imagePath = await this.downloadToLocal(imageSrc);
     const qrPath = await this.downloadToLocal(remote && remote.qrTempUrl);
 
-    const cardCaption = pickKnowledgeCardCaption(product, remote);
-
     return {
+      productId: product._id,
       title: (remote && remote.title) || product.title || '藏品',
       latinName: sanitizeLatinName((remote && remote.latinName) || product.latinName || product.latin || product.scientificName || ''),
       category: (remote && remote.category) || product.category || '',
-      brief: (remote && remote.brief) || product.brief || '',
-      cardCaption,
-      description: cardCaption,
-      shareText: (remote && remote.shareText) || '',
-      cardTitle: (remote && remote.cardTitle) || '山海造物 · 知识卡',
+      taxonomy: product.taxonomy || null,
+      origin: product.origin || '',
+      caption: pickCaptionSource(product, remote),
       brand: (remote && remote.brand) || '山海造物',
       brandEn: (remote && remote.brandEn) || "NATURE'S CREATIONS",
       tagline: (remote && remote.tagline) || '把山海带回家',
@@ -2836,32 +2761,6 @@ Page(withAppModal({
     });
   },
 
-  wrapCardLines(text, maxChars, maxLines) {
-    const t = normalizeCardText(text);
-    if (!t) return [];
-    const lines = [];
-    let i = 0;
-    while (i < t.length && lines.length < maxLines) {
-      lines.push(t.slice(i, i + maxChars));
-      i += maxChars;
-    }
-    if (i < t.length && lines.length === maxLines) {
-      const clipped = clipCardCaption(t, maxChars * maxLines);
-      if (clipped && clipped !== t) {
-        const out = [];
-        let j = 0;
-        while (j < clipped.length && out.length < maxLines) {
-          out.push(clipped.slice(j, j + maxChars));
-          j += maxChars;
-        }
-        return out;
-      }
-      const last = lines[maxLines - 1];
-      lines[maxLines - 1] = last.length >= 2 ? `${last.slice(0, -1)}…` : '…';
-    }
-    return lines;
-  },
-
   loadCanvasImage(canvas, src) {
     return new Promise((resolve) => {
       if (!src || !canvas) {
@@ -2876,8 +2775,8 @@ Page(withAppModal({
   },
 
   initPosterCanvas() {
-    const W = 750;
-    const H = 1200;
+    const W = CARD_W;
+    const H = CARD_H;
     return new Promise((resolve, reject) => {
       wx.createSelectorQuery()
         .in(this)
@@ -2902,127 +2801,11 @@ Page(withAppModal({
   async renderKnowledgeCard(assets) {
     const { canvas, ctx, dpr, W, H } = await this.initPosterCanvas();
     const a = assets || {};
-
-    ctx.fillStyle = '#1A1814';
-    ctx.fillRect(0, 0, W, H);
-
-    // 外框
-    ctx.strokeStyle = 'rgba(196, 167, 108, 0.55)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(28, 28, W - 56, H - 56);
-    ctx.strokeStyle = 'rgba(196, 167, 108, 0.22)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(40, 40, W - 80, H - 80);
-
-    // 顶线
-    const grd = ctx.createLinearGradient(80, 0, W - 80, 0);
-    grd.addColorStop(0, 'rgba(196,167,108,0)');
-    grd.addColorStop(0.5, 'rgba(196,167,108,0.65)');
-    grd.addColorStop(1, 'rgba(196,167,108,0)');
-    ctx.fillStyle = grd;
-    ctx.fillRect(80, 64, W - 160, 2);
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#C4A76C';
-    ctx.font = '22px sans-serif';
-    ctx.fillText(a.cardTitle || '山海造物 · 知识卡', W / 2, 108);
-
-    // 主图
-    const frameX = 80;
-    const frameY = 140;
-    const frameW = W - 160;
-    const frameH = 520;
-    ctx.fillStyle = '#262320';
-    ctx.fillRect(frameX, frameY, frameW, frameH);
-
-    const img = await this.loadCanvasImage(canvas, a.imagePath);
-    if (img && img.width && img.height) {
-      const scale = Math.max(frameW / img.width, frameH / img.height);
-      const dw = img.width * scale;
-      const dh = img.height * scale;
-      const dx = frameX + (frameW - dw) / 2;
-      const dy = frameY + (frameH - dh) / 2;
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(frameX, frameY, frameW, frameH);
-      ctx.clip();
-      ctx.drawImage(img, dx, dy, dw, dh);
-      ctx.restore();
-    } else {
-      ctx.fillStyle = 'rgba(160,154,144,0.7)';
-      ctx.font = '28px sans-serif';
-      ctx.fillText('暂无藏品图', W / 2, frameY + frameH / 2);
-    }
-
-    ctx.strokeStyle = 'rgba(196, 167, 108, 0.35)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(frameX, frameY, frameW, frameH);
-
-    // 文案
-    let y = 710;
-    ctx.textAlign = 'left';
-    if (a.category) {
-      ctx.fillStyle = '#8A7530';
-      ctx.font = '22px sans-serif';
-      ctx.fillText(String(a.category).slice(0, 16), 88, y);
-      y += 42;
-    }
-
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 44px sans-serif';
-    this.wrapCardLines(a.title || '藏品', 12, 2).forEach((line) => {
-      ctx.fillText(line, 88, y);
-      y += 56;
-    });
-
-    if (a.latinName) {
-      ctx.fillStyle = '#C4A76C';
-      ctx.font = 'italic 26px serif';
-      const latin = a.latinName.length > 36 ? `${a.latinName.slice(0, 34)}…` : a.latinName;
-      ctx.fillText(latin, 88, y);
-      y += 44;
-    } else {
-      y += 12;
-    }
-
-    ctx.fillStyle = '#D5D1C8';
-    ctx.font = '24px sans-serif';
-    const desc = a.cardCaption || a.description || a.shareText || '';
-    const captionLines = this.wrapCardLines(
-      desc,
-      CARD_CAPTION_CHARS_PER_LINE,
-      CARD_CAPTION_MAX_LINES
-    );
-    captionLines.forEach((line) => {
-      ctx.fillText(line, 88, y);
-      y += 36;
-    });
-
-    // 底部品牌 + 小程序码
-    const qrSize = 168;
-    const qx = W - 88 - qrSize;
-    const qy = H - 88 - qrSize;
-    const qr = await this.loadCanvasImage(canvas, a.qrPath);
-    if (qr) {
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(qx - 8, qy - 8, qrSize + 16, qrSize + 16);
-      ctx.drawImage(qr, qx, qy, qrSize, qrSize);
-      ctx.fillStyle = 'rgba(160,154,144,0.9)';
-      ctx.font = '20px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('扫码查看藏品', qx + qrSize / 2, qy + qrSize + 28);
-    }
-
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#C4A76C';
-    ctx.font = '26px sans-serif';
-    ctx.fillText(a.brand || '山海造物', 88, H - 120);
-    ctx.fillStyle = '#A09A90';
-    ctx.font = '20px sans-serif';
-    ctx.fillText(a.brandEn || "NATURE'S CREATIONS", 88, H - 88);
-    ctx.fillStyle = '#6B6560';
-    ctx.font = '22px sans-serif';
-    ctx.fillText(a.tagline || '把山海带回家', 88, H - 56);
+    const [image, qr] = await Promise.all([
+      this.loadCanvasImage(canvas, a.imagePath),
+      this.loadCanvasImage(canvas, a.qrPath)
+    ]);
+    drawKnowledgeCard(ctx, a, { image, qr });
 
     return await new Promise((resolve, reject) => {
       wx.canvasToTempFilePath({
