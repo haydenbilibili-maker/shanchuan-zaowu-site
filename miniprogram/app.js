@@ -239,6 +239,11 @@ App({
         }, 600);
         return;
       }
+      // ⚠️ 商品知识卡（generateShareCard）的码：page=商品详情、scene=商品 _id（同样是 hex）。
+      //    2026-10-10 真机：扫「潮痕」知识卡被下面的 hex 判据抢到鉴定结果页，拿商品 id 读鉴定记录 → 权限拒绝。
+      //    入口页是商品详情时 scene 归详情页自己解析，这里一律让路。
+      const entryPath = String((opts && opts.path) || '').replace(/^\//, '');
+      if (entryPath === 'subpackages/feature/detail/index') return;
       // ① 门店物料码：scene 形如 `from=store_qr`（识别主页）
       // ② 分享海报码：scene 就是鉴定记录 _id（24 位 hex → 结果页）
       const isStore = /(?:^|[&?])from=store_qr(?:&|$)/.test(scene);
@@ -249,7 +254,6 @@ App({
         : '/subpackages/feature/identify/index?from=store_qr';
       const target = url.split('?')[0].replace(/^\//, '');
       // 冷启动时入口页就是目标页 → 页面自己会处理，不要再跳（否则重复加载 + 重复埋点）
-      const entryPath = String((opts && opts.path) || '').replace(/^\//, '');
       if (entryPath && entryPath === target) return;
       const key = (rid ? 'r:' : 's:') + (rid || scene);
       const now = Date.now();

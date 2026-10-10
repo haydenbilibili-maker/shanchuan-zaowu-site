@@ -435,6 +435,139 @@ export async function scanAppRegisterEntry() {
   return { checked, problems }
 }
 
+/* ── 商品知识卡小程序码（2026-10-10 真机：扫「潮痕」知识卡落到鉴定百科，-502003 权限拒绝）──
+ * 知识卡码 page=商品详情、scene=商品 _id；鉴定海报码 scene=鉴定记录 _id —— 两者都是 hex。
+ * app 级识别入口曾按「hex 即鉴定记录」把知识卡抢到鉴定结果页。这里钉住：
+ *   ① generateShareCard 的码指向已注册的商品详情页、scene 为商品 id；
+ *   ② 商品详情把纯 scene 解析成商品 id；
+ *   ③ 入口页是商品详情时，app 级识别路由不得 reLaunch（鉴定海报码仍照常进结果页）；
+ *   ④ 结果页读不到记录时先认商品 id 转商品详情，且数据库原始报错不上屏。
+ * 入参为源码字符串，自检在内存里改写，不写盘。 */
+export const SHARE_CARD_FILES = {
+  appSrc: APP_JS,
+  cardFnSrc: join(MP, 'cloudfunctions/generateShareCard/index.js'),
+  posterFnSrc: join(MP, 'cloudfunctions/generateSharePoster/index.js'),
+  detailSrc: join(MP, 'subpackages/feature/detail/index.js'),
+  resultSrc: join(MP, 'subpackages/feature/identify/result/index.js'),
+}
+const DETAIL_PAGE = 'subpackages/feature/detail/index'
+const RESULT_PAGE = 'subpackages/feature/identify/result/index'
+
+function readShareCardSources() {
+  const out = {}
+  for (const [k, f] of Object.entries(SHARE_CARD_FILES)) out[k] = readFileSync(f, 'utf8')
+  return out
+}
+
+function extractFunction(src, name) {
+  const at = src.indexOf(`function ${name}(`)
+  if (at < 0) return ''
+  const open = src.indexOf('{', at)
+  let depth = 0
+  for (let i = open; i < src.length; i += 1) {
+    if (src[i] === '{') depth += 1
+    else if (src[i] === '}') { depth -= 1; if (depth === 0) return src.slice(at, i + 1) }
+  }
+  return ''
+}
+
+function wxacodePageOf(src) {
+  const m = /getUnlimited\(\{[\s\S]*?page:\s*'([^']+)'/.exec(stripComments(src))
+  return m ? m[1] : ''
+}
+
+export async function checkShareCardQr(srcs, registered = registeredPages()) {
+  const problems = []
+  const t = (ok, msg) => { if (!ok) problems.push(`[知识卡码] ${msg}`) }
+  const PID = '7d1e3c5a68f2b0e400a1b2c31f0e9d8c'
+
+  // ① 云函数：知识卡码 → 商品详情；鉴定海报码 → 鉴定结果（两张码各归各页）
+  const cardPage = wxacodePageOf(srcs.cardFnSrc)
+  t(cardPage === DETAIL_PAGE, `generateShareCard 小程序码 page 应为 ${DETAIL_PAGE}，实为「${cardPage}」`)
+  t(registered.has('/' + DETAIL_PAGE), '商品详情页不在 app.json 注册页里（码会扫空）')
+  t(/scene\s*=\s*String\(productId/.test(stripComments(srcs.cardFnSrc)),
+    'generateShareCard 的 scene 不再是商品 id（商品详情解析不出来）')
+  t(wxacodePageOf(srcs.posterFnSrc) === RESULT_PAGE,
+    `generateSharePoster（鉴定海报）码 page 应为 ${RESULT_PAGE}`)
+
+  // ② 商品详情：纯 scene 即商品 id
+  const resolverSrc = extractFunction(srcs.detailSrc, 'resolveProductIdFromOptions')
+  let resolved = ''
+  try {
+    // eslint-disable-next-line no-new-func
+    resolved = new Function('wx', `${resolverSrc}; return resolveProductIdFromOptions`)({})({ scene: PID })
+  } catch (e) {
+    resolved = `抛错：${e && e.message}`
+  }
+  t(resolved === PID, `商品详情没把扫码 scene 解析成商品 id（得到「${resolved}」）`)
+
+  // ③ app 级入口路由
+  const relaunch = []
+  let captured = null
+  try {
+    // eslint-disable-next-line no-new-func
+    new Function('App', 'wx', 'getCurrentPages', 'require', stripComments(srcs.appSrc))(
+      (cfg) => { captured = cfg },
+      {
+        reLaunch: ({ url }) => relaunch.push(url),
+        switchTab: ({ url }) => relaunch.push(`switchTab:${url}`),
+        navigateTo: () => {}, showToast: () => {}, getSystemInfoSync: () => ({}),
+        cloud: { database: () => ({}), callFunction: () => Promise.resolve({ result: {} }) },
+        onError: () => {}
+      },
+      () => [{ route: 'pages/index/index' }],
+      (id) => (String(id).includes('cloudHealth')
+        ? { checkCloudHealth: () => {}, notifyCloudHealthFailure: () => {} }
+        : {})
+    )
+  } catch (e) {
+    problems.push(`[知识卡码] app.js 加载失败：${e && e.message}`)
+    return problems
+  }
+  if (!captured || typeof captured.maybeOpenIdentifyEntry !== 'function') {
+    problems.push('[知识卡码] app.js 里没有 maybeOpenIdentifyEntry')
+    return problems
+  }
+  const drive = async (options) => {
+    relaunch.length = 0
+    const ctx = Object.assign(Object.create(null), captured)
+    ctx._identifyEntryKey = ''
+    ctx._identifyEntryAt = 0
+    ctx.maybeOpenIdentifyEntry(options)
+    await new Promise((r) => setTimeout(r, 700))
+    return relaunch.slice()
+  }
+  const card = await drive({ path: DETAIL_PAGE, query: { scene: PID } })
+  t(card.length === 0, `★ 扫商品知识卡被识别路由抢走：${JSON.stringify(card)}`)
+  const card24 = await drive({ path: '/' + DETAIL_PAGE, query: { scene: PID.slice(0, 24) } })
+  t(card24.length === 0, `★ 扫商品知识卡（24 位 id、带前导斜杠的 path）被识别路由抢走：${JSON.stringify(card24)}`)
+  const poster = await drive({ path: 'pages/index/index', query: { scene: PID.slice(0, 24) } })
+  t(poster.length === 1 && poster[0].indexOf('/' + RESULT_PAGE) === 0,
+    `对照：鉴定海报码被误伤（不再进结果页）：${JSON.stringify(poster)}`)
+
+  // ④ 结果页兜底
+  const resultCode = stripComments(srcs.resultSrc)
+  const loadRecordSrc = (/async loadRecord\(id\)\s*\{[\s\S]*?\n {2}\},/.exec(resultCode) || [''])[0]
+  t(/await this\.redirectIfProductId\(id\)/.test(loadRecordSrc),
+    '结果页加载失败时没先认商品 id（误入的商品码只会看到报错）')
+  const redirSrc = (/async redirectIfProductId\([\s\S]*?\n {2}\},/.exec(resultCode) || [''])[0]
+  t(/collection\('products'\)\.doc\(/.test(redirSrc) && redirSrc.indexOf(`/${DETAIL_PAGE}?id=`) >= 0,
+    '结果页 redirectIfProductId 没有查商品并转到商品详情')
+  t(/loadErrorMsg:\s*friendlyLoadErrorText\(/.test(loadRecordSrc),
+    '结果页把原始报错直接写进 loadErrorMsg（errCode 会上屏）')
+  let shown = null
+  try {
+    // eslint-disable-next-line no-new-func
+    shown = new Function(`${extractFunction(srcs.resultSrc, 'isDeniedText')}\n${extractFunction(srcs.resultSrc, 'friendlyLoadErrorText')}\nreturn friendlyLoadErrorText`)()(
+      'errCode: -502003 database permission denied | errMsg: Permission denied 更多错误信息请访问：https://docs.cloudbase.net/error-code/basic/DATABASE_PERMISSION_DENIED')
+  } catch (e) {
+    shown = null
+  }
+  t(typeof shown === 'string' && !/errCode|errMsg|-502003|https?:/i.test(shown),
+    `结果页权限拒绝文案仍含原始报错：${JSON.stringify(shown)}`)
+  return problems
+}
+
 async function selftest() {
   let bad = 0
   const t = (n, ok) => { if (!ok) bad += 1; console.log(`${ok ? '✓' : '✗'} ${n}`) }
@@ -559,6 +692,37 @@ async function selftest() {
   await inject(APP_JS, 'const wallKey = /(?:^|[&?])k=([^&]+)/.exec(scene);', '',
     '拆掉祈福墙物料码让路分支（扫祈福墙立牌被抢到识别页）')
 
+  // 商品知识卡码：真源必须干净，内存注入逐条必须红（不写盘）
+  {
+    const real = readShareCardSources()
+    const base = await checkShareCardQr(real, registered)
+    t('★ 商品知识卡码真源通过', base.length === 0, base.join(' | '))
+    const mutate = (key, from, to) => {
+      if (real[key].indexOf(from) < 0) return null
+      return Object.assign({}, real, { [key]: real[key].replace(from, to) })
+    }
+    const cases = [
+      ['拆掉 app.js 的商品详情让路（扫知识卡被抢到鉴定结果页）', 'appSrc',
+        "if (entryPath === 'subpackages/feature/detail/index') return;", ''],
+      ['知识卡码改指向鉴定结果页', 'cardFnSrc',
+        "page: 'subpackages/feature/detail/index'", "page: 'subpackages/feature/identify/result/index'"],
+      ['商品详情不再把纯 scene 当商品 id', 'detailSrc',
+        '  // generateShareCard：scene 即为 productId\n  return scene;', "  return '';"],
+      ['结果页加载失败不再认商品 id', 'resultSrc',
+        'if (kind !== \'unshared\' && (await this.redirectIfProductId(id))) return', ''],
+      ['结果页把原始报错直接上屏', 'resultSrc',
+        'loadErrorMsg: friendlyLoadErrorText(msg)', 'loadErrorMsg: msg'],
+      ['报错文案回退成原文', 'resultSrc',
+        "const t = String(msg || '')\n  if (isDeniedText(t))", "return String(msg || '')\n  const t = ''\n  if (isDeniedText(t))"],
+    ]
+    for (const [why, key, from, to] of cases) {
+      const srcs = mutate(key, from, to)
+      if (!srcs) { t(`注入点存在：${why}`, false); continue }
+      const got = await checkShareCardQr(srcs, registered)
+      t(`★ ${why} → 必须检出`, got.length > 0)
+    }
+  }
+
   if (bad) {
     console.error(`\n自检失败 ${bad} 项——守卫不可信，请先修它`)
     process.exit(1)
@@ -571,9 +735,11 @@ async function main() {
   if (process.argv.includes('--selftest')) return selftest()
   const { checked, problems, registered } = scan()
   const app = await scanAppRegisterEntry()
+  const card = await checkShareCardQr(readShareCardSources(), registered)
   for (const p of problems) console.error(`✗ ${p}`)
   for (const p of app.problems) console.error(`✗ ${p}`)
-  const total = problems.length + app.problems.length
+  for (const p of card) console.error(`✗ ${p}`)
+  const total = problems.length + app.problems.length + card.length
   if (total) {
     console.error(`\n旧路径重映射未通过：${total} 处（拼接目标不在注册页 / 入口兜底失效，`
       + '用户扫物料码或点通知会「点击无效」或落首页）')

@@ -18,6 +18,18 @@ function buildArchiveNav(profile) {
     .map((b) => ({ id: String(b.id), title: String(b.title) }))
 }
 
+function isDeniedText(msg) {
+  return /permission denied|PERMISSION_DENIED|-502003/i.test(String(msg || ''))
+}
+
+/** 加载失败文案：数据库原始报错（errCode / errMsg / 文档链接）不上屏 */
+function friendlyLoadErrorText(msg) {
+  const t = String(msg || '')
+  if (isDeniedText(t)) return '这份鉴定记录暂时无法查看：可能还没有公开分享，或不属于当前微信账号。'
+  if (/errCode|errMsg|https?:\/\//i.test(t)) return ''
+  return t
+}
+
 Page({
   data: {
     loading: true,
@@ -194,17 +206,36 @@ Page({
       const msg = (e && e.message) || ''
       const kind = /还没有公开分享|未公开分享/.test(msg)
         ? 'unshared'
-        : /记录不存在|缺少/.test(msg)
+        : /记录不存在|缺少/.test(msg) || isDeniedText(msg)
           ? 'missing'
           : 'network'
+      if (kind !== 'unshared' && (await this.redirectIfProductId(id))) return
       this.setData({
         loadError: true,
         loadErrorKind: kind,
-        loadErrorMsg: msg
+        loadErrorMsg: friendlyLoadErrorText(msg)
       })
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  /**
+   * 商品 _id 与鉴定记录 _id 同为 hex，入口路由一旦误判（2026-10-10 商品知识卡码）就会把商品 id 送到本页。
+   * 读不到鉴定记录时查一次商品：确是商品就换到商品详情（本页常是 reLaunch 来的唯一一页，用 redirectTo 不留回退死页）。
+   */
+  async redirectIfProductId(id) {
+    const pid = String(id || '').trim()
+    if (!pid || pid.length > 64) return false
+    try {
+      const res = await db.collection('products').doc(pid).get()
+      if (!res || !res.data) return false
+    } catch (e) {
+      return false
+    }
+    const url = `/subpackages/feature/detail/index?id=${encodeURIComponent(pid)}`
+    wx.redirectTo({ url, fail: () => wx.reLaunch({ url }) })
+    return true
   },
 
   /**
