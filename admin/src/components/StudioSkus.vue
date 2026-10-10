@@ -497,7 +497,7 @@ async function removeSku(row) {
 
 async function offerDeactivate(row, reason) {
   if (row.status !== 'active') {
-    await ElMessageBox.alert(`${reason}。它已经是停用状态，开单时不会再出现。`, '只能停用', { type: 'info' }).catch(() => {})
+    ElMessage({ type: 'info', message: `只能停用：${reason}。它已经是停用状态，开单时不会再出现。`, duration: 6000 })
     return
   }
   try {
