@@ -50,13 +50,13 @@
 .hr-go::after { content: ''; width: 40rpx; height: 1px; margin-left: 12rpx; background: currentColor; }
 
 .hr-cover--wide { flex-direction: column; }
-.hr-cover--wide .hr-cv-media { width: 100%; height: 430rpx; }
+.hr-cover--wide .hr-cv-media { position: relative; width: 100%; height: 430rpx; }
 .hr-cover--wide .hr-label { padding: 22rpx 26rpx; border-top: 1px solid var(--g2); }
 .hr-cover--wide .hr-cv-name, .hr-cover--wide .hr-note { margin-right: 200rpx; }
 .hr-cover--wide .hr-cv-theme, .hr-cover--wide .hr-cover-title, .hr-cover--wide .hr-note { white-space: nowrap; text-overflow: ellipsis; }
 .hr-cover--wide .hr-latin { flex: 1; }
 .hr-cover--wide .hr-cv-foot { position: absolute; right: 26rpx; bottom: 22rpx; flex-direction: column; align-items: flex-end; gap: 4rpx; }
-.hr-cover--side .hr-cv-media { height: 100%; }
+.hr-cover--side .hr-cv-media { position: relative; height: 100%; }
 .hr-cover--side .hr-label { padding: 28rpx 24rpx 24rpx 26rpx; border-left: 1px solid var(--g2); }
 .hr-cover--side .hr-kicker { flex-wrap: wrap; height: auto; max-height: 72rpx; row-gap: 8rpx; margin-bottom: 22rpx; }
 .hr-cover--side .hr-cv-theme { -webkit-line-clamp: 2; margin-bottom: 8rpx; }
