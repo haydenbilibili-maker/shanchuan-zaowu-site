@@ -88,8 +88,9 @@ const PROTECTION_LABELS = {
 const SPEC_RATIO_MIN = 0.5;
 const SPEC_RATIO_MAX = 1.25;
 
-/** 头图大约占屏幕上半，夹在 42%–50% 屏高。多图共用区间中部这一截，切换时页面不再被撑高撑矮。
- *  横图、方图放得下就按宽度铺满，矮于窗口就上下留深色；竖图在这扇窗口里居中，只裁上下边缘，主体留在中间。 */
+/** 横图、方图：头图区域是边长等于屏宽的正方形，图片居中裁切铺满，不留上下空边。
+ *  竖图：仍是半屏窗口（42%–50% 屏高的中部），居中，只裁上下边缘。
+ *  多图切换只改这一截高度，由样式过渡，不猛跳。 */
 const HERO_VIEW_MIN = 0.42;
 const HERO_VIEW_MAX = 0.50;
 
@@ -454,7 +455,7 @@ Page(withAppModal({
     activeDetailSlide: 0,
     specSwiperH: 0,
     heroSwiperH: 0,
-    heroFit: 'aspectFit',
+    heroFit: 'aspectFill',
     descriptionParagraphs: [],
     detailTagStyle: DETAIL_TAG_STYLE,
     detailHtmlContainerStyle: DETAIL_HTML_CONTAINER_STYLE,
@@ -1819,7 +1820,7 @@ Page(withAppModal({
     if (src === this.heroSlideSrc()) this.syncHeroHeight();
   },
 
-  /** 头图高度固定在半屏附近，不跟每张图的比例把页面撑高。竖图超出窗口就居中裁上下边。 */
+  /** 横图、方图铺成正方形；竖图保持半屏。高度跟当前这张走，样式负责过渡。 */
   syncHeroHeight() {
     const src = this.heroSlideSrc();
     const ratio = src && this._heroRatio && this._heroRatio[src];
@@ -1827,9 +1828,9 @@ Page(withAppModal({
     const win = getWindowInfo();
     const w = win.windowWidth || 375;
     const screenH = win.windowHeight || 667;
-    const box = Math.round(screenH * (HERO_VIEW_MIN + HERO_VIEW_MAX) / 2);
-    const natural = Math.round(w * ratio);
-    const heroFit = natural > box ? 'aspectFill' : 'aspectFit';
+    const half = Math.round(screenH * (HERO_VIEW_MIN + HERO_VIEW_MAX) / 2);
+    const box = ratio > 1 ? half : Math.round(w);
+    const heroFit = 'aspectFill';
     if (box !== this.data.heroSwiperH || heroFit !== this.data.heroFit) {
       this.setData({ heroSwiperH: box, heroFit });
     }

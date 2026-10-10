@@ -218,17 +218,18 @@ function checks(s) {
     /flex-wrap:\s*nowrap;/.test(rule(s.detailWxss, '.bottom-bar')) &&
     /white-space:\s*nowrap;/.test(rule(s.detailWxss, '.btn-sub')))
 
-  // R8 头图固定在半屏附近：竖图居中裁上下边，横图留深色，高度不跟每张图猛跳
+  // R8 横图铺成正方形；竖图仍是半屏居中裁切，高度切换有过渡
   add('R8 头图两处按 heroFit 显示，并用 bindload 量原比例',
     (s.detailWxml.match(/class="slide-image" mode="\{\{heroFit\}\}" bindload="onHeroImageLoad"/g) || []).length === 2)
   add('R8 头图高度跟 heroSwiperH，盒子有高度过渡',
     /heroSwiperH/.test(openTag(s.detailWxml, /<view class="hero-stage/)) &&
     /transition: height /.test(rule(s.detailWxss, '.hero-stage')) &&
     /<view class="hero-wrapper">/.test(s.detailWxml))
-  add('R8 头图高度取 42%–50% 的中部，竖图超出才居中裁切',
+  add('R8 横图头图是正方形并居中铺满，竖图仍取半屏',
     /const HERO_VIEW_MIN = 0\.42/.test(s.detailJs) && /const HERO_VIEW_MAX = 0\.50/.test(s.detailJs) &&
     /\(HERO_VIEW_MIN \+ HERO_VIEW_MAX\) \/ 2/.test(s.detailJs) &&
-    /natural > box \? 'aspectFill' : 'aspectFit'/.test(s.detailJs) &&
+    /ratio > 1 \? half : Math\.round\(w\)/.test(s.detailJs) &&
+    /const heroFit = 'aspectFill'/.test(s.detailJs) &&
     /syncHeroHeight\(\)/.test(s.detailJs) && /onHeroImageLoad\(e\)/.test(s.detailJs))
   return out
 }
@@ -260,7 +261,8 @@ if (process.argv.includes('--selftest')) {
     ['立即购买改掉事件名', 'detailWxml', (t) => t.replace('bindtap="handleBuyNow"', 'bindtap="handleCheckout"')],
     ['头图退回一律裁切', 'detailWxml', (t) => t.replace(/mode="\{\{heroFit\}\}"/g, 'mode="aspectFill"')],
     ['头图比例上限被删', 'detailJs', (t) => t.replace('const HERO_VIEW_MAX = 0.50;', '')],
-    ['头图竖图不再居中裁切', 'detailJs', (t) => t.replace("natural > box ? 'aspectFill' : 'aspectFit'", "natural > box ? 'aspectFit' : 'aspectFit'")],
+    ['横图退回上下留白', 'detailJs', (t) => t.replace("const heroFit = 'aspectFill'", "const heroFit = 'aspectFit'")],
+    ['横图不再铺成正方形', 'detailJs', (t) => t.replace('ratio > 1 ? half : Math.round(w)', 'half')],
     ['定金按钮去按压态', 'detailWxml', (t) => t.replace('bindtap="handleDeposit"\n          hover-class="cta-press"\n          hover-stay-time="80"', 'bindtap="handleDeposit"')],
     ['文章加载失败返回按钮去按压态', 'articleWxml', (t) => t.replace('<view class="load-error-btn" bindtap="goBack" hover-class="tap-press" hover-stay-time="80">', '<view class="load-error-btn" bindtap="goBack">')],
     ['鉴定结果重新加载去按压态', 'identifyResultWxml', (t) => t.replace('<view class="act ghost" bindtap="retryLoad" hover-class="act-ghost-press" hover-stay-time="80">', '<view class="act ghost" bindtap="retryLoad">')],
