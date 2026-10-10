@@ -86,19 +86,6 @@ function blankSingle() {
   }
 }
 
-function blankSkuForm(globalRatePct) {
-  return {
-    show: false,
-    saving: false,
-    materialId: '', materialName: '', materialGrade: '',
-    packagingId: '', packagingName: '', packagingSize: '',
-    useGlobalRate: true, laborRatePct: globalRatePct,
-    hasScene: false, sceneCost: '',
-    name: '', nameTouched: false,
-    unitPriceText: '—', pricingStatus: '', pricingNote: '', problems: []
-  }
-}
-
 const data = {
   createMode: '',
   createTip: '',
@@ -121,9 +108,8 @@ const data = {
   saveHint: '',
 
   skuPicker: { show: false, target: '', keyword: '', loading: false, list: [], total: 0, reviewOnly: false, reviewCount: 0 },
-  skuForm: blankSkuForm(30),
-  /** 原材料 / 包装选择器：target = skuForm（新建 SKU）| single（单条补录的可选字段） */
-  picker: { show: false, kind: 'material', target: 'skuForm', keyword: '', loading: false, list: [], expandedKey: '' },
+  /** 原材料 / 包装选择器：target = skuEdit（SKU 编辑弹层，见 parts/skus.js）| single（单条补录的可选字段） */
+  picker: { show: false, kind: 'material', target: 'skuEdit', keyword: '', loading: false, list: [], expandedKey: '' },
 
   pasteText: '',
   parsing: false,
@@ -173,7 +159,6 @@ const methods = {
           settleLoaded: true,
           pricingEnabled,
           globalRatePct,
-          'skuForm.laborRatePct': globalRatePct,
           createTipTone: pricingEnabled ? 'info' : 'warn',
           createTip: pricingEnabled
             ? ''
@@ -388,107 +373,17 @@ const methods = {
       })
   },
 
+  /** 开单里的「新建 SKU」：打开 SKU 模块同一个编辑弹层（parts/skus.js），建好后加进本单 */
   openSkuForm() {
     if (!this.data.pricingEnabled) {
       this.setData({ createTipTone: 'warn', createTip: '算价未启用，先打开 ERP 价目表开关再建 SKU' })
       return
     }
-    this.setData({ skuForm: Object.assign(blankSkuForm(this.data.globalRatePct), { show: true }) })
+    this.openSkuEditor({ mode: 'create', origin: 'create' })
   },
 
-  closeSkuForm() {
-    this.setData({ 'skuForm.show': false })
-  },
-
-  onFormName(e) {
-    this.setData({ 'skuForm.name': String(e.detail.value || ''), 'skuForm.nameTouched': true })
-  },
-
-  onFormRateToggle(e) {
-    const useGlobal = !!e.detail.value
-    this.setData({ 'skuForm.useGlobalRate': useGlobal }, () => this.previewSku())
-  },
-
-  onFormRate(e) {
-    const v = Number(e.detail.value)
-    this.setData({ 'skuForm.laborRatePct': Number.isFinite(v) ? v : 0 }, () => this.previewSku())
-  },
-
-  onFormSceneToggle(e) {
-    const hasScene = !!(e.detail && e.detail.value)
-    this.setData(
-      { 'skuForm.hasScene': hasScene, 'skuForm.sceneCost': hasScene ? this.data.skuForm.sceneCost : '' },
-      () => this.previewSku()
-    )
-  },
-
-  onFormSceneCost(e) {
-    this.setData({ 'skuForm.sceneCost': String((e.detail && e.detail.value) || '') }, () => this.previewSku())
-  },
-
-  previewSku() {
-    const f = this.data.skuForm
-    if (!f.materialName || !f.packagingName) {
-      this.setData({ 'skuForm.unitPriceText': '—', 'skuForm.pricingStatus': '', 'skuForm.pricingNote': '请先选原材料与包装方式' })
-      return Promise.resolve()
-    }
-    const line = {
-      itemName: f.name || `${f.materialName} · ${f.packagingName}`,
-      qty: 1,
-      materialId: f.materialId, materialName: f.materialName, materialGrade: f.materialGrade,
-      packagingId: f.packagingId, packagingName: f.packagingName, packagingSize: f.packagingSize,
-      sceneCost: f.hasScene ? (Number(f.sceneCost) || 0) : 0
-    }
-    if (!f.useGlobalRate) line.laborRatePct = Number(f.laborRatePct) || 0
-    return callCloud(SHIPMENT_FN, { action: 'quotePrice', laborRatePct: this.data.globalRatePct, lines: [line] })
-      .then((r) => {
-        const q = (r.lines || [])[0] || {}
-        const priced = q.pricingStatus === 'priced'
-        this.setData({
-          'skuForm.pricingStatus': q.pricingStatus || 'unmatched',
-          'skuForm.pricingNote': q.pricingNote || '',
-          'skuForm.unitPriceText': priced ? '¥' + yuan(Math.round(q.unitPrice * 100)) : '待核价'
-        })
-      })
-      .catch((e) => this.setData({ 'skuForm.pricingNote': formatCloudFnError(e, '试算失败') }))
-  },
-
-  submitSkuForm() {
-    const f = this.data.skuForm
-    if (f.saving) return
-    if (!f.materialName) return this.setData({ 'skuForm.problems': ['请选择原材料'] })
-    if (!f.packagingName) return this.setData({ 'skuForm.problems': ['请选择包装方式'] })
-    const sceneRaw = String(f.sceneCost == null ? '' : f.sceneCost).trim()
-    if (f.hasScene && (sceneRaw === '' || !Number.isFinite(Number(sceneRaw)) || Number(sceneRaw) < 0)) {
-      return this.setData({ 'skuForm.problems': ['勾了造景就必须填「造景成本」（元/件；不额外计价可填 0）'] })
-    }
-    const item = {
-      materialId: f.materialId, materialName: f.materialName, materialGrade: f.materialGrade,
-      packagingId: f.packagingId, packagingName: f.packagingName, packagingSize: f.packagingSize,
-      hasScene: f.hasScene === true,
-      sceneCost: f.hasScene ? Number(sceneRaw) : 0
-    }
-    if (!f.useGlobalRate) item.laborRatePct = Number(f.laborRatePct) || 0
-    if (f.nameTouched && f.name) item.skuName = f.name
-    this.setData({ 'skuForm.saving': true, 'skuForm.problems': [] })
-    callCloud(SETTLEMENT_FN, { action: 'sku.create', item })
-      .then((r) => {
-        if (r.ok === false) {
-          const dup = r.duplicate
-          this.setData({
-            'skuForm.saving': false,
-            'skuForm.problems': [r.msg || '创建失败'].concat(dup ? [`已在目录里：${dup.skuName}`] : [])
-          })
-          return
-        }
-        const created = r.item || {}
-        const lines = this.data.lines.slice()
-        lines.push(skuLineFrom(Object.assign({}, created, { unitPrice: null, unitPriceText: '待核价', pricingStatus: '' }), this.data.globalRatePct))
-        this.setData({ 'skuForm.saving': false, 'skuForm.show': false, lines }, () => this.refreshLinePrices())
-      })
-      .catch((e) => {
-        this.setData({ 'skuForm.saving': false, 'skuForm.problems': [formatCloudFnError(e, '创建 SKU 失败')] })
-      })
+  skuLineFromCreated(created) {
+    return skuLineFrom(Object.assign({}, created, { unitPrice: null, unitPriceText: '待核价', pricingStatus: '' }), this.data.globalRatePct)
   },
 
   onSaveSku() {
@@ -544,7 +439,7 @@ const methods = {
   openPicker(e) {
     const ds = e.currentTarget.dataset || {}
     const kind = ds.kind === 'packaging' ? 'packaging' : 'material'
-    const target = ds.target === 'single' ? 'single' : 'skuForm'
+    const target = ds.target === 'single' ? 'single' : 'skuEdit'
     this.setData({ picker: { show: true, kind, target, keyword: '', loading: true, list: [], expandedKey: '' } }, () =>
       this.searchPriceBook('')
     )
@@ -612,7 +507,7 @@ const methods = {
       patch[`${target}.packagingSize`] = option
     }
     this.setData(patch, () => {
-      if (target === 'skuForm') this.previewSku()
+      if (target === 'skuEdit') this.previewSkuEdit()
     })
   },
 

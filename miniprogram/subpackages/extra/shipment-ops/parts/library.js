@@ -1,10 +1,11 @@
 /**
- * 出货中心 · 资料：原材料 / 包装方式。店长只读，写入口与服务端均仅超管。
+ * 出货中心 · SKU 页签（店长看到的是「资料」）：SKU 目录（parts/skus.js，仅超管）/ 原材料 / 包装方式。店长只读，写入口与服务端均仅超管。
  * priceBook.update 整行覆盖 → 经 toPayload() 回送整行；删除只走 removeIfUnused（有引用即拒）。
  */
 const { formatCloudFnError } = require('../../utils/memberScan')
 const { SETTLEMENT_FN, callCloud, yuan } = require('./shared')
 const { railUrl, detailUrl, onImageError } = require('../../../../utils/imageUrl')
+const { skuImpactOf, impactText } = require('./skus')
 
 /** 资料图云存储目录：studio-pricebook/<kind>/<时间戳>_<随机>.<ext> */
 const LIB_IMAGE_DIR = 'studio-pricebook'
@@ -86,11 +87,14 @@ function blankLibForm(kind) {
     image: '',
     imageThumb: '',
     uploading: false,
+    impactText: '',
     problems: ''
   }
 }
 
 const data = {
+  /** 子视图：sku（SKU 目录，仅超管）| material | packaging */
+  libView: '',
   libKind: 'material',
   libKeyword: '',
   libLoading: false,
@@ -110,7 +114,15 @@ const data = {
 }
 
 const methods = {
-  enterLibrary() {
+  /** view：sku | material | packaging；不传 = 上次停留，超管首次进 SKU 目录、店长进原材料 */
+  enterLibrary(view) {
+    const want = view === 'sku' || KIND_META[view] ? view : this.data.libView || (this.data.isSuper ? 'sku' : this.data.libKind)
+    const libView = want === 'sku' && !this.data.isSuper ? this.data.libKind : want
+    if (KIND_META[libView] && libView !== this.data.libKind) {
+      this._libAll = null
+      this.setData({ libKind: libView, libKeyword: '', libList: [], libTip: '', libConfirmId: '', 'libBlocked.id': '' })
+    }
+    this.setData({ libView })
     if (this.data.isSuper && !this._libMetaLoaded) {
       this._libMetaLoaded = true
       callCloud(SETTLEMENT_FN, { action: 'meta' })
@@ -124,14 +136,29 @@ const methods = {
           this._libMetaLoaded = false
         })
     }
-    if (!this._libAll) this.loadLibrary()
+    if (libView === 'sku') this.enterSkuCatalog()
+    else if (!this._libAll) this.loadLibrary()
   },
 
   switchLibKind(e) {
     const kind = String((e.currentTarget.dataset || {}).kind || '')
-    if (!KIND_META[kind] || kind === this.data.libKind) return
+    if (kind === 'sku') {
+      if (this.data.isSuper && this.data.libView !== 'sku') {
+        this.setData({ libView: 'sku' })
+        this.enterSkuCatalog()
+      }
+      return
+    }
+    if (!KIND_META[kind]) return
+    if (kind === this.data.libKind) {
+      if (this.data.libView !== kind) {
+        this.setData({ libView: kind })
+        if (!this._libAll) this.loadLibrary()
+      }
+      return
+    }
     this._libAll = null
-    this.setData({ libKind: kind, libKeyword: '', libList: [], libTip: '', libConfirmId: '', 'libBlocked.id': '' }, () => this.loadLibrary())
+    this.setData({ libView: kind, libKind: kind, libKeyword: '', libList: [], libTip: '', libConfirmId: '', 'libBlocked.id': '' }, () => this.loadLibrary())
   },
 
   loadLibrary() {
@@ -179,11 +206,13 @@ const methods = {
         id,
         item: toPayload(this.data.libKind, row, { status: next })
       })
+      const impact = this._skuAll ? skuImpactOf(this.data.libKind, row, this._skuAll) : null
+      this._skuAll = null
       this.setData({
         libTipTone: 'ok',
-        libTip: next === 'inactive'
+        libTip: (next === 'inactive'
           ? `已停用「${row.name} · ${row.option}」：开单选择器与算价不再使用，历史单不受影响`
-          : `已启用「${row.name} · ${row.option}」`
+          : `已启用「${row.name} · ${row.option}」`) + (impact && impact.total ? `（涉及 ${impact.total} 个 SKU 的算价）` : '')
       })
       await this.loadLibrary()
     } catch (err) {
@@ -264,6 +293,12 @@ const methods = {
     }
     const catIdx = Math.max(0, (this.data.libCategoryValues || []).indexOf(form.category))
     this.setData({ libForm: form, libCategoryIndex: catIdx })
+    if (row) {
+      this.ensureSkuCatalog().then((all) => {
+        if (!all || !this.data.libForm.show || this.data.libForm.id !== id) return
+        this.setData({ 'libForm.impactText': impactText(skuImpactOf(kind, row, all)) })
+      })
+    }
   },
 
   closeLibForm() {
@@ -321,6 +356,7 @@ const methods = {
       const item = toPayload(kind, base || {}, patch)
       if (base) await callCloud(SETTLEMENT_FN, { action: 'priceBook.update', kind, id: f.id, item })
       else await callCloud(SETTLEMENT_FN, { action: 'priceBook.create', kind, item })
+      this._skuAll = null
       this.setData({
         'libForm.saving': false,
         'libForm.show': false,

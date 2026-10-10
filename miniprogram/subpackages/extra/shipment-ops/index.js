@@ -7,10 +7,11 @@ const { formatCloudFnError } = require('../utils/memberScan')
 const { SHIPMENT_FN, callCloud, money, sheetBodyPx, materialLine } = require('./parts/shared')
 const createPart = require('./parts/create')
 const libraryPart = require('./parts/library')
+const skusPart = require('./parts/skus')
 const memosPart = require('./parts/memos')
 
 const TAB_STORAGE_KEY = 'shipment_center_tab_v1'
-const TAB_ALIAS = { sku: 'create', create: 'create', entry: 'create', list: 'list', overview: 'overview', library: 'library', master: 'library' }
+const TAB_ALIAS = { sku: 'create', create: 'create', entry: 'create', list: 'list', overview: 'overview', library: 'library', master: 'library', skus: 'library' }
 
 const STATUS_TONE = {
   draft: 'muted',
@@ -172,7 +173,7 @@ const coreMethods = {
     if (!role) return
     this.setData({ ready: true, isSuper: !!(role.superAdmin || role.isSuperAdmin), sheetBodyPx: sheetBodyPx() })
     await this.loadMeta()
-    this.applyTab(this.pickInitialTab(opts), { mode: opts.mode, persist: false })
+    this.applyTab(this.pickInitialTab(opts), { mode: opts.mode, view: opts.tab === 'skus' ? 'sku' : opts.view, persist: false })
     if (this.data.activeTab !== 'list') this.loadList()
   },
 
@@ -188,7 +189,7 @@ const coreMethods = {
     const tab = this.data.activeTab
     const tasks = []
     if (tab === 'overview') tasks.push(this.loadDashboard(), this.loadList())
-    else if (tab === 'library') tasks.push(this.loadLibrary())
+    else if (tab === 'library') tasks.push(this.data.libView === 'sku' ? this.loadSkuCatalog() : this.loadLibrary())
     else tasks.push(this.loadList())
     Promise.all(tasks).finally(() => wx.stopPullDownRefresh())
   },
@@ -197,7 +198,7 @@ const coreMethods = {
   visibleTabs() {
     const tabs = []
     if (this.data.canWrite) tabs.push({ key: 'create', label: '开单' })
-    tabs.push({ key: 'list', label: '单据' }, { key: 'overview', label: '总览' }, { key: 'library', label: '资料' })
+    tabs.push({ key: 'list', label: '单据' }, { key: 'overview', label: '总览' }, { key: 'library', label: this.data.isSuper ? 'SKU' : '资料' })
     return tabs
   },
 
@@ -230,7 +231,7 @@ const coreMethods = {
     if (tab === 'list') this.loadList()
     else if (tab === 'overview' && !this.data.dashLoaded) this.loadDashboard()
     else if (tab === 'create') this.enterCreate(o.mode)
-    else if (tab === 'library') this.enterLibrary()
+    else if (tab === 'library') this.enterLibrary(o.view)
   },
 
   switchTab(e) {
@@ -782,10 +783,11 @@ const coreMethods = {
 
 Page(
   Object.assign(
-    { data: Object.assign({}, baseData, createPart.data, libraryPart.data, memosPart.data) },
+    { data: Object.assign({}, baseData, createPart.data, libraryPart.data, skusPart.data, memosPart.data) },
     coreMethods,
     createPart.methods,
     libraryPart.methods,
+    skusPart.methods,
     memosPart.methods
   )
 )

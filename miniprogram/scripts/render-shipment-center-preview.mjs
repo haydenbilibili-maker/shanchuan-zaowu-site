@@ -96,14 +96,23 @@ const common = {
   ready: true, isSuper: true, canWrite: true, stores, storeNames: stores.map((s) => s.name),
   storeFilterNames: ['全部门店', ...stores.map((s) => s.name)], storeFilterIndex: 0,
   statusFilterNames: ['全部状态'], statusFilterIndex: 0, sourceFilterNames: ['全部来源'], sourceFilterIndex: 0,
-  sheetBodyPx: 520, highlightIds: {}, tabs: [{ key: 'create', label: '开单' }, { key: 'list', label: '单据' }, { key: 'overview', label: '总览' }, { key: 'library', label: '资料' }],
+  sheetBodyPx: 520, highlightIds: {}, tabs: [{ key: 'create', label: '开单' }, { key: 'list', label: '单据' }, { key: 'overview', label: '总览' }, { key: 'library', label: 'SKU' }],
   draft: { storeIndex: 0, shipmentDate: '2026-09-28', note: '' }, globalRatePct: 30, pricingEnabled: true,
   lines: [], totalText: '¥0.00', totalQty: 0, pendingCount: 0, canSave: false, saveHint: '先加明细',
-  skuPicker: {}, skuForm: {}, picker: {}, libForm: {}, single: { qty: '1' }, formCategoryNames: [], formStatusNames: ['已确认'],
+  skuPicker: {}, skuEdit: {}, picker: {}, libForm: {}, libView: 'material',
+  skuCat: { list: [], counts: {}, categoryNames: ['全部分类'], categoryValues: [''], categoryIndex: 0, filter: 'all' }, single: { qty: '1' }, formCategoryNames: [], formStatusNames: ['已确认'],
   list: [], summary: { totalQty: 0, count: 0, itemCount: 0, byStore: [] }, statusQuick: '',
   createBusy: false, saving: false, parsing: false, loading: false, dashLoading: false, libLoading: false, busy: false,
   keyword: '', libKeyword: '', itemKeyword: '', itemSearching: false, itemHits: [], filterOpen: false, dateFrom: '', dateTo: '', removePendingId: ''
 }
+
+const skuRows = [
+  { _id: 'k1', skuName: '大蓝闪蝶 A1 · 框 10x18', matText: '大蓝闪蝶（A1）', pkgText: '框 10x18', rateText: '手工费 全局 30%', materialCategory: '蝴蝶', priceText: '¥123.50', priced: true },
+  { _id: 'k2', skuName: '光明女神 · 玻璃罩 15x22 · 造景', matText: '光明女神', pkgText: '玻璃罩 15x22', sceneText: '造景 ¥20.00', rateText: '手工费 40%', materialCategory: '蝴蝶', priceText: '¥186.40', priced: true, needsReview: true },
+  { _id: 'k3', skuName: '熊蜂王 · 玻璃罩', matText: '熊蜂王', pkgText: '玻璃罩', rateText: '手工费 全局 30%', materialCategory: '甲虫', priceText: '待核价', priced: false, pricingNote: '价目表里没有「熊蜂王」' },
+  { _id: 'k4', skuName: '枯叶蛱蝶 · 框 10x18', matText: '枯叶蛱蝶', pkgText: '框 10x18', rateText: '手工费 全局 30%', materialCategory: '蝴蝶', priceText: '¥61.10', priced: true, inactive: true }
+]
+const skuCatData = { list: skuRows, total: 4, counts: { all: 4, active: 3, inactive: 1, review: 1 }, categoryNames: ['全部分类', '甲虫', '蝴蝶'], categoryValues: ['', '甲虫', '蝴蝶'], categoryIndex: 0, filter: 'all', keyword: '', tip: '', tipTone: 'info' }
 
 const AFTER_WXML = join(EXTRA, 'shipment-ops/index.wxml')
 const AFTER_WXSS = join(EXTRA, 'shipment-ops/index.wxss')
@@ -132,6 +141,25 @@ const scenes = [
   {
     name: 'after-library-form', wxml: AFTER_WXML, wxss: AFTER_WXSS, h: 1500,
     data: { ...common, activeTab: 'library', libKind: 'packaging', libList: [], libForm: { show: true, kind: 'packaging', name: '框', option: '10x18', unitPrice: '35', unit: '个', aliases: '', note: '', isDefault: true, image: 'cloud://x/y.jpg', imageThumb: SAMPLE_IMG } }
+  },
+  { name: 'after-sku-catalog', wxml: AFTER_WXML, wxss: AFTER_WXSS, h: 1500, data: { ...common, activeTab: 'library', libView: 'sku', skuCat: skuCatData } },
+  {
+    name: 'after-sku-detail', wxml: AFTER_WXML, wxss: AFTER_WXSS, h: 2300,
+    data: {
+      ...common, activeTab: 'library', libView: 'sku', skuCat: skuCatData, sheetBodyPx: 1900,
+      skuEdit: {
+        show: true, mode: 'edit', origin: 'catalog', id: 'k2', name: '光明女神 · 玻璃罩 15x22 · 造景', nameTouched: false, namePlaceholder: '光明女神 · 玻璃罩 15x22 · 造景',
+        materialName: '光明女神', materialGrade: '', packagingName: '玻璃罩', packagingSize: '15x22', useGlobalRate: false, laborRatePct: 40,
+        hasScene: true, sceneCost: '20', note: '客户常用', status: 'active', needsReview: true, importBatch: 'feishu-2026-10-09',
+        unitPriceText: '¥186.40', pricingStatus: 'priced', breakdown: '原材料 ¥88.00 · 包装 ¥24.00 · 手工费 ¥44.80（40%） · 造景 ¥20.00',
+        refsText: '正式单 3 张 · 草稿 1 张', metaText: '最近修改 2026-10-10 21:05 · 超管', problems: [], removeStep: 'blocked',
+        blockedText: '被 3 张出货单、1 张草稿 引用，不能删除；请改为停用'
+      }
+    }
+  },
+  {
+    name: 'after-library-impact', wxml: AFTER_WXML, wxss: AFTER_WXSS, h: 1500,
+    data: { ...common, activeTab: 'library', libKind: 'material', libList: [], libCategoryNames: ['蝴蝶'], libCategoryIndex: 0, libForm: { show: true, id: 'a', kind: 'material', name: '大蓝闪蝶', option: 'A1', unitPrice: '60', unit: '只', aliases: '大蓝闪', note: '', isDefault: true, impactText: '影响 12 个 SKU 的算价（其中启用 10 个）；已开的单据不受影响' } }
   }
 ]
 if (beforeDir) {

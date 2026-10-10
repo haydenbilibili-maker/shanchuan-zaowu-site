@@ -82,6 +82,39 @@ async function loadHistoryRevenueRows(db, scope) {
   }
 }
 
+/**
+ * SKU 被备忘引用的次数（SKU 模块「被引用 / 能否删除」用，只读，不进任何统计）。
+ * 已删行（removed）也算：草稿里还能「恢复此行」。已删除的备忘不算。
+ * 返回：以 SKU id 为键，值为 { drafts, otherMemos }
+ */
+async function countSkuRefsInMemos(db, ids) {
+  const _ = db.command
+  const want = [...new Set((Array.isArray(ids) ? ids : []).map((x) => String(x || '')).filter(Boolean))]
+  const out = {}
+  want.forEach((id) => { out[id] = { drafts: 0, otherMemos: 0 } })
+  for (let i = 0; i < want.length; i += 50) {
+    const chunk = want.slice(i, i + 50)
+    for (let skip = 0; skip < 2000; skip += 100) {
+      let res
+      try {
+        res = await db.collection(MEMO_COLLECTION).where({ 'lines.skuId': _.in(chunk), deleted: _.neq(true) }).skip(skip).limit(100).get()
+      } catch (e) {
+        if (/not exist|集合不存在|502005/i.test(String((e && (e.errMsg || e.message)) || e))) return out
+        throw e
+      }
+      const page = (res && res.data) || []
+      page.forEach((m) => {
+        if (!m || m.deleted === true) return
+        const isDraft = m.kind === KIND.DRAFT && (m.status === MEMO_STATUS.DRAFT || m.status === MEMO_STATUS.CONFIRMING)
+        const hit = new Set((m.lines || []).map((l) => String((l && l.skuId) || '')).filter((id) => out[id]))
+        hit.forEach((id) => { out[id][isDraft ? 'drafts' : 'otherMemos'] += 1 })
+      })
+      if (page.length < 100) break
+    }
+  }
+  return out
+}
+
 function mapMemo(doc) {
   const d = doc || {}
   return Object.assign(
@@ -299,4 +332,4 @@ function createMemoHandlers(deps) {
   }
 }
 
-module.exports = { MEMO_COLLECTION, KIND, MEMO_STATUS, summarizeMemo, mapMemo, applyDraftPatch, historyRevenueRows, loadHistoryRevenueRows, createMemoHandlers }
+module.exports = { MEMO_COLLECTION, KIND, MEMO_STATUS, summarizeMemo, mapMemo, applyDraftPatch, historyRevenueRows, loadHistoryRevenueRows, countSkuRefsInMemos, createMemoHandlers }

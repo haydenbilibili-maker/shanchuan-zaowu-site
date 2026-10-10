@@ -41,6 +41,14 @@
  *       工作室仪表盘（静态）只读 kind:'history'，加进 revenueTotal / shippedAmount，**不进** computeSettlementKpis
  *       （已结清 / 未收款 / 待确认 / 真毛利）
  *   20) 导入批次（importBatch 以 feishu- 开头）的草稿转正式**不发通知**；手工草稿与直接开单照常通知；客户端入参关不掉通知
+ *  I 2026-10-10 SKU 模块（miniprogram/docs/出货中心SKU模块_蓝图_2026-10-10.md）
+ *   21) 停用 SKU 不进开单选择器：选 SKU 只取 status:'active'（静态）；sku.list 按 status 过滤（运行时）
+ *   22) 被引用 SKU 不可删除：页面绝不调 sku.remove，删除只走 skuAdmin.removeIfUnused；运行时正式单 / 已作废单 /
+ *       已删除单 / 单头 skuId / 草稿任一引用都必拒 IN_USE 且零写入；无引用才软删并记更新人 / 时间
+ *   23) 新 action 仅超管：skuAdmin.* 分发处 requireSuperAdmin（静态）+ 店长调用全被拒且零写入（运行时）；
+ *       SKU 写方法首行拦非超管；SKU 目录入口在 isSuper 门下；标记复核记复核人 / 时间
+ *   24) 算价公式未变：两份 pricingCore.js 逐字一致；quotePrice 例（原材料 10 + 包装 5，费率 30%，造景 2，2 件）
+ *       = 单价 21.5、行合计 4300 分；SKU 编辑弹层计入 page-meta 锁滚动
  */
 import { readFileSync, existsSync, mkdtempSync, cpSync, writeFileSync, mkdirSync, rmSync, readdirSync } from 'node:fs'
 import { resolve, dirname, join, relative } from 'node:path'
@@ -74,7 +82,10 @@ const FILES = {
   memosJs: `${EXTRA}/shipment-ops/parts/memos.js`,
   shipIndex: 'miniprogram/cloudfunctions/manageStoreShipment/index.js',
   studioDash: 'miniprogram/cloudfunctions/getStudioDashboard/index.js',
-  studioKpis: 'miniprogram/cloudfunctions/getStudioDashboard/settlementKpis.js'
+  studioKpis: 'miniprogram/cloudfunctions/getStudioDashboard/settlementKpis.js',
+  skusJs: `${EXTRA}/shipment-ops/parts/skus.js`,
+  pricingShip: 'miniprogram/cloudfunctions/manageStoreShipment/pricingCore.js',
+  pricingSettle: 'miniprogram/cloudfunctions/manageStudioSettlement/pricingCore.js'
 }
 
 const MEMO_COLL = 'ops_shipment_memos'
@@ -103,7 +114,7 @@ function memoRefFiles() {
 
 function collect(s) {
   const errs = []
-  const pageJs = s.opsJs + '\n' + s.createJs + '\n' + s.libraryJs + '\n' + s.sharedJs
+  const pageJs = s.opsJs + '\n' + s.createJs + '\n' + s.libraryJs + '\n' + s.sharedJs + '\n' + s.skusJs
 
   // A1 重定向壳
   if (!/wx\.redirectTo\(/.test(s.shellJs) || !/shipment-ops\/index\?tab=create/.test(s.shellJs)) {
@@ -223,7 +234,7 @@ function collect(s) {
   }
   if (!/action: 'sku\.list'[^}]*reviewOnly/.test(s.createJs)) errs.push('选 SKU 的 sku.list 须传 reviewOnly（只看待复核筛选）')
   const pickerAt = s.opsWxml.indexOf('<!-- 选已有 SKU -->')
-  const picker = pickerAt < 0 ? '' : s.opsWxml.slice(pickerAt, s.opsWxml.indexOf('<!-- 现场新建 SKU -->'))
+  const picker = pickerAt < 0 ? '' : s.opsWxml.slice(pickerAt, s.opsWxml.indexOf('<!-- SKU 详情 / 编辑'))
   if (!/<text class="ss-review-tag" wx:if="\{\{item\.needsReview\}\}">待复核<\/text>/.test(picker)) errs.push('选 SKU 弹层须对 needsReview 显示「待复核」标签')
   if (!/bindtap="toggleSkuReviewOnly"/.test(picker)) errs.push('选 SKU 弹层须有「只看待复核」筛选（toggleSkuReviewOnly）')
   // G17 草稿箱 / 历史备忘：不进统计 + 仅超管 + 标签
@@ -244,8 +255,30 @@ function collect(s) {
   if (!/shippedAmount: roundMoney\(settlement\.shippedAmount \+ historyRevenue\)/.test(s.studioDash)) errs.push('工作室仪表盘出货额（shippedAmount）须含历史备忘')
   const kpiCalls = s.studioDash.match(/computeSettlementKpis\([^)]*\)/g) || []
   if (kpiCalls.length !== 1 || kpiCalls[0] !== 'computeSettlementKpis(shipments)') errs.push(`历史备忘不得进结算口径（已结清 / 未收款 / 待确认 / 真毛利）：computeSettlementKpis 只能吃正式单（现 ${kpiCalls.join('、') || '无'}）`)
+  // I21 停用 SKU 不进开单选择器
+  if (!/action: 'sku\.list', keyword: keyword \|\| '', status: 'active'/.test(s.createJs)) errs.push("停用 SKU 不得进开单选择器：选 SKU 的 sku.list 须传 status: 'active'")
+  // I22 删除只走引用检查
+  if (/'sku\.remove'/.test(pageJs)) errs.push('出货中心不得直接调 sku.remove（被引用 SKU 不可删除；删除只走 skuAdmin.removeIfUnused）')
+  const skuActions = (s.skusJs.match(/action:\s*'([\w.]+)'/g) || []).map((m) => m.replace(/action:\s*'|'/g, ''))
+  skuActions.filter((a) => SKU_ACTIONS.indexOf(a) === -1).forEach((a) => errs.push(`SKU 模块不得调用 ${a}（允许：${SKU_ACTIONS.join(' / ')}）`))
+  if (!skuActions.includes('skuAdmin.removeIfUnused')) errs.push('SKU 删除须走 skuAdmin.removeIfUnused（服务端引用检查）')
+  // I23 仅超管
+  if (!/hasOwnProperty\.call\(skuAdminHandlers, action\)\) \{\s*const auth = await requireSuperAdmin\(/.test(s.shipIndex)) errs.push('manageStoreShipment 的 skuAdmin.* 须仅超管（requireSuperAdmin）')
+  for (const fn of SKU_WRITE_FNS) {
+    const at = s.skusJs.search(new RegExp(`\\n\\s*(async )?${fn}\\((e|opts)?\\) \\{`))
+    const head = at < 0 ? '' : s.skusJs.slice(at, at + 260)
+    if (!/if \(!this\.data\.isSuper\b/.test(head)) errs.push(`${fn} 须首行拦截非超管（if (!this.data.isSuper …) return）`)
+  }
+  if (!/skusPart\.methods/.test(s.opsJs)) errs.push('出货中心页须组装 parts/skus.js（skusPart.methods）')
+  // I24 公式一份口径 + 弹层锁滚动
+  if (s.pricingShip !== s.pricingSettle) errs.push('两份 pricingCore.js 须逐字一致（算价公式只能有一份口径）')
+  if (!/<page-meta page-style="\{\{[^"]*skuEdit\.show/.test(s.opsWxml)) errs.push('SKU 编辑弹层须计入 page-meta 锁滚动（skuEdit.show）')
   return errs
 }
+
+const SKU_ACTIONS = ['sku.list', 'sku.create', 'sku.update', 'quotePrice', 'skuAdmin.refs', 'skuAdmin.removeIfUnused', 'skuAdmin.markReviewed']
+const SKU_WRITE_FNS = ['openSkuEditor', 'submitSkuEdit', 'toggleSkuEditStatus', 'markSkuEditReviewed', 'askRemoveSkuEdit', 'confirmRemoveSkuEdit']
+const SKU_TAPS = ['openSkuCreate', 'openSkuDetail']
 
 const WRITE_TAPS = ['openLibForm', 'toggleLibStatus', 'moveLibRow', 'askRemoveLib', 'confirmRemoveLib', 'deactivateBlocked']
 
@@ -264,7 +297,7 @@ function ungatedWrites(block) {
     }
     const gated = (stack.length && stack[stack.length - 1]) || /wx:if="[^"]*isSuper/.test(attrs)
     const tap = (attrs.match(/(?:bind|catch)tap="(\w+)"/) || [])[1]
-    if (tap && WRITE_TAPS.includes(tap) && !gated) out.push(tag.slice(0, 80))
+    if (tap && (WRITE_TAPS.includes(tap) || SKU_TAPS.includes(tap)) && !gated) out.push(tag.slice(0, 80))
     if (!selfClose) stack.push(gated)
   }
   return out
@@ -412,6 +445,16 @@ async function serverErrs(mutateFiles) {
     else if (Object.prototype.hasOwnProperty.call(up.data, 'needsReview') || Object.prototype.hasOwnProperty.call(up.data, 'importBatch')) {
       errs.push('sku.update 部分更新不得改写 needsReview / importBatch（会冲掉待复核标记）')
     }
+    // I21 停用 SKU 不进开单选择器（选择器传 status:'active'）；SKU 目录（status 空）能看到停用的
+    M.db.studio_shipment_skus = [
+      { _id: 'k4', materialId: 'm3', materialName: '光明女神', packagingName: '玻璃罩', status: 'active' },
+      { _id: 'k5', materialId: 'm5', materialName: '金斑喙凤蝶', packagingName: '玻璃罩', status: 'inactive' }
+    ]
+    const act = await call({ action: 'sku.list', status: 'active' })
+    const actIds = (act.list || []).map((k) => k._id).join(',')
+    if (actIds !== 'k4') errs.push(`停用 SKU 不得出现在开单选择器（sku.list status:active 现回 ${actIds || JSON.stringify(act.msg)}）`)
+    const cat = await call({ action: 'sku.list', status: '' })
+    if ((cat.list || []).length !== 2) errs.push('SKU 目录（sku.list 不传状态）须同时列出启用与停用的 SKU')
   } catch (e) {
     errs.push('云函数运行时测试异常：' + ((e && e.stack) || e))
   } finally {
@@ -425,16 +468,33 @@ async function serverErrs(mutateFiles) {
 const MEMO_SDK_MOCK = `
 const M = global.__SM_MOCK
 const clone = (d) => JSON.parse(JSON.stringify(d))
+function match(x, v) {
+  if (v && typeof v === 'object' && !Array.isArray(v)) {
+    if ('neq' in v) return x !== v.neq
+    if ('in' in v) return v.in.includes(x)
+    if ('eq' in v) return x === v.eq
+    return true
+  }
+  return x === v
+}
+/** 'items.skuId' 这类点路径：途经数组时取每个元素的字段（与云数据库数组字段查询同义） */
+function valuesAt(doc, path) {
+  let cur = [doc]
+  for (const part of path.split('.')) {
+    const next = []
+    cur.forEach((c) => (Array.isArray(c) ? c : [c]).forEach((x) => { if (x && typeof x === 'object' && part in x) next.push(x[part]) }))
+    cur = next
+  }
+  return cur
+}
 function hit(doc, cond) {
   return Object.entries(cond || {}).every(([k, v]) => {
-    const x = doc[k]
-    if (v && typeof v === 'object' && !Array.isArray(v)) {
-      if ('neq' in v) return x !== v.neq
-      if ('in' in v) return v.in.includes(x)
-      if ('eq' in v) return x === v.eq
-      return true
+    if (k === 'or' && Array.isArray(v)) return v.some((c) => hit(doc, c))
+    if (k.includes('.')) {
+      const vals = valuesAt(doc, k)
+      return vals.length ? vals.some((x) => match(x, v)) : match(undefined, v)
     }
-    return x === v
+    return match(doc[k], v)
   })
 }
 function q(name, cond) {
@@ -589,6 +649,97 @@ async function memoErrs(mutateFiles) {
   return errs
 }
 
+/* ---------- I22–I24 manageStoreShipment 的 skuAdmin.* + quotePrice 运行时（沿用 G18 有状态 mock） ---------- */
+const SKU_ADMIN_DB = () => ({
+  studio_shipment_skus: ['sA', 'sB', 'sC', 'sD', 'sE', 'sF'].map((id) => ({ _id: id, skuName: id, status: id === 'sE' ? 'inactive' : 'active', needsReview: id === 'sE' })),
+  ops_shipments: [
+    { _id: 'x1', status: 'confirmed', items: [{ skuId: 'sA', qty: 1 }] },
+    { _id: 'x2', status: 'cancelled', items: [{ skuId: 'sB', qty: 1 }] },
+    { _id: 'x3', status: 'confirmed', deleted: true, items: [{ skuId: 'sC', qty: 1 }] },
+    { _id: 'x4', status: 'confirmed', skuId: 'sF', items: [] }
+  ],
+  [MEMO_COLL]: [{ _id: 'dm', kind: 'draft', status: 'draft', deleted: false, lines: [{ key: 'l1', skuId: 'sD', qty: 1 }] }],
+  studio_material_prices: [{ _id: 'tm', name: '测材', grade: '默认', isDefaultGrade: true, unitPrice: 10, status: 'active' }],
+  studio_packaging_prices: [{ _id: 'tp', name: '测包', size: '默认', isDefaultSize: true, unitPrice: 5, status: 'active' }],
+  configs: [{ _id: 'studio_settlement', enabled: true, laborRatePct: 30, requirePackaging: true }]
+})
+const SKU_REF_CASES = [['sA', '正式单明细', 'shipments'], ['sB', '已作废单', 'cancelledShipments'], ['sC', '已删除单', 'deletedShipments'], ['sD', '草稿', 'drafts'], ['sF', '单头 skuId', 'shipments']]
+
+async function skuAdminErrs(mutateFiles) {
+  const errs = []
+  const fnDir = resolve(ROOT, 'miniprogram/cloudfunctions/manageStoreShipment')
+  const tmp = mkdtempSync(join(tmpdir(), 'sa-guard-'))
+  try {
+    cpSync(fnDir, tmp, { recursive: true, filter: (p) => !/node_modules/.test(p) })
+    writeFileSync(join(tmp, 'package.json'), '{"type":"commonjs"}')
+    mkdirSync(join(tmp, 'node_modules/wx-server-sdk'), { recursive: true })
+    writeFileSync(join(tmp, 'node_modules/wx-server-sdk/index.js'), MEMO_SDK_MOCK)
+    writeFileSync(join(tmp, 'staffGuard.js'), MEMO_GUARD_MOCK)
+    for (const [f, fn] of Object.entries(mutateFiles || {})) {
+      const p = join(tmp, f)
+      writeFileSync(p, fn(readFileSync(p, 'utf8')))
+    }
+    const M = (global.__SM_MOCK = { role: 'super', writes: [], seq: 0, db: SKU_ADMIN_DB() })
+    const fn = createRequire(join(tmp, 'index.js'))(join(tmp, 'index.js'))
+    const call = (ev) => fn.main(ev, {})
+    const sku = (id) => M.db.studio_shipment_skus.find((d) => d._id === id)
+    const reset = () => { M.role = 'super'; M.writes = []; M.db = SKU_ADMIN_DB() }
+
+    const rf = await call({ action: 'skuAdmin.refs', ids: ['sA', 'sB', 'sC', 'sD', 'sE', 'sF'] })
+    if (!rf.success) errs.push(`skuAdmin.refs 调用失败（${rf.msg}）`)
+    else {
+      for (const [id, why, key] of SKU_REF_CASES) {
+        const r = (rf.refs || {})[id] || {}
+        if (!(r[key] > 0) || !(r.total > 0)) errs.push(`被引用须统计到：${id}（${why}）refs.${key}>0（现 ${JSON.stringify(r)}）`)
+      }
+      if (((rf.refs || {}).sE || {}).total !== 0) errs.push(`未被引用的 SKU 引用数须为 0（现 ${JSON.stringify((rf.refs || {}).sE)}）`)
+    }
+    if (M.writes.length) errs.push('skuAdmin.refs 不得写库')
+
+    for (const [id, why] of SKU_REF_CASES) {
+      reset()
+      const r = await call({ action: 'skuAdmin.removeIfUnused', id })
+      if (r.success || r.code !== 'IN_USE' || M.writes.length || sku(id).deleted) {
+        errs.push(`被引用 SKU 不可删除：${id}（${why}）须 IN_USE 且零写入（现 ${JSON.stringify({ success: r.success, code: r.code, writes: M.writes.length })}）`)
+      }
+    }
+
+    reset()
+    let r = await call({ action: 'skuAdmin.markReviewed', id: 'sE' })
+    const reviewed = sku('sE')
+    if (!r.success || reviewed.needsReview !== false || reviewed.reviewedBy !== 't' || !(reviewed.reviewedAt > 0) || reviewed.updatedBy !== 't' || !(reviewed.updatedAt > 0)) {
+      errs.push(`标记已复核须写 needsReview:false + 复核人 / 时间 + 更新人 / 时间（现 ${JSON.stringify({ success: r.success, msg: r.msg, doc: reviewed })}）`)
+    }
+    if (M.writes.some((w) => w.name !== 'studio_shipment_skus')) errs.push('标记已复核只能写 SKU 集合')
+    reset()
+    r = await call({ action: 'skuAdmin.removeIfUnused', id: 'sE' })
+    const removed = sku('sE')
+    if (!r.success || removed.deleted !== true || removed.updatedBy !== 't' || !(removed.updatedAt > 0)) {
+      errs.push(`无引用的 SKU 须软删并记更新人 / 时间（现 ${JSON.stringify({ success: r.success, msg: r.msg, doc: removed })}）`)
+    }
+    if (M.writes.some((w) => w.name !== 'studio_shipment_skus')) errs.push('删除 SKU 只能写 SKU 集合（不得动出货单 / 草稿）')
+
+    reset()
+    M.role = 'manager'
+    for (const ev of [{ action: 'skuAdmin.refs', id: 'sE' }, { action: 'skuAdmin.removeIfUnused', id: 'sE' }, { action: 'skuAdmin.markReviewed', id: 'sE' }]) {
+      const mr = await call(ev)
+      if (mr.success || M.writes.length) errs.push(`店长调用 ${ev.action} 须被拒（仅超管）且零写入`)
+    }
+
+    reset()
+    const qp = await call({ action: 'quotePrice', laborRatePct: 30, lines: [{ itemName: '测', qty: 2, materialName: '测材', packagingName: '测包', sceneCost: 2 }] })
+    const q = (qp.lines || [])[0] || {}
+    const got = [q.unitPrice, q.lineTotalCents, q.unitLaborCostCents, q.unitSceneCostCents].join('/')
+    if (got !== '21.5/4300/450/200') errs.push(`算价公式不得改变：原材料 10 + 包装 5、费率 30%、造景 2、2 件 → 单价 21.5 / 行 4300 分 / 手工 450 / 造景 200（现 ${got}；${qp.msg || ''}）`)
+  } catch (e) {
+    errs.push('SKU 模块运行时测试异常：' + ((e && e.stack) || e))
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+    delete global.__SM_MOCK
+  }
+  return errs
+}
+
 const src = {}
 for (const [k, rel] of Object.entries(FILES)) {
   const p = resolve(ROOT, rel)
@@ -614,7 +765,7 @@ if (selftest) {
     ['SKU 载荷带单价', (s) => ({ ...s, createJs: s.createJs.replace('const out = { skuId: l.skuId,', 'const out = { unitPrice: l.unitPrice, skuId: l.skuId,') }), /不得带单价/],
     ['staffAuth 漂移', (s) => ({ ...s, staffManager: s.staffManager + '\n// drift' }), /逐字一致/],
     ['原生 toast', (s) => ({ ...s, libraryJs: s.libraryJs + "\nwx.showToast({ title: 'x' })" }), /原生 toast/],
-    ['资料页签对店长隐藏', (s) => ({ ...s, opsJs: s.opsJs.replace(", { key: 'library', label: '资料' })", ")\n    if (this.data.isSuper) tabs.push({ key: 'library', label: '资料' })") }), /须对店长可见/],
+    ['资料页签对店长隐藏', (s) => ({ ...s, opsJs: s.opsJs.replace(", { key: 'library', label: this.data.isSuper ? 'SKU' : '资料' })", ")\n    if (this.data.isSuper) tabs.push({ key: 'library', label: 'SKU' })") }), /须对店长可见/],
     ['店长看见删除', (s) => ({ ...s, opsWxml: s.opsWxml.replace(/<view class="sc-lib-actions" wx:if="\{\{isSuper\}\}"/, '<view class="sc-lib-actions"') }), /isSuper 门下/],
     ['店长看见新增', (s) => ({ ...s, opsWxml: s.opsWxml.replace(/ wx:if="\{\{isSuper\}\}"([^>]*bindtap="openLibForm")/, '$1') }), /isSuper 门下/],
     ['写方法不拦店长', (s) => ({ ...s, libraryJs: s.libraryJs.replace("if (!this.data.isSuper || !row || this.data.libBusy) return\n    const label", "if (!row || this.data.libBusy) return\n    const label") }), /confirmRemoveLib 须首行拦截/],
@@ -622,7 +773,7 @@ if (selftest) {
     ['编辑页丢排序参数', (s) => ({ ...s, editJs: s.editJs.replace(", orderBy: 'sort' }", ' }') }), /shipment-edit 选择器/],
     ['删除绕过引用检查', (s) => ({ ...s, libraryJs: s.libraryJs.replace("'priceBook.removeIfUnused'", "'priceBook.remove'") }), /priceBook\.remove/],
     ['店长可删（服务端）', (s) => ({ ...s, settle: s.settle.replace("'priceBook.removeIfUnused': 1", "'priceBook.removeIfUnusedX': 1") }), /SUPER_ONLY_ACTIONS/],
-    ['待复核标签被删', (s) => ({ ...s, opsWxml: s.opsWxml.replace('wx:if="{{item.needsReview}}">待复核', 'wx:if="{{false}}">待复核') }), /待复核」标签/],
+    ['待复核标签被删', (s) => ({ ...s, opsWxml: s.opsWxml.replace(/(<!-- 选已有 SKU -->[\s\S]*?)wx:if="\{\{item\.needsReview\}\}">待复核/, '$1wx:if="{{false}}">待复核') }), /待复核」标签/],
     ['待复核筛选被删', (s) => ({ ...s, opsWxml: s.opsWxml.replace('bindtap="toggleSkuReviewOnly"', '') }), /只看待复核/],
     ['选择器丢待复核映射', (s) => ({ ...s, createJs: s.createJs.replace('needsReview: s.needsReview === true', 'needsReviewX: false') }), /mapSkuForPicker 须映射 needsReview/],
     ['选择器丢 reviewOnly', (s) => ({ ...s, createJs: s.createJs.replace("limit: 100, reviewOnly }", 'limit: 100 }') }), /须传 reviewOnly/],
@@ -635,7 +786,15 @@ if (selftest) {
     ['仪表盘映射吃草稿', (s) => ({ ...s, studioKpis: s.studioKpis.replace("m && m.kind === 'history' && m.deleted !== true", 'm && m.deleted !== true') }), /historyRevenueRows 须只取/],
     ['仪表盘营收漏历史', (s) => ({ ...s, studioDash: s.studioDash.replace(' + historyRevenue)\n    const shipmentCount', ')\n    const shipmentCount') }), /revenueTotal）须含历史/],
     ['仪表盘出货额漏历史', (s) => ({ ...s, studioDash: s.studioDash.replace('roundMoney(settlement.shippedAmount + historyRevenue)', 'settlement.shippedAmount') }), /shippedAmount）须含历史/],
-    ['历史进结算口径', (s) => ({ ...s, studioDash: s.studioDash.replace('computeSettlementKpis(shipments)', 'computeSettlementKpis(shipments.concat(historyRows))') }), /不得进结算口径/]
+    ['历史进结算口径', (s) => ({ ...s, studioDash: s.studioDash.replace('computeSettlementKpis(shipments)', 'computeSettlementKpis(shipments.concat(historyRows))') }), /不得进结算口径/],
+    ['选择器混入停用 SKU', (s) => ({ ...s, createJs: s.createJs.replace("keyword: keyword || '', status: 'active', limit: 100", "keyword: keyword || '', status: '', limit: 100") }), /停用 SKU 不得进开单选择器/],
+    ['页面直接删 SKU', (s) => ({ ...s, skusJs: s.skusJs + "\ncallCloud(SETTLEMENT_FN, { action: 'sku.remove', id: 'x' })" }), /不得直接调 sku\.remove/],
+    ['删除绕过引用检查（SKU）', (s) => ({ ...s, skusJs: s.skusJs.replace("action: 'skuAdmin.removeIfUnused'", "action: 'skuAdmin.removeX'") }), /skuAdmin\.removeIfUnused/],
+    ['SKU 动作对店长开放（静态）', (s) => ({ ...s, shipIndex: s.shipIndex.replace(/(hasOwnProperty\.call\(skuAdminHandlers, action\)\) \{\s*const auth = await )requireSuperAdmin/, '$1requireWriter') }), /skuAdmin\.\* 须仅超管/],
+    ['SKU 写方法不拦店长', (s) => ({ ...s, skusJs: s.skusJs.replace('if (!this.data.isSuper || f.saving || f.busy) return', 'if (f.saving || f.busy) return') }), /submitSkuEdit 须首行拦截/],
+    ['SKU 目录对店长可见', (s) => ({ ...s, opsWxml: s.opsWxml.replace("wx:if=\"{{isSuper && libView === 'sku'}}\"", "wx:if=\"{{libView === 'sku'}}\"") }), /isSuper 门下/],
+    ['SKU 弹层不锁滚动', (s) => ({ ...s, opsWxml: s.opsWxml.replace(' || skuEdit.show', '') }), /page-meta 锁滚动/],
+    ['两份算价公式漂移', (s) => ({ ...s, pricingShip: s.pricingShip + '\n// drift' }), /pricingCore\.js 须逐字一致/]
   ]
   // 运行时注入：只改 tmp 副本里的云函数源码
   const serverCases = [
@@ -649,6 +808,7 @@ if (selftest) {
     ['mapSku 不透出待复核', { 'settlementDefaults.js': (t) => t.replace('needsReview: d.needsReview === true,', '') }, /须透出 needsReview/],
     ['reviewOnly 不筛选', { 'index.js': (t) => t.replace('if (event.reviewOnly === true) rows = rows.filter((r) => r.needsReview === true)', '') }, /reviewOnly 须只回待复核/],
     ['reviewOnly 宽松判真', { 'index.js': (t) => t.replace('if (event.reviewOnly === true)', 'if (event.reviewOnly)') }, /只认布尔 true/],
+    ['停用 SKU 进选择器（运行时）', { 'index.js': (t) => t.replace('rows = rows.filter((r) => (status ? r.status === status : true))\n  const reviewCount', 'rows = rows.filter(() => true)\n  const reviewCount') }, /停用 SKU 不得出现在开单选择器/],
     ['部分更新冲掉待复核', { 'settlementDefaults.js': (t) => t.replace("note: String(src.note == null ? '' : src.note).trim(),\n    deleted: false", "note: String(src.note == null ? '' : src.note).trim(),\n    needsReview: false,\n    deleted: false") }, /不得改写 needsReview/]
   ]
   // G18 运行时注入：只改 manageStoreShipment 的 tmp 副本
@@ -667,7 +827,18 @@ if (selftest) {
     ['客户端可关通知', { 'index.js': (t) => t.replace('opts && opts.silentNotify === true', '((opts && opts.silentNotify === true) || event.silentNotify === true)') }, /客户端入参不得关闭通知/],
     ['备忘对店长开放（运行时）', { 'index.js': (t) => t.replace(/(hasOwnProperty\.call\(memoHandlers, action\)\) \{\s*const auth = await )requireSuperAdmin/, '$1requireWriter') }, /店长调用 memo/]
   ]
-  const base = collect(src).concat(await serverErrs(), await memoErrs())
+  // I22–I24 运行时注入：只改 manageStoreShipment 的 tmp 副本
+  const skuAdminCases = [
+    ['有引用也能删', { 'skuAdmin.js': (t) => t.replace('if (r.total > 0) {', 'if (false) {') }, /被引用 SKU 不可删除/],
+    ['引用漏草稿', { 'shipmentMemos.js': (t) => t.replace("'lines.skuId': _.in(chunk)", "'lines.skuIdX': _.in(chunk)") }, /草稿/],
+    ['引用漏作废 / 已删单', { 'skuAdmin.js': (t) => t.replace("hit.forEach((id) => { out[id][key] += 1 })", "if (key === 'shipments') hit.forEach((id) => { out[id][key] += 1 })") }, /已作废单|已删除单/],
+    ['引用漏单头 skuId', { 'skuAdmin.js': (t) => t.replace("_.or([{ 'items.skuId': _.in(chunk) }, { skuId: _.in(chunk) }])", "{ 'items.skuId': _.in(chunk) }") }, /单头 skuId/],
+    ['删除不记更新人', { 'skuAdmin.js': (t) => t.replace('data: { deleted: true, deletedAt: now, updatedAt: now, updatedBy: actorName(actor) }', 'data: { deleted: true, deletedAt: now }') }, /记更新人/],
+    ['复核不记复核人', { 'skuAdmin.js': (t) => t.replace('reviewedAt: now, reviewedBy: by, ', '') }, /复核人/],
+    ['SKU 动作对店长开放（运行时）', { 'index.js': (t) => t.replace(/(hasOwnProperty\.call\(skuAdminHandlers, action\)\) \{\s*const auth = await )requireSuperAdmin/, '$1requireWriter') }, /店长调用 skuAdmin/],
+    ['算价公式被改', { 'pricingCore.js': (t) => t.replace('Math.round(((perUnitMaterial + perUnitPackaging) * rate) / 100)', 'Math.round((perUnitMaterial * rate) / 100)') }, /算价公式不得改变/]
+  ]
+  const base = collect(src).concat(await serverErrs(), await memoErrs(), await skuAdminErrs())
   if (base.length) {
     base.forEach((e) => console.error(TAG, '基线不绿，selftest 无意义：', e))
     process.exit(1)
@@ -696,12 +867,19 @@ if (selftest) {
       bad++
     }
   }
+  for (const [name, files, expect] of skuAdminCases) {
+    const errs = await skuAdminErrs(files)
+    if (!errs.some((e) => expect.test(e))) {
+      console.error(TAG, `selftest 失败：「${name}」未被检出`, errs.slice(0, 2))
+      bad++
+    }
+  }
   if (bad) process.exit(1)
-  console.log(TAG, `selftest ok（${cases.length + serverCases.length + memoCases.length} 条注入全部检出）`)
+  console.log(TAG, `selftest ok（${cases.length + serverCases.length + memoCases.length + skuAdminCases.length} 条注入全部检出）`)
   process.exit(0)
 }
 
-const errs = collect(src).concat(await serverErrs(), await memoErrs())
+const errs = collect(src).concat(await serverErrs(), await memoErrs(), await skuAdminErrs())
 if (errs.length) {
   errs.forEach((e) => console.error(TAG, e))
   process.exit(1)
