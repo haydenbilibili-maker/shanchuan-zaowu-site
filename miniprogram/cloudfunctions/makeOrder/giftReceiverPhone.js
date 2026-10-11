@@ -13,6 +13,7 @@
  * 凭礼笺领取（2026-10-11 拍板，蓝图 miniprogram/docs/礼赠凭礼笺领取_2026-10-11.md）：
  *   带 GIFT_CLAIM_LINK_CAP 且 giftClaimMode='link'、交付方式在 CLAIM_LINK_DELIVERY 内、未带有效号码 → 免填号，
  *   订单标 claimMode:'link'；可选 6 位口令（passcode 只进核验集合）。其它交付方式仍按上面规则必填。
+ *   第三轮（同日）追加 ship_to_self：货寄给送礼人自己，礼笺只决定「记在谁名下」（同蓝图 §10）。直寄 TA 仍必填。
  */
 const crypto = require('crypto')
 
@@ -20,7 +21,7 @@ const GIFT_PHONE_CAP = 'gift_receiver_phone_v1'
 const ENFORCE_ALL_DEFAULT = false
 const GIFT_VERIFY_COL = 'gift_receiver_verify'
 const GIFT_CLAIM_LINK_CAP = 'gift_claim_link_v1'
-const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup']
+const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self']
 
 function enforceAllGiftPhone() {
   return ENFORCE_ALL_DEFAULT || String(process.env.GIFT_PHONE_ENFORCE_ALL || '') === '1'

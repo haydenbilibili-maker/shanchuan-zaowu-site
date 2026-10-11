@@ -1959,11 +1959,18 @@ async function passcodeGate(order, openid) {
 }
 
 const CLAIM_OPEN_STATUS = ['paid', 'paid_awaiting_address', 'ready_pickup']
+/** 寄给我：货在送礼人手里，礼笺只决定记在谁名下 → 订单结束前都可改（蓝图 §10） */
+const SELF_CLAIM_OPEN_STATUS = ['paid', 'shipped', 'received']
 
-/** 作废换链接的截止：对方填地址 / 到店领取前 */
+function claimOpen(order) {
+  const self = ((order && order.giftMeta) || {}).deliveryType === 'ship_to_self'
+  return (self ? SELF_CLAIM_OPEN_STATUS : CLAIM_OPEN_STATUS).includes(String((order && order.status) || ''))
+}
+
+/** 作废换链接的截止：对方填地址 / 到店领取前；寄给我为订单结束前 */
 function claimResettable(order) {
   const meta = (order && order.giftMeta) || {}
-  return isClaimLink(order) && CLAIM_OPEN_STATUS.includes(String(order.status || '')) &&
+  return isClaimLink(order) && claimOpen(order) &&
     meta.addressStatus !== 'submitted' && meta.claimStatus !== 'claimed'
 }
 
@@ -2052,7 +2059,8 @@ async function getReceiverVerify(event, openid) {
 async function claimLinkInfo(order) {
   const meta = order.giftMeta || {}
   const link = isClaimLink(order)
-  const out = { claimMode: link ? 'link' : '', linkEligible: claimLinkAllowed(meta.deliveryType), canReset: claimResettable(order), passcode: '', claimer: null }
+  const out = { claimMode: link ? 'link' : '', linkEligible: claimLinkAllowed(meta.deliveryType), canReset: claimResettable(order), passcode: '', claimer: null, resetHint: '' }
+  if (link && meta.deliveryType === 'ship_to_self') out.resetHint = '藏品在你手里，礼笺只决定这份礼记在谁名下；订单结束前都可作废并换新链接'
   if (!link) return out
   if (meta.claimPasscode) {
     const doc = await loadVerifyDoc(order._id)
@@ -2106,7 +2114,7 @@ async function setClaimPasscode(event, openid) {
   if (!isClaimLink(order)) return { success: false, code: 'NOT_LINK', msg: '这份礼赠不是凭礼笺领取' }
   const meta = order.giftMeta || {}
   if (meta.receiverOpenid) return { success: false, code: 'ALREADY_BOUND', msg: 'TA 已收下，口令不能再改' }
-  if (!CLAIM_OPEN_STATUS.includes(String(order.status || ''))) return { success: false, code: 'CLOSED', msg: '这份礼赠已结束' }
+  if (!claimOpen(order)) return { success: false, code: 'CLOSED', msg: '这份礼赠已结束' }
   const passcode = event.enable === true ? createPasscode() : ''
   await db.collection(GIFT_VERIFY_COL).doc(order._id).set({ data: buildLinkVerifyDoc(order._id, openid, passcode, db.serverDate()) })
   await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.claimPasscode': !!passcode } })

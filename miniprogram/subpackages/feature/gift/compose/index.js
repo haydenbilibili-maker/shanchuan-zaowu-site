@@ -89,7 +89,7 @@ const OTHER_DELIVERIES = [
 ]
 
 /** 可不填号、凭礼笺领取的交付方式（与云函数 giftReceiverPhone.CLAIM_LINK_DELIVERY 同值，check:gift-claim-link 钉住） */
-const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup']
+const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self']
 
 Page({
   data: {

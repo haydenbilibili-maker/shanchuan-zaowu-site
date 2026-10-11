@@ -30,7 +30,7 @@ C 端下单、支付、履约、退款的主订单集合。
 | `refundPolicy` | object | 退款策略快照 |
 | `giftMeta.receiverVerify` | boolean | **选填**（2026-09-28 N3）。送礼人设了礼笺领取核验（受礼人手机号）。**只存布尔**：号码的加盐哈希与尾号在仅云函数可读写的 `gift_receiver_verify`（本集合 `read: auth != null`，不得落手机号）。写入方 `manageGift.setReceiverPhone`；无此键 = 未设核验（含全部历史单，保持现行领取行为）。 |
 | `giftMeta.receiverBoundSource` | string | 受礼人绑定来源：`receive_page` / `share_link`（`bindReceiver`）、`phone_verify_account` / `phone_verify_manual`（`verifyReceiver` 核验通过即绑定）、`claim_link`（凭礼笺领取：受礼人主动点「收下」，2026-10-11） |
-| `giftMeta.claimMode` | string | **选填**（2026-10-11 凭礼笺领取）。`'link'` = 不填受礼人手机号、凭礼笺链接领取（只限 `invite_address` / `store_pickup`）；打开不绑定，须主动收下，条件写入保证一份一人。设了手机号（`receiverVerify: true`）即以手机号核验为准。写入方 `makeOrder`（带 `gift_claim_link_v1`）、`manageGift.setReceiverPhone`（清号 = 转为凭礼笺领取）。无此键 = 原行为。 |
+| `giftMeta.claimMode` | string | **选填**（2026-10-11 凭礼笺领取）。`'link'` = 不填受礼人手机号、凭礼笺链接领取（只限 `invite_address` / `store_pickup` / `ship_to_self`，后者 2026-10-11 第三轮追加：货寄送礼人自己，礼笺只决定记在谁名下，作废换链接到订单结束前）；打开不绑定，须主动收下，条件写入保证一份一人。设了手机号（`receiverVerify: true`）即以手机号核验为准。写入方 `makeOrder`（带 `gift_claim_link_v1`）、`manageGift.setReceiverPhone`（清号 = 转为凭礼笺领取）。无此键 = 原行为。 |
 | `giftMeta.claimPasscode` | boolean | **选填**。凭礼笺领取是否加了 6 位口令。**只存布尔**：口令本身在 `gift_receiver_verify.passcode`（仅云函数可读写，只回给送礼人）。 |
 | `giftMeta.claimName` / `giftMeta.claimedByLinkAt` | string / date | 凭礼笺收下时受礼人自填的称呼（≤12 字，选填）与收下时间；送礼人据此看到「谁收下了」。 |
 | `giftMeta.claimResetCount` / `giftMeta.claimResetAt` | number / date | 送礼人「作废并换新链接」次数与最近时间（`manageGift.resetShareLink`：换 `shareToken`、解绑原领取人、自提换 `claimCode`）。 |

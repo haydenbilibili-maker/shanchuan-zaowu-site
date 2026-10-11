@@ -3,14 +3,15 @@
  * 礼赠 · 凭礼笺领取守卫（蓝图 miniprogram/docs/礼赠凭礼笺领取_2026-10-11.md）
  *
  * 用**真源码** + 桩数据库跑 makeOrder / manageGift（不联网、不写盘）：
- *   A 下单：只有新版客户端（带 gift_claim_link_v1）+ 填址 / 自提才可免填号；直寄 / 寄给自己仍必填；带号即走手机号核验；
+ *   A 下单：只有新版客户端（带 gift_claim_link_v1）+ 填址 / 自提 / 寄给我才可免填号；直寄 TA 仍必填；带号即走手机号核验；
  *     旧版客户端行为不变；口令只进核验集合（orders 登录可读）
  *   B 领取：打开不算领取（getShare 不绑定、不出自提领取码）；bindReceiver 不带 confirm 不绑定；填址前须先收下；
  *     收下**不要求注册**（无 users 记录也能收）；一份礼只一个微信身份（含并发两人同时收下只一人成功）
  *   C 口令：未过口令不得收下；错口令不绑定、限次；口令不出现在受礼人可见数据里；口令通过不等于收下
  *   D 作废并换新链接：旧链接即刻失效、原领取人解绑、口令重置；对方填址 / 到店领取后不可作废；只有送礼人可作废
  *   E 送礼人看到领取人：称呼 / 「未留名的微信用户」+ 收下时间；不出完整号码
- *   F 「不设核验」后门已改为「转为凭礼笺领取」：只限填址 / 自提，其它交付方式拒绝清号；设号即回到手机号核验
+ *   F 「不设核验」后门已改为「转为凭礼笺领取」：只限填址 / 自提 / 寄给我，直寄 TA 拒绝清号；设号即回到手机号核验
+ *   S 寄给我（第三轮 §10）：同一套收下规则；作废 / 口令窗口放宽到订单结束前（含已签收），其它交付方式窗口不变
  *   G 客户端接线：送礼页免填号交付方式与云端同值；凭礼笺领取不发朋友圈（成功页 / 订单详情）；领取页收下不走注册门；
  *     注册引导卡只给未注册者、可关、在协议勾选守卫名单内；7 个新埋点双端登记
  *
@@ -33,6 +34,8 @@ const P = {
   phoneLib: resolve(MP, 'cloudfunctions/makeOrder/giftReceiverPhone.js'),
   phoneLibCopy: resolve(MP, 'cloudfunctions/manageGift/giftReceiverPhone.js'),
   composeJs: resolve(MP, 'subpackages/feature/gift/compose/index.js'),
+  composeWxml: resolve(MP, 'subpackages/feature/gift/compose/index.wxml'),
+  claimSheetWxml: resolve(MP, 'subpackages/feature/gift/claim-sheet/index.wxml'),
   confirmOrder: resolve(MP, 'subpackages/business/confirm-order/index.js'),
   receiverVerify: resolve(MP, 'subpackages/feature/gift/receiverVerify.js'),
   successJs: resolve(MP, 'subpackages/feature/gift/success/index.js'),
@@ -170,7 +173,7 @@ async function runChecks() {
   // ---------------- A 下单
   const PL = load(P.phoneLib, { stubs: { crypto: NODE_CRYPTO } })
   ok(read(P.phoneLib) === read(P.phoneLibCopy), 'A 副本漂移：manageGift/giftReceiverPhone.js 与 makeOrder/giftReceiverPhone.js 不一致')
-  ok(JSON.stringify(PL.CLAIM_LINK_DELIVERY) === JSON.stringify(['invite_address', 'store_pickup']), 'A 免填号的交付方式只能是「邀请 TA 填地址」与「门店自提」')
+  ok(JSON.stringify(PL.CLAIM_LINK_DELIVERY) === JSON.stringify(['invite_address', 'store_pickup', 'ship_to_self']), 'A 免填号的交付方式只能是「邀请 TA 填地址」「门店自提」「寄给我」（直寄 TA 必填）')
   async function makeOrder(event) {
     const { store, db } = makeDb({ orders: [], gift_settings: [] })
     const sdk = { init() {}, DYNAMIC_CURRENT_ENV: 'env', database: () => db, getWXContext: () => ({ OPENID: GIVER }) }
@@ -189,7 +192,8 @@ async function runChecks() {
     const res = await main({ items: [{ productId: 'p1', count: 1 }], ...event })
     return { res, store }
   }
-  const gEv = (deliveryType) => ({ source: 'gift', giftMeta: { deliveryType, recipientName: '小满', cardBody: '生日快乐', ...(deliveryType === 'store_pickup' ? { storeId: 's1', storeName: '山海造物' } : {}) } })
+  const gEv = (deliveryType) => ({ source: 'gift', giftMeta: { deliveryType, recipientName: '小满', cardBody: '生日快乐', ...(deliveryType === 'store_pickup' ? { storeId: 's1', storeName: '山海造物' } : {}) },
+    ...(deliveryType.startsWith('ship_') ? { address: { name: '阿山', phone: '13900002222', region: ['上海市', '上海市', '静安区'], detail: '某路 1 号' } } : {}) })
   const BOTH = { clientCaps: [PL.GIFT_PHONE_CAP, PL.GIFT_CLAIM_LINK_CAP] }
   {
     const a = await makeOrder({ ...gEv('invite_address'), ...BOTH, giftClaimMode: 'link' })
@@ -203,10 +207,17 @@ async function runChecks() {
     ok(pk.res.success && po.giftMeta && po.giftMeta.claimMode === 'link' && po.giftMeta.claimPasscode === true && /^\d{6}$/.test(vd.passcode || ''),
       'A 门店自提 + 口令：订单只记「有口令」，6 位口令进核验集合')
     ok(!JSON.stringify(po).includes(vd.passcode) && !JSON.stringify(pk.res).includes(vd.passcode), 'A 口令不得出现在订单（登录可读）与下单出参里')
-    for (const dt of ['ship_to_receiver', 'ship_to_self']) {
-      const r = await makeOrder({ ...gEv(dt), ...BOTH, giftClaimMode: 'link' })
-      ok(!r.res.success && r.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED' && !r.store.orders.length, `A ${dt}：仍必须填受礼人手机号`)
-    }
+    const direct = await makeOrder({ ...gEv('ship_to_receiver'), ...BOTH, giftClaimMode: 'link' })
+    ok(!direct.res.success && direct.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED' && !direct.store.orders.length, 'A 直寄 TA：仍必须填受礼人手机号')
+    const selfLink = await makeOrder({ ...gEv('ship_to_self'), ...BOTH, giftClaimMode: 'link' })
+    const so = selfLink.store.orders[0] || {}
+    ok(selfLink.res.success && so.giftMeta && so.giftMeta.claimMode === 'link' && !so.giftMeta.receiverVerify && !so.giftMeta.expireAt,
+      'A 寄给我 + 凭礼笺领取：不填号也能下单，不带过期时间（货在送礼人手里，不退款）')
+    const selfNoCap = await makeOrder({ ...gEv('ship_to_self'), clientCaps: [PL.GIFT_PHONE_CAP], giftClaimMode: 'link' })
+    ok(!selfNoCap.res.success && selfNoCap.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED', 'A 寄给我 + 不带凭礼笺能力标记：仍必须填号（旧版行为不变）')
+    const selfPhone = await makeOrder({ ...gEv('ship_to_self'), ...BOTH, giftReceiverPhone: PHONE })
+    const sp = selfPhone.store.orders[0] || {}
+    ok(selfPhone.res.success && sp.giftMeta.receiverVerify === true && !sp.giftMeta.claimMode, 'A 寄给我 + 填了号：仍是手机号定向（行为不变）')
     const noCap = await makeOrder({ ...gEv('invite_address'), clientCaps: [PL.GIFT_PHONE_CAP], giftClaimMode: 'link' })
     ok(!noCap.res.success && noCap.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED', 'A 不带凭礼笺领取能力标记：不得免填号')
     const both = await makeOrder({ ...gEv('invite_address'), ...BOTH, giftClaimMode: 'link', giftReceiverPhone: PHONE })
@@ -349,7 +360,37 @@ async function runChecks() {
     ok(!(await phoneGift.call(GIVER, { action: 'resetShareLink', orderId: 'L1' })).success, 'D 手机号定向礼赠不走作废换链接（行为不变）')
   }
 
-  // F 清号 = 转为凭礼笺领取（只限填址 / 自提）
+  // S 寄给我 + 凭礼笺领取（第三轮，蓝图 §10）：同一套收下规则，作废 / 口令窗口放宽到订单结束前
+  {
+    const env = giftEnv([linkOrder({ deliveryType: 'ship_to_self', expireAt: null }, { status: 'shipped' })])
+    const bind = await env.call(RECV, { action: 'bindReceiver', token: 'tokA', orderId: 'L1', source: 'receive_page' })
+    ok(!bind.success && bind.code === 'CLAIM_CONFIRM_REQUIRED' && !env.o().giftMeta.receiverOpenid, 'S 寄给我：打开礼笺不算领取')
+    const pc = await env.call(GIVER, { action: 'setClaimPasscode', orderId: 'L1', enable: true })
+    ok(pc.success && /^\d{6}$/.test(pc.passcode || ''), 'S 寄给我：已发货仍可加口令（无人收下前）')
+    await env.call(RECV, { action: 'verifyReceiver', token: 'tokA', orderId: 'L1', method: 'passcode', passcode: pc.passcode })
+    const [b1, b2] = await Promise.all([
+      env.call(RECV, { action: 'bindReceiver', token: 'tokA', orderId: 'L1', confirm: true, claimName: '小满' }),
+      env.call(RECV2, { action: 'bindReceiver', token: 'tokA', orderId: 'L1', confirm: true })
+    ])
+    ok(b1.success && !b2.success && env.o().giftMeta.receiverOpenid === RECV, 'S 寄给我：过口令 + 主动收下才记在名下，一份只一人')
+    env.o().status = 'received'
+    const info = await env.call(GIVER, { action: 'getReceiverVerify', orderId: 'L1' })
+    ok(info.success && info.canReset === true && info.linkEligible === true && /订单结束前/.test(info.resetHint || '') && info.claimer && info.claimer.label.startsWith('小满'),
+      'S 寄给我：签收后送礼人仍可作废（货在送礼人手里），面板给出作废时限说明并看到领取人')
+    const r = await env.call(GIVER, { action: 'resetShareLink', orderId: 'L1' })
+    ok(r.success && !env.o().giftMeta.receiverOpenid && env.o().giftMeta.shareToken !== 'tokA', 'S 寄给我：签收后作废换链接，原领取人解绑')
+    env.o().status = 'refunded'
+    ok(!(await env.call(GIVER, { action: 'resetShareLink', orderId: 'L1' })).success, 'S 寄给我：订单已结束（退款）不可再作废')
+    const pick = giftEnv([linkOrder({ deliveryType: 'store_pickup', claimCode: '135790' }, { status: 'received' })])
+    const pinfo = await pick.call(GIVER, { action: 'getReceiverVerify', orderId: 'L1' })
+    ok(!(await pick.call(GIVER, { action: 'resetShareLink', orderId: 'L1' })).success && pinfo.canReset === false && !pinfo.resetHint,
+      'S 自提 / 填址的作废窗口不随寄给我放宽（签收后不可作废，无寄给我说明）')
+    const selfPhone = giftEnv([linkOrder({ claimMode: '', receiverVerify: true, deliveryType: 'ship_to_self' }, { status: 'paid' })])
+    const clr = await selfPhone.call(GIVER, { action: 'setReceiverPhone', orderId: 'L1', phone: '' })
+    ok(clr.success && selfPhone.o().giftMeta.claimMode === 'link', 'S 寄给我清号 → 转为凭礼笺领取（不是谁先打开谁领）')
+  }
+
+  // F 清号 = 转为凭礼笺领取（只限填址 / 自提 / 寄给我）
   {
     const env = giftEnv([linkOrder({ claimMode: '', receiverVerify: true })])
     const clr = await env.call(GIVER, { action: 'setReceiverPhone', orderId: 'L1', phone: '' })
@@ -368,7 +409,11 @@ async function runChecks() {
   const cm = cjs.match(/const CLAIM_LINK_DELIVERY = (\[[^\]]*\])/)
   ok(!!cm && JSON.stringify(eval(cm[1])) === JSON.stringify(PL.CLAIM_LINK_DELIVERY), 'G 送礼页免填号的交付方式须与云端 CLAIM_LINK_DELIVERY 同值')
   const co = read(P.confirmOrder)
-  ok(co.includes("giftClaimMode: giftClaimLink ? 'link' : undefined,") && co.includes("if (dt !== 'invite_address' && dt !== 'store_pickup') return null"), 'G 确认页：只在填址 / 自提时带「凭礼笺领取」')
+  ok(co.includes("giftClaimMode: giftClaimLink ? 'link' : undefined,") && co.includes("if (dt !== 'invite_address' && dt !== 'store_pickup' && dt !== 'ship_to_self') return null"), 'G 确认页：只在填址 / 自提 / 寄给我时带「凭礼笺领取」')
+  const cw = read(P.composeWxml)
+  ok(cw.includes("<block wx:if=\"{{claimLink && deliveryType !== 'ship_to_receiver'}}\">") && cw.includes("<text class=\"verify-set-req\" wx:if=\"{{deliveryType === 'ship_to_receiver'}}\">* 必填</text>") &&
+    cw.includes("<text class=\"claim-switch\" wx:if=\"{{deliveryType !== 'ship_to_receiver'}}\" bindtap=\"toggleClaimLink\">"), 'G 送礼页：只有直寄 TA 标必填；其余三种可切凭礼笺领取')
+  ok(read(P.claimSheetWxml).includes("{{state.resetHint || "), 'G 管理面板：作废时限说明取云端 resetHint（寄给我与其它交付方式不同）')
   const succ = read(P.successJs)
   ok(/if \(gift\.claimMode === 'link'\) wx\.hideShareMenu\(\{ menus: \['shareTimeline'\] \}\)/.test(succ) && succ.includes("const token = this.data.claimLink ? '' :"), 'G 送礼成功页：凭礼笺领取不发朋友圈，朋友圈卡不带领取凭证')
   const od = read(P.orderDetailJs)
@@ -382,10 +427,11 @@ async function runChecks() {
   ok(read(P.privacyGuard).includes("js: 'miniprogram/subpackages/feature/gift/reg-card/index.js'"), 'G 注册引导卡须在协议主动勾选守卫名单内（check:privacy-consent）')
   const rc = read(P.regCardJs)
   ok(!/registerWithPhone\(/.test(rc.replace(fnBody(rc, 'onGetPhoneNumber'), '')), 'G 注册引导卡：注册只能发生在用户点授权按钮之后（不得静默注册）')
+  ok(/patch: nickName \? \{ nickName, agreedTermsAt \} : \{ agreedTermsAt \}/.test(rc) && rc.includes("patch: { agreedTermsAt }, completeOnboarding: true"), 'G 注册引导卡：两条建档路径都留协议同意时间（与注册页同口径）')
   {
     const RV = load(P.receiverVerify, { globals: { wx: {}, getApp: () => ({}) } })
     ok(RV.sheetCopy({ receiverVerify: true, phoneTail: '1234', linkEligible: true }).clearText.includes('凭礼笺领取') &&
-      RV.sheetCopy({ receiverVerify: true, phoneTail: '1234', linkEligible: false }).clearText === '', 'G 「不设核验」入口改为「改为凭礼笺领取」，只在填址 / 自提出现')
+      RV.sheetCopy({ receiverVerify: true, phoneTail: '1234', linkEligible: false }).clearText === '', 'G 「不设核验」入口改为「改为凭礼笺领取」，只在可免填号的交付方式出现')
   }
   const mp = read(P.mpSchema)
   const ad = read(P.adminSchema)
@@ -407,13 +453,21 @@ const INJECTIONS = [
   { name: '直寄也可清号', file: P.gift, find: "    if (!claimLinkAllowed(meta.deliveryType)) {\n      return { success: false, code: 'PHONE_REQUIRED'", replace: "    if (false) {\n      return { success: false, code: 'PHONE_REQUIRED'" },
   { name: '免填号放开到所有交付方式', file: [P.phoneLib, P.phoneLibCopy], find: 'return CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1', replace: 'return true' },
   { name: '口令写进订单', file: P.makeOrder, find: "claimMode: 'link', claimPasscode: !!claimPasscode }", replace: "claimMode: 'link', claimPasscode: claimPasscode }" },
-  { name: '送礼页免填号多了直寄', file: P.composeJs, find: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup']", replace: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_receiver']" },
+  { name: '送礼页免填号多了直寄', file: P.composeJs, find: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self']", replace: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self', 'ship_to_receiver']" },
+  { name: '寄给我免填号被撤回（云端）', file: [P.phoneLib, P.phoneLibCopy], find: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self']", replace: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup']" },
+  { name: '确认页寄给我不带凭礼笺', file: P.confirmOrder, find: " && dt !== 'ship_to_self') return null", replace: ") return null" },
+  { name: '送礼页直寄不再标必填', file: P.composeWxml, find: "wx:if=\"{{deliveryType === 'ship_to_receiver'}}\">* 必填", replace: "wx:if=\"{{false}}\">* 必填" },
+  { name: '寄给我作废窗口退回发货前', file: P.gift, find: "const SELF_CLAIM_OPEN_STATUS = ['paid', 'shipped', 'received']", replace: "const SELF_CLAIM_OPEN_STATUS = ['paid']" },
+  { name: '作废窗口对所有交付方式放宽', file: P.gift, find: '(self ? SELF_CLAIM_OPEN_STATUS : CLAIM_OPEN_STATUS)', replace: 'SELF_CLAIM_OPEN_STATUS' },
+  { name: '寄给我作废窗口含已退款', file: P.gift, find: "const SELF_CLAIM_OPEN_STATUS = ['paid', 'shipped', 'received']", replace: "const SELF_CLAIM_OPEN_STATUS = ['paid', 'shipped', 'received', 'refunded']" },
+  { name: '面板不取 resetHint', file: P.claimSheetWxml, find: "{{state.resetHint || ", replace: "{{" },
   { name: '成功页朋友圈仍带领取凭证', file: P.successJs, find: "const token = this.data.claimLink ? '' : String", replace: 'const token = String' },
   { name: '订单详情不隐藏朋友圈', file: P.orderDetailJs, find: "if (this.data.giftClaimLink) wx.hideShareMenu({ menus: ['shareTimeline'] });", replace: '' },
   { name: '凭礼笺收下前强制注册', file: P.receiveJs, find: '  async acceptByLink() {\n', replace: "  async acceptByLink() {\n    if (!(await require('../../../../utils/userSession').requirePhone(getApp(), {}))) return\n" },
   { name: '已注册者也弹注册引导', file: P.receiveJs, find: '    if (registered) return\n    this.setData({ regCardShow: true })', replace: '    this.setData({ regCardShow: true })' },
   { name: '注册引导卡静默注册', file: P.regCardJs, find: '    onClose() {\n', replace: "    onClose() {\n      registerWithPhone({ app: getApp(), phoneCode: 'x' })\n" },
   { name: '「不设核验」在直寄也出现', file: P.receiverVerify, find: 'clearText: on && state.linkEligible ?', replace: 'clearText: on ?' },
+  { name: '注册引导卡不留协议同意时间', file: P.regCardJs, find: "patch: { agreedTermsAt }, completeOnboarding: true", replace: "patch: {}, completeOnboarding: true" },
   { name: 'ERP 漏登记注册引导完成事件', file: P.adminSchema, find: '  gift_reg_guide_done: {', replace: '  gift_reg_guide_done_x: {' }
 ]
 
@@ -449,7 +503,7 @@ async function main() {
     console.error('✗ 礼赠凭礼笺领取守卫失败：\n  ' + fails.join('\n  '))
     process.exit(1)
   }
-  console.log('✓ 礼赠凭礼笺领取：免填号只限填址 / 自提（直寄仍必填、旧版不变）· 打开不算领取、须主动收下、不要求注册 · 一份一人（含并发）· 口令门与限次 · 作废换链接旧链即失效 · 送礼人见领取人不见完整号码 · 不发朋友圈 · 注册引导可关且守协议勾选 · 7 个埋点双端登记')
+  console.log('✓ 礼赠凭礼笺领取：免填号只限填址 / 自提 / 寄给我（直寄仍必填、旧版不变）· 寄给我作废窗口到订单结束 · 打开不算领取、须主动收下、不要求注册 · 一份一人（含并发）· 口令门与限次 · 作废换链接旧链即失效 · 送礼人见领取人不见完整号码 · 不发朋友圈 · 注册引导可关且守协议勾选 · 7 个埋点双端登记')
 }
 
 main().then(

@@ -265,7 +265,7 @@ Page({
         shareCta = '把礼笺也告诉 TA'
       } else if (deliveryType === 'ship_to_self') {
         heroDesc = '藏品将先寄到你处。收到后，再当面转交这份山海。'
-        shareCta = '可选：先把礼笺给 TA'
+        shareCta = gift.claimMode === 'link' ? '把礼笺交给 TA 收下' : '可选：先把礼笺给 TA'
       } else if (deliveryType === 'store_pickup') {
         heroOverline = 'STORE HOLD'
         heroTitle = '门店正在备妥'

@@ -4,7 +4,7 @@
  * 结构从真 WXML 现读（页面按注释锚点截段；claim-sheet / reg-card 组件整份渲染），样式从真 WXSS 现读；
  * 无头 Chrome 以 750px 视口截图（rpx 1:1 当 px）。字体与真机不同，只看版式，不能替代真机验收。
  *
- * 用法：node miniprogram/scripts/render-gift-claim-link-preview.mjs [--out-dir <dir>]
+ * 用法：node miniprogram/scripts/render-gift-claim-link-preview.mjs [--out-dir <dir>] [--only <场景编号前缀，如 8>]
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { spawn } from 'node:child_process'
@@ -44,6 +44,11 @@ function cut(src, startMark, endMark) {
 
 const composeWxml = read(join(GIFT, 'compose/index.wxml'))
 const composeFrame = `<view class="page">${cut(composeWxml, '<!-- 03 交付方式 -->', '<view class="pack-note">')}</view></view>`
+const OTHER_DELIVERIES = [
+  { id: 'ship_to_receiver', name: '快递给 TA', desc: '你已知地址时，下单时填写收货信息' },
+  { id: 'ship_to_self', name: '寄给我', desc: '先寄到你处，再当面转交' },
+  { id: 'store_pickup', name: '门店自提代赠', desc: '选这有店备货，分享领取码到店核销' }
+]
 const COMPOSE = { deliveryType: 'invite_address', showOtherDelivery: false, otherDeliveries: [], storePickupEnabled: false, stores: [], receiverPhone: '', receiverPhoneFocus: false, receiverPhoneError: '' }
 
 const receiveWxml = read(join(GIFT, 'receive/index.wxml'))
@@ -79,6 +84,10 @@ const scenes = [
     name: '7-送礼人-看到领取人+作废确认', h: 1334, css: 'giver',
     body: () => `<view class="page">${renderWxml(successLine, { verify: STATE_CLAIMED, claimLineText: '小满 · 10月11日收下', claimTip: '' }, { lenient: true })}</view>` +
       renderWxml(claimSheetWxml, { show: true, state: STATE_CLAIMED, busy: false, error: '', confirmReset: true }, { lenient: true })
+  },
+  {
+    name: '8-送礼页-寄给我-不填号（凭礼笺领取）', h: 1320, css: 'compose',
+    body: () => renderWxml(composeFrame, { ...COMPOSE, deliveryType: 'ship_to_self', showOtherDelivery: true, otherDeliveries: OTHER_DELIVERIES, claimLink: true, claimPasscode: false }, { lenient: true })
   }
 ]
 
@@ -140,4 +149,5 @@ text { display: inline; }
   console.log(`✓ ${scene.name} → ${out}`)
 }
 
-for (const s of scenes) await shoot(s)
+const only = argOf('--only', '')
+for (const s of scenes.filter((x) => !only || x.name.startsWith(only))) await shoot(s)

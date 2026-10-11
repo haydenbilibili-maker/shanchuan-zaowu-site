@@ -1525,12 +1525,12 @@ Page(withAppModal({
     return g.phone
   },
 
-  /** 送礼页选了「凭礼笺领取」（2h 内有效，只限填址 / 自提）→ { passcode }；否则 null */
+  /** 送礼页选了「凭礼笺领取」（2h 内有效，只限填址 / 自提 / 寄给我）→ { passcode }；否则 null */
   pendingGiftClaimLink() {
     const g = getApp().globalData.giftReceiverPhone
     if (!g || !g.claimLink || Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return null
     const dt = (this._giftMeta && this._giftMeta.deliveryType) || ''
-    if (dt !== 'invite_address' && dt !== 'store_pickup') return null
+    if (dt !== 'invite_address' && dt !== 'store_pickup' && dt !== 'ship_to_self') return null
     return { passcode: !!g.claimPasscode }
   },
 

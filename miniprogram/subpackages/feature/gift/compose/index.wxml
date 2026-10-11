@@ -327,11 +327,12 @@
         <text class="store-empty" wx:if="{{!stores.length}}">这有店暂未就绪，稍后再选或换其他交付</text>
       </view>
 
-      <!-- 受礼人手机号：直寄 / 寄给自己必填；填址 / 自提推荐填写，也可凭礼笺领取 -->
+      <!-- 受礼人手机号：直寄 TA 必填；填址 / 自提 / 寄给我推荐填写，也可凭礼笺领取（同 CLAIM_LINK_DELIVERY） -->
       <view id="receiverPhoneField" class="verify-set {{receiverPhoneError ? 'is-error' : ''}}">
-        <block wx:if="{{claimLink && (deliveryType === 'invite_address' || deliveryType === 'store_pickup')}}">
+        <block wx:if="{{claimLink && deliveryType !== 'ship_to_receiver'}}">
         <text class="verify-set-label">凭礼笺领取 <text class="verify-set-tip">不需要 TA 的手机号</text></text>
-        <text class="verify-set-hint">TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。为防扩散，这份礼笺不能发朋友圈。</text>
+        <text class="verify-set-hint" wx:if="{{deliveryType === 'ship_to_self'}}">藏品照常寄到你处；TA 点礼笺「收下」后礼记在 TA 名下，订单结束前可作废换链接。不能发朋友圈。</text>
+        <text class="verify-set-hint" wx:else>TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。为防扩散，这份礼笺不能发朋友圈。</text>
         <view class="claim-opt {{claimPasscode ? 'on' : ''}}" bindtap="toggleClaimPasscode" hover-class="tap-press-soft" hover-stay-time="80">
           <view class="claim-check"></view>
           <text class="claim-opt-t">加 6 位领取口令（只你看得到，TA 输对才能收下）</text>
@@ -339,7 +340,7 @@
         <text class="claim-switch" bindtap="toggleClaimLink">知道 TA 的手机号？改为手机号核验（更安全）</text>
         </block>
         <block wx:else>
-        <text class="verify-set-label">受礼人手机号 <text class="verify-set-req" wx:if="{{deliveryType !== 'invite_address' && deliveryType !== 'store_pickup'}}">* 必填</text><text class="verify-set-tip" wx:else>推荐填写</text></text>
+        <text class="verify-set-label">受礼人手机号 <text class="verify-set-req" wx:if="{{deliveryType === 'ship_to_receiver'}}">* 必填</text><text class="verify-set-tip" wx:else>推荐填写</text></text>
         <input
           class="verify-set-input"
           type="number"
@@ -352,7 +353,7 @@
         />
         <text class="verify-set-err" wx:if="{{receiverPhoneError}}">{{receiverPhoneError}}</text>
         <text class="verify-set-hint">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
-        <text class="claim-switch" wx:if="{{deliveryType === 'invite_address' || deliveryType === 'store_pickup'}}" bindtap="toggleClaimLink">不知道 TA 的手机号？凭礼笺领取 ›</text>
+        <text class="claim-switch" wx:if="{{deliveryType !== 'ship_to_receiver'}}" bindtap="toggleClaimLink">不知道 TA 的手机号？凭礼笺领取 ›</text>
         </block>
       </view>
 

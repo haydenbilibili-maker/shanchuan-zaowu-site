@@ -50,9 +50,11 @@ Component({
       this.setData({ saving: true, errText: '' })
       let app = null
       try { app = getApp() } catch (err) { /* ignore */ }
-      let res = await registerWithPhone({ app, phoneCode: detail.code, patch: nickName ? { nickName } : {} })
+      // 协议同意时间与注册页同口径留痕（agreedTermsAt）
+      const agreedTermsAt = new Date().toISOString()
+      let res = await registerWithPhone({ app, phoneCode: detail.code, patch: nickName ? { nickName, agreedTermsAt } : { agreedTermsAt } })
       // 称呼未过内容审核时号已绑上：不带昵称补完建档（同一注册接口，不改契约）
-      if (!res.ok && nickName) res = await this._finishWithoutName(app)
+      if (!res.ok && nickName) res = await this._finishWithoutName(app, agreedTermsAt)
       if (!res.ok) {
         this.setData({ saving: false, errText: res.msg || '注册未完成，可稍后再试' })
         return
@@ -63,9 +65,9 @@ Component({
       this.triggerEvent('done', res.payload || {})
     },
 
-    async _finishWithoutName(app) {
+    async _finishWithoutName(app, agreedTermsAt) {
       try {
-        const up = await wx.cloud.callFunction({ name: 'upsertUserProfile', data: { patch: {}, completeOnboarding: true } })
+        const up = await wx.cloud.callFunction({ name: 'upsertUserProfile', data: { patch: { agreedTermsAt }, completeOnboarding: true } })
         const r = (up && up.result) || {}
         if (!r.success) return { ok: false, msg: r.msg }
         const { refreshSessionAfterAuth } = require('../../../../utils/userSession')

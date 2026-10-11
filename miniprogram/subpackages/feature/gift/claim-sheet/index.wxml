@@ -22,7 +22,7 @@
     <text class="cs-notice" wx:if="{{notice}}">{{notice}}</text>
     <text class="cs-error" wx:if="{{error}}">{{error}}</text>
     <view class="cs-btn {{busy ? 'is-busy' : ''}} {{confirmReset ? 'is-warn' : ''}}" wx:if="{{state.canReset}}" hover-class="cs-btn-press" hover-stay-time="80" bindtap="onReset">{{busy ? '请稍候…' : (confirmReset ? '确认作废：旧链接立即失效' + (state.claimer ? '，已收下的人将被解除' : '') : '作废并换新链接')}}</view>
-    <text class="cs-mini cs-center" wx:if="{{state.canReset}}">发现不是 TA 收下、或礼笺被转出去了，可在 TA 留地址 / 到店领取前作废</text>
+    <text class="cs-mini cs-center" wx:if="{{state.canReset}}">{{state.resetHint || '发现不是 TA 收下、或礼笺被转出去了，可在 TA 留地址 / 到店领取前作废'}}</text>
     <view class="cs-link" wx:if="{{!state.claimer && state.editable}}" bindtap="onUsePhone">知道 TA 的手机号了？改为手机号核验</view>
     <view class="cs-link cs-link-muted" bindtap="onClose">关闭</view>
   </view>
