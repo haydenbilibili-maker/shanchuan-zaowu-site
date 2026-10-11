@@ -467,6 +467,19 @@ shift || true          # ← 无条件执行
 - **机制**：`npm run test:ai-identify-monitor`（manager 域，条目不增）A8/A9：`index.js` 不得写死模型名、默认清单 ≥ 2 且不含已下线模型、
   首选「Model not exist」自动切备用且日志记实际模型、全部不可用时失败并记原因；6 个内存注入。
 
+### E32 · 默认导入「导出对象」的模块再当函数调：礼赠领取页一打开就抛错（2026-10-11）
+
+- **症状**：礼赠「凭礼笺领取」上线提交里，领取页与注册引导卡写成 `const trackBehavior = require('…/utils/trackBehavior')`。
+  该模块导出 `{ trackBehavior, track, … }` 对象，`trackBehavior(…)` 必抛 TypeError：领取页在载入流程 try 内抛错 →
+  被吞成「柜门片刻未应」，**所有受礼人打不开领取页**；引导卡注册成功后抛错，`done` 事件发不出去。
+- **根因**：凭印象写导入形态，没看被引模块的 `module.exports`；全仓 120+ 处都是解构写法，偏偏新文件写错。
+  离线预览只渲染 WXML、不跑 JS，未定义名 / const 重赋值守卫也都看不出「对象被当函数调」。
+- **规矩**
+  1. 写 `require` 前先 `rg "module.exports" <被引文件>` 看导出形态；同仓已有写法优先照抄。
+  2. 埋点、日志这类「附带调用」也会抛错 —— 放在主流程里的附带调用出错同样会把主流程拖垮。
+- **机制**：**`npm run check:require-call-shape`**（cross 域）：小程序 `const X = require(相对路径)` 解析到确定导出对象的模块、本文件又出现 `X(` 即红；
+  2 注入 + 1 不误报对照，内存副本不写盘。
+
 ---
 
 ## 四、事实核查类
@@ -561,3 +574,4 @@ shift || true          # ← 无条件执行
 | **E30** 共享副本「仓库全改了、线上只部署了自己那几个」（09-28 合并提交改了 64 份 `staffGuard.js`，线上 45 个仍是 09-19 版；**同类第 2 次**，上次 29 个函数缺股东门禁） | 报告 + 约定 | **`npm run audit:shared-drift`**（2026-10-01 新增，手动、只读线上、需 TCB 凭据，**不进链**）：按 `check:shared-modules` 的家族逐函数下载线上包、只比共享文件，并用 git 历史判方向（「线上是 X 版、仓库较新」/「不在仓库历史里，先取证」）；规矩：改共享副本的提交要么点名部署**全部**持有该副本的函数，要么在交付说明里列出未部署清单 |
 | **E31** 第三方模型名写死、无备用（百炼 10-10 下线 `qwen-vl-plus` / `qwen-turbo` → AI 鉴定全部「Model not exist.」） | ✅ | **`npm run test:ai-identify-monitor`** A8/A9（manager 域，条目不增，6 个内存注入）：不写死模型名、默认清单 ≥ 2 且不含已下线模型、首选不可用自动切备用；规矩：先用同一把密钥调模型列表再判「换不换密钥」 |
 | **E31** 同步副本时把真源的 CommonJS 尾巴（`module.exports`）整段抄进 ERP 的 ESM 副本 → dev 管线具名导入失败、ERP 整页「加载中…」，而 build 与 `check:sfc-dev`（只验编译 + 路径可解析）全绿 | ✅ | **`check:sfc-dev` 加「具名导入 ↔ 导出对账」**（2026-10-01：在 dev transform 产物上核对 src 内 490 条模块引用；覆盖不足 50 条判失效；自检含「CJS 被具名导入」「导出改名」两条注入）；`admin/src/utils/blessTags.js` 头注释写明必须保持 ESM |
+| **E32** 默认导入导出对象的模块再当函数调（礼赠领取页 `trackBehavior` → 载入抛错，所有受礼人打不开领取页） | ✅ | **`npm run check:require-call-shape`**（cross 域，2 注入 + 1 不误报对照）；规矩：写 `require` 前先看被引模块的 `module.exports` |

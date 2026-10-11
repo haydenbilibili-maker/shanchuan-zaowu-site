@@ -18,7 +18,7 @@ const SFX_OPEN = '/subpackages/feature/gift/assets/gift-open.mp3'
 /** 礼笺打字机音效（与编排页/礼成页共用同一静音键与音源） */
 const textFx = require('../giftTextEffect')
 const { buildGuideUrl, resolveCareCategory } = require('../../utils/careDefaults')
-const trackBehavior = require('../../../../utils/trackBehavior')
+const { trackBehavior } = require('../../../../utils/trackBehavior')
 /** 注册引导卡「先不注册」：按单记住，不再打扰 */
 const REG_CARD_OFF_KEY = 'gift_reg_card_off_'
 /** 开盒音量：适中，配合静默键 obeyMuteSwitch */

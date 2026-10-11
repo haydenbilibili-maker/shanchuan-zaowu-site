@@ -6,7 +6,7 @@
  * 注册走唯一链路 registerWithPhone；收下时留的称呼预填为昵称（可清空）。
  */
 const { registerWithPhone } = require('../../utils/registerPhone')
-const trackBehavior = require('../../../../utils/trackBehavior')
+const { trackBehavior } = require('../../../../utils/trackBehavior')
 
 Component({
   properties: {

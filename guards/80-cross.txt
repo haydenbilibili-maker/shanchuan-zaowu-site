@@ -84,3 +84,5 @@ npm run check:rpx-zero-slack
 npm run check:cloudfn-require-scope
 # 2026-10-08：全仓未定义变量（TS 绑定器扫小程序 + 全部云函数；storeById / refundOrder 常量 / 礼赠物流常量 / 运费 SHIPPING_KIND / 催领模板 v）
 npm run check:undefined-names
+# 2026-10-11：小程序 require 到「导出对象」的模块却当函数调（礼赠领取页 trackBehavior 默认导入 → 所有受礼人打不开领取页，错题本 E32）
+npm run check:require-call-shape
