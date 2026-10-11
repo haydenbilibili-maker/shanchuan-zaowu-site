@@ -210,10 +210,15 @@ export function evaluateRatchet(findings, baseline, opts = {}) {
   }
 }
 
+// 正例 / 「有校验就放行」用例必须落在非代理集合上：真实集合会陆续收进写网关（products / home_configs / stores 都已收），
+// 收进去后这些用例会因「代理集合本就放行」而空转（2026-10-11 实测）。占位集合名永不进网关，并由首条用例钉住。
+const PLAIN = 'selftest_plain_coll'
+
 const CASES = [
+  ['占位集合不在代理集合内（否则下列用例空转）', (c) => !c.PROXIED_COLLECTIONS.has(PLAIN) && !c.PROXIED_COLLECTIONS.has('bookings')],
   ['直写且不校验 → 命中', (c) => c.findUnverifiedWrites(`
     const save = async () => {
-      await cdnUpdate('products', id, { a: 1 })
+      await cdnUpdate('${PLAIN}', id, { a: 1 })
       ElMessage.success('已保存')
     }`).length === 1],
   ['secureDataWrite 网关集合（PROXY_WRITE_COLLECTIONS 运行时读取）→ 不要求校验', (c) =>
@@ -221,11 +226,11 @@ const CASES = [
       await cdnUpdate('home_configs', id, { a: 1 })`, '', c.PROXIED_COLLECTIONS).length === 0],
   ['直写 + assertWriteApplied → 不命中', (c) => c.findUnverifiedWrites(`
     const save = async () => {
-      const res = await cdnUpdate('home_configs', id, { a: 1 })
-      assertWriteApplied('home_configs', res, '保存')
+      const res = await cdnUpdate('${PLAIN}', id, { a: 1 })
+      assertWriteApplied('${PLAIN}', res, '保存')
     }`).length === 0],
   ['直写 + writeApplied 判定 → 不命中', (c) => c.findUnverifiedWrites(`
-    const res = await cdnUpdate('home_configs', id, { a: 1 })
+    const res = await cdnUpdate('${PLAIN}', id, { a: 1 })
     if (!writeApplied(res)) throw new Error('no')`).length === 0],
   ['代理集合的直写 → 不要求校验（代理会抛错）', (c) => c.findUnverifiedWrites(`
     await cdnUpdate('categories', id, { a: 1 })`).length === 0],
@@ -248,10 +253,10 @@ const CASES = [
   }],
   ['校验出现在同一函数内的较远处（窗口内）→ 不命中', (c) => c.findUnverifiedWrites(`
     const save = async () => {
-      const res = await cdnUpdate('stores', id, { a: 1 })
+      const res = await cdnUpdate('${PLAIN}', id, { a: 1 })
       await doOther()
       await doMore()
-      assertWriteApplied('stores', res, '保存')
+      assertWriteApplied('${PLAIN}', res, '保存')
     }`).length === 0],
 ]
 // ---- 退出码语义（棘轮）自检 ----

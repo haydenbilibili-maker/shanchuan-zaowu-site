@@ -200,7 +200,7 @@ function selftest() {
       // 维护入口被摘掉 → 改档位后老会员的券不齐，谁也补不了（能力在、跑不了）
       name: '维护入口被摘掉（券不齐的会员再也补不了）',
       file: PAGE_WXML,
-      from: '          <view class="workbench-btn-outline sm {{maintBusy ? \'is-disabled\' : \'\'}}" bindtap="onAlignCoupons" aria-role="button">对齐已发券</view>\n',
+      from: '          <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm {{maintBusy ? \'is-disabled\' : \'\'}}" bindtap="onAlignCoupons" aria-role="button">对齐已发券</view>\n',
       to: ''
     },
     {

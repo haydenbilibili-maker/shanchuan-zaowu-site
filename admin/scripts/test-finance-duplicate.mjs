@@ -297,11 +297,11 @@ if (process.argv.includes('--selftest')) {
     ['ERP 录入不再检测', { finance: (s) => s.replace('const dup = findExistingDuplicate(this.data, this.tempRecord)', 'const dup = null') }],
     ['ERP 取消后仍写入', { finance: (s) => s.replace("ElMessage.info(dup.identical ? '已取消：该日报已录入过' : '已取消，未改动已有记录')\n                    return", "ElMessage.info('x')") }],
     ['小程序录入不带 checkDuplicate', { page: (s) => s.replace('storeLedger.upsert(sid, form, { checkDuplicate: true })', 'storeLedger.upsert(sid, form)') }],
-    ['小程序弹窗改回原生 showModal', { page: (s) => s.replace("const host = this.selectComponent && this.selectComponent('#appModal');", "wx.showModal({ title: 'x' }); const host = null;") }],
+    ['小程序弹窗改回原生 showModal', { page: (s) => s.replace("async askLedgerDuplicate(dup) {\n    const host = this.selectComponent && this.selectComponent('#appModal');", "async askLedgerDuplicate(dup) {\n    wx.showModal({ title: 'x' }); const host = null;") }],
     ['storeLedger 副本漂移', { extraLedger: (s) => s.replace('checkDuplicate: o.checkDuplicate === true,', '') }],
     ['服务端不再拦截', { fnIndex: (s) => s.replace("if (options.checkDuplicate === true && options.confirmDuplicate !== true) {", 'if (false) {') }],
     ['服务端入口不透传 checkDuplicate', { fnIndex: (s) => s.replace('checkDuplicate: event.checkDuplicate === true,', 'checkDuplicate: false,') }],
-    ['服务端 ledgerKey 不再归并旧 id', { fnIndex: (s) => s.replace("const MAIN_STORE_ALIAS_IDS = ['store_1780146782017_6w0okpr']", 'const MAIN_STORE_ALIAS_IDS = []') }],
+    ['服务端 ledgerKey 不再归并旧 id', { fnIndex: (s) => s.replace(/(const MAIN_STORE_ALIAS_IDS = \[[^\]]*?)\n {2}'store_1780146782017_6w0okpr',?/, '$1') }],
   ]
   let allCaught = true
   for (const [name, mut] of injections) {

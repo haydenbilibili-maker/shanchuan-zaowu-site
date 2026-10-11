@@ -782,7 +782,7 @@ function selftest() {
     ['列表挂 catchtouchmove', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('<scroll-view class="se-sheet-body" scroll-y', '<scroll-view class="se-sheet-body" catchtouchmove="noop" scroll-y') }), /R9-5 shipment-edit 的 scroll-view 上挂了/],
     ['核对页遮罩不挡穿透', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('bindtap="closePicker" catchtouchmove="noop"></view>', 'bindtap="closePicker"></view>') }), /R9-5 shipment-edit 遮罩缺/],
     ['搜索行不挡背后滚动', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('<view class="ss-search" catchtouchmove="noop">', '<view class="ss-search">') }), /R9-5 shipment-ops 弹层固定区/],
-    ['page-meta 漏了选择器', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('skuForm.show || picker.show || libForm.show', 'skuForm.show || libForm.show') }), /R9-6 shipment-ops 弹层「picker\.show」/],
+    ['page-meta 漏了选择器', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace(/^(<page-meta page-style="\{\{[^"]*?)\|\| picker\.show /, '$1') }), /R9-6 shipment-ops 弹层「picker\.show」/],
     ['page-meta 被删', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace(/^<page-meta[^\n]*\n/, '') }), /R9-6 shipment-edit 第一个节点不是 page-meta/],
     ['弹层上限回到 86%', (s) => ({ ...s, shipShared: s.shipShared.replace('Math.floor(winH * 0.8) - 120', 'Math.floor(winH * 0.86) - 120') }), /R9-7 iPhone 13/],
     ['安全区退回不存在的 safeAreaInsets', (s) => ({ ...s, shipShared: s.shipShared.replace(/const safeBottom = [^\n]*/, 'const safeBottom = Number((sys.safeAreaInsets && sys.safeAreaInsets.bottom) || 0)') }), /R9-7 iPhone 13（有底部安全区）（getWindowInfo）/]

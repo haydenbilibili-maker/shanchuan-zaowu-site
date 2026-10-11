@@ -662,7 +662,7 @@ const INJECTIONS = [
           .orderBy('createTime', 'desc')
           .get(),`)],
   ['B14 分批循环丢 skip', F.certJs, (s) => s.replace('.skip(page * PAGE_SIZE)', '')],
-  ['B13 反馈按钮丢按压', F.feedbackWxml, (s) => s.replace(` hover-class="{{submitting ? '' : 'account-btn-press'}}" hover-stay-time="80"`, '')],
+  ['B13 反馈按钮丢按压', F.feedbackWxml, (s) => s.replace(/ hover-class="\{\{[^"]*'account-btn-press'\}\}" hover-stay-time="80"(?=[^>]*bindtap="submitFeedback")/, '')],
   ['B16 评价页画回自定义标题栏', F.cmWxml, (s) => s.replace('<view class="page-wrapper">', '<view class="page-wrapper">\n  <view class="custom-navbar"><view class="back-btn" bindtap="goBack"><text class="back-arrow">‹</text></view></view>')],
   ['B16 资格卡加回「返回订单」', F.cmWxml, (s) => s.replace('<text class="gate-text">{{gateMsg}}</text>', '<text class="gate-text">{{gateMsg}}</text>\n        <view class="btn-secondary" bindtap="goOrderDetail">返回订单</view>')],
   ['B16 标题回到「发表评价」', F.cmJson, (s) => s.replace('"navigationBarTitleText": "评价"', '"navigationBarTitleText": "发表评价"')],
