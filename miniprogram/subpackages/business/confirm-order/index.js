@@ -558,6 +558,31 @@ Page(withAppModal({
     }
   },
 
+  /** 原地注册弹层：组件（feature 分包按需加载）未就绪时返回 false，由 requirePhone 退回跳注册页 */
+  openRegDialog() {
+    if (!this.selectComponent('#regDialog')) return false
+    this.setData({ regDialogShow: true })
+    return true
+  },
+
+  onRegDialogClose() {
+    this.setData({ regDialogShow: false })
+  },
+
+  /** 原地注册成功：刷新礼券与服务端价格（新客礼可能自动选用）后自动续提交 */
+  async onRegDialogSuccess() {
+    this.setData({ regDialogShow: false })
+    try {
+      const [packed] = await Promise.all([
+        fetchMyCoupons({ usableOnly: true }).catch(() => ({ list: [] })),
+        this.loadUserDiscount()
+      ])
+      await this.loadCoupons(packed)
+      await this.syncServerPricingPreview()
+    } catch (e) { /* 刷新失败不拦提交：服务端仍按实时价格结算 */ }
+    this.submitOrder()
+  },
+
   dismissAuthResumeHint() {
     this.setData({ showAuthResumeHint: false })
   },
@@ -1419,14 +1444,20 @@ Page(withAppModal({
     if (!hasPhone(session)) {
       this._authNavigating = true
       this.persistCheckoutForAuth()
+      let inline = false
       await requirePhone(getApp(), {
         content: '授权手机号即可下单；若尚未注册，将同步领取新客礼。',
         from: 'checkout',
         returnUrl: CONFIRM_ORDER_PATH,
         returnMode: 'back',
         direct: true,
-        resumeSubmit: true
+        resumeSubmit: true,
+        inline: () => (inline = this.openRegDialog())
       })
+      if (inline) {
+        this._authNavigating = false
+        return
+      }
       // 跳转离开后解锁，避免返回后无法再提交
       setTimeout(() => {
         this._authNavigating = false

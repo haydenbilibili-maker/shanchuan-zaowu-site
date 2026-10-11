@@ -334,3 +334,23 @@
 
 <!-- 全站样式化弹窗宿主（替代 wx.showModal）；详见 utils/appModal.js -->
 <app-modal id="appModal" />
+
+<!-- 未绑手机号时原地注册（按需加载 feature 分包组件；未就绪时退回跳注册页）。协议默认不勾、「先不注册」只关弹层 -->
+<register-auth-dialog
+  id="regDialog"
+  show="{{regDialogShow}}"
+  from="booking"
+  closable="{{true}}"
+  close-text="先不注册"
+  mask-closable="{{false}}"
+  overline="BOOKING"
+  title="授权手机号，继续预约"
+  desc="预约提醒与到店通知需要手机号。未注册将同步建档，新客礼放入账户。"
+  lead="授权后自动继续刚才的预约"
+  cta="授权手机号 · 继续预约"
+  login-title="确认手机号，继续预约"
+  login-desc="该微信已完成注册，授权手机号即可继续预约。"
+  login-cta="授权手机号 · 继续预约"
+  bind:success="onRegDialogSuccess"
+  bind:close="onRegDialogClose"
+/>

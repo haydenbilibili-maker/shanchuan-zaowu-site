@@ -804,7 +804,8 @@ Page({
       content: '授权手机号即可收下礼赠；若尚未注册，将同步领取新客礼包。',
       from: 'gift',
       returnMode: 'back',
-      direct: true
+      direct: true,
+      inline: () => this.openRegDialog('accept')
     }).catch(() => true)
     if (phoneOk === false) return
 
@@ -907,6 +908,27 @@ Page({
     try { wx.setStorageSync(REG_CARD_OFF_KEY + (this.data.orderId || this._orderId), 1) } catch (e) { /* ignore */ }
   },
 
+  /** 原地注册弹层：组件未就绪时返回 false，由 requirePhone 退回跳注册页；成功后续做刚才的动作 */
+  openRegDialog(action) {
+    if (!this.selectComponent('#regDialog')) return false
+    this._regResume = action
+    this.setData({ regDialogShow: true })
+    return true
+  },
+
+  onRegDialogClose() {
+    this._regResume = ''
+    this.setData({ regDialogShow: false })
+  },
+
+  onRegDialogSuccess() {
+    const action = this._regResume
+    this._regResume = ''
+    this.setData({ regDialogShow: false })
+    if (action === 'accept') this.accept()
+    else if (action === 'verify') this.verifyByAccount()
+  },
+
   // 优先比对微信授权手机号（requirePhone 只调用）
   async verifyByAccount() {
     if (this.data.verifyBusy) return
@@ -915,7 +937,8 @@ Page({
       content: '授权微信手机号即可核验领取；若尚未注册，将同步领取新客礼包。',
       from: 'gift',
       returnMode: 'back',
-      direct: true
+      direct: true,
+      inline: () => this.openRegDialog('verify')
     }).catch(() => true)
     if (phoneOk === false) return
     this._runVerify({ method: 'account' })

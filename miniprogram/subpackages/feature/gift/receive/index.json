@@ -6,7 +6,8 @@
   "usingComponents": {
     "protected-badge": "/components/ProtectedBadge/index",
     "phone-sheet": "/subpackages/feature/gift/phone-sheet/index",
-    "reg-card": "/subpackages/feature/gift/reg-card/index"
+    "reg-card": "/subpackages/feature/gift/reg-card/index",
+    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index"
   },
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",

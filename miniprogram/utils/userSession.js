@@ -410,6 +410,9 @@ async function requirePhone(app, options = {}) {
   const from = options.from || (needOnboard ? 'checkout' : 'phone')
   const phoneOnly = options.phoneOnly != null ? !!options.phoneOnly : (!needOnboard && !!session.onboardingDone)
 
+  // 页面内注册弹层（2026-10-11 全局注册简化 S1）：inline 返回 false（弹层组件未就绪）时退回跳注册页
+  if (typeof options.inline === 'function' && options.inline({ from, phoneOnly }) !== false) return false
+
   await promptPhoneBind({
     title: options.title || (needOnboard ? '授权后即可继续' : '绑定手机号'),
     content: options.content || (needOnboard

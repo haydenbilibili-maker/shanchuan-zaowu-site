@@ -3,7 +3,11 @@
   "navigationBarTextStyle": "white",
   "usingComponents": {
     "calendar": "/subpackages/business/components/Calendar/index",
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index"
+  },
+  "componentPlaceholder": {
+    "register-auth-dialog": "view"
   },
   "navigationBarBackgroundColor": "#1A1814",
   "backgroundColor": "#1A1814"

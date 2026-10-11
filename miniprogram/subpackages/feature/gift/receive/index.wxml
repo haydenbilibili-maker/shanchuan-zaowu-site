@@ -331,3 +331,23 @@
   bindconfirm="onManualVerify"
   bindclose="closeVerifySheet"
 />
+
+<!-- 收下 / 核验前未绑手机号时原地注册（与注册弹层同组件；未就绪时退回跳注册页）。协议默认不勾、「先不注册」只关弹层 -->
+<register-auth-dialog
+  id="regDialog"
+  show="{{regDialogShow}}"
+  from="gift"
+  closable="{{true}}"
+  close-text="先不注册"
+  mask-closable="{{false}}"
+  overline="GIFT"
+  title="授权手机号，收下这份山海"
+  desc="礼赠核验与物流通知需要手机号。未注册将同步建档，新客礼放入账户。"
+  lead="授权后自动继续收下 / 核验"
+  cta="授权手机号 · 继续"
+  login-title="确认手机号，继续"
+  login-desc="该微信已完成注册，授权手机号即可继续。"
+  login-cta="授权手机号 · 继续"
+  bind:success="onRegDialogSuccess"
+  bind:close="onRegDialogClose"
+/>

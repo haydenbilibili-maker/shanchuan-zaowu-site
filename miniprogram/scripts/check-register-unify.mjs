@@ -6,6 +6,9 @@
  *   S4 统一口径：注册页 / 注册弹层 / 礼赠引导卡同一漏斗事件 register_panel（双端 schema 登记），各入口旧事件照旧；
  *               注册弹层真跑（假 Component / 假 wx）：曝光只记一次、先不注册记 dismiss、注册成功记 success、
  *               未勾选不注册；第一条权益可配且默认值不变（鉴定场景文案不动）。
+ *   S1 门禁原地化：结算 / 预约 / 礼赠收下与核验都挂页面内注册弹层（跨分包必须登记 componentPlaceholder = 按需加载、不进主包），
+ *               可关（先不注册）、成功后续做原动作；组件未就绪时退回跳注册页（旧路径照旧可用）；
+ *               requirePhone 真跑：带 inline 且弹层就绪 → 不跳页；inline 返回 false / 不带 inline → 照旧跳注册页；已绑号 → 直接放行。
  *
  * 用法：node miniprogram/scripts/check-register-unify.mjs [--selftest]
  * 自检：对真源码做内存注入（不写盘），每条都必须检出。
@@ -23,8 +26,25 @@ const P = {
   onbJs: 'miniprogram/subpackages/extra/user/onboarding/index.js',
   regCardJs: 'miniprogram/subpackages/feature/gift/reg-card/index.js',
   mpSchema: 'miniprogram/utils/analytics/eventSchema.js',
-  erpSchema: 'admin/src/utils/analyticsSchema.js'
+  erpSchema: 'admin/src/utils/analyticsSchema.js',
+  session: 'miniprogram/utils/userSession.js',
+  coJs: 'miniprogram/subpackages/business/confirm-order/index.js',
+  coJson: 'miniprogram/subpackages/business/confirm-order/index.json',
+  coWxml: 'miniprogram/subpackages/business/confirm-order/index.wxml',
+  bkJs: 'miniprogram/subpackages/business/booking/index.js',
+  bkJson: 'miniprogram/subpackages/business/booking/index.json',
+  bkWxml: 'miniprogram/subpackages/business/booking/index.wxml',
+  grJs: 'miniprogram/subpackages/feature/gift/receive/index.js',
+  grJson: 'miniprogram/subpackages/feature/gift/receive/index.json',
+  grWxml: 'miniprogram/subpackages/feature/gift/receive/index.wxml'
 }
+const DIALOG_PATH = '/subpackages/feature/components/RegisterAuthDialog/index'
+/** S1 门禁页：页面前缀 / 是否跨分包 / 成功后必须续做的方法 */
+const GATES = [
+  { key: 'co', name: '结算', crossPackage: true, from: 'checkout', resume: ['submitOrder'] },
+  { key: 'bk', name: '预约', crossPackage: true, from: 'booking', resume: ['submitBooking'] },
+  { key: 'gr', name: '礼赠收下 / 核验', crossPackage: false, from: 'gift', resume: ['accept', 'verifyByAccount'] }
+]
 const readSrc = (rel) => readFileSync(resolve(ROOT, rel), 'utf8')
 const stripComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/[^\n]*/g, '$1')
 
@@ -116,6 +136,48 @@ async function runDialog(src) {
   return out
 }
 
+async function runRequirePhone(sessionSrc) {
+  const m = /async function requirePhone\(app, options = \{\}\) \{[\s\S]*?\n\}/.exec(stripComments(sessionSrc))
+  if (!m) throw new Error('取不到 requirePhone 源码')
+  const make = (phone) => {
+    const calls = { prompt: 0, inline: 0 }
+    // eslint-disable-next-line no-new-func
+    const fn = new Function('ensureSession', 'hasPhone', 'needsOnboarding', 'promptPhoneBind', `${m[0]}; return requirePhone`)(
+      async () => ({ success: true, user: phone ? { phone: '1' } : {} }),
+      (s) => !!(s && s.user && s.user.phone),
+      () => true,
+      async () => { calls.prompt += 1 }
+    )
+    return { fn, calls }
+  }
+  const out = {}
+  let t = make(false)
+  let r = await t.fn({}, { direct: true, inline: () => { t.calls.inline += 1; return true } })
+  out.inlineNoJump = r === false && t.calls.inline === 1 && t.calls.prompt === 0
+  t = make(false)
+  r = await t.fn({}, { direct: true, inline: () => false })
+  out.inlineFallback = r === false && t.calls.prompt === 1
+  t = make(false)
+  r = await t.fn({}, { direct: true })
+  out.noInlineUnchanged = r === false && t.calls.prompt === 1
+  t = make(true)
+  r = await t.fn({}, { direct: true, inline: () => { t.calls.inline += 1; return true } })
+  out.boundPasses = r === true && t.calls.inline === 0 && t.calls.prompt === 0
+  return out
+}
+
+function methodBody(js, name) {
+  const re = new RegExp(`\\n  (?:async )?${name}\\(([^)]*)\\) \\{`)
+  const m = re.exec(js)
+  if (!m) return ''
+  let depth = 0
+  for (let i = m.index + m[0].length - 1; i < js.length; i += 1) {
+    if (js[i] === '{') depth += 1
+    else if (js[i] === '}') { depth -= 1; if (depth === 0) return js.slice(m.index, i + 1) }
+  }
+  return ''
+}
+
 /* ── 判据 ─────────────────────────────────────────────────────────────── */
 async function evaluate(src) {
   const fails = []
@@ -160,6 +222,41 @@ async function evaluate(src) {
     check('真跑：注册成功记 success（带入口 from 与 isNewUser）且照常发 success', run.success)
     check('真跑：关掉再打开重新计一次曝光', run.reopenCountsAgain)
   }
+
+  // S1-1 三个门禁页都挂弹层、跨分包登记占位、可关、成功续做、未就绪退回
+  for (const g of GATES) {
+    let json = {}
+    try { json = JSON.parse(src[`${g.key}Json`]) } catch (e) { check(`${g.name}页 json 可解析`, false, e.message) }
+    const uc = json.usingComponents || {}
+    check(`${g.name}页引用注册弹层组件`, uc['register-auth-dialog'] === DIALOG_PATH)
+    if (g.crossPackage) {
+      check(`${g.name}页跨分包引用登记 componentPlaceholder（按需加载，不进主包）`,
+        !!(json.componentPlaceholder && json.componentPlaceholder['register-auth-dialog'] === 'view'))
+    }
+    const tag = (/<register-auth-dialog[\s\S]*?\/>/.exec(src[`${g.key}Wxml`]) || [''])[0]
+    check(`${g.name}页弹层可关且文案为「先不注册」`, /closable="\{\{true\}\}"/.test(tag) && /close-text="先不注册"/.test(tag))
+    check(`${g.name}页弹层绑定 close / success、id=regDialog、from=${g.from}`,
+      /bind:close="onRegDialogClose"/.test(tag) && /bind:success="onRegDialogSuccess"/.test(tag)
+      && /id="regDialog"/.test(tag) && new RegExp(`from="${g.from}"`).test(tag))
+    const js = stripComments(src[`${g.key}Js`])
+    const inlineCalls = (js.match(/inline:\s*\(\)\s*=>/g) || []).length
+    check(`${g.name}页 requirePhone 带 inline（原地弹层）`, inlineCalls >= g.resume.length, `${inlineCalls} 处`)
+    const open = methodBody(js, 'openRegDialog')
+    check(`${g.name}页弹层未就绪时返回 false（退回跳注册页）`,
+      /if \(!this\.selectComponent\('#regDialog'\)\) return false/.test(open) && /regDialogShow: true/.test(open))
+    const succ = methodBody(js, 'onRegDialogSuccess')
+    for (const r of g.resume) check(`${g.name}页注册成功后续做 ${r}`, new RegExp(`this\\.${r}\\(`).test(succ))
+    check(`${g.name}页关闭弹层只收起`, /regDialogShow: false/.test(methodBody(js, 'onRegDialogClose')))
+  }
+  // S1-2 requirePhone 真跑
+  let rp = null
+  try { rp = await runRequirePhone(src.session) } catch (e) { check('requirePhone 可被真跑', false, e.message) }
+  if (rp) {
+    check('真跑 requirePhone：带 inline 且弹层就绪 → 不跳注册页', rp.inlineNoJump)
+    check('真跑 requirePhone：inline 返回 false → 退回跳注册页', rp.inlineFallback)
+    check('真跑 requirePhone：不带 inline → 行为不变（跳注册页）', rp.noInlineUnchanged)
+    check('真跑 requirePhone：已绑手机号 → 直接放行、不弹层', rp.boundPasses)
+  }
   return fails
 }
 
@@ -181,6 +278,13 @@ const INJECTIONS = [
   { name: '弹层「先不注册」不记 dismiss', key: 'dialogJs', from: "      this._funnel('dismiss')\n", to: '' },
   { name: '弹层成功不记 success', key: 'dialogJs', from: "        this._funnel('success', { isNewUser: !!(res.payload && res.payload.isNewUser) })\n", to: '' },
   { name: '弹层默认权益被改（鉴定场景文案被动）', key: 'dialogJs', from: "value: '鉴定结果自动存进山海图鉴'", to: "value: '注册后自动继续'" },
+  { name: '结算页丢掉 componentPlaceholder（跨分包组件同步引用）', key: 'coJson', from: /,\n  "componentPlaceholder": \{\n    "register-auth-dialog": "view"\n  \}/, to: '' },
+  { name: '预约页弹层不可关（没有「先不注册」）', key: 'bkWxml', from: '  closable="{{true}}"\n  close-text="先不注册"\n', to: '' },
+  { name: '结算页注册成功后不续提交', key: 'coJs', from: '    this.submitOrder()\n  },\n\n  dismissAuthResumeHint', to: '  },\n\n  dismissAuthResumeHint' },
+  { name: '礼赠页核验门禁退回只跳页（没有 inline）', key: 'grJs', from: "      inline: () => this.openRegDialog('verify')\n", to: '' },
+  { name: '预约页弹层未就绪不退回（永远当作已打开）', key: 'bkJs', from: "    if (!this.selectComponent('#regDialog')) return false;\n", to: '' },
+  { name: 'requirePhone 忽略 inline 返回值（未就绪也不跳页 → 用户卡住）', key: 'session', from: "options.inline({ from, phoneOnly }) !== false) return false", to: 'options.inline({ from, phoneOnly }) !== null) return false' },
+  { name: 'requirePhone 带 inline 仍跳注册页', key: 'session', from: "  if (typeof options.inline === 'function' && options.inline({ from, phoneOnly }) !== false) return false\n", to: '' },
   { name: '弹层未勾选也放行注册', key: 'dialogJs', from: "    async onGetPhoneNumber(e) {\n      if (this.data.saving || !this.data.agreed) return", to: '    async onGetPhoneNumber(e) {\n      if (this.data.saving) return' }
 ]
 
@@ -211,5 +315,6 @@ if (process.argv.includes('--selftest')) {
     fails.forEach((f) => console.log(`  - ${f}`))
     process.exit(1)
   }
-  console.log('✓ 全局注册简化：S4 统一漏斗 register_panel 双端登记、三处面板四步齐全、旧事件照旧、注册弹层真跑（曝光去重 / 先不注册 / 未勾不注册 / 成功）')
+  console.log('✓ 全局注册简化：S4 统一漏斗 register_panel 双端登记、三处面板四步齐全、旧事件照旧、注册弹层真跑（曝光去重 / 先不注册 / 未勾不注册 / 成功）'
+    + ' · S1 结算 / 预约 / 礼赠原地弹层（跨分包占位按需加载、可关、成功续做、未就绪退回跳页）、requirePhone 真跑')
 }

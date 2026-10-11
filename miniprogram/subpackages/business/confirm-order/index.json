@@ -2,7 +2,11 @@
   "navigationBarTitleText": "确认订单",
   "usingComponents": {
     "protected-badge": "/components/ProtectedBadge/index",
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index"
+  },
+  "componentPlaceholder": {
+    "register-auth-dialog": "view"
   },
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",

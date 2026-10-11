@@ -413,6 +413,23 @@ Page(withAppModal({
     }
   },
 
+  /** 原地注册弹层：组件（feature 分包按需加载）未就绪时返回 false，由 requirePhone 退回跳注册页 */
+  openRegDialog() {
+    if (!this.selectComponent('#regDialog')) return false;
+    this.setData({ regDialogShow: true });
+    return true;
+  },
+
+  onRegDialogClose() {
+    this.setData({ regDialogShow: false });
+  },
+
+  /** 原地注册成功：自动续提交刚才的预约 */
+  onRegDialogSuccess() {
+    this.setData({ regDialogShow: false });
+    this.submitBooking();
+  },
+
   // 🟢 1. 通用预约提交 (Tab 0)
   async submitBooking() {
     const dateObj = this.data.weekDays[this.data.selectedDateIndex];
@@ -427,7 +444,8 @@ Page(withAppModal({
       content: '授权手机号即可预约；若尚未注册，将同步领取新客礼包。',
       from: 'booking',
       returnMode: 'back',
-      direct: true
+      direct: true,
+      inline: () => this.openRegDialog()
     });
     if (!phoneOk) return;
     if (!this.data.contactName || !this.data.contactPhone) return wx.showToast({ title: '请完善信息', icon: 'none' });
