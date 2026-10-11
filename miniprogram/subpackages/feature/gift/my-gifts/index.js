@@ -6,7 +6,7 @@ const { batchTempFileURLs } = require('../../../../utils/util')
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const { ensureSession } = require('../../../../utils/userSession')
 const { requestGiftSubscribe } = require('../../utils/giftSubscribe')
-const { loadReceiverVerify, saveReceiverPhone, sheetCopy } = require('../receiverVerify')
+const { loadReceiverVerify, saveReceiverPhone, sheetCopy, setClaimPasscode, resetShareLink } = require('../receiverVerify')
 const {
   giftFlowSignal,
   giftDateSignal,
@@ -412,6 +412,10 @@ Page({
     verifyBusy: false,
     verifyError: '',
     verifyCopy: {},
+    /** 凭礼笺领取管理面板（2026-10-11） */
+    claimSheet: false,
+    claimState: {},
+    claimNotice: '',
     /** 主滚动区高度（iOS 显式 px） */
     scrollHeightPx: 0,
     scrollStyle: ''
@@ -935,6 +939,46 @@ Page({
 
   closeVerifySheet() {
     this.setData({ verifySheet: false, sheetOpen: false })
+  },
+
+  async onClaimTap(e) {
+    const orderId = String((e.currentTarget.dataset && e.currentTarget.dataset.orderId) || '')
+    if (!orderId || this.data.verifyBusy) return
+    this._verifyOrderId = orderId
+    this.setData({ verifyBusy: true, verifyError: '' })
+    const state = await loadReceiverVerify(orderId)
+    if (!state.success) return this.setData({ verifyBusy: false })
+    this.setData({ verifyBusy: false, claimSheet: true, sheetOpen: true, claimState: state, claimNotice: '', verifyCopy: sheetCopy(state) })
+  },
+
+  closeClaimSheet() {
+    this.setData({ claimSheet: false, sheetOpen: false })
+  },
+
+  async onClaimPasscode(e) {
+    this.setData({ verifyBusy: true, verifyError: '' })
+    const res = await setClaimPasscode(this._verifyOrderId, e.detail && e.detail.enable)
+    if (!res.success) return this.setData({ verifyBusy: false, verifyError: res.msg || '此刻未能保存，请稍后再试' })
+    const state = await loadReceiverVerify(this._verifyOrderId)
+    this.setData({ verifyBusy: false, claimState: state })
+    this.loadList(true)
+  },
+
+  async onClaimReset() {
+    this.setData({ verifyBusy: true, verifyError: '' })
+    const res = await resetShareLink(this._verifyOrderId)
+    if (!res.success) return this.setData({ verifyBusy: false, verifyError: res.msg || '此刻未能作废，请稍后再试' })
+    const state = await loadReceiverVerify(this._verifyOrderId)
+    this.setData({
+      verifyBusy: false,
+      claimState: state,
+      claimNotice: '旧链接已作废。请到这份礼赠的详情里重新分享新礼笺给 TA' + (res.passcode ? `，新口令 ${res.passcode}` : '') + '。'
+    })
+    this.loadList(true)
+  },
+
+  onClaimUsePhone() {
+    this.setData({ claimSheet: false, verifySheet: true, sheetOpen: true, verifyError: '' })
   },
 
   async _saveVerify(payload) {

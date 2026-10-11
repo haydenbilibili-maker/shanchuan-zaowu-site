@@ -37,7 +37,8 @@
 | `phoneHash` | string | `sha256(salt + ':' + 11 位手机号)`；空串 = 已清除核验 |
 | `phoneTail` | string | 尾号 4 位，**只回给送礼人**展示 |
 | `attempts` | array<{o, t}> | 近 1 小时核验失败记录（`o` 核验者 openid，`t` 毫秒时间戳），最多保留 50 条 |
-| `verifiedOpenid` / `verifiedAt` / `verifyMethod` | string / date / string | 核验通过者、时间、方式（`account` 微信授权手机号 / `manual` 手动输入） |
+| `verifiedOpenid` / `verifiedAt` / `verifyMethod` | string / date / string | 核验通过者、时间、方式（`account` 微信授权手机号 / `manual` 手动输入 / `passcode` 领取口令） |
 | `updatedAt` | date | 最近设置时间 |
+| `passcode` | string | **凭礼笺领取的 6 位口令**（2026-10-11，选填）。只回给送礼人；受礼人比对通过只记 `verifiedOpenid`（`verifyMethod: 'passcode'`），**不等于收下**。凭礼笺领取的单 `salt` / `phoneHash` / `phoneTail` 为空串；作废换链接时重写本文档（新口令、清空通过者与失败记录）。 |
 
 **不存**手机号明文；失败响应只含「不一致 + 剩余次数」，不回任何号码片段。

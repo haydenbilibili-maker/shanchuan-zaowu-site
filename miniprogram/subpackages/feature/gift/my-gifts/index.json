@@ -10,6 +10,7 @@
   "backgroundColorBottom": "#1A1814",
   "usingComponents": {
     "page-edge-back": "/components/PageEdgeBack/index",
-    "phone-sheet": "/subpackages/feature/gift/phone-sheet/index"
+    "phone-sheet": "/subpackages/feature/gift/phone-sheet/index",
+    "claim-sheet": "/subpackages/feature/gift/claim-sheet/index"
   }
 }

@@ -1,0 +1,21 @@
+.rc{margin:32rpx 0 0;padding:32rpx 32rpx 36rpx;border:2rpx solid rgba(196,167,108,0.4);border-radius:16rpx;background:rgba(31,29,26,0.92);display:flex;flex-direction:column}
+.rc-head{display:flex;justify-content:space-between;align-items:center}
+.rc-over{font-size:20rpx;letter-spacing:6rpx;color:#C4A76C}
+.rc-x{font-size:24rpx;color:#9A8F7C;padding:8rpx 0 8rpx 24rpx}
+.rc-title{margin-top:12rpx;font-size:30rpx;font-weight:600;color:#F3ECDD;line-height:1.5}
+.rc-perks{margin-top:18rpx}
+.rc-perk{display:flex;align-items:center;margin-top:10rpx}
+.rc-dot{width:10rpx;height:10rpx;border-radius:50%;background:#C4A76C;margin-right:16rpx;flex-shrink:0}
+.rc-perk-t{font-size:26rpx;color:#E6DCC8}
+.rc-note{margin-top:16rpx;font-size:22rpx;line-height:1.7;color:#9A8F7C}
+.rc-link{color:#C4A76C}
+.rc-name,.rc-agree{margin-top:20rpx;display:flex;align-items:flex-start}
+.rc-check{width:28rpx;height:28rpx;margin:6rpx 14rpx 0 0;flex-shrink:0;border:2rpx solid #C4A76C;border-radius:6rpx;box-sizing:border-box}
+.rc-check.is-on{background:#C4A76C;box-shadow:inset 0 0 0 5rpx #1F1D1A}
+.rc-name-t,.rc-agree-t{font-size:24rpx;line-height:1.6;color:#B8AD98}
+.rc-agree.is-shake{animation:rc-shake 0.42s}
+@keyframes rc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8rpx)}75%{transform:translateX(8rpx)}}
+.rc-hint{margin-top:8rpx;font-size:22rpx;color:#E8927C}
+.rc-cta{margin-top:24rpx;width:100%;height:84rpx;line-height:84rpx;border-radius:42rpx;background:#C4A76C;color:#1A1814;font-size:28rpx;font-weight:600;padding:0}
+.rc-cta::after{border:none}
+.rc-cta.is-off{opacity:0.55}

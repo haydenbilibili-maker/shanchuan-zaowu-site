@@ -196,8 +196,25 @@
     </view>
 
     <view class="actions">
+      <!-- 凭礼笺领取：打开不算领取，须点「收下」；口令（若设）先过；不需注册 / 手机号 -->
+      <block wx:if="{{claimLink && !accepted}}">
+        <view class="share-lock" wx:if="{{needFriendShare}}">
+          <text class="share-lock-title">礼笺可先读</text>
+          <text class="share-lock-desc">收下需通过好友分享的礼笺链接进入，请对方再转发一次。</text>
+        </view>
+        <view class="verify-card" wx:else>
+          <text class="verify-over">凭礼笺领取</text>
+          <text class="verify-title">{{passcodeNeeded ? '送礼人为这份礼设了领取口令' : '这份山海在等你收下'}}</text>
+          <text class="verify-desc">点「收下」才算领取，一份礼只能由一个微信收下。不用注册，也不用填手机号。</text>
+          <input wx:if="{{passcodeNeeded}}" class="claim-input is-code" type="number" maxlength="6" placeholder="输入 6 位口令（向送礼人要）" placeholder-class="claim-ph" value="{{passcodeInput}}" bindinput="onPasscodeInput" />
+          <input class="claim-input" maxlength="12" placeholder="怎么称呼你？选填，让送礼人知道是你收下的" placeholder-class="claim-ph" value="{{claimNameInput}}" bindinput="onClaimNameInput" />
+          <view class="btn-primary {{claimBusy ? 'is-busy' : ''}}" bindtap="acceptByLink" hover-class="{{claimBusy ? '' : 'btn-primary-press'}}" hover-stay-time="80">{{claimBusy ? '收下中…' : '收下这份山海'}}</view>
+          <text class="verify-error" wx:if="{{claimError}}">{{claimError}}</text>
+        </view>
+        <view class="btn-ghost" bindtap="later">稍后再看</view>
+      </block>
       <!-- 领取核验（N3） -->
-      <block wx:if="{{verifyNeeded}}">
+      <block wx:elif="{{verifyNeeded}}">
         <view class="verify-card">
           <text class="verify-over">领取核验</text>
           <text class="verify-title">送礼人为这份礼赠设了身份核验</text>
@@ -275,6 +292,7 @@
         <view class="btn-ghost" bindtap="goHolderCare">养护指南</view>
       </view>
     </view>
+    <reg-card show="{{regCardShow}}" orderId="{{orderId}}" claimName="{{claimNameInput}}" bindclose="onRegCardClose" binddone="onRegCardDone" bindcare="goHolderCare" />
   </block>
   </block>
 </view>

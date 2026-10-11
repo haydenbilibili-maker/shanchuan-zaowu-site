@@ -181,6 +181,8 @@
     "test:gift-note-variants:selftest": "node miniprogram/scripts/test-gift-note-variants.mjs --selftest",
     "check:gift-holder": "node miniprogram/scripts/check-gift-holder.mjs",
     "check:gift-holder:selftest": "node miniprogram/scripts/check-gift-holder.mjs --selftest",
+    "check:gift-claim-link": "node miniprogram/scripts/check-gift-claim-link.mjs",
+    "check:gift-claim-link:selftest": "node miniprogram/scripts/check-gift-claim-link.mjs --selftest",
     "check:gift-sticker-layout": "node miniprogram/scripts/check-gift-sticker-layout.mjs",
     "check:gift-export-flow": "node miniprogram/scripts/check-gift-export-flow.mjs",
     "check:gift-export-flow:selftest": "node miniprogram/scripts/check-gift-export-flow.mjs --selftest",

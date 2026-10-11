@@ -5,7 +5,7 @@ const { dispatchInAppMessage } = require('./inAppMessage')
 const { snapshotFromOrderContext } = require('./refundPolicy')
 const shipping = require('./shipping')
 const { normalizeGiftMeta, isInviteAddressGift } = require('./giftMeta')
-const { checkGiftReceiverPhone, buildVerifyDoc, GIFT_VERIFY_COL } = require('./giftReceiverPhone')
+const { checkGiftReceiverPhone, buildVerifyDoc, buildLinkVerifyDoc, createPasscode, GIFT_VERIFY_COL } = require('./giftReceiverPhone')
 const { holdOrderProducts, releaseOrderStockHold } = require('./stockUtils')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -187,7 +187,9 @@ exports.main = async (event, context) => {
   }
 
   // 礼赠受礼人手机号（领取核验）：新版客户端（clientCaps 标记）缺号即拒；旧版不带标记暂不拒（开关见 giftReceiverPhone.js）
-  const giftPhone = isGift ? checkGiftReceiverPhone(event) : { required: false, phone: '' }
+  // 凭礼笺领取（填址 / 自提，新标记 + giftClaimMode='link'）可不填号
+  const giftPhone = isGift ? checkGiftReceiverPhone(event, giftMeta && giftMeta.deliveryType) : { required: false, phone: '', claimLink: false }
+  const claimPasscode = giftPhone.claimLink && event.giftClaimPasscode === true ? createPasscode() : ''
   if (giftPhone.required && !giftPhone.phone) {
     return { success: false, code: 'GIFT_RECEIVER_PHONE_REQUIRED', msg: '请填写受礼人手机号（用于 TA 领取时核验身份）' }
   }
@@ -328,7 +330,7 @@ exports.main = async (event, context) => {
       orderNo,
       source: orderSource,
       customMeta: isCustom ? customMeta : null,
-      giftMeta: isGift ? (giftPhone.phone ? { ...giftMeta, receiverVerify: true } : giftMeta) : null,
+      giftMeta: isGift ? (giftPhone.phone ? { ...giftMeta, receiverVerify: true } : (giftPhone.claimLink ? { ...giftMeta, claimMode: 'link', claimPasscode: !!claimPasscode } : giftMeta)) : null,
       customExtraPrice: pricing.customExtraPrice || 0,
       productionStatus: isCustom ? 'pending_make' : null,
       refundPolicy,
@@ -440,6 +442,18 @@ exports.main = async (event, context) => {
         await db.collection('orders').doc(orderRes._id).update({ data: { 'giftMeta.receiverVerify': false } }).catch(() => {})
       }
     }
+    let claimPasscodeSaved = false
+    if (isGift && claimPasscode) {
+      try {
+        await db.collection(GIFT_VERIFY_COL).doc(orderRes._id).set({
+          data: buildLinkVerifyDoc(orderRes._id, openid, claimPasscode, db.serverDate())
+        })
+        claimPasscodeSaved = true
+      } catch (codeErr) {
+        console.warn('makeOrder gift claim passcode save failed:', codeErr && codeErr.message)
+        await db.collection('orders').doc(orderRes._id).update({ data: { 'giftMeta.claimPasscode': false } }).catch(() => {})
+      }
+    }
 
     const productNames = pricing.products.map((p) => p.title || p.name).filter(Boolean).slice(0, 2).join('、')
     await dispatchInAppMessage(db, {
@@ -466,7 +480,8 @@ exports.main = async (event, context) => {
       useWalletPay: !!pricing.useWalletPay,
       paymentBreakdown: pricing.paymentBreakdown,
       status: 'pending_pay',
-      ...(isGift ? { receiverVerify } : {})
+      ...(isGift ? { receiverVerify } : {}),
+      ...(isGift && giftPhone.claimLink ? { claimMode: 'link', claimPasscode: claimPasscodeSaved } : {})
     }
   } catch (err) {
     console.error('makeOrder error:', err)

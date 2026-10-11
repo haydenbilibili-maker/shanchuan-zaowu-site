@@ -365,6 +365,12 @@ page {
 .verify-set-req { color: #E8927C; letter-spacing: 0; }
 .verify-set.is-error { border-color: #E8927C; }
 .verify-set-err { margin-top: 10rpx; font-size: 24rpx; color: #E8927C; }
+.verify-set-tip { color: #9A8F7C; letter-spacing: 0; font-size: 22rpx; }
+.claim-switch { margin-top: 14rpx; font-size: 24rpx; color: #C4A76C; text-decoration: underline; }
+.claim-opt { margin-top: 16rpx; display: flex; align-items: center; }
+.claim-check { width: 30rpx; height: 30rpx; flex-shrink: 0; border: 1px solid #C4A76C; border-radius: 6rpx; margin-right: 14rpx; }
+.claim-opt.on .claim-check { background: #C4A76C; box-shadow: inset 0 0 0 5rpx #1F1D1A; }
+.claim-opt-t { font-size: 24rpx; color: #E6DCC8; line-height: 1.5; }
 
 .pack-note {
   margin-top: 8rpx;

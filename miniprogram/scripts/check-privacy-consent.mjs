@@ -60,6 +60,15 @@ const ENTRIES = [
     handler: 'onGetPhoneNumber',
     toggle: 'togglePhoneAgree',
     blocked: 'onPhoneBindBlocked'
+  },
+  {
+    name: '礼赠领取后的注册引导卡（凭礼笺领取，2026-10-11）',
+    wxml: 'miniprogram/subpackages/feature/gift/reg-card/index.wxml',
+    js: 'miniprogram/subpackages/feature/gift/reg-card/index.js',
+    flag: 'agreed',
+    handler: 'onGetPhoneNumber',
+    toggle: 'onToggleAgree',
+    blocked: 'onCtaBlocked'
   }
 ]
 
@@ -194,6 +203,7 @@ function selftest() {
   t('基线：当前仓库通过全部断言', quiet(() => runChecks(base)))
 
   const D = ENTRIES[0]; const O = ENTRIES[1]; const P = ENTRIES[2]
+  const G = ENTRIES.find((e) => e.js.includes('/gift/reg-card/'))
   const injections = [
     ['弹层恢复「点击即表示同意」小字', D.wxml, (s) => s.replace('<text>我已阅读并同意</text>', '<text>点击即表示同意</text>')],
     ['祈福墙按钮文案恢复「同意并一键注册」', 'miniprogram/subpackages/feature/wish-wall/index.wxml',
@@ -218,6 +228,10 @@ function selftest() {
     ['祈福墙功德证弹层改成关不掉', 'miniprogram/subpackages/feature/wish-wall/index.wxml',
       (s) => s.replace(/(show="\{\{showCertDialog\}\}"[\s\S]*?)closable="\{\{true\}\}"/, '$1closable="{{false}}"')],
     ['弹层组件删掉关闭按钮', D.wxml, (s) => s.replace(/bindtap="onClose"/, '')],
+    ['礼赠注册卡勾选默认为已勾（「无感」= 默认同意）', G.js, (s) => s.replace('agreed: false,', 'agreed: true,')],
+    ['礼赠注册卡授权按钮去掉勾选门控', G.wxml, (s) => s.replace('wx:if="{{agreed}}"', 'wx:if="{{true}}"')],
+    ['礼赠注册卡授权回调不再挡未勾选', G.js, (s) => s.replace("if (this.data.saving || !this.data.agreed) return\n      const detail", "if (this.data.saving) return\n      const detail")],
+    ['礼赠注册卡删掉《隐私政策》入口', G.wxml, (s) => s.replace(/<text[^>]*>《隐私政策》<\/text>/, '')],
     ['注册页用 showModal 代用户勾选', O.js, (s) => s.replace('nudgeAgree() {', "nudgeAgree() {\n    wx.showModal({ title: '同意协议', success: () => this.toggleAgree() })")]
   ]
   for (const [label, target, mut] of injections) {

@@ -1,0 +1,46 @@
+<!-- 领礼后注册引导：可关；不注册不影响收礼 -->
+<view class="rc" wx:if="{{show && done}}">
+  <view class="rc-head">
+    <text class="rc-over">MEMBER</text>
+    <text class="rc-x" bindtap="onClose">收起</text>
+  </view>
+  <text class="rc-title">注册完成</text>
+  <text class="rc-note">{{gotGift ? '新客礼包已放进「我的 · 券包」。' : ''}}这件藏品签收后，收藏证书会署上你的名字。</text>
+</view>
+<view class="rc" wx:elif="{{show}}">
+  <view class="rc-head">
+    <text class="rc-over">MEMBER</text>
+    <text class="rc-x" bindtap="onClose">先不注册</text>
+  </view>
+  <text class="rc-title">礼已收好。注册一下，还能多得这些</text>
+  <view class="rc-perks">
+    <view class="rc-perk"><text class="rc-dot"></text><text class="rc-perk-t">新客礼包自动到账</text></view>
+    <view class="rc-perk"><text class="rc-dot"></text><text class="rc-perk-t">这件藏品的收藏证书署上你的名字</text></view>
+  </view>
+  <text class="rc-note">不注册也能照常留地址 / 到店领取、看物流，<text class="rc-link" bindtap="goCare">标本养护指南</text>也随时可读。</text>
+  <view class="rc-name" wx:if="{{claimName}}" bindtap="onToggleName">
+    <view class="rc-check {{useName ? 'is-on' : ''}}"></view>
+    <text class="rc-name-t">昵称用「{{claimName}}」（之后可在「我的」里改）</text>
+  </view>
+  <view class="rc-agree {{agreeShake ? 'is-shake' : ''}}" bindtap="onToggleAgree">
+    <view class="rc-check {{agreed ? 'is-on' : ''}}"></view>
+    <view class="rc-agree-t">
+      <text>我已阅读并同意</text>
+      <text class="rc-link" data-kind="terms" catchtap="onAgreementTap">《用户服务协议》</text>
+      <text>和</text>
+      <text class="rc-link" data-kind="privacy" catchtap="onAgreementTap">《隐私政策》</text>
+    </view>
+  </view>
+  <text wx:if="{{agreeHint && !agreed}}" class="rc-hint">请先阅读并勾选同意</text>
+  <text wx:if="{{errText}}" class="rc-hint">{{errText}}</text>
+  <button
+    wx:if="{{agreed}}"
+    class="rc-cta"
+    open-type="{{saving ? '' : 'getPhoneNumber'}}"
+    bindtap="onCtaTap"
+    bindgetphonenumber="onGetPhoneNumber"
+    disabled="{{saving}}"
+    loading="{{saving}}"
+  >{{saving ? '正在注册…' : '微信手机号一键注册'}}</button>
+  <button wx:else class="rc-cta is-off" bindtap="onCtaBlocked">微信手机号一键注册</button>
+</view>

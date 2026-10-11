@@ -88,6 +88,9 @@ const OTHER_DELIVERIES = [
   }
 ]
 
+/** 可不填号、凭礼笺领取的交付方式（与云函数 giftReceiverPhone.CLAIM_LINK_DELIVERY 同值，check:gift-claim-link 钉住） */
+const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup']
+
 Page({
   data: {
     /** 音效开关：与 receive 页共用同一个存储键，整条礼赠流程一个偏好 */
@@ -128,8 +131,10 @@ Page({
     cardSignature: '',
     recipientName: '',
     recipientEditing: false,
-    // 受礼人手机号（必填）：经确认页交 makeOrder 存哈希，不进 giftMeta
+    // 受礼人手机号：经确认页交 makeOrder 存哈希，不进 giftMeta；填址 / 自提可改凭礼笺领取（2026-10-11）
     receiverPhone: '',
+    claimLink: false,
+    claimPasscode: false,
     receiverPhoneError: '',
     receiverPhoneFocus: false,
     phoneScrollId: '',
@@ -964,6 +969,14 @@ Page({
     this.setData({ receiverPhone: String((e.detail && e.detail.value) || '').replace(/\D/g, '').slice(0, 11), receiverPhoneError: '' })
   },
 
+  toggleClaimLink() {
+    this.setData({ claimLink: !this.data.claimLink, receiverPhoneError: '' })
+  },
+
+  toggleClaimPasscode() {
+    this.setData({ claimPasscode: !this.data.claimPasscode })
+  },
+
   flagReceiverPhone(msg) {
     this.setData({ receiverPhoneError: msg, phoneScrollId: '', receiverPhoneFocus: false }, () => {
       this.setData({ phoneScrollId: 'receiverPhoneField', receiverPhoneFocus: true })
@@ -1266,13 +1279,14 @@ Page({
       return
     }
 
-    const receiverPhone = String(this.data.receiverPhone || '')
-    if (!/^1\d{10}$/.test(receiverPhone)) {
-      this.flagReceiverPhone(receiverPhone ? '受礼人手机号需为 11 位' : '请填写受礼人手机号')
+    const claimLink = !!this.data.claimLink && CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1
+    const receiverPhone = claimLink ? '' : String(this.data.receiverPhone || '')
+    if (!claimLink && !/^1\d{10}$/.test(receiverPhone)) {
+      this.flagReceiverPhone(receiverPhone ? '受礼人手机号需为 11 位' : '请填写受礼人手机号，或选「凭礼笺领取」')
       return
     }
-    // 确认页随下单交 makeOrder 存哈希；送礼成功页兜底补存
-    getApp().globalData.giftReceiverPhone = { phone: receiverPhone, productId: p._id, at: Date.now() }
+    // 确认页随下单交 makeOrder（号码存哈希 / 凭礼笺领取标记）；送礼成功页兜底补存号码
+    getApp().globalData.giftReceiverPhone = { phone: receiverPhone, claimLink, claimPasscode: claimLink && !!this.data.claimPasscode, productId: p._id, at: Date.now() }
 
     const sku = this.data.selectedSku
     const count = this.data.count || 1

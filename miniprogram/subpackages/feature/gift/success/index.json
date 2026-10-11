@@ -7,6 +7,7 @@
   "backgroundColorBottom": "#1A1814",
   "backgroundTextStyle": "light",
   "usingComponents": {
-    "phone-sheet": "/subpackages/feature/gift/phone-sheet/index"
+    "phone-sheet": "/subpackages/feature/gift/phone-sheet/index",
+    "claim-sheet": "/subpackages/feature/gift/claim-sheet/index"
   }
 }

@@ -1084,3 +1084,6 @@ page { background: var(--color-bg); color: #fff; }
 .verify-card .btn-primary.is-busy{opacity:0.6}
 .verify-alt{margin-top:22rpx;text-align:center;font-size:26rpx;color:#C4A76C}
 .verify-error{margin-top:16rpx;text-align:center;font-size:24rpx;color:#E8927C}
+.claim-input{margin:0 0 20rpx;height:84rpx;padding:0 24rpx;border:2rpx solid rgba(196,167,108,0.45);border-radius:12rpx;background:#2A2621;color:#F3ECDD;font-size:28rpx}
+.claim-input.is-code{font-size:36rpx;letter-spacing:10rpx}
+.claim-ph{color:#7D7466;letter-spacing:0;font-size:24rpx}

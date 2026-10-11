@@ -26,6 +26,8 @@ npm run check:miniprogram-sync
 npm run check:audit-matrix
 npm run test:gift-note-variants
 npm run check:gift-holder
+# 2026-10-11：礼赠凭礼笺领取（免填号只限填址/自提、须主动收下、不要求注册、一份一人、口令、作废换链接、不发朋友圈、注册引导守协议勾选）
+npm run check:gift-claim-link
 npm run test:product-copy-species
 npm run check:size-canonical-sync
 npm run test:list-cover-images

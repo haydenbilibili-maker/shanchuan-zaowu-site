@@ -1,0 +1,29 @@
+<view class="cs-mask" wx:if="{{show}}" bindtap="onClose" catchtouchmove="noop">
+  <view class="cs-panel" catchtap="noop">
+    <text class="cs-over">CLAIM BY LETTER</text>
+    <text class="cs-title">凭礼笺领取</text>
+    <text class="cs-desc">TA 打开礼笺后点「收下」才算领取，一份只能一人收下。这份礼笺不能发朋友圈。</text>
+    <view class="cs-row" wx:if="{{state.claimer}}">
+      <text class="cs-k">已收下</text>
+      <text class="cs-v">{{state.claimer.label}}{{state.claimer.at ? ' · ' + state.claimer.at : ''}}</text>
+    </view>
+    <view class="cs-row" wx:if="{{!state.claimer}}">
+      <text class="cs-k">领取口令</text>
+      <block wx:if="{{state.passcode}}">
+        <text class="cs-code" bindtap="onCopyCode">{{state.passcode}}</text>
+        <text class="cs-mini">轻触复制。请另外告诉 TA，别和礼笺发在同一处。</text>
+        <text class="cs-link cs-link-muted" bindtap="onRemoveCode">去掉口令</text>
+      </block>
+      <block wx:else>
+        <text class="cs-v">未加口令（持礼笺者点「收下」即可领取）</text>
+        <text class="cs-link" bindtap="onAddCode">加 6 位领取口令</text>
+      </block>
+    </view>
+    <text class="cs-notice" wx:if="{{notice}}">{{notice}}</text>
+    <text class="cs-error" wx:if="{{error}}">{{error}}</text>
+    <view class="cs-btn {{busy ? 'is-busy' : ''}} {{confirmReset ? 'is-warn' : ''}}" wx:if="{{state.canReset}}" hover-class="cs-btn-press" hover-stay-time="80" bindtap="onReset">{{busy ? '请稍候…' : (confirmReset ? '确认作废：旧链接立即失效' + (state.claimer ? '，已收下的人将被解除' : '') : '作废并换新链接')}}</view>
+    <text class="cs-mini cs-center" wx:if="{{state.canReset}}">发现不是 TA 收下、或礼笺被转出去了，可在 TA 留地址 / 到店领取前作废</text>
+    <view class="cs-link" wx:if="{{!state.claimer && state.editable}}" bindtap="onUsePhone">知道 TA 的手机号了？改为手机号核验</view>
+    <view class="cs-link cs-link-muted" bindtap="onClose">关闭</view>
+  </view>
+</view>

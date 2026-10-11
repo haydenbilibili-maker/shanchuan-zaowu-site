@@ -1525,6 +1525,15 @@ Page(withAppModal({
     return g.phone
   },
 
+  /** 送礼页选了「凭礼笺领取」（2h 内有效，只限填址 / 自提）→ { passcode }；否则 null */
+  pendingGiftClaimLink() {
+    const g = getApp().globalData.giftReceiverPhone
+    if (!g || !g.claimLink || Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return null
+    const dt = (this._giftMeta && this._giftMeta.deliveryType) || ''
+    if (dt !== 'invite_address' && dt !== 'store_pickup') return null
+    return { passcode: !!g.claimPasscode }
+  },
+
   /** 缺受礼人手机号：退回送礼页并定位到该字段（送礼页 onShow 读 giftPhoneRefill） */
   backToGiftPhone() {
     getApp().globalData.giftPhoneRefill = true
@@ -1545,7 +1554,8 @@ Page(withAppModal({
   async doSubmitOrder() {
     if (this.data.submitting) return
     const giftReceiverPhone = this.data.isGiftOrder ? this.pendingGiftReceiverPhone() : ''
-    if (this.data.isGiftOrder && !giftReceiverPhone) {
+    const giftClaimLink = this.data.isGiftOrder && !giftReceiverPhone ? this.pendingGiftClaimLink() : null
+    if (this.data.isGiftOrder && !giftReceiverPhone && !giftClaimLink) {
       this.backToGiftPhone()
       return
     }
@@ -1595,7 +1605,9 @@ Page(withAppModal({
           giftMeta: this._giftMeta || null,
           source: this.data.isGiftOrder ? 'gift' : undefined,
           giftReceiverPhone: giftReceiverPhone || undefined,
-          clientCaps: this.data.isGiftOrder ? ['gift_receiver_phone_v1'] : undefined,
+          giftClaimMode: giftClaimLink ? 'link' : undefined,
+          giftClaimPasscode: giftClaimLink && giftClaimLink.passcode ? true : undefined,
+          clientCaps: this.data.isGiftOrder ? ['gift_receiver_phone_v1', 'gift_claim_link_v1'] : undefined,
           useWalletPay: !!this.data.useWalletPay,
           depositIntentId: this._depositIntentId || null,
           storePickup: !!this.data.storePickup && !this.data.isGiftOrder,
@@ -1612,7 +1624,7 @@ Page(withAppModal({
         this.backToGiftPhone()
         return
       }
-      if (result && result.receiverVerify) getApp().globalData.giftReceiverPhone = null
+      if (result && (result.receiverVerify || result.claimMode === 'link')) getApp().globalData.giftReceiverPhone = null
       if (!result || !result.success) {
         this.modal({
           title: '下单失败',

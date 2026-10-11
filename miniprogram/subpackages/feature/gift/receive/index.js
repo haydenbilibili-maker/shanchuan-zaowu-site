@@ -18,6 +18,9 @@ const SFX_OPEN = '/subpackages/feature/gift/assets/gift-open.mp3'
 /** 礼笺打字机音效（与编排页/礼成页共用同一静音键与音源） */
 const textFx = require('../giftTextEffect')
 const { buildGuideUrl, resolveCareCategory } = require('../../utils/careDefaults')
+const trackBehavior = require('../../../../utils/trackBehavior')
+/** 注册引导卡「先不注册」：按单记住，不再打扰 */
+const REG_CARD_OFF_KEY = 'gift_reg_card_off_'
 /** 开盒音量：适中，配合静默键 obeyMuteSwitch */
 const SFX_VOLUME = 0.58
 const MUTE_STORAGE_KEY = 'gift_receive_sfx_muted'
@@ -73,6 +76,14 @@ Page({
     verifyBusy: false,
     verifyError: '',
     verifySheet: false,
+    /** 凭礼笺领取（2026-10-11）：打开不算领取，须主动收下；可选口令；不要求注册 */
+    claimLink: false,
+    passcodeNeeded: false,
+    passcodeInput: '',
+    claimNameInput: '',
+    claimBusy: false,
+    claimError: '',
+    regCardShow: false,
     storeName: '',
     pickupHint: '',
     hidePrice: true,
@@ -461,7 +472,8 @@ Page({
           data: { action: 'bindReceiver', token: this._token, orderId: this._orderId, source: 'receive_page' }
         })
         const br = (bindRes && bindRes.result) || {}
-        this._verifyNeeded = !br.success && br.code === 'VERIFY_REQUIRED'
+        this._verifyNeeded = !br.success && br.code === 'VERIFY_REQUIRED' && br.verifyKind !== 'passcode'
+        this._passcodeNeeded = !br.success && br.code === 'VERIFY_REQUIRED' && br.verifyKind === 'passcode'
         if (!br.success && br.code === 'ALREADY_BOUND') {
           this.setData({ invalid: true, errorMsg: br.msg || '这份礼赠已由其他人领取' })
           return
@@ -534,7 +546,9 @@ Page({
       const claimClaimed = gift.claimStatus === 'claimed'
       const hidePrice = gift.hidePrice !== false
       const token = String(gift.shareToken || this._token || '').trim()
-      const needFriendShare = isInvite && !token && gift.acceptStatus !== 'accepted'
+      const claimLink = gift.claimMode === 'link'
+      const linkClaimed = claimLink && !gift.claimPending
+      const needFriendShare = (isInvite || claimLink) && !token && !(isInvite ? accepted : linkClaimed)
       let pickupHint = ''
       if (isPickup) {
         pickupHint = claimClaimed
@@ -575,7 +589,7 @@ Page({
         letterToShown: alreadyRevealed,
         showLetterCursor: false,
         product,
-        accepted: isInvite ? accepted : true,
+        accepted: isInvite ? accepted : (claimLink ? linkClaimed : true),
         addressDone: isInvite ? gift.addressStatus === 'submitted' : true,
         addressMaskedLine: (gift.addressMasked && gift.addressMasked.line) || '',
         phoneMasked: gift.receiverPhoneMasked || (gift.addressMasked && gift.addressMasked.phone) || '',
@@ -597,10 +611,17 @@ Page({
         priceLabel,
         needFriendShare,
         // 持有期服务：受礼人收下后即为持有人；签收后可看自己的收藏证书与养护指南
-        holderCard: isInvite ? accepted : true,
+        holderCard: isInvite ? accepted : (claimLink ? linkClaimed : true),
         holderReady: gift.status === 'received',
-        verifyNeeded: !!(this._verifyNeeded || gift.verifyRequired)
+        verifyNeeded: !!(this._verifyNeeded || gift.verifyRequired),
+        claimLink,
+        passcodeNeeded: claimLink && !linkClaimed && !!(this._passcodeNeeded || gift.passcodeRequired)
       })
+      if (!this._openTracked) {
+        this._openTracked = true
+        trackBehavior('gift_receive_open', 'order', this.data.orderId, { mode: claimLink ? 'link' : (gift.receiverVerify ? 'phone' : 'none') })
+      }
+      this._maybeShowRegCard()
       if (gift.voiceTempUrl) this._voiceTempUrl = gift.voiceTempUrl
       this._hydrateProductCover(product)
     } catch (e) {
@@ -805,6 +826,7 @@ Page({
         if (result.code === 'VERIFY_REQUIRED') this.setData({ verifyNeeded: true })
         return
       }
+      trackBehavior('gift_receive_accept', 'order', this.data.orderId, { mode: 'phone', ok: true })
       this.setData({ accepted: true })
       wx.showToast({ title: '已收下', icon: 'success' })
       setTimeout(() => this.goAddress(), 500)
@@ -812,6 +834,77 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '网络未通，请稍后再试', icon: 'none' })
     }
+  },
+
+  onPasscodeInput(e) {
+    this.setData({ passcodeInput: String((e.detail && e.detail.value) || '').replace(/\D/g, '').slice(0, 6), claimError: '' })
+  },
+
+  onClaimNameInput(e) {
+    this.setData({ claimNameInput: String((e.detail && e.detail.value) || '').slice(0, 12) })
+  },
+
+  /** 凭礼笺领取：口令（若有）→ 主动收下；不要求注册 / 手机号 */
+  async acceptByLink() {
+    if (this.data.isSender || this.data.claimBusy || !this.data.claimLink) return
+    const orderId = this.data.orderId || this._orderId
+    const token = this.data.token || this._token
+    this.setData({ claimBusy: true, claimError: '' })
+    const call = (data) => wx.cloud.callFunction({ name: 'manageGift', data: { token, orderId, ...data } })
+      .then((r) => (r && r.result) || {})
+      .catch(() => ({ success: false, msg: '网络未通，请稍后再试' }))
+    if (this.data.passcodeNeeded) {
+      const v = await call({ action: 'verifyReceiver', method: 'passcode', passcode: this.data.passcodeInput })
+      trackBehavior('gift_receive_passcode', 'order', orderId, { ok: !!v.success })
+      if (!v.success) return this.setData({ claimBusy: false, claimError: v.msg || '口令未通过，请稍后再试' })
+      this._passcodeNeeded = false
+      this.setData({ passcodeNeeded: false })
+    }
+    const claimName = String(this.data.claimNameInput || '').trim()
+    const res = this.data.isInvite
+      ? await call({ action: 'accept', claimName })
+      : await call({ action: 'bindReceiver', confirm: true, claimName, source: 'claim_link' })
+    trackBehavior('gift_receive_accept', 'order', orderId, { mode: 'link', ok: !!res.success })
+    if (!res.success) {
+      if (res.code === 'VERIFY_REQUIRED' && res.verifyKind === 'passcode') this.setData({ passcodeNeeded: true })
+      if (res.code === 'EXPIRED') this.setData({ expired: true })
+      return this.setData({ claimBusy: false, claimError: res.msg || '此刻未能收下，请稍后再试' })
+    }
+    this._claimName = claimName
+    this.setData({ claimBusy: false })
+    if (this.data.isInvite) {
+      this.setData({ accepted: true, holderCard: true })
+      this._maybeShowRegCard()
+      return
+    }
+    this.bootstrap()
+  },
+
+  async _maybeShowRegCard() {
+    if (this.data.isSender || !this.data.holderCard || this.data.regCardShow || this._regChecked) return
+    this._regChecked = true
+    const id = this.data.orderId || this._orderId
+    try {
+      if (wx.getStorageSync(REG_CARD_OFF_KEY + id)) return
+    } catch (e) { /* ignore */ }
+    const { ensureSession } = require('../../../../utils/userSession')
+    const session = await ensureSession(getApp()).catch(() => null)
+    if (!session) return
+    const registered = session.isRegistered !== undefined
+      ? !!session.isRegistered
+      : !!(session.onboardingDone || (session.user && session.user.phone))
+    if (registered) return
+    this.setData({ regCardShow: true })
+    trackBehavior('gift_reg_guide_expose', 'order', id)
+  },
+
+  onRegCardClose() {
+    try { wx.setStorageSync(REG_CARD_OFF_KEY + (this.data.orderId || this._orderId), 1) } catch (e) { /* ignore */ }
+    this.setData({ regCardShow: false })
+  },
+
+  onRegCardDone() {
+    try { wx.setStorageSync(REG_CARD_OFF_KEY + (this.data.orderId || this._orderId), 1) } catch (e) { /* ignore */ }
   },
 
   // 优先比对微信授权手机号（requirePhone 只调用）
@@ -852,6 +945,7 @@ Page({
     } catch (e) {
       result = { success: false, msg: '网络未通，请稍后再试' }
     }
+    trackBehavior('gift_receive_verify', 'order', this.data.orderId || this._orderId, { ok: !!result.success, method: payload.method })
     if (result.success) {
       this._verifyNeeded = false
       this.setData({ verifyBusy: false, verifySheet: false, verifyNeeded: false })

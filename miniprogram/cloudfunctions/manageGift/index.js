@@ -14,10 +14,11 @@ const {
   maskAddress,
   buildProductSnapshot,
   createClaimCode,
+  createShareToken,
   DEFAULT_ADDRESS_TIMEOUT_DAYS
 } = require('./giftMeta')
 const { notifyGiftSubscribe } = require('./giftSubscribe')
-const { GIFT_VERIFY_COL, normalizeCnPhone, hashPhone, buildVerifyDoc } = require('./giftReceiverPhone')
+const { GIFT_VERIFY_COL, normalizeCnPhone, hashPhone, buildVerifyDoc, buildLinkVerifyDoc, createPasscode, claimLinkAllowed } = require('./giftReceiverPhone')
 const {
   COLLECTION: GIFT_SETTINGS_COL,
   DOC_KEY: GIFT_SETTINGS_KEY,
@@ -176,6 +177,9 @@ function publicGiftView(order, { role = 'receiver', includeVoiceMeta = true } = 
     receiverBound: !!meta.receiverOpenid,
     /** 送礼人设了领取核验（只给布尔，不给号码 / 尾号） */
     receiverVerify: !!meta.receiverVerify,
+    /** 凭礼笺领取（2026-10-11）：打开不绑定，须主动收下；可选口令 */
+    claimMode: isClaimLink(order) ? 'link' : '',
+    claimPasscode: isClaimLink(order) && !!meta.claimPasscode,
     totalPrice: role === 'giver' ? order.totalPrice : undefined,
     paidTime: order.paidTime || null,
     storeId: meta.storeId || '',
@@ -472,6 +476,16 @@ async function getShare(event, openid) {
       gift.claimQrPayload = ''
       gift.verifyRequired = true
     }
+    // 凭礼笺领取：收下前不出自提领取码；口令未过的访客标 passcodeRequired
+    if (isClaimLink(order) && !isBoundReceiver) {
+      gift.claimCode = ''
+      gift.claimQrPayload = ''
+      gift.claimPending = true
+      if (order.giftMeta.claimPasscode) {
+        const vdoc = await loadVerifyDoc(order._id)
+        gift.passcodeRequired = !!(vdoc && vdoc.passcode && vdoc.verifiedOpenid !== openid)
+      }
+    }
   }
 
   return {
@@ -525,9 +539,15 @@ async function acceptGift(event, openid) {
     'giftMeta.acceptedAt': db.serverDate(),
     'giftMeta.receiverOpenid': openid
   }
-  await db.collection('orders').doc(order._id).update({
-    data: nextMetaPatch
-  })
+  if (isClaimLink(order)) {
+    Object.assign(nextMetaPatch, claimLinkBindPatch(event))
+    const won = await db.collection('orders').where(claimLinkWhere(order)).update({ data: nextMetaPatch })
+    if (!updatedCount(won)) return { success: false, code: 'CLAIMED', msg: '这份山海已有去处' }
+  } else {
+    await db.collection('orders').doc(order._id).update({
+      data: nextMetaPatch
+    })
+  }
 
   const giver = order._openid || order.openid
   await dispatchInAppMessage(db, {
@@ -609,6 +629,9 @@ async function submitAddress(event, openid) {
   }
   const addressGate = await receiverVerifyGate(order, openid)
   if (addressGate) return addressGate
+  if (isClaimLink(order) && !isBoundReceiver) {
+    return { success: false, code: 'CLAIM_CONFIRM_REQUIRED', msg: '请先点「收下这份山海」，再留下收件去处' }
+  }
   if (meta.addressStatus === 'submitted') {
     // 历史脏数据：地址已记但 status 未翻转 → 补齐后返回
     if (order.status === 'paid_awaiting_address') {
@@ -1861,15 +1884,29 @@ async function bindReceiver(event, openid) {
   }
   const bindGate = await receiverVerifyGate(order, openid)
   if (bindGate) return bindGate
+  const claimLink = isClaimLink(order)
+  if (claimLink && event.confirm !== true) {
+    return { success: false, code: 'CLAIM_CONFIRM_REQUIRED', msg: '点「收下这份山海」即可领取' }
+  }
 
   try {
-    await db.collection("orders").doc(order._id).update({
-      data: {
+    if (claimLink) {
+      const linkPatch = {
         "giftMeta.receiverOpenid": openid,
         "giftMeta.receiverBoundAt": db.serverDate(),
-        "giftMeta.receiverBoundSource": String(event.source || "share_link").slice(0, 32)
+        ...claimLinkBindPatch(event)
       }
-    })
+      const won = await db.collection("orders").where(claimLinkWhere(order)).update({ data: linkPatch })
+      if (!updatedCount(won)) return { success: false, code: 'ALREADY_BOUND', msg: '这份礼赠已由其他人领取' }
+    } else {
+      await db.collection("orders").doc(order._id).update({
+        data: {
+          "giftMeta.receiverOpenid": openid,
+          "giftMeta.receiverBoundAt": db.serverDate(),
+          "giftMeta.receiverBoundSource": String(event.source || "share_link").slice(0, 32)
+        }
+      })
+    }
   } catch (e) {
     console.error("bindReceiver update", e)
     return { success: false, msg: "绑定失败，请稍后重试" }
@@ -1888,6 +1925,48 @@ async function loadVerifyDoc(orderId) {
   }
 }
 
+/** 凭礼笺领取：下单时选了 link 且没有设手机号核验（设号即回到手机号定向） */
+function isClaimLink(order) {
+  const meta = (order && order.giftMeta) || {}
+  return meta.claimMode === 'link' && !meta.receiverVerify
+}
+
+function claimLinkBindPatch(event) {
+  const name = String((event && event.claimName) || '').replace(/\s+/g, ' ').trim().slice(0, 12)
+  return { 'giftMeta.receiverBoundSource': 'claim_link', 'giftMeta.claimName': name, 'giftMeta.claimedByLinkAt': db.serverDate() }
+}
+
+/** 凭礼笺领取的收下条件：仍无人收下且链接未换过（两人同时点「收下」只有一人写入成功） */
+function claimLinkWhere(order) {
+  return {
+    _id: order._id,
+    'giftMeta.shareToken': String((order.giftMeta && order.giftMeta.shareToken) || ''),
+    'giftMeta.receiverOpenid': _.or(_.exists(false), _.in(['', null]))
+  }
+}
+
+const updatedCount = (res) => (res && res.stats ? Number(res.stats.updated) || 0 : 0)
+
+/** 凭礼笺领取的口令门：设了口令且本人未通过 → VERIFY_REQUIRED(verifyKind=passcode) */
+async function passcodeGate(order, openid) {
+  const meta = order.giftMeta || {}
+  if (!meta.claimPasscode) return null
+  if (meta.receiverOpenid && meta.receiverOpenid === openid) return null
+  const doc = await loadVerifyDoc(order._id)
+  if (!doc || !doc.passcode) return null
+  if (doc.verifiedOpenid && doc.verifiedOpenid === openid) return null
+  return { success: false, code: 'VERIFY_REQUIRED', verifyKind: 'passcode', msg: '送礼人为这份礼赠设了领取口令，请先输入口令' }
+}
+
+const CLAIM_OPEN_STATUS = ['paid', 'paid_awaiting_address', 'ready_pickup']
+
+/** 作废换链接的截止：对方填地址 / 到店领取前 */
+function claimResettable(order) {
+  const meta = (order && order.giftMeta) || {}
+  return isClaimLink(order) && CLAIM_OPEN_STATUS.includes(String(order.status || '')) &&
+    meta.addressStatus !== 'submitted' && meta.claimStatus !== 'claimed'
+}
+
 function isGiverOfOrder(order, openid) {
   return !!(openid && order && (openid === order._openid || openid === order.openid))
 }
@@ -1899,6 +1978,7 @@ function recentVerifyFailures(doc, now) {
 /** 领取门：返回 null = 放行；否则为 VERIFY_REQUIRED 响应。只读核验结果，不做比对 */
 async function receiverVerifyGate(order, openid) {
   const meta = (order && order.giftMeta) || {}
+  if (isClaimLink(order)) return passcodeGate(order, openid)
   if (!meta.receiverVerify) return null
   if (meta.receiverOpenid && meta.receiverOpenid === openid) return null
   const doc = await loadVerifyDoc(order._id)
@@ -1930,16 +2010,19 @@ async function setReceiverPhone(event, openid) {
     raw = String(order.address.phone || '')
   }
   if (!raw) {
-    await db.collection(GIFT_VERIFY_COL).doc(order._id).set({
-      data: { orderId: order._id, giverOpenid: openid, salt: '', phoneHash: '', phoneTail: '', attempts: [], verifiedOpenid: '', updatedAt: db.serverDate() }
-    })
-    await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.receiverVerify': false } })
-    return { success: true, receiverVerify: false, phoneTail: '' }
+    // 「不设核验」= 转为凭礼笺领取（2026-10-11 拍板，堵「清号即谁先打开谁领」后门）；只限填址 / 自提
+    if (!claimLinkAllowed(meta.deliveryType)) {
+      return { success: false, code: 'PHONE_REQUIRED', msg: '这种交付方式需要受礼人手机号核验' }
+    }
+    await db.collection(GIFT_VERIFY_COL).doc(order._id).set({ data: buildLinkVerifyDoc(order._id, openid, '', db.serverDate()) })
+    await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.receiverVerify': false, 'giftMeta.claimMode': 'link', 'giftMeta.claimPasscode': false } })
+    return { success: true, receiverVerify: false, phoneTail: '', claimMode: 'link' }
   }
   const phone = normalizeCnPhone(raw)
   if (!phone) return { success: false, code: 'BAD_PHONE', msg: '请输入 11 位手机号' }
   await db.collection(GIFT_VERIFY_COL).doc(order._id).set({ data: buildVerifyDoc(order._id, openid, phone, db.serverDate()) })
   await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.receiverVerify': true } })
+  if (meta.claimMode) await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.claimMode': '', 'giftMeta.claimPasscode': false } })
   return { success: true, receiverVerify: true, phoneTail: phone.slice(-4) }
 }
 
@@ -1960,7 +2043,116 @@ async function getReceiverVerify(event, openid) {
     editable: !meta.receiverOpenid && order.status !== 'received' && !GIFT_CLOSED_STATUS.includes(String(order.status || '')),
     addressPhoneTail: meta.deliveryType === 'ship_to_receiver' && order.address && normalizeCnPhone(order.address.phone)
       ? normalizeCnPhone(order.address.phone).slice(-4)
-      : ''
+      : '',
+    ...(await claimLinkInfo(order))
+  }
+}
+
+/** 送礼人侧：凭礼笺领取状态（口令只回送礼人）+ 领取人 */
+async function claimLinkInfo(order) {
+  const meta = order.giftMeta || {}
+  const link = isClaimLink(order)
+  const out = { claimMode: link ? 'link' : '', linkEligible: claimLinkAllowed(meta.deliveryType), canReset: claimResettable(order), passcode: '', claimer: null }
+  if (!link) return out
+  if (meta.claimPasscode) {
+    const doc = await loadVerifyDoc(order._id)
+    out.passcode = (doc && doc.passcode) || ''
+  }
+  if (meta.receiverOpenid) {
+    const users = await loadUsersByOpenid([meta.receiverOpenid])
+    out.claimer = claimerOf(order, users[meta.receiverOpenid])
+  }
+  return out
+}
+
+async function loadUsersByOpenid(openids) {
+  const ids = Array.from(new Set((openids || []).filter(Boolean)))
+  const map = {}
+  if (!ids.length) return map
+  try {
+    const res = await db.collection('users').where({ _openid: _.in(ids) }).limit(ids.length).get()
+    ;(res.data || []).forEach((u) => { if (u && u._openid) map[u._openid] = u })
+  } catch (e) {
+    console.warn('loadUsersByOpenid', e && e.message)
+  }
+  return map
+}
+
+function fmtMonthDay(v) {
+  const d = v ? new Date(v) : null
+  return d && Number.isFinite(d.getTime()) ? `${d.getMonth() + 1}月${d.getDate()}日` : ''
+}
+
+/** 领取人展示：称呼 / 昵称 · 尾号（已授权手机号才有）· 收件人姓氏（已填址）· 收下时间；不出完整号码与地址 */
+function claimerOf(order, user) {
+  const meta = order.giftMeta || {}
+  const name = String(meta.claimName || '').trim() || String((user && user.nickName) || '').trim() || '未留名的微信用户'
+  const phone = user && user.phoneVerifiedAt ? normalizeCnPhone(user.phone) : ''
+  const addrName = meta.addressStatus === 'submitted' && order.address ? String(order.address.name || '').trim() : ''
+  const addrPhone = meta.addressStatus === 'submitted' && order.address ? normalizeCnPhone(order.address.phone) : ''
+  const parts = [name]
+  if (phone) parts.push(`尾号 ${phone.slice(-4)}`)
+  if (addrName) parts.push(`收件人 ${addrName.slice(0, 1)}*${addrPhone ? `（尾号 ${addrPhone.slice(-4)}）` : ''}`)
+  const at = fmtMonthDay(meta.claimedByLinkAt || meta.acceptedAt || meta.receiverBoundAt)
+  return { label: parts.join(' · '), at, registered: !!phone }
+}
+
+/** 送礼人：加 / 去掉 6 位领取口令（凭礼笺领取、对方收下前） */
+async function setClaimPasscode(event, openid) {
+  if (!openid) return { success: false, msg: '请先登录' }
+  const order = await loadOrder(String(event.orderId || '').trim())
+  if (!order || !isGiftOrder(order)) return { success: false, msg: '礼赠不存在' }
+  if (!isGiverOfOrder(order, openid)) return { success: false, code: 'FORBIDDEN', msg: '只有送礼人可以设置领取口令' }
+  if (!isClaimLink(order)) return { success: false, code: 'NOT_LINK', msg: '这份礼赠不是凭礼笺领取' }
+  const meta = order.giftMeta || {}
+  if (meta.receiverOpenid) return { success: false, code: 'ALREADY_BOUND', msg: 'TA 已收下，口令不能再改' }
+  if (!CLAIM_OPEN_STATUS.includes(String(order.status || ''))) return { success: false, code: 'CLOSED', msg: '这份礼赠已结束' }
+  const passcode = event.enable === true ? createPasscode() : ''
+  await db.collection(GIFT_VERIFY_COL).doc(order._id).set({ data: buildLinkVerifyDoc(order._id, openid, passcode, db.serverDate()) })
+  await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.claimPasscode': !!passcode } })
+  return { success: true, claimPasscode: !!passcode, passcode }
+}
+
+/** 送礼人：作废并换新链接（对方填地址 / 到店领取前）。旧链接即刻失效，原领取人解绑 */
+async function resetShareLink(event, openid) {
+  if (!openid) return { success: false, msg: '请先登录' }
+  const order = await loadOrder(String(event.orderId || '').trim())
+  if (!order || !isGiftOrder(order)) return { success: false, msg: '礼赠不存在' }
+  if (!isGiverOfOrder(order, openid)) return { success: false, code: 'FORBIDDEN', msg: '只有送礼人可以作废链接' }
+  if (!claimResettable(order)) return { success: false, code: 'NOT_RESETTABLE', msg: 'TA 已留下地址或已到店领取，链接不能再作废' }
+  const meta = order.giftMeta || {}
+  const oldToken = String(meta.shareToken || '')
+  const shareToken = createShareToken()
+  const data = {
+    'giftMeta.shareToken': shareToken,
+    'giftMeta.receiverOpenid': '',
+    'giftMeta.receiverBoundAt': null,
+    'giftMeta.receiverBoundSource': '',
+    'giftMeta.claimName': '',
+    'giftMeta.claimedByLinkAt': null,
+    'giftMeta.acceptStatus': 'none',
+    'giftMeta.acceptedAt': null,
+    'giftMeta.claimResetCount': (parseInt(meta.claimResetCount, 10) || 0) + 1,
+    'giftMeta.claimResetAt': db.serverDate()
+  }
+  if (meta.deliveryType === 'store_pickup') data['giftMeta.claimCode'] = createClaimCode()
+  const res = await db.collection('orders').where({
+    _id: order._id,
+    'giftMeta.shareToken': oldToken,
+    'giftMeta.addressStatus': _.neq('submitted'),
+    'giftMeta.claimStatus': _.neq('claimed')
+  }).update({ data })
+  const updated = res && res.stats ? Number(res.stats.updated) || 0 : 0
+  if (!updated) return { success: false, code: 'NOT_RESETTABLE', msg: '礼赠状态刚刚有变，请刷新后再试' }
+  let passcode = ''
+  if (meta.claimPasscode) passcode = createPasscode()
+  await db.collection(GIFT_VERIFY_COL).doc(order._id).set({ data: buildLinkVerifyDoc(order._id, openid, passcode, db.serverDate()) })
+  if (meta.claimPasscode && !passcode) await db.collection('orders').doc(order._id).update({ data: { 'giftMeta.claimPasscode': false } })
+  return {
+    success: true,
+    shareToken,
+    passcode,
+    sharePath: `/subpackages/feature/gift/receive/index?orderId=${order._id}&token=${shareToken}`
   }
 }
 
@@ -1988,6 +2180,7 @@ async function verifyReceiver(event, openid) {
   if (!shareToken || token !== shareToken) return { success: false, code: 'BAD_TOKEN', msg: '请从分享礼笺进入后再核验' }
   if (GIFT_CLOSED_STATUS.includes(String(order.status || ''))) return { success: false, code: 'CLOSED', msg: '该礼赠已关闭' }
 
+  if (event.method === 'passcode') return verifyPasscode(order, openid, event)
   const doc = meta.receiverVerify ? await loadVerifyDoc(order._id) : null
   if (!doc || !doc.phoneHash) return { success: true, notRequired: true, orderId: order._id }
 
@@ -2039,6 +2232,40 @@ async function verifyReceiver(event, openid) {
   return { success: true, bound: true, orderId: order._id, method }
 }
 
+/** 口令核验：通过只记核验人，不绑定（仍须主动「收下」）；限次与手机号核验同一套 */
+async function verifyPasscode(order, openid, event) {
+  const meta = order.giftMeta || {}
+  if (!isClaimLink(order) || !meta.claimPasscode) return { success: true, notRequired: true, orderId: order._id }
+  const doc = await loadVerifyDoc(order._id)
+  if (!doc || !doc.passcode) return { success: true, notRequired: true, orderId: order._id }
+  if (doc.verifiedOpenid === openid) return { success: true, already: true, orderId: order._id }
+  const now = Date.now()
+  const failures = recentVerifyFailures(doc, now)
+  const mine = failures.filter((a) => a.o === openid)
+  if (mine.length >= VERIFY_MAX_PER_HOUR || failures.length >= VERIFY_ORDER_MAX_PER_HOUR) {
+    const oldest = (mine.length >= VERIFY_MAX_PER_HOUR ? mine : failures)[0]
+    const retryAfterMin = Math.max(1, Math.ceil((Number(oldest.t) + HOUR_MS - now) / 60000))
+    return { success: false, code: 'VERIFY_LOCKED', msg: `尝试次数过多，请 ${retryAfterMin} 分钟后再试`, retryAfterMin, remaining: 0 }
+  }
+  const given = String(event.passcode || '').replace(/\D/g, '')
+  if (given.length !== 6) return { success: false, code: 'BAD_PASSCODE', msg: '请输入 6 位领取口令' }
+  if (given !== doc.passcode) {
+    const attempts = failures.concat([{ o: openid, t: now }]).slice(-50)
+    await db.collection(GIFT_VERIFY_COL).doc(order._id).update({ data: { attempts } })
+    const remaining = Math.max(0, VERIFY_MAX_PER_HOUR - mine.length - 1)
+    return {
+      success: false,
+      code: 'PASSCODE_MISMATCH',
+      msg: remaining ? `口令不对，还可尝试 ${remaining} 次` : '口令不对，尝试次数已用完，请 1 小时后再试',
+      remaining
+    }
+  }
+  await db.collection(GIFT_VERIFY_COL).doc(order._id).update({
+    data: { verifiedOpenid: openid, verifiedAt: db.serverDate(), verifyMethod: 'passcode', attempts: failures }
+  })
+  return { success: true, passcodeOk: true, orderId: order._id }
+}
+
 /** 我的礼赠（送出侧）：补上领取核验状态与尾号（批量读核验集合，只给尾号） */
 async function attachVerifyInfo(list, orders) {
   const byId = {}
@@ -2061,7 +2288,20 @@ async function attachVerifyInfo(list, orders) {
     it.receiverVerify = !!(doc && doc.phoneHash)
     it.verifyPhoneTail = it.receiverVerify ? String(doc.phoneTail || '') : ''
     it.verifyEditable = !meta.receiverOpenid && o.status !== 'received' && !GIFT_CLOSED_STATUS.includes(String(o.status || ''))
+    it.claimMode = isClaimLink(o) ? 'link' : ''
+    it.claimPasscode = it.claimMode === 'link' && !!meta.claimPasscode
   })
+  const linkBound = orders.filter((o) => isClaimLink(o) && o.giftMeta.receiverOpenid)
+  if (linkBound.length) {
+    const users = await loadUsersByOpenid(linkBound.map((o) => o.giftMeta.receiverOpenid))
+    list.forEach((it) => {
+      const o = byId[it.orderId]
+      if (o && isClaimLink(o) && o.giftMeta.receiverOpenid) {
+        const c = claimerOf(o, users[o.giftMeta.receiverOpenid])
+        it.claimerLabel = c.at ? `${c.label} · ${c.at}收下` : c.label
+      }
+    })
+  }
   return list
 }
 
@@ -3005,6 +3245,8 @@ exports.main = async (event) => {
     if (action === 'setReceiverPhone') return await setReceiverPhone(event, openid)
     if (action === 'getReceiverVerify') return await getReceiverVerify(event, openid)
     if (action === 'verifyReceiver') return await verifyReceiver(event, openid)
+    if (action === 'setClaimPasscode') return await setClaimPasscode(event, openid)
+    if (action === 'resetShareLink') return await resetShareLink(event, openid)
     if (action === 'submitAddress') return await submitAddress(event, openid)
     if (action === 'nudge') return await nudge(event, openid)
     if (action === 'verifyPickup') return await verifyPickup(event, openid)

@@ -560,6 +560,7 @@ Page(withAppModal({
             : `请在 ${days} 日内请 TA 留下地址`
         })(),
         giftShareToken: (data.giftMeta && data.giftMeta.shareToken) || '',
+        giftClaimLink: !!(data.giftMeta && data.giftMeta.claimMode === 'link' && !data.giftMeta.receiverVerify),
         giftShowPickupClaim: !!(data.giftMeta && data.giftMeta.deliveryType === 'store_pickup' && data.giftMeta.claimCode && data.status !== 'received' && data.giftMeta.claimStatus !== 'claimed'),
         giftClaimCode: (data.giftMeta && data.giftMeta.claimCode) || '',
         showOrderPickup: !!(
@@ -630,6 +631,8 @@ Page(withAppModal({
         reviewProducts: [],
         reviewChipPending: false
       });
+      // 凭礼笺领取的礼笺不进朋友圈（2026-10-11）
+      if (this.data.giftClaimLink) wx.hideShareMenu({ menus: ['shareTimeline'] });
       
       wx.hideNavigationBarLoading();
 
@@ -1274,7 +1277,7 @@ Page(withAppModal({
   onShareTimeline() {
     const order = this.data.order || {};
     const id = order._id || this.data.orderId || '';
-    const token = this.data.giftShareToken || (order.giftMeta && order.giftMeta.shareToken) || '';
+    const token = this.data.giftClaimLink ? '' : (this.data.giftShareToken || (order.giftMeta && order.giftMeta.shareToken) || '');
     const parts = [];
     if (id) parts.push(`giftOrderId=${encodeURIComponent(id)}`);
     if (token) parts.push(`token=${encodeURIComponent(token)}`);

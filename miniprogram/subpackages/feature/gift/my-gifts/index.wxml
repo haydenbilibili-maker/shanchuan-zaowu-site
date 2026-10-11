@@ -29,10 +29,16 @@
           <!-- 领取核验（送出侧，只显示尾号；TA 领取前可设置 / 修改） -->
           <view
             class="verify-chip {{item.receiverVerify ? 'on' : 'warn'}}"
-            wx:if="{{item.flowTab === 'sent' && (item.receiverVerify || item.verifyEditable)}}"
+            wx:if="{{item.flowTab === 'sent' && item.claimMode !== 'link' && (item.receiverVerify || item.verifyEditable)}}"
             data-order-id="{{item.orderId}}"
             catchtap="onVerifyTap"
           >{{item.receiverVerify ? '领取核验 · 尾号 ' + item.verifyPhoneTail : '建议补填受礼人手机号，防礼笺被他人领走'}}{{item.verifyEditable ? ' ›' : ''}}</view>
+          <view
+            class="verify-chip on"
+            wx:if="{{item.flowTab === 'sent' && item.claimMode === 'link'}}"
+            data-order-id="{{item.orderId}}"
+            catchtap="onClaimTap"
+          >凭礼笺领取 · {{item.claimerLabel || (item.claimPasscode ? '已加口令，等 TA 收下' : '等 TA 收下')}} ›</view>
           <text class="snippet" wx:if="{{item.cardSnippet}}">「{{item.cardSnippet}}」</text>
           <block wx:elif="{{item.flowTab !== 'sent'}}">
             <text class="meta" wx:if="{{item.storeName}}">{{item.storeName}}</text>
@@ -820,4 +826,16 @@
   bindquick="onVerifyUseAddress"
   bindclear="onVerifyClear"
   bindclose="closeVerifySheet"
+/>
+
+<claim-sheet
+  show="{{claimSheet}}"
+  state="{{claimState}}"
+  notice="{{claimNotice}}"
+  busy="{{verifyBusy}}"
+  error="{{verifyError}}"
+  bindpasscode="onClaimPasscode"
+  bindreset="onClaimReset"
+  bindusephone="onClaimUsePhone"
+  bindclose="closeClaimSheet"
 />

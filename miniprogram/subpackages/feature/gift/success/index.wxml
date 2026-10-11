@@ -121,10 +121,15 @@
       bindtap="goVoucher"
       wx:if="{{voucherReady}}"
     >查看赠予凭证</view>
-    <view class="verify-line {{verify.receiverVerify ? '' : 'warn'}}" wx:if="{{verify && (verify.receiverVerify || verify.editable)}}" bindtap="openVerifySheet">
+    <view class="verify-line" wx:if="{{verify && verify.claimMode === 'link'}}" bindtap="openClaimSheet">
+      <text class="verify-line-label">凭礼笺领取</text>
+      <text class="verify-line-val">{{claimLineText}} · 管理</text>
+    </view>
+    <view class="verify-line {{verify.receiverVerify ? '' : 'warn'}}" wx:elif="{{verify && (verify.receiverVerify || verify.editable)}}" bindtap="openVerifySheet">
       <text class="verify-line-label">{{verify.receiverVerify ? '领取核验' : '建议补填受礼人手机号'}}</text>
       <text class="verify-line-val">{{verify.receiverVerify ? '尾号 ' + verify.phoneTail : '防礼笺被他人领走'}}{{verify.editable ? (verify.receiverVerify ? ' · 修改' : ' · 去填写') : ''}}</text>
     </view>
+    <text class="subscribe-hint" wx:if="{{claimTip}}">{{claimTip}}</text>
     <text class="subscribe-hint" wx:if="{{subscribeHint}}">{{subscribeHint}}</text>
   </view>
 </view>
@@ -151,4 +156,15 @@
   bindquick="onVerifyUseAddress"
   bindclear="onVerifyClear"
   bindclose="closeVerifySheet"
+/>
+
+<claim-sheet
+  show="{{claimSheet}}"
+  state="{{verify}}"
+  busy="{{verifyBusy}}"
+  error="{{verifyError}}"
+  bindpasscode="onClaimPasscode"
+  bindreset="onClaimReset"
+  bindusephone="onClaimUsePhone"
+  bindclose="closeClaimSheet"
 />

@@ -7,7 +7,7 @@ const { requestGiftSubscribe, giftSubscribeSkipHint } = require('../../utils/gif
 const { formatDuration, createGiftPlayer, ensureInnerAudioOption } = require('../giftVoice')
 const { renderGiftShareImage } = require('../giftShareCard')
 const textFx = require('../giftTextEffect')
-const { loadReceiverVerify, saveReceiverPhone, flushPendingReceiverPhone, sheetCopy } = require('../receiverVerify')
+const { loadReceiverVerify, saveReceiverPhone, flushPendingReceiverPhone, sheetCopy, setClaimPasscode, resetShareLink, claimLine } = require('../receiverVerify')
 
 Page({
   data: {
@@ -43,6 +43,11 @@ Page({
     verifyBusy: false,
     verifyError: '',
     verifyCopy: {},
+    /** 凭礼笺领取（2026-10-11）：不发朋友圈；管理面板 = 口令 / 作废换链接 / 领取人 */
+    claimLink: false,
+    claimSheet: false,
+    claimLineText: '',
+    claimTip: '',
     shareTitle: '请拆开这封山海礼笺',
     sharePath: '',
     shareImageUrl: '',
@@ -280,6 +285,7 @@ Page({
         ready: true,
         orderId: this._orderId,
         token: gift.shareToken || '',
+        claimLink: gift.claimMode === 'link',
         cardBodyFull: cardBody,
         cardBody: '',
         cardSignature,
@@ -319,6 +325,7 @@ Page({
         })
       })
 
+      if (gift.claimMode === 'link') wx.hideShareMenu({ menus: ['shareTimeline'] })
       this._syncVerify(product0 && product0.productId)
 
       // 礼笺逐字显示（产品负责人：文字跳出时给打字机音效）。
@@ -358,7 +365,8 @@ Page({
 
   onShareTimeline() {
     // 朋友圈：打开本页 + query；onLoad 将 giftOrderId 导到领取页
-    const token = String(this.data.token || '').trim()
+    // 凭礼笺领取：朋友圈卡不带领取凭证（入口本已隐藏，此处兜底）
+    const token = this.data.claimLink ? '' : String(this.data.token || '').trim()
     const parts = []
     if (this._orderId) parts.push(`giftOrderId=${encodeURIComponent(this._orderId)}`)
     if (token) parts.push(`token=${encodeURIComponent(token)}`)
@@ -373,7 +381,55 @@ Page({
   async _syncVerify(productId) {
     await flushPendingReceiverPhone(this._orderId, productId)
     const verify = await loadReceiverVerify(this._orderId)
-    if (verify.success) this.setData({ verify, verifyCopy: sheetCopy(verify) })
+    if (verify.success) this.setData({ verify, verifyCopy: sheetCopy(verify), claimLineText: claimLine(verify) })
+  },
+
+  /** 凭礼笺领取不进朋友圈；改回手机号核验后恢复 */
+  _applyClaimMode(verify) {
+    if (!verify || !verify.success) return
+    const link = verify.claimMode === 'link'
+    if (link === this.data.claimLink) return
+    this.setData({ claimLink: link })
+    if (link) wx.hideShareMenu({ menus: ['shareTimeline'] })
+    else wx.showShareMenu({ withShareTicket: false, menus: ['shareAppMessage', 'shareTimeline'] })
+  },
+
+  openClaimSheet() {
+    if (!this.data.verify || this.data.verify.claimMode !== 'link') return
+    this.setData({ claimSheet: true, verifyError: '' })
+  },
+
+  closeClaimSheet() {
+    this.setData({ claimSheet: false })
+  },
+
+  async _reloadVerify(patch) {
+    const verify = await loadReceiverVerify(this._orderId)
+    this._applyClaimMode(verify)
+    this.setData({ verifyBusy: false, verify, verifyCopy: sheetCopy(verify), claimLineText: claimLine(verify), ...(patch || {}) })
+  },
+
+  async onClaimPasscode(e) {
+    this.setData({ verifyBusy: true, verifyError: '' })
+    const res = await setClaimPasscode(this._orderId, e.detail && e.detail.enable)
+    if (!res.success) return this.setData({ verifyBusy: false, verifyError: res.msg || '此刻未能保存，请稍后再试' })
+    this._reloadVerify()
+  },
+
+  async onClaimReset() {
+    this.setData({ verifyBusy: true, verifyError: '' })
+    const res = await resetShareLink(this._orderId)
+    if (!res.success) return this.setData({ verifyBusy: false, verifyError: res.msg || '此刻未能作废，请稍后再试' })
+    this._reloadVerify({
+      token: res.shareToken,
+      sharePath: res.sharePath,
+      claimSheet: false,
+      claimTip: '旧链接已作废。请把这份新礼笺重新发给 TA' + (res.passcode ? `，新口令 ${res.passcode}` : '') + '。'
+    })
+  },
+
+  onClaimUsePhone() {
+    this.setData({ claimSheet: false, verifySheet: true, verifyError: '' })
   },
 
   openVerifySheet() {
@@ -393,7 +449,8 @@ Page({
       return
     }
     const verify = await loadReceiverVerify(this._orderId)
-    this.setData({ verifyBusy: false, verifySheet: false, verify, verifyCopy: sheetCopy(verify) })
+    this._applyClaimMode(verify)
+    this.setData({ verifyBusy: false, verifySheet: false, verify, verifyCopy: sheetCopy(verify), claimLineText: claimLine(verify) })
   },
 
   onVerifyPhone(e) { this._saveVerify({ phone: e.detail.phone }) },
