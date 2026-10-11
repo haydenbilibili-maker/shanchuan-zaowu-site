@@ -75,7 +75,7 @@ const ONB_BASE = {
   accountReady: true, showGiftPack: true, showPoints: true, rewardPoints: 100, rewardCouponCount: 2,
   rewardCouponCards: [{ key: 'a', value: 20, label: '满 199 可用' }, { key: 'b', value: 10, label: '满 99 可用' }],
   showProfileExtras: true, avatarUrl: '', nickName: '', phoneBound: false, agreed: false, saving: false,
-  ctaPhoneText: '授权手机号 · 领取新客礼', loadingText: '正在注册', hasReturn: false, phoneOnly: false
+  ctaPhoneText: '授权手机号 · 领取新客礼', loadingText: '正在注册', hasReturn: false, phoneOnly: false, doneView: false
 }
 const CHECKOUT_JUMP = {
   ...ONB_BASE, navTitle: '确认手机号', heroOverline: 'ONE STEP', heroTitle: '授权手机号后继续下单',
@@ -90,10 +90,15 @@ function checkoutCol() {
   const bar = '<div style="position:fixed;left:0;right:0;bottom:0;height:150px;background:#1e1c19;border-top:1px solid #3a352d;display:flex;align-items:center;justify-content:space-between;padding:0 40px;box-sizing:border-box;color:#e8dcc0;font-size:30px;"><span>合计 ¥ 398.00</span><span style="background:#c4a76c;color:#151412;padding:22px 56px;border-radius:8px;">提交订单</span></div>'
   const lines = ['收货信息 · 张女士 138****0000', '藏品 · 山海图鉴·青丘 × 1', '礼券 · 暂无可用', '备注 · 选填']
     .map((t) => `<div style="margin:24px 32px;padding:32px;background:#1e1c19;border-radius:12px;color:#cfc4ad;font-size:28px;">${t}</div>`).join('')
+  // 弹层文案取结算页真实属性（kebab → camel），不在预览里另写一份
+  const tag = (/<register-auth-dialog([\s\S]*?)\/>/.exec(read('subpackages/business/confirm-order/index.wxml')) || [, ''])[1]
+  const attrs = {}
+  for (const m of tag.matchAll(/([\w-]+)="([^"]*)"/g)) {
+    if (m[2].includes('{{')) continue
+    attrs[m[1].replace(/-(\w)/g, (_, c) => c.toUpperCase())] = m[2]
+  }
   const dialog = renderWxml(read(`${DIALOG}/index.wxml`), {
-    show: true, closable: true, maskClosable: false, closeText: '先不注册', isRegistered: false, agreed: false, saving: false,
-    overline: 'ONE STEP', title: '授权手机号后继续下单', desc: '订单通知与售后需要联系手机号；注册后自动继续提交。',
-    lead: '注册后自动继续刚才的下单', cta: '授权手机号 · 继续下单', agreeHint: false, agreeShake: false
+    ...attrs, show: true, closable: true, maskClosable: false, isRegistered: false, agreed: false, saving: false, agreeHint: false, agreeShake: false
   }, { lenient: true })
   return {
     css: rpx2px(wxss(`${DIALOG}/index.wxss`)),
@@ -102,8 +107,10 @@ function checkoutCol() {
 }
 function successCol() {
   return onbCol({
-    ...ONB_BASE, doneView: true, isNewUser: true, welcomeBack: false, hasReturn: false, primaryCta: '',
-    giftPoints: 100, giftCoupons: 2, giftPartial: false, giftFail: false, giftMsg: '', showProfileExtras: false
+    ...ONB_BASE, doneView: true, nickName: '藏家', isNewUser: true, welcomeBack: false, hasReturn: false, primaryCta: '开始逛馆',
+    hasRegisterGift: true, showCouponsEntry: true, repairing: false,
+    giftPoints: 0, giftCoupons: 2, giftPartial: false, giftFail: false, giftMsg: '', showProfileExtras: false,
+    pagePadTop: 160, pagePadBottom: 32, pagePadX: 32
   })
 }
 function userCol() {
@@ -113,7 +120,7 @@ function userCol() {
     css: rpx2px(read('pages/user/index.wxss')),
     body: `<view class="container" style="padding-top: 100px;">${renderWxml(banners, {
       showOnboardingBanner: false, isLocalLoggedOut: false, showGiftRepairBanner: false, profileScore: 60,
-      showProfileHint: true, profileHintTitle: '给档案署个名', profileHintDesc: '现在显示为「藏家」，补个昵称和头像，证书与祈福墙都用它'
+      showProfileHint: true, profileHintDesc: '署名仍是「藏家」，补个昵称和头像，收藏证书与祈福墙都用它'
     }, { lenient: true })}<div style="margin:24px 32px;height:360px;border-radius:24px;background:linear-gradient(135deg,#2a2620,#1a1815);color:#8d826c;font-size:26px;display:flex;align-items:center;justify-content:center;">（会员卡区域，略）</div></view>`
   }
 }
