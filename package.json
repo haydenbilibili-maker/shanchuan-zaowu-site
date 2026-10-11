@@ -330,6 +330,8 @@
     "check:package-photos:selftest": "node miniprogram/scripts/check-package-photos.mjs --selftest",
     "check:main-package-size": "node miniprogram/scripts/check-main-package-size.mjs",
     "check:main-package-size:selftest": "node miniprogram/scripts/check-main-package-size.mjs --selftest",
+    "check:subpackage-size": "node miniprogram/scripts/check-subpackage-size.mjs",
+    "check:subpackage-size:selftest": "node miniprogram/scripts/check-subpackage-size.mjs --selftest",
     "check:home-reco": "node miniprogram/scripts/test-home-reco.mjs",
     "check:home-reco:selftest": "node miniprogram/scripts/test-home-reco.mjs --selftest",
     "test:category-feed-cache": "node miniprogram/scripts/test-category-feed-cache.mjs",

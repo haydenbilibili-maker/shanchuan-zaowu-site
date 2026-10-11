@@ -72,6 +72,8 @@ npm run check:product-save-fields
 npm run check:hook-registration
 npm run check:collection-docs
 npm run check:main-package-size
+# 2026-10-11：分包上传口径（编译后实测基线 + 源码增量）超 2M 或余量 < 50 KiB 即红
+npm run check:subpackage-size
 npm run check:sensitive-rules
 npm run check:sensitive-direct-read
 npm run test:secure-data-read

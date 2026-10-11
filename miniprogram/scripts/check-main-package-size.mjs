@@ -18,17 +18,19 @@
  *     同一份代码 CLI 编译后仅 1,076,622，所以不能用编译后体积、也不能用 MiB 当口径。
  *   · 不设允许名单：微信不认「多分包共用、留在主包的桥接件」，照样报「主包未使用的 JS」。
  *     多分包共用件一律复制进各分包，副本一致性登记在 subpackage-mirrors.json（check:subpackage-refs）。
- *   · 分包原始体积只打印、超 2048 KiB 仅警告：微信的 2M 分包上限按编译后体积判（CLI preview --info-output）。
+ *   · 分包原始体积只打印、超 2048 KiB 仅警告：微信的 2M 分包上限按编译后体积判（CLI preview --info-output），
+ *     分包上限由 check:subpackage-size 守（编译后实测基线 + 源码增量）。
  *
  * 用法：
  *   node miniprogram/scripts/check-main-package-size.mjs
  *   node miniprogram/scripts/check-main-package-size.mjs --selftest
  */
-import { readFileSync, readdirSync, statSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { readFileSync, statSync, existsSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join, dirname, resolve, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
+import { loadJson, packageOf, loadPackedProject, subpackageRawBytes } from './lib/packed-files.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const MP_DEFAULT = resolve(HERE, '..')
@@ -38,62 +40,6 @@ const MAIN_BUDGET_BYTES = WECHAT_MAIN_HARD_LIMIT_BYTES - MARGIN_BYTES
 const MAIN_RECOMMENDED_BYTES = 1500000
 const SUB_WARN_BYTES = 2048 * 1024
 
-
-const SKIP_DIR_NAMES = new Set(['node_modules', '.git', 'miniprogram_npm'])
-
-function loadJson(p) {
-  return JSON.parse(readFileSync(p, 'utf8'))
-}
-
-function isIgnored(rel, ignoreRules) {
-  const norm = String(rel || '').replace(/\\/g, '/')
-  for (const rule of ignoreRules) {
-    const v = String(rule.value || '').replace(/^\//, '').replace(/\\/g, '/')
-    if (rule.type === 'folder') {
-      if (norm === v || norm.startsWith(`${v}/`)) return true
-    } else if (rule.type === 'file') {
-      if (norm === v || norm.split('/').pop() === v) return true
-    } else if (rule.type === 'suffix') {
-      if (norm.endsWith(v)) return true
-    } else if (rule.type === 'prefix') {
-      const base = norm.split('/').pop() || ''
-      if (base.startsWith(v) || norm.includes(`/${v}`)) return true
-    }
-  }
-  return false
-}
-
-function walkPacked(mpRoot, ignoreRules, dir = mpRoot, out = []) {
-  let entries
-  try {
-    entries = readdirSync(dir, { withFileTypes: true })
-  } catch {
-    return out
-  }
-  for (const e of entries) {
-    if (SKIP_DIR_NAMES.has(e.name)) continue
-    const full = join(dir, e.name)
-    const rel = relative(mpRoot, full).replace(/\\/g, '/')
-    if (isIgnored(rel, ignoreRules)) continue
-    let st
-    try {
-      st = statSync(full)
-    } catch {
-      continue
-    }
-    if (st.isDirectory()) walkPacked(mpRoot, ignoreRules, full, out)
-    else if (st.isFile()) out.push(rel)
-  }
-  return out
-}
-
-function packageOf(rel, subRoots) {
-  const r = String(rel || '').replace(/^\//, '')
-  for (const s of subRoots) {
-    if (r === s || r.startsWith(`${s}/`)) return s
-  }
-  return 'main'
-}
 
 function extractRequires(src) {
   const code = String(src || '')
@@ -181,11 +127,7 @@ function collectMainReachable(mpRoot, appJson, subRoots) {
 }
 
 function analyze(mpRoot) {
-  const appJson = loadJson(join(mpRoot, 'app.json'))
-  const projectConfig = loadJson(join(mpRoot, 'project.config.json'))
-  const ignoreRules = (projectConfig.packOptions && projectConfig.packOptions.ignore) || []
-  const subRoots = (appJson.subpackages || []).map((s) => String(s.root || '').replace(/\/$/, ''))
-  const packed = walkPacked(mpRoot, ignoreRules)
+  const { appJson, subRoots, packed } = loadPackedProject(mpRoot)
   const mainFiles = packed.filter((f) => packageOf(f, subRoots) === 'main')
   let mainBytes = 0
   for (const f of mainFiles) {
@@ -203,16 +145,7 @@ function analyze(mpRoot) {
     if (!reachable.has(f)) unreachable.push(f)
   }
   unreachable.sort()
-  const subBytes = {}
-  for (const f of packed) {
-    const p = packageOf(f, subRoots)
-    if (p === 'main') continue
-    try {
-      subBytes[p] = (subBytes[p] || 0) + statSync(join(mpRoot, f)).size
-    } catch {
-      /* vanished — skip */
-    }
-  }
+  const subBytes = subpackageRawBytes(mpRoot, subRoots, packed)
   return { mainBytes, mainFiles: mainFiles.length, unreachable, budget: MAIN_BUDGET_BYTES, subBytes }
 }
 
@@ -311,7 +244,7 @@ function main() {
   )
   for (const w of warnings(result)) console.warn(`⚠ ${w}`)
   for (const [p, b] of Object.entries(result.subBytes)) {
-    const warn = b > SUB_WARN_BYTES ? '  ⚠ 原始体积超 2048 KiB（微信按编译后体积判 2M，需用 CLI 复核）' : ''
+    const warn = b > SUB_WARN_BYTES ? '  ⚠ 原始体积超 2048 KiB（微信按编译后体积判 2M，以 check:subpackage-size 为准）' : ''
     console.log(`  ${p} ${(b / 1024).toFixed(1)} KiB${warn}`)
   }
   if (problems.length) {

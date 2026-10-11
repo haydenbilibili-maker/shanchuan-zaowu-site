@@ -1,0 +1,36 @@
+{
+  "_doc": "分包编译后体积实测基线（check:subpackage-size 用）。只能用 --measure 重写，不要手改数字。",
+  "measuredAt": "2026-10-11",
+  "method": "微信开发者工具 CLI preview --info-output（与上传同一编译器）",
+  "commit": "5bb5e18c",
+  "packages": {
+    "subpackages/business": {
+      "compiledBytes": 1664586,
+      "rawBytes": 1172575
+    },
+    "subpackages/manager": {
+      "compiledBytes": 1685605,
+      "rawBytes": 2174944
+    },
+    "subpackages/feature": {
+      "compiledBytes": 1539519,
+      "rawBytes": 2174847
+    },
+    "subpackages/plays": {
+      "compiledBytes": 116168,
+      "rawBytes": 174939
+    },
+    "subpackages/content": {
+      "compiledBytes": 146277,
+      "rawBytes": 170878
+    },
+    "subpackages/extra": {
+      "compiledBytes": 1753696,
+      "rawBytes": 2200265
+    },
+    "subpackages/b2bdesk": {
+      "compiledBytes": 114529,
+      "rawBytes": 139225
+    }
+  }
+}
