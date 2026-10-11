@@ -275,6 +275,7 @@ Page({
       showProfileExtras: false
     })
     trackBehavior('onboarding_start', 'from', resolvedFrom || 'direct')
+    this._funnel('show')
     this.initLayout()
     this.loadWelcomeGiftPreview()
     this.loadSession()
@@ -282,6 +283,15 @@ Page({
 
   onReady() {
     this.remeasureChrome()
+  },
+
+  onUnload() {
+    if (!this._funnelEnded) this._funnel('dismiss')
+  },
+
+  /** 统一注册漏斗（register_panel，与注册弹层 / 礼赠引导卡同一事件；onboarding_* / auth_* 照旧） */
+  _funnel(step, extra) {
+    trackBehavior('register_panel', 'register', this.data.from || 'direct', Object.assign({ step, surface: 'page' }, extra || {}))
   },
 
   onShow() {
@@ -408,6 +418,7 @@ Page({
     } : {})))
 
     if (onboardingDone && phoneBound) {
+      this._funnelEnded = true
       if (this.data.hasReturn) {
         this.returnAfterSuccess({ silent: true })
         return
@@ -476,6 +487,7 @@ Page({
   onPhoneCtaTap() {
     if (this.data.saving) return
     if (!this.data.agreed) this.nudgeAgree()
+    else this._funnel('auth')
   },
 
   /** 未勾选协议：轻抖勾选行 + 轻提示，不代用户勾选 */
@@ -672,6 +684,8 @@ Page({
         return
       }
       trackBehavior('onboarding_complete', 'from', this.data.from || 'direct')
+      this._funnelEnded = true
+      this._funnel('success', { isNewUser: result.payload && result.payload.isNewUser !== undefined ? !!result.payload.isNewUser : !this.data.isRegistered })
       this.goDoneFromPayload(result.payload)
     } catch (err) {
       wx.hideLoading()
@@ -702,6 +716,8 @@ Page({
         return
       }
       trackBehavior('onboarding_complete', 'from', this.data.from || 'direct')
+      this._funnelEnded = true
+      this._funnel('success', { isNewUser: result.payload && result.payload.isNewUser !== undefined ? !!result.payload.isNewUser : !this.data.isRegistered })
       this.goDoneFromPayload(result.payload)
     } catch (err) {
       wx.hideLoading()

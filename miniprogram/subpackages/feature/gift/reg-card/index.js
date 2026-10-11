@@ -17,7 +17,18 @@ Component({
 
   data: { agreed: false, saving: false, agreeShake: false, agreeHint: false, useName: true, errText: '', done: false, gotGift: false },
 
+  observers: {
+    show(v) {
+      if (v && !this._panelShown) { this._panelShown = true; this._funnel('show') }
+    }
+  },
+
   methods: {
+    /** 统一注册漏斗（register_panel，与注册弹层 / 注册页同一事件；gift_reg_guide_* 照旧） */
+    _funnel(step, extra) {
+      trackBehavior('register_panel', 'register', 'gift_claim', Object.assign({ step, surface: 'gift_card' }, extra || {}))
+    },
+
     onToggleAgree() {
       if (this.data.saving) return
       this.setData({ agreed: !this.data.agreed, agreeHint: false })
@@ -37,6 +48,7 @@ Component({
     onCtaTap() {
       if (this.data.saving || !this.data.agreed) return
       trackBehavior('gift_reg_guide_click', 'order', this.data.orderId)
+      this._funnel('auth')
     },
 
     async onGetPhoneNumber(e) {
@@ -62,6 +74,7 @@ Component({
       const isNewUser = !!(res.payload && res.payload.isNewUser)
       this.setData({ saving: false, done: true, gotGift: isNewUser })
       trackBehavior('gift_reg_guide_done', 'order', this.data.orderId, { isNewUser })
+      this._funnel('success', { isNewUser })
       this.triggerEvent('done', res.payload || {})
     },
 
@@ -79,7 +92,9 @@ Component({
     },
 
     onClose() {
-      if (!this.data.saving) this.triggerEvent('close')
+      if (this.data.saving) return
+      if (!this.data.done) this._funnel('dismiss')
+      this.triggerEvent('close')
     },
 
     goCare() {

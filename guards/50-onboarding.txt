@@ -6,3 +6,5 @@ npm run test:auth-login-register
 npm run test:welcome-gift-editor
 npm run test:register-gate
 npm run check:privacy-consent
+# 2026-10-11：全局注册简化（蓝图 miniprogram/docs/全局注册简化方案_2026-10-11.md §0；按 S4→S1→S2→S3 逐步追加断言）
+npm run check:register-unify

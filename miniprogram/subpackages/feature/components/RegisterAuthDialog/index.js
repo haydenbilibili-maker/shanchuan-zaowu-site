@@ -19,6 +19,7 @@
  */
 const { registerWithPhone } = require('../../utils/registerPhone')
 const { ensureSession } = require('../../../../utils/userSession')
+const { trackBehavior } = require('../../../../utils/trackBehavior')
 
 Component({
   options: { addGlobalClass: true },
@@ -38,6 +39,8 @@ Component({
     maskClosable: { type: Boolean, value: true },
     /** 埋点用来源 */
     from: { type: String, value: 'register_dialog' },
+    /** 第一条权益：门禁场景（结算 / 预约 / 礼赠）传「注册后自动继续…」，默认沿用鉴定场景文案 */
+    lead: { type: String, value: '鉴定结果自动存进山海图鉴' },
     /** 老号（已注册）时替换的文案：不再承诺「新客礼包自动到账」 */
     loginOverline: { type: String, value: 'ONE STEP' },
     loginTitle: { type: String, value: '确认手机号继续' },
@@ -49,6 +52,8 @@ Component({
 
   observers: {
     show(v) {
+      if (v) this._trackShow()
+      else this._panelShown = false
       if (!v && (this.data.agreed || this.data.agreeHint)) this.setData({ agreed: false, agreeHint: false })
     }
   },
@@ -59,6 +64,7 @@ Component({
      * 此前无论新老都承诺新客礼 —— 老用户（尤其已注册但资料空、被门禁拦下的人）会以为还能再领。
      */
     attached() {
+      if (this.data.show) this._trackShow()
       ensureSession(null).then((session) => {
         if (!session || !session.success) return
         const registered = session.isRegistered !== undefined
@@ -75,9 +81,21 @@ Component({
   methods: {
     noop() {},
 
+    /** 统一注册漏斗（register_panel，三处注册面板同一事件；各入口旧事件照旧） */
+    _funnel(step, extra) {
+      trackBehavior('register_panel', 'register', this.data.from || 'register_dialog', Object.assign({ step, surface: 'dialog' }, extra || {}))
+    },
+
+    _trackShow() {
+      if (this._panelShown) return
+      this._panelShown = true
+      this._funnel('show')
+    },
+
     onClose() {
       if (!this.data.closable && !this.properties.closable) return
       if (this.data.saving) return
+      this._funnel('dismiss')
       this.triggerEvent('close')
     },
 
@@ -92,6 +110,7 @@ Component({
      */
     onCtaTap() {
       if (this.data.saving || !this.data.agreed) return
+      this._funnel('auth')
       this.triggerEvent('cta')
     },
 
@@ -131,6 +150,7 @@ Component({
           this.triggerEvent('fail', { reason: 'server', msg: res.msg })
           return
         }
+        this._funnel('success', { isNewUser: !!(res.payload && res.payload.isNewUser) })
         this.triggerEvent('success', res.payload || {})
       } catch (err) {
         wx.hideLoading()

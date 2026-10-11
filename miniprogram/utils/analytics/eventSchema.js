@@ -194,6 +194,8 @@ const EVENTS = {
   onboarding_start: { module: MODULE.USER, desc: '新手引导开始', targetType: 'onboarding' },
   onboarding_complete: { module: MODULE.USER, desc: '新手引导完成', targetType: 'onboarding' },
   phone_bind_success: { module: MODULE.USER, desc: '手机号绑定成功', targetType: 'user' },
+  // 2026-10-11 统一注册漏斗：注册页 / 注册弹层 / 礼赠引导卡同一事件（targetId = 入口 from；step: show/auth/success/dismiss；surface: page/dialog/gift_card；success 附 isNewUser）。各入口旧事件照旧
+  register_panel: { module: MODULE.USER, desc: '统一注册漏斗（step: show/auth/success/dismiss；surface: page/dialog/gift_card）', targetType: 'register' },
   feedback_submit: { module: MODULE.USER, desc: '提交反馈', targetType: 'feedback' },
   invoice_request_submit: { module: MODULE.USER, desc: '提交开票申请', targetType: 'invoice' },
 
