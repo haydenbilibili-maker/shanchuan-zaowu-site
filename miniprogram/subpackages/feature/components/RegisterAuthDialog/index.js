@@ -4,7 +4,8 @@
  * 需求（2026-09-17）：
  *   ① 「鉴定百科」未登录态要在**原地**完成注册，不再跳 `extra/user/onboarding`；
  *   ② 弹窗样式要与全站交互视觉对齐（博物黑 + 铜金 + 博物柜铭牌，见 app.wxss 令牌）；
- *   ③ 门禁场景**不提供关闭/再看看**（`closable="{{false}}"`），转化场景可保留关闭。
+ *   ③ ~~门禁场景不提供关闭~~ → 2026-10-11 产品负责人拍板：门禁页（图鉴详情 / 鉴定结果）也给「先不注册」，
+ *      关掉后由页面返回上一页（扫码直进回首页），避免审核以「强制注册」退回；门禁页传 `mask-closable="{{false}}"`，点遮罩不误关。
  *
  * 为什么必须是自定义组件而不是 `wx.showModal`：
  *   微信的 `getPhoneNumber` **只能由 `<button open-type="getPhoneNumber">` 的用户点击触发**，
@@ -33,6 +34,8 @@ Component({
     closable: { type: Boolean, value: false },
     /** 关闭按钮文案（closable 为 true 时才显示） */
     closeText: { type: String, value: '先看看' },
+    /** closable 为 true 时点遮罩是否也关闭（默认 true 保持祈福墙现状；门禁页传 false，只认按钮） */
+    maskClosable: { type: Boolean, value: true },
     /** 埋点用来源 */
     from: { type: String, value: 'register_dialog' },
     /** 老号（已注册）时替换的文案：不再承诺「新客礼包自动到账」 */

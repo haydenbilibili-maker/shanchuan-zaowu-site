@@ -110,6 +110,25 @@ const check = (name, ok, detail) => {
   else console.log(`✓ ${name}`)
 }
 
+/**
+ * 门禁页拒绝出口：弹窗标签 closable=true + close-text「先不注册」+ mask-closable=false + bind:close=handler；
+ * handler 里离开本页（navigateBack / switchTab / reLaunch），且**不**把 registerGated 置 false。
+ */
+function gateExitOk(wxml, js, showVar) {
+  const tag = (stripWxml(wxml).match(/<register-auth-dialog\b[^>]*>/g) || [])
+    .find((t) => new RegExp(`show="\\{\\{${showVar}\\}\\}"`).test(t)) || ''
+  const handlerName = (/bind:close="(\w+)"/.exec(tag) || [])[1]
+  if (!handlerName) return false
+  const src = stripJs(js)
+  const m = new RegExp(`\\n\\s*${handlerName}\\s*\\([^)]*\\)\\s*\\{`).exec(src)
+  if (!m) return false
+  const body = src.slice(m.index + m[0].length, (src.slice(m.index + m[0].length).search(/\n  \}/) + m.index + m[0].length))
+  return /closable="\{\{true\}\}"/.test(tag) && /close-text="先不注册"/.test(tag)
+    && /mask-closable="\{\{false\}\}"/.test(tag)
+    && /navigateBack|switchTab|reLaunch|goHomeTab/.test(body)
+    && !/registerGated:\s*false/.test(body)
+}
+
 function runChecks(r) {
   // ── 链路唯一出处 ───────────────────────────────────────────────
   check('注册链路 util 存在', r.chain.length > 0)
@@ -144,8 +163,10 @@ function runChecks(r) {
   // ── 百科详情页：整页模糊门禁 + 无「再看看」────────────────────
   check('★ 百科详情页注册了注册弹窗组件', /register-auth-dialog/.test(stripJs(r.wikiJson)))
   check('★ 百科详情页对 guest 置 registerGated', /registerGated:\s*true/.test(r.wikiJs))
-  check('★ 门禁弹窗 closable=false（不给「再看看」）',
-    /show="\{\{registerGated\}\}"/.test(stripWxml(r.wikiWxml)) && /closable="\{\{false\}\}"/.test(stripWxml(r.wikiWxml)))
+  // 2026-10-11 产品负责人拍板：门禁页也给「先不注册」拒绝出口（审核「强制注册」风险），
+  // 但拒绝 = 离开本页，**不解模糊**；点遮罩不关，只认按钮。口径见 gateExitOk。
+  check('★ 门禁弹窗有「先不注册」出口：关掉即离开本页，不解模糊',
+    gateExitOk(r.wikiWxml, r.wikiJs, 'registerGated'))
   check('★ 百科详情页门禁路径不含「再看看」「先看看」文案',
     !/再看看|先看看/.test(stripWxml(r.wikiWxml)))
   check('★ 整页灰色模糊（filter blur + grayscale）且挡点击',
@@ -158,8 +179,8 @@ function runChecks(r) {
   // ── 鉴定结果页：原地授权 ───────────────────────────────────────
   check('★ 结果页注册了注册弹窗组件', /register-auth-dialog/.test(stripJs(r.resultJson)))
   check('★ 结果页改为原地弹窗（不再 navigate 注册页）', /showRegisterDialog:\s*true/.test(r.resultJs))
-  check('★ 结果页门禁也不提供「先看看」（closable=false + 文案不含先看看）',
-    /closable="\{\{false\}\}"/.test(stripWxml(r.resultWxml))
+  check('★ 结果页门禁有「先不注册」出口：关掉即离开本页，不解模糊（文案不含先看看）',
+    gateExitOk(r.resultWxml, r.resultJs, 'showRegisterDialog')
     && !/再看看|先看看/.test(stripWxml(r.resultWxml)))
   check('★ 结果页正文整页灰色模糊（blur + grayscale + 挡点击）',
     /\.rg-gate\.is-gated/.test(r.resultWxss) && /blur\(/.test(r.resultWxss)
@@ -251,14 +272,18 @@ function selftest() {
       (s) => s.replace(/require\(['"][^'"]*registerPhone['"]\)/, "require('../../utils/noop')")
         .replace('const res = await registerWithPhone({ app, phoneCode: detail.code })',
           "const res = await wx.cloud.callFunction({ name: 'authPhone', data: { code: detail.code } })")],
-    ['门禁弹窗改成可关闭（门禁形同不存在）', F.wikiWxml,
-      (s) => s.replace(/closable="\{\{false\}\}"/, 'closable="{{true}}"')],
+    ['百科门禁拒绝后解除模糊（拒绝即可看全文，门禁形同不存在）', F.wikiJs,
+      (s) => s.replace(/onRegisterDialogClose\(\) \{\n/, 'onRegisterDialogClose() {\n    this.setData({ registerGated: false });\n')],
+    ['百科门禁去掉「先不注册」出口（又成关不掉的门禁）', F.wikiWxml,
+      (s) => s.replace(/closable="\{\{true\}\}"/, 'closable="{{false}}"')],
     ['去掉整页模糊（只弹窗不门禁）', F.wikiWxss,
       (s) => s.replace(/\.wd-gate\.is-gated \{[\s\S]*?\}/, '.wd-gate.is-gated { opacity: 1; }')],
     ['链路丢掉 refreshSessionAfterAuth（注册后仍判为 guest）', F.chain,
       (s) => s.replace(/await refreshSessionAfterAuth\(app\)/g, '')],
-    ['结果页又放开「先看看」', F.resultWxml,
-      (s) => s.replace(/closable="\{\{false\}\}"/, 'closable="{{true}}"')],
+    ['结果页门禁拒绝后解除模糊', F.resultJs,
+      (s) => s.replace(/onRegisterDialogClose\(\) \{\n/, 'onRegisterDialogClose() {\n    this.setData({ showRegisterDialog: false, registerGated: false })\n')],
+    ['结果页点遮罩也会关（误触即离开）', F.resultWxml,
+      (s) => s.replace(/mask-closable="\{\{false\}\}"/, 'mask-closable="{{true}}"')],
     ['结果页去掉整页模糊（只弹窗不门禁）', F.resultWxss,
       (s) => s.replace(/\.rg-gate\.is-gated \{[\s\S]*?\}/, '.rg-gate.is-gated { opacity: 1; }')],
     ['百科详情页忘记给 guest 置门禁', F.wikiJs,

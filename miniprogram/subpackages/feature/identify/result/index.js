@@ -543,10 +543,14 @@ Page({
     trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'go_register' })
   },
 
+  /** 「先不注册」：离开本页（扫码直进只有一页时回首页）；不解模糊，门禁内容不因拒绝而露出 */
   onRegisterDialogClose() {
-    // closable=false 时组件不会派发 close；保留此分支仅为兜底（例如未来放开可关闭）
-    this.setData({ showRegisterDialog: false, registerGated: false })
     trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'dismiss' })
+    if (getCurrentPages().length > 1) {
+      wx.navigateBack({ fail: () => this.goHomeTab() })
+    } else {
+      this.goHomeTab()
+    }
   },
 
   /** 注册回流（from=identify_result）：标记漏斗闭环，并刷新会话态 */

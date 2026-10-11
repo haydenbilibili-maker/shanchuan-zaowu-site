@@ -3,7 +3,7 @@
   class="rad-mask {{show ? 'is-on' : 'is-off'}}"
   wx:if="{{show}}"
   catchtouchmove="noop"
-  catchtap="{{closable ? 'onClose' : 'noop'}}"
+  catchtap="{{closable && maskClosable ? 'onClose' : 'noop'}}"
 >
   <view class="rad-plate" catchtap="noop">
     <!-- 铭牌四角：与敏感形态罩层同一套博物柜语言 -->
@@ -61,12 +61,12 @@
       hover-stay-time="80"
     >{{isRegistered ? loginCta : cta}}</button>
 
-    <!-- 门禁场景不渲染关闭：不给「再看看」 -->
+    <!-- 拒绝出口：closable=false 时不渲染；门禁页（图鉴详情 / 鉴定结果）也传 true，关掉后由页面返回 -->
     <view
       wx:if="{{closable}}"
       class="rad-close"
       bindtap="onClose"
-      hover-class="rad-close-press"
+      hover-class="tap-press"
       hover-stay-time="80"
     >{{closeText}}</view>
   </view>

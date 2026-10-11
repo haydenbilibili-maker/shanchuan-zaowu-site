@@ -177,4 +177,3 @@
   font-size: 24rpx;
   color: var(--text-sub, #A09A90);
 }
-.rad-close-press { opacity: 0.7; }

@@ -259,6 +259,19 @@ Page({
     wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/category/index' }) });
   },
 
+  /** 门禁「先不注册」：离开本页（扫码直进只有一页时回首页）；不解模糊，门禁内容不因拒绝而露出 */
+  onRegisterDialogClose() {
+    const goHome = () => wx.switchTab({
+      url: '/pages/index/index',
+      fail: () => wx.reLaunch({ url: '/pages/index/index' })
+    });
+    if (getCurrentPages().length > 1) {
+      wx.navigateBack({ fail: goHome });
+    } else {
+      goHome();
+    }
+  },
+
   previewImage(e) {
     const current = e.currentTarget.dataset.src;
     const urls = this.data.wiki.gallery || [];

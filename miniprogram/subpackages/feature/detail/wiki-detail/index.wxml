@@ -155,16 +155,19 @@
   <view style="height: 140rpx;"></view>
   </view>
 
-  <!-- 门禁弹窗：closable=false → 组件内部不渲染关闭入口 -->
+  <!-- 门禁弹窗：给「先不注册」拒绝出口（关掉即离开本页，不解模糊）；点遮罩不关，只认按钮 -->
   <register-auth-dialog
     show="{{registerGated}}"
     overline="SPECIES ARCHIVE"
     title="注册后查看完整档案"
     desc="这是为收藏者准备的物种档案。一键注册即可解锁全文，并把它存进你的山海图鉴。"
     cta="一键注册"
-    closable="{{false}}"
+    closable="{{true}}"
+    close-text="先不注册"
+    mask-closable="{{false}}"
     from="wiki_detail"
     bind:success="onRegisterSuccess"
+    bind:close="onRegisterDialogClose"
   />
   </block>
 </view>

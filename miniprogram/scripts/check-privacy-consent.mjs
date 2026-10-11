@@ -12,7 +12,9 @@
  *   ③ 勾选初始值为 false，只能由用户点击翻转（不得从缓存 / 会话 / 已注册态预置为 true）；
  *   ④ 全部 open-type="getPhoneNumber" 按钮都受勾选变量门控（wx:if 或动态 open-type），
  *      未勾时的那个按钮不带 open-type；授权回调首行再挡一次；
- *   ⑤ 勾选 / 未勾提示里不弹确认框、不代用户勾选（不得用弹窗代用户勾选）。
+ *   ⑤ 勾选 / 未勾提示里不弹确认框、不代用户勾选（不得用弹窗代用户勾选）；
+ *   ⑥ 每个使用共用注册弹层的页面，每一处弹层都有拒绝出口：closable=true + bind:close 指向页面里存在的处理函数，
+ *      组件在 closable 时渲染关闭按钮并派发 close（2026-10-11：图鉴详情 / 鉴定结果曾是关不掉的门禁）。
  *
  * 用法：
  *   node miniprogram/scripts/check-privacy-consent.mjs
@@ -155,6 +157,28 @@ function runChecks(files) {
       && !/wx\.showModal\s*\(/.test(toggle + blocked)
       && !new RegExp(`${e.flag}\\s*:\\s*true|${e.toggle}\\(`).test(blocked))
   }
+  const dlgWxml = stripWxml(files[ENTRIES[0].wxml] || '')
+  const dlgJs = stripJs(files[ENTRIES[0].js] || '')
+  const closeView = (dlgWxml.match(/<view\b[^>]*>/g) || []).find((t) => /bindtap="onClose"/.test(t)) || ''
+  check('★ 共用注册弹层：closable 时渲染关闭按钮，点击派发 close',
+    /wx:if="\{\{closable\}\}"/.test(closeView) && /triggerEvent\(\s*'close'/.test(fnBody(dlgJs, 'onClose')))
+
+  const noExit = []
+  let dialogPages = 0
+  for (const [rel, src] of Object.entries(files)) {
+    if (!rel.startsWith('miniprogram/') || !rel.endsWith('.wxml')) continue
+    const tags = stripWxml(src).match(/<register-auth-dialog\b[^>]*>/g) || []
+    if (!tags.length) continue
+    dialogPages++
+    const js = stripJs(files[rel.replace(/\.wxml$/, '.js')] || '')
+    for (const tag of tags) {
+      const handler = (/bind:close="(\w+)"/.exec(tag) || [])[1]
+      const show = (/show="\{\{(\w+)\}\}"/.exec(tag) || [])[1] || '?'
+      if (!/closable="\{\{true\}\}"/.test(tag) || !handler || !fnBody(js, handler)) noExit.push(`${rel}（show=${show}）`)
+    }
+  }
+  check(`★ 使用注册弹层的页面（${dialogPages} 个）每一处都有关闭 / 拒绝出口（closable=true + 页面实现了 bind:close）`,
+    dialogPages > 0 && noExit.length === 0, noExit.join('\n    '))
   return failures === 0
 }
 
@@ -187,6 +211,13 @@ function selftest() {
     ['弹层授权回调不再挡未勾选', D.js, (s) => s.replace('if (this.data.saving || !this.data.agreed) return\n      const detail', 'if (this.data.saving) return\n      const detail')],
     ['弹层协议名改成 bindtap（点协议名会顺带勾选）', D.wxml, (s) => s.replace(/catchtap="onAgreementTap">《隐私政策》/, 'bindtap="onAgreementTap">《隐私政策》')],
     ['资料页删掉《隐私政策》入口', P.wxml, (s) => s.replace(/<text[^>]*>《隐私政策》<\/text>/, '')],
+    ['图鉴详情门禁删掉「先不注册」出口（又成关不掉的门禁）', 'miniprogram/subpackages/feature/detail/wiki-detail/index.wxml',
+      (s) => s.replace(/\n\s*closable="\{\{true\}\}"/, '')],
+    ['鉴定结果页删掉关闭处理函数（按钮点了没反应）', 'miniprogram/subpackages/feature/identify/result/index.js',
+      (s) => s.replace(/onRegisterDialogClose\(\) \{/, 'onRegisterDialogClose_removed() {')],
+    ['祈福墙功德证弹层改成关不掉', 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+      (s) => s.replace(/(show="\{\{showCertDialog\}\}"[\s\S]*?)closable="\{\{true\}\}"/, '$1closable="{{false}}"')],
+    ['弹层组件删掉关闭按钮', D.wxml, (s) => s.replace(/bindtap="onClose"/, '')],
     ['注册页用 showModal 代用户勾选', O.js, (s) => s.replace('nudgeAgree() {', "nudgeAgree() {\n    wx.showModal({ title: '同意协议', success: () => this.toggleAgree() })")]
   ]
   for (const [label, target, mut] of injections) {

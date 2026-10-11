@@ -382,14 +382,16 @@
   </view>
 </view>
 
-<!-- 注册引导：原地授权 + 整页模糊门禁；closable=false → 不提供「先看看」 -->
+<!-- 注册引导：原地授权 + 整页模糊门禁；给「先不注册」拒绝出口（关掉即离开本页，不解模糊），点遮罩不关 -->
 <register-auth-dialog
   show="{{showRegisterDialog}}"
   overline="SPECIMEN ARCHIVE"
   title="注册后收藏这份鉴定"
   desc="一键注册即可把这次鉴定收进山海图鉴。"
   cta="一键注册"
-  closable="{{false}}"
+  closable="{{true}}"
+  close-text="先不注册"
+  mask-closable="{{false}}"
   from="identify_result"
   bind:success="onRegisterSuccess"
   bind:cta="onRegisterCta"
