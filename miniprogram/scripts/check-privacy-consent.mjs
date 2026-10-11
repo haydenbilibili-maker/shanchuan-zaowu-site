@@ -14,7 +14,10 @@
  *      未勾时的那个按钮不带 open-type；授权回调首行再挡一次；
  *   ⑤ 勾选 / 未勾提示里不弹确认框、不代用户勾选（不得用弹窗代用户勾选）；
  *   ⑥ 每个使用共用注册弹层的页面，每一处弹层都有拒绝出口：closable=true + bind:close 指向页面里存在的处理函数，
- *      组件在 closable 时渲染关闭按钮并派发 close（2026-10-11：图鉴详情 / 鉴定结果曾是关不掉的门禁）。
+ *      组件在 closable 时渲染关闭按钮并派发 close（2026-10-11：图鉴详情 / 鉴定结果曾是关不掉的门禁）；
+ *   ⑦ 每个入口都**记录同意协议时间**（agreedTermsAt = 点授权那一刻的 new Date()）：入口里每个调用注册链路
+ *      （registerWithPhone / authPhone / 带 completeOnboarding 的 upsertUserProfile）的方法，自身或经 this.xxx() 辅助方法写入 agreedTermsAt
+ *      （2026-10-11 产品负责人点名：共用注册弹层曾不留痕）。
  *
  * 用法：
  *   node miniprogram/scripts/check-privacy-consent.mjs
@@ -117,6 +120,29 @@ function phoneButtonGated(tag) {
   return /open-type="\{\{\s*\w*[aA]greed\b[^}?]*\?\s*'getPhoneNumber'\s*:\s*''\s*\}\}"/.test(tag)
 }
 
+/** 注册链路：手机号一键注册 / 授权手机号 / 完成建档（普通改资料的 upsertUserProfile 不算） */
+const REG_CALL = /registerWithPhone\(|name:\s*'authPhone'|completeOnboarding:\s*true/
+const TERMS_TS = /agreedTermsAt\s*[:=]\s*new Date\(\)|agreedTermsAt\s*:\s*agreedTermsAt\b|\{\s*agreedTermsAt\s*[,}]/
+
+/** 入口 JS 里调用注册链路、却没写同意时间的方法名（可经 this.helper() 间接写入） */
+function missingTermsStamp(js) {
+  const methods = {}
+  for (const m of js.matchAll(/(?:^|\n)[ \t]+(?:async\s+)?(\w+)\s*\([^)\n]*\)\s*\{/g)) {
+    if (/^(if|for|while|switch|catch|function)$/.test(m[1]) || methods[m[1]] != null) continue
+    methods[m[1]] = fnBody(js, m[1])
+  }
+  const stamps = (name, seen = new Set()) => {
+    if (seen.has(name)) return false
+    seen.add(name)
+    const body = methods[name] || ''
+    if (TERMS_TS.test(body) && /agreedTermsAt/.test(body) && (/new Date\(\)/.test(body) || /\bagreedTermsAt\b/.test(body))) return true
+    return [...body.matchAll(/this\.(\w+)\(/g)].some((c) => methods[c[1]] != null && c[1] !== name && /agreedTermsAt/.test(methods[c[1]] || '') && stamps(c[1], seen))
+  }
+  const hasStamp = /agreedTermsAt\s*[:=]?\s*new Date\(\)\.toISOString\(\)|agreedTermsAt\s*:\s*new Date\(\)/.test(js)
+  const bad = Object.keys(methods).filter((n) => REG_CALL.test(methods[n]) && !stamps(n))
+  return hasStamp ? bad : ['（全文件没有 agreedTermsAt = new Date()）', ...bad]
+}
+
 function runChecks(files) {
   failures = 0
 
@@ -159,6 +185,8 @@ function runChecks(files) {
     if (elseBtn) {
       check(`★ ${e.name}：未勾选时的按钮不带 open-type`, !/open-type=/.test(elseBtn))
     }
+    const unstamped = missingTermsStamp(js)
+    check(`★ ${e.name}：调用注册链路的方法都记录同意协议时间（agreedTermsAt）`, unstamped.length === 0, unstamped.join(', '))
     const toggle = fnBody(js, e.toggle)
     const blocked = fnBody(js, e.blocked)
     check(`★ ${e.name}：勾选 / 未勾提示里不弹确认框、不代用户勾选`,
@@ -232,6 +260,11 @@ function selftest() {
     ['礼赠注册卡授权按钮去掉勾选门控', G.wxml, (s) => s.replace('wx:if="{{agreed}}"', 'wx:if="{{true}}"')],
     ['礼赠注册卡授权回调不再挡未勾选', G.js, (s) => s.replace("if (this.data.saving || !this.data.agreed) return\n      const detail", "if (this.data.saving) return\n      const detail")],
     ['礼赠注册卡删掉《隐私政策》入口', G.wxml, (s) => s.replace(/<text[^>]*>《隐私政策》<\/text>/, '')],
+    ['共用注册弹层不再记录同意时间', D.js, (s) => s.replace("patch: { agreedTermsAt: new Date().toISOString() } })", '})')],
+    ['注册页资料补丁去掉同意时间', O.js, (s) => s.replace(/\n\s*agreedTermsAt: new Date\(\)\.toISOString\(\),/, '')],
+    ['资料页绑号不补记同意时间', P.js, (s) => s.replace("data: { patch: { agreedTermsAt: new Date().toISOString() } } })", 'data: { patch: {} } })')],
+    ['礼赠注册卡补建档路径漏写同意时间', G.js, (s) => s.replace('patch: { agreedTermsAt }, completeOnboarding: true', 'patch: {}, completeOnboarding: true')],
+    ['注册页新增一条不留痕的注册调用', O.js, (s) => s.replace('  goBack() {', "  async quickReg(code) {\n    await wx.cloud.callFunction({ name: 'authPhone', data: { code, finishRegistration: true, patch: {} } })\n  },\n\n  goBack() {")],
     ['注册页用 showModal 代用户勾选', O.js, (s) => s.replace('nudgeAgree() {', "nudgeAgree() {\n    wx.showModal({ title: '同意协议', success: () => this.toggleAgree() })")]
   ]
   for (const [label, target, mut] of injections) {

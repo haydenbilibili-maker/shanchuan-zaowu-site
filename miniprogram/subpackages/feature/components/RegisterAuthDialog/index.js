@@ -124,7 +124,7 @@ Component({
       try {
         let app = null
         try { app = getApp() } catch (err) { /* ignore */ }
-        const res = await registerWithPhone({ app, phoneCode: detail.code })
+        const res = await registerWithPhone({ app, phoneCode: detail.code, patch: { agreedTermsAt: new Date().toISOString() } })
         wx.hideLoading()
         if (!res.ok) {
           wx.showToast({ title: res.msg || '注册未完成', icon: 'none' })

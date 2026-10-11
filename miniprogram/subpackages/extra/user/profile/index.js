@@ -608,6 +608,8 @@ Page({
       wx.hideLoading()
       const payload = res.result || {}
       if (payload.success) {
+        // authPhone 不收资料补丁：同意协议时间单独补记（失败不影响绑定结果）
+        wx.cloud.callFunction({ name: 'upsertUserProfile', data: { patch: { agreedTermsAt: new Date().toISOString() } } }).catch(() => {})
         this.setData({
           phoneBound: true,
           phoneMasked: payload.phoneMasked || this.data.phoneMasked
