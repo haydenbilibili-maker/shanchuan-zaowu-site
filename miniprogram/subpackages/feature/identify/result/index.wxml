@@ -388,7 +388,7 @@
   overline="SPECIMEN ARCHIVE"
   title="注册后收藏这份鉴定"
   desc="一键注册即可把这次鉴定收进山海图鉴。"
-  cta="同意并一键注册"
+  cta="一键注册"
   closable="{{false}}"
   from="identify_result"
   bind:success="onRegisterSuccess"

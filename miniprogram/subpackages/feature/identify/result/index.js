@@ -537,7 +537,7 @@ Page({
     wx.showToast({ title: '注册成功', icon: 'success' })
   },
 
-  /** 点「同意并一键注册」即上报去注册（与祈福墙 / 保存图鉴钩子同一 step） */
+  /** 点「一键注册」即上报去注册（与祈福墙 / 保存图鉴钩子同一 step） */
   onRegisterCta() {
     if (!this.data.recordId) return
     trackBehavior('identify_result_gate', 'identification', this.data.recordId, { step: 'go_register' })

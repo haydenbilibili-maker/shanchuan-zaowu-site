@@ -184,10 +184,33 @@
               <text class="phone-bind-desc">用于订单通知、预约提醒与门店权益。下单前需完成绑定。</text>
             </view>
           </view>
+          <view
+            class="phone-agree-row {{phoneAgreeShake ? 'is-shake' : ''}}"
+            bindtap="togglePhoneAgree"
+            hover-class="tap-press-soft"
+            hover-stay-time="80"
+          >
+            <view class="phone-agree-check {{phoneAgreed ? 'checked' : ''}}"></view>
+            <view class="phone-agree-text">
+              <text>我已阅读并同意</text>
+              <text class="phone-agree-link" catchtap="openLegal" data-type="terms">《用户服务协议》</text>
+              <text>和</text>
+              <text class="phone-agree-link" catchtap="openLegal" data-type="privacy">《隐私政策》</text>
+            </view>
+          </view>
+          <text wx:if="{{phoneAgreeHint && !phoneAgreed}}" class="phone-agree-hint">请先阅读并勾选同意</text>
           <button
+            wx:if="{{phoneAgreed}}"
             class="profile-bind-phone"
             open-type="getPhoneNumber"
             bindgetphonenumber="onGetPhoneNumber"
+            hover-class="profile-bind-press"
+            hover-stay-time="80"
+          >手机号快捷绑定</button>
+          <button
+            wx:else
+            class="profile-bind-phone is-off"
+            bindtap="onPhoneBindBlocked"
             hover-class="profile-bind-press"
             hover-stay-time="80"
           >手机号快捷绑定</button>

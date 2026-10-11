@@ -10,8 +10,9 @@
  *   微信的 `getPhoneNumber` **只能由 `<button open-type="getPhoneNumber">` 的用户点击触发**，
  *   无法程序化弹出。系统弹窗里放不了这个按钮，所以「原地授权」只能是自带按钮的自定义弹窗。
  *
- * 合规：把「同意」写在 CTA 上（`同意并一键注册`），并在下方给《用户协议》《隐私政策》入口 ——
- *   与注册页的口径一致（注册页是显式勾选，这里用按钮文案承载同意）。
+ * 合规（2026-10-11 微信审核驳回整改）：协议必须由用户**主动勾选**，不得用按钮文案代替同意。
+ *   勾选框每次打开都从「未勾」开始，不读缓存；没勾时 CTA 不带 open-type，绝不弹微信手机号授权，
+ *   只轻抖勾选行 + 轻提示。点协议名只打开协议页，不等于勾选。
  *
  * 事件：`bind:success`（已注册成功，event.detail = payload）/ `bind:fail` / `bind:close`
  */
@@ -27,7 +28,7 @@ Component({
     overline: { type: String, value: 'ONE-TAP REGISTER' },
     title: { type: String, value: '注册后收藏这份鉴定' },
     desc: { type: String, value: '一键注册即可把这次鉴定收进山海图鉴，新客礼包将自动到账。' },
-    cta: { type: String, value: '同意并一键注册' },
+    cta: { type: String, value: '一键注册' },
     /** 是否允许关闭（门禁场景传 false：不给「再看看」） */
     closable: { type: Boolean, value: false },
     /** 关闭按钮文案（closable 为 true 时才显示） */
@@ -41,7 +42,13 @@ Component({
     loginCta: { type: String, value: '授权手机号 · 继续' }
   },
 
-  data: { saving: false, isRegistered: false },
+  data: { saving: false, isRegistered: false, agreed: false, agreeShake: false, agreeHint: false },
+
+  observers: {
+    show(v) {
+      if (!v && (this.data.agreed || this.data.agreeHint)) this.setData({ agreed: false, agreeHint: false })
+    }
+  },
 
   lifetimes: {
     /**
@@ -56,6 +63,9 @@ Component({
           : !!(session.onboardingDone || (session.user && session.user.phone))
         if (registered) this.setData({ isRegistered: true })
       }).catch(() => { /* 会话不可用时保持注册态文案（首访是多数） */ })
+    },
+    detached() {
+      clearTimeout(this._shakeTimer)
     }
   },
 
@@ -78,13 +88,26 @@ Component({
      * 加法事件：既有 success / fail / close 语义不变。
      */
     onCtaTap() {
-      if (this.data.saving) return
+      if (this.data.saving || !this.data.agreed) return
       this.triggerEvent('cta')
+    },
+
+    onToggleAgree() {
+      if (this.data.saving) return
+      this.setData({ agreed: !this.data.agreed, agreeHint: false })
+    },
+
+    /** 未勾选时点 CTA：不进注册、不弹授权，只抖勾选行并在其下轻提示 */
+    onCtaBlocked() {
+      if (this.data.saving) return
+      this.setData({ agreeShake: true, agreeHint: true })
+      clearTimeout(this._shakeTimer)
+      this._shakeTimer = setTimeout(() => this.setData({ agreeShake: false }), 420)
     },
 
     /** `getPhoneNumber` 回调：拿 code → 走唯一注册链路 */
     async onGetPhoneNumber(e) {
-      if (this.data.saving) return
+      if (this.data.saving || !this.data.agreed) return
       const detail = e && e.detail ? e.detail : {}
       if (detail.errMsg !== 'getPhoneNumber:ok' || !detail.code) {
         // 用户点了「拒绝」也会走这里 —— 门禁场景要明确告诉他还需要授权

@@ -324,7 +324,7 @@ export const FUNNELS = [
     color: '#8D6E63',
     steps: [
       { action: 'wish_ritual_gate:show', label: '有可丢进展时曝光' },
-      { action: 'wish_ritual_gate:go_register', label: '点「同意并一键注册」' },
+      { action: 'wish_ritual_gate:go_register', label: '点「一键注册」' },
       { action: 'wish_ritual_gate:dismiss', label: '先存着' },
       { action: 'wish_ritual_gate:resume_success', label: '注册完成并同步上云', endpoint: true }
     ]
@@ -337,7 +337,7 @@ export const FUNNELS = [
     color: '#C4A76C',
     steps: [
       { action: 'muyu_cert_gate:show', label: '里程点入口曝光' },
-      { action: 'muyu_cert_gate:go_register', label: '点「同意并一键注册」' },
+      { action: 'muyu_cert_gate:go_register', label: '点「一键注册」' },
       { action: 'muyu_cert_gate:dismiss', label: '先不领' },
       { action: 'muyu_cert_gate:resume_success', label: '证书已发且功德同步上云', endpoint: true }
     ]

@@ -111,20 +111,6 @@
         </view>
       </block>
 
-      <view class="account-section-card agree-card">
-        <view class="agree-row" bindtap="toggleAgree">
-          <view class="agree-check {{agreed ? 'checked' : ''}}"></view>
-          <view class="agree-copy">
-            <text class="agree-text">我已阅读并同意</text>
-            <view class="agree-links">
-              <text class="agree-link" hover-class="tap-press" catchtap="openTerms">《用户服务协议》</text>
-              <text class="agree-sep">与</text>
-              <text class="agree-link" hover-class="tap-press" catchtap="openPrivacy">《隐私政策》</text>
-            </view>
-          </view>
-        </view>
-      </view>
-
       <view class="phone-bound-plate" wx:if="{{phoneBound}}">
         <text class="phone-bound-label">已绑定</text>
         <text class="phone-bound-value">{{phoneMasked}}</text>
@@ -135,6 +121,21 @@
   </view>
 
   <view class="account-footer account-footer-safe ob-footer">
+    <!-- 协议勾选贴着按钮、始终可见；默认不勾，点协议名只打开协议 -->
+    <view
+      class="agree-row ob-agree {{agreeShake ? 'is-shake' : ''}}"
+      bindtap="toggleAgree"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+    >
+      <view class="agree-check {{agreed ? 'checked' : ''}}"></view>
+      <view class="agree-copy">
+        <text class="agree-text">我已阅读并同意</text>
+        <text class="agree-link" hover-class="tap-press" catchtap="openTerms">《用户服务协议》</text>
+        <text class="agree-sep">和</text>
+        <text class="agree-link" hover-class="tap-press" catchtap="openPrivacy">《隐私政策》</text>
+      </view>
+    </view>
     <button
       wx:if="{{!phoneBound}}"
       class="account-btn-phone ob-cta {{(!agreed || saving) ? 'disabled' : ''}}"

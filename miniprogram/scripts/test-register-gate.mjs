@@ -127,8 +127,11 @@ function runChecks(r) {
 
   // ── 弹窗组件 ──────────────────────────────────────────────────
   check('弹窗组件四件套齐全', !!(r.dialogJs && r.dialogWxml && r.dialogWxss && r.dialogJson))
+  // 2026-10-11：弹层改为「未勾协议 / 已勾协议」两个按钮后，判据必须落在**同一个** <button> 标签上，
+  // 否则未勾那颗普通按钮会让「授权按钮被改成 view」的注入假绿（错题本 E7）。
   check('★ 授权按钮是 button open-type="getPhoneNumber"（唯一合法触发方式）',
-    /open-type=/.test(r.dialogWxml) && /getPhoneNumber/.test(r.dialogWxml) && /<button/.test(r.dialogWxml))
+    (stripWxml(r.dialogWxml).match(/<button\b[^>]*>/g) || [])
+      .some((tag) => /open-type="[^"]*getPhoneNumber/.test(tag) && /bindgetphonenumber=/.test(tag)))
   check('★ 弹窗复用唯一链路，而不是自己拼一遍云函数',
     /require\(['"][^'"]*registerPhone['"]\)/.test(r.dialogJs) && !/name:\s*'authPhone'/.test(r.dialogJs))
   check('★ 弹窗不再跳注册页（不出现 navigateToOnboarding / onboarding 路径）',

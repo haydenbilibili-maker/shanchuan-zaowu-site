@@ -88,6 +88,9 @@ Page({
     avatarUrl: '',
     phoneMasked: '',
     phoneBound: false,
+    phoneAgreed: false,
+    phoneAgreeShake: false,
+    phoneAgreeHint: false,
     gender: '',
     birthday: '',
     birthdayMax: todayDateStr(),
@@ -577,7 +580,19 @@ Page({
     }
   },
 
+  togglePhoneAgree() {
+    this.setData({ phoneAgreed: !this.data.phoneAgreed, phoneAgreeHint: false })
+  },
+
+  /** 未勾选协议时点绑定：不弹授权，轻抖勾选行并在其下轻提示 */
+  onPhoneBindBlocked() {
+    this.setData({ phoneAgreeShake: true, phoneAgreeHint: true })
+    clearTimeout(this._phoneAgreeShakeTimer)
+    this._phoneAgreeShakeTimer = setTimeout(() => this.setData({ phoneAgreeShake: false }), 420)
+  },
+
   async onGetPhoneNumber(e) {
+    if (!this.data.phoneAgreed) return
     if (e.detail.errMsg !== 'getPhoneNumber:ok' || !e.detail.code) {
       const cancelled = String(e.detail.errMsg || '').indexOf('fail user deny') > -1
         || String(e.detail.errMsg || '').indexOf('cancel') > -1

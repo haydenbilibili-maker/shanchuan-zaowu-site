@@ -216,6 +216,7 @@ Page({
     ctaFinishText: NEUTRAL_COPY.ctaFinish,
     loadingText: NEUTRAL_COPY.loading,
     agreed: false,
+    agreeShake: false,
     avatarUrl: '',
     nickName: '',
     phoneBound: false,
@@ -382,7 +383,6 @@ Page({
       nickName,
       phoneBound,
       phoneMasked: u.phoneMasked || '',
-      agreed: !!(u.agreedTermsAt || u.phone || onboardingDone),
       phoneOnly,
       accountReady: true,
       isRegistered,
@@ -475,9 +475,15 @@ Page({
 
   onPhoneCtaTap() {
     if (this.data.saving) return
-    if (!this.data.agreed) {
-      wx.showToast({ title: '请先阅读并同意协议', icon: 'none' })
-    }
+    if (!this.data.agreed) this.nudgeAgree()
+  },
+
+  /** 未勾选协议：轻抖勾选行 + 轻提示，不代用户勾选 */
+  nudgeAgree() {
+    wx.showToast({ title: '请先阅读并勾选同意', icon: 'none' })
+    this.setData({ agreeShake: true })
+    clearTimeout(this._agreeShakeTimer)
+    this._agreeShakeTimer = setTimeout(() => this.setData({ agreeShake: false }), 420)
   },
 
   resolveNickName() {
@@ -648,7 +654,7 @@ Page({
   async onGetPhoneNumber(e) {
     if (this.data.saving) return
     if (!this.data.agreed) {
-      wx.showToast({ title: '请先阅读并同意协议', icon: 'none' })
+      this.nudgeAgree()
       return
     }
     if (e.detail.errMsg !== 'getPhoneNumber:ok' || !e.detail.code) {
@@ -678,7 +684,7 @@ Page({
   async finishWithGift() {
     if (this.data.saving) return
     if (!this.data.agreed) {
-      wx.showToast({ title: '请先阅读并同意协议', icon: 'none' })
+      this.nudgeAgree()
       return
     }
     if (!this.data.phoneBound) {

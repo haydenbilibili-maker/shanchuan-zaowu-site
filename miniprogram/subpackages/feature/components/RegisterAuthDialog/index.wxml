@@ -24,8 +24,26 @@
       <view class="rad-perk"><text class="rad-dot"></text><text class="rad-perk-t">订单与门店通知可达</text></view>
     </view>
 
-    <!-- 授权必须是 button open-type 触发；文案即同意（与注册页口径一致） -->
+    <!-- 协议须用户主动勾选（默认不勾）；点协议名只打开协议，不等于勾选 -->
+    <view
+      class="rad-agree {{agreeShake ? 'is-shake' : ''}}"
+      bindtap="onToggleAgree"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+    >
+      <view class="rad-check {{agreed ? 'is-on' : ''}}"></view>
+      <view class="rad-agree-t">
+        <text>我已阅读并同意</text>
+        <text class="rad-link" data-kind="terms" catchtap="onAgreementTap">《用户服务协议》</text>
+        <text>和</text>
+        <text class="rad-link" data-kind="privacy" catchtap="onAgreementTap">《隐私政策》</text>
+      </view>
+    </view>
+    <text wx:if="{{agreeHint && !agreed}}" class="rad-agree-hint">请先阅读并勾选同意</text>
+
+    <!-- 授权必须是 button open-type 触发；未勾选时渲染不带 open-type 的按钮，绝不弹授权 -->
     <button
+      wx:if="{{agreed}}"
       class="rad-cta"
       open-type="{{saving ? '' : 'getPhoneNumber'}}"
       bindtap="onCtaTap"
@@ -33,15 +51,15 @@
       disabled="{{saving}}"
       loading="{{saving}}"
       hover-class="rad-cta-press"
-      hover-stay-time="60"
+      hover-stay-time="80"
     >{{saving ? (isRegistered ? '正在确认…' : '正在注册…') : (isRegistered ? loginCta : cta)}}</button>
-
-    <view class="rad-fineprint">
-      <text>点击即表示同意</text>
-      <text class="rad-link" data-kind="terms" catchtap="onAgreementTap">《用户协议》</text>
-      <text>与</text>
-      <text class="rad-link" data-kind="privacy" catchtap="onAgreementTap">《隐私政策》</text>
-    </view>
+    <button
+      wx:else
+      class="rad-cta is-off"
+      bindtap="onCtaBlocked"
+      hover-class="rad-cta-press"
+      hover-stay-time="80"
+    >{{isRegistered ? loginCta : cta}}</button>
 
     <!-- 门禁场景不渲染关闭：不给「再看看」 -->
     <view
@@ -49,7 +67,7 @@
       class="rad-close"
       bindtap="onClose"
       hover-class="rad-close-press"
-      hover-stay-time="60"
+      hover-stay-time="80"
     >{{closeText}}</view>
   </view>
 </view>

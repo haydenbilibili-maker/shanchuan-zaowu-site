@@ -161,7 +161,7 @@
     overline="SPECIES ARCHIVE"
     title="注册后查看完整档案"
     desc="这是为收藏者准备的物种档案。一键注册即可解锁全文，并把它存进你的山海图鉴。"
-    cta="同意并一键注册"
+    cta="一键注册"
     closable="{{false}}"
     from="wiki_detail"
     bind:success="onRegisterSuccess"

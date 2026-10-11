@@ -5,3 +5,4 @@ npm run check:welcome-gift
 npm run test:auth-login-register
 npm run test:welcome-gift-editor
 npm run test:register-gate
+npm run check:privacy-consent

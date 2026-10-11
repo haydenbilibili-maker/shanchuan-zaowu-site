@@ -159,6 +159,8 @@
     "check:wxml-conditions:selftest": "node miniprogram/scripts/check-wxml-conditions.mjs --selftest",
     "test:register-gate": "node miniprogram/scripts/test-register-gate.mjs",
     "test:register-gate:selftest": "node miniprogram/scripts/test-register-gate.mjs --selftest",
+    "check:privacy-consent": "node miniprogram/scripts/check-privacy-consent.mjs",
+    "check:privacy-consent:selftest": "node miniprogram/scripts/check-privacy-consent.mjs --selftest",
     "check:modal-style": "node miniprogram/scripts/check-modal-style.mjs",
     "check:modal-style:selftest": "node miniprogram/scripts/check-modal-style.mjs --selftest",
     "audit:fn-env": "node miniprogram/scripts/check-cloud-fn-env.mjs",

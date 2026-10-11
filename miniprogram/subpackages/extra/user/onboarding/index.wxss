@@ -258,10 +258,6 @@ page {
   text-align: center;
 }
 
-.agree-card {
-  margin-bottom: var(--space-4);
-}
-
 .agree-row {
   display: flex;
   align-items: flex-start;
@@ -273,15 +269,6 @@ page {
 .agree-copy {
   flex: 1;
   min-width: 0;
-}
-
-.agree-links {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4rpx;
-  padding-top: 8rpx;
-  padding-left: 0;
 }
 
 .phone-bound-plate {
@@ -399,7 +386,7 @@ page {
   display: flex;
   align-items: flex-start;
   gap: 16rpx;
-  padding-top: 0;
+  padding: 12rpx 0;
   border-top: none;
 }
 
@@ -413,35 +400,50 @@ page {
 }
 
 .agree-check.checked {
+  position: relative;
   background: var(--brass-400);
   border-color: var(--brass-400);
 }
 
+.agree-check.checked::after {
+  content: '';
+  position: absolute;
+  left: 10rpx;
+  top: 4rpx;
+  width: 8rpx;
+  height: 16rpx;
+  border: solid #1A1814;
+  border-width: 0 4rpx 4rpx 0;
+  transform: rotate(45deg);
+}
+
+.agree-row.is-shake { animation: agree-shake 0.42s ease; }
+@keyframes agree-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-10rpx); }
+  40%, 80% { transform: translateX(10rpx); }
+}
+
 .agree-text {
-  flex: 1;
   font-size: 24rpx;
   color: var(--color-text-secondary);
   line-height: 1.55;
 }
 
-.agree-links {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4rpx;
-  padding-top: 8rpx;
-  padding-left: 0;
+.ob-agree {
+  padding: 4rpx 0 20rpx;
+  line-height: 1.55;
 }
 
 .agree-link {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: var(--brass-400);
 }
 
 
 .agree-sep {
-  font-size: 22rpx;
-  color: var(--color-text-muted);
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
 }
 
 
