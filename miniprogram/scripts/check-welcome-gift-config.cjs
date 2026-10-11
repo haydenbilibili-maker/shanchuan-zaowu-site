@@ -66,9 +66,10 @@ function proxyAllowsManageWelcomeGift(src) {
  * 这条守卫钉住最容易回流的三种写法：注册页改回读死档位、完成页改回显示兜底张数、C 端出现第二份档位表。
  */
 const ONBOARDING_PAGE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'index.js')
-const ONBOARDING_DONE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'done.js')
+// 2026-10-11 完成页并入注册页成功态（全局注册简化 S3）：完成页口径随落点改看注册页；旧 done.js 只做重定向
+const ONBOARDING_DONE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'index.js')
 const ONBOARDING_WXML = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'index.wxml')
-const ONBOARDING_DONE_WXML = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'done.wxml')
+const ONBOARDING_DONE_WXML = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'onboarding', 'index.wxml')
 const PROFILE_PAGE = path.join(ROOT, 'miniprogram', 'subpackages', 'extra', 'user', 'profile', 'index.js')
 
 /**

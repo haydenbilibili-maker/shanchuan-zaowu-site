@@ -28,8 +28,8 @@ const SESSION_FN = 'miniprogram/cloudfunctions/getUserSession/index.js'
 const SESSION_UTIL = 'miniprogram/utils/userSession.js'
 const ONBOARD_JS = 'miniprogram/subpackages/extra/user/onboarding/index.js'
 const ONBOARD_WXML = 'miniprogram/subpackages/extra/user/onboarding/index.wxml'
-const DONE_JS = 'miniprogram/subpackages/extra/user/onboarding/done.js'
-const DONE_WXML = 'miniprogram/subpackages/extra/user/onboarding/done.wxml'
+const DONE_JS = 'miniprogram/subpackages/extra/user/onboarding/index.js' // 2026-10-11 完成页并入注册页成功态
+const DONE_WXML = 'miniprogram/subpackages/extra/user/onboarding/index.wxml'
 const DIALOG_JS = 'miniprogram/subpackages/feature/components/RegisterAuthDialog/index.js'
 const DIALOG_WXML = 'miniprogram/subpackages/feature/components/RegisterAuthDialog/index.wxml'
 const IDENTIFY_WXML = 'miniprogram/subpackages/feature/identify/result/index.wxml'
@@ -152,7 +152,7 @@ check('★ 老号不再被说成「注册完成」', /isNewUser \? '注册已完
 check('★ 老号不会出现空礼包卡（0 张礼券）',
   /\(isNewUser \|\| giftCoupons > 0\)/.test(doneWxml),
   'done-gifts 未按新老/券数门控')
-check('★ 注册页把新老标记透传给完成页', /`isNew=\$\{isNewUser \? 1 : 0\}`/.test(onboardJs))
+check('★ 注册页把新老标记透传给成功态', /isNew: isNewUser \? '1' : '0'/.test(onboardJs))
 
 /* ── 4) L0 授权弹窗 + 鉴定页 ─────────────────────────────────────────────── */
 check('★ 弹窗自己判断是否已注册', /ensureSession\(null\)/.test(dialogJs) && /isRegistered: true/.test(dialogJs))

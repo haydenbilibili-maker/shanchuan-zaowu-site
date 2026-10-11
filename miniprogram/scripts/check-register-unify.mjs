@@ -11,6 +11,9 @@
  *               requirePhone 真跑：带 inline 且弹层就绪 → 不跳页；inline 返回 false / 不带 inline → 照旧跳注册页；已绑号 → 直接放行。
  *   S2 注册页瘦身：注册页不再收集昵称 / 头像（默认「藏家」、协议同意时间照写）；「我的」页已注册且署名默认或无头像时出可关的补资料提示；
  *               收藏证书首次签发署名为默认「藏家」时就地提示改名重签（不拦签发），改完名回来才重签。
+ *   S3 完成页并入：注册页真跑（假 Page / 假 wx）——注册成功原页切成功态、不再 redirect 完成页；有回流且礼包正常照旧直接带回；
+ *               旧完成页路径保留（app.json 登记）且真跑重定向带全部原参数、不二次编码；?done=1 进入即成功态且不记曝光 / 不重复开始事件；
+ *               收银台码独立入口逻辑不动。
  *
  * 用法：node miniprogram/scripts/check-register-unify.mjs [--selftest]
  * 自检：对真源码做内存注入（不写盘），每条都必须检出。
@@ -43,7 +46,9 @@ const P = {
   userJs: 'miniprogram/pages/user/index.js',
   userWxml: 'miniprogram/pages/user/index.wxml',
   certJs: 'miniprogram/subpackages/business/certificate/index.js',
-  certWxml: 'miniprogram/subpackages/business/certificate/index.wxml'
+  certWxml: 'miniprogram/subpackages/business/certificate/index.wxml',
+  doneJs: 'miniprogram/subpackages/extra/user/onboarding/done.js',
+  appJson: 'miniprogram/app.json'
 }
 const DIALOG_PATH = '/subpackages/feature/components/RegisterAuthDialog/index'
 /** S1 门禁页：页面前缀 / 是否跨分包 / 成功后必须续做的方法 */
@@ -185,6 +190,100 @@ function methodBody(js, name) {
   return ''
 }
 
+function loadPage(src, fakes) {
+  let def = null
+  const sandbox = {
+    Page: (d) => { def = d },
+    getApp: () => ({ globalData: { userInfo: { nickName: '' } } }),
+    wx: fakes.wx,
+    console,
+    setTimeout: () => 0,
+    clearTimeout: () => {},
+    Promise,
+    Date,
+    Object,
+    Number,
+    String,
+    parseInt,
+    encodeURIComponent,
+    decodeURIComponent,
+    require: (spec) => {
+      for (const [k, v] of Object.entries(fakes.modules)) if (spec.endsWith(k)) return v
+      throw new Error(`未模拟的依赖：${spec}`)
+    }
+  }
+  vm.runInNewContext(src, sandbox, { filename: 'page.js' })
+  if (!def) throw new Error('页面未调用 Page()')
+  const data = JSON.parse(JSON.stringify(def.data || {}))
+  const inst = { data, setData(patch) { Object.assign(data, patch) } }
+  for (const [k, fn] of Object.entries(def)) if (typeof fn === 'function') inst[k] = fn.bind(inst)
+  return inst
+}
+
+async function runOnboarding(onbSrc, doneSrc) {
+  const calls = { redirect: [], track: [], left: 0 }
+  const wx = {
+    redirectTo: (o) => calls.redirect.push(o.url), switchTab() {}, navigateTo() {}, showToast() {}, showLoading() {}, hideLoading() {},
+    setNavigationBarTitle() {}, getSystemInfoSync: () => ({ windowWidth: 375, safeAreaInsets: { bottom: 0 } }),
+    createSelectorQuery: () => ({ in() { return this }, select() { return this }, boundingClientRect() { return this }, exec() {} }),
+    cloud: { callFunction: async () => ({ result: { success: false } }) }
+  }
+  let stored = {}
+  const modules = {
+    '/utils/trackBehavior': { trackBehavior: (...a) => calls.track.push(a) },
+    '/utils/profileConstants': { REGISTER_GIFT: { points: 0, coupons: [{ id: 'a', value: 20, minSpend: 199 }, { id: 'b', value: 10, minSpend: 99 }] } },
+    '/utils/userSession': {
+      ensureSession: async () => ({ success: false }),
+      refreshSessionAfterAuth: async () => ({}),
+      leaveOnboardingToReturn: () => { calls.left += 1; return true },
+      saveOnboardingReturn: (v) => { stored = v },
+      peekOnboardingReturn: () => stored
+    },
+    '/utils/profileHelper': { sanitizeNickName: (v) => String(v || '').trim(), resolvePrefillNickName: () => '' },
+    '/utils/pageNav': { getPageNavInsets: () => ({ headerBlockPx: 80, safeBottom: 0, statusBarHeight: 20, navPaddingRight: 16 }), rpxToPx: (v) => v / 2 },
+    '/utils/systemInfo': { getWindowInfo: () => ({ windowWidth: 375 }) },
+    '/utils/cacheInvalidate': { invalidateAfterProfile() {} }
+  }
+  const out = {}
+  // ① 无回流：注册成功 → 原页成功态，不 redirect
+  let pg = loadPage(onbSrc, { wx, modules })
+  stored = {}
+  pg.onLoad({ from: 'counter_qr' })
+  pg.goDoneFromPayload({ isNewUser: true, registerGift: { claimed: true, couponCount: 2 }, reward: {} })
+  out.inPlace = pg.data.doneView === true && calls.redirect.length === 0 && pg.data.showCouponsEntry === true && pg.data.giftCoupons === 2
+  out.counterStandalone = pg.data.hasReturn === false && pg.data.primaryCta === '开始逛馆'
+  // ② 有回流且礼包正常：照旧直接带回
+  calls.redirect.length = 0; calls.left = 0
+  pg = loadPage(onbSrc, { wx, modules })
+  stored = {}
+  pg.onLoad({ from: 'checkout', returnMode: 'back' })
+  pg.goDoneFromPayload({ isNewUser: true, registerGift: { claimed: true, couponCount: 2 }, reward: {} })
+  out.returnUnchanged = calls.left === 1 && pg.data.doneView !== true
+  // ③ 老号确认手机号：欢迎回来分支
+  pg = loadPage(onbSrc, { wx, modules })
+  stored = {}
+  pg.onLoad({ from: '' })
+  pg.goDoneFromPayload({ isNewUser: false, registerGift: { alreadyGranted: true, couponCount: 0 }, reward: {} })
+  out.welcomeBack = pg.data.doneView === true && pg.data.welcomeBack === true && pg.data.isNewUser === false
+  // ④ ?done=1（旧完成页重定向过来）：直接成功态，不记开始 / 曝光
+  calls.track.length = 0
+  pg = loadPage(onbSrc, { wx, modules })
+  stored = {}
+  pg.onLoad({ done: '1', isNew: '1', gift: '1', coupons: '2', msg: '%E5%B7%B2%E5%88%B0%E8%B4%A6', from: 'counter_qr' })
+  out.doneParam = pg.data.doneView === true && pg.data.giftCoupons === 2 && pg.data.giftMsg === '已到账'
+  out.doneNoStartTrack = !calls.track.some((t) => t[0] === 'onboarding_start' || (t[0] === 'register_panel' && t[3] && t[3].step === 'show'))
+  pg.onUnload && pg.onUnload()
+  out.doneNoDismiss = !calls.track.some((t) => t[0] === 'register_panel' && t[3] && t[3].step === 'dismiss')
+  // ⑤ 旧完成页：带全部原参数重定向、不二次编码
+  calls.redirect.length = 0
+  const done = loadPage(doneSrc, { wx, modules })
+  done.onLoad({ reward: '0', isNew: '0', gift: '1', giftPartial: '0', giftFail: '0', points: '0', coupons: '2', msg: '%E5%B7%B2', from: 'counter_qr' })
+  const url = calls.redirect[0] || ''
+  out.doneRedirect = url.startsWith('/subpackages/extra/user/onboarding/index?done=1&')
+    && ['reward=0', 'isNew=0', 'gift=1', 'giftPartial=0', 'giftFail=0', 'points=0', 'coupons=2', 'msg=%E5%B7%B2', 'from=counter_qr'].every((kv) => url.includes(`&${kv}`))
+  return out
+}
+
 /* ── 判据 ─────────────────────────────────────────────────────────────── */
 async function evaluate(src) {
   const fails = []
@@ -277,6 +376,24 @@ async function evaluate(src) {
   const certShow = methodBody(certJs, 'onShow')
   check('证书改名回来：署名仍为默认则不重签，改了才重签', /if \(!nick \|\| nick === DEFAULT_NICK\) return/.test(certShow) && /this\.mintFresh\(\)/.test(certShow) && /if \(!this\._renaming/.test(certShow))
 
+  // S3 完成页并入
+  check('旧完成页路径仍在 app.json（运营位 / 旧链接可达）', /"user\/onboarding\/done"/.test(src.appJson))
+  check('注册页不再 redirect 到完成页', !/onboarding\/done/.test(stripComments(src.onbJs)))
+  check('注册页表单与成功态互斥渲染', /<block wx:if="\{\{!doneView\}\}">/.test(src.onbWxml) && /wx:if="\{\{doneView\}\}"\s*class="page-done/.test(src.onbWxml))
+  check('收银台码仍是独立入口（不继承历史回流）', /const isStandalone = from === 'counter_qr'/.test(onb))
+  let ob = null
+  try { ob = await runOnboarding(src.onbJs, src.doneJs) } catch (e) { check('注册页 / 旧完成页可被真跑', false, e.message) }
+  if (ob) {
+    check('真跑：无回流注册成功 → 原页成功态、不跳页，礼券入口在', ob.inPlace)
+    check('真跑：收银台码成功态主按钮为「开始逛馆」（不带回旧场景）', ob.counterStandalone)
+    check('真跑：有回流且礼包正常 → 照旧直接带回原页', ob.returnUnchanged)
+    check('真跑：老号确认手机号 → 「欢迎回来」分支', ob.welcomeBack)
+    check('真跑：?done=1 → 成功态、参数解码正确', ob.doneParam)
+    check('真跑：?done=1 不记开始事件 / 注册曝光', ob.doneNoStartTrack)
+    check('真跑：?done=1 离开不记「先不注册」', ob.doneNoDismiss)
+    check('真跑：旧完成页带全部原参数重定向到成功态、不二次编码', ob.doneRedirect)
+  }
+
   // S1-2 requirePhone 真跑
   let rp = null
   try { rp = await runRequirePhone(src.session) } catch (e) { check('requirePhone 可被真跑', false, e.message) }
@@ -321,6 +438,13 @@ const INJECTIONS = [
   { name: '补资料提示对未注册的人也出', key: 'userJs', from: 'showProfileHint: !needOnboard && !!session.onboardingDone && ', to: 'showProfileHint: ' },
   { name: '证书改名回来无条件重签', key: 'certJs', from: '      if (!nick || nick === DEFAULT_NICK) return;\n', to: '' },
   { name: '证书默认署名不提示', key: 'certJs', from: '          this.setData({ signHint: !nick || nick === DEFAULT_NICK });\n', to: '' },
+  { name: '注册成功退回 redirect 完成页', key: 'onbJs', from: '    this.showDone({\n      reward:', to: "    wx.redirectTo({ url: '/subpackages/extra/user/onboarding/done?isNew=1' })\n    this.showDone({\n      reward:" },
+  { name: '旧完成页路径从 app.json 删掉', key: 'appJson', from: '"user/onboarding/done"', to: '"user/onboarding/done-removed"' },
+  { name: '旧完成页重定向丢参数', key: 'doneJs', from: "['done=1'].concat(q).join('&')", to: "['done=1'].join('&')" },
+  { name: '旧完成页重定向二次编码', key: 'doneJs', from: '.map((k) => `${k}=${options[k]}`)', to: '.map((k) => `${k}=${encodeURIComponent(options[k])}`)' },
+  { name: '?done=1 仍记开始事件', key: 'onbJs', from: "      this._funnelEnded = true\n      this.showDone(options)\n      return", to: "      trackBehavior('onboarding_start', 'from', 'done')\n      this.showDone(options)\n      return" },
+  { name: '老号成功态丢「欢迎回来」', key: 'onbJs', from: '      welcomeBack: !isNewUser && !hasReturn,', to: '      welcomeBack: false,' },
+  { name: '有回流也停在成功态（不带回原页）', key: 'onbJs', from: '    if (this.data.hasReturn && !giftFailed && !giftPartial) {', to: '    if (false) {' },
   { name: '弹层未勾选也放行注册', key: 'dialogJs', from: "    async onGetPhoneNumber(e) {\n      if (this.data.saving || !this.data.agreed) return", to: '    async onGetPhoneNumber(e) {\n      if (this.data.saving) return' }
 ]
 
@@ -353,5 +477,6 @@ if (process.argv.includes('--selftest')) {
   }
   console.log('✓ 全局注册简化：S4 统一漏斗 register_panel 双端登记、三处面板四步齐全、旧事件照旧、注册弹层真跑（曝光去重 / 先不注册 / 未勾不注册 / 成功）'
     + ' · S1 结算 / 预约 / 礼赠原地弹层（跨分包占位按需加载、可关、成功续做、未就绪退回跳页）、requirePhone 真跑'
-    + ' · S2 注册页只问手机号（默认「藏家」）、「我的」补资料提示可关、证书默认署名就地提示改名重签')
+    + ' · S2 注册页只问手机号（默认「藏家」）、「我的」补资料提示可关、证书默认署名就地提示改名重签'
+    + ' · S3 完成页并入注册页成功态（真跑：原页切换 / 回流照旧 / 欢迎回来 / 旧路径带参重定向）')
 }
