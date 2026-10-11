@@ -302,6 +302,50 @@ page {
 
 /* 完成奖励旧类保留兼容 */
 
+.agree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding-top: 0;
+  border-top: none;
+}
+
+.agree-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.phone-bound-plate {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background: rgba(82, 183, 136, 0.08);
+  border: 1px solid rgba(82, 183, 136, 0.28);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.phone-bound-label {
+  display: block;
+  font-size: 20rpx;
+  color: var(--color-success);
+  letter-spacing: 0.06em;
+  margin-bottom: 6rpx;
+}
+
+.phone-bound-value {
+  display: block;
+  font-size: 30rpx;
+  font-family: var(--font-mono);
+  color: var(--color-text-body);
+}
+
+.page-onboard.is-phone-only .step-hero.compact,
+.page-onboard.is-return .step-hero.compact {
+  margin-bottom: var(--space-4);
+}
+
+/* 完成奖励旧类保留兼容 */
+
 .avatar-plate {
   display: flex;
   flex-direction: column;

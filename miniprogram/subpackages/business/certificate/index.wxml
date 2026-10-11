@@ -30,6 +30,7 @@
        <image wx:if="{{certImageUrl}}" class="cert-canvas" src="{{certImageUrl}}" mode="aspectFit" binderror="onCertImageError"></image>
        <canvas type="2d" id="certCanvas" class="cert-canvas {{certImageUrl ? 'cert-canvas-off' : ''}}"></canvas>
     </view>
+    <view class="sign-hint" wx:if="{{signHint && showCert}}" bindtap="goRename" hover-class="tap-press-soft" hover-stay-time="80">证书署名为「藏家」· 改个名字重新签发 ›</view>
     
     <!-- 底部操作 -->
     <view class="action-bar safe-area">

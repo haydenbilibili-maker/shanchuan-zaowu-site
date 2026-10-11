@@ -73,44 +73,6 @@
         <text class="reward-plate-note">与授权同步到账；已领取不会重复发放。</text>
       </view>
 
-      <block wx:if="{{showProfileExtras}}">
-        <view
-          class="avatar-plate"
-          hover-class="tap-press-soft"
-          hover-stay-time="80"
-          catchtap="onChangeAvatar"
-          aria-label="设定头像（选填）"
-        >
-          <view class="avatar-stack">
-            <view class="avatar-btn">
-              <image class="avatar-img" src="{{avatarUrl || '/assets/icons/user.png'}}" mode="aspectFill"></image>
-            </view>
-            <view class="avatar-badge" aria-hidden="true">
-              <image class="avatar-badge-icon" src="/assets/icons/camera.png" mode="aspectFit"></image>
-            </view>
-          </view>
-          <text class="avatar-hint">{{avatarUrl ? '点击更换' : '头像选填'}}</text>
-        </view>
-
-        <view class="account-section-card">
-          <view class="account-field">
-            <text class="account-field-label">藏家代号（选填）</text>
-            <text class="account-field-hint" wx:if="{{nickName}}">已带出，可修改</text>
-            <text class="account-field-hint" wx:else>轻点可选用微信昵称；不填则为「藏家」</text>
-            <input
-              class="account-field-input"
-              type="nickname"
-              maxlength="20"
-              placeholder="轻点选用微信昵称"
-              value="{{nickName}}"
-              bindinput="onNickInput"
-              bindblur="onNickBlur"
-              bindnicknamereview="onNicknameReview"
-            />
-          </view>
-        </view>
-      </block>
-
       <view class="phone-bound-plate" wx:if="{{phoneBound}}">
         <text class="phone-bound-label">已绑定</text>
         <text class="phone-bound-value">{{phoneMasked}}</text>

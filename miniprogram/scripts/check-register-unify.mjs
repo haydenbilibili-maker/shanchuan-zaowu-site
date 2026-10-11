@@ -9,6 +9,8 @@
  *   S1 门禁原地化：结算 / 预约 / 礼赠收下与核验都挂页面内注册弹层（跨分包必须登记 componentPlaceholder = 按需加载、不进主包），
  *               可关（先不注册）、成功后续做原动作；组件未就绪时退回跳注册页（旧路径照旧可用）；
  *               requirePhone 真跑：带 inline 且弹层就绪 → 不跳页；inline 返回 false / 不带 inline → 照旧跳注册页；已绑号 → 直接放行。
+ *   S2 注册页瘦身：注册页不再收集昵称 / 头像（默认「藏家」、协议同意时间照写）；「我的」页已注册且署名默认或无头像时出可关的补资料提示；
+ *               收藏证书首次签发署名为默认「藏家」时就地提示改名重签（不拦签发），改完名回来才重签。
  *
  * 用法：node miniprogram/scripts/check-register-unify.mjs [--selftest]
  * 自检：对真源码做内存注入（不写盘），每条都必须检出。
@@ -36,7 +38,12 @@ const P = {
   bkWxml: 'miniprogram/subpackages/business/booking/index.wxml',
   grJs: 'miniprogram/subpackages/feature/gift/receive/index.js',
   grJson: 'miniprogram/subpackages/feature/gift/receive/index.json',
-  grWxml: 'miniprogram/subpackages/feature/gift/receive/index.wxml'
+  grWxml: 'miniprogram/subpackages/feature/gift/receive/index.wxml',
+  onbWxml: 'miniprogram/subpackages/extra/user/onboarding/index.wxml',
+  userJs: 'miniprogram/pages/user/index.js',
+  userWxml: 'miniprogram/pages/user/index.wxml',
+  certJs: 'miniprogram/subpackages/business/certificate/index.js',
+  certWxml: 'miniprogram/subpackages/business/certificate/index.wxml'
 }
 const DIALOG_PATH = '/subpackages/feature/components/RegisterAuthDialog/index'
 /** S1 门禁页：页面前缀 / 是否跨分包 / 成功后必须续做的方法 */
@@ -248,6 +255,28 @@ async function evaluate(src) {
     for (const r of g.resume) check(`${g.name}页注册成功后续做 ${r}`, new RegExp(`this\\.${r}\\(`).test(succ))
     check(`${g.name}页关闭弹层只收起`, /regDialogShow: false/.test(methodBody(js, 'onRegDialogClose')))
   }
+  // S2-1 注册页只问手机号
+  check('注册页不再有昵称输入 / 头像选择', !/type="nickname"|avatar-plate|onChangeAvatar|chooseAvatar/.test(src.onbWxml))
+  check('注册页不再上传头像', !/uploadFile|pickAvatar/.test(onb))
+  const patchFn = methodBody(onb, 'buildProfilePatch')
+  check('注册补丁：昵称取已有 / 预填 / 默认「藏家」，照写同意时间，不带头像',
+    /nickName: this\.resolveNickName\(\)/.test(patchFn) && /agreedTermsAt: new Date\(\)\.toISOString\(\)/.test(patchFn)
+    && !/avatarUrl/.test(patchFn) && /const FALLBACK_NICK = '藏家'/.test(onb) && /\|\| FALLBACK_NICK/.test(methodBody(onb, 'resolveNickName')))
+  // S2-2「我的」页补资料提示
+  const userJs = stripComments(src.userJs)
+  const hintTag = (/<view class="onboard-banner[^"]*"[^>]*wx:if="\{\{showProfileHint[\s\S]*?catchtap="dismissProfileHint"/.exec(src.userWxml) || [''])[0]
+  check('「我的」页有补资料提示且可关', !!hintTag && /bindtap="goProfileHint"/.test(hintTag))
+  check('补资料提示只对已注册、署名默认「藏家」或无头像的人', /showProfileHint: !needOnboard && !!session\.onboardingDone && !hintOff && \(defaultNick \|\| !user\.avatarUrl\)/.test(userJs)
+    && /const defaultNick = !nick \|\| nick === '藏家'/.test(userJs))
+  check('补资料提示去资料页、关掉后不再出现', /goProfileHint\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/extra\/user\/profile\/index' \}\)/.test(userJs)
+    && /setStorageSync\('profile_hint_off', 1\)/.test(userJs) && /getStorageSync\('profile_hint_off'\)/.test(userJs))
+  // S2-3 证书首次署名就地提示
+  const certJs = stripComments(src.certJs)
+  check('证书首次签发：署名默认时亮出提示（不拦签发）', /this\.setData\(\{ signHint: !nick \|\| nick === DEFAULT_NICK \}\)/.test(certJs) && /const DEFAULT_NICK = '藏家'/.test(certJs))
+  check('证书提示可点去改名', /class="sign-hint" wx:if="\{\{signHint && showCert\}\}" bindtap="goRename"/.test(src.certWxml))
+  const certShow = methodBody(certJs, 'onShow')
+  check('证书改名回来：署名仍为默认则不重签，改了才重签', /if \(!nick \|\| nick === DEFAULT_NICK\) return/.test(certShow) && /this\.mintFresh\(\)/.test(certShow) && /if \(!this\._renaming/.test(certShow))
+
   // S1-2 requirePhone 真跑
   let rp = null
   try { rp = await runRequirePhone(src.session) } catch (e) { check('requirePhone 可被真跑', false, e.message) }
@@ -285,6 +314,13 @@ const INJECTIONS = [
   { name: '预约页弹层未就绪不退回（永远当作已打开）', key: 'bkJs', from: "    if (!this.selectComponent('#regDialog')) return false;\n", to: '' },
   { name: 'requirePhone 忽略 inline 返回值（未就绪也不跳页 → 用户卡住）', key: 'session', from: "options.inline({ from, phoneOnly }) !== false) return false", to: 'options.inline({ from, phoneOnly }) !== null) return false' },
   { name: 'requirePhone 带 inline 仍跳注册页', key: 'session', from: "  if (typeof options.inline === 'function' && options.inline({ from, phoneOnly }) !== false) return false\n", to: '' },
+  { name: '注册页重新加回昵称输入', key: 'onbWxml', from: '      <view class="phone-bound-plate"', to: '      <input type="nickname" bindinput="onNickInput" />\n      <view class="phone-bound-plate"' },
+  { name: '注册补丁丢掉同意时间', key: 'onbJs', from: "      agreedTermsAt: new Date().toISOString(),\n      onboardingStep: 1", to: '      onboardingStep: 1' },
+  { name: '默认昵称不再是「藏家」', key: 'onbJs', from: "const FALLBACK_NICK = '藏家'", to: "const FALLBACK_NICK = ''" },
+  { name: '「我的」补资料提示不可关', key: 'userWxml', from: '    <view class="onboard-banner-close" catchtap="dismissProfileHint">×</view>\n', to: '' },
+  { name: '补资料提示对未注册的人也出', key: 'userJs', from: 'showProfileHint: !needOnboard && !!session.onboardingDone && ', to: 'showProfileHint: ' },
+  { name: '证书改名回来无条件重签', key: 'certJs', from: '      if (!nick || nick === DEFAULT_NICK) return;\n', to: '' },
+  { name: '证书默认署名不提示', key: 'certJs', from: '          this.setData({ signHint: !nick || nick === DEFAULT_NICK });\n', to: '' },
   { name: '弹层未勾选也放行注册', key: 'dialogJs', from: "    async onGetPhoneNumber(e) {\n      if (this.data.saving || !this.data.agreed) return", to: '    async onGetPhoneNumber(e) {\n      if (this.data.saving) return' }
 ]
 
@@ -316,5 +352,6 @@ if (process.argv.includes('--selftest')) {
     process.exit(1)
   }
   console.log('✓ 全局注册简化：S4 统一漏斗 register_panel 双端登记、三处面板四步齐全、旧事件照旧、注册弹层真跑（曝光去重 / 先不注册 / 未勾不注册 / 成功）'
-    + ' · S1 结算 / 预约 / 礼赠原地弹层（跨分包占位按需加载、可关、成功续做、未就绪退回跳页）、requirePhone 真跑')
+    + ' · S1 结算 / 预约 / 礼赠原地弹层（跨分包占位按需加载、可关、成功续做、未就绪退回跳页）、requirePhone 真跑'
+    + ' · S2 注册页只问手机号（默认「藏家」）、「我的」补资料提示可关、证书默认署名就地提示改名重签')
 }

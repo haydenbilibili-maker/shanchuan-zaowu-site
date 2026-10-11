@@ -11,7 +11,6 @@ const {
   peekOnboardingReturn
 } = require('../../../../utils/userSession')
 const { sanitizeNickName, resolvePrefillNickName } = require('../../../../utils/profileHelper')
-const { pickAvatarImage, avatarExtFromPath, toastAvatarPickError } = require('../../../../utils/pickAvatar')
 const { getPageNavInsets } = require('../../utils/pageNav')
 
 const HEADER_EXTRA_RPX = 56
@@ -178,7 +177,7 @@ const COPY_BY_FROM = {
     navSub: 'WELCOME · ONE STEP',
     overline: 'CABINET',
     title: '打开你的奇珍柜',
-    desc: '勾选协议并授权手机号，即可完成注册。新客礼即时放入账户；昵称与头像选填。',
+    desc: '勾选协议并授权手机号，即可完成注册。新客礼即时放入账户；昵称与头像可稍后在「我的」里补。',
     ctaPhone: '授权手机号 · 领取新客礼',
     ctaFinish: '完成注册 · 领取新客礼',
     loading: '正在放入礼包',
@@ -202,7 +201,6 @@ Page({
     phoneOnly: false,
     hasReturn: false,
     showGiftPack: true,
-    showProfileExtras: true,
     /** 会话是否已返回：未返回前用中性文案，且不渲染新客礼卡（详见 NEUTRAL_COPY） */
     accountReady: false,
     /** 该微信是否已注册（老号走登录态文案，不承诺新客礼） */
@@ -217,7 +215,6 @@ Page({
     loadingText: NEUTRAL_COPY.loading,
     agreed: false,
     agreeShake: false,
-    avatarUrl: '',
     nickName: '',
     phoneBound: false,
     phoneMasked: '',
@@ -270,9 +267,7 @@ Page({
       returnUrl: resolvedReturnUrl,
       returnMode: resolvedReturnMode,
       hasReturn: !!(resolvedReturnUrl || resolvedReturnMode === 'back'),
-      showGiftPack: !phoneOnly && this.data.showGiftPack,
-      // 资料补充区也等会话回来再决定（老号的资料已存在，不该再让填一遍）
-      showProfileExtras: false
+      showGiftPack: !phoneOnly && this.data.showGiftPack
     })
     trackBehavior('onboarding_start', 'from', resolvedFrom || 'direct')
     this._funnel('show')
@@ -389,15 +384,13 @@ Page({
       : resolveCopy(this.data.from, isRegistered)
 
     this.setData(Object.assign({
-      avatarUrl: u.avatarUrl || '',
       nickName,
       phoneBound,
       phoneMasked: u.phoneMasked || '',
       phoneOnly,
       accountReady: true,
       isRegistered,
-      showGiftPack: !phoneOnly && !giftClaimed,
-      showProfileExtras: !phoneOnly && !this.data.hasReturn
+      showGiftPack: !phoneOnly && !giftClaimed
     }, copy ? {
       navTitle: copy.navTitle,
       navSub: copy.navSub,
@@ -429,40 +422,6 @@ Page({
           : '/subpackages/extra/user/profile/index'
         wx.redirectTo({ url: target })
       }
-    }
-  },
-
-  async onChangeAvatar() {
-    try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
-    try {
-      const path = await pickAvatarImage()
-      this.setData({ avatarUrl: path })
-    } catch (err) {
-      toastAvatarPickError(err)
-    }
-  },
-
-  onNickInput(e) {
-    this.setData({ nickName: e.detail.value || '' })
-  },
-
-  onNickBlur(e) {
-    const raw = (e && e.detail && e.detail.value != null)
-      ? e.detail.value
-      : this.data.nickName
-    const nick = sanitizeNickName(raw)
-    if (String(raw || '').trim() && !nick) {
-      this.setData({ nickName: '' })
-      wx.showToast({ title: '请使用真实昵称', icon: 'none' })
-      return
-    }
-    if (nick !== this.data.nickName) this.setData({ nickName: nick })
-  },
-
-  onNicknameReview(e) {
-    if (e && e.detail && e.detail.pass === false) {
-      this.setData({ nickName: '' })
-      wx.showToast({ title: '昵称未通过审核，请换一个', icon: 'none' })
     }
   },
 
@@ -504,29 +463,13 @@ Page({
       || FALLBACK_NICK
   },
 
-  async uploadAvatarIfNeeded() {
-    const { avatarUrl } = this.data
-    if (!avatarUrl || avatarUrl.startsWith('cloud://')) return avatarUrl
-    const openid = app.globalData.openid || 'user'
-    const ext = avatarExtFromPath(avatarUrl)
-    const res = await wx.cloud.uploadFile({
-      cloudPath: `avatars/${openid}/${Date.now()}.${ext}`,
-      filePath: avatarUrl
-    })
-    if (!res || !res.fileID) throw new Error('AVATAR_UPLOAD')
-    return res.fileID
-  },
-
-  buildProfilePatch(avatarUrl) {
-    const patch = {
+  /** 注册只问手机号：昵称沿用已有 / 预填，否则默认「藏家」；头像不在注册时收集（「我的」资料页后补） */
+  buildProfilePatch() {
+    return {
       nickName: this.resolveNickName(),
       agreedTermsAt: new Date().toISOString(),
       onboardingStep: 1
     }
-    if (avatarUrl || this.data.avatarUrl) {
-      patch.avatarUrl = avatarUrl || this.data.avatarUrl
-    }
-    return patch
   },
 
   returnAfterSuccess(opts) {
@@ -586,11 +529,7 @@ Page({
   },
 
   async finishRegistration(extra) {
-    const avatarUrl = this.data.showProfileExtras
-      ? await this.uploadAvatarIfNeeded()
-      : (this.data.avatarUrl && this.data.avatarUrl.startsWith('cloud://') ? this.data.avatarUrl : '')
-    if (avatarUrl) this.setData({ avatarUrl })
-    const patch = this.buildProfilePatch(avatarUrl)
+    const patch = this.buildProfilePatch()
 
     if (extra && extra.phoneCode) {
       const res = await wx.cloud.callFunction({

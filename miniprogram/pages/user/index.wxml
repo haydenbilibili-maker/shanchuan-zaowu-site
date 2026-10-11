@@ -39,6 +39,18 @@
     </view>
     <view class="onboard-banner-close" catchtap="dismissGiftRepairBanner">×</view>
   </view>
+
+  <!-- 资料后补（注册只问手机号）：已注册而昵称仍为默认「藏家」或没头像时提示，可关 -->
+  <view class="onboard-banner stagger-item" wx:if="{{showProfileHint && !isLocalLoggedOut && !showOnboardingBanner && !showGiftRepairBanner}}" style="animation-delay: 0s;" hover-class="onboard-banner-press">
+    <view class="onboard-banner-body" bindtap="goProfileHint">
+      <view class="onboard-banner-text">
+        <text class="onboard-banner-title">补全藏家档案</text>
+        <text class="onboard-banner-desc">{{profileHintDesc}}</text>
+      </view>
+      <text class="onboard-banner-cta">去补</text>
+    </view>
+    <view class="onboard-banner-close" catchtap="dismissProfileHint">×</view>
+  </view>
   
   <user-vip-card
     card-flipped="{{cardFlipped}}"

@@ -17,6 +17,8 @@ function formatCertDay(ms) {
  * 收藏证书只认签发日（持有人信息以首次签发为准，像实体证书一样不随改名变）；
  * 赠予凭证另含对方状态与称呼（TA 签收 / 领取后凭证文字会变，需重新签发一次）。
  */
+const DEFAULT_NICK = '藏家';
+
 function certSig(kind, data) {
   const parts = [kind, data.date, 'v2'];
   if (kind === 'gift_voucher' && data.gift) parts.push(data.gift.statusLabel || '', data.gift.recipientName || '');
@@ -61,6 +63,24 @@ Page({
       this.setData({ isMinting: false, missingId: true });
       wx.showToast({ title: '证书不存在', icon: 'none' });
     }
+  },
+
+  /** 从「我的资料」改完名回来：署名已不是默认值才重签（同一订单同一证书，覆盖固化图） */
+  async onShow() {
+    if (!this._renaming || !this._mint) return;
+    this._renaming = false;
+    try {
+      const res = await db.collection('users').where({ _openid: app.globalData.openid }).get();
+      const nick = String(((res.data || [])[0] || {}).nickName || '').trim();
+      if (!nick || nick === DEFAULT_NICK) return;
+    } catch (e) { return; }
+    this.setData({ signHint: false, certImageUrl: '', isMinting: true, showCert: false });
+    this.mintFresh();
+  },
+
+  goRename() {
+    this._renaming = true;
+    wx.navigateTo({ url: '/subpackages/extra/user/profile/index' });
   },
 
   async startMinting(orderId) {
@@ -154,7 +174,10 @@ Page({
       try {
         const userRes = await db.collection('users').where({ _openid: app.globalData.openid }).get();
         if (userRes.data && userRes.data.length > 0) {
-          certData.user = userRes.data[0].nickName || 'COLLECTOR';
+          const nick = String(userRes.data[0].nickName || '').trim();
+          certData.user = nick || 'COLLECTOR';
+          // 注册不再问昵称（默认「藏家」）：首次签发时就地提示可改名重签，不拦签发
+          this.setData({ signHint: !nick || nick === DEFAULT_NICK });
           const lvMap = {
             1: '原木·见习者',
             2: '秘银·采集家',

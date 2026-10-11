@@ -253,3 +253,12 @@ view, text, image, button { box-sizing: border-box; }
 .save-btn:active::before {
   opacity: 1;
 }
+
+/* 默认署名就地提示（注册不再问昵称） */
+.sign-hint {
+  margin-top: 24rpx;
+  padding: 12rpx 24rpx;
+  font-size: 24rpx;
+  color: var(--brass-400);
+  text-align: center;
+}

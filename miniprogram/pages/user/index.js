@@ -814,9 +814,15 @@ Page(withAppModal({
         && user
         && (user.registerGiftClaimed === false || user.registerGiftIncomplete === true)
       );
+      const nick = String(user.nickName || '').trim();
+      const defaultNick = !nick || nick === '藏家';
+      let hintOff = false;
+      try { hintOff = !!wx.getStorageSync('profile_hint_off'); } catch (e) { /* ignore */ }
       this.setData({
         showOnboardingBanner: needOnboard,
         showGiftRepairBanner: !needOnboard && needGiftRepair,
+        showProfileHint: !needOnboard && !!session.onboardingDone && !hintOff && (defaultNick || !user.avatarUrl),
+        profileHintDesc: defaultNick ? '署名仍是「藏家」，补个昵称和头像，收藏证书与祈福墙都用它' : '还没有头像，补一张让藏家档案更完整',
         onboardingResumeStep: (session.user && session.user.onboardingStep) || 1,
         onboardingDone: session.onboardingDone === true,
         isLocalLoggedOut: false
@@ -830,6 +836,15 @@ Page(withAppModal({
 
   dismissOnboardingBanner() {
     this.setData({ showOnboardingBanner: false });
+  },
+
+  goProfileHint() {
+    wx.navigateTo({ url: '/subpackages/extra/user/profile/index' });
+  },
+
+  dismissProfileHint() {
+    try { wx.setStorageSync('profile_hint_off', 1); } catch (e) { /* ignore */ }
+    this.setData({ showProfileHint: false });
   },
 
   dismissGiftRepairBanner() {
