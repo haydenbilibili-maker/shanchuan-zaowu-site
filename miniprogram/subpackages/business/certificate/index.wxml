@@ -40,7 +40,7 @@
       </view>
       <view class="action-row">
         <button class="icon-btn share" open-type="share" hover-class="tap-press">
-          <image src="/assets/icons/share.png" class="btn-icon"></image>
+          <image src="/assets/icons/share.png" class="btn-icon" mode="aspectFit"></image>
           <text>分享</text>
         </button>
         

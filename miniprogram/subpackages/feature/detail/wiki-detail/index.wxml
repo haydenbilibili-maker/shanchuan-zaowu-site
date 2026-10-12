@@ -71,7 +71,7 @@
     <!-- 画廊 (标本模式显示) -->
     <scroll-view scroll-x class="gallery-scroll" wx:if="{{wiki.type !== 'exhibition' && wiki.gallery && wiki.gallery.length > 0}}">
       <block wx:for="{{wiki.gallery}}" wx:key="*this">
-        <view class="gallery-item" bindtap="previewImage" data-src="{{item}}">
+        <view class="gallery-item" bindtap="previewImage" data-src="{{item}}" hover-class="tap-press-soft" hover-stay-time="80">
            <image src="{{item}}" mode="aspectFill" lazy-load></image>
         </view>
       </block>

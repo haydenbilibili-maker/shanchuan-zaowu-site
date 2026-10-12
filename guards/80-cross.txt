@@ -2,6 +2,8 @@
 # 只有该域的 owner 改它（见 docs/并发工作流注册表.json）；跨流加守卫请提变更请求。
 # 校验：npm run check:guards-coverage
 npm run lint:wxml
+# 2026-10-13：WXML 绑定的处理函数必须在页面 / 组件 JS 里有定义（起因：地址页手动新增表单「省市区」「设为默认」绑定名与实现名不一致，一个月点了没反应）
+npm run check:wxml-handlers
 npm run check:silent-catch
 npm run check:write-verify:strict
 npm run check:store-points

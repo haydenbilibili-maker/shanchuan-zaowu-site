@@ -20,6 +20,8 @@
     "check:miniprogram-sync": "node scripts/check-miniprogram-sync.mjs",
     "check:miniprogram-sync:selftest": "node scripts/check-miniprogram-sync.mjs --selftest",
     "lint:wxml": "node miniprogram/scripts/check-wxml.mjs miniprogram",
+    "check:wxml-handlers": "node miniprogram/scripts/check-wxml-handlers.mjs",
+    "check:wxml-handlers:selftest": "node miniprogram/scripts/check-wxml-handlers.mjs --selftest",
     "lint:wxml:selftest": "node miniprogram/scripts/check-wxml.mjs --selftest",
     "check:welcome-gift": "node miniprogram/scripts/check-welcome-gift-config.cjs",
     "check:welcome-gift:selftest": "node miniprogram/scripts/check-welcome-gift-config.cjs --selftest",

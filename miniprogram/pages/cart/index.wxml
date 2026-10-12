@@ -14,7 +14,7 @@
       <text class="header-meta" wx:elif="{{!loading && currentFolder !== 'all'}}">当前：{{currentFolderName}}</text>
     </view>
     <view class="header-actions" wx:if="{{!loading && currentFolder !== 'all'}}">
-      <view class="text-btn" bindtap="switchToAll">返回全部</view>
+      <view class="text-btn" bindtap="switchToAll" hover-class="tap-press" hover-stay-time="80">返回全部</view>
     </view>
   </view>
 
@@ -79,7 +79,7 @@
                 </view>
 
                 <view class="card-body">
-                  <view class="thumb-wrap" catchtap="goToDetail" data-id="{{item.productId}}">
+                  <view class="thumb-wrap" catchtap="goToDetail" data-id="{{item.productId}}" hover-class="tap-press-soft" hover-stay-time="80">
                     <image class="thumb" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" lazy-load binderror="onCartThumbError" data-index="{{index}}"></image>
                     <view class="thumb-ph" wx:else>
                       <image class="thumb-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
@@ -100,7 +100,7 @@
                   </view>
 
                   <view class="info-col">
-                    <view class="info-top" catchtap="goToDetail" data-id="{{item.productId}}">
+                    <view class="info-top" catchtap="goToDetail" data-id="{{item.productId}}" hover-class="tap-press-soft" hover-stay-time="80">
                       <text class="name">{{item.title}}</text>
                       <text class="latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
                       <text class="sku-tag" wx:if="{{item.skuLabel}}">{{item.skuLabel}}</text>
@@ -118,7 +118,7 @@
                 </view>
               </view>
 
-              <view class="swipe-action" catchtap="deleteItem" data-index="{{index}}">
+              <view class="swipe-action" catchtap="deleteItem" data-index="{{index}}" hover-class="tap-press" hover-stay-time="80">
                 <view class="remove-btn">
                   <image class="remove-icon" src="/assets/icons/delete.png" mode="aspectFit"></image>
                   <text class="remove-txt">移除</text>
@@ -255,7 +255,7 @@
     </view>
 
     <view class="bar-main">
-      <view class="select-all" bindtap="toggleSelectAll">
+      <view class="select-all" bindtap="toggleSelectAll" hover-class="tap-press" hover-stay-time="80">
         <view class="gold-checkbox sm {{allSelected ? 'checked' : ''}}">
           <view class="tick" wx:if="{{allSelected}}"><image src="/assets/icons/done.png" mode="aspectFit"></image></view>
         </view>

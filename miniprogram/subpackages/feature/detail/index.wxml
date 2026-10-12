@@ -333,19 +333,19 @@ module.exports.saveLabel = saveLabel;
     <!-- 快捷功能 -->
     <view class="quick-actions">
       <view class="quick-btn" bindtap="showAR" hover-class="quick-btn-press" hover-stay-time="80">
-        <image src="/assets/icons/box.png" class="quick-icon"></image>
+        <image src="/assets/icons/box.png" class="quick-icon" mode="aspectFit"></image>
         <text>AR 试摆</text>
       </view>
       <view class="quick-btn" bindtap="show360" hover-class="quick-btn-press" hover-stay-time="80">
-        <image src="/assets/icons/trend.png" class="quick-icon"></image>
+        <image src="/assets/icons/trend.png" class="quick-icon" mode="aspectFit"></image>
         <text>360° 鉴赏</text>
       </view>
       <view class="quick-btn" bindtap="createPoster" hover-class="quick-btn-press" hover-stay-time="80">
-        <image src="/subpackages/feature/assets/icons/poster.png" class="quick-icon"></image>
+        <image src="/subpackages/feature/assets/icons/poster.png" class="quick-icon" mode="aspectFit"></image>
         <text>知识卡</text>
       </view>
       <view class="quick-btn" bindtap="handleAudio" hover-class="quick-btn-press" hover-stay-time="80">
-        <image src="/subpackages/feature/assets/icons/audio.png" class="quick-icon"></image>
+        <image src="/subpackages/feature/assets/icons/audio.png" class="quick-icon" mode="aspectFit"></image>
         <text>讲解</text>
       </view>
     </view>

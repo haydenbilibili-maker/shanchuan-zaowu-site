@@ -171,6 +171,16 @@ view, text { box-sizing: border-box; }
   background: #C4A76C;
   border-color: #C4A76C;
 }
+.check-box.on::after {
+  content: '';
+  display: block;
+  width: 8rpx;
+  height: 15rpx;
+  margin: 4rpx auto 0;
+  border: solid #1A1814;
+  border-width: 0 3rpx 3rpx 0;
+  transform: rotate(45deg);
+}
 .form-foot {
   padding: 16rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
   border-top: 1px solid rgba(38, 35, 32, 0.6);

@@ -49,21 +49,21 @@
       </view>
 
       <view class="form-body">
-        <view class="form-row">
+        <view class="form-field">
           <text class="form-label">收件人</text>
           <input class="form-input" placeholder="姓名" value="{{form.name}}" data-field="name" bindinput="onFormInput" />
         </view>
-        <view class="form-row">
+        <view class="form-field">
           <text class="form-label">手机号</text>
           <input class="form-input" type="number" maxlength="11" placeholder="11 位手机号" value="{{form.phone}}" data-field="phone" bindinput="onFormInput" />
         </view>
-        <view class="form-row" bindtap="onChooseRegion">
+        <view class="form-field">
           <text class="form-label">省市区</text>
-          <text class="form-value {{form.region.length ? '' : 'placeholder'}}">
-            {{form.region.length ? form.region[0] + ' ' + form.region[1] + ' ' + form.region[2] : '请选择'}}
-          </text>
+          <picker mode="region" value="{{form.region}}" bindchange="onRegionChange">
+            <view class="form-picker {{form.region.length ? '' : 'placeholder'}}">{{form.region.length ? form.region[0] + ' ' + form.region[1] + ' ' + form.region[2] : '请选择'}}</view>
+          </picker>
         </view>
-        <view class="form-row col">
+        <view class="form-field">
           <text class="form-label">详细地址</text>
           <textarea
             class="form-textarea"
@@ -75,13 +75,13 @@
             auto-height
           />
         </view>
-        <view class="form-row switch-row" bindtap="toggleDefault">
-          <text class="form-label">设为默认地址</text>
-          <view class="switch {{form.setAsDefault ? 'on' : ''}}"></view>
+        <view class="form-check" bindtap="toggleFormDefault">
+          <view class="check-box {{form.setAsDefault ? 'on' : ''}}"></view>
+          <text>设为默认地址</text>
         </view>
       </view>
 
-      <view class="form-footer">
+      <view class="form-foot">
         <view class="form-submit {{saving ? 'is-busy' : ''}}" bindtap="submitManualAddress" hover-class="{{saving ? '' : 'tap-press'}}" hover-stay-time="80">{{saving ? '保存中…' : '保存地址'}}</view>
       </view>
     </view>
