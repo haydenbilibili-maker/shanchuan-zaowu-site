@@ -241,12 +241,35 @@ page {
   line-height: 1.55;
 }
 
+.section-hint.is-picked {
+  color: var(--text-gold);
+  animation: pick-in 0.24s ease-out;
+}
+
+/* 犒劳自己：就近一张提示签（左缘金线），随选中入场 */
 .relation-self-note {
-  display: block;
-  margin-top: 16rpx;
-  font-size: 24rpx;
-  color: #C4A76C;
-  line-height: 1.55;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  margin-top: 4rpx;
+  padding: 16rpx 20rpx;
+  border-left: 4rpx solid var(--primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--primary-light);
+  animation: pick-in 0.24s ease-out;
+}
+.relation-self-k { font-size: 24rpx; font-weight: 500; color: var(--text-gold); }
+.relation-self-v { font-size: 24rpx; line-height: 1.5; color: var(--text-body); }
+
+/* 选了关系后的就近反馈：从下方轻移入场（每个关系各渲染一枚，换关系时重新播放） */
+@keyframes pick-in {
+  from { opacity: 0; transform: translateY(8rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes preset-pop {
+  0% { transform: scale(0.94); }
+  60% { transform: scale(1.04); }
+  100% { transform: scale(1); }
 }
 
 .note-relation-row {
@@ -276,6 +299,32 @@ page {
   border: 1px solid rgba(77, 64, 26, 0.55);
   border-radius: 16rpx;
   margin-bottom: 0;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.product-row.is-for {
+  border-color: var(--primary);
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.08), var(--bg-card) 70%);
+}
+
+/* 「送给 · X」小签：藏品卡里的选中摘要 */
+.for-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 14rpx;
+  padding: 6rpx 18rpx 6rpx 14rpx;
+  border-radius: 999rpx;
+  background: var(--primary);
+  color: var(--bg-root);
+  font-size: 22rpx;
+  font-weight: 500;
+  animation: pick-in 0.24s ease-out;
+}
+.for-tag-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: var(--bg-root);
 }
 
 .product-cover-wrap {
@@ -411,16 +460,7 @@ page {
   line-height: 1.5;
 }
 
-/* 小节标题：只是一行字，靠留白分隔，不加分割线 */
-.group-label {
-  display: block;
-  margin: 48rpx 0 20rpx;
-  font-size: 24rpx;
-  letter-spacing: 0.08em;
-  color: #A09A90;
-}
-
-.store-pick { margin-bottom: 28rpx; }
+.store-pick { margin-top: 28rpx; }
 .store-pick-label {
   display: block; font-size: 24rpx; color: #A09A90; margin-bottom: 12rpx;
 }
@@ -436,12 +476,65 @@ page {
 }
 .store-empty { display: block; font-size: 24rpx; color: #A09A90; }
 
-/* 领取核验：说明类不加框；只有输入框有底色，出错时输入框描红 */
+/* 领取核验：标题行（右侧标当前方式）→ 两张单选卡（可选，才描边）→ 一句结论 → 输入 / 口令 → 折叠规则。
+   说明类不加框；出错时输入框与「手机号核验」卡同时描红，错误就地写在输入框下 */
 .verify-set {
   display: flex;
   flex-direction: column;
+  margin-top: 48rpx;
 }
-.verify-set-label { font-size: 26rpx; color: #D5D1C8; }
+.verify-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 18rpx;
+}
+.verify-title { font-size: 30rpx; font-weight: 500; color: var(--text-main); }
+.verify-mode {
+  font-size: 22rpx;
+  color: var(--text-gold);
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--primary-light);
+}
+.verify-seg-row { display: flex; gap: 16rpx; margin-bottom: 18rpx; }
+.verify-seg {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding: 20rpx 20rpx 22rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: var(--radius-md);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.verify-seg.on {
+  border-color: var(--primary);
+  background: rgba(196, 167, 108, 0.1);
+}
+.verify-seg.on.is-error { border-color: #E8927C; }
+.verify-seg-press { background: rgba(196, 167, 108, 0.14); }
+.verify-seg-radio {
+  flex-shrink: 0;
+  width: 28rpx;
+  height: 28rpx;
+  margin-top: 4rpx;
+  border: 1px solid #6B6560;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.verify-seg.on .verify-seg-radio {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: inset 0 0 0 6rpx var(--bg-root);
+}
+.verify-seg-main { flex: 1; min-width: 0; }
+.verify-seg-t { display: block; font-size: 26rpx; font-weight: 500; color: var(--text-body); }
+.verify-seg.on .verify-seg-t { color: var(--text-main); }
+.verify-seg-d { display: block; margin-top: 4rpx; font-size: 22rpx; line-height: 1.45; color: var(--text-sub); }
+.verify-set-label { margin-top: 18rpx; font-size: 26rpx; color: #D5D1C8; }
 .verify-set-input {
   margin-top: 14rpx;
   height: 80rpx;
@@ -454,10 +547,32 @@ page {
 }
 .verify-set.is-error .verify-set-input { box-shadow: inset 0 0 0 1px #E8927C; }
 .verify-set-ph { color: #7D7466; font-size: 26rpx; }
-.verify-set-brief { margin-top: 8rpx; font-size: 24rpx; line-height: 1.5; color: #A09A90; }
-.verify-set-hint { margin-top: 12rpx; font-size: 22rpx; line-height: 1.6; color: #A09A90; }
+.verify-set-brief { font-size: 24rpx; line-height: 1.5; color: var(--text-body); }
+.verify-set-hint { margin-top: 12rpx; font-size: 22rpx; line-height: 1.6; color: #A09A90; animation: pick-in 0.2s ease-out; }
 .verify-set-req { color: #E8927C; font-size: 22rpx; }
-.verify-set-err { margin-top: 10rpx; font-size: 24rpx; color: #E8927C; }
+.verify-set-err {
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #E8927C;
+  animation: pick-in 0.2s ease-out;
+}
+.verify-set-err-mark {
+  flex-shrink: 0;
+  width: 30rpx;
+  height: 30rpx;
+  margin-top: 3rpx;
+  border-radius: 50%;
+  background: #E8927C;
+  color: var(--bg-root);
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 30rpx;
+  text-align: center;
+}
 .verify-set-tip { color: #A09A90; font-size: 22rpx; }
 .verify-links {
   display: flex;
@@ -466,26 +581,59 @@ page {
   gap: 16rpx;
   margin-top: 16rpx;
 }
+/* 折叠规则：小字 + 箭头，展开时箭头翻转 */
 .why-toggle { font-size: 22rpx; color: #A09A90; padding: 4rpx 0; }
+.why-toggle::after {
+  content: '';
+  display: inline-block;
+  width: 8rpx;
+  height: 8rpx;
+  margin: 0 0 4rpx 10rpx;
+  border-right: 1px solid #A09A90;
+  border-bottom: 1px solid #A09A90;
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+}
+.why-toggle.open::after { transform: rotate(-135deg); margin-bottom: 0; }
 .claim-switch { font-size: 24rpx; color: #C4A76C; text-decoration: underline; }
 .self-exit { display: block; margin-top: 18rpx; }
-.claim-opt { margin-top: 16rpx; display: flex; align-items: center; }
-.claim-check { width: 30rpx; height: 30rpx; flex-shrink: 0; border: 1px solid #C4A76C; border-radius: 6rpx; margin-right: 14rpx; }
+/* 口令：可勾选的一行（描边 = 可选），勾上后整行点亮 */
+.claim-opt {
+  margin-top: 16rpx;
+  display: flex;
+  align-items: flex-start;
+  padding: 18rpx 20rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: var(--radius-md);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.claim-opt.on { border-color: rgba(196, 167, 108, 0.55); background: rgba(196, 167, 108, 0.06); }
+.claim-check { width: 30rpx; height: 30rpx; margin-top: 4rpx; flex-shrink: 0; border: 1px solid #C4A76C; border-radius: 6rpx; margin-right: 14rpx; box-sizing: border-box; }
 .claim-opt.on .claim-check { background: #C4A76C; box-shadow: inset 0 0 0 5rpx #1F1D1A; }
-.claim-opt-t { font-size: 24rpx; color: #E6DCC8; line-height: 1.5; }
+.claim-opt-main { flex: 1; min-width: 0; }
+.claim-opt-t { display: block; font-size: 26rpx; color: #E6DCC8; line-height: 1.5; }
+.claim-opt-d { display: block; margin-top: 2rpx; font-size: 22rpx; color: var(--text-sub); line-height: 1.5; }
 
-/* 次要信息：隐价开关行 + 包装摘要，一行一项、不加框 */
-.detail-rows { margin-top: 48rpx; }
-.detail-muted { display: block; font-size: 24rpx; color: #A09A90; padding: 12rpx 0; }
+/* 第 1 步「包装与价格」：包装逐项（左列项名、右列内容，不加框）+ 隐价开关行（右侧开关，开 = 金色底） */
+.wrap-list { display: flex; flex-direction: column; gap: 12rpx; }
+.wrap-item { display: flex; align-items: baseline; gap: 20rpx; }
+.wrap-k { flex: 0 0 72rpx; font-size: 22rpx; letter-spacing: 0.06em; color: var(--text-gold); }
+.wrap-v { flex: 1; min-width: 0; font-size: 24rpx; line-height: 1.55; color: var(--text-body); }
 .switch-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24rpx;
   min-height: 72rpx;
+  margin-top: 24rpx;
+  padding-top: 20rpx;
 }
-.switch-label { font-size: 26rpx; color: #D5D1C8; }
+.switch-main { flex: 1; min-width: 0; }
+.switch-label { display: block; font-size: 26rpx; color: #D5D1C8; }
 .switch-tip { font-size: 22rpx; color: #A09A90; }
+.switch-sub { display: block; margin-top: 4rpx; font-size: 22rpx; color: var(--text-gold); }
+.switch-sub.is-off { color: #A09A90; }
+.switch-row.is-locked .switch-sub { color: #A09A90; }
 .switch {
   position: relative;
   flex-shrink: 0;
@@ -509,14 +657,6 @@ page {
   transition: transform 0.18s ease;
 }
 .switch.on .switch-knob { background: #1A1814; transform: translateX(32rpx); }
-
-.pack-note { margin-top: 12rpx; }
-.pack-note-body {
-  display: block;
-  font-size: 22rpx;
-  color: #A09A90;
-  line-height: 1.6;
-}
 
 .scene-note-block {
   margin-bottom: 20rpx;
@@ -573,6 +713,8 @@ page {
 
 .note-preset {
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
   padding: 10rpx 22rpx;
   border: 1px solid rgba(196, 167, 108, 0.28);
   border-radius: 12rpx;
@@ -588,10 +730,24 @@ page {
   border-color: rgba(196, 167, 108, 0.55);
 }
 
+/* 选中：实心金底 + 深色字 + 左侧勾，一眼区别于其余描边 chip */
 .note-preset.on {
-  color: #C4A76C;
-  border-color: #C4A76C;
-  background: rgba(196, 167, 108, 0.08);
+  color: var(--bg-root);
+  border-color: var(--primary);
+  background: var(--primary);
+  font-weight: 500;
+  padding-left: 16rpx;
+  animation: preset-pop 0.22s ease-out;
+}
+.note-preset-check { display: none; }
+.note-preset.on .note-preset-check {
+  display: block;
+  width: 9rpx;
+  height: 16rpx;
+  margin: -4rpx 12rpx 0 2rpx;
+  border-right: 3rpx solid var(--bg-root);
+  border-bottom: 3rpx solid var(--bg-root);
+  transform: rotate(45deg);
 }
 
 .envelope-shell {

@@ -18,6 +18,12 @@
  *   N 自定义顶栏（产品负责人拍板：左上返回在第 2、3 步回上一步，第 1 步才离开，不弹确认）：index.json 设 custom、胶囊白色；
  *     顶栏高度按胶囊位置算（真跑 customNav + _initNav）；标题左右各让出胶囊宽；三种页态都给顶栏留白；
  *     左上返回与左缘右滑同一口径（真跑 onNavBack），直达无上一页时回馆藏；占位高度也减顶栏。安卓实体返回键拦不住（不测）。
+ *   P 隐价与包装挪到第 1 步（产品负责人改口：隐价从第 3 步移到「选礼」）：开关只在第 1 步、说明随开关状态变、平台强制时无开关；
+ *     toggleHidePrice 仍守平台强制、goPay 交给 makeOrder 的 hidePrice 语义不变（真跑）；包装逐项说明只写代码里确有的事实（真读 giftPackaging.js）。
+ *   S 第 1 步「送给谁」选中反馈：被选 chip 实心 + 勾、藏品卡描金并出「送给 · X」小签、提示改为「已选「X」」、
+ *     犒劳自己提示就近入场；全部由 activeNotePresetId / selfTreat 派生（真渲染 index.wxml，不新增状态，不碰 selfTreat 进出逻辑）。
+ *   V 第 3 步「领取核验」：标题右侧标当前方式、两张单选卡（直寄 TA 无）、一句话结论、规则折叠、报错就地；
+ *     单选卡有按压反馈、点已选不动、点另一张走原 toggleClaimLink（真跑）。
  *
  * 用法：node miniprogram/scripts/check-gift-compose-steps.mjs [--selftest]
  * --selftest：对真源做**内存注入**（不改文件），每条注入都必须被检出。
@@ -26,10 +32,12 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import vm from 'node:vm'
+import { renderWxml } from './lib/wxml-preview.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const MP = resolve(HERE, '..')
 const P = {
+  packaging: resolve(MP, 'subpackages/feature/gift/giftPackaging.js'),
   js: resolve(MP, 'subpackages/feature/gift/compose/index.js'),
   wxml: resolve(MP, 'subpackages/feature/gift/compose/index.wxml'),
   wxss: resolve(MP, 'subpackages/feature/gift/compose/index.wxss'),
@@ -116,7 +124,169 @@ function runChecks() {
   stepChecks(js, wxml, ok)
   declutterChecks(js, wxml, wxss, ok)
   navChecks(js, wxml, ok)
+  polishChecks(js, wxml, wxss, ok)
   return fails
+}
+
+// ── P / S / V（2026-10-12 产品负责人点名：隐价挪第 1 步 + 包装说明 / 选中反馈 / 领取核验加强）──────────
+const RENDER_BASE = {
+  allowed: true, checking: false, loading: false, navTotal: 64, statusBarHeight: 20, navBarHeight: 44, navPaddingRight: 96,
+  product: { _id: 'p1', title: '独角仙', latinName: '' }, latin: { display: (s) => s || '' }, cover: '', displayPrice: '299.00', payablePrice: '299.00',
+  memberDiscounted: false, skuLabel: '', count: 1, sfxMuted: false, activeStep: 1, maxStep: 1,
+  notePresets: [{ id: 'friend', label: '朋友' }, { id: 'lover', label: '恋人' }, { id: 'self', label: '犒劳自己' }],
+  activeNotePresetId: '', selfTreat: false, hidePrice: true, allowHidePriceToggle: true, packagingItems: [],
+  deliveryType: 'invite_address', otherDeliveries: [], storePickupEnabled: true, stores: [], selectedStoreId: '',
+  claimLink: false, claimPasscode: false, receiverPhone: '', receiverPhoneError: '', receiverPhoneFocus: false, verifyWhyOpen: false
+}
+const count = (html, re) => (html.match(re) || []).length
+/** 取 class 以 cls 开头的第一个元素的整段 HTML（按标签配平） */
+function elem(html, cls) {
+  const m = new RegExp(`<(div|span) class="${cls}(?: [^"]*)?"[^>]*>`).exec(html)
+  if (!m) return ''
+  let depth = 0
+  const re = new RegExp(`<(/?)${m[1]}\\b[^>]*>`, 'g')
+  re.lastIndex = m.index
+  let t
+  while ((t = re.exec(html))) {
+    depth += t[1] ? -1 : 1
+    if (depth === 0) return html.slice(m.index, re.lastIndex)
+  }
+  return ''
+}
+const text = (h) => h.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+
+function polishChecks(js, wxml, wxss, ok) {
+  const mod = { exports: {} }
+  try { vm.runInNewContext(read(P.packaging), { module: mod, exports: mod.exports }) } catch (e) { ok('P0 giftPackaging.js 跑不起来：' + e.message, false) }
+  const items = mod.exports.GIFT_PACKAGING_ITEMS || []
+  const note = mod.exports.GIFT_PACKAGING_NOTE || ''
+  const render = (over) => renderWxml(wxml.replace(/<wxs[^>]*\/>/, ''), { ...RENDER_BASE, packagingItems: items, ...over }, { lenient: true })
+  const run = (name, fn) => { try { fn() } catch (e) { ok(`${name}（抛错：${e.message}）`, false) } }
+  const a1 = wxml.indexOf('<!-- ═══ 第 1 步')
+  const a2 = wxml.indexOf('<!-- ═══ 第 2 步')
+  const a3 = wxml.indexOf('<!-- ═══ 第 3 步')
+  const end = wxml.indexOf('<view class="scroll-pad">')
+  const s1 = a1 >= 0 && a2 > a1 ? wxml.slice(a1, a2) : ''
+  const s23 = a2 >= 0 && end > a2 ? wxml.slice(a2, end) : ''
+
+  // P 隐价与包装在第 1 步
+  ok('P1 隐价开关与包装说明只在第 1 步「选礼」（第 2、3 步不再出现）',
+    s1.includes('bindtap="toggleHidePrice"') && s1.includes('wx:for="{{packagingItems}}"') && !s23.includes('toggleHidePrice') && !s23.includes('packagingItems') &&
+    js.includes('packagingItems: GIFT_PACKAGING_ITEMS') && !/packagingSummary/.test(js + wxml))
+  run('P2', () => {
+    const on = render({ hidePrice: true })
+    const off = render({ hidePrice: false })
+    const lock = render({ allowHidePriceToggle: false })
+    ok('P2 隐价开关行说明随状态变（开：TA 看不到价格 / 关：TA 会看到成交价）；平台强制时只有一行说明、没有开关',
+      text(elem(on, 'switch-row')).includes('TA 收礼时看不到价格') && /class="switch on"/.test(on) &&
+      text(elem(off, 'switch-row')).includes('TA 收礼时会看到成交价') && /class="switch"/.test(off) &&
+      text(elem(lock, 'switch-row is-locked')).includes('平台设定，不可更改') && count(lock, /class="switch( on)?"/g) === 0)
+  })
+  run('P3', () => {
+    let r = makePage(js, { allowHidePriceToggle: false, hidePrice: true })
+    r.page.toggleHidePrice()
+    const forced = r.page.data.hidePrice === true
+    r = makePage(js, { allowHidePriceToggle: true, hidePrice: true })
+    r.page.toggleHidePrice()
+    const flipped = r.page.data.hidePrice === false
+    r.page.data.activeStep = 3
+    r.page.data.maxStep = 3
+    r.page.goPay()
+    const meta = r.calls.nav[0] && r.calls.nav[0].opts.giftMeta
+    ok('P3 隐价语义不变：平台强制时切不动；第 1 步关掉后交给 makeOrder 的 giftMeta.hidePrice === false', forced && flipped && !!meta && meta.hidePrice === false)
+  })
+  const ks = items.map((i) => i.k).join('/')
+  const vs = items.map((i) => i.v).join(' ')
+  ok(`P4 包装逐项说明：包装 / 礼笺 / 其它三项，与长句同义（牛皮纸 + 雪梨纸 / 联系专员），不写代码里没有的礼盒、价签（实得 ${ks}）`,
+    ks === '包装/礼笺/其它' && items.every((i) => String(i.v || '').trim()) && /牛皮纸/.test(vs) && /雪梨纸/.test(vs) && /专员/.test(vs) &&
+    /牛皮纸/.test(note) && /雪梨纸/.test(note) && /专员/.test(note) && !/礼盒|价签|吊牌/.test(vs))
+  run('P5', () => {
+    const h = render({})
+    ok('P5 包装项逐条渲染（项名 + 内容两列）', count(h, /class="wrap-item"/g) === items.length && text(elem(h, 'wrap-list')).includes('牛皮纸'))
+  })
+
+  // S 选中反馈
+  run('S1', () => {
+    const h = render({ activeNotePresetId: 'friend' })
+    const chipsOn = h.match(/<div class="note-preset on"[^>]*>[\s\S]*?<\/div>\s*<span\s*>([^<]*)<\/span>/g) || []
+    ok('S1 选了「朋友」：只有这枚 chip 选中（实心 + 勾），藏品卡描金并出「送给 · 朋友」小签，提示改为「已选「朋友」」',
+      chipsOn.length === 1 && chipsOn[0].includes('朋友') && chipsOn[0].includes('note-preset-check') &&
+      /class="product-row is-for"/.test(h) && count(h, /class="for-tag"/g) === 1 && text(elem(h, 'for-tag')) === '送给 · 朋友' &&
+      text(elem(h, 'section-hint is-picked')).includes('已选「朋友」') && !h.includes('relation-self-note'))
+  })
+  run('S2', () => {
+    const h = render({})
+    ok('S2 没选关系：无选中 chip、无小签、藏品卡不描金，提示仍是「不选也行」',
+      count(h, /class="note-preset on"/g) === 0 && !h.includes('for-tag') && /class="product-row"/.test(h) && text(elem(h, 'section-hint')).includes('不选也行'))
+  })
+  run('S3', () => {
+    const h = render({ selfTreat: true, activeNotePresetId: 'self' })
+    const e = render({ selfTreat: true, activeNotePresetId: '' })
+    const selfOn = (x) => /<div class="note-preset on"[^>]*>\s*<div class="note-preset-check"[^>]*><\/div>\s*<span\s*>犒劳自己<\/span>/.test(x)
+    ok('S3 犒劳自己：chip 选中、小签「犒劳自己 · 寄给我」、就近出提示签；正文手改后（关系被清空、selfTreat 仍在）照样亮着，不与 selfTreat 打架',
+      selfOn(h) && text(elem(h, 'for-tag is-self')) === '犒劳自己 · 寄给我' && text(elem(h, 'relation-self-note')).includes('收货地址') &&
+      selfOn(e) && count(e, /class="note-preset on"/g) === 1 && text(elem(e, 'section-hint is-picked')).includes('犒劳自己') && e.includes('relation-self-note'))
+  })
+  const wrapAt = s1.indexOf('<view class="note-preset-wrap">')
+  const selfAt = s1.indexOf('<view class="relation-self-note" wx:if="{{selfTreat}}">')
+  ok('S4 犒劳自己提示紧跟关系 chip（就近），在包装与价格之前，且只有一处', (wxml.match(/class="relation-self-note"/g) || []).length === 1 && wrapAt > 0 && selfAt > wrapAt && selfAt < s1.indexOf('<view class="section sec-wrap">'))
+  const pre = rule(wxss, '.note-preset.on')
+  ok('S5 选中样式与入场：chip 实心金底 + 勾 + 弹一下；小签 / 提示签 / 已选提示从下方轻移入场；藏品卡描金',
+    /background:\s*var\(--primary\)/.test(pre) && /animation:\s*preset-pop/.test(pre) && /border-right:/.test(rule(wxss, '.note-preset.on .note-preset-check')) &&
+    ['.for-tag', '.relation-self-note', '.section-hint.is-picked'].every((s) => /animation:\s*pick-in/.test(rule(wxss, s))) &&
+    /@keyframes pick-in \{/.test(wxss) && /@keyframes preset-pop \{/.test(wxss) && /border-color:\s*var\(--primary\)/.test(rule(wxss, '.product-row.is-for')))
+  ok('S6 选中反馈不新增状态：只读 activeNotePresetId / selfTreat（不出现 forWhom 一类新字段），selfTreat 进出仍只在 enterSelfTreat / exitSelfTreat',
+    !/forWhom|relationLabel|pickedRelation/.test(js + wxml) && (js.match(/selfTreat: true/g) || []).length === 1 && (js.match(/selfTreat: false/g) || []).length === 2)
+
+  // V 领取核验
+  run('V1', () => {
+    const h = render({ activeStep: 3, maxStep: 3 })
+    const segs = elem(h, 'verify-seg-row')
+    ok('V1 手机号核验：标题右侧标「手机号核验」、两张单选卡且只有「手机号核验」选中、先给一句结论、规则默认收起',
+      text(elem(h, 'verify-mode')) === '手机号核验' && count(segs, /class="verify-seg[ "]/g) === 2 &&
+      /class="verify-seg on"[^>]*aria-checked="true"[\s\S]*?手机号核验/.test(segs) && /class="verify-seg"[^>]*aria-checked="false"[\s\S]*?凭礼笺领取/.test(segs) &&
+      text(elem(h, 'verify-set-brief')).includes('别人拿到链接也领不走') && !h.includes('verify-set-hint') && text(elem(h, 'why-toggle')) === '为什么要填？')
+  })
+  run('V2', () => {
+    const h = render({ activeStep: 3, maxStep: 3, claimLink: true })
+    const p = render({ activeStep: 3, maxStep: 3, claimLink: true, claimPasscode: true })
+    ok('V2 凭礼笺领取：标「凭礼笺领取」且该卡选中、无手机号输入；加口令后标「凭礼笺 + 口令」、口令行点亮',
+      text(elem(h, 'verify-mode')) === '凭礼笺领取' && /class="verify-seg on"[^>]*>[\s\S]*?凭礼笺领取/.test(elem(h, 'verify-seg-row')) && !h.includes('verify-set-input') &&
+      text(elem(p, 'verify-mode')) === '凭礼笺 + 口令' && /class="claim-opt on"/.test(p))
+  })
+  run('V3', () => {
+    const h = render({ activeStep: 3, maxStep: 3, deliveryType: 'ship_to_receiver', claimLink: true })
+    ok('V3 直寄 TA：没有单选卡（只能手机号核验）、标「手机号核验」、手机号「* 必填」', !h.includes('verify-seg-row') && text(elem(h, 'verify-mode')) === '手机号核验' && h.includes('* 必填') && h.includes('verify-set-input'))
+  })
+  run('V4', () => {
+    const h = render({ activeStep: 3, maxStep: 3, receiverPhoneError: '请填写受礼人手机号' })
+    const field = elem(h, 'verify-set is-error')
+    ok('V4 报错就地：错误写在核验块里输入框之下，「手机号核验」卡与输入框同时描红',
+      text(elem(field, 'verify-set-err')).includes('请填写受礼人手机号') && field.indexOf('verify-set-err') > field.indexOf('verify-set-input') &&
+      /class="verify-seg on is-error"/.test(field) && /\.verify-set\.is-error \.verify-set-input \{[^}]*#E8927C/.test(wxss) && /border-color:\s*#E8927C/.test(rule(wxss, '.verify-seg.on.is-error')))
+  })
+  run('V5', () => {
+    const h = render({ activeStep: 3, maxStep: 3, verifyWhyOpen: true })
+    ok('V5 规则可折叠：点开后出完整说明、箭头翻转', text(elem(h, 'verify-set-hint')).includes('仅存加密值与尾号') && /class="why-toggle open"/.test(h) && /transform:\s*rotate\(-135deg\)/.test(rule(wxss, '.why-toggle.open::after')))
+  })
+  const segTags = wxml.match(/<view\s+class="verify-seg [^"]*"[\s\S]*?>/g) || []
+  const optTag = (wxml.match(/<view\s+class="claim-opt [^"]*"[\s\S]*?>/) || [''])[0]
+  ok('V6 单选卡与口令行都有按压反馈（hover-class 已定义）、无障碍角色齐全',
+    segTags.length === 2 && segTags.every((t) => t.includes('hover-class="verify-seg-press"') && t.includes('aria-role="radio"') && t.includes('bindtap="onPickVerify"')) &&
+    optTag.includes('hover-class="verify-seg-press"') && optTag.includes('aria-role="checkbox"') && rule(wxss, '.verify-seg-press').includes('background'))
+  run('V7', () => {
+    let r = makePage(js, { claimLink: false, receiverPhoneError: '错' })
+    r.page.onPickVerify({ currentTarget: { dataset: { mode: 'phone' } } })
+    const stay = r.page.data.claimLink === false && r.page.data.receiverPhoneError === '错'
+    r.page.onPickVerify({ currentTarget: { dataset: { mode: 'link' } } })
+    const sw = r.page.data.claimLink === true && r.page.data.receiverPhoneError === ''
+    r.page.onPickVerify({ currentTarget: { dataset: { mode: 'link' } } })
+    ok('V7 单选卡：点已选的不动；点另一张 = 原 toggleClaimLink（切换并清掉报错）；再点同一张不来回翻', stay && sw && r.page.data.claimLink === true &&
+      /onPickVerify\(e\) \{[\s\S]*?this\.toggleClaimLink\(\)\n {2}\},/.test(js))
+  })
+  ok('V8 只有可选的东西描边：单选卡 / 口令行有框、选中卡金边金底；核验块本身与标题行不加框',
+    /border:/.test(rule(wxss, '.verify-seg')) && /border-color:\s*var\(--primary\)/.test(rule(wxss, '.verify-seg.on')) && /background:/.test(rule(wxss, '.verify-seg.on')) &&
+    /border:/.test(rule(wxss, '.claim-opt')) && ['.verify-set', '.verify-head'].every((s) => rule(wxss, s) && !/border(?!-radius)|background/.test(rule(wxss, s))))
 }
 
 function navChecks(js, wxml, ok) {
@@ -180,12 +350,14 @@ function declutterChecks(js, wxml, wxss, ok) {
   const longTexts = s3.match(/<text[^>]*>[^<]*(?:仅存加密值与尾号|不能发朋友圈)[^<]*<\/text>/g) || []
   ok('D3 长说明收进可点开的小字（手机号用途 / 凭礼笺领取规则默认不展开）',
     longTexts.length >= 3 && longTexts.every((t) => /wx:(?:el)?if="\{\{verifyWhyOpen/.test(t)) && /bindtap="toggleVerifyWhy"/.test(s3) && js.includes('toggleVerifyWhy() {'))
-  const unframed = ['.verify-set', '.pack-note', '.switch-row', '.detail-rows', '.group-label']
-  ok('D4 只有可选的东西描边：领取核验 / 隐价 / 包装 / 小节标题不加框，交付选项有框',
+  const unframed = ['.verify-set', '.verify-head', '.switch-row', '.wrap-list', '.wrap-item']
+  ok('D4 只有可选的东西描边：领取核验块 / 隐价行 / 包装说明不加框，交付选项有框',
     unframed.every((sel) => rule(wxss, sel) && !/border(?!-radius)|background/.test(rule(wxss, sel))) && /border:/.test(rule(wxss, '.delivery-opt')))
-  ok('D5 隐价是一行开关；平台强制隐价时只一行灰字',
-    /<text class="detail-muted" wx:if="\{\{allowHidePriceToggle === false\}\}">/.test(s3) && /class="switch-row"[\s\S]{0,40}bindtap="toggleHidePrice"/.test(s3) && !/privacy-row/.test(wxml))
-  ok('D6 包装压成页尾一行摘要', /<view class="pack-note">\s*<text class="pack-note-body">包装：\{\{packagingSummary\}\}<\/text>\s*<\/view>/.test(s3) && js.includes('packagingSummary: GIFT_PACKAGING_SUMMARY'))
+  const a1 = wxml.indexOf('<!-- ═══ 第 1 步')
+  const s1 = a1 >= 0 && a3 > a1 ? wxml.slice(a1, a3) : ''
+  ok('D5 隐价是一行开关（第 1 步）；平台强制隐价时只一行说明、不给开关',
+    /<view class="switch-row is-locked" wx:if="\{\{allowHidePriceToggle === false\}\}">/.test(s1) && /class="switch-row"[\s\S]{0,40}bindtap="toggleHidePrice"/.test(s1) && !/privacy-row/.test(wxml))
+  ok('D6 包装说明逐项列出（第 1 步，项名 + 内容），不再是页尾一行摘要', /<view class="wrap-item" wx:for="\{\{packagingItems\}\}" wx:key="k">/.test(s1) && !/pack-note/.test(wxml))
   const rail = wxml.slice(wxml.indexOf('<view class="step-rail'), wxml.indexOf('<scroll-view'))
   ok('D7 音效并进步骤轨右端、不再单占一行；「上一步」只由左上返回承担（步骤轨不重复放）', !/sfx-bar/.test(wxml) && !rail.includes('onStepBack') && rail.includes('catchtap="toggleSfxMute"'))
   ok('D8 底栏「备妥应付」与价格同一行（小字只剩会员价一行）', /<view class="bottom-value-row">\s*<text class="bottom-label">备妥应付<\/text>/.test(wxml))
@@ -197,7 +369,7 @@ const GIFT_META_KEYS = 'cardBody,cardSignature,deliveryType,hidePrice,phase,reci
 const PHONE_KEYS = 'at,claimLink,claimPasscode,phone,productId,selfTreat'
 const PAGE_METHODS = ['_goStep', 'onStepNext', 'onNavBack', '_backOrLeave', 'onRailTap', 'onEdgeBack', '_checkLetter', 'goPay', 'showAppToast',
   'flagReceiverPhone', 'finishNoteWrite', 'clearNoteWriteTimer', 'startNoteWrite', '_scheduleNoteWrite', 'applyToSelfRecipientDefault',
-  'enterSelfTreat', 'exitSelfTreat', 'onShow', 'leaveCompose']
+  'enterSelfTreat', 'exitSelfTreat', 'onShow', 'leaveCompose', 'toggleHidePrice', 'toggleClaimLink', 'onPickVerify']
 
 function makePage(js, over = {}) {
   const calls = { nav: [], toast: [], track: [], timers: [], back: 0, tab: [], pages: 2 }
@@ -257,11 +429,11 @@ function stepChecks(js, wxml, ok) {
   const s3 = a3 >= 0 && end > a3 ? wxml.slice(a3, end) : ''
   ok('T1 三步分块且条件互斥（第 1 步 wx:if / 第 2 步 wx:elif / 第 3 步 wx:else）',
     s1.includes('<block wx:if="{{activeStep === 1}}">') && s2.includes('<block wx:elif="{{activeStep === 2}}">') && /<block wx:else>/.test(s3))
-  ok('T2 第 1 步：藏品 + 送给谁（关系标签）', s1.includes('class="product-row"') && s1.includes('bindtap="onNotePresetTap"') && !s2.includes('bindtap="onNotePresetTap"') && !s3.includes('bindtap="onNotePresetTap"'))
+  ok('T2 第 1 步：藏品 + 送给谁（关系标签）', s1.includes('class="product-row') && s1.includes('bindtap="onNotePresetTap"') && !s2.includes('bindtap="onNotePresetTap"') && !s3.includes('bindtap="onNotePresetTap"'))
   ok('T3 第 2 步：称呼 / 正文 / 署名 / 语音 / 换一句都在且只在这一步',
     ['bindinput="onRecipientInput"', 'bindinput="onCardInput"', 'bindinput="onSigInput"', 'catchtouchstart="onVoiceHoldStart"', 'bindtap="onNoteShuffle"'].every((k) => s2.includes(k) && !s1.includes(k) && !s3.includes(k)))
-  ok('T4 第 3 步：交付方式 / 受礼人手机号 / 隐价 / 包装都在且只在这一步',
-    ['bindtap="onSelectDelivery"', 'id="receiverPhoneField"', 'bindtap="toggleHidePrice"', 'class="pack-note"'].every((k) => s3.includes(k) && !s1.includes(k) && !s2.includes(k)))
+  ok('T4 第 3 步：交付方式 / 受礼人手机号（领取核验）都在且只在这一步（隐价 / 包装 2026-10-12 起在第 1 步，见 P1）',
+    ['bindtap="onSelectDelivery"', 'id="receiverPhoneField"', 'bindtap="onPickVerify"'].every((k) => s3.includes(k) && !s1.includes(k) && !s2.includes(k)))
   ok('T5 支付按钮只有一个，且只在第 3 步（第 1、2 步底栏是「下一步」）',
     (wxml.match(/bindtap="goPay"/g) || []).length === 1 &&
     /<view wx:if="\{\{activeStep < 3\}\}" class="pay-btn" bindtap="onStepNext"[^>]*>[\s\S]*?<\/view>\s*<view wx:else class="pay-btn[^"]*" bindtap="goPay"/.test(wxml))
@@ -402,7 +574,39 @@ const INJECTIONS = [
   { name: '门店自提关闭时仍显示', file: P.js, find: "OTHER_DELIVERIES.filter((d) => d.id !== 'store_pickup')", replace: 'OTHER_DELIVERIES.filter(() => true)' },
   { name: '手机号用途说明常驻', file: P.wxml, find: '<text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于', replace: '<text class="verify-set-hint">用于' },
   { name: '领取核验又加框', file: P.wxss, find: '.verify-set {\n  display: flex;', replace: '.verify-set {\n  border: 1px solid #C4A76C;\n  display: flex;' },
-  { name: '包装回到大框', file: P.wxss, find: '.pack-note { margin-top: 12rpx; }', replace: '.pack-note { margin-top: 12rpx; border: 1px solid #C4A76C; }' },
+  { name: '包装说明加框', file: P.wxss, find: '.wrap-list { display: flex;', replace: '.wrap-list { border: 1px solid #C4A76C; display: flex;' },
+  // P 隐价与包装在第 1 步
+  { name: '隐价开关挪回第 3 步', file: P.wxml, find: '<view class="verify-head">', replace: '<view bindtap="toggleHidePrice"></view><view class="verify-head">' },
+  { name: '隐价说明不随开关变', file: P.wxml, find: "{{hidePrice ? 'TA 收礼时看不到价格' : 'TA 收礼时会看到成交价'}}", replace: 'TA 收礼时看不到价格' },
+  { name: '平台强制隐价时仍给开关', file: P.wxml, find: '<view class="switch-row is-locked" wx:if="{{allowHidePriceToggle === false}}">', replace: '<view class="switch-row is-locked" wx:if="{{false}}">' },
+  { name: 'toggleHidePrice 不守平台强制', file: P.js, find: '    if (this.data.allowHidePriceToggle === false) {', replace: '    if (false) {' },
+  { name: '交给 makeOrder 的隐价写死', file: P.js, find: '        hidePrice: this.data.hidePrice !== false,', replace: '        hidePrice: true,' },
+  { name: '包装说明编出礼盒', file: P.packaging, find: "{ k: '其它', v: '需要其它包装，请联系专员' }", replace: "{ k: '其它', v: '附赠礼盒，需要其它包装请联系专员' }" },
+  { name: '包装说明丢了雪梨纸', file: P.packaging, find: "{ k: '包装', v: '牛皮纸 + 雪梨纸简约裹封' }", replace: "{ k: '包装', v: '牛皮纸简约裹封' }" },
+  { name: '包装项不渲染', file: P.wxml, find: 'wx:for="{{packagingItems}}"', replace: 'wx:for="{{[]}}"' },
+  // S 选中反馈
+  { name: '选中 chip 不再实心', file: P.wxss, find: '  background: var(--primary);\n  font-weight: 500;\n  padding-left: 16rpx;', replace: '  background: transparent;\n  font-weight: 500;\n  padding-left: 16rpx;' },
+  { name: '选中 chip 没有勾', file: P.wxml, find: '            <view class="note-preset-check" aria-hidden="true"></view>\n', replace: '' },
+  { name: '犒劳自己（正文手改后）chip 不亮', file: P.wxml, find: "{{activeNotePresetId === item.id || (selfTreat && item.id === 'self') ? 'on' : ''}}", replace: "{{activeNotePresetId === item.id ? 'on' : ''}}" },
+  { name: '藏品卡没有「送给」小签', file: P.wxml, find: '<view class="for-tag" wx:if="{{item.id === activeNotePresetId}}">', replace: '<view class="for-tag" wx:if="{{false}}">' },
+  { name: '藏品卡选了关系也不点亮', file: P.wxml, find: "{{activeNotePresetId || selfTreat ? 'is-for' : ''}}", replace: '' },
+  { name: '选了关系提示不变', file: P.wxml, find: '<text class="section-hint" wx:if="{{!activeNotePresetId && !selfTreat}}">', replace: '<text class="section-hint" wx:if="{{true}}">' },
+  { name: '犒劳自己提示挪远（放到包装之后）', file: P.wxml, find: '    <!-- 01 包装与价格', replace: '    <view class="relation-self-note" wx:if="{{selfTreat}}"></view>\n    <!-- 01 包装与价格' },
+  { name: '小签无入场动画', file: P.wxss, find: '  font-weight: 500;\n  animation: pick-in 0.24s ease-out;\n}\n.for-tag-dot', replace: '  font-weight: 500;\n}\n.for-tag-dot' },
+  { name: '选中反馈另起新状态字段', file: P.js, find: '    activeNotePresetId: \'\',\n', replace: '    activeNotePresetId: \'\',\n    forWhom: \'\',\n' },
+  // V 领取核验
+  { name: '核验标题不标当前方式', file: P.wxml, find: '<text class="verify-mode" wx:else>手机号核验</text>', replace: '<text class="verify-mode" wx:else></text>' },
+  { name: '单选卡选中态写反', file: P.wxml, find: "class=\"verify-seg {{claimLink ? '' : 'on'}}", replace: "class=\"verify-seg {{claimLink ? 'on' : ''}}" },
+  { name: '直寄 TA 也给凭礼笺选项', file: P.wxml, find: "<view class=\"verify-seg-row\" wx:if=\"{{deliveryType !== 'ship_to_receiver'}}\">", replace: '<view class="verify-seg-row">' },
+  { name: '没有一句话结论', file: P.wxml, find: '        <text class="verify-set-brief">TA 领取时核对这个号码，别人拿到链接也领不走</text>\n', replace: '' },
+  { name: '报错不就地显示', file: P.wxml, find: '<view class="verify-set-err" wx:if="{{receiverPhoneError}}">', replace: '<view class="verify-set-err" wx:if="{{false}}">' },
+  { name: '出错时手机号卡不描红', file: P.wxml, find: "class=\"verify-seg {{claimLink ? '' : 'on'}} {{receiverPhoneError ? 'is-error' : ''}}\"", replace: "class=\"verify-seg {{claimLink ? '' : 'on'}}\"" },
+  { name: '规则展开箭头不翻转', file: P.wxss, find: '.why-toggle.open::after { transform: rotate(-135deg);', replace: '.why-toggle.open::after { transform: none;' },
+  { name: '单选卡没有按压反馈', file: P.wxml, find: 'hover-class="verify-seg-press"', replace: 'hover-class="none"' },
+  { name: '按压类未定义', file: P.wxss, find: '.verify-seg-press {', replace: '.verify-seg-press-x {' },
+  { name: '点已选的卡也会切换', file: P.js, find: '    if (wantLink === !!this.data.claimLink) return\n', replace: '' },
+  { name: '单选卡绕开 toggleClaimLink（不清报错）', file: P.js, find: '    this.toggleClaimLink()\n  },', replace: '    this.setData({ claimLink: wantLink })\n  },' },
+  { name: '单选卡去掉描边', file: P.wxss, find: '  border: 1px solid rgba(77, 64, 26, 0.45);\n  border-radius: var(--radius-md);\n  transition: border-color 0.18s ease, background-color 0.18s ease;\n}\n.verify-seg.on {', replace: '  border-radius: var(--radius-md);\n  transition: border-color 0.18s ease, background-color 0.18s ease;\n}\n.verify-seg.on {' },
   { name: '隐价回到勾选大框', file: P.wxml, find: 'class="switch-row"', replace: 'class="privacy-row"' },
   { name: '音效条单占一行', file: P.wxml, find: '  <scroll-view\n', replace: '  <view class="sfx-bar"></view>\n  <scroll-view\n' },
   { name: '底栏「备妥应付」单占一行', file: P.wxml, find: '<view class="bottom-value-row">\n        <text class="bottom-label">备妥应付</text>', replace: '<text class="bottom-label">备妥应付</text>\n      <view class="bottom-value-row">' }
@@ -436,7 +640,7 @@ function main() {
     console.error('✗ 送礼页（礼赠编排）版式 / 分步不合格：\n  - ' + fails.join('\n  - '))
     process.exit(1)
   }
-  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 三步各放各的 · 第 3 步去密集（平铺单选 / 说明折叠 / 只给可选项描边） · 第 1、2 步无支付 · 写笺在第 2 步校验、手机号 / 门店在第 3 步校验 · 自定义顶栏按胶囊算高、左上返回第 2/3 步回上一步 / 第 1 步离开 · 左缘右滑 / 步骤轨回退 · 交给确认页的字段与改前一致')
+  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 三步各放各的 · 第 3 步去密集（平铺单选 / 说明折叠 / 只给可选项描边） · 第 1、2 步无支付 · 写笺在第 2 步校验、手机号 / 门店在第 3 步校验 · 自定义顶栏按胶囊算高、左上返回第 2/3 步回上一步 / 第 1 步离开 · 左缘右滑 / 步骤轨回退 · 隐价与包装逐项说明在第 1 步（隐价语义不变） · 选了关系整页有反馈（chip 实心 + 勾 / 藏品卡「送给 · X」/ 犒劳自己就近提示） · 领取核验标当前方式、单选卡有选中与按压态、一句结论 + 规则折叠、报错就地 · 交给确认页的字段与改前一致')
 }
 
 main()

@@ -22,7 +22,7 @@ const {
 // 正文字数上限**从打印模块取**（印得出来才算数；推导见 giftShareCard.js 常量处注释）
 const { GIFT_NOTE_MAX_CHARS } = require('../giftShareCard')
 const {
-  GIFT_PACKAGING_SUMMARY
+  GIFT_PACKAGING_ITEMS
 } = require('../giftPackaging')
 const { decodeQueryText } = require('../decodeQueryText')
 const { getSceneByKey } = require('../../utils/giftScenes')
@@ -126,7 +126,7 @@ Page({
     stores: [],
     selectedStoreId: '',
     selectedStoreName: '',
-    packagingSummary: GIFT_PACKAGING_SUMMARY,
+    packagingItems: GIFT_PACKAGING_ITEMS,
     cardBody: '',
     cardFocused: false,          // iOS：textarea 不支持 font-family → 未聚焦时用手写体 text 展示
     placeholderNote: '这段日子里你帮了太多。柜中挑了一件安静的藏品……',
@@ -1028,6 +1028,13 @@ Page({
 
   toggleClaimLink() {
     this.setData({ claimLink: !this.data.claimLink, receiverPhoneError: '' })
+  },
+
+  /** 领取核验单选卡：点已选中的那张不动，点另一张 = toggleClaimLink */
+  onPickVerify(e) {
+    const wantLink = e.currentTarget.dataset.mode === 'link'
+    if (wantLink === !!this.data.claimLink) return
+    this.toggleClaimLink()
   },
 
   toggleClaimPasscode() {

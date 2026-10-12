@@ -1,5 +1,5 @@
 <!-- 礼赠编排 · 博物柜仪式（落笔/语音区仅外围增强，正文逻辑不动）
-     2026-10-12 分步：01 选礼（藏品 + 送给谁）→ 02 写笺（称呼 / 礼笺 / 署名 / 语音）→ 03 交付（交付方式 / 领取核验 / 隐价 / 包装）→ 支付
+     2026-10-12 分步：01 选礼（藏品 + 送给谁 + 包装与隐价）→ 02 写笺（称呼 / 礼笺 / 署名 / 语音）→ 03 交付（交付方式 / 领取核验）→ 支付
      去密集（同日）：只有可选的东西用描边；音效在步骤轨右端；自定义顶栏左上返回兼作「上一步」 -->
 <wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
 <!-- 自定义顶栏（index.json navigationStyle: custom）：放在三种页态之外，加载中 / 打不开时也有返回。
@@ -81,9 +81,10 @@
       <text class="rite-title">从柜中取出，封笺赠予</text>
     </view>
 
-    <!-- 01 已选标本：藏品卡自明，不再另起标题（第 1 步的主问题是「送给谁」） -->
+    <!-- 01 已选标本：藏品卡自明，不再另起标题（第 1 步的主问题是「送给谁」）。
+         选了关系后整块随之点亮：卡片描金 + 「送给 · X」小签（每个关系各渲染一枚，换关系时重新入场） -->
     <view class="section sec-specimen">
-      <view class="product-row">
+      <view class="product-row {{activeNotePresetId || selfTreat ? 'is-for' : ''}}">
         <view class="product-cover-wrap">
           <image class="product-cover" src="{{cover}}" mode="aspectFill"></image>
           <protected-badge product="{{product}}" size="xs" corner="bl" />
@@ -93,6 +94,18 @@
           <text class="product-latin" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
           <text class="product-price">¥{{displayPrice}}</text>
           <text class="product-sku" wx:if="{{skuLabel}}">{{skuLabel}} · ×{{count}}</text>
+          <view class="for-tag is-self" wx:if="{{selfTreat}}">
+            <view class="for-tag-dot" aria-hidden="true"></view>
+            <text>犒劳自己 · 寄给我</text>
+          </view>
+          <block wx:else>
+            <block wx:for="{{notePresets}}" wx:key="id">
+              <view class="for-tag" wx:if="{{item.id === activeNotePresetId}}">
+                <view class="for-tag-dot" aria-hidden="true"></view>
+                <text>送给 · {{item.label}}</text>
+              </view>
+            </block>
+          </block>
         </view>
       </view>
     </view>
@@ -101,7 +114,12 @@
     <view class="section sec-relation">
       <text class="section-overline">FOR WHOM</text>
       <text class="section-title">这份礼送给谁</text>
-      <text class="section-hint">下一步按它起草礼笺，可改写；不选也行</text>
+      <text class="section-hint" wx:if="{{!activeNotePresetId && !selfTreat}}">下一步按它起草礼笺，可改写；不选也行</text>
+      <block wx:else>
+        <block wx:for="{{notePresets}}" wx:key="id">
+          <text class="section-hint is-picked" wx:if="{{item.id === activeNotePresetId || (selfTreat && !activeNotePresetId && item.id === 'self')}}">已选「{{item.label}}」· 下一步按它起草礼笺，可改写</text>
+        </block>
+      </block>
       <!-- 2026-09-21：关系从 8 个扩到 20 个（giftNotePresets.js 实为 20 组 × 3 句）。
            原来这里是**横向 scroll**（white-space: nowrap），一屏只露得出前 5–6 个 ——
            后面新增的「老师 / 领导 / 长辈」等于藏起来了，那「拓展角色」就白做。
@@ -110,17 +128,58 @@
       <view class="note-preset-wrap">
         <view class="note-preset-row">
           <view
-            class="note-preset {{activeNotePresetId === item.id ? 'on' : ''}}"
+            class="note-preset {{activeNotePresetId === item.id || (selfTreat && item.id === 'self') ? 'on' : ''}}"
             wx:for="{{notePresets}}"
             wx:key="id"
             data-id="{{item.id}}"
             bindtap="onNotePresetTap" hover-class="note-preset-press" hover-stay-time="80"
+            aria-role="radio"
+            aria-checked="{{activeNotePresetId === item.id || (selfTreat && item.id === 'self')}}"
           >
+            <view class="note-preset-check" aria-hidden="true"></view>
             <text>{{item.label}}</text>
           </view>
         </view>
       </view>
-      <text class="relation-self-note" wx:if="{{selfTreat}}">犒劳自己：寄到你的收货地址（结算页填写）</text>
+      <view class="relation-self-note" wx:if="{{selfTreat}}">
+        <text class="relation-self-k">犒劳自己</text>
+        <text class="relation-self-v">寄到你的收货地址（结算页填写），不用填受礼人手机号</text>
+      </view>
+    </view>
+
+    <!-- 01 包装与价格（2026-10-12 产品负责人改口：隐价从第 3 步挪到选礼）。
+         包装逐项说清（文案在 giftPackaging.js，只写代码里确有的：牛皮纸 + 雪梨纸 / 印制礼笺 / 其它包装找专员）；
+         隐价开关仍写 hidePrice、交给 makeOrder 的入参与语义不变 -->
+    <view class="section sec-wrap">
+      <text class="section-overline">WRAP</text>
+      <text class="section-title">包装与价格</text>
+      <view class="wrap-list">
+        <view class="wrap-item" wx:for="{{packagingItems}}" wx:key="k">
+          <text class="wrap-k">{{item.k}}</text>
+          <text class="wrap-v">{{item.v}}</text>
+        </view>
+      </view>
+      <view class="switch-row is-locked" wx:if="{{allowHidePriceToggle === false}}">
+        <view class="switch-main">
+          <text class="switch-label">成交价已对受礼人隐藏</text>
+          <text class="switch-sub">平台设定，不可更改 · TA 收礼时看不到价格</text>
+        </view>
+      </view>
+      <view
+        class="switch-row"
+        bindtap="toggleHidePrice"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        aria-role="switch"
+        aria-checked="{{hidePrice}}"
+        wx:else
+      >
+        <view class="switch-main">
+          <text class="switch-label">对受礼人隐藏成交价 <text class="switch-tip">推荐</text></text>
+          <text class="switch-sub {{hidePrice ? '' : 'is-off'}}">{{hidePrice ? 'TA 收礼时看不到价格' : 'TA 收礼时会看到成交价'}}</text>
+        </view>
+        <view class="switch {{hidePrice ? 'on' : ''}}" aria-hidden="true"><view class="switch-knob"></view></view>
+      </view>
     </view>
     </block>
 
@@ -379,7 +438,6 @@
         </view>
       </view>
 
-      <text class="group-label">领取核验</text>
       <view class="store-pick" wx:if="{{deliveryType === 'store_pickup' && storePickupEnabled}}">
         <text class="store-pick-label">自提门店 <text class="verify-set-req">* 必选</text></text>
         <view
@@ -397,23 +455,71 @@
         <text class="store-empty" wx:if="{{!stores.length}}">这有店暂未就绪，稍后再选或换其他交付</text>
       </view>
 
-      <!-- 受礼人手机号：直寄 TA 必填；填址 / 自提 / 寄给我推荐填写，也可凭礼笺领取（同 CLAIM_LINK_DELIVERY） -->
+      <!-- 领取核验（2026-10-12 产品负责人点名加强）：标题右侧标出当前方式；填址 / 自提 / 寄给我两张单选卡
+           「手机号核验 / 凭礼笺领取」（同 CLAIM_LINK_DELIVERY，切换仍走 toggleClaimLink），直寄 TA 只有手机号且必填；
+           每种方式先给一句结论，完整规则点开；报错就地显示在输入框下。核验逻辑与交给确认页的数据不变 -->
       <view id="receiverPhoneField" class="verify-set {{receiverPhoneError ? 'is-error' : ''}}">
+        <view class="verify-head">
+          <text class="verify-title">领取核验</text>
+          <text class="verify-mode" wx:if="{{claimLink && deliveryType !== 'ship_to_receiver'}}">{{claimPasscode ? '凭礼笺 + 口令' : '凭礼笺领取'}}</text>
+          <text class="verify-mode" wx:else>手机号核验</text>
+        </view>
+        <view class="verify-seg-row" wx:if="{{deliveryType !== 'ship_to_receiver'}}">
+          <view
+            class="verify-seg {{claimLink ? '' : 'on'}} {{receiverPhoneError ? 'is-error' : ''}}"
+            data-mode="phone"
+            bindtap="onPickVerify"
+            hover-class="verify-seg-press"
+            hover-stay-time="80"
+            aria-role="radio"
+            aria-checked="{{!claimLink}}"
+          >
+            <view class="verify-seg-radio" aria-hidden="true"></view>
+            <view class="verify-seg-main">
+              <text class="verify-seg-t">手机号核验</text>
+              <text class="verify-seg-d">更安全 · 核对号码</text>
+            </view>
+          </view>
+          <view
+            class="verify-seg {{claimLink ? 'on' : ''}}"
+            data-mode="link"
+            bindtap="onPickVerify"
+            hover-class="verify-seg-press"
+            hover-stay-time="80"
+            aria-role="radio"
+            aria-checked="{{claimLink}}"
+          >
+            <view class="verify-seg-radio" aria-hidden="true"></view>
+            <view class="verify-seg-main">
+              <text class="verify-seg-t">凭礼笺领取</text>
+              <text class="verify-seg-d">不需要 TA 的手机号</text>
+            </view>
+          </view>
+        </view>
         <block wx:if="{{claimLink && deliveryType !== 'ship_to_receiver'}}">
-        <text class="verify-set-label">凭礼笺领取 <text class="verify-set-tip">不需要 TA 的手机号</text></text>
         <text class="verify-set-brief">{{deliveryType === 'ship_to_self' ? '照常寄到你处，TA 点「收下」后礼记在 TA 名下' : 'TA 打开礼笺点「收下」即领取，一份限一人'}}</text>
-        <view class="claim-opt {{claimPasscode ? 'on' : ''}}" bindtap="toggleClaimPasscode" hover-class="tap-press-soft" hover-stay-time="80">
-          <view class="claim-check"></view>
-          <text class="claim-opt-t">加 6 位领取口令（TA 输对才能收下）</text>
+        <view
+          class="claim-opt {{claimPasscode ? 'on' : ''}}"
+          bindtap="toggleClaimPasscode"
+          hover-class="verify-seg-press"
+          hover-stay-time="80"
+          aria-role="checkbox"
+          aria-checked="{{claimPasscode}}"
+        >
+          <view class="claim-check" aria-hidden="true"></view>
+          <view class="claim-opt-main">
+            <text class="claim-opt-t">加 6 位领取口令</text>
+            <text class="claim-opt-d">{{claimPasscode ? '已加 · TA 输对口令才能收下，口令只你看得到' : 'TA 输对才能收下，防止链接被转给别人'}}</text>
+          </view>
         </view>
         <view class="verify-links">
-          <text class="why-toggle" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起规则' : '领取规则'}}</text>
-          <text class="claim-switch" bindtap="toggleClaimLink">改用手机号核验（更安全）</text>
+          <text class="why-toggle {{verifyWhyOpen ? 'open' : ''}}" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起规则' : '领取规则'}}</text>
         </view>
         <text class="verify-set-hint" wx:if="{{verifyWhyOpen && deliveryType === 'ship_to_self'}}">藏品照常寄到你处；TA 点礼笺「收下」后礼记在 TA 名下，订单结束前可作废换链接。口令只你看得到。不能发朋友圈。</text>
         <text class="verify-set-hint" wx:elif="{{verifyWhyOpen}}">TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。口令只你看得到。为防扩散，这份礼笺不能发朋友圈。</text>
         </block>
         <block wx:else>
+        <text class="verify-set-brief">TA 领取时核对这个号码，别人拿到链接也领不走</text>
         <text class="verify-set-label">受礼人手机号 <text class="verify-set-req" wx:if="{{deliveryType === 'ship_to_receiver'}}">* 必填</text><text class="verify-set-tip" wx:else>推荐填写</text></text>
         <input
           class="verify-set-input"
@@ -425,36 +531,18 @@
           focus="{{receiverPhoneFocus}}"
           bindinput="onReceiverPhoneInput"
         />
-        <text class="verify-set-err" wx:if="{{receiverPhoneError}}">{{receiverPhoneError}}</text>
+        <view class="verify-set-err" wx:if="{{receiverPhoneError}}">
+          <text class="verify-set-err-mark" aria-hidden="true">!</text>
+          <text>{{receiverPhoneError}}</text>
+        </view>
         <view class="verify-links">
-          <text class="why-toggle" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起' : '为什么要填？'}}</text>
+          <text class="why-toggle {{verifyWhyOpen ? 'open' : ''}}" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起' : '为什么要填？'}}</text>
           <text class="claim-switch" wx:if="{{deliveryType !== 'ship_to_receiver'}}" bindtap="toggleClaimLink">不知道号码？凭礼笺领取 ›</text>
         </view>
         <text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
         </block>
       </view>
       </block>
-
-      <!-- 次要信息：隐价一行开关、包装一行摘要，不加框 -->
-      <view class="detail-rows">
-        <text class="detail-muted" wx:if="{{allowHidePriceToggle === false}}">成交价已对受礼人隐藏（平台设定，不可更改）</text>
-        <view
-          class="switch-row"
-          bindtap="toggleHidePrice"
-          hover-class="tap-press-soft"
-          hover-stay-time="80"
-          aria-role="switch"
-          aria-checked="{{hidePrice}}"
-          wx:else
-        >
-          <text class="switch-label">对受礼人隐藏成交价 <text class="switch-tip">推荐</text></text>
-          <view class="switch {{hidePrice ? 'on' : ''}}" aria-hidden="true"><view class="switch-knob"></view></view>
-        </view>
-
-        <view class="pack-note">
-          <text class="pack-note-body">包装：{{packagingSummary}}</text>
-        </view>
-      </view>
     </view>
     </block>
 
