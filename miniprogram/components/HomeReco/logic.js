@@ -3,34 +3,15 @@ const { isOneOfAKindProduct, isNewArrival } = require('../../utils/productStats'
 const { sanitizeLatinName } = require('../../utils/latinDisplay')
 const { isSensitiveBlurProduct } = require('../../utils/sensitiveBlur')
 
-const PAGE_SIZE = 3
+/** 横滑展柜（2026-10-13 重做）：一批 6 件，「换一批」翻到下一批；祈运件仍每 3 件插 1 */
+const BATCH = 6
+const BLESS_EVERY = 3
 const FETCH_LIMIT = 12
 const BLESS_LIMIT = 2
 const WALL_RECENT_DAYS = 14
 /** 须与 plays 分包 ritualPlayArchive.STORAGE_KEY 同值 */
 const RITUAL_PLAY_STORAGE_KEY = 'shanhai_ritual_play_v1'
 const SERVER_TAG_REASON = '相近标签'
-
-/** 封面恒高、按 h/w 分 wide / side 档（文档 §7）；比例未知 tier=''，失败 -1 → wide */
-const COVER_H = 640
-const SIDE_MIN_W = 360
-const SIDE_MAX_W = 420
-const CARD_W = 334
-const TOP_BIAS = 0.3
-
-function coverGeo(ratio, hasImage) {
-  if (!hasImage || ratio < 0) return { tier: 'wide', cm: 'aspectFill', mt: 0 }
-  if (!(ratio > 0)) return { tier: '', cm: 'aspectFill', mt: 0 }
-  if (ratio < 0.85) return { tier: 'wide', cm: 'aspectFill', mt: 0 }
-  const bw = Math.min(SIDE_MAX_W, Math.max(SIDE_MIN_W, Math.round(COVER_H / ratio)))
-  const over = bw * ratio - COVER_H
-  return { tier: 'side', bw, cm: over > 0 ? 'widthFix' : 'aspectFill', mt: over > 0 ? -Math.round(over * TOP_BIAS) : 0 }
-}
-
-/** 两列 1:1：竖图 widthFix 偏上裁（保住标本上半），其余居中裁 */
-function cardGeo(ratio) {
-  return ratio > 1.05 ? { cm: 'widthFix', mt: -Math.round((ratio - 1) * CARD_W * TOP_BIAS) } : { cm: 'aspectFill', mt: 0 }
-}
 
 function normTag(t) {
   return String(t || '').trim().toLowerCase()
@@ -112,9 +93,14 @@ function toCard(raw, ctx, fromBless) {
   const images = Array.isArray(it.images) ? it.images : []
   const theme = String(it.themeName || '').trim()
   const latin = sanitizeLatinName(it.latinName || it.latin || it.scientificName || '')
+  const title = String(it.title || it.name || '').trim()
+  const cat = String(it.category || '').trim()
   const card = {
     _id: String(it._id || ''),
-    title: String(it.title || it.name || '').trim(),
+    title,
+    /** 卡上主名：诗意主题名优先，没有就用标题；副行 = 门类 · 标题（主名已是标题时只写门类） */
+    name: theme || title,
+    sub: [cat, theme ? title : ''].filter(Boolean).join(' · '),
     theme: theme ? `「${theme}」` : '',
     note: String(it.themeNote || '').trim(),
     latin,
@@ -161,7 +147,7 @@ function buildPool(recoRows, blessRows, signals) {
   const out = []
   let bi = 0
   main.forEach((card) => {
-    if (out.length % PAGE_SIZE === 2 && bi < bless.length) out.push(bless[bi++])
+    if (out.length % BLESS_EVERY === 2 && bi < bless.length) out.push(bless[bi++])
     out.push(card)
   })
   while (bi < bless.length) out.push(bless[bi++])
@@ -186,46 +172,39 @@ function headline(pageCards, signals) {
   return { mode: 'cold', text: '还在认识你 · 先看馆里今天的精选' }
 }
 
-function pageCount(pool) {
-  return Math.max(1, Math.ceil((Array.isArray(pool) ? pool.length : 0) / PAGE_SIZE))
+function batchCount(pool) {
+  return Math.max(1, Math.ceil((Array.isArray(pool) ? pool.length : 0) / BATCH))
 }
 
+/** 一批 = 连续 6 件；件数 ≥ 6 时末批从头补齐（只补到 6，批内不重复，补位件 dup=true 不重复计曝光） */
 function buildView(st) {
   const s = st || {}
   const pool = Array.isArray(s.pool) ? s.pool : []
-  const ratios = s.ratios || {}
   const n = pool.length
-  const total = pageCount(pool)
-  // ≥3 件末页从头补齐（起点 ≥3、只补 0/1，不会页内重复；dup 件沿用原 No./pos）；2 件 = 两列；1 件 = 只封面
-  const layout = n >= PAGE_SIZE ? 'full' : (n === 2 ? 'row' : 'lead')
-  const pages = []
-  for (let p = 0; p * PAGE_SIZE < n; p += 1) {
+  const batches = []
+  for (let b = 0; b * BATCH < n; b += 1) {
     const idx = []
-    for (let k = p * PAGE_SIZE; k < n && idx.length < PAGE_SIZE; k += 1) idx.push(k)
-    for (let k = 0; layout === 'full' && idx.length < PAGE_SIZE; k += 1) idx.push(k)
-    const cards = idx.map((k, i) => Object.assign({}, pool[k], {
-      no: `No.${String(k + 1).padStart(2, '0')}`,
-      pos: k,
-      dup: k < p * PAGE_SIZE
-    }, i || layout === 'row' ? cardGeo(ratios[pool[k].rawImage]) : coverGeo(ratios[pool[k].rawImage], !!pool[k].rawImage)))
+    for (let k = b * BATCH; k < n && idx.length < BATCH; k += 1) idx.push(k)
+    for (let k = 0; n >= BATCH && idx.length < BATCH; k += 1) idx.push(k)
+    const cards = idx.map((k) => Object.assign({}, pool[k], { pos: k, dup: k < b * BATCH }))
     const why = headline(cards, s.signals)
-    const lead = layout === 'row' ? null : cards[0]
-    pages.push({ lead, row: lead ? cards.slice(1) : cards, whyText: why.text, whyMode: why.mode })
+    batches.push({ cards, whyText: why.text, whyMode: why.mode })
   }
-  const pageIndex = Math.min(Math.max(0, s.pageIndex | 0), total - 1)
-  const cur = pages[pageIndex]
+  const total = batchCount(pool)
+  const batchIndex = Math.min(Math.max(0, s.batchIndex | 0), total - 1)
+  const cur = batches[batchIndex]
   return {
     phase: cur ? 'ready' : (s.phase === 'ready' ? 'empty' : (s.phase || 'loading')),
-    pages,
-    layout,
+    batches,
+    cards: cur ? cur.cards : [],
     whyText: cur ? cur.whyText : '',
     whyMode: cur ? cur.whyMode : '',
-    pageIndex,
-    pageTotal: total,
-    canSwap: pages.length > 1,
+    batchIndex,
+    batchTotal: total,
+    canSwap: batches.length > 1,
     refreshing: !!s.refreshing,
     errorMsg: String(s.errorMsg || '')
   }
 }
 
-module.exports = { FETCH_LIMIT, BLESS_LIMIT, RITUAL_PLAY_STORAGE_KEY, COVER_H, playedWallRecently, priceView, coverGeo, cardGeo, buildPool, buildView }
+module.exports = { BATCH, FETCH_LIMIT, BLESS_LIMIT, RITUAL_PLAY_STORAGE_KEY, playedWallRecently, priceView, buildPool, buildView }

@@ -1,4 +1,4 @@
-/* 「注记」见 miniprogram/docs/源码注记_A流主包.md（COM-1）；版式口径见 docs/首页为你推荐_博物视觉重构_2026-10-10.md */
+/* 「注记」见 miniprogram/docs/源码注记_A流主包.md（COM-1）；2026-10-13 重做为横滑展柜，口径见 docs/首页为你推荐_横滑展柜_2026-10-13.md */
 .hr-body { width: 100%; --g1: rgba(196,167,108,.12); --g2: rgba(196,167,108,.2); --g4: rgba(196,167,108,.4); --t2: var(--color-text-secondary); }
 
 .hr-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24rpx; padding-bottom: 18rpx; background: linear-gradient(90deg, rgba(196,167,108,.55), var(--g1) 60%, transparent) left bottom / 100% 1px no-repeat; }
@@ -17,102 +17,38 @@
 .hr-why-row { display: flex; align-items: baseline; gap: 16rpx; margin-bottom: 24rpx; padding-left: 18rpx; border-left: 2rpx solid var(--brass-500); }
 .hr-why-tag { flex-shrink: 0; font-size: 20rpx; line-height: 36rpx; color: var(--t2); letter-spacing: .2em; }
 .hr-why { flex: 1; min-width: 0; font-size: 25rpx; line-height: 36rpx; color: var(--brass-200); font-family: var(--font-brand); letter-spacing: .04em; -webkit-line-clamp: 2; }
-.hr-why, .hr-card-title, .hr-cover--side .hr-cv-theme, .hr-cover--side .hr-cover-title, .hr-cover--side .hr-note { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.hr-why { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
 
-.hr-swiper { height: 1238rpx; }
-.hr-swiper--lead { height: 640rpx; }
-.hr-swiper--row { height: 578rpx; }
-.hr-swiper--row .hr-row { margin-top: 0; }
-.hr-page.is-on .hr-label, .hr-page.is-on .hr-card-body { animation: hr-rise .48s ease both; }
+/* 横滑展柜：卡 300×568（图 400 + 体 166 + 边 2），骨架同尺寸 */
+.hr-strip { width: 100%; white-space: nowrap; }
+.hr-strip.is-turn .hr-card { animation: hr-rise .48s ease both; }
 @keyframes hr-rise { from { opacity: 0; transform: translateY(14rpx); } }
-
-.hr-paper { background: radial-gradient(rgba(240,230,204,.045) 1px, transparent 1.4px) 0 0 / 6rpx 6rpx, linear-gradient(160deg, rgba(196,167,108,.08), transparent 52%), var(--color-bg-card); }
-.hr-frame::after { content: ''; position: absolute; z-index: 1; left: 12rpx; top: 12rpx; right: 12rpx; bottom: 12rpx; border: 1px solid rgba(240,230,204,.24); pointer-events: none; }
-/* 过渡蒙层（A 流第 8–10 轮） */
-.hr-frame::before { content: ''; position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; height: 44%; background: linear-gradient(to bottom, rgba(31,29,26,0) 0%, rgba(31,29,26,.42) 58%, rgba(31,29,26,.88) 100%); pointer-events: none; }
-.hr-cover--side .hr-cv-media.hr-frame::before { top: 0; left: auto; width: 34%; height: auto; background: linear-gradient(to right, rgba(31,29,26,0) 0%, rgba(31,29,26,.4) 58%, rgba(31,29,26,.85) 100%); }
-
-.hr-cover { display: flex; height: 640rpx; border-radius: 6rpx; overflow: hidden; border: 1px solid rgba(196,167,108,.26); box-sizing: border-box; box-shadow: 0 24rpx 48rpx -28rpx rgba(0,0,0,.7); }
-.hr-cv-media { position: relative; flex-shrink: 0; overflow: hidden; background: var(--color-bg-elevated); }
-.hr-label { position: relative; flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; box-sizing: border-box; }
-.hr-cv-media, .hr-label { transition: opacity .25s; }
-.hr-kicker { display: flex; align-items: center; gap: 12rpx; height: 28rpx; margin-bottom: 10rpx; padding-right: 26rpx; overflow: hidden; }
-.hr-no { flex-shrink: 0; font-size: 19rpx; line-height: 28rpx; font-family: var(--font-mono); color: var(--brass-400); letter-spacing: .16em; }
-.hr-rule { flex: 1; min-width: 24rpx; height: 1px; background: linear-gradient(90deg, var(--g4), transparent); }
-.hr-cat, .hr-spec-k { flex-shrink: 0; font-size: 20rpx; line-height: 28rpx; color: var(--t2); letter-spacing: .16em; white-space: nowrap; }
-.hr-cv-name { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 14rpx; min-width: 0; }
-.hr-cv-theme { width: 100%; font-size: 36rpx; line-height: 48rpx; font-weight: 500; color: var(--brass-200); font-family: var(--font-brand); letter-spacing: .04em; text-indent: -.5em; overflow: hidden; }
-.hr-cover-title { width: 100%; min-width: 0; font-size: 32rpx; line-height: 46rpx; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .06em; overflow: hidden; }
-.hr-cover-title.is-sub { width: auto; max-width: 100%; font-size: 24rpx; line-height: 36rpx; font-family: var(--font-body); color: var(--color-text-body); letter-spacing: .04em; }
-.hr-latin, .hr-card-sub.is-latin { color: var(--t2); font-family: Georgia, serif; font-style: italic; }
-.hr-latin, .hr-spec-v { min-width: 0; font-size: 22rpx; line-height: 36rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hr-note { min-width: 0; font-size: 22rpx; line-height: 34rpx; color: var(--t2); overflow: hidden; }
-.hr-cv-foot { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6rpx 16rpx; }
-.hr-go { margin-left: auto; display: flex; align-items: center; font-size: 22rpx; line-height: 36rpx; color: var(--brass-300); letter-spacing: .14em; white-space: nowrap; }
-.hr-go::after { content: '›'; margin-left: 8rpx; font-size: 28rpx; line-height: 1; }  /* 与首页其它卡片同一 › 收尾（2026-10-13） */
-
-.hr-cover--wide { flex-direction: column; }
-.hr-cover--wide .hr-cv-media { position: relative; width: 100%; height: 430rpx; }
-.hr-cover--wide .hr-label { padding: 22rpx 26rpx; border-top: 1px solid transparent; }
-.hr-cover--wide .hr-cv-name, .hr-cover--wide .hr-note { margin-right: 200rpx; }
-.hr-cover--wide .hr-cv-theme, .hr-cover--wide .hr-cover-title, .hr-cover--wide .hr-note { white-space: nowrap; text-overflow: ellipsis; }
-.hr-cover--wide .hr-latin { flex: 1; }
-.hr-cover--wide .hr-cv-foot { position: absolute; right: 26rpx; bottom: 22rpx; flex-direction: column; align-items: flex-end; gap: 4rpx; }
-.hr-cover--side .hr-cv-media { position: relative; height: 100%; }
-.hr-cover--side .hr-label { padding: 28rpx 24rpx 24rpx 26rpx; border-left: 1px solid var(--g2); }
-.hr-cover--side .hr-kicker { flex-wrap: wrap; height: auto; max-height: 72rpx; row-gap: 8rpx; margin-bottom: 22rpx; }
-.hr-cover--side .hr-cv-theme { -webkit-line-clamp: 2; margin-bottom: 8rpx; }
-.hr-cover--side .hr-cover-title { -webkit-line-clamp: 3; }
-.hr-cover--side .hr-cover-title.is-sub { width: 100%; -webkit-line-clamp: 2; }
-.hr-cover--side .hr-note { flex-shrink: 1; min-height: 0; margin-top: 18rpx; -webkit-line-clamp: 4; line-height: 36rpx; }
-.hr-spec { margin-top: auto; padding-top: 18rpx; }
-.hr-spec-row { display: flex; align-items: baseline; gap: 16rpx; padding: 6rpx 0; border-top: 1px solid var(--g1); }
-.hr-spec-v { flex: 1; color: var(--color-text-body); }
-.hr-cover--side .hr-cv-foot { flex-shrink: 0; margin-top: auto; padding-top: 18rpx; border-top: 1px solid rgba(196,167,108,.3); }
-.hr-spec + .hr-cv-foot { margin-top: 0; }
-
-.hr-cover.is-pending .hr-cv-media, .hr-cover.is-pending .hr-label { opacity: 0; }
-
-.hr-price { font-size: 32rpx; line-height: 40rpx; font-weight: 500; color: var(--brass-300); font-family: var(--font-mono); letter-spacing: .04em; white-space: nowrap; }
-.hr-price--sm { font-size: 26rpx; }
+.hr-card, .hr-more-card { display: inline-flex; flex-direction: column; vertical-align: top; width: 300rpx; height: 568rpx; margin-right: 18rpx; border: 1px solid var(--g2); border-radius: 6rpx; overflow: hidden; box-sizing: border-box; white-space: normal; }
+.hr-card { background: var(--color-bg-card); box-shadow: 0 18rpx 36rpx -24rpx rgba(0,0,0,.6); }
+.hr-img-box { position: relative; flex-shrink: 0; width: 100%; height: 400rpx; overflow: hidden; background: var(--color-bg-elevated); }
+.hr-img, .hr-img-ph { display: block; width: 100%; height: 100%; }
+.hr-img-ph { background: var(--color-bg-elevated); }
+.hr-fade { position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; height: 46%; background: linear-gradient(to bottom, rgba(31,29,26,0), rgba(31,29,26,.42) 58%, rgba(31,29,26,.9)); pointer-events: none; }
+.hr-mark { position: absolute; z-index: 2; top: 14rpx; left: 14rpx; padding: 0 8rpx; font-size: 19rpx; line-height: 28rpx; color: var(--brass-200); background: rgba(26,24,20,.55); border: 1px solid var(--g4); letter-spacing: .1em; white-space: nowrap; }
+.hr-mark--wall { background: rgba(196,167,108,.18); }
+.hr-card-body { flex: 1; padding: 16rpx 20rpx 0; box-sizing: border-box; }
+.hr-name, .hr-sub { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hr-name { font-size: 30rpx; line-height: 42rpx; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .06em; }
+.hr-sub { height: 32rpx; margin-top: 4rpx; font-size: 22rpx; line-height: 32rpx; color: var(--t2); letter-spacing: .04em; }
+.hr-card-foot { display: flex; align-items: baseline; gap: 8rpx; margin-top: 12rpx; }
+.hr-price { font-size: 28rpx; line-height: 40rpx; font-weight: 500; color: var(--brass-300); font-family: var(--font-mono); letter-spacing: .04em; white-space: nowrap; }
 .hr-from { font-size: 20rpx; font-weight: 400; color: var(--t2); margin-left: 4rpx; }
 .hr-soldout { font-size: 20rpx; color: var(--t2); letter-spacing: .08em; white-space: nowrap; }
-.hr-mark { flex-shrink: 0; font-size: 19rpx; line-height: 26rpx; padding: 0 8rpx; color: var(--brass-200); border: 1px solid var(--g4); letter-spacing: .1em; white-space: nowrap; }
-.hr-mark--wall { background: var(--g1); }
-
-.hr-img-box { position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; background: var(--color-bg-elevated); }
-.hr-img { width: 100%; display: block; }
-.hr-aspectFill { height: 100%; }
-.hr-img-ph { width: 100%; height: 100%; background: var(--color-bg-elevated); }
-.hr-row { display: flex; gap: 18rpx; margin-top: 20rpx; }
-.hr-card { flex: 1 1 0; min-width: 0; max-width: calc((100% - 18rpx) / 2); border: 1px solid var(--g2); border-radius: 6rpx; overflow: hidden; box-shadow: 0 18rpx 36rpx -24rpx rgba(0,0,0,.6); }
-/* 体高 242 = 18+28+10+34+6+72+10+46+16（+2） */
-.hr-card-body { height: 242rpx; padding: 18rpx 20rpx 16rpx; box-sizing: border-box; border-top: 1px solid var(--g1); }
-.hr-card-meta { display: flex; align-items: center; gap: 10rpx; height: 28rpx; overflow: hidden; }
-.hr-card-meta .hr-cat::before { content: '·'; margin-right: 10rpx; color: var(--brass-500); }
-.hr-card-meta .hr-mark { margin-left: auto; }
-.hr-card-sub { display: block; height: 34rpx; margin-top: 10rpx; font-size: 24rpx; line-height: 34rpx; color: var(--brass-200); font-family: var(--font-brand); text-indent: -.5em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.hr-card-sub.is-latin { font-size: 22rpx; text-indent: 0; }
-.hr-card-title { height: 72rpx; margin-top: 6rpx; font-size: 25rpx; line-height: 36rpx; font-weight: 500; color: var(--color-text-primary); -webkit-line-clamp: 2; }
-.hr-card-foot { display: flex; align-items: center; gap: 8rpx; height: 46rpx; margin-top: 10rpx; padding-top: 8rpx; border-top: 1px solid var(--g1); box-sizing: border-box; }
-.hr-card-foot::after { content: ''; margin-left: auto; width: 28rpx; height: 1px; background: var(--brass-500); }
-
-.hr-foot { display: flex; align-items: center; margin-top: 6rpx; }
-.hr-dots { display: flex; align-items: center; gap: 8rpx; }
-.hr-dot { width: 14rpx; height: 2rpx; background: rgba(196,167,108,.3); transition: width .3s; }
-.hr-dot.is-on { width: 40rpx; background: var(--brass-400); }
-.hr-count { margin-left: 10rpx; font-size: 20rpx; font-family: var(--font-mono); color: var(--t2); letter-spacing: .12em; }
-.hr-more { margin-left: auto; padding: 22rpx 0 22rpx 24rpx; font-size: 24rpx; color: var(--brass-300); letter-spacing: .1em; }
+.hr-more-card { width: 200rpx; align-items: center; justify-content: center; gap: 6rpx; margin-right: 4rpx; background: linear-gradient(160deg, rgba(196,167,108,.08), transparent 60%); }
+.hr-more-en { font-size: 16rpx; line-height: 24rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .24em; }
+.hr-more-cn { font-size: 26rpx; line-height: 38rpx; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .1em; }
+.hr-more-go { font-size: 34rpx; line-height: 1; color: var(--brass-300); }
 
 .hr-sk-why { width: 360rpx; height: 36rpx; margin: 0 0 24rpx; }
-.hr-sk-cover, .hr-sk-card { margin-top: 0; padding: 0; overflow: hidden; box-sizing: border-box; border-radius: 6rpx; }
-.hr-sk-cover { height: 640rpx; }
-.hr-sk-card { flex: 1; height: 578rpx; }
-.hr-sk .hr-sk-img { width: 100%; height: 430rpx; margin: 0; border-radius: 0; }
-.hr-sk-card .hr-sk-img { height: 334rpx; }
-.hr-sk-cover .ui-sk-line, .hr-sk-card .ui-sk-line { margin: 24rpx 0 0 24rpx; }
-.hr-cover.is-pending { background: linear-gradient(90deg, var(--color-bg-card) 25%, var(--color-bg-elevated) 50%, var(--color-bg-card) 75%) 0 0 / 200% 100%; animation: hr-shimmer 1.5s ease-in-out infinite; }
-@keyframes hr-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.hr-sk-strip { display: flex; gap: 18rpx; overflow: hidden; }
+.hr-sk-card { flex: 0 0 300rpx; height: 568rpx; margin: 0; padding: 0; overflow: hidden; box-sizing: border-box; border-radius: 6rpx; }
+.hr-sk .hr-sk-img { width: 100%; height: 400rpx; margin: 0; border-radius: 0; }
+.hr-sk-card .ui-sk-line { margin: 24rpx 0 0 20rpx; }
 .hr-error, .hr-empty { display: flex; flex-direction: column; align-items: center; padding: 44rpx 24rpx 36rpx; font-size: 24rpx; color: var(--t2); letter-spacing: .08em; background: var(--color-bg-card); border: 1px solid var(--g2); border-radius: 6rpx; }
 .hr-error-title { font-size: 28rpx; color: var(--color-text-primary); font-family: var(--font-brand); }
 .hr-error-desc { margin-top: 8rpx; font-size: 22rpx; }
