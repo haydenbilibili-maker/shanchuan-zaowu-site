@@ -365,3 +365,17 @@
   opacity: 0.85;
   filter: saturate(0.55);
 }
+
+/* ── v2「马上有 · 心愿签」卡（2026-10-13）：发丝框墨底卡 + 实拍缩略，值对齐评审稿 ── */
+.wl-entry { position: relative; display: flex; align-items: center; gap: 28rpx; margin: 0; padding: 24rpx 28rpx 24rpx 24rpx; border: 1rpx solid rgba(196, 167, 108, 0.24); border-radius: 28rpx; background: linear-gradient(165deg, #24201A, #191612); box-sizing: border-box; }
+.wl-entry--press { opacity: 0.86; }
+.wl-entry-thumb { flex-shrink: 0; width: 128rpx; height: 128rpx; border-radius: 16rpx; box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35); background: #0E0D0B; }
+.wl-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.wl-entry-kicker { font-family: var(--font-mono); font-size: 18rpx; line-height: 26rpx; letter-spacing: 0.32em; color: var(--brass-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wl-entry-title { margin-top: 6rpx; font-family: var(--font-brand); font-size: 36rpx; line-height: 48rpx; font-weight: 500; letter-spacing: 0.12em; color: #F7F1E4; white-space: nowrap; }
+.wl-entry-meta { margin-top: 8rpx; font-size: 22rpx; line-height: 1.45; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wl-entry-wish { font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", serif; font-size: 26rpx; color: #E8D6A8; }
+.wl-entry-chevron { flex-shrink: 0; width: 18rpx; height: 18rpx; margin-right: 6rpx; border-right: 3rpx solid var(--brass-300); border-bottom: 3rpx solid var(--brass-300); transform: rotate(-45deg); }
+.wl-entry.is-compact { padding: 18rpx 24rpx 18rpx 18rpx; gap: 22rpx; }
+.wl-entry.is-compact .wl-entry-thumb { width: 96rpx; height: 96rpx; }
+.wl-entry.is-compact .wl-entry-title { font-size: 30rpx; line-height: 40rpx; }

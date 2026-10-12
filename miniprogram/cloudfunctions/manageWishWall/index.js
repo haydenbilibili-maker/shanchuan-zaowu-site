@@ -27,6 +27,7 @@
  *   `DASHSCOPE_API_KEY` 或 AI 不可用时，自动改用 `wishSeeds.js` 里人工审校过的基线文案，
  *   **不会因为 AI 挂了就拿不出第一批内容**。
  */
+const crypto = require('crypto')
 const cloud = require('wx-server-sdk')
 const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
 const {
@@ -48,6 +49,11 @@ const db = cloud.database()
 const _ = db.command
 
 const COLLECTION = 'wish_wall_messages'
+/**
+ * 「我也想要」记录（2026-10-13 心愿签重做新增旁路）：_id = 签 id + openid 摘要 → 天然幂等；
+ * 集合规则 read:false / write:false（只经本函数）。不把点过的人写进签文档 —— 签集合是 read:true。
+ */
+const ECHO_COLLECTION = 'wish_wall_echoes'
 const PERMISSION = 'manageContentDisplayFlags'
 
 /** 祈福墙作用域：当前只挂在「马上有」上，字段留出为后续「为全站拓展」预留 */
@@ -310,8 +316,48 @@ function mapPublicItem(doc) {
     // 只回"是不是用户写的"这一位：C 端据此给馆方内容加一个小标记。
     // 不回 openid / status —— 最小暴露，这是「公开列表」不是管理列表。
     source: doc.source || SOURCE_USER,
-    createTime: doc.createTime || doc._createTime || null
+    createTime: doc.createTime || doc._createTime || null,
+    // 只回计数，不回谁点过（最小暴露）
+    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0)
   }
+}
+
+function echoKey(msgId, openid) {
+  return `${msgId}_${crypto.createHash('sha1').update(String(openid)).digest('hex').slice(0, 16)}`
+}
+
+/**
+ * 「我也想要」：同一人对同一张签只记一次。
+ * 先写记录（_id 冲突 = 已点过，不再加计数），写成功才给签 `echoCount` +1；
+ * 只对公开可见的签生效；自己的签不能点（前端不给按钮，服务端再挡一次）。
+ * 回包：{ success, echoCount, already }
+ */
+async function echoWish(event, openid) {
+  if (!openid) return { success: false, msg: '请先登录' }
+  const id = String((event && event.id) || '').trim()
+  if (!id) return { success: false, msg: '缺少心愿签' }
+  let doc = null
+  try {
+    const res = await db.collection(COLLECTION).doc(id).get()
+    doc = res && res.data
+  } catch (e) {
+    doc = null
+  }
+  if (!doc || doc.status === STATUS_HIDDEN) return { success: false, msg: '这张签暂时看不到了' }
+  if (doc._openid && doc._openid === openid) return { success: false, msg: '自己的签不用点' }
+  let already = false
+  try {
+    await db.collection(ECHO_COLLECTION).add({
+      data: { _id: echoKey(id, openid), msgId: id, _openid: openid, createTime: db.serverDate() }
+    })
+  } catch (e) {
+    // 主键冲突 = 已点过；其它写库错误照实失败，不加计数
+    if (/duplicate|exist|E11000/i.test(String((e && (e.errMsg || e.message)) || ''))) already = true
+    else throw e
+  }
+  if (!already) await db.collection(COLLECTION).doc(id).update({ data: { echoCount: _.inc(1) } })
+  const after = await db.collection(COLLECTION).doc(id).field({ echoCount: true }).get()
+  return { success: true, already, echoCount: Math.max(0, parseInt(after && after.data && after.data.echoCount, 10) || 0) }
 }
 
 function mapStaffItem(doc) {
@@ -866,6 +912,7 @@ exports.main = async (event) => {
       case 'list': return await listPublic(event)
       case 'post': return await postWish(event, openid)
       case 'mine': return await listMine(event, openid)
+      case 'echo': return await echoWish(event, openid)
       case 'staffList': return await staffList(event, openid)
       case 'staffSetStatus': return await staffSetStatus(event, openid)
       case 'staffRemove': return await staffRemove(event, openid)
@@ -887,6 +934,8 @@ module.exports.normalizeProductKey = normalizeProductKey
 module.exports.todayRangeShanghai = todayRangeShanghai
 module.exports.shanghaiDayKey = shanghaiDayKey
 module.exports.composeWallList = composeWallList
+module.exports.echoKey = echoKey
+module.exports.mapPublicItem = mapPublicItem
 module.exports.SEED_RESERVE_RATIO = SEED_RESERVE_RATIO
 module.exports.SEED_ROTATE_MS = SEED_ROTATE_MS
 module.exports.TEXT_MAX = TEXT_MAX

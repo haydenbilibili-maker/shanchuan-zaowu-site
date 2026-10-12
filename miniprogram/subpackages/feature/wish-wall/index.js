@@ -40,7 +40,9 @@ const {
   dailyQuota,
   splitTagColumns,
   isTagListCapped,
-  CYCLE_PAUSE_MS
+  CYCLE_PAUSE_MS,
+  WISH_LABELS_V2,
+  WISH_LABELS_PATH
 } = require('../../../utils/wishWall')
 // 字数口径（P0 修复）：按「字」算而不是按 UTF-16 码元算 —— `draft.length` 会把 emoji 算 2、
 // 把 ZWJ 家庭 emoji 算 8，`.slice(0, TEXT_MAX)` 还会截出半个代理对。口径与已知边界见该模块文件头；
@@ -348,6 +350,16 @@ Page({
 
   onLoad(options) {
     const opts = options || {}
+    // 2026-10-13「马上有 · 心愿签」重做：已印的门店码 / 旧分享 / 横幅都指向本页 → 原样转给新页（含 scene）。
+    // 回退 = utils/wishWall.js 的 WISH_LABELS_V2 置 false。旧玩法深链 play=qian 直达今日一签，其余玩法随旧页退场。
+    if (WISH_LABELS_V2 && !opts.legacy) {
+      const q = Object.keys(opts).filter((k) => opts[k] != null && k !== 'play')
+        .map((k) => `${k}=${encodeURIComponent(String(opts[k]))}`).join('&')
+      const url = opts.play === 'qian' ? '/subpackages/plays/play-qian/index?from=wish_labels' : `${WISH_LABELS_PATH}${q ? '?' + q : ''}`
+      this._redirected = true
+      wx.redirectTo({ url, fail: () => wx.reLaunch({ url }) })
+      return
+    }
     // 门店/物料**小程序码**走 scene（wxacode.getUnlimited）：内容是 `from=store_qr&k=mashangyou`。
     // 只在显式参数缺失时采用 scene（与 identify / onboarding 两页同口径），
     // 这样普通 URL 入口（带 productKey/from）不会被 scene 抢走。
@@ -393,6 +405,7 @@ Page({
   },
 
   onPullDownRefresh() {
+    if (this._redirected) return
     // 下拉 = **强制**重读开关 + 重拉列表。开关走 SWR 缓存（TTL 10 分钟 / 陈旧窗口 24 小时），
     // 下拉是用户自己能把门禁刷新过来的动作 —— 否则只能等缓存过期或清缓存。
     // ⚠️ 2026-09-20 修：`force` 此前在 applyGate 的早退分支里被丢掉 ——
@@ -1186,6 +1199,7 @@ Page({
   },
 
   onHide() {
+    if (this._redirected) return
     // 切后台不必继续排期；回前台时 onShow 会按当前 rows 重排
     this.clearDanmakuCycle()
     // 「功德证」：离开页面才把功德推一次（写放大防护见 reportCertProgress —— 绝不逐次写）
@@ -1193,6 +1207,7 @@ Page({
   },
 
   onUnload() {
+    if (this._redirected) return
     this._unloaded = true
     this.clearDanmakuCycle()
     this.clearFreshTimer()
@@ -1214,6 +1229,7 @@ Page({
   },
 
   onShow() {
+    if (this._redirected) return
     // ⚠️ 2026-09-20：跨天回来必须重算灯态。此前 onShow 只重排弹幕，
     // 于是"昨晚点了灯、今早从后台切回来"时 `lamp.lit` 还是 true ——
     // 点灯会走「再看一眼灯」分支，新的一天点不亮（`lightLamp` 连调用都到不了）。
@@ -1473,6 +1489,7 @@ Page({
    *    命中就直接返回 —— 该分支结构上不接触 `card`，不会把玩法分享串成愿签文案。
    */
   onShareAppMessage() {
+    if (this._redirected) return {}
     const path = `/subpackages/feature/wish-wall/index?productKey=${encodeURIComponent(this.data.productKey)}`
     // 玩法弹层的「分享这份结果」：只用弹层递来的 result.share（一次性，读到即清）
     const playShare = this._playShare

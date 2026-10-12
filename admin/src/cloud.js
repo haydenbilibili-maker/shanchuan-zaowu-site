@@ -546,6 +546,7 @@ export const COLLECTIONS = {
   SUPPORT_CONFIGS: 'support_configs',                     // 客服入口（getSupportConfig）
   CONTENT_DISPLAY_FLAGS: 'content_display_flags',         // 内容展示开关（getContentDisplayFlags）
   WISH_WALL_MESSAGES: 'wish_wall_messages',               // 马上有祈福弹幕（manageWishWall，需求 28）
+  WISH_WALL_ECHOES: 'wish_wall_echoes',                   // 心愿签「我也想要」记录（manageWishWall.echo；仅云函数读写，2026-10-13）
   WISH_RITUAL_PROFILES: 'wish_ritual_profiles',           // 祈福墙仪式档案：连续点灯 + 木鱼功德（wishRitualProfile）
   WIKI_STATS: 'wiki_stats',                               // 专题档案阅读计数（wikiViewStats；仅云函数可读写，2026-10-01 新增旁路）
   WIKI_VIEW_MARKS: 'wiki_view_marks',                     // 专题阅读防刷标记：同一用户 30 分钟只计一次（wikiViewStats；仅云函数可读写）

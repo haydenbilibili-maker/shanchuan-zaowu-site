@@ -38,6 +38,7 @@
 | `nickname` | string | 展示昵称。用户发布：**服务端**取 `users.nickName`，缺省「匿名藏家」；基础内容：固定「山海造物」 |
 | `avatar` | string | 头像，服务端取 `users.avatarUrl` |
 | `status` | string | `visible` \| `hidden`（管理端可切换） |
+| `echoCount` | number | 「我也想要」人数（2026-10-13）。只由 `manageWishWall.echo` 在 `wish_wall_echoes` 首次写入成功后 `+1`；缺省视为 0 |
 | `pinned` | boolean | 是否置顶 |
 | `source` | string | `user`（用户手写）\| `ai`（AI 创作的基础内容）\| `seed`（人工基线兜底） |
 | `aiGenerated` | boolean | 是否由 AI 生成（`source === 'ai'`） |

@@ -7,3 +7,5 @@ npm run check:wall-qr
 npm run check:wall-monitor
 npm run test:ritual-profile
 npm run check:wish-seeds
+# 2026-10-13：「马上有 · 心愿签」前台重做（纯函数 / 闸门 / 写签 / 我也想要 / 版式拍板项 / 云函数最小暴露；10 注入）
+npm run test:wish-labels

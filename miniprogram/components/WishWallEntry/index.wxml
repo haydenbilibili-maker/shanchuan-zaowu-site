@@ -1,5 +1,27 @@
 <!--components/WishWallEntry/index.wxml 需求 28：祈福墙入口（开关 + 藏品命中共同决定）
   ext-class 由宿主传入（外间距归宿主）；compact 为首屏位的一行变体 -->
+<!-- v2「马上有 · 心愿签」卡（2026-10-13 重做，蓝图 docs/马上有心愿签_重设计蓝图_2026-10-13.md）：
+     展品实拍缩略 + 眉标 + 主标 + 最新一句真实心愿（没有就用展品出处句）；不滚动、无铭牌、无发光灯 -->
+<view
+  class="wl-entry ext-class {{compact ? 'is-compact' : ''}}"
+  wx:if="{{v2 && visible}}"
+  bindtap="onTap"
+  hover-class="wl-entry--press"
+  hover-stay-time="70"
+  aria-role="button"
+  aria-label="马上有 · 心愿签：{{latest || productHint || descText}}"
+>
+  <image class="wl-entry-thumb" wx:if="{{cover}}" src="{{cover}}" mode="aspectFill" />
+  <view class="wl-entry-main">
+    <text class="wl-entry-kicker">WISH LABELS</text>
+    <text class="wl-entry-title">{{brandText || '马上有'}} · 心愿签</text>
+    <text class="wl-entry-meta" wx:if="{{latest}}">最新 <text class="wl-entry-wish">「{{latest}}」</text></text>
+    <text class="wl-entry-meta" wx:elif="{{productHint || descText}}">{{productHint || descText}}</text>
+  </view>
+  <view class="wl-entry-chevron" aria-hidden="true"></view>
+</view>
+<!-- 旧入口（WISH_LABELS_V2 = false 时的回退路径；心愿签稳定后随旧页一并删除） -->
+<block wx:if="{{!v2}}">
 <view
   class="wish-wall-entry ext-class {{compact ? 'is-compact' : ''}} {{tone === 'ink' ? 'is-ink' : ''}}"
   wx:if="{{visible}}"
@@ -41,3 +63,4 @@
     <view class="wish-wall-entry-chevron"></view>
   </view>
 </view>
+</block>

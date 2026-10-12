@@ -289,6 +289,8 @@
     "check:wall-qr:selftest": "node miniprogram/scripts/check-wall-qr.mjs --selftest",
     "check:wall-monitor": "node miniprogram/scripts/check-wall-monitor.mjs",
     "check:wall-monitor:selftest": "node miniprogram/scripts/check-wall-monitor.mjs --selftest",
+    "test:wish-labels": "node miniprogram/scripts/test-wish-labels.mjs",
+    "test:wish-labels:selftest": "node miniprogram/scripts/test-wish-labels.mjs --selftest",
     "check:wish-seeds": "node scripts/check-wish-seed-batch.mjs",
     "check:wish-seeds:selftest": "node scripts/check-wish-seed-batch.mjs --selftest",
     "check:workstream-ownership": "node scripts/check-workstream-ownership.mjs",
