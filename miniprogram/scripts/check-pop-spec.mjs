@@ -34,7 +34,12 @@ export const MIGRATED = [
   ['subpackages/feature/detail/index.wxml', 'showCouponSheet'],
   ['subpackages/feature/detail/index.wxml', 'showRefundSheet'],
   ['subpackages/feature/detail/index.wxml', 'showPosterModal', 'mask'],
-  ['subpackages/feature/detail/index.wxml', 'show360Modal', 'mask']
+  ['subpackages/feature/detail/index.wxml', 'show360Modal', 'mask'],
+  ['subpackages/feature/identify/index.wxml', 'busy', 'mask'],
+  ['subpackages/feature/identify/result/index.wxml', 'showFeedback'],
+  ['subpackages/feature/identify/result/index.wxml', 'unlockSheet.show'],
+  ['subpackages/feature/collection/index.wxml', 'unlockSheet.show'],
+  ['subpackages/feature/collection/detail/index.wxml', 'justUnlocked']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小） */
@@ -46,16 +51,12 @@ export const MASK_BASELINE = {
   'subpackages/business/components/WalletPanelCoupons/index.wxss': 2,
   'subpackages/business/components/WalletPanelPoints/index.wxss': 2,
   'subpackages/content/live/watch/index.wxss': 1,
-  'subpackages/feature/collection/detail/index.wxss': 1,
-  'subpackages/feature/collection/index.wxss': 1,
   'subpackages/feature/components/CouponPrintMint/index.wxss': 1,
   'subpackages/feature/components/RegisterAuthDialog/index.wxss': 1,
   'subpackages/feature/gift/claim-sheet/index.wxss': 1,
   'subpackages/feature/gift/my-gifts/index.wxss': 1,
   'subpackages/feature/gift/phone-sheet/index.wxss': 1,
-  'subpackages/feature/gift/proxy-address-sheet/index.wxss': 1,
-  'subpackages/feature/identify/index.wxss': 1,
-  'subpackages/feature/identify/result/index.wxss': 2
+  'subpackages/feature/gift/proxy-address-sheet/index.wxss': 1
 }
 
 /** 不计入：员工 / 管理端（第 3 批）、祈福墙 / 心愿签（另一流的纸感语言）、吸底栏（不是遮罩） */

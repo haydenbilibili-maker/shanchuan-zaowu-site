@@ -344,10 +344,12 @@
   </view>
   </block>
 
-  <view class="fb-mask" wx:if="{{showFeedback}}" catchtap="closeFeedback">
-    <view class="fb-panel" catchtap="noop">
-      <text class="fb-en">CORRECTION</text>
-      <text class="fb-title">识别纠错</text>
+  <view class="ui-pop-mask is-center fb-mask" wx:if="{{showFeedback}}" catchtap="closeFeedback" catchtouchmove="true">
+    <view class="ui-pop-dialog fb-panel" catchtap="noop">
+      <view class="ui-pop-head">
+        <text class="ui-pop-kicker">CORRECTION</text>
+        <text class="ui-pop-title">识别纠错</text>
+      </view>
       <text class="fb-tip">帮助我们改进模型。请填写您认为更准确的中文名，备注可选。</text>
       <input
         class="fb-input"
@@ -362,22 +364,24 @@
         bindinput="onFeedbackNote"
         maxlength="500"
       />
-      <view class="fb-actions">
-        <button class="fb-btn cancel" bindtap="closeFeedback">取消</button>
-        <button class="fb-btn ok" bindtap="submitFeedback" loading="{{feedbackSubmitting}}">提交</button>
+      <view class="ui-pop-foot">
+        <button class="ui-pop-btn is-ghost fb-btn" hover-class="tap-press" bindtap="closeFeedback">取消</button>
+        <button class="ui-pop-btn is-primary fb-btn" hover-class="tap-press" bindtap="submitFeedback" loading="{{feedbackSubmitting}}">提交</button>
       </view>
     </view>
   </view>
 
-  <view class="unlock-mask" wx:if="{{unlockSheet.show}}" catchtouchmove="onUnlockStay">
-    <view class="unlock-sheet" catchtap="noop">
-      <text class="unlock-en">PAGE TURNED</text>
-      <text class="unlock-title">这一页被翻开了</text>
+  <view class="ui-pop-mask is-center is-deep unlock-mask" wx:if="{{unlockSheet.show}}" catchtouchmove="onUnlockStay">
+    <view class="ui-pop-dialog unlock-sheet" catchtap="noop">
+      <view class="ui-pop-head is-center">
+        <text class="ui-pop-kicker">PAGE TURNED</text>
+        <text class="ui-pop-title">这一页被翻开了</text>
+      </view>
       <text class="unlock-name">{{unlockSheet.nameZh}}</text>
       <text class="unlock-latin" wx:if="{{unlockSheet.nameLatin}}">{{unlockSheet.nameLatin}}</text>
       <text class="unlock-msg">{{unlockSheet.msg}}</text>
-      <view class="unlock-cta" bindtap="onUnlockOpen">去看这一页</view>
-      <text class="unlock-later" bindtap="onUnlockStay">先留在这里</text>
+      <view class="ui-pop-btn is-primary unlock-cta" bindtap="onUnlockOpen" hover-class="tap-press" hover-stay-time="80">去看这一页</view>
+      <view class="unlock-later" bindtap="onUnlockStay" hover-class="tap-press" hover-stay-time="80">先留在这里</view>
     </view>
   </view>
 </view>

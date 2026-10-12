@@ -204,15 +204,17 @@
     <view class="dock-btn" bindtap="goLogs" hover-class="tap-press-soft" hover-stay-time="80">采集日志</view>
   </view>
 
-  <view class="unlock-mask" wx:if="{{unlockSheet.show}}" catchtouchmove="onUnlockStay">
-    <view class="unlock-sheet">
-      <text class="unlock-en">PAGE TURNED</text>
-      <text class="unlock-title">这一页被翻开了</text>
+  <view class="ui-pop-mask is-center is-deep unlock-mask" wx:if="{{unlockSheet.show}}" catchtouchmove="onUnlockStay">
+    <view class="ui-pop-dialog unlock-sheet">
+      <view class="ui-pop-head is-center">
+        <text class="ui-pop-kicker">PAGE TURNED</text>
+        <text class="ui-pop-title">这一页被翻开了</text>
+      </view>
       <text class="unlock-name">{{unlockSheet.nameZh}}</text>
       <text class="unlock-latin" wx:if="{{unlockSheet.nameLatin}}">{{unlockSheet.nameLatin}}</text>
       <text class="unlock-msg">{{unlockSheet.msg}}</text>
-      <view class="unlock-cta" bindtap="onUnlockOpen" hover-class="tap-press-soft" hover-stay-time="80">去看这一页</view>
-      <text class="unlock-later" bindtap="onUnlockStay">先留在图鉴</text>
+      <view class="ui-pop-btn is-primary unlock-cta" bindtap="onUnlockOpen" hover-class="tap-press" hover-stay-time="80">去看这一页</view>
+      <view class="unlock-later" bindtap="onUnlockStay" hover-class="tap-press" hover-stay-time="80">先留在图鉴</view>
     </view>
   </view>
 </view>

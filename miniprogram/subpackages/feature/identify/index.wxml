@@ -56,7 +56,7 @@
     </view>
   </view>
 
-  <view class="loading-mask" wx:if="{{busy}}">
+  <view class="ui-pop-mask is-center loading-mask" wx:if="{{busy}}" catchtouchmove="true">
     <!-- 步骤与进度放进加载卡：放在遮罩下面时被压暗，等待 15–60 秒只看得到一个转圈 -->
     <view class="loading-core">
       <view class="spinner"></view>
