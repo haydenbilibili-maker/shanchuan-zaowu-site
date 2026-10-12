@@ -588,12 +588,11 @@ view, text, image, map { box-sizing: border-box; }
   height: 1rpx;
   background: linear-gradient(90deg, transparent, rgba(196, 167, 108,0.5), transparent);
 }
+/* VIS 3.0：方寸篆印（PNG 已是黄铜色，不再用 filter 给 tab 图标染色） */
 .logo-icon { 
-  width: 44rpx; 
-  height: 44rpx; 
-  margin-bottom: 14rpx; 
-  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
-  opacity: 0.8;
+  width: 72rpx; 
+  height: 72rpx; 
+  margin-bottom: 16rpx; 
 }
 .footer-cr-cn {
   font-size: 20rpx;

@@ -121,7 +121,7 @@
 
     <!-- 底部 Logo -->
     <view class="footer-logo" catchlongpress="onEasterEggLongPress" data-egg-id="kunlun">
-      <image class="logo-icon" src="/subpackages/business/assets/icons/home-active.png" mode="aspectFit"></image> 
+      <image class="logo-icon" src="/assets/brand/seal-standard.png" mode="aspectFit"></image>
       <text class="footer-cr-cn">© 2026 山海造物</text>
       <text class="footer-cr-en">NATURE'S CREATIONS</text>
     </view>
