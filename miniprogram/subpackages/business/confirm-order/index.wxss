@@ -431,7 +431,9 @@ view, text, scroll-view { box-sizing: border-box; }
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   z-index: 100;
 }
-.footer-price { display: flex; align-items: baseline; gap: 8rpx; }
+.footer-price { flex: 1; min-width: 0; margin-right: 24rpx; }
+.fp-row { display: flex; align-items: baseline; gap: 8rpx; }
+.fp-note { display: block; margin-top: 4rpx; font-size: 22rpx; color: #C4A76C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fp-label { font-size: 24rpx; color: #A09A90; }
 .fp-value { font-size: 40rpx; font-weight: 600; color: #C4A76C; font-family: monospace; }
 .submit-btn {
@@ -911,7 +913,6 @@ view, text, scroll-view { box-sizing: border-box; }
 }
 .gift-sum-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; margin-top: 8rpx; }
 .gift-sum-sku { flex: 1; min-width: 0; font-size: 22rpx; color: #A09A90; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gift-sum-price { flex-shrink: 0; font-size: 26rpx; color: #C4A76C; font-family: 'JetBrains Mono', 'DM Mono', monospace; }
 .gift-sum-letter {
   margin-top: 24rpx;
   padding: 20rpx 24rpx;

@@ -60,9 +60,9 @@
       <view class="gift-sum-main">
         <text class="gift-sum-for">{{giftSelfTreat ? '犒劳自己' : (giftRecipientName ? '送给 · ' + giftRecipientName : '一份礼')}}</text>
         <text class="gift-sum-title">{{item.title}}</text>
-        <view class="gift-sum-row">
+        <!-- 单价不在摘要重复：下方账单「藏品合计」与底栏已给（2026-10-12 产品负责人：价格只在一处说清） -->
+        <view class="gift-sum-row" wx:if="{{item.skuLabel || item.count > 1}}">
           <text class="gift-sum-sku">{{item.skuLabel || ''}}{{item.count > 1 ? ' ×' + item.count : ''}}</text>
-          <text class="gift-sum-price">¥{{item.price}}</text>
         </view>
       </view>
     </view>
@@ -467,7 +467,7 @@
 
     <view class="row-item" wx:if="{{discountRate < 1 && vipSaved > 0}}">
       <text class="row-label">{{discountLabel}}</text>
-      <text class="row-value gold">-¥{{vipSaved}}（{{discountText}}）</text>
+      <text class="row-value gold">-¥{{vipSavedYuan}}（{{discountText}}）</text>
     </view>
     <view class="row-item" wx:if="{{depositCredit > 0}}">
       <text class="row-label">已付定金抵扣</text>
@@ -522,8 +522,12 @@
   <!-- 底部提交 -->
   <view class="footer-bar">
     <view class="footer-price">
-      <text class="fp-label">{{footerPayLabel}}</text>
-      <text class="fp-value">¥{{payNowYuan}}</text>
+      <view class="fp-row">
+        <text class="fp-label">{{footerPayLabel}}</text>
+        <text class="fp-value">¥{{payNowYuan}}</text>
+      </view>
+      <!-- 礼赠：价格只在第 3 步给，会员折扣在底栏说一句（送礼页不再报价，2026-10-12） -->
+      <text class="fp-note" wx:if="{{isGiftOrder && discountRate < 1 && vipSaved > 0}}">{{levelName}} {{discountText}} · 已省 ¥{{vipSavedYuan}}</text>
     </view>
     <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitOrder" hover-class="{{submitting ? '' : 'submit-btn-hover'}}">
       {{submitting ? (isGiftOrder ? '备妥中…' : '处理中…') : (isGiftOrder ? (useWalletPay && wxpayYuan === '0.00' ? '钱包支付并备妥' : '支付并备妥') : (useWalletPay && wxpayYuan === '0.00' ? '钱包支付' : '提交订单'))}}

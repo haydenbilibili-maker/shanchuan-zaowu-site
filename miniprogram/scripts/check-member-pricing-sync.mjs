@@ -1,373 +1,183 @@
 #!/usr/bin/env node
 /**
- * check:member-pricing-sync —— 会员应付「口径同源」守卫（2026-09-19 裁决 46-a）
+ * check:member-pricing-sync —— 会员价「只在一处报、只有一份口径」守卫
  *
- * 背景（真事故形态，不是假想）：
- *   礼赠编排页底部「备妥应付」此前直接渲染 `displayPrice`（**原价**），
- *   会员看到的价格与结算页不一致。修法只能是「同一个等级、同一个费率、同一种乘法」，
- *   而微信分包硬约束决定了主包件 `subpackages/feature/utils/memberPayable.js` 只能是
- *   `subpackages/business/utils/memberPricing.js` 三个纯函数的**副本**
- *   （分包之间不能互 require；主包不能引分包）。
+ * 沿革：
+ *   2026-09-19 裁决 46-a：礼赠编排页底栏「备妥应付」显示当前等级会员价，为此在 feature 分包
+ *   复制了一份定级口径 `subpackages/feature/utils/memberPayable.js`，本守卫当时拦「副本漂移」。
+ *   2026-10-12 产品负责人撤回编排页报价：「在最后一个环节展示价格即可，并展示会员折扣信息」——
+ *   送礼页不再报价，价格与会员折扣只在第 3 步确认页给一次。副本随之删除（它只服务编排页）。
  *
- *   ⇒ 副本就有漂移风险：改了 business 那份的定级口径，编排页会静默按旧口径报价。
- *     本守卫就是拦这个静默漂移。
+ *   ⇒ 现在要拦的是**反方向**：有人把编排页报价加回来，又在分包里复制一份定级口径（漂移源复活）。
  *
  * 断言（任一条不成立即失败）：
- *   ① 副本同源：`resolveFromLadder` / `normalizeDiscountRate` / `levelRate`
- *      在 `subpackages/feature/utils/memberPayable.js` 与 `subpackages/business/utils/memberPricing.js`
- *      里**逐字一致**（副本可以存在，但不许各自演化）。
- *   ② 引用合法：编排页只引主包件，绝不出现 `memberPricing`（跨包会整包起不来）。
- *   ③ 界面真展示会员价：底栏「备妥应付」渲染的是 `payablePrice`，
- *      且带「以结算页为准」（当前等级价 ≠ 结算页含券/运费/自提后的最终价）。
- *   ④ 参与折扣的判据一致：`memberDiscountEnabled === false`（false 才不打折）。
- *   ⑤ 结算页乘法形态未变：`orderPricing` 仍是「合计 × 费率」一次成形
- *      （⇒ 单行订单与编排页 `applyMemberRate` 数学等价，见 ⑥ 的数值证明）。
- *   ⑥ 数值等价（真跑，不靠读代码）：`applyMemberRate(line, rate, true)`
- *      与结算页单行公式 `round2(line * rate)` 在费率 × 金额矩阵上逐点相等；
- *      非法费率（0 / 负数 / NaN / >1）一律回落原价，绝不因脏数据把价格算成 0 或负数。
- *   ⑦ 取数同源：两页都从 `getUserStats` 的同一批字段（levelLadder / growthValue /
- *      userInfo.isHonorary）解析当前等级。
+ *   ① 副本不复活：`subpackages/feature/utils/memberPayable.js` 不存在；小程序端（云函数、scripts 除外）
+ *      除业务真源 `subpackages/business/utils/memberPricing.js` 外，没有别处定义
+ *      `resolveFromLadder` / `levelRate` / `normalizeDiscountRate`。
+ *   ② 送礼页不报价：编排页 JS 不取会员等级（无 getUserStats / memberPayable / memberPricing / payablePrice），
+ *      底栏无金额与「会员价」字样。
+ *   ③ 确认页是唯一口径：仍从 getUserStats 取等级、优先 stats.discountRate；
+ *      orderPricing 会员乘法形态未变（合计 × 费率一次成形）。
  *
  * 用法：
  *   node miniprogram/scripts/check-member-pricing-sync.mjs            # 校验
- *   node miniprogram/scripts/check-member-pricing-sync.mjs --selftest # 证明它会失败
+ *   node miniprogram/scripts/check-member-pricing-sync.mjs --selftest # 证明它会失败（临时根上注入，不动工作区）
  *   node miniprogram/scripts/check-member-pricing-sync.mjs --root <dir>  # 只给自检用
  */
-import { readFileSync, mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs'
-import { join, dirname } from 'node:path'
+import { existsSync, readFileSync, readdirSync, mkdirSync, mkdtempSync, writeFileSync, rmSync, statSync } from 'node:fs'
+import { join, dirname, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
-import vm from 'node:vm'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const MP_DEFAULT = join(HERE, '..')
 
-/** 相对 miniprogram/ 的落点（自检时整体搬到临时根，绝不改共享工作区的真文件） */
 const REL = {
-  helper: 'subpackages/feature/utils/memberPayable.js',
   pricing: 'subpackages/business/utils/memberPricing.js',
   orderPricing: 'subpackages/business/utils/orderPricing.js',
   compose: 'subpackages/feature/gift/compose/index.js',
   composeWxml: 'subpackages/feature/gift/compose/index.wxml',
   confirm: 'subpackages/business/confirm-order/index.js'
 }
-
-/** 三个必须逐字同源的纯函数（business 件是这些函数的真源） */
+const RETIRED_COPY = 'subpackages/feature/utils/memberPayable.js'
 const SHARED_FNS = ['normalizeDiscountRate', 'levelRate', 'resolveFromLadder']
+const SKIP_DIRS = new Set(['node_modules', 'cloudfunctions', 'scripts', 'docs', 'minitest', '.git'])
 
-/** 从源码里切出一个 `function NAME(...) {...}` 的完整文本（按花括号配平） */
-function extractFn(text, name) {
-  const start = text.indexOf(`function ${name}(`)
-  if (start < 0) return null
-  const open = text.indexOf('{', start)
-  if (open < 0) return null
-  let depth = 0
-  for (let p = open; p < text.length; p += 1) {
-    const ch = text[p]
-    if (ch === '{') depth += 1
-    else if (ch === '}') {
-      depth -= 1
-      if (depth === 0) return text.slice(start, p + 1)
-    }
+function walkJs(root, dir = root, out = []) {
+  for (const name of readdirSync(dir)) {
+    if (SKIP_DIRS.has(name)) continue
+    const abs = join(dir, name)
+    const st = statSync(abs)
+    if (st.isDirectory()) walkJs(root, abs, out)
+    else if (name.endsWith('.js')) out.push(relative(root, abs).split(sep).join('/'))
   }
-  return null
-}
-
-const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100
-
-/**
- * 结算页 `orderPricing.calculateClientPricing` 在**单行、参与折扣、无券**时的取值：
- *   original = price * count；discountedSubtotal = original；
- *   vipTotal = round2(discountedSubtotal * discountRate + 0)
- * 编排页只有一行（选中 SKU × 件数），故这一条就是两页必须重合的全部情形。
- */
-function checkoutSingleLine(line, rate) {
-  return round2(line * rate)
-}
-
-/** 以 CJS 语义执行主包件（它自带 module.exports，且**不许有 require**） */
-function loadHelper(src) {
-  const module = { exports: {} }
-  const wrapper = new vm.Script(`(function (module, exports, require) {\n${src}\n})`)
-  const requireStub = () => {
-    throw new Error('主包件不得 require 任何模块（跨包引用会让分包整包起不来）')
-  }
-  wrapper.runInThisContext()(module, module.exports, requireStub)
-  return module.exports
+  return out
 }
 
 function check(mp) {
   const problems = []
-  const read = (key) => readFileSync(join(mp, REL[key]), 'utf8')
   const texts = {}
-  for (const key of Object.keys(REL)) {
+  for (const [key, rel] of Object.entries(REL)) {
     try {
-      texts[key] = read(key)
+      texts[key] = readFileSync(join(mp, rel), 'utf8')
     } catch (e) {
-      problems.push(`${REL[key]} 读不到：${e.message}`)
+      problems.push(`${rel} 读不到：${e.message}`)
     }
   }
   if (problems.length) return problems
 
-  // ① 副本同源：三个函数逐字一致
-  for (const name of SHARED_FNS) {
-    const a = extractFn(texts.helper, name)
-    const b = extractFn(texts.pricing, name)
-    if (!a) problems.push(`${REL.helper} 里找不到 function ${name}(（副本被删或被改名）`)
-    else if (!b) problems.push(`${REL.pricing} 里找不到 function ${name}(（真源被删或被改名）`)
-    else if (a !== b) {
-      problems.push(
-        `「${name}」两处不再逐字一致 —— 定级口径已漂移：编排页会按旧口径报价\n` +
-        `    主包副本：${a.split('\n')[0]}\n    业务真源：${b.split('\n')[0]}`
-      )
+  // ① 副本不复活
+  if (existsSync(join(mp, RETIRED_COPY))) {
+    problems.push(`${RETIRED_COPY} 复活了 —— 编排页已不报价，分包里的定级口径副本只会漂移（2026-10-12 删除）`)
+  }
+  for (const rel of walkJs(mp)) {
+    if (rel === REL.pricing) continue
+    const src = readFileSync(join(mp, rel), 'utf8')
+    for (const fn of SHARED_FNS) {
+      if (new RegExp(`function ${fn}\\s*\\(`).test(src)) {
+        problems.push(`${rel} 又定义了 ${fn}() —— 定级口径只许在 ${REL.pricing} 一处`)
+      }
     }
   }
 
-  // ② 引用合法 + 真引了主包件
-  if (!/require\((['"])[^'"]*utils\/memberPayable\1\)/.test(texts.compose)) {
-    problems.push(`${REL.compose} 没有 require feature 分包件 utils/memberPayable`)
+  // ② 送礼页不报价
+  for (const bad of ['getUserStats', 'memberPayable', 'memberPricing', 'payablePrice']) {
+    if (texts.compose.includes(bad)) problems.push(`${REL.compose} 又出现 ${bad} —— 送礼页不取会员等级、不算价（价格只在确认页）`)
   }
-  if (/require\((['"])[^'"]*memberPricing\1\)/.test(texts.compose)) {
-    problems.push(`${REL.compose} require 了 memberPricing —— 分包之间不能互 require，会让整包起不来`)
-  }
-
-  // ③ 界面真展示会员价 + 「以结算页为准」
-  const bottomAt = texts.composeWxml.indexOf('备妥应付')
-  if (bottomAt < 0) {
-    problems.push(`${REL.composeWxml} 找不到「备妥应付」`)
-  } else {
-    const block = texts.composeWxml.slice(bottomAt, bottomAt + 500)
-    if (!/bottom-value[^>]*>\s*¥\{\{payablePrice\}\}/.test(block)) {
-      problems.push('「备妥应付」的主价没有渲染 payablePrice（会员看到的是原价 —— 这正是本次要修的事故形态）')
-    }
-    if (/bottom-value[^>]*>\s*¥\{\{displayPrice\}\}/.test(block)) {
-      problems.push('「备妥应付」的主价仍在直接渲染 ¥{{displayPrice}}（原价）')
-    }
-    // 原价只允许作为划掉对照出现（bottom-origin），不许在别处裸奔
-    if (block.includes('¥{{displayPrice}}') && !/bottom-origin[^>]*>\s*¥\{\{displayPrice\}\}/.test(block)) {
-      problems.push('「备妥应付」里的原价不在 .bottom-origin（划掉对照）里 —— 排版会让人分不清哪个是应付')
-    }
-    if (!block.includes('以结算页为准')) {
-      problems.push('「备妥应付」缺少「以结算页为准」—— 当前等级价不等于含券/运费的最终价')
-    }
-  }
-  const setPriceAt = texts.compose.indexOf('displayPrice: total')
-  const refreshAt = texts.compose.indexOf('this._refreshMemberPayable()', setPriceAt)
-  if (setPriceAt < 0 || refreshAt < 0) {
-    problems.push(`${REL.compose} 未在 displayPrice 落定后调用 _refreshMemberPayable()`)
-  }
-  if (!texts.compose.includes('this._loadMemberStats()')) {
-    problems.push(`${REL.compose} 没有在进页时取会员等级（_loadMemberStats）`)
+  const w = texts.composeWxml
+  const barAt = w.indexOf('<view class="bottom-bar')
+  if (barAt < 0) problems.push(`${REL.composeWxml} 找不到底栏 bottom-bar`)
+  else {
+    const bar = w.slice(barAt, w.indexOf('<view class="page checking"', barAt))
+    if (/¥|会员价|备妥应付|以结算页为准/.test(bar)) problems.push(`${REL.composeWxml} 底栏又报价（¥ / 会员价 / 备妥应付）—— 与确认页底栏重复`)
   }
 
-  // ④ 折扣判据一致
-  if (!/memberDiscountEnabled === false/.test(texts.helper)) {
-    problems.push(`${REL.helper} 的 applyMemberRate 判据不再是 memberDiscountEnabled === false`)
-  }
-  if (!/item\.memberDiscountEnabled !== false/.test(texts.orderPricing)) {
-    problems.push(`${REL.orderPricing} 的 isMemberDiscountEnabled 判据不再是 item.memberDiscountEnabled !== false`)
-  }
-  if (!/memberDiscountEnabled: p\.memberDiscountEnabled !== false/.test(texts.compose)) {
-    problems.push(`${REL.compose} 传给结算页的 memberDiscountEnabled 判据变了`)
-  }
-
-  // ⑤ 结算页乘法形态（单行等价的前提）
+  // ③ 确认页是唯一口径
+  if (!texts.confirm.includes('getUserStats')) problems.push(`${REL.confirm} 不再从 getUserStats 取等级`)
+  if (!/stats\.discountRate/.test(texts.confirm)) problems.push(`${REL.confirm} 不再优先取 stats.discountRate`)
   if (!/discountedSubtotal \* discountRate \+ nonDiscounted/.test(texts.orderPricing)) {
-    problems.push(
-      `${REL.orderPricing} 的会员乘法形态变了 —— 逐行取整会与编排页的整单取整不等价，请同步核对 ⑥ 的矩阵`
-    )
-  }
-
-  // ⑥ 数值等价（真跑主包件）
-  let helper = null
-  try {
-    helper = loadHelper(texts.helper)
-  } catch (e) {
-    problems.push(`主包件执行失败：${e.message}`)
-  }
-  if (helper) {
-    for (const fn of ['applyMemberRate', 'payableFor', 'inputsFromStats', 'resolveCurrentRate']) {
-      if (typeof helper[fn] !== 'function') problems.push(`主包件未导出 ${fn}`)
-    }
-  }
-  if (helper && typeof helper.applyMemberRate === 'function') {
-    const lines = [0.01, 1, 9.99, 33.33, 168, 298, 299, 4500, 12345.67]
-    const rates = [0.75, 0.8, 0.85, 0.9, 0.95, 1]
-    for (const line of lines) {
-      for (const rate of rates) {
-        const got = helper.applyMemberRate(line, rate, true)
-        const want = checkoutSingleLine(line, rate)
-        if (got !== want) {
-          problems.push(`折扣价与结算页不等价：¥${line} × ${rate} → 编排页 ${got} / 结算页 ${want}`)
-        }
-      }
-      if (helper.applyMemberRate(line, 0.9, false) !== round2(line)) {
-        problems.push(`memberDiscountEnabled=false 时未回落原价（¥${line}）`)
-      }
-    }
-    for (const bad of [0, -1, NaN, 1.5, 'x', null, undefined]) {
-      const got = helper.applyMemberRate(100, bad, true)
-      if (got !== 100) problems.push(`非法费率 ${String(bad)} 未回落原价（得到 ${got}）`)
-    }
-    if (helper.applyMemberRate(0, 0.9, true) !== 0) problems.push('0 元订单应仍为 0')
-
-    // 服务端费率优先（与结算页 stats.discountRate 同源）：阶梯为空也必须照服务端算
-    const srv = helper.payableFor({ amount: 1000, ladder: [], growthValue: 0, serverRate: 0.9, serverLevelName: '流金·研究员' })
-    if (srv.payable !== 900) problems.push(`服务端费率未被优先采用（1000 × 0.9 → ${srv.payable}）`)
-    if (srv.levelName !== '流金·研究员') problems.push(`等级名未取服务端值（得到「${srv.levelName}」）`)
-    const srvPct = helper.payableFor({ amount: 1000, ladder: [], growthValue: 0, serverRate: 90 })
-    if (srvPct.payable !== 900) problems.push(`服务端百分数写法（90）未归一为 0.9（得到 ${srvPct.payable}）`)
-    const noSrv = helper.payableFor({
-      amount: 1000,
-      ladder: [{ level: 3, name: '流金·研究员', threshold: 2000, discountRate: 0.9 }],
-      growthValue: 2500
-    })
-    if (noSrv.payable !== 900) problems.push(`无服务端费率时未按阶梯兜底（得到 ${noSrv.payable}）`)
-
-    // 钱安全：脏费率绝不能算出「近乎免费」或「高于原价」
-    // normalizeDiscountRate 会把 >1 的值当「折/百分数」写法治（1.05 → 0.105！），
-    // 故服务端费率只采信 [MIN_PLAUSIBLE_RATE, 1]。
-    const dirty = [
-      [1.05, '既非合法分数、又会被归一成 0.105（近乎免费）'],
-      [0.05, '低于可信下界'],
-      [0.2, '低于可信下界'],
-      [1.0001, '刚过 1 就会被 /10 归一成 0.1'],
-      [200, '百分数写法的越界值']
-    ]
-    for (const [r, why] of dirty) {
-      const got = helper.payableFor({ amount: 100, ladder: [], growthValue: 0, serverRate: r })
-      if (got.payable !== 100) problems.push(`脏服务端费率 ${r}（${why}）未回落原价（得到 ${got.payable}）`)
-    }
-    const badLadder = helper.payableFor({
-      amount: 100,
-      ladder: [{ level: 2, name: '脏档', threshold: 0, discountRate: 0.1 }],
-      growthValue: 0
-    })
-    if (badLadder.payable !== 100) problems.push(`脏阶梯费率 0.1 未回落原价（得到 ${badLadder.payable}）`)
-    const pct = helper.payableFor({ amount: 100, ladder: [], growthValue: 0, serverRate: 9.5 })
-    if (pct.payable !== 95) problems.push(`合法「9.5 折」写法未采信（得到 ${pct.payable}，应为 95）`)
-  }
-
-  // ⑦ 取数同源
-  const STAT_KEYS = ['levelLadder', 'growthValue', 'isHonorary']
-  for (const [key, label] of [['confirm', '结算页'], ['helper', '主包件']]) {
-    for (const k of STAT_KEYS) {
-      if (!texts[key].includes(k)) problems.push(`${label} 不再使用 getUserStats 字段 ${k} —— 两页取数口径可能已分叉`)
-    }
-  }
-  if (!texts.confirm.includes('getUserStats') || !texts.compose.includes('getUserStats')) {
-    problems.push('两页必须都从 getUserStats 取等级（否则等级口径不同源）')
-  }
-  // 服务端费率优先：结算页的「当前等级」取 stats.discountRate，主包件必须同源
-  if (!/stats\.discountRate/.test(texts.confirm)) {
-    problems.push(`${REL.confirm} 不再取 stats.discountRate —— 主包件的 serverRate 优先口径失去对照`)
-  }
-  if (!/serverRate: inputs\.serverRate/.test(texts.compose)) {
-    problems.push(`${REL.compose} 没有把 stats.discountRate 传给 payableFor（会退化成纯本地阶梯推算）`)
+    problems.push(`${REL.orderPricing} 的会员乘法形态变了（合计 × 费率一次成形），请核对账单与服务端是否同口径`)
   }
   return problems
 }
 
 // ────────────────────────────── 自检 ──────────────────────────────
+function copyTree(src, dst) {
+  for (const name of readdirSync(src)) {
+    if (SKIP_DIRS.has(name)) continue
+    const a = join(src, name)
+    const b = join(dst, name)
+    if (statSync(a).isDirectory()) { mkdirSync(b, { recursive: true }); copyTree(a, b) }
+    else if (name.endsWith('.js') || name.endsWith('.wxml')) writeFileSync(b, readFileSync(a))
+  }
+}
+
 function selftest() {
   let bad = 0
-  const t = (name, ok, extra) => {
-    if (!ok) bad += 1
-    console.log(`${ok ? '✓' : '✗'} ${name}${ok || !extra ? '' : ` —— ${extra}`}`)
-  }
-
-  // 合成用例：证明「花括号配平切片」这个判据本身可用
-  const src = 'function f() {\n  if (1) { return 2 }\n  return 3\n}\n'
-  t('切片：能取到完整函数体', extractFn(src, 'f') === src.trim())
-  t('切片：缺函数返回 null', extractFn(src, 'nope') === null)
-  t('★ 切片：多一个字符必须不等', extractFn(src, 'f') !== src.trim().replace('return 3', 'return 4'))
-
-  // 真实文件注入：搬到临时根上改，共享工作区一个字节都不动
   const tmp = mkdtempSync(join(tmpdir(), 'member-pricing-sync-'))
   try {
-    for (const [key, rel] of Object.entries(REL)) {
-      const dst = join(tmp, rel)
-      mkdirSync(dirname(dst), { recursive: true })
-      writeFileSync(dst, readFileSync(join(MP_DEFAULT, rel)))
-    }
+    copyTree(MP_DEFAULT, tmp)
     const run = () => spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--root', tmp], { encoding: 'utf8' })
-    const baseline = run()
-    t('基线（真文件副本）通过', baseline.status === 0, (baseline.stdout || '') + (baseline.stderr || ''))
-
+    const base = run()
+    if (base.status !== 0) {
+      console.error(`✗ 自检前提：真文件副本须先通过\n${base.stdout}${base.stderr}`)
+      process.exit(1)
+    }
+    const pricingSrc = readFileSync(join(MP_DEFAULT, REL.pricing), 'utf8')
     const injections = [
+      { name: '分包副本 memberPayable.js 复活', file: RETIRED_COPY, mutate: () => 'module.exports = {}\n', expect: /复活/ },
       {
-        name: '定级口径漂移（主包副本的 resolveFromLadder 改了门槛比较）',
-        file: REL.helper,
-        mutate: (s) => s.replace('if (growth >= th) current = row', 'if (growth > th) current = row'),
-        expect: /不再逐字一致/
+        name: '别处又复制一份 resolveFromLadder',
+        file: 'utils/memberLevelCopy.js',
+        mutate: () => `function resolveFromLadder(ladder, growth) { return ladder }\nmodule.exports = { resolveFromLadder }\n`,
+        expect: /又定义了 resolveFromLadder/
       },
+      { name: '送礼页又取会员等级', file: REL.compose, mutate: (s) => s.replace('_maybeApplySceneNote() {', "_load() { wx.cloud.callFunction({ name: 'getUserStats' }) },\n  _maybeApplySceneNote() {"), expect: /getUserStats/ },
+      { name: '送礼页底栏又报价', file: REL.composeWxml, mutate: (s) => s.replace('<view class="pay-btn', '<text class="bottom-value">¥{{displayPrice}}</text>\n    <view class="pay-btn'), expect: /底栏又报价/ },
+      { name: '确认页不再取 stats.discountRate', file: REL.confirm, mutate: (s) => s.split('stats.discountRate').join('stats.rateX'), expect: /stats\.discountRate/ },
       {
-        name: '备妥应付退回原价（wxml 渲染 displayPrice）',
-        file: REL.composeWxml,
-        mutate: (s) => s.replace('¥{{payablePrice}}', '¥{{displayPrice}}'),
-        expect: /payablePrice|displayPrice/
-      },
-      {
-        name: '结算页折扣改成分段取整（乘法形态变了）',
+        name: '结算页折扣改成分段取整',
         file: REL.orderPricing,
-        mutate: (s) =>
-          s.replace(
-            'discountedSubtotal * discountRate + nonDiscounted',
-            'Math.round(discountedSubtotal * discountRate * 100) / 100 + nonDiscounted'
-          ),
-        expect: /乘法形态变了|不等价/
-      },
-      {
-        name: '编排页改回引分包件 memberPricing（跨包引用）',
-        file: REL.compose,
-        mutate: (s) => s.replace("require('../../utils/memberPayable')", "require('../../utils/memberPricing')"),
-        expect: /memberPricing/
-      },
-      {
-        name: '主包件偷偷 require 别的模块（跨包风险）',
-        file: REL.helper,
-        mutate: (s) => `const x = require('./util')\n${s}`,
-        expect: /不得 require/
-      },
-      {
-        name: '不再优先采用服务端费率（退化成纯本地阶梯推算）',
-        file: REL.helper,
-        mutate: (s) => s.replace('if (Number.isFinite(raw) && raw > 0) {', 'if (false) {'),
-        expect: /服务端费率未被优先采用|等级名未取服务端值|百分数写法/
+        mutate: (s) => s.replace('discountedSubtotal * discountRate + nonDiscounted', 'Math.round(discountedSubtotal * discountRate * 100) / 100 + nonDiscounted'),
+        expect: /乘法形态变了/
       }
     ]
+    if (!pricingSrc.includes('function resolveFromLadder')) {
+      bad += 1
+      console.log('✗ 前提：业务真源里找不到 resolveFromLadder（注入「别处复制」失去对照）')
+    }
     for (const inj of injections) {
       const abs = join(tmp, inj.file)
-      const orig = readFileSync(abs, 'utf8')
-      const mutated = inj.mutate(orig)
-      if (mutated === orig) {
+      const had = existsSync(abs)
+      const orig = had ? readFileSync(abs, 'utf8') : null
+      const mutated = inj.mutate(orig || '')
+      if (had && mutated === orig) {
         bad += 1
         console.log(`✗ 注入锚点缺失：${inj.name}`)
         continue
       }
+      mkdirSync(dirname(abs), { recursive: true })
       writeFileSync(abs, mutated)
       const res = run()
       const out = `${res.stdout || ''}${res.stderr || ''}`
-      if (res.status !== 0 && inj.expect.test(out)) {
-        console.log(`✓ ${inj.name} → 被守卫拦下`)
-      } else {
+      if (res.status !== 0 && inj.expect.test(out)) console.log(`✓ 注入「${inj.name}」→ 检出`)
+      else {
         bad += 1
-        console.log(`✗ ${inj.name} → 未被拦下（status=${res.status}）\n${out.slice(0, 600)}`)
+        console.log(`✗ 注入「${inj.name}」→ 未检出（status=${res.status}）\n${out.slice(0, 400)}`)
       }
-      writeFileSync(abs, orig)
+      if (had) writeFileSync(abs, orig)
+      else rmSync(abs)
     }
-    const after = run()
-    t('注入全部还原后重新通过', after.status === 0)
+    if (run().status !== 0) { bad += 1; console.log('✗ 还原后未重新通过') }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }
-
   if (bad) {
     console.error(`\n自检失败 ${bad} 项 —— 守卫不可信，请先修它`)
     process.exit(1)
   }
-  console.log('\n自检通过：切片判据 + 6 处真实注入（口径漂移/退回原价/乘法变形/跨包引用/偷偷 require/丢弃服务端费率）全部拦下')
+  console.log('\n✓ check:member-pricing-sync 自检通过（6 处注入全部检出，临时根上进行，未动工作区）')
 }
 
 function main() {
@@ -376,14 +186,11 @@ function main() {
   const mp = i >= 0 ? process.argv[i + 1] : MP_DEFAULT
   const problems = check(mp)
   if (problems.length) {
-    console.error('✗ 会员应付口径不同源：')
+    console.error('✗ 会员价不在一处 / 口径不唯一：')
     for (const p of problems) console.error(`  - ${p}`)
     process.exit(1)
   }
-  console.log('✓ 会员应付口径同源：主包副本三函数逐字一致 / 编排页只引主包件 /')
-  console.log('  备妥应付渲染 payablePrice 且标注「以结算页为准」/ 折扣判据一致 /')
-  console.log('  与结算页单行公式在 9×6 费率矩阵上逐点等价 / 两页同取 getUserStats /')
-  console.log('  钱安全：非法与脏费率（含 1.05→0.105 陷阱）一律回落原价，不出现近乎免费或高于原价')
+  console.log('✓ check:member-pricing-sync：送礼页不报价、不取等级 / 分包无定级口径副本 / 确认页从 getUserStats + stats.discountRate 取价、乘法形态未变')
 }
 
 main()

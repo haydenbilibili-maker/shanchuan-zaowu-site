@@ -92,7 +92,6 @@
         <view class="product-meta">
           <text class="product-title">{{product.title}}</text>
           <text class="product-latin" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
-          <text class="product-price">¥{{displayPrice}}</text>
           <text class="product-sku" wx:if="{{skuLabel}}">{{skuLabel}} · ×{{count}}</text>
           <view class="for-tag is-self" wx:if="{{selfTreat}}">
             <view class="for-tag-dot" aria-hidden="true"></view>
@@ -384,15 +383,7 @@
   </scroll-view>
 
   <view class="bottom-bar safe-area">
-    <view class="bottom-price">
-      <view class="bottom-value-row">
-        <text class="bottom-label">备妥应付</text>
-        <text class="bottom-value">¥{{payablePrice}}</text>
-        <text class="bottom-origin" wx:if="{{memberDiscounted}}">¥{{displayPrice}}</text>
-      </view>
-      <text class="bottom-note" wx:if="{{memberDiscounted}}">{{memberLevelName}}会员价 · 以结算页为准</text>
-    </view>
-    <!-- 送礼页只有「下一步」；交付与支付在确认页（那里的底栏才是支付按钮） -->
+    <!-- 送礼页只有「下一步」、不报价：价格与会员折扣只在第 3 步确认页给一次（2026-10-12 产品负责人撤回裁决 46-a 的编排页报价） -->
     <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="onStepNext" hover-class="pay-btn-press" hover-stay-time="80">
       <text>下一步 · {{activeStep === 1 ? '写笺' : '交付与支付'}}</text>
     </view>

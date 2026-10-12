@@ -50,6 +50,8 @@ const P = {
   wxss: resolve(MP, 'subpackages/feature/gift/compose/index.wxss'),
   json: resolve(MP, 'subpackages/feature/gift/compose/index.json'),
   confirmWxss: resolve(MP, 'subpackages/business/confirm-order/index.wxss'),
+  confirmWxml: resolve(MP, 'subpackages/business/confirm-order/index.wxml'),
+  confirmJs: resolve(MP, 'subpackages/business/confirm-order/index.js'),
   customNav: resolve(MP, 'subpackages/feature/utils/customNav.js'),
   checkout: resolve(MP, 'utils/checkout.js'),
   mpSchema: resolve(MP, 'utils/analytics/eventSchema.js'),
@@ -122,7 +124,8 @@ async function runChecks() {
   }
   ok(`L1 滚动区底边 = 底栏顶边（底栏 96：期望 565，实得 ${h1}）`, h1 === 753 - 92 - 96)
   ok(`L2 底栏变高（会员价 + 安全区 158）滚动区随之变矮（期望 503，实得 ${h2}）`, h2 === 753 - 92 - 158)
-  ok('L3 会员价落定后重量滚动区（底栏高度会变）', /memberLevelName: r\.levelName\s*\}, \(\) => this\.syncScrollPane\(\)\)/.test(js))
+  // 2026-10-12 产品负责人撤回裁决 46-a 的编排页报价：送礼页不再取会员等级、不再算价（价格只在第 3 步确认页）
+  ok('L3 送礼页不取会员等级 / 不算会员价（不再多调一次 getUserStats）', !/getUserStats|memberPayable|_refreshMemberPayable|payablePrice/.test(js))
   ok('L4 底栏仍固定在底部（滚动区按它的顶边截止）', /position:\s*fixed/.test(rule(wxss, '.bottom-bar')) && /bottom:\s*0/.test(rule(wxss, '.bottom-bar')))
   ok('L5 滚动区末尾有留白块', /<view class="scroll-pad"><\/view>\s*<\/scroll-view>/.test(wxml))
   ok('L6 留白不再估底栏高度（底栏高度只由实测决定，不得回到写死 160rpx + 安全区）', !/env\(safe-area-inset-bottom\)/.test(rule(wxss, '.scroll-pad')))
@@ -339,13 +342,22 @@ function declutterChecks(js, wxml, wxss, ok) {
   ok('D6 包装说明逐项列出（第 1 步，项名 + 内容），不再是页尾一行摘要', /<view class="wrap-item" wx:for="\{\{packagingItems\}\}" wx:key="k">/.test(s1) && !/pack-note/.test(wxml))
   const rail = wxml.slice(wxml.indexOf('<view class="step-rail'), wxml.indexOf('<scroll-view'))
   ok('D7 音效并进步骤轨右端、不再单占一行；「上一步」只由左上返回承担（步骤轨不重复放）', !/sfx-bar/.test(wxml) && !rail.includes('onStepBack') && rail.includes('catchtap="toggleSfxMute"'))
-  ok('D8 底栏「备妥应付」与价格同一行（小字只剩会员价一行）', /<view class="bottom-value-row">\s*<text class="bottom-label">备妥应付<\/text>/.test(wxml))
+  const bar = wxml.slice(wxml.indexOf('<view class="bottom-bar'), wxml.indexOf('<view class="page checking"'))
+  ok('D8 送礼页不报价：底栏无金额 / 备妥应付 / 会员价，藏品卡也不标价（价格只在确认页说一次）',
+    bar.length > 0 && !/¥|备妥应付|会员价|以结算页为准/.test(bar) && !/class="product-price"/.test(wxml))
   ok('D9 底栏是「下一步」（第 1 步 · 写笺 / 第 2 步 · 交付与支付）；页内不再出现「支付并备妥」',
     /<text>下一步 · \{\{activeStep === 1 \? '写笺' : '交付与支付'\}\}<\/text>/.test(wxml) && !wxml.includes('支付并备妥'))
   // 2026-10-12 产品负责人真机：「下一步 · 交付与支付」在定宽 248rpx 里折成两行、靠左上；交付卡「邀请 TA 填地址 + 推荐」折行
   const btn = rule(wxss, '.pay-btn')
-  ok('D10 底栏按钮按内容定宽且不折行（不得回到定宽 flex-basis）', /white-space:\s*nowrap/.test(btn) && /flex:\s*0 0 auto/.test(btn) && !/flex:\s*0 0 \d+rpx/.test(btn))
-  ok('D11 底栏会员价小字一行收住（不折出孤字）', /white-space:\s*nowrap/.test(rule(wxss, '.bottom-note')))
+  const cw0 = read(P.confirmWxss)
+  ok('D10 底栏按钮占满整行且不折行（不得回到定宽 flex-basis）', /white-space:\s*nowrap/.test(btn) && /flex:\s*1 1 auto/.test(btn) && !/flex:\s*0 0 \d+rpx/.test(btn))
+  const cx = read(P.confirmWxml)
+  const foot = cx.slice(cx.indexOf('<view class="footer-bar">'), cx.indexOf('<!-- 优惠券弹窗 -->'))
+  ok('D11 确认页（第 3 步）底栏给会员折扣一句：仅礼赠单、有会员省额才出；省额两位小数（账单折扣行同一字段）；礼赠摘要不重复标单价',
+    /<text class="fp-note" wx:if="\{\{isGiftOrder && discountRate < 1 && vipSaved > 0\}\}">\{\{levelName\}\} \{\{discountText\}\} · 已省 ¥\{\{vipSavedYuan\}\}<\/text>/.test(foot) &&
+    /-¥\{\{vipSavedYuan\}\}（\{\{discountText\}\}）/.test(cx) && !/gift-sum-price/.test(cx) &&
+    /white-space:\s*nowrap/.test(rule(cw0, '.fp-note')) &&
+    (read(P.confirmJs).match(/vipSavedYuan: formatPrice\(/g) || []).length === 2)
   const cw = read(P.confirmWxss)
   const tileName = rule(cw, '.delivery-tile .delivery-name')
   const tileTag = rule(cw, '.delivery-tile .delivery-tag')
@@ -569,7 +581,6 @@ const INJECTIONS = [
   { name: '滚动区不减底栏（回到旧算法：铺满到底）', file: P.js, find: 'bottom - scroll.top - barH', replace: 'bottom - scroll.top' },
   { name: '滚动区漏减上方音效条（只按步骤轨算）', file: P.js, find: 'bottom - scroll.top - barH', replace: 'bottom - 56 - barH' },
   { name: '不量底栏', file: P.js, find: ".select('.bottom-bar')", replace: ".select('.no-such-bar')" },
-  { name: '会员价落定后不重量', file: P.js, find: '}, () => this.syncScrollPane())\n  },', replace: '})\n  },' },
   { name: '底栏不再固定', file: P.wxss, find: '.bottom-bar {\n  position: fixed;', replace: '.bottom-bar {\n  position: relative;' },
   { name: '留白回到写死底栏估高', file: P.wxss, find: '.scroll-pad {\n  height: 48rpx;', replace: '.scroll-pad {\n  height: calc(160rpx + env(safe-area-inset-bottom));' },
   { name: '第 1、2 步底栏也是支付按钮', file: P.wxml, find: 'class="pay-btn" bindtap="onStepNext"', replace: 'class="pay-btn" bindtap="goPay"' },
@@ -625,12 +636,17 @@ const INJECTIONS = [
   { name: '礼笺块又加框（只给可选项描边的反面）', file: P.wxss, find: '.wrap-list { display: flex;', replace: '.wrap-list { border: 1px solid #C4A76C; display: flex;' },
   { name: '隐价回到勾选大框', file: P.wxml, find: 'class="switch-row"', replace: 'class="privacy-row"' },
   { name: '音效条单占一行', file: P.wxml, find: '  <scroll-view\n', replace: '  <view class="sfx-bar"></view>\n  <scroll-view\n' },
-  { name: '底栏按钮回到定宽折行', file: P.wxss, find: '  flex: 0 0 auto;\n  min-width: 248rpx;', replace: '  flex: 0 0 248rpx;\n  min-width: 248rpx;' },
-  { name: '底栏按钮允许折行', file: P.wxss, find: '  letter-spacing: 0.02em;\n  white-space: nowrap;\n  border-radius: 16rpx;', replace: '  letter-spacing: 0.02em;\n  border-radius: 16rpx;' },
-  { name: '会员价小字可折行', file: P.wxss, find: '  color: #A09A90;\n  white-space: nowrap;\n  overflow: hidden;', replace: '  color: #A09A90;\n  overflow: hidden;' },
+  { name: '底栏按钮回到定宽折行', file: P.wxss, find: '  flex: 1 1 auto;\n  min-width: 248rpx;', replace: '  flex: 0 0 248rpx;\n  min-width: 248rpx;' },
+  { name: '底栏按钮允许折行', file: P.wxss, find: '  letter-spacing: 0.04em;\n  white-space: nowrap;\n  border-radius: 16rpx;', replace: '  letter-spacing: 0.04em;\n  border-radius: 16rpx;' },
+  { name: '确认页折扣小字可折行', file: P.confirmWxss, find: 'font-size: 22rpx; color: #C4A76C; white-space: nowrap;', replace: 'font-size: 22rpx; color: #C4A76C;' },
+  { name: '确认页底栏不说会员折扣', file: P.confirmWxml, find: '<text class="fp-note" wx:if="{{isGiftOrder && discountRate < 1 && vipSaved > 0}}">', replace: '<text class="fp-note" wx:if="{{false}}">' },
+  { name: '账单折扣行回到一位小数', file: P.confirmWxml, find: '-¥{{vipSavedYuan}}（{{discountText}}）', replace: '-¥{{vipSaved}}（{{discountText}}）' },
+  { name: '礼赠摘要又标单价', file: P.confirmWxml, find: '<text class="gift-sum-sku">', replace: '<text class="gift-sum-price">¥1</text><text class="gift-sum-sku">' },
+  { name: '省额第二处不再格式化', file: P.confirmJs, find: '        vipSavedYuan: formatPrice(vipSaved || 0),\n', replace: '' },
   { name: '交付卡名称可折行', file: P.confirmWxss, find: '  font-size: 26rpx;\n  white-space: nowrap;', replace: '  font-size: 26rpx;' },
   { name: '推荐签回到标题行内', file: P.confirmWxss, find: '.delivery-tile .delivery-tag {\n  position: absolute;', replace: '.delivery-tile .delivery-tag {\n  position: static;' },
-  { name: '底栏「备妥应付」单占一行', file: P.wxml, find: '<view class="bottom-value-row">\n        <text class="bottom-label">备妥应付</text>', replace: '<text class="bottom-label">备妥应付</text>\n      <view class="bottom-value-row">' }
+  { name: '送礼页底栏又报价', file: P.wxml, find: '    <view class="pay-btn', replace: '    <text class="bottom-value">¥{{displayPrice}}</text>\n    <view class="pay-btn' },
+  { name: '送礼页又取会员等级', file: P.js, find: '  _maybeApplySceneNote() {', replace: '  _loadMemberStats() { wx.cloud.callFunction({ name: \'getUserStats\' }) },\n  _maybeApplySceneNote() {' },
 ]
 
 async function main() {

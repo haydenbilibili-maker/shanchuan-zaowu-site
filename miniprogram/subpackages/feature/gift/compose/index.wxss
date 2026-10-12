@@ -365,14 +365,6 @@ page {
   margin-bottom: 12rpx;
 }
 
-.product-price {
-  display: block;
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #C4A76C;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
-  margin-bottom: 6rpx;
-}
 
 .product-sku {
   display: block;
@@ -1080,51 +1072,15 @@ page {
   z-index: 20;
 }
 
-.bottom-price {
-  flex: 1;
-  min-width: 0;
-}
 
-.bottom-label {
-  font-size: 22rpx;
-  color: #A09A90;
-}
 
-.bottom-value {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #C4A76C;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
-}
 
-/* 会员价（裁决 46-a）：折后价主显，原价划掉；底色沿用底栏 #1F1D1A */
-.bottom-value-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4rpx 12rpx;
-}
 
-.bottom-origin {
-  font-size: 24rpx;
-  color: #A09A90;
-  text-decoration: line-through;
-}
 
-.bottom-note {
-  display: block;
-  margin-top: 2rpx;
-  font-size: 20rpx;
-  color: #A09A90;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
-/* 文案「下一步 · 交付与支付」比旧「支付并备妥」长：定宽 248rpx 会折成两行且靠左上；
-   改按内容定宽 + 不折行，价格区（flex: 1）让出宽度 */
+/* 底栏只剩「下一步」一颗按钮（不报价）：整行宽、不折行 */
 .pay-btn {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-width: 248rpx;
   height: 84rpx;
   padding: 0 28rpx;
@@ -1133,9 +1089,9 @@ page {
   justify-content: center;
   background: #C4A76C;
   color: #1A1814;
-  font-size: 26rpx;
+  font-size: 30rpx;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   border-radius: 16rpx;
 }

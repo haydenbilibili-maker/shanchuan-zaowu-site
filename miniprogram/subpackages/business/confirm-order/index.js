@@ -351,6 +351,7 @@ Page(withAppModal({
     finalPrice: '0.00',
     savedAmount: '0.00',
     vipSaved: 0,
+    vipSavedYuan: '0.00',   // 展示用两位小数（账单折扣行 / 礼赠底栏省额）；vipSaved 仍是数值判据
     couponSaved: 0,
     depositCredit: 0,
     depositCreditDisplay: '',
@@ -841,6 +842,7 @@ Page(withAppModal({
       footerPayLabel,
       savedAmount: formatPrice(pricing.totalSaved),
       vipSaved: pricing.vipSaved,
+      vipSavedYuan: formatPrice(pricing.vipSaved || 0),
       couponSaved,
       shippingFee,
       shippingFeeDisplay: formatPrice(shippingFee),
@@ -1192,6 +1194,7 @@ Page(withAppModal({
           : (this.data.isGiftOrder ? '备妥应付' : '合计'),
         originalPrice: Number.isFinite(originalPrice) ? formatPrice(originalPrice) : this.data.originalPrice,
         vipSaved: vipSaved || 0,
+        vipSavedYuan: formatPrice(vipSaved || 0),
         couponSaved: nextCoupon ? (couponValue || 0) : 0,
         depositCredit,
         depositCreditDisplay: depositCredit > 0 ? formatPrice(depositCredit) : '',
