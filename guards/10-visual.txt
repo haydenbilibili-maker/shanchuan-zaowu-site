@@ -10,4 +10,6 @@ npm run check:wxss-syntax
 npm run check:copy-terms
 npm run check:dialog-ratchet
 npm run check:modal-style
+# 2026-10-13：弹层视觉规范（miniprogram/docs/弹层视觉规范_2026-10-13.md）—— 零件 / 令牌在场、已迁移弹层不回退、自写遮罩按文件只减不增
+npm run check:pop-spec
 npm run check:mp-contrast

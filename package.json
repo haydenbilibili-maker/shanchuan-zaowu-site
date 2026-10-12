@@ -166,6 +166,8 @@
     "check:register-unify": "node miniprogram/scripts/check-register-unify.mjs",
     "check:register-unify:selftest": "node miniprogram/scripts/check-register-unify.mjs --selftest",
     "check:modal-style": "node miniprogram/scripts/check-modal-style.mjs",
+    "check:pop-spec": "node miniprogram/scripts/check-pop-spec.mjs",
+    "check:pop-spec:selftest": "node miniprogram/scripts/check-pop-spec.mjs --selftest",
     "check:modal-style:selftest": "node miniprogram/scripts/check-modal-style.mjs --selftest",
     "audit:fn-env": "node miniprogram/scripts/check-cloud-fn-env.mjs",
     "audit:fn-env:selftest": "node miniprogram/scripts/check-cloud-fn-env.mjs --selftest",

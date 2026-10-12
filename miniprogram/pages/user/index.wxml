@@ -409,15 +409,15 @@
 
   <!-- 会员码与权益（核销成功态与券夹亮码共用 PassRedeemCard） -->
   <!-- catchtouchmove 仅挡遮罩穿透；弹层本体可滚，勿绑在父级 -->
-  <view class="qr-mask" wx:if="{{showQrModal}}" bindtap="closeMemberCode">
+  <view class="ui-pop-mask is-center is-deep qr-mask" wx:if="{{showQrModal}}" bindtap="closeMemberCode">
     <view class="qr-mask-blocker" catchtouchmove="preventPassClose" catchtap="closeMemberCode"></view>
-    <view class="qr-content pop-in {{passState === 'redeemed' ? 'is-redeemed' : ''}}" catchtap="preventPassClose">
+    <view class="ui-pop-dialog qr-content {{passState === 'redeemed' ? 'is-redeemed' : ''}}" catchtap="preventPassClose">
 
       <view class="qr-header">
-        <text class="qr-overline">{{passState === 'redeemed' ? 'REDEEMED' : 'MEMBER PASS'}}</text>
-        <text class="qr-title">{{passState === 'redeemed' ? '核销成功' : '会员通行码'}}</text>
+        <text class="ui-pop-kicker">{{passState === 'redeemed' ? 'REDEEMED' : 'MEMBER PASS'}}</text>
+        <text class="ui-pop-title">{{passState === 'redeemed' ? '核销成功' : '会员通行码'}}</text>
         <view class="qr-level-badge" wx:if="{{passState !== 'redeemed'}}">{{levelName}}</view>
-        <view class="qr-close" bindtap="closeMemberCode" hover-class="tap-press" hover-stay-time="80">关闭</view>
+        <view class="ui-pop-close" bindtap="closeMemberCode" hover-class="tap-press" hover-stay-time="80">✕</view>
       </view>
 
       <view class="pass-coupon-banner" wx:if="{{passState !== 'redeemed' && passCouponHint}}">
@@ -433,7 +433,7 @@
           animating="{{redeemAnimating}}"
           note="门店礼券已核销 · 可关闭本页"
         />
-        <view class="pass-done-btn" hover-class="pass-done-btn-press" bindtap="closeMemberCode">完成</view>
+        <view class="ui-pop-btn is-primary pass-done-btn" hover-class="tap-press" hover-stay-time="80" bindtap="closeMemberCode">完成</view>
       </view>
 
       <block wx:else>
@@ -485,15 +485,15 @@
   </view>
 
   <!-- 🟢 官方社群二维码弹窗 -->
-  <view class="group-mask {{showGroupModal ? 'active' : ''}}" bindtap="closeGroupModal" wx:if="{{showGroupModal}}"> 
-    <view class="group-content slide-up" catchtap="true"> 
+  <view class="ui-pop-mask is-center group-mask" bindtap="closeGroupModal" wx:if="{{showGroupModal}}" catchtouchmove="true">
+    <view class="ui-pop-dialog group-content" catchtap="true">
       
       <!-- 顶部标题 -->
-      <view class="group-header">
-        <view class="group-close" catchtap="closeGroupModal" hover-class="group-close-press" hover-stay-time="80">✕</view>
-        <text class="group-title">官方社群</text>
-        <text class="group-subtitle">COMMUNITY</text>
-      </view> 
+      <view class="ui-pop-head is-center group-header">
+        <text class="ui-pop-kicker">COMMUNITY</text>
+        <text class="ui-pop-title">官方社群</text>
+        <view class="ui-pop-close" catchtap="closeGroupModal" hover-class="tap-press" hover-stay-time="80">✕</view>
+      </view>
       
       <!-- 二维码区域 -->
       <view class="group-qr-box">
@@ -523,20 +523,20 @@
   </view>
 
   <!-- 🟢 数据统计弹窗 -->
-  <view class="statistics-mask {{showStatisticsModal ? 'active' : ''}}" bindtap="closeStatistics" wx:if="{{showStatisticsModal}}">
-    <view class="statistics-content slide-up" catchtap="true">
+  <view class="ui-pop-mask is-center statistics-mask" bindtap="closeStatistics" wx:if="{{showStatisticsModal}}" catchtouchmove="true">
+    <view class="ui-pop-dialog statistics-content" catchtap="true">
       <!-- 头部 -->
-      <view class="statistics-header">
-        <view class="statistics-close" catchtap="closeStatistics" hover-class="tap-press" hover-stay-time="80">✕</view>
-        <text class="statistics-title">我的数据</text>
-        <text class="statistics-subtitle">STATISTICS</text>
+      <view class="ui-pop-head is-center statistics-header">
+        <text class="ui-pop-kicker">STATISTICS</text>
+        <text class="ui-pop-title">我的数据</text>
+        <view class="ui-pop-close" catchtap="closeStatistics" hover-class="tap-press" hover-stay-time="80">✕</view>
       </view>
 
       <!-- 内容区域 -->
       <scroll-view scroll-y="true" class="statistics-body">
         <!-- 我的数据 -->
         <view class="stat-section">
-          <view class="mu-head"><view class="mu-head-t"><text class="mu-en">MY DATA</text><text class="mu-cn">我的数据</text></view></view>
+          <view class="mu-head"><view class="mu-head-t"><text class="mu-en">ACTIVITY</text><text class="mu-cn">浏览互动</text></view></view>
           <view class="stat-grid">
             <view class="stat-card">
               <view class="card-icon"><image src="/assets/icons/eye.png" mode="aspectFit" class="icon-gold"></image></view>
@@ -646,32 +646,34 @@
   />
 
   <!-- 等级升级铭牌动效 -->
-  <view class="level-up-mask {{showLevelUp ? 'active' : ''}}" wx:if="{{showLevelUp}}" bindtap="closeLevelUp">
-    <view class="level-up-plate" catchtap="true">
+  <view class="ui-pop-mask is-center is-deep level-up-mask" wx:if="{{showLevelUp}}" bindtap="closeLevelUp" catchtouchmove="true">
+    <view class="ui-pop-dialog level-up-plate" catchtap="true">
       <view class="level-up-shine"></view>
-      <text class="level-up-overline">LEVEL UP</text>
+      <text class="ui-pop-kicker level-up-overline">LEVEL UP</text>
       <text class="level-up-lv">Lv{{levelUpLevel}}</text>
       <text class="level-up-name">{{levelUpName}}</text>
       <text class="level-up-hint">新权益已解锁，可在会员码中查看</text>
-      <view class="level-up-btn" bindtap="closeLevelUp" hover-class="tap-press" hover-stay-time="80">继续探索</view>
+      <view class="ui-pop-btn is-primary level-up-btn" bindtap="closeLevelUp" hover-class="tap-press" hover-stay-time="80">继续探索</view>
     </view>
   </view>
 
   <!-- 生日卡 -->
-  <view class="birthday-card-mask {{showBirthdayCard ? 'active' : ''}}" wx:if="{{showBirthdayCard}}" bindtap="closeBirthdayCard">
-    <view class="birthday-card-plate" catchtap="true">
+  <view class="ui-pop-mask is-center is-deep birthday-card-mask" wx:if="{{showBirthdayCard}}" bindtap="closeBirthdayCard" catchtouchmove="true">
+    <view class="ui-pop-dialog birthday-card-plate" catchtap="true">
       <view class="birthday-card-rule" aria-hidden="true"></view>
-      <text class="birthday-card-overline">BIRTHDAY NOTE</text>
-      <text class="birthday-card-title">生日快乐</text>
+      <view class="ui-pop-head is-center">
+        <text class="ui-pop-kicker">BIRTHDAY NOTE</text>
+        <text class="ui-pop-title">生日快乐</text>
+      </view>
       <text class="birthday-card-body" wx:if="{{birthdayGiftInfo.alreadyGranted}}">
         礼券已在账户里：{{birthdayGiftInfo.points}} 积分，以及 {{birthdayGiftInfo.couponCount}} 张满 {{birthdayGiftInfo.minSpend}} 减 {{birthdayGiftInfo.couponValue}} 的礼券。本月内慢慢挑一件喜欢的即可。
       </text>
       <text class="birthday-card-body" wx:else>
         山海造物为你备好了生日礼券：{{birthdayGiftInfo.points}} 积分（不计入成长值），以及 {{birthdayGiftInfo.couponCount}} 张满 {{birthdayGiftInfo.minSpend}} 减 {{birthdayGiftInfo.couponValue}} 的礼券{{birthdayGiftInfo.expireDate ? '，有效期至 ' + birthdayGiftInfo.expireDate : '，本月内可用'}}。
       </text>
-      <view class="birthday-card-actions">
-        <view class="birthday-card-btn secondary" bindtap="closeBirthdayCard" hover-class="tap-press" hover-stay-time="80">收下了</view>
-        <view class="birthday-card-btn primary" bindtap="goBirthdayCoupons" hover-class="tap-press" hover-stay-time="80">查看我的礼券夹</view>
+      <view class="ui-pop-foot">
+        <view class="ui-pop-btn is-ghost" bindtap="closeBirthdayCard" hover-class="tap-press" hover-stay-time="80">收下了</view>
+        <view class="ui-pop-btn is-primary" bindtap="goBirthdayCoupons" hover-class="tap-press" hover-stay-time="80">去礼券夹</view>
       </view>
     </view>
   </view>

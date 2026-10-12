@@ -41,11 +41,13 @@
   </view>
 
   <!-- 手动填写地址 -->
-  <view class="form-mask" wx:if="{{showManualForm}}" bindtap="closeManualForm" catchtouchmove="true">
-    <view class="form-panel" catchtap="true">
-      <view class="form-head">
-        <text class="form-title">手动填写地址</text>
-        <text class="form-close" bindtap="closeManualForm">✕</text>
+  <view class="ui-pop-mask" wx:if="{{showManualForm}}" bindtap="closeManualForm" catchtouchmove="true">
+    <view class="ui-pop-sheet" catchtap="true">
+      <view class="ui-pop-grip"></view>
+      <view class="ui-pop-head">
+        <text class="ui-pop-kicker">ADDRESS</text>
+        <text class="ui-pop-title">手动填写地址</text>
+        <view class="ui-pop-close" bindtap="closeManualForm" hover-class="tap-press" hover-stay-time="80">✕</view>
       </view>
 
       <view class="form-body">
@@ -81,8 +83,8 @@
         </view>
       </view>
 
-      <view class="form-foot">
-        <view class="form-submit {{saving ? 'is-busy' : ''}}" bindtap="submitManualAddress" hover-class="{{saving ? '' : 'tap-press'}}" hover-stay-time="80">{{saving ? '保存中…' : '保存地址'}}</view>
+      <view class="ui-pop-foot">
+        <view class="ui-pop-btn is-primary {{saving ? 'is-disabled' : ''}}" bindtap="submitManualAddress" hover-class="{{saving ? '' : 'tap-press'}}" hover-stay-time="80">{{saving ? '保存中…' : '保存地址'}}</view>
       </view>
     </view>
   </view>
