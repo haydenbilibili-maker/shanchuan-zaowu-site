@@ -1,9 +1,9 @@
 <!-- 礼赠编排 · 博物柜仪式（落笔/语音区仅外围增强，正文逻辑不动）
-     2026-10-12 分步：01 选礼（藏品 + 送给谁 + 包装与隐价）→ 02 写笺（称呼 / 礼笺 / 署名 / 语音）→ 03 交付（交付方式 / 领取核验）→ 支付
+     2026-10-12 分步：01 选礼（藏品 + 送给谁 + 包装与隐价）→ 02 写笺（称呼 / 礼笺 / 署名 / 语音）→ 03 交付与支付（确认订单页礼赠模式，蓝图 礼赠凭礼笺领取 §15）
      去密集（同日）：只有可选的东西用描边；音效在步骤轨右端；自定义顶栏左上返回兼作「上一步」 -->
 <wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
 <!-- 自定义顶栏（index.json navigationStyle: custom）：放在三种页态之外，加载中 / 打不开时也有返回。
-     高度按胶囊位置算（customNav）；左上返回第 2、3 步回上一步，第 1 步离开 -->
+     高度按胶囊位置算（customNav）；左上返回第 2 步回第 1 步，第 1 步离开 -->
 <view class="compose-nav" style="padding-top: {{statusBarHeight}}px;">
   <view class="compose-nav-inner" style="height: {{navBarHeight}}px;">
     <nav-back ext-class="compose-nav-back" bind:back="onNavBack" aria-label="{{activeStep > 1 ? '上一步' : '返回'}}" />
@@ -14,10 +14,10 @@
 </view>
 
 <view class="page" style="padding-top: {{navTotal}}px;" wx:if="{{allowed && product}}">
-  <!-- 页面关了系统侧滑（index.json）：左缘右滑在第 2、3 步回上一步，第 1 步离开 -->
+  <!-- 页面关了系统侧滑（index.json）：左缘右滑在第 2 步回第 1 步，第 1 步离开 -->
   <page-edge-back ext-class="compose-edge" bind:back="onEdgeBack" disabled="{{voiceRecording}}" />
 
-  <!-- 步骤轨：当前步高亮；已到过的步可点回。「上一步」就是左上返回，这里不再重复；右端音效开关
+  <!-- 步骤轨：当前步高亮；已到过的步可点回；第 3 格「交付与支付」在确认页（到过写笺才可点）。「上一步」就是左上返回；右端音效开关
        （2026-09-19：与收礼页共用同一个静音偏好，存储键 gift_receive_sfx_muted） -->
   <view class="step-rail sticky">
     <view
@@ -45,18 +45,18 @@
       <text class="step-rail-num">02</text>
       <text class="step-rail-label">写笺</text>
     </view>
-    <view class="step-rail-line {{maxStep > 2 ? 'on' : ''}}"></view>
+    <view class="step-rail-line"></view>
     <view
-      class="step-rail-item {{activeStep === 3 ? 'on' : ''}} {{maxStep >= 3 && activeStep !== 3 ? 'done' : ''}}"
+      class="step-rail-item step-rail-next"
       data-step="3"
       bindtap="onRailTap"
-      hover-class="{{maxStep >= 3 && activeStep !== 3 ? 'tap-press' : 'none'}}"
+      hover-class="{{maxStep >= 2 ? 'tap-press' : 'none'}}"
       hover-stay-time="80"
       aria-role="button"
-      aria-label="第 3 步 交付"
+      aria-label="第 3 步 交付与支付"
     >
       <text class="step-rail-num">03</text>
-      <text class="step-rail-label">交付</text>
+      <text class="step-rail-label">交付与支付</text>
     </view>
     <view class="rail-tool rail-sfx" catchtap="toggleSfxMute" hover-class="tap-press" hover-stay-time="80" aria-role="button" aria-label="{{sfxMuted ? '开启音效' : '静音'}}">
       <view class="icon-sound {{sfxMuted ? 'off' : 'on'}}" aria-hidden="true"></view>
@@ -110,7 +110,7 @@
       </view>
     </view>
 
-    <!-- 01 送给谁：关系决定第 2 步起草的推荐礼笺；「犒劳自己」让第 3 步交付固定为寄给我 -->
+    <!-- 01 送给谁：关系决定第 2 步起草的推荐礼笺；「犒劳自己」让确认页的交付固定为寄给我 -->
     <view class="section sec-relation">
       <text class="section-overline">FOR WHOM</text>
       <text class="section-title">这份礼送给谁</text>
@@ -143,7 +143,7 @@
       </view>
       <view class="relation-self-note" wx:if="{{selfTreat}}">
         <text class="relation-self-k">犒劳自己</text>
-        <text class="relation-self-v">寄到你的收货地址（结算页填写），不用填受礼人手机号</text>
+        <text class="relation-self-v">寄到你的收货地址（下一步「交付与支付」里选），不用填受礼人手机号</text>
       </view>
     </view>
 
@@ -184,7 +184,7 @@
     </block>
 
     <!-- ═══ 第 2 步 · 写笺 ═══ -->
-    <block wx:elif="{{activeStep === 2}}">
+    <block wx:else>
     <!-- 02 礼笺：信封外壳包裹（不改 textarea / 落笔动画结构） -->
     <view class="section sec-letter">
       <text class="section-overline">LETTER</text>
@@ -380,199 +380,6 @@
     </view>
     </block>
 
-    <!-- ═══ 第 3 步 · 交付 ═══ -->
-    <block wx:else>
-    <!-- 03 交付方式 -->
-    <!-- 一步一问「怎样交给 TA」：四种交付平铺成单选行（门店自提关闭时不出现），只有选中项高亮；
-         跟随项按交付方式（2026-10-12 第五轮，蓝图 礼赠凭礼笺领取 §14）：邀请填址 → 领取核验；
-         快递给 TA / 寄给我 / 犒劳自己 → 收货地址（同一块地址卡）；门店自提 → 门店 + 自提码说明 -->
-    <view class="section sec-delivery">
-      <text class="section-overline">DELIVERY</text>
-      <text class="section-title">{{selfTreat ? '寄到哪里' : '怎样交给 TA'}}</text>
-      <block wx:if="{{selfTreat}}">
-      <view class="delivery-opt active">
-        <view class="delivery-radio" aria-hidden="true"></view>
-        <view class="delivery-opt-main">
-          <view class="delivery-head">
-            <text class="delivery-name">寄到我的收货地址</text>
-            <text class="delivery-tag">犒劳自己</text>
-          </view>
-          <text class="delivery-desc">选好你的收货地址，直接寄给你</text>
-        </view>
-      </view>
-      <text class="claim-switch self-exit" bindtap="exitSelfTreat">其实是送给别人？改为送礼方式 ›</text>
-      </block>
-      <block wx:else>
-      <view
-        class="delivery-opt {{deliveryType === 'invite_address' ? 'active' : ''}}"
-        data-type="invite_address"
-        bindtap="onSelectDelivery"
-        hover-class="tap-press-soft"
-        hover-stay-time="80"
-        aria-role="radio"
-        aria-checked="{{deliveryType === 'invite_address'}}"
-      >
-        <view class="delivery-radio" aria-hidden="true"></view>
-        <view class="delivery-opt-main">
-          <view class="delivery-head">
-            <text class="delivery-name">邀请 TA 填写地址</text>
-            <text class="delivery-tag">推荐</text>
-          </view>
-          <text class="delivery-desc">支付后分享领取卡，TA 留下地址再寄出</text>
-        </view>
-      </view>
-      <view
-        class="delivery-opt {{deliveryType === item.id ? 'active' : ''}}"
-        wx:for="{{otherDeliveries}}"
-        wx:key="id"
-        data-type="{{item.id}}"
-        bindtap="onSelectDelivery"
-        hover-class="tap-press-soft"
-        hover-stay-time="80"
-        aria-role="radio"
-        aria-checked="{{deliveryType === item.id}}"
-      >
-        <view class="delivery-radio" aria-hidden="true"></view>
-        <view class="delivery-opt-main">
-          <text class="delivery-name">{{item.name}}</text>
-          <text class="delivery-desc">{{item.desc}}</text>
-        </view>
-      </view>
-
-      <view class="store-pick" wx:if="{{deliveryType === 'store_pickup' && storePickupEnabled}}">
-        <text class="store-pick-label">自提门店 <text class="verify-set-req">* 必选</text></text>
-        <view
-          class="store-chip {{selectedStoreId === item.storeId ? 'on' : ''}}"
-          wx:for="{{stores}}"
-          wx:key="storeId"
-          data-id="{{item.storeId}}"
-          data-name="{{item.name}}"
-          bindtap="onSelectStore"
-          hover-class="tap-press-soft"
-          hover-stay-time="80"
-        >
-          <text>{{item.name}}</text>
-        </view>
-        <text class="store-empty" wx:if="{{!stores.length}}">这有店暂未就绪，稍后再选或换其他交付</text>
-        <view class="pickup-code-note">
-          <text class="pickup-code-t">支付后生成自提码</text>
-          <text class="pickup-code-d">可转发给 TA，到店出示由专员核销领取，不用另做核验</text>
-        </view>
-      </view>
-
-      <!-- 领取核验：只在「邀请 TA 填写地址」出现（第五轮）。两张单选卡「手机号核验 / 凭礼笺领取」（切换走 toggleClaimLink）；
-           每种方式先给一句结论，完整规则点开；报错就地显示在输入框下 -->
-      <view id="receiverPhoneField" class="verify-set {{receiverPhoneError ? 'is-error' : ''}}" wx:if="{{deliveryType === 'invite_address'}}">
-        <view class="verify-head">
-          <text class="verify-title">领取核验</text>
-          <text class="verify-mode" wx:if="{{claimLink}}">{{claimPasscode ? '凭礼笺 + 口令' : '凭礼笺领取'}}</text>
-          <text class="verify-mode" wx:else>手机号核验</text>
-        </view>
-        <view class="verify-seg-row">
-          <view
-            class="verify-seg {{claimLink ? '' : 'on'}} {{receiverPhoneError ? 'is-error' : ''}}"
-            data-mode="phone"
-            bindtap="onPickVerify"
-            hover-class="verify-seg-press"
-            hover-stay-time="80"
-            aria-role="radio"
-            aria-checked="{{!claimLink}}"
-          >
-            <view class="verify-seg-radio" aria-hidden="true"></view>
-            <view class="verify-seg-main">
-              <text class="verify-seg-t">手机号核验</text>
-              <text class="verify-seg-d">更安全 · 核对号码</text>
-            </view>
-          </view>
-          <view
-            class="verify-seg {{claimLink ? 'on' : ''}}"
-            data-mode="link"
-            bindtap="onPickVerify"
-            hover-class="verify-seg-press"
-            hover-stay-time="80"
-            aria-role="radio"
-            aria-checked="{{claimLink}}"
-          >
-            <view class="verify-seg-radio" aria-hidden="true"></view>
-            <view class="verify-seg-main">
-              <text class="verify-seg-t">凭礼笺领取</text>
-              <text class="verify-seg-d">不需要 TA 的手机号</text>
-            </view>
-          </view>
-        </view>
-        <block wx:if="{{claimLink}}">
-        <text class="verify-set-brief">TA 打开礼笺点「收下」即领取，一份限一人</text>
-        <view
-          class="claim-opt {{claimPasscode ? 'on' : ''}}"
-          bindtap="toggleClaimPasscode"
-          hover-class="verify-seg-press"
-          hover-stay-time="80"
-          aria-role="checkbox"
-          aria-checked="{{claimPasscode}}"
-        >
-          <view class="claim-check" aria-hidden="true"></view>
-          <view class="claim-opt-main">
-            <text class="claim-opt-t">加 6 位领取口令</text>
-            <text class="claim-opt-d">{{claimPasscode ? '已加 · TA 输对口令才能收下，口令只你看得到' : 'TA 输对才能收下，防止链接被转给别人'}}</text>
-          </view>
-        </view>
-        <view class="verify-links">
-          <text class="why-toggle {{verifyWhyOpen ? 'open' : ''}}" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起规则' : '领取规则'}}</text>
-        </view>
-        <text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。口令只你看得到。为防扩散，这份礼笺不能发朋友圈。</text>
-        </block>
-        <block wx:else>
-        <text class="verify-set-brief">TA 领取时核对这个号码，别人拿到链接也领不走</text>
-        <text class="verify-set-label">受礼人手机号 <text class="verify-set-tip">推荐填写</text></text>
-        <input
-          class="verify-set-input"
-          type="number"
-          maxlength="11"
-          placeholder="TA 的 11 位手机号，领取时核验"
-          placeholder-class="verify-set-ph"
-          value="{{receiverPhone}}"
-          focus="{{receiverPhoneFocus}}"
-          bindinput="onReceiverPhoneInput"
-        />
-        <view class="verify-set-err" wx:if="{{receiverPhoneError}}">
-          <text class="verify-set-err-mark" aria-hidden="true">!</text>
-          <text>{{receiverPhoneError}}</text>
-        </view>
-        <view class="verify-links">
-          <text class="why-toggle {{verifyWhyOpen ? 'open' : ''}}" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起' : '为什么要填？'}}</text>
-          <text class="claim-switch" bindtap="toggleClaimLink">不知道号码？凭礼笺领取 ›</text>
-        </view>
-        <text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
-        </block>
-      </view>
-      </block>
-
-      <!-- 收货地址：快递给 TA / 寄给我 / 犒劳自己同一块卡，选或新增都走地址页（与确认页同一个），选好的地址带到确认页；
-           这三种没有领取核验（快递给 TA 的领取核验号码 = 这里的收货手机号） -->
-      <view id="shipAddressField" class="ship-addr {{shipAddressError ? 'is-error' : ''}}" wx:if="{{selfTreat || deliveryType === 'ship_to_receiver' || deliveryType === 'ship_to_self'}}">
-        <text class="store-pick-label">{{!selfTreat && deliveryType === 'ship_to_receiver' ? 'TA 的收货地址' : '我的收货地址'}} <text class="verify-set-req">* 必填</text></text>
-        <view class="ship-addr-card {{shipAddress ? 'on' : ''}}" bindtap="chooseShipAddress" hover-class="tap-press-soft" hover-stay-time="80">
-          <view class="ship-addr-main" wx:if="{{shipAddress}}">
-            <view class="ship-addr-head">
-              <text class="ship-addr-name">{{shipAddress.name}}</text>
-              <text class="ship-addr-phone">{{shipAddress.phone}}</text>
-            </view>
-            <text class="ship-addr-detail">{{shipAddress.regionText}} {{shipAddress.detail}}</text>
-          </view>
-          <text class="ship-addr-ph" wx:else>{{!selfTreat && deliveryType === 'ship_to_receiver' ? '选择或新增 TA 的收货地址' : '选择或新增你的收货地址'}}</text>
-          <text class="ship-addr-arrow" aria-hidden="true">›</text>
-        </view>
-        <view class="verify-set-err" wx:if="{{shipAddressError}}">
-          <text class="verify-set-err-mark" aria-hidden="true">!</text>
-          <text>{{shipAddressError}}</text>
-        </view>
-        <text class="ship-addr-note" wx:if="{{selfTreat}}">和普通下单一样，直接寄给你；结算页还可再改</text>
-        <text class="ship-addr-note" wx:elif="{{deliveryType === 'ship_to_receiver'}}">TA 领取礼笺时核对这个收货手机号，不用另填；结算页还可再改</text>
-        <text class="ship-addr-note" wx:else>藏品寄到你处再当面转交；TA 点礼笺「收下」后礼记在 TA 名下</text>
-      </view>
-    </view>
-    </block>
-
     <view class="scroll-pad"></view>
   </scroll-view>
 
@@ -585,12 +392,9 @@
       </view>
       <text class="bottom-note" wx:if="{{memberDiscounted}}">{{memberLevelName}}会员价 · 以结算页为准</text>
     </view>
-    <!-- 第 1、2 步只有「下一步」；支付只在第 3 步出现 -->
-    <view wx:if="{{activeStep < 3}}" class="pay-btn" bindtap="onStepNext" hover-class="pay-btn-press" hover-stay-time="80">
-      <text>下一步 · {{activeStep === 1 ? '写笺' : '交付'}}</text>
-    </view>
-    <view wx:else class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="goPay" hover-class="pay-btn-press" hover-stay-time="80">
-      <text>{{paying ? '备妥中…' : '支付并备妥'}}</text>
+    <!-- 送礼页只有「下一步」；交付与支付在确认页（那里的底栏才是支付按钮） -->
+    <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="onStepNext" hover-class="pay-btn-press" hover-stay-time="80">
+      <text>下一步 · {{activeStep === 1 ? '写笺' : '交付与支付'}}</text>
     </view>
   </view>
 </view>

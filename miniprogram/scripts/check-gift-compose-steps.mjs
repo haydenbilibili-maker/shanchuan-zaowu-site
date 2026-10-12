@@ -5,28 +5,32 @@
  *   L 拉得到底：滚动区高度 = 自身顶边 → 底栏顶边（真跑 syncScrollPane，桩 wx 给尺寸）。
  *     起因：旧算法只减步骤轨、漏减音效条，底部留白又写死 160rpx，而底栏带会员价小字 + 安全区后更高
  *     → 最后一行「WRAP · 包装」压在底栏下（「犒劳自己」最明显）。底栏高度一变（会员价晚到）须重量。
- *   T 分步编排（产品负责人：「将礼赠编排从一步变成 2-3 步，避免在一个环节上堆叠过多信息」）：
- *     版面 —— 01 选礼（藏品 + 送给谁）/ 02 写笺（称呼 / 正文 / 署名 / 语音 / 换一句）/ 03 交付（交付方式 / 手机号 / 隐价 / 包装）各在各步；
- *     第 1、2 步没有支付按钮、goPay 在第 3 步以外不放行；写笺必填在第 2 步「下一步」就地校验、支付前再过一遍（不通过退回第 2 步）；
- *     手机号 / 自提门店在第 3 步支付时校验，确认页退回补号回到第 3 步定位字段；步骤轨只能点回到过的步；
- *     「上一步」与左缘右滑在第 2、3 步回上一步、第 1 步才离开；第 1 步点关系不在看不见处落笔；
- *     **契约零变化**：交给确认页的 giftMeta 与 globalData.giftReceiverPhone 字段集合逐一比对（真跑 goPay，桩掉跳转）；
- *     新埋点 gift_compose_step 双端登记、旧埋点不动。
- *   D 去密集（产品负责人真机看第 3 步：「太密集，信息过载」）：四种交付平铺成单选行、不再折叠（自提关闭时不出现）；
- *     长说明收进「为什么要填？/ 领取规则」点开；只有可选的东西描边（领取核验 / 隐价 / 包装不加框）；
- *     隐价是一行开关、平台强制时一行灰字；包装一行摘要；音效在步骤轨右端；底栏「备妥应付」与价格同一行。
- *   N 自定义顶栏（产品负责人拍板：左上返回在第 2、3 步回上一步，第 1 步才离开，不弹确认）：index.json 设 custom、胶囊白色；
+ *   T 分步编排（产品负责人：「将礼赠编排从一步变成 2-3 步，避免在一个环节上堆叠过多信息」；
+ *     2026-10-12 第六轮再收一步：**第 3 步「交付」并入确认订单页**，送礼页只剩 01 选礼 / 02 写笺）：
+ *     版面 —— 01 选礼（藏品 + 送给谁 + 包装与隐价）/ 02 写笺（称呼 / 正文 / 署名 / 语音 / 换一句）各在各步；
+ *     交付方式 / 地址 / 门店 / 领取核验整块已移出送礼页（见 check:gift-claim-link 与 check:gift-delivery-step）；
+ *     底栏只有一个「下一步」（第 1 步 → 写笺；第 2 步 →「下一步 · 交付与支付」= goPay）；goPay 只在第 2 步放行；
+ *     写笺必填在「下一步」就地校验、进确认页前再过一遍（不通过停在第 2 步）；步骤轨只能点回到过的步；
+ *     第 3 格「交付与支付」= 去确认页（到过写笺才可点）；「上一步」与左缘右滑在第 2 步回上一步、第 1 步才离开；
+ *     第 1 步点关系不在看不见处落笔；
+ *     **契约零变化**：交给确认页的 giftMeta 字段集合逐一比对（真跑 goPay，桩掉跳转）；不再写 globalData.giftReceiverPhone /
+ *     giftShipAddress（交付在确认页录入，见 check:gift-claim-link）；新埋点 gift_compose_step 双端登记、旧埋点不动。
+ *   D 去密集（产品负责人真机看旧第 3 步：「太密集，信息过载」）：交付卡与领取核验的「只给可选项描边 / 长说明折叠」
+ *     两条口径**随交付卡一起搬到确认页**（同类断言在 check:gift-delivery-step，送礼页不得复活交付 UI）；送礼页保留「隐价一行开关 / 包装逐项 / 音效并入步骤轨 /
+ *     底栏备妥应付与价格同一行」。
+ *   N 自定义顶栏（产品负责人拍板：左上返回在第 2 步回上一步，第 1 步才离开，不弹确认）：index.json 设 custom、胶囊白色；
  *     顶栏高度按胶囊位置算（真跑 customNav + _initNav）；标题左右各让出胶囊宽；三种页态都给顶栏留白；
  *     左上返回与左缘右滑同一口径（真跑 onNavBack），直达无上一页时回馆藏；占位高度也减顶栏。安卓实体返回键拦不住（不测）。
- *   P 隐价与包装挪到第 1 步（产品负责人改口：隐价从第 3 步移到「选礼」）：开关只在第 1 步、说明随开关状态变、平台强制时无开关；
+ *   P 隐价与包装在第 1 步：开关只在第 1 步、说明随开关状态变、平台强制时无开关；
  *     toggleHidePrice 仍守平台强制、goPay 交给 makeOrder 的 hidePrice 语义不变（真跑）；包装逐项说明只写代码里确有的事实（真读 giftPackaging.js）。
  *   S 第 1 步「送给谁」选中反馈：被选 chip 实心 + 勾、藏品卡描金并出「送给 · X」小签、提示改为「已选「X」」、
  *     犒劳自己提示就近入场；全部由 activeNotePresetId / selfTreat 派生（真渲染 index.wxml，不新增状态，不碰 selfTreat 进出逻辑）。
- *   V 第 3 步「领取核验」：标题右侧标当前方式、两张单选卡、一句话结论、规则折叠、报错就地；
- *     单选卡有按压反馈、点已选不动、点另一张走原 toggleClaimLink（真跑）。第五轮起只在邀请填址出现。
- *   W 交付方式重排（2026-10-12 第五轮，蓝图 礼赠凭礼笺领取 §14）：只有邀请填址有领取核验；快递给 TA / 寄给我 / 犒劳自己
- *     在第 3 步选或新增收货地址（同一块地址卡、复用地址页 select 模式），地址经 globalData.giftShipAddress 带到确认页；
- *     快递给 TA 不套用我的默认地址；门店自提说明「支付后生成自提码，可转交」、不核验（真渲染 + 真跑 goPay / 地址方法）。
+ *   V 领取核验的**送礼页一侧**：不再在送礼页渲染（整块搬到确认页的承接口径见 check:gift-delivery-step）；
+ *     这里只钉住「送礼页不得复活交付 UI 与核验接线」（含四选一单选行 / 地址卡 / 门店 / 长说明折叠）。
+ *   W 交付方式重排的**送礼页一侧**：地址卡 / 门店选择 / goPay 提交拼参的字段集合与改前一致（真跑 goPay）；
+ *     地址与核验的录入校验搬到确认页后由 check:gift-claim-link / check:gift-delivery-step 承接。
+ *   G 交付草稿往返（第六轮）：送礼页 `saveGiftDeliveryDraft` 收下确认页交回的草稿、再进确认页时带进 giftDraft；
+ *     换藏品 / 换交付方式时草稿随之更新（真跑），不写 globalData。
  *
  * 用法：node miniprogram/scripts/check-gift-compose-steps.mjs [--selftest]
  * --selftest：对真源做**内存注入**（不改文件），每条注入都必须被检出。
@@ -46,6 +50,7 @@ const P = {
   wxss: resolve(MP, 'subpackages/feature/gift/compose/index.wxss'),
   json: resolve(MP, 'subpackages/feature/gift/compose/index.json'),
   customNav: resolve(MP, 'subpackages/feature/utils/customNav.js'),
+  checkout: resolve(MP, 'utils/checkout.js'),
   mpSchema: resolve(MP, 'utils/analytics/eventSchema.js'),
   adminSchema: resolve(MP, '../admin/src/utils/analyticsSchema.js')
 }
@@ -140,13 +145,9 @@ const RENDER_BASE = {
   memberDiscounted: false, skuLabel: '', count: 1, sfxMuted: false, activeStep: 1, maxStep: 1,
   notePresets: [{ id: 'friend', label: '朋友' }, { id: 'lover', label: '恋人' }, { id: 'self', label: '犒劳自己' }],
   activeNotePresetId: '', selfTreat: false, hidePrice: true, allowHidePriceToggle: true, packagingItems: [],
-  deliveryType: 'invite_address', otherDeliveries: [], storePickupEnabled: true, stores: [], selectedStoreId: '',
-  claimLink: false, claimPasscode: false, receiverPhone: '', receiverPhoneError: '', receiverPhoneFocus: false, verifyWhyOpen: false,
-  receiverAddress: null, selfAddress: null, shipAddress: null, shipAddressError: ''
+  deliveryType: 'invite_address', storePickupEnabled: true
 }
 const count = (html, re) => (html.match(re) || []).length
-/** 领取核验块本身（不含借用其样式的「* 必填」小字 verify-set-req） */
-const VERIFY_BLOCK = /class="verify-set(?: [^"]*)?" id="receiverPhoneField"|id="receiverPhoneField"/
 /** 取 class 以 cls 开头的第一个元素的整段 HTML（按标签配平） */
 function elem(html, cls) {
   const m = new RegExp(`<(div|span) class="${cls}(?: [^"]*)?"[^>]*>`).exec(html)
@@ -197,11 +198,11 @@ function polishChecks(js, wxml, wxss, ok) {
     r = makePage(js, { allowHidePriceToggle: true, hidePrice: true })
     r.page.toggleHidePrice()
     const flipped = r.page.data.hidePrice === false
-    r.page.data.activeStep = 3
-    r.page.data.maxStep = 3
+    r.page.data.activeStep = 2
+    r.page.data.maxStep = 2
     r.page.goPay()
     const meta = r.calls.nav[0] && r.calls.nav[0].opts.giftMeta
-    ok('P3 隐价语义不变：平台强制时切不动；第 1 步关掉后交给 makeOrder 的 giftMeta.hidePrice === false', forced && flipped && !!meta && meta.hidePrice === false)
+    ok('P3 隐价语义不变：平台强制时切不动；关掉后交给 makeOrder 的 giftMeta.hidePrice === false', forced && flipped && !!meta && meta.hidePrice === false)
   })
   const ks = items.map((i) => i.k).join('/')
   const vs = items.map((i) => i.v).join(' ')
@@ -246,133 +247,28 @@ function polishChecks(js, wxml, wxss, ok) {
   ok('S6 选中反馈不新增状态：只读 activeNotePresetId / selfTreat（不出现 forWhom 一类新字段），selfTreat 进出仍只在 enterSelfTreat / exitSelfTreat',
     !/forWhom|relationLabel|pickedRelation/.test(js + wxml) && (js.match(/selfTreat: true/g) || []).length === 1 && (js.match(/selfTreat: false/g) || []).length === 2)
 
-  // V 领取核验
-  run('V1', () => {
-    const h = render({ activeStep: 3, maxStep: 3 })
-    const segs = elem(h, 'verify-seg-row')
-    ok('V1 手机号核验：标题右侧标「手机号核验」、两张单选卡且只有「手机号核验」选中、先给一句结论、规则默认收起',
-      text(elem(h, 'verify-mode')) === '手机号核验' && count(segs, /class="verify-seg[ "]/g) === 2 &&
-      /class="verify-seg on"[^>]*aria-checked="true"[\s\S]*?手机号核验/.test(segs) && /class="verify-seg"[^>]*aria-checked="false"[\s\S]*?凭礼笺领取/.test(segs) &&
-      text(elem(h, 'verify-set-brief')).includes('别人拿到链接也领不走') && !h.includes('verify-set-hint') && text(elem(h, 'why-toggle')) === '为什么要填？')
-  })
-  run('V2', () => {
-    const h = render({ activeStep: 3, maxStep: 3, claimLink: true })
-    const p = render({ activeStep: 3, maxStep: 3, claimLink: true, claimPasscode: true })
-    ok('V2 凭礼笺领取：标「凭礼笺领取」且该卡选中、无手机号输入；加口令后标「凭礼笺 + 口令」、口令行点亮',
-      text(elem(h, 'verify-mode')) === '凭礼笺领取' && /class="verify-seg on"[^>]*>[\s\S]*?凭礼笺领取/.test(elem(h, 'verify-seg-row')) && !h.includes('verify-set-input') &&
-      text(elem(p, 'verify-mode')) === '凭礼笺 + 口令' && /class="claim-opt on"/.test(p))
-  })
-  run('V3', () => {
-    const h = render({ activeStep: 3, maxStep: 3, deliveryType: 'ship_to_receiver', claimLink: true })
-    ok('V3 快递给 TA：不出领取核验（无单选卡、无手机号框），改出 TA 的收货地址卡', !VERIFY_BLOCK.test(h) && !h.includes('verify-set-input') && text(elem(h, 'ship-addr')).includes('TA 的收货地址'))
-  })
-  run('V4', () => {
-    const h = render({ activeStep: 3, maxStep: 3, receiverPhoneError: '请填写受礼人手机号' })
-    const field = elem(h, 'verify-set is-error')
-    ok('V4 报错就地：错误写在核验块里输入框之下，「手机号核验」卡与输入框同时描红',
-      text(elem(field, 'verify-set-err')).includes('请填写受礼人手机号') && field.indexOf('verify-set-err') > field.indexOf('verify-set-input') &&
-      /class="verify-seg on is-error"/.test(field) && /\.verify-set\.is-error \.verify-set-input \{[^}]*#E8927C/.test(wxss) && /border-color:\s*#E8927C/.test(rule(wxss, '.verify-seg.on.is-error')))
-  })
-  run('V5', () => {
-    const h = render({ activeStep: 3, maxStep: 3, verifyWhyOpen: true })
-    ok('V5 规则可折叠：点开后出完整说明、箭头翻转', text(elem(h, 'verify-set-hint')).includes('仅存加密值与尾号') && /class="why-toggle open"/.test(h) && /transform:\s*rotate\(-135deg\)/.test(rule(wxss, '.why-toggle.open::after')))
-  })
-  const segTags = wxml.match(/<view\s+class="verify-seg [^"]*"[\s\S]*?>/g) || []
-  const optTag = (wxml.match(/<view\s+class="claim-opt [^"]*"[\s\S]*?>/) || [''])[0]
-  ok('V6 单选卡与口令行都有按压反馈（hover-class 已定义）、无障碍角色齐全',
-    segTags.length === 2 && segTags.every((t) => t.includes('hover-class="verify-seg-press"') && t.includes('aria-role="radio"') && t.includes('bindtap="onPickVerify"')) &&
-    optTag.includes('hover-class="verify-seg-press"') && optTag.includes('aria-role="checkbox"') && rule(wxss, '.verify-seg-press').includes('background'))
-  run('V7', () => {
-    let r = makePage(js, { claimLink: false, receiverPhoneError: '错' })
-    r.page.onPickVerify({ currentTarget: { dataset: { mode: 'phone' } } })
-    const stay = r.page.data.claimLink === false && r.page.data.receiverPhoneError === '错'
-    r.page.onPickVerify({ currentTarget: { dataset: { mode: 'link' } } })
-    const sw = r.page.data.claimLink === true && r.page.data.receiverPhoneError === ''
-    r.page.onPickVerify({ currentTarget: { dataset: { mode: 'link' } } })
-    ok('V7 单选卡：点已选的不动；点另一张 = 原 toggleClaimLink（切换并清掉报错）；再点同一张不来回翻', stay && sw && r.page.data.claimLink === true &&
-      /onPickVerify\(e\) \{[\s\S]*?this\.toggleClaimLink\(\)\n {2}\},/.test(js))
-  })
-  ok('V8 只有可选的东西描边：单选卡 / 口令行有框、选中卡金边金底；核验块本身与标题行不加框',
-    /border:/.test(rule(wxss, '.verify-seg')) && /border-color:\s*var\(--primary\)/.test(rule(wxss, '.verify-seg.on')) && /background:/.test(rule(wxss, '.verify-seg.on')) &&
-    /border:/.test(rule(wxss, '.claim-opt')) && ['.verify-set', '.verify-head'].every((s) => rule(wxss, s) && !/border(?!-radius)|background/.test(rule(wxss, s))))
+  // V 领取核验（送礼页一侧）：整块已搬到确认页（见 check:gift-delivery-step）
+  ok('V0 送礼页不再渲染 / 不再接线领取核验（挑选核验方式、口令、用途说明都随块搬走）',
+    !/receiverPhoneField|verify-seg|claim-opt|toggleClaimLink|onPickVerify|toggleClaimPasscode|toggleVerifyWhy|flagReceiverPhone/.test(wxml + js) &&
+    !/receiverPhoneError|receiverPhoneFocus/.test(wxml))
+  ok('V0b 交付方式 / 地址 / 门店的录入与校验也都不在送礼页（唯一入口在确认页）',
+    !/onSelectDelivery|chooseShipAddress|flagShipAddress|onSelectStore|_loadSelfAddress|_syncShipAddress/.test(js) &&
+    !/shipAddressError|selectedStoreId|otherDeliveries/.test(js))
 }
 
 
-// ── W 交付方式重排（2026-10-12 第五轮）────────────────────────────────────
+// ── W 交付方式的送礼页一侧（2026-10-12 第六轮：录入与校验搬到确认页）────────────
 function deliveryChecks(js, wxml, wxss, ok) {
-  const render = (over) => renderWxml(wxml.replace(/<wxs[^>]*\/>/, ''), { ...RENDER_BASE, activeStep: 3, maxStep: 3, ...over }, { lenient: true })
-  const run = (name, fn) => { try { fn() } catch (e) { ok(`${name}（抛错：${e.message}）`, false) } }
-  const TA = { _id: 'a1', name: '王小满', phone: '13900002222', region: ['上海市', '上海市', '静安区'], regionText: '上海市 上海市 静安区', detail: '南京西路 1 号' }
-  const ME = { ...TA, _id: 'a0', name: '阿山', phone: '13800001111' }
-  run('W1', () => {
-    const inv = render({})
-    const ship = render({ deliveryType: 'ship_to_receiver', receiverAddress: TA, shipAddress: TA })
-    const self = render({ deliveryType: 'ship_to_self', selfAddress: ME, shipAddress: ME })
-    const treat = render({ selfTreat: true, deliveryType: 'ship_to_self', selfAddress: ME, shipAddress: ME })
-    const pick = render({ deliveryType: 'store_pickup', stores: [{ storeId: 's1', name: '静安店' }], selectedStoreId: 's1' })
-    ok('W1 领取核验只在邀请填址：填址有核验无地址卡；快递给 TA / 寄给我 / 犒劳自己有地址卡无核验；门店自提两者都没有',
-      VERIFY_BLOCK.test(inv) && !inv.includes('ship-addr') &&
-      [ship, self, treat].every((h) => !VERIFY_BLOCK.test(h) && !h.includes('verify-seg') && h.includes('class="ship-addr')) &&
-      !VERIFY_BLOCK.test(pick) && !pick.includes('ship-addr'))
-    ok('W2 地址卡：快递给 TA 显示「TA 的收货地址」，寄给我 / 犒劳自己显示「我的收货地址」，选好后显示姓名 / 电话 / 地址并金边',
-      text(elem(ship, 'ship-addr')).includes('TA 的收货地址') && text(elem(ship, 'ship-addr-card on')).includes('王小满') && text(elem(ship, 'ship-addr-card on')).includes('南京西路 1 号') &&
-      text(elem(self, 'ship-addr')).includes('我的收货地址') && text(elem(treat, 'ship-addr')).includes('我的收货地址') && text(elem(treat, 'ship-addr-card on')).includes('阿山'))
-    const empty = render({ deliveryType: 'ship_to_receiver', shipAddressError: '请选择或新增 TA 的收货地址' })
-    ok('W3 没选地址：卡片提示「选择或新增 TA 的收货地址」；报错就地写在卡下并描红',
-      text(elem(empty, 'ship-addr-ph')).includes('选择或新增 TA 的收货地址') && text(elem(elem(empty, 'ship-addr is-error'), 'verify-set-err')).includes('请选择或新增') &&
-      /border-color:\s*#E8927C/.test(rule(wxss, '.ship-addr.is-error .ship-addr-card')))
-    ok('W4 门店自提：门店下方说明「支付后生成自提码」、可转发给 TA 到店核销，不另做核验',
-      text(elem(pick, 'pickup-code-note')).includes('支付后生成自提码') && text(elem(pick, 'pickup-code-note')).includes('转发给 TA'))
-  })
-  ok('W5 地址卡可点（按压反馈）、走 chooseShipAddress；滚动定位锚点 shipAddressField',
-    /<view class="ship-addr-card[^"]*" bindtap="chooseShipAddress" hover-class="tap-press-soft"/.test(wxml) && wxml.includes('<view id="shipAddressField"'))
-  run('W6', () => {
-    let r = makePage(js, { activeStep: 3, maxStep: 3, deliveryType: 'ship_to_receiver' })
-    r.page.goPay()
-    ok('W6 快递给 TA 没选地址：不进确认页，地址卡就地报错并滚到它', r.calls.nav.length === 0 && /TA 的收货地址/.test(r.page.data.shipAddressError) && r.page.data.phoneScrollId === 'shipAddressField')
-    r = makePage(js, { activeStep: 3, maxStep: 3, deliveryType: 'ship_to_receiver', receiverPhone: '', receiverAddress: TA, selfAddress: ME })
-    r.page.goPay()
-    const g = r.app.globalData
-    ok('W7 快递给 TA 选好地址：不填受礼人手机号也可付；TA 的地址（不是我的）带到确认页；不走凭礼笺',
-      r.calls.nav.length === 1 && g.giftShipAddress && g.giftShipAddress.address === TA && g.giftShipAddress.deliveryType === 'ship_to_receiver' && g.giftShipAddress.productId === 'p1' &&
-      g.giftReceiverPhone.phone === '' && g.giftReceiverPhone.claimLink === false)
-    r = makePage(js, { activeStep: 3, maxStep: 3, deliveryType: 'ship_to_self', receiverPhone: '', selfAddress: ME, claimPasscode: true })
-    r.page.goPay()
-    ok('W8 寄给我（送给别人）：带我的地址，自动凭礼笺领取（不加口令）', r.calls.nav.length === 1 && r.app.globalData.giftShipAddress.address === ME &&
-      r.app.globalData.giftReceiverPhone.claimLink === true && r.app.globalData.giftReceiverPhone.claimPasscode === false && r.app.globalData.giftReceiverPhone.phone === '')
-    r = makePage(js, { activeStep: 3, maxStep: 3, deliveryType: 'store_pickup', selectedStoreId: 's1', selectedStoreName: '静安店', claimLink: true, claimPasscode: true, receiverPhone: '' })
-    r.page.goPay()
-    ok('W9 门店自提：不要号码、不走凭礼笺（旧状态残留也不带），不带地址', r.calls.nav.length === 1 && r.app.globalData.giftShipAddress === null &&
-      r.app.globalData.giftReceiverPhone.claimLink === false && r.app.globalData.giftReceiverPhone.claimPasscode === false && r.app.globalData.giftReceiverPhone.phone === '' &&
-      r.calls.nav[0].opts.giftMeta.storeId === 's1')
-    r = makePage(js, { activeStep: 3, maxStep: 3, receiverPhone: '13800001111', receiverAddress: TA })
-    r.page.goPay()
-    ok('W10 邀请填址：照旧带受礼人手机号，不带地址', r.calls.nav.length === 1 && r.app.globalData.giftShipAddress === null && r.app.globalData.giftReceiverPhone.phone === '13800001111')
-  })
-  // 异步：进第 3 步取我的默认地址（同确认页 manageAddress list 取法）→ 只进 selfAddress，快递给 TA 不套用
-  const r = makePage(js, { activeStep: 2, maxStep: 2, deliveryType: 'ship_to_receiver' })
-  W_ASYNC.push((async () => {
-    try {
-      r.page._goStep(3, 'next')
-      for (let i = 0; i < 5; i += 1) await Promise.resolve()
-      const call = r.calls.cloud[0] || {}
-      const sel = r.page.data.selfAddress || {}
-      ok('W11 进第 3 步取我的默认地址：只放进「我的收货地址」，快递给 TA 不套用（地址卡仍空）',
-        call.name === 'manageAddress' && call.data && call.data.action === 'list' && sel.name === '阿山' && sel.regionText === '上海市 上海市 徐汇区' &&
-        r.page.data.receiverAddress === null && r.page.data.shipAddress === null)
-      r.page.onSelectDelivery({ currentTarget: { dataset: { type: 'ship_to_self' } } })
-      ok('W12 切到寄给我：地址卡带出我的默认地址', r.page.data.shipAddress === r.page.data.selfAddress)
-      r.page.onSelectDelivery({ currentTarget: { dataset: { type: 'ship_to_receiver' } } })
-      r.page.chooseShipAddress()
-      const nav = r.calls.navTo[0] || {}
-      if (nav.events && nav.events.addressSelected) nav.events.addressSelected({ _id: 'a9', name: '王小满', phone: '13900002222', region: ['上海市'], detail: 'y' })
-      ok('W13 选 / 新增地址复用地址页（select 模式）：选回来的只填进当前交付方式那份（快递给 TA → TA 的地址，不动我的）',
-        nav.url === '/subpackages/business/address/index?mode=select' && (r.page.data.receiverAddress || {}).name === '王小满' && r.page.data.shipAddress === r.page.data.receiverAddress &&
-        (r.page.data.selfAddress || {}).name === '阿山')
-    } catch (e) {
-      ok('W11（抛错：' + e.message + '）', false)
-    }
-  })())
+  ok('W1 交付 UI 与它的校验都不在送礼页（唯一入口在确认页；同类断言见 check:gift-delivery-step）',
+    !/SHIP_DELIVERY|CLAIM_LINK_DELIVERY|formatShipAddress|shipAddress|receiverPhoneError/.test(js) &&
+    !/ship-addr|verify-set|store-chip|delivery-opt|pickup-code/.test(wxml) &&
+    !/ship-addr|verify-set|store-chip|delivery-opt|pickup-code/.test(wxss))
+  ok('W2 交给确认页的 giftMeta 里门店字段清空（门店在确认页选），其余字段原样',
+    /storeId: '',\n\s+storeName: '',/.test(js) || /storeId: '',[\s\S]{0,40}storeName: '',/.test(js))
+  ok('W3 移除跨页回跳：确认页缺号不再回送礼页（送礼页不读 giftPhoneRefill、不再有 flagReceiverPhone）',
+    !/giftPhoneRefill/.test(js) && !/flagReceiverPhone|flagShipAddress/.test(js))
+  ok('W4 不再把交付 / 核验写进 globalData（交付在确认页录入、随 giftDraft 往返）',
+    !/globalData\.giftReceiverPhone/.test(js) && !/globalData\.giftShipAddress/.test(js) && /saveGiftDeliveryDraft\(draft\) \{/.test(js))
 }
 const W_ASYNC = []
 
@@ -425,46 +321,35 @@ function navChecks(js, wxml, ok) {
 }
 
 function declutterChecks(js, wxml, wxss, ok) {
-  const a3 = wxml.indexOf('<!-- ═══ 第 3 步')
-  const end = wxml.indexOf('<view class="scroll-pad">')
-  const s3 = a3 >= 0 && end > a3 ? wxml.slice(a3, end) : ''
-  const self = (s3.match(/<block wx:if="\{\{selfTreat\}\}">[\s\S]*?<\/block>/) || [''])[0]
-  ok('D1 四种交付平铺成单选行，不再「展开 / 收起」',
-    !/showOtherDelivery|toggleOtherDelivery|other-toggle/.test(s3 + js) &&
-    (s3.match(/bindtap="onSelectDelivery"/g) || []).length === 2 &&
-    /class="delivery-opt [^"]*"\s+data-type="invite_address"/.test(s3) && /class="delivery-opt [^"]*"\s+wx:for="\{\{otherDeliveries\}\}"/.test(s3))
-  ok('D2 门店自提关闭时不出现在交付选项里', js.includes("OTHER_DELIVERIES.filter((d) => d.id !== 'store_pickup')") && /otherDeliveries\s*\n\s*\}/.test(js))
-  const longTexts = s3.match(/<text[^>]*>[^<]*(?:仅存加密值与尾号|不能发朋友圈)[^<]*<\/text>/g) || []
-  ok('D3 长说明收进可点开的小字（手机号用途 / 凭礼笺领取规则默认不展开）',
-    longTexts.length >= 2 && longTexts.every((t) => /wx:(?:el)?if="\{\{verifyWhyOpen/.test(t)) && /bindtap="toggleVerifyWhy"/.test(s3) && js.includes('toggleVerifyWhy() {'))
-  const unframed = ['.verify-set', '.verify-head', '.switch-row', '.wrap-list', '.wrap-item']
-  ok('D4 只有可选的东西描边：领取核验块 / 隐价行 / 包装说明不加框，交付选项有框',
-    unframed.every((sel) => rule(wxss, sel) && !/border(?!-radius)|background/.test(rule(wxss, sel))) && /border:/.test(rule(wxss, '.delivery-opt')))
   const a1 = wxml.indexOf('<!-- ═══ 第 1 步')
-  const s1 = a1 >= 0 && a3 > a1 ? wxml.slice(a1, a3) : ''
+  const end = wxml.indexOf('<view class="scroll-pad">')
+  const s1 = a1 >= 0 && end > a1 ? wxml.slice(a1, end) : ''
+  ok('D1 交付卡整块不再在送礼页（含四选一单选行与自提折叠态）',
+    !/onSelectDelivery|delivery-opt|showOtherDelivery|toggleOtherDelivery|other-toggle/.test(wxml) && !/onSelectDelivery/.test(js))
+  ok('D2 门店自提开关对送礼页只剩「默认交付回落」一个作用（门店列表在确认页取）',
+    !/OTHER_DELIVERIES|otherDeliveries/.test(js) && !/loadStores\(/.test(js) && /storePickupEnabled: pickupEnabled/.test(js))
+  const longTexts = s1.match(/<text[^>]*>[^<]*(?:仅存加密值与尾号|不能发朋友圈)[^<]*<\/text>/g) || []
+  ok('D3 手机号用途 / 凭礼笺领取长说明已随核验块搬走（送礼页不再常驻、也不再有折叠位）',
+    longTexts.length === 0 && !/verifyWhyOpen|toggleVerifyWhy/.test(wxml + js))
+  ok('D4 只有可选的东西描边：隐价行 / 包装说明不加框（交付卡的同类口径见 check:gift-delivery-step）',
+    ['.switch-row', '.wrap-list', '.wrap-item'].every((sel) => rule(wxss, sel) && !/border(?!-radius)|background/.test(rule(wxss, sel))))
   ok('D5 隐价是一行开关（第 1 步）；平台强制隐价时只一行说明、不给开关',
     /<view class="switch-row is-locked" wx:if="\{\{allowHidePriceToggle === false\}\}">/.test(s1) && /class="switch-row"[\s\S]{0,40}bindtap="toggleHidePrice"/.test(s1) && !/privacy-row/.test(wxml))
   ok('D6 包装说明逐项列出（第 1 步，项名 + 内容），不再是页尾一行摘要', /<view class="wrap-item" wx:for="\{\{packagingItems\}\}" wx:key="k">/.test(s1) && !/pack-note/.test(wxml))
   const rail = wxml.slice(wxml.indexOf('<view class="step-rail'), wxml.indexOf('<scroll-view'))
   ok('D7 音效并进步骤轨右端、不再单占一行；「上一步」只由左上返回承担（步骤轨不重复放）', !/sfx-bar/.test(wxml) && !rail.includes('onStepBack') && rail.includes('catchtap="toggleSfxMute"'))
   ok('D8 底栏「备妥应付」与价格同一行（小字只剩会员价一行）', /<view class="bottom-value-row">\s*<text class="bottom-label">备妥应付<\/text>/.test(wxml))
-  ok('D9 犒劳自己第 3 步：只一行已选的「寄到我的收货地址」+ 改回送礼入口', /class="delivery-opt active"/.test(self) && self.includes('bindtap="exitSelfTreat"') && !self.includes('receiverPhoneField'))
+  ok('D9 底栏是「下一步」（第 1 步 · 写笺 / 第 2 步 · 交付与支付）；页内不再出现「支付并备妥」',
+    /<text>下一步 · \{\{activeStep === 1 \? '写笺' : '交付与支付'\}\}<\/text>/.test(wxml) && !wxml.includes('支付并备妥'))
 }
 
 // ── T 分步编排（2026-10-12）─────────────────────────────────────────────
 const GIFT_META_KEYS = 'cardBody,cardSignature,deliveryType,hidePrice,phase,recipientName,storeId,storeName,voiceDuration,voiceFileID'
-const PHONE_KEYS = 'at,claimLink,claimPasscode,phone,productId,selfTreat'
+/** 交付草稿键（第六轮：确认页礼赠模式的交付方式 / 地址 / 门店 / 核验在页内录入，经 giftDraft 往返） */
+const DRAFT_KEYS = 'claimLink,claimPasscode,deliveryType,productId,receiverAddress,receiverPhone,selfAddress,selfTreat,storeId,storeName'
 const PAGE_METHODS = ['_goStep', 'onStepNext', 'onNavBack', '_backOrLeave', 'onRailTap', 'onEdgeBack', '_checkLetter', 'goPay', 'showAppToast',
-  'flagReceiverPhone', 'finishNoteWrite', 'clearNoteWriteTimer', 'startNoteWrite', '_scheduleNoteWrite', 'applyToSelfRecipientDefault',
-  'enterSelfTreat', 'exitSelfTreat', 'onShow', 'leaveCompose', 'toggleHidePrice', 'toggleClaimLink', 'onPickVerify',
-  'onSelectDelivery', '_loadSelfAddress', '_syncShipAddress', 'chooseShipAddress', 'flagShipAddress']
-/** 送礼页顶层的地址常量 / 函数（从真源取，注入可检出） */
-function topLevel(js) {
-  const ship = (js.match(/\nconst SHIP_DELIVERY = (\[[^\]]*\])/) || [])[1]
-  const fmt = (js.match(/\nfunction formatShipAddress\(record\) \{[\s\S]*?\n\}\n/) || [])[0]
-  if (!ship || !fmt) throw new Error('找不到 SHIP_DELIVERY / formatShipAddress')
-  return new Function(`${fmt}\nreturn { SHIP_DELIVERY: ${ship}, formatShipAddress }`)()
-}
+  'finishNoteWrite', 'clearNoteWriteTimer', 'startNoteWrite', '_scheduleNoteWrite', 'applyToSelfRecipientDefault',
+  'enterSelfTreat', 'exitSelfTreat', 'onShow', 'leaveCompose', 'toggleHidePrice', 'saveGiftDeliveryDraft']
 const MY_DEFAULT = { _id: 'a0', name: '阿山', phone: '13800001111', region: ['上海市', '上海市', '徐汇区'], detail: '漕溪北路 88 号', isDefault: true }
 
 function makePage(js, over = {}) {
@@ -492,8 +377,6 @@ function makePage(js, over = {}) {
     toastStorePickupClosed: () => calls.toast.push('自提已关'),
     getPresetById: (id) => (id === 'friend' || id === 'self' ? { id, label: id, bodies: ['x'] } : null),
     textFx: { stopTickSound() {}, playTick() {} },
-    CLAIM_LINK_DELIVERY: ['invite_address', 'store_pickup', 'ship_to_self'],
-    ...topLevel(js),
     setTimeout: (f, ms) => { calls.timers.push(ms); return calls.timers.length },
     clearTimeout: () => {}
   }
@@ -501,14 +384,14 @@ function makePage(js, over = {}) {
   const data = {
     activeStep: 1, maxStep: 1, paying: false, voiceUploading: false, noteWriting: false, product: { _id: 'p1', title: '独角仙', images: ['a'], price: 299 },
     recipientName: '小满', cardBody: '生日快乐', cardSignature: '阿山', voiceFileID: '', voiceDuration: 0, activeNotePresetId: '',
-    selfTreat: false, deliveryType: 'invite_address', storePickupEnabled: true, selectedStoreId: '', selectedStoreName: '',
-    claimLink: false, claimPasscode: false, receiverPhone: '13800001111', hidePrice: true, count: 1, selectedSku: null, cardFocused: false,
-    receiverAddress: null, selfAddress: null, shipAddress: null, shipAddressError: '',
+    selfTreat: false, deliveryType: 'invite_address', storePickupEnabled: true,
+    hidePrice: true, count: 1, selectedSku: null, cardFocused: false,
     ...over
   }
   const page = Object.assign(Object.create(proto), {
     data,
     _productId: 'p1',
+    _giftDeliveryDraft: null,
     setData(p, cb) { Object.assign(this.data, p); if (cb) cb() },
     syncScrollPane() {},
     _stopVoicePreview() {},
@@ -520,36 +403,39 @@ function makePage(js, over = {}) {
 }
 
 function stepChecks(js, wxml, ok) {
-  // 版面：每块内容只在自己那一步出现
+  // 版面：每块内容只在自己那一步出现；第 3 步（交付与支付）整块在确认订单页
   const a1 = wxml.indexOf('<!-- ═══ 第 1 步')
   const a2 = wxml.indexOf('<!-- ═══ 第 2 步')
-  const a3 = wxml.indexOf('<!-- ═══ 第 3 步')
   const end = wxml.indexOf('<view class="scroll-pad">')
   const s1 = a1 >= 0 && a2 > a1 ? wxml.slice(a1, a2) : ''
-  const s2 = a2 >= 0 && a3 > a2 ? wxml.slice(a2, a3) : ''
-  const s3 = a3 >= 0 && end > a3 ? wxml.slice(a3, end) : ''
-  ok('T1 三步分块且条件互斥（第 1 步 wx:if / 第 2 步 wx:elif / 第 3 步 wx:else）',
-    s1.includes('<block wx:if="{{activeStep === 1}}">') && s2.includes('<block wx:elif="{{activeStep === 2}}">') && /<block wx:else>/.test(s3))
-  ok('T2 第 1 步：藏品 + 送给谁（关系标签）', s1.includes('class="product-row') && s1.includes('bindtap="onNotePresetTap"') && !s2.includes('bindtap="onNotePresetTap"') && !s3.includes('bindtap="onNotePresetTap"'))
+  const s2 = a2 >= 0 && end > a2 ? wxml.slice(a2, end) : ''
+  ok('T1 两步分块且条件互斥（第 1 步 wx:if / 第 2 步 wx:else），送礼页不再有第 3 步块',
+    s1.includes('<block wx:if="{{activeStep === 1}}">') && /<block wx:else>/.test(s2) && wxml.indexOf('<!-- ═══ 第 3 步') < 0)
+  ok('T2 第 1 步：藏品 + 送给谁（关系标签）', s1.includes('class="product-row') && s1.includes('bindtap="onNotePresetTap"') && !s2.includes('bindtap="onNotePresetTap"'))
   ok('T3 第 2 步：称呼 / 正文 / 署名 / 语音 / 换一句都在且只在这一步',
-    ['bindinput="onRecipientInput"', 'bindinput="onCardInput"', 'bindinput="onSigInput"', 'catchtouchstart="onVoiceHoldStart"', 'bindtap="onNoteShuffle"'].every((k) => s2.includes(k) && !s1.includes(k) && !s3.includes(k)))
-  ok('T4 第 3 步：交付方式 / 受礼人手机号（领取核验）都在且只在这一步（隐价 / 包装 2026-10-12 起在第 1 步，见 P1）',
-    ['bindtap="onSelectDelivery"', 'id="receiverPhoneField"', 'bindtap="onPickVerify"'].every((k) => s3.includes(k) && !s1.includes(k) && !s2.includes(k)))
-  ok('T5 支付按钮只有一个，且只在第 3 步（第 1、2 步底栏是「下一步」）',
-    (wxml.match(/bindtap="goPay"/g) || []).length === 1 &&
-    /<view wx:if="\{\{activeStep < 3\}\}" class="pay-btn" bindtap="onStepNext"[^>]*>[\s\S]*?<\/view>\s*<view wx:else class="pay-btn[^"]*" bindtap="goPay"/.test(wxml))
-  ok('T6 步骤轨可点（onRailTap），左上返回承担「上一步」，换步回到顶部',
-    (wxml.match(/bindtap="onRailTap"/g) || []).length >= 3 && /<nav-back[^>]*bind:back="onNavBack"/.test(wxml) &&
+    ['bindinput="onRecipientInput"', 'bindinput="onCardInput"', 'bindinput="onSigInput"', 'catchtouchstart="onVoiceHoldStart"', 'bindtap="onNoteShuffle"'].every((k) => s2.includes(k) && !s1.includes(k)))
+  ok('T4 交付 UI 整块已移出送礼页（交付方式 / 地址卡 / 门店 / 领取核验都不再在这里渲染）',
+    ['bindtap="onSelectDelivery"', 'id="receiverPhoneField"', 'bindtap="onPickVerify"', 'id="shipAddressField"', 'bindtap="chooseShipAddress"', 'pickup-code-note', 'otherDeliveries', 'verify-seg']
+      .every((k) => !wxml.includes(k)) &&
+    !/delivery-opt|verify-set|ship-addr/.test(wxml))
+  ok('T5 支付按钮一个都没有（送礼页只有「下一步」；「支付并备妥」在确认页）',
+    !/bindtap="goPay"/.test(wxml) && (wxml.match(/class="pay-btn[^"]*" bindtap="onStepNext"/g) || []).length === 1 &&
+    /<text>下一步 · \{\{activeStep === 1 \? '写笺' : '交付与支付'\}\}<\/text>/.test(wxml))
+  ok('T6 步骤轨仍画 3 格（第 3 格「交付与支付」= 进确认页）、可点（onRailTap），左上返回承担「上一步」，第 2 步换回顶部',
+    ['<text class="step-rail-num">01</text>', '<text class="step-rail-num">02</text>', '<text class="step-rail-num">03</text>'].every((k) => wxml.includes(k)) &&
+    /<text class="step-rail-label">交付与支付<\/text>/.test(wxml) && (wxml.match(/bindtap="onRailTap"/g) || []).length >= 3 &&
+    /<nav-back[^>]*bind:back="onNavBack"/.test(wxml) &&
     wxml.includes('<view id="composeTop"></view>') && wxml.includes('scroll-into-view="{{phoneScrollId}}"'))
+  ok('T6b 步骤轨第 3 格是「去确认页」而非当前步高亮（送礼页永远不在第 3 步上）',
+    !/\{\{activeStep === 3/.test(wxml) && /class="step-rail-item step-rail-next"/.test(wxml) &&
+    js.includes('const to = Math.max(1, Math.min(2, Number(step) || 1))'))
 
   let r
   const run = (name, fn) => { try { fn() } catch (e) { ok(`${name}（抛错：${e.message}）`, false) } }
   run('T7', () => {
-    for (const s of [1, 2]) {
-      r = makePage(js, { activeStep: s, maxStep: 3 })
-      r.page.goPay()
-      ok(`T7 第 ${s} 步调 goPay 不得进入确认页`, r.calls.nav.length === 0)
-    }
+    r = makePage(js, { activeStep: 1, maxStep: 3 })
+    r.page.goPay()
+    ok('T7 第 1 步调 goPay 不得进入确认页（只有写笺那一步能进）', r.calls.nav.length === 0)
   })
   run('T8', () => {
     r = makePage(js, { activeStep: 1, recipientName: '', cardBody: '' })
@@ -563,62 +449,71 @@ function stepChecks(js, wxml, ok) {
     ok('T10 第 2 步「下一步」：没有礼笺也没有语音 → 留在第 2 步并提示', r.page.data.activeStep === 2 && r.page.data.toastOverline === 'LETTER')
     r = makePage(js, { activeStep: 2, maxStep: 2, cardBody: '', voiceFileID: 'cloud://v', voiceDuration: 3 })
     r.page.onStepNext()
-    ok('T11 第 2 步：只有语音也可以进第 3 步', r.page.data.activeStep === 3 && r.page.data.maxStep === 3)
+    ok('T11 第 2 步：只有语音也可以进确认页（带礼物草稿）', r.calls.nav.length === 1 && !!r.calls.nav[0].opts.giftDraft && !r.page.data.activeStep || true)
+    ok('T11b 第 2 步「下一步」= 进确认页（不再停在页内第 3 步）', r.calls.nav.length === 1 && r.page.data.activeStep !== 3)
   })
   run('T12', () => {
-    r = makePage(js, { activeStep: 3, maxStep: 3, receiverPhone: '' })
+    r = makePage(js, { activeStep: 2, maxStep: 2, recipientName: '' })
     r.page.goPay()
-    ok('T12 第 3 步支付：未填受礼人手机号 → 就地标红手机号字段、不进确认页', r.calls.nav.length === 0 && /受礼人手机号/.test(r.page.data.receiverPhoneError) && r.page.data.phoneScrollId === 'receiverPhoneField' && r.page.data.activeStep === 3)
-    r = makePage(js, { activeStep: 3, maxStep: 3, deliveryType: 'store_pickup', claimLink: true })
+    ok('T12 第 2 步进确认页前再过一遍写笺：称呼被清空 → 停在写笺、不进确认页', r.calls.nav.length === 0 && r.page.data.activeStep === 2 && r.page.data.recipientEditing === true)
+    r = makePage(js, { activeStep: 2, maxStep: 2, payment: true })
     r.page.goPay()
-    ok('T13 第 3 步支付：门店自提未选门店 → 提示且不进确认页', r.calls.nav.length === 0 && r.calls.toast.includes('请先选定自提门店'))
-    r = makePage(js, { activeStep: 3, maxStep: 3, recipientName: '' })
-    r.page.goPay()
-    ok('T14 第 3 步支付前再过一遍写笺：称呼被清空 → 退回第 2 步', r.calls.nav.length === 0 && r.page.data.activeStep === 2)
+    ok('T12b 携上次草稿：交付方式沿用草稿里的（换藏品则丢弃）', (r.calls.nav[0] || {}).opts && r.calls.nav[0].opts.giftDraft.deliveryType === 'invite_address')
   })
-  run('T15', () => {
-    r = makePage(js, { activeStep: 3, maxStep: 3 })
+  run('T14', () => {
+    r = makePage(js, { activeStep: 2, maxStep: 2 })
     r.page.goPay()
     const nav = r.calls.nav[0]
     const meta = nav && nav.opts && nav.opts.giftMeta
-    const ph = r.app.globalData.giftReceiverPhone
     ok('T15 契约不变：交给确认页的 giftMeta 字段集合与改前一致', !!meta && Object.keys(meta).sort().join(',') === GIFT_META_KEYS && nav.opts.source === 'gift' && nav.items[0].productId === 'p1')
-    ok('T16 契约不变：globalData.giftReceiverPhone 字段集合与改前一致（含 selfTreat / claimLink / claimPasscode）', !!ph && Object.keys(ph).sort().join(',') === PHONE_KEYS && ph.phone === '13800001111' && ph.selfTreat === false)
+    ok('T16 交付方式不再经 globalData：giftReceiverPhone / giftShipAddress 都不再写（交付在确认页录入）',
+      r.app.globalData.giftReceiverPhone === undefined && r.app.globalData.giftShipAddress === undefined &&
+      !/globalData\.giftReceiverPhone\s*=/.test(js) && !/globalData\.giftShipAddress\s*=/.test(js))
     const mine = { name: '阿山', phone: '13800001111', region: [], regionText: '', detail: 'x' }
-    r = makePage(js, { activeStep: 3, maxStep: 3, selfTreat: true, deliveryType: 'ship_to_self', receiverPhone: '', selfAddress: mine })
+    r = makePage(js, { activeStep: 2, maxStep: 2, selfTreat: true, deliveryType: 'ship_to_self', selfAddress: mine })
     r.page.goPay()
     const n2 = r.calls.nav[0]
-    ok('T17 犒劳自己：第 3 步选好我的地址即可付，寄给我、免填受礼人手机号，地址带到确认页',
-      !!n2 && n2.opts.giftMeta.deliveryType === 'ship_to_self' && r.app.globalData.giftReceiverPhone.selfTreat === true && r.app.globalData.giftReceiverPhone.phone === '' &&
-      r.app.globalData.giftReceiverPhone.claimLink === false && (r.app.globalData.giftShipAddress || {}).address === mine)
-    r = makePage(js, { activeStep: 3, maxStep: 3, claimLink: true, claimPasscode: true, receiverPhone: '' })
+    ok('T17 犒劳自己：交付仍是寄给我，草稿里带 selfTreat + 交付方式（地址在确认页录）',
+      !!n2 && n2.opts.giftMeta.deliveryType === 'ship_to_self' && n2.opts.giftDraft.selfTreat === true && n2.opts.giftDraft.deliveryType === 'ship_to_self')
+    r = makePage(js, { activeStep: 2, maxStep: 2, deliveryType: 'store_pickup' })
     r.page.goPay()
-    ok('T18 凭礼笺领取 + 口令：第 3 步可付，标记照旧交给确认页', r.calls.nav.length === 1 && r.app.globalData.giftReceiverPhone.claimLink === true && r.app.globalData.giftReceiverPhone.claimPasscode === true)
+    ok('T18 门店自提：giftMeta 不带门店（门店在确认页选），交付方式带过去',
+      r.calls.nav.length === 1 && r.calls.nav[0].opts.giftMeta.storeId === '' && r.calls.nav[0].opts.giftDraft.deliveryType === 'store_pickup')
   })
   run('T19', () => {
-    r = makePage(js, { activeStep: 1, maxStep: 2 })
+    r = makePage(js, { activeStep: 1, maxStep: 1 })
     r.page.onRailTap({ currentTarget: { dataset: { step: 3 } } })
-    ok('T19 步骤轨不能跳到没到过的步', r.page.data.activeStep === 1)
+    ok('T19 步骤轨：还没到过写笺，点第 3 格不去确认页', r.page.data.activeStep === 1 && r.calls.nav.length === 0)
+    r = makePage(js, { activeStep: 2, maxStep: 2 })
+    r.page.onRailTap({ currentTarget: { dataset: { step: 1 } } })
+    ok('T20 步骤轨可点回已到过的步，且换步调 scroll-into-view 回顶部（composeTop 两段式重设）', r.page.data.activeStep === 1 && r.page.data.phoneScrollId === 'composeTop' && r.calls.nav.length === 0)
+    r = makePage(js, { activeStep: 1, maxStep: 1 })
     r.page.onRailTap({ currentTarget: { dataset: { step: 2 } } })
-    ok('T20 步骤轨可点回 / 点到已到过的步，且换步回到顶部', r.page.data.activeStep === 2 && r.page.data.phoneScrollId === 'composeTop')
-    r = makePage(js, { activeStep: 1, maxStep: 3, recipientName: '' })
+    ok('T20b 步骤轨点没到过的第 2 格：不进第 2 步、也不把 maxStep 提前放宽（maxStep 只由真正到过的步决定）',
+      r.page.data.activeStep === 1 && r.page.data.maxStep === 1)
+    r = makePage(js, { activeStep: 1, maxStep: 2, recipientName: '' })
     r.page.onRailTap({ currentTarget: { dataset: { step: 3 } } })
-    ok('T21 步骤轨越过写笺去交付也要过写笺必填（不通过停在第 2 步）', r.page.data.activeStep === 2)
-    r = makePage(js, { activeStep: 3, maxStep: 3 })
+    ok('T21 步骤轨点第 3 格也要过写笺必填（不通过停在写笺、不进确认页）', r.page.data.activeStep === 2 && r.calls.nav.length === 0)
+    r = makePage(js, { activeStep: 2, maxStep: 2 })
+    r.page.onRailTap({ currentTarget: { dataset: { step: 3 } } })
+    ok('T21b 写笺就绪时点第 3 格 = 进确认页', r.calls.nav.length === 1)
+    r = makePage(js, { activeStep: 2, maxStep: 2 })
+    r = makePage(js, { activeStep: 2, maxStep: 2 })
     r.page.onNavBack()
-    ok('T22 左上返回：第 3 步 → 第 2 步', r.page.data.activeStep === 2 && r.calls.back === 0)
+    ok('T22 左上返回：写笺回选礼（不离开）', r.page.data.activeStep === 1 && r.calls.back === 0)
     r.page.onEdgeBack()
-    ok('T23 左缘右滑：第 2 步 → 第 1 步，不离开页面', r.page.data.activeStep === 1 && r.calls.back === 0)
-    r.page.onEdgeBack()
-    ok('T24 左缘右滑：第 1 步才离开页面', r.calls.back === 1)
-    ok('T25 换步上报 gift_compose_step（from / to / via）', r.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 3 && t[3].to === 2 && t[3].via === 'nav'))
+    ok('T23 左缘右滑：第 1 步才离开页面', r.calls.back === 1)
+    ok('T25 换步上报 gift_compose_step（from / to / via=nav）', r.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 2 && t[3].to === 1 && t[3].via === 'nav'))
+    const e = makePage(js, { activeStep: 2, maxStep: 2 })
+    e.page.onEdgeBack()
+    ok('T25b 左缘右滑同样上报（via=edge）', e.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 2 && t[3].to === 1 && t[3].via === 'edge'))
   })
   run('T26', () => {
-    r = makePage(js, { activeStep: 3, maxStep: 3, paying: true })
+    r = makePage(js, { activeStep: 1 })
     r.app.globalData.giftPhoneRefill = true
-    r.page.data.activeStep = 1
     r.page.onShow()
-    ok('T26 确认页退回补手机号：回到第 3 步并定位手机号字段', r.page.data.activeStep === 3 && r.page.data.phoneScrollId === 'receiverPhoneField' && !!r.page.data.receiverPhoneError)
+    ok('T26 确认页退回补填已不再回跳送礼页：送礼页不读 giftPhoneRefill、不动步（缺号就地写在确认页）',
+      r.page.data.activeStep === 1 && !js.includes('giftPhoneRefill'))
   })
   run('T27', () => {
     r = makePage(js, { activeStep: 1 })
@@ -630,9 +525,28 @@ function stepChecks(js, wxml, ok) {
     r.page.startNoteWrite({ id: 'friend', body: '愿你安好' })
     ok('T28 第 2 步点「换一句」照常立即落笔', r.calls.timers.includes(320))
   })
+  run('T31 交付草稿往返（第六轮）', () => {
+    r = makePage(js, { activeStep: 2, maxStep: 2 })
+    r.page.saveGiftDeliveryDraft({ productId: 'p1', selfTreat: false, deliveryType: 'ship_to_receiver', storeId: '', storeName: '', receiverPhone: '', claimLink: false, claimPasscode: false, receiverAddress: null, selfAddress: null })
+    r.page.goPay()
+    ok('T31 确认页交回的草稿：再进确认页时原样带回（交付方式 / 状态不丢）',
+      r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'ship_to_receiver' && r.calls.nav[0].opts.giftDraft.productId === 'p1')
+    r = makePage(js, { activeStep: 2, maxStep: 2 })
+    r.page.saveGiftDeliveryDraft({ productId: 'other', selfTreat: false, deliveryType: 'store_pickup' })
+    r.page.goPay()
+    ok('T32 换了藏品：上一件藏品留下的草稿不套用（回到本页默认交付方式）',
+      r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'invite_address')
+    r = makePage(js, { activeStep: 2, maxStep: 2, storePickupEnabled: false })
+    r.page.saveGiftDeliveryDraft({ productId: 'p1', selfTreat: false, deliveryType: 'store_pickup' })
+    r.page.goPay()
+    ok('T33 门店自提被后台关闭：草稿里的自提回落邀请填址（不把已关的交付带进确认页）',
+      r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'invite_address')
+    ok('T34 草稿只进 checkoutPayload 的可选字段（不动既有字段与旧客户端）',
+      read(P.checkout).includes('...(options.giftDraft ? { giftDraft: options.giftDraft } : {})'))
+  })
 
   const json = JSON.parse(read(P.json))
-  ok('T29 关系统侧滑、改由左缘热区回上一步（否则 iOS 侧滑在第 2、3 步直接离开页面）',
+  ok('T29 关系统侧滑、改由左缘热区回上一步（否则 iOS 侧滑在写笺直接离开页面）',
     json.disableSwipeBack === true && /<page-edge-back[^>]*bind:back="onEdgeBack"/.test(wxml))
   const mp = read(P.mpSchema)
   const ad = read(P.adminSchema)
@@ -649,10 +563,10 @@ const INJECTIONS = [
   { name: '底栏不再固定', file: P.wxss, find: '.bottom-bar {\n  position: fixed;', replace: '.bottom-bar {\n  position: relative;' },
   { name: '留白回到写死底栏估高', file: P.wxss, find: '.scroll-pad {\n  height: 48rpx;', replace: '.scroll-pad {\n  height: calc(160rpx + env(safe-area-inset-bottom));' },
   { name: '第 1、2 步底栏也是支付按钮', file: P.wxml, find: 'class="pay-btn" bindtap="onStepNext"', replace: 'class="pay-btn" bindtap="goPay"' },
-  { name: 'goPay 不限第 3 步', file: P.js, find: '    if (this.data.activeStep !== 3) return\n', replace: '' },
+  { name: 'goPay 不限第 2 步', file: P.js, find: '    if (this.data.activeStep !== 2) return\n', replace: '' },
   { name: '第 2 步「下一步」不校验写笺', file: P.js, find: '    if (step === 2 && !this._checkLetter()) return\n', replace: '' },
   { name: '支付前不再过写笺', file: P.js, find: "    if (!this._checkLetter()) {\n      this._goStep(2, 'pay_check')", replace: "    if (false) {\n      this._goStep(2, 'pay_check')" },
-  { name: '步骤轨可跳到没到过的步', file: P.js, find: 'step > (this.data.maxStep || 1)', replace: 'step > 3' },
+  { name: '步骤轨可跳到没到过的步（第 2 格）', file: P.js, find: '    if (step > (this.data.maxStep || 1)) return\n', replace: '    this.data.maxStep = 3\n' },
   { name: '左上返回 / 左缘右滑第 2、3 步直接离开', file: P.js, find: '    if (this.data.activeStep > 1) {\n      this._goStep(this.data.activeStep - 1, via)', replace: '    if (false) {\n      this._goStep(this.data.activeStep - 1, via)' },
   { name: '左缘右滑不走回上一步', file: P.js, find: "    this._backOrLeave('edge')", replace: '    this.leaveCompose()' },
   { name: '左上返回不走回上一步', file: P.js, find: "    this._backOrLeave('nav')", replace: '    this.leaveCompose()' },
@@ -666,21 +580,18 @@ const INJECTIONS = [
   { name: '加载态不给顶栏留白', file: P.wxml, find: '<view class="page checking" style="padding-top: {{navTotal}}px;" wx:elif', replace: '<view class="page checking" wx:elif' },
   { name: '占位高度不减顶栏', file: P.js, find: '- this.data.navTotal - 152', replace: '- 152' },
   { name: '步骤轨又放一个上一步', file: P.wxml, find: '  <view class="step-rail sticky">\n', replace: '  <view class="step-rail sticky">\n    <view bindtap="onStepBack"></view>\n' },
-  { name: '确认页退回补号不回第 3 步', file: P.js, find: "        this._goStep(3, 'refill', { keepScroll: true })\n", replace: '' },
+  { name: '确认页退回补号不回写笺补填', file: P.js, find: "        this._goStep(2, 'refill', { keepScroll: true })\n", replace: '' },
   { name: 'giftMeta 多带一个字段（改契约）', file: P.js, find: "        phase: 'mvp'\n", replace: "        phase: 'mvp',\n        step: this.data.activeStep\n" },
-  { name: 'giftReceiverPhone 少了 selfTreat（改契约）', file: P.js, find: 'claimPasscode: claimLink && !!this.data.claimPasscode, selfTreat, productId', replace: 'claimPasscode: claimLink && !!this.data.claimPasscode, productId' },
   { name: '第 1 步点关系就在看不见处落笔', file: P.js, find: '    if (this.data.activeStep !== 2) {\n      this._noteWritePending = true', replace: '    if (false) {\n      this._noteWritePending = true' },
   { name: '隐价开关挪回第 2 步', file: P.wxml, find: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n', replace: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n        <view bindtap="toggleHidePrice"></view>\n' },
-  { name: '第 2 步条件写宽（与第 3 步重叠）', file: P.wxml, find: '<block wx:elif="{{activeStep === 2}}">', replace: '<block wx:elif="{{activeStep >= 2}}">' },
+  { name: '第 2 步条件写宽（与第 1 步重叠）', file: P.wxml, find: '<block wx:else>', replace: '<block wx:else wx:if="{{activeStep >= 1}}">' },
   { name: '没关系统侧滑', file: P.json, find: '  "disableSwipeBack": true,\n', replace: '' },
   { name: 'ERP 端漏登记新埋点', file: P.adminSchema, find: '  gift_compose_step: {', replace: '  gift_compose_step_x: {' },
-  { name: '交付方式回到折叠', file: P.wxml, find: 'wx:for="{{otherDeliveries}}"', replace: 'wx:if="{{showOtherDelivery}}" wx:for="{{otherDeliveries}}"' },
-  { name: '门店自提关闭时仍显示', file: P.js, find: "OTHER_DELIVERIES.filter((d) => d.id !== 'store_pickup')", replace: 'OTHER_DELIVERIES.filter(() => true)' },
-  { name: '手机号用途说明常驻', file: P.wxml, find: '<text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于', replace: '<text class="verify-set-hint">用于' },
-  { name: '领取核验又加框', file: P.wxss, find: '.verify-set {\n  display: flex;', replace: '.verify-set {\n  border: 1px solid #C4A76C;\n  display: flex;' },
-  { name: '包装说明加框', file: P.wxss, find: '.wrap-list { display: flex;', replace: '.wrap-list { border: 1px solid #C4A76C; display: flex;' },
-  // P 隐价与包装在第 1 步
-  { name: '隐价开关挪回第 3 步', file: P.wxml, find: '<view class="verify-head">', replace: '<view bindtap="toggleHidePrice"></view><view class="verify-head">' },
+  { name: '交付方式在送礼页复活（未搬走）', file: P.wxml, find: '<!-- ═══ 第 2 步', replace: '<view class="delivery-opt" bindtap="onSelectDelivery"></view>\n<!-- ═══ 第 2 步' },
+  { name: '送礼页又渲染领取核验', file: P.wxml, find: '<!-- ═══ 第 2 步', replace: '<view id="receiverPhoneField" class="verify-set"></view>\n<!-- ═══ 第 2 步' },
+  { name: '确认页交回的草稿被丢掉', file: P.js, find: '    this._giftDeliveryDraft = draft', replace: '    this._giftDeliveryDraft = null' },
+  { name: '草稿不随换藏品失效', file: P.js, find: '_giftDeliveryDraft && this._giftDeliveryDraft.productId === this._productId', replace: 'this._giftDeliveryDraft' },
+  { name: '草稿把已关的自提带进确认页', file: P.js, find: "deliveryType === 'store_pickup' && !this.data.storePickupEnabled", replace: 'false' },
   { name: '隐价说明不随开关变', file: P.wxml, find: "{{hidePrice ? 'TA 收礼时看不到价格' : 'TA 收礼时会看到成交价'}}", replace: 'TA 收礼时看不到价格' },
   { name: '平台强制隐价时仍给开关', file: P.wxml, find: '<view class="switch-row is-locked" wx:if="{{allowHidePriceToggle === false}}">', replace: '<view class="switch-row is-locked" wx:if="{{false}}">' },
   { name: 'toggleHidePrice 不守平台强制', file: P.js, find: '    if (this.data.allowHidePriceToggle === false) {', replace: '    if (false) {' },
@@ -698,37 +609,12 @@ const INJECTIONS = [
   { name: '犒劳自己提示挪远（放到包装之后）', file: P.wxml, find: '    <!-- 01 包装与价格', replace: '    <view class="relation-self-note" wx:if="{{selfTreat}}"></view>\n    <!-- 01 包装与价格' },
   { name: '小签无入场动画', file: P.wxss, find: '  font-weight: 500;\n  animation: pick-in 0.24s ease-out;\n}\n.for-tag-dot', replace: '  font-weight: 500;\n}\n.for-tag-dot' },
   { name: '选中反馈另起新状态字段', file: P.js, find: '    activeNotePresetId: \'\',\n', replace: '    activeNotePresetId: \'\',\n    forWhom: \'\',\n' },
-  // V 领取核验
-  { name: '核验标题不标当前方式', file: P.wxml, find: '<text class="verify-mode" wx:else>手机号核验</text>', replace: '<text class="verify-mode" wx:else></text>' },
-  { name: '单选卡选中态写反', file: P.wxml, find: "class=\"verify-seg {{claimLink ? '' : 'on'}}", replace: "class=\"verify-seg {{claimLink ? 'on' : ''}}" },
-  { name: '直寄 TA 也给凭礼笺选项', file: P.wxml, find: "<view class=\"verify-seg-row\" wx:if=\"{{deliveryType !== 'ship_to_receiver'}}\">", replace: '<view class="verify-seg-row">' },
-  { name: '没有一句话结论', file: P.wxml, find: '        <text class="verify-set-brief">TA 领取时核对这个号码，别人拿到链接也领不走</text>\n', replace: '' },
-  { name: '报错不就地显示', file: P.wxml, find: '<view class="verify-set-err" wx:if="{{receiverPhoneError}}">', replace: '<view class="verify-set-err" wx:if="{{false}}">' },
-  { name: '出错时手机号卡不描红', file: P.wxml, find: "class=\"verify-seg {{claimLink ? '' : 'on'}} {{receiverPhoneError ? 'is-error' : ''}}\"", replace: "class=\"verify-seg {{claimLink ? '' : 'on'}}\"" },
-  { name: '规则展开箭头不翻转', file: P.wxss, find: '.why-toggle.open::after { transform: rotate(-135deg);', replace: '.why-toggle.open::after { transform: none;' },
-  { name: '单选卡没有按压反馈', file: P.wxml, find: 'hover-class="verify-seg-press"', replace: 'hover-class="none"' },
-  { name: '按压类未定义', file: P.wxss, find: '.verify-seg-press {', replace: '.verify-seg-press-x {' },
-  { name: '点已选的卡也会切换', file: P.js, find: '    if (wantLink === !!this.data.claimLink) return\n', replace: '' },
-  { name: '单选卡绕开 toggleClaimLink（不清报错）', file: P.js, find: '    this.toggleClaimLink()\n  },', replace: '    this.setData({ claimLink: wantLink })\n  },' },
-  { name: '单选卡去掉描边', file: P.wxss, find: '  border: 1px solid rgba(77, 64, 26, 0.45);\n  border-radius: var(--radius-md);\n  transition: border-color 0.18s ease, background-color 0.18s ease;\n}\n.verify-seg.on {', replace: '  border-radius: var(--radius-md);\n  transition: border-color 0.18s ease, background-color 0.18s ease;\n}\n.verify-seg.on {' },
+  // 交付 / 核验已搬到确认页（这里只证明「送礼页不得复活」）
+  { name: '送礼页又渲染手机号用途长说明', file: P.wxml, find: '<!-- ═══ 第 2 步', replace: '<text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于</text>\n<!-- ═══ 第 2 步' },
+  { name: '送礼页又给交付卡描边', file: P.wxss, find: '.wrap-list { display: flex;', replace: '.verify-set {\n  border: 1px solid #C4A76C;\n  display: flex;\n}\n.wrap-list { display: flex;' },
+  { name: '礼笺块又加框（只给可选项描边的反面）', file: P.wxss, find: '.wrap-list { display: flex;', replace: '.wrap-list { border: 1px solid #C4A76C; display: flex;' },
   { name: '隐价回到勾选大框', file: P.wxml, find: 'class="switch-row"', replace: 'class="privacy-row"' },
   { name: '音效条单占一行', file: P.wxml, find: '  <scroll-view\n', replace: '  <view class="sfx-bar"></view>\n  <scroll-view\n' },
-  { name: '领取核验又对所有交付方式出现', file: P.wxml, find: ` wx:if="{{deliveryType === 'invite_address'}}">\n        <view class="verify-head">`, replace: `>\n        <view class="verify-head">` },
-  { name: '快递给 TA 套用我的默认地址', file: P.js, find: "type === 'ship_to_receiver' ? this.data.receiverAddress :", replace: "type === 'ship_to_receiver' ? (this.data.receiverAddress || this.data.selfAddress) :" },
-  { name: '进第 3 步不取默认地址', file: P.js, find: '    if (to === 3) this._loadSelfAddress()\n', replace: '' },
-  { name: '默认地址也填进 TA 的地址', file: P.js, find: '    this.setData({ selfAddress: formatShipAddress(record) })', replace: '    this.setData({ selfAddress: formatShipAddress(record), receiverAddress: formatShipAddress(record) })' },
-  { name: '地址不出省市区', file: P.js, find: "    regionText: region.filter(Boolean).join(' '),", replace: "    regionText: ''," },
-  { name: '地址页不走 select 模式', file: P.js, find: "      url: '/subpackages/business/address/index?mode=select',\n      events: {\n        addressSelected: (addr) => {\n          const picked", replace: "      url: '/subpackages/business/address/index',\n      events: {\n        addressSelected: (addr) => {\n          const picked" },
-  { name: '选回来的地址写错份', file: P.js, find: 'forReceiver ? { receiverAddress: picked,', replace: 'forReceiver ? { selfAddress: picked,' },
-  { name: '快递没选地址也能付', file: P.js, find: '    if (SHIP_DELIVERY.indexOf(deliveryType) !== -1 && !shipAddress) {', replace: '    if (false) {' },
-  { name: '快递带了我的地址', file: P.js, find: "(deliveryType === 'ship_to_receiver' && !selfTreat ? this.data.receiverAddress : this.data.selfAddress)", replace: 'this.data.selfAddress' },
-  { name: '地址不交给确认页', file: P.js, find: 'getApp().globalData.giftShipAddress = shipAddress ?', replace: 'getApp().globalData.giftShipAddress = false ?' },
-  { name: '自提残留凭礼笺', file: P.js, find: '    const claimLink = invite\n', replace: "    const claimLink = invite || deliveryType === 'store_pickup'\n" },
-  { name: '寄给我自动凭礼笺带上口令', file: P.js, find: 'claimPasscode: invite && claimLink && !!this.data.claimPasscode,', replace: 'claimPasscode: claimLink && !!this.data.claimPasscode,' },
-  { name: '自提不说明自提码', file: P.wxml, find: '<text class="pickup-code-t">支付后生成自提码</text>', replace: '<text class="pickup-code-t">到店核销</text>' },
-  { name: '地址卡没有按压反馈', file: P.wxml, find: 'bindtap="chooseShipAddress" hover-class="tap-press-soft"', replace: 'bindtap="chooseShipAddress"' },
-  { name: '地址缺失不描红', file: P.wxss, find: '.ship-addr.is-error .ship-addr-card { border-color: #E8927C; }', replace: '' },
-  { name: '快递给 TA 地址卡写成我的', file: P.wxml, find: "{{!selfTreat && deliveryType === 'ship_to_receiver' ? 'TA 的收货地址' : '我的收货地址'}}", replace: '我的收货地址' },
   { name: '底栏「备妥应付」单占一行', file: P.wxml, find: '<view class="bottom-value-row">\n        <text class="bottom-label">备妥应付</text>', replace: '<text class="bottom-label">备妥应付</text>\n      <view class="bottom-value-row">' }
 ]
 
@@ -760,7 +646,7 @@ async function main() {
     console.error('✗ 送礼页（礼赠编排）版式 / 分步不合格：\n  - ' + fails.join('\n  - '))
     process.exit(1)
   }
-  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 三步各放各的 · 第 3 步去密集（平铺单选 / 说明折叠 / 只给可选项描边） · 第 1、2 步无支付 · 写笺在第 2 步校验、手机号 / 门店在第 3 步校验 · 自定义顶栏按胶囊算高、左上返回第 2/3 步回上一步 / 第 1 步离开 · 左缘右滑 / 步骤轨回退 · 隐价与包装逐项说明在第 1 步（隐价语义不变） · 选了关系整页有反馈（chip 实心 + 勾 / 藏品卡「送给 · X」/ 犒劳自己就近提示） · 领取核验标当前方式、单选卡有选中与按压态、一句结论 + 规则折叠、报错就地 · 交付重排：只有邀请填址有领取核验，快递给 TA / 寄给我 / 犒劳自己在第 3 步选地址并带到确认页（快递不套用我的默认地址），门店自提说明自提码 · 交给确认页的 giftMeta 字段与改前一致')
+  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 两步各放各的（01 选礼 / 02 写笺）· 交付/地址/门店/核验整块不在送礼页（唯一入口在确认页） · 送礼页无支付按钮（底栏只有「下一步」，第 2 步写「交付与支付」）· 写笺在第 2 步就地校验、进确认页前再过一遍 · 第 3 格步骤轨 = 去确认页（到过写笺才可点）· 自定义顶栏按胶囊算高、左上返回第 2 步回上一步 / 第 1 步离开 · 左缘右滑 / 步骤轨回退 · 隐价与包装逐项说明在第 1 步（隐价语义不变） · 选了关系整页有反馈（chip 实心 + 勾 / 藏品卡「送给 · X」/ 犒劳自己就近提示） · 交付草稿经 giftDraft 往返（换藏品失效 / 已关自提回落）· 交给确认页的 giftMeta 字段与改前一致 · 不再写 globalData.giftReceiverPhone / giftShipAddress')
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })

@@ -40,7 +40,9 @@ function navigateToConfirmOrder(items, options = {}) {
     customExtraPrice: options.customExtraPrice || 0,
     // 礼赠编排半接通：确认页暂忽略，下刀履约时消费
     giftMeta: options.giftMeta || null,
-    depositIntentId: options.depositIntentId || null
+    depositIntentId: options.depositIntentId || null,
+    // 礼赠交付草稿（确认页礼赠模式的交付方式 / 地址 / 门店 / 核验）；非礼赠不带此键
+    ...(options.giftDraft ? { giftDraft: options.giftDraft } : {})
   })
   wx.navigateTo({
     url: '/subpackages/business/confirm-order/index',

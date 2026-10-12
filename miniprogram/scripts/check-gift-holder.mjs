@@ -65,6 +65,7 @@ const P = {
   composeJs: resolve(MP, 'subpackages/feature/gift/compose/index.js'),
   composeWxml: resolve(MP, 'subpackages/feature/gift/compose/index.wxml'),
   confirmOrder: resolve(MP, 'subpackages/business/confirm-order/index.js'),
+  giftCheckout: resolve(MP, 'subpackages/business/confirm-order/giftCheckout.js'),
   cartJs: resolve(MP, 'pages/cart/index.js'),
   myGiftsWxml: resolve(MP, 'subpackages/feature/gift/my-gifts/index.wxml')
 }
@@ -600,21 +601,59 @@ async function runChecks() {
   }
   const cjs = read(P.composeJs)
   const cw = read(P.composeWxml)
-  // 2026-10-11 起：填址 / 自提可选「凭礼笺领取」免填号（判据见 check:gift-claim-link）。
-  // 2026-10-12 第五轮：领取核验只留在邀请填址；快递给 TA / 寄给我改为第 3 步必选收货地址（号码 = 收货手机号），门店自提不核验
-  ok(/if \(invite && !claimLink && !\/\^1\\d\{10\}\$\/\.test\(receiverPhone\)\) \{\n\s+this\.flagReceiverPhone\(/.test(cjs) &&
-    cjs.includes("const invite = deliveryType === 'invite_address'") &&
-    cjs.includes('? !!this.data.claimLink && CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1'), 'J 送礼页：邀请填址未填号且未选凭礼笺领取不得进入确认页，并定位到该字段')
-  ok(/if \(SHIP_DELIVERY\.indexOf\(deliveryType\) !== -1 && !shipAddress\) \{\n\s+this\.flagShipAddress\(/.test(cjs),
-    'J 送礼页：快递给 TA / 寄给我没选收货地址不得进入确认页，并定位到地址卡')
-  ok(cw.includes('id="receiverPhoneField"') && cw.includes('scroll-into-view="{{phoneScrollId}}"') && cw.includes('focus="{{receiverPhoneFocus}}"') &&
-    cw.includes('id="shipAddressField"') && cw.includes('* 必填') && cw.includes('用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号'), 'J 送礼页：必填标注 + 用途说明 + 滚动聚焦到字段')
-  ok(!/wx\.show(Toast|Modal)\([^)]*手机号/.test(cjs), 'J 送礼页：手机号报错不得用原生弹窗')
+  // 2026-10-12 第六轮：领取核验与地址录入整块搬到确认订单页（giftCheckout.js），送礼页只剩「下一步 · 交付与支付」。
+  // 这里钉住送礼页不复活交付 UI，以及确认页承接「缺号不下单 + 就地描红」的口径。
+  ok(!/flagReceiverPhone|flagShipAddress|receiverPhoneError|shipAddressError/.test(cjs + cw) &&
+    !/id="receiverPhoneField"|id="shipAddressField"|delivery-opt|pickup-code/.test(cw) &&
+    cw.includes("{{activeStep === 1 ? '写笺' : '交付与支付'}}"),
+    'J 送礼页：交付方式 / 地址 / 领取核验整块不在这里（唯一入口在确认页），底栏只有「下一步 · 交付与支付」')
+  ok(!/wx\.show(Toast|Modal)\([^)]*手机号/.test(cjs), 'J 送礼页：不得用原生弹窗报缺号（该口径随核验搬到确认页，见 J 确认页）')
   const co = read(P.confirmOrder)
+  const gc = read(P.giftCheckout)
   const PL = load(P.phoneLib, { stubs: { crypto: NODE_CRYPTO } })
   ok(co.includes(`clientCaps: this.data.isGiftOrder ? ['${PL.GIFT_PHONE_CAP}', '${PL.GIFT_CLAIM_LINK_CAP}', '${PL.GIFT_DELIVERY_V2_CAP}'] : undefined,`) && co.includes('giftReceiverPhone: giftReceiverPhone || undefined,'), 'J 确认页：礼赠单须携带能力标记与受礼人手机号')
-  ok(/if \(this\.data\.isGiftInvite && !giftReceiverPhone && !giftClaimLink\) \{\n\s+this\.backToGiftPhone\(\)/.test(co) && /if \(this\.data\.isGiftOrder && !giftReceiverPhone && this\.giftUsesAddressPhone\(\)\) return\n/.test(co) &&
-    co.includes("result.code === 'GIFT_RECEIVER_PHONE_REQUIRED'"), 'J 确认页：缺号不下单（邀请填址退回送礼页定位字段；快递给 TA / 犒劳自己就地提示收货手机号）')
+  ok(gc.includes("this._flagGiftField('giftPhoneError', phone ? '受礼人手机号需为 11 位' : '请填写受礼人手机号，或选「凭礼笺领取」')") &&
+    gc.includes("this._flagGiftField('giftAddressError', forReceiver ? '请选择或新增 TA 的收货地址' : '请选择或新增你的收货地址')") &&
+    gc.includes("this._flagGiftField('giftStoreError', '请选择自提门店')") &&
+    gc.includes("if (typeof wx.pageScrollTo === 'function')") &&
+    !/wx\.show(Toast|Modal)\([^)]*(手机号|地址|门店)/.test(gc),
+    'J 确认页：邀请填址缺号 / 快递缺地址 / 自提缺门店都就地描红 + 滚到交付卡，不用原生弹窗')
+  ok(co.includes('    if (this.data.isGiftOrder && !this._giftSubmitCheck()) return\n') && co.includes('this._giftSubmitCheck()') &&
+    co.includes("result.code === 'GIFT_RECEIVER_PHONE_REQUIRED'") && !/backToGiftPhone/.test(co),
+    'J 确认页：缺号不下单（前端就地拦 + 云端 GIFT_RECEIVER_PHONE_REQUIRED 兜底；不再回跳送礼页）')
+  {
+    // 真跑确认页的交付校验：快递给 TA / 犒劳自己的收货手机号必须校验收，缺号不得算出核验号码
+    const fnBody = (src, name) => {
+      const m = new RegExp(`\\n( +)(async )?${name}\\(`).exec(src)
+      if (!m) return ''
+      const j = src.indexOf(`\n${m[1]}},`, m.index)
+      const k = src.indexOf(`\n${m[1]}}\n`, m.index)
+      const end = j < 0 ? (k < 0 ? undefined : k) : j
+      return src.slice(m.index, end)
+    }
+    const globals = {
+      require: () => ({}), wx: { pageScrollTo() {} }, module: { exports: {} },
+      SHIP_DELIVERY: ['ship_to_receiver', 'ship_to_self'],
+      CLAIM_LINK_DELIVERY: ['invite_address', 'store_pickup', 'ship_to_self'],
+      PHONE_RE: /^1\d{10}$/, digits: (v) => String(v || '').replace(/\D/g, '')
+    }
+    const body = `${fnBody(gc, '_giftSubmitCheck')}\n  },`
+    const proto = new Function(...Object.keys(globals), `return {${body}\n}`)(...Object.values(globals))
+    const mk = (data) => Object.assign(Object.create(proto), {
+      data: { giftDeliveryType: 'invite_address', giftSelfTreat: false, address: null, storePickupEnabled: true, giftStoreId: '', giftClaimLink: false, giftClaimPasscode: false, giftReceiverPhone: '', giftStoreError: '', giftAddressError: '', giftPhoneError: '', ...data },
+      setData(p) { Object.assign(this.data, p) }, _flagGiftField(f, m) { (this.flagged = this.flagged || []).push([f, m]) }
+    })
+    ok(!!proto && mk({ giftDeliveryType: 'ship_to_receiver', address: { name: 'TA', phone: '021-6666666' } })._giftSubmitCheck() === null &&
+      mk({ giftDeliveryType: 'ship_to_self', giftSelfTreat: true, address: { name: '我', phone: '021-6666666' } })._giftSubmitCheck() === null &&
+      mk({ giftDeliveryType: 'ship_to_receiver', address: { name: 'TA', phone: '13900002222' } })._giftSubmitCheck().receiverPhone === '13900002222',
+      'J 确认页：快递给 TA / 犒劳自己的收货手机号非 11 位就地拦下（不得放行到下单）')
+    let flagged = null
+    const bad = mk({ giftDeliveryType: 'ship_to_receiver', address: null })
+    bad._giftSubmitCheck()
+    flagged = (bad.flagged || [])[0]
+    ok(!!bad._giftSubmitCheck && flagged && flagged[0] === 'giftAddressError' && /收货地址/.test(flagged[1]),
+      'J 确认页：缺收货地址就地描红到地址卡（giftAddressError）')
+  }
   ok(PL.ENFORCE_ALL_DEFAULT === false && (delete process.env.GIFT_PHONE_ENFORCE_ALL, PL.enforceAllGiftPhone() === false), 'J 「对所有请求强制」开关默认必须关')
   async function makeOrder(event, { env } = {}) {
     const { store, db } = makeDb({ orders: [], gift_settings: [] })
@@ -712,12 +751,12 @@ const INJECTIONS = [
   { name: '非送礼人可设号', file: P.gift, find: "  if (!isGiverOfOrder(order, openid)) return { success: false, code: 'FORBIDDEN', msg: '只有送礼人可以设置领取核验' }\n", replace: '' },
   { name: '领取后仍可改号', file: P.gift, find: "  if (meta.receiverOpenid) return { success: false, code: 'ALREADY_BOUND', msg: 'TA 已领取，核验手机号不能再改' }\n", replace: '' },
   { name: '未设号的礼赠也被拦', file: P.gift, find: '  if (!meta.receiverVerify) return null\n  if (meta.receiverOpenid && meta.receiverOpenid === openid) return null\n  const doc = await loadVerifyDoc(order._id)\n  if (!doc || !doc.phoneHash) return null', replace: "  const doc = await loadVerifyDoc(order._id)\n  if (!doc || !doc.phoneHash) return { success: false, code: 'VERIFY_REQUIRED' }" },
-  { name: '送礼页手机号又变选填', file: P.composeJs, find: 'if (invite && !claimLink && !/^1\\d{10}$/.test(receiverPhone)) {', replace: 'if (invite && !claimLink && receiverPhone && !/^1\\d{10}$/.test(receiverPhone)) {' },
-  { name: '送礼页快递不选地址也放行', file: P.composeJs, find: 'if (SHIP_DELIVERY.indexOf(deliveryType) !== -1 && !shipAddress) {', replace: 'if (false) {' },
-  { name: '确认页快递缺收货手机号仍下单', file: P.confirmOrder, find: '    if (this.data.isGiftOrder && !giftReceiverPhone && this.giftUsesAddressPhone()) return\n', replace: '' },
-  { name: '送礼页去掉必填标注', file: P.composeWxml, find: '* 必填', replace: '选填' },
+  { name: '送礼页又复活交付 / 核验接线', file: P.composeJs, find: "  goPay() {\n", replace: "  goPay() {\n    this.flagReceiverPhone()\n" },
+  { name: '送礼页又渲染地址卡 / 核验块', file: P.composeWxml, find: '<!-- ═══ 第 2 步', replace: '<view id="shipAddressField" class="ship-addr"></view>\n<!-- ═══ 第 2 步' },
+  { name: '确认页快递 / 犒劳自己不校验收货手机号', file: P.giftCheckout, find: "        if (!PHONE_RE.test(phone)) {\n          this._flagGiftField('giftAddressError', '收货手机号需为 11 位手机号", replace: "        if (false) {\n          this._flagGiftField('giftAddressError', '收货手机号需为 11 位手机号" },
+  { name: '确认页缺地址不再就地描红', file: P.giftCheckout, find: "        this._flagGiftField('giftAddressError', forReceiver ? '请选择或新增 TA 的收货地址'", replace: "        void (forReceiver ? '请选择或新增 TA 的收货地址'" },
   { name: '确认页不带能力标记', file: P.confirmOrder, find: "clientCaps: this.data.isGiftOrder ? ['gift_receiver_phone_v1', 'gift_claim_link_v1', 'gift_delivery_v2'] : undefined,", replace: 'clientCaps: undefined,' },
-  { name: '确认页缺号仍下单', file: P.confirmOrder, find: 'if (this.data.isGiftInvite && !giftReceiverPhone && !giftClaimLink) {', replace: 'if (false) {' },
+  { name: '确认页下单前不再跑交付校验', file: P.confirmOrder, find: '    if (this.data.isGiftOrder && !this._giftSubmitCheck()) return\n', replace: '    if (false) return\n' },
   { name: '新礼赠入口绕过送礼页', file: P.cartJs, find: "source: 'cart',", replace: "source: 'cart', giftMeta: { deliveryType: 'invite_address' }," },
   { name: 'makeOrder 不校验手机号', file: P.makeOrder, find: 'if (giftPhone.required && !giftPhone.phone) {', replace: 'if (false) {' },
   { name: '忽略新版能力标记', file: [P.phoneLib, P.phoneLibCopy], find: 'required: (clientHasGiftPhoneCap(event) || enforceAllGiftPhone()) && !claimLink,', replace: 'required: enforceAllGiftPhone() && !claimLink,' },

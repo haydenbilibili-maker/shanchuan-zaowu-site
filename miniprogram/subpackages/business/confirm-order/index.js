@@ -39,6 +39,7 @@ const {
   buildProvisionalTip
 } = require('../utils/memberPricing')
 const { resolveCheckoutCareNotice } = require('../utils/checkoutCareNotice')
+const { giftCheckoutMethods } = require('./giftCheckout')
 
 /**
  * 普通标本温馨提示：保留手工温度与「仅此一件」表述；
@@ -333,6 +334,7 @@ function resolveCouponRowState({ goodsFloorHit, coupons, shipFeeWithoutCoupon, c
 }
 
 Page(withAppModal({
+  ...giftCheckoutMethods,
   data: {
     items: [],
     source: 'cart',
@@ -418,8 +420,24 @@ Page(withAppModal({
     isGiftInvite: false,
     isGiftStorePickup: false,
     giftNeedsAddress: false,
-    giftDeliveryLabel: '',
+    /** 礼赠模式（§15）：交付方式 / 门店 / 领取核验在本页录入，见 giftCheckout.js */
+    giftDeliveryType: '',
     giftDeliveryHint: '',
+    giftDeliveryOptions: [],
+    giftSelfTreat: false,
+    giftStores: [],
+    giftStoreId: '',
+    giftStoreName: '',
+    giftStoreError: '',
+    giftAddressError: '',
+    giftReceiverPhone: '',
+    giftClaimLink: false,
+    giftClaimPasscode: false,
+    giftPhoneError: '',
+    giftVerifyWhyOpen: false,
+    giftRecipientName: '',
+    giftHidePrice: true,
+    giftCanEditSteps: false,
     giftPackagingLabel: GIFT_PACKAGING_LABEL,
     giftPackagingNote: GIFT_PACKAGING_NOTE,
     storePickup: false,
@@ -468,6 +486,10 @@ Page(withAppModal({
     this.resumeAfterAuthIfNeeded()
   },
 
+  onUnload() {
+    if (this.data.isGiftOrder) this._handGiftDraftBack()
+  },
+
   /** 离开去注册/绑号前，把当前结算快照写回，避免页被销毁后无法恢复 */
   persistCheckoutForAuth() {
     const items = this.data.items || []
@@ -484,7 +506,8 @@ Page(withAppModal({
         storePickup: !!this.data.storePickup,
         pickupStoreId: this.data.pickupStoreId || '',
         pickupStoreName: this.data.pickupStoreName || '',
-        pickupStoreAddress: this.data.pickupStoreAddress || ''
+        pickupStoreAddress: this.data.pickupStoreAddress || '',
+        ...(this.data.isGiftOrder ? { giftDraft: this.giftDeliveryDraft() } : {})
       })
     } catch (e) {
       console.warn('persistCheckoutForAuth', e)
@@ -611,32 +634,12 @@ Page(withAppModal({
     this._depositIntentId = payload.depositIntentId || null
     const isCustomOrder = payload.source === 'custom' || !!(payload.customMeta && payload.customMeta.isCustom)
     const isGiftOrder = payload.source === 'gift' || !!payload.giftMeta
-    const deliveryType = (this._giftMeta && this._giftMeta.deliveryType) || ''
-    const isGiftInvite = deliveryType === 'invite_address'
-    const isGiftStorePickup = deliveryType === 'store_pickup'
-    const giftNeedsAddress = isGiftOrder && !isGiftInvite && !isGiftStorePickup
     const storePickup = !isGiftOrder && !!payload.storePickup
-    // 第五轮（蓝图 礼赠凭礼笺领取 §14）：快递给 TA / 寄给我的地址在送礼页第 3 步已选好，这里直接带出（仍可改）
-    const giftDeliveryLabels = {
-      invite_address: '邀请 TA 留下去处',
-      ship_to_receiver: '快递给 TA',
-      ship_to_self: '寄给我 · 再当面转交',
-      store_pickup: '门店自提'
+    // 礼赠模式（§15）：交付方式 / 地址 / 门店 / 核验在本页录入；giftDraft = 上次填过的草稿
+    const giftPatch = isGiftOrder ? this._initGiftCheckout(payload) : {}
+    if (isGiftOrder && typeof wx.setNavigationBarTitle === 'function') {
+      wx.setNavigationBarTitle({ title: '礼赠 · 交付与支付' })
     }
-    const giftDeliveryHints = {
-      invite_address: '礼笺已备妥。支付后交给 TA——对方启封并写下收件去处后，专员再启程。默认隐价。',
-      ship_to_receiver: '按下方 TA 的收货地址妥投；TA 领取礼笺时核对这个收货手机号。仍可分享礼笺让对方先读到你的话。',
-      ship_to_self: '藏品先寄到下方你的地址，再当面转交；TA 点礼笺「收下」后礼记在 TA 名下。',
-      store_pickup: `门店「${(this._giftMeta && this._giftMeta.storeName) || '已选门店'}」将备妥。支付后生成自提码，可转交 TA，到店出示由专员核销。`
-    }
-    const giftSelfTreat = isGiftOrder && deliveryType === 'ship_to_self' && this.pendingGiftSelfTreat()
-    const giftDeliveryLabel = giftSelfTreat ? '犒劳自己 · 寄给我' : (giftDeliveryLabels[deliveryType] || deliveryType || '')
-    const giftDeliveryHint = giftSelfTreat
-      ? '和普通下单一样，藏品直接寄到下方你的地址。'
-      : (giftDeliveryHints[deliveryType] || '')
-    const presetAddress = giftNeedsAddress ? this.pendingGiftShipAddress(deliveryType, payload.items) : null
-    // 带过来的地址优先；快递给 TA 没带地址时也不套用我的默认地址（那是送礼人自己的）
-    this._giftAddressPreset = !!presetAddress || (isGiftOrder && deliveryType === 'ship_to_receiver')
     const giftCardBody = String((this._giftMeta && this._giftMeta.cardBody) || '').trim()
     const giftCardSignature = String((this._giftMeta && this._giftMeta.cardSignature) || '').trim()
     const giftHasVoice = !!(
@@ -660,13 +663,8 @@ Page(withAppModal({
       customPreviewLines: payload.customMeta ? buildPreviewSummary(payload.customMeta) : [],
       isCustomOrder,
       isGiftOrder,
-      isGiftInvite,
-      isGiftStorePickup,
-      giftNeedsAddress,
       storePickup,
-      giftDeliveryLabel,
-      giftDeliveryHint,
-      ...(presetAddress ? { address: this.formatAddress(presetAddress) } : {}),
+      ...giftPatch,
       giftCardBody,
       giftCardSignature,
       giftHasVoice,
@@ -880,6 +878,7 @@ Page(withAppModal({
       console.warn('applyStorePickupFlag', e && e.message)
     }
     this.setData({ storePickupEnabled: enabled })
+    if (this.data.isGiftOrder) this._syncGiftPickupFlag()
     if (!enabled) {
       if (this.data.storePickup) {
         this.setData({ storePickup: false })
@@ -1222,19 +1221,19 @@ Page(withAppModal({
   },
 
   async loadDefaultAddress() {
-    if (this._giftAddressPreset) return
+    if (this.data.isGiftOrder && this._giftAddrs && this._giftAddrs.ship_to_self) return
     try {
       const res = await wx.cloud.callFunction({
         name: 'manageAddress',
         data: { action: 'list' }
       })
       const result = res.result || {}
-      if (!result.success || this._giftAddressPreset) return
+      if (!result.success) return
 
       const list = result.data || []
       const record = list.find((a) => a.isDefault) || list[0]
       if (record) {
-        this.setData({ address: this.formatAddress(record) })
+        this._applyDefaultAddress(record)
       }
     } catch (e) {
       console.error('loadDefaultAddress', e)
@@ -1242,12 +1241,20 @@ Page(withAppModal({
         const local = wx.getStorageSync('user_addresses_local') || []
         const record = local.find((a) => a.isDefault) || local[0]
         if (record) {
-          this.setData({ address: this.formatAddress(record) })
+          this._applyDefaultAddress(record)
         }
       } catch (err) {
         console.warn('loadDefaultAddress local', err)
       }
     }
+  },
+
+  _applyDefaultAddress(record) {
+    if (this.data.isGiftOrder) {
+      this._onGiftDefaultAddress(record)
+      return
+    }
+    this.setData({ address: this.formatAddress(record) })
   },
 
   formatAddress(record) {
@@ -1380,8 +1387,7 @@ Page(withAppModal({
         addressSelected: (addr) => {
           if (!addr) return
           this.setData({ address: this.formatAddress(addr) })
-          const g = getApp().globalData.giftShipAddress
-          if (this.data.isGiftOrder && g) g.address = addr
+          if (this.data.isGiftOrder) this._onGiftAddressPicked(addr)
         }
       },
       fail: () => wx.showToast({ title: '无法打开地址', icon: 'none' })
@@ -1482,11 +1488,7 @@ Page(withAppModal({
     }
 
     const address = this.data.address
-    const shipPhoneBad = !!(address && address.phone) && this.giftUsesAddressPhone() && !this.pendingGiftReceiverPhone()
-    if (this.data.giftNeedsAddress && (!address || !address.name || !address.phone || shipPhoneBad)) {
-      wx.showToast({ title: shipPhoneBad ? '收货手机号需为 11 位手机号' : '请选择收货地址', icon: 'none' })
-      return
-    }
+    if (this.data.isGiftOrder && !this._giftSubmitCheck()) return
     if (!this.data.isGiftOrder && !this.data.storePickup && (!address || !address.name || !address.phone)) {
       wx.showToast({ title: '请选择收货地址', icon: 'none' })
       return
@@ -1562,77 +1564,18 @@ Page(withAppModal({
     this.submitOrder()
   },
 
-  /** 送礼页暂存的受礼人手机号（2h 内有效）；礼赠单强制携带（2026-09-28 产品负责人拍板）。
-   *  犒劳自己 / 快递给 TA（第五轮）：号码 = 收货地址手机号，送礼页不再单独填 */
-  pendingGiftReceiverPhone() {
-    const g = getApp().globalData.giftReceiverPhone
-    if (this.giftUsesAddressPhone()) {
-      const addrPhone = String((this.data.address && this.data.address.phone) || '').replace(/\D/g, '')
-      return /^1\d{10}$/.test(addrPhone) ? addrPhone : ''
-    }
-    if (!g || !/^1\d{10}$/.test(String(g.phone || '')) || Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return ''
-    return g.phone
-  },
-
-  /** 送礼页选了「犒劳自己」（2h 内有效，只限寄给我）：受礼人即本人，号码取收货地址手机号 */
-  pendingGiftSelfTreat() {
-    const g = getApp().globalData.giftReceiverPhone
-    if (!g || !g.selfTreat || Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return false
-    return ((this._giftMeta && this._giftMeta.deliveryType) || '') === 'ship_to_self'
-  },
-
-  /** 领取核验号码取收货地址手机号：犒劳自己、快递给 TA */
-  giftUsesAddressPhone() {
-    if (!this.data.isGiftOrder) return false
-    return this.pendingGiftSelfTreat() || ((this._giftMeta && this._giftMeta.deliveryType) || '') === 'ship_to_receiver'
-  },
-
-  /** 送礼页第 3 步选好的收货地址（2h 内有效，交付方式与藏品须一致）→ 地址；否则 null */
-  pendingGiftShipAddress(deliveryType, items) {
-    const g = getApp().globalData.giftShipAddress
-    if (!g || !g.address || !g.address.name || !g.address.phone) return null
-    if (Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return null
-    if (g.deliveryType !== deliveryType) return null
-    const first = (items && items[0]) || {}
-    if (g.productId && g.productId !== (first.productId || first.id || first._id)) return null
-    return g.address
-  },
-
-  /** 送礼页选了「凭礼笺领取」（2h 内有效，只限填址 / 自提 / 寄给我）→ { passcode }；否则 null */
-  pendingGiftClaimLink() {
-    const g = getApp().globalData.giftReceiverPhone
-    if (!g || !g.claimLink || Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return null
-    const dt = (this._giftMeta && this._giftMeta.deliveryType) || ''
-    if (dt !== 'invite_address' && dt !== 'store_pickup' && dt !== 'ship_to_self') return null
-    return { passcode: !!g.claimPasscode }
-  },
-
-  /** 缺受礼人手机号：退回送礼页并定位到该字段（送礼页 onShow 读 giftPhoneRefill） */
-  backToGiftPhone() {
-    getApp().globalData.giftPhoneRefill = true
-    const pages = getCurrentPages()
-    const prev = pages[pages.length - 2]
-    if (prev && /gift\/compose\/index$/.test(prev.route || '')) {
-      wx.navigateBack()
-      return
-    }
-    this.modal({
-      title: '请填写受礼人手机号',
-      overline: 'RECIPIENT PHONE',
-      content: '用于受礼人领取时核验身份，防止礼笺被他人领走。请回到送礼页填写后再下单。',
-      showCancel: false
-    })
-  },
-
   async doSubmitOrder() {
     if (this.data.submitting) return
-    const giftReceiverPhone = this.data.isGiftOrder ? this.pendingGiftReceiverPhone() : ''
-    const giftClaimLink = this.data.isGiftOrder && !giftReceiverPhone ? this.pendingGiftClaimLink() : null
-    if (this.data.isGiftOrder && !giftReceiverPhone && this.giftUsesAddressPhone()) return
-    // 只有邀请填址还要领取核验：缺号退回送礼页；快递给 TA / 寄给我 / 门店自提不再要号码（gift_delivery_v2）
-    if (this.data.isGiftInvite && !giftReceiverPhone && !giftClaimLink) {
-      this.backToGiftPhone()
-      return
+    // 礼赠：按本页交付方式校验并算核验参数（只有邀请填址要选核验；缺项就地描红，不跳页）
+    const giftCheck = this.data.isGiftOrder ? this._giftSubmitCheck() : null
+    if (this.data.isGiftOrder && !giftCheck) return
+    const giftReceiverPhone = giftCheck ? giftCheck.receiverPhone : ''
+    const giftClaimLink = giftCheck ? giftCheck.claimLink : null
+    // 送礼成功页兜底补存号码（flushPendingReceiverPhone）：只在邀请填址填了号时挂起
+    if (this.data.isGiftOrder) {
+      getApp().globalData.giftReceiverPhone = this.data.isGiftInvite && giftReceiverPhone
+        ? { phone: giftReceiverPhone, productId: this._giftProductId || '', at: Date.now() }
+        : null
     }
 
     const address = this.data.address
@@ -1677,7 +1620,7 @@ Page(withAppModal({
           address: addressPayload,
           customMeta: this._customMeta,
           customExtraPrice: this._customExtraPrice,
-          giftMeta: this._giftMeta || null,
+          giftMeta: this.data.isGiftOrder ? this._giftMetaForSubmit() : (this._giftMeta || null),
           source: this.data.isGiftOrder ? 'gift' : undefined,
           giftReceiverPhone: giftReceiverPhone || undefined,
           giftClaimMode: giftClaimLink ? 'link' : undefined,
@@ -1697,18 +1640,12 @@ Page(withAppModal({
       if (result && result.code === 'GIFT_RECEIVER_PHONE_REQUIRED') {
         this.setData({ submitting: false })
         if (this.data.isGiftInvite) {
-          this.backToGiftPhone()
+          this._flagGiftField('giftPhoneError', '请填写受礼人手机号，或选「凭礼笺领取」')
         } else {
-          this.modal({
-            title: '请核对收货手机号',
-            overline: 'RECIPIENT PHONE',
-            content: '收货手机号需为 11 位手机号（TA 领取礼笺时核对它）。请点上方地址修改后再下单。',
-            showCancel: false
-          })
+          this._flagGiftField('giftAddressError', '收货手机号需为 11 位手机号（领取礼笺时核对它），点地址修改')
         }
         return
       }
-      if (result && result.success) getApp().globalData.giftShipAddress = null
       if (result && (result.receiverVerify || result.claimMode === 'link')) getApp().globalData.giftReceiverPhone = null
       if (!result || !result.success) {
         this.modal({

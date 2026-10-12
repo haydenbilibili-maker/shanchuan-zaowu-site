@@ -12,27 +12,252 @@
     <text class="auth-resume-hint-close">收起</text>
   </view>
 
-  <!-- 礼赠交付说明 -->
-  <view class="card gift-invite-card" wx:if="{{isGiftOrder}}">
-    <text class="section-label">SEAL · 封笺确认</text>
-    <text class="gift-invite-title">{{giftDeliveryLabel}}</text>
-    <text class="gift-invite-desc">{{giftDeliveryHint}}</text>
-    <view class="gift-pack-note">
-      <text class="gift-pack-label">{{giftPackagingLabel}}</text>
-      <text class="gift-pack-body">{{giftPackagingNote}}</text>
+  <!-- 礼赠模式（蓝图 礼赠凭礼笺领取 §15）：送礼页 01 选礼 / 02 写笺 → 本页「03 交付与支付」。
+       层级：步骤轨 → 礼物摘要（藏品 + 送给谁 + 礼笺摘录）→ 交付方式（四选一 + 跟随项：地址 / 门店 / 领取核验）→ 礼券与金额 → 底栏 -->
+  <block wx:if="{{isGiftOrder}}">
+  <view class="gift-rail">
+    <view
+      class="gift-rail-item done"
+      data-step="1"
+      bindtap="onGiftRailTap"
+      hover-class="{{giftCanEditSteps ? 'tap-press' : 'none'}}"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="第 1 步 选礼"
+    >
+      <text class="gift-rail-num">01</text>
+      <text class="gift-rail-label">选礼</text>
+    </view>
+    <view class="gift-rail-line"></view>
+    <view
+      class="gift-rail-item done"
+      data-step="2"
+      bindtap="onGiftRailTap"
+      hover-class="{{giftCanEditSteps ? 'tap-press' : 'none'}}"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="第 2 步 写笺"
+    >
+      <text class="gift-rail-num">02</text>
+      <text class="gift-rail-label">写笺</text>
+    </view>
+    <view class="gift-rail-line"></view>
+    <view class="gift-rail-item on" aria-label="第 3 步 交付与支付（当前）">
+      <text class="gift-rail-num">03</text>
+      <text class="gift-rail-label">交付与支付</text>
     </view>
   </view>
 
-  <!-- 礼笺摘要预览 -->
-  <view class="card gift-note-card" wx:if="{{isGiftOrder && (giftCardBody || giftHasVoice)}}">
-    <text class="section-label">LETTER · 礼笺摘要</text>
-    <text class="gift-note-body" wx:if="{{giftCardBody}}">{{giftCardBody}}</text>
-    <text class="gift-note-voice" wx:if="{{giftHasVoice}}">另封入一段声音</text>
-    <text class="gift-note-sig" wx:if="{{giftCardSignature}}">— {{giftCardSignature}}</text>
+  <!-- 礼物摘要：藏品一行 + 礼笺两行摘录（点开回写笺改）+ 包装 / 隐价一行 -->
+  <view class="card gift-summary-card">
+    <view class="gift-sum-goods" wx:for="{{items}}" wx:key="productId">
+      <view class="gift-sum-img-wrap">
+        <image class="gift-sum-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill"></image>
+        <view class="gift-sum-img goods-img-ph" wx:else>
+          <image class="goods-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
+        </view>
+      </view>
+      <view class="gift-sum-main">
+        <text class="gift-sum-for">{{giftSelfTreat ? '犒劳自己' : (giftRecipientName ? '送给 · ' + giftRecipientName : '一份礼')}}</text>
+        <text class="gift-sum-title">{{item.title}}</text>
+        <view class="gift-sum-row">
+          <text class="gift-sum-sku">{{item.skuLabel || ''}}{{item.count > 1 ? ' ×' + item.count : ''}}</text>
+          <text class="gift-sum-price">¥{{item.price}}</text>
+        </view>
+      </view>
+    </view>
+    <view
+      class="gift-sum-letter"
+      wx:if="{{giftCardBody || giftHasVoice}}"
+      bindtap="onGiftRailTap"
+      data-step="2"
+      hover-class="{{giftCanEditSteps ? 'tap-press-soft' : 'none'}}"
+      hover-stay-time="80"
+    >
+      <text class="gift-sum-letter-body" wx:if="{{giftCardBody}}">{{giftCardBody}}</text>
+      <view class="gift-sum-letter-foot">
+        <text class="gift-sum-sig" wx:if="{{giftCardSignature}}">— {{giftCardSignature}}</text>
+        <text class="gift-sum-voice" wx:if="{{giftHasVoice}}">另封入一段声音</text>
+        <text class="gift-sum-edit" wx:if="{{giftCanEditSteps}}">改礼笺 ›</text>
+      </view>
+    </view>
+    <text class="gift-sum-wrap">{{giftPackagingNote}}{{giftHidePrice ? ' 礼笺与包裹不显示价格。' : ''}}</text>
   </view>
 
-  <!-- 收货地址：邀请填址 / 礼赠自提 / 普通门店自取不展示 -->
-  <view class="card address-card" bindtap="chooseAddress" hover-class="address-card-hover" wx:if="{{!isGiftInvite && !isGiftStorePickup && !storePickup}}">
+  <!-- 交付方式：四选一（门店自提关闭时三选一），选中项点亮；下面跟随该方式要填的东西 -->
+  <view class="card gift-delivery-card" id="giftDeliveryCard">
+    <text class="section-label">DELIVERY · {{giftSelfTreat ? '寄到哪里' : '怎样交给 TA'}}</text>
+    <block wx:if="{{giftSelfTreat}}">
+    <view class="delivery-opt active is-solo">
+      <view class="delivery-radio" aria-hidden="true"></view>
+      <view class="delivery-opt-main">
+        <view class="delivery-head">
+          <text class="delivery-name">寄到我的收货地址</text>
+          <text class="delivery-tag">犒劳自己</text>
+        </view>
+        <text class="delivery-desc">{{giftDeliveryHint}}</text>
+      </view>
+    </view>
+    <text class="claim-switch self-exit" wx:if="{{giftCanEditSteps}}" bindtap="onGiftRailTap" data-step="1">其实是送给别人？回到选礼换关系 ›</text>
+    </block>
+    <block wx:else>
+    <view class="delivery-grid">
+      <view
+        class="delivery-tile {{giftDeliveryType === item.id ? 'active' : ''}}"
+        wx:for="{{giftDeliveryOptions}}"
+        wx:key="id"
+        data-type="{{item.id}}"
+        bindtap="onGiftSelectDelivery"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        aria-role="radio"
+        aria-checked="{{giftDeliveryType === item.id}}"
+      >
+        <view class="delivery-head">
+          <view class="delivery-radio" aria-hidden="true"></view>
+          <text class="delivery-name">{{item.name}}</text>
+          <text class="delivery-tag" wx:if="{{item.tag}}">{{item.tag}}</text>
+        </view>
+        <text class="delivery-short">{{item.short}}</text>
+      </view>
+    </view>
+    <text class="delivery-hint">{{giftDeliveryHint}}</text>
+    </block>
+
+    <!-- 收货地址：快递给 TA / 寄给我 / 犒劳自己（与普通订单同一个地址页）；缺地址 / 号码不对就地描红 -->
+    <view class="gift-follow ship-addr {{giftAddressError ? 'is-error' : ''}}" wx:if="{{giftNeedsAddress}}">
+      <text class="follow-label">{{!giftSelfTreat && giftDeliveryType === 'ship_to_receiver' ? 'TA 的收货地址' : '我的收货地址'}} <text class="verify-set-req">* 必填</text></text>
+      <view class="ship-addr-card {{address ? 'on' : ''}}" bindtap="chooseAddress" hover-class="tap-press-soft" hover-stay-time="80">
+        <view class="ship-addr-main" wx:if="{{address}}">
+          <view class="ship-addr-head">
+            <text class="ship-addr-name">{{address.name}}</text>
+            <text class="ship-addr-phone">{{address.phone}}</text>
+          </view>
+          <text class="ship-addr-detail">{{address.regionText}} {{address.detail}}</text>
+        </view>
+        <text class="ship-addr-ph" wx:else>{{!giftSelfTreat && giftDeliveryType === 'ship_to_receiver' ? '选择或新增 TA 的收货地址' : '选择或新增你的收货地址'}}</text>
+        <text class="ship-addr-arrow" aria-hidden="true">›</text>
+      </view>
+      <view class="verify-set-err" wx:if="{{giftAddressError}}">
+        <text class="verify-set-err-mark" aria-hidden="true">!</text>
+        <text>{{giftAddressError}}</text>
+      </view>
+    </view>
+
+    <!-- 门店自提：选门店；支付后得自提码，不另做核验 -->
+    <view class="gift-follow store-pick {{giftStoreError ? 'is-error' : ''}}" wx:elif="{{isGiftStorePickup}}">
+      <text class="follow-label">自提门店 <text class="verify-set-req">* 必选</text></text>
+      <view class="store-chips">
+        <view
+          class="store-chip {{giftStoreId === item.storeId ? 'on' : ''}}"
+          wx:for="{{giftStores}}"
+          wx:key="storeId"
+          data-id="{{item.storeId}}"
+          data-name="{{item.name}}"
+          bindtap="onGiftSelectStore"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+        >
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+      <text class="store-empty" wx:if="{{!giftStores.length}}">门店暂未就绪，稍后再选或换其他交付</text>
+      <view class="verify-set-err" wx:if="{{giftStoreError}}">
+        <text class="verify-set-err-mark" aria-hidden="true">!</text>
+        <text>{{giftStoreError}}</text>
+      </view>
+      <view class="pickup-code-note">
+        <text class="pickup-code-t">支付后生成自提码</text>
+        <text class="pickup-code-d">可转发给 TA，到店出示由专员核销领取，不用另做核验</text>
+      </view>
+    </view>
+
+    <!-- 领取核验：只在「邀请 TA 填地址」出现。手机号核验 / 凭礼笺领取（可加口令）；报错就地写在输入框下 -->
+    <view class="gift-follow verify-set {{giftPhoneError ? 'is-error' : ''}}" wx:elif="{{isGiftInvite}}">
+      <view class="verify-head">
+        <text class="follow-label">领取核验</text>
+        <text class="verify-mode" wx:if="{{giftClaimLink}}">{{giftClaimPasscode ? '凭礼笺 + 口令' : '凭礼笺领取'}}</text>
+        <text class="verify-mode" wx:else>手机号核验</text>
+      </view>
+      <view class="verify-seg-row">
+        <view
+          class="verify-seg {{giftClaimLink ? '' : 'on'}} {{giftPhoneError ? 'is-error' : ''}}"
+          data-mode="phone"
+          bindtap="onGiftPickVerify"
+          hover-class="verify-seg-press"
+          hover-stay-time="80"
+          aria-role="radio"
+          aria-checked="{{!giftClaimLink}}"
+        >
+          <view class="verify-seg-radio" aria-hidden="true"></view>
+          <view class="verify-seg-main">
+            <text class="verify-seg-t">手机号核验</text>
+            <text class="verify-seg-d">更安全 · 核对号码</text>
+          </view>
+        </view>
+        <view
+          class="verify-seg {{giftClaimLink ? 'on' : ''}}"
+          data-mode="link"
+          bindtap="onGiftPickVerify"
+          hover-class="verify-seg-press"
+          hover-stay-time="80"
+          aria-role="radio"
+          aria-checked="{{giftClaimLink}}"
+        >
+          <view class="verify-seg-radio" aria-hidden="true"></view>
+          <view class="verify-seg-main">
+            <text class="verify-seg-t">凭礼笺领取</text>
+            <text class="verify-seg-d">不需要 TA 的手机号</text>
+          </view>
+        </view>
+      </view>
+      <block wx:if="{{giftClaimLink}}">
+      <text class="verify-set-brief">TA 打开礼笺点「收下」即领取，一份限一人</text>
+      <view
+        class="claim-opt {{giftClaimPasscode ? 'on' : ''}}"
+        bindtap="toggleGiftClaimPasscode"
+        hover-class="verify-seg-press"
+        hover-stay-time="80"
+        aria-role="checkbox"
+        aria-checked="{{giftClaimPasscode}}"
+      >
+        <view class="claim-check" aria-hidden="true"></view>
+        <view class="claim-opt-main">
+          <text class="claim-opt-t">加 6 位领取口令</text>
+          <text class="claim-opt-d">{{giftClaimPasscode ? '已加 · TA 输对口令才能收下，口令只你看得到' : 'TA 输对才能收下，防止链接被转给别人'}}</text>
+        </view>
+      </view>
+      <view class="verify-links">
+        <text class="why-toggle {{giftVerifyWhyOpen ? 'open' : ''}}" bindtap="toggleGiftVerifyWhy">{{giftVerifyWhyOpen ? '收起规则' : '领取规则'}}</text>
+      </view>
+      <text class="verify-set-hint" wx:if="{{giftVerifyWhyOpen}}">TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。口令只你看得到。为防扩散，这份礼笺不能发朋友圈。</text>
+      </block>
+      <block wx:else>
+      <text class="verify-set-brief">TA 领取时核对这个号码，别人拿到链接也领不走</text>
+      <input
+        class="verify-set-input"
+        type="number"
+        maxlength="11"
+        placeholder="TA 的 11 位手机号"
+        placeholder-class="verify-set-ph"
+        value="{{giftReceiverPhone}}"
+        bindinput="onGiftPhoneInput"
+      />
+      <view class="verify-set-err" wx:if="{{giftPhoneError}}">
+        <text class="verify-set-err-mark" aria-hidden="true">!</text>
+        <text>{{giftPhoneError}}</text>
+      </view>
+      <view class="verify-links">
+        <text class="why-toggle {{giftVerifyWhyOpen ? 'open' : ''}}" bindtap="toggleGiftVerifyWhy">{{giftVerifyWhyOpen ? '收起' : '为什么要填？'}}</text>
+      </view>
+      <text class="verify-set-hint" wx:if="{{giftVerifyWhyOpen}}">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
+      </block>
+    </view>
+  </view>
+  </block>
+
+  <!-- 收货地址：普通订单（门店自取不展示）；礼赠的地址在上面的交付卡里 -->
+  <view class="card address-card" bindtap="chooseAddress" hover-class="address-card-hover" wx:if="{{!isGiftOrder && !storePickup}}">
     <block wx:if="{{address}}">
       <view class="addr-head">
         <text class="addr-name">{{address.name}}</text>
@@ -41,7 +266,7 @@
       <text class="addr-detail">{{address.regionText}} {{address.detail}}</text>
     </block>
     <block wx:else>
-      <text class="addr-placeholder">{{isGiftOrder ? (giftNeedsAddress ? '写下这份珍物的去处' : '请选择收货地址') : '请选择收货地址'}}</text>
+      <text class="addr-placeholder">请选择收货地址</text>
     </block>
     <text class="addr-arrow">›</text>
   </view>
@@ -92,8 +317,9 @@
     <text class="custom-estimate" wx:if="{{customMeta.estimatedDays}}">预计 {{customMeta.estimatedDays}} 个工作日内发出</text>
   </view>
 
-  <!-- 商品清单 -->
+  <!-- 商品清单（礼赠模式藏品已在礼物摘要里，只留品牌说明） -->
   <view class="card">
+    <block wx:if="{{!isGiftOrder}}">
     <view class="section-label">藏品清单</view>
     <view class="goods-item" wx:for="{{items}}" wx:key="productId">
       <view class="goods-img-wrap">
@@ -113,7 +339,8 @@
         </view>
       </view>
     </view>
-    <view class="brand-notes">
+    </block>
+    <view class="brand-notes {{isGiftOrder ? 'is-solo' : ''}}">
       <view
         class="brand-note {{ethicsExpanded ? 'is-open' : ''}}"
         wx:if="{{showAnimalEthics}}"

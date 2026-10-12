@@ -115,46 +115,6 @@ view, text, scroll-view { box-sizing: border-box; }
   line-height: 1.55;
 }
 
-.gift-invite-card {
-  border-color: rgba(196, 167, 108, 0.45);
-  background: linear-gradient(180deg, rgba(196, 167, 108, 0.06) 0%, #1F1D1A 48%);
-}
-.gift-invite-title {
-  display: block;
-  font-size: 30rpx;
-  font-weight: 500;
-  color: #C4A76C;
-  margin: 8rpx 0 12rpx;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
-}
-.gift-invite-desc {
-  display: block;
-  font-size: 24rpx;
-  color: #A09A90;
-  line-height: 1.65;
-}
-
-.gift-pack-note {
-  margin-top: 20rpx;
-  padding-top: 18rpx;
-  border-top: 1px solid rgba(77, 64, 26, 0.45);
-}
-
-.gift-pack-label {
-  display: block;
-  font-size: 20rpx;
-  color: #C4A76C;
-  letter-spacing: 0.1em;
-  margin-bottom: 8rpx;
-}
-
-.gift-pack-body {
-  display: block;
-  font-size: 24rpx;
-  color: #A09A90;
-  line-height: 1.65;
-}
-
 .brand-notes {
   margin-top: 16rpx;
   padding-top: 4rpx;
@@ -206,11 +166,7 @@ view, text, scroll-view { box-sizing: border-box; }
   line-height: 1.65;
 }
 
-.gift-note-card {
-  border-color: rgba(196, 167, 108, 0.35);
-  background: #F2EDE4;
-}
-.gift-note-card .section-label {
+.section-label {
   color: #8A7530;
 }
 .gift-note-body {
@@ -900,4 +856,359 @@ view, text, scroll-view { box-sizing: border-box; }
 }
 .c-save.is-off {
   color: var(--color-text-muted, #8A847C);
+}
+
+/* ═══ 礼赠模式（蓝图 礼赠凭礼笺领取 §15）：步骤轨 → 礼物摘要 → 交付方式（含跟随项）═══ */
+.brand-notes.is-solo { margin-top: 0; padding-top: 0; border-top: none; }
+
+/* 步骤轨：与送礼页同形（01 / 02 已完成可点回，03 当前） */
+.gift-rail {
+  display: flex;
+  align-items: center;
+  padding: 4rpx 8rpx 24rpx;
+}
+.gift-rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+}
+.gift-rail-num {
+  font-size: 20rpx;
+  color: #C4A76C;
+  letter-spacing: 0.08em;
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+}
+.gift-rail-label { font-size: 22rpx; color: #A09A90; }
+.gift-rail-item.on .gift-rail-label { color: #D5D1C8; }
+.gift-rail-line {
+  flex: 1;
+  height: 1px;
+  margin: 0 16rpx 28rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(77, 64, 26, 0.25));
+}
+
+/* 礼物摘要：藏品一行 + 礼笺两行摘录（浅纸色，点开回写笺）+ 包装一行小字 */
+.gift-summary-card {
+  border-color: rgba(196, 167, 108, 0.35);
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.06) 0%, #1F1D1A 56%);
+}
+.gift-sum-goods { display: flex; gap: 24rpx; align-items: center; }
+.gift-sum-goods + .gift-sum-goods { margin-top: 16rpx; }
+.gift-sum-img-wrap { flex-shrink: 0; width: 120rpx; height: 120rpx; border-radius: 12rpx; overflow: hidden; background: #262320; }
+.gift-sum-img { width: 120rpx; height: 120rpx; }
+.gift-sum-main { flex: 1; min-width: 0; }
+.gift-sum-for { display: block; font-size: 22rpx; color: #C4A76C; letter-spacing: 0.06em; }
+.gift-sum-title {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gift-sum-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; margin-top: 8rpx; }
+.gift-sum-sku { flex: 1; min-width: 0; font-size: 22rpx; color: #A09A90; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gift-sum-price { flex-shrink: 0; font-size: 26rpx; color: #C4A76C; font-family: 'JetBrains Mono', 'DM Mono', monospace; }
+.gift-sum-letter {
+  margin-top: 24rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  background: #F2EDE4;
+}
+.gift-sum-letter-body {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 26rpx;
+  line-height: 1.65;
+  color: #33302C;
+  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+}
+.gift-sum-letter-foot { display: flex; align-items: center; gap: 16rpx; margin-top: 10rpx; }
+.gift-sum-sig { font-size: 22rpx; color: #8A7530; }
+.gift-sum-voice { font-size: 22rpx; color: #8A7530; }
+.gift-sum-edit { margin-left: auto; font-size: 22rpx; color: #8A7530; }
+.gift-sum-wrap { display: block; margin-top: 18rpx; font-size: 22rpx; line-height: 1.6; color: #A09A90; }
+
+/* 交付方式：2×2 单选块（可选才描边，只有选中项点亮），下面一句说明 + 跟随项 */
+.gift-delivery-card { border-color: rgba(196, 167, 108, 0.28); }
+.delivery-grid { display: flex; flex-wrap: wrap; justify-content: space-between; row-gap: 16rpx; }
+.delivery-tile {
+  width: 48.5%;
+  padding: 20rpx 20rpx 22rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: 16rpx;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.delivery-tile.active {
+  border-color: rgba(196, 167, 108, 0.55);
+  background: rgba(196, 167, 108, 0.08);
+}
+.delivery-tile .delivery-radio { width: 26rpx; height: 26rpx; margin-top: 0; }
+.delivery-tile.active .delivery-radio {
+  border-color: #C4A76C;
+  background: #C4A76C;
+  box-shadow: inset 0 0 0 5rpx #1F1D1A;
+}
+.delivery-tile .delivery-name { font-size: 26rpx; }
+.delivery-tile .delivery-tag { padding: 0 10rpx; }
+.delivery-short { display: block; margin-top: 8rpx; padding-left: 38rpx; font-size: 22rpx; line-height: 1.45; color: #A09A90; }
+.delivery-tile.active .delivery-short { color: #D5D1C8; }
+.delivery-hint { display: block; margin-top: 18rpx; font-size: 22rpx; line-height: 1.6; color: #A09A90; }
+.delivery-opt.is-solo { margin-bottom: 0; }
+
+/* 跟随项：地址 / 门店 / 领取核验（只出现一种），与选项之间一道细线分隔 */
+.gift-follow {
+  margin-top: 24rpx;
+  padding-top: 24rpx;
+  border-top: 1px solid rgba(77, 64, 26, 0.4);
+}
+.follow-label { display: block; font-size: 26rpx; font-weight: 500; color: #FFFFFF; margin-bottom: 14rpx; }
+.verify-head .follow-label { margin-bottom: 0; }
+.store-chips { display: flex; flex-wrap: wrap; }
+.store-pick.is-error .store-chip { border-color: #E8927C; }
+
+/* 交付方式：单选行（可选的东西才描边），只有选中项点亮 */
+.delivery-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 22rpx 24rpx;
+  margin-bottom: 12rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: 16rpx;
+}
+.delivery-opt.active {
+  border-color: rgba(196, 167, 108, 0.55);
+  background: rgba(196, 167, 108, 0.06);
+}
+.delivery-radio {
+  flex-shrink: 0;
+  width: 30rpx;
+  height: 30rpx;
+  margin-top: 4rpx;
+  border: 1px solid #6B6560;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.delivery-opt.active .delivery-radio {
+  border-color: #C4A76C;
+  background: #C4A76C;
+  box-shadow: inset 0 0 0 6rpx #1F1D1A;
+}
+.delivery-opt-main { flex: 1; min-width: 0; }
+
+.delivery-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.delivery-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.delivery-tag {
+  font-size: 20rpx;
+  color: #1A1814;
+  background: #C4A76C;
+  padding: 2rpx 12rpx;
+  border-radius: 8rpx;
+  font-weight: 500;
+}
+
+.delivery-desc {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  color: #A09A90;
+  line-height: 1.5;
+}
+
+.store-chip {
+  display: inline-flex; align-items: center;
+  padding: 12rpx 24rpx; margin: 0 12rpx 12rpx 0;
+  border: 1px solid rgba(196, 167, 108, 0.35);
+  border-radius: 12rpx; font-size: 24rpx; color: #D5D1C8;
+}
+.store-chip.on {
+  border-color: #C4A76C; color: #C4A76C;
+  background: rgba(196, 167, 108, 0.08);
+}
+.store-empty { display: block; font-size: 24rpx; color: #A09A90; }
+.pickup-code-note {
+  margin-top: 12rpx;
+  padding-left: 18rpx;
+  border-left: 2px solid var(--primary);
+}
+.pickup-code-t { display: block; font-size: 26rpx; font-weight: 500; color: var(--text-gold); }
+.pickup-code-d { display: block; margin-top: 4rpx; font-size: 22rpx; line-height: 1.5; color: var(--text-sub); }
+
+/* 收货地址（快递给 TA / 寄给我 / 犒劳自己）：一张可点的地址卡，选好后金边；缺地址时描红、错误就地 */
+.ship-addr-card {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 24rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: var(--radius-md);
+}
+.ship-addr-card.on {
+  border-color: var(--primary);
+  background: rgba(196, 167, 108, 0.06);
+}
+.ship-addr.is-error .ship-addr-card { border-color: #E8927C; }
+.ship-addr-main { flex: 1; min-width: 0; }
+.ship-addr-head { display: flex; align-items: baseline; gap: 16rpx; }
+.ship-addr-name { font-size: 28rpx; font-weight: 500; color: var(--text-main); }
+.ship-addr-phone { font-size: 24rpx; color: var(--text-sub); }
+.ship-addr-detail { display: block; margin-top: 6rpx; font-size: 24rpx; line-height: 1.5; color: var(--text-body); }
+.ship-addr-ph { flex: 1; font-size: 26rpx; color: var(--text-gold); }
+.ship-addr-arrow { flex-shrink: 0; font-size: 32rpx; color: var(--text-sub); }
+.ship-addr-note { display: block; margin-top: 12rpx; font-size: 22rpx; line-height: 1.5; color: var(--text-sub); }
+
+/* 领取核验：标题行（右侧标当前方式）→ 两张单选卡（可选，才描边）→ 一句结论 → 输入 / 口令 → 折叠规则。
+   说明类不加框；出错时输入框与「手机号核验」卡同时描红，错误就地写在输入框下 */
+.verify-set {
+  display: flex;
+  flex-direction: column;
+}
+.verify-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-bottom: 18rpx;
+}
+.verify-mode {
+  font-size: 22rpx;
+  color: var(--text-gold);
+  padding: 4rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--primary-light);
+}
+.verify-seg-row { display: flex; gap: 16rpx; margin-bottom: 18rpx; }
+.verify-seg {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  padding: 20rpx 20rpx 22rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: var(--radius-md);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.verify-seg.on {
+  border-color: var(--primary);
+  background: rgba(196, 167, 108, 0.1);
+}
+.verify-seg.on.is-error { border-color: #E8927C; }
+.verify-seg-press { background: rgba(196, 167, 108, 0.14); }
+.verify-seg-radio {
+  flex-shrink: 0;
+  width: 28rpx;
+  height: 28rpx;
+  margin-top: 4rpx;
+  border: 1px solid #6B6560;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.verify-seg.on .verify-seg-radio {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: inset 0 0 0 6rpx var(--bg-root);
+}
+.verify-seg-main { flex: 1; min-width: 0; }
+.verify-seg-t { display: block; font-size: 26rpx; font-weight: 500; color: var(--text-body); }
+.verify-seg.on .verify-seg-t { color: var(--text-main); }
+.verify-seg-d { display: block; margin-top: 4rpx; font-size: 22rpx; line-height: 1.45; color: var(--text-sub); }
+.verify-set-input {
+  margin-top: 14rpx;
+  height: 80rpx;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  border-radius: 12rpx;
+  background: #2A2621;
+  color: #F3ECDD;
+  font-size: 30rpx;
+}
+.verify-set.is-error .verify-set-input { box-shadow: inset 0 0 0 1px #E8927C; }
+.verify-set-ph { color: #7D7466; font-size: 26rpx; }
+.verify-set-brief { font-size: 24rpx; line-height: 1.5; color: var(--text-body); }
+.verify-set-hint { margin-top: 12rpx; font-size: 22rpx; line-height: 1.6; color: #A09A90; animation: pick-in 0.2s ease-out; }
+.verify-set-req { color: #E8927C; font-size: 22rpx; }
+.verify-set-err {
+  display: flex;
+  align-items: flex-start;
+  gap: 10rpx;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #E8927C;
+  animation: pick-in 0.2s ease-out;
+}
+.verify-set-err-mark {
+  flex-shrink: 0;
+  width: 30rpx;
+  height: 30rpx;
+  margin-top: 3rpx;
+  border-radius: 50%;
+  background: #E8927C;
+  color: var(--bg-root);
+  font-size: 22rpx;
+  font-weight: 700;
+  line-height: 30rpx;
+  text-align: center;
+}
+.verify-links {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin-top: 16rpx;
+}
+/* 折叠规则：小字 + 箭头，展开时箭头翻转 */
+.why-toggle { font-size: 22rpx; color: #A09A90; padding: 4rpx 0; }
+.why-toggle::after {
+  content: '';
+  display: inline-block;
+  width: 8rpx;
+  height: 8rpx;
+  margin: 0 0 4rpx 10rpx;
+  border-right: 1px solid #A09A90;
+  border-bottom: 1px solid #A09A90;
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+}
+.why-toggle.open::after { transform: rotate(-135deg); margin-bottom: 0; }
+.claim-switch { font-size: 24rpx; color: #C4A76C; text-decoration: underline; }
+.self-exit { display: block; margin-top: 18rpx; }
+/* 口令：可勾选的一行（描边 = 可选），勾上后整行点亮 */
+.claim-opt {
+  margin-top: 16rpx;
+  display: flex;
+  align-items: flex-start;
+  padding: 18rpx 20rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: var(--radius-md);
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+.claim-opt.on { border-color: rgba(196, 167, 108, 0.55); background: rgba(196, 167, 108, 0.06); }
+.claim-check { width: 30rpx; height: 30rpx; margin-top: 4rpx; flex-shrink: 0; border: 1px solid #C4A76C; border-radius: 6rpx; margin-right: 14rpx; box-sizing: border-box; }
+.claim-opt.on .claim-check { background: #C4A76C; box-shadow: inset 0 0 0 5rpx #1F1D1A; }
+.claim-opt-main { flex: 1; min-width: 0; }
+.claim-opt-t { display: block; font-size: 26rpx; color: #E6DCC8; line-height: 1.5; }
+.claim-opt-d { display: block; margin-top: 2rpx; font-size: 22rpx; color: var(--text-sub); line-height: 1.5; }
+
+@keyframes pick-in {
+  from { opacity: 0; transform: translateY(8rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
