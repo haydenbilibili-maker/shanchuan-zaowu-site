@@ -346,7 +346,7 @@
       <view class="hologram-btn od-primary" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goFillGiftAddress">留下收件去处</view>
     </view>
     <view class="gift-actions" wx:elif="{{isGiftOrder && giftShowPickupClaim}}">
-      <view class="hologram-btn od-primary" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goGiftPickupClaim">出示妥投码 {{giftClaimCode}}</view>
+      <view class="hologram-btn od-primary" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goGiftPickupClaim">出示自提码 {{giftClaimCode}}</view>
     </view>
     <!-- 礼赠分享封面离屏 canvas -->
     <canvas

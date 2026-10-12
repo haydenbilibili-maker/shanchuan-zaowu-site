@@ -475,6 +475,37 @@ page {
   background: rgba(196, 167, 108, 0.08);
 }
 .store-empty { display: block; font-size: 24rpx; color: #A09A90; }
+.pickup-code-note {
+  margin-top: 12rpx;
+  padding-left: 18rpx;
+  border-left: 2px solid var(--primary);
+}
+.pickup-code-t { display: block; font-size: 26rpx; font-weight: 500; color: var(--text-gold); }
+.pickup-code-d { display: block; margin-top: 4rpx; font-size: 22rpx; line-height: 1.5; color: var(--text-sub); }
+
+/* 收货地址（快递给 TA / 寄给我 / 犒劳自己）：一张可点的地址卡，选好后金边；缺地址时描红、错误就地 */
+.ship-addr { margin-top: 28rpx; }
+.ship-addr-card {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 22rpx 24rpx;
+  border: 1px solid rgba(77, 64, 26, 0.45);
+  border-radius: var(--radius-md);
+}
+.ship-addr-card.on {
+  border-color: var(--primary);
+  background: rgba(196, 167, 108, 0.06);
+}
+.ship-addr.is-error .ship-addr-card { border-color: #E8927C; }
+.ship-addr-main { flex: 1; min-width: 0; }
+.ship-addr-head { display: flex; align-items: baseline; gap: 16rpx; }
+.ship-addr-name { font-size: 28rpx; font-weight: 500; color: var(--text-main); }
+.ship-addr-phone { font-size: 24rpx; color: var(--text-sub); }
+.ship-addr-detail { display: block; margin-top: 6rpx; font-size: 24rpx; line-height: 1.5; color: var(--text-body); }
+.ship-addr-ph { flex: 1; font-size: 26rpx; color: var(--text-gold); }
+.ship-addr-arrow { flex-shrink: 0; font-size: 32rpx; color: var(--text-sub); }
+.ship-addr-note { display: block; margin-top: 12rpx; font-size: 22rpx; line-height: 1.5; color: var(--text-sub); }
 
 /* 领取核验：标题行（右侧标当前方式）→ 两张单选卡（可选，才描边）→ 一句结论 → 输入 / 口令 → 折叠规则。
    说明类不加框；出错时输入框与「手机号核验」卡同时描红，错误就地写在输入框下 */

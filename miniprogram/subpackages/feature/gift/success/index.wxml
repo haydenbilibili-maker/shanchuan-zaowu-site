@@ -30,7 +30,7 @@
   </view>
 
   <view class="claim-card" wx:if="{{showPickupClaim}}">
-    <text class="claim-label">门店妥投码</text>
+    <text class="claim-label">门店自提码</text>
     <text class="claim-code">{{claimCode}}</text>
     <text class="claim-hint">{{claimHint}}</text>
     <canvas

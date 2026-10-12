@@ -600,16 +600,21 @@ async function runChecks() {
   }
   const cjs = read(P.composeJs)
   const cw = read(P.composeWxml)
-  // 2026-10-11 起：填址 / 自提可选「凭礼笺领取」免填号（判据见 check:gift-claim-link），其余交付方式仍必填
-  ok(/if \(!claimLink && !\/\^1\\d\{10\}\$\/\.test\(receiverPhone\)\) \{\n\s+this\.flagReceiverPhone\(/.test(cjs) &&
-    cjs.includes('const claimLink = !!this.data.claimLink && CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1'), 'J 送礼页：未填号且未选凭礼笺领取（或交付方式不允许免填）不得进入确认页，并定位到该字段')
+  // 2026-10-11 起：填址 / 自提可选「凭礼笺领取」免填号（判据见 check:gift-claim-link）。
+  // 2026-10-12 第五轮：领取核验只留在邀请填址；快递给 TA / 寄给我改为第 3 步必选收货地址（号码 = 收货手机号），门店自提不核验
+  ok(/if \(invite && !claimLink && !\/\^1\\d\{10\}\$\/\.test\(receiverPhone\)\) \{\n\s+this\.flagReceiverPhone\(/.test(cjs) &&
+    cjs.includes("const invite = deliveryType === 'invite_address'") &&
+    cjs.includes('? !!this.data.claimLink && CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1'), 'J 送礼页：邀请填址未填号且未选凭礼笺领取不得进入确认页，并定位到该字段')
+  ok(/if \(SHIP_DELIVERY\.indexOf\(deliveryType\) !== -1 && !shipAddress\) \{\n\s+this\.flagShipAddress\(/.test(cjs),
+    'J 送礼页：快递给 TA / 寄给我没选收货地址不得进入确认页，并定位到地址卡')
   ok(cw.includes('id="receiverPhoneField"') && cw.includes('scroll-into-view="{{phoneScrollId}}"') && cw.includes('focus="{{receiverPhoneFocus}}"') &&
-    cw.includes('* 必填') && cw.includes('用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号'), 'J 送礼页：必填标注 + 用途说明 + 滚动聚焦到字段')
+    cw.includes('id="shipAddressField"') && cw.includes('* 必填') && cw.includes('用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号'), 'J 送礼页：必填标注 + 用途说明 + 滚动聚焦到字段')
   ok(!/wx\.show(Toast|Modal)\([^)]*手机号/.test(cjs), 'J 送礼页：手机号报错不得用原生弹窗')
   const co = read(P.confirmOrder)
   const PL = load(P.phoneLib, { stubs: { crypto: NODE_CRYPTO } })
-  ok(co.includes(`clientCaps: this.data.isGiftOrder ? ['${PL.GIFT_PHONE_CAP}', '${PL.GIFT_CLAIM_LINK_CAP}'] : undefined,`) && co.includes('giftReceiverPhone: giftReceiverPhone || undefined,'), 'J 确认页：礼赠单须携带能力标记与受礼人手机号')
-  ok(/if \(this\.data\.isGiftOrder && !giftReceiverPhone && !giftClaimLink\) \{\n\s+this\.backToGiftPhone\(\)/.test(co) && co.includes("result.code === 'GIFT_RECEIVER_PHONE_REQUIRED'"), 'J 确认页：缺号不下单，退回送礼页定位字段')
+  ok(co.includes(`clientCaps: this.data.isGiftOrder ? ['${PL.GIFT_PHONE_CAP}', '${PL.GIFT_CLAIM_LINK_CAP}', '${PL.GIFT_DELIVERY_V2_CAP}'] : undefined,`) && co.includes('giftReceiverPhone: giftReceiverPhone || undefined,'), 'J 确认页：礼赠单须携带能力标记与受礼人手机号')
+  ok(/if \(this\.data\.isGiftInvite && !giftReceiverPhone && !giftClaimLink\) \{\n\s+this\.backToGiftPhone\(\)/.test(co) && /if \(this\.data\.isGiftOrder && !giftReceiverPhone && this\.giftUsesAddressPhone\(\)\) return\n/.test(co) &&
+    co.includes("result.code === 'GIFT_RECEIVER_PHONE_REQUIRED'"), 'J 确认页：缺号不下单（邀请填址退回送礼页定位字段；快递给 TA / 犒劳自己就地提示收货手机号）')
   ok(PL.ENFORCE_ALL_DEFAULT === false && (delete process.env.GIFT_PHONE_ENFORCE_ALL, PL.enforceAllGiftPhone() === false), 'J 「对所有请求强制」开关默认必须关')
   async function makeOrder(event, { env } = {}) {
     const { store, db } = makeDb({ orders: [], gift_settings: [] })
@@ -707,10 +712,12 @@ const INJECTIONS = [
   { name: '非送礼人可设号', file: P.gift, find: "  if (!isGiverOfOrder(order, openid)) return { success: false, code: 'FORBIDDEN', msg: '只有送礼人可以设置领取核验' }\n", replace: '' },
   { name: '领取后仍可改号', file: P.gift, find: "  if (meta.receiverOpenid) return { success: false, code: 'ALREADY_BOUND', msg: 'TA 已领取，核验手机号不能再改' }\n", replace: '' },
   { name: '未设号的礼赠也被拦', file: P.gift, find: '  if (!meta.receiverVerify) return null\n  if (meta.receiverOpenid && meta.receiverOpenid === openid) return null\n  const doc = await loadVerifyDoc(order._id)\n  if (!doc || !doc.phoneHash) return null', replace: "  const doc = await loadVerifyDoc(order._id)\n  if (!doc || !doc.phoneHash) return { success: false, code: 'VERIFY_REQUIRED' }" },
-  { name: '送礼页手机号又变选填', file: P.composeJs, find: 'if (!claimLink && !/^1\\d{10}$/.test(receiverPhone)) {', replace: 'if (!claimLink && receiverPhone && !/^1\\d{10}$/.test(receiverPhone)) {' },
+  { name: '送礼页手机号又变选填', file: P.composeJs, find: 'if (invite && !claimLink && !/^1\\d{10}$/.test(receiverPhone)) {', replace: 'if (invite && !claimLink && receiverPhone && !/^1\\d{10}$/.test(receiverPhone)) {' },
+  { name: '送礼页快递不选地址也放行', file: P.composeJs, find: 'if (SHIP_DELIVERY.indexOf(deliveryType) !== -1 && !shipAddress) {', replace: 'if (false) {' },
+  { name: '确认页快递缺收货手机号仍下单', file: P.confirmOrder, find: '    if (this.data.isGiftOrder && !giftReceiverPhone && this.giftUsesAddressPhone()) return\n', replace: '' },
   { name: '送礼页去掉必填标注', file: P.composeWxml, find: '* 必填', replace: '选填' },
-  { name: '确认页不带能力标记', file: P.confirmOrder, find: "clientCaps: this.data.isGiftOrder ? ['gift_receiver_phone_v1', 'gift_claim_link_v1'] : undefined,", replace: 'clientCaps: undefined,' },
-  { name: '确认页缺号仍下单', file: P.confirmOrder, find: 'if (this.data.isGiftOrder && !giftReceiverPhone && !giftClaimLink) {', replace: 'if (false) {' },
+  { name: '确认页不带能力标记', file: P.confirmOrder, find: "clientCaps: this.data.isGiftOrder ? ['gift_receiver_phone_v1', 'gift_claim_link_v1', 'gift_delivery_v2'] : undefined,", replace: 'clientCaps: undefined,' },
+  { name: '确认页缺号仍下单', file: P.confirmOrder, find: 'if (this.data.isGiftInvite && !giftReceiverPhone && !giftClaimLink) {', replace: 'if (false) {' },
   { name: '新礼赠入口绕过送礼页', file: P.cartJs, find: "source: 'cart',", replace: "source: 'cart', giftMeta: { deliveryType: 'invite_address' }," },
   { name: 'makeOrder 不校验手机号', file: P.makeOrder, find: 'if (giftPhone.required && !giftPhone.phone) {', replace: 'if (false) {' },
   { name: '忽略新版能力标记', file: [P.phoneLib, P.phoneLibCopy], find: 'required: (clientHasGiftPhoneCap(event) || enforceAllGiftPhone()) && !claimLink,', replace: 'required: enforceAllGiftPhone() && !claimLink,' },

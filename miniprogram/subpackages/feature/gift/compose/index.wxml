@@ -384,7 +384,8 @@
     <block wx:else>
     <!-- 03 交付方式 -->
     <!-- 一步一问「怎样交给 TA」：四种交付平铺成单选行（门店自提关闭时不出现），只有选中项高亮；
-         跟随选择的门店 / 手机号 / 凭礼笺领取归进下方「领取核验」，长说明收进可点开的小字 -->
+         跟随项按交付方式（2026-10-12 第五轮，蓝图 礼赠凭礼笺领取 §14）：邀请填址 → 领取核验；
+         快递给 TA / 寄给我 / 犒劳自己 → 收货地址（同一块地址卡）；门店自提 → 门店 + 自提码说明 -->
     <view class="section sec-delivery">
       <text class="section-overline">DELIVERY</text>
       <text class="section-title">{{selfTreat ? '寄到哪里' : '怎样交给 TA'}}</text>
@@ -396,7 +397,7 @@
             <text class="delivery-name">寄到我的收货地址</text>
             <text class="delivery-tag">犒劳自己</text>
           </view>
-          <text class="delivery-desc">结算页填你的地址与手机号，直接寄给你</text>
+          <text class="delivery-desc">选好你的收货地址，直接寄给你</text>
         </view>
       </view>
       <text class="claim-switch self-exit" bindtap="exitSelfTreat">其实是送给别人？改为送礼方式 ›</text>
@@ -453,18 +454,21 @@
           <text>{{item.name}}</text>
         </view>
         <text class="store-empty" wx:if="{{!stores.length}}">这有店暂未就绪，稍后再选或换其他交付</text>
+        <view class="pickup-code-note">
+          <text class="pickup-code-t">支付后生成自提码</text>
+          <text class="pickup-code-d">可转发给 TA，到店出示由专员核销领取，不用另做核验</text>
+        </view>
       </view>
 
-      <!-- 领取核验（2026-10-12 产品负责人点名加强）：标题右侧标出当前方式；填址 / 自提 / 寄给我两张单选卡
-           「手机号核验 / 凭礼笺领取」（同 CLAIM_LINK_DELIVERY，切换仍走 toggleClaimLink），直寄 TA 只有手机号且必填；
-           每种方式先给一句结论，完整规则点开；报错就地显示在输入框下。核验逻辑与交给确认页的数据不变 -->
-      <view id="receiverPhoneField" class="verify-set {{receiverPhoneError ? 'is-error' : ''}}">
+      <!-- 领取核验：只在「邀请 TA 填写地址」出现（第五轮）。两张单选卡「手机号核验 / 凭礼笺领取」（切换走 toggleClaimLink）；
+           每种方式先给一句结论，完整规则点开；报错就地显示在输入框下 -->
+      <view id="receiverPhoneField" class="verify-set {{receiverPhoneError ? 'is-error' : ''}}" wx:if="{{deliveryType === 'invite_address'}}">
         <view class="verify-head">
           <text class="verify-title">领取核验</text>
-          <text class="verify-mode" wx:if="{{claimLink && deliveryType !== 'ship_to_receiver'}}">{{claimPasscode ? '凭礼笺 + 口令' : '凭礼笺领取'}}</text>
+          <text class="verify-mode" wx:if="{{claimLink}}">{{claimPasscode ? '凭礼笺 + 口令' : '凭礼笺领取'}}</text>
           <text class="verify-mode" wx:else>手机号核验</text>
         </view>
-        <view class="verify-seg-row" wx:if="{{deliveryType !== 'ship_to_receiver'}}">
+        <view class="verify-seg-row">
           <view
             class="verify-seg {{claimLink ? '' : 'on'}} {{receiverPhoneError ? 'is-error' : ''}}"
             data-mode="phone"
@@ -496,8 +500,8 @@
             </view>
           </view>
         </view>
-        <block wx:if="{{claimLink && deliveryType !== 'ship_to_receiver'}}">
-        <text class="verify-set-brief">{{deliveryType === 'ship_to_self' ? '照常寄到你处，TA 点「收下」后礼记在 TA 名下' : 'TA 打开礼笺点「收下」即领取，一份限一人'}}</text>
+        <block wx:if="{{claimLink}}">
+        <text class="verify-set-brief">TA 打开礼笺点「收下」即领取，一份限一人</text>
         <view
           class="claim-opt {{claimPasscode ? 'on' : ''}}"
           bindtap="toggleClaimPasscode"
@@ -515,12 +519,11 @@
         <view class="verify-links">
           <text class="why-toggle {{verifyWhyOpen ? 'open' : ''}}" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起规则' : '领取规则'}}</text>
         </view>
-        <text class="verify-set-hint" wx:if="{{verifyWhyOpen && deliveryType === 'ship_to_self'}}">藏品照常寄到你处；TA 点礼笺「收下」后礼记在 TA 名下，订单结束前可作废换链接。口令只你看得到。不能发朋友圈。</text>
-        <text class="verify-set-hint" wx:elif="{{verifyWhyOpen}}">TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。口令只你看得到。为防扩散，这份礼笺不能发朋友圈。</text>
+        <text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。口令只你看得到。为防扩散，这份礼笺不能发朋友圈。</text>
         </block>
         <block wx:else>
         <text class="verify-set-brief">TA 领取时核对这个号码，别人拿到链接也领不走</text>
-        <text class="verify-set-label">受礼人手机号 <text class="verify-set-req" wx:if="{{deliveryType === 'ship_to_receiver'}}">* 必填</text><text class="verify-set-tip" wx:else>推荐填写</text></text>
+        <text class="verify-set-label">受礼人手机号 <text class="verify-set-tip">推荐填写</text></text>
         <input
           class="verify-set-input"
           type="number"
@@ -537,12 +540,36 @@
         </view>
         <view class="verify-links">
           <text class="why-toggle {{verifyWhyOpen ? 'open' : ''}}" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起' : '为什么要填？'}}</text>
-          <text class="claim-switch" wx:if="{{deliveryType !== 'ship_to_receiver'}}" bindtap="toggleClaimLink">不知道号码？凭礼笺领取 ›</text>
+          <text class="claim-switch" bindtap="toggleClaimLink">不知道号码？凭礼笺领取 ›</text>
         </view>
         <text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
         </block>
       </view>
       </block>
+
+      <!-- 收货地址：快递给 TA / 寄给我 / 犒劳自己同一块卡，选或新增都走地址页（与确认页同一个），选好的地址带到确认页；
+           这三种没有领取核验（快递给 TA 的领取核验号码 = 这里的收货手机号） -->
+      <view id="shipAddressField" class="ship-addr {{shipAddressError ? 'is-error' : ''}}" wx:if="{{selfTreat || deliveryType === 'ship_to_receiver' || deliveryType === 'ship_to_self'}}">
+        <text class="store-pick-label">{{!selfTreat && deliveryType === 'ship_to_receiver' ? 'TA 的收货地址' : '我的收货地址'}} <text class="verify-set-req">* 必填</text></text>
+        <view class="ship-addr-card {{shipAddress ? 'on' : ''}}" bindtap="chooseShipAddress" hover-class="tap-press-soft" hover-stay-time="80">
+          <view class="ship-addr-main" wx:if="{{shipAddress}}">
+            <view class="ship-addr-head">
+              <text class="ship-addr-name">{{shipAddress.name}}</text>
+              <text class="ship-addr-phone">{{shipAddress.phone}}</text>
+            </view>
+            <text class="ship-addr-detail">{{shipAddress.regionText}} {{shipAddress.detail}}</text>
+          </view>
+          <text class="ship-addr-ph" wx:else>{{!selfTreat && deliveryType === 'ship_to_receiver' ? '选择或新增 TA 的收货地址' : '选择或新增你的收货地址'}}</text>
+          <text class="ship-addr-arrow" aria-hidden="true">›</text>
+        </view>
+        <view class="verify-set-err" wx:if="{{shipAddressError}}">
+          <text class="verify-set-err-mark" aria-hidden="true">!</text>
+          <text>{{shipAddressError}}</text>
+        </view>
+        <text class="ship-addr-note" wx:if="{{selfTreat}}">和普通下单一样，直接寄给你；结算页还可再改</text>
+        <text class="ship-addr-note" wx:elif="{{deliveryType === 'ship_to_receiver'}}">TA 领取礼笺时核对这个收货手机号，不用另填；结算页还可再改</text>
+        <text class="ship-addr-note" wx:else>藏品寄到你处再当面转交；TA 点礼笺「收下」后礼记在 TA 名下</text>
+      </view>
     </view>
     </block>
 

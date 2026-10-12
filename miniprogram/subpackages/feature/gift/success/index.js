@@ -288,8 +288,8 @@ Page({
       } else if (deliveryType === 'store_pickup') {
         heroOverline = 'STORE HOLD'
         heroTitle = '门店正在备妥'
-        heroDesc = '到店出示下方妥投码，由专员核销后交予 TA。'
-        shareCta = '把领取邀请交给 TA'
+        heroDesc = '自提码已生成。转发给 TA，到店出示下方自提码，由专员核销领取。'
+        shareCta = '把自提码转交给 TA'
       }
 
       const showPickupClaim = deliveryType === 'store_pickup' && !!gift.claimCode
@@ -334,7 +334,7 @@ Page({
         storeName: gift.storeName || '',
         claimHint: claimed
           ? '已到店领取'
-          : (gift.storeName ? `请到「${gift.storeName}」出示此码，妥投一件珍物` : '到店出示此码，由专员扫码妥投')
+          : (gift.storeName ? `到「${gift.storeName}」出示此码，专员核销后领取；可转发给 TA 到店领` : '到店出示此码，专员核销后领取；可转发给 TA 到店领')
       }, () => {
         if (showPickupClaim && !claimed && this.data.claimQrPayload) {
           drawMemberQr('#giftClaimQr', this.data.claimQrPayload, this, 160).catch(() => {})

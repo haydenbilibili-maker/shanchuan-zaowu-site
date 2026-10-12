@@ -14,7 +14,10 @@
  *   S 寄给我（第三轮 §10）：同一套收下规则；作废 / 口令窗口放宽到订单结束前（含已签收），其它交付方式窗口不变
  *   G 客户端接线：送礼页免填号交付方式与云端同值；凭礼笺领取不发朋友圈（成功页 / 订单详情）；领取页收下不走注册门；
  *     注册引导卡只给未注册者、可关、在协议勾选守卫名单内；7 个新埋点双端登记
- *   H 犒劳自己：交付固定寄给我，地址与手机号按普通下单在确认页填（2026-10-12）
+ *   H 犒劳自己：交付固定寄给我，与「寄给我」同一块地址卡（第五轮起在送礼页第 3 步选地址，号码 = 收货手机号）
+ *   R 交付方式重排（2026-10-12 第五轮，蓝图 §14）：带 gift_delivery_v2 时自提不核验（订单照常有自提码、持链接的 TA 看得到）、
+ *     直寄 TA 号码取收货地址手机号、寄给我不带号即凭礼笺领取、只有邀请填址仍要核验；不带新标记的旧版客户端一律照旧；
+ *     确认页带出送礼页选好的地址（不被默认地址覆盖，直寄 TA 不套用我的默认地址），号码取收货手机号
  *   P 代填收货地址（2026-10-12 旁路 proxySubmitAddress）：只有店长及以上 / 下单人本人能代填；代填后按普通待发货可发货；
  *     不认定受礼人、留痕；过期不可代填；受礼人原填址路径不变；送礼成功页按核验号码 = 本人判定「犒劳自己」
  *
@@ -444,8 +447,9 @@ async function runChecks() {
   const co = read(P.confirmOrder)
   ok(co.includes("giftClaimMode: giftClaimLink ? 'link' : undefined,") && co.includes("if (dt !== 'invite_address' && dt !== 'store_pickup' && dt !== 'ship_to_self') return null"), 'G 确认页：只在填址 / 自提 / 寄给我时带「凭礼笺领取」')
   const cw = read(P.composeWxml)
-  ok(cw.includes("<block wx:if=\"{{claimLink && deliveryType !== 'ship_to_receiver'}}\">") && cw.includes("<text class=\"verify-set-req\" wx:if=\"{{deliveryType === 'ship_to_receiver'}}\">* 必填</text>") &&
-    cw.includes("<text class=\"claim-switch\" wx:if=\"{{deliveryType !== 'ship_to_receiver'}}\" bindtap=\"toggleClaimLink\">"), 'G 送礼页：只有直寄 TA 标必填；其余三种可切凭礼笺领取')
+  ok(cw.includes("<view id=\"receiverPhoneField\" class=\"verify-set {{receiverPhoneError ? 'is-error' : ''}}\" wx:if=\"{{deliveryType === 'invite_address'}}\">") &&
+    cw.includes('<text class="claim-switch" bindtap="toggleClaimLink">不知道号码？凭礼笺领取 ›</text>') && cw.includes('受礼人手机号 <text class="verify-set-tip">推荐填写</text>'),
+    'G 送礼页：领取核验只在邀请填址出现（手机号推荐填写，可切凭礼笺领取）')
   ok(read(P.claimSheetWxml).includes("{{state.resetHint || "), 'G 管理面板：作废时限说明取云端 resetHint（寄给我与其它交付方式不同）')
   const succ = read(P.successJs)
   ok(/if \(gift\.claimMode === 'link'\) wx\.hideShareMenu\(\{ menus: \['shareTimeline'\] \}\)/.test(succ) && succ.includes("const token = this.data.claimLink ? '' :"), 'G 送礼成功页：凭礼笺领取不发朋友圈，朋友圈卡不带领取凭证')
@@ -481,36 +485,45 @@ async function runChecks() {
     }
   }
   {
-    const page = methods(cjs, ['enterSelfTreat', 'exitSelfTreat'], {})
-    const st = { selfTreat: false, deliveryType: 'store_pickup', storePickupEnabled: true, claimLink: true, claimPasscode: true, showOtherDelivery: true, activeNotePresetId: 'self' }
+    const page = methods(cjs, ['enterSelfTreat', 'exitSelfTreat', '_syncShipAddress'], {})
+    const st = { selfTreat: false, deliveryType: 'store_pickup', storePickupEnabled: true, claimLink: true, claimPasscode: true, showOtherDelivery: true, activeNotePresetId: 'self',
+      receiverAddress: { name: 'TA' }, selfAddress: { name: '我' }, shipAddress: null }
     const ctx = page && Object.assign(Object.create(page), { data: st, setData(p) { Object.assign(st, p) } })
     if (ctx) ctx.enterSelfTreat()
     ok(!!ctx && st.selfTreat === true && st.deliveryType === 'ship_to_self' && st.claimLink === false && st.claimPasscode === false,
       'H 选「犒劳自己」：交付须固定为寄给我，并关掉凭礼笺领取')
+    ok(!!ctx && st.shipAddress === st.selfAddress, 'H 选「犒劳自己」：地址卡显示我的收货地址（与寄给我同一份）')
     if (ctx) ctx.exitSelfTreat()
-    ok(!!ctx && st.selfTreat === false && st.deliveryType === 'store_pickup', 'H 退出「犒劳自己」：恢复原来的交付方式')
+    ok(!!ctx && st.selfTreat === false && st.deliveryType === 'store_pickup' && st.shipAddress === null, 'H 退出「犒劳自己」：恢复原来的交付方式（门店自提不显示地址）')
   }
-  ok(/<block wx:if="\{\{selfTreat\}\}">[\s\S]*?<\/block>\s*<block wx:else>[\s\S]*?data-type="invite_address"[\s\S]*?id="receiverPhoneField"[\s\S]*?<\/block>\s*<\/view>\s*<\/block>/.test(cw),
-    'H 送礼页：「犒劳自己」时不显示邀请填址与受礼人手机号')
+  ok(/<block wx:if="\{\{selfTreat\}\}">[\s\S]*?<\/block>\s*<block wx:else>[\s\S]*?data-type="invite_address"[\s\S]*?id="receiverPhoneField"[\s\S]*?<\/block>\s*<!--[\s\S]*?-->\s*<view id="shipAddressField"[^>]*wx:if="\{\{selfTreat \|\| deliveryType === 'ship_to_receiver' \|\| deliveryType === 'ship_to_self'\}\}">/.test(cw),
+    'H 送礼页：「犒劳自己」时不显示邀请填址与受礼人手机号，与寄给我共用同一块地址卡')
   const gp = fnBody(cjs, 'goPay')
-  ok(gp.includes("const deliveryType = selfTreat ? 'ship_to_self'") && gp.includes('selfTreat, productId: p._id') && /if \(selfTreat\) \{\n[^\n]*\n\s+\} else if \(!claimLink && /.test(gp),
-    'H 送礼页下单：「犒劳自己」走寄给我、免填受礼人手机号并把标记交给确认页')
+  ok(gp.includes("const deliveryType = selfTreat ? 'ship_to_self'") && gp.includes('selfTreat, productId: p._id') &&
+    gp.includes("      : deliveryType === 'ship_to_self' && !selfTreat\n") && gp.includes("const receiverPhone = invite && !claimLink ? String(this.data.receiverPhone || '') : ''"),
+    'H 送礼页下单：「犒劳自己」走寄给我、免填受礼人手机号并把标记交给确认页；寄给我送给别人自动凭礼笺领取')
   {
     let g = null
-    const co2 = methods(co, ['pendingGiftReceiverPhone', 'pendingGiftSelfTreat'], { getApp: () => ({ globalData: { giftReceiverPhone: g } }) })
-    const mk = (dt, phone) => co2 && Object.assign(Object.create(co2), { _giftMeta: { deliveryType: dt }, data: { address: phone ? { name: '阿山', phone } : null } })
+    const co2 = methods(co, ['pendingGiftReceiverPhone', 'pendingGiftSelfTreat', 'giftUsesAddressPhone'], { getApp: () => ({ globalData: { giftReceiverPhone: g } }) })
+    const mk = (dt, phone) => co2 && Object.assign(Object.create(co2), { _giftMeta: { deliveryType: dt }, data: { isGiftOrder: true, address: phone ? { name: '阿山', phone } : null } })
     g = { phone: '', claimLink: false, selfTreat: true, at: Date.now() }
     ok(!!co2 && mk('ship_to_self', '139 0000 2222').pendingGiftReceiverPhone() === '13900002222', 'H 确认页：「犒劳自己」的领取核验号码取收货地址手机号')
     ok(!!co2 && mk('ship_to_self', '').pendingGiftReceiverPhone() === '', 'H 确认页：「犒劳自己」未填收货手机号不得放行')
     ok(!!co2 && mk('invite_address', '13900002222').pendingGiftSelfTreat() === false, 'H 确认页：「犒劳自己」标记只对寄给我生效')
     g = { phone: '13700001111', claimLink: false, selfTreat: false, at: Date.now() }
     ok(!!co2 && mk('ship_to_self', '13900002222').pendingGiftReceiverPhone() === '13700001111', 'H 确认页：普通寄给我仍用送礼页填的受礼人手机号')
+    g = { phone: '', claimLink: false, selfTreat: false, at: Date.now() }
+    ok(!!co2 && mk('ship_to_receiver', '139-0000-3333').pendingGiftReceiverPhone() === '13900003333' && mk('ship_to_receiver', '021-6666666').pendingGiftReceiverPhone() === '',
+      'R 确认页：快递给 TA 的领取核验号码取收货地址手机号（非 11 位手机号不得放行）')
+    ok(!!co2 && mk('store_pickup', '13900002222').pendingGiftReceiverPhone() === '' && mk('store_pickup', '').giftUsesAddressPhone() === false, 'R 确认页：门店自提不取号码')
   }
   const dso = fnBody(co, 'doSubmitOrder')
   const sbo = fnBody(co, 'submitOrder')
-  ok(dso.indexOf('!giftReceiverPhone && this.pendingGiftSelfTreat()) return') !== -1 && dso.indexOf('!giftReceiverPhone && this.pendingGiftSelfTreat()) return') < dso.indexOf('this.backToGiftPhone()') &&
-    sbo.includes("const selfPhoneBad = !!(address && address.phone) && this.pendingGiftSelfTreat() && !this.pendingGiftReceiverPhone()") && sbo.includes('|| selfPhoneBad)) {'),
-    'H 确认页：「犒劳自己」缺收货手机号就地提示，不退回送礼页找受礼人手机号')
+  ok(dso.indexOf('!giftReceiverPhone && this.giftUsesAddressPhone()) return') !== -1 && dso.indexOf('!giftReceiverPhone && this.giftUsesAddressPhone()) return') < dso.indexOf('this.backToGiftPhone()') &&
+    sbo.includes("const shipPhoneBad = !!(address && address.phone) && this.giftUsesAddressPhone() && !this.pendingGiftReceiverPhone()") && sbo.includes('|| shipPhoneBad)) {'),
+    'H 确认页：「犒劳自己」/ 快递给 TA 缺收货手机号就地提示，不退回送礼页找受礼人手机号')
+  ok(/if \(this\.data\.isGiftInvite\) \{\n\s+this\.backToGiftPhone\(\)\n\s+\} else \{\n\s+this\.modal\(/.test(dso),
+    'R 确认页：云端判缺号时只有邀请填址退回送礼页，其余交付方式就地提示改收货手机号')
 
   // ---------------- P 代填收货地址（旁路 proxySubmitAddress）
   {
@@ -623,6 +636,75 @@ async function runChecks() {
       !read(resolve(MP, 'cloudfunctions/dispatchMessage/templates.js')).includes('gift_address_proxied'),
       'Q 新增旁路：不往共享件 inAppMessage / dispatchMessage 模板里加类型（显式标题直发）')
   }
+
+  // ---------------- R 交付方式重排（2026-10-12 第五轮，蓝图 §14）：新标记 gift_delivery_v2
+  {
+    const V2 = { clientCaps: [PL.GIFT_PHONE_CAP, PL.GIFT_CLAIM_LINK_CAP, PL.GIFT_DELIVERY_V2_CAP] }
+    ok(PL.GIFT_DELIVERY_V2_CAP === 'gift_delivery_v2', 'R 新能力标记须为 gift_delivery_v2')
+    const pk = await makeOrder({ ...gEv('store_pickup'), ...V2 })
+    const po = pk.store.orders[0] || {}
+    ok(pk.res.success && po.giftMeta && !po.giftMeta.receiverVerify && !po.giftMeta.claimMode && !(pk.store.gift_receiver_verify || []).length,
+      'R 门店自提（新版）：不要号码、不走凭礼笺，不写核验集合')
+    ok(/^[0-9A-F]{10}$/.test(po.giftMeta.claimCode || '') && po.giftMeta.claimStatus === 'ready', 'R 门店自提（新版）：下单即有自提码（与主单自取码同格式）')
+    const pkLink = await makeOrder({ ...gEv('store_pickup'), ...V2, giftClaimMode: 'link', giftClaimPasscode: true })
+    ok(pkLink.res.success && !(pkLink.store.orders[0] || {}).giftMeta.claimMode && !(pkLink.store.gift_receiver_verify || []).length, 'R 门店自提（新版）：即使带了凭礼笺参数也不核验')
+    const ship = await makeOrder({ ...gEv('ship_to_receiver'), ...V2 })
+    const so = ship.store.orders[0] || {}
+    const vd = (ship.store.gift_receiver_verify || [])[0] || {}
+    ok(ship.res.success && so.giftMeta.receiverVerify === true && !so.giftMeta.claimMode && vd.phoneHash === PL.hashPhone(vd.salt, '13900002222'),
+      'R 快递给 TA（新版）：不传受礼人手机号也能下单，领取核验号码 = 收货地址手机号')
+    const badPhone = await makeOrder({ ...gEv('ship_to_receiver'), ...V2, address: { name: '阿山', phone: '021-66666666', region: ['上海市', '上海市', '静安区'], detail: '某路 1 号' } })
+    ok(!badPhone.res.success && badPhone.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED' && !badPhone.store.orders.length, 'R 快递给 TA（新版）：收货电话不是 11 位手机号 → 拒绝（确认页就地提示）')
+    const self = await makeOrder({ ...gEv('ship_to_self'), ...V2 })
+    const sfo = self.store.orders[0] || {}
+    ok(self.res.success && sfo.giftMeta.claimMode === 'link' && !sfo.giftMeta.receiverVerify, 'R 寄给我（新版）：不带号自动凭礼笺领取（TA 收下才记在 TA 名下）')
+    const treat = await makeOrder({ ...gEv('ship_to_self'), ...V2, giftReceiverPhone: '13900002222' })
+    ok(treat.res.success && (treat.store.orders[0] || {}).giftMeta.receiverVerify === true, 'R 犒劳自己（新版）：号码 = 收货手机号，手机号核验')
+    const inv = await makeOrder({ ...gEv('invite_address'), ...V2 })
+    ok(!inv.res.success && inv.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED', 'R 邀请填址（新版）：仍要领取核验（手机号或凭礼笺领取）')
+    const invLink = await makeOrder({ ...gEv('invite_address'), ...V2, giftClaimMode: 'link' })
+    ok(invLink.res.success && (invLink.store.orders[0] || {}).giftMeta.claimMode === 'link', 'R 邀请填址（新版）：凭礼笺领取照旧')
+    // 旧版客户端（不带 gift_delivery_v2）：判定一字不变
+    const oldPk = await makeOrder({ ...gEv('store_pickup'), ...BOTH })
+    ok(!oldPk.res.success && oldPk.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED', 'R 旧版：门店自提不带号也不带凭礼笺 → 照旧拒绝')
+    const oldPkPhone = await makeOrder({ ...gEv('store_pickup'), ...BOTH, giftReceiverPhone: PHONE })
+    ok(oldPkPhone.res.success && (oldPkPhone.store.orders[0] || {}).giftMeta.receiverVerify === true, 'R 旧版：门店自提带号 → 照旧手机号核验')
+    const oldShip = await makeOrder({ ...gEv('ship_to_receiver'), ...BOTH })
+    ok(!oldShip.res.success && oldShip.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED', 'R 旧版：快递给 TA 不带号 → 照旧拒绝（不偷偷取地址手机号）')
+    const oldSelf = await makeOrder({ ...gEv('ship_to_self'), ...BOTH })
+    ok(!oldSelf.res.success && oldSelf.res.code === 'GIFT_RECEIVER_PHONE_REQUIRED', 'R 旧版：寄给我不带号也不带凭礼笺 → 照旧拒绝')
+    const oldShipPhone = await makeOrder({ ...gEv('ship_to_receiver'), ...BOTH, giftReceiverPhone: PHONE })
+    ok(oldShipPhone.res.success && (oldShipPhone.store.orders[0] || {}).giftMeta.receiverVerify === true, 'R 旧版：快递给 TA 带号 → 照旧下单')
+
+    // 新版自提单：持有效链接的 TA 看得到自提码（可转交）；没有链接看不到
+    const env = giftEnv([linkOrder({ deliveryType: 'store_pickup', claimMode: '', receiverVerify: false, claimCode: 'A1B2C3D4E5', claimStatus: 'ready', storeId: 's1', storeName: '山海造物' }, { status: 'paid' })])
+    const withTok = await env.call(RECV, { action: 'getShare', token: 'tokA', orderId: 'L1' })
+    const noTok = await env.call(RECV2, { action: 'getShare', token: '', orderId: 'L1' })
+    ok(withTok.success && withTok.gift.claimCode === 'A1B2C3D4E5' && withTok.gift.claimQrPayload === 'GIFT:A1B2C3D4E5' && !noTok.gift.claimCode,
+      'R 门店自提（新版）：自提码随礼笺转交——持有效链接可见，无链接不可见')
+    const old = giftEnv([linkOrder({ deliveryType: 'store_pickup', claimMode: '', receiverVerify: true, claimCode: 'A1B2C3D4E5', claimStatus: 'ready' }, { status: 'paid' })])
+    ok(!(await old.call(RECV, { action: 'getShare', token: 'tokA', orderId: 'L1' })).gift.claimCode, 'R 历史自提单（带手机号核验）：核验通过前仍不出码（历史订单不变）')
+
+    // 确认页：送礼页第 3 步选好的地址
+    let gsa = null
+    const co3 = methods(co, ['pendingGiftShipAddress'], { getApp: () => ({ globalData: { giftShipAddress: gsa } }) })
+    const A = { name: '王小满', phone: '13900002222', region: ['上海市'], detail: 'x' }
+    const items = [{ productId: 'p1' }]
+    gsa = { address: A, deliveryType: 'ship_to_receiver', productId: 'p1', at: Date.now() }
+    ok(!!co3 && co3.pendingGiftShipAddress('ship_to_receiver', items) === A, 'R 确认页：带出送礼页选好的地址')
+    ok(!!co3 && co3.pendingGiftShipAddress('ship_to_self', items) === null && co3.pendingGiftShipAddress('ship_to_receiver', [{ productId: 'p2' }]) === null,
+      'R 确认页：交付方式或藏品对不上不带地址')
+    gsa = { ...gsa, at: Date.now() - 3 * 3600e3 }
+    ok(!!co3 && co3.pendingGiftShipAddress('ship_to_receiver', items) === null, 'R 确认页：超过 2 小时不带地址')
+    const init = fnBody(co, 'initPayload')
+    const lda = fnBody(co, 'loadDefaultAddress')
+    ok(init.includes('...(presetAddress ? { address: this.formatAddress(presetAddress) } : {}),') &&
+      init.includes("this._giftAddressPreset = !!presetAddress || (isGiftOrder && deliveryType === 'ship_to_receiver')") &&
+      /async loadDefaultAddress\(\) \{\n\s+if \(this\._giftAddressPreset\) return\n/.test(lda) && lda.includes('if (!result.success || this._giftAddressPreset) return'),
+      'R 确认页：带来的地址不被默认地址覆盖；快递给 TA 不套用我的默认地址')
+    ok(init.includes('支付后生成自提码，可转交 TA，到店出示由专员核销') && init.includes("ship_to_receiver: '快递给 TA'") && init.includes("'犒劳自己 · 寄给我'"),
+      'R 确认页：门店自提说明自提码；交付标签与送礼页一致')
+  }
   return fails
 }
 
@@ -642,7 +724,7 @@ const INJECTIONS = [
   { name: '送礼页免填号多了直寄', file: P.composeJs, find: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self']", replace: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self', 'ship_to_receiver']" },
   { name: '寄给我免填号被撤回（云端）', file: [P.phoneLib, P.phoneLibCopy], find: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self']", replace: "const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup']" },
   { name: '确认页寄给我不带凭礼笺', file: P.confirmOrder, find: " && dt !== 'ship_to_self') return null", replace: ") return null" },
-  { name: '送礼页直寄不再标必填', file: P.composeWxml, find: "wx:if=\"{{deliveryType === 'ship_to_receiver'}}\">* 必填", replace: "wx:if=\"{{false}}\">* 必填" },
+  { name: '领取核验又对所有交付方式出现', file: P.composeWxml, find: "class=\"verify-set {{receiverPhoneError ? 'is-error' : ''}}\" wx:if=\"{{deliveryType === 'invite_address'}}\">", replace: "class=\"verify-set {{receiverPhoneError ? 'is-error' : ''}}\">" },
   { name: '寄给我作废窗口退回发货前', file: P.gift, find: "const SELF_CLAIM_OPEN_STATUS = ['paid', 'shipped', 'received']", replace: "const SELF_CLAIM_OPEN_STATUS = ['paid']" },
   { name: '作废窗口对所有交付方式放宽', file: P.gift, find: '(self ? SELF_CLAIM_OPEN_STATUS : CLAIM_OPEN_STATUS)', replace: 'SELF_CLAIM_OPEN_STATUS' },
   { name: '寄给我作废窗口含已退款', file: P.gift, find: "const SELF_CLAIM_OPEN_STATUS = ['paid', 'shipped', 'received']", replace: "const SELF_CLAIM_OPEN_STATUS = ['paid', 'shipped', 'received', 'refunded']" },
@@ -657,10 +739,24 @@ const INJECTIONS = [
   { name: 'ERP 漏登记注册引导完成事件', file: P.adminSchema, find: '  gift_reg_guide_done: {', replace: '  gift_reg_guide_done_x: {' },
   { name: '犒劳自己仍走邀请填址', file: P.composeJs, find: "      selfTreat: true,\n      deliveryType: 'ship_to_self',", replace: '      selfTreat: true,' },
   { name: '犒劳自己仍显示受礼人手机号', file: P.composeWxml, find: '      </view>\n      </block>\n', replace: '      </view>\n' },
-  { name: '犒劳自己下单仍要求受礼人手机号', file: P.composeJs, find: '    if (selfTreat) {\n      // 号码到确认页取收货地址手机号\n    } else if (!claimLink && ', replace: '    if (!claimLink && ' },
+  { name: '寄给我送给别人不再自动凭礼笺', file: P.composeJs, find: "      : deliveryType === 'ship_to_self' && !selfTreat\n", replace: '      : false\n' },
+  { name: '快递 / 寄给我又要填受礼人手机号', file: P.composeJs, find: "const receiverPhone = invite && !claimLink ? String(this.data.receiverPhone || '') : ''", replace: "const receiverPhone = !claimLink ? String(this.data.receiverPhone || '') : ''" },
+  { name: '犒劳自己地址卡显示成 TA 的地址', file: P.composeJs, find: "type === 'ship_to_receiver' ? this.data.receiverAddress : (type === 'ship_to_self' ? this.data.selfAddress : null)", replace: "type === 'ship_to_receiver' || type === 'ship_to_self' ? this.data.receiverAddress : null" },
   { name: '确认页犒劳自己不取收货手机号', file: P.confirmOrder, find: "      return /^1\\d{10}$/.test(addrPhone) ? addrPhone : ''", replace: "      return ''" },
-  { name: '确认页犒劳自己缺号退回送礼页', file: P.confirmOrder, find: '    if (this.data.isGiftOrder && !giftReceiverPhone && this.pendingGiftSelfTreat()) return\n', replace: '' },
-  { name: '确认页犒劳自己收货手机号不校验', file: P.confirmOrder, find: ' || selfPhoneBad)) {', replace: ')) {' },
+  { name: '确认页犒劳自己缺号退回送礼页', file: P.confirmOrder, find: '    if (this.data.isGiftOrder && !giftReceiverPhone && this.giftUsesAddressPhone()) return\n', replace: '' },
+  { name: '确认页犒劳自己收货手机号不校验', file: P.confirmOrder, find: ' || shipPhoneBad)) {', replace: ')) {' },
+  { name: '确认页快递给 TA 不取收货手机号', file: P.confirmOrder, find: "    return this.pendingGiftSelfTreat() || ((this._giftMeta && this._giftMeta.deliveryType) || '') === 'ship_to_receiver'", replace: '    return this.pendingGiftSelfTreat()' },
+  { name: '确认页云端缺号一律退回送礼页', file: P.confirmOrder, find: '        if (this.data.isGiftInvite) {\n          this.backToGiftPhone()', replace: '        if (true) {\n          this.backToGiftPhone()' },
+  { name: '新版自提仍要核验', file: [P.phoneLib, P.phoneLibCopy], find: "    if (deliveryType === 'store_pickup') return { required: false, phone: '', claimLink: false }\n", replace: '' },
+  { name: '新版快递不取地址手机号', file: [P.phoneLib, P.phoneLibCopy], find: ' || normalizeCnPhone(event.address && event.address.phone)', replace: '' },
+  { name: '新版寄给我不自动凭礼笺', file: [P.phoneLib, P.phoneLibCopy], find: 'return { required: false, phone: selfPhone, claimLink: !selfPhone }', replace: 'return { required: !selfPhone, phone: selfPhone, claimLink: false }' },
+  { name: '新版邀请填址也免核验', file: [P.phoneLib, P.phoneLibCopy], find: "    if (deliveryType === 'store_pickup') return { required: false, phone: '', claimLink: false }\n", replace: "    if (deliveryType === 'store_pickup' || deliveryType === 'invite_address') return { required: false, phone: '', claimLink: false }\n" },
+  { name: '旧版也按新规则（不看标记）', file: [P.phoneLib, P.phoneLibCopy], find: '  if (clientHasDeliveryV2(event)) {', replace: '  if (true) {' },
+  { name: '确认页不带出送礼页地址', file: P.confirmOrder, find: '      ...(presetAddress ? { address: this.formatAddress(presetAddress) } : {}),\n', replace: '' },
+  { name: '确认页默认地址覆盖带来的地址', file: P.confirmOrder, find: '    if (this._giftAddressPreset) return\n    try {', replace: '    try {' },
+  { name: '确认页快递给 TA 套用我的默认地址', file: P.confirmOrder, find: "this._giftAddressPreset = !!presetAddress || (isGiftOrder && deliveryType === 'ship_to_receiver')", replace: 'this._giftAddressPreset = !!presetAddress' },
+  { name: '确认页带地址不比对交付方式', file: P.confirmOrder, find: '    if (g.deliveryType !== deliveryType) return null\n', replace: '' },
+  { name: '确认页带地址不限时', file: P.confirmOrder, find: "    if (!g || !g.address || !g.address.name || !g.address.phone) return null\n    if (Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return null\n", replace: "    if (!g || !g.address || !g.address.name || !g.address.phone) return null\n" },
   { name: '代填不校验店员', file: P.gift, find: "    if (!guard.ok) return { success: false, code: guard.code || 'FORBIDDEN', msg: guard.msg || '无操作权限' }\n    actor = guard.actor || {}", replace: '    actor = guard.actor || {}' },
   { name: '代填不校验下单人', file: P.gift, find: "    if (!isGiverOfOrder(order, openid)) {\n      return { success: false, code: 'NOT_GIVER'", replace: "    if (false) {\n      return { success: false, code: 'NOT_GIVER'" },
   { name: '代填后仍是待填址（不可发货）', file: P.gift, find: "        address: _.set(addressDoc),\n        'giftMeta.addressStatus': 'submitted',\n", replace: '        address: _.set(addressDoc),\n' },
@@ -715,7 +811,7 @@ async function main() {
     console.error('✗ 礼赠凭礼笺领取守卫失败：\n  ' + fails.join('\n  '))
     process.exit(1)
   }
-  console.log('✓ 礼赠凭礼笺领取：免填号只限填址 / 自提 / 寄给我（直寄仍必填、旧版不变）· 寄给我作废窗口到订单结束 · 打开不算领取、须主动收下、不要求注册 · 一份一人（含并发）· 口令门与限次 · 作废换链接旧链即失效 · 送礼人见领取人不见完整号码 · 不发朋友圈 · 注册引导可关且守协议勾选 · 7 个埋点双端登记 · 犒劳自己固定寄给我、地址与手机号按普通下单填写')
+  console.log('✓ 礼赠凭礼笺领取：免填号只限填址 / 自提 / 寄给我（直寄仍必填、旧版不变）· 寄给我作废窗口到订单结束 · 打开不算领取、须主动收下、不要求注册 · 一份一人（含并发）· 口令门与限次 · 作废换链接旧链即失效 · 送礼人见领取人不见完整号码 · 不发朋友圈 · 注册引导可关且守协议勾选 · 7 个埋点双端登记 · 犒劳自己固定寄给我 · 交付重排（新标记 gift_delivery_v2）：只有邀请填址核验、快递号码取收货手机号、寄给我自动凭礼笺、自提不核验出自提码、确认页带出第 3 步地址、旧版一字不变')
 }
 
 main().then(

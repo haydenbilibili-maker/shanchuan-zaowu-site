@@ -4,7 +4,7 @@
       <text class="en">GIFT FULFILLMENT</text>
       <text class="cn">礼赠履约</text>
     </view>
-    <text class="header-note">待填址不可发货 · 自提请扫妥投码</text>
+    <text class="header-note">待填址不可发货 · 自提请扫顾客的自提码</text>
   </view>
 
   <view class="toolbar">
@@ -126,7 +126,7 @@
       <view class="card-extra" wx:if="{{expandedId === item.orderId}}">
         <text class="extra-line" wx:if="{{item.recipientName}}">写给 · {{item.recipientName}}</text>
         <text class="extra-line" wx:if="{{item.storeName}}">门店 · {{item.storeName}}</text>
-        <text class="extra-line" wx:if="{{item.claimCode}}">妥投码 · {{item.claimCode}}</text>
+        <text class="extra-line" wx:if="{{item.claimCode}}">自提码 · {{item.claimCode}}</text>
         <block wx:if="{{item.address}}">
           <text class="extra-line">{{item.address.name}} {{item.address.phone}}</text>
           <text class="extra-line">{{item.address.line}}</text>

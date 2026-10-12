@@ -188,6 +188,7 @@ exports.main = async (event, context) => {
 
   // 礼赠受礼人手机号（领取核验）：新版客户端（clientCaps 标记）缺号即拒；旧版不带标记暂不拒（开关见 giftReceiverPhone.js）
   // 凭礼笺领取（填址 / 自提，新标记 + giftClaimMode='link'）可不填号
+  // 带 gift_delivery_v2：自提不核验、直寄 TA 取收货地址手机号、寄给我不带号即凭礼笺领取（蓝图 礼赠凭礼笺领取 §14）
   const giftPhone = isGift ? checkGiftReceiverPhone(event, giftMeta && giftMeta.deliveryType) : { required: false, phone: '', claimLink: false }
   const claimPasscode = giftPhone.claimLink && event.giftClaimPasscode === true ? createPasscode() : ''
   if (giftPhone.required && !giftPhone.phone) {

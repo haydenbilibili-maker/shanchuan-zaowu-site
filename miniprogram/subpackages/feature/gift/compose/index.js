@@ -75,7 +75,7 @@ const OTHER_DELIVERIES = [
   {
     id: 'ship_to_receiver',
     name: '快递给 TA',
-    desc: '你已知地址时，下单时填写收货信息'
+    desc: '在这里选好 TA 的收货地址，按址寄出'
   },
   {
     id: 'ship_to_self',
@@ -85,12 +85,29 @@ const OTHER_DELIVERIES = [
   {
     id: 'store_pickup',
     name: '门店自提代赠',
-    desc: '选这有店备货，分享领取码到店核销'
+    desc: '选门店备货，支付后得自提码，可转交 TA'
   }
 ]
 
 /** 可不填号、凭礼笺领取的交付方式（与云函数 giftReceiverPhone.CLAIM_LINK_DELIVERY 同值，check:gift-claim-link 钉住） */
 const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self']
+
+/** 在第 3 步直接选地址的交付方式（犒劳自己 = 寄给我）；地址经 globalData.giftShipAddress 带到确认页 */
+const SHIP_DELIVERY = ['ship_to_receiver', 'ship_to_self']
+
+/** 与确认页 formatAddress 同形 */
+function formatShipAddress(record) {
+  if (!record || !record.name || !record.phone) return null
+  const region = Array.isArray(record.region) ? record.region : []
+  return {
+    _id: record._id || '',
+    name: record.name,
+    phone: record.phone,
+    region,
+    regionText: region.filter(Boolean).join(' '),
+    detail: record.detail || ''
+  }
+}
 
 Page({
   data: {
@@ -119,8 +136,14 @@ Page({
     deliveryType: 'invite_address',
     otherDeliveries: OTHER_DELIVERIES,
     verifyWhyOpen: false,
-    /** 犒劳自己：交付固定寄给我，地址与手机号到确认页按普通下单填写（不走邀请填址 / 受礼人手机号） */
+    /** 犒劳自己：交付固定寄给我，第 3 步选我的收货地址（与「寄给我」同一块地址卡），不走邀请填址 / 受礼人手机号 */
     selfTreat: false,
+    /** 第 3 步收货地址（2026-10-12 第五轮）：快递给 TA 用 receiverAddress（不带出我的默认地址），
+     *  寄给我 / 犒劳自己用 selfAddress（带出地址簿默认地址）；shipAddress = 当前交付方式对应的那份 */
+    receiverAddress: null,
+    selfAddress: null,
+    shipAddress: null,
+    shipAddressError: '',
     /** 门店自取开关（超管后台）：false 时移除「门店自提代赠」 */
     storePickupEnabled: true,
     stores: [],
@@ -226,7 +249,7 @@ Page({
     if (app.globalData.giftPhoneRefill) {
       app.globalData.giftPhoneRefill = false
       this.setData({ paying: false })
-      if (!this.data.selfTreat) {
+      if (!this.data.selfTreat && this.data.deliveryType === 'invite_address') {
         this._goStep(3, 'refill', { keepScroll: true })
         this.flagReceiverPhone('请填写受礼人手机号，用于 TA 领取时核验身份')
       }
@@ -404,6 +427,7 @@ Page({
       this.setData({ phoneScrollId: '' }, () => this.setData({ phoneScrollId: 'composeTop' }))
     }
     if (to === 2 && this._noteWritePending && this.data.noteWriting) this._scheduleNoteWrite()
+    if (to === 3) this._loadSelfAddress()
     this.syncScrollPane()
     trackBehavior('gift_compose_step', 'product', this._productId || '', { from, to, via: via || '' })
   },
@@ -921,7 +945,56 @@ Page({
       toastStorePickupClosed()
       return
     }
-    this.setData({ deliveryType: type })
+    this.setData({ deliveryType: type, shipAddressError: '' })
+    this._syncShipAddress()
+  },
+
+  /** 寄给我 / 犒劳自己：带出地址簿默认地址（同确认页 loadDefaultAddress 的取法），只取一次、不覆盖已选 */
+  async _loadSelfAddress() {
+    if (this._selfAddressLoaded) return
+    this._selfAddressLoaded = true
+    let record = null
+    try {
+      const res = await wx.cloud.callFunction({ name: 'manageAddress', data: { action: 'list' } })
+      const list = (res && res.result && res.result.success && res.result.data) || []
+      record = list.find((a) => a.isDefault) || list[0] || null
+    } catch (e) {
+      try {
+        const local = wx.getStorageSync('user_addresses_local') || []
+        record = local.find((a) => a.isDefault) || local[0] || null
+      } catch (err) { /* ignore */ }
+    }
+    if (!record || this.data.selfAddress) return
+    this.setData({ selfAddress: formatShipAddress(record) })
+    this._syncShipAddress()
+  },
+
+  _syncShipAddress() {
+    const type = this.data.selfTreat ? 'ship_to_self' : this.data.deliveryType
+    const shipAddress = type === 'ship_to_receiver' ? this.data.receiverAddress : (type === 'ship_to_self' ? this.data.selfAddress : null)
+    this.setData({ shipAddress })
+  },
+
+  /** 选 / 新增收货地址：复用确认页同一个地址页（select 模式，可新增 / 导入微信地址） */
+  chooseShipAddress() {
+    const forReceiver = !this.data.selfTreat && this.data.deliveryType === 'ship_to_receiver'
+    wx.navigateTo({
+      url: '/subpackages/business/address/index?mode=select',
+      events: {
+        addressSelected: (addr) => {
+          const picked = formatShipAddress(addr)
+          if (!picked) return
+          this.setData(forReceiver ? { receiverAddress: picked, shipAddressError: '' } : { selfAddress: picked, shipAddressError: '' })
+          this._syncShipAddress()
+        }
+      }
+    })
+  },
+
+  flagShipAddress(msg) {
+    this.setData({ shipAddressError: msg, phoneScrollId: '' }, () => {
+      this.setData({ phoneScrollId: 'shipAddressField' })
+    })
   },
 
   onSelectStore(e) {
@@ -1284,8 +1357,10 @@ Page({
       deliveryType: 'ship_to_self',
       claimLink: false,
       claimPasscode: false,
-      receiverPhoneError: ''
+      receiverPhoneError: '',
+      shipAddressError: ''
     })
+    this._syncShipAddress()
   },
 
   /** 换成其它关系，或点「其实是送给别人」→ 恢复送礼交付选择 */
@@ -1295,12 +1370,13 @@ Page({
     const restore = prev && prev !== 'ship_to_self' && !(prev === 'store_pickup' && this.data.storePickupEnabled === false)
       ? prev
       : 'invite_address'
-    const patch = { selfTreat: false, deliveryType: restore }
+    const patch = { selfTreat: false, deliveryType: restore, shipAddressError: '' }
     if (this.data.activeNotePresetId === 'self') {
       patch.activeNotePresetId = ''
       patch.recipientPlaceholder = 'TA 的名字（必填）'
     }
     this.setData(patch)
+    this._syncShipAddress()
   },
 
   /** 场景语向：与关系预设并存，复用同一落笔路径，不改录音逻辑 */
@@ -1374,7 +1450,8 @@ Page({
   },
 
   /**
-   * 第 3 步「交付」的「支付并备妥」：交付方式 / 自提门店 / 受礼人手机号在这里校验
+   * 第 3 步「交付」的「支付并备妥」：按交付方式校验（2026-10-12 第五轮，蓝图 礼赠凭礼笺领取 §14）
+   *   邀请 TA 填写地址：领取核验（手机号 / 凭礼笺领取）；快递给 TA / 寄给我（含犒劳自己）：收货地址；门店自提：门店
    */
   goPay() {
     if (this.data.paying || this.data.voiceUploading) return
@@ -1400,17 +1477,26 @@ Page({
       return
     }
 
-    const claimLink = !!this.data.claimLink && CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1 && !selfTreat
-    const receiverPhone = (claimLink || selfTreat) ? '' : String(this.data.receiverPhone || '')
-    if (selfTreat) {
-      // 号码到确认页取收货地址手机号
-    } else if (!claimLink && !/^1\d{10}$/.test(receiverPhone)) {
+    const invite = deliveryType === 'invite_address'
+    const shipAddress = SHIP_DELIVERY.indexOf(deliveryType) !== -1
+      ? (deliveryType === 'ship_to_receiver' && !selfTreat ? this.data.receiverAddress : this.data.selfAddress)
+      : null
+    if (SHIP_DELIVERY.indexOf(deliveryType) !== -1 && !shipAddress) {
+      this.flagShipAddress(deliveryType === 'ship_to_receiver' && !selfTreat ? '请选择或新增 TA 的收货地址' : '请选择或新增你的收货地址')
+      return
+    }
+    // 领取核验只在邀请填址；寄给我（送给别人）自动凭礼笺领取（TA 收下才记在 TA 名下），快递给 TA / 犒劳自己的号码到确认页取收货地址手机号
+    const claimLink = invite
+      ? !!this.data.claimLink && CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1
+      : deliveryType === 'ship_to_self' && !selfTreat
+    const receiverPhone = invite && !claimLink ? String(this.data.receiverPhone || '') : ''
+    if (invite && !claimLink && !/^1\d{10}$/.test(receiverPhone)) {
       this.flagReceiverPhone(receiverPhone ? '受礼人手机号需为 11 位' : '请填写受礼人手机号，或选「凭礼笺领取」')
       return
     }
-    // 确认页随下单交 makeOrder（号码存哈希 / 凭礼笺领取标记）；送礼成功页兜底补存号码。
-    // 犒劳自己：号码取确认页收货地址的手机号（confirm-order pendingGiftReceiverPhone）
-    getApp().globalData.giftReceiverPhone = { phone: receiverPhone, claimLink, claimPasscode: claimLink && !!this.data.claimPasscode, selfTreat, productId: p._id, at: Date.now() }
+    // 确认页随下单交 makeOrder（号码存哈希 / 凭礼笺领取标记）；送礼成功页兜底补存号码
+    getApp().globalData.giftReceiverPhone = { phone: receiverPhone, claimLink, claimPasscode: invite && claimLink && !!this.data.claimPasscode, selfTreat, productId: p._id, at: Date.now() }
+    getApp().globalData.giftShipAddress = shipAddress ? { address: shipAddress, deliveryType, productId: p._id, at: Date.now() } : null
 
     const sku = this.data.selectedSku
     const count = this.data.count || 1

@@ -14,6 +14,12 @@
  *   带 GIFT_CLAIM_LINK_CAP 且 giftClaimMode='link'、交付方式在 CLAIM_LINK_DELIVERY 内、未带有效号码 → 免填号，
  *   订单标 claimMode:'link'；可选 6 位口令（passcode 只进核验集合）。其它交付方式仍按上面规则必填。
  *   第三轮（同日）追加 ship_to_self：货寄给送礼人自己，礼笺只决定「记在谁名下」（同蓝图 §10）。直寄 TA 仍必填。
+ *
+ * 交付方式重排（2026-10-12 第五轮，同蓝图 §14）：只有带 GIFT_DELIVERY_V2_CAP 的客户端改判，旧版一字不变：
+ *   - store_pickup：不核验（不要号码、不走凭礼笺），支付后凭自提码（giftMeta.claimCode）到店核销；
+ *   - ship_to_receiver：号码取 giftReceiverPhone，没有就取收货地址手机号（送礼人在送礼页填的就是 TA 的地址）；
+ *   - ship_to_self：带号（犒劳自己 = 收货地址手机号）即手机号核验，不带号自动凭礼笺领取；
+ *   - invite_address：与旧版相同。
  */
 const crypto = require('crypto')
 
@@ -22,6 +28,7 @@ const ENFORCE_ALL_DEFAULT = false
 const GIFT_VERIFY_COL = 'gift_receiver_verify'
 const GIFT_CLAIM_LINK_CAP = 'gift_claim_link_v1'
 const CLAIM_LINK_DELIVERY = ['invite_address', 'store_pickup', 'ship_to_self']
+const GIFT_DELIVERY_V2_CAP = 'gift_delivery_v2'
 
 function enforceAllGiftPhone() {
   return ENFORCE_ALL_DEFAULT || String(process.env.GIFT_PHONE_ENFORCE_ALL || '') === '1'
@@ -30,6 +37,11 @@ function enforceAllGiftPhone() {
 function clientHasGiftPhoneCap(event) {
   const caps = event && event.clientCaps
   return Array.isArray(caps) && caps.indexOf(GIFT_PHONE_CAP) !== -1
+}
+
+function clientHasDeliveryV2(event) {
+  const caps = event && event.clientCaps
+  return Array.isArray(caps) && caps.indexOf(GIFT_DELIVERY_V2_CAP) !== -1
 }
 
 function claimLinkAllowed(deliveryType) {
@@ -77,6 +89,17 @@ function buildLinkVerifyDoc(orderId, giverOpenid, passcode, now) {
 
 /** 下单校验：{ required, phone, claimLink }；required && !phone → 应拒绝 */
 function checkGiftReceiverPhone(event, deliveryType) {
+  if (clientHasDeliveryV2(event)) {
+    if (deliveryType === 'store_pickup') return { required: false, phone: '', claimLink: false }
+    if (deliveryType === 'ship_to_receiver') {
+      const shipPhone = normalizeCnPhone(event.giftReceiverPhone) || normalizeCnPhone(event.address && event.address.phone)
+      return { required: true, phone: shipPhone, claimLink: false }
+    }
+    if (deliveryType === 'ship_to_self') {
+      const selfPhone = normalizeCnPhone(event.giftReceiverPhone)
+      return { required: false, phone: selfPhone, claimLink: !selfPhone }
+    }
+  }
   const phone = normalizeCnPhone(event && event.giftReceiverPhone)
   const claimLink = !phone && wantsClaimLink(event, deliveryType)
   return {
@@ -92,6 +115,8 @@ module.exports = {
   GIFT_VERIFY_COL,
   GIFT_CLAIM_LINK_CAP,
   CLAIM_LINK_DELIVERY,
+  GIFT_DELIVERY_V2_CAP,
+  clientHasDeliveryV2,
   claimLinkAllowed,
   wantsClaimLink,
   createPasscode,

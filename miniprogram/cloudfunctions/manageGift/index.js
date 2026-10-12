@@ -1802,7 +1802,7 @@ function buildMineActions(order, role, progress) {
         actions.push({ key: 'nudge', label: '再提醒', type: 'nudge' })
       }
     } else if (progress.key === 'pickup_verify') {
-      actions.push({ key: 'share', label: '查看妥投码', type: 'nav', path: successPath })
+      actions.push({ key: 'share', label: '查看自提码', type: 'nav', path: successPath })
     } else if (progress.key === 'pending_pay') {
       actions.push({ key: 'pay', label: '去支付', type: 'nav', path: orderPath })
     } else if (progress.key === 'shipping' || progress.key === 'awaiting_ship') {
