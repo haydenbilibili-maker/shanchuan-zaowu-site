@@ -3358,3 +3358,115 @@ page {
   border-radius: 0;
 }
 .ww-muyu-slit { display: none; }   /* 图标自带鱼口，隐藏原 CSS 画的鱼口 */
+
+/* ══ 2026-10-12 质感层（产品负责人点名「祈福墙详情页质感提升」）══════════════════════════
+   追加在文件末，同特异性按顺序覆盖：上方各版（v2 / v3）规则与守卫钉住的值原样保留，
+   本层只调「视觉重量」—— 不动布局几何、定位层级、弹幕舞台尺寸与任何交互。
+   ① 四座厅盒（挂签台 / 仪式 / 玩法）：2rpx 金框 + 顶光 + 投影三重 → 发丝框 + 极淡顶光，厅与厅靠间距分；
+   ② 门楣金币章（挂 / 仪 / 玩）：实心铜币 → 发丝方印（金字、透明底），不再满页金球；
+   ③ 玩法格：去掉标题前的小铜币（左侧器物已是图示，二者重复）；「先推」改格内细金字签，不压边框；
+   ④ 发送钮不可点态：整钮降透明（发灰发脏）→ 描边空心，可点时才是铜钮；
+   ⑤ 额度 / 字数说明字 muted → secondary（深底上 muted 不达标）。 */
+.ww-desk,
+.ww-hall,
+.ww-plays {
+  border: 1rpx solid rgba(196, 167, 108, 0.24);
+  background:
+    linear-gradient(180deg, rgba(212, 188, 133, 0.06) 0%, rgba(212, 188, 133, 0) 32%),
+    linear-gradient(165deg, #191611 0%, #110F0C 100%);
+  box-shadow: inset 0 1rpx 0 rgba(250, 246, 237, 0.05);
+}
+
+.ww-desk-lintel,
+.ww-hall-lintel,
+.ww-plays-head {
+  gap: 18rpx;
+  padding-bottom: 18rpx;
+  border-bottom-color: rgba(196, 167, 108, 0.16);
+}
+
+.ww-desk-seal,
+.ww-hall-seal {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 8rpx;
+  background: rgba(196, 167, 108, 0.06);
+  border: 1rpx solid rgba(196, 167, 108, 0.55);
+  box-shadow: none;
+}
+
+.ww-desk-seal-t,
+.ww-hall-seal-t {
+  font-size: var(--fs-26);
+  font-weight: 600;
+  color: var(--brass-300);
+  letter-spacing: 0;
+}
+
+.ww-desk-title,
+.ww-hall-title,
+.ww-plays-title {
+  font-weight: 600;
+  letter-spacing: 0.14em;
+}
+
+.ww-play {
+  border: 1rpx solid rgba(196, 167, 108, 0.24);
+  background: linear-gradient(160deg, #1F1B15 0%, #14120E 100%);
+  box-shadow: none;
+}
+
+.ww-play.is-lead {
+  border-color: rgba(212, 188, 133, 0.5);
+  background:
+    linear-gradient(180deg, rgba(212, 188, 133, 0.08) 0%, rgba(212, 188, 133, 0) 50%),
+    linear-gradient(155deg, #262118 0%, #17140F 100%);
+  box-shadow: none;
+}
+
+.ww-play-mark { display: none; }
+
+.ww-play-lead-tag {
+  top: 14rpx;
+  right: 14rpx;
+  padding: 0 var(--space-1);
+  font-size: var(--fs-16);
+  line-height: 28rpx;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--brass-300);
+  background: transparent;
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+  border-radius: 6rpx;
+  box-shadow: none;
+}
+
+.ww-send.is-off {
+  opacity: 1;
+  color: rgba(212, 188, 133, 0.6);
+  background: transparent;
+  border-color: rgba(196, 167, 108, 0.36);
+  box-shadow: none;
+}
+
+.ww-quota,
+.ww-count {
+  color: var(--color-text-secondary);
+}
+
+/* 质感层续：玩法厅门楣的印（原规则带 .ww-plays-head 前缀，特异性更高，须同前缀覆盖）；
+   仪式两器龛：2rpx 金框 → 发丝框，点灯后的金光仍由 .is-lit 自身规则给（未覆盖） */
+.ww-plays-head .ww-hall-seal {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 8rpx;
+  background: rgba(196, 167, 108, 0.06);
+  border: 1rpx solid rgba(196, 167, 108, 0.55);
+  box-shadow: none;
+}
+
+.ww-lantern.is-idle,
+.ww-ritual-card {
+  border: 1rpx solid rgba(196, 167, 108, 0.3);
+  box-shadow: none;
+}
