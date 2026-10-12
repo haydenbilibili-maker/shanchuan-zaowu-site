@@ -312,12 +312,16 @@ function resolveCouponRowState({ goodsFloorHit, coupons, shipFeeWithoutCoupon, c
   if (goodsFloorHit && !freeShipCanHelp) {
     return {
       couponRowText: '您已达到最大优惠额度，礼券暂不可用',
+      couponRowShort: '暂不可用',
+      couponRowNote: '本单已达最大优惠额度',
       couponRowBlocked: true
     }
   }
   if (goodsFloorHit && freeShipCanHelp) {
     return {
       couponRowText: '现金礼券已达上限，免邮券可选',
+      couponRowShort: '免邮券可选',
+      couponRowNote: '现金礼券已达上限',
       couponRowBlocked: false
     }
   }
@@ -836,6 +840,8 @@ Page(withAppModal({
       selectedCoupon,
       couponHint,
       couponRowText: rowState.couponRowText,
+      couponRowShort: rowState.couponRowShort || '',
+      couponRowNote: rowState.couponRowNote || '',
       couponRowBlocked: rowState.couponRowBlocked,
       originalPrice: formatPrice(pricing.originalPrice),
       finalPrice: formatPrice(payable),

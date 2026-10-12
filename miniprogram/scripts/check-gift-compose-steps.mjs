@@ -355,7 +355,7 @@ function declutterChecks(js, wxml, wxss, ok) {
   const foot = cx.slice(cx.indexOf('<view class="footer-bar">'), cx.indexOf('<!-- 优惠券弹窗 -->'))
   ok('D11 确认页底栏给会员折扣一句：礼赠与普通订单同口径、有会员省额才出；省额两位小数（账单折扣行同一字段）；礼赠摘要不重复标单价',
     /<text class="fp-note" wx:if="\{\{discountRate < 1 && vipSaved > 0\}\}">\{\{levelName\}\} \{\{discountText\}\} · 已省 ¥\{\{vipSavedYuan\}\}<\/text>/.test(foot) &&
-    /-¥\{\{vipSavedYuan\}\}（\{\{discountText\}\}）/.test(cx) && !/gift-sum-price/.test(cx) &&
+    /−¥\{\{vipSavedYuan\}\}/.test(cx) && /<text class="bl-chip">\{\{discountText\}\}<\/text>/.test(cx) && !/gift-sum-price/.test(cx) &&
     /white-space:\s*nowrap/.test(rule(cw0, '.fp-note')) &&
     (read(P.confirmJs).match(/vipSavedYuan: formatPrice\(/g) || []).length === 2)
   const cw = read(P.confirmWxss)
@@ -640,7 +640,7 @@ const INJECTIONS = [
   { name: '底栏按钮允许折行', file: P.wxss, find: '  letter-spacing: 0.04em;\n  white-space: nowrap;\n  border-radius: 16rpx;', replace: '  letter-spacing: 0.04em;\n  border-radius: 16rpx;' },
   { name: '确认页折扣小字可折行', file: P.confirmWxss, find: 'font-size: 22rpx; color: #C4A76C; white-space: nowrap;', replace: 'font-size: 22rpx; color: #C4A76C;' },
   { name: '确认页底栏不说会员折扣', file: P.confirmWxml, find: '<text class="fp-note" wx:if="{{discountRate < 1 && vipSaved > 0}}">', replace: '<text class="fp-note" wx:if="{{false}}">' },
-  { name: '账单折扣行回到一位小数', file: P.confirmWxml, find: '-¥{{vipSavedYuan}}（{{discountText}}）', replace: '-¥{{vipSaved}}（{{discountText}}）' },
+  { name: '账单折扣行回到一位小数', file: P.confirmWxml, find: '−¥{{vipSavedYuan}}', replace: '−¥{{vipSaved}}' },
   { name: '礼赠摘要又标单价', file: P.confirmWxml, find: '<text class="gift-sum-sku">', replace: '<text class="gift-sum-price">¥1</text><text class="gift-sum-sku">' },
   { name: '省额第二处不再格式化', file: P.confirmJs, find: '        vipSavedYuan: formatPrice(vipSaved || 0),\n', replace: '' },
   { name: '交付卡名称可折行', file: P.confirmWxss, find: '  font-size: 26rpx;\n  white-space: nowrap;', replace: '  font-size: 26rpx;' },

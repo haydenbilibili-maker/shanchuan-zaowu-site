@@ -441,60 +441,72 @@
     </view>
   </view>
 
-  <!-- 单一账单：商品合计 → 优惠券 → 折扣 → 运费/快递 → 应付 -->
+  <!-- 单一账单：商品合计 → 优惠券 → 折扣 → 运费/快递 → 应付
+       2026-10-12 产品负责人点名重排：左「名目 + 小注」/ 右「金额」两栏；金额同一等宽字、减项金色带 −；
+       说明性文字（礼券为何不可用、包邮规则）收进名目下小注，不再在右栏长句或单独起一行；只在应付前一道分隔 -->
   <view class="card bill-card {{useWalletPay ? 'bill-wallet' : ''}}">
     <view class="section-label">账单</view>
 
-    <view class="row-item">
-      <text class="row-label">藏品合计</text>
-      <text class="row-value mono">¥{{originalPrice}}</text>
+    <view class="bl-row">
+      <view class="bl-l"><text class="bl-label">藏品合计</text></view>
+      <text class="bl-v">¥{{originalPrice}}</text>
     </view>
 
     <view
-      class="row-item {{couponRowBlocked ? 'row-item-blocked' : 'row-item-tap'}}"
+      class="bl-row {{couponRowBlocked ? 'is-blocked' : 'is-tap'}}"
       bindtap="openCouponModal"
-      hover-class="{{couponRowBlocked ? '' : 'row-item-press'}}"
+      hover-class="{{couponRowBlocked ? '' : 'bl-row-press'}}"
       hover-stay-time="80"
     >
-      <text class="row-label">礼券</text>
-      <view class="row-value">
-        <text class="coupon-hint" wx:if="{{selectedCoupon && couponHint}}">{{couponHint}}</text>
-        <text class="coupon-hint" wx:elif="{{selectedCoupon}}">已选礼券</text>
-        <text class="coupon-hint muted {{couponRowBlocked ? 'blocked' : ''}}" wx:else>{{couponRowText}}</text>
-        <text class="row-arrow" wx:if="{{!couponRowBlocked}}">›</text>
+      <view class="bl-l">
+        <text class="bl-label">礼券</text>
+        <text class="bl-note" wx:if="{{!selectedCoupon && couponRowNote}}">{{couponRowNote}}</text>
+      </view>
+      <view class="bl-v-wrap">
+        <text class="bl-v is-gold is-text" wx:if="{{selectedCoupon && couponHint}}">{{couponHint}}</text>
+        <text class="bl-v is-gold is-text" wx:elif="{{selectedCoupon}}">已选礼券</text>
+        <text class="bl-v is-text {{couponRowBlocked ? 'is-muted' : ''}}" wx:else>{{couponRowShort || couponRowText}}</text>
+        <text class="bl-arrow" wx:if="{{!couponRowBlocked}}">›</text>
       </view>
     </view>
 
-    <view class="row-item" wx:if="{{discountRate < 1 && vipSaved > 0}}">
-      <text class="row-label">{{discountLabel}}</text>
-      <text class="row-value gold">-¥{{vipSavedYuan}}（{{discountText}}）</text>
+    <view class="bl-row" wx:if="{{discountRate < 1 && vipSaved > 0}}">
+      <view class="bl-l">
+        <view class="bl-label-line">
+          <text class="bl-label">{{discountLabel}}</text>
+          <text class="bl-chip">{{discountText}}</text>
+        </view>
+      </view>
+      <text class="bl-v is-gold">−¥{{vipSavedYuan}}</text>
     </view>
-    <view class="row-item" wx:if="{{depositCredit > 0}}">
-      <text class="row-label">已付定金抵扣</text>
-      <text class="row-value gold">-¥{{depositCreditDisplay}}</text>
+    <view class="bl-row" wx:if="{{depositCredit > 0}}">
+      <view class="bl-l"><text class="bl-label">已付定金抵扣</text></view>
+      <text class="bl-v is-gold">−¥{{depositCreditDisplay}}</text>
     </view>
     <view class="provisional-tip" wx:if="{{provisionalTip}}">{{provisionalTip}}</view>
 
-    <view class="row-item">
-      <text class="row-label">{{storePickup || isGiftStorePickup ? '运费（门店自取）' : shippingLineLabel}}</text>
-      <view class="row-value shipping-fee-value {{isShippingFree ? 'gold' : ''}}">
-        <text wx:if="{{showShippingStrike}}" class="shipping-fee-strike">¥{{originalShippingFeeDisplay}}</text>
-        <text class="{{isShippingFree ? 'shipping-free-tag' : 'mono'}}">{{storePickup || isGiftStorePickup ? '自取免运费' : shippingFeeLabel}}</text>
+    <view class="bl-row">
+      <view class="bl-l">
+        <text class="bl-label">{{storePickup || isGiftStorePickup ? '运费（门店自取）' : shippingLineLabel}}</text>
+        <text class="bl-note {{isShippingFree ? '' : 'is-nudge'}}" wx:if="{{!storePickup && !isGiftStorePickup && shippingRuleText}}">{{shippingRuleText}}</text>
+      </view>
+      <view class="bl-v-wrap">
+        <text wx:if="{{showShippingStrike}}" class="bl-strike">¥{{originalShippingFeeDisplay}}</text>
+        <text class="bl-v {{isShippingFree || storePickup || isGiftStorePickup ? 'is-gold is-text' : ''}}">{{storePickup || isGiftStorePickup ? '自取免运费' : shippingFeeLabel}}</text>
       </view>
     </view>
-    <view class="shipping-tip {{isShippingFree ? 'free' : ''}}" wx:if="{{!storePickup && !isGiftStorePickup && shippingRuleText}}">{{shippingRuleText}}</view>
 
-    <view class="row-item" wx:if="{{useWalletPay}}">
-      <text class="row-label">订单应付</text>
-      <text class="row-value mono">¥{{finalPrice}}</text>
+    <view class="bl-row" wx:if="{{useWalletPay}}">
+      <view class="bl-l"><text class="bl-label">订单应付</text></view>
+      <text class="bl-v">¥{{finalPrice}}</text>
     </view>
-    <view class="row-item" wx:if="{{useWalletPay && walletPayYuan !== '0.00'}}">
-      <text class="row-label">钱包抵扣</text>
-      <text class="row-value gold">-¥{{walletPayYuan}}</text>
+    <view class="bl-row" wx:if="{{useWalletPay && walletPayYuan !== '0.00'}}">
+      <view class="bl-l"><text class="bl-label">钱包抵扣</text></view>
+      <text class="bl-v is-gold">−¥{{walletPayYuan}}</text>
     </view>
 
-    <view class="row-item total-row">
-      <text class="row-label total-label">{{payNowLabel}}</text>
+    <view class="bl-total">
+      <text class="bl-total-label">{{payNowLabel}}</text>
       <text class="total-price">¥{{payNowYuan}}</text>
     </view>
     <text class="summary-foot-hint" wx:if="{{useWalletPay && wxpayYuan !== '0.00'}}">尾款将通过微信支付</text>

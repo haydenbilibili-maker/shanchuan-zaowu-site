@@ -22,7 +22,6 @@ view, text, scroll-view { box-sizing: border-box; }
   border-radius: 16rpx;
 }
 
-
 .auth-resume-hint-text {
   flex: 1;
   min-width: 0;
@@ -216,14 +215,7 @@ view, text, scroll-view { box-sizing: border-box; }
 .goods-title { font-size: 28rpx; color: #D5D1C8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .goods-latin { font-size: 22rpx; color: #C4A76C; font-style: italic; margin-top: 4rpx; }
 .goods-sku { font-size: 22rpx; color: #A09A90; margin-top: 4rpx; display: block; }
-.shipping-tip {
-  font-size: 22rpx;
-  color: #A09A90;
-  padding: 4rpx 0 16rpx;
-  line-height: 1.45;
-}
-.shipping-tip.campaign,
-.shipping-tip.free { color: #C4A76C; }
+
 .provisional-tip {
   font-size: 22rpx;
   color: #C4A76C;
@@ -231,18 +223,7 @@ view, text, scroll-view { box-sizing: border-box; }
   line-height: 1.4;
   margin-top: -8rpx;
 }
-.shipping-fee-value { justify-content: flex-end; }
-.shipping-fee-strike {
-  color: #6B6560;
-  font-size: 24rpx;
-  text-decoration: line-through;
-  font-family: monospace;
-}
-.shipping-free-tag {
-  color: #C4A76C;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
+
 /* 售后约定卡（2026-10-12 产品负责人点名改版）：标题 = 一句话规则 + 类型签；条款为三行要点；
    只有扣费数字保留警示色加粗，其余强调降为细节；「联系专员」改整行轻链接，不与底栏主按钮抢视线 */
 .aftercare-plate {
@@ -390,41 +371,8 @@ view, text, scroll-view { box-sizing: border-box; }
 .goods-price { font-size: 28rpx; color: #C4A76C; font-family: monospace; }
 .goods-count { font-size: 24rpx; color: #A09A90; }
 
-.row-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18rpx 0;
-  border-bottom: 1px solid rgba(38, 35, 32, 0.55);
-}
-.row-item:last-child { border-bottom: none; }
-.row-item-tap { margin: 0 -12rpx; padding-left: 12rpx; padding-right: 12rpx; border-radius: 12rpx; }
-.row-item-blocked { margin: 0 -12rpx; padding-left: 12rpx; padding-right: 12rpx; }
-.row-item-press { background: rgba(196, 167, 108, 0.06); }
-.row-label { font-size: 28rpx; color: #A09A90; flex-shrink: 0; max-width: 62%; }
-.row-value { font-size: 28rpx; color: #D5D1C8; display: flex; align-items: center; gap: 8rpx; }
-.row-value.gold { color: #C4A76C; }
-.row-value.mono { font-family: monospace; }
 .row-arrow { color: #6B6560; font-size: 32rpx; }
-.coupon-hint { color: #C4A76C; }
-.coupon-hint.muted { color: #A09A90; }
-.coupon-hint.muted.blocked {
-  color: #A09A90;
-  max-width: 420rpx;
-  text-align: right;
-  line-height: 1.35;
-  font-size: 24rpx;
-}
-.mono { font-family: monospace; }
 
-.total-row {
-  border-top: 1px solid rgba(196, 167, 108, 0.22);
-  border-bottom: none;
-  margin-top: 4rpx;
-  padding-top: 24rpx;
-  padding-bottom: 0;
-}
-.total-label { color: #D5D1C8; font-weight: 500; }
 .total-price { font-size: 40rpx; font-weight: 600; color: #C4A76C; font-family: monospace; }
 
 .footer-bar {
@@ -831,6 +779,53 @@ view, text, scroll-view { box-sizing: border-box; }
 }
 
 /* 单一账单：金额主路径 */
+/* 账单两栏（2026-10-12 重排）：左名目 + 小注，右金额；行间不画线，只在应付前一道分隔 */
+.bl-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24rpx;
+  padding: 16rpx 0;
+}
+.bl-row.is-tap, .bl-row.is-blocked { margin: 0 -12rpx; padding-left: 12rpx; padding-right: 12rpx; border-radius: 12rpx; }
+.bl-row-press { background: rgba(196, 167, 108, 0.06); }
+.bl-l { flex: 1; min-width: 0; }
+.bl-label-line { display: flex; align-items: center; gap: 12rpx; }
+.bl-label { font-size: 28rpx; line-height: 40rpx; color: #A09A90; }
+.bl-note { display: block; margin-top: 4rpx; font-size: 22rpx; line-height: 1.45; color: #8C867D; }
+.bl-note.is-nudge { color: #C4A76C; }
+.bl-chip {
+  padding: 0 10rpx;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  color: #C4A76C;
+  border: 1px solid rgba(196, 167, 108, 0.45);
+  border-radius: 8rpx;
+  white-space: nowrap;
+}
+.bl-v-wrap { flex-shrink: 0; display: flex; align-items: center; gap: 10rpx; }
+.bl-v {
+  flex-shrink: 0;
+  font-size: 28rpx;
+  line-height: 40rpx;
+  color: #D5D1C8;
+  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  white-space: nowrap;
+}
+.bl-v.is-text { font-family: inherit; font-size: 26rpx; }
+.bl-v.is-gold { color: #C4A76C; }
+.bl-v.is-muted { color: #8C867D; }
+.bl-strike { font-size: 24rpx; color: #6B6560; text-decoration: line-through; font-family: 'JetBrains Mono', 'DM Mono', monospace; }
+.bl-arrow { font-size: 32rpx; line-height: 40rpx; color: #A09A90; }
+.bl-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 12rpx;
+  padding-top: 24rpx;
+  border-top: 1px solid rgba(196, 167, 108, 0.22);
+}
+.bl-total-label { font-size: 28rpx; color: #D5D1C8; font-weight: 500; }
 .bill-card {
   border-color: rgba(77, 64, 26, 0.55);
   padding-bottom: 32rpx;
@@ -840,12 +835,7 @@ view, text, scroll-view { box-sizing: border-box; }
   color: #8A7530;
   letter-spacing: 0.12em;
 }
-.bill-card .row-item:last-of-type {
-  border-bottom: none;
-}
-.bill-wallet .total-row {
-  border-top-color: rgba(196, 167, 108, 0.32);
-}
+
 .bill-wallet .total-price {
   font-size: 44rpx;
 }
