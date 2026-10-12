@@ -1,13 +1,14 @@
 <!-- 会员等级 · 奇珍柜：一张英雄牌 + 铜牌档位轨 + 单区权益
      iPhone：sheet/body 高度由 JS 写死 px，避免 flex:1+height:0 塌成空白 -->
-<view class="level-mask {{visible ? 'active' : ''}}" bindtap="onClose" wx:if="{{visible}}">
-  <view class="level-sheet" style="{{sheetStyle}}" catchtap="noop">
+<view class="ui-pop-mask level-mask" bindtap="onClose" wx:if="{{visible}}" catchtouchmove="noop">
+  <view class="ui-pop-sheet level-sheet" style="{{sheetStyle}}" catchtap="noop">
     <view class="level-header">
-      <view class="level-close" catchtap="onClose" aria-label="关闭">
-        <text class="close-icon">✕</text>
+      <view class="ui-pop-grip"></view>
+      <view class="ui-pop-head is-center">
+        <text class="ui-pop-kicker">MEMBERSHIP</text>
+        <text class="ui-pop-title">会员等级</text>
       </view>
-      <text class="level-title">会员等级</text>
-      <text class="level-subtitle">MEMBERSHIP</text>
+      <view class="ui-pop-close" catchtap="onClose" hover-class="tap-press" hover-stay-time="80" aria-label="关闭">✕</view>
     </view>
 
     <scroll-view

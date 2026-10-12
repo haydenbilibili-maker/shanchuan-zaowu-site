@@ -1,70 +1,7 @@
-/* 注册引导 / 一键注册弹窗 —— 博物黑 + 铜金铭牌（令牌取 app.wxss） */
+/* 注册引导 / 一键注册弹窗 —— 形态取 app.wxss 的 ui-pop-* 零件 */
 
-.rad-mask {
-  position: fixed;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48rpx;
-  box-sizing: border-box;
-  background: rgba(12, 11, 9, 0.72);
-  transition: opacity 0.28s ease;
-}
-.rad-mask.is-on { opacity: 1; }
-.rad-mask.is-off { opacity: 0; }
-
-/* 铭牌：与 sensitive-blur-gate 的 .sb-plate 同一套视觉语言 */
-.rad-plate {
-  position: relative;
-  width: 100%;
-  max-width: 560rpx;
-  padding: 44rpx 40rpx 32rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.55);
-  border-radius: var(--radius-md, 16rpx);
-  background: linear-gradient(180deg, #221F1B 0%, #1A1814 100%);
-  box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.55);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.rad-corner {
-  position: absolute;
-  width: 14rpx;
-  height: 14rpx;
-  border-color: rgba(196, 167, 108, 0.8);
-  border-style: solid;
-  border-width: 0;
-}
-.rad-corner.is-tl { left: 12rpx; top: 12rpx; border-left-width: 2rpx; border-top-width: 2rpx; }
-.rad-corner.is-tr { right: 12rpx; top: 12rpx; border-right-width: 2rpx; border-top-width: 2rpx; }
-.rad-corner.is-bl { left: 12rpx; bottom: 12rpx; border-left-width: 2rpx; border-bottom-width: 2rpx; }
-.rad-corner.is-br { right: 12rpx; bottom: 12rpx; border-right-width: 2rpx; border-bottom-width: 2rpx; }
-
-.rad-overline {
-  font-size: 18rpx;
-  line-height: 26rpx;
-  letter-spacing: .32em;
-  color: var(--brass-400, #C4A76C);
-  font-family: var(--font-mono, inherit);
-  margin-bottom: 16rpx;
-}
-
-.rad-title {
-  font-size: var(--fs-36);
-  font-family: var(--font-brand);
-  font-weight: 500;
-  color: var(--text-main, #FFFFFF);
-  letter-spacing: .06em;
-  text-align: center;
-  line-height: 1.35;
-}
+.rad-mask { z-index: 900; }
+.rad-plate { text-align: center; }
 
 .rad-desc {
   margin-top: 14rpx;
@@ -159,12 +96,12 @@
   line-height: 88rpx;
   padding: 0;
   border: none;
-  border-radius: var(--radius-sm, 8rpx);
-  background: linear-gradient(180deg, #D8BC80 0%, #C4A76C 55%, #A8903C 100%);
+  border-radius: 12rpx;
+  background: var(--brass-400, #C4A76C);   /* 与 ui-pop-btn.is-primary 同为平涂品牌金（原三段铜铸渐变 + 900 粗黑） */
   color: #1A1814;
-  font-size: 30rpx;
-  font-weight: 900;
-  letter-spacing: 2rpx;
+  font-size: var(--fs-28);
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 .rad-cta::after { border: none; }
 .rad-cta-press { opacity: 0.88; }

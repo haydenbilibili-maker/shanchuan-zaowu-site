@@ -4,81 +4,20 @@
  * 材质与 UserVipCard 同源：纸 / 木 / 金属 / 黑蟒皮
  * ========================================================================== */
 
-.level-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 10001;
-  background: rgba(26, 24, 20, 0.82);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.28s ease;
-}
-.level-mask.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-.level-mask:not(.active) .level-sheet {
-  transform: translateY(100%);
-}
-
-.level-sheet {
-  width: 100%;
-  /* 明确高度：仅 max-height 时子级 flex:1+height:0 在部分 iPhone 会塌成 0 */
+/* 抽屉形态取 ui-pop-*（docs/弹层视觉规范_2026-10-13.md）；高度由 JS 按像素写入 style（真机 flex 塌陷，见文件头），
+   安全区已在 .level-body-safe 里留 —— 这里把 ui-pop-sheet 自带的底部安全区内边距归零，避免算重 */
+.level-mask { z-index: 10001; }
+.ui-pop-sheet.level-sheet {
   height: 88vh;
   max-height: 88vh;
-  background: var(--color-bg);
-  border-radius: 32rpx 32rpx 0 0;
-  border: 1px solid rgba(77, 64, 26, 0.45);
-  border-bottom: none;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  transform: translateY(100%);
-  transition: transform 0.3s ease;
-  overflow: hidden;
+  padding-bottom: 0;
 }
-.level-mask.active .level-sheet {
-  transform: translateY(0);
-}
-
 .level-header {
   position: relative;
   flex-shrink: 0;
-  padding: 36rpx 40rpx 28rpx;
-  text-align: center;
+  padding: 0 40rpx 20rpx;
 }
-.level-close {
-  position: absolute;
-  top: 28rpx;
-  right: 28rpx;
-  width: 56rpx;
-  height: 56rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.close-icon {
-  font-size: 28rpx;
-  color: var(--color-text-secondary);
-}
-.level-title {
-  display: block;
-  font-family: var(--font-brand, 'Source Han Serif SC', Georgia, serif);
-  font-size: 34rpx;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  letter-spacing: 0.12em;
-}
-.level-subtitle {
-  display: block;
-  margin-top: 8rpx;
-  font-size: 18rpx;
-  color: var(--gold);
-  letter-spacing: 0.22em;
-}
+.level-header .ui-pop-head { padding-top: 24rpx; }
 
 .level-body {
   /* 禁止 flex:1 + height:0（iPhone 真机 scroll-view 会高度为 0 → 正文空白）

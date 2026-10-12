@@ -1,19 +1,15 @@
-<!-- 注册引导 / 一键注册弹窗：博物黑 + 铜金铭牌，自带 getPhoneNumber 授权按钮 -->
+<!-- 注册引导 / 一键注册弹窗：确认框形态取 ui-pop-*（docs/弹层视觉规范_2026-10-13.md），自带 getPhoneNumber 授权按钮 -->
 <view
-  class="rad-mask {{show ? 'is-on' : 'is-off'}}"
+  class="ui-pop-mask is-center rad-mask"
   wx:if="{{show}}"
   catchtouchmove="noop"
   catchtap="{{closable && maskClosable ? 'onClose' : 'noop'}}"
 >
-  <view class="rad-plate" catchtap="noop">
-    <!-- 铭牌四角：与敏感形态罩层同一套博物柜语言 -->
-    <view class="rad-corner is-tl"></view>
-    <view class="rad-corner is-tr"></view>
-    <view class="rad-corner is-bl"></view>
-    <view class="rad-corner is-br"></view>
-
-    <text class="rad-overline">{{isRegistered ? loginOverline : overline}}</text>
-    <text class="rad-title">{{isRegistered ? loginTitle : title}}</text>
+  <view class="ui-pop-dialog rad-plate" catchtap="noop">
+    <view class="ui-pop-head is-center">
+      <text class="ui-pop-kicker">{{isRegistered ? loginOverline : overline}}</text>
+      <text class="ui-pop-title">{{isRegistered ? loginTitle : title}}</text>
+    </view>
     <text class="rad-desc">{{isRegistered ? loginDesc : desc}}</text>
 
     <!-- 权益点：一句话说清「注册能得到什么」，降低授权抗拒 -->

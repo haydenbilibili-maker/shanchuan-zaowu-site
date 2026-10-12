@@ -39,12 +39,13 @@ export const MIGRATED = [
   ['subpackages/feature/identify/result/index.wxml', 'showFeedback'],
   ['subpackages/feature/identify/result/index.wxml', 'unlockSheet.show'],
   ['subpackages/feature/collection/index.wxml', 'unlockSheet.show'],
-  ['subpackages/feature/collection/detail/index.wxml', 'justUnlocked']
+  ['subpackages/feature/collection/detail/index.wxml', 'justUnlocked'],
+  ['components/MemberLevelModal/index.wxml', 'visible'],
+  ['subpackages/feature/components/RegisterAuthDialog/index.wxml', 'show']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小） */
 export const MASK_BASELINE = {
-  'components/MemberLevelModal/index.wxss': 1,
   'components/SensitiveBlurGate/index.wxss': 1,
   'subpackages/business/booking/index.wxss': 1,
   'subpackages/business/components/CouponPrintMint/index.wxss': 1,
@@ -52,7 +53,6 @@ export const MASK_BASELINE = {
   'subpackages/business/components/WalletPanelPoints/index.wxss': 2,
   'subpackages/content/live/watch/index.wxss': 1,
   'subpackages/feature/components/CouponPrintMint/index.wxss': 1,
-  'subpackages/feature/components/RegisterAuthDialog/index.wxss': 1,
   'subpackages/feature/gift/claim-sheet/index.wxss': 1,
   'subpackages/feature/gift/my-gifts/index.wxss': 1,
   'subpackages/feature/gift/phone-sheet/index.wxss': 1,
