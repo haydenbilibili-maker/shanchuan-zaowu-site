@@ -706,51 +706,87 @@ view, text, image, button { box-sizing: border-box; }
 
 .custom-section { padding: 0 40rpx 24rpx; }
 
+/* 售后约定卡（2026-10-12 产品负责人点名改版）：标题 = 一句话规则 + 类型签；条款为三行要点；
+   只有扣费数字保留警示色加粗，其余强调降为细节；「联系专员」改整行轻链接，不与底栏主按钮抢视线 */
 .aftercare-plate {
-  position: relative;
-  margin-top: 24rpx;
-  background: rgba(31, 29, 26, 0.9);
-  border: 1px solid var(--color-bg-elevated);
-  border-left: 4rpx solid var(--gold);
+  background: #1F1D1A;
+  border: 1px solid rgba(196, 167, 108, 0.22);
   border-radius: 24rpx;
-  padding: 28rpx 32rpx 28rpx 28rpx;
-  overflow: hidden;
+  padding: 28rpx 32rpx 8rpx;
+  margin-bottom: 20rpx;
 }
-.aftercare-plate::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  height: 1px;
-  background: rgba(196, 167, 108, 0.35);
+.aftercare-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding-bottom: 22rpx;
+  border-bottom: 1px solid rgba(77, 64, 26, 0.4);
 }
+.aftercare-title-col { flex: 1; min-width: 0; }
 .aftercare-overline {
   display: block;
   font-size: 20rpx;
   font-weight: 500;
   letter-spacing: 0.14em;
-  color: var(--gold);
-  margin-bottom: 20rpx;
+  color: #8A7530;
 }
-.aftercare-body {
-  margin-bottom: 8rpx;
-}
-.aftercare-para {
+.aftercare-title {
   display: block;
+  margin-top: 8rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #FFFFFF;
+  line-height: 1.4;
+}
+.aftercare-chip {
+  flex-shrink: 0;
+  margin-top: 4rpx;
+  padding: 4rpx 14rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: #C4A76C;
+  border: 1px solid rgba(196, 167, 108, 0.45);
+  border-radius: 999rpx;
+  white-space: nowrap;
+}
+.aftercare-body { padding: 18rpx 0 6rpx; }
+.aftercare-para {
+  position: relative;
+  display: block;
+  padding-left: 26rpx;
+  margin-bottom: 14rpx;
   font-size: 24rpx;
-  color: var(--color-text-secondary);
-  line-height: 1.7;
-  margin-bottom: 12rpx;
+  line-height: 1.65;
+  color: #A09A90;
+}
+.aftercare-para::before {
+  content: '';
+  position: absolute;
+  left: 4rpx;
+  top: 17rpx;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: rgba(196, 167, 108, 0.6);
 }
 .aftercare-para:last-child { margin-bottom: 0; }
-.aftercare-warn {
-  color: #E9A23B;
-  font-weight: 500;
+.aftercare-em { color: #D5D1C8; }
+.aftercare-strong { font-weight: 500; color: #FFFFFF; }
+.aftercare-warn { color: #E9A23B; font-weight: 600; }
+.aftercare-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6rpx;
+  margin: 10rpx -32rpx 0;
+  padding: 22rpx 32rpx 24rpx;
+  border-top: 1px solid rgba(77, 64, 26, 0.4);
 }
-.aftercare-em {
-  color: var(--gold);
-}
+.aftercare-link-hint { font-size: 24rpx; color: #A09A90; }
+.aftercare-link-label { font-size: 24rpx; color: #C4A76C; font-weight: 500; }
+.aftercare-link-arrow { font-size: 28rpx; line-height: 1; color: #C4A76C; }
+.aftercare-link-press { background: rgba(196, 167, 108, 0.06); }
 
 .evidence-plate {
   margin-top: 24rpx;
@@ -792,34 +828,6 @@ view, text, image, button { box-sizing: border-box; }
   height: 152rpx;
   border-radius: 12rpx;
   border: 1rpx solid #4D401A;
-}
-.aftercare-strong {
-  font-weight: 600;
-}
-.aftercare-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8rpx;
-  margin-top: 20rpx;
-  padding: 12rpx 20rpx;
-  border: 1px solid rgba(196, 167, 108, 0.45);
-  border-radius: 16rpx;
-  background: transparent;
-}
-.aftercare-link-label {
-  font-size: 24rpx;
-  color: var(--gold);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
-.aftercare-link-arrow {
-  font-size: 24rpx;
-  color: var(--gold);
-  line-height: 1;
-}
-.aftercare-link-press {
-  opacity: 0.78;
-  background: rgba(196, 167, 108, 0.08);
 }
 .custom-plate {
   margin-top: 16rpx;

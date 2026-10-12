@@ -401,6 +401,7 @@ Page(withAppModal({
     specimenPledgeLineAmount: '',
     specimenPledgeLineAfter: '',
     refundPolicyLabel: '',
+    refundPolicyShort: '',
     refundPolicyParagraphs: [],
     refundPolicyRichParagraphs: [],
     walletEnabled: _bootWallet.walletEnabled,
@@ -671,6 +672,7 @@ Page(withAppModal({
       giftHasVoice,
       showAnimalEthics: orderHasAnimalSpecimen(payload.items, resolveCareCategory),
       refundPolicyLabel: notice.label,
+      refundPolicyShort: notice.shortLabel || '',
       refundPolicyParagraphs: notice.paragraphs,
       refundPolicyRichParagraphs: notice.richParagraphs || []
     })

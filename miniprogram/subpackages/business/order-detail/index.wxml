@@ -281,7 +281,13 @@
     </view>
 
     <view class="aftercare-plate" wx:if="{{refundPolicyLabel}}">
-      <text class="aftercare-overline">AFTERCARE · {{refundPolicyLabel}}</text>
+      <view class="aftercare-head">
+        <view class="aftercare-title-col">
+          <text class="aftercare-overline">AFTERCARE · 售后约定</text>
+          <text class="aftercare-title">{{refundPolicyShort || refundPolicyLabel}}</text>
+        </view>
+        <text class="aftercare-chip">{{refundPolicyLabel}}</text>
+      </view>
       <view class="aftercare-body">
         <view class="aftercare-para" wx:for="{{refundPolicyRichParagraphs}}" wx:for-item="para" wx:key="idx">
           <text
@@ -292,9 +298,10 @@
           >{{seg.t}}</text>
         </view>
       </view>
-      <view class="aftercare-link" bindtap="goToSupport" hover-class="aftercare-link-press">
+      <view class="aftercare-link" bindtap="goToSupport" hover-class="aftercare-link-press" hover-stay-time="80">
+        <text class="aftercare-link-hint">对售后有疑问？</text>
         <text class="aftercare-link-label">联系专员</text>
-        <text class="aftercare-link-arrow">→</text>
+        <text class="aftercare-link-arrow">›</text>
       </view>
     </view>
 
