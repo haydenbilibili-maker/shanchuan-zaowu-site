@@ -77,6 +77,7 @@ function greetByHour(hour) {
 
 const { leaveWorkbench: leaveWorkspace, fallbackLeaveWorkbench } = require('../utils/workspaceBack');
 const { resolveDepositDisplay, isDepositOrder } = require('../utils/depositOrderDisplay');
+const { openAppModal } = require('../../../utils/appModal')
 const {
   countLamp,
   fulfillmentLamp,
@@ -3260,7 +3261,7 @@ const managerPageConfig = {
   deleteRevenue(e) {
       const id = e.currentTarget.dataset.id;
       const date = e.currentTarget.dataset.date;
-      wx.showModal({
+      openAppModal({
           title: '删除',
           content: '确定删除该日流水？删除后列表将不再展示该日合并数据。',
           success: async (res) => {
@@ -3286,7 +3287,7 @@ const managerPageConfig = {
                   this.showHubTip(formatCloudFnError(err, '删除失败'), 'warn');
               }
           },
-      });
+      }, this);
   },
 
   _shortMoney(n, compact) {
@@ -3849,6 +3850,7 @@ const managerPageConfig = {
       // ignore
     }
 
+    // ⚠️ 保留系统弹窗：确认后要发起订阅授权，须在用户点击手势内同步调用；AppModal 回调为异步不算手势（docs/弹层视觉规范_2026-10-13.md §7）
     wx.showModal({
       title,
       content: String(content).slice(0, 160),
@@ -4358,7 +4360,7 @@ const managerPageConfig = {
   deleteBanner(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) return this.showHubTip('缺少海报 ID', 'warn');
-    wx.showModal({
+    openAppModal({
       title: '删除',
       content: '确定删除该轮播海报？',
       confirmColor: '#D64045',
@@ -4376,7 +4378,7 @@ const managerPageConfig = {
           this.showHubTip(formatCloudFnError(err, '删除失败'), 'warn');
         }
       }
-    });
+    }, this);
   },
 
   // === 核销（走 verifyBooking 云函数，禁止客户端直写 bookings）===
@@ -4393,7 +4395,7 @@ const managerPageConfig = {
       return;
     }
     wx.vibrateShort({ type: 'heavy' });
-    wx.showModal({
+    openAppModal({
       title: '确认核销', content: '确认该访客已入场？', confirmColor: '#C4A76C',
       success: async (res) => {
         if (!res.confirm) return;
@@ -4409,12 +4411,12 @@ const managerPageConfig = {
           wx.hideLoading();
           const result = (call && call.result) || {};
           if (!result.success) {
-            wx.showModal({
+            openAppModal({
               title: '无法核销',
               content: formatCloudFnError(result, result.msg || '核销失败'),
               showCancel: false,
               confirmColor: '#C4A76C'
-            });
+            }, this);
             return;
           }
           this.setData({ showVerifySuccess: true });
@@ -4424,7 +4426,7 @@ const managerPageConfig = {
           this.showHubTip(formatCloudFnError(err, '核销失败'), 'warn');
         }
       }
-    });
+    }, this);
   },
   closeVerifyModal() { this.setData({ showVerifySuccess: false }); },
   handleScan() {
@@ -4706,11 +4708,11 @@ const managerPageConfig = {
       if (!ids.length) return this.showHubTip('无过期秒杀', 'info');
 
       const ok = await new Promise((resolve) => {
-        wx.showModal({
+        openAppModal({
           title: '清理过期秒杀',
           content: `将关闭 ${ids.length} 件藏品的过期秒杀，是否继续？`,
           success: (r) => resolve(!!r.confirm)
-        });
+        }, this);
       });
       if (!ok) return;
 
@@ -4779,7 +4781,7 @@ const managerPageConfig = {
       return;
     }
     const title = String(item.title || '').trim() || '该藏品';
-    wx.showModal({
+    openAppModal({
       title: '高风险操作',
       content: `确定要永久删除藏品《${title}》吗？\n删除后不可恢复（已售订单与账本记录不受影响）。`,
       confirmText: '确认删除',
@@ -4788,7 +4790,7 @@ const managerPageConfig = {
         if (!res.confirm) return;
         this.submitDeleteProduct(productId, title);
       }
-    });
+    }, this);
   },
 
   async submitDeleteProduct(productId, title) {
@@ -5072,7 +5074,7 @@ const managerPageConfig = {
           const { accepted, rejected } = await prepareUploadImages(picked, { label: '藏品图' });
           wx.hideLoading();
           if (rejected.length) {
-            wx.showModal({
+            openAppModal({
               title: '部分图片未通过校验',
               content: rejected
                 .slice(0, 3)
@@ -5080,7 +5082,7 @@ const managerPageConfig = {
                 .join('\n') + (rejected.length > 3 ? `\n（共 ${rejected.length} 张未通过）` : ''),
               showCancel: false,
               confirmText: '知道了'
-            });
+            }, this);
           }
           if (!accepted.length) return;
           const next = current.concat(accepted);
@@ -6272,7 +6274,7 @@ const managerPageConfig = {
       return
     }
     const row = (this.data.pendingPayOrders || []).find((o) => o && o._id === id) || {}
-    wx.showModal({
+    openAppModal({
       title: '补履约',
       content: `仅在微信商户平台确认「${row.orderNo || id}」已收款后使用：将补写支付证据并执行履约（扣库存 / 核销礼券 / 发通知）。`,
       confirmText: '确认补履约',
@@ -6281,7 +6283,7 @@ const managerPageConfig = {
         if (!res.confirm) return
         this.submitFulfillPaidOrder(id)
       }
-    })
+    }, this)
   },
 
   async submitFulfillPaidOrder(orderId) {
@@ -6635,13 +6637,13 @@ const managerPageConfig = {
         wx.setClipboardData({
           data: no,
           success: () => {
-            wx.showModal({
+            openAppModal({
               title: '单号已复制',
               content,
               showCancel: false,
               confirmText: '知道了',
               confirmColor: '#C4A76C'
-            })
+            }, this)
           }
         })
         return
@@ -6662,13 +6664,13 @@ const managerPageConfig = {
     wx.setClipboardData({
       data: no,
       success: () => {
-        wx.showModal({
+        openAppModal({
           title: '单号已复制',
           content,
           showCancel: false,
           confirmText: '知道了',
           confirmColor: '#C4A76C'
-        })
+        }, this)
       }
     })
   },
@@ -7000,7 +7002,7 @@ const managerPageConfig = {
   deleteCustomConfig(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) return this.showHubTip('缺少配置 ID', 'warn');
-    wx.showModal({
+    openAppModal({
       title: '删除配置',
       confirmColor: '#D64045',
       success: async (res) => {
@@ -7016,7 +7018,7 @@ const managerPageConfig = {
           this.showHubTip(formatCloudFnError(err, '删除失败'), 'warn');
         }
       }
-    });
+    }, this);
   },
   shipOrder(e) {
     // 兼容旧绑定：统一走带运单号的 managerShipOrder 弹窗，禁止直写集合
@@ -7033,7 +7035,7 @@ const managerPageConfig = {
     const missingTip = order.missingUnboxVideo
       ? '\n\n注意：该单缺开箱影像，请谨慎审核。'
       : '';
-    wx.showModal({
+    openAppModal({
       title: modal.title,
       content: `${modal.content}${missingTip}`,
       confirmColor: '#C4A76C',
@@ -7060,7 +7062,7 @@ const managerPageConfig = {
           fail: () => this.showHubTip('退款请求失败', 'warn')
         });
       }
-    });
+    }, this);
   },
 
   /**
@@ -7072,7 +7074,7 @@ const managerPageConfig = {
       this.showHubTip('订单信息缺失', 'warn');
       return;
     }
-    wx.showModal({
+    openAppModal({
       title: '确认收回藏品',
       content: '请核对顾客送回门店的藏品与订单一致后确认；确认收回后才能执行退款。',
       confirmText: '确认收回',
@@ -7098,7 +7100,7 @@ const managerPageConfig = {
           }
         });
       }
-    });
+    }, this);
   },
 
   async resolveRefundEvidenceMedia(list) {
@@ -7852,11 +7854,11 @@ parseRevenueText(e) {
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || this.data.editId || '').trim();
     if (!id) return;
     const conf = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '解除绑定',
         content: '解绑后该员工将不再关联此标本师档案。确定？',
         success: (r) => resolve(!!r.confirm)
-      });
+      }, this);
     });
     if (!conf) return;
     wx.showLoading({ title: '解绑中…', mask: true });
@@ -7920,12 +7922,12 @@ parseRevenueText(e) {
       return;
     }
     const conf = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '处理同名重复',
         content: `以「${item.name}」当前档案为权威，将同名/同人其它档案下架并解除绑定。公开主页会按权威档案汇总展示。`,
         confirmText: '确认处理',
         success: (r) => resolve(!!r.confirm)
-      });
+      }, this);
     });
     if (!conf) return;
     wx.showLoading({ title: '处理中…', mask: true });
@@ -8139,7 +8141,7 @@ parseRevenueText(e) {
   deleteReward(e) {
     const id = e.currentTarget.dataset.id;
     if (!id) return this.showHubTip('缺少藏品 ID', 'warn');
-    wx.showModal({
+    openAppModal({
       title: '删除',
       content: '确定删除该积分藏品？',
       confirmColor: '#D64045',
@@ -8156,7 +8158,7 @@ parseRevenueText(e) {
           this.showHubTip(formatCloudFnError(err, '删除失败'), 'warn');
         }
       }
-    });
+    }, this);
   },
 
   /* 活动课程看板：纯函数在 ../utils/activityBoard.js，说明见 miniprogram/docs/超管工作台_活动课程_升级_2026-09-28.md */
@@ -8533,7 +8535,7 @@ bindSubCatChange(e) {
       this.showHubTip('订单信息缺失', 'warn')
       return
     }
-    wx.showModal({
+    openAppModal({
       title: '确认门店自取',
       content: `确认订单 ${orderNo || id} 已由顾客到店领取？${code ? `\n自取码 ${code}` : ''}\n确认后订单将标记为已完成。`,
       confirmText: '确认自取',
@@ -8542,7 +8544,7 @@ bindSubCatChange(e) {
         if (!res.confirm) return
         this.submitCompleteStorePickup(id)
       }
-    })
+    }, this)
   },
 
   /** 复制门店自取码（现场核对 / 转告顾客） */
@@ -8786,7 +8788,7 @@ bindSubCatChange(e) {
           /access_token|WX_APP_SECRET|AppSecret|openapi/i.test(reason)
             ? '\n\n说明：发货本身已成功；这是轨迹同步凭证问题，不是物流服务未开通。请确认云函数已配置 WX_APP_SECRET 并重新部署。'
             : '';
-        wx.showModal({
+        openAppModal({
           title: '发货成功',
           content:
             '订单已标记为已发货，并已切换到「已发货」。官方物流轨迹同步失败，用户端会暂时显示「复制单号查询」。\n\n详情：' +
@@ -8794,7 +8796,7 @@ bindSubCatChange(e) {
             tokenHint,
           showCancel: false,
           confirmText: '知道了'
-        });
+        }, this);
       } else if (!result.messageSent) {
         this.showHubTip('已发货，已切到已发货', 'info');
       } else {
@@ -9042,7 +9044,7 @@ bindSubCatChange(e) {
       ? '将同时删除其下所有二级分类，确认继续？'
       : '确认删除该二级分类？删除后藏品 categoryId 可能悬空，建议先在「关联」里改挂。';
 
-    wx.showModal({
+    openAppModal({
       title,
       content,
       confirmColor: '#C4A76C',
@@ -9068,7 +9070,7 @@ bindSubCatChange(e) {
           this.showHubTip('删除失败', 'warn');
         }
       }
-    });
+    }, this);
   },
 
   async fillL2LatinNames() {
@@ -9094,7 +9096,7 @@ bindSubCatChange(e) {
   },
 
   async repairProductCategoryLinks() {
-    wx.showModal({
+    openAppModal({
       title: '修复藏品关联',
       content: '将把藏品上指向已删除/旧二级 id，或仅有短名 category 的记录，迁到当前启用的二级分类。确定继续？',
       confirmColor: '#C4A76C',
@@ -9112,18 +9114,18 @@ bindSubCatChange(e) {
             this.showHubTip(result.msg || '修复失败', 'warn');
             return;
           }
-          wx.showModal({
+          openAppModal({
             title: '修复完成',
             content: result.msg || `已修复 ${result.updated || 0} 件`,
             showCancel: false
-          });
+          }, this);
           await this.loadCategoriesManage();
         } catch (e) {
           wx.hideLoading();
           this.showHubTip('请先部署 seedCategories', 'warn');
         }
       }
-    });
+    }, this);
   },
 
   openCatLinkModal(e) {
@@ -9216,7 +9218,7 @@ bindSubCatChange(e) {
       this.showHubTip(this.data.catLinkEmptyHint || '无匹配藏品', 'warn');
       return;
     }
-    wx.showModal({
+    openAppModal({
       title: mode === 'all' ? '一键全部关联' : '自动关联',
       content: `将把约 ${count} 件匹配藏品挂到「${target.name}」。可随后撤销。`,
       confirmColor: '#C4A76C',
@@ -9250,17 +9252,17 @@ bindSubCatChange(e) {
               reasons: '已关联'
             }))
           });
-          wx.showModal({
+          openAppModal({
             title: '关联完成',
             content: result.msg || `已关联 ${result.linkedCount || 0} 件`,
             showCancel: false
-          });
+          }, this);
         } catch (err) {
           wx.hideLoading();
           this.showHubTip('关联失败', 'warn');
         }
       }
-    });
+    }, this);
   },
 
   async undoCatLink() {
@@ -9269,7 +9271,7 @@ bindSubCatChange(e) {
       this.showHubTip('没有可撤销的记录', 'warn');
       return;
     }
-    wx.showModal({
+    openAppModal({
       title: '撤销关联',
       content: `恢复上次关联的 ${last.linkedCount || last.linked.length} 件藏品的原分类字段？`,
       confirmColor: '#C4A76C',
@@ -9299,7 +9301,7 @@ bindSubCatChange(e) {
           this.showHubTip('撤销失败', 'warn');
         }
       }
-    });
+    }, this);
   },
   
   // === 内容管理 ===
@@ -9369,7 +9371,7 @@ bindSubCatChange(e) {
     }
   },
   clearCommunityTestData() {
-    wx.showModal({
+    openAppModal({
       title: '清除种子内容',
       content: '将删除所有由种子脚本导入的社区笔记与专题，是否继续？',
       confirmColor: '#D64045',
@@ -9391,7 +9393,7 @@ bindSubCatChange(e) {
           this.showHubTip(formatCloudFnError(e, '清除失败'), 'warn')
         }
       }
-    })
+    }, this)
   },
   switchContentType(e) { 
     const type = e.currentTarget.dataset.type;
@@ -9562,7 +9564,7 @@ bindSubCatChange(e) {
   },
   deleteCareGuide(e) {
     const id = e.currentTarget.dataset.id;
-    wx.showModal({
+    openAppModal({
       title: '删除养护指南',
       content: '确定删除该指南？小程序将回退到默认内容。',
       confirmColor: '#D64045',
@@ -9579,7 +9581,7 @@ bindSubCatChange(e) {
           this.showHubTip('删除失败', 'warn');
         }
       }
-    });
+    }, this);
   },
   previewCareGuide(e) {
     const category = e.currentTarget.dataset.category || 'GENERAL';
@@ -9645,7 +9647,7 @@ bindSubCatChange(e) {
     }
     if (action === 'delete') {
       const confirm = await new Promise((resolve) => {
-        wx.showModal({ title: '删除评价', content: '确定删除该评价？', confirmColor: '#D64045', success: (r) => resolve(!!r.confirm) });
+        openAppModal({ title: '删除评价', content: '确定删除该评价？', confirmColor: '#D64045', success: (r) => resolve(!!r.confirm) }, this);
       });
       if (!confirm) return;
     }
@@ -9994,7 +9996,7 @@ bindSubCatChange(e) {
     const id = e.currentTarget.dataset.id;
     const type = e.currentTarget.dataset.type;
     const typeText = type === 'exhibition' ? '专题' : '文章';
-    wx.showModal({
+    openAppModal({
       title: '删除确认', 
       content: `确定删除该${typeText}吗？此操作不可撤销。`,
       confirmColor: '#ff4d4f',
@@ -10015,7 +10017,7 @@ bindSubCatChange(e) {
           }
         }
       }
-    });
+    }, this);
   },
   async loadBookingConfig() { try { const res = await db.collection('configs').doc('booking_config').get(); if (res.data && res.data.image) this.setData({ bookingHero: res.data.image }); } catch (e) {} },
 

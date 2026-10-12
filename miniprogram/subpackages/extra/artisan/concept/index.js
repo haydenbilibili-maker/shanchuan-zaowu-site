@@ -1,4 +1,5 @@
 const { guardManagerPage } = require('../../../../utils/managerAuth')
+const { openAppModal } = require('../../../../utils/appModal')
 const {
   guardArtisanWorkspace,
   hasPermission,
@@ -503,7 +504,7 @@ Page({
   deleteHistory(e) {
     const id = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
     if (!id) return
-    wx.showModal({
+    openAppModal({
       title: '删除概念',
       content: '从本机历史中移除？',
       confirmText: '删除',
@@ -516,7 +517,7 @@ Page({
         this.setData({ concept })
         this.syncHistory(history)
       }
-    })
+    }, this)
   },
 
   copyConceptText() {

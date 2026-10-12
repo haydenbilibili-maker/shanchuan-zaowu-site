@@ -8,7 +8,8 @@
   "usingComponents": {
     "work-notice-voice": "/subpackages/manager/components/WorkNoticeVoice/index",
     "nav-back": "/components/NavBack/index",
-    "page-edge-back": "/components/PageEdgeBack/index"
+    "page-edge-back": "/components/PageEdgeBack/index",
+    "app-modal": "/components/AppModal/index"
   },
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",

@@ -1,5 +1,6 @@
 const { formatCloudFnError } = require('../../utils/storePoints')
 const { guardStaffPage } = require('../../utils/staffAuth')
+const { openAppModal } = require('../../../../utils/appModal')
 
 function currentYearMonth() {
   const d = new Date()
@@ -298,7 +299,7 @@ Page({
   removeRow(e) {
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
     if (!id) return
-    wx.showModal({
+    openAppModal({
       title: '删除工资条',
       content: '删除后员工端将不再可见该月记录，确定继续？',
       confirmColor: '#C4A76C',
@@ -319,7 +320,7 @@ Page({
           wx.showToast({ title: formatCloudFnError(err, '删除失败'), icon: 'none' })
         })
       }
-    })
+    }, this)
   },
 
   noop() {}

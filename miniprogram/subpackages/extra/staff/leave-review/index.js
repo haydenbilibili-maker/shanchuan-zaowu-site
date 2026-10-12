@@ -1,5 +1,6 @@
 const { guardStaffPage, hasPermission } = require('../../utils/staffAuth')
 const { formatCloudFnError } = require('../../utils/storePoints')
+const { openAppModal } = require('../../../../utils/appModal')
 
 function formatTime(raw) {
   if (!raw) return ''
@@ -66,7 +67,7 @@ Page({
     const decision = String((e.currentTarget.dataset && e.currentTarget.dataset.decision) || '').trim()
     if (!id || !decision || this.data.reviewingId) return
     const label = decision === 'approved' ? '通过' : '驳回'
-    wx.showModal({
+    openAppModal({
       title: `确认${label}？`,
       confirmColor: decision === 'approved' ? '#C4A76C' : '#D64045',
       success: async (r) => {
@@ -99,6 +100,6 @@ Page({
           wx.showToast({ title: formatCloudFnError(err, '操作失败'), icon: 'none' })
         }
       }
-    })
+    }, this)
   }
 })

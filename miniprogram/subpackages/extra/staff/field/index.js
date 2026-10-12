@@ -10,6 +10,7 @@ const { LEVEL_BENEFITS } = require('../../../../utils/profileConstants');
 const { collectCurrentPerkItems, formatDiscount } = require('../../../../utils/profileHelper');
 const { RULE_TEXT_FALLBACK, PURCHASE_STATUS_TEXT, IDENTIFY_METHOD_TEXT } = require('../../utils/storePoints');
 const { initStaffStores, applyStoreChange, resolveStoreFromQuery } = require('../utils/pageSetup');
+const { openAppModal } = require('../../../../utils/appModal')
 
 const EMPTY_GRANT_FORM = {
   amount: '',
@@ -543,7 +544,7 @@ Page({
             retryKind: retryable ? 'member' : 'scan'
           }
         });
-        wx.showModal({
+        openAppModal({
           title: '会员码核验失败',
           content: result.msg || '核验失败。会员码 60 秒过期，请让顾客刷新后再扫。',
           confirmText: '再扫一次',
@@ -551,7 +552,7 @@ Page({
           success: (m) => {
             if (m.confirm) this.handleScan({ currentTarget: { dataset: { purpose: 'verify' } } });
           }
-        });
+        }, this);
         return;
       }
       const valid = !!result.valid;
@@ -622,7 +623,7 @@ Page({
           retryKind: 'member'
         }
       });
-      wx.showModal({
+      openAppModal({
         title: '核验请求失败',
         content: formatCloudFnError(e, '网络异常，请再试'),
         confirmText: '再试',
@@ -630,7 +631,7 @@ Page({
         success: (m) => {
           if (m.confirm) this.verifyMemberPass(this._retryMemberPayload || payload);
         }
-      });
+      }, this);
     }
   },
 
@@ -989,7 +990,7 @@ Page({
     }
 
     const confirmed = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '确认核销',
         content: willSubmitPoints
           ? `将核销「${form.title || '礼券'}」，并按消费 ¥${amountParsed.amount} 提交线下积分（待店长审核）。请确认商品图已上传。`
@@ -998,7 +999,7 @@ Page({
         confirmColor: '#C4A76C',
         success: (m) => resolve(!!m.confirm),
         fail: () => resolve(false)
-      });
+      }, this);
     });
     if (!confirmed) return;
 
@@ -1129,7 +1130,7 @@ Page({
       return wx.showToast({ title: '请先选择门店', icon: 'none' });
     }
     this._retryGiftClaim = code;
-    wx.showModal({
+    openAppModal({
       title: '核销礼赠自提',
       content: `领取码 ${code}\n确认顾客已取走标本？`,
       confirmText: '确认领取',
@@ -1161,7 +1162,7 @@ Page({
                 retryKind: 'gift'
               }
             });
-            wx.showModal({
+            openAppModal({
               title: '礼赠无法核销',
               content: formatCloudFnError(result, result.msg || '核销失败'),
               confirmText: '再扫一次',
@@ -1169,7 +1170,7 @@ Page({
               success: (r) => {
                 if (r.confirm) this.handleScan({ currentTarget: { dataset: { purpose: 'verify' } } });
               }
-            });
+            }, this);
             return;
           }
           const titles = (result.products || []).map((p) => p.title || p.name).filter(Boolean).slice(0, 2).join('、');
@@ -1191,7 +1192,7 @@ Page({
           this.setScanFail('verify', '礼赠核销失败', formatCloudFnError(e, '网络异常，请再试'));
         }
       }
-    });
+    }, this);
   },
 
   /**
@@ -1498,7 +1499,7 @@ Page({
               retryKind: retryable ? 'booking' : 'scan'
             }
           });
-          wx.showModal({
+          openAppModal({
             title: '预约票无法核销',
             content: formatCloudFnError(result, result.msg || '核销失败'),
             confirmText: retryable ? '再试' : '再扫一次',
@@ -1508,7 +1509,7 @@ Page({
               if (retryable) this.verifyBookingById(id, code, { skipConfirm: true });
               else this.handleScan({ currentTarget: { dataset: { purpose: 'verify' } } });
             }
-          });
+          }, this);
           return;
         }
         if (result.already) {
@@ -1577,7 +1578,7 @@ Page({
             retryKind: 'booking'
           }
         });
-        wx.showModal({
+        openAppModal({
           title: '核销请求失败',
           content: formatCloudFnError(err, '网络异常，请再试'),
           confirmText: '再试',
@@ -1585,7 +1586,7 @@ Page({
           success: (m) => {
             if (m.confirm) this.verifyBookingById(id, code, { skipConfirm: true });
           }
-        });
+        }, this);
       }
     };
     if (options && options.skipConfirm) {
@@ -1593,14 +1594,14 @@ Page({
       return;
     }
     wx.vibrateShort({ type: 'heavy' });
-    wx.showModal({
+    openAppModal({
       title: '确认核销预约票',
       content: '确认该访客已到店入场？核销后不可重复使用。',
       confirmColor: '#C4A76C',
       success: (res) => {
         if (res.confirm) run();
       }
-    });
+    }, this);
   },
 
   closeBookingVerifyResult() {
@@ -1657,7 +1658,7 @@ Page({
       wx.hideLoading();
       const result = (res && res.result) || {};
       if (!result.success || !result.member) {
-        wx.showModal({ title: '识别失败', content: result.msg || '请让顾客刷新会员码', showCancel: false, confirmColor: '#C4A76C' });
+        openAppModal({ title: '识别失败', content: result.msg || '请让顾客刷新会员码', showCancel: false, confirmColor: '#C4A76C' }, this);
         return;
       }
       this.setData({
@@ -1673,7 +1674,7 @@ Page({
       });
     } catch (e) {
       wx.hideLoading();
-      wx.showModal({
+      openAppModal({
         title: '识别失败',
         content: formatCloudFnError(e, '网络异常，请再扫会员码'),
         confirmText: '再扫一次',
@@ -1681,7 +1682,7 @@ Page({
         success: (m) => {
           if (m.confirm) this.handleScan({ currentTarget: { dataset: { purpose: 'grant' } } });
         }
-      });
+      }, this);
     }
   },
 
@@ -1869,7 +1870,7 @@ Page({
     const member = this.data.member || {};
     const canDirect = this.data.canDirectGrant;
     this.setData({ granting: true });
-    wx.showModal({
+    openAppModal({
       title: canDirect ? '确认赠分' : '提交店长审核',
       content: canDirect
         ? `${member.nickName || '顾客'}（${member.memberNo || ''}）\n消费 ¥${amount}，赠送 ${this.data.previewPoints} 积分`
@@ -1879,7 +1880,7 @@ Page({
         if (res.confirm) this.doGrant(amount);
         else this.setData({ granting: false });
       }
-    });
+    }, this);
   },
 
   async doGrant(amount) {
@@ -1902,7 +1903,7 @@ Page({
       const result = (res && res.result) || {};
       if (!result.success) {
         this.setData({ granting: false });
-        wx.showModal({
+        openAppModal({
           title: '赠分失败',
           content: result.msg || '请稍后重试',
           confirmText: '再试',
@@ -1913,7 +1914,7 @@ Page({
               this.doGrant(amount);
             }
           }
-        });
+        }, this);
         return;
       }
       const member = this.data.member || {};
@@ -1940,17 +1941,17 @@ Page({
         lastGrant,
         clientRequestId: newRequestId()
       });
-      wx.showModal({
+      openAppModal({
         title: lastGrant.title,
         content: result.msg || lastGrant.sub,
         showCancel: false,
         confirmColor: '#C4A76C'
-      });
+      }, this);
       this.loadSummary();
     } catch (e) {
       wx.hideLoading();
       this.setData({ granting: false });
-      wx.showModal({
+      openAppModal({
         title: '赠分请求失败',
         content: formatCloudFnError(e, '网络异常，请再试。同一笔不会重复提交。'),
         confirmText: '再试',
@@ -1961,7 +1962,7 @@ Page({
             this.doGrant(amount);
           }
         }
-      });
+      }, this);
     }
   },
 

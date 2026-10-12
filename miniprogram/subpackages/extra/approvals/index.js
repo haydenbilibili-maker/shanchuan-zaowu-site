@@ -919,6 +919,7 @@ Page({
 
     // 驳回需可填原因：保留系统 editable modal（无自定义表单时的最小输入面）
     const modal = await new Promise((resolve) => {
+      // ⚠️ 保留系统弹窗：需要输入框（editable），AppModal 不支持（docs/弹层视觉规范_2026-10-13.md §7）
       wx.showModal({
         title: '驳回原因',
         editable: true,

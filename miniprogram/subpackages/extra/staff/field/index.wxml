@@ -688,3 +688,6 @@
     <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" bindtap="closePickupVerifyResult">完成</view>
   </view>
 </view>
+
+<!-- 全站样式化弹窗宿主（utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
+<app-modal id="appModal" />
