@@ -15,20 +15,23 @@
   flex-direction: column;
   min-width: 0;
 }
+/* 全站分区标题口径（app.wxss .mu-head，2026-10-13 工作台 R6 对齐） */
 .hub-en {
   display: block;
   font-size: 18rpx;
-  line-height: 24rpx;
-  letter-spacing: 4rpx;
+  line-height: 26rpx;
+  letter-spacing: .32em;
+  font-family: var(--font-mono);
   color: #C4A76C;
 }
 .hub-cn {
   display: block;
-  margin-top: 2rpx;
-  font-size: 30rpx;
-  line-height: 40rpx;
-  font-weight: 600;
-  letter-spacing: 2rpx;
+  margin-top: 6rpx;
+  font-size: 36rpx;
+  line-height: 48rpx;
+  font-weight: 500;
+  font-family: var(--font-brand);
+  letter-spacing: .12em;
   color: #F3E9D2;
 }
 
@@ -283,21 +286,14 @@
   min-height: 88rpx;
   padding: 0 6rpx 0 4rpx;
 }
-.hub-grp-head::before {
-  content: '';
-  flex-shrink: 0;
-  width: 6rpx;
-  height: 28rpx;
-  border-radius: 3rpx;
-  background: #C4A76C;
-  margin-right: 14rpx;
-}
+.hub-grp-head::before { content: none; }  /* 去竖条（2026-10-12 拍板：分区标题无竖条） */
 .hub-grp-title {
   flex-shrink: 0;
   font-size: 30rpx;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: var(--font-brand);
   color: #EADFC8;
-  letter-spacing: 2rpx;
+  letter-spacing: .08em;
 }
 .hub-grp-fold {
   display: flex;

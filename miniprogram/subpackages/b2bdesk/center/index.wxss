@@ -50,7 +50,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 999rpx;
-  border: 2rpx solid rgba(196, 167, 108, 0.55);
+  border: 1rpx solid rgba(196, 167, 108, 0.55);
 }
 
 .hero-mark-text {
@@ -340,7 +340,7 @@
   justify-content: center;
   overflow: hidden;
   border-radius: 999rpx;
-  border: 2rpx solid rgba(196, 167, 108, 0.45);
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
 }
 
 .avatar-img {
