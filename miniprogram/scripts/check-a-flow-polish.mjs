@@ -205,13 +205,14 @@ function checks(s) {
   add('R7 加购物车与立即购买仍在底栏，事件仍是 handleBuy / handleBuyNow',
     /class="add-cart-btn"[^>]*bindtap="handleBuy"/.test(bottomBar) &&
     /class="buy-now-btn"[^>]*bindtap="handleBuyNow"/.test(bottomBar))
-  add('R7 定制与送给 TA 在信息区，仍走 goToCustom / goToGift，不支持则不显示',
+  // 2026-10-12 详情页质感：「送给 TA」与下方「作为礼物」面板重复 → 送礼入口只留面板（一键送礼 → goGiftCompose，场景 chip → goGiftScene）
+  add('R7 定制在信息区仍走 goToCustom（不支持则不显示）；送礼入口唯一 = 「作为礼物」面板，信息区不再重复「送给 TA」',
     /class="offer-link"[\s\S]{0,80}bindtap="goToCustom"[\s\S]{0,80}hover-class="tap-press"/.test(s.detailWxml) &&
-    /class="offer-link"[\s\S]{0,80}bindtap="goToGift"[\s\S]{0,80}hover-class="tap-press"/.test(s.detailWxml) &&
     /supportsCustom !== false/.test(s.detailWxml) &&
-    /giftEligible !== false/.test(s.detailWxml) &&
     />定制</.test(s.detailWxml) &&
-    />送给 TA</.test(s.detailWxml))
+    !/>送给 TA</.test(s.detailWxml) &&
+    /<view class="gift-panel" wx:if="\{\{product\.giftEligible !== false\}\}">/.test(s.detailWxml) &&
+    /class="gift-cta" bindtap="goGiftCompose"/.test(s.detailWxml))
   add('R7 底栏两个购买按钮等宽且不换行',
     /flex:\s*1 1 0;/.test(rule(s.detailWxss, '.add-cart-btn')) &&
     /flex:\s*1 1 0;/.test(rule(s.detailWxss, '.buy-now-btn')) &&
@@ -296,6 +297,8 @@ if (process.argv.includes('--selftest')) {
     ['规格 slide 写死 520rpx', 'detailWxss', (t) => t.replace('.detail-spec-slide {\n  width: 100%;\n  height: 100%;', '.detail-spec-slide {\n  width: 100%;\n  height: 520rpx;')],
     ['规格 swiper 去掉高度过渡', 'detailWxss', (t) => t.replace('\n  transition: height 0.25s ease;', '')],
     ['SPEC_RATIO_MAX 改掉', 'detailJs', (t) => t.replace('const SPEC_RATIO_MAX = 1.25;', '')],
+    ['信息区又放「送给 TA」', 'detailWxml', (t) => t.replace('>定制</text>', '>定制</text>\n        <text class="offer-link" bindtap="goToGift">送给 TA</text>')],
+    ['礼赠面板一键送礼不再直达写笺', 'detailWxml', (t) => t.replace('class="gift-cta" bindtap="goGiftCompose"', 'class="gift-cta" bindtap="goToGift"')],
   ]
   let ok = baseOk
   console.log(`${baseOk ? '✓' : '✗'} 基线：真源码全部断言通过`)

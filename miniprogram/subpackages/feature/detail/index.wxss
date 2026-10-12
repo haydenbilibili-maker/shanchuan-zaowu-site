@@ -558,15 +558,23 @@ button.nav-share-btn::after { display: none; border: none; }
 .info-row:last-child { border-bottom: none; }
 .info-row:active,
 .info-row-press { background: var(--color-bg-elevated); }
-.info-row.muted .info-value { color: var(--color-text-muted); font-size: 22rpx; }
-/* 收起态单行省略（那行只放得下一行）；展开态允许换行显示完整规则 */
-.info-row.muted .info-value.open {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
+/* 运费行（并入原「说明」行）：金额在上、规则小注在下；收起态单行省略，展开态完整换行 */
+.ship-row { align-items: flex-start; }
+.ship-row .info-label { line-height: 36rpx; }
+.ship-row .info-arrow { line-height: 36rpx; }
+.info-col { flex: 1; min-width: 0; }
+.info-col .info-value { display: flex; line-height: 36rpx; }
+.info-note {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
   line-height: 1.5;
-  padding-right: 4rpx;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.info-note.open { white-space: normal; overflow: visible; text-overflow: clip; }
 .rule-arrow { transition: transform 0.2s ease; }
 .rule-arrow.open { transform: rotate(90deg); }
 .info-label { width: 80rpx; font-size: 26rpx; color: var(--color-text-secondary); flex-shrink: 0; }
@@ -1146,9 +1154,13 @@ button.nav-share-btn::after { display: none; border: none; }
 .stock-label.active { color: #E9A23B; }
 .price-from { font-size: 24rpx; color: var(--color-text-secondary); margin-left: 4rpx; }
 
-.section-title { font-size: 30rpx; color: var(--color-text-secondary); font-weight: 600; letter-spacing: 0.06em; margin-bottom: 24rpx; padding-left: 16rpx; border-left: 6rpx solid var(--gold); }
+/* 分区标题：英文大写眉标 + 中文主标两行（A 流 Museum 口径，2026-10-12 详情页质感） */
+.section-title { display: flex; flex-direction: column; gap: 4rpx; margin-bottom: 24rpx; padding-left: 18rpx; border-left: 4rpx solid var(--gold); }
+.st-en { font-size: 20rpx; line-height: 1.3; letter-spacing: 0.18em; color: #8A7530; font-weight: 500; }
+.st-zh { font-size: 32rpx; line-height: 1.35; color: var(--color-text-primary, #FFFFFF); font-weight: 600; letter-spacing: 0.04em; }
 .section-title.inline { margin-bottom: 0; }
 .archive-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24rpx; margin-bottom: 60rpx; width: 100%; }
+.archive-item:last-child:nth-child(odd) { grid-column: span 2; }
 .archive-item { background: var(--color-bg-card); padding: 24rpx; border-radius: 16rpx; border: 1px solid rgba(38, 35, 32, 0.8); display: flex; flex-direction: column; overflow: hidden; }
 .archive-item.clickable:active,
 .archive-item-press { background: var(--color-bg-elevated); }

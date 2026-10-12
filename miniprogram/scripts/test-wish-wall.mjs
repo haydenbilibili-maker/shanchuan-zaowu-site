@@ -3210,7 +3210,7 @@ eq('★ 入口数量唯一（不会既在头部又在参数区）', (detWxml.mat
     `body=${bodyAt} slot=${slotAt} entry=${entryAt} card=${cardAt}`
   )
   const paramsAt = detWxml.indexOf('PARAMETERS')
-  const detailsAt = detWxml.indexOf('DETAILS / 图文详情')
+  const detailsAt = detWxml.indexOf('<text class="st-en">DETAILS</text>')
   check(
     '★ 旧位置（藏品参数与图文详情之间）已无入口',
     paramsAt > -1 && detailsAt > paramsAt && !detWxml.slice(paramsAt, detailsAt).includes('wish-wall-entry')

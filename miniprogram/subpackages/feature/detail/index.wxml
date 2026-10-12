@@ -163,7 +163,8 @@ module.exports.saveLabel = saveLabel;
           <!-- 右侧：折扣 + 库存（原先各自占行，合并后消掉两处留白） -->
           <view class="price-side">
             <text class="discount-chip" wx:if="{{discountRate < 1}}">{{tool.saveLabel(displayPrice, discountRate)}}</text>
-            <text class="side-stock unique" wx:if="{{isOneOfAKind}}">{{uniqueStockLabel}}</text>
+            <!-- 孤品不在价格旁重复：下方铜牌已说「孤品 / 所见即所得」（2026-10-12 详情页质感） -->
+            <block wx:if="{{isOneOfAKind}}"></block>
             <text class="side-stock soldout" wx:elif="{{displayStock <= 0}}">已售罄</text>
             <text class="side-stock warn" wx:elif="{{displayStock <= 2}}">仅剩 {{displayStock}} 件</text>
             <text class="side-stock" wx:elif="{{displayStock != null}}">现货 {{displayStock}} 件</text>
@@ -206,7 +207,7 @@ module.exports.saveLabel = saveLabel;
       <!-- 底栏腾出的次要入口：有货且该商品支持时才出现，点击仍走原来的定制 / 礼赠 -->
       <view
         class="offer-links"
-        wx:if="{{product._id && commerceReady && displayStock > 0 && !canPayBalance && ((showSpecimenCustom && product.supportsCustom !== false) || (showGift && product.giftEligible !== false))}}"
+        wx:if="{{product._id && commerceReady && displayStock > 0 && !canPayBalance && showSpecimenCustom && product.supportsCustom !== false}}"
       >
         <text
           wx:if="{{showSpecimenCustom && product.supportsCustom !== false}}"
@@ -215,17 +216,7 @@ module.exports.saveLabel = saveLabel;
           hover-class="tap-press"
           hover-stay-time="80"
         >定制</text>
-        <text
-          class="offer-link-dot"
-          wx:if="{{showSpecimenCustom && product.supportsCustom !== false && showGift && product.giftEligible !== false}}"
-        >·</text>
-        <text
-          wx:if="{{showGift && product.giftEligible !== false}}"
-          class="offer-link"
-          bindtap="goToGift"
-          hover-class="tap-press"
-          hover-stay-time="80"
-        >送给 TA</text>
+        <!-- 「送给 TA」不在此重复：下方「作为礼物」面板是唯一送礼入口（场景 chip → 选礼 / 一键送礼 → 写笺） -->
       </view>
 
       <!-- 礼赠面板（坪效位）：把「这是什么」变成「适合送什么场合」+ 一键送礼 -->
@@ -280,17 +271,16 @@ module.exports.saveLabel = saveLabel;
         <text class="info-value">{{specSummary}}</text>
         <text class="info-arrow">›</text>
       </view>
-      <view class="info-row">
+      <!-- 运费与规则并成一行：金额在上、规则小注在下；点一下展开完整规则（含承运商与"否则运费 ¥X"） -->
+      <view class="info-row ship-row" bindtap="toggleShippingRuleDetail" hover-class="info-row-press" hover-stay-time="80">
         <text class="info-label">运费</text>
-        <view class="info-value shipping-fee-inline {{isShippingFree ? 'gold' : ''}}">
-          <text wx:if="{{showShippingStrike}}" class="shipping-fee-strike">¥{{originalShippingFeeDisplay}}</text>
-          <text class="{{isShippingFree ? 'shipping-free-tag' : ''}}">{{shippingHint}}</text>
+        <view class="info-col">
+          <view class="info-value shipping-fee-inline {{isShippingFree ? 'gold' : ''}}">
+            <text wx:if="{{showShippingStrike}}" class="shipping-fee-strike">¥{{originalShippingFeeDisplay}}</text>
+            <text class="{{isShippingFree ? 'shipping-free-tag' : ''}}">{{shippingHint}}</text>
+          </view>
+          <text class="info-note {{shippingDetailOpen ? 'open' : ''}}" wx:if="{{shippingRuleShort || shippingRuleText}}">{{shippingDetailOpen ? shippingRuleText : shippingRuleShort}}</text>
         </view>
-      </view>
-      <!-- 说明行：收起态只放得下一行短句；点一下展开完整规则（含承运商与"否则运费 ¥X"） -->
-      <view class="info-row muted" bindtap="toggleShippingRuleDetail" hover-class="info-row-press" hover-stay-time="80">
-        <text class="info-label">说明</text>
-        <text class="info-value {{shippingDetailOpen ? 'open' : ''}}">{{shippingDetailOpen ? shippingRuleText : shippingRuleShort}}</text>
         <text class="info-arrow rule-arrow {{shippingDetailOpen ? 'open' : ''}}">›</text>
       </view>
     </view>
@@ -361,20 +351,20 @@ module.exports.saveLabel = saveLabel;
     </view>
 
     <!-- 商品参数 -->
-    <view class="section-title">PARAMETERS / 藏品参数</view>
+    <view class="section-title"><text class="st-en">PARAMETERS</text><text class="st-zh">藏品参数</text></view>
     <view class="params-card">
-      <view class="param-row"><text class="param-k">品类</text><text class="param-v">{{product.category || '—'}}</text></view>
+      <view class="param-row" wx:if="{{product.category}}"><text class="param-k">品类</text><text class="param-v">{{product.category}}</text></view>
       <view class="param-row" wx:if="{{!archiveDisplay.craftProcessEmpty}}"><text class="param-k">制作工艺</text><text class="param-v">{{archiveDisplay.craftProcess}}</text></view>
       <view class="param-row" wx:if="{{!archiveDisplay.framingEmpty}}"><text class="param-k">装裱方式</text><text class="param-v">{{archiveDisplay.framingMethod}}</text></view>
-      <view class="param-row"><text class="param-k">采集地</text><text class="param-v {{archiveDisplay.originEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.origin}}</text></view>
-      <view class="param-row"><text class="param-k">采集时间</text><text class="param-v {{archiveDisplay.dateEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.date}}</text></view>
-      <view class="param-row"><text class="param-k">装裱尺寸</text><text class="param-v {{archiveDisplay.sizeEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.size}}</text></view>
-      <view class="param-row"><text class="param-k">标本师</text><text class="param-v gold {{archiveDisplay.framerEmpty ? 'is-placeholder' : ''}}" bindtap="goToFramer" data-id="{{archiveDisplay.framerId}}">{{archiveDisplay.framerName}}</text></view>
+      <view class="param-row" wx:if="{{!archiveDisplay.originEmpty}}"><text class="param-k">采集地</text><text class="param-v {{archiveDisplay.originEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.origin}}</text></view>
+      <view class="param-row" wx:if="{{!archiveDisplay.dateEmpty}}"><text class="param-k">采集时间</text><text class="param-v {{archiveDisplay.dateEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.date}}</text></view>
+      <view class="param-row" wx:if="{{!archiveDisplay.sizeEmpty}}"><text class="param-k">装裱尺寸</text><text class="param-v {{archiveDisplay.sizeEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.size}}</text></view>
+      <view class="param-row" wx:if="{{!archiveDisplay.framerEmpty}}"><text class="param-k">标本师</text><text class="param-v gold {{archiveDisplay.framerEmpty ? 'is-placeholder' : ''}}" bindtap="goToFramer" data-id="{{archiveDisplay.framerId}}">{{archiveDisplay.framerName}}</text></view>
       <view class="param-row" wx:if="{{latin.display(product.latinName)}}"><text class="param-k">拉丁学名</text><text class="param-v latin">{{latin.display(product.latinName)}}</text></view>
     </view>
 
     <!-- 图文详情 -->
-    <view class="section-title">DETAILS / 图文详情</view>
+    <view class="section-title"><text class="st-en">DETAILS</text><text class="st-zh">图文详情</text></view>
     <view class="detail-content">
       <view class="detail-prose" wx:if="{{descriptionParagraphs.length}}">
         <view class="detail-prose-rule" aria-hidden="true"></view>
@@ -483,22 +473,24 @@ module.exports.saveLabel = saveLabel;
 
     <!-- 档案区 -->
     <view id="section-archive">
-      <view class="section-title">SPECIMEN ARCHIVES / 标本档案</view>
-      <view class="archive-grid">
-        <view class="archive-item {{archiveDisplay.originEmpty ? 'is-empty' : ''}}">
+      <view class="section-title" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty)}}"><text class="st-en">SPECIMEN ARCHIVES</text><text class="st-zh">标本档案</text></view>
+      <!-- 空字段整卡不出（不再满屏「—」）；剩奇数张时末张通栏 -->
+      <view class="archive-grid" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty)}}">
+        <view class="archive-item" wx:if="{{!archiveDisplay.originEmpty}}">
           <text class="lbl">采集地 ORIGIN</text>
           <text class="val {{archiveDisplay.originEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.origin}}</text>
         </view>
-        <view class="archive-item {{archiveDisplay.dateEmpty ? 'is-empty' : ''}}">
+        <view class="archive-item" wx:if="{{!archiveDisplay.dateEmpty}}">
           <text class="lbl">采集时间 DATE</text>
           <text class="val {{archiveDisplay.dateEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.date}}</text>
         </view>
-        <view class="archive-item {{archiveDisplay.sizeEmpty ? 'is-empty' : ''}}">
+        <view class="archive-item" wx:if="{{!archiveDisplay.sizeEmpty}}">
           <text class="lbl">装裱尺寸 SIZE</text>
           <text class="val {{archiveDisplay.sizeEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.size}}</text>
         </view>
         <view
-          class="archive-item {{archiveDisplay.framerEmpty ? 'is-empty' : 'clickable'}}"
+          wx:if="{{!archiveDisplay.framerEmpty}}"
+          class="archive-item clickable"
           bindtap="goToFramer"
           data-id="{{archiveDisplay.framerId}}"
           hover-class="{{archiveDisplay.framerEmpty ? 'none' : 'archive-item-press'}}"
@@ -512,7 +504,7 @@ module.exports.saveLabel = saveLabel;
         </view>
       </view>
 
-      <view class="section-title">TAXONOMY / 科学分类</view>
+      <view class="section-title"><text class="st-en">TAXONOMY</text><text class="st-zh">科学分类</text></view>
       <view class="taxonomy-card" wx:if="{{product.taxonomy && (product.taxonomy.kingdom || product.taxonomy.phylum || product.taxonomy.class)}}">
         <view class="tax-row" wx:if="{{product.taxonomy.kingdom}}"><text class="k">界 Kingdom</text><text class="v">{{product.taxonomy.kingdom}}</text></view>
         <view class="tax-row" wx:if="{{product.taxonomy.phylum}}"><text class="k">门 Phylum</text><text class="v">{{product.taxonomy.phylum}}</text></view>
@@ -531,7 +523,7 @@ module.exports.saveLabel = saveLabel;
       </view>
 
       <block wx:if="{{showProtectionCert}}">
-        <view class="section-title">PROVENANCE / 来源说明</view>
+        <view class="section-title"><text class="st-en">PROVENANCE</text><text class="st-zh">来源说明</text></view>
         <view class="cert-card" bindtap="previewCertificate" hover-class="tap-press-soft" hover-stay-time="80">
           <view class="cert-badge">{{protectionLabel}}</view>
           <view class="cert-body">
@@ -547,7 +539,7 @@ module.exports.saveLabel = saveLabel;
 
     <!-- 相关推荐 -->
     <block wx:if="{{recommends.length}}">
-      <view class="section-title">RELATED / 相关推荐</view>
+      <view class="section-title"><text class="st-en">RELATED</text><text class="st-zh">相关推荐</text></view>
       <scroll-view class="recommend-scroll" scroll-x="true" enable-flex="true">
         <block wx:for="{{recommends}}" wx:key="_id">
           <view class="rec-card" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
@@ -574,7 +566,7 @@ module.exports.saveLabel = saveLabel;
     <!-- 用户评价 -->
     <view class="comment-section" id="section-review">
       <view class="comment-header">
-        <view class="section-title inline">REVIEWS / 用户评价</view>
+        <view class="section-title inline"><text class="st-en">REVIEWS</text><text class="st-zh">用户评价</text></view>
         <view class="comment-action muted" wx:if="{{product._id}}">
           <text>签收后可在订单中评价</text>
         </view>
