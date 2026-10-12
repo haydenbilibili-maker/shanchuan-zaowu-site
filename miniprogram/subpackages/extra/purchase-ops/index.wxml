@@ -8,7 +8,7 @@
         <text class="ops-title">采购管理</text>
         <text class="ops-meta-chip" wx:if="{{dashLoading || loading}}">刷新中</text>
       </view>
-      <text class="ops-note">观测台看盘 · 单据录入。云库 ops_purchases 为唯一账本。{{canWrite ? '' : '当前为只读。'}}</text>
+      <text class="ops-note">观测台看盘 · 单据录入，以本页采购单为唯一账本。{{canWrite ? '' : '当前为只读。'}}</text>
     </view>
 
     <view class="ops-tabs">

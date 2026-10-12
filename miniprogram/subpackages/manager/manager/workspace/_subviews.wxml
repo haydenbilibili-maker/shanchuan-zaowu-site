@@ -428,7 +428,7 @@
           <view class="cat-zone-tab {{catZone==='category'?'on':''}}" bindtap="switchCatZone" data-zone="category"
             hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='category'}}">分类管理</view>
           <view class="cat-zone-tab {{catZone==='fields'?'on':''}}" wx:if="{{canProductFields}}" bindtap="switchCatZone" data-zone="fields"
-            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='fields'}}">字段维护</view>
+            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='fields'}}">属性维护</view>
           <view class="cat-zone-tab {{catZone==='options'?'on':''}}" wx:if="{{canProductFields}}" bindtap="switchCatZone" data-zone="options"
             hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='options'}}">选项维护</view>
         </view>
@@ -439,7 +439,7 @@
           <view class="cat-sync-btn cat-sync-btn-ghost" bindtap="fillL2LatinNames">补齐拉丁名</view>
           <view class="cat-sync-btn cat-sync-btn-ghost" bindtap="repairProductCategoryLinks">修复藏品关联</view>
         </view>
-        <view class="cat-manage-tip">展示云库已启用一二级。点「关联」查看已挂件数并可一键补挂；「修复藏品关联」把指向旧 id / 短名的藏品迁到当前二级。</view>
+        <view class="cat-manage-tip">列出已启用的一、二级分类。点「关联」可查看并补挂藏品；「修复藏品关联」会把挂在旧分类上的藏品移到现分类。</view>
 
         <view class="cat-tree" wx:if="{{categoryManageTree.length}}">
           <block wx:for="{{categoryManageTree}}" wx:key="_id">
@@ -497,7 +497,7 @@
 
         <view class="cat-field-zone" wx:if="{{canProductFields && catZone==='fields'}}">
         <view class="cat-field-head">
-          <text class="cat-field-title">字段维护</text>
+          <text class="cat-field-title">属性维护</text>
           <text class="cat-field-sub">点一下就能改 · 改完即刻保存，不用拉到最下面</text>
         </view>
 
@@ -1898,7 +1898,7 @@
           </radio-group>
         </view>
         <view class="form-row ship-form-row" wx:if="{{pushForm.scope==='single'}}">
-          <text>openid</text>
+          <text>微信编号</text>
           <input
             class="push-title-input"
             value="{{pushForm.targetOpenid}}"
@@ -2597,7 +2597,7 @@
             <view class="visit-stats-row"><text class="visit-stats-name">日汇总·鉴定开始</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.dailyIdentifyStart}}</text></view>
             <view class="visit-stats-row"><text class="visit-stats-name">构建指纹</text><text class="visit-stats-count">{{analyticsReport.behavior.diag.build}}</text></view>
             <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.error}}">告警：{{analyticsReport.behavior.diag.error}}</text>
-            <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.build != 'funnel-daily-v2'}}">指纹不是 funnel-daily-v2 → 线上云函数很可能未部署本版。</text>
+            <text class="addr-detail" wx:if="{{analyticsReport.behavior.diag.build != 'funnel-daily-v2'}}">数据统计服务版本较旧，漏斗可能不准，请联系技术更新。</text>
           </block>
         </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.identify}}">
@@ -2719,7 +2719,7 @@
 
           <view class="cfg-field-block">
             <text class="cfg-label-top">按装裱方式配置邮费（每种装裱方式可以单独设门槛与运费）</text>
-            <text class="cfg-hint">没单独配置的跟随最下面那条「其它（通配符）」；混合车（一单含多种装裱方式）按门槛最高的一档算。判定只看商品的装裱方式字段。</text>
+            <text class="cfg-hint">未单独设置的装裱方式按「其它」计；一单含多种装裱方式时，按门槛最高的一档算。</text>
           </view>
           <view class="ship-rule-row {{item.isWildcard ? 'is-wildcard' : ''}}" wx:for="{{shippingRuleRows}}" wx:key="craftType">
             <text class="ship-rule-name">{{item.label}}{{item.isWildcard ? '（通配符）' : ''}}</text>
@@ -2754,7 +2754,7 @@
               </view>
             </view>
           </view>
-          <text class="cfg-hint">通配符那一档会兜住**未标注装裱方式**的商品，以及后台用「选项维护」新加的（塑封 / 玻璃瓶…）—— 它不能删。</text>
+          <text class="cfg-hint">「其它」一档兜住未标注装裱方式、以及后来新增装裱方式（如塑封 / 玻璃瓶）的藏品，不能删除。</text>
           <view class="cfg-row cfg-row-switch">
             <view class="cfg-label-block">
               <text class="cfg-label">限时免邮</text>
@@ -3030,7 +3030,7 @@
            <text>首页展示</text>
            <switch color="#C4A76C" checked="{{tempBanner.enabled}}" bindchange="bindBEnabledChange"/>
          </view>
-         <view class="form-row" wx:if="{{tempBanner.type==='product' || tempBanner.type==='category'}}"><text>目标ID</text><input value="{{tempBanner.target}}" bindinput="bindBInput" data-field="target" placeholder="藏品ID或分类关键词"/></view>
+         <view class="form-row" wx:if="{{tempBanner.type==='product' || tempBanner.type==='category'}}"><text>目标编号</text><input value="{{tempBanner.target}}" bindinput="bindBInput" data-field="target" placeholder="藏品ID或分类关键词"/></view>
          <view class="form-label">跳转类型</view>
          <radio-group class="radio-row" bindchange="bindBTypeChange">
            <radio color="#C4A76C" value="product" checked="{{tempBanner.type==='product'}}"/>藏品
@@ -3298,7 +3298,7 @@
               </view>
             </view>
           </view>
-          <text class="latin-hint">多选；写入 giftScenes，与兴趣标签分离。无标签也可礼赠，场景选品时优先匹配有标签藏品。</text>
+          <text class="latin-hint">可多选，与兴趣标签分开。不打标签也能礼赠；按场景选礼时，优先推荐打了标签的藏品。</text>
           <view class="form-row tag-editor-row">
             <text>祈运标签</text>
             <view class="tag-editor">
@@ -3579,7 +3579,7 @@
       <scroll-view scroll-y class="modal-body">
         <view class="form-group">
           <view class="form-row"><text>名称</text><input value="{{tempCustomConfig.name}}" bindinput="bindCCInput" data-field="name"/></view>
-          <view class="form-row"><text>配置ID</text><input value="{{tempCustomConfig.configId}}" bindinput="bindCCInput" data-field="configId" placeholder="如 frame_metal_slim"/></view>
+          <view class="form-row"><text>配置编号</text><input value="{{tempCustomConfig.configId}}" bindinput="bindCCInput" data-field="configId" placeholder="如 frame_metal_slim"/></view>
           <view class="form-label">类型</view>
           <radio-group class="radio-row" bindchange="bindCCTypeChange">
             <radio color="#C4A76C" value="frame" checked="{{tempCustomConfig.type==='frame'}}"/>装裱
@@ -4007,7 +4007,7 @@
           </view>
           <view class="form-row"><text>标题</text><input value="{{tempCareGuide.title || ''}}" bindinput="bindCareGuideInput" data-field="title" placeholder="如：蝴蝶昆虫 · 框画与展柜藏品"/></view>
           <view class="form-row"><text>英文副标</text><input value="{{tempCareGuide.overline || ''}}" bindinput="bindCareGuideInput" data-field="overline" placeholder="INSECTA"/></view>
-          <view class="form-row"><text>guideId</text><input value="{{tempCareGuide.guideId || ''}}" bindinput="bindCareGuideInput" data-field="guideId" placeholder="留空自动生成"/></view>
+          <view class="form-row"><text>指南编号</text><input value="{{tempCareGuide.guideId || ''}}" bindinput="bindCareGuideInput" data-field="guideId" placeholder="留空自动生成"/></view>
           <view class="form-row form-row-col"><text>养护摘要</text><textarea class="textarea" value="{{tempCareGuide.summary || ''}}" bindinput="bindCareGuideInput" data-field="summary" placeholder="一句话摘要" style="height:120rpx"/></view>
           <view class="form-row form-row-col"><text>免责声明</text><textarea class="textarea" value="{{tempCareGuide.disclaimer || ''}}" bindinput="bindCareGuideInput" data-field="disclaimer" placeholder="可选" style="height:100rpx"/></view>
           <view class="form-row">
@@ -4017,8 +4017,8 @@
               <radio color="#C4A76C" value="draft" checked="{{tempCareGuide.status==='draft'}}"/>草稿
             </radio-group>
           </view>
-          <view class="form-label">内容板块 JSON</view>
-          <text class="form-hint">数组格式：[{"key":"environment","title":"适宜环境","body":"…","tips":["…"]}]</text>
+          <view class="form-label">内容板块</view>
+          <text class="form-hint">按示例格式填写：[{"key":"environment","title":"适宜环境","body":"…","tips":["…"]}]</text>
           <textarea class="textarea mono" value="{{tempCareGuide.sectionsJson || ''}}" bindinput="bindCareGuideInput" data-field="sectionsJson" placeholder="[]" style="height:360rpx; font-family:monospace; font-size:22rpx;"/>
         </view>
       </scroll-view>

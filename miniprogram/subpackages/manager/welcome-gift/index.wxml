@@ -150,7 +150,7 @@
         <text class="section-title">维护 · 券对齐</text>
       </view>
       <view class="field-block">
-        <text class="form-label block">改档位后，「改档前注册」的会员券会不齐（缺新增那一档）。「查」＝列出券不齐的会员；「对齐」＝把未使用券的门槛改成当前配置（幂等）。注意：对齐**不会补发**缺失的那张券（补发走 upsertUserProfile 的 repairRegisterGift，属另一条路）。</text>
+        <text class="form-label block">改档位后，之前注册的会员可能缺新档位的券。「查」列出这些会员；「对齐」把他们未使用券的门槛改成当前配置（可重复操作）。对齐不会补发缺失的券。</text>
         <view class="flex">
           <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm {{maintBusy ? 'is-disabled' : ''}}" bindtap="onListIncomplete" aria-role="button">查券不齐的会员</view>
           <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline sm {{maintBusy ? 'is-disabled' : ''}}" bindtap="onAlignCoupons" aria-role="button">对齐已发券</view>

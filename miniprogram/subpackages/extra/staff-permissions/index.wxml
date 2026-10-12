@@ -15,9 +15,9 @@
 
   <view class="section">
     <text class="section-title">后台角色</text>
-    <text class="section-note">工作台能力仅在此由超管配置；店员报销、清单等现场审批由店长处理（超管可代审）。支持手机号查找或粘贴 openid。</text>
+    <text class="section-note">在这里为员工开通工作台功能（仅超管）。店员的报销、清单等审批由店长处理，超管可代审。</text>
     <view class="btn-primary" bindtap="openStaffModal">开通后台角色</view>
-    <text class="section-note link-note" bindtap="copyOpenidHint">不知道 openid？点此查看获取方式</text>
+    <text class="section-note link-note" bindtap="copyOpenidHint">查不到人？点此查看如何获取微信编号</text>
   </view>
 
   <view class="section">
@@ -56,12 +56,12 @@
         </view>
       </view>
     </block>
-    <view class="empty" wx:elif="{{!loading && !listError}}">还没有登记权限账号，可用手机号或 openid 开通角色</view>
+    <view class="empty" wx:elif="{{!loading && !listError}}">还没有员工账号，可用手机号开通</view>
   </view>
 
   <view class="section">
     <text class="field-label">权限边界</text>
-    <text class="section-note">编辑人员时可按工作台勾选能力；超管工作台为全集（只读）。未勾选的能力在对应工作台入口不可见，云函数亦会拒绝。</text>
+    <text class="section-note">可按工作台勾选功能；没勾选的功能，员工看不到也用不了。超管拥有全部功能。</text>
   </view>
 </view>
 
@@ -69,7 +69,7 @@
   <view class="modal" catchtap="noop">
     <view class="modal-head">
       <text class="modal-title">编辑权限</text>
-      <text class="modal-sub">手机号 / 会员号查找，或粘贴 openid</text>
+      <text class="modal-sub">输入手机号或会员号查找</text>
     </view>
 
     <view class="modal-body">
@@ -111,11 +111,11 @@
       </view>
 
       <view class="field">
-        <text class="field-label">openid（用户 ID）</text>
+        <text class="field-label">微信编号（openid）</text>
         <input class="input" placeholder="粘贴微信 openid / users._openid" placeholder-class="ph"
                value="{{staffForm.openid}}" bindinput="onStaffInput" data-field="openid" />
         <text class="field-hint" wx:if="{{staffForm.openid}}">当前 …{{staffForm.openidTail || staffForm.openid}}</text>
-        <text class="field-hint" wx:else>手机号、会员号都查不到时，可直接粘贴 openid</text>
+        <text class="field-hint" wx:else>手机号、会员号都查不到时，可粘贴微信编号（openid）</text>
       </view>
 
       <view class="field">

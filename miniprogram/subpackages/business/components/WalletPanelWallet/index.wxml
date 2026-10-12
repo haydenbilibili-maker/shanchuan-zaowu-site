@@ -147,7 +147,7 @@
       <view class="account-section-card sv-ios-note" wx:if="{{iosBlocked}}">
         <text class="account-section-label">充值</text>
         <text class="sv-recharge-lead">当前设备暂不支持在线充值</text>
-        <text class="sv-muted">该端暂未开放购买储值余额；余额与账单流水仍可正常查看。如需充值可前往门店由店员协助。</text>
+        <text class="sv-muted">暂不支持线上充值，可到门店由店员协助；余额与账单照常查看。</text>
       </view>
 
       <view class="account-section-card sv-ledger-card">

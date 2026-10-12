@@ -6,7 +6,7 @@
   <view class="se-header">
     <text class="se-title">核对出货单</text>
     <text class="se-sub">{{storeName || '未指定门店'}} · {{shipmentDate || '未指定日期'}}</text>
-    <text class="se-sub">改动任一项会自动重算；金额由服务端按价目表计算</text>
+    <text class="se-sub">改动任一项会自动按价目表重算金额</text>
   </view>
 
   <!-- 单据级手工费率 -->

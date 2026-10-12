@@ -118,7 +118,7 @@
     </view>
 
     <view class="foot-note">
-      <text wx:if="{{isPreview}}">预览：采购=真实订货单；演示开关只影响供货方列表。支付需部署 payB2bPurchase / b2bPayCallback。</text>
+      <text wx:if="{{isPreview}}">预览：采购为真实订货单；演示开关只影响供货方列表。</text>
       <text wx:elif="{{isBuyer}}">有问题请联系山海造物对接人。微信支付以真机与商户配置为准。</text>
       <text wx:else>仅展示与您相关的单据。不进入工作室采购/出货/账单页。</text>
     </view>

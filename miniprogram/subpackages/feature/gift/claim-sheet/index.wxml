@@ -2,7 +2,7 @@
   <view class="cs-panel" catchtap="noop">
     <text class="cs-over">CLAIM BY LETTER</text>
     <text class="cs-title">凭礼笺领取</text>
-    <text class="cs-desc">TA 打开礼笺后点「收下」才算领取，一份只能一人收下。这份礼笺不能发朋友圈。</text>
+    <text class="cs-desc">TA 点「收下」即领取，仅限一人；礼笺不能发朋友圈。</text>
     <view class="cs-row" wx:if="{{state.claimer}}">
       <text class="cs-k">已收下</text>
       <text class="cs-v">{{state.claimer.label}}{{state.claimer.at ? ' · ' + state.claimer.at : ''}}</text>

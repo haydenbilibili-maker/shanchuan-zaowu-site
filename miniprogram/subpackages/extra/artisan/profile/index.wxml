@@ -8,7 +8,7 @@
   <block wx:if="{{ready}}">
   <view class="header">
     <text class="title">个人页面维护</text>
-    <text class="sub">字段与 Admin「编辑标本师档案」对齐，保存后立刻写回本页并同步对外主页</text>
+    <text class="sub">保存后立即更新本页和对外主页</text>
   </view>
 
   <view class="visibility-card {{form.active ? 'is-on' : 'is-off'}}">

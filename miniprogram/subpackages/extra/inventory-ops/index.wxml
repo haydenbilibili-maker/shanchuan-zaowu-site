@@ -509,7 +509,7 @@
       <text class="ops-meta" wx:if="{{preview.skippedCount}}">跳过 {{preview.skippedCount}} 行（公告头等）</text>
     </view>
 
-    <text class="ops-meta" style="margin-top: 24rpx;">写入模式：按盘点日全量覆盖当前成品台账，历史快照保留在 studio_inventory_snapshots。</text>
+    <text class="ops-meta" style="margin-top: 24rpx;">按盘点日整体覆盖当前成品库存，历史盘点记录会保留。</text>
   </scroll-view>
 </view>
 

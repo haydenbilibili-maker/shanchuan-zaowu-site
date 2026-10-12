@@ -127,7 +127,7 @@
   </view>
 
   <view class="hint-card info">
-    <text class="hint-text">与 Admin「会员 CRM」同源：users + orders + user_behaviors。兴趣标签为行为自动派生，非人工备注。</text>
+    <text class="hint-text">与 ERP「会员 CRM」数据一致；兴趣标签根据浏览和购买自动生成。</text>
   </view>
 
   <view class="section filter-section">
@@ -276,7 +276,7 @@
 
   <view class="section empty-find" wx:if="{{!loading && !listError && !list.length}}">
     <text class="empty-title">暂无匹配会员</text>
-    <text class="empty-desc">试试清空筛选，或换关键词（昵称 / openid / 手机号）</text>
+    <text class="empty-desc">试试清空筛选，或换个关键词（昵称 / 手机号 / 会员号）</text>
   </view>
 
   <!-- 详情抽屉 -->
@@ -350,7 +350,7 @@
               <text class="info-value mono">{{detail.registerAtText || '—'}}</text>
             </view>
             <view class="info-row">
-              <text class="info-label">OpenID</text>
+              <text class="info-label">微信编号</text>
               <text class="info-value mono muted" catchtap="onCopyOpenid" data-openid="{{detail.openid}}">{{detail.openidMasked || detail.openid}} · 复制</text>
             </view>
           </view>
@@ -528,7 +528,7 @@
   <view class="modal-mask" wx:if="{{showAdjust}}" bindtap="closeAdjust">
     <view class="modal" catchtap="stopBubble">
       <text class="modal-title">人工调整积分</text>
-      <text class="modal-desc">正数增加、负数扣除。写入 bonusPoints，并记 point_records（admin_adjust）。</text>
+      <text class="modal-desc">正数增加、负数扣除，会记入积分明细。</text>
       <input
         class="modal-input"
         type="number"

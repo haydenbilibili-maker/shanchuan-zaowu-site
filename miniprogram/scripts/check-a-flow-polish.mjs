@@ -243,6 +243,31 @@ function checks(s) {
     if (hits.length) console.error('  旧链：' + hits.join(' / '))
   }
 
+  // R11 界面文字不出现开发术语（2026-10-13 产品负责人「清理技术型文字说明」）：全站 wxml 可见文本禁云函数 / 服务端 / 幂等 / 字段 / 云库 / 回调 / 部署 / JSON / fileID / cloud:// / payload / schema
+  //     openid 仅允许作为「微信编号（openid）」这类粘贴提示出现，不在禁词内；祈福墙 / 心愿签由并发流负责，不扫
+  {
+    const BAN = /云函数|服务端|幂等|字段|云库|回调|部署|JSON|fileID|cloud:\/\/|payload|schema/
+    const SKIP = /wish-wall|wish-labels|WallFeed|WishWallEntry|plays\/|mp-html|node_modules|cloudfunctions|^scripts|^docs/
+    const byPath = { [FILES.detailWxml]: s.detailWxml }
+    const bad = []
+    const walk = (dir) => {
+      for (const n of readdirSync(join(MP, dir))) {
+        const rel = dir ? `${dir}/${n}` : n
+        if (SKIP.test(rel)) continue
+        if (statSync(join(MP, rel)).isDirectory()) { walk(rel); continue }
+        if (!rel.endsWith('.wxml')) continue
+        const src = (byPath[rel] != null ? byPath[rel] : readFileSync(join(MP, rel), 'utf8')).replace(/<!--[\s\S]*?-->/g, '').replace(/<wxs[\s\S]*?<\/wxs>/g, '')
+        for (const m of src.matchAll(/>([^<>]+)</g)) {
+          const t = m[1].replace(/\{\{[^}]*\}\}/g, '').trim()
+          if (BAN.test(t)) bad.push(`${rel}：${t.slice(0, 40)}`)
+        }
+      }
+    }
+    walk('')
+    add('R11 界面文字不出现开发术语（云函数 / 服务端 / 字段 / 云库 …）', bad.length === 0)
+    if (bad.length) console.error('  ' + bad.slice(0, 8).join('\n  '))
+  }
+
   // R9 头图叠层必须压在头图层之上（2026-10-12 真机：.hero-wrapper .sb-wrap 曾为 z-index 6，渐隐 / 署名 / 张数全被头图盖住；
   //    离线预览把 sensitive-blur-gate 展平成普通 view，量不出这一层 —— 故按 wxss 里**最后一条**同选择器规则静态比对）
   {
@@ -344,6 +369,7 @@ if (process.argv.includes('--selftest')) {
     ['罩层打开时带证角标仍叠在罩层上', 'detailWxml', (t) => t.replace('wx:if="{{isProtected && !sensitiveVeiled}}"', 'wx:if="{{isProtected}}"')],
     ['详情底栏图标回到旧亮黄链', 'detailWxss', (t) => t.replace('brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%)', 'brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%)')],
     ['全局 icon-gold 回到偏浅近似链', 'appWxss', (t) => t.replace('.icon-gold {\n  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);', '.icon-gold {\n  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);')],
+    ['详情页又写开发术语', 'detailWxml', (t) => t.replace('<text class="st-zh">藏品参数</text>', '<text class="st-zh">藏品参数（字段）</text>')],
     ['礼赠面板一键送礼不再直达写笺', 'detailWxml', (t) => t.replace('class="gift-cta" bindtap="goGiftCompose"', 'class="gift-cta" bindtap="goToGift"')],
   ]
   let ok = baseOk

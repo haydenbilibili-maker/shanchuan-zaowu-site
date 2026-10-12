@@ -179,7 +179,7 @@ async function payBuyerOrder(purchaseOrderId, opts) {
         paid: true,
         via: 'wechat',
         paymentStatus: 'paid',
-        msg: '支付已提交，到账以回调为准'
+        msg: '支付已提交，到账可能稍有延迟'
       }
     } catch (e) {
       return {
@@ -309,7 +309,7 @@ function friendlyPayError(errOrResult) {
     return {
       code: 'FN_NOT_DEPLOYED',
       msg:
-        '支付云函数未部署。请总部在微信开发者工具上传 payB2bPurchase 与 b2bPayCallback；期间可用「待对公」。'
+        '在线支付暂不可用，请联系总部；期间可选「待对公」。'
     }
   }
   if (blob.indexOf('timeout') !== -1 || blob.indexOf('timed out') !== -1) {

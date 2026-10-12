@@ -2332,7 +2332,7 @@ const managerPageConfig = {
   addTaxonomyOption(e) {
     const kind = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.kind) || '');
     if (!this.data.taxonomyCloudReady) {
-      this.showAppToast({ overline: 'TAXONOMY', title: '云端未连接', desc: '选项维护要先部署 getProductTaxonomy 云函数' });
+      this.showAppToast({ overline: 'TAXONOMY', title: '云端未连接', desc: '选项维护暂不可用，请联系技术支持' });
       return;
     }
     const groups = (this.data.optGroups || []).map((g) => {
@@ -2371,7 +2371,7 @@ const managerPageConfig = {
 
   async saveTaxonomy() {
     if (!this.data.taxonomyCloudReady) {
-      this.showAppToast({ overline: 'TAXONOMY', title: '云端未连接', desc: '请先部署 getProductTaxonomy 云函数' });
+      this.showAppToast({ overline: 'TAXONOMY', title: '云端未连接', desc: '选项维护暂不可用，请联系技术支持' });
       return;
     }
     if (!this.data.taxonomyDirty) return;
@@ -11214,7 +11214,7 @@ bindSubCatChange(e) {
       this.applyProductFieldFilter()
     } catch (e) {
       console.error('loadProductFields', e)
-      this.showAppToast({ overline: 'FIELDS', title: '字段读取失败', desc: String((e && e.message) || e) })
+      this.showAppToast({ overline: 'FIELDS', title: '属性读取失败', desc: String((e && e.message) || e) })
     } finally {
       this.setData({ pfLoading: false })
     }

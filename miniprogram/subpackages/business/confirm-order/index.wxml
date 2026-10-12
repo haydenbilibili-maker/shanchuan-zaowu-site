@@ -230,7 +230,7 @@
       <view class="verify-links">
         <text class="why-toggle {{giftVerifyWhyOpen ? 'open' : ''}}" bindtap="toggleGiftVerifyWhy">{{giftVerifyWhyOpen ? '收起规则' : '领取规则'}}</text>
       </view>
-      <text class="verify-set-hint" wx:if="{{giftVerifyWhyOpen}}">TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。口令只你看得到。为防扩散，这份礼笺不能发朋友圈。</text>
+      <text class="verify-set-hint" wx:if="{{giftVerifyWhyOpen}}">TA 点「收下」即领取，仅限一人；收下前你可随时作废换链接。口令只有你看得到，礼笺不能发朋友圈。</text>
       </block>
       <block wx:else>
       <text class="verify-set-brief">TA 领取时核对这个号码，别人拿到链接也领不走</text>
@@ -250,7 +250,7 @@
       <view class="verify-links">
         <text class="why-toggle {{giftVerifyWhyOpen ? 'open' : ''}}" bindtap="toggleGiftVerifyWhy">{{giftVerifyWhyOpen ? '收起' : '为什么要填？'}}</text>
       </view>
-      <text class="verify-set-hint" wx:if="{{giftVerifyWhyOpen}}">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
+      <text class="verify-set-hint" wx:if="{{giftVerifyWhyOpen}}">用于 TA 领取时核验，防止被他人领走；号码加密保存。</text>
       </block>
     </view>
   </view>

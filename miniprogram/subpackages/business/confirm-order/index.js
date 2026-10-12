@@ -1455,7 +1455,7 @@ Page(withAppModal({
       this.modal({
         title: '价格校验未完成',
         overline: 'PRICE CHECK',
-        content: '当前价格未通过服务端校验，为避免与实付不一致，请重试校验后再提交。',
+        content: '价格刚刚有更新，请重新确认后再提交。',
         confirmText: '重新校验',
         cancelText: '取消'
       }).then((r) => {

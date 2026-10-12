@@ -275,12 +275,12 @@
     </view>
 
     <view hover-class="wb-press" hover-stay-time="80" class="advanced-toggle" bindtap="toggleAdvancedIds">
-      <text class="advanced-label">{{showAdvancedIds ? '收起高级选项' : '高级：粘贴类目 / 藏品 ID'}}</text>
+      <text class="advanced-label">{{showAdvancedIds ? '收起高级选项' : '高级：粘贴类目 / 藏品编号'}}</text>
       <text class="advanced-arrow">{{showAdvancedIds ? '▴' : '▾'}}</text>
     </view>
     <view class="rule-block advanced" wx:if="{{showAdvancedIds}}">
       <view class="field-block first">
-        <text class="form-label block">类目 ID</text>
+        <text class="form-label block">类目编号</text>
         <input
           class="input full"
           value="{{form.categoryIdsText}}"
@@ -289,7 +289,7 @@
         />
       </view>
       <view class="field-block">
-        <text class="form-label block">藏品 ID</text>
+        <text class="form-label block">藏品编号</text>
         <input
           class="input full"
           value="{{form.productIdsText}}"

@@ -473,7 +473,7 @@ Page({
     if (!this.data.configured) {
       wx.showModal({
         title: '暂未配置推流',
-        content: '请在云函数 manageLiveSession 配置 LIVE_PUSH_DOMAIN / LIVE_PLAY_DOMAIN / LIVE_AUTH_KEY。详见 docs/live-streaming.md。',
+        content: '直播推流地址未配置，请联系技术支持',
         showCancel: false
       })
       return

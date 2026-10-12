@@ -46,7 +46,7 @@
           <!-- 渠道 -->
           <view class="section" wx:if="{{activeDim === 'channel' && showChannel}}">
             <text class="section-title">渠道</text>
-            <text class="section-hint">适用于昆虫 / 植物 / 海洋 / 动物标本 · 未标注在未选渠道时可见</text>
+            <text class="section-hint">适用于昆虫 / 植物 / 海洋 / 动物标本</text>
             <view class="chip-grid clearfix">
               <view
                 class="chip {{draft.channel === item.value ? 'on' : ''}}"

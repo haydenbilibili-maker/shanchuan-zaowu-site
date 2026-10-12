@@ -249,7 +249,7 @@
             </view>
             <text class="sc-clear" wx:if="{{single.packagingName}}" bindtap="clearSinglePackaging">清除</text>
           </view>
-          <text class="ops-field-hint" wx:if="{{single.materialName || single.packagingName}}">已选原材料 / 包装：算价开启时服务端按价目表核价；未命中则保留手填单价。</text>
+          <text class="ops-field-hint" wx:if="{{single.materialName || single.packagingName}}">已选原材料 / 包装：开启算价时按价目表计算，价目表里没有的保留手填单价。</text>
 
           <view class="sc-more-toggle" bindtap="toggleSingleMore">
             <text>{{singleMoreOpen ? '收起更多字段' : '更多字段（规格 / 分类 / 购买人 / 状态 / 物流）'}}</text>
@@ -527,7 +527,7 @@
 
         <view class="card" wx:if="{{completeness}}">
           <view class="card-top">
-            <text class="card-title">字段完整度</text>
+            <text class="card-title">资料完整度</text>
             <text class="card-meta {{completeness.tone}}">完整 {{completeness.okPctText}}</text>
           </view>
           <view class="progress-track">

@@ -54,7 +54,7 @@
 
     <view class="error-panel" wx:elif="{{loadError}}">
       <text class="error-panel-title">加载失败</text>
-      <text class="error-panel-body">无法读取采购单。请确认已登录、花名册已勾选「采购商」，且总部已部署 payB2bPurchase。</text>
+      <text class="error-panel-body">无法读取采购单。请确认已登录，且总部已在花名册为你勾选「采购商」。</text>
       <view hover-class="wb-press" hover-stay-time="80" class="retry-btn" bindtap="onRetry">重试</view>
     </view>
 

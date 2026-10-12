@@ -161,7 +161,7 @@
           <text class="detail-val">{{item.handledByName || '店长'}} · {{item.handledText}}</text>
         </view>
         <view hover-class="wb-press" hover-stay-time="80" class="detail-row" wx:if="{{item.orderId}}" bindtap="copyText" data-text="{{item.orderId}}">
-          <text class="detail-label">订单 ID</text>
+          <text class="detail-label">订单号</text>
           <text class="detail-val mono">{{item.orderId}}</text>
         </view>
       </view>

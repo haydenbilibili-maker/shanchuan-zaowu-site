@@ -28,7 +28,7 @@
     <view class="care-content {{pageReady ? 'ready' : ''}}" wx:else>
       <view class="intro care-enter care-enter-d1">
         <text class="intro-overline">YOUR COLLECTION</text>
-        <text class="intro-text">已签收藏品按订单聚合，点击可查看对应品类养护指南与装裱补充说明</text>
+        <text class="intro-text">已签收的藏品，点开查看对应的养护指南</text>
       </view>
 
       <view class="load-error care-enter care-enter-d2" wx:if="{{loadError}}">

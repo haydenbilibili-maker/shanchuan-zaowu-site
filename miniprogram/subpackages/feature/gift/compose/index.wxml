@@ -142,7 +142,7 @@
       </view>
       <view class="relation-self-note" wx:if="{{selfTreat}}">
         <text class="relation-self-k">犒劳自己</text>
-        <text class="relation-self-v">寄到你的收货地址（下一步「交付与支付」里选），不用填受礼人手机号</text>
+        <text class="relation-self-v">寄到你的收货地址（下一步选择），无需受礼人手机号</text>
       </view>
     </view>
 

@@ -166,7 +166,7 @@ Page({
   async doSearch() {
     const keyword = String(this.data.keyword || '').trim();
     if (!keyword) {
-      wx.showToast({ title: '请输入手机号 / openid / 昵称', icon: 'none' });
+      wx.showToast({ title: '请输入手机号 / 昵称 / 微信编号', icon: 'none' });
       return;
     }
     this.setData({ searching: true, searched: true });

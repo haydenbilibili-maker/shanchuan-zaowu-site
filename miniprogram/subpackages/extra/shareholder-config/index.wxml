@@ -25,7 +25,7 @@
     <view class="formula-card">
       <text class="formula-title">双阶段分红口径</text>
       <text class="formula-line">回本判定：累计投资人分红池 ≥ 总投资额后进入回本后阶段（与财务核算一致）。</text>
-      <text class="formula-line">个人应得 = 当日投资人池 × 回本前/后个人分成%；旧字段「分成」等同回本前。</text>
+      <text class="formula-line">个人应得 = 当日投资人池 × 个人分成比例（回本前 / 后分开设置）。</text>
     </view>
 
     <view class="skeleton-list" wx:if="{{loading && !list.length && !listError}}">
@@ -142,7 +142,7 @@
     </view>
 
     <view class="field" wx:if="{{editingId || form.openid}}">
-      <text class="field-label">openid</text>
+      <text class="field-label">微信编号</text>
       <text class="openid-text">…{{form.openidTail || '—'}}</text>
     </view>
 

@@ -30,7 +30,7 @@
     <view class="ops-empty is-error" wx:elif="{{loadError && !kpis}}">
       <text class="ops-empty-title">仪表盘未能展开</text>
       <text class="ops-empty-sub">{{loadError}}</text>
-      <text class="ops-empty-sub">若长期是旧数据，可先到「飞书同步」拉一次云库。</text>
+      <text class="ops-empty-sub">若长期是旧数据，可先到「飞书同步」同步一次。</text>
       <view class="dash-error-actions">
         <view class="ops-btn-secondary" bindtap="load">重试</view>
         <view class="ops-btn-primary" bindtap="goFeishuSync">去飞书同步</view>

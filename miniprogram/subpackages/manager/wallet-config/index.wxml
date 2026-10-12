@@ -27,7 +27,7 @@
       <text class="status-label">C 端入口</text>
       <text class="status-tag {{enabled ? 'on' : ''}}">{{enabled ? '已开（showStoredValue）' : '关闭（请到内容开关开启）'}}</text>
     </view>
-    <view class="meta-line" wx:if="{{fromDefault}}">当前为代码默认，保存后写入云库</view>
+    <view class="meta-line" wx:if="{{fromDefault}}">当前为默认配置，保存后生效</view>
 
     <view class="section">
       <view class="workbench-section-head">
@@ -79,10 +79,10 @@
 
     <view class="section">
       <view class="workbench-section-head">
-        <text class="section-title">补单入账（支付回调缺失时）</text>
+        <text class="section-title">补单入账（已付款但未到账时）</text>
       </view>
       <view class="hint-card info">
-        <text class="hint-text">仅在微信商户平台确认该笔充值已收款后使用。服务端入账幂等（recharge:{outTradeNo}），重复执行不会重复加钱。</text>
+        <text class="hint-text">仅在微信商户平台确认已收款后使用；重复操作不会重复加钱。</text>
       </view>
       <view class="row-line">
         <input class="input flex" placeholder="充值单 ID（_id）" value="{{reconcileForm.orderId}}" data-field="orderId" bindinput="onReconcileInput" />
