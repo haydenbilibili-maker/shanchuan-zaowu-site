@@ -140,6 +140,7 @@ Page({
     claimPasscode: false,
     receiverPhoneError: '',
     receiverPhoneFocus: false,
+    /** scroll-into-view 目标：受礼人手机号字段（报错定位）/ composeTop（换步回到顶部） */
     phoneScrollId: '',
     /** 需求 9：必填项要在界面上看得出来；选「犒劳自己」时改成「你的昵称」 */
     recipientPlaceholder: 'TA 的名字（必填）',
@@ -179,8 +180,9 @@ Page({
     /** 超管是否允许顾客切换「隐藏价格」；false 时强制隐价 */
     allowHidePriceToggle: true,
     paying: false,
-    /** 步骤轨：1 选礼 / 2 写笺 / 3 交付 */
+    /** 分步编排（2026-10-12）：当前步 1 选礼 / 2 写笺 / 3 交付；maxStep = 已到过的最远一步（步骤轨只能点回 ≤ 它的步） */
     activeStep: 1,
+    maxStep: 1,
     /** 主滚动区高度（iOS 显式 px） */
     scrollHeightPx: 0,
     scrollStyle: ''
@@ -221,7 +223,10 @@ Page({
     if (app.globalData.giftPhoneRefill) {
       app.globalData.giftPhoneRefill = false
       this.setData({ paying: false })
-      if (!this.data.selfTreat) this.flagReceiverPhone('请填写受礼人手机号，用于 TA 领取时核验身份')
+      if (!this.data.selfTreat) {
+        this._goStep(3, 'refill', { keepScroll: true })
+        this.flagReceiverPhone('请填写受礼人手机号，用于 TA 领取时核验身份')
+      }
     }
   },
 
@@ -364,38 +369,60 @@ Page({
     if (Object.keys(patch).length) this.setData(patch)
   },
 
-  onComposeScroll() {
-    if (this._stepRailLock) return
-    this._stepRailLock = true
-    this._updateActiveStep()
-    setTimeout(() => {
-      this._stepRailLock = false
-    }, 80)
+  /**
+   * 切到第 n 步。离开「写笺」时收笔、停试听；进入「写笺」时补上第 1 步点关系后待落的笔。
+   * via 只进埋点：next / back / rail / edge / pay_check / refill
+   */
+  _goStep(step, via, opts) {
+    const from = this.data.activeStep
+    const to = Math.max(1, Math.min(3, Number(step) || 1))
+    if (to === from) return
+    const patch = { activeStep: to, maxStep: Math.max(this.data.maxStep || 1, to) }
+    if (from === 2) {
+      if (this.data.noteWriting) this.finishNoteWrite()
+      this._stopVoicePreview()
+      patch.cardFocused = false
+      if (to !== 2) patch.recipientEditing = false
+    }
+    this.setData(patch)
+    if (!(opts && opts.keepScroll)) {
+      this.setData({ phoneScrollId: '' }, () => this.setData({ phoneScrollId: 'composeTop' }))
+    }
+    if (to === 2 && this._noteWritePending && this.data.noteWriting) this._scheduleNoteWrite()
+    this.syncScrollPane()
+    trackBehavior('gift_compose_step', 'product', this._productId || '', { from, to, via: via || '' })
   },
 
-  _updateActiveStep() {
-    wx.createSelectorQuery()
-      .in(this)
-      .select('.scroll')
-      .boundingClientRect()
-      .select('.sec-specimen')
-      .boundingClientRect()
-      .select('.sec-letter')
-      .boundingClientRect()
-      .select('.sec-delivery')
-      .boundingClientRect()
-      .exec((rects) => {
-        if (!rects || !rects[0]) return
-        const viewportTop = rects[0].top
-        const mark = viewportTop + Math.min(160, (rects[0].height || 400) * 0.28)
-        let step = 1
-        const letter = rects[2]
-        const delivery = rects[3]
-        if (delivery && delivery.top <= mark) step = 3
-        else if (letter && letter.top <= mark) step = 2
-        else step = 1
-        if (step !== this.data.activeStep) this.setData({ activeStep: step })
-      })
+  /** 底栏「下一步」：写笺的必填就地校验，不通过不前进 */
+  onStepNext() {
+    const step = this.data.activeStep
+    if (step >= 3) return
+    if (step === 2 && !this._checkLetter()) return
+    this._goStep(step + 1, 'next')
+  },
+
+  onStepBack() {
+    if (this.data.activeStep > 1) this._goStep(this.data.activeStep - 1, 'back')
+  },
+
+  /** 步骤轨：只能点回已到过的步；越过「写笺」去「交付」也要先过写笺的必填 */
+  onRailTap(e) {
+    const step = Number(e.currentTarget.dataset.step) || 0
+    if (!step || step === this.data.activeStep || step > (this.data.maxStep || 1)) return
+    if (step === 3 && !this._checkLetter()) {
+      this._goStep(2, 'rail')
+      return
+    }
+    this._goStep(step, 'rail')
+  },
+
+  /** 左缘右滑（页面关了系统侧滑，见 index.json）：第 2、3 步回上一步，第 1 步离开 */
+  onEdgeBack() {
+    if (this.data.activeStep > 1) {
+      this._goStep(this.data.activeStep - 1, 'edge')
+      return
+    }
+    this.leaveCompose()
   },
 
   onHide() {
@@ -697,10 +724,7 @@ Page({
         from: this._from,
         deliveryType: this.data.deliveryType || 'invite_address'
       })
-      setTimeout(() => {
-        this.syncScrollPane()
-        this._updateActiveStep()
-      }, 120)
+      setTimeout(() => this.syncScrollPane(), 120)
     } catch (e) {
       toastGiftClosed()
       this.setData({ checking: false, allowed: false, loading: false })
@@ -1032,6 +1056,7 @@ Page({
    */
   finishNoteWrite() {
     this.clearNoteWriteTimer()
+    this._noteWritePending = false
     const target = this._noteWriteTarget != null
       ? this._noteWriteTarget
       : String(this.data.cardBody || '')
@@ -1133,6 +1158,16 @@ Page({
     if (preset.id === 'self') this.enterSelfTreat()
     else if (this.data.selfTreat && getPresetById(preset.id)) this.exitSelfTreat()
 
+    // 第 1 步点关系时礼笺还看不见：先记下，进第 2 步再落笔（免得在看不见的地方响打字声）
+    if (this.data.activeStep !== 2) {
+      this._noteWritePending = true
+      return
+    }
+    this._scheduleNoteWrite()
+  },
+
+  _scheduleNoteWrite() {
+    this._noteWritePending = false
     // 落笔前短停：铺纸、想好第一句
     this._noteWriteTimer = setTimeout(() => {
       this._noteWriteTimer = null
@@ -1287,17 +1322,14 @@ Page({
   /**
    * 进入确认订单：按交付方式携带 giftMeta（含门店）
    */
-  goPay() {
-    if (this.data.paying || this.data.voiceUploading) return
+  /**
+   * 第 2 步「写笺」的必填（点「下一步」时校验；支付前再过一次，不通过退回第 2 步）
+   */
+  _checkLetter() {
     if (this.data.noteWriting) this.finishNoteWrite()
     if (this._giftRecorder && this._giftRecorder.isRecording()) {
       wx.showToast({ title: '请先结束录音', icon: 'none' })
-      return
-    }
-    const p = this.data.product
-    if (!p || !p._id) {
-      wx.showToast({ title: '藏品信息异常', icon: 'none' })
-      return
+      return false
     }
     // 需求 9：**受礼人姓名**必填。空则**不进入**确认订单，并当场聚焦到该输入框给提示。
     // 文案口径（产品负责人 2026-09-19 验收）：用「受礼人姓名」，不用「写给谁的名字」——与术语表「受礼人」一致。
@@ -1308,16 +1340,35 @@ Page({
     if (!String(this.data.recipientName || '').trim()) {
       this.setData({ recipientEditing: true })
       this.showAppToast({ overline: 'RECIPIENT', title: '请务必填写受礼人姓名' })
+      return false
+    }
+    const hasText = !!String(this.data.cardBody || '').trim()
+    const hasVoice = !!(this.data.voiceFileID && this.data.voiceDuration > 0)
+    if (!hasText && !hasVoice) {
+      this.showAppToast({ overline: 'LETTER', title: '先写礼笺，或留下一段声音' })
+      return false
+    }
+    return true
+  },
+
+  /**
+   * 第 3 步「交付」的「支付并备妥」：交付方式 / 自提门店 / 受礼人手机号在这里校验
+   */
+  goPay() {
+    if (this.data.paying || this.data.voiceUploading) return
+    if (this.data.activeStep !== 3) return
+    const p = this.data.product
+    if (!p || !p._id) {
+      wx.showToast({ title: '藏品信息异常', icon: 'none' })
+      return
+    }
+    if (!this._checkLetter()) {
+      this._goStep(2, 'pay_check')
       return
     }
     const selfTreat = !!this.data.selfTreat
     const deliveryType = selfTreat ? 'ship_to_self' : (this.data.deliveryType || 'invite_address')
-    const hasText = !!String(this.data.cardBody || '').trim()
     const hasVoice = !!(this.data.voiceFileID && this.data.voiceDuration > 0)
-    if (!hasText && !hasVoice) {
-      wx.showToast({ title: '先写礼笺，或留下一段声音', icon: 'none' })
-      return
-    }
     if (deliveryType === 'store_pickup' && this.data.storePickupEnabled === false) {
       toastStorePickupClosed()
       return

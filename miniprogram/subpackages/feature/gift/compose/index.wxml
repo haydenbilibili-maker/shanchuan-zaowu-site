@@ -1,26 +1,65 @@
-<!-- 礼赠编排 · 博物柜仪式（落笔/语音区仅外围增强，正文逻辑不动） -->
+<!-- 礼赠编排 · 博物柜仪式（落笔/语音区仅外围增强，正文逻辑不动）
+     2026-10-12 分步：01 选礼（藏品 + 送给谁）→ 02 写笺（称呼 / 礼笺 / 署名 / 语音）→ 03 交付（交付方式 / 手机号 / 隐价 / 包装）→ 支付 -->
 <wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
 <view class="page" wx:if="{{allowed && product}}">
-  <!-- 步骤轨固定：随滚动高亮 -->
-  <view class="step-rail sticky" aria-hidden="true">
-    <view class="step-rail-item {{activeStep === 1 ? 'on' : ''}} {{activeStep > 1 ? 'done' : ''}}">
+  <!-- 页面关了系统侧滑（index.json）：左缘右滑在第 2、3 步回上一步，第 1 步离开 -->
+  <page-edge-back ext-class="compose-edge" bind:back="onEdgeBack" disabled="{{voiceRecording}}" />
+
+  <!-- 步骤轨：当前步高亮；已到过的步可点回 -->
+  <view class="step-rail sticky">
+    <view
+      class="step-rail-item {{activeStep === 1 ? 'on' : ''}} {{activeStep !== 1 ? 'done' : ''}}"
+      data-step="1"
+      bindtap="onRailTap"
+      hover-class="{{activeStep !== 1 ? 'tap-press' : 'none'}}"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="第 1 步 选礼"
+    >
       <text class="step-rail-num">01</text>
       <text class="step-rail-label">选礼</text>
     </view>
-    <view class="step-rail-line {{activeStep > 1 ? 'on' : ''}}"></view>
-    <view class="step-rail-item {{activeStep === 2 ? 'on' : ''}} {{activeStep > 2 ? 'done' : ''}}">
+    <view class="step-rail-line {{maxStep > 1 ? 'on' : ''}}"></view>
+    <view
+      class="step-rail-item {{activeStep === 2 ? 'on' : ''}} {{maxStep >= 2 && activeStep !== 2 ? 'done' : ''}}"
+      data-step="2"
+      bindtap="onRailTap"
+      hover-class="{{maxStep >= 2 && activeStep !== 2 ? 'tap-press' : 'none'}}"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="第 2 步 写笺"
+    >
       <text class="step-rail-num">02</text>
       <text class="step-rail-label">写笺</text>
     </view>
-    <view class="step-rail-line {{activeStep > 2 ? 'on' : ''}}"></view>
-    <view class="step-rail-item {{activeStep === 3 ? 'on' : ''}}">
+    <view class="step-rail-line {{maxStep > 2 ? 'on' : ''}}"></view>
+    <view
+      class="step-rail-item {{activeStep === 3 ? 'on' : ''}} {{maxStep >= 3 && activeStep !== 3 ? 'done' : ''}}"
+      data-step="3"
+      bindtap="onRailTap"
+      hover-class="{{maxStep >= 3 && activeStep !== 3 ? 'tap-press' : 'none'}}"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="第 3 步 交付"
+    >
       <text class="step-rail-num">03</text>
       <text class="step-rail-label">交付</text>
     </view>
   </view>
 
-  <!-- 音效开关（2026-09-19）：与收礼页共用同一个静音偏好（存储键 gift_receive_sfx_muted） -->
+  <!-- 音效开关（2026-09-19）：与收礼页共用同一个静音偏好（存储键 gift_receive_sfx_muted）；第 2、3 步左侧是页内「上一步」 -->
   <view class="sfx-bar">
+    <view
+      class="tool-btn step-back"
+      wx:if="{{activeStep > 1}}"
+      bindtap="onStepBack"
+      hover-class="tap-press"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="上一步"
+    >
+      <text>‹ 上一步 · {{activeStep === 2 ? '选礼' : '写笺'}}</text>
+    </view>
     <view class="tool-btn" catchtap="toggleSfxMute" aria-role="button" aria-label="{{sfxMuted ? '开启音效' : '静音'}}">
       <view class="icon-sound {{sfxMuted ? 'off' : 'on'}}" aria-hidden="true"></view>
       <text>{{sfxMuted ? '已静音' : '音效'}}</text>
@@ -35,12 +74,14 @@
     show-scrollbar="{{false}}"
     scroll-into-view="{{phoneScrollId}}"
     scroll-with-animation
-    bindscroll="onComposeScroll"
   >
+    <view id="composeTop"></view>
+    <!-- ═══ 第 1 步 · 选礼 ═══ -->
+    <block wx:if="{{activeStep === 1}}">
     <view class="rite-intro">
       <text class="rite-overline">FROM THE CABINET</text>
       <text class="rite-title">从柜中取出，封笺赠予</text>
-      <text class="rite-desc">选好藏品、写下礼笺，再选定交付方式——像递出一件值得郑重的东西。</text>
+      <text class="rite-desc">分三步：选好藏品与送给谁、写下礼笺，再选定交付方式——像递出一件值得郑重的东西。</text>
     </view>
 
     <!-- 01 已选标本 -->
@@ -61,6 +102,35 @@
       </view>
     </view>
 
+    <!-- 01 送给谁：关系决定第 2 步起草的推荐礼笺；「犒劳自己」让第 3 步交付固定为寄给我 -->
+    <view class="section sec-relation">
+      <text class="section-overline">FOR WHOM</text>
+      <text class="section-title">这份礼送给谁</text>
+      <text class="section-hint">选一个关系，下一步按它起草礼笺（可改写）；也可以不选，自己写。</text>
+      <!-- 2026-09-21：关系从 8 个扩到 20 个（giftNotePresets.js 实为 20 组 × 3 句）。
+           原来这里是**横向 scroll**（white-space: nowrap），一屏只露得出前 5–6 个 ——
+           后面新增的「老师 / 领导 / 长辈」等于藏起来了，那「拓展角色」就白做。
+           改成**换行铺开**，一屏看得见（⚠️ 原注释写「两行」与实测不符：20 个 chip 换行后
+           窄屏**实测约 4 行**，见 2026-09-21 审计 P3-23 —— 已订正）。 -->
+      <view class="note-preset-wrap">
+        <view class="note-preset-row">
+          <view
+            class="note-preset {{activeNotePresetId === item.id ? 'on' : ''}}"
+            wx:for="{{notePresets}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="onNotePresetTap" hover-class="note-preset-press" hover-stay-time="80"
+          >
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+      <text class="relation-self-note" wx:if="{{selfTreat}}">犒劳自己：藏品寄到你的收货地址，地址与手机号在结算页填写。</text>
+    </view>
+    </block>
+
+    <!-- ═══ 第 2 步 · 写笺 ═══ -->
+    <block wx:elif="{{activeStep === 2}}">
     <!-- 02 礼笺：信封外壳包裹（不改 textarea / 落笔动画结构） -->
     <view class="section sec-letter">
       <text class="section-overline">LETTER</text>
@@ -79,23 +149,12 @@
         </view>
       </view>
 
-      <!-- 2026-09-21：关系从 8 个扩到 20 个（giftNotePresets.js 实为 20 组 × 3 句）。
-           原来这里是**横向 scroll**（white-space: nowrap），一屏只露得出前 5–6 个 ——
-           后面新增的「老师 / 领导 / 长辈」等于藏起来了，那「拓展角色」就白做。
-           改成**换行铺开**，一屏看得见（⚠️ 原注释写「两行」与实测不符：20 个 chip 换行后
-           窄屏**实测约 4 行**，见 2026-09-21 审计 P3-23 —— 已订正）。 -->
-      <view class="note-preset-wrap">
-        <view class="note-preset-row">
-          <view
-            class="note-preset {{activeNotePresetId === item.id ? 'on' : ''}}"
-            wx:for="{{notePresets}}"
-            wx:key="id"
-            data-id="{{item.id}}"
-            bindtap="onNotePresetTap" hover-class="note-preset-press" hover-stay-time="80"
-          >
-            <text>{{item.label}}</text>
-          </view>
-        </view>
+      <!-- 关系在第 1 步选；这里只标出当前关系，没选时给一条回第 1 步的路 -->
+      <view class="note-relation-row">
+        <block wx:for="{{notePresets}}" wx:key="id">
+          <text class="note-relation" wx:if="{{item.id === activeNotePresetId}}">按「{{item.label}}」起草</text>
+        </block>
+        <text class="note-relation-back" wx:if="{{!activeNotePresetId}}" data-step="1" bindtap="onRailTap">想要推荐句？回「选礼」挑个关系 ›</text>
       </view>
 
       <!-- 2026-09-17：一个关系现在有多句候选 —— 这里给出「换一句」与句序（第 2/3 句）。
@@ -265,19 +324,11 @@
 
         <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>
       </view>
-
-      <view class="privacy-row privacy-row-locked is-on" wx:if="{{allowHidePriceToggle === false}}">
-        <view class="check on"></view>
-        <text class="privacy-txt">价格已隐藏（平台设定，不可更改）</text>
-      </view>
-
-      <!-- 2026-09-17：整行加 is-on 点亮（勾选框太小、只有填色很难看出「已隐藏」是开着的） -->
-      <view class="privacy-row {{hidePrice ? 'is-on' : ''}}" bindtap="toggleHidePrice" wx:else>
-        <view class="check {{hidePrice ? 'on' : ''}}"></view>
-        <text class="privacy-text">对受礼人隐藏成交价（推荐）</text>
-      </view>
     </view>
+    </block>
 
+    <!-- ═══ 第 3 步 · 交付 ═══ -->
+    <block wx:else>
     <!-- 03 交付方式 -->
     <view class="section sec-delivery">
       <text class="section-overline">DELIVERY</text>
@@ -372,11 +423,23 @@
       </view>
       </block>
 
+      <view class="privacy-row privacy-row-locked is-on" wx:if="{{allowHidePriceToggle === false}}">
+        <view class="check on"></view>
+        <text class="privacy-txt">价格已隐藏（平台设定，不可更改）</text>
+      </view>
+
+      <!-- 2026-09-17：整行加 is-on 点亮（勾选框太小、只有填色很难看出「已隐藏」是开着的） -->
+      <view class="privacy-row {{hidePrice ? 'is-on' : ''}}" bindtap="toggleHidePrice" wx:else>
+        <view class="check {{hidePrice ? 'on' : ''}}"></view>
+        <text class="privacy-text">对受礼人隐藏成交价（推荐）</text>
+      </view>
+
       <view class="pack-note">
         <text class="pack-note-label">{{packagingLabel}}</text>
         <text class="pack-note-body">{{packagingNote}}</text>
       </view>
     </view>
+    </block>
 
     <view class="scroll-pad"></view>
   </scroll-view>
@@ -390,7 +453,11 @@
       </view>
       <text class="bottom-note" wx:if="{{memberDiscounted}}">{{memberLevelName}}会员价 · 以结算页为准</text>
     </view>
-    <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="goPay" hover-class="pay-btn-press" hover-stay-time="80">
+    <!-- 第 1、2 步只有「下一步」；支付只在第 3 步出现 -->
+    <view wx:if="{{activeStep < 3}}" class="pay-btn" bindtap="onStepNext" hover-class="pay-btn-press" hover-stay-time="80">
+      <text>下一步 · {{activeStep === 1 ? '写笺' : '交付'}}</text>
+    </view>
+    <view wx:else class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="goPay" hover-class="pay-btn-press" hover-stay-time="80">
       <text>{{paying ? '备妥中…' : '支付并备妥'}}</text>
     </view>
   </view>

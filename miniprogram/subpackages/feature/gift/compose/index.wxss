@@ -188,6 +188,47 @@ page {
   background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(77, 64, 26, 0.25));
 }
 
+/* 分步编排（2026-10-12）：左缘右滑热区收窄到页面左内边距内（32rpx），不压住左列的关系标签 / 输入框 / 底栏 */
+.page-edge-back.compose-edge {
+  width: 32rpx;
+}
+
+/* 第 2、3 步：音效条左侧的页内「上一步」，推开右侧音效键 */
+.step-back {
+  margin-right: auto;
+}
+
+.section-hint {
+  display: block;
+  margin: -8rpx 0 20rpx;
+  font-size: 24rpx;
+  color: #A09A90;
+  line-height: 1.55;
+}
+
+.relation-self-note {
+  display: block;
+  margin-top: 16rpx;
+  font-size: 24rpx;
+  color: #C4A76C;
+  line-height: 1.55;
+}
+
+.note-relation-row {
+  margin: 0 4rpx 4rpx;
+}
+
+.note-relation {
+  font-size: 24rpx;
+  color: #A09A90;
+}
+
+.note-relation-back {
+  font-size: 24rpx;
+  color: #C4A76C;
+  text-decoration: underline;
+}
+
 .product-row {
   display: flex;
   gap: 24rpx;
