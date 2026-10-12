@@ -140,7 +140,7 @@
   width: 40rpx;
   height: 40rpx;
   flex-shrink: 0;
-  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
 }
 
 .link-btn .lb-en {

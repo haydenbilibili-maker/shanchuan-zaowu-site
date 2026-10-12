@@ -203,7 +203,7 @@ view, text, image, button { box-sizing: border-box; }
   width: 36rpx; 
   height: 36rpx; 
   margin-bottom: 6rpx; 
-  filter: invert(1) sepia(1) hue-rotate(15deg) saturate(2) brightness(1.2);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
 }
 
 .save-btn {

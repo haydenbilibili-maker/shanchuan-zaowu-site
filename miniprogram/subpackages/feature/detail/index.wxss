@@ -1389,7 +1389,7 @@ button.nav-share-btn::after { display: none; border: none; }
   height: 44rpx;
   display: block;
   margin-bottom: 4rpx;
-  filter: brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
 }
 
 .bar-txt {
@@ -1456,9 +1456,10 @@ button.nav-share-btn::after { display: none; border: none; }
   opacity: 1;
   filter: none;
 }
+/* 底栏图标与「加购物车」同为品牌金：不再压 0.85 透明度（压暗后读成另一种金） */
 .icon-btn:not(.active) .bar-icon.wish-on,
 .icon-btn:not(.active) .bar-icon {
-  opacity: 0.85;
+  opacity: 1;
 }
 
 .wishlist-cta {

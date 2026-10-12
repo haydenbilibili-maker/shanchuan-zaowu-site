@@ -909,13 +909,13 @@ image[error] {
 /* 皇冠图标 - 三角形+装饰 */
 
 /* ==================== 13. 图标颜色统一 ==================== */
-/* 单色图标统一为黄铜金 #C4A76C（近似） */
+/* 单色图标统一为品牌金 #C4A76C（滤镜链求解，Chrome 实测 198,168,108；原链偏浅 204,177,135） */
 .icon-gold {
-  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
 }
 
 .icon-gold image {
-  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
 }
 
 /* ==================== 14. 统一回退按钮（Museum Brass） ==================== */

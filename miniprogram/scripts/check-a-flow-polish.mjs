@@ -7,7 +7,7 @@
  *   node miniprogram/scripts/check-a-flow-polish.mjs
  *   node miniprogram/scripts/check-a-flow-polish.mjs --selftest   （内存注入，不写盘）
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -220,6 +220,29 @@ function checks(s) {
     /flex-wrap:\s*nowrap;/.test(rule(s.detailWxss, '.bottom-bar')) &&
     /white-space:\s*nowrap;/.test(rule(s.detailWxss, '.btn-sub')))
 
+  // R10 单色金图标只许一条品牌金滤镜链（2026-10-13 产品负责人真机：详情底栏图标仍偏黄 —— 第二次出现「两套金」，补守卫）
+  //     旧亮黄链实测 (223,183,20)、旧近似链 (204,177,135)；品牌链 Chrome 实测 (198,168,108) ≈ #C4A76C
+  {
+    const OLD = ['invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg)', 'invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg)']
+    const BRAND = 'invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg)'
+    const byPath = { [FILES.detailWxss]: s.detailWxss, [FILES.appWxss]: s.appWxss }
+    const hits = []
+    const walk = (dir) => {
+      for (const n of readdirSync(join(MP, dir))) {
+        const rel = dir ? `${dir}/${n}` : n
+        if (/node_modules|cloudfunctions|^scripts$|^docs$/.test(rel)) continue
+        if (statSync(join(MP, rel)).isDirectory()) { walk(rel); continue }
+        if (!rel.endsWith('.wxss')) continue
+        const src = byPath[rel] != null ? byPath[rel] : readFileSync(join(MP, rel), 'utf8')
+        if (OLD.some((o) => src.includes(o))) hits.push(rel)
+      }
+    }
+    walk('')
+    add('R10 全站不再出现旧金色滤镜链（亮黄 / 偏浅近似）', hits.length === 0)
+    add('R10 全局 .icon-gold 用品牌金链', /\n\.icon-gold \{[^}]*/.test(s.appWxss) && (/\n\.icon-gold \{([^}]*)\}/.exec(s.appWxss) || [])[1].includes(BRAND))
+    if (hits.length) console.error('  旧链：' + hits.join(' / '))
+  }
+
   // R9 头图叠层必须压在头图层之上（2026-10-12 真机：.hero-wrapper .sb-wrap 曾为 z-index 6，渐隐 / 署名 / 张数全被头图盖住；
   //    离线预览把 sensitive-blur-gate 展平成普通 view，量不出这一层 —— 故按 wxss 里**最后一条**同选择器规则静态比对）
   {
@@ -319,6 +342,8 @@ if (process.argv.includes('--selftest')) {
     ['信息区又放「送给 TA」', 'detailWxml', (t) => t.replace('>定制</text>', '>定制</text>\n        <text class="offer-link" bindtap="goToGift">送给 TA</text>')],
     ['头图层又压过叠层（sb-wrap z-index 抬回 6）', 'detailWxss', (t) => t.replace('.hero-wrapper .sb-wrap {\n  z-index: 1;\n}', '.hero-wrapper .sb-wrap {\n  z-index: 6;\n}')],
     ['罩层打开时带证角标仍叠在罩层上', 'detailWxml', (t) => t.replace('wx:if="{{isProtected && !sensitiveVeiled}}"', 'wx:if="{{isProtected}}"')],
+    ['详情底栏图标回到旧亮黄链', 'detailWxss', (t) => t.replace('brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%)', 'brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%)')],
+    ['全局 icon-gold 回到偏浅近似链', 'appWxss', (t) => t.replace('.icon-gold {\n  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);', '.icon-gold {\n  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);')],
     ['礼赠面板一键送礼不再直达写笺', 'detailWxml', (t) => t.replace('class="gift-cta" bindtap="goGiftCompose"', 'class="gift-cta" bindtap="goToGift"')],
   ]
   let ok = baseOk
