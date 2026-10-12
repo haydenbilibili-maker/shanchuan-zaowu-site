@@ -7,6 +7,7 @@ const { trackBehavior } = require('../../../../utils/trackBehavior')
 const { ensureSession } = require('../../../../utils/userSession')
 const { requestGiftSubscribe } = require('../../utils/giftSubscribe')
 const { loadReceiverVerify, saveReceiverPhone, sheetCopy, setClaimPasscode, resetShareLink } = require('../receiverVerify')
+const { openAppModal } = require('../../../../utils/appModal')
 const {
   giftFlowSignal,
   giftDateSignal,
@@ -1155,7 +1156,7 @@ Page({
     if (this.data.formBusy) return
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '').trim()
     if (!id) return
-    wx.showModal({
+    openAppModal({
       title: '移出名单',
       content: '确定从馈赠对象中移出？关联日子仍会保留。',
       confirmText: '移出',
@@ -1182,7 +1183,7 @@ Page({
           wx.showToast({ title: '网络未通', icon: 'none' })
         }
       }
-    })
+    }, this)
   },
 
   giftForContact(e) {
@@ -1389,7 +1390,7 @@ Page({
     const value = this.data.profileBirthday
     const parsed = parseYmd(value)
     if (!parsed) {
-      wx.showModal({
+      openAppModal({
         title: '尚未填写生日',
         content: '个人资料里还没有生日。去完善后，即可一键导入到这里。',
         confirmText: '去完善',
@@ -1402,7 +1403,7 @@ Page({
             })
           }
         }
-      })
+      }, this)
       return
     }
     const form = this.data.dateForm || {}
@@ -1493,7 +1494,7 @@ Page({
     if (this.data.formBusy) return
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '').trim()
     if (!id) return
-    wx.showModal({
+    openAppModal({
       title: '删除日子',
       content: '确定从日历中移出这一天？',
       confirmText: '删除',
@@ -1520,7 +1521,7 @@ Page({
           wx.showToast({ title: '网络未通', icon: 'none' })
         }
       }
-    })
+    }, this)
   },
 
   giftForDate(e) {

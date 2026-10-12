@@ -5,6 +5,7 @@ const _ = db.command
 const uiIcons = require('../../utils/uiIcons')
 const { getWindowInfo } = require('../../../../utils/systemInfo')
 const { cdnPath } = require('../../../../config/cloudEnv')
+const { openAppModal } = require('../../../../utils/appModal')
 
 const FALLBACK_COVER = cdnPath('stores/store_shanhaizaowu.png')
 
@@ -277,7 +278,7 @@ Page({
       wx.hideLoading()
       const msg = (e && e.errMsg) || ''
       if (msg.indexOf('auth') > -1 || msg.indexOf('authorize') > -1) {
-        wx.showModal({ title: '需要相册权限', content: '请在设置中允许保存到相册，以便保存分享卡。', showCancel: false })
+        openAppModal({ title: '需要相册权限', content: '请在设置中允许保存到相册，以便保存分享卡。', showCancel: false }, this)
       } else {
         wx.showToast({ title: '分享卡保存失败', icon: 'none' })
       }

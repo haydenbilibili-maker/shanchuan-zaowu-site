@@ -5,5 +5,8 @@
   "backgroundColor": "#1A1814",
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",
-  "backgroundTextStyle": "light"
+  "backgroundTextStyle": "light",
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  }
 }

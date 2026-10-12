@@ -325,6 +325,8 @@ const page = (() => {
       }
       if (key.includes('pageNav')) return { getPageNavInsets: () => ({ statusBarHeight: 20, navPaddingRight: 16, headerBlockPx: 88 }) }
       if (key.includes('scrollArea')) return { measureFixedScroll: async () => ({ scrollTopPx: 88, scrollHeightPx: 600 }) }
+      // 2026-10-13 弹层规范：充值确认改 openAppModal（与 wx.showModal 同入参）
+      if (key.includes('utils/appModal')) return { openAppModal: (o) => undefined }
       if (key.includes('userSession')) return { isLocalLoggedOut: () => false, resumeLocalSession: noop, ensureSession: async () => ({}) }
       throw new Error('unstubbed require ' + id)
     },
@@ -403,6 +405,8 @@ function makeCtx(initial) {
       }
       if (key.includes('pageNav')) return { getPageNavInsets: () => ({ statusBarHeight: 20, navPaddingRight: 16, headerBlockPx: 88 }) }
       if (key.includes('scrollArea')) return { measureFixedScroll: async () => ({ scrollTopPx: 88, scrollHeightPx: 600 }) }
+      // 2026-10-13 弹层规范：充值确认改 openAppModal（与 wx.showModal 同入参）
+      if (key.includes('utils/appModal')) return { openAppModal: (o) => undefined }
       if (key.includes('userSession')) return { isLocalLoggedOut: () => false, resumeLocalSession: () => {}, ensureSession: async () => ({}) }
       throw new Error('unstubbed require ' + id)
     },

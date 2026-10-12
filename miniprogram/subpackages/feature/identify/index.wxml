@@ -87,3 +87,6 @@
 
   <easter-egg-note id="easterEggNote" />
 </view>
+
+<!-- 全站样式化弹窗宿主（替代 wx.showModal；utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
+<app-modal id="appModal" />

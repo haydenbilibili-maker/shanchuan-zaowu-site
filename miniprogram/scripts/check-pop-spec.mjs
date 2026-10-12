@@ -5,6 +5,7 @@
  * 钉三件事：
  *   ① 全局零件在场：app.wxss 定义 --pop-* 令牌与 ui-pop-* 零件，零件不用回弹缓动（C7 §5.2）、有 reduced-motion 分支；
  *   ② 已迁移弹层不回退：MIGRATED 里每个「wx:if 开关」所在的遮罩挂 ui-pop-mask，其牌面挂 ui-pop-sheet / ui-pop-dialog；
+ *   ③' openAppModal（utils/appModal.js，与 wx.showModal 同入参）沙箱实跑：组件宿主 / 当前页宿主 / 无宿主兜底 / 红色确认 → danger / 回调同形；
  *   ③ 自写遮罩棘轮：C 端 wxss 里「全屏 fixed + 自带底色」的规则按文件计数，只许减少（新文件必须 0）——
  *      新弹层一律用 ui-pop-mask，不再各写一个遮罩色。
  *
@@ -136,6 +137,39 @@ export function run(read = (f) => readFileSync(join(MP, f), 'utf8'), files = nul
     if (!found) fails.push(`${wxml}（${flag}）：牌面没挂 ui-pop-sheet / ui-pop-dialog`)
   }
 
+  // ③' openAppModal 行为：沙箱执行真源码（CommonJS），thenable 同步回调
+  try {
+    const calls = []
+    const hostOf = (tag) => ({ open: (o) => { calls.push([tag, o]); return { then: (cb) => cb({ confirm: true, cancel: false }) } } })
+    let pageHost = null
+    const mod = { exports: {} }
+    // eslint-disable-next-line no-new-func
+    new Function('module', 'exports', 'wx', 'getCurrentPages', read('utils/appModal.js'))(
+      mod, mod.exports, { showModal: (o) => calls.push(['native', o]) }, () => [{ selectComponent: () => pageHost }])
+    const { openAppModal } = mod.exports
+    if (typeof openAppModal !== 'function') fails.push('utils/appModal.js 未导出 openAppModal')
+    else {
+      const comp = { selectComponent: (id) => (id === '#appModal' ? hostOf('comp') : null) }
+      let got = null
+      let done = 0
+      openAppModal({ title: 'a', confirmColor: '#D64045', success: (r) => { got = r }, complete: () => { done += 1 } }, comp)
+      const c1 = calls.pop() || []
+      if (c1[0] !== 'comp') fails.push('openAppModal 没用组件自己的 #appModal 宿主')
+      if (!(c1[1] && c1[1].danger === true)) fails.push('openAppModal 红色 confirmColor 未映射为 danger')
+      if (!(got && got.confirm === true && got.cancel === false) || done !== 1) fails.push('openAppModal 的 success / complete 回调不同形')
+      pageHost = hostOf('page')
+      openAppModal({ title: 'b', confirmColor: '#C4A76C' })
+      const c2 = calls.pop() || []
+      if (c2[0] !== 'page') fails.push('openAppModal 没找当前页的 #appModal 宿主')
+      if (c2[1] && c2[1].danger) fails.push('openAppModal 把金色确认误判为 danger')
+      pageHost = null
+      openAppModal({ title: 'c' }, {})
+      if ((calls.pop() || [])[0] !== 'native') fails.push('openAppModal 无宿主时未退回系统弹窗（会点了没反应）')
+    }
+  } catch (e) {
+    fails.push(`openAppModal 沙箱执行失败：${e.message}`)
+  }
+
   const list = files || walk(MP)
   for (const f of list) {
     if (OUT_OF_SCOPE.test(f) || f === 'app.wxss') continue
@@ -154,7 +188,9 @@ function selftest() {
     ['页面新增一个自写遮罩', (f) => f === 'pages/cart/index.wxss' ? `${real(f)}\n.new-mask { position: fixed; inset: 0; background: rgba(0,0,0,.6); }\n` : real(f), '自写遮罩'],
     ['零件改用回弹缓动', (f) => f === 'app.wxss' ? real(f).replace('animation: ui-pop-rise var(--dur-base) var(--ease-out-soft) both;', 'animation: ui-pop-rise 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;') : real(f), '回弹'],
     ['遮罩底色脱离令牌', (f) => f === 'app.wxss' ? real(f).replace('  background: var(--pop-mask);\n  animation: ui-pop-fade', '  background: rgba(0,0,0,.6);\n  animation: ui-pop-fade') : real(f), 'var(--pop-mask)'],
-    ['丢掉一个令牌', (f) => f === 'app.wxss' ? real(f).replace('  --pop-hairline:', '  --pop-hairline-x:') : real(f), '--pop-hairline']
+    ['丢掉一个令牌', (f) => f === 'app.wxss' ? real(f).replace('  --pop-hairline:', '  --pop-hairline-x:') : real(f), '--pop-hairline'],
+    ['openAppModal 丢掉红色 → danger 映射', (f) => f === 'utils/appModal.js' ? real(f).replace("danger: !!o.danger || DANGER_COLOR.test(String(o.confirmColor || ''))", 'danger: !!o.danger') : real(f), 'danger'],
+    ['openAppModal 丢掉无宿主兜底', (f) => f === 'utils/appModal.js' ? real(f).replace('  if (!host) return nativeModal(o)', '  if (!host) return undefined') : real(f), '系统弹窗']
   ]
   let bad = 0
   const base = run()

@@ -2,5 +2,8 @@
   "navigationBarTitleText": "发布笔记",
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",
-  "navigationBarTextStyle": "white"
+  "navigationBarTextStyle": "white",
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  }
 }

@@ -4,6 +4,7 @@
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814",
   "usingComponents": {
-    "easter-egg-note": "/components/EasterEggNote/index"
+    "easter-egg-note": "/components/EasterEggNote/index",
+    "app-modal": "/components/AppModal/index"
   }
 }

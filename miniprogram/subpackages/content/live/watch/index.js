@@ -3,6 +3,7 @@ const { getWindowInfo } = require('../../../../utils/systemInfo')
 const { batchTempFileURLs, getFirstImage } = require('../../../../utils/util')
 const { ensureOpenId, markCartDirty, fetchCartCount, updateCartTabBadge } = require('../../../../utils/cartHelper')
 const { navigateToConfirmOrder } = require('../../../../utils/checkout')
+const { openAppModal } = require('../../../../utils/appModal')
 
 const app = getApp()
 const POLL_MS = 8000
@@ -615,12 +616,12 @@ Page({
     if (this._leaving) return
     if (this.data.session && this.data.session.pullUrl && this.data.viewState !== 'ended') {
       const ok = await new Promise((resolve) => {
-        wx.showModal({
+        openAppModal({
           title: '离开直播间？',
           content: '当前正在观看馆内直播，确定返回吗？',
           success: (r) => resolve(!!r.confirm),
           fail: () => resolve(false)
-        })
+        }, this)
       })
       if (!ok) return
     }

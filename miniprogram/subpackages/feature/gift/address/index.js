@@ -1,3 +1,4 @@
+const { openAppModal } = require('../../../../utils/appModal')
 const {
   fetchContentDisplayFlags,
   toastGiftClosed
@@ -114,7 +115,7 @@ Page({
         wx.showToast({ title: msg, icon: 'none' })
         return
       }
-      wx.showModal({
+      openAppModal({
         title: '去处已记下',
         content: result.phoneMasked
           ? `馆员将为你备妥启程。\n联系 ${result.phoneMasked}`
@@ -126,7 +127,7 @@ Page({
             url: `/subpackages/feature/gift/receive/index?orderId=${this.data.orderId}&token=${this.data.token}`
           })
         }
-      })
+      }, this)
     } catch (e) {
       wx.hideLoading()
       this.setData({ submitting: false })

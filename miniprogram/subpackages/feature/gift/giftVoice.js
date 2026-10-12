@@ -2,6 +2,7 @@
  * 礼赠礼笺语音：录音 / 上传 / 播放（与落笔文字动画解耦）
  * 上限 60s；格式 mp3（两端试听更稳）；iPhone 优先内置麦 + 全局忽略静音键
  */
+const { openAppModal } = require('../../../utils/appModal')
 
 const MAX_DURATION_SEC = 60
 const MAX_DURATION_MS = MAX_DURATION_SEC * 1000
@@ -73,7 +74,7 @@ function getRecordAuthState() {
 
 function openRecordSetting() {
   return new Promise((resolve) => {
-    wx.showModal({
+    openAppModal({
       title: '需要麦克风权限',
       content:
         '录制礼笺语音需要麦克风。请在设置中打开「录音」，然后返回再按住说话。',

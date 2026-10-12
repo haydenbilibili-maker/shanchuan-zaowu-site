@@ -5,6 +5,7 @@ const {
 } = require('../../../../utils/contentDisplayFlags')
 const { isLocalLoggedOut, resumeLocalSession, ensureSession } = require('../../../../utils/userSession')
 const walletCopy = require('./walletCopy')
+const { openAppModal } = require('../../../../utils/appModal')
 const {
   buildLedgerTimeline,
   ledgerCapText
@@ -695,12 +696,12 @@ const _pageCfg = {
     // 保留作为「日后若确有平台规则」的统一出口。
     // 原实现由 utils/platform.js 硬编码拦截，依据条款未经核实，2026-09-16 恢复充值能力。
     if (this.data.iosBlocked) {
-      wx.showModal({
+      openAppModal({
         title: '当前设备暂不支持充值',
         content: '该端暂未开放购买储值余额。你仍可在本页查看余额与账单，或前往门店充值。',
         showCancel: false,
         confirmText: '知道了'
-      })
+      }, this)
       return
     }
     if (this.data.needLogin || isLocalLoggedOut()) {
@@ -746,14 +747,14 @@ const _pageCfg = {
     }
 
     const confirmed = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '确认充值',
         content: `充值 ${payLabel}，到账 ${creditLabel}（全额本金）。${walletCopy.rechargeModalSuffix}`,
         confirmText: '立即支付',
         confirmColor: '#C4A76C',
         success: (res) => resolve(!!res.confirm),
         fail: () => resolve(false)
-      })
+      }, this)
     })
     if (!confirmed) return
 

@@ -2,6 +2,7 @@
   "component": true,
   "styleIsolation": "apply-shared",
   "usingComponents": {
-    "app-toast": "/components/AppToast/index"
+    "app-toast": "/components/AppToast/index",
+    "app-modal": "/components/AppModal/index"
   }
 }

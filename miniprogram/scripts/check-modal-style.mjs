@@ -27,7 +27,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MP = resolve(HERE, '..')
 
 /** 棘轮基线：只许降不许升。每迁移一页就把这个数字改小（并同步 MIGRATED）。 */
-export const BASELINE = 127
+export const BASELINE = 74
 /** 已迁移到样式化弹窗的页面：不得再出现 wx.showModal */
 export const MIGRATED = [
   'subpackages/business/address/index.js',
@@ -41,7 +41,23 @@ export const MIGRATED = [
   'subpackages/business/booking/index.js',
   'subpackages/business/ticket/index.js',
   'subpackages/business/store/index.js',
-  'subpackages/business/store-zone/index.js'
+  'subpackages/business/store-zone/index.js',
+  // 2026-10-13 弹层规范第 2b 批：C 端剩余原生调用改 utils/appModal.js 的 openAppModal（同入参同回调）
+  'subpackages/business/certificate/index.js',
+  'subpackages/business/aftersale-apply/index.js',
+  'subpackages/business/components/WalletPanelPoints/index.js',
+  'subpackages/business/components/WalletPanelWallet/index.js',
+  'subpackages/content/live/watch/index.js',
+  'subpackages/feature/identify/index.js',
+  'subpackages/feature/articles/detail/index.js',
+  'subpackages/feature/gift/giftVoice.js',
+  'subpackages/feature/gift/compose/index.js',
+  'subpackages/feature/gift/my-gifts/index.js',
+  'subpackages/feature/gift/address/index.js',
+  'subpackages/feature/custom/index.js',
+  'subpackages/feature/custom/inquiry/index.js',
+  'subpackages/feature/custom/pet/status/index.js',
+  'subpackages/feature/community/publish/index.js'
 ]
 const SKIP_DIRS = new Set(['node_modules', 'cloudfunctions', 'scripts', 'docs', '.git'])
 
