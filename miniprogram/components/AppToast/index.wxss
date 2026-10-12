@@ -1,4 +1,4 @@
-/* 全站样式化轻提示 —— 令牌与 AppModal / RegisterAuthDialog 完全一致（app.wxss 设计令牌） */
+/* 全站样式化轻提示 —— 牌面与 AppModal 同取 app.wxss 弹层令牌（--pop-*，docs/弹层视觉规范_2026-10-13.md） */
 
 .at-mask {
   position: fixed;
@@ -21,10 +21,10 @@
   position: relative;
   max-width: 520rpx;
   padding: 32rpx 36rpx 30rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.55);
-  border-radius: var(--radius-md, 16rpx);
-  background: linear-gradient(180deg, #221F1B 0%, #1A1814 100%);
-  box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.55);
+  border: 1rpx solid var(--pop-hairline);
+  border-radius: var(--pop-radius-dialog);
+  background: var(--pop-surface);
+  box-shadow: var(--pop-shadow-dialog);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -32,17 +32,6 @@
   text-align: center;
 }
 
-.at-corner {
-  position: absolute;
-  width: 14rpx; height: 14rpx;
-  border-color: rgba(196, 167, 108, 0.5);
-  border-style: solid;
-  border-width: 0;
-}
-.at-corner.is-tl { left: 11rpx; top: 11rpx; border-left-width: 1rpx; border-top-width: 1rpx; }
-.at-corner.is-tr { right: 11rpx; top: 11rpx; border-right-width: 1rpx; border-top-width: 1rpx; }
-.at-corner.is-bl { left: 11rpx; bottom: 11rpx; border-left-width: 1rpx; border-bottom-width: 1rpx; }
-.at-corner.is-br { right: 11rpx; bottom: 11rpx; border-right-width: 1rpx; border-bottom-width: 1rpx; }
 
 .at-overline {
   font-size: var(--fs-18);
@@ -58,7 +47,6 @@
   font-family: var(--font-brand);
   font-weight: 500;
   letter-spacing: .06em;
-  font-family: var(--font-brand);
   color: var(--color-text-primary, #FFFFFF);
   line-height: 1.4;
 }
