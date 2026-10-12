@@ -41,7 +41,11 @@ export const MIGRATED = [
   ['subpackages/feature/collection/index.wxml', 'unlockSheet.show'],
   ['subpackages/feature/collection/detail/index.wxml', 'justUnlocked'],
   ['components/MemberLevelModal/index.wxml', 'visible'],
-  ['subpackages/feature/components/RegisterAuthDialog/index.wxml', 'show']
+  ['subpackages/feature/components/RegisterAuthDialog/index.wxml', 'show'],
+  ['subpackages/business/components/WalletPanelCoupons/index.wxml', 'showUseSheet'],
+  ['subpackages/business/components/WalletPanelCoupons/index.wxml', 'showPassModal'],
+  ['subpackages/business/components/WalletPanelPoints/index.wxml', 'showQrModal'],
+  ['subpackages/business/components/WalletPanelPoints/index.wxml', 'showExchangeConfirm']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小） */
@@ -49,8 +53,6 @@ export const MASK_BASELINE = {
   'components/SensitiveBlurGate/index.wxss': 1,
   'subpackages/business/booking/index.wxss': 1,
   'subpackages/business/components/CouponPrintMint/index.wxss': 1,
-  'subpackages/business/components/WalletPanelCoupons/index.wxss': 2,
-  'subpackages/business/components/WalletPanelPoints/index.wxss': 2,
   'subpackages/content/live/watch/index.wxss': 1,
   'subpackages/feature/components/CouponPrintMint/index.wxss': 1,
   'subpackages/feature/gift/claim-sheet/index.wxss': 1,
