@@ -49,6 +49,7 @@ const P = {
   wxml: resolve(MP, 'subpackages/feature/gift/compose/index.wxml'),
   wxss: resolve(MP, 'subpackages/feature/gift/compose/index.wxss'),
   json: resolve(MP, 'subpackages/feature/gift/compose/index.json'),
+  confirmWxss: resolve(MP, 'subpackages/business/confirm-order/index.wxss'),
   customNav: resolve(MP, 'subpackages/feature/utils/customNav.js'),
   checkout: resolve(MP, 'utils/checkout.js'),
   mpSchema: resolve(MP, 'utils/analytics/eventSchema.js'),
@@ -341,6 +342,15 @@ function declutterChecks(js, wxml, wxss, ok) {
   ok('D8 底栏「备妥应付」与价格同一行（小字只剩会员价一行）', /<view class="bottom-value-row">\s*<text class="bottom-label">备妥应付<\/text>/.test(wxml))
   ok('D9 底栏是「下一步」（第 1 步 · 写笺 / 第 2 步 · 交付与支付）；页内不再出现「支付并备妥」',
     /<text>下一步 · \{\{activeStep === 1 \? '写笺' : '交付与支付'\}\}<\/text>/.test(wxml) && !wxml.includes('支付并备妥'))
+  // 2026-10-12 产品负责人真机：「下一步 · 交付与支付」在定宽 248rpx 里折成两行、靠左上；交付卡「邀请 TA 填地址 + 推荐」折行
+  const btn = rule(wxss, '.pay-btn')
+  ok('D10 底栏按钮按内容定宽且不折行（不得回到定宽 flex-basis）', /white-space:\s*nowrap/.test(btn) && /flex:\s*0 0 auto/.test(btn) && !/flex:\s*0 0 \d+rpx/.test(btn))
+  ok('D11 底栏会员价小字一行收住（不折出孤字）', /white-space:\s*nowrap/.test(rule(wxss, '.bottom-note')))
+  const cw = read(P.confirmWxss)
+  const tileName = rule(cw, '.delivery-tile .delivery-name')
+  const tileTag = rule(cw, '.delivery-tile .delivery-tag')
+  ok('D12 确认页交付卡名称不折行、推荐签移出标题行（绝对定位，卡片已定位）',
+    /white-space:\s*nowrap/.test(tileName) && /position:\s*absolute/.test(tileTag) && /position:\s*relative/.test(rule(cw, '.delivery-tile')))
 }
 
 // ── T 分步编排（2026-10-12）─────────────────────────────────────────────
@@ -615,6 +625,11 @@ const INJECTIONS = [
   { name: '礼笺块又加框（只给可选项描边的反面）', file: P.wxss, find: '.wrap-list { display: flex;', replace: '.wrap-list { border: 1px solid #C4A76C; display: flex;' },
   { name: '隐价回到勾选大框', file: P.wxml, find: 'class="switch-row"', replace: 'class="privacy-row"' },
   { name: '音效条单占一行', file: P.wxml, find: '  <scroll-view\n', replace: '  <view class="sfx-bar"></view>\n  <scroll-view\n' },
+  { name: '底栏按钮回到定宽折行', file: P.wxss, find: '  flex: 0 0 auto;\n  min-width: 248rpx;', replace: '  flex: 0 0 248rpx;\n  min-width: 248rpx;' },
+  { name: '底栏按钮允许折行', file: P.wxss, find: '  letter-spacing: 0.02em;\n  white-space: nowrap;\n  border-radius: 16rpx;', replace: '  letter-spacing: 0.02em;\n  border-radius: 16rpx;' },
+  { name: '会员价小字可折行', file: P.wxss, find: '  color: #A09A90;\n  white-space: nowrap;\n  overflow: hidden;', replace: '  color: #A09A90;\n  overflow: hidden;' },
+  { name: '交付卡名称可折行', file: P.confirmWxss, find: '  font-size: 26rpx;\n  white-space: nowrap;', replace: '  font-size: 26rpx;' },
+  { name: '推荐签回到标题行内', file: P.confirmWxss, find: '.delivery-tile .delivery-tag {\n  position: absolute;', replace: '.delivery-tile .delivery-tag {\n  position: static;' },
   { name: '底栏「备妥应付」单占一行', file: P.wxml, find: '<view class="bottom-value-row">\n        <text class="bottom-label">备妥应付</text>', replace: '<text class="bottom-label">备妥应付</text>\n      <view class="bottom-value-row">' }
 ]
 

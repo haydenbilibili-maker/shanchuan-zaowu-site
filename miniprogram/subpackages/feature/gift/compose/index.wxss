@@ -1116,19 +1116,27 @@ page {
   margin-top: 2rpx;
   font-size: 20rpx;
   color: #A09A90;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* 文案「下一步 · 交付与支付」比旧「支付并备妥」长：定宽 248rpx 会折成两行且靠左上；
+   改按内容定宽 + 不折行，价格区（flex: 1）让出宽度 */
 .pay-btn {
-  flex: 0 0 248rpx;
-  height: 80rpx;
+  flex: 0 0 auto;
+  min-width: 248rpx;
+  height: 84rpx;
+  padding: 0 28rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   background: #C4A76C;
   color: #1A1814;
-  font-size: 30rpx;
+  font-size: 26rpx;
   font-weight: 500;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
   border-radius: 16rpx;
 }
 

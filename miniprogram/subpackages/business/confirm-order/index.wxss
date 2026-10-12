@@ -936,8 +936,9 @@ view, text, scroll-view { box-sizing: border-box; }
 
 /* 交付方式：2×2 单选块（可选才描边，只有选中项点亮），下面一句说明 + 跟随项 */
 .gift-delivery-card { border-color: rgba(196, 167, 108, 0.28); }
-.delivery-grid { display: flex; flex-wrap: wrap; justify-content: space-between; row-gap: 16rpx; }
+.delivery-grid { display: flex; flex-wrap: wrap; justify-content: space-between; row-gap: 16rpx; padding-top: 22rpx; }  /* 标签是行内 text、margin-bottom 不生效；留出推荐签骑边框的高度 */
 .delivery-tile {
+  position: relative;
   width: 48.5%;
   padding: 20rpx 20rpx 22rpx;
   border: 1px solid rgba(77, 64, 26, 0.45);
@@ -954,8 +955,25 @@ view, text, scroll-view { box-sizing: border-box; }
   background: #C4A76C;
   box-shadow: inset 0 0 0 5rpx #1F1D1A;
 }
-.delivery-tile .delivery-name { font-size: 26rpx; }
-.delivery-tile .delivery-tag { padding: 0 10rpx; }
+/* 半宽卡里「邀请 TA 填地址」+「推荐」放不下一行：名称不折行（极窄时省略号兜底），
+   推荐签移出标题行、骑在卡片上边框右侧，不再占标题宽度 */
+.delivery-tile .delivery-name {
+  min-width: 0;
+  font-size: 26rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.delivery-tile .delivery-tag {
+  position: absolute;
+  top: -15rpx;
+  right: 16rpx;
+  padding: 0 10rpx;
+  font-size: 18rpx;
+  line-height: 28rpx;
+  letter-spacing: 0.08em;
+  border-radius: 6rpx;
+}
 .delivery-short { display: block; margin-top: 8rpx; padding-left: 38rpx; font-size: 22rpx; line-height: 1.45; color: #A09A90; }
 .delivery-tile.active .delivery-short { color: #D5D1C8; }
 .delivery-hint { display: block; margin-top: 18rpx; font-size: 22rpx; line-height: 1.6; color: #A09A90; }
