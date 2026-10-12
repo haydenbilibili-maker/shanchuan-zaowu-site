@@ -526,8 +526,8 @@
         <text class="fp-label">{{footerPayLabel}}</text>
         <text class="fp-value">¥{{payNowYuan}}</text>
       </view>
-      <!-- 礼赠：价格只在第 3 步给，会员折扣在底栏说一句（送礼页不再报价，2026-10-12） -->
-      <text class="fp-note" wx:if="{{isGiftOrder && discountRate < 1 && vipSaved > 0}}">{{levelName}} {{discountText}} · 已省 ¥{{vipSavedYuan}}</text>
+      <!-- 有会员省额时底栏说一句（礼赠与普通订单同一口径；送礼页不再报价，2026-10-12） -->
+      <text class="fp-note" wx:if="{{discountRate < 1 && vipSaved > 0}}">{{levelName}} {{discountText}} · 已省 ¥{{vipSavedYuan}}</text>
     </view>
     <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitOrder" hover-class="{{submitting ? '' : 'submit-btn-hover'}}">
       {{submitting ? (isGiftOrder ? '备妥中…' : '处理中…') : (isGiftOrder ? (useWalletPay && wxpayYuan === '0.00' ? '钱包支付并备妥' : '支付并备妥') : (useWalletPay && wxpayYuan === '0.00' ? '钱包支付' : '提交订单'))}}
