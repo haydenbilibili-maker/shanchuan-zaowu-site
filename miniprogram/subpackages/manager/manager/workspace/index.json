@@ -6,6 +6,10 @@
   "enablePullDownRefresh": true,
   "usingComponents": {
     "app-toast": "/components/AppToast/index",
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "proxy-address-sheet": "/subpackages/feature/gift/proxy-address-sheet/index"
+  },
+  "componentPlaceholder": {
+    "proxy-address-sheet": "view"
   }
 }

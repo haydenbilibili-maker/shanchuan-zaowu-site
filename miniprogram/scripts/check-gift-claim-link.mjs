@@ -14,6 +14,9 @@
  *   S 寄给我（第三轮 §10）：同一套收下规则；作废 / 口令窗口放宽到订单结束前（含已签收），其它交付方式窗口不变
  *   G 客户端接线：送礼页免填号交付方式与云端同值；凭礼笺领取不发朋友圈（成功页 / 订单详情）；领取页收下不走注册门；
  *     注册引导卡只给未注册者、可关、在协议勾选守卫名单内；7 个新埋点双端登记
+ *   H 犒劳自己：交付固定寄给我，地址与手机号按普通下单在确认页填（2026-10-12）
+ *   P 代填收货地址（2026-10-12 旁路 proxySubmitAddress）：只有店长及以上 / 下单人本人能代填；代填后按普通待发货可发货；
+ *     不认定受礼人、留痕；过期不可代填；受礼人原填址路径不变；送礼成功页按核验号码 = 本人判定「犒劳自己」
  *
  * 用法：node miniprogram/scripts/check-gift-claim-link.mjs [--selftest]
  * --selftest：对真源做**内存注入**（不改文件），每条注入都必须被检出。
@@ -38,6 +41,11 @@ const P = {
   claimSheetWxml: resolve(MP, 'subpackages/feature/gift/claim-sheet/index.wxml'),
   confirmOrder: resolve(MP, 'subpackages/business/confirm-order/index.js'),
   receiverVerify: resolve(MP, 'subpackages/feature/gift/receiverVerify.js'),
+  shipGiftMeta: resolve(MP, 'cloudfunctions/managerShipOrder/giftMeta.js'),
+  proxySheetJs: resolve(MP, 'subpackages/feature/gift/proxy-address-sheet/index.js'),
+  managerWxml: resolve(MP, 'subpackages/manager/manager/workspace/_subviews.wxml'),
+  managerPageJson: resolve(MP, 'subpackages/manager/manager/workspace/index.json'),
+  successWxml: resolve(MP, 'subpackages/feature/gift/success/index.wxml'),
   successJs: resolve(MP, 'subpackages/feature/gift/success/index.js'),
   orderDetailJs: resolve(MP, 'subpackages/business/order-detail/index.js'),
   receiveJs: resolve(MP, 'subpackages/feature/gift/receive/index.js'),
@@ -58,7 +66,8 @@ const _ = {
   lte: (v) => ({ $op: 'lte', v }),
   gte: (v) => ({ $op: 'gte', v }),
   or: (...list) => ({ $op: 'or', v: list.flat() }),
-  remove: () => ({ $op: 'remove' })
+  remove: () => ({ $op: 'remove' }),
+  set: (v) => v
 }
 const pick = (doc, path) => path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), doc)
 function setPath(doc, path, v) {
@@ -159,6 +168,9 @@ const GIVER = 'o_giver'
 const RECV = 'o_recv'
 const RECV2 = 'o_recv2'
 const PHONE = '13800001234'
+const STAFF = 'o_staff'
+/** 店员权限校验时可挂起：用来确定性地复现「店员读单后、写入前，受礼人先交了地址」 */
+let STAFF_GATE = null
 const product = { id: 'p1', productId: 'p1', title: '光明女神闪蝶', image: 'https://example.com/a.jpg' }
 const linkOrder = (meta = {}, over = {}) => ({
   _id: 'L1', _openid: GIVER, openid: GIVER, source: 'gift', orderNo: 'SH20261011001', status: 'paid_awaiting_address', products: [product], createTime: new Date(),
@@ -237,7 +249,11 @@ async function runChecks() {
         crypto: NODE_CRYPTO,
         './sourceOrigin': { isNonClientSource: () => false, isClientSource: () => true },
         './inAppMessage': { dispatchInAppMessage: async () => ({ success: true }) },
-        './staffGuard': { assertStaff: async () => ({ ok: false }) },
+        './staffGuard': {
+          assertStaff: async (_db, who, opts) => (STAFF_GATE ? await STAFF_GATE : null, who === STAFF && opts && opts.role === 'manager'
+            ? { ok: true, actor: { openid: STAFF, name: '店长甲', workspaceRole: 'manager' } }
+            : { ok: false, code: 'FORBIDDEN', msg: '该操作仅店长可用' })
+        },
         './giftSubscribe': { notifyGiftSubscribe: async () => ({}) }
       }
     }).main
@@ -478,6 +494,75 @@ async function runChecks() {
   ok(dso.indexOf('!giftReceiverPhone && this.pendingGiftSelfTreat()) return') !== -1 && dso.indexOf('!giftReceiverPhone && this.pendingGiftSelfTreat()) return') < dso.indexOf('this.backToGiftPhone()') &&
     sbo.includes("const selfPhoneBad = !!(address && address.phone) && this.pendingGiftSelfTreat() && !this.pendingGiftReceiverPhone()") && sbo.includes('|| selfPhoneBad)) {'),
     'H 确认页：「犒劳自己」缺收货手机号就地提示，不退回送礼页找受礼人手机号')
+
+  // ---------------- P 代填收货地址（旁路 proxySubmitAddress）
+  {
+    const SG = load(P.shipGiftMeta, { stubs: { crypto: NODE_CRYPTO } })
+    const ADDR = { name: '王小满', phone: '139 0000 2222', region: ['上海市', '上海市', '静安区'], detail: '某路 1 号' }
+    const inviteOrder = (meta = {}, over = {}) => linkOrder({ claimMode: '', receiverVerify: false, ...meta }, over)
+    const env = giftEnv([inviteOrder()])
+    const no1 = await env.call(RECV, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR })
+    const no2 = await env.call(GIVER, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR })
+    ok(!no1.success && !no2.success && no1.code === 'FORBIDDEN' && env.o().giftMeta.addressStatus !== 'submitted' && env.o().status === 'paid_awaiting_address',
+      'P 非店员（含下单人冒充店员）不能以店员身份代填')
+    const no3 = await env.call(RECV, { action: 'proxySubmitAddress', by: 'giver', orderId: 'L1', address: ADDR })
+    const no4 = await env.call(STAFF, { action: 'proxySubmitAddress', by: 'giver', orderId: 'L1', address: ADDR })
+    ok(!no3.success && !no4.success && no3.code === 'NOT_GIVER' && env.o().giftMeta.addressStatus !== 'submitted', 'P 非下单人不能以下单人身份代填')
+    ok(SG.needsAddressBeforeShip(env.o()), 'P 前置：未填址的礼赠发货端判「待填址禁发货」')
+    const st = await env.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR, reason: '顾客到店口述' })
+    const o = env.o()
+    ok(st.success && o.status === 'paid' && o.giftMeta.addressStatus === 'submitted' && o.address && o.address.phone === '13900002222' && o.address.region.length === 3 &&
+      !SG.needsAddressBeforeShip(o), 'P 店员代填后：订单回到待发货、发货端不再拦截（可填快递单号）')
+    ok(!o.giftMeta.receiverOpenid && o.giftMeta.acceptStatus === 'none', 'P 代填不认定受礼人（不写 receiverOpenid / acceptStatus）')
+    const pr = o.giftMeta.addressProxy || {}
+    const log = (env.store.staff_audit_logs || [])[0] || {}
+    ok(pr.by === 'staff' && pr.openid === STAFF && pr.reason === '顾客到店口述' && !!pr.at && log.action === 'gift_proxy_address' && log.relatedId === 'L1' && log.openid === STAFF,
+      'P 店员代填留痕：订单记谁 / 何时 / 原因，并写操作记录')
+    const again = await env.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: { ...ADDR, name: '别人' } })
+    ok(again.success && again.already && env.o().address.name === '王小满', 'P 已有地址：再次代填不覆盖')
+    const late = await env.call(RECV, { action: 'submitAddress', token: 'tokA', orderId: 'L1', address: { ...ADDR, name: '受礼人' } })
+    ok(late.success && late.already && env.o().address.name === '王小满', 'P 代填后受礼人再填：按「已提交」处理，不覆盖')
+    const acc = await env.call(RECV, { action: 'accept', token: 'tokA', orderId: 'L1' })
+    ok(acc.success && env.o().giftMeta.receiverOpenid === RECV, 'P 代填后 TA 仍可凭礼笺收下（礼记在 TA 名下）')
+
+    const g = giftEnv([inviteOrder()])
+    const gv = await g.call(GIVER, { action: 'proxySubmitAddress', by: 'giver', orderId: 'L1', address: ADDR })
+    ok(gv.success && g.o().status === 'paid' && g.o().giftMeta.addressStatus === 'submitted' && (g.o().giftMeta.addressProxy || {}).by === 'giver' && !g.o().giftMeta.receiverOpenid,
+      'P 下单人本人可填写收货地址，记为本人代填')
+    const ex = giftEnv([inviteOrder({ expireAt: new Date(Date.now() - 1000) })])
+    const exr = await ex.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR })
+    ok(!exr.success && exr.code === 'EXPIRED' && ex.o().giftMeta.addressStatus !== 'submitted', 'P 已过填址期限：不可代填（等退款，不偷偷改发货）')
+    const ship = giftEnv([inviteOrder({ deliveryType: 'ship_to_receiver' }, { status: 'paid' })])
+    ok(!(await ship.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR })).success, 'P 只对「邀请 TA 填地址」的礼赠开放')
+
+    const race = giftEnv([inviteOrder()])
+    let open
+    STAFF_GATE = new Promise((res) => { open = res })
+    const pending = race.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: { ...ADDR, name: '店员录入' } })
+    await tick(); await tick()
+    const recv = await race.call(RECV, { action: 'submitAddress', token: 'tokA', orderId: 'L1', address: { ...ADDR, name: '受礼人' } })
+    open(); STAFF_GATE = null
+    const pr2 = await pending
+    ok(recv.success && pr2.success && pr2.already && (race.o().address || {}).name === '受礼人' && !race.o().giftMeta.addressProxy,
+      'P 并发：店员读单后受礼人先交了地址 → 代填不覆盖（条件写入）')
+
+    const r = giftEnv([inviteOrder()])
+    const rs = await r.call(RECV, { action: 'submitAddress', token: 'tokA', orderId: 'L1', address: { ...ADDR, phone: '13900002222' } })
+    ok(rs.success && r.o().status === 'paid' && r.o().giftMeta.addressStatus === 'submitted' && r.o().giftMeta.receiverOpenid === RECV &&
+      r.o().giftMeta.acceptStatus === 'accepted' && !r.o().giftMeta.addressProxy, 'P 受礼人原填址路径不变：仍认定受礼人、不记代填')
+
+    const selfEnv = giftEnv([inviteOrder({ receiverVerify: true })], [{ _id: 'u1', _openid: GIVER, phone: '13800001234' }])
+    selfEnv.store.gift_receiver_verify.push({ _id: 'L1', ...PL.buildVerifyDoc('L1', GIVER, PHONE, new Date()) })
+    const sv = await selfEnv.call(GIVER, { action: 'getGiverShare', orderId: 'L1' })
+    const other = giftEnv([inviteOrder({ receiverVerify: true })], [{ _id: 'u1', _openid: GIVER, phone: '13700009999' }])
+    other.store.gift_receiver_verify.push({ _id: 'L1', ...PL.buildVerifyDoc('L1', GIVER, PHONE, new Date()) })
+    const ov = await other.call(GIVER, { action: 'getGiverShare', orderId: 'L1' })
+    ok(sv.success && sv.gift.selfTreat === true && ov.success && ov.gift.selfTreat === false, 'P 犒劳自己判定：核验号码 = 下单人手机才算自己收')
+  }
+  ok(/wx:elif="\{\{item\.giftAwaitingAddress\}\}">\s*<view[^>]*catchtap="openProxyAddress"[^>]*>代填地址<\/view>/.test(read(P.managerWxml)) &&
+    read(P.managerPageJson).includes('"proxy-address-sheet": "/subpackages/feature/gift/proxy-address-sheet/index"'), 'P 店员订单管理：待填址订单有「代填地址」按钮与代填面板')
+  ok(read(P.proxySheetJs).includes("action: 'proxySubmitAddress',") && /<proxy-address-sheet[\s\S]*?by="giver"/.test(read(P.successWxml)) &&
+    /bindtap="openProxySheet"\s*wx:if="\{\{canProxyAddress && selfTreat\}\}"/.test(read(P.successWxml)), 'P 送礼成功页：犒劳自己时「填写我的收货地址」为主按钮，走代填旁路')
   return fails
 }
 
@@ -515,7 +600,21 @@ const INJECTIONS = [
   { name: '犒劳自己下单仍要求受礼人手机号', file: P.composeJs, find: '    if (selfTreat) {\n      // 号码到确认页取收货地址手机号\n    } else if (!claimLink && ', replace: '    if (!claimLink && ' },
   { name: '确认页犒劳自己不取收货手机号', file: P.confirmOrder, find: "      return /^1\\d{10}$/.test(addrPhone) ? addrPhone : ''", replace: "      return ''" },
   { name: '确认页犒劳自己缺号退回送礼页', file: P.confirmOrder, find: '    if (this.data.isGiftOrder && !giftReceiverPhone && this.pendingGiftSelfTreat()) return\n', replace: '' },
-  { name: '确认页犒劳自己收货手机号不校验', file: P.confirmOrder, find: ' || selfPhoneBad)) {', replace: ')) {' }
+  { name: '确认页犒劳自己收货手机号不校验', file: P.confirmOrder, find: ' || selfPhoneBad)) {', replace: ')) {' },
+  { name: '代填不校验店员', file: P.gift, find: "    if (!guard.ok) return { success: false, code: guard.code || 'FORBIDDEN', msg: guard.msg || '无操作权限' }\n    actor = guard.actor || {}", replace: '    actor = guard.actor || {}' },
+  { name: '代填不校验下单人', file: P.gift, find: "    if (!isGiverOfOrder(order, openid)) {\n      return { success: false, code: 'NOT_GIVER'", replace: "    if (false) {\n      return { success: false, code: 'NOT_GIVER'" },
+  { name: '代填后仍是待填址（不可发货）', file: P.gift, find: "        address: _.set(addressDoc),\n        'giftMeta.addressStatus': 'submitted',\n", replace: '        address: _.set(addressDoc),\n' },
+  { name: '代填冒充受礼人', file: P.gift, find: "        'giftMeta.receiverPhoneMasked': maskPhone(addressDoc.phone),\n", replace: "        'giftMeta.receiverPhoneMasked': maskPhone(addressDoc.phone),\n        'giftMeta.receiverOpenid': openid,\n" },
+  { name: '代填不留痕', file: P.gift, find: '        ...proxy\n', replace: '' },
+  { name: '店员代填不写操作记录', file: P.gift, find: "      action: 'gift_proxy_address',", replace: "      action: '',"  },
+  { name: '代填不判过期', file: P.gift, find: "  if (isExpired(order)) {\n    return { success: false, code: 'EXPIRED', msg: '填址期限已过", replace: "  if (false) {\n    return { success: false, code: 'EXPIRED', msg: '填址期限已过" },
+  { name: '代填覆盖已提交地址', file: P.gift, find: "      'giftMeta.addressStatus': _.neq('submitted')\n    }).update({", replace: '    }).update({' },
+  { name: '代填前清空地址不带条件（会抹掉受礼人刚交的地址）', file: P.gift, find: "await db.collection('orders').where({ _id: order._id, 'giftMeta.addressStatus': _.neq('submitted') })\n        .update({ data: { address: _.remove() } })", replace: "await db.collection('orders').doc(order._id).update({ data: { address: _.remove() } })" },
+  { name: '受礼人填址不再认定受礼人', file: P.gift, find: "\n    'giftMeta.receiverOpenid': openid,\n    'giftMeta.addressStatus': 'submitted',", replace: "\n    'giftMeta.addressStatus': 'submitted'," },
+  { name: '犒劳自己判定失效', file: P.gift, find: 'return phones.filter(Boolean).some((p) => hashPhone(doc.salt, p) === doc.phoneHash)', replace: 'return false' },
+  { name: '店员端没有代填入口', file: P.managerWxml, find: 'catchtap="openProxyAddress"', replace: 'catchtap="noop"' },
+  { name: '代填面板不走旁路动作', file: P.proxySheetJs, find: "action: 'proxySubmitAddress',", replace: "action: 'submitAddress'," },
+  { name: '犒劳自己没有本人填址主按钮', file: P.successWxml, find: 'wx:if="{{canProxyAddress && selfTreat}}"', replace: 'wx:if="{{false}}"' }
 ]
 
 async function main() {

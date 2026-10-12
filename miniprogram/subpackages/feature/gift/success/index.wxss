@@ -653,3 +653,17 @@ page { background: #1A1814; color: #fff; }
 .verify-line-val { color: #C4A76C; }
 .verify-line.warn { padding: 16rpx 20rpx; border: 1px solid #E8927C; border-radius: 12rpx; }
 .verify-line.warn .verify-line-label, .verify-line.warn .verify-line-val { color: #E8927C; }
+
+/* 邀请填址未留址：送礼人自己填写收货地址（2026-10-12）—— 带边框的整行入口，一眼看得到 */
+.proxy-fill-line {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  padding: 18rpx 20rpx;
+  border: 1px solid rgba(196, 167, 108, 0.42);
+  border-radius: 16rpx;
+  text-align: center;
+}
+.proxy-fill-label { font-size: 22rpx; color: #9A8F7C; }
+.proxy-fill-cta { font-size: 26rpx; color: #C4A76C; letter-spacing: 0.02em; }

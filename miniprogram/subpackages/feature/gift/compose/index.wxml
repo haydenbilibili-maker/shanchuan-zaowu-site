@@ -305,9 +305,12 @@
         <text class="delivery-desc">支付后分享领取卡，由 TA 启封礼笺并留下去处，馆员再启程</text>
       </view>
 
-      <view class="other-toggle" bindtap="toggleOtherDelivery">
-        <text>{{showOtherDelivery ? '收起其他方式' : '其他交付方式'}}</text>
-        <text class="toggle-arrow">{{showOtherDelivery ? '▴' : '▾'}}</text>
+      <view class="other-toggle {{showOtherDelivery ? 'is-open' : ''}}" bindtap="toggleOtherDelivery" hover-class="tap-press" hover-stay-time="80">
+        <view class="other-toggle-main">
+          <text class="other-toggle-title">{{showOtherDelivery ? '其他交付方式' : '还有 ' + otherDeliveries.length + ' 种交付方式可选'}}</text>
+          <text class="other-toggle-names" wx:if="{{!showOtherDelivery}}">{{otherDeliveryNames}}</text>
+        </view>
+        <text class="other-toggle-act">{{showOtherDelivery ? '收起 ▴' : '展开 ▾'}}</text>
       </view>
 
       <view class="other-list" wx:if="{{showOtherDelivery}}">

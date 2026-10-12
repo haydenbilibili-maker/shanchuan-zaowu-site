@@ -118,6 +118,7 @@ Page({
     deliveryType: 'invite_address',
     showOtherDelivery: false,
     otherDeliveries: OTHER_DELIVERIES,
+    otherDeliveryNames: OTHER_DELIVERIES.map((d) => d.name).join(' · '),
     /** 犒劳自己：交付固定寄给我，地址与手机号到确认页按普通下单填写（不走邀请填址 / 受礼人手机号） */
     selfTreat: false,
     /** 门店自取开关（超管后台）：false 时移除「门店自提代赠」 */
@@ -660,11 +661,13 @@ Page({
       }
       // 门店自取开关：关闭时移除「门店自提代赠」选项，并回落「邀请 TA 填写地址」
       const pickupEnabled = flags.showStorePickup !== false
+      const otherDeliveries = pickupEnabled
+        ? OTHER_DELIVERIES
+        : OTHER_DELIVERIES.filter((d) => d.id !== 'store_pickup')
       const deliveryPatch = {
         storePickupEnabled: pickupEnabled,
-        otherDeliveries: pickupEnabled
-          ? OTHER_DELIVERIES
-          : OTHER_DELIVERIES.filter((d) => d.id !== 'store_pickup')
+        otherDeliveries,
+        otherDeliveryNames: otherDeliveries.map((d) => d.name).join(' · ')
       }
       if (!pickupEnabled && this.data.deliveryType === 'store_pickup') {
         deliveryPatch.deliveryType = 'invite_address'

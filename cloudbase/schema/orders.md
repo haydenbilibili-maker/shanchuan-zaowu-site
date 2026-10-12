@@ -34,6 +34,7 @@ C 端下单、支付、履约、退款的主订单集合。
 | `giftMeta.claimPasscode` | boolean | **选填**。凭礼笺领取是否加了 6 位口令。**只存布尔**：口令本身在 `gift_receiver_verify.passcode`（仅云函数可读写，只回给送礼人）。 |
 | `giftMeta.claimName` / `giftMeta.claimedByLinkAt` | string / date | 凭礼笺收下时受礼人自填的称呼（≤12 字，选填）与收下时间；送礼人据此看到「谁收下了」。 |
 | `giftMeta.claimResetCount` / `giftMeta.claimResetAt` | number / date | 送礼人「作废并换新链接」次数与最近时间（`manageGift.resetShareLink`：换 `shareToken`、解绑原领取人、自提换 `claimCode`）。 |
+| `giftMeta.addressProxy` | object | **选填**（2026-10-12）。邀请填址单由店员或下单人**代填**收货地址时的操作记录：`{ by: 'staff'\|'giver', openid, name, role, reason, at }`。写入方 `manageGift.proxySubmitAddress`（与受礼人 `submitAddress` 同一条件写入：`addressStatus` 未提交才写，置 `submitted`、状态转 `paid`）；**不写** `receiverOpenid` / `acceptStatus`，TA 仍可凭礼笺收下。店员代填另记 `staff_audit_logs`（`gift_proxy_address`）。无此键 = 受礼人本人填的或未填。 |
 | `certMeta` | object | **选填**（2026-09-28 N5）。证书首次签发后固化：`issuedAt`（签发时间，首次写入后不变）+ 按版式 `holder` / `gift_holder` / `gift_voucher` 各一项 `{ fileID, sig, openid, savedAt }`（本人那一版证书图）。写入方 `getCareSpecimens.saveCertificate`。存量单无此键 → 签发时间读时推导为最接近的真实签收时间（`receiveTime` → `giftMeta.claimedAt` → `pickupClaimedAt` → `autoReceivedAt`，见 `giftHolder.certIssuedAt`），不迁移。 |
 | `packagePhotos` | array\<string\> | **选填**（2026-09-21 新增）。发货时店长上传的包装实拍，元素是云存储 fileID（`cloud://…`）。由 `managerShipOrder` 在发货动作里归一化（`orderSummary.pickPackagePhotos`）后写入，并**同时**写入该笔发货私信 `user_messages.photos` —— 顾客在「山海有信」里直接看到。 |
 

@@ -319,9 +319,24 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16rpx 8rpx 8rpx;
+  gap: 16rpx;
+  padding: 22rpx 24rpx;
+  margin-bottom: 16rpx;
+  border: 1px solid rgba(196, 167, 108, 0.42);
+  border-radius: 16rpx;
+  background: rgba(196, 167, 108, 0.04);
+}
+.other-toggle.is-open { padding: 16rpx 24rpx; }
+.other-toggle-main { display: flex; flex-direction: column; gap: 6rpx; min-width: 0; }
+.other-toggle-title { font-size: 22rpx; color: #A09A90; }
+.other-toggle-names { font-size: 28rpx; font-weight: 500; color: #C4A76C; }
+.other-toggle-act {
+  flex-shrink: 0;
+  padding: 8rpx 18rpx;
+  border: 1px solid rgba(196, 167, 108, 0.55);
+  border-radius: 999rpx;
+  font-size: 22rpx;
   color: #C4A76C;
-  font-size: 24rpx;
 }
 
 .store-pick { margin-top: 16rpx; }
@@ -470,11 +485,6 @@ page {
   color: #C4A76C;
   border-color: #C4A76C;
   background: rgba(196, 167, 108, 0.08);
-}
-
-.toggle-arrow {
-  font-size: 22rpx;
-  color: #A09A90;
 }
 
 .envelope-shell {

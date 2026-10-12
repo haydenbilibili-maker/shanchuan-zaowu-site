@@ -334,6 +334,7 @@
     <view class="gift-await-bar" wx:if="{{isGiftOrder && giftAwaitingAddress}}">
       <text class="gift-await-hint" wx:if="{{giftExpireHint}}">{{giftExpireHint}}</text>
       <button class="btn-gift-primary share-native" open-type="share" hover-class="tap-press-soft">把礼笺交给 TA</button>
+      <view class="btn-gift-secondary btn-gift-fill" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goProxyFillAddress">已拿到地址或送给自己？我来填写收货地址</view>
       <view class="gift-await-row">
         <view class="btn-gift-secondary" hover-class="tap-press-soft" hover-stay-time="80" bindtap="nudgeGift">再轻轻提醒一声</view>
         <view class="btn-gift-ghost" hover-class="tap-press-soft" hover-stay-time="80" bindtap="requestRefund" wx:if="{{showRefundEntry}}">{{refundEntryLabel}}</view>

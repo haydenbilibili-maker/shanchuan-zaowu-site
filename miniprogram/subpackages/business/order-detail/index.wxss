@@ -524,6 +524,11 @@ view, text, image, button { box-sizing: border-box; }
   border: 1px solid rgba(196, 167, 108, 0.55);
   background: transparent;
 }
+.btn-gift-fill {
+  flex: none;
+  width: 100%;
+  font-size: 24rpx;
+}
 .btn-gift-ghost {
   color: var(--color-text-secondary);
   border: 1px solid rgba(160, 154, 144, 0.28);

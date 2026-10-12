@@ -1,0 +1,42 @@
+<view class="pa-mask" wx:if="{{show}}" bindtap="onClose" catchtouchmove="noop">
+  <view class="pa-panel" catchtap="noop">
+    <text class="pa-over">{{by === 'staff' ? 'ADDRESS BY STAFF' : 'MY ADDRESS'}}</text>
+    <text class="pa-title">{{by === 'staff' ? '代填收货地址' : (selfTreat ? '填写我的收货地址' : '我来填写收货地址')}}</text>
+    <text class="pa-desc" wx:if="{{by === 'staff'}}">顾客已把地址告诉门店时使用。提交后这单按普通待发货处理，可直接填快递单号；会记录是你代填的。</text>
+    <text class="pa-desc" wx:elif="{{selfTreat}}">这份是犒劳自己的礼。填上收货地址，专员就能启程。</text>
+    <text class="pa-desc" wx:else>已经拿到 TA 的地址？直接替 TA 填上，专员就能启程；TA 之后打开礼笺仍可收下。</text>
+    <text class="pa-no" wx:if="{{orderNo}}">订单 NO. {{orderNo}}</text>
+
+    <view class="pa-import" wx:if="{{by !== 'staff'}}" bindtap="importWx" hover-class="tap-press" hover-stay-time="80">
+      <text>从微信地址导入</text>
+      <text class="pa-chev" aria-hidden="true"></text>
+    </view>
+
+    <view class="pa-field">
+      <text class="pa-label">收件人</text>
+      <input class="pa-input" maxlength="20" placeholder="收件人姓名" placeholder-class="pa-placeholder" value="{{name}}" bindinput="onName" />
+    </view>
+    <view class="pa-field">
+      <text class="pa-label">手机号</text>
+      <input class="pa-input" type="number" maxlength="11" placeholder="11 位手机号" placeholder-class="pa-placeholder" value="{{phone}}" bindinput="onPhone" />
+    </view>
+    <picker mode="region" value="{{region}}" bindchange="onRegion">
+      <view class="pa-field">
+        <text class="pa-label">省市区</text>
+        <text class="pa-input {{regionText ? '' : 'pa-placeholder'}}">{{regionText || '选择省 / 市 / 区'}}</text>
+      </view>
+    </picker>
+    <view class="pa-field">
+      <text class="pa-label">详细地址</text>
+      <textarea class="pa-textarea" maxlength="120" placeholder="街道、门牌号" placeholder-class="pa-placeholder" value="{{detail}}" bindinput="onDetail" />
+    </view>
+    <view class="pa-field" wx:if="{{by === 'staff'}}">
+      <text class="pa-label">原因（选填）</text>
+      <input class="pa-input" maxlength="60" placeholder="如：顾客到店口述地址" placeholder-class="pa-placeholder" value="{{reason}}" bindinput="onReason" />
+    </view>
+
+    <text class="pa-error" wx:if="{{error}}">{{error}}</text>
+    <view class="pa-btn {{busy ? 'is-busy' : ''}}" bindtap="submit" hover-class="tap-press" hover-stay-time="80">{{busy ? '正在记下…' : '确认地址'}}</view>
+    <view class="pa-cancel" bindtap="onClose" hover-class="tap-press" hover-stay-time="80">取消</view>
+  </view>
+</view>

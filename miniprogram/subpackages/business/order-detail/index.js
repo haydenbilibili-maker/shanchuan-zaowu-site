@@ -1304,6 +1304,16 @@ Page(withAppModal({
     }
   },
 
+  /** 送礼人自己填收货地址（犒劳自己 / 已线下拿到地址）：到送礼成功页打开填写面板 */
+  goProxyFillAddress() {
+    const id = this.data.orderId || (this.data.order && this.data.order._id);
+    if (!id) return;
+    this._refreshOnShow = true;
+    wx.navigateTo({
+      url: `/subpackages/feature/gift/success/index?orderId=${encodeURIComponent(id)}&fill=1`
+    });
+  },
+
   goFillGiftAddress() {
     const id = this.data.orderId || (this.data.order && this.data.order._id);
     if (!id) return;

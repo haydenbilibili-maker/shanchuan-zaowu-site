@@ -57,7 +57,13 @@ Page({
     claimQrPayload: '',
     storeName: '',
     claimHint: '',
-    subscribeHint: ''
+    subscribeHint: '',
+    /** 犒劳自己（云端按核验号码 = 本人判定）：文案改成自己收 */
+    selfTreat: false,
+    /** 邀请填址且未留址：送礼人可自己填收货地址（2026-10-12） */
+    canProxyAddress: false,
+    proxySheet: false,
+    verifyLabel: '领取核验'
   },
 
   /** 逐字显示礼笺；点任意处可立即显示全文并停音（产品负责人确认的手感） */
@@ -178,6 +184,7 @@ Page({
       return
     }
     this._orderId = String((options && options.orderId) || '').trim()
+    this._openFill = String((options && options.fill) || '') === '1'
     this.bootstrap()
   },
 
@@ -205,6 +212,7 @@ Page({
       const gift = result.gift || {}
       const deliveryType = gift.deliveryType || 'invite_address'
       const awaiting = !!gift.awaitingAddress && deliveryType === 'invite_address'
+      const selfTreat = !!gift.selfTreat
       let heroOverline = 'GIFT SEALED'
       let heroTitle = '礼已备好'
       let heroDesc = '这份山海已封缄。'
@@ -235,9 +243,13 @@ Page({
           shareCta = '把礼笺也告诉 TA'
         } else if (addrSubmitted) {
           heroOverline = 'ADDRESS RECEIVED'
-          heroTitle = 'TA 已留下去处'
+          heroTitle = selfTreat || gift.addressProxyBy ? '收货地址已填好' : 'TA 已留下去处'
           heroDesc = '收件信息已经收到，专员正在备妥启程。每一步都可以在「礼赠进度」里回看。'
-          shareCta = '把礼笺也告诉 TA'
+          shareCta = selfTreat ? '把礼笺发到微信里留存' : '把礼笺也告诉 TA'
+        } else if (selfTreat) {
+          heroTitle = '礼已备好，填上你的收货地址'
+          heroDesc = '这份是犒劳自己的礼，不用转交礼笺。填好收货地址，专员就能启程。'
+          canShare = false
         } else if (accepted) {
           heroTitle = 'TA 已启封，正等留下去处'
           heroDesc = '对方已经打开这封信了。等 TA 写下收件信息，专员就能启程。'
@@ -252,7 +264,9 @@ Page({
           if (gift.expireAt) {
             try {
               const d = new Date(gift.expireAt)
-              expireHint = `须于 ${d.getMonth() + 1}月${d.getDate()}日前请 TA 留下地址`
+              expireHint = selfTreat
+                ? `须于 ${d.getMonth() + 1}月${d.getDate()}日前填写收货地址`
+                : `须于 ${d.getMonth() + 1}月${d.getDate()}日前请 TA 留下地址`
             } catch (e) {
               expireHint = `填址有效期 ${gift.addressTimeoutDays || 7} 日`
             }
@@ -263,6 +277,11 @@ Page({
       } else if (deliveryType === 'ship_to_receiver') {
         heroDesc = '将按你填写的地址妥投给 TA。仍可分享礼笺，让对方先读到你的话。'
         shareCta = '把礼笺也告诉 TA'
+      } else if (deliveryType === 'ship_to_self' && selfTreat) {
+        heroOverline = 'FOR MYSELF'
+        heroTitle = '犒劳自己的礼已备好'
+        heroDesc = '藏品将寄到你填写的收货地址。这封礼笺写给自己，随时可以回来重读。'
+        shareCta = '把礼笺发到微信里留存'
       } else if (deliveryType === 'ship_to_self') {
         heroDesc = '藏品将先寄到你处。收到后，再当面转交这份山海。'
         shareCta = gift.claimMode === 'link' ? '把礼笺交给 TA 收下' : '可选：先把礼笺给 TA'
@@ -300,7 +319,10 @@ Page({
         heroDesc,
         shareCta,
         canShare,
-        canNudge: awaiting && !gift.expired,
+        canNudge: awaiting && !gift.expired && !selfTreat,
+        selfTreat,
+        canProxyAddress: awaiting && !gift.expired,
+        verifyLabel: selfTreat ? '本人手机核验' : '领取核验',
         // TA 签收 / 到店领取后：送礼人的赠予凭证（持有证书归受礼人）
         voucherReady: gift.status === 'received',
         shareTitle: result.shareTitle || '请拆开这封山海礼笺',
@@ -327,6 +349,10 @@ Page({
 
       if (gift.claimMode === 'link') wx.hideShareMenu({ menus: ['shareTimeline'] })
       this._syncVerify(product0 && product0.productId)
+      if (this._openFill && awaiting && !gift.expired) {
+        this._openFill = false
+        this.setData({ proxySheet: true })
+      }
 
       // 礼笺逐字显示（产品负责人：文字跳出时给打字机音效）。
       // 在 setData 之后启动，避免「先整段闪一下再从头打」。
@@ -456,6 +482,19 @@ Page({
   onVerifyPhone(e) { this._saveVerify({ phone: e.detail.phone }) },
   onVerifyUseAddress() { this._saveVerify({ useAddressPhone: true }) },
   onVerifyClear() { this._saveVerify({ phone: '' }) },
+
+  openProxySheet() {
+    if (this.data.canProxyAddress) this.setData({ proxySheet: true })
+  },
+
+  closeProxySheet() {
+    this.setData({ proxySheet: false })
+  },
+
+  onProxyDone() {
+    this.setData({ proxySheet: false })
+    this.bootstrap()
+  },
 
   goVoucher() {
     wx.navigateTo({ url: `/subpackages/business/certificate/index?id=${this._orderId}` })

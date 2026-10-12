@@ -27,3 +27,13 @@
 
 <!-- 录入日报重复提示（submitRevenue → askLedgerDuplicate）：覆盖已有 / 仍要新增 / 取消 -->
 <app-modal id="appModal" />
+
+<!-- 礼赠待填址：店员代填收货地址（礼赠分包组件，按需加载） -->
+<proxy-address-sheet
+  show="{{proxyAddr.show}}"
+  orderId="{{proxyAddr.orderId}}"
+  orderNo="{{proxyAddr.orderNo}}"
+  by="staff"
+  bind:done="onProxyAddressDone"
+  bind:close="closeProxyAddress"
+/>

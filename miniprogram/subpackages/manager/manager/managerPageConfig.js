@@ -1416,6 +1416,7 @@ const managerPageConfig = {
 
     // 🟢 [新增] 发货弹窗相关数据
     showShipModal: false,
+    proxyAddr: { show: false, orderId: '', orderNo: '' },
     tempShip: {
       orderId: '',
       orderNo: '',
@@ -8581,6 +8582,25 @@ bindSubCatChange(e) {
       console.error('completeStorePickup', err)
       this.showHubTip((err && err.message) || '确认失败', 'warn')
     }
+  },
+
+  // 礼赠待填址：店员代填收货地址（顾客已线下告知门店）→ 写入后按普通待发货处理
+  openProxyAddress(e) {
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    if (!ds.id) return;
+    this.setData({ proxyAddr: { show: true, orderId: ds.id, orderNo: ds.orderno || '' } });
+  },
+
+  closeProxyAddress() {
+    this.setData({ 'proxyAddr.show': false });
+  },
+
+  onProxyAddressDone(e) {
+    const already = !!(e && e.detail && e.detail.already);
+    this.setData({ 'proxyAddr.show': false });
+    this.showHubTip(already ? '地址此前已提交，可以发货了' : '地址已记下，可以发货了', 'info');
+    this.loadOrders();
+    this.loadOpsOrderCounts();
   },
 
   // 1. 打开弹窗

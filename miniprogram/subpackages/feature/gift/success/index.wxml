@@ -93,6 +93,23 @@
       hover-stay-time="80"
       wx:if="{{canShare}}"
     >{{shareCta}}</button>
+    <view
+      class="btn-primary proxy-fill-btn"
+      hover-class="btn-primary-press"
+      hover-stay-time="80"
+      bindtap="openProxySheet"
+      wx:if="{{canProxyAddress && selfTreat}}"
+    >填写我的收货地址</view>
+    <view
+      class="proxy-fill-line"
+      hover-class="tap-press"
+      hover-stay-time="80"
+      bindtap="openProxySheet"
+      wx:elif="{{canProxyAddress}}"
+    >
+      <text class="proxy-fill-label">已经拿到 TA 的地址，或是送给自己？</text>
+      <text class="proxy-fill-cta">我来填写收货地址</text>
+    </view>
     <view class="actions-secondary" wx:if="{{canNudge}}">
       <view
         class="btn-secondary"
@@ -126,7 +143,7 @@
       <text class="verify-line-val">{{claimLineText}} · 管理</text>
     </view>
     <view class="verify-line {{verify.receiverVerify ? '' : 'warn'}}" wx:elif="{{verify && (verify.receiverVerify || verify.editable)}}" bindtap="openVerifySheet">
-      <text class="verify-line-label">{{verify.receiverVerify ? '领取核验' : '建议补填受礼人手机号'}}</text>
+      <text class="verify-line-label">{{verify.receiverVerify ? verifyLabel : '建议补填受礼人手机号'}}</text>
       <text class="verify-line-val">{{verify.receiverVerify ? '尾号 ' + verify.phoneTail : '防礼笺被他人领走'}}{{verify.editable ? (verify.receiverVerify ? ' · 修改' : ' · 去填写') : ''}}</text>
     </view>
     <text class="subscribe-hint" wx:if="{{claimTip}}">{{claimTip}}</text>
@@ -156,6 +173,15 @@
   bindquick="onVerifyUseAddress"
   bindclear="onVerifyClear"
   bindclose="closeVerifySheet"
+/>
+
+<proxy-address-sheet
+  show="{{proxySheet}}"
+  orderId="{{orderId}}"
+  by="giver"
+  selfTreat="{{selfTreat}}"
+  bind:done="onProxyDone"
+  bind:close="closeProxySheet"
 />
 
 <claim-sheet

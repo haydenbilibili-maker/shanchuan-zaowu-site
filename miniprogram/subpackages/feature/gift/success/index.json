@@ -8,6 +8,7 @@
   "backgroundTextStyle": "light",
   "usingComponents": {
     "phone-sheet": "/subpackages/feature/gift/phone-sheet/index",
-    "claim-sheet": "/subpackages/feature/gift/claim-sheet/index"
+    "claim-sheet": "/subpackages/feature/gift/claim-sheet/index",
+    "proxy-address-sheet": "/subpackages/feature/gift/proxy-address-sheet/index"
   }
 }

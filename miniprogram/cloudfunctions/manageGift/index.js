@@ -6,6 +6,7 @@ const cloud = require('wx-server-sdk')
 const { isNonClientSource } = require('./sourceOrigin')
 const { dispatchInAppMessage } = require('./inAppMessage')
 const { assertStaff } = require('./staffGuard')
+const { writeAuditLog, auditFromActor } = require('./auditLog')
 const {
   isInviteAddressGift,
   isGiftOrder,
@@ -762,6 +763,142 @@ async function submitAddress(event, openid) {
   }
 }
 
+/**
+ * 代填收货地址（2026-10-12 产品负责人点名，旁路；受礼人 submitAddress 不变）
+ * 「邀请 TA 填地址」且尚未留址的礼赠，由店员（店长及以上，与发货同口径）或下单人本人代填。
+ * 写入与 submitAddress 相同的地址字段与状态（status→paid、addressStatus=submitted），
+ * 但**不认定受礼人**：不写 receiverOpenid / acceptStatus，TA 之后仍可凭礼笺收下。
+ * 留痕：giftMeta.addressProxy {by, openid, name, role, reason, at}；店员另记 staff_audit_logs。
+ */
+const PROXY_ADDRESS_STATUS = ['paid_awaiting_address', 'paid']
+
+function proxyAddressDoc(addr) {
+  const a = addr || {}
+  const name = String(a.name || '').trim().slice(0, 40)
+  const phone = normalizeCnPhone(a.phone)
+  const detail = String(a.detail || '').trim().slice(0, 120)
+  const region = Array.isArray(a.region)
+    ? a.region.map((x) => String(x || '').trim()).filter(Boolean)
+    : []
+  if (!name || !detail || region.length < 2) return { error: '请填写完整收件信息' }
+  if (!phone) return { error: '请填写 11 位收件手机号' }
+  return { doc: { name, phone, region, detail } }
+}
+
+async function proxySubmitAddress(event, openid) {
+  const by = event.by === 'staff' || event.by === 'giver' ? event.by : ''
+  if (!by) return { success: false, code: 'BAD_ROLE', msg: '缺少代填身份' }
+  if (!openid && !(by === 'staff' && event.adminOpsKey)) return { success: false, msg: '请先登录' }
+  const order = await loadOrder(String(event.orderId || '').trim())
+  if (!order || !order._id || !isGiftOrder(order) || !isInviteAddressGift(order)) {
+    return { success: false, msg: '这不是待填地址的礼赠订单' }
+  }
+
+  let actor = null
+  if (by === 'staff') {
+    const guard = await assertStaff(db, openid, { role: 'manager', adminOpsKey: event.adminOpsKey })
+    if (!guard.ok) return { success: false, code: guard.code || 'FORBIDDEN', msg: guard.msg || '无操作权限' }
+    actor = guard.actor || {}
+  } else {
+    if (!isGiverOfOrder(order, openid)) {
+      return { success: false, code: 'NOT_GIVER', msg: '只有下单人本人可以填写这份礼赠的收货地址' }
+    }
+    if (!(await isGiftFeatureEnabled())) return { success: false, code: 'GIFT_CLOSED', msg: '礼赠暂未开放' }
+  }
+
+  const meta = order.giftMeta || {}
+  if (meta.addressStatus === 'submitted') {
+    if (order.status === 'paid_awaiting_address') await ensureGiftAddressStatusPaid(order._id)
+    return { success: true, already: true, msg: '地址已提交' }
+  }
+  if (!PROXY_ADDRESS_STATUS.includes(String(order.status || ''))) {
+    return { success: false, code: 'BAD_STATUS', msg: '当前订单状态不可填写地址' }
+  }
+  if (isExpired(order)) {
+    return { success: false, code: 'EXPIRED', msg: '填址期限已过，这份礼赠将按规则退款' }
+  }
+
+  const picked = proxyAddressDoc(event.address)
+  if (picked.error) return { success: false, code: 'BAD_ADDRESS', msg: picked.error }
+  const addressDoc = picked.doc
+  const reason = String(event.reason || '').trim().slice(0, 60)
+  const proxy = {
+    'giftMeta.addressProxy.by': by,
+    'giftMeta.addressProxy.openid': String(openid || (actor && actor.openid) || 'admin_web'),
+    'giftMeta.addressProxy.name': String((actor && actor.name) || '').slice(0, 40),
+    'giftMeta.addressProxy.role': String((actor && (actor.workspaceRole || actor.role)) || (by === 'giver' ? 'giver' : '')).slice(0, 32),
+    'giftMeta.addressProxy.reason': reason,
+    'giftMeta.addressProxy.at': db.serverDate()
+  }
+
+  if (order.address == null) {
+    try {
+      await db.collection('orders').where({ _id: order._id, 'giftMeta.addressStatus': _.neq('submitted') })
+        .update({ data: { address: _.remove() } })
+    } catch (e0) {
+      /* 字段本就不存在时忽略 */
+    }
+  }
+  let won = null
+  try {
+    won = await db.collection('orders').where({
+      _id: order._id,
+      status: _.in(PROXY_ADDRESS_STATUS),
+      'giftMeta.addressStatus': _.neq('submitted')
+    }).update({
+      data: {
+        status: 'paid',
+        address: _.set(addressDoc),
+        'giftMeta.addressStatus': 'submitted',
+        'giftMeta.addressSubmittedAt': db.serverDate(),
+        'giftMeta.receiverPhoneMasked': maskPhone(addressDoc.phone),
+        ...proxy
+      }
+    })
+  } catch (e) {
+    console.error('proxySubmitAddress update failed', order._id, e)
+    return { success: false, code: 'DB_UPDATE', msg: '此刻未能记下地址，请稍后再试' }
+  }
+  if (!updatedCount(won)) {
+    const fresh = await loadOrder(order._id)
+    if (fresh && fresh.giftMeta && fresh.giftMeta.addressStatus === 'submitted') {
+      return { success: true, already: true, msg: '地址刚刚已由其他人提交' }
+    }
+    return { success: false, code: 'BAD_STATUS', msg: '订单状态已变化，请刷新后再试' }
+  }
+  const fresh = await loadOrder(order._id)
+  if (fresh && fresh.status === 'paid_awaiting_address') await ensureGiftAddressStatusPaid(order._id)
+
+  if (by === 'staff') {
+    await writeAuditLog(db, auditFromActor(actor, {
+      action: 'gift_proxy_address',
+      relatedId: order._id,
+      relatedType: 'order',
+      detail: { orderNo: order.orderNo || '', reason, region: addressDoc.region.slice(0, 2) },
+      source: 'manageGift'
+    }))
+  }
+
+  return { success: true, msg: '收货地址已记下，可以发货了', phoneMasked: maskPhone(addressDoc.phone) }
+}
+
+/** 送礼人视角：这份礼赠是不是「犒劳自己」—— 领取核验号码就是本人（寄给我的收货手机或本人注册手机）。只比哈希 */
+async function detectSelfTreat(order) {
+  const meta = (order && order.giftMeta) || {}
+  if (!meta.receiverVerify) return false
+  const doc = await loadVerifyDoc(order._id)
+  if (!doc || !doc.phoneHash || !doc.salt) return false
+  const phones = []
+  if (meta.deliveryType === 'ship_to_self' && order.address) phones.push(normalizeCnPhone(order.address.phone))
+  const giver = String(order._openid || order.openid || '')
+  if (giver) {
+    const users = await loadUsersByOpenid([giver])
+    const u = users[giver]
+    if (u && u.phone) phones.push(normalizeCnPhone(u.phone))
+  }
+  return phones.filter(Boolean).some((p) => hashPhone(doc.salt, p) === doc.phoneHash)
+}
+
 async function nudge(event, openid) {
   if (!openid) return { success: false, msg: '请先登录' }
   const orderId = String(event.orderId || '').trim()
@@ -1413,14 +1550,17 @@ async function getGiverShare(event, openid) {
     order.giftMeta = meta
   }
 
+  const gift = await enrichVoiceAccess(
+    publicGiftView(order, { role: 'giver' }),
+    order,
+    openid,
+    (order.giftMeta && order.giftMeta.shareToken) || ''
+  )
+  gift.selfTreat = await detectSelfTreat(order).catch(() => false)
+  gift.addressProxyBy = (order.giftMeta && order.giftMeta.addressProxy && order.giftMeta.addressProxy.by) || ''
   return {
     success: true,
-    gift: await enrichVoiceAccess(
-      publicGiftView(order, { role: 'giver' }),
-      order,
-      openid,
-      (order.giftMeta && order.giftMeta.shareToken) || ''
-    ),
+    gift,
     sharePath: `/subpackages/feature/gift/receive/index?orderId=${order._id}&token=${(order.giftMeta && order.giftMeta.shareToken) || ''}`,
     shareTitle: '请拆开这封山海礼笺'
   }
@@ -3256,6 +3396,7 @@ exports.main = async (event) => {
     if (action === 'setClaimPasscode') return await setClaimPasscode(event, openid)
     if (action === 'resetShareLink') return await resetShareLink(event, openid)
     if (action === 'submitAddress') return await submitAddress(event, openid)
+    if (action === 'proxySubmitAddress') return await proxySubmitAddress(event, openid)
     if (action === 'nudge') return await nudge(event, openid)
     if (action === 'verifyPickup') return await verifyPickup(event, openid)
     if (action === 'listBoard') return await listBoard(event, openid)

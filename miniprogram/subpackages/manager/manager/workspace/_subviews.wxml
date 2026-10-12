@@ -739,7 +739,7 @@
             <image class="om-addr-icon" src="/subpackages/manager/assets/icons/location.png" mode="aspectFit"></image>
             <view class="om-addr-body">
               <text class="om-addr-title">待 TA 留下地址</text>
-              <text class="om-addr-sub">地址提交前不可发货</text>
+              <text class="om-addr-sub">顾客已把地址告诉门店？点「代填地址」录入后即可发货</text>
             </view>
           </view>
           <view class="om-addr om-addr-copyable" wx:elif="{{item.address}}" catchtap="copyOrderAddress" data-id="{{item._id}}" data-scope="orders" hover-class="om-addr-press" hover-stay-time="80">
@@ -791,6 +791,9 @@
             </view>
             <view class="om-foot-actions" wx:elif="{{item.isStorePickup}}">
               <view class="om-btn ship disabled">门店自取</view>
+            </view>
+            <view class="om-foot-actions" wx:elif="{{item.giftAwaitingAddress}}">
+              <view hover-class="wb-press" hover-stay-time="80" class="om-btn ship" catchtap="openProxyAddress" data-id="{{item._id}}" data-orderno="{{item.orderNo}}">代填地址</view>
             </view>
             <view class="om-foot-actions" wx:else>
               <view class="om-btn ship disabled">待填址禁发货</view>
