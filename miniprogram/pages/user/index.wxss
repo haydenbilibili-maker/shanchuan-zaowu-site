@@ -325,7 +325,7 @@ page {
 .wb-icon {
   width: 40rpx;
   height: 40rpx;
-  filter: brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
   opacity: 1;
 }
 .wb-tile-info .wb-icon {

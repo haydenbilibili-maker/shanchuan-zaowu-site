@@ -1156,10 +1156,10 @@ Page({
     try {
       const limit = config.limit || 4;
       const cats = [
-        { _id: 'insect', displayName: '蝴蝶昆虫', enName: 'INSECTA', icon: '🦋' },
-        { _id: 'animal', displayName: '动物世界', enName: 'ANIMALIA', icon: '🐥' },
-        { _id: 'plant', displayName: '植物果实', enName: 'PLANTAE', icon: '🍀' },
-        { _id: 'marine', displayName: '海洋标本', enName: 'MARINE', icon: '🦀' }
+        { _id: 'insect', displayName: '蝴蝶昆虫', enName: 'INSECTA', icon: '蝶' },
+        { _id: 'animal', displayName: '动物世界', enName: 'ANIMALIA', icon: '禽' },
+        { _id: 'plant', displayName: '植物果实', enName: 'PLANTAE', icon: '叶' },
+        { _id: 'marine', displayName: '海洋标本', enName: 'MARINE', icon: '贝' }
       ].slice(0, limit);
       this.setData({ categories: cats, loadingCategories: false });
     } catch(e) {

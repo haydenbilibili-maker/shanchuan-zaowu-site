@@ -250,7 +250,7 @@ page {
   height: 28rpx;
   flex-shrink: 0;
   opacity: 0.4;
-  filter: brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
 }
 
 /* 会员铭牌：实体铜牌感；代号输入框之下的身份标识，可点复制 */
@@ -498,7 +498,7 @@ page {
 .phone-bind-icon {
   width: 32rpx;
   height: 32rpx;
-  filter: brightness(0) saturate(100%) invert(76%) sepia(66%) saturate(709%) hue-rotate(356deg) brightness(93%) contrast(87%);
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
 }
 
 .phone-bind-text {
