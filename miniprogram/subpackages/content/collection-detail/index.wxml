@@ -58,7 +58,7 @@
 
   <!-- B. 知识画廊 (横向滚动) -->
   <view class="section-block" wx:if="{{galleryImages.length > 0}}">
-    <view class="section-title">VISUAL ARCHIVE / 影像档案</view>
+    <view class="mu-head"><view class="mu-head-t"><text class="mu-en">VISUAL ARCHIVE</text><text class="mu-cn">影像档案</text></view></view>
     <scroll-view scroll-x class="gallery-scroll" enable-flex>
       <block wx:for="{{galleryImages}}" wx:key="*this">
         <view class="gallery-item" bindtap="previewGallery" data-src="{{item}}" hover-class="tap-press" hover-stay-time="80">
@@ -70,7 +70,7 @@
 
   <!-- C. 关联藏品 (玻璃拟态卡片) -->
   <view class="section-block" wx:if="{{relatedProducts.length > 0}}">
-    <view class="section-title">RELATED COLLECTION / 馆藏关联</view>
+    <view class="mu-head"><view class="mu-head-t"><text class="mu-en">RELATED COLLECTION</text><text class="mu-cn">馆藏关联</text></view></view>
     <block wx:for="{{relatedProducts}}" wx:key="_id">
       <view class="product-card-glass" bindtap="goToProduct" data-id="{{item._id}}" hover-class="tap-press" hover-stay-time="80">
         <!-- 需求 11：敏感形态模糊 -->
@@ -89,7 +89,8 @@
           <text class="p-name">{{item.title}}</text>
           <text class="p-price" wx:if="{{item.price}}">¥{{item.price}}</text>
         </view>
-        <view class="p-btn">查看</view>
+        <!-- 整行可点进入（2026-10-12 拍板：行内不放实心「查看」钮，金色实心只留给每屏唯一主操作） -->
+        <text class="p-chevron" aria-hidden="true">›</text>
       </view>
     </block>
   </view>

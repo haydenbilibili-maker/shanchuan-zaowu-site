@@ -129,10 +129,6 @@ page {
 .p-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .p-name { font-size: 28rpx; font-weight: bold; color: #eee; margin-bottom: 8rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .p-price { font-size: 32rpx; color: #C4A76C; font-family: 'DIN'; font-weight: bold; }
-.p-btn { 
-  font-size: 22rpx; color: #1A1814; background: #C4A76C; 
-  padding: 10rpx 30rpx; border-radius: 30rpx; font-weight: bold;
-}
 /* 加载中 / 加载失败状态（失败可重试，避免永久白屏） */
 .cd-state {
   display: flex;
@@ -165,3 +161,6 @@ page {
   font-size: 24rpx;
   color: var(--color-text-muted);
 }
+
+/* 行尾进入暗示：替代原实心「查看」胶囊 */
+.p-chevron { flex-shrink: 0; margin-left: 16rpx; font-size: 34rpx; line-height: 1; color: var(--brass-300); }

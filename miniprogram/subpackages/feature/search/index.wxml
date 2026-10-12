@@ -132,10 +132,10 @@
         </view>
 
         <view class="zone-section">
-          <view class="section-head">
-            <view class="section-copy">
-              <text class="section-en">TRENDING</text>
-              <text class="section-cn">热门检索</text>
+          <view class="mu-head">
+            <view class="mu-head-t">
+              <text class="mu-en">TRENDING</text>
+              <text class="mu-cn">热门检索</text>
             </view>
           </view>
           <view class="chip-matrix">
@@ -157,10 +157,10 @@
         </view>
 
         <view class="zone-section" wx:if="{{historyList.length > 0}}">
-          <view class="section-head">
-            <view class="section-copy">
-              <text class="section-en">RECENT</text>
-              <text class="section-cn">最近搜索</text>
+          <view class="mu-head">
+            <view class="mu-head-t">
+              <text class="mu-en">RECENT</text>
+              <text class="mu-cn">最近搜索</text>
             </view>
             <view
               class="clear-history"
@@ -299,10 +299,10 @@
           </view>
 
           <view class="related-block related-after-hits" wx:if="{{displayList.length > 0 && (relatedList.length || relatedLoading)}}">
-            <view class="section-head related-head">
-              <view class="section-copy">
-                <text class="section-en">RELATED</text>
-                <text class="section-cn">同标签藏品</text>
+            <view class="mu-head related-head">
+              <view class="mu-head-t">
+                <text class="mu-en">RELATED</text>
+                <text class="mu-cn">同标签藏品</text>
               </view>
             </view>
             <view class="related-sk" wx:if="{{relatedLoading && !relatedList.length}}">
@@ -406,10 +406,10 @@
             </view>
 
             <view class="related-block empty-related" wx:if="{{resultList.length === 0 && relatedList.length}}">
-              <view class="section-head related-head">
-                <view class="section-copy">
-                  <text class="section-en">RELATED</text>
-                  <text class="section-cn">同标签藏品</text>
+              <view class="mu-head related-head">
+                <view class="mu-head-t">
+                  <text class="mu-en">RELATED</text>
+                  <text class="mu-cn">同标签藏品</text>
                 </view>
               </view>
               <view class="related-list">

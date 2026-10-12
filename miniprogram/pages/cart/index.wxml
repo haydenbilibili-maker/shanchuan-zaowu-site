@@ -131,10 +131,7 @@
 
       <!-- 推荐 -->
       <view class="recommend-section" wx:if="{{collectionRecommendations.length > 0 && currentFolder === 'all'}}">
-        <view class="section-head">
-          <text class="section-label">你可能也喜欢</text>
-          <text class="section-sub">YOU MAY ALSO LIKE</text>
-        </view>
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">YOU MAY ALSO LIKE</text><text class="mu-cn">你可能也喜欢</text></view></view>
         <scroll-view scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
           <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
             <view class="rec-img-wrap">
@@ -201,9 +198,7 @@
       </view>
 
       <view class="recommend-section empty-rec" wx:if="{{collectionRecommendations.length > 0 && currentFolder === 'all'}}">
-        <view class="section-head">
-          <text class="section-label">为你推荐</text>
-        </view>
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">FOR YOU</text><text class="mu-cn">为你推荐</text></view></view>
         <scroll-view scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
           <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
             <view class="rec-img-wrap">

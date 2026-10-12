@@ -956,3 +956,12 @@ image[error] {
 }
 
 /* 关闭弹层专用：圆环内 X，勿与回退混用 */
+
+/* 分区标题全站口径（注记见 docs/细节雕刻_A流 第 10 轮） */
+.mu-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24rpx; margin-bottom: 24rpx; padding-bottom: 18rpx; background: linear-gradient(90deg, rgba(196,167,108,.55), rgba(196,167,108,.12) 60%, transparent) left bottom / 100% 1px no-repeat; }
+.mu-head-t { display: flex; flex-direction: column; min-width: 0; }
+.mu-en { font-size: 18rpx; line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
+.mu-cn { margin-top: 6rpx; font-size: 38rpx; line-height: 50rpx; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; }
+.mu-sub { margin-top: 6rpx; font-size: 22rpx; line-height: 1.45; color: var(--color-text-secondary); letter-spacing: .04em; }
+.mu-act { flex-shrink: 0; display: flex; align-items: center; gap: 12rpx; padding-bottom: 6rpx; font-size: 22rpx; color: var(--brass-300); letter-spacing: .12em; white-space: nowrap; }
+.mu-act-muted { color: var(--color-text-secondary); letter-spacing: .06em; }

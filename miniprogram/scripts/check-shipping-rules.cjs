@@ -788,9 +788,10 @@ async function runChecks(paths) {
         wxml.includes('bindtap="toggleShippingRuleDetail"') &&
         /shippingDetailOpen\s*\?\s*shippingRuleText\s*:\s*shippingRuleShort/.test(wxml),
         '需要 bindtap + `shippingDetailOpen ? shippingRuleText : shippingRuleShort`')
+      // 2026-10-12 运费行与说明行合并：规则小注 .info-note 承载收起 / 展开（判据不变：展开态必须允许换行）
       check('详情页有展开态样式（允许换行，不再省略号截断）',
-        /info-value\.open/.test(fs.readFileSync(paths.detailPageWxss, 'utf8')),
-        'wxss 需要 .info-row.muted .info-value.open { white-space: normal }')
+        /\.info-note\.open\s*\{[^}]*white-space:\s*normal/.test(fs.readFileSync(paths.detailPageWxss, 'utf8')),
+        'wxss 需要 .info-note.open { white-space: normal }')
       check('详情页短句走共享件（不内联文案）',
         /getRuleTextShort/.test(js) && /buildShippingRuleShortText\(/.test(js),
         '详情页应调 shippingConfig.getRuleTextShort')

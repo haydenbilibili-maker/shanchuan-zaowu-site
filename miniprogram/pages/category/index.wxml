@@ -122,10 +122,12 @@
     <view class="feed-wrap" wx:else>
       <!-- A 区：标本档案（首屏仅突出最新一篇，横滑查看更多） -->
       <view class="feed-block archive-block" wx:if="{{showSpecimenArchive && (showContentSection || contentItems.length)}}">
-        <view class="block-head">
-          <text class="block-title">标本档案</text>
-          <text class="block-swipe-hint" wx:if="{{contentTotal > 1}}">左滑更多</text>
-          <text class="block-meta" wx:if="{{contentTotal > 0}}">{{contentTotal}} 篇</text>
+        <view class="mu-head">
+          <view class="mu-head-t"><text class="mu-en">SPECIMEN ARCHIVES</text><text class="mu-cn">标本档案</text></view>
+          <view class="mu-act mu-act-muted">
+            <text wx:if="{{contentTotal > 1}}">左滑更多</text>
+            <text wx:if="{{contentTotal > 0}}">{{contentTotal}} 篇</text>
+          </view>
         </view>
 
         <swiper
@@ -155,10 +157,12 @@
 
       <!-- B 区：可购藏品 -->
       <view id="productBlock" class="feed-block product-block" wx:if="{{orphanProducts.length || !showContentSection || filterActiveCount > 0}}">
-        <view class="block-head">
-          <text class="block-title">{{showContentSection ? '本类可购' : '可购藏品'}}</text>
-          <text class="filter-summary" wx:if="{{filterSummary}}" bindtap="openFilterPanel">{{filterSummary}}</text>
-          <text class="block-meta" wx:if="{{orphanTotal >= 0 && (filterActiveCount > 0 || orphanTotal > 0)}}">{{orphanTotal}} 件</text>
+        <view class="mu-head">
+          <view class="mu-head-t"><text class="mu-en">AVAILABLE</text><text class="mu-cn">{{showContentSection ? '本类可购' : '可购藏品'}}</text></view>
+          <view class="mu-act">
+            <text class="filter-summary" wx:if="{{filterSummary}}" bindtap="openFilterPanel">{{filterSummary}}</text>
+            <text class="mu-act-muted" wx:if="{{orphanTotal >= 0 && (filterActiveCount > 0 || orphanTotal > 0)}}">{{orphanTotal}} 件</text>
+          </view>
         </view>
 
         <view class="product-grid">

@@ -108,7 +108,7 @@
     <!-- 礼赠档案（2026-09-21）：订单详情页原来只在**底栏**按状态给礼赠动作，
          没有"回看这封礼笺 / 看这份礼赠进展"的入口 —— 送礼人付完款就找不到自己写的那封信了。 -->
     <view class="gift-archive slide-in-delay-1" wx:if="{{isGiftOrder}}">
-      <text class="section-title"><text class="en-label">GIFT NOTE</text> 礼赠档案</text>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">GIFT NOTE</text><text class="mu-cn">礼赠档案</text></view></view>
       <view class="ga-card">
         <view class="ga-head">
           <view class="ga-who">
@@ -137,7 +137,7 @@
     </view>
 
     <view class="manifest-section slide-in-delay-2">
-      <text class="section-title"><text class="en-label">MANIFEST</text> 订单清单</text>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">MANIFEST</text><text class="mu-cn">订单清单</text></view></view>
       <block wx:if="{{order.products && order.products.length}}">
         <block wx:for="{{order.products}}" wx:key="id" wx:for-index="prodIndex">
           <view class="manifest-item" bindtap="goToProduct" data-id="{{item.id || item.productId || item._id}}" hover-class="manifest-item-press" hover-stay-time="80">
@@ -160,7 +160,7 @@
     <!-- 发货包装实拍（可选）：馆员发货时留档，会随「山海有信」一并给到顾客；
          订单详情页这一处是**顾客主动回看**的入口（图片已由 JS 转成 https，见 packagePhotos）。 -->
     <view class="pack-section slide-in-delay-2" wx:if="{{order.packagePhotos && order.packagePhotos.length}}">
-      <text class="section-title"><text class="en-label">PACKING</text> 包装实拍</text>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">PACKING</text><text class="mu-cn">包装实拍</text></view></view>
       <view class="pack-grid">
         <image
           class="pack-item"
@@ -177,7 +177,7 @@
     </view>
 
     <view class="custom-section slide-in-delay-2" wx:if="{{isCustomOrder && customPreviewLines.length}}">
-      <text class="section-title"><text class="en-label">ATELIER</text> 定制方案</text>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">ATELIER</text><text class="mu-cn">定制方案</text></view></view>
       <view class="custom-plate">
         <view class="custom-line" wx:for="{{customPreviewLines}}" wx:key="label">
           <text class="custom-lbl">{{item.label}}</text>
@@ -195,7 +195,7 @@
     </view>
 
     <view class="care-section slide-in-delay-2" wx:if="{{order.status === 'received' && showCare}}">
-      <text class="section-title"><text class="en-label">SPECIMEN CARE</text> 养护提醒</text>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">SPECIMEN CARE</text><text class="mu-cn">养护提醒</text></view></view>
       <view class="care-hint-strip" bindtap="goToCare" hover-class="care-hint-press">
         <image class="care-hint-icon" src="/assets/icons/care.png" mode="aspectFit"></image>
         <view class="care-hint-main">

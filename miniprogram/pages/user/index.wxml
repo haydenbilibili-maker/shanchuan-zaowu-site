@@ -536,10 +536,7 @@
       <scroll-view scroll-y="true" class="statistics-body">
         <!-- 我的数据 -->
         <view class="stat-section">
-          <view class="section-title">
-            <text class="title-cn">我的数据</text>
-            <text class="title-en">MY DATA</text>
-          </view>
+          <view class="mu-head"><view class="mu-head-t"><text class="mu-en">MY DATA</text><text class="mu-cn">我的数据</text></view></view>
           <view class="stat-grid">
             <view class="stat-card">
               <view class="card-icon"><image src="/assets/icons/eye.png" mode="aspectFit" class="icon-gold"></image></view>
@@ -566,10 +563,7 @@
 
         <!-- 消费统计 -->
         <view class="stat-section">
-          <view class="section-title">
-            <text class="title-cn">消费统计</text>
-            <text class="title-en">CONSUMPTION</text>
-          </view>
+          <view class="mu-head"><view class="mu-head-t"><text class="mu-en">CONSUMPTION</text><text class="mu-cn">消费统计</text></view></view>
           <view class="stat-list">
             <view class="stat-row">
               <text class="row-label">总消费</text>
@@ -588,10 +582,7 @@
 
         <!-- 学习记录 -->
         <view class="stat-section">
-          <view class="section-title">
-            <text class="title-cn">学习记录</text>
-            <text class="title-en">LEARNING</text>
-          </view>
+          <view class="mu-head"><view class="mu-head-t"><text class="mu-en">LEARNING</text><text class="mu-cn">学习记录</text></view></view>
           <view class="stat-grid">
             <view class="stat-card">
               <view class="card-icon"><image src="/assets/icons/knowledge.png" mode="aspectFit" class="icon-gold"></image></view>
@@ -608,10 +599,7 @@
 
         <!-- 收藏分类 -->
         <view class="stat-section">
-          <view class="section-title">
-            <text class="title-cn">收藏分类</text>
-            <text class="title-en">COLLECTIONS</text>
-          </view>
+          <view class="mu-head"><view class="mu-head-t"><text class="mu-en">COLLECTIONS</text><text class="mu-cn">收藏分类</text></view></view>
           <view class="stat-list">
             <view class="stat-row">
               <text class="row-label">藏品</text>
@@ -630,10 +618,7 @@
 
         <!-- 活跃度 -->
         <view class="stat-section">
-          <view class="section-title">
-            <text class="title-cn">活跃度</text>
-            <text class="title-en">ACTIVITY</text>
-          </view>
+          <view class="mu-head"><view class="mu-head-t"><text class="mu-en">ACTIVITY</text><text class="mu-cn">活跃度</text></view></view>
           <view class="stat-list">
             <view class="stat-row">
               <text class="row-label">最后活跃</text>

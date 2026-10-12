@@ -76,7 +76,7 @@
 
       <!-- 咨询主题 -->
       <view class="section">
-        <text class="section-title">选择咨询类型</text>
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">TOPICS</text><text class="mu-cn">选择咨询类型</text></view></view>
         <view class="topic-grid">
           <view
             class="topic-item {{activeTopic === item.id ? 'active' : ''}}"
@@ -95,7 +95,7 @@
 
       <!-- 联系方式 -->
       <view class="section">
-        <text class="section-title">即时联系</text>
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">CONTACT</text><text class="mu-cn">即时联系</text></view></view>
         <view class="channel-list">
           <view class="channel-item primary">
             <view class="channel-info">
@@ -142,7 +142,7 @@
 
       <!-- 留言表单 -->
       <view class="section">
-        <text class="section-title">留言给专员</text>
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">LEAVE A NOTE</text><text class="mu-cn">留言给专员</text></view></view>
         <text class="section-hint">若暂时无法接入微信客服，可留下文字说明，专员会通过山海有信回复</text>
         <view class="form-card">
           <textarea
@@ -200,7 +200,7 @@
 
       <!-- 常见问题 -->
       <view class="section" wx:if="{{faqs.length}}">
-        <text class="section-title">常见问题</text>
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">FAQ</text><text class="mu-cn">常见问题</text></view></view>
         <view class="faq-list">
           <view
             class="faq-item {{expandedFaq === index ? 'expanded' : ''}}"
@@ -220,7 +220,7 @@
 
       <!-- 到店信息 -->
       <view class="section visit-section">
-        <text class="section-title">到店咨询</text>
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">VISIT US</text><text class="mu-cn">到店咨询</text></view></view>
         <view class="visit-card" hover-class="tap-press-soft" bindtap="openMap">
           <text class="visit-addr">{{config.address || '门店地址加载中'}}</text>
           <text class="visit-link">点击导航 →</text>

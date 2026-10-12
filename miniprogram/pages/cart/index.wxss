@@ -216,7 +216,6 @@ page {
 
 .swipe-wrapper.active .cart-card { transform: translateX(-120rpx); }
 
-
 .cart-card.selected {
   border-color: var(--brass-800);
   /* 必须用不透明底，避免透出背后的「移除」层 */
@@ -544,22 +543,6 @@ page {
   margin-top: var(--space-2);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
-}
-.section-head { margin-bottom: var(--space-3); }
-
-.section-label {
-  display: block;
-  font-size: 22rpx;
-  color: var(--brass-400);
-  letter-spacing: 0.1em;
-}
-
-.section-sub {
-  display: block;
-  font-size: 18rpx;
-  color: var(--color-text-muted);
-  letter-spacing: 0.12em;
-  margin-top: 4rpx;
 }
 
 .recommend-scroll {
@@ -900,7 +883,6 @@ page {
   box-sizing: border-box;
 }
 
-
 .addon-thumb-wrap {
   flex-shrink: 0;
   width: 76rpx;
@@ -970,7 +952,6 @@ page {
   font-size: var(--fs-22);
   font-weight: 500;
 }
-
 
 .addon-close {
   flex-shrink: 0;

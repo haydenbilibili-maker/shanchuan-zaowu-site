@@ -91,10 +91,8 @@
 
     <!-- 门店名片：事实区；签到位置保持第一轮 -->
     <view class="section visit-section {{enterReady ? 'reveal reveal-2' : 'is-entering'}}">
-      <view class="section-head">
-        <text class="section-title">门店名片</text>
-        <text class="section-lead">地址、营业与联系方式</text>
-      </view>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">STORE PROFILE</text><text class="mu-cn">门店名片</text>
+        <text class="mu-sub">地址、营业与联系方式</text></view></view>
 
       <view class="store-card">
         <view class="store-card-head">
@@ -190,10 +188,8 @@
 
     <!-- 展陈 -->
     <view class="section {{enterReady ? 'reveal reveal-3' : 'is-entering'}}">
-      <view class="section-head">
-        <text class="section-title">展陈导览</text>
-        <text class="section-lead">按柜走读本店展区</text>
-      </view>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">GALLERY GUIDE</text><text class="mu-cn">展陈导览</text>
+        <text class="mu-sub">按柜走读本店展区</text></view></view>
       <view class="zone-grid" wx:if="{{store.zones && store.zones.length}}">
         <view
           class="zone-card"
@@ -221,10 +217,8 @@
 
     <!-- 店内可体验 -->
     <view class="section {{enterReady ? 'reveal reveal-4' : 'is-entering'}}" wx:if="{{hasExperienceProducts || experienceLoading}}">
-      <view class="section-head">
-        <text class="section-title">店内可体验</text>
-        <text class="section-lead">到店可看可触的藏品</text>
-      </view>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">IN STORE</text><text class="mu-cn">店内可体验</text>
+        <text class="mu-sub">到店可看可触的藏品</text></view></view>
       <scroll-view scroll-x class="exp-scroll" enable-flex enhanced show-scrollbar="{{false}}">
         <view class="exp-track">
           <view
@@ -252,10 +246,8 @@
 
     <!-- 活动 -->
     <view class="section {{enterReady ? 'reveal reveal-4' : 'is-entering'}}" wx:if="{{hasActivities}}">
-      <view class="section-head">
-        <text class="section-title">本店活动</text>
-        <text class="section-lead">课程与特别活动</text>
-      </view>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">EVENTS</text><text class="mu-cn">本店活动</text>
+        <text class="mu-sub">课程与特别活动</text></view></view>
       <view class="list-block">
         <view
           class="list-row"
@@ -278,10 +270,8 @@
 
     <!-- 服务 -->
     <view class="section {{enterReady ? 'reveal reveal-5' : 'is-entering'}}">
-      <view class="section-head">
-        <text class="section-title">本店服务</text>
-        <text class="section-lead">到店可办事项</text>
-      </view>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">SERVICES</text><text class="mu-cn">本店服务</text>
+        <text class="mu-sub">到店可办事项</text></view></view>
       <view class="list-block" wx:if="{{store.services && store.services.length}}">
         <view
           class="list-row"
@@ -304,10 +294,8 @@
 
     <!-- 双店动线 -->
     <view class="section section-last {{enterReady ? 'reveal reveal-6' : 'is-entering'}}" wx:if="{{store.walkingGuide}}">
-      <view class="section-head">
-        <text class="section-title">双店动线</text>
-        <text class="section-lead">主店与工坊之间怎么走</text>
-      </view>
+      <view class="mu-head"><view class="mu-head-t"><text class="mu-en">TWO STORES</text><text class="mu-cn">双店动线</text>
+        <text class="mu-sub">主店与工坊之间怎么走</text></view></view>
       <view class="walking-plate">
         <view class="walking-head" bindtap="toggleWalkingGuide" hover-class="walking-head-press" hover-stay-time="80">
           <view class="walking-head-main">

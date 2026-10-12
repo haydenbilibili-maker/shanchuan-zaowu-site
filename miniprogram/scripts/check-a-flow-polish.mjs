@@ -170,7 +170,8 @@ function checks(s) {
   const SEC = 'var(--color-text-secondary)'
   add('R4-3 工坊 / 馆藏 / 鉴定 / 详情的说明字改用 secondary',
     ['.intro-overline', '.tile-overline', '.section-overline', '.order-tile-desc'].every((x) => colorOf(s.atelierWxss, x) === SEC) &&
-    ['.nav-sub', '.block-swipe-hint', '.block-meta'].every((x) => colorOf(s.catWxss, x) === SEC) &&
+    // 第 10 轮：馆藏区头改全站 .mu-head，「左滑更多 · N 篇 / N 件」由 app.wxss .mu-act-muted 承载（判据不变：说明字 = secondary）
+    colorOf(s.catWxss, '.nav-sub') === SEC && colorOf(s.appWxss, '.mu-act-muted') === SEC && colorOf(s.appWxss, '.mu-sub') === SEC &&
     colorOf(s.identifyWxss, '.ai-privacy-txt') === SEC &&
     ['.gift-panel-sub', '.gift-scene-label', '.coupon-empty', '.param-k'].every((x) => colorOf(s.detailWxss, x) === SEC))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))

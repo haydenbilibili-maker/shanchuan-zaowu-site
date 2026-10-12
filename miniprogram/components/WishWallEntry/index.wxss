@@ -232,12 +232,7 @@
   to { transform: translateX(-50%); }
 }
 
-/* ── 墨底纸韵：暗房里的嵌墙纸（#2C2822 起点被守卫钉死） ───────────────────
-   2026-10-12 产品负责人点名「首页卡片样式重构」：
-   · 外框降为发丝线，只留内嵌铜金细框一道主线（原外框 + 内框两道同强度，显乱）；
-   · 眉标 WISH WALL + 主标「祈福墙」+ 细金印「马上有」（金属铭牌在小卡上太重）；
-   · 方点灯改圆形微光点；跑马灯去胶囊边框，改「金钉 + 手写一句」两端渐隐，去掉分隔线；
-   · 右侧实心金球改发丝圆钮。宿主 / 数据 / 跳转 / 跑马灯几何不变。 */
+/* ── 墨底纸韵（#2C2822 起点被守卫钉死；2026-10-12 重构见 A 流第 8 轮） ── */
 .wish-wall-entry.is-ink {
   gap: 20rpx;
   padding: 26rpx 28rpx 22rpx;
@@ -277,7 +272,6 @@
 
 .wish-wall-entry.is-ink .wish-wall-entry-row { gap: 14rpx; }
 
-/* 灯：方点 → 圆形微光（与眉标同一行的「在线」感，留在主标前） */
 .wish-wall-entry.is-ink .wish-wall-entry-row .wish-wall-entry-lamp {
   width: 12rpx;
   height: 12rpx;
@@ -287,7 +281,6 @@
   box-shadow: 0 0 12rpx rgba(227, 201, 140, 0.75);
 }
 
-/* 「马上有」：金属铭牌 → 细金印（主标之后） */
 .wish-wall-entry.is-ink .wish-wall-entry-brand {
   order: 3;
   padding: 4rpx 12rpx;
@@ -318,7 +311,6 @@
   color: rgba(224, 207, 163, 0.7);
 }
 
-/* 右侧：实心金球 → 发丝圆钮 */
 .wish-wall-entry.is-ink .wish-wall-entry-go {
   width: 60rpx;
   height: 60rpx;
@@ -334,7 +326,7 @@
   border-bottom: 2rpx solid #D4BC85;
 }
 
-/* 墨底跑马灯：去胶囊，金钉 + 手写一句；两端渐隐；不画分隔线（注记 COM-3） */
+/* 墨底跑马灯（注记 COM-3） */
 .wish-wall-entry.is-ink .wish-wall-entry-mq {
   margin-top: 18rpx;
   padding-top: 0;
