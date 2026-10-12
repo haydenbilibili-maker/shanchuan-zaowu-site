@@ -93,7 +93,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 34rpx;
-  font-weight: 600;
+  font-weight: 500;
   font-family: var(--font-brand, 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif);
   color: var(--color-text-primary, #FFFFFF);
 }
@@ -177,12 +177,8 @@ page {
 }
 
 /* —— 选店面板 —— */
-.picker-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 210;
-  background: rgba(26, 24, 20, 0.62);
-}
+/* 选门店：自顶部滑下的下拉面板（常驻节点 + open 类，进出都有过渡）；遮罩取 ui-pop-mask */
+.picker-mask { z-index: 210; }
 
 .picker-sheet {
   position: fixed;
@@ -190,39 +186,35 @@ page {
   right: 0;
   top: 0;
   z-index: 220;
-  background: var(--color-bg-card, #1F1D1A);
-  border-bottom: 1px solid rgba(77, 64, 26, 0.4);
-  padding: 0 var(--space-4, 32rpx) var(--space-4, 32rpx);
+  background: var(--pop-surface);
+  border-bottom: 1rpx solid var(--pop-hairline);
+  border-radius: 0 0 var(--pop-radius-sheet) var(--pop-radius-sheet);
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.42);
+  padding: 0 var(--pop-pad-x) 16rpx;
   transform: translateY(-100%);
-  transition: transform 0.26s ease;
+  transition: transform var(--dur-base) var(--ease-out-soft);
 }
 
 .picker-sheet.open { transform: translateY(0); }
 
-.picker-title {
-  display: block;
-  padding-top: 28rpx;
-  margin-bottom: var(--space-3, 24rpx);
-  font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
-  letter-spacing: 0.12em;
+.picker-head {
+  display: flex;
+  flex-direction: column;
+  padding: 28rpx 0 8rpx;
 }
 
+/* 门店行：发丝分隔，不做方框卡片 */
 .picker-item {
   display: flex;
   align-items: center;
   gap: var(--space-3, 24rpx);
-  padding: var(--space-3, 24rpx);
-  margin-bottom: var(--space-2, 16rpx);
-  background: var(--color-bg-elevated, #262320);
-  border: 1px solid var(--color-border, rgba(38, 35, 32, 0.4));
-  border-radius: var(--radius-md, 16rpx);
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--pop-divider);
 }
+.picker-item:last-child { border-bottom: none; }
 
 
-.picker-item.active {
-  border-color: var(--brass-400, #C4A76C);
-}
+.picker-item.active .picker-name { color: var(--brass-400, #C4A76C); }
 
 .picker-thumb {
   width: 88rpx;
@@ -1154,12 +1146,8 @@ page {
 }
 
 /* —— LBS —— */
-.lbs-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: rgba(26, 24, 20, 0.62);
-}
+/* 附近门店：浮在底栏上的提示卡（常驻节点 + open 类）；遮罩取 ui-pop-mask */
+.lbs-mask { z-index: 200; }
 
 .lbs-sheet {
   position: fixed;
@@ -1167,14 +1155,15 @@ page {
   right: var(--space-4, 32rpx);
   bottom: calc(16rpx + var(--tabbar-offset, 0px));
   z-index: 201;
-  padding: 40rpx 32rpx 32rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid rgba(77, 64, 26, 0.42);
-  border-radius: var(--radius-lg, 24rpx);
+  padding: 40rpx var(--pop-pad-x) 32rpx;
+  background: var(--pop-surface);
+  border: 1rpx solid var(--pop-hairline);
+  border-radius: var(--pop-radius-dialog);
+  box-shadow: var(--pop-shadow-dialog);
   transform: translateY(20rpx);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.28s ease, opacity 0.28s ease;
+  transition: transform var(--dur-base) var(--ease-out-soft), opacity var(--dur-base) var(--ease-standard);
 }
 
 .lbs-sheet.open {
@@ -1183,13 +1172,7 @@ page {
   pointer-events: auto;
 }
 
-.lbs-title {
-  display: block;
-  margin-bottom: 10rpx;
-  font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
-  letter-spacing: 0.1em;
-}
+.lbs-title { display: block; }
 
 .lbs-store-name {
   display: block;
@@ -1219,26 +1202,3 @@ page {
   gap: var(--space-3, 24rpx);
 }
 
-.lbs-btn {
-  flex: 1;
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md, 16rpx);
-  font-size: 28rpx;
-  font-weight: 500;
-}
-
-.lbs-btn.secondary {
-  border: 1px solid rgba(196, 167, 108, 0.4);
-  color: var(--brass-400, #C4A76C);
-}
-
-.lbs-btn.primary {
-  background: var(--brass-400, #C4A76C);
-  color: var(--color-bg, #1A1814);
-}
-
-.lbs-btn-secondary-press { background: rgba(196, 167, 108, 0.06); }
-.lbs-btn-primary-press { background: var(--brass-500, #A8903C); }

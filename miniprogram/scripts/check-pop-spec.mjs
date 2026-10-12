@@ -8,9 +8,10 @@
  *   ③ 自写遮罩棘轮：C 端 wxss 里「全屏 fixed + 自带底色」的规则按文件计数，只许减少（新文件必须 0）——
  *      新弹层一律用 ui-pop-mask，不再各写一个遮罩色。
  *
- * 用法：node miniprogram/scripts/check-pop-spec.mjs [--selftest] [--print-baseline]
+ * 用法：node miniprogram/scripts/check-pop-spec.mjs [--selftest] [--print-baseline] [--tighten]
+ *   --tighten：把 MASK_BASELINE 收紧到实测值（只降不升、清掉归零项），迁移一处后跑一次
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -40,12 +41,10 @@ export const MIGRATED = [
 export const MASK_BASELINE = {
   'components/MemberLevelModal/index.wxss': 1,
   'components/SensitiveBlurGate/index.wxss': 1,
-  'subpackages/business/booking/index.wxss': 2,
+  'subpackages/business/booking/index.wxss': 1,
   'subpackages/business/components/CouponPrintMint/index.wxss': 1,
   'subpackages/business/components/WalletPanelCoupons/index.wxss': 2,
   'subpackages/business/components/WalletPanelPoints/index.wxss': 2,
-  'subpackages/business/store/index.wxss': 2,
-  'subpackages/business/ticket/index.wxss': 1,
   'subpackages/content/live/watch/index.wxss': 1,
   'subpackages/feature/collection/detail/index.wxss': 1,
   'subpackages/feature/collection/index.wxss': 1,
@@ -178,6 +177,18 @@ else if (process.argv.includes('--print-baseline')) {
   const out = {}
   for (const f of walk(MP)) { if (OUT_OF_SCOPE.test(f) || f === 'app.wxss') continue; const n = ownMasks(readFileSync(join(MP, f), 'utf8')).length; if (n) out[f] = n }
   console.log(JSON.stringify(out, null, 2))
+} else if (process.argv.includes('--tighten')) {
+  const self = fileURLToPath(import.meta.url)
+  const next = {}
+  for (const [f, base] of Object.entries(MASK_BASELINE)) {
+    let n = 0
+    try { n = ownMasks(readFileSync(join(MP, f), 'utf8')).length } catch { n = 0 }
+    if (Math.min(n, base) > 0) next[f] = Math.min(n, base)
+  }
+  const body = Object.entries(next).map(([k, v]) => `  '${k}': ${v}`).join(',\n')
+  const src = readFileSync(self, 'utf8').replace(/export const MASK_BASELINE = \{[\s\S]*?\n\}/, `export const MASK_BASELINE = {\n${body}\n}`)
+  writeFileSync(self, src)
+  console.log(`✓ 基线收紧：${Object.keys(MASK_BASELINE).length} → ${Object.keys(next).length} 个文件`)
 } else {
   const fails = run()
   if (fails.length) {

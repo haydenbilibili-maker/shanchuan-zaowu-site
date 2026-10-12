@@ -68,7 +68,7 @@ const modalWxss = read(MODAL_WXSS)
  * 判据：令牌在 app.wxss 定义且 .ui-pop-dialog 引用它；AppToast 引用同一令牌；两者都不再写字面量牌面。 */
 const appWxssAll = read(APP_WXSS)
 const modalWxml = read('miniprogram/components/AppModal/index.wxml')
-const popDialog = (stripComments(appWxssAll).match(/\.ui-pop-dialog\s*\{([^}]*)\}/) || [, ''])[1]
+const popDialog = (stripComments(appWxssAll).match(/\n\.ui-pop-dialog\s*\{([^}]*)\}/) || [, ''])[1]  // 行首独立规则（不取 .is-toggle .ui-pop-dialog 这类变体）
 const TOKENS = [
   ['发丝金描边', '--pop-hairline', /border:\s*1rpx solid var\(--pop-hairline\);/],
   ['渐变黑底', '--pop-surface', /background:\s*var\(--pop-surface\);/],

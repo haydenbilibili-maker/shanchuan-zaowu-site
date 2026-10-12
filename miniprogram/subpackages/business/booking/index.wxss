@@ -952,24 +952,19 @@
   line-height: 1.5;
 }
 
-.store-picker-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 90;
-}
+/* 选门店：下拉面板（嵌在表单里，遮罩取 ui-pop-mask；docs/弹层视觉规范_2026-10-13.md §1） */
+.store-picker-mask { z-index: 90; }
 
 .store-picker-sheet {
   position: relative;
   z-index: 91;
   margin: 0 32rpx 24rpx;
   padding: 16rpx;
-  background: var(--color-bg-card);
-  border: 1rpx solid rgba(196, 167, 108, 0.25);
-  border-radius: 16rpx;
+  background: var(--pop-surface);
+  border: 1rpx solid var(--pop-hairline);
+  border-radius: var(--pop-radius-dialog);
+  box-shadow: var(--pop-shadow-dialog);
+  animation: ui-pop-in var(--dur-base) var(--ease-out-soft) both;
 }
 
 .store-picker-item {
@@ -980,6 +975,7 @@
 .store-picker-item.active {
   background: rgba(196, 167, 108, 0.08);
 }
+.store-picker-item.active .spi-name { color: var(--brass-400); }
 
 .store-picker-item:last-child {
   border-bottom: none;
@@ -994,7 +990,7 @@
 .spi-loc {
   display: block;
   font-size: 22rpx;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--color-text-secondary);
   margin-top: 4rpx;
 }
 

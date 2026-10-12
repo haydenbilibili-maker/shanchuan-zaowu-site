@@ -771,6 +771,14 @@ button[disabled]:active,
   animation: ui-pop-fade var(--dur-base) var(--ease-standard) both;
 }
 .ui-pop-mask.is-deep { background: var(--pop-mask-deep); }
+/* 常驻节点、靠类切换显隐的弹层（有退场动画）：is-toggle + is-open。
+   ⚠️ 不能直接用默认的进场 animation —— fill-mode both 会把隐藏态的 opacity 顶成 1 */
+.ui-pop-mask.is-toggle { animation: none; opacity: 0; pointer-events: none; transition: opacity var(--dur-base) var(--ease-standard); }
+.ui-pop-mask.is-toggle.is-open { opacity: 1; pointer-events: auto; }
+.ui-pop-mask.is-toggle .ui-pop-dialog { animation: none; transform: translateY(16rpx) scale(0.97); transition: transform var(--dur-base) var(--ease-out-soft); }
+.ui-pop-mask.is-toggle .ui-pop-sheet { animation: none; transform: translateY(100%); transition: transform var(--dur-base) var(--ease-out-soft); }
+.ui-pop-mask.is-toggle.is-open .ui-pop-dialog,
+.ui-pop-mask.is-toggle.is-open .ui-pop-sheet { transform: none; }
 .ui-pop-mask.is-center {
   display: flex;
   align-items: center;

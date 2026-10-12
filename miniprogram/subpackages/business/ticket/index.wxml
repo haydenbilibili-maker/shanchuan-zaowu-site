@@ -65,19 +65,20 @@
   </view>
 
   <!-- 改期弹窗 -->
-  <view class="modal-overlay {{showRescheduleModal ? 'show' : ''}}" bindtap="closeRescheduleModal" catchtouchmove="true">
-    <view class="modal-content" catchtap="stopPropagation">
-      <view class="modal-header">
-        <text class="modal-title">改期预约</text>
-        <view class="modal-close" bindtap="closeRescheduleModal">✕</view>
+  <view class="ui-pop-mask is-center is-toggle {{showRescheduleModal ? 'is-open' : ''}}" bindtap="closeRescheduleModal" catchtouchmove="true">
+    <view class="ui-pop-dialog modal-content" catchtap="stopPropagation">
+      <view class="ui-pop-head">
+        <text class="ui-pop-kicker">RESCHEDULE</text>
+        <text class="ui-pop-title">改期预约</text>
       </view>
+      <view class="ui-pop-close" bindtap="closeRescheduleModal" hover-class="tap-press" hover-stay-time="80">✕</view>
 
       <view class="modal-body">
         <view class="form-section">
           <text class="section-label">选择新日期</text>
           <scroll-view scroll-x class="date-scroll" enable-flex show-scrollbar="{{false}}">
             <block wx:for="{{weekDays}}" wx:key="index">
-              <view class="date-pill {{selectedDateIndex === index ? 'active' : ''}}" bindtap="selectDate" data-index="{{index}}">
+              <view class="date-pill {{selectedDateIndex === index ? 'active' : ''}}" hover-class="tap-press-soft" hover-stay-time="80" bindtap="selectDate" data-index="{{index}}">
                 <text class="d-week">{{item.week}}</text>
                 <text class="d-day">{{item.day}}</text>
               </view>
@@ -89,7 +90,7 @@
           <text class="section-label">选择新时间</text>
           <view class="time-grid">
             <block wx:for="{{timeSlots}}" wx:key="index">
-              <view class="time-btn {{selectedTimeIndex === index ? 'active' : ''}}" bindtap="selectTime" data-index="{{index}}">
+              <view class="time-btn {{selectedTimeIndex === index ? 'active' : ''}}" hover-class="tap-press-soft" hover-stay-time="80" bindtap="selectTime" data-index="{{index}}">
                 <text>{{item.time}}</text>
               </view>
             </block>
@@ -97,9 +98,9 @@
         </view>
       </view>
 
-      <view class="modal-footer">
-        <view class="modal-btn cancel" bindtap="closeRescheduleModal">取消</view>
-        <view class="modal-btn confirm" bindtap="confirmReschedule">确认改期</view>
+      <view class="ui-pop-foot">
+        <view class="ui-pop-btn is-ghost" bindtap="closeRescheduleModal" hover-class="tap-press" hover-stay-time="80">取消</view>
+        <view class="ui-pop-btn is-primary" bindtap="confirmReschedule" hover-class="tap-press" hover-stay-time="80">确认改期</view>
       </view>
     </view>
   </view>

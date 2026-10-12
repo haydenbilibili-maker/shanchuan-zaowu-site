@@ -72,7 +72,7 @@
             <text class="cp-tip">· {{item}}</text>
           </block>
         </view>
-        <view class="store-picker-mask" wx:if="{{storePickerOpen}}" bindtap="closeStorePicker"></view>
+        <view class="ui-pop-mask store-picker-mask" wx:if="{{storePickerOpen}}" bindtap="closeStorePicker" catchtouchmove="true"></view>
         <view class="store-picker-sheet" wx:if="{{storePickerOpen}}">
           <view
             class="store-picker-item {{item.storeId === storeId ? 'active' : ''}}"
@@ -80,6 +80,8 @@
             wx:key="storeId"
             bindtap="selectBookingStore"
             data-id="{{item.storeId}}"
+            hover-class="tap-press-soft"
+            hover-stay-time="80"
           >
             <text class="spi-name">{{item.name}}</text>
             <text class="spi-loc">{{item.locationLabel}}</text>
