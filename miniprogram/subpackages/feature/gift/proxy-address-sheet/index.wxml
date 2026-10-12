@@ -7,6 +7,18 @@
     <text class="pa-desc" wx:else>已经拿到 TA 的地址？直接替 TA 填上，专员就能启程；TA 之后打开礼笺仍可收下。</text>
     <text class="pa-no" wx:if="{{orderNo}}">订单 NO. {{orderNo}}</text>
 
+    <view class="pa-paste">
+      <view class="pa-paste-head">
+        <text class="pa-label">粘贴整段地址自动识别</text>
+        <text class="pa-paste-clip" bindtap="pasteClipboard" hover-class="tap-press" hover-stay-time="80">从剪贴板粘贴</text>
+      </view>
+      <textarea class="pa-paste-box" maxlength="300" placeholder="如：上海市杨浦区政悦路500弄21号301 惠惠 15901285772" placeholder-class="pa-placeholder" value="{{pasteText}}" bindinput="onPasteInput" />
+      <view class="pa-paste-foot">
+        <text class="pa-paste-tip {{pasteMissing ? 'is-partial' : ''}}" wx:if="{{pasteTip}}">{{pasteTip}}</text>
+        <text class="pa-paste-btn" bindtap="parsePaste" hover-class="tap-press" hover-stay-time="80">识别</text>
+      </view>
+    </view>
+
     <view class="pa-import" wx:if="{{by !== 'staff'}}" bindtap="importWx" hover-class="tap-press" hover-stay-time="80">
       <text>从微信地址导入</text>
       <text class="pa-chev" aria-hidden="true"></text>

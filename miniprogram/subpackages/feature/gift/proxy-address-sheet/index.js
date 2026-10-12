@@ -1,5 +1,7 @@
 // 代填收货地址（2026-10-12）：店员在订单管理 / 下单人在送礼成功页，为「邀请 TA 填地址」且未留址的礼赠填写地址。
 // 走 manageGift.proxySubmitAddress（旁路），受礼人自己的填址页不变。错误就地显示，不弹原生提示。
+const { parseAddressText } = require('../../utils/addressParse')
+
 Component({
   options: { addGlobalClass: true },
 
@@ -20,12 +22,15 @@ Component({
     detail: '',
     reason: '',
     busy: false,
-    error: ''
+    error: '',
+    pasteText: '',
+    pasteTip: '',
+    pasteMissing: false
   },
 
   observers: {
     show(v) {
-      if (v) this.setData({ name: '', phone: '', region: [], regionText: '', detail: '', reason: '', busy: false, error: '' })
+      if (v) this.setData({ name: '', phone: '', region: [], regionText: '', detail: '', reason: '', busy: false, error: '', pasteText: '', pasteTip: '', pasteMissing: false })
     }
   },
 
@@ -38,6 +43,53 @@ Component({
       const v = (e.detail && e.detail.value) || []
       const region = Array.isArray(v) ? v.map((x) => String(x || '').trim()).filter(Boolean) : []
       this.setData({ region, regionText: region.join(' '), error: '' })
+    },
+
+    onPasteInput(e) { this.setData({ pasteText: (e.detail && e.detail.value) || '' }) },
+
+    pasteClipboard() {
+      wx.getClipboardData({
+        success: (res) => {
+          const text = String((res && res.data) || '').trim()
+          if (!text) {
+            this.setData({ pasteTip: '剪贴板里没有文字，请先复制地址', pasteMissing: true })
+            return
+          }
+          this.setData({ pasteText: text.slice(0, 300) })
+          this.applyParsed(text)
+        },
+        fail: () => this.setData({ pasteTip: '没能读取剪贴板，请长按输入框粘贴', pasteMissing: true })
+      })
+    },
+
+    parsePaste() {
+      const text = String(this.data.pasteText || '').trim()
+      if (!text) {
+        this.setData({ pasteTip: '先把整段地址粘贴到上面', pasteMissing: true })
+        return
+      }
+      this.applyParsed(text)
+    },
+
+    /** 识别结果只做预填：认出的字段覆盖，认不出的保持原样让人补；提交仍走 submit 的原校验 */
+    applyParsed(text) {
+      const r = parseAddressText(text)
+      const patch = { error: '' }
+      if (r.name) patch.name = r.name
+      if (r.phone) patch.phone = r.phone
+      if (r.region.length >= 2) { patch.region = r.region; patch.regionText = r.region.join(' ') }
+      if (r.detail) patch.detail = r.detail
+      const found = r.found.slice()
+      let missing = r.missing.slice()
+      if (r.region.length === 2) {
+        found.push('省市')
+        missing = missing.map((k) => (k === '省市区' ? '区县' : k))
+      }
+      let tip
+      if (!found.length) tip = '没认出地址信息，请手动填写下方各项'
+      else if (!missing.length) tip = `已识别：${found.join('、')}，请核对后确认`
+      else tip = `已识别：${found.join('、')}；${missing.join('、')}没认出，请在下方补填`
+      this.setData({ ...patch, pasteTip: tip, pasteMissing: missing.length > 0 })
     },
 
     importWx() {

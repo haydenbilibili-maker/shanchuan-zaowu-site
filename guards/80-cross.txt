@@ -28,6 +28,8 @@ npm run test:gift-note-variants
 npm run check:gift-holder
 # 2026-10-11：礼赠凭礼笺领取（免填号只限填址/自提、须主动收下、不要求注册、一份一人、口令、作废换链接、不发朋友圈、注册引导守协议勾选）
 npm run check:gift-claim-link
+# 2026-10-12：代填地址「粘贴整段 → 自动识别」（24 个样例 + 弹层真跑：认不出的留空不猜、不弹原生提示、提交仍走原校验）
+npm run check:address-parse
 npm run test:product-copy-species
 npm run check:size-canonical-sync
 npm run test:list-cover-images
