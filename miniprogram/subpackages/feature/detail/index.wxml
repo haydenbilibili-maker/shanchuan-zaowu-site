@@ -113,7 +113,7 @@ module.exports.saveLabel = saveLabel;
       </swiper>
     </sensitive-blur-gate>
     <!-- 头图叠层（2026-10-12 产品负责人点名「头图到下方信息过渡突兀、图片展示单一」）：
-         顶部淡影托住导航钮 / 左上馆藏署名水印 / 右上孤品·镇店方印 / 左下合法带证 / 右下张数；
+         顶部淡影托住导航钮 / 左上馆藏署名水印 / 右上孤品·镇店方印（正文不再另放铜牌）/ 左下合法带证 / 右下张数；
          底部三段渐隐接正文卡（卡顶边线同时淡出，见 wxss）。敏感图罩层打开时叠层全部不出，不压罩层文案。 -->
     <view class="hero-topshade" wx:if="{{!sensitiveVeiled}}" aria-hidden="true"></view>
     <view class="hero-credit" wx:if="{{!sensitiveVeiled}}" aria-hidden="true">
@@ -173,7 +173,7 @@ module.exports.saveLabel = saveLabel;
           <!-- 右侧：折扣 + 库存（原先各自占行，合并后消掉两处留白） -->
           <view class="price-side">
             <text class="discount-chip" wx:if="{{discountRate < 1}}">{{tool.saveLabel(displayPrice, discountRate)}}</text>
-            <!-- 孤品不在价格旁重复：下方铜牌已说「孤品 / 所见即所得」（2026-10-12 详情页质感） -->
+            <!-- 孤品不在价格旁重复：头图右上方印已标明（2026-10-12 详情页质感） -->
             <block wx:if="{{isOneOfAKind}}"></block>
             <text class="side-stock soldout" wx:elif="{{displayStock <= 0}}">已售罄</text>
             <text class="side-stock warn" wx:elif="{{displayStock <= 2}}">仅剩 {{displayStock}} 件</text>
@@ -183,17 +183,7 @@ module.exports.saveLabel = saveLabel;
         </block>
       </view>
 
-      <view class="unique-plate" wx:if="{{isOneOfAKind && commerceReady}}">
-        <view class="unique-plate-frame">
-          <view class="unique-plate-corner tl"></view>
-          <view class="unique-plate-corner tr"></view>
-          <view class="unique-plate-corner bl"></view>
-          <view class="unique-plate-corner br"></view>
-          <text class="unique-plate-kicker">{{product.isTreasure ? 'TREASURE' : 'ONE OF A KIND'}}</text>
-          <text class="unique-plate-title">{{uniquePlateTitle}}</text>
-          <text class="unique-plate-desc">{{uniquePlateDesc}}</text>
-        </view>
-      </view>
+      <!-- 孤品 / 镇店铜牌已撤（2026-10-12 产品负责人）：头图右上方印已标明，正文不再重复 -->
 
       <view class="title-block">
         <block wx:if="{{!product.title}}">
@@ -201,7 +191,7 @@ module.exports.saveLabel = saveLabel;
           <view class="detail-skel-title short skeleton" aria-hidden="true"></view>
         </block>
         <block wx:else>
-        <!-- 元信息标签：品类 / 装裱 / 工艺；孤品见铜牌，合法带证见主图角标，此处不重复 -->
+        <!-- 元信息标签：品类 / 装裱 / 工艺；孤品见头图方印，合法带证见主图角标，此处不重复 -->
         <view class="tags-row" wx:if="{{product.category || (craftTags && craftTags.length)}}">
           <text class="tag-item" wx:if="{{product.category}}">{{product.category}}</text>
           <text class="tag-item" wx:for="{{craftTags}}" wx:key="key">{{item.label}}</text>

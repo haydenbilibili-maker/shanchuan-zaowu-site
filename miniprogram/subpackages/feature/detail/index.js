@@ -370,8 +370,6 @@ Page(withAppModal({
     },
     isOneOfAKind: false,
     uniqueBadgeLabel: '',
-    uniquePlateTitle: '',
-    uniquePlateDesc: '',
     uniqueStockLabel: '',
     refundServiceLabel: '发货前可申请退款',
     refundNoticeRichParagraphs: [],
@@ -881,10 +879,6 @@ Page(withAppModal({
     data.depositEligible = depositEligible;
 
     const uniqueBadgeLabel = data.isTreasure ? '镇店之宝' : (oneOfAKind ? '孤品' : '');
-    const uniquePlateTitle = uniqueBadgeLabel;
-    const uniquePlateDesc = data.isTreasure
-      ? '馆藏级稀有藏品，页面展示即为您将收到的那一件。'
-      : '所见即所得——页面展示即为您将收到的那一件。';
     const uniqueStockLabel = data.isTreasure ? '镇店之宝 · 仅此一件' : '孤品 · 仅此一件';
 
     const productHasSku = hasSkus(data);
@@ -960,8 +954,6 @@ Page(withAppModal({
         (firstSku ? (parseInt(firstSku.stock, 10) || 0) : stockForCta) <= 0
       )),
       uniqueBadgeLabel,
-      uniquePlateTitle,
-      uniquePlateDesc,
       uniqueStockLabel,
       hasSku: productHasSku,
       displayStock,
