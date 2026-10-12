@@ -312,25 +312,28 @@ button.nav-share-btn::after { display: none; border: none; }
 .slide-image { width: 100%; height: 100%; background: transparent; }
 .hero-video { background: #111; }
 .hero-live-badge {
-  position: absolute; left: 24rpx; bottom: 72rpx; z-index: 4; padding: 4rpx 14rpx; border-radius: 20rpx;
+  position: absolute; left: 24rpx; bottom: 96rpx; z-index: 4; padding: 4rpx 14rpx; border-radius: 20rpx;
   font-size: 20rpx; letter-spacing: 2rpx; color: #fff; background: rgba(26, 24, 20, 0.6); pointer-events: none;
 }
 .img-counter {
   position: absolute;
   right: 24rpx;
-  bottom: 72rpx;
+  bottom: 96rpx;
   z-index: 4;
-  background: rgba(26, 24, 20, 0.72);
+  background: rgba(26, 24, 20, 0.55);
+  border: 1rpx solid rgba(212, 188, 133, 0.35);
   color: var(--color-text-body);
-  font-size: 22rpx;
-  padding: 6rpx 16rpx;
+  font-size: 20rpx;
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono, monospace);
+  padding: 4rpx 14rpx;
   border-radius: 9999px;
 }
 /* 主图左下：仅合规角标，避开状态栏与返回键 */
 .hero-badge-stack {
   position: absolute;
   left: 24rpx;
-  bottom: 72rpx;
+  bottom: 96rpx;
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -341,12 +344,40 @@ button.nav-share-btn::after { display: none; border: none; }
 .hero-wrapper .sb-wrap {
   z-index: 6;
 }
+/* 底部三段渐隐：180rpx 两段线性在实拍浅底图上收不住，接正文卡处一道硬边 → 拉长到 320rpx、中段先压暗 */
 .hero-overlay {
-  position: absolute; bottom: 0; left: 0; width: 100%; height: 180rpx;
-  background: linear-gradient(to bottom, transparent, var(--color-bg));
+  position: absolute; bottom: 0; left: 0; width: 100%; height: 320rpx;
+  background: linear-gradient(to bottom, rgba(26, 24, 20, 0) 0%, rgba(26, 24, 20, 0.55) 48%, rgba(26, 24, 20, 0.92) 80%, var(--color-bg) 100%);
   pointer-events: none;
   z-index: 2;
 }
+/* 顶部淡影：导航钮压在浅色实拍上时不发虚 */
+.hero-topshade {
+  position: absolute; top: 0; left: 0; width: 100%; height: 140rpx;
+  background: linear-gradient(to bottom, rgba(26, 24, 20, 0.42), rgba(26, 24, 20, 0));
+  pointer-events: none;
+  z-index: 2;
+}
+/* 左上馆藏署名水印：两行极小字，半透明，不抢主体 */
+.hero-credit {
+  position: absolute; top: 24rpx; left: 28rpx; z-index: 4;
+  display: flex; flex-direction: column; gap: 2rpx;
+  pointer-events: none;
+}
+.hero-credit-en { font-size: 16rpx; letter-spacing: 0.32em; color: rgba(247, 241, 228, 0.72); font-weight: 600; text-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.45); }
+.hero-credit-zh { font-size: 18rpx; letter-spacing: 0.16em; color: rgba(247, 241, 228, 0.6); text-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.45); }
+/* 右上方印：孤品 / 镇店 —— 金框方章（下方铜牌仍讲「所见即所得」的完整含义） */
+.hero-seal {
+  position: absolute; top: 24rpx; right: 24rpx; z-index: 4;
+  width: 76rpx; height: 76rpx;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(26, 24, 20, 0.58);
+  border: 1rpx solid rgba(212, 188, 133, 0.85);
+  border-radius: 8rpx;
+  box-shadow: inset 0 0 0 4rpx rgba(26, 24, 20, 0.58), inset 0 0 0 5rpx rgba(212, 188, 133, 0.45);
+  pointer-events: none;
+}
+.hero-seal-t { width: 44rpx; font-size: 22rpx; line-height: 1.15; font-weight: 600; letter-spacing: 0.06em; text-align: center; color: #E3C98C; font-family: var(--font-brand, 'Source Han Serif SC', serif); }
 
 /* 内容区：圆角信息卡上叠一头图，和头图底部渐隐接成同一页 */
 .content-body {
@@ -371,6 +402,9 @@ button.nav-share-btn::after { display: none; border: none; }
   border-radius: 32rpx 32rpx 24rpx 24rpx;
   padding: 32rpx;
   border: 1px solid rgba(38,35,32,0.8);
+  /* 卡顶边线淡出 + 向上一层同色柔影：与头图底部渐隐接成一片，不再是一道硬边 */
+  border-top-color: transparent;
+  box-shadow: 0 -28rpx 40rpx -12rpx rgba(26, 24, 20, 0.9);
   margin-bottom: 24rpx;
 }
 .offer-links {
@@ -391,6 +425,7 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 .commerce-card-unique {
   border-color: rgba(77, 64, 26, 0.95);
+  border-top-color: transparent;
   background:
     linear-gradient(135deg, rgba(196, 167, 108, 0.06) 0%, transparent 42%),
     var(--color-bg-card);

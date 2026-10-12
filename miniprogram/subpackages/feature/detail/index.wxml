@@ -112,7 +112,17 @@ module.exports.saveLabel = saveLabel;
         </swiper-item>
       </swiper>
     </sensitive-blur-gate>
-    <!-- 主图角标：仅合规「合法带证」；孤品由下方铜牌说明条承载，不叠图 -->
+    <!-- 头图叠层（2026-10-12 产品负责人点名「头图到下方信息过渡突兀、图片展示单一」）：
+         顶部淡影托住导航钮 / 左上馆藏署名水印 / 右上孤品·镇店方印 / 左下合法带证 / 右下张数；
+         底部三段渐隐接正文卡（卡顶边线同时淡出，见 wxss）。敏感图罩层打开时叠层全部不出，不压罩层文案。 -->
+    <view class="hero-topshade" aria-hidden="true"></view>
+    <view class="hero-credit" wx:if="{{!sensitiveVeiled}}" aria-hidden="true">
+      <text class="hero-credit-en">SHANHAI ZAOWU</text>
+      <text class="hero-credit-zh">山海造物 · 馆藏实拍</text>
+    </view>
+    <view class="hero-seal" wx:if="{{isOneOfAKind && !sensitiveVeiled}}" aria-hidden="true">
+      <text class="hero-seal-t">{{product.isTreasure ? '镇店' : '孤品'}}</text>
+    </view>
     <view class="hero-badge-stack" wx:if="{{isProtected}}">
       <protected-badge show="{{true}}" size="sm" corner="static" />
     </view>
