@@ -138,7 +138,7 @@
            此处改为「我的档案」（原藏家档案入口上移，避免同一入口出现两次） -->
       <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="profile">
         <view class="as-icon-wrap">
-          <!-- 2026-09-17：改用真金素材 user_gold.png（与 wallet_gold/medal_gold/gift 同为 #D4AF37）。
+          <!-- 2026-09-17：改用真金素材 user_gold.png（与 wallet_gold/medal_gold/gift 同色；2026-10-12 全站金色图标统一为品牌金 #C4A76C）。
                原做法是白灰 user.png + 滤镜，且滤镜那条例外把 opacity 提到 1，而 .as-icon 统一是 0.8
                → 同屏对比必然有色差（真机实测确认）。真素材 + 同一 opacity 才是同色值。 -->
           <image class="as-icon" src="/assets/icons/user_gold.png"></image>
@@ -305,11 +305,11 @@
           <text class="m-cn">预约参观</text>
           <text class="m-en">BOOK A VISIT · 参观 / 工坊</text>
         </view>
-        <text class="m-arr">→</text>
+        <text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="address">
         <image class="m-img silver" src="/assets/icons/map.png"></image>
-        <view class="m-info"><text class="m-cn">地址管理</text><text class="m-en">ADDRESS</text></view><text class="m-arr">→</text>
+        <view class="m-info"><text class="m-cn">地址管理</text><text class="m-en">ADDRESS</text></view><text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="orderClaim">
         <image class="m-img gold" src="/assets/icons/list.png"></image>
@@ -317,7 +317,7 @@
           <text class="m-cn">订单认领</text>
           <text class="m-en">ORDER CLAIM · 小票 / 外部订单兑积分</text>
         </view>
-        <text class="m-arr">→</text>
+        <text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToMessages">
         <image class="m-img gold" src="/assets/icons/message.png"></image>
@@ -328,7 +328,7 @@
         <view class="badge-solid-danger badge-inline {{messageBadgeWide ? 'badge-wide' : ''}} badge-enter" wx:if="{{messageBadgeText}}">
           <text>{{messageBadgeText}}</text>
         </view>
-        <text class="m-arr">→</text>
+        <text class="m-arr">›</text>
       </view>
 
       <!-- 馆藏与内容 -->
@@ -336,12 +336,12 @@
         <image class="m-img native" src="/assets/icons/atlas.png" mode="aspectFit"></image>
         <view class="m-info"><text class="m-cn">我的山海图鉴</text><text class="m-en">MY ATLAS</text></view>
         <text class="meta-progress badge-inline" wx:if="{{atlasStats.total}}">{{atlasStats.unlocked}}/{{atlasStats.total}}</text>
-        <text class="m-arr">→</text>
+        <text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="wishlist">
         <image class="m-img gold" src="/assets/icons/heart.png" mode="aspectFit"></image>
         <view class="m-info"><text class="m-cn">收藏与候补</text><text class="m-en">SAVED & WAITLIST</text></view>
-        <text class="m-arr">→</text>
+        <text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToAchievements" wx:if="{{showAchievements}}">
         <image class="m-img gold" src="/assets/icons/medal_gold.png"></image>
@@ -353,44 +353,44 @@
         <view class="badge-outline-brass badge-inline {{achievementBadgeWide ? 'badge-wide' : ''}} badge-enter" wx:if="{{achievementBadgeText}}">
           <text>{{achievementBadgeText}}</text>
         </view>
-        <text class="m-arr">→</text>
+        <text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToCare">
         <image class="m-img native" src="/assets/icons/care.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">标本养护</text><text class="m-en">SPECIMEN CARE</text></view><text class="m-arr">→</text>
+        <view class="m-info"><text class="m-cn">标本养护</text><text class="m-en">SPECIMEN CARE</text></view><text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="identify" wx:if="{{showAiIdentify}}">
         <image class="m-img gold" src="/assets/icons/camera.png"></image>
         <view class="m-info"><text class="m-cn">AI 标本鉴定</text><text class="m-en">AI IDENTIFY · 当前免费</text></view>
-        <text class="m-arr">→</text>
+        <text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToCommunity" wx:if="{{showUserCommunity}}">
         <image class="m-img gold" src="/assets/icons/article-tab.png"></image>
-        <view class="m-info"><text class="m-cn">山海社区</text><text class="m-en">SHANHAI COMMUNITY</text></view><text class="m-arr">→</text>
+        <view class="m-info"><text class="m-cn">山海社区</text><text class="m-en">SHANHAI COMMUNITY</text></view><text class="m-arr">›</text>
       </view>
 
       <!-- 售后与支持 -->
       <view class="menu-row section-start" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToSupport">
         <image class="m-img silver" src="/assets/icons/service.png"></image>
-        <view class="m-info"><text class="m-cn">联系专员</text><text class="m-en">SUPPORT</text></view><text class="m-arr">→</text>
+        <view class="m-info"><text class="m-cn">联系专员</text><text class="m-en">SUPPORT</text></view><text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="feedback">
         <image class="m-img gold" src="/assets/icons/message.png"></image>
-        <view class="m-info"><text class="m-cn">反馈与建议</text><text class="m-en">FEEDBACK</text></view><text class="m-arr">→</text>
+        <view class="m-info"><text class="m-cn">反馈与建议</text><text class="m-en">FEEDBACK</text></view><text class="m-arr">›</text>
       </view>
 
       <!-- 门店运营与品牌 -->
       <view class="menu-row section-start" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToStore" wx:if="{{showStore}}">
         <image class="m-img gold" src="/assets/icons/store.png"></image>
-        <view class="m-info"><text class="m-cn">这有店</text><text class="m-en">STORE</text></view><text class="m-arr">→</text>
+        <view class="m-info"><text class="m-cn">这有店</text><text class="m-en">STORE</text></view><text class="m-arr">›</text>
       </view>
       <view class="menu-row {{showStore ? '' : 'section-start'}}" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="group">
         <image class="m-img silver" src="/assets/icons/group.png"></image>
-        <view class="m-info"><text class="m-cn">官方社群</text><text class="m-en">COMMUNITY</text></view><text class="m-arr">→</text>
+        <view class="m-info"><text class="m-cn">官方社群</text><text class="m-en">COMMUNITY</text></view><text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="about">
         <image class="m-img silver" src="/assets/icons/store.png"></image>
-        <view class="m-info"><text class="m-cn">关于品牌</text><text class="m-en">ABOUT US</text></view><text class="m-arr">→</text>
+        <view class="m-info"><text class="m-cn">关于品牌</text><text class="m-en">ABOUT US</text></view><text class="m-arr">›</text>
       </view>
     </view>
   </view>
