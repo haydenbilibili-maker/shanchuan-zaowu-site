@@ -242,13 +242,29 @@ async function runChecks() {
   // ---------------- B~F manageGift
   function giftEnv(orders, users = []) {
     const { store, db } = makeDb({ orders, users, gift_receiver_verify: [], content_display_flags: [{ _id: 'f1', status: 'active', priority: 1, showGift: true }] })
-    const sdk = { init() {}, DYNAMIC_CURRENT_ENV: 'env', database: () => db, getWXContext: () => ({ OPENID: '' }), callFunction: async () => ({ result: { success: true } }) }
+    // 站内信出口：记下每次 dispatchMessage / writeDirect；mode 可改成 'fail'（派发返回失败）/ 'throw'（派发与直写都抛错）
+    const msg = { fn: [], direct: [], mode: 'ok' }
+    const sdk = {
+      init() {}, DYNAMIC_CURRENT_ENV: 'env', database: () => db, getWXContext: () => ({ OPENID: '' }),
+      callFunction: async (req) => {
+        msg.fn.push(req)
+        if (msg.mode === 'throw') throw new Error('dispatchMessage 不可用')
+        return { result: { success: msg.mode !== 'fail' } }
+      }
+    }
     const main = load(P.gift, {
       stubs: {
         'wx-server-sdk': sdk,
         crypto: NODE_CRYPTO,
         './sourceOrigin': { isNonClientSource: () => false, isClientSource: () => true },
-        './inAppMessage': { dispatchInAppMessage: async () => ({ success: true }) },
+        './inAppMessage': {
+          dispatchInAppMessage: async () => ({ success: true }),
+          writeDirect: async (_db, payload) => {
+            msg.direct.push(payload)
+            if (msg.mode === 'throw') throw new Error('直写失败')
+            return { success: true, fallback: true }
+          }
+        },
         './staffGuard': {
           assertStaff: async (_db, who, opts) => (STAFF_GATE ? await STAFF_GATE : null, who === STAFF && opts && opts.role === 'manager'
             ? { ok: true, actor: { openid: STAFF, name: '店长甲', workspaceRole: 'manager' } }
@@ -264,7 +280,8 @@ async function runChecks() {
       return p
     }
     const o = (id = 'L1') => store.orders.find((x) => x._id === id)
-    return { store, call, o }
+    const notices = () => msg.fn.filter((r) => r && r.name === 'dispatchMessage' && r.data && r.data.eventType === 'gift_address_proxied')
+    return { store, call, o, msg, notices }
   }
 
   // B 打开不算领取 / 主动收下 / 不要求注册 / 一人一份
@@ -563,6 +580,49 @@ async function runChecks() {
     read(P.managerPageJson).includes('"proxy-address-sheet": "/subpackages/feature/gift/proxy-address-sheet/index"'), 'P 店员订单管理：待填址订单有「代填地址」按钮与代填面板')
   ok(read(P.proxySheetJs).includes("action: 'proxySubmitAddress',") && /<proxy-address-sheet[\s\S]*?by="giver"/.test(read(P.successWxml)) &&
     /bindtap="openProxySheet"\s*wx:if="\{\{canProxyAddress && selfTreat\}\}"/.test(read(P.successWxml)), 'P 送礼成功页：犒劳自己时「填写我的收货地址」为主按钮，走代填旁路')
+
+  // ---------------- Q 店员代填成功 → 给送礼人一条站内信（2026-10-12 产品负责人点名，旁路）
+  {
+    const ADDR = { name: '王小满', phone: '139 0000 2222', region: ['上海市', '上海市', '静安区'], detail: '某路 1 号' }
+    const inviteOrder = (meta = {}, over = {}) => linkOrder({ claimMode: '', receiverVerify: false, ...meta }, over)
+    const env = giftEnv([inviteOrder()])
+    await env.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR, reason: '顾客到店口述' })
+    const n = env.notices()
+    const d = (n[0] && n[0].data) || {}
+    ok(n.length === 1 && d.action === 'dispatch' && d.openid === GIVER && d.relatedId === 'L1' && d.category === 'order' &&
+      d.title === '收货地址已由客服代填' && d.content.startsWith('礼物收货地址已由客服代为填写，即将安排发货') && d.content.includes('SH20261011001') && d.content.includes('光明女神闪蝶') &&
+      d.actionUrl === 'subpackages/business/order-detail/index?id=L1' && Array.isArray(d.vars && d.vars.products) && env.msg.direct.length === 0,
+      'Q 店员代填成功：经现有 dispatchMessage 给送礼人发一条站内信（显式标题 / 正文 / 跳订单详情，带商品卡）')
+    await env.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: { ...ADDR, name: '别人' } })
+    ok(env.notices().length === 1, 'Q 同一订单重复代填（已提交）不再发第二条')
+    const g = giftEnv([inviteOrder()])
+    await g.call(GIVER, { action: 'proxySubmitAddress', by: 'giver', orderId: 'L1', address: ADDR })
+    ok(g.notices().length === 0 && g.msg.direct.length === 0, 'Q 送礼人本人填写：不给自己发')
+    const deny = giftEnv([inviteOrder({ expireAt: new Date(Date.now() - 1000) })])
+    await deny.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR })
+    await deny.call(RECV, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR })
+    ok(deny.notices().length === 0 && deny.msg.direct.length === 0, 'Q 代填未成功（过期 / 非店员）不发')
+    const fb = giftEnv([inviteOrder()])
+    fb.msg.mode = 'fail'
+    const warn0 = console.warn
+    console.warn = () => {}
+    let fr = {}
+    try { fr = await fb.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR }) } finally { console.warn = warn0 }
+    const w = fb.msg.direct[0] || {}
+    ok(fr.success && fb.notices().length === 1 && fb.msg.direct.length === 1 && w.eventType === 'gift_address_proxied' && w.openid === GIVER && w.relatedId === 'L1' &&
+      w.title === '收货地址已由客服代填' && w.actionUrl === 'subpackages/business/order-detail/index?id=L1',
+      'Q 消息分发不可用：退回共享件 writeDirect 直写同一条（同一去重键）')
+    const bad = giftEnv([inviteOrder()])
+    bad.msg.mode = 'throw'
+    const quiet = { error: console.error, warn: console.warn }
+    console.error = console.warn = () => {}
+    let br = {}
+    try { br = await bad.call(STAFF, { action: 'proxySubmitAddress', by: 'staff', orderId: 'L1', address: ADDR }) } finally { Object.assign(console, quiet) }
+    ok(br.success && !br.already && bad.o().giftMeta.addressStatus === 'submitted' && bad.o().status === 'paid', 'Q 站内信发送失败（含兜底也失败）不影响代填结果')
+    ok(!['manageGift', 'makeOrder', 'payCallback', 'confirmPayment'].some((f) => read(resolve(MP, `cloudfunctions/${f}/inAppMessage.js`)).includes('gift_address_proxied')) &&
+      !read(resolve(MP, 'cloudfunctions/dispatchMessage/templates.js')).includes('gift_address_proxied'),
+      'Q 新增旁路：不往共享件 inAppMessage / dispatchMessage 模板里加类型（显式标题直发）')
+  }
   return fails
 }
 
@@ -614,7 +674,13 @@ const INJECTIONS = [
   { name: '犒劳自己判定失效', file: P.gift, find: 'return phones.filter(Boolean).some((p) => hashPhone(doc.salt, p) === doc.phoneHash)', replace: 'return false' },
   { name: '店员端没有代填入口', file: P.managerWxml, find: 'catchtap="openProxyAddress"', replace: 'catchtap="noop"' },
   { name: '代填面板不走旁路动作', file: P.proxySheetJs, find: "action: 'proxySubmitAddress',", replace: "action: 'submitAddress'," },
-  { name: '犒劳自己没有本人填址主按钮', file: P.successWxml, find: 'wx:if="{{canProxyAddress && selfTreat}}"', replace: 'wx:if="{{false}}"' }
+  { name: '犒劳自己没有本人填址主按钮', file: P.successWxml, find: 'wx:if="{{canProxyAddress && selfTreat}}"', replace: 'wx:if="{{false}}"' },
+  { name: '店员代填成功不发站内信', file: P.gift, find: '    await notifyGiverAddressProxied(order, openid)\n', replace: '' },
+  { name: '送礼人本人填写也发', file: P.gift, find: '    await notifyGiverAddressProxied(order, openid)\n  }\n', replace: "  }\n  await notifyGiverAddressProxied(order, 'x')\n" },
+  { name: '已提交仍重复发', file: P.gift, find: "    if (order.status === 'paid_awaiting_address') await ensureGiftAddressStatusPaid(order._id)\n    return { success: true, already: true, msg: '地址已提交' }", replace: "    if (order.status === 'paid_awaiting_address') await ensureGiftAddressStatusPaid(order._id)\n    if (by === 'staff') await notifyGiverAddressProxied(order, openid)\n    return { success: true, already: true, msg: '地址已提交' }" },
+  { name: '分发失败不兜底直写', file: P.gift, find: '    return await writeDirect(db, {', replace: '    return null && writeDirect(db, {' },
+  { name: '发送失败拖垮代填', file: P.gift, find: "    console.error('notifyGiverAddressProxied failed', order && order._id, e)\n    return { success: false }", replace: '    throw e' },
+  { name: '站内信不跳订单详情', file: P.gift, find: 'actionUrl: `subpackages/business/order-detail/index?id=${order._id}`\n  }\n}', replace: "actionUrl: ''\n  }\n}" }
 ]
 
 async function main() {

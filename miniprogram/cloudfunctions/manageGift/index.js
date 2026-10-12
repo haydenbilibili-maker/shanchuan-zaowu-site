@@ -4,7 +4,8 @@
 const cloud = require('wx-server-sdk')
 // 来源判定统一真源（负向子串判定对互调合并串会判反，详见 sourceOrigin.js 顶部说明）
 const { isNonClientSource } = require('./sourceOrigin')
-const { dispatchInAppMessage } = require('./inAppMessage')
+const { dispatchInAppMessage, writeDirect } = require('./inAppMessage')
+const { orderProductLine } = require('./orderSummary')
 const { assertStaff } = require('./staffGuard')
 const { writeAuditLog, auditFromActor } = require('./auditLog')
 const {
@@ -772,6 +773,53 @@ async function submitAddress(event, openid) {
  */
 const PROXY_ADDRESS_STATUS = ['paid_awaiting_address', 'paid']
 
+/**
+ * 店员代填成功 → 给送礼人一条站内信（2026-10-12 产品负责人点名，旁路）。
+ * 走 dispatchMessage 现成的「显式标题 / 正文 / 跳转」入参（不新增模板、不改 inAppMessage 等共享件），
+ * 它不可用时退回同一共享件导出的 writeDirect 直写（同一 dedupeKey = 类型:订单:送礼人）。
+ * 只在条件写入胜出后调用（同一订单只会胜出一次）；任何失败都吞掉只记日志，不影响代填结果。
+ */
+const PROXY_NOTICE_TYPE = 'gift_address_proxied'
+
+function proxyNoticeMessage(order) {
+  return {
+    category: 'order',
+    title: '收货地址已由客服代填',
+    content: `礼物收货地址已由客服代为填写，即将安排发货\n礼赠订单 ${order.orderNo || ''}\n${orderProductLine(order.products, { fallback: '礼赠藏品' })}`,
+    actionUrl: `subpackages/business/order-detail/index?id=${order._id}`
+  }
+}
+
+async function notifyGiverAddressProxied(order, staffOpenid) {
+  try {
+    const giver = String(order._openid || order.openid || '').trim()
+    if (!giver || giver === String(staffOpenid || '')) return { skipped: true }
+    const msg = proxyNoticeMessage(order)
+    try {
+      const res = await cloud.callFunction({
+        name: 'dispatchMessage',
+        data: {
+          action: 'dispatch',
+          eventType: PROXY_NOTICE_TYPE,
+          openid: giver,
+          relatedId: order._id,
+          vars: { orderNo: order.orderNo || '', products: order.products },
+          ...msg
+        }
+      })
+      const r = (res && res.result) || {}
+      if (r.success) return r
+      console.warn('notifyGiverAddressProxied dispatch failed', order._id, r.msg)
+    } catch (e1) {
+      console.warn('notifyGiverAddressProxied dispatch error', order._id, e1 && e1.message)
+    }
+    return await writeDirect(db, { eventType: PROXY_NOTICE_TYPE, openid: giver, relatedId: order._id, ...msg })
+  } catch (e) {
+    console.error('notifyGiverAddressProxied failed', order && order._id, e)
+    return { success: false }
+  }
+}
+
 function proxyAddressDoc(addr) {
   const a = addr || {}
   const name = String(a.name || '').trim().slice(0, 40)
@@ -877,6 +925,7 @@ async function proxySubmitAddress(event, openid) {
       detail: { orderNo: order.orderNo || '', reason, region: addressDoc.region.slice(0, 2) },
       source: 'manageGift'
     }))
+    await notifyGiverAddressProxied(order, openid)
   }
 
   return { success: true, msg: '收货地址已记下，可以发货了', phoneMasked: maskPhone(addressDoc.phone) }
