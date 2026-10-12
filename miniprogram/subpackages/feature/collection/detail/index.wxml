@@ -26,7 +26,7 @@
     <view class="plate plate-{{card.card}} {{card.toneClass}} {{locked ? 'dim' : ''}}">
       <view class="plate-rim"></view>
       <text class="plate-en">SPECIMEN CARD</text>
-      <text class="plate-no">编号 {{card.no || '—'}}</text>
+      <text class="plate-no" wx:if="{{card.no}}">编号 {{card.no}}</text>
       <view class="silhouette big" wx:if="{{locked}}">
         <view class="silhouette-ring"></view>
       </view>
@@ -34,13 +34,14 @@
         <text class="plate-mark-en">SPECIMEN</text>
       </view>
       <text class="plate-name">{{card.nameZh || '—'}}</text>
-      <text class="plate-latin" wx:if="{{!locked}}">{{card.nameLatin || '—'}}</text>
+      <text class="plate-latin" wx:if="{{!locked && card.nameLatin}}">{{card.nameLatin}}</text>
       <view class="meta">
-        <text>{{card.category || '—'}}</text>
-        <text class="dot-sep">·</text>
-        <text>{{card.rarityLabel || '—'}}</text>
+        <!-- 空字段不出、分隔点随之不出（2026-10-12 全站质感：不显示「—」占位） -->
+        <text wx:if="{{card.category}}">{{card.category}}</text>
+        <text class="dot-sep" wx:if="{{card.category && card.rarityLabel}}">·</text>
+        <text wx:if="{{card.rarityLabel}}">{{card.rarityLabel}}</text>
         <block wx:if="{{card.hasSpot}}">
-          <text class="dot-sep">·</text>
+          <text class="dot-sep" wx:if="{{card.category || card.rarityLabel}}">·</text>
           <text class="meta-spot">{{locked ? '馆内可寻' : '馆内印记'}}</text>
         </block>
       </view>
@@ -65,8 +66,8 @@
     </view>
 
     <block wx:else>
-      <view class="essay-block">
-        <text class="essay">{{card.essay || '—'}}</text>
+      <view class="essay-block" wx:if="{{card.essay}}">
+        <text class="essay">{{card.essay}}</text>
       </view>
 
       <view class="facts">
@@ -120,8 +121,8 @@
         <block wx:if="{{hasLogs}}">
           <view class="log" wx:for="{{logs}}" wx:key="id">
             <view class="log-row">
-              <text class="log-m">{{item.methodLabel || '—'}}</text>
-              <text class="log-time">{{item.timeText || '—'}}</text>
+              <text class="log-m" wx:if="{{item.methodLabel}}">{{item.methodLabel}}</text>
+              <text class="log-time" wx:if="{{item.timeText}}">{{item.timeText}}</text>
             </view>
             <text class="log-p" wx:if="{{item.place}}">{{item.place}}</text>
           </view>

@@ -3470,3 +3470,12 @@ page {
   border: 1rpx solid rgba(196, 167, 108, 0.3);
   box-shadow: none;
 }
+
+/* 质感层续（全站 R2）：墙脚「看全部 ›」是次要动作 —— 铜铸实心钮 → 浅纸面上的深铜描边（实心铜只留挂签台主钮） */
+.ww-wall-foot-more {
+  font-weight: 600;
+  color: var(--brass-700);
+  background: rgba(196, 167, 108, 0.1);
+  border: 1rpx solid rgba(107, 90, 36, 0.5);
+  box-shadow: none;
+}

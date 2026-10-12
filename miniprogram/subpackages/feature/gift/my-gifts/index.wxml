@@ -59,7 +59,7 @@
           </view>
 
           <view class="row-bottom">
-            <text class="time">{{item.paidText || '—'}}</text>
+            <text class="time">{{item.paidText || ''}}</text>
             <text class="price" wx:if="{{item.totalPrice != null}}">¥{{item.totalPrice}}</text>
           </view>
           <view class="actions" wx:if="{{item.primaryAction}}" catchtap="noop">

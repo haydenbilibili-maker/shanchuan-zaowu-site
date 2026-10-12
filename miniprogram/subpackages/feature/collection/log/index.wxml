@@ -66,8 +66,8 @@
             <text class="record-name">{{item.nameZh || '—'}}</text>
             <text class="record-mark" wx:if="{{item.bookmarked}}">已入图鉴</text>
           </view>
-          <text class="record-latin">{{item.nameLatin || '—'}}</text>
-          <text class="record-meta">{{item.category || '—'}} · {{item.confidenceText || '—'}} · {{item.timeText || '—'}}</text>
+          <text class="record-latin" wx:if="{{item.nameLatin}}">{{item.nameLatin}}</text>
+          <text class="record-meta" wx:if="{{item.category || item.confidenceText || item.timeText}}">{{item.category}}{{item.category && (item.confidenceText || item.timeText) ? ' · ' : ''}}{{item.confidenceText}}{{item.confidenceText && item.timeText ? ' · ' : ''}}{{item.timeText}}</text>
           <text class="record-tax" wx:if="{{item.taxLine}}">{{item.taxLine}}</text>
           <text class="record-excerpt" wx:if="{{item.excerpt}}">{{item.excerpt}}</text>
           <text class="record-fact" wx:if="{{item.fact}}">{{item.fact}}</text>
@@ -94,8 +94,8 @@
         hover-stay-time="80"
       >
         <text class="row-title">{{item.title || '—'}}</text>
-        <text class="row-meta">{{item.methodLabel || '—'}}{{item.place ? ' · ' + item.place : ''}}</text>
-        <text class="row-time">{{item.timeText || '—'}}</text>
+        <text class="row-meta" wx:if="{{item.methodLabel || item.place}}">{{item.methodLabel}}{{item.methodLabel && item.place ? ' · ' : ''}}{{item.place}}</text>
+        <text class="row-time" wx:if="{{item.timeText}}">{{item.timeText}}</text>
       </view>
     </view>
   </block>

@@ -1869,11 +1869,13 @@ button.nav-share-btn::after { display: none; border: none; }
   color: var(--brass-400, #C4A76C);
 }
 .gift-scene-chip-press { background: rgba(196, 167, 108, 0.14); }
+/* 2026-10-12 拍板：每屏只留一个实心金主操作（底栏「立即购买」）→ 一键送礼改金色描边，位置 / 大小 / 跳转不变 */
 .gift-cta {
-  margin-top: 20rpx; height: 76rpx; line-height: 76rpx; text-align: center;
+  margin-top: 20rpx; height: 76rpx; line-height: 74rpx; text-align: center;
   border-radius: 999rpx;
-  background: linear-gradient(90deg, #C4A76C 0%, #D9BE86 100%);
-  color: #1A1814; font-size: 28rpx; font-weight: 600; letter-spacing: 2rpx;
+  background: rgba(196, 167, 108, 0.06);
+  border: 1rpx solid rgba(196, 167, 108, 0.7);
+  color: #C4A76C; font-size: 28rpx; font-weight: 600; letter-spacing: 2rpx;
 }
 
 /* ── 价格行右侧：折扣 + 库存（合并原独立库存行，提升信息密度）────────────── */

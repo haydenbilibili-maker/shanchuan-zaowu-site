@@ -1466,19 +1466,15 @@ page {
   margin-bottom: 24rpx;
 }
 
+/* 两条路径等权（2026-10-12 拍板）：同一枚发丝金边小签 */
 .atelier-path-chip {
   padding: 8rpx 20rpx;
   font-size: 22rpx;
-  color: var(--color-bg);
-  font-weight: 500;
-  background: var(--gold);
-  border-radius: 9999px;
-}
-
-.atelier-path-chip.soft {
   color: var(--gold);
-  background: rgba(196, 167, 108, 0.12);
-  border: 1px solid rgba(196, 167, 108, 0.35);
+  font-weight: 500;
+  background: rgba(196, 167, 108, 0.08);
+  border: 1px solid rgba(196, 167, 108, 0.45);
+  border-radius: 9999px;
 }
 
 .atelier-cta-row {
