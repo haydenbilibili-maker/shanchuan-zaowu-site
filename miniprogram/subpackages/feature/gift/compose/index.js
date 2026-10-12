@@ -118,6 +118,8 @@ Page({
     deliveryType: 'invite_address',
     showOtherDelivery: false,
     otherDeliveries: OTHER_DELIVERIES,
+    /** 犒劳自己：交付固定寄给我，地址与手机号到确认页按普通下单填写（不走邀请填址 / 受礼人手机号） */
+    selfTreat: false,
     /** 门店自取开关（超管后台）：false 时移除「门店自提代赠」 */
     storePickupEnabled: true,
     stores: [],
@@ -218,7 +220,7 @@ Page({
     if (app.globalData.giftPhoneRefill) {
       app.globalData.giftPhoneRefill = false
       this.setData({ paying: false })
-      this.flagReceiverPhone('请填写受礼人手机号，用于 TA 领取时核验身份')
+      if (!this.data.selfTreat) this.flagReceiverPhone('请填写受礼人手机号，用于 TA 领取时核验身份')
     }
   },
 
@@ -843,8 +845,12 @@ Page({
       if (deliveryType === 'store_pickup' && this.data.storePickupEnabled === false) {
         deliveryType = 'invite_address'
       }
+      if (this.data.selfTreat) {
+        this._deliveryBeforeSelf = deliveryType
+        deliveryType = 'ship_to_self'
+      }
       const patch = { deliveryType }
-      if (deliveryType !== 'invite_address') patch.showOtherDelivery = true
+      if (deliveryType !== 'invite_address' && !this.data.selfTreat) patch.showOtherDelivery = true
       // 超管运营开关：关闭后强制隐价，前端同时隐藏切换入口
       const allowToggle = result.allowHidePriceToggle !== false
       patch.allowHidePriceToggle = allowToggle
@@ -1113,6 +1119,8 @@ Page({
     // 放在这里是因为**所有**落笔入口都走 startNoteWrite（点关系、换一句、场景语向之外的一致路径），
     // 只补空值、不覆盖用户已填的名字（沿用上面「关系标签不覆盖已填受赠人名」的既有规则）。
     if (preset.id === 'self') this.applyToSelfRecipientDefault()
+    if (preset.id === 'self') this.enterSelfTreat()
+    else if (this.data.selfTreat && getPresetById(preset.id)) this.exitSelfTreat()
 
     // 落笔前短停：铺纸、想好第一句
     this._noteWriteTimer = setTimeout(() => {
@@ -1199,6 +1207,34 @@ Page({
     this.setData({ recipientName: nick })
   },
 
+  enterSelfTreat() {
+    if (this.data.selfTreat) return
+    this._deliveryBeforeSelf = this.data.deliveryType
+    this.setData({
+      selfTreat: true,
+      deliveryType: 'ship_to_self',
+      showOtherDelivery: false,
+      claimLink: false,
+      claimPasscode: false,
+      receiverPhoneError: ''
+    })
+  },
+
+  /** 换成其它关系，或点「其实是送给别人」→ 恢复送礼交付选择 */
+  exitSelfTreat() {
+    if (!this.data.selfTreat) return
+    const prev = this._deliveryBeforeSelf
+    const restore = prev && prev !== 'ship_to_self' && !(prev === 'store_pickup' && this.data.storePickupEnabled === false)
+      ? prev
+      : 'invite_address'
+    const patch = { selfTreat: false, deliveryType: restore, showOtherDelivery: restore !== 'invite_address' }
+    if (this.data.activeNotePresetId === 'self') {
+      patch.activeNotePresetId = ''
+      patch.recipientPlaceholder = 'TA 的名字（必填）'
+    }
+    this.setData(patch)
+  },
+
   /** 场景语向：与关系预设并存，复用同一落笔路径，不改录音逻辑 */
   onSceneNoteTap() {
     const hint = String(this.data.sceneNoteHint || '').trim()
@@ -1263,7 +1299,8 @@ Page({
       this.showAppToast({ overline: 'RECIPIENT', title: '请务必填写受礼人姓名' })
       return
     }
-    const deliveryType = this.data.deliveryType || 'invite_address'
+    const selfTreat = !!this.data.selfTreat
+    const deliveryType = selfTreat ? 'ship_to_self' : (this.data.deliveryType || 'invite_address')
     const hasText = !!String(this.data.cardBody || '').trim()
     const hasVoice = !!(this.data.voiceFileID && this.data.voiceDuration > 0)
     if (!hasText && !hasVoice) {
@@ -1279,14 +1316,17 @@ Page({
       return
     }
 
-    const claimLink = !!this.data.claimLink && CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1
-    const receiverPhone = claimLink ? '' : String(this.data.receiverPhone || '')
-    if (!claimLink && !/^1\d{10}$/.test(receiverPhone)) {
+    const claimLink = !!this.data.claimLink && CLAIM_LINK_DELIVERY.indexOf(deliveryType) !== -1 && !selfTreat
+    const receiverPhone = (claimLink || selfTreat) ? '' : String(this.data.receiverPhone || '')
+    if (selfTreat) {
+      // 号码到确认页取收货地址手机号
+    } else if (!claimLink && !/^1\d{10}$/.test(receiverPhone)) {
       this.flagReceiverPhone(receiverPhone ? '受礼人手机号需为 11 位' : '请填写受礼人手机号，或选「凭礼笺领取」')
       return
     }
-    // 确认页随下单交 makeOrder（号码存哈希 / 凭礼笺领取标记）；送礼成功页兜底补存号码
-    getApp().globalData.giftReceiverPhone = { phone: receiverPhone, claimLink, claimPasscode: claimLink && !!this.data.claimPasscode, productId: p._id, at: Date.now() }
+    // 确认页随下单交 makeOrder（号码存哈希 / 凭礼笺领取标记）；送礼成功页兜底补存号码。
+    // 犒劳自己：号码取确认页收货地址的手机号（confirm-order pendingGiftReceiverPhone）
+    getApp().globalData.giftReceiverPhone = { phone: receiverPhone, claimLink, claimPasscode: claimLink && !!this.data.claimPasscode, selfTreat, productId: p._id, at: Date.now() }
 
     const sku = this.data.selectedSku
     const count = this.data.count || 1

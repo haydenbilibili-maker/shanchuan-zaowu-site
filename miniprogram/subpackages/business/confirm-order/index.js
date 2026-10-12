@@ -628,8 +628,11 @@ Page(withAppModal({
       ship_to_self: '请填写你的收货地址。藏品先到你处，再当面转交这份山海。',
       store_pickup: `门店「${(this._giftMeta && this._giftMeta.storeName) || '已选门店'}」将备妥。支付后出示妥投码，由专员核销交予 TA。`
     }
-    const giftDeliveryLabel = giftDeliveryLabels[deliveryType] || deliveryType || ''
-    const giftDeliveryHint = giftDeliveryHints[deliveryType] || ''
+    const giftSelfTreat = isGiftOrder && deliveryType === 'ship_to_self' && this.pendingGiftSelfTreat()
+    const giftDeliveryLabel = giftSelfTreat ? '犒劳自己 · 寄给我' : (giftDeliveryLabels[deliveryType] || deliveryType || '')
+    const giftDeliveryHint = giftSelfTreat
+      ? '和普通下单一样，填写你的收货地址与手机号，藏品直接寄给你。'
+      : (giftDeliveryHints[deliveryType] || '')
     const giftCardBody = String((this._giftMeta && this._giftMeta.cardBody) || '').trim()
     const giftCardSignature = String((this._giftMeta && this._giftMeta.cardSignature) || '').trim()
     const giftHasVoice = !!(
@@ -1470,8 +1473,9 @@ Page(withAppModal({
     }
 
     const address = this.data.address
-    if (this.data.giftNeedsAddress && (!address || !address.name || !address.phone)) {
-      wx.showToast({ title: '请选择收货地址', icon: 'none' })
+    const selfPhoneBad = !!(address && address.phone) && this.pendingGiftSelfTreat() && !this.pendingGiftReceiverPhone()
+    if (this.data.giftNeedsAddress && (!address || !address.name || !address.phone || selfPhoneBad)) {
+      wx.showToast({ title: selfPhoneBad ? '收货手机号需为 11 位手机号' : '请选择收货地址', icon: 'none' })
       return
     }
     if (!this.data.isGiftOrder && !this.data.storePickup && (!address || !address.name || !address.phone)) {
@@ -1552,8 +1556,19 @@ Page(withAppModal({
   /** 送礼页暂存的受礼人手机号（2h 内有效）；礼赠单强制携带（2026-09-28 产品负责人拍板） */
   pendingGiftReceiverPhone() {
     const g = getApp().globalData.giftReceiverPhone
+    if (this.pendingGiftSelfTreat()) {
+      const addrPhone = String((this.data.address && this.data.address.phone) || '').replace(/\D/g, '')
+      return /^1\d{10}$/.test(addrPhone) ? addrPhone : ''
+    }
     if (!g || !/^1\d{10}$/.test(String(g.phone || '')) || Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return ''
     return g.phone
+  },
+
+  /** 送礼页选了「犒劳自己」（2h 内有效，只限寄给我）：受礼人即本人，号码取收货地址手机号 */
+  pendingGiftSelfTreat() {
+    const g = getApp().globalData.giftReceiverPhone
+    if (!g || !g.selfTreat || Date.now() - Number(g.at || 0) > 2 * 60 * 60 * 1000) return false
+    return ((this._giftMeta && this._giftMeta.deliveryType) || '') === 'ship_to_self'
   },
 
   /** 送礼页选了「凭礼笺领取」（2h 内有效，只限填址 / 自提 / 寄给我）→ { passcode }；否则 null */
@@ -1586,6 +1601,7 @@ Page(withAppModal({
     if (this.data.submitting) return
     const giftReceiverPhone = this.data.isGiftOrder ? this.pendingGiftReceiverPhone() : ''
     const giftClaimLink = this.data.isGiftOrder && !giftReceiverPhone ? this.pendingGiftClaimLink() : null
+    if (this.data.isGiftOrder && !giftReceiverPhone && this.pendingGiftSelfTreat()) return
     if (this.data.isGiftOrder && !giftReceiverPhone && !giftClaimLink) {
       this.backToGiftPhone()
       return

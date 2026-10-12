@@ -281,7 +281,18 @@
     <!-- 03 交付方式 -->
     <view class="section sec-delivery">
       <text class="section-overline">DELIVERY</text>
-      <text class="section-title">怎样交给 TA</text>
+      <text class="section-title">{{selfTreat ? '寄到哪里' : '怎样交给 TA'}}</text>
+      <block wx:if="{{selfTreat}}">
+      <view class="delivery-main active">
+        <view class="delivery-head">
+          <text class="delivery-name">寄到我的收货地址</text>
+          <text class="delivery-tag">犒劳自己</text>
+        </view>
+        <text class="delivery-desc">下一步和普通下单一样，填写你的收货地址与手机号，藏品直接寄给你。</text>
+      </view>
+      <text class="claim-switch self-exit" bindtap="exitSelfTreat">其实是送给别人？改为送礼方式 ›</text>
+      </block>
+      <block wx:else>
       <view
         class="delivery-main {{deliveryType === 'invite_address' ? 'active' : ''}}"
         data-type="invite_address"
@@ -356,6 +367,7 @@
         <text class="claim-switch" wx:if="{{deliveryType !== 'ship_to_receiver'}}" bindtap="toggleClaimLink">不知道 TA 的手机号？凭礼笺领取 ›</text>
         </block>
       </view>
+      </block>
 
       <view class="pack-note">
         <text class="pack-note-label">{{packagingLabel}}</text>

@@ -88,6 +88,10 @@ const scenes = [
   {
     name: '8-送礼页-寄给我-不填号（凭礼笺领取）', h: 1320, css: 'compose',
     body: () => renderWxml(composeFrame, { ...COMPOSE, deliveryType: 'ship_to_self', showOtherDelivery: true, otherDeliveries: OTHER_DELIVERIES, claimLink: true, claimPasscode: false }, { lenient: true })
+  },
+  {
+    name: '9-送礼页-犒劳自己（寄到我的收货地址）', h: 640, css: 'compose',
+    body: () => renderWxml(composeFrame, { ...COMPOSE, selfTreat: true, deliveryType: 'ship_to_self', claimLink: false, claimPasscode: false }, { lenient: true })
   }
 ]
 

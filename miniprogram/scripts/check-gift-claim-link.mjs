@@ -437,6 +437,47 @@ async function runChecks() {
   const ad = read(P.adminSchema)
   EVENTS.forEach((e) => ok(mp.includes(`  ${e}: {`) && ad.includes(`  ${e}: {`), `G 埋点 ${e} 须在小程序与 ERP 两份 schema 登记`))
   ok(EVENTS.every((e) => rv.includes(`'${e}'`) || rc.includes(`'${e}'`)), 'G 领取页 / 注册引导卡须实际上报 7 个新埋点')
+
+  // ---------------- H 犒劳自己：交付固定寄给我，地址与手机号按普通下单在确认页填（2026-10-12）
+  const methods = (src, names, globals) => {
+    const body = names.map((n) => { const b = fnBody(src, n); return b ? `${b}\n  },` : '' }).join('\n')
+    try {
+      return new Function(...Object.keys(globals), `return {${body}\n}`)(...Object.values(globals))
+    } catch (e) {
+      return null
+    }
+  }
+  {
+    const page = methods(cjs, ['enterSelfTreat', 'exitSelfTreat'], {})
+    const st = { selfTreat: false, deliveryType: 'store_pickup', storePickupEnabled: true, claimLink: true, claimPasscode: true, showOtherDelivery: true, activeNotePresetId: 'self' }
+    const ctx = page && Object.assign(Object.create(page), { data: st, setData(p) { Object.assign(st, p) } })
+    if (ctx) ctx.enterSelfTreat()
+    ok(!!ctx && st.selfTreat === true && st.deliveryType === 'ship_to_self' && st.claimLink === false && st.claimPasscode === false,
+      'H 选「犒劳自己」：交付须固定为寄给我，并关掉凭礼笺领取')
+    if (ctx) ctx.exitSelfTreat()
+    ok(!!ctx && st.selfTreat === false && st.deliveryType === 'store_pickup', 'H 退出「犒劳自己」：恢复原来的交付方式')
+  }
+  ok(/<block wx:if="\{\{selfTreat\}\}">[\s\S]*?<\/block>\s*<block wx:else>[\s\S]*?data-type="invite_address"[\s\S]*?id="receiverPhoneField"[\s\S]*?<\/block>\s*<\/view>\s*<\/block>/.test(cw),
+    'H 送礼页：「犒劳自己」时不显示邀请填址与受礼人手机号')
+  const gp = fnBody(cjs, 'goPay')
+  ok(gp.includes("const deliveryType = selfTreat ? 'ship_to_self'") && gp.includes('selfTreat, productId: p._id') && /if \(selfTreat\) \{\n[^\n]*\n\s+\} else if \(!claimLink && /.test(gp),
+    'H 送礼页下单：「犒劳自己」走寄给我、免填受礼人手机号并把标记交给确认页')
+  {
+    let g = null
+    const co2 = methods(co, ['pendingGiftReceiverPhone', 'pendingGiftSelfTreat'], { getApp: () => ({ globalData: { giftReceiverPhone: g } }) })
+    const mk = (dt, phone) => co2 && Object.assign(Object.create(co2), { _giftMeta: { deliveryType: dt }, data: { address: phone ? { name: '阿山', phone } : null } })
+    g = { phone: '', claimLink: false, selfTreat: true, at: Date.now() }
+    ok(!!co2 && mk('ship_to_self', '139 0000 2222').pendingGiftReceiverPhone() === '13900002222', 'H 确认页：「犒劳自己」的领取核验号码取收货地址手机号')
+    ok(!!co2 && mk('ship_to_self', '').pendingGiftReceiverPhone() === '', 'H 确认页：「犒劳自己」未填收货手机号不得放行')
+    ok(!!co2 && mk('invite_address', '13900002222').pendingGiftSelfTreat() === false, 'H 确认页：「犒劳自己」标记只对寄给我生效')
+    g = { phone: '13700001111', claimLink: false, selfTreat: false, at: Date.now() }
+    ok(!!co2 && mk('ship_to_self', '13900002222').pendingGiftReceiverPhone() === '13700001111', 'H 确认页：普通寄给我仍用送礼页填的受礼人手机号')
+  }
+  const dso = fnBody(co, 'doSubmitOrder')
+  const sbo = fnBody(co, 'submitOrder')
+  ok(dso.indexOf('!giftReceiverPhone && this.pendingGiftSelfTreat()) return') !== -1 && dso.indexOf('!giftReceiverPhone && this.pendingGiftSelfTreat()) return') < dso.indexOf('this.backToGiftPhone()') &&
+    sbo.includes("const selfPhoneBad = !!(address && address.phone) && this.pendingGiftSelfTreat() && !this.pendingGiftReceiverPhone()") && sbo.includes('|| selfPhoneBad)) {'),
+    'H 确认页：「犒劳自己」缺收货手机号就地提示，不退回送礼页找受礼人手机号')
   return fails
 }
 
@@ -468,7 +509,13 @@ const INJECTIONS = [
   { name: '注册引导卡静默注册', file: P.regCardJs, find: '    onClose() {\n', replace: "    onClose() {\n      registerWithPhone({ app: getApp(), phoneCode: 'x' })\n" },
   { name: '「不设核验」在直寄也出现', file: P.receiverVerify, find: 'clearText: on && state.linkEligible ?', replace: 'clearText: on ?' },
   { name: '注册引导卡不留协议同意时间', file: P.regCardJs, find: "patch: { agreedTermsAt }, completeOnboarding: true", replace: "patch: {}, completeOnboarding: true" },
-  { name: 'ERP 漏登记注册引导完成事件', file: P.adminSchema, find: '  gift_reg_guide_done: {', replace: '  gift_reg_guide_done_x: {' }
+  { name: 'ERP 漏登记注册引导完成事件', file: P.adminSchema, find: '  gift_reg_guide_done: {', replace: '  gift_reg_guide_done_x: {' },
+  { name: '犒劳自己仍走邀请填址', file: P.composeJs, find: "      selfTreat: true,\n      deliveryType: 'ship_to_self',", replace: '      selfTreat: true,' },
+  { name: '犒劳自己仍显示受礼人手机号', file: P.composeWxml, find: '      </view>\n      </block>\n', replace: '      </view>\n' },
+  { name: '犒劳自己下单仍要求受礼人手机号', file: P.composeJs, find: '    if (selfTreat) {\n      // 号码到确认页取收货地址手机号\n    } else if (!claimLink && ', replace: '    if (!claimLink && ' },
+  { name: '确认页犒劳自己不取收货手机号', file: P.confirmOrder, find: "      return /^1\\d{10}$/.test(addrPhone) ? addrPhone : ''", replace: "      return ''" },
+  { name: '确认页犒劳自己缺号退回送礼页', file: P.confirmOrder, find: '    if (this.data.isGiftOrder && !giftReceiverPhone && this.pendingGiftSelfTreat()) return\n', replace: '' },
+  { name: '确认页犒劳自己收货手机号不校验', file: P.confirmOrder, find: ' || selfPhoneBad)) {', replace: ')) {' }
 ]
 
 async function main() {
@@ -503,7 +550,7 @@ async function main() {
     console.error('✗ 礼赠凭礼笺领取守卫失败：\n  ' + fails.join('\n  '))
     process.exit(1)
   }
-  console.log('✓ 礼赠凭礼笺领取：免填号只限填址 / 自提 / 寄给我（直寄仍必填、旧版不变）· 寄给我作废窗口到订单结束 · 打开不算领取、须主动收下、不要求注册 · 一份一人（含并发）· 口令门与限次 · 作废换链接旧链即失效 · 送礼人见领取人不见完整号码 · 不发朋友圈 · 注册引导可关且守协议勾选 · 7 个埋点双端登记')
+  console.log('✓ 礼赠凭礼笺领取：免填号只限填址 / 自提 / 寄给我（直寄仍必填、旧版不变）· 寄给我作废窗口到订单结束 · 打开不算领取、须主动收下、不要求注册 · 一份一人（含并发）· 口令门与限次 · 作废换链接旧链即失效 · 送礼人见领取人不见完整号码 · 不发朋友圈 · 注册引导可关且守协议勾选 · 7 个埋点双端登记 · 犒劳自己固定寄给我、地址与手机号按普通下单填写')
 }
 
 main().then(
