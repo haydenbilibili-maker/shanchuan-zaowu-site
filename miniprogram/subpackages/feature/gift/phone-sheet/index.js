@@ -1,5 +1,7 @@
 // 礼笺领取核验 · 手机号弹层：只做输入与格式校验，不缓存、不回显完整号码
 Component({
+  // 弹层零件 ui-pop-*（app.wxss）需要全局类；本组件类名与 app.wxss 无重名（2026-10-13 核对）
+  options: { addGlobalClass: true },
   properties: {
     show: { type: Boolean, value: false },
     overline: { type: String, value: 'VERIFY' },

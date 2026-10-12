@@ -1528,10 +1528,10 @@ page {
   right: 0;
   top: 0;
   bottom: 0;
-  background: rgba(26, 24, 20, 0.72);
+  background: var(--pop-mask);
   z-index: 40;
   opacity: 0;
-  transition: opacity 0.22s ease;
+  transition: opacity var(--dur-base) var(--ease-standard);
 }
 .sheet-mask.on { opacity: 1; }
 
@@ -1541,18 +1541,20 @@ page {
   right: 0;
   bottom: 0;
   z-index: 50;
-  background: linear-gradient(180deg, #241f18 0%, #1F1D1A 18%, #1F1D1A 100%);
-  border-radius: 28rpx 28rpx 0 0;
-  border-top: 1px solid rgba(196, 167, 108, 0.28);
+  /* 牌面取弹层令牌（docs/弹层视觉规范_2026-10-13.md）；常驻挂载 + on 类切换，保留进出过渡 */
+  background: var(--pop-surface);
+  border-radius: var(--pop-radius-sheet) var(--pop-radius-sheet) 0 0;
+  border-top: 1rpx solid var(--pop-hairline);
+  box-shadow: var(--pop-shadow-sheet);
   /* 底安全区用 sheet-safe spacer，勿只靠 padding-bottom */
-  padding: 16rpx 32rpx 0;
+  padding: 0 var(--pop-pad-x) 0;
   box-sizing: border-box;
   height: auto;
   max-height: 86vh;
   overflow-y: auto;
   transform: translateY(24rpx);
   opacity: 0;
-  transition: transform 0.24s ease, opacity 0.24s ease;
+  transition: transform var(--dur-base) var(--ease-out-soft), opacity var(--dur-base) var(--ease-standard);
 }
 .sheet-safe {
   width: 100%;
@@ -1563,28 +1565,8 @@ page {
   transform: translateY(0);
   opacity: 1;
 }
-.sheet-handle {
-  width: 64rpx;
-  height: 6rpx;
-  border-radius: 999rpx;
-  background: rgba(160, 154, 144, 0.35);
-  margin: 0 auto 20rpx;
-}
-.sheet-over {
-  display: block;
-  font-size: 20rpx;
-  color: #8A7530;
-  letter-spacing: 0.14em;
-  margin-bottom: 8rpx;
-}
-.sheet-title {
-  display: block;
-  font-size: 34rpx;
-  color: #FFFFFF;
-  font-weight: 500;
-  font-family: 'Source Han Serif SC', Georgia, serif;
-  margin-bottom: 28rpx;
-}
+.sheet-handle { margin-bottom: 28rpx; }
+.sheet-title { margin-bottom: 28rpx; }
 .field { margin-bottom: 24rpx; }
 .field.row2 { display: flex; gap: 20rpx; }
 .field.half { flex: 1; margin-bottom: 0; }

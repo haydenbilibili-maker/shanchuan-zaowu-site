@@ -832,6 +832,7 @@ button[disabled]:active,
 .ui-pop-dialog .ui-pop-head { padding: 0 0 20rpx; }
 .ui-pop-head.is-center { align-items: center; text-align: center; padding: 0 0 8rpx; }
 .ui-pop-kicker {
+  display: block;
   font-family: var(--font-mono);
   font-size: var(--fs-18);
   line-height: 26rpx;
@@ -840,6 +841,7 @@ button[disabled]:active,
   margin-bottom: 10rpx;
 }
 .ui-pop-title {
+  display: block;
   font-family: var(--font-brand);
   font-size: var(--fs-34);
   font-weight: 500;
@@ -848,6 +850,7 @@ button[disabled]:active,
   color: var(--color-text-primary);
 }
 .ui-pop-sub {
+  display: block;
   margin-top: 8rpx;
   font-size: var(--fs-24);
   line-height: 1.6;

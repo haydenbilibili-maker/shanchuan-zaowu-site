@@ -1,7 +1,8 @@
-<view class="pa-mask" wx:if="{{show}}" bindtap="onClose" catchtouchmove="noop">
-  <view class="pa-panel" catchtap="noop">
-    <text class="pa-over">{{by === 'staff' ? 'ADDRESS BY STAFF' : 'MY ADDRESS'}}</text>
-    <text class="pa-title">{{by === 'staff' ? '代填收货地址' : (selfTreat ? '填写我的收货地址' : '我来填写收货地址')}}</text>
+<view class="ui-pop-mask pa-mask" wx:if="{{show}}" bindtap="onClose" catchtouchmove="noop">
+  <view class="ui-pop-sheet pa-panel" catchtap="noop">
+    <view class="ui-pop-grip pa-grip"></view>
+    <text class="ui-pop-kicker">{{by === 'staff' ? 'ADDRESS BY STAFF' : 'MY ADDRESS'}}</text>
+    <text class="ui-pop-title">{{by === 'staff' ? '代填收货地址' : (selfTreat ? '填写我的收货地址' : '我来填写收货地址')}}</text>
     <text class="pa-desc" wx:if="{{by === 'staff'}}">顾客已把地址告诉门店时使用。提交后这单按普通待发货处理，可直接填快递单号；会记录是你代填的。</text>
     <text class="pa-desc" wx:elif="{{selfTreat}}">这份是犒劳自己的礼。填上收货地址，专员就能启程。</text>
     <text class="pa-desc" wx:else>已经拿到 TA 的地址？直接替 TA 填上，专员就能启程；TA 之后打开礼笺仍可收下。</text>
@@ -48,7 +49,7 @@
     </view>
 
     <text class="pa-error" wx:if="{{error}}">{{error}}</text>
-    <view class="pa-btn {{busy ? 'is-busy' : ''}}" bindtap="submit" hover-class="tap-press" hover-stay-time="80">{{busy ? '正在记下…' : '确认地址'}}</view>
+    <view class="ui-pop-btn is-primary pa-btn {{busy ? 'is-busy' : ''}}" bindtap="submit" hover-class="tap-press" hover-stay-time="80">{{busy ? '正在记下…' : '确认地址'}}</view>
     <view class="pa-cancel" bindtap="onClose" hover-class="tap-press" hover-stay-time="80">取消</view>
   </view>
 </view>
