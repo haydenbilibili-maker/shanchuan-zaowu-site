@@ -219,6 +219,24 @@ function checks(s) {
     /flex-wrap:\s*nowrap;/.test(rule(s.detailWxss, '.bottom-bar')) &&
     /white-space:\s*nowrap;/.test(rule(s.detailWxss, '.btn-sub')))
 
+  // R9 头图叠层必须压在头图层之上（2026-10-12 真机：.hero-wrapper .sb-wrap 曾为 z-index 6，渐隐 / 署名 / 张数全被头图盖住；
+  //    离线预览把 sensitive-blur-gate 展平成普通 view，量不出这一层 —— 故按 wxss 里**最后一条**同选择器规则静态比对）
+  {
+    const zOf = (sel) => {
+      const re = new RegExp('(?:^|\\n)' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}', 'g')
+      let m, z = null
+      while ((m = re.exec(s.detailWxss))) { const zm = /z-index:\s*(-?\d+)/.exec(m[1]); if (zm) z = Number(zm[1]) }
+      return z
+    }
+    const base = zOf('.hero-wrapper .sb-wrap')
+    const layers = ['.hero-overlay', '.hero-topshade', '.hero-credit', '.hero-seal', '.img-counter', '.hero-badge-stack'].map((k) => [k, zOf(k)])
+    add('R9 头图叠层（渐隐 / 顶影 / 署名 / 方印 / 张数 / 带证）z-index 均高于头图层 .hero-wrapper .sb-wrap',
+      base != null && layers.every(([, z]) => z != null && z > base))
+    add('R9 罩层打开时叠层退场（署名 / 方印 / 张数 / 顶影 / 带证都带 !sensitiveVeiled）',
+      ['hero-topshade', 'hero-credit', 'hero-seal', 'img-counter', 'hero-badge-stack'].every((c) =>
+        new RegExp('<view class="' + c + '"[^\\n]*!sensitiveVeiled').test(s.detailWxml)))
+  }
+
   // R8 横图铺成正方形；竖图仍是半屏居中裁切，高度切换有过渡
   add('R8 头图两处按 heroFit 显示，并用 bindload 量原比例',
     (s.detailWxml.match(/class="slide-image" mode="\{\{heroFit\}\}" bindload="onHeroImageLoad"/g) || []).length === 2)
@@ -298,6 +316,8 @@ if (process.argv.includes('--selftest')) {
     ['规格 swiper 去掉高度过渡', 'detailWxss', (t) => t.replace('\n  transition: height 0.25s ease;', '')],
     ['SPEC_RATIO_MAX 改掉', 'detailJs', (t) => t.replace('const SPEC_RATIO_MAX = 1.25;', '')],
     ['信息区又放「送给 TA」', 'detailWxml', (t) => t.replace('>定制</text>', '>定制</text>\n        <text class="offer-link" bindtap="goToGift">送给 TA</text>')],
+    ['头图层又压过叠层（sb-wrap z-index 抬回 6）', 'detailWxss', (t) => t.replace('.hero-wrapper .sb-wrap {\n  z-index: 1;\n}', '.hero-wrapper .sb-wrap {\n  z-index: 6;\n}')],
+    ['罩层打开时带证角标仍叠在罩层上', 'detailWxml', (t) => t.replace('wx:if="{{isProtected && !sensitiveVeiled}}"', 'wx:if="{{isProtected}}"')],
     ['礼赠面板一键送礼不再直达写笺', 'detailWxml', (t) => t.replace('class="gift-cta" bindtap="goGiftCompose"', 'class="gift-cta" bindtap="goToGift"')],
   ]
   let ok = baseOk

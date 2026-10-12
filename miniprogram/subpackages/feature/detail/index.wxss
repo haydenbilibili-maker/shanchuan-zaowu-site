@@ -341,8 +341,11 @@ button.nav-share-btn::after { display: none; border: none; }
   max-width: calc(100% - 160rpx);
   pointer-events: none;
 }
+/* ⚠️ 2026-10-12 真机：这里原为 z-index: 6，把整张头图（含 swiper）抬到全部叠层（渐隐 2 / 署名·方印·张数 4 / 带证 5）之上，
+   底部渐隐自上线起就从未显示过。图层回到 1（与上方首条 .sb-wrap 同值）；罩层打开时叠层自身 wx:if 退场，不再靠压层级遮挡。
+   守卫 check:a-flow-polish R9 钉住「叠层 z-index 必须高于头图层」。 */
 .hero-wrapper .sb-wrap {
-  z-index: 6;
+  z-index: 1;
 }
 /* 底部三段渐隐：180rpx 两段线性在实拍浅底图上收不住，接正文卡处一道硬边 → 拉长到 320rpx、中段先压暗 */
 .hero-overlay {
