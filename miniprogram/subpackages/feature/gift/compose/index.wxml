@@ -1,26 +1,25 @@
 <!-- 礼赠编排 · 博物柜仪式（落笔/语音区仅外围增强，正文逻辑不动）
      2026-10-12 分步：01 选礼（藏品 + 送给谁）→ 02 写笺（称呼 / 礼笺 / 署名 / 语音）→ 03 交付（交付方式 / 领取核验 / 隐价 / 包装）→ 支付
-     去密集（同日）：只有可选的东西用描边；上一步与音效并进步骤轨两端 -->
+     去密集（同日）：只有可选的东西用描边；音效在步骤轨右端；自定义顶栏左上返回兼作「上一步」 -->
 <wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
-<view class="page" wx:if="{{allowed && product}}">
+<!-- 自定义顶栏（index.json navigationStyle: custom）：放在三种页态之外，加载中 / 打不开时也有返回。
+     高度按胶囊位置算（customNav）；左上返回第 2、3 步回上一步，第 1 步离开 -->
+<view class="compose-nav" style="padding-top: {{statusBarHeight}}px;">
+  <view class="compose-nav-inner" style="height: {{navBarHeight}}px;">
+    <nav-back ext-class="compose-nav-back" bind:back="onNavBack" aria-label="{{activeStep > 1 ? '上一步' : '返回'}}" />
+    <view class="compose-nav-title" style="left: {{navPaddingRight}}px; right: {{navPaddingRight}}px;">
+      <text>礼赠编排</text>
+    </view>
+  </view>
+</view>
+
+<view class="page" style="padding-top: {{navTotal}}px;" wx:if="{{allowed && product}}">
   <!-- 页面关了系统侧滑（index.json）：左缘右滑在第 2、3 步回上一步，第 1 步离开 -->
   <page-edge-back ext-class="compose-edge" bind:back="onEdgeBack" disabled="{{voiceRecording}}" />
 
-  <!-- 步骤轨：当前步高亮；已到过的步可点回。左端页内「上一步」（第 2、3 步），右端音效开关
+  <!-- 步骤轨：当前步高亮；已到过的步可点回。「上一步」就是左上返回，这里不再重复；右端音效开关
        （2026-09-19：与收礼页共用同一个静音偏好，存储键 gift_receive_sfx_muted） -->
   <view class="step-rail sticky">
-    <view
-      class="rail-tool rail-back"
-      wx:if="{{activeStep > 1}}"
-      bindtap="onStepBack"
-      hover-class="tap-press"
-      hover-stay-time="80"
-      aria-role="button"
-      aria-label="上一步"
-    >
-      <text>‹ {{activeStep === 2 ? '选礼' : '写笺'}}</text>
-    </view>
-    <view class="rail-tool rail-back" wx:else aria-hidden="true"></view>
     <view
       class="step-rail-item {{activeStep === 1 ? 'on' : ''}} {{activeStep !== 1 ? 'done' : ''}}"
       data-step="1"
@@ -481,14 +480,14 @@
   </view>
 </view>
 
-<view class="page checking" wx:elif="{{checking || loading}}">
+<view class="page checking" style="padding-top: {{navTotal}}px;" wx:elif="{{checking || loading}}">
   <view class="state-block">
     <view class="state-seal" aria-hidden="true"></view>
     <text class="muted">柜门轻启，正在备妥…</text>
   </view>
 </view>
 
-<view class="page checking" wx:else>
+<view class="page checking" style="padding-top: {{navTotal}}px;" wx:else>
   <view class="state-block">
     <text class="state-title">暂无法打开礼赠</text>
     <text class="muted">{{loadError || '请从馆藏详情再次进入'}}</text>

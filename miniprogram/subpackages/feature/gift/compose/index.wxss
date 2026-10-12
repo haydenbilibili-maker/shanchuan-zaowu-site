@@ -116,6 +116,41 @@ page {
   margin-bottom: 12rpx;
 }
 
+/* 自定义顶栏：固定在顶，压过左缘右滑热区（z-index 50）；标题绝对居中、左右各让出胶囊宽 */
+.compose-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: #1A1814;
+}
+.compose-nav-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  box-sizing: border-box;
+}
+.compose-nav-back .page-nav-back-icon {
+  width: 28px;
+  height: 28px;
+}
+.compose-nav-title {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #FFFFFF;
+  pointer-events: none;
+}
+
 .step-rail {
   display: flex;
   align-items: center;
@@ -186,7 +221,7 @@ page {
   width: 32rpx;
 }
 
-/* 步骤轨两端：左「‹ 上一步」（第 1 步占位不显示）、右音效 —— 不加框，不再单占一行 */
+/* 步骤轨右端音效 —— 不加框，不单占一行（「上一步」= 自定义顶栏左上返回） */
 .rail-tool {
   flex: 0 0 104rpx;
   display: flex;
@@ -196,7 +231,6 @@ page {
   font-size: 22rpx;
   color: #A09A90;
 }
-.rail-back { margin-right: 12rpx; }
 .rail-sfx { justify-content: flex-end; margin-left: 12rpx; }
 
 .section-hint {

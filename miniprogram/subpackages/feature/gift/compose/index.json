@@ -1,5 +1,6 @@
 {
   "navigationBarTitleText": "礼赠编排",
+  "navigationStyle": "custom",
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814",
@@ -7,7 +8,8 @@
   "usingComponents": {
     "protected-badge": "/components/ProtectedBadge/index",
     "app-toast": "/components/AppToast/index",
-    "page-edge-back": "/components/PageEdgeBack/index"
+    "page-edge-back": "/components/PageEdgeBack/index",
+    "nav-back": "/components/NavBack/index"
   },
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",

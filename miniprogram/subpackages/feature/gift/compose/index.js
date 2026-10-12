@@ -48,6 +48,8 @@ const textFx = require('../giftTextEffect')
 /** 会员应付（2026-09-19 裁决 46-a）：**主包**件 —— 分包之间不能互 require，
  *  故编排页不能直接引 subpackages/business/utils/memberPricing.js */
 const memberPayable = require('../../utils/memberPayable')
+/** 自定义顶栏（index.json navigationStyle: custom）：高度按胶囊位置算，与藏品详情同一套 */
+const { getCustomNavLayout } = require('../../utils/customNav')
 
 const VOICE_CANCEL_SLIDE_PX = 56
 
@@ -178,6 +180,10 @@ Page({
     allowHidePriceToggle: true,
     paying: false,
     /** 分步编排（2026-10-12）：当前步 1 选礼 / 2 写笺 / 3 交付；maxStep = 已到过的最远一步（步骤轨只能点回 ≤ 它的步） */
+    statusBarHeight: 20,
+    navBarHeight: 44,
+    navPaddingRight: 96,
+    navTotal: 64,
     activeStep: 1,
     maxStep: 1,
     /** 主滚动区高度（iOS 显式 px） */
@@ -227,10 +233,21 @@ Page({
     }
   },
 
-  /** 实测前的占位：步骤轨约 56 + 音效条约 36 + 底栏约 96（不含安全区，onReady 后即被实测值覆盖） */
+  /** 顶栏 = 状态栏 + 按胶囊上下对称留白的导航条（customNav），标题左右各让出胶囊宽，不压胶囊 */
+  _initNav() {
+    const nav = getCustomNavLayout()
+    this.setData({
+      statusBarHeight: nav.statusBarHeight,
+      navBarHeight: nav.navBarHeight,
+      navPaddingRight: nav.navPaddingRight,
+      navTotal: nav.statusBarHeight + nav.navBarHeight
+    })
+  },
+
+  /** 实测前的占位：顶栏 + 步骤轨约 56 + 底栏约 96（不含安全区，onReady 后即被实测值覆盖） */
   guessScrollPane() {
     const winH = getWindowHeight()
-    const next = Math.max(240, (winH || 600) - 188)
+    const next = Math.max(240, (winH || 600) - this.data.navTotal - 152)
     this.setData({
       scrollHeightPx: next,
       scrollStyle: 'height: ' + next + 'px;'
@@ -238,7 +255,7 @@ Page({
   },
 
   /**
-   * 滚动区 = 自身顶边 → 底栏顶边（实测 px）。上方的步骤轨、音效条与底栏高度都不能写死：
+   * 滚动区 = 自身顶边 → 底栏顶边（实测 px）。上方的自定义顶栏、步骤轨与底栏高度都不能写死：
    * 底栏会因会员价小字、安全区变高；漏减任何一块，最后一行就会压在底栏下（2026-10-12 真机）。
    */
   syncScrollPane() {
@@ -272,6 +289,7 @@ Page({
   },
 
   onLoad(options) {
+    this._initNav()
     this.guessScrollPane()
     this._from = (options && options.from) || 'direct'
     this._productId = decodeQueryText((options && options.productId) || '').trim()
@@ -398,9 +416,6 @@ Page({
     this._goStep(step + 1, 'next')
   },
 
-  onStepBack() {
-    if (this.data.activeStep > 1) this._goStep(this.data.activeStep - 1, 'back')
-  },
 
   /** 步骤轨：只能点回已到过的步；越过「写笺」去「交付」也要先过写笺的必填 */
   onRailTap(e) {
@@ -413,10 +428,19 @@ Page({
     this._goStep(step, 'rail')
   },
 
-  /** 左缘右滑（页面关了系统侧滑，见 index.json）：第 2、3 步回上一步，第 1 步离开 */
+  /** 左上返回（自定义顶栏）与左缘右滑（页面关了系统侧滑）同一口径：第 2、3 步回上一步，第 1 步离开；
+   *  安卓实体返回键拦不住，仍直接离开 */
+  onNavBack() {
+    this._backOrLeave('nav')
+  },
+
   onEdgeBack() {
+    this._backOrLeave('edge')
+  },
+
+  _backOrLeave(via) {
     if (this.data.activeStep > 1) {
-      this._goStep(this.data.activeStep - 1, 'edge')
+      this._goStep(this.data.activeStep - 1, via)
       return
     }
     this.leaveCompose()
@@ -1429,10 +1453,14 @@ Page({
     setTimeout(() => this.setData({ paying: false }), 600)
   },
 
+  /** 扫码 / 分享直达时页面栈只有这一页，navigateBack 无处可回 → 回馆藏 */
   leaveCompose() {
-    wx.navigateBack({
-      fail: () => wx.switchTab({ url: '/pages/atelier/index' })
-    })
+    const fallback = () => wx.switchTab({ url: '/pages/atelier/index' })
+    if (getCurrentPages().length <= 1) {
+      fallback()
+      return
+    }
+    wx.navigateBack({ fail: fallback })
   },
 
   goBrowseFromError() {

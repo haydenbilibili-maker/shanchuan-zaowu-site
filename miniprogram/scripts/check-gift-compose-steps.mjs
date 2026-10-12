@@ -14,7 +14,10 @@
  *     新埋点 gift_compose_step 双端登记、旧埋点不动。
  *   D 去密集（产品负责人真机看第 3 步：「太密集，信息过载」）：四种交付平铺成单选行、不再折叠（自提关闭时不出现）；
  *     长说明收进「为什么要填？/ 领取规则」点开；只有可选的东西描边（领取核验 / 隐价 / 包装不加框）；
- *     隐价是一行开关、平台强制时一行灰字；包装一行摘要；上一步 / 音效并进步骤轨；底栏「备妥应付」与价格同一行。
+ *     隐价是一行开关、平台强制时一行灰字；包装一行摘要；音效在步骤轨右端；底栏「备妥应付」与价格同一行。
+ *   N 自定义顶栏（产品负责人拍板：左上返回在第 2、3 步回上一步，第 1 步才离开，不弹确认）：index.json 设 custom、胶囊白色；
+ *     顶栏高度按胶囊位置算（真跑 customNav + _initNav）；标题左右各让出胶囊宽；三种页态都给顶栏留白；
+ *     左上返回与左缘右滑同一口径（真跑 onNavBack），直达无上一页时回馆藏；占位高度也减顶栏。安卓实体返回键拦不住（不测）。
  *
  * 用法：node miniprogram/scripts/check-gift-compose-steps.mjs [--selftest]
  * --selftest：对真源做**内存注入**（不改文件），每条注入都必须被检出。
@@ -31,6 +34,7 @@ const P = {
   wxml: resolve(MP, 'subpackages/feature/gift/compose/index.wxml'),
   wxss: resolve(MP, 'subpackages/feature/gift/compose/index.wxss'),
   json: resolve(MP, 'subpackages/feature/gift/compose/index.json'),
+  customNav: resolve(MP, 'subpackages/feature/utils/customNav.js'),
   mpSchema: resolve(MP, 'utils/analytics/eventSchema.js'),
   adminSchema: resolve(MP, '../admin/src/utils/analyticsSchema.js')
 }
@@ -105,10 +109,62 @@ function runChecks() {
   ok('L4 底栏仍固定在底部（滚动区按它的顶边截止）', /position:\s*fixed/.test(rule(wxss, '.bottom-bar')) && /bottom:\s*0/.test(rule(wxss, '.bottom-bar')))
   ok('L5 滚动区末尾有留白块', /<view class="scroll-pad"><\/view>\s*<\/scroll-view>/.test(wxml))
   ok('L6 留白不再估底栏高度（底栏高度只由实测决定，不得回到写死 160rpx + 安全区）', !/env\(safe-area-inset-bottom\)/.test(rule(wxss, '.scroll-pad')))
+  let h3 = 0
+  try { h3 = runSync(js, { ...base, '.scroll': { top: 180, height: 600 }, '.bottom-bar': { top: 657, height: 96 } }, 753) } catch (e) { /* L0 已报 */ }
+  ok(`L7 自定义顶栏把滚动区顶边推低后，滚动区随之变矮（顶边 180：期望 477，实得 ${h3}）`, h3 === 753 - 180 - 96)
 
   stepChecks(js, wxml, ok)
   declutterChecks(js, wxml, wxss, ok)
+  navChecks(js, wxml, ok)
   return fails
+}
+
+function navChecks(js, wxml, ok) {
+  const json = JSON.parse(read(P.json))
+  ok('N1 只对本页设自定义顶栏，胶囊白色（暗色页），返回按钮复用 NavBack',
+    json.navigationStyle === 'custom' && json.navigationBarTextStyle === 'white' && json.usingComponents['nav-back'] === '/components/NavBack/index')
+  // 真跑 customNav：iPhone 13 状态栏 47、胶囊 top 51 / 高 32 / left 281（宽 375）→ 导航条 40、右让 102
+  let lay = null
+  let page = null
+  try {
+    const mod = { exports: {} }
+    const wx = { getMenuButtonBoundingClientRect: () => ({ top: 51, height: 32, left: 281, width: 87, right: 368, bottom: 83 }) }
+    const req = () => ({ getWindowInfo: () => ({ statusBarHeight: 47, windowWidth: 375, windowHeight: 812 }) })
+    vm.runInNewContext(read(P.customNav), { module: mod, exports: mod.exports, require: req, wx, Math })
+    lay = mod.exports.getCustomNavLayout()
+    const body = ['_initNav', 'guessScrollPane'].map((n) => method(js, n)).join(',\n')
+    const proto = new Function('getCustomNavLayout', 'getWindowHeight', 'Math', `return {${body}\n}`)(mod.exports.getCustomNavLayout, () => 812, Math)
+    page = Object.assign(Object.create(proto), { data: { navTotal: 64 }, setData(p) { Object.assign(this.data, p) } })
+    page._initNav()
+    page.guessScrollPane()
+  } catch (e) {
+    ok('N2 顶栏布局跑不起来：' + e.message, false)
+  }
+  ok('N2 顶栏高度按胶囊位置算：导航条 =（胶囊 top − 状态栏）× 2 + 胶囊高，顶栏 = 状态栏 + 导航条',
+    !!lay && lay.navBarHeight === 40 && !!page && page.data.statusBarHeight === 47 && page.data.navBarHeight === 40 && page.data.navTotal === 87 &&
+    /onLoad\(options\) \{\n\s+this\._initNav\(\)/.test(js))
+  ok('N3 标题「礼赠编排」居中且左右各让出胶囊宽（不压胶囊）',
+    !!page && page.data.navPaddingRight === 102 &&
+    /<view class="compose-nav-title" style="left: \{\{navPaddingRight\}\}px; right: \{\{navPaddingRight\}\}px;">\s*<text>礼赠编排<\/text>/.test(wxml))
+  const pages = wxml.match(/<view class="page[^"]*"[^>]*>/g) || []
+  const navAt = wxml.indexOf('<view class="compose-nav"')
+  ok('N4 顶栏在三种页态之外，三种页态（编排 / 加载中 / 打不开）都按顶栏高度留白',
+    navAt >= 0 && navAt < wxml.indexOf('<view class="page') && pages.length === 3 && pages.every((t) => t.includes('style="padding-top: {{navTotal}}px;"')) &&
+    /<view class="compose-nav" style="padding-top: \{\{statusBarHeight\}\}px;">\s*<view class="compose-nav-inner" style="height: \{\{navBarHeight\}\}px;">/.test(wxml))
+  ok('N5 实测前的占位高度也减掉顶栏（812 − 顶栏 87 − 152 = 573）', !!page && page.data.scrollHeightPx === 573)
+  const run = (name, fn) => { try { fn() } catch (e) { ok(`${name}（抛错：${e.message}）`, false) } }
+  run('N6', () => {
+    const r = makePage(js, { activeStep: 2, maxStep: 3 })
+    r.page.onNavBack()
+    const s1 = r.page.data.activeStep
+    r.page.onNavBack()
+    ok('N6 左上返回：第 2 步回第 1 步（不离开），第 1 步才离开页面', s1 === 1 && r.calls.back === 1 && r.calls.tab.length === 0 &&
+      r.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 2 && t[3].to === 1 && t[3].via === 'nav'))
+    const d = makePage(js, { activeStep: 1 })
+    d.calls.pages = 1
+    d.page.onNavBack()
+    ok('N7 扫码 / 分享直达（页面栈只有这一页）：第 1 步左上返回回馆藏', d.calls.back === 0 && d.calls.tab[0] === '/pages/atelier/index')
+  })
 }
 
 function declutterChecks(js, wxml, wxss, ok) {
@@ -131,7 +187,7 @@ function declutterChecks(js, wxml, wxss, ok) {
     /<text class="detail-muted" wx:if="\{\{allowHidePriceToggle === false\}\}">/.test(s3) && /class="switch-row"[\s\S]{0,40}bindtap="toggleHidePrice"/.test(s3) && !/privacy-row/.test(wxml))
   ok('D6 包装压成页尾一行摘要', /<view class="pack-note">\s*<text class="pack-note-body">包装：\{\{packagingSummary\}\}<\/text>\s*<\/view>/.test(s3) && js.includes('packagingSummary: GIFT_PACKAGING_SUMMARY'))
   const rail = wxml.slice(wxml.indexOf('<view class="step-rail'), wxml.indexOf('<scroll-view'))
-  ok('D7 「上一步」与音效并进步骤轨两端，不再单占一行', !/sfx-bar/.test(wxml) && rail.includes('bindtap="onStepBack"') && rail.includes('catchtap="toggleSfxMute"'))
+  ok('D7 音效并进步骤轨右端、不再单占一行；「上一步」只由左上返回承担（步骤轨不重复放）', !/sfx-bar/.test(wxml) && !rail.includes('onStepBack') && rail.includes('catchtap="toggleSfxMute"'))
   ok('D8 底栏「备妥应付」与价格同一行（小字只剩会员价一行）', /<view class="bottom-value-row">\s*<text class="bottom-label">备妥应付<\/text>/.test(wxml))
   ok('D9 犒劳自己第 3 步：只一行已选的「寄到我的收货地址」+ 改回送礼入口', /class="delivery-opt active"/.test(self) && self.includes('bindtap="exitSelfTreat"') && !self.includes('receiverPhoneField'))
 }
@@ -139,12 +195,12 @@ function declutterChecks(js, wxml, wxss, ok) {
 // ── T 分步编排（2026-10-12）─────────────────────────────────────────────
 const GIFT_META_KEYS = 'cardBody,cardSignature,deliveryType,hidePrice,phase,recipientName,storeId,storeName,voiceDuration,voiceFileID'
 const PHONE_KEYS = 'at,claimLink,claimPasscode,phone,productId,selfTreat'
-const PAGE_METHODS = ['_goStep', 'onStepNext', 'onStepBack', 'onRailTap', 'onEdgeBack', '_checkLetter', 'goPay', 'showAppToast',
+const PAGE_METHODS = ['_goStep', 'onStepNext', 'onNavBack', '_backOrLeave', 'onRailTap', 'onEdgeBack', '_checkLetter', 'goPay', 'showAppToast',
   'flagReceiverPhone', 'finishNoteWrite', 'clearNoteWriteTimer', 'startNoteWrite', '_scheduleNoteWrite', 'applyToSelfRecipientDefault',
   'enterSelfTreat', 'exitSelfTreat', 'onShow', 'leaveCompose']
 
 function makePage(js, over = {}) {
-  const calls = { nav: [], toast: [], track: [], timers: [], back: 0 }
+  const calls = { nav: [], toast: [], track: [], timers: [], back: 0, tab: [], pages: 2 }
   const app = { globalData: {} }
   const bodies = PAGE_METHODS.map((n) => {
     const b = method(js, n)
@@ -155,8 +211,9 @@ function makePage(js, over = {}) {
     wx: {
       showToast: (o) => calls.toast.push(o.title),
       navigateBack: () => { calls.back += 1 },
-      switchTab: () => {}
+      switchTab: (o) => calls.tab.push(o.url)
     },
+    getCurrentPages: () => new Array(calls.pages).fill({}),
     getApp: () => app,
     navigateToConfirmOrder: (items, opts) => calls.nav.push({ items, opts }),
     trackBehavior: (...a) => calls.track.push(a),
@@ -208,8 +265,8 @@ function stepChecks(js, wxml, ok) {
   ok('T5 支付按钮只有一个，且只在第 3 步（第 1、2 步底栏是「下一步」）',
     (wxml.match(/bindtap="goPay"/g) || []).length === 1 &&
     /<view wx:if="\{\{activeStep < 3\}\}" class="pay-btn" bindtap="onStepNext"[^>]*>[\s\S]*?<\/view>\s*<view wx:else class="pay-btn[^"]*" bindtap="goPay"/.test(wxml))
-  ok('T6 步骤轨可点（onRailTap），第 2、3 步有页内「上一步」，换步回到顶部',
-    (wxml.match(/bindtap="onRailTap"/g) || []).length >= 3 && /wx:if="\{\{activeStep > 1\}\}"[\s\S]{0,80}bindtap="onStepBack"/.test(wxml) &&
+  ok('T6 步骤轨可点（onRailTap），左上返回承担「上一步」，换步回到顶部',
+    (wxml.match(/bindtap="onRailTap"/g) || []).length >= 3 && /<nav-back[^>]*bind:back="onNavBack"/.test(wxml) &&
     wxml.includes('<view id="composeTop"></view>') && wxml.includes('scroll-into-view="{{phoneScrollId}}"'))
 
   let r
@@ -272,13 +329,13 @@ function stepChecks(js, wxml, ok) {
     r.page.onRailTap({ currentTarget: { dataset: { step: 3 } } })
     ok('T21 步骤轨越过写笺去交付也要过写笺必填（不通过停在第 2 步）', r.page.data.activeStep === 2)
     r = makePage(js, { activeStep: 3, maxStep: 3 })
-    r.page.onStepBack()
-    ok('T22 页内「上一步」：第 3 步 → 第 2 步', r.page.data.activeStep === 2)
+    r.page.onNavBack()
+    ok('T22 左上返回：第 3 步 → 第 2 步', r.page.data.activeStep === 2 && r.calls.back === 0)
     r.page.onEdgeBack()
     ok('T23 左缘右滑：第 2 步 → 第 1 步，不离开页面', r.page.data.activeStep === 1 && r.calls.back === 0)
     r.page.onEdgeBack()
     ok('T24 左缘右滑：第 1 步才离开页面', r.calls.back === 1)
-    ok('T25 换步上报 gift_compose_step（from / to / via）', r.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 3 && t[3].to === 2 && t[3].via === 'back'))
+    ok('T25 换步上报 gift_compose_step（from / to / via）', r.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 3 && t[3].to === 2 && t[3].via === 'nav'))
   })
   run('T26', () => {
     r = makePage(js, { activeStep: 3, maxStep: 3, paying: true })
@@ -320,7 +377,19 @@ const INJECTIONS = [
   { name: '第 2 步「下一步」不校验写笺', file: P.js, find: '    if (step === 2 && !this._checkLetter()) return\n', replace: '' },
   { name: '支付前不再过写笺', file: P.js, find: "    if (!this._checkLetter()) {\n      this._goStep(2, 'pay_check')", replace: "    if (false) {\n      this._goStep(2, 'pay_check')" },
   { name: '步骤轨可跳到没到过的步', file: P.js, find: 'step > (this.data.maxStep || 1)', replace: 'step > 3' },
-  { name: '左缘右滑第 2、3 步直接离开', file: P.js, find: "    if (this.data.activeStep > 1) {\n      this._goStep(this.data.activeStep - 1, 'edge')", replace: "    if (false) {\n      this._goStep(this.data.activeStep - 1, 'edge')" },
+  { name: '左上返回 / 左缘右滑第 2、3 步直接离开', file: P.js, find: '    if (this.data.activeStep > 1) {\n      this._goStep(this.data.activeStep - 1, via)', replace: '    if (false) {\n      this._goStep(this.data.activeStep - 1, via)' },
+  { name: '左缘右滑不走回上一步', file: P.js, find: "    this._backOrLeave('edge')", replace: '    this.leaveCompose()' },
+  { name: '左上返回不走回上一步', file: P.js, find: "    this._backOrLeave('nav')", replace: '    this.leaveCompose()' },
+  { name: '第 1 步左上返回不离开', file: P.js, find: '    this.leaveCompose()\n  },\n\n  onHide', replace: '  },\n\n  onHide' },
+  { name: '直达无上一页不回馆藏', file: P.js, find: 'if (getCurrentPages().length <= 1) {', replace: 'if (false) {' },
+  { name: '没设自定义顶栏', file: P.json, find: '  "navigationStyle": "custom",\n', replace: '' },
+  { name: '胶囊变黑', file: P.json, find: '"navigationBarTextStyle": "white"', replace: '"navigationBarTextStyle": "black"' },
+  { name: '顶栏高度写死', file: P.js, find: 'const nav = getCustomNavLayout()', replace: 'const nav = { statusBarHeight: 20, navBarHeight: 44, navPaddingRight: 96 }' },
+  { name: '导航条不按胶囊算', file: P.customNav, find: '(menu.top - statusBarHeight) * 2 + menu.height', replace: '44' },
+  { name: '标题压胶囊', file: P.wxml, find: 'style="left: {{navPaddingRight}}px; right: {{navPaddingRight}}px;"', replace: 'style="left: 0; right: 0;"' },
+  { name: '加载态不给顶栏留白', file: P.wxml, find: '<view class="page checking" style="padding-top: {{navTotal}}px;" wx:elif', replace: '<view class="page checking" wx:elif' },
+  { name: '占位高度不减顶栏', file: P.js, find: '- this.data.navTotal - 152', replace: '- 152' },
+  { name: '步骤轨又放一个上一步', file: P.wxml, find: '  <view class="step-rail sticky">\n', replace: '  <view class="step-rail sticky">\n    <view bindtap="onStepBack"></view>\n' },
   { name: '确认页退回补号不回第 3 步', file: P.js, find: "        this._goStep(3, 'refill', { keepScroll: true })\n", replace: '' },
   { name: 'giftMeta 多带一个字段（改契约）', file: P.js, find: "        phase: 'mvp'\n", replace: "        phase: 'mvp',\n        step: this.data.activeStep\n" },
   { name: 'giftReceiverPhone 少了 selfTreat（改契约）', file: P.js, find: 'claimPasscode: claimLink && !!this.data.claimPasscode, selfTreat, productId', replace: 'claimPasscode: claimLink && !!this.data.claimPasscode, productId' },
@@ -367,7 +436,7 @@ function main() {
     console.error('✗ 送礼页（礼赠编排）版式 / 分步不合格：\n  - ' + fails.join('\n  - '))
     process.exit(1)
   }
-  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 三步各放各的 · 第 3 步去密集（平铺单选 / 说明折叠 / 只给可选项描边） · 第 1、2 步无支付 · 写笺在第 2 步校验、手机号 / 门店在第 3 步校验 · 上一步 / 左缘右滑 / 步骤轨回退 · 交给确认页的字段与改前一致')
+  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 三步各放各的 · 第 3 步去密集（平铺单选 / 说明折叠 / 只给可选项描边） · 第 1、2 步无支付 · 写笺在第 2 步校验、手机号 / 门店在第 3 步校验 · 自定义顶栏按胶囊算高、左上返回第 2/3 步回上一步 / 第 1 步离开 · 左缘右滑 / 步骤轨回退 · 交给确认页的字段与改前一致')
 }
 
 main()
