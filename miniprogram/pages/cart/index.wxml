@@ -304,39 +304,44 @@
   </view>
 
   <!-- 优惠券弹窗 -->
-  <view class="modal-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal" catchtouchmove="true">
-    <view class="sheet-panel" catchtap="true">
-      <view class="sheet-drag-handle"></view>
-      <view class="sheet-header">选择礼券</view>
-      <scroll-view scroll-y class="sheet-list" enhanced show-scrollbar="{{false}}">
-        <view class="sheet-item {{!selectedCoupon ? 'selected' : ''}}" bindtap="selectCoupon" data-index="-1" hover-class="sheet-item-press">
-          <text class="sheet-item-name">不使用礼券</text>
-          <view class="radio {{!selectedCoupon ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{!selectedCoupon}}"></view></view>
-        </view>
-        <block wx:for="{{coupons}}" wx:key="_id">
+  <view class="ui-pop-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal" catchtouchmove="true">
+    <view class="ui-pop-sheet" catchtap="true">
+      <view class="ui-pop-grip"></view>
+      <view class="ui-pop-head">
+        <text class="ui-pop-kicker">COUPONS</text>
+        <text class="ui-pop-title">选择礼券</text>
+        <text class="ui-pop-close" bindtap="closeCouponModal">✕</text>
+      </view>
+      <!-- 列表区按条数定高（券行约 156rpx、「不使用」行 112rpx），满 4 张再封顶 56vh：券少时不再空出半屏 -->
+      <scroll-view scroll-y class="sheet-list" style="height: {{coupons.length >= 4 ? '56vh' : (coupons.length * 156 + 136) + 'rpx'}};" enhanced show-scrollbar="{{false}}">
+        <view class="ui-pop-body">
+          <view class="ui-pop-row {{!selectedCoupon ? 'is-on' : ''}}" bindtap="selectCoupon" data-index="-1" hover-class="tap-press-soft" hover-stay-time="80">
+            <view class="ui-pop-row-main"><text class="ui-pop-row-t">不使用礼券</text></view>
+            <view class="ui-pop-radio {{!selectedCoupon ? 'is-on' : ''}}"></view>
+          </view>
           <view
-            class="sheet-item {{couponBaseAmount < item.minSpend ? 'disabled' : ''}} {{selectedCoupon._id === item._id ? 'selected' : ''}}"
+            wx:for="{{coupons}}"
+            wx:key="_id"
+            class="ui-pop-row {{couponBaseAmount < item.minSpend ? 'is-off' : ''}} {{selectedCoupon._id === item._id ? 'is-on' : ''}}"
             bindtap="selectCoupon"
             data-index="{{index}}"
-            hover-class="sheet-item-press"
+            hover-class="tap-press-soft"
+            hover-stay-time="80"
           >
-            <view class="cp-left">
-              <text class="cp-val">{{item.faceLabel || ('¥' + item.value)}}</text>
-              <view class="cp-meta">
-                <text class="cp-name">{{item.title}}</text>
-                <text class="cp-cond">{{item.minSpend > 0 ? '满 ¥' + item.minSpend + ' 可用' : '无门槛'}}</text>
-                <text class="cp-save" wx:if="{{item._save > 0}}">本单可省 ¥{{item._save}}</text>
-                <text class="cp-save is-off" wx:elif="{{item._reason}}">{{item._reason}}</text>
-              </view>
+            <text class="ui-pop-row-lead">{{item.faceLabel || ('¥' + item.value)}}</text>
+            <view class="ui-pop-row-main">
+              <text class="ui-pop-row-t">{{item.title}}</text>
+              <text class="ui-pop-row-d">{{item.minSpend > 0 ? '满 ¥' + item.minSpend + ' 可用' : '无门槛'}}</text>
+              <text class="ui-pop-row-note" wx:if="{{item._save > 0}}">本单可省 ¥{{item._save}}</text>
+              <text class="ui-pop-row-note is-off" wx:elif="{{item._reason}}">{{item._reason}}</text>
             </view>
-            <view class="radio {{selectedCoupon._id === item._id ? 'checked' : ''}}"><view class="radio-dot" wx:if="{{selectedCoupon._id === item._id}}"></view></view>
+            <view class="ui-pop-radio {{selectedCoupon._id === item._id ? 'is-on' : ''}}"></view>
           </view>
-        </block>
-        <view class="sheet-empty" wx:if="{{!coupons.length}}">暂无可用礼券</view>
+          <view class="ui-pop-empty" wx:if="{{!coupons.length}}">暂无可用礼券</view>
+        </view>
       </scroll-view>
     </view>
   </view>
-
 </view>
 
 <!-- 全站样式化轻提示（替代 wx.showToast）；详见 components/AppToast -->

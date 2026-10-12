@@ -679,13 +679,13 @@ module.exports.saveLabel = saveLabel;
   </view>
 
   <!-- 360 鉴赏弹窗 -->
-  <view class="mask-360" wx:if="{{show360Modal}}" bindtap="close360">
+  <view class="ui-pop-mask is-center is-deep mask-360" wx:if="{{show360Modal}}" bindtap="close360">
     <view class="box-360"
           catchtap="true"
           catchtouchstart="on360TouchStart"
           catchtouchmove="on360TouchMove"
           catchtouchend="on360TouchEnd">
-      <view class="tip-360">360° INTERACTIVE</view>
+      <view class="ui-pop-head is-center tip-360"><text class="ui-pop-kicker">360° INTERACTIVE</text><text class="ui-pop-title">环视鉴赏</text></view>
       <view class="spinner-3d"
             style="transform: rotateX({{rotateX}}deg) rotateY({{rotateY}}deg); transition: {{transition}};">
         <!-- 走 imgView 映射：映射值 = 追加 imageMogr2 的 https 链（此前直绑 cloud:// 渲染不出） -->
@@ -697,8 +697,9 @@ module.exports.saveLabel = saveLabel;
   </view>
 
   <!-- SKU 规格选择 -->
-  <view class="sku-mask" wx:if="{{showSkuSheet}}" bindtap="closeSkuSheet">
-    <view class="sku-panel" catchtap="true">
+  <view class="ui-pop-mask" wx:if="{{showSkuSheet}}" bindtap="closeSkuSheet" catchtouchmove="true">
+    <view class="ui-pop-sheet sku-panel" catchtap="true">
+      <view class="ui-pop-grip"></view>
       <view class="sku-head">
         <view class="sku-img-wrap" catchtap="previewSkuImage" hover-class="tap-press-soft" hover-stay-time="80">
           <image class="sku-img" src="{{imgView[selectedSku.image || product.images[0]] || selectedSku.image || product.images[0]}}" mode="aspectFill"></image>
@@ -715,7 +716,7 @@ module.exports.saveLabel = saveLabel;
             <text class="{{isShippingFree ? 'shipping-free-tag' : ''}}">{{shippingHint}}</text>
           </text>
         </view>
-        <text class="sku-close" bindtap="closeSkuSheet" hover-class="cta-press" hover-stay-time="80">✕</text>
+        <view class="sku-close" bindtap="closeSkuSheet" hover-class="cta-press" hover-stay-time="80">✕</view>
       </view>
       <block wx:if="{{hasSku && product.skuDimensions && product.skuDimensions.length}}">
         <view class="sku-section" wx:for="{{dimensionOptions}}" wx:key="name">
@@ -761,50 +762,51 @@ module.exports.saveLabel = saveLabel;
           <view class="qty-btn {{buyCount >= displayStock ? 'disabled' : ''}}" bindtap="changeBuyCount" data-delta="1" hover-class="cta-press" hover-stay-time="80">+</view>
         </view>
       </view>
-      <view class="sku-confirm" bindtap="confirmSkuAction" hover-class="sku-confirm-press" hover-stay-time="80">{{skuConfirmText}}</view>
+      <view class="ui-pop-btn is-primary sku-confirm" bindtap="confirmSkuAction" hover-class="sku-confirm-press" hover-stay-time="80">{{skuConfirmText}}</view>
     </view>
   </view>
 
-  <!-- 优惠券弹层 -->
-  <view class="coupon-mask" wx:if="{{showCouponSheet}}" bindtap="closeCouponSheet">
-    <view class="coupon-panel" catchtap="true">
-      <view class="coupon-panel-head">
-        <text>礼券</text>
-        <text class="sku-close" bindtap="closeCouponSheet" hover-class="cta-press" hover-stay-time="80">✕</text>
+  <!-- 礼券抽屉（docs/弹层视觉规范_2026-10-13.md）：「领取」为发丝金描边，实心金只留给「立即购买」 -->
+  <view class="ui-pop-mask" wx:if="{{showCouponSheet}}" bindtap="closeCouponSheet" catchtouchmove="true">
+    <view class="ui-pop-sheet coupon-panel" catchtap="true">
+      <view class="ui-pop-grip"></view>
+      <view class="ui-pop-head">
+        <text class="ui-pop-kicker">COUPONS</text>
+        <text class="ui-pop-title">礼券</text>
+        <view class="ui-pop-close" bindtap="closeCouponSheet" hover-class="cta-press" hover-stay-time="80">✕</view>
       </view>
       <scroll-view scroll-y class="coupon-panel-body" enhanced show-scrollbar="{{false}}" enable-flex="{{true}}">
-        <view class="coupon-section-title" wx:if="{{claimableCoupons.length}}">可领取</view>
-        <view class="coupon-card" wx:for="{{claimableCoupons}}" wx:key="_id">
-          <view class="coupon-card-left">
-            <text class="coupon-card-value">{{item.label}}</text>
-            <text class="coupon-card-title">{{item.title}}</text>
+        <view class="ui-pop-body">
+          <text class="coupon-section-title" wx:if="{{claimableCoupons.length}}">可领取</text>
+          <view class="ui-pop-row" wx:for="{{claimableCoupons}}" wx:key="_id">
+            <text class="ui-pop-row-lead">{{item.label}}</text>
+            <view class="ui-pop-row-main"><text class="ui-pop-row-t">{{item.title}}</text></view>
+            <view
+              class="coupon-card-btn {{item.claimed ? 'claimed' : ''}}"
+              bindtap="claimCoupon"
+              data-id="{{item._id}}"
+              data-claimed="{{item.claimed}}"
+              hover-class="{{item.claimed ? 'none' : 'cta-press'}}"
+              hover-stay-time="80"
+            >{{item.claimed ? '已领取' : '领取'}}</view>
           </view>
-          <view
-            class="coupon-card-btn {{item.claimed ? 'claimed' : ''}}"
-            bindtap="claimCoupon"
-            data-id="{{item._id}}"
-            data-claimed="{{item.claimed}}"
-            hover-class="{{item.claimed ? 'none' : 'cta-press'}}"
-            hover-stay-time="80"
-          >{{item.claimed ? '已领取' : '领取'}}</view>
-        </view>
 
-        <view class="coupon-section-title" wx:if="{{bestCoupon}}">本单推荐</view>
-        <view class="coupon-card active" wx:if="{{bestCoupon}}">
-          <view class="coupon-card-left">
-            <text class="coupon-card-value">{{bestCoupon.label}}</text>
-            <text class="coupon-card-title">{{bestCoupon.title}} · 可省 ¥{{couponSavedLabel}}</text>
+          <text class="coupon-section-title" wx:if="{{bestCoupon}}">本单推荐</text>
+          <view class="ui-pop-row is-on" wx:if="{{bestCoupon}}">
+            <text class="ui-pop-row-lead">{{bestCoupon.label}}</text>
+            <view class="ui-pop-row-main">
+              <text class="ui-pop-row-t">{{bestCoupon.title}}</text>
+              <text class="ui-pop-row-note">本单可省 ¥{{couponSavedLabel}}</text>
+            </view>
+            <text class="coupon-card-btn claimed">已拥有</text>
           </view>
-          <view class="coupon-card-btn claimed">已拥有</view>
-        </view>
 
-        <view class="coupon-empty" wx:if="{{!claimableCoupons.length && !bestCoupon}}">
-          <text>暂无可用礼券</text>
+          <view class="ui-pop-empty" wx:if="{{!claimableCoupons.length && !bestCoupon}}">暂无可用礼券</view>
         </view>
       </scroll-view>
-      <view class="coupon-panel-foot">
-        <view class="coupon-link-btn" bindtap="goToCoupons" hover-class="cta-press" hover-stay-time="80">我的礼券夹</view>
-        <view class="coupon-buy-btn" bindtap="buyNowWithCoupon" hover-class="cta-press" hover-stay-time="80">立即购买</view>
+      <view class="ui-pop-foot">
+        <view class="ui-pop-btn is-ghost coupon-link-btn" bindtap="goToCoupons" hover-class="cta-press" hover-stay-time="80">我的礼券夹</view>
+        <view class="ui-pop-btn is-primary coupon-buy-btn" bindtap="buyNowWithCoupon" hover-class="cta-press" hover-stay-time="80">立即购买</view>
       </view>
     </view>
   </view>
@@ -822,7 +824,7 @@ module.exports.saveLabel = saveLabel;
 
   <!-- 海报弹窗 -->
   <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
-  <view class="poster-modal" wx:if="{{showPosterModal}}" bindtap="closePosterModal">
+  <view class="ui-pop-mask is-center is-deep poster-modal" wx:if="{{showPosterModal}}" bindtap="closePosterModal" catchtouchmove="true">
     <view class="poster-container" catchtap="true">
       <view class="close-icon-out" bindtap="closePosterModal" hover-class="cta-press" hover-stay-time="80">✕</view>
       <image src="{{posterImage}}" mode="widthFix" class="generated-img"></image>
@@ -830,10 +832,14 @@ module.exports.saveLabel = saveLabel;
     </view>
   </view>
 
-  <view class="refund-sheet-mask" wx:if="{{showRefundSheet}}" bindtap="closeRefundSheet" catchtouchmove="true">
-    <view class="refund-sheet" catchtap="true">
-      <text class="refund-sheet-title">退款说明</text>
-      <view class="refund-sheet-body">
+  <view class="ui-pop-mask" wx:if="{{showRefundSheet}}" bindtap="closeRefundSheet" catchtouchmove="true">
+    <view class="ui-pop-sheet" catchtap="true">
+      <view class="ui-pop-grip"></view>
+      <view class="ui-pop-head">
+        <text class="ui-pop-kicker">REFUND POLICY</text>
+        <text class="ui-pop-title">退款说明</text>
+      </view>
+      <view class="ui-pop-body refund-sheet-body">
         <view class="refund-sheet-para" wx:for="{{refundNoticeRichParagraphs}}" wx:for-item="para" wx:key="idx">
           <text
             wx:for="{{para.segments}}"
@@ -843,7 +849,9 @@ module.exports.saveLabel = saveLabel;
           >{{seg.t}}</text>
         </view>
       </view>
-      <view class="refund-sheet-btn" bindtap="closeRefundSheet" hover-class="cta-press" hover-stay-time="80">知道了</view>
+      <view class="ui-pop-foot">
+        <view class="ui-pop-btn is-primary refund-sheet-btn" bindtap="closeRefundSheet" hover-class="cta-press" hover-stay-time="80">知道了</view>
+      </view>
     </view>
   </view>
   </block>

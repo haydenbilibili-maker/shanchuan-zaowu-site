@@ -821,6 +821,7 @@ button[disabled]:active,
   flex-direction: column;
   padding: 28rpx 112rpx 24rpx var(--pop-pad-x);
 }
+.ui-pop-dialog .ui-pop-head { padding: 0 0 20rpx; }
 .ui-pop-head.is-center { align-items: center; text-align: center; padding: 0 0 8rpx; }
 .ui-pop-kicker {
   font-family: var(--font-mono);
@@ -900,6 +901,15 @@ button[disabled]:active,
 }
 .ui-pop-row:last-child { border-bottom: none; }
 .ui-pop-row.is-off { opacity: 0.4; }
+/* 行内：面额 / 数值（等宽金）+ 标题 / 说明 / 提示（主次两行）+ 末尾单选 */
+.ui-pop-row-lead { flex-shrink: 0; min-width: 96rpx; font-family: var(--font-mono); font-size: var(--fs-36); font-weight: 600; color: var(--brass-400); }
+.ui-pop-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.ui-pop-row-t { font-size: var(--fs-28); line-height: 1.4; color: var(--color-text-body); }
+.ui-pop-row.is-on .ui-pop-row-t { color: var(--color-text-primary); }
+.ui-pop-row-d { font-size: var(--fs-22); line-height: 1.5; color: var(--color-text-secondary); }
+.ui-pop-row-note { font-size: var(--fs-22); line-height: 1.5; color: var(--brass-400); }
+.ui-pop-row-note.is-off { color: var(--color-text-secondary); }
+.ui-pop-empty { padding: 48rpx 0; text-align: center; font-size: var(--fs-24); color: var(--color-text-secondary); }
 .ui-pop-radio {
   flex-shrink: 0;
   width: 36rpx;
