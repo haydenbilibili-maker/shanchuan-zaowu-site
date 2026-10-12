@@ -366,16 +366,22 @@
   filter: saturate(0.55);
 }
 
-/* ── v2「马上有 · 心愿签」卡（2026-10-13）：发丝框墨底卡 + 实拍缩略，值对齐评审稿 ── */
-.wl-entry { position: relative; display: flex; align-items: center; gap: 28rpx; margin: 0; padding: 24rpx 28rpx 24rpx 24rpx; border: 1rpx solid rgba(196, 167, 108, 0.24); border-radius: 28rpx; background: linear-gradient(165deg, #24201A, #191612); box-sizing: border-box; }
+/* ── v2「马上有 · 心愿签」卡（2026-10-13）：墨底卡 + 纸感（卡纸裱照 + 标签纸），产品负责人点名「暗黑底上加标签纸 / 便条纸质感」 ── */
+.wl-entry { position: relative; display: flex; align-items: center; gap: 30rpx; margin: 0; padding: 26rpx 28rpx 26rpx 30rpx; border: 1rpx solid rgba(196, 167, 108, 0.24); border-radius: 28rpx; background: radial-gradient(120% 90% at 100% 0%, rgba(196, 167, 108, 0.1), rgba(196, 167, 108, 0) 60%), linear-gradient(165deg, #24201A, #171410); box-sizing: border-box; overflow: hidden; }
 .wl-entry--press { opacity: 0.86; }
-.wl-entry-thumb { flex-shrink: 0; width: 128rpx; height: 128rpx; border-radius: 16rpx; box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35); background: #0E0D0B; }
-.wl-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.wl-entry-kicker { font-family: var(--font-mono); font-size: 18rpx; line-height: 26rpx; letter-spacing: 0.32em; color: var(--brass-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wl-entry-title { margin-top: 6rpx; font-family: var(--font-brand); font-size: 36rpx; line-height: 48rpx; font-weight: 500; letter-spacing: 0.12em; color: #F7F1E4; white-space: nowrap; }
-.wl-entry-meta { margin-top: 8rpx; font-size: 22rpx; line-height: 1.45; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.wl-entry-wish { font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", serif; font-size: 26rpx; color: #E8D6A8; }
+/* 卡纸裱照：米白卡纸 + 底边留宽（像相片卡）+ 微斜 + 落影 */
+.wl-entry-mat { position: relative; flex-shrink: 0; padding: 8rpx 8rpx 18rpx; background: linear-gradient(170deg, #F6F0E2, #E6DCC6); border-radius: 4rpx; box-shadow: 0 10rpx 22rpx rgba(0, 0, 0, 0.5), inset 0 0 0 1rpx rgba(138, 117, 48, 0.25); transform: rotate(-3deg); }
+.wl-entry-mat::after { content: ''; position: absolute; top: -6rpx; left: 50%; width: 12rpx; height: 12rpx; margin-left: -6rpx; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F0E6CC, #A8903C 70%); box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.45); }
+.wl-entry-thumb { display: block; width: 112rpx; height: 112rpx; border-radius: 2rpx; background: #0E0D0B; }
+.wl-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+.wl-entry-kicker { font-family: var(--font-mono); font-size: 18rpx; line-height: 26rpx; letter-spacing: 0.32em; color: var(--brass-400); white-space: nowrap; }
+.wl-entry-title { margin-top: 4rpx; font-family: var(--font-brand); font-size: 36rpx; line-height: 48rpx; font-weight: 500; letter-spacing: 0.12em; color: #F7F1E4; white-space: nowrap; }
+.wl-entry-meta { margin-top: 8rpx; max-width: 100%; font-size: 22rpx; line-height: 1.45; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 标签纸：米白纸 + 左端打孔 + 细内框 + 身后再叠一张（错位实影，旋转元素内不能用负 z 伪元素垫底）；手写字 */
+.wl-entry-slip { position: relative; max-width: 100%; margin: 14rpx 0 2rpx 6rpx; padding: 6rpx 22rpx 8rpx 34rpx; background: linear-gradient(172deg, #F5EEDF, #E8DFCB); border-radius: 3rpx 8rpx 8rpx 3rpx; box-shadow: 7rpx 7rpx 0 -1rpx #D3C6A8, 7rpx 7rpx 0 0 rgba(138, 117, 48, 0.25), 0 10rpx 18rpx rgba(0, 0, 0, 0.5), inset 0 0 0 1rpx rgba(138, 117, 48, 0.22); transform: rotate(-1.5deg); box-sizing: border-box; }
+.wl-entry-slip::before { content: ''; position: absolute; left: 12rpx; top: 50%; width: 10rpx; height: 10rpx; margin-top: -5rpx; border-radius: 50%; background: #1B1814; box-shadow: inset 0 1rpx 2rpx rgba(0, 0, 0, 0.6), 0 0 0 1rpx rgba(138, 117, 48, 0.35); }
+.wl-entry-slip-text { display: block; font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", serif; font-size: 28rpx; line-height: 1.35; color: #2E2618; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wl-entry-chevron { flex-shrink: 0; width: 18rpx; height: 18rpx; margin-right: 6rpx; border-right: 3rpx solid var(--brass-300); border-bottom: 3rpx solid var(--brass-300); transform: rotate(-45deg); }
-.wl-entry.is-compact { padding: 18rpx 24rpx 18rpx 18rpx; gap: 22rpx; }
-.wl-entry.is-compact .wl-entry-thumb { width: 96rpx; height: 96rpx; }
+.wl-entry.is-compact { padding: 20rpx 24rpx 20rpx 24rpx; gap: 24rpx; }
+.wl-entry.is-compact .wl-entry-thumb { width: 88rpx; height: 88rpx; }
 .wl-entry.is-compact .wl-entry-title { font-size: 30rpx; line-height: 40rpx; }

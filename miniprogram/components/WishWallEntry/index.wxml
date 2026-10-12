@@ -11,11 +11,17 @@
   aria-role="button"
   aria-label="马上有 · 心愿签：{{latest || productHint || descText}}"
 >
-  <image class="wl-entry-thumb" wx:if="{{cover}}" src="{{cover}}" mode="aspectFill" />
+  <!-- 实拍裱在米白卡纸上、微斜，像钉在展板上的照片 -->
+  <view class="wl-entry-mat" wx:if="{{cover}}" aria-hidden="true">
+    <image class="wl-entry-thumb" src="{{cover}}" mode="aspectFill" />
+  </view>
   <view class="wl-entry-main">
     <text class="wl-entry-kicker">WISH LABELS</text>
     <text class="wl-entry-title">{{brandText || '马上有'}} · 心愿签</text>
-    <text class="wl-entry-meta" wx:if="{{latest}}">最新 <text class="wl-entry-wish">「{{latest}}」</text></text>
+    <!-- 最新一张 = 一枚标签纸（打孔 + 身后再叠一张），手写；没有真实心愿就不出（不编造） -->
+    <view class="wl-entry-slip" wx:if="{{latest}}">
+      <text class="wl-entry-slip-text">{{latest}}</text>
+    </view>
     <text class="wl-entry-meta" wx:elif="{{productHint || descText}}">{{productHint || descText}}</text>
   </view>
   <view class="wl-entry-chevron" aria-hidden="true"></view>
