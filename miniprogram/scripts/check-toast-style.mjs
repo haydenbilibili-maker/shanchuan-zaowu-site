@@ -68,7 +68,8 @@ const TOKENS = [
   ['渐变黑底', /background:\s*linear-gradient\(180deg, #221F1B 0%, #1A1814 100%\);/],
   ['投影', /box-shadow:\s*0 24rpx 64rpx rgba\(0, 0, 0, 0\.55\);/],
   ['圆角令牌', /border-radius:\s*var\(--radius-md, 16rpx\);/],
-  ['四角铭牌', /border-color:\s*rgba\(196, 167, 108, 0\.8\);/]
+  // 2026-10-13 全站质感 R5：四角铭牌 2rpx / 0.8 → 1rpx / 0.5（发丝金），判据不变：两者逐字一致
+  ['四角铭牌', /border-color:\s*rgba\(196, 167, 108, 0\.5\);/]
 ]
 for (const [label, re] of TOKENS) {
   check(`AppToast 有${label}`, re.test(toastWxss), label)

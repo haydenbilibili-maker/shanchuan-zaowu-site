@@ -35,25 +35,29 @@
 .at-corner {
   position: absolute;
   width: 14rpx; height: 14rpx;
-  border-color: rgba(196, 167, 108, 0.8);
+  border-color: rgba(196, 167, 108, 0.5);
   border-style: solid;
   border-width: 0;
 }
-.at-corner.is-tl { left: 12rpx; top: 12rpx; border-left-width: 2rpx; border-top-width: 2rpx; }
-.at-corner.is-tr { right: 12rpx; top: 12rpx; border-right-width: 2rpx; border-top-width: 2rpx; }
-.at-corner.is-bl { left: 12rpx; bottom: 12rpx; border-left-width: 2rpx; border-bottom-width: 2rpx; }
-.at-corner.is-br { right: 12rpx; bottom: 12rpx; border-right-width: 2rpx; border-bottom-width: 2rpx; }
+.at-corner.is-tl { left: 11rpx; top: 11rpx; border-left-width: 1rpx; border-top-width: 1rpx; }
+.at-corner.is-tr { right: 11rpx; top: 11rpx; border-right-width: 1rpx; border-top-width: 1rpx; }
+.at-corner.is-bl { left: 11rpx; bottom: 11rpx; border-left-width: 1rpx; border-bottom-width: 1rpx; }
+.at-corner.is-br { right: 11rpx; bottom: 11rpx; border-right-width: 1rpx; border-bottom-width: 1rpx; }
 
 .at-overline {
-  font-size: var(--fs-20);
-  letter-spacing: 4rpx;
-  color: rgba(196, 167, 108, 0.75);
+  font-size: var(--fs-18);
+  line-height: 26rpx;
+  font-family: var(--font-mono);
+  letter-spacing: .32em;
+  color: var(--brass-400, #C4A76C);
   margin-bottom: 10rpx;
 }
 
 .at-title {
   font-size: var(--fs-34);
-  font-weight: 600;
+  font-family: var(--font-brand);
+  font-weight: 500;
+  letter-spacing: .06em;
   font-family: var(--font-brand);
   color: var(--color-text-primary, #FFFFFF);
   line-height: 1.4;

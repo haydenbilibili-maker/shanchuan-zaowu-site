@@ -48,18 +48,20 @@
 .rad-corner.is-br { right: 12rpx; bottom: 12rpx; border-right-width: 2rpx; border-bottom-width: 2rpx; }
 
 .rad-overline {
-  font-size: 20rpx;
-  letter-spacing: 4rpx;
-  color: rgba(196, 167, 108, 0.75);
-  font-family: var(--font-din, inherit);
+  font-size: 18rpx;
+  line-height: 26rpx;
+  letter-spacing: .32em;
+  color: var(--brass-400, #C4A76C);
+  font-family: var(--font-mono, inherit);
   margin-bottom: 16rpx;
 }
 
 .rad-title {
   font-size: var(--fs-36);
-  font-weight: 900;
+  font-family: var(--font-brand);
+  font-weight: 500;
   color: var(--text-main, #FFFFFF);
-  letter-spacing: 1rpx;
+  letter-spacing: .06em;
   text-align: center;
   line-height: 1.35;
 }
