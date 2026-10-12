@@ -376,20 +376,26 @@ page {
   margin-bottom: 40rpx;
 }
 
+/* 流程内小节标题（全站第二级口径）：等宽眉标 + 宋体主标；第一级见 app.wxss .mu-head */
 .section-overline {
   display: block;
-  font-size: 20rpx;
-  color: #6B6560;
-  letter-spacing: 0.12em;
-  margin-bottom: 8rpx;
+  font-size: 18rpx;
+  line-height: 26rpx;
+  color: var(--brass-400);
+  font-family: var(--font-mono);
+  letter-spacing: .32em;
+  margin-bottom: 6rpx;
 }
 
 .section-title {
   display: block;
   font-size: 32rpx;
+  line-height: 44rpx;
   font-weight: 500;
   color: #FFFFFF;
+  letter-spacing: .08em;
   margin-bottom: 20rpx;
+  font-family: var(--font-brand);
 }
 
 /* 第 1 步「包装与价格」：包装逐项（左列项名、右列内容，不加框）+ 隐价开关行（右侧开关，开 = 金色底） */
