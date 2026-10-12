@@ -32,23 +32,25 @@
   </block>
 </view>
 
-<!-- 首次启视：全局展示偏好（Museum 铜牌弹层） -->
+<!-- 首次启视：全局展示偏好（确认框形态，ui-pop-*：docs/弹层视觉规范_2026-10-13.md） -->
 <root-portal wx:if="{{showPrefModal}}">
-  <view class="sb-pref-mask" catchtouchmove="noop" catchtap="noop">
-    <view class="sb-pref-panel" catchtap="noop">
-      <text class="sb-pref-title">{{prefTitle}}</text>
+  <view class="ui-pop-mask is-center sb-pref-mask" catchtouchmove="noop" catchtap="noop">
+    <view class="ui-pop-dialog sb-pref-panel" catchtap="noop">
+      <view class="ui-pop-head is-center">
+        <text class="ui-pop-title">{{prefTitle}}</text>
+      </view>
       <text class="sb-pref-body">{{prefBody}}</text>
-      <view class="sb-pref-actions">
+      <view class="ui-pop-foot">
         <view
-          class="sb-pref-btn secondary {{prefSaving ? 'disabled' : ''}}"
+          class="ui-pop-btn is-ghost sb-pref-btn {{prefSaving ? 'disabled' : ''}}"
           catchtap="onPrefClear"
-          hover-class="sb-pref-btn-hover"
+          hover-class="tap-press"
           hover-stay-time="80"
         >{{prefClear}}</view>
         <view
-          class="sb-pref-btn primary {{prefSaving ? 'disabled' : ''}}"
+          class="ui-pop-btn is-primary sb-pref-btn {{prefSaving ? 'disabled' : ''}}"
           catchtap="onPrefKeep"
-          hover-class="sb-pref-btn-primary-hover"
+          hover-class="tap-press"
           hover-stay-time="80"
         >{{prefKeep}}</view>
       </view>

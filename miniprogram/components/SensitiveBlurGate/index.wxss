@@ -212,90 +212,31 @@
 
 /* —— 首次启视偏好：对齐确认订单「温馨提示」铜牌弹层 —— */
 .sb-pref-mask {
-  position: fixed;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
   z-index: 10050;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48rpx;
-  box-sizing: border-box;
-  background: rgba(26, 24, 20, 0.72);
 }
 
 .sb-pref-panel {
-  width: 100%;
   max-width: 620rpx;
-  background: #1F1D1A;
-  border: 1px solid rgba(77, 64, 26, 0.45);
-  border-radius: 24rpx;
-  padding: 40rpx 36rpx 36rpx;
-  box-sizing: border-box;
   text-align: center;
 }
 
-.sb-pref-title {
-  display: block;
-  font-size: 32rpx;
-  font-weight: 500;
-  color: #FFFFFF;
-  letter-spacing: 0.04em;
-  margin-bottom: 20rpx;
-}
 
 .sb-pref-body {
   display: block;
-  font-size: 28rpx;
-  color: #D5D1C8;
-  line-height: 1.65;
-  margin-bottom: 8rpx;
+  font-size: var(--fs-26);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-top: 12rpx;
 }
 
-.sb-pref-actions {
-  display: flex;
-  gap: 20rpx;
-  margin-top: 32rpx;
-}
 
-.sb-pref-btn {
-  flex: 1;
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16rpx;
-  font-size: 26rpx;
-  font-weight: 500;
-}
 
-.sb-pref-btn.secondary {
-  background: transparent;
-  border: 1px solid rgba(196, 167, 108, 0.45);
-  color: #C4A76C;
-}
 
-.sb-pref-btn.primary {
-  background: #C4A76C;
-  color: #1A1814;
-}
+
 
 .sb-pref-btn.disabled {
   opacity: 0.55;
   pointer-events: none;
 }
 
-.sb-pref-btn.disabled {
-  opacity: 0.55;
-  pointer-events: none;
-}
 
-.sb-pref-btn-hover {
-  opacity: 0.82;
-}
-
-.sb-pref-btn-primary-hover {
-  background: #A8903C;
-}

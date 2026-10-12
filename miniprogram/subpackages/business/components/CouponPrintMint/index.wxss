@@ -1,17 +1,8 @@
 /* CouponPrintMint — Museum Mode；对齐预约出纸 + 投资人信号灯语义 */
 .mint-modal {
-  position: fixed;
-  inset: 0;
   z-index: 1200;
-  background: rgba(26, 24, 20, 0.94);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
 }
-.mint-modal.active {
-  opacity: 1;
-  pointer-events: auto;
-}
+/* 仪式卡遮罩：ui-pop-mask is-deep is-toggle（docs/弹层视觉规范_2026-10-13.md），active 仅留给后代选择器 */
 
 .mint-content {
   width: 100%;

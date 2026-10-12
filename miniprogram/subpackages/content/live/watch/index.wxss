@@ -408,31 +408,20 @@
 .spotlight-price { font-size: 20rpx; color: #C4A76C; }
 
 .shelf-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 24, 20, 0.55);
   z-index: 40;
 }
 .shelf-sheet {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 41;
   max-height: 62vh;
-  background: #1F1D1A;
-  border-radius: 24rpx 24rpx 0 0;
-  border-top: 1px solid #4D401A;
-  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
-  box-sizing: border-box;
+  padding: 0 32rpx calc(24rpx + env(safe-area-inset-bottom));
 }
-.shelf-sheet-hd {
-  display: flex;
-  align-items: baseline;
-  gap: 16rpx;
-  margin-bottom: 16rpx;
-}
-.shelf-sheet-title { font-size: 30rpx; color: #FFFFFF; font-weight: 500; }
-.shelf-sheet-sub { flex: 1; font-size: 22rpx; color: #E9A23B; }
-.shelf-sheet-close { font-size: 24rpx; color: #C4A76C; }
+/* 抽屉形态 / 头部取 ui-pop-*（docs/弹层视觉规范_2026-10-13.md）；牌面内已有左右内边距，头部只留给 ✕ 的右侧 */
+.shelf-sheet-hd { padding: 28rpx 96rpx 16rpx 0; }
+.shelf-sheet-sub { color: #E9A23B; }
 .shelf-list { height: 48vh; max-height: 48vh; min-height: 160rpx; width: 100%; box-sizing: border-box; }
 .shelf-row {
   display: flex;
@@ -568,14 +557,12 @@
 
 .sku-sheet {
   position: fixed;
-  left: 0; right: 0; bottom: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 70;
   max-height: 68vh;
-  background: #1F1D1A;
-  border-radius: 24rpx 24rpx 0 0;
-  border-top: 1px solid #4D401A;
-  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
-  box-sizing: border-box;
+  padding: 0 32rpx calc(24rpx + env(safe-area-inset-bottom));
 }
 .sku-product {
   display: flex;
@@ -616,12 +603,5 @@
 }
 .sku-pill.sold { opacity: 0.45; }
 .sku-pill-meta { font-size: 22rpx; color: #A09A90; flex-shrink: 0; }
-.sku-confirm {
-  text-align: center;
-  padding: 22rpx 0;
-  background: #C4A76C;
-  color: #1A1814;
-  border-radius: 16rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-}
+
+.sku-confirm { display: block; flex: none; margin-top: 24rpx; }

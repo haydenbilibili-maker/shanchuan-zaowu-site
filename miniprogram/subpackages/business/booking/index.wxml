@@ -288,7 +288,7 @@
   </view>
 
   <!-- 4. 门票铸造动画 -->
-  <view class="mint-modal {{showMintModal ? 'active' : ''}}" catchtouchmove="true">
+  <view class="ui-pop-mask is-deep is-toggle mint-modal {{showMintModal ? 'is-open active' : ''}}" catchtouchmove="true">
     <view class="mint-content">
       <view class="mint-machine">
         <view class="signal-light printer-light {{mintAnimation ? 'blink' : ''}}"></view>

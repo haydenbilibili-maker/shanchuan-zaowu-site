@@ -48,16 +48,14 @@ export const MIGRATED = [
   ['subpackages/business/components/WalletPanelPoints/index.wxml', 'showExchangeConfirm'],
   ['subpackages/feature/gift/claim-sheet/index.wxml', 'show'],
   ['subpackages/feature/gift/phone-sheet/index.wxml', 'show'],
-  ['subpackages/feature/gift/proxy-address-sheet/index.wxml', 'show']
+  ['subpackages/feature/gift/proxy-address-sheet/index.wxml', 'show'],
+  ['subpackages/content/live/watch/index.wxml', 'showShelf'],
+  ['subpackages/content/live/watch/index.wxml', 'showSkuSheet']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小） */
 export const MASK_BASELINE = {
-  'components/SensitiveBlurGate/index.wxss': 1,
-  'subpackages/business/booking/index.wxss': 1,
-  'subpackages/business/components/CouponPrintMint/index.wxss': 1,
-  'subpackages/content/live/watch/index.wxss': 1,
-  'subpackages/feature/components/CouponPrintMint/index.wxss': 1
+
 }
 
 /** 不计入：员工 / 管理端（第 3 批）、祈福墙 / 心愿签（另一流的纸感语言）、吸底栏（不是遮罩） */

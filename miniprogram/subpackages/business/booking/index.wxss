@@ -715,12 +715,13 @@
 /* ==================== 🟢 4. 门票铸造动画 (布局修复版) ==================== */
 
 .mint-modal {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.98); z-index: 1000;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
-.mint-modal.active { opacity: 1; pointer-events: auto; }
+/* 仪式卡遮罩：ui-pop-mask is-deep is-toggle（docs/弹层视觉规范_2026-10-13.md），active 仅留给后代选择器 */
 
 .mint-content { 
   width: 100%; 
