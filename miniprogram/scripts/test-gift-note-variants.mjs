@@ -563,7 +563,8 @@ function selftest() {
       // 迁到统一组件 `this.showAppToast(...)`（修 check:dialog-ratchet 的既存红），
       // 于是旧锚点命中 0 次、自检恒失败。语义不变，只把锚点跟到新写法。
       // 2026-09-19：锚点里的文案改为引用 `RECIPIENT_REQUIRED_TOAST` 常量 —— 文案再变也不会漏这一处。
-      from: `      this.showAppToast({ overline: 'RECIPIENT', title: '${RECIPIENT_REQUIRED_TOAST}' })\n      return\n`,
+      // 2026-10-12：分步后这段校验搬进 _checkLetter()（返回 false 拦下），锚点跟到新写法。
+      from: `      this.showAppToast({ overline: 'RECIPIENT', title: '${RECIPIENT_REQUIRED_TOAST}' })\n      return false\n`,
       to: ''
     },
     {

@@ -22,8 +22,7 @@ const {
 // 正文字数上限**从打印模块取**（印得出来才算数；推导见 giftShareCard.js 常量处注释）
 const { GIFT_NOTE_MAX_CHARS } = require('../giftShareCard')
 const {
-  GIFT_PACKAGING_LABEL,
-  GIFT_PACKAGING_NOTE
+  GIFT_PACKAGING_SUMMARY
 } = require('../giftPackaging')
 const { decodeQueryText } = require('../decodeQueryText')
 const { getSceneByKey } = require('../../utils/giftScenes')
@@ -116,9 +115,8 @@ Page({
     selectedSku: null,
     count: 1,
     deliveryType: 'invite_address',
-    showOtherDelivery: false,
     otherDeliveries: OTHER_DELIVERIES,
-    otherDeliveryNames: OTHER_DELIVERIES.map((d) => d.name).join(' · '),
+    verifyWhyOpen: false,
     /** 犒劳自己：交付固定寄给我，地址与手机号到确认页按普通下单填写（不走邀请填址 / 受礼人手机号） */
     selfTreat: false,
     /** 门店自取开关（超管后台）：false 时移除「门店自提代赠」 */
@@ -126,8 +124,7 @@ Page({
     stores: [],
     selectedStoreId: '',
     selectedStoreName: '',
-    packagingLabel: GIFT_PACKAGING_LABEL,
-    packagingNote: GIFT_PACKAGING_NOTE,
+    packagingSummary: GIFT_PACKAGING_SUMMARY,
     cardBody: '',
     cardFocused: false,          // iOS：textarea 不支持 font-family → 未聚焦时用手写体 text 展示
     placeholderNote: '这段日子里你帮了太多。柜中挑了一件安静的藏品……',
@@ -701,12 +698,10 @@ Page({
         : OTHER_DELIVERIES.filter((d) => d.id !== 'store_pickup')
       const deliveryPatch = {
         storePickupEnabled: pickupEnabled,
-        otherDeliveries,
-        otherDeliveryNames: otherDeliveries.map((d) => d.name).join(' · ')
+        otherDeliveries
       }
       if (!pickupEnabled && this.data.deliveryType === 'store_pickup') {
         deliveryPatch.deliveryType = 'invite_address'
-        deliveryPatch.showOtherDelivery = false
       }
       this.setData(deliveryPatch)
       this.setData({ checking: false, allowed: true, loading: true })
@@ -885,7 +880,6 @@ Page({
         deliveryType = 'ship_to_self'
       }
       const patch = { deliveryType }
-      if (deliveryType !== 'invite_address' && !this.data.selfTreat) patch.showOtherDelivery = true
       // 超管运营开关：关闭后强制隐价，前端同时隐藏切换入口
       const allowToggle = result.allowHidePriceToggle !== false
       patch.allowHidePriceToggle = allowToggle
@@ -903,9 +897,7 @@ Page({
       toastStorePickupClosed()
       return
     }
-    const patch = { deliveryType: type }
-    if (type !== 'invite_address') patch.showOtherDelivery = true
-    this.setData(patch)
+    this.setData({ deliveryType: type })
   },
 
   onSelectStore(e) {
@@ -915,8 +907,8 @@ Page({
     this.setData({ selectedStoreId: id, selectedStoreName: name })
   },
 
-  toggleOtherDelivery() {
-    this.setData({ showOtherDelivery: !this.data.showOtherDelivery })
+  toggleVerifyWhy() {
+    this.setData({ verifyWhyOpen: !this.data.verifyWhyOpen })
   },
 
   onCardInput(e) {
@@ -1259,7 +1251,6 @@ Page({
     this.setData({
       selfTreat: true,
       deliveryType: 'ship_to_self',
-      showOtherDelivery: false,
       claimLink: false,
       claimPasscode: false,
       receiverPhoneError: ''
@@ -1273,7 +1264,7 @@ Page({
     const restore = prev && prev !== 'ship_to_self' && !(prev === 'store_pickup' && this.data.storePickupEnabled === false)
       ? prev
       : 'invite_address'
-    const patch = { selfTreat: false, deliveryType: restore, showOtherDelivery: restore !== 'invite_address' }
+    const patch = { selfTreat: false, deliveryType: restore }
     if (this.data.activeNotePresetId === 'self') {
       patch.activeNotePresetId = ''
       patch.recipientPlaceholder = 'TA 的名字（必填）'

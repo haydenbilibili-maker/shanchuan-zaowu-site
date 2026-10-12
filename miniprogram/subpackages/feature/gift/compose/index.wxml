@@ -1,12 +1,26 @@
 <!-- 礼赠编排 · 博物柜仪式（落笔/语音区仅外围增强，正文逻辑不动）
-     2026-10-12 分步：01 选礼（藏品 + 送给谁）→ 02 写笺（称呼 / 礼笺 / 署名 / 语音）→ 03 交付（交付方式 / 手机号 / 隐价 / 包装）→ 支付 -->
+     2026-10-12 分步：01 选礼（藏品 + 送给谁）→ 02 写笺（称呼 / 礼笺 / 署名 / 语音）→ 03 交付（交付方式 / 领取核验 / 隐价 / 包装）→ 支付
+     去密集（同日）：只有可选的东西用描边；上一步与音效并进步骤轨两端 -->
 <wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
 <view class="page" wx:if="{{allowed && product}}">
   <!-- 页面关了系统侧滑（index.json）：左缘右滑在第 2、3 步回上一步，第 1 步离开 -->
   <page-edge-back ext-class="compose-edge" bind:back="onEdgeBack" disabled="{{voiceRecording}}" />
 
-  <!-- 步骤轨：当前步高亮；已到过的步可点回 -->
+  <!-- 步骤轨：当前步高亮；已到过的步可点回。左端页内「上一步」（第 2、3 步），右端音效开关
+       （2026-09-19：与收礼页共用同一个静音偏好，存储键 gift_receive_sfx_muted） -->
   <view class="step-rail sticky">
+    <view
+      class="rail-tool rail-back"
+      wx:if="{{activeStep > 1}}"
+      bindtap="onStepBack"
+      hover-class="tap-press"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="上一步"
+    >
+      <text>‹ {{activeStep === 2 ? '选礼' : '写笺'}}</text>
+    </view>
+    <view class="rail-tool rail-back" wx:else aria-hidden="true"></view>
     <view
       class="step-rail-item {{activeStep === 1 ? 'on' : ''}} {{activeStep !== 1 ? 'done' : ''}}"
       data-step="1"
@@ -45,24 +59,9 @@
       <text class="step-rail-num">03</text>
       <text class="step-rail-label">交付</text>
     </view>
-  </view>
-
-  <!-- 音效开关（2026-09-19）：与收礼页共用同一个静音偏好（存储键 gift_receive_sfx_muted）；第 2、3 步左侧是页内「上一步」 -->
-  <view class="sfx-bar">
-    <view
-      class="tool-btn step-back"
-      wx:if="{{activeStep > 1}}"
-      bindtap="onStepBack"
-      hover-class="tap-press"
-      hover-stay-time="80"
-      aria-role="button"
-      aria-label="上一步"
-    >
-      <text>‹ 上一步 · {{activeStep === 2 ? '选礼' : '写笺'}}</text>
-    </view>
-    <view class="tool-btn" catchtap="toggleSfxMute" aria-role="button" aria-label="{{sfxMuted ? '开启音效' : '静音'}}">
+    <view class="rail-tool rail-sfx" catchtap="toggleSfxMute" hover-class="tap-press" hover-stay-time="80" aria-role="button" aria-label="{{sfxMuted ? '开启音效' : '静音'}}">
       <view class="icon-sound {{sfxMuted ? 'off' : 'on'}}" aria-hidden="true"></view>
-      <text>{{sfxMuted ? '已静音' : '音效'}}</text>
+      <text>{{sfxMuted ? '静音' : '音效'}}</text>
     </view>
   </view>
 
@@ -81,13 +80,10 @@
     <view class="rite-intro">
       <text class="rite-overline">FROM THE CABINET</text>
       <text class="rite-title">从柜中取出，封笺赠予</text>
-      <text class="rite-desc">分三步：选好藏品与送给谁、写下礼笺，再选定交付方式——像递出一件值得郑重的东西。</text>
     </view>
 
-    <!-- 01 已选标本 -->
+    <!-- 01 已选标本：藏品卡自明，不再另起标题（第 1 步的主问题是「送给谁」） -->
     <view class="section sec-specimen">
-      <text class="section-overline">SPECIMEN</text>
-      <text class="section-title">柜中这一件</text>
       <view class="product-row">
         <view class="product-cover-wrap">
           <image class="product-cover" src="{{cover}}" mode="aspectFill"></image>
@@ -106,7 +102,7 @@
     <view class="section sec-relation">
       <text class="section-overline">FOR WHOM</text>
       <text class="section-title">这份礼送给谁</text>
-      <text class="section-hint">选一个关系，下一步按它起草礼笺（可改写）；也可以不选，自己写。</text>
+      <text class="section-hint">下一步按它起草礼笺，可改写；不选也行</text>
       <!-- 2026-09-21：关系从 8 个扩到 20 个（giftNotePresets.js 实为 20 组 × 3 句）。
            原来这里是**横向 scroll**（white-space: nowrap），一屏只露得出前 5–6 个 ——
            后面新增的「老师 / 领导 / 长辈」等于藏起来了，那「拓展角色」就白做。
@@ -125,7 +121,7 @@
           </view>
         </view>
       </view>
-      <text class="relation-self-note" wx:if="{{selfTreat}}">犒劳自己：藏品寄到你的收货地址，地址与手机号在结算页填写。</text>
+      <text class="relation-self-note" wx:if="{{selfTreat}}">犒劳自己：寄到你的收货地址（结算页填写）</text>
     </view>
     </block>
 
@@ -155,13 +151,12 @@
           <text class="note-relation" wx:if="{{item.id === activeNotePresetId}}">按「{{item.label}}」起草</text>
         </block>
         <text class="note-relation-back" wx:if="{{!activeNotePresetId}}" data-step="1" bindtap="onRailTap">想要推荐句？回「选礼」挑个关系 ›</text>
-      </view>
-
-      <!-- 2026-09-17：一个关系现在有多句候选 —— 这里给出「换一句」与句序（第 2/3 句）。
-           顾客原话：「点进去好几次都是同样一段话，也没有更新的标」。 -->
-      <view class="note-shuffle-row" wx:if="{{activeNotePresetId && noteVariantTotal > 1}}">
-        <text class="note-shuffle-count">第 {{noteVariantLabel}} 句</text>
-        <text class="note-shuffle" bindtap="onNoteShuffle">换一句 ↻</text>
+        <!-- 2026-09-17：一个关系现在有多句候选 —— 这里给出「换一句」与句序（第 2/3 句）。
+             顾客原话：「点进去好几次都是同样一段话，也没有更新的标」。与关系同一行，少占一行 -->
+        <view class="note-shuffle-row" wx:if="{{activeNotePresetId && noteVariantTotal > 1}}">
+          <text class="note-shuffle-count">第 {{noteVariantLabel}} 句</text>
+          <text class="note-shuffle" bindtap="onNoteShuffle">换一句 ↻</text>
+        </view>
       </view>
 
       <view class="envelope-shell">
@@ -330,55 +325,64 @@
     <!-- ═══ 第 3 步 · 交付 ═══ -->
     <block wx:else>
     <!-- 03 交付方式 -->
+    <!-- 一步一问「怎样交给 TA」：四种交付平铺成单选行（门店自提关闭时不出现），只有选中项高亮；
+         跟随选择的门店 / 手机号 / 凭礼笺领取归进下方「领取核验」，长说明收进可点开的小字 -->
     <view class="section sec-delivery">
       <text class="section-overline">DELIVERY</text>
       <text class="section-title">{{selfTreat ? '寄到哪里' : '怎样交给 TA'}}</text>
       <block wx:if="{{selfTreat}}">
-      <view class="delivery-main active">
-        <view class="delivery-head">
-          <text class="delivery-name">寄到我的收货地址</text>
-          <text class="delivery-tag">犒劳自己</text>
+      <view class="delivery-opt active">
+        <view class="delivery-radio" aria-hidden="true"></view>
+        <view class="delivery-opt-main">
+          <view class="delivery-head">
+            <text class="delivery-name">寄到我的收货地址</text>
+            <text class="delivery-tag">犒劳自己</text>
+          </view>
+          <text class="delivery-desc">结算页填你的地址与手机号，直接寄给你</text>
         </view>
-        <text class="delivery-desc">下一步和普通下单一样，填写你的收货地址与手机号，藏品直接寄给你。</text>
       </view>
       <text class="claim-switch self-exit" bindtap="exitSelfTreat">其实是送给别人？改为送礼方式 ›</text>
       </block>
       <block wx:else>
       <view
-        class="delivery-main {{deliveryType === 'invite_address' ? 'active' : ''}}"
+        class="delivery-opt {{deliveryType === 'invite_address' ? 'active' : ''}}"
         data-type="invite_address"
         bindtap="onSelectDelivery"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        aria-role="radio"
+        aria-checked="{{deliveryType === 'invite_address'}}"
       >
-        <view class="delivery-head">
-          <text class="delivery-name">邀请 TA 填写地址</text>
-          <text class="delivery-tag">推荐</text>
+        <view class="delivery-radio" aria-hidden="true"></view>
+        <view class="delivery-opt-main">
+          <view class="delivery-head">
+            <text class="delivery-name">邀请 TA 填写地址</text>
+            <text class="delivery-tag">推荐</text>
+          </view>
+          <text class="delivery-desc">支付后分享领取卡，TA 留下地址再寄出</text>
         </view>
-        <text class="delivery-desc">支付后分享领取卡，由 TA 启封礼笺并留下去处，馆员再启程</text>
       </view>
-
-      <view class="other-toggle {{showOtherDelivery ? 'is-open' : ''}}" bindtap="toggleOtherDelivery" hover-class="tap-press" hover-stay-time="80">
-        <view class="other-toggle-main">
-          <text class="other-toggle-title">{{showOtherDelivery ? '其他交付方式' : '还有 ' + otherDeliveries.length + ' 种交付方式可选'}}</text>
-          <text class="other-toggle-names" wx:if="{{!showOtherDelivery}}">{{otherDeliveryNames}}</text>
-        </view>
-        <text class="other-toggle-act">{{showOtherDelivery ? '收起 ▴' : '展开 ▾'}}</text>
-      </view>
-
-      <view class="other-list" wx:if="{{showOtherDelivery}}">
-        <view
-          class="delivery-item {{deliveryType === item.id ? 'active' : ''}}"
-          wx:for="{{otherDeliveries}}"
-          wx:key="id"
-          data-type="{{item.id}}"
-          bindtap="onSelectDelivery"
-        >
+      <view
+        class="delivery-opt {{deliveryType === item.id ? 'active' : ''}}"
+        wx:for="{{otherDeliveries}}"
+        wx:key="id"
+        data-type="{{item.id}}"
+        bindtap="onSelectDelivery"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        aria-role="radio"
+        aria-checked="{{deliveryType === item.id}}"
+      >
+        <view class="delivery-radio" aria-hidden="true"></view>
+        <view class="delivery-opt-main">
           <text class="delivery-name">{{item.name}}</text>
           <text class="delivery-desc">{{item.desc}}</text>
         </view>
       </view>
 
+      <text class="group-label">领取核验</text>
       <view class="store-pick" wx:if="{{deliveryType === 'store_pickup' && storePickupEnabled}}">
-        <text class="store-pick-label">自提门店</text>
+        <text class="store-pick-label">自提门店 <text class="verify-set-req">* 必选</text></text>
         <view
           class="store-chip {{selectedStoreId === item.storeId ? 'on' : ''}}"
           wx:for="{{stores}}"
@@ -386,6 +390,8 @@
           data-id="{{item.storeId}}"
           data-name="{{item.name}}"
           bindtap="onSelectStore"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
         >
           <text>{{item.name}}</text>
         </view>
@@ -396,13 +402,17 @@
       <view id="receiverPhoneField" class="verify-set {{receiverPhoneError ? 'is-error' : ''}}">
         <block wx:if="{{claimLink && deliveryType !== 'ship_to_receiver'}}">
         <text class="verify-set-label">凭礼笺领取 <text class="verify-set-tip">不需要 TA 的手机号</text></text>
-        <text class="verify-set-hint" wx:if="{{deliveryType === 'ship_to_self'}}">藏品照常寄到你处；TA 点礼笺「收下」后礼记在 TA 名下，订单结束前可作废换链接。不能发朋友圈。</text>
-        <text class="verify-set-hint" wx:else>TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。为防扩散，这份礼笺不能发朋友圈。</text>
+        <text class="verify-set-brief">{{deliveryType === 'ship_to_self' ? '照常寄到你处，TA 点「收下」后礼记在 TA 名下' : 'TA 打开礼笺点「收下」即领取，一份限一人'}}</text>
         <view class="claim-opt {{claimPasscode ? 'on' : ''}}" bindtap="toggleClaimPasscode" hover-class="tap-press-soft" hover-stay-time="80">
           <view class="claim-check"></view>
-          <text class="claim-opt-t">加 6 位领取口令（只你看得到，TA 输对才能收下）</text>
+          <text class="claim-opt-t">加 6 位领取口令（TA 输对才能收下）</text>
         </view>
-        <text class="claim-switch" bindtap="toggleClaimLink">知道 TA 的手机号？改为手机号核验（更安全）</text>
+        <view class="verify-links">
+          <text class="why-toggle" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起规则' : '领取规则'}}</text>
+          <text class="claim-switch" bindtap="toggleClaimLink">改用手机号核验（更安全）</text>
+        </view>
+        <text class="verify-set-hint" wx:if="{{verifyWhyOpen && deliveryType === 'ship_to_self'}}">藏品照常寄到你处；TA 点礼笺「收下」后礼记在 TA 名下，订单结束前可作废换链接。口令只你看得到。不能发朋友圈。</text>
+        <text class="verify-set-hint" wx:elif="{{verifyWhyOpen}}">TA 打开礼笺后点「收下」才算领取，一份只能一人收下；收下前你可随时作废并换新链接。口令只你看得到。为防扩散，这份礼笺不能发朋友圈。</text>
         </block>
         <block wx:else>
         <text class="verify-set-label">受礼人手机号 <text class="verify-set-req" wx:if="{{deliveryType === 'ship_to_receiver'}}">* 必填</text><text class="verify-set-tip" wx:else>推荐填写</text></text>
@@ -410,33 +420,41 @@
           class="verify-set-input"
           type="number"
           maxlength="11"
-          placeholder="TA 的 11 位手机号"
+          placeholder="TA 的 11 位手机号，领取时核验"
           placeholder-class="verify-set-ph"
           value="{{receiverPhone}}"
           focus="{{receiverPhoneFocus}}"
           bindinput="onReceiverPhoneInput"
         />
         <text class="verify-set-err" wx:if="{{receiverPhoneError}}">{{receiverPhoneError}}</text>
-        <text class="verify-set-hint">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
-        <text class="claim-switch" wx:if="{{deliveryType !== 'ship_to_receiver'}}" bindtap="toggleClaimLink">不知道 TA 的手机号？凭礼笺领取 ›</text>
+        <view class="verify-links">
+          <text class="why-toggle" bindtap="toggleVerifyWhy">{{verifyWhyOpen ? '收起' : '为什么要填？'}}</text>
+          <text class="claim-switch" wx:if="{{deliveryType !== 'ship_to_receiver'}}" bindtap="toggleClaimLink">不知道号码？凭礼笺领取 ›</text>
+        </view>
+        <text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于受礼人领取时核验身份，防止礼笺被他人领走；仅存加密值与尾号。</text>
         </block>
       </view>
       </block>
 
-      <view class="privacy-row privacy-row-locked is-on" wx:if="{{allowHidePriceToggle === false}}">
-        <view class="check on"></view>
-        <text class="privacy-txt">价格已隐藏（平台设定，不可更改）</text>
-      </view>
+      <!-- 次要信息：隐价一行开关、包装一行摘要，不加框 -->
+      <view class="detail-rows">
+        <text class="detail-muted" wx:if="{{allowHidePriceToggle === false}}">成交价已对受礼人隐藏（平台设定，不可更改）</text>
+        <view
+          class="switch-row"
+          bindtap="toggleHidePrice"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+          aria-role="switch"
+          aria-checked="{{hidePrice}}"
+          wx:else
+        >
+          <text class="switch-label">对受礼人隐藏成交价 <text class="switch-tip">推荐</text></text>
+          <view class="switch {{hidePrice ? 'on' : ''}}" aria-hidden="true"><view class="switch-knob"></view></view>
+        </view>
 
-      <!-- 2026-09-17：整行加 is-on 点亮（勾选框太小、只有填色很难看出「已隐藏」是开着的） -->
-      <view class="privacy-row {{hidePrice ? 'is-on' : ''}}" bindtap="toggleHidePrice" wx:else>
-        <view class="check {{hidePrice ? 'on' : ''}}"></view>
-        <text class="privacy-text">对受礼人隐藏成交价（推荐）</text>
-      </view>
-
-      <view class="pack-note">
-        <text class="pack-note-label">{{packagingLabel}}</text>
-        <text class="pack-note-body">{{packagingNote}}</text>
+        <view class="pack-note">
+          <text class="pack-note-body">包装：{{packagingSummary}}</text>
+        </view>
       </view>
     </view>
     </block>
@@ -446,8 +464,8 @@
 
   <view class="bottom-bar safe-area">
     <view class="bottom-price">
-      <text class="bottom-label">备妥应付</text>
       <view class="bottom-value-row">
+        <text class="bottom-label">备妥应付</text>
         <text class="bottom-value">¥{{payablePrice}}</text>
         <text class="bottom-origin" wx:if="{{memberDiscounted}}">¥{{displayPrice}}</text>
       </view>

@@ -12,6 +12,9 @@
  *     「上一步」与左缘右滑在第 2、3 步回上一步、第 1 步才离开；第 1 步点关系不在看不见处落笔；
  *     **契约零变化**：交给确认页的 giftMeta 与 globalData.giftReceiverPhone 字段集合逐一比对（真跑 goPay，桩掉跳转）；
  *     新埋点 gift_compose_step 双端登记、旧埋点不动。
+ *   D 去密集（产品负责人真机看第 3 步：「太密集，信息过载」）：四种交付平铺成单选行、不再折叠（自提关闭时不出现）；
+ *     长说明收进「为什么要填？/ 领取规则」点开；只有可选的东西描边（领取核验 / 隐价 / 包装不加框）；
+ *     隐价是一行开关、平台强制时一行灰字；包装一行摘要；上一步 / 音效并进步骤轨；底栏「备妥应付」与价格同一行。
  *
  * 用法：node miniprogram/scripts/check-gift-compose-steps.mjs [--selftest]
  * --selftest：对真源做**内存注入**（不改文件），每条注入都必须被检出。
@@ -86,7 +89,7 @@ function runChecks() {
   const wxss = read(P.wxss)
 
   // ── L 拉得到底 ─────────────────────────────────────────────
-  // 视口 753（iPhone 13 可用高），步骤轨 + 音效条后滚动区顶边在 92；底栏两种高度：无会员价 96 / 带会员价 + 安全区 158
+  // 视口 753（iPhone 13 可用高），步骤轨后滚动区顶边在 92；底栏两种高度：无会员价 96 / 带会员价 + 安全区 158
   const base = { '.page': { top: 0, height: 753 }, '.scroll': { top: 92, height: 600 }, '.step-rail': { top: 0, height: 56 } }
   let h1 = 0
   let h2 = 0
@@ -104,7 +107,33 @@ function runChecks() {
   ok('L6 留白不再估底栏高度（底栏高度只由实测决定，不得回到写死 160rpx + 安全区）', !/env\(safe-area-inset-bottom\)/.test(rule(wxss, '.scroll-pad')))
 
   stepChecks(js, wxml, ok)
+  declutterChecks(js, wxml, wxss, ok)
   return fails
+}
+
+function declutterChecks(js, wxml, wxss, ok) {
+  const a3 = wxml.indexOf('<!-- ═══ 第 3 步')
+  const end = wxml.indexOf('<view class="scroll-pad">')
+  const s3 = a3 >= 0 && end > a3 ? wxml.slice(a3, end) : ''
+  const self = (s3.match(/<block wx:if="\{\{selfTreat\}\}">[\s\S]*?<\/block>/) || [''])[0]
+  ok('D1 四种交付平铺成单选行，不再「展开 / 收起」',
+    !/showOtherDelivery|toggleOtherDelivery|other-toggle/.test(s3 + js) &&
+    (s3.match(/bindtap="onSelectDelivery"/g) || []).length === 2 &&
+    /class="delivery-opt [^"]*"\s+data-type="invite_address"/.test(s3) && /class="delivery-opt [^"]*"\s+wx:for="\{\{otherDeliveries\}\}"/.test(s3))
+  ok('D2 门店自提关闭时不出现在交付选项里', js.includes("OTHER_DELIVERIES.filter((d) => d.id !== 'store_pickup')") && /otherDeliveries\s*\n\s*\}/.test(js))
+  const longTexts = s3.match(/<text[^>]*>[^<]*(?:仅存加密值与尾号|不能发朋友圈)[^<]*<\/text>/g) || []
+  ok('D3 长说明收进可点开的小字（手机号用途 / 凭礼笺领取规则默认不展开）',
+    longTexts.length >= 3 && longTexts.every((t) => /wx:(?:el)?if="\{\{verifyWhyOpen/.test(t)) && /bindtap="toggleVerifyWhy"/.test(s3) && js.includes('toggleVerifyWhy() {'))
+  const unframed = ['.verify-set', '.pack-note', '.switch-row', '.detail-rows', '.group-label']
+  ok('D4 只有可选的东西描边：领取核验 / 隐价 / 包装 / 小节标题不加框，交付选项有框',
+    unframed.every((sel) => rule(wxss, sel) && !/border(?!-radius)|background/.test(rule(wxss, sel))) && /border:/.test(rule(wxss, '.delivery-opt')))
+  ok('D5 隐价是一行开关；平台强制隐价时只一行灰字',
+    /<text class="detail-muted" wx:if="\{\{allowHidePriceToggle === false\}\}">/.test(s3) && /class="switch-row"[\s\S]{0,40}bindtap="toggleHidePrice"/.test(s3) && !/privacy-row/.test(wxml))
+  ok('D6 包装压成页尾一行摘要', /<view class="pack-note">\s*<text class="pack-note-body">包装：\{\{packagingSummary\}\}<\/text>\s*<\/view>/.test(s3) && js.includes('packagingSummary: GIFT_PACKAGING_SUMMARY'))
+  const rail = wxml.slice(wxml.indexOf('<view class="step-rail'), wxml.indexOf('<scroll-view'))
+  ok('D7 「上一步」与音效并进步骤轨两端，不再单占一行', !/sfx-bar/.test(wxml) && rail.includes('bindtap="onStepBack"') && rail.includes('catchtap="toggleSfxMute"'))
+  ok('D8 底栏「备妥应付」与价格同一行（小字只剩会员价一行）', /<view class="bottom-value-row">\s*<text class="bottom-label">备妥应付<\/text>/.test(wxml))
+  ok('D9 犒劳自己第 3 步：只一行已选的「寄到我的收货地址」+ 改回送礼入口', /class="delivery-opt active"/.test(self) && self.includes('bindtap="exitSelfTreat"') && !self.includes('receiverPhoneField'))
 }
 
 // ── T 分步编排（2026-10-12）─────────────────────────────────────────────
@@ -299,7 +328,15 @@ const INJECTIONS = [
   { name: '隐价开关挪回第 2 步', file: P.wxml, find: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n', replace: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n        <view bindtap="toggleHidePrice"></view>\n' },
   { name: '第 2 步条件写宽（与第 3 步重叠）', file: P.wxml, find: '<block wx:elif="{{activeStep === 2}}">', replace: '<block wx:elif="{{activeStep >= 2}}">' },
   { name: '没关系统侧滑', file: P.json, find: '  "disableSwipeBack": true,\n', replace: '' },
-  { name: 'ERP 端漏登记新埋点', file: P.adminSchema, find: '  gift_compose_step: {', replace: '  gift_compose_step_x: {' }
+  { name: 'ERP 端漏登记新埋点', file: P.adminSchema, find: '  gift_compose_step: {', replace: '  gift_compose_step_x: {' },
+  { name: '交付方式回到折叠', file: P.wxml, find: 'wx:for="{{otherDeliveries}}"', replace: 'wx:if="{{showOtherDelivery}}" wx:for="{{otherDeliveries}}"' },
+  { name: '门店自提关闭时仍显示', file: P.js, find: "OTHER_DELIVERIES.filter((d) => d.id !== 'store_pickup')", replace: 'OTHER_DELIVERIES.filter(() => true)' },
+  { name: '手机号用途说明常驻', file: P.wxml, find: '<text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于', replace: '<text class="verify-set-hint">用于' },
+  { name: '领取核验又加框', file: P.wxss, find: '.verify-set {\n  display: flex;', replace: '.verify-set {\n  border: 1px solid #C4A76C;\n  display: flex;' },
+  { name: '包装回到大框', file: P.wxss, find: '.pack-note { margin-top: 12rpx; }', replace: '.pack-note { margin-top: 12rpx; border: 1px solid #C4A76C; }' },
+  { name: '隐价回到勾选大框', file: P.wxml, find: 'class="switch-row"', replace: 'class="privacy-row"' },
+  { name: '音效条单占一行', file: P.wxml, find: '  <scroll-view\n', replace: '  <view class="sfx-bar"></view>\n  <scroll-view\n' },
+  { name: '底栏「备妥应付」单占一行', file: P.wxml, find: '<view class="bottom-value-row">\n        <text class="bottom-label">备妥应付</text>', replace: '<text class="bottom-label">备妥应付</text>\n      <view class="bottom-value-row">' }
 ]
 
 function main() {
@@ -330,7 +367,7 @@ function main() {
     console.error('✗ 送礼页（礼赠编排）版式 / 分步不合格：\n  - ' + fails.join('\n  - '))
     process.exit(1)
   }
-  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 三步各放各的 · 第 1、2 步无支付 · 写笺在第 2 步校验、手机号 / 门店在第 3 步校验 · 上一步 / 左缘右滑 / 步骤轨回退 · 交给确认页的字段与改前一致')
+  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 三步各放各的 · 第 3 步去密集（平铺单选 / 说明折叠 / 只给可选项描边） · 第 1、2 步无支付 · 写笺在第 2 步校验、手机号 / 门店在第 3 步校验 · 上一步 / 左缘右滑 / 步骤轨回退 · 交给确认页的字段与改前一致')
 }
 
 main()
