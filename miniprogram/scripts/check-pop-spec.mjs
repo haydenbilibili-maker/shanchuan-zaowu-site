@@ -6,6 +6,8 @@
  *   ① 全局零件在场：app.wxss 定义 --pop-* 令牌与 ui-pop-* 零件，零件不用回弹缓动（C7 §5.2）、有 reduced-motion 分支；
  *   ② 已迁移弹层不回退：MIGRATED 里每个「wx:if 开关」所在的遮罩挂 ui-pop-mask，其牌面挂 ui-pop-sheet / ui-pop-dialog；
  *   ③' openAppModal（utils/appModal.js，与 wx.showModal 同入参）沙箱实跑：组件宿主 / 当前页宿主 / 无宿主兜底 / 红色确认 → danger / 回调同形；
+ *   ③'' openAppModal 回调里不得调用要求「用户点击手势」的接口（openSetting / requestSubscribeMessage / 订阅授权 …）：
+ *       AppModal 的回调由 Promise 异步触发，不算手势 → 这类弹窗必须保留 wx.showModal（起因：giftVoice「去设置」）；
  *   ③ 自写遮罩棘轮：C 端 wxss 里「全屏 fixed + 自带底色」的规则按文件计数，只许减少（新文件必须 0）——
  *      新弹层一律用 ui-pop-mask，不再各写一个遮罩色。
  *
@@ -103,7 +105,32 @@ const openTag = (src, i) => {
   return src.slice(i, j + 1)
 }
 
-export function run(read = (f) => readFileSync(join(MP, f), 'utf8'), files = null) {
+function walkJs(dir, out = []) {
+  for (const n of readdirSync(dir)) {
+    if (SKIP_DIRS.has(n)) continue
+    const p = join(dir, n)
+    if (statSync(p).isDirectory()) walkJs(p, out)
+    else if (p.endsWith('.js')) out.push(relative(MP, p))
+  }
+  return out
+}
+
+/** 从 openAppModal 后的 "(" 起取到配对的 ")"（跳过字符串与行注释） */
+function callBody(src, open) {
+  let d = 0
+  let q = null
+  for (let k = open; k < src.length; k += 1) {
+    const c = src[k]
+    if (q) { if (c === '\\') k += 1; else if (c === q) q = null; continue }
+    if (c === '"' || c === "'" || c === '`') q = c
+    else if (c === '/' && src[k + 1] === '/') { const e = src.indexOf('\n', k); k = e < 0 ? src.length : e }
+    else if (c === '(' || c === '{' || c === '[') d += 1
+    else if (c === ')' || c === '}' || c === ']') { d -= 1; if (d === 0) return src.slice(open, k + 1) }
+  }
+  return src.slice(open)
+}
+
+export function run(read = (f) => readFileSync(join(MP, f), 'utf8'), files = null, jsFiles = null) {
   const fails = []
   const app = read('app.wxss')
   for (const t of ['--pop-mask:', '--pop-mask-deep:', '--pop-surface:', '--pop-hairline:', '--pop-radius-dialog:', '--pop-radius-sheet:', '--dur-base:', '--ease-out-soft:']) {
@@ -170,6 +197,20 @@ export function run(read = (f) => readFileSync(join(MP, f), 'utf8'), files = nul
     fails.push(`openAppModal 沙箱执行失败：${e.message}`)
   }
 
+  // ③'' 手势接口：扫所有 JS 的 openAppModal(...) 调用体
+  const GESTURE = /\b(openSetting|requestSubscribeMessage|requestSubscribeDeviceMessage|requestGiftSubscribe|promptStaffOrderSubscribe\w*|navigateToMiniProgram|getUserProfile|chooseAddress)\s*\(/
+  for (const f of (jsFiles || walkJs(MP))) {
+    if (f === 'utils/appModal.js') continue
+    const src = read(f)
+    let i = src.indexOf('openAppModal(')
+    while (i >= 0) {
+      const body = callBody(src, i + 'openAppModal'.length)
+      const g = GESTURE.exec(body)
+      if (g) fails.push(`${f}:${src.slice(0, i).split('\n').length} openAppModal 回调里调用了 ${g[1]}()（需要点击手势，AppModal 回调为异步不算手势 → 保留 wx.showModal）`)
+      i = src.indexOf('openAppModal(', i + 1)
+    }
+  }
+
   const list = files || walk(MP)
   for (const f of list) {
     if (OUT_OF_SCOPE.test(f) || f === 'app.wxss') continue
@@ -190,6 +231,7 @@ function selftest() {
     ['遮罩底色脱离令牌', (f) => f === 'app.wxss' ? real(f).replace('  background: var(--pop-mask);\n  animation: ui-pop-fade', '  background: rgba(0,0,0,.6);\n  animation: ui-pop-fade') : real(f), 'var(--pop-mask)'],
     ['丢掉一个令牌', (f) => f === 'app.wxss' ? real(f).replace('  --pop-hairline:', '  --pop-hairline-x:') : real(f), '--pop-hairline'],
     ['openAppModal 丢掉红色 → danger 映射', (f) => f === 'utils/appModal.js' ? real(f).replace("danger: !!o.danger || DANGER_COLOR.test(String(o.confirmColor || ''))", 'danger: !!o.danger') : real(f), 'danger'],
+    ['openAppModal 回调里调用需要手势的 openSetting', (f) => f === 'subpackages/feature/custom/inquiry/index.js' ? real(f).replace('openAppModal({', "openAppModal({ success: () => wx.openSetting({}), ") : real(f), '手势'],
     ['openAppModal 丢掉无宿主兜底', (f) => f === 'utils/appModal.js' ? real(f).replace('  if (!host) return nativeModal(o)', '  if (!host) return undefined') : real(f), '系统弹窗']
   ]
   let bad = 0

@@ -27,7 +27,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const MP = resolve(HERE, '..')
 
 /** 棘轮基线：只许降不许升。每迁移一页就把这个数字改小（并同步 MIGRATED）。 */
-export const BASELINE = 74
+export const BASELINE = 75  // 2026-10-13：gift/giftVoice.js 退回系统弹窗（确认后 wx.openSetting 需要点击手势，AppModal 回调为异步）
 /** 已迁移到样式化弹窗的页面：不得再出现 wx.showModal */
 export const MIGRATED = [
   'subpackages/business/address/index.js',
@@ -50,7 +50,6 @@ export const MIGRATED = [
   'subpackages/content/live/watch/index.js',
   'subpackages/feature/identify/index.js',
   'subpackages/feature/articles/detail/index.js',
-  'subpackages/feature/gift/giftVoice.js',
   'subpackages/feature/gift/compose/index.js',
   'subpackages/feature/gift/my-gifts/index.js',
   'subpackages/feature/gift/address/index.js',

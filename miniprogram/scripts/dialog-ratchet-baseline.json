@@ -1,6 +1,6 @@
 {
- "at": "2026-10-12T20:34:28.816Z",
- "total": 1245,
+ "at": "2026-10-12T20:45:50.211Z",
+ "total": 1246,
  "counts": {
   "miniprogram/components/ProductList/index.js": 4,
   "miniprogram/components/WishWallEntry/index.js": 1,
@@ -101,6 +101,7 @@
   "miniprogram/subpackages/feature/detail/wiki-detail/index.js": 5,
   "miniprogram/subpackages/feature/gift/address/index.js": 6,
   "miniprogram/subpackages/feature/gift/compose/index.js": 12,
+  "miniprogram/subpackages/feature/gift/giftVoice.js": 1,
   "miniprogram/subpackages/feature/gift/hub/index.js": 1,
   "miniprogram/subpackages/feature/gift/my-gifts/index.js": 25,
   "miniprogram/subpackages/feature/gift/receive/index.js": 10,
