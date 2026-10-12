@@ -196,20 +196,12 @@ function paintGiftShareCard(canvas, opts) {
     ctx.fillText(sigText, cardX + cardW - 22 - sw, cardY + cardH - 28)
   }
 
-  // 蜡封：有图时靠左下，避免压图
+  // 封印：VIS 3.0 方寸篆印，朱砂钤印（礼赠专属色）；有图时靠左下，避免压图
   const cx = hasImg ? cardX + 42 : cardX + cardW - 42
   const cy = hasImg ? cardY + cardH - 42 : cardY + 42
-  ctx.beginPath()
-  ctx.arc(cx, cy, 22, 0, Math.PI * 2)
-  ctx.fillStyle = 'rgba(196, 167, 108, 0.18)'
-  ctx.fill()
-  ctx.strokeStyle = '#C4A76C'
-  ctx.lineWidth = 2
-  ctx.stroke()
-  ctx.fillStyle = '#8A7530'
-  ctx.font = '500 12px serif'
-  ctx.textAlign = 'center'
-  ctx.fillText('山海', cx, cy + 4)
+  // 同一相对路径在三个副本里各自解析到本分包 utils/brandSeal.js（按需加载，Node 守卫不执行此段）
+  const { drawBrandSeal } = require('../utils/brandSeal')
+  drawBrandSeal(ctx, cx, cy, 40, { color: '#9E3B2E', ground: '#F2EDE4', rotate: -6 })
   ctx.textAlign = 'left'
 }
 

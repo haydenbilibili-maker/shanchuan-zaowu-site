@@ -8,7 +8,7 @@
     <view class="nav-bar">
       <view class="header-capsule {{isScrolled ? 'hidden' : ''}}" bindtap="handleSearch" hover-class="header-capsule-press" hover-stay-time="80">
         <view class="brand-part" catchlongpress="onEasterEggLongPress" data-egg-id="zhulong">
-          <image class="brand-mark" src="/assets/brand/seal-simple.png" mode="aspectFit"></image>
+          <image class="brand-mark" src="/assets/brand/seal-outline.png" mode="aspectFit"></image>
           <text class="brand-cn">山海造物</text>
         </view>
         <view class="v-divider"></view>

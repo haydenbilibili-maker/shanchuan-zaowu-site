@@ -362,6 +362,8 @@ page {
   margin-bottom: 24rpx;
   letter-spacing: 0.12em;
 }
+/* VIS 3.0：页脚落款方寸篆印 */
+.copyright .cr-mark { width: 48rpx; height: 48rpx; margin-bottom: 8rpx; opacity: 0.85; }
 .copyright .cr-line { display: block; }
 .copyright .cr-line.en {
   font-family: var(--font-din);
