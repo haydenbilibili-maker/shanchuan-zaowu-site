@@ -28,6 +28,10 @@
 
 .hr-paper { background: radial-gradient(rgba(240,230,204,.045) 1px, transparent 1.4px) 0 0 / 6rpx 6rpx, linear-gradient(160deg, rgba(196,167,108,.08), transparent 52%), var(--color-bg-card); }
 .hr-frame::after { content: ''; position: absolute; z-index: 1; left: 12rpx; top: 12rpx; right: 12rpx; bottom: 12rpx; border: 1px solid rgba(240,230,204,.24); pointer-events: none; }
+/* 过渡蒙层（2026-10-12 产品负责人点名「为你推荐图片加过渡，提升质感」）：图底 → 展签底色（--color-bg-card #1F1D1A）三段渐隐，
+   图与下方展签不再一刀切；横排主推（side）改为向右渐隐接右侧展签。与内框 ::after 同层（z 1），在 sensitive-blur-gate 宿主之上 */
+.hr-frame::before { content: ''; position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; height: 44%; background: linear-gradient(to bottom, rgba(31,29,26,0) 0%, rgba(31,29,26,.42) 58%, rgba(31,29,26,.88) 100%); pointer-events: none; }
+.hr-cover--side .hr-cv-media.hr-frame::before { top: 0; left: auto; width: 34%; height: auto; background: linear-gradient(to right, rgba(31,29,26,0) 0%, rgba(31,29,26,.4) 58%, rgba(31,29,26,.85) 100%); }
 
 .hr-cover { display: flex; height: 640rpx; border-radius: 6rpx; overflow: hidden; border: 1px solid rgba(196,167,108,.26); box-sizing: border-box; box-shadow: 0 24rpx 48rpx -28rpx rgba(0,0,0,.7); }
 .hr-cv-media { position: relative; flex-shrink: 0; overflow: hidden; background: var(--color-bg-elevated); }
@@ -51,7 +55,7 @@
 
 .hr-cover--wide { flex-direction: column; }
 .hr-cover--wide .hr-cv-media { position: relative; width: 100%; height: 430rpx; }
-.hr-cover--wide .hr-label { padding: 22rpx 26rpx; border-top: 1px solid var(--g2); }
+.hr-cover--wide .hr-label { padding: 22rpx 26rpx; border-top: 1px solid transparent; }  /* 顶线让位给图底渐隐，接缝不再一道硬线 */
 .hr-cover--wide .hr-cv-name, .hr-cover--wide .hr-note { margin-right: 200rpx; }
 .hr-cover--wide .hr-cv-theme, .hr-cover--wide .hr-cover-title, .hr-cover--wide .hr-note { white-space: nowrap; text-overflow: ellipsis; }
 .hr-cover--wide .hr-latin { flex: 1; }

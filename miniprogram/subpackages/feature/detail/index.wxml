@@ -117,7 +117,7 @@ module.exports.saveLabel = saveLabel;
          底部三段渐隐接正文卡（卡顶边线同时淡出，见 wxss）。敏感图罩层打开时叠层全部不出，不压罩层文案。 -->
     <view class="hero-topshade" wx:if="{{!sensitiveVeiled}}" aria-hidden="true"></view>
     <view class="hero-credit" wx:if="{{!sensitiveVeiled}}" aria-hidden="true">
-      <text class="hero-credit-en">SHANHAI ZAOWU</text>
+      <text class="hero-credit-en">NATURE'S CREATIONS</text>
       <text class="hero-credit-zh">山海造物 · 馆藏实拍</text>
     </view>
     <view class="hero-seal" wx:if="{{isOneOfAKind && !sensitiveVeiled}}" aria-hidden="true">
