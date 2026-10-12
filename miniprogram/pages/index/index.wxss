@@ -126,7 +126,6 @@ page {
 .search-part icon { margin-right: 8rpx; }
 .search-part text { font-size: 24rpx; color: var(--color-text-secondary); letter-spacing: 1rpx; }
 
-
 /* ==================== 2. Banner ==================== */
 /* 首屏 Hero：约 38vh，留出下方内容自然露出 */
 .hero-section {
@@ -156,206 +155,6 @@ page {
 }
 
 /* 标本师招募条 — 柜内铜牌 / 书脊铭牌感（非整幅营销 banner） */
-.recruit-rail {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  align-items: stretch;
-  margin: 0 32rpx 64rpx;
-  padding: 0;
-  background: var(--color-bg-card);
-  border: 1px solid #4D401A;
-  border-radius: 16rpx;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-.recruit-rail-texture {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    linear-gradient(180deg, rgba(196, 167, 108, 0.045) 0%, transparent 42%),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0,
-      transparent 5rpx,
-      rgba(196, 167, 108, 0.018) 5rpx,
-      rgba(196, 167, 108, 0.018) 6rpx
-    );
-}
-
-.recruit-rail-corner {
-  position: absolute;
-  width: 16rpx;
-  height: 16rpx;
-  z-index: 3;
-  pointer-events: none;
-  border-color: rgba(196, 167, 108, 0.55);
-  border-style: solid;
-  border-width: 0;
-  box-sizing: border-box;
-}
-
-.recruit-rail-corner--tl {
-  top: 8rpx;
-  left: 8rpx;
-  border-top-width: 1px;
-  border-left-width: 1px;
-}
-
-.recruit-rail-corner--tr {
-  top: 8rpx;
-  right: 8rpx;
-  border-top-width: 1px;
-  border-right-width: 1px;
-}
-
-.recruit-rail-corner--bl {
-  bottom: 8rpx;
-  left: 8rpx;
-  border-bottom-width: 1px;
-  border-left-width: 1px;
-}
-
-.recruit-rail-corner--br {
-  bottom: 8rpx;
-  right: 8rpx;
-  border-bottom-width: 1px;
-  border-right-width: 1px;
-}
-
-.recruit-rail-spine {
-  position: relative;
-  z-index: 1;
-  flex-shrink: 0;
-  width: 52rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 28rpx 0;
-  background: rgba(196, 167, 108, 0.07);
-  border-right: 1px solid rgba(77, 64, 26, 0.9);
-  box-sizing: border-box;
-}
-
-.recruit-rail-spine-mark {
-  writing-mode: vertical-rl;
-  font-family: var(--font-brand);
-  font-size: 22rpx;
-  font-weight: 500;
-  color: var(--gold);
-  letter-spacing: 0.42em;
-  line-height: 1;
-}
-
-.recruit-rail-body {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-width: 0;
-  padding: 26rpx 20rpx 26rpx 28rpx;
-  box-sizing: border-box;
-}
-
-.recruit-rail-meta {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  margin-bottom: 10rpx;
-}
-
-.recruit-rail-kicker {
-  flex-shrink: 0;
-  font-family: 'DIN', 'Oswald', sans-serif;
-  font-size: 18rpx;
-  font-weight: 600;
-  color: var(--gold);
-  letter-spacing: 0.18em;
-  line-height: 1.2;
-}
-
-.recruit-rail-rule {
-  flex: 1;
-  height: 1px;
-  min-width: 24rpx;
-  background: linear-gradient(90deg, rgba(196, 167, 108, 0.35), transparent 92%);
-}
-
-.recruit-rail-title {
-  display: block;
-  font-family: var(--font-brand);
-  font-size: 36rpx;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  letter-spacing: 0.12em;
-  line-height: 1.25;
-  margin-bottom: 16rpx;
-}
-
-.recruit-rail-pills {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10rpx;
-}
-
-.recruit-rail-pill {
-  padding: 6rpx 16rpx;
-  font-size: 20rpx;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-  line-height: 1.3;
-  background: rgba(26, 24, 20, 0.55);
-  border: 1px solid rgba(77, 64, 26, 0.75);
-  border-radius: 9999px;
-  box-sizing: border-box;
-}
-
-.recruit-rail-cta {
-  position: relative;
-  z-index: 1;
-  flex-shrink: 0;
-  align-self: center;
-  width: 48rpx;
-  height: 48rpx;
-  margin-right: 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(196, 167, 108, 0.38);
-  border-radius: 50%;
-  background: rgba(26, 24, 20, 0.35);
-  box-sizing: border-box;
-}
-
-.recruit-rail-arrow {
-  font-size: 36rpx;
-  line-height: 1;
-  color: var(--gold);
-  margin-top: -2rpx;
-  margin-left: 2rpx;
-}
-
-.recruit-rail-press {
-  background: #221F1B;
-  border-color: rgba(196, 167, 108, 0.42);
-}
-
-.recruit-rail-press .recruit-rail-spine {
-  background: rgba(196, 167, 108, 0.11);
-}
-
-.recruit-rail-press .recruit-rail-cta {
-  border-color: rgba(196, 167, 108, 0.55);
-  background: rgba(196, 167, 108, 0.08);
-}
-
-.recruit-rail-press .recruit-rail-pill {
-  color: var(--color-text-body);
-  border-color: rgba(196, 167, 108, 0.28);
-}
 
 .orbs-section.orbs-first {
   margin-top: 0;
@@ -572,7 +371,6 @@ page {
   z-index: 10;
 }
 
-
 .orb-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; position: relative; transition: transform 0.4s ease, opacity 0.4s ease; }
 .orb-wrapper.active { transform: scale(1.1); z-index: 20; }
 .orb-wrapper.active .orb-sphere { border-color: rgba(196, 167, 108, 0.55); }
@@ -671,7 +469,6 @@ page {
   border: 1px dashed #4D401A;
   border-radius: 16rpx;
 }
-
 
 /* ==================== 4. 🟢 近期活动 (票根修复) ==================== */
 .section-header-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 28rpx; border-bottom: 1px solid rgba(38, 35, 32, 0.7); padding-bottom: 16rpx; }
@@ -814,7 +611,6 @@ page {
   opacity: 1;
 }
 
-
 .ec-info { 
   position: absolute; 
   bottom: 0;
@@ -929,14 +725,6 @@ page {
 }
 
 /* 卡片容器 - 分离式设计：图片 + 信息栏 */
-.artist-card-v3 { 
-  display: inline-flex;
-  flex-direction: column;
-  width: 280rpx; 
-  margin-right: 24rpx; 
-  flex-shrink: 0;
-  transition: transform 0.25s ease;
-}
 
 .artist-card-v3:active,
 .artist-card-press {
@@ -944,132 +732,17 @@ page {
 }
 
 /* 图片容器 - 独立区域，不包含文字 */
-.ac-image-wrapper {
-  position: relative;
-  width: 100%;
-  height: 320rpx;
-  border-radius: 20rpx 20rpx 0 0;
-  overflow: hidden;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-bg-elevated);
-  border-bottom: none;
-}
 
-.ac-bg { 
-  width: 100%; 
-  height: 100%; 
-  filter: brightness(0.8) contrast(1.15) saturate(1.05) grayscale(0.15); 
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  object-fit: cover;
-  object-position: center center;
-}
-
-.artist-card-v3:active .ac-bg { 
-  filter: brightness(0.9) contrast(1.25) saturate(1.15) grayscale(0); 
-  transform: scale(1.08); 
-}
 
 /* 图片渐变遮罩 - 底部轻微渐变，不遮挡主体 */
-.ac-image-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60rpx;
-  background: linear-gradient(
-    to top,
-    rgba(26, 24, 20, 0.4) 0%,
-    rgba(26, 24, 20, 0.18) 50%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 1;
-}
 
 /* 信息栏 - 独立于图片，位于下方 */
-.ac-info-bar {
-  width: 100%;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-bg-elevated);
-  border-top: none;
-  border-radius: 0 0 20rpx 20rpx;
-  padding: 20rpx 18rpx;
-  position: relative;
-  overflow: hidden;
-}
-
-.artist-card-v3:active .ac-info-bar {
-  border-color: rgba(196, 167, 108, 0.4);
-}
 
 /* 信息内容 */
-.ac-info-content {
-  text-align: center;
-  position: relative;
-  z-index: 2;
-}
-
-.ac-name { 
-  font-size: 30rpx; 
-  color: var(--color-text-primary); 
-  font-weight: 700; 
-  display: block; 
-  margin-bottom: 6rpx;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
-  letter-spacing: 1.5rpx;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.ac-title { 
-  font-size: 18rpx; 
-  color: var(--gold); 
-  display: block;
-  font-family: 'DIN', sans-serif;
-  font-weight: 600;
-  letter-spacing: 2rpx;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.3;
-  opacity: 0.9;
-}
 
 /* 装饰性元素 */
-.ac-info-decoration {
-  position: absolute;
-  bottom: 12rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 50rpx;
-  height: 2rpx;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  opacity: 0.6;
-  box-shadow: none;
-  transition: all 0.4s;
-}
-
-.artist-card-v3:active .ac-info-decoration {
-  width: 70rpx;
-  opacity: 0.9;
-  box-shadow: none;
-}
-
-.artist-card-v3::before { display: none; }
 
 /* 旧样式保留（向后兼容，如果还有使用 artist-card-v2 的地方） */
-
-.ac-bg { 
-  width: 100%; 
-  height: 100%; 
-  filter: brightness(0.75) contrast(1.2) saturate(1.1) grayscale(0.2) sepia(0.1); 
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  object-fit: cover;
-  object-position: center top;
-  transform-origin: center top;
-}
 
 /* 杂志风格的装饰性边框 */
 
@@ -1078,21 +751,6 @@ page {
 /* 顶部渐变遮罩（用于保护顶部区域，如果需要） */
 
 /* 悬停遮罩 */
-
-
-.ac-title::after {
-  content: '';
-  position: absolute;
-  bottom: -10rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60rpx;
-  height: 2rpx;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  opacity: 0.9;
-  box-shadow: none;
-  transition: all 0.4s;
-}
 
 /* ==================== 页脚标语优化 ==================== */
 .footer-slogan { 
@@ -1341,23 +999,6 @@ page {
 
 /* 走进这有店 — 探索页门店卡片（入口已迁至「我的」，区块默认关闭） */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* 标本工坊入口 — 探索页专题卡片 */
 .atelier-section {
   padding-top: 8rpx;
@@ -1367,139 +1008,8 @@ page {
   margin-bottom: 28rpx;
 }
 
-.atelier-card-pro {
-  position: relative;
-  width: 100%;
-  height: 360rpx;
-  border-radius: 24rpx;
-  overflow: hidden;
-  background: var(--color-bg-card);
-  border: 1px solid rgba(77, 64, 26, 0.45);
-  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.08);
-  transition: transform 0.25s ease, border-color 0.25s ease;
-}
 
-.atelier-card-pro:active,
-.atelier-card-press {
-  transform: scale(0.985);
-  border-color: rgba(196, 167, 108, 0.55);
-}
 
-.atelier-hero-img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  filter: brightness(0.62) contrast(1.12) saturate(1.05);
-}
-
-.atelier-hero-mask {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    115deg,
-    rgba(26, 24, 20, 0.92) 0%,
-    rgba(26, 24, 20, 0.78) 42%,
-    rgba(26, 24, 20, 0.35) 100%
-  );
-}
-
-.atelier-brass-frame {
-  position: absolute;
-  inset: 16rpx;
-  border: 1px solid rgba(196, 167, 108, 0.22);
-  border-radius: 16rpx;
-  pointer-events: none;
-}
-
-.atelier-content {
-  position: relative;
-  z-index: 2;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 32rpx 36rpx 36rpx;
-  box-sizing: border-box;
-}
-
-.atelier-badge {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  width: auto;
-  padding: 6rpx 16rpx;
-  margin-bottom: 16rpx;
-  font-size: 20rpx;
-  color: var(--gold);
-  letter-spacing: 0.06em;
-  background: rgba(26, 24, 20, 0.55);
-  border: 1px solid rgba(196, 167, 108, 0.28);
-  border-radius: 8rpx;
-  white-space: nowrap;
-  box-sizing: border-box;
-}
-
-.atelier-tagline {
-  display: block;
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #FAF6ED;
-  letter-spacing: 0.1em;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
-  line-height: 1.35;
-  margin-bottom: 10rpx;
-}
-
-.atelier-desc {
-  display: block;
-  font-size: 24rpx;
-  color: var(--color-text-secondary);
-  line-height: 1.55;
-  max-width: 520rpx;
-  margin-bottom: 20rpx;
-}
-
-.atelier-paths {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin-bottom: 24rpx;
-}
-
-/* 两条路径等权（2026-10-12 拍板）：同一枚发丝金边小签 */
-.atelier-path-chip {
-  padding: 8rpx 20rpx;
-  font-size: 22rpx;
-  color: var(--gold);
-  font-weight: 500;
-  background: rgba(196, 167, 108, 0.08);
-  border: 1px solid rgba(196, 167, 108, 0.45);
-  border-radius: 9999px;
-}
-
-.atelier-cta-row {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.atelier-cta {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: var(--gold);
-  letter-spacing: 0.04em;
-}
-
-.atelier-cta-arrow {
-  font-size: 28rpx;
-  color: var(--gold);
-  transition: transform 0.25s ease;
-}
-
-.atelier-card-pro:active .atelier-cta-arrow {
-  transform: translateX(6rpx);
-}
 /* ===== 整页错误态（关键内容全部加载失败）===== */
 /* 与 collection-detail 的 .cd-state 保持同一视觉语言 */
 .page-error {
@@ -1553,3 +1063,33 @@ page {
   font-size: 22rpx;
   color: var(--color-text-muted);
 }
+
+/* 首页卡片对齐（2026-10-13）：与「为你推荐」同一展窗语言 —— 6rpx 角、发丝金边、宋体主标、等宽眉标、图底渐隐、› 收尾 */
+.atelier-card-pro, .recruit-rail, .ac-image-wrapper, .ac-info-bar { border: 1px solid rgba(196,167,108,.2); box-sizing: border-box; }
+.atelier-card-pro { position: relative; width: 100%; height: 360rpx; border-radius: 6rpx; overflow: hidden; background: var(--color-bg-card); box-shadow: 0 18rpx 36rpx -24rpx rgba(0,0,0,.6); }
+.atelier-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; filter: brightness(.62) contrast(1.12) saturate(1.05); }
+.atelier-hero-mask { position: absolute; inset: 0; background: linear-gradient(115deg, rgba(26,24,20,.92) 0%, rgba(26,24,20,.75) 45%, rgba(26,24,20,.3) 100%); }
+.atelier-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; padding: 32rpx 36rpx; box-sizing: border-box; }
+.atelier-badge, .rr-kicker { font-size: 18rpx; line-height: 26rpx; font-family: var(--font-mono); letter-spacing: .32em; color: var(--brass-400); }
+.atelier-badge { margin-bottom: 10rpx; letter-spacing: .16em; }
+.atelier-tagline, .rr-title { display: block; font-family: var(--font-brand); font-weight: 500; color: #FAF6ED; letter-spacing: .12em; }
+.atelier-tagline { font-size: 38rpx; line-height: 50rpx; margin-bottom: 8rpx; }
+.atelier-desc, .rr-desc { display: block; font-size: 24rpx; line-height: 1.55; color: var(--color-text-secondary); }
+.atelier-desc { margin-bottom: 20rpx; }
+.atelier-paths { display: flex; gap: 12rpx; margin-bottom: 22rpx; }
+.atelier-path-chip { padding: 6rpx 18rpx; font-size: 22rpx; color: var(--gold); background: rgba(196,167,108,.08); border: 1px solid rgba(196,167,108,.45); border-radius: 999rpx; }
+.atelier-cta-row { display: flex; align-items: center; gap: 8rpx; }
+.atelier-cta, .atelier-cta-arrow, .rr-go { font-size: 24rpx; color: var(--brass-300); letter-spacing: .12em; }
+.atelier-cta-arrow { font-size: 30rpx; line-height: 1; }
+.recruit-rail { position: relative; display: flex; align-items: center; gap: 24rpx; margin: 0 32rpx 64rpx; padding: 28rpx 32rpx; border-radius: 6rpx; background: linear-gradient(160deg, rgba(196,167,108,.08), transparent 52%), var(--color-bg-card); }
+.rr-body { flex: 1; min-width: 0; }
+.rr-title { margin: 6rpx 0 6rpx; font-size: 34rpx; line-height: 46rpx; }
+.rr-go { flex-shrink: 0; white-space: nowrap; }
+.artist-card-v3 { display: inline-flex; flex-direction: column; width: 280rpx; margin-right: 24rpx; flex-shrink: 0; }
+.ac-image-wrapper { position: relative; width: 100%; height: 320rpx; border-radius: 6rpx 6rpx 0 0; border-bottom: none; overflow: hidden; background: var(--color-bg-card); }
+.ac-bg { width: 100%; height: 100%; object-fit: cover; filter: brightness(.88) saturate(1.02); }
+.ac-image-overlay { position: absolute; left: 0; right: 0; bottom: 0; height: 44%; z-index: 1; pointer-events: none; background: linear-gradient(to bottom, rgba(31,29,26,0), rgba(31,29,26,.45) 58%, rgba(31,29,26,.9)); }
+.ac-info-bar { width: 100%; padding: 18rpx 18rpx 20rpx; border-top: none; border-radius: 0 0 6rpx 6rpx; background: var(--color-bg-card); }
+.ac-info-content { text-align: center; }
+.ac-name { display: block; font-size: 30rpx; line-height: 42rpx; font-family: var(--font-brand); font-weight: 500; letter-spacing: .1em; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ac-title { display: block; margin-top: 4rpx; font-size: 20rpx; letter-spacing: .12em; color: var(--brass-400); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

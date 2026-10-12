@@ -235,12 +235,11 @@
           <text class="t-en">NATURE'S ATELIER</text>
         </view>
       </view>
-      <view class="atelier-card-pro" bindtap="goToCustom" hover-class="atelier-card-press" hover-stay-time="80">
+      <view class="atelier-card-pro" bindtap="goToCustom" hover-class="tap-press-soft" hover-stay-time="80">
         <image class="atelier-hero-img" src="{{atelierHeroImage}}" mode="aspectFill" lazy-load />
         <view class="atelier-hero-mask"></view>
-        <view class="atelier-brass-frame"></view>
         <view class="atelier-content">
-          <view class="atelier-badge">{{workshopStoreName}}</view>
+          <text class="atelier-badge">{{workshopStoreName}}</text>
           <text class="atelier-tagline">把山海带回家</text>
           <text class="atelier-desc">装裱定制与伴宠记忆，在同一盏暖光下完成</text>
           <view class="atelier-paths">
@@ -249,7 +248,7 @@
           </view>
           <view class="atelier-cta-row">
             <text class="atelier-cta">进入工坊</text>
-            <text class="atelier-cta-arrow">→</text>
+            <text class="atelier-cta-arrow">›</text>
           </view>
         </view>
       </view>
@@ -297,7 +296,7 @@
       <!-- 实际内容 -->
       <scroll-view wx:elif="{{framers.length > 0}}" scroll-x class="artist-scroll" enable-flex show-scrollbar="{{false}}">
         <block wx:for="{{framers}}" wx:key="_id">
-          <view class="artist-card-v3" bindtap="goToFramer" data-id="{{item._id}}" hover-class="artist-card-press" hover-stay-time="80">
+          <view class="artist-card-v3" bindtap="goToFramer" data-id="{{item._id}}" hover-class="tap-press-soft" hover-stay-time="80">
              <!-- 图片容器 -->
              <view class="ac-image-wrapper">
                <image class="ac-bg" src="{{item.avatar}}" mode="aspectFill" lazy-load></image>
@@ -310,7 +309,6 @@
                  <text class="ac-name">{{item.name}}</text>
                  <text class="ac-title">{{item.title}}</text>
                </view>
-               <view class="ac-info-decoration"></view>
              </view>
           </view>
         </block>
@@ -323,36 +321,16 @@
     <view
       class="recruit-rail"
       catchtap="goToFramerRecruit"
-      hover-class="recruit-rail-press"
+      hover-class="tap-press-soft"
       hover-stay-time="80"
       hover-stop-propagation="{{true}}"
     >
-      <view class="recruit-rail-texture"></view>
-      <view class="recruit-rail-corner recruit-rail-corner--tl"></view>
-      <view class="recruit-rail-corner recruit-rail-corner--tr"></view>
-      <view class="recruit-rail-corner recruit-rail-corner--bl"></view>
-      <view class="recruit-rail-corner recruit-rail-corner--br"></view>
-
-      <view class="recruit-rail-spine">
-        <text class="recruit-rail-spine-mark">合作</text>
+      <view class="rr-body">
+        <text class="rr-kicker">FRAMER RECRUIT</text>
+        <text class="rr-title">标本师招募</text>
+        <text class="rr-desc">门店渠道 · 小程序上架 · 分成合作</text>
       </view>
-
-      <view class="recruit-rail-body">
-        <view class="recruit-rail-meta">
-          <text class="recruit-rail-kicker">FRAMER RECRUIT</text>
-          <view class="recruit-rail-rule"></view>
-        </view>
-        <text class="recruit-rail-title">标本师招募</text>
-        <view class="recruit-rail-pills">
-          <text class="recruit-rail-pill">门店渠道</text>
-          <text class="recruit-rail-pill">小程序上架</text>
-          <text class="recruit-rail-pill">分成合作</text>
-        </view>
-      </view>
-
-      <view class="recruit-rail-cta">
-        <text class="recruit-rail-arrow">›</text>
-      </view>
+      <text class="rr-go">了解合作 ›</text>
     </view>
 
     <!-- 近期活动模块 -->

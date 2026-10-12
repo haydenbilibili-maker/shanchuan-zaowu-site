@@ -35,7 +35,6 @@
 .hr-cover { display: flex; height: 640rpx; border-radius: 6rpx; overflow: hidden; border: 1px solid rgba(196,167,108,.26); box-sizing: border-box; box-shadow: 0 24rpx 48rpx -28rpx rgba(0,0,0,.7); }
 .hr-cv-media { position: relative; flex-shrink: 0; overflow: hidden; background: var(--color-bg-elevated); }
 .hr-label { position: relative; flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; box-sizing: border-box; }
-.hr-label::before { content: ''; position: absolute; top: 14rpx; right: 14rpx; width: 16rpx; height: 16rpx; border: 1px solid var(--brass-500); border-width: 1px 1px 0 0; }
 .hr-cv-media, .hr-label { transition: opacity .25s; }
 .hr-kicker { display: flex; align-items: center; gap: 12rpx; height: 28rpx; margin-bottom: 10rpx; padding-right: 26rpx; overflow: hidden; }
 .hr-no { flex-shrink: 0; font-size: 19rpx; line-height: 28rpx; font-family: var(--font-mono); color: var(--brass-400); letter-spacing: .16em; }
@@ -50,7 +49,7 @@
 .hr-note { min-width: 0; font-size: 22rpx; line-height: 34rpx; color: var(--t2); overflow: hidden; }
 .hr-cv-foot { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6rpx 16rpx; }
 .hr-go { margin-left: auto; display: flex; align-items: center; font-size: 22rpx; line-height: 36rpx; color: var(--brass-300); letter-spacing: .14em; white-space: nowrap; }
-.hr-go::after { content: ''; width: 40rpx; height: 1px; margin-left: 12rpx; background: currentColor; }
+.hr-go::after { content: '›'; margin-left: 8rpx; font-size: 28rpx; line-height: 1; }  /* 与首页其它卡片同一 › 收尾（2026-10-13） */
 
 .hr-cover--wide { flex-direction: column; }
 .hr-cover--wide .hr-cv-media { position: relative; width: 100%; height: 430rpx; }
