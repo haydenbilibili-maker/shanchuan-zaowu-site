@@ -10,6 +10,8 @@
   aria-label="{{brandText}}{{title}}：{{descText}}"
 >
   <view class="wish-wall-entry-main">
+    <!-- 墨底版眉标（2026-10-12 首页卡片重构）：英文眉标一行，主标「祈福墙」+ 细金印「马上有」一行 -->
+    <text class="wish-wall-entry-kicker" wx:if="{{tone === 'ink'}}">WISH WALL</text>
     <view class="wish-wall-entry-row">
       <view class="signal-light lamp-brass wish-wall-entry-lamp"></view>
       <text class="wish-wall-entry-brand" wx:if="{{brandText}}">{{brandText}}</text>
