@@ -225,36 +225,44 @@ Page({
     }
   },
 
+  /** 实测前的占位：步骤轨约 56 + 音效条约 36 + 底栏约 96（不含安全区，onReady 后即被实测值覆盖） */
   guessScrollPane() {
     const winH = getWindowHeight()
-    const next = Math.max(240, (winH || 600) - 56)
+    const next = Math.max(240, (winH || 600) - 188)
     this.setData({
       scrollHeightPx: next,
       scrollStyle: 'height: ' + next + 'px;'
     })
   },
 
+  /**
+   * 滚动区 = 自身顶边 → 底栏顶边（实测 px）。上方的步骤轨、音效条与底栏高度都不能写死：
+   * 底栏会因会员价小字、安全区变高；漏减任何一块，最后一行就会压在底栏下（2026-10-12 真机）。
+   */
   syncScrollPane() {
     const winH = getWindowHeight()
-    const apply = (pageH, railH) => {
-      const next = Math.max(240, Math.floor((pageH || winH || 600) - (railH || 56)))
-      if (!next || next === this.data.scrollHeightPx) return
-      this.setData({
-        scrollHeightPx: next,
-        scrollStyle: 'height: ' + next + 'px;'
-      })
-    }
     const runQuery = () => {
       wx.createSelectorQuery()
         .in(this)
         .select('.page')
         .boundingClientRect()
-        .select('.step-rail')
+        .select('.scroll')
+        .boundingClientRect()
+        .select('.bottom-bar')
         .boundingClientRect()
         .exec((res) => {
-          const pageH = (res && res[0] && res[0].height) || winH
-          const railH = (res && res[1] && res[1].height) || 56
-          apply(pageH, railH)
+          const page = res && res[0]
+          const scroll = res && res[1]
+          const bar = res && res[2]
+          if (!scroll) return
+          const bottom = page && page.height ? page.top + page.height : (winH || 600)
+          const barH = (bar && bar.height) || 0
+          const next = Math.max(240, Math.floor(bottom - scroll.top - barH))
+          if (!next || next === this.data.scrollHeightPx) return
+          this.setData({
+            scrollHeightPx: next,
+            scrollStyle: 'height: ' + next + 'px;'
+          })
         })
     }
     if (typeof wx.nextTick === 'function') wx.nextTick(runQuery)
@@ -797,7 +805,7 @@ Page({
       payablePrice: r.payable.toFixed(2),
       memberDiscounted: r.discounted,
       memberLevelName: r.levelName
-    })
+    }, () => this.syncScrollPane())
   },
 
 

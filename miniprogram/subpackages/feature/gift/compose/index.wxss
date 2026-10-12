@@ -88,9 +88,9 @@ page {
   flex: none;
   width: 100%;
   min-height: 420rpx;
-  /* 步骤轨约 96rpx；底栏 fixed 叠在下方，由 .scroll-pad 留白 */
-  height: calc(100vh - 96rpx);
-  height: calc(100% - 96rpx);
+  /* 实测前的占位（步骤轨 + 音效条 + 底栏）；JS syncScrollPane 量出「自身顶边 → 底栏顶边」后改写为 px */
+  height: calc(100vh - 380rpx - env(safe-area-inset-bottom));
+  height: calc(100% - 380rpx - env(safe-area-inset-bottom));
   padding: 24rpx 32rpx 0;
   box-sizing: border-box;
 }
@@ -1072,8 +1072,9 @@ page {
   font-weight: 500;
 }
 
+/* 滚动区止于底栏顶边（syncScrollPane），这里只留最后一行下方的呼吸距离，不再估底栏高度 */
 .scroll-pad {
-  height: calc(160rpx + env(safe-area-inset-bottom));
+  height: 48rpx;
 }
 
 .bottom-bar {

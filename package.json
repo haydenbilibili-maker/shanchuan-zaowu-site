@@ -187,6 +187,8 @@
     "check:gift-claim-link:selftest": "node miniprogram/scripts/check-gift-claim-link.mjs --selftest",
     "check:address-parse": "node miniprogram/scripts/check-address-parse.mjs",
     "check:address-parse:selftest": "node miniprogram/scripts/check-address-parse.mjs --selftest",
+    "check:gift-compose-steps": "node miniprogram/scripts/check-gift-compose-steps.mjs",
+    "check:gift-compose-steps:selftest": "node miniprogram/scripts/check-gift-compose-steps.mjs --selftest",
     "check:require-call-shape": "node miniprogram/scripts/check-require-call-shape.mjs",
     "check:require-call-shape:selftest": "node miniprogram/scripts/check-require-call-shape.mjs --selftest",
     "check:gift-sticker-layout": "node miniprogram/scripts/check-gift-sticker-layout.mjs",

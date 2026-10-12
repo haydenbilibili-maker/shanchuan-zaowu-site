@@ -30,6 +30,8 @@ npm run check:gift-holder
 npm run check:gift-claim-link
 # 2026-10-12：代填地址「粘贴整段 → 自动识别」（24 个样例 + 弹层真跑：认不出的留空不猜、不弹原生提示、提交仍走原校验）
 npm run check:address-parse
+# 2026-10-12：送礼页（礼赠编排）滚动区止于底栏顶边（最后一行不被底栏遮挡）+ 分步编排
+npm run check:gift-compose-steps
 npm run test:product-copy-species
 npm run check:size-canonical-sync
 npm run test:list-cover-images
