@@ -20,8 +20,12 @@ const SCOPE_CACHE_KEY = 'wish_wall_admin_scope_v1'
 const STATUS_TABS = [
   { id: '', label: '全部' },
   { id: 'visible', label: '展示中' },
-  { id: 'hidden', label: '已隐藏' }
+  { id: 'hidden', label: '已隐藏' },
+  // 2026-10-13 心愿签语音：全部人工试听后才公开（产品负责人拍板）
+  { id: 'voice', label: '待试听' }
 ]
+
+const VOICE_LABEL = { pending: '声音待试听', approved: '声音已公开', rejected: '声音已驳回' }
 
 function decorate(row) {
   const item = row || {}
@@ -29,6 +33,8 @@ function decorate(row) {
   return {
     ...item,
     statusLabel: item.status === 'hidden' ? '已隐藏' : '展示中',
+    voiceLabel: VOICE_LABEL[item.voiceStatus] || '',
+    voiceSecText: item.voiceDuration ? `${item.voiceDuration} 秒` : '',
     timeText: t && !Number.isNaN(t.getTime())
       ? `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
       : ''
@@ -60,6 +66,7 @@ Page({
     tipTone: 'info',
     tipText: '',
     removePendingId: '',
+    playingId: '',
     busyId: '',
     statusTabs: STATUS_TABS,
     activeStatus: '',
@@ -143,7 +150,9 @@ Page({
     if (this.data.loading) return
     this.setData({ loading: true, listError: false, tipText: '', removePendingId: '' })
     try {
-      const payload = { action: 'staffList', productKey: this.data.productKey, status: this.data.activeStatus }
+      const voiceTab = this.data.activeStatus === 'voice'
+      const payload = { action: 'staffList', productKey: this.data.productKey, status: voiceTab ? '' : this.data.activeStatus }
+      if (voiceTab) payload.voice = 'pending'
       const keyword = String(this.data.keyword || '').trim()
       if (keyword) payload.keyword = keyword
       const [listRes, statsRes] = await Promise.all([
@@ -217,6 +226,50 @@ Page({
     } finally {
       this.setData({ busyId: '' })
     }
+  },
+
+  /** 试听：同一时间只放一段；再点同一条 = 停 */
+  playVoice(e) {
+    const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
+    const row = (this.data.list || []).find((r) => r._id === id)
+    if (!row || !row.voiceUrl) return
+    if (!this._audio) {
+      this._audio = wx.createInnerAudioContext({ useWebAudioImplement: false })
+      this._audio.obeyMuteSwitch = false
+      this._audio.onEnded(() => this.setData({ playingId: '' }))
+      this._audio.onStop(() => this.setData({ playingId: '' }))
+      this._audio.onError(() => this.setData({ playingId: '', tipTone: 'warn', tipText: '这段声音放不出来，可下拉刷新后再试' }))
+    }
+    if (this.data.playingId === id) { this._audio.stop(); return }
+    this._audio.stop()
+    this._audio.src = row.voiceUrl
+    this._audio.play()
+    this.setData({ playingId: id })
+  },
+
+  async reviewVoice(e) {
+    const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
+    const decision = String((e.currentTarget.dataset && e.currentTarget.dataset.decision) || '')
+    if (!id || !decision || this.data.busyId) return
+    if (this._audio && this.data.playingId === id) this._audio.stop()
+    this.setData({ busyId: id })
+    try {
+      const result = await this.callFn({ action: 'staffSetVoice', id, decision })
+      this.setData({ tipTone: 'info', tipText: result.msg || '已处理' })
+      await this.refresh()
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '处理失败') })
+    } finally {
+      this.setData({ busyId: '' })
+    }
+  },
+
+  onHide() {
+    if (this._audio) this._audio.stop()
+  },
+
+  onUnload() {
+    if (this._audio) { this._audio.destroy(); this._audio = null }
   },
 
   removeWish(e) {

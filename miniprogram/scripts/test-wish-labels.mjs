@@ -68,6 +68,8 @@ async function runChecks() {
 
   /* ---------------- 页面加载 ---------------- */
   const calls = []
+  const deleted = []
+  let lastPost = null
   const store = {}
   let flags = { showMaShangYou: true }
   let flagsThrow = false
@@ -85,7 +87,10 @@ async function runChecks() {
     navigateTo: () => {},
     stopPullDownRefresh: () => {},
     cloud: {
+      uploadFile: async () => ({ fileID: 'cloud://env.x/wish-voice/1_a.mp3' }),
+      deleteFile: async ({ fileList }) => { deleted.push(...fileList); return {} },
       callFunction: async ({ data }) => {
+        lastPost = data.action === 'post' ? data : lastPost
         calls.push(data.action)
         if (data.action === 'list') return { result: { success: true, list: [{ _id: 'w0000aaaa', text: '马上有钱', nickname: '藏家', createTime: Date.now() - 60000, echoCount: 2 }, { _id: 'w0000bbbb', text: '马上有晴', source: 'seed' }], inspiration: ['马上有闲', '马上有缘'] } }
         if (data.action === 'mine') return { result: { success: true, list: mineList } }
@@ -151,6 +156,15 @@ async function runChecks() {
   const r3 = await page.submitWish()
   const first = page.data.columns[0][0]
   ok('C3 成功：新签置顶并标「刚别上」、额度 −1、弹层收起、草稿清空', r3 === true && first && first._id === 'srv0001' && first.fresh === true && first.isMine === true && page.data.quota.left === left0 - 1 && page.data.composeOpen === false && page.data.draft === '')
+  // 语音：失败要删掉刚传的文件；成功带上 fileID 与时长，新签对作者标「声音审核中」
+  postResult = { success: false, msg: '慢一点' }
+  page.setData({ draft: '马上有回音', voicePath: '/tmp/v.mp3', voiceSec: 8, quota: { used: 1, left: 4, cap: 5, exhausted: false } })
+  await page.submitWish()
+  ok('C5 带声音但 post 失败：删掉刚上传的声音、录音保留', deleted.includes('cloud://env.x/wish-voice/1_a.mp3') && page.data.voicePath === '/tmp/v.mp3')
+  postResult = { success: true, _id: 'srv0002', nickname: '小满' }
+  await page.submitWish()
+  const vfresh = page._wall[0]
+  ok('C6 带声音成功：post 带 fileID + 时长；新签作者可听、标声音审核中；录音清空', lastPost && lastPost.voiceFileID === 'cloud://env.x/wish-voice/1_a.mp3' && lastPost.voiceDuration === 8 && vfresh._id === 'srv0002' && vfresh.voiceTag === '声音审核中' && vfresh.voiceUrl === '/tmp/v.mp3' && page.data.voicePath === '')
   page.setData({ quota: { used: 5, left: 0, cap: 5, exhausted: true }, draft: '马上有光' })
   calls.length = 0
   const r4 = await page.submitWish()
@@ -208,6 +222,16 @@ async function runChecks() {
     const pub = fn.mapPublicItem({ _id: 'a', text: 't', _openid: 'o', openid: 'o', status: 'visible', echoCount: 5 })
     ok('F4 公开行只多回 echoCount，不回 openid / status', pub.echoCount === 5 && !('openid' in pub) && !('_openid' in pub) && !('status' in pub))
   }
+  if (fn) {
+    ok('F6 语音入参：只收 wish-voice/ 下、1–15 秒，新签一律待试听', fn.parseVoice({ voiceFileID: 'cloud://e/wish-voice/a.mp3', voiceDuration: 8 }).voiceStatus === 'pending' &&
+      !!fn.parseVoice({ voiceFileID: 'cloud://e/gift/voice/a.mp3', voiceDuration: 8 }).error &&
+      !!fn.parseVoice({ voiceFileID: 'cloud://e/wish-voice/a.mp3', voiceDuration: 16 }).error && fn.parseVoice({}) === null)
+    const pend = fn.mapPublicItem({ _id: 'a', text: 't', voiceFileID: 'cloud://e/wish-voice/a.mp3', voiceDuration: 8, voiceStatus: 'pending' })
+    const appr = fn.mapPublicItem({ _id: 'a', text: 't', voiceFileID: 'cloud://e/wish-voice/a.mp3', voiceDuration: 8, voiceStatus: 'approved' })
+    ok('F7 公开行：待试听的声音不露、通过的只给时长不给 fileID', pend.voiceDuration === 0 && appr.voiceDuration === 8 && !('voiceFileID' in appr))
+  }
+  ok('F8 试听结论条件更新（只改 pending）、驳回删文件', /where\(\{ _id: id, voiceStatus: VOICE_PENDING \}\)\.update/.test(fnSrc) && /cloud\.deleteFile\(\{ fileList: \[doc\.voiceFileID\] \}\)/.test(fnSrc))
+  ok('F9 公开列表只给已通过的声音换链接', /attachVoiceUrls\(composed\.map\(mapPublicItem\), composed, \(d\) => d\.voiceStatus === VOICE_APPROVED\)/.test(fnSrc))
   const rules = JSON.parse(readFileSync(join(MP, '../cloudbase/rules/wish_wall_echoes.json'), 'utf8'))
   ok('F5 echo 集合客户端不可读写', rules.read === false && rules.write === false)
   return fails
@@ -223,6 +247,10 @@ const INJECTIONS = [
   { name: '今日一签改实心钮', file: PAGE + '.wxml', find: '<text class="wl-link" bindtap="goQian"', replace: '<view class="wl-primary" bindtap="goQianX"></view><text class="wl-link" bindtap="goQian"' },
   { name: '分享带 cloud:// 封面', file: PAGE + '.js', find: "    return { title: (ex && ex.line) || '马上有 · 心愿签', path }", replace: "    return { title: (ex && ex.line) || '马上有 · 心愿签', path, imageUrl: this.data.cover }" },
   { name: '每次都加计数（不判重）', file: FN, find: '  if (!already) await db.collection(COLLECTION)', replace: '  if (true) await db.collection(COLLECTION)' },
+  { name: '语音路径不校验', file: FN, find: "fileID.indexOf(VOICE_DIR) === -1", replace: 'false' },
+  { name: '公开行露出待试听的声音', file: FN, find: 'voiceDuration: doc.voiceStatus === VOICE_APPROVED && doc.voiceFileID ?', replace: 'voiceDuration: doc.voiceFileID ?' },
+  { name: '发布失败不删声音', file: PAGE + '.js', find: '      if (voiceFileID) deleteCloudVoice(voiceFileID)\n', replace: '' },
+  { name: '公开领链接不看试听状态', file: FN, find: "composed, (d) => d.voiceStatus === VOICE_APPROVED)", replace: 'composed, () => true)' },
   { name: '公开行回 openid', file: FN, find: '    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0)\n  }', replace: '    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0),\n    openid: doc.openid\n  }' }
 ]
 

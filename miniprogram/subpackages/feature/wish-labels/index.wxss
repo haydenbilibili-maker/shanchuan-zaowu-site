@@ -113,3 +113,21 @@ page {
 .wl-card-acts { display: flex; gap: 20rpx; margin-top: 40rpx; }
 .wl-share { flex: 1; margin: 0; padding: 0; min-height: 72rpx; line-height: 72rpx; border-radius: 36rpx; background: transparent; border: 1rpx solid rgba(196,167,108,.36); color: var(--color-text-body); font-size: 26rpx; letter-spacing: .08em; }
 .wl-share::after { border: 0; }
+
+/* 语音（2026-10-13 选附 ≤ 15 秒）：录音条 = 描边次级（实心金仍只给「别上墙」）；签上播放钮 = 纸面上的细铜小签 */
+.wl-voice { margin-top: 28rpx; }
+.wl-voice-hold { display: flex; align-items: center; justify-content: center; gap: 14rpx; min-height: 80rpx; border: 1rpx dashed rgba(196,167,108,.45); border-radius: 40rpx; font-size: 24rpx; color: var(--brass-300); letter-spacing: .04em; }
+.wl-voice-hold.is-rec { border-style: solid; border-color: rgba(212,188,133,.85); background: rgba(196,167,108,.1); color: #F0E2B8; }
+.wl-voice-dot { width: 14rpx; height: 14rpx; border-radius: 50%; background: var(--brass-400); }
+.wl-voice-hold.is-rec .wl-voice-dot { background: #E8927C; animation: wl-rec 1s ease-in-out infinite; }
+@keyframes wl-rec { 50% { opacity: .3; } }
+.wl-voice-chip { display: flex; align-items: center; gap: 24rpx; }
+.wl-voice-play { flex: 1; display: flex; align-items: center; justify-content: center; gap: 12rpx; min-height: 80rpx; border: 1rpx solid rgba(196,167,108,.55); border-radius: 40rpx; font-size: 24rpx; color: var(--brass-300); background: rgba(196,167,108,.06); }
+.wl-voice-play.is-on { background: rgba(196,167,108,.16); }
+.wl-voice-del { flex-shrink: 0; padding: 16rpx 8rpx; font-size: 24rpx; color: var(--color-text-secondary); }
+.wl-voice-note { display: block; margin-top: 12rpx; text-align: center; font-size: 20rpx; color: var(--color-text-secondary); }
+.wl-voice-ico { width: 0; height: 0; border-top: 9rpx solid transparent; border-bottom: 9rpx solid transparent; border-left: 14rpx solid currentColor; }
+.wl-label-voice { display: inline-flex; align-items: center; gap: 10rpx; margin: -6rpx 0 16rpx; padding: 6rpx 16rpx; min-height: 44rpx; border: 1rpx solid rgba(107,90,36,.45); border-radius: 22rpx; font-family: var(--font-mono); font-size: 18rpx; color: var(--brass-700); }
+.wl-label-voice.is-on { background: rgba(196,167,108,.22); }
+.wl-label-voice.is-big { display: flex; justify-content: center; margin: 0 0 24rpx; min-height: 64rpx; font-family: inherit; font-size: 24rpx; }
+.wl-paper-note { display: block; margin: -8rpx 0 20rpx; text-align: center; font-size: 20rpx; color: #7C6E55; }

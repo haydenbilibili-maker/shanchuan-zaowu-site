@@ -44,8 +44,29 @@ function toLabel(row, now, echoed) {
     echoCount: Math.max(0, parseInt(r.echoCount, 10) || 0),
     echoed: !!(echoed && echoed.has(id)),
     isMine: false,
-    hidden: false
+    hidden: false,
+    // 语音：公开列表只在试听通过后带 voiceUrl（临时链接）
+    voiceSec: Math.max(0, parseInt(r.voiceDuration, 10) || 0),
+    voiceUrl: String(r.voiceUrl || ''),
+    voiceText: (parseInt(r.voiceDuration, 10) || 0) > 0 ? voiceLabel(r.voiceDuration) : '',
+    voiceStatus: '',
+    voiceTag: ''
   }
+}
+
+/** 「声音审核中 / 声音未通过」只给作者自己看 */
+function voiceTag(label) {
+  const l = label || {}
+  if (!l.isMine) return ''
+  if (l.voiceStatus === 'pending') return '声音审核中'
+  if (l.voiceStatus === 'rejected') return '声音未通过'
+  return ''
+}
+
+/** 0:08 */
+function voiceLabel(sec) {
+  const n = Math.max(0, Math.floor(Number(sec) || 0))
+  return `${Math.floor(n / 60)}:${n % 60 < 10 ? '0' : ''}${n % 60}`
 }
 
 /** 两列错落：按序交替入列（与旧墙一致的确定性，不做测高） */
@@ -64,8 +85,11 @@ function mineToLabels(rows, rawRows) {
     author: r.nickname || '我',
     date: labelDate(raw[i] && raw[i].createTime),
     echoCount: Math.max(0, parseInt(raw[i] && raw[i].echoCount, 10) || 0),
-    echoed: false
-  }))
+    echoed: false,
+    voiceSec: Math.max(0, parseInt(raw[i] && raw[i].voiceDuration, 10) || 0),
+    voiceUrl: String((raw[i] && raw[i].voiceUrl) || ''),
+    voiceStatus: String((raw[i] && raw[i].voiceStatus) || '')
+  })).map((l) => Object.assign(l, { voiceTag: voiceTag(l), voiceText: l.voiceSec ? voiceLabel(l.voiceSec) : '' }))
 }
 
 function readEchoed(storage) {
@@ -91,6 +115,8 @@ module.exports = {
   labelDate,
   toLabel,
   splitColumns,
+  voiceTag,
+  voiceLabel,
   mineToLabels,
   readEchoed,
   writeEchoed

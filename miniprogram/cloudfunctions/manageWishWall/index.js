@@ -54,6 +54,50 @@ const COLLECTION = 'wish_wall_messages'
  * 集合规则 read:false / write:false（只经本函数）。不把点过的人写进签文档 —— 签集合是 read:true。
  */
 const ECHO_COLLECTION = 'wish_wall_echoes'
+/**
+ * 心愿签语音（2026-10-13 产品负责人拍板：文字必填、语音选附、≤ 15 秒、**全部人工试听**后才公开）。
+ * 只收本小程序上传到 wish-voice/ 下的云文件；新签语音一律 pending，公开列表只回已通过的
+ * **临时播放链接**（不回 fileID）；驳回即删文件、清字段，文字照常在墙上。
+ */
+const VOICE_MAX_SEC = 15
+const VOICE_DIR = '/wish-voice/'
+const VOICE_PENDING = 'pending'
+const VOICE_APPROVED = 'approved'
+const VOICE_REJECTED = 'rejected'
+
+/** 入参 → 语音字段；未带语音返回 null，带了但不合法返回 { error } */
+function parseVoice(event) {
+  const fileID = String((event && event.voiceFileID) || '').trim()
+  if (!fileID) return null
+  const sec = parseInt(event && event.voiceDuration, 10) || 0
+  if (fileID.indexOf('cloud://') !== 0 || fileID.indexOf(VOICE_DIR) === -1) return { error: '这段声音没传好，请重录一次' }
+  if (sec < 1 || sec > VOICE_MAX_SEC) return { error: `声音最长 ${VOICE_MAX_SEC} 秒` }
+  return { voiceFileID: fileID, voiceDuration: sec, voiceStatus: VOICE_PENDING }
+}
+
+/** 给行补临时播放链接：只对 pick(doc) 为真的文档换链接；换不到就当没有声音（不报错） */
+async function attachVoiceUrls(rows, docs, pick) {
+  const byId = new Map((docs || []).map((d) => [String(d._id), d]))
+  const want = []
+  ;(rows || []).forEach((r) => {
+    const d = byId.get(String(r._id))
+    if (d && d.voiceFileID && pick(d)) want.push(d.voiceFileID)
+  })
+  if (!want.length) return rows
+  let urls = {}
+  try {
+    const res = await cloud.getTempFileURL({ fileList: Array.from(new Set(want)) })
+    ;((res && res.fileList) || []).forEach((f) => { if (f && f.tempFileURL && (!f.status || f.status === 0)) urls[f.fileID] = f.tempFileURL })
+  } catch (e) {
+    console.warn('wish voice temp url failed:', e && e.message)
+    urls = {}
+  }
+  return rows.map((r) => {
+    const d = byId.get(String(r._id))
+    const url = d && d.voiceFileID && pick(d) ? urls[d.voiceFileID] : ''
+    return url ? Object.assign({}, r, { voiceUrl: url }) : r
+  })
+}
 const PERMISSION = 'manageContentDisplayFlags'
 
 /** 祈福墙作用域：当前只挂在「马上有」上，字段留出为后续「为全站拓展」预留 */
@@ -318,7 +362,9 @@ function mapPublicItem(doc) {
     source: doc.source || SOURCE_USER,
     createTime: doc.createTime || doc._createTime || null,
     // 只回计数，不回谁点过（最小暴露）
-    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0)
+    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0),
+    // 语音只在试听通过后公开：只回时长，播放链接由 attachVoiceUrls 另补（不回 fileID）
+    voiceDuration: doc.voiceStatus === VOICE_APPROVED && doc.voiceFileID ? Math.max(0, parseInt(doc.voiceDuration, 10) || 0) : 0
   }
 }
 
@@ -371,7 +417,10 @@ function mapStaffItem(doc) {
     source: doc.source || 'user',
     openid: doc._openid || doc.openid || '',
     productKey: doc.productKey || DEFAULT_PRODUCT_KEY,
-    createTime: doc.createTime || doc._createTime || null
+    createTime: doc.createTime || doc._createTime || null,
+    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0),
+    voiceStatus: doc.voiceFileID || doc.voiceStatus === VOICE_REJECTED ? String(doc.voiceStatus || VOICE_PENDING) : '',
+    voiceDuration: doc.voiceFileID ? Math.max(0, parseInt(doc.voiceDuration, 10) || 0) : 0
   }
 }
 
@@ -486,7 +535,8 @@ async function listPublic(event) {
           return []
         })
     ])
-    const rows = composeWallList(realRes.data || [], seedDocs, { limit, nowMs: Date.now() }).map(mapPublicItem)
+    const composed = composeWallList(realRes.data || [], seedDocs, { limit, nowMs: Date.now() })
+    const rows = await attachVoiceUrls(composed.map(mapPublicItem), composed, (d) => d.voiceStatus === VOICE_APPROVED)
     return { success: true, list: rows, inspiration, productKey }
   } catch (e) {
     // P1-1：查询失败**不是**"墙上一条都没有"。旧写法 `success:true + list:[]` 会让页面
@@ -505,6 +555,8 @@ async function postWish(event, openid) {
   if (!checked.ok) return { success: false, msg: checked.msg }
 
   const productKey = normalizeProductKey(event && event.productKey)
+  const voice = parseVoice(event)
+  if (voice && voice.error) return { success: false, code: 'VOICE_INVALID', msg: voice.error }
 
   const sec = await checkTextRisky(openid, checked.text)
   if (!sec.ok) {
@@ -553,6 +605,7 @@ async function postWish(event, openid) {
         pinned: false,
         source: SOURCE_USER,
         securityChecked: securityEnabled(),
+        ...(voice || {}),
         createTime: now,
         updateTime: now
       }
@@ -562,7 +615,8 @@ async function postWish(event, openid) {
       _id: added._id,
       text: checked.text,
       nickname: profile.nickname,
-      msg: '心愿已挂上墙'
+      voiceStatus: voice ? VOICE_PENDING : '',
+      msg: voice ? '心愿已挂上墙，声音试听通过后公开' : '心愿已挂上墙'
     }
   } catch (e) {
     console.error('wish wall post failed:', e)
@@ -582,7 +636,10 @@ async function listMine(event, openid) {
       .orderBy('createTime', 'desc')
       .limit(LIST_MAX)
       .get()
-    return { success: true, list: (res.data || []).map(mapStaffItem) }
+    const docs = res.data || []
+    // 自己的声音在任何试听状态下都能听（被驳回的文件已删，自然没有链接）
+    const list = await attachVoiceUrls(docs.map(mapStaffItem), docs, () => true)
+    return { success: true, list }
   } catch (e) {
     // 与 listPublic 同一原则（P1-1）：读失败 ≠「你还没写过」。
     // 旧写法 success:true + list:[] 会让「我的心愿」显示「你还没在这面墙上写过心愿」——
@@ -608,6 +665,8 @@ async function staffList(event, openid) {
   const limit = Math.min(100, Math.max(1, parseInt((event && event.limit) || 50, 10) || 50))
   const where = { productKey }
   if (status === STATUS_VISIBLE || status === STATUS_HIDDEN) where.status = status
+  // 「待试听」：只看带声音且未审的
+  if (String((event && event.voice) || '') === VOICE_PENDING) where.voiceStatus = VOICE_PENDING
 
   try {
     const res = await db.collection(COLLECTION)
@@ -615,7 +674,8 @@ async function staffList(event, openid) {
       .orderBy('createTime', 'desc')
       .limit(limit)
       .get()
-    let rows = (res.data || []).map(mapStaffItem)
+    const docs = res.data || []
+    let rows = await attachVoiceUrls(docs.map(mapStaffItem), docs, (d) => d.voiceStatus === VOICE_PENDING || d.voiceStatus === VOICE_APPROVED)
     if (keyword) rows = rows.filter((r) => r.text.indexOf(keyword) !== -1)
     return { success: true, list: rows, productKey }
   } catch (e) {
@@ -642,6 +702,33 @@ async function staffSetStatus(event, openid) {
   } catch (e) {
     return { success: false, msg: e.message || '更新失败' }
   }
+}
+
+/**
+ * 试听结论：approved → 公开播放；rejected → 删云文件、清 fileID，文字照常（只动声音）。
+ * 只对 pending 的签生效，用条件更新避免两人同时处理互相覆盖。
+ */
+async function staffSetVoice(event, openid) {
+  const guard = await requireManager(event, openid)
+  if (!guard.ok) return { success: false, code: guard.code, msg: guard.msg || '无权限' }
+  const id = String((event && event.id) || '').trim()
+  const decision = String((event && event.decision) || '').trim()
+  if (!id) return { success: false, msg: '缺少 id' }
+  if ([VOICE_APPROVED, VOICE_REJECTED].indexOf(decision) === -1) return { success: false, msg: '结论不合法' }
+  const res = await db.collection(COLLECTION).doc(id).get().catch(() => null)
+  const doc = res && res.data
+  if (!doc || !doc.voiceFileID) return { success: false, msg: '这张签没有声音' }
+  if (doc.voiceStatus !== VOICE_PENDING) return { success: true, id, voiceStatus: doc.voiceStatus, already: true, msg: '已处理过' }
+  const by = openid || (guard.actor && guard.actor.openid) || ''
+  const data = { voiceStatus: decision, voiceReviewedBy: by, voiceReviewedAt: db.serverDate(), updateTime: db.serverDate() }
+  if (decision === VOICE_REJECTED) data.voiceFileID = ''
+  const upd = await db.collection(COLLECTION).where({ _id: id, voiceStatus: VOICE_PENDING }).update({ data })
+  const updated = upd && upd.stats ? upd.stats.updated : 0
+  if (!updated) return { success: true, id, already: true, msg: '已被其他人处理' }
+  if (decision === VOICE_REJECTED) {
+    await cloud.deleteFile({ fileList: [doc.voiceFileID] }).catch((e) => console.warn('wish voice delete failed:', e && e.message))
+  }
+  return { success: true, id, voiceStatus: decision, msg: decision === VOICE_APPROVED ? '声音已公开' : '声音已驳回并删除' }
 }
 
 async function staffRemove(event, openid) {
@@ -916,6 +1003,7 @@ exports.main = async (event) => {
       case 'staffList': return await staffList(event, openid)
       case 'staffSetStatus': return await staffSetStatus(event, openid)
       case 'staffRemove': return await staffRemove(event, openid)
+      case 'staffSetVoice': return await staffSetVoice(event, openid)
       case 'staffStats': return await staffStats(event, openid)
       case 'staffWalls': return await staffWalls(event, openid)
       case 'staffSeedAi': return await staffSeedAi(event, openid)
@@ -935,6 +1023,8 @@ module.exports.todayRangeShanghai = todayRangeShanghai
 module.exports.shanghaiDayKey = shanghaiDayKey
 module.exports.composeWallList = composeWallList
 module.exports.echoKey = echoKey
+module.exports.parseVoice = parseVoice
+module.exports.VOICE_MAX_SEC = VOICE_MAX_SEC
 module.exports.mapPublicItem = mapPublicItem
 module.exports.SEED_RESERVE_RATIO = SEED_RESERVE_RATIO
 module.exports.SEED_ROTATE_MS = SEED_ROTATE_MS

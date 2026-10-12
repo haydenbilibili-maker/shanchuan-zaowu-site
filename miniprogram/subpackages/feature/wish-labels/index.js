@@ -25,6 +25,27 @@ const { getCustomNavLayout } = require('../utils/customNav')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const { fetchContentDisplayFlags, toastWishWallClosed } = require('../../../utils/contentDisplayFlags')
 const L = require('./labels')
+// 录音 / 播放复用礼赠语音件（同在 feature 分包）；心愿签上限 15 秒（产品负责人拍板），全部人工试听后才公开
+const {
+  ensureInnerAudioOption,
+  mapRecordError,
+  getFileSize,
+  deleteCloudVoice,
+  createGiftRecorder,
+  createGiftPlayer
+} = require('../gift/giftVoice')
+const VOICE_MAX_SEC = 15
+const VOICE_MIN_MS = 600
+const VOICE_MIN_BYTES = 800
+const MIN_HOLD_MS = 280
+
+function uploadWishVoice(tempFilePath) {
+  const cloudPath = `wish-voice/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp3`
+  return wx.cloud.uploadFile({ cloudPath, filePath: tempFilePath }).then((res) => {
+    if (!res || !res.fileID) throw new Error('upload empty')
+    return res.fileID
+  })
+}
 
 const FN = 'manageWishWall'
 const INSPIRATION_MAX = 4
@@ -66,6 +87,13 @@ Page({
     card: null,
     echoBusy: false,
     showRegisterDialog: false,
+    voiceMax: VOICE_MAX_SEC,
+    voicePath: '',
+    voiceSec: 0,
+    voiceText: '',
+    voiceRecording: false,
+    voiceRecordSec: 0,
+    playingId: '',
     toastShow: false,
     toastTitle: ''
   },
@@ -257,7 +285,107 @@ Page({
 
   closeCompose() {
     if (this.data.posting) return
+    this.stopPlay()
     this.setData({ composeOpen: false })
+  },
+
+  /* ------------------------------ 语音（选附，≤15 秒） ------------------------------ */
+
+  _initVoice() {
+    ensureInnerAudioOption()
+    this._recorder = createGiftRecorder({
+      maxMs: VOICE_MAX_SEC * 1000,
+      onStart: () => {
+        if (!this._voiceHolding) { if (this._recorder) this._recorder.cancel(); return }
+        this.setData({ voiceRecording: true, voiceRecordSec: 0 })
+      },
+      onTick: (sec) => this.setData({ voiceRecordSec: sec }),
+      onStop: (payload) => {
+        this._voiceHolding = false
+        this.setData({ voiceRecording: false, voiceRecordSec: 0 })
+        this._onVoiceRecorded(payload)
+      },
+      onError: (err) => {
+        this._voiceHolding = false
+        this.setData({ voiceRecording: false, voiceRecordSec: 0 })
+        const mapped = mapRecordError(err)
+        if (!mapped.authDenied) this.toast(mapped.toast || '录音未能开始')
+      }
+    })
+    this._player = createGiftPlayer({
+      onEnded: () => this.setData({ playingId: '' }),
+      onStop: () => this.setData({ playingId: '' }),
+      onPause: () => this.setData({ playingId: '' }),
+      onError: () => { this.setData({ playingId: '' }); this.toast('这段声音暂时放不出来') }
+    })
+  },
+
+  onVoiceHoldStart() {
+    if (this.data.posting || this._voiceHolding) return
+    if (this._recorder && this._recorder.isBusy()) return
+    if (!this._recorder) this._initVoice()
+    this.stopPlay()
+    this._voiceHolding = true
+    this._voiceTouchAt = Date.now()
+    this._recorder.start().then((started) => {
+      if (!started) { this._voiceHolding = false; this.setData({ voiceRecording: false }) }
+      else if (!this._voiceHolding && this._recorder) this._recorder.cancel()
+    })
+  },
+
+  onVoiceHoldEnd() {
+    if (!this._voiceHolding && !(this._recorder && this._recorder.isBusy())) return
+    const held = Date.now() - (this._voiceTouchAt || 0)
+    this._voiceHolding = false
+    if (!this._recorder) return
+    if (held < MIN_HOLD_MS) { this._recorder.cancel(); this.toast('按住说话，松开结束'); return }
+    this._recorder.stop()
+  },
+
+  onVoiceHoldCancel() {
+    this._voiceHolding = false
+    if (this._recorder) this._recorder.cancel()
+    this.setData({ voiceRecording: false, voiceRecordSec: 0 })
+  },
+
+  async _onVoiceRecorded(payload) {
+    if (!payload || payload.discarded) return
+    const ms = Math.max(0, payload.durationMs || 0)
+    const sec = Math.min(VOICE_MAX_SEC, Math.max(ms >= VOICE_MIN_MS ? 1 : 0, payload.durationSec || 0))
+    if (!payload.tempFilePath || ms < VOICE_MIN_MS || sec < 1) { this.toast('录音太短，按住多说一会'); return }
+    const size = await getFileSize(payload.tempFilePath)
+    if (size > 0 && size < VOICE_MIN_BYTES) { this.toast('没录到声音，对着手机再说一次'); return }
+    this.setData({ voicePath: payload.tempFilePath, voiceSec: sec, voiceText: L.voiceLabel(sec) })
+  },
+
+  onVoiceClear() {
+    this.stopPlay()
+    this.setData({ voicePath: '', voiceSec: 0, voiceText: '' })
+  },
+
+  onVoicePreview() {
+    if (!this.data.voicePath) return
+    this.playSrc('draft', this.data.voicePath)
+  },
+
+  /** 签上的播放钮（catchtap，不打开详情） */
+  playLabel(e) {
+    const label = this.findLabel(String(e.currentTarget.dataset.id || ''))
+    if (!label || !label.voiceUrl) return
+    this.playSrc(label._id, label.voiceUrl)
+  },
+
+  playSrc(id, src) {
+    if (!this._player) this._initVoice()
+    if (this.data.playingId === id) { this.stopPlay(); return }
+    this.stopPlay()
+    this.setData({ playingId: id })
+    this._player.play(src)
+  },
+
+  stopPlay() {
+    if (this._player) this._player.stop()
+    if (this.data.playingId) this.setData({ playingId: '' })
   },
 
   async loadWriter() {
@@ -316,18 +444,31 @@ Page({
     }
     this._submitting = false
     this.setData({ posting: true })
+    this.stopPlay()
+    // 语音在「别上墙」时才上传（录了不发不留云端文件）；post 失败把刚传的删掉
+    let voiceFileID = ''
+    if (this.data.voicePath) {
+      try {
+        voiceFileID = await uploadWishVoice(this.data.voicePath)
+      } catch (e) {
+        this.setData({ posting: false })
+        this.toast('声音没传上去，可删掉声音只发文字，或稍后再试')
+        return false
+      }
+    }
     let result = null
     try {
-      result = await this.callFn({
+      result = await this.callFn(Object.assign({
         action: 'post',
         productKey: this.data.productKey,
         productId: this.data.productId,
         text: checked.text
-      })
+      }, voiceFileID ? { voiceFileID, voiceDuration: this.data.voiceSec } : {}))
     } catch (e) {
       result = { success: false }
     }
     if (!result || !result.success) {
+      if (voiceFileID) deleteCloudVoice(voiceFileID)
       this.setData({ posting: false })
       this.toast((result && result.msg) || '没能别上墙，请稍后再试')
       return false
@@ -335,6 +476,11 @@ Page({
     const id = String(result._id || `local-${Date.now()}`)
     const fresh = L.toLabel({ _id: id, text: checked.text, nickname: result.nickname || this.data.writer || '我', createTime: Date.now() }, Date.now(), this._echoed)
     fresh.isMine = true
+    if (voiceFileID) {
+      // 作者自己马上能听（本地文件）；公开要等试听通过
+      Object.assign(fresh, { voiceSec: this.data.voiceSec, voiceText: L.voiceLabel(this.data.voiceSec), voiceUrl: this.data.voicePath, voiceStatus: 'pending' })
+      fresh.voiceTag = L.voiceTag(fresh)
+    }
     this._wall = [fresh].concat(this._wall || [])
     this._mine = [fresh].concat(this._mine || [])
     const q = this.data.quota
@@ -343,13 +489,17 @@ Page({
       composeOpen: false,
       draft: '',
       draftCount: 0,
+      voicePath: '',
+      voiceSec: 0,
+      voiceText: '',
       freshId: id,
       viewMode: 'latest',
       quota: Object.assign({}, q, { used: q.used + 1, left: Math.max(0, q.left - 1), exhausted: q.used + 1 >= q.cap })
     })
     this.applyView()
     try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
-    trackBehavior('wish_wall_post', 'ok', 'ok')
+    trackBehavior('wish_wall_post', 'ok', voiceFileID ? 'voice' : 'ok')
+    if (voiceFileID) this.toast('已别上墙，声音试听通过后公开')
     // 弹层收起后再滚到墙，让「刚别上」那张的落签动效在视野里；离页即取消
     this._wallTimer = setTimeout(() => { this._wallTimer = null; if (!this._unloaded) this.goWall() }, 320)
     return true
@@ -400,6 +550,7 @@ Page({
   },
 
   closeLabel() {
+    this.stopPlay()
     this.setData({ card: null })
   },
 
@@ -461,8 +612,16 @@ Page({
     return { title: (ex && ex.line) || '马上有 · 心愿签', path }
   },
 
+  onHide() {
+    this.onVoiceHoldCancel()
+    this.stopPlay()
+  },
+
   onUnload() {
     this._unloaded = true
+    this._voiceHolding = false
+    if (this._recorder) { this._recorder.destroy(); this._recorder = null }
+    if (this._player) { this._player.destroy(); this._player = null }
     if (this._wallTimer) { clearTimeout(this._wallTimer); this._wallTimer = null }
   },
 

@@ -100,9 +100,14 @@
             <text class="wl-label-no">{{item.no}}</text>
             <text class="wl-label-tag" wx:if="{{item.fresh}}">刚别上</text>
             <text class="wl-label-tag" wx:elif="{{item.hidden}}">已收起</text>
+            <text class="wl-label-tag" wx:elif="{{item.voiceTag}}">{{item.voiceTag}}</text>
             <text class="wl-label-tag" wx:elif="{{item.pinned}}">置顶</text>
           </view>
           <text class="wl-label-text {{item.long ? 'is-long' : ''}}">{{item.text}}</text>
+          <view wx:if="{{item.voiceUrl}}" class="wl-label-voice {{playingId === item._id ? 'is-on' : ''}}" data-id="{{item._id}}" catchtap="playLabel" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button" aria-label="播放这段声音">
+            <view class="wl-voice-ico" aria-hidden="true"></view>
+            <text>{{item.voiceText}}</text>
+          </view>
           <view class="wl-label-by">
             <text class="wl-label-author">{{item.official ? '山海造物' : item.author}}</text>
             <text>{{item.echoCount ? item.echoCount + ' 人也想要' : item.timeText}}</text>
@@ -149,6 +154,30 @@
       <view class="wl-paper-field"><text class="k">别于</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
     </view>
   </view>
+  <!-- 语音（选附，≤ 15 秒；全部人工试听后才公开）：按住说话 → 试听 / 删除 -->
+  <view class="wl-voice">
+    <view
+      wx:if="{{!voicePath}}"
+      class="wl-voice-hold {{voiceRecording ? 'is-rec' : ''}}"
+      catchtouchstart="onVoiceHoldStart"
+      catchtouchend="onVoiceHoldEnd"
+      catchtouchcancel="onVoiceHoldCancel"
+      aria-role="button"
+      aria-label="按住录一段声音"
+    >
+      <view class="wl-voice-dot" aria-hidden="true"></view>
+      <text>{{voiceRecording ? '正在录 ' + voiceRecordSec + ' / ' + voiceMax + ' 秒 · 松开结束' : '按住附一段声音（' + voiceMax + ' 秒内，可不录）'}}</text>
+    </view>
+    <view wx:else class="wl-voice-chip">
+      <view class="wl-voice-play {{playingId === 'draft' ? 'is-on' : ''}}" bindtap="onVoicePreview" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button">
+        <view class="wl-voice-ico" aria-hidden="true"></view>
+        <text>{{playingId === 'draft' ? '正在播放' : '试听'}} · {{voiceText}}</text>
+      </view>
+      <text class="wl-voice-del" bindtap="onVoiceClear" aria-role="button">删除</text>
+    </view>
+    <text class="wl-voice-note">声音经馆方试听后公开，之前只有你自己听得到</text>
+  </view>
+
   <view class="wl-inspo" wx:if="{{inspiration.length}}">
     <text class="wl-inspo-k">灵感</text>
     <text class="wl-inspo-chip" wx:for="{{inspiration}}" wx:key="*this" data-text="{{item}}" bindtap="useInspiration" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
@@ -169,6 +198,11 @@
     <view class="wl-paper-top"><text>{{card.no || 'MA SHANG YOU'}}</text><text>{{card.date}}</text></view>
     <text class="wl-paper-ttl">心 愿 标 本 签</text>
     <text class="wl-paper-wish">{{card.text}}</text>
+    <view wx:if="{{card.voiceUrl}}" class="wl-label-voice is-big {{playingId === card._id ? 'is-on' : ''}}" data-id="{{card._id}}" catchtap="playLabel" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button">
+      <view class="wl-voice-ico" aria-hidden="true"></view>
+      <text>{{playingId === card._id ? '正在播放' : '听这段声音'}} · {{card.voiceText}}</text>
+    </view>
+    <text wx:elif="{{card.voiceTag}}" class="wl-paper-note">{{card.voiceTag}}：试听通过后其他人也能听到</text>
     <view class="wl-paper-grid">
       <view class="wl-paper-field"><text class="k">写签人</text><text class="v">{{card.official ? '山海造物' : card.author}}</text></view>
       <view class="wl-paper-field"><text class="k">别于</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
