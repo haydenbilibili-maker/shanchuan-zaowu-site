@@ -417,8 +417,8 @@
   </view>
 
   <!-- 价目「更多」操作（自定义底部弹层，不用原生弹框） -->
-  <view wx:if="{{sheet.show}}" class="sheet-mask" catchtouchmove="noop" bindtap="closeSheet">
-    <view class="sheet" catchtap="noop">
+  <view wx:if="{{sheet.show}}" class="ui-pop-mask" bindtap="closeSheet" catchtouchmove="true">
+    <view class="ui-pop-sheet sheet" catchtap="true">
       <view class="sheet-head">
         <view class="sheet-thumb">
           <image wx:if="{{sheet.thumb}}" class="pthumb-img" src="{{sheet.thumb}}" mode="aspectFill" />

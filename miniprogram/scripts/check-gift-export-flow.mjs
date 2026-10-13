@@ -362,11 +362,18 @@ function makeHarness() {
     const m = /z-index:\s*(\d+)/.exec(ruleOf(sel))
     return m ? Number(m[1]) : NaN
   }
-  const maskZ = zIndexOf('.pp-mask')
+  // 2026-10-13（弹层规范第 3 批）：预览遮罩已迁到全局 .ui-pop-mask（app.wxss），
+  // 本页 .pp-mask 不再自带 z-index —— 层级改从零件读，判据的**意图**（遮罩压过固定底栏）不变。
+  const partZ = (() => {
+    const app = stripComments(readSrc('miniprogram/app.wxss'))
+    const m = /\.ui-pop-mask\s*\{[^}]*z-index:\s*(\d+)/.exec(app)
+    return m ? Number(m[1]) : NaN
+  })()
+  const maskZ = Number.isFinite(zIndexOf('.pp-mask')) ? zIndexOf('.pp-mask') : partZ
   const footZ = zIndexOf('.foot-bar')
   check('★★ 预览遮罩必须**盖在页面固定底栏之上**（否则底栏压住保存/上传按钮）',
     Number.isFinite(maskZ) && Number.isFinite(footZ) && maskZ > footZ,
-    `.pp-mask z-index=${maskZ} 必须 > .foot-bar z-index=${footZ}`)
+    `预览遮罩 z-index=${maskZ}（ui-pop-mask）必须 > .foot-bar z-index=${footZ}`)
   check('★★ 预览区必须**可滚动**（wxml 用 scroll-view scroll-y；面板自身不滚）',
     /<scroll-view[^>]*scroll-y[^>]*class="pp-body"/.test(wxml))
   check('★★ 滚动区必须有**确定高度**（不能只靠 flex:1：内容图会把按钮顶出视口）',

@@ -877,18 +877,6 @@ page {
 }
 
 /* —— 详情弹窗（铜牌说明） —— */
-.achievement-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 24, 20, 0.88);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.22s ease, visibility 0.22s ease;
-}
 
 .achievement-modal.show {
   opacity: 1;
@@ -896,12 +884,8 @@ page {
 }
 
 .modal-content {
-  position: relative;
   width: 86%;
   max-width: 640rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--brass-800, #4D401A);
-  border-radius: 24rpx;
   padding: 40rpx 28rpx 32rpx;
   box-sizing: border-box;
 }
@@ -1128,18 +1112,6 @@ page {
 }
 
 /* —— 解锁提示 —— */
-.unlock-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 24, 20, 0.92);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.22s ease, visibility 0.22s ease;
-}
 
 .unlock-overlay.show {
   opacity: 1;
@@ -1153,9 +1125,6 @@ page {
   flex-direction: column;
   align-items: center;
   padding: 48rpx 32rpx 36rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--brass-800, #4D401A);
-  border-radius: 24rpx;
   box-sizing: border-box;
 }
 

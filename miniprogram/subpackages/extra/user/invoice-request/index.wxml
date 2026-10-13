@@ -144,8 +144,8 @@
   </scroll-view>
 
   <!-- 订单选择 sheet -->
-  <view class="sheet-mask {{showOrderSheet ? 'active' : ''}}" bindtap="closeOrderSheet" wx:if="{{showOrderSheet}}">
-    <view class="order-sheet" catchtap="noop">
+  <view class="ui-pop-mask sheet-mask {{showOrderSheet ? 'active' : ''}}" bindtap="closeOrderSheet" wx:if="{{showOrderSheet}}" catchtouchmove="true">
+    <view class="ui-pop-sheet order-sheet" catchtap="true">
       <view class="sheet-handle"></view>
       <view class="sheet-head">
         <text class="sheet-title">选择订单</text>

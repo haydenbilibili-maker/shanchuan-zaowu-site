@@ -313,21 +313,10 @@ page {
 }
 
 /* 订单 sheet */
-.sheet-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: rgba(26, 24, 20, 0.72);
-  display: flex;
-  align-items: flex-end;
-}
 
 .order-sheet {
   width: 100%;
   max-height: 78vh;
-  background: var(--color-bg-card, #1F1D1A);
-  border-radius: var(--radius-xl, 32rpx) var(--radius-xl, 32rpx) 0 0;
-  border-top: 1px solid rgba(77, 64, 26, 0.4);
   padding: 16rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   display: flex;

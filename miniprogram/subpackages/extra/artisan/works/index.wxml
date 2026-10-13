@@ -164,8 +164,8 @@
   </block>
   </block>
 
-  <view class="detail-mask" wx:if="{{detailOpen && detailItem}}" catchtap="closeDetail">
-    <view class="detail-sheet" catchtap="noop">
+  <view class="ui-pop-mask detail-mask" wx:if="{{detailOpen && detailItem}}" catchtap="closeDetail" catchtouchmove="true">
+    <view class="ui-pop-sheet detail-sheet" catchtap="true">
       <view class="detail-handle"></view>
       <view class="detail-cover">
         <image src="{{detailItem.coverImage}}" mode="aspectFill" />

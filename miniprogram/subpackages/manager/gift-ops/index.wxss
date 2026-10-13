@@ -445,20 +445,6 @@ page {
 /* 为什么加：印刷类导出的最大风险是"印错"（受礼人姓名/正文/规格），
    而原实现点一下就直接存相册并上传——没有回看机会。现在生成后先进这里。 */
 
-.pp-mask {
-  position: fixed;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  /* ⚠ 必须高于页面自己的固定底栏 `.foot-bar`（z-index:110）。原先这里是 60 ⇒ 底栏压在面板底部，
-     把「保存到相册 / 上传印刷文件」整排按钮盖住（真机截图里只见两条按钮上沿、只剩「刷新」）⇒
-     用户报「无法向下滑动到保存按钮」。遮罩盖在底栏之上才对（底栏属于下层页面，不该穿透预览层）。 */
-  z-index: 300;
-  display: flex;
-  align-items: flex-end;
-  background: rgba(10, 9, 8, 0.78);
-}
 
 .pp-panel {
   width: 100%;
@@ -470,9 +456,6 @@ page {
   padding: var(--space-4);
   /* 底部同时让开 home indicator 与「按钮行 + 提示行」的高度，避免按钮被挤出视口 */
   padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
-  background: var(--color-bg-card);
-  border-top: 1rpx solid var(--brass-500);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .pp-head {

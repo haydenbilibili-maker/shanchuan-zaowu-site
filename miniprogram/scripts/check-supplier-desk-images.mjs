@@ -360,7 +360,7 @@ async function runChecks() {
     const w = read(CENTER_WXML)
     const js = read(CENTER_JS)
     return /src="\{\{item\.thumb\}\}"/.test(w) && /catchtap="previewPrice"/.test(w) && /catchtap="openPriceSheet"/.test(w) &&
-      /class="sheet-mask"/.test(w) && /class="fab"[^>]*bindtap="newPrice"/.test(w) && /class="skel"/.test(w) &&
+      (/class="sheet-mask"/.test(w) || /class="ui-pop-mask"/.test(w)) && /class="fab"[^>]*bindtap="newPrice"/.test(w) && /class="skel"/.test(w) &&
       /bindtap="toggleOrderFilter"/.test(w) && /wx:if="\{\{orders\.filterOpen\}\}"/.test(w) && /src="\{\{item\.logoThumb\}\}"/.test(w) &&
       /sheetToggle\(\)/.test(js) && /sheetMove\(e\)/.test(js)
   })

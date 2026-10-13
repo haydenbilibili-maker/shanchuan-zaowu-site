@@ -167,8 +167,8 @@
 <canvas type="2d" id="giftPrintCanvas" class="print-canvas"></canvas>
 
 <!-- 导出预览层：生成后**先看再动**（印刷类导出最大的风险是印错；原实现一点即存相册并上传） -->
-<view class="pp-mask" wx:if="{{printPreview}}" catchtouchmove="noop">
-  <view class="pp-panel">
+<view class="ui-pop-mask pp-mask" wx:if="{{printPreview}}" catchtouchmove="true">
+  <view class="ui-pop-sheet pp-panel">
     <view class="pp-head">
       <view class="pp-head-titles">
         <text class="pp-overline">GIFT PRINT · PREVIEW</text>

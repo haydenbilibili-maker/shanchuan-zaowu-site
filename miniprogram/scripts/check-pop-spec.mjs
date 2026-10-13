@@ -118,19 +118,21 @@ export const MIGRATED = [
   ['subpackages/extra/shipment-edit/index.wxml', 'picker.show'],
   ['subpackages/manager/studio-bills/index.wxml', 'creating'],
   ['subpackages/manager/studio-bills/index.wxml', 'showDetail'],
-  ['subpackages/manager/identify-monitor/index.wxml', 'detail']
+  ['subpackages/manager/identify-monitor/index.wxml', 'detail'],
+  // —— 第 3 批 g-2b（2026-10-13）：最后 8 个；同批删掉 store-points 无使用者的 .mask 死规则 ——
+  ['subpackages/extra/artisan/works/index.wxml', 'detailOpen && detailItem'],
+  ['subpackages/extra/user/achievements/index.wxml', 'selectedAchievement'],
+  ['subpackages/extra/user/achievements/index.wxml', 'unlockedAchievement'],
+  ['subpackages/extra/user/invoice-request/index.wxml', 'showOrderSheet'],
+  ['subpackages/extra/user/support/index.wxml', 'showCommunity'],
+  ['subpackages/manager/gift-ops/index.wxml', 'printPreview'],
+  ['subpackages/manager/manager/index.wxml', 'hubFavEdit.open'],
+  ['subpackages/b2bdesk/center/index.wxml', 'sheet.show']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小）—— 用 `--tighten` 收紧 */
 export const MASK_BASELINE = {
-  'subpackages/b2bdesk/desk-common.wxss': 1,
-  'subpackages/extra/artisan/works/index.wxss': 1,
-  'subpackages/extra/user/achievements/index.wxss': 2,
-  'subpackages/extra/user/invoice-request/index.wxss': 1,
-  'subpackages/extra/user/support/index.wxss': 1,
-  'subpackages/manager/gift-ops/index.wxss': 1,
-  'subpackages/manager/manager/hubNav.wxss': 1,
-  'subpackages/manager/store-points/index.wxss': 1
+
 }
 
 /**

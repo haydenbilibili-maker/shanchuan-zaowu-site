@@ -328,8 +328,8 @@
   </scroll-view>
 
   <!-- 成就详情：铜牌说明 -->
-  <view class="achievement-modal {{showModal ? 'show' : ''}}" wx:if="{{selectedAchievement}}" catchtap="closeModal">
-    <view class="modal-content {{selectedAchievement.unlocked ? 'lit' : 'dim'}}" catchtap="stopPropagation">
+  <view class="ui-pop-mask is-center achievement-modal {{showModal ? 'show' : ''}}" wx:if="{{selectedAchievement}}" catchtap="closeModal" catchtouchmove="true">
+    <view class="ui-pop-dialog modal-content {{selectedAchievement.unlocked ? 'lit' : 'dim'}}" catchtap="stopPropagation">
       <view class="modal-close" hover-class="tap-press" bindtap="closeModal">
         <image class="modal-close-icon icon-gold" src="/subpackages/feature/assets/icons/nav-close-brass.png" mode="aspectFit"></image>
       </view>
@@ -393,8 +393,8 @@
   </view>
 
   <!-- 解锁提示 -->
-  <view class="unlock-overlay {{showUnlockAnimation ? 'show' : ''}}" wx:if="{{unlockedAchievement}}" catchtap="closeUnlockAnimation">
-    <view class="unlock-content" catchtap="stopPropagation">
+  <view class="ui-pop-mask is-center is-deep unlock-overlay {{showUnlockAnimation ? 'show' : ''}}" wx:if="{{unlockedAchievement}}" catchtap="closeUnlockAnimation" catchtouchmove="true">
+    <view class="ui-pop-dialog unlock-content" catchtap="stopPropagation">
       <view class="unlock-icon-wrap">
         <image class="unlock-icon icon-gold" src="{{unlockedAchievement.icon || '/assets/icons/medal_gold.png'}}" mode="aspectFit"></image>
       </view>

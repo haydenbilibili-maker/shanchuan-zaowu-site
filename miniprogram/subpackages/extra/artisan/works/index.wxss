@@ -347,25 +347,11 @@
   margin-top: var(--space-4);
 }
 
-.detail-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 200;
-  background: rgba(26, 24, 20, 0.72);
-  display: flex;
-  align-items: flex-end;
-}
 
 .detail-sheet {
   width: 100%;
   box-sizing: border-box;
   padding: var(--space-3) var(--space-4) calc(var(--space-6) + env(safe-area-inset-bottom));
-  background: var(--color-bg-card);
-  border-top: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .detail-handle {
