@@ -280,8 +280,9 @@
   </view>
 
   <!-- 详情抽屉 -->
-  <view class="drawer-mask" wx:if="{{showDetail}}" bindtap="closeDetail">
-    <view class="drawer" catchtap="stopBubble">
+  <view class="ui-pop-mask" wx:if="{{showDetail}}" bindtap="closeDetail" catchtouchmove="true">
+    <view class="ui-pop-sheet drawer" catchtap="true">
+      <view class="ui-pop-grip"></view>
       <view class="drawer-head">
         <text class="drawer-title">会员详情</text>
         <view class="drawer-head-actions">
@@ -438,8 +439,8 @@
   </view>
 
   <!-- 有信撰写（单人） -->
-  <view class="modal-mask" wx:if="{{showYouxin}}" bindtap="closeYouxin">
-    <view class="modal youxin-modal" catchtap="stopBubble">
+  <view class="ui-pop-mask is-center" wx:if="{{showYouxin}}" bindtap="closeYouxin" catchtouchmove="true">
+    <view class="ui-pop-dialog modal youxin-modal" catchtap="true">
       <view class="youxin-head">
         <text class="modal-title">山海有信</text>
         <text class="youxin-sub">单人 · {{youxinTarget.nickName}}</text>
@@ -481,8 +482,8 @@
   </view>
 
   <!-- 注销此用户（超管 · 双重验证：手机号 + 手输「注销」） -->
-  <view class="modal-mask" wx:if="{{showCancelMember}}" bindtap="closeCancelMember">
-    <view class="modal cancel-modal" catchtap="stopBubble">
+  <view class="ui-pop-mask is-center" wx:if="{{showCancelMember}}" bindtap="closeCancelMember" catchtouchmove="true">
+    <view class="ui-pop-dialog modal cancel-modal" catchtap="true">
       <text class="modal-title danger-title">注销此用户</text>
 
       <view class="cancel-target">
@@ -525,8 +526,8 @@
   </view>
 
   <!-- 调整积分 -->
-  <view class="modal-mask" wx:if="{{showAdjust}}" bindtap="closeAdjust">
-    <view class="modal" catchtap="stopBubble">
+  <view class="ui-pop-mask is-center" wx:if="{{showAdjust}}" bindtap="closeAdjust" catchtouchmove="true">
+    <view class="ui-pop-dialog modal" catchtap="true">
       <text class="modal-title">人工调整积分</text>
       <text class="modal-desc">正数增加、负数扣除，会记入积分明细。</text>
       <input

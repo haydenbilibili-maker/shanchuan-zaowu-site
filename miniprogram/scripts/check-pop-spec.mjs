@@ -74,6 +74,12 @@ export const MIGRATED = [
   ['subpackages/extra/staff/field/index.wxml', 'showBookingVerifyResult'],
   ['subpackages/extra/staff/field/index.wxml', 'showPickupConfirm'],
   ['subpackages/extra/staff/field/index.wxml', 'showPickupVerifyResult']
+  ,
+  // —— 第 3 批 e（2026-10-13）：会员 CRM 的详情抽屉 + 3 个确认框 ——
+  ['subpackages/extra/member-crm/index.wxml', 'showDetail'],
+  ['subpackages/extra/member-crm/index.wxml', 'showYouxin'],
+  ['subpackages/extra/member-crm/index.wxml', 'showCancelMember'],
+  ['subpackages/extra/member-crm/index.wxml', 'showAdjust']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小）—— 用 `--tighten` 收紧 */
@@ -82,7 +88,6 @@ export const MASK_BASELINE = {
   'subpackages/extra/artisan/works/index.wxss': 1,
   'subpackages/extra/artisan-commission/index.wxss': 1,
   'subpackages/extra/live/broadcast/index.wxss': 1,
-  'subpackages/extra/member-crm/index.wxss': 2,
   'subpackages/extra/property-cost/index.wxss': 1,
   'subpackages/extra/shareholder-config/index.wxss': 1,
   'subpackages/extra/shipment-edit/index.wxss': 1,

@@ -617,25 +617,13 @@ page {
 }
 
 /* drawer */
-.drawer-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(26, 24, 20, 0.72);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-}
 
+/* 弹层形态取 app.wxss 的 ui-pop-*（docs/弹层视觉规范_2026-10-13.md｜第 3 批 e）；
+   这里只留本页尺寸与三段布局，底色 / 圆角 / 发丝边 / 进动画由零件提供。 */
 .drawer {
   width: 100%;
   height: 88vh;
   max-height: 88vh;
-  background: var(--color-bg);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  border-top: 1rpx solid var(--brass-800);
   padding: var(--space-4) var(--space-4) 0;
   box-sizing: border-box;
   display: flex;
@@ -986,28 +974,10 @@ page {
 }
 
 /* modal */
-.modal-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(26, 24, 20, 0.72);
-  z-index: 1100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4);
-  box-sizing: border-box;
-}
 
 .modal {
   width: 100%;
   max-width: 620rpx;
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
   box-sizing: border-box;
 }
 
