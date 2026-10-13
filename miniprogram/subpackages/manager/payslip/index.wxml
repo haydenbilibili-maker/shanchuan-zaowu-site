@@ -89,9 +89,9 @@
   </view>
 </view>
 
-<view class="mask" wx:if="{{showDetail}}" bindtap="closeDetail">
-  <view class="modal" catchtap="noop">
-    <text class="modal-title">工资条 · {{detail.month}}</text>
+<view class="ui-pop-mask is-center" wx:if="{{showDetail}}" bindtap="closeDetail" catchtouchmove="true">
+  <view class="ui-pop-dialog modal" catchtap="true">
+    <text class="ui-pop-title">工资条 · {{detail.month}}</text>
     <view class="scene-card" style="margin-top:24rpx;">
       <block wx:if="{{detail.hasItems}}">
         <view class="row" wx:for="{{detail.items}}" wx:key="name">

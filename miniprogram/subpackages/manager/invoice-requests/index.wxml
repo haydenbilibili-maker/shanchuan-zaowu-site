@@ -197,10 +197,10 @@
 </view>
 
 <!-- 标记已开具 -->
-<view class="modal-mask" wx:if="{{showIssueModal}}" catchtouchmove="noop" bindtap="closeModals">
-  <view class="modal" catchtap="noop">
-    <text class="modal-title">标记已开具</text>
-    <text class="modal-sub" wx:if="{{actionTarget}}">订单 {{actionTarget.orderNo}} · {{actionTarget.title}}</text>
+<view class="ui-pop-mask is-center" wx:if="{{showIssueModal}}" bindtap="closeModals" catchtouchmove="true">
+  <view class="ui-pop-dialog modal" catchtap="true">
+    <text class="ui-pop-title">标记已开具</text>
+    <text class="ui-pop-sub" wx:if="{{actionTarget}}">订单 {{actionTarget.orderNo}} · {{actionTarget.title}}</text>
     <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
     <view class="field">
       <text class="field-label">发票号（可选）</text>
@@ -218,10 +218,10 @@
 </view>
 
 <!-- 驳回 -->
-<view class="modal-mask" wx:if="{{showRejectModal}}" catchtouchmove="noop" bindtap="closeModals">
-  <view class="modal" catchtap="noop">
-    <text class="modal-title">驳回申请</text>
-    <text class="modal-sub" wx:if="{{actionTarget}}">订单 {{actionTarget.orderNo}} · {{actionTarget.title}}</text>
+<view class="ui-pop-mask is-center" wx:if="{{showRejectModal}}" bindtap="closeModals" catchtouchmove="true">
+  <view class="ui-pop-dialog modal" catchtap="true">
+    <text class="ui-pop-title">驳回申请</text>
+    <text class="ui-pop-sub" wx:if="{{actionTarget}}">订单 {{actionTarget.orderNo}} · {{actionTarget.title}}</text>
     <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
     <view class="field">
       <text class="field-label">驳回原因（必填）</text>

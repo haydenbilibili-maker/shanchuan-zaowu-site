@@ -148,54 +148,19 @@ page {
   color: var(--color-text-secondary);
 }
 
-@keyframes mask-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes modal-in {
-  from { opacity: 0; transform: translateY(20rpx); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 9, 8, 0.88);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: 48rpx 32rpx;
-  box-sizing: border-box;
-  animation: mask-in 180ms ease-out;
-}
-
-.mask .modal {
-  position: relative;
-  z-index: 1;
-}
 
 .modal {
   width: 100%;
   max-width: 620rpx;
   max-height: 82vh;
-  padding: var(--space-6) var(--space-5);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
   overflow-y: auto;
-  animation: modal-in 220ms ease-out;
 }
 
-.modal-title {
-  font-size: 30rpx;
-  font-weight: 500;
-}
+
 
 .modal .btn-primary {
   margin-top: var(--space-6);

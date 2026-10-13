@@ -126,9 +126,9 @@
 </view>
 
 <!-- 调整弹层：等级点选卡片 -->
-<view class="modal-mask" wx:if="{{showAdjustModal}}">
-  <view class="modal-backdrop" catchtouchmove="noop" bindtap="closeModals"></view>
-  <view class="modal-sheet" catchtap="noop">
+<view class="ui-pop-mask" wx:if="{{showAdjustModal}}" bindtap="closeModals" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
     <view class="modal-head">
       <text class="modal-title">调整会员等级</text>
       <text class="modal-sub" wx:if="{{adjustTarget}}">
@@ -200,9 +200,9 @@
 </view>
 
 <!-- 清除覆盖 -->
-<view class="modal-mask" wx:if="{{showClearModal}}">
-  <view class="modal-backdrop" catchtouchmove="noop" bindtap="closeModals"></view>
-  <view class="modal-sheet" catchtap="noop">
+<view class="ui-pop-mask" wx:if="{{showClearModal}}" bindtap="closeModals" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
     <view class="modal-head">
       <text class="modal-title">清除等级覆盖</text>
       <text class="modal-sub" wx:if="{{clearTarget}}">

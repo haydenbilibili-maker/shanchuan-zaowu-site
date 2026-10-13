@@ -79,7 +79,17 @@ export const MIGRATED = [
   ['subpackages/extra/member-crm/index.wxml', 'showDetail'],
   ['subpackages/extra/member-crm/index.wxml', 'showYouxin'],
   ['subpackages/extra/member-crm/index.wxml', 'showCancelMember'],
-  ['subpackages/extra/member-crm/index.wxml', 'showAdjust']
+  ['subpackages/extra/member-crm/index.wxml', 'showAdjust'],
+  // —— 第 3 批 f（2026-10-13）：与审批同型的 .mask/.modal 页 ——
+  ['subpackages/extra/staff-permissions/index.wxml', 'showStaffModal'],
+  ['subpackages/manager/payslip/index.wxml', 'showDetail'],
+  ['subpackages/manager/payslip/admin/index.wxml', 'showEditor'],
+  ['subpackages/manager/invoice-requests/index.wxml', 'showIssueModal'],
+  ['subpackages/manager/invoice-requests/index.wxml', 'showRejectModal'],
+  ['subpackages/extra/honorary-curators/index.wxml', 'showAddModal'],
+  ['subpackages/extra/honorary-curators/index.wxml', 'showRemoveModal'],
+  ['subpackages/extra/member-level-adjust/index.wxml', 'showAdjustModal'],
+  ['subpackages/extra/member-level-adjust/index.wxml', 'showClearModal']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小）—— 用 `--tighten` 收紧 */
@@ -91,18 +101,14 @@ export const MASK_BASELINE = {
   'subpackages/extra/property-cost/index.wxss': 1,
   'subpackages/extra/shareholder-config/index.wxss': 1,
   'subpackages/extra/shipment-edit/index.wxss': 1,
-  'subpackages/extra/staff-permissions/index.wxss': 1,
   'subpackages/extra/user/achievements/index.wxss': 2,
   'subpackages/extra/user/invoice-request/index.wxss': 1,
   'subpackages/extra/user/messages/index.wxss': 1,
   'subpackages/extra/user/support/index.wxss': 1,
   'subpackages/manager/gift-ops/index.wxss': 1,
   'subpackages/manager/identify-monitor/index.wxss': 1,
-  'subpackages/manager/invoice-requests/index.wxss': 1,
   'subpackages/manager/manager/hubNav.wxss': 1,
   'subpackages/manager/manager/index.wxss': 2,
-  'subpackages/manager/payslip/index.wxss': 1,
-  'subpackages/manager/staff-permissions/index.wxss': 1,
   'subpackages/manager/store-points/index.wxss': 1,
   'subpackages/manager/studio-bills/index.wxss': 1
 }

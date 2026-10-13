@@ -47,10 +47,10 @@
   </view>
 </view>
 
-<view class="mask" wx:if="{{showEditor}}" bindtap="closeEditor">
-  <view class="modal" catchtap="noop">
-    <view class="modal-head">
-      <text class="modal-title">{{form.id ? '编辑' : '新建'}}工资条</text>
+<view class="ui-pop-mask is-center" wx:if="{{showEditor}}" bindtap="closeEditor" catchtouchmove="true">
+  <view class="ui-pop-dialog modal" catchtap="true">
+    <view class="ui-pop-head">
+      <text class="ui-pop-title">{{form.id ? '编辑' : '新建'}}工资条</text>
     </view>
     <view class="modal-body">
       <view class="field">

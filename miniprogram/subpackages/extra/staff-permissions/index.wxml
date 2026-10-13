@@ -65,11 +65,11 @@
   </view>
 </view>
 
-<view class="mask" wx:if="{{showStaffModal}}" bindtap="closeStaffModal">
-  <view class="modal" catchtap="noop">
-    <view class="modal-head">
-      <text class="modal-title">编辑权限</text>
-      <text class="modal-sub">输入手机号或会员号查找</text>
+<view class="ui-pop-mask is-center" wx:if="{{showStaffModal}}" bindtap="closeStaffModal" catchtouchmove="true">
+  <view class="ui-pop-dialog modal" catchtap="true">
+    <view class="ui-pop-head">
+      <text class="ui-pop-title">编辑权限</text>
+      <text class="ui-pop-sub">输入手机号或会员号查找</text>
     </view>
 
     <view class="modal-body">

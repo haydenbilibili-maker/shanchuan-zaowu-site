@@ -399,33 +399,15 @@ page {
 }
 
 /* modal */
-.modal-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
 
-.modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(26, 24, 20, 0.72);
-}
 
 .modal-sheet {
   position: relative;
   width: 100%;
   height: 86vh;
   max-height: 86vh;
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  border: 1rpx solid var(--brass-800);
-  border-bottom: none;
   display: flex;
   flex-direction: column;
-  padding-bottom: env(safe-area-inset-bottom);
   box-sizing: border-box;
   overflow: hidden;
 }

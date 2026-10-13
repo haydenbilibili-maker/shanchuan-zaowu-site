@@ -548,26 +548,7 @@ page {
 }
 
 /* Modal — 头/可滚内容/底栏分离，避免 input 裁切与键盘遮挡 */
-.modal-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
 
-.modal-backdrop {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(26, 24, 20, 0.72);
-}
 
 .modal-sheet {
   position: relative;
@@ -577,9 +558,6 @@ page {
   max-height: 78vh;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  border-top: 1rpx solid rgba(196, 167, 108, 0.35);
   box-sizing: border-box;
   overflow: hidden;
 }

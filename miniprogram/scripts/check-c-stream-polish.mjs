@@ -20,7 +20,7 @@
  *   R2-5 低频配置页不出现「云函数 / status=active / openid」等技术词
  *   R3-1 中低频功能页（R3_PAGES）可点元素都有 hover-class，app.wxss 有全局 .wb-press；订单卡操作按钮有按压态
  *   R3-2 发票列表首次加载是骨架、按状态筛空有「切回全部」提示；门店积分规则说明无云函数 / 集合名
- *   R3-3 工资条明细不再 @import staff/scene.wxss（连带 ~41 KiB 核销页样式）；内联后仍有本页依赖的基础类
+ *   R3-3 工资条明细不再 @import staff/scene.wxss（连带 ~41 KiB 核销页样式）；内联后仍有本页依赖的基础类（遮罩自 2026-10-13 起由 ui-pop-* 提供，不再内联）
  *   —— R4 为产品负责人 2026-10-01 点名范围 ——
  *   R4-1 定金意向卡显示「会员昵称 · 会员号」；manageDeposit 只新增 memberNickName / memberNo 出参（展开原行、不读手机号）
  *   R4-2 审批中心只有被点的那张卡显示「处理中… / 催办中…」；全局 deciding 仍压暗整排防并发
@@ -383,8 +383,10 @@ function check(src) {
   ok(!/云函数|store_point_rules|云端配置/.test(stripComments(src.storePointsWxml)), 'R3-2 门店积分规则说明出现技术词（云函数 / 集合名）')
 
   // R3-3 工资条样式内联（manager/staff 两份镜像随后已删，见 R4-6）
+  // 2026-10-13：弹层形态改走 app.wxss 的 ui-pop-*（第 3 批 f），本页**不再**内联 .mask；
+  // 「弹层必须挂 ui-pop-mask / ui-pop-dialog」由 check:pop-spec 的 MIGRATED 条目守，本判据只管它原本的两件事。
   ok(!/@import\s+['"][^'"]*staff\/scene\.wxss['"]/.test(src.payslipWxss), 'R3-3 工资条又 @import staff/scene.wxss（manager 包多带 ~41 KiB）')
-  for (const sel of ['.page-boot', '.section', '.row', '.row-main', '.row-sub', '.amount-row', '.scene-card', '.mask', '.modal', '.btn-primary']) {
+  for (const sel of ['.page-boot', '.section', '.row', '.row-main', '.row-sub', '.amount-row', '.scene-card', '.modal', '.btn-primary']) {
     ok(new RegExp(`(^|[\\n,])\\${sel}\\s*[,{]`).test(src.payslipWxss), `R3-3 工资条内联样式缺 ${sel}`)
   }
 

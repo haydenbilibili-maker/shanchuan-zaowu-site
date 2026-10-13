@@ -270,9 +270,9 @@
 </view>
 
 <!-- 授予确认 -->
-<view class="modal-mask" wx:if="{{showAddModal}}">
-  <view class="modal-backdrop" catchtouchmove="noop" bindtap="closeModals"></view>
-  <view class="modal-sheet" catchtap="noop">
+<view class="ui-pop-mask" wx:if="{{showAddModal}}" bindtap="closeModals" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
     <view class="modal-head">
       <text class="modal-title">授予荣誉馆长</text>
       <text class="modal-sub" wx:if="{{addHint}}">{{addHint}}</text>
@@ -331,9 +331,9 @@
 </view>
 
 <!-- 移出 -->
-<view class="modal-mask" wx:if="{{showRemoveModal}}">
-  <view class="modal-backdrop" catchtouchmove="noop" bindtap="closeModals"></view>
-  <view class="modal-sheet" catchtap="noop">
+<view class="ui-pop-mask" wx:if="{{showRemoveModal}}" bindtap="closeModals" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
     <view class="modal-head">
       <text class="modal-title">移出荣誉馆长</text>
       <text class="modal-sub" wx:if="{{removeTarget}}">将移出 {{removeTarget.phoneMasked}}；isHonorary 清除，等级按成长值回落</text>
