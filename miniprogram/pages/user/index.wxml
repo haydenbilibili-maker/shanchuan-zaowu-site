@@ -361,7 +361,11 @@
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="identify" wx:if="{{showAiIdentify}}">
         <image class="m-img gold" src="/assets/icons/camera.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">AI 标本鉴定</text><text class="m-en">AI IDENTIFY · 当前免费</text></view>
+        <view class="m-info"><text class="m-cn">AI 标本鉴定</text><text class="m-en">AI IDENTIFY</text></view>
+        <!-- VIS 3.0 纪律 04「英文眉题 + 中文标题」：眉题一律纯英文、不与中文混排同一行。
+             「当前免费」原写在 .m-en 里（AI IDENTIFY · 当前免费）→ 挪到行尾徽标，
+             与同页其它菜单行（优惠券 / 预约 / 证书）的「行尾徽标」语言一致。 -->
+        <view class="badge-outline-brass badge-sm m-badge" wx:if="{{showAiIdentify}}" aria-hidden="true">当前免费</view>
         <text class="m-arr">›</text>
       </view>
       <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToCommunity" wx:if="{{showUserCommunity}}">

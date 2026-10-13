@@ -219,6 +219,10 @@ page {
 .m-cn { font-size: 26rpx; color: var(--color-text-body); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-en { font-family: var(--font-mono); font-size: 16rpx; color: var(--color-text-secondary); letter-spacing: .14em; margin-top: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-arr { color: var(--color-text-secondary); font-size: 32rpx; line-height: 1; flex-shrink: 0; }
+/* 菜单行行尾徽标（VIS 3.0 纪律 04：眉标一律纯英文，中文补充走这里）。
+   视觉走全局 .badge-outline-brass（无底色 + 黄铜描边 + 黄铜字），
+   本页只负责**行内定位** —— 不能用 .as-badge-pos（那是绝对定位到资产图标的右上角）。 */
+.m-badge { flex-shrink: 0; margin-left: 12rpx; padding: 0 12rpx; white-space: nowrap; }
 
 /* 角标视觉已迁至 app.wxss：.badge-solid-danger / .badge-outline-brass / .badge-info / .meta-progress */
 

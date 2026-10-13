@@ -63,6 +63,10 @@ page {
   --font-heading: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", sans-serif;
   --font-body: "Source Han Sans SC", "Noto Sans SC", "PingFang SC", sans-serif;
   --font-mono: "JetBrains Mono", "DIN", "DIN Alternate", monospace;
+  /* VIS 3.0 第 05 页「字体与字阶」新增：拉丁衬线，只用于**拉丁学名 / 英文名**
+     （规范：拉丁学名一律斜体）。EB Garamond 是规范首选，但小程序端不保证可达，
+     Georgia 是 iOS / 微信 WebView 的常驻衬线体，故列在其后兜底。 */
+  --font-latin: "EB Garamond", Georgia, "Times New Roman", serif;
   /* 手写体（毛笔 / 签字笔感）：只给「用户亲手写下」的内容用 —— 祈福墙弹幕与愿签。（注记 APP-2） */
   /* ⚠️ 必须**单行**：自定义属性值跨行在小程序 WXSS 编译器上是已知风险点（2026-09-19 iOS 实测踩坑） */
   --font-hand: "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, 楷体, "Songti SC", serif;
@@ -312,6 +316,11 @@ button.btn-primary,
   box-shadow: none;
   position: relative;
   overflow: hidden;
+  /* VIS 3.0 视觉纪律 08「不折行、不孤字」：按钮按内容定宽、文案不折行。
+     在**零件层**加一句，覆盖全站页面（页面里的同名规则是叠加不是覆盖）——
+     比逐页补 42 处安全得多。实测最长按钮文案「用我的微信手机号核验」11 字，
+     且不落在 .btn-row 的等分格里，全宽场景余量充足。 */
+  white-space: nowrap;
 }
 
 button.btn-primary:active,
@@ -338,6 +347,7 @@ button.btn-secondary,
   border-radius: var(--radius-md);
   box-shadow: none;
   overflow: visible;
+  white-space: nowrap; /* VIS 3.0 纪律 08：按钮文案不折行 */
 }
 
 button.btn-secondary::after,
@@ -366,6 +376,7 @@ button.btn-text,
   padding: 14rpx 28rpx;
   border-radius: var(--radius-md);
   transition: opacity 0.2s;
+  white-space: nowrap; /* VIS 3.0 纪律 08：按钮文案不折行 */
 }
 
 button.btn-text:active,
@@ -390,6 +401,7 @@ button.btn-ghost,
   border-radius: var(--radius-md);
   box-shadow: none;
   overflow: visible;
+  white-space: nowrap; /* VIS 3.0 纪律 08：按钮文案不折行 */
 }
 
 button.btn-ghost::after,
@@ -1166,7 +1178,7 @@ image[error] {
 .mu-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24rpx; margin-bottom: 24rpx; padding-bottom: 18rpx; background: linear-gradient(90deg, rgba(196,167,108,.55), rgba(196,167,108,.12) 60%, transparent) left bottom / 100% 1px no-repeat; }
 .mu-head-t { display: flex; flex-direction: column; min-width: 0; }
 .mu-en { font-size: 18rpx; line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
-.mu-cn { margin-top: 6rpx; font-size: 38rpx; line-height: 50rpx; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; }
+.mu-cn { margin-top: 6rpx; font-size: 38rpx; line-height: 50rpx; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; white-space: nowrap; /* VIS 3.0 纪律 08：分区主标不折行 */ }
 .mu-sub { margin-top: 6rpx; font-size: 22rpx; line-height: 1.45; color: var(--color-text-secondary); letter-spacing: .04em; }
 .mu-act { flex-shrink: 0; display: flex; align-items: center; gap: 12rpx; padding-bottom: 6rpx; font-size: 22rpx; color: var(--brass-300); letter-spacing: .12em; white-space: nowrap; }
 .mu-act-muted { color: var(--color-text-secondary); letter-spacing: .06em; }
