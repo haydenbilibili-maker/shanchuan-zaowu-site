@@ -24,7 +24,8 @@
  *   —— R4 为产品负责人 2026-10-01 点名范围 ——
  *   R4-1 定金意向卡显示「会员昵称 · 会员号」；manageDeposit 只新增 memberNickName / memberNo 出参（展开原行、不读手机号）
  *   R4-2 审批中心只有被点的那张卡显示「处理中… / 催办中…」；全局 deciding 仍压暗整排防并发
- *   R4-3 报表行为诊断卡：可见文案无「钩子 / fail_sync / 上云 / 指纹」等技术词，排障项收进「更多」；数据绑定不变
+ *   R4-3 报表行为诊断卡：可见文案无「钩子 / fail_sync / 上云 / 指纹」等技术词，排障项收进「更多」；
+ *        数据绑定不变（2026-10-13：连灯云存 / 功德证两张已退役卡的绑定随之移除，且不得复活）
  *   R4-4 按会员号查人：manageStaff 只新增可选 memberNo（带手机号的旧调用不变、候选只回脱敏手机号）、
  *        manageMemberCrm 关键词追加会员号整号匹配（原匹配不变）；两份 normalizeMemberNo 逐字一致且行为正确
  *   R4-6 manager/staff 两份无引用镜像样式已删除，且不得在 subpackage-mirrors.json 复活登记
@@ -428,9 +429,12 @@ function check(src) {
   }
   ok(/wx:if="\{\{reportDiagOpen && analyticsReport\.behavior\.topEvents\.length\}\}"/.test(src.subviews), 'R4-3 原始事件名卡没有收进「更多」')
   ok(/bindtap="toggleReportDiag"[^>]*>\{\{reportDiagOpen \?/.test(src.subviews) && /\n  toggleReportDiag\(\) \{/.test(src.pageCfg) && /reportDiagOpen: false,/.test(src.pageCfg), 'R4-3 「更多（排障信息）」开关缺失或默认展开')
-  for (const b of ['diag.behaviorsCount', 'funnel.wishWall.gate.show', 'funnel.wishWall.ritualGate.resumeSuccess',
-    'funnel.wishWall.ritualGate.completeRate', 'funnel.wishWall.certGate.resumeSuccess']) {
+  for (const b of ['diag.behaviorsCount', 'funnel.wishWall.gate.show']) {
     ok(behavior.includes(`analyticsReport.behavior.${b}`), `R4-3 行为漏斗的数据绑定 ${b} 不见了（只许改文案不许改口径）`)
+  }
+  // 2026-10-13 退役（产品负责人点头）：连灯云存 / 功德证两张卡的绑定随卡一起移除 —— **不得复活**
+  for (const b of ['ritualGate', 'certGate']) {
+    ok(!behavior.includes(`funnel.wishWall.${b}`), `R4-3 已退役的 ${b} 卡片/数据绑定复活了`)
   }
 
   // R4-4 会员号查人

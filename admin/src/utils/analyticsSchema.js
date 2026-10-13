@@ -341,32 +341,6 @@ export const FUNNELS = [
       { action: 'register_panel:success', label: '注册 / 确认完成', endpoint: true }
     ]
   },
-  {
-    key: 'wish_ritual_gate',
-    name: '祈福墙 · 连灯记录云存钩子',
-    module: MODULE.COMMUNITY,
-    icon: '🏮',
-    color: '#8D6E63',
-    steps: [
-      { action: 'wish_ritual_gate:show', label: '有可丢进展时曝光' },
-      { action: 'wish_ritual_gate:go_register', label: '点「一键注册」' },
-      { action: 'wish_ritual_gate:dismiss', label: '先存着' },
-      { action: 'wish_ritual_gate:resume_success', label: '注册完成并同步上云', endpoint: true }
-    ]
-  },
-  {
-    key: 'muyu_cert_gate',
-    name: '祈福墙 · 功德证领取钩子',
-    module: MODULE.COMMUNITY,
-    icon: '📜',
-    color: '#C4A76C',
-    steps: [
-      { action: 'muyu_cert_gate:show', label: '里程点入口曝光' },
-      { action: 'muyu_cert_gate:go_register', label: '点「一键注册」' },
-      { action: 'muyu_cert_gate:dismiss', label: '先不领' },
-      { action: 'muyu_cert_gate:resume_success', label: '证书已发且功德同步上云', endpoint: true }
-    ]
-  },
   // —— 印刷物料码 ——
   // ⚠️ 这里**刻意不放**物料漏斗：通用 `funnelData` 只按 `action` 全局聚合（既不看 `material`
   //    也不看步骤上的 `page`），放进来会渲染出 3 条「扫码进入=三张码之和 / 到达目标页=全站

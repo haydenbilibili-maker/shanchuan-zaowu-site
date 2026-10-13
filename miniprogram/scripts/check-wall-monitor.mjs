@@ -250,7 +250,7 @@ check(
   '监测表已接进行为分析页（导入 + 渲染 + 用同一份 user_behaviors 明细）',
   /from '\.\.\/utils\/wishWallMonitor'/.test(viewSrc) &&
     /buildWallMonitor\(/.test(viewSrc) &&
-    /祈福墙 · 注册转化监测表/.test(viewSrc)
+    /(?:祈福墙|马上有 · 心愿签) · 注册转化监测表|马上有 · 心愿签 转化监测表/.test(viewSrc)
 )
 
 /* ── ③b 小程序数据报表也必须算这一块（产品反馈"数据报表里没有祈福墙数据"）─────
@@ -269,9 +269,16 @@ check('能读出登记在案的注册钩子事件（判据的输入必须真实�
  * ⚠️ 判据是"schema 里每个 gate 必须落在两者之一"：**新登记一个钩子却忘了进报表，这里立刻红** ——
  * 这正是"漏一个漏斗面"这类错误的棘轮（ERP 恒 0、报表少卡片，已经发生过两次）。
  */
-const REPORT_COVERED_GATES = ['identify_save_atlas_gate', 'identify_result_gate', 'wish_wall_register_gate', 'wish_ritual_gate', 'muyu_cert_gate']
+const REPORT_COVERED_GATES = ['identify_save_atlas_gate', 'identify_result_gate', 'wish_wall_register_gate']
+/* ⚠️ 理由串里**不要出现「标识符 + 冒号」**（例如 check:hook-registration）：
+   check:hook-registration 的 B4 用 `/([A-Za-z_]\w*)\s*:/g` 从本对象里提取键，
+   理由里写个「xx:」就会被当成一个多余的排除键 → B4 报「两本账打架」。（2026-10-13 踩过一次） */
 const REPORT_EXCLUDED_GATES = {
-  wiki_register_gate: '百科注册门禁未进本期数据报表（另立需求；它有独立入口与口径）'
+  wiki_register_gate: '百科注册门禁未进本期数据报表（另立需求；它有独立入口与口径）',
+  wish_ritual_gate:
+    '【2026-10-13 退役·产品负责人点头】「连灯记录云存」注册钩子随祈福墙升级为「马上有 · 心愿签」下线：超管开关已从面板移除、埋点只剩旧页在发（缺字段默认关 → 不可达）。报表卡与 ERP 漏斗卡一并退役（与 hook-registration 守卫的 FUNNEL_CARD_EXCLUDED 同理由）',
+  muyu_cert_gate:
+    '【2026-10-13 退役·产品负责人点头】「功德证」自 2026-09-20 PRD §8 裁决「停」；开关已从超管面板移除、埋点只剩旧页在发（不可达）。报表卡与 ERP 漏斗卡一并退役（同理由）'
 }
 const unclassified = gateEvents.filter(
   (a) => !REPORT_COVERED_GATES.includes(a) && !REPORT_EXCLUDED_GATES[a]
@@ -287,12 +294,6 @@ const COVERED_PAIRS = [
   { gate: 'identify_save_atlas_gate', payload: /identify:\s*\{[\s\S]{0,1400}?gate:\s*\{/, view: /\.funnel\.identify\.gate\.show/ },
   { gate: 'identify_result_gate', payload: /resultGate:\s*gateBlock\('identify_result_gate'\)/, view: /\.funnel\.identify\.resultGate\.show/ },
   { gate: 'wish_wall_register_gate', payload: /wishWall:\s*\{[\s\S]{0,800}?gate:\s*\{/, view: /\.funnel\.wishWall\.gate\.show/ },
-  // 2026-09-20 新增：连灯记录云存钩子。ratchet 的作用就在这条 ——
-  // 新登记一个 *_gate 若忘了进报表，上面的 unclassified 立刻红
-  { gate: 'wish_ritual_gate', payload: /ritualGate:\s*gateBlock\('wish_ritual_gate'\)/, view: /\.funnel\.wishWall\.ritualGate\.show/ },
-  // 2026-09-20 新增：创新钩子 H2「功德证」领取钩子。ratchet 的作用就在这里 ——
-  // 新登记一个 *_gate 若忘了进报表，上面的 unclassified 立刻红
-  { gate: 'muyu_cert_gate', payload: /certGate:\s*gateBlock\('muyu_cert_gate'\)/, view: /\.funnel\.wishWall\.certGate\.show/ }
 ]
 /* ── P2-7 报表侧（2026-09-21）：`wish_wall_play` 被**页头藏品 chip** 复用 ——
  * 那里没有任何玩法发生（`targetType='product'`，玩法一律 `'play'`）。
@@ -407,31 +408,7 @@ if (process.argv.includes('--selftest')) {
       to: "  { key: 'gateOk', label: '注册成功并自动续发', actions: ['wish_wall_register_gate'], step: 'resume_succes'"
     },
     // 2026-09-20 新增：连灯记录云存钩子同样要"进报表"（否则就是第三次"埋点发了、报表没有"）
-    {
-      name: '连灯云存钩子又漏出报表（与祈福墙同一类漏）',
-      file: 'miniprogram/cloudfunctions/getAnalyticsDashboard/index.js',
-      from: "      ritualGate: gateBlock('wish_ritual_gate')",
-      to: "      ritualGateOff: gateBlock('wish_ritual_gate')"
-    },
-    {
-      name: '数据报表页读错连灯云存钩子的键（卡片永远不渲染）',
-      file: MP_REPORT,
-      from: '{{analyticsReport.behavior.funnel.wishWall.ritualGate.show || 0}}',
-      to: '{{analyticsReport.behavior.funnel.wishWall.ritualGateOff.show || 0}}'
-    },
     // 2026-09-20 新增：功德证钩子同样要"进报表"（否则就是第四次"埋点发了、报表没有"）
-    {
-      name: '功德证钩子又漏出报表（与祈福墙同一类漏）',
-      file: 'miniprogram/cloudfunctions/getAnalyticsDashboard/index.js',
-      from: "      certGate: gateBlock('muyu_cert_gate')",
-      to: "      certGateOff: gateBlock('muyu_cert_gate')"
-    },
-    {
-      name: '数据报表页读错功德证钩子的键（卡片永远不渲染）',
-      file: MP_REPORT,
-      from: '{{analyticsReport.behavior.funnel.wishWall.certGate.show || 0}}',
-      to: '{{analyticsReport.behavior.funnel.wishWall.certGateOff.show || 0}}'
-    },
     // 2026-09-21 新增（P1-3 防复发）：落愿成功埋点 targetId 与报表口径**端到端**对账。
     // 两条注入各证明一半：①判据读了客户端实发值；②判据读了监测表期望值。
     {

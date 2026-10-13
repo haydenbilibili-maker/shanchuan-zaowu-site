@@ -568,10 +568,13 @@ const INJECTIONS = {
   },
   // ===== 多面墙治理 =====
   // 管理页退回写死默认墙 → 第二面墙的弹幕又变成无人可治
+  // ⚠️ 2026-10-13 锚点跟随源码：心愿签语音上线时这行多了「待试听页签时 status 传空」的分支
+  //   （`status: voiceTab ? '' : this.data.activeStatus`），旧锚点整行匹配失效 → 注入变成假绿。
+  //   注入语义不变（把 productKey 换成写死的默认墙）。
   'manager-wall-hardcoded': {
     file: 'miniprogram/subpackages/manager/wish-wall/index.js',
-    from: "const payload = { action: 'staffList', productKey: this.data.productKey, status: this.data.activeStatus }",
-    to: "const payload = { action: 'staffList', productKey: DEFAULT_PRODUCT_KEY, status: this.data.activeStatus }"
+    from: "productKey: this.data.productKey, status: voiceTab ? '' : this.data.activeStatus }",
+    to: "productKey: DEFAULT_PRODUCT_KEY, status: voiceTab ? '' : this.data.activeStatus }"
   },
   // 列墙不鉴权 → 任何人都能枚举出全部墙
   'staffwalls-unprotected': {
@@ -6812,17 +6815,14 @@ check(
       /showRitualProfile: flags\.showRitualProfile === true/.test(mgrCfg) &&
       /showRitualProfile: false,/.test(mgrCfg)
   )
+  // 【2026-10-13 退役·产品负责人点头】连灯记录云存钩子：开关已从超管面板移除、埋点只剩旧页在发（不可达）
+  // → 报表卡 / ERP 漏斗卡 / 云函数分桶一并退役（理由登记在 check:wall-monitor 的 REPORT_EXCLUDED_GATES
+  //   与 check:hook-registration 的 FUNNEL_CARD_EXCLUDED）。事件 action 登记保留（历史数据仍可读）。
   check(
-    '埋点双端登记 + ERP FUNNELS 有卡（否则"埋了但报表看不到"）',
-    /wish_ritual_gate:/.test(readSrc('miniprogram/utils/analytics/eventSchema.js')) &&
-      /wish_ritual_gate:/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
-      /key: 'wish_ritual_gate'/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
-      /wish_ritual_gate:resume_success/.test(readSrc('admin/src/utils/analyticsSchema.js'))
-  )
-  check(
-    '★ 小程序数据报表也算了这一块（云函数分桶 + 报表页卡片，否则恒 0/看不到）',
-    /ritualGate: gateBlock\('wish_ritual_gate'\)/.test(readSrc('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')) &&
-      /funnel\.wishWall\.ritualGate\.show/.test(subv)
+    '【已退役·不得复活】连灯记录云存钩子的云函数分桶 / ERP 漏斗卡 / 报表卡都已移除',
+    !/gateBlock\('wish_ritual_gate'\)/.test(readSrc('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')) &&
+      !/key: 'wish_ritual_gate'/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+      !/funnel\.wishWall\.ritualGate/.test(subv)
   )
   check('漏斗 step 都从 trackRitualGate 一处发出（action 名只有一个事实源）', (hookPageSrc.match(/trackRitualGate\(/g) || []).length >= 6)
 
@@ -7166,17 +7166,13 @@ check(
       /showMuyuCertificate: flags\.showMuyuCertificate === true/.test(certMgrCfg) &&
       /showMuyuCertificate: false,/.test(certMgrCfg)
   )
+  // 【2026-10-13 退役·产品负责人点头】功德证领取钩子：PRD §8（2026-09-20）已裁决「停」，
+  // 开关已从超管面板移除、埋点只剩旧页在发（不可达）→ 报表卡 / ERP 漏斗卡 / 云函数分桶一并退役。
   check(
-    '埋点双端登记 + ERP FUNNELS 有卡（否则"埋了但报表看不到"）',
-    /muyu_cert_gate:/.test(readSrc('miniprogram/utils/analytics/eventSchema.js')) &&
-      /muyu_cert_gate:/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
-      /key: 'muyu_cert_gate'/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
-      /muyu_cert_gate:resume_success/.test(readSrc('admin/src/utils/analyticsSchema.js'))
-  )
-  check(
-    '★ 小程序数据报表也算了这一块（云函数分桶 + 报表页卡片，否则恒 0/看不到）',
-    /certGate: gateBlock\('muyu_cert_gate'\)/.test(readSrc('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')) &&
-      /funnel\.wishWall\.certGate\.show/.test(certSubv)
+    '【已退役·不得复活】功德证领取钩子的云函数分桶 / ERP 漏斗卡 / 报表卡都已移除',
+    !/gateBlock\('muyu_cert_gate'\)/.test(readSrc('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')) &&
+      !/key: 'muyu_cert_gate'/.test(readSrc('admin/src/utils/analyticsSchema.js')) &&
+      !/funnel\.wishWall\.certGate/.test(certSubv)
   )
   check('漏斗 step 都从 trackCertGate 一处发出（action 名只有一个事实源）', (certPageSrc.match(/trackCertGate\(/g) || []).length >= 6)
 }

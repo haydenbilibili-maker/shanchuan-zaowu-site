@@ -161,12 +161,12 @@
       </div>
     </el-card>
 
-    <!-- 祈福墙 · 注册转化监测表（需求 28）：表格式看板 —— 每行口径都来自真实埋点，
+    <!-- 马上有 · 心愿签 转化监测表（需求 28；2026-10-13 由「祈福墙」改名）：表格式看板 —— 每行口径都来自真实埋点，
          门店码来源单独拆出来（现场转化是这一期的重点） -->
     <el-card shadow="never" class="wall-monitor-card">
       <template #header>
         <div class="card-header">
-          <span>🕯️ 祈福墙 · 注册转化监测表</span>
+          <span>🕯️ 马上有 · 心愿签 转化监测表</span>
           <span class="hint">
             数据源 user_behaviors 明细（analytics_daily 无 step/来源维度）；「—」= 该环节没有曝光，不是 0%
           </span>

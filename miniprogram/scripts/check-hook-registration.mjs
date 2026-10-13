@@ -95,6 +95,10 @@ const RETIRED_FLAGS = {
 const FUNNEL_CARD_EXCLUDED = {
   wiki_register_gate:
     '百科注册门禁钩子未进 ERP「漏斗」卡：口径与入口独立，另立需求（与 check:wall-monitor 的 REPORT_EXCLUDED_GATES 同理由）',
+  wish_ritual_gate:
+    '【2026-10-13 退役】「连灯记录云存」随祈福墙升级为「马上有 · 心愿签」下线，开关已从超管面板移除、埋点不可达 → 漏斗卡与报表卡一并退役（与 REPORT_EXCLUDED_GATES 同理由）',
+  muyu_cert_gate:
+    '【2026-10-13 退役】「功德证」PRD §8（2026-09-20）已裁决「停」，开关已从超管面板移除、埋点不可达 → 漏斗卡与报表卡一并退役（同理由）',
 }
 
 /* ─────────────────────────── 解析（纯函数） ─────────────────────────── */
@@ -478,7 +482,9 @@ function selftest() {
   )
 
   console.log('④ 文件级注入 → 真实 CLI 必须 exit≠0 → 源文件逐字节还原')
-  const WISH_RITUAL_STEP = "'wish_ritual_gate:"
+  // 2026-10-13：原来拿 wish_ritual_gate 的 FUNNELS 卡做注入，该钩子已退役（卡与报表卡一起删了），
+  // 注入锚点随之消失 —— 换成**仍在用**的 wish_wall_register_gate，判据本身（漏卡必红）不变。
+  const LIVE_GATE_STEP = "'wish_wall_register_gate:"
   const INJECTIONS = [
     {
       name: '把 showRitualProfile 从云函数 saveFlags 抽掉（任务点名的那一条）',
@@ -506,10 +512,10 @@ function selftest() {
       to: '    showMaShangYouOff: src.showMaShangYou === true',
     },
     {
-      name: '把 wish_ritual_gate 从 ERP FUNNELS 卡里抽掉（埋点发了、漏斗没有）',
+      name: '把 wish_wall_register_gate 从 ERP FUNNELS 卡里抽掉（埋点发了、漏斗没有）',
       file: F.erpSchema,
-      from: WISH_RITUAL_STEP,
-      to: "'wish_ritual_gate_OFF:",
+      from: LIVE_GATE_STEP,
+      to: "'wish_wall_register_gate_OFF:",
       all: true,
     },
   ]

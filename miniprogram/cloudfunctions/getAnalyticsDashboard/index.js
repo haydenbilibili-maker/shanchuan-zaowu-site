@@ -639,14 +639,9 @@ function buildFunnel(rows, dailyRows = []) {
         completeRate: pct(wallGateResume, wallGateShow),
         resumeRate: pct(wallGateResume, wallGateGo)
       },
-      // 祈福墙「连续记录云保存」注册钩子（2026-09-20）：action 是 wish_ritual_gate，
-      // 与落愿钩子共用 gateBlock 的同一套口径（曝光/去注册/放弃/完成 + 四个比率）。
-      // 不在这里分桶 = 埋点发了、报表恒 0（祈福墙 2026-09-18 已栽过一次）
-      ritualGate: gateBlock('wish_ritual_gate'),
-      // 创新钩子 H2「功德证」（2026-09-20）：action 是 muyu_cert_gate，与上面两个钩子共用
-      // gateBlock 的同一套口径（曝光/去注册/放弃/完成 + 四个比率）。
-      // ⚠️ 不在这里分桶 = 埋点发了、报表恒 0（祈福墙 2026-09-18 已栽过一次）
-      certGate: gateBlock('muyu_cert_gate')
+      // 2026-10-13 退役（产品负责人点头）：wish_ritual_gate（连灯记录云存）与 muyu_cert_gate（功德证）
+      // 两个分桶已移除 —— 对应开关早已从超管面板移除、埋点只剩旧页在发（缺字段默认关 → 不可达），
+      // 报表卡与 ERP 漏斗卡同期退役（见 miniprogram/scripts/check-wall-monitor.mjs 的 REPORT_EXCLUDED_GATES）。
     },
     store: {
       tabEnter: count('store_tab_enter'),
