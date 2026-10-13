@@ -2,7 +2,9 @@
   "navigationBarTitleText": "藏品概念生成",
   "enablePullDownRefresh": false,
   "backgroundTextStyle": "dark",
-  "usingComponents": {},
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814"

@@ -56,7 +56,7 @@
     </view>
   </view>
 
-  <view class="loading-mask" wx:if="{{busy}}">
+  <view class="ui-pop-mask is-center loading-mask" wx:if="{{busy}}" catchtouchmove="true">
     <!-- 步骤与进度放进加载卡：放在遮罩下面时被压暗，等待 15–60 秒只看得到一个转圈 -->
     <view class="loading-core">
       <view class="spinner"></view>
@@ -87,3 +87,6 @@
 
   <easter-egg-note id="easterEggNote" />
 </view>
+
+<!-- 全站样式化弹窗宿主（替代 wx.showModal；utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
+<app-modal id="appModal" />

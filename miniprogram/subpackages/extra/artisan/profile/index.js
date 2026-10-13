@@ -2,6 +2,7 @@ const { guardManagerPage } = require('../../../../utils/managerAuth')
 const { guardArtisanWorkspace, hasPermission, roleHasStored } = require('../../utils/staffAuth')
 const { formatCloudFnError } = require('../../utils/memberScan')
 const { batchTempFileURLs } = require('../../../../utils/util')
+const { openAppModal } = require('../../../../utils/appModal')
 
 const FALLBACK_AVATAR = '/assets/icons/user.png'
 const NAME_MAX = 32
@@ -579,7 +580,7 @@ Page({
       return
     }
     if (this.data.dirty || !this.data.form.framerId) {
-      wx.showModal({
+      openAppModal({
         title: '尚未保存',
         content: this.data.form.framerId ? '有未保存的修改，打开主页前请先保存。' : '请先保存个人主页。',
         confirmText: '保存',
@@ -588,7 +589,7 @@ Page({
         success: (res) => {
           if (res.confirm) this.save({ thenPreview: true })
         }
-      })
+      }, this)
       return
     }
     this.openPublicPage()
@@ -601,7 +602,7 @@ Page({
       return
     }
     if (this.data.form.active === false) {
-      wx.showModal({
+      openAppModal({
         title: '仅自己可见',
         content: '当前未对外展示。打开后只有你能看，C 端访客会看到已下架。',
         confirmText: '仍打开',
@@ -610,7 +611,7 @@ Page({
         success: (res) => {
           if (res.confirm) this.navigatePublic(id)
         }
-      })
+      }, this)
       return
     }
     this.navigatePublic(id)

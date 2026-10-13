@@ -1,14 +1,9 @@
-<!-- 全站样式化轻提示：博物黑 + 铜金铭牌，与 AppModal 同一套语言；非阻塞 -->
+<!-- 全站样式化轻提示：牌面与 AppModal 同取 app.wxss 弹层令牌（--pop-*）；非阻塞 -->
 <view
   class="at-mask {{leaving ? 'is-out' : 'is-in'}}"
   wx:if="{{visible}}"
 >
   <view class="at-plate">
-    <view class="at-corner is-tl"></view>
-    <view class="at-corner is-tr"></view>
-    <view class="at-corner is-bl"></view>
-    <view class="at-corner is-br"></view>
-
     <text class="at-overline" wx:if="{{overline}}">{{overline}}</text>
     <text class="at-title" wx:if="{{title}}">{{title}}</text>
     <text class="at-desc" wx:if="{{desc}}">{{desc}}</text>

@@ -3,7 +3,8 @@
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark",
   "usingComponents": {
-    "work-notice-voice": "/subpackages/extra/components/WorkNoticeVoice/index"
+    "work-notice-voice": "/subpackages/extra/components/WorkNoticeVoice/index",
+    "app-modal": "/components/AppModal/index"
   },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",

@@ -184,18 +184,8 @@
   transition: width 0.2s ease;
 }
 
-.loading-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(26, 24, 20, 0.72);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* 鉴定进行中：遮罩取 ui-pop-mask is-center（令牌底色 + 淡入） */
+.loading-mask { z-index: 100; }
 
 .loading-core {
   width: 520rpx;

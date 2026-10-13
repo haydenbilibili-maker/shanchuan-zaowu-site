@@ -403,86 +403,9 @@ view, text, scroll-view { box-sizing: border-box; }
 .submit-btn-hover { background: #A8903C; }
 .submit-btn.disabled { opacity: 0.6; pointer-events: none; }
 
-.modal-mask {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  z-index: 200;
-  display: flex;
-  align-items: flex-end;
-}
-.modal-panel {
-  width: 100%;
-  max-height: 70vh;
-  background: #1F1D1A;
-  border-radius: 32rpx 32rpx 0 0;
-  padding: 32rpx;
-  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-.modal-head { flex-shrink: 0; display: flex; justify-content: space-between; font-size: 32rpx; color: #FFFFFF; margin-bottom: 24rpx; }
-.modal-close { color: #6B6560; padding: 8rpx; }
-.coupon-scroll {
-  flex-shrink: 0;
-  width: 100%;
-  height: 50vh;
-  max-height: 50vh;
-  min-height: 200rpx;
-  box-sizing: border-box;
-}
-.coupon-opt {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 24rpx;
-  padding: 24rpx;
-  background: #1F1D1A;
-  border: 1px solid rgba(38, 35, 32, 0.6);
-  border-radius: 16rpx;
-  margin-bottom: 16rpx;
-  box-sizing: border-box;
-}
-.coupon-opt.selected {
-  border-color: #C4A76C;
-  background: rgba(196, 167, 108, 0.10);
-}
-.coupon-opt.disabled {
-  opacity: 0.4;
-  pointer-events: none;
-  border-color: rgba(38, 35, 32, 0.6);
-  background: #1F1D1A;
-}
-.coupon-opt-press { background: rgba(196, 167, 108, 0.06); border-color: rgba(196, 167, 108, 0.35); }
-.coupon-opt.selected.coupon-opt-press { background: rgba(196, 167, 108, 0.14); }
-.coupon-opt-name { flex: 1; font-size: 28rpx; color: #D5D1C8; }
-.coupon-opt.selected .coupon-opt-name { color: #FFFFFF; }
-.c-left { display: flex; flex-direction: column; flex-shrink: 0; }
-.c-val { font-size: 32rpx; color: #C4A76C; font-weight: 600; }
-.c-min { font-size: 22rpx; color: #A09A90; margin-top: 4rpx; }
-.c-right { flex: 1; min-width: 0; }
-.c-name { font-size: 26rpx; color: #D5D1C8; }
-.radio {
-  width: 36rpx;
-  height: 36rpx;
-  border: 2rpx solid #6B6560;
-  border-radius: 50%;
-  flex-shrink: 0;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.radio.checked {
-  border-color: #C4A76C;
-}
-.radio-dot {
-  width: 18rpx;
-  height: 18rpx;
-  border-radius: 50%;
-  background: #C4A76C;
-}
+/* 选券抽屉：形态 / 头部 / 行 / 单选全取 app.wxss 的 ui-pop-*（docs/弹层视觉规范_2026-10-13.md）；高度在 wxml 按条数给 */
+.coupon-scroll { width: 100%; box-sizing: border-box; }
+.ui-pop-row.is-locked { pointer-events: none; }   /* 本页不可用券点不动（改版前 .coupon-opt.disabled 同义） */
 
 .custom-line {
   display: flex;
@@ -498,31 +421,12 @@ view, text, scroll-view { box-sizing: border-box; }
 .custom-value.gold { color: #C4A76C; }
 
 /* —— 下单门闸弹层：启程前须知 / 温馨提示 共用面板（内容左齐） —— */
-.specimen-mask {
-  align-items: center;
-  justify-content: center;
-  padding: 32rpx 28rpx;
-  background: rgba(26, 24, 20, 0.72);
-  z-index: 220;
-}
+.specimen-mask { z-index: 820; }
+/* 须知牌面：形态取 ui-pop-dialog；这里只放宽宽度（引导句不折行，见 .notice-intro）与长文滚动 */
 .specimen-panel {
-  width: 100%;
+  max-width: 654rpx;
   max-height: 78vh;
   overflow-y: auto;
-  background: #1F1D1A;
-  border: 1px solid rgba(77, 64, 26, 0.45);
-  border-radius: 24rpx;
-  padding: 40rpx 32rpx 36rpx;
-  box-sizing: border-box;
-  text-align: left;
-}
-.specimen-title {
-  display: block;
-  font-size: 32rpx;
-  font-weight: 500;
-  color: #FFFFFF;
-  letter-spacing: 0.04em;
-  margin-bottom: 20rpx;
   text-align: left;
 }
 .notice-intro {
@@ -696,32 +600,7 @@ view, text, scroll-view { box-sizing: border-box; }
   color: #C4A76C;
   letter-spacing: 0.02em;
 }
-.specimen-actions {
-  display: flex;
-  gap: 20rpx;
-  margin-top: 32rpx;
-}
-.specimen-btn {
-  flex: 1;
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16rpx;
-  font-size: 26rpx;
-  font-weight: 500;
-}
-.specimen-btn.secondary {
-  background: transparent;
-  border: 1px solid rgba(196, 167, 108, 0.45);
-  color: #C4A76C;
-}
-.specimen-btn-hover { opacity: 0.82; }
-.specimen-btn.primary {
-  background: #C4A76C;
-  color: #1A1814;
-}
-.specimen-btn-primary-hover { background: #A8903C; }
+
 .custom-estimate {
   display: block;
   margin-top: 16rpx;
@@ -847,16 +726,6 @@ view, text, scroll-view { box-sizing: border-box; }
   line-height: 1.4;
 }
 
-/* 礼券项：本单实际可省 / 不可用原因（面额与本单实减常常不等，必须分开显示） */
-.coupon-opt .c-right { display: flex; flex-direction: column; align-items: flex-end; }
-.c-save {
-  margin-top: 6rpx;
-  font-size: var(--fs-20);
-  color: var(--gold, #C4A76C);
-}
-.c-save.is-off {
-  color: var(--color-text-muted, #8A847C);
-}
 
 /* ═══ 礼赠模式（蓝图 礼赠凭礼笺领取 §15）：步骤轨 → 礼物摘要 → 交付方式（含跟随项）═══ */
 .brand-notes.is-solo { margin-top: 0; padding-top: 0; border-top: none; }

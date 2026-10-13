@@ -6,6 +6,7 @@ const { buildGuideUrl, resolveCareCategory } = require('../utils/careDefaults');
 const { resolveCareContext } = require('../utils/careHelper');
 const { isGiftOrder, resolveCertRole, giftCertInfo, certSerial, receiverOf, certIssuedAt } = require('../utils/giftHolder');
 const { drawCertificate } = require('./certDraw');
+const { openAppModal } = require('../../../utils/appModal')
 
 function formatCertDay(ms) {
   const d = ms ? new Date(ms) : new Date();
@@ -274,7 +275,7 @@ Page({
     wx.saveImageToPhotosAlbum({
       filePath,
       success: () => wx.showToast({ title: '已保存', icon: 'success' }),
-      fail: () => wx.showModal({ title: '提示', content: '需相册权限', showCancel:false })
+      fail: () => openAppModal({ title: '提示', content: '需相册权限', showCancel:false }, this)
     });
   },
   goToCare() {

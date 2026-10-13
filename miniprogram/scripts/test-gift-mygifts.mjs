@@ -296,6 +296,8 @@ const requireStub = (id) => {
   if (key.includes('receiverVerify')) {
     return { loadReceiverVerify: async () => ({}), saveReceiverPhone: async () => ({ success: true }), sheetCopy: () => ({}) }
   }
+  // 2026-10-13 弹层规范：页面改用 openAppModal（与 wx.showModal 同入参）—— 桩直接转发给 wxStub.showModal，原断言不变
+  if (key.includes('utils/appModal')) return { openAppModal: (o) => (wxStub.showModal ? wxStub.showModal(o) : undefined) }
   if (key.includes('giftSignalLamp')) {
     return {
       giftFlowSignal: () => 'lamp-idle',

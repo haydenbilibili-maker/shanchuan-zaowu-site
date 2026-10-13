@@ -399,49 +399,35 @@ page {
 /* ... (保留其他样式) ... */
 
 /* 弹窗样式重构 */
-.qr-mask { 
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-  background: rgba(26, 24, 20, 0.88); backdrop-filter: blur(15px); 
-  z-index: 10000; display: flex; align-items: center; justify-content: center;
+/* 会员码：仪式卡（ui-pop-mask is-center is-deep + ui-pop-dialog）；这里只留层级、安全区内边距与牌面内部分区 */
+.qr-mask {
+  z-index: 10000;
   padding: calc(24rpx + env(safe-area-inset-top)) 32rpx calc(24rpx + env(safe-area-inset-bottom));
-  box-sizing: border-box;
 }
 .qr-mask-blocker {
   position: absolute;
   inset: 0;
   z-index: 0;
 }
-.qr-content { 
-  position: relative;
+.qr-content {
   z-index: 1;
-  width: 560rpx; max-height: 82vh; background: var(--color-bg-card); border-radius: 24rpx; 
+  width: 600rpx;
+  max-height: 82vh;
+  padding: 0;
   overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  border: 1px solid #4D401A; 
-  box-shadow: none; 
   display: flex; flex-direction: column;
-  box-sizing: border-box;
 }
 
-/* 头部：中文主标题，英文仅作 overline */
-.qr-header { 
-  background: var(--color-bg-card); 
-  padding: 28rpx 32rpx 20rpx; text-align: center; color: var(--color-text-primary); 
+/* 头部：眉标 + 主标两行，✕ 取 ui-pop-close */
+.qr-header {
+  padding: 36rpx 96rpx 24rpx; text-align: center;
   display: flex; flex-direction: column; align-items: center;
-  border-bottom: 1px solid var(--color-bg-elevated);
+  border-bottom: 1rpx solid var(--pop-divider);
   position: relative;
-}
-
-.qr-close {
-  position: absolute;
-  right: 24rpx;
-  top: 24rpx;
-  padding: 8rpx 4rpx;
-  font-size: 24rpx;
-  color: var(--color-text-secondary);
 }
 
 .qr-content.is-redeemed {
-  border-color: #8A7530;
+  border-color: rgba(196, 167, 108, 0.6);
 }
 
 .pass-redeem-wrap {
@@ -453,24 +439,7 @@ page {
   align-items: center;
 }
 
-.pass-done-btn {
-  margin-top: 20rpx;
-  width: 100%;
-  text-align: center;
-  padding: 22rpx 24rpx;
-  border-radius: 16rpx;
-  background: var(--gold);
-  color: var(--color-bg);
-  font-size: 28rpx;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  box-sizing: border-box;
-}
-
-.pass-done-btn-press {
-  background: #A8903C;
-  opacity: 0.92;
-}
+.pass-done-btn { flex: none; width: 100%; margin-top: 20rpx; }
 
 .pass-coupon-banner {
   margin: 20rpx 28rpx 0;
@@ -494,18 +463,10 @@ page {
   color: var(--gold);
   line-height: 1.4;
 }
-.qr-overline {
-  font-size: 18rpx; color: var(--color-text-secondary); letter-spacing: 0.14em;
-  font-weight: 500; line-height: 1.2;
-}
-.qr-title {
-  margin-top: 6rpx; font-size: 32rpx; font-weight: 500; color: var(--color-text-primary);
-  letter-spacing: 0.04em; line-height: 1.3;
-}
 .qr-level-badge {
-  margin-top: 10rpx; font-size: 20rpx; color: var(--gold);
+  margin-top: 12rpx; font-size: 20rpx; color: var(--gold);
   padding: 4rpx 16rpx; border-radius: 8rpx; font-weight: 500;
-  border: 1px solid #4D401A; background: transparent;
+  border: 1rpx solid var(--pop-hairline); background: transparent;
 }
 
 /* 会员码区：Specimen Cream 纸底板（纤维点阵 + 暖色细边；不盖二维码） */
@@ -664,84 +625,20 @@ page {
 
 .qr-tips { text-align: center; margin-top: 24rpx; font-size: 20rpx; color: var(--color-text-secondary); }
 
-/* 动画 */
-.pop-in { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* ==================== 官方社群二维码弹窗 ==================== */
-.group-mask { 
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-  background: rgba(26, 24, 20, 0.88); backdrop-filter: blur(12px); 
-  z-index: 1001; display: flex; align-items: center; justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-.group-mask.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.group-content { 
-  width: 640rpx; 
-  background: var(--color-bg-card); 
-  border-radius: 24rpx; 
-  overflow: hidden; 
-  border: 1px solid #4D401A; 
-  display: flex; 
-  flex-direction: column;
-  transform: translateY(40rpx);
-  transition: transform 0.3s ease;
-}
-.group-mask.active .group-content {
-  transform: translateY(0);
-}
-
-/* 头部 */
-.group-header { 
-  background: var(--color-bg-card); 
-  padding: 40rpx 40rpx 30rpx; 
-  text-align: center; 
-  position: relative;
-  border-bottom: 1px solid var(--color-bg-elevated);
-}
-.group-close {
-  position: absolute;
-  top: 30rpx;
-  right: 30rpx;
-  width: 56rpx;
-  height: 56rpx;
+/* ==================== 官方社群：确认框形态（ui-pop-*），牌面内为米白二维码区 + 说明 ==================== */
+.group-mask { z-index: 1001; }
+.group-content {
+  width: 640rpx;
+  max-width: 640rpx;
+  padding: 0;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.8);
-  font-size: 32rpx;
-  font-weight: 300;
-  transition: all 0.3s;
-  border: 1px solid rgba(255,255,255,0.1);
+  flex-direction: column;
 }
-.group-close:active,
-.group-close-press {
-  background: rgba(255,255,255,0.2);
-  transform: scale(0.95);
-}
-.group-title { 
-  font-size: 36rpx; 
-  font-weight: 500; 
-  color: #fff; 
-  letter-spacing: 2rpx; 
-  display: block;
-  margin-bottom: 8rpx;
-}
-.group-subtitle { 
-  font-family: 'DIN'; 
-  font-size: 20rpx; 
-  color: var(--gold); 
-  letter-spacing: 4rpx; 
-  text-transform: uppercase;
-  opacity: 0.8;
+.group-header {
+  position: relative;
+  padding: 40rpx 96rpx 28rpx;
 }
 
 /* 二维码区域 */
@@ -775,16 +672,15 @@ page {
 }
 
 /* 底部说明 */
-.group-footer { 
-  padding: 40rpx 30rpx; 
-  background: var(--color-bg);
+.group-footer {
+  padding: 32rpx 40rpx 36rpx;
   text-align: center;
 }
 .group-tips {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20rpx;
+  margin-bottom: 12rpx;
   gap: 12rpx;
 }
 .tip-icon {
@@ -795,126 +691,44 @@ page {
   justify-content: center;
 }
 .tip-text {
-  font-size: 28rpx;
-  color: #fff;
-  font-weight: 600;
-  letter-spacing: 1rpx;
+  font-size: var(--fs-28);
+  color: var(--color-text-primary);
+  font-weight: 500;
 }
 .group-desc {
-  font-size: 22rpx;
-  color: rgba(255,255,255,0.6);
+  font-size: var(--fs-24);
+  color: var(--color-text-secondary);
   line-height: 1.6;
 }
 
-/* 滑入动画 */
-.slide-up {
-  animation: slideUpModal 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-@keyframes slideUpModal {
-  from { 
-    transform: translateY(100rpx) scale(0.9); 
-    opacity: 0; 
-  }
-  to { 
-    transform: translateY(0) scale(1); 
-    opacity: 1; 
-  }
-}
-
-/* === 数据统计弹窗样式 === */
-.statistics-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
-  z-index: 1002;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-  pointer-events: none;
-}
-.statistics-mask.active {
-  opacity: 1;
-  pointer-events: auto;
-}
+/* === 数据统计：确认框形态（ui-pop-*）；正文区定高滚动 === */
+.statistics-mask { z-index: 1002; }
 .statistics-content {
   width: 85%;
-  max-width: 600rpx;
+  max-width: 640rpx;
   height: 80vh;
   max-height: 80vh;
-  background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,20,20,0.9) 100%);
-  border: 2px solid rgba(196, 167, 108,0.3);
-  border-radius: 32rpx;
+  padding: 0;
   overflow: hidden;
-  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.8);
   display: flex;
   flex-direction: column;
-  position: relative;
 }
 .statistics-header {
   position: relative;
-  padding: 40rpx 30rpx 30rpx;
-  text-align: center;
-  border-bottom: 1px solid rgba(196, 167, 108,0.2);
-}
-.statistics-close {
-  position: absolute;
-  top: 30rpx;
-  right: 30rpx;
-  width: 60rpx;
-  height: 60rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 32rpx;
-  color: rgba(255,255,255,0.9);
-  transition: opacity 0.3s;
-}
-.statistics-close:active {
-  opacity: 0.6;
-}
-.statistics-title {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: 2rpx;
-  display: block;
-  margin-bottom: 8rpx;
-}
-.statistics-subtitle {
-  font-size: 20rpx;
-  color: rgba(196, 167, 108,0.8);
-  letter-spacing: 4rpx;
-  text-transform: uppercase;
-  display: block;
+  padding: 40rpx 96rpx 24rpx;
+  border-bottom: 1rpx solid var(--pop-divider);
 }
 .statistics-body {
   /* 明确高度：勿用 flex:1 依赖仅有 max-height 的父级 */
   flex-shrink: 0;
   width: 100%;
-  height: calc(80vh - 160rpx);
-  max-height: calc(80vh - 160rpx);
+  height: calc(80vh - 170rpx);
+  max-height: calc(80vh - 170rpx);
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 30rpx 30rpx 0;
+  padding: 32rpx var(--pop-pad-x) 0;
   box-sizing: border-box;
-}
-.statistics-body::-webkit-scrollbar {
-  width: 6rpx;
-}
-.statistics-body::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.2);
-  border-radius: 3rpx;
-}
-.statistics-body::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(196, 167, 108,0.6), rgba(196, 167, 108,0.4));
-  border-radius: 3rpx;
 }
 .stat-section {
   margin-bottom: 40rpx;
@@ -966,17 +780,19 @@ page {
 .stat-list {
   display: flex;
   flex-direction: column;
-  gap: 16rpx;
 }
+/* 两列行：左标签 secondary、右值等宽（金额金色），发丝分隔不做方框（设计原则 4） */
 .stat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(196, 167, 108,0.2);
-  border-radius: 12rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid var(--pop-divider);
 }
+.stat-row:last-child { border-bottom: none; }
+.row-label { font-size: var(--fs-26); color: var(--color-text-secondary); }
+.row-value { font-family: var(--font-mono); font-size: var(--fs-28); color: var(--color-text-primary); }
+.row-value.gold { color: var(--brass-400); }
 
 .qr-tips.sub {
   font-size: 20rpx;
@@ -1187,59 +1003,19 @@ page {
   border-bottom: 1px solid var(--color-bg-elevated);
 }
 
-/* 等级升级铭牌 */
-.level-up-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  background: rgba(26, 24, 20, 0.88);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-6);
-  box-sizing: border-box;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.35s ease;
-}
-
-.level-up-mask.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
+/* 等级升级：仪式卡（ui-pop-mask is-center is-deep + ui-pop-dialog），保留 Lv 大字主视觉 */
+.level-up-mask { z-index: 2000; }
 .level-up-plate {
-  width: 100%;
   max-width: 560rpx;
-  padding: var(--space-6) var(--space-4);
-  background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
-  border-radius: var(--radius-lg);
   text-align: center;
-  position: relative;
   overflow: hidden;
-  animation: levelUpIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes levelUpIn {
-  from { transform: scale(0.85) translateY(40rpx); opacity: 0; }
-  to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
 .level-up-shine {
   display: none;
 }
 
-.level-up-overline {
-  display: block;
-  font-size: 20rpx;
-  color: var(--brass-400);
-  letter-spacing: 0.2em;
-  margin-bottom: 16rpx;
-  position: relative;
-  z-index: 1;
-}
-
+.level-up-overline { display: block; }
 .level-up-lv {
   display: block;
   font-size: 72rpx;
@@ -1272,49 +1048,12 @@ page {
   z-index: 1;
 }
 
-.level-up-btn {
-  height: 80rpx;
-  line-height: 80rpx;
-  background: var(--brass-400);
-  color: var(--color-bg);
-  border-radius: var(--radius-md);
-  font-size: 28rpx;
-  font-weight: 500;
-  position: relative;
-  z-index: 1;
-}
-/* 生日卡 */
-.birthday-card-mask {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  background: rgba(26, 24, 20, 0.88);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-6);
-  box-sizing: border-box;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.35s ease;
-}
-
-.birthday-card-mask.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
+.level-up-btn { display: block; flex: none; }
+/* 生日卡：仪式卡；顶部渐隐金线为主视觉 */
+.birthday-card-mask { z-index: 2000; }
 .birthday-card-plate {
-  width: 100%;
   max-width: 560rpx;
-  padding: var(--space-6) var(--space-5);
-  background: linear-gradient(165deg, var(--color-bg-elevated) 0%, var(--color-bg-card) 55%, var(--color-bg) 100%);
-  border: 1px solid var(--brass-800);
-  border-radius: var(--radius-lg);
-  text-align: center;
-  position: relative;
   overflow: hidden;
-  animation: levelUpIn 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .birthday-card-rule {
@@ -1327,53 +1066,12 @@ page {
   opacity: 0.7;
 }
 
-.birthday-card-overline {
-  display: block;
-  font-size: 20rpx;
-  color: var(--brass-400);
-  letter-spacing: 0.18em;
-  margin-bottom: 20rpx;
-}
-
-.birthday-card-title {
-  display: block;
-  font-size: 40rpx;
-  font-family: var(--font-brand);
-  color: #fff;
-  margin-bottom: 20rpx;
-}
-
 .birthday-card-body {
   display: block;
-  font-size: 26rpx;
+  margin-top: 16rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
-  line-height: 1.65;
+  line-height: 1.7;
   text-align: left;
-  margin-bottom: var(--space-5);
 }
 
-.birthday-card-actions {
-  display: flex;
-  gap: 16rpx;
-}
-
-.birthday-card-btn {
-  flex: 1;
-  height: 80rpx;
-  line-height: 80rpx;
-  border-radius: var(--radius-md);
-  font-size: 26rpx;
-  font-weight: 500;
-}
-
-.birthday-card-btn.secondary {
-  background: transparent;
-  border: 1px solid var(--brass-400);
-  color: var(--brass-400);
-}
-
-.birthday-card-btn.primary {
-  background: var(--brass-400);
-  color: var(--color-bg);
-  border: none;
-}

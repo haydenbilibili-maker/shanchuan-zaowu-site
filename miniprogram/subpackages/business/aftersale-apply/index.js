@@ -1,6 +1,7 @@
 const app = getApp();
 const db = wx.cloud.database();
 const { ensureOpenId, isOrderOwnedBy, denyOrderAccess } = require('../../../utils/orderScope');
+const { openAppModal } = require('../../../utils/appModal')
 const {
   getPolicy,
   canUserRequestRefund,
@@ -57,13 +58,13 @@ Page({
       }
       const check = canUserRequestRefund(order);
       if (!check.ok) {
-        wx.showModal({
+        openAppModal({
           title: '无法申请',
           content: check.reason || '当前不可申请',
           showCancel: false,
           confirmColor: '#C4A76C',
           success: () => wx.navigateBack({ fail: () => {} })
-        });
+        }, this);
         return;
       }
       // 门店自取：当面交接、无物流开箱环节；逆向流程 = 送回领取门店，门店确认收回后退款

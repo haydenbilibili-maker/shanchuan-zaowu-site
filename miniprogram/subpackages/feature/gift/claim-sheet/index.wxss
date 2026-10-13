@@ -1,7 +1,12 @@
-.cs-mask{position:fixed;left:0;right:0;top:0;bottom:0;z-index:900;background:rgba(10,9,7,0.72);display:flex;align-items:flex-end}
-.cs-panel{width:100%;box-sizing:border-box;padding:44rpx 48rpx calc(40rpx + env(safe-area-inset-bottom));background:#1F1D1A;border-top:2rpx solid rgba(196,167,108,0.45);border-radius:28rpx 28rpx 0 0;display:flex;flex-direction:column}
-.cs-over{font-size:20rpx;letter-spacing:6rpx;color:#C4A76C}
-.cs-title{margin-top:12rpx;font-size:34rpx;font-weight:600;color:#F3ECDD}
+.cs-mask {
+  z-index:900;
+}
+.ui-pop-sheet.cs-panel {
+  box-sizing:border-box;
+  padding:12rpx var(--pop-pad-x) calc(40rpx + env(safe-area-inset-bottom));
+  display:flex;
+  flex-direction:column;
+}
 .cs-desc{margin-top:14rpx;font-size:24rpx;line-height:1.7;color:#B8AD98}
 .cs-row{margin-top:28rpx;padding:24rpx 26rpx;border:2rpx solid rgba(196,167,108,0.3);border-radius:14rpx;display:flex;flex-direction:column}
 .cs-k{font-size:22rpx;letter-spacing:2rpx;color:#C4A76C}
@@ -11,10 +16,16 @@
 .cs-center{text-align:center}
 .cs-notice{margin-top:18rpx;font-size:24rpx;line-height:1.6;color:#E6DCC8}
 .cs-error{margin-top:14rpx;font-size:24rpx;color:#E8927C}
-.cs-btn{margin-top:32rpx;height:88rpx;line-height:88rpx;text-align:center;border-radius:44rpx;border:2rpx solid #C4A76C;color:#C4A76C;font-size:28rpx}
-.cs-btn.is-warn{background:#E8927C;border-color:#E8927C;color:#1A1814;font-size:24rpx}
+.cs-btn {
+  flex: none;
+  margin-top:32rpx;
+}
+.cs-btn.is-warn{background:linear-gradient(180deg,var(--pop-danger-from) 0%,var(--pop-danger-to) 100%);border-color:transparent;color:#FFF3F0;font-size:var(--fs-24)}
 .cs-btn.is-busy{opacity:0.6}
 .cs-btn-press{opacity:0.85}
 .cs-link{margin-top:22rpx;text-align:center;font-size:26rpx;color:#C4A76C}
 .cs-row .cs-link{text-align:left}
 .cs-link-muted{color:#9A8F7C}
+
+/* 弹层规范（docs/弹层视觉规范_2026-10-13.md）：遮罩 / 牌面 / 抓手 / 眉标 / 主标 / 按钮取 ui-pop-*；抓手在内边距里，抵掉上边距 */
+.cs-grip { margin-bottom: 28rpx; }

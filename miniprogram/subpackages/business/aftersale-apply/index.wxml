@@ -107,3 +107,6 @@
 <view class="page loading-wrap" wx:elif="{{loading}}">
   <text class="loading-text">载入中…</text>
 </view>
+
+<!-- 全站样式化弹窗宿主（替代 wx.showModal；utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
+<app-modal id="appModal" />

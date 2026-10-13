@@ -30,9 +30,12 @@
     </scroll-view>
   </view>
 
-  <view class="picker-mask" wx:if="{{storePickerOpen}}" bindtap="closeStorePicker"></view>
+  <view class="ui-pop-mask picker-mask" wx:if="{{storePickerOpen}}" bindtap="closeStorePicker" catchtouchmove="true"></view>
   <view class="picker-sheet {{storePickerOpen ? 'open' : ''}}">
-    <text class="picker-title">选择门店</text>
+    <view class="picker-head">
+      <text class="ui-pop-kicker">STORES</text>
+      <text class="ui-pop-title">选择门店</text>
+    </view>
     <view
       class="picker-item {{item.storeId === store.storeId ? 'active' : ''}}"
       wx:for="{{stores}}"
@@ -331,15 +334,15 @@
     <text class="checkin-dock-store" wx:if="{{!checkedInToday && stores.length > 1}}">{{store.name}}</text>
   </view>
 
-  <view class="lbs-mask" wx:if="{{lbsSheetOpen}}" bindtap="dismissLbsSheet"></view>
+  <view class="ui-pop-mask lbs-mask" wx:if="{{lbsSheetOpen}}" bindtap="dismissLbsSheet" catchtouchmove="true"></view>
   <view class="lbs-sheet {{lbsSheetOpen ? 'open' : ''}}" wx:if="{{lbsSuggestStore}}">
-    <text class="lbs-title">附近门店</text>
+    <text class="ui-pop-kicker lbs-title">NEARBY</text>
     <text class="lbs-store-name">{{lbsSuggestStore.name}}</text>
     <text class="lbs-meta">{{lbsSuggestStore.locationLabel}} · {{lbsSuggestStore.distanceText}}</text>
     <text class="lbs-desc">切换到该门店？</text>
     <view class="lbs-actions">
-      <view class="lbs-btn secondary" bindtap="dismissLbsSheet" hover-class="lbs-btn-secondary-press" hover-stay-time="80">暂不</view>
-      <view class="lbs-btn primary" bindtap="confirmLbsSwitch" hover-class="lbs-btn-primary-press" hover-stay-time="80">切换</view>
+      <view class="ui-pop-btn is-ghost" bindtap="dismissLbsSheet" hover-class="tap-press" hover-stay-time="80">暂不</view>
+      <view class="ui-pop-btn is-primary" bindtap="confirmLbsSwitch" hover-class="tap-press" hover-stay-time="80">切换</view>
     </view>
   </view>
 

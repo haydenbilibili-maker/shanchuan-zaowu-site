@@ -408,7 +408,8 @@ async function checkIdentify(src, t) {
     t.ok('A11 调用超时按服务异常', timeout && timeout.title === svc.title, JSON.stringify(timeout))
     const page = String(src.identifyPage)
     t.ok('A11 识别页把出参 error_type 带进错误', /\.errorType = \(result && result\.error_type\) \|\| ''/.test(page))
-    const modal = (page.match(/wx\.showModal\(\{[\s\S]*?\}\)/g) || []).find((m) => /知道了/.test(m)) || ''
+    // 2026-10-13 弹层规范：识别页改用 openAppModal（与 wx.showModal 同入参），两种写法都认
+    const modal = (page.match(/(?:wx\.showModal|openAppModal)\(\{[\s\S]*?\}(?:, this)?\)/g) || []).find((m) => /知道了/.test(m)) || ''
     t.ok('A11 失败弹窗文案只来自 identifyFailureCopy（不露原始报错）', /title: copy\.title/.test(modal) && /content: copy\.content/.test(modal) && /const copy = identifyFailureCopy\(err\)/.test(page) && !/err\.message|result\.msg|\bmsg\b/.test(modal), modal.slice(0, 160))
   }
 }

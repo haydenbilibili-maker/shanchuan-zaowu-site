@@ -155,11 +155,13 @@
   </view>
 
   <!-- 双渠道：Museum 底栏（替代系统 ActionSheet） -->
-  <view class="sheet-mask {{showUseSheet ? 'show' : ''}}" wx:if="{{showUseSheet}}" bindtap="closeUseSheet" catchtouchmove="preventClose">
-    <view class="use-sheet" catchtap="preventClose">
-      <view class="sheet-handle" aria-hidden="true"></view>
-      <text class="sheet-overline">HOW TO USE</text>
-      <text class="sheet-title">如何使用此礼券</text>
+  <view class="ui-pop-mask sheet-mask" wx:if="{{showUseSheet}}" bindtap="closeUseSheet" catchtouchmove="preventClose">
+    <view class="ui-pop-sheet use-sheet" catchtap="preventClose">
+      <view class="ui-pop-grip" aria-hidden="true"></view>
+      <view class="ui-pop-head is-center">
+        <text class="ui-pop-kicker">HOW TO USE</text>
+        <text class="ui-pop-title">如何使用此礼券</text>
+      </view>
       <text class="sheet-coupon" wx:if="{{sheetCoupon.title}}">{{sheetCoupon.title}}{{sheetCoupon.value ? ' · ¥' + sheetCoupon.value : ''}}</text>
 
       <view class="sheet-option" hover-class="sheet-option-press" bindtap="onSheetOnline">
@@ -176,19 +178,19 @@
         </view>
         <text class="sheet-arrow">›</text>
       </view>
-      <view class="sheet-cancel" hover-class="sheet-cancel-press" bindtap="closeUseSheet">取消</view>
+      <view class="ui-pop-btn is-ghost sheet-cancel" hover-class="tap-press" hover-stay-time="80" bindtap="closeUseSheet">取消</view>
     </view>
   </view>
 
   <!-- 到店亮码弹层：catchtouchmove 只挡遮罩穿透，面板可滚 -->
-  <view class="pass-mask" wx:if="{{showPassModal}}" bindtap="closePassModal">
+  <view class="ui-pop-mask is-center is-deep pass-mask" wx:if="{{showPassModal}}" bindtap="closePassModal">
     <view class="pass-mask-blocker" catchtouchmove="preventClose" catchtap="closePassModal"></view>
-    <view class="pass-panel {{passState === 'redeemed' ? 'is-redeemed' : ''}}" catchtap="preventClose">
-      <view class="pass-head">
-        <text class="pass-overline">{{passState === 'redeemed' ? 'REDEEMED' : 'MEMBER PASS'}}</text>
-        <text class="pass-title">{{passState === 'redeemed' ? '核销成功' : '到店亮码'}}</text>
-        <view class="pass-close" bindtap="closePassModal">关闭</view>
+    <view class="ui-pop-dialog pass-panel {{passState === 'redeemed' ? 'is-redeemed' : ''}}" catchtap="preventClose">
+      <view class="ui-pop-head is-center pass-head">
+        <text class="ui-pop-kicker">{{passState === 'redeemed' ? 'REDEEMED' : 'MEMBER PASS'}}</text>
+        <text class="ui-pop-title">{{passState === 'redeemed' ? '核销成功' : '到店亮码'}}</text>
       </view>
+      <view class="ui-pop-close" bindtap="closePassModal" hover-class="tap-press" hover-stay-time="80">✕</view>
 
       <!-- 等待核销提示 -->
       <view class="pass-coupon-tip" wx:if="{{passState !== 'redeemed' && passCouponTip}}">

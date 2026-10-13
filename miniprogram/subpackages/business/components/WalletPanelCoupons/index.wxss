@@ -286,46 +286,12 @@ view, text { box-sizing: border-box; }
 
 /* —— 使用方式底栏 —— */
 .sheet-mask {
-  position: fixed;
-  inset: 0;
   z-index: 1100;
-  background: rgba(26, 24, 20, 0.72);
-  display: flex;
-  align-items: flex-end;
-  opacity: 0;
-  transition: opacity 0.22s ease;
 }
-.sheet-mask.show { opacity: 1; }
 
 .use-sheet {
-  width: 100%;
-  background: #1F1D1A;
-  border-radius: 24rpx 24rpx 0 0;
-  border-top: 1rpx solid #4D401A;
-  padding: 16rpx 32rpx calc(28rpx + env(safe-area-inset-bottom));
+  padding: 0 var(--pop-pad-x) 28rpx;
   box-sizing: border-box;
-}
-.sheet-handle {
-  width: 64rpx;
-  height: 6rpx;
-  border-radius: 999rpx;
-  background: #4A4540;
-  margin: 0 auto 24rpx;
-}
-.sheet-overline {
-  display: block;
-  text-align: center;
-  font-size: 18rpx;
-  letter-spacing: 0.16em;
-  color: #6B6560;
-}
-.sheet-title {
-  display: block;
-  text-align: center;
-  margin-top: 8rpx;
-  font-size: 32rpx;
-  color: #FFFFFF;
-  font-weight: 500;
 }
 .sheet-coupon {
   display: block;
@@ -334,21 +300,17 @@ view, text { box-sizing: border-box; }
   font-size: 22rpx;
   color: #C4A76C;
 }
+/* 两个渠道：发丝分隔行（不做方框卡片）；推荐渠道标题金色 */
 .sheet-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16rpx;
-  padding: 28rpx 24rpx;
-  margin-bottom: 16rpx;
-  border-radius: 16rpx;
-  border: 1rpx solid #262320;
-  background: #1A1814;
+  min-height: 112rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--pop-divider);
 }
-.sheet-option.primary {
-  border-color: #4D401A;
-  background: rgba(196, 167, 108, 0.1);
-}
+.sheet-option.primary .sheet-opt-title { color: var(--brass-400); }
 .sheet-option-press {
   opacity: 0.88;
   background: #262320;
@@ -371,27 +333,12 @@ view, text { box-sizing: border-box; }
   color: #C4A76C;
   line-height: 1;
 }
-.sheet-cancel {
-  margin-top: 8rpx;
-  text-align: center;
-  padding: 24rpx;
-  font-size: 26rpx;
-  color: #A09A90;
-  letter-spacing: 0.06em;
-}
-.sheet-cancel-press { opacity: 0.7; }
+.sheet-cancel { display: block; flex: none; margin-top: 24rpx; }
 
 /* —— 亮码弹层 —— */
 .pass-mask {
-  position: fixed;
-  inset: 0;
   z-index: 1200;
-  background: rgba(26, 24, 20, 0.9);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: calc(40rpx + env(safe-area-inset-top)) 32rpx calc(40rpx + env(safe-area-inset-bottom));
-  box-sizing: border-box;
 }
 .pass-mask-blocker {
   position: absolute;
@@ -399,14 +346,9 @@ view, text { box-sizing: border-box; }
   z-index: 0;
 }
 .pass-panel {
-  position: relative;
   z-index: 1;
-  width: 100%;
   max-width: 600rpx;
   max-height: 100%;
-  background: #1F1D1A;
-  border: 1rpx solid #4D401A;
-  border-radius: 24rpx;
   padding: 32rpx 28rpx 36rpx;
   box-sizing: border-box;
   display: flex;
@@ -418,29 +360,7 @@ view, text { box-sizing: border-box; }
 .pass-head {
   width: 100%;
   position: relative;
-  text-align: center;
   margin-bottom: 20rpx;
-}
-.pass-overline {
-  display: block;
-  font-size: 18rpx;
-  letter-spacing: 0.16em;
-  color: #6B6560;
-}
-.pass-title {
-  display: block;
-  margin-top: 6rpx;
-  font-size: 32rpx;
-  color: #FFFFFF;
-  font-weight: 500;
-}
-.pass-close {
-  position: absolute;
-  right: 0;
-  top: 0;
-  padding: 8rpx 4rpx;
-  font-size: 24rpx;
-  color: #A09A90;
 }
 
 .pass-coupon-tip {
@@ -560,7 +480,7 @@ view, text { box-sizing: border-box; }
 
 /* —— 核销成功结果卡样式见 components/PassRedeemCard —— */
 .pass-panel.is-redeemed {
-  border-color: #8A7530;
+  border-color: rgba(196, 167, 108, 0.6);
 }
 
 .pass-done-btn {

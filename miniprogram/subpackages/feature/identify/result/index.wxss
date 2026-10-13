@@ -942,48 +942,9 @@
   display: none;
 }
 
-.fb-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(26, 24, 20, 0.88);
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40rpx;
-  box-sizing: border-box;
-}
-
-.fb-panel {
-  width: 100%;
-  max-width: 640rpx;
-  padding: 36rpx 32rpx;
-  background: var(--color-bg-card);
-  border-radius: 24rpx;
-  border: 1rpx solid #4D401A;
-  text-align: left;
-}
-
-.fb-en {
-  display: block;
-  font-size: 18rpx;
-  letter-spacing: 0.16em;
-  color: var(--gold);
-  font-style: italic;
-  margin-bottom: 8rpx;
-}
-
-.fb-title {
-  display: block;
-  font-size: 36rpx;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  margin-bottom: 12rpx;
-}
-
+/* 识别纠错：确认框形态（ui-pop-*，docs/弹层视觉规范_2026-10-13.md）；这里只排表单与原生 button 复位 */
+.fb-mask { z-index: 200; }
+.fb-panel { max-width: 640rpx; text-align: left; }
 .fb-tip {
   display: block;
   font-size: 24rpx;
@@ -997,7 +958,7 @@
   padding: 0 24rpx;
   margin-bottom: 20rpx;
   background: var(--color-bg-elevated);
-  border-radius: 16rpx;
+  border-radius: 12rpx;
   color: var(--color-text-primary);
   font-size: 28rpx;
 }
@@ -1014,75 +975,18 @@
   font-size: 28rpx;
 }
 
-.fb-actions {
-  display: flex;
-  gap: 20rpx;
-}
+/* 原生 button（要用它的 loading 转圈）：复位默认内边距 / 行高 / 描边，外观全取 ui-pop-btn */
+.fb-btn { margin: 0; padding: 0; }
+.fb-btn::after { border: none; }
 
-.fb-btn {
-  flex: 1;
-  height: 80rpx;
-  line-height: 80rpx;
-  border-radius: 40rpx;
-  font-size: 28rpx;
-  border: none;
-}
 
-.fb-btn::after {
-  border: none;
-}
 
-.fb-btn.cancel {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-body);
-}
 
-.fb-btn.ok {
-  background: var(--gold);
-  color: var(--color-bg);
-  font-weight: 500;
-}
 
-.unlock-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(26, 24, 20, 0.92);
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48rpx;
-  box-sizing: border-box;
-}
-
-.unlock-sheet {
-  width: 100%;
-  background: var(--color-bg-card);
-  border: 1rpx solid #4D401A;
-  border-radius: 24rpx;
-  padding: 48rpx 40rpx 40rpx;
-  box-sizing: border-box;
-  text-align: left;
-}
-
-.unlock-en {
-  display: block;
-  font-size: 18rpx;
-  letter-spacing: 0.28em;
-  color: rgba(196, 167, 108, 0.7);
-}
-
-.unlock-title {
-  display: block;
-  margin-top: 16rpx;
-  font-size: 36rpx;
-  color: var(--color-text-primary);
-  font-weight: 600;
-}
-
+/* 解锁仪式卡：ui-pop-mask is-center is-deep + ui-pop-dialog（docs/弹层视觉规范_2026-10-13.md）；这里只排卡内藏品信息 */
+.unlock-mask { z-index: 50; }
+.unlock-sheet { text-align: center; }
+.unlock-cta { display: block; flex: none; margin-top: 40rpx; }
 .unlock-name {
   display: block;
   margin-top: 28rpx;
@@ -1106,16 +1010,6 @@
   line-height: 1.6;
 }
 
-.unlock-cta {
-  margin-top: 40rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: var(--gold);
-  color: var(--color-bg);
-  font-size: 28rpx;
-  border-radius: 16rpx;
-  text-align: center;
-}
 
 .unlock-later {
   display: block;

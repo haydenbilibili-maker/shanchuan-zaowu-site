@@ -260,3 +260,6 @@
     <view class="picker-empty" wx:elif="{{!productCandidates.length}}">没有匹配藏品</view>
   </scroll-view>
 </view>
+
+<!-- 全站样式化弹窗宿主（utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
+<app-modal id="appModal" />

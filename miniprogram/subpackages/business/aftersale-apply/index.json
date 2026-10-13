@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "page-edge-back": "/components/PageEdgeBack/index"
+    "page-edge-back": "/components/PageEdgeBack/index",
+    "app-modal": "/components/AppModal/index"
   },
   "navigationBarTitleText": "售后申请",
   "navigationBarBackgroundColor": "#1A1814",

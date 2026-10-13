@@ -6,6 +6,7 @@ const {
   formatQuoteAmount
 } = require('../../../utils/petMemorialHelper')
 const { trackBehavior } = require('../../../../../utils/trackBehavior')
+const { openAppModal } = require('../../../../../utils/appModal')
 
 Page({
   data: {
@@ -103,7 +104,7 @@ Page({
 
   async confirmQuote() {
     if (!this.data.canConfirmQuote || this.data.confirming) return
-    wx.showModal({
+    openAppModal({
       title: '确认报价',
       content: `确认接受 ${this.data.quoteAmountText} 的报价？确认后工坊将安排后续交接。`,
       success: async (res) => {
@@ -127,7 +128,7 @@ Page({
           this.setData({ confirming: false })
         }
       }
-    })
+    }, this)
   },
 
   goBookIntake() {

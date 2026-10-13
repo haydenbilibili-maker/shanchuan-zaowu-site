@@ -4,6 +4,7 @@ const { getWindowInfo } = require('../../../../utils/systemInfo')
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const { buildPublishPayload, CATEGORY_VALUES, CATEGORY_NAMES } = require('../../utils/communityPublish')
 const { ensureOpenId } = require('../../../../utils/orderScope')
+const { openAppModal } = require('../../../../utils/appModal')
 
 Page({
   data: {
@@ -138,14 +139,14 @@ Page({
     }
 
     if (!openid) {
-      wx.showModal({
+      openAppModal({
         title: '登录后发布',
         content: '未能获取账号信息，请稍后重试或重新进入小程序',
         confirmText: '去我的',
         success: (res) => {
           if (res.confirm) wx.switchTab({ url: '/pages/user/index' })
         }
-      })
+      }, this)
       return null
     }
 

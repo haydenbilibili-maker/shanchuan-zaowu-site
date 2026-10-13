@@ -1,5 +1,7 @@
 // 凭礼笺领取 · 送礼人管理面板：口令 / 作废并换新链接 / 改用手机号核验 / 领取人（2026-10-11）
 Component({
+  // 弹层零件 ui-pop-*（app.wxss）需要全局类；本组件类名与 app.wxss 无重名（2026-10-13 核对）
+  options: { addGlobalClass: true },
   properties: {
     show: { type: Boolean, value: false },
     state: { type: Object, value: {} },

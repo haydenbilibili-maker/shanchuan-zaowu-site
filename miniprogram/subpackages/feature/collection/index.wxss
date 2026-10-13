@@ -577,46 +577,14 @@ page {
   color: #6B6560;
 }
 
-.unlock-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(26, 24, 20, 0.92);
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48rpx;
-  box-sizing: border-box;
-}
 
-.unlock-sheet {
-  width: 100%;
-  background: #1F1D1A;
-  border: 1rpx solid #4D401A;
-  border-radius: 24rpx;
-  padding: 48rpx 40rpx 40rpx;
-  box-sizing: border-box;
-  text-align: center;
-}
 
-.unlock-en {
-  display: block;
-  font-size: 18rpx;
-  letter-spacing: 0.28em;
-  color: rgba(196, 167, 108, 0.7);
-}
 
-.unlock-title {
-  display: block;
-  margin-top: 16rpx;
-  font-size: 36rpx;
-  color: #FFFFFF;
-  font-weight: 600;
-}
 
+/* 解锁仪式卡：ui-pop-mask is-center is-deep + ui-pop-dialog（docs/弹层视觉规范_2026-10-13.md）；这里只排卡内藏品信息 */
+.unlock-mask { z-index: 40; }
+.unlock-sheet { text-align: center; }
+.unlock-cta { display: block; flex: none; margin-top: 40rpx; }
 .unlock-name {
   display: block;
   margin-top: 28rpx;
@@ -640,19 +608,10 @@ page {
   line-height: 1.6;
 }
 
-.unlock-cta {
-  margin-top: 40rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: #C4A76C;
-  color: #1A1814;
-  font-size: 28rpx;
-  border-radius: 16rpx;
-}
 
 .unlock-later {
   display: block;
   margin-top: 24rpx;
   font-size: 24rpx;
-  color: #6B6560;
+  color: var(--color-text-secondary);
 }

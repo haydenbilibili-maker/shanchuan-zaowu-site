@@ -130,14 +130,15 @@ function checks(s) {
   add('R3-1 SKU 数量 ± / 确认 / 两处 ✕ 都有 hover-class',
     tagsWith(s.detailWxml, /bindtap="changeBuyCount"/).filter((t) => /hover-class=/.test(t)).length === 2 &&
     tagsWith(s.detailWxml, /bindtap="confirmSkuAction"/).every((t) => /hover-class=/.test(t)) &&
-    tagsWith(s.detailWxml, /class="sku-close"/).filter((t) => /hover-class=/.test(t)).length === 2)
+    // 2026-10-13 弹层规范：礼券抽屉的 ✕ 改为全局 ui-pop-close —— 判据改按两个关闭回调各自的 ✕ 计（意图不变）
+    ['closeSkuSheet', 'closeCouponSheet'].every((h) => tagsWith(s.detailWxml, new RegExp(`class="(?:sku-close|ui-pop-close)" bindtap="${h}"`)).some((t) => /hover-class=/.test(t))))
   add('R3-1 「数量」标签去掉下边距（与步进器垂直居中）、SKU 头部 ✕ 热区放大',
     /\.qty-section \.sku-label \{ margin-bottom: 0; \}/.test(s.detailWxss) && /\.sku-head \.sku-close \{[^}]*padding: 24rpx;/.test(s.detailWxss))
 
   // R3-2 优惠券 / 退款说明 / 海报弹层按钮有按压态；已领取的券按钮不给按压反馈
   add('R3-2 礼券领取（已领取为 none）/ 礼券夹 / 立即购买 / 知道了 / 海报关闭都有 hover-class',
     /bindtap="claimCoupon"[\s\S]{0,160}?hover-class="\{\{item\.claimed \? 'none' : 'cta-press'\}\}"/.test(s.detailWxml) &&
-    ['goToCoupons', 'buyNowWithCoupon', 'closeRefundSheet"', 'closePosterModal'].every((h) => tagsWith(s.detailWxml, new RegExp(`class="(?:coupon-link-btn|coupon-buy-btn|refund-sheet-btn|close-icon-out)" bindtap="${h.replace('"', '')}"`)).some((t) => /hover-class=/.test(t))))
+    ['goToCoupons', 'buyNowWithCoupon', 'closeRefundSheet"', 'closePosterModal'].every((h) => tagsWith(s.detailWxml, new RegExp(`class="(?:[^"]*\\s)?(?:coupon-link-btn|coupon-buy-btn|refund-sheet-btn|close-icon-out)" bindtap="${h.replace('"', '')}"`)).some((t) => /hover-class=/.test(t))))
   add('R3-2 详情吸顶 tab 三项都有 hover-class', tagsWith(s.detailWxml, /bindtap="scrollToSection"/).filter((t) => /hover-class=/.test(t)).length === 3)
 
   // R3-3 专题档案页：价格带 ¥、0 阅读 0 收藏不展示、画廊与关联藏品有按压态
@@ -173,7 +174,9 @@ function checks(s) {
     // 第 10 轮：馆藏区头改全站 .mu-head，「左滑更多 · N 篇 / N 件」由 app.wxss .mu-act-muted 承载（判据不变：说明字 = secondary）
     colorOf(s.catWxss, '.nav-sub') === SEC && colorOf(s.appWxss, '.mu-act-muted') === SEC && colorOf(s.appWxss, '.mu-sub') === SEC &&
     colorOf(s.identifyWxss, '.ai-privacy-txt') === SEC &&
-    ['.gift-panel-sub', '.gift-scene-label', '.coupon-empty', '.param-k'].every((x) => colorOf(s.detailWxss, x) === SEC))
+    // 2026-10-13 弹层规范：详情礼券抽屉空态改用全局 .ui-pop-empty（判据不变：说明字 = secondary）
+    ['.gift-panel-sub', '.gift-scene-label', '.param-k'].every((x) => colorOf(s.detailWxss, x) === SEC) &&
+    /\n\.ui-pop-empty \{[^}]*color: var\(--color-text-secondary\);/.test(s.appWxss))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
 
   // R5-1 首页恰好一屏：容器 100vh 纵向 flex 且裁切，顶部占位 + 滚动区（flex:1）+ 底栏让位 = 视口；不再「占位 + 满屏滚动区」叠高

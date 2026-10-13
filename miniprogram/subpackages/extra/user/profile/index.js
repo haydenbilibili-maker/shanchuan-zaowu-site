@@ -10,6 +10,7 @@ const { zodiacFromBirthday, calcProfileScore, buildInterestChips, sanitizeNickNa
 const { ensureSession, fetchUserSession, clearLocalSession } = require('../../../../utils/userSession')
 const { pickAvatarImage, avatarExtFromPath, toastAvatarPickError } = require('../../../../utils/pickAvatar')
 const { getPageNavInsets } = require('../../utils/pageNav')
+const { openAppModal } = require('../../../../utils/appModal')
 const {
   DISPLAY_OPTIONS,
   PREF_VEIL,
@@ -706,7 +707,7 @@ Page({
       wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) })
       return
     }
-    wx.showModal({
+    openAppModal({
       title: '尚未保存',
       content: LEAVE_MESSAGE,
       confirmText: '离开',
@@ -716,7 +717,7 @@ Page({
         this.disableLeaveGuard()
         wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) })
       }
-    })
+    }, this)
   },
 
   goFeedback() {
@@ -746,7 +747,7 @@ Page({
     const content = this.data.isDirty
       ? '未保存的修改将丢失。将清除本机登录状态，返回「我的」访客视图。云端档案仍保留。'
       : '将清除本机登录状态，返回「我的」访客视图。云端档案仍保留，再次进入时可重新载入。'
-    wx.showModal({
+    openAppModal({
       title: '退出登录',
       content,
       confirmText: '退出',
@@ -756,7 +757,7 @@ Page({
         if (!res.confirm) return
         this.performLogout()
       }
-    })
+    }, this)
   },
 
   performLogout() {

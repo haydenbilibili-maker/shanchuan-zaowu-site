@@ -73,6 +73,8 @@ function getRecordAuthState() {
 
 function openRecordSetting() {
   return new Promise((resolve) => {
+    // ⚠️ 保留系统弹窗：确认后要调 wx.openSetting，须在用户点击手势内同步发起；
+    // AppModal 的回调是 Promise 异步触发，不算手势（docs/弹层视觉规范_2026-10-13.md §7）
     wx.showModal({
       title: '需要麦克风权限',
       content:

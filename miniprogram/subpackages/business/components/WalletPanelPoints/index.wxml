@@ -306,16 +306,17 @@
     <text class="cr-en">NATURE'S CREATIONS</text>
   </view>
 
-  <!-- 弹窗保持不变 (省略以精简，请保留原有的 qr-mask 部分) -->
-  <view class="qr-mask" wx:if="{{showQrModal}}" bindtap="closeCode">
-    <view class="qr-content pop-in" catchtap="true">
-      <view class="qr-header">
+  <!-- 核销码：仪式卡（ui-pop-*，docs/弹层视觉规范_2026-10-13.md） -->
+  <view class="ui-pop-mask is-center is-deep qr-mask" wx:if="{{showQrModal}}" bindtap="closeCode" catchtouchmove="true">
+    <view class="ui-pop-dialog qr-content" catchtap="true">
+      <view class="ui-pop-head is-center">
         <view class="qr-live-row">
           <view class="signal-light blink"></view>
-          <text>REDEEM CODE</text>
+          <text class="ui-pop-kicker">REDEEM CODE</text>
         </view>
-        <text class="sub">{{currentTitle}}</text>
+        <text class="ui-pop-title">{{currentTitle}}</text>
       </view>
+      <view class="ui-pop-close" bindtap="closeCode" hover-class="tap-press" hover-stay-time="80">✕</view>
       <view class="qr-box">
         <canvas type="2d" id="redeemQrCanvas" class="qr-code-img" style="width: 400rpx; height: 400rpx;"></canvas>
       </view>
@@ -326,11 +327,11 @@
   </view>
 
   <!-- 兑换代金券二次确认 -->
-  <view class="ex-mask" wx:if="{{showExchangeConfirm}}" bindtap="closeExchangeConfirm">
-    <view class="ex-modal" catchtap="noop">
-      <view class="ex-head">
-        <text class="ex-en">CONFIRM EXCHANGE</text>
-        <text class="ex-title">确认兑换礼券</text>
+  <view class="ui-pop-mask is-center ex-mask" wx:if="{{showExchangeConfirm}}" bindtap="closeExchangeConfirm" catchtouchmove="true">
+    <view class="ui-pop-dialog ex-modal" catchtap="noop">
+      <view class="ui-pop-head">
+        <text class="ui-pop-kicker">CONFIRM EXCHANGE</text>
+        <text class="ui-pop-title">确认兑换礼券</text>
       </view>
       <view class="ex-body" wx:if="{{exchangeTarget}}">
         <text class="ex-name">{{exchangeTarget.title}}</text>
@@ -341,9 +342,9 @@
         <text class="ex-usage" wx:if="{{exchangeTarget.usageText}}">{{exchangeTarget.usageText}}</text>
         <text class="ex-hint">{{exchangeConfirmHint}}</text>
       </view>
-      <view class="ex-foot">
-        <view class="ex-btn ghost" bindtap="closeExchangeConfirm">取消</view>
-        <view class="ex-btn primary" bindtap="confirmExchangeCoupon">确认兑换</view>
+      <view class="ui-pop-foot">
+        <view class="ui-pop-btn is-ghost" bindtap="closeExchangeConfirm" hover-class="tap-press" hover-stay-time="80">取消</view>
+        <view class="ui-pop-btn is-primary" bindtap="confirmExchangeCoupon" hover-class="tap-press" hover-stay-time="80">确认兑换</view>
       </view>
     </view>
   </view>
@@ -360,3 +361,6 @@
   />
 
 </view>
+
+<!-- 全站样式化弹窗宿主（替代 wx.showModal；utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
+<app-modal id="appModal" />

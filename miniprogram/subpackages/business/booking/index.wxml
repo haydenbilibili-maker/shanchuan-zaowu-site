@@ -72,7 +72,7 @@
             <text class="cp-tip">· {{item}}</text>
           </block>
         </view>
-        <view class="store-picker-mask" wx:if="{{storePickerOpen}}" bindtap="closeStorePicker"></view>
+        <view class="ui-pop-mask store-picker-mask" wx:if="{{storePickerOpen}}" bindtap="closeStorePicker" catchtouchmove="true"></view>
         <view class="store-picker-sheet" wx:if="{{storePickerOpen}}">
           <view
             class="store-picker-item {{item.storeId === storeId ? 'active' : ''}}"
@@ -80,6 +80,8 @@
             wx:key="storeId"
             bindtap="selectBookingStore"
             data-id="{{item.storeId}}"
+            hover-class="tap-press-soft"
+            hover-stay-time="80"
           >
             <text class="spi-name">{{item.name}}</text>
             <text class="spi-loc">{{item.locationLabel}}</text>
@@ -286,7 +288,7 @@
   </view>
 
   <!-- 4. 门票铸造动画 -->
-  <view class="mint-modal {{showMintModal ? 'active' : ''}}" catchtouchmove="true">
+  <view class="ui-pop-mask is-deep is-toggle mint-modal {{showMintModal ? 'is-open active' : ''}}" catchtouchmove="true">
     <view class="mint-content">
       <view class="mint-machine">
         <view class="signal-light printer-light {{mintAnimation ? 'blink' : ''}}"></view>

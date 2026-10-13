@@ -62,22 +62,28 @@ const toastWxss = read(TOAST_WXSS)
 const toastWxml = read(TOAST_WXML)
 const modalWxss = read(MODAL_WXSS)
 
-/* ── 1) 视觉同源：与 AppModal 逐字一致 ───────────────────────────────────── */
+/* ── 1) 视觉同源：两个母版的牌面都取 app.wxss 同一组弹层令牌 ────────────────
+ * 2026-10-13 弹层规范（docs/弹层视觉规范_2026-10-13.md）：事实源从「两份逐字相同的字面量」
+ * 收到 app.wxss 的 --pop-* 令牌 —— AppModal 用全局零件 .ui-pop-dialog，AppToast 牌面直接引用令牌。
+ * 判据：令牌在 app.wxss 定义且 .ui-pop-dialog 引用它；AppToast 引用同一令牌；两者都不再写字面量牌面。 */
+const appWxssAll = read(APP_WXSS)
+const modalWxml = read('miniprogram/components/AppModal/index.wxml')
+const popDialog = (stripComments(appWxssAll).match(/\n\.ui-pop-dialog\s*\{([^}]*)\}/) || [, ''])[1]  // 行首独立规则（不取 .is-toggle .ui-pop-dialog 这类变体）
 const TOKENS = [
-  ['铜金描边', /border:\s*1rpx solid rgba\(196, 167, 108, 0\.55\);/],
-  ['渐变黑底', /background:\s*linear-gradient\(180deg, #221F1B 0%, #1A1814 100%\);/],
-  ['投影', /box-shadow:\s*0 24rpx 64rpx rgba\(0, 0, 0, 0\.55\);/],
-  ['圆角令牌', /border-radius:\s*var\(--radius-md, 16rpx\);/],
-  // 2026-10-13 全站质感 R5：四角铭牌 2rpx / 0.8 → 1rpx / 0.5（发丝金），判据不变：两者逐字一致
-  ['四角铭牌', /border-color:\s*rgba\(196, 167, 108, 0\.5\);/]
+  ['发丝金描边', '--pop-hairline', /border:\s*1rpx solid var\(--pop-hairline\);/],
+  ['渐变黑底', '--pop-surface', /background:\s*var\(--pop-surface\);/],
+  ['投影', '--pop-shadow-dialog', /box-shadow:\s*var\(--pop-shadow-dialog\);/],
+  ['圆角', '--pop-radius-dialog', /border-radius:\s*var\(--pop-radius-dialog\);/]
 ]
-for (const [label, re] of TOKENS) {
-  check(`AppToast 有${label}`, re.test(toastWxss), label)
-  check(`★ ${label}与 AppModal 逐字一致（同一套主视觉）`, re.test(modalWxss) && re.test(toastWxss),
-    `AppModal=${re.test(modalWxss)} AppToast=${re.test(toastWxss)}`)
+check('★ AppModal 牌面用全局零件 ui-pop-dialog', /class="ui-pop-dialog\b/.test(modalWxml))
+for (const [label, token, re] of TOKENS) {
+  check(`★ app.wxss 定义了弹层令牌 ${token}`, new RegExp(`${token}\\s*:`).test(appWxssAll), token)
+  check(`★ ${label}：AppModal（ui-pop-dialog）与 AppToast 同取 ${token}`, re.test(popDialog) && re.test(toastWxss),
+    `ui-pop-dialog=${re.test(popDialog)} AppToast=${re.test(toastWxss)}`)
 }
 check('AppToast 用品牌衬线字体做标题', /font-family:\s*var\(--font-brand\)/.test(toastWxss))
-check('AppToast 有铭牌四角元素', (toastWxml.match(/class="at-corner/g) || []).length === 4)
+check('★ 牌面不再自带四角铭牌（规范：发丝金框即边界）', !/am-corner|at-corner/.test(toastWxss + read(TOAST_WXML) + modalWxss + modalWxml))
+check('★ AppModal 不再自写牌面字面量（只留组件特有样式）', !/linear-gradient\(180deg, #221F1B/.test(stripComments(modalWxss)))
 
 /* ── 1b) 字阶令牌（契约 C7 §1）：母版不得自带离群字号 ─────────────────────── */
 {
@@ -87,8 +93,9 @@ check('AppToast 有铭牌四角元素', (toastWxml.match(/class="at-corner/g) ||
   check('★ app.wxss 定义了全部 14 档 --fs-* 字阶令牌（契约 C7 §1.1）', missing.length === 0,
     missing.length ? `缺 ${missing.map((n) => `--fs-${n}`).join(' / ')}` : '')
 
+  const uiPopBlock = (appWxss.match(/\/\* =+ 弹层[\s\S]*?@keyframes ui-pop-fade/) || [''])[0]
   for (const [label, file, wxss] of [
-    ['AppModal', MODAL_WXSS, modalWxss],
+    ['AppModal', MODAL_WXSS, `${modalWxss}\n${uiPopBlock}`],
     ['AppToast', TOAST_WXSS, toastWxss]
   ]) {
     const body = stripComments(wxss)
@@ -181,10 +188,22 @@ function selftest() {
       to: '  wx:if="{{visible}}"\n  catchtouchmove="noop"\n>'
     },
     {
-      name: 'toast 描边与 AppModal 漂移（视觉不再同源）',
+      name: 'toast 描边与 AppModal 漂移（写回字面量，视觉不再同源）',
       file: TOAST_WXSS,
-      from: 'border: 1rpx solid rgba(196, 167, 108, 0.55);',
+      from: 'border: 1rpx solid var(--pop-hairline);',
       to: 'border: 1rpx solid rgba(196, 167, 108, 0.25);'
+    },
+    {
+      name: 'AppModal 牌面脱离全局零件（自写一套）',
+      file: 'miniprogram/components/AppModal/index.wxml',
+      from: 'class="ui-pop-dialog am-plate"',
+      to: 'class="am-plate"'
+    },
+    {
+      name: 'app.wxss 弹层零件改走字面量底色（令牌失效）',
+      file: APP_WXSS,
+      from: '  background: var(--pop-surface);\n  border: 1rpx solid var(--pop-hairline);\n  border-radius: var(--pop-radius-dialog);',
+      to: '  background: #222;\n  border: 1rpx solid var(--pop-hairline);\n  border-radius: var(--pop-radius-dialog);'
     },
     {
       name: '券夹面板漏注册 app-toast',
@@ -207,8 +226,8 @@ function selftest() {
     {
       name: '母版引用幻影令牌（AppModal 用不在册的 --fs-27）',
       file: MODAL_WXSS,
-      from: '.am-content {\n  margin-top: 16rpx;\n  font-size: var(--fs-26);',
-      to: '.am-content {\n  margin-top: 16rpx;\n  font-size: var(--fs-27);'
+      from: '.am-content {\n  display: block;\n  margin-top: 16rpx;\n  font-size: var(--fs-26);',
+      to: '.am-content {\n  display: block;\n  margin-top: 16rpx;\n  font-size: var(--fs-27);'
     }
   ]
   let bad = 0
@@ -276,6 +295,7 @@ async function renderPreview() {
   const rootVars = toPx([...pageBlock.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/g)]
     .map((m) => `  ${m[1]}: ${m[2].trim()};`).join('\n'))
 
+  const uiPopCss = () => (read(APP_WXSS).match(/\.ui-pop-mask \{[\s\S]*?@keyframes ui-pop-fade/) || [''])[0].replace(/@keyframes ui-pop-fade$/, '')
   const toHtml = (wxml, binds) => {
     let s = wxml.replace(/<!--[\s\S]*?-->/g, '')
     for (const [k, v] of Object.entries(binds)) s = s.split(k).join(v)
@@ -295,7 +315,7 @@ async function renderPreview() {
     '{{content}}': '删除后不可恢复。\n如需再次使用，请重新填写。',  // 真换行：证明 pre-wrap
     '{{cancelText}}': '取消',
     '{{confirmText}}': '删除',
-    "{{danger ? 'is-danger' : ''}}": 'is-danger'
+    "{{tone === 'danger' ? 'is-danger' : (tone === 'warn' ? 'is-primary is-warn' : 'is-primary')}}": 'is-danger'
   })
   const toast = toHtml(read(TOAST_WXML), {
     "{{leaving ? 'is-out' : 'is-in'}}": 'is-in',
@@ -313,6 +333,7 @@ html, body { margin: 0; padding: 0; background: #12100E; }
 .pane-label { position: absolute; left: 10px; top: 6px; z-index: 9999; color: #C4A76C; font: 11px/1.4 -apple-system, sans-serif; letter-spacing: .08em; }
 .pane .am-mask, .pane .at-mask { position: absolute; padding: 16px; }
 .pane .am-plate, .pane .at-plate { max-width: none; }
+${toPx(uiPopCss())}
 ${toPx(read(MODAL_WXSS))}
 ${toPx(read(TOAST_WXSS))}
 </style></head><body><div class="stage">

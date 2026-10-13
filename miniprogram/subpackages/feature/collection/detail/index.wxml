@@ -136,13 +136,15 @@
     </block>
   </block>
 
-  <view class="unlock-mask" wx:if="{{justUnlocked}}" catchtouchmove="closeCeremony">
-    <view class="unlock-sheet">
-      <text class="unlock-en">PAGE TURNED</text>
-      <text class="unlock-title">这一页被翻开了</text>
+  <view class="ui-pop-mask is-center is-deep unlock-mask" wx:if="{{justUnlocked}}" catchtouchmove="closeCeremony">
+    <view class="ui-pop-dialog unlock-sheet">
+      <view class="ui-pop-head is-center">
+        <text class="ui-pop-kicker">PAGE TURNED</text>
+        <text class="ui-pop-title">这一页被翻开了</text>
+      </view>
       <text class="unlock-name">{{card.nameZh}}</text>
       <text class="unlock-latin" wx:if="{{card.nameLatin}}">{{card.nameLatin}}</text>
-      <view class="unlock-cta" bindtap="closeCeremony" hover-class="tap-press-soft" hover-stay-time="80">看这一页</view>
+      <view class="ui-pop-btn is-primary unlock-cta" bindtap="closeCeremony" hover-class="tap-press" hover-stay-time="80">看这一页</view>
     </view>
   </view>
 </view>

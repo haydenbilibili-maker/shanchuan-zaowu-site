@@ -92,6 +92,25 @@ page {
   --tabbar-content-height: 120rpx;
   --tabbar-offset: calc(var(--tabbar-content-height) + env(safe-area-inset-bottom));
   --shadow-museum-warm: 0 8rpx 24rpx rgba(26, 24, 20, 0.45);
+  /* 弹层令牌（docs/弹层视觉规范_2026-10-13.md；时长 / 缓动值即契约 C7 §5） */
+  --dur-instant: 80ms;
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+  --dur-slow: 400ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --pop-mask: rgba(12, 11, 9, 0.72);
+  --pop-mask-deep: rgba(12, 11, 9, 0.88);
+  --pop-surface: linear-gradient(180deg, #221F1B 0%, #1C1A17 100%);
+  --pop-hairline: rgba(196, 167, 108, 0.36);
+  --pop-divider: rgba(255, 255, 255, 0.06);
+  --pop-radius-dialog: 24rpx;
+  --pop-radius-sheet: 32rpx;
+  --pop-shadow-dialog: 0 24rpx 64rpx rgba(0, 0, 0, 0.55);
+  --pop-shadow-sheet: 0 -16rpx 48rpx rgba(0, 0, 0, 0.42);
+  --pop-pad-x: 40rpx;
+  --pop-danger-from: #B4432F;
+  --pop-danger-to: #93321F;
 
   background-color: #1A1814;
   color: var(--text-main);
@@ -735,6 +754,192 @@ button[disabled]:active,
    ⚠️ 自定义组件内拿不到本文件的类，需自带同值类；wb-press 为工作台旧名 */
 .tap-press, .wb-press { opacity: 0.72 !important; }
 .tap-press-soft { opacity: 0.86 !important; }
+
+/* ==================== 弹层（docs/弹层视觉规范_2026-10-13.md） ====================
+ * 三种形态，一套零件：
+ *   居中确认框  <view class="ui-pop-mask is-center"><view class="ui-pop-dialog">…</view></view>（AppModal 即此形态）
+ *   底部抽屉    <view class="ui-pop-mask"><view class="ui-pop-sheet"><view class="ui-pop-grip"/>…</view></view>
+ *   仪式卡      ui-pop-mask is-center is-deep（升级 / 生日 / 海报 / 证件：遮罩更深、允许主视觉装饰）
+ * 零件：ui-pop-head（ui-pop-kicker 英文眉标 + ui-pop-title 宋体主标）/ ui-pop-close / ui-pop-body / ui-pop-foot / ui-pop-btn
+ * 页面 wxss 只写本弹层特有的内容（尺寸、列表行），**不再自写遮罩色 / 面板底 / 圆角 / 金边 / 动画**。
+ * ⚠️ 自定义组件需 options.addGlobalClass 才拿得到这些类。 */
+.ui-pop-mask {
+  position: fixed;
+  left: 0; top: 0; right: 0; bottom: 0;
+  z-index: 800;
+  background: var(--pop-mask);
+  animation: ui-pop-fade var(--dur-base) var(--ease-standard) both;
+}
+.ui-pop-mask.is-deep { background: var(--pop-mask-deep); }
+/* 常驻节点、靠类切换显隐的弹层（有退场动画）：is-toggle + is-open。
+   ⚠️ 不能直接用默认的进场 animation —— fill-mode both 会把隐藏态的 opacity 顶成 1 */
+.ui-pop-mask.is-toggle { animation: none; opacity: 0; pointer-events: none; transition: opacity var(--dur-base) var(--ease-standard); }
+.ui-pop-mask.is-toggle.is-open { opacity: 1; pointer-events: auto; }
+.ui-pop-mask.is-toggle .ui-pop-dialog { animation: none; transform: translateY(16rpx) scale(0.97); transition: transform var(--dur-base) var(--ease-out-soft); }
+.ui-pop-mask.is-toggle .ui-pop-sheet { animation: none; transform: translateY(100%); transition: transform var(--dur-base) var(--ease-out-soft); }
+.ui-pop-mask.is-toggle.is-open .ui-pop-dialog,
+.ui-pop-mask.is-toggle.is-open .ui-pop-sheet { transform: none; }
+.ui-pop-mask.is-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48rpx;
+  box-sizing: border-box;
+}
+.ui-pop-dialog {
+  position: relative;
+  width: 100%;
+  max-width: 600rpx;
+  padding: 48rpx var(--pop-pad-x) 32rpx;
+  box-sizing: border-box;
+  background: var(--pop-surface);
+  border: 1rpx solid var(--pop-hairline);
+  border-radius: var(--pop-radius-dialog);
+  box-shadow: var(--pop-shadow-dialog);
+  animation: ui-pop-in var(--dur-base) var(--ease-out-soft) both;
+}
+.ui-pop-sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--pop-surface);
+  border-top: 1rpx solid var(--pop-hairline);
+  border-radius: var(--pop-radius-sheet) var(--pop-radius-sheet) 0 0;
+  box-shadow: var(--pop-shadow-sheet);
+  overflow: hidden;
+  animation: ui-pop-rise var(--dur-base) var(--ease-out-soft) both;
+}
+.ui-pop-grip {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 6rpx;
+  margin: 16rpx auto 0;
+  border-radius: 3rpx;
+  background: rgba(255, 255, 255, 0.16);
+}
+/* 头部：左眉标 + 主标两行（不写「EN / 中」一行），右上关闭；居中确认框加 is-center */
+.ui-pop-head {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 28rpx 112rpx 24rpx var(--pop-pad-x);
+}
+.ui-pop-dialog .ui-pop-head { padding: 0 0 20rpx; }
+.ui-pop-head.is-center { align-items: center; text-align: center; padding: 0 0 8rpx; }
+.ui-pop-kicker {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  line-height: 26rpx;
+  letter-spacing: 0.32em;
+  color: var(--brass-400);
+  margin-bottom: 10rpx;
+}
+.ui-pop-title {
+  display: block;
+  font-family: var(--font-brand);
+  font-size: var(--fs-34);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.06em;
+  color: var(--color-text-primary);
+}
+.ui-pop-sub {
+  display: block;
+  margin-top: 8rpx;
+  font-size: var(--fs-24);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+/* 关闭：88rpx 触控区，字形 secondary（不用 muted） */
+.ui-pop-close {
+  position: absolute;
+  top: 12rpx;
+  right: 16rpx;
+  width: 88rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  font-size: var(--fs-30);
+  color: var(--color-text-secondary);
+}
+.ui-pop-body {
+  padding: 0 var(--pop-pad-x);
+  font-size: var(--fs-26);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+.ui-pop-foot {
+  flex-shrink: 0;
+  display: flex;
+  gap: 20rpx;
+  padding: 24rpx var(--pop-pad-x) 28rpx;
+  border-top: 1rpx solid var(--pop-divider);
+}
+.ui-pop-dialog .ui-pop-foot { padding: 32rpx 0 0; border-top: none; }
+.ui-pop-btn {
+  flex: 1;
+  min-width: 0;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  border-radius: 12rpx;
+  font-size: var(--fs-28);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+/* 每屏一个实心金：主按钮平涂品牌金；次按钮发丝描边；危险为铁锈红（C7 §4.3） */
+.ui-pop-btn.is-primary { color: #1A1814; background: var(--brass-400); }
+.ui-pop-btn.is-ghost { color: var(--color-text-body); background: transparent; border: 1rpx solid rgba(255, 255, 255, 0.16); }
+.ui-pop-btn.is-danger { color: #FFF3F0; background: linear-gradient(180deg, var(--pop-danger-from) 0%, var(--pop-danger-to) 100%); }
+.ui-pop-btn.is-disabled { opacity: 0.4; }
+/* 抽屉内选择行：发丝分隔，不做方框卡片 */
+.ui-pop-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  min-height: 112rpx;
+  padding: 20rpx 0;
+  box-sizing: border-box;
+  border-bottom: 1rpx solid var(--pop-divider);
+}
+.ui-pop-row:last-child { border-bottom: none; }
+.ui-pop-row.is-off { opacity: 0.4; }
+/* 行内：面额 / 数值（等宽金）+ 标题 / 说明 / 提示（主次两行）+ 末尾单选 */
+.ui-pop-row-lead { flex-shrink: 0; min-width: 96rpx; font-family: var(--font-mono); font-size: var(--fs-36); font-weight: 600; color: var(--brass-400); }
+.ui-pop-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.ui-pop-row-t { font-size: var(--fs-28); line-height: 1.4; color: var(--color-text-body); }
+.ui-pop-row.is-on .ui-pop-row-t { color: var(--color-text-primary); }
+.ui-pop-row-d { font-size: var(--fs-22); line-height: 1.5; color: var(--color-text-secondary); }
+.ui-pop-row-note { font-size: var(--fs-22); line-height: 1.5; color: var(--brass-400); }
+.ui-pop-row-note.is-off { color: var(--color-text-secondary); }
+.ui-pop-empty { padding: 48rpx 0; text-align: center; font-size: var(--fs-24); color: var(--color-text-secondary); }
+.ui-pop-radio {
+  flex-shrink: 0;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 1rpx solid rgba(255, 255, 255, 0.28);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ui-pop-radio.is-on { border-color: var(--brass-400); }
+.ui-pop-radio.is-on::after { content: ''; width: 18rpx; height: 18rpx; border-radius: 50%; background: var(--brass-400); }
+@keyframes ui-pop-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ui-pop-rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes ui-pop-in { from { opacity: 0; transform: translateY(16rpx) scale(0.97); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .ui-pop-mask, .ui-pop-dialog, .ui-pop-sheet { animation: none; }
+}
 
 /* 加载动画 */
 .loading-spinner {

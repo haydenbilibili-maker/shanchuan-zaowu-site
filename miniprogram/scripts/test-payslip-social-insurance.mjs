@@ -370,7 +370,8 @@ function checkMiniprogram(t, src, SI) {
     /apply: true, includeAnnual: f\.siIncludeAnnual/.test(src.adminJs) && /action: 'payslipSiPreview'/.test(src.adminJs) &&
     !/siPaidMonth|所属期|参考上期|legacyMonths/.test(src.adminJs + src.adminWxml))
   t.ok('E4 超管页：扣款栏写明不含社保、公司部分写明不扣', /其他扣款（考勤等，不含社保）/.test(src.adminWxml) && /公司缴纳合计（不扣工资，只展示）/.test(src.adminWxml))
-  t.ok('E5 不新增原生弹窗', !/wx\.showModal/.test(src.pageJs) && (src.adminJs.match(/wx\.showModal/g) || []).length === 1)
+  // 2026-10-13 弹层规范第 3 批：超管页那 1 处已改样式化弹窗（openAppModal）—— 判据「恰好 1」→「不超过 1」，意图（不新增）不变
+  t.ok('E5 不新增原生弹窗', !/wx\.showModal/.test(src.pageJs) && (src.adminJs.match(/wx\.showModal/g) || []).length <= 1)
 }
 
 async function runAll(src) {

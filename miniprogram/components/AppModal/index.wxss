@@ -1,112 +1,22 @@
-/* 全站样式化弹窗 —— 令牌取 app.wxss；与 RegisterAuthDialog / sensitive-blur-gate 同语言 */
-
-.am-mask {
-  position: fixed;
-  left: 0; top: 0; right: 0; bottom: 0;
-  z-index: 950;                     /* 略高于注册弹窗(900)，保证"确认"盖在最上层 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 56rpx;
-  box-sizing: border-box;
-  background: rgba(12, 11, 9, 0.72);
-  transition: opacity 0.24s ease;
-}
-.am-mask.is-on { opacity: 1; }
-.am-mask.is-off { opacity: 0; }
-
-.am-plate {
-  position: relative;
-  width: 100%;
-  max-width: 560rpx;
-  padding: 40rpx 36rpx 28rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.55);
-  border-radius: var(--radius-md, 16rpx);
-  background: linear-gradient(180deg, #221F1B 0%, #1A1814 100%);
-  box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.55);
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.am-corner {
-  position: absolute;
-  width: 14rpx; height: 14rpx;
-  border-color: rgba(196, 167, 108, 0.5);
-  border-style: solid;
-  border-width: 0;
-}
-.am-corner.is-tl { left: 12rpx; top: 12rpx; border-left-width: 1rpx; border-top-width: 1rpx; }
-.am-corner.is-tr { right: 12rpx; top: 12rpx; border-right-width: 1rpx; border-top-width: 1rpx; }
-.am-corner.is-bl { left: 12rpx; bottom: 12rpx; border-left-width: 1rpx; border-bottom-width: 1rpx; }
-.am-corner.is-br { right: 12rpx; bottom: 12rpx; border-right-width: 1rpx; border-bottom-width: 1rpx; }
-
-/* 眉标 / 主标同全站口径（全站质感 R5） */
-.am-overline {
-  font-size: var(--fs-18);
-  line-height: 26rpx;
-  font-family: var(--font-mono);
-  letter-spacing: .32em;
-  color: var(--brass-400, #C4A76C);
-  margin-bottom: 12rpx;
-}
-
-.am-title {
-  font-size: var(--fs-34);
-  font-family: var(--font-brand);
-  font-weight: 500;
-  letter-spacing: .06em;
-  color: var(--color-text-primary, #FFFFFF);
-  text-align: center;
-  line-height: 1.4;
-}
+/* 全站样式化弹窗 —— 遮罩 / 牌面 / 头部 / 按钮全部取 app.wxss 的 ui-pop-* 零件（addGlobalClass），
+ * 这里只留本组件特有的：正文排版、多选项按钮收字、警示色、按压。规范：docs/弹层视觉规范_2026-10-13.md */
+.am-mask { z-index: 950; }                 /* 略高于注册弹窗(900)，保证「确认」盖在最上层 */
 
 .am-content {
+  display: block;
   margin-top: 16rpx;
   font-size: var(--fs-26);
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--color-text-secondary, #A09A90);
   text-align: center;
-  white-space: pre-wrap;         /* 与 showModal 的 \n 换行语义一致 */
+  white-space: pre-wrap;         /* 与 showModal 的 \n 换行语义一致（C7 §4.4） */
 }
-
-.am-actions {
-  width: 100%;
-  margin-top: 32rpx;
-  display: flex;
-  gap: 20rpx;
-}
-
-.am-btn {
-  flex: 1;
-  height: 84rpx;
-  line-height: 84rpx;
-  text-align: center;
-  border-radius: var(--radius-sm, 8rpx);
-  font-size: var(--fs-28);
-  font-weight: 600;
-  letter-spacing: .04em;
-}
-.am-btn.is-ghost {
-  color: var(--color-text-secondary, #A09A90);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1rpx solid rgba(255, 255, 255, 0.12);
-}
-.am-btn.is-primary {
-  color: #1A1814;
-  background: #C4A76C;   /* 与全站主按钮同为平涂品牌金（原三段铜铸渐变） */
-}
-.am-btn.is-primary.is-danger {
-  color: #FFF3F0;
-  background: linear-gradient(180deg, #B4432F 0%, #93321F 100%);
-}
-.am-btn-press { opacity: 0.86; }
 
 /* 三个及以上选项：按钮等分一行，文字收一档避免四字按钮溢出 */
 .am-actions.is-multi { gap: 14rpx; }
-.am-actions.is-multi .am-btn {
-  min-width: 0;
-  font-size: var(--fs-26);
-  white-space: nowrap;
-}
+.am-actions.is-multi .ui-pop-btn { font-size: var(--fs-26); }
+
+/* tone: 'warn'（不可逆但非破坏：覆盖 / 重置）= C7 §4.3 --color-warning */
+.ui-pop-btn.is-primary.is-warn { background: var(--color-warning, #E9A23B); }
+
+.am-btn-press { opacity: 0.86; }

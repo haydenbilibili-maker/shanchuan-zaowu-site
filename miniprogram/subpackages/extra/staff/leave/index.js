@@ -1,4 +1,5 @@
 const { formatCloudFnError } = require('../../utils/storePoints')
+const { openAppModal } = require('../../../../utils/appModal')
 const {
   initStaffStores,
   applyStoreChange,
@@ -235,7 +236,7 @@ Page({
   cancelLeave(e) {
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '').trim()
     if (!id || this.data.cancellingId) return
-    wx.showModal({
+    openAppModal({
       title: '撤销请假？',
       content: '仅待审批的申请可撤销',
       confirmColor: '#C4A76C',
@@ -262,6 +263,6 @@ Page({
           wx.showToast({ title: formatCloudFnError(err, '撤销失败'), icon: 'none' })
         })
       }
-    })
+    }, this)
   }
 })

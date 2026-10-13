@@ -24,6 +24,7 @@ const {
 } = require('../utils/sku')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const { getCustomNavLayout } = require('../utils/customNav')
+const { openAppModal } = require('../../../utils/appModal')
 const {
   fetchContentDisplayFlags,
   toastSpecimenCustomClosed
@@ -304,14 +305,14 @@ Page({
       const product = res.data
       if (!product) return
       if (product.supportsCustom === false) {
-        wx.showModal({
+        openAppModal({
           title: '暂不支持定制',
           content: '该件为成品藏品，暂不提供工坊定制服务。',
           showCancel: false,
           confirmText: '返回',
           confirmColor: '#C4A76C',
           success: () => wx.navigateBack()
-        })
+        }, this)
         return
       }
       this.selectProductInternal(product)
@@ -369,7 +370,7 @@ Page({
   deleteDraft(e) {
     const id = e.currentTarget.dataset.id
     if (!id) return
-    wx.showModal({
+    openAppModal({
       title: '删除方案',
       content: '确定删除这条定制方案？',
       success: async (res) => {
@@ -379,7 +380,7 @@ Page({
         this.loadDrafts()
         wx.showToast({ title: '已删除' })
       }
-    })
+    }, this)
   },
 
   selectProductInternal(product, presetSpecs) {
@@ -593,7 +594,7 @@ Page({
   },
 
   promptSaveDraft(onLeave) {
-    wx.showModal({
+    openAppModal({
       title: '保存草稿？',
       content: '是否保存当前定制方案，方便下次继续？',
       confirmText: '保存',
@@ -607,7 +608,7 @@ Page({
         }
         if (typeof onLeave === 'function') onLeave()
       }
-    })
+    }, this)
   },
 
   goToSupport() {

@@ -157,12 +157,14 @@
     </view>
     <view class="hint {{hintLevel}}" wx:if="{{playerHint || msgHint}}">{{playerHint || msgHint}}</view>
 
-    <view class="shelf-mask" wx:if="{{showShelf}}" catchtap="closeShelf"></view>
-    <view class="shelf-sheet {{showShelf ? 'open' : ''}}" wx:if="{{showShelf}}" catchtouchmove="noop">
-      <view class="shelf-sheet-hd">
-        <text class="shelf-sheet-title">本场挂车</text>
-        <text class="shelf-sheet-sub" wx:if="{{!shelfPurchasable}}">直播已结束，暂不可购</text>
-        <text class="shelf-sheet-close" bindtap="closeShelf">关闭</text>
+    <view class="ui-pop-mask shelf-mask" wx:if="{{showShelf}}" catchtap="closeShelf" catchtouchmove="noop"></view>
+    <view class="ui-pop-sheet shelf-sheet {{showShelf ? 'open' : ''}}" wx:if="{{showShelf}}" catchtouchmove="noop">
+      <view class="ui-pop-grip"></view>
+      <view class="ui-pop-head shelf-sheet-hd">
+        <text class="ui-pop-kicker">ON AIR</text>
+        <text class="ui-pop-title">本场挂车</text>
+        <text class="ui-pop-sub shelf-sheet-sub" wx:if="{{!shelfPurchasable}}">直播已结束，暂不可购</text>
+        <view class="ui-pop-close" bindtap="closeShelf" hover-class="tap-press" hover-stay-time="80">✕</view>
       </view>
       <scroll-view class="shelf-list" scroll-y>
         <view class="shelf-row {{item.spotlight ? 'spot' : ''}} {{item.soldOut || !item.onShelf ? 'disabled-row' : ''}}" wx:for="{{shelfItems}}" wx:key="_id">
@@ -185,11 +187,13 @@
       </scroll-view>
     </view>
 
-    <view class="shelf-mask" wx:if="{{showSkuSheet}}" catchtap="closeSkuSheet"></view>
-    <view class="sku-sheet" wx:if="{{showSkuSheet}}" catchtouchmove="noop">
-      <view class="shelf-sheet-hd">
-        <text class="shelf-sheet-title">选择规格</text>
-        <text class="shelf-sheet-close" bindtap="closeSkuSheet">关闭</text>
+    <view class="ui-pop-mask shelf-mask" wx:if="{{showSkuSheet}}" catchtap="closeSkuSheet" catchtouchmove="noop"></view>
+    <view class="ui-pop-sheet sku-sheet" wx:if="{{showSkuSheet}}" catchtouchmove="noop">
+      <view class="ui-pop-grip"></view>
+      <view class="ui-pop-head shelf-sheet-hd">
+        <text class="ui-pop-kicker">SPECIFICATION</text>
+        <text class="ui-pop-title">选择规格</text>
+        <view class="ui-pop-close" bindtap="closeSkuSheet" hover-class="tap-press" hover-stay-time="80">✕</view>
       </view>
       <view class="sku-product" wx:if="{{skuProduct}}">
         <image class="sku-cover" src="{{skuProduct.cover}}" mode="aspectFill"/>
@@ -210,9 +214,12 @@
           <text class="sku-pill-meta">¥{{item.price}}{{item.stock <= 0 ? ' · 售罄' : ''}}</text>
         </view>
       </scroll-view>
-      <view class="sku-confirm" bindtap="confirmSkuSheet">
+      <view class="ui-pop-btn is-primary sku-confirm" bindtap="confirmSkuSheet" hover-class="tap-press" hover-stay-time="80">
         {{skuAction === 'buy' ? '立即购买' : '加入购物车'}}
       </view>
     </view>
   </block>
 </view>
+
+<!-- 全站样式化弹窗宿主（替代 wx.showModal；utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
+<app-modal id="appModal" />

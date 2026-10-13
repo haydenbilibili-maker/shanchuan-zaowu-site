@@ -1,5 +1,5 @@
 <!-- 代金券小票打印：对齐预约 mint-machine；槽顶三灯对齐全局信号灯 -->
-<view class="mint-modal {{visible ? 'active' : ''}}" catchtouchmove="true" wx:if="{{visible || animating}}">
+<view class="ui-pop-mask is-deep is-toggle mint-modal {{visible ? 'is-open active' : ''}}" catchtouchmove="true" wx:if="{{visible || animating}}">
   <view class="mint-content">
     <view class="mint-machine">
       <view class="printer-slot"></view>

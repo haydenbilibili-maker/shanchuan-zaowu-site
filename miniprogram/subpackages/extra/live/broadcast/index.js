@@ -3,6 +3,7 @@ const { guardLiveHostWorkspace } = require('../../utils/staffAuth')
 const { formatCloudFnError } = require('../../utils/memberScan')
 const { batchTempFileURLs, getFirstImage } = require('../../../../utils/util')
 const { writeLiveSnapshot, decorateShelfList } = require('../sessionSync')
+const { openAppModal } = require('../../../../utils/appModal')
 
 function detectSimulator() {
   try {
@@ -455,12 +456,12 @@ Page({
     const mic = await tryAuth('scope.record')
     if (!cam || !mic) {
       const go = await new Promise((resolve) => {
-        wx.showModal({
+        openAppModal({
           title: '需要摄像头与麦克风',
           content: '开播需授权摄像头和麦克风，请在设置中开启。',
           confirmText: '去设置',
           success: (r) => resolve(!!r.confirm)
-        })
+        }, this)
       })
       if (go) wx.openSetting({})
       return false
@@ -471,20 +472,20 @@ Page({
   async startLive() {
     if (this.data.busy) return
     if (!this.data.configured) {
-      wx.showModal({
+      openAppModal({
         title: '暂未配置推流',
         content: '直播推流地址未配置，请联系技术支持',
         showCancel: false
-      })
+      }, this)
       return
     }
     if (this.data.active && this.data.active._id &&
       !(this.data.session && this.data.session._id === this.data.active._id)) {
-      wx.showModal({
+      openAppModal({
         title: '无法同时开第二场',
         content: `「${this.data.active.title || '直播'}」进行中（主播 ${this.data.active.hostName || '同事'}）。请先结束该场。`,
         showCancel: false
-      })
+      }, this)
       return
     }
 
@@ -507,20 +508,20 @@ Page({
       const result = (res && res.result) || {}
       if (!result.success) {
         if (result.code === 'LIVE_BUSY') {
-          wx.showModal({
+          openAppModal({
             title: '无法同时开第二场',
             content: result.msg || '已有进行中的直播',
             showCancel: false
-          })
+          }, this)
           await this.loadDashboard()
           return
         }
         if (result.code === 'NOT_CONFIGURED') {
-          wx.showModal({
+          openAppModal({
             title: '暂未配置推流',
             content: result.msg || '请配置 LIVE_* 环境变量',
             showCancel: false
-          })
+          }, this)
           this.setData({ configured: false })
           return
         }
@@ -530,11 +531,11 @@ Page({
 
       const session = result.session || {}
       if (!session.pushUrl) {
-        wx.showModal({
+        openAppModal({
           title: '无法推流',
           content: '未拿到 pushUrl，请检查域名与鉴权 Key。',
           showCancel: false
-        })
+        }, this)
         return
       }
 
@@ -643,12 +644,12 @@ Page({
       return
     }
     const ok = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '强制结束直播？',
         content: `将结束「${target.title || '当前场次'}」，观众端会同步变为已结束。`,
         confirmColor: '#D64045',
         success: (r) => resolve(!!r.confirm)
-      })
+      }, this)
     })
     if (!ok) return
     this.setData({ busy: true })
@@ -691,13 +692,13 @@ Page({
   async endLive() {
     if (this.data.busy) return
     const confirm = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '结束直播？',
         content: '结束后观众将无法继续观看，本场推流地址会清空。确定结束吗？',
         confirmColor: '#D64045',
         success: (r) => resolve(!!r.confirm),
         fail: () => resolve(false)
-      })
+      }, this)
     })
     if (!confirm) return
 
@@ -1086,12 +1087,12 @@ Page({
     if (this.data.shelfBusy || !this.data.session || !this.data.session._id) return
     if (!(this.data.shelfItems || []).length) return
     const ok = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '清空本场挂车？',
         content: '观众端挂车会同步清空。',
         confirmColor: '#D64045',
         success: (r) => resolve(!!r.confirm)
-      })
+      }, this)
     })
     if (!ok) return
     this.setData({ shelfBusy: true })

@@ -1,6 +1,7 @@
 // subpackages/feature/custom/inquiry/index.js
 const { buildInquirySummary, buildDraftTitle } = require('../../utils/customHelper')
 const { trackBehavior } = require('../../../../utils/trackBehavior')
+const { openAppModal } = require('../../../../utils/appModal')
 
 Page({
   data: {
@@ -128,12 +129,12 @@ Page({
         return
       }
       trackBehavior('custom_inquiry_submit', 'type', 'enterprise')
-      wx.showModal({
+      openAppModal({
         title: '意向已提交',
         content: '专员将在 1-2 个工作日内与您联系报价，请留意山海有信通知。',
         showCancel: false,
         success: () => wx.navigateBack()
-      })
+      }, this)
     } catch (e) {
       wx.showToast({ title: '提交失败', icon: 'none' })
     } finally {

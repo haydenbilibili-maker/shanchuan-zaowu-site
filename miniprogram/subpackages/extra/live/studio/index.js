@@ -1,6 +1,7 @@
 const { guardManagerPage } = require('../../../../utils/managerAuth')
 const { formatCloudFnError } = require('../../utils/memberScan')
 const { goManagerModule } = require('../../manager/moduleRoutes')
+const { openAppModal } = require('../../../../utils/appModal')
 const {
   guardLiveHostWorkspace,
   goLiveBroadcast,
@@ -504,12 +505,12 @@ Page({
       return
     }
     const ok = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '结束对方直播？',
         content: `将结束「${this.data.otherLiveHint || '同事场次'}」，观众端会立即不可看。`,
         confirmColor: '#D64045',
         success: (r) => resolve(!!r.confirm)
-      })
+      }, this)
     })
     if (!ok) return
     this.setData({ ending: true })
@@ -578,12 +579,12 @@ Page({
   async clearShelf() {
     if (!this.data.shelfPreview.length) return
     const ok = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '清空本场挂车？',
         content: '观众端挂车会同步清空。可稍后再从藏品库挂上。',
         confirmColor: '#D64045',
         success: (r) => resolve(!!r.confirm)
-      })
+      }, this)
     })
     if (!ok) return
     this.updateShelfAction({ clear: true })
@@ -814,6 +815,7 @@ Page({
     if (this.data.creating) return
     const goBroadcastAfter = openAfter === true
     const title = await new Promise((resolve) => {
+      // ⚠️ 保留系统弹窗：需要输入框（editable），AppModal 不支持（docs/弹层视觉规范_2026-10-13.md §7）
       wx.showModal({
         title: goBroadcastAfter ? '快捷开播' : '新建场次',
         editable: true,
@@ -881,12 +883,12 @@ Page({
       return
     }
     const ok = await new Promise((resolve) => {
-      wx.showModal({
+      openAppModal({
         title: '结束当前直播？',
         content: '观众端将立即无法继续观看，本场挂车也不可再购。',
         confirmColor: '#D64045',
         success: (r) => resolve(!!r.confirm)
-      })
+      }, this)
     })
     if (!ok) return
     this.setData({ ending: true })

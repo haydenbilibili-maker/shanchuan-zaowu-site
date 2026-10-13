@@ -3,6 +3,7 @@ const { compressToMaxSize, isAllowedImage } = require('../utils/identifyImage')
 const { identifyFailureCopy } = require('../utils/identifyFailure')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const easterEggHost = require('../../../utils/easterEggHost')
+const { openAppModal } = require('../../../utils/appModal')
 const {
   fetchContentDisplayFlags,
   toastAiIdentifyClosed
@@ -297,12 +298,12 @@ Page({
         source: this.data.entrySource
       })
       const copy = identifyFailureCopy(err)
-      wx.showModal({
+      openAppModal({
         title: copy.title,
         content: copy.content,
         confirmText: '知道了',
         showCancel: false
-      })
+      }, this)
     }
   }
 })

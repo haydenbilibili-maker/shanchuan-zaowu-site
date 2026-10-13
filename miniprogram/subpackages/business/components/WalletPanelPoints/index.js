@@ -11,6 +11,7 @@ const { ensureOpenId } = require('../../../../utils/orderScope');
 const { fetchUserSession } = require('../../../../utils/userSession');
 const { drawMemberQr } = require('../../utils/qrCanvas');
 const { buildPointsTimeline, pointsCapText } = require('./points-ledger');
+const { openAppModal } = require('../../../../utils/appModal')
 const app = getApp();
 const db = wx.cloud.database();
 
@@ -438,12 +439,12 @@ const _pageCfg = {
             exchangeTarget: { ...prev, clientRequestId: requestId }
           });
         }
-        wx.showModal({
+        openAppModal({
           title: '兑换失败',
           content: result.msg || '请稍后重试',
           showCancel: false,
           confirmColor: '#C4A76C'
-        });
+        }, this);
         return;
       }
       this.setData({ exchangeTarget: null });

@@ -9,6 +9,7 @@ const {
   isSuperAdminOpenid
 } = require('../../../../utils/workspaceRoles');
 const { fetchUserSession } = require('../../../../utils/userSession');
+const { openAppModal } = require('../../../../utils/appModal')
 
 const CUSTOMER_FILTER_TABS = [
   { id: 'all', label: '全部' },
@@ -640,28 +641,28 @@ Page({
             return;
           }
           if (res.tapIndex === 1) {
-            wx.showModal({
+            openAppModal({
               title: '删除日报',
               content: '确定从工作信息里拿掉这一期日报吗？历史快照删除后不可从本机恢复。',
               confirmColor: '#C4A76C',
               success: (modalRes) => {
                 if (modalRes.confirm) this.deleteMessageById(message._id);
               }
-            });
+            }, this);
           }
         }
       });
       return;
     }
 
-    wx.showModal({
+    openAppModal({
       title: '删除来信',
       content: '确定从信箱里拿掉这一封吗？',
       confirmColor: '#C4A76C',
       success: (res) => {
         if (res.confirm) this.deleteMessageById(message._id);
       }
-    });
+    }, this);
   },
 
   copyDigestSummary(message) {

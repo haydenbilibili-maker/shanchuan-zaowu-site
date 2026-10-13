@@ -8,7 +8,7 @@
   <view class="detail-empty" wx:elif="{{loadError}}">
     <text class="detail-empty-title">档案读取失败</text>
     <text class="detail-empty-desc">订单不存在或网络异常，请稍后重试</text>
-    <view class="detail-empty-cta" wx:if="{{orderId}}" bindtap="retryLoad">重新加载</view>
+    <view class="detail-empty-cta" wx:if="{{orderId}}" bindtap="retryLoad" hover-class="tap-press" hover-stay-time="80">重新加载</view>
   </view>
 
   <view class="archive-folder {{isDecrypted ? 'active' : ''}}" wx:else>

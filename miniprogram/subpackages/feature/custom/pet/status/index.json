@@ -2,5 +2,8 @@
   "navigationBarTitleText": "工单进度",
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
-  "backgroundColor": "#1A1814"
+  "backgroundColor": "#1A1814",
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  }
 }

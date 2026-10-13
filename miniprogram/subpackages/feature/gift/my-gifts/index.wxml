@@ -673,9 +673,9 @@
     bindtap="closeContactForm"
   ></view>
   <view class="sheet {{showContactForm ? 'on' : ''}}" wx:if="{{sheetContactMounted}}" catchtouchmove="noop">
-    <view class="sheet-handle" aria-hidden="true"></view>
-    <text class="sheet-over">CONTACT</text>
-    <text class="sheet-title">{{contactForm.id ? '编辑对象' : '添加对象'}}</text>
+    <view class="ui-pop-grip sheet-handle" aria-hidden="true"></view>
+    <text class="ui-pop-kicker">CONTACT</text>
+    <text class="ui-pop-title sheet-title">{{contactForm.id ? '编辑对象' : '添加对象'}}</text>
     <view class="field">
       <text class="field-lbl">称呼</text>
       <input class="field-input" maxlength="20" placeholder="如：阿宁" value="{{contactForm.name}}" bindinput="onContactName" />
@@ -716,9 +716,9 @@
     bindtap="closeDateForm"
   ></view>
   <view class="sheet {{showDateForm ? 'on' : ''}}" wx:if="{{sheetDateMounted}}" catchtouchmove="noop">
-    <view class="sheet-handle" aria-hidden="true"></view>
-    <text class="sheet-over">DATE</text>
-    <text class="sheet-title">{{dateForm.id ? '编辑日子' : '添加日子'}}</text>
+    <view class="ui-pop-grip sheet-handle" aria-hidden="true"></view>
+    <text class="ui-pop-kicker">DATE</text>
+    <text class="ui-pop-title sheet-title">{{dateForm.id ? '编辑日子' : '添加日子'}}</text>
     <view class="field">
       <text class="field-lbl">类型</text>
       <view class="chip-row wrap">
@@ -839,3 +839,6 @@
   bindusephone="onClaimUsePhone"
   bindclose="closeClaimSheet"
 />
+
+<!-- 全站样式化弹窗宿主（替代 wx.showModal；utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
+<app-modal id="appModal" />

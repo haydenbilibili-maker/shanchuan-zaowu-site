@@ -6,5 +6,7 @@
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "dark",
   "disableSwipeBack": false,
-  "usingComponents": {}
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  }
 }

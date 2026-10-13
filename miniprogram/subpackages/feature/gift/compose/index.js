@@ -46,6 +46,7 @@ const {
 const textFx = require('../giftTextEffect')
 /** 自定义顶栏（index.json navigationStyle: custom）：高度按胶囊位置算，与藏品详情同一套 */
 const { getCustomNavLayout } = require('../../utils/customNav')
+const { openAppModal } = require('../../../../utils/appModal')
 
 const VOICE_CANCEL_SLIDE_PX = 56
 
@@ -634,7 +635,7 @@ Page({
 
   onVoiceDeleteTap() {
     if (!this.data.voiceFileID && !this.data.voiceDuration) return
-    wx.showModal({
+    openAppModal({
       title: '删除语音？',
       content: '礼笺将只保留文字（若有）。',
       confirmText: '删除',
@@ -652,7 +653,7 @@ Page({
         })
         if (prev) deleteCloudVoice(prev)
       }
-    })
+    }, this)
   },
 
   async bootstrap() {
@@ -1065,7 +1066,7 @@ Page({
       this.applyNotePreset(preset, variant)
       return
     }
-    wx.showModal({
+    openAppModal({
       title: '替换礼笺？',
       content: confirmContent,
       confirmText: '替换',
@@ -1073,7 +1074,7 @@ Page({
       success: (res) => {
         if (res.confirm) this.applyNotePreset(preset, variant)
       }
-    })
+    }, this)
   },
 
   applyNotePreset(preset, variant) {
@@ -1148,7 +1149,7 @@ Page({
       this.applyNotePreset(preset)
       return
     }
-    wx.showModal({
+    openAppModal({
       title: '替换礼笺？',
       content: '用场景语向替换当前内容？',
       confirmText: '替换',
@@ -1156,7 +1157,7 @@ Page({
       success: (res) => {
         if (res.confirm) this.applyNotePreset(preset)
       }
-    })
+    }, this)
   },
 
   toggleHidePrice() {

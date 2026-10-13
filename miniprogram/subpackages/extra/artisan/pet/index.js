@@ -11,6 +11,7 @@
 const { guardArtisanWorkspace, hasPermission, roleHasStored } = require('../../utils/staffAuth')
 const { formatCloudFnError } = require('../../utils/memberScan')
 const { STATUS_LABELS } = require('../../utils/petMemorialDefaults')
+const { openAppModal } = require('../../../../utils/appModal')
 
 const FN = 'petMemorialOrder'
 
@@ -92,7 +93,7 @@ Page({
   async acceptAssignment(e) {
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
     if (!id) return
-    wx.showModal({
+    openAppModal({
       title: '确认接单',
       content: '确认后请尽快与客户联系，沟通工艺与交接安排。',
       confirmText: '确认接单',
@@ -100,7 +101,7 @@ Page({
         if (!res.confirm) return
         this.doAccept(id)
       }
-    })
+    }, this)
   },
 
   async doAccept(id) {
