@@ -1,4 +1,5 @@
 // P2：Canvas 合成分享海报（中文 + 标本图 + 小程序码）
+const { drawBrandSeal } = require('../../utils/brandSeal')
 const W = 750
 const H = 1200
 
@@ -287,13 +288,16 @@ Page({
 
     ctx.fillStyle = 'rgba(196, 167, 108,0.35)'
     ctx.font = '22px sans-serif'
-    ctx.fillText(a.brand_sub || '把山川带回家', 48, y)
+    ctx.fillText(a.brand_sub || '把山海带回家', 48, y)
     if (a.brand_en) {
       y += 28
       ctx.fillStyle = 'rgba(255,255,255,0.28)'
       ctx.font = '18px sans-serif'
       ctx.fillText(a.brand_en, 48, y)
     }
+
+    // VIS 3.0 品牌落款：方寸篆印描边版，左下与小程序码底边对齐
+    drawBrandSeal(ctx, 48 + 32, H - 48 - 32, 64, { color: '#C4A76C', filled: false })
 
     // 小程序码
     const qrSize = 200

@@ -112,11 +112,10 @@ page {
 .header-capsule-press { background: rgba(38, 35, 32, 0.92); transform: scale(0.98); }
 
 /* 品牌部分 */
-.brand-part { display: flex; flex-direction: column; justify-content: center; margin-right: 16rpx; }
-.brand-en-wrap { display: flex; flex-direction: column; line-height: 1; margin-bottom: 4rpx; }
-.brand-en { font-family: 'DIN', sans-serif; font-size: var(--fs-16); color: var(--primary); font-weight: bold; letter-spacing: 0.12em; line-height: 1.15; }
-.brand-en-second { margin-top: 2rpx; }
-.brand-cn { font-size: 24rpx; color: var(--color-text-primary); font-weight: 600; letter-spacing: 0.12em; line-height: 1; }
+/* VIS 3.0：方寸篆印朱文描边版（实心金只留给主按钮）+ 中文字标（中英不同行，顶栏只留中文） */
+.brand-part { display: flex; flex-direction: row; align-items: center; margin-right: 16rpx; }
+.brand-mark { width: 36rpx; height: 36rpx; flex-shrink: 0; margin-right: 12rpx; }
+.brand-cn { font-family: var(--font-brand); font-size: var(--fs-24); color: var(--color-text-primary); font-weight: 600; letter-spacing: 0.16em; line-height: 1; white-space: nowrap; }
 
 /* 分割线 */
 .v-divider { width: 1px; height: 24rpx; background: rgba(196, 167, 108, 0.28); margin-right: 16rpx; }
@@ -782,20 +781,9 @@ page {
   animation: lineExpand 0.3s ease-out both;
 }
 
-.f-line::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 8rpx;
-  height: 8rpx;
-  background: var(--primary);
-  border-radius: 50%;
-  box-shadow: none;
-  animation: dotPulse 2s ease-in-out infinite;
-}
+/* VIS 3.0：页脚中心由方寸篆印承担，两侧金线不再加呼吸圆点（克制的金） */
 
+.f-mark { width: 56rpx; height: 56rpx; margin-bottom: 20rpx; opacity: 0.9; }
 .f-text-wrap {
   display: flex;
   flex-direction: column;
@@ -878,17 +866,6 @@ page {
   }
   to {
     width: 100%;
-    opacity: 1;
-  }
-}
-
-@keyframes dotPulse {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.8;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.3);
     opacity: 1;
   }
 }

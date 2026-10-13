@@ -8,10 +8,7 @@
     <view class="nav-bar">
       <view class="header-capsule {{isScrolled ? 'hidden' : ''}}" bindtap="handleSearch" hover-class="header-capsule-press" hover-stay-time="80">
         <view class="brand-part" catchlongpress="onEasterEggLongPress" data-egg-id="zhulong">
-          <view class="brand-en-wrap">
-            <text class="brand-en">NATURE'S</text>
-            <text class="brand-en brand-en-second">CREATIONS</text>
-          </view>
+          <image class="brand-mark" src="/assets/brand/seal-outline.png" mode="aspectFit"></image>
           <text class="brand-cn">山海造物</text>
         </view>
         <view class="v-divider"></view>
@@ -380,6 +377,7 @@
     <view class="footer-slogan">
       <view class="f-line"></view>
       <view class="f-text-wrap">
+        <image class="f-mark" src="/assets/brand/seal-standard.png" mode="aspectFit"></image>
         <text class="f-tagline">把山海带回家</text>
         <text class="f-text">NATURE'S CREATIONS · EST. 2026</text>
         <text class="f-single-page-note" wx:if="{{isSinglePage}}">朋友圈预览 · 可下滑浏览内容</text>

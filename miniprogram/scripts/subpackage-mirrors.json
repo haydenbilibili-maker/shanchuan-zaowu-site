@@ -268,5 +268,15 @@
     "source": "subpackages/manager/utils/workNoticeCatalog.js",
     "mirror": "subpackages/extra/utils/workNoticeCatalog.js",
     "identical": true
+  },
+  {
+    "source": "subpackages/feature/utils/brandSeal.js",
+    "mirror": "subpackages/business/utils/brandSeal.js",
+    "identical": true
+  },
+  {
+    "source": "subpackages/feature/utils/brandSeal.js",
+    "mirror": "subpackages/manager/utils/brandSeal.js",
+    "identical": true
   }
 ]

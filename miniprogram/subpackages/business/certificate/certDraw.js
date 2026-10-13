@@ -6,7 +6,10 @@
  * drawGiftHolderCert  受礼人收藏证书：同一金色家族 + 「由 X 赠予」与赠言，日期为签收日
  * drawGiftVoucher  送礼人赠予凭证：象牙纸 + 朱砂，记录赠予对象 / 藏品 / 赠言 / 日期
  * 礼赠两版按画布高度等比排版（原版为固定像素，375 宽真机底部会挤，非礼赠不改）。
+ * VIS 3.0：赠予凭证的钤印改为品牌方寸篆印（朱砂）；非礼赠证书的 drawSeal 受金样锁定，未改。
  */
+
+const { drawBrandSeal } = require('../utils/brandSeal')
 
 async function loadImage(canvas, getImagePath, src) {
   const url = await getImagePath(src)
@@ -259,14 +262,7 @@ async function drawGiftHolderCert(ctx, w, h, data, canvas, getImagePath) {
 }
 
 function drawGiftSeal(ctx, x, y) {
-  const color = 'rgba(158, 59, 46, 0.92)'
-  ctx.save(); ctx.translate(x, y); ctx.rotate(-8 * Math.PI / 180);
-  ctx.strokeStyle = color; ctx.lineWidth = 2;
-  ctx.strokeRect(-20, -20, 40, 40);
-  ctx.lineWidth = 1; ctx.strokeRect(-16, -16, 32, 32);
-  ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.font = 'bold 20px serif'; ctx.fillText('赠', 0, 1);
-  ctx.restore();
+  drawBrandSeal(ctx, x, y, 40, { color: '#9E3B2E', ground: '#F3ECDD', rotate: -8 })
 }
 
 /** 送礼人赠予凭证 */

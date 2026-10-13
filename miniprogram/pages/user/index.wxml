@@ -303,7 +303,7 @@
         <image class="m-img gold" src="/assets/icons/calendar_gold.png" mode="aspectFit"></image>
         <view class="m-info">
           <text class="m-cn">预约参观</text>
-          <text class="m-en">BOOK A VISIT · 参观 / 工坊</text>
+          <text class="m-en">BOOK A VISIT</text>
         </view>
         <text class="m-arr">›</text>
       </view>
@@ -315,7 +315,7 @@
         <image class="m-img gold" src="/assets/icons/list.png" mode="aspectFit"></image>
         <view class="m-info">
           <text class="m-cn">订单认领</text>
-          <text class="m-en">ORDER CLAIM · 小票 / 外部订单兑积分</text>
+          <text class="m-en">ORDER CLAIM</text>
         </view>
         <text class="m-arr">›</text>
       </view>
@@ -396,6 +396,7 @@
   </view>
 
   <view class="copyright">
+    <image class="cr-mark" src="/assets/brand/seal-standard.png" mode="aspectFit"></image>
     <text class="cr-line">把山海带回家</text>
     <text class="cr-line en">NATURE'S CREATIONS</text>
     <view class="cr-legal">

@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-09-29",
+  "updatedAt": "2026-10-12",
   "note": "分包内逐字节相同的重复工具：可省字节数只许减少（棘轮）。--update 收紧后不得再放宽。",
-  "savableBytes": 258036,
+  "savableBytes": 263750,
   "groups": [
     "giftShareCard.js ×3",
     "storeLedger.js ×2",
@@ -13,6 +13,7 @@
     "workNoticeCatalog.js ×2",
     "ritualPlays.js ×2",
     "ritualPlayArchive.js ×2",
+    "brandSeal.js ×3",
     "wishHandoff.js ×2",
     "node.js ×2",
     "cacheInvalidate.js ×3",
