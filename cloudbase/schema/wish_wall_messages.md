@@ -5,10 +5,11 @@
 ## 用途
 
 - 小程序 C 端：`manageWishWall`（`list` 公开读 / `post` 发布 / `mine` 我的）
-- 小程序超管工作台 → 磁贴**「内容开关」**(tab 16) →「祈福墙内容管理」：
+- 小程序超管工作台 → 磁贴**「内容开关」**(tab 16) →「**心愿签内容管理**」（2026-10-13 由「祈福墙内容管理」改名，
+  功能与跳转未变 —— 祈福墙已全面升级为「马上有 · 心愿签」）：
   `manageWishWall`（`staffList` / `staffSetStatus` / `staffRemove` / `staffStats` / `staffSeedAi`）
 - 「内容管理」(tab 9) 顶部另有**直达条**进入同一治理页（两处共用同一个跳转）
-- 运营开关：`content_display_flags.showMaShangYou`（缺配置默认**关**）
+- 运营开关：`content_display_flags.showMaShangYou`（缺字段默认**关**；超管面板上叫「马上有 · 心愿签」）
 
 ## 为什么 `write: false`
 
@@ -55,7 +56,7 @@
 
 - `_openid` / `openid` 留**空串**：基础内容不属于任何用户，不参与用户频控与「我的」；
 - 与用户弹幕**同表同字段**，故超管端内容开关面板照常可隐藏/删除 —— 不存在"免治理通道"；
-- 播种入口：超管工作台 → 磁贴「内容开关」→ 祈福墙内容管理 →「AI 生成一批心愿」
+- 播种入口：超管工作台 → 磁贴「内容开关」→ 心愿签内容管理 →「AI 生成一批心愿」
   （AI 不可用时自动改用 `manageWishWall/wishSeeds.js` 的人工基线文案）。
 - **按批次预埋**（2026-09-30 起）：文案放 `scripts/wish-wall-seeds/<批次>.json`（守卫 `npm run check:wish-seeds`），
   由 `node scripts/seed-wish-wall-batch.mjs` 写入（默认 dry-run；`--apply` 写前快照到 `backups/wish-wall-seeds/`、按文案幂等）。

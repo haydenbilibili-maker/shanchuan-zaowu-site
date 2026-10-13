@@ -70,3 +70,6 @@ miniprogram/**/.DS_Store
 .o[0-9a-z]*/
 .o[0-9a-z]*
 .run-guards-selftest.json
+
+# 本地临时 / 证据目录（渲染出图、线上副本下载、审计清单等）—— 不入库，避免被 git add -A 误收
+/.tmp/

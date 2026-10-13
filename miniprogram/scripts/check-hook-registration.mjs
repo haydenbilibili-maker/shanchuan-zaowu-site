@@ -16,7 +16,8 @@
  *   链 A · showXxx 五处登记（本守卫新增，此前无守卫）
  *     A2  云函数 getDefaultFlags / normalizeFlags / saveFlags 三处集合**两两相等**（集合，不是计数）
  *     A3  小程序 normalizeContentDisplayFlags 与云函数集合**相等**
- *     A4  链上每个 showXxx 必须**至少**出现在一个后台入口（ERP `form.showXxx` ∪ 店长端 `data-field`）
+ *     A4  链上每个 showXxx 必须**至少**出现在一个后台入口（ERP `form.showXxx` ∪ 店长端 `data-field`）；
+ *         仅 `RETIRED_FLAGS` 里**逐条带理由**登记的已退役开关可豁免，且例外只许变小（A4-stale 判红）
  *         —— 刻意**不要求两处都有**：实测后台是分工（`showGift`/`showLive`/`showMaShangYou`/`showStore`
  *         只在店长端；`showAchievements`/`showAtlas` 只在 ERP）。要求「两处都有」会一上线就一片假红。
  *     A5  后台入口不得出现「链上没有」的孤儿开关（否则是切了不生效的死开关；允许表见 ADMIN_ORPHAN_ALLOWED）
@@ -73,6 +74,19 @@ class Unjudgeable extends Error {}
  * 例：{ showXxx: '只用于 ERP 内部灰度，C 端暂不读（产品 2026-xx-xx 确认）' }
  */
 const ADMIN_ORPHAN_ALLOWED = {}
+
+/**
+ * **已退役**开关的显式登记：链上仍在（云端字段与旧页接线保留，稳定期不改契约），
+ * 但产品负责人点名把它的**后台入口**移除了 —— 于是它必然「两处都没有入口」。
+ * 与 ADMIN_ORPHAN_ALLOWED 同一纪律：**例外只许变小**，登记项若重新有入口会因 A4-stale 判红。
+ * 每条必须写清理由与日期。
+ */
+const RETIRED_FLAGS = {
+  showRitualProfile:
+    '「连灯记录云存」注册钩子：随祈福墙升级为「马上有 · 心愿签」下线；超管面板行已于 2026-10-13 按产品负责人点名移除（缺字段默认关，旧页行为不变）',
+  showMuyuCertificate:
+    '「功德证」次级入口：PRD §8（2026-09-20）已裁决「停」；超管面板行已于 2026-10-13 按产品负责人点名移除（缺字段默认关，旧页行为不变）',
+}
 
 /**
  * 允许「已登记为漏斗、但故意不进 ERP FUNNELS 卡」的钩子。每条必须写清理由。
@@ -181,7 +195,7 @@ export function inspectChainB(src = {}) {
 
 /* ─────────────────────────── 判据（纯函数，可被自检喂合成输入） ─────────────────────────── */
 
-export function evalChainA(input, allowedOrphans = ADMIN_ORPHAN_ALLOWED) {
+export function evalChainA(input, allowedOrphans = ADMIN_ORPHAN_ALLOWED, retiredFlags = {}) {
   const { mp, fnDefault, fnNormalize, fnSave, erp, mgr } = input
   const problems = []
   const admin = union(erp, mgr)
@@ -208,10 +222,19 @@ export function evalChainA(input, allowedOrphans = ADMIN_ORPHAN_ALLOWED) {
     )
   }
   // A4：链上每个开关至少一个后台入口（**不要求两处都有** —— 后台是分工）
-  const noAdmin = diff(mp, admin)
+  //     RETIRED_FLAGS 是**已退役**开关的显式登记（产品负责人点名从面板移除、且不得复活）。
+  const noAdmin = diff(mp, admin).filter((f) => !retiredFlags[f])
   if (noAdmin.length) {
     problems.push(
       `A4: 这些 showXxx 在 ERP 与店长端**两处都没有**入口（超管没法开关，等于静默失效）：${noAdmin.join(', ')}`
+    )
+  }
+  // A4-stale：退役例外只许变小 —— 登记项若重新有了后台入口（或已不在链上），必须从名单删掉，
+  //     否则「退役」会变成重启它的掩护（与 A5-stale 同一纪律）。
+  const staleRetired = Object.keys(retiredFlags).filter((f) => !mp.has(f) || admin.has(f))
+  if (staleRetired.length) {
+    problems.push(
+      `A4-stale: RETIRED_FLAGS 里有过期例外（该开关已重新有后台入口，或已不在链上）——例外只许变小：${staleRetired.join(', ')}`
     )
   }
   // A5：后台孤儿开关（切了不生效的死开关）
@@ -298,7 +321,7 @@ export function evalChainB(input, excluded = FUNNEL_CARD_EXCLUDED) {
 function report() {
   const a = inspectChainA()
   const b = inspectChainB()
-  const aProblems = evalChainA(a)
+  const aProblems = evalChainA(a, ADMIN_ORPHAN_ALLOWED, RETIRED_FLAGS)
   const bProblems = evalChainB(b)
   // 两份排除清单必须同源（同一概念不许有两本会各自漂移的账）
   const reportExcluded = parseWallMonitorExcluded(read(F.wallMonitor))
@@ -411,6 +434,27 @@ function selftest() {
   }
   t('过期例外：ADMIN_ORPHAN_ALLOWED 里的开关已进链 → 红', evalChainA(baseA, { showBeta: 'x' }).length > 0)
 
+  console.log('①b 退役开关名单（RETIRED_FLAGS）：允许「链上有、后台两处都没有」，但例外只许变小')
+  // 2026-10-13：产品负责人点名把两个历史注册钩子开关从超管面板移除（云端字段保留）。
+  const retiredA = { ...baseA, mgr: S('showBeta', 'showGamma') } // Delta 后台两处都没有
+  t(
+    '★ 退役开关带理由登记 → 通过（链上仍在，后台入口已按点名移除）',
+    evalChainA(retiredA, {}, { showDelta: '点名退役' }).length === 0,
+    evalChainA(retiredA, {}, { showDelta: '点名退役' }).join(' / ')
+  )
+  t(
+    '★ 未登记的「后台两处都没有」仍必须红（退役名单不是把 A4 放开）',
+    evalChainA(retiredA, {}, {}).length > 0
+  )
+  t(
+    '★ 过期退役例外（该开关其实还有后台入口）→ 必须红（例外只许变小）',
+    evalChainA(baseA, {}, { showDelta: '点名退役' }).length > 0
+  )
+  t(
+    '★ 过期退役例外（该开关已不在链上）→ 必须红',
+    evalChainA({ ...baseA, mp: S('showAlpha', 'showBeta', 'showGamma'), fnDefault: S('showAlpha', 'showBeta', 'showGamma'), fnNormalize: S('showAlpha', 'showBeta', 'showGamma'), fnSave: S('showAlpha', 'showBeta', 'showGamma'), erp: S('showAlpha'), mgr: S('showBeta', 'showGamma') }, {}, { showDelta: '点名退役' }).length > 0
+  )
+
   console.log('③ 链 B：FUNNELS 卡 + 例外棘轮（纯逻辑）')
   const baseB = { gates: S('wish_wall_register_gate', 'wiki_register_gate'), cards: S('wish_wall_register_gate') }
   const excl = { wiki_register_gate: '另立需求' }
@@ -500,7 +544,7 @@ function selftest() {
   // 还原后基线必须恢复绿（证明还原彻底、且不是"一直红"）
   const aAfter = inspectChainA()
   const bAfter = inspectChainB()
-  t('注入全部还原后，守卫恢复通过', evalChainA(aAfter).length === 0 && evalChainB(bAfter).length === 0)
+  t('注入全部还原后，守卫恢复通过', evalChainA(aAfter, ADMIN_ORPHAN_ALLOWED, RETIRED_FLAGS).length === 0 && evalChainB(bAfter).length === 0)
 
   console.log('⑤ 锚点失效必须报「无法判定」，不许假绿（错题本 E16）')
   {

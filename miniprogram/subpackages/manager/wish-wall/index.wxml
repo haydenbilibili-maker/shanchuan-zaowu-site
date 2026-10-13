@@ -4,16 +4,16 @@
 <view class="page" wx:if="{{ready}}">
   <view class="header">
     <view class="brand-group">
-      <text class="en">WISH WALL</text>
-      <text class="cn">祈福墙管理</text>
+      <text class="en">WISH LABEL</text>
+      <text class="cn">心愿签管理</text>
     </view>
-    <text class="header-note">弹幕不接内容审核，治理由本页承载：全部弹幕（含已隐藏）都可在这里查看、隐藏、恢复、置顶或删除。C 端展示由「内容开关 → 马上有祈福」统一控制。</text>
+    <text class="header-note">签条与语音都不接自动审核，治理由本页承载：全部签条（含已隐藏）都可在这里查看、隐藏、恢复、置顶或删除；带语音的签条必须在本页试听后才会公开。C 端展示由「内容开关 → 马上有 · 心愿签」统一控制。</text>
   </view>
 
   <view class="page-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
-  <!-- 需求 28：多面墙。祈福墙按作用域隔离，可能不止一面 —— 治理必须覆盖全部，
-       否则第二面墙的弹幕无人可治，「不接审核」就只对第一面墙成立。 -->
+  <!-- 多面墙。心愿签按作用域隔离，可能不止一面 —— 治理必须覆盖全部，
+       否则第二面墙的签条无人可治，「不接自动审核」就只对第一面墙成立。 -->
   <view class="wall-bar" wx:if="{{walls.length > 1}}">
     <text class="wall-bar-label">墙面</text>
     <scroll-view class="wall-bar-scroll" scroll-x enable-flex>
@@ -26,15 +26,15 @@
       >{{item.label}}<text class="wall-chip-n" wx:if="{{item.count}}"> {{item.count}}</text></view>
     </scroll-view>
   </view>
-  <text class="wall-bar-hint" wx:elif="{{ready}}">当前只有一面墙（{{productKey}}）。在藏品库给别的藏品设「祈福墙作用域」即可开新墙。</text>
+  <text class="wall-bar-hint" wx:elif="{{ready}}">当前只有一面墙（{{productKey}}）。在藏品库给别的藏品设「心愿签作用域」即可开新墙。</text>
 
-  <!-- 需求 28：第一批基础内容。祈福墙上线第一天不能是空墙 —— 空墙没人愿意第一个写 -->
+  <!-- 第一批基础内容。心愿签墙上线第一天不能是空墙 —— 空墙没人愿意第一个写 -->
   <view class="seed-card">
     <view class="seed-head">
       <text class="seed-title">基础内容</text>
       <text class="seed-badge" wx:if="{{seedResult}}">{{seedResult.counts.total}} 条已上墙</text>
     </view>
-    <text class="seed-desc">用 AI 创作一批祈福句铺上墙：每条都以「句式前缀」开头（默认「马上有」，即「马上有XX」句式）。未配置 AI 密钥或调用失败时，默认前缀会自动改用人工审校过的基线文案。上墙后与用户弹幕同一套治理，可在这里隐藏或删除。</text>
+    <text class="seed-desc">用 AI 创作一批心愿句铺上墙：每条都以「句式前缀」开头（默认「马上有」，即「马上有XX」句式）。未配置 AI 密钥或调用失败时，默认前缀会自动改用人工审校过的基线文案。上墙后与用户签条同一套治理，可在这里隐藏或删除。</text>
     <view class="seed-prefix-row">
       <text class="seed-prefix-label">句式前缀</text>
       <input
@@ -88,11 +88,11 @@
 
   <view class="empty" wx:if="{{loading && !listError}}">同步中…</view>
   <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
-    <text class="empty-title">弹幕列表未能取回</text>
+    <text class="empty-title">签条列表未能取回</text>
     <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
     <view hover-class="wb-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
   </view>
-  <view class="empty" wx:elif="{{!loading && !listError && !list.length}}">没有符合条件的弹幕</view>
+  <view class="empty" wx:elif="{{!loading && !listError && !list.length}}">没有符合条件的签条</view>
 
   <view class="wish-card" wx:for="{{list}}" wx:key="_id">
     <view class="wish-top">

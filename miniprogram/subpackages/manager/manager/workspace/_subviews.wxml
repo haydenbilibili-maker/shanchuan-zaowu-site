@@ -1535,13 +1535,13 @@
       <view class="sub-tab {{contentType==='comment'?'active':''}}" bindtap="switchContentType" data-type="comment">用户评价</view>
       <view class="sub-tab {{contentType==='care'?'active':''}}" bindtap="switchContentType" data-type="care">标本养护</view>
     </view>
-    <!-- 需求 28：祈福墙弹幕同属 C 端展示内容，故「内容管理」里也放一个直达入口。
+    <!-- 心愿签同属 C 端展示内容，故「内容管理」里也放一个直达入口。
          开关行本体在「内容开关」(tab 16) —— 两处共用同一个 goWishWallManage，
          不复制判定。原先只有 tab 16 有入口，按「内容模块」直觉找的人会找不到（实测反馈）。 -->
     <view class="content-seed-bar" bindtap="goWishWallManage">
-      <text class="seed-hint">马上有祈福弹幕</text>
+      <text class="seed-hint">马上有 · 心愿签</text>
       <view class="seed-actions">
-        <view class="seed-btn outline">弹幕复核 ›</view>
+        <view class="seed-btn outline">签条复核 ›</view>
       </view>
     </view>
     <view class="content-seed-bar" wx:if="{{contentType!=='care' && contentType!=='comment'}}">
@@ -2874,37 +2874,24 @@
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showGift}}" data-field="showGift" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <!-- 需求 28：马上有祈福弹幕。UGC 新能力 → 缺配置默认关；关闭后 C 端入口消失且不发请求 -->
+          <!-- 马上有 · 心愿签（原「祈福墙」）C 端入口总闸。UGC 新能力 → 缺配置默认关；关闭后 C 端入口消失且不发请求 -->
           <view class="cfg-row cfg-row-switch">
             <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">马上有祈福</text>
+              <text class="cfg-label cfg-label-wide">马上有 · 心愿签</text>
               <text class="cfg-switch-hint {{contentFlags.showMaShangYou ? 'on' : ''}}">{{contentFlags.showMaShangYou ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showMaShangYou}}" data-field="showMaShangYou" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <!-- 祈福墙「连续记录云保存」注册钩子：身份相关新能力 → 缺配置默认关。
-               关闭后不再弹注册钩子；点灯/木鱼/落愿等主功能不受影响（降级不影响主功能） -->
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">连灯记录云存</text>
-              <text class="cfg-switch-hint {{contentFlags.showRitualProfile ? 'on' : ''}}">{{contentFlags.showRitualProfile ? '展示中' : '已隐藏'}}</text>
-            </view>
-            <switch class="cfg-switch" checked="{{contentFlags.showRitualProfile}}" data-field="showRitualProfile" color="#C4A76C" bindchange="onContentFlagToggle"/>
-          </view>
-          <!-- 祈福墙「功德证」次级入口（创新钩子 H2）：领证要身份 → 属身份相关新能力，缺配置默认关。
-               关闭后不再出现「领证/回看」入口；点灯/木鱼/落愿等主功能不受影响（降级不影响主功能） -->
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">功德证</text>
-              <text class="cfg-switch-hint {{contentFlags.showMuyuCertificate ? 'on' : ''}}">{{contentFlags.showMuyuCertificate ? '展示中' : '已隐藏'}}</text>
-            </view>
-            <switch class="cfg-switch" checked="{{contentFlags.showMuyuCertificate}}" data-field="showMuyuCertificate" color="#C4A76C" bindchange="onContentFlagToggle"/>
-          </view>
-          <!-- 需求 28：弹幕治理入口。不接审核 → 必须能在此复核全部内容（含已隐藏） -->
+          <!-- 2026-10-13 产品负责人点名：祈福墙已全面升级为「马上有 · 心愿签」，
+               两个历史注册钩子开关（连灯记录云存 showRitualProfile / 功德证 showMuyuCertificate）
+               从超管面板移除 —— 面板不再出现祈福墙历史功能信息。
+               云端字段与旧祈福墙页接线**保留**（稳定期不改契约；旧页仍被门店码与玩法回跳使用），
+               两者缺字段默认关 → 旧页行为不变（始终不展示），无需再从后台开关。 -->
+          <!-- 心愿签治理入口。签条（含语音）不接自动审核 → 必须能在此复核全部内容（含已隐藏） -->
           <view class="cfg-row cfg-row-link" bindtap="goWishWallManage">
             <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">祈福墙内容管理</text>
-              <text class="cfg-switch-hint">查看全部弹幕 · 隐藏 / 恢复 / 置顶 / 删除</text>
+              <text class="cfg-label cfg-label-wide">心愿签内容管理</text>
+              <text class="cfg-switch-hint">查看全部签条 · 隐藏 / 恢复 / 置顶 / 删除 · 语音试听</text>
             </view>
             <text class="cfg-chevron">›</text>
           </view>
@@ -3315,15 +3302,15 @@
               </view>
             </view>
           </view>
-          <text class="latin-hint">最多 {{maxBlessTags}} 个；写入 blessTags，用于祈福墙玩法推荐与墙面文案，与兴趣标签 / 礼赠场景分离。</text>
+          <text class="latin-hint">最多 {{maxBlessTags}} 个；写入 blessTags，用于心愿签玩法推荐与签条文案，与兴趣标签 / 礼赠场景分离。</text>
 
-          <view class="form-section-label">祈福墙</view>
-          <!-- 需求 28：本藏品是否挂祈福墙，以及挂在**哪面**墙。
+          <view class="form-section-label">马上有 · 心愿签</view>
+          <!-- 本藏品是否挂上心愿签墙面，以及挂在**哪面**墙（字段名沿用 wishWall*，改字段=改契约）。
                注意：这里保存的是**显式**商品字段（wishWallEnabled/wishWallKey），
                会压过「标题含马上有」的过渡兜底 —— 所以载入时按"当前实际是否挂墙"回填，
                避免运营打开就保存、把原本在墙上的藏品悄悄摘下来。 -->
-          <view class="form-row"><text>挂祈福墙</text><switch checked="{{tempProduct.wishWallEnabled}}" color="#C4A76C" bindchange="bindPWishWall" style="transform:scale(0.7)"/></view>
-          <text class="latin-hint">开启后：该藏品详情页出现「祈福墙」入口（还受内容开关「马上有祈福」总闸控制）。关闭则即使标题含「马上有」也不展示。</text>
+          <view class="form-row"><text>挂心愿签</text><switch checked="{{tempProduct.wishWallEnabled}}" color="#C4A76C" bindchange="bindPWishWall" style="transform:scale(0.7)"/></view>
+          <text class="latin-hint">开启后：该藏品详情页出现「马上有 · 心愿签」入口（还受内容开关「马上有 · 心愿签」总闸控制）。关闭则即使标题含「马上有」也不展示。</text>
           <view class="form-row" wx:if="{{tempProduct.wishWallEnabled}}">
             <text>墙的作用域</text>
             <input value="{{tempProduct.wishWallKey}}" bindinput="bindPWishWallKey" placeholder="留空 = 马上有这面墙"/>

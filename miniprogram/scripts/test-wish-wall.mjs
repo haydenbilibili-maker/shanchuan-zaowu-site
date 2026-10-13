@@ -1087,6 +1087,19 @@ const INJECTIONS = {
     from: '    // ⚠️ 漏这一行 = 超管在后台保存成功、但 showRitualProfile 被静默重置为默认（关）\n    showRitualProfile: incoming.showRitualProfile\n',
     to: ''
   },
+  // 2026-10-13（产品负责人点名）：祈福墙已全面升级为「马上有 · 心愿签」，
+  // 这两个历史注册钩子开关从超管「内容开关」面板移除（云端字段与旧页接线保留 = 不改契约）。
+  // 断言随之改成「不得复活」—— 下面两条注入就是它的可证伪性证明：把开关行加回去必须变红。
+  'ritual-switch-row-revived': {
+    file: 'miniprogram/subpackages/manager/manager/workspace/_subviews.wxml',
+    from: '          <!-- 心愿签治理入口。签条（含语音）不接自动审核',
+    to: '          <switch class="cfg-switch" checked="{{contentFlags.showRitualProfile}}" data-field="showRitualProfile" color="#C4A76C" bindchange="onContentFlagToggle"/>\n          <!-- 心愿签治理入口。签条（含语音）不接自动审核'
+  },
+  'muyu-cert-switch-row-revived': {
+    file: 'miniprogram/subpackages/manager/manager/workspace/_subviews.wxml',
+    from: '          <!-- 心愿签治理入口。签条（含语音）不接自动审核',
+    to: '          <switch class="cfg-switch" checked="{{contentFlags.showMuyuCertificate}}" data-field="showMuyuCertificate" color="#C4A76C" bindchange="onContentFlagToggle"/>\n          <!-- 心愿签治理入口。签条（含语音）不接自动审核'
+  },
   // 「取」这一半被摘掉（只存不取）→ 换机/清缓存后本地仍是 0，而文案仍承诺「记录不丢」
   // ⚠️ 2026-09-21（P2-10）锚点跟随源码：这行从 `onLoad` 无条件执行搬到了
   // `applyGate` 的 `if (!allowed) return` 之后（关闭态不许发请求），并加了 `void`。
@@ -2329,12 +2342,14 @@ check(
 )
 
 /* ------------------------------------------------------------------ *
- * 5) 超管工作台-内容模块：开关行 + 治理入口都在
+ * 5) 超管工作台-内容模块：**心愿签**入口行 + 治理入口都在
+ *    2026-10-13（产品负责人点名）：祈福墙已全面升级为「马上有 · 心愿签」，
+ *    面板里不得再出现两个历史注册钩子开关（连灯记录云存 / 功德证）—— 见 §14 / §15 的「不得复活」断言。
  * ------------------------------------------------------------------ */
 
 const subviews = readSrc('miniprogram/subpackages/manager/manager/workspace/_subviews.wxml')
-check('内容开关面板出现「马上有祈福」行', /data-field="showMaShangYou"/.test(subviews))
-check('面板内含祈福墙内容管理入口', /goWishWallManage/.test(subviews))
+check('内容开关面板出现「马上有 · 心愿签」行', /data-field="showMaShangYou"/.test(subviews))
+check('面板内含心愿签内容管理入口', /goWishWallManage/.test(subviews))
 const managerSrc = readSrc('miniprogram/subpackages/manager/manager/managerPageConfig.js')
 check('管理页跳转已实现', /goWishWallManage\(\) \{/.test(managerSrc))
 check('管理页加载归一化含该字段', /showMaShangYou: flags\.showMaShangYou === true/.test(managerSrc))
@@ -6367,8 +6382,10 @@ check(
  *
  * 这一节钉四件事（每一条都对应一种"看起来做了、其实没做"的缺陷）：
  *   ① 门槛与判定是**纯函数**：连灯 ≥2 天 / 木鱼 ≥21 下才谈，否则就是骚扰；
- *   ② 开关 `showRitualProfile` 缺字段默认关，且**六处链路齐全** ——
+ *   ② 开关 `showRitualProfile` 缺字段默认关，且云端与旧页链路齐全 ——
  *      漏一处就是"超管在后台保存成功、但字段被静默重置"（本仓已发生过）；
+ *      ⚠️ 2026-10-13：该开关的**超管面板行**已按产品负责人点名移除（断言改为"不得复活"），
+ *      但云端默认/归一/透传与旧页判定**必须保留**（稳定期不改契约）。
  *   ③ 注册成功后**真的调 `syncToCloud()`** 并把结果如实告诉用户
  *      （只弹"成功"却什么都没存 = 空承诺，所以漏斗终点只在同步成功后上报）；
  *   ④ 三条降级（开关读失败 / 云存模块缺失 / 用户拒绝授权）都不得影响点灯与木鱼。
@@ -6790,8 +6807,8 @@ check(
   check('③ 云函数 normalizeFlags 同口径（=== true）', /showRitualProfile: src\.showRitualProfile === true/.test(flagFn))
   check('④ ★ 云函数 saveFlags 显式透传（漏了 = 后台保存成功但字段被静默丢）', /showRitualProfile: incoming\.showRitualProfile/.test(flagFn))
   check(
-    '⑤ ★ 店长端工作台（tab16 开关面板）：有该行 + load 归一 + data 默认（缺一个就会被保存抹掉）',
-    /data-field="showRitualProfile"/.test(subv) &&
+    '⑤ ★ 店长端工作台：开关行已于 2026-10-13 按产品负责人点名移除（不得复活）+ load 归一 + data 默认（缺一个就会被保存抹掉）',
+    !/data-field="showRitualProfile"/.test(subv) &&
       /showRitualProfile: flags\.showRitualProfile === true/.test(mgrCfg) &&
       /showRitualProfile: false,/.test(mgrCfg)
   )
@@ -6843,7 +6860,9 @@ check(
  *
  * 这一节钉五件事（每一条都对应一种"看起来做了、其实没做"的缺陷）：
  *   ① 里程点判定是**纯函数**、阈值只有一处常量，且**写明"口径待产品确认"**（不许猜成定稿）；
- *   ② 开关 `showMuyuCertificate` 缺字段默认关，且**五处链路齐全**（漏一处就被静默重置）；
+ *   ② 开关 `showMuyuCertificate` 缺字段默认关，且云端与旧页链路齐全（漏一处就被静默重置）；
+ *      ⚠️ 2026-10-13：该开关的**超管面板行**已按产品负责人点名移除（断言改为"不得复活"），
+ *      云端默认/归一/透传与旧页判定**必须保留**（稳定期不改契约；功德证本身自 2026-09-20 已停）。
  *   ③ **写放大防护**：木鱼可连点，`onMuyuTap` 一次云端写都不许有；只在离开页面/退出时上报；
  *   ④ 注册成功后**真的调 `syncToCloud()`**，且只有成功才说「已存到云端」（失败说真话）；
  *   ⑤ 证书文字**只有计数与日期**（合规：不涉命理改运），且埋点双端登记 + 数据报表有分桶。
@@ -7142,8 +7161,8 @@ check(
   check('③ 云函数 normalizeFlags 同口径（=== true）', /showMuyuCertificate: src\.showMuyuCertificate === true/.test(certFlagFn))
   check('④ ★ 云函数 saveFlags 显式透传（漏了 = 后台保存成功但字段被静默丢）', /showMuyuCertificate: incoming\.showMuyuCertificate/.test(certFlagFn))
   check(
-    '⑤ ★ 店长端工作台（tab16 开关面板）：有该行 + load 归一 + data 默认（缺一个就会被保存抹掉）',
-    /data-field="showMuyuCertificate"/.test(certSubv) &&
+    '⑤ ★ 店长端工作台：开关行已于 2026-10-13 按产品负责人点名移除（不得复活）+ load 归一 + data 默认（缺一个就会被保存抹掉）',
+    !/data-field="showMuyuCertificate"/.test(certSubv) &&
       /showMuyuCertificate: flags\.showMuyuCertificate === true/.test(certMgrCfg) &&
       /showMuyuCertificate: false,/.test(certMgrCfg)
   )
