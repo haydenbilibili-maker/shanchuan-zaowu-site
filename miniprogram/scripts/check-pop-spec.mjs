@@ -103,7 +103,6 @@ export const MASK_BASELINE = {
   'subpackages/extra/shipment-edit/index.wxss': 1,
   'subpackages/extra/user/achievements/index.wxss': 2,
   'subpackages/extra/user/invoice-request/index.wxss': 1,
-  'subpackages/extra/user/messages/index.wxss': 1,
   'subpackages/extra/user/support/index.wxss': 1,
   'subpackages/manager/gift-ops/index.wxss': 1,
   'subpackages/manager/identify-monitor/index.wxss': 1,
@@ -118,7 +117,7 @@ export const MASK_BASELINE = {
  * 与 MASK_BASELINE 同一纪律：条目必须一直有对应的自写遮罩，否则 `--tighten` 清掉它。
  */
 export const NON_POPUP = {
-  'subpackages/extra/user/messages/detail/index.wxss': {
+  'subpackages/extra/user/messages/index.wxss': {
     '.letter-page': '整页信纸视图（固定定位的**页面态**，不是弹层，没有牌面与遮罩语义）',
   },
   'subpackages/manager/manager/index.wxss': {
