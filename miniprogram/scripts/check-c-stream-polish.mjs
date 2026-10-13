@@ -542,7 +542,7 @@ function check(src) {
   ok(/\.ticket-msg \{[^}]*white-space: pre-wrap/.test(src.hubWxss), 'R7-1 .ticket-msg 不是 pre-wrap（换行后的正文看不到）')
   ok(/bindtap="previewTicketImage"/.test(ticketTab), 'R7-1 留言卡附图不能点开看大图')
   ok(!/openidMask|_openid/.test(ticketTab) && /\{\{item\.who\}\}/.test(ticketTab), 'R7-4 留言卡右上角又显示 openid 片段（应为昵称 / 会员号）')
-  const replyModal = (src.subviews.match(/<view class="modal-mask" wx:if="\{\{showTicketReplyModal\}\}"[\s\S]*?发送回复/) || [''])[0]
+  const replyModal = (src.subviews.match(/<view class="ui-pop-mask" wx:if="\{\{showTicketReplyModal\}\}"[\s\S]*?发送回复/) || [''])[0]
   ok(/顾客原留言/.test(replyModal) && /\{\{tempTicketReply\.body\}\}/.test(replyModal), 'R7-3 回复弹层看不到顾客原留言')
   const tv = loadTicketView(src.ticketView)
   if (!tv || typeof tv.buildTicketView !== 'function') ok(false, 'R7-2 supportTicketView.js 无法执行')

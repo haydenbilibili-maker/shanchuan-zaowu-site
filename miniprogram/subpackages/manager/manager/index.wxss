@@ -3418,12 +3418,26 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 
 /* ==================== 4. 弹窗与反馈 (ActionSheet 风格) ==================== */
-.modal-mask { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 200; display: flex; align-items: flex-end; opacity: 0; animation: fadeIn 0.3s forwards; }
-.modal-panel { width: 100%; background: #1a1a1a; border-radius: 30rpx 30rpx 0 0; padding-bottom: env(safe-area-inset-bottom); max-height: 80vh; display: flex; flex-direction: column; transform: translateY(100%); animation: slideUpPanel 0.3s forwards; }
 
 @keyframes slideUpPanel { to { transform: translateY(0); } }
 
-.modal-head { padding: 30rpx; text-align: center; font-size: 30rpx; font-weight: bold; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.05); position: relative; background: #1f1f1f; border-radius: 30rpx 30rpx 0 0; }
+.modal-panel {
+  width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.modal-head {
+  padding: 30rpx;
+  text-align: center;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  position: relative;
+}
 .close-btn { position: absolute; right: 30rpx; top: 30rpx; color: #888; font-size: 36rpx; padding: 0 20rpx; }
 
 /* 旧段保留结构；高度以下方「弹窗系统」.modal-body 为准 */
@@ -3479,27 +3493,17 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .placeholder { color: rgba(255, 255, 255, 0.3); }
 
 /* ==================== 弹窗系统 (UI 统一优化) ==================== */
-.modal-mask { 
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-  background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); 
-  z-index: 200; display: flex; align-items: flex-end; 
-  opacity: 0; animation: fadeIn 0.3s forwards; 
-}
 
-.modal-panel { 
-  width: 100%; background: #1a1a1a; 
-  border-radius: 32rpx 32rpx 0 0; 
-  padding-bottom: calc(40rpx + env(safe-area-inset-bottom)); 
-  max-height: 85vh; display: flex; flex-direction: column; 
-  box-shadow: 0 -10rpx 40rpx rgba(0,0,0,0.5);
-}
 
 /* 标题栏 */
-.modal-head { 
-  padding: 36rpx; text-align: center; 
-  font-size: 32rpx; font-weight: bold; color: #fff; 
-  border-bottom: 1px solid rgba(255,255,255,0.05); position: relative; 
-  background: #1f1f1f; border-radius: 32rpx 32rpx 0 0;
+/* 2026-10-13（弹层规范第 3 批 g）：头部只留排版，底色 / 边 / 圆角由 ui-pop-sheet 提供 */
+.modal-head {
+  padding: 36rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  position: relative;
 }
 .close-btn { 
   position: absolute; right: 30rpx; top: 36rpx; 

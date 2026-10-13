@@ -1,6 +1,6 @@
 <!-- 伴宠工单处理弹层（需补充 / 拒绝）：理由必填，快选可叠加后再改；不用原生弹窗 -->
-<view class="modal-mask pm-sheet-mask" wx:if="{{petSheet.show}}" bindtap="closePetSheet">
-  <view class="modal-panel pm-sheet" catchtap="noop">
+<view class="ui-pop-mask pm-sheet-mask" wx:if="{{petSheet.show}}" bindtap="closePetSheet" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-panel pm-sheet" catchtap="true">
     <view class="modal-head"><text>{{petSheet.title}}</text><view class="close-btn" hover-class="tap-press" hover-stay-time="80" bindtap="closePetSheet">✕</view></view>
     <view class="modal-body pm-sheet-body">
       <text class="pm-sheet-order">{{petSheet.petName}} · {{petSheet.orderNo}}</text>

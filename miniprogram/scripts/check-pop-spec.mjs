@@ -89,7 +89,27 @@ export const MIGRATED = [
   ['subpackages/extra/honorary-curators/index.wxml', 'showAddModal'],
   ['subpackages/extra/honorary-curators/index.wxml', 'showRemoveModal'],
   ['subpackages/extra/member-level-adjust/index.wxml', 'showAdjustModal'],
-  ['subpackages/extra/member-level-adjust/index.wxml', 'showClearModal']
+  ['subpackages/extra/member-level-adjust/index.wxml', 'showClearModal'],
+  // —— 第 3 批 g（2026-10-13）：工作台 _subviews 的 18 个底部抽屉（共用一条 .modal-mask）——
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showMemberPassResult'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showPetQuoteModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showRevenueModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showBannerModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showProductModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showFramerModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showFramerBindSheet'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showCustomConfigModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showActivityModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showCatLinkModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showRewardModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showVipModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showShipModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showContentModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showCareGuideModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showPushConfirm'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showStoreEditModal'],
+  ['subpackages/manager/manager/workspace/_subviews.wxml', 'showTicketReplyModal'],
+  ['subpackages/manager/manager/workspace/petMemorialSheet.wxml', 'petSheet.show']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小）—— 用 `--tighten` 收紧 */
@@ -107,7 +127,6 @@ export const MASK_BASELINE = {
   'subpackages/manager/gift-ops/index.wxss': 1,
   'subpackages/manager/identify-monitor/index.wxss': 1,
   'subpackages/manager/manager/hubNav.wxss': 1,
-  'subpackages/manager/manager/index.wxss': 2,
   'subpackages/manager/store-points/index.wxss': 1,
   'subpackages/manager/studio-bills/index.wxss': 1
 }

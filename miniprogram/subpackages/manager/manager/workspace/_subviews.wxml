@@ -2918,8 +2918,8 @@
 </view>
 
 <!-- 会员码核验结果 -->
-<view class="modal-mask" wx:if="{{showMemberPassResult}}" bindtap="closeMemberPassResult">
-  <view class="modal-panel member-pass-panel" catchtap="true">
+<view class="ui-pop-mask" wx:if="{{showMemberPassResult}}" bindtap="closeMemberPassResult" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-panel member-pass-panel" catchtap="true">
     <view class="modal-head">
       <text>会员核验</text>
       <view class="close-btn" bindtap="closeMemberPassResult">✕</view>
@@ -2965,8 +2965,8 @@
 </view>
 
 <!-- 伴宠报价弹窗 -->
-<view class="modal-mask" wx:if="{{showPetQuoteModal}}">
-  <view class="modal-panel">
+<view class="ui-pop-mask" wx:if="{{showPetQuoteModal}}" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-panel">
     <view class="modal-head"><text>伴宠报价</text><view class="close-btn" bindtap="closePetQuoteModal">✕</view></view>
     <scroll-view scroll-y class="modal-body">
       <view class="form-group">
@@ -2982,8 +2982,8 @@
 <include src="petMemorialSheet.wxml" />
 
 <!-- 营收录入弹窗 -->
-<view class="modal-mask" wx:if="{{showRevenueModal}}">
-  <view class="modal-panel">
+<view class="ui-pop-mask" wx:if="{{showRevenueModal}}" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-panel">
     <view class="modal-head"><text>录入营收 · {{ledgerStoreName}}</text><view class="close-btn" bindtap="closeModal">✕</view></view>
     <scroll-view scroll-y class="modal-body">
       <view class="smart-box"><textarea placeholder="粘贴营收信息自动解析（入账门店以顶部选中为准）…" bindinput="parseRevenueText" value="{{tempRevenue.rawText}}"></textarea></view>
@@ -3000,8 +3000,8 @@
 </view>
 
 <!-- 轮播图编辑弹窗 -->
-<view class="modal-mask" wx:if="{{showBannerModal}}">
-  <view class="modal-panel">
+<view class="ui-pop-mask" wx:if="{{showBannerModal}}" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-panel">
     <view class="modal-head"><text>编辑海报</text><view class="close-btn" bindtap="closeModal">✕</view></view>
     <scroll-view scroll-y class="modal-body">
       <view class="upload-area" bindtap="chooseBannerImage">
@@ -3039,8 +3039,8 @@
 </view>
 
 <!-- 藏品录入弹窗 -->
-<view class="modal-mask" wx:if="{{showProductModal}}">
-    <view class="modal-panel product-entry-panel">
+<view class="ui-pop-mask" wx:if="{{showProductModal}}" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel product-entry-panel">
       <view class="modal-head"><text>{{isEditing?'编辑':'录入'}}藏品</text><view class="close-btn" bindtap="closeModal">✕</view></view>
       <view class="product-form-tabs">
         <view class="pft {{productFormTab==='basic'?'on':''}}" bindtap="setProductFormTab" data-tab="basic">基础</view>
@@ -3485,8 +3485,8 @@
   </view>
 
 <!-- 标本师弹窗 -->
-  <view class="modal-mask" wx:if="{{showFramerModal}}">
-    <view class="modal-panel sm">
+  <view class="ui-pop-mask" wx:if="{{showFramerModal}}" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel sm">
       <view class="modal-head"><text>{{isEditing ? '编辑标本师' : '新增标本师'}}</text><view class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="upload-area round" bindtap="chooseFramerImage" style="width:200rpx; height:200rpx; border-radius:50%; margin:0 auto 30rpx;">
@@ -3531,8 +3531,8 @@
   </view>
 
   <!-- 绑定员工面板 -->
-  <view class="modal-mask" wx:if="{{showFramerBindSheet}}" bindtap="closeFramerBindSheet">
-    <view class="modal-panel sm framer-bind-panel" catchtap="noop">
+  <view class="ui-pop-mask" wx:if="{{showFramerBindSheet}}" bindtap="closeFramerBindSheet" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel sm framer-bind-panel" catchtap="true">
       <view class="modal-head"><text>绑定员工</text><view class="close-btn" bindtap="closeFramerBindSheet">✕</view></view>
       <view class="framer-bind-search">
         <input
@@ -3560,8 +3560,8 @@
   </view>
 
   <!-- 定制选项配置弹窗 -->
-  <view class="modal-mask" wx:if="{{showCustomConfigModal}}">
-    <view class="modal-panel sm">
+  <view class="ui-pop-mask" wx:if="{{showCustomConfigModal}}" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel sm">
       <view class="modal-head"><text>定制选项</text><view class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="form-group">
@@ -3583,8 +3583,8 @@
   </view>
 
   <!-- 活动编辑面板 -->
-  <view class="modal-mask" wx:if="{{showActivityModal}}">
-    <view class="modal-panel">
+  <view class="ui-pop-mask" wx:if="{{showActivityModal}}" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel">
       <view class="modal-head"><text>{{isEditing?'编辑活动':'发布活动'}}</text><view class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body" scroll-into-view="{{actFormErr.field?'actf-'+actFormErr.field:''}}">
         <text class="act-err" wx:if="{{actFormErr.field==='submit'}}">{{actFormErr.msg}}</text>
@@ -3658,8 +3658,8 @@
 <!-- 分类管理已迁入藏品库子 Tab；关联弹窗如下 -->
 
 <!-- 关联藏品：打开即预览；主路径一键确认 -->
-<view class="modal-mask" wx:if="{{showCatLinkModal}}">
-  <view class="modal-panel cat-manage-panel">
+<view class="ui-pop-mask" wx:if="{{showCatLinkModal}}" catchtouchmove="true">
+  <view class="ui-pop-sheet modal-panel cat-manage-panel">
     <view class="modal-head"><text>关联藏品 · {{catLinkTarget.name}}</text><view class="close-btn" bindtap="closeCatLinkModal">✕</view></view>
     <scroll-view scroll-y class="modal-body cat-manage-scroll">
       <view class="cat-manage-tip">已关联 {{catLinkAlreadyCount || 0}} 件。下方为可补挂候选；空态时可试「一键全部」（含同馆未分类）。</view>
@@ -3684,8 +3684,8 @@
 </view>
 
   <!-- 🟢 权益弹窗 (UI统一优化) -->
-  <view class="modal-mask" wx:if="{{showRewardModal}}">
-    <view class="modal-panel">
+  <view class="ui-pop-mask" wx:if="{{showRewardModal}}" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel">
       <view class="modal-head"><text>权益编辑</text><view class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="upload-area" bindtap="chooseRewardImage">
@@ -3721,8 +3721,8 @@
   </view>
 
   <!-- 等级弹窗：字段对齐 Admin member_levels -->
-  <view class="modal-mask" wx:if="{{showVipModal}}">
-    <view class="modal-panel sm">
+  <view class="ui-pop-mask" wx:if="{{showVipModal}}" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel sm">
       <view class="modal-head"><text>等级设置</text><view class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body" style="max-height:70vh;">
          <view class="form-group">
@@ -3754,8 +3754,8 @@
       <view class="btn-small gold" bindtap="closeVerifyModal">完成</view>
     </view>
   </view>
-  <view class="modal-mask" wx:if="{{showShipModal}}" catchtap="closeModal">
-    <view class="modal-panel sm ship-modal-panel" catchtap="noop">
+  <view class="ui-pop-mask" wx:if="{{showShipModal}}" catchtap="closeModal" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel sm ship-modal-panel" catchtap="true">
       <view class="modal-head">
         <text>发货信息录入</text>
         <view class="close-btn" catchtap="closeModal">✕</view>
@@ -3856,8 +3856,8 @@
   </view>
 
   <!-- 🟢 内容管理弹窗（统一专题+文章） -->
-  <view class="modal-mask" wx:if="{{showContentModal}}" catchtap="closeModal">
-    <view class="modal-panel" catchtap="">
+  <view class="ui-pop-mask" wx:if="{{showContentModal}}" catchtap="closeModal" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel" catchtap="true">
       <view class="modal-head">
         <text>{{isEditing ? '编辑' : '新建'}}{{contentType === 'exhibition' ? '专题' : '文章'}}</text>
         <view class="close-btn" bindtap="closeModal">✕</view>
@@ -3939,7 +3939,7 @@
 
   <!-- 关联商品选择器 -->
   <view class="modal-mask picker-mask" wx:if="{{showProductPicker}}" catchtap="closeProductPicker">
-    <view class="modal-panel picker-panel" catchtap="">
+    <view class="ui-pop-sheet modal-panel picker-panel" catchtap="true">
       <view class="modal-head">
         <text>选择关联藏品</text>
         <view class="close-btn" bindtap="closeProductPicker">✕</view>
@@ -3978,8 +3978,8 @@
   </view>
 
   <!-- 养护指南 CMS 弹窗 -->
-  <view class="modal-mask" wx:if="{{showCareGuideModal}}" catchtap="closeCareGuideModal">
-    <view class="modal-panel" catchtap="">
+  <view class="ui-pop-mask" wx:if="{{showCareGuideModal}}" catchtap="closeCareGuideModal" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel" catchtap="true">
       <view class="modal-head">
         <text>{{isEditing ? '编辑' : '新建'}}养护指南</text>
         <view class="close-btn" bindtap="closeCareGuideModal">✕</view>
@@ -4040,8 +4040,8 @@
   </view>
 
   <!-- 山海有信：推送确认 -->
-  <view class="modal-mask" wx:if="{{showPushConfirm}}" catchtap="closePushConfirm">
-    <view class="modal-panel" catchtap="noop">
+  <view class="ui-pop-mask" wx:if="{{showPushConfirm}}" catchtap="closePushConfirm" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel" catchtap="true">
       <view class="modal-head"><text>确认发送</text><view class="close-btn" catchtap="closePushConfirm">✕</view></view>
       <view class="modal-body">
         <text class="p-name">将向约 {{pushEstimate}} 位藏家发送公告</text>
@@ -4053,8 +4053,8 @@
   </view>
 
   <!-- 门店编辑 -->
-  <view class="modal-mask" wx:if="{{showStoreEditModal}}" catchtap="closeStoreEditModal">
-    <view class="modal-panel" catchtap="noop">
+  <view class="ui-pop-mask" wx:if="{{showStoreEditModal}}" catchtap="closeStoreEditModal" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel" catchtap="true">
       <view class="modal-head"><text>编辑门店 · {{tempStoreEdit.name}}</text><view class="close-btn" catchtap="closeStoreEditModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="form-row"><text>名称</text><input value="{{tempStoreEdit.name}}" bindinput="bindStoreEditInput" data-field="name" placeholder="门店名称"/></view>
@@ -4079,8 +4079,8 @@
   </view>
 
   <!-- 山海有信：留言回复 -->
-  <view class="modal-mask" wx:if="{{showTicketReplyModal}}" catchtap="closeTicketReplyModal">
-    <view class="modal-panel" catchtap="noop">
+  <view class="ui-pop-mask" wx:if="{{showTicketReplyModal}}" catchtap="closeTicketReplyModal" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel" catchtap="true">
       <view class="modal-head"><text>回复 · {{tempTicketReply.topicLabel}}</text><view class="close-btn" catchtap="closeTicketReplyModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="ticket-origin">

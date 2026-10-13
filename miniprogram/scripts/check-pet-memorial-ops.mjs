@@ -265,9 +265,10 @@ function run(overrides = {}) {
   t('样式经 workspace/index.wxss @import 可达', () => /@import\s+['"]\.\/petMemorial\.wxss['"]/.test(read(WSS)))
   t('两份新 wxml 的可点元素都有 hover-class tap-press / tap-press-soft', () => {
     for (const rel of [CARDS, SHEET]) {
-      const tags = read(rel).match(/<view\b[^>]*bindtap="(?!closePetSheet"[^>]*class="modal-mask)[^"]+"[^>]*>/g) || []
+      const tags = read(rel).match(/<view\b[^>]*bindtap="[^"]+"[^>]*>/g) || []
       for (const tag of tags) {
-        if (/class="modal-mask/.test(tag)) continue
+        // 遮罩（2026-10-13 起为 ui-pop-mask）只承担「点外侧关闭」，不给按压态
+        if (/class="ui-pop-mask/.test(tag)) continue
         if (!/hover-class="tap-press(-soft)?"/.test(tag)) return false
       }
     }
