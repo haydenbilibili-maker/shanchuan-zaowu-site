@@ -100,6 +100,14 @@
       <text class="wish-pin" wx:if="{{item.pinned}}">置顶</text>
     </view>
     <text class="wish-text" bindtap="copyText" data-text="{{item.text}}">{{item.text}}</text>
+    <view class="wish-voice" wx:if="{{item.voiceStatus}}">
+      <view hover-class="wb-press" hover-stay-time="80" class="btn-ghost" wx:if="{{item.voiceUrl}}" bindtap="playVoice" data-id="{{item._id}}">{{playingId === item._id ? '停止' : '试听'}} {{item.voiceSecText}}</view>
+      <text class="wish-voice-state is-{{item.voiceStatus}}">{{item.voiceLabel}}</text>
+      <block wx:if="{{item.voiceStatus === 'pending'}}">
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-ghost" bindtap="reviewVoice" data-id="{{item._id}}" data-decision="approved">通过公开</view>
+        <view hover-class="wb-press" hover-stay-time="80" class="btn-danger" bindtap="reviewVoice" data-id="{{item._id}}" data-decision="rejected">驳回删除</view>
+      </block>
+    </view>
     <text class="wish-meta">{{item.nickname}} · {{item.timeText}}</text>
     <text class="wish-meta" wx:if="{{item.openid}}">openid {{item.openid}}</text>
     <view class="wish-actions">

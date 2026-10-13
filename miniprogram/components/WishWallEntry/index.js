@@ -6,7 +6,9 @@ const {
   buildWishWallUrl,
   PRODUCT_KEY,
   normalizeWishText,
-  TEXT_MAX
+  TEXT_MAX,
+  WISH_LABELS_V2,
+  WISH_EXHIBIT_COVER
 } = require('../../utils/wishWall')
 const { exhibitFor } = require('../../config/wallExhibit')
 
@@ -73,7 +75,11 @@ Component({
     productHint: '',
     /** 跑马灯条目：文案各两份 + 唯一 key → 平移 -50% 即无缝循环 */
     mqItems: [],
-    mqDurationMs: 26000
+    mqDurationMs: 26000,
+    /** 2026-10-13 心愿签卡（v2）：展品缩略 + 最新一句；false = 旧墨底 / 亮纸版（回退路径） */
+    v2: WISH_LABELS_V2,
+    cover: '',
+    latest: ''
   },
 
   observers: {
@@ -99,6 +105,10 @@ Component({
           productHint
         })
       }
+      // v2 缩略：默认墙用店内实拍常量；藏品墙用该藏品首图（读不到就不画图，不编造）
+      const imgs = product && Array.isArray(product.images) ? product.images : []
+      const cover = !visible ? '' : (productKey === PRODUCT_KEY ? WISH_EXHIBIT_COVER : String(imgs[0] || ''))
+      if (cover !== this.data.cover) this.setData({ cover })
     },
     /** 跑马灯：清洗 + 限长 + 复制一份（无缝循环）。（注记 E9） */
     wishes(list) {
@@ -125,6 +135,9 @@ Component({
       // 去重键按**内容**而不是条数：宿主下拉刷新后条数往往一模一样（墙上还是那几条），
       // 但文案可能已经被新愿替换 —— 只看长度会让跑马灯停在旧文案上。
       const signature = items.map((it) => `${it.t}\u0001${it.e}`).join('\u0002')
+      // v2 只露最新一句（真实心愿；没有就不出这一句）
+      const latest = rows.length ? rows[0].t : ''
+      if (latest !== this.data.latest) this.setData({ latest })
       if (signature !== this._mqSignature) {
         this._mqSignature = signature
         this.setData({ mqItems: items, mqDurationMs: duration })

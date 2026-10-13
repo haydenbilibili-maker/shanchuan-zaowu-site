@@ -37,13 +37,13 @@ function eq(name, got, want) {
 
 const SSOT = 'miniprogram/utils/bannerNav.js'
 const ERP = 'admin/src/utils/bannerNav.js'
-const WISH = 'miniprogram/subpackages/feature/wish-wall/index'
+const WISH = 'miniprogram/subpackages/feature/wish-labels/index'
 
 const INJECTIONS = {
   // 新增核心功能忘补候选（本轮用户点名的那件事）
   'wish-wall-dropped': {
     file: SSOT,
-    from: "  { id: 'wish-wall', label: '祈福墙', path: '/subpackages/feature/wish-wall/index' },\n",
+    from: "  { id: 'wish-wall', label: '马上有 · 心愿签', path: '/subpackages/feature/wish-labels/index' },\n",
     to: ''
   },
   // 运营点了会跳到空白/报错页
@@ -55,8 +55,8 @@ const INJECTIONS = {
   // 两份副本漂移（改了 ERP 那侧的名字，模拟历史上真实发生过的那种错）
   'copy-drift': {
     file: ERP,
-    from: "{ id: 'wish-wall', label: '祈福墙',",
-    to: "{ id: 'wish-wall', label: '祈福墙（旧）',"
+    from: "{ id: 'wish-wall', label: '马上有 · 心愿签',",
+    to: "{ id: 'wish-wall', label: '马上有 · 心愿签（旧）',"
   },
   // 重复 id（运营端回填会串台）
   'dup-id': {
@@ -127,7 +127,7 @@ const REQUIRED_TARGETS = [
   ['标本工坊', '/pages/atelier/index'],
   ['购物车', '/pages/cart/index'],
   ['我的', '/pages/user/index'],
-  ['祈福墙（2026-09 新增核心功能）', '/subpackages/feature/wish-wall/index'],
+  ['祈福墙（2026-09 新增核心功能）', '/subpackages/feature/wish-labels/index'],
   ['订单列表', '/subpackages/business/orders/index'],
   ['我的礼券夹', '/subpackages/business/coupons/index'],
   ['我的钱包', '/subpackages/extra/user/stored-value/index'],
@@ -197,7 +197,7 @@ const REQUIRED_TARGETS = [
   eq('★ ERP 副本的分支行为与小程序一致（booking）', erp.buildBannerLinkForSave('booking', ''), ssot.buildBannerLinkForSave('booking', ''))
   eq('★ ERP 副本的分支行为与小程序一致（scheme 带 query）', erp.buildBannerLinkForSave('scheme', '/subpackages/content/user/legal/index?type=terms'), ssot.buildBannerLinkForSave('scheme', '/subpackages/content/user/legal/index?type=terms'))
   check('★ 祈福墙在候选里，且 path 就是那个页面',
-    presets.some((p) => p.id === 'wish-wall' && p.path === '/subpackages/feature/wish-wall/index'))
+    presets.some((p) => p.id === 'wish-wall' && p.path === '/subpackages/feature/wish-labels/index'))
   check('祈福墙的说明写清了多面墙怎么指（productKey）',
     /productKey/.test(readSrc(SSOT)) && /祈福墙/.test(readSrc(SSOT)))
 }
@@ -250,7 +250,7 @@ const REQUIRED_TARGETS = [
   })()
   const built = wishWallUtil.buildWishWallUrl({ _id: 'p1', title: '马上有', wishWallEnabled: true }, { from: 'detail' })
   check('★ C 端入口组件生成的 URL 与候选 path 同源（前缀一致）',
-    built.indexOf('/subpackages/feature/wish-wall/index?') === 0, built)
+    built.indexOf('/subpackages/feature/wish-labels/index?') === 0, built)
   const pageSrc = readSrc(WISH + '.js')
   // 允许两种等价写法：
   //   A) setData 内联 productKey: normalizeProductKey(...)
@@ -264,8 +264,8 @@ const REQUIRED_TARGETS = [
     /parseWishWallScene/.test(pageSrc))
   const preset = presets.find((p) => p.id === 'wish-wall')
   check('候选里也允许带 productKey（指向某一面墙）',
-    ssot.validateSchemePath('/subpackages/feature/wish-wall/index?productKey=k').ok === true,
-    JSON.stringify(ssot.validateSchemePath('/subpackages/feature/wish-wall/index?productKey=k')))
+    ssot.validateSchemePath('/subpackages/feature/wish-labels/index?productKey=k').ok === true,
+    JSON.stringify(ssot.validateSchemePath('/subpackages/feature/wish-labels/index?productKey=k')))
   eq('常见拼错（外链 / 相对路径）仍被拦', ssot.validateSchemePath('https://x.com/a').ok, false)
   void preset
 }

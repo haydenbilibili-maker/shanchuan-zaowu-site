@@ -38,6 +38,11 @@
 | `nickname` | string | 展示昵称。用户发布：**服务端**取 `users.nickName`，缺省「匿名藏家」；基础内容：固定「山海造物」 |
 | `avatar` | string | 头像，服务端取 `users.avatarUrl` |
 | `status` | string | `visible` \| `hidden`（管理端可切换） |
+| `echoCount` | number | 「我也想要」人数（2026-10-13）。只由 `manageWishWall.echo` 在 `wish_wall_echoes` 首次写入成功后 `+1`；缺省视为 0 |
+| `voiceFileID` | string | 心愿签语音（2026-10-13，选附）：云文件 ID，只收 `wish-voice/` 下；驳回后清空且删文件 |
+| `voiceDuration` | number | 语音秒数，1–15 |
+| `voiceStatus` | string | `pending`（待试听，只作者可听）\| `approved`（公开）\| `rejected`（已驳回删除）；只由 `staffSetVoice` 改 |
+| `voiceReviewedBy` / `voiceReviewedAt` | string / Date | 试听人与时间 |
 | `pinned` | boolean | 是否置顶 |
 | `source` | string | `user`（用户手写）\| `ai`（AI 创作的基础内容）\| `seed`（人工基线兜底） |
 | `aiGenerated` | boolean | 是否由 AI 生成（`source === 'ai'`） |

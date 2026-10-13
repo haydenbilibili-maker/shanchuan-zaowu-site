@@ -1,0 +1,239 @@
+<!-- 马上有 · 心愿签（2026-10-13 重做）：展品首屏 → 写签 → 心愿签墙。蓝图 docs/马上有心愿签_重设计蓝图_2026-10-13.md -->
+<view class="wl-nav" style="padding-top: {{statusBarHeight}}px; height: {{navBarHeight}}px;">
+  <nav-back ext-class="wl-nav-back" bind:back="onNavBack" aria-label="返回" />
+</view>
+
+<!-- 闸门：读失败 / 未开放 / 加载中 -->
+<view class="wl-state" wx:if="{{!allowed}}" style="padding-top: {{navTotal + 120}}px;">
+  <block wx:if="{{gateError}}">
+    <text class="wl-state-title">没读上馆方的开关</text>
+    <text class="wl-state-desc">网络或权限异常，稍后再试</text>
+    <view class="wl-ghost-btn" bindtap="onGateRetry" hover-class="tap-press-soft" hover-stay-time="80">重新读取</view>
+  </block>
+  <block wx:elif="{{flagChecked}}">
+    <text class="wl-state-title">心愿签暂未开放</text>
+    <text class="wl-state-desc">馆方正在准备，开放后这里会有一面签墙</text>
+  </block>
+  <block wx:else>
+    <view class="ui-sk-line wl-sk-title"></view>
+    <view class="ui-sk-line wide"></view>
+  </block>
+</view>
+
+<view class="wl-page" wx:else>
+  <!-- ① 展品首屏 -->
+  <view class="wl-hero">
+    <image class="wl-hero-img" wx:if="{{cover}}" src="{{cover}}" mode="aspectFill" />
+    <view class="wl-hero-shade" aria-hidden="true"></view>
+    <view class="wl-credit" style="top: {{navTotal + 8}}px;" aria-hidden="true">
+      <text class="wl-credit-en">NATURE'S CREATIONS</text>
+      <text class="wl-credit-zh">山海造物 · 馆藏实拍</text>
+    </view>
+    <view class="wl-exhibit-tag" style="top: {{navTotal + 6}}px;" aria-hidden="true">
+      <text>EXHIBIT</text>
+      <text>{{exhibit.nameEn || 'MA SHANG YOU'}}</text>
+    </view>
+  </view>
+
+  <view class="wl-intro">
+    <text class="wl-kicker">{{exhibit.species || '展品'}}{{exhibit.storeLabel ? ' · ' + exhibit.storeLabel : ''}}</text>
+    <text class="wl-title">{{exhibit.name || '马上有'}}</text>
+    <text class="wl-sub" wx:if="{{exhibit.line}}">{{exhibit.line}}</text>
+    <text class="wl-sub is-note" wx:if="{{exhibit.visitNote}}">{{exhibit.visitNote}}</text>
+  </view>
+
+  <!-- 最新三张露角，点即看墙 -->
+  <scroll-view class="wl-peek" scroll-x enhanced show-scrollbar="{{false}}" wx:if="{{peek.length}}">
+    <view class="wl-peek-row">
+      <view class="wl-mini" wx:for="{{peek}}" wx:key="_id" data-id="{{item._id}}" bindtap="openLabel" hover-class="tap-press-soft" hover-stay-time="80">
+        <text class="wl-mini-no" wx:if="{{item.no}}">{{item.no}}</text>
+        <text class="wl-mini-text">{{item.text}}</text>
+        <text class="wl-mini-by">{{item.author}}{{item.timeText ? ' · ' + item.timeText : ''}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- ④ 心愿签墙 -->
+  <view id="wall" class="wl-wall">
+    <view class="mu-head">
+      <view class="mu-head-t"><text class="mu-en">THE WALL</text><text class="mu-cn">心愿签墙</text></view>
+      <view class="wl-seg" aria-role="tablist">
+        <text class="wl-seg-item {{viewMode === 'latest' ? 'is-on' : ''}}" data-mode="latest" bindtap="switchView" aria-role="tab">最新</text>
+        <text class="wl-seg-item {{viewMode === 'mine' ? 'is-on' : ''}}" data-mode="mine" bindtap="switchView" aria-role="tab">我的</text>
+      </view>
+    </view>
+
+    <view class="wl-notice" wx:if="{{viewMode === 'mine' && mineHidden > 0}}">{{mineHidden}} 张签被馆方暂时收起，只有你自己看得到</view>
+
+    <block wx:if="{{loading}}">
+      <view class="wl-cols">
+        <view class="wl-col"><view class="ui-sk-card wl-sk-card"></view><view class="ui-sk-card wl-sk-card short"></view></view>
+        <view class="wl-col"><view class="ui-sk-card wl-sk-card short"></view><view class="ui-sk-card wl-sk-card"></view></view>
+      </view>
+    </block>
+    <view class="wl-empty" wx:elif="{{viewMode === 'latest' && loadError}}">
+      <text>{{loadError}}</text>
+      <view class="wl-ghost-btn" bindtap="refresh" hover-class="tap-press-soft" hover-stay-time="80">再试一次</view>
+    </view>
+    <view class="wl-empty" wx:elif="{{viewMode === 'mine' && mineError}}">
+      <text>{{mineError}}</text>
+      <view class="wl-ghost-btn" bindtap="loadMine" hover-class="tap-press-soft" hover-stay-time="80">再试一次</view>
+    </view>
+    <view class="wl-empty" wx:elif="{{!columns[0].length}}">
+      <text>{{viewMode === 'mine' ? '你还没写过心愿签' : '墙上还空着'}}</text>
+      <text class="wl-empty-sub">写下第一张，别在{{exhibit.name || '马上有'}}身边</text>
+    </view>
+    <view class="wl-cols" wx:else>
+      <view class="wl-col" wx:for="{{columns}}" wx:for-item="col" wx:for-index="ci" wx:key="ci">
+        <view
+          class="wl-label {{item.isMine ? 'is-mine' : ''}} {{item.fresh ? 'is-fresh' : ''}} {{item.hidden ? 'is-hidden' : ''}}"
+          wx:for="{{col}}"
+          wx:key="_id"
+          data-id="{{item._id}}"
+          bindtap="openLabel"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+          aria-role="button"
+          aria-label="{{item.text}}"
+        >
+          <view class="wl-label-top">
+            <text class="wl-label-no">{{item.no}}</text>
+            <text class="wl-label-tag" wx:if="{{item.fresh}}">刚别上</text>
+            <text class="wl-label-tag" wx:elif="{{item.hidden}}">已收起</text>
+            <text class="wl-label-tag" wx:elif="{{item.voiceTag}}">{{item.voiceTag}}</text>
+            <text class="wl-label-tag" wx:elif="{{item.pinned}}">置顶</text>
+          </view>
+          <text class="wl-label-text {{item.long ? 'is-long' : ''}}">{{item.text}}</text>
+          <view wx:if="{{item.voiceUrl}}" class="wl-label-voice {{playingId === item._id ? 'is-on' : ''}}" data-id="{{item._id}}" catchtap="playLabel" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button" aria-label="播放这段声音">
+            <view class="wl-voice-ico" aria-hidden="true"></view>
+            <text>{{item.voiceText}}</text>
+          </view>
+          <view class="wl-label-by">
+            <text class="wl-label-author">{{item.official ? '山海造物' : item.author}}</text>
+            <text>{{item.echoCount ? item.echoCount + ' 人也想要' : item.timeText}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <text class="wl-capped" wx:if="{{viewMode === 'latest' && capped && !loading}}">仅展示最近 {{listLimit}} 张</text>
+  </view>
+
+  <!-- 底栏：唯一实心金 = 写一张心愿签；今日一签为文字链 -->
+  <view class="wl-foot safe-area">
+    <view class="wl-primary {{quota.exhausted ? 'is-off' : ''}}" bindtap="openCompose" hover-class="tap-press" hover-stay-time="80" aria-role="button">
+      {{quota.exhausted ? '今天已写满 ' + quota.cap + ' 张' : '写一张心愿签'}}
+    </view>
+    <text class="wl-link" bindtap="goQian" hover-class="tap-press" hover-stay-time="80" aria-role="button">今日一签 ›</text>
+  </view>
+</view>
+
+<!-- ③ 写签弹层：在标本签上直接写 -->
+<view class="wl-mask {{composeOpen ? 'is-on' : ''}}" wx:if="{{composeOpen}}" bindtap="closeCompose" catchtouchmove="noop"></view>
+<view class="wl-sheet" wx:if="{{composeOpen}}" catchtouchmove="noop">
+  <view class="wl-grab" aria-hidden="true"></view>
+  <view class="mu-head">
+    <view class="mu-head-t"><text class="mu-en">SPECIMEN LABEL</text><text class="mu-cn">写一张心愿签</text></view>
+    <text class="wl-close" bindtap="closeCompose" aria-role="button" aria-label="关闭">×</text>
+  </view>
+  <view class="wl-paper">
+    <view class="wl-paper-top"><text>MA SHANG YOU</text><text>{{today}}</text></view>
+    <text class="wl-paper-ttl">心 愿 标 本 签</text>
+    <textarea
+      class="wl-paper-input"
+      value="{{draft}}"
+      maxlength="-1"
+      auto-height
+      focus="{{composeOpen}}"
+      placeholder="马上有……"
+      placeholder-class="wl-paper-ph"
+      cursor-spacing="140"
+      bindinput="onDraftInput"
+    />
+    <view class="wl-paper-grid">
+      <view class="wl-paper-field" wx:if="{{writer}}"><text class="k">写签人</text><text class="v">{{writer}}</text></view>
+      <view class="wl-paper-field"><text class="k">别于</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
+    </view>
+  </view>
+  <!-- 语音（选附，≤ 15 秒；全部人工试听后才公开）：按住说话 → 试听 / 删除 -->
+  <view class="wl-voice">
+    <view
+      wx:if="{{!voicePath}}"
+      class="wl-voice-hold {{voiceRecording ? 'is-rec' : ''}}"
+      catchtouchstart="onVoiceHoldStart"
+      catchtouchend="onVoiceHoldEnd"
+      catchtouchcancel="onVoiceHoldCancel"
+      aria-role="button"
+      aria-label="按住录一段声音"
+    >
+      <view class="wl-voice-dot" aria-hidden="true"></view>
+      <text>{{voiceRecording ? '正在录 ' + voiceRecordSec + ' / ' + voiceMax + ' 秒 · 松开结束' : '按住附一段声音（' + voiceMax + ' 秒内，可不录）'}}</text>
+    </view>
+    <view wx:else class="wl-voice-chip">
+      <view class="wl-voice-play {{playingId === 'draft' ? 'is-on' : ''}}" bindtap="onVoicePreview" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button">
+        <view class="wl-voice-ico" aria-hidden="true"></view>
+        <text>{{playingId === 'draft' ? '正在播放' : '试听'}} · {{voiceText}}</text>
+      </view>
+      <text class="wl-voice-del" bindtap="onVoiceClear" aria-role="button">删除</text>
+    </view>
+    <text class="wl-voice-note">声音经馆方试听后公开，之前只有你自己听得到</text>
+  </view>
+
+  <view class="wl-inspo" wx:if="{{inspiration.length}}">
+    <text class="wl-inspo-k">灵感</text>
+    <text class="wl-inspo-chip" wx:for="{{inspiration}}" wx:key="*this" data-text="{{item}}" bindtap="useInspiration" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
+  </view>
+  <view class="wl-sheet-line">
+    <text wx:if="{{quota.unknown}}">额度暂时读不到，以提交结果为准</text>
+    <text wx:else>今日还可写 {{quota.left}} 张</text>
+    <text class="wl-count">{{draftCount}}/{{textMax}}</text>
+  </view>
+  <view class="wl-primary {{posting || !draft ? 'is-off' : ''}}" bindtap="submitWish" hover-class="tap-press" hover-stay-time="80" aria-role="button">{{posting ? '正在别上…' : '别上墙'}}</view>
+</view>
+
+<!-- 签详情 -->
+<view class="wl-mask is-on" wx:if="{{card}}" bindtap="closeLabel" catchtouchmove="noop"></view>
+<view class="wl-sheet is-card" wx:if="{{card}}" catchtouchmove="noop">
+  <view class="wl-grab" aria-hidden="true"></view>
+  <view class="wl-paper is-view">
+    <view class="wl-paper-top"><text>{{card.no || 'MA SHANG YOU'}}</text><text>{{card.date}}</text></view>
+    <text class="wl-paper-ttl">心 愿 标 本 签</text>
+    <text class="wl-paper-wish">{{card.text}}</text>
+    <view wx:if="{{card.voiceUrl}}" class="wl-label-voice is-big {{playingId === card._id ? 'is-on' : ''}}" data-id="{{card._id}}" catchtap="playLabel" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button">
+      <view class="wl-voice-ico" aria-hidden="true"></view>
+      <text>{{playingId === card._id ? '正在播放' : '听这段声音'}} · {{card.voiceText}}</text>
+    </view>
+    <text wx:elif="{{card.voiceTag}}" class="wl-paper-note">{{card.voiceTag}}：试听通过后其他人也能听到</text>
+    <view class="wl-paper-grid">
+      <view class="wl-paper-field"><text class="k">写签人</text><text class="v">{{card.official ? '山海造物' : card.author}}</text></view>
+      <view class="wl-paper-field"><text class="k">别于</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
+    </view>
+  </view>
+  <view class="wl-card-acts">
+    <view
+      wx:if="{{!card.isMine}}"
+      class="wl-ghost-btn wide {{card.echoed ? 'is-done' : ''}}"
+      bindtap="toggleEcho"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+      aria-role="button"
+    >{{card.echoed ? '已表示也想要' : '我也想要'}}{{card.echoCount ? ' · ' + card.echoCount : ''}}</view>
+    <button class="wl-share" open-type="share" hover-class="tap-press-soft">分享这张签</button>
+  </view>
+</view>
+
+<register-auth-dialog
+  show="{{showRegisterDialog}}"
+  overline="WISH LABEL"
+  title="注册后心愿签才别得住"
+  desc="一键注册即可把这张签别上墙、收进「我的」，以后回来都看得到它。"
+  cta="一键注册"
+  closable="{{true}}"
+  close-text="先不写"
+  from="wish_wall"
+  bind:cta="onRegisterDialogCta"
+  bind:success="onRegisterSuccess"
+  bind:close="onRegisterDialogClose"
+  bind:fail="onRegisterDialogFail"
+/>
+
+<app-toast show="{{toastShow}}" overline="WISH LABEL" title="{{toastTitle}}" duration="{{2400}}" bind:close="onToastClose" />

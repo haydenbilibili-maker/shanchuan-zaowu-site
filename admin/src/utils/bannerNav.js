@@ -21,7 +21,7 @@ export const SCHEME_PRESETS = [
   // 核心互动（新增核心功能优先放这里，海报/物料要能直接指向）
   // ⚠️ 祈福墙是**多面墙**：不带参数 = 默认墙；要指向某一面墙请在路径后补 `?productKey=<藏品键>`
   //    （页面 onLoad 对非法/缺失的 key 一律回落默认墙，不会跳出空白页）
-  { id: 'wish-wall', label: '祈福墙', path: '/subpackages/feature/wish-wall/index' },
+  { id: 'wish-wall', label: '马上有 · 心愿签', path: '/subpackages/feature/wish-labels/index' },
   // 常用功能
   { id: 'atlas', label: '山海图鉴', path: '/subpackages/feature/collection/index' },
   { id: 'store', label: '线下门店', path: '/subpackages/business/store/index' },

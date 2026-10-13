@@ -18,6 +18,12 @@ const LANES = 6
 
 /** 祈福墙作用域 key（与云函数 DEFAULT_PRODUCT_KEY 一致） */
 const PRODUCT_KEY = 'mashangyou'
+/** 2026-10-13「马上有 · 心愿签」重做：true = 入口与旧页都去新页（回退 = 置 false 重传）。蓝图 docs/马上有心愿签_重设计蓝图_2026-10-13.md */
+const WISH_LABELS_V2 = true
+const WISH_LABELS_PATH = '/subpackages/feature/wish-labels/index'
+const WISH_WALL_PATH = '/subpackages/feature/wish-wall/index'
+/** 黑马展品实拍（商品 7794572a… images[1]，店内展柜实拍；fileID 直接给 image 用，主包零字节） */
+const WISH_EXHIBIT_COVER = 'cloud://cloud1-8gnkty5bfff9f0bf.636c-cloud1-8gnkty5bfff9f0bf-1387508856/products/1788775191533_DSC03810.JPG'
 
 /** 一面墙最多回多少条（与云函数 `manageWishWall` 的 `LIST_MAX` **必须相等**）。（注记 W3） */
 const LIST_LIMIT = 30
@@ -114,7 +120,7 @@ function buildWishWallUrl(product, opts) {
   // 显式标签为空时由场景兜底推导（映射写死在 config/blessTags.js，永不写库）。
   const bless = resolveBlessTags(p).join(',')
   if (bless) params.push(`bless=${encodeURIComponent(bless)}`)
-  return `/subpackages/feature/wish-wall/index?${params.join('&')}`
+  return `${WISH_LABELS_V2 ? WISH_LABELS_PATH : WISH_WALL_PATH}?${params.join('&')}`
 }
 
 /** 解析**门店 / 物料小程序码**带进来的 `scene`（wxacode.getUnlimited，≤32 字符）。（注记 W15） */
@@ -543,6 +549,9 @@ function formatWishTime(value, now) {
 }
 
 module.exports = {
+  WISH_LABELS_V2,
+  WISH_LABELS_PATH,
+  WISH_EXHIBIT_COVER,
   TEXT_MIN,
   TEXT_MAX,
   LANES,

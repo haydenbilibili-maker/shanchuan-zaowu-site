@@ -167,6 +167,7 @@ const EVENTS = {
   wish_wall_sound: { module: MODULE.COMMUNITY, desc: '祈福墙仪式音效开关', targetType: 'on' },
   wish_wall_play: { module: MODULE.COMMUNITY, desc: '祈福墙玩法（targetType=玩法 id：qian/cookie/zodiac/mbti）', targetType: 'play' },
   wish_wall_reco: { module: MODULE.COMMUNITY, desc: '祈福墙祈运弱推（targetType=祈运标签 key）', targetType: 'reco' },
+  wish_wall_echo: { module: MODULE.COMMUNITY, desc: '心愿签「我也想要」（targetId=心愿签 _id）', targetType: 'ok' },
   // 注册转化漏斗（2026-09-18 产品口径：祈福墙是注册转化路径，对齐 AI 识别）：
   // step = show（落愿时弹注册）/ dismiss（先不挂）/ resume_success（注册完成并自动续发）/ fail_*
   wish_wall_register_gate: { module: MODULE.COMMUNITY, desc: '祈福墙注册引导漏斗（step: show/go_register/dismiss/fail_*/resume_success；注册成功后另有 to_coupons/to_shop 两个「下一步」点击，属转化**之后**的行为、不计入漏斗）', targetType: 'wish_wall' },

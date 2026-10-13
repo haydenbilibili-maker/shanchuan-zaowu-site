@@ -6174,23 +6174,39 @@ check(
   }
   const tracks = []
   const p1 = mkOnLoadPage()
-  p1.onLoad({ scene: 'from=store_qr&k=mashangyou' })
+  // legacy=1：旧页作为回退路径照常解析（v2 开时旧页会先转去心愿签页，见下方「旧码转新页」）
+  p1.onLoad({ scene: 'from=store_qr&k=mashangyou', legacy: '1' })
   check(
     '★ 扫码进来（只有 scene）→ 落到码里的那面墙 + 来源记为 store_qr',
     p1.data.productKey === 'mashangyou' && p1.data.entryFrom === 'store_qr',
     JSON.stringify({ key: p1.data.productKey, from: p1.data.entryFrom })
   )
   const p2 = mkOnLoadPage()
-  p2.onLoad({ productKey: 'k2', from: 'detail', scene: 'from=store_qr&k=other' })
+  p2.onLoad({ productKey: 'k2', from: 'detail', scene: 'from=store_qr&k=other', legacy: '1' })
   check(
     '★ 显式参数优先于 scene（普通 URL 入口不被门店码抢走）',
     p2.data.productKey === 'k2' && p2.data.entryFrom === 'detail',
     JSON.stringify({ key: p2.data.productKey, from: p2.data.entryFrom })
   )
   const p3 = mkOnLoadPage()
-  p3.onLoad({})
+  p3.onLoad({ legacy: '1' })
   check('既无显式参数也无 scene → 默认墙 + direct（不抛）',
     p3.data.productKey === wish.PRODUCT_KEY && p3.data.entryFrom === 'direct')
+  // 2026-10-13 心愿签重做：已印门店码 / 旧分享仍指向本页 → 必须原样（含 scene）转到新页；玩法深链 qian → 今日一签
+  if (wish.WISH_LABELS_V2) {
+    const redirects = []
+    const realRedirect = globalThis.wx.redirectTo
+    globalThis.wx.redirectTo = (o) => { redirects.push(o.url) }
+    const p4 = mkOnLoadPage()
+    p4.onLoad({ scene: 'from=store_qr&k=mashangyou' })
+    const p5 = mkOnLoadPage()
+    p5.onLoad({ play: 'qian' })
+    globalThis.wx.redirectTo = realRedirect
+    check('★ 旧码转新页：scene 原样带到心愿签页，旧页不再初始化',
+      redirects[0] === `${wish.WISH_LABELS_PATH}?scene=${encodeURIComponent('from=store_qr&k=mashangyou')}` && p4._redirected === true && !p4.data.productKey,
+      JSON.stringify(redirects))
+    check('旧玩法深链 play=qian → 今日一签页（其它玩法随旧页退场）', /play-qian\/index/.test(redirects[1] || ''), redirects[1])
+  }
   stub.restore()
 }
 
@@ -7830,7 +7846,7 @@ if (process.argv.includes('--selftest') && !INJECT) {
     // 门禁读取失败（真实 bootstrap 会吞掉并落 gateError，不抛 —— 页面照常走完 onLoad）
     p.bootstrap = async () => { p.data.gateError = true; p.data.flagChecked = true }
     globalThis.wx.cloud.callFunction = () => Promise.reject(new Error('云不可用'))
-    p.onLoad({})
+    p.onLoad({ legacy: '1' })
     await new Promise((r) => setTimeout(r, 0))
     check('★ onLoad 里云全挂也照样算出博物笔记入口（入口与云调用解耦）', p._relicsCalls === 1, `calls=${p._relicsCalls}`)
     // onShow 同样：切回来也要重算（从成就页回来看进度变了）

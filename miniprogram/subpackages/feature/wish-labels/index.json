@@ -1,0 +1,15 @@
+{
+  "navigationBarTitleText": "马上有 · 心愿签",
+  "navigationStyle": "custom",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#151412",
+  "backgroundColorTop": "#151412",
+  "backgroundColorBottom": "#151412",
+  "backgroundTextStyle": "light",
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "nav-back": "/components/NavBack/index",
+    "app-toast": "/components/AppToast/index",
+    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index"
+  }
+}

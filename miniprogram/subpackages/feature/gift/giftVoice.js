@@ -244,10 +244,13 @@ const MIN_HOLD_MS = 280
  * 按住说话录音器
  * 关键：touchstart→start / touchend→stop；松手早于 onStart 时用 pendingStop 收束。
  * 权限弹窗会打断触摸：授权成功后提示再按一次，避免空文件上传。
- * @param {{ onStart?: Function, onStop?: Function, onError?: Function, onTick?: Function }} hooks
+ * @param {{ onStart?: Function, onStop?: Function, onError?: Function, onTick?: Function, maxMs?: number }} hooks
  */
 function createGiftRecorder(hooks) {
   const h = hooks || {}
+  // 可选上限（2026-10-13 心愿签语音 15s 旁路）；不传 = 礼赠原 60s，行为逐字不变
+  const maxMs = Math.min(MAX_DURATION_MS, Math.max(1000, Number(h.maxMs) || MAX_DURATION_MS))
+  const maxSec = Math.round(maxMs / 1000)
   const recorder = wx.getRecorderManager()
   let recording = false
   let starting = false
@@ -284,7 +287,7 @@ function createGiftRecorder(hooks) {
     clearTick()
     tickTimer = setInterval(() => {
       const elapsed = Math.min(
-        MAX_DURATION_SEC,
+        maxSec,
         Math.floor((Date.now() - startedAt) / 1000)
       )
       if (typeof h.onTick === 'function') h.onTick(elapsed)
@@ -300,11 +303,11 @@ function createGiftRecorder(hooks) {
     pendingStop = false
     clearTick()
     const durationMs = Math.min(
-      MAX_DURATION_MS,
+      maxMs,
       Math.max(0, (res && res.duration) || (startedAt ? Date.now() - startedAt : 0))
     )
     const durationSec = Math.min(
-      MAX_DURATION_SEC,
+      maxSec,
       Math.max(0, Math.round(durationMs / 1000) || (durationMs >= MIN_VOICE_MS ? 1 : 0))
     )
     if (typeof h.onStop === 'function') {
@@ -382,7 +385,7 @@ function createGiftRecorder(hooks) {
 
       try {
         const opts = {
-          duration: MAX_DURATION_MS,
+          duration: maxMs,
           sampleRate: 16000,
           numberOfChannels: 1,
           encodeBitRate: 48000,
