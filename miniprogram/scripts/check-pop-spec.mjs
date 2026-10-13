@@ -67,7 +67,13 @@ export const MIGRATED = [
   ['subpackages/extra/shipment-ops/index.wxml', 'skuPicker.show'],
   ['subpackages/extra/shipment-ops/index.wxml', 'skuEdit.show'],
   ['subpackages/extra/shipment-ops/index.wxml', 'picker.show'],
-  ['subpackages/extra/shipment-ops/index.wxml', 'libForm.show']
+  ['subpackages/extra/shipment-ops/index.wxml', 'libForm.show'],
+  // —— 第 3 批 d（2026-10-13）：员工端现场核销 / 查证的 5 个结果弹层 ——
+  ['subpackages/extra/staff/field/index.wxml', 'showMemberPassResult'],
+  ['subpackages/extra/staff/field/index.wxml', 'showCouponRedeemResult'],
+  ['subpackages/extra/staff/field/index.wxml', 'showBookingVerifyResult'],
+  ['subpackages/extra/staff/field/index.wxml', 'showPickupConfirm'],
+  ['subpackages/extra/staff/field/index.wxml', 'showPickupVerifyResult']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小）—— 用 `--tighten` 收紧 */
@@ -80,7 +86,6 @@ export const MASK_BASELINE = {
   'subpackages/extra/property-cost/index.wxss': 1,
   'subpackages/extra/shareholder-config/index.wxss': 1,
   'subpackages/extra/shipment-edit/index.wxss': 1,
-  'subpackages/extra/staff/field/index.wxss': 1,
   'subpackages/extra/staff-permissions/index.wxss': 1,
   'subpackages/extra/user/achievements/index.wxss': 2,
   'subpackages/extra/user/invoice-request/index.wxss': 1,

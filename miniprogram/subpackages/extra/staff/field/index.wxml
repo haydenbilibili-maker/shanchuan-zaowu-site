@@ -344,9 +344,9 @@
 
 <!-- 会员码核验结果：主路径可核销门店券 -->
 <!-- catchtouchmove 只挡遮罩穿透；弹层本体可滚区域不嵌套 scroll-view -->
-<view class="mask {{memberPassClosing ? 'is-closing' : ''}}" wx:if="{{showMemberPassResult}}" bindtap="closeMemberPassResult">
+<view class="ui-pop-mask is-center is-deep {{memberPassClosing ? 'is-closing' : ''}}" wx:if="{{showMemberPassResult}}" bindtap="closeMemberPassResult" catchtouchmove="true">
   <view class="mask-blocker" catchtouchmove="noop" catchtap="closeMemberPassResult"></view>
-  <view class="modal modal-pass {{memberPassClosing ? 'is-closing' : ''}}" catchtap="noop">
+  <view class="ui-pop-dialog modal modal-pass {{memberPassClosing ? 'is-closing' : ''}}" catchtap="true">
     <!-- 顶栏：类型说明 + 信号灯状态（固定） -->
     <view class="pass-head">
       <text class="kind-label">{{memberPassResult.kindLabel || '会员码核验 · 不消耗、不入场'}}</text>
@@ -581,8 +581,8 @@
 </view>
 
 <!-- 门店券核销结果：遮罩隔离底层；点遮罩或「完成」关闭 -->
-<view class="mask mask-result" wx:if="{{showCouponRedeemResult}}" bindtap="closeCouponRedeemResult" catchtouchmove="noop">
-  <view class="modal modal-result" catchtap="noop">
+<view class="ui-pop-mask is-center is-deep mask-result" wx:if="{{showCouponRedeemResult}}" bindtap="closeCouponRedeemResult" catchtouchmove="true">
+  <view class="ui-pop-dialog modal modal-result" catchtap="true">
     <text class="kind-label">{{couponRedeemResult.kindLabel || '门店礼券 · 已核销'}}</text>
     <view class="modal-title-row">
       <view class="signal-light {{couponRedeemResult.titleLamp || (couponRedeemResult.ok ? 'blink' : 'danger')}}"></view>
@@ -606,8 +606,8 @@
 </view>
 
 <!-- 预约票核销结果 -->
-<view class="mask mask-result" wx:if="{{showBookingVerifyResult}}" bindtap="closeBookingVerifyResult" catchtouchmove="noop">
-  <view class="modal modal-result" catchtap="noop">
+<view class="ui-pop-mask is-center is-deep mask-result" wx:if="{{showBookingVerifyResult}}" bindtap="closeBookingVerifyResult" catchtouchmove="true">
+  <view class="ui-pop-dialog modal modal-result" catchtap="true">
     <text class="kind-label">{{bookingVerifyResult.kindLabel || '预约票核销 · 入场消耗'}}</text>
     <view class="modal-title-row">
       <view class="signal-light {{bookingVerifyResult.ok ? 'blink' : 'danger'}}"></view>
@@ -625,8 +625,8 @@
 </view>
 
 <!-- 门店自取：交付二次确认（先核对单号 / 藏品 / 买家尾号，再核销） -->
-<view class="mask mask-result" wx:if="{{showPickupConfirm}}" bindtap="closePickupConfirm" catchtouchmove="noop">
-  <view class="modal modal-result pickup-confirm" catchtap="noop">
+<view class="ui-pop-mask is-center is-deep mask-result" wx:if="{{showPickupConfirm}}" bindtap="closePickupConfirm" catchtouchmove="true">
+  <view class="ui-pop-dialog modal modal-result pickup-confirm" catchtap="true">
     <text class="kind-label">门店自取 · 交付确认</text>
     <view class="pc-head">
       <text class="pc-title">{{pickupConfirm.title}}</text>
@@ -667,8 +667,8 @@
 </view>
 
 <!-- 门店自取核销结果 -->
-<view class="mask mask-result" wx:if="{{showPickupVerifyResult}}" bindtap="closePickupVerifyResult" catchtouchmove="noop">
-  <view class="modal modal-result" catchtap="noop">
+<view class="ui-pop-mask is-center is-deep mask-result" wx:if="{{showPickupVerifyResult}}" bindtap="closePickupVerifyResult" catchtouchmove="true">
+  <view class="ui-pop-dialog modal modal-result" catchtap="true">
     <text class="kind-label">{{pickupVerifyResult.kindLabel || '门店自取核销'}}</text>
     <view class="modal-title-row">
       <view class="signal-light {{pickupVerifyResult.ok ? 'blink' : 'danger'}}"></view>

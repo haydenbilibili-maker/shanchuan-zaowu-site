@@ -821,38 +821,17 @@ page {
   line-height: 1.45;
 }
 
-/* ---------------- 弹窗 ---------------- */
-@keyframes mask-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
+/* ---------------- 弹窗 ----------------
+   形态（遮罩 / 牌面 / 进场动画）取 app.wxss 的 ui-pop-*（docs/弹层视觉规范_2026-10-13.md｜第 3 批 d）；
+   本页只留：退场动画（is-closing）、挡底层滚动的 blocker、结果弹层的底边距，以及状态色排版。 */
 @keyframes mask-out {
   from { opacity: 1; }
   to { opacity: 0; }
 }
 
-@keyframes modal-in {
-  from { opacity: 0; transform: translateY(20rpx); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
 @keyframes modal-out {
   from { opacity: 1; transform: translateY(0); }
   to { opacity: 0; transform: translateY(12rpx); }
-}
-
-.mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 9, 8, 0.88);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: 48rpx 32rpx;
-  box-sizing: border-box;
-  animation: mask-in 180ms ease-out;
 }
 
 /* 挡底层页面滚动；弹层在其上，手势不经过 blocker */
@@ -862,20 +841,13 @@ page {
   z-index: 0;
 }
 
-.mask .modal {
-  position: relative;
-  z-index: 1;
-}
-
-/* 结果弹层：更深遮罩 + 底边距，与贴底扫码条错开 */
+/* 结果弹层：与贴底扫码条错开（牌面底色 / 圆角 / 投影由零件提供） */
 .mask-result {
-  z-index: 220;
-  background: rgba(10, 9, 8, 0.94);
   padding: 64rpx 32rpx calc(72rpx + env(safe-area-inset-bottom));
   align-items: center;
 }
 
-.mask.is-closing {
+.ui-pop-mask.is-closing {
   animation: mask-out 180ms ease-in forwards;
 }
 
@@ -883,16 +855,11 @@ page {
   width: 100%;
   max-width: 620rpx;
   max-height: 82vh;
-  padding: var(--space-6) var(--space-5);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
   overflow-y: auto;
-  animation: modal-in 220ms ease-out;
 }
 
 .modal.is-closing {
