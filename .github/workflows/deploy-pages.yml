@@ -65,12 +65,12 @@ jobs:
       - name: Build site (admin + astro)
         run: npm run build
 
-      - name: Upload dist
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist
-          path: dist
-          retention-days: 7
+      # ⚠️ 2026-10-13：**刻意不上传 dist 产物**。
+      # 起因：产物存储配额爆掉（42 个 dist / 1079 MB）后，`upload-artifact` 直接失败，
+      # 于是 main 上从 2026-10-11 起每一次部署都断在这里（守卫与构建其实是绿的），
+      # 而配额「每 6–12 小时才重算」—— 删旧产物也救不了当场那一次。
+      # 这一 job 的职责是**校验**（守卫 + 构建能过）；部署 job 自己 checkout + build + 部署，
+      # 不再经手中的产物存档 —— 部署链路与产物配额彻底解耦。
 
   guards-can-fail:
     name: 守卫自检（证明会失败）
@@ -128,17 +128,14 @@ jobs:
           node-version: '22'
           cache: npm
 
-      # 装依赖只为拿到与本地一致的 wrangler（devDependency）；构建产物用上面 verify 的 artifact
-      - name: Install dependencies (for wrangler)
+      # 装依赖既为拿 wrangler（devDependency），也为在**本 job 内**构建 dist（不再依赖产物存档，见 verify 的说明）
+      - name: Install dependencies
         if: steps.cf.outputs.configured == 'true'
         run: npm ci --include=dev
 
-      - name: Download dist
+      - name: Build site (admin + astro)
         if: steps.cf.outputs.configured == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist
+        run: npm run build
 
       - name: Deploy to Cloudflare Pages
         if: steps.cf.outputs.configured == 'true'
