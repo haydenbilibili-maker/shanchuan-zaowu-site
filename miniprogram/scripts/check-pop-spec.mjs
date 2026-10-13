@@ -60,7 +60,14 @@ export const MIGRATED = [
   ['subpackages/extra/inventory-ops/index.wxml', 'showRawForm'],
   ['subpackages/extra/purchase-ops/index.wxml', 'showSyncPanel'],
   ['subpackages/extra/purchase-ops/index.wxml', 'showForm'],
-  ['subpackages/extra/shipment-ops/index.wxml', 'showDetail']
+  ['subpackages/extra/shipment-ops/index.wxml', 'showDetail'],
+  // —— 第 3 批 c（2026-10-13）：`.ss-*` 组的 6 个抽屉（定义在 sku.wxss，出货页用）——
+  ['subpackages/extra/shipment-ops/index.wxml', 'memoBox.show'],
+  ['subpackages/extra/shipment-ops/index.wxml', 'memoDetail.show'],
+  ['subpackages/extra/shipment-ops/index.wxml', 'skuPicker.show'],
+  ['subpackages/extra/shipment-ops/index.wxml', 'skuEdit.show'],
+  ['subpackages/extra/shipment-ops/index.wxml', 'picker.show'],
+  ['subpackages/extra/shipment-ops/index.wxml', 'libForm.show']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小）—— 用 `--tighten` 收紧 */
@@ -73,7 +80,6 @@ export const MASK_BASELINE = {
   'subpackages/extra/property-cost/index.wxss': 1,
   'subpackages/extra/shareholder-config/index.wxss': 1,
   'subpackages/extra/shipment-edit/index.wxss': 1,
-  'subpackages/extra/shipment-ops/sku.wxss': 1,
   'subpackages/extra/staff/field/index.wxss': 1,
   'subpackages/extra/staff-permissions/index.wxss': 1,
   'subpackages/extra/user/achievements/index.wxss': 2,
@@ -88,8 +94,7 @@ export const MASK_BASELINE = {
   'subpackages/manager/payslip/index.wxss': 1,
   'subpackages/manager/staff-permissions/index.wxss': 1,
   'subpackages/manager/store-points/index.wxss': 1,
-  'subpackages/manager/studio-bills/index.wxss': 1,
-  'subpackages/manager/utils/ops-museum.wxss': 1
+  'subpackages/manager/studio-bills/index.wxss': 1
 }
 
 /**

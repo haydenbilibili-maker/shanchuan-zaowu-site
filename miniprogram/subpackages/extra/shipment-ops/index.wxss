@@ -144,9 +144,7 @@
 .ops-card.sc-card-new { border-color: #c4a76c !important; box-shadow: 0 0 0 2rpx rgba(196, 167, 108, 0.35), 0 12rpx 32rpx rgba(196, 167, 108, 0.12); background: linear-gradient(180deg, rgba(196, 167, 108, 0.12), rgba(31, 29, 26, 1) 60%); }
 .sc-new-badge { flex-shrink: 0; margin-right: 10rpx; padding: 2rpx 12rpx; border-radius: 6rpx; font-size: 20rpx; font-weight: 600; color: #221e17; background: #c4a76c; }
 
-/* 详情：明细带原材料 / 包装 */
-.ss-mask.is-top { z-index: 50; }
-.ss-sheet.is-top { z-index: 51; }
+/* 详情：明细带原材料 / 包装（弹层形态取 ui-pop-*；「选择器浮在其它抽屉之上」现由 DOM 顺序保证，不再各写 z-index） */
 .sc-detail-sheet { max-height: 80vh; overflow: hidden; }
 .sc-detail-body { flex: 0 1 auto; min-height: 0; max-height: none; }
 .sc-detail-line { display: flex; align-items: center; justify-content: space-between; gap: 12rpx; padding: 14rpx 0; border-bottom: 1rpx solid rgba(38, 35, 32, 0.9); }

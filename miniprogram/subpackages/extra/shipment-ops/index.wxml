@@ -857,334 +857,346 @@
 </view>
 
 <!-- 草稿箱 / 历史备忘（仅超管；独立旁路集合，不进任何统计） -->
-<view class="ss-mask" wx:if="{{memoBox.show}}" bindtap="closeMemoBox" catchtouchmove="noop"></view>
-<view class="ss-sheet" wx:if="{{memoBox.show}}">
-  <view class="ss-sheet-head" catchtouchmove="noop">
-    <text class="ss-sheet-title">{{memoBox.title}}</text>
-    <view class="ss-sheet-close" bindtap="closeMemoBox"><text>关闭</text></view>
-  </view>
-  <view class="ss-search" catchtouchmove="noop">
-    <text class="mm-note">{{memoBox.kind === 'history' ? '9.21 前的飞书出货单，已结清，只读备忘；不计入任何统计' : '9.21 起的飞书出货单：审核修改后可转为正式出货单，转正式前不计入任何统计'}}</text>
-  </view>
-  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
-    <view class="ss-loading" wx:if="{{memoBox.loading}}"><text>加载中…</text></view>
-    <view class="ss-empty" wx:elif="{{memoBox.error}}">
-      <text>{{memoBox.error}}</text>
-      <text class="ss-empty-hint" bindtap="loadMemoBox">点此重试</text>
+<view class="ui-pop-mask" wx:if="{{memoBox.show}}" bindtap="closeMemoBox" catchtouchmove="true">
+  <view class="ui-pop-sheet ss-sheet" wx:if="{{memoBox.show}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ss-sheet-head" catchtouchmove="noop">
+      <text class="ui-pop-title ss-sheet-title">{{memoBox.title}}</text>
+      <view class="ui-pop-close ss-sheet-close" catchtap="closeMemoBox" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-    <view class="ss-empty" wx:elif="{{!memoBox.list.length}}"><text>{{memoBox.kind === 'history' ? '暂无历史备忘' : '草稿箱是空的'}}</text></view>
-    <block wx:else>
-      <view class="mm-card" wx:for="{{memoBox.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="openMemo">
-        <view class="mm-top">
-          <text class="mm-title">{{item.title}}</text>
-          <text class="mm-tag {{item.kind === 'history' ? 'is-history' : ''}}">{{item.kind === 'history' ? '已结清·历史' : '草稿'}}</text>
-          <text class="mm-tag is-pending" wx:if="{{item.pendingCount}}">待匹配 {{item.pendingCount}}</text>
-        </view>
-        <text class="mm-meta">{{item.shipmentDate}} · {{item.lineCount}} 行 · {{item.totalQty}} 件{{item.storeMatched && item.customerName ? ' · 飞书客户 ' + item.customerName : ''}}</text>
-        <text class="mm-meta">飞书 {{item.feishuTotalText}}{{item.kind === 'draft' ? ' · 参考 ' + item.refTotalText : ''}}</text>
+    <view class="ss-search" catchtouchmove="noop">
+      <text class="mm-note">{{memoBox.kind === 'history' ? '9.21 前的飞书出货单，已结清，只读备忘；不计入任何统计' : '9.21 起的飞书出货单：审核修改后可转为正式出货单，转正式前不计入任何统计'}}</text>
+    </view>
+    <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+      <view class="ss-loading" wx:if="{{memoBox.loading}}"><text>加载中…</text></view>
+      <view class="ss-empty" wx:elif="{{memoBox.error}}">
+        <text>{{memoBox.error}}</text>
+        <text class="ss-empty-hint" bindtap="loadMemoBox">点此重试</text>
       </view>
-    </block>
-  </scroll-view>
+      <view class="ss-empty" wx:elif="{{!memoBox.list.length}}"><text>{{memoBox.kind === 'history' ? '暂无历史备忘' : '草稿箱是空的'}}</text></view>
+      <block wx:else>
+        <view class="mm-card" wx:for="{{memoBox.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="openMemo">
+          <view class="mm-top">
+            <text class="mm-title">{{item.title}}</text>
+            <text class="mm-tag {{item.kind === 'history' ? 'is-history' : ''}}">{{item.kind === 'history' ? '已结清·历史' : '草稿'}}</text>
+            <text class="mm-tag is-pending" wx:if="{{item.pendingCount}}">待匹配 {{item.pendingCount}}</text>
+          </view>
+          <text class="mm-meta">{{item.shipmentDate}} · {{item.lineCount}} 行 · {{item.totalQty}} 件{{item.storeMatched && item.customerName ? ' · 飞书客户 ' + item.customerName : ''}}</text>
+          <text class="mm-meta">飞书 {{item.feishuTotalText}}{{item.kind === 'draft' ? ' · 参考 ' + item.refTotalText : ''}}</text>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
 </view>
 
-<view class="ss-mask" wx:if="{{memoDetail.show}}" bindtap="closeMemoDetail" catchtouchmove="noop"></view>
-<view class="ss-sheet" wx:if="{{memoDetail.show}}">
-  <view class="ss-sheet-head" catchtouchmove="noop">
-    <text class="ss-sheet-title">{{memoDetail.item.kind === 'history' ? '历史备忘' : '草稿'}} · {{memoDetail.item.shipmentDate}}</text>
-    <view class="ss-sheet-close" bindtap="closeMemoDetail"><text>关闭</text></view>
-  </view>
-  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
-    <view class="mm-head">
-      <view class="mm-top">
-        <text class="mm-tag {{memoDetail.item.kind === 'history' ? 'is-history' : ''}}">{{memoDetail.item.kind === 'history' ? '已结清·历史' : '草稿'}}</text>
-        <picker wx:if="{{memoDetail.item.kind === 'draft'}}" mode="selector" range="{{storeNames}}" bindchange="onMemoStore">
-          <view class="mm-store {{memoDetail.item.storeMatched ? '' : 'is-pending'}}">{{memoDetail.item.storeMatched ? memoDetail.item.storeName : '门店待匹配 · 点选'}} ▾</view>
-        </picker>
-        <text class="mm-title" wx:else>{{memoDetail.item.storeMatched ? memoDetail.item.storeName : '门店待匹配'}}</text>
-      </view>
-      <text class="mm-meta">飞书客户 {{memoDetail.item.customerName || '—'}}</text>
-      <text class="mm-meta">飞书合计 {{memoDetail.item.feishuTotalText}}</text>
-      <text class="mm-meta" wx:if="{{memoDetail.item.kind === 'draft'}}">系统参考 {{memoDetail.item.refTotalText}}{{memoDetail.item.diffTotalText ? ' · ' + memoDetail.item.diffTotalText : ''}}</text>
-      <text class="mm-meta" wx:if="{{memoDetail.item.note}}">备注 {{memoDetail.item.note}}</text>
+<view class="ui-pop-mask" wx:if="{{memoDetail.show}}" bindtap="closeMemoDetail" catchtouchmove="true">
+  <view class="ui-pop-sheet ss-sheet" wx:if="{{memoDetail.show}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ss-sheet-head" catchtouchmove="noop">
+      <text class="ui-pop-title ss-sheet-title">{{memoDetail.item.kind === 'history' ? '历史备忘' : '草稿'}} · {{memoDetail.item.shipmentDate}}</text>
+      <view class="ui-pop-close ss-sheet-close" catchtap="closeMemoDetail" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-    <view class="mm-line {{item.removed ? 'is-removed' : ''}}" wx:for="{{memoDetail.item.lines}}" wx:key="key">
-      <view class="mm-top">
-        <text class="mm-line-name">{{item.rawName}}{{item.rawSpec ? ' · ' + item.rawSpec : ''}}</text>
-        <text class="mm-tag is-pending" wx:if="{{item.pending}}">待匹配</text>
-        <text class="mm-tag" wx:if="{{item.removed}}">已删除</text>
+    <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+      <view class="mm-head">
+        <view class="mm-top">
+          <text class="mm-tag {{memoDetail.item.kind === 'history' ? 'is-history' : ''}}">{{memoDetail.item.kind === 'history' ? '已结清·历史' : '草稿'}}</text>
+          <picker wx:if="{{memoDetail.item.kind === 'draft'}}" mode="selector" range="{{storeNames}}" bindchange="onMemoStore">
+            <view class="mm-store {{memoDetail.item.storeMatched ? '' : 'is-pending'}}">{{memoDetail.item.storeMatched ? memoDetail.item.storeName : '门店待匹配 · 点选'}} ▾</view>
+          </picker>
+          <text class="mm-title" wx:else>{{memoDetail.item.storeMatched ? memoDetail.item.storeName : '门店待匹配'}}</text>
+        </view>
+        <text class="mm-meta">飞书客户 {{memoDetail.item.customerName || '—'}}</text>
+        <text class="mm-meta">飞书合计 {{memoDetail.item.feishuTotalText}}</text>
+        <text class="mm-meta" wx:if="{{memoDetail.item.kind === 'draft'}}">系统参考 {{memoDetail.item.refTotalText}}{{memoDetail.item.diffTotalText ? ' · ' + memoDetail.item.diffTotalText : ''}}</text>
+        <text class="mm-meta" wx:if="{{memoDetail.item.note}}">备注 {{memoDetail.item.note}}</text>
       </view>
-      <text class="mm-meta">飞书 {{item.qty}} 件 {{item.unitText}} · {{item.feishuText}}{{item.feishuNote ? ' · ' + item.feishuNote : ''}}</text>
-      <text class="mm-meta" wx:if="{{item.match === 'sku'}}">SKU {{item.skuName}} · 参考 {{item.refText}}{{item.diffText ? ' · 差 ' + item.diffText : ''}}</text>
-      <text class="mm-meta" wx:elif="{{item.matchNote}}">{{item.matchNote}}</text>
-      <view class="mm-actions" wx:if="{{memoDetail.item.kind === 'draft'}}">
-        <block wx:if="{{!item.removed}}">
-          <view class="mm-btn" data-key="{{item.key}}" bindtap="onMemoPickSku">{{item.match === 'sku' ? '换 SKU' : '选 SKU'}}</view>
-          <view class="mm-btn" wx:if="{{item.match === 'sku'}}" data-key="{{item.key}}" bindtap="onMemoClearSku">取消匹配</view>
-          <view class="mm-btn" data-key="{{item.key}}" data-delta="-1" bindtap="onMemoQtyStep">−</view>
-          <view class="mm-btn" data-key="{{item.key}}" data-delta="1" bindtap="onMemoQtyStep">＋</view>
-          <view class="mm-btn danger" data-key="{{item.key}}" bindtap="onMemoToggleLine">删行</view>
-        </block>
-        <view class="mm-btn" wx:else data-key="{{item.key}}" bindtap="onMemoToggleLine">恢复此行</view>
+      <view class="mm-line {{item.removed ? 'is-removed' : ''}}" wx:for="{{memoDetail.item.lines}}" wx:key="key">
+        <view class="mm-top">
+          <text class="mm-line-name">{{item.rawName}}{{item.rawSpec ? ' · ' + item.rawSpec : ''}}</text>
+          <text class="mm-tag is-pending" wx:if="{{item.pending}}">待匹配</text>
+          <text class="mm-tag" wx:if="{{item.removed}}">已删除</text>
+        </view>
+        <text class="mm-meta">飞书 {{item.qty}} 件 {{item.unitText}} · {{item.feishuText}}{{item.feishuNote ? ' · ' + item.feishuNote : ''}}</text>
+        <text class="mm-meta" wx:if="{{item.match === 'sku'}}">SKU {{item.skuName}} · 参考 {{item.refText}}{{item.diffText ? ' · 差 ' + item.diffText : ''}}</text>
+        <text class="mm-meta" wx:elif="{{item.matchNote}}">{{item.matchNote}}</text>
+        <view class="mm-actions" wx:if="{{memoDetail.item.kind === 'draft'}}">
+          <block wx:if="{{!item.removed}}">
+            <view class="mm-btn" data-key="{{item.key}}" bindtap="onMemoPickSku">{{item.match === 'sku' ? '换 SKU' : '选 SKU'}}</view>
+            <view class="mm-btn" wx:if="{{item.match === 'sku'}}" data-key="{{item.key}}" bindtap="onMemoClearSku">取消匹配</view>
+            <view class="mm-btn" data-key="{{item.key}}" data-delta="-1" bindtap="onMemoQtyStep">−</view>
+            <view class="mm-btn" data-key="{{item.key}}" data-delta="1" bindtap="onMemoQtyStep">＋</view>
+            <view class="mm-btn danger" data-key="{{item.key}}" bindtap="onMemoToggleLine">删行</view>
+          </block>
+          <view class="mm-btn" wx:else data-key="{{item.key}}" bindtap="onMemoToggleLine">恢复此行</view>
+        </view>
       </view>
+    </scroll-view>
+    <view class="mm-foot" catchtouchmove="noop">
+      <text class="mm-tip" wx:if="{{memoDetail.tip}}">{{memoDetail.tip}}</text>
+      <view class="mm-foot-row" wx:if="{{memoDetail.item.kind === 'draft'}}">
+        <view class="mm-foot-btn is-ghost" bindtap="removeMemo">{{memoDetail.removePending ? '确认删除' : '删除草稿'}}</view>
+        <view class="mm-foot-btn {{memoDetail.busy || memoDetail.item.pendingCount ? 'is-disabled' : ''}}" bindtap="confirmMemo">{{memoDetail.busy ? '处理中…' : (memoDetail.confirmPending ? '确认转正式' : '转为正式出货单')}}</view>
+      </view>
+      <text class="mm-tip" wx:else>已结清的历史备忘，只读；金额以飞书原始金额为准</text>
     </view>
-  </scroll-view>
-  <view class="mm-foot" catchtouchmove="noop">
-    <text class="mm-tip" wx:if="{{memoDetail.tip}}">{{memoDetail.tip}}</text>
-    <view class="mm-foot-row" wx:if="{{memoDetail.item.kind === 'draft'}}">
-      <view class="mm-foot-btn is-ghost" bindtap="removeMemo">{{memoDetail.removePending ? '确认删除' : '删除草稿'}}</view>
-      <view class="mm-foot-btn {{memoDetail.busy || memoDetail.item.pendingCount ? 'is-disabled' : ''}}" bindtap="confirmMemo">{{memoDetail.busy ? '处理中…' : (memoDetail.confirmPending ? '确认转正式' : '转为正式出货单')}}</view>
-    </view>
-    <text class="mm-tip" wx:else>已结清的历史备忘，只读；金额以飞书原始金额为准</text>
   </view>
 </view>
 
 <!-- 选已有 SKU -->
-<view class="ss-mask" wx:if="{{skuPicker.show}}" bindtap="closeSkuPicker" catchtouchmove="noop"></view>
-<view class="ss-sheet" wx:if="{{skuPicker.show}}">
-  <view class="ss-sheet-head" catchtouchmove="noop">
-    <text class="ss-sheet-title">选择出货 SKU</text>
-    <view class="ss-sheet-close" bindtap="closeSkuPicker"><text>关闭</text></view>
-  </view>
-  <view class="ss-search" catchtouchmove="noop">
-    <input class="ss-search-input" placeholder="搜 SKU 名（如 大蓝闪蝶）" value="{{skuPicker.keyword}}" bindinput="onSkuKeyword" />
-    <view class="ss-review-filter {{skuPicker.reviewOnly ? 'on' : ''}}" wx:if="{{skuPicker.reviewCount || skuPicker.reviewOnly}}" bindtap="toggleSkuReviewOnly">
-      <text>{{skuPicker.reviewOnly ? '显示全部' : '只看待复核 ' + skuPicker.reviewCount}}</text>
+<view class="ui-pop-mask" wx:if="{{skuPicker.show}}" bindtap="closeSkuPicker" catchtouchmove="true">
+  <view class="ui-pop-sheet ss-sheet" wx:if="{{skuPicker.show}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ss-sheet-head" catchtouchmove="noop">
+      <text class="ui-pop-title ss-sheet-title">选择出货 SKU</text>
+      <view class="ui-pop-close ss-sheet-close" catchtap="closeSkuPicker" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-  </view>
-  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
-    <view class="ss-loading" wx:if="{{skuPicker.loading}}"><text>加载中…</text></view>
-    <view class="ss-empty" wx:elif="{{!skuPicker.list.length}}">
-      <text>还没有 SKU</text>
-      <text class="ss-empty-hint">点「新建 SKU」建一个（同组合只需建一次，以后直接选）</text>
-    </view>
-    <block wx:else>
-      <view class="ss-sku" wx:for="{{skuPicker.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onPickSku">
-        <view class="ss-sku-main">
-          <view class="ss-sku-title">
-            <text class="ss-sku-name">{{item.skuName}}</text>
-            <text class="ss-review-tag" wx:if="{{item.needsReview}}">待复核</text>
-          </view>
-          <text class="ss-sku-meta">{{item.rateText}}{{item.pricingStatus !== 'priced' ? ' · ' + (item.pricingNote || '待核价') : ''}}</text>
-        </view>
-        <text class="ss-sku-price {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{item.unitPriceText}}</text>
+    <view class="ss-search" catchtouchmove="noop">
+      <input class="ss-search-input" placeholder="搜 SKU 名（如 大蓝闪蝶）" value="{{skuPicker.keyword}}" bindinput="onSkuKeyword" />
+      <view class="ss-review-filter {{skuPicker.reviewOnly ? 'on' : ''}}" wx:if="{{skuPicker.reviewCount || skuPicker.reviewOnly}}" bindtap="toggleSkuReviewOnly">
+        <text>{{skuPicker.reviewOnly ? '显示全部' : '只看待复核 ' + skuPicker.reviewCount}}</text>
       </view>
-    </block>
-  </scroll-view>
+    </view>
+    <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+      <view class="ss-loading" wx:if="{{skuPicker.loading}}"><text>加载中…</text></view>
+      <view class="ss-empty" wx:elif="{{!skuPicker.list.length}}">
+        <text>还没有 SKU</text>
+        <text class="ss-empty-hint">点「新建 SKU」建一个（同组合只需建一次，以后直接选）</text>
+      </view>
+      <block wx:else>
+        <view class="ss-sku" wx:for="{{skuPicker.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onPickSku">
+          <view class="ss-sku-main">
+            <view class="ss-sku-title">
+              <text class="ss-sku-name">{{item.skuName}}</text>
+              <text class="ss-review-tag" wx:if="{{item.needsReview}}">待复核</text>
+            </view>
+            <text class="ss-sku-meta">{{item.rateText}}{{item.pricingStatus !== 'priced' ? ' · ' + (item.pricingNote || '待核价') : ''}}</text>
+          </view>
+          <text class="ss-sku-price {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{item.unitPriceText}}</text>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
 </view>
 
 <!-- SKU 详情 / 编辑（SKU 目录与开单「新建 SKU」共用；仅超管）。删除只走 skuAdmin.removeIfUnused，被引用只能停用 -->
-<view class="ss-mask" wx:if="{{skuEdit.show}}" bindtap="closeSkuEdit" catchtouchmove="noop"></view>
-<view class="ss-sheet" wx:if="{{skuEdit.show}}">
-  <view class="ss-sheet-head" catchtouchmove="noop">
-    <view class="sk-sheet-heading">
-      <text class="sk-sheet-en">{{skuEdit.mode === 'edit' ? 'SKU · DETAIL' : 'SKU · NEW'}}</text>
-      <text class="ss-sheet-title">{{skuEdit.mode === 'edit' ? 'SKU 详情' : (skuEdit.origin === 'create' ? '新建 SKU 并加入本单' : '新建 SKU')}}</text>
+<view class="ui-pop-mask" wx:if="{{skuEdit.show}}" bindtap="closeSkuEdit" catchtouchmove="true">
+  <view class="ui-pop-sheet ss-sheet" wx:if="{{skuEdit.show}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ss-sheet-head" catchtouchmove="noop">
+      <view class="sk-sheet-heading">
+        <text class="sk-sheet-en">{{skuEdit.mode === 'edit' ? 'SKU · DETAIL' : 'SKU · NEW'}}</text>
+        <text class="ui-pop-title ss-sheet-title">{{skuEdit.mode === 'edit' ? 'SKU 详情' : (skuEdit.origin === 'create' ? '新建 SKU 并加入本单' : '新建 SKU')}}</text>
+      </view>
+      <view class="ui-pop-close ss-sheet-close" catchtap="closeSkuEdit" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-    <view class="ss-sheet-close" hover-class="tap-press" hover-stay-time="80" bindtap="closeSkuEdit"><text>关闭</text></view>
-  </view>
-  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
-    <view class="ops-list-tip is-{{skuEdit.tipTone}} sk-sheet-tip" wx:if="{{skuEdit.tip}}"><text>{{skuEdit.tip}}</text></view>
-    <view class="ss-alert" wx:if="{{skuEdit.mode !== 'edit'}}">
-      <text>SKU = 原材料 × 等级 × 包装方式 × 尺寸 + 是否造景 + 默认手工费率。同组合只需建一次；原材料 / 包装缺项先到「SKU」页签的原材料 / 包装方式里补。</text>
-    </view>
+    <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+      <view class="ops-list-tip is-{{skuEdit.tipTone}} sk-sheet-tip" wx:if="{{skuEdit.tip}}"><text>{{skuEdit.tip}}</text></view>
+      <view class="ss-alert" wx:if="{{skuEdit.mode !== 'edit'}}">
+        <text>SKU = 原材料 × 等级 × 包装方式 × 尺寸 + 是否造景 + 默认手工费率。同组合只需建一次；原材料 / 包装缺项先到「SKU」页签的原材料 / 包装方式里补。</text>
+      </view>
 
-    <view class="sk-state" wx:if="{{skuEdit.mode === 'edit'}}">
-      <view class="sk-state-tags">
-        <text class="sk-state-tag {{skuEdit.status === 'inactive' ? 'is-off' : 'is-on'}}">{{skuEdit.status === 'inactive' ? '已停用' : '启用中'}}</text>
-        <text class="ss-review-tag" wx:if="{{skuEdit.needsReview}}">待复核</text>
-        <text class="sk-state-batch" wx:if="{{skuEdit.importBatch}}">导入批次 {{skuEdit.importBatch}}</text>
+      <view class="sk-state" wx:if="{{skuEdit.mode === 'edit'}}">
+        <view class="sk-state-tags">
+          <text class="sk-state-tag {{skuEdit.status === 'inactive' ? 'is-off' : 'is-on'}}">{{skuEdit.status === 'inactive' ? '已停用' : '启用中'}}</text>
+          <text class="ss-review-tag" wx:if="{{skuEdit.needsReview}}">待复核</text>
+          <text class="sk-state-batch" wx:if="{{skuEdit.importBatch}}">导入批次 {{skuEdit.importBatch}}</text>
+        </view>
+        <text class="sk-state-line">{{skuEdit.refsLoading ? '正在查被引用情况…' : (skuEdit.refsError ? skuEdit.refsError : '被引用：' + (skuEdit.refsText || '无'))}}</text>
+        <text class="sk-state-line" wx:if="{{skuEdit.metaText}}">{{skuEdit.metaText}}</text>
       </view>
-      <text class="sk-state-line">{{skuEdit.refsLoading ? '正在查被引用情况…' : (skuEdit.refsError ? skuEdit.refsError : '被引用：' + (skuEdit.refsText || '无'))}}</text>
-      <text class="sk-state-line" wx:if="{{skuEdit.metaText}}">{{skuEdit.metaText}}</text>
-    </view>
 
-    <view class="ss-row">
-      <text class="ss-label">原材料</text>
-      <view class="ss-pick-inner ss-pick-click" hover-class="tap-press-soft" hover-stay-time="80" data-kind="material" data-target="skuEdit" bindtap="openPicker">
-        <text class="{{skuEdit.materialName ? 'sc-pick-on' : 'sc-pick-off'}}">{{skuEdit.materialName ? (skuEdit.materialName + (skuEdit.materialGrade ? '（' + skuEdit.materialGrade + '）' : '')) : '选择原材料'}}</text>
-        <text class="ss-arrow">▾</text>
+      <view class="ss-row">
+        <text class="ss-label">原材料</text>
+        <view class="ss-pick-inner ss-pick-click" hover-class="tap-press-soft" hover-stay-time="80" data-kind="material" data-target="skuEdit" bindtap="openPicker">
+          <text class="{{skuEdit.materialName ? 'sc-pick-on' : 'sc-pick-off'}}">{{skuEdit.materialName ? (skuEdit.materialName + (skuEdit.materialGrade ? '（' + skuEdit.materialGrade + '）' : '')) : '选择原材料'}}</text>
+          <text class="ss-arrow">▾</text>
+        </view>
       </view>
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">包装方式</text>
-      <view class="ss-pick-inner ss-pick-click" hover-class="tap-press-soft" hover-stay-time="80" data-kind="packaging" data-target="skuEdit" bindtap="openPicker">
-        <text class="{{skuEdit.packagingName ? 'sc-pick-on' : 'sc-pick-off'}}">{{skuEdit.packagingName ? (skuEdit.packagingName + (skuEdit.packagingSize ? ' ' + skuEdit.packagingSize : '')) : '选择包装方式'}}</text>
-        <text class="ss-arrow">▾</text>
+      <view class="ss-row">
+        <text class="ss-label">包装方式</text>
+        <view class="ss-pick-inner ss-pick-click" hover-class="tap-press-soft" hover-stay-time="80" data-kind="packaging" data-target="skuEdit" bindtap="openPicker">
+          <text class="{{skuEdit.packagingName ? 'sc-pick-on' : 'sc-pick-off'}}">{{skuEdit.packagingName ? (skuEdit.packagingName + (skuEdit.packagingSize ? ' ' + skuEdit.packagingSize : '')) : '选择包装方式'}}</text>
+          <text class="ss-arrow">▾</text>
+        </view>
       </view>
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">手工费</text>
-      <view class="ss-rate-ctl">
-        <switch class="ss-switch" checked="{{skuEdit.useGlobalRate}}" color="#C4A76C" bindchange="onSkuEditRateToggle" />
-        <text class="ss-rate-hint" wx:if="{{skuEdit.useGlobalRate}}">用全局 {{globalRatePct}}%</text>
-        <block wx:else>
-          <input class="ss-rate-input" type="digit" value="{{skuEdit.laborRatePct}}" bindinput="onSkuEditRate" />
-          <text class="ss-rate-hint">%</text>
-        </block>
+      <view class="ss-row">
+        <text class="ss-label">手工费</text>
+        <view class="ss-rate-ctl">
+          <switch class="ss-switch" checked="{{skuEdit.useGlobalRate}}" color="#C4A76C" bindchange="onSkuEditRateToggle" />
+          <text class="ss-rate-hint" wx:if="{{skuEdit.useGlobalRate}}">用全局 {{globalRatePct}}%</text>
+          <block wx:else>
+            <input class="ss-rate-input" type="digit" value="{{skuEdit.laborRatePct}}" bindinput="onSkuEditRate" />
+            <text class="ss-rate-hint">%</text>
+          </block>
+        </view>
       </view>
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">造景</text>
-      <view class="ss-rate-ctl">
-        <switch class="ss-switch" checked="{{skuEdit.hasScene}}" color="#C4A76C" bindchange="onSkuEditSceneToggle" />
-        <text class="ss-rate-hint" wx:if="{{!skuEdit.hasScene}}">不含造景</text>
-        <block wx:else>
-          <text class="ss-rate-hint">¥</text>
-          <input class="ss-rate-input" type="digit" value="{{skuEdit.sceneCost}}" placeholder="元/件" bindinput="onSkuEditSceneCost" />
-          <text class="ss-rate-hint">/ 件 · 计入金额与毛利扣减，不计手工费基数</text>
-        </block>
+      <view class="ss-row">
+        <text class="ss-label">造景</text>
+        <view class="ss-rate-ctl">
+          <switch class="ss-switch" checked="{{skuEdit.hasScene}}" color="#C4A76C" bindchange="onSkuEditSceneToggle" />
+          <text class="ss-rate-hint" wx:if="{{!skuEdit.hasScene}}">不含造景</text>
+          <block wx:else>
+            <text class="ss-rate-hint">¥</text>
+            <input class="ss-rate-input" type="digit" value="{{skuEdit.sceneCost}}" placeholder="元/件" bindinput="onSkuEditSceneCost" />
+            <text class="ss-rate-hint">/ 件 · 计入金额与毛利扣减，不计手工费基数</text>
+          </block>
+        </view>
       </view>
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">SKU 名</text>
-      <input class="ss-input" value="{{skuEdit.name}}" placeholder="{{skuEdit.nameTouched ? '留空即自动生成' : skuEdit.namePlaceholder}}" placeholder-class="ss-ph" bindinput="onSkuEditName" />
-    </view>
-    <view class="ss-row is-last">
-      <text class="ss-label">备注</text>
-      <input class="ss-input" value="{{skuEdit.note}}" placeholder="可选，如 客户常用 / 换包装前用" placeholder-class="ss-ph" bindinput="onSkuEditNote" />
-    </view>
-    <view class="ss-preview">
-      <text class="ss-preview-label">这一组合的单价（按当前价目表现算）</text>
-      <text class="ss-preview-value {{skuEdit.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{skuEdit.unitPriceText}}</text>
-      <text class="sk-breakdown" wx:if="{{skuEdit.breakdown}}">{{skuEdit.breakdown}}</text>
-      <text class="ss-preview-note" wx:if="{{skuEdit.pricingNote}}">{{skuEdit.pricingNote}}</text>
-    </view>
-    <view class="ss-problems" wx:if="{{skuEdit.problems.length}}">
-      <text wx:for="{{skuEdit.problems}}" wx:key="*this">· {{item}}</text>
-    </view>
+      <view class="ss-row">
+        <text class="ss-label">SKU 名</text>
+        <input class="ss-input" value="{{skuEdit.name}}" placeholder="{{skuEdit.nameTouched ? '留空即自动生成' : skuEdit.namePlaceholder}}" placeholder-class="ss-ph" bindinput="onSkuEditName" />
+      </view>
+      <view class="ss-row is-last">
+        <text class="ss-label">备注</text>
+        <input class="ss-input" value="{{skuEdit.note}}" placeholder="可选，如 客户常用 / 换包装前用" placeholder-class="ss-ph" bindinput="onSkuEditNote" />
+      </view>
+      <view class="ss-preview">
+        <text class="ss-preview-label">这一组合的单价（按当前价目表现算）</text>
+        <text class="ss-preview-value {{skuEdit.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{skuEdit.unitPriceText}}</text>
+        <text class="sk-breakdown" wx:if="{{skuEdit.breakdown}}">{{skuEdit.breakdown}}</text>
+        <text class="ss-preview-note" wx:if="{{skuEdit.pricingNote}}">{{skuEdit.pricingNote}}</text>
+      </view>
+      <view class="ss-problems" wx:if="{{skuEdit.problems.length}}">
+        <text wx:for="{{skuEdit.problems}}" wx:key="*this">· {{item}}</text>
+      </view>
 
-    <view class="sk-ops" wx:if="{{skuEdit.mode === 'edit'}}">
-      <text class="sc-lib-btn {{skuEdit.status === 'inactive' ? 'on' : 'warn'}}" hover-class="tap-press" hover-stay-time="80" bindtap="toggleSkuEditStatus">{{skuEdit.busy ? '处理中…' : (skuEdit.status === 'inactive' ? '启用' : '停用')}}</text>
-      <text class="sc-lib-btn on" wx:if="{{skuEdit.needsReview}}" hover-class="tap-press" hover-stay-time="80" bindtap="markSkuEditReviewed">标记已复核</text>
-      <text class="sc-lib-btn" hover-class="tap-press" hover-stay-time="80" bindtap="copySkuEdit">复制为新 SKU</text>
-      <text class="sc-lib-btn warn" hover-class="tap-press" hover-stay-time="80" bindtap="askRemoveSkuEdit">删除</text>
-    </view>
-    <view class="sc-lib-inline sk-inline" wx:if="{{skuEdit.removeStep === 'confirm'}}">
-      <text class="sc-lib-inline-text">删除「{{skuEdit.name || skuEdit.namePlaceholder}}」？只有没被任何出货单 / 草稿用过才会成功，否则请停用。</text>
-      <view class="sc-lib-inline-btns">
-        <text class="sc-lib-btn" hover-class="tap-press" hover-stay-time="80" bindtap="cancelRemoveSkuEdit">取消</text>
-        <text class="sc-lib-btn danger" hover-class="tap-press" hover-stay-time="80" bindtap="confirmRemoveSkuEdit">{{skuEdit.busy ? '检查中…' : '确认删除'}}</text>
+      <view class="sk-ops" wx:if="{{skuEdit.mode === 'edit'}}">
+        <text class="sc-lib-btn {{skuEdit.status === 'inactive' ? 'on' : 'warn'}}" hover-class="tap-press" hover-stay-time="80" bindtap="toggleSkuEditStatus">{{skuEdit.busy ? '处理中…' : (skuEdit.status === 'inactive' ? '启用' : '停用')}}</text>
+        <text class="sc-lib-btn on" wx:if="{{skuEdit.needsReview}}" hover-class="tap-press" hover-stay-time="80" bindtap="markSkuEditReviewed">标记已复核</text>
+        <text class="sc-lib-btn" hover-class="tap-press" hover-stay-time="80" bindtap="copySkuEdit">复制为新 SKU</text>
+        <text class="sc-lib-btn warn" hover-class="tap-press" hover-stay-time="80" bindtap="askRemoveSkuEdit">删除</text>
       </view>
-    </view>
-    <view class="sc-lib-inline is-warn sk-inline" wx:if="{{skuEdit.removeStep === 'blocked'}}">
-      <text class="sc-lib-inline-text">{{skuEdit.blockedText}}</text>
-      <view class="sc-lib-inline-btns">
-        <text class="sc-lib-btn" hover-class="tap-press" hover-stay-time="80" bindtap="cancelRemoveSkuEdit">知道了</text>
-        <text class="sc-lib-btn danger" wx:if="{{skuEdit.status !== 'inactive'}}" hover-class="tap-press" hover-stay-time="80" bindtap="deactivateBlockedSku">改为停用</text>
+      <view class="sc-lib-inline sk-inline" wx:if="{{skuEdit.removeStep === 'confirm'}}">
+        <text class="sc-lib-inline-text">删除「{{skuEdit.name || skuEdit.namePlaceholder}}」？只有没被任何出货单 / 草稿用过才会成功，否则请停用。</text>
+        <view class="sc-lib-inline-btns">
+          <text class="sc-lib-btn" hover-class="tap-press" hover-stay-time="80" bindtap="cancelRemoveSkuEdit">取消</text>
+          <text class="sc-lib-btn danger" hover-class="tap-press" hover-stay-time="80" bindtap="confirmRemoveSkuEdit">{{skuEdit.busy ? '检查中…' : '确认删除'}}</text>
+        </view>
       </view>
-    </view>
-  </scroll-view>
-  <view class="ss-actions is-in-sheet" catchtouchmove="noop">
-    <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitSkuEdit">
-      <text>{{skuEdit.saving ? '保存中…' : (skuEdit.mode === 'edit' ? '保存修改' : (skuEdit.origin === 'create' ? '创建并加入明细' : '创建 SKU'))}}</text>
+      <view class="sc-lib-inline is-warn sk-inline" wx:if="{{skuEdit.removeStep === 'blocked'}}">
+        <text class="sc-lib-inline-text">{{skuEdit.blockedText}}</text>
+        <view class="sc-lib-inline-btns">
+          <text class="sc-lib-btn" hover-class="tap-press" hover-stay-time="80" bindtap="cancelRemoveSkuEdit">知道了</text>
+          <text class="sc-lib-btn danger" wx:if="{{skuEdit.status !== 'inactive'}}" hover-class="tap-press" hover-stay-time="80" bindtap="deactivateBlockedSku">改为停用</text>
+        </view>
+      </view>
+    </scroll-view>
+    <view class="ss-actions is-in-sheet" catchtouchmove="noop">
+      <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitSkuEdit">
+        <text>{{skuEdit.saving ? '保存中…' : (skuEdit.mode === 'edit' ? '保存修改' : (skuEdit.origin === 'create' ? '创建并加入明细' : '创建 SKU'))}}</text>
+      </view>
     </view>
   </view>
 </view>
 
 <!-- 原材料 / 包装方式选择器 -->
-<view class="ss-mask is-top" wx:if="{{picker.show}}" bindtap="closePicker" catchtouchmove="noop"></view>
-<view class="ss-sheet is-top" wx:if="{{picker.show}}">
-  <view class="ss-sheet-head" catchtouchmove="noop">
-    <text class="ss-sheet-title">选择{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>
-    <view class="ss-sheet-close" bindtap="closePicker"><text>关闭</text></view>
-  </view>
-  <view class="ss-search" catchtouchmove="noop">
-    <input class="ss-search-input" placeholder="输入名称或别名（如 大蓝闪）" value="{{picker.keyword}}" bindinput="onPickerKeyword" />
-  </view>
-  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
-    <view class="ss-loading" wx:if="{{picker.loading}}"><text>加载中…</text></view>
-    <view class="ss-empty" wx:elif="{{!picker.list.length}}">
-      <text>没有匹配项</text>
-      <text class="ss-empty-hint">{{isSuper ? '可到「SKU」页签的原材料 / 包装方式里新增' : '请联系超管在「资料」页签维护'}}</text>
+<view class="ui-pop-mask" wx:if="{{picker.show}}" bindtap="closePicker" catchtouchmove="true">
+  <view class="ui-pop-sheet ss-sheet" wx:if="{{picker.show}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ss-sheet-head" catchtouchmove="noop">
+      <text class="ui-pop-title ss-sheet-title">选择{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>
+      <view class="ui-pop-close ss-sheet-close" catchtap="closePicker" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-    <block wx:else>
-      <view class="ss-group" wx:for="{{picker.list}}" wx:key="key">
-        <view class="ss-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
-          <image class="ss-group-thumb" wx:if="{{item.thumb}}" src="{{item.thumb}}" mode="aspectFill" lazy-load />
-          <view class="ss-group-main">
-            <text class="ss-group-name">{{item.displayName}}</text>
-            <text class="ss-group-meta" wx:if="{{item.aliasesText}}">别名 {{item.aliasesText}}</text>
-          </view>
-          <text class="ss-group-count">{{item.optionField === 'size' ? '尺寸' : '等级'}} {{item.optionCount}}</text>
-        </view>
-        <view class="ss-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
-          <view class="ss-option" wx:for="{{item.options}}" wx:for-item="opt" wx:key="_id" data-key="{{item.key}}" data-option="{{opt.option}}" data-id="{{opt._id}}" bindtap="onPickOption">
-            <text class="ss-option-name">{{opt.option}}</text>
-            <text class="ss-option-price">{{opt.unitPriceText}}</text>
-            <text class="ss-option-tag" wx:if="{{opt.isDefault}}">默认</text>
-          </view>
-        </view>
-        <view class="ss-group-hint" wx:else><text>点一下展开 {{item.optionCount}} 个规格</text></view>
+    <view class="ss-search" catchtouchmove="noop">
+      <input class="ss-search-input" placeholder="输入名称或别名（如 大蓝闪）" value="{{picker.keyword}}" bindinput="onPickerKeyword" />
+    </view>
+    <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+      <view class="ss-loading" wx:if="{{picker.loading}}"><text>加载中…</text></view>
+      <view class="ss-empty" wx:elif="{{!picker.list.length}}">
+        <text>没有匹配项</text>
+        <text class="ss-empty-hint">{{isSuper ? '可到「SKU」页签的原材料 / 包装方式里新增' : '请联系超管在「资料」页签维护'}}</text>
       </view>
-    </block>
-  </scroll-view>
+      <block wx:else>
+        <view class="ss-group" wx:for="{{picker.list}}" wx:key="key">
+          <view class="ss-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
+            <image class="ss-group-thumb" wx:if="{{item.thumb}}" src="{{item.thumb}}" mode="aspectFill" lazy-load />
+            <view class="ss-group-main">
+              <text class="ss-group-name">{{item.displayName}}</text>
+              <text class="ss-group-meta" wx:if="{{item.aliasesText}}">别名 {{item.aliasesText}}</text>
+            </view>
+            <text class="ss-group-count">{{item.optionField === 'size' ? '尺寸' : '等级'}} {{item.optionCount}}</text>
+          </view>
+          <view class="ss-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
+            <view class="ss-option" wx:for="{{item.options}}" wx:for-item="opt" wx:key="_id" data-key="{{item.key}}" data-option="{{opt.option}}" data-id="{{opt._id}}" bindtap="onPickOption">
+              <text class="ss-option-name">{{opt.option}}</text>
+              <text class="ss-option-price">{{opt.unitPriceText}}</text>
+              <text class="ss-option-tag" wx:if="{{opt.isDefault}}">默认</text>
+            </view>
+          </view>
+          <view class="ss-group-hint" wx:else><text>点一下展开 {{item.optionCount}} 个规格</text></view>
+        </view>
+      </block>
+    </scroll-view>
+  </view>
 </view>
 
 <!-- 资料表单：新增 / 编辑 -->
-<view class="ss-mask" wx:if="{{libForm.show}}" bindtap="closeLibForm" catchtouchmove="noop"></view>
-<view class="ss-sheet" wx:if="{{libForm.show}}">
-  <view class="ss-sheet-head" catchtouchmove="noop">
-    <text class="ss-sheet-title">{{libForm.id ? '编辑' : '新增'}}{{libForm.kind === 'material' ? '原材料' : '包装方式'}}</text>
-    <view class="ss-sheet-close" bindtap="closeLibForm"><text>关闭</text></view>
-  </view>
-  <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
-    <view class="ss-alert" wx:if="{{libForm.impactText}}"><text>{{libForm.impactText}}</text></view>
-    <view class="ss-row">
-      <text class="ss-label">名称</text>
-      <input class="ss-input" value="{{libForm.name}}" data-field="name" bindinput="onLibInput" placeholder="必填，如 大蓝闪蝶 / 框" placeholder-class="ss-ph" />
+<view class="ui-pop-mask" wx:if="{{libForm.show}}" bindtap="closeLibForm" catchtouchmove="true">
+  <view class="ui-pop-sheet ss-sheet" wx:if="{{libForm.show}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ss-sheet-head" catchtouchmove="noop">
+      <text class="ui-pop-title ss-sheet-title">{{libForm.id ? '编辑' : '新增'}}{{libForm.kind === 'material' ? '原材料' : '包装方式'}}</text>
+      <view class="ui-pop-close ss-sheet-close" catchtap="closeLibForm" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-    <view class="ss-row">
-      <text class="ss-label">{{libForm.kind === 'material' ? '等级' : '尺寸'}}</text>
-      <input class="ss-input" value="{{libForm.option}}" data-field="option" bindinput="onLibInput" placeholder="{{libForm.kind === 'material' ? '如 A1；留空 = 默认' : '如 10x18；留空 = 默认'}}" placeholder-class="ss-ph" />
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">单价（元）</text>
-      <input class="ss-input" type="digit" value="{{libForm.unitPrice}}" data-field="unitPrice" bindinput="onLibInput" placeholder="≥ 0" placeholder-class="ss-ph" />
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">单位</text>
-      <input class="ss-input" value="{{libForm.unit}}" data-field="unit" bindinput="onLibInput" placeholder="只 / 个 / 份（可选）" placeholder-class="ss-ph" />
-    </view>
-    <view class="ss-row" wx:if="{{libForm.kind === 'material'}}">
-      <text class="ss-label">分类</text>
-      <picker class="ss-pick" mode="selector" range="{{libCategoryNames}}" value="{{libCategoryIndex}}" bindchange="onLibCategory">
-        <view class="ss-pick-inner">
-          <text class="ss-pick-val">{{libCategoryNames[libCategoryIndex]}}</text>
-          <text class="ss-arrow">▾</text>
-        </view>
-      </picker>
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">别名</text>
-      <input class="ss-input" value="{{libForm.aliases}}" data-field="aliases" bindinput="onLibInput" placeholder="逗号分隔（可选），如 大蓝闪" placeholder-class="ss-ph" />
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">默认{{libForm.kind === 'material' ? '等级' : '尺寸'}}</text>
-      <view class="ss-rate-ctl">
-        <switch class="ss-switch" checked="{{libForm.isDefault}}" color="#C4A76C" bindchange="onLibDefault" />
-        <text class="ss-rate-hint">文本没写{{libForm.kind === 'material' ? '等级' : '尺寸'}}时用这一行取价（同名只能一个）</text>
+    <scroll-view class="ss-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+      <view class="ss-alert" wx:if="{{libForm.impactText}}"><text>{{libForm.impactText}}</text></view>
+      <view class="ss-row">
+        <text class="ss-label">名称</text>
+        <input class="ss-input" value="{{libForm.name}}" data-field="name" bindinput="onLibInput" placeholder="必填，如 大蓝闪蝶 / 框" placeholder-class="ss-ph" />
       </view>
-    </view>
-    <view class="ss-row">
-      <text class="ss-label">备注</text>
-      <input class="ss-input" value="{{libForm.note}}" data-field="note" bindinput="onLibInput" placeholder="可选" placeholder-class="ss-ph" />
-    </view>
-    <view class="ss-row is-last">
-      <text class="ss-label">图片</text>
-      <view class="sc-lib-img-ctl">
-        <image class="sc-lib-img" wx:if="{{libForm.imageThumb}}" src="{{libForm.imageThumb}}" mode="aspectFill" bindtap="previewLibImage" binderror="onLibThumbError" />
-        <view class="sc-lib-img is-empty" wx:else bindtap="chooseLibImage"><text>{{libForm.uploading ? '上传中…' : '＋'}}</text></view>
-        <view class="sc-lib-img-btns">
-          <text class="sc-lib-btn" bindtap="chooseLibImage">{{libForm.uploading ? '上传中…' : (libForm.image ? '换一张' : '上传图片')}}</text>
-          <text class="sc-lib-btn warn" wx:if="{{libForm.image && !libForm.uploading}}" bindtap="removeLibImage">删除图片</text>
+      <view class="ss-row">
+        <text class="ss-label">{{libForm.kind === 'material' ? '等级' : '尺寸'}}</text>
+        <input class="ss-input" value="{{libForm.option}}" data-field="option" bindinput="onLibInput" placeholder="{{libForm.kind === 'material' ? '如 A1；留空 = 默认' : '如 10x18；留空 = 默认'}}" placeholder-class="ss-ph" />
+      </view>
+      <view class="ss-row">
+        <text class="ss-label">单价（元）</text>
+        <input class="ss-input" type="digit" value="{{libForm.unitPrice}}" data-field="unitPrice" bindinput="onLibInput" placeholder="≥ 0" placeholder-class="ss-ph" />
+      </view>
+      <view class="ss-row">
+        <text class="ss-label">单位</text>
+        <input class="ss-input" value="{{libForm.unit}}" data-field="unit" bindinput="onLibInput" placeholder="只 / 个 / 份（可选）" placeholder-class="ss-ph" />
+      </view>
+      <view class="ss-row" wx:if="{{libForm.kind === 'material'}}">
+        <text class="ss-label">分类</text>
+        <picker class="ss-pick" mode="selector" range="{{libCategoryNames}}" value="{{libCategoryIndex}}" bindchange="onLibCategory">
+          <view class="ss-pick-inner">
+            <text class="ss-pick-val">{{libCategoryNames[libCategoryIndex]}}</text>
+            <text class="ss-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
+      <view class="ss-row">
+        <text class="ss-label">别名</text>
+        <input class="ss-input" value="{{libForm.aliases}}" data-field="aliases" bindinput="onLibInput" placeholder="逗号分隔（可选），如 大蓝闪" placeholder-class="ss-ph" />
+      </view>
+      <view class="ss-row">
+        <text class="ss-label">默认{{libForm.kind === 'material' ? '等级' : '尺寸'}}</text>
+        <view class="ss-rate-ctl">
+          <switch class="ss-switch" checked="{{libForm.isDefault}}" color="#C4A76C" bindchange="onLibDefault" />
+          <text class="ss-rate-hint">文本没写{{libForm.kind === 'material' ? '等级' : '尺寸'}}时用这一行取价（同名只能一个）</text>
         </view>
       </view>
-    </view>
-    <view class="ss-problems" wx:if="{{libForm.problems}}"><text>· {{libForm.problems}}</text></view>
-  </scroll-view>
-  <view class="ss-actions is-in-sheet" catchtouchmove="noop">
-    <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitLibForm">
-      <text>{{libForm.saving ? '保存中…' : '保存'}}</text>
+      <view class="ss-row">
+        <text class="ss-label">备注</text>
+        <input class="ss-input" value="{{libForm.note}}" data-field="note" bindinput="onLibInput" placeholder="可选" placeholder-class="ss-ph" />
+      </view>
+      <view class="ss-row is-last">
+        <text class="ss-label">图片</text>
+        <view class="sc-lib-img-ctl">
+          <image class="sc-lib-img" wx:if="{{libForm.imageThumb}}" src="{{libForm.imageThumb}}" mode="aspectFill" bindtap="previewLibImage" binderror="onLibThumbError" />
+          <view class="sc-lib-img is-empty" wx:else bindtap="chooseLibImage"><text>{{libForm.uploading ? '上传中…' : '＋'}}</text></view>
+          <view class="sc-lib-img-btns">
+            <text class="sc-lib-btn" bindtap="chooseLibImage">{{libForm.uploading ? '上传中…' : (libForm.image ? '换一张' : '上传图片')}}</text>
+            <text class="sc-lib-btn warn" wx:if="{{libForm.image && !libForm.uploading}}" bindtap="removeLibImage">删除图片</text>
+          </view>
+        </view>
+      </view>
+      <view class="ss-problems" wx:if="{{libForm.problems}}"><text>· {{libForm.problems}}</text></view>
+    </scroll-view>
+    <view class="ss-actions is-in-sheet" catchtouchmove="noop">
+      <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitLibForm">
+        <text>{{libForm.saving ? '保存中…' : '保存'}}</text>
+      </view>
     </view>
   </view>
 </view>

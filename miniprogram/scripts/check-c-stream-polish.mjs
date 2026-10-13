@@ -778,7 +778,7 @@ function selftest() {
     ['弹层上限回到 86vh', (s) => ({ ...s, shipSkuWxss: s.shipSkuWxss.replace('max-height: 80vh; overflow: hidden;', 'max-height: 86vh; overflow: hidden;') }), /R9-3 \.ss-sheet 高度上限/],
     ['弹层去掉底部安全区', (s) => ({ ...s, shipEditWxss: s.shipEditWxss.replace('  padding-bottom: env(safe-area-inset-bottom);\n', '') }), /R9-3 \.se-sheet 底部没留安全区/],
     ['搜索框可被挤扁', (s) => ({ ...s, shipSkuWxss: s.shipSkuWxss.replace('.ss-search { flex-shrink: 0;', '.ss-search {') }), /R9-4 \.ss-search 缺 flex-shrink/],
-    ['弹层容器挂 catchtouchmove', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('<view class="ss-sheet is-top" wx:if="{{picker.show}}">', '<view class="ss-sheet is-top" wx:if="{{picker.show}}" catchtouchmove="noop">') }), /R9-5 shipment-ops 弹层容器挂了 catchtouchmove/],
+    ['弹层容器挂 catchtouchmove', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('<view class="ui-pop-sheet ss-sheet" wx:if="{{picker.show}}" catchtap="true">', '<view class="ui-pop-sheet ss-sheet" wx:if="{{picker.show}}" catchtouchmove="noop">') }), /R9-5 shipment-ops 弹层容器挂了 catchtouchmove/],
     ['列表挂 catchtouchmove', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('<scroll-view class="se-sheet-body" scroll-y', '<scroll-view class="se-sheet-body" catchtouchmove="noop" scroll-y') }), /R9-5 shipment-edit 的 scroll-view 上挂了/],
     ['核对页遮罩不挡穿透', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('bindtap="closePicker" catchtouchmove="noop"></view>', 'bindtap="closePicker"></view>') }), /R9-5 shipment-edit 遮罩缺/],
     ['搜索行不挡背后滚动', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('<view class="ss-search" catchtouchmove="noop">', '<view class="ss-search">') }), /R9-5 shipment-ops 弹层固定区/],
