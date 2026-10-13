@@ -390,39 +390,41 @@
 </view>
 
 <!-- 标本师选择面板 -->
-<view class="sheet-mask" wx:if="{{showArtisanSheet}}" bindtap="closeArtisanSheet"></view>
-<view class="sheet {{showArtisanSheet?'on':''}}" wx:if="{{showArtisanSheet}}">
-  <view class="sheet-hd">
-    <text class="sheet-title">{{artisanSheetMode==='rule' ? '限定标本师' : '选择标本师'}}</text>
-    <text class="sheet-close" bindtap="closeArtisanSheet">关闭</text>
-  </view>
-  <view class="sheet-search">
-    <input
-      class="input full"
-      value="{{artisanKeyword}}"
-      bindinput="onArtisanKeyword"
-      placeholder="搜索姓名"
-      confirm-type="search"
-    />
-  </view>
-  <scroll-view scroll-y class="sheet-list">
-    <view
-      class="sheet-item {{!filterArtisanId?'on':''}}"
-      wx:if="{{artisanSheetMode!=='rule'}}"
-      data-id=""
-      data-name=""
-      bindtap="selectArtisan"
-    >
-      全部标本师
+<view class="ui-pop-mask" wx:if="{{showArtisanSheet}}" bindtap="closeArtisanSheet" catchtouchmove="true">
+  <view class="ui-pop-sheet sheet {{showArtisanSheet?'on':''}}" wx:if="{{showArtisanSheet}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="sheet-hd">
+      <text class="sheet-title">{{artisanSheetMode==='rule' ? '限定标本师' : '选择标本师'}}</text>
+      <text class="sheet-close" bindtap="closeArtisanSheet">关闭</text>
     </view>
-    <view
-      class="sheet-item {{artisanSheetMode==='filter' && filterArtisanId===item._id?'on':''}}"
-      wx:for="{{artisanFiltered}}"
-      wx:key="_id"
-      data-id="{{item._id}}"
-      data-name="{{item.name}}"
-      bindtap="selectArtisan"
-    >{{item.name}}</view>
-    <view class="empty-mini" wx:if="{{!artisanFiltered.length}}">未找到匹配标本师</view>
-  </scroll-view>
+    <view class="sheet-search">
+      <input
+        class="input full"
+        value="{{artisanKeyword}}"
+        bindinput="onArtisanKeyword"
+        placeholder="搜索姓名"
+        confirm-type="search"
+      />
+    </view>
+    <scroll-view scroll-y class="sheet-list">
+      <view
+        class="sheet-item {{!filterArtisanId?'on':''}}"
+        wx:if="{{artisanSheetMode!=='rule'}}"
+        data-id=""
+        data-name=""
+        bindtap="selectArtisan"
+      >
+        全部标本师
+      </view>
+      <view
+        class="sheet-item {{artisanSheetMode==='filter' && filterArtisanId===item._id?'on':''}}"
+        wx:for="{{artisanFiltered}}"
+        wx:key="_id"
+        data-id="{{item._id}}"
+        data-name="{{item.name}}"
+        bindtap="selectArtisan"
+      >{{item.name}}</view>
+      <view class="empty-mini" wx:if="{{!artisanFiltered.length}}">未找到匹配标本师</view>
+    </scroll-view>
+  </view>
 </view>

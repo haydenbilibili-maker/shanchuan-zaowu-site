@@ -226,39 +226,41 @@
   </view>
 </scroll-view>
 
-<view class="picker-mask" wx:if="{{showShelfPicker}}" bindtap="closeShelfPicker"></view>
-<view class="picker-sheet" wx:if="{{showShelfPicker}}">
-  <view class="picker-hd">
-    <text class="picker-title">选择挂车藏品</text>
-    <text class="picker-close" bindtap="closeShelfPicker">完成</text>
-  </view>
-  <view class="picker-search">
-    <input
-      class="picker-input"
-      value="{{productKeyword}}"
-      bindinput="onProductKeyword"
-      bindconfirm="searchProducts"
-      placeholder="搜索藏品名 / 学名"
-      placeholder-class="ph"
-    />
-    <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="searchProducts">搜索</view>
-  </view>
-  <scroll-view class="picker-list" scroll-y>
-    <view class="picker-row" wx:for="{{productCandidates}}" wx:key="_id">
-      <image class="picker-cover" src="{{item.cover}}" mode="aspectFill"/>
-      <view class="picker-info">
-        <text class="picker-name">{{item.title}}</text>
-        <text class="picker-meta">¥{{item.price}}{{item.onShelf ? '' : ' · 已下架'}}</text>
-      </view>
-      <view hover-class="wb-press" hover-stay-time="80"
-        class="ghost-light mini {{item.already ? 'disabled' : ''}}"
-        bindtap="addShelfProduct"
-        data-id="{{item._id}}"
-      >{{item.already ? '已挂' : '挂上'}}</view>
+<view class="ui-pop-mask" wx:if="{{showShelfPicker}}" bindtap="closeShelfPicker" catchtouchmove="true">
+  <view class="ui-pop-sheet picker-sheet" wx:if="{{showShelfPicker}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="picker-hd">
+      <text class="picker-title">选择挂车藏品</text>
+      <text class="picker-close" bindtap="closeShelfPicker">完成</text>
     </view>
-    <view class="picker-empty" wx:if="{{productLoading}}">加载中…</view>
-    <view class="picker-empty" wx:elif="{{!productCandidates.length}}">没有匹配藏品</view>
-  </scroll-view>
+    <view class="picker-search">
+      <input
+        class="picker-input"
+        value="{{productKeyword}}"
+        bindinput="onProductKeyword"
+        bindconfirm="searchProducts"
+        placeholder="搜索藏品名 / 学名"
+        placeholder-class="ph"
+      />
+      <view hover-class="wb-press" hover-stay-time="80" class="ghost-light mini" bindtap="searchProducts">搜索</view>
+    </view>
+    <scroll-view class="picker-list" scroll-y>
+      <view class="picker-row" wx:for="{{productCandidates}}" wx:key="_id">
+        <image class="picker-cover" src="{{item.cover}}" mode="aspectFill"/>
+        <view class="picker-info">
+          <text class="picker-name">{{item.title}}</text>
+          <text class="picker-meta">¥{{item.price}}{{item.onShelf ? '' : ' · 已下架'}}</text>
+        </view>
+        <view hover-class="wb-press" hover-stay-time="80"
+          class="ghost-light mini {{item.already ? 'disabled' : ''}}"
+          bindtap="addShelfProduct"
+          data-id="{{item._id}}"
+        >{{item.already ? '已挂' : '挂上'}}</view>
+      </view>
+      <view class="picker-empty" wx:if="{{productLoading}}">加载中…</view>
+      <view class="picker-empty" wx:elif="{{!productCandidates.length}}">没有匹配藏品</view>
+    </scroll-view>
+  </view>
 </view>
 
 <!-- 全站样式化弹窗宿主（utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->

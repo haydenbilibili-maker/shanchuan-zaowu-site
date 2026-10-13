@@ -231,28 +231,11 @@
 }
 
 /* 详情抽屉 */
-.im-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 90;
-  background: rgba(0, 0, 0, 0.6);
-}
 
 .im-sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 91;
   height: 86vh;
   display: flex;
   flex-direction: column;
-  border-radius: 28rpx 28rpx 0 0;
-  background: var(--color-bg, #1a1814);
-  border-top: 1rpx solid rgba(196, 167, 108, 0.35);
 }
 
 .im-sheet-head {

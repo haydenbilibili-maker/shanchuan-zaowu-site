@@ -97,80 +97,82 @@
   </view>
 </view>
 
-<view class="sheet-mask" wx:if="{{showForm}}" bindtap="closeForm"></view>
-<view class="sheet" wx:if="{{showForm}}">
-  <view class="sheet-head">
-    <text class="sheet-title">{{editingId ? '编辑物业成本' : '登记物业成本'}}</text>
-    <text class="sheet-close" bindtap="closeForm">关闭</text>
-  </view>
-  <scroll-view scroll-y class="sheet-body">
-    <view class="pc-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
-    <view class="field">
-      <text class="field-label">归属主体</text>
-      <picker mode="selector" range="{{formEntityNames}}" value="{{formEntityIndex}}" bindchange="onFormEntity">
-        <view class="input">{{formEntityNames[formEntityIndex] || '请选择'}}</view>
-      </picker>
+<view class="ui-pop-mask" wx:if="{{showForm}}" bindtap="closeForm" catchtouchmove="true">
+  <view class="ui-pop-sheet sheet" wx:if="{{showForm}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="sheet-head">
+      <text class="sheet-title">{{editingId ? '编辑物业成本' : '登记物业成本'}}</text>
+      <text class="sheet-close" bindtap="closeForm">关闭</text>
     </view>
-    <view class="field">
-      <text class="field-label">成本类型</text>
-      <picker mode="selector" range="{{formTypeNames}}" value="{{formTypeIndex}}" bindchange="onFormType">
-        <view class="input">{{formTypeNames[formTypeIndex]}}</view>
-      </picker>
-    </view>
-    <view class="field">
-      <text class="field-label">金额（元）</text>
-      <input class="input" type="digit" value="{{form.amount}}" data-field="amount" bindinput="onFormInput" placeholder="必填" placeholder-class="ph" />
-    </view>
-    <view class="field">
-      <text class="field-label">所属月</text>
-      <picker mode="date" fields="month" value="{{form.periodMonth}}" bindchange="onFormMonth">
-        <view class="input">{{form.periodMonth || '选择月份'}}</view>
-      </picker>
-    </view>
-    <view class="field-row">
-      <view class="field half">
-        <text class="field-label">周期起</text>
-        <picker mode="date" value="{{form.periodStart}}" bindchange="onFormPeriodStart">
-          <view class="input">{{form.periodStart || '可选'}}</view>
+    <scroll-view scroll-y class="sheet-body">
+      <view class="pc-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+      <view class="field">
+        <text class="field-label">归属主体</text>
+        <picker mode="selector" range="{{formEntityNames}}" value="{{formEntityIndex}}" bindchange="onFormEntity">
+          <view class="input">{{formEntityNames[formEntityIndex] || '请选择'}}</view>
         </picker>
       </view>
-      <view class="field half">
-        <text class="field-label">周期止</text>
-        <picker mode="date" value="{{form.periodEnd}}" bindchange="onFormPeriodEnd">
-          <view class="input">{{form.periodEnd || '可选'}}</view>
+      <view class="field">
+        <text class="field-label">成本类型</text>
+        <picker mode="selector" range="{{formTypeNames}}" value="{{formTypeIndex}}" bindchange="onFormType">
+          <view class="input">{{formTypeNames[formTypeIndex]}}</view>
         </picker>
       </view>
-    </view>
-    <view class="field">
-      <text class="field-label">支付日期</text>
-      <picker mode="date" value="{{form.paidAt}}" bindchange="onFormPaidAt">
-        <view class="input">{{form.paidAt || '选择日期'}}</view>
-      </picker>
-    </view>
-    <view class="field">
-      <text class="field-label">支付票据（最多 {{maxReceipts}} 张）</text>
-      <view class="receipt-edit">
-        <view class="receipt-grid" wx:if="{{receiptPreviews.length}}">
-          <view class="receipt-item" wx:for="{{receiptPreviews}}" wx:key="fileId">
-            <image
-              class="receipt-thumb lg"
-              src="{{item.url}}"
-              mode="aspectFill"
-              data-url="{{item.url}}"
-              bindtap="previewReceipt"
-            />
-            <view class="receipt-del" data-index="{{index}}" catchtap="removeReceipt">删</view>
+      <view class="field">
+        <text class="field-label">金额（元）</text>
+        <input class="input" type="digit" value="{{form.amount}}" data-field="amount" bindinput="onFormInput" placeholder="必填" placeholder-class="ph" />
+      </view>
+      <view class="field">
+        <text class="field-label">所属月</text>
+        <picker mode="date" fields="month" value="{{form.periodMonth}}" bindchange="onFormMonth">
+          <view class="input">{{form.periodMonth || '选择月份'}}</view>
+        </picker>
+      </view>
+      <view class="field-row">
+        <view class="field half">
+          <text class="field-label">周期起</text>
+          <picker mode="date" value="{{form.periodStart}}" bindchange="onFormPeriodStart">
+            <view class="input">{{form.periodStart || '可选'}}</view>
+          </picker>
+        </view>
+        <view class="field half">
+          <text class="field-label">周期止</text>
+          <picker mode="date" value="{{form.periodEnd}}" bindchange="onFormPeriodEnd">
+            <view class="input">{{form.periodEnd || '可选'}}</view>
+          </picker>
+        </view>
+      </view>
+      <view class="field">
+        <text class="field-label">支付日期</text>
+        <picker mode="date" value="{{form.paidAt}}" bindchange="onFormPaidAt">
+          <view class="input">{{form.paidAt || '选择日期'}}</view>
+        </picker>
+      </view>
+      <view class="field">
+        <text class="field-label">支付票据（最多 {{maxReceipts}} 张）</text>
+        <view class="receipt-edit">
+          <view class="receipt-grid" wx:if="{{receiptPreviews.length}}">
+            <view class="receipt-item" wx:for="{{receiptPreviews}}" wx:key="fileId">
+              <image
+                class="receipt-thumb lg"
+                src="{{item.url}}"
+                mode="aspectFill"
+                data-url="{{item.url}}"
+                bindtap="previewReceipt"
+              />
+              <view class="receipt-del" data-index="{{index}}" catchtap="removeReceipt">删</view>
+            </view>
+          </view>
+          <view class="chip-btn" bindtap="chooseReceipt">
+            {{uploading ? '上传中…' : (receiptPreviews.length ? '继续添加' : '上传票据')}}
           </view>
         </view>
-        <view class="chip-btn" bindtap="chooseReceipt">
-          {{uploading ? '上传中…' : (receiptPreviews.length ? '继续添加' : '上传票据')}}
-        </view>
       </view>
-    </view>
-    <view class="field">
-      <text class="field-label">备注</text>
-      <input class="input" value="{{form.note}}" data-field="note" bindinput="onFormInput" placeholder-class="ph" />
-    </view>
-    <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
-  </scroll-view>
+      <view class="field">
+        <text class="field-label">备注</text>
+        <input class="input" value="{{form.note}}" data-field="note" bindinput="onFormInput" placeholder-class="ph" />
+      </view>
+      <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
+    </scroll-view>
+  </view>
 </view>

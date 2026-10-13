@@ -148,81 +148,83 @@
   </view>
 </view>
 
-<view class="im-mask" wx:if="{{detail}}" bindtap="closeDetail" catchtouchmove="noop"></view>
-<view class="im-sheet" wx:if="{{detail}}">
-  <view class="im-sheet-head">
-    <text class="im-sheet-title">鉴定详情</text>
-    <text class="im-sheet-close" bindtap="closeDetail">关闭</text>
+<view class="ui-pop-mask" wx:if="{{detail}}" bindtap="closeDetail" catchtouchmove="true">
+  <view class="ui-pop-sheet im-sheet" wx:if="{{detail}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="im-sheet-head">
+      <text class="im-sheet-title">鉴定详情</text>
+      <text class="im-sheet-close" bindtap="closeDetail">关闭</text>
+    </view>
+    <scroll-view scroll-y class="im-sheet-body">
+      <view class="ops-skeleton" wx:if="{{detailLoading}}">
+        <view class="ui-sk-card"><view class="ui-sk-line wide"></view><view class="ui-sk-line"></view></view>
+      </view>
+      <view class="ops-empty is-error" wx:elif="{{detailError}}">
+        <text class="ops-empty-title">详情未能取回</text>
+        <text class="ops-empty-sub">{{detailError}}</text>
+      </view>
+      <block wx:else>
+        <image wx:if="{{detail.imageUrl}}" class="im-hero" src="{{detail.imageUrl}}" mode="aspectFit" bindtap="previewImage" />
+        <view class="im-hero im-thumb-empty" wx:else><text>照片不可用</text></view>
+        <text class="im-hint" wx:if="{{detail.imageUrl}}">点图可放大查看</text>
+
+        <view class="im-block">
+          <view class="im-row-top">
+            <text class="im-detail-title">{{detail.title}}</text>
+            <text class="ops-status {{detail.statusTone}}">{{detail.statusLabel}}</text>
+          </view>
+          <text class="im-row-sub" wx:if="{{detail.latin || detail.english}}">{{detail.latin}}{{detail.latin && detail.english ? ' · ' : ''}}{{detail.english}}</text>
+          <text class="im-row-sub" wx:if="{{detail.confidence}}">置信度 {{detail.confidence}}</text>
+          <text class="im-note" wx:if="{{detail.reuseText}}">{{detail.reuseText}}</text>
+          <text class="im-row-err" wx:if="{{detail.errorMsg}}">失败原因：{{detail.errorMsg}}</text>
+        </view>
+
+        <view class="im-block">
+          <view class="im-kv"><text class="im-k">用户</text><text class="im-v link" bindtap="onFilterByUser" data-openid="{{detail.openid}}" data-label="{{detail.userText}}">{{detail.userText}}</text></view>
+          <view class="im-kv"><text class="im-k">时间</text><text class="im-v">{{detail.timeText}}</text></view>
+          <view class="im-kv"><text class="im-k">耗时</text><text class="im-v">{{detail.durationText}}</text></view>
+          <view class="im-kv"><text class="im-k">入口</text><text class="im-v">{{detail.entryLabel}}</text></view>
+          <view class="im-kv"><text class="im-k">类别提示</text><text class="im-v">{{detail.categoryHint}}</text></view>
+          <view class="im-kv"><text class="im-k">模型</text><text class="im-v">{{detail.modelText}}</text></view>
+          <view class="im-kv" wx:if="{{detail.flags}}"><text class="im-k">后续</text><text class="im-v">{{detail.flags.isBookmarked ? '已入图鉴' : '未入图鉴'}} · {{detail.flags.isShared ? '已分享' : '未分享'}}{{detail.flags.reuseCount ? ' · 再次鉴定 ' + detail.flags.reuseCount + ' 次' : ''}}</text></view>
+          <text class="im-note" wx:if="{{detail.isHistory}}">上线前的记录：只有成功结果，没有耗时与模型信息。</text>
+        </view>
+
+        <view class="im-block" wx:if="{{detail.brief || detail.taxonomy.length || detail.alternatives.length}}">
+          <text class="im-block-title">识别结论</text>
+          <text class="im-para" wx:if="{{detail.brief}}">{{detail.brief}}</text>
+          <view class="im-taxa" wx:if="{{detail.taxonomy.length}}">
+            <text class="ops-chip" wx:for="{{detail.taxonomy}}" wx:key="label">{{item.label}} {{item.value}}</text>
+          </view>
+          <text class="im-row-sub" wx:if="{{detail.alternatives.length}}">备选：<text wx:for="{{detail.alternatives}}" wx:key="*this">{{index ? '、' : ''}}{{item}}</text></text>
+        </view>
+
+        <view class="im-block" wx:if="{{detail.aiSections.length}}">
+          <text class="im-block-title">完整解读</text>
+          <view class="im-sec" wx:for="{{detail.aiSections}}" wx:key="label">
+            <text class="im-sec-label">{{item.label}}</text>
+            <text class="im-para">{{item.text}}</text>
+          </view>
+        </view>
+
+        <view class="im-block" wx:if="{{detail.products.length}}">
+          <text class="im-block-title">匹配藏品</text>
+          <view class="im-prod" wx:for="{{detail.products}}" wx:key="id" data-id="{{item.id}}" bindtap="openProduct">
+            <image wx:if="{{item.cover}}" class="im-prod-img" src="{{item.cover}}" mode="aspectFill" lazy-load />
+            <view class="im-prod-img im-thumb-empty" wx:else></view>
+            <text class="im-prod-title">{{item.title}}</text>
+            <text class="im-prod-price">{{item.priceText}}</text>
+          </view>
+        </view>
+
+        <view class="im-block" wx:if="{{detail.feedback.length}}">
+          <text class="im-block-title">用户纠错</text>
+          <view class="im-sec" wx:for="{{detail.feedback}}" wx:key="timeText">
+            <text class="im-sec-label">改为「{{item.name}}」 · {{item.timeText}}</text>
+            <text class="im-para" wx:if="{{item.note}}">{{item.note}}</text>
+          </view>
+        </view>
+      </block>
+    </scroll-view>
   </view>
-  <scroll-view scroll-y class="im-sheet-body">
-    <view class="ops-skeleton" wx:if="{{detailLoading}}">
-      <view class="ui-sk-card"><view class="ui-sk-line wide"></view><view class="ui-sk-line"></view></view>
-    </view>
-    <view class="ops-empty is-error" wx:elif="{{detailError}}">
-      <text class="ops-empty-title">详情未能取回</text>
-      <text class="ops-empty-sub">{{detailError}}</text>
-    </view>
-    <block wx:else>
-      <image wx:if="{{detail.imageUrl}}" class="im-hero" src="{{detail.imageUrl}}" mode="aspectFit" bindtap="previewImage" />
-      <view class="im-hero im-thumb-empty" wx:else><text>照片不可用</text></view>
-      <text class="im-hint" wx:if="{{detail.imageUrl}}">点图可放大查看</text>
-
-      <view class="im-block">
-        <view class="im-row-top">
-          <text class="im-detail-title">{{detail.title}}</text>
-          <text class="ops-status {{detail.statusTone}}">{{detail.statusLabel}}</text>
-        </view>
-        <text class="im-row-sub" wx:if="{{detail.latin || detail.english}}">{{detail.latin}}{{detail.latin && detail.english ? ' · ' : ''}}{{detail.english}}</text>
-        <text class="im-row-sub" wx:if="{{detail.confidence}}">置信度 {{detail.confidence}}</text>
-        <text class="im-note" wx:if="{{detail.reuseText}}">{{detail.reuseText}}</text>
-        <text class="im-row-err" wx:if="{{detail.errorMsg}}">失败原因：{{detail.errorMsg}}</text>
-      </view>
-
-      <view class="im-block">
-        <view class="im-kv"><text class="im-k">用户</text><text class="im-v link" bindtap="onFilterByUser" data-openid="{{detail.openid}}" data-label="{{detail.userText}}">{{detail.userText}}</text></view>
-        <view class="im-kv"><text class="im-k">时间</text><text class="im-v">{{detail.timeText}}</text></view>
-        <view class="im-kv"><text class="im-k">耗时</text><text class="im-v">{{detail.durationText}}</text></view>
-        <view class="im-kv"><text class="im-k">入口</text><text class="im-v">{{detail.entryLabel}}</text></view>
-        <view class="im-kv"><text class="im-k">类别提示</text><text class="im-v">{{detail.categoryHint}}</text></view>
-        <view class="im-kv"><text class="im-k">模型</text><text class="im-v">{{detail.modelText}}</text></view>
-        <view class="im-kv" wx:if="{{detail.flags}}"><text class="im-k">后续</text><text class="im-v">{{detail.flags.isBookmarked ? '已入图鉴' : '未入图鉴'}} · {{detail.flags.isShared ? '已分享' : '未分享'}}{{detail.flags.reuseCount ? ' · 再次鉴定 ' + detail.flags.reuseCount + ' 次' : ''}}</text></view>
-        <text class="im-note" wx:if="{{detail.isHistory}}">上线前的记录：只有成功结果，没有耗时与模型信息。</text>
-      </view>
-
-      <view class="im-block" wx:if="{{detail.brief || detail.taxonomy.length || detail.alternatives.length}}">
-        <text class="im-block-title">识别结论</text>
-        <text class="im-para" wx:if="{{detail.brief}}">{{detail.brief}}</text>
-        <view class="im-taxa" wx:if="{{detail.taxonomy.length}}">
-          <text class="ops-chip" wx:for="{{detail.taxonomy}}" wx:key="label">{{item.label}} {{item.value}}</text>
-        </view>
-        <text class="im-row-sub" wx:if="{{detail.alternatives.length}}">备选：<text wx:for="{{detail.alternatives}}" wx:key="*this">{{index ? '、' : ''}}{{item}}</text></text>
-      </view>
-
-      <view class="im-block" wx:if="{{detail.aiSections.length}}">
-        <text class="im-block-title">完整解读</text>
-        <view class="im-sec" wx:for="{{detail.aiSections}}" wx:key="label">
-          <text class="im-sec-label">{{item.label}}</text>
-          <text class="im-para">{{item.text}}</text>
-        </view>
-      </view>
-
-      <view class="im-block" wx:if="{{detail.products.length}}">
-        <text class="im-block-title">匹配藏品</text>
-        <view class="im-prod" wx:for="{{detail.products}}" wx:key="id" data-id="{{item.id}}" bindtap="openProduct">
-          <image wx:if="{{item.cover}}" class="im-prod-img" src="{{item.cover}}" mode="aspectFill" lazy-load />
-          <view class="im-prod-img im-thumb-empty" wx:else></view>
-          <text class="im-prod-title">{{item.title}}</text>
-          <text class="im-prod-price">{{item.priceText}}</text>
-        </view>
-      </view>
-
-      <view class="im-block" wx:if="{{detail.feedback.length}}">
-        <text class="im-block-title">用户纠错</text>
-        <view class="im-sec" wx:for="{{detail.feedback}}" wx:key="timeText">
-          <text class="im-sec-label">改为「{{item.name}}」 · {{item.timeText}}</text>
-          <text class="im-para" wx:if="{{item.note}}">{{item.note}}</text>
-        </view>
-      </view>
-    </block>
-  </scroll-view>
 </view>

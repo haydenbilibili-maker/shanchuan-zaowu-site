@@ -613,8 +613,10 @@ function check(src) {
     const sheets = tags.filter((t) => r9Classes(t).some((c) => /^(ss|ops|se)-sheet$/.test(c)))
     ok(sheets.length > 0, `R9-5 ${name} 找不到底部弹层`)
     sheets.forEach((t) => ok(!/catchtouchmove/.test(t), `R9-5 ${name} 弹层容器挂了 catchtouchmove（会吞掉内部列表滚动）：${t.slice(0, 70)}`))
-    tags.filter((t) => r9Classes(t).some((c) => /^(ss|ops|se)-mask$/.test(c))).forEach((t) => {
-      ok(/catchtouchmove="noop"/.test(t), `R9-5 ${name} 遮罩缺 catchtouchmove（背后页面会跟着滚）：${t.slice(0, 70)}`)
+    // 2026-10-13（弹层规范第 3 批）：遮罩已迁到全局 ui-pop-mask（catchtouchmove="true"），
+    // 旧类名一并认（未迁完的页面仍是 se/ss/ops-mask + "noop"）—— 两者都不能缺 catchtouchmove。
+    tags.filter((t) => r9Classes(t).some((c) => /^(ss|ops|se)-mask$/.test(c)) || /class="[^"]*\bui-pop-mask\b/.test(t)).forEach((t) => {
+      ok(/catchtouchmove="(?:true|noop)"/.test(t), `R9-5 ${name} 遮罩缺 catchtouchmove（背后页面会跟着滚）：${t.slice(0, 70)}`)
     })
     tags.filter((t) => r9Classes(t).some((c) => /^(ss|ops|se)-sheet-head$|^(ss|se)-search$/.test(c)) || /class="ss-actions is-in-sheet"/.test(t)).forEach((t) => {
       ok(/catchtouchmove="noop"/.test(t), `R9-5 ${name} 弹层固定区（标题 / 搜索 / 底部按钮）缺 catchtouchmove：${t.slice(0, 70)}`)
@@ -782,7 +784,7 @@ function selftest() {
     ['搜索框可被挤扁', (s) => ({ ...s, shipSkuWxss: s.shipSkuWxss.replace('.ss-search { flex-shrink: 0;', '.ss-search {') }), /R9-4 \.ss-search 缺 flex-shrink/],
     ['弹层容器挂 catchtouchmove', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('<view class="ui-pop-sheet ss-sheet" wx:if="{{picker.show}}" catchtap="true">', '<view class="ui-pop-sheet ss-sheet" wx:if="{{picker.show}}" catchtouchmove="noop">') }), /R9-5 shipment-ops 弹层容器挂了 catchtouchmove/],
     ['列表挂 catchtouchmove', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('<scroll-view class="se-sheet-body" scroll-y', '<scroll-view class="se-sheet-body" catchtouchmove="noop" scroll-y') }), /R9-5 shipment-edit 的 scroll-view 上挂了/],
-    ['核对页遮罩不挡穿透', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('bindtap="closePicker" catchtouchmove="noop"></view>', 'bindtap="closePicker"></view>') }), /R9-5 shipment-edit 遮罩缺/],
+    ['核对页遮罩不挡穿透', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace('<view class="ui-pop-mask" wx:if="{{picker.show}}" bindtap="closePicker" catchtouchmove="true">', '<view class="ui-pop-mask" wx:if="{{picker.show}}" bindtap="closePicker">') }), /R9-5 shipment-edit 遮罩缺/],
     ['搜索行不挡背后滚动', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace('<view class="ss-search" catchtouchmove="noop">', '<view class="ss-search">') }), /R9-5 shipment-ops 弹层固定区/],
     ['page-meta 漏了选择器', (s) => ({ ...s, shipOpsWxml: s.shipOpsWxml.replace(/^(<page-meta page-style="\{\{[^"]*?)\|\| picker\.show /, '$1') }), /R9-6 shipment-ops 弹层「picker\.show」/],
     ['page-meta 被删', (s) => ({ ...s, shipEditWxml: s.shipEditWxml.replace(/^<page-meta[^\n]*\n/, '') }), /R9-6 shipment-edit 第一个节点不是 page-meta/],

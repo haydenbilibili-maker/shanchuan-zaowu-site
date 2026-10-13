@@ -69,119 +69,123 @@
   </view>
 
   <!-- 新建账单：选门店 → 勾单 → 生成 -->
-  <view class="sb-mask" wx:if="{{creating}}" bindtap="closeCreate"></view>
-  <view class="sb-sheet" wx:if="{{creating}}">
-    <view class="sb-sheet-head">
-      <text class="sb-sheet-title">新建账单</text>
-      <view class="sb-sheet-close" bindtap="closeCreate"><text>关闭</text></view>
-    </view>
-    <view class="sb-create-store">
-      <text class="sb-create-label">门店</text>
-      <picker mode="selector" range="{{stores}}" range-key="name" value="{{createStoreIndex}}" bindchange="onPickStore">
-        <view class="sb-picker"><text>{{createStoreName || '请选择门店'}}</text><text class="sb-picker-arrow">▾</text></view>
-      </picker>
-    </view>
-    <view class="sb-tip is-info" wx:if="{{createTip}}"><text>{{createTip}}</text></view>
+<view class="ui-pop-mask" wx:if="{{creating}}" bindtap="closeCreate" catchtouchmove="true">
+  <view class="ui-pop-sheet sb-sheet" wx:if="{{creating}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+      <view class="sb-sheet-head">
+        <text class="sb-sheet-title">新建账单</text>
+        <view class="sb-sheet-close" bindtap="closeCreate"><text>关闭</text></view>
+      </view>
+      <view class="sb-create-store">
+        <text class="sb-create-label">门店</text>
+        <picker mode="selector" range="{{stores}}" range-key="name" value="{{createStoreIndex}}" bindchange="onPickStore">
+          <view class="sb-picker"><text>{{createStoreName || '请选择门店'}}</text><text class="sb-picker-arrow">▾</text></view>
+        </picker>
+      </view>
+      <view class="sb-tip is-info" wx:if="{{createTip}}"><text>{{createTip}}</text></view>
 
-    <scroll-view class="sb-sheet-body" scroll-y>
-      <view hover-class="wb-press" hover-stay-time="80"
-        class="sb-cand {{item.selectable ? '' : 'is-blocked'}} {{item.selected ? 'is-on' : ''}}"
-        wx:for="{{candidates}}"
-        wx:key="_id"
-        data-id="{{item._id}}"
-        bindtap="toggleCandidate"
-      >
-        <view class="sb-cand-check">{{item.selected ? '✓' : ''}}</view>
-        <view class="sb-cand-main">
-          <text class="sb-cand-no">{{item.shipmentNo}}</text>
-          <text class="sb-cand-meta">{{item.shipmentDate}} · {{item.qtyText}}</text>
-          <!-- 不可入账的把原因写在这，而不是让超管勾完才被拒 -->
-          <text class="sb-cand-block" wx:if="{{!item.selectable}}">{{item.blockReason}}</text>
+      <scroll-view class="sb-sheet-body" scroll-y>
+        <view hover-class="wb-press" hover-stay-time="80"
+          class="sb-cand {{item.selectable ? '' : 'is-blocked'}} {{item.selected ? 'is-on' : ''}}"
+          wx:for="{{candidates}}"
+          wx:key="_id"
+          data-id="{{item._id}}"
+          bindtap="toggleCandidate"
+        >
+          <view class="sb-cand-check">{{item.selected ? '✓' : ''}}</view>
+          <view class="sb-cand-main">
+            <text class="sb-cand-no">{{item.shipmentNo}}</text>
+            <text class="sb-cand-meta">{{item.shipmentDate}} · {{item.qtyText}}</text>
+            <!-- 不可入账的把原因写在这，而不是让超管勾完才被拒 -->
+            <text class="sb-cand-block" wx:if="{{!item.selectable}}">{{item.blockReason}}</text>
+          </view>
+          <text class="sb-cand-amount">{{item.amountText}}</text>
         </view>
-        <text class="sb-cand-amount">{{item.amountText}}</text>
-      </view>
-      <view class="sb-empty" wx:if="{{!candidates.length}}">
-        <text>该门店没有可入账的出货单</text>
-        <text class="sb-empty-hint">只有「已核价」且「未结」的单能进账单</text>
-      </view>
-    </scroll-view>
+        <view class="sb-empty" wx:if="{{!candidates.length}}">
+          <text>该门店没有可入账的出货单</text>
+          <text class="sb-empty-hint">只有「已核价」且「未结」的单能进账单</text>
+        </view>
+      </scroll-view>
 
-    <view class="sb-actions">
-      <view class="sb-create-sum">
-        <text class="sb-create-sum-label">已选 {{selectedCount}} 张</text>
-        <text class="sb-create-sum-value">{{selectedTotalText}}</text>
+      <view class="sb-actions">
+        <view class="sb-create-sum">
+          <text class="sb-create-sum-label">已选 {{selectedCount}} 张</text>
+          <text class="sb-create-sum-value">{{selectedTotalText}}</text>
+        </view>
+        <button class="sb-btn sb-btn-main" bindtap="submitCreate" disabled="{{busy || !selectedCount}}">生成账单</button>
       </view>
-      <button class="sb-btn sb-btn-main" bindtap="submitCreate" disabled="{{busy || !selectedCount}}">生成账单</button>
-    </view>
-  </view>
-
-  <!-- 详情 + 动作 -->
-  <view class="sb-mask" wx:if="{{showDetail}}" bindtap="closeDetail"></view>
-  <view class="sb-sheet" wx:if="{{showDetail && detail}}">
-    <view class="sb-sheet-head">
-      <text class="sb-sheet-title">{{detail.billNo}} · {{detail.storeName}}</text>
-      <view class="sb-sheet-close" bindtap="closeDetail"><text>关闭</text></view>
     </view>
 
-    <scroll-view class="sb-sheet-body" scroll-y>
-      <view class="sb-detail-amount">
-        <text class="sb-detail-label">应付货款</text>
-        <text class="sb-detail-value">{{detail.totalText}}</text>
-      </view>
-      <view class="sb-detail-split">
-        <view class="sb-split-cell"><text class="sb-split-label">材料</text><text class="sb-split-value">{{detail.materialText}}</text></view>
-        <view class="sb-split-cell"><text class="sb-split-label">包装</text><text class="sb-split-value">{{detail.packagingText}}</text></view>
-        <view class="sb-split-cell"><text class="sb-split-label">手工</text><text class="sb-split-value">{{detail.laborText}}</text></view>
-      </view>
-      <view class="sb-detail-meta">
-        <text>账期 {{detail.periodText}}</text>
-        <text wx:if="{{detail.laborRatePct !== null}}">本单手工费率 {{detail.laborRatePct}}%</text>
-        <text>状态 {{detail.statusLabel}}</text>
-        <text wx:if="{{detail.paidMarkedByName}}">门店标记人 {{detail.paidMarkedByName}}</text>
-        <text wx:if="{{detail.paidNote}}">门店备注 {{detail.paidNote}}</text>
-        <text wx:if="{{detail.settledByName}}">确认收款人 {{detail.settledByName}}</text>
-      </view>
+    <!-- 详情 + 动作 -->
+  <view class="ui-pop-mask" wx:if="{{showDetail}}" bindtap="closeDetail" catchtouchmove="true">
+    <view class="ui-pop-sheet sb-sheet" wx:if="{{showDetail && detail}}" catchtap="true">
+      <view class="ui-pop-grip"></view>
+        <view class="sb-sheet-head">
+          <text class="sb-sheet-title">{{detail.billNo}} · {{detail.storeName}}</text>
+          <view class="sb-sheet-close" bindtap="closeDetail"><text>关闭</text></view>
+        </view>
 
-      <view class="sb-section-title"><text>纳入的出货单（{{detailFields.length}}）</text></view>
-      <view class="sb-ship" wx:for="{{detailFields}}" wx:key="_id">
-        <text class="sb-ship-no">{{item.shipmentNo}}</text>
-        <text class="sb-ship-date">{{item.shipmentDate}}</text>
-        <text class="sb-ship-qty">{{item.qtyText}}</text>
-        <text class="sb-ship-amount">{{item.amountText}}</text>
-      </view>
-    </scroll-view>
+        <scroll-view class="sb-sheet-body" scroll-y>
+          <view class="sb-detail-amount">
+            <text class="sb-detail-label">应付货款</text>
+            <text class="sb-detail-value">{{detail.totalText}}</text>
+          </view>
+          <view class="sb-detail-split">
+            <view class="sb-split-cell"><text class="sb-split-label">材料</text><text class="sb-split-value">{{detail.materialText}}</text></view>
+            <view class="sb-split-cell"><text class="sb-split-label">包装</text><text class="sb-split-value">{{detail.packagingText}}</text></view>
+            <view class="sb-split-cell"><text class="sb-split-label">手工</text><text class="sb-split-value">{{detail.laborText}}</text></view>
+          </view>
+          <view class="sb-detail-meta">
+            <text>账期 {{detail.periodText}}</text>
+            <text wx:if="{{detail.laborRatePct !== null}}">本单手工费率 {{detail.laborRatePct}}%</text>
+            <text>状态 {{detail.statusLabel}}</text>
+            <text wx:if="{{detail.paidMarkedByName}}">门店标记人 {{detail.paidMarkedByName}}</text>
+            <text wx:if="{{detail.paidNote}}">门店备注 {{detail.paidNote}}</text>
+            <text wx:if="{{detail.settledByName}}">确认收款人 {{detail.settledByName}}</text>
+          </view>
 
-    <view class="sb-actions">
-      <!-- 店长（付款方）：标记已付款 -->
-      <button
-        wx:if="{{detail.canMarkPaid}}"
-        class="sb-btn sb-btn-main"
-        bindtap="onMarkPaid"
-        disabled="{{busy}}"
-      >标记已付款</button>
+          <view class="sb-section-title"><text>纳入的出货单（{{detailFields.length}}）</text></view>
+          <view class="sb-ship" wx:for="{{detailFields}}" wx:key="_id">
+            <text class="sb-ship-no">{{item.shipmentNo}}</text>
+            <text class="sb-ship-date">{{item.shipmentDate}}</text>
+            <text class="sb-ship-qty">{{item.qtyText}}</text>
+            <text class="sb-ship-amount">{{item.amountText}}</text>
+          </view>
+        </scroll-view>
 
-      <!-- 超管（收款方）：确认收款 / 撤回 / 作废 -->
-      <button
-        wx:if="{{isSuper && detail.canConfirmSettle}}"
-        class="sb-btn sb-btn-main"
-        bindtap="onConfirmSettle"
-        disabled="{{busy}}"
-      >确认收款（订单终结）</button>
-      <button
-        wx:if="{{isSuper && detail.status === 'paid_pending'}}"
-        class="sb-btn sb-btn-ghost"
-        bindtap="onWithdrawPaid"
-        disabled="{{busy}}"
-      >撤回「已付款」</button>
-      <button
-        wx:if="{{isSuper && detail.canVoid}}"
-        class="sb-btn sb-btn-ghost"
-        bindtap="onVoid"
-        disabled="{{busy}}"
-      >作废账单</button>
+        <view class="sb-actions">
+          <!-- 店长（付款方）：标记已付款 -->
+          <button
+            wx:if="{{detail.canMarkPaid}}"
+            class="sb-btn sb-btn-main"
+            bindtap="onMarkPaid"
+            disabled="{{busy}}"
+          >标记已付款</button>
 
-      <view class="sb-noop" wx:if="{{detail.status === 'settled'}}">
-        <text>该账单已结清，相关出货单已终结</text>
+          <!-- 超管（收款方）：确认收款 / 撤回 / 作废 -->
+          <button
+            wx:if="{{isSuper && detail.canConfirmSettle}}"
+            class="sb-btn sb-btn-main"
+            bindtap="onConfirmSettle"
+            disabled="{{busy}}"
+          >确认收款（订单终结）</button>
+          <button
+            wx:if="{{isSuper && detail.status === 'paid_pending'}}"
+            class="sb-btn sb-btn-ghost"
+            bindtap="onWithdrawPaid"
+            disabled="{{busy}}"
+          >撤回「已付款」</button>
+          <button
+            wx:if="{{isSuper && detail.canVoid}}"
+            class="sb-btn sb-btn-ghost"
+            bindtap="onVoid"
+            disabled="{{busy}}"
+          >作废账单</button>
+
+          <view class="sb-noop" wx:if="{{detail.status === 'settled'}}">
+            <text>该账单已结清，相关出货单已终结</text>
+          </view>
+        </view>
       </view>
     </view>
   </view>

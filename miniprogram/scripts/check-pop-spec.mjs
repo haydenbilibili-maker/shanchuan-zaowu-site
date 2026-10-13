@@ -109,26 +109,28 @@ export const MIGRATED = [
   ['subpackages/manager/manager/workspace/_subviews.wxml', 'showPushConfirm'],
   ['subpackages/manager/manager/workspace/_subviews.wxml', 'showStoreEditModal'],
   ['subpackages/manager/manager/workspace/_subviews.wxml', 'showTicketReplyModal'],
-  ['subpackages/manager/manager/workspace/petMemorialSheet.wxml', 'petSheet.show']
+  ['subpackages/manager/manager/workspace/petMemorialSheet.wxml', 'petSheet.show'],
+  // —— 第 3 批 g-2a（2026-10-13）：7 组平级遮罩+抽屉 ——
+  ['subpackages/extra/artisan-commission/index.wxml', 'showArtisanSheet'],
+  ['subpackages/extra/live/broadcast/index.wxml', 'showShelfPicker'],
+  ['subpackages/extra/property-cost/index.wxml', 'showForm'],
+  ['subpackages/extra/shareholder-config/index.wxml', 'showForm'],
+  ['subpackages/extra/shipment-edit/index.wxml', 'picker.show'],
+  ['subpackages/manager/studio-bills/index.wxml', 'creating'],
+  ['subpackages/manager/studio-bills/index.wxml', 'showDetail'],
+  ['subpackages/manager/identify-monitor/index.wxml', 'detail']
 ]
 
 /** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小）—— 用 `--tighten` 收紧 */
 export const MASK_BASELINE = {
   'subpackages/b2bdesk/desk-common.wxss': 1,
   'subpackages/extra/artisan/works/index.wxss': 1,
-  'subpackages/extra/artisan-commission/index.wxss': 1,
-  'subpackages/extra/live/broadcast/index.wxss': 1,
-  'subpackages/extra/property-cost/index.wxss': 1,
-  'subpackages/extra/shareholder-config/index.wxss': 1,
-  'subpackages/extra/shipment-edit/index.wxss': 1,
   'subpackages/extra/user/achievements/index.wxss': 2,
   'subpackages/extra/user/invoice-request/index.wxss': 1,
   'subpackages/extra/user/support/index.wxss': 1,
   'subpackages/manager/gift-ops/index.wxss': 1,
-  'subpackages/manager/identify-monitor/index.wxss': 1,
   'subpackages/manager/manager/hubNav.wxss': 1,
-  'subpackages/manager/store-points/index.wxss': 1,
-  'subpackages/manager/studio-bills/index.wxss': 1
+  'subpackages/manager/store-points/index.wxss': 1
 }
 
 /**

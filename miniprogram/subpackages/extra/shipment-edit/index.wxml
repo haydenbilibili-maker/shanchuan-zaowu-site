@@ -131,56 +131,58 @@
   </view>
 
   <!-- 选择器弹层 -->
-  <view class="se-mask" wx:if="{{picker.show}}" bindtap="closePicker" catchtouchmove="noop"></view>
-  <view class="se-sheet" wx:if="{{picker.show}}">
-    <view class="se-sheet-head" catchtouchmove="noop">
-      <text class="se-sheet-title">{{picker.title}}</text>
-      <view class="se-sheet-close" bindtap="closePicker"><text>关闭</text></view>
-    </view>
-    <view class="se-search" catchtouchmove="noop">
-      <input
-        class="se-search-input"
-        placeholder="输入名称或别名搜索（如 大蓝闪）"
-        value="{{picker.keyword}}"
-        bindinput="onPickerInput"
-        confirm-type="search"
-      />
-    </view>
-    <scroll-view class="se-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
-      <view class="se-loading" wx:if="{{picker.loading}}"><text>加载中…</text></view>
-      <view class="se-empty" wx:elif="{{!picker.list.length}}">
-        <text>没有匹配的{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>
-        <text class="se-empty-hint">请先到「价目表配置」里维护，或换一个关键词</text>
+<view class="ui-pop-mask" wx:if="{{picker.show}}" bindtap="closePicker" catchtouchmove="true">
+  <view class="ui-pop-sheet se-sheet" wx:if="{{picker.show}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+      <view class="se-sheet-head" catchtouchmove="noop">
+        <text class="se-sheet-title">{{picker.title}}</text>
+        <view class="se-sheet-close" bindtap="closePicker"><text>关闭</text></view>
       </view>
-      <block wx:else>
-        <view class="se-group" wx:for="{{picker.list}}" wx:key="key">
-          <view class="se-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
-            <view class="se-group-main">
-              <text class="se-group-name">{{item.displayName}}</text>
-              <text class="se-group-meta" wx:if="{{item.aliases.length}}">别名 {{item.aliases}}</text>
-            </view>
-            <text class="se-group-count">{{item.optionField === 'size' ? '尺寸' : '等级'}} {{item.optionCount}}</text>
-          </view>
-          <!-- 只有一个规格时直接可点，不用先展开 -->
-          <view class="se-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
-            <view
-              class="se-option"
-              wx:for="{{item.options}}"
-              wx:for-item="opt"
-              wx:key="_id"
-              data-key="{{item.key}}"
-              data-option="{{opt.option}}"
-              data-id="{{opt._id}}"
-              bindtap="onPickOption"
-            >
-              <text class="se-option-name">{{opt.option}}</text>
-              <text class="se-option-price">{{opt.unitPriceText}}</text>
-              <text class="se-option-tag" wx:if="{{opt.isDefault}}">默认</text>
-            </view>
-          </view>
-          <view class="se-group-hint" wx:else><text>点一下展开 {{item.optionCount}} 个规格</text></view>
+      <view class="se-search" catchtouchmove="noop">
+        <input
+          class="se-search-input"
+          placeholder="输入名称或别名搜索（如 大蓝闪）"
+          value="{{picker.keyword}}"
+          bindinput="onPickerInput"
+          confirm-type="search"
+        />
+      </view>
+      <scroll-view class="se-sheet-body" scroll-y style="height: {{sheetBodyPx}}px;">
+        <view class="se-loading" wx:if="{{picker.loading}}"><text>加载中…</text></view>
+        <view class="se-empty" wx:elif="{{!picker.list.length}}">
+          <text>没有匹配的{{picker.kind === 'material' ? '原材料' : '包装方式'}}</text>
+          <text class="se-empty-hint">请先到「价目表配置」里维护，或换一个关键词</text>
         </view>
-      </block>
-    </scroll-view>
+        <block wx:else>
+          <view class="se-group" wx:for="{{picker.list}}" wx:key="key">
+            <view class="se-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
+              <view class="se-group-main">
+                <text class="se-group-name">{{item.displayName}}</text>
+                <text class="se-group-meta" wx:if="{{item.aliases.length}}">别名 {{item.aliases}}</text>
+              </view>
+              <text class="se-group-count">{{item.optionField === 'size' ? '尺寸' : '等级'}} {{item.optionCount}}</text>
+            </view>
+            <!-- 只有一个规格时直接可点，不用先展开 -->
+            <view class="se-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
+              <view
+                class="se-option"
+                wx:for="{{item.options}}"
+                wx:for-item="opt"
+                wx:key="_id"
+                data-key="{{item.key}}"
+                data-option="{{opt.option}}"
+                data-id="{{opt._id}}"
+                bindtap="onPickOption"
+              >
+                <text class="se-option-name">{{opt.option}}</text>
+                <text class="se-option-price">{{opt.unitPriceText}}</text>
+                <text class="se-option-tag" wx:if="{{opt.isDefault}}">默认</text>
+              </view>
+            </view>
+            <view class="se-group-hint" wx:else><text>点一下展开 {{item.optionCount}} 个规格</text></view>
+          </view>
+        </block>
+      </scroll-view>
+    </view>
   </view>
 </view>

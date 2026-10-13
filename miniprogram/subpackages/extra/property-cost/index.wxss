@@ -294,22 +294,8 @@ page {
   color: #D64045;
 }
 
-.sheet-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(26, 24, 20, 0.72);
-  z-index: 90;
-}
 .sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
   max-height: 82vh;
-  background: var(--color-bg-card, #1F1D1A);
-  border-radius: 24rpx 24rpx 0 0;
-  border-top: 1rpx solid rgba(77, 64, 26, 0.5);
-  z-index: 100;
   padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
 }
 .sheet-head {

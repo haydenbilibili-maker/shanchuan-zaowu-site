@@ -69,12 +69,8 @@
 .sb-card-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 6rpx; }
 .sb-card-meta { font-size: 21rpx; color: #7d786f; }
 
-.sb-mask { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.62); z-index: 40; }
 .sb-sheet {
-  position: fixed; left: 0; right: 0; bottom: 0; max-height: 84vh;
   display: flex; flex-direction: column; background: #211e1a;
-  border-top-left-radius: 22rpx; border-top-right-radius: 22rpx;
-  border-top: 1rpx solid rgba(196, 167, 108, 0.4); z-index: 41;
 }
 .sb-sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 22rpx 28rpx 12rpx; }
 .sb-sheet-title { font-size: 28rpx; color: #f2ece1; }

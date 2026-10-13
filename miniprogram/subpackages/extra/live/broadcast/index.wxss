@@ -473,18 +473,8 @@
 .shelf-toolbar { display: flex; flex-direction: column; gap: 12rpx; }
 .ghost-light.full.danger { border-color: rgba(214, 64, 69, 0.5); color: #D64045; }
 
-.picker-mask {
-  position: fixed; inset: 0;
-  background: rgba(26, 24, 20, 0.55);
-  z-index: 50;
-}
 .picker-sheet {
-  position: fixed; left: 0; right: 0; bottom: 0;
-  z-index: 51;
   max-height: 70vh;
-  background: #1F1D1A;
-  border-radius: 24rpx 24rpx 0 0;
-  border-top: 1px solid #4D401A;
   padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }

@@ -553,26 +553,9 @@ page {
   color: var(--color-text-secondary, #A09A90);
 }
 
-.sheet-mask {
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(26, 24, 20, 0.72);
-  z-index: 90;
-}
 .sheet {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 91;
   max-height: 70vh;
   padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
-  background: var(--color-bg-card);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  border-top: 1rpx solid var(--brass-800);
   box-sizing: border-box;
 }
 .sheet-hd {
