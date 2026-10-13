@@ -958,35 +958,14 @@ page {
   margin-top: var(--space-6);
 }
 
-/* —— 撤销弹窗 —— */
-.mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 9, 8, 0.82);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  padding: 32rpx;
-  box-sizing: border-box;
-}
-
+/* —— 撤销弹窗 ——
+   形态 / 遮罩 / 牌面 / 头部 / 标题 / 说明全取 app.wxss 的 ui-pop-*（docs/弹层视觉规范_2026-10-13.md）；
+   这里只留本弹层特有的尺寸与滚动（牌面自带左右 40rpx 内边距，内部块不再加左右留白）。 */
 .modal {
-  width: 100%;
   max-height: 86vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-lg);
-  box-sizing: border-box;
-}
-
-.modal-head {
-  flex-shrink: 0;
-  padding: 36rpx 36rpx 20rpx;
-  border-bottom: 1rpx solid rgba(38, 35, 32, 0.7);
 }
 
 .modal-body {
@@ -994,23 +973,8 @@ page {
   max-height: calc(86vh - 160rpx);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 28rpx 36rpx 16rpx;
+  padding: 8rpx 0 0;
   box-sizing: border-box;
-}
-
-.modal-title {
-  display: block;
-  font-family: var(--font-brand);
-  font-size: 34rpx;
-  color: var(--color-text-primary);
-}
-
-.modal-sub {
-  display: block;
-  margin-top: 12rpx;
-  font-size: 24rpx;
-  line-height: 1.5;
-  color: var(--color-text-secondary);
 }
 
 .field {
@@ -1066,7 +1030,7 @@ page {
 .modal .workbench-modal-foot {
   display: flex;
   gap: var(--space-3);
-  padding: 20rpx 36rpx 36rpx;
+  padding: 24rpx 0 0;
 }
 
 .modal .workbench-modal-foot .workbench-btn-outline,

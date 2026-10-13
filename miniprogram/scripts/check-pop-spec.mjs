@@ -53,16 +53,60 @@ export const MIGRATED = [
   ['subpackages/feature/gift/phone-sheet/index.wxml', 'show'],
   ['subpackages/feature/gift/proxy-address-sheet/index.wxml', 'show'],
   ['subpackages/content/live/watch/index.wxml', 'showShelf'],
-  ['subpackages/content/live/watch/index.wxml', 'showSkuSheet']
+  ['subpackages/content/live/watch/index.wxml', 'showSkuSheet'],
+  // —— 第 3 批 b（2026-10-13）：员工 / 管理端开始迁移；员工端自此纳入 MASK_BASELINE 棘轮 ——
+  ['subpackages/extra/approvals/index.wxml', 'showRevokeModal'],
+  ['subpackages/extra/inventory-ops/index.wxml', 'showPaste'],
+  ['subpackages/extra/inventory-ops/index.wxml', 'showRawForm'],
+  ['subpackages/extra/purchase-ops/index.wxml', 'showSyncPanel'],
+  ['subpackages/extra/purchase-ops/index.wxml', 'showForm'],
+  ['subpackages/extra/shipment-ops/index.wxml', 'showDetail']
 ]
 
-/** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小） */
+/** 自写遮罩棘轮基线（按文件，只许减少；迁移一处就把数字改小）—— 用 `--tighten` 收紧 */
 export const MASK_BASELINE = {
-
+  'subpackages/b2bdesk/desk-common.wxss': 1,
+  'subpackages/extra/artisan/works/index.wxss': 1,
+  'subpackages/extra/artisan-commission/index.wxss': 1,
+  'subpackages/extra/live/broadcast/index.wxss': 1,
+  'subpackages/extra/member-crm/index.wxss': 2,
+  'subpackages/extra/property-cost/index.wxss': 1,
+  'subpackages/extra/shareholder-config/index.wxss': 1,
+  'subpackages/extra/shipment-edit/index.wxss': 1,
+  'subpackages/extra/shipment-ops/sku.wxss': 1,
+  'subpackages/extra/staff/field/index.wxss': 1,
+  'subpackages/extra/staff-permissions/index.wxss': 1,
+  'subpackages/extra/user/achievements/index.wxss': 2,
+  'subpackages/extra/user/invoice-request/index.wxss': 1,
+  'subpackages/extra/user/messages/index.wxss': 1,
+  'subpackages/extra/user/support/index.wxss': 1,
+  'subpackages/manager/gift-ops/index.wxss': 1,
+  'subpackages/manager/identify-monitor/index.wxss': 1,
+  'subpackages/manager/invoice-requests/index.wxss': 1,
+  'subpackages/manager/manager/hubNav.wxss': 1,
+  'subpackages/manager/manager/index.wxss': 2,
+  'subpackages/manager/payslip/index.wxss': 1,
+  'subpackages/manager/staff-permissions/index.wxss': 1,
+  'subpackages/manager/store-points/index.wxss': 1,
+  'subpackages/manager/studio-bills/index.wxss': 1,
+  'subpackages/manager/utils/ops-museum.wxss': 1
 }
 
-/** 不计入：员工 / 管理端（第 3 批）、祈福墙 / 心愿签（另一流的纸感语言）、吸底栏（不是遮罩） */
-const OUT_OF_SCOPE = /^(subpackages\/(extra|manager|b2bdesk|staff)\/|subpackages\/feature\/wish-wall\/|subpackages\/feature\/components\/WallFeed\/|subpackages\/feature\/wish-labels\/)/
+/**
+ * **真·非弹层**的例外（逐条带理由）：固定定位但没有牌面 / 不是弹层的整页态。
+ * 与 MASK_BASELINE 同一纪律：条目必须一直有对应的自写遮罩，否则 `--tighten` 清掉它。
+ */
+export const NON_POPUP = {
+  'subpackages/extra/user/messages/detail/index.wxss': {
+    '.letter-page': '整页信纸视图（固定定位的**页面态**，不是弹层，没有牌面与遮罩语义）',
+  },
+  'subpackages/manager/manager/index.wxss': {
+    '.verify-success-modal': '核销成功全屏**过场动画舞台**（按类切换的时序动画，无交互、无牌面；是否并进仪式卡另议）',
+  },
+}
+
+/** 不计入：祈福墙 / 心愿签（另一流的纸感语言，自带设计语言） */
+const OUT_OF_SCOPE = /^(subpackages\/feature\/wish-wall\/|subpackages\/feature\/components\/WallFeed\/|subpackages\/feature\/wish-labels\/)/
 const SKIP_DIRS = new Set(['node_modules', 'cloudfunctions', 'scripts', 'docs', 'minitest'])
 
 function walk(dir, out = []) {
@@ -214,7 +258,8 @@ export function run(read = (f) => readFileSync(join(MP, f), 'utf8'), files = nul
   const list = files || walk(MP)
   for (const f of list) {
     if (OUT_OF_SCOPE.test(f) || f === 'app.wxss') continue
-    const n = ownMasks(read(f)).length
+    const exempt = NON_POPUP[f] || {}
+    const n = ownMasks(read(f)).filter((sel) => !exempt[sel]).length
     const base = MASK_BASELINE[f] || 0
     if (n > base) fails.push(`${f}：自写遮罩 ${n} 处 > 基线 ${base}（新弹层用 ui-pop-mask，见 docs/弹层视觉规范_2026-10-13.md）`)
   }
@@ -250,22 +295,49 @@ function selftest() {
   console.log(`✓ 自检通过（${cases.length} 注入 + 1 不误报，内存副本不写盘）`)
 }
 
-if (process.argv.includes('--selftest')) selftest()
-else if (process.argv.includes('--print-baseline')) {
-  const out = {}
-  for (const f of walk(MP)) { if (OUT_OF_SCOPE.test(f) || f === 'app.wxss') continue; const n = ownMasks(readFileSync(join(MP, f), 'utf8')).length; if (n) out[f] = n }
-  console.log(JSON.stringify(out, null, 2))
-} else if (process.argv.includes('--tighten')) {
+/** 把基线写回本文件（`--seed` / `--tighten` 共用） */
+function writeBaseline(next) {
   const self = fileURLToPath(import.meta.url)
-  const next = {}
-  for (const [f, base] of Object.entries(MASK_BASELINE)) {
-    let n = 0
-    try { n = ownMasks(readFileSync(join(MP, f), 'utf8')).length } catch { n = 0 }
-    if (Math.min(n, base) > 0) next[f] = Math.min(n, base)
-  }
   const body = Object.entries(next).map(([k, v]) => `  '${k}': ${v}`).join(',\n')
   const src = readFileSync(self, 'utf8').replace(/export const MASK_BASELINE = \{[\s\S]*?\n\}/, `export const MASK_BASELINE = {\n${body}\n}`)
   writeFileSync(self, src)
+}
+
+if (process.argv.includes('--selftest')) selftest()
+else if (process.argv.includes('--print-baseline')) {
+  const out = {}
+  for (const f of walk(MP)) {
+    if (OUT_OF_SCOPE.test(f) || f === 'app.wxss') continue
+    const exempt = NON_POPUP[f] || {}
+    const n = ownMasks(readFileSync(join(MP, f), 'utf8')).filter((s) => !exempt[s]).length
+    if (n) out[f] = n
+  }
+  console.log(JSON.stringify(out, null, 2))
+} else if (process.argv.includes('--seed')) {
+  /* 首次把某个分包纳入判据时**只登记尚无基线**的文件（已有条目一律不动）。
+     之后只走 `--tighten`（只许降）。这条区分很重要：`--seed` 若能改写已有条目，
+     它就成了"抬高基线"的后门，棘轮立刻失效。 */
+  const next = { ...MASK_BASELINE }
+  let added = 0
+  for (const f of walk(MP)) {
+    if (OUT_OF_SCOPE.test(f) || f === 'app.wxss' || next[f] !== undefined) continue
+    const exempt = NON_POPUP[f] || {}
+    const n = ownMasks(readFileSync(join(MP, f), 'utf8')).filter((s) => !exempt[s]).length
+    if (n) { next[f] = n; added += 1 }
+  }
+  writeBaseline(next)
+  console.log(`✓ 首次登记：+${added} 个文件（已有条目未动，共 ${Object.keys(next).length} 个）`)
+} else if (process.argv.includes('--tighten')) {
+  const next = {}
+  for (const [f, base] of Object.entries(MASK_BASELINE)) {
+    let n = 0
+    try {
+      const exempt = NON_POPUP[f] || {}
+      n = ownMasks(readFileSync(join(MP, f), 'utf8')).filter((s) => !exempt[s]).length
+    } catch { n = 0 }
+    if (Math.min(n, base) > 0) next[f] = Math.min(n, base)
+  }
+  writeBaseline(next)
   console.log(`✓ 基线收紧：${Object.keys(MASK_BASELINE).length} → ${Object.keys(next).length} 个文件`)
 } else {
   const fails = run()

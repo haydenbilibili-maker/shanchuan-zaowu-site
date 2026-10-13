@@ -1190,66 +1190,68 @@
 </view>
 
 <!-- 详情：物流 + 状态流转（契约：setStatus / update；结算只读） -->
-<view class="ops-mask" wx:if="{{showDetail}}" bindtap="closeDetail" catchtouchmove="noop"></view>
-<view class="ops-sheet sc-detail-sheet" wx:if="{{showDetail && detail}}">
-  <view class="ops-sheet-head" catchtouchmove="noop">
-    <text class="ops-sheet-title">{{detail.customerLine || detail.storeName}}</text>
-    <text class="ops-sheet-close" bindtap="closeDetail">关闭</text>
-  </view>
-  <scroll-view scroll-y class="ops-sheet-body sc-detail-body" style="height: {{sheetBodyPx}}px;">
-    <view class="ops-card-tags" style="margin-bottom: 16rpx;">
-      <text class="ops-status {{detail.statusTone}}">{{detail.statusLabel}}</text>
-      <text class="ops-settle {{detail.settleTone}}" wx:if="{{detail.settleLabel}}">结算 {{detail.settleLabel}}</text>
-      <text class="ops-source {{detail.sourceTone}}">{{detail.sourceLabel}}</text>
-      <text class="ops-meta-inline warn" wx:if="{{detail.pricingIncomplete}}">核价未完</text>
-      <text class="ops-meta-inline" wx:if="{{detail.entryPathLabel}}">{{detail.entryPathLabel}}</text>
+<view class="ui-pop-mask" wx:if="{{showDetail}}" bindtap="closeDetail" catchtouchmove="true">
+  <view class="ui-pop-sheet ops-sheet sc-detail-sheet" wx:if="{{showDetail && detail}}" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ops-sheet-head" catchtouchmove="noop">
+      <text class="ui-pop-title ops-sheet-title">{{detail.customerLine || detail.storeName}}</text>
+      <view class="ui-pop-close" catchtap="closeDetail" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-    <text class="ops-meta">{{detail.shipmentNo}} · {{detail.shipmentDate}}</text>
-    <text class="ops-meta" wx:if="{{detail.buyerName}}">购买人 {{detail.buyerName}}</text>
-    <text class="ops-amount">{{detail.totalQty}} 件 · {{detail.itemCount}} 行{{detail.amountText ? ' · ¥' + detail.amountText : ''}}</text>
-
-    <view class="ops-group" style="margin-top: 20rpx;">
-      <view class="sc-detail-line" wx:for="{{detail.items}}" wx:key="itemName">
-        <view class="sc-detail-line-main">
-          <text class="ops-line-name">{{item.itemName}}{{item.spec ? ' · ' + item.spec : ''}}</text>
-          <text class="sc-detail-mat" wx:if="{{item.matLine}}">{{item.matLine}}</text>
-        </view>
-        <text class="ops-qty-badge">{{item.qty}}</text>
+    <scroll-view scroll-y class="ui-pop-body ops-sheet-body sc-detail-body" style="height: {{sheetBodyPx}}px;">
+      <view class="ops-card-tags" style="margin-bottom: 16rpx;">
+        <text class="ops-status {{detail.statusTone}}">{{detail.statusLabel}}</text>
+        <text class="ops-settle {{detail.settleTone}}" wx:if="{{detail.settleLabel}}">结算 {{detail.settleLabel}}</text>
+        <text class="ops-source {{detail.sourceTone}}">{{detail.sourceLabel}}</text>
+        <text class="ops-meta-inline warn" wx:if="{{detail.pricingIncomplete}}">核价未完</text>
+        <text class="ops-meta-inline" wx:if="{{detail.entryPathLabel}}">{{detail.entryPathLabel}}</text>
       </view>
-    </view>
+      <text class="ops-meta">{{detail.shipmentNo}} · {{detail.shipmentDate}}</text>
+      <text class="ops-meta" wx:if="{{detail.buyerName}}">购买人 {{detail.buyerName}}</text>
+      <text class="ops-amount">{{detail.totalQty}} 件 · {{detail.itemCount}} 行{{detail.amountText ? ' · ¥' + detail.amountText : ''}}</text>
 
-    <view class="ops-detail-section" wx:if="{{canWrite}}">
-      <text class="ops-section-label">物流（快递公司 / 运单号）</text>
-      <view class="ops-field-row">
-        <view class="ops-field half">
-          <input class="ops-field-input" value="{{shipForm.expressCompany}}" data-field="expressCompany" bindinput="onShipFormInput" placeholder="快递公司" placeholder-class="ops-ph" />
-        </view>
-        <view class="ops-field half">
-          <input class="ops-field-input" value="{{shipForm.trackingNo}}" data-field="trackingNo" bindinput="onShipFormInput" placeholder="运单号" placeholder-class="ops-ph" />
+      <view class="ops-group" style="margin-top: 20rpx;">
+        <view class="sc-detail-line" wx:for="{{detail.items}}" wx:key="itemName">
+          <view class="sc-detail-line-main">
+            <text class="ops-line-name">{{item.itemName}}{{item.spec ? ' · ' + item.spec : ''}}</text>
+            <text class="sc-detail-mat" wx:if="{{item.matLine}}">{{item.matLine}}</text>
+          </view>
+          <text class="ops-qty-badge">{{item.qty}}</text>
         </view>
       </view>
-      <view class="ops-chip-btn brass" bindtap="saveLogistics">{{detailBusy ? '保存中…' : '保存物流'}}</view>
-    </view>
-    <text class="ops-meta" wx:elif="{{detail.expressCompany || detail.trackingNo}}">物流 {{detail.expressCompany || '—'}} {{detail.trackingNo || ''}}</text>
 
-    <view class="ops-detail-section" wx:if="{{canWrite && nextActions.length}}">
-      <text class="ops-section-label">下一状态</text>
-      <view class="ops-next-row">
-        <view class="ops-chip-btn brass" wx:for="{{nextActions}}" wx:key="value" data-status="{{item.value}}" bindtap="applyStatus">{{item.label}}</view>
+      <view class="ops-detail-section" wx:if="{{canWrite}}">
+        <text class="ops-section-label">物流（快递公司 / 运单号）</text>
+        <view class="ops-field-row">
+          <view class="ops-field half">
+            <input class="ops-field-input" value="{{shipForm.expressCompany}}" data-field="expressCompany" bindinput="onShipFormInput" placeholder="快递公司" placeholder-class="ops-ph" />
+          </view>
+          <view class="ops-field half">
+            <input class="ops-field-input" value="{{shipForm.trackingNo}}" data-field="trackingNo" bindinput="onShipFormInput" placeholder="运单号" placeholder-class="ops-ph" />
+          </view>
+        </view>
+        <view class="ops-chip-btn brass" bindtap="saveLogistics">{{detailBusy ? '保存中…' : '保存物流'}}</view>
       </view>
-      <text class="ops-field-hint">发货前可先填运单；点「已发货」时会一并写入。取消 / 完成等不可逆路径请谨慎。</text>
-    </view>
-    <view class="ops-detail-section" wx:elif="{{!nextActions.length}}">
-      <text class="ops-field-hint">当前状态无后续流转（已完成或已取消）。</text>
-    </view>
+      <text class="ops-meta" wx:elif="{{detail.expressCompany || detail.trackingNo}}">物流 {{detail.expressCompany || '—'}} {{detail.trackingNo || ''}}</text>
 
-    <view class="ops-list-tip is-{{detailTipTone}}" wx:if="{{detailTip}}"><text>{{detailTip}}</text></view>
+      <view class="ops-detail-section" wx:if="{{canWrite && nextActions.length}}">
+        <text class="ops-section-label">下一状态</text>
+        <view class="ops-next-row">
+          <view class="ops-chip-btn brass" wx:for="{{nextActions}}" wx:key="value" data-status="{{item.value}}" bindtap="applyStatus">{{item.label}}</view>
+        </view>
+        <text class="ops-field-hint">发货前可先填运单；点「已发货」时会一并写入。取消 / 完成等不可逆路径请谨慎。</text>
+      </view>
+      <view class="ops-detail-section" wx:elif="{{!nextActions.length}}">
+        <text class="ops-field-hint">当前状态无后续流转（已完成或已取消）。</text>
+      </view>
 
-    <text class="ops-meta" wx:if="{{detail.note}}">备注 {{detail.note}}</text>
-    <text class="ops-meta" wx:if="{{detail.billNo}}">关联账单 {{detail.billNo}}</text>
-    <text class="ops-meta" wx:if="{{detail.feishuRecordId}}">飞书记录 {{detail.feishuRecordId}}</text>
-    <text class="ops-meta" wx:if="{{detail.batchId}}">批次 {{detail.batchId}}</text>
-    <view class="ops-chip-btn danger sc-detail-remove" wx:if="{{canWrite}}" data-id="{{detail._id}}" bindtap="onRemove">{{removePendingId === detail._id ? '确认删除（软删）' : '删除此单'}}</view>
-    <text class="ops-settle-note">结算状态跟随「工作室账单」，这里只能查看。</text>
-  </scroll-view>
+      <view class="ops-list-tip is-{{detailTipTone}}" wx:if="{{detailTip}}"><text>{{detailTip}}</text></view>
+
+      <text class="ops-meta" wx:if="{{detail.note}}">备注 {{detail.note}}</text>
+      <text class="ops-meta" wx:if="{{detail.billNo}}">关联账单 {{detail.billNo}}</text>
+      <text class="ops-meta" wx:if="{{detail.feishuRecordId}}">飞书记录 {{detail.feishuRecordId}}</text>
+      <text class="ops-meta" wx:if="{{detail.batchId}}">批次 {{detail.batchId}}</text>
+      <view class="ops-chip-btn danger sc-detail-remove" wx:if="{{canWrite}}" data-id="{{detail._id}}" bindtap="onRemove">{{removePendingId === detail._id ? '确认删除（软删）' : '删除此单'}}</view>
+      <text class="ops-settle-note">结算状态跟随「工作室账单」，这里只能查看。</text>
+    </scroll-view>
+</view>
 </view>

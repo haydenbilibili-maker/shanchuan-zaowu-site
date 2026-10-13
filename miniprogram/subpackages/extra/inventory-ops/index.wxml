@@ -448,113 +448,117 @@
 </view>
 
 <!-- 成品：粘贴入库 -->
-<view class="ops-mask" wx:if="{{showPaste}}" bindtap="closePaste"></view>
-<view class="ops-sheet" wx:if="{{showPaste}}">
-  <view class="ops-sheet-head">
-    <text class="ops-sheet-title">粘贴群公告入库 · 成品</text>
-    <text class="ops-sheet-close" bindtap="closePaste">关闭</text>
-  </view>
-  <scroll-view scroll-y class="ops-sheet-body">
-    <view class="ops-paste-card">
-      <text class="ops-paste-hint">可忽略「群公告」；含「库存」作来源；日期行 YYYY年M月D日；明细「品名+数量+个」；⬇️ 结尾为分组行。</text>
-      <textarea
-        class="ops-paste-area"
-        value="{{pasteText}}"
-        bindinput="onPasteInput"
-        placeholder="粘贴群公告盘点文本…"
-        placeholder-class="ops-ph"
-        maxlength="-1"
-      />
-      <view class="ops-actions">
-        <view class="ops-btn-secondary" bindtap="runPreview">解析预览</view>
-        <view class="ops-btn-primary {{committing ? 'disabled' : ''}}" bindtap="confirmCommit">
-          {{committing ? '写入中…' : (commitPending ? '再点确认覆盖' : '确认覆盖写入')}}
-        </view>
-      </view>
+<view class="ui-pop-mask" wx:if="{{showPaste}}" bindtap="closePaste" catchtouchmove="true">
+  <view class="ui-pop-sheet ops-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ops-sheet-head">
+      <text class="ui-pop-title ops-sheet-title">粘贴群公告入库 · 成品</text>
+      <view class="ui-pop-close" catchtap="closePaste" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-
-    <view class="ops-issue-block" wx:if="{{previewError}}">
-      <text class="ops-issue-label">{{commitPending ? '待确认' : '提示'}}</text>
-      <text class="ops-issue-msg">{{previewError}}</text>
-    </view>
-
-    <view wx:if="{{preview}}">
-      <view class="ops-preview-bar">
-        <text class="ops-preview-label">盘点日</text>
-        <text class="ops-filter-chip brass">{{preview.inventoryDate}}</text>
-      </view>
-      <text class="ops-summary-meta" style="margin-bottom: 16rpx;">
-        {{preview.sourceLabel}} · {{preview.lineCount}} SKU · {{preview.totalQty}} 件 · {{preview.groupCount}} 分组
-      </text>
-      <view class="ops-chips" wx:if="{{preview.groups.length}}" style="margin-bottom: 16rpx;">
-        <text class="ops-chip" wx:for="{{preview.groups}}" wx:key="name">{{item.name}} {{item.count}}品 / {{item.totalQty}}个</text>
-      </view>
-      <block wx:for="{{preview.groupBlocks}}" wx:key="key" wx:for-index="gIdx">
-        <view class="ops-group">
-          <view class="ops-group-head" data-idx="{{gIdx}}" bindtap="togglePreviewGroup">
-            <text class="ops-group-title">{{item.name}} · {{item.skuCount}}SKU</text>
-            <view class="ops-group-side">
-              <text class="ops-qty-badge">{{item.totalQty}}</text>
-              <text class="ops-group-chevron">{{item.collapsed ? '▸' : '▾'}}</text>
-            </view>
-          </view>
-          <view class="ops-group-body" wx:if="{{!item.collapsed}}">
-            <view class="ops-line-row" wx:for="{{item.items}}" wx:key="lineNo" wx:for-item="sku">
-              <text class="ops-line-name">{{sku.skuName}}</text>
-              <text class="ops-qty-badge">{{sku.qty}}</text>
-            </view>
+    <scroll-view scroll-y class="ui-pop-body ops-sheet-body">
+      <view class="ops-paste-card">
+        <text class="ops-paste-hint">可忽略「群公告」；含「库存」作来源；日期行 YYYY年M月D日；明细「品名+数量+个」；⬇️ 结尾为分组行。</text>
+        <textarea
+          class="ops-paste-area"
+          value="{{pasteText}}"
+          bindinput="onPasteInput"
+          placeholder="粘贴群公告盘点文本…"
+          placeholder-class="ops-ph"
+          maxlength="-1"
+        />
+        <view class="ops-actions">
+          <view class="ops-btn-secondary" bindtap="runPreview">解析预览</view>
+          <view class="ops-btn-primary {{committing ? 'disabled' : ''}}" bindtap="confirmCommit">
+            {{committing ? '写入中…' : (commitPending ? '再点确认覆盖' : '确认覆盖写入')}}
           </view>
         </view>
-      </block>
-      <text class="ops-meta" wx:if="{{preview.skippedCount}}">跳过 {{preview.skippedCount}} 行（公告头等）</text>
-    </view>
+      </view>
 
-    <text class="ops-meta" style="margin-top: 24rpx;">按盘点日整体覆盖当前成品库存，历史盘点记录会保留。</text>
-  </scroll-view>
+      <view class="ops-issue-block" wx:if="{{previewError}}">
+        <text class="ops-issue-label">{{commitPending ? '待确认' : '提示'}}</text>
+        <text class="ops-issue-msg">{{previewError}}</text>
+      </view>
+
+      <view wx:if="{{preview}}">
+        <view class="ops-preview-bar">
+          <text class="ops-preview-label">盘点日</text>
+          <text class="ops-filter-chip brass">{{preview.inventoryDate}}</text>
+        </view>
+        <text class="ops-summary-meta" style="margin-bottom: 16rpx;">
+          {{preview.sourceLabel}} · {{preview.lineCount}} SKU · {{preview.totalQty}} 件 · {{preview.groupCount}} 分组
+        </text>
+        <view class="ops-chips" wx:if="{{preview.groups.length}}" style="margin-bottom: 16rpx;">
+          <text class="ops-chip" wx:for="{{preview.groups}}" wx:key="name">{{item.name}} {{item.count}}品 / {{item.totalQty}}个</text>
+        </view>
+        <block wx:for="{{preview.groupBlocks}}" wx:key="key" wx:for-index="gIdx">
+          <view class="ops-group">
+            <view class="ops-group-head" data-idx="{{gIdx}}" bindtap="togglePreviewGroup">
+              <text class="ops-group-title">{{item.name}} · {{item.skuCount}}SKU</text>
+              <view class="ops-group-side">
+                <text class="ops-qty-badge">{{item.totalQty}}</text>
+                <text class="ops-group-chevron">{{item.collapsed ? '▸' : '▾'}}</text>
+              </view>
+            </view>
+            <view class="ops-group-body" wx:if="{{!item.collapsed}}">
+              <view class="ops-line-row" wx:for="{{item.items}}" wx:key="lineNo" wx:for-item="sku">
+                <text class="ops-line-name">{{sku.skuName}}</text>
+                <text class="ops-qty-badge">{{sku.qty}}</text>
+              </view>
+            </view>
+          </view>
+        </block>
+        <text class="ops-meta" wx:if="{{preview.skippedCount}}">跳过 {{preview.skippedCount}} 行（公告头等）</text>
+      </view>
+
+      <text class="ops-meta" style="margin-top: 24rpx;">按盘点日整体覆盖当前成品库存，历史盘点记录会保留。</text>
+    </scroll-view>
+</view>
 </view>
 
 <!-- 原材料：录入/编辑 -->
-<view class="ops-mask" wx:if="{{showRawForm}}" bindtap="closeRawForm"></view>
-<view class="ops-sheet" wx:if="{{showRawForm}}">
-  <view class="ops-sheet-head">
-    <text class="ops-sheet-title">{{rawEditingId ? '编辑原材料' : '录入原材料'}}</text>
-    <text class="ops-sheet-close" bindtap="closeRawForm">关闭</text>
-  </view>
-  <scroll-view scroll-y class="ops-sheet-body">
-    <view class="ops-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
-    <view class="ops-field">
-      <text class="ops-field-label">物品名称</text>
-      <input class="ops-field-input" value="{{rawForm.itemName}}" bindinput="onRawForm" data-key="itemName" />
+<view class="ui-pop-mask" wx:if="{{showRawForm}}" bindtap="closeRawForm" catchtouchmove="true">
+  <view class="ui-pop-sheet ops-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ops-sheet-head">
+      <text class="ui-pop-title ops-sheet-title">{{rawEditingId ? '编辑原材料' : '录入原材料'}}</text>
+      <view class="ui-pop-close" catchtap="closeRawForm" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-    <view class="ops-field">
-      <text class="ops-field-label">规格型号</text>
-      <input class="ops-field-input" value="{{rawForm.spec}}" bindinput="onRawForm" data-key="spec" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">分类</text>
-      <picker mode="selector" range="{{formCategoryNames}}" value="{{formCategoryIndex}}" bindchange="onFormCategory">
-        <view class="ops-filter-chip">{{formCategoryNames[formCategoryIndex]}}</view>
-      </picker>
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">当前库存</text>
-      <input class="ops-field-input" type="number" value="{{rawForm.qty}}" bindinput="onRawForm" data-key="qty" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">单价</text>
-      <input class="ops-field-input" type="digit" value="{{rawForm.unitPrice}}" bindinput="onRawForm" data-key="unitPrice" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">存放位置</text>
-      <input class="ops-field-input" value="{{rawForm.locationText}}" bindinput="onRawForm" data-key="locationText" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">备注</text>
-      <input class="ops-field-input" value="{{rawForm.note}}" bindinput="onRawForm" data-key="note" />
-    </view>
-    <view class="ops-actions" style="margin-top: 24rpx;">
-      <view class="ops-btn-secondary" bindtap="closeRawForm">取消</view>
-      <view class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveRawForm">保存</view>
-    </view>
-  </scroll-view>
+    <scroll-view scroll-y class="ui-pop-body ops-sheet-body">
+      <view class="ops-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+      <view class="ops-field">
+        <text class="ops-field-label">物品名称</text>
+        <input class="ops-field-input" value="{{rawForm.itemName}}" bindinput="onRawForm" data-key="itemName" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">规格型号</text>
+        <input class="ops-field-input" value="{{rawForm.spec}}" bindinput="onRawForm" data-key="spec" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">分类</text>
+        <picker mode="selector" range="{{formCategoryNames}}" value="{{formCategoryIndex}}" bindchange="onFormCategory">
+          <view class="ops-filter-chip">{{formCategoryNames[formCategoryIndex]}}</view>
+        </picker>
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">当前库存</text>
+        <input class="ops-field-input" type="number" value="{{rawForm.qty}}" bindinput="onRawForm" data-key="qty" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">单价</text>
+        <input class="ops-field-input" type="digit" value="{{rawForm.unitPrice}}" bindinput="onRawForm" data-key="unitPrice" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">存放位置</text>
+        <input class="ops-field-input" value="{{rawForm.locationText}}" bindinput="onRawForm" data-key="locationText" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">备注</text>
+        <input class="ops-field-input" value="{{rawForm.note}}" bindinput="onRawForm" data-key="note" />
+      </view>
+      <view class="ops-actions" style="margin-top: 24rpx;">
+        <view class="ops-btn-secondary" bindtap="closeRawForm">取消</view>
+        <view class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveRawForm">保存</view>
+      </view>
+    </scroll-view>
+</view>
 </view>

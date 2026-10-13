@@ -428,79 +428,83 @@
 </view>
 
 <!-- 同步面板 -->
-<view class="ops-mask" wx:if="{{showSyncPanel}}" bindtap="closeSyncPanel"></view>
-<view class="ops-sheet" wx:if="{{showSyncPanel}}">
-  <view class="ops-sheet-head">
-    <text class="ops-sheet-title">飞书同步</text>
-    <text class="ops-sheet-close" bindtap="closeSyncPanel">关闭</text>
-  </view>
-  <view class="ops-sheet-body sync-body">
-    <text class="sync-label">最近拉取</text>
-    <text class="sync-value">{{syncMeta.lastPullText}}</text>
-    <text class="sync-msg">{{syncMeta.lastPullMsg}}</text>
-    <text class="sync-note">拉取经 ERP「同步管理」写入 ops_purchases；此处可刷新状态与清单。</text>
-    <view class="ops-btn-primary {{syncing ? 'disabled' : ''}}" bindtap="refreshSyncAndList">
-      {{syncing ? '刷新中…' : '刷新状态与清单'}}
+<view class="ui-pop-mask" wx:if="{{showSyncPanel}}" bindtap="closeSyncPanel" catchtouchmove="true">
+  <view class="ui-pop-sheet ops-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ops-sheet-head">
+      <text class="ui-pop-title ops-sheet-title">飞书同步</text>
+      <view class="ui-pop-close" catchtap="closeSyncPanel" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-  </view>
+    <view class="ops-sheet-body sync-body">
+      <text class="sync-label">最近拉取</text>
+      <text class="sync-value">{{syncMeta.lastPullText}}</text>
+      <text class="sync-msg">{{syncMeta.lastPullMsg}}</text>
+      <text class="sync-note">拉取经 ERP「同步管理」写入 ops_purchases；此处可刷新状态与清单。</text>
+      <view class="ops-btn-primary {{syncing ? 'disabled' : ''}}" bindtap="refreshSyncAndList">
+        {{syncing ? '刷新中…' : '刷新状态与清单'}}
+      </view>
+    </view>
+</view>
 </view>
 
 <!-- 表单 -->
-<view class="ops-mask" wx:if="{{showForm}}" bindtap="closeForm"></view>
-<view class="ops-sheet" wx:if="{{showForm}}">
-  <view class="ops-sheet-head">
-    <text class="ops-sheet-title">{{editingId ? '编辑采购' : '新增采购'}}</text>
-    <text class="ops-sheet-close" bindtap="closeForm">关闭</text>
-  </view>
-  <scroll-view scroll-y class="ops-sheet-body">
-    <view class="ops-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
-    <view class="ops-field">
-      <text class="ops-field-label">归属主体</text>
-      <picker mode="selector" range="{{formEntityNames}}" value="{{formEntityIndex}}" bindchange="onFormEntity">
-        <view class="ops-field-input">{{formEntityNames[formEntityIndex] || '请选择'}}</view>
-      </picker>
+<view class="ui-pop-mask" wx:if="{{showForm}}" bindtap="closeForm" catchtouchmove="true">
+  <view class="ui-pop-sheet ops-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ops-sheet-head">
+      <text class="ui-pop-title ops-sheet-title">{{editingId ? '编辑采购' : '新增采购'}}</text>
+      <view class="ui-pop-close" catchtap="closeForm" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
-    <view class="ops-field">
-      <text class="ops-field-label">品名 / 物料</text>
-      <input class="ops-field-input" value="{{form.itemName}}" data-field="itemName" bindinput="onFormInput" placeholder="必填" placeholder-class="ops-ph" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">规格</text>
-      <input class="ops-field-input" value="{{form.spec}}" data-field="spec" bindinput="onFormInput" placeholder="可选" placeholder-class="ops-ph" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">数量</text>
-      <input class="ops-field-input" type="digit" value="{{form.qty}}" data-field="qty" bindinput="onFormInput" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">单位</text>
-      <input class="ops-field-input" value="{{form.unit}}" data-field="unit" bindinput="onFormInput" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">单价（元）</text>
-      <input class="ops-field-input" type="digit" value="{{form.unitPrice}}" data-field="unitPrice" bindinput="onFormInput" placeholder="0" placeholder-class="ops-ph" />
-    </view>
-    <text class="ops-summary-meta" style="margin-bottom: 16rpx;">合计预览 ¥{{formAmountPreview}}</text>
-    <view class="ops-field">
-      <text class="ops-field-label">供应商</text>
-      <input class="ops-field-input" value="{{form.supplier}}" data-field="supplier" bindinput="onFormInput" placeholder-class="ops-ph" />
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">采购日期</text>
-      <picker mode="date" value="{{form.purchaseDate}}" bindchange="onFormDate">
-        <view class="ops-field-input">{{form.purchaseDate || '选择日期'}}</view>
-      </picker>
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">状态</text>
-      <picker mode="selector" range="{{formStatusNames}}" value="{{formStatusIndex}}" bindchange="onFormStatus">
-        <view class="ops-field-input">{{formStatusNames[formStatusIndex] || '草稿'}}</view>
-      </picker>
-    </view>
-    <view class="ops-field">
-      <text class="ops-field-label">备注</text>
-      <input class="ops-field-input" value="{{form.note}}" data-field="note" bindinput="onFormInput" placeholder-class="ops-ph" />
-    </view>
-    <view class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
-  </scroll-view>
+    <scroll-view scroll-y class="ui-pop-body ops-sheet-body">
+      <view class="ops-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
+      <view class="ops-field">
+        <text class="ops-field-label">归属主体</text>
+        <picker mode="selector" range="{{formEntityNames}}" value="{{formEntityIndex}}" bindchange="onFormEntity">
+          <view class="ops-field-input">{{formEntityNames[formEntityIndex] || '请选择'}}</view>
+        </picker>
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">品名 / 物料</text>
+        <input class="ops-field-input" value="{{form.itemName}}" data-field="itemName" bindinput="onFormInput" placeholder="必填" placeholder-class="ops-ph" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">规格</text>
+        <input class="ops-field-input" value="{{form.spec}}" data-field="spec" bindinput="onFormInput" placeholder="可选" placeholder-class="ops-ph" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">数量</text>
+        <input class="ops-field-input" type="digit" value="{{form.qty}}" data-field="qty" bindinput="onFormInput" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">单位</text>
+        <input class="ops-field-input" value="{{form.unit}}" data-field="unit" bindinput="onFormInput" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">单价（元）</text>
+        <input class="ops-field-input" type="digit" value="{{form.unitPrice}}" data-field="unitPrice" bindinput="onFormInput" placeholder="0" placeholder-class="ops-ph" />
+      </view>
+      <text class="ops-summary-meta" style="margin-bottom: 16rpx;">合计预览 ¥{{formAmountPreview}}</text>
+      <view class="ops-field">
+        <text class="ops-field-label">供应商</text>
+        <input class="ops-field-input" value="{{form.supplier}}" data-field="supplier" bindinput="onFormInput" placeholder-class="ops-ph" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">采购日期</text>
+        <picker mode="date" value="{{form.purchaseDate}}" bindchange="onFormDate">
+          <view class="ops-field-input">{{form.purchaseDate || '选择日期'}}</view>
+        </picker>
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">状态</text>
+        <picker mode="selector" range="{{formStatusNames}}" value="{{formStatusIndex}}" bindchange="onFormStatus">
+          <view class="ops-field-input">{{formStatusNames[formStatusIndex] || '草稿'}}</view>
+        </picker>
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">备注</text>
+        <input class="ops-field-input" value="{{form.note}}" data-field="note" bindinput="onFormInput" placeholder-class="ops-ph" />
+      </view>
+      <view class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
+    </scroll-view>
+</view>
 </view>
