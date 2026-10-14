@@ -71,6 +71,56 @@ const apItem = (id, title, extra = {}) => ({
 })
 
 export const SCENES = [
+  /* ── 2026-10-13 藏品库（提审前点名）：高风险一键上下线 / 水印可辨 / 分类展示层 ── */
+  (() => {
+    const pic = `file://${resolve(MP, '..', 'public/images/price-list/blue-morpho-dome-single.jpg')}`
+    const libRow = (id, title, price, o) => ({
+      _id: id, title, price, costPrice: '50', profitRate: o.rate, soldCountDisplay: '0', images: [pic],
+      inArchive: true, isOneOfAKind: !!o.one, isHighRisk: !!o.risk, riskLabel: o.riskLabel || '',
+      isOffShelf: !!o.off, shelfApprovalStatus: o.st || '', shelfWm: o.wm || '', shelfWmClass: o.wmClass || '',
+      craftProcessLabel: '干制标本', craftTypeLabel: '相框', framerName: '阿棋', hasSku: false,
+      seckill: { enabled: false }, groupBuying: { enabled: false }
+    })
+    return {
+      name: 'r10-lib-risk', h: 1700, wxml: () => tabBlock(1), wxss: MGR_CSS,
+      data: {
+        curTab: 1, productLibTab: 'list', artisanEmbed: false,
+        highRiskCount: 3, expiredSeckillCount: 1,
+        productShelfCounts: { all: 5, on: 2, pending: 1, rejected: 1, off: 1 },
+        productArchiveFilter: 'all', productPromoFilter: 'all', productRiskFilter: 'all', productShelfFilter: 'all',
+        searchVal: '', productSort: 'new', productPriceSortLabel: '价格',
+        productSortOptions: [{ key: 'new', label: '最新' }, { key: 'sales', label: '销量' }, { key: 'price', label: '价格', isPrice: true }],
+        products: [
+          libRow('p1', '药食同源手绘中药标本框', '499', { rate: '90.0', risk: true, riskLabel: '三有', wm: '已上架', wmClass: 'approved' }),
+          libRow('p2', '伤寒论中药标本框', '299', { rate: '83.3', risk: true, riskLabel: '保护植物', st: 'pending', wm: '审核中', wmClass: 'pending' }),
+          libRow('p3', '大蓝闪蝶 · 原木框', '399', { rate: '87.5', risk: true, riskLabel: '保护动物' }),
+          libRow('p4', '绿尾大蚕蛾标本框', '299', { rate: '83.3', off: true, wm: '已下架', wmClass: 'offshelf' }),
+          libRow('p5', '金裳凤蝶标本框', '899', { rate: '92.0', one: true, st: 'rejected', wm: '已驳回', wmClass: 'rejected' })
+        ],
+        productTotal: 5, productHasMore: false, productListLoading: false, productListError: false, bulkRiskRunning: false
+      }
+    }
+  })(),
+  (() => {
+    const catTreeView = [
+      { _id: 'c1', name: '昆虫馆', enName: 'INSECTA', totalCount: 128, hiddenCount: 1, children: [
+        { _id: 'c1a', name: '蝴蝶', productCount: 128, isEmpty: false, latinName: 'Lepidoptera' }
+      ] },
+      { _id: 'c2', name: '植物馆', enName: 'PLANTAE', totalCount: 0, hiddenCount: 0, children: [
+        { _id: 'c2a', name: '苔藓', productCount: 0, isEmpty: true, latinName: 'Bryophyta' }
+      ] }
+    ]
+    return {
+      name: 'r10-lib-category', h: 1500, wxml: () => tabBlock(1), wxss: MGR_CSS,
+      data: {
+        curTab: 1, productLibTab: 'category', catZone: 'category', canProductFields: false, artisanEmbed: false,
+        catKeyword: '馆', catSortMode: 'count', catOnlyEmpty: false, catEmptyCount: 2,
+        catMatchSummary: '匹配 2 个一级 · 1 个二级', catTreeView,
+        categoryManageTree: catTreeView, catManageRootNames: ['昆虫馆', '植物馆'],
+        newCatLevel: 1, newCatName: '', newCatEn: '', newCatParentIndex: 0
+      }
+    }
+  })(),
   {
     name: 'r1-hub-boot',
     h: 900,
