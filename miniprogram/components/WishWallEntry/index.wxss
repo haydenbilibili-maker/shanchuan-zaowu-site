@@ -356,7 +356,7 @@
   width: 6rpx;
   height: 6rpx;
   background: #D4BC85;
-  box-shadow: 0 0 8rpx rgba(212, 188, 133, 0.6);
+  box-shadow: none;
 }
 
 /* emoji 降饱和：彩色 emoji 在暗金调里最抢眼，压到与文字同一亮度层 */

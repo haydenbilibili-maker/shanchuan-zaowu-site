@@ -95,7 +95,7 @@
 
 .card-main { margin-top: 20rpx; text-align: center; }
 .symbol { font-size: 22rpx; color: var(--brass-400); letter-spacing: 0.18em; display: block; margin-bottom: 8rpx; }
-.num { font-size: 100rpx; color: var(--color-text-primary); font-weight: bold; font-family: var(--font-mono), 'DIN', sans-serif; letter-spacing: 4rpx; text-shadow: 0 0 30rpx rgba(196, 167, 108,0.4); line-height: 1; }
+.num { font-size: 100rpx; color: var(--color-text-primary); font-weight: bold; font-family: var(--font-mono), 'DIN', sans-serif; letter-spacing: 4rpx; text-shadow: none; line-height: 1; }
 .num.is-pending { color: var(--color-text-secondary); font-size: 72rpx; letter-spacing: 8rpx; }
 .unit { font-size: 24rpx; color: #666; margin-top: 10rpx; display: block; font-family: var(--font-din); letter-spacing: 2rpx; }
 

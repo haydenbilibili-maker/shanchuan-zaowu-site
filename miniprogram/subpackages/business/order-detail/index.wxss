@@ -284,7 +284,7 @@ view, text, image, button { box-sizing: border-box; }
   margin-right: 4rpx;
   font-size: 18rpx;
 }
-.m-price { color: var(--gold); }
+.m-price { color: var(--gold); font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
 .m-price.muted { color: var(--color-text-muted); font-weight: 400; }
 
 
@@ -301,7 +301,7 @@ view, text, image, button { box-sizing: border-box; }
   margin-right: 8rpx;
   font-size: 24rpx;
 }
-.gold-txt { color: var(--gold); font-size: 40rpx; font-family: var(--font-din); }
+.gold-txt { color: var(--gold); font-size: 40rpx; font-family: var(--font-mono); }  /* VIS3 纪律 05：实付金额等宽（第 06 页「实付 ¥ 1,260.00」） */
 .shipping-fee-cell {
   display: flex;
   align-items: baseline;
@@ -847,7 +847,7 @@ view, text, image, button { box-sizing: border-box; }
 .custom-lbl { font-size: 22rpx; color: var(--color-text-secondary); }
 .custom-val { font-size: 24rpx; color: var(--color-text-body); text-align: right; flex: 1; }
 .custom-val.latin { font-style: italic; color: var(--gold); }
-.custom-val.gold { color: var(--gold); }
+.custom-val.gold { color: var(--gold); font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
 
 /* ── 礼赠档案（2026-09-21）：把"这封信写给谁 / 进展到哪 / 回看入口"收在一张卡里 ── */
 .gift-archive { margin: 8rpx 0 24rpx; }

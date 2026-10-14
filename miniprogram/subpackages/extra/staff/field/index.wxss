@@ -805,6 +805,7 @@ page {
 }
 
 .rec-meta {
+  font-family: var(--font-mono);  /* VIS3 纪律 05：金额等宽（¥ 金额 · 时间同行） */
   flex: 1;
   min-width: 0;
   font-size: 22rpx;

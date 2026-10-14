@@ -67,7 +67,7 @@
 
 .star.active {
   color: var(--primary);
-  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.6);
+  text-shadow: none;
 }
 
 .stats-count {

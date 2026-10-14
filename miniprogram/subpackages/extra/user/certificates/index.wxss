@@ -60,10 +60,9 @@ page {
   position: relative;
   border: 10rpx solid rgba(196, 167, 108,0.3);
   border-radius: 16rpx;
-  box-shadow: 
+  box-shadow:
     0 16rpx 48rpx rgba(0,0,0,0.6),
     0 4rpx 16rpx rgba(0,0,0,0.4),
-    0 0 24rpx rgba(196, 167, 108,0.15),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
   overflow: hidden; 
   margin-bottom: 24rpx;
@@ -73,10 +72,9 @@ page {
 .cert-item:active .cert-frame {
   transform: scale(0.98) translateY(-4rpx);
   border-color: rgba(196, 167, 108,0.5);
-  box-shadow: 
+  box-shadow:
     0 12rpx 36rpx rgba(0,0,0,0.7),
     0 2rpx 12rpx rgba(0,0,0,0.5),
-    0 0 32rpx rgba(196, 167, 108,0.25),
     inset 0 1rpx 2rpx rgba(255,255,255,0.1);
 }
 .c-img { 
@@ -108,7 +106,7 @@ page {
   color: rgba(196, 167, 108,0.8); 
   letter-spacing: 3rpx;
   font-weight: 700;
-  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.3);
+  text-shadow: none;
 }
 
 /* 礼赠：受赠（持有人）/ 赠予凭证（送礼人）角标 */
@@ -138,12 +136,11 @@ page {
   background: linear-gradient(135deg, rgba(196, 167, 108,0.15), rgba(196, 167, 108,0.08));
   font-weight: 800;
   letter-spacing: 2rpx;
-  box-shadow: 
+  box-shadow:
     0 4rpx 12rpx rgba(0,0,0,0.4),
-    0 0 16rpx rgba(196, 167, 108,0.3),
     inset 0 1rpx 2rpx rgba(255,255,255,0.1);
   backdrop-filter: blur(8px);
-  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.4);
+  text-shadow: none;
 }
 
 .c-name { 
@@ -163,7 +160,7 @@ page {
   color: rgba(196, 167, 108,0.7);
   font-weight: 600;
   letter-spacing: 2rpx;
-  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.2);
+  text-shadow: none;
 }
 
 .empty-state { 
@@ -186,13 +183,12 @@ page {
   font-weight: 800;
   letter-spacing: 3rpx;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.12), rgba(196, 167, 108,0.06));
-  box-shadow: 
+  box-shadow:
     0 4rpx 12rpx rgba(0,0,0,0.3),
-    0 0 16rpx rgba(196, 167, 108,0.2),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
   backdrop-filter: blur(8px);
   transition: all 0.4s;
-  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.3);
+  text-shadow: none;
 }
 .btn-go-press {
   transform: scale(0.97);

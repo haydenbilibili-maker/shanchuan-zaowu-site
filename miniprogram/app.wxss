@@ -96,6 +96,14 @@ page {
   --tabbar-content-height: 120rpx;
   --tabbar-offset: calc(var(--tabbar-content-height) + env(safe-area-inset-bottom));
   --shadow-museum-warm: 0 8rpx 24rpx rgba(26, 24, 20, 0.45);
+  /* VIS 3.0 纪律 02「克制的金」质感令牌（2026-10-14）：金色只以发丝线出现，不发光。
+     选中 / 强调 → 金线环（blur 0）；卡面 → 内发丝线；浮起 → 中性夜墨投影（不带金）。
+     例外只给「光源」（灯 / 烛 / 火花 / 信号灯），登记在 scripts/audit-vis3-rules.mjs 的 R2_LIGHT_SOURCE。 */
+  --ring-brass: 0 0 0 2rpx rgba(196, 167, 108, 0.55);
+  --ring-brass-soft: 0 0 0 1rpx rgba(196, 167, 108, 0.36);
+  --hairline-brass-inset: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
+  --shadow-lift: 0 8rpx 24rpx rgba(0, 0, 0, 0.36);
+  --shadow-lift-press: 0 4rpx 12rpx rgba(0, 0, 0, 0.32);
   /* 弹层令牌（docs/弹层视觉规范_2026-10-13.md；时长 / 缓动值即契约 C7 §5） */
   --dur-instant: 80ms;
   --dur-fast: 160ms;

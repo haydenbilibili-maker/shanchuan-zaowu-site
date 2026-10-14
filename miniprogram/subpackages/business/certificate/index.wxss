@@ -84,10 +84,9 @@ view, text, image, button { box-sizing: border-box; }
 .cert-shadow-box {
   width: 600rpx; 
   height: 960rpx;
-  box-shadow: 
+  box-shadow:
     0 20rpx 80rpx rgba(0,0,0,0.8),
     0 8rpx 32rpx rgba(0,0,0,0.6),
-    0 0 60rpx rgba(196, 167, 108, 0.2),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
   border: 2rpx solid rgba(196, 167, 108,0.3);
   border-radius: 8rpx;
@@ -181,9 +180,8 @@ view, text, image, button { box-sizing: border-box; }
   font-size: 20rpx; 
   padding: 0; 
   margin: 0;
-  box-shadow: 
+  box-shadow:
     0 4rpx 12rpx rgba(0,0,0,0.3),
-    0 0 16rpx rgba(196, 167, 108,0.2),
     inset 0 1rpx 2rpx rgba(255,255,255,0.1);
   backdrop-filter: blur(8px);
   transition: all 0.3s;
@@ -194,9 +192,8 @@ view, text, image, button { box-sizing: border-box; }
   background: linear-gradient(135deg, rgba(196, 167, 108,0.25), rgba(196, 167, 108,0.15));
   border-color: rgba(196, 167, 108,0.6);
   transform: scale(0.95);
-  box-shadow: 
+  box-shadow:
     0 2rpx 8rpx rgba(0,0,0,0.4),
-    0 0 20rpx rgba(196, 167, 108,0.3),
     inset 0 1rpx 2rpx rgba(255,255,255,0.15);
 }
 .btn-icon { 
@@ -219,8 +216,7 @@ view, text, image, button { box-sizing: border-box; }
   font-size: 30rpx; 
   font-weight: 800; 
   letter-spacing: 3rpx;
-  box-shadow: 
-    0 8rpx 32rpx rgba(196, 167, 108,0.5),
+  box-shadow:
     0 4rpx 16rpx rgba(0,0,0,0.4),
     inset 0 2rpx 4rpx rgba(255,255,255,0.3),
     inset 0 -1rpx 2rpx rgba(0,0,0,0.2);
@@ -245,8 +241,7 @@ view, text, image, button { box-sizing: border-box; }
 }
 .save-btn:active { 
   transform: scale(0.97);
-  box-shadow: 
-    0 6rpx 24rpx rgba(196, 167, 108,0.6),
+  box-shadow:
     0 3rpx 12rpx rgba(0,0,0,0.5),
     inset 0 2rpx 4rpx rgba(255,255,255,0.4);
 }

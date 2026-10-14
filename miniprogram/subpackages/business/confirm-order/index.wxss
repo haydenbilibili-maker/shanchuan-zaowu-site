@@ -418,7 +418,7 @@ view, text, scroll-view { box-sizing: border-box; }
 .custom-label { font-size: 24rpx; color: #A09A90; flex-shrink: 0; }
 .custom-value { font-size: 24rpx; color: #D5D1C8; text-align: right; flex: 1; }
 .custom-value.latin { font-style: italic; color: #C4A76C; }
-.custom-value.gold { color: #C4A76C; }
+.custom-value.gold { color: #C4A76C; font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
 
 /* —— 下单门闸弹层：启程前须知 / 温馨提示 共用面板（内容左齐） —— */
 .specimen-mask { z-index: 820; }

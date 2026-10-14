@@ -602,6 +602,6 @@
   background: rgba(77, 64, 26, 0.28);
 }
 .sku-pill.sold { opacity: 0.45; }
-.sku-pill-meta { font-size: 22rpx; color: #A09A90; flex-shrink: 0; }
+.sku-pill-meta { font-size: 22rpx; color: #A09A90; flex-shrink: 0; font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
 
 .sku-confirm { display: block; flex: none; margin-top: 24rpx; }

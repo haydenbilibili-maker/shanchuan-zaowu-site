@@ -467,7 +467,7 @@ page {
   font-weight: 700;
   line-height: 1;
   color: var(--brass-300);
-  text-shadow: 0 0 12rpx rgba(212, 188, 133, 0.45);
+  text-shadow: none;
 }
 
 .ww-exhibit-copy {
@@ -1134,7 +1134,6 @@ page {
   box-shadow:
     inset 0 0 0 1rpx rgba(250, 246, 237, 0.55),
     inset 0 0 0 6rpx rgba(196, 167, 108, 0.08),
-    inset 0 0 56rpx rgba(196, 167, 108, 0.1),
     0 18rpx 40rpx rgba(0, 0, 0, 0.32);
   animation: ww-wall-in 560ms cubic-bezier(0.22, 0.82, 0.28, 1) both;
 }
@@ -1419,7 +1418,7 @@ page {
   margin-bottom: 12rpx;
   border-radius: 3rpx;
   background: linear-gradient(90deg, transparent, rgba(168, 144, 60, 0.7), transparent);
-  box-shadow: 0 0 12rpx rgba(196, 167, 108, 0.35);
+  box-shadow: none;
 }
 
 .ww-wall-empty-title {
@@ -2306,7 +2305,7 @@ page {
   bottom: 8rpx;
   border-radius: 3rpx;
   background: linear-gradient(180deg, var(--brass-300) 0%, var(--brass-500) 100%);
-  box-shadow: 0 0 12rpx rgba(233, 190, 110, 0.4);
+  box-shadow: none;
 }
 
 .ww-tag-seal.is-hidden {
@@ -2551,7 +2550,7 @@ page {
   opacity: 0;
   /* 与全页动效同一缓动族（ease-out）；此前它是唯一写 `ease` 的一处 */
   animation: ww-heart-float 1.6s ease-out forwards;
-  text-shadow: 0 0 10rpx rgba(233, 190, 110, 0.55);
+  text-shadow: none;
 }
 /* 第一颗（h1）：显式写出颜色/字号/0 延迟 —— 此前 h1 在 WXSS 里**没有任何规则**
    （只有 h2~h5），靠基类兜底。空转的类名会让下一个人以为"h1 是特例"，实际它只是没写。 */
@@ -2598,7 +2597,6 @@ page {
   box-shadow:
     inset 0 0 0 1rpx rgba(250, 246, 237, 0.06),
     inset 0 1rpx 0 rgba(250, 246, 237, 0.12),
-    inset 0 -24rpx 48rpx rgba(196, 167, 108, 0.06),
     0 14rpx 28rpx rgba(0, 0, 0, 0.3);
 }
 .ww-muyu-press { opacity: 0.86; }
@@ -2706,7 +2704,7 @@ page {
   height: 28rpx;
   border-radius: 2rpx;
   background: linear-gradient(180deg, var(--brass-200) 0%, var(--brass-500) 100%);
-  box-shadow: 0 2rpx 6rpx rgba(196, 167, 108, 0.35);
+  box-shadow: none;
 }
 
 .ww-sec-title {

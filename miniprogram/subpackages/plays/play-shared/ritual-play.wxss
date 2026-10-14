@@ -98,7 +98,6 @@
 .rp-hero.is-done .rp-hero-mark {
   box-shadow:
     0 0 0 4rpx rgba(196, 167, 108, 0.42),
-    0 0 22rpx rgba(196, 167, 108, 0.22),
     inset 0 2rpx 0 rgba(250, 246, 237, 0.55);
 }
 
@@ -635,8 +634,7 @@ button.rp-act::after {
   background: linear-gradient(150deg, #F0E2B8 0%, var(--brass-400) 55%, var(--brass-500) 100%);
   border-color: var(--brass-300);
   box-shadow:
-    0 0 0 3rpx rgba(196, 167, 108, 0.24),
-    0 8rpx 20rpx rgba(196, 167, 108, 0.38);
+    0 0 0 3rpx rgba(196, 167, 108, 0.24);
 }
 
 /* ── 留档 ──────────────────────────────────────────────────── */

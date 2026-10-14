@@ -124,12 +124,53 @@ function isGoldColor(s) {
   }
   return false
 }
+/**
+ * 「光源」豁免 —— R2 唯一的例外口径（2026-10-14 全站去光时定，**每条都带理由**）。
+ * 纪律 02 说的是「金色不当装饰」：文字辉光、按钮光晕、卡面外发光、选中态光晕一律去掉
+ * （改为金线环 `--ring-brass` / 内发丝线 `--hairline-brass-inset` / 中性投影 `--shadow-lift`）。
+ * 但**本身就是光源**的元素（灯、烛、星点、信号灯、落愿那一瞬的回响），光就是它的内容，去掉就不成立。
+ * 按「文件 → 选择器正则」登记；**不在表里的发光一律硬红**。新增一条必须写清它为什么是光源。
+ */
+const R2_LIGHT_SOURCE = {
+  'subpackages/business/components/CouponPrintMint/index.wxss': [
+    [/^\.signal-light\b/, '印券机信号灯（与 app.wxss 全局信号灯同族）'],
+    [/^50%$/, '信号灯闪烁关键帧'],
+    [/^\.printer-slot$/, '出券口指示光']
+  ],
+  'subpackages/feature/components/CouponPrintMint/index.wxss': [
+    [/^\.signal-light\b/, '同上（分包副本）'], [/^50%$/, '同上'], [/^\.printer-slot$/, '同上']
+  ],
+  'components/WishWallEntry/index.wxss': [
+    [/wish-wall-entry-lamp$/, '入口的一盏灯（祈福墙「灯」意象）']
+  ],
+  'subpackages/feature/wish-wall/index.wxss': [
+    [/^\.ww-lantern$/, '厅顶灯笼'],
+    [/^\.ww-lamp-dot$/, '灯点'],
+    [/^\.ww-dm-spark$/, '弹幕落点火花'],
+    [/^\.ww-dm-slip\.is-landing$/, '落愿瞬间回响（瞬态，非常驻）'],
+    [/^\.ww-desk\.is-posted$/, '落愿瞬间回响（瞬态）'],
+    [/^\.ww-tag\.is-fresh$/, '刚落愿的签（瞬态）'],
+    [/^\.ww-echo$/, '墙脚回声带（瞬态）'],
+    [/^30%$/, '墙体回响关键帧（瞬态）']
+  ],
+  'subpackages/plays/play-zodiac/index.wxss': [
+    [/^\.rp-dot$/, '星盘星点'],
+    [/^\.rp-wheel-needle::before$/, '指针星芒']
+  ]
+}
+const isLightSource = (relPath, sel) => {
+  const key = Object.keys(R2_LIGHT_SOURCE).find((k) => relPath.endsWith(k))
+  return !!key && R2_LIGHT_SOURCE[key].some(([re]) => re.test(sel))
+}
+
 function ruleR2(relPath, src, kind) {
   if (kind !== 'wxss') return []
   const out = []
   const css = stripComments(src)
   for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    const sels = m[1].trim().replace(/\s+/g, ' ').slice(0, 60)
+    const selFull = m[1].trim().replace(/\s+/g, ' ')
+    if (isLightSource(relPath, selFull)) continue
+    const sels = selFull.slice(0, 60)
     for (const s of m[2].matchAll(/(text-shadow|box-shadow)\s*:([^;}]+)/g)) {
       const val = s[2]
       if (!isGoldColor(val)) continue
@@ -147,6 +188,9 @@ function ruleR2(relPath, src, kind) {
         const blur = px.length >= 3 ? Math.abs(px[2]) : 0
         const inset = /inset/.test(layer)
         if (inset && px.every((n) => n <= 4)) continue               // 纯发丝线 = 合规
+        // 第七次校准（2026-10-14）：亚像素凹刻高光（偏移 ≤ 2rpx、blur ≤ 1rpx）也是发丝线 ——
+        // UserVipCard 金属卡面的刻字「上暗下亮」就是这种写法（`1rpx 1.2rpx 0.6rpx`），不是辉光。
+        if (!inset && blur <= 1 && px.slice(0, 2).every((n) => Math.abs(n) <= 2)) continue
         if (blur > 4 || (!inset && blur > 0)) {
           out.push(`金色发光：${sels} → ${layer.trim().replace(/\s+/g, ' ').slice(0, 70)}`)
         }
@@ -508,7 +552,8 @@ const RULES = {
  * about 仪式版面）—— 规范第 04 页说「宣纸为纸主场」，那些微光可能是刻意的设计，
  * 与"克制"的关系需要产品负责人拍板，不是纯静态能判的（见落地台账 §4-1）。
  * **拍板后把它从这张表里删掉，R2 即成为硬判据，基线随之清零。** */
-const ADVISORY = { R2: true, R3: true, R5: true, R6: 'partial', R7: true }
+const ADVISORY = { R3: true, R5: true, R6: 'partial', R7: true }
+// 2026-10-14：R2 已摘出参考项 → **硬判据**。全站 74 处装饰性金光已去掉，剩下 19 处是光源，登记在 R2_LIGHT_SOURCE。
 
 /* ── 自检：喂合成样本，证明每条判据都会红 ───────────────────────────────── */
 if (has('--selftest')) {
@@ -521,6 +566,13 @@ if (has('--selftest')) {
       '.a { text-shadow: 0 0 12rpx rgba(212, 188, 133, 0.45); }', '金色发光'],
     ['R2-neg', 'miniprogram/x/index.wxss', 'wxss',
       '.a { box-shadow: inset 0 1rpx 0 rgba(212, 188, 133, 0.08); }', null],   // 发丝线 = 合规
+    ['R2-neg2', 'miniprogram/x/index.wxss', 'wxss',
+      '.a { text-shadow: 1rpx 1.2rpx 0.6rpx rgba(224, 196, 132, 0.42); }', null],   // 亚像素凹刻高光 = 发丝线
+    ['R2-neg3', 'miniprogram/subpackages/feature/wish-wall/index.wxss', 'wxss',
+      '.ww-lamp-dot { box-shadow: 0 0 8rpx rgba(233, 190, 110, 0.7); }', null],     // 登记过的光源
+    // 光源豁免只认**登记的选择器**：同一文件里别的元素发光仍须红
+    ['R2-pos2', 'miniprogram/subpackages/feature/wish-wall/index.wxss', 'wxss',
+      '.ww-sec-mark { box-shadow: 0 2rpx 12rpx rgba(196, 167, 108, 0.35); }', '金色发光'],
     ['R3', 'miniprogram/x/index.wxml', 'wxml',
       '<view class="row"><view class="btn-primary">A</view><view class="btn-primary">B</view></view>', '并列'],
     ['R3-neg', 'miniprogram/x/index.wxml', 'wxml',

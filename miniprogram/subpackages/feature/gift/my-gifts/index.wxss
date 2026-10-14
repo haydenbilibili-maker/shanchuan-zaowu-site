@@ -943,7 +943,7 @@ page {
 .prog-step.current .prog-dot {
   background: #E9A23B;
   border-color: #E9A23B;
-  box-shadow: 0 0 6rpx rgba(233, 162, 59, 0.45);
+  box-shadow: 0 0 0 4rpx rgba(233, 162, 59, 0.18);
 }
 .prog-lbl {
   font-size: 16rpx;

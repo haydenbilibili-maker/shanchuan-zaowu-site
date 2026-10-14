@@ -92,7 +92,7 @@ view, text, image, map { box-sizing: border-box; }
   margin-bottom: 24rpx; 
   font-weight: 800; 
   font-family: 'DIN';
-  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.4);
+  text-shadow: none;
 }
 .h-title { 
   font-size: 88rpx; 
@@ -225,7 +225,7 @@ view, text, image, map { box-sizing: border-box; }
   font-weight: 800; 
   border-bottom: 2rpx solid var(--gold); 
   padding-bottom: 12rpx;
-  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.4);
+  text-shadow: none;
   position: relative;
   display: inline-block;
   width: auto;
@@ -308,7 +308,7 @@ view, text, image, map { box-sizing: border-box; }
   letter-spacing: 4rpx; 
   text-transform: uppercase;
   font-weight: 700;
-  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.3);
+  text-shadow: none;
   margin-top: 8rpx;
   font-family: 'DIN', sans-serif;
 }
@@ -382,10 +382,9 @@ view, text, image, map { box-sizing: border-box; }
   border-radius: 12rpx;
   padding: 44rpx;
   position: relative;
-  box-shadow: 
+  box-shadow:
     0 12rpx 40rpx rgba(0,0,0,0.6),
     0 4rpx 16rpx rgba(0,0,0,0.4),
-    0 0 24rpx rgba(196, 167, 108,0.1),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
   backdrop-filter: blur(8px);
 }
@@ -429,7 +428,7 @@ view, text, image, map { box-sizing: border-box; }
   margin: 0 24rpx; 
   color: var(--gold); 
   font-size: var(--fs-16);
-  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.5);
+  text-shadow: none;
   animation: dot-pulse 2s ease-in-out infinite;
 }
 @keyframes dot-pulse {
@@ -458,7 +457,7 @@ view, text, image, map { box-sizing: border-box; }
   flex-shrink: 0;
   font-weight: 700;
   font-family: 'DIN';
-  text-shadow: 0 0 8rpx rgba(196, 167, 108,0.3);
+  text-shadow: none;
   text-align: left;
   line-height: 1.8;
 }
@@ -474,12 +473,12 @@ view, text, image, map { box-sizing: border-box; }
   text-decoration: underline; 
   text-underline-offset: 4rpx;
   color: var(--gold);
-  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.4);
+  text-shadow: none;
   transition: all 0.3s;
 }
 .val.underline:active {
   color: #E0CFA3;
-  text-shadow: 0 0 16rpx rgba(196, 167, 108,0.6);
+  text-shadow: none;
 }
 
 /* 地图 - 黑金质感 */
@@ -491,18 +490,16 @@ view, text, image, map { box-sizing: border-box; }
   filter: brightness(0.7) contrast(1.2) saturate(1.1) grayscale(0.5) sepia(0.1);
   border-radius: 8rpx;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 8rpx 24rpx rgba(0,0,0,0.5),
-    0 0 16rpx rgba(196, 167, 108,0.1),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
   transition: all 0.3s;
 }
 .map-box:active {
   border-color: rgba(196, 167, 108,0.5);
   filter: brightness(0.8) contrast(1.3) saturate(1.2) grayscale(0.3) sepia(0.15);
-  box-shadow: 
+  box-shadow:
     0 12rpx 32rpx rgba(0,0,0,0.6),
-    0 0 24rpx rgba(196, 167, 108,0.2),
     inset 0 1rpx 2rpx rgba(255,255,255,0.1);
   transform: scale(0.99);
 }
@@ -563,10 +560,9 @@ view, text, image, map { box-sizing: border-box; }
   border-radius: 20rpx;
   font-weight: 700;
   font-family: 'DIN';
-  text-shadow: 0 0 12rpx rgba(196, 167, 108,0.4);
-  box-shadow: 
+  text-shadow: none;
+  box-shadow:
     0 4rpx 12rpx rgba(0,0,0,0.4),
-    0 0 16rpx rgba(196, 167, 108,0.2),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
 }
 

@@ -25,7 +25,6 @@
       transparent 1.6deg 30deg
     );
   box-shadow:
-    inset 0 0 42rpx rgba(196, 167, 108, 0.24),
     0 0 0 10rpx rgba(196, 167, 108, 0.1),
     0 10rpx 26rpx rgba(0, 0, 0, 0.4);
 }
@@ -73,7 +72,7 @@
   background: linear-gradient(180deg, #FAF6ED 0%, var(--brass-400) 100%);
   transform-origin: 2.5rpx 104rpx;
   z-index: 1;
-  box-shadow: 0 0 10rpx rgba(196, 167, 108, 0.4);
+  box-shadow: none;
 }
 
 /* 针尖：一点铜滴，扫过时更像「指」 */
@@ -122,7 +121,6 @@
   border-radius: var(--radius-xl);
   box-shadow:
     inset 0 0 0 1rpx rgba(250, 246, 237, 0.08),
-    inset 0 0 56rpx rgba(196, 167, 108, 0.1),
     0 20rpx 44rpx rgba(0, 0, 0, 0.42);
 }
 

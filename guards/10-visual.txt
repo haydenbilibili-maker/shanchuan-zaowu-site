@@ -13,5 +13,5 @@ npm run check:modal-style
 # 2026-10-13：弹层视觉规范（miniprogram/docs/弹层视觉规范_2026-10-13.md）—— 零件 / 令牌在场、已迁移弹层不回退、自写遮罩按文件只减不增
 npm run check:pop-spec
 npm run check:mp-contrast
-# 2026-10-13：VIS 3.0 八条视觉纪律（miniprogram/docs/VIS3落地规范_2026-10-13.md）—— 硬项须为 0；静态判不了的（R2 纸品微光 / R3 互斥按钮 / R5 等宽字 / R7 主图渐隐）走参考项基线棘轮，只许变小
+# 2026-10-13：VIS 3.0 八条视觉纪律（miniprogram/docs/VIS3落地规范_2026-10-13.md）—— 硬项须为 0（2026-10-14 起 R2「克制的金」为硬判据，光源例外登记在 R2_LIGHT_SOURCE）；静态判不了的（R3 互斥按钮 / R5 等宽字 / R7 主图渐隐）走参考项基线棘轮，只许变小
 npm run check:vis3-rules

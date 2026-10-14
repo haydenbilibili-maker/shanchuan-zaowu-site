@@ -761,7 +761,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .week-split-row { display: flex; justify-content: space-between; align-items: baseline; }
 .week-split-l { font-size: 20rpx; color: var(--color-text-secondary); }
 .week-split-v {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);  /* VIS3 纪律 05：金额等宽 */
   font-size: 26rpx;
   color: var(--color-text-body);
   font-weight: 600;
@@ -809,10 +809,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  box-shadow: 
-    0 8rpx 24rpx rgba(196, 167, 108,0.6),
-    0 0 0 4rpx rgba(196, 167, 108,0.2),
-    0 0 40rpx rgba(196, 167, 108,0.5);
+  box-shadow:
+    var(--shadow-lift),
+    0 0 0 4rpx rgba(196, 167, 108,0.2);
   z-index: 90; 
   padding-bottom: 8rpx;
   border: 2rpx solid rgba(255,255,255,0.3);
@@ -822,16 +821,10 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .fab-scan-icon { width: 44rpx; height: 44rpx; }
 @keyframes fab-pulse {
   0%, 100% {
-    box-shadow: 
-      0 8rpx 24rpx rgba(196, 167, 108,0.6),
-      0 0 0 4rpx rgba(196, 167, 108,0.2),
-      0 0 40rpx rgba(196, 167, 108,0.5);
+    box-shadow: var(--shadow-lift), 0 0 0 4rpx rgba(196, 167, 108,0.2);
   }
   50% {
-    box-shadow: 
-      0 8rpx 32rpx rgba(196, 167, 108,0.8),
-      0 0 0 6rpx rgba(196, 167, 108,0.3),
-      0 0 60rpx rgba(196, 167, 108,0.7);
+    box-shadow: var(--shadow-lift), 0 0 0 6rpx rgba(196, 167, 108,0.3);
   }
 }
 
