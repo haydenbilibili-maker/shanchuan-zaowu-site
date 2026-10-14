@@ -96,15 +96,18 @@ export const SCENES = [
       all: { total: 255, on: 231, pending: 0, rejected: 0, off: 24, missingCert: 244 },
       tiers: {
         high: { total: 11, on: 0, pending: 0, rejected: 0, off: 11, missingCert: 0, byProtection: { sanyou: 0, protected_plant: 1, protected_animal: 10 } },
-        medium: { total: 216, on: 204, pending: 0, rejected: 0, off: 12, missingCert: 216, byBasis: { taxonomy: 201, category: 15 } },
-        normal: { total: 28, on: 27, pending: 0, rejected: 0, off: 1, missingCert: 28 }
+        medium: { total: 43, on: 37, pending: 0, rejected: 0, off: 6, missingCert: 43, byGroup: [
+          { name: '爬行纲', count: 20 }, { name: '哺乳纲', count: 12 }, { name: '鸟纲', count: 7 },
+          { name: '两栖纲', count: 2 }, { name: '辐鳍鱼纲', count: 1 }, { name: '头足类', count: 1 }
+        ] },
+        normal: { total: 201, on: 194, pending: 0, rejected: 0, off: 7, missingCert: 201 }
       }
     }
     return {
       name: 'r10-lib-risk', h: 2100, wxml: () => tabBlock(1), wxss: MGR_CSS,
       data: {
         curTab: 1, productLibTab: 'risk', artisanEmbed: false,
-        highRiskCount: 11, mediumRiskCount: 216, expiredSeckillCount: 1,
+        highRiskCount: 11, mediumRiskCount: 43, expiredSeckillCount: 1,
         riskOverview: overview, riskOverviewLoading: false, riskOverviewError: false,
         riskShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
         productShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
@@ -115,11 +118,15 @@ export const SCENES = [
         products: [
           riskRow('p1', '暹罗鳄标本 · 树脂封存', { tier: 'high', tierLabel: '高风险', riskLabel: '保护动物', root: '动物馆', cat: '爬行纲', off: true, wm: '已下架', wmClass: 'offshelf' }),
           riskRow('p2', '红豆杉植物标本框', { tier: 'high', tierLabel: '高风险', riskLabel: '保护植物', root: '植物馆', cat: '裸子植物', off: true, wm: '已下架', wmClass: 'offshelf' }),
-          riskRow('p3', '大蓝闪蝶 · 原木框', { tier: 'medium', tierLabel: '中等风险', basis: '学名属动物界', root: '昆虫馆', cat: '鳞翅目 · 蝴蝶', wm: '已上架', wmClass: 'approved' }),
-          riskRow('p4', '巨扁竹节虫标本框', { tier: 'medium', tierLabel: '中等风险', basis: '所属分类属动物界', root: '昆虫馆', cat: '其他昆虫', off: true, wm: '已下架', wmClass: 'offshelf' }),
-          riskRow('p5', '蝉与蝽 · 干制标本', { tier: 'medium', tierLabel: '中等风险', basis: '学名属动物界', root: '昆虫馆', cat: '半翅目 · 蝉与蝽', one: true, wm: '已上架', wmClass: 'approved' })
+          // 中等风险只认「动物馆」分类（2026-10-14 收窄）—— 所以样本都是动物馆下的脊椎动物
+          riskRow('p3', '鬃狮蜥标本 · 生态框', { tier: 'medium', tierLabel: '中等风险', basis: '所属分类：动物馆', root: '动物馆', cat: '爬行纲', wm: '已上架', wmClass: 'approved' }),
+          riskRow('p4', '孔雀标本 · 立姿', { tier: 'medium', tierLabel: '中等风险', basis: '所属分类：动物馆', root: '动物馆', cat: '鸟纲', off: true, wm: '已下架', wmClass: 'offshelf' }),
+          riskRow('p5', '侏儒兔标本 · 树脂封存', { tier: 'medium', tierLabel: '中等风险', basis: '所属分类：动物馆', root: '动物馆', cat: '哺乳纲', one: true, wm: '已上架', wmClass: 'approved' }),
+          // 对照：昆虫馆的蝴蝶在**旧**口径（动物界）里算中等风险，收窄后归「普通」——
+          // 这一行就是「缩小覆盖面」在界面上的样子
+          riskRow('p6', '大蓝闪蝶 · 原木框', { tier: 'normal', tierLabel: '普通', root: '昆虫馆', cat: '鳞翅目 · 蝴蝶', wm: '已上架', wmClass: 'approved' })
         ],
-        productTotal: 216, productHasMore: true, productListLoading: false, productListError: false
+        productTotal: 255, productHasMore: true, productListLoading: false, productListError: false
       }
     }
   })(),
@@ -137,30 +144,33 @@ export const SCENES = [
       name: 'r10-lib-risk-medium', h: 1500, wxml: () => tabBlock(1), wxss: MGR_CSS,
       data: {
         curTab: 1, productLibTab: 'risk', artisanEmbed: false,
-        highRiskCount: 11, mediumRiskCount: 216, expiredSeckillCount: 0,
+        highRiskCount: 11, mediumRiskCount: 43, expiredSeckillCount: 0,
         riskOverview: {
           scanned: 255, truncated: false,
           all: { total: 255, on: 231, pending: 0, rejected: 0, off: 24, missingCert: 244 },
           tiers: {
             high: { total: 11, on: 0, pending: 0, rejected: 0, off: 11, missingCert: 0, byProtection: { sanyou: 0, protected_plant: 1, protected_animal: 10 } },
-            medium: { total: 216, on: 204, pending: 0, rejected: 0, off: 12, missingCert: 216, byBasis: { taxonomy: 201, category: 15 } },
-            normal: { total: 28, on: 27, pending: 0, rejected: 0, off: 1, missingCert: 28 }
+            medium: { total: 43, on: 37, pending: 0, rejected: 0, off: 6, missingCert: 43, byGroup: [
+              { name: '爬行纲', count: 20 }, { name: '哺乳纲', count: 12 }, { name: '鸟纲', count: 7 },
+              { name: '两栖纲', count: 2 }, { name: '辐鳍鱼纲', count: 1 }, { name: '头足类', count: 1 }
+            ] },
+            normal: { total: 201, on: 194, pending: 0, rejected: 0, off: 7, missingCert: 201 }
           }
         },
         riskOverviewLoading: false, riskOverviewError: false,
-        riskShelfCounts: { all: 216, on: 204, pending: 0, rejected: 0, off: 12 },
+        riskShelfCounts: { all: 43, on: 37, pending: 0, rejected: 0, off: 6 },
         productShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
         productArchiveFilter: 'all', productPromoFilter: 'all', productRiskFilter: 'medium', productShelfFilter: 'all',
         searchVal: '', productSort: 'new', productPriceSortLabel: '价格',
         productSortOptions: [{ key: 'new', label: '最新' }, { key: 'sales', label: '销量' }, { key: 'price', label: '价格', isPrice: true }],
         bulkRiskRunning: 'medium', riskCopyRunning: true,
         products: [
-          row('m1', '绿灰蝶手链', { basis: '学名属动物界', root: '首饰馆', cat: '蝴蝶首饰' }),
-          row('m2', '玫瑰俏眼蝶闹钟', { basis: '所属分类属动物界', root: '昆虫馆', cat: '鳞翅目 · 蝴蝶' }),
-          row('m3', '创意贝壳标本框', { basis: '学名属动物界', root: '海洋馆', cat: '腹足纲 · 贝壳' }),
-          row('m4', '巴普洛夫菊石装饰框', { basis: '学名属动物界', root: '矿石馆', cat: '化石', off: true })
+          row('m1', '鬃狮蜥标本 · 生态框', { basis: '所属分类：动物馆', root: '动物馆', cat: '爬行纲' }),
+          row('m2', '孔雀标本 · 立姿', { basis: '所属分类：动物馆', root: '动物馆', cat: '鸟纲' }),
+          row('m3', '侏儒兔标本 · 树脂封存', { basis: '所属分类：动物馆', root: '动物馆', cat: '哺乳纲' }),
+          row('m4', '水母浸液标本', { basis: '所属分类：动物馆', root: '动物馆', cat: '两栖纲', off: true })
         ],
-        productTotal: 216, productHasMore: true, productListLoading: false, productListError: false
+        productTotal: 43, productHasMore: true, productListLoading: false, productListError: false
       }
     }
   })(),
@@ -181,7 +191,7 @@ export const SCENES = [
       name: 'r10-lib-list', h: 1500, wxml: () => tabBlock(1), wxss: MGR_CSS,
       data: {
         curTab: 1, productLibTab: 'list', artisanEmbed: false,
-        highRiskCount: 11, mediumRiskCount: 216, expiredSeckillCount: 1,
+        highRiskCount: 11, mediumRiskCount: 43, expiredSeckillCount: 1,
         productShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
         riskShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
         productArchiveFilter: 'all', productPromoFilter: 'all', productRiskFilter: 'all', productShelfFilter: 'all',

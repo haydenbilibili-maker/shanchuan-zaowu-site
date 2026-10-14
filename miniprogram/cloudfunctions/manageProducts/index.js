@@ -7,14 +7,15 @@
  *                     giftScene: 可选，按 products.giftScenes 含该 key 过滤
  *                     riskFilter（2026-10-13 新增，不传 = all = 与改前逐字一致）:
  *                       high   = 保护类（三有 / 保护植物 / 保护动物）
- *                       medium = **动物类**（taxonomy 界为动物界，或所属分类属动物界）且**不含保护类**（与 high 互斥）
+ *                       medium = **所属分类在「动物馆」下**且**不含保护类**（与 high 互斥）
+ *                                （2026-10-14 收窄：不再看 taxonomy.kingdom；产品负责人「而非动物界」）
  *                       normal = **既不是 high 也不是 medium**（2026-10-14 修正：原为「none / 缺失」，
- *                                那会把 216 件中等风险再包一遍，三层相加 ≠ 全库）
+ *                                那会把中等风险那批再包一遍，三层相加 ≠ 全库）
  *                     shelfFilter（同日新增，不传 = all）: on | off | pending | rejected（优先级同 shelfCounts）
  *                     withRiskMeta（2026-10-14 新增，不传 = 逐字同改前）:
- *                       每行附加 riskTier(high|medium|normal) / riskBasis(protection|taxonomy|category) / certMissing
+ *                       每行附加 riskTier(high|medium|normal) / riskBasis(protection|category) / certMissing
  *   riskOverview      只读风险分层概览 { mineOnly? } → { all, tiers:{high,medium,normal}, scanned, truncated }
- *                     tiers 互斥穷尽（total 相加 = all.total）；high.byProtection / medium.byBasis / *.missingCert
+ *                     tiers 互斥穷尽（total 相加 = all.total）；high.byProtection / medium.byGroup / *.missingCert
  *   upsert            新建 / 更新商品（更新时剥离 isOffShelf；上架走 manageApprovals）
  *   patch             单条字段补丁（白名单，不含 isOffShelf）
  *   batchPatch        批量补丁 { items: [{ productId, data }] }
@@ -63,15 +64,22 @@ const db = cloud.database()
 const PROTECTED_TYPES = ['sanyou', 'protected_plant', 'protected_animal']
 
 /**
- * 「中等风险」口径（产品负责人 2026-10-13）：**动物类藏品**。
- * ⚠️ 与高风险**互斥**：保护类一律归高风险（含保护动物），中等风险 = 动物类 − 保护类 ——
- * 否则同一件会同时落进两个「一键上下线」，计数重复、两次操作互相打架。
- * 判定取**两级信号**（并集）：
- *   ① 商品自己的 `taxonomy.kingdom`（落库时经 toChineseTaxonomy 归一为「动物界」）；
- *   ② 商品所属分类（categoryId / rootCategoryId）指向动物界分类 —— 兜底 taxonomy 为空的历史商品。
- *   ③ 保护动物（protected_animal）必然动物。
+ * 「中等风险」口径（**产品负责人 2026-10-14 第二轮指令收窄**）：**所属分类在「动物馆」下的藏品**。
+ *
+ * 沿革（别再把口径改回去）：
+ *   2026-10-13 第一版 = **动物界**（`taxonomy.kingdom ∈ 动物界/Animalia` ∨ 所属分类指向动物界分类），
+ *     实测命中 216 件 —— 把昆虫馆 121 / 海洋馆 28 / 首饰馆 18（动物源首饰）/ 衍生品 2 /
+ *     矿石馆 3（化石、石英）/ 植物馆 1 全扫了进来。产品负责人 2026-10-14 明确：
+ *     「**中等风险藏品仅限于分类中为动物馆中的藏品，而非动物界；缩小覆盖面**」。
+ *   2026-10-14 第二版（现行）= **只认分类**：`categoryId / rootCategoryId ∈ 动物馆子树`
+ *     （动物馆本身 + 哺乳纲 / 爬行纲 / 鸟纲 / 两栖纲 / 辐鳍鱼纲 / 头足类），实测 216 → **43**。
+ *     **不再读 `taxonomy.kingdom`** —— 学名属于哪一界不再参与"算不算中等风险"的判定。
+ *
+ * ⚠️ 与高风险**互斥**：保护类一律归高风险（含保护动物），中等风险 = 动物馆 − 保护类 ——
+ *    否则同一件会同时落进两个「一键上下线」，计数重复、两次操作互相打架。
+ * ⚠️ 分类名是**一级分类的中文名**；id 每次现查（不写死），改分类树不需要改代码。
  */
-const ANIMAL_KINGDOMS = ['动物界', 'Animalia', 'animalia']
+const ANIMAL_HALL_NAME = '动物馆'
 
 const ALLOWED_FIELDS = [
   'title', 'latinName', 'price', 'costPrice', 'stock', 'hasSku', 'skus', 'skuDimensions',
@@ -728,23 +736,32 @@ function compareProductsForSort(a, b, sortBy) {
 }
 
 /**
- * 动物界分类的 id（含一级与二级）—— 「中等风险 = 动物类」的兜底信号。
- * 只在 riskFilter==='medium' 时查一次；categories 是小集合（~30 条），失败就退化为「只认商品 taxonomy」。
+ * 「动物馆」分类子树的 id（一级 `动物馆` + 它的全部二级）。
+ * 只在 riskFilter 走 medium / normal，或 `withRiskMeta` 时查一次；
+ * categories 是小集合（现 ~63 条），**id 每次现查不写死**（改分类树不用改代码），失败就返回空 = 中等风险为空。
+ *
+ * 为什么按"一级分类名"找根：`categories` 里一级的 `parentId` 为空，二级带 `parentId`；
+ * 先按名字取根，再取 `parentId === 根` 的二级 —— 两步都能命中索引，比一次全表读更省。
  */
-async function loadAnimalCategoryIds() {
-  const _ = db.command
+async function loadAnimalHallCategoryIds() {
   try {
-    const res = await db.collection('categories')
-      .where(_.or([
-        { 'taxonomy.kingdom': _.in(ANIMAL_KINGDOMS) },
-        { 'taxonomy.kingdomLatin': _.in(ANIMAL_KINGDOMS) }
-      ]))
+    const rootRes = await db.collection('categories')
+      .where({ name: ANIMAL_HALL_NAME })
+      .limit(20)
+      .field({ _id: true, parentId: true })
+      .get()
+    const roots = (rootRes && rootRes.data) || []
+    const root = roots.find((c) => c && !c.parentId) || roots[0]
+    if (!root || !root._id) return []
+    const childRes = await db.collection('categories')
+      .where({ parentId: root._id })
       .limit(200)
       .field({ _id: true })
       .get()
-    return (res && res.data ? res.data : []).map((c) => (c && c._id) || '').filter(Boolean)
+    const children = ((childRes && childRes.data) || []).map((c) => (c && c._id) || '').filter(Boolean)
+    return [root._id, ...children]
   } catch (e) {
-    console.warn('loadAnimalCategoryIds', e && e.message)
+    console.warn('loadAnimalHallCategoryIds', e && e.message)
     return []
   }
 }
@@ -763,7 +780,7 @@ function buildScopeCondition(event, actor, verifiedFramerId) {
   return _.or(orParts)
 }
 
-function buildListWhere(event, actor, verifiedFramerId, animalCategoryIds = []) {
+function buildListWhere(event, actor, verifiedFramerId, animalHallCategoryIds = []) {
   const _ = db.command
   const keyword = String((event && event.keyword) || '').trim().slice(0, 64)
   const archiveFilter = String((event && event.archiveFilter) || 'all').trim()
@@ -790,31 +807,30 @@ function buildListWhere(event, actor, verifiedFramerId, animalCategoryIds = []) 
 
   if (riskFilter === 'high') conditions.push({ protectionType: _.in(PROTECTED_TYPES) })
   else if (riskFilter === 'medium') {
-    // 中等风险 = 动物类 − 保护类（两个「一键上下线」入口互斥，见 ANIMAL_KINGDOMS 注释）
-    const animalSignals = [
-      { 'taxonomy.kingdom': _.in(ANIMAL_KINGDOMS) },
-      { 'taxonomy.kingdomLatin': _.in(ANIMAL_KINGDOMS) },
-      { protectionType: 'protected_animal' }
-    ]
-    if (animalCategoryIds.length) {
-      animalSignals.push({ categoryId: _.in(animalCategoryIds) })
-      animalSignals.push({ rootCategoryId: _.in(animalCategoryIds) })
+    // 中等风险 = **所属分类在「动物馆」下** − 保护类（两个「一键上下线」入口互斥，见 ANIMAL_HALL_NAME 注释）。
+    // 2026-10-14 收窄：**不再读 taxonomy.kingdom**（产品负责人：「仅限于分类中为动物馆中的藏品，而非动物界」）。
+    // 分类查不到（hallIds 为空）时**不退化**成"全库都算中等风险" —— 宁可这一层为空，也不能把范围偷偷放大。
+    const mediumConds = [{ protectionType: _.nin(PROTECTED_TYPES) }]
+    if (animalHallCategoryIds.length) {
+      mediumConds.push(_.or([
+        { categoryId: _.in(animalHallCategoryIds) },
+        { rootCategoryId: _.in(animalHallCategoryIds) }
+      ]))
+    } else {
+      // 哨兵 id：命中零条（比"不追加条件"安全 —— 不追加就等于"全库都算中等风险"，那是把范围偷偷放大）
+      mediumConds.push({ _id: '__animal_hall_unavailable__' })
     }
-    conditions.push(_.and([_.or(animalSignals), { protectionType: _.nin(PROTECTED_TYPES) }]))
+    conditions.push(_.and(mediumConds))
   } else if (riskFilter === 'normal') {
-    // 「普通」= **既不是高风险（保护类）也不是中等风险（动物类）**。
+    // 「普通」= **既不是高风险（保护类）也不是中等风险（动物馆）**。
     // 2026-10-14 修正：原来是「protectionType 为 none / 缺失」（= 244 件），
-    // 而中等风险那 216 件里绝大多数的 protectionType 恰好就是 none —— 于是「普通」把中等风险
-    // 又包了一遍，三层相加 11+216+244=471 ≠ 全库 255。分层计数加不回总数，产品负责人一眼就会问。
+    // 而中等风险那批里绝大多数的 protectionType 恰好就是 none —— 于是「普通」把中等风险
+    // 又包了一遍，三层相加 ≠ 全库。分层计数加不回总数，产品负责人一眼就会问。
     // 现在三层与 `riskTierOf`（内存同源判据）**同一个划分**：互斥、穷尽、相加 = 全库。
-    const notAnimal = [
-      { protectionType: _.nin(PROTECTED_TYPES) },
-      { 'taxonomy.kingdom': _.nin(ANIMAL_KINGDOMS) },
-      { 'taxonomy.kingdomLatin': _.nin(ANIMAL_KINGDOMS) }
-    ]
-    if (animalCategoryIds.length) {
-      notAnimal.push({ categoryId: _.nin(animalCategoryIds) })
-      notAnimal.push({ rootCategoryId: _.nin(animalCategoryIds) })
+    const notAnimal = [{ protectionType: _.nin(PROTECTED_TYPES) }]
+    if (animalHallCategoryIds.length) {
+      notAnimal.push({ categoryId: _.nin(animalHallCategoryIds) })
+      notAnimal.push({ rootCategoryId: _.nin(animalHallCategoryIds) })
     }
     conditions.push(_.and(notAnimal))
   }
@@ -853,47 +869,38 @@ function buildListWhere(event, actor, verifiedFramerId, animalCategoryIds = []) 
  *
  * 为什么要有内存版：概览要把**每一件**归到 high / medium / normal，DB 的 `where` 只能回答
  * 「符合条件的有几件」。两层判据并存 = 迟早分叉，所以：
- *   · 常量只有一份（PROTECTED_TYPES / ANIMAL_KINGDOMS），两边都引用它；
- *   · 信号清单只有一份语义（保护类 / taxonomy 动物界 / 所属分类动物界）；
+ *   · 常量只有一份（PROTECTED_TYPES / ANIMAL_HALL_NAME），两边都引用它；
+ *   · 判据只有一条：保护类 → high；所属分类在动物馆子树 → medium；其余 → normal；
  *   · 守卫 `check:product-lib-risk` 的 A7 钉住「内存三层互斥且相加 = 全库」，
- *     并用线上真数据核对「内存 high/medium == where high/medium」（2026-10-14：11 / 216 两侧一致）。
+ *     并用线上真数据核对「内存 high/medium/normal == where 三层」
+ *     （2026-10-14 收窄口径后实测：11 / 43 / 201，相加 255 = 全库）。
  * ⚠️ 改这里必须同步 `buildListWhere` 的 high/medium/normal 三个分支，反之亦然。
  * ══════════════════════════════════════════════════════════════════════════════ */
 
-/** 商品的 taxonomy 是否指向动物界 */
-function isAnimalTaxonomy(row) {
-  const tax = (row && row.taxonomy) || {}
-  const k1 = String(tax.kingdom || '').trim()
-  const k2 = String(tax.kingdomLatin || '').trim()
-  return ANIMAL_KINGDOMS.indexOf(k1) >= 0 || ANIMAL_KINGDOMS.indexOf(k2) >= 0
-}
-
-/** 商品挂的分类是否属动物界（历史商品 taxonomy 为空时的兜底信号） */
-function isAnimalCategory(row, animalCategoryIds = []) {
-  const ids = animalCategoryIds || []
+/** 商品挂的分类是否在「动物馆」子树下（**唯一**的中等风险判据；不再看 taxonomy） */
+function isInAnimalHall(row, animalHallCategoryIds = []) {
+  const ids = animalHallCategoryIds || []
   if (!ids.length) return false
   return (!!row.categoryId && ids.indexOf(row.categoryId) >= 0) ||
     (!!row.rootCategoryId && ids.indexOf(row.rootCategoryId) >= 0)
 }
 
-/** 单件藏品的风险层级：high（保护类）/ medium（动物类）/ normal。**互斥且穷尽**。 */
-function riskTierOf(row, animalCategoryIds = []) {
+/** 单件藏品的风险层级：high（保护类）/ medium（动物馆）/ normal。**互斥且穷尽**。 */
+function riskTierOf(row, animalHallCategoryIds = []) {
   const pt = String((row && row.protectionType) || '').trim()
   if (PROTECTED_TYPES.indexOf(pt) >= 0) return 'high'
-  // `protectionType === 'protected_animal'` 也被 buildListWhere 的 medium 分支当信号列着，
-  // 但它是保护类 → 上面已 return。此处保持与 where 的信号清单逐条对应（不额外造口径）。
-  if (isAnimalTaxonomy(row) || isAnimalCategory(row, animalCategoryIds)) return 'medium'
+  // 只看分类 —— 产品负责人 2026-10-14：「仅限于分类中为动物馆中的藏品，而非动物界」
+  if (isInAnimalHall(row, animalHallCategoryIds)) return 'medium'
   return 'normal'
 }
 
-/** 命中原因（给店主看「为什么这件算风险」）：protection | taxonomy | category | '' */
-function riskBasisOf(row, animalCategoryIds = []) {
-  const tier = riskTierOf(row, animalCategoryIds)
+/** 命中原因（给店主看「为什么这件算风险」）：protection | category | '' */
+function riskBasisOf(row, animalHallCategoryIds = []) {
+  const tier = riskTierOf(row, animalHallCategoryIds)
   if (tier === 'high') return 'protection'
   if (tier !== 'medium') return ''
-  if (isAnimalTaxonomy(row)) return 'taxonomy'
-  if (isAnimalCategory(row, animalCategoryIds)) return 'category'
-  return ''
+  // 中等风险只有一条判据（分类在动物馆），所以原因恒为 category —— 这正是"口径收窄"的含义
+  return 'category'
 }
 
 /** 收藏证书是否缺失（合规提醒用；空串 / 空数组 / 空对象都算缺） */
@@ -932,15 +939,17 @@ async function scanProducts(where) {
  * 一次调用返回「风险管理」模块顶部的全部分层数字，省掉客户端 3~4 次 count 往返：
  *   all   : 作用域内全量（含上架态拆分）
  *   tiers : high / medium / normal —— 互斥穷尽，`total` 相加 = `all.total`
- *           high 另有 byProtection（三有 / 保护植物 / 保护动物）
- *           medium 另有 byBasis（taxonomy / category），直接回答「凭什么算中等风险」
+ *           high   另有 byProtection（三有 / 保护植物 / 保护动物）
+ *           medium 另有 byGroup（动物馆下二级分类构成：爬行纲 / 哺乳纲 / 鸟纲 …）
+ *                  —— 口径收窄成"只看分类"之后，"凭什么算"已经不言自明，
+ *                     更有信息量的是**这一层由什么构成**（原来那个 byBasis 会恒等于一个值，成了废字段）
  *           normal 不细分
  *   每层另有 missingCert（缺收藏证书）—— 合规待办
  * 作用域（mineOnly / framerId）与 list 同源（buildScopeCondition）；
  * 上架态用 `computeShelfCounts` 同一套优先级（on → pending → rejected → off）。
  */
 async function riskOverview(event, actor) {
-  const animalCategoryIds = await loadAnimalCategoryIds()
+  const animalHallCategoryIds = await loadAnimalHallCategoryIds()
   // 作用域与 list 同源；「本人藏品」下 framerId 同样要过服务端校验才采纳
   const mineOnly = !!(event && (event.mineOnly || event.scope === 'mine'))
   let verifiedFramerId = ''
@@ -953,12 +962,12 @@ async function riskOverview(event, actor) {
   const blank = () => ({ total: 0, on: 0, pending: 0, rejected: 0, off: 0, missingCert: 0 })
   const tiers = { high: blank(), medium: blank(), normal: blank() }
   tiers.high.byProtection = { sanyou: 0, protected_plant: 0, protected_animal: 0 }
-  tiers.medium.byBasis = { taxonomy: 0, category: 0 }
+  const mediumGroupCounts = {}
   const all = blank()
 
   rows.forEach((row) => {
     if (!row) return
-    const bucket = tiers[riskTierOf(row, animalCategoryIds)]
+    const bucket = tiers[riskTierOf(row, animalHallCategoryIds)]
     if (!bucket) return
     bucket.total += 1
     // 与 computeShelfCounts 同一套优先级（否则概览与藏品明细的 chip 会打架）
@@ -973,10 +982,15 @@ async function riskOverview(event, actor) {
       const pt = String(row.protectionType || '').trim()
       if (tiers.high.byProtection[pt] !== undefined) tiers.high.byProtection[pt] += 1
     } else if (bucket === tiers.medium) {
-      const basis = riskBasisOf(row, animalCategoryIds)
-      if (tiers.medium.byBasis[basis] !== undefined) tiers.medium.byBasis[basis] += 1
+      const g = String(row.category || '').trim() || '未分二级'
+      mediumGroupCounts[g] = (mediumGroupCounts[g] || 0) + 1
     }
   })
+
+  // 构成按件数降序（前端直接 wx:for，不再自己排一次 —— 排序规则两处各写一遍必然不一致）
+  tiers.medium.byGroup = Object.keys(mediumGroupCounts)
+    .map((name) => ({ name, count: mediumGroupCounts[name] }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-Hans-CN'))
 
   return { success: true, scanned, truncated, all, tiers, generatedAtMs: Date.now() }
 }
@@ -1213,17 +1227,17 @@ async function listProducts(event, actor) {
       verifiedFramerId = await resolveVerifiedArtisanFramerId(actor, event && event.framerId)
     }
   }
-  // 「动物界分类 id」兜底（商品 taxonomy 可能为空）：
+  // 「动物馆」分类子树 id（中等风险的**唯一**判据）：
   //   · riskFilter = medium / normal → 筛条件的**一部分**，必须查；
   //   · withRiskMeta（风险管理模块的清单）→ 要给每件标 riskTier / riskBasis，也要查。
   // 其余情况（藏品明细的普通浏览）不查 —— 保持与改前逐字一致，不为一个不用到的字段多打一次库。
   const needRiskMeta = !!(event && event.withRiskMeta)
   const riskFilterRaw = String((event && event.riskFilter) || '').trim()
-  let animalCategoryIds = []
+  let animalHallCategoryIds = []
   if (needRiskMeta || riskFilterRaw === 'medium' || riskFilterRaw === 'normal') {
-    animalCategoryIds = await loadAnimalCategoryIds()
+    animalHallCategoryIds = await loadAnimalHallCategoryIds()
   }
-  const { where, promoFilter, keyword } = buildListWhere(event, actor, verifiedFramerId, animalCategoryIds)
+  const { where, promoFilter, keyword } = buildListWhere(event, actor, verifiedFramerId, animalHallCategoryIds)
   const needsMemoryPromo =
     promoFilter === 'seckill' || promoFilter === 'seckill_expired'
   const now = Date.now()
@@ -1253,8 +1267,8 @@ async function listProducts(event, actor) {
     }
     // 风险管理模块的清单：带上「为什么算风险」—— 店主自己就能核，不用来问口径
     if (needRiskMeta) {
-      out.riskTier = riskTierOf(row, animalCategoryIds)
-      out.riskBasis = riskBasisOf(row, animalCategoryIds)
+      out.riskTier = riskTierOf(row, animalHallCategoryIds)
+      out.riskBasis = riskBasisOf(row, animalHallCategoryIds)
       out.certMissing = isCertMissing(row)
     }
     return out

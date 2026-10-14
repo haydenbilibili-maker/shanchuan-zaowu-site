@@ -83,20 +83,34 @@ export function run(src = {}) {
     'A4 一键上下线没有确认弹窗或没带件数')
   ok(/#D64045/i.test(bulk), 'A4 一键下架没有用危险色（确认框缺危险语义）')
 
-  /* ── A5/A6 中等风险（动物类）——两个独立入口 ───────────────────── */
-  const animalKingdoms = (fn.match(/const ANIMAL_KINGDOMS = \[([^\]]*)\]/) || [])[1] || ''
-  ok(/动物界/.test(animalKingdoms) && /Animalia/i.test(animalKingdoms),
-    `A5 云函数 ANIMAL_KINGDOMS 没覆盖「动物界 / Animalia」（实得 ${animalKingdoms || '无'}）`)
+  /* ── A5/A6 中等风险（**动物馆分类**，2026-10-14 收窄）——两个独立入口 ──────
+     产品负责人第二轮指令：「中等风险藏品仅限于分类中为动物馆中的藏品，**而非动物界**；缩小覆盖面」。
+     ⇒ 判据**只认分类**（categoryId / rootCategoryId ∈ 动物馆子树），**不许**再用 taxonomy.kingdom。
+     实测：动物界口径 216 件 → 动物馆口径 **43** 件（缩掉 173：昆虫馆 121 / 海洋馆 28 / 首饰馆 18 …）。 */
+  const hallName = (fn.match(/const ANIMAL_HALL_NAME = '([^']*)'/) || [])[1] || ''
+  ok(hallName === '动物馆', `A5 云函数中等风险的分类口径不是「动物馆」（实得 ${hallName || '无'}）`)
+  ok(/async function loadAnimalHallCategoryIds\(\)/.test(fn), 'A5 缺 loadAnimalHallCategoryIds（现查动物馆子树 id，不写死）')
   ok(/riskFilter === 'medium'/.test(fn), 'A5 云函数缺 riskFilter=medium（中等风险）分支')
   // ⚠️ 2026-10-14 修正**假阴性**：原来是 `/animalCategoryIds = await loadAnimalCategoryIds\(\)/`，
   //    而 `const animalCategoryIds = await loadAnimalCategoryIds()` 里也含这段子串 ——
   //    新增的 riskOverview 里正好有这么一行，于是「把 list 的分类兜底拆掉」这条注入**检不出来**了。
   //    改成必须以「行首缩进 + 裸赋值」出现（`const ` 前缀不算），注入才落得进判据。
-  ok(/\n\s+animalCategoryIds = await loadAnimalCategoryIds\(\)/.test(fn),
-    'A5 中等风险没用「所属分类属动物界」兜底（历史商品 taxonomy 可能为空）')
+  ok(/\n\s+animalHallCategoryIds = await loadAnimalHallCategoryIds\(\)/.test(fn),
+    'A5 中等风险没去查「动物馆」子树 id（查不到就该这一层为空，不能退化放大）')
   const mediumBlock = (fn.match(/riskFilter === 'medium'\) \{[\s\S]*?\n  \}/) || [''])[0]
   ok(/\.nin\(PROTECTED_TYPES\)/.test(mediumBlock),
     'A5 中等风险没有排除保护类（与高风险重叠 → 同一件落进两个一键入口、计数重复）')
+  ok(/categoryId: _\.in\(animalHallCategoryIds\)/.test(mediumBlock) &&
+    /rootCategoryId: _\.in\(animalHallCategoryIds\)/.test(mediumBlock),
+    'A5 中等风险的 where 没有按「动物馆」分类 id 过滤（categoryId / rootCategoryId 都要）')
+  // ★ 核心判据：收窄后中等风险**不许**再依赖 taxonomy.kingdom（否则又变回"动物界"，覆盖面重新放大）
+  // ⚠️ 判据必须是 where 的**键字面量**（`'taxonomy.kingdom':`）——
+  //    第一版写成 `/taxonomy\.kingdom/`，结果被我自己那句注释「不再读 `taxonomy.kingdom`」命中了（假阳性）。
+  //    注释里提到某个字段 ≠ 用那个字段当条件，这是"守卫判据自身错误"的老毛病。
+  ok(!/'taxonomy\.kingdom'\s*:/.test(fn) && !/'taxonomy\.kingdomLatin'\s*:/.test(fn) && !/ANIMAL_KINGDOMS/.test(fn),
+    'A5 中等风险又用上了 taxonomy 的「动物界」（产品负责人明确要求「而非动物界」；覆盖面会重新放大到 216）')
+  ok(/_id: '__animal_hall_unavailable__'/.test(mediumBlock),
+    'A5 分类查不到时没有退化成「这一层为空」（不追加条件 = 全库都算中等风险，把范围偷偷放大）')
   ok(/dataset\.risk|ds\.risk/.test(bulk) && /riskFilter: risk/.test(bulk),
     'A6 一键上下线没有按 data-risk 区分高/中等两个口径')
   ok(/mediumRiskCount: 0,/.test(cfg) && /highRiskCount: 0,/.test(cfg), 'A6 高/中等风险没有各自独立的件数（data 默认值）')
@@ -109,16 +123,17 @@ export function run(src = {}) {
      起因：产品负责人真机看到「中等风险 216 件」，与先前判断的 12 件不符。
      于是把高/中风险抽成独立「风险管理」tab，并在服务端给出**可自证**的三层划分。
      三层必须互斥且相加 = 全库，否则概览上的数字加不回总数（一眼假）。
-     线上真数据核对（2026-10-14）：内存 11/216/28 == where 11/216/28，相加 255 == 全库 255。 */
-  const tierFn = (fn.match(/function riskTierOf\(row, animalCategoryIds = \[\]\) \{[\s\S]*?\n\}/) || [''])[0]
+     线上真数据核对（2026-10-14 收窄口径后）：内存 11/43/201 == where 11/43/201，相加 255 == 全库 255。 */
+  const tierFn = (fn.match(/function riskTierOf\(row, animalHallCategoryIds = \[\]\) \{[\s\S]*?\n\}/) || [''])[0]
   ok(!!tierFn, 'A7 云函数缺 riskTierOf（风险三层的内存判据）')
   ok(/PROTECTED_TYPES\.indexOf\(pt\)\s*>=\s*0/.test(tierFn), 'A7 riskTierOf 的 high 判定没走 PROTECTED_TYPES（第二套口径）')
-  ok(/isAnimalTaxonomy\(row\)/.test(tierFn) && /isAnimalCategory\(row, animalCategoryIds\)/.test(tierFn),
-    'A7 riskTierOf 的 medium 判定没走 isAnimalTaxonomy / isAnimalCategory（与 where 分支的口径会分叉）')
+  ok(/isInAnimalHall\(row, animalHallCategoryIds\)/.test(tierFn),
+    'A7 riskTierOf 的 medium 判定没走 isInAnimalHall（与 where 分支的口径会分叉）')
+  ok(!/isAnimalTaxonomy|taxonomy/.test(tierFn), 'A7 riskTierOf 又看 taxonomy 了（口径已收窄成只认「动物馆」分类）')
   ok(/return 'normal'/.test(tierFn), 'A7 riskTierOf 缺 normal 兜底（三层不穷尽 = 有藏品归不了类）')
-  // normal 分支必须是**真补集**：原来是「none / 缺失」，那会把 216 件中等风险再包一遍（三层相加 ≠ 全库）
+  // normal 分支必须是**真补集**：原来是「none / 缺失」，那会把中等风险那批再包一遍（三层相加 ≠ 全库）
   const normalBlock = (fn.match(/riskFilter === 'normal'\) \{[\s\S]*?\n  \}/) || [''])[0]
-  ok(/\.nin\(ANIMAL_KINGDOMS\)/.test(normalBlock) && /\.nin\(PROTECTED_TYPES\)/.test(normalBlock),
+  ok(/\.nin\(animalHallCategoryIds\)/.test(normalBlock) && /\.nin\(PROTECTED_TYPES\)/.test(normalBlock),
     'A7 normal 分支不是「非高风险且非中等风险」的真补集（三层相加会超过全库）')
   ok(!/_\.exists\(false\)/.test(normalBlock), 'A7 normal 分支又回到「protectionType 缺失」（与中等风险重叠）')
   // 只读概览 action：注册 + 路由
@@ -126,8 +141,15 @@ export function run(src = {}) {
   ok(/case 'riskOverview':/.test(fn), "A7 riskOverview 没有注册进 action 路由（前端调用会得到「未知 action」）")
   ok(/tiers\s*=\s*\{\s*high: blank\(\), medium: blank\(\), normal: blank\(\)\s*\}/.test(fn),
     'A7 riskOverview 没有同时给出 high / medium / normal 三层')
-  ok(/tiers\.high\.byProtection/.test(fn) && /tiers\.medium\.byBasis/.test(fn),
-    'A7 概览缺「高风险按保护类细分 / 中等风险按命中原因细分」')
+  ok(/tiers\.high\.byProtection/.test(fn) && /tiers\.medium\.byGroup/.test(fn),
+    'A7 概览缺「高风险按保护类细分 / 中等风险按动物馆二级构成细分」')
+  // byGroup 必须是**服务端排好序**的数组（页面直接 wx:for；排序规则两处各写一遍必然不一致）
+  // ⚠️ 必须把判据**限定在 byGroup 那一段**：`stats` 里另有一处 `.sort((a, b) => b.count - a.count`
+  //    （一级分类分布），全文件匹配的话「把 byGroup 的排序删掉」这条注入会被那处顶掉（假阴性）。
+  const byGroupAssign = (fn.match(/tiers\.medium\.byGroup = [\s\S]*?\n\n/) || [''])[0]
+  ok(/Object\.keys\(mediumGroupCounts\)/.test(byGroupAssign) &&
+    /\.sort\(\(a, b\) => b\.count - a\.count/.test(byGroupAssign),
+    'A7 byGroup 不是服务端按件数降序排好的数组')
   // ⚠️ 只断言 `/missingCert/` 会假阴性：`blank()` 里的 `missingCert: 0` 就满足了它。
   // 必须断言**真的在累加** —— 否则「概览缺合规提醒计数」这条注入检不出来。
   ok(/bucket\.missingCert \+= 1/.test(fn) && /all\.missingCert \+= 1/.test(fn),
@@ -149,14 +171,15 @@ export function run(src = {}) {
     'A7 「本人藏品」作用域没有共用 buildScopeCondition（概览与清单的口径会分叉）')
 
   /* ── A8 命中原因（凭什么算这一层）────────────────────────────── */
-  const basisFn = (fn.match(/function riskBasisOf\(row, animalCategoryIds = \[\]\) \{[\s\S]*?\n\}/) || [''])[0]
+  const basisFn = (fn.match(/function riskBasisOf\(row, animalHallCategoryIds = \[\]\) \{[\s\S]*?\n\}/) || [''])[0]
   ok(!!basisFn, 'A8 云函数缺 riskBasisOf（逐件命中原因）')
-  for (const k of ['protection', 'taxonomy', 'category']) {
+  for (const k of ['protection', 'category']) {
     ok(basisFn.includes(`'${k}'`), `A8 riskBasisOf 缺 '${k}' 这一种命中原因`)
   }
+  ok(!basisFn.includes("'taxonomy'"), "A8 riskBasisOf 还留 'taxonomy'（口径收窄后中等风险只有分类一条判据）")
   const basisLabels = (cfg.match(/const RISK_BASIS_LABELS = \{([\s\S]*?)\n\};/) || [])[1] || ''
   const basisKeys = [...basisLabels.matchAll(/(\w+)\s*:/g)].map((m) => m[1])
-  ok(['protection', 'taxonomy', 'category'].every((k) => basisKeys.includes(k)) && basisKeys.length === 3,
+  ok(['protection', 'category'].every((k) => basisKeys.includes(k)) && basisKeys.length === 2,
     `A8 客户端 RISK_BASIS_LABELS 的键与云函数 riskBasisOf 不对应（实得 ${basisKeys.join('/') || '无'}）`)
   // withRiskMeta：只在点名时附加，不传 = 与改前逐字一致
   ok(/needRiskMeta/.test(fn) && /withRiskMeta/.test(fn), 'A8 云函数缺 withRiskMeta（清单要拿到命中原因）')
@@ -180,7 +203,9 @@ export function run(src = {}) {
   ok((riskBlock.match(/bindtap="setProductRiskFilter"/g) || []).length === 4,
     `A9 风险管理页的分层 chip 不是 4 颗（全部/高风险/中等风险/普通），实得 ${(riskBlock.match(/bindtap="setProductRiskFilter"/g) || []).length}`)
   ok(/bindtap="copyRiskList"/.test(riskBlock), 'A9 风险管理页缺「复制风险清单」')
-  ok(/riskOverview\.tiers\.medium\.byBasis\.taxonomy/.test(riskBlock) && /riskOverview\.tiers\.medium\.byBasis\.category/.test(riskBlock) &&
+  // ⚠️ 判据落在 `wx:for` 上：byGroup 在页面上出现两次（wx:if 与 wx:for），
+  //    只查字段名的话「把渲染那处换掉」的注入会被 wx:if 那处顶掉（假阴性）。
+  ok(/wx:for="\{\{riskOverview\.tiers\.medium\.byGroup\}\}"/.test(riskBlock) &&
     /riskOverview\.tiers\.high\.byProtection\.sanyou/.test(riskBlock) && /riskOverview\.tiers\.high\.byProtection\.protected_animal/.test(riskBlock),
     'A9 概览的构成数字没有取服务端回包（客户端重算 = 第二套口径）')
   ok(/riskShelfCounts\.on/.test(riskBlock) && /riskShelfCounts\.off/.test(riskBlock),
@@ -307,9 +332,19 @@ function selftest() {
     ['工具条丢掉一键下架', (s) => ({ ...s, wxml: s.wxml.replace('bindtap="bulkToggleRisk" data-risk="high" data-on="0"', 'bindtap="bulkToggleRisk" data-risk="high" data-on="1"') }), /D/],
     ['卡片丢掉高风险标签', (s) => ({ ...s, wxml: s.wxml.replace('wx:if="{{item.isHighRisk}}"', 'wx:if="{{false}}"') }), /D/],
     /* ── A5/A6 中等风险（动物类）── */
-    ['中等风险不再排除保护类（与高风险重叠）', (s) => ({ ...s, fn: s.fn.replace("conditions.push(_.and([_.or(animalSignals), { protectionType: _.nin(PROTECTED_TYPES) }]))", 'conditions.push(_.or(animalSignals))') }), /A5/],
-    ['动物界口径丢失', (s) => ({ ...s, fn: s.fn.replace("const ANIMAL_KINGDOMS = ['动物界', 'Animalia', 'animalia']", "const ANIMAL_KINGDOMS = ['Insecta']") }), /A5/],
-    ['中等风险去掉分类兜底信号', (s) => ({ ...s, fn: s.fn.replace('    animalCategoryIds = await loadAnimalCategoryIds()', '    animalCategoryIds = []') }), /A5/],
+    ['中等风险不再排除保护类（与高风险重叠）',
+      (s) => ({ ...s, fn: s.fn.replace("    const mediumConds = [{ protectionType: _.nin(PROTECTED_TYPES) }]", '    const mediumConds = []') }), /A5/],
+    ['中等风险分类口径不再是「动物馆」', (s) => ({ ...s, fn: s.fn.replace("const ANIMAL_HALL_NAME = '动物馆'", "const ANIMAL_HALL_NAME = '昆虫馆'") }), /A5/],
+    ['中等风险又用 taxonomy 的「动物界」（覆盖面会重新放大到 216）',
+      (s) => ({ ...s, fn: s.fn.replace("      mediumConds.push(_.or([\n        { categoryId: _.in(animalHallCategoryIds) },\n        { rootCategoryId: _.in(animalHallCategoryIds) }\n      ]))", "      mediumConds.push(_.or([\n        { 'taxonomy.kingdom': _.in(['动物界']) },\n        { categoryId: _.in(animalHallCategoryIds) }\n      ]))") }), /A5/],
+    ['中等风险分类查不到时退化成全库（把范围偷偷放大）',
+      (s) => ({ ...s, fn: s.fn.replace("      mediumConds.push({ _id: '__animal_hall_unavailable__' })", "      // 什么都不加 = 全库") }), /A5/],
+    ['中等风险不去查「动物馆」子树 id',
+      (s) => ({ ...s, fn: s.fn.replace('    animalHallCategoryIds = await loadAnimalHallCategoryIds()', '    animalHallCategoryIds = []') }), /A5/],
+    ['normal 不排除动物馆（与中等风险重叠）',
+      (s) => ({ ...s, fn: s.fn.replace("      notAnimal.push({ categoryId: _.nin(animalHallCategoryIds) })\n      notAnimal.push({ rootCategoryId: _.nin(animalHallCategoryIds) })", '') }), /A7/],
+    ['byGroup 不由服务端排序（页面各自排一次）',
+      (s) => ({ ...s, fn: s.fn.replace("    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-Hans-CN'))\n", '') }), /A7/],
     ['两个入口共用同一口径', (s) => ({ ...s, wxml: s.wxml.split('data-risk="medium"').join('data-risk="high"') }), /A6/],
     ['丢弃中等风险件数', (s) => ({ ...s, cfg: s.cfg.replace('    mediumRiskCount: 0,', '') }), /A6/],
     /* ── A7 三层互斥穷尽 + 两套判据同源 ── */
@@ -330,14 +365,14 @@ function selftest() {
     ['概览缺合规提醒计数',
       (s) => ({ ...s, fn: s.fn.replace('    if (missing) { bucket.missingCert += 1; all.missingCert += 1 }', '') }), /A7/],
     /* ── A8 命中原因 ── */
-    ['命中原因丢掉「所属分类兜底」这一种',
-      (s) => ({ ...s, fn: s.fn.replace("  if (isAnimalCategory(row, animalCategoryIds)) return 'category'\n", '') }), /A8/],
+    ['命中原因把早已废弃的 taxonomy 类目又加回来',
+      (s) => ({ ...s, fn: s.fn.replace("  // 中等风险只有一条判据（分类在动物馆），所以原因恒为 category —— 这正是\"口径收窄\"的含义\n  return 'category'", "  return 'taxonomy'") }), /A8/],
     ['客户端命中原因文案与云函数脱钩',
-      (s) => ({ ...s, cfg: s.cfg.replace("  taxonomy: '学名属动物界',", "  taxonomyByLatin: '学名属动物界',") }), /A8/],
+      (s) => ({ ...s, cfg: s.cfg.replace("  category: '所属分类：动物馆'", "  categoryByAnimalHall: '所属分类：动物馆'") }), /A8/],
     ['withRiskMeta 不把命中原因附到行上',
-      (s) => ({ ...s, fn: s.fn.replace('      out.riskBasis = riskBasisOf(row, animalCategoryIds)\n', '') }), /A8/],
+      (s) => ({ ...s, fn: s.fn.replace('      out.riskBasis = riskBasisOf(row, animalHallCategoryIds)\n', '') }), /A8/],
     ['每次明细列表都无条件查分类（丢掉「默认不查」退化）',
-      (s) => ({ ...s, fn: s.fn.replace('  const riskFilterRaw = String((event && event.riskFilter) || \'\').trim()\n  let animalCategoryIds = []\n  if (needRiskMeta || riskFilterRaw === \'medium\' || riskFilterRaw === \'normal\') {\n    animalCategoryIds = await loadAnimalCategoryIds()\n  }', '  let animalCategoryIds = []\n  animalCategoryIds = await loadAnimalCategoryIds()') }), /A8/],
+      (s) => ({ ...s, fn: s.fn.replace('  let animalHallCategoryIds = []\n  if (needRiskMeta || riskFilterRaw === \'medium\' || riskFilterRaw === \'normal\') {', '  let animalHallCategoryIds = []\n  if (true) {') }), /A8/],
     /* ── A9 独立 tab：能力抽走后只留一个入口 ── */
     ['明细页还留着风险一键工具条（两个入口）',
       // 注入必须**带 bulkToggleRisk 本体**：只插一个空 .risk-bar 的话，判据里那句 /bulkToggleRisk/
@@ -350,7 +385,7 @@ function selftest() {
     ['分层 chip 少一颗（普通层点不着）',
       (s) => ({ ...s, wxml: s.wxml.replace('<view class="pf-chip {{productRiskFilter===\'normal\'?\'on\':\'\'}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>', '') }), /A9/],
     ['概览数字改由客户端重算（去掉服务端构成）',
-      (s) => ({ ...s, wxml: s.wxml.replace('riskOverview.tiers.medium.byBasis.taxonomy', 'riskOverview.tiers.medium.total') }), /A9/],
+      (s) => ({ ...s, wxml: s.wxml.replace('wx:for="{{riskOverview.tiers.medium.byGroup}}"', 'wx:for="{{products}}"') }), /A9/],
     ['上架态筛选改读全局计数（与分层件数同屏打架）',
       (s) => ({ ...s, wxml: s.wxml.split('riskShelfCounts.on').join('productShelfCounts.on') }), /A9/],
     ['复制清单只导当前页',

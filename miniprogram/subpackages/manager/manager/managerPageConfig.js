@@ -784,15 +784,16 @@ const PROTECTED_TYPE_LABELS = {
 };
 
 /**
- * 「凭什么算中等风险」的中文说法（2026-10-14）。
+ * 「凭什么算中等风险」的中文说法。
  * 产品负责人真机看到「中等风险 216 件」时第一反应是「跟我之前判断的 12 件不符」——
  * 光给一个数字，店主没法自己核。所以每一件都标出命中原因，口径从「我告诉你」变成「你能看见」。
+ * 2026-10-14 第二轮：产品负责人把口径收窄成「**仅限分类在动物馆下的藏品，而非动物界**」，
+ * 于是中等风险只剩一条判据 —— `category`（去掉了 `taxonomy`，学名属哪一界不再参与判定）。
  * key 与云函数 `riskBasisOf` 的返回值**逐字对应**（守卫 A8 钉住）。
  */
 const RISK_BASIS_LABELS = {
   protection: '保护类',
-  taxonomy: '学名属动物界',
-  category: '所属分类属动物界'
+  category: '所属分类：动物馆'
 };
 
 /** 风险层级的中文名（三层与云函数 riskTierOf 同一个划分） */
@@ -4985,7 +4986,7 @@ const managerPageConfig = {
       `山海造物 · 风险藏品清单`,
       `${tierName}${shelfName} · 共 ${rows.length} 件${rows.length > MAX_ROWS ? `（仅导出前 ${MAX_ROWS} 件）` : ''}`,
       `导出时间：${this._formatStamp(Date.now())}`,
-      `口径：高风险 = 三有 / 保护植物 / 保护动物；中等风险 = 动物类（按学名或所属分类），不含保护类`,
+      `口径：高风险 = 三有 / 保护植物 / 保护动物；中等风险 = 所属分类在「动物馆」下（不含保护类）`,
       ''
     ];
     const body = sliced.map((r, i) => {
@@ -5052,7 +5053,7 @@ const managerPageConfig = {
     if (this.data.bulkRiskRunning) return;
     const onShelf = String(ds.on) === '1';
     const tier = risk === 'medium'
-      ? { label: '中等风险', scope: '动物类（保护类已归入高风险）', empty: '当前没有动物类藏品（或都已归入保护类）' }
+      ? { label: '中等风险', scope: '动物馆藏品（保护类已归入高风险）', empty: '「动物馆」下当前没有藏品（或都已归入保护类）' }
       : { label: '高风险', scope: '三有 / 保护类', empty: '当前没有标注为三有 / 保护类的藏品' };
     this.setData({ bulkRiskRunning: risk });
     wx.showLoading({ title: `统计${tier.label}藏品…` });
