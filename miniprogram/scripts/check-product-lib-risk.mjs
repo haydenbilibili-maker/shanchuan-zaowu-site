@@ -88,7 +88,11 @@ export function run(src = {}) {
   ok(/动物界/.test(animalKingdoms) && /Animalia/i.test(animalKingdoms),
     `A5 云函数 ANIMAL_KINGDOMS 没覆盖「动物界 / Animalia」（实得 ${animalKingdoms || '无'}）`)
   ok(/riskFilter === 'medium'/.test(fn), 'A5 云函数缺 riskFilter=medium（中等风险）分支')
-  ok(/animalCategoryIds = await loadAnimalCategoryIds\(\)/.test(fn),
+  // ⚠️ 2026-10-14 修正**假阴性**：原来是 `/animalCategoryIds = await loadAnimalCategoryIds\(\)/`，
+  //    而 `const animalCategoryIds = await loadAnimalCategoryIds()` 里也含这段子串 ——
+  //    新增的 riskOverview 里正好有这么一行，于是「把 list 的分类兜底拆掉」这条注入**检不出来**了。
+  //    改成必须以「行首缩进 + 裸赋值」出现（`const ` 前缀不算），注入才落得进判据。
+  ok(/\n\s+animalCategoryIds = await loadAnimalCategoryIds\(\)/.test(fn),
     'A5 中等风险没用「所属分类属动物界」兜底（历史商品 taxonomy 可能为空）')
   const mediumBlock = (fn.match(/riskFilter === 'medium'\) \{[\s\S]*?\n  \}/) || [''])[0]
   ok(/\.nin\(PROTECTED_TYPES\)/.test(mediumBlock),
@@ -100,6 +104,111 @@ export function run(src = {}) {
   ok((wxml.match(/data-risk="high"/g) || []).length === 2 && (wxml.match(/data-risk="medium"/g) || []).length === 2,
     'A6 高/中等风险的两个独立入口不完整（应各 2 颗：下架 / 上架）')
   ok(/productRiskFilter==='medium'/.test(wxml), 'A6 筛选条缺「中等风险」chip')
+
+  /* ── A7 风险三层：互斥穷尽 + 内存判据与 DB where 同源（2026-10-14）─────────
+     起因：产品负责人真机看到「中等风险 216 件」，与先前判断的 12 件不符。
+     于是把高/中风险抽成独立「风险管理」tab，并在服务端给出**可自证**的三层划分。
+     三层必须互斥且相加 = 全库，否则概览上的数字加不回总数（一眼假）。
+     线上真数据核对（2026-10-14）：内存 11/216/28 == where 11/216/28，相加 255 == 全库 255。 */
+  const tierFn = (fn.match(/function riskTierOf\(row, animalCategoryIds = \[\]\) \{[\s\S]*?\n\}/) || [''])[0]
+  ok(!!tierFn, 'A7 云函数缺 riskTierOf（风险三层的内存判据）')
+  ok(/PROTECTED_TYPES\.indexOf\(pt\)\s*>=\s*0/.test(tierFn), 'A7 riskTierOf 的 high 判定没走 PROTECTED_TYPES（第二套口径）')
+  ok(/isAnimalTaxonomy\(row\)/.test(tierFn) && /isAnimalCategory\(row, animalCategoryIds\)/.test(tierFn),
+    'A7 riskTierOf 的 medium 判定没走 isAnimalTaxonomy / isAnimalCategory（与 where 分支的口径会分叉）')
+  ok(/return 'normal'/.test(tierFn), 'A7 riskTierOf 缺 normal 兜底（三层不穷尽 = 有藏品归不了类）')
+  // normal 分支必须是**真补集**：原来是「none / 缺失」，那会把 216 件中等风险再包一遍（三层相加 ≠ 全库）
+  const normalBlock = (fn.match(/riskFilter === 'normal'\) \{[\s\S]*?\n  \}/) || [''])[0]
+  ok(/\.nin\(ANIMAL_KINGDOMS\)/.test(normalBlock) && /\.nin\(PROTECTED_TYPES\)/.test(normalBlock),
+    'A7 normal 分支不是「非高风险且非中等风险」的真补集（三层相加会超过全库）')
+  ok(!/_\.exists\(false\)/.test(normalBlock), 'A7 normal 分支又回到「protectionType 缺失」（与中等风险重叠）')
+  // 只读概览 action：注册 + 路由
+  ok(/async function riskOverview\(event, actor\)/.test(fn), 'A7 云函数缺 riskOverview（风险分层概览）')
+  ok(/case 'riskOverview':/.test(fn), "A7 riskOverview 没有注册进 action 路由（前端调用会得到「未知 action」）")
+  ok(/tiers\s*=\s*\{\s*high: blank\(\), medium: blank\(\), normal: blank\(\)\s*\}/.test(fn),
+    'A7 riskOverview 没有同时给出 high / medium / normal 三层')
+  ok(/tiers\.high\.byProtection/.test(fn) && /tiers\.medium\.byBasis/.test(fn),
+    'A7 概览缺「高风险按保护类细分 / 中等风险按命中原因细分」')
+  // ⚠️ 只断言 `/missingCert/` 会假阴性：`blank()` 里的 `missingCert: 0` 就满足了它。
+  // 必须断言**真的在累加** —— 否则「概览缺合规提醒计数」这条注入检不出来。
+  ok(/bucket\.missingCert \+= 1/.test(fn) && /all\.missingCert \+= 1/.test(fn),
+    'A7 概览缺缺收藏证书计数（合规提醒的唯一数据源）')
+  // 合规提醒必须**分两档**：先问保护类缺不缺（缺了才是真警报），不缺才退成静默提示。
+  // 线上实测 244/255 为空、但高风险 11 件一件不缺 —— 一句「全空」会把做到位的部分也说成没做。
+  ok(/riskOverview\.tiers\.high\.missingCert > 0/.test(wxml),
+    'A7 合规提醒没有先看「保护类有没有缺证书」（不分档 = 把做到位的部分也说成没做）')
+  // 扫描循环只许有一处（list 与 riskOverview 共用）—— 两处各写一次必然漂移
+  ok(/async function scanProducts\(where\)/.test(fn), 'A7 缺共用的 scanProducts（list 与概览各写一套扫描循环会漂移）')
+  // 「通用全量扫描」只许有一处 —— 就是 scanProducts 里那句 `if (where) query = query.where(where)`。
+  // （backfillMineProductLinks 另有两条扫描，但它们各带固定 where，不是通用扫描。）
+  ok((fn.match(/if \(where\) query = query\.where\(where\)/g) || []).length === 1,
+    `A7 通用全量扫描循环出现了 ${(fn.match(/if \(where\) query = query\.where\(where\)/g) || []).length} 处（只该有 scanProducts 一处）`)
+  ok(/await scanProducts\(where\)/.test(fn) && /await scanProducts\(scopeCond\)/.test(fn),
+    'A7 list 与 riskOverview 没有共用 scanProducts')
+  ok(/function buildScopeCondition\(event, actor, verifiedFramerId\)/.test(fn) &&
+    (fn.match(/buildScopeCondition\(event, actor, verifiedFramerId\)/g) || []).length >= 3,
+    'A7 「本人藏品」作用域没有共用 buildScopeCondition（概览与清单的口径会分叉）')
+
+  /* ── A8 命中原因（凭什么算这一层）────────────────────────────── */
+  const basisFn = (fn.match(/function riskBasisOf\(row, animalCategoryIds = \[\]\) \{[\s\S]*?\n\}/) || [''])[0]
+  ok(!!basisFn, 'A8 云函数缺 riskBasisOf（逐件命中原因）')
+  for (const k of ['protection', 'taxonomy', 'category']) {
+    ok(basisFn.includes(`'${k}'`), `A8 riskBasisOf 缺 '${k}' 这一种命中原因`)
+  }
+  const basisLabels = (cfg.match(/const RISK_BASIS_LABELS = \{([\s\S]*?)\n\};/) || [])[1] || ''
+  const basisKeys = [...basisLabels.matchAll(/(\w+)\s*:/g)].map((m) => m[1])
+  ok(['protection', 'taxonomy', 'category'].every((k) => basisKeys.includes(k)) && basisKeys.length === 3,
+    `A8 客户端 RISK_BASIS_LABELS 的键与云函数 riskBasisOf 不对应（实得 ${basisKeys.join('/') || '无'}）`)
+  // withRiskMeta：只在点名时附加，不传 = 与改前逐字一致
+  ok(/needRiskMeta/.test(fn) && /withRiskMeta/.test(fn), 'A8 云函数缺 withRiskMeta（清单要拿到命中原因）')
+  ok(/if \(needRiskMeta\) \{/.test(fn) && /out\.riskTier = riskTierOf\(/.test(fn) && /out\.riskBasis = riskBasisOf\(/.test(fn),
+    'A8 withRiskMeta 没有真的把 riskTier / riskBasis 附到每一行')
+  // ⚠️ 只断言 `animalCategoryIds = []` 也会假阴性：改成无条件 `loadAnimalCategoryIds()` 之后
+  // 那行字面量还在。必须断言**加载条件**：只有点名 medium / normal / withRiskMeta 才查。
+  ok(/if \(needRiskMeta \|\| riskFilterRaw === 'medium' \|\| riskFilterRaw === 'normal'\)/.test(fn),
+    'A8 withRiskMeta 缺「默认不查分类」的退化（会让每次明细列表都多打一次库）')
+
+  /* ── A9 独立「风险管理」tab：一个能力只有一个入口 ──────────────────
+     明细页不许再留风险工具条 / 风险 chip —— 抽出去还留着 = 两处计数迟早打架。 */
+  ok(/data-tab="risk"/.test(wxml), 'A9 藏品库顶栏缺「风险管理」tab')
+  ok(/wx:if="\{\{productLibTab==='risk'\}\}"/.test(wxml), "A9 缺 productLibTab=risk 的渲染块")
+  ok(/tab === 'risk'/.test(cfg), "A9 setProductLibTab 不认 'risk'（点了会掉回藏品明细）")
+  const listBlock = (wxml.match(/wx:if="\{\{productLibTab==='list'\}\}"[\s\S]*?wx:if="\{\{productLibTab==='risk'\}\}"/) || [''])[0]
+  ok(!!listBlock, 'A9 取不到「藏品明细」块（无法判断风险能力是否已抽走）')
+  ok(!/bulkToggleRisk/.test(listBlock), 'A9 藏品明细页还留着风险一键工具条（能力抽走后必须只剩一个入口）')
+  ok(!/setProductRiskFilter/.test(listBlock), 'A9 藏品明细页还留着风险筛选 chip（同上）')
+  const riskBlock = (wxml.match(/wx:if="\{\{productLibTab==='risk'\}\}"[\s\S]*?<!-- 库存概览/) || [''])[0]
+  ok((riskBlock.match(/bindtap="setProductRiskFilter"/g) || []).length === 4,
+    `A9 风险管理页的分层 chip 不是 4 颗（全部/高风险/中等风险/普通），实得 ${(riskBlock.match(/bindtap="setProductRiskFilter"/g) || []).length}`)
+  ok(/bindtap="copyRiskList"/.test(riskBlock), 'A9 风险管理页缺「复制风险清单」')
+  ok(/riskOverview\.tiers\.medium\.byBasis\.taxonomy/.test(riskBlock) && /riskOverview\.tiers\.medium\.byBasis\.category/.test(riskBlock) &&
+    /riskOverview\.tiers\.high\.byProtection\.sanyou/.test(riskBlock) && /riskOverview\.tiers\.high\.byProtection\.protected_animal/.test(riskBlock),
+    'A9 概览的构成数字没有取服务端回包（客户端重算 = 第二套口径）')
+  ok(/riskShelfCounts\.on/.test(riskBlock) && /riskShelfCounts\.off/.test(riskBlock),
+    'A9 上架态筛选没有用**分层**计数（用全库计数会与分层件数同屏打架）')
+  const ovMethod = methodBody(cfg, 'loadRiskOverview')
+  ok(!!ovMethod, 'A9 找不到 loadRiskOverview')
+  ok(/action:\s*'riskOverview'/.test(ovMethod), 'A9 loadRiskOverview 没走云函数 action riskOverview')
+  ok(/highRiskCount:/.test(ovMethod) && /mediumRiskCount:/.test(ovMethod),
+    'A9 两条工具条的件数没有取自概览回包（同一份数字只能有一个来源）')
+  const riskFilterMethod = methodBody(cfg, 'setProductRiskFilter')
+  ok(/productShelfFilter:\s*'all'/.test(riskFilterMethod),
+    'A9 切分层没有清掉上架态筛选（切到中等风险还留着「已下架」＝只看见 12 件，像是丢数据）')
+  const recompute = methodBody(cfg, '_recomputeRiskShelfCounts')
+  ok(!!recompute && /this\.data\.riskOverview/.test(recompute) && !/productShelfCounts/.test(recompute),
+    '_recomputeRiskShelfCounts 没有从 riskOverview 取值（或又去读全局 productShelfCounts）')
+  const copyMethod = methodBody(cfg, 'copyRiskList')
+  ok(!!copyMethod, 'A9 找不到 copyRiskList')
+  ok(/wx\.setClipboardData\(/.test(copyMethod), 'A9 复制清单没用 wx.setClipboardData')
+  ok(/withRiskMeta:\s*true/.test(copyMethod), 'A9 复制的清单没带命中原因（withRiskMeta）')
+  ok(/page \+= 1/.test(copyMethod) && /total/.test(copyMethod),
+    'A9 复制清单只导了当前页（提审要的是全量，不是「已加载」那 50 件）')
+  ok(/riskTierLabel/.test(copyMethod) && /riskBasisLabel/.test(copyMethod),
+    'A9 复制清单的每行缺风险等级 / 命中原因')
+
+  /* ── F 风险管理模块样式 ──────────────────────────────────────── */
+  for (const c of ['.risk-hero', '.risk-tier-item', '.rti-detail', '.risk-note', '.risk-sec-label', '.risk-copy-btn']) {
+    ok(new RegExp(`\\${c} \\{`).test(wxss), `F 样式缺 ${c}`)
+  }
 
   /* ── B1/B2 停留当前页 ─────────────────────────────────────────── */
   const toggle = methodBody(cfg, 'toggleShelf')
@@ -202,7 +311,57 @@ function selftest() {
     ['动物界口径丢失', (s) => ({ ...s, fn: s.fn.replace("const ANIMAL_KINGDOMS = ['动物界', 'Animalia', 'animalia']", "const ANIMAL_KINGDOMS = ['Insecta']") }), /A5/],
     ['中等风险去掉分类兜底信号', (s) => ({ ...s, fn: s.fn.replace('    animalCategoryIds = await loadAnimalCategoryIds()', '    animalCategoryIds = []') }), /A5/],
     ['两个入口共用同一口径', (s) => ({ ...s, wxml: s.wxml.split('data-risk="medium"').join('data-risk="high"') }), /A6/],
-    ['丢掉中等风险件数', (s) => ({ ...s, cfg: s.cfg.replace('    mediumRiskCount: 0,', '') }), /A6/],
+    ['丢弃中等风险件数', (s) => ({ ...s, cfg: s.cfg.replace('    mediumRiskCount: 0,', '') }), /A6/],
+    /* ── A7 三层互斥穷尽 + 两套判据同源 ── */
+    ['normal 回到「protectionType 缺失」（与中等风险重叠、三层相加超全库）',
+      (s) => ({ ...s, fn: s.fn.replace(/const notAnimal = \[[\s\S]*?\]\n/, "const notAnimal = [{ protectionType: _.exists(false) }]\n") }), /A7/],
+    ['riskTierOf 自己造一套 high 口径（不走 PROTECTED_TYPES）',
+      (s) => ({ ...s, fn: s.fn.replace("  if (PROTECTED_TYPES.indexOf(pt) >= 0) return 'high'", "  if (pt === 'sanyou') return 'high'") }), /A7/],
+    ['三层丢掉 normal（有藏品归不了类）',
+      (s) => ({ ...s, fn: s.fn.replace("  return 'normal'\n}", '  return \'medium\'\n}') }), /A7/],
+    ['概览不注册进 action 路由（前端只会拿到「未知 action」）',
+      (s) => ({ ...s, fn: s.fn.replace("      case 'riskOverview':\n", '') }), /A7/],
+    ['list 与概览各写一套扫描循环',
+      (s) => ({ ...s, fn: s.fn.replace("  const { rows: scannedRows, scanned, truncated } = await scanProducts(where)", '  const scannedRows = []\n  let cursor2 = 0\n  while (cursor2 < 5000) { const r = await db.collection(\'products\').skip(cursor2).limit(100).get(); if (!r.data.length) break; scannedRows.push(...r.data); cursor2 += r.data.length }\n  const scanned = scannedRows.length\n  const truncated = false') }), /A7/],
+    ['概览不共用「本人藏品」作用域条件',
+      (s) => ({ ...s, fn: s.fn.replace('  const scopeCond = buildScopeCondition(event, actor, verifiedFramerId)\n  const { rows, scanned, truncated } = await scanProducts(scopeCond)', '  const scopeCond = null\n  const { rows, scanned, truncated } = await scanProducts(scopeCond)') }), /A7/],
+    ['合规提醒不分档（把做到位的保护类也说成没证书）',
+      (s) => ({ ...s, wxml: s.wxml.replace('<view class="risk-note" wx:if="{{riskOverview.tiers.high.missingCert > 0}}">', '<view class="risk-note" wx:if="{{riskOverview.all.missingCert > 0}}">') }), /A7/],
+    ['概览缺合规提醒计数',
+      (s) => ({ ...s, fn: s.fn.replace('    if (missing) { bucket.missingCert += 1; all.missingCert += 1 }', '') }), /A7/],
+    /* ── A8 命中原因 ── */
+    ['命中原因丢掉「所属分类兜底」这一种',
+      (s) => ({ ...s, fn: s.fn.replace("  if (isAnimalCategory(row, animalCategoryIds)) return 'category'\n", '') }), /A8/],
+    ['客户端命中原因文案与云函数脱钩',
+      (s) => ({ ...s, cfg: s.cfg.replace("  taxonomy: '学名属动物界',", "  taxonomyByLatin: '学名属动物界',") }), /A8/],
+    ['withRiskMeta 不把命中原因附到行上',
+      (s) => ({ ...s, fn: s.fn.replace('      out.riskBasis = riskBasisOf(row, animalCategoryIds)\n', '') }), /A8/],
+    ['每次明细列表都无条件查分类（丢掉「默认不查」退化）',
+      (s) => ({ ...s, fn: s.fn.replace('  const riskFilterRaw = String((event && event.riskFilter) || \'\').trim()\n  let animalCategoryIds = []\n  if (needRiskMeta || riskFilterRaw === \'medium\' || riskFilterRaw === \'normal\') {\n    animalCategoryIds = await loadAnimalCategoryIds()\n  }', '  let animalCategoryIds = []\n  animalCategoryIds = await loadAnimalCategoryIds()') }), /A8/],
+    /* ── A9 独立 tab：能力抽走后只留一个入口 ── */
+    ['明细页还留着风险一键工具条（两个入口）',
+      // 注入必须**带 bulkToggleRisk 本体**：只插一个空 .risk-bar 的话，判据里那句 /bulkToggleRisk/
+      // 根本没被碰到，于是"注入成功但检不出来"（2026-10-14 实际踩到）。
+      (s) => ({ ...s, wxml: s.wxml.replace('<view class="search-box">\n        <input placeholder="搜索藏品…"', '<view class="risk-bar"><view class="risk-bar-btn is-danger" bindtap="bulkToggleRisk" data-risk="high" data-on="0">一键下架</view><view class="risk-bar-btn" bindtap="bulkToggleRisk" data-risk="high" data-on="1">一键上架</view></view>\n      <view class="search-box">\n        <input placeholder="搜索藏品…"') }), /A9/],
+    ['明细页还留着风险筛选 chip',
+      (s) => ({ ...s, wxml: s.wxml.replace('<view class="pf-chip {{productArchiveFilter===\'oneOfAKind\'?\'on\':\'\'}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>', '<view class="pf-chip {{productArchiveFilter===\'oneOfAKind\'?\'on\':\'\'}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>\n        <view class="pf-chip is-risk" bindtap="setProductRiskFilter" data-val="high">高风险</view>') }), /A9/],
+    ['切分层不清上架态（选高风险却只剩已下架的 11 件）',
+      (s) => ({ ...s, cfg: s.cfg.replace("    this.setData({ productRiskFilter: next, productShelfFilter: 'all' });", '    this.setData({ productRiskFilter: next });') }), /A9/],
+    ['分层 chip 少一颗（普通层点不着）',
+      (s) => ({ ...s, wxml: s.wxml.replace('<view class="pf-chip {{productRiskFilter===\'normal\'?\'on\':\'\'}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>', '') }), /A9/],
+    ['概览数字改由客户端重算（去掉服务端构成）',
+      (s) => ({ ...s, wxml: s.wxml.replace('riskOverview.tiers.medium.byBasis.taxonomy', 'riskOverview.tiers.medium.total') }), /A9/],
+    ['上架态筛选改读全局计数（与分层件数同屏打架）',
+      (s) => ({ ...s, wxml: s.wxml.split('riskShelfCounts.on').join('productShelfCounts.on') }), /A9/],
+    ['复制清单只导当前页',
+      (s) => ({ ...s, cfg: s.cfg.replace('        if (!batch.length || rows.length >= total) break;\n        page += 1;\n      }\n    } catch (err) {\n      wx.hideLoading();\n      this.setData({ riskCopyRunning: false });\n      this.showHubTip(formatCloudFnError(err, \'清单整理失败\'), \'warn\');', '        break;\n      }\n    } catch (err) {\n      wx.hideLoading();\n      this.setData({ riskCopyRunning: false });\n      this.showHubTip(formatCloudFnError(err, \'清单整理失败\'), \'warn\');') }), /A9/],
+    ['复制清单不带命中原因',
+      (s) => ({ ...s, cfg: s.cfg.replace('            withRiskMeta: true', '            withRiskMeta: false') }), /A9/],
+    ['tier 列表丢掉命中原因文案',
+      (s) => ({ ...s, cfg: s.cfg.replace('        `${r.riskTierLabel || \'—\'}${r.riskBasisLabel ? \' · \' + r.riskBasisLabel : \'\'}`,', '        `${r.riskTierLabel || \'—\'}`,') }), /A9/],
+    /* ── F 样式 ── */
+    ['丢掉风险管理分层卡样式',
+      (s) => ({ ...s, wxss: s.wxss.replace(/\.risk-tier-item \{[\s\S]*?\n\}\n/, '') }), /F/],
     /* ── E 分类管理 ── */
     ['派生视图写回源树（下标会错位）', (s) => ({ ...s, cfg: s.cfg.replace('    catTreeView: view,', '    catTreeView: view,\n    categoryManageTree: view,') }), /E1/],
     ['submitCategory 改读过滤后的视图', (s) => ({ ...s, cfg: s.cfg.replace('    const tree = this.data.categoryManageTree || [];', '    const tree = this.data.catTreeView || [];') }), /E1/],

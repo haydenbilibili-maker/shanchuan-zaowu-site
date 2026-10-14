@@ -71,33 +71,129 @@ const apItem = (id, title, extra = {}) => ({
 })
 
 export const SCENES = [
-  /* ── 2026-10-13 藏品库（提审前点名）：高风险一键上下线 / 水印可辨 / 分类展示层 ── */
+  /* ── 2026-10-14 藏品库「风险管理」独立 tab（产品负责人：抽象成独立顶部 tab + 丰富能力）──
+     ⚠️ 数字是**线上真数据**（2026-10-14 用只读探针 .tmp/probe-risk-tiers.mjs 从 products/categories 实测）：
+        全库 255 / 高风险 11（三有 0 · 保护植物 1 · 保护动物 10，全部已下架）/
+        中等风险 216（学名属动物界 201 · 按分类兜底 15；在架 204 · 已下架 12）/ 普通 28；
+        「收藏证书」244/255 为空，但**高风险 11 件一件不缺**（这 11 件的来源材料是做到位的）。
+     上一版这里写的是 highRiskCount 3 / mediumRiskCount 12 —— 那是**版式占位数字**，
+     产品负责人真机看到 216 后当场质疑「跟你之前判断的 12 件不符」。
+     ⚠️ 教训：**渲染台的样例数字是给产品负责人看的，不许当真实数据用**，所以这一次用实测值。 */
   (() => {
     const pic = `file://${resolve(MP, '..', 'public/images/price-list/blue-morpho-dome-single.jpg')}`
+    const riskRow = (id, title, o) => ({
+      _id: id, title, price: o.price || '399', images: [pic],
+      riskTier: o.tier, riskTierLabel: o.tierLabel, riskBasisLabel: o.basis || '',
+      riskLabel: o.riskLabel || '', isHighRisk: o.tier === 'high',
+      inArchive: true, isOneOfAKind: !!o.one, hasSku: false,
+      rootCategoryName: o.root, category: o.cat,
+      isOffShelf: !!o.off, shelfApprovalStatus: o.st || '',
+      shelfWm: o.wm || '', shelfWmClass: o.wmClass || ''
+    })
+    // 线上实测回包（原样，不做四舍五入也不做美化）
+    const overview = {
+      scanned: 255, truncated: false, generatedAtMs: Date.now(),
+      all: { total: 255, on: 231, pending: 0, rejected: 0, off: 24, missingCert: 244 },
+      tiers: {
+        high: { total: 11, on: 0, pending: 0, rejected: 0, off: 11, missingCert: 0, byProtection: { sanyou: 0, protected_plant: 1, protected_animal: 10 } },
+        medium: { total: 216, on: 204, pending: 0, rejected: 0, off: 12, missingCert: 216, byBasis: { taxonomy: 201, category: 15 } },
+        normal: { total: 28, on: 27, pending: 0, rejected: 0, off: 1, missingCert: 28 }
+      }
+    }
+    return {
+      name: 'r10-lib-risk', h: 2100, wxml: () => tabBlock(1), wxss: MGR_CSS,
+      data: {
+        curTab: 1, productLibTab: 'risk', artisanEmbed: false,
+        highRiskCount: 11, mediumRiskCount: 216, expiredSeckillCount: 1,
+        riskOverview: overview, riskOverviewLoading: false, riskOverviewError: false,
+        riskShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
+        productShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
+        productArchiveFilter: 'all', productPromoFilter: 'all', productRiskFilter: 'all', productShelfFilter: 'all',
+        searchVal: '', productSort: 'new', productPriceSortLabel: '价格',
+        productSortOptions: [{ key: 'new', label: '最新' }, { key: 'sales', label: '销量' }, { key: 'price', label: '价格', isPrice: true }],
+        bulkRiskRunning: '', riskCopyRunning: false,
+        products: [
+          riskRow('p1', '暹罗鳄标本 · 树脂封存', { tier: 'high', tierLabel: '高风险', riskLabel: '保护动物', root: '动物馆', cat: '爬行纲', off: true, wm: '已下架', wmClass: 'offshelf' }),
+          riskRow('p2', '红豆杉植物标本框', { tier: 'high', tierLabel: '高风险', riskLabel: '保护植物', root: '植物馆', cat: '裸子植物', off: true, wm: '已下架', wmClass: 'offshelf' }),
+          riskRow('p3', '大蓝闪蝶 · 原木框', { tier: 'medium', tierLabel: '中等风险', basis: '学名属动物界', root: '昆虫馆', cat: '鳞翅目 · 蝴蝶', wm: '已上架', wmClass: 'approved' }),
+          riskRow('p4', '巨扁竹节虫标本框', { tier: 'medium', tierLabel: '中等风险', basis: '所属分类属动物界', root: '昆虫馆', cat: '其他昆虫', off: true, wm: '已下架', wmClass: 'offshelf' }),
+          riskRow('p5', '蝉与蝽 · 干制标本', { tier: 'medium', tierLabel: '中等风险', basis: '学名属动物界', root: '昆虫馆', cat: '半翅目 · 蝉与蝽', one: true, wm: '已上架', wmClass: 'approved' })
+        ],
+        productTotal: 216, productHasMore: true, productListLoading: false, productListError: false
+      }
+    }
+  })(),
+  // 切到「中等风险」+ 上架态仍是「全部」：证书风险条的件数、上架态计数都跟着分层走
+  (() => {
+    const pic = `file://${resolve(MP, '..', 'public/images/price-list/blue-morpho-dome-single.jpg')}`
+    const row = (id, title, o) => ({
+      _id: id, title, price: '399', images: [pic],
+      riskTier: 'medium', riskTierLabel: '中等风险', riskBasisLabel: o.basis,
+      riskLabel: '', isHighRisk: false, inArchive: true, isOneOfAKind: false, hasSku: false,
+      rootCategoryName: o.root, category: o.cat, isOffShelf: !!o.off, shelfApprovalStatus: '',
+      shelfWm: o.off ? '已下架' : '已上架', shelfWmClass: o.off ? 'offshelf' : 'approved'
+    })
+    return {
+      name: 'r10-lib-risk-medium', h: 1500, wxml: () => tabBlock(1), wxss: MGR_CSS,
+      data: {
+        curTab: 1, productLibTab: 'risk', artisanEmbed: false,
+        highRiskCount: 11, mediumRiskCount: 216, expiredSeckillCount: 0,
+        riskOverview: {
+          scanned: 255, truncated: false,
+          all: { total: 255, on: 231, pending: 0, rejected: 0, off: 24, missingCert: 244 },
+          tiers: {
+            high: { total: 11, on: 0, pending: 0, rejected: 0, off: 11, missingCert: 0, byProtection: { sanyou: 0, protected_plant: 1, protected_animal: 10 } },
+            medium: { total: 216, on: 204, pending: 0, rejected: 0, off: 12, missingCert: 216, byBasis: { taxonomy: 201, category: 15 } },
+            normal: { total: 28, on: 27, pending: 0, rejected: 0, off: 1, missingCert: 28 }
+          }
+        },
+        riskOverviewLoading: false, riskOverviewError: false,
+        riskShelfCounts: { all: 216, on: 204, pending: 0, rejected: 0, off: 12 },
+        productShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
+        productArchiveFilter: 'all', productPromoFilter: 'all', productRiskFilter: 'medium', productShelfFilter: 'all',
+        searchVal: '', productSort: 'new', productPriceSortLabel: '价格',
+        productSortOptions: [{ key: 'new', label: '最新' }, { key: 'sales', label: '销量' }, { key: 'price', label: '价格', isPrice: true }],
+        bulkRiskRunning: 'medium', riskCopyRunning: true,
+        products: [
+          row('m1', '绿灰蝶手链', { basis: '学名属动物界', root: '首饰馆', cat: '蝴蝶首饰' }),
+          row('m2', '玫瑰俏眼蝶闹钟', { basis: '所属分类属动物界', root: '昆虫馆', cat: '鳞翅目 · 蝴蝶' }),
+          row('m3', '创意贝壳标本框', { basis: '学名属动物界', root: '海洋馆', cat: '腹足纲 · 贝壳' }),
+          row('m4', '巴普洛夫菊石装饰框', { basis: '学名属动物界', root: '矿石馆', cat: '化石', off: true })
+        ],
+        productTotal: 216, productHasMore: true, productListLoading: false, productListError: false
+      }
+    }
+  })(),
+  // 「藏品明细」：风险工具条与风险 chip 已抽走 —— 这一张就是「没有它们」的证据
+  (() => {
+    const pic = `file://${resolve(MP, '..', 'public/images/price-list/blue-morpho-dome-single.jpg')}`
+    // ⚠️ 形参顺序 (id, title, price, o)：2026-10-14 改这一版时漏掉了 `price`，结果 `o` 收到的是价格字符串，
+    //    于是 on(o.off) / wm(o.wm) / rate(o.rate) 全是 undefined —— 图上"看着正常"（¥ 后面空着、没有水印），
+    //    出图不报错、字段也不缺（所以那句「缺字段按空渲染」没提示）。**样例数据的形参错位是静默的**。
     const libRow = (id, title, price, o) => ({
       _id: id, title, price, costPrice: '50', profitRate: o.rate, soldCountDisplay: '0', images: [pic],
-      inArchive: true, isOneOfAKind: !!o.one, isHighRisk: !!o.risk, riskLabel: o.riskLabel || '',
+      inArchive: true, isOneOfAKind: !!o.one, isHighRisk: !!o.risk, riskLabel: o.riskLabel || '', riskTier: o.risk ? 'high' : '',
       isOffShelf: !!o.off, shelfApprovalStatus: o.st || '', shelfWm: o.wm || '', shelfWmClass: o.wmClass || '',
       craftProcessLabel: '干制标本', craftTypeLabel: '相框', framerName: '阿棋', hasSku: false,
       seckill: { enabled: false }, groupBuying: { enabled: false }
     })
     return {
-      name: 'r10-lib-risk', h: 1700, wxml: () => tabBlock(1), wxss: MGR_CSS,
+      name: 'r10-lib-list', h: 1500, wxml: () => tabBlock(1), wxss: MGR_CSS,
       data: {
         curTab: 1, productLibTab: 'list', artisanEmbed: false,
-        highRiskCount: 3, mediumRiskCount: 12, expiredSeckillCount: 1,
-        productShelfCounts: { all: 5, on: 2, pending: 1, rejected: 1, off: 1 },
+        highRiskCount: 11, mediumRiskCount: 216, expiredSeckillCount: 1,
+        productShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
+        riskShelfCounts: { all: 255, on: 231, pending: 0, rejected: 0, off: 24 },
         productArchiveFilter: 'all', productPromoFilter: 'all', productRiskFilter: 'all', productShelfFilter: 'all',
         searchVal: '', productSort: 'new', productPriceSortLabel: '价格',
         productSortOptions: [{ key: 'new', label: '最新' }, { key: 'sales', label: '销量' }, { key: 'price', label: '价格', isPrice: true }],
         products: [
-          libRow('p1', '药食同源手绘中药标本框', '499', { rate: '90.0', risk: true, riskLabel: '三有', wm: '已上架', wmClass: 'approved' }),
-          libRow('p2', '伤寒论中药标本框', '299', { rate: '83.3', risk: true, riskLabel: '保护植物', st: 'pending', wm: '审核中', wmClass: 'pending' }),
-          libRow('p3', '大蓝闪蝶 · 原木框', '399', { rate: '87.5', risk: true, riskLabel: '保护动物' }),
-          libRow('p4', '绿尾大蚕蛾标本框', '299', { rate: '83.3', off: true, wm: '已下架', wmClass: 'offshelf' }),
-          libRow('p5', '金裳凤蝶标本框', '899', { rate: '92.0', one: true, st: 'rejected', wm: '已驳回', wmClass: 'rejected' })
+          libRow('p1', '大蓝闪蝶 · 原木框', '399', { rate: '87.5', wm: '已上架', wmClass: 'approved' }),
+          libRow('p2', '暹罗鳄标本 · 树脂封存', '1299', { rate: '92.0', risk: true, riskLabel: '保护动物', off: true, wm: '已下架', wmClass: 'offshelf' }),
+          libRow('p3', '金裳凤蝶标本框', '899', { rate: '92.0', one: true, st: 'pending', wm: '审核中', wmClass: 'pending' }),
+          libRow('p4', '绿尾大蚕蛾标本框', '299', { rate: '83.3', st: 'rejected', wm: '已驳回', wmClass: 'rejected' })
         ],
-        productTotal: 5, productHasMore: false, productListLoading: false, productListError: false, bulkRiskRunning: false
+        productTotal: 255, productHasMore: true, productListLoading: false, productListError: false, bulkRiskRunning: ''
       }
     }
   })(),

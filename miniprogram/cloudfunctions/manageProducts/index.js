@@ -2,14 +2,19 @@
  * 商品写入代理 — products 集合 write:false 后唯一店长/Admin 写入口
  *
  * action:
- *   list              分页列表 { page, pageSize, keyword, archiveFilter, promoFilter, sortBy, giftScene, riskFilter, shelfFilter }
+ *   list              分页列表 { page, pageSize, keyword, archiveFilter, promoFilter, sortBy, giftScene, riskFilter, shelfFilter, withRiskMeta }
  *                     sortBy: new | sales | price_asc | price_desc（默认 new；与 C 端 ProductList 语义对齐）
  *                     giftScene: 可选，按 products.giftScenes 含该 key 过滤
  *                     riskFilter（2026-10-13 新增，不传 = all = 与改前逐字一致）:
  *                       high   = 保护类（三有 / 保护植物 / 保护动物）
  *                       medium = **动物类**（taxonomy 界为动物界，或所属分类属动物界）且**不含保护类**（与 high 互斥）
- *                       normal = 明确 none 或字段缺失
+ *                       normal = **既不是 high 也不是 medium**（2026-10-14 修正：原为「none / 缺失」，
+ *                                那会把 216 件中等风险再包一遍，三层相加 ≠ 全库）
  *                     shelfFilter（同日新增，不传 = all）: on | off | pending | rejected（优先级同 shelfCounts）
+ *                     withRiskMeta（2026-10-14 新增，不传 = 逐字同改前）:
+ *                       每行附加 riskTier(high|medium|normal) / riskBasis(protection|taxonomy|category) / certMissing
+ *   riskOverview      只读风险分层概览 { mineOnly? } → { all, tiers:{high,medium,normal}, scanned, truncated }
+ *                     tiers 互斥穷尽（total 相加 = all.total）；high.byProtection / medium.byBasis / *.missingCert
  *   upsert            新建 / 更新商品（更新时剥离 isOffShelf；上架走 manageApprovals）
  *   patch             单条字段补丁（白名单，不含 isOffShelf）
  *   batchPatch        批量补丁 { items: [{ productId, data }] }
@@ -744,6 +749,20 @@ async function loadAnimalCategoryIds() {
   }
 }
 
+/**
+ * 「本人藏品」作用域条件（`mineOnly` / `scope: 'mine'`）。
+ * 抽出来是因为**风险概览也要用同一套作用域** —— 两处各写一遍 = 概览与清单的口径迟早分叉。
+ */
+function buildScopeCondition(event, actor, verifiedFramerId) {
+  const _ = db.command
+  const mineOnly = !!(event && (event.mineOnly || event.scope === 'mine'))
+  if (!mineOnly || !actor || !actor.openid) return null
+  const framerId = String(verifiedFramerId || '').trim()
+  const orParts = [{ createdByOpenid: actor.openid }]
+  if (framerId) orParts.push({ framerId })
+  return _.or(orParts)
+}
+
 function buildListWhere(event, actor, verifiedFramerId, animalCategoryIds = []) {
   const _ = db.command
   const keyword = String((event && event.keyword) || '').trim().slice(0, 64)
@@ -761,11 +780,9 @@ function buildListWhere(event, actor, verifiedFramerId, animalCategoryIds = []) 
   const conditions = []
 
   const mineOnly = !!(event && (event.mineOnly || event.scope === 'mine'))
-  if (mineOnly && actor && actor.openid) {
-    const framerId = String(verifiedFramerId || '').trim()
-    const orParts = [{ createdByOpenid: actor.openid }]
-    if (framerId) orParts.push({ framerId })
-    conditions.push(_.or(orParts))
+  if (mineOnly) {
+    const scopeCond = buildScopeCondition(event, actor, verifiedFramerId)
+    if (scopeCond) conditions.push(scopeCond)
   }
 
   if (archiveFilter === 'archive') conditions.push({ inArchive: true })
@@ -785,8 +802,21 @@ function buildListWhere(event, actor, verifiedFramerId, animalCategoryIds = []) 
     }
     conditions.push(_.and([_.or(animalSignals), { protectionType: _.nin(PROTECTED_TYPES) }]))
   } else if (riskFilter === 'normal') {
-    // 「普通」= 明确 none 或字段缺失（后者是历史数据，同样按非保护处理）
-    conditions.push(_.or([{ protectionType: 'none' }, { protectionType: _.exists(false) }]))
+    // 「普通」= **既不是高风险（保护类）也不是中等风险（动物类）**。
+    // 2026-10-14 修正：原来是「protectionType 为 none / 缺失」（= 244 件），
+    // 而中等风险那 216 件里绝大多数的 protectionType 恰好就是 none —— 于是「普通」把中等风险
+    // 又包了一遍，三层相加 11+216+244=471 ≠ 全库 255。分层计数加不回总数，产品负责人一眼就会问。
+    // 现在三层与 `riskTierOf`（内存同源判据）**同一个划分**：互斥、穷尽、相加 = 全库。
+    const notAnimal = [
+      { protectionType: _.nin(PROTECTED_TYPES) },
+      { 'taxonomy.kingdom': _.nin(ANIMAL_KINGDOMS) },
+      { 'taxonomy.kingdomLatin': _.nin(ANIMAL_KINGDOMS) }
+    ]
+    if (animalCategoryIds.length) {
+      notAnimal.push({ categoryId: _.nin(animalCategoryIds) })
+      notAnimal.push({ rootCategoryId: _.nin(animalCategoryIds) })
+    }
+    conditions.push(_.and(notAnimal))
   }
 
   if (promoFilter === 'group') conditions.push({ 'groupBuying.enabled': true })
@@ -816,6 +846,139 @@ function buildListWhere(event, actor, verifiedFramerId, animalCategoryIds = []) 
   if (!conditions.length) return { where: null, keyword, archiveFilter, promoFilter, riskFilter, giftScene, blessTag }
   if (conditions.length === 1) return { where: conditions[0], keyword, archiveFilter, promoFilter, riskFilter, giftScene, blessTag }
   return { where: _.and(conditions), keyword, archiveFilter, promoFilter, riskFilter, giftScene }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+ * 风险分层的内存判据（2026-10-14，产品负责人：「把高风险与中风险能力抽象成独立的『风险管理』tab」）
+ *
+ * 为什么要有内存版：概览要把**每一件**归到 high / medium / normal，DB 的 `where` 只能回答
+ * 「符合条件的有几件」。两层判据并存 = 迟早分叉，所以：
+ *   · 常量只有一份（PROTECTED_TYPES / ANIMAL_KINGDOMS），两边都引用它；
+ *   · 信号清单只有一份语义（保护类 / taxonomy 动物界 / 所属分类动物界）；
+ *   · 守卫 `check:product-lib-risk` 的 A7 钉住「内存三层互斥且相加 = 全库」，
+ *     并用线上真数据核对「内存 high/medium == where high/medium」（2026-10-14：11 / 216 两侧一致）。
+ * ⚠️ 改这里必须同步 `buildListWhere` 的 high/medium/normal 三个分支，反之亦然。
+ * ══════════════════════════════════════════════════════════════════════════════ */
+
+/** 商品的 taxonomy 是否指向动物界 */
+function isAnimalTaxonomy(row) {
+  const tax = (row && row.taxonomy) || {}
+  const k1 = String(tax.kingdom || '').trim()
+  const k2 = String(tax.kingdomLatin || '').trim()
+  return ANIMAL_KINGDOMS.indexOf(k1) >= 0 || ANIMAL_KINGDOMS.indexOf(k2) >= 0
+}
+
+/** 商品挂的分类是否属动物界（历史商品 taxonomy 为空时的兜底信号） */
+function isAnimalCategory(row, animalCategoryIds = []) {
+  const ids = animalCategoryIds || []
+  if (!ids.length) return false
+  return (!!row.categoryId && ids.indexOf(row.categoryId) >= 0) ||
+    (!!row.rootCategoryId && ids.indexOf(row.rootCategoryId) >= 0)
+}
+
+/** 单件藏品的风险层级：high（保护类）/ medium（动物类）/ normal。**互斥且穷尽**。 */
+function riskTierOf(row, animalCategoryIds = []) {
+  const pt = String((row && row.protectionType) || '').trim()
+  if (PROTECTED_TYPES.indexOf(pt) >= 0) return 'high'
+  // `protectionType === 'protected_animal'` 也被 buildListWhere 的 medium 分支当信号列着，
+  // 但它是保护类 → 上面已 return。此处保持与 where 的信号清单逐条对应（不额外造口径）。
+  if (isAnimalTaxonomy(row) || isAnimalCategory(row, animalCategoryIds)) return 'medium'
+  return 'normal'
+}
+
+/** 命中原因（给店主看「为什么这件算风险」）：protection | taxonomy | category | '' */
+function riskBasisOf(row, animalCategoryIds = []) {
+  const tier = riskTierOf(row, animalCategoryIds)
+  if (tier === 'high') return 'protection'
+  if (tier !== 'medium') return ''
+  if (isAnimalTaxonomy(row)) return 'taxonomy'
+  if (isAnimalCategory(row, animalCategoryIds)) return 'category'
+  return ''
+}
+
+/** 收藏证书是否缺失（合规提醒用；空串 / 空数组 / 空对象都算缺） */
+function isCertMissing(row) {
+  const v = row && row.collectionCertificate
+  if (v === undefined || v === null || v === '') return true
+  if (Array.isArray(v)) return v.length === 0
+  if (typeof v === 'object') return !Object.keys(v).length
+  return String(v).trim() === ''
+}
+
+/**
+ * 按 where 全量扫描 products（分页 100、上限 5000）。
+ * 抽出来给 `list` 与 `riskOverview` 共用 —— 两边各写一次扫描循环必然漂移（页大小 / 上限 / 截断语义）。
+ */
+async function scanProducts(where) {
+  const PAGE = 100
+  const MAX = 5000
+  const rows = []
+  let cursor = 0
+  while (rows.length < MAX) {
+    let query = db.collection('products')
+    if (where) query = query.where(where)
+    const res = await query.skip(cursor).limit(PAGE).get()
+    const batch = res.data || []
+    if (!batch.length) break
+    rows.push(...batch)
+    cursor += batch.length
+    if (batch.length < PAGE) break
+  }
+  return { rows, scanned: rows.length, truncated: rows.length >= MAX }
+}
+
+/**
+ * 风险概览（**只读**，2026-10-14）。
+ * 一次调用返回「风险管理」模块顶部的全部分层数字，省掉客户端 3~4 次 count 往返：
+ *   all   : 作用域内全量（含上架态拆分）
+ *   tiers : high / medium / normal —— 互斥穷尽，`total` 相加 = `all.total`
+ *           high 另有 byProtection（三有 / 保护植物 / 保护动物）
+ *           medium 另有 byBasis（taxonomy / category），直接回答「凭什么算中等风险」
+ *           normal 不细分
+ *   每层另有 missingCert（缺收藏证书）—— 合规待办
+ * 作用域（mineOnly / framerId）与 list 同源（buildScopeCondition）；
+ * 上架态用 `computeShelfCounts` 同一套优先级（on → pending → rejected → off）。
+ */
+async function riskOverview(event, actor) {
+  const animalCategoryIds = await loadAnimalCategoryIds()
+  // 作用域与 list 同源；「本人藏品」下 framerId 同样要过服务端校验才采纳
+  const mineOnly = !!(event && (event.mineOnly || event.scope === 'mine'))
+  let verifiedFramerId = ''
+  if (mineOnly && actor && actor.openid) {
+    verifiedFramerId = await resolveVerifiedArtisanFramerId(actor, event && event.framerId)
+  }
+  const scopeCond = buildScopeCondition(event, actor, verifiedFramerId)
+  const { rows, scanned, truncated } = await scanProducts(scopeCond)
+
+  const blank = () => ({ total: 0, on: 0, pending: 0, rejected: 0, off: 0, missingCert: 0 })
+  const tiers = { high: blank(), medium: blank(), normal: blank() }
+  tiers.high.byProtection = { sanyou: 0, protected_plant: 0, protected_animal: 0 }
+  tiers.medium.byBasis = { taxonomy: 0, category: 0 }
+  const all = blank()
+
+  rows.forEach((row) => {
+    if (!row) return
+    const bucket = tiers[riskTierOf(row, animalCategoryIds)]
+    if (!bucket) return
+    bucket.total += 1
+    // 与 computeShelfCounts 同一套优先级（否则概览与藏品明细的 chip 会打架）
+    if (row.isOffShelf === false) { bucket.on += 1; all.on += 1 }
+    else if (row.shelfApprovalStatus === 'pending') { bucket.pending += 1; all.pending += 1 }
+    else if (row.shelfApprovalStatus === 'rejected') { bucket.rejected += 1; all.rejected += 1 }
+    else { bucket.off += 1; all.off += 1 }
+    all.total += 1
+    const missing = isCertMissing(row)
+    if (missing) { bucket.missingCert += 1; all.missingCert += 1 }
+    if (bucket === tiers.high) {
+      const pt = String(row.protectionType || '').trim()
+      if (tiers.high.byProtection[pt] !== undefined) tiers.high.byProtection[pt] += 1
+    } else if (bucket === tiers.medium) {
+      const basis = riskBasisOf(row, animalCategoryIds)
+      if (tiers.medium.byBasis[basis] !== undefined) tiers.medium.byBasis[basis] += 1
+    }
+  })
+
+  return { success: true, scanned, truncated, all, tiers, generatedAtMs: Date.now() }
 }
 
 /**
@@ -1050,9 +1213,14 @@ async function listProducts(event, actor) {
       verifiedFramerId = await resolveVerifiedArtisanFramerId(actor, event && event.framerId)
     }
   }
-  // 中等风险要「动物界分类 id」兜底（商品 taxonomy 可能为空）—— 只在点名 medium 时查一次
+  // 「动物界分类 id」兜底（商品 taxonomy 可能为空）：
+  //   · riskFilter = medium / normal → 筛条件的**一部分**，必须查；
+  //   · withRiskMeta（风险管理模块的清单）→ 要给每件标 riskTier / riskBasis，也要查。
+  // 其余情况（藏品明细的普通浏览）不查 —— 保持与改前逐字一致，不为一个不用到的字段多打一次库。
+  const needRiskMeta = !!(event && event.withRiskMeta)
+  const riskFilterRaw = String((event && event.riskFilter) || '').trim()
   let animalCategoryIds = []
-  if (String((event && event.riskFilter) || '').trim() === 'medium') {
+  if (needRiskMeta || riskFilterRaw === 'medium' || riskFilterRaw === 'normal') {
     animalCategoryIds = await loadAnimalCategoryIds()
   }
   const { where, promoFilter, keyword } = buildListWhere(event, actor, verifiedFramerId, animalCategoryIds)
@@ -1060,28 +1228,10 @@ async function listProducts(event, actor) {
     promoFilter === 'seckill' || promoFilter === 'seckill_expired'
   const now = Date.now()
 
-  const PAGE = 100
-  const MAX = 5000
-  const matched = []
-  let cursor = 0
-  let scanned = 0
-  while (scanned < MAX) {
-    let query = db.collection('products')
-    if (where) query = query.where(where)
-    const res = await query.skip(cursor).limit(PAGE).get()
-    const rows = res.data || []
-    if (!rows.length) break
-    rows.forEach((row) => {
-      if (needsMemoryPromo) {
-        if (matchesPromoFilter(row, promoFilter, now)) matched.push(row)
-      } else {
-        matched.push(row)
-      }
-    })
-    scanned += rows.length
-    cursor += rows.length
-    if (rows.length < PAGE) break
-  }
+  const { rows: scannedRows, scanned, truncated } = await scanProducts(where)
+  const matched = needsMemoryPromo
+    ? scannedRows.filter((row) => matchesPromoFilter(row, promoFilter, now))
+    : scannedRows
 
   let ordered = matched
   if (keyword) {
@@ -1095,11 +1245,20 @@ async function listProducts(event, actor) {
   const total = ordered.length
   const attachAll = !!(mineOnly && total <= 500)
   const withStatus = await attachShelfApprovalStatus(attachAll ? ordered : ordered.slice(skip, skip + pageSize))
-  const list = (attachAll ? withStatus.slice(skip, skip + pageSize) : withStatus).map((row) => ({
-    ...row,
-    tags: readProductTags(row),
-    giftScenes: readGiftScenes(row)
-  }))
+  const list = (attachAll ? withStatus.slice(skip, skip + pageSize) : withStatus).map((row) => {
+    const out = {
+      ...row,
+      tags: readProductTags(row),
+      giftScenes: readGiftScenes(row)
+    }
+    // 风险管理模块的清单：带上「为什么算风险」—— 店主自己就能核，不用来问口径
+    if (needRiskMeta) {
+      out.riskTier = riskTierOf(row, animalCategoryIds)
+      out.riskBasis = riskBasisOf(row, animalCategoryIds)
+      out.certMissing = isCertMissing(row)
+    }
+    return out
+  })
   const shelfCounts = computeShelfCounts(attachAll ? withStatus : ordered)
   return {
     success: true,
@@ -1109,7 +1268,7 @@ async function listProducts(event, actor) {
     pageSize,
     sortBy,
     scanned,
-    truncated: scanned >= MAX,
+    truncated,
     shelfCounts
   }
 }
@@ -1336,7 +1495,9 @@ exports.main = async (event) => {
   if (!openid && !adminOpsKey) return fail('未登录')
 
   let access = await requireManager(openid, adminOpsKey)
-  if (!access.ok && (action === 'list' || action === 'backfillMineLinks')) {
+  // riskOverview（2026-10-14）与 list 是**同一片数据的只读视图**，所以鉴权面与之逐字对齐 ——
+  // 多一条更严的判定会出现「能打开藏品库、看得见清单，却读不到概览」这种半通不通的状态。
+  if (!access.ok && (action === 'list' || action === 'riskOverview' || action === 'backfillMineLinks')) {
     access = await assertStaff(db, openid, { role: ROLE_STAFF, permission: 'manageArtisanWorks', adminOpsKey })
       .then((guard) => (guard.ok ? { ok: true, actor: { ...guard.actor, openid } } : { ok: false, code: guard.code, msg: guard.msg }))
   }
@@ -1346,6 +1507,9 @@ exports.main = async (event) => {
     switch (action) {
       case 'list':
         return await listProducts(event, access.actor)
+      case 'riskOverview':
+        // 只读：风险管理模块的分层概览（不写库、不改任何既有 action 的入参语义）
+        return await riskOverview(event, access.actor)
       case 'upsert':
         return await upsert(event, access.actor)
       case 'patch':

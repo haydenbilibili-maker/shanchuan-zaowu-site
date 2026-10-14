@@ -4184,6 +4184,185 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: rgba(224, 207, 163, 0.1);
   border-color: rgba(224, 207, 163, 0.42);
 }
+
+/* ══════════════ 「风险管理」独立 tab（2026-10-14）══════════════
+   视觉沿用本页既有语言：发丝金边 + 淡底卡片（与「分类管理」返工后同一套），
+   红 / 琥珀**只**用于风险等级语义，不铺满屏。 */
+.risk-page {
+  padding: 0 0 40rpx;
+}
+
+/* ① 分层概览：先给"一共多少 / 风险多少 / 普通多少"，再给每层的构成与上下架态 */
+.risk-hero {
+  margin: 0 8rpx 20rpx;
+  padding: 22rpx;
+  border-radius: 14rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid rgba(196, 167, 108, 0.24);
+}
+.risk-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+.risk-hero-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.risk-hero-refresh {
+  font-size: 22rpx;
+  color: var(--gold);
+  padding: 6rpx 18rpx;
+  border-radius: 9999px;
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
+}
+.risk-hero-refresh-press {
+  opacity: 0.6;
+}
+.risk-hero-state {
+  margin-top: 16rpx;
+  font-size: 22rpx;
+  color: var(--color-text-secondary);
+}
+.risk-hero-state.is-error {
+  color: #E3A99E;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.risk-hero-retry {
+  color: var(--gold);
+  text-decoration: underline;
+}
+.risk-hero-nums {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+.risk-hero-num {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  padding: 14rpx 8rpx;
+  border-radius: 12rpx;
+  background: rgba(196, 167, 108, 0.06);
+}
+.rhn-val {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+.rhn-val.is-risk {
+  color: #E3A99E;
+}
+.rhn-val.is-quiet {
+  color: var(--color-text-secondary);
+}
+.rhn-lbl {
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+}
+/* 每层一张条：等级名 + 件数 + 凭什么算（构成）+ 上下架态。三段是一件事，所以放一张卡里 */
+.risk-tier-item {
+  margin-top: 14rpx;
+  padding: 16rpx 18rpx;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  background: rgba(198, 58, 63, 0.1);
+  border: 1rpx solid rgba(198, 58, 63, 0.42);
+}
+.risk-tier-item.is-warn {
+  background: rgba(224, 207, 163, 0.1);
+  border-color: rgba(224, 207, 163, 0.4);
+}
+.rti-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12rpx;
+}
+.rti-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #E3A99E;
+}
+.risk-tier-item.is-warn .rti-name {
+  color: #E0CFA3;
+}
+.rti-total {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.rti-detail {
+  font-size: 20rpx;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+.rti-shelf {
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+}
+.risk-note {
+  margin-top: 14rpx;
+  padding: 14rpx 16rpx;
+  border-radius: 12rpx;
+  background: rgba(196, 167, 108, 0.08);
+  border: 1rpx solid rgba(196, 167, 108, 0.22);
+}
+.risk-note.is-quiet {
+  background: transparent;
+  border-color: rgba(196, 167, 108, 0.16);
+}
+.risk-note-txt {
+  font-size: 20rpx;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+/* ③ 分层 / 上架态：小节标签（与「分类管理」的一、二级分类标签同一层级语言） */
+.risk-sec-label {
+  margin: 22rpx 8rpx 10rpx;
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
+  color: var(--gold);
+  opacity: 0.85;
+}
+
+/* ④ 导出 */
+.risk-actions {
+  margin: 16rpx 8rpx 6rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+.risk-copy-btn {
+  align-self: flex-start;
+  padding: 14rpx 28rpx;
+  border-radius: 9999px;
+  font-size: 24rpx;
+  color: var(--gold);
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
+  background: rgba(196, 167, 108, 0.06);
+}
+.risk-copy-btn-press {
+  opacity: 0.6;
+}
+.risk-copy-btn.is-disabled {
+  opacity: 0.45;
+}
+.risk-actions-hint {
+  font-size: 20rpx;
+  color: var(--color-text-secondary);
+}
 .risk-bar.is-medium .risk-bar-label {
   color: #E0CFA3;
 }

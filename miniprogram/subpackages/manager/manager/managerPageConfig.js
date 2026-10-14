@@ -784,6 +784,33 @@ const PROTECTED_TYPE_LABELS = {
 };
 
 /**
+ * 「凭什么算中等风险」的中文说法（2026-10-14）。
+ * 产品负责人真机看到「中等风险 216 件」时第一反应是「跟我之前判断的 12 件不符」——
+ * 光给一个数字，店主没法自己核。所以每一件都标出命中原因，口径从「我告诉你」变成「你能看见」。
+ * key 与云函数 `riskBasisOf` 的返回值**逐字对应**（守卫 A8 钉住）。
+ */
+const RISK_BASIS_LABELS = {
+  protection: '保护类',
+  taxonomy: '学名属动物界',
+  category: '所属分类属动物界'
+};
+
+/** 风险层级的中文名（三层与云函数 riskTierOf 同一个划分） */
+const RISK_TIER_LABELS = {
+  high: '高风险',
+  medium: '中等风险',
+  normal: '普通'
+};
+
+/** 上架态的中文名（导出清单 / 文案复用；口径同 productShelfFilter） */
+const SHELF_FILTER_LABELS = {
+  on: '在架',
+  off: '已下架',
+  pending: '待审',
+  rejected: '已驳回'
+};
+
+/**
  * 藏品行派生（利润 / 销量展示 / 水印 / 工艺标签）—— **唯一一套**。
  * 列表加载与「就地更新一行」（上下线 / 编辑保存）都走它，避免两套口径漂移
  * （2026-10-13：为了让上下线与编辑保存不再整页重载，把这段从 loadProducts 里抽出来）。
@@ -799,6 +826,8 @@ function mapProductRow(p) {
   const shelfWm = resolveProductShelfWatermark(p);
   const protectionType = String(p.protectionType || '').trim();
   const riskLabel = PROTECTED_TYPE_LABELS[protectionType] || '';
+  const isHighRisk = !!riskLabel;
+  const riskTier = String(p.riskTier || (isHighRisk ? 'high' : ''));
   return {
     ...p,
     profitRate: rate,
@@ -808,8 +837,13 @@ function mapProductRow(p) {
     shelfWmClass: shelfWm.className,
     protectionType,
     // 高风险（三有 / 保护类）：卡片打标与「一键上下线」的作用域都由这一个布尔决定
-    isHighRisk: !!riskLabel,
+    isHighRisk,
     riskLabel,
+    // 风险管理模块（withRiskMeta 时服务端给的 riskTier / riskBasis）——
+    // 不传时 riskTier 退化为「保护类 → high」，其余留空（明细页不显示，不需要额外请求）
+    riskTier,
+    riskTierLabel: RISK_TIER_LABELS[riskTier] || '',
+    riskBasisLabel: RISK_BASIS_LABELS[String(p.riskBasis || '')] || '',
     craftTypeLabel: craftTypeLabel(p.craftType) || '',
     craftProcessLabel: craftProcessLabel(p.craftProcess) || ''
   };
@@ -1494,16 +1528,29 @@ const managerPageConfig = {
     productArchiveFilter: 'all', // all | archive | oneOfAKind
     productPromoFilter: 'all', // all | seckill | seckill_expired | group
     // 2026-10-13（提审前点名）：保护等级筛选（高风险 = 三有 / 保护植物 / 保护动物）+ 上架态筛选
-    productRiskFilter: 'all', // all | high | normal
+    // 2026-10-14：风险筛选**只属于「风险管理」tab**（明细页不再放风险 chip）——
+    // 三层与云函数 riskOverview.tiers 同一个划分：all | high | medium | normal（互斥穷尽）。
+    productRiskFilter: 'all', // all | high | medium | normal
     productShelfFilter: 'all', // all | on | off | pending | rejected
     /** list 返回的 shelfCounts（与筛选同一套口径），用于筛选条上的计数 */
     productShelfCounts: { all: 0, on: 0, pending: 0, rejected: 0, off: 0 },
-    /** 高风险藏品总数（保护类）—— 打开藏品库时单独统计一次，供「一键上下线」显数 */
+    /** 高风险藏品总数（保护类）—— 「风险管理」tab 打开时由 riskOverview 一次性给出 */
     highRiskCount: 0,
     /** 中等风险藏品总数（**动物类**，不含保护类）—— 与高风险**互斥**、两个入口独立 */
     mediumRiskCount: 0,
     /** 一键上下线进行中：'' | 'high' | 'medium'（只压暗正在跑的那一组，防重复点击） */
     bulkRiskRunning: '',
+    /* ── 风险管理模块（2026-10-14 产品负责人：把高/中风险能力抽成独立顶部 tab，并丰富它）──
+       riskOverview = 云函数 action `riskOverview` 的原样回包：
+         { all, tiers: { high:{total,on,pending,rejected,off,missingCert,byProtection}, medium:{…,byBasis}, normal:{…} }, scanned, truncated }
+       一个数都不在客户端重算 —— 重算就是第二套口径。 */
+    riskOverview: null,
+    riskOverviewLoading: false,
+    riskOverviewError: false,
+    /** 风险清单的**分层**上架态计数：随所选分层变（不是全局 productShelfCounts，否则选「高风险」还显示全库数） */
+    riskShelfCounts: { all: 0, on: 0, pending: 0, rejected: 0, off: 0 },
+    /** 复制风险清单进行中 */
+    riskCopyRunning: false,
     // 2026-10-13（提审前点名·第③项）：分类管理的**展示层**检索 / 排序 / 空分类筛查。
     // ⚠️ 只派生视图，绝不动 `categoryManageTree`（提交新增分类、关联弹层都按它的下标取值）。
     catKeyword: '',
@@ -2269,7 +2316,7 @@ const managerPageConfig = {
     if (idx !== 0) this.refreshSubData(idx);
   },
 
-  /** 藏品库顶栏三 Tab */
+  /** 藏品库顶栏四 Tab（藏品明细 / 风险管理 / 库存概览 / 分类管理） */
   switchProductLibTab(e) {
     const tab = String((e && e.currentTarget && e.currentTarget.dataset.tab) || 'list');
     this.setProductLibTab(tab);
@@ -2280,19 +2327,35 @@ const managerPageConfig = {
       this.setData({ productLibTab: 'list' });
       return;
     }
-    const next = tab === 'stats' || tab === 'category' ? tab : 'list';
+    const next = (tab === 'stats' || tab === 'category' || tab === 'risk') ? tab : 'list';
+    const enter = (t) => {
+      if (t === 'stats') this.loadProductStats();
+      if (t === 'category') { this.loadCategoriesManage(); this.maybeLoadProductFields(); }
+      if (t === 'risk') { this.loadRiskOverview(); this.loadProducts({ silent: true }); }
+    };
     if (this.data.productLibTab === next) {
-      if (next === 'stats' && !this.data.productStats && !this.data.productStatsLoading) {
-        this.loadProductStats();
-      }
-      if (next === 'category') this.loadCategoriesManage();
-      if (next === 'category') this.maybeLoadProductFields();
+      if (next === 'stats' && !this.data.productStats && !this.data.productStatsLoading) this.loadProductStats();
+      if (next === 'category') { this.loadCategoriesManage(); this.maybeLoadProductFields(); }
+      // 「风险管理」重复点：概览缓存还在就不重拉，只保证清单与当前分层一致
+      if (next === 'risk') { if (!this.data.riskOverview) this.loadRiskOverview(); this.loadProducts({ silent: true }); }
       return;
     }
+    // 一个能力只有一个入口：明细页不带风险筛选，「风险管理」页不带在档 / 促销筛选 / 搜索词。
+    // 不过滤地切过去 = 明明在「中等风险」tab 却看见普通藏品，那种"数字对不上"最难查。
+    if (next === 'risk') {
+      this.setData({
+        productRiskFilter: 'all',
+        productShelfFilter: 'all',
+        productArchiveFilter: 'all',
+        productPromoFilter: 'all',
+        searchVal: ''
+      });
+    } else if (next === 'list') {
+      this.setData({ productRiskFilter: 'all' });
+    }
     this.setData({ productLibTab: next });
-    if (next === 'stats') this.loadProductStats();
-    if (next === 'category') this.loadCategoriesManage();
-    if (next === 'category') this.maybeLoadProductFields();
+    enter(next);
+    if (next === 'list') this.loadProducts({ silent: true });
   },
 
   /**
@@ -4639,6 +4702,8 @@ const managerPageConfig = {
         shelfFilter: this.data.productShelfFilter || 'all',
         sortBy: this.data.productSort || 'new'
       };
+      // 风险管理模块的清单要「凭什么算这一层」—— 只有这一页要，明细页不传（不为用不到的字段多打一次库）
+      if (this.data.productLibTab === 'risk') listData.withRiskMeta = true;
       if (
         this.data.artisanEmbed ||
         this.data.workspaceRole === WORKSPACE_SPECIMEN_ARTISAN
@@ -4682,21 +4747,9 @@ const managerPageConfig = {
         } catch (e) {
           patch.expiredSeckillCount = 0;
         }
-        // 高风险 / 中等风险总数同样走全量 total（两个「一键上下线」都要显数，且不能只数当前页）
-        const countOf = async (risk) => {
-          try {
-            const res = await wx.cloud.callFunction({
-              name: 'manageProducts',
-              data: { action: 'list', page: 1, pageSize: 1, riskFilter: risk }
-            });
-            const r = (res && res.result) || {};
-            return r.success ? (Number(r.total) || 0) : 0;
-          } catch (e) {
-            return 0;
-          }
-        };
-        patch.highRiskCount = await countOf('high');
-        patch.mediumRiskCount = await countOf('medium');
+        // 高风险 / 中等风险件数**不再**在这里各打一次 count ——
+        // 从 2026-10-14 起它们由「风险管理」tab 的 riskOverview 一次性给出（同一份数字只有一个来源），
+        // 顺带省掉每次进藏品库的 2 次云函数往返。
       }
       this.setData(patch);
     } catch (err) {
@@ -4793,11 +4846,81 @@ const managerPageConfig = {
     });
     this.loadProducts({ silent: true });
   },
-  /** 保护等级筛选：全部 / 高风险（三有·保护类）/ 普通 */
+  /* ══════════════════════════════════════════════════════════════════════════════
+   * 风险管理模块（2026-10-14 产品负责人：「把目前的高风险与中风险能力抽象为一个独立的顶部 tab
+   * 模块，风险管理」+「丰富风险管理模块的能力」）
+   *
+   * 为什么要独立成 tab，而不是继续堆在「藏品明细」顶上：
+   *   · 明细页的主任务是"找一件藏品改它"，风险工具条压在搜索框上方 = 每次点进藏品库都先看到两条
+   *     大色块（红 + 琥珀），既抢主次又不属于"明细"这件事；
+   *   · 风险管理是**合规巡查**，有自己的一套问题：分几层？每层在架多少？凭什么算这一层？要导出给谁？
+   *     这不是"明细"的一个筛选条件能装下的。
+   *
+   * 数字**全部**来自云函数 `riskOverview`（一次调用）：客户端一个数都不重算 —— 重算 = 第二套口径。
+   * ══════════════════════════════════════════════════════════════════════════════ */
+
+  /** 拉一次分层概览（含各层上架态拆分 / 保护类细分 / 中等风险命中原因） */
+  async loadRiskOverview() {
+    if (this.data.riskOverviewLoading) return;
+    this.setData({ riskOverviewLoading: true, riskOverviewError: false });
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'manageProducts',
+        data: { action: 'riskOverview' }
+      });
+      const r = (res && res.result) || {};
+      if (!r.success) throw new Error(r.msg || '读取失败');
+      const tiers = r.tiers || {};
+      this.setData({
+        riskOverview: r,
+        riskOverviewLoading: false,
+        // 两条「一键上下线」工具条上的件数也取自这里 —— 与概览同一份数字，不再单独 count 一遍
+        highRiskCount: Number((tiers.high || {}).total) || 0,
+        mediumRiskCount: Number((tiers.medium || {}).total) || 0
+      });
+      this._recomputeRiskShelfCounts();
+    } catch (e) {
+      console.warn('loadRiskOverview', e);
+      this.setData({ riskOverviewLoading: false, riskOverviewError: true });
+      this.showHubTip(formatCloudFnError(e, '风险概览读取失败'), 'warn');
+    }
+  },
+
+  /**
+   * 分层上架态计数：选「高风险」时，下面那条上架态筛选要显示**高风险这一层**的在架 / 已下架，
+   * 而不是全库的 —— 否则「高风险 11 件」配「在架 232」两个数字同屏打架。
+   * 数据源只有 riskOverview（服务端算好），这里只做选择，不做统计。
+   */
+  _recomputeRiskShelfCounts() {
+    const ov = this.data.riskOverview;
+    const tier = String(this.data.productRiskFilter || 'all');
+    const empty = { all: 0, on: 0, pending: 0, rejected: 0, off: 0 };
+    if (!ov || !ov.tiers) { this.setData({ riskShelfCounts: empty }); return; }
+    const src = tier === 'all' ? ov.all : ov.tiers[tier];
+    if (!src) { this.setData({ riskShelfCounts: empty }); return; }
+    this.setData({
+      riskShelfCounts: {
+        all: Number(src.total) || 0,
+        on: Number(src.on) || 0,
+        pending: Number(src.pending) || 0,
+        rejected: Number(src.rejected) || 0,
+        off: Number(src.off) || 0
+      }
+    });
+  },
+
+  /**
+   * 风险分层筛选：全部风险 / 高风险 / 中等风险 / 普通（三层互斥穷尽，与概览同一个划分）。
+   * 切分层会**清掉上架态筛选** —— 从「高风险 · 已下架 11」切到「中等风险」时留着 off
+   * 会让店主以为中等风险只有 12 件（那是 204 在架 + 12 已下架里的 12）。
+   */
   setProductRiskFilter(e) {
-    const val = e.currentTarget.dataset.val || 'all';
-    if (val === this.data.productRiskFilter) return;
-    this.setData({ productRiskFilter: val });
+    const val = String((e && e.currentTarget && e.currentTarget.dataset.val) || 'all');
+    const allowed = ['all', 'high', 'medium', 'normal'];
+    const next = allowed.indexOf(val) >= 0 ? val : 'all';
+    if (next === this.data.productRiskFilter) return;
+    this.setData({ productRiskFilter: next, productShelfFilter: 'all' });
+    this._recomputeRiskShelfCounts();
     this.loadProducts({ silent: true });
   },
   /** 上架态筛选：全部 / 在架 / 已下架 / 待审核 / 已驳回（口径与卡片计数一致） */
@@ -4806,6 +4929,87 @@ const managerPageConfig = {
     if (val === this.data.productShelfFilter) return;
     this.setData({ productShelfFilter: val });
     this.loadProducts({ silent: true });
+  },
+
+  /**
+   * 风险清单：**当前筛选的全量**（不是当前页）→ 复制成纯文本，给法务 / 供应商 / 平台核对。
+   * 为什么需要：提审或应对平台问询时，要的是"哪些件、凭什么算、现在什么状态"的一张清单，
+   * 而手机上一页页截图是没法用的。同一次扫描也顺手把命中原因带回来（withRiskMeta）。
+   */
+  async copyRiskList() {
+    if (this.data.riskCopyRunning) return;
+    this.setData({ riskCopyRunning: true });
+    wx.showLoading({ title: '整理清单…' });
+    const rows = [];
+    try {
+      const pageSize = 100;
+      let page = 1;
+      let total = Infinity;
+      while (rows.length < total && page <= 50) {
+        const res = await wx.cloud.callFunction({
+          name: 'manageProducts',
+          data: {
+            action: 'list',
+            page,
+            pageSize,
+            riskFilter: this.data.productRiskFilter || 'all',
+            shelfFilter: this.data.productShelfFilter || 'all',
+            withRiskMeta: true
+          }
+        });
+        const result = (res && res.result) || {};
+        if (!result.success) throw new Error(result.msg || '扫描失败');
+        total = Number(result.total) || 0;
+        const batch = (result.list || []).map(mapProductRow);
+        rows.push(...batch);
+        if (!batch.length || rows.length >= total) break;
+        page += 1;
+      }
+    } catch (err) {
+      wx.hideLoading();
+      this.setData({ riskCopyRunning: false });
+      this.showHubTip(formatCloudFnError(err, '清单整理失败'), 'warn');
+      return;
+    }
+    wx.hideLoading();
+    if (!rows.length) {
+      this.setData({ riskCopyRunning: false });
+      this.showHubTip('当前筛选下没有藏品，无需导出', 'info');
+      return;
+    }
+    const MAX_ROWS = 500;
+    const sliced = rows.slice(0, MAX_ROWS);
+    const tierName = this.data.productRiskFilter === 'all' ? '全部风险' : (RISK_TIER_LABELS[this.data.productRiskFilter] || '');
+    const shelfName = this.data.productShelfFilter === 'all' ? '' : ` · ${SHELF_FILTER_LABELS[this.data.productShelfFilter] || ''}`;
+    const head = [
+      `山海造物 · 风险藏品清单`,
+      `${tierName}${shelfName} · 共 ${rows.length} 件${rows.length > MAX_ROWS ? `（仅导出前 ${MAX_ROWS} 件）` : ''}`,
+      `导出时间：${this._formatStamp(Date.now())}`,
+      `口径：高风险 = 三有 / 保护植物 / 保护动物；中等风险 = 动物类（按学名或所属分类），不含保护类`,
+      ''
+    ];
+    const body = sliced.map((r, i) => {
+      const parts = [
+        `${i + 1}. ${r.title || '(无标题)'}`,
+        [r.rootCategoryName, r.category].filter(Boolean).join(' / ') || '未分类',
+        `${r.riskTierLabel || '—'}${r.riskBasisLabel ? ' · ' + r.riskBasisLabel : ''}`,
+        r.isOffShelf === false ? '在架' : `已下架${r.shelfApprovalStatus === 'pending' ? '（待审）' : r.shelfApprovalStatus === 'rejected' ? '（已驳回）' : ''}`
+      ];
+      return parts.join(' | ');
+    });
+    const text = head.concat(body).join('\n');
+    wx.setClipboardData({
+      data: text,
+      success: () => this.showHubTip(`已复制 ${sliced.length} 件风险清单，可直接粘贴给法务 / 平台`, 'info'),
+      fail: () => this.showHubTip('复制失败，请重试', 'warn')
+    });
+    this.setData({ riskCopyRunning: false });
+  },
+
+  _formatStamp(ms) {
+    const d = new Date(Number(ms) || Date.now());
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
   },
 
   /**
@@ -4913,6 +5117,8 @@ const managerPageConfig = {
     this.showHubTip(parts.join(' · '), failCount ? 'warn' : 'info');
     this.setData({ bulkRiskRunning: '' });
     this.loadProducts({ silent: true });
+    // 概览上的分层件数与上下架态也变了 —— 不刷新就会出现「条上 11 件、概览还写 0 在架」
+    if (this.data.productLibTab === 'risk') this.loadRiskOverview();
   },
   async clearExpiredSeckill() {
     wx.showLoading({ title: '扫描过期秒杀…' });

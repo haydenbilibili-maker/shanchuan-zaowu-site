@@ -222,10 +222,11 @@
     </view>
   </block>
 
-  <!-- [Tab 1] 藏品库：明细 / 库存概览 / 分类管理 -->
+  <!-- [Tab 1] 藏品库：明细 / 风险管理 / 库存概览 / 分类管理 -->
   <block wx:if="{{curTab===1}}">
     <view class="sub-tab-row product-lib-tabs" wx:if="{{!artisanEmbed}}">
       <view class="sub-tab {{productLibTab==='list'?'active':''}}" bindtap="switchProductLibTab" data-tab="list">藏品明细</view>
+      <view class="sub-tab {{productLibTab==='risk'?'active':''}}" bindtap="switchProductLibTab" data-tab="risk">风险管理</view>
       <view class="sub-tab {{productLibTab==='stats'?'active':''}}" bindtap="switchProductLibTab" data-tab="stats">库存概览</view>
       <view class="sub-tab {{productLibTab==='category'?'active':''}}" bindtap="switchProductLibTab" data-tab="category">分类管理</view>
     </view>
@@ -234,33 +235,14 @@
       <text class="artisan-embed-sub">仅展示与编辑你创建或关联的藏品</text>
     </view>
 
-    <!-- 藏品明细 -->
+    <!-- 藏品明细：**只放"找一件藏品改它"要用的东西**。
+         2026-10-14（产品负责人）：「把目前的高风险与中风险能力抽象为一个独立的顶部 tab 模块，风险管理」
+         —— 两条风险工具条与「高风险 / 中等风险」筛选 chip 全部迁到「风险管理」tab。
+         理由：风险巡查与藏品明细是两个任务，混在一起时每次进藏品库先看到两条大色块（红 + 琥珀），
+         既抢主次，又让「明细」这条列表承担了它不该承担的合规语义；且两处各有一份风险计数迟早打架。 -->
     <block wx:if="{{productLibTab==='list'}}">
       <view class="product-toolbar" wx:if="{{!artisanEmbed && expiredSeckillCount > 0}}">
         <view class="cat-manage-btn" bindtap="clearExpiredSeckill">清过期秒杀({{expiredSeckillCount}})</view>
-      </view>
-      <!-- 风险藏品一键上下线：**两个独立入口**（产品负责人 2026-10-13）——
-           高风险 = 保护类（三有 / 保护植物 / 保护动物）；中等风险 = 动物类（**不含保护类**，两者互斥）。
-           各带自己的件数与动作，方便分别操作；进行中只压暗正在跑的那一组。 -->
-      <view class="risk-bar" wx:if="{{!artisanEmbed && highRiskCount > 0}}">
-        <view class="risk-bar-main">
-          <text class="risk-bar-label">高风险 {{highRiskCount}} 件</text>
-          <text class="risk-bar-sub">三有 / 保护类标本 · 来源与许可须齐备</text>
-        </view>
-        <view class="risk-bar-actions">
-          <view class="risk-bar-btn is-danger {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="0">一键下架</view>
-          <view class="risk-bar-btn {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="1">一键上架</view>
-        </view>
-      </view>
-      <view class="risk-bar is-medium" wx:if="{{!artisanEmbed && mediumRiskCount > 0}}">
-        <view class="risk-bar-main">
-          <text class="risk-bar-label">中等风险 {{mediumRiskCount}} 件</text>
-          <text class="risk-bar-sub">动物类标本（保护类已归入高风险）</text>
-        </view>
-        <view class="risk-bar-actions">
-          <view class="risk-bar-btn is-warn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="0">一键下架</view>
-          <view class="risk-bar-btn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="1">一键上架</view>
-        </view>
       </view>
       <view class="search-box">
         <input placeholder="搜索藏品…" placeholder-class="ph" bindinput="onSearchInput" value="{{searchVal}}"/>
@@ -285,11 +267,10 @@
       <view class="product-filter-row" wx:if="{{!artisanEmbed}}">
         <view class="pf-chip {{productArchiveFilter==='archive'?'on':''}}" bindtap="setProductArchiveFilter" data-val="archive">在档</view>
         <view class="pf-chip {{productArchiveFilter==='oneOfAKind'?'on':''}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>
-        <view class="pf-chip is-risk {{productRiskFilter==='high'?'on':''}}" bindtap="setProductRiskFilter" data-val="high">高风险 {{highRiskCount}}</view>
-        <view class="pf-chip is-warn {{productRiskFilter==='medium'?'on':''}}" bindtap="setProductRiskFilter" data-val="medium">中等风险 {{mediumRiskCount}}</view>
         <view class="pf-chip {{productPromoFilter==='seckill'?'on':''}}" bindtap="setProductPromoFilter" data-val="seckill">秒杀中</view>
         <view class="pf-chip {{productPromoFilter==='seckill_expired'?'on':''}}" bindtap="setProductPromoFilter" data-val="seckill_expired">秒杀过期</view>
         <view class="pf-chip {{productPromoFilter==='group'?'on':''}}" bindtap="setProductPromoFilter" data-val="group">拼团</view>
+        <!-- 高风险 / 中等风险 chip 已迁到「风险管理」tab（一个能力一个入口） -->
       </view>
       <block wx:for="{{products}}" wx:key="_id">
         <view class="product-row {{item.isOffShelf ? 'disabled' : ''}}">
@@ -334,6 +315,178 @@
         <text class="product-list-end" wx:elif="{{!productListLoading && !products.length}}">暂无藏品</text>
       </view>
       <view class="fab-add" bindtap="openProductModal">+</view>
+    </block>
+
+    <!-- ══════════════ 风险管理（2026-10-14 产品负责人：「抽象为一个独立的顶部 tab 模块」+「丰富能力」）══════════════
+         这一页回答的是合规巡查的四个问题：① 分几层、各多少？② 每层在架 / 已下架多少？
+         ③ 凭什么算这一层（逐件标出命中原因）？④ 怎么一次性交给法务 / 平台（复制清单）？
+         ⚠️ 页面上的数字**全部**来自云函数 riskOverview 一次调用的回包 —— 客户端一个数都不重算，
+            重算就是第二套口径（本项目已经被"同一屏两个数字打架"坑过）。
+         口径（与云函数 buildListWhere / riskTierOf 同源）：
+           高风险   = protectionType ∈ {三有, 保护植物, 保护动物}
+           中等风险 = 动物类（taxonomy 界为动物界，或所属分类属动物界）**且不含保护类**
+           普通     = 既不是高风险也不是中等风险（三层互斥穷尽，相加 = 全库） -->
+    <block wx:if="{{productLibTab==='risk'}}">
+      <view class="risk-page">
+
+        <!-- ① 分层概览 -->
+        <view class="risk-hero">
+          <view class="risk-hero-top">
+            <text class="risk-hero-title">风险分层总览</text>
+            <view class="risk-hero-refresh" bindtap="loadRiskOverview" hover-class="risk-hero-refresh-press" hover-stay-time="70">{{riskOverviewLoading ? '读取中…' : '刷新'}}</view>
+          </view>
+          <view class="risk-hero-state" wx:if="{{riskOverviewLoading && !riskOverview}}">正在统计全库…</view>
+          <view class="risk-hero-state is-error" wx:elif="{{riskOverviewError && !riskOverview}}">
+            <text>概览没取回来</text>
+            <text class="risk-hero-retry" catchtap="loadRiskOverview">重试</text>
+          </view>
+          <block wx:elif="{{riskOverview}}">
+            <view class="risk-hero-nums">
+              <view class="risk-hero-num">
+                <text class="rhn-val">{{riskOverview.all.total}}</text>
+                <text class="rhn-lbl">全库藏品</text>
+              </view>
+              <view class="risk-hero-num">
+                <text class="rhn-val is-risk">{{highRiskCount + mediumRiskCount}}</text>
+                <text class="rhn-lbl">风险藏品</text>
+              </view>
+              <view class="risk-hero-num">
+                <text class="rhn-val is-quiet">{{riskOverview.tiers.normal.total}}</text>
+                <text class="rhn-lbl">普通藏品</text>
+              </view>
+            </view>
+            <view class="risk-tier-item is-danger">
+              <view class="rti-head">
+                <text class="rti-name">高风险</text>
+                <text class="rti-total">{{riskOverview.tiers.high.total}} 件</text>
+              </view>
+              <text class="rti-detail">保护类 · 三有 {{riskOverview.tiers.high.byProtection.sanyou}} / 保护植物 {{riskOverview.tiers.high.byProtection.protected_plant}} / 保护动物 {{riskOverview.tiers.high.byProtection.protected_animal}}</text>
+              <text class="rti-shelf">在架 {{riskOverview.tiers.high.on}} · 已下架 {{riskOverview.tiers.high.off}}</text>
+            </view>
+            <view class="risk-tier-item is-warn">
+              <view class="rti-head">
+                <text class="rti-name">中等风险</text>
+                <text class="rti-total">{{riskOverview.tiers.medium.total}} 件</text>
+              </view>
+              <text class="rti-detail">动物类（不含保护类）· 学名属动物界 {{riskOverview.tiers.medium.byBasis.taxonomy}} / 按所属分类兜底 {{riskOverview.tiers.medium.byBasis.category}}</text>
+              <text class="rti-shelf">在架 {{riskOverview.tiers.medium.on}} · 已下架 {{riskOverview.tiers.medium.off}}</text>
+            </view>
+            <!-- 合规材料：只报**真数**，而且分两档说 ——
+                 2026-10-14 线上实测：全库 255 件里 244 件「收藏证书」为空，但**高风险 11 件一件不缺**
+                 （保护类标本的来源材料是做到位的）。所以先问"保护类缺不缺"，缺了才是真警报；
+                 不缺就退成静默提示，只提醒动物类那些待补 —— 一句「255/255 全空」是错的，会把做到位的部分也说成没做。 -->
+            <view class="risk-note" wx:if="{{riskOverview.tiers.high.missingCert > 0}}">
+              <text class="risk-note-txt">合规材料：高风险还有 {{riskOverview.tiers.high.missingCert}} / {{riskOverview.tiers.high.total}} 件没有登记「收藏证书」—— 保护类标本上架前须补齐合法来源材料。</text>
+            </view>
+            <view class="risk-note is-quiet" wx:elif="{{riskOverview.all.missingCert > 0}}">
+              <text class="risk-note-txt">合规材料：高风险 {{riskOverview.tiers.high.total}} 件已全部登记「收藏证书」；其余 {{riskOverview.all.missingCert}} 件为空（中等风险 {{riskOverview.tiers.medium.missingCert}} 件 · 普通 {{riskOverview.tiers.normal.missingCert}} 件），动物类标本建议逐件补来源材料。</text>
+            </view>
+            <view class="risk-note is-quiet" wx:if="{{riskOverview.truncated}}">
+              <text class="risk-note-txt">扫描已达上限（{{riskOverview.scanned}} 件），数字可能不全。</text>
+            </view>
+          </block>
+        </view>
+
+        <!-- ② 两条**独立**一键工具条（口径与动作与改前逐字一致，只换了页）——
+             各自带自己的件数与方向按钮，方便分别操作（例如只清保护类、或只清动物类）；
+             进行中只压暗正在跑的那一组。 -->
+        <view class="risk-bar" wx:if="{{highRiskCount > 0}}">
+          <view class="risk-bar-main">
+            <text class="risk-bar-label">高风险 {{highRiskCount}} 件</text>
+            <text class="risk-bar-sub">三有 / 保护类标本 · 来源与许可须齐备</text>
+          </view>
+          <view class="risk-bar-actions">
+            <view class="risk-bar-btn is-danger {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="0">一键下架</view>
+            <view class="risk-bar-btn {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="1">一键上架</view>
+          </view>
+        </view>
+        <view class="risk-bar is-medium" wx:if="{{mediumRiskCount > 0}}">
+          <view class="risk-bar-main">
+            <text class="risk-bar-label">中等风险 {{mediumRiskCount}} 件</text>
+            <text class="risk-bar-sub">动物类标本（保护类已归入高风险）</text>
+          </view>
+          <view class="risk-bar-actions">
+            <view class="risk-bar-btn is-warn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="0">一键下架</view>
+            <view class="risk-bar-btn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="1">一键上架</view>
+          </view>
+        </view>
+
+        <!-- ③ 分层筛选（三层互斥穷尽） -->
+        <view class="risk-sec-label">按风险分层</view>
+        <view class="product-filter-row">
+          <view class="pf-chip {{productRiskFilter==='all'?'on':''}}" bindtap="setProductRiskFilter" data-val="all">全部</view>
+          <view class="pf-chip is-risk {{productRiskFilter==='high'?'on':''}}" bindtap="setProductRiskFilter" data-val="high">高风险 {{highRiskCount}}</view>
+          <view class="pf-chip is-warn {{productRiskFilter==='medium'?'on':''}}" bindtap="setProductRiskFilter" data-val="medium">中等风险 {{mediumRiskCount}}</view>
+          <view class="pf-chip {{productRiskFilter==='normal'?'on':''}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>
+        </view>
+
+        <!-- 上架态：计数随所选分层变（选「高风险」就显示高风险这一层的在架 / 已下架）——
+             用全库计数会与上面的分层件数同屏打架。 -->
+        <view class="risk-sec-label">按上架态</view>
+        <view class="product-filter-row">
+          <view class="pf-chip {{productShelfFilter==='all'?'on':''}}" bindtap="setProductShelfFilter" data-val="all">全部 {{riskShelfCounts.all}}</view>
+          <view class="pf-chip {{productShelfFilter==='on'?'on':''}}" bindtap="setProductShelfFilter" data-val="on">在架 {{riskShelfCounts.on}}</view>
+          <view class="pf-chip {{productShelfFilter==='off'?'on':''}}" bindtap="setProductShelfFilter" data-val="off">已下架 {{riskShelfCounts.off}}</view>
+          <view class="pf-chip {{productShelfFilter==='pending'?'on':''}}" wx:if="{{riskShelfCounts.pending > 0}}" bindtap="setProductShelfFilter" data-val="pending">待审 {{riskShelfCounts.pending}}</view>
+          <view class="pf-chip {{productShelfFilter==='rejected'?'on':''}}" wx:if="{{riskShelfCounts.rejected > 0}}" bindtap="setProductShelfFilter" data-val="rejected">已驳回 {{riskShelfCounts.rejected}}</view>
+        </view>
+
+        <view class="search-box">
+          <input placeholder="搜索风险藏品…" placeholder-class="ph" bindinput="onSearchInput" value="{{searchVal}}"/>
+        </view>
+
+        <!-- ④ 复制清单：提审 / 平台问询时要的是"哪些件、凭什么算、现在什么状态"的一整张清单，
+             手机上一页页截图没法用。导出范围＝当前筛选的**全量**（不是这一页）。 -->
+        <view class="risk-actions">
+          <view class="risk-copy-btn {{riskCopyRunning ? 'is-disabled' : ''}}" bindtap="copyRiskList" hover-class="risk-copy-btn-press" hover-stay-time="70">{{riskCopyRunning ? '整理中…' : '复制风险清单'}}</view>
+          <text class="risk-actions-hint">导出范围＝当前筛选的全量（含命中原因与上下架态）</text>
+        </view>
+
+        <!-- ⑤ 清单：每件都标出**凭什么算这一层**，店主自己就能核，不用来问口径 -->
+        <block wx:for="{{products}}" wx:key="_id">
+          <view class="product-row {{item.isOffShelf ? 'disabled' : ''}}">
+            <view class="p-cover">
+              <image class="p-img" src="{{item.images[0]}}" mode="aspectFill"></image>
+              <view class="p-wm {{item.shelfWmClass}}" wx:if="{{item.shelfWm}}">
+                <text class="p-wm-text">{{item.shelfWm}}</text>
+              </view>
+            </view>
+            <view class="p-info">
+              <view class="p-top"><text class="p-name">{{item.title}}</text><view class="p-edit" bindtap="openProductModal" data-item="{{item}}">✎</view></view>
+              <view class="p-tags">
+                <text class="mini-tag danger" wx:if="{{item.riskTier==='high'}}">高风险{{item.riskLabel ? ' · ' + item.riskLabel : ''}}</text>
+                <text class="mini-tag warn" wx:elif="{{item.riskTier==='medium'}}">中等风险</text>
+                <text class="mini-tag" wx:elif="{{item.riskTier==='normal'}}">普通</text>
+                <text class="mini-tag" wx:if="{{item.riskBasisLabel}}">{{item.riskBasisLabel}}</text>
+                <text class="mini-tag" wx:if="{{item.inArchive}}">在档</text>
+                <text class="mini-tag warn" wx:if="{{item.isOneOfAKind}}">孤品</text>
+                <text class="mini-tag" wx:if="{{item.hasSku}}">多规格</text>
+              </view>
+              <view class="p-mid">
+                <text class="tag">{{item.rootCategoryName || '未分类'}}</text>
+                <text class="tag" wx:if="{{item.category}}">{{item.category}}</text>
+                <text class="tag profit" wx:if="{{item.riskTier==='normal'}}">非风险</text>
+              </view>
+              <view class="p-bot">
+                <text class="p-price">¥{{item.price}}</text>
+                <switch checked="{{!item.isOffShelf}}" color="#C4A76C" bindchange="toggleShelf" data-id="{{item._id}}" style="transform:scale(0.6)"/>
+              </view>
+            </view>
+          </view>
+        </block>
+        <view class="product-list-footer">
+          <text class="product-list-meta" wx:if="{{productTotal}}">已加载 {{products.length}} / {{productTotal}}</text>
+          <view class="product-load-more" wx:if="{{productHasMore}}" bindtap="loadMoreProducts">
+            {{productLoadingMore ? '加载中…' : '加载更多'}}
+          </view>
+          <text class="product-list-end" wx:elif="{{products.length && !productListLoading}}">已显示全部</text>
+          <view class="product-list-end is-error" wx:elif="{{productListError && !productListLoading && !products.length}}">
+            <text>风险清单未能取回</text>
+            <text class="product-list-retry" catchtap="loadProducts">重试</text>
+          </view>
+          <text class="product-list-end" wx:elif="{{!productListLoading && !products.length}}">该筛选下没有藏品</text>
+        </view>
+      </view>
     </block>
 
     <!-- 库存概览（原藏品概览） -->
