@@ -1502,6 +1502,14 @@ const managerPageConfig = {
     highRiskCount: 0,
     /** 一键上下线进行中（防重复点击） */
     bulkRiskRunning: false,
+    // 2026-10-13（提审前点名·第③项）：分类管理的**展示层**检索 / 排序 / 空分类筛查。
+    // ⚠️ 只派生视图，绝不动 `categoryManageTree`（提交新增分类、关联弹层都按它的下标取值）。
+    catKeyword: '',
+    catSortMode: 'default', // default | count | name
+    catOnlyEmpty: false,
+    catTreeView: [],
+    catMatchSummary: '',
+    catEmptyCount: 0,
     /** 与 C 端 ProductList 对齐：new | sales | price_asc | price_desc */
     productSort: 'new',
     productPriceSortLabel: '价格',
@@ -8695,10 +8703,94 @@ async loadCategoriesManage() {
       catManageRootNames: manage.catManageRootNames,
       categories: manage.categories
     });
+    this.rebuildCatTreeView();
   } catch (e) {
     console.error('loadCategoriesManage', e);
     this.showHubTip('加载分类失败', 'warn');
   }
+},
+
+/**
+ * 分类树**展示层**派生（2026-10-13·第③项）：检索 / 排序 / 只看空分类。
+ * 为什么不直接改 categoryManageTree：新增二级分类要按下标取 `tree[newCatParentIndex]`
+ * （见 submitCategory），关联弹层也按 `_id` 取 —— 一旦把过滤后的树写回源，确认框与提交都会错位。
+ * 所以：源树只读，视图另存 `catTreeView`。
+ */
+rebuildCatTreeView() {
+  const raw = Array.isArray(this.data.categoryManageTree) ? this.data.categoryManageTree : [];
+  const kw = String(this.data.catKeyword || '').trim().toLowerCase();
+  const mode = this.data.catSortMode || 'default';
+  const onlyEmpty = !!this.data.catOnlyEmpty;
+  const hit = (v) => String(v || '').toLowerCase().indexOf(kw) !== -1;
+
+  let emptyCount = 0;
+  let matchedRoots = 0;
+  let matchedSubs = 0;
+
+  const view = [];
+  raw.forEach((root) => {
+    const children = (Array.isArray(root.children) ? root.children : []).map((sub) => {
+      const count = Number(sub.productCount) || 0;
+      if (count === 0) emptyCount += 1;
+      return { ...sub, isEmpty: count === 0 };
+    });
+    const rootHit = !kw || hit(root.name) || hit(root.enName);
+    // 只看空分类：一级整体不过滤，只保留「有 0 件二级」的一级（并只显示这些 0 件项）
+    let kept = onlyEmpty ? children.filter((c) => c.isEmpty) : children;
+    if (kw && !rootHit) kept = kept.filter((c) => hit(c.name) || hit(c.latinName) || hit(c.latin) || hit(c.enName));
+    if (kw && rootHit && !onlyEmpty) kept = children;
+    if (onlyEmpty && !kept.length) return;
+
+    if (mode === 'count') {
+      kept = kept.slice().sort((a, b) => (Number(b.productCount) || 0) - (Number(a.productCount) || 0));
+    } else if (mode === 'name') {
+      kept = kept.slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN'));
+    }
+
+    matchedRoots += 1;
+    matchedSubs += kept.length;
+    view.push({
+      ...root,
+      children: kept,
+      // 一级合计 = 二级之和 + 直接挂在一级上的（历史数据可能直接挂一级）
+      totalCount: children.reduce((sum, c) => sum + (Number(c.productCount) || 0), 0) + (Number(root.productCount) || 0),
+      hiddenCount: children.length - kept.length
+    });
+  });
+
+  if (mode === 'count') {
+    view.sort((a, b) => (Number(b.totalCount) || 0) - (Number(a.totalCount) || 0));
+  } else if (mode === 'name') {
+    view.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN'));
+  }
+
+  const filtering = !!kw || onlyEmpty || mode !== 'default';
+  this.setData({
+    catTreeView: view,
+    catEmptyCount: emptyCount,
+    catMatchSummary: filtering
+      ? `匹配 ${matchedRoots} 个一级 · ${matchedSubs} 个二级${onlyEmpty ? `（全库 ${emptyCount} 个空分类）` : ''}`
+      : ''
+  });
+},
+setCatKeyword(e) {
+  this.setData({ catKeyword: e.detail.value });
+  clearTimeout(this._catTimer);
+  this._catTimer = setTimeout(() => this.rebuildCatTreeView(), 200);
+},
+clearCatKeyword() {
+  if (!this.data.catKeyword && !this.data.catOnlyEmpty && this.data.catSortMode === 'default') return;
+  this.setData({ catKeyword: '', catOnlyEmpty: false, catSortMode: 'default' });
+  this.rebuildCatTreeView();
+},
+setCatSortMode(e) {
+  const val = (e.currentTarget.dataset.val || 'default');
+  this.setData({ catSortMode: val === this.data.catSortMode && val !== 'default' ? 'default' : val });
+  this.rebuildCatTreeView();
+},
+toggleCatOnlyEmpty() {
+  this.setData({ catOnlyEmpty: !this.data.catOnlyEmpty });
+  this.rebuildCatTreeView();
 },
 
 // 🟢 一级分类改变

@@ -461,19 +461,32 @@
         </view>
         <view class="cat-manage-tip">列出已启用的一、二级分类。点「关联」可查看并补挂藏品；「修复藏品关联」会把挂在旧分类上的藏品移到现分类。</view>
 
-        <view class="cat-tree" wx:if="{{categoryManageTree.length}}">
-          <block wx:for="{{categoryManageTree}}" wx:key="_id">
+        <!-- 2026-10-13（第③项）：分类树的**展示层**检索 / 排序 / 空分类筛查。
+             只派生 catTreeView，不动 categoryManageTree（新增分类与关联弹层按源树下标取值）。 -->
+        <view class="cat-filter-row">
+          <input class="cat-search" placeholder="搜索分类（中文 / 英文 / 拉丁名）" placeholder-class="ph"
+            value="{{catKeyword}}" bindinput="setCatKeyword" confirm-type="search"/>
+          <view class="pf-chip {{catSortMode==='count'?'on':''}}" bindtap="setCatSortMode" data-val="count">按数量</view>
+          <view class="pf-chip {{catSortMode==='name'?'on':''}}" bindtap="setCatSortMode" data-val="name">按名称</view>
+          <view class="pf-chip is-warn {{catOnlyEmpty?'on':''}}" bindtap="toggleCatOnlyEmpty">只看空分类 {{catEmptyCount}}</view>
+          <view class="pf-chip" wx:if="{{catMatchSummary}}" bindtap="clearCatKeyword">清空</view>
+        </view>
+        <view class="cat-match-tip" wx:if="{{catMatchSummary}}">{{catMatchSummary}}</view>
+
+        <view class="cat-tree" wx:if="{{catTreeView.length}}">
+          <block wx:for="{{catTreeView}}" wx:key="_id">
             <view class="cat-root-row">
               <view class="cat-root-main">
                 <text class="cat-l1">{{item.name}}</text>
                 <text class="cat-en">{{item.enName}}</text>
               </view>
+              <text class="cat-root-count">共 {{item.totalCount}} 件</text>
               <view class="cat-del" bindtap="deleteCategory" data-id="{{item._id}}" data-level="1">删除</view>
             </view>
             <view class="cat-sub-row" wx:for="{{item.children}}" wx:for-item="sub" wx:key="_id">
               <view class="cat-sub-main">
                 <text class="cat-sub-name">└ {{sub.name}}</text>
-                <text class="cat-count">{{sub.productCount || 0}} 件</text>
+                <text class="cat-count {{sub.isEmpty ? 'is-empty' : ''}}">{{sub.productCount || 0}} 件</text>
                 <text class="cat-tax" wx:if="{{sub.latinName || sub.latin || sub.enName}}">{{sub.latinName || sub.latin || sub.enName}}</text>
               </view>
               <view class="cat-sub-ops">
@@ -481,10 +494,11 @@
                 <view class="cat-del" bindtap="deleteCategory" data-id="{{sub._id}}" data-level="2">删除</view>
               </view>
             </view>
-            <view class="cat-empty-subs" wx:if="{{!item.children.length}}">暂无已启用的二级分类</view>
+            <view class="cat-empty-subs" wx:if="{{!item.children.length}}">{{catOnlyEmpty ? '该一级下没有空分类' : '暂无已启用的二级分类'}}</view>
+            <view class="cat-hidden-tip" wx:if="{{item.hiddenCount > 0}}">另有 {{item.hiddenCount}} 个二级被当前条件隐藏</view>
           </block>
         </view>
-        <view class="empty-tip" wx:else>暂无分类，可在下方添加</view>
+        <view class="empty-tip" wx:else>{{catMatchSummary ? '没有匹配的分类（可清空条件）' : '暂无分类，可在下方添加'}}</view>
 
         <view class="cat-add-section">
           <view class="form-section-label">新增分类</view>

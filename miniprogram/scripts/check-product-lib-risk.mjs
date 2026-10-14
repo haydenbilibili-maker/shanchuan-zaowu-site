@@ -127,6 +127,27 @@ export function run(src = {}) {
   ok(/bindtap="resetProductFilters"/.test(wxml), 'D 「全部」没有走一键清空筛选')
   ok(/highRiskCount/.test(wxml), 'D 工具条没有显示高风险件数')
 
+  /* ── E 分类管理（第③项后半）展示层检索 / 排序 / 空分类 ────────────── */
+  const catFn = (cfg.match(/rebuildCatTreeView\(\) \{[\s\S]*?\n  \},/) || [''])[0]
+  ok(!!catFn, 'E1 找不到 rebuildCatTreeView（分类树展示层派生）')
+  ok(!/categoryManageTree:\s*view/.test(catFn) && !/setData\(\{[^}]*categoryManageTree/.test(catFn),
+    'E1 派生视图写回了源树 categoryManageTree（新增分类 / 关联弹层按下标取值会错位）')
+  const submitCat = methodBody(cfg, 'submitCategory')
+  ok(/this\.data\.categoryManageTree/.test(submitCat),
+    'E1 submitCategory 不再读源树（改读过滤后的视图会取错「所属一级分类」）')
+  ok(/hit\(root\.name\)/.test(catFn) && /hit\(root\.enName\)/.test(catFn), 'E2 检索没有覆盖一级的中文 / 英文名')
+  ok(/hit\(c\.latinName\)/.test(catFn) || /hit\(c\.latin\)/.test(catFn), 'E2 检索没有覆盖二级的拉丁名')
+  ok(/mode === 'count'/.test(catFn) && /mode === 'name'/.test(catFn), 'E3 缺「按数量 / 按名称」排序分支')
+  // 一级与二级**都要**按中文序（只改一层 = 用户看到两段不同顺序）
+  ok((catFn.match(/localeCompare\([\s\S]{0,120}?'zh/g) || []).length >= 2, 'E3 名称排序没覆盖一级与二级两层（中文排序缺失）')
+  ok(/isEmpty/.test(catFn) && /emptyCount \+= 1/.test(catFn) && /catEmptyCount: emptyCount/.test(catFn),
+    'E4 没有空分类标记或其计数没真的累加（chip 上的数字会恒 0）')
+  ok(/catOnlyEmpty/.test(catFn), 'E4 没有「只看空分类」筛选')
+  ok(/totalCount:\s*children\.reduce\(/.test(catFn), 'E5 一级分类的合计件数不是由二级求和（恒 0 = 假合计）')
+  ok(/wx:for="\{\{catTreeView\}\}"/.test(wxml), 'E6 分类树没有用派生视图 catTreeView')
+  ok(/bindinput="setCatKeyword"/.test(wxml), 'E6 分类页没有检索输入框')
+  ok(/没有匹配的分类/.test(wxml), 'E6 筛选后的空态没有区分文案')
+
   return fails
 }
 
@@ -157,7 +178,16 @@ function selftest() {
     ['样式丢掉已下架配色', (s) => ({ ...s, wxss: s.wxss.replace(/\/\* 已下架：墨底浅字[\s\S]*?\n\}\n/, '') }), /C2/],
     ['页面去掉高风险 chip', (s) => ({ ...s, wxml: s.wxml.replace('bindtap="setProductRiskFilter" data-val="high"', 'bindtap="setProductRiskFilter" data-val="normal"') }), /D/],
     ['工具条丢掉一键下架', (s) => ({ ...s, wxml: s.wxml.replace('bindtap="bulkToggleHighRisk" data-on="0"', 'bindtap="bulkToggleHighRisk" data-on="1"') }), /D/],
-    ['卡片丢掉高风险标签', (s) => ({ ...s, wxml: s.wxml.replace('wx:if="{{item.isHighRisk}}"', 'wx:if="{{false}}"') }), /D/]
+    ['卡片丢掉高风险标签', (s) => ({ ...s, wxml: s.wxml.replace('wx:if="{{item.isHighRisk}}"', 'wx:if="{{false}}"') }), /D/],
+    /* ── E 分类管理 ── */
+    ['派生视图写回源树（下标会错位）', (s) => ({ ...s, cfg: s.cfg.replace('    catTreeView: view,', '    catTreeView: view,\n    categoryManageTree: view,') }), /E1/],
+    ['submitCategory 改读过滤后的视图', (s) => ({ ...s, cfg: s.cfg.replace('    const tree = this.data.categoryManageTree || [];', '    const tree = this.data.catTreeView || [];') }), /E1/],
+    ['检索丢掉拉丁名', (s) => ({ ...s, cfg: s.cfg.replace('if (kw && !rootHit) kept = kept.filter((c) => hit(c.name) || hit(c.latinName) || hit(c.latin) || hit(c.enName));', 'if (kw && !rootHit) kept = kept.filter((c) => hit(c.name));') }), /E2/],
+    ['排序丢掉按名称分支', (s) => ({ ...s, cfg: s.cfg.replace("    } else if (mode === 'name') {\n      kept = kept.slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh-Hans-CN'));\n    }", '    }') }), /E3/],
+    ['丢掉空分类计数', (s) => ({ ...s, cfg: s.cfg.replace('      if (count === 0) emptyCount += 1;', '') }), /E4/],
+    ['丢掉一级合计件数', (s) => ({ ...s, cfg: s.cfg.replace('      totalCount: children.reduce((sum, c) => sum + (Number(c.productCount) || 0), 0) + (Number(root.productCount) || 0),', '      totalCount: 0,') }), /E5/],
+    ['分类树用回源树渲染', (s) => ({ ...s, wxml: s.wxml.replace('wx:for="{{catTreeView}}"', 'wx:for="{{categoryManageTree}}"') }), /E6/],
+    ['分类页丢掉检索框', (s) => ({ ...s, wxml: s.wxml.replace('bindinput="setCatKeyword"', 'bindinput="noopSearch"') }), /E6/]
   ]
   for (const [name, mut, expect] of cases) {
     const mutated = mut(base)

@@ -4261,6 +4261,27 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .cat-sub-main { flex: 1; min-width: 0; padding-left: 16rpx; }
 .cat-sub-name { display: block; font-size: 26rpx; color: #ccc; }
 .cat-count { display: inline-block; margin-left: 12rpx; font-size: 22rpx; color: var(--gold); }
+/* 0 件分类：降一档并留可读性（是「清理候选」，不是错误态） */
+.cat-count.is-empty { color: var(--color-text-secondary, #A09A90); }
+/* 2026-10-13（第③项）：分类树展示层的检索 / 排序 / 空分类筛查 */
+.cat-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
+.cat-search {
+  flex: 1 1 100%;
+  min-width: 0;
+  height: 72rpx;
+  padding: 0 22rpx;
+  font-size: 26rpx;
+  color: var(--color-text-primary, #F2ECE1);
+  background: var(--color-bg-card, #1F1D1A);
+  border: 1rpx solid rgba(38, 35, 32, 0.8);
+  border-radius: 12rpx;
+  box-sizing: border-box;
+}
+.cat-match-tip { margin-bottom: 14rpx; font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
+.cat-root-count { flex-shrink: 0; margin-left: 12rpx; font-size: 22rpx; color: var(--gold); }
+.cat-hidden-tip { padding: 4rpx 24rpx 14rpx 48rpx; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); }
+.pf-chip.is-warn { color: #E3A99E; border-color: rgba(198, 58, 63, 0.45); }
+.pf-chip.is-warn.on { color: #FFFFFF; background: #C63A3F; border-color: #C63A3F; }
 .cat-tax { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); margin-top: 4rpx; line-height: 1.4; }
 .cat-empty-subs { padding: 8rpx 24rpx 16rpx 48rpx; font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
 .cat-manage-actions { margin-bottom: 16rpx; display: flex; flex-wrap: wrap; gap: 16rpx; }
