@@ -761,11 +761,67 @@ function resolveProductShelfWatermark(p) {
   if (p.isOffShelf === false) status = 'approved';
   else if (raw === 'pending') status = 'pending';
   else if (raw === 'rejected') status = 'rejected';
+  // 2026-10-13 新增：**已下架**也要有水印（原先下架商品完全没有标识，
+  // 在藏品库里分不清「从没上过架」和「上过又被下架」）。
+  else if (p.isOffShelf === true) status = 'offshelf';
 
   if (status === 'pending') return { status, text: '审核中', className: 'pending' };
   if (status === 'rejected') return { status, text: '已驳回', className: 'rejected' };
   if (status === 'approved') return { status, text: '已上架', className: 'approved' };
+  if (status === 'offshelf') return { status, text: '已下架', className: 'offshelf' };
   return { status: '', text: '', className: '' };
+}
+
+/**
+ * 「高风险藏品」= 商品著录的保护等级非 none。
+ * ⚠️ 口径必须与云函数 manageProducts 的 PROTECTED_TYPES、assistProductCopy 的 PROTECTION_TYPES、
+ * 鉴定流 speciesProfile 的 PRODUCT_PROTECTION 同源；改这里要四处一起改。
+ */
+const PROTECTED_TYPE_LABELS = {
+  sanyou: '三有',
+  protected_plant: '保护植物',
+  protected_animal: '保护动物'
+};
+
+/**
+ * 藏品行派生（利润 / 销量展示 / 水印 / 工艺标签）—— **唯一一套**。
+ * 列表加载与「就地更新一行」（上下线 / 编辑保存）都走它，避免两套口径漂移
+ * （2026-10-13：为了让上下线与编辑保存不再整页重载，把这段从 loadProducts 里抽出来）。
+ */
+function mapProductRow(p) {
+  let rate = '0.0';
+  if (p.price && p.price != 0 && p.costPrice) {
+    const pr = parseFloat(p.price);
+    const cp = parseFloat(p.costPrice);
+    if (!isNaN(pr) && !isNaN(cp) && pr !== 0) rate = ((pr - cp) / pr * 100).toFixed(1);
+  }
+  const sold = Number(p.soldCount);
+  const shelfWm = resolveProductShelfWatermark(p);
+  const protectionType = String(p.protectionType || '').trim();
+  const riskLabel = PROTECTED_TYPE_LABELS[protectionType] || '';
+  return {
+    ...p,
+    profitRate: rate,
+    soldCountDisplay: Number.isFinite(sold) && sold >= 0 ? sold : (Number(p.sales) || 0),
+    shelfApprovalStatus: shelfWm.status,
+    shelfWm: shelfWm.text,
+    shelfWmClass: shelfWm.className,
+    protectionType,
+    // 高风险（三有 / 保护类）：卡片打标与「一键上下线」的作用域都由这一个布尔决定
+    isHighRisk: !!riskLabel,
+    riskLabel,
+    craftTypeLabel: craftTypeLabel(p.craftType) || '',
+    craftProcessLabel: craftProcessLabel(p.craftProcess) || ''
+  };
+}
+
+/** 列表行：云文件 ID 必须换 https（_subviews.wxml 直绑 images[0]，否则全部渲染不出） */
+function withThumbImages(row) {
+  if (!row) return row;
+  return {
+    ...row,
+    images: (Array.isArray(row.images) ? row.images : []).map((u) => imageUrl.thumbUrl(u))
+  };
 }
 
 function normalizeSkuForEdit(s, i) {
@@ -1437,6 +1493,15 @@ const managerPageConfig = {
     searchVal: '',
     productArchiveFilter: 'all', // all | archive | oneOfAKind
     productPromoFilter: 'all', // all | seckill | seckill_expired | group
+    // 2026-10-13（提审前点名）：保护等级筛选（高风险 = 三有 / 保护植物 / 保护动物）+ 上架态筛选
+    productRiskFilter: 'all', // all | high | normal
+    productShelfFilter: 'all', // all | on | off | pending | rejected
+    /** list 返回的 shelfCounts（与筛选同一套口径），用于筛选条上的计数 */
+    productShelfCounts: { all: 0, on: 0, pending: 0, rejected: 0, off: 0 },
+    /** 高风险藏品总数（打开藏品库时单独统计一次，供「一键上下线」显数） */
+    highRiskCount: 0,
+    /** 一键上下线进行中（防重复点击） */
+    bulkRiskRunning: false,
     /** 与 C 端 ProductList 对齐：new | sales | price_asc | price_desc */
     productSort: 'new',
     productPriceSortLabel: '价格',
@@ -4538,6 +4603,9 @@ const managerPageConfig = {
   },
   async loadProducts(opts = {}) {
     const append = !!(opts && opts.append);
+    // silent：搜索 / 切排序 / 切筛选 这类「本来就该重查」的刷新不弹全屏遮罩
+    // （2026-10-13 产品负责人：搜索与改完藏品后整页刷新、还丢滚动位置，影响效率）
+    const silent = !!(opts && opts.silent);
     if (this.data.productListLoading || (append && this.data.productLoadingMore)) return;
     if (append && !this.data.productHasMore) return;
 
@@ -4546,7 +4614,7 @@ const managerPageConfig = {
     this.setData(append
       ? { productLoadingMore: true }
       : { productListLoading: true, productListError: false, productPage: 1, productHasMore: false });
-    if (!append) wx.showLoading({ title: '加载藏品…' });
+    if (!append && !silent) wx.showLoading({ title: '加载藏品…' });
 
     try {
       const listData = {
@@ -4556,6 +4624,9 @@ const managerPageConfig = {
         keyword: String(this.data.searchVal || '').trim(),
         archiveFilter: this.data.productArchiveFilter || 'all',
         promoFilter: this.data.productPromoFilter || 'all',
+        // 2026-10-13 新增筛选（不传 = all，与改前逐字兼容）
+        riskFilter: this.data.productRiskFilter || 'all',
+        shelfFilter: this.data.productShelfFilter || 'all',
         sortBy: this.data.productSort || 'new'
       };
       if (
@@ -4574,41 +4645,20 @@ const managerPageConfig = {
       const result = (res && res.result) || {};
       if (!result.success) throw new Error(result.msg || '加载失败');
 
-      const mapped = (result.list || []).map((p) => {
-        let rate = '0.0';
-        if (p.price && p.price != 0 && p.costPrice) {
-          const pr = parseFloat(p.price);
-          const cp = parseFloat(p.costPrice);
-          if (!isNaN(pr) && !isNaN(cp) && pr !== 0) rate = ((pr - cp) / pr * 100).toFixed(1);
-        }
-        const sold = Number(p.soldCount);
-        const shelfWm = resolveProductShelfWatermark(p);
-        return {
-          ...p,
-          profitRate: rate,
-          soldCountDisplay: Number.isFinite(sold) && sold >= 0 ? sold : (Number(p.sales) || 0),
-          shelfApprovalStatus: shelfWm.status,
-          shelfWm: shelfWm.text,
-          shelfWmClass: shelfWm.className,
-          craftTypeLabel: craftTypeLabel(p.craftType) || '',
-          craftProcessLabel: craftProcessLabel(p.craftProcess) || ''
-        };
-      });
+      const mapped = (result.list || []).map(mapProductRow);
 
       const products = append ? (this.data.products || []).concat(mapped) : mapped;
       const total = Number(result.total) || 0;
       const hasMore = products.length < total;
 
       const patch = {
-        // 缩略图：云文件 ID 必须换 https（_subviews.wxml 直绑 images[0]，否则全部渲染不出）
-        products: products.map((it) => (it ? {
-          ...it,
-          images: (Array.isArray(it.images) ? it.images : []).map((u) => imageUrl.thumbUrl(u))
-        } : it)),
+        products: products.map(withThumbImages),
         productPage: page,
         productTotal: total,
         productHasMore: hasMore,
-        productListError: false
+        productListError: false,
+        // 筛选条上的计数（服务端与筛选条件同一套口径算出）
+        productShelfCounts: (result && result.shelfCounts) || this.data.productShelfCounts
       };
       if (!append && !this.data.artisanEmbed) {
         // 过期秒杀数走全量筛选 total，不依赖当前页
@@ -4622,6 +4672,17 @@ const managerPageConfig = {
         } catch (e) {
           patch.expiredSeckillCount = 0;
         }
+        // 高风险总数同样走全量 total（「一键上下线」要显数，且不能只数当前页）
+        try {
+          const riskRes = await wx.cloud.callFunction({
+            name: 'manageProducts',
+            data: { action: 'list', page: 1, pageSize: 1, riskFilter: 'high' }
+          });
+          const risk = (riskRes && riskRes.result) || {};
+          patch.highRiskCount = risk.success ? (Number(risk.total) || 0) : 0;
+        } catch (e) {
+          patch.highRiskCount = 0;
+        }
       }
       this.setData(patch);
     } catch (err) {
@@ -4630,9 +4691,32 @@ const managerPageConfig = {
       // 失败保留上次列表，勿伪装空柜
       if (!append) this.setData({ productListError: true });
     } finally {
-      if (!append) wx.hideLoading();
+      if (!append && !silent) wx.hideLoading();
       this.setData({ productListLoading: false, productLoadingMore: false });
     }
+  },
+
+  /**
+   * 就地更新列表里的**一行**（不整页重载）：上下线 / 编辑保存后调用。
+   * 为什么不能只改字段：卡片上的水印、利润、标签都由 mapProductRow 派生 —— 复用同一个函数才能保证
+   * 与「重新加载」的结果逐字段一致（否则会出现第三种口径）。
+   * 返回 false 表示该行不在当前列表（例如新建的藏品 / 当前筛选下看不见）→ 调用方改走静默重载。
+   */
+  _patchProductRow(id, mutate) {
+    const list = this.data.products || [];
+    const i = list.findIndex((row) => row && row._id === id);
+    if (i < 0) return false;
+    const next = withThumbImages(mapProductRow(mutate({ ...list[i] })));
+    this.setData({ [`products[${i}]`]: next });
+    return true;
+  },
+
+  /** 上下线后就地重算这一行（水印 / 审核态都来自 mapProductRow 的同一套口径） */
+  _patchShelfRow(id, patch) {
+    const ok = this._patchProductRow(id, (row) => ({ ...row, ...patch }));
+    // 行不在当前列表（被筛掉了）→ 静默重载，但**不弹遮罩、不动滚动**
+    if (!ok) this.loadProducts({ silent: true });
+    return ok;
   },
 
   loadMoreProducts() {
@@ -4659,13 +4743,14 @@ const managerPageConfig = {
       productSort: next,
       productPriceSortLabel: this._buildPriceSortLabel(next)
     });
-    this.loadProducts();
+    // 2026-10-13：切排序属于「本来就该重查」，但**不弹全屏遮罩**（弹了就像整页刷新，还打断视线）
+    this.loadProducts({ silent: true });
   },
 
   onSearchInput(e) {
     this.setData({ searchVal: e.detail.value });
     clearTimeout(this.timer);
-    this.timer = setTimeout(() => { this.loadProducts(); }, 500);
+    this.timer = setTimeout(() => { this.loadProducts({ silent: true }); }, 500);
   },
   setProductArchiveFilter(e) {
     const val = e.currentTarget.dataset.val || 'all';
@@ -4674,7 +4759,7 @@ const managerPageConfig = {
     } else {
       this.setData({ productArchiveFilter: val });
     }
-    this.loadProducts();
+    this.loadProducts({ silent: true });
   },
   setProductPromoFilter(e) {
     const val = e.currentTarget.dataset.val || 'all';
@@ -4682,7 +4767,132 @@ const managerPageConfig = {
       productPromoFilter: val,
       productArchiveFilter: this.data.productArchiveFilter === 'all' ? 'all' : this.data.productArchiveFilter
     });
-    this.loadProducts();
+    this.loadProducts({ silent: true });
+  },
+  /** 一键清空全部筛选（「全部」那颗 chip） */
+  resetProductFilters() {
+    this.setData({
+      productShelfFilter: 'all',
+      productArchiveFilter: 'all',
+      productRiskFilter: 'all',
+      productPromoFilter: 'all'
+    });
+    this.loadProducts({ silent: true });
+  },
+  /** 保护等级筛选：全部 / 高风险（三有·保护类）/ 普通 */
+  setProductRiskFilter(e) {
+    const val = e.currentTarget.dataset.val || 'all';
+    if (val === this.data.productRiskFilter) return;
+    this.setData({ productRiskFilter: val });
+    this.loadProducts({ silent: true });
+  },
+  /** 上架态筛选：全部 / 在架 / 已下架 / 待审核 / 已驳回（口径与卡片计数一致） */
+  setProductShelfFilter(e) {
+    const val = e.currentTarget.dataset.val || 'all';
+    if (val === this.data.productShelfFilter) return;
+    this.setData({ productShelfFilter: val });
+    this.loadProducts({ silent: true });
+  },
+
+  /**
+   * 分页扫描符合条件的商品 id（**全量**，不是当前页）—— 一键操作的作用域来源。
+   * 与 clearExpiredSeckill 同一套扫描写法：只认服务端 total，最多 50 页兜底。
+   */
+  async _scanProductIds(extraData) {
+    const ids = [];
+    let page = 1;
+    const pageSize = 100;
+    let total = Infinity;
+    while (ids.length < total && page <= 50) {
+      const res = await wx.cloud.callFunction({
+        name: 'manageProducts',
+        data: Object.assign({ action: 'list', page, pageSize }, extraData || {})
+      });
+      const result = (res && res.result) || {};
+      if (!result.success) throw new Error(result.msg || '扫描失败');
+      total = Number(result.total) || 0;
+      const batch = (result.list || []).map((p) => p && p._id).filter(Boolean);
+      ids.push(...batch);
+      if (!batch.length || ids.length >= total) break;
+      page += 1;
+    }
+    return ids;
+  },
+
+  /**
+   * 高风险藏品（三有 / 保护类）**一键上下线**。
+   * 合规诉求：属于保护类的标本要能一眼筛出来、并一次全部下架（提审前的兜底动作）。
+   * - 作用域 = 全库 riskFilter='high'（分页取全量，**不是当前页**）
+   * - 复用既有 `manageApprovals.submitProductShelf`（下架直写；上架对店长 / 超管直写、对标本师走审批）
+   *   —— **不新增任何写库旁路**，流程与状态机一字未改
+   * - 先确认（带件数与方向后果）再执行，分块上报进度，结束后**静默刷新**（不弹遮罩、不动滚动位置）
+   */
+  async bulkToggleHighRisk(e) {
+    if (this.data.bulkRiskRunning) return;
+    const onShelf = String((e.currentTarget.dataset || {}).on) === '1';
+    this.setData({ bulkRiskRunning: true });
+    wx.showLoading({ title: '统计高风险藏品…' });
+    let ids = [];
+    try {
+      ids = await this._scanProductIds({ riskFilter: 'high' });
+    } catch (err) {
+      wx.hideLoading();
+      this.setData({ bulkRiskRunning: false });
+      this.showHubTip(formatCloudFnError(err, '统计失败'), 'warn');
+      return;
+    }
+    wx.hideLoading();
+    if (!ids.length) {
+      this.setData({ bulkRiskRunning: false });
+      this.showHubTip('当前没有标注为三有 / 保护类的藏品', 'info');
+      return;
+    }
+    const ok = await new Promise((resolve) => {
+      openAppModal({
+        title: onShelf ? '一键上架高风险藏品' : '一键下架高风险藏品',
+        content: `共 ${ids.length} 件标注为「三有 / 保护类」的藏品。\n\n` +
+          (onShelf
+            ? '上架后立即对顾客可见 —— 请先确认每件的合法来源与许可材料齐备。'
+            : '下架后顾客看不到，商品与订单数据都不受影响，可随时单独重新上架。'),
+        confirmText: onShelf ? '全部上架' : '全部下架',
+        confirmColor: onShelf ? '' : '#D64045',
+        success: (r) => resolve(!!r.confirm)
+      }, this);
+    });
+    if (!ok) {
+      this.setData({ bulkRiskRunning: false });
+      return;
+    }
+
+    let okCount = 0;
+    let pendingCount = 0;
+    let failCount = 0;
+    const CHUNK = 8;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const chunk = ids.slice(i, i + CHUNK);
+      wx.showLoading({
+        title: `${onShelf ? '上架' : '下架'}中 ${Math.min(i + chunk.length, ids.length)}/${ids.length}`
+      });
+      const results = await Promise.all(chunk.map((id) => wx.cloud.callFunction({
+        name: 'manageApprovals',
+        data: { action: 'submitProductShelf', productId: id, onShelf }
+      }).then((res) => (res && res.result) || { success: false }).catch(() => ({ success: false }))));
+      results.forEach((r) => {
+        if (r && r.success) {
+          if (r.pendingApproval) pendingCount += 1;
+          else okCount += 1;
+        } else {
+          failCount += 1;
+        }
+      });
+    }
+    wx.hideLoading();
+    const parts = [`${onShelf ? '上架' : '下架'}成功 ${okCount} 件`];
+    if (pendingCount) parts.push(`待超管审核 ${pendingCount} 件`);
+    if (failCount) parts.push(`失败 ${failCount} 件`);
+    this.showHubTip(parts.join(' · '), failCount ? 'warn' : 'info');
+    this.setData({ bulkRiskRunning: false });
+    this.loadProducts({ silent: true });
   },
   async clearExpiredSeckill() {
     wx.showLoading({ title: '扫描过期秒杀…' });
@@ -4729,7 +4939,7 @@ const managerPageConfig = {
         cleared += Number(result.ok) || chunk.length;
       }
       this.showHubTip(`已清理 ${cleared} 件`, 'info');
-      this.loadProducts();
+      this.loadProducts({ silent: true });
     } catch (err) {
       this.showHubTip(formatCloudFnError(err, '清理失败'), 'warn');
     } finally {
@@ -4749,19 +4959,24 @@ const managerPageConfig = {
       const result = (res && res.result) || {};
       if (!result.success) {
         this.showHubTip(result.msg || '操作失败', 'warn');
-        this.loadProducts();
+        // 失败：开关要拨回真实状态。数据本身没变，必须换一次对象引用才会重渲染这一行
+        this._patchShelfRow(id, {});
         return;
       }
       if (result.pendingApproval) {
         this.showHubTip(result.msg || '已提交超管审核', 'info');
+        // 已提交待审：商品仍是下架态（等超管审），但水印要显示「审核中」
+        this._patchShelfRow(id, { shelfApprovalStatus: 'pending' });
       } else {
         this.showHubTip(result.msg || (onShelf ? '已上架' : '已下架'), 'info');
+        // 2026-10-13：**就地更新这一行**（原先整页 loadProducts 会弹遮罩、并把列表拉回第一页，
+        // 一次上下线就把已加载的多页与滚动位置全丢掉 —— 产品负责人反馈的效率问题）
+        this._patchShelfRow(id, { isOffShelf: !onShelf, shelfApprovalStatus: '' });
       }
-      this.loadProducts();
     } catch (err) {
       console.error('toggleShelf', err);
       this.showHubTip(formatCloudFnError(err, '上下架失败'), 'warn');
-      this.loadProducts();
+      this._patchShelfRow(id, {});
     } finally {
       wx.hideLoading();
     }
@@ -6199,7 +6414,19 @@ const managerPageConfig = {
         }
         return;
       }
-      this.loadProducts();
+      // 2026-10-13（产品负责人：编辑上下线后要停在当前页）：**就地更新这一行**，
+      // 不再整页重载 —— 保住已加载页与滚动位置；只有新建（列表里还没有这行）才静默重载。
+      const savedId = String(this.data.editId || '').trim();
+      const patchedRow = savedId
+        ? this._patchProductRow(savedId, (row) => ({
+            ...row,
+            ...p,
+            // 表单里的临时字段不能盖到行上
+            tempCertificate: undefined,
+            _id: row._id
+          }))
+        : false;
+      if (!patchedRow) this.loadProducts({ silent: true });
       if (this.data.productStats || this.data.productLibTab === 'stats') this.loadProductStats();
       } catch (err) {
         wx.hideLoading();

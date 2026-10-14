@@ -239,6 +239,17 @@
       <view class="product-toolbar" wx:if="{{!artisanEmbed && expiredSeckillCount > 0}}">
         <view class="cat-manage-btn" bindtap="clearExpiredSeckill">清过期秒杀({{expiredSeckillCount}})</view>
       </view>
+      <!-- 高风险藏品（三有 / 保护类）：提审前的合规兜底 —— 一眼看到总量，并可**一键全下架 / 全上架** -->
+      <view class="risk-bar" wx:if="{{!artisanEmbed && highRiskCount > 0}}">
+        <view class="risk-bar-main">
+          <text class="risk-bar-label">高风险 {{highRiskCount}} 件</text>
+          <text class="risk-bar-sub">三有 / 保护类标本 · 来源与许可须齐备</text>
+        </view>
+        <view class="risk-bar-actions">
+          <view class="risk-bar-btn is-danger {{bulkRiskRunning ? 'is-disabled' : ''}}" bindtap="bulkToggleHighRisk" data-on="0">一键下架</view>
+          <view class="risk-bar-btn {{bulkRiskRunning ? 'is-disabled' : ''}}" bindtap="bulkToggleHighRisk" data-on="1">一键上架</view>
+        </view>
+      </view>
       <view class="search-box">
         <input placeholder="搜索藏品…" placeholder-class="ph" bindinput="onSearchInput" value="{{searchVal}}"/>
       </view>
@@ -251,10 +262,18 @@
           data-key="{{item.key}}"
         >{{item.isPrice ? productPriceSortLabel : item.label}}</view>
       </view>
+      <!-- 筛选：第一行按**上架态**（带计数，口径同卡片），第二行按性质 / 活动 -->
       <view class="product-filter-row" wx:if="{{!artisanEmbed}}">
-        <view class="pf-chip {{productArchiveFilter==='all' && productPromoFilter==='all'?'on':''}}" bindtap="setProductArchiveFilter" data-val="all">全部</view>
+        <view class="pf-chip {{productShelfFilter==='all' && productArchiveFilter==='all' && productRiskFilter==='all' && productPromoFilter==='all' ? 'on' : ''}}" bindtap="resetProductFilters">全部</view>
+        <view class="pf-chip {{productShelfFilter==='on'?'on':''}}" bindtap="setProductShelfFilter" data-val="on">在架 {{productShelfCounts.on}}</view>
+        <view class="pf-chip {{productShelfFilter==='off'?'on':''}}" bindtap="setProductShelfFilter" data-val="off">已下架 {{productShelfCounts.off}}</view>
+        <view class="pf-chip {{productShelfFilter==='pending'?'on':''}}" bindtap="setProductShelfFilter" data-val="pending" wx:if="{{productShelfCounts.pending > 0}}">待审 {{productShelfCounts.pending}}</view>
+        <view class="pf-chip {{productShelfFilter==='rejected'?'on':''}}" bindtap="setProductShelfFilter" data-val="rejected" wx:if="{{productShelfCounts.rejected > 0}}">已驳回 {{productShelfCounts.rejected}}</view>
+      </view>
+      <view class="product-filter-row" wx:if="{{!artisanEmbed}}">
         <view class="pf-chip {{productArchiveFilter==='archive'?'on':''}}" bindtap="setProductArchiveFilter" data-val="archive">在档</view>
         <view class="pf-chip {{productArchiveFilter==='oneOfAKind'?'on':''}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>
+        <view class="pf-chip is-risk {{productRiskFilter==='high'?'on':''}}" bindtap="setProductRiskFilter" data-val="high">高风险 {{highRiskCount}}</view>
         <view class="pf-chip {{productPromoFilter==='seckill'?'on':''}}" bindtap="setProductPromoFilter" data-val="seckill">秒杀中</view>
         <view class="pf-chip {{productPromoFilter==='seckill_expired'?'on':''}}" bindtap="setProductPromoFilter" data-val="seckill_expired">秒杀过期</view>
         <view class="pf-chip {{productPromoFilter==='group'?'on':''}}" bindtap="setProductPromoFilter" data-val="group">拼团</view>
@@ -270,6 +289,7 @@
           <view class="p-info">
             <view class="p-top"><text class="p-name">{{item.title}}</text><view class="p-edit" bindtap="openProductModal" data-item="{{item}}">✎</view></view>
             <view class="p-tags">
+              <text class="mini-tag danger" wx:if="{{item.isHighRisk}}">高风险 · {{item.riskLabel}}</text>
               <text class="mini-tag" wx:if="{{item.inArchive}}">在档</text>
               <text class="mini-tag warn" wx:if="{{item.isOneOfAKind}}">孤品</text>
               <text class="mini-tag danger" wx:if="{{item.seckill.enabled}}">秒杀</text>

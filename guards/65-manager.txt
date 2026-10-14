@@ -23,3 +23,6 @@ npm run check:c-stream-polish
 npm run check:pet-memorial-ops
 # 2026-10-10（产品负责人点名）：工资条社保明细 —— 个人 = 缴费记录合计 ÷ 参保人数、工伤个人不扣、公司缴纳只展示不进扣款、大额医疗互助全年一次、旧工资条不变；ERP 副本同口径
 npm run test:payslip-social-insurance
+# 2026-10-13（提审前点名）：藏品库高风险（三有/保护类）一键上下线 + 操作后停留当前页 + 商品图水印可辨
+#   miniprogram/docs/藏品库_高风险一键上下线_2026-10-13.md
+npm run check:product-lib-risk

@@ -125,8 +125,11 @@ check(
 check('★ 物种百科缩略走 thumbUrl', /thumbUrl\(getFirstImage\(p\.images\)\)/.test(stripComments(read(WIKI_JS))))
 check('★ 定制页商品 images 经 thumbUrl 换算',
   /images: \(Array\.isArray\(p\.images\) \? p\.images : \[\]\)\.map\(\(u\) => imageUrl\.thumbUrl\(u\)\)/.test(stripComments(read(CUSTOM_JS))))
-check('★ 超管商品列表 images 经 thumbUrl 换算',
-  /images: \(Array\.isArray\(it\.images\) \? it\.images : \[\]\)\.map\(\(u\) => imageUrl\.thumbUrl\(u\)\)/.test(stripComments(read(MANAGER_JS))))
+// 2026-10-13：藏品行派生收口到 withThumbImages 一处（上下线与编辑保存要就地复用它）——
+// 判据按「意图」改成两半都查：① 换算函数本体确实走 thumbUrl；② 列表确实经过它（删任一半都红）
+check('★ 超管商品列表 images 经 thumbUrl 换算（收口在 withThumbImages）',
+  /function withThumbImages\(row\) \{[\s\S]{0,240}?images: \(Array\.isArray\(row\.images\) \? row\.images : \[\]\)\.map\(\(u\) => imageUrl\.thumbUrl\(u\)\)/.test(stripComments(read(MANAGER_JS))) &&
+    /products\.map\(withThumbImages\)/.test(stripComments(read(MANAGER_JS))))
 check('★ 详情页 360°/SKU 两处改用 imgView 映射（不再直绑 cloud://）',
   !/src="\{\{product\.images\[0\]\}\}"/.test(read(DETAIL_WXML))
   && /imgView\[product\.images\[0\]\]/.test(read(DETAIL_WXML))

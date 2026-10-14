@@ -45,6 +45,13 @@ const { sanitizeProductMedia, stripVideoUrls, isVideoUrl } = require('./productM
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
+/**
+ * 「高风险藏品」口径 = 商品著录的保护等级非 none。
+ * ⚠️ 与 assistProductCopy 的 PROTECTION_TYPES、鉴定流 speciesProfile 的 PRODUCT_PROTECTION
+ * 必须同源（三有 / 保护植物 / 保护动物）；改这里就要同时改那两处与小程序表单的选项。
+ */
+const PROTECTED_TYPES = ['sanyou', 'protected_plant', 'protected_animal']
+
 const ALLOWED_FIELDS = [
   'title', 'latinName', 'price', 'costPrice', 'stock', 'hasSku', 'skus', 'skuDimensions',
   'category', 'categoryId', 'categoryType', 'rootCategoryName', 'rootCategoryId',
@@ -704,6 +711,13 @@ function buildListWhere(event, actor, verifiedFramerId) {
   const keyword = String((event && event.keyword) || '').trim().slice(0, 64)
   const archiveFilter = String((event && event.archiveFilter) || 'all').trim()
   const promoFilter = String((event && event.promoFilter) || 'all').trim()
+  // 2026-10-13 新增（提审前的合规诉求）：按**保护等级**筛「高风险藏品」。
+  // 口径与 product 著录字段 protectionType 完全一致（none / sanyou / protected_plant / protected_animal），
+  // 不新增字段、不改既有参数语义（不传 = all = 与改前逐字一致）。
+  const riskFilter = String((event && event.riskFilter) || 'all').trim()
+  // 2026-10-13 新增：按**上架态**筛（on / off / pending / rejected），口径与 list 返回的 shelfCounts 完全一致。
+  // 不传 = all = 与改前逐字一致。
+  const shelfFilter = String((event && event.shelfFilter) || 'all').trim()
   const giftScene = sanitizeGiftScenes([(event && (event.giftScene || event.giftScenes)) || ''])[0] || ''
   const blessTag = sanitizeBlessTags([(event && (event.blessTag || event.blessTags)) || ''])[0] || ''
   const conditions = []
@@ -719,9 +733,26 @@ function buildListWhere(event, actor, verifiedFramerId) {
   if (archiveFilter === 'archive') conditions.push({ inArchive: true })
   else if (archiveFilter === 'oneOfAKind') conditions.push({ isOneOfAKind: true })
 
+  if (riskFilter === 'high') conditions.push({ protectionType: _.in(PROTECTED_TYPES) })
+  else if (riskFilter === 'normal') {
+    // 「普通」= 明确 none 或字段缺失（后者是历史数据，同样按非保护处理）
+    conditions.push(_.or([{ protectionType: 'none' }, { protectionType: _.exists(false) }]))
+  }
+
   if (promoFilter === 'group') conditions.push({ 'groupBuying.enabled': true })
   else if (promoFilter === 'seckill' || promoFilter === 'seckill_expired') {
     conditions.push({ 'seckill.enabled': true })
+  }
+
+  // ⚠️ 与 computeShelfCounts 的**同一套优先级**（on → pending → rejected → off），
+  // 否则「筛选结果条数」会与卡片上的计数对不上（同一屏两个数字打架最难查）。
+  if (shelfFilter === 'on') conditions.push({ isOffShelf: false })
+  else if (shelfFilter === 'pending') {
+    conditions.push(_.and([{ isOffShelf: _.neq(false) }, { shelfApprovalStatus: 'pending' }]))
+  } else if (shelfFilter === 'rejected') {
+    conditions.push(_.and([{ isOffShelf: _.neq(false) }, { shelfApprovalStatus: 'rejected' }]))
+  } else if (shelfFilter === 'off') {
+    conditions.push(_.and([{ isOffShelf: _.neq(false) }, { shelfApprovalStatus: _.nin(['pending', 'rejected']) }]))
   }
 
   if (giftScene) conditions.push({ giftScenes: giftScene })
@@ -732,9 +763,9 @@ function buildListWhere(event, actor, verifiedFramerId) {
     if (kwCond) conditions.push(kwCond)
   }
 
-  if (!conditions.length) return { where: null, keyword, archiveFilter, promoFilter, giftScene, blessTag }
-  if (conditions.length === 1) return { where: conditions[0], keyword, archiveFilter, promoFilter, giftScene, blessTag }
-  return { where: _.and(conditions), keyword, archiveFilter, promoFilter, giftScene }
+  if (!conditions.length) return { where: null, keyword, archiveFilter, promoFilter, riskFilter, giftScene, blessTag }
+  if (conditions.length === 1) return { where: conditions[0], keyword, archiveFilter, promoFilter, riskFilter, giftScene, blessTag }
+  return { where: _.and(conditions), keyword, archiveFilter, promoFilter, riskFilter, giftScene }
 }
 
 /**
