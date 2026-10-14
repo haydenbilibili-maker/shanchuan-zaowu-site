@@ -25,7 +25,14 @@ const SKIP = new Set(['node_modules', '.git', 'miniprogram_npm', 'dist'])
 const BANNED = [
   { bad: '收礼人', good: '受礼人', why: '全站统一用「受礼人」（2026-09-19 产品口径）' },
   { bad: '我知道了', good: '知道了', why: '纯告知型弹窗的确认键全站统一为「知道了」（2026-09-21 分子级审计：9 处「知道了」vs 1 处「我知道了」）' },
-  { bad: "confirmText: '好的'", good: "confirmText: '知道了'", why: '同上；「好的」还会撞「做好的」等词，故连上下文一起钉（2026-09-21）' }
+  { bad: "confirmText: '好的'", good: "confirmText: '知道了'", why: '同上；「好的」还会撞「做好的」等词，故连上下文一起钉（2026-09-21）' },
+  // 2026-10-14：**旧品牌口号**。ERP 已确认的品牌记录（2026-05-14）是中文「山海造物」、
+  // 口号「把山海带回家」、英文标语 Bring Nature Home；而「山川」是**改名前**的旧名。
+  // 复核时发现云端分享海报的默认副标题还印着旧口号（顾客可见），而 app 内标签页与另一张
+  // 分享卡都已是新口号 —— 同一张海报两个来源印不同口号。修掉后加这条钉住，防止再回来。
+  // ⚠️ 门店**实体名**「山川造物」不在此列：它是 `store_shanhaizaowu` 的 name / aliases
+  //    （账本与门店记录都按它归一），属于历史数据，**改了会对不上账**。
+  { bad: '把山川带回家', good: '把山海带回家', why: '旧品牌口号（改名前的「山川」版）。品牌口号只有「把山海带回家」一个口径（2026-05-14 品牌记录）' }
 ]
 
 function walk(dir, out = []) {
@@ -106,16 +113,25 @@ if (process.argv.includes('--selftest')) {
     }
   }
 
-  // 注入 A：禁用词
+  // 注入 A：禁用词 —— **逐条**遍历 BANNED 表，而不是只测某一个词。
+  // 为什么改成遍历：原来只注入「我知道了」一条，于是**新加的禁用词没人证明它会红**
+  // （2026-10-14 加「把山川带回家」时发现的：表里加一条，自检照样绿，等于这条判据没被证明过）。
+  // 遍历之后，以后谁往表里加词都自动被证明。
   const wordTarget = join(MP, 'app.json')
   const wordOrig = readFileSync(wordTarget, 'utf8')
-  writeFileSync(wordTarget, wordOrig.replace('{', '{\n  "_copyTermProbe": "我知道了",'))
-  const a = run()
-  restore(wordTarget, wordOrig, '禁用词注入')
-  if (a.status === 0) {
-    console.log('✗ 注入未被检出：禁用词扫描失效')
-    process.exit(1)
+  const proven = []
+  for (const b of BANNED) {
+    // 用 JSON 转义写进字符串值，任何字面量都能安全注入
+    writeFileSync(wordTarget, wordOrig.replace('{', `{\n  "_copyTermProbe": ${JSON.stringify(b.bad)},`))
+    const a = run()
+    if (a.status === 0) {
+      restore(wordTarget, wordOrig, '禁用词注入')
+      console.log(`✗ 注入未被检出：禁用词「${b.bad}」的判据失效（表里有词但扫不出来）`)
+      process.exit(1)
+    }
+    proven.push(b.bad)
   }
+  restore(wordTarget, wordOrig, '禁用词注入')
 
   // 注入 B：字数上限口径不一致（maxlength=500 vs placeholder「最多 40 字」）
   const lenTarget = join(MP, 'pages/index/index.wxml')
@@ -128,7 +144,8 @@ if (process.argv.includes('--selftest')) {
     process.exit(1)
   }
 
-  console.log('✓ 自检通过：注入「我知道了」与「maxlength=500 / 最多 40 字」均被检出、源文件逐字还原')
+  console.log(`✓ 自检通过：禁用词表 ${proven.length} 条**逐条**注入均被检出（${proven.join(' / ')}）`
+    + '、字数上限口径（maxlength=500 / 最多 40 字）被检出、源文件逐字还原')
 } else {
   const hits = [...scan(), ...scanMaxLenCopy()]
   if (hits.length) {

@@ -223,52 +223,139 @@ function ruleR6(relPath, src, kind) {
 }
 
 /** R7 图像融入夜色（参考项：权威判定需浏览器实测，这里只给候选）
- * ⚠️ 2026-10-13 第三次校准 —— 这次是**找错了文件**。
- *   前三版都只在 **WXML 片段**里找 `gradient`，可渐隐是写在 **WXSS** 里的：
- *   `pages/index/index.wxss:218` 的 `linear-gradient(180deg, …, var(--color-bg) 100%)`、
- *   `wiki-detail/index.wxss:8` 的 `.hero-overlay { linear-gradient(to bottom, transparent 40%, var(--color-bg)) }`
- *   —— 两处都被误报成「缺渐隐层」。
- *   判据必须**跨到同名 WXSS**去找（这正是错题本 E3 的形态：读的是半个镜像）。
- *   同一条判据一天内错了三次（子串 → `\b` → 找错文件），所以它始终只作**参考项**。 */
-const HERO_TOKEN = /(^|\s)(hero|hero-[a-z-]+|[a-z-]+-hero)(\s|$)/
-const NOT_HERO = /(^|\s)(hero-plate|hero-content|hero-over-row|hero-credit|hero-topshade|hero-seal)(\s|$)/
-/** 渐隐的形态：一个 gradient，且要么到透明、要么到页面底色 */
-const FADE_CSS = /gradient\([^)]*(?:transparent|color-bg)/i
-function ruleR7(relPath, src, kind) {
+ *
+ * ── 判据校准史（**改这条前必读**；一天内被产品负责人推着改了四次）──────────────
+ * ① 子串匹配 `hero|cover|banner` → `hero-plate`（无图）/ `note-cover`（缩略图）误报 6 条。
+ * ② `\bhero` → 匹配到 `sk-hero`（骨架屏）误报 68 条。
+ * ③ 只在 **WXML 片段**里找 `gradient`，而渐隐写在 **WXSS**（首页 `.hero-mask-vignette`、
+ *    `wiki-detail/index.wxss:8` 的 `.hero-overlay`）→ 误报 19 条。改为跨同名 WXSS 找。
+ * ④ **2026-10-14 第四次校准：把"窗口"当成了"子树"。**
+ *    第三版把"容器内有图"实现成 `s.slice(m.index, m.index + 3000)` —— 那**不是子树包含关系**，
+ *    只是"这个标签之后 3000 字符内出现过 `<image>`"，而且**只向后看**。于是：
+ *      · `care/index` 的 `.hero` 是**纯文字** hero（眉题/标语/分隔线/统计块，整块没有照片），
+ *        被后面别的块的图带红 3 条（`.hero` / `.hero-divider` / `.hero-stat`）；
+ *      · `articles/detail` 的 `.hero-text` 是**文字块**（只含 1 枚分类小图标），
+ *        而真实渐隐是它的**兄弟** `.hero-overlay` —— 兄弟在它**前面**，只向后看所以看不到；
+ *      · `cart` 的空购物车**插画** `.empty-hero`（`tab-cart.png` 图标）也被当成"照片主图"；
+ *      · 管理端 `_subviews` 的 `.hero-edit-card`（主图/轮播图**配置卡**）不是规范第 07 页的适用面。
+ *    现在四条一起改：
+ *      Ⅰ **真子树扫描**：按 `<view>` 配平取到闭合标签，"内有图"= 子树里真有 `<image>`/`<swiper>`；
+ *      Ⅱ **兄弟也算**：渐隐层常常是与容器**同级**的遮罩（`.hero-overlay`），所以在
+ *        "容器子树 ∪ 父级子树"里找 —— 但父级只认**名字像遮罩的类**（shade/overlay/vignette/
+ *        fade/mask/scrim），否则父级 = 整页，页面上任何一处渐变都会把英雄区放过（那是把判据废掉）；
+ *      Ⅲ 按**角色**排掉不是主图容器的类名（`-text/-divider/-stat/-icon/-badge/…`）与**空态**（`empty-`）；
+ *      Ⅳ **管理端**（`subpackages/manager/**`）跳过 —— 这是 C 端主图纪律，管理端没有这个诉求。
+ *    ⚠️ 本条始终只作**参考项**：静态只能给候选，权威判定要浏览器量层级与视觉叠加（见落地台账 §4-2）。 */
+const FADE_NAME = /(shade|overlay|vignette|scrim|fade|topshade|mask)/i
+/** 名字里带这些词元的 hero 类**不是主图容器**：文字块 / 分隔线 / 统计块 / 图标 / 徽标 /
+ *  以及**渐隐层自身**（`hero-overlay` / `hero-shade` / `hero-vignette` —— 它们是答案，不是问题）。 */
+const HERO_SUBROLE = /(^|\s)hero-(text|divider|stat|plate|content|over-row|credit|topshade|seal|edit-card|preview|icon|badge|title|desc|label|overlay|shade|vignette|fade|mask|scrim)(\s|$)/
+const HERO_ANY = /(^|\s)(hero|hero-[a-z-]+|[a-z-]+-hero)(\s|$)/
+
+/** 取 `<view>` 元素树：只关心 tag 配平，用来判断"子树"归属（`<image>` 是自闭合/成对，都不影响 view 深度） */
+function parseViewTree(src) {
+  const nodes = []
+  const stack = []
+  const re = /<view\b[^>]*?(\/?)>|<\/view>/g
+  let m
+  while ((m = re.exec(src))) {
+    const tag = m[0]
+    if (tag.startsWith('</')) {
+      const top = stack.pop()
+      if (top) { top.end = m.index + tag.length; nodes.push(top) }
+      continue
+    }
+    const clsM = /class="([^"]*)"/.exec(tag)
+    const node = {
+      cls: clsM ? clsM[1].trim() : '',
+      start: m.index,
+      end: src.length,
+      parent: stack.length ? stack[stack.length - 1] : null,
+      children: []
+    }
+    if (node.parent) node.parent.children.push(node)
+    if (m[1] !== '/') stack.push(node)
+    else { nodes.push(node) }   // 自闭合 <view ... />
+  }
+  // 未闭合的（源码被截断等）也算上，end 兜到末尾
+  while (stack.length) { const t = stack.pop(); nodes.push(t) }
+  return nodes
+}
+
+const HERO_TOKEN = HERO_ANY   // 兼容旧引用（判据内部已改用 HERO_ANY / HERO_SUBROLE）
+const NOT_HERO = HERO_SUBROLE
+
+/** 渐隐的形态：规则里既有一个 gradient，又收到透明或页面底色。
+ * ⚠️ **第五次校准**：原来写成 `/gradient\([^)]*(?:transparent|color-bg)/` —— `[^)]*` **跨不过渐变参数里的
+ * `rgba(...)` 的右括号**，于是最常见的那种写法
+ *   `linear-gradient(to bottom, rgba(0,0,0,.4) 0%, …, var(--color-bg) 100%)`
+ * 被判成"没有渐隐"。`about/index.wxss` 的 `.hero-mask` 正是这么被误报的（它明明有整整一层遮罩）。
+ * 现拆成两条**独立**判据（先有 gradient，再有透明/底色），与参数顺序、参数里有没有括号都无关。 */
+const FADE_GRADIENT = /gradient\(/i
+const FADE_TO_BG = /transparent|color-bg/i
+
+/** 一段文本里出现过的 class 词元 */
+function classesIn(text) {
+  const out = new Set()
+  for (const cm of text.matchAll(/class="([^"]*)"/g)) {
+    for (const c of cm[1].split(/\s+/)) if (c && !c.includes('{')) out.add(c.replace(/[{}]/g, ''))
+  }
+  return out
+}
+
+/** WXSS 里是否有"渐隐渐变"规则落在给定的 class 集合上 */
+function fadeRuleHits(siblingCss, classNames) {
+  if (!siblingCss || !classNames.size) return false
+  for (const r of siblingCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!FADE_GRADIENT.test(r[2]) || !FADE_TO_BG.test(r[2])) continue
+    for (const c of classNames) {
+      if (new RegExp(`\\.${c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`).test(r[1])) return true
+    }
+  }
+  return false
+}
+
+/** 同名 WXSS 的读取（默认从仓库读；自检可以注入桩，否则 WXSS 侧那条判据无法被证明会红/会放行） */
+const defaultSiblingCss = (relPath) => read(join(ROOT, relPath.replace(/\.wxml$/, '.wxss')))
+
+function ruleR7(relPath, src, kind, readSiblingCss = defaultSiblingCss) {
   if (kind !== 'wxml') return []
+  // Ⅳ 管理端不是 C 端主图纪律的适用面（.hero-edit-card 是"主图/轮播图配置卡"）
+  if (/subpackages\/manager\//.test(relPath)) return []
   const out = []
   const s = stripComments(src)
-  // 同名 WXSS 在**仓库根**下（relPath 是相对 ROOT 的，不是相对 miniprogram/）——
-  // 拼错一层就会永远读到空串，判据静默失效（本条自检会当场抓到）。
-  const siblingCss = stripComments(read(join(ROOT, relPath.replace(/\.wxml$/, '.wxss'))))
-  for (const m of s.matchAll(/<view\b[^>]*class="([^"]*)"[^>]*>/g)) {
-    const cls = m[1].trim()
-    if (!HERO_TOKEN.test(cls) || NOT_HERO.test(cls)) continue
-    if (/sk-|skeleton|skel-|placeholder/.test(cls)) continue
-    const token = cls.split(/\s+/).find((c) => HERO_TOKEN.test(` ${c} `)) || cls.split(/\s+/)[0]
-    const seg = s.slice(m.index, m.index + 3000)
-    if (!/<image\b|<swiper\b/.test(seg)) continue
-    // 渐隐层通常挂在**子元素**上（如首页 `.hero-item` 里的 `.hero-mask-vignette`），
-    // 只查容器自身的规则会漏判 —— 所以取该英雄区标记段里**出现过的每一个 class**，
-    // 看其中是否有一个在 WXSS 里带渐隐渐变。
-    const inWxml = /hero-shade|img-shade|topshade|hero-overlay|mask-vignette|fade/.test(seg)
-    let inWxss = false
-    if (!inWxml && siblingCss) {
-      const segClasses = new Set()
-      for (const cm of seg.matchAll(/class="([^"]*)"/g)) {
-        for (const c of cm[1].split(/\s+/)) if (c && !c.includes('{')) segClasses.add(c.replace(/[{}]/g, ''))
-      }
-      for (const r of siblingCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        if (!FADE_CSS.test(r[2])) continue
-        const rSels = r[1]
-        for (const c of segClasses) {
-          if (new RegExp(`\\.${c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-])`).test(rSels)) { inWxss = true; break }
-        }
-        if (inWxss) break
-      }
+  const siblingCss = stripComments(readSiblingCss(relPath))
+  const nodes = parseViewTree(s)
+
+  for (const node of nodes) {
+    const cls = node.cls
+    if (!cls || !HERO_ANY.test(cls)) continue
+    if (HERO_SUBROLE.test(cls)) continue                       // Ⅲ 文字块/分隔线/统计块/渐隐层自身…
+    if (/(^|\s)empty-/.test(cls)) continue                     // Ⅲ 空态插画不是照片主图
+    if (/sk-|skeleton|skel-|placeholder/.test(cls)) continue    // 骨架屏
+    const token = cls.split(/\s+/).find((c) => HERO_ANY.test(` ${c} `)) || cls.split(/\s+/)[0]
+    const subtree = s.slice(node.start, node.end)
+    // Ⅰ 真子树里必须有**照片**（不是图标）：
+    //    `<image class="hero-max-icon" mode="aspectFit" src="medal_gold.png">` 是勋章图标，
+    //    拿它当"主图"会把会员等级卡判成缺渐隐（第五次校准同时修掉的另一条）。
+    const photoTags = [...subtree.matchAll(/<image\b[^>]*>/g)].map((t) => t[0])
+    const hasPhoto = photoTags.some((t) => !/class="[^"]*icon/.test(t))
+    if (!hasPhoto && !/<swiper\b/.test(subtree)) continue
+
+    // Ⅱ 渐隐层：容器子树（任意 class 带渐变）∪ 父级子树（只认名字像遮罩的类）
+    const subClasses = classesIn(subtree)
+    // wxml 侧证据：**名字像遮罩**的元素本身就是"设计上加过一层"的强证据
+    // （改成按名字判而不是硬编码 `hero-overlay|hero-shade|…` 清单 —— 清单会漏 `hero-mask` 这种同义命名）
+    if ([...subClasses].some((c) => FADE_NAME.test(c))) continue
+    if (fadeRuleHits(siblingCss, subClasses)) continue
+    if (node.parent) {
+      const parentSub = s.slice(node.parent.start, node.parent.end)
+      const parentClasses = classesIn(parentSub)
+      const fadeNames = new Set([...subClasses, ...parentClasses].filter((c) => FADE_NAME.test(c)))
+      if (fadeNames.size) continue
+      if (fadeRuleHits(siblingCss, fadeNames)) continue
     }
-    if (inWxml || inWxss) continue
-    out.push(`主图容器 .${token} 内有图但未见渐隐层（WXML 与同名 WXSS 都没找到）`)
+    out.push(`主图容器 .${token} 内有图但未见渐隐层（子树与同级遮罩都没找到）`)
   }
   return out
 }
@@ -314,7 +401,7 @@ const RULES = {
   R4: { title: '英文眉题 + 中文标题', run: (p, s, k) => ruleR4(p, s, k) },
   R5: { title: '左标签，右数值', run: (p, s, k) => ruleR5(p, s, k) },
   R6: { title: '空就隐藏', run: (p, s, k) => ruleR6(p, s, k) },
-  R7: { title: '图像融入夜色', run: (p, s, k) => ruleR7(p, s, k) },
+  R7: { title: '图像融入夜色', run: (p, s, k, css) => ruleR7(p, s, k, css) },
   R8: { title: '不折行、不孤字', run: (p, s, k) => ruleR8(p, s, k) }
 }
 /** 参考项（advisory）：不进硬判据，但计入基线棘轮，只许变少。
@@ -352,15 +439,41 @@ if (has('--selftest')) {
       '<view class="hero-card"><image src="a.png"><view class="hero-shade"></view></view>', null],
     ['R7-neg2', 'miniprogram/x/index.wxml', 'wxml',
       '<view class="sk-hero"><image src="a.png"></image></view>', null],        // 骨架屏不是主图
+    /* ── R7 第四次/第五次校准的负例（每一条都对应一个真实的误报来源，别再退回去）── */
+    ['R7-neg3', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="hero"><text>只有文字，没有照片</text><view class="hero-divider"></view></view>', null],  // 纯文字 hero + 分隔线
+    // ⚠️ 这条要**隔离**角色判据：文字块里放一张**非图标**的照片（articles/detail 的 .hero-text 就是这样），
+    //    没有角色判据时它会被报出来 —— 有判据才放行。
+    //    （第一版写成"外层还有 .hero 承接"，结果命中的是外层 .hero，测的不是角色判据。）
+    ['R7-neg4', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="wrap"><view class="hero-text"><image src="a.png" mode="aspectFill"></image></view></view>', null],  // 文字块不是主图容器
+    ['R7-neg5', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="empty-hero"><image class="empty-icon" src="cart.png"></image></view>', null],  // 空态插画
+    ['R7-neg6', 'miniprogram/subpackages/manager/manager/x.wxml', 'wxml',
+      '<view class="hero-edit-card"><image src="a.png"></image></view>', null],  // 管理端不是 C 端主图纪律的适用面
+    ['R7-neg7', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="hero-max"><image class="hero-max-icon" mode="aspectFit" src="medal.png"></image></view>', null],  // 图标不是照片
+    ['R7-neg8', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="wrap"><view class="hero-overlay"></view><view class="hero-text"><image src="a.png"></image></view></view>', null],  // 渐隐层是**前面的兄弟**
+    ['R7-neg9', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="hero"><image src="a.png"></image><view class="hero-mask"></view></view>', null],  // 有遮罩层（名字像遮罩就算数）
+    // WXSS 侧：渐隐写在同名 WXSS 里也算数 —— 第 6 项是注入的同名 WXSS 桩。
+    // ⚠️ 这两条钉住**第五次校准**（`rgba()` 的右括号曾把判据卡死）：参数里带 rgba(...) 的渐变必须认出来。
+    ['R7-neg10', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="hero"><image src="a.png"></image><view class="veil-bottom"></view></view>', null,
+      '.veil-bottom { background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, var(--color-bg) 100%); }'],
+    ['R7-pos10', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="hero"><image src="a.png"></image><view class="veil-bottom"></view></view>', '渐隐层',
+      '.veil-bottom { background: linear-gradient(to bottom, #111 0%, #222 100%); }'],
     ['R8', 'miniprogram/app.wxss', 'wxss',
       '\n.btn-primary { background: red; }', 'nowrap']
   ]
   let ok = true
-  for (const [name, path, kind, src, expect] of CASES) {
-    const base = name.replace(/-neg2?$/, '')
-    const fn = RULES[base.replace(/^R(\d)$/, 'R$1')]
-    const hits = fn.run(path, src, kind)
-    const isNeg = /-neg2?$/.test(name)
+  for (const [name, path, kind, src, expect, stubCss] of CASES) {
+    const base = name.replace(/-neg\d*$/, '').replace(/-pos\d*$/, '')
+    const fn = RULES[base]
+    const hits = fn.run(path, src, kind, stubCss ? () => stubCss : undefined)
+    const isNeg = /-neg\d*$/.test(name)
     if (isNeg) {
       if (hits.length) { ok = false; console.error(`✗ 负例「${name}」被误报：${hits[0]} —— 判据过宽`) }
       else console.log(`  ✓ 负例「${name}」正确放行（不误报）`)

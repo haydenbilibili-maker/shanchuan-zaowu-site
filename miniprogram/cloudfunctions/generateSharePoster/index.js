@@ -114,7 +114,11 @@ exports.main = async (event, context) => {
         brief: si.brief_description || '',
         protection_label: (doc.species_profile && doc.species_profile.shareProtection) || '',
         poster_title: '山海造物 · AI 标本鉴定',
-        brand_sub: '把山川带回家',
+        // 品牌口号以 ERP 已确认的品牌记录为准（2026-05-14：中文『山海造物』、口号『把山海带回家』、
+        // 英文标语 Bring Nature Home）。这里原先是**『山川』版旧口号**——
+        // 而 generateShareCard 的 tagline 与客户端 fallback（identify/share）早就是『把山海带回家』，
+        // 于是同一张分享海报会因数据来源不同印出两个口号（2026-10-14 复核发现，产品负责人点名修）。
+        brand_sub: '把山海带回家',
         brand_en: "NATURE'S CREATIONS"
       }
     }

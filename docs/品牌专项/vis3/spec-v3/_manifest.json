@@ -1,0 +1,104 @@
+{
+ "_doc": "VIS 3.0 规范原文归档清单（校验用）",
+ "source": "~/Downloads/山海造物 VIS 3.0-png.zip",
+ "sourceMtime": "2026-10-13 04:21",
+ "archivedAt": "2026-10-14",
+ "note": "文件名在 zip 内是 UTF-8（未置 EFS 标志），unzip CLI 会显示成乱码；用 Python zipfile 读取才正确。",
+ "pages": [
+  {
+   "name": "00 封面.png",
+   "bytes": 384796,
+   "sha256_12": "114eb5604ea0"
+  },
+  {
+   "name": "01 品牌与视觉原则.png",
+   "bytes": 590233,
+   "sha256_12": "5477d3efac16"
+  },
+  {
+   "name": "02 标志设计 · 山海印.png",
+   "bytes": 479383,
+   "sha256_12": "76fbd4f27890"
+  },
+  {
+   "name": "03 标志版本与使用规范.png",
+   "bytes": 506744,
+   "sha256_12": "421738c1e4a0"
+  },
+  {
+   "name": "04 色彩系统.png",
+   "bytes": 486081,
+   "sha256_12": "c4b2ad2917e9"
+  },
+  {
+   "name": "05 字体与字阶.png",
+   "bytes": 522045,
+   "sha256_12": "60e5f22efc13"
+  },
+  {
+   "name": "06 界面组件.png",
+   "bytes": 461833,
+   "sha256_12": "570cc22e0d52"
+  },
+  {
+   "name": "07 小程序应用.png",
+   "bytes": 602644,
+   "sha256_12": "5fe0be6a666a"
+  },
+  {
+   "name": "08 物料与包装应用.png",
+   "bytes": 389190,
+   "sha256_12": "0fbac3cd8a5d"
+  },
+  {
+   "name": "09 Logo 六方案.png",
+   "bytes": 671790,
+   "sha256_12": "9e18340345d2"
+  },
+  {
+   "name": "10 Logo 方案压力测试.png",
+   "bytes": 479999,
+   "sha256_12": "7d9b1e3291c3"
+  },
+  {
+   "name": "11 开箱仪式九步.png",
+   "bytes": 563087,
+   "sha256_12": "4b9f8d7fa56f"
+  },
+  {
+   "name": "12 礼盒结构爆炸图.png",
+   "bytes": 517969,
+   "sha256_12": "a2577c7862ab"
+  },
+  {
+   "name": "13 包装尺寸与档位矩阵.png",
+   "bytes": 507727,
+   "sha256_12": "ef5c92571407"
+  },
+  {
+   "name": "14 装裱规范.png",
+   "bytes": 431318,
+   "sha256_12": "34ac2e171da3"
+  },
+  {
+   "name": "15 礼赠体系.png",
+   "bytes": 554741,
+   "sha256_12": "c1cafeebd1fc"
+  },
+  {
+   "name": "16 礼赠纸品套件.png",
+   "bytes": 565370,
+   "sha256_12": "bbe34b57a1b2"
+  },
+  {
+   "name": "组件 · Logo 方案.png",
+   "bytes": 32593,
+   "sha256_12": "7e8b275c5d01"
+  },
+  {
+   "name": "组件 · 山海印.png",
+   "bytes": 32593,
+   "sha256_12": "7e8b275c5d01"
+  }
+ ]
+}
