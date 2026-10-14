@@ -71,7 +71,7 @@ page { background: #1A1814; color: #fff; }
 
 .btn-primary {
   width: 100%; height: 88rpx; line-height: 88rpx;
-  background: #C4A76C; color: #1A1814; border-radius: 16rpx; font-size: 28rpx; border: none;
+  background: #C4A76C; color: #1A1814; border-radius: var(--radius-md); font-size: 28rpx; border: none;
 }
 
 .btn-primary::after { border: none; }
@@ -101,7 +101,7 @@ page { background: #1A1814; color: #fff; }
   margin: 0 32rpx 16rpx; padding: 20rpx 24rpx;
   background: rgba(250, 246, 237, 0.06);
   border: 1rpx solid rgba(196, 167, 108, 0.25);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 
 .species-cn {
@@ -122,7 +122,7 @@ page { background: #1A1814; color: #fff; }
   display: inline-flex; flex-direction: column; width: 220rpx;
   margin-right: 20rpx; vertical-align: top;
   background: #1F1D1A; border: 1rpx solid rgba(38, 35, 32, 0.8);
-  border-radius: 16rpx; overflow: hidden;
+  border-radius: var(--radius-md); overflow: hidden;
 }
 
 /* 门控组件的定位参照（见 wxml 注释）。尺寸与原 .product-img 一致，避免布局变化。 */
@@ -140,11 +140,11 @@ page { background: #1A1814; color: #fff; }
 .wiki-row {
   display: flex; align-items: center; gap: 16rpx;
   margin: 0 32rpx 16rpx; padding: 16rpx;
-  background: #1F1D1A; border-radius: 12rpx;
+  background: #1F1D1A; border-radius: var(--radius-md);
   border: 1rpx solid rgba(38, 35, 32, 0.6);
 }
 
-.wiki-thumb { width: 88rpx; height: 88rpx; border-radius: 8rpx; flex-shrink: 0; }
+.wiki-thumb { width: 88rpx; height: 88rpx; border-radius: var(--radius-sm); flex-shrink: 0; }
 
 .wiki-meta { flex: 1; min-width: 0; }
 

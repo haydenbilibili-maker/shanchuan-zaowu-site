@@ -74,7 +74,7 @@ page {
   padding: var(--space-4) var(--space-4) var(--space-4) 40rpx;
   margin-bottom: var(--space-3);
   background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-lg);
   box-sizing: border-box;
   overflow: hidden;
@@ -96,7 +96,7 @@ page {
   align-items: center;
   justify-content: center;
   background: rgba(196, 167, 108, 0.1);
-  border: 1px solid rgba(196, 167, 108, 0.22);
+  border: 1rpx solid rgba(196, 167, 108, 0.22);
   border-radius: var(--radius-md);
 }
 
@@ -147,7 +147,7 @@ page {
   padding: var(--space-4);
   margin-bottom: var(--space-3);
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border-highlight);
+  border: 1rpx solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
@@ -233,7 +233,7 @@ page {
   padding: var(--space-4);
   margin-bottom: var(--space-4);
   background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
@@ -245,7 +245,7 @@ page {
   left: 12rpx;
   right: 12rpx;
   bottom: 12rpx;
-  border: 1px solid rgba(196, 167, 108, 0.14);
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
   border-radius: calc(var(--radius-lg) - 8rpx);
   pointer-events: none;
 }
@@ -356,7 +356,7 @@ page {
   height: 48rpx;
   border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.1);
-  border: 1px solid rgba(196, 167, 108, 0.22);
+  border: 1rpx solid rgba(196, 167, 108, 0.22);
   color: var(--brass-400);
   font-size: 20rpx;
   font-family: var(--font-mono);
@@ -554,7 +554,7 @@ page {
   padding: var(--space-4);
   margin-bottom: var(--space-4);
   background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
@@ -585,7 +585,7 @@ page {
   font-size: 20rpx;
   color: var(--brass-400);
   padding: 4rpx 12rpx;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-full);
 }
 

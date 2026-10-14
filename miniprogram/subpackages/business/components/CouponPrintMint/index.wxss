@@ -250,7 +250,7 @@
 .tm-plate {
   width: 100%;
   border: 1rpx solid #E0CFA3;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: rgba(250, 246, 237, 0.72);
   padding: 8rpx 20rpx;
   box-sizing: border-box;
@@ -399,7 +399,7 @@
   font-weight: 700;
   font-size: 28rpx;
   padding: 24rpx 72rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: 12rpx;

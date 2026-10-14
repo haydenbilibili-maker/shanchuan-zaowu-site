@@ -316,7 +316,7 @@
   text-align: center;
   color: #7A2E24;
   border: 2rpx solid rgba(122, 46, 36, 0.55);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 
 .rp-paper-overline {

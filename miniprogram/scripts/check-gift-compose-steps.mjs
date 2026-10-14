@@ -637,7 +637,7 @@ const INJECTIONS = [
   { name: '隐价回到勾选大框', file: P.wxml, find: 'class="switch-row"', replace: 'class="privacy-row"' },
   { name: '音效条单占一行', file: P.wxml, find: '  <scroll-view\n', replace: '  <view class="sfx-bar"></view>\n  <scroll-view\n' },
   { name: '底栏按钮回到定宽折行', file: P.wxss, find: '  flex: 1 1 auto;\n  min-width: 248rpx;', replace: '  flex: 0 0 248rpx;\n  min-width: 248rpx;' },
-  { name: '底栏按钮允许折行', file: P.wxss, find: '  letter-spacing: 0.04em;\n  white-space: nowrap;\n  border-radius: 16rpx;', replace: '  letter-spacing: 0.04em;\n  border-radius: 16rpx;' },
+  { name: '底栏按钮允许折行', file: P.wxss, find: '  letter-spacing: 0.04em;\n  white-space: nowrap;\n  border-radius: var(--radius-md);', replace: '  letter-spacing: 0.04em;\n  border-radius: var(--radius-md);' },
   { name: '确认页折扣小字可折行', file: P.confirmWxss, find: 'font-size: 22rpx; color: #C4A76C; white-space: nowrap;', replace: 'font-size: 22rpx; color: #C4A76C;' },
   { name: '确认页底栏不说会员折扣', file: P.confirmWxml, find: '<text class="fp-note" wx:if="{{discountRate < 1 && vipSaved > 0}}">', replace: '<text class="fp-note" wx:if="{{false}}">' },
   { name: '账单折扣行回到一位小数', file: P.confirmWxml, find: '−¥{{vipSavedYuan}}', replace: '−¥{{vipSaved}}' },

@@ -58,7 +58,7 @@
   letter-spacing: 0.06em;
   background: #1F1D1A;
   border: 1px dashed rgba(77, 64, 26, 0.45);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 /* 按压态（组件样式隔离，拿不到 app.wxss 的同名类；值与 app.wxss 一致） */

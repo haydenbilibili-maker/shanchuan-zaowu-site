@@ -77,7 +77,7 @@ page {
   margin-bottom: var(--space-4);
   padding: var(--space-4);
   background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
@@ -169,7 +169,7 @@ page {
   box-sizing: border-box;
   background: linear-gradient(145deg, #FAF6ED 0%, #F0E6CC 100%);
   border: 1rpx solid #E0CFA3;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -353,7 +353,7 @@ page {
   padding: var(--space-5) var(--space-4);
   margin-bottom: var(--space-4);
   background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-lg);
 }
 
@@ -437,8 +437,8 @@ page {
 .agree-check {
   width: 32rpx;
   height: 32rpx;
-  border-radius: 8rpx;
-  border: 1px solid var(--brass-800);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid var(--brass-800);
   flex-shrink: 0;
   margin-top: 4rpx;
 }
@@ -641,7 +641,7 @@ page {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px solid var(--brass-400);
+  border: 1rpx solid var(--brass-400);
   opacity: 0.55;
   animation: doneSealPulse 2600ms ease-in-out infinite;
 }
@@ -698,7 +698,7 @@ page {
   padding: var(--space-4) var(--space-2);
   border-radius: var(--radius-md);
   background: rgba(196, 167, 108, 0.06);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
 }
 
 .gift-card-tap {

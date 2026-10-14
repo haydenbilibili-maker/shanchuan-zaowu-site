@@ -17,7 +17,7 @@ page {
   padding: 40rpx 32rpx;
   background: #1F1D1A;
   border: 1rpx solid rgba(196, 167, 108, 0.28);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
 
@@ -57,7 +57,7 @@ page {
   height: 80rpx;
   line-height: 80rpx;
   text-align: center;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   font-weight: 500;
 }

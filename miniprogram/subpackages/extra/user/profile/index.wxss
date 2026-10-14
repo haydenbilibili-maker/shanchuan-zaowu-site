@@ -261,7 +261,7 @@ page {
   padding: 22rpx 28rpx 20rpx;
   box-sizing: border-box;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(196, 167, 108, 0.38);
+  border: 1rpx solid rgba(196, 167, 108, 0.38);
   background:
     linear-gradient(
       145deg,
@@ -281,7 +281,7 @@ page {
   top: 8rpx;
   right: 8rpx;
   bottom: 8rpx;
-  border: 1px solid rgba(168, 144, 60, 0.28);
+  border: 1rpx solid rgba(168, 144, 60, 0.28);
   border-radius: 4rpx;
   pointer-events: none;
   box-sizing: border-box;
@@ -412,14 +412,14 @@ page {
 
 .score-bar-track {
   height: 6rpx;
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-elevated);
   overflow: hidden;
 }
 
 .score-bar-fill {
   height: 100%;
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--brass-600), var(--brass-400));
   transition: width var(--dur-slow) var(--ease-standard);
 }
@@ -491,7 +491,7 @@ page {
   align-items: center;
   justify-content: center;
   background: rgba(196, 167, 108, 0.1);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
 }
 
@@ -530,7 +530,7 @@ page {
   font-size: 28rpx;
   font-weight: 500;
   border-radius: var(--radius-md);
-  border: 1px solid var(--brass-400);
+  border: 1rpx solid var(--brass-400);
   box-sizing: border-box;
 }
 
@@ -551,7 +551,7 @@ page {
   margin-top: 4rpx;
   flex-shrink: 0;
   border: 2rpx solid var(--brass-400);
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   box-sizing: border-box;
 }
 
@@ -855,7 +855,7 @@ page {
 
 .profile-retry {
   padding: 16rpx 48rpx;
-  border: 1px solid var(--brass-400);
+  border: 1rpx solid var(--brass-400);
   border-radius: var(--radius-md);
   color: var(--brass-400);
   font-size: 26rpx;

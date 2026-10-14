@@ -305,7 +305,7 @@ page {
   height: 36rpx;
   border-radius: 50%;
   background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-highlight);
+  border: 1rpx solid var(--color-border-highlight);
   color: var(--brass-400);
   font-size: 20rpx;
   display: flex;
@@ -408,7 +408,7 @@ page {
 
 .exhibition-card {
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border-highlight);
+  border: 1rpx solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
   overflow: hidden;
   transition: transform var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard);

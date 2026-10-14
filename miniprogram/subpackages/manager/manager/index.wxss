@@ -34,7 +34,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   justify-content: space-between;
   margin-top: 24rpx;
 }
-.ui-sk-line.wb-sk-tile { width: 22%; height: 112rpx; margin-top: 0; border-radius: 16rpx; }
+.ui-sk-line.wb-sk-tile { width: 22%; height: 112rpx; margin-top: 0; border-radius: var(--radius-md); }
 
 /* ==================== 1. 自定义顶部导航 ==================== */
 .status-bar-placeholder {
@@ -85,7 +85,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* 金卡 KPI */
 .kpi-card {
   background: linear-gradient(135deg, #4a3b18, #1a160a);
-  border: 1px solid rgba(196, 167, 108,0.3); border-radius: 24rpx; padding: 40rpx;
+  border: 1rpx solid rgba(196, 167, 108,0.3); border-radius: var(--radius-lg); padding: 40rpx;
   margin-bottom: 30rpx; position: relative; overflow: hidden;
   box-shadow: 0 20rpx 50rpx rgba(0,0,0,0.5);
 }
@@ -104,7 +104,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .ops-signal-board {
   background: var(--color-bg-card);
   border: 1px solid var(--color-bg-elevated);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 18rpx 22rpx 14rpx;
   margin-bottom: 16rpx;
 }
@@ -260,7 +260,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   gap: 12rpx;
   background: var(--color-bg-card);
   border: 1px solid #4D401A;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 10rpx 16rpx;
   min-height: 56rpx;
   box-sizing: border-box;
@@ -268,7 +268,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .ops-info-feed--header .ops-info-feed-rail {
   min-height: 52rpx;
   padding: 8rpx 14rpx;
-  border-radius: 14rpx;
+  border-radius: var(--radius-md);
 }
 .ops-info-feed-tag {
   flex-shrink: 0;
@@ -366,7 +366,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .grid-item {
   background: var(--color-bg-card);
-  border-radius: 20rpx;
+  border-radius: var(--radius-lg);
   padding: 30rpx;
   width: auto;
   min-width: 0;
@@ -388,7 +388,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .panel-title .panel-cn { display: block; margin-top: 4rpx; font-size: 28rpx; line-height: 40rpx; font-family: var(--font-brand); font-weight: 500; letter-spacing: .08em; color: var(--color-text-primary); }
 
 /* 待办计数：视觉走 .badge-info；此处只负责定位 */
-.badge { position: absolute; top: -6rpx; right: -6rpx; background: var(--color-error, #D64045); color: #fff; font-size: 18rpx; padding: 2rpx 10rpx; border-radius: 20rpx; font-family: var(--font-mono); }
+.badge { position: absolute; top: -6rpx; right: -6rpx; background: var(--color-error, #D64045); color: #fff; font-size: 18rpx; padding: 2rpx 10rpx; border-radius: var(--radius-lg); font-family: var(--font-mono); }
 
 /* 门店现场入口（跳转独立页，不再往这个巨型页加 Tab） */
 .panel-title.sub { margin-top: 32rpx; }
@@ -407,7 +407,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   justify-content: center;
   background: var(--gold);
   color: var(--color-bg);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 32rpx;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -436,8 +436,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   display: flex;
   flex-direction: column;
   padding: 24rpx;
-  border: 1px solid rgba(196, 167, 108, 0.35);
-  border-radius: 16rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
+  border-radius: var(--radius-md);
   background: rgba(196, 167, 108, 0.06);
 }
 .link-btn:active { background: rgba(196, 167, 108, 0.14); }
@@ -517,7 +517,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .page-tip {
   margin: 0 24rpx 16rpx;
   padding: 16rpx 20rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   font-size: 24rpx;
   line-height: 1.5;
 }
@@ -538,7 +538,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   gap: 16rpx;
   margin: 8rpx 0 12rpx;
   padding: 12rpx 16rpx;
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   background: rgba(196, 92, 74, 0.14);
   border: 1rpx solid rgba(196, 92, 74, 0.4);
 }
@@ -632,7 +632,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   width: 18rpx;
   max-width: 100%;
   background: rgba(255,255,255,0.04);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
@@ -699,7 +699,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 12rpx 14rpx;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.04);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 .kpi-mini-l { display: block; font-size: 18rpx; color: var(--color-text-secondary, #A09A90); margin-bottom: 4rpx; }
 .kpi-mini-v {
@@ -832,18 +832,18 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .search-box { margin-bottom: 30rpx; }
 .search-box input { background: var(--color-bg-card); height: 80rpx; min-height: 80rpx; line-height: normal; border-radius: 40rpx; padding: 0 30rpx; color: #fff; border: 1px solid rgba(255,255,255,0.1); font-size: 26rpx; box-sizing: border-box; }
 
-.product-row { display: flex; background: var(--color-bg-card); padding: 20rpx; border-radius: 16rpx; margin-bottom: 20rpx; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+.product-row { display: flex; background: var(--color-bg-card); padding: 20rpx; border-radius: var(--radius-md); margin-bottom: 20rpx; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
 .product-row.disabled { opacity: 0.88; border-style: dashed; }
 .product-row.disabled .p-img { opacity: 0.55; filter: grayscale(1); }
 .p-cover { position: relative; width: 120rpx; height: 120rpx; margin-right: 24rpx; flex-shrink: 0; }
-.p-img { width: 120rpx; height: 120rpx; border-radius: 12rpx; background: var(--color-bg); border: 1px solid rgba(255,255,255,0.1); object-fit: cover; display: block; }
+.p-img { width: 120rpx; height: 120rpx; border-radius: var(--radius-md); background: var(--color-bg); border: 1px solid rgba(255,255,255,0.1); object-fit: cover; display: block; }
 .p-wm {
   position: absolute;
   left: 0; top: 0; right: 0; bottom: 0;
   pointer-events: none;
   z-index: 2;
   overflow: hidden;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 /* 2026-10-13（产品负责人：商品图上的「已下架 / 已上线」水印不明显）：
    原来的斜字是 22rpx 半透明（approved 只有 .55），在实拍藏品图上几乎看不见 ——
@@ -877,9 +877,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .p-info { flex: 1; display: flex; flex-direction: column; gap: 10rpx; min-width: 0; }
 .p-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .p-name { font-size: 28rpx; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.p-edit { color: var(--color-text-secondary); padding: 4rpx 12rpx; border: 1px solid #444; border-radius: 8rpx; font-size: 22rpx; }
+.p-edit { color: var(--color-text-secondary); padding: 4rpx 12rpx; border: 1px solid #444; border-radius: var(--radius-sm); font-size: 22rpx; }
 .p-mid { display: flex; gap: 12rpx; }
-.tag { display: inline-flex; align-items: center; align-self: flex-start; width: auto; font-size: 20rpx; color: var(--color-text-secondary); background: rgba(255,255,255,0.05); padding: 4rpx 10rpx; border-radius: 6rpx; font-family: var(--font-mono); white-space: nowrap; box-sizing: border-box; }
+.tag { display: inline-flex; align-items: center; align-self: flex-start; width: auto; font-size: 20rpx; color: var(--color-text-secondary); background: rgba(255,255,255,0.05); padding: 4rpx 10rpx; border-radius: var(--radius-sm); font-family: var(--font-mono); white-space: nowrap; box-sizing: border-box; }
 .tag.profit { color: #52B788; background: rgba(76,175,80,0.1); }
 .p-bot { display: flex; justify-content: space-between; align-items: center; }
 .p-price { color: var(--gold); font-weight: bold; font-family: var(--font-mono); font-size: 30rpx; }
@@ -890,7 +890,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .manage-card { 
   display: flex; 
   background: var(--color-bg-card); 
-  border-radius: 20rpx; 
+  border-radius: var(--radius-lg); 
   padding: 24rpx; 
   margin-bottom: 24rpx; 
   border: 1px solid rgba(255,255,255,0.05); 
@@ -901,7 +901,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* 通用卡片内部样式 */
 .m-img { 
   width: 140rpx; height: 140rpx; 
-  border-radius: 12rpx; 
+  border-radius: var(--radius-md); 
   margin-right: 24rpx; 
   background: var(--color-bg); 
   object-fit: cover; flex-shrink: 0;
@@ -927,7 +927,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   display: inline-flex; align-items: center; align-self: flex-start; width: auto;
   font-size: 20rpx; color: #aaa;
   background: rgba(255,255,255,0.05);
-  padding: 4rpx 12rpx; border-radius: 6rpx;
+  padding: 4rpx 12rpx; border-radius: var(--radius-sm);
   border: 1px solid rgba(255,255,255,0.1);
   white-space: nowrap; box-sizing: border-box;
 }
@@ -940,7 +940,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .book-icon-img { width: 40rpx; height: 40rpx; opacity: 0.55; }
 
 /* --- [Tab 2] 订单管理 --- */
-.sub-tab-row { display: flex; margin-bottom: 30rpx; background: var(--color-bg-card); border-radius: 16rpx; padding: 8rpx; border: 1px solid var(--color-bg-elevated); }
+.sub-tab-row { display: flex; margin-bottom: 30rpx; background: var(--color-bg-card); border-radius: var(--radius-md); padding: 8rpx; border: 1px solid var(--color-bg-elevated); }
 
 .content-seed-bar {
   display: flex;
@@ -949,8 +949,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin: -10rpx 0 24rpx;
   padding: 20rpx 24rpx;
   background: rgba(196, 167, 108, 0.08);
-  border: 1px solid rgba(196, 167, 108, 0.25);
-  border-radius: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.25);
+  border-radius: var(--radius-md);
 }
 .seed-hint { font-size: 24rpx; color: var(--gold); }
 .seed-actions { display: flex; gap: 16rpx; }
@@ -959,14 +959,14 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 22rpx;
   color: var(--color-bg);
   background: var(--gold);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 .seed-btn.outline {
   background: transparent;
   color: var(--gold);
-  border: 1px solid rgba(196, 167, 108, 0.45);
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
 }
-.sub-tab { flex: 1; text-align: center; font-size: 24rpx; color: var(--color-text-secondary, #A09A90); padding: 16rpx 0; border-radius: 12rpx; font-weight: 500; transition: all var(--dur-fast) var(--ease-standard); }
+.sub-tab { flex: 1; text-align: center; font-size: 24rpx; color: var(--color-text-secondary, #A09A90); padding: 16rpx 0; border-radius: var(--radius-md); font-weight: 500; transition: all var(--dur-fast) var(--ease-standard); }
 .sub-tab.active { background: var(--color-bg-elevated); color: var(--gold, #C4A76C); }
 
 .product-lib-tabs { margin-bottom: 24rpx; }
@@ -995,7 +995,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   line-height: 1.45;
 }
 
-.card { background: var(--color-bg-card); border-radius: 20rpx; padding: 30rpx; margin-bottom: 30rpx; border: 1px solid rgba(255,255,255,0.05); }
+.card { background: var(--color-bg-card); border-radius: var(--radius-lg); padding: 30rpx; margin-bottom: 30rpx; border: 1px solid rgba(255,255,255,0.05); }
 .card-top { display: flex; justify-content: space-between; margin-bottom: 20rpx; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 16rpx; }
 .no { font-family: var(--font-mono); color: var(--color-text-secondary); font-size: 24rpx; letter-spacing: 1rpx; }
 .time { font-size: 22rpx; color: var(--color-text-secondary); }
@@ -1021,7 +1021,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* ==================== Tab 13 数据报表 ==================== */
 .report-page { padding-bottom: 48rpx; }
 .report-signal-board {
-  border: 1px solid var(--brass-800, #4D401A);
+  border: 1rpx solid var(--brass-800, #4D401A);
   background: var(--color-bg-card, #1F1D1A);
 }
 .report-signal-top {
@@ -1150,8 +1150,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .report-seg {
   display: flex;
   margin-top: 20rpx;
-  border: 1px solid var(--brass-400, #C4A76C);
-  border-radius: 12rpx;
+  border: 1rpx solid var(--brass-400, #C4A76C);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 .report-seg-item {
@@ -1166,7 +1166,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   white-space: nowrap;
 }
 .report-seg-item + .report-seg-item {
-  border-left: 1px solid rgba(196, 167, 108, 0.35);
+  border-left: 1rpx solid rgba(196, 167, 108, 0.35);
 }
 .report-seg-item.active {
   background: var(--brass-400, #C4A76C);
@@ -1288,7 +1288,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   justify-content: center;
 }
 .report-hero {
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   background: linear-gradient(160deg, #262018 0%, var(--color-bg-card) 55%, var(--color-bg) 100%);
 }
 .report-hero-top {
@@ -1400,7 +1400,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   flex: 1;
   min-width: 0;
   padding: 20rpx 22rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-card);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -1498,16 +1498,16 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .store-feature {
   padding: 6rpx 16rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   font-size: 22rpx;
   color: var(--gold, #C4A76C);
   background: rgba(196, 167, 108, 0.1);
-  border: 1px solid rgba(196, 167, 108, 0.2);
+  border: 1rpx solid rgba(196, 167, 108, 0.2);
 }
 
 .store-tips {
   padding: 20rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
   border: 1px solid rgba(255, 255, 255, 0.04);
   margin-bottom: 8rpx;
@@ -1580,7 +1580,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .p-name { display: block; font-size: 28rpx; font-weight: bold; color: var(--color-text-body); margin-bottom: 6rpx; }
 .p-name.gold { color: var(--gold); font-weight: 500; }
 
-.address-box { background: #222; padding: 20rpx; border-radius: 12rpx; margin-bottom: 24rpx; }
+.address-box { background: #222; padding: 20rpx; border-radius: var(--radius-md); margin-bottom: 24rpx; }
 .addr-detail { font-size: 22rpx; color: var(--color-text-secondary); margin-top: 8rpx; display: block; }
 /* 报表行为漏斗「更多（排障信息）」开关 */
 .report-diag-toggle { margin-top: 16rpx; padding: 12rpx 0; font-size: 24rpx; color: var(--brass-400); }
@@ -1599,8 +1599,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 2rpx 12rpx;
   font-size: 20rpx;
   color: var(--gold);
-  border: 1px solid rgba(196, 167, 108, 0.45);
-  border-radius: 8rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
+  border-radius: var(--radius-sm);
   vertical-align: middle;
 }
 .btn.verify { background: #52B788; color: var(--color-bg); }
@@ -1616,7 +1616,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .om-card {
   background: var(--color-bg-card);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 28rpx;
   margin-bottom: 28rpx;
   border: 1px solid var(--color-bg-elevated);
@@ -1666,7 +1666,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 16rpx 18rpx;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(77, 64, 26, 0.55);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .om-note-head {
   display: flex;
@@ -1699,7 +1699,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--color-text-body);
   background: var(--color-bg-card);
   border: 1px solid #3A342C;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 .om-note-ph {
   font-size: 22rpx;
@@ -1714,7 +1714,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 24rpx;
   color: var(--color-bg);
   background: var(--gold);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 .om-note-save.disabled {
   opacity: 0.5;
@@ -1737,7 +1737,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 16rpx 18rpx;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(77, 64, 26, 0.55);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .om-buyer-avatar {
   width: 64rpx;
@@ -1784,7 +1784,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   flex-shrink: 0;
   padding: 10rpx 20rpx;
   border-radius: 9999px;
-  border: 1px solid var(--gold);
+  border: 1rpx solid var(--gold);
   color: var(--gold);
   font-size: 22rpx;
   font-weight: 500;
@@ -1806,7 +1806,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .om-sku-thumb {
   width: 112rpx;
   height: 112rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
   flex-shrink: 0;
   border: 1px solid #4D401A;
@@ -1872,7 +1872,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin: 16rpx 0 8rpx;
   padding: 20rpx;
   background: var(--color-bg-elevated);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(38, 35, 32, 0.8);
 }
 .om-addr-copyable {
@@ -1919,8 +1919,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   gap: 8rpx;
   margin: 12rpx 0 4rpx;
   padding: 16rpx 18rpx;
-  border-radius: 16rpx;
-  border: 1px solid rgba(196, 167, 108, 0.35);
+  border-radius: var(--radius-md);
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
   background: rgba(196, 167, 108, 0.06);
 }
 .om-pickup-head {
@@ -1955,7 +1955,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   flex-shrink: 0;
   padding: 6rpx 18rpx;
   border-radius: 999rpx;
-  border: 1px solid rgba(196, 167, 108, 0.45);
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
   font-size: 20rpx;
   color: var(--gold);
 }
@@ -1970,8 +1970,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin: 16rpx 0 8rpx;
   padding: 20rpx;
   background: rgba(196, 167, 108, 0.06);
-  border-radius: 16rpx;
-  border: 1px solid rgba(196, 167, 108, 0.22);
+  border-radius: var(--radius-md);
+  border: 1rpx solid rgba(196, 167, 108, 0.22);
 }
 .om-express.muted {
   border-color: rgba(38, 35, 32, 0.9);
@@ -2030,8 +2030,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   text-align: center;
   font-size: 24rpx;
   color: var(--gold);
-  border: 1px solid rgba(196, 167, 108, 0.4);
-  border-radius: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  border-radius: var(--radius-md);
   background: transparent;
 }
 .om-express-btn.track {
@@ -2065,7 +2065,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 20rpx;
   background: rgba(214, 64, 69, 0.08);
   border: 1px solid rgba(214, 64, 69, 0.25);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .om-refund-amt {
   display: block;
@@ -2108,7 +2108,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .om-btn {
   min-width: 180rpx;
   padding: 18rpx 28rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 26rpx;
   font-weight: 500;
   text-align: center;
@@ -2185,7 +2185,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 12rpx 20rpx;
   background: var(--color-bg-card);
   border: 1px solid var(--color-bg-elevated);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .om-search-input {
   flex: 1;
@@ -2207,8 +2207,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   text-align: center;
   font-size: 24rpx;
   color: var(--gold);
-  border: 1px solid rgba(196, 167, 108, 0.35);
-  border-radius: 14rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
+  border-radius: var(--radius-md);
   background: rgba(196, 167, 108, 0.06);
 }
 .om-batch-btn.disabled {
@@ -2249,13 +2249,13 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 24rpx;
   color: var(--gold);
   border: 1px dashed rgba(196, 167, 108, 0.35);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   background: rgba(196, 167, 108, 0.05);
 }
 .om-btn.ghost {
   background: transparent;
   color: var(--gold);
-  border: 1px solid rgba(196, 167, 108, 0.45);
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
   min-width: 140rpx;
 }
 .om-foot-actions {
@@ -2297,7 +2297,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   letter-spacing: 0.04em;
   color: var(--color-text-primary);
   background: #D64045;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 .om-evidence {
   margin-top: 16rpx;
@@ -2307,7 +2307,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   height: 320rpx;
   margin-bottom: 12rpx;
   background: #151310;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 .om-evidence-imgs {
   display: flex;
@@ -2317,7 +2317,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .om-evidence-img {
   width: 128rpx;
   height: 128rpx;
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   border: 1px solid #4D401A;
 }
 
@@ -2343,7 +2343,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .ship-section {
   background: var(--color-bg-card);
   border: 1px solid var(--color-bg-elevated);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 24rpx;
   margin-bottom: 20rpx;
 }
@@ -2376,7 +2376,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   line-height: 1.2;
   color: var(--color-text-body);
   border: 1px solid #33302C;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
 }
 .ship-carrier-chip.on {
@@ -2392,7 +2392,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   box-sizing: border-box;
   background: var(--color-bg-elevated);
   border: 1px solid #33302C;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   font-size: 26rpx;
   color: var(--color-text-primary);
   text-align: left;
@@ -2410,7 +2410,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   box-sizing: border-box;
   background: var(--color-bg-elevated);
   border: 1px solid #33302C;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   color: var(--color-text-primary);
   text-align: left !important;
@@ -2428,8 +2428,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-weight: 500;
   color: var(--gold);
   background: rgba(196, 167, 108, 0.1);
-  border: 1px solid rgba(196, 167, 108, 0.4);
-  border-radius: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  border-radius: var(--radius-md);
   white-space: nowrap;
 }
 .ship-action-btn:active {
@@ -2452,7 +2452,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   position: relative;
   width: 148rpx;
   height: 148rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-bg-elevated);
 }
@@ -2483,7 +2483,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   justify-content: center;
   gap: 6rpx;
   border: 1rpx dashed var(--color-border-highlight);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
 }
 .ship-photo-add-mark {
@@ -2515,13 +2515,13 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .ship-submit-btn {
   height: 96rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 30rpx;
   letter-spacing: 0.06em;
 }
 
 /* --- [Tab 3] 核销验票 --- */
-.verify-card { background: var(--color-bg-card); padding: 30rpx; border-radius: 16rpx; display: flex; align-items: center; margin-bottom: 20rpx; border-left: 6rpx solid var(--gold); box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.2); }
+.verify-card { background: var(--color-bg-card); padding: 30rpx; border-radius: var(--radius-md); display: flex; align-items: center; margin-bottom: 20rpx; border-left: 6rpx solid var(--gold); box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.2); }
 .vc-left { display: flex; flex-direction: column; margin-right: 30rpx; align-items: center; width: 120rpx; border-right: 1px dashed #333; padding-right: 20rpx; }
 .vc-time { font-family: var(--font-mono); font-size: 36rpx; font-weight: bold; color: #fff; }
 .vc-status { font-size: 20rpx; color: var(--gold); margin-top: 4rpx; font-weight: bold; }
@@ -2559,21 +2559,21 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 10rpx 16rpx 10rpx 12rpx;
   background: var(--color-bg-card);
   border: 1px solid var(--color-bg-elevated);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 .mp-perk-icon { width: 28rpx; height: 28rpx; }
 .mp-perk-text { font-size: 22rpx; color: var(--gold); letter-spacing: 0.04em; }
 
 /* --- [Tab 4] 店铺装修 (Banner) --- */
-.hero-edit-card { display: flex; flex-direction: column; background: var(--color-bg-card); border-radius: 16rpx; padding: 20rpx; overflow: hidden; margin-bottom: 40rpx; }
-.hero-preview { width: 100%; height: 300rpx; border-radius: 12rpx; margin-bottom: 20rpx; background: var(--color-bg); }
+.hero-edit-card { display: flex; flex-direction: column; background: var(--color-bg-card); border-radius: var(--radius-md); padding: 20rpx; overflow: hidden; margin-bottom: 40rpx; }
+.hero-preview { width: 100%; height: 300rpx; border-radius: var(--radius-md); margin-bottom: 20rpx; background: var(--color-bg); }
 .card-actions { display: flex; justify-content: flex-end; }
 .btn-small { font-size: 24rpx; padding: 10rpx 30rpx; border-radius: 30rpx; font-weight: bold; }
 .btn-small.gold { background: var(--gold); color: var(--color-bg); }
 
 .banner-list { display: flex; flex-direction: column; gap: 24rpx; }
-.banner-item { display: flex; background: var(--color-bg-card); padding: 20rpx; border-radius: 16rpx; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
-.b-thumb { width: 160rpx; height: 90rpx; border-radius: 8rpx; background: var(--color-bg); margin-right: 24rpx; object-fit: cover; }
+.banner-item { display: flex; background: var(--color-bg-card); padding: 20rpx; border-radius: var(--radius-md); align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+.b-thumb { width: 160rpx; height: 90rpx; border-radius: var(--radius-sm); background: var(--color-bg); margin-right: 24rpx; object-fit: cover; }
 .b-info { flex: 1; display: flex; flex-direction: column; }
 .b-title { font-size: 28rpx; color: #fff; font-weight: bold; margin-bottom: 4rpx; }
 .b-sub { font-size: 20rpx; color: var(--color-text-secondary); margin-bottom: 8rpx; }
@@ -2615,7 +2615,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin: 0 0 24rpx;
   padding: 20rpx 12rpx;
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--color-border-highlight, #4D401A);
+  border: 1rpx solid var(--color-border-highlight, #4D401A);
   border-radius: var(--radius-md, 16rpx);
 }
 .framer-stat {
@@ -2660,7 +2660,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 0 24rpx;
   background: var(--color-bg-card);
   border: 1px solid rgba(77, 64, 26, 0.55);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   color: #fff;
   font-size: 26rpx;
 }
@@ -2708,7 +2708,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .framer-card {
   display: flex;
   background: var(--color-bg-card);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 24rpx;
   margin-bottom: 20rpx;
   align-items: flex-start;
@@ -2755,7 +2755,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   flex-shrink: 0;
   font-size: 20rpx;
   padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   line-height: 1.2;
   letter-spacing: 0.5rpx;
 }
@@ -2802,7 +2802,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .f-act {
   padding: 10rpx 18rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   font-size: 22rpx;
   color: var(--color-text-body);
   background: rgba(255, 255, 255, 0.04);
@@ -2881,7 +2881,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 
 /* --- [Tab 6] 权益会员 (按钮块) --- */
-.add-btn-block { background: var(--color-bg-card); border: 2rpx dashed #444; color: var(--color-text-secondary); font-size: 28rpx; font-weight: bold; text-align: center; padding: 30rpx; border-radius: 16rpx; margin-top: 30rpx; }
+.add-btn-block { background: var(--color-bg-card); border: 2rpx dashed #444; color: var(--color-text-secondary); font-size: 28rpx; font-weight: bold; text-align: center; padding: 30rpx; border-radius: var(--radius-md); margin-top: 30rpx; }
 
 /* --- [Tab 8] 营收录入 (高级财务报表风) --- */
 
@@ -2901,7 +2901,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   gap: 16rpx;
 }
 .add-btn-ghost {
-  border: 1px solid rgba(196, 167, 108, 0.35);
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
   color: var(--color-text-secondary, #A09A90);
   padding: 12rpx 24rpx;
   border-radius: 40rpx;
@@ -2909,7 +2909,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .add-btn-gold { 
   background: linear-gradient(135deg, rgba(196, 167, 108,0.2), rgba(196, 167, 108,0.1)); 
-  border: 1px solid rgba(196, 167, 108,0.4); 
+  border: 1rpx solid rgba(196, 167, 108,0.4); 
   color: var(--gold); 
   padding: 12rpx 30rpx; border-radius: 40rpx; 
   font-size: 24rpx; font-weight: bold; display: flex; align-items: center;
@@ -2926,7 +2926,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin: -16rpx 10rpx 32rpx;
   padding: 16rpx 20rpx;
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--color-border-highlight, #4D401A);
+  border: 1rpx solid var(--color-border-highlight, #4D401A);
   border-radius: var(--radius-md, 16rpx);
 }
 .ledger-month-picker {
@@ -2964,7 +2964,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin: 0 10rpx 36rpx;
   padding: 28rpx 24rpx;
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--color-border-highlight, #4D401A);
+  border: 1rpx solid var(--color-border-highlight, #4D401A);
   border-radius: var(--radius-lg, 24rpx);
 }
 .lo-hero {
@@ -3081,7 +3081,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .lo-mall {
   margin-top: 28rpx;
   padding-top: 24rpx;
-  border-top: 1px solid rgba(196, 167, 108, 0.15);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.15);
 }
 .lo-mall-grid {
   display: grid;
@@ -3210,7 +3210,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   max-width: 14rpx;
   height: 100%;
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
@@ -3374,7 +3374,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* 明细网格 */
 .bill-detail { 
   display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; 
-  background: rgba(0,0,0,0.03); padding: 20rpx; border-radius: 8rpx;
+  background: rgba(0,0,0,0.03); padding: 20rpx; border-radius: var(--radius-sm);
 }
 
 .bd-item { display: flex; flex-direction: column; }
@@ -3450,25 +3450,25 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* 旧段保留结构；高度以下方「弹窗系统」.modal-body 为准 */
 .modal-body { padding: 30rpx; }
 .form-group { display: flex; flex-direction: column; gap: 20rpx; }
-.form-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 24rpx; border-radius: 12rpx; border: 1px solid rgba(255,255,255,0.03); }
+.form-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 24rpx; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.03); }
 .form-row text { font-size: 26rpx; color: var(--color-text-secondary); width: 140rpx; }
 .form-row input, .picker { flex: 1; text-align: right; font-size: 28rpx; color: #fff; line-height: normal; height: 100%; min-height: 48rpx; }
 .form-label { font-size: 24rpx; color: var(--color-text-secondary); margin: 20rpx 0 10rpx; padding-left: 10rpx; }
 
 .picker-s {
   background: var(--color-bg); border: 1px solid #333; color: var(--color-text-body);
-  padding: 10rpx 20rpx; border-radius: 8rpx; font-size: 24rpx; text-align: center;
+  padding: 10rpx 20rpx; border-radius: var(--radius-sm); font-size: 24rpx; text-align: center;
   min-width: 140rpx;
 }
 .picker-s.disabled { opacity: 0.3; }
 
 
-.radio-row { display: flex; gap: 30rpx; padding: 20rpx; background: #222; border-radius: 12rpx; }
-.upload-area { height: 300rpx; background: #222; border: 2rpx dashed #444; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; margin-bottom: 30rpx; overflow: hidden; position: relative; }
+.radio-row { display: flex; gap: 30rpx; padding: 20rpx; background: #222; border-radius: var(--radius-md); }
+.upload-area { height: 300rpx; background: #222; border: 2rpx dashed #444; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; margin-bottom: 30rpx; overflow: hidden; position: relative; }
 .upload-area.round { width: 200rpx; height: 200rpx; border-radius: 50%; margin: 0 auto 30rpx; }
 .placeholder { color: var(--color-text-muted); font-size: 26rpx; }
 .upload-area image { width: 100%; height: 100%; object-fit: cover; }
-.smart-box textarea { width: 100%; height: 160rpx; background: #222; padding: 20rpx; border-radius: 12rpx; font-size: 26rpx; color: #fff; margin-bottom: 30rpx; border: 1px solid rgba(255,255,255,0.05); }
+.smart-box textarea { width: 100%; height: 160rpx; background: #222; padding: 20rpx; border-radius: var(--radius-md); font-size: 26rpx; color: #fff; margin-bottom: 30rpx; border: 1px solid rgba(255,255,255,0.05); }
 .modal-foot { padding: 20rpx 30rpx 40rpx; border-top: 1px solid rgba(255,255,255,0.05); }
 .btn-full { background: var(--gold); color: var(--color-bg); font-weight: bold; height: 90rpx; display: flex; align-items: center; justify-content: center; border-radius: 45rpx; font-size: 30rpx; letter-spacing: 2rpx; box-shadow: none; }
 
@@ -3487,7 +3487,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: var(--color-bg) !important; /* 深黑底 */
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: #fff !important;
-  border-radius: 12rpx !important;
+  border-radius: var(--radius-md) !important;
   transition: border-color var(--dur-base) var(--ease-standard);
   font-family: var(--font-body);
 }
@@ -3538,7 +3538,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .form-row { 
   display: flex; justify-content: space-between; align-items: center; 
   background: #222; padding: 0 24rpx; height: 96rpx; 
-  border-radius: 16rpx; border: 1px solid rgba(255,255,255,0.05); 
+  border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.05); 
 }
 
 .form-row text { font-size: 28rpx; color: var(--color-text-secondary); width: 160rpx; }
@@ -3553,7 +3553,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* 文本域 */
 .textarea { 
   width: 100%; height: 200rpx; background: #222; 
-  padding: 24rpx; border-radius: 16rpx; 
+  padding: 24rpx; border-radius: var(--radius-md); 
   font-size: 28rpx; color: #fff; 
   border: 1px solid rgba(255,255,255,0.05); 
   margin-bottom: 24rpx;
@@ -3566,7 +3566,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-bottom: 16rpx;
   background: #222;
   padding: 16rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 .sku-input { flex: 1; font-size: 24rpx; color: #fff; min-width: 0; }
 .sku-input.sm { flex: 0.6; }
@@ -3577,14 +3577,14 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 26rpx;
   padding: 16rpx;
   border: 1px dashed rgba(196, 167, 108, 0.4);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   margin-bottom: 16rpx;
 }
 
 /* 🟢 上传封面优化 */
 .upload-area { 
   height: 340rpx; background: #222; 
-  border: 2rpx dashed #555; border-radius: 20rpx; 
+  border: 2rpx dashed #555; border-radius: var(--radius-lg); 
   display: flex; flex-direction: column; align-items: center; justify-content: center; 
   margin-bottom: 40rpx; overflow: hidden; position: relative;
   transition: all var(--dur-base) var(--ease-standard);
@@ -3602,7 +3602,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .picker-group { display: flex; align-items: center; flex: 1; justify-content: flex-end; gap: 10rpx; }
 .picker-s { 
   background: #1a1a1a; color: var(--color-text-body); padding: 10rpx 20rpx; 
-  border-radius: 8rpx; font-size: 24rpx; border: 1px solid #333;
+  border-radius: var(--radius-sm); font-size: 24rpx; border: 1px solid #333;
 }
 .picker-s.disabled { color: var(--color-text-muted); border-style: dashed; }
 
@@ -3637,7 +3637,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .detail-img-item {
   width: 160rpx;
   height: 160rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
   position: relative;
   background: #222;
@@ -3653,7 +3653,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   width: 160rpx;
   height: 160rpx;
   border: 2rpx dashed #555;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3676,7 +3676,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   width: 100%;
   min-height: 280rpx;
   border: 2rpx dashed #4D401A;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-card);
   display: flex;
   align-items: center;
@@ -3802,13 +3802,13 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 12rpx;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 
 .related-thumb {
   width: 72rpx;
   height: 72rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: var(--color-bg);
   flex-shrink: 0;
 }
@@ -3861,7 +3861,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   align-items: center;
   justify-content: center;
   padding: 12rpx 24rpx;
-  border: 1px solid rgba(196, 167, 108, 0.5);
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
   border-radius: 9999px;
   color: var(--gold);
   font-size: 24rpx;
@@ -3884,7 +3884,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   height: 72rpx;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   padding: 0 24rpx;
   color: #fff;
   font-size: 26rpx;
@@ -3908,7 +3908,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-bottom: 12rpx;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 
 .picker-row.selected {
@@ -3919,7 +3919,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .picker-thumb {
   width: 88rpx;
   height: 88rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: var(--color-bg);
   flex-shrink: 0;
 }
@@ -3953,7 +3953,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 22rpx;
   color: var(--gold);
   padding: 8rpx 16rpx;
-  border: 1px solid rgba(196, 167, 108, 0.35);
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
   border-radius: 9999px;
 }
 
@@ -3979,7 +3979,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--color-bg);
   background: var(--gold);
   padding: 8rpx 20rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 .ai-btn.disabled { opacity: 0.5; pointer-events: none; }
 
@@ -3989,7 +3989,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   justify-content: space-between;
   gap: 16rpx;
   padding: 8rpx 0 20rpx;
-  border-bottom: 1px solid rgba(196, 167, 108, 0.15);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.15);
   margin-bottom: 8rpx;
 }
 
@@ -4028,7 +4028,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .cat-manage-btn {
   font-size: 24rpx;
   color: var(--gold);
-  border: 1px solid rgba(196, 167, 108, 0.45);
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
   padding: 12rpx 24rpx;
   border-radius: 9999px;
 }
@@ -4047,7 +4047,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   display: inline-block;
   font-size: 24rpx;
   color: var(--gold);
-  border: 1px solid rgba(196, 167, 108, 0.45);
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
   padding: 14rpx 36rpx;
   border-radius: 9999px;
 }
@@ -4070,7 +4070,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: var(--color-bg-card);
   border: 1px solid var(--color-bg-elevated);
   padding: 14rpx 0;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   letter-spacing: 0.02em;
 }
 .ps-chip.on {
@@ -4127,7 +4127,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   gap: 16rpx;
   margin: 0 8rpx 20rpx;
   padding: 18rpx 22rpx;
-  border-radius: 14rpx;
+  border-radius: var(--radius-md);
   background: rgba(198, 58, 63, 0.12);
   border: 1rpx solid rgba(198, 58, 63, 0.5);
 }
@@ -4189,7 +4189,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .risk-hero {
   margin: 0 8rpx 20rpx;
   padding: 22rpx;
-  border-radius: 14rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-card);
   border: 1rpx solid rgba(196, 167, 108, 0.24);
 }
@@ -4242,7 +4242,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   align-items: center;
   gap: 6rpx;
   padding: 14rpx 8rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: rgba(196, 167, 108, 0.06);
 }
 .rhn-val {
@@ -4265,7 +4265,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .risk-tier-item {
   margin-top: 14rpx;
   padding: 16rpx 18rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   gap: 8rpx;
@@ -4307,7 +4307,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .risk-note {
   margin-top: 14rpx;
   padding: 14rpx 16rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: rgba(196, 167, 108, 0.08);
   border: 1rpx solid rgba(196, 167, 108, 0.22);
 }
@@ -4386,7 +4386,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--gold);
   background: rgba(196, 167, 108, 0.12);
   padding: 2rpx 10rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 .mini-tag.warn { color: #E9A23B; background: rgba(233, 162, 59, 0.12); }
 .mini-tag.danger { color: var(--color-error-on-tint); background: rgba(214, 64, 69, 0.12); }
@@ -4444,7 +4444,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .cat-manage-inline {
   background: var(--color-bg-card);
   border: 1px solid rgba(77, 64, 26, 0.45);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 28rpx 24rpx 40rpx;
   margin-bottom: 48rpx;
 }
@@ -4562,8 +4562,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 22rpx;
   color: var(--gold);
   padding: 8rpx 12rpx;
-  border: 1px solid rgba(196,167,108,0.35);
-  border-radius: 8rpx;
+  border: 1rpx solid rgba(196,167,108,0.35);
+  border-radius: var(--radius-sm);
 }
 .cat-action-btn.on {
   background: rgba(196,167,108,0.18);
@@ -4573,7 +4573,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 20rpx;
   background: var(--color-bg-elevated);
   border: 1px solid #4D401A;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .cat-dup-title { font-size: 24rpx; color: var(--gold); margin-bottom: 12rpx; }
 .cat-link-modes { display: flex; gap: 16rpx; margin-bottom: 20rpx; }
@@ -4586,8 +4586,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .btn-ghost {
   text-align: center;
   padding: 24rpx;
-  border-radius: 16rpx;
-  border: 1px solid var(--gold);
+  border-radius: var(--radius-md);
+  border: 1rpx solid var(--gold);
   color: var(--gold);
   font-size: 28rpx;
 }
@@ -4603,21 +4603,21 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 .comment-admin-card {
   background: var(--color-bg-card);
-  border: 1px solid rgba(196, 167, 108, 0.15);
-  border-radius: 16rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.15);
+  border-radius: var(--radius-md);
   padding: 24rpx;
   margin-bottom: 20rpx;
 }
 .c-head { display: flex; align-items: center; gap: 16rpx; margin-bottom: 12rpx; }
 .c-rating { color: var(--gold); font-weight: 700; font-size: 26rpx; }
 .c-status { font-size: 22rpx; color: var(--color-text-secondary); }
-.c-pin { font-size: 20rpx; color: #52B788; border: 1px solid #52B788; padding: 2rpx 8rpx; border-radius: 6rpx; }
+.c-pin { font-size: 20rpx; color: #52B788; border: 1px solid #52B788; padding: 2rpx 8rpx; border-radius: var(--radius-sm); }
 .c-content { display: block; color: var(--color-text-body); font-size: 26rpx; line-height: 1.5; margin-bottom: 12rpx; }
 .c-meta { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); margin-bottom: 12rpx; }
-.c-reply { background: rgba(196, 167, 108, 0.08); padding: 12rpx; border-radius: 8rpx; margin-bottom: 12rpx; font-size: 24rpx; color: var(--color-text-secondary); }
+.c-reply { background: rgba(196, 167, 108, 0.08); padding: 12rpx; border-radius: var(--radius-sm); margin-bottom: 12rpx; font-size: 24rpx; color: var(--color-text-secondary); }
 .c-reply-label { color: var(--gold); }
 .c-actions { display: flex; flex-wrap: wrap; gap: 16rpx; }
-.c-act { font-size: 22rpx; color: var(--gold); padding: 8rpx 16rpx; border: 1px solid rgba(196, 167, 108, 0.3); border-radius: 8rpx; }
+.c-act { font-size: 22rpx; color: var(--gold); padding: 8rpx 16rpx; border: 1rpx solid rgba(196, 167, 108, 0.3); border-radius: var(--radius-sm); }
 .c-act.danger { color: #D64045; border-color: rgba(214, 64, 69, 0.4); }
 
 /* 评价回复弹窗：居中对话框，避免底部 sheet + 键盘顶起误触导航返回 */
@@ -4633,8 +4633,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   width: 100%;
   max-width: 640rpx;
   background: #1a1a1a;
-  border-radius: 24rpx;
-  border: 1px solid rgba(196, 167, 108, 0.2);
+  border-radius: var(--radius-lg);
+  border: 1rpx solid rgba(196, 167, 108, 0.2);
   display: flex;
   flex-direction: column;
   transform: none;
@@ -4666,7 +4666,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   box-sizing: border-box;
   background: var(--color-bg);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   color: #fff;
   font-size: 28rpx;
   text-align: left;
@@ -4680,7 +4680,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   box-sizing: border-box;
   background: var(--color-bg);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   color: #fff;
   font-size: 28rpx;
   line-height: 1.5;
@@ -4731,7 +4731,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 28rpx;
   background: var(--color-bg-card);
   border: 1px solid #4D401A;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 .museum-preview-kicker {
   display: block;
@@ -4782,8 +4782,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 22rpx;
   color: var(--gold);
   padding: 8rpx 16rpx;
-  border: 1px solid rgba(196, 167, 108, 0.4);
-  border-radius: 8rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  border-radius: var(--radius-sm);
 }
 .empty-hint {
   text-align: center;
@@ -5088,7 +5088,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .pstats-panel {
   background: var(--color-bg-card);
   border: 1px solid rgba(77, 64, 26, 0.55);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 28rpx 24rpx;
   margin: 0 0 24rpx;
 }
@@ -5145,7 +5145,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .pstats-cost-hero {
   background: linear-gradient(135deg, #A8903C 0%, var(--gold) 100%);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 24rpx 28rpx 22rpx;
   margin-bottom: 16rpx;
 }
@@ -5202,7 +5202,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-bottom: 12rpx;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 16rpx 12rpx;
   box-sizing: border-box;
 }
@@ -5335,7 +5335,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .pstats-sales-img {
   width: 64rpx;
   height: 64rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-elevated);
 }
 .pstats-sales-info { flex: 1; min-width: 0; }
@@ -5460,13 +5460,13 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   align-items: center;
   gap: 6rpx;
   padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.12);
   border: 1px solid #4D401A;
 }
 .gift-scene-chip {
   background: transparent;
-  border: 1px solid rgba(196, 167, 108, 0.35);
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
 }
 .gift-scene-chip .tag-chip-text {
   color: var(--color-text-secondary);
@@ -5504,9 +5504,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .tag-add-btn {
   font-size: 22rpx;
   color: var(--gold);
-  border: 1px solid var(--gold);
+  border: 1rpx solid var(--gold);
   padding: 6rpx 16rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 .product-entry-body .form-row > text {
   width: auto;
@@ -5540,7 +5540,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 24rpx;
   white-space: nowrap;
   text-align: center;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(214, 64, 69, 0.6);
   color: var(--color-error-on-tint);
   background: rgba(214, 64, 69, 0.08);
@@ -5599,12 +5599,12 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--color-text-primary);
   background: var(--color-bg);
   border: 1px solid #4D401A;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
 }
 .sku-builder {
   background: var(--color-bg-elevated);
   border: 1px solid rgba(77, 64, 26, 0.55);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 24rpx;
   margin-bottom: 24rpx;
 }
@@ -5644,7 +5644,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .sku-bulk-panel {
   background: var(--color-bg-elevated);
   border: 1px solid rgba(77, 64, 26, 0.45);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 24rpx;
   margin-bottom: 24rpx;
 }
@@ -5668,9 +5668,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 24rpx;
   line-height: 1.2;
   color: var(--gold);
-  border: 1px solid rgba(196, 167, 108, 0.45);
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
   background: transparent;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   white-space: nowrap;
 }
 .sku-tool-btn.primary {
@@ -5685,7 +5685,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .sku-block.compact {
   background: var(--color-bg-card);
   border: 1px solid rgba(77, 64, 26, 0.5);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 24rpx;
   margin-bottom: 20rpx;
   border-bottom: 1px solid rgba(77, 64, 26, 0.5);
@@ -5755,7 +5755,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 26rpx;
   padding: 20rpx;
   border: 1px dashed rgba(196, 167, 108, 0.45);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   margin-bottom: 16rpx;
   background: rgba(196, 167, 108, 0.06);
 }
@@ -5776,7 +5776,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   line-height: 1.7;
   background: var(--color-bg-elevated);
   border: 1px dashed rgba(77, 64, 26, 0.55);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   box-sizing: border-box;
 }
 .sku-off-hint text,
@@ -6033,7 +6033,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .pf-row:last-child { border-bottom: none; }
 .pf-row.is-saving { opacity: 0.72; }
-.pf-cover { width: 96rpx; height: 96rpx; border-radius: 12rpx; flex-shrink: 0; background: var(--color-bg-elevated); }
+.pf-cover { width: 96rpx; height: 96rpx; border-radius: var(--radius-md); flex-shrink: 0; background: var(--color-bg-elevated); }
 .pf-main { flex: 1; min-width: 0; }
 .pf-head { display: flex; align-items: baseline; gap: 12rpx; margin-bottom: 12rpx; }
 .pf-title {
@@ -6111,9 +6111,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .ticket-empty { display: block; font-size: 26rpx; line-height: 1.6; color: #E9A23B; }
 .ticket-more { display: inline-block; margin-top: 8rpx; padding: 8rpx 0; font-size: 24rpx; color: var(--gold, #C4A76C); }
 .ticket-imgs { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 16rpx; }
-.ticket-img { width: 160rpx; height: 160rpx; border-radius: 12rpx; background: var(--color-bg-elevated, #262320); }
+.ticket-img { width: 160rpx; height: 160rpx; border-radius: var(--radius-md); background: var(--color-bg-elevated, #262320); }
 .ticket-phone { display: block; font-size: 22rpx; color: var(--color-text-secondary, #A09A90); margin-top: 12rpx; }
-.ticket-origin { padding: 20rpx; margin-bottom: 20rpx; border-radius: 12rpx; background: var(--color-bg-elevated, #262320); }
+.ticket-origin { padding: 20rpx; margin-bottom: 20rpx; border-radius: var(--radius-md); background: var(--color-bg-elevated, #262320); }
 .ticket-origin-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10rpx; }
 .ticket-origin-label { font-size: 22rpx; letter-spacing: 2rpx; color: var(--gold, #C4A76C); }
 .ticket-origin-who { font-size: 22rpx; color: var(--color-text-secondary, #A09A90); max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

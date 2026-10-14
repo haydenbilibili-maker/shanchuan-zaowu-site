@@ -54,7 +54,7 @@ page { background: #1A1814; }
   color: #A09A90;
   background: #1F1D1A;
   border: 1rpx solid #262320;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .mode + .mode { margin-left: 16rpx; }
@@ -73,7 +73,7 @@ page { background: #1A1814; }
   padding: 28rpx 8rpx;
   background: #1F1D1A;
   border: 1rpx solid #262320;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 
 .stat-box {
@@ -184,7 +184,7 @@ page { background: #1A1814; }
   width: 168rpx;
   height: 168rpx;
   flex-shrink: 0;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: #171512;
   border: 1rpx solid #262320;
@@ -304,7 +304,7 @@ page { background: #1A1814; }
   color: #1A1814;
   font-size: 28rpx;
   border: none;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .btn-brass::after { border: none; }

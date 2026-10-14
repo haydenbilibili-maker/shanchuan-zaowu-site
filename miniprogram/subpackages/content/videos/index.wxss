@@ -156,7 +156,7 @@ page {
   width: auto;
   padding: 4rpx 12rpx;
   background: rgba(26, 24, 20, 0.72);
-  border: 1px solid var(--color-border-highlight);
+  border: 1rpx solid var(--color-border-highlight);
   color: var(--brass-300);
   font-size: 18rpx;
   border-radius: var(--radius-sm);
@@ -238,7 +238,7 @@ page {
   display: inline-flex;
   margin-top: 24rpx;
   padding: 12rpx 32rpx;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-full);
   color: var(--brass-400);
   font-size: 24rpx;

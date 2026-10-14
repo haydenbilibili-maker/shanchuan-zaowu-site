@@ -16,7 +16,7 @@
   pointer-events: none;
   color: var(--prot-brass);
   background: rgba(26, 24, 20, 0.9);
-  border: 1px solid rgba(196, 167, 108, 0.55);
+  border: 1rpx solid rgba(196, 167, 108, 0.55);
   letter-spacing: 0.08em;
   line-height: 1.15;
 }
@@ -106,7 +106,7 @@
 /* 文档流内联（详情标签行等） */
 .prot-badge--static {
   position: relative;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   padding: 4rpx 12rpx;
   flex-direction: row;
   align-items: center;

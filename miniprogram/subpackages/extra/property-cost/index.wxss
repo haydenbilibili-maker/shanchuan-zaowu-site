@@ -15,7 +15,7 @@ page {
 .pc-tip {
   margin-bottom: 16rpx;
   padding: 16rpx 20rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   font-size: 24rpx;
   line-height: 1.5;
 }
@@ -33,7 +33,7 @@ page {
 .empty-tip.is-error {
   margin: 8rpx 0 20rpx;
   padding: 40rpx 24rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   border: 1rpx solid rgba(196, 92, 74, 0.4);
   background: rgba(196, 92, 74, 0.08);
 }
@@ -41,7 +41,7 @@ page {
   display: inline-block;
   margin-top: 20rpx;
   padding: 14rpx 36rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   border: 1rpx solid rgba(196, 167, 108, 0.5);
   font-size: 26rpx;
   color: #e8dcc0;
@@ -77,7 +77,7 @@ page {
   padding: 24rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid rgba(77, 64, 26, 0.55);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .summary-main {
   display: flex;
@@ -110,7 +110,7 @@ page {
 }
 .entity-chip {
   padding: 6rpx 14rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   font-size: 20rpx;
   color: var(--brass-300, #D4BC85);
   background: rgba(196, 167, 108, 0.1);
@@ -141,7 +141,7 @@ page {
 .btn-add {
   margin-left: auto;
   padding: 12rpx 28rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg, #1A1814);
   font-size: 24rpx;
@@ -158,13 +158,13 @@ page {
   padding: 24rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid rgba(38, 35, 32, 0.66);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .sk-line {
   height: 24rpx;
   width: 42%;
   margin-top: 16rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-elevated, #262320);
   animation: sk-pulse 1.2s ease-in-out infinite;
 }
@@ -196,7 +196,7 @@ page {
   padding: 24rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid rgba(38, 35, 32, 0.66);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .card-top {
   display: flex;
@@ -213,7 +213,7 @@ page {
 .status-tag {
   font-size: 20rpx;
   padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   background: rgba(38, 35, 32, 0.9);
 }
@@ -245,7 +245,7 @@ page {
 .receipt-thumb {
   width: 96rpx;
   height: 96rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
   border: 1rpx solid rgba(77, 64, 26, 0.4);
 }
@@ -271,7 +271,7 @@ page {
   right: 4rpx;
   top: 4rpx;
   padding: 4rpx 10rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   font-size: 18rpx;
   color: var(--color-text-primary);
   background: rgba(214, 64, 69, 0.85);
@@ -329,7 +329,7 @@ page {
 }
 .input {
   padding: 18rpx 20rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-elevated, #262320);
   border: 1rpx solid rgba(38, 35, 32, 0.8);
   color: var(--color-text-primary);
@@ -340,7 +340,7 @@ page {
   margin-top: 12rpx;
   text-align: center;
   padding: 24rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg, #1A1814);
   font-size: 28rpx;

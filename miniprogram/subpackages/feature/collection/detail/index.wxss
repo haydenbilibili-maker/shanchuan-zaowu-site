@@ -50,7 +50,7 @@ page { background: #1A1814; }
 .skel-plate {
   width: 100%;
   height: 280rpx;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   background: #1F1D1A;
   border: 1rpx solid #262320;
   animation: pulse 1.2s ease-in-out infinite;
@@ -65,7 +65,7 @@ page { background: #1A1814; }
   height: 28rpx;
   margin-bottom: 16rpx;
   background: #262320;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   animation: pulse 1.2s ease-in-out infinite;
 }
 
@@ -95,7 +95,7 @@ page { background: #1A1814; }
   padding: 40rpx 32rpx 36rpx;
   background: #1F1D1A;
   border: 1rpx solid #4D401A;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   margin-bottom: 32rpx;
   overflow: hidden;
 }
@@ -107,7 +107,7 @@ page { background: #1A1814; }
   top: 16rpx;
   bottom: 16rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.18);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   pointer-events: none;
 }
 
@@ -164,7 +164,7 @@ page { background: #1A1814; }
   margin: 28rpx 0 0;
   padding: 12rpx 24rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.06);
 }
 
@@ -291,7 +291,7 @@ page { background: #1A1814; }
   padding: 32rpx;
   background: #1F1D1A;
   border: 1rpx solid rgba(38, 35, 32, 0.66);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 
 .related.soft {
@@ -329,7 +329,7 @@ page { background: #1A1814; }
   font-size: 26rpx;
   color: #C4A76C;
   border: 1rpx solid #C4A76C;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .product {
@@ -347,7 +347,7 @@ page { background: #1A1814; }
 .product-img {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: #171512;
   flex-shrink: 0;
 }
@@ -482,7 +482,7 @@ page { background: #1A1814; }
   color: #1A1814;
   font-size: 28rpx;
   border: none;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .btn-brass::after { border: none; }
@@ -500,7 +500,7 @@ page { background: #1A1814; }
   flex: 1;
   min-width: 0;
   height: 88rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -573,7 +573,7 @@ button.btn-share {
   font-weight: 500;
   letter-spacing: 0.04em;
   border: none;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   text-align: center;
 }
 

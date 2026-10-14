@@ -126,7 +126,7 @@ page { background: var(--color-bg); color: #fff; }
   padding: 26rpx 24rpx 30rpx;
   background: var(--color-bg-card);
   border: 1px solid rgba(38, 35, 32, 0.9);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
 
@@ -222,7 +222,7 @@ page { background: var(--color-bg); color: #fff; }
   padding: 28rpx 24rpx;
   background: var(--color-bg-card);
   border: 1px solid rgba(38, 35, 32, 0.85);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   min-height: 160rpx;
 }
 

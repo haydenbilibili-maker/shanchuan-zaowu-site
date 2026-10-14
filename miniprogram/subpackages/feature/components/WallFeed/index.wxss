@@ -465,7 +465,7 @@
 
 .wf-skel-line {
   height: 24rpx;
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, rgba(168, 144, 60, 0.1) 0%, rgba(212, 188, 133, 0.32) 50%, rgba(168, 144, 60, 0.1) 100%);
   background-size: 200% 100%;
   animation: wf-shimmer 1.5s ease-in-out infinite;
@@ -727,7 +727,7 @@
   letter-spacing: 0.04em;
   color: #5A4A28;
   border: 1rpx solid rgba(138, 117, 48, 0.45);
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   background: rgba(250, 246, 237, 0.65);
 }
 
@@ -840,7 +840,7 @@
 
 /* 愿签廊门楣「签」：实心铜币 → 发丝方印（与挂签台 / 仪式 / 玩法同一枚印） */
 .wf-gallery-seal {
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.06);
   border: 1rpx solid rgba(196, 167, 108, 0.55);
   box-shadow: none;

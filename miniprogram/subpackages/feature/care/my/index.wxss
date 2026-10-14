@@ -50,14 +50,14 @@ page {
   gap: var(--space-3);
   padding: var(--space-3);
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border-highlight);
+  border: 1rpx solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
   transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 
 .spec-frame {
   padding: 4rpx;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
   flex-shrink: 0;
 }
@@ -124,7 +124,7 @@ page {
   font-size: 20rpx;
   color: var(--brass-400);
   padding: 4rpx 10rpx;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-full);
   white-space: nowrap;
   box-sizing: border-box;
@@ -172,7 +172,7 @@ page {
   height: 96rpx;
   margin: 0 auto var(--space-4);
   border-radius: 50%;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   background: rgba(196, 167, 108, 0.06);
   display: flex;
   align-items: center;

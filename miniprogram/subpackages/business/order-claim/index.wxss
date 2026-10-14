@@ -51,14 +51,14 @@
   margin-bottom: 28rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid var(--color-border, #26232066);
-  border-radius: 20rpx;
+  border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
 .seg-item {
   flex: 1;
   padding: 22rpx 12rpx;
   text-align: center;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   transition: background var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
   border: 1rpx solid transparent;
   box-sizing: border-box;
@@ -99,7 +99,7 @@
   padding: 32rpx 28rpx 28rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid var(--color-border, #26232066);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
 .panel-head {
@@ -159,7 +159,7 @@
 .upload-add {
   width: 168rpx;
   height: 168rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
   position: relative;
   background: var(--color-bg-elevated, #262320);
@@ -217,7 +217,7 @@
   padding: 0 24rpx;
   background: var(--color-bg-elevated, #262320);
   border: 1rpx solid rgba(196, 167, 108, 0.18);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   box-sizing: border-box;
   transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
@@ -260,7 +260,7 @@
   justify-content: center;
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg, #1A1814);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -335,7 +335,7 @@
   margin-top: 4rpx;
   padding: 4rpx 14rpx;
   font-size: 20rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   letter-spacing: 0.04em;
   border: 1rpx solid transparent;
 }
@@ -361,7 +361,7 @@
   text-align: center;
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid var(--color-border, #26232066);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 .empty-title {
   display: block;

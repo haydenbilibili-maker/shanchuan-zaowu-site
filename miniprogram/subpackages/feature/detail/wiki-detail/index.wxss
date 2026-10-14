@@ -45,7 +45,7 @@ page { background: var(--color-bg); color: #fff; }
 .load-error-actions { display: flex; flex-direction: column; gap: 20rpx; width: 100%; max-width: 480rpx; }
 .load-error-btn {
   height: 88rpx; line-height: 88rpx; text-align: center;
-  border-radius: 16rpx; border: 1px solid var(--gold); color: var(--gold); font-size: 28rpx;
+  border-radius: var(--radius-md); border: 1rpx solid var(--gold); color: var(--gold); font-size: 28rpx;
 }
 .load-error-btn.primary { background: var(--gold); color: var(--color-bg); border: none; }
 
@@ -53,24 +53,24 @@ page { background: var(--color-bg); color: #fff; }
 .article-body { padding: 40rpx; background: var(--color-bg); min-height: 400rpx; }
 
 .gallery-scroll { white-space: nowrap; margin-bottom: 50rpx; height: 240rpx; }
-.g-img { width: 360rpx; height: 240rpx; border-radius: 12rpx; margin-right: 24rpx; display: inline-block; border: 1px solid #333; background: #111; }
+.g-img { width: 360rpx; height: 240rpx; border-radius: var(--radius-md); margin-right: 24rpx; display: inline-block; border: 1px solid #333; background: #111; }
 
 .rich-text-container { color: var(--color-text-body); font-size: 30rpx; line-height: 1.8; text-align: justify; letter-spacing: 1rpx; }
 
 /* 3. 关联藏品卡片 */
 .commerce-float {
   margin: 40rpx 30rpx; padding: 30rpx;
-  background: var(--color-bg-card); border: 1px solid rgba(196, 167, 108,0.2);
-  border-radius: 20rpx;
+  background: var(--color-bg-card); border: 1rpx solid rgba(196, 167, 108,0.2);
+  border-radius: var(--radius-lg);
 }
 .commerce-title { margin-bottom: 30rpx; border-bottom: 1px solid rgba(38, 35, 32, 0.8); padding-bottom: 16rpx; display: flex; align-items: baseline; justify-content: space-between; }
 .commerce-title text:first-child { font-family: var(--font-mono); color: var(--gold); font-weight: bold; letter-spacing: 2rpx; font-size: 24rpx; }
 .commerce-title .sub { color: var(--color-text-secondary); font-size: 22rpx; font-weight: 500; }
 
-.product-card-mini { display: flex; align-items: center; margin-bottom: 24rpx; background: var(--color-bg-elevated); padding: 16rpx; border-radius: 12rpx; border: 1px solid rgba(38, 35, 32, 0.8); }
+.product-card-mini { display: flex; align-items: center; margin-bottom: 24rpx; background: var(--color-bg-elevated); padding: 16rpx; border-radius: var(--radius-md); border: 1px solid rgba(38, 35, 32, 0.8); }
 .product-card-mini:last-child { margin-bottom: 0; }
 /* 门控组件的定位参照（见 wxml 注释）。margin/border/border-radius 移到盒上，保持 flex 行为不变。 */
-.p-thumb-box { position: relative; width: 100rpx; height: 100rpx; margin-right: 24rpx; flex-shrink: 0; border-radius: 8rpx; overflow: hidden; background: var(--color-bg); border: 1px solid rgba(38, 35, 32, 0.9); }
+.p-thumb-box { position: relative; width: 100rpx; height: 100rpx; margin-right: 24rpx; flex-shrink: 0; border-radius: var(--radius-sm); overflow: hidden; background: var(--color-bg); border: 1px solid rgba(38, 35, 32, 0.9); }
 .p-thumb { width: 100%; height: 100%; }
 /* 2026-09-21 分子级审计：同 orders/index.wxss —— flex:1 缺 min-width:0 + 标题无截断。
    本文件下方 `.notes-brief` 已有 2 行钳制；标题行改与「缩略图 + 标题」同型的 search 页一致（单行省略号）。 */
@@ -92,7 +92,7 @@ page { background: var(--color-bg); color: #fff; }
   color: var(--color-text-secondary);
   background: rgba(196, 167, 108, 0.08);
   border: 1px solid rgba(77, 64, 26, 0.5);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   padding: 2rpx 8rpx;
   white-space: nowrap;
 }
@@ -102,7 +102,7 @@ page { background: var(--color-bg); color: #fff; }
   padding: 30rpx;
   background: var(--color-bg-card);
   border: 1px solid #26232066;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 .notes-head { margin-bottom: 24rpx; }
 .notes-overline {
@@ -123,7 +123,7 @@ page { background: var(--color-bg); color: #fff; }
 .notes-cover {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
   flex-shrink: 0;
 }
@@ -148,7 +148,7 @@ page { background: var(--color-bg); color: #fff; }
 .p-price { color: var(--gold); font-family: var(--font-mono); font-size: 28rpx; font-weight: bold; }
 .btn-buy { 
   background: transparent; color: var(--gold); font-size: 22rpx; padding: 8rpx 24rpx; 
-  border-radius: 16rpx; border: 1px solid rgba(196, 167, 108, 0.45); font-weight: 500;
+  border-radius: var(--radius-md); border: 1rpx solid rgba(196, 167, 108, 0.45); font-weight: 500;
 }
 
 /* 在原 CSS 基础上追加 */
@@ -163,7 +163,7 @@ page { background: var(--color-bg); color: #fff; }
   padding: 28rpx;
   background: var(--color-bg-card);
   border: 1px solid rgba(38, 35, 32, 0.9);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 .wiki-prot { margin-bottom: 20rpx; }
 .wiki-archive-label {
@@ -179,8 +179,8 @@ page { background: var(--color-bg); color: #fff; }
   align-items: baseline;
   gap: 8rpx;
   padding: 6rpx 14rpx;
-  border-radius: 8rpx;
-  border: 1px solid rgba(196, 167, 108, 0.3);
+  border-radius: var(--radius-sm);
+  border: 1rpx solid rgba(196, 167, 108, 0.3);
   color: var(--color-text-body);
   font-size: 22rpx;
   background: rgba(196, 167, 108, 0.08);
@@ -216,7 +216,7 @@ page { background: var(--color-bg); color: #fff; }
   line-height: 80rpx;
   background: var(--gold);
   color: var(--color-bg);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   font-weight: 500;
 }

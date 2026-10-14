@@ -56,7 +56,7 @@
 .ps-grip {
   width: 72rpx;
   height: 8rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: rgba(212, 188, 133, 0.42);
 }
 

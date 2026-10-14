@@ -90,7 +90,7 @@
   font-size: 20rpx;
   font-family: var(--font-mono);
   color: var(--brass-400);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-full);
   background: rgba(196, 167, 108, 0.06);
 }

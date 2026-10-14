@@ -57,7 +57,7 @@ page {
   margin-top: var(--space-3);
   padding: 12rpx 24rpx;
   background: rgba(196, 167, 108, 0.08);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-full);
 }
 
@@ -137,14 +137,14 @@ page {
   padding: var(--space-3);
   margin-bottom: var(--space-2);
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border-highlight);
+  border: 1rpx solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
   transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 
 .specimen-frame {
   padding: 4rpx;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
   flex-shrink: 0;
 }
@@ -245,7 +245,7 @@ page {
   height: 96rpx;
   margin: 0 auto var(--space-4);
   border-radius: 50%;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   background: rgba(196, 167, 108, 0.06);
   display: flex;
   align-items: center;

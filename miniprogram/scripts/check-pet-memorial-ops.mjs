@@ -248,7 +248,7 @@ function run(overrides = {}) {
   }
   t('.pm-btn：white-space: nowrap + 高 76rpx + 圆角 16rpx + 居中', () => {
     const r = rule(read(PMSS), '.pm-btn')
-    return /white-space:\s*nowrap/.test(r) && /height:\s*76rpx/.test(r) && /border-radius:\s*16rpx/.test(r) && /justify-content:\s*center/.test(r)
+    return /white-space:\s*nowrap/.test(r) && /height:\s*76rpx/.test(r) && /border-radius:\s*(16rpx|var\(--radius-md\))/.test(r) && /justify-content:\s*center/.test(r)
   })
   t('按钮行：flex-wrap 换行 + 16rpx 间距；行内按钮 flex 等分且有 min-width（放不下整颗换行，不压窄）', () => {
     const css = read(PMSS)

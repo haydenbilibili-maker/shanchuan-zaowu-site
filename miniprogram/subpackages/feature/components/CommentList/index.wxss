@@ -10,8 +10,8 @@
   margin-bottom: 40rpx;
   padding: 30rpx;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.1), rgba(196, 167, 108,0.05));
-  border: 1px solid rgba(196, 167, 108,0.2);
-  border-radius: 16rpx;
+  border: 1rpx solid rgba(196, 167, 108,0.2);
+  border-radius: var(--radius-md);
   backdrop-filter: blur(10px);
 }
 
@@ -81,7 +81,7 @@
   margin-bottom: 30rpx;
   padding: 20rpx;
   background: rgba(255,255,255,0.03);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -114,7 +114,7 @@
   color: rgba(255,255,255,0.6);
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 20rpx;
+  border-radius: var(--radius-lg);
   transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
 
@@ -142,7 +142,7 @@
   padding: 30rpx;
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
 
@@ -195,7 +195,7 @@
 .comment-image {
   width: 200rpx;
   height: 200rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(255,255,255,0.1);
   background: rgba(255,255,255,0.05);
 }
@@ -211,14 +211,14 @@
   align-items: center;
   gap: 8rpx;
   padding: 8rpx 16rpx;
-  border-radius: 20rpx;
+  border-radius: var(--radius-lg);
   background: rgba(255,255,255,0.05);
   transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
 
 .comment-like.liked {
   background: rgba(196, 167, 108,0.15);
-  border: 1px solid rgba(196, 167, 108,0.3);
+  border: 1rpx solid rgba(196, 167, 108,0.3);
 }
 
 .like-icon {
@@ -271,7 +271,7 @@
 .empty-cta {
   margin-top: 24rpx;
   padding: 12rpx 36rpx;
-  border: 1px solid rgba(196, 167, 108, 0.4);
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
   border-radius: 9999px;
   color: var(--gold);
   font-size: 24rpx;
@@ -297,7 +297,7 @@
   color: #52B788;
   border: 1px solid rgba(82, 183, 136, 0.4);
   padding: 4rpx 8rpx;
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   margin-right: 8rpx;
   white-space: nowrap;
   box-sizing: border-box;
@@ -308,7 +308,7 @@
   padding: 16rpx;
   background: rgba(196, 167, 108, 0.08);
   border-left: 3rpx solid var(--gold);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 
 .reply-label {

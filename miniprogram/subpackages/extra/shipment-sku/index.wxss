@@ -19,7 +19,7 @@ page { background: #1a1814; }
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14rpx;
+  border-radius: var(--radius-md);
   background: linear-gradient(135deg, #c4a76c, #a8874c);
   box-sizing: border-box;
 }

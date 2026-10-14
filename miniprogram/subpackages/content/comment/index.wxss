@@ -42,7 +42,7 @@ page {
   padding: 48rpx 32rpx;
   background: #1F1D1A;
   border: 1px solid #26232066;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   gap: 16rpx;
@@ -71,13 +71,13 @@ page {
   padding: 28rpx;
   background: #1F1D1A;
   border: 1px solid #4D401A;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 
 .target-image {
   width: 144rpx;
   height: 144rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
   background: #262320;
 }
@@ -128,7 +128,7 @@ page {
   margin-right: 16rpx;
   background: #1F1D1A;
   border: 1px solid #26232066;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   vertical-align: top;
 }
 
@@ -159,7 +159,7 @@ page {
   padding: 32rpx;
   background: #1F1D1A;
   border: 1px solid #26232066;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   gap: 24rpx;
@@ -191,7 +191,7 @@ page {
   flex-shrink: 0;
   padding: 6rpx 20rpx;
   border-radius: 999rpx;
-  border: 1px solid #C4A76C;
+  border: 1rpx solid #C4A76C;
   color: #C4A76C;
   font-size: 22rpx;
   letter-spacing: 0.06em;
@@ -223,7 +223,7 @@ page {
 .review-image {
   width: 180rpx;
   height: 180rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   background: #262320;
 }
 
@@ -235,7 +235,7 @@ page {
 .review-reply {
   padding: 20rpx 24rpx;
   background: #262320;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   gap: 8rpx;
@@ -270,8 +270,8 @@ page {
 
 .review-visit {
   padding: 16rpx 32rpx;
-  border: 1px solid #C4A76C;
-  border-radius: 16rpx;
+  border: 1rpx solid #C4A76C;
+  border-radius: var(--radius-md);
   color: #C4A76C;
   font-size: 26rpx;
 }
@@ -283,7 +283,7 @@ page {
   padding: 32rpx;
   background: #1F1D1A;
   border: 1px solid #26232066;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 
 .section-label {
@@ -325,7 +325,7 @@ page {
   padding: 24rpx;
   background: #262320;
   border: 1px solid #4D401A66;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   color: #D5D1C8;
   line-height: 1.7;
@@ -359,7 +359,7 @@ page {
 .uploaded-image {
   width: 180rpx;
   height: 180rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   border: 1px solid #26232066;
 }
 
@@ -384,7 +384,7 @@ page {
   width: 180rpx;
   height: 180rpx;
   border: 1px dashed #C4A76C66;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -423,7 +423,7 @@ page {
   height: 96rpx;
   background: #C4A76C;
   color: #1A1814;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 30rpx;
   font-weight: 500;
   letter-spacing: 0.04em;

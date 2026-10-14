@@ -6,7 +6,7 @@ view, text { box-sizing: border-box; }
 .addr-card {
   background: #1F1D1A;
   border: 1px solid rgba(38, 35, 32, 0.4);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 32rpx;
   margin-bottom: 24rpx;
 }
@@ -22,9 +22,9 @@ view, text { box-sizing: border-box; }
   width: auto;
   font-size: 20rpx;
   color: #C4A76C;
-  border: 1px solid rgba(196, 167, 108, 0.5);
+  border: 1rpx solid rgba(196, 167, 108, 0.5);
   padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   white-space: nowrap;
   box-sizing: border-box;
 }
@@ -53,9 +53,9 @@ view, text { box-sizing: border-box; }
   flex: 1;
   text-align: center;
   padding: 24rpx;
-  border: 1px solid #C4A76C;
+  border: 1rpx solid #C4A76C;
   color: #C4A76C;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
 }
 .add-btn.primary {
@@ -85,7 +85,7 @@ view, text { box-sizing: border-box; }
   width: 100%;
   background: #262320;
   border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 22rpx 24rpx;
   font-size: 28rpx;
   color: #D5D1C8;
@@ -101,7 +101,7 @@ view, text { box-sizing: border-box; }
   line-height: normal;
   background: #262320;
   border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   color: #D5D1C8;
   box-sizing: border-box;
@@ -122,7 +122,7 @@ view, text { box-sizing: border-box; }
 .check-box {
   width: 32rpx;
   height: 32rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   border: 1px solid #6B6560;
   box-sizing: border-box;
 }

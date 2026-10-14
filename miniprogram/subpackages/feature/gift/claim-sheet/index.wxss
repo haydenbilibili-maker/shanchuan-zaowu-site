@@ -8,7 +8,7 @@
   flex-direction:column;
 }
 .cs-desc{margin-top:14rpx;font-size:24rpx;line-height:1.7;color:#B8AD98}
-.cs-row{margin-top:28rpx;padding:24rpx 26rpx;border:2rpx solid rgba(196,167,108,0.3);border-radius:14rpx;display:flex;flex-direction:column}
+.cs-row{margin-top:28rpx;padding:24rpx 26rpx;border:2rpx solid rgba(196,167,108,0.3);border-radius:var(--radius-md);display:flex;flex-direction:column}
 .cs-k{font-size:22rpx;letter-spacing:2rpx;color:#C4A76C}
 .cs-v{margin-top:10rpx;font-size:28rpx;line-height:1.6;color:#F3ECDD}
 .cs-code{margin-top:10rpx;font-size:52rpx;letter-spacing:14rpx;font-weight:600;color:#F3ECDD}

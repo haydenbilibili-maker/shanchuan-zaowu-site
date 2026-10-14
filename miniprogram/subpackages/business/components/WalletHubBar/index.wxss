@@ -43,7 +43,7 @@
   align-items: stretch;
   background: #1F1D1A;
   border: 1px solid #262320;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   overflow: visible;
 }
 

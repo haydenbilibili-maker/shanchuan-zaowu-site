@@ -46,18 +46,18 @@ page { background: #1A1814; color: #fff; }
 .load-error-actions { width: 100%; display: flex; flex-direction: column; gap: 20rpx; }
 .btn-ghost {
   height: 88rpx; line-height: 88rpx; text-align: center;
-  border-radius: 16rpx; border: 1px solid #C4A76C; color: #C4A76C; font-size: 28rpx;
+  border-radius: var(--radius-md); border: 1rpx solid #C4A76C; color: #C4A76C; font-size: 28rpx;
 }
 
 .intro-box {
   margin: 24rpx 32rpx; padding: 24rpx;
   background: rgba(196, 167, 108, 0.08); border: 1px solid rgba(77, 64, 26, 0.5);
-  border-radius: 16rpx; font-size: 26rpx; color: #A09A90; line-height: 1.6;
+  border-radius: var(--radius-md); font-size: 26rpx; color: #A09A90; line-height: 1.6;
 }
 
 .preview-plate {
   margin: 0 32rpx 24rpx; padding: 28rpx;
-  background: #FAF6ED; border: 1px solid #E0CFA3; border-radius: 16rpx;
+  background: #FAF6ED; border: 1px solid #E0CFA3; border-radius: var(--radius-md);
 }
 
 .plate-label {
@@ -87,13 +87,13 @@ page { background: #1A1814; color: #fff; }
 .form-input {
   flex: 1; min-width: 200rpx; height: 72rpx; padding: 0 24rpx;
   background: #1F1D1A; border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: 12rpx; color: #fff; font-size: 28rpx;
+  border-radius: var(--radius-md); color: #fff; font-size: 28rpx;
 }
 
 .form-textarea {
   width: 100%; min-height: 160rpx; padding: 20rpx 24rpx; box-sizing: border-box;
   background: #1F1D1A; border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: 12rpx; color: #fff; font-size: 28rpx;
+  border-radius: var(--radius-md); color: #fff; font-size: 28rpx;
 }
 
 .form-hint { font-size: 22rpx; color: #6B6560; width: 100%; padding-left: 160rpx; }
@@ -107,7 +107,7 @@ page { background: #1A1814; color: #fff; }
 }
 
 .btn-primary {
-  background: #C4A76C; color: #1A1814; border: none; border-radius: 16rpx;
+  background: #C4A76C; color: #1A1814; border: none; border-radius: var(--radius-md);
   font-size: 28rpx; font-weight: 500; height: 88rpx; line-height: 88rpx;
 }
 

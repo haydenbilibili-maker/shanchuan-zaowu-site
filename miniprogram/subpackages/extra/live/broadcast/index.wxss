@@ -49,7 +49,7 @@
   padding: 20rpx 24rpx;
   background: #262320;
   border: 1px solid #4D401A;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 22rpx;
   color: #E9A23B;
   line-height: 1.5;
@@ -60,7 +60,7 @@
   padding: 24rpx;
   background: #1F1D1A;
   border: 1px solid #262320;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .status-row {
@@ -105,7 +105,7 @@
   height: 420rpx;
   background: #1F1D1A;
   border: 1px solid #4D401A;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
 
@@ -151,7 +151,7 @@
   gap: 10rpx;
   padding: 8rpx 16rpx;
   border: 1px solid #4D401A;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   font-size: 20rpx;
   letter-spacing: 0.12em;
   color: #A09A90;
@@ -180,7 +180,7 @@
 .conn-pill {
   max-width: 55%;
   padding: 8rpx 14rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   font-size: 20rpx;
   background: rgba(26, 24, 20, 0.72);
   color: #A09A90;
@@ -198,7 +198,7 @@
   padding: 28rpx 28rpx 32rpx;
   background: #1F1D1A;
   border: 1px solid #262320;
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
 
@@ -212,7 +212,7 @@
 .input {
   background: #262320;
   border: 1px solid #4D401A;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 18rpx 20rpx;
   color: #FFFFFF;
   font-size: 26rpx;
@@ -297,9 +297,9 @@
   flex: 1;
   text-align: center;
   padding: 22rpx 12rpx;
-  border: 1px solid #C4A76C;
+  border: 1rpx solid #C4A76C;
   color: #C4A76C;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 26rpx;
   box-sizing: border-box;
 }
@@ -311,7 +311,7 @@
   /* 2026-09-21 分子级审计：原字面量 #D64045 配白字仅 4.489（AA 需 4.5）→ 用令牌（4.74） */
   background: var(--color-error);
   color: #FFFFFF;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 26rpx;
   box-sizing: border-box;
 }
@@ -329,7 +329,7 @@
   bottom: 20rpx;
   z-index: 2;
   padding: 8rpx 14rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: rgba(26, 24, 20, 0.72);
   border: 1px solid #4D401A;
   font-size: 20rpx;
@@ -349,7 +349,7 @@
 .cover-placeholder {
   width: 120rpx;
   height: 120rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   border: 1px solid #4D401A;
   background: #262320;
   flex-shrink: 0;
@@ -383,7 +383,7 @@
   padding: 14rpx 20rpx;
   background: #262320;
   border: 1px solid #4D401A;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   color: #D5D1C8;
   font-size: 24rpx;
   text-align: center;
@@ -453,7 +453,7 @@
 .shelf-host-row.spot { border-color: #4D401A; }
 .shelf-host-cover {
   width: 88rpx; height: 88rpx;
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   background: #262320;
   flex-shrink: 0;
 }
@@ -491,7 +491,7 @@
   flex: 1;
   background: #262320;
   border: 1px solid #4D401A;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   padding: 14rpx 18rpx;
   color: #FFFFFF;
   font-size: 24rpx;
@@ -503,7 +503,7 @@
   border-bottom: 1px solid #262320;
 }
 .picker-cover {
-  width: 80rpx; height: 80rpx; border-radius: 10rpx; background: #262320; flex-shrink: 0;
+  width: 80rpx; height: 80rpx; border-radius: var(--radius-sm); background: #262320; flex-shrink: 0;
 }
 .picker-info { flex: 1; min-width: 0; }
 .picker-name {
@@ -522,6 +522,6 @@
 .shelf-host-row.sold { opacity: 0.55; }
 .shelf-host-row.spot {
   background: rgba(77, 64, 26, 0.28);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   padding: 10rpx 8rpx;
 }

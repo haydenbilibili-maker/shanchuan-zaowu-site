@@ -134,7 +134,7 @@ page {
   margin: 24rpx 32rpx 8rpx;
   padding: 28rpx;
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid rgba(196, 167, 108, 0.2);
+  border: 1rpx solid rgba(196, 167, 108, 0.2);
   border-radius: var(--radius-lg, 24rpx);
 }
 
@@ -170,7 +170,7 @@ page {
   margin-top: 20rpx;
   padding: 16rpx 20rpx;
   background: rgba(196, 167, 108, 0.08);
-  border: 1px solid rgba(196, 167, 108, 0.2);
+  border: 1rpx solid rgba(196, 167, 108, 0.2);
   border-radius: var(--radius-md, 16rpx);
 }
 
@@ -204,7 +204,7 @@ page {
   gap: 0;
   padding: 20rpx 22rpx 18rpx;
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid rgba(196, 167, 108, 0.28);
+  border: 1rpx solid rgba(196, 167, 108, 0.28);
   border-radius: var(--radius-lg, 24rpx);
   box-sizing: border-box;
 }
@@ -231,7 +231,7 @@ page {
   height: 96rpx;
   border-radius: var(--radius-sm, 8rpx);
   background: var(--color-bg-elevated, #262320);
-  border: 1px solid rgba(196, 167, 108, 0.28);
+  border: 1rpx solid rgba(196, 167, 108, 0.28);
   flex-shrink: 0;
 }
 
@@ -288,7 +288,7 @@ page {
   gap: 2rpx;
   min-height: 56rpx;
   padding: 0 18rpx;
-  border: 1px solid rgba(196, 167, 108, 0.45);
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
   border-radius: var(--radius-full, 9999px);
   background: rgba(196, 167, 108, 0.1);
 }
@@ -370,8 +370,8 @@ page {
   margin-bottom: 20rpx;
   padding: 24rpx 28rpx;
   background: rgba(196, 167, 108, 0.08);
-  border: 1px solid rgba(196, 167, 108, 0.25);
-  border-radius: 16rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.25);
+  border-radius: var(--radius-md);
 }
 .invoice-note-title {
   display: block;
@@ -713,7 +713,7 @@ page {
 .community-qr {
   width: 360rpx;
   height: 360rpx;
-  border: 1px solid rgba(196, 167, 108, 0.2);
+  border: 1rpx solid rgba(196, 167, 108, 0.2);
   border-radius: var(--radius-md, 16rpx);
 }
 

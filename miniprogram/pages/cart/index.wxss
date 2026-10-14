@@ -182,7 +182,7 @@ page {
   font-size: 24rpx;
   color: var(--brass-400);
   padding: 4rpx 16rpx;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-sm);
 }
 
@@ -232,7 +232,7 @@ page {
   margin-right: var(--space-3);
   margin-top: 4rpx;
   flex-shrink: 0;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -447,7 +447,7 @@ page {
   align-items: center;
   justify-content: center;
   background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-lg);
 }
 
@@ -516,7 +516,7 @@ page {
 
 .empty-cta-secondary {
   padding: var(--space-2) var(--space-4);
-  border: 1px solid rgba(196, 167, 108, 0.35);
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
   border-radius: var(--radius-md);
 }
 
@@ -669,7 +669,7 @@ page {
   gap: 8rpx;
   padding: 8rpx 20rpx;
   background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-bottom: none;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
   font-size: 20rpx;
@@ -774,7 +774,7 @@ page {
   flex-shrink: 0;
   width: 76rpx;
   height: 76rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.04);
 }

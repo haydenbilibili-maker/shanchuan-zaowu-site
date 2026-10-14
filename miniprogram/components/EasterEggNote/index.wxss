@@ -25,7 +25,7 @@
   box-sizing: border-box;
   padding: 16rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
   background: var(--color-bg-card, #1F1D1A);
-  border-top: 1px solid var(--brass-800, #4D401A);
+  border-top: 1rpx solid var(--brass-800, #4D401A);
   border-radius: 32rpx 32rpx 0 0;
   transform: translateY(24rpx);
   opacity: 0;
@@ -58,8 +58,8 @@
 .egg-plate {
   padding: 32rpx 28rpx 28rpx;
   background: var(--color-bg-elevated, #262320);
-  border: 1px solid var(--brass-800, #4D401A);
-  border-radius: 24rpx;
+  border: 1rpx solid var(--brass-800, #4D401A);
+  border-radius: var(--radius-lg);
 }
 
 .egg-meta {
@@ -123,8 +123,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--brass-400, #C4A76C);
-  border-radius: 16rpx;
+  border: 1rpx solid var(--brass-400, #C4A76C);
+  border-radius: var(--radius-md);
   color: var(--brass-400, #C4A76C);
   font-size: 28rpx;
   letter-spacing: 0.08em;

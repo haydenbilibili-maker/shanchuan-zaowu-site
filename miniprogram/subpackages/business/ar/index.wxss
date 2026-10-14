@@ -38,7 +38,7 @@ view, text, image, slider { box-sizing: border-box; }
   box-sizing: border-box; /* 关键 */
 }
 .ht-item {
-  background: rgba(0,0,0,0.5); color: #C4A76C; font-size: 20rpx; padding: 4rpx 12rpx; border: 1px solid rgba(196, 167, 108,0.3); border-radius: 4rpx; font-weight: bold;
+  background: rgba(0,0,0,0.5); color: #C4A76C; font-size: 20rpx; padding: 4rpx 12rpx; border: 1rpx solid rgba(196, 167, 108,0.3); border-radius: 4rpx; font-weight: bold;
 }
 
 /* 取景框四角 */
@@ -85,7 +85,7 @@ view, text, image, slider { box-sizing: border-box; }
 .target-lock .br { bottom: 0; right: 0; border-width: 0 2rpx 2rpx 0; }
 .crosshair { 
   position: absolute; top: 50%; left: 50%; width: 20rpx; height: 20rpx; 
-  border-left: 1px solid #C4A76C; border-top: 1px solid #C4A76C; 
+  border-left: 1rpx solid #C4A76C; border-top: 1rpx solid #C4A76C; 
   transform: translate(-50%, -50%) rotate(45deg); opacity: 0.5;
 }
 

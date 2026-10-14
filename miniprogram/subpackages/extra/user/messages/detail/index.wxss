@@ -75,7 +75,7 @@ page {
 .paper-stage .letter-card.paper {
   overflow: hidden;
   background: #F2EDE4;
-  border: 1px solid var(--gold);
+  border: 1rpx solid var(--gold);
   border-radius: var(--radius-lg, 24rpx);
   transform: translateY(16rpx);
   opacity: 0.88;
@@ -110,8 +110,8 @@ page {
 .paper-plate-outer {
   position: absolute;
   inset: 14rpx;
-  border: 1px solid rgba(196, 167, 108, 0.28);
-  border-radius: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.28);
+  border-radius: var(--radius-md);
   pointer-events: none;
   z-index: 1;
 }
@@ -313,7 +313,7 @@ page {
   color: var(--color-wood-on-tint);
   font-weight: 600;
   background: rgba(196, 167, 108, 0.16);
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   padding: 2rpx 8rpx;
   letter-spacing: 0.02em;
 }
@@ -321,9 +321,9 @@ page {
 .letter-sum {
   margin-top: 28rpx;
   padding: 18rpx 22rpx;
-  border: 1px solid rgba(196, 167, 108, 0.42);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
   background: rgba(250, 246, 237, 0.7);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 
 .letter-sum-row {
@@ -350,9 +350,9 @@ page {
 .letter-goods {
   margin-top: 28rpx;
   padding: 18rpx 22rpx 8rpx;
-  border: 1px solid rgba(196, 167, 108, 0.42);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
   background: rgba(250, 246, 237, 0.7);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 
 .goods-head {
@@ -392,7 +392,7 @@ page {
   flex-shrink: 0;
   width: 96rpx;
   height: 96rpx;
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   background: rgba(45, 35, 20, 0.06);
   border: 1rpx solid rgba(196, 167, 108, 0.32);
 }
@@ -474,7 +474,7 @@ page {
 .letter-photos {
   margin-top: 28rpx;
   padding: 18rpx 22rpx 16rpx;
-  border: 1px solid rgba(196, 167, 108, 0.42);
+  border: 1rpx solid rgba(196, 167, 108, 0.42);
   background: rgba(250, 246, 237, 0.7);
   border-radius: var(--radius-sm, 8rpx);
 }
@@ -579,7 +579,7 @@ page {
 .dg-health {
   margin-top: var(--space-2, 16rpx);
   padding: 10rpx 14rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   border: 1rpx solid rgba(45, 35, 20, 0.1);
   background: rgba(196, 167, 108, 0.08);
 }
@@ -660,7 +660,7 @@ page {
 .letter-digest-missing {
   margin-top: var(--space-4, 32rpx);
   padding: var(--space-3, 24rpx);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   border: 1rpx dashed rgba(138, 90, 43, 0.4);
   background: rgba(138, 90, 43, 0.06);
 }
@@ -681,7 +681,7 @@ page {
 .dg-alert {
   margin-bottom: var(--space-3, 24rpx);
   padding: var(--space-2, 16rpx);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   border: 1rpx solid rgba(138, 90, 43, 0.35);
   background: rgba(138, 90, 43, 0.08);
 }
@@ -703,7 +703,7 @@ page {
   flex: 1 1 28%;
   min-width: 160rpx;
   padding: var(--space-2, 16rpx);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   border: 1rpx solid rgba(45, 35, 20, 0.1);
   background: rgba(196, 167, 108, 0.08);
   box-sizing: border-box;
@@ -768,7 +768,7 @@ page {
 .dg-section {
   margin-bottom: var(--space-3, 24rpx);
   padding: 4rpx 0 0;
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
 }
 
 .dg-section.tone-failed {
@@ -846,7 +846,7 @@ page {
   margin: 0 -8rpx;
   padding-left: 8rpx;
   padding-right: 8rpx;
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
 }
 
 .dg-row-top {

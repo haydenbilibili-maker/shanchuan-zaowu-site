@@ -65,7 +65,7 @@
   bottom: 8rpx;
   width: 10rpx;
   height: 48rpx;
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   background: linear-gradient(180deg, #6A5838 0%, #3A3020 100%);
   transform: rotate(22deg);
 }
@@ -153,7 +153,7 @@
   line-height: 1.55;
   color: rgba(42, 50, 32, 0.82);
   background: rgba(90, 110, 56, 0.1);
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   border-left: 6rpx solid rgba(74, 90, 48, 0.55);
 }
 

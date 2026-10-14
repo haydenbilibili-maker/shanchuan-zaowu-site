@@ -51,7 +51,7 @@
   top: 10rpx;
   width: 20rpx;
   height: 140rpx;
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   background: linear-gradient(180deg, #FAF6ED 0%, var(--brass-300) 100%);
   box-shadow: inset -2rpx 0 0 rgba(122, 92, 44, 0.28);
   opacity: 0.78;
@@ -113,7 +113,7 @@
     linear-gradient(90deg, rgba(122, 92, 44, 0.08) 0%, transparent 10%, transparent 90%, rgba(122, 92, 44, 0.08) 100%),
     linear-gradient(180deg, #F8F1E0 0%, #E8D9BA 100%);
   border: 2rpx solid rgba(122, 92, 44, 0.48);
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   /* 左右双线 + 竹节感：读成竖签而不是普通信卡 */
   box-shadow:
     inset 14rpx 0 0 rgba(122, 92, 44, 0.12),
@@ -174,7 +174,7 @@
   text-align: center;
   border-top: none;
   background: rgba(122, 92, 44, 0.08);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   border: 1rpx solid rgba(122, 92, 44, 0.18);
 }
 

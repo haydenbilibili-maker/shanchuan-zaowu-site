@@ -122,7 +122,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(196, 167, 108, 0.38);
+  border: 1rpx solid rgba(196, 167, 108, 0.38);
   border-radius: 50%;
   background: rgba(196, 167, 108, 0.08);
 }
@@ -168,7 +168,7 @@ page {
   min-width: 0;
   padding: 8rpx 20rpx;
   background: rgba(196, 167, 108, 0.08);
-  border: 1px solid var(--brass-800, #4D401A);
+  border: 1rpx solid var(--brass-800, #4D401A);
   border-radius: var(--radius-full, 9999px);
 }
 
@@ -208,7 +208,7 @@ page {
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--brass-800, #4D401A);
+  border: 1rpx solid var(--brass-800, #4D401A);
   border-radius: var(--radius-lg, 24rpx);
 }
 
@@ -295,7 +295,7 @@ page {
   margin: 8rpx 0 40rpx;
   padding: 28rpx 32rpx;
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--brass-800, #4D401A);
+  border: 1rpx solid var(--brass-800, #4D401A);
   border-radius: var(--radius-lg, 24rpx);
   box-sizing: border-box;
 }
@@ -313,7 +313,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(196, 167, 108, 0.35);
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, rgba(242, 237, 228, 0.08), rgba(26, 24, 20, 0.98));
 }
@@ -433,7 +433,7 @@ page {
   min-height: 56rpx;
   padding: 0;
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--brass-800, #4D401A);
+  border: 1rpx solid var(--brass-800, #4D401A);
   border-radius: var(--radius-full, 9999px);
   box-sizing: border-box;
 }
@@ -511,8 +511,8 @@ page {
   justify-content: center;
   margin-bottom: 24rpx;
   background: rgba(196, 167, 108, 0.1);
-  border: 1px solid var(--brass-800, #4D401A);
-  border-radius: 16rpx;
+  border: 1rpx solid var(--brass-800, #4D401A);
+  border-radius: var(--radius-md);
 }
 
 .idle-icon,
@@ -677,7 +677,7 @@ page {
   width: 152rpx;
   height: 152rpx;
   flex-shrink: 0;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--color-bg);
   border: 1px solid rgba(77, 64, 26, 0.45);
@@ -748,7 +748,7 @@ page {
   font-size: 18rpx;
   letter-spacing: 0.06em;
   color: var(--brass-400, #C4A76C);
-  border: 1px solid rgba(196, 167, 108, 0.35);
+  border: 1rpx solid rgba(196, 167, 108, 0.35);
   border-radius: var(--radius-sm, 8rpx);
   background: rgba(196, 167, 108, 0.08);
 }
@@ -807,7 +807,7 @@ page {
   color: var(--color-text-secondary);
   background: rgba(196, 167, 108, 0.08);
   border: 1px solid rgba(77, 64, 26, 0.5);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   padding: 2rpx 10rpx;
   white-space: nowrap;
 }
@@ -851,8 +851,8 @@ page {
 .retry-btn {
   margin-top: 32rpx;
   padding: 16rpx 48rpx;
-  border: 1px solid var(--brass-400, #C4A76C);
-  border-radius: 16rpx;
+  border: 1rpx solid var(--brass-400, #C4A76C);
+  border-radius: var(--radius-md);
   color: var(--brass-400, #C4A76C);
   font-size: 26rpx;
   font-weight: 500;
@@ -944,7 +944,7 @@ page {
   width: 152rpx;
   height: 152rpx;
   flex-shrink: 0;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   background: var(--color-bg-elevated, #262320);
 }
 
@@ -963,7 +963,7 @@ page {
 
 .sk-line {
   height: 24rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-elevated, #262320);
 }
 

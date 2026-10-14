@@ -6,7 +6,7 @@
   align-items: center;
   padding: 36rpx 24rpx 32rpx;
   margin-bottom: 8rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   border: 1rpx solid #4D401A;
   background: linear-gradient(165deg, rgba(196, 167, 108, 0.14) 0%, #1A1814 48%, #1F1D1A 100%);
   box-sizing: border-box;

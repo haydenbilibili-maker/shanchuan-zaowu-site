@@ -49,7 +49,7 @@ page { background: #1A1814; color: #fff; }
 .preview-plate {
   margin: 32rpx; padding: 32rpx;
   background: #1F1D1A; border: 1px solid rgba(38,35,32,0.6);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 
 .plate-label {
@@ -74,7 +74,7 @@ page { background: #1A1814; color: #fff; }
 .tip-box {
   margin: 0 32rpx; padding: 24rpx;
   background: rgba(196,167,108,0.08); border: 1px solid rgba(77,64,26,0.5);
-  border-radius: 16rpx; font-size: 24rpx; color: #A09A90; line-height: 1.6;
+  border-radius: var(--radius-md); font-size: 24rpx; color: #A09A90; line-height: 1.6;
 }
 
 .footer {
@@ -85,13 +85,13 @@ page { background: #1A1814; color: #fff; }
 }
 
 .btn-primary {
-  background: #C4A76C; color: #1A1814; border: none; border-radius: 16rpx;
+  background: #C4A76C; color: #1A1814; border: none; border-radius: var(--radius-md);
   font-size: 28rpx; font-weight: 500;
 }
 
 .btn-ghost {
   background: transparent; color: #C4A76C;
-  border: 1px solid #C4A76C; border-radius: 16rpx; font-size: 28rpx;
+  border: 1rpx solid #C4A76C; border-radius: var(--radius-md); font-size: 28rpx;
   overflow: visible; box-sizing: border-box;
 }
 

@@ -46,7 +46,7 @@ page { background: #1A1814; color: #fff; }
   display: flex; align-items: center; gap: 16rpx;
   padding: 28rpx 24rpx; margin-bottom: 16rpx;
   background: #1F1D1A; border: 1px solid rgba(38, 35, 32, 0.85);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .item-card:active,
@@ -85,7 +85,7 @@ page { background: #1A1814; color: #fff; }
 .btn-primary {
   display: inline-block; padding: 0 48rpx; height: 84rpx; line-height: 84rpx;
   background: #C4A76C; color: #1A1814; font-size: 28rpx; font-weight: 500;
-  border-radius: 16rpx; border: none;
+  border-radius: var(--radius-md); border: none;
 }
 
 .btn-primary::after { border: none; }

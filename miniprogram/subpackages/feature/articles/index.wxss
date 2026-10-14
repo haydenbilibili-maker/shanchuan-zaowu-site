@@ -158,7 +158,7 @@ page {
   gap: 8rpx;
   padding: 8rpx 20rpx;
   border-radius: var(--radius-full);
-  border: 1px solid var(--color-border-highlight);
+  border: 1rpx solid var(--color-border-highlight);
   background: rgba(196, 167, 108, 0.06);
 }
 

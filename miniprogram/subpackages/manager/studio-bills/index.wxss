@@ -14,7 +14,7 @@
 .sb-summary {
   display: flex; align-items: center; justify-content: space-between;
   background: #262320; border: 1rpx solid rgba(77, 64, 26, 0.5);
-  border-radius: 16rpx; padding: 22rpx 26rpx; margin-bottom: 16rpx;
+  border-radius: var(--radius-md); padding: 22rpx 26rpx; margin-bottom: 16rpx;
 }
 .sb-sum-cell { display: flex; flex-direction: column; gap: 6rpx; }
 .sb-sum-cell-right { align-items: flex-end; }
@@ -24,14 +24,14 @@
 
 .sb-filters { display: flex; gap: 10rpx; margin-bottom: 16rpx; }
 .sb-filter {
-  flex: 1; text-align: center; padding: 14rpx 8rpx; border-radius: 10rpx;
+  flex: 1; text-align: center; padding: 14rpx 8rpx; border-radius: var(--radius-sm);
   background: #262320; border: 1rpx solid rgba(77, 64, 26, 0.5);
 }
 .sb-filter text { font-size: 24rpx; color: #a09a90; }
 .sb-filter.is-on { background: rgba(196, 167, 108, 0.18); border-color: rgba(196, 167, 108, 0.6); }
 .sb-filter.is-on text { color: #e8dcc0; }
 
-.sb-tip { padding: 16rpx 20rpx; border-radius: 12rpx; font-size: 24rpx; line-height: 1.5; margin-bottom: 16rpx; }
+.sb-tip { padding: 16rpx 20rpx; border-radius: var(--radius-md); font-size: 24rpx; line-height: 1.5; margin-bottom: 16rpx; }
 .sb-tip.is-info { background: rgba(196, 167, 108, 0.14); border: 1rpx solid rgba(196, 167, 108, 0.36); color: #e8dcc0; }
 .sb-tip.is-warn { background: rgba(196, 92, 74, 0.16); border: 1rpx solid rgba(196, 92, 74, 0.5); color: #f0c9c0; }
 
@@ -41,7 +41,7 @@
 .sb-empty.is-error {
   margin: 8rpx 0 16rpx;
   padding: 40rpx 24rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   border: 1rpx solid rgba(196, 92, 74, 0.4);
   background: rgba(196, 92, 74, 0.08);
 }
@@ -49,16 +49,16 @@
 .sb-retry {
   margin-top: 16rpx;
   padding: 14rpx 36rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   border: 1rpx solid rgba(196, 167, 108, 0.5);
 }
 .sb-retry text { font-size: 26rpx; color: #e8dcc0; }
 
 .sb-list { display: flex; flex-direction: column; gap: 16rpx; }
-.sb-card { background: #262320; border: 1rpx solid rgba(77, 64, 26, 0.5); border-radius: 16rpx; padding: 22rpx 24rpx; }
+.sb-card { background: #262320; border: 1rpx solid rgba(77, 64, 26, 0.5); border-radius: var(--radius-md); padding: 22rpx 24rpx; }
 .sb-card-head { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12rpx; }
 .sb-card-no { font-size: 25rpx; color: #c4a76c; }
-.sb-tag { font-size: 21rpx; padding: 4rpx 12rpx; border-radius: 8rpx; }
+.sb-tag { font-size: 21rpx; padding: 4rpx 12rpx; border-radius: var(--radius-sm); }
 .sb-tag.is-warn { background: rgba(196, 92, 74, 0.2); color: #f0c9c0; }
 .sb-tag.is-brass { background: rgba(196, 167, 108, 0.22); color: #e8dcc0; }
 .sb-tag.is-ok { background: rgba(120, 160, 110, 0.22); color: #d6e6cf; }
@@ -81,7 +81,7 @@
 .sb-detail-label { font-size: 24rpx; color: #a09a90; }
 .sb-detail-value { font-size: 44rpx; font-weight: 600; color: #c4a76c; }
 .sb-detail-split { display: flex; gap: 12rpx; padding-bottom: 16rpx; }
-.sb-split-cell { flex: 1; background: rgba(0, 0, 0, 0.24); border-radius: 10rpx; padding: 14rpx; display: flex; flex-direction: column; gap: 6rpx; }
+.sb-split-cell { flex: 1; background: rgba(0, 0, 0, 0.24); border-radius: var(--radius-sm); padding: 14rpx; display: flex; flex-direction: column; gap: 6rpx; }
 .sb-split-label { font-size: 21rpx; color: #a09a90; }
 .sb-split-value { font-size: 26rpx; color: #f2ece1; }
 .sb-detail-meta { display: flex; flex-direction: column; gap: 8rpx; padding-bottom: 18rpx; border-bottom: 1rpx solid rgba(77, 64, 26, 0.4); }
@@ -96,7 +96,7 @@
 .sb-ship-amount { font-size: 24rpx; color: #c4a76c; }
 
 .sb-actions { display: flex; flex-direction: column; gap: 12rpx; padding: 16rpx 28rpx calc(30rpx + env(safe-area-inset-bottom)); border-top: 1rpx solid rgba(77, 64, 26, 0.4); }
-.sb-btn { font-size: 27rpx; border-radius: 12rpx; line-height: 2.6; }
+.sb-btn { font-size: 27rpx; border-radius: var(--radius-md); line-height: 2.6; }
 .sb-btn-main { background: linear-gradient(135deg, #c4a76c, #a8874c); color: #221e17; border: none; }
 .sb-btn-ghost { background: transparent; border: 1rpx solid rgba(196, 167, 108, 0.5); color: #e8dcc0; }
 .sb-noop { text-align: center; padding: 10rpx 0; }
@@ -104,7 +104,7 @@
 
 /* 新建账单 */
 .sb-create-btn {
-  margin-bottom: 16rpx; padding: 20rpx; border-radius: 12rpx; text-align: center;
+  margin-bottom: 16rpx; padding: 20rpx; border-radius: var(--radius-md); text-align: center;
   border: 1rpx dashed rgba(196, 167, 108, 0.6); background: rgba(196, 167, 108, 0.08);
 }
 .sb-create-btn text { font-size: 26rpx; color: #e8dcc0; }
@@ -112,19 +112,19 @@
 .sb-create-label { font-size: 24rpx; color: #a09a90; }
 .sb-picker {
   display: flex; align-items: center; gap: 10rpx; padding: 14rpx 18rpx;
-  background: rgba(0, 0, 0, 0.28); border: 1rpx solid rgba(196, 167, 108, 0.34); border-radius: 10rpx;
+  background: rgba(0, 0, 0, 0.28); border: 1rpx solid rgba(196, 167, 108, 0.34); border-radius: var(--radius-sm);
 }
 .sb-picker text { font-size: 26rpx; color: #f2ece1; }
 .sb-picker-arrow { color: #c4a76c; }
 .sb-cand {
   display: flex; align-items: center; gap: 14rpx; padding: 18rpx 16rpx; margin-bottom: 10rpx;
-  background: rgba(0, 0, 0, 0.22); border: 1rpx solid rgba(77, 64, 26, 0.5); border-radius: 12rpx;
+  background: rgba(0, 0, 0, 0.22); border: 1rpx solid rgba(77, 64, 26, 0.5); border-radius: var(--radius-md);
 }
 .sb-cand.is-on { border-color: rgba(196, 167, 108, 0.7); background: rgba(196, 167, 108, 0.12); }
 .sb-cand.is-blocked { opacity: 0.55; }
 .sb-cand-check {
   width: 40rpx; height: 40rpx; display: flex; align-items: center; justify-content: center;
-  border: 1rpx solid rgba(196, 167, 108, 0.5); border-radius: 8rpx; color: #c4a76c; font-size: 26rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.5); border-radius: var(--radius-sm); color: #c4a76c; font-size: 26rpx;
 }
 .sb-cand-main { flex: 1; display: flex; flex-direction: column; gap: 4rpx; }
 .sb-cand-no { font-size: 25rpx; color: #f2ece1; }

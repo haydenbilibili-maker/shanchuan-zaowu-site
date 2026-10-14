@@ -241,7 +241,7 @@
   min-height: 52rpx;
   padding: 0 18rpx;
   background: rgba(196, 167, 108, 0.08);
-  border: 1px solid rgba(196, 167, 108, 0.36);
+  border: 1rpx solid rgba(196, 167, 108, 0.36);
   border-radius: var(--radius-full);
   box-sizing: border-box;
   transition: background var(--dur-instant) var(--ease-standard), border-color var(--dur-instant) var(--ease-standard), opacity var(--dur-instant) var(--ease-standard);
@@ -449,7 +449,7 @@
 .rate-tag {
   font-size: 20rpx;
   color: var(--brass-400);
-  border: 1px solid rgba(196, 167, 108, 0.38);
+  border: 1rpx solid rgba(196, 167, 108, 0.38);
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.06);
@@ -614,7 +614,7 @@
 
 .flip-layer {
   position: absolute;
-  border: 1px solid rgba(196, 167, 108, 0.36);
+  border: 1rpx solid rgba(196, 167, 108, 0.36);
   border-radius: 4rpx;
   background: rgba(196, 167, 108, 0.08);
 }
@@ -2346,7 +2346,7 @@
   gap: 16rpx;
   padding: 14rpx 18rpx;
   background: rgba(31, 29, 26, 0.9);
-  border: 1px solid rgba(196, 167, 108, 0.16);
+  border: 1rpx solid rgba(196, 167, 108, 0.16);
   border-radius: var(--radius-md);
 }
 
@@ -2410,7 +2410,7 @@
   padding: 12rpx 8rpx;
   text-align: center;
   background: rgba(31, 29, 26, 0.9);
-  border: 1px solid rgba(196, 167, 108, 0.14);
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
   border-radius: var(--radius-md);
 }
 
@@ -2492,7 +2492,7 @@
   align-items: center;
   justify-content: center;
   padding: 10rpx 32rpx 24rpx;
-  border-top: 1px solid rgba(196, 167, 108, 0.1);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
 }
 
 .cb-since {

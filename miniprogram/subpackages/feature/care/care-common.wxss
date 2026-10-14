@@ -275,7 +275,7 @@
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   background: rgba(196, 167, 108, 0.06);
-  border: 1px solid var(--color-border-highlight);
+  border: 1rpx solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
@@ -339,7 +339,7 @@
   height: 96rpx;
   margin-bottom: var(--space-4);
   border-radius: 50%;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   background: rgba(196, 167, 108, 0.06);
   display: flex;
   align-items: center;
@@ -382,7 +382,7 @@
 .care-empty-btn.ghost {
   color: var(--brass-400);
   background: transparent;
-  border: 1px solid var(--brass-400);
+  border: 1rpx solid var(--brass-400);
 }
 
 /* ── 底部主次按钮 ── */
@@ -422,7 +422,7 @@
 
 .care-footer-btn.secondary {
   background: transparent;
-  border: 1px solid var(--brass-400);
+  border: 1rpx solid var(--brass-400);
   color: var(--brass-400);
 }
 

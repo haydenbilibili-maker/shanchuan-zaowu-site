@@ -199,7 +199,7 @@ page {
 .quick-link {
   flex-shrink: 0;
   padding: 8rpx 16rpx;
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
   font-size: 22rpx;
   color: var(--brass-400);
@@ -578,7 +578,7 @@ page {
   height: 22rpx;
   width: 40%;
   margin-top: 12rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-elevated, #262320);
   animation: field-sk-pulse 1.2s ease-in-out infinite;
 }
@@ -1836,7 +1836,7 @@ page {
 .page-tip {
   margin: 12rpx 0 8rpx;
   padding: 16rpx 20rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   font-size: 24rpx;
   line-height: 1.5;
 }
@@ -1853,7 +1853,7 @@ page {
 .empty.is-error {
   border: 1rpx solid rgba(196, 92, 74, 0.4);
   background: rgba(196, 92, 74, 0.08);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 24rpx;
 }
 .empty-hint {

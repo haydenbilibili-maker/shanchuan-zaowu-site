@@ -52,7 +52,7 @@ page {
   min-width: 280rpx;
   text-align: center;
   padding: 20rpx 32rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   font-weight: 500;
   box-sizing: border-box;
@@ -60,7 +60,7 @@ page {
 
 .btn-secondary {
   color: #C4A76C;
-  border: 1px solid rgba(196, 167, 108, 0.55);
+  border: 1rpx solid rgba(196, 167, 108, 0.55);
   background: transparent;
 }
 
@@ -297,7 +297,7 @@ page {
   padding: 28rpx;
   background: #1F1D1A;
   border: 1px solid rgba(77, 64, 26, 0.55);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   margin-bottom: 0;
   transition: border-color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard);
 }
@@ -331,7 +331,7 @@ page {
   position: relative;
   width: 160rpx;
   height: 160rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
   flex-shrink: 0;
   background: #262320;
@@ -447,7 +447,7 @@ page {
   padding: 20rpx 22rpx;
   background: #1F1D1A;
   border: 1px solid #4D401A;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .scene-note-label {
@@ -469,8 +469,8 @@ page {
 .scene-note-chip {
   display: inline-flex;
   padding: 10rpx 22rpx;
-  border: 1px solid rgba(196, 167, 108, 0.4);
-  border-radius: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  border-radius: var(--radius-md);
   font-size: 24rpx;
   color: #A09A90;
 }
@@ -500,8 +500,8 @@ page {
   display: inline-flex;
   align-items: center;
   padding: 10rpx 22rpx;
-  border: 1px solid rgba(196, 167, 108, 0.28);
-  border-radius: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.28);
+  border-radius: var(--radius-md);
   font-size: 24rpx;
   color: #A09A90;
   letter-spacing: 0.02em;
@@ -539,7 +539,7 @@ page {
   padding: 20rpx 16rpx 16rpx;
   background: #1F1D1A;
   border: 1px solid rgba(77, 64, 26, 0.65);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .envelope-flap {
@@ -548,7 +548,7 @@ page {
   right: 24rpx;
   top: 0;
   height: 10rpx;
-  border-bottom: 1px solid rgba(196, 167, 108, 0.28);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.28);
   pointer-events: none;
 }
 
@@ -593,7 +593,7 @@ page {
   justify-content: center;
   gap: 14rpx;
   border: 1px solid rgba(138, 117, 48, 0.45);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: rgba(250, 246, 237, 0.65);
   font-size: 26rpx;
   color: var(--brass-700);
@@ -664,7 +664,7 @@ page {
   gap: 14rpx;
   padding: 0 24rpx;
   border: 1px solid rgba(138, 117, 48, 0.45);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: rgba(250, 246, 237, 0.65);
   font-size: 26rpx;
   color: var(--brass-700);
@@ -695,7 +695,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   font-size: 22rpx;
 }
 
@@ -723,7 +723,7 @@ page {
   padding: 32rpx;
   background: #F2EDE4;
   border: 1px solid #E0CFA3;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   transform-origin: 50% 40%;
   position: relative;
   overflow: hidden;
@@ -1022,8 +1022,8 @@ page {
   top: 50%;
   transform: translateY(-30%);
   padding: 6rpx 14rpx;
-  border: 1px solid rgba(196, 167, 108, 0.45);
-  border-radius: 8rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
+  border-radius: var(--radius-sm);
   font-size: 20rpx;
   color: var(--brass-700);
   letter-spacing: 0.04em;
@@ -1055,7 +1055,7 @@ page {
   color: #C4A76C;
   letter-spacing: 0.04em;
   padding: 6rpx 0;
-  border-bottom: 1px solid rgba(196, 167, 108, 0.4);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.4);
 }
 
 /* 滚动区止于底栏顶边（syncScrollPane），这里只留最后一行下方的呼吸距离，不再估底栏高度 */
@@ -1099,7 +1099,7 @@ page {
   font-weight: 500;
   letter-spacing: 0.04em;
   white-space: nowrap;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
 }
 
 .pay-btn:active,

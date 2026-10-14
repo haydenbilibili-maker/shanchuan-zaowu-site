@@ -1,4 +1,4 @@
-.rc{margin:32rpx 0 0;padding:32rpx 32rpx 36rpx;border:2rpx solid rgba(196,167,108,0.4);border-radius:16rpx;background:rgba(31,29,26,0.92);display:flex;flex-direction:column}
+.rc{margin:32rpx 0 0;padding:32rpx 32rpx 36rpx;border:2rpx solid rgba(196,167,108,0.4);border-radius:var(--radius-md);background:rgba(31,29,26,0.92);display:flex;flex-direction:column}
 .rc-head{display:flex;justify-content:space-between;align-items:center}
 .rc-over{font-size:20rpx;letter-spacing:6rpx;color:#C4A76C}
 .rc-x{font-size:24rpx;color:#9A8F7C;padding:8rpx 0 8rpx 24rpx}
@@ -10,7 +10,7 @@
 .rc-note{margin-top:16rpx;font-size:22rpx;line-height:1.7;color:#9A8F7C}
 .rc-link{color:#C4A76C}
 .rc-name,.rc-agree{margin-top:20rpx;display:flex;align-items:flex-start}
-.rc-check{width:28rpx;height:28rpx;margin:6rpx 14rpx 0 0;flex-shrink:0;border:2rpx solid #C4A76C;border-radius:6rpx;box-sizing:border-box}
+.rc-check{width:28rpx;height:28rpx;margin:6rpx 14rpx 0 0;flex-shrink:0;border:2rpx solid #C4A76C;border-radius:var(--radius-sm);box-sizing:border-box}
 .rc-check.is-on{background:#C4A76C;box-shadow:inset 0 0 0 5rpx #1F1D1A}
 .rc-name-t,.rc-agree-t{font-size:24rpx;line-height:1.6;color:#B8AD98}
 .rc-agree.is-shake{animation:rc-shake 0.42s}

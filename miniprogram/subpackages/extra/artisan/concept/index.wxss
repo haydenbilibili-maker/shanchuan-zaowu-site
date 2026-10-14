@@ -73,7 +73,7 @@ page {
   margin-bottom: var(--space-5);
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   background: var(--color-bg-card);
 }
 
@@ -204,7 +204,7 @@ page {
   margin-right: 12rpx;
   padding: 8rpx 18rpx;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   font-size: 22rpx;
   color: var(--brass-400);
 }
@@ -245,7 +245,7 @@ page {
 .btn-brass-outline {
   background: transparent;
   color: var(--brass-400);
-  border: 1px solid var(--brass-400);
+  border: 1rpx solid var(--brass-400);
   border-radius: var(--radius-md);
 }
 
@@ -351,7 +351,7 @@ page {
 .plate-card.skel {
   padding: var(--space-5);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   background: var(--color-bg-card);
 }
 
@@ -359,7 +359,7 @@ page {
 .plate-card {
   position: relative;
   border-radius: var(--radius-lg);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   background: var(--color-bg-card);
   overflow: hidden;
 }
@@ -426,7 +426,7 @@ page {
   font-size: 20rpx;
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--brass-800);
+  border: 1rpx solid var(--brass-800);
   color: var(--brass-600);
 }
 

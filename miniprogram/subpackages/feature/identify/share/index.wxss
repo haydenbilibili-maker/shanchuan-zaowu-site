@@ -46,7 +46,7 @@
   width: 600rpx;
   height: 960rpx;
   background: #1F1D1A;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   border: 1rpx solid #4D401A;
 }
 
@@ -62,7 +62,7 @@
   padding: 28rpx 36rpx;
   background: rgba(26, 24, 20, 0.88);
   border: 1rpx solid #4D401A;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 24rpx;
   color: #C4A76C;
 }
@@ -116,7 +116,7 @@
 .btn {
   height: 88rpx;
   line-height: 88rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   font-size: 28rpx;
   border: none;
   background: #262320;

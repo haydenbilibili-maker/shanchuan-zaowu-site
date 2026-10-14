@@ -32,7 +32,7 @@
 .se-card {
   background: var(--color-bg-elevated, #262320);
   border: 1rpx solid rgba(77, 64, 26, 0.5);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 20rpx 24rpx;
   margin-bottom: 16rpx;
 }
@@ -57,7 +57,7 @@
 .se-input {
   background: rgba(0, 0, 0, 0.28);
   border: 1rpx solid rgba(196, 167, 108, 0.36);
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   color: var(--color-text-primary, #f2ece1);
   font-size: 28rpx;
   padding: 8rpx 14rpx;
@@ -86,7 +86,7 @@
 
 .se-tip {
   padding: 16rpx 20rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   font-size: var(--fs-24);
   line-height: 1.5;
   margin-bottom: 16rpx;
@@ -113,7 +113,7 @@
 .se-line {
   background: var(--color-bg-elevated, #262320);
   border: 1rpx solid rgba(77, 64, 26, 0.5);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   padding: 20rpx 24rpx;
 }
 
@@ -145,7 +145,7 @@
 .se-del {
   padding: 6rpx 16rpx;
   border: 1rpx solid rgba(196, 92, 74, 0.46);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
 }
 
 .se-del text {
@@ -175,7 +175,7 @@
   padding: 12rpx 16rpx;
   background: rgba(0, 0, 0, 0.26);
   border: 1rpx solid rgba(196, 167, 108, 0.3);
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
 }
 
 .se-pick-text {
@@ -236,7 +236,7 @@
   align-items: center;
   justify-content: center;
   border: 1rpx solid rgba(196, 167, 108, 0.36);
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
   color: #e8dcc0;
   font-size: 30rpx;
 }
@@ -334,7 +334,7 @@
 .se-btn {
   flex: 1;
   font-size: var(--fs-26);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   line-height: 2.6;
 }
 
@@ -392,7 +392,7 @@
 .se-search-input {
   background: rgba(0, 0, 0, 0.34);
   border: 1rpx solid rgba(196, 167, 108, 0.34);
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   padding: 16rpx 20rpx;
   font-size: var(--fs-26);
   color: var(--color-text-primary, #f2ece1);
@@ -430,7 +430,7 @@
   margin-bottom: 14rpx;
   background: rgba(0, 0, 0, 0.2);
   border: 1rpx solid rgba(77, 64, 26, 0.44);
-  border-radius: 14rpx;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -483,7 +483,7 @@
   margin-top: 8rpx;
   background: rgba(196, 167, 108, 0.08);
   border: 1rpx solid rgba(196, 167, 108, 0.26);
-  border-radius: 10rpx;
+  border-radius: var(--radius-sm);
 }
 
 .se-option-name {
@@ -501,6 +501,6 @@
   font-size: 19rpx;
   color: #221e17;
   background: #c4a76c;
-  border-radius: 6rpx;
+  border-radius: var(--radius-sm);
   padding: 2rpx 8rpx;
 }

@@ -65,8 +65,8 @@
   position: relative;
   max-width: 100%;
   padding: 24rpx 28rpx 20rpx;
-  border: 1px solid rgba(196, 167, 108, 0.55);
-  border-radius: 8rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.55);
+  border-radius: var(--radius-sm);
   background: rgba(26, 24, 20, 0.78);
   text-align: center;
   box-sizing: border-box;
@@ -124,8 +124,8 @@
   letter-spacing: 0.08em;
   color: #C4A76C;
   background: rgba(26, 24, 20, 0.82);
-  border: 1px solid rgba(196, 167, 108, 0.45);
-  border-radius: 8rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
+  border-radius: var(--radius-sm);
 }
 
 .sb-badge-press {

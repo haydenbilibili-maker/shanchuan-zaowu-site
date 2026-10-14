@@ -27,7 +27,7 @@ page { background: #1A1814; color: #fff; }
 .order-card {
   padding: 28rpx; margin-bottom: 20rpx;
   background: #1F1D1A; border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
 }
 
 .order-card:active { opacity: 0.92; }
@@ -36,7 +36,7 @@ page { background: #1A1814; color: #fff; }
 .pet-name { font-size: 30rpx; font-weight: 600; flex: 1; }
 .status-badge {
   font-size: 20rpx; color: #C4A76C; padding: 4rpx 12rpx;
-  background: rgba(196,167,108,0.12); border-radius: 8rpx; flex-shrink: 0;
+  background: rgba(196,167,108,0.12); border-radius: var(--radius-sm); flex-shrink: 0;
 }
 
 .order-no { display: block; margin-top: 8rpx; font-size: 22rpx; color: var(--color-text-secondary); }
@@ -56,6 +56,6 @@ page { background: #1A1814; color: #fff; }
 
 .btn-primary {
   width: 320rpx; height: 88rpx; line-height: 88rpx;
-  background: #C4A76C; color: #1A1814; border-radius: 16rpx; font-size: 28rpx; border: none;
+  background: #C4A76C; color: #1A1814; border-radius: var(--radius-md); font-size: 28rpx; border: none;
 }
 .btn-primary::after { border: none; }

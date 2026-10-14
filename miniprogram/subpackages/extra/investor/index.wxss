@@ -129,8 +129,8 @@ page {
   gap: 8rpx;
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
-  border: 1px solid var(--brass-800, #4D401A);
-  border-radius: 8rpx;
+  border: 1rpx solid var(--brass-800, #4D401A);
+  border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.06);
 }
 
@@ -154,8 +154,8 @@ page {
   min-width: 0;
   text-align: center;
   padding: 14rpx 4rpx;
-  border-radius: 16rpx;
-  border: 1px solid var(--brass-800, #4D401A);
+  border-radius: var(--radius-md);
+  border: 1rpx solid var(--brass-800, #4D401A);
   font-size: 22rpx;
   color: var(--brass-400, #C4A76C);
   box-sizing: border-box;
@@ -182,7 +182,7 @@ page {
   min-width: 0;
   text-align: center;
   padding: 12rpx 8rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border, #26232066);
   background: var(--color-bg-card, #1F1D1A);
   font-size: 22rpx;
@@ -203,8 +203,8 @@ page {
 /* —— 研判 —— */
 .verdict-card {
   background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--brass-800, #4D401A);
-  border-radius: 24rpx;
+  border: 1rpx solid var(--brass-800, #4D401A);
+  border-radius: var(--radius-lg);
   padding: 24rpx 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -261,7 +261,7 @@ page {
 .verdict-badge {
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   font-size: 22rpx;
   font-family: var(--font-mono);
   border: 1px solid var(--color-border, #26232066);
@@ -304,7 +304,7 @@ page {
 
 .sum-chip {
   padding: 4rpx 12rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   font-size: 20rpx;
   font-family: var(--font-mono);
   border: 1px solid transparent;
@@ -383,7 +383,7 @@ page {
 .card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 24rpx 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -464,7 +464,7 @@ page {
   align-items: flex-start;
   gap: 12rpx;
   padding: 16rpx 14rpx 16rpx 18rpx;
-  border-radius: 12rpx;
+  border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(38, 35, 32, 0.95);
   box-sizing: border-box;
@@ -561,7 +561,7 @@ page {
 
 .hero-card {
   background: linear-gradient(135deg, var(--brass-500, #A8903C) 0%, var(--brass-400, #C4A76C) 100%);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 28rpx 28rpx 24rpx;
   margin-bottom: 16rpx;
   width: 100%;
@@ -649,7 +649,7 @@ page {
   padding: 16rpx 8rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: 16rpx;
+  border-radius: var(--radius-md);
   text-align: center;
   box-sizing: border-box;
 }
@@ -772,7 +772,7 @@ page {
   text-align: center;
   padding: 12rpx 6rpx;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   box-sizing: border-box;
 }
 
@@ -864,7 +864,7 @@ page {
   min-height: 40rpx;
   max-width: 100%;
   background: rgba(255, 255, 255, 0.04);
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
@@ -916,7 +916,7 @@ page {
 .skel-card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -925,7 +925,7 @@ page {
 
 .skel-line {
   height: 24rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--color-bg-elevated) 0%, #33302C 50%, var(--color-bg-elevated) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
@@ -949,7 +949,7 @@ page {
   flex: 1;
   min-width: 0;
   height: 80rpx;
-  border-radius: 8rpx;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--color-bg-elevated) 0%, #33302C 50%, var(--color-bg-elevated) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
@@ -968,7 +968,7 @@ page {
 .empty-card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: 24rpx;
+  border-radius: var(--radius-lg);
   padding: 40rpx 28rpx;
   text-align: center;
   margin-bottom: 20rpx;
