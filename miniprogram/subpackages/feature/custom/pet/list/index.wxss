@@ -22,7 +22,7 @@ page { background: #1A1814; color: #fff; }
 .title { display: block; font-size: 34rpx; font-weight: 600; }
 .sub { display: block; font-size: 20rpx; color: #C4A76C; letter-spacing: 0.1em; margin-top: 4rpx; }
 
-.loading-wrap { padding: 120rpx 0; text-align: center; color: #6B6560; }
+.loading-wrap { padding: 120rpx 0; text-align: center; color: var(--color-text-secondary); }
 
 .order-card {
   padding: 28rpx; margin-bottom: 20rpx;
@@ -39,7 +39,7 @@ page { background: #1A1814; color: #fff; }
   background: rgba(196,167,108,0.12); border-radius: 8rpx; flex-shrink: 0;
 }
 
-.order-no { display: block; margin-top: 8rpx; font-size: 22rpx; color: #6B6560; }
+.order-no { display: block; margin-top: 8rpx; font-size: 22rpx; color: var(--color-text-secondary); }
 .craft-line { display: block; margin-top: 8rpx; font-size: 24rpx; color: #A09A90; }
 
 .card-foot {
@@ -47,8 +47,8 @@ page { background: #1A1814; color: #fff; }
   margin-top: 16rpx; padding-top: 16rpx; border-top: 1px solid rgba(38,35,32,0.6);
 }
 
-.time { font-size: 22rpx; color: #6B6560; }
-.quote { font-size: 24rpx; color: #C4A76C; font-family: 'JetBrains Mono', monospace; }
+.time { font-size: 22rpx; color: var(--color-text-secondary); }
+.quote { font-size: 24rpx; color: #C4A76C; font-family: var(--font-mono); }
 
 .empty { padding: 120rpx 0; text-align: center; }
 .empty-title { display: block; font-size: 32rpx; font-weight: 500; margin-bottom: 12rpx; }

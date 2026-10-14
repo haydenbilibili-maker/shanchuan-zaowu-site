@@ -27,7 +27,7 @@
 page {
   background-color: var(--color-bg);
   color: var(--color-text-body);
-  font-family: "PingFang SC", "Helvetica Neue", sans-serif;
+  font-family: var(--font-body);
   width: 100%;
   overflow-x: hidden; /* 🔴 核心：禁止横向滚动 */
   
@@ -487,7 +487,7 @@ button.nav-share-btn::after { display: none; border: none; }
   color: var(--color-text-secondary, #A09A90);
 }
 .title-main { font-size: 36rpx; font-weight: 600; color: var(--color-text-primary); line-height: 1.4; display: block; }
-.latin-sub { font-size: 24rpx; color: var(--gold); font-style: italic; margin-top: 8rpx; display: block; font-family: Georgia, serif; }
+.latin-sub { font-size: 24rpx; color: var(--gold); font-style: italic; margin-top: 8rpx; display: block; font-family: var(--font-latin); }
 
 .service-row {
   display: flex;
@@ -581,7 +581,7 @@ button.nav-share-btn::after { display: none; border: none; }
   font-weight: 500;
   letter-spacing: 0.04em;
 }
-.info-arrow { color: var(--color-text-muted); font-size: 32rpx; margin-left: 8rpx; }
+.info-arrow { color: var(--color-text-secondary); font-size: 32rpx; margin-left: 8rpx; }
 
 /* 标本养护摘要条 */
 .care-strip {
@@ -674,7 +674,7 @@ button.nav-share-btn::after { display: none; border: none; }
   flex-shrink: 0;
   font-size: 28rpx;
   line-height: 1;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   transition: transform var(--dur-fast) var(--ease-standard);
 }
 .brand-note.is-open .brand-note-chevron {
@@ -886,7 +886,7 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 .detail-seg { color: inherit; }
 .detail-seg-latin {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-latin);
   font-style: italic;
   color: var(--gold);
 }
@@ -1022,11 +1022,11 @@ button.nav-share-btn::after { display: none; border: none; }
 /* 价格 */
 .price-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8rpx; }
 .symbol { font-size: 28rpx; color: var(--gold); margin-right: 8rpx; font-weight: bold; }
-.num { font-size: 64rpx; color: var(--gold); font-family: 'DIN', sans-serif; font-weight: bold; }
+.num { font-size: 64rpx; color: var(--gold); font-family: var(--font-mono); font-weight: bold; }
 .vip-box { display: flex; align-items: baseline; }
 .vip-badge { background: linear-gradient(90deg, #A8903C, var(--gold)); color: var(--color-bg); font-size: 20rpx; padding: 2rpx 10rpx; border-radius: 8rpx; font-weight: bold; margin-left: 8rpx; transform: translateY(-10rpx); }
-.origin { font-size: 24rpx; color: #666; text-decoration: line-through; margin-top: 6rpx; }
-.stock-label { font-size: 22rpx; color: #666; margin-top: 12rpx; }
+.origin { font-size: 24rpx; color: var(--color-text-secondary); text-decoration: line-through; margin-top: 6rpx; }
+.stock-label { font-size: 22rpx; color: var(--color-text-secondary); margin-top: 12rpx; }
 .stock-label.active { color: #E9A23B; }
 .price-from { font-size: 24rpx; color: var(--color-text-secondary); margin-left: 4rpx; }
 
@@ -1051,15 +1051,15 @@ button.nav-share-btn::after { display: none; border: none; }
   font-weight: 500;
 }
 .val-row { display: flex; justify-content: space-between; align-items: center; }
-.arrow { font-size: 24rpx; color: #666; }
+.arrow { font-size: 24rpx; color: var(--color-text-secondary); }
 
 /* 科学分类 */
 .taxonomy-card { background: var(--color-bg-card); border-radius: 16rpx; padding: 30rpx; margin-bottom: 60rpx; border: 1px solid rgba(38, 35, 32, 0.8); width: 100%; }
 .tax-row { display: flex; justify-content: space-between; padding: 16rpx 0; border-bottom: 1px dashed rgba(38, 35, 32, 0.7); width: 100%; }
 .tax-row:last-child { border-bottom: none; }
-.k { font-size: 24rpx; color: #888; flex-shrink: 0; margin-right: 20rpx; } 
+.k { font-size: 24rpx; color: var(--color-text-secondary); flex-shrink: 0; margin-right: 20rpx; } 
 .v { 
-  font-size: 24rpx; color: #eee; font-style: italic; 
+  font-size: 24rpx; color: var(--color-text-body); font-style: italic; 
   text-align: right; 
   flex: 1;
   white-space: nowrap; 
@@ -1648,7 +1648,7 @@ button.nav-share-btn::after { display: none; border: none; }
   font-size: 32rpx;
 }
 .qty-btn.disabled { opacity: 0.35; pointer-events: none; }
-.qty-num { font-size: 28rpx; color: #fff; min-width: 48rpx; text-align: center; font-family: monospace; }
+.qty-num { font-size: 28rpx; color: #fff; min-width: 48rpx; text-align: center; font-family: var(--font-mono); }
 .sku-options { display: flex; flex-wrap: wrap; gap: 16rpx; }
 .sku-pill {
   padding: 12rpx 28rpx;

@@ -104,7 +104,7 @@ page {
 .hero-desc {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   letter-spacing: 0.04em;
 }
 
@@ -131,14 +131,14 @@ page {
 
 .tab-cn {
   font-size: 28rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-weight: 500;
   transition: color var(--dur-fast) var(--ease-standard);
 }
 
 .tab-en {
   font-size: 16rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   letter-spacing: 0.12em;
   margin-top: 4rpx;
   opacity: 0.7;
@@ -316,7 +316,7 @@ page {
 
 .note-name {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -328,7 +328,7 @@ page {
   gap: 4rpx;
   flex-shrink: 0;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .like-icon {
@@ -489,6 +489,6 @@ page {
 .state-desc {
   display: block;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 

@@ -281,7 +281,7 @@ page {
 }
 
 .verdict-badge.down {
-  color: var(--color-error, #D64045);
+  color: var(--color-error-on-tint);
   border-color: rgba(214, 64, 69, 0.35);
   background: rgba(214, 64, 69, 0.08);
 }
@@ -323,7 +323,7 @@ page {
 }
 
 .sum-chip.danger {
-  color: var(--color-error, #D64045);
+  color: var(--color-error-on-tint);
   background: rgba(214, 64, 69, 0.1);
   border-color: rgba(214, 64, 69, 0.28);
 }

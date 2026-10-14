@@ -85,7 +85,7 @@ page {
 .switcher-label {
   display: block;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   letter-spacing: 0.08em;
 }
 
@@ -169,7 +169,7 @@ page {
 .pill-loc {
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 
 .store-pill.active .pill-loc {
@@ -450,7 +450,7 @@ page {
   display: block;
   margin-top: var(--space-2, 16rpx);
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   line-height: 1.5;
 }
 
@@ -479,7 +479,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
@@ -614,7 +614,7 @@ page {
   display: block;
   margin-bottom: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   letter-spacing: 0.04em;
 }
 
@@ -710,7 +710,7 @@ page {
 .web-label {
   flex-shrink: 0;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 
 .web-val {
@@ -960,7 +960,7 @@ page {
   margin-top: 4rpx;
   font-size: 20rpx;
   font-style: italic;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-latin);
   color: var(--color-text-latin, #C4A76C);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -982,7 +982,7 @@ page {
   width: 180rpx;
   height: 300rpx;
   font-size: 24rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 
 /* —— 列表（活动 / 服务） —— */

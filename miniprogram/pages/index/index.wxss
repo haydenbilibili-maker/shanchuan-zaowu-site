@@ -341,12 +341,12 @@ page {
   color: var(--color-text-primary);
   line-height: 1.15;
   margin-bottom: 8rpx;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 .hero-live .h-title {
   text-shadow: 0 2rpx 16rpx rgba(26, 24, 20, 0.75);
 }
-.h-sub { font-size: 20rpx; color: var(--color-text-body); letter-spacing: 2rpx; font-family: 'DIN'; }
+.h-sub { font-size: 20rpx; color: var(--color-text-body); letter-spacing: 2rpx; font-family: var(--font-mono); }
 .hero-live .h-sub {
   color: var(--color-text-body);
   text-shadow: 0 1rpx 10rpx rgba(26, 24, 20, 0.65);
@@ -401,7 +401,7 @@ page {
 
 .orb-meta { text-align: center; }
 .orb-meta .cn { font-size: 26rpx; color: var(--color-text-body); font-weight: 600; display: block; letter-spacing: 2rpx; }
-.orb-meta .en { font-size: var(--fs-16); color: var(--color-text-secondary); font-family: 'DIN'; letter-spacing: 1rpx; margin-top: 6rpx; display: block; text-transform: uppercase; font-weight: bold; }
+.orb-meta .en { font-size: var(--fs-16); color: var(--color-text-secondary); font-family: var(--font-mono); letter-spacing: 1rpx; margin-top: 6rpx; display: block; text-transform: uppercase; font-weight: bold; }
 
 /* 灵动球展开面板 */
 .orb-expansion-panel { width: 100%; height: 0; opacity: 0; overflow: hidden; transition: height var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard), margin var(--dur-base) var(--ease-standard); margin-top: 20rpx; background: rgba(31, 29, 26, 0.6); border-radius: 16rpx; }
@@ -422,7 +422,7 @@ page {
 .op-title { font-size: 22rpx; color: var(--color-text-body); font-weight: bold; line-height: 1.3; }
 .op-latin { font-size: 16rpx; color: var(--color-text-secondary); font-style: italic; line-height: 1.2; flex-shrink: 0; }
 .op-bot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 4rpx; }
-.op-price { font-family: 'DIN'; font-size: 24rpx; color: var(--primary); font-weight: bold; }
+.op-price { font-family: var(--font-mono); font-size: 24rpx; color: var(--primary); font-weight: bold; }
 .op-btn { width: 36rpx; height: 36rpx; border-radius: 50%; border: 1px solid #4D401A; color: var(--gold); font-size: 24rpx; display: flex; align-items: center; justify-content: center; }
 .op-more-card { width: 100rpx; height: 340rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--color-bg-card); border: 1px solid var(--color-bg-elevated); border-radius: 12rpx; flex-shrink: 0; }
 .op-more-card .txt { font-size: 18rpx; color: var(--primary); writing-mode: vertical-rl; letter-spacing: 4rpx; font-weight: bold; }
@@ -482,7 +482,7 @@ page {
 .t-en { 
   font-size: 20rpx; 
   color: var(--gold); 
-  font-family: 'DIN'; 
+  font-family: var(--font-mono); 
   letter-spacing: 0.14em; 
   font-weight: 500; 
   margin-top: 6rpx;
@@ -504,12 +504,12 @@ page {
 
 .ticket-stub { width: 180rpx; background: var(--color-bg-elevated); border-radius: 20rpx 0 0 20rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; border-right: 2rpx dashed rgba(196, 167, 108, 0.35); }
 .stub-header { transform: rotate(-90deg); position: absolute; left: -20rpx; top: 50%; }
-.stub-label { font-family: 'DIN'; font-size: 18rpx; font-weight: bold; color: rgba(196, 167, 108, 0.45); letter-spacing: 4rpx; }
+.stub-label { font-family: var(--font-mono); font-size: 18rpx; font-weight: bold; color: rgba(196, 167, 108, 0.45); letter-spacing: 4rpx; }
 .stub-date { text-align: center; margin-top: -20rpx; }
-.sd-day { font-size: 56rpx; font-weight: 900; color: var(--primary); font-family: 'DIN'; display: block; line-height: 1; text-shadow: none; }
+.sd-day { font-size: 56rpx; font-weight: 900; color: var(--primary); font-family: var(--font-mono); display: block; line-height: 1; text-shadow: none; }
 .sd-month { font-size: 22rpx; font-weight: bold; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 2rpx; margin-top: 6rpx; display: block; }
 .stub-footer { position: absolute; bottom: 20rpx; width: 100%; text-align: center; }
-.barcode { font-family: monospace; font-size: 16rpx; transform: scaleY(2); opacity: 0.7; color: var(--gold); letter-spacing: 2rpx; }
+.barcode { font-family: var(--font-mono); font-size: 16rpx; transform: scaleY(2); opacity: 0.7; color: var(--gold); letter-spacing: 2rpx; }
 .rip-line { position: absolute; right: -1rpx; top: 0; bottom: 0; border-left: 2rpx dashed rgba(196, 167, 108, 0.28); height: 100%; z-index: 2; }
 
 .ticket-main { flex: 1; background: var(--color-bg-card); border-radius: 0 20rpx 20rpx 0; position: relative; overflow: hidden; border: 1px solid var(--color-bg-elevated); border-left: none; }
@@ -525,7 +525,7 @@ page {
 .tm-loc-row { display: flex; align-items: center; }
 .tm-loc { font-size: 22rpx; color: var(--color-text-secondary); margin-left: 8rpx; }
 .tm-bot { display: flex; justify-content: space-between; align-items: flex-end; }
-.tm-price { font-family: 'DIN'; font-size: 40rpx; color: var(--primary); font-weight: bold; }
+.tm-price { font-family: var(--font-mono); font-size: 40rpx; color: var(--primary); font-weight: bold; }
 .tm-price.free { color: var(--color-text-primary); font-size: 32rpx; }
 .tm-btn { width: 60rpx; height: 60rpx; border-radius: 50%; background: rgba(196, 167, 108, 0.1); border: 1px solid rgba(196, 167, 108, 0.28); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 28rpx; }
 .notch { position: absolute; left: -14rpx; width: 28rpx; height: 28rpx; background: var(--color-bg); border-radius: 50%; z-index: 3; box-shadow: inset -2rpx 0 4rpx rgba(26, 24, 20, 0.45); }
@@ -646,7 +646,7 @@ page {
   border-radius: 8rpx; 
   letter-spacing: 3rpx;
   text-transform: uppercase;
-  font-family: 'DIN', sans-serif;
+  font-family: var(--font-mono);
   white-space: nowrap;
   box-sizing: border-box;
 }
@@ -657,7 +657,7 @@ page {
   font-weight: 700; 
   display: block; 
   margin-bottom: 16rpx; 
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   line-height: 1.3;
   letter-spacing: 2rpx;
   position: relative;
@@ -1025,7 +1025,7 @@ page {
   font-size: 24rpx;
   line-height: 1.6;
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 .page-error-btn {
   margin-top: 44rpx;
@@ -1038,7 +1038,7 @@ page {
 .page-error-hint {
   margin-top: 24rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 /* 首页卡片对齐（2026-10-13）：与「为你推荐」同一展窗语言 —— 6rpx 角、发丝金边、宋体主标、等宽眉标、图底渐隐、› 收尾 */

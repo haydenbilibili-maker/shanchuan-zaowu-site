@@ -450,11 +450,11 @@ function selftest() {
       // 根本没被碰到，于是"注入成功但检不出来"（2026-10-14 实际踩到）。
       (s) => ({ ...s, wxml: s.wxml.replace('<view class="search-box">\n        <input placeholder="搜索藏品…"', '<view class="risk-bar"><view class="risk-bar-btn is-danger" bindtap="bulkToggleRisk" data-risk="high" data-on="0">一键下架</view><view class="risk-bar-btn" bindtap="bulkToggleRisk" data-risk="high" data-on="1">一键上架</view></view>\n      <view class="search-box">\n        <input placeholder="搜索藏品…"') }), /A9/],
     ['明细页还留着风险筛选 chip',
-      (s) => ({ ...s, wxml: s.wxml.replace('<view class="pf-chip {{productArchiveFilter===\'oneOfAKind\'?\'on\':\'\'}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>', '<view class="pf-chip {{productArchiveFilter===\'oneOfAKind\'?\'on\':\'\'}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>\n        <view class="pf-chip is-risk" bindtap="setProductRiskFilter" data-val="high">高风险</view>') }), /A9/],
+      (s) => ({ ...s, wxml: s.wxml.replace('<view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productArchiveFilter===\'oneOfAKind\'?\'on\':\'\'}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>', '<view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productArchiveFilter===\'oneOfAKind\'?\'on\':\'\'}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>\n        <view class="pf-chip is-risk" bindtap="setProductRiskFilter" data-val="high">高风险</view>') }), /A9/],
     ['切分层不清上架态（选高风险却只剩已下架的 11 件）',
       (s) => ({ ...s, cfg: s.cfg.replace("    this.setData({ productRiskFilter: next, productShelfFilter: 'all' });", '    this.setData({ productRiskFilter: next });') }), /A9/],
     ['分层 chip 少一颗（普通层点不着）',
-      (s) => ({ ...s, wxml: s.wxml.replace('<view class="pf-chip {{productRiskFilter===\'normal\'?\'on\':\'\'}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>', '') }), /A9/],
+      (s) => ({ ...s, wxml: s.wxml.replace('<view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productRiskFilter===\'normal\'?\'on\':\'\'}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>', '') }), /A9/],
     ['概览数字改由客户端重算（去掉服务端构成）',
       (s) => ({ ...s, wxml: s.wxml.replace('wx:for="{{riskOverview.tiers.medium.byGroup}}"', 'wx:for="{{products}}"') }), /A9/],
     ['上架态筛选改读全局计数（与分层件数同屏打架）',

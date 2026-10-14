@@ -85,7 +85,7 @@
 
 .sv-pkg-points {
   font-size: 18rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .sv-pkg-amt-row {
@@ -121,7 +121,7 @@
 
 .sv-pkg-tile-hint {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
@@ -157,7 +157,7 @@
 
 .sv-custom-range {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-family: var(--font-mono);
 }
 
@@ -285,7 +285,7 @@
 
 .sv-ledger-cap {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-family: var(--font-mono);
 }
 
@@ -384,7 +384,7 @@
 
 .sv-ledger-day-week {
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .sv-ledger-day-spacer {
@@ -406,7 +406,7 @@
 
 .sv-ledger-day-net.is-flat,
 .sv-ledger-day-net.is-open {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 /* 行：轨道 + 类型/时分 + 金额/余额；行内不再重复日期 */
@@ -532,7 +532,7 @@
   display: block;
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-family: var(--font-mono);
 }
 
@@ -563,7 +563,7 @@
   text-align: center;
   font-size: 20rpx;
   letter-spacing: 0.08em;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .sv-flash {
@@ -663,7 +663,7 @@
 }
 
 .wallet-back-overline {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 18rpx;
   letter-spacing: 0.16em;
   color: rgba(196, 167, 108, 0.55);
@@ -701,7 +701,7 @@
   right: 0;
   bottom: 14rpx;
   text-align: center;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 18rpx;
   letter-spacing: 0.16em;
   color: rgba(196, 167, 108, 0.5);

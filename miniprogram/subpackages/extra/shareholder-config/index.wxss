@@ -180,7 +180,7 @@ page {
   flex-shrink: 0;
 }
 .status-tag.brass { color: var(--gold); background: rgba(196, 167, 108, 0.15); }
-.status-tag.muted { color: var(--color-text-muted); }
+.status-tag.muted { color: var(--color-text-secondary); }
 
 .signal-light {
   width: 16rpx;

@@ -152,7 +152,7 @@ page {
 
 .rec-status.rejected {
   background: rgba(214, 64, 69, 0.15);
-  color: var(--color-error);
+  color: var(--color-error-on-tint);
 }
 
 .rec-meta-row {

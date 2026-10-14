@@ -332,7 +332,7 @@
   background: rgba(82, 183, 136, 0.1);
 }
 .perk-status.locked {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   border-color: rgba(107, 101, 96, 0.35);
   background: rgba(38, 35, 32, 0.6);
 }
@@ -530,7 +530,7 @@
 .hero-card.level-skin-2 .hero-badge {
   background: rgba(139, 111, 71, 0.12);
   border-color: rgba(139, 111, 71, 0.34);
-  color: #8B6F47;
+  color: var(--color-wood-on-tint);
 }
 .hero-card.level-skin-2 .hero-progress-fill { background: linear-gradient(90deg, #8B6F47, var(--gold)); }
 .hero-card.level-skin-2 .hero-watermark {

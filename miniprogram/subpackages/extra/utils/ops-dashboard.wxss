@@ -127,7 +127,7 @@
 
 .verdict-badge.up { background: rgba(82, 183, 136, 0.15); color: #52b788; }
 .verdict-badge.warn { background: rgba(233, 162, 59, 0.15); color: #e9a23b; }
-.verdict-badge.down { background: rgba(214, 64, 69, 0.16); color: #d64045; }
+.verdict-badge.down { background: rgba(214, 64, 69, 0.16); color: var(--color-error-on-tint); }
 
 .verdict-insight {
   display: block;
@@ -152,7 +152,7 @@
 
 .sum-chip.ok { background: rgba(82, 183, 136, 0.12); color: #52b788; }
 .sum-chip.warn { background: rgba(233, 162, 59, 0.12); color: #e9a23b; }
-.sum-chip.danger { background: rgba(214, 64, 69, 0.12); color: #d64045; }
+.sum-chip.danger { background: rgba(214, 64, 69, 0.12); color: var(--color-error-on-tint); }
 
 .verdict-foot {
   margin-top: 18rpx;

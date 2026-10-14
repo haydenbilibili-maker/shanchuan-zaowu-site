@@ -88,7 +88,7 @@
   margin-top: 6rpx;
   font-size: 16rpx;
   letter-spacing: 0.12em;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 .seg-item.active .seg-en {
   color: var(--brass-400, #C4A76C);
@@ -116,7 +116,7 @@
   margin-top: 8rpx;
   font-size: 22rpx;
   line-height: 1.5;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 .panel-note,
 .panel-rule {
@@ -145,7 +145,7 @@
 }
 .step-gap {
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 
 /* —— Upload —— */
@@ -197,7 +197,7 @@
 .upload-label {
   margin-top: 10rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 .thumb-press {
   transform: scale(0.96);
@@ -294,7 +294,7 @@
 }
 .history-count {
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   font-family: var(--font-mono);
 }
 .history-row {
@@ -321,7 +321,7 @@
   display: block;
   margin-top: 6rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 .hr-reject {
   display: block;
@@ -350,7 +350,7 @@
   border-color: rgba(82, 183, 136, 0.25);
 }
 .hr-status.rejected {
-  color: var(--color-error, #D64045);
+  color: var(--color-error-on-tint);
   background: rgba(214, 64, 69, 0.12);
   border-color: rgba(214, 64, 69, 0.25);
 }
@@ -383,7 +383,7 @@
 .footer-cn {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   font-family: var(--font-brand);
 }
 .footer-en {

@@ -23,7 +23,7 @@
   line-height: 1.25;
   letter-spacing: 0.14em;
   color: #FFFFFF;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 
 .page-pet .nav-sub {
@@ -47,7 +47,7 @@
   line-height: 1.65;
   letter-spacing: 0.04em;
   color: #C4A76C;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 
 /* 「提交意向后专员评估 · 无需立即支付」是这一页**最重要的安心信息**（顾客最怕的是
@@ -173,7 +173,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   color: #C4A76C;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   margin-bottom: 8rpx;
 }
 

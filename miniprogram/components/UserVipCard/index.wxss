@@ -211,7 +211,7 @@
 }
 
 .org-name .en {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 16rpx;
   color: var(--brass-400);
   letter-spacing: 0.14em;
@@ -2237,7 +2237,7 @@
 }
 
 .cb-specimen-latin {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-latin);
   font-style: italic;
   font-size: 18rpx;
   color: rgba(196, 167, 108, 0.72);

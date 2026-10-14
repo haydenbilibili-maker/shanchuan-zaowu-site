@@ -80,7 +80,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .header-right { display: flex; align-items: center; gap: 12rpx; flex-shrink: 0; }
 .welcome { font-size: 24rpx; color: var(--gold); letter-spacing: 2rpx; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 8rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .sub-welcome { font-size: 48rpx; color: #fff; font-weight: 900; white-space: nowrap; }
-.date-badge { font-family: var(--font-din); color: #666; font-size: 24rpx; border: 1px solid rgba(255,255,255,0.1); padding: 6rpx 16rpx; border-radius: 30rpx; }
+.date-badge { font-family: var(--font-mono); color: var(--color-text-secondary); font-size: 24rpx; border: 1px solid rgba(255,255,255,0.1); padding: 6rpx 16rpx; border-radius: 30rpx; }
 
 /* 金卡 KPI */
 .kpi-card {
@@ -95,10 +95,10 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .card-row { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
 .card-titles { display: flex; flex-direction: column; }
-.card-eyebrow { font-family: var(--font-din); font-size: 18rpx; color: var(--gold); letter-spacing: 2rpx; opacity: 0.85; }
+.card-eyebrow { font-family: var(--font-mono); font-size: 18rpx; color: var(--gold); letter-spacing: 2rpx; opacity: 0.85; }
 .card-label { margin-top: 4rpx; font-size: 24rpx; color: rgba(255,255,255,0.75); font-weight: bold; letter-spacing: 1rpx; }
 .card-icon-img { width: 36rpx; height: 36rpx; opacity: 0.85; }
-.card-value-lg { font-family: var(--font-din); font-size: 80rpx; font-weight: bold; color: #fff; margin: 10rpx 0; display: block; position: relative; z-index: 2; }
+.card-value-lg { font-family: var(--font-mono); font-size: 80rpx; font-weight: bold; color: #fff; margin: 10rpx 0; display: block; position: relative; z-index: 2; }
 
 /* 经营信号板（全局 .signal-light；此处仅布局） */
 .ops-signal-board {
@@ -349,7 +349,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .card-row.bottom { margin-top: 8rpx; }
 .sub-metric { display: flex; flex-direction: column; }
 .sub-metric .lbl { font-size: 18rpx; color: var(--gold); opacity: 0.8; margin-bottom: 4rpx; }
-.sub-metric .val { font-family: var(--font-din); font-size: 32rpx; color: #fff; font-weight: bold; }
+.sub-metric .val { font-family: var(--font-mono); font-size: 32rpx; color: #fff; font-weight: bold; }
 .sub-metric .split { font-size: 18rpx; color: var(--gold); opacity: 0.8; margin-top: 4rpx; }
 .v-line { width: 1px; height: 40rpx; background: rgba(255,255,255,0.1); }
 
@@ -388,7 +388,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .panel-title .panel-cn { display: block; margin-top: 4rpx; font-size: 28rpx; line-height: 40rpx; font-family: var(--font-brand); font-weight: 500; letter-spacing: .08em; color: var(--color-text-primary); }
 
 /* 待办计数：视觉走 .badge-info；此处只负责定位 */
-.badge { position: absolute; top: -6rpx; right: -6rpx; background: var(--color-error, #D64045); color: #fff; font-size: 18rpx; padding: 2rpx 10rpx; border-radius: 20rpx; font-family: var(--font-din); }
+.badge { position: absolute; top: -6rpx; right: -6rpx; background: var(--color-error, #D64045); color: #fff; font-size: 18rpx; padding: 2rpx 10rpx; border-radius: 20rpx; font-family: var(--font-mono); }
 
 /* 门店现场入口（跳转独立页，不再往这个巨型页加 Tab） */
 .panel-title.sub { margin-top: 32rpx; }
@@ -456,7 +456,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: #D64045;
   color: #fff;
   font-size: 20rpx;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   text-align: center;
 }
 
@@ -489,7 +489,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   height: var(--donut-size, 112rpx);
 }
 .legend { flex: 1; min-width: 0; }
-.legend-row { display: flex; align-items: center; font-size: 20rpx; color: var(--color-text-secondary); margin-bottom: 6rpx; font-family: var(--font-din); }
+.legend-row { display: flex; align-items: center; font-size: 20rpx; color: var(--color-text-secondary); margin-bottom: 6rpx; font-family: var(--font-mono); }
 .dot { width: 8rpx; height: 8rpx; border-radius: 2rpx; margin-right: 10rpx; flex-shrink: 0; }
 .dot.gold { background: var(--gold, #C4A76C); }
 .dot.forest { background: #52B788; }
@@ -577,7 +577,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .trend-meta-item {
   font-size: 18rpx;
   color: var(--color-text-secondary);
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
 }
 .trend-meta-item.up { color: #52B788; }
 .trend-meta-item.down { color: #D64045; }
@@ -618,7 +618,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .bar-val {
   font-size: 16rpx;
   color: var(--gold);
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   white-space: nowrap;
   line-height: 1;
   max-width: 100%;
@@ -645,7 +645,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-size: 16rpx;
   color: var(--color-text-secondary, #A09A90);
   margin-top: 8rpx;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -668,7 +668,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-left: auto;
   font-size: 20rpx;
   color: var(--gold);
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-weight: 600;
   max-width: 100%;
   overflow: hidden;
@@ -686,7 +686,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .kpi-mini { display: flex; flex-direction: column; gap: 20rpx; flex: 1; }
 .kpi-mini-main { display: flex; align-items: baseline; gap: 10rpx; }
 .kpi-mini-val {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 48rpx;
   font-weight: 700;
   color: var(--color-text-primary);
@@ -704,7 +704,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .kpi-mini-l { display: block; font-size: 18rpx; color: var(--color-text-secondary, #A09A90); margin-bottom: 4rpx; }
 .kpi-mini-v {
   display: block;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 26rpx;
   color: var(--color-text-body);
   font-weight: 600;
@@ -716,7 +716,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .stock-mini-cell { flex: 1; text-align: center; }
 .stock-mini-v {
   display: block;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 30rpx;
   color: var(--color-text-primary);
   font-weight: 700;
@@ -753,7 +753,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   text-align: right;
   font-size: 18rpx;
   color: var(--color-text-secondary);
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
 }
 
 /* 近7日渠道拆分 */
@@ -778,8 +778,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .week-share-fill.forest { background: #2D5A3F; }
 .week-split-hint { margin-top: 8rpx; font-size: 18rpx; color: #4A4540; }
 
-.footer-logo { text-align: center; color: #333; font-size: 20rpx; margin-top: 60rpx; letter-spacing: 4rpx; }
-.footer-en { display: block; font-family: var(--font-din); font-size: 18rpx; }
+.footer-logo { text-align: center; color: var(--color-text-secondary); font-size: 20rpx; margin-top: 60rpx; letter-spacing: 4rpx; }
+.footer-en { display: block; font-family: var(--font-mono); font-size: 18rpx; }
 .footer-cn { display: block; margin-top: 6rpx; font-size: 20rpx; color: #4a4640; }
 
 /* ==================== 3. 子页面样式 (Sub Views) ==================== */
@@ -792,7 +792,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   from { opacity: 0.35; transform: translateY(8rpx); }
   to { opacity: 1; transform: translateY(0); }
 }
-.section-title { font-size: 28rpx; font-weight: 500; font-family: var(--font-brand); letter-spacing: .08em; color: #ddd; margin: 40rpx 0 20rpx; }  /* 去竖条（R6） */
+.section-title { font-size: 28rpx; font-weight: 500; font-family: var(--font-brand); letter-spacing: .08em; color: var(--color-text-body); margin: 40rpx 0 20rpx; }  /* 去竖条（R6） */
 
 /* 通用添加按钮 - 优化可见性 */
 .fab-add { 
@@ -877,12 +877,12 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .p-info { flex: 1; display: flex; flex-direction: column; gap: 10rpx; min-width: 0; }
 .p-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .p-name { font-size: 28rpx; font-weight: bold; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.p-edit { color: #aaa; padding: 4rpx 12rpx; border: 1px solid #444; border-radius: 8rpx; font-size: 22rpx; }
+.p-edit { color: var(--color-text-secondary); padding: 4rpx 12rpx; border: 1px solid #444; border-radius: 8rpx; font-size: 22rpx; }
 .p-mid { display: flex; gap: 12rpx; }
-.tag { display: inline-flex; align-items: center; align-self: flex-start; width: auto; font-size: 20rpx; color: #888; background: rgba(255,255,255,0.05); padding: 4rpx 10rpx; border-radius: 6rpx; font-family: var(--font-din); white-space: nowrap; box-sizing: border-box; }
+.tag { display: inline-flex; align-items: center; align-self: flex-start; width: auto; font-size: 20rpx; color: var(--color-text-secondary); background: rgba(255,255,255,0.05); padding: 4rpx 10rpx; border-radius: 6rpx; font-family: var(--font-mono); white-space: nowrap; box-sizing: border-box; }
 .tag.profit { color: #52B788; background: rgba(76,175,80,0.1); }
 .p-bot { display: flex; justify-content: space-between; align-items: center; }
-.p-price { color: var(--gold); font-weight: bold; font-family: var(--font-din); font-size: 30rpx; }
+.p-price { color: var(--gold); font-weight: bold; font-family: var(--font-mono); font-size: 30rpx; }
 
 /* --- [Tab 7] 活动课程 & [Tab 6] 权益商品 (核心修复) --- */
 
@@ -921,7 +921,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .m-row.bottom { align-items: flex-end; }
 
 .m-title { font-size: 30rpx; font-weight: bold; color: #fff; max-width: 360rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.m-price { font-family: 'DIN'; font-size: 34rpx; color: var(--gold); font-weight: bold; }
+.m-price { font-family: var(--font-mono); font-size: 34rpx; color: var(--gold); font-weight: bold; }
 
 .tag-f {
   display: inline-flex; align-items: center; align-self: flex-start; width: auto;
@@ -933,7 +933,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .tag-f.profit { color: #52B788; border-color: rgba(76,175,80,0.3); background: rgba(76,175,80,0.1); }
 
-.icon-btn { font-size: 22rpx; color: #888; border: 1px solid #444; padding: 6rpx 18rpx; border-radius: 30rpx; }
+.icon-btn { font-size: 22rpx; color: var(--color-text-secondary); border: 1px solid #444; padding: 6rpx 18rpx; border-radius: 30rpx; }
 .del-btn { font-size: 24rpx; color: #ff4d4f; padding: 10rpx; }
 .del-btn-icon { width: 28rpx; height: 28rpx; }
 .m-stats-line { font-size: 24rpx !important; color: var(--color-text-secondary) !important; font-weight: 400 !important; }
@@ -997,10 +997,10 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 .card { background: var(--color-bg-card); border-radius: 20rpx; padding: 30rpx; margin-bottom: 30rpx; border: 1px solid rgba(255,255,255,0.05); }
 .card-top { display: flex; justify-content: space-between; margin-bottom: 20rpx; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 16rpx; }
-.no { font-family: var(--font-din); color: #888; font-size: 24rpx; letter-spacing: 1rpx; }
-.time { font-size: 22rpx; color: #666; }
+.no { font-family: var(--font-mono); color: var(--color-text-secondary); font-size: 24rpx; letter-spacing: 1rpx; }
+.time { font-size: 22rpx; color: var(--color-text-secondary); }
 .status { font-size: 24rpx; font-weight: bold; }
-.status.used { color: #666; text-decoration: line-through; }
+.status.used { color: var(--color-text-secondary); text-decoration: line-through; }
 .status.confirmed { color: var(--gold); }
 .status.gold { color: var(--gold); }
 
@@ -1013,8 +1013,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 .visit-stats-row:last-child { border-bottom: none; }
-.visit-stats-name { font-size: 26rpx; color: #ccc; }
-.visit-stats-count { font-family: var(--font-din); font-size: 28rpx; color: var(--gold); font-weight: bold; }
+.visit-stats-name { font-size: 26rpx; color: var(--color-text-body); }
+.visit-stats-count { font-family: var(--font-mono); font-size: 28rpx; color: var(--gold); font-weight: bold; }
 .report-note { display: block; margin-top: 10rpx; line-height: 1.5; color: var(--color-text-secondary); font-size: 22rpx; }
 .report-bars { margin-top: 8rpx; }
 
@@ -1308,7 +1308,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .report-hero-value {
   display: block;
   margin: 12rpx 0 20rpx;
-  font-family: var(--font-mono, var(--font-din), monospace);
+  font-family: var(--font-mono);
   font-size: 56rpx;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -1361,7 +1361,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--color-text-body);
 }
 .report-share-p {
-  font-family: var(--font-mono, var(--font-din), monospace);
+  font-family: var(--font-mono);
   font-size: 22rpx;
   color: var(--brass-400);
 }
@@ -1577,11 +1577,11 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 
 .products { margin-bottom: 20rpx; }
-.p-name { display: block; font-size: 28rpx; font-weight: bold; color: #eee; margin-bottom: 6rpx; }
+.p-name { display: block; font-size: 28rpx; font-weight: bold; color: var(--color-text-body); margin-bottom: 6rpx; }
 .p-name.gold { color: var(--gold); font-weight: 500; }
 
 .address-box { background: #222; padding: 20rpx; border-radius: 12rpx; margin-bottom: 24rpx; }
-.addr-detail { font-size: 22rpx; color: #aaa; margin-top: 8rpx; display: block; }
+.addr-detail { font-size: 22rpx; color: var(--color-text-secondary); margin-top: 8rpx; display: block; }
 /* 报表行为漏斗「更多（排障信息）」开关 */
 .report-diag-toggle { margin-top: 16rpx; padding: 12rpx 0; font-size: 24rpx; color: var(--brass-400); }
 
@@ -1603,9 +1603,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border-radius: 8rpx;
   vertical-align: middle;
 }
-.btn.verify { background: #52B788; color: #fff; }
+.btn.verify { background: #52B788; color: var(--color-bg); }
 
-.empty-tip { text-align: center; color: #444; font-size: 24rpx; margin-top: 60rpx; }
+.empty-tip { text-align: center; color: var(--color-text-secondary); font-size: 24rpx; margin-top: 60rpx; }
 
 /* --- 订单管理升级卡 --- */
 .om-loading {
@@ -2523,12 +2523,12 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* --- [Tab 3] 核销验票 --- */
 .verify-card { background: var(--color-bg-card); padding: 30rpx; border-radius: 16rpx; display: flex; align-items: center; margin-bottom: 20rpx; border-left: 6rpx solid var(--gold); box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.2); }
 .vc-left { display: flex; flex-direction: column; margin-right: 30rpx; align-items: center; width: 120rpx; border-right: 1px dashed #333; padding-right: 20rpx; }
-.vc-time { font-family: var(--font-din); font-size: 36rpx; font-weight: bold; color: #fff; }
+.vc-time { font-family: var(--font-mono); font-size: 36rpx; font-weight: bold; color: #fff; }
 .vc-status { font-size: 20rpx; color: var(--gold); margin-top: 4rpx; font-weight: bold; }
 .vc-mid { flex: 1; display: flex; flex-direction: column; }
 .vc-name { font-size: 30rpx; font-weight: bold; color: #fff; margin-bottom: 6rpx; }
-.vc-desc { font-size: 22rpx; color: #888; }
-.vc-btn { background: #52B788; color: #fff; font-size: 26rpx; padding: 12rpx 36rpx; border-radius: 40rpx; font-weight: bold; }
+.vc-desc { font-size: 22rpx; color: var(--color-text-secondary); }
+.vc-btn { background: #52B788; color: var(--color-bg); font-size: 26rpx; padding: 12rpx 36rpx; border-radius: 40rpx; font-weight: bold; }
 .scan-hint { font-size: 22rpx; color: var(--color-text-secondary); margin: -8rpx 0 24rpx; line-height: 1.5; }
 .verify-live-head {
   display: flex;
@@ -2549,7 +2549,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .mp-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16rpx; }
 .mp-label { font-size: 22rpx; color: var(--color-text-secondary, #A09A90); flex-shrink: 0; }
 .mp-value { font-size: 26rpx; color: var(--color-text-body); text-align: right; }
-.mp-value.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.06em; color: var(--gold); }
+.mp-value.mono { font-family: var(--font-mono); letter-spacing: 0.06em; color: var(--gold); }
 .mp-perks { display: flex; flex-direction: column; gap: 12rpx; padding-top: 8rpx; border-top: 1px solid var(--color-bg-elevated); }
 .mp-perk-grid { display: flex; flex-wrap: wrap; gap: 12rpx; }
 .mp-perk-chip {
@@ -2576,11 +2576,11 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .b-thumb { width: 160rpx; height: 90rpx; border-radius: 8rpx; background: var(--color-bg); margin-right: 24rpx; object-fit: cover; }
 .b-info { flex: 1; display: flex; flex-direction: column; }
 .b-title { font-size: 28rpx; color: #fff; font-weight: bold; margin-bottom: 4rpx; }
-.b-sub { font-size: 20rpx; color: #888; margin-bottom: 8rpx; }
+.b-sub { font-size: 20rpx; color: var(--color-text-secondary); margin-bottom: 8rpx; }
 .b-tag { font-size: 18rpx; color: var(--gold); background: rgba(196, 167, 108,0.1); padding: 2rpx 8rpx; border-radius: 4rpx; align-self: flex-start; }
 .b-actions { display: flex; gap: 20rpx; }
 .action-btn { width: 60rpx; height: 60rpx; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 50%; font-size: 24rpx; }
-.action-btn.edit { color: #ccc; }
+.action-btn.edit { color: var(--color-text-body); }
 .action-btn.del { color: #ff4d4f; }
 
 /* --- [Tab 5] 标本师管理 --- */
@@ -2881,7 +2881,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 
 /* --- [Tab 6] 权益会员 (按钮块) --- */
-.add-btn-block { background: var(--color-bg-card); border: 2rpx dashed #444; color: #888; font-size: 28rpx; font-weight: bold; text-align: center; padding: 30rpx; border-radius: 16rpx; margin-top: 30rpx; }
+.add-btn-block { background: var(--color-bg-card); border: 2rpx dashed #444; color: var(--color-text-secondary); font-size: 28rpx; font-weight: bold; text-align: center; padding: 30rpx; border-radius: 16rpx; margin-top: 30rpx; }
 
 /* --- [Tab 8] 营收录入 (高级财务报表风) --- */
 
@@ -2890,7 +2890,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-bottom: 40rpx; padding: 0 10rpx;
 }
 .lh-en { 
-  font-family: var(--font-din); font-size: 20rpx; color: var(--gold); 
+  font-family: var(--font-mono); font-size: 20rpx; color: var(--gold); 
   letter-spacing: 4rpx; display: block; margin-bottom: 6rpx; font-weight: bold;
 }
 .lh-cn { font-size: 36rpx; font-weight: 900; color: #fff; letter-spacing: 2rpx; }
@@ -2974,7 +2974,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .lo-en {
   display: block;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 18rpx;
   color: var(--gold, #C4A76C);
   letter-spacing: 3rpx;
@@ -2990,7 +2990,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .lo-net {
   display: block;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 52rpx;
   font-weight: 900;
   color: #fff;
@@ -3060,7 +3060,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .lo-m-v {
   display: block;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 28rpx;
   font-weight: 700;
   color: var(--color-text-body, #D5D1C8);
@@ -3147,7 +3147,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .lo-kpi-v {
   display: block;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 30rpx;
   font-weight: 700;
   color: #fff;
@@ -3186,7 +3186,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--gold, #C4A76C);
   letter-spacing: 2rpx;
   margin-bottom: 4rpx;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
 }
 .lo-trend {
   display: flex;
@@ -3225,8 +3225,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-top: 8rpx;
   height: 24rpx;
   font-size: 16rpx;
-  color: #555;
-  font-family: var(--font-din);
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
   line-height: 1;
 }
 .lo-channel-row {
@@ -3273,7 +3273,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .lo-share-l { font-size: 20rpx; color: var(--color-text-secondary, #A09A90); }
 .lo-share-p {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 20rpx;
   color: var(--gold, #C4A76C);
   font-weight: 700;
@@ -3294,7 +3294,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .lo-share-val {
   display: block;
   margin-top: 4rpx;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 22rpx;
   color: var(--color-text-body, #D5D1C8);
   font-weight: 600;
@@ -3305,7 +3305,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .lo-empty-en {
   display: block;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 20rpx;
   color: var(--gold, #C4A76C);
   letter-spacing: 3rpx;
@@ -3355,8 +3355,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 
 .bm-left { display: flex; flex-direction: column; }
-.bm-day { font-size: 60rpx; font-weight: 900; font-family: var(--font-din); color: var(--color-bg); line-height: 1; letter-spacing: -2rpx; }
-.bm-date { font-size: 20rpx; color: #666; font-family: var(--font-din); margin-top: 6rpx; font-weight: bold; letter-spacing: 1rpx; }
+.bm-day { font-size: 60rpx; font-weight: 900; font-family: var(--font-mono); color: var(--color-bg); line-height: 1; letter-spacing: -2rpx; }
+.bm-date { font-size: 20rpx; color: var(--color-text-secondary); font-family: var(--font-mono); margin-top: 6rpx; font-weight: bold; letter-spacing: 1rpx; }
 
 .bm-right {
   text-align: right;
@@ -3368,8 +3368,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   box-sizing: border-box;
   max-width: 70%;
 }
-.bm-lbl { font-size: 20rpx; color: #777; font-weight: bold; letter-spacing: 2rpx; text-transform: uppercase; margin-bottom: 4rpx; }
-.bm-val { font-size: 48rpx; font-weight: 900; color: #b88a4d; font-family: var(--font-din); letter-spacing: 1rpx; }
+.bm-lbl { font-size: 20rpx; color: var(--color-text-secondary); font-weight: bold; letter-spacing: 2rpx; text-transform: uppercase; margin-bottom: 4rpx; }
+.bm-val { font-size: 48rpx; font-weight: 900; color: #b88a4d; font-family: var(--font-mono); letter-spacing: 1rpx; }
 
 /* 明细网格 */
 .bill-detail { 
@@ -3379,18 +3379,18 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 .bd-item { display: flex; flex-direction: column; }
 .bd-item text:first-child {
-  color: #777;
+  color: var(--color-text-secondary);
   font-size: 20rpx;
   font-weight: bold;
   margin-bottom: 4rpx;
   letter-spacing: 0.5rpx;
 }
-.bd-item text:last-child { font-family: var(--font-din); font-weight: bold; font-size: 28rpx; color: #333; }
+.bd-item text:last-child { font-family: var(--font-mono); font-weight: bold; font-size: 28rpx; color: var(--color-text-secondary); }
 
 /* 特殊状态颜色 */
 .bd-item.warn text:last-child { color: #d32f2f; } /* 退款红色 */
 .bd-item.pledge text:last-child { color: #8A7530; }
-.bd-item.muted text:last-child { color: #666; font-weight: 600; }
+.bd-item.muted text:last-child { color: var(--color-text-secondary); font-weight: 600; }
 .pledge-row { opacity: 0.95; }
 
 /* 删除按钮：固定票据卡右上角，不压住净额标签/金额 */
@@ -3398,7 +3398,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   position: absolute; top: 20rpx; right: 16rpx; 
   width: 60rpx; height: 60rpx; 
   display: flex; align-items: center; justify-content: center;
-  color: #aaa; font-size: 28rpx; 
+  color: var(--color-text-secondary); font-size: 28rpx; 
   border-radius: 50%; transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
   z-index: 3;
 }
@@ -3445,18 +3445,18 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--color-text-primary);
   position: relative;
 }
-.close-btn { position: absolute; right: 30rpx; top: 30rpx; color: #888; font-size: 36rpx; padding: 0 20rpx; }
+.close-btn { position: absolute; right: 30rpx; top: 30rpx; color: var(--color-text-secondary); font-size: 36rpx; padding: 0 20rpx; }
 
 /* 旧段保留结构；高度以下方「弹窗系统」.modal-body 为准 */
 .modal-body { padding: 30rpx; }
 .form-group { display: flex; flex-direction: column; gap: 20rpx; }
 .form-row { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 24rpx; border-radius: 12rpx; border: 1px solid rgba(255,255,255,0.03); }
-.form-row text { font-size: 26rpx; color: #aaa; width: 140rpx; }
+.form-row text { font-size: 26rpx; color: var(--color-text-secondary); width: 140rpx; }
 .form-row input, .picker { flex: 1; text-align: right; font-size: 28rpx; color: #fff; line-height: normal; height: 100%; min-height: 48rpx; }
-.form-label { font-size: 24rpx; color: #888; margin: 20rpx 0 10rpx; padding-left: 10rpx; }
+.form-label { font-size: 24rpx; color: var(--color-text-secondary); margin: 20rpx 0 10rpx; padding-left: 10rpx; }
 
 .picker-s {
-  background: var(--color-bg); border: 1px solid #333; color: #ccc;
+  background: var(--color-bg); border: 1px solid #333; color: var(--color-text-body);
   padding: 10rpx 20rpx; border-radius: 8rpx; font-size: 24rpx; text-align: center;
   min-width: 140rpx;
 }
@@ -3466,7 +3466,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .radio-row { display: flex; gap: 30rpx; padding: 20rpx; background: #222; border-radius: 12rpx; }
 .upload-area { height: 300rpx; background: #222; border: 2rpx dashed #444; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; margin-bottom: 30rpx; overflow: hidden; position: relative; }
 .upload-area.round { width: 200rpx; height: 200rpx; border-radius: 50%; margin: 0 auto 30rpx; }
-.placeholder { color: #666; font-size: 26rpx; }
+.placeholder { color: var(--color-text-muted); font-size: 26rpx; }
 .upload-area image { width: 100%; height: 100%; object-fit: cover; }
 .smart-box textarea { width: 100%; height: 160rpx; background: #222; padding: 20rpx; border-radius: 12rpx; font-size: 26rpx; color: #fff; margin-bottom: 30rpx; border: 1px solid rgba(255,255,255,0.05); }
 .modal-foot { padding: 20rpx 30rpx 40rpx; border-top: 1px solid rgba(255,255,255,0.05); }
@@ -3489,7 +3489,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: #fff !important;
   border-radius: 12rpx !important;
   transition: border-color var(--dur-base) var(--ease-standard);
-  font-family: "PingFang SC", sans-serif;
+  font-family: var(--font-body);
 }
 
 .input:focus, .textarea:focus {
@@ -3514,7 +3514,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .close-btn { 
   position: absolute; right: 30rpx; top: 36rpx; 
-  color: #888; font-size: 36rpx; padding: 0 20rpx; 
+  color: var(--color-text-secondary); font-size: 36rpx; padding: 0 20rpx; 
 }
 
 /* 通用弹层中部：scroll-view 必须有明确高度，否则内容撑开被 max-height 裁切且无法滚动 */
@@ -3541,14 +3541,14 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border-radius: 16rpx; border: 1px solid rgba(255,255,255,0.05); 
 }
 
-.form-row text { font-size: 28rpx; color: #aaa; width: 160rpx; }
+.form-row text { font-size: 28rpx; color: var(--color-text-secondary); width: 160rpx; }
 
 /* 输入框统一（line-height:normal 避免继承 page 1.6 导致裁切/变形） */
 .input, .picker { 
   flex: 1; text-align: right; font-size: 28rpx; color: #fff; height: 100%;
   line-height: normal; min-height: 48rpx;
 }
-.input-placeholder { color: #555; }
+.input-placeholder { color: var(--color-text-muted); }
 
 /* 文本域 */
 .textarea { 
@@ -3594,17 +3594,17 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .upload-area image { width: 100%; height: 100%; object-fit: cover; }
 
 .placeholder { 
-  color: #666; font-size: 28rpx; display: flex; flex-direction: column; align-items: center; gap: 10rpx; 
+  color: var(--color-text-muted); font-size: 28rpx; display: flex; flex-direction: column; align-items: center; gap: 10rpx; 
 }
-.placeholder::before { content: '+'; font-size: 60rpx; color: #444; }
+.placeholder::before { content: '+'; font-size: 60rpx; color: var(--color-text-muted); }
 
 /* 级联选择器 */
 .picker-group { display: flex; align-items: center; flex: 1; justify-content: flex-end; gap: 10rpx; }
 .picker-s { 
-  background: #1a1a1a; color: #ddd; padding: 10rpx 20rpx; 
+  background: #1a1a1a; color: var(--color-text-body); padding: 10rpx 20rpx; 
   border-radius: 8rpx; font-size: 24rpx; border: 1px solid #333;
 }
-.picker-s.disabled { color: #555; border-style: dashed; }
+.picker-s.disabled { color: var(--color-text-muted); border-style: dashed; }
 
 /* 按钮 */
 .modal-foot { padding: 20rpx 40rpx; border-top: 1px solid rgba(255,255,255,0.05); }
@@ -3623,7 +3623,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 .form-label {
   font-size: 24rpx;
-  color: #888;
+  color: var(--color-text-secondary);
   margin: 24rpx 0 16rpx;
 }
 
@@ -3657,7 +3657,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
 }
 
@@ -3845,13 +3845,13 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 .related-remove {
   font-size: 22rpx;
-  color: #888;
+  color: var(--color-text-secondary);
   padding: 8rpx 12rpx;
 }
 
 .related-empty {
   font-size: 22rpx;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 16rpx;
   line-height: 1.5;
 }
@@ -3946,7 +3946,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 .picker-sub {
   font-size: 22rpx;
-  color: #888;
+  color: var(--color-text-secondary);
 }
 
 .picker-check {
@@ -3960,7 +3960,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .picker-empty {
   text-align: center;
   padding: 48rpx;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 24rpx;
 }
 
@@ -4389,7 +4389,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border-radius: 8rpx;
 }
 .mini-tag.warn { color: #E9A23B; background: rgba(233, 162, 59, 0.12); }
-.mini-tag.danger { color: #D64045; background: rgba(214, 64, 69, 0.12); }
+.mini-tag.danger { color: var(--color-error-on-tint); background: rgba(214, 64, 69, 0.12); }
 
 .cover-badge {
   position: absolute;
@@ -4479,9 +4479,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .cat-root-main { flex: 1; min-width: 0; }
-.cat-l1 { display: block; font-size: 28rpx; color: #eee; font-weight: 600; }
+.cat-l1 { display: block; font-size: 28rpx; color: var(--color-text-body); font-weight: 600; }
 .cat-sub-main { flex: 1; min-width: 0; padding-left: 16rpx; }
-.cat-sub-name { display: block; font-size: 26rpx; color: #ccc; }
+.cat-sub-name { display: block; font-size: 26rpx; color: var(--color-text-body); }
 .cat-count { display: inline-block; margin-left: 12rpx; font-size: 22rpx; color: var(--gold); }
 /* 0 件分类：降一档并留可读性（是「清理候选」，不是错误态） */
 .cat-count.is-empty { color: var(--color-text-secondary, #A09A90); }
@@ -4581,7 +4581,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding: 12rpx 0;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.cat-link-title { display: block; font-size: 26rpx; color: #eee; }
+.cat-link-title { display: block; font-size: 26rpx; color: var(--color-text-body); }
 .cat-link-meta { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); margin-top: 4rpx; }
 .btn-ghost {
   text-align: center;
@@ -4596,7 +4596,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   padding-top: 20rpx;
   border-top: 1px dashed rgba(255,255,255,0.08);
 }
-.radio-label { margin-right: 24rpx; font-size: 24rpx; color: #ccc; }
+.radio-label { margin-right: 24rpx; font-size: 24rpx; color: var(--color-text-body); }
 
 .sub-tab.sm { font-size: 22rpx; padding: 12rpx 20rpx; }
 .inner-filter { margin-bottom: 16rpx; }
@@ -4655,7 +4655,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .push-label {
   display: block;
   font-size: 26rpx;
-  color: #aaa;
+  color: var(--color-text-secondary);
   margin-bottom: 12rpx;
   padding-left: 4rpx;
 }
@@ -4755,7 +4755,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .card-dim { opacity: 0.92; border-color: rgba(196, 167, 108, 0.15); }
 .msg-estimate { font-size: 22rpx; color: var(--gold); padding: 8rpx 4rpx 16rpx; opacity: 0.85; }
-.radio-label { display: flex; align-items: center; gap: 8rpx; font-size: 26rpx; color: #ccc; margin-right: 24rpx; }
+.radio-label { display: flex; align-items: center; gap: 8rpx; font-size: 26rpx; color: var(--color-text-body); margin-right: 24rpx; }
 
 /* 发货弹窗（样式主定义见上方 .ship-modal-*；此处仅兜底覆盖旧 form-row 高度） */
 .ship-modal-panel .modal-body { padding-bottom: 16rpx; }
@@ -4766,7 +4766,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .care-summary-line {
   flex: 1;
   font-size: 24rpx !important;
-  color: #999 !important;
+  color: var(--color-text-secondary) !important;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4789,18 +4789,18 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   text-align: center;
   padding: 48rpx 32rpx;
   font-size: 24rpx;
-  color: #666;
+  color: var(--color-text-secondary);
   line-height: 1.55;
 }
 .form-hint {
   display: block;
   font-size: 20rpx;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: -8rpx 0 12rpx;
   padding-left: 8rpx;
   line-height: 1.5;
 }
-.textarea.mono { font-family: monospace; }
+.textarea.mono { font-family: var(--font-mono); }
 
 /* ==================== Tab 15/16 运费规则 · 内容展示开关 ==================== */
 /* 对齐 welcome-gift / booking-rules / wallet-config 的 Museum 配置页规范 */
@@ -5163,7 +5163,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .pstats-cost-amount {
   display: block;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 48rpx;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -5208,7 +5208,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .ps-val {
   display: block;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 32rpx;
   font-weight: 600;
   color: var(--color-text-primary);
@@ -5276,7 +5276,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   text-align: right;
   font-size: 20rpx;
   color: var(--color-text-secondary);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
 }
 .pstats-trend {
   display: flex;
@@ -5330,7 +5330,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   width: 32rpx;
   font-size: 22rpx;
   color: var(--gold);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
 }
 .pstats-sales-img {
   width: 64rpx;
@@ -5356,7 +5356,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .pstats-sales-sold {
   font-size: 26rpx;
   color: var(--gold);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   font-weight: 600;
 }
 
@@ -5542,7 +5542,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   text-align: center;
   border-radius: 16rpx;
   border: 1px solid rgba(214, 64, 69, 0.6);
-  color: #D64045;
+  color: var(--color-error-on-tint);
   background: rgba(214, 64, 69, 0.08);
 }
 .product-entry-foot .btn-danger-press {
@@ -5699,7 +5699,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .sku-idx {
   font-size: 24rpx;
   color: var(--gold);
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
 }
 .sku-del {
   min-height: 56rpx;

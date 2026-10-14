@@ -30,7 +30,7 @@
 }
 
 .brand-group .cn {
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   font-size: 40rpx;
   color: #FFFFFF;
   margin-top: 6rpx;

@@ -242,7 +242,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 999rpx;
-  background: var(--brass-600);
+  background: var(--brass-500);  /* 深字压 brass-600 仅 4.07:1 → 提一档 ≈5.3:1 */
   color: #1a1408;
   font-size: 24rpx;
   font-weight: 500;
@@ -255,7 +255,7 @@
 .add-btn.muted {
   background: transparent;
   border: 1rpx solid rgba(255, 255, 255, 0.14);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-weight: 400;
 }
 
@@ -333,14 +333,14 @@
 }
 
 .cart-bar-count.muted {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .cart-bar-cta {
   flex-shrink: 0;
   padding: 14rpx 26rpx;
   border-radius: 999rpx;
-  background: var(--brass-600);
+  background: var(--brass-500);  /* 深字压 brass-600 仅 4.07:1 → 提一档 ≈5.3:1 */
   color: #1a1408;
   font-size: 24rpx;
   font-weight: 500;

@@ -125,7 +125,7 @@ page {
 .section-hint {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   margin: -8rpx 0 20rpx;
   line-height: 1.5;
 }
@@ -150,7 +150,7 @@ page {
 
 .service-label {
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
@@ -316,7 +316,7 @@ page {
 .context-tip-text {
   display: block;
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   line-height: 1.5;
 }
 
@@ -361,7 +361,7 @@ page {
 
 .topic-desc {
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   line-height: 1.4;
   word-break: break-all;
 }
@@ -402,7 +402,7 @@ page {
 .field-label {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   margin-bottom: 12rpx;
 }
 
@@ -498,7 +498,7 @@ page {
 .channel-desc {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 
 .channel-btn {
@@ -553,7 +553,7 @@ page {
 
 .phone-label {
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
@@ -720,5 +720,5 @@ page {
 .modal-tip {
   margin-top: 24rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }

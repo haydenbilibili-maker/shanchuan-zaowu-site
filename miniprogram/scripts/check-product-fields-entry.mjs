@@ -611,7 +611,7 @@ function selftest () {
           const lineEnd = s.indexOf('\n', at) + 1
           // ① 在列表**之后**加回一个"保存全部改动"按钮 ② 把顶部那条的入口摘掉
           const withBottom = s.slice(0, lineEnd) + '          <view class="pf-bottom-save" bindtap="saveProductFields">保存全部改动</view>\n' + s.slice(lineEnd)
-          return withBottom.replace('<view class="pf-retry-btn" bindtap="saveProductFields">', '<view class="pf-retry-btn" bindtap="noop">')
+          return withBottom.replace('<view hover-class="tap-press" hover-stay-time="80" class="pf-retry-btn" bindtap="saveProductFields">', '<view hover-class="tap-press" hover-stay-time="80" class="pf-retry-btn" bindtap="noop">')
         },
         expect: /拉到最下才能保存/
       },

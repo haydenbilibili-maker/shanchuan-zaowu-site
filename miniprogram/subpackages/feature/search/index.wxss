@@ -174,7 +174,7 @@ page {
 
 .scope-label {
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
@@ -577,7 +577,7 @@ page {
 
 .filter-count {
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   font-family: var(--font-mono, monospace);
   min-width: 1em;
 }
@@ -754,7 +754,7 @@ page {
 }
 
 .ac-latin {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-latin);
   font-style: italic;
   font-size: 22rpx;
   color: var(--brass-400, #C4A76C);
@@ -835,7 +835,7 @@ page {
 .ac-arr {
   flex-shrink: 0;
   font-size: 36rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   line-height: 1;
   padding-left: 4rpx;
 }

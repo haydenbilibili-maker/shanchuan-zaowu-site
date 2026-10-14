@@ -235,7 +235,7 @@
 .job-latin {
   display: block;
   margin-top: 6rpx;
-  font-family: Georgia, serif;
+  font-family: var(--font-latin);
   font-style: italic;
   font-size: 22rpx;
   color: var(--color-text-latin);
@@ -280,7 +280,7 @@
 }
 
 .shelf-tag.rejected {
-  color: var(--color-error);
+  color: var(--color-error-on-tint);
   background: rgba(214, 64, 69, 0.12);
 }
 
@@ -290,7 +290,7 @@
 }
 
 .shelf-tag.packing {
-  color: var(--color-info);
+  color: var(--color-info-on-tint);
   background: rgba(91, 143, 185, 0.14);
 }
 

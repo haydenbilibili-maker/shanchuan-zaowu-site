@@ -310,7 +310,7 @@ page {
 
 /* 店长订单备注（发货私信里的「馆员留言」）：整行加重，压在纸面上更醒目 */
 .run-note {
-  color: #8B6F47;
+  color: var(--color-wood-on-tint);
   font-weight: 600;
   background: rgba(196, 167, 108, 0.16);
   border-radius: 6rpx;

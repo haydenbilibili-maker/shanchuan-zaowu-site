@@ -95,7 +95,7 @@
 .egg-latin {
   display: block;
   margin-top: 8rpx;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-latin);
   font-style: italic;
   font-size: 26rpx;
   color: var(--color-text-latin, #C4A76C);

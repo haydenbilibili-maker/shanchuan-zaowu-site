@@ -282,7 +282,7 @@ page {
   align-items: center;
   gap: 6rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .stat-icon {
@@ -293,7 +293,7 @@ page {
 
 .article-author {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   max-width: 140rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -315,5 +315,5 @@ page {
 .state-desc {
   display: block;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }

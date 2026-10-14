@@ -246,7 +246,7 @@ page {
 }
 
 .ops-status.muted {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .ops-source {
@@ -258,7 +258,7 @@ page {
 }
 
 .ops-source.feishu {
-  color: #5B8FB9;
+  color: var(--color-info-on-tint);
   background: rgba(91, 143, 185, 0.15);
 }
 

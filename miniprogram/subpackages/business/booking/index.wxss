@@ -127,14 +127,14 @@
   margin-top: 8rpx; 
   font-weight: bold; 
   text-transform: uppercase; 
-  font-family: var(--font-din); 
+  font-family: var(--font-mono); 
   line-height: 1.4;
   white-space: normal; /* 允许换行 */
 }
 .tp-sub.light { color: #888; }
 
 .tp-serial { 
-  font-family: var(--font-din); 
+  font-family: var(--font-mono); 
   font-size: 20rpx; 
   color: #A09A90; 
   border: 1px solid #333; 
@@ -150,19 +150,19 @@
 .info-item.center { align-items: center; text-align: center; }
 .info-item.right { align-items: flex-end; text-align: right; }
 
-.label { font-size: 18rpx; color: #A09A90; letter-spacing: 2rpx; margin-bottom: 8rpx; font-weight: bold; text-transform: uppercase; font-family: var(--font-din); }
+.label { font-size: 18rpx; color: #A09A90; letter-spacing: 2rpx; margin-bottom: 8rpx; font-weight: bold; text-transform: uppercase; font-family: var(--font-mono); }
 .label.light { color: #999; }
 
-.val { font-family: var(--font-din); font-size: 36rpx; font-weight: bold; color: #fff; line-height: 1; }
+.val { font-family: var(--font-mono); font-size: 36rpx; font-weight: bold; color: #fff; line-height: 1; }
 .val.light { color: var(--color-bg); }
 
 .val.highlight { color: var(--gold); font-size: 48rpx; text-shadow: none; line-height: 0.8; }
 .val.highlight.light { color: var(--gold); text-shadow: none; }
 
-.val-calligraphy { font-family: "Times New Roman", serif; font-style: italic; font-size: 32rpx; color: #eee; line-height: 1; }
+.val-calligraphy { font-family: var(--font-latin); font-style: italic; font-size: 32rpx; color: #eee; line-height: 1; }
 .val-calligraphy.light { color: #333; }
 
-.val-sm { font-size: 20rpx; font-weight: bold; color: #eee; letter-spacing: 1rpx; text-transform: uppercase; font-family: var(--font-din); }
+.val-sm { font-size: 20rpx; font-weight: bold; color: #eee; letter-spacing: 1rpx; text-transform: uppercase; font-family: var(--font-mono); }
 .val-sm.light { color: #555; }
 
 /* 底部 & 防伪线 */
@@ -205,7 +205,7 @@
 .flip-hint {
   position: absolute; bottom: 10rpx; right: 20rpx;
   font-size: var(--fs-18); color: rgba(255,255,255,0.5);
-  font-family: var(--font-din); letter-spacing: 2rpx;
+  font-family: var(--font-mono); letter-spacing: 2rpx;
   pointer-events: none;
 }
 
@@ -398,8 +398,8 @@
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
-.d-week { font-size: 20rpx; color: rgba(255,255,255,0.5); margin-bottom: 8rpx; font-family: var(--font-din); text-transform: uppercase; font-weight: 600; transition: color var(--dur-slow) var(--ease-standard); }
-.d-day { font-size: 40rpx; font-weight: 800; color: rgba(255,255,255,0.9); font-family: var(--font-din); transition: color var(--dur-slow) var(--ease-standard); }
+.d-week { font-size: 20rpx; color: rgba(255,255,255,0.5); margin-bottom: 8rpx; font-family: var(--font-mono); text-transform: uppercase; font-weight: 600; transition: color var(--dur-slow) var(--ease-standard); }
+.d-day { font-size: 40rpx; font-weight: 800; color: rgba(255,255,255,0.9); font-family: var(--font-mono); transition: color var(--dur-slow) var(--ease-standard); }
 .date-pill.active .d-week, .date-pill.active .d-day { color: var(--color-bg); }
 
 /* 时间与人数 - 黑金质感 */
@@ -461,7 +461,7 @@
   display: flex; 
   align-items: center; 
   justify-content: center; 
-  font-family: var(--font-din); 
+  font-family: var(--font-mono); 
   font-size: 30rpx; 
   color: rgba(255,255,255,0.7); 
   position: relative;
@@ -565,7 +565,7 @@
   text-align: center; 
   font-size: 30rpx; 
   color: #fff; 
-  font-family: var(--font-din); 
+  font-family: var(--font-mono); 
   font-weight: 800;
   text-shadow: none;
 }
@@ -622,9 +622,9 @@
   background: linear-gradient(to bottom, transparent, var(--color-bg));
 }
 .act-t { font-size: 36rpx; font-weight: 900; color: #fff; margin-bottom: 10rpx; display: block; letter-spacing: 2rpx; }
-.act-d { font-size: 22rpx; color: #aaa; margin-bottom: 20rpx; display: block; font-family: var(--font-din); }
+.act-d { font-size: 22rpx; color: #aaa; margin-bottom: 20rpx; display: block; font-family: var(--font-mono); }
 .act-b { display: flex; justify-content: flex-start; align-items: center; }
-.act-p { font-size: 40rpx; color: var(--gold); font-family: var(--font-din); font-weight: bold; }
+.act-p { font-size: 40rpx; color: var(--gold); font-family: var(--font-mono); font-weight: bold; }
 .act-seat { margin-left: 20rpx; font-size: 24rpx; color: rgba(255, 255, 255, 0.72); }
 .act-seat.is-full { color: #E8A0A0; font-weight: 600; }
 .act-card.is-full { opacity: 0.55; }
@@ -685,7 +685,7 @@
 }
 .btn-content { display: flex; flex-direction: column; position: relative; z-index: 1; }
 .btn-main { font-size: 34rpx; font-weight: 900; color: var(--color-bg); letter-spacing: 3rpx; text-shadow: 0 1rpx 2rpx rgba(255,255,255,0.3); }
-.btn-sub { font-size: 18rpx; color: rgba(0,0,0,0.7); letter-spacing: 4rpx; margin-top: 4rpx; font-family: var(--font-din); font-weight: 800; }
+.btn-sub { font-size: 18rpx; color: rgba(0,0,0,0.7); letter-spacing: 4rpx; margin-top: 4rpx; font-family: var(--font-mono); font-weight: 800; }
 .btn-icon { 
   width: 42rpx; 
   height: 42rpx; 
@@ -805,7 +805,7 @@
 }
 
 .tm-val { 
-  font-family: var(--font-din); font-size: 32rpx; color: #333; letter-spacing: 2rpx; font-weight: bold; 
+  font-family: var(--font-mono); font-size: 32rpx; color: #333; letter-spacing: 2rpx; font-weight: bold; 
 }
 
 .tm-foot { margin-top: 20rpx; font-size: 16rpx; color: #aaa; letter-spacing: 6rpx; }
@@ -1134,7 +1134,7 @@
 .t-type {
   transform: rotate(-90deg);
   white-space: nowrap;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   color: var(--gold);
   font-size: 22rpx;
   font-weight: 800;
@@ -1192,7 +1192,7 @@
 }
 
 .tr-badge {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-size: 20rpx;
   color: rgba(196, 167, 108,0.8);
   border: 1.5px solid rgba(196, 167, 108,0.3);
@@ -1224,7 +1224,7 @@
   font-size: 18rpx;
   color: rgba(255,255,255,0.4);
   margin-bottom: 6rpx;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-weight: 600;
   letter-spacing: 2rpx;
   text-transform: uppercase;
@@ -1234,7 +1234,7 @@
   font-size: 30rpx;
   color: rgba(255,255,255,0.9);
   font-weight: 800;
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   text-shadow: 0 1rpx 3rpx rgba(0,0,0,0.6);
 }
 
@@ -1319,14 +1319,14 @@
   font-size: 40rpx;
   font-weight: 900;
   color: rgba(196, 167, 108,0.7);
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   text-shadow: none;
 }
 
 .hc-month {
   font-size: 22rpx;
   color: rgba(255,255,255,0.4);
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 2rpx;
@@ -1351,7 +1351,7 @@
 .hc-time {
   font-size: 24rpx;
   color: rgba(255,255,255,0.5);
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   font-weight: 600;
 }
 

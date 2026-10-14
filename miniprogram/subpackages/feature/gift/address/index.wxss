@@ -38,7 +38,7 @@ page { background: #1A1814; color: #fff; }
   font-weight: 500;
   color: #fff;
   margin-bottom: 12rpx;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 .desc { display: block; font-size: 24rpx; color: #A09A90; line-height: 1.55; }
 

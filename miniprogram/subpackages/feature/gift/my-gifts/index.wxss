@@ -188,7 +188,7 @@ page {
   font-size: 20rpx;
   color: #A8903C;
   letter-spacing: 0.16em;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   line-height: 1.3;
   margin-bottom: 4rpx;
 }
@@ -197,7 +197,7 @@ page {
   font-size: 40rpx;
   font-weight: 600;
   color: #6B5A24;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   letter-spacing: 0.04em;
   line-height: 1.25;
 }
@@ -250,7 +250,7 @@ page {
   font-size: 26rpx;
   color: #8A7530;
   font-weight: 600;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
   line-height: 1.2;
 }
 .hero-stat.hot .hero-stat-n { color: #C47A1A; }
@@ -358,10 +358,10 @@ page {
   line-height: 28rpx;
   text-align: center;
   font-size: 18rpx;
-  color: #6B6560;
+  color: var(--color-text-secondary);
   background: rgba(38, 35, 32, 0.9);
   border-radius: 999rpx;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 .hub-n.hot { color: #1A1814; background: #E9A23B; }
 .hub-tab.on .hub-n { color: #1A1814; background: #C4A76C; }
@@ -407,7 +407,7 @@ page {
 .sub-n {
   font-size: 18rpx;
   color: #6B6560;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 .sub-tab.on .sub-n { color: #A8903C; }
 
@@ -466,7 +466,7 @@ page {
 .seg-n {
   font-size: 18rpx;
   color: #6B6560;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 .scroll {
@@ -599,7 +599,7 @@ page {
   font-size: 30rpx;
   color: #FFFFFF;
   font-weight: 500;
-  font-family: 'Source Han Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 .empty-over {
   font-size: 18rpx;
@@ -967,13 +967,13 @@ page {
   min-width: 0;
   font-size: 22rpx;
   color: #A09A90;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 .price {
   flex-shrink: 0;
   font-size: 24rpx;
   color: #C4A76C;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 /* 往来卡操作行：与日子铜牌 plate-acts 同为两端铺满，主按钮略宽 */
@@ -1061,7 +1061,7 @@ page {
   font-size: 32rpx;
   color: #FFFFFF;
   font-weight: 500;
-  font-family: 'Source Han Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 .ph-hint {
   display: block;
@@ -1222,7 +1222,7 @@ page {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-family: 'Source Han Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   overflow: hidden;
 }
 .plate-avatar-shine {
@@ -1251,7 +1251,7 @@ page {
   font-size: 30rpx;
   color: #E0CFA3;
   font-weight: 500;
-  font-family: 'Source Han Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   line-height: 1.4;
   letter-spacing: 0.02em;
 }
@@ -1392,7 +1392,7 @@ page {
   font-size: 20rpx;
   color: #8A7530;
   letter-spacing: 0.06em;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
   line-height: 1.2;
 }
 .date-badge-md {
@@ -1401,7 +1401,7 @@ page {
   font-size: 24rpx;
   color: #6B5A24;
   font-weight: 500;
-  font-family: 'Source Han Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   line-height: 1.35;
   text-align: center;
   letter-spacing: 0.02em;
@@ -1476,7 +1476,7 @@ page {
   display: block;
   font-size: 30rpx;
   color: #E0CFA3;
-  font-family: 'Source Han Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;

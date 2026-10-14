@@ -92,7 +92,7 @@
 .whb-en {
   margin-top: 4rpx;
   font-size: 18rpx;
-  color: #6B6560;
+  color: var(--color-text-secondary);
   letter-spacing: 0.12em;
   line-height: 1.2;
   text-align: center;

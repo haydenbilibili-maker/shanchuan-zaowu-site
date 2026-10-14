@@ -41,7 +41,7 @@ page {
   display: block;
   font-size: 26rpx;
   color: #C4A76C;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono);
   margin-bottom: 28rpx;
 }
 

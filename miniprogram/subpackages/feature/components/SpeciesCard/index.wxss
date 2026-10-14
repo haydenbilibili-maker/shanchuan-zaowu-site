@@ -75,7 +75,7 @@
   display: block;
   font-size: 40rpx;
   font-weight: 600;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   color: #6B5A24;
   letter-spacing: 0.04em;
   line-height: 1.3;

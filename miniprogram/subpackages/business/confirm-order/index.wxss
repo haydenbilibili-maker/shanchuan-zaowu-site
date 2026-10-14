@@ -97,7 +97,7 @@ view, text, scroll-view { box-sizing: border-box; }
   display: block;
   font-size: 28rpx;
   color: #C4A76C;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   margin-bottom: 8rpx;
 }
 .pickup-hint-addr {
@@ -173,7 +173,7 @@ view, text, scroll-view { box-sizing: border-box; }
   font-size: 28rpx;
   color: #33302C;
   line-height: 1.7;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 .gift-note-voice {
   display: block;
@@ -368,12 +368,12 @@ view, text, scroll-view { box-sizing: border-box; }
   border-color: rgba(196, 167, 108, 0.35);
 }
 .goods-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx; }
-.goods-price { font-size: 28rpx; color: #C4A76C; font-family: monospace; }
+.goods-price { font-size: 28rpx; color: #C4A76C; font-family: var(--font-mono); }
 .goods-count { font-size: 24rpx; color: #A09A90; }
 
 .row-arrow { color: #6B6560; font-size: 32rpx; }
 
-.total-price { font-size: 40rpx; font-weight: 600; color: #C4A76C; font-family: monospace; }
+.total-price { font-size: 40rpx; font-weight: 600; color: #C4A76C; font-family: var(--font-mono); }
 
 .footer-bar {
   position: fixed;
@@ -391,7 +391,7 @@ view, text, scroll-view { box-sizing: border-box; }
 .fp-row { display: flex; align-items: baseline; gap: 8rpx; }
 .fp-note { display: block; margin-top: 4rpx; font-size: 22rpx; color: #C4A76C; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fp-label { font-size: 24rpx; color: #A09A90; }
-.fp-value { font-size: 40rpx; font-weight: 600; color: #C4A76C; font-family: monospace; }
+.fp-value { font-size: 40rpx; font-weight: 600; color: #C4A76C; font-family: var(--font-mono); }
 .submit-btn {
   background: #C4A76C;
   color: #1A1814;
@@ -688,13 +688,13 @@ view, text, scroll-view { box-sizing: border-box; }
   font-size: 28rpx;
   line-height: 40rpx;
   color: #D5D1C8;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
   white-space: nowrap;
 }
 .bl-v.is-text { font-family: inherit; font-size: 26rpx; }
 .bl-v.is-gold { color: #C4A76C; }
 .bl-v.is-muted { color: #8C867D; }
-.bl-strike { font-size: 24rpx; color: #6B6560; text-decoration: line-through; font-family: 'JetBrains Mono', 'DM Mono', monospace; }
+.bl-strike { font-size: 24rpx; color: #6B6560; text-decoration: line-through; font-family: var(--font-mono); }
 .bl-arrow { font-size: 32rpx; line-height: 40rpx; color: #A09A90; }
 .bl-total {
   display: flex;
@@ -746,7 +746,7 @@ view, text, scroll-view { box-sizing: border-box; }
   font-size: 20rpx;
   color: #C4A76C;
   letter-spacing: 0.08em;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 .gift-rail-label { font-size: 22rpx; color: #A09A90; }
 .gift-rail-item.on .gift-rail-label { color: #D5D1C8; }
@@ -794,7 +794,7 @@ view, text, scroll-view { box-sizing: border-box; }
   font-size: 26rpx;
   line-height: 1.65;
   color: #33302C;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 .gift-sum-letter-foot { display: flex; align-items: center; gap: 16rpx; margin-top: 10rpx; }
 .gift-sum-sig { font-size: 22rpx; color: #8A7530; }

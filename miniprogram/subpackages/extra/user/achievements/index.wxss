@@ -371,7 +371,7 @@ page {
 .filter-chip-count {
   font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
   font-size: 20rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   line-height: 1;
 }
 
@@ -424,7 +424,7 @@ page {
 }
 
 .partition-label.muted {
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 
 .partition-count {
@@ -435,7 +435,7 @@ page {
 }
 
 .partition-count.muted {
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 
 /* —— 分类头 —— */
@@ -1324,7 +1324,7 @@ page {
 .relics-plaque-total {
   font-family: var(--font-mono, 'JetBrains Mono', 'DIN', monospace);
   font-size: 22rpx;
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   letter-spacing: 0.04em;
 }
 
@@ -1365,7 +1365,7 @@ page {
 
 
 .relic-roman {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-latin);
   font-size: 20rpx;
   font-style: italic;
   letter-spacing: 0.08em;

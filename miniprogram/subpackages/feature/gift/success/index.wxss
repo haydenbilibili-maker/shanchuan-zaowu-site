@@ -279,7 +279,7 @@ page { background: #1A1814; color: #fff; }
   z-index: 3;
   font-size: 30rpx;
   color: #302810;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-shadow:
@@ -362,7 +362,7 @@ page { background: #1A1814; color: #fff; }
   font-size: 40rpx;
   font-weight: 600;
   color: #6B5A24;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   margin-bottom: 16rpx;
   line-height: 1.35;
   padding-right: 0;
@@ -404,7 +404,7 @@ page { background: #1A1814; color: #fff; }
   margin-bottom: 12rpx;
 }
 .claim-code {
-  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-family: var(--font-mono);
   font-size: 48rpx;
   font-weight: 600;
   color: #C4A76C;
@@ -461,7 +461,7 @@ page { background: #1A1814; color: #fff; }
   justify-content: center;
   font-size: 15rpx;
   color: rgba(196, 167, 108, 0.85);
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 .card-body {
   display: block;
@@ -475,7 +475,7 @@ page { background: #1A1814; color: #fff; }
   font-size: 22rpx;
   color: #A8903C;
   letter-spacing: 0.04em;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 /* 可回放的语音行（2026-09-21）：从"一行不可点的说明"变成播放控件。

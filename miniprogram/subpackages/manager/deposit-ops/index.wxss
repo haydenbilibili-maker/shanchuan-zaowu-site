@@ -276,7 +276,7 @@ page {
 }
 
 .status-tag.danger {
-  color: #D64045;
+  color: var(--color-error-on-tint);
   background: rgba(214, 64, 69, 0.12);
 }
 

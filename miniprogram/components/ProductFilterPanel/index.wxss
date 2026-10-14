@@ -155,7 +155,7 @@
 .section-hint {
   display: block;
   font-size: 22rpx;
-  color: #6B6560;
+  color: var(--color-text-secondary);
   margin-bottom: 20rpx;
   line-height: 1.4;
 }
@@ -271,7 +271,7 @@
 }
 
 .price-dash {
-  color: #6B6560;
+  color: var(--color-text-secondary);
   font-size: 28rpx;
   padding: 0 12rpx;
   flex-shrink: 0;

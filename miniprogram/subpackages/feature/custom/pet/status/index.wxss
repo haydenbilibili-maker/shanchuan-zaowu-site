@@ -50,7 +50,7 @@ page { background: #1A1814; color: #fff; }
 .preview-row.dark { border-bottom-color: rgba(196,167,108,0.12); }
 .preview-label.dark { color: #A09A90; }
 .preview-value.dark { color: #D5D1C8; }
-.preview-value.dark.amount { color: #C4A76C; font-size: 32rpx; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.preview-value.dark.amount { color: #C4A76C; font-size: 32rpx; font-weight: 600; font-family: var(--font-mono); }
 
 .plate-label.dark { color: #C4A76C; margin-bottom: 16rpx; }
 .plate-label.log { color: #A09A90; }

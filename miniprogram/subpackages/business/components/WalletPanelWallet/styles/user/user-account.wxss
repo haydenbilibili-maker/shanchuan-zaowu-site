@@ -245,7 +245,7 @@
 .account-field-label {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   margin-bottom: 10rpx;
 }
 
@@ -254,7 +254,7 @@
   margin: -2rpx 0 12rpx;
   font-size: 22rpx;
   line-height: 1.45;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .account-field-hint.field-hint-brass {

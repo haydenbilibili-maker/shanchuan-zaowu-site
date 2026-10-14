@@ -365,7 +365,7 @@ if (process.argv.includes('--selftest')) {
     ['规格大图去掉 bindload', 'detailWxml', (t) => t.replace('\n              bindload="onSpecImageLoad"\n              data-src="{{item}}"', '')],
     ['规格 swiper 去掉动态高度', 'detailWxml', (t) => t.replace("style=\"{{specSwiperH ? 'height: ' + specSwiperH + 'px;' : ''}}\"\n          ", '')],
     ['规格 slide 写死 520rpx', 'detailWxss', (t) => t.replace('.detail-spec-slide {\n  width: 100%;\n  height: 100%;', '.detail-spec-slide {\n  width: 100%;\n  height: 520rpx;')],
-    ['规格 swiper 去掉高度过渡', 'detailWxss', (t) => t.replace('\n  transition: height 0.25s ease;', '')],
+    ['规格 swiper 去掉高度过渡', 'detailWxss', (t) => t.replace('border: 1px solid rgba(38, 35, 32, 0.9);\n  transition: height var(--dur-base) var(--ease-standard);', 'border: 1px solid rgba(38, 35, 32, 0.9);')],
     ['SPEC_RATIO_MAX 改掉', 'detailJs', (t) => t.replace('const SPEC_RATIO_MAX = 1.25;', '')],
     ['信息区又放「送给 TA」', 'detailWxml', (t) => t.replace('>定制</text>', '>定制</text>\n        <text class="offer-link" bindtap="goToGift">送给 TA</text>')],
     ['头图层又压过叠层（sb-wrap z-index 抬回 6）', 'detailWxss', (t) => t.replace('.hero-wrapper .sb-wrap {\n  z-index: 1;\n}', '.hero-wrapper .sb-wrap {\n  z-index: 6;\n}')],

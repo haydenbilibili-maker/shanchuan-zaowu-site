@@ -212,7 +212,7 @@ page {
 
 .status-pill.rejected {
   background: rgba(214, 64, 69, 0.16);
-  color: var(--color-error);
+  color: var(--color-error-on-tint);
 }
 
 .status-pill.ignored {

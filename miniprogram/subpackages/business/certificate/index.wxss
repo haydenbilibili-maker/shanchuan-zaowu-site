@@ -69,7 +69,7 @@ view, text, image, button { box-sizing: border-box; }
   animation: spin 1s linear infinite; margin-bottom: 30rpx;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.mint-txt { font-family: 'DIN'; font-size: 24rpx; color: var(--gold); letter-spacing: 4rpx; opacity: 0.8; }
+.mint-txt { font-family: var(--font-mono); font-size: 24rpx; color: var(--gold); letter-spacing: 4rpx; opacity: 0.8; }
 
 /* 证书展示层 */
 .cert-layer {

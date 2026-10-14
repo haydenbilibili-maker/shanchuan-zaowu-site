@@ -44,7 +44,7 @@ view, text, image { box-sizing: border-box; }
 .motto-primary {
   display: block; font-size: 28rpx; color: #E0CFA3;
   line-height: 1.45; letter-spacing: 0.08em;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 
 .motto-secondary {
@@ -101,7 +101,7 @@ view, text, image { box-sizing: border-box; }
 
 .rail-num {
   font-size: 22rpx; font-weight: 600; color: #6B6560;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 .rail-dot.filled .rail-num { color: #C4A76C; }
@@ -145,7 +145,7 @@ view, text, image { box-sizing: border-box; }
 
 .panel-index {
   font-size: 24rpx; color: #6B6560;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
   flex-shrink: 0;
 }
 
@@ -210,7 +210,7 @@ view, text, image { box-sizing: border-box; }
 
 .workbench-key { font-size: 22rpx; color: #6B6560; }
 .workbench-val { font-size: 24rpx; color: #D5D1C8; }
-.workbench-val.gold { color: #C4A76C; font-weight: 600; font-family: 'JetBrains Mono', 'DM Mono', monospace; }
+.workbench-val.gold { color: #C4A76C; font-weight: 600; font-family: var(--font-mono); }
 
 .step-context {
   padding: 16rpx 20rpx; margin-bottom: 24rpx;
@@ -393,7 +393,7 @@ view, text, image { box-sizing: border-box; }
   font-size: 28rpx;
   color: #C4A76C;
   font-weight: 600;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 .selected-chip {
@@ -508,7 +508,7 @@ view, text, image { box-sizing: border-box; }
 
 .draft-del {
   width: 56rpx; align-self: stretch; display: flex; align-items: center; justify-content: center;
-  color: #6B6560; font-size: 32rpx; background: rgba(38, 35, 32, 0.5);
+  color: var(--color-text-secondary); font-size: 32rpx; background: rgba(38, 35, 32, 0.5);
 }
 
 .option-hint {

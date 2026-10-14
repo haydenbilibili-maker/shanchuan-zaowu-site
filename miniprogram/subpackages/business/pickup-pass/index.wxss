@@ -3,7 +3,7 @@
 page {
   background-color: var(--color-bg);
   color: var(--color-text-body);
-  font-family: "PingFang SC", sans-serif;
+  font-family: var(--font-body);
 }
 
 view, text, canvas { box-sizing: border-box; }
@@ -123,7 +123,7 @@ view, text, canvas { box-sizing: border-box; }
   border: 4rpx solid rgba(82, 183, 136, 0.85);
   border-radius: 12rpx;
   background: rgba(250, 247, 240, 0.72);
-  color: var(--color-success);
+  color: #2D6A4F;
   font-family: var(--font-brand);
   font-size: 64rpx;
   font-weight: 600;
@@ -339,7 +339,7 @@ view, text, canvas { box-sizing: border-box; }
   background: rgba(214, 64, 69, 0.08);
   font-size: 22rpx;
   line-height: 1.5;
-  color: var(--color-error);
+  color: var(--color-error-on-tint);
   text-align: center;
 }
 

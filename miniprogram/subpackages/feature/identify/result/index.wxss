@@ -347,7 +347,7 @@
   margin-bottom: 20rpx;
   font-size: 22rpx;
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .alt-list {
@@ -430,7 +430,7 @@
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   letter-spacing: 0.04em;
   line-height: 1.45;
 }
@@ -562,7 +562,7 @@
   display: block;
   margin-top: 8rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .ency-empty {
@@ -893,7 +893,7 @@
 .wiki-brief {
   display: block;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   margin-top: 6rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -901,7 +901,7 @@
 }
 
 .wiki-arrow {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-size: 32rpx;
 }
 
@@ -913,16 +913,16 @@
   justify-content: center;
   gap: 16rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 .foot-link {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 .foot-link-text {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 .foot-link-icon {
   width: 24rpx;

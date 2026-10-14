@@ -75,7 +75,7 @@ page { background: #1A1814; }
 .loading-t {
   margin-top: 24rpx;
   font-size: 24rpx;
-  color: #6B6560;
+  color: var(--color-text-secondary);
 }
 
 @keyframes pulse {
@@ -251,7 +251,7 @@ page { background: #1A1814; }
   display: block;
   font-size: 20rpx;
   letter-spacing: 0.16em;
-  color: #6B6560;
+  color: var(--color-text-secondary);
   margin-bottom: 8rpx;
 }
 
@@ -460,7 +460,7 @@ page { background: #1A1814; }
   flex-shrink: 0;
   font-size: 22rpx;
   line-height: 1.35;
-  color: #6B6560;
+  color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -469,7 +469,7 @@ page { background: #1A1814; }
   margin-top: 6rpx;
   font-size: 22rpx;
   line-height: 1.35;
-  color: #6B6560;
+  color: var(--color-text-secondary);
 }
 
 .btn-brass {

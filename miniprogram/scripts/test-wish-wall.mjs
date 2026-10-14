@@ -713,8 +713,8 @@ const INJECTIONS = {
   // 同一选择器又冒出第二份图 → 后一份静默吃掉前一份（改哪份都不生效）
   'lamp-icon-image-duplicated': {
     file: 'miniprogram/subpackages/feature/wish-wall/index.wxss',
-    from: '  opacity: 0.38;\n  transition: opacity 0.4s ease, transform 0.4s ease;\n}',
-    to: '  opacity: 0.38;\n  transition: opacity 0.4s ease, transform 0.4s ease;\n}\n.ww-lantern-core {\n  background-image: url("data:image/svg+xml,%3Csvg/%3E");\n}'
+    from: '  opacity: 0.38;\n  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);\n}',
+    to: '  opacity: 0.38;\n  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);\n}\n.ww-lantern-core {\n  background-image: url("data:image/svg+xml,%3Csvg/%3E");\n}'
   },
   // 灯语又缩回标题旁边那 ~220rpx 的窄列 → 孤字回来（产品反馈过的"文案拥挤"）
   'lamp-tail-inline-again': {

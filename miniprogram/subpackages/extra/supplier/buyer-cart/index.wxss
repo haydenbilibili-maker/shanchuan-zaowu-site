@@ -278,7 +278,7 @@
 
 .btn-primary {
   flex: 1.35;
-  background: var(--brass-600);
+  background: var(--brass-500);  /* 深字压 brass-600 仅 4.07:1 → 提一档 ≈5.3:1 */
   color: #1a1408;
   font-weight: 500;
 }

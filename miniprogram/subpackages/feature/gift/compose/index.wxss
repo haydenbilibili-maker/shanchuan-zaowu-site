@@ -112,7 +112,7 @@ page {
   font-size: 34rpx;
   font-weight: 500;
   color: #FFFFFF;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   margin-bottom: 12rpx;
 }
 
@@ -183,7 +183,7 @@ page {
   font-size: 20rpx;
   color: #6B6560;
   letter-spacing: 0.08em;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 .step-rail-item.on .step-rail-num,
@@ -596,7 +596,7 @@ page {
   border-radius: 12rpx;
   background: rgba(250, 246, 237, 0.65);
   font-size: 26rpx;
-  color: #8A7530;
+  color: var(--brass-700);
   letter-spacing: 0.04em;
 }
 
@@ -609,7 +609,7 @@ page {
 .voice-hold.will-cancel {
   border-color: rgba(214, 64, 69, 0.55);
   background: rgba(214, 64, 69, 0.08);
-  color: #D64045;
+  color: var(--color-error-on-tint);
 }
 
 .voice-hold.busy {
@@ -667,7 +667,7 @@ page {
   border-radius: 12rpx;
   background: rgba(250, 246, 237, 0.65);
   font-size: 26rpx;
-  color: #8A7530;
+  color: var(--brass-700);
   box-sizing: border-box;
 }
 
@@ -680,7 +680,7 @@ page {
   margin-left: auto;
   font-size: 22rpx;
   color: #A09A90;
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
 }
 
 .voice-actions {
@@ -750,7 +750,7 @@ page {
   pointer-events: none;
   transform: rotate(-12deg);
   z-index: 1;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   line-height: 1;
   letter-spacing: 0.08em;
   color: #1A1814;
@@ -781,7 +781,7 @@ page {
   font-size: 18rpx;
   color: #8A7530;
   letter-spacing: 0.04em;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 
 .card-plate.writing {
@@ -822,7 +822,7 @@ page {
   font-size: 20rpx;
   color: #8A7530;
   letter-spacing: 0.1em;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 
 .card-to-dot {
@@ -830,7 +830,7 @@ page {
   margin: 0 8rpx;
   font-size: 20rpx;
   color: #C4A76C;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
 }
 
 .card-to-input {
@@ -840,7 +840,7 @@ page {
   font-size: 26rpx;
   color: #6B5A24;
   letter-spacing: 0.04em;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   border-bottom: 1px solid transparent;
   padding: 0 0 2rpx;
   transition: border-color var(--dur-base) var(--ease-standard);
@@ -891,7 +891,7 @@ page {
   font-size: 28rpx;
   line-height: 1.65;
   color: #8A7530;
-  font-family: Georgia, serif;
+  font-family: var(--font-latin);
   opacity: 0;
   margin-left: 2rpx;
 }
@@ -1025,7 +1025,7 @@ page {
   border: 1px solid rgba(196, 167, 108, 0.45);
   border-radius: 8rpx;
   font-size: 20rpx;
-  color: #8A7530;
+  color: var(--brass-700);
   letter-spacing: 0.04em;
   background: rgba(242, 237, 228, 0.92);
 }

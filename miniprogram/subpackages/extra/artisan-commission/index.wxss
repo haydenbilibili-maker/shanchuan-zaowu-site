@@ -644,7 +644,7 @@ page {
   background: rgba(196, 167, 108, 0.08);
 }
 .tier-tag.muted {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   border-color: var(--color-border);
   background: transparent;
 }

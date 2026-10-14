@@ -198,7 +198,7 @@ page {
 }
 .verdict-badge.up { background: rgba(82, 183, 136, 0.15); color: #52B788; }
 .verdict-badge.warn { background: rgba(233, 162, 59, 0.15); color: #E9A23B; }
-.verdict-badge.down { background: rgba(214, 64, 69, 0.15); color: #D64045; }
+.verdict-badge.down { background: rgba(214, 64, 69, 0.15); color: var(--color-error-on-tint); }
 .verdict-insight {
   display: block;
   margin-top: 16rpx;
@@ -219,7 +219,7 @@ page {
 }
 .sum-chip.ok { background: rgba(82, 183, 136, 0.12); color: #52B788; }
 .sum-chip.warn { background: rgba(233, 162, 59, 0.12); color: #E9A23B; }
-.sum-chip.danger { background: rgba(214, 64, 69, 0.12); color: #D64045; }
+.sum-chip.danger { background: rgba(214, 64, 69, 0.12); color: var(--color-error-on-tint); }
 .verdict-foot {
   margin-top: 16rpx;
   display: flex;

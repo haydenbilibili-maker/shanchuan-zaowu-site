@@ -219,7 +219,7 @@ page {
 }
 .status-tag.brass { color: var(--gold); background: rgba(196, 167, 108, 0.15); }
 .status-tag.warn { color: #E9A23B; background: rgba(233, 162, 59, 0.15); }
-.status-tag.muted { color: var(--color-text-muted); }
+.status-tag.muted { color: var(--color-text-secondary); }
 .amount {
   display: block;
   margin-top: 12rpx;

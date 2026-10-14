@@ -8,10 +8,10 @@ page { background: var(--color-bg); color: #fff; }
 .hero-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(to bottom, transparent 40%, var(--color-bg) 100%); }
 .hero-text { position: absolute; bottom: 60rpx; left: 40rpx; right: 40rpx; z-index: 2; }
 
-.latin-lg { font-family: "Times New Roman", serif; color: var(--gold); font-style: italic; font-size: 36rpx; display: block; margin-bottom: 10rpx; opacity: 0.9; }
+.latin-lg { font-family: var(--font-latin); color: var(--gold); font-style: italic; font-size: 36rpx; display: block; margin-bottom: 10rpx; opacity: 0.9; }
 .name-lg { font-size: 64rpx; color: #fff; font-weight: 900; display: block; text-shadow: 0 4rpx 20rpx rgba(0,0,0,0.8); line-height: 1.1; }
-.taxonomy-row { display: flex; align-items: center; margin-top: 20rpx; font-family: var(--font-din); font-size: 22rpx; color: #aaa; letter-spacing: 2rpx; text-transform: uppercase; }
-.divider { margin: 0 10rpx; color: #444; }
+.taxonomy-row { display: flex; align-items: center; margin-top: 20rpx; font-family: var(--font-mono); font-size: 22rpx; color: var(--color-text-secondary); letter-spacing: 2rpx; text-transform: uppercase; }
+.divider { margin: 0 10rpx; color: var(--color-text-secondary); }
 
 .back-btn {
   position: fixed;
@@ -64,7 +64,7 @@ page { background: var(--color-bg); color: #fff; }
   border-radius: 20rpx;
 }
 .commerce-title { margin-bottom: 30rpx; border-bottom: 1px solid rgba(38, 35, 32, 0.8); padding-bottom: 16rpx; display: flex; align-items: baseline; justify-content: space-between; }
-.commerce-title text:first-child { font-family: var(--font-din); color: var(--gold); font-weight: bold; letter-spacing: 2rpx; font-size: 24rpx; }
+.commerce-title text:first-child { font-family: var(--font-mono); color: var(--gold); font-weight: bold; letter-spacing: 2rpx; font-size: 24rpx; }
 .commerce-title .sub { color: var(--color-text-secondary); font-size: 22rpx; font-weight: 500; }
 
 .product-card-mini { display: flex; align-items: center; margin-bottom: 24rpx; background: var(--color-bg-elevated); padding: 16rpx; border-radius: 12rpx; border: 1px solid rgba(38, 35, 32, 0.8); }
@@ -76,7 +76,7 @@ page { background: var(--color-bg); color: #fff; }
    本文件下方 `.notes-brief` 已有 2 行钳制；标题行改与「缩略图 + 标题」同型的 search 页一致（单行省略号）。 */
 .p-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .p-name { color: var(--color-text-primary); font-size: 26rpx; font-weight: bold; margin-bottom: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.p-latin { color: var(--gold); font-size: 20rpx; font-style: italic; margin-bottom: 6rpx; font-family: Georgia, serif; }
+.p-latin { color: var(--gold); font-size: 20rpx; font-style: italic; margin-bottom: 6rpx; font-family: var(--font-latin); }
 .p-sku { color: var(--color-text-secondary); font-size: 20rpx; margin-bottom: 6rpx; }
 .p-craft-tags {
   display: flex;
@@ -145,7 +145,7 @@ page { background: var(--color-bg); color: #fff; }
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
-.p-price { color: var(--gold); font-family: var(--font-din); font-size: 28rpx; font-weight: bold; }
+.p-price { color: var(--gold); font-family: var(--font-mono); font-size: 28rpx; font-weight: bold; }
 .btn-buy { 
   background: transparent; color: var(--gold); font-size: 22rpx; padding: 8rpx 24rpx; 
   border-radius: 16rpx; border: 1px solid rgba(196, 167, 108, 0.45); font-weight: 500;
@@ -208,7 +208,7 @@ page { background: var(--color-bg); color: #fff; }
   z-index: 90;
 }
 .bottom-price { flex: 1; }
-.bp-label { font-size: 22rpx; color: var(--color-text-muted); display: block; }
+.bp-label { font-size: 22rpx; color: var(--color-text-secondary); display: block; }
 .bp-num { font-size: 36rpx; color: var(--gold); font-weight: 600; }
 .bottom-buy {
   padding: 0 48rpx;

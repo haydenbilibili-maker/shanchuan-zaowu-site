@@ -2,7 +2,7 @@
 page {
   background-color: #1A1814;
   color: #fff;
-  font-family: "PingFang SC", "Helvetica Neue", sans-serif;
+  font-family: var(--font-body);
 }
 
 .load-error-overlay {
@@ -211,9 +211,9 @@ page {
 
 .info { padding: 24rpx; }
 .p-title {
-  display: block; font-size: 26rpx; color: #eee; margin-bottom: 10rpx;
+  display: block; font-size: 26rpx; color: var(--color-text-body); margin-bottom: 10rpx;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold;
 }
-.p-year { font-size: 22rpx; color: #666; display: block; }
+.p-year { font-size: 22rpx; color: var(--color-text-secondary); display: block; }
 
-.empty-tip { text-align: center; color: #555; font-size: 24rpx; margin-top: 100rpx; }
+.empty-tip { text-align: center; color: var(--color-text-secondary); font-size: 24rpx; margin-top: 100rpx; }

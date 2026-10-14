@@ -4,7 +4,7 @@
 page { 
   background-color: var(--color-bg); 
   color: var(--color-text-body); 
-  font-family: "PingFang SC", sans-serif; 
+  font-family: var(--font-body); 
   padding-bottom: calc(280rpx + env(safe-area-inset-bottom));
   overscroll-behavior-x: none;
   overflow-x: hidden;
@@ -80,13 +80,13 @@ view, text, image, button { box-sizing: border-box; }
 .fh-right { align-items: flex-end; max-width: 46%; }
 .fh-label { font-size: 18rpx; color: var(--color-text-secondary); letter-spacing: 1rpx; margin-bottom: 6rpx; font-weight: bold; }
 .fh-label .en-label { 
-  font-family: var(--font-din); 
+  font-family: var(--font-mono); 
   letter-spacing: 2rpx; 
   opacity: 0.6; 
   margin-right: 8rpx;
   font-size: 16rpx;
 }
-.fh-val { font-family: 'Courier New', monospace; font-size: 24rpx; color: var(--color-text-body); letter-spacing: 1rpx; }
+.fh-val { font-family: var(--font-mono); font-size: 24rpx; color: var(--color-text-body); letter-spacing: 1rpx; }
 .fh-val.copy { text-decoration: underline; color: var(--gold); }
 .divider-dashed { width: 100%; height: 0; border-top: 1px dashed rgba(38, 35, 32, 0.7); margin-bottom: 40rpx; }
 
@@ -114,7 +114,7 @@ view, text, image, button { box-sizing: border-box; }
 }
 .sl-header text { font-size: 20rpx; font-weight: 900; letter-spacing: 1rpx; color: var(--gold); }
 .sl-header .en-label {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   letter-spacing: 2rpx;
   opacity: 0.7;
   margin-right: 8rpx;
@@ -143,7 +143,7 @@ view, text, image, button { box-sizing: border-box; }
   letter-spacing: 0.5rpx; 
 }
 .sl-lbl .en-label {
-  font-family: 'DIN';
+  font-family: var(--font-mono);
   letter-spacing: 1rpx;
   opacity: 0.6;
   margin-right: 4rpx;
@@ -151,12 +151,12 @@ view, text, image, button { box-sizing: border-box; }
 }
 .sl-val { font-size: 26rpx; color: var(--color-text-primary); font-weight: bold; flex: 1; min-width: 0; }
 .sl-val.code {
-  font-family: 'Courier New', monospace;
+  font-family: var(--font-mono);
   letter-spacing: 1rpx;
   flex: 0 1 auto;
   word-break: break-all;
 }
-.sl-val.code.muted { color: var(--color-text-muted); font-weight: 500; }
+.sl-val.code.muted { color: var(--color-text-secondary); font-weight: 500; }
 
 .sl-waybill-block {
   display: flex;
@@ -187,7 +187,7 @@ view, text, image, button { box-sizing: border-box; }
 
 .sl-user-box { display: flex; align-items: baseline; gap: 10rpx; }
 .sl-user { font-weight: 900; font-size: 28rpx; }
-.sl-phone { font-family: 'DIN'; color: var(--color-text-secondary); }
+.sl-phone { font-family: var(--font-mono); color: var(--color-text-secondary); }
 
 .sl-addr { 
   font-size: 24rpx; line-height: 1.4; color: var(--color-text-body); 
@@ -218,7 +218,7 @@ view, text, image, button { box-sizing: border-box; }
   display: block;
   font-size: 20rpx;
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   letter-spacing: 0.02em;
 }
 
@@ -242,7 +242,7 @@ view, text, image, button { box-sizing: border-box; }
 .btn-sign:active,
 .btn-sign-press { background: #A8903C; }
 .btn-sign text { font-size: 28rpx; font-weight: 600; letter-spacing: 0.06em; }
-.btn-arrow { font-family: Georgia, serif; font-size: 28rpx; line-height: 1; }
+.btn-arrow { font-family: var(--font-latin); font-size: 28rpx; line-height: 1; }
 
 /* 清单 */
 .section-title { 
@@ -250,7 +250,7 @@ view, text, image, button { box-sizing: border-box; }
   display: block; border-left: 4rpx solid var(--gold); padding-left: 12rpx; font-weight: bold;
 }
 .section-title .en-label {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   letter-spacing: 2rpx;
   opacity: 0.6;
   margin-right: 8rpx;
@@ -276,26 +276,29 @@ view, text, image, button { box-sizing: border-box; }
 .m-img { width: 100rpx; height: 100rpx; background: var(--color-bg-elevated); border-radius: 12rpx; margin-right: 20rpx; flex-shrink: 0; border: 1px solid var(--color-bg-elevated); }
 .m-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
 .m-title { font-size: 26rpx; color: var(--color-text-primary); font-weight: bold; }
-.m-latin { font-size: 20rpx; color: var(--gold); font-style: italic; font-family: 'Times New Roman'; }
-.m-meta { display: flex; justify-content: space-between; font-size: 22rpx; color: var(--color-text-secondary); font-family: 'Courier New'; }
+.m-latin { font-size: 20rpx; color: var(--gold); font-style: italic; font-family: var(--font-latin); }
+.m-meta { display: flex; justify-content: space-between; font-size: 22rpx; color: var(--color-text-secondary); font-family: var(--font-mono); }
 .m-qty .en-label {
-  font-family: 'DIN';
+  font-family: var(--font-mono);
   opacity: 0.5;
   margin-right: 4rpx;
   font-size: 18rpx;
 }
 .m-price { color: var(--gold); font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
-.m-price.muted { color: var(--color-text-muted); font-weight: 400; }
+.m-price.muted { color: var(--color-text-secondary); font-weight: 400; }
 
 
 /* 财务 */
 .finance-section { border-top: 1px dashed rgba(38, 35, 32, 0.7); padding-top: 30rpx; margin-top: 30rpx; }
-.f-row { display: flex; justify-content: space-between; font-size: 22rpx; color: var(--color-text-secondary); margin-bottom: 10rpx; font-family: 'Courier New'; }
-.f-row.highlight { color: var(--gold); }
+/* VIS3 第 06 页两栏信息行：左标签走正文字族、右数值走等宽；减免只把**数值**染金，标签保持说明色 */
+.f-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 22rpx; color: var(--color-text-secondary); margin-bottom: 10rpx; font-family: var(--font-body); }
+.f-row > text:last-child { font-family: var(--font-mono); color: var(--color-text-body); }
+.f-row.highlight > text:last-child { color: var(--gold); }
+.f-row > .shipping-fee-cell { font-family: var(--font-mono); }
 .f-divider { width: 100%; height: 1px; background: rgba(38, 35, 32, 0.7); margin: 20rpx 0; }
 .f-total { display: flex; justify-content: space-between; font-size: 28rpx; font-weight: bold; color: var(--color-text-primary); align-items: center; }
 .f-total .en-label {
-  font-family: var(--font-din);
+  font-family: var(--font-mono);
   letter-spacing: 2rpx;
   opacity: 0.6;
   margin-right: 8rpx;
@@ -341,7 +344,7 @@ view, text, image, button { box-sizing: border-box; }
   font-size: 22rpx;
   font-weight: 900;
   letter-spacing: 1rpx;
-  font-family: 'Courier New';
+  font-family: var(--font-mono);
   text-align: center;
   border-top: 2rpx solid;
   border-bottom: 2rpx solid;
@@ -860,7 +863,7 @@ view, text, image, button { box-sizing: border-box; }
 }
 .ga-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
 .ga-who { display: flex; align-items: baseline; gap: 12rpx; min-width: 0; }
-.ga-label { font-size: 22rpx; color: var(--color-text-muted); flex-shrink: 0; }
+.ga-label { font-size: 22rpx; color: var(--color-text-secondary); flex-shrink: 0; }
 .ga-name {
   font-size: 32rpx; color: var(--brass-300); font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -869,11 +872,11 @@ view, text, image, button { box-sizing: border-box; }
 .ga-status.tone-waiting { color: var(--brass-400); }
 .ga-status.tone-moving { color: #8FB6D9; }
 .ga-status.tone-done { color: #7EDC96; }
-.ga-status.tone-muted { color: var(--color-text-muted); }
+.ga-status.tone-muted { color: var(--color-text-secondary); }
 .ga-note { margin-top: 16rpx; }
 .ga-note-quote { font-size: 24rpx; line-height: 1.6; color: var(--color-text-body); }
 .ga-meta { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 14rpx; }
-.ga-meta-item { font-size: var(--fs-20); color: var(--color-text-muted); }
+.ga-meta-item { font-size: var(--fs-20); color: var(--color-text-secondary); }
 .ga-entries { display: flex; gap: 16rpx; margin-top: 22rpx; }
 .ga-entry {
   flex: 1; min-width: 0; text-align: center;
@@ -897,5 +900,5 @@ view, text, image, button { box-sizing: border-box; }
   display: block;
   margin-top: var(--space-1);
   font-size: var(--fs-22);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }

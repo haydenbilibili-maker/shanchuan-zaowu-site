@@ -189,7 +189,7 @@
   flex-shrink: 0;
 }
 .tm-title {
-  font-family: Georgia, 'Times New Roman', serif;
+  font-family: var(--font-latin);
   font-size: 20rpx;
   color: #8A7530;
   font-weight: 700;
@@ -224,7 +224,7 @@
   line-height: 1;
 }
 .tm-amount {
-  font-family: 'JetBrains Mono', 'DM Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 76rpx;
   font-weight: 700;
   line-height: 0.95;
@@ -238,7 +238,7 @@
   font-weight: 600;
   color: #33302C;
   margin: 4rpx 0 28rpx;
-  font-family: 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif;
+  font-family: var(--font-brand);
   text-align: center;
   max-width: 100%;
   overflow: hidden;

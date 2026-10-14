@@ -71,7 +71,7 @@
 .p-info { padding: 20rpx; }
 /* 2026-09-21 分子级审计：`.text-cut` / `.font-num` 定义在 app.wxss，但本组件 json **没有**（注记 COM-1） */
 .p-title { font-size: 26rpx; color: var(--color-text-primary); font-weight: 600; margin-bottom: 4rpx; font-family: var(--font-heading); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.p-latin { font-size: 20rpx; color: var(--color-text-latin); font-family: Georgia, 'Times New Roman', serif; font-style: italic; margin-bottom: 16rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.p-latin { font-size: 20rpx; color: var(--color-text-latin); font-family: var(--font-latin); font-style: italic; margin-bottom: 16rpx; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .p-craft-tags {
   display: flex;
   flex-wrap: wrap;

@@ -1418,7 +1418,7 @@ page {
   border-radius: 999rpx;
   font-size: 20rpx;
   line-height: 1.6;
-  color: #D64045;
+  color: var(--color-error-on-tint);
   border: 1rpx solid rgba(214, 64, 69, 0.5);
   background: rgba(214, 64, 69, 0.10);
 }

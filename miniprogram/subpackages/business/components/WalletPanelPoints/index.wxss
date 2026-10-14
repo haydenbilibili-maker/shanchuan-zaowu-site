@@ -37,7 +37,7 @@
 .card-flip-hint {
   position: absolute; left: 0; right: 0; bottom: 14rpx;
   text-align: center;
-  font-family: var(--font-din); font-size: 18rpx; letter-spacing: .16em;
+  font-family: var(--font-mono); font-size: 18rpx; letter-spacing: .16em;
   color: rgba(196, 167, 108, .55);
 }
 
@@ -49,7 +49,7 @@
 }
 .back-head { position: relative; z-index: 2; display: flex; align-items: baseline; justify-content: space-between; }
 .back-head-left { display: flex; align-items: baseline; gap: 12rpx; }
-.back-en { font-family: var(--font-din); font-size: 20rpx; letter-spacing: .18em; color: var(--gold); font-weight: bold; }
+.back-en { font-family: var(--font-mono); font-size: 20rpx; letter-spacing: .18em; color: var(--gold); font-weight: bold; }
 .back-cn { font-size: 28rpx; letter-spacing: .06em; color: #F2EFE8; }
 .back-seal {
   font-family: var(--font-mono); font-size: 18rpx; letter-spacing: .16em;
@@ -83,8 +83,8 @@
 
 .card-top { width: 100%; display: flex; justify-content: space-between; align-items: center; }
 .brand-group { text-align: center; width: 100%; }
-.en { font-family: var(--font-din); font-size: 20rpx; color: var(--gold); letter-spacing: 8rpx; font-weight: bold; margin-bottom: 10rpx; display: block; }
-.cn { font-size: 24rpx; color: #666; letter-spacing: 2rpx; }
+.en { font-family: var(--font-mono); font-size: 20rpx; color: var(--gold); letter-spacing: 8rpx; font-weight: bold; margin-bottom: 10rpx; display: block; }
+.cn { font-size: 24rpx; color: var(--color-text-secondary); letter-spacing: 2rpx; }
 
 .level-badge { 
   position: absolute; top: 40rpx; right: 40rpx;
@@ -97,9 +97,9 @@
 .symbol { font-size: 22rpx; color: var(--brass-400); letter-spacing: 0.18em; display: block; margin-bottom: 8rpx; }
 .num { font-size: 100rpx; color: var(--color-text-primary); font-weight: bold; font-family: var(--font-mono), 'DIN', sans-serif; letter-spacing: 4rpx; text-shadow: none; line-height: 1; }
 .num.is-pending { color: var(--color-text-secondary); font-size: 72rpx; letter-spacing: 8rpx; }
-.unit { font-size: 24rpx; color: #666; margin-top: 10rpx; display: block; font-family: var(--font-din); letter-spacing: 2rpx; }
+.unit { font-size: 24rpx; color: var(--color-text-secondary); margin-top: 10rpx; display: block; font-family: var(--font-mono); letter-spacing: 2rpx; }
 
-.card-bottom .tips { font-size: 20rpx; color: #444; }
+.card-bottom .tips { font-size: 20rpx; color: var(--color-text-secondary); }
 
 /* 2. 极简导航 */
 .tab-navbar {
@@ -109,7 +109,7 @@
 .tab-item {
   flex: 1; min-width: 0;
   padding: 20rpx 0; position: relative;
-  font-size: 26rpx; color: #666; font-weight: bold; transition: all var(--dur-base) var(--ease-standard);
+  font-size: 26rpx; color: var(--color-text-secondary); font-weight: bold; transition: all var(--dur-base) var(--ease-standard);
   text-align: center; white-space: nowrap;
 }
 .tab-item text { white-space: nowrap; }
@@ -127,7 +127,7 @@
 /* 3. 权益网格 (沉浸式) */
 .content-area { width: 100%; }
 .section-header { margin-bottom: 40rpx; text-align: center; }
-.title-group .en { font-family: var(--font-din); font-size: 20rpx; color: var(--gold); letter-spacing: 6rpx; font-weight: bold; }
+.title-group .en { font-family: var(--font-mono); font-size: 20rpx; color: var(--gold); letter-spacing: 6rpx; font-weight: bold; }
 
 .reward-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24rpx; }
 .reward-card {
@@ -146,22 +146,22 @@
 .sold-out-mask {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.8); color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 24rpx; letter-spacing: 4rpx; font-weight: bold; font-family: var(--font-din);
+  font-size: 24rpx; letter-spacing: 4rpx; font-weight: bold; font-family: var(--font-mono);
 }
 
 .info-box { padding: 24rpx; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-.r-title { font-size: 26rpx; color: #eee; font-weight: bold; margin-bottom: 8rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.r-desc { font-size: 20rpx; color: #666; margin-bottom: 20rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r-title { font-size: 26rpx; color: var(--color-text-body); font-weight: bold; margin-bottom: 8rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-desc { font-size: 20rpx; color: var(--color-text-secondary); margin-bottom: 20rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .r-footer { display: flex; justify-content: space-between; align-items: center; }
 .cost-group .val { font-size: 32rpx; color: var(--gold); font-weight: bold; font-family: var(--font-num); }
-.cost-group .unit { font-size: 18rpx; color: #666; margin-left: 4rpx; font-weight: bold; }
+.cost-group .unit { font-size: 18rpx; color: var(--color-text-secondary); margin-left: 4rpx; font-weight: bold; }
 
 .btn-outline {
   font-size: 20rpx; color: var(--color-bg); background: var(--gold);
   padding: 8rpx 24rpx; border-radius: 30rpx; font-weight: bold; 
 }
-.btn-outline.disabled { background: #333; color: #666; }
+.btn-outline.disabled { background: #333; color: var(--color-text-muted); }
 
 /* 4. 我的兑换 (时间轴风格) */
 .my-list { display: flex; flex-direction: column; gap: 40rpx; padding-left: 20rpx; border-left: 1px solid rgba(255,255,255,0.1); margin-left: 20rpx; }
@@ -179,17 +179,17 @@
 .my-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 
 .my-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8rpx; }
-.my-title { font-size: 26rpx; color: #eee; font-weight: bold; }
-.my-meta { font-size: 20rpx; color: #555; font-family: monospace; }
+.my-title { font-size: 26rpx; color: var(--color-text-body); font-weight: bold; }
+.my-meta { font-size: 20rpx; color: var(--color-text-secondary); font-family: var(--font-mono); }
 
 .my-action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12rpx; }
-.status-txt { font-size: 20rpx; color: #666; }
+.status-txt { font-size: 20rpx; color: var(--color-text-secondary); }
 .btn-small {
   font-size: 20rpx; color: var(--gold); border: 1px solid var(--gold); 
   padding: 4rpx 16rpx; border-radius: 6rpx; font-weight: bold;
 }
 .btn-track {
-  font-size: 20rpx; color: #aaa; border: 1px solid #444; 
+  font-size: 20rpx; color: var(--color-text-secondary); border: 1px solid #444; 
   padding: 4rpx 16rpx; border-radius: 6rpx;
 }
 
@@ -218,12 +218,12 @@
   align-items: center;
   gap: 8rpx;
   text-align: center;
-  color: #666;
+  color: var(--color-text-muted);
   font-size: 20rpx;
   margin-top: 80rpx;
   letter-spacing: 0.1em;
 }
-.copyright .cr-cn { font-weight: 500; color: #333; }
+.copyright .cr-cn { font-weight: 500; color: var(--color-text-muted); }
 .copyright .cr-en {
   font-size: 18rpx;
   letter-spacing: 0.18em;
@@ -270,14 +270,14 @@
 .pt-ledger-cap {
   flex-shrink: 0;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-family: var(--font-mono);
 }
 .pt-ledger-sums { display: flex; align-items: center; gap: 18rpx; padding-bottom: 10rpx; }
 .pt-sum { font-size: 20rpx; font-family: var(--font-mono); }
 .pt-sum.is-plus { color: var(--brass-400); }
 .pt-sum.is-minus { color: var(--color-text-secondary); }
-.pt-sum.is-hint { color: var(--color-text-muted); font-family: var(--font-brand); }
+.pt-sum.is-hint { color: var(--color-text-secondary); font-family: var(--font-brand); }
 
 .pt-ledger-timeline { display: flex; flex-direction: column; }
 .pt-ledger-month {
@@ -309,13 +309,13 @@
   padding-top: 20rpx;
 }
 .pt-ledger-day-label { font-size: 24rpx; color: var(--color-text-body); }
-.pt-ledger-day-week { font-size: 20rpx; color: var(--color-text-muted); }
+.pt-ledger-day-week { font-size: 20rpx; color: var(--color-text-secondary); }
 .pt-ledger-day-spacer { flex: 1; }
 .pt-ledger-day-net { font-size: 22rpx; font-family: var(--font-mono); }
 .pt-ledger-day-net.is-plus { color: var(--brass-400); }
 .pt-ledger-day-net.is-minus { color: var(--color-text-secondary); }
 .pt-ledger-day-net.is-flat,
-.pt-ledger-day-net.is-open { color: var(--color-text-muted); }
+.pt-ledger-day-net.is-open { color: var(--color-text-secondary); }
 
 /* 行：轨道圆点 + 标题/时分 + 分值/余额；行内不重复日期 */
 .pt-ledger-row {
@@ -356,18 +356,18 @@
   font-family: var(--font-mono);
 }
 .pt-ledger-meta { display: flex; align-items: center; gap: 12rpx; margin-top: 6rpx; }
-.pt-ledger-tag { font-size: 20rpx; color: var(--color-text-muted); }
+.pt-ledger-tag { font-size: 20rpx; color: var(--color-text-secondary); }
 .pt-ledger-pending { font-size: 20rpx; color: var(--brass-600); }
 .pt-ledger-side { flex-shrink: 0; min-width: 150rpx; text-align: right; }
 .pt-ledger-points { display: block; font-family: var(--font-mono); font-size: 30rpx; }
 .pt-ledger-points.is-plus { color: var(--brass-400); }
 .pt-ledger-points.is-minus { color: var(--color-text-secondary); }
-.pt-ledger-points.is-flat { color: var(--color-text-muted); }
+.pt-ledger-points.is-flat { color: var(--color-text-secondary); }
 .pt-ledger-balance {
   display: block;
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 .pt-ledger-more {
   margin-top: 26rpx;
@@ -383,7 +383,7 @@
   margin-top: 24rpx;
   text-align: center;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 /* 订单认领轻量入口 */
@@ -426,7 +426,7 @@
   display: block;
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   line-height: 1.4;
 }
 .claim-entry-arr {
@@ -474,5 +474,5 @@
   margin-top: 16rpx;
   font-size: 22rpx;
   line-height: 1.55;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }

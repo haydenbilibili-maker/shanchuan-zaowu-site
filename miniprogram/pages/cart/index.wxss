@@ -694,7 +694,7 @@ page {
 .select-label { font-size: 24rpx; color: var(--color-text-body); }
 .total-block { flex: 1; min-width: 0; text-align: right; }
 .total-row { margin-bottom: 4rpx; }
-.total-hint { font-size: 20rpx; color: var(--color-text-muted); margin-left: 8rpx; }
+.total-hint { font-size: 20rpx; color: var(--gold); font-family: var(--font-mono); margin-left: 8rpx; }  /* VIS3 纪律 05：减免为金色（原弱化色 #6B6560 也低于说明文字下限 #A09A90） */
 
 .total-main {
   display: flex;
@@ -845,7 +845,7 @@ page {
   padding: 0 6rpx 0 2rpx;
   font-size: 32rpx;
   line-height: 1;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 /* === 需求 2/3：免邮凑单行（未达包邮门槛时替代纯规则文案） === */
@@ -875,7 +875,7 @@ page {
   min-width: 0;
   text-align: right;
   font-size: 19rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

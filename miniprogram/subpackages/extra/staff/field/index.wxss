@@ -177,7 +177,7 @@ page {
   color: var(--brass-600);
 }
 .rule-hint.muted {
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
   margin-top: 6rpx;
 }
 
@@ -933,7 +933,7 @@ page {
 }
 
 .pass-foot-hint.muted {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .pass-cta {

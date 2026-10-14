@@ -81,7 +81,7 @@ page {
 .plate-desc {
   display: block;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   line-height: 1.5;
   margin-bottom: var(--space-3);
 }
@@ -360,7 +360,7 @@ page {
   display: block;
   max-width: 100%;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   letter-spacing: 0.04em;
   line-height: 1.4;
   text-align: center;
@@ -428,7 +428,7 @@ page {
   display: block;
   margin-top: 16rpx;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   line-height: 1.55;
 }
 
@@ -461,7 +461,7 @@ page {
 .phone-bound-tip {
   display: block;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .phone-bound-val {
@@ -611,7 +611,7 @@ page {
   margin-top: 8rpx;
   font-size: 24rpx;
   font-family: var(--font-mono);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .profile-footer .account-btn-primary {
@@ -676,7 +676,7 @@ page {
 
 .profile-logout-hint {
   font-size: 22rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   letter-spacing: 0.02em;
   text-align: center;
   line-height: 1.4;
@@ -712,7 +712,7 @@ page {
 .privacy-desc {
   display: block;
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .privacy-switch {
@@ -750,7 +750,7 @@ page {
 
 .interest-count {
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   font-weight: 400;
   flex-shrink: 0;
 }
@@ -849,7 +849,7 @@ page {
 
 .profile-state-desc {
   font-size: 24rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   margin-bottom: var(--space-4);
 }
 
@@ -990,7 +990,7 @@ page {
 .next-step-desc {
   font-size: 20rpx;
   line-height: 1.4;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .next-step-cta {
@@ -1003,7 +1003,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 20rpx;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .next-step-empty {

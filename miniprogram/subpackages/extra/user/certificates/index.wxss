@@ -101,7 +101,7 @@ page {
   pointer-events: none;
 }
 .c-no { 
-  font-family: 'DIN'; 
+  font-family: var(--font-mono); 
   font-size: 18rpx; 
   color: rgba(196, 167, 108,0.8); 
   letter-spacing: 3rpx;
@@ -155,7 +155,7 @@ page {
   letter-spacing: 1rpx;
 }
 .c-date { 
-  font-family: 'DIN'; 
+  font-family: var(--font-mono); 
   font-size: 22rpx; 
   color: rgba(196, 167, 108,0.7);
   font-weight: 600;

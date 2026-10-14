@@ -5,7 +5,7 @@ page {
   height: 100%; 
   width: 100%;
   overflow: hidden; /* 禁止溢出 */
-  font-family: "DIN", sans-serif; 
+  font-family: var(--font-mono); 
 }
 view, text, image, slider { box-sizing: border-box; }
 
@@ -63,7 +63,7 @@ view, text, image, slider { box-sizing: border-box; }
   position: absolute; bottom: 300rpx; left: 50%; transform: translateX(-50%); 
   text-align: center; animation: blink 2s infinite; 
 }
-.hud-label { font-size: 16rpx; color: #888; display: block; letter-spacing: 2rpx; }
+.hud-label { font-size: 16rpx; color: var(--color-text-secondary); display: block; letter-spacing: 2rpx; }
 .hud-val { font-size: 24rpx; color: #C4A76C; font-weight: bold; letter-spacing: 4rpx; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
@@ -113,7 +113,7 @@ view, text, image, slider { box-sizing: border-box; }
   background: linear-gradient(to top, #1A1814 20%, transparent);
   padding-bottom: 80rpx; display: flex; flex-direction: column; align-items: center;
 }
-.tips { color: #888; font-size: 22rpx; margin-bottom: 30rpx; letter-spacing: 2rpx; }
+.tips { color: var(--color-text-secondary); font-size: 22rpx; margin-bottom: 30rpx; letter-spacing: 2rpx; }
 
 /* 🟢 修复：缩小滑块宽度，防止溢出 */
 .slider-wrapper { 

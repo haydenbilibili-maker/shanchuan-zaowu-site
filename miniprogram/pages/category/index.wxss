@@ -33,7 +33,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .cat-filter-row { display: flex; align-items: flex-start; padding-right: 0; }
 .sub-category-block { margin-top: 8rpx; padding: 0 24rpx 10rpx; border-top: 1px solid rgba(77,64,26,.35); }
 .sub-category-head { display: flex; align-items: center; gap: 16rpx; padding: 10rpx 0 12rpx; }
-.sub-category-label { font-size: 20rpx; font-weight: 500; color: var(--color-text-muted); letter-spacing: 0.14em; flex-shrink: 0; }
+.sub-category-label { font-size: 20rpx; font-weight: 500; color: var(--color-text-secondary); letter-spacing: 0.14em; flex-shrink: 0; }
 .sub-category-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(77,64,26,.55) 0%, rgba(38,35,32,.2) 100%); }
 .sub-category-wrap { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8rpx 12rpx; }
 .cat-pill-l1 { height: 56rpx; padding: 0 30rpx; }
@@ -86,7 +86,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
 
 /* ===== 内容列表行（左图右文，保留供其它页复用） ===== */
 .tag-type { display: inline-flex; align-items: center; align-self: flex-start; width: auto; box-sizing: border-box; font-size: 20rpx; color: var(--gold); padding: 4rpx 12rpx; border: 1px solid rgba(196,167,108,.35); border-radius: 8rpx; white-space: nowrap; line-height: 1.3; }
-.content-latin { font-size: 22rpx; color: var(--gold); font-style: italic; margin-top: 6rpx; font-family: Georgia, serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.content-latin { font-size: 22rpx; color: var(--gold); font-style: italic; margin-top: 6rpx; font-family: var(--font-latin); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ===== 商品双列网格 ===== */
 .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20rpx; }
@@ -149,5 +149,5 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .page-error-mark { width: 132rpx; height: 132rpx; border-radius: 50%; border: 1rpx solid var(--gold, #C4A76C); display: flex; align-items: center; justify-content: center; opacity: .55; }
 .page-error-glyph { font-size: 30rpx; letter-spacing: .12em; color: var(--gold, #C4A76C); }
 .page-error-title { margin-top: 44rpx; font-size: 32rpx; color: var(--color-text-primary); }
-.page-error-desc { margin-top: 16rpx; font-size: 24rpx; line-height: 1.6; text-align: center; color: var(--color-text-muted); }
+.page-error-desc { margin-top: 16rpx; font-size: 24rpx; line-height: 1.6; text-align: center; color: var(--color-text-secondary); }
 .page-error-btn { margin-top: 44rpx; padding: 18rpx 60rpx; border-radius: 999rpx; border: 1rpx solid var(--gold, #C4A76C); font-size: 26rpx; color: var(--gold, #C4A76C); }
