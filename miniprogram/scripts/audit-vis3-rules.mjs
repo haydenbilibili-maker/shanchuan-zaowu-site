@@ -156,9 +156,23 @@ function ruleR2(relPath, src, kind) {
   return out
 }
 
+/**
+ * 已核实的「自写实心金按钮同屏只有一枚」——**每条都要带理由**（2026-10-14 逐条取证）。
+ * R3 的 wxss 分支只能数"这个文件里有几处自写实心金"，数不出"会不会同屏"；
+ * 静态数不出、但人工/结构已确认合规的，登记在这里，避免参考项永远挂着一条查不动的警告。
+ */
+const R3_CONFIRMED_SINGLE = {
+  'subpackages/feature/wish-labels/index.wxss':
+    '两处 .wl-primary：一处是展品页主按钮，一处**只**在写签弹层内（`.wl-sheet` 由 wx:if="{{composeOpen}}" 控制），' +
+    '且弹层打开时同屏有 `.wl-mask {{composeOpen ? \'is-on\' : \'\'}}` 全屏遮罩 —— 可见的主行动仍只有一枚。2026-10-14 核实。'
+}
+
 /** R3 一屏一个主按钮 —— 只判**同一父节点下的并列**实心金（页面级计数静态不可判） */
 function ruleR3(relPath, src, kind) {
   if (kind !== 'wxss') return []
+  // 键统一用「去掉 miniprogram/ 前缀的相对路径」（relPath 传进来是相对仓库根的）
+  const key = relPath.replace(/^miniprogram\//, '')
+  if (R3_CONFIRMED_SINGLE[key]) return []
   const own = []
   for (const m of stripComments(src).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (/linear-gradient\(1[0-9]{2}deg\s*,\s*#E6D3A1/.test(m[2]) && !/\.btn-primary/.test(m[1])) {
@@ -193,12 +207,44 @@ function ruleR4(relPath, src, kind) {
     .map((t) => `同一行中英并列：「${t.slice(0, 34)}」`)
 }
 
-/** R5 左标签，右数值（参考项：金额是否走 --font-mono 需浏览器实测） */
-function ruleR5(relPath, src, kind) {
+/**
+ * R5 左标签，右数值（参考项：金额是否走 --font-mono 需浏览器实测）
+ *
+ * ⚠️ 2026-10-14 收窄（**第七类误报**：代理指标太宽）：原来凡"文本里出现 ¥ 数字"就报，
+ * 于是把**居中脚注**也算成"左标签右数值"。实测那唯一一条：
+ * `MemberLevelModal` 的 `.growth-foot`（`text-align: center` 的成长脚注）里
+ * `.growth-foot-sub`「每消费 ¥1 = 1 成长值」—— 那是**一句居中说明**，不是"标签左、数值右"的行；
+ * 而且同一块里的 `.growth-foot-main` **本来就走 `font-family: var(--font-mono, monospace)`**。
+ * 规范点名的形状是「左标签，右数值」的**行**，不是"任何含 ¥ 的文本"。
+ * 现在只报**容器规则里有 `display:flex` + `justify-content:space-between`** 的那种行（左右分布才是该形状）。
+ */
+function ruleR5(relPath, src, kind, readSiblingCss = defaultSiblingCss) {
   if (kind !== 'wxml') return []
-  return textNodes(src)
-    .filter((t) => /¥\s*\{\{|¥\s*\d/.test(t))
-    .map((t) => `金额文本：「${t.slice(0, 30)}」—— 确认走 --font-mono`)
+  const css = stripComments(readSiblingCss(relPath))
+  const s = stripComments(src)
+  const out = []
+  // 只看「直接含文本、且内部没有再嵌 <view>」的容器（近似"一行"），避免把整页当成一个容器
+  const MONO = /font-family\s*:\s*var\(--font-mono|font-family\s*:[^;]*monospace/
+  for (const m of s.matchAll(/<view\b[^>]*class="([^"]*)"[^>]*>((?:(?!<view\b)[\s\S])*?)<\/view>/g)) {
+    const cls = m[1].trim().split(/\s+/)[0]
+    const body = m[2]
+    if (!/¥\s*(\{\{|\d)/.test(body)) continue
+    const rule = rulesFor(css, cls)
+    if (!/display\s*:\s*flex/.test(rule) || !/justify-content\s*:\s*space-between/.test(rule)) continue
+    // 已在等宽字上的**不报**（判据要的是"数值该用等宽字"，不是在数"哪行有 ¥"）。
+    // 元素自身或所在行有 --font-mono 即视为合规 —— 宁可漏报也不误报。
+    if (MONO.test(rule)) continue
+    let flagged = 0
+    for (const tm of body.matchAll(/<text\b[^>]*class="([^"]*)"[^>]*>([\s\S]*?)<\/text>/g)) {
+      if (!/¥\s*(\{\{|\d)/.test(tm[2])) continue
+      if (MONO.test(rulesFor(css, tm[1].trim().split(/\s+/)[0]))) continue
+      flagged += 1
+    }
+    if (!flagged) continue
+    const amt = (/¥\s*(?:\{\{[^}]*\}\}|[\d.,]+)/.exec(body) || [''])[0]
+    out.push(`左标签右数值行 .${cls} 的金额「${amt}」未走 --font-mono（${flagged} 处）`)
+  }
+  return out
 }
 
 /** R6 空就隐藏 —— 只判 em dash `—` 这个**空值符号**（`-` 是减号/连接符，一律不判） */
@@ -315,6 +361,47 @@ function fadeRuleHits(siblingCss, classNames) {
   return false
 }
 
+/** 取一个 class 在 wxss 里所有规则体（拼起来看，避免只看到第一条就下结论） */
+function rulesFor(css, cls) {
+  if (!css || !cls) return ''
+  const esc = cls.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter((m) => new RegExp(`\\.${esc}(?![\\w-])`).test(m[1]))
+    .map((m) => m[2]).join(' ; ')
+}
+
+/**
+ * 主图容器的**形状**判据：得是个"照片框"，不是卡面 / 牌匾 / 图文行。
+ *
+ * 第六次校准（2026-10-14）：`HERO_ANY` 会把**任何**名字带 hero 的容器都当主图容器，于是
+ * 剩下 6 个候选**全是误报**，逐个取证如下：
+ *   · `b2bdesk/partner .ptn-hero`      —— 合作方**信息行**（flex + .avatar-img 头像）
+ *   · `extra/user/profile .profile-hero` —— **头像区**（flex column + 圆形头像 + 相机角标）
+ *   · `extra/member-crm .d-hero`       —— **会员卡卡面**（background: bg-card + border + 圆角）
+ *   · `feature/care/guide .cat-hero`   —— **图文行**（flex + bg-card + border，图是 aspectFit 图标）
+ *   · `feature/custom .preview-hero`   —— **商品预览行**（flex + 缩略图 + 底部分隔线）
+ *   · `feature/wish-wall .ww-hero`     —— **浅色牌匾**（`background: linear-gradient(brass-50…)` + border + 圆角）
+ * 规范第 07 页讲的是**满幅照片与夜墨底融合** —— 卡面 / 牌匾 / 头像 / 缩略图都不在其列。
+ * 判据（三条都满足才算主图容器）：
+ *   ① 容器自身有 `overflow: hidden`（照片框的典型标志；卡面/图文行都没有）
+ *   ② 容器自身**不是面板**：不出现"不透明底 + 边框/圆角"这一对（排除卡面与牌匾）
+ *   ③ 若那张图有 class 且该 class 有规则，则它必须撑满（`width: 100%` 或 `position: absolute`）
+ * ⚠️ 不能用 `display: flex` 当排除条件 —— 真主图（`about .hero-poster`）自己就是 flex（居中叠字）。
+ */
+function isPhotoFrame(containerCss, containerCls, imgCls) {
+  const c = rulesFor(containerCss, containerCls)
+  if (!c) return false
+  if (!/overflow\s*:\s*hidden/.test(c)) return false
+  const panelBg = /background\s*:\s*(?!\s*(?:transparent|none)\b)[^;]+/.test(c)
+  const framed = /(?:^|[;\s])border(?:-radius)?\s*:/.test(c)
+  if (panelBg && framed) return false
+  if (imgCls) {
+    const img = rulesFor(containerCss, imgCls)
+    if (img && !/width\s*:\s*100%/.test(img) && !/position\s*:\s*absolute/.test(img)) return false
+  }
+  return true
+}
+
 /** 同名 WXSS 的读取（默认从仓库读；自检可以注入桩，否则 WXSS 侧那条判据无法被证明会红/会放行） */
 const defaultSiblingCss = (relPath) => read(join(ROOT, relPath.replace(/\.wxml$/, '.wxss')))
 
@@ -334,6 +421,15 @@ function ruleR7(relPath, src, kind, readSiblingCss = defaultSiblingCss) {
     if (/(^|\s)empty-/.test(cls)) continue                     // Ⅲ 空态插画不是照片主图
     if (/sk-|skeleton|skel-|placeholder/.test(cls)) continue    // 骨架屏
     const token = cls.split(/\s+/).find((c) => HERO_ANY.test(` ${c} `)) || cls.split(/\s+/)[0]
+    // ⑥ 形状判据：不是"照片框"的（卡面 / 牌匾 / 头像 / 图文行）直接放行
+    if (!isPhotoFrame(siblingCss, token, null)) {
+      // 图有 class 时还要满足"撑满容器"，所以先取子树里那张非图标图的 class 再判一次
+      const seg0 = s.slice(node.start, node.end)
+      const tags0 = [...seg0.matchAll(/<image\b[^>]*>/g)].map((t) => t[0])
+      const tag0 = tags0.find((t) => !/class="[^"]*icon/.test(t)) || ''
+      const imgCls0 = (/class="([^"]*)"/.exec(tag0) || [, ''])[1].split(/\s+/)[0]
+      if (!isPhotoFrame(siblingCss, token, imgCls0)) continue
+    }
     const subtree = s.slice(node.start, node.end)
     // Ⅰ 真子树里必须有**照片**（不是图标）：
     //    `<image class="hero-max-icon" mode="aspectFit" src="medal_gold.png">` 是勋章图标，
@@ -399,7 +495,7 @@ const RULES = {
   R2: { title: '克制的金', run: (p, s, k) => ruleR2(p, s, k) },
   R3: { title: '一屏一个主按钮', run: (p, s, k) => (k === 'wxml' ? ruleR3Wxml(p, s) : ruleR3(p, s, k)) },
   R4: { title: '英文眉题 + 中文标题', run: (p, s, k) => ruleR4(p, s, k) },
-  R5: { title: '左标签，右数值', run: (p, s, k) => ruleR5(p, s, k) },
+  R5: { title: '左标签，右数值', run: (p, s, k, css) => ruleR5(p, s, k, css) },
   R6: { title: '空就隐藏', run: (p, s, k) => ruleR6(p, s, k) },
   R7: { title: '图像融入夜色', run: (p, s, k, css) => ruleR7(p, s, k, css) },
   R8: { title: '不折行、不孤字', run: (p, s, k) => ruleR8(p, s, k) }
@@ -416,6 +512,8 @@ const ADVISORY = { R2: true, R3: true, R5: true, R6: 'partial', R7: true }
 
 /* ── 自检：喂合成样本，证明每条判据都会红 ───────────────────────────────── */
 if (has('--selftest')) {
+  /** "照片框"容器规则：R7 的多数样本都要带上它，否则会先被形状判据放行（测不到真正要测的那条） */
+  const FRAME = '.hero-card, .hero { position: relative; overflow: hidden; }'
   const CASES = [
     ['R1', 'miniprogram/subpackages/feature/detail/index.wxml', 'wxml',
       '<text>孤品</text><text>镇店</text>', '主图印章一次'],
@@ -434,9 +532,9 @@ if (has('--selftest')) {
     ['R6-neg', 'miniprogram/x/index.wxml', 'wxml',
       '<view class="price-dash">—</view><view class="s-btn">-</view>', null],  // 连接符 / 减号 = 合规
     ['R7', 'miniprogram/x/index.wxml', 'wxml',
-      '<view class="hero-card"><image src="a.png"></image></view>', '渐隐层'],
+      '<view class="hero-card"><image src="a.png"></image></view>', '渐隐层', FRAME],
     ['R7-neg', 'miniprogram/x/index.wxml', 'wxml',
-      '<view class="hero-card"><image src="a.png"><view class="hero-shade"></view></view>', null],
+      '<view class="hero-card"><image src="a.png"><view class="hero-shade"></view></view>', null, FRAME],
     ['R7-neg2', 'miniprogram/x/index.wxml', 'wxml',
       '<view class="sk-hero"><image src="a.png"></image></view>', null],        // 骨架屏不是主图
     /* ── R7 第四次/第五次校准的负例（每一条都对应一个真实的误报来源，别再退回去）── */
@@ -454,17 +552,46 @@ if (has('--selftest')) {
     ['R7-neg7', 'miniprogram/x/index.wxml', 'wxml',
       '<view class="hero-max"><image class="hero-max-icon" mode="aspectFit" src="medal.png"></image></view>', null],  // 图标不是照片
     ['R7-neg8', 'miniprogram/x/index.wxml', 'wxml',
-      '<view class="wrap"><view class="hero-overlay"></view><view class="hero-text"><image src="a.png"></image></view></view>', null],  // 渐隐层是**前面的兄弟**
+      '<view class="wrap"><view class="hero-overlay"></view><view class="hero-text"><image src="a.png"></image></view></view>', null, FRAME],  // 渐隐层是**前面的兄弟**
     ['R7-neg9', 'miniprogram/x/index.wxml', 'wxml',
-      '<view class="hero"><image src="a.png"></image><view class="hero-mask"></view></view>', null],  // 有遮罩层（名字像遮罩就算数）
+      '<view class="hero"><image src="a.png"></image><view class="hero-mask"></view></view>', null, FRAME],  // 有遮罩层（名字像遮罩就算数）
     // WXSS 侧：渐隐写在同名 WXSS 里也算数 —— 第 6 项是注入的同名 WXSS 桩。
     // ⚠️ 这两条钉住**第五次校准**（`rgba()` 的右括号曾把判据卡死）：参数里带 rgba(...) 的渐变必须认出来。
     ['R7-neg10', 'miniprogram/x/index.wxml', 'wxml',
       '<view class="hero"><image src="a.png"></image><view class="veil-bottom"></view></view>', null,
-      '.veil-bottom { background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, var(--color-bg) 100%); }'],
+      FRAME + ' .veil-bottom { background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, var(--color-bg) 100%); }'],
+    /* ── R7 第六次校准的负例：**这六个形状就是校准前剩下的全部候选**（逐个取证后判误报）。
+          判据是"得是照片框"：① 容器 overflow:hidden；② 容器不是"不透明底 + 边框/圆角"的面板；
+          ③ 图要撑满。任何一条不满足都放行 —— 卡面 / 牌匾 / 头像 / 图文行不是"满幅照片"。 ── */
+    ['R7-neg11', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="ptn-hero"><image class="avatar-img" src="a.png" mode="aspectFill"></image></view>', null,
+      '.ptn-hero { display: flex; align-items: center; gap: 28rpx; } .avatar-img { width: 100%; height: 100%; }'],  // 合作方信息行（头像）
+    ['R7-neg12', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="profile-hero"><image class="avatar-img" src="a.png" mode="aspectFill"></image></view>', null,
+      '.profile-hero { display: flex; flex-direction: column; align-items: center; } .avatar-img { width: 100%; height: 100%; border-radius: 50%; }'],  // 头像区
+    ['R7-neg13', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="d-hero"><image class="avatar" src="a.png" mode="aspectFill"></image></view>', null,
+      '.d-hero { padding: var(--space-4); background: var(--color-bg-card); border: 1rpx solid var(--brass-800); border-radius: var(--radius-lg); } .avatar { width: 100%; height: 100%; }'],  // 会员卡卡面
+    ['R7-neg14', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="cat-hero"><image class="cat-hero-icon" src="a.png" mode="aspectFit"></image></view>', null,
+      '.cat-hero { display: flex; align-items: center; gap: var(--space-3); background: var(--color-bg-card); border: 1px solid var(--color-border); }'],  // 图文行（图标）
+    ['R7-neg15', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="preview-hero"><image class="preview-hero-img" src="a.png" mode="aspectFill"></image></view>', null,
+      '.preview-hero { display: flex; gap: 24rpx; border-bottom: 1px solid rgba(38,35,32,0.8); } .preview-hero-img { width: 100%; height: 100%; }'],  // 商品预览行（缩略图）
+    ['R7-neg16', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="ww-hero"><image class="ww-exhibit-img" src="a.png" mode="aspectFill"></image></view>', null,
+      '.ww-hero { position: relative; overflow: hidden; background: linear-gradient(165deg, var(--brass-50) 0%, #F2EDE4 100%); border: 1px solid var(--brass-200); border-radius: var(--radius-md); } .ww-exhibit-img { width: 100%; height: 100%; }'],  // **浅色牌匾**（有 overflow:hidden，只能靠"面板底+边框"排除）
+    ['R7-pos11', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="hero-poster"><image class="hero-img" src="a.png" mode="aspectFill"></image></view>', '渐隐层',
+      '.hero-poster { position: relative; width: 100%; height: 900rpx; overflow: hidden; } .hero-img { position: absolute; width: 100%; height: 100%; }'],  // 真主图（about 的形状）必须仍能被报
     ['R7-pos10', 'miniprogram/x/index.wxml', 'wxml',
       '<view class="hero"><image src="a.png"></image><view class="veil-bottom"></view></view>', '渐隐层',
-      '.veil-bottom { background: linear-gradient(to bottom, #111 0%, #222 100%); }'],
+      FRAME + ' .veil-bottom { background: linear-gradient(to bottom, #111 0%, #222 100%); }'],
+    // R5 收窄后的正/负例：同样是"含 ¥ 的文本"，**是左右行**才报、**居中脚注**不报
+    ['R5-pos', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="row"><text class="lbl">合计</text><text class="val">¥128</text></view>', '左标签右数值行', '.row { display: flex; justify-content: space-between; }'],
+    ['R5-neg', 'miniprogram/x/index.wxml', 'wxml',
+      '<view class="growth-foot"><text class="main">当前成长值 120</text><text class="sub">每消费 ¥1 = 1 成长值</text></view>', null, '.growth-foot { padding: 28rpx 0; text-align: center; }'],
     ['R8', 'miniprogram/app.wxss', 'wxss',
       '\n.btn-primary { background: red; }', 'nowrap']
   ]

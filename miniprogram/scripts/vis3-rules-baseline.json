@@ -16,12 +16,10 @@
   "R2 miniprogram/subpackages/manager/manager/index.wxss": 6,
   "R2 miniprogram/subpackages/plays/play-shared/ritual-play.wxss": 2,
   "R2 miniprogram/subpackages/plays/play-zodiac/index.wxss": 5,
-  "R3 miniprogram/subpackages/feature/wish-labels/index.wxss": 1,
-  "R5 miniprogram/components/MemberLevelModal/index.wxml": 1,
-  "R7 miniprogram/subpackages/b2bdesk/partner/index.wxml": 1,
-  "R7 miniprogram/subpackages/extra/member-crm/index.wxml": 1,
-  "R7 miniprogram/subpackages/extra/user/profile/index.wxml": 1,
-  "R7 miniprogram/subpackages/feature/care/guide/index.wxml": 1,
-  "R7 miniprogram/subpackages/feature/custom/index.wxml": 1,
-  "R7 miniprogram/subpackages/feature/wish-wall/index.wxml": 1
+  "R5 miniprogram/subpackages/business/confirm-order/index.wxml": 1,
+  "R5 miniprogram/subpackages/business/order-detail/index.wxml": 3,
+  "R5 miniprogram/subpackages/content/live/watch/index.wxml": 1,
+  "R5 miniprogram/subpackages/extra/approvals/index.wxml": 1,
+  "R5 miniprogram/subpackages/extra/staff/field/index.wxml": 1,
+  "R5 miniprogram/subpackages/manager/manager/index.wxml": 2
 }
