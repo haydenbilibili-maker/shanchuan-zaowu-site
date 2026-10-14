@@ -444,7 +444,9 @@
              分类管理 / 字段维护 / 选项维护 三块各自成页，切 Tab 而不是一路往下滚。
              ⚠️ 三块**必须各自带 wx:if**（只渲染当前这一块）：这是"不再无限下拉"的判据本体，
              守卫 check-product-fields-entry 会钉住"每个分区都有 catZone 门"。 -->
-        <view class="cat-zone-tabs" aria-role="tablist">
+        <!-- 2026-10-13：只有**多个**分区时才需要切换器（属性 / 选项维护仅超管可见）——
+             非超管只有一个「分类管理」分区，渲染一条等分的金色实底反而更重、更像主按钮。 -->
+        <view class="cat-zone-tabs" wx:if="{{canProductFields}}" aria-role="tablist">
           <view class="cat-zone-tab {{catZone==='category'?'on':''}}" bindtap="switchCatZone" data-zone="category"
             hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='category'}}">分类管理</view>
           <view class="cat-zone-tab {{catZone==='fields'?'on':''}}" wx:if="{{canProductFields}}" bindtap="switchCatZone" data-zone="fields"
@@ -454,24 +456,30 @@
         </view>
 
         <block wx:if="{{catZone==='category'}}">
+        <!-- 顺序：先说这块是什么（阅读）→ 再做维护动作（操作）→ 再检索 / 排序 / 筛（找）→ 再看树（列表）。
+             2026-10-13 视觉一致性：工具条改用本页的「发丝金边 pill + 选中铜铸渐变」语言
+             （不再借用「藏品明细」页的 .pf-chip 近黑边 22rpx），「清空」收成文字链不抢主次。 -->
+        <view class="cat-manage-tip">列出已启用的一、二级分类。点「关联」可查看并补挂藏品；「修复藏品关联」会把挂在旧分类上的藏品移到现分类。</view>
         <view class="cat-manage-actions">
           <view class="cat-sync-btn" bindtap="syncCategoriesFromSeed">同步标准分类</view>
           <view class="cat-sync-btn cat-sync-btn-ghost" bindtap="fillL2LatinNames">补齐拉丁名</view>
           <view class="cat-sync-btn cat-sync-btn-ghost" bindtap="repairProductCategoryLinks">修复藏品关联</view>
         </view>
-        <view class="cat-manage-tip">列出已启用的一、二级分类。点「关联」可查看并补挂藏品；「修复藏品关联」会把挂在旧分类上的藏品移到现分类。</view>
-
-        <!-- 2026-10-13（第③项）：分类树的**展示层**检索 / 排序 / 空分类筛查。
-             只派生 catTreeView，不动 categoryManageTree（新增分类与关联弹层按源树下标取值）。 -->
-        <view class="cat-filter-row">
-          <input class="cat-search" placeholder="搜索分类（中文 / 英文 / 拉丁名）" placeholder-class="ph"
+        <!-- 展示层检索 / 排序 / 空分类筛查：只派生 catTreeView，不动 categoryManageTree
+             （新增分类与关联弹层按源树下标 / _id 取值，写回源会错位）。 -->
+        <view class="cat-tool-row">
+          <input class="cat-search" placeholder="搜索分类（中文 / 英文 / 拉丁名）" placeholder-class="cat-search-ph"
             value="{{catKeyword}}" bindinput="setCatKeyword" confirm-type="search"/>
-          <view class="pf-chip {{catSortMode==='count'?'on':''}}" bindtap="setCatSortMode" data-val="count">按数量</view>
-          <view class="pf-chip {{catSortMode==='name'?'on':''}}" bindtap="setCatSortMode" data-val="name">按名称</view>
-          <view class="pf-chip is-warn {{catOnlyEmpty?'on':''}}" bindtap="toggleCatOnlyEmpty">只看空分类 {{catEmptyCount}}</view>
-          <view class="pf-chip" wx:if="{{catMatchSummary}}" bindtap="clearCatKeyword">清空</view>
+        </view>
+        <view class="cat-tool-row">
+          <view class="cat-tool-chip {{catSortMode==='count'?'on':''}}" bindtap="setCatSortMode" data-val="count">按数量</view>
+          <view class="cat-tool-chip {{catSortMode==='name'?'on':''}}" bindtap="setCatSortMode" data-val="name">按名称</view>
+          <view class="cat-tool-chip {{catOnlyEmpty?'on':''}}" bindtap="toggleCatOnlyEmpty">只看空分类<text class="cat-tool-count">{{catEmptyCount}}</text></view>
+          <view class="cat-tool-clear" wx:if="{{catMatchSummary}}" bindtap="clearCatKeyword">清空条件</view>
         </view>
         <view class="cat-match-tip" wx:if="{{catMatchSummary}}">{{catMatchSummary}}</view>
+
+        <view class="form-section-label">一、二级分类</view>
 
         <view class="cat-tree" wx:if="{{catTreeView.length}}">
           <block wx:for="{{catTreeView}}" wx:key="_id">

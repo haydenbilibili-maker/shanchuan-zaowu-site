@@ -4263,25 +4263,43 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .cat-count { display: inline-block; margin-left: 12rpx; font-size: 22rpx; color: var(--gold); }
 /* 0 件分类：降一档并留可读性（是「清理候选」，不是错误态） */
 .cat-count.is-empty { color: var(--color-text-secondary, #A09A90); }
-/* 2026-10-13（第③项）：分类树展示层的检索 / 排序 / 空分类筛查 */
-.cat-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx; margin-bottom: 12rpx; }
+/* 2026-10-13（第③项）：分类树展示层的检索 / 排序 / 空分类筛查。
+   ⚠️ 视觉一致性：这一页的控件语言是「发丝金边 pill（rgba(196,167,108,.24)）」+「选中铜铸渐变」，
+   与「藏品明细」页的 .pf-chip（近黑边、22rpx）**不是同一套** —— 这里不再复用 .pf-chip。 */
+.cat-tool-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx; margin-bottom: 14rpx; }
 .cat-search {
   flex: 1 1 100%;
   min-width: 0;
-  height: 72rpx;
-  padding: 0 22rpx;
-  font-size: 26rpx;
+  height: 64rpx;
+  padding: 0 28rpx;
+  font-size: 24rpx;
   color: var(--color-text-primary, #F2ECE1);
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1rpx solid rgba(38, 35, 32, 0.8);
-  border-radius: 12rpx;
+  background: rgba(196, 167, 108, 0.06);
+  border: 1rpx solid rgba(196, 167, 108, 0.24);
+  border-radius: 9999px;
   box-sizing: border-box;
 }
+.cat-search-ph { color: var(--color-text-secondary, #A09A90); font-size: 24rpx; }
+/* 工具 chip：与分区页签（改版前的 .cat-zone-tab）同一套 pill 语言 */
+.cat-tool-chip {
+  padding: 12rpx 28rpx;
+  font-size: 24rpx;
+  color: var(--color-text-secondary);
+  background: rgba(196, 167, 108, 0.06);
+  border: 1rpx solid rgba(196, 167, 108, 0.24);
+  border-radius: 9999px;
+}
+.cat-tool-chip.on {
+  color: var(--color-bg);
+  background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
+  border-color: var(--brass-400);
+}
+.cat-tool-count { margin-left: 8rpx; font-size: 21rpx; font-variant-numeric: tabular-nums; opacity: 0.8; }
+/* 「清空」是**文字链**，不是第四颗 pill —— 不跟筛选抢主次 */
+.cat-tool-clear { padding: 12rpx 8rpx; font-size: 22rpx; color: var(--gold); }
 .cat-match-tip { margin-bottom: 14rpx; font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
 .cat-root-count { flex-shrink: 0; margin-left: 12rpx; font-size: 22rpx; color: var(--gold); }
 .cat-hidden-tip { padding: 4rpx 24rpx 14rpx 48rpx; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); }
-.pf-chip.is-warn { color: #E3A99E; border-color: rgba(198, 58, 63, 0.45); }
-.pf-chip.is-warn.on { color: #FFFFFF; background: #C63A3F; border-color: #C63A3F; }
 .cat-tax { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); margin-top: 4rpx; line-height: 1.4; }
 .cat-empty-subs { padding: 8rpx 24rpx 16rpx 48rpx; font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
 .cat-manage-actions { margin-bottom: 16rpx; display: flex; flex-wrap: wrap; gap: 16rpx; }
@@ -5566,26 +5584,30 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* ── 内层分区 Tab（2026-09-20）：分类管理 / 字段维护 / 选项维护 ────────────────
    为什么改：三块叠在一条长滚动里，越往下越难找（产品负责人原话「而不是无限下拉」）。
    样式沿用本页既有的 `.sub-tab` 语汇（同一页里两处 Tab 长得一样，别自成一套）。 */
+/* 分区页签（分类管理 / 属性维护 / 选项维护）：2026-10-13 由「一排 pill」改为**轻量分段控件** ——
+   上面那排页面页签（.sub-tab-row 分段控件）已经是 pill 容器，两排同款 pill 叠着看会重复且分不出层级。
+   现在：页面页签 = 大分段（flex:1 / 24rpx），分区 = 小分段（22rpx / 更轻的容器），层级一眼可分。 */
 .cat-zone-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  margin-bottom: 24rpx;
-  padding-bottom: 20rpx;
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.24);
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 20rpx;
+  padding: 6rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--color-bg-elevated);
+  border-radius: 14rpx;
 }
 .cat-zone-tab {
-  padding: 12rpx 28rpx;
-  font-size: 24rpx;
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  font-size: 22rpx;
   color: var(--color-text-secondary);
-  background: rgba(196, 167, 108, 0.06);
-  border: 1rpx solid rgba(196, 167, 108, 0.24);
-  border-radius: 9999px;
+  border-radius: 10rpx;
 }
 .cat-zone-tab.on {
   color: var(--color-bg);
   background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
-  border-color: var(--brass-400);
 }
 .cat-zone-tab-press { opacity: 0.86; }
 

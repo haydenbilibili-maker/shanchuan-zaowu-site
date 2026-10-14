@@ -103,6 +103,27 @@ export const SCENES = [
   })(),
   (() => {
     const catTreeView = [
+      { _id: 'c1', name: '昆虫馆', enName: 'INSECTA', totalCount: 128, hiddenCount: 0, children: [
+        { _id: 'c1a', name: '蝴蝶', productCount: 128, isEmpty: false, latinName: 'Lepidoptera' },
+        { _id: 'c1b', name: '甲虫', productCount: 32, isEmpty: false, latinName: 'Coleoptera' }
+      ] },
+      { _id: 'c2', name: '植物馆', enName: 'PLANTAE', totalCount: 0, hiddenCount: 0, children: [
+        { _id: 'c2a', name: '苔藓', productCount: 0, isEmpty: true, latinName: 'Bryophyta' }
+      ] }
+    ]
+    return {
+      name: 'r10-lib-category-default', h: 1500, wxml: () => tabBlock(1), wxss: MGR_CSS,
+      data: {
+        curTab: 1, productLibTab: 'category', catZone: 'category', canProductFields: false, artisanEmbed: false,
+        catKeyword: '', catSortMode: 'default', catOnlyEmpty: false, catEmptyCount: 1,
+        catMatchSummary: '', catTreeView,
+        categoryManageTree: catTreeView, catManageRootNames: ['昆虫馆', '植物馆'],
+        newCatLevel: 1, newCatName: '', newCatEn: '', newCatParentIndex: 0
+      }
+    }
+  })(),
+  (() => {
+    const catTreeView = [
       { _id: 'c1', name: '昆虫馆', enName: 'INSECTA', totalCount: 128, hiddenCount: 1, children: [
         { _id: 'c1a', name: '蝴蝶', productCount: 128, isEmpty: false, latinName: 'Lepidoptera' }
       ] },
