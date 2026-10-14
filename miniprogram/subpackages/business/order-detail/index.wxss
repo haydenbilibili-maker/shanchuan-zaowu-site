@@ -849,7 +849,7 @@ view, text, image, button { box-sizing: border-box; }
 .custom-line:last-child { border-bottom: none; }
 .custom-lbl { font-size: 22rpx; color: var(--color-text-secondary); }
 .custom-val { font-size: 24rpx; color: var(--color-text-body); text-align: right; flex: 1; }
-.custom-val.latin { font-style: italic; color: var(--gold); }
+.custom-val.latin { font-style: italic; font-family: var(--font-latin); color: var(--gold); }
 .custom-val.gold { color: var(--gold); font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
 
 /* ── 礼赠档案（2026-09-21）：把"这封信写给谁 / 进展到哪 / 回看入口"收在一张卡里 ── */

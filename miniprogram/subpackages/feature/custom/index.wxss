@@ -198,7 +198,7 @@ view, text, image { box-sizing: border-box; }
 }
 
 .workbench-latin {
-  display: block; font-size: 22rpx; color: #C4A76C; font-style: italic;
+  display: block; font-size: 22rpx; color: #C4A76C; font-style: italic; font-family: var(--font-latin);
   margin-top: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -253,7 +253,7 @@ view, text, image { box-sizing: border-box; }
 }
 
 .preview-hero-latin {
-  display: block; font-size: 24rpx; color: #C4A76C; font-style: italic; margin-top: 8rpx;
+  display: block; font-size: 24rpx; color: #C4A76C; font-style: italic; font-family: var(--font-latin); margin-top: 8rpx;
 }
 
 .step-title {
@@ -376,7 +376,7 @@ view, text, image { box-sizing: border-box; }
   margin-top: 4rpx;
   font-size: 20rpx;
   color: #C4A76C;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -461,7 +461,7 @@ view, text, image { box-sizing: border-box; }
 
 .preview-label { font-size: 22rpx; color: #8B6F47; }
 .preview-value { font-size: 24rpx; color: #6B5A24; text-align: right; flex: 1; }
-.preview-value.latin { font-style: italic; color: #C4A76C; }
+.preview-value.latin { font-style: italic; font-family: var(--font-latin); color: #C4A76C; }
 
 .price-breakdown {
   padding: 24rpx; background: #1F1D1A; border-radius: var(--radius-lg);

@@ -418,7 +418,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 20rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -596,7 +596,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
 }
 

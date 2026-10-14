@@ -108,7 +108,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .product-name { font-size: 26rpx; color: var(--color-text-body); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 68rpx; }
 /* 主题名：与首页「为你推荐」小卡同款（「」黄铜衬线，「 悬挂半字） */
 .product-theme { margin-top: 6rpx; font-size: 22rpx; line-height: 32rpx; color: var(--brass-300); font-family: var(--font-brand); text-indent: -0.5em; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.product-latin { font-size: 20rpx; color: var(--gold); font-style: italic; margin-top: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.product-latin { font-size: 20rpx; color: var(--gold); font-style: italic; font-family: var(--font-latin); margin-top: 4rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .product-craft-tags { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 8rpx; }
 .product-craft-tag { font-size: 18rpx; line-height: 1.3; font-weight: 500; letter-spacing: 0.04em; color: var(--color-text-secondary); background: rgba(196,167,108,.08); border: 1px solid rgba(77,64,26,.5); border-radius: var(--radius-sm); padding: 2rpx 10rpx; white-space: nowrap; }
 .product-foot { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 12rpx; }

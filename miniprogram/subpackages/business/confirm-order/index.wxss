@@ -213,7 +213,7 @@ view, text, scroll-view { box-sizing: border-box; }
 .goods-img-ph-icon { width: 48rpx; height: 48rpx; opacity: 0.4; }
 .goods-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
 .goods-title { font-size: 28rpx; color: #D5D1C8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.goods-latin { font-size: 22rpx; color: #C4A76C; font-style: italic; margin-top: 4rpx; }
+.goods-latin { font-size: 22rpx; color: #C4A76C; font-style: italic; font-family: var(--font-latin); margin-top: 4rpx; }
 .goods-sku { font-size: 22rpx; color: #A09A90; margin-top: 4rpx; display: block; }
 
 .provisional-tip {
@@ -417,7 +417,7 @@ view, text, scroll-view { box-sizing: border-box; }
 .custom-line:last-of-type { border-bottom: none; }
 .custom-label { font-size: 24rpx; color: #A09A90; flex-shrink: 0; }
 .custom-value { font-size: 24rpx; color: #D5D1C8; text-align: right; flex: 1; }
-.custom-value.latin { font-style: italic; color: #C4A76C; }
+.custom-value.latin { font-style: italic; font-family: var(--font-latin); color: #C4A76C; }
 .custom-value.gold { color: #C4A76C; font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
 
 /* —— 下单门闸弹层：启程前须知 / 温馨提示 共用面板（内容左齐） —— */

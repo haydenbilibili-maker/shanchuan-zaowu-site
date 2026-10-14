@@ -69,7 +69,7 @@ page { background: #1A1814; color: #fff; }
   font-size: 26rpx; color: #D5D1C8; text-align: right; flex: 1;
 }
 
-.preview-value.latin { color: #C4A76C; font-style: italic; }
+.preview-value.latin { color: #C4A76C; font-style: italic; font-family: var(--font-latin); }
 
 .tip-box {
   margin: 0 32rpx; padding: 24rpx;

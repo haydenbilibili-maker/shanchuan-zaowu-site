@@ -240,7 +240,7 @@ page { background: #1A1814; }
   display: block;
   margin-top: 6rpx;
   font-size: 22rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
   overflow: hidden;
   text-overflow: ellipsis;

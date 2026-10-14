@@ -85,7 +85,7 @@
   display: block;
   margin-top: 10rpx;
   font-size: 26rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
   line-height: 1.35;
 }

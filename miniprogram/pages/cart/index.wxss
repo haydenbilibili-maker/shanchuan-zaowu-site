@@ -312,7 +312,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: 22rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: var(--color-text-latin);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -629,7 +629,7 @@ page {
   display: block;
   font-size: 20rpx;
   color: var(--color-text-latin);
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   margin-top: 4rpx;
   overflow: hidden;
   text-overflow: ellipsis;

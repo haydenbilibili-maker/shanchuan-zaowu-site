@@ -659,7 +659,7 @@ page {
   display: block;
   margin-top: 4rpx;
   font-size: var(--fs-20);
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: #7A6E58;
 }
 

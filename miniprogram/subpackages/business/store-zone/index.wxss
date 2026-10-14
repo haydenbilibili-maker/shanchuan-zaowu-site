@@ -109,7 +109,7 @@ page { background: #1A1814; color: #fff; }
 }
 
 .species-latin {
-  display: block; font-size: 24rpx; font-style: italic; color: #A09A90; margin-top: 6rpx;
+  display: block; font-size: 24rpx; font-style: italic; font-family: var(--font-latin); color: #A09A90; margin-top: 6rpx;
 }
 
 .related-block { margin-bottom: 8rpx; }

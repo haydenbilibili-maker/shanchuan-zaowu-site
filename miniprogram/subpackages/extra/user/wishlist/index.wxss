@@ -147,7 +147,7 @@ page {
 .latin {
   font-size: 22rpx;
   color: var(--brass-400, #C4A76C);
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

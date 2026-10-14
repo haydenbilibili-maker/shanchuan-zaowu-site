@@ -385,7 +385,7 @@
   display: block;
   margin-top: 4rpx;
   font-size: 22rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: var(--gold);
 }
 
@@ -671,7 +671,7 @@
   display: block;
   margin-top: 4rpx;
   font-size: 22rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: var(--gold);
 }
 
@@ -883,7 +883,7 @@
   display: block;
   font-size: 22rpx;
   color: var(--gold);
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   margin-top: 4rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -998,7 +998,7 @@
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: var(--gold);
 }
 

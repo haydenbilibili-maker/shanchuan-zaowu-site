@@ -843,7 +843,7 @@ button.nav-share-btn::after { display: none; border: none; }
 .param-v.is-placeholder { color: var(--color-text-secondary); }
 .param-v.gold { color: var(--gold); }
 .param-v.gold.is-placeholder { color: var(--color-text-secondary); }
-.param-v.latin { font-style: italic; color: var(--gold); }
+.param-v.latin { font-style: italic; font-family: var(--font-latin); color: var(--gold); }
 
 /* 图文详情 — Museum prose */
 .detail-content {

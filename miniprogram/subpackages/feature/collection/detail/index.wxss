@@ -188,7 +188,7 @@ page { background: #1A1814; }
   display: block;
   margin-top: 8rpx;
   font-size: 26rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
 }
 
@@ -379,7 +379,7 @@ page { background: #1A1814; }
   margin-top: 8rpx;
   font-size: 22rpx;
   line-height: 1.35;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -606,7 +606,7 @@ button.btn-share::after {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  font-style: italic;
+  font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
 }
 
