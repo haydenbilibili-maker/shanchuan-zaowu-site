@@ -4115,6 +4115,16 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: #C63A3F;
   border-color: #C63A3F;
 }
+/* 中等风险（动物类）：琥珀色，与高风险的红在同一套语言里区分「两个独立口径」 */
+.pf-chip.is-warn {
+  color: #E0CFA3;
+  border-color: rgba(224, 207, 163, 0.5);
+}
+.pf-chip.is-warn.on {
+  color: #1B1916;
+  background: #E0CFA3;
+  border-color: #E0CFA3;
+}
 
 /* 高风险藏品工具条（2026-10-13·提审前点名）：显数 + 一键全下架 / 全上架 */
 .risk-bar {
@@ -4161,8 +4171,21 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: #C63A3F;
   border-color: #C63A3F;
 }
+.risk-bar-btn.is-warn {
+  color: #1B1916;
+  background: #E0CFA3;
+  border-color: #E0CFA3;
+}
 .risk-bar-btn.is-disabled {
   opacity: 0.45;
+}
+/* 中等风险条（动物类）：琥珀底纹，与高风险的红明确区分 */
+.risk-bar.is-medium {
+  background: rgba(224, 207, 163, 0.1);
+  border-color: rgba(224, 207, 163, 0.42);
+}
+.risk-bar.is-medium .risk-bar-label {
+  color: #E0CFA3;
 }
 .p-tags {
   display: flex;

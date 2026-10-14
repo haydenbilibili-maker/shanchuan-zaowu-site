@@ -2,9 +2,14 @@
  * 商品写入代理 — products 集合 write:false 后唯一店长/Admin 写入口
  *
  * action:
- *   list              分页列表 { page, pageSize, keyword, archiveFilter, promoFilter, sortBy, giftScene }
+ *   list              分页列表 { page, pageSize, keyword, archiveFilter, promoFilter, sortBy, giftScene, riskFilter, shelfFilter }
  *                     sortBy: new | sales | price_asc | price_desc（默认 new；与 C 端 ProductList 语义对齐）
  *                     giftScene: 可选，按 products.giftScenes 含该 key 过滤
+ *                     riskFilter（2026-10-13 新增，不传 = all = 与改前逐字一致）:
+ *                       high   = 保护类（三有 / 保护植物 / 保护动物）
+ *                       medium = **动物类**（taxonomy 界为动物界，或所属分类属动物界）且**不含保护类**（与 high 互斥）
+ *                       normal = 明确 none 或字段缺失
+ *                     shelfFilter（同日新增，不传 = all）: on | off | pending | rejected（优先级同 shelfCounts）
  *   upsert            新建 / 更新商品（更新时剥离 isOffShelf；上架走 manageApprovals）
  *   patch             单条字段补丁（白名单，不含 isOffShelf）
  *   batchPatch        批量补丁 { items: [{ productId, data }] }
@@ -51,6 +56,17 @@ const db = cloud.database()
  * 必须同源（三有 / 保护植物 / 保护动物）；改这里就要同时改那两处与小程序表单的选项。
  */
 const PROTECTED_TYPES = ['sanyou', 'protected_plant', 'protected_animal']
+
+/**
+ * 「中等风险」口径（产品负责人 2026-10-13）：**动物类藏品**。
+ * ⚠️ 与高风险**互斥**：保护类一律归高风险（含保护动物），中等风险 = 动物类 − 保护类 ——
+ * 否则同一件会同时落进两个「一键上下线」，计数重复、两次操作互相打架。
+ * 判定取**两级信号**（并集）：
+ *   ① 商品自己的 `taxonomy.kingdom`（落库时经 toChineseTaxonomy 归一为「动物界」）；
+ *   ② 商品所属分类（categoryId / rootCategoryId）指向动物界分类 —— 兜底 taxonomy 为空的历史商品。
+ *   ③ 保护动物（protected_animal）必然动物。
+ */
+const ANIMAL_KINGDOMS = ['动物界', 'Animalia', 'animalia']
 
 const ALLOWED_FIELDS = [
   'title', 'latinName', 'price', 'costPrice', 'stock', 'hasSku', 'skus', 'skuDimensions',
@@ -706,7 +722,29 @@ function compareProductsForSort(a, b, sortBy) {
   return toMs(b && b.createTime) - toMs(a && a.createTime)
 }
 
-function buildListWhere(event, actor, verifiedFramerId) {
+/**
+ * 动物界分类的 id（含一级与二级）—— 「中等风险 = 动物类」的兜底信号。
+ * 只在 riskFilter==='medium' 时查一次；categories 是小集合（~30 条），失败就退化为「只认商品 taxonomy」。
+ */
+async function loadAnimalCategoryIds() {
+  const _ = db.command
+  try {
+    const res = await db.collection('categories')
+      .where(_.or([
+        { 'taxonomy.kingdom': _.in(ANIMAL_KINGDOMS) },
+        { 'taxonomy.kingdomLatin': _.in(ANIMAL_KINGDOMS) }
+      ]))
+      .limit(200)
+      .field({ _id: true })
+      .get()
+    return (res && res.data ? res.data : []).map((c) => (c && c._id) || '').filter(Boolean)
+  } catch (e) {
+    console.warn('loadAnimalCategoryIds', e && e.message)
+    return []
+  }
+}
+
+function buildListWhere(event, actor, verifiedFramerId, animalCategoryIds = []) {
   const _ = db.command
   const keyword = String((event && event.keyword) || '').trim().slice(0, 64)
   const archiveFilter = String((event && event.archiveFilter) || 'all').trim()
@@ -734,7 +772,19 @@ function buildListWhere(event, actor, verifiedFramerId) {
   else if (archiveFilter === 'oneOfAKind') conditions.push({ isOneOfAKind: true })
 
   if (riskFilter === 'high') conditions.push({ protectionType: _.in(PROTECTED_TYPES) })
-  else if (riskFilter === 'normal') {
+  else if (riskFilter === 'medium') {
+    // 中等风险 = 动物类 − 保护类（两个「一键上下线」入口互斥，见 ANIMAL_KINGDOMS 注释）
+    const animalSignals = [
+      { 'taxonomy.kingdom': _.in(ANIMAL_KINGDOMS) },
+      { 'taxonomy.kingdomLatin': _.in(ANIMAL_KINGDOMS) },
+      { protectionType: 'protected_animal' }
+    ]
+    if (animalCategoryIds.length) {
+      animalSignals.push({ categoryId: _.in(animalCategoryIds) })
+      animalSignals.push({ rootCategoryId: _.in(animalCategoryIds) })
+    }
+    conditions.push(_.and([_.or(animalSignals), { protectionType: _.nin(PROTECTED_TYPES) }]))
+  } else if (riskFilter === 'normal') {
     // 「普通」= 明确 none 或字段缺失（后者是历史数据，同样按非保护处理）
     conditions.push(_.or([{ protectionType: 'none' }, { protectionType: _.exists(false) }]))
   }
@@ -1000,7 +1050,12 @@ async function listProducts(event, actor) {
       verifiedFramerId = await resolveVerifiedArtisanFramerId(actor, event && event.framerId)
     }
   }
-  const { where, promoFilter, keyword } = buildListWhere(event, actor, verifiedFramerId)
+  // 中等风险要「动物界分类 id」兜底（商品 taxonomy 可能为空）—— 只在点名 medium 时查一次
+  let animalCategoryIds = []
+  if (String((event && event.riskFilter) || '').trim() === 'medium') {
+    animalCategoryIds = await loadAnimalCategoryIds()
+  }
+  const { where, promoFilter, keyword } = buildListWhere(event, actor, verifiedFramerId, animalCategoryIds)
   const needsMemoryPromo =
     promoFilter === 'seckill' || promoFilter === 'seckill_expired'
   const now = Date.now()

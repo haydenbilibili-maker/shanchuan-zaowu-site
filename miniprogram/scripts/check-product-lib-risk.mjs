@@ -68,8 +68,8 @@ export function run(src = {}) {
     `A1 客户端 PROTECTED_TYPE_LABELS 的键不等于 ${CANON.join('/')}（实得 ${cfgKeys.join('/') || '无'}）`)
 
   /* ── A2/A3/A4 一键上下线 ──────────────────────────────────────── */
-  const bulk = methodBody(cfg, 'bulkToggleHighRisk')
-  ok(!!bulk, 'A2 找不到 bulkToggleHighRisk（一键上下线）')
+  const bulk = methodBody(cfg, 'bulkToggleRisk')
+  ok(!!bulk, 'A2 找不到 bulkToggleRisk（一键上下线）')
   ok(/action:\s*'submitProductShelf'/.test(bulk) && /name:\s*'manageApprovals'/.test(bulk),
     'A2 一键上下线没有复用 manageApprovals.submitProductShelf（不许新增写库旁路）')
   ok(!/\.collection\(/.test(bulk), 'A2 一键上下线里出现直接读写集合（绕过了审批接口）')
@@ -82,6 +82,24 @@ export function run(src = {}) {
   ok(/openAppModal\(/.test(bulk) && /\$\{ids\.length\}/.test(bulk),
     'A4 一键上下线没有确认弹窗或没带件数')
   ok(/#D64045/i.test(bulk), 'A4 一键下架没有用危险色（确认框缺危险语义）')
+
+  /* ── A5/A6 中等风险（动物类）——两个独立入口 ───────────────────── */
+  const animalKingdoms = (fn.match(/const ANIMAL_KINGDOMS = \[([^\]]*)\]/) || [])[1] || ''
+  ok(/动物界/.test(animalKingdoms) && /Animalia/i.test(animalKingdoms),
+    `A5 云函数 ANIMAL_KINGDOMS 没覆盖「动物界 / Animalia」（实得 ${animalKingdoms || '无'}）`)
+  ok(/riskFilter === 'medium'/.test(fn), 'A5 云函数缺 riskFilter=medium（中等风险）分支')
+  ok(/animalCategoryIds = await loadAnimalCategoryIds\(\)/.test(fn),
+    'A5 中等风险没用「所属分类属动物界」兜底（历史商品 taxonomy 可能为空）')
+  const mediumBlock = (fn.match(/riskFilter === 'medium'\) \{[\s\S]*?\n  \}/) || [''])[0]
+  ok(/\.nin\(PROTECTED_TYPES\)/.test(mediumBlock),
+    'A5 中等风险没有排除保护类（与高风险重叠 → 同一件落进两个一键入口、计数重复）')
+  ok(/dataset\.risk|ds\.risk/.test(bulk) && /riskFilter: risk/.test(bulk),
+    'A6 一键上下线没有按 data-risk 区分高/中等两个口径')
+  ok(/mediumRiskCount: 0,/.test(cfg) && /highRiskCount: 0,/.test(cfg), 'A6 高/中等风险没有各自独立的件数（data 默认值）')
+  // 两个口径各自**上架 + 下架**两只按钮 = 2 + 2，共 4 个独立入口
+  ok((wxml.match(/data-risk="high"/g) || []).length === 2 && (wxml.match(/data-risk="medium"/g) || []).length === 2,
+    'A6 高/中等风险的两个独立入口不完整（应各 2 颗：下架 / 上架）')
+  ok(/productRiskFilter==='medium'/.test(wxml), 'A6 筛选条缺「中等风险」chip')
 
   /* ── B1/B2 停留当前页 ─────────────────────────────────────────── */
   const toggle = methodBody(cfg, 'toggleShelf')
@@ -118,8 +136,8 @@ export function run(src = {}) {
   }
 
   /* ── D 页面接线 ──────────────────────────────────────────────── */
-  ok(/bindtap="bulkToggleHighRisk"[^>]*data-on="0"/.test(wxml), 'D 工具条缺「一键下架」按钮')
-  ok(/bindtap="bulkToggleHighRisk"[^>]*data-on="1"/.test(wxml), 'D 工具条缺「一键上架」按钮')
+  ok(/bindtap="bulkToggleRisk"[^>]*data-risk="high"[^>]*data-on="0"/.test(wxml), 'D 工具条缺「高风险一键下架」按钮')
+  ok(/bindtap="bulkToggleRisk"[^>]*data-risk="medium"[^>]*data-on="x"?/.test(wxml) || /bindtap="bulkToggleRisk"[^>]*data-risk="medium"/.test(wxml), 'D 工具条缺「中等风险」入口')
   ok(/bindtap="setProductRiskFilter"[^>]*data-val="high"/.test(wxml), 'D 筛选条缺「高风险」chip')
   ok(/item\.isHighRisk/.test(wxml), 'D 藏品卡没有高风险标签')
   ok(/productShelfCounts\.on/.test(wxml) && /productShelfCounts\.off/.test(wxml),
@@ -167,9 +185,9 @@ function selftest() {
     ['云函数把 none 也算高风险', (s) => ({ ...s, fn: s.fn.replace("const PROTECTED_TYPES = ['sanyou', 'protected_plant', 'protected_animal']", "const PROTECTED_TYPES = ['none', 'sanyou']") }), /A1/],
     ['客户端口径漏掉保护植物', (s) => ({ ...s, cfg: s.cfg.replace('  protected_plant: \'保护植物\',\n', '') }), /A1/],
     ['一键上下线改直写集合（绕过审批）', (s) => ({ ...s, cfg: s.cfg.replace("        data: { action: 'submitProductShelf', productId: id, onShelf }", "        data: { action: 'bulkSet', ids }") }), /A2/],
-    ['作用域改回当前页', (s) => ({ ...s, cfg: s.cfg.replace('      ids = await this._scanProductIds({ riskFilter: \'high\' });', '      ids = (this.data.products || []).map((r) => r._id);') }), /A3/],
+    ['作用域改回当前页', (s) => ({ ...s, cfg: s.cfg.replace('      ids = await this._scanProductIds({ riskFilter: risk });', '      ids = (this.data.products || []).map((r) => r._id);') }), /A3/],
     ['扫描丢掉分页', (s) => ({ ...s, cfg: s.cfg.replace('      page += 1;\n    }\n    return ids;', '    }\n    return ids;') }), /A3/],
-    ['去掉确认弹窗', (s) => ({ ...s, cfg: s.cfg.replace('      openAppModal({\n        title: onShelf ? \'一键上架高风险藏品\' : \'一键下架高风险藏品\',', '      Promise.resolve({\n        title: onShelf ? \'一键上架高风险藏品\' : \'一键下架高风险藏品\',') }), /A4/],
+    ['去掉确认弹窗', (s) => ({ ...s, cfg: s.cfg.replace('      openAppModal({\n        title: onShelf ? `一键上架${tier.label}藏品` : `一键下架${tier.label}藏品`,', '      Promise.resolve({\n        title: onShelf ? `一键上架${tier.label}藏品` : `一键下架${tier.label}藏品`,') }), /A4/],
     ['toggleShelf 回到整页重载', (s) => ({ ...s, cfg: s.cfg.replace("        this._patchShelfRow(id, { isOffShelf: !onShelf, shelfApprovalStatus: '' });", '        this.loadProducts();') }), /B1/],
     ['搜索回到弹遮罩重载', (s) => ({ ...s, cfg: s.cfg.replace('this.timer = setTimeout(() => { this.loadProducts({ silent: true }); }, 500);', 'this.timer = setTimeout(() => { this.loadProducts(); }, 500);') }), /B2/],
     ['切排序回到弹遮罩重载', (s) => ({ ...s, cfg: s.cfg.replace("    // 2026-10-13：切排序属于「本来就该重查」，但**不弹全屏遮罩**（弹了就像整页刷新，还打断视线）\n    this.loadProducts({ silent: true });", '    this.loadProducts();') }), /B2/],
@@ -177,8 +195,14 @@ function selftest() {
     ['水印样式回到半透明斜字', (s) => ({ ...s, wxss: s.wxss.replace('.p-wm-text {\n  position: absolute;\n  left: 0; top: 0;', '.p-wm-text {\n  opacity: 0.55;\n  transform: rotate(-28deg);\n  position: absolute;\n  left: 0; top: 0;') }), /C2/],
     ['样式丢掉已下架配色', (s) => ({ ...s, wxss: s.wxss.replace(/\/\* 已下架：墨底浅字[\s\S]*?\n\}\n/, '') }), /C2/],
     ['页面去掉高风险 chip', (s) => ({ ...s, wxml: s.wxml.replace('bindtap="setProductRiskFilter" data-val="high"', 'bindtap="setProductRiskFilter" data-val="normal"') }), /D/],
-    ['工具条丢掉一键下架', (s) => ({ ...s, wxml: s.wxml.replace('bindtap="bulkToggleHighRisk" data-on="0"', 'bindtap="bulkToggleHighRisk" data-on="1"') }), /D/],
+    ['工具条丢掉一键下架', (s) => ({ ...s, wxml: s.wxml.replace('bindtap="bulkToggleRisk" data-risk="high" data-on="0"', 'bindtap="bulkToggleRisk" data-risk="high" data-on="1"') }), /D/],
     ['卡片丢掉高风险标签', (s) => ({ ...s, wxml: s.wxml.replace('wx:if="{{item.isHighRisk}}"', 'wx:if="{{false}}"') }), /D/],
+    /* ── A5/A6 中等风险（动物类）── */
+    ['中等风险不再排除保护类（与高风险重叠）', (s) => ({ ...s, fn: s.fn.replace("conditions.push(_.and([_.or(animalSignals), { protectionType: _.nin(PROTECTED_TYPES) }]))", 'conditions.push(_.or(animalSignals))') }), /A5/],
+    ['动物界口径丢失', (s) => ({ ...s, fn: s.fn.replace("const ANIMAL_KINGDOMS = ['动物界', 'Animalia', 'animalia']", "const ANIMAL_KINGDOMS = ['Insecta']") }), /A5/],
+    ['中等风险去掉分类兜底信号', (s) => ({ ...s, fn: s.fn.replace('    animalCategoryIds = await loadAnimalCategoryIds()', '    animalCategoryIds = []') }), /A5/],
+    ['两个入口共用同一口径', (s) => ({ ...s, wxml: s.wxml.split('data-risk="medium"').join('data-risk="high"') }), /A6/],
+    ['丢掉中等风险件数', (s) => ({ ...s, cfg: s.cfg.replace('    mediumRiskCount: 0,', '') }), /A6/],
     /* ── E 分类管理 ── */
     ['派生视图写回源树（下标会错位）', (s) => ({ ...s, cfg: s.cfg.replace('    catTreeView: view,', '    catTreeView: view,\n    categoryManageTree: view,') }), /E1/],
     ['submitCategory 改读过滤后的视图', (s) => ({ ...s, cfg: s.cfg.replace('    const tree = this.data.categoryManageTree || [];', '    const tree = this.data.catTreeView || [];') }), /E1/],

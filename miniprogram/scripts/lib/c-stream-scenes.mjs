@@ -85,7 +85,7 @@ export const SCENES = [
       name: 'r10-lib-risk', h: 1700, wxml: () => tabBlock(1), wxss: MGR_CSS,
       data: {
         curTab: 1, productLibTab: 'list', artisanEmbed: false,
-        highRiskCount: 3, expiredSeckillCount: 1,
+        highRiskCount: 3, mediumRiskCount: 12, expiredSeckillCount: 1,
         productShelfCounts: { all: 5, on: 2, pending: 1, rejected: 1, off: 1 },
         productArchiveFilter: 'all', productPromoFilter: 'all', productRiskFilter: 'all', productShelfFilter: 'all',
         searchVal: '', productSort: 'new', productPriceSortLabel: '价格',

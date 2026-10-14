@@ -1498,10 +1498,12 @@ const managerPageConfig = {
     productShelfFilter: 'all', // all | on | off | pending | rejected
     /** list 返回的 shelfCounts（与筛选同一套口径），用于筛选条上的计数 */
     productShelfCounts: { all: 0, on: 0, pending: 0, rejected: 0, off: 0 },
-    /** 高风险藏品总数（打开藏品库时单独统计一次，供「一键上下线」显数） */
+    /** 高风险藏品总数（保护类）—— 打开藏品库时单独统计一次，供「一键上下线」显数 */
     highRiskCount: 0,
-    /** 一键上下线进行中（防重复点击） */
-    bulkRiskRunning: false,
+    /** 中等风险藏品总数（**动物类**，不含保护类）—— 与高风险**互斥**、两个入口独立 */
+    mediumRiskCount: 0,
+    /** 一键上下线进行中：'' | 'high' | 'medium'（只压暗正在跑的那一组，防重复点击） */
+    bulkRiskRunning: '',
     // 2026-10-13（提审前点名·第③项）：分类管理的**展示层**检索 / 排序 / 空分类筛查。
     // ⚠️ 只派生视图，绝不动 `categoryManageTree`（提交新增分类、关联弹层都按它的下标取值）。
     catKeyword: '',
@@ -4680,17 +4682,21 @@ const managerPageConfig = {
         } catch (e) {
           patch.expiredSeckillCount = 0;
         }
-        // 高风险总数同样走全量 total（「一键上下线」要显数，且不能只数当前页）
-        try {
-          const riskRes = await wx.cloud.callFunction({
-            name: 'manageProducts',
-            data: { action: 'list', page: 1, pageSize: 1, riskFilter: 'high' }
-          });
-          const risk = (riskRes && riskRes.result) || {};
-          patch.highRiskCount = risk.success ? (Number(risk.total) || 0) : 0;
-        } catch (e) {
-          patch.highRiskCount = 0;
-        }
+        // 高风险 / 中等风险总数同样走全量 total（两个「一键上下线」都要显数，且不能只数当前页）
+        const countOf = async (risk) => {
+          try {
+            const res = await wx.cloud.callFunction({
+              name: 'manageProducts',
+              data: { action: 'list', page: 1, pageSize: 1, riskFilter: risk }
+            });
+            const r = (res && res.result) || {};
+            return r.success ? (Number(r.total) || 0) : 0;
+          } catch (e) {
+            return 0;
+          }
+        };
+        patch.highRiskCount = await countOf('high');
+        patch.mediumRiskCount = await countOf('medium');
       }
       this.setData(patch);
     } catch (err) {
@@ -4828,37 +4834,43 @@ const managerPageConfig = {
   },
 
   /**
-   * 高风险藏品（三有 / 保护类）**一键上下线**。
-   * 合规诉求：属于保护类的标本要能一眼筛出来、并一次全部下架（提审前的兜底动作）。
-   * - 作用域 = 全库 riskFilter='high'（分页取全量，**不是当前页**）
+   * 风险藏品**一键上下线**（两个**独立**入口：高风险 / 中等风险，产品负责人 2026-10-13）。
+   * - 高风险 = 保护类（三有 / 保护植物 / 保护动物）；中等风险 = **动物类**（不含保护类）——
+   *   两者**互斥**，各有自己的件数与本按钮，方便分别下架（例如提审前先清保护类，再按需清动物类）。
+   * - 作用域 = 全库该 riskFilter（分页取全量，**不是当前页**）
    * - 复用既有 `manageApprovals.submitProductShelf`（下架直写；上架对店长 / 超管直写、对标本师走审批）
    *   —— **不新增任何写库旁路**，流程与状态机一字未改
    * - 先确认（带件数与方向后果）再执行，分块上报进度，结束后**静默刷新**（不弹遮罩、不动滚动位置）
    */
-  async bulkToggleHighRisk(e) {
+  async bulkToggleRisk(e) {
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    const risk = String(ds.risk || 'high') === 'medium' ? 'medium' : 'high';
     if (this.data.bulkRiskRunning) return;
-    const onShelf = String((e.currentTarget.dataset || {}).on) === '1';
-    this.setData({ bulkRiskRunning: true });
-    wx.showLoading({ title: '统计高风险藏品…' });
+    const onShelf = String(ds.on) === '1';
+    const tier = risk === 'medium'
+      ? { label: '中等风险', scope: '动物类（保护类已归入高风险）', empty: '当前没有动物类藏品（或都已归入保护类）' }
+      : { label: '高风险', scope: '三有 / 保护类', empty: '当前没有标注为三有 / 保护类的藏品' };
+    this.setData({ bulkRiskRunning: risk });
+    wx.showLoading({ title: `统计${tier.label}藏品…` });
     let ids = [];
     try {
-      ids = await this._scanProductIds({ riskFilter: 'high' });
+      ids = await this._scanProductIds({ riskFilter: risk });
     } catch (err) {
       wx.hideLoading();
-      this.setData({ bulkRiskRunning: false });
+      this.setData({ bulkRiskRunning: '' });
       this.showHubTip(formatCloudFnError(err, '统计失败'), 'warn');
       return;
     }
     wx.hideLoading();
     if (!ids.length) {
-      this.setData({ bulkRiskRunning: false });
-      this.showHubTip('当前没有标注为三有 / 保护类的藏品', 'info');
+      this.setData({ bulkRiskRunning: '' });
+      this.showHubTip(tier.empty, 'info');
       return;
     }
     const ok = await new Promise((resolve) => {
       openAppModal({
-        title: onShelf ? '一键上架高风险藏品' : '一键下架高风险藏品',
-        content: `共 ${ids.length} 件标注为「三有 / 保护类」的藏品。\n\n` +
+        title: onShelf ? `一键上架${tier.label}藏品` : `一键下架${tier.label}藏品`,
+        content: `共 ${ids.length} 件${tier.scope}的藏品。\n\n` +
           (onShelf
             ? '上架后立即对顾客可见 —— 请先确认每件的合法来源与许可材料齐备。'
             : '下架后顾客看不到，商品与订单数据都不受影响，可随时单独重新上架。'),
@@ -4868,7 +4880,7 @@ const managerPageConfig = {
       }, this);
     });
     if (!ok) {
-      this.setData({ bulkRiskRunning: false });
+      this.setData({ bulkRiskRunning: '' });
       return;
     }
 
@@ -4895,11 +4907,11 @@ const managerPageConfig = {
       });
     }
     wx.hideLoading();
-    const parts = [`${onShelf ? '上架' : '下架'}成功 ${okCount} 件`];
+    const parts = [`${tier.label}${onShelf ? '上架' : '下架'}成功 ${okCount} 件`];
     if (pendingCount) parts.push(`待超管审核 ${pendingCount} 件`);
     if (failCount) parts.push(`失败 ${failCount} 件`);
     this.showHubTip(parts.join(' · '), failCount ? 'warn' : 'info');
-    this.setData({ bulkRiskRunning: false });
+    this.setData({ bulkRiskRunning: '' });
     this.loadProducts({ silent: true });
   },
   async clearExpiredSeckill() {
