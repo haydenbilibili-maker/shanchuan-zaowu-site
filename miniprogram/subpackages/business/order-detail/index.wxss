@@ -51,7 +51,7 @@ view, text, image, button { box-sizing: border-box; }
   background: var(--color-bg-card); border-radius: 16rpx; padding: 40rpx 30rpx 60rpx;
   position: relative; border: 1px solid var(--color-bg-elevated); 
   overflow: hidden;
-  opacity: 0; transform: scale(0.98); transition: opacity 0.28s ease, transform 0.28s ease;
+  opacity: 0; transform: scale(0.98); transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 .archive-folder.active { opacity: 1; transform: scale(1); }
 
@@ -264,7 +264,7 @@ view, text, image, button { box-sizing: border-box; }
   border-radius: 12rpx; 
   margin-bottom: 16rpx; 
   border: 1px solid var(--color-bg-elevated);
-  transition: opacity 0.2s ease, background 0.2s ease;
+  transition: opacity var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .manifest-item:last-child { margin-bottom: 0; }
 .manifest-item:active,
@@ -568,7 +568,7 @@ view, text, image, button { box-sizing: border-box; }
   padding: 0;
   margin: 0;
   line-height: 1;
-  transition: background 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
+  transition: background var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
   position: relative;
   overflow: hidden;
   min-width: 0;

@@ -34,7 +34,7 @@
 
     <!-- 周期：近7/30/90 + 自然月 -->
     <view class="range-bar reveal r2" wx:if="{{canFinance || canAnalytics}}">
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="range-tab {{rangeKey===item.key?'on':''}}"
         wx:for="{{rangeTabs}}"
         wx:key="key"
@@ -43,12 +43,12 @@
       >{{item.label}}</view>
     </view>
     <view class="month-bar reveal r2" wx:if="{{rangeType==='month' && (canFinance || canAnalytics)}}">
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="month-chip {{monthKey===monthCurrent?'on':''}}"
         data-preset="current"
         bindtap="setMonthPreset"
       >本月</view>
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="month-chip {{monthKey===monthPrev?'on':''}}"
         data-preset="prev"
         bindtap="setMonthPreset"
@@ -233,7 +233,7 @@
           <text class="group-cn">营收趋势</text>
         </view>
         <view class="card reveal r5">
-          <view class="sec-head" data-key="trend" bindtap="toggleSection">
+          <view hover-class="tap-press" hover-stay-time="80" class="sec-head" data-key="trend" bindtap="toggleSection">
             <text class="card-title">综合 / 日</text>
             <view class="sec-right">
               <view class="legend-inline">
@@ -269,7 +269,7 @@
           <text class="group-cn">订单结构</text>
         </view>
         <view class="card reveal r6">
-          <view class="sec-head" data-key="structure" bindtap="toggleSection">
+          <view hover-class="tap-press" hover-stay-time="80" class="sec-head" data-key="structure" bindtap="toggleSection">
             <text class="card-title">来源与品类</text>
             <text class="sec-chevron">{{sectionOpen.structure ? '收起' : '展开'}}</text>
           </view>
@@ -311,7 +311,7 @@
           <text class="group-cn">业务漏斗</text>
         </view>
         <view class="card reveal r7">
-          <view class="sec-head" data-key="funnel" bindtap="toggleSection">
+          <view hover-class="tap-press" hover-stay-time="80" class="sec-head" data-key="funnel" bindtap="toggleSection">
             <text class="card-title">定金 · 提成</text>
             <text class="sec-chevron">{{sectionOpen.funnel ? '收起' : '展开'}}</text>
           </view>
@@ -373,7 +373,7 @@
       <!-- 用户 / 库存（次要，默认折叠） -->
       <view class="group" id="anchor-users" wx:if="{{canAnalytics && !financeOnly}}">
         <view class="card reveal r8">
-          <view class="sec-head" data-key="users" bindtap="toggleSection">
+          <view hover-class="tap-press" hover-stay-time="80" class="sec-head" data-key="users" bindtap="toggleSection">
             <text class="card-title">用户</text>
             <view class="sec-right">
               <text class="card-meta accent">新增 {{users.newUsers}}</text>
@@ -415,7 +415,7 @@
         </view>
 
         <view class="card reveal r8" id="anchor-stock">
-          <view class="sec-head" data-key="stock" bindtap="toggleSection">
+          <view hover-class="tap-press" hover-stay-time="80" class="sec-head" data-key="stock" bindtap="toggleSection">
             <text class="card-title">库存概况</text>
             <view class="sec-right">
               <text class="card-meta">低库存 {{stock.lowStock}}</text>
@@ -447,7 +447,7 @@
 
       <!-- ⑥ 口径说明 -->
       <view class="notes-card reveal r9" wx:if="{{notes.length}}">
-        <view class="notes-head" bindtap="toggleNotes">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="notes-head" bindtap="toggleNotes">
           <text class="notes-title">口径说明</text>
           <text class="notes-toggle">{{notesOpen ? '收起' : '展开 · ' + notes.length}}</text>
         </view>

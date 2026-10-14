@@ -109,7 +109,7 @@
 .tab-item {
   flex: 1; min-width: 0;
   padding: 20rpx 0; position: relative;
-  font-size: 26rpx; color: #666; font-weight: bold; transition: all 0.3s;
+  font-size: 26rpx; color: #666; font-weight: bold; transition: all var(--dur-base) var(--ease-standard);
   text-align: center; white-space: nowrap;
 }
 .tab-item text { white-space: nowrap; }
@@ -399,7 +399,7 @@
   border: 1rpx solid var(--brass-800);
   border-radius: 20rpx;
   box-sizing: border-box;
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
 }
 .wallet-entry {
   margin-top: 8rpx;

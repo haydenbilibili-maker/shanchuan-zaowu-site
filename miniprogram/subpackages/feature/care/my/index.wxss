@@ -52,7 +52,7 @@ page {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 
 .spec-frame {

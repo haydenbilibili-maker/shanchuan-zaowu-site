@@ -4,8 +4,8 @@
     <text class="sub" wx:if="{{statusSub}}">{{statusSub}}</text>
     <text class="waybill" wx:if="{{trackingNumber}}">运单 {{trackingNumber}}</text>
     <view class="actions" wx:if="{{showFallback}}">
-      <view class="btn-primary" bindtap="copyTracking" wx:if="{{trackingNumber}}">复制运单号</view>
-      <view class="btn-secondary" bindtap="goBack">返回</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-primary" bindtap="copyTracking" wx:if="{{trackingNumber}}">复制运单号</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-secondary" bindtap="goBack">返回</view>
     </view>
   </view>
 </view>

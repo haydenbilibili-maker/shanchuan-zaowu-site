@@ -18,11 +18,11 @@
     <view class="rc-perk"><text class="rc-dot"></text><text class="rc-perk-t">这件藏品的收藏证书署上你的名字</text></view>
   </view>
   <text class="rc-note">不注册也能照常留地址 / 到店领取、看物流，<text class="rc-link" bindtap="goCare">标本养护指南</text>也随时可读。</text>
-  <view class="rc-name" wx:if="{{claimName}}" bindtap="onToggleName">
+  <view hover-class="tap-press" hover-stay-time="80" class="rc-name" wx:if="{{claimName}}" bindtap="onToggleName">
     <view class="rc-check {{useName ? 'is-on' : ''}}"></view>
     <text class="rc-name-t">昵称用「{{claimName}}」（之后可在「我的」里改）</text>
   </view>
-  <view class="rc-agree {{agreeShake ? 'is-shake' : ''}}" bindtap="onToggleAgree">
+  <view hover-class="tap-press" hover-stay-time="80" class="rc-agree {{agreeShake ? 'is-shake' : ''}}" bindtap="onToggleAgree">
     <view class="rc-check {{agreed ? 'is-on' : ''}}"></view>
     <view class="rc-agree-t">
       <text>我已阅读并同意</text>

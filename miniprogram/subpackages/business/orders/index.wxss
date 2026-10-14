@@ -32,7 +32,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
   flex-shrink: 0;
   padding: 10rpx 30rpx; margin-right: 20rpx;
   background: #1F1D1A; border: 1px solid #262320; border-radius: 40rpx;
-  color: #A09A90; font-size: 24rpx; transition: all 0.2s;
+  color: #A09A90; font-size: 24rpx; transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
 }
 
 .tab-pill.active {
@@ -59,7 +59,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
   padding: 30rpx; margin-bottom: 24rpx;
   position: relative; overflow: hidden;
   opacity: 0; animation: slideUp 0.28s ease-out forwards;
-  transition: transform 0.22s ease, border-color 0.22s ease;
+  transition: transform var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
 }
 .order-card:last-child { margin-bottom: 0; }
 .order-card-press { transform: scale(0.985); border-color: rgba(196, 167, 108, 0.4); }
@@ -130,7 +130,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .btn-action {
   background: #262320; color: #D5D1C8; font-size: 22rpx; font-weight: 600;
   padding: 10rpx 30rpx; border-radius: 16rpx; border: 1px solid #4D401A;
-  letter-spacing: 1rpx; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  letter-spacing: 1rpx; transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .btn-action.primary {
   background: #C4A76C;

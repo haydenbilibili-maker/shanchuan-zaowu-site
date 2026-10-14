@@ -12,15 +12,15 @@
     </view>
 
     <view class="ops-tabs">
-      <view class="ops-tab {{viewMode === 'overview' ? 'on' : ''}}" data-mode="overview" bindtap="switchView">总览</view>
-      <view class="ops-tab {{viewMode === 'detail' ? 'on' : ''}}" data-mode="detail" bindtap="switchView">明细</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-tab {{viewMode === 'overview' ? 'on' : ''}}" data-mode="overview" bindtap="switchView">总览</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-tab {{viewMode === 'detail' ? 'on' : ''}}" data-mode="detail" bindtap="switchView">明细</view>
     </view>
 
     <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
     <!-- ========== 总览 ========== -->
     <block wx:if="{{viewMode === 'overview'}}">
-      <view class="ops-source-toggle" bindtap="toggleSource">
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-source-toggle" bindtap="toggleSource">
         <text class="ops-source-label">{{sourceOpen ? '收起数据说明' : '数据说明'}}</text>
         <text class="ops-source-chevron">{{sourceOpen ? '▴' : '▾'}}</text>
       </view>
@@ -38,7 +38,7 @@
       <view class="ops-empty is-error" wx:elif="{{dashError && !kpis}}">
         <text class="ops-empty-title">观测台未能展开</text>
         <text class="ops-empty-sub">{{dashError}}</text>
-        <view class="ops-btn-secondary inv-retry" bindtap="loadDashboard">重试</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary inv-retry" bindtap="loadDashboard">重试</view>
       </view>
 
       <view class="ops-tip is-warn" wx:elif="{{dashError && kpis}}">
@@ -191,14 +191,14 @@
           </view>
         </view>
 
-        <view class="detail-toggle" bindtap="toggleDetail">
+        <view hover-class="tap-press" hover-stay-time="80" class="detail-toggle" bindtap="toggleDetail">
           <text class="detail-toggle-main">{{detailOpen ? '收起排行 · 预警明细' : '展开排行 · 预警明细'}}</text>
           <text class="detail-toggle-sub">不影响上方核心指标</text>
         </view>
 
         <view class="detail-panel" wx:if="{{detailOpen}}">
           <view class="detail-block">
-            <view class="detail-block-head" data-key="finished" bindtap="toggleSection">
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="finished" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">FINISHED TOP</text>
                 <text class="detail-block-cn">成品件数排行</text>
@@ -215,7 +215,7 @@
                   <view class="bar-fill" style="width: {{item.pct}}%;"></view>
                 </view>
               </view>
-              <view
+              <view hover-class="tap-press-soft" hover-stay-time="80"
                 class="list-more"
                 wx:if="{{charts.topFinishedMore > 0 || listMore.finished}}"
                 data-key="finished"
@@ -227,7 +227,7 @@
           </view>
 
           <view class="detail-block">
-            <view class="detail-block-head" data-key="raw" bindtap="toggleSection">
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="raw" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">RAW TOP</text>
                 <text class="detail-block-cn">原材料价值排行</text>
@@ -244,7 +244,7 @@
                   <view class="bar-fill alt" style="width: {{item.pct}}%;"></view>
                 </view>
               </view>
-              <view
+              <view hover-class="tap-press-soft" hover-stay-time="80"
                 class="list-more"
                 wx:if="{{charts.topRawMore > 0 || listMore.raw}}"
                 data-key="raw"
@@ -256,7 +256,7 @@
           </view>
 
           <view class="detail-block" wx:if="{{charts.lowStockItems.length}}">
-            <view class="detail-block-head" data-key="low" bindtap="toggleSection">
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="low" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">LOW STOCK</text>
                 <text class="detail-block-cn">原材料预警清单</text>
@@ -272,7 +272,7 @@
           </view>
         </view>
 
-        <view class="ops-goto-list" data-tab="finished" bindtap="switchTab">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="ops-goto-list" data-tab="finished" bindtap="switchTab">
           <text>前往明细 · 成品 / 原材料录入</text>
         </view>
       </block>
@@ -281,8 +281,8 @@
     <!-- ========== 明细 ========== -->
     <block wx:if="{{viewMode === 'detail'}}">
       <view class="ops-scope-tabs">
-        <view class="ops-scope-tab {{activeTab === 'finished' ? 'on' : ''}}" data-tab="finished" bindtap="switchTab">成品库存</view>
-        <view class="ops-scope-tab {{activeTab === 'raw' ? 'on' : ''}}" data-tab="raw" bindtap="switchTab">原材料</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-scope-tab {{activeTab === 'finished' ? 'on' : ''}}" data-tab="finished" bindtap="switchTab">成品库存</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-scope-tab {{activeTab === 'raw' ? 'on' : ''}}" data-tab="raw" bindtap="switchTab">原材料</view>
       </view>
 
       <!-- Tab：成品库存 -->
@@ -307,7 +307,7 @@
             placeholder-class="ops-ph"
             confirm-type="search"
           />
-          <view class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
         </view>
 
         <view class="ops-filter-row">
@@ -317,7 +317,7 @@
           <picker mode="selector" range="{{groupFilterNames}}" value="{{groupFilterIndex}}" bindchange="onGroupFilter">
             <view class="ops-filter-chip">{{groupFilterNames[groupFilterIndex]}}</view>
           </picker>
-          <view class="ops-btn-add" bindtap="openPaste">粘贴入库</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-add" bindtap="openPaste">粘贴入库</view>
         </view>
 
         <view class="ops-skeleton" wx:if="{{loading && !groups.length && !finishedListError}}">
@@ -330,7 +330,7 @@
         <view class="ops-empty is-error" wx:elif="{{finishedListError && !groups.length}}">
           <text class="ops-empty-title">成品列表未能取回</text>
           <text class="ops-empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-          <view class="ops-btn-secondary inv-retry" bindtap="loadFinishedList">重试</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary inv-retry" bindtap="loadFinishedList">重试</view>
         </view>
 
         <view class="ops-empty" wx:elif="{{!loading && !groups.length}}">
@@ -340,7 +340,7 @@
 
         <block wx:for="{{groups}}" wx:key="key" wx:for-index="gIdx">
           <view class="ops-group">
-            <view class="ops-group-head" data-idx="{{gIdx}}" bindtap="toggleGroupCollapse">
+            <view hover-class="tap-press" hover-stay-time="80" class="ops-group-head" data-idx="{{gIdx}}" bindtap="toggleGroupCollapse">
               <text class="ops-group-title">{{item.name}} · {{item.skuCount}}SKU</text>
               <view class="ops-group-side">
                 <text class="ops-qty-badge">{{item.totalQty}}</text>
@@ -362,7 +362,7 @@
 
         <view wx:if="{{snapshots.length}}">
           <text class="ops-section-label">历史快照</text>
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             class="ops-snap-row {{item.inventoryDate === dateFilter ? 'active' : ''}}"
             wx:for="{{snapshots}}"
             wx:key="_id"
@@ -400,14 +400,14 @@
             placeholder-class="ops-ph"
             confirm-type="search"
           />
-          <view class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
         </view>
 
         <view class="ops-filter-row">
           <picker mode="selector" range="{{rawCategoryNames}}" value="{{rawCategoryIndex}}" bindchange="onRawCategory">
             <view class="ops-filter-chip">{{rawCategoryNames[rawCategoryIndex]}}</view>
           </picker>
-          <view class="ops-btn-add" bindtap="openRawForm">录入</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-add" bindtap="openRawForm">录入</view>
         </view>
 
         <view class="ops-skeleton" wx:if="{{loading && !rawList.length && !rawListError}}">
@@ -420,7 +420,7 @@
         <view class="ops-empty is-error" wx:elif="{{rawListError && !rawList.length}}">
           <text class="ops-empty-title">原材料列表未能取回</text>
           <text class="ops-empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-          <view class="ops-btn-secondary inv-retry" bindtap="loadRawList">重试</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary inv-retry" bindtap="loadRawList">重试</view>
         </view>
 
         <view class="ops-empty" wx:elif="{{!loading && !rawList.length}}">
@@ -429,7 +429,7 @@
         </view>
 
         <block wx:for="{{rawList}}" wx:key="_id">
-          <view class="ops-card" data-id="{{item._id}}" bindtap="openRawEdit">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="ops-card" data-id="{{item._id}}" bindtap="openRawEdit">
             <view class="ops-card-top">
               <text class="ops-card-title">{{item.itemName}}</text>
               <text class="ops-qty-badge {{item.lowStock ? 'warn' : ''}}">{{item.qty}}</text>
@@ -467,8 +467,8 @@
           maxlength="-1"
         />
         <view class="ops-actions">
-          <view class="ops-btn-secondary" bindtap="runPreview">解析预览</view>
-          <view class="ops-btn-primary {{committing ? 'disabled' : ''}}" bindtap="confirmCommit">
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary" bindtap="runPreview">解析预览</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-primary {{committing ? 'disabled' : ''}}" bindtap="confirmCommit">
             {{committing ? '写入中…' : (commitPending ? '再点确认覆盖' : '确认覆盖写入')}}
           </view>
         </view>
@@ -492,7 +492,7 @@
         </view>
         <block wx:for="{{preview.groupBlocks}}" wx:key="key" wx:for-index="gIdx">
           <view class="ops-group">
-            <view class="ops-group-head" data-idx="{{gIdx}}" bindtap="togglePreviewGroup">
+            <view hover-class="tap-press" hover-stay-time="80" class="ops-group-head" data-idx="{{gIdx}}" bindtap="togglePreviewGroup">
               <text class="ops-group-title">{{item.name}} · {{item.skuCount}}SKU</text>
               <view class="ops-group-side">
                 <text class="ops-qty-badge">{{item.totalQty}}</text>
@@ -556,8 +556,8 @@
         <input class="ops-field-input" value="{{rawForm.note}}" bindinput="onRawForm" data-key="note" />
       </view>
       <view class="ops-actions" style="margin-top: 24rpx;">
-        <view class="ops-btn-secondary" bindtap="closeRawForm">取消</view>
-        <view class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveRawForm">保存</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary" bindtap="closeRawForm">取消</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveRawForm">保存</view>
       </view>
     </scroll-view>
 </view>

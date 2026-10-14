@@ -35,7 +35,7 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  transition: opacity 0.32s ease, transform 0.32s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 
 .vip-card-front {
@@ -194,7 +194,7 @@
   padding: 4rpx 8rpx 4rpx 0;
   margin: -4rpx 0;
   border-radius: var(--radius-sm);
-  transition: opacity 80ms ease;
+  transition: opacity var(--dur-instant) var(--ease-standard);
 }
 
 .org-name-press {
@@ -244,7 +244,7 @@
   border: 1px solid rgba(196, 167, 108, 0.36);
   border-radius: var(--radius-full);
   box-sizing: border-box;
-  transition: background 80ms ease, border-color 80ms ease, opacity 80ms ease;
+  transition: background var(--dur-instant) var(--ease-standard), border-color var(--dur-instant) var(--ease-standard), opacity var(--dur-instant) var(--ease-standard);
 }
 
 .action-chip-press {
@@ -310,7 +310,7 @@
   padding: 8rpx 4rpx 8rpx 0;
   margin: 0 -4rpx;
   border-radius: var(--radius-md);
-  transition: background 80ms ease, opacity 80ms ease;
+  transition: background var(--dur-instant) var(--ease-standard), opacity var(--dur-instant) var(--ease-standard);
 }
 
 .user-info-row-press {
@@ -494,7 +494,7 @@
   padding: 10rpx 8rpx 8rpx 44rpx;
   margin: 0 -8rpx;
   border-radius: var(--radius-md);
-  transition: background 80ms ease, opacity 80ms ease;
+  transition: background var(--dur-instant) var(--ease-standard), opacity var(--dur-instant) var(--ease-standard);
 }
 
 .growth-panel.is-max {
@@ -605,7 +605,7 @@
   height: 36rpx;
   opacity: 0.36;
   z-index: 3;
-  transition: opacity 80ms ease;
+  transition: opacity var(--dur-instant) var(--ease-standard);
 }
 
 .card-flip-glyph-press {
@@ -2601,7 +2601,7 @@
   box-shadow:
     0 14rpx 34rpx rgba(10, 8, 6, 0.5),
     0 2rpx 8rpx rgba(10, 8, 6, 0.32);
-  transition: opacity 0.2s ease;
+  transition: opacity var(--dur-fast) var(--ease-standard);
 }
 .guest-envelope-press {
   opacity: 0.96;
@@ -2645,7 +2645,7 @@
   margin-left: -230rpx;
   z-index: 3;
   background: radial-gradient(ellipse at center, rgba(10, 8, 6, 0.6) 0%, transparent 74%);
-  transition: transform 0.7s ease, opacity 0.7s ease;
+  transition: transform 0.7s var(--ease-standard), opacity 0.7s var(--ease-standard);
   pointer-events: none;
 }
 .phase-lid .ge-shadow,
@@ -2724,7 +2724,7 @@
   height: 2rpx;
   opacity: 0;
   background: linear-gradient(90deg, transparent, rgba(224, 207, 163, 0.7), transparent);
-  transition: opacity 0.3s ease 0.2s;
+  transition: opacity var(--dur-base) var(--ease-standard) 0.2s;
 }
 .phase-lid .ge-flap-lip,
 .phase-done .ge-flap-lip {
@@ -2746,7 +2746,7 @@
   text-align: center;
   /* 文案落在底部折痕之上：给一层柔和压暗，别让折痕与字互相干扰（边界是渐变，无硬框） */
   background: radial-gradient(ellipse 62% 130% at 50% 50%, rgba(9, 7, 5, 0.52) 0%, rgba(9, 7, 5, 0) 76%);
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-base) var(--ease-standard);
   pointer-events: none;
 }
 .phase-lid .ge-face,
@@ -2775,7 +2775,7 @@
   align-items: center;
   opacity: 0;
   transform: translateY(196rpx);
-  transition: opacity 0.42s ease, transform 0.72s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: opacity var(--dur-slow) var(--ease-standard), transform 0.72s cubic-bezier(0.22, 0.61, 0.36, 1);
   pointer-events: none;
 }
 .phase-lid .ge-letter,
@@ -2977,7 +2977,7 @@
     0 0 0 7rpx rgba(8, 5, 4, 0.3),
     inset 0 3rpx 5rpx rgba(255, 216, 206, 0.34),
     inset 0 -9rpx 14rpx rgba(42, 3, 7, 0.68);
-  transition: opacity 0.32s ease, transform 0.32s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
   pointer-events: none;
 }
 /* 溢蜡：与主体大面积重叠（只露一角），读成一坨蜡而不是两颗珠子 */
@@ -3049,7 +3049,7 @@
   z-index: 8;
   pointer-events: none;
   animation: ge-butterfly-float 5.2s ease-in-out infinite;
-  transition: opacity 0.35s ease, transform 0.45s ease;
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
 }
 .ge-butterfly-img {
   position: relative;
@@ -3115,7 +3115,7 @@
   flex-direction: column;
   align-items: center;
   gap: 4rpx;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--dur-base) var(--ease-standard);
   pointer-events: none;
 }
 .phase-seal .ge-hint,

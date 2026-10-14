@@ -282,7 +282,7 @@ button {
   border-radius: var(--radius-md);
   background: transparent;
   color: inherit;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   overflow: hidden;
   -webkit-tap-highlight-color: transparent;
 }
@@ -383,7 +383,7 @@ button.btn-text,
   line-height: 1.2;
   padding: 14rpx 28rpx;
   border-radius: var(--radius-md);
-  transition: opacity 0.2s;
+  transition: opacity var(--dur-fast) var(--ease-standard);
   white-space: nowrap; /* VIS 3.0 纪律 08：按钮文案不折行 */
 }
 

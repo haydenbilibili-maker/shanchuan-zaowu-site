@@ -27,13 +27,13 @@
           <!-- 送出侧：受赠人是这张卡的身份，**不因为有礼笺摘句就不显示**（原来摘句把「致 XX」顶掉了） -->
           <text class="meta recipient" wx:if="{{item.flowTab === 'sent' && item.recipientName}}">致 {{item.recipientName}}</text>
           <!-- 领取核验（送出侧，只显示尾号；TA 领取前可设置 / 修改） -->
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="verify-chip {{item.receiverVerify ? 'on' : 'warn'}}"
             wx:if="{{item.flowTab === 'sent' && item.claimMode !== 'link' && (item.receiverVerify || item.verifyEditable)}}"
             data-order-id="{{item.orderId}}"
             catchtap="onVerifyTap"
           >{{item.receiverVerify ? '领取核验 · 尾号 ' + item.verifyPhoneTail : '建议补填受礼人手机号，防礼笺被他人领走'}}{{item.verifyEditable ? ' ›' : ''}}</view>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="verify-chip on"
             wx:if="{{item.flowTab === 'sent' && item.claimMode === 'link'}}"
             data-order-id="{{item.orderId}}"

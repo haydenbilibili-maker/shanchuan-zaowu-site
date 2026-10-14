@@ -318,7 +318,7 @@
   border-right: 3rpx solid #C4A76C;
   border-bottom: 3rpx solid #C4A76C;
   transform: rotate(-135deg);
-  transition: transform 0.18s ease-out;
+  transition: transform var(--dur-fast) var(--ease-out-soft);
 }
 .hub-grp-fold + .hub-grp-arrow {
   margin-left: 18rpx;

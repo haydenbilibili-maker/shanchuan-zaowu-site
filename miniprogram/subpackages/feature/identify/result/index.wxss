@@ -801,7 +801,7 @@
   width: 200rpx;
   flex-shrink: 0;
 }
-.p-card-press { opacity: 0.86; transition: opacity 80ms ease; }
+.p-card-press { opacity: 0.86; transition: opacity var(--dur-instant) var(--ease-standard); }
 .p-img {
   width: 200rpx;
   height: 200rpx;
@@ -1024,7 +1024,7 @@
 /* 未登录/未注册：整页正文灰色模糊 + 挡点击；不提供「先看看」。
    与百科详情页 wiki-detail 的 .wd-gate.is-gated 同一口径。 */
 .rg-gate {
-  transition: filter 0.42s ease, transform 0.42s ease;
+  transition: filter var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
   will-change: filter, transform;
 }
 .rg-gate.is-gated {

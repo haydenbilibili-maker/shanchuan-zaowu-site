@@ -36,14 +36,14 @@
       <view class="se-line-head">
         <text class="se-line-no">#{{item.index}}</text>
         <text class="se-line-name">{{item.itemName}}</text>
-        <view class="se-del" data-index="{{index}}" catchtap="onRemoveLine">
+        <view hover-class="tap-press" hover-stay-time="80" class="se-del" data-index="{{index}}" catchtap="onRemoveLine">
           <text>删除</text>
         </view>
       </view>
 
       <view class="se-field">
         <text class="se-field-label">原材料</text>
-        <view class="se-field-pick" data-index="{{index}}" data-kind="material" bindtap="openPicker">
+        <view hover-class="tap-press" hover-stay-time="80" class="se-field-pick" data-index="{{index}}" data-kind="material" bindtap="openPicker">
           <text class="se-pick-text {{item.materialName ? '' : 'is-empty'}}">{{item.materialLabel}}</text>
           <text class="se-pick-arrow">▾</text>
         </view>
@@ -52,7 +52,7 @@
 
       <view class="se-field">
         <text class="se-field-label">包装方式</text>
-        <view class="se-field-pick" data-index="{{index}}" data-kind="packaging" bindtap="openPicker">
+        <view hover-class="tap-press" hover-stay-time="80" class="se-field-pick" data-index="{{index}}" data-kind="packaging" bindtap="openPicker">
           <text class="se-pick-text {{item.packagingName ? '' : 'is-empty'}}">{{item.packagingLabel}}</text>
           <text class="se-pick-arrow">▾</text>
         </view>
@@ -84,9 +84,9 @@
 
       <view class="se-line-foot">
         <view class="se-qty">
-          <view class="se-qty-btn" data-index="{{index}}" data-delta="-1" bindtap="onQtyStep"><text>−</text></view>
+          <view hover-class="tap-press" hover-stay-time="80" class="se-qty-btn" data-index="{{index}}" data-delta="-1" bindtap="onQtyStep"><text>−</text></view>
           <input class="se-qty-input" type="number" value="{{item.qty}}" data-index="{{index}}" bindinput="onQtyChange" />
-          <view class="se-qty-btn" data-index="{{index}}" data-delta="1" bindtap="onQtyStep"><text>＋</text></view>
+          <view hover-class="tap-press" hover-stay-time="80" class="se-qty-btn" data-index="{{index}}" data-delta="1" bindtap="onQtyStep"><text>＋</text></view>
         </view>
         <view class="se-line-total">
           <text class="se-line-total-label">行小计</text>
@@ -136,7 +136,7 @@
     <view class="ui-pop-grip"></view>
       <view class="se-sheet-head" catchtouchmove="noop">
         <text class="se-sheet-title">{{picker.title}}</text>
-        <view class="se-sheet-close" bindtap="closePicker"><text>关闭</text></view>
+        <view hover-class="tap-press" hover-stay-time="80" class="se-sheet-close" bindtap="closePicker"><text>关闭</text></view>
       </view>
       <view class="se-search" catchtouchmove="noop">
         <input
@@ -155,7 +155,7 @@
         </view>
         <block wx:else>
           <view class="se-group" wx:for="{{picker.list}}" wx:key="key">
-            <view class="se-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
+            <view hover-class="tap-press" hover-stay-time="80" class="se-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
               <view class="se-group-main">
                 <text class="se-group-name">{{item.displayName}}</text>
                 <text class="se-group-meta" wx:if="{{item.aliases.length}}">别名 {{item.aliases}}</text>
@@ -164,7 +164,7 @@
             </view>
             <!-- 只有一个规格时直接可点，不用先展开 -->
             <view class="se-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="se-option"
                 wx:for="{{item.options}}"
                 wx:for-item="opt"

@@ -36,7 +36,7 @@
     <view class="empty-panel" wx:else>
       <text class="empty-panel-title">{{emptyTitle}}</text>
       <text class="empty-panel-body">{{emptyBody}}</text>
-      <view class="retry-btn" wx:if="{{demoOn}}" bindtap="goShip">去发货回传</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="retry-btn" wx:if="{{demoOn}}" bindtap="goShip">去发货回传</view>
     </view>
   </block>
 </view>

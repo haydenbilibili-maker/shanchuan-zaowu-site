@@ -227,7 +227,7 @@ page { background: var(--color-bg); color: #fff; }
 /* 未登录/未注册：整页灰色模糊，且不提供「再看看」。
    与 sensitive-blur-gate 同一手法（filter + 轻微缩放），并加灰度以明确「未解锁」语义。 */
 .wd-gate {
-  transition: filter 0.42s ease, transform 0.42s ease;
+  transition: filter var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
   will-change: filter, transform;
 }
 .wd-gate.is-gated {

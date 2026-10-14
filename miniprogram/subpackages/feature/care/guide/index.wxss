@@ -403,7 +403,7 @@ page {
 .block-content {
   overflow: hidden;
   max-height: 2400rpx;
-  transition: max-height 0.35s ease, opacity 0.25s ease, margin-top 0.25s ease;
+  transition: max-height var(--dur-slow) var(--ease-standard), opacity var(--dur-base) var(--ease-standard), margin-top var(--dur-base) var(--ease-standard);
   opacity: 1;
   margin-top: 20rpx;
 }

@@ -16,11 +16,11 @@
         <text class="overview-title">数据概览</text>
         <text class="overview-sub" wx:if="{{overviewReady}}">生效采样 {{overview.totalLoaded}}{{overview.dataCapped ? '（已截断）' : ''}}</text>
       </view>
-      <view class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="overview-refresh" bindtap="onRefreshOverview">刷新</view>
     </view>
 
     <view class="sub-tab-row overview-tabs">
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="sub-tab {{overviewTab === item.key ? 'active' : ''}}"
         wx:for="{{overviewTabs}}"
         wx:key="key"
@@ -106,11 +106,11 @@
   </view>
 
   <view class="mode-tabs">
-    <view class="mode-tab {{modeFind ? 'on' : ''}}" data-mode="find" bindtap="switchMode">
+    <view hover-class="tap-press" hover-stay-time="80" class="mode-tab {{modeFind ? 'on' : ''}}" data-mode="find" bindtap="switchMode">
       <text class="mode-cn">找会员授予</text>
       <text class="mode-en">查 users</text>
     </view>
-    <view class="mode-tab {{modeRoster ? 'on' : ''}}" data-mode="roster" bindtap="switchMode">
+    <view hover-class="tap-press" hover-stay-time="80" class="mode-tab {{modeRoster ? 'on' : ''}}" data-mode="roster" bindtap="switchMode">
       <text class="mode-cn">筛选馆长名单</text>
       <text class="mode-en">查名单库</text>
     </view>
@@ -133,8 +133,8 @@
           bindinput="onFindPhoneInput"
           bindconfirm="searchMembers"
         />
-        <view class="btn-outline search-btn" bindtap="searchMembers">{{findLoading ? '…' : '搜索'}}</view>
-        <view class="btn-outline search-btn" wx:if="{{findPhone}}" bindtap="clearFind">清空</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline search-btn" bindtap="searchMembers">{{findLoading ? '…' : '搜索'}}</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline search-btn" wx:if="{{findPhone}}" bindtap="clearFind">清空</view>
       </view>
     </view>
 
@@ -155,7 +155,7 @@
         </view>
         <view class="user-right">
           <text class="user-badge {{item.statusClass}}">{{item.statusLabel}}</text>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="btn-primary mini {{item.canGrant ? '' : 'disabled'}}"
             wx:if="{{item.canGrant}}"
             catchtap="openGrantFromCandidate"
@@ -169,16 +169,16 @@
     <view class="section empty-find" wx:if="{{findSearched && !findLoading && !candidates.length}}">
       <text class="empty-title">未匹配到会员账号</text>
       <text class="empty-desc">{{findMsg}}</text>
-      <view class="btn-primary grant-btn" wx:if="{{findCanGrantWithoutUser}}" bindtap="openGrantWithoutUser">
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-primary grant-btn" wx:if="{{findCanGrantWithoutUser}}" bindtap="openGrantWithoutUser">
         用 {{findPhoneMasked || '此号码'}} 授予
       </view>
-      <view class="btn-outline grant-btn" wx:else bindtap="openManualAdd">手动输入完整号授予</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline grant-btn" wx:else bindtap="openManualAdd">手动输入完整号授予</view>
     </view>
 
     <view class="loading-hint" wx:if="{{findLoading}}">查找会员中…</view>
 
     <view class="cta-row soft" wx:if="{{!findSearched}}">
-      <view class="btn-outline grant-btn" bindtap="openManualAdd">已知完整号，直接授予</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline grant-btn" bindtap="openManualAdd">已知完整号，直接授予</view>
     </view>
   </block>
 
@@ -206,8 +206,8 @@
           bindinput="onRosterPhoneInput"
           bindconfirm="onRosterSearch"
         />
-        <view class="btn-outline search-btn" bindtap="onRosterSearch">筛选</view>
-        <view class="btn-outline search-btn" wx:if="{{rosterPhone}}" bindtap="clearRosterSearch">清空</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline search-btn" bindtap="onRosterSearch">筛选</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline search-btn" wx:if="{{rosterPhone}}" bindtap="clearRosterSearch">清空</view>
       </view>
       <text class="total-hint" wx:if="{{total > 0}}">名单共 {{total}} 条</text>
     </view>
@@ -233,17 +233,17 @@
         </view>
 
         <view class="rec-actions" wx:if="{{item.status === 'active'}}">
-          <view class="btn-danger" catchtap="openRemove" data-id="{{item._id}}">移出</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="btn-danger" catchtap="openRemove" data-id="{{item._id}}">移出</view>
         </view>
       </view>
 
-      <view class="btn-outline load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
     </view>
 
     <view class="empty is-error" wx:if="{{listError && !list.length}}">
       <text class="empty-title">名单未能取回</text>
       <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-outline" bindtap="onRetryList" style="margin-top:24rpx;">重试</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline" bindtap="onRetryList" style="margin-top:24rpx;">重试</view>
     </view>
     <view class="empty" wx:elif="{{!loading && list.length === 0}}">名单中暂无匹配记录（不等于会员库搜不到人）</view>
     <view class="loading-hint" wx:if="{{loading}}">加载名单中…</view>
@@ -324,8 +324,8 @@
       </view>
     </scroll-view>
     <view class="modal-foot">
-      <view class="btn-outline" bindtap="closeModals">取消</view>
-      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmAdd">确认授予</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline" bindtap="closeModals">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmAdd">确认授予</view>
     </view>
   </view>
 </view>
@@ -355,8 +355,8 @@
       </view>
     </scroll-view>
     <view class="modal-foot">
-      <view class="btn-outline" bindtap="closeModals">取消</view>
-      <view class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmRemove">确认移出</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline" bindtap="closeModals">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmRemove">确认移出</view>
     </view>
   </view>
 </view>

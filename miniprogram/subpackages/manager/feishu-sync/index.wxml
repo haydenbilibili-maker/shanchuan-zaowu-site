@@ -25,7 +25,7 @@
     <view class="ops-empty is-error" wx:elif="{{loadError}}">
       <text class="ops-empty-title">同步状态未能取回</text>
       <text class="ops-empty-sub">{{loadError}}</text>
-      <view class="ops-btn-secondary fs-retry" bindtap="refresh">重试</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary fs-retry" bindtap="refresh">重试</view>
     </view>
 
     <block wx:else>
@@ -69,7 +69,7 @@
             <text class="fs-item-note">{{item.feishuTable}} · 表 {{item.tableId}}{{item.fromSavedConfig ? '' : '（内置默认）'}}</text>
             <text class="fs-item-sum tone-{{item.sumTone}}">{{item.summary}}</text>
           </view>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="ops-chip-btn brass {{busy === item.label || !creds.configured ? 'disabled' : ''}}"
             data-role="{{item.role}}"
             bindtap="onSyncOne"
@@ -83,11 +83,11 @@
       </view>
 
       <view class="fs-actions">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="ops-btn-primary {{busy || !creds.configured ? 'disabled' : ''}}"
           bindtap="onSyncAll"
         >{{busy === '全部' ? '正在同步全部…' : '一键同步全部'}}</view>
-        <view class="ops-btn-secondary {{busy ? 'disabled' : ''}}" bindtap="refresh">刷新状态</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary {{busy ? 'disabled' : ''}}" bindtap="refresh">刷新状态</view>
       </view>
 
       <text class="fs-foot">只从飞书同步到小程序（单向）：在飞书整理，在小程序展示；规则与 ERP 同步中心一致。</text>

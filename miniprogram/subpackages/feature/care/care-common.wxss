@@ -46,7 +46,7 @@
   flex-shrink: 0;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 
 .care-back .page-nav-back-icon {

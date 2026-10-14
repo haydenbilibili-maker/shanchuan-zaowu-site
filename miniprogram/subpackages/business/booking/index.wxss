@@ -249,7 +249,7 @@
   color: rgba(255,255,255,0.6); 
   padding: 14rpx 6rpx; 
   border-radius: 40rpx; 
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); 
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard), color var(--dur-slow) var(--ease-standard), background-color var(--dur-slow) var(--ease-standard), border-color var(--dur-slow) var(--ease-standard), box-shadow var(--dur-slow) var(--ease-standard); 
   font-weight: 700;
   letter-spacing: 1rpx;
   position: relative;
@@ -264,7 +264,7 @@
   inset: 0;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.15), transparent);
   opacity: 0;
-  transition: opacity 0.4s;
+  transition: opacity var(--dur-slow) var(--ease-standard);
   pointer-events: none;
 }
 .tab-item:active::before {
@@ -314,7 +314,7 @@
   background: linear-gradient(135deg, rgba(196, 167, 108,0.1), rgba(196, 167, 108,0.05));
   border: 2px solid rgba(196, 167, 108,0.2);
   border-radius: 16rpx;
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
 
 .date-selector-toggle:active,
@@ -364,7 +364,7 @@
   border-radius: 16rpx; 
   margin-right: 20rpx; 
   border: 1.5px solid rgba(196, 167, 108,0.2); 
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard), color var(--dur-slow) var(--ease-standard), background-color var(--dur-slow) var(--ease-standard), border-color var(--dur-slow) var(--ease-standard), box-shadow var(--dur-slow) var(--ease-standard);
   box-shadow: 
     0 4rpx 12rpx rgba(0,0,0,0.3),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
@@ -378,7 +378,7 @@
   inset: 0;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.1), transparent);
   opacity: 0;
-  transition: opacity 0.4s;
+  transition: opacity var(--dur-slow) var(--ease-standard);
   pointer-events: none;
 }
 .date-pill:active::before {
@@ -398,8 +398,8 @@
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
-.d-week { font-size: 20rpx; color: rgba(255,255,255,0.5); margin-bottom: 8rpx; font-family: var(--font-din); text-transform: uppercase; font-weight: 600; transition: color 0.4s; }
-.d-day { font-size: 40rpx; font-weight: 800; color: rgba(255,255,255,0.9); font-family: var(--font-din); transition: color 0.4s; }
+.d-week { font-size: 20rpx; color: rgba(255,255,255,0.5); margin-bottom: 8rpx; font-family: var(--font-din); text-transform: uppercase; font-weight: 600; transition: color var(--dur-slow) var(--ease-standard); }
+.d-day { font-size: 40rpx; font-weight: 800; color: rgba(255,255,255,0.9); font-family: var(--font-din); transition: color var(--dur-slow) var(--ease-standard); }
 .date-pill.active .d-week, .date-pill.active .d-day { color: var(--color-bg); }
 
 /* 时间与人数 - 黑金质感 */
@@ -445,7 +445,7 @@
   color: var(--gold);
   font-size: 24rpx;
   font-weight: 600;
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
 
 .waitlist-btn:active,
@@ -465,7 +465,7 @@
   font-size: 30rpx; 
   color: rgba(255,255,255,0.7); 
   position: relative;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard), color var(--dur-slow) var(--ease-standard), background-color var(--dur-slow) var(--ease-standard), border-color var(--dur-slow) var(--ease-standard), box-shadow var(--dur-slow) var(--ease-standard);
   box-shadow: 
     0 2rpx 8rpx rgba(0,0,0,0.3),
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
@@ -479,7 +479,7 @@
   inset: 0;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.15), transparent);
   opacity: 0;
-  transition: opacity 0.4s;
+  transition: opacity var(--dur-slow) var(--ease-standard);
   pointer-events: none;
 }
 .time-btn:active::before {
@@ -537,7 +537,7 @@
   font-size: 36rpx; 
   color: var(--gold); 
   font-weight: 800;
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   border-radius: 26rpx;
   position: relative;
   overflow: hidden;
@@ -548,7 +548,7 @@
   inset: 0;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.2), transparent);
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard);
   pointer-events: none;
 }
 .s-btn:active,
@@ -600,7 +600,7 @@
   height: 400rpx; position: relative; border-radius: 24rpx; overflow: hidden; 
   box-shadow: 0 20rpx 40rpx rgba(0,0,0,0.5);
   border: 2px solid transparent;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard), color var(--dur-slow) var(--ease-standard), background-color var(--dur-slow) var(--ease-standard), border-color var(--dur-slow) var(--ease-standard), box-shadow var(--dur-slow) var(--ease-standard);
   cursor: pointer;
 }
 .act-card:active,
@@ -613,7 +613,7 @@
     0 20rpx 40rpx rgba(0,0,0,0.5),
     inset 0 0 0 2px rgba(196, 167, 108,0.2);
 }
-.act-img { width: 100%; height: 100%; filter: brightness(0.7); transition: filter 0.4s; }
+.act-img { width: 100%; height: 100%; filter: brightness(0.7); transition: filter var(--dur-slow) var(--ease-standard); }
 .act-card.selected .act-img {
   filter: brightness(0.85);
 }
@@ -658,7 +658,7 @@
     inset 0 2rpx 4rpx rgba(255,255,255,0.3);
   border: 1px solid rgba(196, 167, 108,0.6);
   pointer-events: auto; 
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard), color var(--dur-slow) var(--ease-standard), background-color var(--dur-slow) var(--ease-standard), border-color var(--dur-slow) var(--ease-standard), box-shadow var(--dur-slow) var(--ease-standard);
   position: relative;
   overflow: hidden;
   animation: tab-golden-shine 3s ease-in-out infinite;
@@ -670,7 +670,7 @@
   inset: 0;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.15), transparent);
   opacity: 0;
-  transition: opacity 0.4s;
+  transition: opacity var(--dur-slow) var(--ease-standard);
   pointer-events: none;
 }
 .submit-btn:active::before {
@@ -762,7 +762,7 @@
   
   overflow: hidden; z-index: 5; /* 在打印机下面 */
   box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.5);
-  transition: height 2.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: height 2.5s var(--ease-standard);
   
   /* 纸张纹理 */
   background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
@@ -823,7 +823,7 @@
 
 .mint-actions { 
   width: 100%; display: flex; flex-direction: column; align-items: center;
-  opacity: 0; transform: translateY(20rpx); transition: all 0.5s 2.6s;
+  opacity: 0; transform: translateY(20rpx); transition: opacity var(--dur-slow) var(--ease-standard) 2.6s, transform var(--dur-slow) var(--ease-standard) 2.6s, color var(--dur-slow) var(--ease-standard) 2.6s, background-color var(--dur-slow) var(--ease-standard) 2.6s, border-color var(--dur-slow) var(--ease-standard) 2.6s, box-shadow var(--dur-slow) var(--ease-standard) 2.6s;
 }
 .mint-actions.show { opacity: 1; transform: translateY(0); }
 
@@ -845,7 +845,7 @@
   letter-spacing: 2rpx;
   position: relative;
   overflow: hidden;
-  transition: all 0.4s;
+  transition: all var(--dur-slow) var(--ease-standard);
   animation: btn-check-shine 3s ease-in-out infinite;
 }
 @keyframes btn-check-shine {
@@ -858,7 +858,7 @@
   inset: 0;
   background: linear-gradient(135deg, rgba(255,255,255,0.3), transparent);
   opacity: 0;
-  transition: opacity 0.4s;
+  transition: opacity var(--dur-slow) var(--ease-standard);
   pointer-events: none;
 }
 .btn-check:active,
@@ -878,7 +878,7 @@
   color: rgba(196, 167, 108,0.8); 
   text-decoration: underline; 
   padding: 20rpx;
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   text-shadow: none;
 }
 .btn-sub-act:active,
@@ -1023,7 +1023,7 @@
   color: rgba(255,255,255,0.5);
   padding: 12rpx 44rpx 16rpx;
   position: relative;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-slow) var(--ease-standard);
   font-weight: 600;
   letter-spacing: 2rpx;
 }
@@ -1037,7 +1037,7 @@
   width: 0;
   height: 3rpx;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  transition: width 0.4s;
+  transition: width var(--dur-slow) var(--ease-standard);
 }
 
 .history-tab-item.active {
@@ -1106,7 +1106,7 @@
     inset 0 1rpx 2rpx rgba(255,255,255,0.05);
   border: 1.5px solid rgba(196, 167, 108,0.2);
   position: relative;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard), color var(--dur-slow) var(--ease-standard), background-color var(--dur-slow) var(--ease-standard), border-color var(--dur-slow) var(--ease-standard), box-shadow var(--dur-slow) var(--ease-standard);
   box-sizing: border-box;
 }
 
@@ -1263,7 +1263,7 @@
   border-radius: 8rpx;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.12), rgba(196, 167, 108,0.06));
   border: 1.5px solid rgba(196, 167, 108,0.3);
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   box-sizing: border-box;
   line-height: 1.3;
   box-shadow: 
@@ -1294,7 +1294,7 @@
     0 8rpx 24rpx rgba(0,0,0,0.4),
     0 2rpx 8rpx rgba(0,0,0,0.3),
     inset 0 1rpx 2rpx rgba(255,255,255,0.03);
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   backdrop-filter: blur(8px);
 }
 

@@ -18,7 +18,7 @@
       <text class="state-kicker">PAUSED</text>
       <text class="state-title">直播入口已关闭</text>
       <text class="state-text">运营已关闭馆内直播入口，本场观看已结束。可返回首页稍后再试。</text>
-      <view class="ghost-btn" bindtap="onNavBack">返回</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ghost-btn" bindtap="onNavBack">返回</view>
     </view>
   </block>
 
@@ -42,7 +42,7 @@
       <text class="state-title">{{endedReplay.title || '主播已结束本场'}}</text>
       <text class="state-text">{{endedReplay.replayHint || '回放筹备中。感谢收看，馆员再次开播后可从首页进入。'}}</text>
       <view class="replay-badge">回看占位 · 录制未接入</view>
-      <view class="ghost-btn" bindtap="reload">刷新看看</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ghost-btn" bindtap="reload">刷新看看</view>
     </view>
   </block>
 
@@ -58,8 +58,8 @@
       <text class="state-title">{{emptyTitle}}</text>
       <text class="state-text">{{emptyMsg}}</text>
       <view class="remind-hint" wx:if="{{remindSubscribe.hint && upcoming._id}}">{{remindSubscribe.hint}}</view>
-      <view class="ghost-btn" bindtap="reload">刷新</view>
-      <view
+      <view hover-class="tap-press" hover-stay-time="80" class="ghost-btn" bindtap="reload">刷新</view>
+      <view hover-class="tap-press" hover-stay-time="80"
         class="ghost-btn remind"
         wx:if="{{upcoming._id && (emptyCode === 'SCHEDULED' || upcoming.scheduledLabel)}}"
         bindtap="onRemindMe"
@@ -132,20 +132,20 @@
           placeholder="留言给主播（本场可见）"
           placeholder-class="composer-ph"
         />
-        <view class="composer-send {{msgBusy ? 'disabled' : ''}}" bindtap="sendMessage">{{msgBusy ? '…' : '发送'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="composer-send {{msgBusy ? 'disabled' : ''}}" bindtap="sendMessage">{{msgBusy ? '…' : '发送'}}</view>
       </view>
       <view class="toolbar">
-        <view class="tool-btn secondary {{liked ? 'done' : ''}}" bindtap="onLike">{{liked ? '已赞' : '点赞'}}</view>
-        <view class="tool-btn secondary" bindtap="toggleMute">{{muted ? '取消静音' : '静音'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="tool-btn secondary {{liked ? 'done' : ''}}" bindtap="onLike">{{liked ? '已赞' : '点赞'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="tool-btn secondary" bindtap="toggleMute">{{muted ? '取消静音' : '静音'}}</view>
         <button class="tool-btn secondary share-plain" open-type="share">分享</button>
-        <view class="tool-btn" bindtap="reconnect">重连</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="tool-btn" bindtap="reconnect">重连</view>
       </view>
 
-      <view class="shelf-fab" wx:if="{{shelfCount}}" bindtap="openShelf">
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="shelf-fab" wx:if="{{shelfCount}}" bindtap="openShelf">
         <text class="shelf-fab-label">挂车</text>
         <text class="shelf-fab-count">{{shelfCount}}</text>
       </view>
-      <view class="spotlight-chip {{spotlightItem.soldOut ? 'sold' : 'pulse'}}" wx:if="{{spotlightItem}}" bindtap="openShelf">
+      <view hover-class="tap-press" hover-stay-time="80" class="spotlight-chip {{spotlightItem.soldOut ? 'sold' : 'pulse'}}" wx:if="{{spotlightItem}}" bindtap="openShelf">
         <image class="spotlight-cover" wx:if="{{spotlightItem.cover}}" src="{{spotlightItem.cover}}" mode="aspectFill"/>
         <view class="spotlight-cover ph" wx:else></view>
         <view class="spotlight-body">
@@ -169,8 +169,8 @@
       <scroll-view class="shelf-list" scroll-y>
         <view class="shelf-row {{item.spotlight ? 'spot' : ''}} {{item.soldOut || !item.onShelf ? 'disabled-row' : ''}}" wx:for="{{shelfItems}}" wx:key="_id">
           <image class="shelf-cover" wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill" bindtap="onShelfDetail" data-id="{{item._id}}"/>
-          <view class="shelf-cover ph" wx:else bindtap="onShelfDetail" data-id="{{item._id}}"><text>缺图</text></view>
-          <view class="shelf-info" bindtap="onShelfDetail" data-id="{{item._id}}">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="shelf-cover ph" wx:else bindtap="onShelfDetail" data-id="{{item._id}}"><text>缺图</text></view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="shelf-info" bindtap="onShelfDetail" data-id="{{item._id}}">
             <text class="shelf-name">{{item.title}}</text>
             <text class="shelf-meta" wx:if="{{item.spotlight}}">讲解中</text>
             <text class="shelf-meta warn" wx:elif="{{item.soldOut}}">售罄</text>
@@ -179,8 +179,8 @@
             <text class="shelf-price">{{item.priceLabel || (item.missingPrice ? '价格待核' : ('¥' + item.price + (item.hasSku ? ' 起' : '')))}}</text>
           </view>
           <view class="shelf-actions">
-            <view class="shelf-btn ghost {{item.buyable ? '' : 'disabled'}}" bindtap="onShelfAddCart" data-id="{{item._id}}">加购</view>
-            <view class="shelf-btn solid {{item.buyable ? '' : 'disabled'}}" bindtap="onShelfBuyNow" data-id="{{item._id}}">{{item.soldOut ? '售罄' : '购买'}}</view>
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="shelf-btn ghost {{item.buyable ? '' : 'disabled'}}" bindtap="onShelfAddCart" data-id="{{item._id}}">加购</view>
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="shelf-btn solid {{item.buyable ? '' : 'disabled'}}" bindtap="onShelfBuyNow" data-id="{{item._id}}">{{item.soldOut ? '售罄' : '购买'}}</view>
           </view>
         </view>
         <view wx:if="{{!shelfItems.length}}" class="shelf-empty">主播尚未挂品</view>
@@ -203,7 +203,7 @@
         </view>
       </view>
       <scroll-view class="sku-list" scroll-y>
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="sku-pill {{selectedSkuId === item.id ? 'active' : ''}} {{item.stock <= 0 ? 'sold' : ''}}"
           wx:for="{{skuOptions}}"
           wx:key="id"

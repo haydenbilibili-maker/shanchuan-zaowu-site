@@ -107,17 +107,17 @@
 
   <!-- 2. 极简 Tab 导航 (解决拥挤) -->
   <view class="tab-navbar">
-    <view class="tab-item {{curTab===0?'active':''}}" bindtap="switchTab" data-idx="0">
+    <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{curTab===0?'active':''}}" bindtap="switchTab" data-idx="0">
       <text>兑换大厅</text>
       <view class="indicator" wx:if="{{curTab===0}}"></view>
     </view>
     <view class="tab-divider"></view>
-    <view class="tab-item {{curTab===1?'active':''}}" bindtap="switchTab" data-idx="1">
+    <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{curTab===1?'active':''}}" bindtap="switchTab" data-idx="1">
       <text>我的兑换</text>
       <view class="indicator" wx:if="{{curTab===1}}"></view>
     </view>
     <view class="tab-divider"></view>
-    <view class="tab-item {{curTab===2?'active':''}}" bindtap="switchTab" data-idx="2">
+    <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{curTab===2?'active':''}}" bindtap="switchTab" data-idx="2">
       <text>积分明细</text>
       <view class="indicator" wx:if="{{curTab===2}}"></view>
     </view>
@@ -141,7 +141,7 @@
       
       <view class="reward-grid">
         <block wx:for="{{rewards}}" wx:key="_id">
-          <view class="reward-card" bindtap="redeem" 
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="reward-card" bindtap="redeem" 
                 data-id="{{item._id}}" data-cost="{{item.cost}}" 
                 data-type="{{item.type}}" data-title="{{item.title}}" data-image="{{item.image}}">
             
@@ -173,8 +173,8 @@
       
       <view class="empty-tip" wx:if="{{rewards.length === 0 && !loading}}">
         <text>{{loadError ? '权益加载失败' : '暂无权益上架'}}</text>
-        <view class="empty-retry" wx:if="{{loadError}}" bindtap="loadRewards">重新加载</view>
-        <view class="empty-guide" wx:else bindtap="goOrderClaim">去订单认领攒积分</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="empty-retry" wx:if="{{loadError}}" bindtap="loadRewards">重新加载</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="empty-guide" wx:else bindtap="goOrderClaim">去订单认领攒积分</view>
       </view>
     </block>
 
@@ -196,21 +196,21 @@
                 <!-- 🟢 差异化按钮 -->
                 
                 <!-- A. 优惠券：去券夹 -->
-                <view class="btn-small" 
+                <view hover-class="tap-press" hover-stay-time="80" class="btn-small" 
                       wx:if="{{item.products[0].latin === 'COUPON'}}"
                       catchtap="goToWallet">
                   查看礼券夹
                 </view>
 
                 <!-- B. 虚拟商品：核销码 -->
-                <view class="btn-small" 
+                <view hover-class="tap-press" hover-stay-time="80" class="btn-small" 
                       wx:elif="{{item.products[0].latin === 'VIRTUAL' && item.status === 'unverified'}}"
                       catchtap="showCode" data-id="{{item._id}}" data-title="{{item.products[0].title}}">
                   核销码
                 </view>
 
                 <!-- C. 实物商品：看物流 -->
-                <view class="btn-track" 
+                <view hover-class="tap-press" hover-stay-time="80" class="btn-track" 
                       wx:elif="{{item.products[0].latin === 'GOODS'}}"
                       catchtap="goToOrder" data-id="{{item._id}}">
                   进度
@@ -221,7 +221,7 @@
         </block>
         <view class="empty-tip" wx:if="{{myRewards.length === 0}}">
           <text>{{myRewardsError ? '兑换记录加载失败' : '暂无兑换记录'}}</text>
-          <view class="empty-retry" wx:if="{{myRewardsError}}" bindtap="loadMyRewards">重新加载</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="empty-retry" wx:if="{{myRewardsError}}" bindtap="loadMyRewards">重新加载</view>
         </view>
       </view>
     </block>
@@ -232,9 +232,9 @@
         <!-- 口径 + 筛选：全部 / 获得 / 消耗（服务端过滤，计数才准） -->
         <view class="pt-ledger-head">
           <view class="pt-ledger-filters">
-            <view class="pt-filter {{recordsFilter===''?'is-on':''}}" bindtap="setRecordsFilter" data-type="">全部</view>
-            <view class="pt-filter {{recordsFilter==='earn'?'is-on':''}}" bindtap="setRecordsFilter" data-type="earn">获得</view>
-            <view class="pt-filter {{recordsFilter==='spend'?'is-on':''}}" bindtap="setRecordsFilter" data-type="spend">消耗</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="pt-filter {{recordsFilter===''?'is-on':''}}" bindtap="setRecordsFilter" data-type="">全部</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="pt-filter {{recordsFilter==='earn'?'is-on':''}}" bindtap="setRecordsFilter" data-type="earn">获得</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="pt-filter {{recordsFilter==='spend'?'is-on':''}}" bindtap="setRecordsFilter" data-type="spend">消耗</view>
           </view>
           <text class="pt-ledger-cap" wx:if="{{recordsCap}}">{{recordsCap}}</text>
         </view>
@@ -294,7 +294,7 @@
 
         <view class="empty-tip" wx:if="{{records.length === 0 && !recordsLoading}}">
           <text>{{recordsError ? '明细加载失败' : '暂无积分变动'}}</text>
-          <view class="empty-retry" wx:if="{{recordsError}}" bindtap="loadRecords">重新加载</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="empty-retry" wx:if="{{recordsError}}" bindtap="loadRecords">重新加载</view>
         </view>
       </view>
     </block>

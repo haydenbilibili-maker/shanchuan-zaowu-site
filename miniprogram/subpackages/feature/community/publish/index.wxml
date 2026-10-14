@@ -2,7 +2,7 @@
 <view class="page-publish">
   <view class="pub-nav" style=" padding-right: {{navPaddingRight}}px;">
     <view class="pub-nav-inner" style="height: {{navBarHeight}}px;">
-      <view class="nav-side nav-back" bindtap="goBack">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="nav-side nav-back" bindtap="goBack">取消</view>
       <text class="nav-title">{{type === 'video' ? '发视频' : '发图文'}}</text>
       <view class="nav-side nav-side-right"></view>
     </view>
@@ -15,11 +15,11 @@
         <block wx:for="{{images}}" wx:key="*this">
           <view class="media-cell">
             <image class="media-img" src="{{item}}" mode="aspectFill"></image>
-            <view class="media-del" bindtap="removeImage" data-index="{{index}}">×</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="media-del" bindtap="removeImage" data-index="{{index}}">×</view>
             <view class="media-cover-tag" wx:if="{{index === 0}}">封面</view>
           </view>
         </block>
-        <view class="media-add" wx:if="{{images.length < 9}}" bindtap="chooseImages">
+        <view hover-class="tap-press" hover-stay-time="80" class="media-add" wx:if="{{images.length < 9}}" bindtap="chooseImages">
           <view class="add-plus" aria-hidden="true">
             <view class="add-plus-h"></view>
             <view class="add-plus-v"></view>
@@ -32,7 +32,7 @@
 
     <!-- 视频：封面 + 链接 -->
     <view class="media-section" wx:if="{{type === 'video'}}">
-      <view class="video-cover-box" bindtap="chooseVideoCover">
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="video-cover-box" bindtap="chooseVideoCover">
         <image wx:if="{{coverImage}}" class="video-cover-img" src="{{coverImage}}" mode="aspectFill"></image>
         <view wx:else class="video-cover-empty">
           <view class="add-plus" aria-hidden="true">
@@ -84,7 +84,7 @@
     <view class="tags-section">
       <text class="section-label">添加话题</text>
       <view class="tag-chips">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="tag-chip {{activeTags.indexOf(item) >= 0 ? 'on' : ''}}"
           wx:for="{{topicPresets}}"
           wx:key="*this"
@@ -106,7 +106,7 @@
     <view class="category-section">
       <text class="section-label">内容分类</text>
       <view class="cat-row">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="cat-chip {{category === item.value ? 'on' : ''}}"
           wx:for="{{categories}}"
           wx:key="value"
@@ -120,7 +120,7 @@
   </scroll-view>
 
   <view class="pub-footer">
-    <view class="footer-submit {{canSubmit ? 'ready' : ''}}" bindtap="submit">发布笔记</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="footer-submit {{canSubmit ? 'ready' : ''}}" bindtap="submit">发布笔记</view>
   </view>
 </view>
 

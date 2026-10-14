@@ -12,15 +12,15 @@
     </view>
 
     <view class="ops-tabs">
-      <view class="ops-tab {{activeTab === 'overview' ? 'on' : ''}}" data-tab="overview" bindtap="switchTab">总览</view>
-      <view class="ops-tab {{activeTab === 'list' ? 'on' : ''}}" data-tab="list" bindtap="switchTab">单据</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-tab {{activeTab === 'overview' ? 'on' : ''}}" data-tab="overview" bindtap="switchTab">总览</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-tab {{activeTab === 'list' ? 'on' : ''}}" data-tab="list" bindtap="switchTab">单据</view>
     </view>
 
     <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
     <!-- ========== 总览 ========== -->
     <block wx:if="{{activeTab === 'overview'}}">
-      <view class="ops-source-toggle" bindtap="toggleSource">
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-source-toggle" bindtap="toggleSource">
         <text class="ops-source-label">{{sourceOpen ? '收起数据说明' : '数据说明'}}</text>
         <text class="ops-source-chevron">{{sourceOpen ? '▴' : '▾'}}</text>
       </view>
@@ -29,8 +29,8 @@
       </view>
 
       <view class="ops-scope-tabs">
-        <view class="ops-scope-tab {{scope==='store'?'on':''}}" data-scope="store" bindtap="setScope">门店</view>
-        <view class="ops-scope-tab {{scope==='studio'?'on':''}}" data-scope="studio" bindtap="setScope">工作室</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-scope-tab {{scope==='store'?'on':''}}" data-scope="store" bindtap="setScope">门店</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-scope-tab {{scope==='studio'?'on':''}}" data-scope="studio" bindtap="setScope">工作室</view>
       </view>
       <picker mode="selector" range="{{entityFilterNames}}" value="{{entityFilterIndex}}" bindchange="onEntityFilter">
         <view class="ops-filter-chip dash-store">{{entityFilterNames[entityFilterIndex]}}</view>
@@ -46,7 +46,7 @@
       <view class="ops-empty is-error" wx:elif="{{dashError && !kpis}}">
         <text class="ops-empty-title">观测台未能展开</text>
         <text class="ops-empty-sub">{{dashError}}</text>
-        <view class="ops-btn-secondary po-retry" bindtap="loadDashboard">重试</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary po-retry" bindtap="loadDashboard">重试</view>
       </view>
 
       <view class="ops-tip is-warn" wx:elif="{{dashError && kpis}}">
@@ -236,14 +236,14 @@
           </view>
         </view>
 
-        <view class="detail-toggle" bindtap="toggleDetail">
+        <view hover-class="tap-press" hover-stay-time="80" class="detail-toggle" bindtap="toggleDetail">
           <text class="detail-toggle-main">{{detailOpen ? '收起主体 · 状态 · 排行明细' : '展开主体 · 状态 · 排行明细'}}</text>
           <text class="detail-toggle-sub">不影响上方核心指标</text>
         </view>
 
         <view class="detail-panel" wx:if="{{detailOpen}}">
           <view class="detail-block">
-            <view class="detail-block-head" data-key="entity" bindtap="toggleSection">
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="entity" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">ENTITY</text>
                 <text class="detail-block-cn">各主体采购额</text>
@@ -264,7 +264,7 @@
           </view>
 
           <view class="detail-block">
-            <view class="detail-block-head" data-key="status" bindtap="toggleSection">
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="status" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">STATUS</text>
                 <text class="detail-block-cn">状态笔数</text>
@@ -285,7 +285,7 @@
           </view>
 
           <view class="detail-block">
-            <view class="detail-block-head" data-key="items" bindtap="toggleSection">
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="items" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">TOP ITEMS</text>
                 <text class="detail-block-cn">品名采购额</text>
@@ -302,7 +302,7 @@
                   <view class="bar-fill" style="width: {{item.pct}}%;"></view>
                 </view>
               </view>
-              <view
+              <view hover-class="tap-press-soft" hover-stay-time="80"
                 class="list-more"
                 wx:if="{{charts.byItemMore > 0 || listMore.items}}"
                 data-key="items"
@@ -314,7 +314,7 @@
           </view>
         </view>
 
-        <view class="ops-goto-list" data-tab="list" bindtap="switchTab">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="ops-goto-list" data-tab="list" bindtap="switchTab">
           <text>前往单据列表 · 录入 / 流转</text>
         </view>
       </block>
@@ -323,8 +323,8 @@
     <!-- ========== 单据 ========== -->
     <block wx:if="{{activeTab === 'list'}}">
       <view class="ops-scope-tabs">
-        <view class="ops-scope-tab {{scope==='store'?'on':''}}" data-scope="store" bindtap="setScope">门店采购</view>
-        <view class="ops-scope-tab {{scope==='studio'?'on':''}}" data-scope="studio" bindtap="setScope">工作室采购</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-scope-tab {{scope==='store'?'on':''}}" data-scope="store" bindtap="setScope">门店采购</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-scope-tab {{scope==='studio'?'on':''}}" data-scope="studio" bindtap="setScope">工作室采购</view>
       </view>
 
       <view class="ops-summary" wx:if="{{!loading || list.length}}">
@@ -349,7 +349,7 @@
           placeholder-class="ops-ph"
           confirm-type="search"
         />
-        <view class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
       </view>
 
       <view class="ops-filter-row">
@@ -371,15 +371,15 @@
         <picker mode="date" value="{{dateTo}}" bindchange="onDateTo">
           <view class="ops-filter-chip">{{dateTo || '截止日'}}</view>
         </picker>
-        <view class="ops-filter-chip clear" wx:if="{{dateFrom || dateTo}}" bindtap="clearDates">清日期</view>
-        <view class="ops-filter-chip brass" wx:if="{{isSuper}}" bindtap="openSyncPanel">同步</view>
-        <view class="ops-filter-chip" wx:if="{{canWrite}}" bindtap="toggleSelectMode">{{selecting ? '取消勾选' : '批量'}}</view>
-        <view class="ops-btn-add" wx:if="{{canWrite}}" bindtap="openCreate">新增</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-filter-chip clear" wx:if="{{dateFrom || dateTo}}" bindtap="clearDates">清日期</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-filter-chip brass" wx:if="{{isSuper}}" bindtap="openSyncPanel">同步</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-filter-chip" wx:if="{{canWrite}}" bindtap="toggleSelectMode">{{selecting ? '取消勾选' : '批量'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-add" wx:if="{{canWrite}}" bindtap="openCreate">新增</view>
       </view>
 
       <view class="batch-bar" wx:if="{{selecting}}">
         <text class="batch-hint">已选 {{selectedIds.length}} 笔</text>
-        <view class="chip-btn brass" bindtap="onBatchTransit">批量流转</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="chip-btn brass" bindtap="onBatchTransit">批量流转</view>
       </view>
 
       <view class="ops-skeleton" wx:if="{{loading && !list.length && !listError}}">
@@ -393,7 +393,7 @@
       <view class="ops-empty is-error" wx:elif="{{listError && !list.length}}">
         <text class="ops-empty-title">清单未能展开</text>
         <text class="ops-empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-        <view class="ops-btn-secondary po-retry" bindtap="loadList">重试</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary po-retry" bindtap="loadList">重试</view>
       </view>
 
       <view class="ops-empty" wx:elif="{{!loading && !list.length}}">
@@ -402,7 +402,7 @@
       </view>
 
       <block wx:for="{{list}}" wx:key="_id">
-        <view class="ops-card {{item.selected ? 'selected' : ''}} {{pendingRemoveId === item._id ? 'pending-remove' : ''}}" data-id="{{item._id}}" bindtap="toggleSelect">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="ops-card {{item.selected ? 'selected' : ''}} {{pendingRemoveId === item._id ? 'pending-remove' : ''}}" data-id="{{item._id}}" bindtap="toggleSelect">
           <view class="ops-card-top">
             <text class="ops-card-title">{{item.itemName}}</text>
             <text class="ops-status {{item.statusTone}}">{{item.statusLabel}}</text>
@@ -417,9 +417,9 @@
           <text class="ops-meta" wx:if="{{item.supplier}}">供应商 {{item.supplier}}</text>
           <text class="ops-meta">采购日 {{item.purchaseDate || '—'}} · 更新 {{item.updatedAtText}}</text>
           <view class="ops-card-actions" catchtap="noop" wx:if="{{canWrite}}">
-            <view class="ops-chip-btn" data-id="{{item._id}}" catchtap="openEdit">编辑</view>
-            <view class="ops-chip-btn brass" wx:if="{{item.canTransit}}" data-id="{{item._id}}" catchtap="onTransit">流转</view>
-            <view class="ops-chip-btn danger" data-id="{{item._id}}" catchtap="onRemove">{{pendingRemoveId === item._id ? '确认删除' : '删除'}}</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn" data-id="{{item._id}}" catchtap="openEdit">编辑</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn brass" wx:if="{{item.canTransit}}" data-id="{{item._id}}" catchtap="onTransit">流转</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn danger" data-id="{{item._id}}" catchtap="onRemove">{{pendingRemoveId === item._id ? '确认删除' : '删除'}}</view>
           </view>
         </view>
       </block>
@@ -440,7 +440,7 @@
       <text class="sync-value">{{syncMeta.lastPullText}}</text>
       <text class="sync-msg">{{syncMeta.lastPullMsg}}</text>
       <text class="sync-note">拉取经 ERP「同步管理」写入 ops_purchases；此处可刷新状态与清单。</text>
-      <view class="ops-btn-primary {{syncing ? 'disabled' : ''}}" bindtap="refreshSyncAndList">
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-primary {{syncing ? 'disabled' : ''}}" bindtap="refreshSyncAndList">
         {{syncing ? '刷新中…' : '刷新状态与清单'}}
       </view>
     </view>
@@ -504,7 +504,7 @@
         <text class="ops-field-label">备注</text>
         <input class="ops-field-input" value="{{form.note}}" data-field="note" bindinput="onFormInput" placeholder-class="ops-ph" />
       </view>
-      <view class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
     </scroll-view>
 </view>
 </view>

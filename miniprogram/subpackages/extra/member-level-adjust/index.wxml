@@ -29,8 +29,8 @@
         confirm-type="search"
         focus="{{false}}"
       />
-      <view class="btn-primary search-btn {{searching ? 'disabled' : ''}}" bindtap="doSearch">{{searching ? '…' : '搜索'}}</view>
-      <view class="btn-outline search-btn" wx:if="{{keyword}}" bindtap="clearKeyword">清空</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-primary search-btn {{searching ? 'disabled' : ''}}" bindtap="doSearch">{{searching ? '…' : '搜索'}}</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline search-btn" wx:if="{{keyword}}" bindtap="clearKeyword">清空</view>
     </view>
   </view>
 
@@ -73,8 +73,8 @@
         </view>
       </view>
       <view class="member-actions">
-        <view class="btn-primary act" data-index="{{index}}" bindtap="openAdjust">调整等级</view>
-        <view
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-primary act" data-index="{{index}}" bindtap="openAdjust">调整等级</view>
+        <view hover-class="tap-press" hover-stay-time="80"
           class="btn-danger act"
           wx:if="{{item.hasOverride}}"
           data-index="{{index}}"
@@ -106,7 +106,7 @@
   <view class="section">
     <view class="section-head">
       <text class="section-title">最近操作</text>
-      <view class="section-action" bindtap="loadOps">刷新</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="section-action" bindtap="loadOps">刷新</view>
     </view>
     <view class="loading-hint" wx:if="{{opsLoading && !opsList.length}}">加载中…</view>
     <view class="ops-row" wx:for="{{opsList}}" wx:key="_id">
@@ -142,7 +142,7 @@
       <view class="field">
         <text class="field-label">目标等级（点选）</text>
         <view class="pick-grid">
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             class="pick-card {{adjustForm.targetLevel === item.level ? 'on' : ''}}"
             wx:for="{{paidLevels}}"
             wx:key="level"
@@ -159,8 +159,8 @@
       <view class="field">
         <text class="field-label">调整模式</text>
         <view class="mode-row">
-          <view class="mode-chip {{adjustForm.modeFloor ? 'on' : ''}}" bindtap="setModeFloor">成长下限</view>
-          <view class="mode-chip {{adjustForm.modeExact ? 'on' : ''}}" bindtap="setModeExact">强制锁定</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="mode-chip {{adjustForm.modeFloor ? 'on' : ''}}" bindtap="setModeFloor">成长下限</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="mode-chip {{adjustForm.modeExact ? 'on' : ''}}" bindtap="setModeExact">强制锁定</view>
         </view>
         <text class="tip">下限：自然成长更高仍可升级。锁定：固定到目标档直至清除。</text>
       </view>
@@ -193,8 +193,8 @@
       </view>
     </scroll-view>
     <view class="modal-foot">
-      <view class="btn-outline" bindtap="closeModals">取消</view>
-      <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmAdjust">确认调整</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline" bindtap="closeModals">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="confirmAdjust">确认调整</view>
     </view>
   </view>
 </view>
@@ -225,8 +225,8 @@
       </view>
     </scroll-view>
     <view class="modal-foot">
-      <view class="btn-outline" bindtap="closeModals">取消</view>
-      <view class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmClear">确认清除</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline" bindtap="closeModals">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-danger {{submitting ? 'disabled' : ''}}" bindtap="confirmClear">确认清除</view>
     </view>
   </view>
 </view>

@@ -15,16 +15,16 @@
 
   <block wx:if="{{pageMode !== 'jobs'}}">
     <view class="toolbar {{selectMode ? 'toolbar-batch' : ''}}">
-      <view class="workbench-btn-primary toolbar-primary" wx:if="{{!selectMode}}" bindtap="goNewProduct">上传藏品</view>
-      <view class="workbench-btn-ghost toolbar-side" wx:if="{{!selectMode && listAll.length}}" bindtap="toggleSelectMode">批量状态</view>
-      <view class="workbench-btn-outline toolbar-side" wx:if="{{selectMode}}" bindtap="toggleSelectMode">取消</view>
-      <view
+      <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-primary toolbar-primary" wx:if="{{!selectMode}}" bindtap="goNewProduct">上传藏品</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-ghost toolbar-side" wx:if="{{!selectMode && listAll.length}}" bindtap="toggleSelectMode">批量状态</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="workbench-btn-outline toolbar-side" wx:if="{{selectMode}}" bindtap="toggleSelectMode">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80"
         class="workbench-btn-primary toolbar-side {{!selectedCount || batchBusy ? 'is-disabled' : ''}}"
         wx:if="{{selectMode}}"
         bindtap="batchToggleShelf"
         data-on="{{true}}"
       >申请上架 {{selectedCount}}</view>
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="workbench-btn-ghost toolbar-side {{!selectedCount || batchBusy ? 'is-disabled' : ''}}"
         wx:if="{{selectMode}}"
         bindtap="batchToggleShelf"
@@ -33,11 +33,11 @@
     </view>
 
     <view class="filter-row wrap">
-      <view class="filter-chip {{shelfFilter === 'all' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="all">全部 {{filterCounts.all}}</view>
-      <view class="filter-chip {{shelfFilter === 'on' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="on">已上架 {{filterCounts.on}}</view>
-      <view class="filter-chip {{shelfFilter === 'pending' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="pending">待确认 {{filterCounts.pending}}</view>
-      <view class="filter-chip {{shelfFilter === 'rejected' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="rejected">已驳回 {{filterCounts.rejected}}</view>
-      <view class="filter-chip {{shelfFilter === 'off' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="off">未上架 {{filterCounts.off}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{shelfFilter === 'all' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="all">全部 {{filterCounts.all}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{shelfFilter === 'on' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="on">已上架 {{filterCounts.on}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{shelfFilter === 'pending' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="pending">待确认 {{filterCounts.pending}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{shelfFilter === 'rejected' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="rejected">已驳回 {{filterCounts.rejected}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{shelfFilter === 'off' ? 'on' : ''}}" bindtap="setShelfFilter" data-val="off">未上架 {{filterCounts.off}}</view>
     </view>
 
     <view class="skeleton-list" wx:if="{{loading && !listAll.length}}">
@@ -52,15 +52,15 @@
 
     <view class="workbench-state" wx:elif="{{loadError && !listAll.length}}">
       <text>加载失败，请检查网络后重试。</text>
-      <view class="workbench-btn-primary retry-btn" bindtap="reload">重新加载</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-primary retry-btn" bindtap="reload">重新加载</view>
     </view>
 
     <view class="workbench-state empty-state" wx:elif="{{!loading && !listAll.length}}">
       <text wx:if="{{!hasProfile}}">还没有个人档案。先完善姓名与简介，再上传第一件藏品。</text>
       <text wx:else>档案已就绪。上传第一件藏品后，可申请上架，并会出现在对外主页。</text>
       <view class="empty-cta-row">
-        <view class="workbench-btn-outline empty-cta" wx:if="{{!hasProfile && canProfile}}" bindtap="goProfile">去完善档案</view>
-        <view class="workbench-btn-primary empty-cta" bindtap="goNewProduct">上传藏品</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="workbench-btn-outline empty-cta" wx:if="{{!hasProfile && canProfile}}" bindtap="goProfile">去完善档案</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-primary empty-cta" bindtap="goNewProduct">上传藏品</view>
       </view>
     </view>
 
@@ -89,8 +89,8 @@
           </view>
           <text class="work-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
           <view class="work-action-row" wx:if="{{!selectMode}}">
-            <view class="workbench-btn-ghost action-btn" catchtap="editProduct" data-id="{{item._id}}">编辑</view>
-            <view
+            <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-ghost action-btn" catchtap="editProduct" data-id="{{item._id}}">编辑</view>
+            <view hover-class="tap-press-soft" hover-stay-time="80"
               class="workbench-btn-outline action-btn {{shelfBusyId === item._id ? 'is-disabled' : ''}}"
               catchtap="toggleShelf"
               data-id="{{item._id}}"
@@ -108,11 +108,11 @@
 
   <block wx:else>
     <view class="filter-row wrap">
-      <view class="filter-chip {{jobFilter === 'active' ? 'on' : ''}}" bindtap="setJobFilter" data-val="active">进行中 {{jobCounts.active}}</view>
-      <view class="filter-chip {{jobFilter === 'pending_make' ? 'on' : ''}}" bindtap="setJobFilter" data-val="pending_make">待制作 {{jobCounts.pending_make}}</view>
-      <view class="filter-chip {{jobFilter === 'framing' ? 'on' : ''}}" bindtap="setJobFilter" data-val="framing">装裱中 {{jobCounts.framing}}</view>
-      <view class="filter-chip {{jobFilter === 'packing' ? 'on' : ''}}" bindtap="setJobFilter" data-val="packing">待发货 {{jobCounts.packing}}</view>
-      <view class="filter-chip {{jobFilter === 'shipped' ? 'on' : ''}}" bindtap="setJobFilter" data-val="shipped">已发出 {{jobCounts.shipped}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{jobFilter === 'active' ? 'on' : ''}}" bindtap="setJobFilter" data-val="active">进行中 {{jobCounts.active}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{jobFilter === 'pending_make' ? 'on' : ''}}" bindtap="setJobFilter" data-val="pending_make">待制作 {{jobCounts.pending_make}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{jobFilter === 'framing' ? 'on' : ''}}" bindtap="setJobFilter" data-val="framing">装裱中 {{jobCounts.framing}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{jobFilter === 'packing' ? 'on' : ''}}" bindtap="setJobFilter" data-val="packing">待发货 {{jobCounts.packing}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip {{jobFilter === 'shipped' ? 'on' : ''}}" bindtap="setJobFilter" data-val="shipped">已发出 {{jobCounts.shipped}}</view>
     </view>
 
     <view class="skeleton-list" wx:if="{{loading && !jobsAll.length}}">
@@ -126,14 +126,14 @@
 
     <view class="workbench-state" wx:elif="{{loadError && !jobsAll.length}}">
       <text>工单加载失败，请检查网络后重试。</text>
-      <view class="workbench-btn-primary retry-btn" bindtap="reload">重新加载</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-primary retry-btn" bindtap="reload">重新加载</view>
     </view>
 
     <view class="workbench-state empty-state" wx:elif="{{!loading && !jobsAll.length}}">
       <text wx:if="{{!hasProfile}}">还没有标本师档案。完善档案并上传藏品后，历史定制单会按本人藏品匹配过来。</text>
       <text wx:else>暂无制作工单。顾客指定你为标本师，或使用你的藏品下单后，会显示在这里。不会领走别人的单。</text>
       <view class="empty-cta-row" wx:if="{{!hasProfile && canProfile}}">
-        <view class="workbench-btn-primary empty-cta" bindtap="goProfile">去完善档案</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-primary empty-cta" bindtap="goProfile">去完善档案</view>
       </view>
     </view>
 
@@ -148,7 +148,7 @@
         <text class="job-meta" wx:if="{{item.frameName || item.skuLabel}}">{{item.frameName}}{{item.frameName && item.skuLabel ? ' · ' : ''}}{{item.skuLabel}}</text>
         <text class="job-meta" wx:if="{{item.formatTime}}">{{item.formatTime}}</text>
         <text class="job-match" wx:if="{{item.matchViaLabel}}">匹配：{{item.matchViaLabel}}</text>
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="workbench-btn-primary job-next {{jobBusyId === item._id ? 'is-disabled' : ''}}"
           wx:if="{{item.nextAction}}"
           bindtap="advanceJob"
@@ -183,10 +183,10 @@
       </view>
       <text class="detail-hint">上架需提交审核；下架立即生效。待确认期间请等待超管处理。</text>
       <view class="detail-actions">
-        <view class="workbench-btn-ghost action-btn" bindtap="previewPublic">预览主页</view>
-        <view class="workbench-btn-outline action-btn" bindtap="editProduct" data-id="{{detailItem._id}}">编辑</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-ghost action-btn" bindtap="previewPublic">预览主页</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="workbench-btn-outline action-btn" bindtap="editProduct" data-id="{{detailItem._id}}">编辑</view>
       </view>
-      <view
+      <view hover-class="tap-press-soft" hover-stay-time="80"
         class="workbench-btn-primary detail-shelf {{shelfBusyId === detailItem._id ? 'is-disabled' : ''}}"
         bindtap="toggleShelf"
         data-id="{{detailItem._id}}"

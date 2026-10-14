@@ -191,7 +191,7 @@ page {
   background: transparent; padding: 8rpx 0 0; border-radius: 0;
   border: none;
 }
-.om-item { display: flex; flex-direction: column; align-items: center; width: 20%; opacity: 0.9; transition: transform 0.2s ease, opacity 0.2s ease; }
+.om-item { display: flex; flex-direction: column; align-items: center; width: 20%; opacity: 0.9; transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard); }
 .om-item:active,
 .om-item-press { opacity: 0.78; transform: scale(0.94); }
 .om-icon-wrap { position: relative; margin-bottom: 16rpx; }
@@ -203,7 +203,7 @@ page {
 .menu-row {
   display: flex; align-items: center; padding: 28rpx 32rpx;
   border-bottom: 1px solid rgba(38, 35, 32, 0.55); position: relative;
-  transition: background 0.2s ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 .menu-row:last-child { border-bottom: none; }
 .menu-row.section-start {
@@ -309,7 +309,7 @@ page {
   flex-direction: column;
   align-items: flex-start;
   position: relative;
-  transition: transform 0.2s ease, opacity 0.2s ease, border-color 0.2s ease;
+  transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .wb-tile-info {
   border-color: rgba(45, 90, 63, 0.55);
@@ -751,7 +751,7 @@ page {
   border: 1px solid rgba(196, 167, 108,0.2);
   border-radius: 16rpx;
   text-align: center;
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
 .stat-card:active {
   transform: scale(0.97);
@@ -818,7 +818,7 @@ page {
   background: var(--color-bg-card);
   border: 1px solid var(--brass-800);
   border-radius: var(--radius-lg);
-  transition: background 0.22s ease;
+  transition: background var(--dur-base) var(--ease-standard);
 }
 .onboard-banner-press { background: var(--color-bg-elevated); }
 

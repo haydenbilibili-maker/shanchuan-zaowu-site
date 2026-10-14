@@ -16,7 +16,7 @@
   <view class="section">
     <text class="section-title">后台角色</text>
     <text class="section-note">在这里为员工开通工作台功能（仅超管）。店员的报销、清单等审批由店长处理，超管可代审。</text>
-    <view class="btn-primary" bindtap="openStaffModal">开通后台角色</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="btn-primary" bindtap="openStaffModal">开通后台角色</view>
     <text class="section-note link-note" bindtap="copyOpenidHint">查不到人？点此查看如何获取微信编号</text>
   </view>
 
@@ -25,7 +25,7 @@
     <view class="empty is-error" wx:if="{{listError && !staffList.length}}">
       <text class="empty-title">权限名单未能取回</text>
       <text class="empty-desc">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryList">重试</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
     </view>
     <block wx:elif="{{staffList.length}}">
       <view class="row staff-row" wx:for="{{staffList}}" wx:key="_id">
@@ -40,14 +40,14 @@
           <text class="row-sub" wx:if="{{item.shareholderProfile && item.shareholderProfile.storeId}}">股东 · {{item.shareholderProfile.storeName || item.shareholderProfile.storeId}} · 占股 {{item.shareholderProfile.ownershipRatio || 0}}% · 回本前 {{item.shareholderProfile.dividendRatioBeforePayback != null ? item.shareholderProfile.dividendRatioBeforePayback : (item.shareholderProfile.dividendRatio || 0)}}% · 回本后 {{item.shareholderProfile.dividendRatioAfterPayback != null ? item.shareholderProfile.dividendRatioAfterPayback : (item.shareholderProfile.dividendRatio || 0)}}%</text>
         </view>
         <view class="staff-actions">
-          <view class="staff-btn edit" catchtap="openStaffModal" data-id="{{item._id}}">编辑</view>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80" class="staff-btn edit" catchtap="openStaffModal" data-id="{{item._id}}">编辑</view>
+          <view hover-class="tap-press" hover-stay-time="80"
             class="staff-btn danger"
             wx:if="{{item.status === 'active'}}"
             catchtap="disableStaff"
             data-id="{{item._id}}"
           >{{disablePendingId === item._id ? '确认停用' : '停用'}}</view>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="staff-btn success"
             wx:else
             catchtap="enableStaff"
@@ -79,7 +79,7 @@
           <input class="input phone-input" type="number" maxlength="11"
                  placeholder="对方已授权的 11 位手机号" placeholder-class="ph"
                  value="{{staffForm.phone}}" bindinput="onStaffInput" data-field="phone" />
-          <view class="lookup-btn {{staffLookingUp ? 'disabled' : ''}}" bindtap="lookupStaffByPhone">
+          <view hover-class="tap-press" hover-stay-time="80" class="lookup-btn {{staffLookingUp ? 'disabled' : ''}}" bindtap="lookupStaffByPhone">
             {{staffLookingUp ? '查找中' : '查找'}}
           </view>
         </view>
@@ -87,7 +87,7 @@
           <input class="input phone-input" maxlength="14"
                  placeholder="或输入会员号 MT-XXXX-XXXX" placeholder-class="ph"
                  value="{{staffMemberNoInput}}" bindinput="onStaffMemberNoInput" />
-          <view class="lookup-btn {{staffLookingUp ? 'disabled' : ''}}" bindtap="lookupStaffByMemberNo">
+          <view hover-class="tap-press" hover-stay-time="80" class="lookup-btn {{staffLookingUp ? 'disabled' : ''}}" bindtap="lookupStaffByMemberNo">
             {{staffLookingUp ? '查找中' : '查找'}}
           </view>
         </view>
@@ -101,7 +101,7 @@
         </view>
         <view class="candidate-list" wx:if="{{staffCandidates.length > 1}}">
           <text class="field-hint">找到多个账号，点选其一</text>
-          <view class="candidate {{item.openid === staffForm.openid ? 'on' : ''}}"
+          <view hover-class="tap-press" hover-stay-time="80" class="candidate {{item.openid === staffForm.openid ? 'on' : ''}}"
                 wx:for="{{staffCandidates}}" wx:key="openid"
                 bindtap="selectStaffCandidate" data-openid="{{item.openid}}">
             <text class="match-name">{{item.nickName || '藏家'}}</text>
@@ -131,7 +131,7 @@
       <view class="field">
         <text class="field-label">角色</text>
         <view class="seg-row wrap">
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             class="seg-item {{staffRoleSelected[staffRoleValues[index]] ? 'on' : ''}}"
             wx:for="{{staffRoleLabels}}"
             wx:key="*this"
@@ -150,7 +150,7 @@
             <text class="feature-group-en">{{item.en}}</text>
           </view>
           <text class="field-hint" wx:if="{{item.readOnly}}">超管工作台为全集，不可逐项关闭</text>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="feature-check {{feat.checked ? 'on' : ''}} {{item.readOnly || feat.disabled ? 'locked' : ''}}"
             wx:for="{{item.items}}"
             wx:for-item="feat"
@@ -170,7 +170,7 @@
         <text class="field-label">股东配置</text>
         <text class="field-hint">绑定门店；回本前/后分成占投资人分红池比重（与财务双阶段一致）。完整维护请用「股东配置」入口。</text>
         <view class="store-check-list">
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="store-check {{item.selected ? 'on' : ''}}"
             wx:for="{{shareholderStoreChecks}}"
             wx:key="key"
@@ -207,7 +207,7 @@
       <view class="field" wx:if="{{showStoreScope}}">
         <text class="field-label">可操作门店</text>
         <view class="store-check-list">
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="store-check {{item.selected ? 'on' : ''}}"
             wx:for="{{staffStoreChecks}}"
             wx:key="key"
@@ -227,8 +227,8 @@
 
     <view class="page-tip is-warn" wx:if="{{formTip}}" style="margin:0 24rpx 16rpx;"><text>{{formTip}}</text></view>
     <view class="workbench-modal-foot">
-      <view class="workbench-btn-outline" bindtap="closeStaffModal">取消</view>
-      <view class="workbench-btn-primary {{staffSaving ? 'is-disabled' : ''}}" bindtap="saveStaff">{{staffSaving ? '保存中…' : '保存'}}</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="workbench-btn-outline" bindtap="closeStaffModal">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-primary {{staffSaving ? 'is-disabled' : ''}}" bindtap="saveStaff">{{staffSaving ? '保存中…' : '保存'}}</view>
     </view>
   </view>
 </view>

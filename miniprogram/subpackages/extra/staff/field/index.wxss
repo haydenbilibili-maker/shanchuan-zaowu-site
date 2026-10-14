@@ -1110,7 +1110,7 @@ page {
   justify-content: space-between;
   box-sizing: border-box;
   background: var(--color-bg-elevated);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 
 .perk-fold.is-open {
@@ -1144,7 +1144,7 @@ page {
   line-height: 1;
   color: var(--brass-400);
   transform: rotate(90deg);
-  transition: transform 0.22s ease;
+  transition: transform var(--dur-base) var(--ease-standard);
 }
 
 .perk-fold.is-open .perk-fold-chevron {
@@ -1159,7 +1159,7 @@ page {
   margin-top: 0;
   opacity: 0;
   overflow: hidden;
-  transition: max-height 0.28s ease, opacity 0.2s ease, margin-top 0.2s ease;
+  transition: max-height var(--dur-base) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard), margin-top var(--dur-fast) var(--ease-standard);
 }
 
 .perk-grid.is-open {
@@ -1304,7 +1304,7 @@ page {
   border-radius: var(--radius-md);
   background: var(--color-bg-elevated);
   box-sizing: border-box;
-  transition: border-color 0.18s ease, background 0.18s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 
 .coupon-pick:last-child {

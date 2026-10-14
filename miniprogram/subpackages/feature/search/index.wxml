@@ -210,7 +210,7 @@
       </view>
 
       <!-- 检索结果 -->
-      <view class="result-zone" wx:else bindtap="onResultAreaTap">
+      <view hover-class="tap-press" hover-stay-time="80" class="result-zone" wx:else bindtap="onResultAreaTap">
         <view class="skeleton-wrap" wx:if="{{loading}}">
           <view class="sk-card" wx:for="{{[1,2,3,4]}}" wx:key="*this">
             <view class="sk-thumb sk-shine"></view>

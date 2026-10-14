@@ -14,8 +14,8 @@
   </picker>
 
   <view class="seg-row">
-    <view class="seg-item {{shift==='morning'?'on':''}}" bindtap="setShift" data-shift="morning">早班清单</view>
-    <view class="seg-item {{shift==='evening'?'on':''}}" bindtap="setShift" data-shift="evening">晚班清单</view>
+    <view hover-class="tap-press-soft" hover-stay-time="80" class="seg-item {{shift==='morning'?'on':''}}" bindtap="setShift" data-shift="morning">早班清单</view>
+    <view hover-class="tap-press-soft" hover-stay-time="80" class="seg-item {{shift==='evening'?'on':''}}" bindtap="setShift" data-shift="evening">晚班清单</view>
   </view>
 
   <view class="scene-card">

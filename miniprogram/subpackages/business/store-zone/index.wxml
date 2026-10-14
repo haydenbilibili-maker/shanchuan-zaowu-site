@@ -54,7 +54,7 @@
     <view class="related-block" wx:if="{{relatedProducts.length}}">
       <text class="section-label">相关藏品 | COLLECTION</text>
       <scroll-view scroll-x class="product-scroll" enable-flex show-scrollbar="{{false}}">
-        <view
+        <view hover-class="tap-press-soft" hover-stay-time="80"
           class="product-card"
           wx:for="{{relatedProducts}}"
           wx:key="_id"
@@ -86,7 +86,7 @@
 
     <view class="related-block" wx:if="{{relatedWikis.length}}">
       <text class="section-label">关联档案 | ARCHIVE</text>
-      <view
+      <view hover-class="tap-press-soft" hover-stay-time="80"
         class="wiki-row"
         wx:for="{{relatedWikis}}"
         wx:key="_id"

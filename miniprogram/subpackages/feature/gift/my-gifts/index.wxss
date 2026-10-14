@@ -12,7 +12,7 @@ page {
   position: relative;
   opacity: 0;
   transform: translateY(8rpx);
-  transition: opacity 0.28s ease, transform 0.28s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 .page.pane-ready {
   opacity: 1;
@@ -331,7 +331,7 @@ page {
   justify-content: center;
   gap: 8rpx;
   border-radius: 10rpx;
-  transition: background 0.2s ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 .hub-tab.on {
   background: rgba(196, 167, 108, 0.14);
@@ -486,7 +486,7 @@ page {
   flex-shrink: 0;
 }
 
-.dim { opacity: 0.72; transition: opacity 0.2s ease; }
+.dim { opacity: 0.72; transition: opacity var(--dur-fast) var(--ease-standard); }
 
 /* —— 骨架 —— */
 .skel-list {
@@ -1740,7 +1740,7 @@ page {
   background: #1F1D1A;
   border: 1rpx solid #262320;
   border-radius: 16rpx;
-  transition: border-color 0.24s ease;
+  transition: border-color var(--dur-base) var(--ease-standard);
 }
 
 .pouch-head.is-open {
@@ -1827,7 +1827,7 @@ page {
   border-right: 2rpx solid #6B6560;
   border-bottom: 2rpx solid #6B6560;
   transform: rotate(45deg) translate(-4rpx, -4rpx);
-  transition: transform 0.24s ease, border-color 0.24s ease;
+  transition: transform var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
 }
 
 .pouch-arrow.open {

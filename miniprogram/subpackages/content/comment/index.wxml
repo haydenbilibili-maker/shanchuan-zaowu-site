@@ -132,7 +132,7 @@
                       bindtap="previewImage"
                       data-index="{{index}}"
                     ></image>
-                    <view class="delete-btn" catchtap="deleteImage" data-index="{{index}}">×</view>
+                    <view hover-class="tap-press" hover-stay-time="80" class="delete-btn" catchtap="deleteImage" data-index="{{index}}">×</view>
                   </view>
                 </block>
                 <view class="upload-btn" wx:if="{{images.length < 3}}" bindtap="chooseImage" hover-class="tap-press-soft" hover-stay-time="80">

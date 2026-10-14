@@ -211,7 +211,7 @@ page {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+  transition: transform var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard);
 }
 
 .swipe-wrapper.active .cart-card { transform: translateX(-120rpx); }
@@ -895,7 +895,7 @@ page {
   height: 100%;
   border-radius: 3rpx;
   background: linear-gradient(90deg, rgba(196, 167, 108, 0.6) 0%, var(--gold) 100%);
-  transition: width 0.28s ease;
+  transition: width var(--dur-base) var(--ease-standard);
 }
 
 .freeship-filler {

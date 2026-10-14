@@ -70,7 +70,7 @@
 
     <view class="controls">
       <scroll-view wx:if="{{isCustomMode}}" scroll-x class="frame-switcher" enable-flex show-scrollbar="{{false}}">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="frame-pill {{frameId === item.id ? 'active' : ''}}"
           wx:for="{{frameOptions}}"
           wx:key="id"
@@ -114,8 +114,8 @@
       <view class="frame-corner bl"></view><view class="frame-corner br"></view>
     </view>
     <view class="p-actions">
-      <view class="btn retry" bindtap="reTake">重拍</view>
-      <view class="btn save" bindtap="savePhoto">保存影像</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn retry" bindtap="reTake">重拍</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn save" bindtap="savePhoto">保存影像</view>
     </view>
   </view>
 </view>

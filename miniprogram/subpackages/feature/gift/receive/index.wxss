@@ -224,7 +224,7 @@ page { background: var(--color-bg); color: #fff; }
   height: 42rpx;
   margin-left: -190rpx;
   background: radial-gradient(ellipse at center, rgba(26, 24, 20, 0.72) 0%, transparent 74%);
-  transition: transform 0.7s ease, opacity 0.7s ease;
+  transition: transform 0.7s var(--ease-standard), opacity 0.7s var(--ease-standard);
 }
 .phase-lid .box-shadow,
 .phase-done .box-shadow {
@@ -272,7 +272,7 @@ page { background: var(--color-bg); color: #fff; }
   padding: 28rpx 24rpx;
   box-sizing: border-box;
   opacity: 0.55;
-  transition: opacity 0.45s ease, transform 0.55s ease;
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
 }
 .phase-lid .inner-letter,
 .phase-done .inner-letter {
@@ -404,7 +404,7 @@ page { background: var(--color-bg); color: #fff; }
   z-index: 4;
   opacity: 0.96;
   overflow: hidden;
-  transition: opacity 0.35s ease, transform 0.45s ease;
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
   box-shadow: 0 2rpx 8rpx rgba(26, 24, 20, 0.28);
 }
 .ribbon-v {
@@ -586,7 +586,7 @@ page { background: var(--color-bg); color: #fff; }
   transform: translateZ(24rpx) rotateX(-118deg);
 }
 .phase-done .gift-box {
-  transition: opacity 0.4s ease, transform 0.4s ease;
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
   opacity: 0.88;
 }
 
@@ -603,7 +603,7 @@ page { background: var(--color-bg); color: #fff; }
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.35s ease, transform 0.45s ease;
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
   animation: butterfly-idle 4.2s ease-in-out infinite;
   pointer-events: none;
 }
@@ -732,7 +732,7 @@ page { background: var(--color-bg); color: #fff; }
   z-index: 2;
   opacity: 0;
   transform: translateY(6rpx);
-  transition: opacity 0.55s ease, transform 0.55s ease;
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
 }
 .letter-to.shown {
   opacity: 1;

@@ -68,7 +68,7 @@ page {
   background: rgba(26, 24, 20, 0.96);
   border-bottom: 1px solid rgba(38, 35, 32, 0.6);
   pointer-events: none;
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 
 .sticky-header.tucked {
@@ -375,7 +375,7 @@ page {
   border-radius: var(--radius-full, 9999px);
   border: 1px solid rgba(38, 35, 32, 0.8);
   background: var(--color-bg-card, #1F1D1A);
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 
 .filter-pill text {
@@ -409,7 +409,7 @@ page {
   bottom: 0;
   z-index: 2;
   box-sizing: border-box;
-  transition: opacity 0.22s ease;
+  transition: opacity var(--dur-base) var(--ease-standard);
 }
 
 .main-scroll.dimmed {
@@ -525,7 +525,7 @@ page {
   border: 1px solid rgba(38, 35, 32, 0.7);
   border-radius: var(--radius-lg, 24rpx);
   overflow: hidden;
-  transition: border-color 0.28s ease, background 0.28s ease, opacity 0.28s ease;
+  transition: border-color var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard);
 }
 
 .message-item-press {
@@ -557,7 +557,7 @@ page {
   bottom: 0;
   width: 4rpx;
   background: transparent;
-  transition: background 0.28s ease;
+  transition: background var(--dur-base) var(--ease-standard);
 }
 
 .item-accent.on {
@@ -779,7 +779,7 @@ page {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color 0.28s ease;
+  transition: color var(--dur-base) var(--ease-standard);
 }
 
 .message-sender {
@@ -895,7 +895,7 @@ page {
   opacity: 0;
   pointer-events: none;
   transform: translateY(24rpx);
-  transition: opacity 0.28s ease, transform 0.28s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 
 .letter-page.visible {

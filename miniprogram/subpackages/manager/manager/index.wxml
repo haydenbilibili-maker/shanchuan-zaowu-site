@@ -790,7 +790,7 @@
        <view class="chart-empty" wx:elif="{{dashStock.error}}">
           <text>库存加载失败</text>
           <text class="chart-empty-hint">点此重试或下拉刷新</text>
-          <view class="dash-retry" catchtap="loadDashboardStock">重试</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="dash-retry" catchtap="loadDashboardStock">重试</view>
        </view>
        <view class="chart-empty" wx:else>
           <text>{{dashStock.loading ? '统计中…' : '暂无库存数据'}}</text>

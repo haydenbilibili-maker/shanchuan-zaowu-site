@@ -244,7 +244,7 @@
       </view>
 
       <!-- 背板 · 藏家铭牌 -->
-      <view class="vip-card vip-card-back {{cardSkinClass}}" bindtap="onToggleFlip">
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="vip-card vip-card-back {{cardSkinClass}}" bindtap="onToggleFlip">
         <view class="bg-texture"></view>
         <view class="card-grain" aria-hidden="true"></view>
         <view class="card-thickness" aria-hidden="true"></view>

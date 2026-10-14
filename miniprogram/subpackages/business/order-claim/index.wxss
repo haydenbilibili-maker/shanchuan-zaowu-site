@@ -59,7 +59,7 @@
   padding: 22rpx 12rpx;
   text-align: center;
   border-radius: 16rpx;
-  transition: background 0.22s ease, border-color 0.22s ease;
+  transition: background var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
   border: 1rpx solid transparent;
   box-sizing: border-box;
 }
@@ -165,7 +165,7 @@
   background: var(--color-bg-elevated, #262320);
   border: 1rpx solid rgba(196, 167, 108, 0.28);
   box-sizing: border-box;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
 }
 .upload-thumb image {
   width: 100%;
@@ -219,7 +219,7 @@
   border: 1rpx solid rgba(196, 167, 108, 0.18);
   border-radius: 16rpx;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .field-press {
   border-color: rgba(196, 167, 108, 0.4);
@@ -264,7 +264,7 @@
   font-size: 28rpx;
   font-weight: 500;
   letter-spacing: 0.04em;
-  transition: opacity 0.2s ease, transform 0.15s ease;
+  transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
 }
 .btn-press {
   opacity: 0.88;

@@ -461,7 +461,7 @@
               catchtap="previewCouponReceipt"
               data-idx="{{idx}}"
             ></image>
-            <view class="receipt-thumb-x" catchtap="removeCouponReceipt" data-idx="{{idx}}">×</view>
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="receipt-thumb-x" catchtap="removeCouponReceipt" data-idx="{{idx}}">×</view>
           </view>
           <view
             class="receipt-add {{couponRedeemForm.userCouponId && couponReceiptPaths.length < 3 ? '' : 'is-disabled'}}"

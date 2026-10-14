@@ -42,7 +42,7 @@ page {
   color: var(--color-text-secondary, #A09A90);
 }
 
-.reveal { opacity: 0; transition: opacity 0.36s ease; }
+.reveal { opacity: 0; transition: opacity var(--dur-slow) var(--ease-standard); }
 .entered .reveal { opacity: 1; }
 .entered .r1 { transition-delay: 0.02s; }
 .entered .r2 { transition-delay: 0.05s; }
@@ -418,7 +418,7 @@ page {
   height: 100%;
   background: linear-gradient(90deg, var(--brass-500, #A8903C), var(--brass-400, #C4A76C));
   border-radius: 9999px;
-  transition: width 0.4s ease;
+  transition: width var(--dur-slow) var(--ease-standard);
 }
 .progress-fill.brass { opacity: 0.75; }
 
@@ -571,7 +571,7 @@ page {
 .bar-fill {
   width: 100%;
   min-height: 0;
-  transition: height 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: height var(--dur-slow) cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 .bar-fill.gold { background: var(--brass-400, #C4A76C); }
 .bar-fill.forest { background: var(--color-forest, #2D5A3F); }
@@ -614,7 +614,7 @@ page {
 .share-fill {
   height: 100%;
   border-radius: 9999px;
-  transition: width 0.4s ease;
+  transition: width var(--dur-slow) var(--ease-standard);
 }
 .share-fill.brass { background: var(--brass-400, #C4A76C); }
 .share-fill.forest { background: var(--color-forest, #2D5A3F); }

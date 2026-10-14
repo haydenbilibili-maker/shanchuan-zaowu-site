@@ -58,7 +58,7 @@ page {
 
 .reveal {
   opacity: 0;
-  transition: opacity 0.36s ease;
+  transition: opacity var(--dur-slow) var(--ease-standard);
 }
 
 .entered .reveal { opacity: 1; }
@@ -159,7 +159,7 @@ page {
   font-size: 22rpx;
   color: var(--brass-400, #C4A76C);
   box-sizing: border-box;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 
 .range-tab.on {
@@ -716,7 +716,7 @@ page {
   height: 100%;
   border-radius: 9999px;
   background: linear-gradient(90deg, var(--brass-500, #A8903C), var(--brass-400, #C4A76C));
-  transition: width 0.55s ease;
+  transition: width var(--dur-slow) var(--ease-standard);
 }
 
 .share-fill.forest {
@@ -873,7 +873,7 @@ page {
 .bar-fill {
   width: 100%;
   min-height: 0;
-  transition: height 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: height var(--dur-slow) cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .bar-fill.gold {

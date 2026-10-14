@@ -181,7 +181,7 @@
 .progress-fill {
   height: 100%;
   background: #C4A76C;
-  transition: width 0.2s ease;
+  transition: width var(--dur-fast) var(--ease-standard);
 }
 
 /* 鉴定进行中：遮罩取 ui-pop-mask is-center（令牌底色 + 淡入） */

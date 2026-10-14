@@ -664,7 +664,7 @@ button.rp-act::after {
   margin-left: var(--space-2);
   font-size: var(--fs-18);
   color: rgba(196, 167, 108, 0.7);
-  transition: transform 0.18s ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 
 .rp-archive.is-open .rp-archive-toggle {

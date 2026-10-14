@@ -19,3 +19,7 @@
 .rc-cta{margin-top:24rpx;width:100%;height:84rpx;line-height:84rpx;border-radius:42rpx;background:#C4A76C;color:#1A1814;font-size:28rpx;font-weight:600;padding:0}
 .rc-cta::after{border:none}
 .rc-cta.is-off{opacity:0.55}
+
+/* 按压态（组件样式隔离，拿不到 app.wxss 的同名类；值与 app.wxss 一致） */
+.tap-press { opacity: 0.72; }
+.tap-press-soft { opacity: 0.86; }

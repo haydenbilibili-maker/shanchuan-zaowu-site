@@ -30,7 +30,7 @@
   background: linear-gradient(135deg, rgba(196, 167, 108,0.1), rgba(196, 167, 108,0.05));
   border: 2px solid rgba(196, 167, 108,0.3);
   border-radius: 50%;
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   backdrop-filter: blur(8px);
 }
 
@@ -104,7 +104,7 @@
   justify-content: center;
   position: relative;
   border-radius: 12rpx;
-  transition: all 0.3s;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   background: rgba(0,0,0,0.3);
   border: 2px solid transparent;
 }
@@ -222,10 +222,6 @@
   letter-spacing: 1rpx;
 }
 
-
-
-
-
-
-
-
+/* 按压态（组件样式隔离，拿不到 app.wxss 的同名类；值与 app.wxss 一致） */
+.tap-press { opacity: 0.72; }
+.tap-press-soft { opacity: 0.86; }

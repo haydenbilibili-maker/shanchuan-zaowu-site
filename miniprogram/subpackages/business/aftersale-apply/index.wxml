@@ -37,8 +37,8 @@
         show-center-play-btn
       ></video>
       <view class="video-actions">
-        <view class="link-btn" bindtap="chooseVideo">重新选择</view>
-        <view class="link-btn danger" bindtap="clearVideo">移除</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="link-btn" bindtap="chooseVideo">重新选择</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="link-btn danger" bindtap="clearVideo">移除</view>
       </view>
     </view>
     <view class="upload-add video-add" wx:else bindtap="chooseVideo" hover-class="thumb-press" hover-stay-time="80">
@@ -64,7 +64,7 @@
         hover-stay-time="80"
       >
         <image src="{{item}}" mode="aspectFill" bindtap="previewImage" data-idx="{{idx}}"></image>
-        <view class="upload-del" catchtap="removeImage" data-idx="{{idx}}">×</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="upload-del" catchtap="removeImage" data-idx="{{idx}}">×</view>
       </view>
       <view
         class="upload-add"

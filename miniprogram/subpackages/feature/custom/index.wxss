@@ -86,7 +86,7 @@ view, text, image { box-sizing: border-box; }
   border: 2rpx solid #33302C;
   background: #1A1814;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.25s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
 
 .rail-dot.filled {
@@ -111,14 +111,14 @@ view, text, image { box-sizing: border-box; }
   position: absolute; left: calc(50% + 22rpx); right: calc(-50% + 22rpx);
   top: 50%; height: 4rpx; margin-top: -2rpx;
   background: #262320; z-index: 1;
-  transition: background 0.25s ease;
+  transition: background var(--dur-base) var(--ease-standard);
 }
 
 .rail-line.filled { background: rgba(196, 167, 108, 0.45); }
 
 .rail-label {
   font-size: 22rpx; color: #6B6560; line-height: 1.2;
-  text-align: center; transition: color 0.2s ease;
+  text-align: center; transition: color var(--dur-fast) var(--ease-standard);
   white-space: nowrap;
 }
 
@@ -424,7 +424,7 @@ view, text, image { box-sizing: border-box; }
   display: flex; align-items: center; justify-content: space-between; gap: 20rpx;
   padding: 24rpx; margin-bottom: 16rpx; background: #1F1D1A;
   border: 1px solid rgba(38, 35, 32, 0.8); border-radius: 16rpx;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 
 .config-card.active {

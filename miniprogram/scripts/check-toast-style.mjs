@@ -118,7 +118,7 @@ check('★ 轻提示不拦点击（pointer-events: none）', /pointer-events:\s*
   '缺少 pointer-events: none → 提示会挡住整屏操作')
 check('★ 轻提示不拦滚动（不 catchtouchmove）', !/catchtouchmove/.test(toastWxml),
   'toast 上挂了 catchtouchmove → 用户滚动会被吃掉')
-check('轻提示有进出场过渡（与 AppModal 同为 0.24s）', /transition:[^;]*0\.24s/.test(toastWxss))
+check('轻提示有进出场过渡（与 AppModal 同为 0.24s；2026-10-14 起写作动效令牌 var(--dur-base) = 240ms）', /transition:[^;]*(0\.24s|240ms|var\(--dur-base\))/.test(toastWxss))
 check('到时自动收起并派发 close（宿主据此复位）',
   /triggerEvent\('close'\)/.test(read('miniprogram/components/AppToast/index.js')))
 

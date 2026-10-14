@@ -383,7 +383,7 @@
           <view class="tag-cloud">
             <text class="interest-tag" wx:for="{{detail.visibleTags}}" wx:for-item="t" wx:key="key">{{t.label}}</text>
           </view>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="tag-expand"
             wx:if="{{detail.tagsOverflow > 0}}"
             bindtap="toggleTagsExpand"
@@ -431,8 +431,8 @@
           <view hover-class="wb-press" hover-stay-time="80" class="btn-outline danger-outline" wx:if="{{detail.cancelMode !== 'anonymize'}}" bindtap="restoreMember">{{restorePending ? '确认恢复' : '恢复会员'}}</view>
         </view>
         <view class="drawer-cta-row" wx:else>
-          <view class="btn-primary drawer-cta" bindtap="openAdjust">调整积分</view>
-          <view class="btn-outline danger-outline drawer-cta" bindtap="openCancelMember">注销此用户</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="btn-primary drawer-cta" bindtap="openAdjust">调整积分</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="btn-outline danger-outline drawer-cta" bindtap="openCancelMember">注销此用户</view>
         </view>
       </view>
     </view>

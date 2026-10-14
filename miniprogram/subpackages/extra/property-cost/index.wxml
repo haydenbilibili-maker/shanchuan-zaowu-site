@@ -40,8 +40,8 @@
       <picker mode="date" fields="month" value="{{monthFilter}}" bindchange="onMonthFilter">
         <view class="filter-chip">{{monthFilter || '所属月'}}</view>
       </picker>
-      <view class="filter-chip clear" wx:if="{{monthFilter}}" bindtap="clearMonth">清除月</view>
-      <view class="btn-add" bindtap="openCreate">登记</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="filter-chip clear" wx:if="{{monthFilter}}" bindtap="clearMonth">清除月</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-add" bindtap="openCreate">登记</view>
     </view>
 
     <view class="skeleton-list" wx:if="{{loading && !list.length && !listError}}">
@@ -55,7 +55,7 @@
     <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
       <text class="empty-title">清单未能展开</text>
       <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="pc-retry" bindtap="loadList">重试</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="pc-retry" bindtap="loadList">重试</view>
     </view>
 
     <view class="empty-tip" wx:elif="{{!loading && !list.length}}">
@@ -89,8 +89,8 @@
           <text class="meta">{{item.receiptCount}} 张票据</text>
         </view>
         <view class="card-actions">
-          <view class="chip-btn" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
-          <view class="chip-btn danger" data-id="{{item._id}}" bindtap="onRemove">{{pendingRemoveId === item._id ? '确认删除' : '删除'}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="chip-btn" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="chip-btn danger" data-id="{{item._id}}" bindtap="onRemove">{{pendingRemoveId === item._id ? '确认删除' : '删除'}}</view>
         </view>
       </view>
     </block>
@@ -160,10 +160,10 @@
                 data-url="{{item.url}}"
                 bindtap="previewReceipt"
               />
-              <view class="receipt-del" data-index="{{index}}" catchtap="removeReceipt">删</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="receipt-del" data-index="{{index}}" catchtap="removeReceipt">删</view>
             </view>
           </view>
-          <view class="chip-btn" bindtap="chooseReceipt">
+          <view hover-class="tap-press" hover-stay-time="80" class="chip-btn" bindtap="chooseReceipt">
             {{uploading ? '上传中…' : (receiptPreviews.length ? '继续添加' : '上传票据')}}
           </view>
         </view>
@@ -172,7 +172,7 @@
         <text class="field-label">备注</text>
         <input class="input" value="{{form.note}}" data-field="note" bindinput="onFormInput" placeholder-class="ph" />
       </view>
-      <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
     </scroll-view>
   </view>
 </view>

@@ -49,7 +49,7 @@
 
     <view class="im-filters">
       <view class="ops-filter-row">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           wx:for="{{rangeOptions}}"
           wx:key="id"
           class="ops-filter-chip {{range === item.id ? 'brass' : ''}}"
@@ -67,7 +67,7 @@
         </picker>
       </view>
       <view class="ops-filter-row">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           wx:for="{{statusOptions}}"
           wx:key="id"
           class="ops-filter-chip {{status === item.id ? 'brass' : ''}}"
@@ -85,9 +85,9 @@
           bindinput="onUserInput"
           bindconfirm="onUserSearch"
         />
-        <view class="ops-chip-btn brass" bindtap="onUserSearch">筛选</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn brass" bindtap="onUserSearch">筛选</view>
       </view>
-      <view class="im-user-chip" wx:if="{{userFilter}}" bindtap="onClearUser">
+      <view hover-class="tap-press" hover-stay-time="80" class="im-user-chip" wx:if="{{userFilter}}" bindtap="onClearUser">
         <text>只看：{{userFilterLabel}}</text>
         <text class="im-user-chip-x">清除</text>
       </view>
@@ -103,7 +103,7 @@
     <view class="ops-empty is-error" wx:elif="{{loadError}}">
       <text class="ops-empty-title">鉴定记录未能取回</text>
       <text class="ops-empty-sub">{{loadError}}</text>
-      <view class="ops-btn-secondary im-retry" bindtap="loadList" data-reset="1">重试</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary im-retry" bindtap="loadList" data-reset="1">重试</view>
     </view>
 
     <view class="ops-empty" wx:elif="{{!list.length}}">
@@ -113,7 +113,7 @@
 
     <block wx:else>
       <text class="im-count">共 {{total}} 次</text>
-      <view class="im-row" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="im-row" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="openDetail">
         <view class="im-thumb-wrap">
           <image
             wx:if="{{item.thumb}}"
@@ -209,7 +209,7 @@
 
         <view class="im-block" wx:if="{{detail.products.length}}">
           <text class="im-block-title">匹配藏品</text>
-          <view class="im-prod" wx:for="{{detail.products}}" wx:key="id" data-id="{{item.id}}" bindtap="openProduct">
+          <view hover-class="tap-press" hover-stay-time="80" class="im-prod" wx:for="{{detail.products}}" wx:key="id" data-id="{{item.id}}" bindtap="openProduct">
             <image wx:if="{{item.cover}}" class="im-prod-img" src="{{item.cover}}" mode="aspectFill" lazy-load />
             <view class="im-prod-img im-thumb-empty" wx:else></view>
             <text class="im-prod-title">{{item.title}}</text>

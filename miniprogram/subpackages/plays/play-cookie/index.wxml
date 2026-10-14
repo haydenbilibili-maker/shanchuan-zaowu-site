@@ -83,7 +83,7 @@
     </view>
 
     <view class="rp-archive {{archiveOpen ? 'is-open' : ''}}">
-      <view class="rp-archive-toggle" bindtap="toggleArchive" aria-role="button">{{archiveOpen ? '收起留档' : '我的留档（' + archive.length + '）'}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="rp-archive-toggle" bindtap="toggleArchive" aria-role="button">{{archiveOpen ? '收起留档' : '我的留档（' + archive.length + '）'}}</view>
       <view class="rp-archive-list" wx:if="{{archiveOpen}}">
         <view class="rp-archive-row" wx:for="{{archive}}" wx:key="at">
           <text class="rp-archive-day">{{item.dayKey}}</text>

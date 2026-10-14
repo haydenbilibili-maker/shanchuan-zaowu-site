@@ -21,7 +21,7 @@
   background-position: center;
   background-repeat: no-repeat;
   overflow: hidden;
-  transition: border-color 0.2s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard);
   box-shadow:
     inset 0 0 0 2rpx rgba(77, 64, 26, 0.32),
     inset 0 0 0 7rpx rgba(38, 32, 26, 0.38);

@@ -54,15 +54,15 @@
   <scroll-view scroll-y="true" class="scroll-content" enable-flex="true">
     <view class="scroll-inner">
       <view class="tab-box">
-        <view class="tab-item {{currentTab==0 ? 'active' : ''}}" bindtap="switchTab" data-idx="0">入店参观</view>
-        <view class="tab-item {{currentTab==1 ? 'active' : ''}}" bindtap="switchTab" data-idx="1">手作课程</view>
-        <view class="tab-item {{currentTab==2 ? 'active' : ''}}" bindtap="switchTab" data-idx="2">特别活动</view>
-        <view class="tab-item {{currentTab==3 ? 'active' : ''}}" bindtap="switchTab" data-idx="3">我的预约</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{currentTab==0 ? 'active' : ''}}" bindtap="switchTab" data-idx="0">入店参观</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{currentTab==1 ? 'active' : ''}}" bindtap="switchTab" data-idx="1">手作课程</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{currentTab==2 ? 'active' : ''}}" bindtap="switchTab" data-idx="2">特别活动</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{currentTab==3 ? 'active' : ''}}" bindtap="switchTab" data-idx="3">我的预约</view>
       </view>
 
       <!-- A: 参观表单 (仅 Tab 0 显示日期选择) -->
       <block wx:if="{{currentTab == 0}}">
-        <view class="custom-plan-banner store-banner {{storeLocked ? 'locked' : ''}}" bindtap="toggleStorePicker">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="custom-plan-banner store-banner {{storeLocked ? 'locked' : ''}}" bindtap="toggleStorePicker">
           <text class="cp-overline">STORE · 预约门店</text>
           <text class="cp-title">{{storeName}}</text>
           <text class="cp-sub" wx:if="{{storeLocationLabel}}">{{storeLocationLabel}}</text>
@@ -126,7 +126,7 @@
         
         <scroll-view scroll-x="true" class="date-scroll {{showCalendar ? 'hidden' : ''}}" enable-flex="true">
           <block wx:for="{{weekDays}}" wx:key="index">
-            <view class="date-pill {{selectedDateIndex === index ? 'active' : ''}}" bindtap="selectDate" data-index="{{index}}">
+            <view hover-class="tap-press" hover-stay-time="80" class="date-pill {{selectedDateIndex === index ? 'active' : ''}}" bindtap="selectDate" data-index="{{index}}">
               <text class="d-week">{{item.week}}</text><text class="d-day">{{item.day}}</text>
             </view>
           </block>
@@ -135,7 +135,7 @@
         <view class="section-label">预约时间 | SELECT SESSION</view>
         <view class="time-grid">
           <block wx:for="{{timeSlots}}" wx:key="index">
-            <view class="time-btn {{item.status === 'full' ? 'disabled' : ''}} {{selectedTimeIndex === index ? 'active' : ''}}" bindtap="selectTime" data-index="{{index}}" data-status="{{item.status}}">
+            <view hover-class="tap-press" hover-stay-time="80" class="time-btn {{item.status === 'full' ? 'disabled' : ''}} {{selectedTimeIndex === index ? 'active' : ''}}" bindtap="selectTime" data-index="{{index}}" data-status="{{item.status}}">
               <text>{{item.time}}</text>
             </view>
           </block>
@@ -191,8 +191,8 @@
       <!-- D: 我的预约（原预约历史） -->
       <block wx:if="{{currentTab == 3}}">
         <view class="booking-history-tabs">
-          <view class="history-tab-item {{bookingHistoryTab==0 ? 'active' : ''}}" bindtap="switchHistoryTab" data-idx="0">待参加</view>
-          <view class="history-tab-item {{bookingHistoryTab==1 ? 'active' : ''}}" bindtap="switchHistoryTab" data-idx="1">历史记录</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="history-tab-item {{bookingHistoryTab==0 ? 'active' : ''}}" bindtap="switchHistoryTab" data-idx="0">待参加</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="history-tab-item {{bookingHistoryTab==1 ? 'active' : ''}}" bindtap="switchHistoryTab" data-idx="1">历史记录</view>
         </view>
         
         <!-- 待参加列表 -->

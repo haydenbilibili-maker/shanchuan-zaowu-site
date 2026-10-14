@@ -18,7 +18,7 @@
     <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
     <view class="sc-tabs">
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="sc-tab {{activeTab === item.key ? 'on' : ''}}"
         wx:for="{{tabs}}"
         wx:key="key"
@@ -30,15 +30,15 @@
     <!-- 开单 -->
     <block wx:if="{{activeTab === 'create'}}">
       <view class="sc-modes">
-        <view class="sc-mode {{createMode === 'sku' ? 'on' : ''}}" wx:if="{{isSuper}}" data-mode="sku" bindtap="switchCreateMode">
+        <view hover-class="tap-press" hover-stay-time="80" class="sc-mode {{createMode === 'sku' ? 'on' : ''}}" wx:if="{{isSuper}}" data-mode="sku" bindtap="switchCreateMode">
           <text class="sc-mode-title">选 SKU</text>
           <text class="sc-mode-sub">目录组合 · 自动算价</text>
         </view>
-        <view class="sc-mode {{createMode === 'paste' ? 'on' : ''}}" data-mode="paste" bindtap="switchCreateMode">
+        <view hover-class="tap-press" hover-stay-time="80" class="sc-mode {{createMode === 'paste' ? 'on' : ''}}" data-mode="paste" bindtap="switchCreateMode">
           <text class="sc-mode-title">粘贴识别</text>
           <text class="sc-mode-sub">整段文本 · 多店</text>
         </view>
-        <view class="sc-mode {{createMode === 'single' ? 'on' : ''}}" data-mode="single" bindtap="switchCreateMode">
+        <view hover-class="tap-press" hover-stay-time="80" class="sc-mode {{createMode === 'single' ? 'on' : ''}}" data-mode="single" bindtap="switchCreateMode">
           <text class="sc-mode-title">单条补录</text>
           <text class="sc-mode-sub">一门店 · 一行明细</text>
         </view>
@@ -93,14 +93,14 @@
                 <text class="ss-line-name">{{item.skuName}}</text>
                 <text class="ss-line-tag" wx:if="{{item.hasScene}}">造景</text>
               </view>
-              <view class="ss-del" data-index="{{index}}" catchtap="onRemoveLine"><text>删除</text></view>
+              <view hover-class="tap-press" hover-stay-time="80" class="ss-del" data-index="{{index}}" catchtap="onRemoveLine"><text>删除</text></view>
             </view>
             <view class="ss-line-calc">
               <text class="ss-unit">{{item.unitPriceText}}/件</text>
               <view class="ss-qty">
-                <view class="ss-qty-btn" data-index="{{index}}" data-delta="-1" bindtap="onQtyStep"><text>−</text></view>
+                <view hover-class="tap-press" hover-stay-time="80" class="ss-qty-btn" data-index="{{index}}" data-delta="-1" bindtap="onQtyStep"><text>−</text></view>
                 <input class="ss-qty-input" type="number" value="{{item.qty}}" data-index="{{index}}" bindinput="onQtyInput" />
-                <view class="ss-qty-btn" data-index="{{index}}" data-delta="1" bindtap="onQtyStep"><text>＋</text></view>
+                <view hover-class="tap-press" hover-stay-time="80" class="ss-qty-btn" data-index="{{index}}" data-delta="1" bindtap="onQtyStep"><text>＋</text></view>
               </view>
               <text class="ss-line-total {{item.pricingStatus !== 'priced' ? 'is-pending' : ''}}">{{item.lineTotalText || '—'}}</text>
             </view>
@@ -170,7 +170,7 @@
           </view>
           <block wx:for="{{parsePreview.shipments}}" wx:key="storeId" wx:for-item="block" wx:for-index="storeIdx">
             <view class="ops-group">
-              <view class="ops-group-head" data-idx="{{storeIdx}}" bindtap="toggleStoreCollapse">
+              <view hover-class="tap-press" hover-stay-time="80" class="ops-group-head" data-idx="{{storeIdx}}" bindtap="toggleStoreCollapse">
                 <text class="ops-group-title">{{block.storeName}} · {{block.totalQty}}件</text>
                 <view class="ops-group-side">
                   <text class="ops-qty-badge">{{block.itemCount}}</text>
@@ -185,7 +185,7 @@
               </view>
             </view>
           </block>
-          <view class="sc-edit-link" bindtap="openEditPage">
+          <view hover-class="tap-press" hover-stay-time="80" class="sc-edit-link" bindtap="openEditPage">
             <text class="sc-edit-link-main">逐行核对并算价 ›</text>
             <text class="sc-edit-link-sub">要逐行选原材料 / 包装方式、按价目表核价时用</text>
           </view>
@@ -200,7 +200,7 @@
             <text class="ops-field-k">从成品库存 / 藏品带入（可选）</text>
             <view class="ops-sku-search">
               <input class="ops-field-box sku-kw" value="{{itemKeyword}}" bindinput="onItemKeyword" bindconfirm="searchItem" placeholder="搜成品库存或藏品名…" placeholder-class="ops-ph" confirm-type="search" />
-              <view class="ops-sku-btn {{itemSearching ? 'disabled' : ''}}" bindtap="searchItem">{{itemSearching ? '…' : '搜'}}</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="ops-sku-btn {{itemSearching ? 'disabled' : ''}}" bindtap="searchItem">{{itemSearching ? '…' : '搜'}}</view>
             </view>
             <view class="ops-sku-hits" wx:if="{{itemHits.length}}">
               <view class="ops-sku-hit" wx:for="{{itemHits}}" wx:key="key" data-idx="{{index}}" bindtap="selectItemHit">
@@ -235,7 +235,7 @@
 
           <view class="ops-field-line">
             <text class="ops-field-k">原材料</text>
-            <view class="ss-pick-inner ss-pick-click" data-kind="material" data-target="single" bindtap="openPicker">
+            <view hover-class="tap-press" hover-stay-time="80" class="ss-pick-inner ss-pick-click" data-kind="material" data-target="single" bindtap="openPicker">
               <text class="{{single.materialName ? 'sc-pick-on' : 'sc-pick-off'}}">{{single.materialName ? single.materialName + (single.materialGrade ? '（' + single.materialGrade + '）' : '') : '可选 · 从资料选择'}}</text>
               <text class="ss-arrow">▾</text>
             </view>
@@ -243,7 +243,7 @@
           </view>
           <view class="ops-field-line">
             <text class="ops-field-k">包装方式</text>
-            <view class="ss-pick-inner ss-pick-click" data-kind="packaging" data-target="single" bindtap="openPicker">
+            <view hover-class="tap-press" hover-stay-time="80" class="ss-pick-inner ss-pick-click" data-kind="packaging" data-target="single" bindtap="openPicker">
               <text class="{{single.packagingName ? 'sc-pick-on' : 'sc-pick-off'}}">{{single.packagingName ? single.packagingName + (single.packagingSize ? ' ' + single.packagingSize : '') : '可选 · 从资料选择'}}</text>
               <text class="ss-arrow">▾</text>
             </view>
@@ -251,7 +251,7 @@
           </view>
           <text class="ops-field-hint" wx:if="{{single.materialName || single.packagingName}}">已选原材料 / 包装：开启算价时按价目表计算，价目表里没有的保留手填单价。</text>
 
-          <view class="sc-more-toggle" bindtap="toggleSingleMore">
+          <view hover-class="tap-press" hover-stay-time="80" class="sc-more-toggle" bindtap="toggleSingleMore">
             <text>{{singleMoreOpen ? '收起更多字段' : '更多字段（规格 / 分类 / 购买人 / 状态 / 物流）'}}</text>
             <text class="ss-arrow">{{singleMoreOpen ? '▴' : '▾'}}</text>
           </view>
@@ -303,8 +303,8 @@
       </view>
 
       <view class="mm-entry-row" wx:if="{{isSuper}}">
-        <view class="mm-entry" data-kind="draft" bindtap="openMemoBox"><text>草稿箱</text><text class="mm-entry-n">{{memoCounts.draft}}</text></view>
-        <view class="mm-entry" data-kind="history" bindtap="openMemoBox"><text>历史 · 已结清</text><text class="mm-entry-n">{{memoCounts.history}}</text></view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="mm-entry" data-kind="draft" bindtap="openMemoBox"><text>草稿箱</text><text class="mm-entry-n">{{memoCounts.draft}}</text></view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="mm-entry" data-kind="history" bindtap="openMemoBox"><text>历史 · 已结清</text><text class="mm-entry-n">{{memoCounts.history}}</text></view>
       </view>
 
       <view class="ops-summary" wx:if="{{!loading || list.length}}">
@@ -320,15 +320,15 @@
 
       <view class="ops-search-row">
         <input class="ops-search-input" value="{{keyword}}" bindinput="onKeywordInput" placeholder="搜单号 / 品名 / 门店 / 客户" placeholder-class="ops-ph" confirm-type="search" />
-        <view class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-search-clear" wx:if="{{keyword}}" bindtap="clearKeyword">清除</view>
       </view>
 
       <view class="ops-quick-row">
-        <view class="ops-quick {{statusQuick === '' ? 'on' : ''}}" data-status="all" bindtap="onStatusQuick">全部</view>
-        <view class="ops-quick {{statusQuick === 'pending' ? 'on' : ''}}" data-status="pending" bindtap="onStatusQuick">待发货</view>
-        <view class="ops-quick {{statusQuick === 'shipped' ? 'on' : ''}}" data-status="shipped" bindtap="onStatusQuick">已发货</view>
-        <view class="ops-quick {{statusQuick === 'completed' ? 'on' : ''}}" data-status="completed" bindtap="onStatusQuick">已完成</view>
-        <view class="ops-quick sc-filter-toggle {{filterOpen || storeFilterIndex || sourceFilterIndex || dateFrom || dateTo ? 'is-active' : ''}}" bindtap="toggleFilter">筛选{{filterOpen ? ' ▴' : ' ▾'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-quick {{statusQuick === '' ? 'on' : ''}}" data-status="all" bindtap="onStatusQuick">全部</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-quick {{statusQuick === 'pending' ? 'on' : ''}}" data-status="pending" bindtap="onStatusQuick">待发货</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-quick {{statusQuick === 'shipped' ? 'on' : ''}}" data-status="shipped" bindtap="onStatusQuick">已发货</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-quick {{statusQuick === 'completed' ? 'on' : ''}}" data-status="completed" bindtap="onStatusQuick">已完成</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-quick sc-filter-toggle {{filterOpen || storeFilterIndex || sourceFilterIndex || dateFrom || dateTo ? 'is-active' : ''}}" bindtap="toggleFilter">筛选{{filterOpen ? ' ▴' : ' ▾'}}</view>
       </view>
 
       <view class="sc-filter-panel" wx:if="{{filterOpen}}">
@@ -350,7 +350,7 @@
           <picker mode="date" value="{{dateTo}}" bindchange="onDateTo">
             <view class="ops-filter-chip">{{dateTo || '截止日'}}</view>
           </picker>
-          <view class="ops-filter-chip clear" wx:if="{{dateFrom || dateTo}}" bindtap="clearDates">清日期</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-filter-chip clear" wx:if="{{dateFrom || dateTo}}" bindtap="clearDates">清日期</view>
         </view>
       </view>
       <view class="sc-date-chip-row" wx:elif="{{dateFrom || dateTo}}">
@@ -369,7 +369,7 @@
       <view class="ops-empty is-error" wx:elif="{{listError && !list.length}}">
         <text class="ops-empty-title">出货单未能展开</text>
         <text class="ops-empty-sub">{{listTip || '下拉或切筛选重试'}}</text>
-        <view class="ops-chip-btn" bindtap="onRetryList">重试</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn" bindtap="onRetryList">重试</view>
       </view>
 
       <view class="ops-empty" wx:elif="{{!loading && !listError && !list.length}}">
@@ -384,7 +384,7 @@
       </view>
 
       <block wx:for="{{list}}" wx:key="_id">
-        <view class="ops-card {{highlightIds[item._id] ? 'sc-card-new' : ''}}" data-id="{{item._id}}" bindtap="openDetail">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="ops-card {{highlightIds[item._id] ? 'sc-card-new' : ''}}" data-id="{{item._id}}" bindtap="openDetail">
           <view class="ops-card-top">
             <text class="ops-card-title">{{item.customerLine || item.storeName}}</text>
             <text class="sc-new-badge" wx:if="{{highlightIds[item._id]}}">新</text>
@@ -404,8 +404,8 @@
           <text class="ops-meta" wx:if="{{item.logisticsText}}">物流 {{item.logisticsText}}</text>
           <text class="ops-meta">更新 {{item.updatedAtText}}</text>
           <view class="ops-card-actions" catchtap="noop">
-            <view class="ops-chip-btn brass" wx:if="{{item.canTransit && canWrite}}" data-id="{{item._id}}" catchtap="openDetail">详情 / 流转</view>
-            <view class="ops-chip-btn danger" wx:if="{{canWrite}}" data-id="{{item._id}}" catchtap="onRemove">{{removePendingId === item._id ? '确认删除' : '删除'}}</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn brass" wx:if="{{item.canTransit && canWrite}}" data-id="{{item._id}}" catchtap="openDetail">详情 / 流转</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn danger" wx:if="{{canWrite}}" data-id="{{item._id}}" catchtap="onRemove">{{removePendingId === item._id ? '确认删除' : '删除'}}</view>
           </view>
         </view>
       </block>
@@ -413,7 +413,7 @@
 
     <!-- 总览（观测台） -->
     <block wx:if="{{activeTab === 'overview'}}">
-      <view class="ops-source-toggle" bindtap="toggleSource">
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-source-toggle" bindtap="toggleSource">
         <text class="ops-source-label">{{sourceOpen ? '收起数据说明' : '数据说明'}}</text>
         <text class="ops-source-chevron">{{sourceOpen ? '▴' : '▾'}}</text>
       </view>
@@ -435,7 +435,7 @@
       <view class="ops-empty is-error" wx:elif="{{dashError && !kpis}}">
         <text class="ops-empty-title">观测台未能展开</text>
         <text class="ops-empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-        <view class="ops-chip-btn" bindtap="onRetryDash">重试</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn" bindtap="onRetryDash">重试</view>
       </view>
 
       <block wx:if="{{kpis}}">
@@ -614,19 +614,19 @@
               </view>
             </view>
           </view>
-          <view class="list-more" wx:if="{{charts.byCustomerMore > 0 || listMore.customers}}" data-key="customers" bindtap="toggleListMore">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="list-more" wx:if="{{charts.byCustomerMore > 0 || listMore.customers}}" data-key="customers" bindtap="toggleListMore">
             <text>{{listMore.customers ? '收起客户列表' : '查看更多客户 · ' + charts.byCustomerMore}}</text>
           </view>
         </view>
 
-        <view class="detail-toggle" bindtap="toggleDetail">
+        <view hover-class="tap-press" hover-stay-time="80" class="detail-toggle" bindtap="toggleDetail">
           <text class="detail-toggle-main">{{detailOpen ? '收起门店 · 状态明细' : '展开门店 · 状态明细'}}</text>
           <text class="detail-toggle-sub">不影响上方核心指标</text>
         </view>
 
         <view class="detail-panel" wx:if="{{detailOpen}}">
           <view class="detail-block">
-            <view class="detail-block-head" data-key="stores" bindtap="toggleSection">
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="stores" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">STORES</text>
                 <text class="detail-block-cn">各门店出货金额</text>
@@ -647,7 +647,7 @@
             </view>
           </view>
           <view class="detail-block">
-            <view class="detail-block-head" data-key="status" bindtap="toggleSection">
+            <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="status" bindtap="toggleSection">
               <view class="detail-block-titles">
                 <text class="detail-block-en">STATUS</text>
                 <text class="detail-block-cn">状态笔数</text>
@@ -666,12 +666,12 @@
               </view>
             </view>
           </view>
-          <view class="detail-toggle secondary" bindtap="toggleDetail">
+          <view hover-class="tap-press" hover-stay-time="80" class="detail-toggle secondary" bindtap="toggleDetail">
             <text class="detail-toggle-main">收起全部明细</text>
           </view>
         </view>
 
-        <view class="ops-goto-list" data-tab="list" bindtap="switchTab">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="ops-goto-list" data-tab="list" bindtap="switchTab">
           <text>前往单据 · 流转 / 物流</text>
         </view>
       </block>
@@ -756,7 +756,7 @@
 
       <view class="sc-lib-bar">
         <input class="ops-search-input sc-lib-search" value="{{libKeyword}}" bindinput="onLibKeyword" placeholder="搜名称 / 别名" placeholder-class="ops-ph" />
-        <view class="sc-lib-add" wx:if="{{isSuper}}" bindtap="openLibForm">＋ 新增</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="sc-lib-add" wx:if="{{isSuper}}" bindtap="openLibForm">＋ 新增</view>
       </view>
       <text class="sc-lib-note">{{isSuper ? '开单时按这个顺序列出；停用的不再出现，已开的单不受影响。' : '只读：开单时按这个顺序列出，需要调整请联系超管。'}}</text>
       <text class="sc-lib-note warn" wx:if="{{libTruncated}}">共 {{libTotal}} 条，仅显示前 200 条：请用搜索定位。</text>
@@ -770,7 +770,7 @@
       <view class="ops-empty is-error" wx:elif="{{libError}}">
         <text class="ops-empty-title">资料未能展开</text>
         <text class="ops-empty-sub">{{libError}}</text>
-        <view class="ops-chip-btn" bindtap="loadLibrary">重试</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn" bindtap="loadLibrary">重试</view>
       </view>
       <view class="ops-empty" wx:elif="{{!libList.length}}">
         <text class="ops-empty-title">{{libKeyword ? '没有匹配项' : '还没有条目'}}</text>
@@ -847,12 +847,12 @@
     </view>
   </block>
   <view class="sc-dock-row" wx:elif="{{createMode === 'paste'}}" style="width:100%;box-sizing:border-box;">
-    <view class="sc-dock-btn is-ghost {{parsing ? 'is-disabled' : ''}}" bindtap="runParse"><text>{{parsing ? '识别中…' : '识别预览'}}</text></view>
-    <view class="sc-dock-btn {{(!parsePreview || !parsePreview.canWrite || saving) ? 'is-disabled' : ''}}" bindtap="confirmPaste"><text>{{saving ? '写入中…' : '确认写入'}}</text></view>
+    <view hover-class="tap-press" hover-stay-time="80" class="sc-dock-btn is-ghost {{parsing ? 'is-disabled' : ''}}" bindtap="runParse"><text>{{parsing ? '识别中…' : '识别预览'}}</text></view>
+    <view hover-class="tap-press" hover-stay-time="80" class="sc-dock-btn {{(!parsePreview || !parsePreview.canWrite || saving) ? 'is-disabled' : ''}}" bindtap="confirmPaste"><text>{{saving ? '写入中…' : '确认写入'}}</text></view>
   </view>
   <view class="sc-dock-row" wx:else style="width:100%;box-sizing:border-box;">
-    <view class="sc-dock-btn is-ghost" bindtap="resetSingle"><text>清空</text></view>
-    <view class="sc-dock-btn {{saving ? 'is-disabled' : ''}}" bindtap="confirmSingle"><text>{{saving ? '写入中…' : '确认写入'}}</text></view>
+    <view hover-class="tap-press" hover-stay-time="80" class="sc-dock-btn is-ghost" bindtap="resetSingle"><text>清空</text></view>
+    <view hover-class="tap-press" hover-stay-time="80" class="sc-dock-btn {{saving ? 'is-disabled' : ''}}" bindtap="confirmSingle"><text>{{saving ? '写入中…' : '确认写入'}}</text></view>
   </view>
 </view>
 
@@ -875,7 +875,7 @@
       </view>
       <view class="ss-empty" wx:elif="{{!memoBox.list.length}}"><text>{{memoBox.kind === 'history' ? '暂无历史备忘' : '草稿箱是空的'}}</text></view>
       <block wx:else>
-        <view class="mm-card" wx:for="{{memoBox.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="openMemo">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="mm-card" wx:for="{{memoBox.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="openMemo">
           <view class="mm-top">
             <text class="mm-title">{{item.title}}</text>
             <text class="mm-tag {{item.kind === 'history' ? 'is-history' : ''}}">{{item.kind === 'history' ? '已结清·历史' : '草稿'}}</text>
@@ -921,21 +921,21 @@
         <text class="mm-meta" wx:elif="{{item.matchNote}}">{{item.matchNote}}</text>
         <view class="mm-actions" wx:if="{{memoDetail.item.kind === 'draft'}}">
           <block wx:if="{{!item.removed}}">
-            <view class="mm-btn" data-key="{{item.key}}" bindtap="onMemoPickSku">{{item.match === 'sku' ? '换 SKU' : '选 SKU'}}</view>
-            <view class="mm-btn" wx:if="{{item.match === 'sku'}}" data-key="{{item.key}}" bindtap="onMemoClearSku">取消匹配</view>
-            <view class="mm-btn" data-key="{{item.key}}" data-delta="-1" bindtap="onMemoQtyStep">−</view>
-            <view class="mm-btn" data-key="{{item.key}}" data-delta="1" bindtap="onMemoQtyStep">＋</view>
-            <view class="mm-btn danger" data-key="{{item.key}}" bindtap="onMemoToggleLine">删行</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="mm-btn" data-key="{{item.key}}" bindtap="onMemoPickSku">{{item.match === 'sku' ? '换 SKU' : '选 SKU'}}</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="mm-btn" wx:if="{{item.match === 'sku'}}" data-key="{{item.key}}" bindtap="onMemoClearSku">取消匹配</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="mm-btn" data-key="{{item.key}}" data-delta="-1" bindtap="onMemoQtyStep">−</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="mm-btn" data-key="{{item.key}}" data-delta="1" bindtap="onMemoQtyStep">＋</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="mm-btn danger" data-key="{{item.key}}" bindtap="onMemoToggleLine">删行</view>
           </block>
-          <view class="mm-btn" wx:else data-key="{{item.key}}" bindtap="onMemoToggleLine">恢复此行</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="mm-btn" wx:else data-key="{{item.key}}" bindtap="onMemoToggleLine">恢复此行</view>
         </view>
       </view>
     </scroll-view>
     <view class="mm-foot" catchtouchmove="noop">
       <text class="mm-tip" wx:if="{{memoDetail.tip}}">{{memoDetail.tip}}</text>
       <view class="mm-foot-row" wx:if="{{memoDetail.item.kind === 'draft'}}">
-        <view class="mm-foot-btn is-ghost" bindtap="removeMemo">{{memoDetail.removePending ? '确认删除' : '删除草稿'}}</view>
-        <view class="mm-foot-btn {{memoDetail.busy || memoDetail.item.pendingCount ? 'is-disabled' : ''}}" bindtap="confirmMemo">{{memoDetail.busy ? '处理中…' : (memoDetail.confirmPending ? '确认转正式' : '转为正式出货单')}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="mm-foot-btn is-ghost" bindtap="removeMemo">{{memoDetail.removePending ? '确认删除' : '删除草稿'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="mm-foot-btn {{memoDetail.busy || memoDetail.item.pendingCount ? 'is-disabled' : ''}}" bindtap="confirmMemo">{{memoDetail.busy ? '处理中…' : (memoDetail.confirmPending ? '确认转正式' : '转为正式出货单')}}</view>
       </view>
       <text class="mm-tip" wx:else>已结清的历史备忘，只读；金额以飞书原始金额为准</text>
     </view>
@@ -952,7 +952,7 @@
     </view>
     <view class="ss-search" catchtouchmove="noop">
       <input class="ss-search-input" placeholder="搜 SKU 名（如 大蓝闪蝶）" value="{{skuPicker.keyword}}" bindinput="onSkuKeyword" />
-      <view class="ss-review-filter {{skuPicker.reviewOnly ? 'on' : ''}}" wx:if="{{skuPicker.reviewCount || skuPicker.reviewOnly}}" bindtap="toggleSkuReviewOnly">
+      <view hover-class="tap-press" hover-stay-time="80" class="ss-review-filter {{skuPicker.reviewOnly ? 'on' : ''}}" wx:if="{{skuPicker.reviewCount || skuPicker.reviewOnly}}" bindtap="toggleSkuReviewOnly">
         <text>{{skuPicker.reviewOnly ? '显示全部' : '只看待复核 ' + skuPicker.reviewCount}}</text>
       </view>
     </view>
@@ -963,7 +963,7 @@
         <text class="ss-empty-hint">点「新建 SKU」建一个（同组合只需建一次，以后直接选）</text>
       </view>
       <block wx:else>
-        <view class="ss-sku" wx:for="{{skuPicker.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onPickSku">
+        <view hover-class="tap-press" hover-stay-time="80" class="ss-sku" wx:for="{{skuPicker.list}}" wx:key="_id" data-id="{{item._id}}" bindtap="onPickSku">
           <view class="ss-sku-main">
             <view class="ss-sku-title">
               <text class="ss-sku-name">{{item.skuName}}</text>
@@ -1108,7 +1108,7 @@
       </view>
       <block wx:else>
         <view class="ss-group" wx:for="{{picker.list}}" wx:key="key">
-          <view class="ss-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
+          <view hover-class="tap-press" hover-stay-time="80" class="ss-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
             <image class="ss-group-thumb" wx:if="{{item.thumb}}" src="{{item.thumb}}" mode="aspectFill" lazy-load />
             <view class="ss-group-main">
               <text class="ss-group-name">{{item.displayName}}</text>
@@ -1117,7 +1117,7 @@
             <text class="ss-group-count">{{item.optionField === 'size' ? '尺寸' : '等级'}} {{item.optionCount}}</text>
           </view>
           <view class="ss-options" wx:if="{{picker.expandedKey === item.key || item.singleOption}}">
-            <view class="ss-option" wx:for="{{item.options}}" wx:for-item="opt" wx:key="_id" data-key="{{item.key}}" data-option="{{opt.option}}" data-id="{{opt._id}}" bindtap="onPickOption">
+            <view hover-class="tap-press" hover-stay-time="80" class="ss-option" wx:for="{{item.options}}" wx:for-item="opt" wx:key="_id" data-key="{{item.key}}" data-option="{{opt.option}}" data-id="{{opt._id}}" bindtap="onPickOption">
               <text class="ss-option-name">{{opt.option}}</text>
               <text class="ss-option-price">{{opt.unitPriceText}}</text>
               <text class="ss-option-tag" wx:if="{{opt.isDefault}}">默认</text>
@@ -1184,7 +1184,7 @@
         <text class="ss-label">图片</text>
         <view class="sc-lib-img-ctl">
           <image class="sc-lib-img" wx:if="{{libForm.imageThumb}}" src="{{libForm.imageThumb}}" mode="aspectFill" bindtap="previewLibImage" binderror="onLibThumbError" />
-          <view class="sc-lib-img is-empty" wx:else bindtap="chooseLibImage"><text>{{libForm.uploading ? '上传中…' : '＋'}}</text></view>
+          <view hover-class="tap-press" hover-stay-time="80" class="sc-lib-img is-empty" wx:else bindtap="chooseLibImage"><text>{{libForm.uploading ? '上传中…' : '＋'}}</text></view>
           <view class="sc-lib-img-btns">
             <text class="sc-lib-btn" bindtap="chooseLibImage">{{libForm.uploading ? '上传中…' : (libForm.image ? '换一张' : '上传图片')}}</text>
             <text class="sc-lib-btn warn" wx:if="{{libForm.image && !libForm.uploading}}" bindtap="removeLibImage">删除图片</text>
@@ -1241,14 +1241,14 @@
             <input class="ops-field-input" value="{{shipForm.trackingNo}}" data-field="trackingNo" bindinput="onShipFormInput" placeholder="运单号" placeholder-class="ops-ph" />
           </view>
         </view>
-        <view class="ops-chip-btn brass" bindtap="saveLogistics">{{detailBusy ? '保存中…' : '保存物流'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn brass" bindtap="saveLogistics">{{detailBusy ? '保存中…' : '保存物流'}}</view>
       </view>
       <text class="ops-meta" wx:elif="{{detail.expressCompany || detail.trackingNo}}">物流 {{detail.expressCompany || '—'}} {{detail.trackingNo || ''}}</text>
 
       <view class="ops-detail-section" wx:if="{{canWrite && nextActions.length}}">
         <text class="ops-section-label">下一状态</text>
         <view class="ops-next-row">
-          <view class="ops-chip-btn brass" wx:for="{{nextActions}}" wx:key="value" data-status="{{item.value}}" bindtap="applyStatus">{{item.label}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn brass" wx:for="{{nextActions}}" wx:key="value" data-status="{{item.value}}" bindtap="applyStatus">{{item.label}}</view>
         </view>
         <text class="ops-field-hint">发货前可先填运单；点「已发货」时会一并写入。取消 / 完成等不可逆路径请谨慎。</text>
       </view>
@@ -1262,7 +1262,7 @@
       <text class="ops-meta" wx:if="{{detail.billNo}}">关联账单 {{detail.billNo}}</text>
       <text class="ops-meta" wx:if="{{detail.feishuRecordId}}">飞书记录 {{detail.feishuRecordId}}</text>
       <text class="ops-meta" wx:if="{{detail.batchId}}">批次 {{detail.batchId}}</text>
-      <view class="ops-chip-btn danger sc-detail-remove" wx:if="{{canWrite}}" data-id="{{detail._id}}" bindtap="onRemove">{{removePendingId === detail._id ? '确认删除（软删）' : '删除此单'}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn danger sc-detail-remove" wx:if="{{canWrite}}" data-id="{{detail._id}}" bindtap="onRemove">{{removePendingId === detail._id ? '确认删除（软删）' : '删除此单'}}</view>
       <text class="ops-settle-note">结算状态跟随「工作室账单」，这里只能查看。</text>
     </scroll-view>
 </view>

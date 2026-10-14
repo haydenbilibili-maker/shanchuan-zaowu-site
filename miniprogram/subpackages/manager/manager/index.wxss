@@ -637,7 +637,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   flex-direction: column-reverse;
   overflow: hidden;
 }
-.bar-fill { width: 100%; transition: height 0.45s ease; min-height: 0; }
+.bar-fill { width: 100%; transition: height var(--dur-slow) var(--ease-standard); min-height: 0; }
 .bar-fill.gold { background: linear-gradient(180deg, #D4BC85, var(--gold)); }
 .bar-fill.forest { background: #2D5A3F; }
 .bar-lbl {
@@ -966,7 +966,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--gold);
   border: 1px solid rgba(196, 167, 108, 0.45);
 }
-.sub-tab { flex: 1; text-align: center; font-size: 24rpx; color: var(--color-text-secondary, #A09A90); padding: 16rpx 0; border-radius: 12rpx; font-weight: 500; transition: all 0.2s; }
+.sub-tab { flex: 1; text-align: center; font-size: 24rpx; color: var(--color-text-secondary, #A09A90); padding: 16rpx 0; border-radius: 12rpx; font-weight: 500; transition: all var(--dur-fast) var(--ease-standard); }
 .sub-tab.active { background: var(--color-bg-elevated); color: var(--gold, #C4A76C); }
 
 .product-lib-tabs { margin-bottom: 24rpx; }
@@ -3322,7 +3322,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-bottom: 40rpx; 
   position: relative; 
   filter: drop-shadow(0 20rpx 40rpx rgba(0,0,0,0.6));
-  transition: transform 0.2s;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 .bill-card:active { transform: scale(0.98); }
 
@@ -3399,7 +3399,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   width: 60rpx; height: 60rpx; 
   display: flex; align-items: center; justify-content: center;
   color: #aaa; font-size: 28rpx; 
-  border-radius: 50%; transition: all 0.2s;
+  border-radius: 50%; transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
   z-index: 3;
 }
 .bill-del:active { background: rgba(0,0,0,0.1); color: #ff4d4f; }
@@ -3419,7 +3419,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* 记一笔 / 商城对账 / 删除 / 空态 CTA 共用按压态 */
 .ledger-btn-press { opacity: 0.72; }
 /* 切月份 / 门店时旧流水压暗，新数据回来即恢复 */
-.revenue-list.is-stale { opacity: 0.4; transition: opacity 0.2s; }
+.revenue-list.is-stale { opacity: 0.4; transition: opacity var(--dur-fast) var(--ease-standard); }
 .ledger-overview.lo-skeleton { padding: 32rpx 28rpx; }
 .ledger-overview.lo-skeleton .wb-sk-sub { margin-top: 0; }
 
@@ -3473,9 +3473,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .btn-full { background: var(--gold); color: var(--color-bg); font-weight: bold; height: 90rpx; display: flex; align-items: center; justify-content: center; border-radius: 45rpx; font-size: 30rpx; letter-spacing: 2rpx; box-shadow: none; }
 
 /* 核销成功全屏动画 */
-.verify-success-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 300; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.verify-success-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 300; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity var(--dur-base) var(--ease-standard); }
 .verify-success-modal.active { opacity: 1; pointer-events: auto; }
-.vs-content { display: flex; flex-direction: column; align-items: center; transform: scale(0.8); transition: transform 0.3s; }
+.vs-content { display: flex; flex-direction: column; align-items: center; transform: scale(0.8); transition: transform var(--dur-base) var(--ease-standard); }
 .active .vs-content { transform: scale(1); }
 .vs-stamp-anim { width: 300rpx; height: 300rpx; border: 12rpx double var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 60rpx; font-weight: 900; transform: rotate(-15deg); margin-bottom: 60rpx; box-shadow: none; }
 .vs-tip { font-size: 36rpx; color: #fff; margin-bottom: 80rpx; letter-spacing: 4rpx; font-weight: bold; }
@@ -3488,7 +3488,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   color: #fff !important;
   border-radius: 12rpx !important;
-  transition: border-color 0.3s ease;
+  transition: border-color var(--dur-base) var(--ease-standard);
   font-family: "PingFang SC", sans-serif;
 }
 
@@ -3587,7 +3587,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border: 2rpx dashed #555; border-radius: 20rpx; 
   display: flex; flex-direction: column; align-items: center; justify-content: center; 
   margin-bottom: 40rpx; overflow: hidden; position: relative;
-  transition: all 0.3s;
+  transition: all var(--dur-base) var(--ease-standard);
 }
 .upload-area:active { background: #2a2a2a; border-color: var(--gold); }
 
@@ -6002,7 +6002,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .pf-progress-fill {
   height: 100%; border-radius: 9999px;
   background: linear-gradient(90deg, var(--brass-500) 0%, var(--brass-300) 100%);
-  transition: width 0.25s ease;
+  transition: width var(--dur-base) var(--ease-standard);
 }
 .pf-progress-text { font-size: 22rpx; color: var(--color-text-secondary); flex-shrink: 0; }
 .pf-counts { display: flex; flex-wrap: wrap; gap: 16rpx; margin-bottom: 16rpx; }

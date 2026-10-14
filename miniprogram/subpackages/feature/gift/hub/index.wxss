@@ -9,7 +9,7 @@ page {
   box-sizing: border-box;
   opacity: 0;
   transform: translateY(8rpx);
-  transition: opacity 0.28s ease, transform 0.28s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 .page.pane-ready {
   opacity: 1;

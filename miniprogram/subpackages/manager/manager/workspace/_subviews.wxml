@@ -22,7 +22,7 @@
     </view>
     <scroll-view scroll-x class="ledger-store-tabs" wx:if="{{ledgerStoreOptions.length}}">
       <view class="ledger-store-tabs-inner">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="ledger-store-tab {{ledgerStoreId === item.storeId ? 'on' : ''}}"
           wx:for="{{ledgerStoreOptions}}"
           wx:key="storeId"
@@ -38,7 +38,7 @@
         <text class="lo-en">MONTHLY NET</text>
         <view class="lo-net-row">
           <text class="lo-net">¥{{ledgerOverview.netFmt}}</text>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="signal-light lo-sync-lamp {{ledgerSyncLampClass}}"
             catchtap="onLedgerSyncLampTap"
             catchlongpress="onLedgerSyncLampTap"
@@ -170,7 +170,7 @@
     <view class="ledger-overview lo-empty" wx:elif="{{ledgerOverviewReady}}">
       <view class="lo-net-row lo-empty-row">
         <text class="lo-empty-en">NO DATA</text>
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="signal-light lo-sync-lamp {{ledgerSyncLampClass}}"
           catchtap="onLedgerSyncLampTap"
           catchlongpress="onLedgerSyncLampTap"
@@ -225,10 +225,10 @@
   <!-- [Tab 1] 藏品库：明细 / 风险管理 / 库存概览 / 分类管理 -->
   <block wx:if="{{curTab===1}}">
     <view class="sub-tab-row product-lib-tabs" wx:if="{{!artisanEmbed}}">
-      <view class="sub-tab {{productLibTab==='list'?'active':''}}" bindtap="switchProductLibTab" data-tab="list">藏品明细</view>
-      <view class="sub-tab {{productLibTab==='risk'?'active':''}}" bindtap="switchProductLibTab" data-tab="risk">风险管理</view>
-      <view class="sub-tab {{productLibTab==='stats'?'active':''}}" bindtap="switchProductLibTab" data-tab="stats">库存概览</view>
-      <view class="sub-tab {{productLibTab==='category'?'active':''}}" bindtap="switchProductLibTab" data-tab="category">分类管理</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{productLibTab==='list'?'active':''}}" bindtap="switchProductLibTab" data-tab="list">藏品明细</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{productLibTab==='risk'?'active':''}}" bindtap="switchProductLibTab" data-tab="risk">风险管理</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{productLibTab==='stats'?'active':''}}" bindtap="switchProductLibTab" data-tab="stats">库存概览</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{productLibTab==='category'?'active':''}}" bindtap="switchProductLibTab" data-tab="category">分类管理</view>
     </view>
     <view class="artisan-embed-hint" wx:if="{{artisanEmbed && productLibTab==='list'}}">
       <text class="artisan-embed-title">本人藏品</text>
@@ -242,13 +242,13 @@
          既抢主次，又让「明细」这条列表承担了它不该承担的合规语义；且两处各有一份风险计数迟早打架。 -->
     <block wx:if="{{productLibTab==='list'}}">
       <view class="product-toolbar" wx:if="{{!artisanEmbed && expiredSeckillCount > 0}}">
-        <view class="cat-manage-btn" bindtap="clearExpiredSeckill">清过期秒杀({{expiredSeckillCount}})</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="cat-manage-btn" bindtap="clearExpiredSeckill">清过期秒杀({{expiredSeckillCount}})</view>
       </view>
       <view class="search-box">
         <input placeholder="搜索藏品…" placeholder-class="ph" bindinput="onSearchInput" value="{{searchVal}}"/>
       </view>
       <view class="product-sort-row">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="ps-chip {{productSort===item.key || (item.isPrice && (productSort==='price_asc' || productSort==='price_desc')) ? 'on' : ''}}"
           wx:for="{{productSortOptions}}"
           wx:key="key"
@@ -258,18 +258,18 @@
       </view>
       <!-- 筛选：第一行按**上架态**（带计数，口径同卡片），第二行按性质 / 活动 -->
       <view class="product-filter-row" wx:if="{{!artisanEmbed}}">
-        <view class="pf-chip {{productShelfFilter==='all' && productArchiveFilter==='all' && productRiskFilter==='all' && productPromoFilter==='all' ? 'on' : ''}}" bindtap="resetProductFilters">全部</view>
-        <view class="pf-chip {{productShelfFilter==='on'?'on':''}}" bindtap="setProductShelfFilter" data-val="on">在架 {{productShelfCounts.on}}</view>
-        <view class="pf-chip {{productShelfFilter==='off'?'on':''}}" bindtap="setProductShelfFilter" data-val="off">已下架 {{productShelfCounts.off}}</view>
-        <view class="pf-chip {{productShelfFilter==='pending'?'on':''}}" bindtap="setProductShelfFilter" data-val="pending" wx:if="{{productShelfCounts.pending > 0}}">待审 {{productShelfCounts.pending}}</view>
-        <view class="pf-chip {{productShelfFilter==='rejected'?'on':''}}" bindtap="setProductShelfFilter" data-val="rejected" wx:if="{{productShelfCounts.rejected > 0}}">已驳回 {{productShelfCounts.rejected}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='all' && productArchiveFilter==='all' && productRiskFilter==='all' && productPromoFilter==='all' ? 'on' : ''}}" bindtap="resetProductFilters">全部</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='on'?'on':''}}" bindtap="setProductShelfFilter" data-val="on">在架 {{productShelfCounts.on}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='off'?'on':''}}" bindtap="setProductShelfFilter" data-val="off">已下架 {{productShelfCounts.off}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='pending'?'on':''}}" bindtap="setProductShelfFilter" data-val="pending" wx:if="{{productShelfCounts.pending > 0}}">待审 {{productShelfCounts.pending}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='rejected'?'on':''}}" bindtap="setProductShelfFilter" data-val="rejected" wx:if="{{productShelfCounts.rejected > 0}}">已驳回 {{productShelfCounts.rejected}}</view>
       </view>
       <view class="product-filter-row" wx:if="{{!artisanEmbed}}">
-        <view class="pf-chip {{productArchiveFilter==='archive'?'on':''}}" bindtap="setProductArchiveFilter" data-val="archive">在档</view>
-        <view class="pf-chip {{productArchiveFilter==='oneOfAKind'?'on':''}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>
-        <view class="pf-chip {{productPromoFilter==='seckill'?'on':''}}" bindtap="setProductPromoFilter" data-val="seckill">秒杀中</view>
-        <view class="pf-chip {{productPromoFilter==='seckill_expired'?'on':''}}" bindtap="setProductPromoFilter" data-val="seckill_expired">秒杀过期</view>
-        <view class="pf-chip {{productPromoFilter==='group'?'on':''}}" bindtap="setProductPromoFilter" data-val="group">拼团</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productArchiveFilter==='archive'?'on':''}}" bindtap="setProductArchiveFilter" data-val="archive">在档</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productArchiveFilter==='oneOfAKind'?'on':''}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productPromoFilter==='seckill'?'on':''}}" bindtap="setProductPromoFilter" data-val="seckill">秒杀中</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productPromoFilter==='seckill_expired'?'on':''}}" bindtap="setProductPromoFilter" data-val="seckill_expired">秒杀过期</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productPromoFilter==='group'?'on':''}}" bindtap="setProductPromoFilter" data-val="group">拼团</view>
         <!-- 高风险 / 中等风险 chip 已迁到「风险管理」tab（一个能力一个入口） -->
       </view>
       <block wx:for="{{products}}" wx:key="_id">
@@ -281,7 +281,7 @@
             </view>
           </view>
           <view class="p-info">
-            <view class="p-top"><text class="p-name">{{item.title}}</text><view class="p-edit" bindtap="openProductModal" data-item="{{item}}">✎</view></view>
+            <view class="p-top"><text class="p-name">{{item.title}}</text><view hover-class="tap-press" hover-stay-time="80" class="p-edit" bindtap="openProductModal" data-item="{{item}}">✎</view></view>
             <view class="p-tags">
               <text class="mini-tag danger" wx:if="{{item.isHighRisk}}">高风险 · {{item.riskLabel}}</text>
               <text class="mini-tag" wx:if="{{item.inArchive}}">在档</text>
@@ -304,7 +304,7 @@
       </block>
       <view class="product-list-footer">
         <text class="product-list-meta" wx:if="{{productTotal}}">已加载 {{products.length}} / {{productTotal}}</text>
-        <view class="product-load-more" wx:if="{{productHasMore}}" bindtap="loadMoreProducts">
+        <view hover-class="tap-press" hover-stay-time="80" class="product-load-more" wx:if="{{productHasMore}}" bindtap="loadMoreProducts">
           {{productLoadingMore ? '加载中…' : '加载更多'}}
         </view>
         <text class="product-list-end" wx:elif="{{products.length && !productListLoading}}">已显示全部</text>
@@ -314,7 +314,7 @@
         </view>
         <text class="product-list-end" wx:elif="{{!productListLoading && !products.length}}">暂无藏品</text>
       </view>
-      <view class="fab-add" bindtap="openProductModal">+</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="fab-add" bindtap="openProductModal">+</view>
     </block>
 
     <!-- ══════════════ 风险管理（2026-10-14 产品负责人：「抽象为一个独立的顶部 tab 模块」+「丰富能力」）══════════════
@@ -403,8 +403,8 @@
             <text class="risk-bar-sub">三有 / 保护类标本 · 来源与许可须齐备</text>
           </view>
           <view class="risk-bar-actions">
-            <view class="risk-bar-btn is-danger {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="0">一键下架</view>
-            <view class="risk-bar-btn {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="1">一键上架</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn is-danger {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="0">一键下架</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="1">一键上架</view>
           </view>
         </view>
         <view class="risk-bar is-medium" wx:if="{{mediumRiskCount > 0}}">
@@ -413,29 +413,29 @@
             <text class="risk-bar-sub">「动物馆」藏品（保护类已归入高风险）</text>
           </view>
           <view class="risk-bar-actions">
-            <view class="risk-bar-btn is-warn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="0">一键下架</view>
-            <view class="risk-bar-btn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="1">一键上架</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn is-warn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="0">一键下架</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="1">一键上架</view>
           </view>
         </view>
 
         <!-- ③ 分层筛选（三层互斥穷尽） -->
         <view class="risk-sec-label">按风险分层</view>
         <view class="product-filter-row">
-          <view class="pf-chip {{productRiskFilter==='all'?'on':''}}" bindtap="setProductRiskFilter" data-val="all">全部</view>
-          <view class="pf-chip is-risk {{productRiskFilter==='high'?'on':''}}" bindtap="setProductRiskFilter" data-val="high">高风险 {{highRiskCount}}</view>
-          <view class="pf-chip is-warn {{productRiskFilter==='medium'?'on':''}}" bindtap="setProductRiskFilter" data-val="medium">中等风险 {{mediumRiskCount}}</view>
-          <view class="pf-chip {{productRiskFilter==='normal'?'on':''}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productRiskFilter==='all'?'on':''}}" bindtap="setProductRiskFilter" data-val="all">全部</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip is-risk {{productRiskFilter==='high'?'on':''}}" bindtap="setProductRiskFilter" data-val="high">高风险 {{highRiskCount}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip is-warn {{productRiskFilter==='medium'?'on':''}}" bindtap="setProductRiskFilter" data-val="medium">中等风险 {{mediumRiskCount}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productRiskFilter==='normal'?'on':''}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>
         </view>
 
         <!-- 上架态：计数随所选分层变（选「高风险」就显示高风险这一层的在架 / 已下架）——
              用全库计数会与上面的分层件数同屏打架。 -->
         <view class="risk-sec-label">按上架态</view>
         <view class="product-filter-row">
-          <view class="pf-chip {{productShelfFilter==='all'?'on':''}}" bindtap="setProductShelfFilter" data-val="all">全部 {{riskShelfCounts.all}}</view>
-          <view class="pf-chip {{productShelfFilter==='on'?'on':''}}" bindtap="setProductShelfFilter" data-val="on">在架 {{riskShelfCounts.on}}</view>
-          <view class="pf-chip {{productShelfFilter==='off'?'on':''}}" bindtap="setProductShelfFilter" data-val="off">已下架 {{riskShelfCounts.off}}</view>
-          <view class="pf-chip {{productShelfFilter==='pending'?'on':''}}" wx:if="{{riskShelfCounts.pending > 0}}" bindtap="setProductShelfFilter" data-val="pending">待审 {{riskShelfCounts.pending}}</view>
-          <view class="pf-chip {{productShelfFilter==='rejected'?'on':''}}" wx:if="{{riskShelfCounts.rejected > 0}}" bindtap="setProductShelfFilter" data-val="rejected">已驳回 {{riskShelfCounts.rejected}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='all'?'on':''}}" bindtap="setProductShelfFilter" data-val="all">全部 {{riskShelfCounts.all}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='on'?'on':''}}" bindtap="setProductShelfFilter" data-val="on">在架 {{riskShelfCounts.on}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='off'?'on':''}}" bindtap="setProductShelfFilter" data-val="off">已下架 {{riskShelfCounts.off}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='pending'?'on':''}}" wx:if="{{riskShelfCounts.pending > 0}}" bindtap="setProductShelfFilter" data-val="pending">待审 {{riskShelfCounts.pending}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='rejected'?'on':''}}" wx:if="{{riskShelfCounts.rejected > 0}}" bindtap="setProductShelfFilter" data-val="rejected">已驳回 {{riskShelfCounts.rejected}}</view>
         </view>
 
         <view class="search-box">
@@ -459,7 +459,7 @@
               </view>
             </view>
             <view class="p-info">
-              <view class="p-top"><text class="p-name">{{item.title}}</text><view class="p-edit" bindtap="openProductModal" data-item="{{item}}">✎</view></view>
+              <view class="p-top"><text class="p-name">{{item.title}}</text><view hover-class="tap-press" hover-stay-time="80" class="p-edit" bindtap="openProductModal" data-item="{{item}}">✎</view></view>
               <view class="p-tags">
                 <text class="mini-tag danger" wx:if="{{item.riskTier==='high'}}">高风险{{item.riskLabel ? ' · ' + item.riskLabel : ''}}</text>
                 <text class="mini-tag warn" wx:elif="{{item.riskTier==='medium'}}">中等风险</text>
@@ -482,7 +482,7 @@
         </block>
         <view class="product-list-footer">
           <text class="product-list-meta" wx:if="{{productTotal}}">已加载 {{products.length}} / {{productTotal}}</text>
-          <view class="product-load-more" wx:if="{{productHasMore}}" bindtap="loadMoreProducts">
+          <view hover-class="tap-press" hover-stay-time="80" class="product-load-more" wx:if="{{productHasMore}}" bindtap="loadMoreProducts">
             {{productLoadingMore ? '加载中…' : '加载更多'}}
           </view>
           <text class="product-list-end" wx:elif="{{products.length && !productListLoading}}">已显示全部</text>
@@ -504,9 +504,9 @@
             <text class="pstats-sub" wx:if="{{productStats}}">扫描 {{productStats.scanned}} 件{{productStats.truncated ? '（已截断）' : ''}}</text>
           </view>
           <view class="pstats-head-actions">
-            <view class="pstats-chip {{productStatsTrendDays===7?'on':''}}" bindtap="setProductStatsTrend" data-days="7">7日</view>
-            <view class="pstats-chip {{productStatsTrendDays===30?'on':''}}" bindtap="setProductStatsTrend" data-days="30">30日</view>
-            <view class="pstats-refresh" bindtap="loadProductStats">刷新</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="pstats-chip {{productStatsTrendDays===7?'on':''}}" bindtap="setProductStatsTrend" data-days="7">7日</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="pstats-chip {{productStatsTrendDays===30?'on':''}}" bindtap="setProductStatsTrend" data-days="30">30日</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="pstats-refresh" bindtap="loadProductStats">刷新</view>
           </view>
         </view>
 
@@ -644,9 +644,9 @@
         <view class="cat-act-row">
           <text class="cat-act-label">维护</text>
           <view class="cat-manage-actions">
-            <view class="cat-sync-btn" bindtap="syncCategoriesFromSeed">同步标准分类</view>
-            <view class="cat-sync-btn" bindtap="fillL2LatinNames">补齐拉丁名</view>
-            <view class="cat-sync-btn" bindtap="repairProductCategoryLinks">修复藏品关联</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="cat-sync-btn" bindtap="syncCategoriesFromSeed">同步标准分类</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="cat-sync-btn" bindtap="fillL2LatinNames">补齐拉丁名</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="cat-sync-btn" bindtap="repairProductCategoryLinks">修复藏品关联</view>
           </view>
         </view>
         <!-- 展示层检索 / 排序 / 空分类筛查：只派生 catTreeView，不动 categoryManageTree
@@ -656,10 +656,10 @@
             value="{{catKeyword}}" bindinput="setCatKeyword" confirm-type="search"/>
         </view>
         <view class="cat-tool-row">
-          <view class="cat-tool-chip {{catSortMode==='count'?'on':''}}" bindtap="setCatSortMode" data-val="count">按数量</view>
-          <view class="cat-tool-chip {{catSortMode==='name'?'on':''}}" bindtap="setCatSortMode" data-val="name">按名称</view>
-          <view class="cat-tool-chip {{catOnlyEmpty?'on':''}}" bindtap="toggleCatOnlyEmpty">只看空分类<text class="cat-tool-count">{{catEmptyCount}}</text></view>
-          <view class="cat-tool-clear" wx:if="{{catMatchSummary}}" bindtap="clearCatKeyword">清空条件</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="cat-tool-chip {{catSortMode==='count'?'on':''}}" bindtap="setCatSortMode" data-val="count">按数量</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="cat-tool-chip {{catSortMode==='name'?'on':''}}" bindtap="setCatSortMode" data-val="name">按名称</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="cat-tool-chip {{catOnlyEmpty?'on':''}}" bindtap="toggleCatOnlyEmpty">只看空分类<text class="cat-tool-count">{{catEmptyCount}}</text></view>
+          <view hover-class="tap-press" hover-stay-time="80" class="cat-tool-clear" wx:if="{{catMatchSummary}}" bindtap="clearCatKeyword">清空条件</view>
         </view>
         <view class="cat-match-tip" wx:if="{{catMatchSummary}}">{{catMatchSummary}}</view>
 
@@ -681,7 +681,7 @@
                 <text class="cat-en">{{item.enName}}</text>
               </view>
               <text class="cat-root-count">共 {{item.totalCount}} 件</text>
-              <view class="cat-del" bindtap="deleteCategory" data-id="{{item._id}}" data-level="1">删除</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="cat-del" bindtap="deleteCategory" data-id="{{item._id}}" data-level="1">删除</view>
             </view>
             <view class="cat-sub-row" wx:for="{{item.children}}" wx:for-item="sub" wx:key="_id">
               <view class="cat-sub-main">
@@ -690,8 +690,8 @@
                 <text class="cat-tax" wx:if="{{sub.latinName || sub.latin || sub.enName}}">{{sub.latinName || sub.latin || sub.enName}}</text>
               </view>
               <view class="cat-sub-ops">
-                <view class="cat-action-btn" bindtap="openCatLinkModal" data-id="{{sub._id}}" data-name="{{sub.name}}">关联</view>
-                <view class="cat-del" bindtap="deleteCategory" data-id="{{sub._id}}" data-level="2">删除</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="cat-action-btn" bindtap="openCatLinkModal" data-id="{{sub._id}}" data-name="{{sub.name}}">关联</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="cat-del" bindtap="deleteCategory" data-id="{{sub._id}}" data-level="2">删除</view>
               </view>
             </view>
             <view class="cat-empty-subs" wx:if="{{!item.children.length}}">{{catOnlyEmpty ? '该一级下没有空分类' : '暂无已启用的二级分类'}}</view>
@@ -717,7 +717,7 @@
           </view>
           <view class="form-row"><text>名称</text><input placeholder="中文名，如：蝴蝶" value="{{newCatName}}" bindinput="bindCatInput" data-field="name"/></view>
           <view class="form-row"><text>英文</text><input placeholder="如：BUTTERFLY" value="{{newCatEn}}" bindinput="bindCatInput" data-field="en"/></view>
-          <view class="btn-full cat-add-submit" bindtap="submitCategory">添加分类</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="btn-full cat-add-submit" bindtap="submitCategory">添加分类</view>
         </view>
 
         <!-- ══════════ 字段维护专区（2026-09-20 从超管工作台 Tab 17 合并进来）══════════
@@ -749,10 +749,10 @@
             <text class="pf-count" wx:if="{{!pfCounts.type && !pfCounts.process && pfCounts.all}}">全部已标注</text>
           </view>
           <view class="cfg-shortcut-row">
-            <view class="cfg-shortcut {{pfFilter==='all'?'on':''}}" bindtap="onPfFilter" data-filter="all">全部 {{pfCounts.all}}</view>
-            <view class="cfg-shortcut {{pfFilter==='missing'?'on':''}}" bindtap="onPfFilter" data-filter="missing">未标注 {{pfCounts.missing}}</view>
-            <view class="cfg-shortcut {{pfFilter==='type'?'on':''}}" bindtap="onPfFilter" data-filter="type">按装裱方式</view>
-            <view class="cfg-shortcut {{pfFilter==='process'?'on':''}}" bindtap="onPfFilter" data-filter="process">按制作工艺</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut {{pfFilter==='all'?'on':''}}" bindtap="onPfFilter" data-filter="all">全部 {{pfCounts.all}}</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut {{pfFilter==='missing'?'on':''}}" bindtap="onPfFilter" data-filter="missing">未标注 {{pfCounts.missing}}</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut {{pfFilter==='type'?'on':''}}" bindtap="onPfFilter" data-filter="type">按装裱方式</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut {{pfFilter==='process'?'on':''}}" bindtap="onPfFilter" data-filter="process">按制作工艺</view>
           </view>
           <!-- ⚠️ 这里**不能**用 `cfg-field-full`：它是给 `.cfg-field-block`（竖排：标签在上、
                输入框在下）用的 `width:100% + flex:none`；放进 `.cfg-row`（横排：220rpx 标签 + gap
@@ -769,7 +769,7 @@
              只有真的存失败时才出现（正常单行编辑即时落库，这里一直不出现）。 -->
         <view class="pf-retry-bar" wx:if="{{pfFailedCount}}">
           <text class="pf-retry-text">{{pfFailedCount}} 件没保存上（网络或权限）</text>
-          <view class="pf-retry-btn" bindtap="saveProductFields">{{pfSaving ? '重试中…' : '全部重试'}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="pf-retry-btn" bindtap="saveProductFields">{{pfSaving ? '重试中…' : '全部重试'}}</view>
         </view>
 
         <view class="cfg-card" wx:if="{{pfLoading}}">
@@ -843,7 +843,7 @@
               hover-class="cat-opt-add-press" hover-stay-time="70" aria-role="button">+ 新增{{g.title}}</view>
           </view>
 
-          <view class="cfg-cta {{taxonomyDirty && !taxonomySaving && taxonomyCloudReady ? '' : 'disabled'}}" bindtap="saveTaxonomy">
+          <view hover-class="tap-press" hover-stay-time="80" class="cfg-cta {{taxonomyDirty && !taxonomySaving && taxonomyCloudReady ? '' : 'disabled'}}" bindtap="saveTaxonomy">
             {{taxonomySaving ? '保存中…' : (taxonomyCloudReady ? (taxonomyDirty ? '保存选项' : '保存选项（先改动）') : '选项维护不可用（云端未连接）')}}
           </view>
         </view>
@@ -873,15 +873,15 @@
           placeholder="单号 / 收货人 / 手机 / 运单"
           placeholder-class="om-search-ph"
         />
-        <view class="om-search-clear" wx:if="{{omQuery}}" catchtap="clearOmQuery">清除</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="om-search-clear" wx:if="{{omQuery}}" catchtap="clearOmQuery">清除</view>
       </view>
       <view class="om-days-row">
-        <view class="om-days-chip {{omDays===0?'on':''}}" bindtap="setOmDays" data-days="0">全部</view>
-        <view class="om-days-chip {{omDays===7?'on':''}}" bindtap="setOmDays" data-days="7">近7日</view>
-        <view class="om-days-chip {{omDays===30?'on':''}}" bindtap="setOmDays" data-days="30">近30日</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="om-days-chip {{omDays===0?'on':''}}" bindtap="setOmDays" data-days="0">全部</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="om-days-chip {{omDays===7?'on':''}}" bindtap="setOmDays" data-days="7">近7日</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="om-days-chip {{omDays===30?'on':''}}" bindtap="setOmDays" data-days="30">近30日</view>
       </view>
       <text class="om-search-hint" wx:if="{{omSearchHint}}">{{omSearchHint}}</text>
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="om-batch-btn {{omPendingCopyCount ? '' : 'disabled'}}"
         wx:if="{{subTab===0}}"
         bindtap="copyAllPendingAddresses"
@@ -1435,7 +1435,7 @@
       </view>
     </block>
 
-    <view
+    <view hover-class="tap-press" hover-stay-time="80"
       class="om-load-more"
       wx:if="{{(subTab===0 && ordersHasMore) || (subTab===1 && shippedOrdersHasMore) || (subTab===2 && completedOrdersHasMore) || (subTab===3 && refundsHasMore) || (subTab===4 && pendingPayOrdersHasMore)}}"
       bindtap="loadMoreOmOrders"
@@ -1453,10 +1453,10 @@
       <view class="verify-card">
         <view class="vc-left"><text class="vc-time">{{item.time}}</text><text class="vc-status">待核销</text></view>
         <view class="vc-mid"><text class="vc-name">{{item.title}}</text><text class="vc-desc">{{item.people}}人 · {{item.name}}<text wx:if="{{item.storeName}}"> · {{item.storeName}}</text><text wx:if="{{item.customMeta}}"> · 含定制方案</text></text></view>
-        <view class="vc-btn" bindtap="verifyBooking" data-id="{{item._id}}">确认</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="vc-btn" bindtap="verifyBooking" data-id="{{item._id}}">确认</view>
       </view>
     </block>
-    <view class="fab-add scan" bindtap="handleScan"><image class="fab-scan-icon" src="/assets/icons/qrcode.png" mode="aspectFit" /></view>
+    <view hover-class="tap-press" hover-stay-time="80" class="fab-add scan" bindtap="handleScan"><image class="fab-scan-icon" src="/assets/icons/qrcode.png" mode="aspectFit" /></view>
   </block>
 
   <!-- [Tab 4] 店铺装修 -->
@@ -1465,7 +1465,7 @@
     <view class="manage-card hero-edit-card">
       <image src="{{bookingHero || defaultBookingHero}}" mode="aspectFill" class="hero-preview"></image>
       <view class="card-actions right">
-        <view class="btn-small gold" bindtap="changeBookingHero">更换图片</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-small gold" bindtap="changeBookingHero">更换图片</view>
       </view>
     </view>
     <view class="section-title">轮播图配置</view>
@@ -1479,13 +1479,13 @@
             <view class="b-tag">跳转： {{item.type}} · {{item.enabled === false ? '已关闭' : '展示中'}}</view>
           </view>
           <view class="b-actions">
-             <view class="action-btn edit" bindtap="openBannerModal" data-id="{{item._id}}">✎</view>
-             <view class="action-btn del" bindtap="deleteBanner" data-id="{{item._id}}">✕</view>
+             <view hover-class="tap-press" hover-stay-time="80" class="action-btn edit" bindtap="openBannerModal" data-id="{{item._id}}">✎</view>
+             <view hover-class="tap-press" hover-stay-time="80" class="action-btn del" bindtap="deleteBanner" data-id="{{item._id}}">✕</view>
           </view>
         </view>
       </block>
     </view>
-    <view class="fab-add" bindtap="openBannerModal">+</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="fab-add" bindtap="openBannerModal">+</view>
   </block>
 
   <!-- [Tab 5] 标本师管理 -->
@@ -1495,7 +1495,7 @@
         <text class="framer-admin-en">ARTISANS</text>
         <text class="framer-admin-cn">标本师管理</text>
       </view>
-      <view class="add-btn-gold" bindtap="openFramerModal"><text class="plus">+</text><text>新增</text></view>
+      <view hover-class="tap-press" hover-stay-time="80" class="add-btn-gold" bindtap="openFramerModal"><text class="plus">+</text><text>新增</text></view>
     </view>
 
     <view class="framer-stats" wx:if="{{framerAdminStats.total}}">
@@ -1529,18 +1529,18 @@
         placeholder-class="framer-search-ph"
         confirm-type="search"
       />
-      <view class="framer-search-clear" wx:if="{{framerQuery}}" bindtap="clearFramerQuery">清除</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="framer-search-clear" wx:if="{{framerQuery}}" bindtap="clearFramerQuery">清除</view>
     </view>
 
     <view class="framer-filter-row">
-      <view class="framer-chip {{framerTypeFilter==='all'?'on':''}}" bindtap="setFramerTypeFilter" data-value="all">全部</view>
-      <view class="framer-chip {{framerTypeFilter==='store'?'on':''}}" bindtap="setFramerTypeFilter" data-value="store">门店</view>
-      <view class="framer-chip {{framerTypeFilter==='partner'?'on':''}}" bindtap="setFramerTypeFilter" data-value="partner">特邀</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="framer-chip {{framerTypeFilter==='all'?'on':''}}" bindtap="setFramerTypeFilter" data-value="all">全部</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="framer-chip {{framerTypeFilter==='store'?'on':''}}" bindtap="setFramerTypeFilter" data-value="store">门店</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="framer-chip {{framerTypeFilter==='partner'?'on':''}}" bindtap="setFramerTypeFilter" data-value="partner">特邀</view>
       <view class="framer-chip-gap"></view>
-      <view class="framer-chip {{framerStatusFilter==='all'?'on':''}}" bindtap="setFramerStatusFilter" data-value="all">状态</view>
-      <view class="framer-chip {{framerStatusFilter==='active'?'on':''}}" bindtap="setFramerStatusFilter" data-value="active">上架</view>
-      <view class="framer-chip {{framerStatusFilter==='off'?'on':''}}" bindtap="setFramerStatusFilter" data-value="off">下架</view>
-      <view class="framer-chip {{framerDupOnly?'on warn':''}}" bindtap="toggleFramerDupOnly">重复</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="framer-chip {{framerStatusFilter==='all'?'on':''}}" bindtap="setFramerStatusFilter" data-value="all">状态</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="framer-chip {{framerStatusFilter==='active'?'on':''}}" bindtap="setFramerStatusFilter" data-value="active">上架</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="framer-chip {{framerStatusFilter==='off'?'on':''}}" bindtap="setFramerStatusFilter" data-value="off">下架</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="framer-chip {{framerDupOnly?'on warn':''}}" bindtap="toggleFramerDupOnly">重复</view>
     </view>
 
     <view class="empty-tip" wx:if="{{framerLoading}}">加载中…</view>
@@ -1600,11 +1600,11 @@
   <!-- [Tab 14] 标本师合作申请 -->
   <block wx:if="{{curTab===14}}">
     <view class="sub-tab-row">
-      <view class="sub-tab {{framerRecruitFilter==='pending'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="pending">待跟进</view>
-      <view class="sub-tab {{framerRecruitFilter==='contacted'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="contacted">已联系</view>
-      <view class="sub-tab {{framerRecruitFilter==='accepted'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="accepted">已通过</view>
-      <view class="sub-tab {{framerRecruitFilter==='rejected'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="rejected">未通过</view>
-      <view class="sub-tab {{framerRecruitFilter==='all'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="all">全部</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{framerRecruitFilter==='pending'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="pending">待跟进</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{framerRecruitFilter==='contacted'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="contacted">已联系</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{framerRecruitFilter==='accepted'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="accepted">已通过</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{framerRecruitFilter==='rejected'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="rejected">未通过</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{framerRecruitFilter==='all'?'active':''}}" bindtap="switchFramerRecruitFilter" data-status="all">全部</view>
     </view>
     <block wx:for="{{framerRecruitApps}}" wx:key="_id">
       <view class="card">
@@ -1635,32 +1635,32 @@
   <!-- [Tab 6] 权益会员 -->
   <block wx:if="{{curTab===6}}">
     <view class="sub-tab-row">
-      <view class="sub-tab {{subTabReward===0?'active':''}}" bindtap="switchSubTabReward" data-idx="0">积分藏品</view>
-      <view class="sub-tab {{subTabReward===1?'active':''}}" bindtap="switchSubTabReward" data-idx="1">会员等级</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabReward===0?'active':''}}" bindtap="switchSubTabReward" data-idx="0">积分藏品</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabReward===1?'active':''}}" bindtap="switchSubTabReward" data-idx="1">会员等级</view>
     </view>
     <view class="cfg-shortcut-row" wx:if="{{menu.walletConfig || menu.welcomeGift || menu.depositOps || menu.purchaseOps || menu.shipmentOps || menu.inventoryOps || menu.rawInventoryOps || menu.studioDashboard || menu.propertyCost}}">
-      <view class="cfg-shortcut" wx:if="{{menu.walletConfig}}" bindtap="goWalletConfig">钱包档位 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.welcomeGift}}" bindtap="goWelcomeGift">新会员礼包 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.welcomeGift}}" bindtap="goBirthdayGift">生日礼包 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.depositOps}}" bindtap="goDepositOps">售罄孤品定金 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">仪表盘 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.propertyCost}}" bindtap="goPropertyCost">物业成本 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.purchaseOps}}" bindtap="goPurchaseOps">采购管理 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">出货中心 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.inventoryOps || menu.rawInventoryOps}}" bindtap="goInventoryOps">库存管理 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.walletConfig}}" bindtap="goWalletConfig">钱包档位 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.welcomeGift}}" bindtap="goWelcomeGift">新会员礼包 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.welcomeGift}}" bindtap="goBirthdayGift">生日礼包 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.depositOps}}" bindtap="goDepositOps">售罄孤品定金 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">仪表盘 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.propertyCost}}" bindtap="goPropertyCost">物业成本 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.purchaseOps}}" bindtap="goPurchaseOps">采购管理 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">出货中心 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.inventoryOps || menu.rawInventoryOps}}" bindtap="goInventoryOps">库存管理 ›</view>
     </view>
     <block wx:if="{{subTabReward===0}}">
       <block wx:for="{{rewards}}" wx:key="_id">
         <view class="manage-card">
           <image class="m-img" src="{{item.image}}" mode="aspectFill"></image>
           <view class="m-info">
-            <view class="m-row top"><text class="m-title">{{item.title}}</text><view class="icon-btn" bindtap="openRewardModal" data-id="{{item._id}}">✎</view></view>
+            <view class="m-row top"><text class="m-title">{{item.title}}</text><view hover-class="tap-press" hover-stay-time="80" class="icon-btn" bindtap="openRewardModal" data-id="{{item._id}}">✎</view></view>
             <view class="m-row middle"><text class="tag-f">{{item.type==='virtual'?'虚拟':'实物'}}</text><text class="tag-f profit">库存：{{item.stock}}</text></view>
-            <view class="m-row bottom"><text class="m-price" style="font-size:26rpx;">{{item.cost}} 积分</text><view class="del-btn" bindtap="deleteReward" data-id="{{item._id}}"><image class="del-btn-icon" src="/assets/icons/delete.png" mode="aspectFit" /></view></view>
+            <view class="m-row bottom"><text class="m-price" style="font-size:26rpx;">{{item.cost}} 积分</text><view hover-class="tap-press" hover-stay-time="80" class="del-btn" bindtap="deleteReward" data-id="{{item._id}}"><image class="del-btn-icon" src="/assets/icons/delete.png" mode="aspectFit" /></view></view>
           </view>
         </view>
       </block>
-      <view class="add-btn-block" bindtap="openRewardModal">+ 新增藏品</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="add-btn-block" bindtap="openRewardModal">+ 新增藏品</view>
     </block>
     <block wx:if="{{subTabReward===1}}">
       <view class="empty-tip" wx:if="{{vipLevelsLoading}}">会员等级加载中…</view>
@@ -1680,11 +1680,11 @@
                <text class="finance-tag">{{p}}</text>
              </block>
           </view>
-          <view class="btn-row"><view class="icon-btn" bindtap="openVipModal" data-id="{{item._id}}" data-level="{{item.level}}">✎ 配置</view></view>
+          <view class="btn-row"><view hover-class="tap-press" hover-stay-time="80" class="icon-btn" bindtap="openVipModal" data-id="{{item._id}}" data-level="{{item.level}}">✎ 配置</view></view>
         </view>
       </block>
       <view class="empty-tip" wx:if="{{!vipLevelsLoading && vipLevels.length===0}}">暂无等级配置</view>
-      <view class="add-btn-block" bindtap="openVipModal">+ 新增等级</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="add-btn-block" bindtap="openVipModal">+ 新增等级</view>
     </block>
   </block>
 
@@ -1692,7 +1692,7 @@
   <block wx:if="{{curTab===7}}">
     <view class="act-head">
       <view class="act-head-l"><text class="act-en">EVENTS · WORKSHOPS</text><text class="act-cn">活动课程</text></view>
-      <view class="act-new" bindtap="openActivityModal">＋ 发布活动</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="act-new" bindtap="openActivityModal">＋ 发布活动</view>
     </view>
     <view class="act-loading" wx:if="{{!actReady}}">
       <view class="act-skel"></view><view class="act-skel"></view><view class="act-skel"></view>
@@ -1700,7 +1700,7 @@
     <view class="act-state" wx:elif="{{actError}}">
       <text class="act-state-t">活动没有读出来</text>
       <text class="act-state-d">{{actError}}</text>
-      <view class="act-state-btn" bindtap="loadActivities">重新加载</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="act-state-btn" bindtap="loadActivities">重新加载</view>
     </view>
     <block wx:else>
       <view class="act-kpis">
@@ -1713,15 +1713,15 @@
           <text class="act-stale-t">{{actBoard.stale}} 场已结束的活动仍在对顾客展示</text>
           <text class="act-stale-d">首页活动位只看「报名中」，不看日期</text>
         </view>
-        <view class="act-stale-btn {{actStaleConfirm?'is-confirm':''}}" bindtap="closeStaleActivities">{{actBusyId==='stale'?'下架中…':(actStaleConfirm?'确认下架':'一键下架')}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="act-stale-btn {{actStaleConfirm?'is-confirm':''}}" bindtap="closeStaleActivities">{{actBusyId==='stale'?'下架中…':(actStaleConfirm?'确认下架':'一键下架')}}</view>
       </view>
       <view class="act-tabs">
-        <view wx:for="{{actBoard.filters}}" wx:key="key" class="act-tab {{actBoard.filter===item.key?'on':''}}" bindtap="switchActFilter" data-key="{{item.key}}">{{item.label}} {{item.count}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" wx:for="{{actBoard.filters}}" wx:key="key" class="act-tab {{actBoard.filter===item.key?'on':''}}" bindtap="switchActFilter" data-key="{{item.key}}">{{item.label}} {{item.count}}</view>
       </view>
       <view class="act-state" wx:if="{{!actBoard.items.length}}">
         <text class="act-state-t">{{actBoard.counts.all?'这一组暂时没有活动':'还没有发布过活动'}}</text>
         <text class="act-state-d">{{actBoard.counts.all?'切换上方分组查看其它活动':'发布后顾客可在预约页报名，报名与核销数会显示在这里'}}</text>
-        <view class="act-state-btn" bindtap="openActivityModal">发布活动</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="act-state-btn" bindtap="openActivityModal">发布活动</view>
       </view>
       <view wx:for="{{actBoard.items}}" wx:key="_id" class="act-card is-{{item.phase}}">
         <view class="act-card-top">
@@ -1750,11 +1750,11 @@
         <text class="act-warn" wx:if="{{item.noStore}}">未绑定门店：预约页和门店页看不到它，点「编辑」选好门店保存即可</text>
         <text class="act-warn" wx:if="{{item.stillVisible}}">活动日期已过，但仍在首页活动位展示</text>
         <view class="act-ops">
-          <view class="act-op" bindtap="openActivityModal" data-id="{{item._id}}">编辑</view>
-          <view class="act-op" bindtap="openActivityModal" data-id="{{item._id}}" data-mode="copy">再办一场</view>
-          <view class="act-op" wx:if="{{item.isToday && item.booked}}" bindtap="goStaffConsole">去核销</view>
-          <view class="act-op" wx:if="{{item.toggle}}" bindtap="toggleActivityStatus" data-id="{{item._id}}" data-to="{{item.toggle.to}}" data-label="{{item.toggle.label}}">{{actBusyId===item._id?'处理中…':item.toggle.label}}</view>
-          <view class="act-op is-danger {{actConfirmDelId===item._id?'is-confirm':''}}" bindtap="deleteActivity" data-id="{{item._id}}">{{actConfirmDelId===item._id?(item.booked?item.booked+' 人已报名 · 确认删除':'确认删除'):'删除'}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="act-op" bindtap="openActivityModal" data-id="{{item._id}}">编辑</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="act-op" bindtap="openActivityModal" data-id="{{item._id}}" data-mode="copy">再办一场</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="act-op" wx:if="{{item.isToday && item.booked}}" bindtap="goStaffConsole">去核销</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="act-op" wx:if="{{item.toggle}}" bindtap="toggleActivityStatus" data-id="{{item._id}}" data-to="{{item.toggle.to}}" data-label="{{item.toggle.label}}">{{actBusyId===item._id?'处理中…':item.toggle.label}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="act-op is-danger {{actConfirmDelId===item._id?'is-confirm':''}}" bindtap="deleteActivity" data-id="{{item._id}}">{{actConfirmDelId===item._id?(item.booked?item.booked+' 人已报名 · 确认删除':'确认删除'):'删除'}}</view>
         </view>
       </view>
       <text class="act-note" wx:if="{{actBoard.items.length}}">报名 / 核销按「活动标题 + 日期」统计；改标题或日期后，旧报名不再计入</text>
@@ -1764,15 +1764,15 @@
   <!-- [Tab 9] 内容管理 -->
   <block wx:if="{{curTab===9}}">
     <view class="sub-tab-row">
-      <view class="sub-tab {{contentType==='exhibition'?'active':''}}" bindtap="switchContentType" data-type="exhibition">专题策展</view>
-      <view class="sub-tab {{contentType==='article'?'active':''}}" bindtap="switchContentType" data-type="article">知识文章</view>
-      <view class="sub-tab {{contentType==='comment'?'active':''}}" bindtap="switchContentType" data-type="comment">用户评价</view>
-      <view class="sub-tab {{contentType==='care'?'active':''}}" bindtap="switchContentType" data-type="care">标本养护</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{contentType==='exhibition'?'active':''}}" bindtap="switchContentType" data-type="exhibition">专题策展</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{contentType==='article'?'active':''}}" bindtap="switchContentType" data-type="article">知识文章</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{contentType==='comment'?'active':''}}" bindtap="switchContentType" data-type="comment">用户评价</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{contentType==='care'?'active':''}}" bindtap="switchContentType" data-type="care">标本养护</view>
     </view>
     <!-- 心愿签同属 C 端展示内容，故「内容管理」里也放一个直达入口。
          开关行本体在「内容开关」(tab 16) —— 两处共用同一个 goWishWallManage，
          不复制判定。原先只有 tab 16 有入口，按「内容模块」直觉找的人会找不到（实测反馈）。 -->
-    <view class="content-seed-bar" bindtap="goWishWallManage">
+    <view hover-class="tap-press" hover-stay-time="80" class="content-seed-bar" bindtap="goWishWallManage">
       <text class="seed-hint">马上有 · 心愿签</text>
       <view class="seed-actions">
         <view class="seed-btn outline">签条复核 ›</view>
@@ -1781,8 +1781,8 @@
     <view class="content-seed-bar" wx:if="{{contentType!=='care' && contentType!=='comment'}}">
       <text class="seed-hint">社区内容种子</text>
       <view class="seed-actions">
-        <view class="seed-btn" bindtap="seedCommunityTestData">导入种子</view>
-        <view class="seed-btn outline" bindtap="clearCommunityTestData">清除种子</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="seed-btn" bindtap="seedCommunityTestData">导入种子</view>
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="seed-btn outline" bindtap="clearCommunityTestData">清除种子</view>
       </view>
     </view>
     
@@ -1794,19 +1794,19 @@
           <view class="m-info">
             <view class="m-row top">
               <text class="m-title">{{item.title}}</text>
-              <view class="icon-btn" bindtap="openContentModal" data-id="{{item._id}}" data-type="exhibition">✎</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="icon-btn" bindtap="openContentModal" data-id="{{item._id}}" data-type="exhibition">✎</view>
             </view>
             <view class="m-row middle">
               <text class="tag-f">{{item.latinName || '专题'}}</text>
             </view>
             <view class="m-row bottom">
               <text class="m-price" style="font-size:24rpx; color:#999;">{{item.brief || '暂无摘要'}}</text>
-              <view class="del-btn" bindtap="deleteContent" data-id="{{item._id}}" data-type="exhibition">删除</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="del-btn" bindtap="deleteContent" data-id="{{item._id}}" data-type="exhibition">删除</view>
             </view>
           </view>
         </view>
       </block>
-      <view class="fab-add" catchtap="openContentModal" data-type="exhibition">＋</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="fab-add" catchtap="openContentModal" data-type="exhibition">＋</view>
     </block>
     
     <!-- 文章列表 -->
@@ -1817,7 +1817,7 @@
           <view class="m-info">
             <view class="m-row top">
               <text class="m-title">{{item.title}}</text>
-              <view class="icon-btn" bindtap="openContentModal" data-id="{{item._id}}" data-type="article">✎</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="icon-btn" bindtap="openContentModal" data-id="{{item._id}}" data-type="article">✎</view>
             </view>
             <view class="m-row middle">
               <text class="tag-f">{{item.category==='knowledge'?'标本知识':item.category==='art'?'艺术鉴赏':item.category==='craft'?'制作工艺':'标本故事'}}</text>
@@ -1830,12 +1830,12 @@
             </view>
             <view class="m-row bottom">
               <text class="m-price m-stats-line">阅 {{item.stats && item.stats.views ? item.stats.views : 0}} · 赞 {{item.stats && item.stats.likes ? item.stats.likes : 0}}</text>
-              <view class="del-btn" bindtap="deleteContent" data-id="{{item._id}}" data-type="article">删除</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="del-btn" bindtap="deleteContent" data-id="{{item._id}}" data-type="article">删除</view>
             </view>
           </view>
         </view>
       </block>
-      <view class="fab-add" catchtap="openContentModal" data-type="article">＋</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="fab-add" catchtap="openContentModal" data-type="article">＋</view>
     </block>
 
     <!-- 标本养护 CMS -->
@@ -1843,8 +1843,8 @@
       <view class="content-seed-bar">
         <text class="seed-hint">养护指南 CMS · care_guides</text>
         <view class="seed-actions">
-          <view class="seed-btn" bindtap="seedCareGuidesFromDefaults">同步默认内容</view>
-          <view class="seed-btn outline" bindtap="processCareRemindersNow">发送到期提醒</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="seed-btn" bindtap="seedCareGuidesFromDefaults">同步默认内容</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="seed-btn outline" bindtap="processCareRemindersNow">发送到期提醒</view>
         </view>
       </view>
       <block wx:for="{{careGuides}}" wx:key="_id">
@@ -1852,7 +1852,7 @@
           <view class="m-info full">
             <view class="m-row top">
               <text class="m-title">{{item.title}}</text>
-              <view class="icon-btn" bindtap="openCareGuideModal" data-id="{{item._id}}">✎</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="icon-btn" bindtap="openCareGuideModal" data-id="{{item._id}}">✎</view>
             </view>
             <view class="m-row middle">
               <text class="tag-f">{{item.category}}</text>
@@ -1862,24 +1862,24 @@
             <view class="m-row bottom">
               <text class="m-price care-summary-line">{{item.summary || '暂无摘要'}}</text>
               <view class="care-guide-actions">
-                <view class="preview-btn" bindtap="previewCareGuide" data-category="{{item.category}}">预览</view>
-                <view class="del-btn" bindtap="deleteCareGuide" data-id="{{item._id}}">删除</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="preview-btn" bindtap="previewCareGuide" data-category="{{item.category}}">预览</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="del-btn" bindtap="deleteCareGuide" data-id="{{item._id}}">删除</view>
               </view>
             </view>
           </view>
         </view>
       </block>
       <view class="empty-hint" wx:if="{{!careGuides.length}}">暂无 CMS 数据，可点击「同步默认内容」导入 6 篇品类指南</view>
-      <view class="fab-add" catchtap="openCareGuideModal">＋</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="fab-add" catchtap="openCareGuideModal">＋</view>
     </block>
 
     <!-- 评价审核 -->
     <block wx:if="{{contentType==='comment'}}">
       <view class="sub-tab-row inner-filter">
-        <view class="sub-tab sm {{commentFilter==='pending'?'active':''}}" bindtap="switchCommentFilter" data-filter="pending">待审核</view>
-        <view class="sub-tab sm {{commentFilter==='approved'?'active':''}}" bindtap="switchCommentFilter" data-filter="approved">已通过</view>
-        <view class="sub-tab sm {{commentFilter==='hidden'?'active':''}}" bindtap="switchCommentFilter" data-filter="hidden">已隐藏</view>
-        <view class="sub-tab sm {{commentFilter==='all'?'active':''}}" bindtap="switchCommentFilter" data-filter="all">全部</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='pending'?'active':''}}" bindtap="switchCommentFilter" data-filter="pending">待审核</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='approved'?'active':''}}" bindtap="switchCommentFilter" data-filter="approved">已通过</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='hidden'?'active':''}}" bindtap="switchCommentFilter" data-filter="hidden">已隐藏</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='all'?'active':''}}" bindtap="switchCommentFilter" data-filter="all">全部</view>
       </view>
       <block wx:for="{{commentList}}" wx:key="_id">
         <view class="comment-admin-card">
@@ -1911,10 +1911,10 @@
   <!-- [Tab 10] 工单 -->
   <block wx:if="{{curTab===10}}">
     <view class="sub-tab-row">
-      <view class="sub-tab {{subTabCustom===0?'active':''}}" bindtap="switchSubTabCustom" data-idx="0">制作工单 ({{customOrders.length}})</view>
-      <view class="sub-tab {{subTabCustom===1?'active':''}}" bindtap="switchSubTabCustom" data-idx="1">选项配置</view>
-      <view class="sub-tab {{subTabCustom===2?'active':''}}" bindtap="switchSubTabCustom" data-idx="2">意向单 ({{customInquiries.length}})</view>
-      <view class="sub-tab {{subTabCustom===3?'active':''}}" bindtap="switchSubTabCustom" data-idx="3">伴宠 ({{petMemorialOrders.length}})</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabCustom===0?'active':''}}" bindtap="switchSubTabCustom" data-idx="0">制作工单 ({{customOrders.length}})</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabCustom===1?'active':''}}" bindtap="switchSubTabCustom" data-idx="1">选项配置</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabCustom===2?'active':''}}" bindtap="switchSubTabCustom" data-idx="2">意向单 ({{customInquiries.length}})</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabCustom===3?'active':''}}" bindtap="switchSubTabCustom" data-idx="3">伴宠 ({{petMemorialOrders.length}})</view>
     </view>
 
     <block wx:if="{{subTabCustom===0}}">
@@ -1952,7 +1952,7 @@
           <view class="m-info" style="padding-left:0;">
             <view class="m-row top">
               <text class="m-title">{{item.name}}</text>
-              <view class="icon-btn" bindtap="openCustomConfigModal" data-id="{{item._id}}">✎</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="icon-btn" bindtap="openCustomConfigModal" data-id="{{item._id}}">✎</view>
             </view>
             <view class="m-row middle">
               <text class="tag-f">{{item.type}}</text>
@@ -1961,12 +1961,12 @@
             </view>
             <view class="m-row bottom">
               <text class="m-price" style="font-size:24rpx; color:#999;">{{item.desc || '无描述'}}</text>
-              <view class="del-btn" bindtap="deleteCustomConfig" data-id="{{item._id}}">删除</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="del-btn" bindtap="deleteCustomConfig" data-id="{{item._id}}">删除</view>
             </view>
           </view>
         </view>
       </block>
-      <view class="fab-add" bindtap="openCustomConfigModal">+</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="fab-add" bindtap="openCustomConfigModal">+</view>
     </block>
 
     <block wx:if="{{subTabCustom===2}}">
@@ -2002,9 +2002,9 @@
   <!-- [Tab 11] 山海有信 -->
   <block wx:if="{{curTab===11}}">
     <view class="sub-tab-row">
-      <view class="sub-tab {{subTabMessage===0?'active':''}}" bindtap="switchSubTabMessage" data-idx="0">发送通知</view>
-      <view class="sub-tab {{subTabMessage===1?'active':''}}" bindtap="switchSubTabMessage" data-idx="1">发送记录</view>
-      <view class="sub-tab {{subTabMessage===2?'active':''}}" bindtap="switchSubTabMessage" data-idx="2">留言回复 ({{supportTickets.length}})</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabMessage===0?'active':''}}" bindtap="switchSubTabMessage" data-idx="0">发送通知</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabMessage===1?'active':''}}" bindtap="switchSubTabMessage" data-idx="1">发送记录</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{subTabMessage===2?'active':''}}" bindtap="switchSubTabMessage" data-idx="2">留言回复 ({{supportTickets.length}})</view>
     </view>
 
     <block wx:if="{{subTabMessage===0}}">
@@ -2021,7 +2021,7 @@
         <view class="push-field-block">
           <text class="push-label">RFM 分群</text>
           <view class="youxin-seg-row">
-            <view
+            <view hover-class="tap-press" hover-stay-time="80"
               class="youxin-seg-chip {{pushForm.segment===item.key?'on':''}}"
               wx:for="{{youxinSegmentsVisible}}"
               wx:key="key"
@@ -2210,7 +2210,7 @@
 
     <!-- 双店切换：主店 / 工坊 -->
     <view class="store-switch" wx:if="{{adminStores.length}}">
-      <view
+      <view hover-class="tap-press-soft" hover-stay-time="80"
         class="store-switch-item {{selectedStoreId===item.storeId?'on':''}}"
         wx:for="{{adminStores}}"
         wx:key="storeId"
@@ -2291,7 +2291,7 @@
         </view>
         <text class="cfg-hint">与山海图鉴共用印记码（如 ATLAS:s1）。做成二维码贴在柜位；客人扫码后会翻开对应页。点按一行即可复制。</text>
         <block wx:if="{{atlasSpots.length}}">
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             class="atlas-row"
             wx:for="{{atlasSpots}}"
             wx:key="id"
@@ -2330,32 +2330,32 @@
           <text class="report-period-tz">北京时间自然日</text>
         </view>
         <view class="report-seg">
-          <view class="report-seg-item {{analyticsRangeType==='day'?'active':''}}" bindtap="setAnalyticsYesterday">昨日</view>
-          <view class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===7?'active':''}}" bindtap="setAnalyticsDays" data-days="7">7日</view>
-          <view class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===30?'active':''}}" bindtap="setAnalyticsDays" data-days="30">30日</view>
-          <view class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===90?'active':''}}" bindtap="setAnalyticsDays" data-days="90">90日</view>
-          <view class="report-seg-item {{analyticsRangeType==='month'?'active':''}}" bindtap="setAnalyticsMonthMode">自然月</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-seg-item {{analyticsRangeType==='day'?'active':''}}" bindtap="setAnalyticsYesterday">昨日</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===7?'active':''}}" bindtap="setAnalyticsDays" data-days="7">7日</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===30?'active':''}}" bindtap="setAnalyticsDays" data-days="30">30日</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-seg-item {{analyticsRangeType==='days' && analyticsDays===90?'active':''}}" bindtap="setAnalyticsDays" data-days="90">90日</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-seg-item {{analyticsRangeType==='month'?'active':''}}" bindtap="setAnalyticsMonthMode">自然月</view>
         </view>
         <!-- 单日 / 自然月共用一套次级导航：箭头 + 中间可点开选择器的日期文字 -->
         <view class="report-subnav" wx:if="{{analyticsRangeType==='day'}}">
-          <view class="report-subnav-arrow" bindtap="shiftAnalyticsDay" data-delta="-1">‹</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-subnav-arrow" bindtap="shiftAnalyticsDay" data-delta="-1">‹</view>
           <picker class="report-subnav-pick" mode="date" value="{{analyticsDayKey}}" start="2024-01-01" end="{{analyticsDayMax}}" bindchange="onAnalyticsDayPick">
             <view class="report-subnav-label">{{analyticsDayLabel}}<text class="report-subnav-caret">▾</text></view>
           </picker>
-          <view class="report-subnav-arrow {{analyticsDayKey>=analyticsDayMax?'disabled':''}}" bindtap="shiftAnalyticsDay" data-delta="1">›</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-subnav-arrow {{analyticsDayKey>=analyticsDayMax?'disabled':''}}" bindtap="shiftAnalyticsDay" data-delta="1">›</view>
         </view>
         <view class="report-subnav" wx:elif="{{analyticsRangeType==='month'}}">
-          <view class="report-subnav-arrow" bindtap="shiftAnalyticsMonth" data-delta="-1">‹</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-subnav-arrow" bindtap="shiftAnalyticsMonth" data-delta="-1">‹</view>
           <picker class="report-subnav-pick" mode="date" fields="month" value="{{analyticsMonth}}" end="{{analyticsMonthMax}}" bindchange="onAnalyticsMonthPick">
             <view class="report-subnav-label">{{analyticsMonthLabel}}<text class="report-subnav-caret">▾</text></view>
           </picker>
-          <view class="report-subnav-arrow {{analyticsMonth>=analyticsMonthMax?'disabled':''}}" bindtap="shiftAnalyticsMonth" data-delta="1">›</view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="report-subnav-arrow {{analyticsMonth>=analyticsMonthMax?'disabled':''}}" bindtap="shiftAnalyticsMonth" data-delta="1">›</view>
         </view>
         <view class="report-subnav report-subnav--static" wx:elif="{{analyticsReport.rangeLabel}}">
           <text class="report-subnav-label">{{analyticsReport.rangeLabel}}</text>
         </view>
         <text class="report-day-hint" wx:if="{{analyticsRangeType==='day' && analyticsDayKey===analyticsDayMax}}">今日未结束，数据仍在累计</text>
-        <view class="report-notes-toggle" wx:if="{{analyticsReport.notes.length}}" bindtap="toggleAnalyticsNotes">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="report-notes-toggle" wx:if="{{analyticsReport.notes.length}}" bindtap="toggleAnalyticsNotes">
           <text class="report-notes-label">{{analyticsNotesOpen ? '收起口径说明' : '口径说明（' + analyticsReport.notes.length + ' 条）'}}</text>
           <text class="report-notes-caret">{{analyticsNotesOpen ? '▴' : '▾'}}</text>
         </view>
@@ -2980,7 +2980,7 @@
             <input class="cfg-field cfg-field-full" value="{{shippingForm.campaignLabel}}" data-field="campaignLabel" bindinput="onShippingFieldInput" placeholder="当前全场免邮" placeholder-class="cfg-placeholder"/>
           </view>
 
-          <view class="cfg-cta {{shippingSaving ? 'disabled' : ''}}" bindtap="saveShippingRules">{{shippingSaving ? '保存中…' : '保存规则'}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="cfg-cta {{shippingSaving ? 'disabled' : ''}}" bindtap="saveShippingRules">{{shippingSaving ? '保存中…' : '保存规则'}}</view>
         </view>
       </block>
     </view>
@@ -2995,9 +2995,9 @@
   <block wx:if="{{curTab===16}}">
     <view class="panel-title cfg-panel-title">内容展示开关 · Display Flags</view>
     <view class="cfg-shortcut-row" wx:if="{{menu.walletConfig || menu.bookingRules || menu.supportConfig}}">
-      <view class="cfg-shortcut" wx:if="{{menu.walletConfig}}" bindtap="goWalletConfig">钱包配置 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.bookingRules}}" bindtap="goBookingRules">预约规则 ›</view>
-      <view class="cfg-shortcut" wx:if="{{menu.supportConfig}}" bindtap="goSupportConfig">客服入口 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.walletConfig}}" bindtap="goWalletConfig">钱包配置 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.bookingRules}}" bindtap="goBookingRules">预约规则 ›</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="cfg-shortcut" wx:if="{{menu.supportConfig}}" bindtap="goSupportConfig">客服入口 ›</view>
     </view>
     <view class="card cfg-card" wx:if="{{contentFlagsLoading}}">
       <text class="cfg-hint">加载中…</text>
@@ -3101,7 +3101,7 @@
                云端字段与旧祈福墙页接线**保留**（稳定期不改契约；旧页仍被门店码与玩法回跳使用），
                两者缺字段默认关 → 旧页行为不变（始终不展示），无需再从后台开关。 -->
           <!-- 心愿签治理入口。签条（含语音）不接自动审核 → 必须能在此复核全部内容（含已隐藏） -->
-          <view class="cfg-row cfg-row-link" bindtap="goWishWallManage">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="cfg-row cfg-row-link" bindtap="goWishWallManage">
             <view class="cfg-label-block">
               <text class="cfg-label cfg-label-wide">心愿签内容管理</text>
               <text class="cfg-switch-hint">查看全部签条 · 隐藏 / 恢复 / 置顶 / 删除 · 语音试听</text>
@@ -3111,7 +3111,7 @@
         </view>
         <!-- 未保存提示：开关是「先改本地、点保存才写云端」，没有这句超管会以为已经生效 -->
         <view class="cfg-dirty" wx:if="{{contentFlagsDirty}}">有未保存的改动 —— 点下方「保存开关」后 C 端才会生效</view>
-        <view class="cfg-cta {{contentFlagsSaving ? 'disabled' : ''}}" bindtap="saveContentDisplayFlags">{{contentFlagsSaving ? '保存中…' : '保存开关'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="cfg-cta {{contentFlagsSaving ? 'disabled' : ''}}" bindtap="saveContentDisplayFlags">{{contentFlagsSaving ? '保存中…' : '保存开关'}}</view>
       </view>
     </block>
   </block>
@@ -3126,7 +3126,7 @@
   <view class="vs-content">
     <view class="vs-stamp-anim"><text>已核销</text></view>
     <text class="vs-tip">欢迎入馆参观</text>
-    <view class="btn-small gold" bindtap="closeVerifyModal">完成</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="btn-small gold" bindtap="closeVerifyModal">完成</view>
   </view>
 </view>
 
@@ -3135,7 +3135,7 @@
   <view class="ui-pop-sheet modal-panel member-pass-panel" catchtap="true">
     <view class="modal-head">
       <text>会员核验</text>
-      <view class="close-btn" bindtap="closeMemberPassResult">✕</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeMemberPassResult">✕</view>
     </view>
     <view class="modal-body member-pass-body">
       <view class="mp-status-row">
@@ -3172,7 +3172,7 @@
       </view>
     </view>
     <view class="modal-foot">
-      <view class="btn-full" bindtap="closeMemberPassResult">完成</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="closeMemberPassResult">完成</view>
     </view>
   </view>
 </view>
@@ -3180,7 +3180,7 @@
 <!-- 伴宠报价弹窗 -->
 <view class="ui-pop-mask" wx:if="{{showPetQuoteModal}}" catchtouchmove="true">
   <view class="ui-pop-sheet modal-panel">
-    <view class="modal-head"><text>伴宠报价</text><view class="close-btn" bindtap="closePetQuoteModal">✕</view></view>
+    <view class="modal-head"><text>伴宠报价</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closePetQuoteModal">✕</view></view>
     <scroll-view scroll-y class="modal-body">
       <view class="form-group">
         <view class="form-row"><text>金额（元）</text><input type="digit" value="{{tempPetQuote.amount}}" bindinput="bindPetQuoteInput" data-field="amount" placeholder="如 5800"/></view>
@@ -3188,7 +3188,7 @@
         <view class="form-row"><text>说明</text><textarea class="textarea" value="{{tempPetQuote.note}}" bindinput="bindPetQuoteInput" data-field="note" placeholder="工艺说明、周期等" style="height:120rpx"/></view>
       </view>
     </scroll-view>
-    <view class="modal-foot"><view class="btn-full" bindtap="submitPetQuote">发送报价</view></view>
+    <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitPetQuote">发送报价</view></view>
   </view>
 </view>
 
@@ -3197,7 +3197,7 @@
 <!-- 营收录入弹窗 -->
 <view class="ui-pop-mask" wx:if="{{showRevenueModal}}" catchtouchmove="true">
   <view class="ui-pop-sheet modal-panel">
-    <view class="modal-head"><text>录入营收 · {{ledgerStoreName}}</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+    <view class="modal-head"><text>录入营收 · {{ledgerStoreName}}</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
     <scroll-view scroll-y class="modal-body">
       <view class="smart-box"><textarea placeholder="粘贴营收信息自动解析（入账门店以顶部选中为准）…" bindinput="parseRevenueText" value="{{tempRevenue.rawText}}"></textarea></view>
       <view class="form-group">
@@ -3208,14 +3208,14 @@
          <view class="form-row"><text>退款｜门店</text><input type="digit" value="{{tempRevenue.refund}}" bindinput="bindRevInput" data-field="refund" style="color:#ff4d4f"/></view>
       </view>
     </scroll-view>
-    <view class="modal-foot"><view class="btn-full" bindtap="submitRevenue">确认小钱钱入账</view></view>
+    <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitRevenue">确认小钱钱入账</view></view>
   </view>
 </view>
 
 <!-- 轮播图编辑弹窗 -->
 <view class="ui-pop-mask" wx:if="{{showBannerModal}}" catchtouchmove="true">
   <view class="ui-pop-sheet modal-panel">
-    <view class="modal-head"><text>编辑海报</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+    <view class="modal-head"><text>编辑海报</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
     <scroll-view scroll-y class="modal-body">
       <view class="upload-area" bindtap="chooseBannerImage">
          <image wx:if="{{tempBanner.image}}" src="{{tempBanner.image}}" mode="aspectFill"></image>
@@ -3247,21 +3247,21 @@
          </block>
       </view>
     </scroll-view>
-    <view class="modal-foot"><view class="btn-full" bindtap="submitBanner">保存发布</view></view>
+    <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitBanner">保存发布</view></view>
   </view>
 </view>
 
 <!-- 藏品录入弹窗 -->
 <view class="ui-pop-mask" wx:if="{{showProductModal}}" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel product-entry-panel">
-      <view class="modal-head"><text>{{isEditing?'编辑':'录入'}}藏品</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <view class="modal-head"><text>{{isEditing?'编辑':'录入'}}藏品</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
       <view class="product-form-tabs">
-        <view class="pft {{productFormTab==='basic'?'on':''}}" bindtap="setProductFormTab" data-tab="basic">基础</view>
-        <view class="pft {{productFormTab==='sku'?'on':''}}" bindtap="setProductFormTab" data-tab="sku">规格</view>
-        <view class="pft {{productFormTab==='flags'?'on':''}}" bindtap="setProductFormTab" data-tab="flags">标识</view>
-        <view class="pft {{productFormTab==='archive'?'on':''}}" bindtap="setProductFormTab" data-tab="archive">档案</view>
-        <view class="pft {{productFormTab==='detail'?'on':''}}" bindtap="setProductFormTab" data-tab="detail">详情</view>
-        <view class="pft {{productFormTab==='promo'?'on':''}}" wx:if="{{!artisanEmbed}}" bindtap="setProductFormTab" data-tab="promo">营销</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pft {{productFormTab==='basic'?'on':''}}" bindtap="setProductFormTab" data-tab="basic">基础</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pft {{productFormTab==='sku'?'on':''}}" bindtap="setProductFormTab" data-tab="sku">规格</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pft {{productFormTab==='flags'?'on':''}}" bindtap="setProductFormTab" data-tab="flags">标识</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pft {{productFormTab==='archive'?'on':''}}" bindtap="setProductFormTab" data-tab="archive">档案</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pft {{productFormTab==='detail'?'on':''}}" bindtap="setProductFormTab" data-tab="detail">详情</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="pft {{productFormTab==='promo'?'on':''}}" wx:if="{{!artisanEmbed}}" bindtap="setProductFormTab" data-tab="promo">营销</view>
       </view>
       <scroll-view scroll-y enable-flex class="modal-body product-entry-body">
 
@@ -3291,7 +3291,7 @@
               <text class="g-act danger" catchtap="removeProductMedia" data-index="{{index}}">×</text>
             </view>
           </view>
-          <view class="detail-img-add" bindtap="chooseProductImages" wx:if="{{!tempProduct.images || tempProduct.images.length < 12 || tempProduct.media.length < 3}}">
+          <view hover-class="tap-press" hover-stay-time="80" class="detail-img-add" bindtap="chooseProductImages" wx:if="{{!tempProduct.images || tempProduct.images.length < 12 || tempProduct.media.length < 3}}">
             <text>+ 图片/视频</text>
           </view>
         </view>
@@ -3305,7 +3305,7 @@
               <!-- 双层命名：title 是标准名（检索/识别/对账），主题名是文艺名（详情/礼赠做主视觉） -->
               <input value="{{tempProduct.themeName}}" bindinput="bindPInput" data-field="themeName" placeholder="主题名（2–8 字，如「时间的守卫者」）"/>
               <input value="{{tempProduct.themeNote}}" bindinput="bindPInput" data-field="themeNote" placeholder="一句话点题（选填，如「钟面朝前，时间向后」）"/>
-              <view class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistProductFillAll">一键补齐</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistProductFillAll">一键补齐</view>
             </view>
           </view>
           <text class="latin-hint">根据名称补齐分类、描述、保护物种、科学分类、拉丁学名与标签</text>
@@ -3329,12 +3329,12 @@
               <view class="tag-chips" wx:if="{{tempProduct.tags.length}}">
                 <view class="tag-chip" wx:for="{{tempProduct.tags}}" wx:for-item="tagItem" wx:key="*this">
                   <text class="tag-chip-text">{{tagItem}}</text>
-                  <view class="tag-chip-x" catchtap="removeProductTag" data-tag="{{tagItem}}">×</view>
+                  <view hover-class="tap-press" hover-stay-time="80" class="tag-chip-x" catchtap="removeProductTag" data-tag="{{tagItem}}">×</view>
                 </view>
               </view>
               <view class="tag-add-row">
                 <input class="tag-draft-input" value="{{tempProduct.tagDraft}}" bindinput="bindPInput" data-field="tagDraft" bindconfirm="addProductTag" placeholder="回车添加，最多 10 个"/>
-                <view class="tag-add-btn" bindtap="addProductTag">添加</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="tag-add-btn" bindtap="addProductTag">添加</view>
               </view>
             </view>
           </view>
@@ -3347,7 +3347,7 @@
           <view class="form-row"><text>库存</text>
             <input wx:if="{{!tempProduct.hasSku}}" type="number" value="{{tempProduct.stock}}" bindinput="bindPInput" data-field="stock" placeholder="1"/>
             <!-- 多规格时总库存由规格汇总：不给「灰掉改不动」的输入框，给明确入口（2026-09-18 反馈「库存无法编辑」） -->
-            <view wx:else class="stock-jump" bindtap="goSkuStockTab">总库存 {{tempProduct.stock || 0}} · {{tempProduct.skus.length}} 个规格汇总 · 去改规格库存 ›</view>
+            <view hover-class="tap-press" hover-stay-time="80" wx:else class="stock-jump" bindtap="goSkuStockTab">总库存 {{tempProduct.stock || 0}} · {{tempProduct.skus.length}} 个规格汇总 · 去改规格库存 ›</view>
           </view>
           <text class="latin-hint" wx:if="{{!tempProduct.hasSku}}">库存为 1 时默认标记孤品；手动关掉后不再强开</text>
           <text class="latin-hint" wx:else>多规格的总库存 = 各规格库存之和，改库存请到「规格」页逐规格填写</text>
@@ -3387,11 +3387,11 @@
               <view class="sku-dim-row" wx:for="{{skuDimBuilder}}" wx:key="index">
                 <input class="sku-field sku-dim-name" placeholder="维度名" placeholder-class="sku-ph" value="{{item.name}}" bindinput="bindSkuDimInput" data-index="{{index}}" data-field="name"/>
                 <input class="sku-field sku-dim-vals" placeholder="取值，逗号分隔" placeholder-class="sku-ph" value="{{item.valuesStr}}" bindinput="bindSkuDimInput" data-index="{{index}}" data-field="valuesStr"/>
-                <view class="sku-dim-del" wx:if="{{skuDimBuilder.length>1}}" bindtap="removeSkuDimRow" data-index="{{index}}">删</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="sku-dim-del" wx:if="{{skuDimBuilder.length>1}}" bindtap="removeSkuDimRow" data-index="{{index}}">删</view>
               </view>
               <view class="sku-builder-actions">
-                <view class="sku-tool-btn" bindtap="addSkuDimRow">+ 维度</view>
-                <view class="sku-tool-btn primary" bindtap="generateSkusFromDims">生成规格组合</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="sku-tool-btn" bindtap="addSkuDimRow">+ 维度</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="sku-tool-btn primary" bindtap="generateSkusFromDims">生成规格组合</view>
               </view>
               <text class="latin-hint">例：尺寸=30cm,40cm；装裱=金框,木框 → 自动组合</text>
             </view>
@@ -3401,19 +3401,19 @@
               <view class="sku-bulk-bar">
                 <input class="sku-field sku-bulk-input" type="digit" placeholder="统一价" placeholder-class="sku-ph" value="{{skuBulkPrice}}" bindinput="bindSkuBulkInput" data-field="price"/>
                 <input class="sku-field sku-bulk-input" type="number" placeholder="统一库存" placeholder-class="sku-ph" value="{{skuBulkStock}}" bindinput="bindSkuBulkInput" data-field="stock"/>
-                <view class="sku-tool-btn" bindtap="applySkuBulkFields">应用到全部</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="sku-tool-btn" bindtap="applySkuBulkFields">应用到全部</view>
               </view>
               <view class="sku-bulk-bar tools">
-                <view class="sku-tool-btn" bindtap="autoFillSkuCodes">补 SKU 编码</view>
-                <view class="sku-tool-btn" bindtap="applyCoverToEmptySkus">缺图用封面</view>
-                <view class="sku-tool-btn" bindtap="addSkuRowsBatch">+3 行</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="sku-tool-btn" bindtap="autoFillSkuCodes">补 SKU 编码</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="sku-tool-btn" bindtap="applyCoverToEmptySkus">缺图用封面</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="sku-tool-btn" bindtap="addSkuRowsBatch">+3 行</view>
               </view>
             </view>
 
             <view class="sku-block compact" wx:for="{{tempProduct.skus}}" wx:key="id">
               <view class="sku-card-head">
                 <text class="sku-idx">#{{index + 1}}</text>
-                <view class="sku-del" bindtap="removeSkuRow" data-index="{{index}}">删除</view>
+                <view hover-class="tap-press" hover-stay-time="80" class="sku-del" bindtap="removeSkuRow" data-index="{{index}}">删除</view>
               </view>
               <view class="sku-editor stacked">
                 <input class="sku-field sku-input full" placeholder="规格名（多维用 / 分隔）" placeholder-class="sku-ph" value="{{item.specLabel}}" bindinput="bindSkuInput" data-index="{{index}}" data-field="specLabel"/>
@@ -3450,12 +3450,12 @@
                     <text class="g-act danger" catchtap="removeSkuImage" data-index="{{index}}" data-img-index="{{imgIdx}}">×</text>
                   </view>
                 </view>
-                <view class="detail-img-add sku-img-add" bindtap="chooseSkuImages" data-index="{{index}}">
+                <view hover-class="tap-press" hover-stay-time="80" class="detail-img-add sku-img-add" bindtap="chooseSkuImages" data-index="{{index}}">
                   <text>+ 图</text>
                 </view>
               </view>
             </view>
-            <view class="btn-add-sku" bindtap="addSkuRow">+ 添加规格</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="btn-add-sku" bindtap="addSkuRow">+ 添加规格</view>
             <text class="latin-hint">每规格至少 1 张图；尺寸随「装裱方式」切换（相框=长×宽×厚度，圆罩=直径，圆柱=直径×高度，方罩=长×宽×高）。有展示文案时 C 端优先用文案。</text>
           </block>
           <view class="sku-off-hint" wx:else>
@@ -3486,7 +3486,7 @@
             <text>适配礼赠场景</text>
             <view class="tag-editor">
               <view class="tag-chips gift-scene-chips">
-                <view
+                <view hover-class="tap-press-soft" hover-stay-time="80"
                   class="tag-chip gift-scene-chip {{item.on ? 'on' : ''}}"
                   wx:for="{{giftSceneOptions}}"
                   wx:key="key"
@@ -3503,7 +3503,7 @@
             <text>祈运标签</text>
             <view class="tag-editor">
               <view class="tag-chips gift-scene-chips">
-                <view
+                <view hover-class="tap-press-soft" hover-stay-time="80"
                   class="tag-chip gift-scene-chip {{item.on ? 'on' : ''}}"
                   wx:for="{{blessTagOptions}}"
                   wx:key="key"
@@ -3602,7 +3602,7 @@
             <text class="{{productLatinRequired ? 'label-required' : ''}}">拉丁学名{{productLatinRequired ? ' *' : ''}}</text>
             <view class="ai-field-wrap">
               <input value="{{tempProduct.latinName}}" bindinput="bindPInput" data-field="latinName" placeholder="{{productLatinRequired ? '必填 · 建议使用 AI 识别' : '文创类可选'}}"/>
-              <view class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistProductWithAi">AI 识别</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistProductWithAi">AI 识别</view>
             </view>
           </view>
           <text class="latin-hint" wx:if="{{productLatinRequired}}">非文创类藏品须填写标准拉丁学名；可用「一键补齐」或本按钮</text>
@@ -3641,7 +3641,7 @@
                 <text class="g-act danger" catchtap="removeDetailImage" data-index="{{index}}">×</text>
               </view>
             </view>
-            <view class="detail-img-add" bindtap="chooseDetailImages" wx:if="{{!tempProduct.detailImages || tempProduct.detailImages.length < 9}}">
+            <view hover-class="tap-press" hover-stay-time="80" class="detail-img-add" bindtap="chooseDetailImages" wx:if="{{!tempProduct.detailImages || tempProduct.detailImages.length < 9}}">
               <text>+ 添加</text>
             </view>
           </view>
@@ -3682,8 +3682,8 @@
 
       </scroll-view>
       <view class="modal-foot product-entry-foot">
-        <view class="btn-ghost sm" wx:if="{{productFormTab!=='basic'}}" bindtap="prevProductFormTab">上一项</view>
-        <view class="btn-ghost sm" wx:if="{{artisanEmbed ? productFormTab!=='detail' : productFormTab!=='promo'}}" bindtap="nextProductFormTab">下一项</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost sm" wx:if="{{productFormTab!=='basic'}}" bindtap="prevProductFormTab">上一项</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost sm" wx:if="{{artisanEmbed ? productFormTab!=='detail' : productFormTab!=='promo'}}" bindtap="nextProductFormTab">下一项</view>
         <!-- 删除：仅超管可见（products write:false，硬删走 manageProducts.remove） -->
         <view
           class="btn-danger sm"
@@ -3692,7 +3692,7 @@
           hover-class="btn-danger-press"
           hover-stay-time="80"
         >删除</view>
-        <view class="btn-full flex-1" bindtap="submitProduct">{{artisanEmbed ? '保存藏品' : '确认保存'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-full flex-1" bindtap="submitProduct">{{artisanEmbed ? '保存藏品' : '确认保存'}}</view>
       </view>
     </view>
   </view>
@@ -3700,7 +3700,7 @@
 <!-- 标本师弹窗 -->
   <view class="ui-pop-mask" wx:if="{{showFramerModal}}" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel sm">
-      <view class="modal-head"><text>{{isEditing ? '编辑标本师' : '新增标本师'}}</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <view class="modal-head"><text>{{isEditing ? '编辑标本师' : '新增标本师'}}</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="upload-area round" bindtap="chooseFramerImage" style="width:200rpx; height:200rpx; border-radius:50%; margin:0 auto 30rpx;">
            <image wx:if="{{tempFramer.avatar}}" src="{{tempFramer.avatar}}" mode="aspectFill"></image>
@@ -3739,14 +3739,14 @@
           </view>
         </view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="submitFramer">保存</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitFramer">保存</view></view>
     </view>
   </view>
 
   <!-- 绑定员工面板 -->
   <view class="ui-pop-mask" wx:if="{{showFramerBindSheet}}" bindtap="closeFramerBindSheet" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel sm framer-bind-panel" catchtap="true">
-      <view class="modal-head"><text>绑定员工</text><view class="close-btn" bindtap="closeFramerBindSheet">✕</view></view>
+      <view class="modal-head"><text>绑定员工</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeFramerBindSheet">✕</view></view>
       <view class="framer-bind-search">
         <input
           class="framer-search-input"
@@ -3757,7 +3757,7 @@
         />
       </view>
       <scroll-view scroll-y class="modal-body framer-bind-scroll">
-        <view
+        <view hover-class="tap-press-soft" hover-stay-time="80"
           class="framer-bind-item"
           wx:for="{{framerBindCandidatesView}}"
           wx:key="openid"
@@ -3775,7 +3775,7 @@
   <!-- 定制选项配置弹窗 -->
   <view class="ui-pop-mask" wx:if="{{showCustomConfigModal}}" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel sm">
-      <view class="modal-head"><text>定制选项</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <view class="modal-head"><text>定制选项</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="form-group">
           <view class="form-row"><text>名称</text><input value="{{tempCustomConfig.name}}" bindinput="bindCCInput" data-field="name"/></view>
@@ -3791,14 +3791,14 @@
           <textarea class="textarea" value="{{tempCustomConfig.desc}}" bindinput="bindCCInput" data-field="desc" style="height:120rpx"/>
         </view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="submitCustomConfig">保存</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitCustomConfig">保存</view></view>
     </view>
   </view>
 
   <!-- 活动编辑面板 -->
   <view class="ui-pop-mask" wx:if="{{showActivityModal}}" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel">
-      <view class="modal-head"><text>{{isEditing?'编辑活动':'发布活动'}}</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <view class="modal-head"><text>{{isEditing?'编辑活动':'发布活动'}}</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body" scroll-into-view="{{actFormErr.field?'actf-'+actFormErr.field:''}}">
         <text class="act-err" wx:if="{{actFormErr.field==='submit'}}">{{actFormErr.msg}}</text>
         <view class="act-f" id="actf-title">
@@ -3809,14 +3809,14 @@
         <view class="act-f">
           <text class="act-f-l">类型</text>
           <view class="act-seg">
-            <view class="act-seg-i {{tempActivity.type==='course'?'on':''}}" bindtap="bindATypeChange" data-type="course">手作课程</view>
-            <view class="act-seg-i {{tempActivity.type==='special_activity'?'on':''}}" bindtap="bindATypeChange" data-type="special_activity">特别活动</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="act-seg-i {{tempActivity.type==='course'?'on':''}}" bindtap="bindATypeChange" data-type="course">手作课程</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="act-seg-i {{tempActivity.type==='special_activity'?'on':''}}" bindtap="bindATypeChange" data-type="special_activity">特别活动</view>
           </view>
         </view>
         <view class="act-f">
           <text class="act-f-l">门店（决定出现在哪家店的预约页）</text>
           <view class="act-seg">
-            <view wx:for="{{actStoreNames}}" wx:key="*this" class="act-seg-i {{tempActivity.storeIndex===index?'on':''}}" bindtap="bindAStoreChange" data-idx="{{index}}">{{item}}</view>
+            <view hover-class="tap-press" hover-stay-time="80" wx:for="{{actStoreNames}}" wx:key="*this" class="act-seg-i {{tempActivity.storeIndex===index?'on':''}}" bindtap="bindAStoreChange" data-idx="{{index}}">{{item}}</view>
           </view>
         </view>
         <view class="act-f" id="actf-date">
@@ -3858,13 +3858,13 @@
         </view>
         <view class="act-f">
           <text class="act-f-l">封面（可选，首页活动位展示）</text>
-          <view class="act-cover-pick" bindtap="chooseActivityImage">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="act-cover-pick" bindtap="chooseActivityImage">
             <image wx:if="{{tempActivity.image}}" src="{{tempActivity.image}}" mode="aspectFill" />
             <text wx:else class="act-cover-ph">＋ 上传封面</text>
           </view>
         </view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full {{actSaving?'is-busy':''}}" bindtap="submitActivity">{{actSaving?'保存中…':(isEditing?'保存修改':'发布活动')}}</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full {{actSaving?'is-busy':''}}" bindtap="submitActivity">{{actSaving?'保存中…':(isEditing?'保存修改':'发布活动')}}</view></view>
     </view>
   </view>
 
@@ -3873,13 +3873,13 @@
 <!-- 关联藏品：打开即预览；主路径一键确认 -->
 <view class="ui-pop-mask" wx:if="{{showCatLinkModal}}" catchtouchmove="true">
   <view class="ui-pop-sheet modal-panel cat-manage-panel">
-    <view class="modal-head"><text>关联藏品 · {{catLinkTarget.name}}</text><view class="close-btn" bindtap="closeCatLinkModal">✕</view></view>
+    <view class="modal-head"><text>关联藏品 · {{catLinkTarget.name}}</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeCatLinkModal">✕</view></view>
     <scroll-view scroll-y class="modal-body cat-manage-scroll">
       <view class="cat-manage-tip">已关联 {{catLinkAlreadyCount || 0}} 件。下方为可补挂候选；空态时可试「一键全部」（含同馆未分类）。</view>
       <view class="cat-link-modes">
-        <view class="cat-action-btn on" bindtap="oneClickCatLink" data-mode="auto">自动关联{{catLinkMode==='auto' && catLinkMatchCount ? '（'+catLinkMatchCount+'）' : ''}}</view>
-        <view class="cat-action-btn" bindtap="oneClickCatLink" data-mode="all">一键全部{{catLinkMode==='all' && catLinkMatchCount ? '（'+catLinkMatchCount+'）' : ''}}</view>
-        <view class="cat-action-btn" bindtap="previewCatLink">刷新预览</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="cat-action-btn on" bindtap="oneClickCatLink" data-mode="auto">自动关联{{catLinkMode==='auto' && catLinkMatchCount ? '（'+catLinkMatchCount+'）' : ''}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="cat-action-btn" bindtap="oneClickCatLink" data-mode="all">一键全部{{catLinkMode==='all' && catLinkMatchCount ? '（'+catLinkMatchCount+'）' : ''}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="cat-action-btn" bindtap="previewCatLink">刷新预览</view>
       </view>
       <view class="cat-dup-title" wx:if="{{catLinkMatchCount}}">当前预览（{{catLinkMode==='all'?'一键全部':'自动'}}）：匹配 {{catLinkMatchCount}} 件</view>
       <view class="cat-link-item" wx:for="{{catLinkPreview}}" wx:key="_id">
@@ -3889,17 +3889,17 @@
       <view class="empty-tip" wx:if="{{!catLinkLoading && !catLinkPreview.length}}">{{catLinkEmptyHint || '暂无候选'}}</view>
       <view class="cat-dup-box" wx:if="{{catLinkLastResult}}">
         <text>上次关联 {{catLinkLastResult.linkedCount}} 件。可撤销本次操作。</text>
-        <view class="cat-action-btn" bindtap="undoCatLink">撤销上次关联</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="cat-action-btn" bindtap="undoCatLink">撤销上次关联</view>
       </view>
     </scroll-view>
-    <view class="modal-foot"><view class="btn-ghost" bindtap="closeCatLinkModal">关闭</view></view>
+    <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="closeCatLinkModal">关闭</view></view>
   </view>
 </view>
 
   <!-- 🟢 权益弹窗 (UI统一优化) -->
   <view class="ui-pop-mask" wx:if="{{showRewardModal}}" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel">
-      <view class="modal-head"><text>权益编辑</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <view class="modal-head"><text>权益编辑</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="upload-area" bindtap="chooseRewardImage">
            <image wx:if="{{tempReward.image}}" src="{{tempReward.image}}" mode="aspectFill"></image>
@@ -3929,14 +3929,14 @@
            <textarea class="textarea" value="{{tempReward.description}}" bindinput="bindRInput" data-field="description" style="height:120rpx"/>
         </view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="submitReward">保存</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitReward">保存</view></view>
     </view>
   </view>
 
   <!-- 等级弹窗：字段对齐 Admin member_levels -->
   <view class="ui-pop-mask" wx:if="{{showVipModal}}" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel sm">
-      <view class="modal-head"><text>等级设置</text><view class="close-btn" bindtap="closeModal">✕</view></view>
+      <view class="modal-head"><text>等级设置</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
       <scroll-view scroll-y class="modal-body" style="max-height:70vh;">
          <view class="form-group">
             <view class="form-row"><text>等级(Lv)</text><input type="number" value="{{tempVip.level}}" bindinput="bindVInput" data-field="level" /></view>
@@ -3956,7 +3956,7 @@
             </view>
          </view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="submitVipLevel">保存</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitVipLevel">保存</view></view>
     </view>
   </view>
   
@@ -3964,14 +3964,14 @@
     <view class="vs-content">
       <view class="vs-stamp-anim"><text>已核销</text></view>
       <text class="vs-tip">欢迎入馆参观</text>
-      <view class="btn-small gold" bindtap="closeVerifyModal">完成</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-small gold" bindtap="closeVerifyModal">完成</view>
     </view>
   </view>
   <view class="ui-pop-mask" wx:if="{{showShipModal}}" catchtap="closeModal" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel sm ship-modal-panel" catchtap="true">
       <view class="modal-head">
         <text>发货信息录入</text>
-        <view class="close-btn" catchtap="closeModal">✕</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closeModal">✕</view>
       </view>
 
       <view class="modal-body ship-modal-body">
@@ -3984,7 +3984,7 @@
           <view class="ship-section-label">快递公司</view>
           <scroll-view scroll-x class="ship-carrier-scroll" enable-flex="{{true}}" show-scrollbar="{{false}}">
             <view class="ship-carrier-chips">
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="ship-carrier-chip {{tempShip.carrier===item?'on':''}}"
                 wx:for="{{shipCarrierOptions}}"
                 wx:key="*this"
@@ -4018,8 +4018,8 @@
               confirm-type="done"
               hold-keyboard="{{true}}"
             />
-            <view class="ship-action-btn" catchtap="pasteTrackingNumber">粘贴</view>
-            <view class="ship-action-btn" catchtap="scanTrackingNumber">扫码</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="ship-action-btn" catchtap="pasteTrackingNumber">粘贴</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="ship-action-btn" catchtap="scanTrackingNumber">扫码</view>
           </view>
         </view>
         <!-- 3. 包装图片（可选）—— 上传后会随「山海有信」一起发给顾客，故文案直接说清去向 -->
@@ -4041,13 +4041,13 @@
                 data-index="{{index}}"
                 catchtap="previewShipPhoto"
               ></image>
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="ship-photo-del"
                 data-index="{{index}}"
                 catchtap="removeShipPhoto"
               >✕</view>
             </view>
-            <view
+            <view hover-class="tap-press" hover-stay-time="80"
               class="ship-photo-add"
               wx:if="{{tempShip.packagePhotos.length < 6}}"
               catchtap="chooseShipPhotos"
@@ -4063,7 +4063,7 @@
       </view>
 
       <view class="modal-foot ship-modal-foot">
-        <view class="btn-full ship-submit-btn" catchtap="submitShip">确认发出并通知</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-full ship-submit-btn" catchtap="submitShip">确认发出并通知</view>
       </view>
     </view>
   </view>
@@ -4073,7 +4073,7 @@
     <view class="ui-pop-sheet modal-panel" catchtap="true">
       <view class="modal-head">
         <text>{{isEditing ? '编辑' : '新建'}}{{contentType === 'exhibition' ? '专题' : '文章'}}</text>
-        <view class="close-btn" bindtap="closeModal">✕</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view>
       </view>
       <scroll-view scroll-y class="modal-body">
         <view class="upload-area" bindtap="chooseContentImage">
@@ -4091,7 +4091,7 @@
             </view>
             <view class="exhibition-ai-bar">
               <text class="exhibition-ai-tip">填写标题后，可一键生成英文副标、摘要与 HTML 正文</text>
-              <view class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistExhibitionWithAi">AI 创作</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="ai-btn {{aiAssisting ? 'disabled' : ''}}" bindtap="assistExhibitionWithAi">AI 创作</view>
             </view>
           </block>
           
@@ -4134,11 +4134,11 @@
                     <text class="related-price" wx:if="{{!item.missing}}">¥{{item.price}}</text>
                     <text class="related-missing" wx:else>藏品不存在</text>
                   </view>
-                  <view class="related-remove" bindtap="removeRelatedProduct" data-key="{{item.key}}">移除</view>
+                  <view hover-class="tap-press" hover-stay-time="80" class="related-remove" bindtap="removeRelatedProduct" data-key="{{item.key}}">移除</view>
                 </view>
               </view>
               <view class="related-empty" wx:else>未关联藏品，馆藏 A 区转化条不会显示</view>
-              <view class="btn-pick-product" bindtap="openProductPicker">选择关联藏品</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="btn-pick-product" bindtap="openProductPicker">选择关联藏品</view>
             </view>
           </view>
           <view class="form-row" wx:if="{{contentType==='article'}}"><text>视频链接</text><input value="{{tempContent.videoUrl || ''}}" bindinput="bindContentInput" data-field="videoUrl" placeholder="可选：文章视频链接"/></view>
@@ -4146,7 +4146,7 @@
           <textarea class="textarea" value="{{tempContent.content || ''}}" bindinput="bindContentInput" data-field="content" placeholder="在此输入 HTML 内容…" style="height:400rpx; font-family:monospace; font-size:24rpx;"/>
         </view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="submitContent">保存</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitContent">保存</view></view>
     </view>
   </view>
 
@@ -4155,7 +4155,7 @@
     <view class="ui-pop-sheet modal-panel picker-panel" catchtap="true">
       <view class="modal-head">
         <text>选择关联藏品</text>
-        <view class="close-btn" bindtap="closeProductPicker">✕</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeProductPicker">✕</view>
       </view>
       <view class="picker-search">
         <input
@@ -4166,7 +4166,7 @@
         />
       </view>
       <scroll-view scroll-y class="picker-scroll">
-        <view
+        <view hover-class="tap-press-soft" hover-stay-time="80"
           class="picker-row {{item.selected ? 'selected' : ''}}"
           wx:for="{{productPickerList}}"
           wx:key="key"
@@ -4185,7 +4185,7 @@
         <view class="picker-empty" wx:if="{{!productPickerList.length}}">暂无藏品</view>
       </scroll-view>
       <view class="modal-foot">
-        <view class="btn-full" bindtap="confirmProductPicker">完成（{{tempContent.relatedSkus.length || 0}}）</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="confirmProductPicker">完成（{{tempContent.relatedSkus.length || 0}}）</view>
       </view>
     </view>
   </view>
@@ -4195,7 +4195,7 @@
     <view class="ui-pop-sheet modal-panel" catchtap="true">
       <view class="modal-head">
         <text>{{isEditing ? '编辑' : '新建'}}养护指南</text>
-        <view class="close-btn" bindtap="closeCareGuideModal">✕</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeCareGuideModal">✕</view>
       </view>
       <scroll-view scroll-y class="modal-body">
         <view class="form-group">
@@ -4222,7 +4222,7 @@
           <textarea class="textarea mono" value="{{tempCareGuide.sectionsJson || ''}}" bindinput="bindCareGuideInput" data-field="sectionsJson" placeholder="[]" style="height:360rpx; font-family:monospace; font-size:22rpx;"/>
         </view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="submitCareGuide">保存</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitCareGuide">保存</view></view>
     </view>
   </view>
 
@@ -4234,7 +4234,7 @@
     catchtouchmove="noop"
   >
     <view class="comment-reply-panel" catchtap="noop">
-      <view class="modal-head"><text>回复评价</text><view class="close-btn" catchtap="closeCommentReplyModal">✕</view></view>
+      <view class="modal-head"><text>回复评价</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closeCommentReplyModal">✕</view></view>
       <view class="modal-body">
         <textarea
           class="textarea comment-reply-input"
@@ -4248,27 +4248,27 @@
           show-confirm-bar="{{true}}"
         ></textarea>
       </view>
-      <view class="modal-foot"><view class="btn-full" catchtap="submitCommentReply">提交回复</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" catchtap="submitCommentReply">提交回复</view></view>
     </view>
   </view>
 
   <!-- 山海有信：推送确认 -->
   <view class="ui-pop-mask" wx:if="{{showPushConfirm}}" catchtap="closePushConfirm" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel" catchtap="true">
-      <view class="modal-head"><text>确认发送</text><view class="close-btn" catchtap="closePushConfirm">✕</view></view>
+      <view class="modal-head"><text>确认发送</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closePushConfirm">✕</view></view>
       <view class="modal-body">
         <text class="p-name">将向约 {{pushEstimate}} 位藏家发送公告</text>
         <text class="addr-detail" style="margin-top:16rpx;display:block;">{{pushForm.title}}</text>
         <text class="addr-detail">{{pushForm.content}}</text>
       </view>
-      <view class="modal-foot"><view class="btn-full" catchtap="submitPush">确认发送</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" catchtap="submitPush">确认发送</view></view>
     </view>
   </view>
 
   <!-- 门店编辑 -->
   <view class="ui-pop-mask" wx:if="{{showStoreEditModal}}" catchtap="closeStoreEditModal" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel" catchtap="true">
-      <view class="modal-head"><text>编辑门店 · {{tempStoreEdit.name}}</text><view class="close-btn" catchtap="closeStoreEditModal">✕</view></view>
+      <view class="modal-head"><text>编辑门店 · {{tempStoreEdit.name}}</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closeStoreEditModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="form-row"><text>名称</text><input value="{{tempStoreEdit.name}}" bindinput="bindStoreEditInput" data-field="name" placeholder="门店名称"/></view>
         <view class="form-row"><text>电话</text><input value="{{tempStoreEdit.phone}}" bindinput="bindStoreEditInput" data-field="phone" placeholder="联系电话"/></view>
@@ -4287,14 +4287,14 @@
         <view class="form-row"><text>简介</text><textarea class="textarea" value="{{tempStoreEdit.intro}}" bindinput="bindStoreEditInput" data-field="intro" style="height:120rpx"/></view>
         <view class="form-row"><text>到店提示</text><textarea class="textarea" value="{{tempStoreEdit.visitTipsText}}" bindinput="bindStoreEditInput" data-field="visitTipsText" placeholder="每行一条" style="height:160rpx"/></view>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="saveStoreEdit">保存</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="saveStoreEdit">保存</view></view>
     </view>
   </view>
 
   <!-- 山海有信：留言回复 -->
   <view class="ui-pop-mask" wx:if="{{showTicketReplyModal}}" catchtap="closeTicketReplyModal" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel" catchtap="true">
-      <view class="modal-head"><text>回复 · {{tempTicketReply.topicLabel}}</text><view class="close-btn" catchtap="closeTicketReplyModal">✕</view></view>
+      <view class="modal-head"><text>回复 · {{tempTicketReply.topicLabel}}</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closeTicketReplyModal">✕</view></view>
       <scroll-view scroll-y class="modal-body">
         <view class="ticket-origin">
           <view class="ticket-origin-head"><text class="ticket-origin-label">顾客原留言</text><text class="ticket-origin-who">{{tempTicketReply.who}}</text></view>
@@ -4309,6 +4309,6 @@
         </view>
         <textarea class="textarea" maxlength="500" value="{{tempTicketReply.content}}" bindinput="bindTicketReplyInput" placeholder="回复内容将推送到用户山海有信" style="height:200rpx"/>
       </scroll-view>
-      <view class="modal-foot"><view class="btn-full" bindtap="submitTicketReply">发送回复</view></view>
+      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitTicketReply">发送回复</view></view>
     </view>
   </view>

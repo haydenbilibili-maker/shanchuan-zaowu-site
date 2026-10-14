@@ -14,7 +14,7 @@
   overflow: hidden;
   margin-bottom: 20rpx;
   border: 1px solid var(--color-border);
-  transition: transform 0.22s ease, border-color 0.22s ease;
+  transition: transform var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
 }
 .prod-card-press {
   transform: scale(0.98);

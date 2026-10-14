@@ -138,19 +138,19 @@
       <text class="empty-overline">VOUCHERS</text>
       <text class="empty-title">先重新进入</text>
       <text class="empty-sub">退出本机登录后，礼券与会员号不会在此展示</text>
-      <view class="go-btn" bindtap="goResumeLogin">重新进入</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="go-btn" bindtap="goResumeLogin">重新进入</view>
     </view>
     <view class="empty-body" wx:elif="{{loadError}}">
       <text class="empty-overline">VOUCHERS</text>
       <text class="empty-title">礼券夹暂时打不开</text>
       <text class="empty-sub">网络或权限异常，稍后再试</text>
-      <view class="go-btn" bindtap="loadCoupons">重新加载</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="go-btn" bindtap="loadCoupons">重新加载</view>
     </view>
     <view class="empty-body" wx:else>
       <text class="empty-overline">VOUCHERS</text>
       <text class="empty-title">礼券夹还是空的</text>
       <text class="empty-sub">完成注册可获新客礼券；积分也可兑换门店与线上通用礼券</text>
-      <view class="go-btn" bindtap="goWelcomeOrPoints">{{emptyCtaText}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="go-btn" bindtap="goWelcomeOrPoints">{{emptyCtaText}}</view>
     </view>
   </view>
 

@@ -9,7 +9,7 @@
       </view>
       <text class="header-note">绑定山川造物 / 星宸门店股东；占股与回本前/后分成用于观测台双阶段分红口径。</text>
       <view class="header-actions">
-        <view class="link-chip" bindtap="goObservatoryPreview">{{obsPending ? '再点打开观测台 ›' : '股东观测台 ›'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="link-chip" bindtap="goObservatoryPreview">{{obsPending ? '再点打开观测台 ›' : '股东观测台 ›'}}</view>
       </view>
     </view>
 
@@ -19,7 +19,7 @@
       <picker mode="selector" range="{{filterLabels}}" value="{{filterIndex}}" bindchange="onFilterChange">
         <view class="filter-chip">{{filterLabels[filterIndex]}}</view>
       </picker>
-      <view class="btn-add" bindtap="openCreate">新增股东</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-add" bindtap="openCreate">新增股东</view>
     </view>
 
     <view class="formula-card">
@@ -39,7 +39,7 @@
     <view class="empty-tip is-error" wx:elif="{{listError && !list.length}}">
       <text class="empty-title">股东名单未能取回</text>
       <text class="empty-sub">{{tipText || '请下拉刷新重试'}}</text>
-      <view class="btn-retry" bindtap="onRetryList">重试</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
     </view>
 
     <view class="empty-tip" wx:elif="{{!loading && !listError && !list.length}}">
@@ -78,14 +78,14 @@
         </view>
         <text class="meta">生效日 {{item.effectiveDate}}</text>
         <view class="card-actions">
-          <view class="chip-btn" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80" class="chip-btn" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
+          <view hover-class="tap-press" hover-stay-time="80"
             class="chip-btn danger"
             wx:if="{{item.status === 'active'}}"
             data-id="{{item._id}}"
             bindtap="disableRow"
           >{{disablePendingId === item._id ? '确认停用' : '停用'}}</view>
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="chip-btn success"
             wx:else
             data-id="{{item._id}}"
@@ -118,7 +118,7 @@
             bindinput="onInput"
             data-field="phone"
           />
-          <view class="lookup-btn {{lookingUp ? 'disabled' : ''}}" bindtap="lookupByPhone">
+          <view hover-class="tap-press" hover-stay-time="80" class="lookup-btn {{lookingUp ? 'disabled' : ''}}" bindtap="lookupByPhone">
             {{lookingUp ? '查找中' : '查找'}}
           </view>
         </view>
@@ -129,7 +129,7 @@
           <text class="match-meta">…{{matched.openidTail}}</text>
         </view>
         <view class="candidate-list" wx:if="{{candidates.length}}">
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             class="candidate-row"
             wx:for="{{candidates}}"
             wx:key="openid"
@@ -159,7 +159,7 @@
       <view class="field">
         <text class="field-label">绑定门店（必选）</text>
         <view class="store-check-list">
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="store-check {{item.selected ? 'on' : ''}}"
             wx:for="{{storeChecks}}"
             wx:key="key"
@@ -201,7 +201,7 @@
       </view>
 
       <view class="page-tip is-warn" wx:if="{{formTip}}" style="margin:0 0 16rpx;"><text>{{formTip}}</text></view>
-      <view class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="btn primary {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中…' : '保存'}}</view>
     </scroll-view>
   </view>
 </view>

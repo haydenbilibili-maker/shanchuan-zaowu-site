@@ -36,7 +36,7 @@ page {
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--brass-600), var(--brass-400));
-  transition: width 0.35s ease;
+  transition: width var(--dur-slow) var(--ease-standard);
 }
 
 .step-panel {

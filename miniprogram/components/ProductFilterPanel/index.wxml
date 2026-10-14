@@ -11,7 +11,7 @@
 
     <view class="filter-body">
       <scroll-view scroll-y class="filter-left" show-scrollbar="{{false}}">
-        <view
+        <view hover-class="tap-press-soft" hover-stay-time="80"
           wx:for="{{dims}}"
           wx:key="key"
           class="dim-item {{activeDim === item.key ? 'active' : ''}}"
@@ -29,7 +29,7 @@
             <text class="section-title">品类</text>
             <text class="section-hint" wx:if="{{rootName === '全部' || !rootName}}">选一级馆将同步顶部分类；二级品类在本馆下筛选</text>
             <view class="chip-grid clearfix" wx:if="{{categoryOptions.length}}">
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="chip {{draft.categoryValue === item.value ? 'on' : ''}}"
                 wx:for="{{categoryOptions}}"
                 wx:key="value"
@@ -48,7 +48,7 @@
             <text class="section-title">渠道</text>
             <text class="section-hint">适用于昆虫 / 植物 / 海洋 / 动物标本</text>
             <view class="chip-grid clearfix">
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="chip {{draft.channel === item.value ? 'on' : ''}}"
                 wx:for="{{channelOptions}}"
                 wx:key="value"
@@ -65,7 +65,7 @@
             <text class="section-title">装裱方式</text>
             <text class="section-hint">适用于昆虫 / 植物 / 海洋 / 动物标本</text>
             <view class="chip-grid clearfix">
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="chip {{draft.craftType === item.value ? 'on' : ''}}"
                 wx:for="{{craftOptions}}"
                 wx:key="value"
@@ -82,7 +82,7 @@
             <text class="section-title">制作工艺</text>
             <text class="section-hint">浸制 / 塑化 / 剥制等藏品工艺</text>
             <view class="chip-grid clearfix">
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="chip {{draft.craftProcess === item.value ? 'on' : ''}}"
                 wx:for="{{craftProcessOptions}}"
                 wx:key="value"
@@ -98,7 +98,7 @@
           <view class="section" wx:if="{{activeDim === 'price'}}">
             <text class="section-title">价格区间</text>
             <view class="price-preset-grid clearfix">
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="price-preset {{draft.pricePresetId === item.id ? 'on' : ''}}"
                 wx:for="{{pricePresets}}"
                 wx:key="id"

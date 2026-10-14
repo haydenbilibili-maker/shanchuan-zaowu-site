@@ -86,12 +86,12 @@
     <view class="workbench-field">
       <text class="workbench-field-label">类型</text>
       <view class="type-row">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="type-chip {{form.type === 'store' ? 'is-on' : ''}}"
           bindtap="onTypeTap"
           data-type="store"
         >门店标本师</view>
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="type-chip {{form.type === 'partner' ? 'is-on' : ''}}"
           bindtap="onTypeTap"
           data-type="partner"
@@ -117,7 +117,7 @@
     <view class="workbench-field">
       <text class="workbench-field-label">从业年限</text>
       <view class="years-row">
-        <view class="years-step" bindtap="onYearsStep" data-dir="minus">－</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="years-step" bindtap="onYearsStep" data-dir="minus">－</view>
         <input
           class="workbench-input years-input {{focusField === 'yearsExperience' ? 'is-focus' : ''}}"
           type="number"
@@ -127,7 +127,7 @@
           bindblur="onBlur"
           data-field="yearsExperience"
         />
-        <view class="years-step" bindtap="onYearsStep" data-dir="plus">＋</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="years-step" bindtap="onYearsStep" data-dir="plus">＋</view>
       </view>
     </view>
 
@@ -191,9 +191,9 @@
       <view class="gallery-grid">
         <view class="gallery-cell" wx:for="{{form.galleryDisplay}}" wx:key="index">
           <image class="gallery-img" src="{{item.url}}" mode="aspectFill" />
-          <view class="gallery-del" catchtap="removeGallery" data-index="{{index}}">删除</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="gallery-del" catchtap="removeGallery" data-index="{{index}}">删除</view>
         </view>
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="gallery-add {{galleryUploading || form.gallery.length >= 9 ? 'is-disabled' : ''}}"
           wx:if="{{form.gallery.length < 9}}"
           bindtap="chooseGallery"
@@ -214,7 +214,7 @@
     <view class="workbench-field">
       <text class="workbench-field-label">擅长领域</text>
       <view class="tag-row">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="tag-chip {{item.on ? 'is-on' : ''}}"
           wx:for="{{tagChips}}"
           wx:key="name"
@@ -344,11 +344,11 @@
   </block>
 
   <view class="workbench-modal-foot profile-sticky-foot" wx:if="{{ready}}">
-    <view
+    <view hover-class="tap-press-soft" hover-stay-time="80"
       class="workbench-btn-outline {{saving || mediaBusy ? 'is-disabled' : ''}}"
       bindtap="previewPublic"
     >打开主页</view>
-    <view
+    <view hover-class="tap-press" hover-stay-time="80"
       class="workbench-btn-primary {{saving || mediaBusy || !dirty ? 'is-disabled' : ''}}"
       bindtap="save"
     >{{saveLabel}}</view>

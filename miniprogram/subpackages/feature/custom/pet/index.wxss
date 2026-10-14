@@ -330,7 +330,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
 }
 
 .option-pill-press {
@@ -385,7 +385,7 @@
   background: #1F1D1A;
   border: 1px solid rgba(38, 35, 32, 0.9);
   border-radius: 16rpx;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 
 
@@ -572,7 +572,7 @@
   background: #1F1D1A;
   border: 1px solid rgba(38, 35, 32, 0.9);
   border-radius: 16rpx;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 
 .artisan-card.active {

@@ -421,7 +421,7 @@ page {
   height: 100%;
   border-radius: 6rpx;
   background: linear-gradient(90deg, var(--brass-600), var(--brass-400));
-  transition: width 0.35s ease;
+  transition: width var(--dur-slow) var(--ease-standard);
 }
 
 .score-bar-note {
@@ -723,7 +723,7 @@ page {
   border: 1px solid var(--color-border);
   position: relative;
   flex-shrink: 0;
-  transition: background 0.25s, border-color 0.25s;
+  transition: background var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
 }
 
 .privacy-switch::after {
@@ -735,7 +735,7 @@ page {
   height: 38rpx;
   border-radius: 50%;
   background: var(--color-text-muted);
-  transition: transform 0.25s, background 0.25s;
+  transition: transform var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard);
 }
 
 .privacy-switch.on {
@@ -764,7 +764,7 @@ page {
 }
 
 .page-profile .account-chip.interest-chip {
-  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
 }
 
 .page-profile .account-chip.interest-chip.active {

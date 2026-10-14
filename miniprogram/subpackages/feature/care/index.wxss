@@ -139,7 +139,7 @@ page {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 
 .specimen-frame {
@@ -308,7 +308,7 @@ page {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 
 .category-card.wide {
@@ -376,7 +376,7 @@ page {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   border-left: 4rpx solid var(--brass-800);
-  transition: border-color 0.25s, background 0.25s;
+  transition: border-color var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard);
 }
 
 .tip-item.expanded {
@@ -426,7 +426,7 @@ page {
 .tip-desc-wrap {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, margin-top 0.3s ease;
+  transition: max-height var(--dur-base) var(--ease-standard), margin-top var(--dur-base) var(--ease-standard);
 }
 
 .tip-item.expanded .tip-desc-wrap {

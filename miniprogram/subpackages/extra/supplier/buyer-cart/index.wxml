@@ -25,7 +25,7 @@
     <view class="empty-panel" wx:if="{{!items.length}}">
       <text class="empty-panel-title">采购车为空</text>
       <text class="empty-panel-body">请先在「供货价目选购」中加入商品。</text>
-      <view class="retry-btn" bindtap="goCatalog">去选品</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="retry-btn" bindtap="goCatalog">去选品</view>
     </view>
 
     <block wx:else>

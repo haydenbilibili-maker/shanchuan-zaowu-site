@@ -44,7 +44,7 @@
   </view>
 
   <!-- 点任意处立即显示全文并停音（产品负责人确认的手感） -->
-  <view class="card-preview" wx:if="{{cardBody || hasVoice}}" bindtap="finishTyping">
+  <view hover-class="tap-press-soft" hover-stay-time="80" class="card-preview" wx:if="{{cardBody || hasVoice}}" bindtap="finishTyping">
     <view class="card-preview-head">
       <text class="card-hint">已封入礼笺</text>
       <view class="mini-seal" aria-hidden="true">山海</view>
@@ -71,7 +71,7 @@
 
   <!-- 音效开关：与编排页/收礼页共用同一个静音偏好 -->
   <view class="sfx-bar">
-    <view class="tool-btn" catchtap="toggleSfxMute" aria-role="button" aria-label="{{sfxMuted ? '开启音效' : '静音'}}">
+    <view hover-class="tap-press" hover-stay-time="80" class="tool-btn" catchtap="toggleSfxMute" aria-role="button" aria-label="{{sfxMuted ? '开启音效' : '静音'}}">
       <view class="icon-sound {{sfxMuted ? 'off' : 'on'}}" aria-hidden="true"></view>
       <text>{{sfxMuted ? '已静音' : '音效'}}</text>
     </view>
@@ -138,11 +138,11 @@
       bindtap="goVoucher"
       wx:if="{{voucherReady}}"
     >查看赠予凭证</view>
-    <view class="verify-line" wx:if="{{verify && verify.claimMode === 'link'}}" bindtap="openClaimSheet">
+    <view hover-class="tap-press-soft" hover-stay-time="80" class="verify-line" wx:if="{{verify && verify.claimMode === 'link'}}" bindtap="openClaimSheet">
       <text class="verify-line-label">凭礼笺领取</text>
       <text class="verify-line-val">{{claimLineText}} · 管理</text>
     </view>
-    <view class="verify-line {{verify.receiverVerify ? '' : 'warn'}}" wx:elif="{{verify && (verify.receiverVerify || verify.editable)}}" bindtap="openVerifySheet">
+    <view hover-class="tap-press-soft" hover-stay-time="80" class="verify-line {{verify.receiverVerify ? '' : 'warn'}}" wx:elif="{{verify && (verify.receiverVerify || verify.editable)}}" bindtap="openVerifySheet">
       <text class="verify-line-label">{{verify.receiverVerify ? verifyLabel : '建议补填受礼人手机号'}}</text>
       <text class="verify-line-val">{{verify.receiverVerify ? '尾号 ' + verify.phoneTail : '防礼笺被他人领走'}}{{verify.editable ? (verify.receiverVerify ? ' · 修改' : ' · 去填写') : ''}}</text>
     </view>
@@ -156,7 +156,7 @@
     <view class="state-seal" aria-hidden="true"></view>
     <text class="state-title" wx:if="{{errorMsg}}">礼笺未能备妥</text>
     <text class="muted">{{errorMsg || '礼笺正在备妥…'}}</text>
-    <view class="btn-secondary" wx:if="{{errorMsg}}" bindtap="bootstrap">再试一次</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="btn-secondary" wx:if="{{errorMsg}}" bindtap="bootstrap">再试一次</view>
   </view>
 </view>
 

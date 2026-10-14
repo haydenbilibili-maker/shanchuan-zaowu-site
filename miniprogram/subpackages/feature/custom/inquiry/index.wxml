@@ -18,8 +18,8 @@
       <text class="load-error-title">方案加载失败</text>
       <text class="load-error-desc">定制方案无效或已失效，请返回工坊重新配置</text>
       <view class="load-error-actions">
-        <view class="btn-primary" bindtap="retryLoad" wx:if="{{draftId}}">重新加载</view>
-        <view class="btn-ghost" bindtap="goCustomHub">返回工坊</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-primary" bindtap="retryLoad" wx:if="{{draftId}}">重新加载</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="goCustomHub">返回工坊</view>
       </view>
     </view>
 

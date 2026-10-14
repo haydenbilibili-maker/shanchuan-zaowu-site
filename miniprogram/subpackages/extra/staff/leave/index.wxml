@@ -79,7 +79,7 @@
         </view>
         <text class="rec-meta">{{item.startKey}} ~ {{item.endKey}}{{item.reason ? ' · ' + item.reason : ''}}</text>
         <text class="rec-meta soft">{{item.timeText}}</text>
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="btn-ghost sm"
           wx:if="{{item.status === 'pending'}}"
           data-id="{{item._id}}"

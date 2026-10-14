@@ -45,7 +45,7 @@
           bindtap="goSenderProgress"
           wx:if="{{senderPhase === 'address_done' || senderPhase === 'claimed' || senderPhase === 'expired' || senderPhase === 'ship_path' || senderPhase === 'waiting_address' || senderPhase === 'waiting_open' || senderPhase === 'waiting_pickup'}}"
         >查看礼赠进度</view>
-        <view class="btn-ghost" bindtap="later">稍后再看</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="later">稍后再看</view>
       </view>
     </view>
   </block>
@@ -59,7 +59,7 @@
     bindlongpress="skipCeremony"
   >
     <view class="stage-toolbar">
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="tool-btn"
         catchtap="toggleSfxMute"
         aria-role="button"
@@ -68,7 +68,7 @@
         <view class="icon-sound {{sfxMuted ? 'off' : 'on'}}" aria-hidden="true"></view>
         <text>{{sfxMuted ? '静音' : '音效'}}</text>
       </view>
-      <view class="tool-skip" catchtap="skipCeremony">直接查看</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="tool-skip" catchtap="skipCeremony">直接查看</view>
     </view>
 
     <view class="box-scene" aria-hidden="true">
@@ -143,7 +143,7 @@
 
   <!-- 展笺态 -->
   <block wx:else>
-    <view class="letter revealed" bindtap="onLetterTap">
+    <view hover-class="tap-press" hover-stay-time="80" class="letter revealed" bindtap="onLetterTap">
       <view class="letter-watermark" aria-hidden="true"></view>
       <text class="letter-over">LETTER</text>
       <text
@@ -170,7 +170,7 @@
         <text class="voice-rite-label">VOICE</text>
         <text class="voice-rite-hint">TA 留下的声音</text>
       </view>
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="voice-play {{voicePlaying ? 'on' : ''}} {{voiceLoading ? 'busy' : ''}}"
         bindtap="onListenVoice"
       >
@@ -211,7 +211,7 @@
           <view class="btn-primary {{claimBusy ? 'is-busy' : ''}}" bindtap="acceptByLink" hover-class="{{claimBusy ? '' : 'btn-primary-press'}}" hover-stay-time="80">{{claimBusy ? '收下中…' : '收下这份山海'}}</view>
           <text class="verify-error" wx:if="{{claimError}}">{{claimError}}</text>
         </view>
-        <view class="btn-ghost" bindtap="later">稍后再看</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="later">稍后再看</view>
       </block>
       <!-- 领取核验（N3） -->
       <block wx:elif="{{verifyNeeded}}">
@@ -220,10 +220,10 @@
           <text class="verify-title">送礼人为这份礼赠设了身份核验</text>
           <text class="verify-desc">核验通过后，这份山海才会记在你名下。手机号只用于比对，不会展示给任何人。</text>
           <view class="btn-primary {{verifyBusy ? 'is-busy' : ''}}" bindtap="verifyByAccount" hover-class="{{verifyBusy ? '' : 'btn-primary-press'}}">{{verifyBusy ? '核验中…' : '用我的微信手机号核验'}}</view>
-          <view class="verify-alt" bindtap="openManualVerify">换一个号码 · 手动输入核验</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="verify-alt" bindtap="openManualVerify">换一个号码 · 手动输入核验</view>
           <text class="verify-error" wx:if="{{verifyError && !verifySheet}}">{{verifyError}}</text>
         </view>
-        <view class="btn-ghost" bindtap="later">稍后再看</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="later">稍后再看</view>
       </block>
       <!-- 先付后填址 -->
       <block wx:elif="{{isInvite}}">
@@ -254,7 +254,7 @@
             >回到主页</view>
           </view>
         </block>
-        <view class="btn-ghost" bindtap="later" wx:if="{{!addressDone || needFriendShare}}">稍后再看</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="later" wx:if="{{!addressDone || needFriendShare}}">稍后再看</view>
       </block>
 
       <!-- 门店自提：展示领取码，到店核销 -->
@@ -269,7 +269,7 @@
           <text class="btn-done">{{claimClaimed ? '已到店领取' : '门店正在备妥'}}</text>
           <text class="addr-masked" wx:if="{{pickupHint}}">{{pickupHint}}</text>
         </view>
-        <view class="btn-ghost" bindtap="later">稍后再看</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="later">稍后再看</view>
       </block>
 
       <!-- 直寄 / 寄给自己：礼笺只读 -->
@@ -278,7 +278,7 @@
           <text class="btn-done">礼笺已拆开</text>
           <text class="addr-masked">藏品正按既定去处启程，无需再填地址。</text>
         </view>
-        <view class="btn-ghost" bindtap="later">稍后再看</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="later">稍后再看</view>
       </block>
     </view>
 
@@ -289,7 +289,7 @@
       <text class="holder-desc">{{holderReady ? '收藏证书以你为持有人签发，养护要点也会寄给你。' : '签收后，收藏证书将以你为持有人签发，养护提醒也只寄给你。'}}</text>
       <view class="holder-actions" wx:if="{{holderReady}}">
         <view class="btn-secondary" hover-class="btn-secondary-press" hover-stay-time="80" bindtap="goHolderCert">查看我的收藏证书</view>
-        <view class="btn-ghost" bindtap="goHolderCare">养护指南</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost" bindtap="goHolderCare">养护指南</view>
       </view>
     </view>
     <reg-card show="{{regCardShow}}" orderId="{{orderId}}" claimName="{{claimNameInput}}" bindclose="onRegCardClose" binddone="onRegCardDone" bindcare="goHolderCare" />
@@ -303,14 +303,14 @@
     <text class="title">邀约已过期</text>
     <text class="desc">这份心意的期限已至。若仍想送出，需由赠予者重新从柜中备妥。</text>
   </view>
-  <view class="btn-ghost state-cta" bindtap="later">回到首页</view>
+  <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost state-cta" bindtap="later">回到首页</view>
 </view>
 
 <view class="page checking" wx:elif="{{invalid}}">
   <view class="state-block">
     <text class="state-title">礼笺未能开启</text>
     <text class="muted">{{errorMsg || '链接已失效，或这份礼已另有去处'}}</text>
-    <view class="btn-ghost state-cta" bindtap="later">回到首页</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost state-cta" bindtap="later">回到首页</view>
   </view>
 </view>
 

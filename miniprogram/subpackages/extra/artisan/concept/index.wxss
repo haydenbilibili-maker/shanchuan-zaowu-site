@@ -272,7 +272,7 @@ page {
 .status-fill {
   height: 100%;
   background: var(--brass-400);
-  transition: width 0.25s ease;
+  transition: width var(--dur-base) var(--ease-standard);
 }
 
 .status-text {

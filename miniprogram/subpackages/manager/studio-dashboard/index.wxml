@@ -8,7 +8,7 @@
         <text class="ops-title">仪表盘</text>
         <text class="ops-meta-chip" wx:if="{{loading}}">刷新中</text>
       </view>
-      <view class="ops-source-toggle" bindtap="toggleSource">
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-source-toggle" bindtap="toggleSource">
         <text class="ops-source-label">{{sourceOpen ? '收起数据说明' : '数据说明与映射'}}</text>
         <text class="ops-source-chevron">{{sourceOpen ? '▴' : '▾'}}</text>
       </view>
@@ -32,8 +32,8 @@
       <text class="ops-empty-sub">{{loadError}}</text>
       <text class="ops-empty-sub">若长期是旧数据，可先到「飞书同步」同步一次。</text>
       <view class="dash-error-actions">
-        <view class="ops-btn-secondary" bindtap="load">重试</view>
-        <view class="ops-btn-primary" bindtap="goFeishuSync">去飞书同步</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary" bindtap="load">重试</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-primary" bindtap="goFeishuSync">去飞书同步</view>
       </view>
     </view>
 
@@ -206,7 +206,7 @@
         </view>
       </view>
 
-      <view class="detail-toggle" bindtap="toggleDetail">
+      <view hover-class="tap-press" hover-stay-time="80" class="detail-toggle" bindtap="toggleDetail">
         <text class="detail-toggle-main">{{detailOpen ? '收起采购 · 库存 · 占比明细' : '展开采购 · 库存 · 占比明细'}}</text>
         <text class="detail-toggle-sub">不影响上方核心指标</text>
       </view>
@@ -214,7 +214,7 @@
       <view class="detail-panel" wx:if="{{detailOpen}}">
         <!-- 采购 -->
         <view class="detail-block">
-          <view class="detail-block-head" data-key="purchase" bindtap="toggleSection">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="purchase" bindtap="toggleSection">
             <view class="detail-block-titles">
               <text class="detail-block-en">PURCHASE</text>
               <text class="detail-block-cn">采购与固定成本</text>
@@ -231,7 +231,7 @@
 
         <!-- 库存出货 -->
         <view class="detail-block">
-          <view class="detail-block-head" data-key="stock" bindtap="toggleSection">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="stock" bindtap="toggleSection">
             <view class="detail-block-titles">
               <text class="detail-block-en">STOCK · SHIP</text>
               <text class="detail-block-cn">库存与出货</text>
@@ -248,7 +248,7 @@
 
         <!-- 分类占比 -->
         <view class="detail-block">
-          <view class="detail-block-head" data-key="share" bindtap="toggleSection">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="share" bindtap="toggleSection">
             <view class="detail-block-titles">
               <text class="detail-block-en">SHARE</text>
               <text class="detail-block-cn">预算类型与分类采购</text>
@@ -268,7 +268,7 @@
                 </view>
               </view>
             </view>
-            <view
+            <view hover-class="tap-press-soft" hover-stay-time="80"
               class="list-more"
               wx:if="{{charts.budgetTypeShareMore > 0 || listMore.budgetType}}"
               data-key="budgetType"
@@ -289,7 +289,7 @@
                 </view>
               </view>
             </view>
-            <view
+            <view hover-class="tap-press-soft" hover-stay-time="80"
               class="list-more"
               wx:if="{{charts.purchaseByCategoryMore > 0 || listMore.category}}"
               data-key="category"
@@ -302,7 +302,7 @@
 
         <!-- 客户出货：默认折叠 -->
         <view class="detail-block">
-          <view class="detail-block-head" data-key="customers" bindtap="toggleSection">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="customers" bindtap="toggleSection">
             <view class="detail-block-titles">
               <text class="detail-block-en">CUSTOMERS</text>
               <text class="detail-block-cn">各客户出货金额</text>
@@ -322,7 +322,7 @@
               </view>
             </view>
             <text class="empty-hint" wx:else>暂无客户出货金额。</text>
-            <view
+            <view hover-class="tap-press-soft" hover-stay-time="80"
               class="list-more"
               wx:if="{{charts.shipmentByCustomerMore > 0 || listMore.customers}}"
               data-key="customers"
@@ -335,7 +335,7 @@
 
         <!-- 预算池：默认折叠 -->
         <view class="detail-block">
-          <view class="detail-block-head" data-key="pools" bindtap="toggleSection">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="detail-block-head" data-key="pools" bindtap="toggleSection">
             <view class="detail-block-titles">
               <text class="detail-block-en">POOLS</text>
               <text class="detail-block-cn">各预算池剩余</text>
@@ -352,7 +352,7 @@
                 <text class="metric-value {{item.remainingTone}}">余 {{item.remainingText}}</text>
               </view>
             </view>
-            <view
+            <view hover-class="tap-press-soft" hover-stay-time="80"
               class="list-more"
               wx:if="{{poolsMore > 0 || listMore.pools}}"
               data-key="pools"
@@ -363,7 +363,7 @@
           </block>
         </view>
 
-        <view class="detail-toggle secondary" bindtap="toggleDetail">
+        <view hover-class="tap-press" hover-stay-time="80" class="detail-toggle secondary" bindtap="toggleDetail">
           <text class="detail-toggle-main">收起全部明细</text>
         </view>
       </view>

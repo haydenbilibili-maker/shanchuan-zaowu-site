@@ -64,7 +64,7 @@
   gap: 20rpx;
   padding: 28rpx 0;
   border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
-  transition: background 0.25s ease;
+  transition: background var(--dur-base) var(--ease-standard);
 }
 
 .cat-card.just-added {

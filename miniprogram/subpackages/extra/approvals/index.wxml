@@ -39,14 +39,14 @@
         <text class="overview-sub" wx:elif="{{overviewLoading}}">统计加载中…</text>
       </view>
       <view class="overview-head-actions">
-        <view class="overview-refresh" catchtap="onRefreshOverview">刷新</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="overview-refresh" catchtap="onRefreshOverview">刷新</view>
         <text class="overview-fold">{{overviewExpanded ? '收起' : '展开'}}</text>
       </view>
     </view>
 
     <view class="overview-body" wx:if="{{overviewExpanded}}">
       <view class="sub-tab-row overview-tabs">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="sub-tab {{overviewTab === item.key ? 'active' : ''}}"
           wx:for="{{overviewTabs}}"
           wx:key="key"
@@ -131,7 +131,7 @@
   <view class="audit-hub" wx:if="{{canDecideTabs}}">
     <text class="audit-hub-label">审核区</text>
     <view class="audit-hub-row">
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="audit-hub-chip {{hubMode === item.key ? 'active' : ''}}"
         wx:for="{{auditHub}}"
         wx:key="key"
@@ -174,11 +174,11 @@
         <text class="rec-meta">经手 {{item.operatorName || '—'}}{{item.methodText ? ' · ' + item.methodText : ''}}{{item.receiptNo ? ' · ' + item.receiptNo : ''}}</text>
         <text class="rec-meta warn" wx:if="{{item.revokedPoints > 0}}">已扣回 {{item.revokedPoints}} 分（¥{{item.revokedAmount}}）{{item.revokeReasonText ? ' · ' + item.revokeReasonText : ''}}</text>
         <text class="rec-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
-        <view class="pending-row" wx:if="{{item.pendingHint}}" catchtap="jumpPendingGrant">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="pending-row" wx:if="{{item.pendingHint}}" catchtap="jumpPendingGrant">
           <text class="rec-meta warn">待店长审核 · 预计 +{{item.pointsGranted}} 分</text>
           <text class="pending-link">去待我审 ›</text>
         </view>
-        <view class="claim-thumbs" wx:if="{{item.attachmentImages && item.attachmentImages.length}}" catchtap="previewFlowImages" data-id="{{item._id}}">
+        <view hover-class="tap-press-soft" hover-stay-time="80" class="claim-thumbs" wx:if="{{item.attachmentImages && item.attachmentImages.length}}" catchtap="previewFlowImages" data-id="{{item._id}}">
           <image
             wx:for="{{item.attachmentImages}}"
             wx:for-item="img"
@@ -189,32 +189,32 @@
           ></image>
         </view>
         <view class="rec-actions" wx:if="{{item.canRevoke}}">
-          <view class="btn-danger-mini" catchtap="openRevoke" data-id="{{item._id}}">撤销</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="btn-danger-mini" catchtap="openRevoke" data-id="{{item._id}}">撤销</view>
         </view>
       </view>
 
       <view class="empty flow-empty is-error" wx:if="{{flowError && !flowRecords.length}}">
         <text class="empty-title">流水未能取回</text>
         <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
-        <view class="btn-retry" bindtap="onRetryFlow">重试</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryFlow">重试</view>
       </view>
       <view class="empty flow-empty" wx:elif="{{flowRecords.length === 0 && !flowLoading}}">
         <text class="empty-title">暂无流水</text>
         <text class="empty-hint">本店赠分记录会出现在这里</text>
       </view>
-      <view class="load-more" wx:if="{{flowHasMore}}" bindtap="loadMoreFlow">加载更多</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="load-more" wx:if="{{flowHasMore}}" bindtap="loadMoreFlow">加载更多</view>
       <view class="footer-hint" wx:if="{{flowLoading}}">加载中…</view>
     </view>
   </block>
 
   <block wx:else>
   <view class="tab-bar">
-    <view class="tab {{viewMode==='inbox'?'active':''}}" wx:if="{{canDecideTabs}}" bindtap="switchView" data-mode="inbox">
+    <view hover-class="tap-press" hover-stay-time="80" class="tab {{viewMode==='inbox'?'active':''}}" wx:if="{{canDecideTabs}}" bindtap="switchView" data-mode="inbox">
       待我审
       <text class="badge-info badge-sm tab-badge badge-enter" wx:if="{{pendingBadge > 0}}">{{pendingBadge > 99 ? '99+' : pendingBadge}}</text>
     </view>
-    <view class="tab {{viewMode==='done'?'active':''}}" wx:if="{{canDecideTabs}}" bindtap="switchView" data-mode="done">已办</view>
-    <view class="tab {{viewMode==='mine'?'active':''}}" bindtap="switchView" data-mode="mine">我发起的</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="tab {{viewMode==='done'?'active':''}}" wx:if="{{canDecideTabs}}" bindtap="switchView" data-mode="done">已办</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="tab {{viewMode==='mine'?'active':''}}" bindtap="switchView" data-mode="mine">我发起的</view>
   </view>
 
   <view class="filter-bar">
@@ -240,7 +240,7 @@
   </view>
 
   <view class="card-list" wx:if="{{list.length}}">
-    <view
+    <view hover-class="tap-press-soft" hover-stay-time="80"
       class="card {{item.status}} {{item.overdue?'overdue':''}} {{expandedId===item._id?'open':''}}"
       wx:for="{{list}}"
       wx:key="_id"
@@ -328,7 +328,7 @@
   <view class="empty is-error" wx:elif="{{listError && !list.length}}">
     <text class="empty-title">审批列表未能取回</text>
     <text class="empty-hint">{{tipText || '请下拉刷新重试'}}</text>
-    <view class="btn-retry" bindtap="onRetryList">重试</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="btn-retry" bindtap="onRetryList">重试</view>
   </view>
 
   <view class="ap-skeleton" wx:elif="{{loading}}">
@@ -343,7 +343,7 @@
     <text class="empty-hint">{{emptyHint}}</text>
   </view>
 
-  <view class="load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
+  <view hover-class="tap-press" hover-stay-time="80" class="load-more" wx:if="{{hasMore}}" bindtap="loadMore">加载更多</view>
   <view class="footer-hint" wx:if="{{loading && list.length}}">加载中…</view>
   </block>
 
@@ -361,7 +361,7 @@
       <view class="field">
         <text class="field-label">撤销原因</text>
         <view class="seg-row wrap">
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             class="seg-item {{revokeReasonIndex === index ? 'on' : ''}}"
             wx:for="{{revokeReasonLabels}}"
             wx:key="*this"
@@ -380,8 +380,8 @@
       <view class="page-tip is-warn" wx:if="{{formTip}}" style="margin-top:16rpx;"><text>{{formTip}}</text></view>
     </view>
     <view class="workbench-modal-foot">
-      <view class="workbench-btn-outline" bindtap="closeRevoke">取消</view>
-      <view class="workbench-btn-danger" bindtap="confirmRevoke">确认撤销</view>
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="workbench-btn-outline" bindtap="closeRevoke">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-danger" bindtap="confirmRevoke">确认撤销</view>
     </view>
   </view>
 </view>

@@ -55,7 +55,7 @@
         hover-stay-time="80"
       >
         <image src="{{item}}" mode="aspectFill" bindtap="previewReceiptImage" data-idx="{{idx}}"></image>
-        <view class="upload-del" catchtap="removeReceiptImage" data-idx="{{idx}}">×</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="upload-del" catchtap="removeReceiptImage" data-idx="{{idx}}">×</view>
       </view>
       <view
         class="upload-add"

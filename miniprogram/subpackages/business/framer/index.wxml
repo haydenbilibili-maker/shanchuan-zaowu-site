@@ -14,8 +14,8 @@
     <text class="load-error-title">{{loadErrorTitle || '标本师档案加载失败'}}</text>
     <text class="load-error-desc">{{loadErrorDesc || '请检查网络后重试'}}</text>
     <view class="load-error-actions">
-      <view class="load-error-btn primary" bindtap="retryLoad">重新加载</view>
-      <view class="load-error-btn" bindtap="goBack">返回</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="load-error-btn primary" bindtap="retryLoad">重新加载</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="load-error-btn" bindtap="goBack">返回</view>
     </view>
   </view>
 

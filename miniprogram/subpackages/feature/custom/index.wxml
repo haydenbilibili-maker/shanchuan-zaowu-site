@@ -62,11 +62,11 @@ module.exports.priceDelta = function(item) {
           <text class="section-label">我的方案</text>
           <scroll-view scroll-x class="draft-scroll" enable-flex show-scrollbar="{{false}}">
             <view class="draft-card" wx:for="{{drafts}}" wx:key="_id">
-              <view class="draft-main" bindtap="loadDraft" data-id="{{item._id}}">
+              <view hover-class="tap-press" hover-stay-time="80" class="draft-main" bindtap="loadDraft" data-id="{{item._id}}">
                 <text class="draft-title">{{item.title}}</text>
                 <text class="draft-sub">{{item.specimenTitle}}</text>
               </view>
-              <view class="draft-del" bindtap="deleteDraft" data-id="{{item._id}}">×</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="draft-del" bindtap="deleteDraft" data-id="{{item._id}}">×</view>
             </view>
           </scroll-view>
         </view>
@@ -81,10 +81,10 @@ module.exports.priceDelta = function(item) {
             bindconfirm="onSearchConfirm"
             confirm-type="search"
           />
-          <view class="search-clear" wx:if="{{searchKeyword}}" bindtap="clearSearch">×</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="search-clear" wx:if="{{searchKeyword}}" bindtap="clearSearch">×</view>
         </view>
         <scroll-view scroll-x class="pill-scroll" enable-flex show-scrollbar="{{false}}">
-          <view
+          <view hover-class="tap-press" hover-stay-time="80"
             class="pill {{activeCategory === item.id ? 'active' : ''}}"
             wx:for="{{categoryPills}}"
             wx:key="id"
@@ -142,7 +142,7 @@ module.exports.priceDelta = function(item) {
           <view class="option-section" wx:for="{{dimensionOptions}}" wx:key="name">
             <text class="option-label">{{item.name}}</text>
             <view class="option-pills">
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 class="option-pill {{selectedSpecs[item.name] === val.value ? 'active' : ''}} {{val.disabled ? 'disabled' : ''}}"
                 wx:for="{{item.values}}"
                 wx:for-item="val"
@@ -156,7 +156,7 @@ module.exports.priceDelta = function(item) {
         </block>
         <view class="option-section">
           <text class="option-label">框型</text>
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             class="config-card {{selectedFrameId === item.id ? 'active' : ''}}"
             wx:for="{{frames}}"
             wx:key="id"
@@ -177,7 +177,7 @@ module.exports.priceDelta = function(item) {
         <view class="option-section" wx:if="{{framers.length}}">
           <text class="option-label">指定标本师（可选）</text>
           <text class="option-hint">特邀标本师可能加价并延长交期</text>
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             class="framer-card {{selectedFramerId === item.id ? 'active' : ''}}"
             wx:for="{{framers}}"
             wx:key="id"
@@ -203,7 +203,7 @@ module.exports.priceDelta = function(item) {
         <view class="step-context" wx:if="{{selectedProduct}}">
           <text class="ctx-line">{{selectedProduct.title}} · {{selectedFrameName}}</text>
         </view>
-        <view
+        <view hover-class="tap-press-soft" hover-stay-time="80"
           class="config-card {{selectedPackagingId === item.id ? 'active' : ''}}"
           wx:for="{{packaging}}"
           wx:key="id"
@@ -288,21 +288,21 @@ module.exports.priceDelta = function(item) {
         </view>
         <view class="escalation-section">
           <text class="section-label">需要更多帮助？</text>
-          <view class="escalation-card" bindtap="goBookStoreVisit">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="escalation-card" bindtap="goBookStoreVisit">
             <view class="esc-main">
               <text class="esc-title">预约到店确认</text>
               <text class="esc-desc">保存方案后预约入店，与标本师当面确认框型与礼盒</text>
             </view>
             <text class="esc-arrow">→</text>
           </view>
-          <view class="escalation-card" bindtap="goEnterpriseInquiry">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="escalation-card" bindtap="goEnterpriseInquiry">
             <view class="esc-main">
               <text class="esc-title">企业团购意向</text>
               <text class="esc-desc">10 件以上定制，提交意向由专员报价跟进</text>
             </view>
             <text class="esc-arrow">→</text>
           </view>
-          <view class="escalation-card ghost" bindtap="goToSupport">
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="escalation-card ghost" bindtap="goToSupport">
             <view class="esc-main">
               <text class="esc-title">联系专员</text>
               <text class="esc-desc">非标尺寸、特殊物料等超纲需求</text>

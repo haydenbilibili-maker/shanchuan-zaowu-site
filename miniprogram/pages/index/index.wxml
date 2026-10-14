@@ -69,7 +69,7 @@
       >
         <block wx:for="{{banners}}" wx:key="id">
           <swiper-item>
-            <view
+            <view hover-class="tap-press-soft" hover-stay-time="80"
               class="hero-item {{item.isLive ? 'hero-live' : ''}}"
               catchtap="onBannerTap"
               data-item="{{item}}"

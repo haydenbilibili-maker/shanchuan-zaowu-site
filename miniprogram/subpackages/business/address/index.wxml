@@ -4,7 +4,7 @@
   <view class="empty" wx:elif="{{needLogin}}">
     <text>先重新进入</text>
     <text class="empty-sub">退出本机登录后，收货地址不会在此展示</text>
-    <view class="add-btn primary" style="margin-top: 32rpx;" bindtap="goResumeLogin">重新进入</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="add-btn primary" style="margin-top: 32rpx;" bindtap="goResumeLogin">重新进入</view>
   </view>
 
   <view class="addr-list" wx:elif="{{addresses.length > 0}}">
@@ -77,7 +77,7 @@
             auto-height
           />
         </view>
-        <view class="form-check" bindtap="toggleFormDefault">
+        <view hover-class="tap-press" hover-stay-time="80" class="form-check" bindtap="toggleFormDefault">
           <view class="check-box {{form.setAsDefault ? 'on' : ''}}"></view>
           <text>设为默认地址</text>
         </view>

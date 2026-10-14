@@ -129,7 +129,7 @@ view, text, image { box-sizing: border-box; }
   left: 0;
   width: 100%;
   z-index: 120;
-  transition: background 0.2s;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 .nav-bar-inner {
   display: flex;
@@ -244,7 +244,7 @@ button.nav-share-btn::after { display: none; border: none; }
   border-bottom: 1px solid rgba(38,35,32,0.8);
   transform: translateY(-100%);
   opacity: 0;
-  transition: transform 0.25s, opacity 0.25s;
+  transition: transform var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard);
   backdrop-filter: blur(12px);
 }
 .sticky-tabs.visible { transform: translateY(0); opacity: 1; }
@@ -292,7 +292,7 @@ button.nav-share-btn::after { display: none; border: none; }
   position: relative;
   width: 100%;
   background: var(--color-bg);
-  transition: height 0.28s ease;
+  transition: height var(--dur-base) var(--ease-standard);
   overflow: hidden;
 }
 .hero-stage.is-pending {
@@ -557,7 +557,7 @@ button.nav-share-btn::after { display: none; border: none; }
   text-overflow: ellipsis;
 }
 .info-note.open { white-space: normal; overflow: visible; text-overflow: clip; }
-.rule-arrow { transition: transform 0.2s ease; }
+.rule-arrow { transition: transform var(--dur-fast) var(--ease-standard); }
 .rule-arrow.open { transform: rotate(90deg); }
 .info-label { width: 80rpx; font-size: 26rpx; color: var(--color-text-secondary); flex-shrink: 0; }
 .info-value { flex: 1; font-size: 26rpx; color: var(--color-text-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -675,7 +675,7 @@ button.nav-share-btn::after { display: none; border: none; }
   font-size: 28rpx;
   line-height: 1;
   color: var(--color-text-muted);
-  transition: transform 0.2s ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 .brand-note.is-open .brand-note-chevron {
   transform: rotate(90deg);
@@ -819,7 +819,7 @@ button.nav-share-btn::after { display: none; border: none; }
   color: var(--color-text-secondary);
   padding: 8rpx 12rpx;
   border-radius: 12rpx;
-  transition: background 0.2s ease, opacity 0.2s ease;
+  transition: background var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
 }
 .quick-btn-press { background: var(--color-bg-elevated); opacity: 0.88; }
 .quick-icon { width: 40rpx; height: 40rpx; opacity: 0.6; filter: brightness(0) invert(1); }
@@ -910,7 +910,7 @@ button.nav-share-btn::after { display: none; border: none; }
   margin-bottom: 24rpx;
   border-radius: 24rpx;
   background: var(--color-bg-elevated);
-  transition: opacity 0.22s ease, transform 0.22s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 .detail-img:last-child { margin-bottom: 0; }
 .detail-img-press {
@@ -953,7 +953,7 @@ button.nav-share-btn::after { display: none; border: none; }
   overflow: hidden;
   background: var(--color-bg-elevated);
   border: 1px solid rgba(38, 35, 32, 0.9);
-  transition: height 0.25s ease;
+  transition: height var(--dur-base) var(--ease-standard);
 }
 .detail-spec-swiper.is-loading { animation: ui-sk-pulse 1.2s ease-in-out infinite; }
 .detail-spec-slide {
@@ -1204,7 +1204,7 @@ button.nav-share-btn::after { display: none; border: none; }
   color: var(--primary);
   font-size: 24rpx;
   font-weight: 700;
-  transition: background 0.22s ease, transform 0.22s ease;
+  transition: background var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 
 .comment-action.muted {
@@ -1499,7 +1499,7 @@ button.nav-share-btn::after { display: none; border: none; }
   z-index: 999;
   box-shadow: 0 8rpx 20rpx rgba(0,0,0,0.4);
   opacity: 0;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 弹性动画 */
+  transition: opacity var(--dur-slow) cubic-bezier(0.175, 0.885, 0.32, 1.275), transform var(--dur-slow) cubic-bezier(0.175, 0.885, 0.32, 1.275), color var(--dur-slow) cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color var(--dur-slow) cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color var(--dur-slow) cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow var(--dur-slow) cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 弹性动画 */
   pointer-events: none;
 }
 

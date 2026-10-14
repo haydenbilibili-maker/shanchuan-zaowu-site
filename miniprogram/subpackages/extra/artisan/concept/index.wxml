@@ -71,7 +71,7 @@
         </view>
       </view>
 
-      <view class="notes-toggle" bindtap="toggleNotes">
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="notes-toggle" bindtap="toggleNotes">
         <text class="notes-toggle-t">{{notesOpen ? '收起约束' : (notes ? '已填约束 · 点此编辑' : '补充约束（可选）')}}</text>
         <text class="notes-chevron">{{notesOpen ? '⌃' : '⌄'}}</text>
       </view>
@@ -156,7 +156,7 @@
         <!-- 批量对比条 -->
         <scroll-view class="variant-scroll" scroll-x enhanced show-scrollbar="{{false}}" wx:if="{{batchResults.length > 1}}">
           <view class="variant-track">
-            <view
+            <view hover-class="tap-press" hover-stay-time="80"
               class="variant-chip {{batchTab === index ? 'on' : ''}} {{item.pending ? 'pending' : ''}}"
               wx:for="{{batchResults}}"
               wx:key="id"
@@ -227,7 +227,7 @@
 
     <!-- 历史：默认折叠，不抢主流程 -->
     <view class="history-drawer">
-      <view class="history-head" bindtap="toggleHistory">
+      <view hover-class="tap-press" hover-stay-time="80" class="history-head" bindtap="toggleHistory">
         <view>
           <text class="group-en">HISTORY</text>
           <text class="group-cn">本机历史{{history.length ? ' · ' + history.length : ''}}</text>

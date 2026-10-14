@@ -133,7 +133,7 @@ page {
   font-size: 28rpx;
   color: var(--color-text-muted);
   font-weight: 500;
-  transition: color 0.2s;
+  transition: color var(--dur-fast) var(--ease-standard);
 }
 
 .tab-en {
@@ -205,7 +205,7 @@ page {
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--color-border);
-  transition: transform 0.22s ease, opacity 0.22s ease;
+  transition: transform var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard);
 }
 
 .note-card:active,
@@ -411,7 +411,7 @@ page {
   border: 1px solid var(--color-border-highlight);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  transition: transform 0.22s ease, background 0.22s ease;
+  transition: transform var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard);
 }
 
 .exhibition-card:active,

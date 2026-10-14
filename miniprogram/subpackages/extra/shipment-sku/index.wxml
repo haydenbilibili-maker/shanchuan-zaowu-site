@@ -4,7 +4,7 @@
   <text class="rd-title">{{failed ? '未能自动跳转' : '正在前往出货中心…'}}</text>
   <text class="rd-sub">「出货开单」已并入出货中心的「开单」页签。</text>
   <view class="rd-actions" wx:if="{{failed}}">
-    <view class="rd-btn" bindtap="goCenter"><text>前往出货中心</text></view>
-    <view class="rd-btn is-ghost" bindtap="goBack"><text>返回</text></view>
+    <view hover-class="tap-press" hover-stay-time="80" class="rd-btn" bindtap="goCenter"><text>前往出货中心</text></view>
+    <view hover-class="tap-press" hover-stay-time="80" class="rd-btn is-ghost" bindtap="goBack"><text>返回</text></view>
   </view>
 </view>

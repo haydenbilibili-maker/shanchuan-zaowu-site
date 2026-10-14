@@ -92,9 +92,9 @@
           <text class="demo-bar-title">本地演示（仅超管）</text>
           <text class="demo-bar-hint">{{demoOn ? '已开：需求/发货/结算为本地假数据。采购建单仍写真实库。' : '默认关。开启后便于走通供货方界面，勿当生产。'}}</text>
         </view>
-        <view class="demo-toggle {{demoOn ? 'on' : ''}}" bindtap="toggleDemo">{{demoOn ? '关闭' : '开启'}}</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="demo-toggle {{demoOn ? 'on' : ''}}" bindtap="toggleDemo">{{demoOn ? '关闭' : '开启'}}</view>
       </view>
-      <view class="demo-reset" wx:if="{{isPreview && demoOn && supplierOpen}}" bindtap="resetDemo">重置演示流</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="demo-reset" wx:if="{{isPreview && demoOn && supplierOpen}}" bindtap="resetDemo">重置演示流</view>
 
       <block wx:if="{{supplierOpen}}">
         <view

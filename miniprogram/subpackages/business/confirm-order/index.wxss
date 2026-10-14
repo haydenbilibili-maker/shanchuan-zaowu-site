@@ -146,7 +146,7 @@ view, text, scroll-view { box-sizing: border-box; }
   font-size: 28rpx;
   line-height: 1;
   color: #6B6560;
-  transition: transform 0.2s ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 .brand-note.is-open .brand-note-chevron {
   transform: rotate(90deg);
@@ -811,7 +811,7 @@ view, text, scroll-view { box-sizing: border-box; }
   padding: 20rpx 20rpx 22rpx;
   border: 1px solid rgba(77, 64, 26, 0.45);
   border-radius: 16rpx;
-  transition: border-color 0.18s ease, background-color 0.18s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard);
 }
 .delivery-tile.active {
   border-color: rgba(196, 167, 108, 0.55);
@@ -990,7 +990,7 @@ view, text, scroll-view { box-sizing: border-box; }
   padding: 20rpx 20rpx 22rpx;
   border: 1px solid rgba(77, 64, 26, 0.45);
   border-radius: var(--radius-md);
-  transition: border-color 0.18s ease, background-color 0.18s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard);
 }
 .verify-seg.on {
   border-color: var(--primary);
@@ -1072,7 +1072,7 @@ view, text, scroll-view { box-sizing: border-box; }
   border-right: 1px solid #A09A90;
   border-bottom: 1px solid #A09A90;
   transform: rotate(45deg);
-  transition: transform 0.18s ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 .why-toggle.open::after { transform: rotate(-135deg); margin-bottom: 0; }
 .claim-switch { font-size: 24rpx; color: #C4A76C; text-decoration: underline; }
@@ -1085,7 +1085,7 @@ view, text, scroll-view { box-sizing: border-box; }
   padding: 18rpx 20rpx;
   border: 1px solid rgba(77, 64, 26, 0.45);
   border-radius: var(--radius-md);
-  transition: border-color 0.18s ease, background-color 0.18s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard);
 }
 .claim-opt.on { border-color: rgba(196, 167, 108, 0.55); background: rgba(196, 167, 108, 0.06); }
 .claim-check { width: 30rpx; height: 30rpx; margin-top: 4rpx; flex-shrink: 0; border: 1px solid #C4A76C; border-radius: 6rpx; margin-right: 14rpx; box-sizing: border-box; }

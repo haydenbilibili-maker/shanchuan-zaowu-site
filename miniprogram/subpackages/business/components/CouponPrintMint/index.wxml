@@ -81,12 +81,12 @@
             <text class="legend-text">打印完成 · 可用</text>
           </view>
         </view>
-        <view class="btn-check primary" bindtap="onGoWallet" wx:if="{{!failedShow}}">
+        <view hover-class="tap-press" hover-stay-time="80" class="btn-check primary" bindtap="onGoWallet" wx:if="{{!failedShow}}">
           <text>查看我的礼券夹</text>
           <text class="arrow">→</text>
         </view>
         <view class="btn-group-sub">
-          <view class="btn-sub-act" bindtap="onClose">{{failedShow ? '关闭' : '完成'}}</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="btn-sub-act" bindtap="onClose">{{failedShow ? '关闭' : '完成'}}</view>
         </view>
       </view>
     </view>

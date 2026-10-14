@@ -33,13 +33,13 @@
     <view class="pet-meta" wx:if="{{item.accepted}}">接单时间：{{item.acceptedAt}}</view>
 
     <view class="pet-actions">
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="btn-ghost"
         wx:if="{{item.contactPhone}}"
         bindtap="callCustomer"
         data-phone="{{item.contactPhone}}"
       >拨打电话</view>
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="btn-primary"
         wx:if="{{!item.accepted}}"
         bindtap="acceptAssignment"

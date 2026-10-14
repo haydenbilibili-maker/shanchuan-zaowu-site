@@ -5,7 +5,7 @@
   <view wx:elif="{{error}}" class="state err">
     <text class="state-title">订单加载失败</text>
     <text class="state-body">{{error}}</text>
-    <view class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
+    <view hover-class="tap-press" hover-stay-time="80" class="state-retry" bindtap="load"><text class="state-retry-text">重试</text></view>
   </view>
   <block wx:elif="{{order}}">
     <view class="head">
@@ -57,7 +57,7 @@
             <text class="card-title" user-select="true">{{item.trackingNo}}</text>
             <text class="card-meta">{{item.carrier}}{{item.shipTimeText ? ' · ' + item.shipTimeText : ''}}{{item.shipmentNo ? ' · 出货单 ' + item.shipmentNo : ''}}</text>
           </view>
-          <view class="search-go" data-no="{{item.trackingNo}}" bindtap="copyTracking"><text class="search-go-text">复制</text></view>
+          <view hover-class="tap-press" hover-stay-time="80" class="search-go" data-no="{{item.trackingNo}}" bindtap="copyTracking"><text class="search-go-text">复制</text></view>
         </view>
       </view>
       <text wx:if="{{logistics.length}}" class="foot">轨迹暂不在小程序内展示：复制运单号后到对应快递公司查询。</text>

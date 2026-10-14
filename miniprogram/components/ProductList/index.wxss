@@ -60,3 +60,7 @@
   border: 1px dashed rgba(77, 64, 26, 0.45);
   border-radius: 16rpx;
 }
+
+/* 按压态（组件样式隔离，拿不到 app.wxss 的同名类；值与 app.wxss 一致） */
+.tap-press { opacity: 0.72; }
+.tap-press-soft { opacity: 0.86; }

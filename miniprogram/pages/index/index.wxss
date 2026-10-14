@@ -104,7 +104,7 @@ page {
   border-radius: 32rpx;
   height: 64rpx; 
   padding: 0 16rpx 0 24rpx;
-  transition: all 0.3s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   max-width: 420rpx;
 }
 .header-capsule.hidden { opacity: 0; transform: translateY(-20px); pointer-events: none; }
@@ -370,7 +370,7 @@ page {
   z-index: 10;
 }
 
-.orb-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; position: relative; transition: transform 0.4s ease, opacity 0.4s ease; }
+.orb-wrapper { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; position: relative; transition: transform var(--dur-slow) var(--ease-standard), opacity var(--dur-slow) var(--ease-standard); }
 .orb-wrapper.active { transform: scale(1.1); z-index: 20; }
 .orb-wrapper.active .orb-sphere { border-color: rgba(196, 167, 108, 0.55); }
 .orb-wrapper.dimmed { opacity: 0.4; transform: scale(0.95); }
@@ -404,7 +404,7 @@ page {
 .orb-meta .en { font-size: var(--fs-16); color: var(--color-text-secondary); font-family: 'DIN'; letter-spacing: 1rpx; margin-top: 6rpx; display: block; text-transform: uppercase; font-weight: bold; }
 
 /* 灵动球展开面板 */
-.orb-expansion-panel { width: 100%; height: 0; opacity: 0; overflow: hidden; transition: height 0.28s ease, opacity 0.28s ease, margin 0.28s ease; margin-top: 20rpx; background: rgba(31, 29, 26, 0.6); border-radius: 16rpx; }
+.orb-expansion-panel { width: 100%; height: 0; opacity: 0; overflow: hidden; transition: height var(--dur-base) var(--ease-standard), opacity var(--dur-base) var(--ease-standard), margin var(--dur-base) var(--ease-standard); margin-top: 20rpx; background: rgba(31, 29, 26, 0.6); border-radius: 16rpx; }
 .orb-expansion-panel.expanded { height: 400rpx; opacity: 1; margin-top: 40rpx; padding-bottom: 24rpx; }
 .panel-line-top { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--primary), transparent); margin-bottom: 20rpx; opacity: 0.5; }
 .orb-product-scroll { width: 100%; height: 100%; display: flex; padding: 0 20rpx; box-sizing: border-box; }
@@ -412,7 +412,7 @@ page {
 .sk-card { width: 220rpx; height: 300rpx; background: var(--color-bg-elevated); margin-right: 20rpx; border-radius: 12rpx; animation: pulse 1.5s infinite; }
 
 .orb-item { flex-shrink: 0; }
-.op-card { width: 220rpx; height: 340rpx; margin-right: 24rpx; flex-shrink: 0; background: var(--color-bg-card); border-radius: 16rpx; overflow: hidden; border: 1px solid var(--color-bg-elevated); position: relative; display: flex; flex-direction: column; transition: transform 0.22s ease, border-color 0.22s ease; }
+.op-card { width: 220rpx; height: 340rpx; margin-right: 24rpx; flex-shrink: 0; background: var(--color-bg-card); border-radius: 16rpx; overflow: hidden; border: 1px solid var(--color-bg-elevated); position: relative; display: flex; flex-direction: column; transition: transform var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard); }
 .op-card:active,
 .op-card-press { border-color: rgba(196, 167, 108, 0.45); transform: scale(0.98); }
 .op-img-box { width: 100%; height: 200rpx; background: var(--color-bg); position: relative; flex-shrink: 0; }
@@ -498,7 +498,7 @@ page {
 /* 🟢 ticket-scroll-view 必须是 flex 容器且不换行 */
 .ticket-scroll-view { display: flex; padding-left: 0; white-space: nowrap; height: 280rpx; width: 100%; box-sizing: border-box; }
 
-.rich-ticket { display: inline-flex; width: 640rpx; height: 220rpx; margin-right: 30rpx; position: relative; flex-shrink: 0; transition: transform 0.22s ease; }
+.rich-ticket { display: inline-flex; width: 640rpx; height: 220rpx; margin-right: 30rpx; position: relative; flex-shrink: 0; transition: transform var(--dur-base) var(--ease-standard); }
 .rich-ticket:active,
 .rich-ticket-press { transform: scale(0.98); }
 
@@ -550,7 +550,7 @@ page {
   border-radius: 24rpx; 
   overflow: hidden; 
   border: 1px solid rgba(77, 64, 26, 0.35);
-  transition: transform 0.25s ease, border-color 0.25s ease;
+  transition: transform var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
   flex-shrink: 0;
   background: var(--color-bg);
 }
@@ -569,7 +569,7 @@ page {
   width: 100%; 
   height: 100%; 
   filter: brightness(0.7) contrast(1.15) saturate(1.1) sepia(0.1); 
-  transition: transform 0.25s ease;
+  transition: transform var(--dur-base) var(--ease-standard);
   object-fit: cover;
   transform-origin: center;
 }
@@ -587,7 +587,7 @@ page {
     rgba(26,24,20,0.18) 70%, 
     transparent 88%
   ); 
-  transition: opacity 0.25s;
+  transition: opacity var(--dur-base) var(--ease-standard);
   z-index: 1;
 }
 .exhibit-card-pro:active .ec-overlay {
@@ -604,7 +604,7 @@ page {
   pointer-events: none;
   z-index: 3;
   opacity: 0;
-  transition: opacity 0.5s;
+  transition: opacity var(--dur-slow) var(--ease-standard);
 }
 .exhibit-card-pro:active::before {
   opacity: 1;
@@ -620,7 +620,7 @@ page {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--dur-slow) var(--ease-standard);
   background: linear-gradient(
     to top,
     rgba(26,24,20,0.92) 0%,
@@ -696,7 +696,7 @@ page {
     rgba(196, 167, 108,0.03) 50%,
     rgba(196, 167, 108,0) 100%
   );
-  transition: background 0.5s;
+  transition: background var(--dur-slow) var(--ease-standard);
   pointer-events: none;
   z-index: 1;
 }
@@ -810,7 +810,7 @@ page {
   position: relative;
   text-shadow: none;
   opacity: 0.9;
-  transition: all 0.3s ease;
+  transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
   white-space: nowrap;
   text-align: center;
 }

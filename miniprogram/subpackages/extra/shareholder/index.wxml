@@ -22,7 +22,7 @@
     </view>
 
     <view class="range-bar reveal r2">
-      <view
+      <view hover-class="tap-press" hover-stay-time="80"
         class="range-tab {{rangeKey===item.key?'on':''}}"
         wx:for="{{rangeTabs}}"
         wx:key="key"
@@ -31,8 +31,8 @@
       >{{item.label}}</view>
     </view>
     <view class="month-bar reveal r2" wx:if="{{rangeType==='month'}}">
-      <view class="month-chip {{monthKey===monthCurrent?'on':''}}" data-preset="current" bindtap="setMonthPreset">本月</view>
-      <view class="month-chip {{monthKey===monthPrev?'on':''}}" data-preset="prev" bindtap="setMonthPreset">上月</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="month-chip {{monthKey===monthCurrent?'on':''}}" data-preset="current" bindtap="setMonthPreset">本月</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="month-chip {{monthKey===monthPrev?'on':''}}" data-preset="prev" bindtap="setMonthPreset">上月</view>
       <picker mode="date" fields="month" value="{{monthKey}}" end="{{monthMax}}" bindchange="onMonthPick">
         <view class="month-chip pick {{monthKey!==monthCurrent && monthKey!==monthPrev?'on':''}}">{{monthLabel}} ▾</view>
       </picker>
@@ -242,7 +242,7 @@
       </view>
 
       <view class="chart-tabs">
-        <view
+        <view hover-class="tap-press" hover-stay-time="80"
           class="chart-tab {{chartTab===item.key?'on':''}}"
           wx:for="{{chartTabs}}"
           wx:key="key"
@@ -360,7 +360,7 @@
     </view>
 
     <view class="notes reveal r7" wx:if="{{notes.length}}">
-      <view class="notes-head" bindtap="toggleNotes">
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="notes-head" bindtap="toggleNotes">
         <text class="notes-title">口径说明</text>
         <text class="notes-toggle">{{notesOpen ? '收起' : '展开'}}</text>
       </view>

@@ -217,7 +217,7 @@
   border: 1px solid rgba(77, 64, 26, 0.4);
   box-sizing: border-box;
   white-space: normal;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  transition: border-color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
 }
 .plate.is-selected {
   border-width: 2px;

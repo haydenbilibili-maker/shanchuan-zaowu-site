@@ -2,5 +2,5 @@
 
 <view class="page" wx:if="{{tipText}}">
   <view class="page-tip is-{{tipTone}}"><text>{{tipText}}</text></view>
-  <view class="btn-retry" bindtap="onRetry">重试跳转</view>
+  <view hover-class="tap-press" hover-stay-time="80" class="btn-retry" bindtap="onRetry">重试跳转</view>
 </view>

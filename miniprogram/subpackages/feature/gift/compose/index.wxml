@@ -193,7 +193,7 @@
       <view class="scene-note-block" wx:if="{{activeScene}}">
         <text class="scene-note-label">场景 · {{sceneLabel}}</text>
         <text class="scene-note-guide" wx:if="{{sceneGuide}}">{{sceneGuide}}</text>
-        <view
+        <view hover-class="tap-press-soft" hover-stay-time="80"
           class="scene-note-chip {{activeNotePresetId === scenePresetId ? 'on' : ''}}"
           bindtap="onSceneNoteTap"
           wx:if="{{sceneNoteHint}}"
@@ -249,7 +249,7 @@
           </view>
 
           <!-- 落笔动画：**整段文本**渲染（逐字 span 会让 iOS 每帧重播动画 → 回跳闪白 ✗）+ 可点打断 -->
-          <view
+          <view hover-class="tap-press-soft" hover-stay-time="80"
             wx:if="{{noteWriting}}"
             class="card-write-view"
             bindtap="onCardAreaTap"
@@ -319,7 +319,7 @@
               <text>收录中…</text>
             </view>
             <block wx:else>
-              <view
+              <view hover-class="tap-press" hover-stay-time="80"
                 wx:if="{{!voiceRecording}}"
                 class="voice-play {{voicePlaying ? 'on' : ''}}"
                 bindtap="onVoicePlayTap"
@@ -341,7 +341,7 @@
                   <text wx:elif="{{voiceRecording}}">松手结束 · {{voiceRecordSec}}s</text>
                   <text wx:else>重录</text>
                 </view>
-                <view
+                <view hover-class="tap-press" hover-stay-time="80"
                   wx:if="{{!voiceRecording}}"
                   class="voice-delete"
                   bindtap="onVoiceDeleteTap"
@@ -401,8 +401,8 @@
   <view class="state-block">
     <text class="state-title">暂无法打开礼赠</text>
     <text class="muted">{{loadError || '请从馆藏详情再次进入'}}</text>
-    <view class="btn-secondary state-cta" bindtap="leaveCompose">返回</view>
-    <view class="btn-ghost state-cta" bindtap="goBrowseFromError">去馆藏看看</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="btn-secondary state-cta" bindtap="leaveCompose">返回</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost state-cta" bindtap="goBrowseFromError">去馆藏看看</view>
   </view>
 </view>
 

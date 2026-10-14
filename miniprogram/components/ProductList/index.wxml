@@ -34,7 +34,7 @@
       hover-class="load-fallback-press"
       hover-stay-time="80"
     >继续下滑</view>
-    <view class="empty-tip" wx:if="{{!loading && list.length === 0}}" bindtap="onEmptyTap">{{loadError ? '加载失败，点击重试' : '暂无藏品'}}</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="empty-tip" wx:if="{{!loading && list.length === 0}}" bindtap="onEmptyTap">{{loadError ? '加载失败，点击重试' : '暂无藏品'}}</view>
     <view class="list-sentinel" aria-hidden="true"></view>
   </view>
 </view>

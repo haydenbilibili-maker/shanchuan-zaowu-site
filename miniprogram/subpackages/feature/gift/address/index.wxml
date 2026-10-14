@@ -37,7 +37,7 @@
   <view class="state-block">
     <view class="state-seal" aria-hidden="true" wx:if="{{!errorMsg}}"></view>
     <text class="muted">{{errorMsg || '正在铺开地址笺…'}}</text>
-    <view class="btn-ghost state-cta" wx:if="{{errorMsg}}" bindtap="goHome">回到首页</view>
+    <view hover-class="tap-press" hover-stay-time="80" class="btn-ghost state-cta" wx:if="{{errorMsg}}" bindtap="goHome">回到首页</view>
   </view>
 </view>
 
