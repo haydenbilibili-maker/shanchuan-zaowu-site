@@ -250,7 +250,7 @@ function check (root) {
   // 判据本体是**每个分区都带 catZone 门** —— 只要有一块不 gate，它就又变回"永远显示在下拉流里"。
   {
     const tabs = subviews.match(/class="cat-zone-tab [^"]*"/g) || []
-    if (tabs.length < 3) problems.push(`内层分区 Tab 不足 3 个（分类管理/字段维护/选项维护），实测 ${tabs.length}`)
+    if (tabs.length < 3) problems.push(`内层分区 Tab 不足 3 个（分类 / 属性 / 选项 —— 2026-10-14 起标签去掉了与页面页签重复的「分类管理」），实测 ${tabs.length}`)
     const gates = [
       ['分类管理块', /<block wx:if="\{\{catZone==='category'\}\}">/],
       ['字段维护区', /class="cat-field-zone"\s+wx:if="\{\{canProductFields && catZone==='fields'\}\}"/],

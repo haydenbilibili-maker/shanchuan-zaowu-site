@@ -220,9 +220,10 @@ export const SCENES = [
     return {
       name: 'r10-lib-category-default', h: 1500, wxml: () => tabBlock(1), wxss: MGR_CSS,
       data: {
-        curTab: 1, productLibTab: 'category', catZone: 'category', canProductFields: false, artisanEmbed: false,
+        // canProductFields: true = 超管（多分区）——**两级页签都在场**才不会漏看"两排长得一样"这个问题
+        curTab: 1, productLibTab: 'category', catZone: 'category', canProductFields: true, artisanEmbed: false,
         catKeyword: '', catSortMode: 'default', catOnlyEmpty: false, catEmptyCount: 1,
-        catMatchSummary: '', catTreeView,
+        catMatchSummary: '', catTreeView, catTreeLoading: false,
         categoryManageTree: catTreeView, catManageRootNames: ['昆虫馆', '植物馆'],
         newCatLevel: 1, newCatName: '', newCatEn: '', newCatParentIndex: 0
       }
@@ -241,13 +242,27 @@ export const SCENES = [
       name: 'r10-lib-category', h: 1500, wxml: () => tabBlock(1), wxss: MGR_CSS,
       data: {
         curTab: 1, productLibTab: 'category', catZone: 'category', canProductFields: false, artisanEmbed: false,
-        catKeyword: '馆', catSortMode: 'count', catOnlyEmpty: false, catEmptyCount: 2,
+        catKeyword: '馆', catSortMode: 'count', catOnlyEmpty: false, catEmptyCount: 2, catTreeLoading: false,
         catMatchSummary: '匹配 2 个一级 · 1 个二级', catTreeView,
         categoryManageTree: catTreeView, catManageRootNames: ['昆虫馆', '植物馆'],
         newCatLevel: 1, newCatName: '', newCatEn: '', newCatParentIndex: 0
       }
     }
   })(),
+  // 分类树「读取中」：**产品负责人 2026-10-14 截图就是这一屏**（当时它写着「暂无分类，可在下方添加」——
+  // 分类库明明有 63 条，只是还在等 2 次云端查询）。这一张是那次修复的证据。
+  {
+    name: 'r10-lib-category-loading', h: 900, wxml: () => tabBlock(1), wxss: MGR_CSS,
+    data: {
+      curTab: 1, productLibTab: 'category', catZone: 'category', canProductFields: true, artisanEmbed: false,
+      catKeyword: '', catSortMode: 'default', catOnlyEmpty: false, catEmptyCount: 0,
+      catMatchSummary: '', catTreeView: [],
+      // 关键：tree 还空着，但正在读 —— 页面必须说"读取分类中…"，不能谎报"暂无分类"
+      catTreeLoading: true,
+      categoryManageTree: [], catManageRootNames: [],
+      newCatLevel: 1, newCatName: '', newCatEn: '', newCatParentIndex: 0
+    }
+  },
   {
     name: 'r1-hub-boot',
     h: 900,

@@ -613,29 +613,41 @@
     <block wx:if="{{productLibTab==='category'}}">
       <view class="cat-manage-inline">
         <!-- 内层分区（2026-09-20 产品负责人：「几个功能分区做成分 tab，而不是无限下拉」）：
-             分类管理 / 字段维护 / 选项维护 三块各自成页，切 Tab 而不是一路往下滚。
+             分类 / 属性 / 选项 三块各自成页，切 Tab 而不是一路往下滚。
              ⚠️ 三块**必须各自带 wx:if**（只渲染当前这一块）：这是"不再无限下拉"的判据本体，
              守卫 check-product-fields-entry 会钉住"每个分区都有 catZone 门"。 -->
-        <!-- 2026-10-13：只有**多个**分区时才需要切换器（属性 / 选项维护仅超管可见）——
-             非超管只有一个「分类管理」分区，渲染一条等分的金色实底反而更重、更像主按钮。 -->
+        <!-- 2026-10-14（产品负责人真机截图：「顶部的分类切换区域比较混乱」）—— 混乱的来源是**我 2026-10-13 那次改动**：
+             当时把分区页签也做成了「分段控件」，只想用"大一点 / 小一点"区分层级，结果真机上变成
+             **两排同款分段控件叠着**（上排 4 个页面页签、下排 3 个分区页签，圆角/描边/等宽全一样），
+             而且两排里各有一个「分类管理」都亮着；下排的金色实底还比上排重 —— **层级被倒过来了**。
+             现在改成"**不同种**"而不是"不同程度"：
+               · 页面页签（.sub-tab-row）= 卡片式分段控件（页面导航，稳重的实底）
+               · 分区页签（.cat-zone-tabs）= **下划线页签**：左对齐、不等分、无边框、无实底，只有一条金色指示条
+             两排一眼就能分出"我在哪个页面 / 我在这个卡片的哪一块"。
+             ⚠️ 分区标签也**去掉了与页面页签逐字重复的「分类管理」**（改叫「分类」）——
+             同名两处都亮着是「混乱」的另一半原因。守卫 A9/E7 钉住这两条。 -->
         <view class="cat-zone-tabs" wx:if="{{canProductFields}}" aria-role="tablist">
           <view class="cat-zone-tab {{catZone==='category'?'on':''}}" bindtap="switchCatZone" data-zone="category"
-            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='category'}}">分类管理</view>
-          <view class="cat-zone-tab {{catZone==='fields'?'on':''}}" wx:if="{{canProductFields}}" bindtap="switchCatZone" data-zone="fields"
-            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='fields'}}">属性维护</view>
-          <view class="cat-zone-tab {{catZone==='options'?'on':''}}" wx:if="{{canProductFields}}" bindtap="switchCatZone" data-zone="options"
-            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='options'}}">选项维护</view>
+            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='category'}}">分类</view>
+          <view class="cat-zone-tab {{catZone==='fields'?'on':''}}" bindtap="switchCatZone" data-zone="fields"
+            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='fields'}}">属性</view>
+          <view class="cat-zone-tab {{catZone==='options'?'on':''}}" bindtap="switchCatZone" data-zone="options"
+            hover-class="cat-zone-tab-press" hover-stay-time="70" aria-role="tab" aria-selected="{{catZone==='options'}}">选项</view>
         </view>
 
         <block wx:if="{{catZone==='category'}}">
         <!-- 顺序：先说这块是什么（阅读）→ 再做维护动作（操作）→ 再检索 / 排序 / 筛（找）→ 再看树（列表）。
-             2026-10-13 视觉一致性：工具条改用本页的「发丝金边 pill + 选中铜铸渐变」语言
-             （不再借用「藏品明细」页的 .pf-chip 近黑边 22rpx），「清空」收成文字链不抢主次。 -->
+             2026-10-14：「同步标准分类」原先独占金色实底 = 看着像本页主 CTA，但它其实是**低频且有副作用**
+             （会按种子停用非标准一级分类）的动作。现在三个维护动作**同级描边**，前面加一个「维护」内联标签
+             把它们与下面的"查找"区分成两组；「清空条件」仍是文字链，不抢主次。 -->
         <view class="cat-manage-tip">列出已启用的一、二级分类。点「关联」可查看并补挂藏品；「修复藏品关联」会把挂在旧分类上的藏品移到现分类。</view>
-        <view class="cat-manage-actions">
-          <view class="cat-sync-btn" bindtap="syncCategoriesFromSeed">同步标准分类</view>
-          <view class="cat-sync-btn cat-sync-btn-ghost" bindtap="fillL2LatinNames">补齐拉丁名</view>
-          <view class="cat-sync-btn cat-sync-btn-ghost" bindtap="repairProductCategoryLinks">修复藏品关联</view>
+        <view class="cat-act-row">
+          <text class="cat-act-label">维护</text>
+          <view class="cat-manage-actions">
+            <view class="cat-sync-btn" bindtap="syncCategoriesFromSeed">同步标准分类</view>
+            <view class="cat-sync-btn" bindtap="fillL2LatinNames">补齐拉丁名</view>
+            <view class="cat-sync-btn" bindtap="repairProductCategoryLinks">修复藏品关联</view>
+          </view>
         </view>
         <!-- 展示层检索 / 排序 / 空分类筛查：只派生 catTreeView，不动 categoryManageTree
              （新增分类与关联弹层按源树下标 / _id 取值，写回源会错位）。 -->
@@ -653,7 +665,15 @@
 
         <view class="form-section-label">一、二级分类</view>
 
-        <view class="cat-tree" wx:if="{{catTreeView.length}}">
+        <!-- ⚠️ 分类树**三态**，顺序不能反（2026-10-14 产品负责人截图里那一屏就是这个 bug）：
+             进「分类管理」时 categoryManageTree 还是空的（要等 2 次云端查询：分类 + 每类件数），
+             而老代码直接落到 `wx:else` → 屏幕上写着「**暂无分类，可在下方添加**」。
+             那不是"空态"，那是**谎报**：分类库明明有 63 条，只是还在读。加载中必须说"读取中"。
+             守卫 E7 钉住「读取中」分支必须排在空态之前。 -->
+        <view class="cat-tree-loading" wx:if="{{catTreeLoading}}">
+          <text class="cat-tree-loading-txt">读取分类中…</text>
+        </view>
+        <view class="cat-tree" wx:elif="{{catTreeView.length}}">
           <block wx:for="{{catTreeView}}" wx:key="_id">
             <view class="cat-root-row">
               <view class="cat-root-main">

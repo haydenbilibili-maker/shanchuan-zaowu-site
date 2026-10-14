@@ -38,17 +38,30 @@ const F = {
 
 const read = (f) => readFileSync(resolve(ROOT, f), 'utf8')
 
-/** 取一个对象方法体：从 `名(...) {` 到下一处同缩进的 `},`（守卫只看这一段，避免误伤同文件其它地方） */
+/**
+ * 取一个方法体：从 `名(...)` 到**与起始缩进同层**的 `},`（守卫只看这一段，避免误伤同文件其它地方）。
+ * ⚠️ 2026-10-14 修正：原来写死 `\n  },`（2 空格），而本文件里有**顶层（0 缩进）方法**
+ * （`loadCategoriesManage` 等，`managerPageConfig.js` 是多段对象拼起来的）。
+ * 写死缩进 → 那种方法取到空串 → 判据静默失效（"守卫看着在跑，其实什么都没查"）。
+ * 现在按起始行自己的缩进推终止锚点。 */
 function methodBody(src, name) {
-  const i = src.search(new RegExp(`\\n  (?:async )?${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\(`))
+  const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const i = src.search(new RegExp(`\\n[ \\t]{0,4}(?:async )?${esc}\\(`))
   if (i < 0) return ''
-  const end = src.indexOf('\n  },', i)
+  const indent = (src.slice(i + 1).match(/^[ \t]*/) || [''])[0]
+  const end = src.indexOf(`\n${indent}},`, i + 1)
   return end < 0 ? src.slice(i) : src.slice(i, end)
 }
 
 export function run(src = {}) {
   const cfg = src.cfg ?? read(F.cfg)
-  const wxml = src.wxml ?? read(F.wxml)
+  // ⚠️ wxml 的存在性 / 文案 / 计数 / 位置判据一律走**去掉注释**的正文。
+  // 本项目被这条坑过**三次**，最近一次就在本组判据里：
+  //   · `/taxonomy\.kingdom/` 命中了云函数里我自己那句解释性注释（假阳性，改动被误判为违规）
+  //   · 「读取中必须排在空态之前」被注释里那句「…写着『暂无分类，可在下方添加』」顶掉（假阴性）
+  //   · A6 数 `data-risk="high"` 出现次数时，注释里提一句就会把计数抬高
+  // 结论：**注释里提到某段文案/类名 ≠ 那段代码存在**。位置类判据必须看正文。
+  const wxml = (src.wxml ?? read(F.wxml)).replace(/<!--[\s\S]*?-->/g, '')
   const wxss = src.wxss ?? read(F.wxss)
   const fn = src.fn ?? read(F.fn)
   const fails = []
@@ -199,7 +212,8 @@ export function run(src = {}) {
   ok(!!listBlock, 'A9 取不到「藏品明细」块（无法判断风险能力是否已抽走）')
   ok(!/bulkToggleRisk/.test(listBlock), 'A9 藏品明细页还留着风险一键工具条（能力抽走后必须只剩一个入口）')
   ok(!/setProductRiskFilter/.test(listBlock), 'A9 藏品明细页还留着风险筛选 chip（同上）')
-  const riskBlock = (wxml.match(/wx:if="\{\{productLibTab==='risk'\}\}"[\s\S]*?<!-- 库存概览/) || [''])[0]
+  // ⚠️ 结束锚点必须是**代码**：原先是 `<!-- 库存概览`，而去注释后注释已经不在正文里了
+  const riskBlock = (wxml.match(/wx:if="\{\{productLibTab==='risk'\}\}"[\s\S]*?wx:if="\{\{productLibTab==='stats'\}\}"/) || [''])[0]
   ok((riskBlock.match(/bindtap="setProductRiskFilter"/g) || []).length === 4,
     `A9 风险管理页的分层 chip 不是 4 颗（全部/高风险/中等风险/普通），实得 ${(riskBlock.match(/bindtap="setProductRiskFilter"/g) || []).length}`)
   ok(/bindtap="copyRiskList"/.test(riskBlock), 'A9 风险管理页缺「复制风险清单」')
@@ -299,6 +313,63 @@ export function run(src = {}) {
   ok(/wx:for="\{\{catTreeView\}\}"/.test(wxml), 'E6 分类树没有用派生视图 catTreeView')
   ok(/bindinput="setCatKeyword"/.test(wxml), 'E6 分类页没有检索输入框')
   ok(/没有匹配的分类/.test(wxml), 'E6 筛选后的空态没有区分文案')
+
+  /* ── E7 顶部两级页签：必须"不同种"，且加载中不许谎报（2026-10-14）─────────────
+     起因：产品负责人真机截图「藏品库-分类管理顶部的分类切换区域比较混乱」。
+     根因是我 2026-10-13 把**分区页签也做成分段控件**，只用"大一点/小一点"区层级 ——
+     真机上变成两排同款分段控件叠着，两排里各有一个「分类管理」都亮着，
+     而且分区那排的金色实底比页面那排的浅底更重（**层级被倒过来**）。
+     结论：层级要用**不同种**控件表达。分区页签 = 下划线页签（不等分 / 无实底 / 有指示条）。
+     ⚠️ 这三条判据必须是"结构性格"的：`flex: 1` 一出现就说明又变回等分分段控件了。 */
+  const zoneTabs = (wxss.match(/\.cat-zone-tabs \{[\s\S]*?\n\}/) || [''])[0]
+  const zoneTab = (wxss.match(/\.cat-zone-tab \{[\s\S]*?\n\}/) || [''])[0]
+  const zoneTabOn = (wxss.match(/\.cat-zone-tab\.on \{[\s\S]*?\n\}/) || [''])[0]
+  const zoneTabBar = (wxss.match(/\.cat-zone-tab\.on::after \{[\s\S]*?\n\}/) || [''])[0]
+  ok(!!zoneTab && !!zoneTabOn && !!zoneTabBar, 'E7 找不到分区页签样式（.cat-zone-tab / .on / .on::after）')
+  // ① 不许等分：等分 = 又变回分段控件（页面页签 .sub-tab 就是 flex:1）
+  ok(!/flex\s*:\s*1/.test(zoneTab) && !/flex\s*:\s*1/.test(zoneTabs),
+    'E7 分区页签又变成等分控件（flex:1）—— 会和页面级分段控件长成同一种')
+  // ② 不许金色实底（那是页面级/主按钮的语言）；选中态只改文字色
+  ok(!/background\s*:/.test(zoneTabOn) && !/linear-gradient/.test(zoneTabOn),
+    'E7 选中的分区页签又用实底/渐变（与页面页签同款，层级会再次倒过来）')
+  // ③ 必须有下划线指示条
+  ok(/content\s*:/.test(zoneTabBar) && /height\s*:/.test(zoneTabBar) && /background\s*:/.test(zoneTabBar),
+    'E7 分区页签缺下划线指示条（.cat-zone-tab.on::after 要有 content/height/background）')
+  ok(/border-bottom\s*:/.test(zoneTabs), 'E7 分区页签容器缺那条基线（指示条没有落脚处）')
+  // ④ 标签不许与页面级页签逐字重复：两处都会亮，同名 = 混乱的另一半
+  // ⚠️ 页面级文案只能在「藏品库那一排」里取：全文件的 `data-tab=` 有 10 处（其它页签也叫 data-tab），
+  //    不限定范围会把别的页签算进来（第一版就是这么写的，报「页面 10」）。
+  // 取一排页签用**定长窗口**，不用"到下一个 </view>"（非贪婪会停在第一颗页签的收尾标签上，
+  // 第一版就是这么写的，结果页面文案取到 0 条）。窗口不依赖后面跟着哪个元素，重排也不会失效。
+  const rowStart = wxml.indexOf('class="sub-tab-row product-lib-tabs"')
+  const libTabRow = rowStart < 0 ? '' : wxml.slice(rowStart, rowStart + 1200)
+  const zoneLabels = [...wxml.matchAll(/data-zone="[a-z]+"[^>]*>([^<]+)<\/view>/g)].map((m) => m[1].trim())
+  const pageLabels = [...libTabRow.matchAll(/data-tab="[a-z]+"[^>]*>([^<]+)<\/view>/g)].map((m) => m[1].trim())
+  ok(zoneLabels.length === 3 && pageLabels.length === 4,
+    `E7 取不到两级页签的文案（分区 ${zoneLabels.length} / 页面 ${pageLabels.length}）`)
+  const dup = zoneLabels.filter((z) => pageLabels.includes(z))
+  ok(dup.length === 0, `E7 分区页签与页面页签出现同名文案：${dup.join('/')}（两处同名都亮着 = 看着混乱）`)
+  // ⑤ 维护动作不许再有一颗"金色实底主 CTA"（同步标准分类是低频且有副作用的动作）
+  const syncBtn = (wxss.match(/\.cat-sync-btn \{[\s\S]*?\n\}/) || [''])[0]
+  ok(!!syncBtn && !/background\s*:\s*var\(--gold\)/.test(syncBtn),
+    'E7 「同步标准分类」又回到金色实底（低频且有副作用的动作不该是本页主 CTA）')
+  // ⑥ 分类树三态：读取中 / 有数据 / 真空 —— 加载中那支必须**排在空态之前**，且空态文案不许出现在加载支里
+  const loadIdx = wxml.indexOf('cat-tree-loading')
+  const emptyIdx = wxml.indexOf('暂无分类，可在下方添加')
+  ok(loadIdx >= 0 && /catTreeLoading/.test(wxml), 'E7 分类树没有「读取中」态（加载中会显示「暂无分类」，属于谎报）')
+  ok(loadIdx >= 0 && emptyIdx > loadIdx,
+    'E7 「读取中」分支排在空态之后（加载中仍会先显示「暂无分类，可在下方添加」）')
+  ok(/catTreeLoading: false/.test(cfg), 'E7 data 里缺 catTreeLoading 默认值')
+  const loadCat = methodBody(cfg, 'loadCategoriesManage')
+  ok(/catTreeLoading: true/.test(loadCat) && /catTreeLoading: false/.test(loadCat),
+    'E7 loadCategoriesManage 没有真的置位/清除 catTreeLoading')
+  // ⚠️ 清位必须在 finally —— 否则加载失败时页面永远停在「读取分类中…」
+  ok(/\} finally \{[\s\S]{0,200}catTreeLoading: false/.test(loadCat),
+    'E7 catTreeLoading 的清位不在 finally 里（失败时会永远停在「读取分类中…」）')
+  // ⑦ 重复点当前分区不重复拉数据
+  const switchZone = methodBody(cfg, 'switchCatZone')
+  ok(/if \(next === this\.data\.catZone\) return/.test(switchZone),
+    'E7 重复点当前分区仍会重新拉数据（switchCatZone 缺同值早退）')
 
   return fails
 }
@@ -405,7 +476,26 @@ function selftest() {
     ['丢掉空分类计数', (s) => ({ ...s, cfg: s.cfg.replace('      if (count === 0) emptyCount += 1;', '') }), /E4/],
     ['丢掉一级合计件数', (s) => ({ ...s, cfg: s.cfg.replace('      totalCount: children.reduce((sum, c) => sum + (Number(c.productCount) || 0), 0) + (Number(root.productCount) || 0),', '      totalCount: 0,') }), /E5/],
     ['分类树用回源树渲染', (s) => ({ ...s, wxml: s.wxml.replace('wx:for="{{catTreeView}}"', 'wx:for="{{categoryManageTree}}"') }), /E6/],
-    ['分类页丢掉检索框', (s) => ({ ...s, wxml: s.wxml.replace('bindinput="setCatKeyword"', 'bindinput="noopSearch"') }), /E6/]
+    ['分类页丢掉检索框', (s) => ({ ...s, wxml: s.wxml.replace('bindinput="setCatKeyword"', 'bindinput="noopSearch"') }), /E6/],
+    /* ── E7 顶部两级页签"不同种" + 加载中不谎报（2026-10-14）── */
+    ['分区页签又变回等分分段控件（与页面页签同款）',
+      (s) => ({ ...s, wxss: s.wxss.replace('.cat-zone-tab {\n  position: relative;', '.cat-zone-tab {\n  flex: 1;\n  position: relative;') }), /E7/],
+    ['选中的分区页签又用金色实底（层级再次倒过来）',
+      (s) => ({ ...s, wxss: s.wxss.replace('.cat-zone-tab.on {\n  color: var(--brass-300);', '.cat-zone-tab.on {\n  background: linear-gradient(160deg, var(--brass-300), var(--brass-500));\n  color: var(--brass-300);') }), /E7/],
+    ['分区页签丢掉下划线指示条',
+      (s) => ({ ...s, wxss: s.wxss.replace(/\n\.cat-zone-tab\.on::after \{[\s\S]*?\n\}/, '') }), /E7/],
+    ['分区页签与页面页签同名（两处都亮着）',
+      (s) => ({ ...s, wxml: s.wxml.replace('aria-selected="{{catZone===\'category\'}}">分类</view>', 'aria-selected="{{catZone===\'category\'}}">分类管理</view>') }), /E7/],
+    ['「同步标准分类」又回到金色实底主 CTA',
+      (s) => ({ ...s, wxss: s.wxss.replace('.cat-sync-btn {\n  display: inline-block;', '.cat-sync-btn {\n  background: var(--gold);\n  display: inline-block;') }), /E7/],
+    ['分类树丢掉「读取中」态（加载中会谎报「暂无分类」）',
+      (s) => ({ ...s, wxml: s.wxml.replace(/ {8}<view class="cat-tree-loading"[\s\S]*?<\/view>\n/, '') }), /E7/],
+    ['loadCategoriesManage 不置位 catTreeLoading（读取中仍是空态）',
+      (s) => ({ ...s, cfg: s.cfg.replace('  this.setData({ catTreeLoading: true });\n', '') }), /E7/],
+    ['catTreeLoading 的清位移出 finally（失败时永远停在读取中）',
+      (s) => ({ ...s, cfg: s.cfg.replace('  } finally {\n    // ⚠️ 必须在 finally 里清：失败也要落地，否则页面永远停在「读取分类中…」\n    this.setData({ catTreeLoading: false });\n  }\n},', '  }\n  this.setData({ catTreeLoading: false });\n},') }), /E7/],
+    ['重复点当前分区仍重新拉数据',
+      (s) => ({ ...s, cfg: s.cfg.replace('    if (next === this.data.catZone) return;\n', '') }), /E7/]
   ]
   for (const [name, mut, expect] of cases) {
     const mutated = mut(base)

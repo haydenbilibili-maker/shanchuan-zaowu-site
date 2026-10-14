@@ -1560,6 +1560,14 @@ const managerPageConfig = {
     catTreeView: [],
     catMatchSummary: '',
     catEmptyCount: 0,
+    /**
+     * 分类树是否正在读取（2026-10-14）。
+     * 为什么必须单独有这个标志：`loadCategoriesManage()` 要跑 2 次云端查询（分类 + 每类件数），
+     * 而 `categoryManageTree` 初始为空 —— 老代码直接落到空态分支，屏幕上写「暂无分类，可在下方添加」。
+     * 分类库其实有 63 条，那句话是**谎报**（产品负责人真机截图里就是这一屏）。
+     * 同一次读取也会让「只看空分类 0」显示成假的 0，所以计数在读取中也不该当真。
+     */
+    catTreeLoading: false,
     /** 与 C 端 ProductList 对齐：new | sales | price_asc | price_desc */
     productSort: 'new',
     productPriceSortLabel: '价格',
@@ -2372,11 +2380,16 @@ const managerPageConfig = {
     this.loadCatZoneData(this.data.catZone);
   },
 
-  /** 切内层分区；切到哪一页才加载哪一页的数据 */
+  /**
+   * 切内层分区；切到哪一页才加载哪一页的数据。
+   * 2026-10-14：**重复点当前分区直接返回**（改前会 setData + loadCatZoneData 再跑一遍，
+   * 「选项维护」每次都会被无谓重拉一次字典）。要刷新请看该分区自己的刷新入口 / 重新进 tab。
+   */
   switchCatZone(e) {
     const zone = String((e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.zone) || 'category');
     const next = (zone === 'fields' || zone === 'options') ? zone : 'category';
     if (!this.data.canProductFields && next !== 'category') return;
+    if (next === this.data.catZone) return;
     this.setData({ catZone: next });
     this.loadCatZoneData(next);
   },
@@ -8899,6 +8912,9 @@ async ensureDefaultCategories() {
 },
 
 async loadCategoriesManage() {
+  // 读取中要**说出来**（见 catTreeLoading 的注释）：进 tab 立刻置位，
+  // 分类树区显示「读取分类中…」而不是「暂无分类，可在下方添加」（后者在读取期间是谎报）
+  this.setData({ catTreeLoading: true });
   try {
     // 与 Admin / 录入藏品同源：云库全部有效一二级；不强制六馆白名单。
     // 「同步标准分类」才跑 seedCategories sync（会停用非标准一级）。
@@ -8926,6 +8942,9 @@ async loadCategoriesManage() {
   } catch (e) {
     console.error('loadCategoriesManage', e);
     this.showHubTip('加载分类失败', 'warn');
+  } finally {
+    // ⚠️ 必须在 finally 里清：失败也要落地，否则页面永远停在「读取分类中…」
+    this.setData({ catTreeLoading: false });
   }
 },
 

@@ -4464,6 +4464,17 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   margin-bottom: 20rpx;
   line-height: 1.5;
 }
+/* 分类树**读取中**：与「真的空」必须分开说。老代码把加载中画成「暂无分类，可在下方添加」——
+   分类库明明有 63 条，只是还在读（要等 2 次云端查询：分类 + 每类件数），那句文案等于**谎报**。
+   产品负责人 2026-10-14 的截图里就是这一屏。守卫 E7 钉住"读取中"分支排在空态之前。 */
+.cat-tree-loading {
+  padding: 40rpx 0 48rpx;
+  text-align: center;
+}
+.cat-tree-loading-txt {
+  font-size: 24rpx;
+  color: var(--color-text-secondary, #A09A90);
+}
 .cat-tree { margin-bottom: 24rpx; }
 .cat-root-row,
 .cat-sub-row {
@@ -4520,19 +4531,36 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .cat-hidden-tip { padding: 4rpx 24rpx 14rpx 48rpx; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); }
 .cat-tax { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); margin-top: 4rpx; line-height: 1.4; }
 .cat-empty-subs { padding: 8rpx 24rpx 16rpx 48rpx; font-size: 22rpx; color: var(--color-text-secondary, #A09A90); }
-.cat-manage-actions { margin-bottom: 16rpx; display: flex; flex-wrap: wrap; gap: 16rpx; }
+/* 维护动作：2026-10-14 三颗**同级描边 pill**（原先「同步标准分类」独占金色实底 = 看着像本页主 CTA，
+   但它其实是低频且有副作用的动作）；左侧一个内联「维护」标签，与下面的"查找与筛选"分成两组。 */
+.cat-act-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  margin-bottom: 18rpx;
+}
+.cat-act-label {
+  flex-shrink: 0;
+  padding-top: 14rpx;
+  font-size: 20rpx;
+  letter-spacing: 2rpx;
+  color: var(--color-text-secondary, #A09A90);
+}
+.cat-manage-actions { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 12rpx; }
 .cat-sync-btn {
   display: inline-block;
-  font-size: 24rpx;
-  color: var(--color-bg);
-  background: var(--gold);
-  padding: 12rpx 28rpx;
+  font-size: 23rpx;
+  color: var(--brass-300);
+  background: rgba(196, 167, 108, 0.06);
+  border: 1rpx solid rgba(196, 167, 108, 0.32);
+  padding: 12rpx 26rpx;
   border-radius: 9999px;
 }
+/* 保留旧类名（其它地方若还引用，不至于丢样式）——但不再是"主 CTA 实底" */
 .cat-sync-btn-ghost {
-  background: transparent;
-  color: var(--gold);
-  border: 1px solid var(--gold);
+  background: rgba(196, 167, 108, 0.06);
+  color: var(--brass-300);
+  border: 1rpx solid rgba(196, 167, 108, 0.32);
 }
 .cat-en { font-size: 20rpx; color: var(--color-text-secondary, #A09A90); letter-spacing: 0.06em; margin-right: 12rpx; }
 .cat-del { font-size: 22rpx; color: #D64045; flex-shrink: 0; padding: 8rpx 12rpx; }
@@ -5802,32 +5830,45 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* ── 内层分区 Tab（2026-09-20）：分类管理 / 字段维护 / 选项维护 ────────────────
    为什么改：三块叠在一条长滚动里，越往下越难找（产品负责人原话「而不是无限下拉」）。
    样式沿用本页既有的 `.sub-tab` 语汇（同一页里两处 Tab 长得一样，别自成一套）。 */
-/* 分区页签（分类管理 / 属性维护 / 选项维护）：2026-10-13 由「一排 pill」改为**轻量分段控件** ——
-   上面那排页面页签（.sub-tab-row 分段控件）已经是 pill 容器，两排同款 pill 叠着看会重复且分不出层级。
-   现在：页面页签 = 大分段（flex:1 / 24rpx），分区 = 小分段（22rpx / 更轻的容器），层级一眼可分。 */
+/* 分区页签（分类 / 属性 / 选项）：2026-10-14 **第二次返工**。
+   ────────────────────────────────────────────────────────────────
+   2026-10-13 那一版把它们做成了「小号分段控件」，想靠"大一点 / 小一点"分层级 —— 真机上失败：
+   上面一排页面页签也是分段控件（圆角 + 描边 + 等分），两排叠着长得**一样**，而且
+   ① 两排里各有一个「分类管理」都亮着；② 分区的金色实底比页面的浅底**更重**，层级被倒过来。
+   产品负责人 2026-10-14 截图原话：「顶部的分类切换区域比较混乱」。
+   结论：层级要用**不同种**控件表达，不能只用**不同程度**。现在分区页签 = **下划线页签**：
+   左对齐、不等分（宽度由文字决定）、无边框、无实底，只有选中项坐一条金色指示条。
+   ⚠️ 守卫 E7 钉住：这里**不许**再出现 `flex: 1`（等分 = 又变回分段控件）与金色实底 `background`。 */
 .cat-zone-tabs {
   display: flex;
   align-items: center;
-  gap: 8rpx;
-  margin-bottom: 20rpx;
-  padding: 6rpx;
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-bg-elevated);
-  border-radius: 14rpx;
+  gap: 40rpx;
+  margin-bottom: 22rpx;
+  padding: 0 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.18);
 }
 .cat-zone-tab {
-  flex: 1;
-  text-align: center;
-  padding: 14rpx 0;
-  font-size: 22rpx;
+  position: relative;
+  padding: 6rpx 2rpx 18rpx;
+  font-size: 26rpx;
   color: var(--color-text-secondary);
-  border-radius: 10rpx;
 }
 .cat-zone-tab.on {
-  color: var(--color-bg);
-  background: linear-gradient(160deg, var(--brass-300) 0%, var(--brass-400) 48%, var(--brass-500) 100%);
+  color: var(--brass-300);
+  font-weight: 600;
 }
-.cat-zone-tab-press { opacity: 0.86; }
+/* 指示条：坐落在容器那条基线上（bottom:-1rpx 盖住基线，接缝处不露白） */
+.cat-zone-tab.on::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1rpx;
+  height: 4rpx;
+  border-radius: 4rpx;
+  background: linear-gradient(90deg, var(--brass-300) 0%, var(--brass-500) 100%);
+}
+.cat-zone-tab-press { opacity: 0.7; }
 
 .cat-field-zone {
   margin-top: 36rpx;
