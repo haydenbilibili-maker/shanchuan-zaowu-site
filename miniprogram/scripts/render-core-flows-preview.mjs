@@ -91,7 +91,29 @@ const petBase = {
 }
 const petMeta = (n) => ({ 1: { title: '开始之前', desc: '以下几件事，决定了这件记忆能否被好好留下。' }, 2: { title: '关于 TA', desc: '告诉标本师 TA 是谁、现在的状况。' }, 3: { title: '选择工艺', desc: '不同工艺的周期与呈现不同，可先选后改。' }, 5: { title: '确认意向', desc: '提交后专员会在 24 小时内联系你。' } })[n]
 
+// 马上有 · 心愿签（2026-10-15 第 5 轮）：展品图用官网 IP 图代替云端实拍（离线可画）；文案来自 config/wallExhibit.js 真值
+const WL_COVER = `file://${join(ROOT, 'public/images/what/ip/mashangyou.png')}`
+const wlExhibit = { name: '马上有', nameEn: 'MA SHANG YOU', species: '黑马标本', storeLabel: '长春店', visitNote: '在店里看得见它，隔着展柜静静看', line: '对着黑马「马上有」，说一句想要的' }
+const wlLabels = [
+  [{ _id: 'a1', no: 'No.8F2A', text: '马上有好睡眠', timeText: '2 小时前', author: '蛋炒饭', fresh: true, isMine: true },
+    { _id: 'a3', no: 'No.71C0', text: '马上有一份不用加班的工作，周末能去爬山', long: true, timeText: '昨天', author: '令狐冲大哥', echoCount: 3, voiceUrl: 'x', voiceText: '0:08' },
+    { _id: 'a5', no: 'No.0B3E', text: '马上有钱', timeText: '3 天前', author: '山海造物', official: true, pinned: true }],
+  [{ _id: 'a2', no: 'No.D41C', text: '马上有 Offer', timeText: '5 小时前', author: '小满', echoCount: 12 },
+    { _id: 'a4', no: 'No.92AF', text: '马上有对象', timeText: '昨天', author: '阿青', voiceTag: '声音审核中', isMine: true },
+    { _id: 'a6', no: 'No.5E07', text: '家里猫咪马上康复', timeText: '4 天前', author: '团子妈' }]
+]
+const wlBase = {
+  statusBarHeight: 44, navBarHeight: 44, navTotal: 88, allowed: true, flagChecked: true, loading: false, exhibit: wlExhibit, cover: WL_COVER,
+  peek: [wlLabels[0][0], wlLabels[1][0], wlLabels[0][1]], columns: wlLabels, viewMode: 'latest', capped: true, listLimit: 60,
+  quota: { used: 1, left: 4, cap: 5, exhausted: false }, textMax: 30, inspiration: ['马上有风', '马上有暖', '马上有眠', '马上有劲'],
+  voiceMax: 15, writer: '蛋炒饭', today: '2026.10.15'
+}
+
 const SCENES = [
+  { name: 'wl-main', h: 2500, wxml: 'subpackages/feature/wish-labels/index', data: wlBase },
+  { name: 'wl-compose', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, composeOpen: true, draft: '马上有好睡眠', draftCount: 6, posting: false, voicePath: '' } },
+  { name: 'wl-card', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, card: { ...wlLabels[1][0], date: '2026.10.15', echoed: false } } },
+  { name: 'wl-empty-mine', h: 1900, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, viewMode: 'mine', columns: [[], []], quota: { used: 5, left: 0, cap: 5, exhausted: true } } },
   {
     name: 'detail', h: 3000, wxml: 'subpackages/feature/detail/index', data: {
       product, commerceReady: true, displayPrice: '388', displayStock: 6, heroSlides: [{ key: 'h1', kind: 'image', src: P[0] }, { key: 'h2', kind: 'image', src: P[2] }], heroFit: 'aspectFill', heroSwiperH: 520,

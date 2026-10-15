@@ -1,10 +1,10 @@
 {
-  "navigationBarTitleText": "祈福玩法",
-  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTitleText": "今日一签",
+  "navigationBarBackgroundColor": "#151412",
   "navigationBarTextStyle": "white",
-  "backgroundColor": "#1A1814",
-  "backgroundColorTop": "#1A1814",
-  "backgroundColorBottom": "#1A1814",
+  "backgroundColor": "#151412",
+  "backgroundColorTop": "#151412",
+  "backgroundColorBottom": "#151412",
   "backgroundTextStyle": "light",
   "usingComponents": {
     "app-toast": "/components/AppToast/index"

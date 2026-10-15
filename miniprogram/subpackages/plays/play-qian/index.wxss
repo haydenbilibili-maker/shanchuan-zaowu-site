@@ -1,81 +1,210 @@
 @import "../play-shared/ritual-play.wxss";
 
-/* ── 今日一签：一只签筒 ──────────────────────────────────────────
-   入口不是"一枚瓦片"，而是一只有体积的筒 —— 摇它才有签条出来。
-   全部用 CSS 盒子拼（无图片、无 canvas）：真机排版可量、可离线预览。 */
+/* ══ 今日一签 · 标本签视觉（2026-10-15 质感第 5 轮）══════════════════════════
+   蓝图 docs/马上有心愿签_重设计蓝图_2026-10-13.md §9「二期：今日一签页改标本签视觉」：
+   入口来自「马上有 · 心愿签」底栏，两页必须是同一套语言 —— 博物黑、纸质标本签、发丝金、
+   唯一实心金；**不再用铜铸签筒 / 门楣铆钉 / 朱红穗 / 舞台光晕**（蓝图 §1：庙会与金属元素是「老土」的根源）。
+   只改本页样式（覆盖共享 ritual-play.wxss，其余玩法不受影响）；结构类名、事件、数据一律不动。 */
+
+.rp-page {
+  --paper: #F3ECDD;
+  --paper-2: #E8DFCB;
+  --ink: #2E2618;
+  background: #151412;
+}
+
+/* ── 页头：眉标 + 主标（与心愿签「THE WALL / 心愿签墙」同口径），不再是一块铆钉铜匾 ── */
+.rp-hero {
+  padding: 28rpx 4rpx 24rpx;
+  margin: var(--space-2) 0 24rpx;
+  border: none;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.22);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.rp-hero::before,
+.rp-hero::after {
+  display: none;
+}
+
+/* 字标：发丝方印（金字、透明底），不再是实心铜币 */
+.rp-hero-mark {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 62rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-28);
+  font-weight: 500;
+  color: var(--brass-300);
+  background: none;
+  border: 1rpx solid rgba(196, 167, 108, 0.6);
+  border-radius: 4rpx;
+  box-shadow: none;
+}
+
+.rp-hero.is-done .rp-hero-mark {
+  background: rgba(196, 167, 108, 0.12);
+  box-shadow: none;
+}
+
+.rp-hero-name {
+  font-family: var(--font-brand);
+  font-size: var(--fs-40);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--color-text-primary);
+}
+
+.rp-hero-state {
+  color: var(--color-text-secondary);
+}
+
+.rp-hero.is-done .rp-hero-state {
+  color: var(--brass-300);
+}
+
+/* ── 入口：一只玻璃标本瓶，里面插着纸签 ───────────────────────────
+   展台 = 发丝框展柜 + 左上展签字 + 一道搁板线（原：双环光晕托盘 + 发光底脚） */
+.rp-stage {
+  min-height: 420rpx;
+  padding: 72rpx 0 56rpx;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, rgba(243, 236, 221, 0.025) 0%, transparent 60%);
+  border: 1rpx solid rgba(196, 167, 108, 0.22);
+  box-shadow: none;
+}
+
+.rp-stage::before {
+  content: 'DAILY LOT · 今日一签';
+  left: 24rpx;
+  top: 20rpx;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-16);
+  letter-spacing: 0.3em;
+  color: var(--brass-400);
+}
+
+.rp-stage.is-pending::before {
+  animation: none;
+}
+
+/* 搁板：一道发丝线，瓶子站在上面 */
+.rp-stage::after {
+  bottom: 54rpx;
+  width: 360rpx;
+  height: 1rpx;
+  margin-left: -180rpx;
+  border-radius: 0;
+  background: linear-gradient(90deg, transparent, rgba(196, 167, 108, 0.5), transparent);
+  box-shadow: none;
+}
+
 .rp-tube {
   position: relative;
   width: 168rpx;
   height: 230rpx;
-  filter: drop-shadow(0 12rpx 20rpx rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 16rpx 18rpx rgba(0, 0, 0, 0.4));
 }
 
+/* 瓶身：透明玻璃（两侧折光 + 一道竖高光），签从玻璃里透出来 */
 .rp-tube-body {
   position: absolute;
   left: 0;
   bottom: 0;
   width: 168rpx;
   height: 188rpx;
-  border-radius: 12rpx 12rpx 24rpx 24rpx;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      transparent 0,
-      transparent 12rpx,
-      rgba(0, 0, 0, 0.07) 12rpx,
-      rgba(0, 0, 0, 0.07) 14rpx
-    ),
-    linear-gradient(180deg, var(--brass-400) 0%, var(--brass-800) 100%);
-  box-shadow:
-    inset 0 5rpx 0 rgba(250, 246, 237, 0.2),
-    inset -12rpx 0 24rpx rgba(0, 0, 0, 0.3),
-    0 10rpx 22rpx rgba(0, 0, 0, 0.32);
-  /* 2026-10-15 质感第 4 轮：筒身是「前脸」，压在签条之上 —— 签从筒口探出来，而不是画在筒身正面 */
+  border-radius: 18rpx 18rpx 30rpx 30rpx;
+  background: linear-gradient(90deg,
+    rgba(250, 246, 237, 0.12) 0%,
+    rgba(250, 246, 237, 0.03) 16%,
+    rgba(250, 246, 237, 0) 50%,
+    rgba(250, 246, 237, 0.03) 84%,
+    rgba(250, 246, 237, 0.1) 100%);
+  border: 1rpx solid rgba(250, 246, 237, 0.28);
+  box-shadow: inset 0 -12rpx 20rpx rgba(0, 0, 0, 0.28);
   z-index: 3;
 }
 
+.rp-tube-body::before {
+  content: '';
+  position: absolute;
+  left: 20rpx;
+  top: 22rpx;
+  width: 6rpx;
+  height: 112rpx;
+  border-radius: 3rpx;
+  background: linear-gradient(180deg, rgba(250, 246, 237, 0.42), rgba(250, 246, 237, 0));
+}
+
+/* 瓶上贴一张小标本签：瓶子读成「馆藏」，不是庙里的签筒 */
+.rp-tube-body::after {
+  content: '今 日 一 签';
+  position: absolute;
+  left: 30rpx;
+  right: 30rpx;
+  bottom: 30rpx;
+  height: 44rpx;
+  line-height: 44rpx;
+  text-align: center;
+  font-family: var(--font-brand);
+  font-size: var(--fs-16);
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  background: linear-gradient(170deg, var(--paper), var(--paper-2));
+  border: 1rpx solid rgba(138, 117, 48, 0.35);
+  border-radius: 2rpx;
+}
+
+/* 瓶口：玻璃口沿（在签条之后，签从口里探出来） */
 .rp-tube-mouth {
   position: absolute;
-  left: -8rpx;
-  top: 24rpx;
-  width: 184rpx;
-  height: 34rpx;
+  left: -4rpx;
+  top: 28rpx;
+  width: 176rpx;
+  height: 28rpx;
   border-radius: 50%;
-  background: var(--brass-900);
-  border: 1rpx solid rgba(196, 167, 108, 0.4);
-  border-top: 4rpx solid rgba(250, 246, 237, 0.38);
-  box-shadow: inset 0 4rpx 10rpx rgba(0, 0, 0, 0.55), inset 0 12rpx 16rpx rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.32);
+  border: 1rpx solid rgba(250, 246, 237, 0.3);
+  border-top: 2rpx solid rgba(250, 246, 237, 0.45);
+  box-shadow: none;
   z-index: 0;
 }
 
+/* 签条：纸色（不是铜色），长到瓶底附近 —— 隔着玻璃也看得见 */
 .rp-stick {
   position: absolute;
-  left: 74rpx;
+  left: 72rpx;
   top: 10rpx;
-  width: 20rpx;
-  height: 140rpx;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(180deg, #FAF6ED 0%, var(--brass-300) 100%);
-  box-shadow: inset -2rpx 0 0 rgba(122, 92, 44, 0.28);
-  opacity: 0.86;
-  /* 静止：主签露出筒口一截（顶 0 → 筒身顶 42rpx），一眼「筒里有签」 */
+  width: 24rpx;
+  height: 190rpx;
+  border-radius: 2rpx;
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  box-shadow: inset 0 0 0 1rpx rgba(138, 117, 48, 0.28);
+  opacity: 0.94;
   transform: translateY(-10rpx);
   z-index: 2;
 }
 
-/* 侧签：筒里不止一支，入口一眼「有一捆」 */
 .rp-stick.is-side {
-  width: 12rpx;
-  height: 110rpx;
-  opacity: 0.62;
+  width: 16rpx;
+  height: 160rpx;
+  opacity: 0.6;
   transform: translateY(8rpx);
   z-index: 1;
 }
 
-.rp-stick.is-l { left: 52rpx; }
+.rp-stick.is-l { left: 48rpx; }
 .rp-stick.is-r { left: 104rpx; }
 
-/* 进行态：筒在摇、签在升 —— 只在这里挂动画（入口静止时是一筒安静的签） */
+/* 进行态：瓶在摇、签在升 —— 只在这里挂动画（入口静止） */
 .rp-stage.is-pending .rp-tube {
   animation: rp-tube-shake 0.26s ease-in-out infinite;
 }
@@ -84,7 +213,6 @@
   animation: rp-stick-up 1000ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
 }
 
-/* 侧签只微微颤，主签才升起 */
 .rp-stage.is-pending .rp-stick.is-side {
   animation: rp-stick-side 0.26s ease-in-out infinite;
 }
@@ -94,11 +222,10 @@
   50% { transform: rotate(3deg); }
 }
 
-/* 先往下一沉（摇的蓄力）再升起：签条只在筒口以上可见，升起的那一截就是「抽中」 */
+/* 先往下一沉（摇的蓄力）再升起：升出瓶口的那一截就是「抽中」 */
 @keyframes rp-stick-up {
-  0% { opacity: 0.86; transform: translateY(-10rpx); }
+  0% { opacity: 0.94; transform: translateY(-10rpx); }
   18% { transform: translateY(2rpx); }
-  60% { opacity: 1; }
   100% { opacity: 1; transform: translateY(-84rpx); }
 }
 
@@ -107,52 +234,107 @@
   50% { transform: translateY(4rpx) rotate(2deg); }
 }
 
-/* ── 结果纸面：竹签（竖长的浅纸，宜/忌分列）· v3 展签 ───────────── */
-.rp-paper {
-  position: relative;
-  background:
-    repeating-linear-gradient(
-      180deg,
-      transparent 0 46rpx,
-      rgba(122, 92, 44, 0.035) 46rpx 48rpx
-    ),
-    linear-gradient(90deg, rgba(122, 92, 44, 0.08) 0%, transparent 10%, transparent 90%, rgba(122, 92, 44, 0.08) 100%),
-    linear-gradient(180deg, #F8F1E0 0%, #E8D9BA 100%);
-  border: 2rpx solid rgba(122, 92, 44, 0.48);
-  border-radius: var(--radius-sm);
-  /* 左右双线 + 竹节感：读成竖签而不是普通信卡 */
-  box-shadow:
-    inset 14rpx 0 0 rgba(122, 92, 44, 0.12),
-    inset -14rpx 0 0 rgba(122, 92, 44, 0.12),
-    inset 0 1rpx 0 rgba(250, 246, 237, 0.55),
-    0 20rpx 44rpx rgba(0, 0, 0, 0.36);
-  padding-left: 44rpx;
-  padding-right: 44rpx;
+.rp-hint {
+  color: var(--color-text-secondary);
 }
 
-/* 顶缘朱红穗：一眼「签」不是卡 */
+.rp-spin-text {
+  color: var(--color-text-body);
+}
+
+/* ── 唯一实心金：与心愿签「写一张心愿签」同一颗胶囊钮 ── */
+.rp-cta.is-primary,
+.rp-act.is-primary {
+  height: 92rpx;
+  border-radius: 46rpx;
+  color: #1A1814;
+  font-size: var(--fs-30);
+  letter-spacing: 0.12em;
+  background: linear-gradient(155deg, #E6D3A1, var(--color-primary) 55%, #A8903C);
+  border: none;
+  box-shadow: none;
+}
+
+.rp-act.is-share {
+  height: 88rpx;
+  border-radius: 44rpx;
+  color: var(--color-text-body);
+  border: 1rpx solid rgba(196, 167, 108, 0.36);
+  box-shadow: none;
+}
+
+/* ── 结果纸面：一张心愿标本签（与心愿签详情同一张纸）─────────────
+   浅纸 + 内发丝框 + 顶上一枚铜别针；原竹签的横格线 / 竹节内阴影 / 朱红穗 / 旋转朱印全部退场。 */
+.rp-paper {
+  margin-top: 26rpx;
+  padding: 40rpx 44rpx 40rpx;
+  background: linear-gradient(170deg, var(--paper), var(--paper-2));
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  box-shadow: 0 36rpx 80rpx rgba(0, 0, 0, 0.5);
+}
+
 .rp-paper::before {
   content: '';
   position: absolute;
-  left: 50%;
-  top: -2rpx;
-  width: 28rpx;
-  height: 14rpx;
-  margin-left: -14rpx;
-  background: linear-gradient(180deg, #8A3A30 0%, #5A241C 100%);
-  border-radius: 0 0 8rpx 8rpx;
-  box-shadow: 0 4rpx 8rpx rgba(90, 36, 28, 0.25);
+  left: 12rpx;
+  right: 12rpx;
+  top: 12rpx;
+  bottom: 12rpx;
+  width: auto;
+  height: auto;
+  margin: 0;
+  background: none;
+  border: 1rpx solid rgba(138, 117, 48, 0.35);
+  border-radius: 0;
+  box-shadow: none;
+  pointer-events: none;
 }
 
-/* 印章：略旋 + 淡朱红底，像钤印而不是空框字标 */
+.rp-paper::after {
+  content: '';
+  position: absolute;
+  top: -8rpx;
+  left: 50%;
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: -9rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #F4ECD4, #A8903C 70%);
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.4);
+}
+
+.rp-paper-grip-bar {
+  background: rgba(138, 117, 48, 0.3);
+}
+
+.rp-paper-grip::after {
+  color: #7C6E55;
+}
+
+/* 字标：发丝方印（铜字），不旋转、不着朱红 */
 .rp-paper-mark {
-  transform: rotate(-9deg);
-  color: #7A2E24;
-  background: rgba(122, 46, 36, 0.08);
-  border: 2rpx solid rgba(122, 46, 36, 0.68);
-  box-shadow: inset 0 0 0 1rpx rgba(122, 46, 36, 0.28);
+  top: 30rpx;
+  right: 32rpx;
+  width: 52rpx;
+  height: 52rpx;
+  line-height: 50rpx;
+  transform: none;
   font-family: var(--font-brand);
-  letter-spacing: 0.06em;
+  font-size: var(--fs-22);
+  color: var(--brass-600);
+  background: none;
+  border: 1rpx solid rgba(138, 117, 48, 0.55);
+  border-radius: 2rpx;
+  box-shadow: none;
+}
+
+.rp-paper-overline {
+  font-family: var(--font-brand);
+  font-size: var(--fs-22);
+  letter-spacing: 0.3em;
+  color: #5A4A28;
 }
 
 .rp-paper-title {
@@ -161,14 +343,18 @@
   letter-spacing: 0.04em;
   margin-top: 0;
   text-align: center;
+  color: var(--ink);
 }
 
-/* 宜 | 忌 真正分列（页面注释承诺过，此前是上下堆叠） */
+/* 宜 | 忌：标本签的两栏字段（上下发丝线 + 中间一道竖线），不再是两块底色格子 */
 .rp-yi-ji {
   display: flex;
   align-items: stretch;
-  margin-top: 18rpx;
-  gap: 10rpx;
+  margin-top: 28rpx;
+  padding: 22rpx 0;
+  gap: 0;
+  border-top: 1rpx solid rgba(138, 117, 48, 0.3);
+  border-bottom: 1rpx solid rgba(138, 117, 48, 0.3);
 }
 
 .rp-yi-ji .rp-paper-title,
@@ -176,16 +362,11 @@
   flex: 1;
   min-width: 0;
   margin-top: 0;
-  padding: 18rpx 10rpx 16rpx;
+  padding: 6rpx 10rpx;
   text-align: center;
-  border-top: none;
-  background: rgba(122, 92, 44, 0.08);
-  border-radius: var(--radius-sm);
-  border: 1rpx solid rgba(122, 92, 44, 0.18);
-}
-
-/* 宜 / 忌 同字号（原 40 / 36：并排的两格一大一小，读成主次）；靠色分：宜 = 铜底，忌 = 朱砂发丝框 */
-.rp-yi-ji .rp-paper-title {
+  background: none;
+  border: none;
+  border-radius: 0;
   line-height: 1.25;
 }
 
@@ -193,22 +374,66 @@
   font-family: var(--font-brand);
   font-size: var(--fs-40);
   letter-spacing: 0.04em;
-  color: #5A241C;
-  line-height: 1.25;
-  background: rgba(122, 46, 36, 0.05);
-  border-color: rgba(122, 46, 36, 0.26);
+  /* 忌：墨里带一点赭红，靠字色分宜忌（不铺底色块） */
+  color: #6A3226;
 }
 
 .rp-yi-ji-rule {
   flex-shrink: 0;
   width: 1rpx;
-  margin: 10rpx 8rpx;
-  background: rgba(122, 92, 44, 0.32);
+  margin: 4rpx 0;
+  background: rgba(138, 117, 48, 0.32);
 }
 
 .rp-paper-sub {
   padding-top: 10rpx;
-  border-top: 1rpx solid rgba(122, 92, 44, 0.24);
+  color: #5A4A28;
+  border-top: 1rpx solid rgba(138, 117, 48, 0.24);
+}
+
+/* 签文：手写体（心愿签上写字的那支笔），居中 */
+.rp-line {
+  margin-top: 28rpx;
+  font-family: var(--font-hand);
+  font-size: var(--fs-34);
+  line-height: 1.5;
+  text-align: center;
+  color: var(--ink);
+}
+
+.rp-note {
+  margin-top: 24rpx;
+  padding-top: 18rpx;
+  text-align: center;
+  color: #7C6E55;
+  border-top: 1rpx solid rgba(138, 117, 48, 0.3);
+}
+
+/* 「带回墙上」：发丝框附注行，印记改发丝方印 */
+.rp-return {
+  margin-top: 28rpx;
+  border-color: rgba(196, 167, 108, 0.3);
+  border-radius: var(--radius-sm);
+  background: none;
+  box-shadow: none;
+}
+
+.rp-return-seal {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 4rpx;
+  background: none;
+  border: 1rpx solid rgba(196, 167, 108, 0.6);
+  box-shadow: none;
+}
+
+.rp-return-seal-t {
+  font-weight: 500;
+  color: var(--brass-300);
+}
+
+.rp-return-text {
+  color: var(--color-text-body);
 }
 
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */

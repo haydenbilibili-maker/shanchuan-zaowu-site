@@ -208,7 +208,10 @@ function ruleR2(relPath, src, kind) {
 const R3_CONFIRMED_SINGLE = {
   'subpackages/feature/wish-labels/index.wxss':
     '两处 .wl-primary：一处是展品页主按钮，一处**只**在写签弹层内（`.wl-sheet` 由 wx:if="{{composeOpen}}" 控制），' +
-    '且弹层打开时同屏有 `.wl-mask {{composeOpen ? \'is-on\' : \'\'}}` 全屏遮罩 —— 可见的主行动仍只有一枚。2026-10-14 核实。'
+    '且弹层打开时同屏有 `.wl-mask {{composeOpen ? \'is-on\' : \'\'}}` 全屏遮罩 —— 可见的主行动仍只有一枚。2026-10-14 核实。',
+  'subpackages/plays/play-qian/index.wxss':
+    '`.rp-cta.is-primary, .rp-act.is-primary` 一条规则两个选择器：「摇一支」只在入口块（`wx:else`）、「写成心愿」只在结果块' +
+    '（`wx:elif="{{stage === \'result\'}}"`），两块互斥，同屏只有一枚；分享为描边次级。2026-10-15 核实。'
 }
 
 /** R3 一屏一个主按钮 —— 只判**同一父节点下的并列**实心金（页面级计数静态不可判） */
