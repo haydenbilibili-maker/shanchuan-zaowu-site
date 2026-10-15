@@ -432,6 +432,8 @@ Page(withAppModal({
           originalShippingFeeDisplay: catalogFee.toFixed(2),
           discountAmount: hidePriceForViewer ? 0 : discountAmt,
           couponValue: hidePriceForViewer ? 0 : coupon,
+          // 只给账单行显示用：与其它金额同为两位小数（原先「- ¥ 20」挨着「¥ 18.00」）
+          couponValueDisplay: hidePriceForViewer ? '0.00' : coupon.toFixed(2),
           discountRate: data.discountRate || 1.0,
           discountText: formatDiscount(data.discountRate || 1.0),
 

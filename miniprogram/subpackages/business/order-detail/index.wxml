@@ -219,7 +219,7 @@
       </view>
       <view class="f-row highlight" wx:if="{{order.couponValue > 0}}">
         <text>礼券抵扣</text>
-        <text>- ¥ {{order.couponValue}}</text>
+        <text>- ¥ {{order.couponValueDisplay || order.couponValue}}</text>
       </view>
       
       <view class="f-row">

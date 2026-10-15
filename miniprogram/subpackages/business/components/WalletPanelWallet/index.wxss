@@ -59,8 +59,29 @@
 }
 
 .sv-pkg-tile.is-on {
+  position: relative;
   border-color: var(--brass-400);
   background: rgba(196, 167, 108, 0.1);
+  box-shadow: 0 0 0 1rpx rgba(196, 167, 108, 0.55);
+}
+/* 选中角标（2026-10-15）：决定付多少钱的那一格，只靠一圈描边太弱 —— 右下角一枚金底小勾 */
+.sv-pkg-tile.is-on::after {
+  content: '✓';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 36rpx;
+  height: 32rpx;
+  border-radius: var(--radius-md) 0 var(--radius-md) 0;
+  background: var(--brass-400);
+  color: var(--color-bg);
+  font-size: var(--fs-20);
+  line-height: 32rpx;
+  text-align: center;
+}
+/* 档位为奇数时最后一格独占一行（2026-10-15）：三档时第三格不再孤零零缩在左下 */
+.sv-pkg-tile:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 
 .sv-pkg-press {

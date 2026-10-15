@@ -309,7 +309,7 @@ view, text, image, button { box-sizing: border-box; }
   display: flex;
   align-items: baseline;
   gap: 12rpx;
-  font-size: var(--fs-28);
+  font-size: var(--fs-22);   /* 与账单其它行同字号（2026-10-15）；免邮仍走下面的 gold-txt 放大成高光 */
 }
 .shipping-fee-cell.gold-txt { font-size: var(--fs-28); }
 .shipping-fee-strike {
