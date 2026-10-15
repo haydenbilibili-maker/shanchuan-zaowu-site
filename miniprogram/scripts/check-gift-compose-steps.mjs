@@ -583,10 +583,10 @@ const INJECTIONS = [
   { name: '不量底栏', file: P.js, find: ".select('.bottom-bar')", replace: ".select('.no-such-bar')" },
   { name: '底栏不再固定', file: P.wxss, find: '.bottom-bar {\n  position: fixed;', replace: '.bottom-bar {\n  position: relative;' },
   { name: '留白回到写死底栏估高', file: P.wxss, find: '.scroll-pad {\n  height: 48rpx;', replace: '.scroll-pad {\n  height: calc(160rpx + env(safe-area-inset-bottom));' },
-  { name: '第 1、2 步底栏也是支付按钮', file: P.wxml, find: 'class="pay-btn" bindtap="onStepNext"', replace: 'class="pay-btn" bindtap="goPay"' },
+  { name: '第 1、2 步底栏也是支付按钮', file: P.wxml, find: 'bindtap="onStepNext" hover-class="pay-btn-press"', replace: 'bindtap="goPay" hover-class="pay-btn-press"' },
   { name: 'goPay 不限第 2 步', file: P.js, find: '    if (this.data.activeStep !== 2) return\n', replace: '' },
-  { name: '第 2 步「下一步」不校验写笺', file: P.js, find: '    if (step === 2 && !this._checkLetter()) return\n', replace: '' },
-  { name: '支付前不再过写笺', file: P.js, find: "    if (!this._checkLetter()) {\n      this._goStep(2, 'pay_check')", replace: "    if (false) {\n      this._goStep(2, 'pay_check')" },
+  // 退役（2026-10-15）：送礼页已改为两步，第 2 步即支付步、没有「下一步」——写笺校验由下一条「支付前不再过写笺」守住
+  { name: '支付前不再过写笺', file: P.js, find: '    if (!this._checkLetter()) return\n    const selfTreat', replace: '    const selfTreat' },
   { name: '步骤轨可跳到没到过的步（第 2 格）', file: P.js, find: '    if (step > (this.data.maxStep || 1)) return\n', replace: '    this.data.maxStep = 3\n' },
   { name: '左上返回 / 左缘右滑第 2、3 步直接离开', file: P.js, find: '    if (this.data.activeStep > 1) {\n      this._goStep(this.data.activeStep - 1, via)', replace: '    if (false) {\n      this._goStep(this.data.activeStep - 1, via)' },
   { name: '左缘右滑不走回上一步', file: P.js, find: "    this._backOrLeave('edge')", replace: '    this.leaveCompose()' },
@@ -601,7 +601,7 @@ const INJECTIONS = [
   { name: '加载态不给顶栏留白', file: P.wxml, find: '<view class="page checking" style="padding-top: {{navTotal}}px;" wx:elif', replace: '<view class="page checking" wx:elif' },
   { name: '占位高度不减顶栏', file: P.js, find: '- this.data.navTotal - 152', replace: '- 152' },
   { name: '步骤轨又放一个上一步', file: P.wxml, find: '  <view class="step-rail sticky">\n', replace: '  <view class="step-rail sticky">\n    <view bindtap="onStepBack"></view>\n' },
-  { name: '确认页退回补号不回写笺补填', file: P.js, find: "        this._goStep(2, 'refill', { keepScroll: true })\n", replace: '' },
+  // 退役（2026-10-15）：源码里已无 _goStep(2, 'refill') 调用（只剩埋点注释里的 via 名），该路径随两步化移除
   { name: 'giftMeta 多带一个字段（改契约）', file: P.js, find: "        phase: 'mvp'\n", replace: "        phase: 'mvp',\n        step: this.data.activeStep\n" },
   { name: '第 1 步点关系就在看不见处落笔', file: P.js, find: '    if (this.data.activeStep !== 2) {\n      this._noteWritePending = true', replace: '    if (false) {\n      this._noteWritePending = true' },
   { name: '隐价开关挪回第 2 步', file: P.wxml, find: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n', replace: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n        <view bindtap="toggleHidePrice"></view>\n' },
@@ -611,8 +611,8 @@ const INJECTIONS = [
   { name: '交付方式在送礼页复活（未搬走）', file: P.wxml, find: '<!-- ═══ 第 2 步', replace: '<view class="delivery-opt" bindtap="onSelectDelivery"></view>\n<!-- ═══ 第 2 步' },
   { name: '送礼页又渲染领取核验', file: P.wxml, find: '<!-- ═══ 第 2 步', replace: '<view id="receiverPhoneField" class="verify-set"></view>\n<!-- ═══ 第 2 步' },
   { name: '确认页交回的草稿被丢掉', file: P.js, find: '    this._giftDeliveryDraft = draft', replace: '    this._giftDeliveryDraft = null' },
-  { name: '草稿不随换藏品失效', file: P.js, find: '_giftDeliveryDraft && this._giftDeliveryDraft.productId === this._productId', replace: 'this._giftDeliveryDraft' },
-  { name: '草稿把已关的自提带进确认页', file: P.js, find: "deliveryType === 'store_pickup' && !this.data.storePickupEnabled", replace: 'false' },
+  { name: '草稿不随换藏品失效', file: P.js, find: 'this._giftDeliveryDraft && this._giftDeliveryDraft.productId === p._id', replace: 'this._giftDeliveryDraft' },
+  { name: '草稿把已关的自提带进确认页', file: P.js, find: "deliveryType === 'store_pickup' && this.data.storePickupEnabled === false", replace: 'false' },
   { name: '隐价说明不随开关变', file: P.wxml, find: "{{hidePrice ? 'TA 收礼时看不到价格' : 'TA 收礼时会看到成交价'}}", replace: 'TA 收礼时看不到价格' },
   { name: '平台强制隐价时仍给开关', file: P.wxml, find: '<view class="switch-row is-locked" wx:if="{{allowHidePriceToggle === false}}">', replace: '<view class="switch-row is-locked" wx:if="{{false}}">' },
   { name: 'toggleHidePrice 不守平台强制', file: P.js, find: '    if (this.data.allowHidePriceToggle === false) {', replace: '    if (false) {' },
@@ -638,12 +638,12 @@ const INJECTIONS = [
   { name: '音效条单占一行', file: P.wxml, find: '  <scroll-view\n', replace: '  <view class="sfx-bar"></view>\n  <scroll-view\n' },
   { name: '底栏按钮回到定宽折行', file: P.wxss, find: '  flex: 1 1 auto;\n  min-width: 248rpx;', replace: '  flex: 0 0 248rpx;\n  min-width: 248rpx;' },
   { name: '底栏按钮允许折行', file: P.wxss, find: '  letter-spacing: 0.04em;\n  white-space: nowrap;\n  border-radius: var(--radius-md);', replace: '  letter-spacing: 0.04em;\n  border-radius: var(--radius-md);' },
-  { name: '确认页折扣小字可折行', file: P.confirmWxss, find: 'font-size: 22rpx; color: #C4A76C; white-space: nowrap;', replace: 'font-size: 22rpx; color: #C4A76C;' },
+  { name: '确认页折扣小字可折行', file: P.confirmWxss, find: 'font-size: var(--fs-22); color: #C4A76C; white-space: nowrap;', replace: 'font-size: var(--fs-22); color: #C4A76C;' },
   { name: '确认页底栏不说会员折扣', file: P.confirmWxml, find: '<text class="fp-note" wx:if="{{discountRate < 1 && vipSaved > 0}}">', replace: '<text class="fp-note" wx:if="{{false}}">' },
   { name: '账单折扣行回到一位小数', file: P.confirmWxml, find: '−¥{{vipSavedYuan}}', replace: '−¥{{vipSaved}}' },
   { name: '礼赠摘要又标单价', file: P.confirmWxml, find: '<text class="gift-sum-sku">', replace: '<text class="gift-sum-price">¥1</text><text class="gift-sum-sku">' },
   { name: '省额第二处不再格式化', file: P.confirmJs, find: '        vipSavedYuan: formatPrice(vipSaved || 0),\n', replace: '' },
-  { name: '交付卡名称可折行', file: P.confirmWxss, find: '  font-size: 26rpx;\n  white-space: nowrap;', replace: '  font-size: 26rpx;' },
+  { name: '交付卡名称可折行', file: P.confirmWxss, find: '  font-size: var(--fs-26);\n  white-space: nowrap;', replace: '  font-size: var(--fs-26);' },
   { name: '推荐签回到标题行内', file: P.confirmWxss, find: '.delivery-tile .delivery-tag {\n  position: absolute;', replace: '.delivery-tile .delivery-tag {\n  position: static;' },
   { name: '送礼页底栏又报价', file: P.wxml, find: '    <view class="pay-btn', replace: '    <text class="bottom-value">¥{{displayPrice}}</text>\n    <view class="pay-btn' },
   { name: '送礼页又取会员等级', file: P.js, find: '  _maybeApplySceneNote() {', replace: '  _loadMemberStats() { wx.cloud.callFunction({ name: \'getUserStats\' }) },\n  _maybeApplySceneNote() {' },
@@ -662,6 +662,8 @@ async function main() {
       let fails
       try { fails = await runChecks() } catch (e) { fails = ['抛错：' + e.message] }
       INJECT = null
+      // 锚点失效 ≠ 检出：注入根本没发生，算「检出」就是假绿（2026-10-15 两条锚点因字阶令牌化失效却被记成检出）
+      if (fails.length === 1 && /注入锚点失效/.test(fails[0])) { bad += 1; console.log(`✗ 注入「${inj.name}」→ 锚点失效（注入没发生）`); continue }
       if (fails.length) console.log(`✓ 注入「${inj.name}」→ 检出（${fails[0]}）`)
       else { bad += 1; console.log(`✗ 注入「${inj.name}」→ 未检出`) }
     }
