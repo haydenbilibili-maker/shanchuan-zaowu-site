@@ -1767,6 +1767,9 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 /* ── 价格行右侧：与价格基线对齐；折扣改为更强的铜金实心标签 ───────────── */
 .price-row { align-items: flex-end; }
+/* ¥ 与数字同一基线（2026-10-15）：整行 flex-end 让 28rpx 的 ¥ 贴到 64rpx 数字行框的底，比数字基线低一截、还多隔 8rpx */
+.price-row > .symbol, .price-row > .num, .price-row > .price-from, .price-row > .vip-box { align-self: baseline; }
+.price-row > .symbol { margin-right: 0; }
 .price-side { align-items: flex-end; gap: 8rpx; }
 .discount-chip {
   padding: 3rpx 14rpx;

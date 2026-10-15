@@ -207,8 +207,9 @@ view, text { box-sizing: border-box; }
   white-space: nowrap;
   font-size: var(--fs-22);
   line-height: 1;
-  color: #1A1814;
-  background: var(--color-primary);
+  color: var(--color-primary);
+  background: transparent;
+  border: 1rpx solid rgba(196, 167, 108, 0.6);
   padding: 14rpx 22rpx;
   border-radius: var(--radius-md);
   font-weight: 600;
@@ -220,13 +221,21 @@ view, text { box-sizing: border-box; }
   color: var(--color-text-secondary);
 }
 .c-status.clickable:active {
-  background: #A8903C;
-  opacity: 0.92;
+  background: rgba(196, 167, 108, 0.14);
 }
 /* 主操作按钮：用 hover-class 而不是只靠 :active（部分机型 :active 不触发，点了没反馈） */
 .c-status-press {
-  background: #A8903C;
-  opacity: 0.92;
+  background: rgba(196, 167, 108, 0.14);
+}
+/* 纪律 03「一屏一个主按钮」（2026-10-15）：三张券三颗实心金按钮叠成一列 → 只给临期券实心，其余描边 */
+.coupon-card.is-soon .c-status {
+  color: var(--color-bg);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.coupon-card.is-soon .c-status-press,
+.coupon-card.is-soon .c-status.clickable:active {
+  background: var(--brass-500);
 }
 
 .texture {
@@ -593,8 +602,14 @@ view, text { box-sizing: border-box; }
   line-height: 1;
   padding: 6rpx 10rpx;
   border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  border: 1rpx solid var(--color-border);
+  background: rgba(255, 255, 255, 0.03);
+}
+/* 提醒色只留给真的临期：每张券都是橙色 = 没有一张显得急 */
+.coupon-card.is-soon .c-hint {
   color: #E9A23B;
-  border: 1rpx solid rgba(233, 162, 59, 0.4);
+  border-color: rgba(233, 162, 59, 0.4);
   background: rgba(233, 162, 59, 0.1);
 }
 

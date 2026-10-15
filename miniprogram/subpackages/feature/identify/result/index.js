@@ -156,7 +156,11 @@ Page({
             ? '衍生品'
             : `${galleryCategory}馆`
           : ''
-      const alternatives = (doc.species_info && doc.species_info.alternatives) || []
+      // 备选只带 0–1 的 confidence；页面显示用的百分比在这里算（原先 confidencePct 从未赋值，备选置信度一直空白）
+      const alternatives = ((doc.species_info && doc.species_info.alternatives) || []).map((a) => {
+        const c = a && typeof a.confidence === 'number' ? Math.max(0, Math.min(1, a.confidence)) : null
+        return c === null ? a : { ...a, confidencePct: `${Math.round(c * 100)}%` }
+      })
       const relatedProducts = doc.related_products_snapshot || []
       const relatedWiki = doc.related_wiki_snapshot || []
       const speciesInfo = doc.species_info || {}

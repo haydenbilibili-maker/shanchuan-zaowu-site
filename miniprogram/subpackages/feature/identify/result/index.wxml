@@ -67,7 +67,10 @@
             <text class="alt-zh">{{alt.species_name_zh || alt.name_zh || '未命名'}}</text>
             <text class="alt-latin" wx:if="{{alt.species_name_latin || alt.name_latin}}">{{alt.species_name_latin || alt.name_latin}}</text>
           </view>
-          <text class="alt-conf" wx:if="{{alt.confidence}}">{{alt.confidencePct || ''}}</text>
+          <view class="alt-conf-col" wx:if="{{alt.confidencePct}}">
+            <text class="alt-conf">{{alt.confidencePct}}</text>
+            <view class="alt-bar" aria-hidden="true"><view class="alt-bar-fill" style="width: {{alt.confidencePct}};"></view></view>
+          </view>
         </view>
       </view>
     </view>
