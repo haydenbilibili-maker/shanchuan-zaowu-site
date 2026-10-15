@@ -592,18 +592,21 @@ page {
   align-items: center;
   justify-content: center;
   gap: 14rpx;
-  border: 1px solid rgba(138, 117, 48, 0.45);
+  /* 2026-10-15 礼赠仪式感：录音钮在深色信封壳上，原 65% 浅纸底读成一块灰色禁用条 →
+     黄铜虚线描边（与「马上有 · 心愿签」的录音条同一语言）；实心金仍只给底栏主按钮 */
+  border: 1rpx dashed rgba(196, 167, 108, 0.5);
   border-radius: var(--radius-md);
-  background: rgba(250, 246, 237, 0.65);
+  background: rgba(196, 167, 108, 0.04);
   font-size: var(--fs-26);
-  color: var(--brass-700);
+  color: var(--brass-300);
   letter-spacing: 0.04em;
 }
 
 .voice-hold.recording {
+  border-style: solid;
   border-color: var(--color-primary);
   background: rgba(196, 167, 108, 0.12);
-  color: #6B5A24;
+  color: #F0E2B8;
 }
 
 .voice-hold.will-cancel {

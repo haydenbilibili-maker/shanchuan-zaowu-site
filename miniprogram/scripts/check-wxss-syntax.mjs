@@ -74,6 +74,15 @@ function inspect(abs) {
   for (const sel of uncoveredInfinite(src)) {
     problems.push(`A8 无限动画 ${sel} 没有 prefers-reduced-motion 减弱分支（在同文件补 @media (prefers-reduced-motion: reduce) { ${sel} { animation: none; } }）`)
   }
+  // A9：custom-tab-bar 渲染在**页面树之外**，app.wxss 的 `page{}` 令牌够不到它 ——
+  //   写 var(--fs-20) 等于未定义：字号整条失效、回落成默认大字（2026-10-15 真事故：P3 字阶令牌化把
+  //   底部 tab 的 20rpx/18rpx 换成令牌，真机字号变大）。本文件只许用自己定义的变量。
+  if (/[\\/]custom-tab-bar[\\/]/.test(abs)) {
+    const own = new Set([...src.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]))
+    for (const m of src.matchAll(/var\(\s*(--[\w-]+)/g)) {
+      if (!own.has(m[1])) problems.push(`A9 custom-tab-bar 用了页面令牌 var(${m[1]})（tab 栏在页面树之外，取不到 app.wxss 的 page{} 变量 → 声明失效）：请写字面量`)
+    }
+  }
   return problems
 }
 
@@ -122,13 +131,16 @@ if (process.argv.includes('--selftest')) {
     { name: '残留孤儿 to{…}（本次真事故）', inject: '\nto { opacity: 1; transform: translateY(0) rotate(0); }\n}\n' },
     { name: '少一个收尾 }', inject: '\n.x-orphan { color: red;\n' },
     { name: 'font-family 里未加引号的中文族名', inject: '\n.x-font { font-family: KaiTi, 楷体, serif; }\n' },
-    { name: 'A8 新增无限动画但没有减弱动效分支', inject: '\n.x-spin { animation: x-spin 1s linear infinite; }\n' }
+    { name: 'A8 新增无限动画但没有减弱动效分支', inject: '\n.x-spin { animation: x-spin 1s linear infinite; }\n' },
+    { name: 'A9 custom-tab-bar 用页面令牌（底部 tab 字号变大真事故）', file: join(MP, 'custom-tab-bar/index.wxss'), inject: '\n.tab-text { font-size: var(--fs-20); }\n' }
   ]
   for (const c of cases) {
-    writeFileSync(target, orig + c.inject)
+    const t = c.file || target
+    const o = c.file ? readFileSync(t, 'utf8') : orig
+    writeFileSync(t, o + c.inject)
     const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
-    writeFileSync(target, orig)
-    if (readFileSync(target, 'utf8') !== orig) { console.log(`✗ 未能逐字还原`); bad += 1; continue }
+    writeFileSync(t, o)
+    if (readFileSync(t, 'utf8') !== o) { console.log(`✗ 未能逐字还原`); bad += 1; continue }
     if (r.status === 0) { console.log(`✗ 注入未被检出：${c.name}`); bad += 1 } else console.log(`  ✓ 已检出：${c.name}`)
   }
   if (bad) { console.log(`✗ 自检失败：${bad} 项`); process.exit(1) }

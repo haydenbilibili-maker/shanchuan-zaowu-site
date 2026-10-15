@@ -179,6 +179,26 @@ const SCENES = [
       cardSignature: '小林', revealed: true, ritePhase: 'done', isInvite: true, hasVoice: true, voiceDurationLabel: '0:12', hidePrice: true, specimenHint: '玻璃罩 · 小号'
     }
   },
+  {
+    name: 'gift-hub', h: 2300, wxml: 'subpackages/feature/gift/hub/index', data: {
+      allowed: true, paneReady: true, activeScene: 'birthday', sceneGuide: '生日礼重在「被记得」：挑一件 TA 会每天看见的。', loadingProducts: false, productsError: '',
+      scenes: ['乔迁', '新婚', '生日', '纪念日', '升学', '毕业', '新工作', '致谢'].map((label, i) => ({ key: i === 2 ? 'birthday' : 'k' + i, label })),
+      products: [
+        { _id: 'p1', title: '光明女神闪蝶 · 玻璃罩', cover: P[0], priceLabel: '388', matchSource: 'scene', themeName: '晨雾', themeNote: '清晨薄雾里的一抹蓝' },
+        { _id: 'p2', title: '血漪蛱蝶 · 穹顶', cover: P[1], priceLabel: '268', matchSource: 'scene' },
+        { _id: 'p3', title: '大蓝闪蝶 · 原木框', cover: P[2], priceLabel: '520', matchSource: 'fallback' },
+        { _id: 'p4', title: '蒲公英 · 玻璃罩', cover: P[3], priceLabel: '198', matchSource: 'scene', themeName: '风起', themeNote: '一吹就散的愿望' }
+      ]
+    }
+  },
+  { name: 'gift-hub-idle', h: 2000, wxml: 'subpackages/feature/gift/hub/index', base: 'gift-hub', data: { activeScene: '', sceneGuide: '', forWhom: '阿禾' } },
+  {
+    name: 'gift-success', h: 1900, wxml: 'subpackages/feature/gift/success/index', data: {
+      ready: true, heroOverline: 'GIFT SEALED', heroTitle: '礼已备好', heroDesc: '礼笺已封好，交给 TA 后由 TA 亲手拆开、填写地址。', expireHint: '7 天内未拆封将自动退回',
+      cardBody: '愿你的每个清晨都像这只蝴蝶一样，有光。', cardSignature: '小林', hasVoice: true, voiceDurationLabel: '0:12', shareCta: '把这份心意交给 TA', canShare: true,
+      canProxyAddress: true, selfTreat: false, canNudge: false, voucherReady: true, verify: { receiverVerify: true, phoneTail: '0012', editable: true }, verifyLabel: '受礼人手机号已核验'
+    }
+  },
   { name: 'gift-compose-2', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose', data: { activeStep: 2, maxStep: 2, cardFocused: false, signed: true, sigJustSigned: false } },
   { name: 'order-pending', h: 2300, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: { order: { _id: 'o2', serialNo: 'SH20261015003', status: 'pending_pay', totalPrice: '468.00', originalPrice: '468.00', discountRate: 1, couponValue: 20, shippingFee: 18, shippingFeeDisplay: '18.00', address: { name: '林', phone: '138****0012' }, addressLine: '上海市徐汇区漕溪北路 ** 号', products: [{ _id: 'p3', title: '蓝闪蝶 · A1 博物级', latin: 'Morpho menelaus', price: '468.00', count: 1, image: P[2] }] }, stampText: '待付款', stampClass: 'warn', payBtnLabel: '付款入藏', hasTracking: false } },
   { name: 'gift-receive-done', h: 1700, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, addressDone: true, phoneMasked: '138****0012', addressMaskedLine: '上海市徐汇区 ***' } },
