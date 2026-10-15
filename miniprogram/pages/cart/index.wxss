@@ -753,6 +753,9 @@ page {
 
 /* 选券抽屉：形态 / 头部 / 行 / 单选全取 app.wxss 的 ui-pop-*（docs/弹层视觉规范_2026-10-13.md）；高度在 wxml 按条数给 */
 .sheet-list { width: 100%; box-sizing: border-box; }
+/* 礼券弹层贴底：全局 TabBar（z 9999）盖住了面板底部约 120rpx，列表末段（及其触摸区）落在 TabBar 下，
+   表现为「选择礼券滑不动」。面板底部让出 TabBar 高度，列表整段可触达。 */
+.coupon-mask .ui-pop-sheet { padding-bottom: var(--tabbar-offset); }
 
 /* === 需求 1：结账台「顺手带走一件」（吧台口香糖位） ===
  * 放在 .checkout-bar 内部 → 随结算栏一起固定在底部，不随清单滚走；

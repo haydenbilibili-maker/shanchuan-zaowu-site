@@ -304,7 +304,7 @@
   </view>
 
   <!-- 优惠券弹窗 -->
-  <view class="ui-pop-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal" catchtouchmove="true">
+  <view class="ui-pop-mask coupon-mask" wx:if="{{showCouponModal}}" bindtap="closeCouponModal" catchtouchmove="true">
     <view class="ui-pop-sheet" catchtap="true">
       <view class="ui-pop-grip"></view>
       <view class="ui-pop-head">
