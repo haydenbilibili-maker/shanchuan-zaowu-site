@@ -356,7 +356,7 @@ if (process.argv.includes('--selftest')) {
     ['首页回退本页 -press 类', 'homeWxss', (t) => t + '\n.probe-card-press { opacity: 0.86; }\n'],
     ['共享骨架丢 bar 行', 'appWxss', (t) => t.replace(/\n\.ui-sk-line\.bar \{[^\n]*/, '')],
     ['工坊卡片说明退回 muted', 'atelierWxss', (t) => t.replace(/(\n\.order-tile-desc \{[^}]*?color: )var\(--color-text-secondary\)/, '$1var(--color-text-muted)')],
-    ['详情礼赠说明退回 muted', 'detailWxss', (t) => t.replace('.gift-panel-sub { font-size: 22rpx; color: var(--color-text-secondary); }', '.gift-panel-sub { font-size: 22rpx; color: var(--color-text-muted); }')],
+    ['详情礼赠说明退回 muted', 'detailWxss', (t) => t.replace('.gift-panel-sub { font-size: var(--fs-22); color: var(--color-text-secondary); }', '.gift-panel-sub { font-size: 22rpx; color: var(--color-text-muted); }')],
     ['首页滚动区退回 calc(100vh - 底栏)', 'homeWxss', (t) => t.replace('.main-scroll {\n  flex: 1;\n  height: 0;', '.main-scroll {\n  height: calc(100vh - var(--tabbar-offset));')],
     ['首页容器去掉 100vh 裁切', 'homeWxss', (t) => t.replace('.container {\n  height: 100vh;\n', '.container {\n')],
     ['单页模式滚动区写回 100vh', 'homeWxss', (t) => t + '\n.container.is-single-page .main-scroll {\n  height: 100vh;\n}\n'],

@@ -102,8 +102,8 @@ function selftest() {
     {
       name: '学名不再弱化（opacity 去掉）',
       file: WXSS,
-      from: '  font-size: 24rpx;\n  opacity: 0.72;',
-      to: '  font-size: 24rpx;'
+      from: '  font-size: var(--fs-24);\n  opacity: 0.72;',
+      to: '  font-size: var(--fs-24);'
     },
     {
       name: '三级规范注释被删（规范失效）',

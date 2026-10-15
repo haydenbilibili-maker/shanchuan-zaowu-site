@@ -312,7 +312,7 @@ export function run(read = (f) => readFileSync(join(MP, f), 'utf8'), files = nul
 function selftest() {
   const real = (f) => readFileSync(join(MP, f), 'utf8')
   const cases = [
-    ['已迁移弹层回退为自写遮罩', (f) => f === 'pages/cart/index.wxml' ? real(f).replace('class="ui-pop-mask" wx:if="{{showCouponModal}}"', 'class="modal-mask" wx:if="{{showCouponModal}}"') : real(f), 'ui-pop-mask'],
+    ['已迁移弹层回退为自写遮罩', (f) => f === 'pages/cart/index.wxml' ? real(f).replace('class="ui-pop-mask coupon-mask" wx:if="{{showCouponModal}}"', 'class="modal-mask coupon-mask" wx:if="{{showCouponModal}}"') : real(f), 'ui-pop-mask'],
     ['牌面脱离 ui-pop-sheet', (f) => f === 'subpackages/feature/detail/index.wxml' ? real(f).replace('class="ui-pop-sheet sku-panel"', 'class="sku-panel"') : real(f), 'ui-pop-sheet'],
     ['页面新增一个自写遮罩', (f) => f === 'pages/cart/index.wxss' ? `${real(f)}\n.new-mask { position: fixed; inset: 0; background: rgba(0,0,0,.6); }\n` : real(f), '自写遮罩'],
     ['零件改用回弹缓动', (f) => f === 'app.wxss' ? real(f).replace('animation: ui-pop-rise var(--dur-base) var(--ease-out-soft) both;', 'animation: ui-pop-rise 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;') : real(f), '回弹'],

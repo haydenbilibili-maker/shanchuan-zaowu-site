@@ -505,8 +505,8 @@ function selftest() {
     {
       name: '礼笺字体退回只依赖 var()（iOS 会落回默认字体）',
       file: COMPOSE_WXSS,
-      from: "  font-family: 'ShanhaiHand', \"HanziPen SC\", \"Hannotate SC\", \"STKaiti\", \"Kaiti SC\", KaiTi, \"\u6977\u4f53\", \"Songti SC\", serif;\n  font-size: 28rpx;",
-      to: "  font-family: var(--font-hand);\n  font-size: 28rpx;"
+      from: "  font-family: 'ShanhaiHand', \"HanziPen SC\", \"Hannotate SC\", \"STKaiti\", \"Kaiti SC\", KaiTi, \"\u6977\u4f53\", \"Songti SC\", serif;\n  font-size: var(--fs-28);",
+      to: "  font-family: var(--font-hand);\n  font-size: var(--fs-28);"
     },
     {
       name: '印刷卡丢掉题记带（印出来少主题名）',

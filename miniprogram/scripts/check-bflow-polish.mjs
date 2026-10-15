@@ -675,7 +675,7 @@ const INJECTIONS = [
   ['B16 myReview 带出 openid', F.cmFn, (s) => s.replace("status: comment.status || 'pending',", "status: comment.status || 'pending',\n    userId: comment.userId,")],
   ['B16 取最新回到字符串比较', F.cmFn, (s) => s.replace('toMs(c.updatedAt || c.createdAt) > toMs(prev.updatedAt || prev.createdAt)', "String(c.updatedAt || c.createdAt || '') > String(prev.updatedAt || prev.createdAt || '')")],
   ['B16 藏品入口丢按压', F.cmWxml, (s) => s.replace('bindtap="goProduct"\n              hover-class="tap-press"', 'bindtap="goProduct"')],
-  ['B16 说明字回到 muted', F.cmWxss, (s) => s.replace('.review-note {\n  font-size: 24rpx;\n  color: #A09A90;', '.review-note {\n  font-size: 24rpx;\n  color: #6B6560;')],
+  ['B16 说明字回到 muted', F.cmWxss, (s) => s.replace('.review-note {\n  font-size: var(--fs-24);\n  color: #A09A90;', '.review-note {\n  font-size: 24rpx;\n  color: #6B6560;')],
   ['B17 文字 review（不通过）也自动展示', F.cmFn, (s) => s.replace("  else if (textCheck.needReview) reviewReasons.push('text_suggest_review')\n", '')
     .replace("else if (textCheck.suggest !== 'pass')", "else if (!['pass', 'review'].includes(textCheck.suggest))")],
   ['B17 文字结果不确定当通过', F.cmFn, (s) => s.replace("  else if (textCheck.suggest !== 'pass') reviewReasons.push('text_result_unknown')\n", '')],
