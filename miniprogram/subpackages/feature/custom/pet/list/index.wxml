@@ -21,7 +21,7 @@
     >
       <view class="card-top">
         <text class="pet-name">{{item.petTitle}}</text>
-        <text class="status-badge">{{item.statusLabel}}</text>
+        <text class="status-badge is-{{item.status}}">{{item.statusLabel}}</text>
       </view>
       <text class="order-no">{{item.orderNo}}</text>
       <text class="craft-line" wx:if="{{item.craftName}}">{{item.craftName}}</text>

@@ -20,7 +20,7 @@
     <view class="status-card">
       <text class="overline">PET MEMORIAL</text>
       <text class="order-no">工单号 {{order.orderNo}}</text>
-      <text class="status-badge">{{statusLabel}}</text>
+      <text class="status-badge is-{{order.status}}">{{statusLabel}}</text>
       <text class="status-hint" wx:if="{{order.status === 'need_info' && needInfoNote}}">标本师评估时还需要您补充：{{needInfoNote}}。整理好后点下方「联系专员」发给我们即可。</text>
       <text class="status-hint" wx:elif="{{order.status === 'pending_review' || order.status === 'need_info'}}">意向已收到。标本师将通过电话或微信与您联络，请您注意接听或查看。</text>
       <text class="status-hint" wx:elif="{{order.status === 'declined'}}">很抱歉，这次我们没能承接。{{declineReason ? '原因：' + declineReason : ''}}如有疑问，可以点下方「联系专员」。</text>

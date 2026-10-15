@@ -72,6 +72,25 @@ const product = {
   skus: [{ id: 's1', specLabel: '玻璃罩 · 小号', stock: 6 }, { id: 's2', specLabel: '实木框', stock: 2 }]
 }
 
+
+const petSteps = [{ id: 1, label: '须知' }, { id: 2, label: '伙伴' }, { id: 3, label: '工艺' }, { id: 4, label: '交接' }, { id: 5, label: '确认' }]
+const petBase = {
+  loading: false, flagChecking: false, steps: petSteps, navPaddingRight: 100, headerHeight: 0,
+  serviceNoticePlates: [{ id: 'n1', title: '先评估，再报价', body: '提交意向后由标本师评估遗体状况与工艺可行性，确认前不收费。' }, { id: 'n2', title: '尽快冷藏', body: '离世后请用毛巾包裹放入冷冻层，避免反复解冻。' }],
+  crafts: [{ craftId: 'taxidermy', name: '仿生标本', desc: '还原生前姿态，适合猫犬等中小型伙伴', estimatedWeeks: '约 8–16 周' }, { craftId: 'skeletal', name: '骨骼标本', desc: '保留完整骨骼，木座陈列', estimatedWeeks: '约 6–10 周' }, { craftId: 'resin', name: '毛发树脂', desc: '少量毛发封存于树脂摆件', estimatedWeeks: '约 2–3 周' }],
+  speciesOptions: [{ id: 'cat', label: '猫' }, { id: 'dog', label: '犬' }, { id: 'bird', label: '鸟' }, { id: 'small', label: '小型宠物' }], species: 'cat',
+  weightRanges: [{ id: 'w1', label: '5kg 以下' }, { id: 'w2', label: '5–15kg' }, { id: 'w3', label: '15kg 以上' }], weightRange: 'w1',
+  storageOptions: [{ id: 'frozen', label: '已冷冻' }, { id: 'fridge', label: '冷藏中' }, { id: 'none', label: '未处理' }], storage: 'frozen',
+  photos: [P[4]], petName: '团子',
+  artisans: [{ id: 'a1', name: '林一', bio: '十二年哺乳类标本经验', avatar: P[1], priceDelta: 0, extraDays: 0 }, { id: 'a2', name: '周舟', bio: '擅长鸟类与小型宠物', avatar: P[0], priceDelta: 800, extraDays: 7 }],
+  craftId: 'taxidermy', artisanId: 'a1', artisanName: '林一',
+  poseOptions: [{ id: 'sleep', label: '安睡' }, { id: 'sit', label: '端坐' }, { id: 'custom', label: '指定姿态' }], pose: 'sleep',
+  intakeMethods: [{ id: 'store', label: '到店交接', desc: '工作室营业时间当面交接，标本师现场确认' }, { id: 'pickup', label: '上门接送', desc: '同城冷链上门', comingSoon: true, soonNote: '即将上线' }], intakeMethod: 'store', preferredDate: '2026-10-20',
+  previewLines: [{ label: '伙伴', value: '团子 · 猫 · 5kg 以下' }, { label: '工艺', value: '仿生标本 · 安睡' }, { label: '标本师', value: '林一' }, { label: '交接', value: '到店 · 10.20' }],
+  relationOptions: [{ id: 'owner', label: '主人' }, { id: 'family', label: '家人' }], relation: 'owner', contactName: '林', contactPhone: '13800000000'
+}
+const petMeta = (n) => ({ 1: { title: '开始之前', desc: '以下几件事，决定了这件记忆能否被好好留下。' }, 2: { title: '关于 TA', desc: '告诉标本师 TA 是谁、现在的状况。' }, 3: { title: '选择工艺', desc: '不同工艺的周期与呈现不同，可先选后改。' }, 5: { title: '确认意向', desc: '提交后专员会在 24 小时内联系你。' } })[n]
+
 const SCENES = [
   {
     name: 'detail', h: 3000, wxml: 'subpackages/feature/detail/index', data: {
@@ -142,6 +161,24 @@ const SCENES = [
   { name: 'order-pending', h: 2300, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: { order: { _id: 'o2', serialNo: 'SH20261015003', status: 'pending_pay', totalPrice: '468.00', originalPrice: '468.00', discountRate: 1, couponValue: 20, shippingFee: 18, shippingFeeDisplay: '18.00', address: { name: '林', phone: '138****0012' }, addressLine: '上海市徐汇区漕溪北路 ** 号', products: [{ _id: 'p3', title: '蓝闪蝶 · A1 博物级', latin: 'Morpho menelaus', price: '468.00', count: 1, image: P[2] }] }, stampText: '待付款', stampClass: 'warn', payBtnLabel: '付款入藏', hasTracking: false } },
   { name: 'gift-receive-done', h: 1700, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, addressDone: true, phoneMasked: '138****0012', addressMaskedLine: '上海市徐汇区 ***' } },
   { name: 'gift-receive-box', h: 1500, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { revealed: false, ritePhase: 'idle', letterToShown: false, letterBodyShown: false } },
+  { name: 'pet-1', h: 2000, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 1, currentStepMeta: petMeta(1) } },
+  { name: 'pet-2', h: 2200, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 2, currentStepMeta: petMeta(2) } },
+  { name: 'pet-3', h: 2400, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 3, currentStepMeta: petMeta(3) } },
+  { name: 'pet-5', h: 2000, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 5, currentStepMeta: petMeta(5) } },
+  {
+    name: 'pet-status', h: 1700, wxml: 'subpackages/feature/custom/pet/status/index', data: {
+      loading: false, loadError: false, orderId: 'po1', order: { orderNo: 'PM20261012003', status: 'quoted' }, statusLabel: '待确认报价', canConfirmQuote: true,
+      quoteLines: [{ label: '仿生标本 · 安睡', value: '¥ 3,800.00' }, { label: '指定标本师', value: '标准' }, { label: '预计周期', value: '8 周' }],
+      summaryLines: [{ label: '伙伴', value: '团子 · 猫' }, { label: '交接', value: '到店' }],
+      history: [{ time: '10.12 14:20', note: '标本师林一完成评估，已报价' }, { time: '10.12 11:30', note: '标本师已接单评估' }, { time: '10.12 09:05', note: '用户提交意向' }]
+    }
+  },
+  {
+    name: 'pet-list', h: 1300, wxml: 'subpackages/feature/custom/pet/list/index', data: {
+      loading: false, canApply: true,
+      orders: [{ _id: 'po1', status: 'quoted', petTitle: '团子', statusLabel: '待确认报价', orderNo: 'PM20261012003', craftName: '仿生标本', formatTime: '10.12', quoteText: '报价 ¥3,800' }, { _id: 'po2', status: 'in_production', petTitle: '豆豆', statusLabel: '制作中', orderNo: 'PM20260901011', craftName: '骨骼标本', formatTime: '09.01' }]
+    }
+  },
   {
     name: 'wallet-coupons', h: 1700, wxml: 'subpackages/business/components/WalletPanelCoupons/index', data: {
       loading: false, usableCouponCount: 3, expiringCount: 1, lockedCount: 1, closedCount: 2, passState: 'idle', memberNo: '0137',
@@ -172,6 +209,8 @@ async function shoot(s) {
   const missing = new Set()
   let wxml = inlineTemplates(read(join(MP, s.wxml + '.wxml')))
     .replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, '')
+    .replace(/<checkbox-group\b/g, '<view').replace(/<\/checkbox-group>/g, '</view>').replace(/<checkbox\b[^>]*?\/>/g, '<view class="__cb"></view>').replace(/<checkbox\b([^>]*)>[\s\S]*?<\/checkbox>/g, '<view class="__cb"></view>')
+    .replace(/<picker\b[^>]*>/g, '<view>').replace(/<\/picker>/g, '</view>')
     .replace(/<scroll-view\b/g, '<view').replace(/<\/scroll-view>/g, '</view>')
     .replace(/<sensitive-blur-gate\b[^>]*>/g, '<view>').replace(/<\/sensitive-blur-gate>/g, '</view>')
     .replace(/<swiper-item\b/g, '<view').replace(/<\/swiper-item>/g, '</view>').replace(/<swiper(?=[\s>])/g, '<view').replace(/<\/swiper>/g, '</view>')
@@ -185,6 +224,10 @@ div, span, img { box-sizing: border-box; }
 </style><style>${toHtmlCss(css)}</style><style>
 *, *::before, *::after { animation-play-state: paused !important; animation-delay: -10s !important; }
 [class*="mask"][class*="ui-pop"] { display: none !important; }
+.main-scroll { position: static !important; height: auto !important; top: auto !important; overflow: visible !important; }
+.sticky-header { position: relative !important; }
+.footer-bar { position: relative !important; }
+.__cb { display: inline-block; width: 28px; height: 28px; border: 1px solid #c4a76c; border-radius: 4px; vertical-align: middle; }
 </style></head><body>${body}</body></html>`
   const htmlPath = join(tmpdir(), `core-${s.name}-${process.pid}.html`)
   writeFileSync(htmlPath, html)

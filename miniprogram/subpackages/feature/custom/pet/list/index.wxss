@@ -59,3 +59,18 @@ page { background: #1A1814; color: #fff; }
   background: var(--color-primary); color: #1A1814; border-radius: var(--radius-md); font-size: var(--fs-28); border: none;
 }
 .btn-primary::after { border: none; }
+
+/* 状态分三档（2026-10-15）：轮到顾客做事的用铜框高亮，完成用成功色，结束态压暗；其余进行中保持原样 */
+.status-badge.is-need_info, .status-badge.is-quoted, .status-badge.is-awaiting_intake {
+  color: var(--brass-200);
+  background: rgba(196, 167, 108, 0.2);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.6);
+}
+.status-badge.is-ready, .status-badge.is-completed {
+  color: var(--color-success);
+  background: rgba(82, 183, 136, 0.12);
+}
+.status-badge.is-cancelled, .status-badge.is-declined {
+  color: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
