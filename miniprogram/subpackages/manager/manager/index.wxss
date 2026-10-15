@@ -453,7 +453,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   height: 32rpx;
   line-height: 32rpx;
   border-radius: 9999px;
-  background: #D64045;
+  background: var(--color-error-solid);
   color: #fff;
   font-size: 20rpx;
   font-family: var(--font-mono);
@@ -2124,7 +2124,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   pointer-events: none;
 }
 .om-btn.refund {
-  background: #D64045;
+  background: var(--color-error-solid);
   color: var(--color-text-primary);
 }
 .om-empty {
@@ -2296,7 +2296,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   font-weight: 500;
   letter-spacing: 0.04em;
   color: var(--color-text-primary);
-  background: #D64045;
+  background: var(--color-error-solid);
   border-radius: var(--radius-sm);
 }
 .om-evidence {
