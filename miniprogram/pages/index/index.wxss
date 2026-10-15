@@ -423,7 +423,7 @@ page {
 .op-latin { font-size: var(--fs-16); color: var(--color-text-secondary); font-style: italic; font-family: var(--font-latin); line-height: 1.2; flex-shrink: 0; }
 .op-bot { display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 4rpx; }
 .op-price { font-family: var(--font-mono); font-size: var(--fs-24); color: var(--color-primary); font-weight: bold; }
-.op-btn { width: 36rpx; height: 36rpx; border-radius: 50%; border: 1px solid #4D401A; color: var(--color-primary); font-size: var(--fs-24); display: flex; align-items: center; justify-content: center; }
+.op-btn { width: 36rpx; height: 36rpx; border-radius: 50%; border: 1px solid var(--brass-800); color: var(--color-primary); font-size: var(--fs-24); display: flex; align-items: center; justify-content: center; }
 .op-more-card { width: 100rpx; height: 340rpx; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--color-bg-card); border: 1px solid var(--color-bg-elevated); border-radius: var(--radius-md); flex-shrink: 0; }
 .op-more-card .txt { font-size: var(--fs-18); color: var(--color-primary); writing-mode: vertical-rl; letter-spacing: 4rpx; font-weight: bold; }
 .op-more-card .arr { color: var(--color-text-secondary); font-size: var(--fs-24); margin-top: 10rpx; }
@@ -449,7 +449,7 @@ page {
   justify-content: center;
   padding: 0 32rpx;
   background: var(--color-bg-card);
-  border: 1px dashed #4D401A;
+  border: 1px dashed var(--brass-800);
   border-radius: var(--radius-md);
   box-sizing: border-box;
 }
@@ -465,7 +465,7 @@ page {
   font-size: var(--fs-24);
   /* 2026-09-21 分子级审计：--color-text-muted 在不透明底 --color-bg-card 上仅 2.93（AA 需 4.5）（注记 PAG-2） */
   color: var(--color-text-secondary);
-  border: 1px dashed #4D401A;
+  border: 1px dashed var(--brass-800);
   border-radius: var(--radius-md);
 }
 
@@ -519,7 +519,7 @@ page {
 .tm-top { display: flex; justify-content: space-between; align-items: flex-start; }
 .tm-type { font-size: var(--fs-16); color: var(--color-bg); background: var(--color-primary); padding: 4rpx 12rpx; border-radius: 4rpx; font-weight: 900; letter-spacing: 2rpx; }
 .tm-status { font-size: var(--fs-20); color: var(--color-text-primary); border: 1px solid rgba(255,255,255,0.3); padding: 4rpx 16rpx; border-radius: var(--radius-lg); font-weight: bold; }
-.tm-status.active { color: #52B788; border-color: #52B788; background: rgba(82, 183, 136, 0.12); }
+.tm-status.active { color: var(--color-success); border-color: var(--color-success); background: rgba(82, 183, 136, 0.12); }
 .tm-mid { margin-top: 10rpx; }
 .tm-title { font-size: var(--fs-34); font-weight: 700; color: var(--color-text-primary); line-height: 1.2; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10rpx; }
 .tm-loc-row { display: flex; align-items: center; }

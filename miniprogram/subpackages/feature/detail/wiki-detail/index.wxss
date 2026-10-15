@@ -154,7 +154,7 @@ page { background: var(--color-bg); color: #fff; }
 /* 在原 CSS 基础上追加 */
 .intro-text {
   font-size: var(--fs-32); font-weight: 300; color: var(--color-primary); font-style: italic;
-  margin-bottom: 40rpx; padding: 0 20rpx; border-left: 2rpx solid #4D401A;
+  margin-bottom: 40rpx; padding: 0 20rpx; border-left: 2rpx solid var(--brass-800);
   line-height: 1.6;
 }
 

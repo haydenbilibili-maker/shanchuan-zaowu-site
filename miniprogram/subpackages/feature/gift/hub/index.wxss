@@ -183,8 +183,8 @@ page {
   height: 28rpx;
   border-radius: 50%;
   flex-shrink: 0;
-  border: 2px solid #C4A76C;
-  background: linear-gradient(145deg, #E0CFA3 0%, #C4A76C 48%, #8A7530 100%);
+  border: 2px solid var(--color-primary);
+  background: linear-gradient(145deg, #E0CFA3 0%, var(--color-primary) 48%, #8A7530 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -282,12 +282,12 @@ page {
 }
 
 .scene-chip.on {
-  border-color: #C4A76C;
+  border-color: var(--color-primary);
   background: rgba(196, 167, 108, 0.14);
 }
 
 .scene-chip.on text {
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 
@@ -323,7 +323,7 @@ page {
 .match-link {
   flex-shrink: 0;
   font-size: var(--fs-24);
-  color: #C4A76C;
+  color: var(--color-primary);
   letter-spacing: 0.04em;
   padding: 4rpx 0;
   border-bottom: 1rpx solid rgba(196, 167, 108, 0.4);
@@ -533,7 +533,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-size: var(--fs-24);
-  color: #C4A76C;
+  color: var(--color-primary);
   font-family: var(--font-mono);
 }
 
@@ -569,7 +569,7 @@ page {
   justify-content: center;
   font-size: var(--fs-22);
   font-weight: 600;
-  color: #C4A76C;
+  color: var(--color-primary);
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   border-radius: var(--radius-md);
   font-family: var(--font-mono);
@@ -608,7 +608,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(160deg, #D4BC85 0%, #C4A76C 48%, #A8903C 100%);
+  background: linear-gradient(160deg, #D4BC85 0%, var(--color-primary) 48%, #A8903C 100%);
   color: #1A1814;
   font-size: var(--fs-30);
   font-weight: 500;
@@ -628,7 +628,7 @@ page {
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: #C4A76C;
+  color: var(--color-primary);
   font-size: var(--fs-28);
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   border-radius: var(--radius-md);

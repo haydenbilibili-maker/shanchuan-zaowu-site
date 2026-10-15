@@ -17,7 +17,7 @@
 }
 .ps-btn.is-busy{opacity:0.6}
 .ps-btn-press{opacity:0.85}
-.ps-link{margin-top:24rpx;text-align:center;font-size:var(--fs-26);color:#C4A76C}
+.ps-link{margin-top:24rpx;text-align:center;font-size:var(--fs-26);color:var(--color-primary)}
 .ps-link-muted{color:#9A8F7C}
 
 /* 弹层规范（docs/弹层视觉规范_2026-10-13.md）：遮罩 / 牌面 / 抓手 / 眉标 / 主标 / 按钮取 ui-pop-*；抓手在内边距里，抵掉上边距 */

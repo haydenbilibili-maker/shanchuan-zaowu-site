@@ -71,7 +71,7 @@ page { background: #1A1814; color: #fff; }
 }
 @keyframes paper-edge {
   0%, 100% { border-color: #D4BC85; }
-  50% { border-color: #C4A76C; }
+  50% { border-color: var(--color-primary); }
 }
 @keyframes seal-breathe {
   0%, 100% { opacity: 0.45; transform: scale(0.96); }
@@ -234,7 +234,7 @@ page { background: #1A1814; color: #fff; }
   inset: 0;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 30% 24%, #F0E6CC 0%, #C4A76C 36%, #A8903C 62%, #8A7530 82%, #4D401A 100%);
+    radial-gradient(circle at 30% 24%, #F0E6CC 0%, var(--color-primary) 36%, #A8903C 62%, #8A7530 82%, var(--brass-800) 100%);
   border: 2px solid rgba(48, 40, 16, 0.72);
   box-sizing: border-box;
   box-shadow:
@@ -256,7 +256,7 @@ page { background: #1A1814; color: #fff; }
   inset: 20rpx;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 38% 30%, #E0CFA3 0%, #C4A76C 42%, #A8903C 78%, #6B5A24 100%);
+    radial-gradient(circle at 38% 30%, #E0CFA3 0%, var(--color-primary) 42%, #A8903C 78%, #6B5A24 100%);
   box-shadow:
     inset 0 2rpx 4rpx rgba(250, 246, 237, 0.28),
     inset 0 -2rpx 4rpx rgba(48, 40, 16, 0.18);
@@ -311,7 +311,7 @@ page { background: #1A1814; color: #fff; }
     ),
     linear-gradient(180deg, #EDE6D8 0%, #F2EDE4 28%, #EDE6D8 55%, #E8DFD0 100%);
   border: 1px solid #D4BC85;
-  border-top-color: #C4A76C;
+  border-top-color: var(--color-primary);
   border-radius: 0 0 16rpx 16rpx;
   box-sizing: border-box;
   box-shadow:
@@ -390,7 +390,7 @@ page { background: #1A1814; color: #fff; }
 .claim-card {
   padding: 36rpx 32rpx;
   background: #1F1D1A;
-  border: 1px solid #4D401A;
+  border: 1px solid var(--brass-800);
   border-radius: var(--radius-md);
   margin-bottom: 28rpx;
   display: flex;
@@ -407,7 +407,7 @@ page { background: #1A1814; color: #fff; }
   font-family: var(--font-mono);
   font-size: var(--fs-48);
   font-weight: 600;
-  color: #C4A76C;
+  color: var(--color-primary);
   letter-spacing: 0.12em;
   margin-bottom: 12rpx;
 }
@@ -516,7 +516,7 @@ page { background: #1A1814; color: #fff; }
   display: block;
   margin-top: 18rpx;
   font-size: var(--fs-24);
-  color: #C4A76C;
+  color: var(--color-primary);
   text-align: right;
 }
 
@@ -533,7 +533,7 @@ page { background: #1A1814; color: #fff; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
   font-size: var(--fs-28);
   font-weight: 500;
@@ -570,7 +570,7 @@ page { background: #1A1814; color: #fff; }
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #C4A76C;
+  color: var(--color-primary);
   font-size: var(--fs-24);
   letter-spacing: 0.02em;
   border: 1rpx solid rgba(196, 167, 108, 0.42);
@@ -650,7 +650,7 @@ page { background: #1A1814; color: #fff; }
   font-size: var(--fs-24);
 }
 .verify-line-label { color: #9A8F7C; }
-.verify-line-val { color: #C4A76C; }
+.verify-line-val { color: var(--color-primary); }
 .verify-line.warn { padding: 16rpx 20rpx; border: 1px solid #E8927C; border-radius: var(--radius-md); }
 .verify-line.warn .verify-line-label, .verify-line.warn .verify-line-val { color: #E8927C; }
 
@@ -666,7 +666,7 @@ page { background: #1A1814; color: #fff; }
   text-align: center;
 }
 .proxy-fill-label { font-size: var(--fs-22); color: #9A8F7C; }
-.proxy-fill-cta { font-size: var(--fs-26); color: #C4A76C; letter-spacing: 0.02em; }
+.proxy-fill-cta { font-size: var(--fs-26); color: var(--color-primary); letter-spacing: 0.02em; }
 
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {

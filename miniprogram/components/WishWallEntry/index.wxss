@@ -72,7 +72,7 @@
   line-height: 1.2;
   letter-spacing: 0.14em;
   color: #2A220E;
-  background: linear-gradient(145deg, #F0E2B8 0%, #C4A76C 42%, #A8903C 78%, #8A7038 100%);
+  background: linear-gradient(145deg, #F0E2B8 0%, var(--color-primary) 42%, #A8903C 78%, #8A7038 100%);
   border: 1rpx solid rgba(107, 90, 36, 0.55);
   border-radius: var(--radius-sm);
   box-shadow:
@@ -150,7 +150,7 @@
   height: 64rpx;
   margin-right: -2rpx;
   border-radius: 50%;
-  background: linear-gradient(145deg, #F0E2B8 0%, #C4A76C 48%, #A8903C 100%);
+  background: linear-gradient(145deg, #F0E2B8 0%, var(--color-primary) 48%, #A8903C 100%);
   border: 1rpx solid rgba(107, 90, 36, 0.45);
   box-sizing: border-box;
   box-shadow:

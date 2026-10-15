@@ -132,7 +132,7 @@
 
 .se-line-no {
   font-size: var(--fs-24);
-  color: #c4a76c;
+  color: var(--color-primary);
 }
 
 .se-line-name {
@@ -189,14 +189,14 @@
 
 .se-pick-arrow {
   font-size: var(--fs-22);
-  color: #c4a76c;
+  color: var(--color-primary);
 }
 
 .se-field-cost {
   width: 150rpx;
   text-align: right;
   font-size: var(--fs-24);
-  color: #c4a76c;
+  color: var(--color-primary);
 }
 
 .se-labor-ctl {
@@ -316,7 +316,7 @@
 .se-sum-total .se-sum-value {
   font-size: var(--fs-34);
   font-weight: 600;
-  color: #c4a76c;
+  color: var(--color-primary);
 }
 
 .se-actions {
@@ -345,7 +345,7 @@
 }
 
 .se-btn-main {
-  background: linear-gradient(135deg, #c4a76c, #a8874c);
+  background: linear-gradient(135deg, var(--color-primary), #a8874c);
   color: #221e17;
   border: none;
 }
@@ -381,7 +381,7 @@
 
 .se-sheet-close text {
   font-size: var(--fs-24);
-  color: #c4a76c;
+  color: var(--color-primary);
 }
 
 .se-search {
@@ -459,7 +459,7 @@
 
 .se-group-count {
   font-size: var(--fs-22);
-  color: #c4a76c;
+  color: var(--color-primary);
 }
 
 .se-group-hint {
@@ -494,13 +494,13 @@
 
 .se-option-price {
   font-size: var(--fs-24);
-  color: #c4a76c;
+  color: var(--color-primary);
 }
 
 .se-option-tag {
   font-size: var(--fs-20);
   color: #221e17;
-  background: #c4a76c;
+  background: var(--color-primary);
   border-radius: var(--radius-sm);
   padding: 2rpx 8rpx;
 }

@@ -69,8 +69,8 @@
 
 .signal-light.lamp-success,
 .signal-light.on {
-  background: #52B788;
-  border-color: #52B788;
+  background: var(--color-success);
+  border-color: var(--color-success);
   box-shadow: 0 0 10rpx rgba(82, 183, 136, 0.55);
 }
 
@@ -90,14 +90,14 @@
 }
 
 .signal-light.lamp-info {
-  background: #5B8FB9;
-  border-color: #5B8FB9;
+  background: var(--color-info);
+  border-color: var(--color-info);
   box-shadow: 0 0 8rpx rgba(91, 143, 185, 0.4);
 }
 
 .signal-light.lamp-brass {
-  background: #C4A76C;
-  border-color: #C4A76C;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   box-shadow: 0 0 8rpx rgba(196, 167, 108, 0.45);
 }
 
@@ -146,7 +146,7 @@
   background-image:
     radial-gradient(rgba(196, 167, 108, 0.22) 0.7px, transparent 0.7px);
   background-size: 12rpx 12rpx;
-  border: 3rpx solid #C4A76C;
+  border: 3rpx solid var(--color-primary);
   border-top: none;
   border-radius: 0 0 12rpx 12rpx;
   overflow: hidden;
@@ -372,7 +372,7 @@
 .mp-bar {
   width: 100%;
   height: 100%;
-  background: #C4A76C;
+  background: var(--color-primary);
   transform: translateX(-100%);
   animation: coupon-print-progress 2.75s cubic-bezier(0.22, 0.82, 0.28, 1) forwards;
 }
@@ -394,7 +394,7 @@
 }
 
 .btn-check {
-  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
+  background: linear-gradient(135deg, #A8903C 0%, var(--color-primary) 100%);
   color: #1A1814;
   font-weight: 700;
   font-size: var(--fs-28);

@@ -12,7 +12,7 @@
   border-radius: 9999px;
 }
 .sort-item.active {
-  color: #C4A76C;
+  color: var(--color-primary);
   border-color: rgba(196, 167, 108, 0.5);
   background: rgba(196, 167, 108, 0.08);
 }

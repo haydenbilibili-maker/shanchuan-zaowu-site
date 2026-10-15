@@ -172,6 +172,8 @@
     "check:modal-style": "node miniprogram/scripts/check-modal-style.mjs",
     "check:pop-spec": "node miniprogram/scripts/check-pop-spec.mjs",
     "check:pop-spec:selftest": "node miniprogram/scripts/check-pop-spec.mjs --selftest",
+    "check:ui-parts": "node miniprogram/scripts/check-ui-parts.mjs",
+    "check:ui-parts:selftest": "node miniprogram/scripts/check-ui-parts.mjs --selftest",
     "check:vis3-rules": "node miniprogram/scripts/audit-vis3-rules.mjs --check",
     "check:vis3-rules:selftest": "node miniprogram/scripts/audit-vis3-rules.mjs --selftest",
     "preview:vis3": "node miniprogram/scripts/audit-vis3-rules.mjs",

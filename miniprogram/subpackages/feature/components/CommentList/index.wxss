@@ -294,7 +294,7 @@
   align-self: flex-start;
   width: auto;
   font-size: var(--fs-20);
-  color: #52B788;
+  color: var(--color-success);
   border: 1px solid rgba(82, 183, 136, 0.4);
   padding: 4rpx 8rpx;
   border-radius: var(--radius-sm);

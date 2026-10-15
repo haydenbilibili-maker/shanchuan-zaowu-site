@@ -34,9 +34,9 @@ page { background: #1A1814; color: #fff; }
   border-radius: var(--radius-lg);
 }
 
-.overline { display: block; font-size: var(--fs-20); color: #C4A76C; letter-spacing: 0.1em; }
+.overline { display: block; font-size: var(--fs-20); color: var(--color-primary); letter-spacing: 0.1em; }
 .order-no { display: block; font-size: var(--fs-30); font-weight: 600; margin: 12rpx 0; }
-.status-badge { display: inline-block; padding: 6rpx 16rpx; font-size: var(--fs-22); color: #C4A76C; background: rgba(196,167,108,0.12); border-radius: var(--radius-sm); }
+.status-badge { display: inline-block; padding: 6rpx 16rpx; font-size: var(--fs-22); color: var(--color-primary); background: rgba(196,167,108,0.12); border-radius: var(--radius-sm); }
 .status-hint { display: block; margin-top: 16rpx; font-size: var(--fs-24); color: #A09A90; line-height: 1.55; }
 
 .quote-card {
@@ -50,9 +50,9 @@ page { background: #1A1814; color: #fff; }
 .preview-row.dark { border-bottom-color: rgba(196,167,108,0.12); }
 .preview-label.dark { color: #A09A90; }
 .preview-value.dark { color: #D5D1C8; }
-.preview-value.dark.amount { color: #C4A76C; font-size: var(--fs-32); font-weight: 600; font-family: var(--font-mono); }
+.preview-value.dark.amount { color: var(--color-primary); font-size: var(--fs-32); font-weight: 600; font-family: var(--font-mono); }
 
-.plate-label.dark { color: #C4A76C; margin-bottom: 16rpx; }
+.plate-label.dark { color: var(--color-primary); margin-bottom: 16rpx; }
 .plate-label.log { color: #A09A90; }
 
 .booking-plate {
@@ -96,9 +96,9 @@ page { background: #1A1814; color: #fff; }
   height: 88rpx; border-radius: var(--radius-md); font-size: var(--fs-28);
   box-sizing: border-box; margin: 0;
 }
-.btn-primary { background: #C4A76C; color: #1A1814; border: none; overflow: hidden; }
+.btn-primary { background: var(--color-primary); color: #1A1814; border: none; overflow: hidden; }
 .btn-ghost {
-  background: transparent; color: #C4A76C;
-  border: 1px solid #4D401A; overflow: visible;
+  background: transparent; color: var(--color-primary);
+  border: 1px solid var(--brass-800); overflow: visible;
 }
 .btn-primary::after, .btn-ghost::after { border: none; }

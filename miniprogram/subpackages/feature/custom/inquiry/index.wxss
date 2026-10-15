@@ -26,7 +26,7 @@ page { background: #1A1814; color: #fff; }
 }
 .nav-brand { flex: 1; }
 .nav-title { display: block; font-size: var(--fs-34); font-weight: 600; }
-.nav-sub { display: block; font-size: var(--fs-20); color: #C4A76C; letter-spacing: 0.1em; margin-top: 4rpx; }
+.nav-sub { display: block; font-size: var(--fs-20); color: var(--color-primary); letter-spacing: 0.1em; margin-top: 4rpx; }
 
 /* 2026-09-21 分子级审计：底栏 `.footer` 的 padding 含 `env(safe-area-inset-bottom)`，
    而这里的预留是固定 140rpx → 有 Home Indicator 的机型上底栏压住滚动区末尾。补同一项 env()。 */
@@ -46,7 +46,7 @@ page { background: #1A1814; color: #fff; }
 .load-error-actions { width: 100%; display: flex; flex-direction: column; gap: 20rpx; }
 .btn-ghost {
   height: 88rpx; line-height: 88rpx; text-align: center;
-  border-radius: var(--radius-md); border: 1rpx solid #C4A76C; color: #C4A76C; font-size: var(--fs-28);
+  border-radius: var(--radius-md); border: 1rpx solid var(--color-primary); color: var(--color-primary); font-size: var(--fs-28);
 }
 
 .intro-box {
@@ -72,7 +72,7 @@ page { background: #1A1814; color: #fff; }
 .preview-row:last-child { border-bottom: none; }
 .preview-label { font-size: var(--fs-22); color: #8B6F47; }
 .preview-value { font-size: var(--fs-24); color: #6B5A24; text-align: right; flex: 1; }
-.preview-value.latin { color: #C4A76C; font-style: italic; font-family: var(--font-latin); }
+.preview-value.latin { color: var(--color-primary); font-style: italic; font-family: var(--font-latin); }
 
 .form-panel { margin: 0 32rpx; }
 
@@ -107,7 +107,7 @@ page { background: #1A1814; color: #fff; }
 }
 
 .btn-primary {
-  background: #C4A76C; color: #1A1814; border: none; border-radius: var(--radius-md);
+  background: var(--color-primary); color: #1A1814; border: none; border-radius: var(--radius-md);
   font-size: var(--fs-28); font-weight: 500; height: 88rpx; line-height: 88rpx;
 }
 

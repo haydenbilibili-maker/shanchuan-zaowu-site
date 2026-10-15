@@ -20,7 +20,7 @@ page { background: #1a1814; }
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #c4a76c, #a8874c);
+  background: linear-gradient(135deg, var(--color-primary), #a8874c);
   box-sizing: border-box;
 }
 .rd-btn text { font-size: var(--fs-28); font-weight: 600; color: #221e17; }

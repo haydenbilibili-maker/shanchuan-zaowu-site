@@ -30,7 +30,7 @@ view, text { box-sizing: border-box; }
   font-family: var(--font-latin);
   font-size: var(--fs-36);
   letter-spacing: 0.16em;
-  color: #C4A76C;
+  color: var(--color-primary);
   font-weight: 700;
   display: block;
 }
@@ -60,7 +60,7 @@ view, text { box-sizing: border-box; }
   display: flex;
   min-height: 188rpx;
   background: #1F1D1A;
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
   position: relative;
   overflow: hidden;
@@ -78,7 +78,7 @@ view, text { box-sizing: border-box; }
 .val-box {
   display: flex;
   align-items: baseline;
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 .symbol {
   font-size: var(--fs-26);
@@ -157,17 +157,17 @@ view, text { box-sizing: border-box; }
   padding: 6rpx 12rpx;
   border-radius: var(--radius-sm);
   letter-spacing: 0.04em;
-  border: 1rpx solid #4D401A;
-  color: #C4A76C;
+  border: 1rpx solid var(--brass-800);
+  color: var(--color-primary);
   background: rgba(196, 167, 108, 0.12);
 }
 .c-tag.store {
   border-color: rgba(45, 90, 63, 0.55);
-  color: #52B788;
+  color: var(--color-success);
   background: rgba(45, 90, 63, 0.16);
 }
 .c-tag.online {
-  border-color: #4D401A;
+  border-color: var(--brass-800);
   color: #D4BC85;
   background: rgba(196, 167, 108, 0.08);
 }
@@ -208,7 +208,7 @@ view, text { box-sizing: border-box; }
   font-size: var(--fs-22);
   line-height: 1;
   color: #1A1814;
-  background: #C4A76C;
+  background: var(--color-primary);
   padding: 14rpx 22rpx;
   border-radius: var(--radius-md);
   font-weight: 600;
@@ -275,8 +275,8 @@ view, text { box-sizing: border-box; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1rpx solid #C4A76C;
-  color: #C4A76C;
+  border: 1rpx solid var(--color-primary);
+  color: var(--color-primary);
   padding: 18rpx 48rpx;
   border-radius: var(--radius-md);
   font-size: var(--fs-26);
@@ -298,7 +298,7 @@ view, text { box-sizing: border-box; }
   text-align: center;
   margin: 10rpx 0 28rpx;
   font-size: var(--fs-22);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 /* 两个渠道：发丝分隔行（不做方框卡片）；推荐渠道标题金色 */
 .sheet-option {
@@ -330,7 +330,7 @@ view, text { box-sizing: border-box; }
 }
 .sheet-arrow {
   font-size: var(--fs-36);
-  color: #C4A76C;
+  color: var(--color-primary);
   line-height: 1;
 }
 .sheet-cancel { display: block; flex: none; margin-top: 24rpx; }
@@ -371,7 +371,7 @@ view, text { box-sizing: border-box; }
   padding: 18rpx 20rpx;
   margin-bottom: 24rpx;
   border-radius: var(--radius-md);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   background: rgba(196, 167, 108, 0.1);
   box-sizing: border-box;
 }
@@ -388,7 +388,7 @@ view, text { box-sizing: border-box; }
 .pass-tip-main {
   display: block;
   font-size: var(--fs-24);
-  color: #C4A76C;
+  color: var(--color-primary);
   line-height: 1.4;
 }
 .pass-tip-sub {
@@ -489,7 +489,7 @@ view, text { box-sizing: border-box; }
   text-align: center;
   padding: 22rpx 24rpx;
   border-radius: var(--radius-md);
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
   font-size: var(--fs-28);
   font-weight: 600;
@@ -529,13 +529,13 @@ view, text { box-sizing: border-box; }
   width: 10rpx;
   height: 10rpx;
   border-radius: 50%;
-  background: #C4A76C;
+  background: var(--color-primary);
   flex-shrink: 0;
 }
 
 .group-title {
   font-size: var(--fs-24);
-  color: #C4A76C;
+  color: var(--color-primary);
   letter-spacing: 0.08em;
 }
 
@@ -560,7 +560,7 @@ view, text { box-sizing: border-box; }
 /* 占用中：虚线描边 = 临时、会被收回 */
 .coupon-card.is-locked {
   border-style: dashed;
-  border-color: #4D401A;
+  border-color: var(--brass-800);
 }
 
 /* 已失效：整体压调，但章要清晰可读（不做重度灰度，避免糊成一团） */
@@ -762,7 +762,7 @@ view, text { box-sizing: border-box; }
 
 .pouch-arrow.open {
   transform: rotate(-135deg) translate(-4rpx, -4rpx);
-  border-color: #C4A76C;
+  border-color: var(--color-primary);
 }
 
 .pouch-body {
@@ -814,8 +814,8 @@ view, text { box-sizing: border-box; }
 .inline-cta-btn {
   flex-shrink: 0;
   font-size: var(--fs-24);
-  color: #C4A76C;
-  border: 1rpx solid #4D401A;
+  color: var(--color-primary);
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
   padding: 12rpx 24rpx;
 }

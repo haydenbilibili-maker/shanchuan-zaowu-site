@@ -7,7 +7,7 @@
   padding: 36rpx 24rpx 32rpx;
   margin-bottom: 8rpx;
   border-radius: var(--radius-md);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   background: linear-gradient(165deg, rgba(196, 167, 108, 0.14) 0%, #1A1814 48%, #1F1D1A 100%);
   box-sizing: border-box;
 }
@@ -66,7 +66,7 @@
 .pass-redeem-status-text {
   font-size: var(--fs-24);
   font-weight: 500;
-  color: #52B788;
+  color: var(--color-success);
   letter-spacing: 0.06em;
 }
 
@@ -81,7 +81,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 3rpx solid #C4A76C;
+  border: 3rpx solid var(--color-primary);
   background: rgba(196, 167, 108, 0.12);
   box-sizing: border-box;
 }
@@ -107,8 +107,8 @@
   top: 34rpx;
   width: 28rpx;
   height: 14rpx;
-  border-left: 4rpx solid #C4A76C;
-  border-bottom: 4rpx solid #C4A76C;
+  border-left: 4rpx solid var(--color-primary);
+  border-bottom: 4rpx solid var(--color-primary);
   transform: rotate(-45deg);
   box-sizing: border-box;
 }
@@ -148,7 +148,7 @@
   margin-top: 20rpx;
   display: flex;
   align-items: baseline;
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .pass-redeem-currency {
@@ -169,9 +169,9 @@
   margin-top: 24rpx;
   padding: 10rpx 28rpx;
   border-radius: 999rpx;
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   background: rgba(196, 167, 108, 0.16);
-  color: #C4A76C;
+  color: var(--color-primary);
   font-size: var(--fs-22);
   font-weight: 600;
   letter-spacing: 0.08em;

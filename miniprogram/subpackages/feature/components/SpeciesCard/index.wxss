@@ -41,7 +41,7 @@
 .card-image-badge text {
   font-size: var(--fs-20);
   font-weight: 500;
-  color: #C4A76C;
+  color: var(--color-primary);
   letter-spacing: 0.06em;
 }
 
@@ -86,7 +86,7 @@
   margin-top: 10rpx;
   font-size: var(--fs-26);
   font-style: italic; font-family: var(--font-latin);
-  color: #C4A76C;
+  color: var(--color-primary);
   line-height: 1.35;
 }
 
@@ -156,7 +156,7 @@
 }
 
 .prot-tag.tone-info .prot-val {
-  color: #5B8FB9;
+  color: var(--color-info);
 }
 
 .prot-tag.tone-muted {
@@ -228,7 +228,7 @@
   font-size: var(--fs-28);
   font-weight: 600;
   font-family: var(--font-mono, monospace);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .conf-pct.tone-medium {
@@ -249,7 +249,7 @@
 .conf-fill {
   height: 100%;
   border-radius: 999rpx;
-  background: #C4A76C;
+  background: var(--color-primary);
 }
 
 .conf-fill.tone-medium {
@@ -290,7 +290,7 @@
 .pt-title {
   display: block;
   font-size: var(--fs-22);
-  color: #C4A76C;
+  color: var(--color-primary);
   margin-bottom: 12rpx;
   letter-spacing: 0.06em;
 }
@@ -338,7 +338,7 @@
   font-size: var(--fs-18);
   font-weight: 500;
   letter-spacing: 0.14em;
-  color: #C4A76C;
+  color: var(--color-primary);
   font-style: italic;
   margin-bottom: 6rpx;
 }
@@ -354,7 +354,7 @@
   flex-shrink: 0;
   padding: 4rpx 0;
   font-size: var(--fs-22);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .sec-toggle-press {
@@ -385,14 +385,14 @@
   gap: 20rpx;
   background: #262320;
   border-radius: var(--radius-md);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   overflow: hidden;
 }
 
 .ff-rule {
   width: 6rpx;
   flex-shrink: 0;
-  background: linear-gradient(180deg, #C4A76C 0%, #8A7530 100%);
+  background: linear-gradient(180deg, var(--color-primary) 0%, #8A7530 100%);
   border-radius: 0 4rpx 4rpx 0;
 }
 
@@ -405,7 +405,7 @@
 .ff-label {
   display: block;
   font-size: var(--fs-20);
-  color: #C4A76C;
+  color: var(--color-primary);
   margin-bottom: 10rpx;
   letter-spacing: 0.1em;
 }

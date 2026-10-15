@@ -35,7 +35,7 @@ page { background: #1A1814; }
   display: inline-block;
   margin-bottom: 28rpx;
   font-size: var(--fs-22);
-  color: #C4A76C;
+  color: var(--color-primary);
   letter-spacing: 0.04em;
 }
 
@@ -61,8 +61,8 @@ page { background: #1A1814; }
 
 .mode.on {
   color: #1A1814;
-  background: #C4A76C;
-  border-color: #C4A76C;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -85,7 +85,7 @@ page { background: #1A1814; }
 .stat-num {
   display: block;
   font-size: var(--fs-40);
-  color: #C4A76C;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -128,8 +128,8 @@ page { background: #1A1814; }
 .cat + .cat { margin-left: 12rpx; }
 
 .cat.on {
-  color: #C4A76C;
-  border-color: #C4A76C;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
 .loading,
@@ -148,7 +148,7 @@ page { background: #1A1814; }
   width: 44rpx;
   height: 44rpx;
   border: 3rpx solid rgba(196, 167, 108, 0.2);
-  border-top-color: #C4A76C;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
 }
@@ -232,7 +232,7 @@ page { background: #1A1814; }
   flex-shrink: 0;
   margin-left: 12rpx;
   font-size: var(--fs-20);
-  color: #C4A76C;
+  color: var(--color-primary);
   letter-spacing: 0.06em;
 }
 
@@ -241,7 +241,7 @@ page { background: #1A1814; }
   margin-top: 6rpx;
   font-size: var(--fs-22);
   font-style: italic; font-family: var(--font-latin);
-  color: #C4A76C;
+  color: var(--color-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -300,7 +300,7 @@ page { background: #1A1814; }
   height: 80rpx;
   line-height: 80rpx;
   padding: 0;
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
   font-size: var(--fs-28);
   border: none;

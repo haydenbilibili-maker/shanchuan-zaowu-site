@@ -679,7 +679,7 @@
 .wallet-back-benefit {
   font-size: var(--fs-26);
   line-height: 1.6;
-  color: #C4A76C;
+  color: var(--color-primary);
   margin-bottom: 16rpx;
 }
 

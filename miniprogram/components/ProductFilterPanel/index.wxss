@@ -27,7 +27,7 @@
   max-height: 90vh;
   background: #1A1814;
   border-radius: 24rpx 24rpx 0 0;
-  border-top: 1px solid #4D401A;
+  border-top: 1px solid var(--brass-800);
   overflow: hidden;
   box-sizing: border-box;
   /* 不用 flex 撑满：微信里 scroll-view + flex 易把 footer 挤出视口 */
@@ -116,7 +116,7 @@
 }
 
 .dim-item.active text {
-  color: #C4A76C;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -127,7 +127,7 @@
   top: 24rpx;
   bottom: 24rpx;
   width: 4rpx;
-  background: #C4A76C;
+  background: var(--color-primary);
   border-radius: 2rpx;
 }
 
@@ -195,11 +195,11 @@
 
 .chip.on {
   background: rgba(196, 167, 108, 0.18);
-  border-color: #C4A76C;
+  border-color: var(--color-primary);
 }
 
 .chip.on text {
-  color: #C4A76C;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -238,11 +238,11 @@
 
 .price-preset.on {
   background: rgba(196, 167, 108, 0.18);
-  border-color: #C4A76C;
+  border-color: var(--color-primary);
 }
 
 .price-preset.on .price-preset-label {
-  color: #C4A76C;
+  color: var(--color-primary);
   font-weight: 600;
 }
 
@@ -311,13 +311,13 @@
   justify-content: center;
   border-radius: var(--radius-md);
   background: transparent;
-  border: 2rpx solid #C4A76C;
+  border: 2rpx solid var(--color-primary);
   box-sizing: border-box;
 }
 
 .btn-clear text {
   font-size: var(--fs-28);
-  color: #C4A76C;
+  color: var(--color-primary);
   font-weight: 500;
 }
 
@@ -328,7 +328,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  background: #C4A76C;
+  background: var(--color-primary);
   box-sizing: border-box;
 }
 

@@ -278,7 +278,7 @@
   font-size: var(--fs-18);
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: #52B788;
+  color: var(--color-success);
 }
 .plate-status.is-current {
   color: var(--color-primary);
@@ -327,7 +327,7 @@
   background: rgba(196, 167, 108, 0.1);
 }
 .perk-status.unlocked {
-  color: #52B788;
+  color: var(--color-success);
   border-color: rgba(82, 183, 136, 0.4);
   background: rgba(82, 183, 136, 0.1);
 }
@@ -723,7 +723,7 @@
 .hero-card.level-skin-6 .hero-badge {
   background: rgba(48, 40, 16, 0.12);
   border-color: rgba(48, 40, 16, 0.36);
-  color: #4D401A;
+  color: var(--brass-800);
 }
 .hero-card.level-skin-6 .hero-progress-track { background: rgba(48, 40, 16, 0.16); }
 .hero-card.level-skin-6 .hero-progress-fill { background: linear-gradient(90deg, #6B5A24, #302810); }
@@ -739,7 +739,7 @@
 .plate.level-skin-6 .plate-name { color: #302810; }
 .plate.level-skin-6 .plate-threshold { color: #6B5A24; }
 .plate.level-skin-6 .plate-status { color: #2D5A3F; }
-.plate.level-skin-6 .plate-status.is-current { color: #4D401A; }
+.plate.level-skin-6 .plate-status.is-current { color: var(--brass-800); }
 .plate.level-skin-6 .plate-status.is-locked { color: #8A7530; }
 
 /* —— Lv99 黑蟒皮 · 浅字 —— */

@@ -45,7 +45,7 @@ page {
   margin: 40rpx 0 24rpx;
   padding: 28rpx 32rpx;
   background: #1F1D1A;
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-lg);
 }
 
@@ -63,7 +63,7 @@ page {
 
 .progress-num {
   font-size: var(--fs-36);
-  color: #C4A76C;
+  color: var(--color-primary);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -78,7 +78,7 @@ page {
 
 .bar-fill {
   height: 100%;
-  background: #C4A76C;
+  background: var(--color-primary);
   transition: width var(--dur-slow) var(--ease-standard);
 }
 
@@ -105,12 +105,12 @@ page {
   flex-shrink: 0;
   padding: 16rpx 24rpx;
   background: #1F1D1A;
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
 }
 
 .series-chip.on {
-  border-color: #C4A76C;
+  border-color: var(--color-primary);
   background: #262320;
 }
 
@@ -128,7 +128,7 @@ page {
 
 .series-done {
   font-size: var(--fs-20);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .series-blurb {
@@ -155,7 +155,7 @@ page {
 
 .browse-link {
   font-size: var(--fs-22);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .tabs {
@@ -181,7 +181,7 @@ page {
 
 .tab.on {
   color: #1A1814;
-  background: #C4A76C;
+  background: var(--color-primary);
   font-weight: 500;
 }
 
@@ -201,8 +201,8 @@ page {
 }
 
 .rarity-chip.on {
-  color: #C4A76C;
-  border-color: #4D401A;
+  color: var(--color-primary);
+  border-color: var(--brass-800);
 }
 
 
@@ -242,7 +242,7 @@ page {
   height: 72rpx;
   line-height: 72rpx;
   padding: 0 40rpx;
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
   font-size: var(--fs-26);
   border: none;
@@ -257,9 +257,9 @@ page {
   line-height: 72rpx;
   padding: 0 32rpx;
   background: transparent;
-  color: #C4A76C;
+  color: var(--color-primary);
   font-size: var(--fs-26);
-  border: 1rpx solid #C4A76C;
+  border: 1rpx solid var(--color-primary);
   border-radius: var(--radius-md);
 }
 
@@ -303,18 +303,18 @@ page {
   top: 0;
   bottom: 0;
   width: 4rpx;
-  background: #4D401A;
+  background: var(--brass-800);
   z-index: 1;
 }
 
-.tone-insecta .card-accent { background: #52B788; }
+.tone-insecta .card-accent { background: var(--color-insecta); }
 .tone-plantae .card-accent { background: #6DA34D; }
 .tone-minerals .card-accent { background: #7B68AE; }
-.tone-marine .card-accent { background: #5B8FB9; }
+.tone-marine .card-accent { background: var(--color-marine); }
 .card.dim .card-accent { opacity: 0.35; }
 
 .card-silver { border-color: #8A8A8A; }
-.card-gold { border-color: #C4A76C; }
+.card-gold { border-color: var(--color-primary); }
 .card.dim { opacity: 0.78; }
 .card-press {
   opacity: 0.9;
@@ -376,7 +376,7 @@ page {
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   opacity: 0.7;
 }
 
@@ -419,7 +419,7 @@ page {
   margin-top: 4rpx;
   font-size: var(--fs-20);
   font-style: italic; font-family: var(--font-latin);
-  color: #C4A76C;
+  color: var(--color-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -455,7 +455,7 @@ page {
   background: #302810;
 }
 
-.dot.on { background: #C4A76C; }
+.dot.on { background: var(--color-primary); }
 .card-silver .dot.on { background: #C8C8C8; }
 
 .card-rarity {
@@ -510,9 +510,9 @@ page {
   line-height: 80rpx;
   text-align: center;
   font-size: var(--fs-24);
-  color: #C4A76C;
+  color: var(--color-primary);
   background: #1F1D1A;
-  border: 1rpx solid #C4A76C;
+  border: 1rpx solid var(--color-primary);
   border-radius: var(--radius-md);
 }
 
@@ -521,7 +521,7 @@ page {
 }
 
 .dock-btn.primary {
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
   font-weight: 500;
   border: none;
@@ -551,7 +551,7 @@ page {
 
 .notes-more {
   font-size: var(--fs-22);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .note {
@@ -597,7 +597,7 @@ page {
   margin-top: 8rpx;
   font-size: var(--fs-24);
   font-style: italic; font-family: var(--font-latin);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .unlock-msg {

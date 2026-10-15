@@ -188,7 +188,7 @@ page {
   border-radius: 50%;
   flex-shrink: 0;
 }
-.signal-light.lamp-forest { background: #52B788; }
+.signal-light.lamp-forest { background: var(--color-success); }
 .signal-light.lamp-muted {
   background: transparent;
   border: 2rpx solid var(--color-text-muted);
@@ -252,7 +252,7 @@ page {
 }
 .chip-btn.success {
   border-color: rgba(82, 183, 136, 0.4);
-  color: #52B788;
+  color: var(--color-success);
 }
 
 .sheet {

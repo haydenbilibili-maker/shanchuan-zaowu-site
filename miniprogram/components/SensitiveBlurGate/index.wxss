@@ -122,7 +122,7 @@
   padding: 6rpx 14rpx;
   font-size: var(--fs-18);
   letter-spacing: 0.08em;
-  color: #C4A76C;
+  color: var(--color-primary);
   background: rgba(26, 24, 20, 0.82);
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   border-radius: var(--radius-sm);

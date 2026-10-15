@@ -211,7 +211,7 @@ page {
   color: #7CB592;
 }
 .workflow-context.cat-system .workflow-context-text {
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 /* 日报档顶栏 */
 .digest-rail {
@@ -234,8 +234,8 @@ page {
   flex-shrink: 0;
 }
 .digest-rail-lamp.tip-warn { background: #C4A06A; }
-.digest-rail-lamp.tip-partial { background: #C4A76C; }
-.digest-rail-lamp.tip-ok { background: #52B788; }
+.digest-rail-lamp.tip-partial { background: var(--color-primary); }
+.digest-rail-lamp.tip-ok { background: var(--color-success); }
 .digest-rail-lamp.tip-muted { background: #6B6560; }
 .digest-rail-text {
   font-size: var(--fs-20);
@@ -256,7 +256,7 @@ page {
   background: rgba(196, 167, 108, 0.08);
 }
 .digest-rail.tip-partial .digest-rail-text {
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 .digest-rail.tip-ok .digest-rail-text {
   color: #8BA8C4;
@@ -305,7 +305,7 @@ page {
   background: rgba(196, 167, 108, 0.12);
 }
 .filter-pill.tab-system.active text {
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .filter-pill-badge {
@@ -341,7 +341,7 @@ page {
   background: rgba(196, 167, 108, 0.22);
 }
 .filter-pill.tab-system .filter-pill-badge text {
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .page-msg.queue-workflow .unread-hint {
@@ -583,9 +583,9 @@ page {
   flex-shrink: 0;
 }
 
-.kind-tag.kind-campaign { color: #5B8FB9; }
-.kind-tag.kind-receipt { color: #52B788; }
-.kind-tag.kind-notice { color: #5B8FB9; }
+.kind-tag.kind-campaign { color: var(--color-info); }
+.kind-tag.kind-receipt { color: var(--color-success); }
+.kind-tag.kind-notice { color: var(--color-info); }
 .kind-tag.kind-workflow { color: #7CB592; }
 .kind-tag.kind-digest { color: #8BA8C4; }
 
@@ -609,16 +609,16 @@ page {
   background: #C4A06A;
 }
 .message-item.digest-card.health-ok .item-accent.on {
-  background: #52B788;
+  background: var(--color-success);
 }
 .message-item.digest-card.health-partial .item-accent.on {
-  background: #C4A76C;
+  background: var(--color-primary);
 }
 .item-accent.forest.on {
   background: #2D5A3F;
 }
 .item-accent.digest.on {
-  background: #5B8FB9;
+  background: var(--color-info);
 }
 
 /* 日报列表关键数 */
@@ -643,8 +643,8 @@ page {
   flex-shrink: 0;
 }
 .dlc-lamp.tone-failed { background: #C4A06A; }
-.dlc-lamp.tone-partial { background: #C4A76C; }
-.dlc-lamp.tone-ok { background: #52B788; }
+.dlc-lamp.tone-partial { background: var(--color-primary); }
+.dlc-lamp.tone-ok { background: var(--color-success); }
 .dlc-health text {
   font-size: var(--fs-18);
   color: #8BA8C4;
@@ -662,7 +662,7 @@ page {
   background: rgba(196, 167, 108, 0.1);
 }
 .dlc-health.tone-partial text {
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 .dlc-health.tone-ok {
   border-color: rgba(82, 183, 136, 0.35);
@@ -693,7 +693,7 @@ page {
 .dlc-chip-kicker {
   display: block;
   font-size: var(--fs-16);
-  color: #C4A76C;
+  color: var(--color-primary);
   letter-spacing: 0.06em;
   margin-bottom: 2rpx;
 }
@@ -747,7 +747,7 @@ page {
 .dpm-text {
   display: block;
   font-size: var(--fs-20);
-  color: #C4A76C;
+  color: var(--color-primary);
   margin-bottom: 8rpx;
 }
 

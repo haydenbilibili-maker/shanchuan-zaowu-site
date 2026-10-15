@@ -77,7 +77,7 @@ page {
 
 /* 按钮：唯一实心金 + 描边次级 */
 .wl-foot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; display: flex; align-items: center; gap: 28rpx; padding: 24rpx 36rpx calc(24rpx + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(21,20,18,0), #151412 30%); }
-.wl-primary { flex: 1; height: 92rpx; line-height: 92rpx; text-align: center; border-radius: 46rpx; background: linear-gradient(155deg, #E6D3A1, #C4A76C 55%, #A8903C); color: #1A1814; font-size: var(--fs-30); font-weight: 600; letter-spacing: .12em; white-space: nowrap; }
+.wl-primary { flex: 1; height: 92rpx; line-height: 92rpx; text-align: center; border-radius: 46rpx; background: linear-gradient(155deg, #E6D3A1, var(--color-primary) 55%, #A8903C); color: #1A1814; font-size: var(--fs-30); font-weight: 600; letter-spacing: .12em; white-space: nowrap; }
 .wl-primary.is-off { background: transparent; color: rgba(212,188,133,.6); border: 1rpx solid rgba(196,167,108,.36); line-height: 90rpx; }
 .wl-link { flex-shrink: 0; font-size: 25rpx; color: var(--brass-300); letter-spacing: .08em; white-space: nowrap; padding: 16rpx 0; }
 .wl-ghost-btn { padding: 0 36rpx; min-height: 72rpx; line-height: 72rpx; text-align: center; border: 1rpx solid rgba(196,167,108,.55); border-radius: 36rpx; color: var(--brass-300); font-size: var(--fs-26); letter-spacing: .08em; background: rgba(196,167,108,.06); }

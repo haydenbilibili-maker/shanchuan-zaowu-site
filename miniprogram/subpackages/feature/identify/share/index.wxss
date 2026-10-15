@@ -14,7 +14,7 @@
   display: block;
   font-size: var(--fs-18);
   letter-spacing: 0.14em;
-  color: #C4A76C;
+  color: var(--color-primary);
   font-style: italic;
   margin-bottom: 8rpx;
 }
@@ -47,7 +47,7 @@
   height: 960rpx;
   background: #1F1D1A;
   border-radius: var(--radius-md);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
 }
 
 .canvas-mask {
@@ -61,17 +61,17 @@
   gap: 16rpx;
   padding: 28rpx 36rpx;
   background: rgba(26, 24, 20, 0.88);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
   font-size: var(--fs-24);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .spinner.small {
   width: 32rpx;
   height: 32rpx;
   border: 3rpx solid rgba(196, 167, 108, 0.2);
-  border-top-color: #C4A76C;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
 }
@@ -94,7 +94,7 @@
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  background: #52B788;
+  background: var(--color-success);
 }
 
 .share-status-text {
@@ -129,14 +129,14 @@
 }
 
 .btn.primary {
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
   font-weight: 500;
 }
 
 .btn.ghost {
   background: transparent;
-  color: #C4A76C;
+  color: var(--color-primary);
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   box-sizing: border-box;
 }

@@ -274,7 +274,7 @@ page {
   font-size: var(--fs-20);
   line-height: 36rpx;
   letter-spacing: 0.02em;
-  color: #5B8FB9;
+  color: var(--color-info);
   font-family: var(--font-mono, 'DIN', monospace);
   font-weight: 500;
 }
@@ -454,7 +454,7 @@ page {
   align-items: center;
   gap: 12rpx;
   border-radius: var(--radius-md);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   background: rgba(196, 167, 108, 0.1);
   box-sizing: border-box;
 }
@@ -973,7 +973,7 @@ page {
   justify-content: center;
   margin-bottom: 10rpx;
   background: rgba(196, 167, 108, 0.12);
-  border: 1px solid #4D401A;
+  border: 1px solid var(--brass-800);
   border-radius: 50%;
 }
 

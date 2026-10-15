@@ -54,14 +54,14 @@ page { background: #1A1814; color: #fff; }
 }
 .import-lbl {
   font-size: var(--fs-26);
-  color: #C4A76C;
+  color: var(--color-primary);
   letter-spacing: 0.02em;
 }
 .import-chev {
   width: 12rpx;
   height: 12rpx;
-  border-top: 2px solid #C4A76C;
-  border-right: 2px solid #C4A76C;
+  border-top: 2px solid var(--color-primary);
+  border-right: 2px solid var(--color-primary);
   transform: rotate(45deg);
   opacity: 0.7;
 }
@@ -84,7 +84,7 @@ page { background: #1A1814; color: #fff; }
 .btn-primary {
   margin-top: 40rpx; height: 88rpx;
   display: flex; align-items: center; justify-content: center;
-  background: #C4A76C; color: #1A1814;
+  background: var(--color-primary); color: #1A1814;
   font-size: var(--fs-30); font-weight: 500; border-radius: var(--radius-md);
   letter-spacing: 0.04em;
 }

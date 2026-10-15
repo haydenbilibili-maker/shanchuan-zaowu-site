@@ -177,7 +177,7 @@ page {
 }
 
 .tab.on {
-  border-color: #4D401A;
+  border-color: var(--brass-800);
   color: var(--color-primary);
   background: rgba(196, 167, 108, 0.08);
 }
@@ -266,7 +266,7 @@ page {
 }
 
 .status-tag.ok {
-  color: #52B788;
+  color: var(--color-success);
   background: rgba(82, 183, 136, 0.12);
 }
 

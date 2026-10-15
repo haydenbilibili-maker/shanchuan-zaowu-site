@@ -22,7 +22,7 @@
   line-height: 26rpx;
   letter-spacing: .32em;
   font-family: var(--font-mono);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 .hub-cn {
   display: block;
@@ -315,8 +315,8 @@
   width: 14rpx;
   height: 14rpx;
   margin: 8rpx 4rpx 0 auto;
-  border-right: 3rpx solid #C4A76C;
-  border-bottom: 3rpx solid #C4A76C;
+  border-right: 3rpx solid var(--color-primary);
+  border-bottom: 3rpx solid var(--color-primary);
   transform: rotate(-135deg);
   transition: transform var(--dur-fast) var(--ease-out-soft);
 }
@@ -463,7 +463,7 @@
 .hub-sheet-close {
   padding: 8rpx 0 8rpx 24rpx;
   font-size: var(--fs-26);
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 /* ── 常用编辑面板 ── */
 .hub-fav-sheet {
@@ -526,7 +526,7 @@
   margin: 0 8rpx 12rpx;
   font-size: var(--fs-24);
   font-weight: 600;
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 .hub-fav-chips {
   display: flex;
@@ -543,7 +543,7 @@
 }
 .hub-fav-chip.is-added {
   background: #4A3D25;
-  border-color: #C4A76C;
+  border-color: var(--color-primary);
   color: #F3E2B8;
 }
 .hub-fav-chip.is-off {
@@ -569,6 +569,6 @@
   color: #E0C58A;
 }
 .hub-fav-btn.is-primary {
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
 }

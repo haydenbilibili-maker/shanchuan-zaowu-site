@@ -71,7 +71,7 @@ page { background: #1A1814; color: #fff; }
 
 .btn-primary {
   width: 100%; height: 88rpx; line-height: 88rpx;
-  background: #C4A76C; color: #1A1814; border-radius: var(--radius-md); font-size: var(--fs-28); border: none;
+  background: var(--color-primary); color: #1A1814; border-radius: var(--radius-md); font-size: var(--fs-28); border: none;
 }
 
 .btn-primary::after { border: none; }
@@ -91,7 +91,7 @@ page { background: #1A1814; color: #fff; }
 .long-desc.expanded { max-height: none; }
 
 .long-desc-toggle {
-  display: block; font-size: var(--fs-24); color: #C4A76C;
+  display: block; font-size: var(--fs-24); color: var(--color-primary);
   padding: 16rpx 32rpx 0;
 }
 
@@ -105,7 +105,7 @@ page { background: #1A1814; color: #fff; }
 }
 
 .species-cn {
-  display: block; font-size: var(--fs-28); font-weight: 600; color: #C4A76C;
+  display: block; font-size: var(--fs-28); font-weight: 600; color: var(--color-primary);
 }
 
 .species-latin {
@@ -135,7 +135,7 @@ page { background: #1A1814; color: #fff; }
 
 .product-latin { font-size: var(--fs-20); color: #A09A90; display: block; margin-top: 4rpx; }
 
-.product-price { font-size: var(--fs-22); color: #C4A76C; margin-top: 8rpx; display: block; }
+.product-price { font-size: var(--fs-22); color: var(--color-primary); margin-top: 8rpx; display: block; }
 
 .wiki-row {
   display: flex; align-items: center; gap: 16rpx;
@@ -152,7 +152,7 @@ page { background: #1A1814; color: #fff; }
 
 .wiki-brief { font-size: var(--fs-22); color: #A09A90; display: block; margin-top: 4rpx; }
 
-.wiki-arr { color: #C4A76C; font-size: var(--fs-28); }
+.wiki-arr { color: var(--color-primary); font-size: var(--fs-28); }
 
 .text-cut {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

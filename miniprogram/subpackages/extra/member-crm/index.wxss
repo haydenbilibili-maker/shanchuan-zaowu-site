@@ -196,7 +196,7 @@ page {
   margin-bottom: var(--space-3);
   padding: 28rpx 28rpx 24rpx;
   background: var(--color-bg-card);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-lg);
   box-sizing: border-box;
 }
@@ -217,7 +217,7 @@ page {
   border-radius: 50%;
   flex-shrink: 0;
   background: var(--color-bg-elevated);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   box-sizing: border-box;
 }
 
@@ -554,7 +554,7 @@ page {
   width: 96rpx;
   height: 96rpx;
   border-radius: 50%;
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
 }
 
 .avatar.placeholder {

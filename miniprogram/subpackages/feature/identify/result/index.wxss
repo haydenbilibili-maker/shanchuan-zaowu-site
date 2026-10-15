@@ -57,7 +57,7 @@
   margin-bottom: 24rpx;
   padding: 24rpx 28rpx;
   background: var(--color-bg-card);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
 }
 
@@ -227,7 +227,7 @@
   height: 80rpx;
   background: var(--color-bg-card);
   color: var(--color-primary);
-  border: 1rpx solid #4D401A;
+  border: 1rpx solid var(--brass-800);
   font-weight: 500;
   font-size: var(--fs-26);
   box-sizing: border-box;
@@ -404,7 +404,7 @@
 .ency-head {
   margin-bottom: 24rpx;
   padding-bottom: 20rpx;
-  border-bottom: 1rpx solid #4D401A;
+  border-bottom: 1rpx solid var(--brass-800);
 }
 
 .ency-en {
@@ -477,7 +477,7 @@
 }
 
 .cabinet-block {
-  border-color: #4D401A;
+  border-color: var(--brass-800);
 }
 
 .cabinet-products {
@@ -601,7 +601,7 @@
   color: var(--color-text-secondary);
   background: var(--color-bg-elevated);
   border-radius: var(--radius-md);
-  border: 1rpx dashed #4D401A;
+  border: 1rpx dashed var(--brass-800);
 }
 
 .ency-prot-plate {

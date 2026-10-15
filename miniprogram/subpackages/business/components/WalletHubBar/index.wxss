@@ -99,7 +99,7 @@
 }
 
 .whb-item.is-on .whb-cn {
-  color: #C4A76C;
+  color: var(--color-primary);
 }
 
 .whb-item.is-on .whb-en {
@@ -120,7 +120,7 @@
   right: 28%;
   bottom: 0;
   height: 4rpx;
-  background: #C4A76C;
+  background: var(--color-primary);
   border-radius: 4rpx 4rpx 0 0;
 }
 

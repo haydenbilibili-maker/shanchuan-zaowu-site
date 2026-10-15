@@ -36,7 +36,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
 }
 
 .tab-pill.active {
-  background: #C4A76C; color: #1A1814; border-color: #C4A76C; font-weight: bold;
+  background: var(--color-primary); color: #1A1814; border-color: var(--color-primary); font-weight: bold;
   box-shadow: none;
 }
 
@@ -46,11 +46,11 @@ view, text, image, scroll-view { box-sizing: border-box; }
 /* Loading */
 .loading-box { text-align: center; padding-top: 100rpx; opacity: 0.7; }
 .scanner { 
-  width: 100%; height: 2rpx; background: linear-gradient(to right, transparent, #C4A76C, transparent);
+  width: 100%; height: 2rpx; background: linear-gradient(to right, transparent, var(--color-primary), transparent);
   margin-bottom: 20rpx; animation: scan 1.5s infinite;
 }
 @keyframes scan { 0% { opacity: 0; width: 0; } 50% { opacity: 1; width: 100%; } 100% { opacity: 0; width: 0; } }
-.loading-box text { font-size: var(--fs-22); letter-spacing: 2rpx; color: #C4A76C; }
+.loading-box text { font-size: var(--fs-22); letter-spacing: 2rpx; color: var(--color-primary); }
 
 
 /* 卡片 */
@@ -87,12 +87,12 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .stamp-inner .en { font-size: var(--fs-16); font-weight: bold; transform: scale(0.8); font-family: var(--font-mono); }
 
 /* 状态颜色 */
-.status-stamp.paid { color: #C4A76C; border-color: #C4A76C; }
+.status-stamp.paid { color: var(--color-primary); border-color: var(--color-primary); }
 .status-stamp.paid_awaiting_address { color: #E9A23B; border-color: #E9A23B; }
-.status-stamp.shipped { color: #52B788; border-color: #52B788; }
+.status-stamp.shipped { color: var(--color-success); border-color: var(--color-success); }
 .status-stamp.received { color: #A09A90; border-color: #6B6560; }
 .status-stamp.ready_pickup,
-.status-stamp.fulfilling { color: #C4A76C; border-color: #C4A76C; }
+.status-stamp.fulfilling { color: var(--color-primary); border-color: var(--color-primary); }
 .status-stamp.cancelled,
 .status-stamp.refund_rejected { color: #A09A90; border-color: #6B6560; }
 .status-stamp.refunding,
@@ -117,37 +117,37 @@ view, text, image, scroll-view { box-sizing: border-box; }
    与同仓 feature/search 的 .ac-info/.ac-title 同型写法对齐：min-width:0 + 单行省略号。 */
 .prod-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .prod-name { font-size: var(--fs-28); font-weight: bold; color: #D5D1C8; margin-bottom: 6rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.prod-latin { font-family: var(--font-latin); font-style: italic; font-size: var(--fs-22); color: #C4A76C; margin-bottom: 12rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prod-latin { font-family: var(--font-latin); font-style: italic; font-size: var(--fs-22); color: var(--color-primary); margin-bottom: 12rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sku-tag { font-size: var(--fs-20); color: #A09A90; border: 1px solid #262320; align-self: flex-start; padding: 2rpx 8rpx; border-radius: 4rpx; }
-.sku-tag.gift { color: #C4A76C; border-color: rgba(196, 167, 108, 0.45); margin-top: 8rpx; }
+.sku-tag.gift { color: var(--color-primary); border-color: rgba(196, 167, 108, 0.45); margin-top: 8rpx; }
 
 /* 底部 */
 .card-foot { display: flex; justify-content: space-between; align-items: center; }
 .total-box { display: flex; align-items: baseline; }
 .lbl { font-size: var(--fs-20); color: var(--color-text-secondary); margin-right: 8rpx; }
-.val { font-family: var(--font-mono); font-size: var(--fs-36); color: #C4A76C; font-weight: bold; }
+.val { font-family: var(--font-mono); font-size: var(--fs-36); color: var(--color-primary); font-weight: bold; }
 
 .btn-action {
   background: #262320; color: #D5D1C8; font-size: var(--fs-22); font-weight: 600;
-  padding: 10rpx 30rpx; border-radius: var(--radius-md); border: 1px solid #4D401A;
+  padding: 10rpx 30rpx; border-radius: var(--radius-md); border: 1px solid var(--brass-800);
   letter-spacing: 1rpx; transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
 .btn-action.primary {
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
-  border-color: #C4A76C;
+  border-color: var(--color-primary);
 }
 .btn-action.gold {
   background: transparent;
-  color: #C4A76C;
+  color: var(--color-primary);
   border-color: rgba(196, 167, 108, 0.55);
 }
-.btn-action:active { background: #C4A76C; color: #1A1814; border-color: #C4A76C; }
+.btn-action:active { background: var(--color-primary); color: #1A1814; border-color: var(--color-primary); }
 .btn-action.primary:active { background: #A8903C; border-color: #A8903C; }
 .btn-action.is-busy { opacity: 0.6; }
 /* 评完的状态标签（不占按钮）：已评价 secondary、审核中金色 */
 .review-chip { display: flex; align-items: center; padding: 10rpx 8rpx; font-size: var(--fs-22); color: #A09A90; letter-spacing: 1rpx; white-space: nowrap; }
-.review-chip.is-pending { color: #C4A76C; }
+.review-chip.is-pending { color: var(--color-primary); }
 .total-box .val.muted { color: #A09A90; font-size: var(--fs-24); font-weight: 400; letter-spacing: 0.04em; }
 
 .end-mark { text-align: center; margin-top: 40rpx; display: flex; flex-direction: column; align-items: center; }
@@ -156,16 +156,16 @@ view, text, image, scroll-view { box-sizing: border-box; }
 /* 空状态 */
 .empty-state { text-align: center; padding-top: 120rpx; color: #A09A90; }
 .safe-box-icon { 
-  width: 100rpx; height: 100rpx; border: 1px solid #4D401A; border-radius: var(--radius-md); margin: 0 auto 30rpx; 
+  width: 100rpx; height: 100rpx; border: 1px solid var(--brass-800); border-radius: var(--radius-md); margin: 0 auto 30rpx; 
   display: flex; align-items: center; justify-content: center;
 }
-.lock { width: 20rpx; height: 30rpx; background: #4D401A; border-radius: 4rpx; }
+.lock { width: 20rpx; height: 30rpx; background: var(--brass-800); border-radius: 4rpx; }
 .empty-title { font-size: var(--fs-28); letter-spacing: 2rpx; margin-bottom: 8rpx; display: block; color: #D5D1C8; }
 .empty-desc { font-size: var(--fs-22); color: #A09A90; display: block; margin-bottom: 32rpx; }
 .empty-cta {
   display: inline-block;
   padding: 16rpx 48rpx;
-  background: #C4A76C;
+  background: var(--color-primary);
   color: #1A1814;
   font-size: var(--fs-26);
   font-weight: 500;

@@ -601,12 +601,12 @@ page {
   width: 14rpx;
   height: 14rpx;
   border-radius: 50%;
-  background: #52B788;
+  background: var(--color-success);
   flex-shrink: 0;
 }
 .dg-health-lamp.tone-failed { background: #C4A06A; }
-.dg-health-lamp.tone-partial { background: #C4A76C; }
-.dg-health-lamp.tone-ok { background: #52B788; }
+.dg-health-lamp.tone-partial { background: var(--color-primary); }
+.dg-health-lamp.tone-ok { background: var(--color-success); }
 
 .dg-health-summary {
   display: block;
@@ -795,10 +795,10 @@ page {
   background: #C4A06A;
 }
 .dg-sec-lamp.tone-partial {
-  background: #C4A76C;
+  background: var(--color-primary);
 }
 .dg-sec-lamp.tone-ok {
-  background: #52B788;
+  background: var(--color-success);
 }
 
 .dg-sec-title {
