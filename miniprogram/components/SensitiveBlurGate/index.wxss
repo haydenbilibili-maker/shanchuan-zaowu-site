@@ -87,7 +87,7 @@
 
 .sb-kicker {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.22em;
   color: rgba(196, 167, 108, 0.72);
   margin-bottom: 10rpx;
@@ -96,7 +96,7 @@
 
 .sb-title {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   color: #F0E6CC;
   letter-spacing: 0.02em;
@@ -107,7 +107,7 @@
 .sb-sub {
   display: block;
   margin-top: 8rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #A09A90;
   letter-spacing: 0.02em;
   line-height: 1.3;
@@ -120,7 +120,7 @@
   bottom: 12rpx;
   z-index: 7;
   padding: 6rpx 14rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.08em;
   color: #C4A76C;
   background: rgba(26, 24, 20, 0.82);
@@ -146,7 +146,7 @@
   margin-bottom: 4rpx;
 }
 .sb-card .sb-title {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0;
 }
 .sb-card .sb-sub {
@@ -168,7 +168,7 @@
   display: none;
 }
 .sb-thumb .sb-title {
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   letter-spacing: 0;
 }
 .sb-thumb .sb-sub {
@@ -178,7 +178,7 @@
   right: 6rpx;
   bottom: 6rpx;
   padding: 4rpx 10rpx;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
 }
 .sb-thumb .sb-media.is-blurred {
   filter: blur(5px) brightness(0.82) saturate(0.88);
@@ -191,11 +191,11 @@
   max-width: 88%;
 }
 .sb-hero .sb-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   letter-spacing: 0.04em;
 }
 .sb-hero .sb-sub {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 /* hero 默认值；实际 right/top 由 getMenuButtonBoundingClientRect 内联覆盖 */
 .sb-hero .sb-badge {
@@ -203,7 +203,7 @@
   top: 88px;
   bottom: auto;
   padding: 8rpx 18rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
 }
 .sb-hero .sb-media.is-blurred {
   filter: blur(10px) brightness(0.8) saturate(0.88);

@@ -85,9 +85,9 @@ view, text, image, map { box-sizing: border-box; }
 }
 
 .h-sub { 
-  font-size: 22rpx; 
+  font-size: var(--fs-22); 
   letter-spacing: 8rpx; 
-  color: var(--gold); 
+  color: var(--color-primary); 
   display: block; 
   margin-bottom: 24rpx; 
   font-weight: 800; 
@@ -122,13 +122,13 @@ view, text, image, map { box-sizing: border-box; }
 .h-line { 
   width: 3rpx; 
   height: 70rpx; 
-  background: linear-gradient(to bottom, var(--gold), rgba(196, 167, 108,0.6));
+  background: linear-gradient(to bottom, var(--color-primary), rgba(196, 167, 108,0.6));
   margin: 0 auto 36rpx;
   box-shadow: none;
   border-radius: 2rpx;
 }
 .h-cn { 
-  font-size: 30rpx; 
+  font-size: var(--fs-30); 
   letter-spacing: 0.35em; 
   color: rgba(255,255,255,0.95); 
   font-weight: 500;
@@ -139,7 +139,7 @@ view, text, image, map { box-sizing: border-box; }
 }
 .h-tagline {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   letter-spacing: 0.28em;
   margin-top: 28rpx;
   color: rgba(255,255,255,0.88);
@@ -147,7 +147,7 @@ view, text, image, map { box-sizing: border-box; }
 }
 .h-idea {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.2em;
   margin-top: 20rpx;
   color: rgba(255,255,255,0.55);
@@ -205,7 +205,7 @@ view, text, image, map { box-sizing: border-box; }
   margin-bottom: 40rpx;
   padding: 60rpx 40rpx;
   background: linear-gradient(135deg, rgba(196, 167, 108,0.05), rgba(196, 167, 108,0.02));
-  border-left: 4rpx solid var(--gold);
+  border-left: 4rpx solid var(--color-primary);
   border-radius: var(--radius-sm);
   position: relative;
 }
@@ -218,12 +218,12 @@ view, text, image, map { box-sizing: border-box; }
 }
 
 .p-en { 
-  font-size: 22rpx; 
-  color: var(--gold); 
+  font-size: var(--fs-22); 
+  color: var(--color-primary); 
   letter-spacing: 6rpx; 
   margin-bottom: 32rpx; 
   font-weight: 800; 
-  border-bottom: 2rpx solid var(--gold); 
+  border-bottom: 2rpx solid var(--color-primary); 
   padding-bottom: 12rpx;
   text-shadow: none;
   position: relative;
@@ -238,7 +238,7 @@ view, text, image, map { box-sizing: border-box; }
   transform: translateX(-50%);
   width: 50rpx;
   height: 2rpx;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
   opacity: 0.6;
 }
 .p-cn { 
@@ -255,7 +255,7 @@ view, text, image, map { box-sizing: border-box; }
 }
 
 .p-body { 
-  font-size: 30rpx; 
+  font-size: var(--fs-30); 
   color: rgba(255,255,255,0.75); 
   line-height: 2.6; 
   text-align: justify; 
@@ -287,7 +287,7 @@ view, text, image, map { box-sizing: border-box; }
 .p-quote::after {
   content: '"';
   font-size: 56rpx;
-  color: var(--gold);
+  color: var(--color-primary);
   opacity: 0.5;
   position: absolute;
   font-family: var(--font-latin);
@@ -303,7 +303,7 @@ view, text, image, map { box-sizing: border-box; }
   bottom: -20rpx;
 }
 .p-author { 
-  font-size: 24rpx; 
+  font-size: var(--fs-24); 
   color: rgba(196, 167, 108,0.85); 
   letter-spacing: 4rpx; 
   text-transform: uppercase;
@@ -334,26 +334,26 @@ view, text, image, map { box-sizing: border-box; }
 .pledge-label {
   flex: 1;
   min-width: 0;
-  font-size: 20rpx;
-  color: var(--gold);
+  font-size: var(--fs-20);
+  color: var(--color-primary);
   letter-spacing: 0.12em;
   font-weight: 600;
 }
 .pledge-chevron {
   flex-shrink: 0;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1;
   color: var(--color-text-muted);
   transition: transform var(--dur-fast) var(--ease-standard);
 }
 .para-pledge.is-open .pledge-chevron {
   transform: rotate(90deg);
-  color: var(--gold);
+  color: var(--color-primary);
 }
 .pledge-summary {
   display: block;
   width: 100%;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
   line-height: 1.55;
   letter-spacing: 0.02em;
@@ -361,7 +361,7 @@ view, text, image, map { box-sizing: border-box; }
 .pledge-body {
   display: block;
   width: 100%;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
   line-height: 1.75;
   letter-spacing: 0.02em;
@@ -396,8 +396,8 @@ view, text, image, map { box-sizing: border-box; }
   left: -2rpx; 
   width: 32rpx; 
   height: 32rpx; 
-  border-top: 3rpx solid var(--gold); 
-  border-left: 3rpx solid var(--gold);
+  border-top: 3rpx solid var(--color-primary); 
+  border-left: 3rpx solid var(--color-primary);
   box-shadow: none;
 }
 .info-card::after { 
@@ -407,8 +407,8 @@ view, text, image, map { box-sizing: border-box; }
   right: -2rpx; 
   width: 32rpx; 
   height: 32rpx; 
-  border-bottom: 3rpx solid var(--gold); 
-  border-right: 3rpx solid var(--gold);
+  border-bottom: 3rpx solid var(--color-primary); 
+  border-right: 3rpx solid var(--color-primary);
   box-shadow: none;
 }
 
@@ -416,7 +416,7 @@ view, text, image, map { box-sizing: border-box; }
   display: flex; 
   justify-content: center; 
   align-items: center; 
-  font-size: 22rpx; 
+  font-size: var(--fs-22); 
   color: rgba(255,255,255,0.5); 
   letter-spacing: 5rpx; 
   margin-bottom: 44rpx; 
@@ -426,7 +426,7 @@ view, text, image, map { box-sizing: border-box; }
 }
 .dot { 
   margin: 0 24rpx; 
-  color: var(--gold); 
+  color: var(--color-primary); 
   font-size: var(--fs-16);
   text-shadow: none;
   animation: dot-pulse 2s ease-in-out infinite;
@@ -442,7 +442,7 @@ view, text, image, map { box-sizing: border-box; }
 .row { 
   display: flex; 
   margin-bottom: 32rpx; 
-  font-size: 26rpx; 
+  font-size: var(--fs-26); 
   line-height: 2;
   align-items: flex-start;
   gap: 24rpx;
@@ -472,7 +472,7 @@ view, text, image, map { box-sizing: border-box; }
 .val.underline { 
   text-decoration: underline; 
   text-underline-offset: 4rpx;
-  color: var(--gold);
+  color: var(--color-primary);
   text-shadow: none;
   transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), background-color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
@@ -530,8 +530,8 @@ view, text, image, map { box-sizing: border-box; }
   text-align: center;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   border-radius: var(--radius-md);
-  color: var(--gold);
-  font-size: 26rpx;
+  color: var(--color-primary);
+  font-size: var(--fs-26);
   letter-spacing: 0.04em;
 }
 
@@ -544,16 +544,16 @@ view, text, image, map { box-sizing: border-box; }
   border: 1px solid rgba(38, 35, 32, 0.9);
   background: rgba(196, 167, 108, 0.06);
   border-radius: var(--radius-md);
-  color: var(--gold);
-  font-size: 26rpx;
+  color: var(--color-primary);
+  font-size: var(--fs-26);
   letter-spacing: 0.04em;
 }
 
 .map-mask text { 
-  color: var(--gold); 
+  color: var(--color-primary); 
   border: 1.5px solid rgba(196, 167, 108,0.5); 
   padding: 8rpx 24rpx; 
-  font-size: 22rpx; 
+  font-size: var(--fs-22); 
   letter-spacing: 3rpx; 
   background: linear-gradient(135deg, rgba(0,0,0,0.7), rgba(0,0,0,0.5));
   backdrop-filter: blur(8px);
@@ -591,16 +591,23 @@ view, text, image, map { box-sizing: border-box; }
   margin-bottom: 16rpx; 
 }
 .footer-cr-cn {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.15em;
   color: rgba(255,255,255,0.55);
   font-weight: 400;
   margin-bottom: 8rpx;
 }
 .footer-cr-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.25em;
   color: rgba(196, 167, 108, 0.75);
   font-family: var(--font-mono);
   font-weight: 600;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
 }

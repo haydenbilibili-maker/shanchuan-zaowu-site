@@ -43,7 +43,7 @@ const block = (sel) => {
   while ((m = re.exec(wxss))) out = m[1]
   return out
 }
-const BRAND_GOLD = /#C4A76C|var\(--brass-400|var\(--gold/
+const BRAND_GOLD = /#C4A76C|var\(--brass-400|var\(--color-primary|var\(--gold/   // 2026-10-15 P2：--gold 已全站改名 --color-primary，两者都认
 
 /* ── ① 规范还在 ─────────────────────────────────────────────────────────── */
 check('★ 三级规范注释还在（L1/L2/L3 均写明）',
@@ -85,6 +85,13 @@ function selftest() {
       file: WXSS,
       from: '  border-color: rgba(196, 167, 108, 0.26);\n  color: #B9B2A6;',
       to: '  border-color: var(--brass-400);\n  color: var(--brass-400);'
+    },
+    {
+      // 2026-10-15 P2：全站 --gold → --color-primary 后，金色通胀会以新名字出现，BRAND_GOLD 必须认得它
+      name: '场景 chips 以 --color-primary 变亮金（新令牌名下的金色通胀）',
+      file: WXSS,
+      from: '  border-color: rgba(196, 167, 108, 0.26);\n  color: #B9B2A6;',
+      to: '  border-color: rgba(196, 167, 108, 0.26);\n  color: var(--color-primary);'
     },
     {
       name: '分隔线被删（两块气场糊在一起）',

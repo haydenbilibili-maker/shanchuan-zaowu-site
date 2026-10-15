@@ -190,7 +190,7 @@
 }
 .tm-title {
   font-family: var(--font-latin);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #8A7530;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -203,7 +203,7 @@
 }
 .tm-sub {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #8B6F47;
   letter-spacing: 0.08em;
 }
@@ -217,7 +217,7 @@
   flex-shrink: 0;
 }
 .tm-currency {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 700;
   margin-right: 4rpx;
   color: #8A7530;
@@ -234,7 +234,7 @@
 
 .tm-name {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 600;
   color: #33302C;
   margin: 4rpx 0 28rpx;
@@ -279,13 +279,13 @@
   box-shadow: 0 0 4rpx rgba(82, 183, 136, 0.25);
 }
 .tm-k {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A09A90;
   letter-spacing: 0.08em;
   flex-shrink: 0;
 }
 .tm-v {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #4A4540;
   text-align: right;
   line-height: 1.35;
@@ -351,13 +351,13 @@
   height: 12rpx;
 }
 .legend-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A09A90;
   letter-spacing: 0.06em;
 }
 
 .mint-tip {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   letter-spacing: 0.14em;
   margin-bottom: 16rpx;
@@ -397,7 +397,7 @@
   background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);
   color: #1A1814;
   font-weight: 700;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   padding: 24rpx 72rpx;
   border-radius: var(--radius-md);
   display: flex;
@@ -406,13 +406,13 @@
   letter-spacing: 0.04em;
 }
 .btn-check .arrow {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 .btn-group-sub {
   margin-top: 32rpx;
 }
 .btn-sub-act {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #A09A90;
   letter-spacing: 0.08em;
   padding: 16rpx 28rpx;
@@ -421,4 +421,13 @@
 @keyframes coupon-print-progress {
   from { transform: translateX(-100%); }
   to { transform: translateX(0); }
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .signal-light.blink,
+  .signal-light.lamp-warn.blink,
+  .signal-light.warn.blink {
+    animation: none;
+  }
 }

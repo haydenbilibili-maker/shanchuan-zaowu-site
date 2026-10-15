@@ -19,7 +19,7 @@
   padding: 0 10rpx;
   border-radius: 9999px;
   pointer-events: none;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1;
   font-weight: 600;
   font-family: var(--font-mono, 'DIN', monospace);
@@ -73,7 +73,7 @@
   display: inline-flex;
   align-items: center;
   height: 36rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 36rpx;
   color: var(--brass-400, #C4A76C);
   font-family: var(--font-mono, 'DIN', monospace);
@@ -96,7 +96,7 @@
   min-width: 28rpx;
   height: 28rpx;
   padding: 0 6rpx;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   font-weight: 600;
 }
 

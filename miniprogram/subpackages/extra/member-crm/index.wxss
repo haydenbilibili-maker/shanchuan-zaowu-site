@@ -20,7 +20,7 @@ page {
 }
 
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
   text-transform: uppercase;
@@ -28,7 +28,7 @@ page {
 
 .brand-group .cn {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 6rpx;
 }
@@ -36,7 +36,7 @@ page {
 .header-note {
   display: block;
   margin-top: var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -59,7 +59,7 @@ page {
 }
 
 .hint-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-warning);
   line-height: 1.5;
 }
@@ -82,7 +82,7 @@ page {
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .btn-outline {
@@ -92,7 +92,7 @@ page {
   border: 1rpx solid var(--brass-400);
   border-radius: var(--radius-md);
   color: var(--brass-400);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   text-align: center;
   box-sizing: border-box;
 }
@@ -101,7 +101,7 @@ page {
   height: 56rpx;
   line-height: 56rpx;
   padding: 0 var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 
 .search-btn {
@@ -116,7 +116,7 @@ page {
   background: var(--brass-400);
   color: var(--color-bg);
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   text-align: center;
 }
@@ -153,12 +153,12 @@ page {
 }
 
 .seg-name {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
 .seg-count {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-primary);
   font-weight: 600;
 }
@@ -176,14 +176,14 @@ page {
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .section-meta {
   flex: 1;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   text-align: right;
   line-height: 1.4;
@@ -226,9 +226,9 @@ page {
   align-items: center;
   justify-content: center;
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-weight: 500;
-  color: var(--gold);
+  color: var(--color-primary);
 }
 
 .plate-identity-text {
@@ -249,7 +249,7 @@ page {
 .plate-name {
   flex: 1;
   min-width: 0;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   color: var(--color-text-primary);
   overflow: hidden;
@@ -266,10 +266,10 @@ page {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  background: var(--gold);
+  background: var(--color-primary);
   color: var(--color-bg);
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   letter-spacing: 0.06em;
 }
@@ -277,7 +277,7 @@ page {
 .btn-youxin-fill.compact {
   height: 52rpx;
   padding: 0 20rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 
 .btn-youxin-fill-pressed {
@@ -301,7 +301,7 @@ page {
 }
 
 .plate-segment {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   line-height: 1.35;
   overflow: hidden;
@@ -312,9 +312,9 @@ page {
 .plate-honor-chip {
   flex-shrink: 0;
   padding: 4rpx 14rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-bg);
-  background: var(--gold);
+  background: var(--color-primary);
   border-radius: var(--radius-sm);
   letter-spacing: 0.04em;
 }
@@ -330,14 +330,14 @@ page {
 
 .plate-level-lv {
   flex-shrink: 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-family: var(--font-mono);
-  color: var(--gold);
+  color: var(--color-primary);
   font-weight: 500;
 }
 
 .plate-level-name {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -373,7 +373,7 @@ page {
 .spec-label {
   width: 120rpx;
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -381,7 +381,7 @@ page {
   flex: 1;
   min-width: 0;
   text-align: right;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-family: var(--font-mono);
   color: var(--color-text-body);
   font-variant-numeric: tabular-nums;
@@ -412,8 +412,8 @@ page {
   min-height: 48rpx;
   line-height: 48rpx;
   padding: 0 4rpx;
-  font-size: 24rpx;
-  color: var(--gold);
+  font-size: var(--fs-24);
+  color: var(--color-primary);
   letter-spacing: 0.04em;
 }
 
@@ -426,7 +426,7 @@ page {
   margin-top: 20rpx;
   padding-top: 16rpx;
   border-top: 1rpx solid rgba(38, 35, 32, 0.9);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   text-align: center;
   letter-spacing: 0.02em;
@@ -450,13 +450,13 @@ page {
 }
 
 .plate-metric-cap {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   letter-spacing: 0.1em;
 }
 
 .plate-metric-val {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-family: var(--font-mono);
   color: var(--color-text-body);
   font-variant-numeric: tabular-nums;
@@ -467,7 +467,7 @@ page {
 }
 
 .plate-metric-val.accent {
-  color: var(--gold);
+  color: var(--color-primary);
 }
 
 .signal-lamp.signal-sm {
@@ -484,7 +484,7 @@ page {
 }
 
 .segment-name {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   line-height: 1.35;
   overflow: hidden;
@@ -512,7 +512,7 @@ page {
 }
 
 .signal-lamp.signal-brass {
-  background: var(--gold);
+  background: var(--color-primary);
   box-shadow: 0 0 0 2rpx rgba(196, 167, 108, 0.35);
 }
 
@@ -562,9 +562,9 @@ page {
   align-items: center;
   justify-content: center;
   background: var(--color-bg-elevated);
-  color: var(--gold);
+  color: var(--color-primary);
   font-family: var(--font-brand);
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 500;
 }
 
@@ -572,7 +572,7 @@ page {
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
 }
 .page-tip.is-info {
@@ -598,20 +598,20 @@ page {
 }
 
 .loading-hint {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   margin-bottom: var(--space-2);
 }
 
 .empty-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -640,13 +640,13 @@ page {
 }
 
 .drawer-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .drawer-close {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
@@ -692,7 +692,7 @@ page {
 .d-name {
   flex: 1;
   min-width: 0;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: var(--color-text-primary);
   font-weight: 500;
   overflow: hidden;
@@ -703,7 +703,7 @@ page {
 .d-level-chip {
   flex-shrink: 0;
   padding: 4rpx 12rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-family: var(--font-mono);
   color: var(--brass-400);
   border: 1rpx solid rgba(196, 167, 108, 0.35);
@@ -733,13 +733,13 @@ page {
 }
 
 .d-hero-cap {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   letter-spacing: 0.06em;
 }
 
 .d-hero-val {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-family: var(--font-mono);
   color: var(--color-text-body);
   font-variant-numeric: tabular-nums;
@@ -769,7 +769,7 @@ page {
 
 .info-label {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -777,7 +777,7 @@ page {
   flex: 1;
   min-width: 0;
   text-align: right;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body);
 }
 
@@ -788,7 +788,7 @@ page {
 
 .info-value.muted {
   color: var(--color-text-secondary);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 
 .stat-grid {
@@ -808,21 +808,21 @@ page {
 
 .stat-label {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   margin-bottom: 8rpx;
 }
 
 .stat-val {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .stat-val.mono-time {
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 400;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-body);
@@ -846,7 +846,7 @@ page {
 
 .block-title {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   letter-spacing: 0.06em;
   margin-bottom: var(--space-3);
@@ -854,7 +854,7 @@ page {
 
 .block-body {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
   line-height: 1.55;
 }
@@ -862,7 +862,7 @@ page {
 .block-sub {
   display: block;
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -873,7 +873,7 @@ page {
 }
 
 .interest-tag {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.4;
   color: #D4BC85;
   background: rgba(196, 167, 108, 0.12);
@@ -890,7 +890,7 @@ page {
 
 .tag-expand {
   margin-top: var(--space-3);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   letter-spacing: 0.04em;
 }
@@ -920,7 +920,7 @@ page {
 .order-no {
   flex: 1;
   min-width: 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-primary);
   font-family: var(--font-mono);
   overflow: hidden;
@@ -930,7 +930,7 @@ page {
 
 .order-status {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   font-weight: 500;
 }
@@ -943,14 +943,14 @@ page {
 }
 
 .order-price {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-family: var(--font-mono);
   color: var(--brass-400);
   font-weight: 600;
 }
 
 .order-time {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-family: var(--font-mono);
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
@@ -970,7 +970,7 @@ page {
   width: 100%;
   height: 88rpx;
   line-height: 88rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 /* modal */
@@ -983,7 +983,7 @@ page {
 
 .modal-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   font-weight: 500;
   margin-bottom: var(--space-2);
@@ -991,7 +991,7 @@ page {
 
 .modal-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-3);
@@ -1004,7 +1004,7 @@ page {
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   margin-bottom: var(--space-4);
 }
 
@@ -1031,18 +1031,18 @@ page {
 }
 
 .d-phone-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
 .d-phone-val {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-family: var(--font-mono);
   color: var(--brass-300);
 }
 
 .d-phone-muted {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
@@ -1056,7 +1056,7 @@ page {
 
 .youxin-sub {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   margin-top: 4rpx;
 }
@@ -1071,7 +1071,7 @@ page {
 
 .youxin-portrait-line {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-body);
   line-height: 1.45;
 }
@@ -1089,7 +1089,7 @@ page {
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   margin-bottom: var(--space-3);
   box-sizing: border-box;
 }
@@ -1103,7 +1103,7 @@ page {
 }
 
 .youxin-campaign-hint {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-600);
   letter-spacing: 0.08em;
 }
@@ -1133,7 +1133,7 @@ page {
 
 .overview-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
 }
@@ -1141,12 +1141,12 @@ page {
 .overview-sub {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-refresh {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   padding: 8rpx 0 0;
   flex-shrink: 0;
@@ -1164,7 +1164,7 @@ page {
 .sub-tab {
   flex: 1;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   padding: 16rpx 0;
   border-radius: var(--radius-sm);
@@ -1179,13 +1179,13 @@ page {
 .overview-loading {
   padding: var(--space-5) 0;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-hint {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-3);
@@ -1213,7 +1213,7 @@ page {
 
 .ov-val {
   display: block;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 600;
   color: var(--color-text-primary);
   font-family: var(--font-mono);
@@ -1226,7 +1226,7 @@ page {
 .ov-lbl {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
@@ -1235,7 +1235,7 @@ page {
 
 .ov-sec-title {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   letter-spacing: 0.06em;
   margin-bottom: var(--space-2);
@@ -1250,7 +1250,7 @@ page {
 
 .ov-bar-label {
   width: 160rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-body);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1281,7 +1281,7 @@ page {
 .ov-bar-count {
   width: 56rpx;
   text-align: right;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
@@ -1296,7 +1296,7 @@ page {
 
 .ov-rank-no {
   width: 36rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   font-family: var(--font-mono);
   font-weight: 600;
@@ -1318,7 +1318,7 @@ page {
   justify-content: center;
   color: var(--brass-400);
   font-family: var(--font-brand);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .ov-rank-main {
@@ -1333,7 +1333,7 @@ page {
 }
 
 .ov-rank-name {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary);
   font-weight: 500;
   overflow: hidden;
@@ -1343,7 +1343,7 @@ page {
 }
 
 .ov-rank-seg {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   /* 2026-09-21 分子级审计：#6B6560 在 --color-bg-elevated 上仅 2.72（AA 需 4.5）→ secondary（5.60） */
   color: var(--color-text-secondary);
   background: var(--color-bg-elevated);
@@ -1358,14 +1358,14 @@ page {
 
 .ov-rank-meta {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .ov-empty {
   padding: var(--space-4) 0;
   text-align: center;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -1382,7 +1382,7 @@ page {
   background: rgba(214, 64, 69, 0.10);
   border: 1rpx solid rgba(214, 64, 69, 0.35);
 }
-.cancel-state-txt { font-size: 24rpx; color: #D64045; }
+.cancel-state-txt { font-size: var(--fs-24); color: #D64045; }
 
 .cancel-modal { max-height: 84vh; }
 .danger-title { color: #D64045; }
@@ -1392,8 +1392,8 @@ page {
   border: 1rpx solid var(--color-border, rgba(196,167,108,0.2));
   display: flex; flex-direction: column;
 }
-.cancel-target-name { font-size: 30rpx; color: var(--color-text-primary, #E8E4DC); }
-.cancel-target-sub { margin-top: 6rpx; font-size: 22rpx; color: var(--color-text-secondary, #A8A29A); }
+.cancel-target-name { font-size: var(--fs-30); color: var(--color-text-primary, #E8E4DC); }
+.cancel-target-sub { margin-top: 6rpx; font-size: var(--fs-22); color: var(--color-text-secondary, #A8A29A); }
 
 .cancel-modes { display: flex; flex-direction: column; gap: 12rpx; margin: 10rpx 0 18rpx; }
 .cancel-mode {
@@ -1401,14 +1401,14 @@ page {
   border: 1rpx solid var(--color-border, rgba(196,167,108,0.25));
   display: flex; flex-direction: column;
 }
-.cancel-mode.active { border-color: var(--gold, #C4A76C); background: rgba(196,167,108,0.10); }
+.cancel-mode.active { border-color: var(--color-primary, #C4A76C); background: rgba(196,167,108,0.10); }
 .cancel-mode.danger-mode.active { border-color: #D64045; background: rgba(214,64,69,0.12); }
-.cancel-mode-name { font-size: 26rpx; color: var(--color-text-primary, #E8E4DC); }
+.cancel-mode-name { font-size: var(--fs-26); color: var(--color-text-primary, #E8E4DC); }
 .cancel-mode.danger-mode .cancel-mode-name { color: #D64045; }
 .cancel-mode-desc { margin-top: 6rpx; font-size: var(--fs-20); line-height: 1.5; color: var(--color-text-secondary, #A8A29A); }
 
-.cancel-verify-title { margin-top: 6rpx; color: var(--gold, #C4A76C); }
-.cancel-verify-hint { display: block; margin: 10rpx 0 6rpx; font-size: 22rpx; color: var(--color-text-secondary, #A8A29A); }
+.cancel-verify-title { margin-top: 6rpx; color: var(--color-primary, #C4A76C); }
+.cancel-verify-hint { display: block; margin: 10rpx 0 6rpx; font-size: var(--fs-22); color: var(--color-text-secondary, #A8A29A); }
 
 /* 已注销标记（列表项） */
 .cancel-badge {
@@ -1416,7 +1416,7 @@ page {
   margin-left: 10rpx;
   padding: 2rpx 12rpx;
   border-radius: 999rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.6;
   color: var(--color-error-on-tint);
   border: 1rpx solid rgba(214, 64, 69, 0.5);
@@ -1428,3 +1428,9 @@ page {
   background: rgba(138, 132, 124, 0.12);
 }
 
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .signal-lamp.is-pulse {
+    animation: none;
+  }
+}

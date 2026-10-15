@@ -158,7 +158,7 @@ function runChecks(r) {
   check('★ 关闭入口受 closable 控制（门禁场景不渲染）',
     /wx:if="\{\{closable\}\}"/.test(r.dialogWxml) && /closable/.test(r.dialogJs))
   check('弹窗样式使用全站设计令牌（--gold / 博物黑），不是系统默认样式',
-    /var\(--gold/.test(r.dialogWxss) && /#1A1814|--color-bg|--bg-root/.test(r.dialogWxss))
+    /var\(--(gold|color-primary)/.test(r.dialogWxss) && /#1A1814|--color-bg|--bg-root/.test(r.dialogWxss))
 
   // ── 百科详情页：整页模糊门禁 + 无「再看看」────────────────────
   check('★ 百科详情页注册了注册弹窗组件', /register-auth-dialog/.test(stripJs(r.wikiJson)))

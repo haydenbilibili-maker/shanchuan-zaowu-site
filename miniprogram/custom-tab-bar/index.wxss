@@ -82,12 +82,12 @@
 }
 
 .tab-bar-item.center .tab-text {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.02em;
 }
 
 .tab-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.2;
   height: 24rpx;
   font-weight: 500;

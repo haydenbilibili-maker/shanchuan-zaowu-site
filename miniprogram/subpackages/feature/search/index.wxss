@@ -81,21 +81,21 @@ page {
   min-width: 0;
   height: 100%;
   margin-left: 12rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary, #FFFFFF);
   line-height: 1.2;
 }
 
 .search-ph {
   color: var(--color-text-muted, #6B6560);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .clear-btn {
   flex-shrink: 0;
   padding: 10rpx 14rpx;
   margin-left: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.04em;
   color: var(--color-text-secondary, #A09A90);
   line-height: 1;
@@ -134,7 +134,7 @@ page {
 }
 
 .identify-glyph {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 600;
   color: var(--brass-400, #C4A76C);
   font-family: Georgia, 'Source Han Serif SC', 'Noto Serif SC', serif;
@@ -145,7 +145,7 @@ page {
 .cancel-btn {
   flex-shrink: 0;
   padding: 16rpx 4rpx 16rpx 8rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.04em;
   line-height: 1;
@@ -173,13 +173,13 @@ page {
 }
 
 .scope-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
 .scope-name {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400, #C4A76C);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -189,7 +189,7 @@ page {
 .scope-clear {
   flex-shrink: 0;
   padding: 8rpx 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -214,7 +214,7 @@ page {
 
 .suggest-head {
   padding: 16rpx 24rpx 8rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-style: italic;
@@ -243,7 +243,7 @@ page {
 .suggest-text {
   flex: 1;
   min-width: 0;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -252,7 +252,7 @@ page {
 
 .suggest-go {
   flex-shrink: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.08em;
   color: var(--brass-600, #8A7530);
 }
@@ -319,7 +319,7 @@ page {
 }
 
 .identify-plate-mark .identify-glyph {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
 }
 
 .identify-plate-copy {
@@ -331,7 +331,7 @@ page {
 }
 
 .identify-plate-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -339,21 +339,21 @@ page {
 }
 
 .identify-plate-cn {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   letter-spacing: 0.04em;
 }
 
 .identify-plate-desc {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
 }
 
 .identify-plate-arr {
   flex-shrink: 0;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-400, #C4A76C);
   line-height: 1;
 }
@@ -378,7 +378,7 @@ page {
 }
 
 .section-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -386,7 +386,7 @@ page {
 }
 
 .section-cn {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   letter-spacing: 0.04em;
@@ -401,7 +401,7 @@ page {
 }
 
 .clear-history text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -461,7 +461,7 @@ page {
 }
 
 .chip-text {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400, #C4A76C);
   line-height: 1.3;
   overflow: hidden;
@@ -524,7 +524,7 @@ page {
 
 .idle-title,
 .empty-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   margin-bottom: 12rpx;
@@ -532,7 +532,7 @@ page {
 
 .idle-desc,
 .empty-desc {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.55;
 }
@@ -570,13 +570,13 @@ page {
 }
 
 .filter-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   font-weight: 500;
 }
 
 .filter-count {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   font-family: var(--font-mono, monospace);
   min-width: 1em;
@@ -624,14 +624,14 @@ page {
 }
 
 .meta-count {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
   flex-shrink: 0;
 }
 
 .meta-hint {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-600, #8A7530);
   letter-spacing: 0.08em;
   flex-shrink: 0;
@@ -725,7 +725,7 @@ page {
 }
 
 .ac-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
   overflow: hidden;
@@ -745,7 +745,7 @@ page {
 .ac-match {
   flex-shrink: 0;
   padding: 2rpx 10rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.06em;
   color: var(--brass-400, #C4A76C);
   border: 1rpx solid rgba(196, 167, 108, 0.35);
@@ -756,7 +756,7 @@ page {
 .ac-latin {
   font-family: var(--font-latin);
   font-style: italic;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -772,14 +772,14 @@ page {
 }
 
 .ac-type {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-600, #8A7530);
   letter-spacing: 0.06em;
 }
 
 .ac-price {
   font-family: var(--font-mono, 'DIN', monospace);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 600;
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.02em;
@@ -800,7 +800,7 @@ page {
 }
 
 .ac-craft-tag {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   line-height: 1.3;
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -815,7 +815,7 @@ page {
 .ac-tag-chip {
   max-width: 100%;
   padding: 4rpx 12rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.3;
   color: var(--color-text-secondary, #A09A90);
   background: rgba(196, 167, 108, 0.06);
@@ -834,7 +834,7 @@ page {
 
 .ac-arr {
   flex-shrink: 0;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: var(--color-text-secondary);
   line-height: 1;
   padding-left: 4rpx;
@@ -854,7 +854,7 @@ page {
   border: 1rpx solid var(--brass-400, #C4A76C);
   border-radius: var(--radius-md);
   color: var(--brass-400, #C4A76C);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
 }
 
@@ -888,13 +888,13 @@ page {
 }
 
 .related-head .section-cn {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 .related-label {
   display: block;
   margin-bottom: 16rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.12em;
   color: var(--color-text-secondary, #A09A90);
 }
@@ -996,4 +996,11 @@ page {
 @keyframes shine {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .sk-shine {
+    animation: none;
+  }
 }

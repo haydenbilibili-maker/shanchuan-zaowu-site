@@ -21,10 +21,10 @@ page {
   display: flex; align-items: center; justify-content: center;
   border: 1px solid rgba(255,255,255,0.1);
 }
-.icon-arrow { color: #fff; font-size: 32rpx; font-weight: bold; padding-bottom: 4rpx; }
+.icon-arrow { color: #fff; font-size: var(--fs-32); font-weight: bold; padding-bottom: 4rpx; }
 .nav-title {
   position: absolute; left: 0; right: 0; text-align: center;
-  font-size: 30rpx; font-weight: bold; color: #fff; pointer-events: none;
+  font-size: var(--fs-30); font-weight: bold; color: #fff; pointer-events: none;
   transition: opacity var(--dur-base) var(--ease-standard);
 }
 
@@ -53,7 +53,7 @@ page {
   align-items: center;
   align-self: flex-start;
   width: auto;
-  font-size: 20rpx; color: #C4A76C; background: rgba(196, 167, 108,0.15); 
+  font-size: var(--fs-20); color: #C4A76C; background: rgba(196, 167, 108,0.15); 
   padding: 4rpx 12rpx; border-radius: var(--radius-sm); border: 1rpx solid rgba(196, 167, 108,0.3);
   white-space: nowrap;
   box-sizing: border-box;
@@ -61,7 +61,7 @@ page {
 
 .latin-name { 
   font-family: var(--font-latin); font-style: italic; 
-  font-size: 36rpx; color: rgba(255,255,255,0.8); margin-bottom: 10rpx;
+  font-size: var(--fs-36); color: rgba(255,255,255,0.8); margin-bottom: 10rpx;
 }
 .cn-name { 
   font-size: 64rpx; font-weight: 900; color: #fff; margin-bottom: 20rpx; 
@@ -71,7 +71,7 @@ page {
   display: flex; 
   align-items: center; 
   gap: 20rpx; 
-  font-size: 24rpx; 
+  font-size: var(--fs-24); 
   color: var(--color-text-secondary); 
   font-family: var(--font-mono); 
 }
@@ -92,7 +92,7 @@ page {
 
 /* 富文本容器 */
 .article-container {
-  font-size: 30rpx; line-height: 1.8; color: var(--color-text-body);
+  font-size: var(--fs-30); line-height: 1.8; color: var(--color-text-body);
   margin-bottom: 60rpx;
   text-align: justify;
 }
@@ -101,7 +101,7 @@ page {
 /* 知识画廊 */
 .section-block { margin-bottom: 60rpx; }
 .section-title { 
-  font-size: 24rpx; color: var(--color-text-secondary); letter-spacing: 2rpx; margin-bottom: 30rpx; 
+  font-size: var(--fs-24); color: var(--color-text-secondary); letter-spacing: 2rpx; margin-bottom: 30rpx; 
   border-left: 4rpx solid #C4A76C; padding-left: 16rpx; font-family: var(--font-mono); font-weight: bold;
 }
 
@@ -127,8 +127,8 @@ page {
 .p-img { width: 100%; height: 100%; }
 /* 2026-09-21 分子级审计：同 orders/index.wxss —— flex:1 缺 min-width:0 + 标题无截断 */
 .p-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
-.p-name { font-size: 28rpx; font-weight: bold; color: var(--color-text-body); margin-bottom: 8rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.p-price { font-size: 32rpx; color: #C4A76C; font-family: var(--font-mono); font-weight: bold; }
+.p-name { font-size: var(--fs-28); font-weight: bold; color: var(--color-text-body); margin-bottom: 8rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.p-price { font-size: var(--fs-32); color: #C4A76C; font-family: var(--font-mono); font-weight: bold; }
 /* 加载中 / 加载失败状态（失败可重试，避免永久白屏） */
 .cd-state {
   display: flex;
@@ -138,12 +138,12 @@ page {
   padding: 200rpx 60rpx 120rpx;
 }
 .cd-state-title {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: var(--color-text-primary);
 }
 .cd-state-sub {
   margin-top: 16rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.6;
   text-align: center;
   color: var(--color-text-secondary);
@@ -153,14 +153,14 @@ page {
   padding: 18rpx 56rpx;
   border-radius: 999rpx;
   border: 1rpx solid var(--brass-400);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-400);
 }
 .cd-state-link {
   margin-top: 24rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
 /* 行尾进入暗示：替代原实心「查看」胶囊 */
-.p-chevron { flex-shrink: 0; margin-left: 16rpx; font-size: 34rpx; line-height: 1; color: var(--brass-300); }
+.p-chevron { flex-shrink: 0; margin-left: 16rpx; font-size: var(--fs-34); line-height: 1; color: var(--brass-300); }

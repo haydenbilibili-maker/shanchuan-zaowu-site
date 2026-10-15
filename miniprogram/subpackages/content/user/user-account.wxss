@@ -52,7 +52,7 @@
 }
 
 .account-nav-back-icon {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: var(--color-text-secondary);
   line-height: 1;
 }
@@ -64,7 +64,7 @@
 
 .account-nav-title {
   display: block;
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-text-primary);
@@ -75,7 +75,7 @@
 
 .account-nav-sub {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400);
   letter-spacing: 0.12em;
   margin-top: 4rpx;
@@ -87,7 +87,7 @@
 .account-nav-badge {
   flex-shrink: 0;
   padding: 6rpx 16rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-family: var(--font-mono);
   color: var(--brass-400);
   border: 1rpx solid var(--brass-800);
@@ -131,7 +131,7 @@
   justify-content: center;
   background: var(--brass-400);
   color: var(--color-bg);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   border-radius: var(--radius-md);
   margin-bottom: var(--space-2);
@@ -153,7 +153,7 @@
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }
@@ -166,7 +166,7 @@
   margin: 0 0 var(--space-2);
   background: var(--brass-400);
   color: var(--color-bg);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   border-radius: var(--radius-md);
   border: none;
@@ -192,7 +192,7 @@
   display: flex;
   align-items: center;
   gap: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   letter-spacing: 0.1em;
   margin-bottom: var(--space-3);
@@ -217,7 +217,7 @@
   padding: 10rpx 22rpx;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   background: rgba(31, 29, 26, 0.6);
   box-sizing: border-box;
@@ -244,7 +244,7 @@
 
 .account-field-label {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   margin-bottom: 10rpx;
 }
@@ -252,7 +252,7 @@
 .account-field-hint {
   display: block;
   margin: -2rpx 0 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.45;
   color: var(--color-text-secondary);
 }
@@ -271,7 +271,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-body);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   box-sizing: border-box;
 }
 

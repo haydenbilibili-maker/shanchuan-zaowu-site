@@ -25,13 +25,13 @@ view, text, canvas { box-sizing: border-box; }
 }
 .pass-eyebrow {
   font-family: var(--font-mono);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.26em;
   color: var(--color-text-muted);
 }
 .pass-title {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   letter-spacing: 0.04em;
   color: #F2EFE8;
 }
@@ -40,7 +40,7 @@ view, text, canvas { box-sizing: border-box; }
   padding: 8rpx 24rpx;
   border-radius: 999rpx;
   border: 1rpx solid;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   letter-spacing: 0.1em;
   transform: rotate(-3deg);
 }
@@ -50,7 +50,7 @@ view, text, canvas { box-sizing: border-box; }
   background: rgba(233, 162, 59, 0.12);
 }
 .pass-chip-ready {
-  color: var(--gold);
+  color: var(--color-primary);
   border-color: rgba(196, 167, 108, 0.55);
   background: rgba(196, 167, 108, 0.14);
 }
@@ -61,12 +61,12 @@ view, text, canvas { box-sizing: border-box; }
 }
 .pass-headline {
   margin-top: 4rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
 }
 .pass-orderno {
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.08em;
   color: var(--color-text-muted);
 }
@@ -105,7 +105,7 @@ view, text, canvas { box-sizing: border-box; }
 }
 .pass-qr-hint {
   margin-top: 16rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
 }
@@ -171,7 +171,7 @@ view, text, canvas { box-sizing: border-box; }
   min-width: 0;
 }
 .pass-code-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.18em;
   color: var(--color-text-muted);
 }
@@ -180,15 +180,15 @@ view, text, canvas { box-sizing: border-box; }
   font-size: var(--fs-44);
   font-weight: 600;
   letter-spacing: 0.14em;
-  color: var(--gold);
+  color: var(--color-primary);
 }
 .pass-copy {
   flex-shrink: 0;
   padding: 10rpx 24rpx;
   border-radius: 999rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
-  font-size: 22rpx;
-  color: var(--gold);
+  font-size: var(--fs-22);
+  color: var(--color-primary);
 }
 
 /* 三段进度 */
@@ -220,7 +220,7 @@ view, text, canvas { box-sizing: border-box; }
 }
 .pass-dot-done { background: var(--color-success); }
 .pass-dot-current {
-  background: var(--gold);
+  background: var(--color-primary);
   animation: passPulse 1.8s ease-in-out infinite;
 }
 .pass-line {
@@ -234,11 +234,11 @@ view, text, canvas { box-sizing: border-box; }
 }
 .pass-step-label {
   margin-top: 14rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-muted);
 }
 .pass-step-label-done { color: var(--color-text-body); }
-.pass-step-label-current { color: var(--gold); }
+.pass-step-label-current { color: var(--color-primary); }
 @keyframes passPulse {
   0%, 100% { box-shadow: 0 0 0 6rpx rgba(196, 167, 108, 0.14); }
   50% { box-shadow: 0 0 0 12rpx rgba(196, 167, 108, 0.24); }
@@ -261,7 +261,7 @@ view, text, canvas { box-sizing: border-box; }
   gap: 16rpx;
 }
 .pass-store-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--color-text-muted);
 }
@@ -269,35 +269,35 @@ view, text, canvas { box-sizing: border-box; }
   padding: 8rpx 20rpx;
   border-radius: 999rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
-  font-size: 22rpx;
-  color: var(--gold);
+  font-size: var(--fs-22);
+  color: var(--color-primary);
 }
 .pass-store-name {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: var(--color-text-body);
 }
 .pass-store-line {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   color: var(--color-text-muted);
 }
 
 /* ---------- 提示 / 已完成 / 错误 ---------- */
 .pass-hint {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.6;
   text-align: center;
   color: var(--color-text-secondary);
 }
 .pass-guard {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.6;
   text-align: center;
   color: var(--color-warning);
 }
 .pass-refresh {
   margin-top: -8rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.5;
   text-align: center;
   color: var(--color-text-muted);
@@ -324,12 +324,12 @@ view, text, canvas { box-sizing: border-box; }
 }
 .pass-sealed-title {
   font-family: var(--font-brand);
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   letter-spacing: 0.04em;
   color: var(--color-text-body);
 }
 .pass-sealed-sub {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted);
 }
 .pass-error {
@@ -337,7 +337,7 @@ view, text, canvas { box-sizing: border-box; }
   border-radius: var(--radius-md);
   border: 1rpx solid rgba(214, 64, 69, 0.4);
   background: rgba(214, 64, 69, 0.08);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   color: var(--color-error-on-tint);
   text-align: center;
@@ -356,14 +356,14 @@ view, text, canvas { box-sizing: border-box; }
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 .pass-btn.ghost {
   border: 1rpx solid rgba(196, 167, 108, 0.4);
-  color: var(--gold);
+  color: var(--color-primary);
 }
 .pass-btn.primary {
-  background: var(--gold);
+  background: var(--color-primary);
   color: #1A1814;
   font-weight: 500;
 }
@@ -371,7 +371,7 @@ view, text, canvas { box-sizing: border-box; }
   align-self: center;
   padding: 16rpx;
   color: var(--color-text-secondary);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 /* 凭证失效态的操作区 */
@@ -380,4 +380,11 @@ view, text, canvas { box-sizing: border-box; }
   gap: 20rpx;
   margin-top: 28rpx;
   justify-content: center;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .pass-dot-current {
+    animation: none;
+  }
 }

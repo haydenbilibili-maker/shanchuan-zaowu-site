@@ -10,13 +10,13 @@
   background: var(--color-bg-card);
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-body);
 }
 
 .row-sub.muted {
   color: var(--color-text-secondary);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 
 .section-head-row,
@@ -60,7 +60,7 @@
 .si-hint {
   display: block;
   margin-top: var(--space-1);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.6;
   color: var(--color-text-secondary);
 }
@@ -81,7 +81,7 @@
   display: flex;
   justify-content: space-between;
   padding: 6rpx 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body);
 }
 

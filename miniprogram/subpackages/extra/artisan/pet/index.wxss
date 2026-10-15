@@ -16,14 +16,14 @@ page {
 .brand-group { display: flex; flex-direction: column; }
 
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
 }
 
 .brand-group .cn {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 6rpx;
 }
@@ -31,7 +31,7 @@ page {
 .header-note {
   display: block;
   margin-top: var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.6;
 }
@@ -45,26 +45,26 @@ page {
 }
 
 .summary-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .summary-value {
   margin-top: 8rpx;
   font-family: var(--font-mono);
-  font-size: 48rpx;
+  font-size: var(--fs-48);
   color: var(--brass-400);
 }
 
 .summary-sub {
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
 
 .section-title {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary);
   margin-bottom: var(--space-3);
 }
@@ -86,13 +86,13 @@ page {
 
 .pet-no {
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
 }
 
 .pet-status {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -100,13 +100,13 @@ page {
 
 .pet-title {
   margin-top: 8rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
 .pet-meta {
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -122,7 +122,7 @@ page {
 .btn-primary {
   padding: 12rpx 28rpx;
   border-radius: 999rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .btn-ghost {
@@ -136,13 +136,13 @@ page {
 }
 
 .pet-done {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-success);
 }
 
 .empty {
   text-align: center;
   padding: var(--space-6) 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }

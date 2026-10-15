@@ -5,7 +5,7 @@
   padding: 0 0 20rpx;
 }
 .sort-item {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   padding: 8rpx 20rpx;
   border: 1px solid rgba(38, 35, 32, 0.6);
@@ -27,18 +27,18 @@
 }
 .loading-tip,
 .end-tip {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
 }
 .end-tip {
   color: #4A4540;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 .load-fallback {
   display: inline-block;
   padding: 8rpx 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #4A4540;
   letter-spacing: 0.06em;
 }
@@ -51,7 +51,7 @@
 .empty-tip {
   margin-top: 24rpx;
   padding: 64rpx 24rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   /* 2026-09-21 分子级审计：原 #6B6560 在本规则的不透明底 #1F1D1A 上仅 2.93（AA 需 4.5）。
      与 pages/category、pages/index 的同类「空态」统一到 --color-text-secondary（6.02）。 */
   color: var(--color-text-secondary);

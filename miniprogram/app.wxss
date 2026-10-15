@@ -4,20 +4,9 @@
 
 /* ==================== 1. 设计系统 Museum Mode（山海造物 VI） ==================== */
 page {
-  /* 兼容旧变量名 */
-  --primary: #C4A76C;
-  --gold: #C4A76C;
-  --primary-dark: #A8903C;
+  /* 兼容旧变量名：2026-10-15 已全站改用 VIS 3.0 名（VI 规范 v1 §3.6 / 升级路线 P2）。
+     只剩两枚无等价新名的：淡金底 primary-light、暗铜边 border-gold。新代码不要再用。 */
   --primary-light: rgba(196, 167, 108, 0.12);
-  --bg-root: #1A1814;
-  --bg-card: #1F1D1A;
-  --bg-float: #262320;
-  --text-main: #FFFFFF;
-  --text-sub: #A09A90;
-  --text-body: #D5D1C8;
-  --text-muted: #6B6560;
-  --text-gold: #C4A76C;
-  --border-light: rgba(38, 35, 32, 0.4);
   --border-gold: rgba(77, 64, 26, 0.55);
   --radius-sm: 8rpx;
   --radius-md: 16rpx;
@@ -48,8 +37,6 @@ page {
   --brass-700: #6B5A24;
   --brass-800: #4D401A;
   --brass-900: #302810;
-  --dark-700: #262320;
-  --dark-800: #1F1D1A;
   --color-insecta: #52B788;
   --color-minerals: #7B68AE;
   --color-plantae: #6DA34D;
@@ -131,9 +118,9 @@ page {
   --pop-danger-to: #93321F;
 
   background-color: #1A1814;
-  color: var(--text-main);
+  color: var(--color-text-primary);
   font-family: var(--font-body);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.6;
   letter-spacing: 0.02em;
   box-sizing: border-box;
@@ -173,7 +160,7 @@ input {
   position: relative;
 }
 .section-header .title-cn {
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   font-weight: 600;
   font-family: var(--font-heading);
   color: var(--color-text-primary);
@@ -181,7 +168,7 @@ input {
   margin-bottom: 6rpx;
 }
 .section-header .title-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400);
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -227,7 +214,7 @@ input {
   color: var(--color-text-latin);
 }
 .overline {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-weight: 500;
   letter-spacing: 0.1em;
   color: var(--color-text-secondary);
@@ -247,7 +234,7 @@ input {
   border-left: 6rpx solid var(--brass-500);
   padding: 20rpx 30rpx;
   margin: 30rpx 0;
-  color: var(--text-body);
+  color: var(--color-text-body);
   font-style: italic;
   font-family: var(--font-latin);
 }
@@ -264,7 +251,7 @@ img {
   line-height: 60rpx;
   padding-top: 4rpx;
   padding-right: 12rpx;
-  color: var(--primary);
+  color: var(--color-primary);
   font-family: var(--font-latin);
   font-weight: bold;
 }
@@ -280,7 +267,7 @@ button {
   padding: 0;
   margin: 0;
   font-family: inherit;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.6;
   text-align: center;
   text-decoration: none;
@@ -352,7 +339,7 @@ button.btn-secondary,
   justify-content: center;
   box-sizing: border-box;
   background: transparent;
-  color: var(--primary);
+  color: var(--color-primary);
   border: 1px solid var(--brass-400, #C4A76C);
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -383,7 +370,7 @@ button.btn-text,
   justify-content: center;
   box-sizing: border-box;
   background: transparent;
-  color: var(--primary);
+  color: var(--color-primary);
   font-weight: 500;
   letter-spacing: 0.04em;
   line-height: 1.2;
@@ -406,7 +393,7 @@ button.btn-ghost,
   justify-content: center;
   box-sizing: border-box;
   background: rgba(255, 255, 255, 0.04);
-  color: var(--text-main);
+  color: var(--color-text-primary);
   border: 1px solid var(--color-border-highlight);
   font-weight: 500;
   letter-spacing: 0.04em;
@@ -434,7 +421,7 @@ button.btn-ghost:active,
 button.btn-small,
 .btn-small {
   padding: 12rpx 24rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   border-radius: 24rpx;
 }
 
@@ -682,7 +669,7 @@ button[disabled]:active,
 
 .signal-legend-text,
 .lamp-legend text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted, #6B6560);
   letter-spacing: 0.02em;
 }
@@ -698,7 +685,7 @@ button[disabled]:active,
   padding: 4rpx 14rpx;
   border-radius: var(--radius-sm);
   border: 1rpx solid rgba(82, 183, 136, 0.35);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-weight: 500;
   letter-spacing: 0.04em;
   line-height: 1.2;
@@ -972,7 +959,7 @@ button[disabled]:active,
   width: 60rpx;
   height: 60rpx;
   border: 4rpx solid rgba(196, 167, 108, 0.2);
-  border-top-color: var(--primary);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spinner-rotate 0.8s linear infinite;
 }
@@ -994,7 +981,7 @@ button[disabled]:active,
   justify-content: center;
   padding: 60rpx 0;
   color: var(--color-text-secondary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 /* ==================== 7. 空状态优化 ==================== */
@@ -1015,7 +1002,7 @@ button[disabled]:active,
 }
 
 .empty-text {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-muted);
   text-align: center;
   margin-bottom: 20rpx;
@@ -1044,7 +1031,7 @@ button[disabled]:active,
 }
 
 .error-text {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-secondary);
   text-align: center;
   margin-bottom: 20rpx;
@@ -1052,7 +1039,7 @@ button[disabled]:active,
 }
 
 .error-detail {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted);
   text-align: center;
   margin-bottom: 40rpx;
@@ -1111,7 +1098,7 @@ image[error] {
   align-items: center;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   letter-spacing: 0.03em;
 }
@@ -1173,7 +1160,7 @@ image[error] {
 
 .page-nav-back-label {
   margin-left: 6rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   line-height: 1;
   color: var(--brass-400, #C4A76C);
   font-weight: 500;
@@ -1191,8 +1178,24 @@ image[error] {
 /* 分区标题全站口径（注记见 docs/细节雕刻_A流 第 10 轮） */
 .mu-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24rpx; margin-bottom: 24rpx; padding-bottom: 18rpx; background: linear-gradient(90deg, rgba(196,167,108,.55), rgba(196,167,108,.12) 60%, transparent) left bottom / 100% 1px no-repeat; }
 .mu-head-t { display: flex; flex-direction: column; min-width: 0; }
-.mu-en { font-size: 18rpx; line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
+.mu-en { font-size: var(--fs-18); line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
 .mu-cn { margin-top: 6rpx; font-size: 38rpx; line-height: 50rpx; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; white-space: nowrap; /* VIS 3.0 纪律 08：分区主标不折行 */ }
-.mu-sub { margin-top: 6rpx; font-size: 22rpx; line-height: 1.45; color: var(--color-text-secondary); letter-spacing: .04em; }
-.mu-act { flex-shrink: 0; display: flex; align-items: center; gap: 12rpx; padding-bottom: 6rpx; font-size: 22rpx; color: var(--brass-300); letter-spacing: .12em; white-space: nowrap; }
+.mu-sub { margin-top: 6rpx; font-size: var(--fs-22); line-height: 1.45; color: var(--color-text-secondary); letter-spacing: .04em; }
+.mu-act { flex-shrink: 0; display: flex; align-items: center; gap: 12rpx; padding-bottom: 6rpx; font-size: var(--fs-22); color: var(--brass-300); letter-spacing: .12em; white-space: nowrap; }
 .mu-act-muted { color: var(--color-text-secondary); letter-spacing: .06em; }
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .signal-light.blink,
+  .signal-light.warn.blink,
+  .lamp-warn.blink,
+  .lamp-warning.blink,
+  .signal-light.danger.blink,
+  .lamp-error.blink,
+  .signal-light.live.blink,
+  .skeleton,
+  .ui-sk-line,
+  .loading-spinner {
+    animation: none;
+  }
+}

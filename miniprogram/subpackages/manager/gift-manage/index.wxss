@@ -33,7 +33,7 @@ page {
 }
 
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
   text-transform: uppercase;
@@ -41,7 +41,7 @@ page {
 
 .brand-group .cn {
   font-family: var(--font-brand);
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   color: var(--color-text-primary);
   margin-top: 6rpx;
   line-height: 1.2;
@@ -52,7 +52,7 @@ page {
   margin-top: 8rpx;
   padding: 8rpx 16rpx;
   border-radius: var(--radius-sm);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.04em;
   border: 1rpx solid var(--color-border);
   color: var(--color-text-secondary, #A09A90);
@@ -71,7 +71,7 @@ page {
 .header-note {
   display: block;
   margin-top: var(--space-2);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -85,7 +85,7 @@ page {
 }
 
 .readonly-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-300);
   line-height: 1.5;
 }
@@ -103,7 +103,7 @@ page {
 }
 
 .hint-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-warning);
   line-height: 1.5;
   flex: 1;
@@ -154,7 +154,7 @@ page {
 }
 
 .section-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
   line-height: 1.3;
@@ -162,13 +162,13 @@ page {
 
 .section-body {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.55;
 }
 
 .chevron {
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--brass-400);
   line-height: 1;
   flex-shrink: 0;
@@ -182,7 +182,7 @@ page {
 }
 
 .lamp-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -193,7 +193,7 @@ page {
 }
 
 .meta-tag {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   padding: 4rpx 12rpx;
   border: 1rpx solid var(--brass-800);
@@ -208,7 +208,7 @@ page {
 .meta-line {
   display: block;
   margin-top: var(--space-3);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -217,7 +217,7 @@ page {
   padding: var(--space-2) var(--space-3);
   background: var(--color-bg-elevated);
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-300);
   line-height: 1.5;
 }
@@ -254,7 +254,7 @@ page {
 .todo-num {
   display: block;
   font-family: var(--font-mono);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-weight: 600;
   color: var(--color-text-primary);
   line-height: 1.1;
@@ -271,14 +271,14 @@ page {
 .todo-lbl {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-body);
 }
 
 .todo-hint {
   display: block;
   margin-top: 4rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.02em;
 }
@@ -306,7 +306,7 @@ page {
 .metric-num {
   display: block;
   font-family: var(--font-mono);
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   font-weight: 600;
 }
@@ -314,7 +314,7 @@ page {
 .metric-lbl {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
@@ -333,12 +333,12 @@ page {
 }
 
 .link-cn {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-400);
 }
 
 .link-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -353,7 +353,7 @@ page {
 }
 
 .form-label {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
 }
 
@@ -361,7 +361,7 @@ page {
   display: block;
   margin-bottom: var(--space-2);
   color: var(--color-text-secondary);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 
 .form-label-col {
@@ -375,7 +375,7 @@ page {
 .field-hint {
   display: block;
   margin-top: 8rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
 }
@@ -402,7 +402,7 @@ page {
   padding: 14rpx 28rpx;
   border-radius: var(--radius-md);
   border: 1rpx solid var(--color-border);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
 }
 
@@ -434,7 +434,7 @@ page {
 .picker-main {
   flex: 1;
   min-width: 0;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary);
   line-height: 1.4;
 }
@@ -445,7 +445,7 @@ page {
 
 .picker-hint {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
 }
 
@@ -454,7 +454,7 @@ page {
   padding: 10rpx 20rpx;
   border-radius: var(--radius-sm);
   border: 1rpx solid var(--color-border);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -489,14 +489,14 @@ page {
 .sub-label {
   flex: 1;
   min-width: 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body);
   line-height: 1.4;
 }
 
 .sub-status {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -516,7 +516,7 @@ page {
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
 }
 .page-tip.is-info {
@@ -539,7 +539,7 @@ page {
 .empty-hint {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 .btn-retry {
@@ -548,6 +548,6 @@ page {
   padding: 12rpx 28rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.5);
   border-radius: 999rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #e8dcc0;
 }

@@ -68,7 +68,44 @@ function inspect(abs) {
     depth -= (l.match(/\}/g) || []).length
     if (keyframesAt >= 0 && depth <= keyframesAt) keyframesAt = -1
   }
+  // A8（契约 C7 §5.3 / VI 规范 v1 §10.3）：带无限循环动画的选择器，必须在同文件的
+  //   @media (prefers-reduced-motion: reduce) 里重写 animation —— 系统开「减少动态效果」时停在静止态。
+  //   2026-10-15 全站补齐（54 个文件 / 148 个选择器），此后新增无限动画不带减弱分支即红。
+  for (const sel of uncoveredInfinite(src)) {
+    problems.push(`A8 无限动画 ${sel} 没有 prefers-reduced-motion 减弱分支（在同文件补 @media (prefers-reduced-motion: reduce) { ${sel} { animation: none; } }）`)
+  }
   return problems
+}
+
+/** 深度 0 的规则：[头, 体]（at-rule 的内部作为体返回，由调用方决定是否下钻） */
+function topRules(src) {
+  const out = []
+  let i = 0
+  while (i < src.length) {
+    const j = src.indexOf('{', i)
+    if (j < 0) break
+    let d = 1
+    let k = j + 1
+    while (k < src.length && d) { if (src[k] === '{') d += 1; else if (src[k] === '}') d -= 1; k += 1 }
+    out.push([src.slice(i, j).trim(), src.slice(j + 1, k - 1)])
+    i = k
+  }
+  return out
+}
+const INFINITE = /animation(?:-iteration-count)?\s*:[^;}]*\binfinite\b/
+function uncoveredInfinite(src) {
+  const need = []
+  const covered = new Set()
+  for (const [head, body] of topRules(src)) {
+    if (head.startsWith('@media') && head.includes('prefers-reduced-motion')) {
+      for (const [h2, b2] of topRules(body)) if (/animation\s*:/.test(b2)) h2.split(',').forEach((x) => covered.add(x.trim().replace(/\s+/g, ' ')))
+    } else if (head.startsWith('@')) {
+      continue
+    } else if (INFINITE.test(body)) {
+      head.split(',').map((x) => x.trim().replace(/\s+/g, ' ')).filter(Boolean).forEach((x) => { if (!need.includes(x)) need.push(x) })
+    }
+  }
+  return need.filter((x) => !covered.has(x))
 }
 
 const files = walk(MP)
@@ -84,7 +121,8 @@ if (process.argv.includes('--selftest')) {
   const cases = [
     { name: '残留孤儿 to{…}（本次真事故）', inject: '\nto { opacity: 1; transform: translateY(0) rotate(0); }\n}\n' },
     { name: '少一个收尾 }', inject: '\n.x-orphan { color: red;\n' },
-    { name: 'font-family 里未加引号的中文族名', inject: '\n.x-font { font-family: KaiTi, 楷体, serif; }\n' }
+    { name: 'font-family 里未加引号的中文族名', inject: '\n.x-font { font-family: KaiTi, 楷体, serif; }\n' },
+    { name: 'A8 新增无限动画但没有减弱动效分支', inject: '\n.x-spin { animation: x-spin 1s linear infinite; }\n' }
   ]
   for (const c of cases) {
     writeFileSync(target, orig + c.inject)
@@ -101,5 +139,5 @@ if (process.argv.includes('--selftest')) {
   console.log(`✗ ${failures.length} 处问题 / 共 ${files.length} 个 wxss`)
   process.exit(1)
 } else {
-  console.log(`✓ WXSS 语法体检通过（${files.length} 个文件：括号配平、无 @keyframes 孤儿片段）`)
+  console.log(`✓ WXSS 语法体检通过（${files.length} 个文件：括号配平、无 @keyframes 孤儿片段、无限动画都有减弱动效分支）`)
 }

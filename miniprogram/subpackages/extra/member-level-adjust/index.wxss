@@ -20,7 +20,7 @@ page {
 }
 
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
   text-transform: uppercase;
@@ -28,7 +28,7 @@ page {
 
 .brand-group .cn {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 6rpx;
 }
@@ -36,7 +36,7 @@ page {
 .header-note {
   display: block;
   margin-top: var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -53,7 +53,7 @@ page {
 }
 
 .hint-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-info);
   line-height: 1.5;
 }
@@ -78,14 +78,14 @@ page {
 }
 
 .section-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
 }
 
 .section-meta,
 .section-action {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
 }
 
@@ -103,7 +103,7 @@ page {
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .search-btn {
@@ -127,14 +127,14 @@ page {
 
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   margin-bottom: 8rpx;
 }
 
 .empty-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -171,7 +171,7 @@ page {
 
 .avatar.placeholder text {
   color: var(--brass-400);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 .member-main {
@@ -187,13 +187,13 @@ page {
 }
 
 .member-name {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .tag {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   padding: 2rpx 12rpx;
   border-radius: var(--radius-sm);
   background: rgba(160, 154, 144, 0.15);
@@ -219,7 +219,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -232,7 +232,7 @@ page {
 
 .level-pill,
 .discount-pill {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.12);
@@ -247,7 +247,7 @@ page {
 .member-natural {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -286,21 +286,21 @@ page {
 }
 
 .chip-lv {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.06em;
   color: var(--brass-400);
 }
 
 .chip-name {
   margin-top: 4rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-primary);
   white-space: nowrap;
 }
 
 .chip-meta {
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
   white-space: nowrap;
@@ -309,7 +309,7 @@ page {
 .tip {
   display: block;
   margin-top: var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -329,7 +329,7 @@ page {
 
 .ops-action {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
@@ -346,7 +346,7 @@ page {
 .ops-meta {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -359,7 +359,7 @@ page {
 .loading-hint {
   padding: var(--space-4) 0;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -372,7 +372,7 @@ page {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   box-sizing: border-box;
 }
 
@@ -418,7 +418,7 @@ page {
 
 .modal-title {
   display: block;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   color: var(--color-text-primary);
 }
@@ -426,7 +426,7 @@ page {
 .modal-sub {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -452,7 +452,7 @@ page {
 .field-label {
   display: block;
   margin-bottom: 10rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -464,7 +464,7 @@ page {
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   box-sizing: border-box;
 }
 
@@ -476,7 +476,7 @@ page {
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   box-sizing: border-box;
 }
 
@@ -500,7 +500,7 @@ page {
 
 .pick-lv {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.06em;
   color: var(--brass-400);
 }
@@ -508,7 +508,7 @@ page {
 .pick-name {
   display: block;
   margin-top: 4rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   font-weight: 500;
 }
@@ -516,7 +516,7 @@ page {
 .pick-meta {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
@@ -536,7 +536,7 @@ page {
   border-radius: var(--radius-md);
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   color: var(--color-text-secondary);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .mode-chip.on {

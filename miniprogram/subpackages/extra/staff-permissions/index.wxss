@@ -22,7 +22,7 @@ page {
 }
 
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
   text-transform: uppercase;
@@ -30,7 +30,7 @@ page {
 
 .brand-group .cn {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 6rpx;
 }
@@ -46,7 +46,7 @@ page {
 .section-title {
   display: block;
   margin-bottom: var(--space-2);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: 0.04em;
@@ -66,12 +66,12 @@ page {
 }
 
 .feature-group-title {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary);
 }
 
 .feature-group-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.12em;
   color: var(--brass-600);
 }
@@ -96,19 +96,19 @@ page {
 }
 
 .feature-check-label {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
 }
 
 .feature-check-state {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
 }
 
 .section-note {
   display: block;
   margin-top: var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.6;
   color: var(--color-text-secondary, #A09A90);
 }
@@ -126,7 +126,7 @@ page {
   margin-top: var(--space-3);
   padding: 0 var(--space-5);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   letter-spacing: 0.02em;
   background: var(--brass-400);
@@ -173,7 +173,7 @@ page {
   min-height: 64rpx;
   padding: 0 var(--space-3);
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   box-sizing: border-box;
 }
@@ -216,13 +216,13 @@ page {
 }
 
 .row-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
 .row-sub {
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -230,7 +230,7 @@ page {
   flex-shrink: 0;
   padding: 4rpx 14rpx;
   border-radius: var(--radius-sm);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-success);
   background: rgba(82, 183, 136, 0.1);
 }
@@ -238,7 +238,7 @@ page {
 .field-label {
   display: block;
   margin-bottom: 14rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
@@ -253,7 +253,7 @@ page {
 .field-hint {
   display: block;
   margin-top: 14rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   color: var(--color-text-secondary, #A09A90);
 }
@@ -278,7 +278,7 @@ page {
   height: 72rpx;
   line-height: 72rpx;
   text-align: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
   background: var(--color-bg-elevated);
   border: 1rpx solid rgba(77, 64, 26, 0.45);
@@ -304,7 +304,7 @@ page {
   line-height: 68rpx;
   border: 1rpx solid rgba(77, 64, 26, 0.4);
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
   background: var(--color-bg-elevated);
   box-sizing: border-box;
@@ -340,7 +340,7 @@ page {
   justify-content: center;
   width: 148rpx;
   height: 80rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-400);
   background: rgba(196, 167, 108, 0.1);
   border: 1rpx solid var(--brass-400);
@@ -383,7 +383,7 @@ page {
   display: inline-block;
   margin-bottom: 8rpx;
   padding: 2rpx 12rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   border-radius: var(--radius-full);
@@ -391,14 +391,14 @@ page {
 
 .match-name {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
 .match-meta {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -413,7 +413,7 @@ page {
   border: 1rpx solid rgba(196, 167, 108, 0.28);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   box-sizing: border-box;
 }
 .picker-like {
@@ -432,7 +432,7 @@ page {
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
 }
 .page-tip.is-info {
@@ -449,14 +449,14 @@ page {
 .loading-hint {
   padding: var(--space-6) var(--space-2);
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .empty {
   padding: var(--space-6) var(--space-2);
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.6;
   color: var(--color-text-secondary, #A09A90);
 }
@@ -468,13 +468,13 @@ page {
 }
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   margin-bottom: 8rpx;
 }
 .empty-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -484,7 +484,7 @@ page {
   padding: 12rpx 28rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.5);
   border-radius: 999rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #e8dcc0;
 }
 

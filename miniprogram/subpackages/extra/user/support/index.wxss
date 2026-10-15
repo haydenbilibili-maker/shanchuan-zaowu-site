@@ -62,13 +62,13 @@ page {
 
 .nav-title {
   font-family: var(--font-brand, serif);
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 600;
   letter-spacing: 0.06em;
 }
 
 .nav-sub {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.12em;
 }
@@ -115,7 +115,7 @@ page {
 
 .section-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
   margin-bottom: 20rpx;
@@ -124,7 +124,7 @@ page {
 
 .section-hint {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   margin: -8rpx 0 20rpx;
   line-height: 1.5;
@@ -149,20 +149,20 @@ page {
 .service-row:last-child { margin-bottom: 0; }
 
 .service-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
 .service-val {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
   text-align: right;
   flex: 1;
 }
 
 .service-val.muted {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -180,7 +180,7 @@ page {
 }
 
 .context-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   line-height: 1.6;
   white-space: pre-wrap;
@@ -242,7 +242,7 @@ page {
 }
 
 .context-thumb-mark {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--brass-400, #C4A76C);
   font-family: var(--font-brand, serif);
 }
@@ -256,14 +256,14 @@ page {
 }
 
 .context-kind {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.1em;
   line-height: 1.2;
 }
 
 .context-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
   line-height: 1.35;
@@ -273,7 +273,7 @@ page {
 }
 
 .context-sub {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.35;
   overflow: hidden;
@@ -294,14 +294,14 @@ page {
 }
 
 .context-go-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.04em;
 }
 
 .context-go-arrow {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1;
   color: var(--brass-400, #C4A76C);
   margin-top: -2rpx;
@@ -315,7 +315,7 @@ page {
 
 .context-tip-text {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
@@ -353,14 +353,14 @@ page {
 }
 
 .topic-label {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
   line-height: 1.35;
 }
 
 .topic-desc {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   line-height: 1.4;
   word-break: break-all;
@@ -375,14 +375,14 @@ page {
 }
 .invoice-note-title {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-400, #C4A76C);
   font-weight: 500;
   margin-bottom: 10rpx;
 }
 .invoice-note-body {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.55;
 }
@@ -401,7 +401,7 @@ page {
 
 .field-label {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   margin-bottom: 12rpx;
 }
@@ -412,7 +412,7 @@ page {
 
 .field-hint-inline {
   margin-left: 8rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted, #6B6560);
   font-weight: 400;
 }
@@ -420,7 +420,7 @@ page {
 .field-input {
   width: 100%;
   height: 64rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   box-sizing: border-box;
 }
@@ -428,7 +428,7 @@ page {
 .field-textarea {
   width: 100%;
   min-height: 120rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.55;
   box-sizing: border-box;
@@ -444,7 +444,7 @@ page {
   height: 64rpx;
   line-height: 64rpx;
   text-align: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary, #A09A90);
   background: var(--color-bg-elevated, #262320);
   border: 1px solid rgba(38, 35, 32, 0.9);
@@ -490,14 +490,14 @@ page {
 
 .channel-name {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   margin-bottom: 6rpx;
 }
 
 .channel-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -506,7 +506,7 @@ page {
   height: 64rpx;
   line-height: 64rpx;
   padding: 0 28rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   color: var(--color-bg, #1A1814);
   background: var(--brass-400, #C4A76C);
@@ -517,7 +517,7 @@ page {
 .channel-btn::after { border: none; }
 
 .channel-arrow {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-400, #C4A76C);
   flex-shrink: 0;
 }
@@ -532,7 +532,7 @@ page {
 .message-input {
   width: 100%;
   min-height: 180rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.6;
   box-sizing: border-box;
@@ -552,14 +552,14 @@ page {
 }
 
 .phone-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   flex-shrink: 0;
 }
 
 .phone-input {
   flex: 1;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
 }
 
@@ -579,7 +579,7 @@ page {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--color-bg, #1A1814) !important;
@@ -623,13 +623,13 @@ page {
   justify-content: space-between;
   align-items: flex-start;
   gap: 16rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.5;
 }
 
 .faq-toggle {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: var(--brass-400, #C4A76C);
   flex-shrink: 0;
   line-height: 1;
@@ -640,7 +640,7 @@ page {
   margin-top: 16rpx;
   padding-top: 16rpx;
   border-top: 1px solid rgba(38, 35, 32, 0.6);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.65;
 }
@@ -654,14 +654,14 @@ page {
 
 .visit-addr {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.6;
   margin-bottom: 12rpx;
 }
 
 .visit-link {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
 }
 
@@ -694,17 +694,17 @@ page {
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary, #A09A90);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 .modal-title {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 600;
   margin-bottom: 8rpx;
 }
 
 .modal-sub {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.1em;
   margin-bottom: 32rpx;
@@ -719,6 +719,13 @@ page {
 
 .modal-tip {
   margin-top: 24rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .sk-shine {
+    animation: none;
+  }
 }

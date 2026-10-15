@@ -10,13 +10,13 @@
 }
 
 .rw-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   letter-spacing: 0.14em;
   margin-bottom: 12rpx;
 }
 
 .rw-cn {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #A09A90;
 }

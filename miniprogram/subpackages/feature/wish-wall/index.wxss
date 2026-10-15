@@ -3477,3 +3477,13 @@ page {
   border: 1rpx solid rgba(107, 90, 36, 0.5);
   box-shadow: none;
 }
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .ww-plate,
+  .ww-lantern.is-lit .ww-lantern-halo,
+  .ww-wall-skel,
+  .wallet-skel {
+    animation: none;
+  }
+}

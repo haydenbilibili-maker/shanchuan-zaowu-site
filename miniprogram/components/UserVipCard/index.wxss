@@ -203,7 +203,7 @@
 
 .org-name .cn {
   font-family: var(--font-brand);
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: 0.18em;
@@ -212,7 +212,7 @@
 
 .org-name .en {
   font-family: var(--font-mono);
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   color: var(--brass-400);
   letter-spacing: 0.14em;
   margin-bottom: 4rpx;
@@ -220,7 +220,7 @@
 }
 
 .org-name .tagline {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-secondary);
   letter-spacing: 0.16em;
   font-weight: 400;
@@ -269,7 +269,7 @@
 
 .pass-chip .ap-text {
   letter-spacing: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
 }
 
 .ap-icon {
@@ -278,7 +278,7 @@
 }
 
 .ap-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   font-weight: 600;
   letter-spacing: 1rpx;
@@ -394,7 +394,7 @@
 }
 
 .nick-display {
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   color: var(--color-text-primary);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -405,7 +405,7 @@
 }
 
 .nick-input {
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: #fff;
   font-weight: 900;
   width: auto;
@@ -418,12 +418,12 @@
 
 .ph {
   color: rgba(255, 255, 255, 0.4);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
 }
 
 .edit-icon {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #666;
   margin-left: 8rpx;
 }
@@ -436,9 +436,9 @@
 }
 
 .badge-pill {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-bg);
-  background: var(--gold);
+  background: var(--color-primary);
   padding: 5rpx 14rpx;
   border-radius: var(--radius-sm);
   font-weight: 600;
@@ -447,7 +447,7 @@
 }
 
 .rate-tag {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   border: 1rpx solid rgba(196, 167, 108, 0.38);
   padding: 4rpx 12rpx;
@@ -514,14 +514,14 @@
 }
 
 .growth-overline {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-muted);
   letter-spacing: 0.14em;
   font-weight: 500;
 }
 
 .growth-link-hint {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400);
   letter-spacing: 0.06em;
   opacity: 0.75;
@@ -537,7 +537,7 @@
 
 .growth-num {
   font-family: var(--font-mono);
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: 1rpx;
@@ -545,14 +545,14 @@
 }
 
 .growth-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   letter-spacing: 0.08em;
 }
 
 .growth-target {
   font-family: var(--font-mono);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: rgba(196, 167, 108, 0.5);
 }
 
@@ -567,7 +567,7 @@
 .growth-gap-line {
   flex: 1;
   min-width: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: rgba(196, 167, 108, 0.9);
   letter-spacing: 0.03em;
   line-height: 1.35;
@@ -578,7 +578,7 @@
 
 .growth-perk-delta {
   flex-shrink: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-weight: 500;
   color: var(--brass-300);
   letter-spacing: 0.04em;
@@ -586,7 +586,7 @@
 }
 
 .growth-status {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: rgba(196, 167, 108, 0.9);
   letter-spacing: 0.06em;
   flex-shrink: 0;
@@ -646,7 +646,7 @@
 .progress-bar {
   position: relative;
   height: 100%;
-  background: linear-gradient(90deg, #8A7530 0%, var(--gold) 100%);
+  background: linear-gradient(90deg, #8A7530 0%, var(--color-primary) 100%);
   border-radius: 0;
   overflow: hidden;
 }
@@ -1025,7 +1025,7 @@
   background: rgba(160, 154, 144, 0.18);
 }
 .vip-card.level-skin-1 .progress-bar {
-  background: linear-gradient(90deg, #A8903C 0%, var(--gold) 100%);
+  background: linear-gradient(90deg, #A8903C 0%, var(--color-primary) 100%);
 }
 .vip-card.level-skin-1 .cb-stripe {
   background: linear-gradient(180deg, #F5F3EF 0%, #EBE8E2 100%);
@@ -1155,7 +1155,7 @@
   background: rgba(139, 111, 71, 0.16);
 }
 .vip-card.level-skin-2 .progress-bar {
-  background: linear-gradient(90deg, #8B6F47 0%, var(--gold) 100%);
+  background: linear-gradient(90deg, #8B6F47 0%, var(--color-primary) 100%);
 }
 .vip-card.level-skin-2 .card-thickness {
   background:
@@ -1374,7 +1374,7 @@
   background: rgba(24, 14, 6, 0.55);
 }
 .vip-card.level-skin-3 .progress-bar {
-  background: linear-gradient(90deg, #8A6A2C 0%, var(--gold) 100%);
+  background: linear-gradient(90deg, #8A6A2C 0%, var(--color-primary) 100%);
 }
 .vip-card.level-skin-3 .user-info-row-press,
 .vip-card.level-skin-3 .growth-panel-press { background: rgba(255, 238, 205, 0.09); }
@@ -1509,7 +1509,7 @@
 .vip-card.level-skin-4 .growth-status,
 .vip-card.level-skin-4 .growth-perk-delta,
 .vip-card.level-skin-4 .cb-row-val { color: #E4DDCE; }
-.vip-card.level-skin-4 .cb-specimen-latin { color: var(--gold); }
+.vip-card.level-skin-4 .cb-specimen-latin { color: var(--color-primary); }
 .vip-card.level-skin-4 .action-chip {
   background: rgba(8, 6, 4, 0.34);
   border-color: rgba(210, 170, 168, 0.34);
@@ -1953,7 +1953,7 @@
   background: rgba(28, 20, 6, 0.65);
 }
 .vip-card.level-skin-6 .progress-bar {
-  background: linear-gradient(90deg, #A8903C 0%, var(--gold) 100%);
+  background: linear-gradient(90deg, #A8903C 0%, var(--color-primary) 100%);
 }
 .vip-card.level-skin-6 .progress-bar::after {
   content: '';
@@ -2120,7 +2120,7 @@
 .vip-card.level-skin-99 .vip-card.level-skin-99 .ap-text,
 .vip-card.level-skin-99 .cb-overline,
 .vip-card.level-skin-99 .cb-row-link,
-.vip-card.level-skin-99 .cb-specimen-latin { color: var(--gold); }
+.vip-card.level-skin-99 .cb-specimen-latin { color: var(--color-primary); }
 .vip-card.level-skin-99 .org-name .tagline,
 .vip-card.level-skin-99 .growth-overline,
 .vip-card.level-skin-99 .growth-label,
@@ -2160,11 +2160,11 @@
   background: var(--color-bg-card);
 }
 .vip-card.level-skin-99 .badge-pill {
-  background: var(--gold);
+  background: var(--color-primary);
   color: var(--color-bg);
 }
 .vip-card.level-skin-99 .rate-tag {
-  color: var(--gold);
+  color: var(--color-primary);
   border-color: rgba(196, 167, 108, 0.4);
   background: rgba(0, 0, 0, 0.32);
 }
@@ -2172,7 +2172,7 @@
 .vip-card.level-skin-99 .card-section-rule-fill { background: rgba(168, 144, 60, 0.7); }
 .vip-card.level-skin-99 .progress-track { background: rgba(0, 0, 0, 0.55); }
 .vip-card.level-skin-99 .progress-bar {
-  background: linear-gradient(90deg, #8A7530 0%, var(--gold) 100%);
+  background: linear-gradient(90deg, #8A7530 0%, var(--color-primary) 100%);
 }
 .vip-card.level-skin-99 .progress-bar::after {
   content: '';
@@ -2229,7 +2229,7 @@
 
 /* —— 背板：标本标签（中文名 + 拉丁学名，Georgia 斜体） —— */
 .cb-specimen {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: rgba(213, 209, 200, 0.6);
   letter-spacing: 0.06em;
   flex-shrink: 0;
@@ -2239,7 +2239,7 @@
 .cb-specimen-latin {
   font-family: var(--font-latin);
   font-style: italic;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: rgba(196, 167, 108, 0.72);
   letter-spacing: 0.02em;
   flex-shrink: 0;
@@ -2254,7 +2254,7 @@
 
 
 .card-flip-hint {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: rgba(196, 167, 108, 0.45);
   letter-spacing: 0.06em;
   flex-shrink: 0;
@@ -2316,7 +2316,7 @@
 
 .cb-overline {
   display: block;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   color: var(--brass-400);
   letter-spacing: 0.14em;
   margin-bottom: 4rpx;
@@ -2324,14 +2324,14 @@
 
 .cb-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-family: var(--font-brand);
   color: var(--color-text-primary);
   line-height: 1.2;
 }
 
 .cb-member {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-family: var(--font-mono);
   color: rgba(255, 255, 255, 0.5);
   letter-spacing: 0.08em;
@@ -2352,7 +2352,7 @@
 
 .cb-row-label,
 .cb-tags-label {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: rgba(196, 167, 108, 0.65);
   letter-spacing: 0.08em;
   flex-shrink: 0;
@@ -2366,7 +2366,7 @@
 
 .cb-row-val {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-family: var(--font-mono);
   color: var(--brass-400);
   font-weight: 600;
@@ -2375,7 +2375,7 @@
 
 .cb-row-sub {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-secondary);
   margin-top: 2rpx;
   overflow: hidden;
@@ -2384,7 +2384,7 @@
 }
 
 .cb-row-link {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   flex-shrink: 0;
 }
@@ -2416,7 +2416,7 @@
 
 .cb-stat-val {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-family: var(--font-mono);
   color: #fff;
   font-weight: 600;
@@ -2428,7 +2428,7 @@
 
 .cb-stat-label {
   display: block;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   color: var(--color-text-muted);
   margin-top: 4rpx;
   white-space: nowrap;
@@ -2461,7 +2461,7 @@
   padding: 4rpx 14rpx;
   border-radius: var(--radius-full);
   border: 1px solid;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   flex-shrink: 0;
   white-space: nowrap;
   box-sizing: border-box;
@@ -2469,7 +2469,7 @@
 
 .cb-persona {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   margin-top: 8rpx;
   overflow: hidden;
@@ -2479,7 +2479,7 @@
 
 .cb-tags-empty {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
   margin-top: 8rpx;
 }
@@ -2496,7 +2496,7 @@
 }
 
 .cb-since {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: rgba(196, 167, 108, 0.55);
   letter-spacing: 0.04em;
   overflow: hidden;
@@ -2561,7 +2561,7 @@
 /* === 需求 21：背板常驻档案入口（生日 / 标签是否填写都可用） === */
 .cb-tags-link {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   margin-top: 8rpx;
 }
@@ -2571,7 +2571,7 @@
   padding: 6rpx 14rpx;
   border-radius: 999rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-300);
 }
 .cb-profile-cta-press {
@@ -2825,12 +2825,12 @@
 /* —— 文案排印（两套底色：封皮浅字 / 信纸深字） —— */
 .ge-overline {
   font-family: var(--font-mono);
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.22em;
 }
 .ge-title {
   font-family: var(--font-brand);
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   letter-spacing: 0.03em;
 }
 .ge-desc {
@@ -2838,7 +2838,7 @@
   line-height: 1.5;
 }
 .ge-note {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
 }
 .ge-face .ge-overline { color: rgba(196, 167, 108, 0.7); }
 .ge-face .ge-title { color: var(--brass-100); }
@@ -2858,12 +2858,12 @@
   background: rgba(196, 167, 108, 0.18);
 }
 .ge-cta-text {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   letter-spacing: 0.08em;
   color: #4A3F22;
 }
 .ge-cta-arr {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #4A3F22;
 }
 
@@ -3022,7 +3022,7 @@
   position: relative;
   z-index: 2;
   font-family: var(--font-brand);
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   letter-spacing: 0.06em;
   color: rgba(255, 232, 224, 0.92);
@@ -3125,11 +3125,30 @@
 }
 .ge-hint-over {
   font-family: var(--font-mono);
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   letter-spacing: 0.24em;
   color: rgba(196, 167, 108, 0.62);
 }
 .ge-hint-line {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .vip-card.level-skin-5 .card-sheen::before,
+  .vip-card.level-skin-5 .progress-bar::after,
+  .vip-card.level-skin-6 .card-sheen::before,
+  .vip-card.level-skin-6 .card-edge::before,
+  .vip-card.level-skin-6 .progress-bar::after,
+  .vip-card.level-skin-99 .card-sheen::before,
+  .vip-card.level-skin-99 .card-edge::before,
+  .vip-card.level-skin-99 .progress-bar::after,
+  .vip-skel,
+  .ge-glow,
+  .ge-butterfly,
+  .ge-butterfly-img,
+  .ge-butterfly-glow {
+    animation: none;
+  }
 }

@@ -20,7 +20,7 @@ page {
 
 .hero-overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
   letter-spacing: 0.16em;
   margin-bottom: 12rpx;
@@ -28,7 +28,7 @@ page {
 
 .hero-tagline {
   display: block;
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   color: var(--brass-200);
   letter-spacing: 0.06em;
   line-height: 1.45;
@@ -45,7 +45,7 @@ page {
 
 .hero-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.65;
 }
@@ -63,18 +63,18 @@ page {
 
 .stat-num {
   font-family: var(--font-mono);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   color: var(--brass-400);
 }
 
 .stat-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
 .stat-arrow {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
@@ -115,7 +115,7 @@ page {
 
 .season-label {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-forest);
   letter-spacing: 0.06em;
   font-weight: 500;
@@ -124,7 +124,7 @@ page {
 
 .season-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body);
   line-height: 1.55;
 }
@@ -164,7 +164,7 @@ page {
 }
 
 .ph-letter {
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: var(--brass-400);
   font-family: var(--font-brand);
 }
@@ -176,7 +176,7 @@ page {
 
 .specimen-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   font-weight: 500;
   overflow: hidden;
@@ -197,7 +197,7 @@ page {
   align-items: center;
   align-self: flex-start;
   width: auto;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.04em;
   padding: 4rpx 12rpx;
   border-radius: var(--radius-full);
@@ -206,13 +206,13 @@ page {
 }
 
 .specimen-date {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
 .specimen-summary {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   margin-top: 10rpx;
   line-height: 1.45;
@@ -225,7 +225,7 @@ page {
 .specimen-chevron {
   flex-shrink: 0;
   padding-top: 8rpx;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: var(--brass-400);
   line-height: 1;
   opacity: 0.75;
@@ -253,7 +253,7 @@ page {
 }
 
 .empty-icon-letter {
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-family: var(--font-brand);
   color: var(--brass-400);
 }
@@ -265,14 +265,14 @@ page {
 
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-secondary);
   margin-bottom: 10rpx;
 }
 
 .empty-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted);
   line-height: 1.55;
   margin-bottom: var(--space-4);
@@ -285,7 +285,7 @@ page {
   padding: 16rpx 40rpx;
   background: var(--brass-400);
   color: var(--color-bg);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   border-radius: var(--radius-md);
   letter-spacing: 0.04em;
@@ -330,7 +330,7 @@ page {
 
 .cat-overline {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-muted);
   letter-spacing: 0.1em;
   margin-bottom: 8rpx;
@@ -338,7 +338,7 @@ page {
 
 .cat-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 8rpx;
@@ -346,7 +346,7 @@ page {
 
 .cat-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.45;
 }
@@ -355,7 +355,7 @@ page {
   display: flex;
   align-items: center;
   padding-right: 16rpx;
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   line-height: 1;
   opacity: 0.65;
 }
@@ -390,7 +390,7 @@ page {
   border-radius: 50%;
   background: rgba(196, 167, 108, 0.12);
   color: var(--brass-400);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-family: var(--font-mono);
   display: flex;
   align-items: center;
@@ -411,13 +411,13 @@ page {
 }
 
 .tip-title {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
   font-weight: 500;
 }
 
 .tip-toggle {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-400);
   line-height: 1;
   flex-shrink: 0;
@@ -436,11 +436,18 @@ page {
 
 .tip-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.55;
 }
 
 .care-support {
   margin-bottom: var(--space-3);
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .season-pulse {
+    animation: none;
+  }
 }

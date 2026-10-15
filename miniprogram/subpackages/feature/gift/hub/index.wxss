@@ -64,20 +64,20 @@ page {
 }
 
 .state-over {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #8A7530;
   letter-spacing: 0.16em;
 }
 
 .state-hint {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #6B6560;
   line-height: 1.45;
 }
 
 .muted {
   color: #A09A90;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 /* 纸面纤维 / 压花 / 标本水印 */
@@ -150,14 +150,14 @@ page {
 .overline {
   flex: 1;
   min-width: 0;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #8A7530;
   letter-spacing: 0.12em;
   line-height: 1.3;
 }
 .hero-brand {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A8903C;
   letter-spacing: 0.16em;
   font-family: var(--font-brand);
@@ -165,7 +165,7 @@ page {
 }
 .title {
   display: block;
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   font-weight: 600;
   color: #6B5A24;
   font-family: var(--font-brand);
@@ -174,7 +174,7 @@ page {
 }
 .desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #6B6560;
   line-height: 1.6;
 }
@@ -212,14 +212,14 @@ page {
 .for-whom-copy { flex: 1; min-width: 0; }
 .for-whom-over {
   display: block;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   color: #8A7530;
   letter-spacing: 0.14em;
   margin-bottom: 4rpx;
 }
 .for-whom-name {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #E0CFA3;
   font-family: var(--font-brand);
   overflow: hidden;
@@ -230,7 +230,7 @@ page {
 /* 流程内小节标题（全站第二级口径）：等宽眉标 + 宋体主标；第一级见 app.wxss .mu-head */
 .section-overline {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   line-height: 26rpx;
   color: var(--brass-400);
   font-family: var(--font-mono);
@@ -240,7 +240,7 @@ page {
 
 .section-title {
   display: block;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   line-height: 44rpx;
   font-weight: 500;
   color: #FFFFFF;
@@ -276,7 +276,7 @@ page {
 }
 
 .scene-chip text {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   letter-spacing: 0.02em;
 }
@@ -293,7 +293,7 @@ page {
 
 .scene-guide {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #D5D1C8;
   line-height: 1.55;
   padding: 12rpx 16rpx;
@@ -322,7 +322,7 @@ page {
 
 .match-link {
   flex-shrink: 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
   letter-spacing: 0.04em;
   padding: 4rpx 0;
@@ -331,7 +331,7 @@ page {
 
 .match-hint {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #6B6560;
   margin-bottom: 16rpx;
   line-height: 1.45;
@@ -380,7 +380,7 @@ page {
   box-shadow: none;
 }
 .empty-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #FFFFFF;
   font-family: var(--font-brand);
 }
@@ -425,7 +425,7 @@ page {
   display: block;
   text-align: center;
   margin-top: 8rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 @keyframes skelShine {
   0% { background-position: 100% 0; }
@@ -473,7 +473,7 @@ page {
   position: absolute;
   left: 10rpx;
   top: 10rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.04em;
   border-radius: var(--radius-sm);
   padding: 2rpx 10rpx;
@@ -499,7 +499,7 @@ page {
 /* 主题名（双层命名）：礼赠卡主视觉，标准名降为副行 —— 送礼时「这句话」比物种名更打动人 */
 .product-theme {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 600;
   color: var(--color-text-primary, #F5F2EC);
   letter-spacing: 1rpx;
@@ -511,17 +511,17 @@ page {
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 4rpx 0 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.5;
   color: var(--color-text-muted, #8A857C);
 }
 .product-title.is-sub {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 .product-title {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #FFFFFF;
   line-height: 1.35;
   overflow: hidden;
@@ -532,7 +532,7 @@ page {
 .product-price {
   display: block;
   margin-top: 8rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
   font-family: var(--font-mono);
 }
@@ -567,7 +567,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 600;
   color: #C4A76C;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
@@ -583,7 +583,7 @@ page {
 
 .step-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: #FFFFFF;
   margin-bottom: 8rpx;
@@ -591,7 +591,7 @@ page {
 
 .step-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.5;
 }
@@ -610,7 +610,7 @@ page {
   justify-content: center;
   background: linear-gradient(160deg, #D4BC85 0%, #C4A76C 48%, #A8903C 100%);
   color: #1A1814;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   letter-spacing: 0.04em;
   border-radius: var(--radius-md);
@@ -629,7 +629,7 @@ page {
   justify-content: center;
   background: transparent;
   color: #C4A76C;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   border-radius: var(--radius-md);
 }
@@ -643,4 +643,12 @@ page {
   width: 100%;
   height: calc(64rpx + env(safe-area-inset-bottom));
   flex-shrink: 0;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .skel-cover,
+  .skel-line {
+    animation: none;
+  }
 }

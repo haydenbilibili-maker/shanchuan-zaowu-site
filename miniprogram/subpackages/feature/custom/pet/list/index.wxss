@@ -19,8 +19,8 @@ page { background: #1A1814; color: #fff; }
   flex-shrink: 0;
 }
 .brand { flex: 1; }
-.title { display: block; font-size: 34rpx; font-weight: 600; }
-.sub { display: block; font-size: 20rpx; color: #C4A76C; letter-spacing: 0.1em; margin-top: 4rpx; }
+.title { display: block; font-size: var(--fs-34); font-weight: 600; }
+.sub { display: block; font-size: var(--fs-20); color: #C4A76C; letter-spacing: 0.1em; margin-top: 4rpx; }
 
 .loading-wrap { padding: 120rpx 0; text-align: center; color: var(--color-text-secondary); }
 
@@ -33,29 +33,29 @@ page { background: #1A1814; color: #fff; }
 .order-card:active { opacity: 0.92; }
 
 .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16rpx; }
-.pet-name { font-size: 30rpx; font-weight: 600; flex: 1; }
+.pet-name { font-size: var(--fs-30); font-weight: 600; flex: 1; }
 .status-badge {
-  font-size: 20rpx; color: #C4A76C; padding: 4rpx 12rpx;
+  font-size: var(--fs-20); color: #C4A76C; padding: 4rpx 12rpx;
   background: rgba(196,167,108,0.12); border-radius: var(--radius-sm); flex-shrink: 0;
 }
 
-.order-no { display: block; margin-top: 8rpx; font-size: 22rpx; color: var(--color-text-secondary); }
-.craft-line { display: block; margin-top: 8rpx; font-size: 24rpx; color: #A09A90; }
+.order-no { display: block; margin-top: 8rpx; font-size: var(--fs-22); color: var(--color-text-secondary); }
+.craft-line { display: block; margin-top: 8rpx; font-size: var(--fs-24); color: #A09A90; }
 
 .card-foot {
   display: flex; justify-content: space-between; align-items: center;
   margin-top: 16rpx; padding-top: 16rpx; border-top: 1px solid rgba(38,35,32,0.6);
 }
 
-.time { font-size: 22rpx; color: var(--color-text-secondary); }
-.quote { font-size: 24rpx; color: #C4A76C; font-family: var(--font-mono); }
+.time { font-size: var(--fs-22); color: var(--color-text-secondary); }
+.quote { font-size: var(--fs-24); color: #C4A76C; font-family: var(--font-mono); }
 
 .empty { padding: 120rpx 0; text-align: center; }
-.empty-title { display: block; font-size: 32rpx; font-weight: 500; margin-bottom: 12rpx; }
-.empty-desc { display: block; font-size: 24rpx; color: #A09A90; line-height: 1.55; margin-bottom: 40rpx; }
+.empty-title { display: block; font-size: var(--fs-32); font-weight: 500; margin-bottom: 12rpx; }
+.empty-desc { display: block; font-size: var(--fs-24); color: #A09A90; line-height: 1.55; margin-bottom: 40rpx; }
 
 .btn-primary {
   width: 320rpx; height: 88rpx; line-height: 88rpx;
-  background: #C4A76C; color: #1A1814; border-radius: var(--radius-md); font-size: 28rpx; border: none;
+  background: #C4A76C; color: #1A1814; border-radius: var(--radius-md); font-size: var(--fs-28); border: none;
 }
 .btn-primary::after { border: none; }

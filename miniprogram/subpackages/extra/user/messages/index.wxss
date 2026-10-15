@@ -42,7 +42,7 @@ page {
 }
 
 .signal-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.08em;
 }
 
@@ -53,7 +53,7 @@ page {
 }
 
 .status-chip text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
@@ -116,7 +116,7 @@ page {
 }
 
 .unread-hint {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.08em;
 }
@@ -140,7 +140,7 @@ page {
 .mark-read-btn:active { opacity: 0.82; }
 
 .mark-read-btn text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1;
   color: var(--brass-400, #C4A76C);
   font-weight: 500;
@@ -176,7 +176,7 @@ page {
 }
 .queue-tab-press { opacity: 0.85; transform: scale(0.98); }
 .queue-tab-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
@@ -200,7 +200,7 @@ page {
   box-sizing: border-box;
 }
 .workflow-context-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #7CB592;
   letter-spacing: 0.06em;
 }
@@ -238,7 +238,7 @@ page {
 .digest-rail-lamp.tip-ok { background: #52B788; }
 .digest-rail-lamp.tip-muted { background: #6B6560; }
 .digest-rail-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #8BA8C4;
   line-height: 1.45;
   flex: 1;
@@ -320,7 +320,7 @@ page {
   justify-content: center;
 }
 .filter-pill-badge text {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400, #C4A76C);
   font-weight: 600;
   line-height: 1;
@@ -379,7 +379,7 @@ page {
 }
 
 .filter-pill text {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   font-weight: 500;
 }
@@ -484,19 +484,19 @@ page {
 }
 
 .lamp-legend text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted, #6B6560);
   letter-spacing: 0.06em;
 }
 
 .empty-text {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-body, #D5D1C8);
   margin-bottom: 12rpx;
 }
 
 .empty-desc {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted, #6B6560);
   line-height: 1.6;
 }
@@ -504,10 +504,10 @@ page {
 .retry-btn {
   margin-top: 32rpx;
   padding: 16rpx 48rpx;
-  border: 1rpx solid var(--gold);
+  border: 1rpx solid var(--color-primary);
   border-radius: var(--radius-md);
-  color: var(--gold);
-  font-size: 26rpx;
+  color: var(--color-primary);
+  font-size: var(--fs-26);
 }
 
 
@@ -561,7 +561,7 @@ page {
 }
 
 .item-accent.on {
-  background: var(--gold);
+  background: var(--color-primary);
 }
 
 .message-body {
@@ -577,7 +577,7 @@ page {
 }
 
 .kind-tag {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-weight: 500;
   letter-spacing: 0.08em;
   flex-shrink: 0;
@@ -646,7 +646,7 @@ page {
 .dlc-lamp.tone-partial { background: #C4A76C; }
 .dlc-lamp.tone-ok { background: #52B788; }
 .dlc-health text {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #8BA8C4;
   letter-spacing: 0.04em;
 }
@@ -692,24 +692,24 @@ page {
 }
 .dlc-chip-kicker {
   display: block;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   color: #C4A76C;
   letter-spacing: 0.06em;
   margin-bottom: 2rpx;
 }
 .dlc-chip.is-primary .dlc-chip-value {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 .dlc-chip-label {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-muted, #6B6560);
   letter-spacing: 0.04em;
 }
 .dlc-chip-value {
   display: block;
   margin-top: 4rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 600;
   color: #C9D6E4;
   font-variant-numeric: tabular-nums;
@@ -729,7 +729,7 @@ page {
 .dlc-hint {
   display: block;
   margin-top: 10rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #8BA8C4;
   opacity: 0.9;
 }
@@ -746,13 +746,13 @@ page {
 }
 .dpm-text {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #C4A76C;
   margin-bottom: 8rpx;
 }
 
 .type-tag {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-wood, #8B6F47);
   letter-spacing: 0.04em;
   flex: 1;
@@ -763,7 +763,7 @@ page {
 }
 
 .message-time {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted, #6B6560);
   flex-shrink: 0;
   font-family: var(--font-mono, monospace);
@@ -771,7 +771,7 @@ page {
 
 .message-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
   line-height: 1.4;
@@ -784,7 +784,7 @@ page {
 
 .message-sender {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-600, #8A7530);
   letter-spacing: 0.04em;
   margin-bottom: 8rpx;
@@ -792,7 +792,7 @@ page {
 
 .message-preview {
   display: -webkit-box;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.55;
   overflow: hidden;
@@ -820,7 +820,7 @@ page {
 .mg-text {
   flex: 1;
   min-width: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   overflow: hidden;
   white-space: nowrap;
@@ -864,7 +864,7 @@ page {
 }
 
 .action-hint {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.02em;
   flex-shrink: 0;
@@ -876,7 +876,7 @@ page {
   justify-content: center;
   gap: 12rpx;
   padding: 24rpx 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400, #C4A76C);
 }
 
@@ -929,7 +929,7 @@ page {
 
 .letter-card.paper {
   background: #F2EDE4;
-  border: 1rpx solid var(--gold);
+  border: 1rpx solid var(--color-primary);
   box-shadow:
     inset 0 0 0 8rpx #FAF6ED,
     inset 0 0 0 10rpx rgba(196, 167, 108, 0.55);
@@ -978,13 +978,13 @@ page {
 }
 
 .stamp-en {
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   letter-spacing: 0.14em;
   color: #8B6F47;
 }
 
 .stamp-cn {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-family: var(--font-brand, 'Source Han Serif SC', serif);
   color: #8A7530;
 }
@@ -1016,7 +1016,7 @@ page {
 
 .letter-sender {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.08em;
   margin-bottom: 12rpx;
 }
@@ -1032,7 +1032,7 @@ page {
 .letter-title {
   display: block;
   font-family: var(--font-brand, 'Source Han Serif SC', serif);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-weight: 600;
   line-height: 1.45;
   margin-bottom: 16rpx;
@@ -1048,7 +1048,7 @@ page {
 
 .letter-time {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-family: var(--font-mono, monospace);
 }
 
@@ -1081,7 +1081,7 @@ page {
 
 .letter-p {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.85;
 }
 
@@ -1108,7 +1108,7 @@ page {
   height: 84rpx;
   margin: 0;
   padding: 0;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   border-radius: var(--radius-md, 16rpx);
   box-sizing: border-box;
@@ -1137,7 +1137,7 @@ page {
 .letter-delete {
   text-align: center;
   padding: 8rpx 0 4rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted, #6B6560);
 }
 
@@ -1152,4 +1152,11 @@ page {
   pointer-events: auto;
   transform: none;
   z-index: 1;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .sk-shine {
+    animation: none;
+  }
 }

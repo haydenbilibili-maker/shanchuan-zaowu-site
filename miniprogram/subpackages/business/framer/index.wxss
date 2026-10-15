@@ -15,12 +15,12 @@ page {
   text-align: center;
   gap: 16rpx;
 }
-.load-error-title { color: #FFFFFF; font-size: 34rpx; font-weight: 500; }
-.load-error-desc { color: #A09A90; font-size: 26rpx; line-height: 1.5; margin-bottom: 24rpx; }
+.load-error-title { color: #FFFFFF; font-size: var(--fs-34); font-weight: 500; }
+.load-error-desc { color: #A09A90; font-size: var(--fs-26); line-height: 1.5; margin-bottom: 24rpx; }
 .load-error-actions { display: flex; flex-direction: column; gap: 20rpx; width: 100%; max-width: 480rpx; }
 .load-error-btn {
   height: 88rpx; line-height: 88rpx; text-align: center;
-  border-radius: var(--radius-md); border: 1rpx solid #C4A76C; color: #C4A76C; font-size: 28rpx;
+  border-radius: var(--radius-md); border: 1rpx solid #C4A76C; color: #C4A76C; font-size: var(--fs-28);
 }
 .load-error-btn.primary { background: #C4A76C; color: #1A1814; border: none; }
 
@@ -82,18 +82,18 @@ page {
 .verified-badge {
   position: absolute; bottom: 10rpx; right: 10rpx;
   width: 40rpx; height: 40rpx; background: #C4A76C; color: #1A1814;
-  border-radius: 50%; font-size: 24rpx; font-weight: bold;
+  border-radius: 50%; font-size: var(--fs-24); font-weight: bold;
   display: flex; align-items: center; justify-content: center;
   border: 2px solid #1A1814;
 }
 
 .name {
-  font-size: 44rpx; font-weight: bold; color: #fff; margin-bottom: 8rpx;
+  font-size: var(--fs-44); font-weight: bold; color: #fff; margin-bottom: 8rpx;
   letter-spacing: 2rpx; text-shadow: 0 4rpx 10rpx rgba(0,0,0,0.5);
 }
 
 .alias {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #C4A76C;
   margin-bottom: 16rpx;
   letter-spacing: 2rpx;
@@ -114,7 +114,7 @@ page {
 }
 
 .skill-tag {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   padding: 6rpx 16rpx;
@@ -124,7 +124,7 @@ page {
 .style-line {
   display: block;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   margin-bottom: 20rpx;
 }
@@ -153,7 +153,7 @@ page {
   align-items: center;
   align-self: flex-start;
   width: auto;
-  font-size: 22rpx; color: #C4A76C; 
+  font-size: var(--fs-22); color: #C4A76C; 
   border: 1rpx solid rgba(196, 167, 108, 0.4);
   padding: 6rpx 16rpx; border-radius: 30rpx;
   background: rgba(0,0,0,0.4);
@@ -164,7 +164,7 @@ page {
 .bio {
   display: block;
   margin: 0 auto;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #D5D1C8;
   line-height: 1.6;
   text-align: center;
@@ -173,7 +173,7 @@ page {
 .craft-intro {
   display: block;
   margin: 20rpx auto 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.65;
   text-align: center;
@@ -188,8 +188,8 @@ page {
   display: flex; align-items: center; justify-content: center; margin-bottom: 50rpx;
 }
 .title-group { display: flex; flex-direction: column; align-items: center; margin: 0 30rpx; }
-.section-header .en { font-size: 20rpx; color: #C4A76C; letter-spacing: 6rpx; margin-bottom: 6rpx; }
-.section-header .cn { font-size: 32rpx; font-weight: bold; color: #fff; letter-spacing: 2rpx; }
+.section-header .en { font-size: var(--fs-20); color: #C4A76C; letter-spacing: 6rpx; margin-bottom: 6rpx; }
+.section-header .cn { font-size: var(--fs-32); font-weight: bold; color: #fff; letter-spacing: 2rpx; }
 .line { width: 60rpx; height: 1px; background: linear-gradient(to right, transparent, #333, transparent); }
 
 /* Grid 布局 */
@@ -205,15 +205,15 @@ page {
 .img-box image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .status-badge {
   position: absolute; top: 12rpx; right: 12rpx;
-  background: rgba(0,0,0,0.8); color: #C4A76C; font-size: 18rpx;
+  background: rgba(0,0,0,0.8); color: #C4A76C; font-size: var(--fs-18);
   padding: 4rpx 10rpx; border-radius: 4rpx;
 }
 
 .info { padding: 24rpx; }
 .p-title {
-  display: block; font-size: 26rpx; color: var(--color-text-body); margin-bottom: 10rpx;
+  display: block; font-size: var(--fs-26); color: var(--color-text-body); margin-bottom: 10rpx;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold;
 }
-.p-year { font-size: 22rpx; color: var(--color-text-secondary); display: block; }
+.p-year { font-size: var(--fs-22); color: var(--color-text-secondary); display: block; }
 
-.empty-tip { text-align: center; color: var(--color-text-secondary); font-size: 24rpx; margin-top: 100rpx; }
+.empty-tip { text-align: center; color: var(--color-text-secondary); font-size: var(--fs-24); margin-top: 100rpx; }

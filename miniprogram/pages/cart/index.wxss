@@ -48,14 +48,14 @@ page {
 .header-title { display: flex; flex-direction: column; }
 
 .title-cn {
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-text-primary);
 }
 
 .title-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400);
   letter-spacing: 0.14em;
   margin-top: 6rpx;
@@ -64,12 +64,12 @@ page {
 .header-meta {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
 .text-btn {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
@@ -101,7 +101,7 @@ page {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
   color: var(--color-text-secondary);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .filter-chip.active {
@@ -121,7 +121,7 @@ page {
   flex-shrink: 0;
 }
 
-.chip-count { font-size: 20rpx; opacity: 0.75; }
+.chip-count { font-size: var(--fs-20); opacity: 0.75; }
 
 /* 真机：fixed 滚动区，避免 flex:1 + height:0 坍缩；须低于 .cart-top */
 .scroll-panel {
@@ -155,7 +155,7 @@ page {
 }
 
 .loading-box text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   letter-spacing: 0.08em;
 }
@@ -176,10 +176,10 @@ page {
   border-radius: var(--radius-md);
 }
 
-.invalid-text { font-size: 24rpx; color: var(--color-error); }
+.invalid-text { font-size: var(--fs-24); color: var(--color-error); }
 
 .invalid-action {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   padding: 4rpx 16rpx;
   border: 1rpx solid var(--brass-800);
@@ -287,8 +287,8 @@ page {
   justify-content: center;
 }
 
-.mask-cn { font-size: 22rpx; color: var(--color-text-secondary); font-weight: 500; }
-.mask-en { font-size: 16rpx; color: var(--color-text-muted); margin-top: 4rpx; letter-spacing: 0.1em; }
+.mask-cn { font-size: var(--fs-22); color: var(--color-text-secondary); font-weight: 500; }
+.mask-en { font-size: var(--fs-16); color: var(--color-text-muted); margin-top: 4rpx; letter-spacing: 0.1em; }
 
 .info-col {
   flex: 1;
@@ -300,7 +300,7 @@ page {
 }
 
 .name {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
   overflow: hidden;
@@ -311,7 +311,7 @@ page {
 .latin {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-style: italic; font-family: var(--font-latin);
   color: var(--color-text-latin);
   overflow: hidden;
@@ -323,7 +323,7 @@ page {
   display: inline-block;
   margin-top: 8rpx;
   padding: 2rpx 12rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -332,7 +332,7 @@ page {
 .invalid-reason {
   display: block;
   margin-top: 8rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-error);
 }
 
@@ -345,7 +345,7 @@ page {
 
 .price {
   font-family: var(--font-mono);
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 600;
   color: var(--brass-400);
 }
@@ -365,7 +365,7 @@ page {
   align-items: center;
   justify-content: center;
   color: var(--brass-400);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   background: var(--color-bg-elevated);
 }
 
@@ -376,7 +376,7 @@ page {
 .qty-val {
   min-width: 48rpx;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body);
   font-family: var(--font-mono);
 }
@@ -418,7 +418,7 @@ page {
 }
 
 .remove-icon { width: 32rpx; height: 32rpx; margin-bottom: 4rpx; }
-.remove-txt { font-size: 20rpx; color: var(--color-error); }
+.remove-txt { font-size: var(--fs-20); color: var(--color-error); }
 
 .empty-section {
   display: flex;
@@ -459,7 +459,7 @@ page {
 
 .empty-overline {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400);
   letter-spacing: 0.16em;
   margin-bottom: var(--space-2);
@@ -467,7 +467,7 @@ page {
 
 .empty-title {
   display: block;
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-text-primary);
@@ -478,7 +478,7 @@ page {
 .empty-desc {
   display: block;
   max-width: 520rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.65;
   margin-bottom: var(--space-5);
@@ -503,7 +503,7 @@ page {
 }
 
 .empty-cta-primary text {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-bg);
   letter-spacing: 0.06em;
@@ -521,7 +521,7 @@ page {
 }
 
 .empty-cta-secondary text {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-400);
   letter-spacing: 0.04em;
 }
@@ -610,7 +610,7 @@ page {
 /* 用 --color-text-secondary（#A09A90，深面 5.6~6.35 ✓）而不是 --color-text-muted ——
    后者在小程序深面上实测 2.72~3.09，低于正文阈值 4.5（见 check:mp-contrast）。 */
 .rec-img-ph-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
@@ -618,7 +618,7 @@ page {
 
 .rec-title {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -627,7 +627,7 @@ page {
 
 .rec-latin {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-latin);
   font-style: italic; font-family: var(--font-latin);
   margin-top: 4rpx;
@@ -640,7 +640,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-family: var(--font-mono);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-400);
 }
 
@@ -672,7 +672,7 @@ page {
   border: 1rpx solid var(--brass-800);
   border-bottom: none;
   border-radius: var(--radius-md) var(--radius-md) 0 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
 }
 
@@ -691,10 +691,10 @@ page {
 }
 
 .select-all { display: flex; align-items: center; flex-shrink: 0; }
-.select-label { font-size: 24rpx; color: var(--color-text-body); }
+.select-label { font-size: var(--fs-24); color: var(--color-text-body); }
 .total-block { flex: 1; min-width: 0; text-align: right; }
 .total-row { margin-bottom: 4rpx; }
-.total-hint { font-size: 20rpx; color: var(--gold); font-family: var(--font-mono); margin-left: 8rpx; }  /* VIS3 纪律 05：减免为金色（原弱化色 #6B6560 也低于说明文字下限 #A09A90） */
+.total-hint { font-size: var(--fs-20); color: var(--color-primary); font-family: var(--font-mono); margin-left: 8rpx; }  /* VIS3 纪律 05：减免为金色（原弱化色 #6B6560 也低于说明文字下限 #A09A90） */
 
 .total-main {
   display: flex;
@@ -703,11 +703,11 @@ page {
   gap: 8rpx;
 }
 
-.total-label { font-size: 22rpx; color: var(--color-text-secondary); }
+.total-label { font-size: var(--fs-22); color: var(--color-text-secondary); }
 
 .total-val {
   font-family: var(--font-mono);
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   font-weight: 600;
   color: var(--brass-400);
 }
@@ -720,7 +720,7 @@ page {
 
 .shipping-hint {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   letter-spacing: 0.02em;
   line-height: 1.45;
@@ -737,7 +737,7 @@ page {
   background: var(--brass-400);
   color: var(--color-bg);
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
 }
 
@@ -749,7 +749,7 @@ page {
 .checkout-btn-hover { background: var(--brass-500); }
 .checkout-btn:active { background: var(--brass-500); }
 
-.checkout-count { font-size: 22rpx; opacity: 0.85; }
+.checkout-count { font-size: var(--fs-22); opacity: 0.85; }
 
 /* 选券抽屉：形态 / 头部 / 行 / 单选全取 app.wxss 的 ui-pop-*（docs/弹层视觉规范_2026-10-13.md）；高度在 wxml 按条数给 */
 .sheet-list { width: 100%; box-sizing: border-box; }
@@ -819,7 +819,7 @@ page {
 }
 
 .addon-reason {
-  font-size: 19rpx;
+  font-size: var(--fs-20);
   color: var(--brass-300);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -829,15 +829,15 @@ page {
 .addon-price {
   flex-shrink: 0;
   font-family: var(--font-mono);
-  font-size: 26rpx;
-  color: var(--gold);
+  font-size: var(--fs-26);
+  color: var(--color-primary);
 }
 
 .addon-cta {
   flex-shrink: 0;
   padding: 10rpx 24rpx;
   border-radius: 999rpx;
-  background: var(--gold);
+  background: var(--color-primary);
   color: #1A1814;
   font-size: var(--fs-22);
   font-weight: 500;
@@ -846,7 +846,7 @@ page {
 .addon-close {
   flex-shrink: 0;
   padding: 0 6rpx 0 2rpx;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   line-height: 1;
   color: var(--color-text-secondary);
 }
@@ -868,8 +868,8 @@ page {
 
 .freeship-gap {
   flex-shrink: 0;
-  font-size: 24rpx;
-  color: var(--gold);
+  font-size: var(--fs-24);
+  color: var(--color-primary);
   letter-spacing: 0.02em;
 }
 
@@ -877,7 +877,7 @@ page {
   flex: 1;
   min-width: 0;
   text-align: right;
-  font-size: 19rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -897,7 +897,7 @@ page {
 .freeship-fill {
   height: 100%;
   border-radius: 3rpx;
-  background: linear-gradient(90deg, rgba(196, 167, 108, 0.6) 0%, var(--gold) 100%);
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.6) 0%, var(--color-primary) 100%);
   transition: width var(--dur-base) var(--ease-standard);
 }
 
@@ -919,7 +919,7 @@ page {
 .freeship-filler-text {
   flex: 1;
   min-width: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -928,6 +928,13 @@ page {
 
 .freeship-filler-cta {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-300);
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .scanner {
+    animation: none;
+  }
 }

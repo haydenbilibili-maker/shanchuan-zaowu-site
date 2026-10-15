@@ -19,7 +19,7 @@ page {
 
 .hero-en {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.28em;
   color: rgba(196, 167, 108, 0.7);
   margin-bottom: 12rpx;
@@ -27,7 +27,7 @@ page {
 
 .hero-cn {
   display: block;
-  font-size: 48rpx;
+  font-size: var(--fs-48);
   font-weight: 600;
   color: #FFFFFF;
   letter-spacing: 0.08em;
@@ -36,7 +36,7 @@ page {
 .hero-sub {
   display: block;
   margin-top: 16rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.6;
 }
@@ -56,13 +56,13 @@ page {
 }
 
 .progress-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   letter-spacing: 0.12em;
 }
 
 .progress-num {
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: #C4A76C;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -85,7 +85,7 @@ page {
 .progress-note {
   display: block;
   margin-top: 16rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
@@ -116,18 +116,18 @@ page {
 
 .series-name {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #E0CFA3;
 }
 
 .series-count {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A09A90;
   margin-right: 8rpx;
 }
 
 .series-done {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #C4A76C;
 }
 
@@ -135,7 +135,7 @@ page {
   display: block;
   margin: 0 0 20rpx;
   padding: 0 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.55;
 }
@@ -148,13 +148,13 @@ page {
 }
 
 .browse-t {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.16em;
   color: #A09A90;
 }
 
 .browse-link {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
 }
 
@@ -172,7 +172,7 @@ page {
 .tab {
   flex-shrink: 0;
   padding: 12rpx 28rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   background: #1F1D1A;
   border: 1rpx solid #262320;
@@ -194,7 +194,7 @@ page {
 
 .rarity-chip {
   padding: 8rpx 20rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   border: 1rpx solid #262320;
   border-radius: var(--radius-sm);
@@ -214,19 +214,19 @@ page {
   padding: 80rpx 24rpx;
   text-align: center;
   color: #A09A90;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   gap: 16rpx;
 }
 
 .error-t,
 .empty-t {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: #FFFFFF;
 }
 
 .error-s,
 .empty-s {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.6;
 }
@@ -244,7 +244,7 @@ page {
   padding: 0 40rpx;
   background: #C4A76C;
   color: #1A1814;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   border: none;
   border-radius: var(--radius-md);
 }
@@ -258,7 +258,7 @@ page {
   padding: 0 32rpx;
   background: transparent;
   color: #C4A76C;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   border: 1rpx solid #C4A76C;
   border-radius: var(--radius-md);
 }
@@ -332,7 +332,7 @@ page {
   position: absolute;
   top: 16rpx;
   left: 20rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.14em;
   color: rgba(196, 167, 108, 0.85);
 }
@@ -341,7 +341,7 @@ page {
   position: absolute;
   right: 16rpx;
   bottom: 16rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
@@ -349,7 +349,7 @@ page {
   position: absolute;
   left: 16rpx;
   bottom: 16rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.12em;
   color: rgba(196, 167, 108, 0.75);
   padding: 2rpx 10rpx;
@@ -392,7 +392,7 @@ page {
 }
 
 .plate-mark-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.22em;
   color: rgba(196, 167, 108, 0.75);
 }
@@ -405,7 +405,7 @@ page {
 .card-name {
   display: block;
   min-width: 0;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #D5D1C8;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -417,7 +417,7 @@ page {
 .card-latin {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
   overflow: hidden;
@@ -428,7 +428,7 @@ page {
 .card-origin {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   line-height: 1.35;
   overflow: hidden;
@@ -459,7 +459,7 @@ page {
 .card-silver .dot.on { background: #C8C8C8; }
 
 .card-rarity {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   letter-spacing: 0.06em;
 }
@@ -509,7 +509,7 @@ page {
   height: 80rpx;
   line-height: 80rpx;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
   background: #1F1D1A;
   border: 1rpx solid #C4A76C;
@@ -544,13 +544,13 @@ page {
 }
 
 .notes-t {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.16em;
   color: #A09A90;
 }
 
 .notes-more {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
 }
 
@@ -562,7 +562,7 @@ page {
 
 .note-title {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #E8E4DC;
 }
 
@@ -573,7 +573,7 @@ page {
 .note-meta {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -588,14 +588,14 @@ page {
 .unlock-name {
   display: block;
   margin-top: 28rpx;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: #E8E4DC;
 }
 
 .unlock-latin {
   display: block;
   margin-top: 8rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
 }
@@ -603,7 +603,7 @@ page {
 .unlock-msg {
   display: block;
   margin-top: 20rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.6;
 }
@@ -612,6 +612,13 @@ page {
 .unlock-later {
   display: block;
   margin-top: 24rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .skel-line {
+    animation: none;
+  }
 }

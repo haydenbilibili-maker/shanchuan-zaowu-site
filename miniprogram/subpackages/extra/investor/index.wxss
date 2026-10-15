@@ -34,7 +34,7 @@ page {
 }
 
 .boot-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.12em;
   color: var(--brass-600, #8A7530);
 }
@@ -42,13 +42,13 @@ page {
 .boot-cn {
   margin-top: 8rpx;
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary, #FFFFFF);
 }
 
 .boot-hint {
   margin-top: 20rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -84,7 +84,7 @@ page {
 
 .brand-group .en {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.1em;
   color: var(--brass-600, #8A7530);
   padding-left: 2rpx;
@@ -97,7 +97,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary, #FFFFFF);
   word-break: break-word;
 }
@@ -115,7 +115,7 @@ page {
 .greeting {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   overflow: hidden;
@@ -135,7 +135,7 @@ page {
 }
 
 .readonly-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.04em;
   color: var(--brass-400, #C4A76C);
 }
@@ -156,7 +156,7 @@ page {
   padding: 14rpx 4rpx;
   border-radius: var(--radius-md);
   border: 1rpx solid var(--brass-800, #4D401A);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   box-sizing: border-box;
   transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
@@ -185,7 +185,7 @@ page {
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border, #26232066);
   background: var(--color-bg-card, #1F1D1A);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   box-sizing: border-box;
 }
@@ -239,14 +239,14 @@ page {
 }
 
 .verdict-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.1em;
   color: var(--color-text-secondary, #A09A90);
 }
 
 .verdict-title {
   margin-top: 6rpx;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   line-height: 1.35;
@@ -262,7 +262,7 @@ page {
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
   border-radius: var(--radius-sm);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-family: var(--font-mono);
   border: 1px solid var(--color-border, #26232066);
   color: var(--color-text-secondary, #A09A90);
@@ -289,7 +289,7 @@ page {
 .verdict-insight {
   display: block;
   margin-top: 16rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.55;
   color: var(--color-text-body, #D5D1C8);
   word-break: break-word;
@@ -305,7 +305,7 @@ page {
 .sum-chip {
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-family: var(--font-mono);
   border: 1px solid transparent;
 }
@@ -337,7 +337,7 @@ page {
 }
 
 .verdict-meta {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
   min-width: 0;
@@ -347,7 +347,7 @@ page {
 }
 
 .legend-toggle {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   flex-shrink: 0;
 }
@@ -366,14 +366,14 @@ page {
 }
 
 .legend-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-body, #D5D1C8);
 }
 
 .legend-hint {
   display: block;
   margin-top: 12rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   word-break: break-word;
@@ -403,7 +403,7 @@ page {
 }
 
 .card-title {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   flex: 1 1 auto;
@@ -411,7 +411,7 @@ page {
 }
 
 .card-meta {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
@@ -428,7 +428,7 @@ page {
 }
 
 .sec-chevron {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   flex-shrink: 0;
 }
@@ -506,7 +506,7 @@ page {
 }
 
 .signal-name {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -514,7 +514,7 @@ page {
 }
 
 .signal-val {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-family: var(--font-mono);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
@@ -529,7 +529,7 @@ page {
 .signal-val.flat { color: var(--color-text-secondary, #A09A90); }
 
 .signal-status {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -547,14 +547,14 @@ page {
 }
 
 .group-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.1em;
   color: var(--color-text-secondary, #A09A90);
 }
 
 .group-cn {
   margin-top: 4rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
 }
@@ -582,13 +582,13 @@ page {
 }
 
 .hero-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.04em;
   color: rgba(255, 255, 255, 0.72);
 }
 
 .hero-delta {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -596,7 +596,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-family: var(--font-mono);
-  font-size: 48rpx;
+  font-size: var(--fs-48);
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: 0.01em;
@@ -621,7 +621,7 @@ page {
 
 .hero-split-l {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: rgba(255, 255, 255, 0.65);
 }
 
@@ -629,7 +629,7 @@ page {
   display: block;
   margin-top: 6rpx;
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -656,7 +656,7 @@ page {
 
 .kpi-l {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-secondary, #A09A90);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -667,7 +667,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-family: var(--font-mono);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
   overflow: hidden;
@@ -690,7 +690,7 @@ page {
 }
 
 .share-l {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
   min-width: 0;
   overflow: hidden;
@@ -699,7 +699,7 @@ page {
 }
 
 .share-p {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   font-family: var(--font-mono);
   flex-shrink: 0;
@@ -734,7 +734,7 @@ page {
 .share-val {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
@@ -742,7 +742,7 @@ page {
 .subhead {
   display: block;
   margin-bottom: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
@@ -779,7 +779,7 @@ page {
 .mini-v {
   display: block;
   font-family: var(--font-mono);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
   overflow: hidden;
@@ -792,7 +792,7 @@ page {
 .mini-l {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -803,7 +803,7 @@ page {
 }
 
 .legend-inline-t {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-secondary, #A09A90);
   margin-right: 6rpx;
 }
@@ -877,7 +877,7 @@ page {
 }
 
 .bar-fill.gold {
-  background: linear-gradient(180deg, #D4BC85, var(--gold));
+  background: linear-gradient(180deg, #D4BC85, var(--color-primary));
 }
 
 .bar-fill.forest {
@@ -899,14 +899,14 @@ page {
   display: block;
   padding: 28rpx 0 12rpx;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .hint {
   display: block;
   margin-top: 14rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
   word-break: break-word;
@@ -978,14 +978,14 @@ page {
 
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary, #FFFFFF);
 }
 
 .empty-desc {
   display: block;
   margin-top: 8rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -1007,14 +1007,14 @@ page {
 }
 
 .notes-title {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   letter-spacing: 0.12em;
   color: var(--brass-400, #C4A76C);
 }
 
 .notes-toggle {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
 }
 
@@ -1034,7 +1034,7 @@ page {
   flex-shrink: 0;
   width: 20rpx;
   margin-top: 2rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.2;
   color: var(--brass-600, #8A7530);
   text-align: center;
@@ -1043,7 +1043,7 @@ page {
 .note-text {
   flex: 1;
   min-width: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.55;
   color: var(--color-text-secondary, #A09A90);
   word-break: break-word;
@@ -1060,19 +1060,19 @@ page {
 }
 
 .footer-note-kicker {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.18em;
   color: var(--brass-600, #8A7530);
 }
 
 .footer-note-main {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .footer-note-sub {
   max-width: 560rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.5;
   color: var(--color-text-secondary, #A09A90);
 }
@@ -1084,4 +1084,12 @@ page {
   width: 14rpx;
   height: 14rpx;
   flex-shrink: 0;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .skel-line,
+  .skel-block {
+    animation: none;
+  }
 }

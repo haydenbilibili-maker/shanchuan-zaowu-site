@@ -21,7 +21,7 @@
 }
 .hero-en {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.18em;
   color: var(--brass-600, #8A7530);
   font-weight: 500;
@@ -29,7 +29,7 @@
 .hero-cn {
   display: block;
   margin-top: 12rpx;
-  font-size: 48rpx;
+  font-size: var(--fs-48);
   line-height: 1.2;
   color: var(--color-text-primary, #FFFFFF);
   font-family: var(--font-brand);
@@ -38,7 +38,7 @@
 .hero-desc {
   display: block;
   margin-top: 20rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.65;
   color: var(--color-text-secondary, #A09A90);
   max-width: 620rpx;
@@ -76,7 +76,7 @@
 }
 .seg-cn {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-brand);
 }
@@ -86,7 +86,7 @@
 .seg-en {
   display: block;
   margin-top: 6rpx;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   letter-spacing: 0.12em;
   color: var(--color-text-secondary);
 }
@@ -107,21 +107,21 @@
 }
 .panel-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary, #FFFFFF);
   font-weight: 500;
 }
 .panel-hint {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
 .panel-note,
 .panel-rule {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.55;
   color: var(--color-text-secondary, #A09A90);
   margin-bottom: 8rpx;
@@ -139,12 +139,12 @@
   margin-bottom: 20rpx;
 }
 .step {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.02em;
 }
 .step-gap {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
@@ -181,7 +181,7 @@
   text-align: center;
   background: rgba(26, 24, 20, 0.82);
   color: #fff;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 .upload-add {
   display: flex;
@@ -190,13 +190,13 @@
   justify-content: center;
 }
 .upload-plus {
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   color: var(--brass-400, #C4A76C);
   line-height: 1;
 }
 .upload-label {
   margin-top: 10rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 .thumb-press {
@@ -231,20 +231,20 @@
 .field-label {
   flex-shrink: 0;
   width: 140rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 .field-value {
   flex: 1;
   text-align: right;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary, #FFFFFF);
 }
 .field-ctrl {
   flex: 1;
   height: 88rpx;
   text-align: right;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary, #FFFFFF);
 }
 .field-ph {
@@ -261,7 +261,7 @@
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg, #1A1814);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   letter-spacing: 0.04em;
   transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
@@ -288,12 +288,12 @@
   margin: 16rpx 0 8rpx;
 }
 .history-title {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
 .history-count {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   font-family: var(--font-mono);
 }
@@ -311,7 +311,7 @@
 }
 .hr-title {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -320,13 +320,13 @@
 .hr-meta {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 .hr-reject {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-error, #D64045);
   line-height: 1.4;
 }
@@ -334,7 +334,7 @@
   flex-shrink: 0;
   margin-top: 4rpx;
   padding: 4rpx 14rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   border-radius: var(--radius-sm);
   letter-spacing: 0.04em;
   border: 1rpx solid transparent;
@@ -365,13 +365,13 @@
 }
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary, #FFFFFF);
 }
 .empty-desc {
   display: block;
   margin-top: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.55;
   color: var(--color-text-secondary, #A09A90);
 }
@@ -382,14 +382,14 @@
 }
 .footer-cn {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   font-family: var(--font-brand);
 }
 .footer-en {
   display: block;
   margin-top: 6rpx;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   letter-spacing: 0.16em;
   color: var(--brass-700, #6B5A24);
 }

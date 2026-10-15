@@ -16,7 +16,7 @@ page {
   margin-bottom: 16rpx;
   padding: 16rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
 }
 .pc-tip.is-info {
@@ -43,7 +43,7 @@ page {
   padding: 14rpx 36rpx;
   border-radius: var(--radius-md);
   border: 1rpx solid rgba(196, 167, 108, 0.5);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #e8dcc0;
 }
 .card.pending-remove {
@@ -53,21 +53,21 @@ page {
 .header { padding: var(--space-5, 40rpx) 0 var(--space-2, 16rpx); }
 .brand-group { display: flex; flex-direction: column; }
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600, #8A7530);
   text-transform: uppercase;
 }
 .brand-group .cn {
   font-family: var(--font-brand, Georgia, serif);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary, #FFFFFF);
   margin-top: 6rpx;
 }
 .header-note {
   display: block;
   margin-top: var(--space-2, 16rpx);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -86,20 +86,20 @@ page {
   gap: 16rpx;
 }
 .summary-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
 .summary-value {
   font-family: var(--font-mono, monospace);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-weight: 600;
   color: var(--brass-400, #C4A76C);
 }
 .summary-count {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 .summary-entities {
@@ -111,7 +111,7 @@ page {
 .entity-chip {
   padding: 6rpx 14rpx;
   border-radius: var(--radius-sm);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-300, #D4BC85);
   background: rgba(196, 167, 108, 0.1);
   border: 1rpx solid rgba(77, 64, 26, 0.45);
@@ -134,17 +134,17 @@ page {
   border-radius: 999rpx;
   border: 1rpx solid rgba(38, 35, 32, 0.8);
   background: var(--color-bg-elevated, #262320);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
-.filter-chip.clear { color: var(--gold); }
+.filter-chip.clear { color: var(--color-primary); }
 .btn-add {
   margin-left: auto;
   padding: 12rpx 28rpx;
   border-radius: var(--radius-md);
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg, #1A1814);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
 }
 
@@ -181,13 +181,13 @@ page {
 }
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary, #FFFFFF);
 }
 .empty-sub {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -206,24 +206,24 @@ page {
 }
 .card-title {
   flex: 1;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 .status-tag {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   background: rgba(38, 35, 32, 0.9);
 }
-.status-tag.brass { color: var(--gold); background: rgba(196, 167, 108, 0.15); }
+.status-tag.brass { color: var(--color-primary); background: rgba(196, 167, 108, 0.15); }
 .status-tag.warn { color: #E9A23B; background: rgba(233, 162, 59, 0.15); }
 .status-tag.muted { color: var(--color-text-secondary); }
 .amount {
   display: block;
   margin-top: 12rpx;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: var(--brass-400, #C4A76C);
   font-family: var(--font-mono, monospace);
   font-weight: 600;
@@ -231,7 +231,7 @@ page {
 .meta {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.45;
 }
@@ -272,7 +272,7 @@ page {
   top: 4rpx;
   padding: 4rpx 10rpx;
   border-radius: var(--radius-sm);
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-primary);
   background: rgba(214, 64, 69, 0.85);
 }
@@ -285,7 +285,7 @@ page {
   padding: 10rpx 20rpx;
   border-radius: 999rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   align-self: flex-start;
 }
@@ -305,12 +305,12 @@ page {
   padding: 28rpx 32rpx 12rpx;
 }
 .sheet-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 .sheet-close {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 .sheet-body {
@@ -324,7 +324,7 @@ page {
 .field-label {
   display: block;
   margin-bottom: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 .input {
@@ -333,7 +333,7 @@ page {
   background: var(--color-bg-elevated, #262320);
   border: 1rpx solid rgba(38, 35, 32, 0.8);
   color: var(--color-text-primary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 .ph { color: var(--color-text-muted); }
 .btn.primary {
@@ -343,7 +343,7 @@ page {
   border-radius: var(--radius-md);
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg, #1A1814);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
 }
 .btn.primary.disabled { opacity: 0.55; }
@@ -354,5 +354,12 @@ page {
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary, #A09A90);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .sk-line {
+    animation: none;
+  }
 }

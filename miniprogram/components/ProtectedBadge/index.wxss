@@ -30,7 +30,7 @@
 }
 
 .prot-badge-text {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   font-weight: 500;
   letter-spacing: 0.1em;
   color: var(--prot-brass);
@@ -43,7 +43,7 @@
 }
 .prot-badge--xs .prot-badge-kicker { display: none; }
 .prot-badge--xs .prot-badge-text {
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   letter-spacing: 0.06em;
 }
 
@@ -51,15 +51,15 @@
   padding: 6rpx 12rpx;
 }
 .prot-badge--sm .prot-badge-kicker { font-size: var(--fs-16); }
-.prot-badge--sm .prot-badge-text { font-size: 18rpx; }
+.prot-badge--sm .prot-badge-text { font-size: var(--fs-18); }
 
 .prot-badge--md {
   padding: 10rpx 18rpx;
   gap: 4rpx;
 }
-.prot-badge--md .prot-badge-kicker { font-size: 16rpx; }
+.prot-badge--md .prot-badge-kicker { font-size: var(--fs-16); }
 .prot-badge--md .prot-badge-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.12em;
 }
 
@@ -113,9 +113,9 @@
   gap: 8rpx;
 }
 .prot-badge--static .prot-badge-kicker {
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   line-height: 1;
 }
 .prot-badge--static .prot-badge-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
 }

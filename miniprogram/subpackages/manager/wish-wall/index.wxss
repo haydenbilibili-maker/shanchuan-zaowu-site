@@ -16,14 +16,14 @@ page {
 .brand-group { display: flex; flex-direction: column; }
 
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
 }
 
 .brand-group .cn {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 6rpx;
 }
@@ -31,7 +31,7 @@ page {
 .header-note {
   display: block;
   margin-top: var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-muted);
   line-height: 1.6;
 }
@@ -45,20 +45,20 @@ page {
 }
 
 .summary-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-muted);
 }
 
 .summary-value {
   margin-top: 8rpx;
   font-family: var(--font-mono);
-  font-size: 48rpx;
+  font-size: var(--fs-48);
   color: var(--brass-400);
 }
 
 .summary-sub {
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -70,7 +70,7 @@ page {
 
 .filter-tab {
   padding: 10rpx 26rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted);
   border: 1rpx solid var(--color-border);
   border-radius: 999rpx;
@@ -93,7 +93,7 @@ page {
   flex: 1;
   height: 72rpx;
   padding: 0 22rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-primary);
   background: var(--color-bg-card);
   border: 1rpx solid var(--color-border);
@@ -107,7 +107,7 @@ page {
   padding: 0 28rpx;
   height: 72rpx;
   line-height: 72rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-bg);
   background: var(--brass-400);
   border-radius: 999rpx;
@@ -128,21 +128,21 @@ page {
 }
 
 .wish-status {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-success);
 }
 
 .wish-status.is-hidden { color: var(--color-warning); }
 
 .wish-pin {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
 }
 
 .wish-text {
   display: block;
   margin-top: 10rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   line-height: 1.5;
 }
@@ -150,7 +150,7 @@ page {
 .wish-meta {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
   word-break: break-all;
 }
@@ -165,7 +165,7 @@ page {
 .btn-ghost,
 .btn-danger {
   padding: 10rpx 24rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   border-radius: 999rpx;
 }
 
@@ -182,7 +182,7 @@ page {
 .empty {
   text-align: center;
   padding: var(--space-6) 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted);
 }
 
@@ -205,13 +205,13 @@ page {
 
 .seed-title {
   font-family: var(--font-brand);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
 .seed-badge {
   padding: 4rpx 16rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   border: 1rpx solid var(--brass-800);
   border-radius: 999rpx;
@@ -220,7 +220,7 @@ page {
 .seed-desc {
   display: block;
   margin-top: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.6;
   color: var(--color-text-muted);
 }
@@ -234,7 +234,7 @@ page {
 
 .seed-btn {
   padding: 14rpx 30rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-bg);
   background: var(--brass-400);
   border-radius: 999rpx;
@@ -245,14 +245,14 @@ page {
 }
 
 .seed-note {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-muted);
 }
 
 .seed-warn {
   display: block;
   margin-top: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-warning, #E9A23B);
 }
 
@@ -265,7 +265,7 @@ page {
 
 .seed-chip {
   padding: 8rpx 18rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   background: rgba(196, 167, 108, 0.1);
   border: 1rpx solid var(--brass-800);
@@ -282,7 +282,7 @@ page {
 
 .wall-bar-label {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-muted);
 }
 
@@ -296,7 +296,7 @@ page {
   display: inline-block;
   padding: 10rpx 22rpx;
   margin-right: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-body);
   background: var(--color-bg-card);
   border: 1rpx solid var(--brass-800);
@@ -311,14 +311,14 @@ page {
 }
 
 .wall-chip-n {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   opacity: 0.75;
 }
 
 .wall-bar-hint {
   display: block;
   margin-bottom: var(--space-3);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.5;
   color: var(--color-text-muted);
 }
@@ -334,7 +334,7 @@ page {
 
 .seed-prefix-label {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-muted);
 }
 
@@ -342,7 +342,7 @@ page {
   flex: 1;
   min-width: 0;
   padding: 12rpx 20rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-primary);
   background: var(--color-bg-elevated, rgba(255, 255, 255, 0.04));
   border: 1rpx solid var(--brass-800);
@@ -356,7 +356,7 @@ page {
 .seed-prefix-hint {
   display: block;
   margin-top: 10rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.5;
   color: var(--color-text-muted);
 }
@@ -365,7 +365,7 @@ page {
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
 }
 .page-tip.is-info {
@@ -388,13 +388,13 @@ page {
 }
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #f0c9c0;
   margin-bottom: 8rpx;
 }
 .empty-sub {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: rgba(232, 220, 192, 0.72);
   line-height: 1.5;
 }
@@ -404,7 +404,7 @@ page {
   padding: 12rpx 28rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.5);
   border-radius: 999rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #e8dcc0;
 }
 .chip-btn.warn-pending {
@@ -413,6 +413,6 @@ page {
 
 /* 心愿签语音试听（2026-10-13） */
 .wish-voice { display: flex; flex-wrap: wrap; align-items: center; gap: 16rpx; margin: 12rpx 0 8rpx; }
-.wish-voice-state { font-size: 22rpx; color: var(--color-text-secondary); }
+.wish-voice-state { font-size: var(--fs-22); color: var(--color-text-secondary); }
 .wish-voice-state.is-pending { color: #E8C27A; }
 .wish-voice-state.is-approved { color: var(--brass-300); }

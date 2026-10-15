@@ -12,7 +12,7 @@
 
 .share-en {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.14em;
   color: #C4A76C;
   font-style: italic;
@@ -21,7 +21,7 @@
 
 .share-title {
   display: block;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 500;
   color: #FFFFFF;
   margin-bottom: 10rpx;
@@ -29,7 +29,7 @@
 
 .share-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.55;
   color: #A09A90;
 }
@@ -63,7 +63,7 @@
   background: rgba(26, 24, 20, 0.88);
   border: 1rpx solid #4D401A;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
 }
 
@@ -98,7 +98,7 @@
 }
 
 .share-status-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
 }
 
@@ -117,7 +117,7 @@
   height: 88rpx;
   line-height: 88rpx;
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   border: none;
   background: #262320;
   color: #D5D1C8;
@@ -145,9 +145,16 @@
   flex: 1;
   height: 72rpx;
   line-height: 72rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .btn[disabled] {
   opacity: 0.45;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .spinner.small {
+    animation: none;
+  }
 }

@@ -18,7 +18,7 @@
 }
 
 .page-pet .nav-brand .nav-title {
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.14em;
@@ -28,7 +28,7 @@
 
 .page-pet .nav-sub {
   margin-top: 8rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   line-height: 1.3;
   letter-spacing: 0.18em;
   color: #C4A76C;
@@ -42,7 +42,7 @@
 }
 
 .page-pet .motto-primary {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 400;
   line-height: 1.65;
   letter-spacing: 0.04em;
@@ -129,7 +129,7 @@
 }
 
 .page-pet .panel-title {
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   letter-spacing: 0.02em;
 }
 
@@ -169,7 +169,7 @@
 
 .notice-plate-title {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 600;
   letter-spacing: 0.06em;
   color: #C4A76C;
@@ -179,14 +179,14 @@
 
 .notice-plate-body {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #D5D1C8;
   line-height: 1.55;
 }
 
 .section-label {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   color: #A09A90;
   letter-spacing: 0.04em;
@@ -195,7 +195,7 @@
 
 .section-hint {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #6B6560;
   line-height: 1.4;
   margin-bottom: 16rpx;
@@ -214,8 +214,8 @@
   pointer-events: none;
 }
 
-.craft-name { display: block; font-size: 26rpx; color: #D5D1C8; }
-.craft-weeks { display: block; font-size: 22rpx; color: #6B6560; margin-top: 6rpx; }
+.craft-name { display: block; font-size: var(--fs-26); color: #D5D1C8; }
+.craft-weeks { display: block; font-size: var(--fs-22); color: #6B6560; margin-top: 6rpx; }
 
 /* 底栏固定勾选：始终可见，消除「灰按钮猜谜」 */
 .consent-dock {
@@ -254,14 +254,14 @@
 }
 
 .consent-text {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: #FFFFFF;
   line-height: 1.4;
 }
 
 .consent-hint {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A09A90;
   line-height: 1.4;
 }
@@ -277,7 +277,7 @@
 
 .form-label {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   color: #A09A90;
   letter-spacing: 0.04em;
@@ -286,7 +286,7 @@
 
 .form-hint {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #6B6560;
   line-height: 1.45;
   margin: -4rpx 0 16rpx;
@@ -299,7 +299,7 @@
   background: #1F1D1A;
   border: 1px solid rgba(38, 35, 32, 0.9);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #FFFFFF;
   line-height: 88rpx;
 }
@@ -311,7 +311,7 @@
   background: #1F1D1A;
   border: 1px solid rgba(38, 35, 32, 0.9);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #FFFFFF;
   line-height: 1.5;
   margin-top: 0;
@@ -323,7 +323,7 @@
   min-height: 64rpx;
   padding: 14rpx 28rpx;
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #A09A90;
   background: #1F1D1A;
   border: 1px solid rgba(38, 35, 32, 0.9);
@@ -362,7 +362,7 @@
   display: flex; align-items: center; justify-content: center;
 }
 
-.photo-del-x { font-size: 28rpx; color: #D5D1C8; line-height: 1; }
+.photo-del-x { font-size: var(--fs-28); color: #D5D1C8; line-height: 1; }
 
 .photo-add {
   display: flex; flex-direction: column;
@@ -376,8 +376,8 @@
   border-color: rgba(196, 167, 108, 0.55);
 }
 
-.photo-add-plus { font-size: 40rpx; color: #C4A76C; line-height: 1; }
-.photo-add-label { font-size: 22rpx; color: #6B6560; }
+.photo-add-plus { font-size: var(--fs-40); color: #C4A76C; line-height: 1; }
+.photo-add-label { font-size: var(--fs-22); color: #6B6560; }
 
 .craft-card, .intake-card {
   padding: 28rpx;
@@ -405,28 +405,28 @@
 
 .craft-card-name, .intake-name {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   color: #FFFFFF;
 }
 
 .craft-card-check, .intake-check {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
   letter-spacing: 0.04em;
 }
 
 .craft-card-desc, .intake-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.55;
 }
 
 .craft-card-weeks {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
   margin-top: 14rpx;
   letter-spacing: 0.02em;
@@ -434,7 +434,7 @@
 
 .submit-tip {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #6B6560;
   line-height: 1.55;
   margin-top: 4rpx;
@@ -454,7 +454,7 @@
 
 .preview-plate-title {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #8B6F47;
   letter-spacing: 0.08em;
   margin-bottom: 12rpx;
@@ -467,8 +467,8 @@
 }
 
 .page-pet .preview-row:last-child { border-bottom: none; }
-.page-pet .preview-label { font-size: 22rpx; color: #8B6F47; flex-shrink: 0; }
-.page-pet .preview-value { font-size: 24rpx; color: #6B5A24; text-align: right; flex: 1; }
+.page-pet .preview-label { font-size: var(--fs-22); color: #8B6F47; flex-shrink: 0; }
+.page-pet .preview-value { font-size: var(--fs-24); color: #6B5A24; text-align: right; flex: 1; }
 
 /* 底部：单行联系专员 + 明确启用提示，不抢主 CTA */
 .page-pet .footer-bar {
@@ -494,7 +494,7 @@
 .page-pet .footer-support {
   flex-shrink: 0;
   margin-left: auto;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   letter-spacing: 0.02em;
   padding: 4rpx 0;
@@ -508,7 +508,7 @@
   flex: 1;
   min-width: 0;
   text-align: left;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #8B6F47;
   line-height: 1.35;
 }
@@ -554,7 +554,7 @@
 
 .intake-soon {
   flex-shrink: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1;
   padding: 6rpx 12rpx;
   color: #6B6560;
@@ -593,7 +593,7 @@
 
 .artisan-name {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   color: #FFFFFF;
 }
@@ -601,7 +601,7 @@
 .artisan-desc {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   overflow: hidden;
   white-space: nowrap;
@@ -610,13 +610,13 @@
 
 .artisan-meta { text-align: right; flex-shrink: 0; }
 
-.artisan-price { display: block; font-size: 24rpx; color: #C4A76C; }
+.artisan-price { display: block; font-size: var(--fs-24); color: #C4A76C; }
 
-.artisan-days { display: block; font-size: 20rpx; color: #A09A90; margin-top: 4rpx; }
+.artisan-days { display: block; font-size: var(--fs-20); color: #A09A90; margin-top: 4rpx; }
 
 .artisan-chosen {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
 }

@@ -245,9 +245,9 @@ function polishChecks(js, wxml, wxss, ok) {
   ok('S4 犒劳自己提示紧跟关系 chip（就近），在包装与价格之前，且只有一处', (wxml.match(/class="relation-self-note"/g) || []).length === 1 && wrapAt > 0 && selfAt > wrapAt && selfAt < s1.indexOf('<view class="section sec-wrap">'))
   const pre = rule(wxss, '.note-preset.on')
   ok('S5 选中样式与入场：chip 实心金底 + 勾 + 弹一下；小签 / 提示签 / 已选提示从下方轻移入场；藏品卡描金',
-    /background:\s*var\(--primary\)/.test(pre) && /animation:\s*preset-pop/.test(pre) && /border-right:/.test(rule(wxss, '.note-preset.on .note-preset-check')) &&
+    /background:\s*var\(--(?:color-)?primary\)/.test(pre) && /animation:\s*preset-pop/.test(pre) && /border-right:/.test(rule(wxss, '.note-preset.on .note-preset-check')) &&
     ['.for-tag', '.relation-self-note', '.section-hint.is-picked'].every((s) => /animation:\s*pick-in/.test(rule(wxss, s))) &&
-    /@keyframes pick-in \{/.test(wxss) && /@keyframes preset-pop \{/.test(wxss) && /border-color:\s*var\(--primary\)/.test(rule(wxss, '.product-row.is-for')))
+    /@keyframes pick-in \{/.test(wxss) && /@keyframes preset-pop \{/.test(wxss) && /border-color:\s*var\(--(?:color-)?primary\)/.test(rule(wxss, '.product-row.is-for')))
   ok('S6 选中反馈不新增状态：只读 activeNotePresetId / selfTreat（不出现 forWhom 一类新字段），selfTreat 进出仍只在 enterSelfTreat / exitSelfTreat',
     !/forWhom|relationLabel|pickedRelation/.test(js + wxml) && (js.match(/selfTreat: true/g) || []).length === 1 && (js.match(/selfTreat: false/g) || []).length === 2)
 
@@ -621,7 +621,7 @@ const INJECTIONS = [
   { name: '包装说明丢了雪梨纸', file: P.packaging, find: "{ k: '包装', v: '牛皮纸 + 雪梨纸简约裹封' }", replace: "{ k: '包装', v: '牛皮纸简约裹封' }" },
   { name: '包装项不渲染', file: P.wxml, find: 'wx:for="{{packagingItems}}"', replace: 'wx:for="{{[]}}"' },
   // S 选中反馈
-  { name: '选中 chip 不再实心', file: P.wxss, find: '  background: var(--primary);\n  font-weight: 500;\n  padding-left: 16rpx;', replace: '  background: transparent;\n  font-weight: 500;\n  padding-left: 16rpx;' },
+  { name: '选中 chip 不再实心', file: P.wxss, find: '  background: var(--color-primary);\n  font-weight: 500;\n  padding-left: 16rpx;', replace: '  background: transparent;\n  font-weight: 500;\n  padding-left: 16rpx;' },
   { name: '选中 chip 没有勾', file: P.wxml, find: '            <view class="note-preset-check" aria-hidden="true"></view>\n', replace: '' },
   { name: '犒劳自己（正文手改后）chip 不亮', file: P.wxml, find: "{{activeNotePresetId === item.id || (selfTreat && item.id === 'self') ? 'on' : ''}}", replace: "{{activeNotePresetId === item.id ? 'on' : ''}}" },
   { name: '藏品卡没有「送给」小签', file: P.wxml, find: '<view class="for-tag" wx:if="{{item.id === activeNotePresetId}}">', replace: '<view class="for-tag" wx:if="{{false}}">' },

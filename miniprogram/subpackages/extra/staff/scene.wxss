@@ -11,7 +11,7 @@
 }
 
 .boot-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
   text-transform: uppercase;
@@ -19,14 +19,14 @@
 
 .boot-cn {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 8rpx;
 }
 
 .boot-hint {
   margin-top: var(--space-3);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -35,21 +35,21 @@
 }
 
 .scene-header .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
 }
 
 .scene-header .brand-group .cn {
   font-family: var(--font-brand);
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: var(--color-text-primary);
   margin-top: 6rpx;
 }
 
 .scene-note {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.5;
   margin-top: var(--space-2);
@@ -73,7 +73,7 @@
 
 .scene-group .panel-title.sub {
   margin: 0 0 var(--space-3);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.12em;
   color: var(--color-text-secondary, #A09A90);
   text-transform: uppercase;
@@ -129,7 +129,7 @@
   height: 32rpx;
   line-height: 32rpx;
   text-align: center;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   font-family: var(--font-mono);
   color: var(--color-bg);
   background: var(--brass-400);
@@ -144,20 +144,20 @@
 }
 
 .link-btn .lb-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.12em;
   color: var(--color-text-secondary, #A09A90);
 }
 
 .link-btn .lb-cn {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .link-btn .lb-desc {
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.45;
   color: var(--color-text-secondary);
 }
@@ -167,7 +167,7 @@
 }
 
 .scene-tile-arrow {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   margin-left: var(--space-3);
 }
@@ -212,14 +212,14 @@
 
 .check-label {
   flex: 1;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-body);
   line-height: 1.45;
 }
 
 .check-meta {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   margin-top: 6rpx;
 }
@@ -236,7 +236,7 @@
   padding: var(--space-2) var(--space-3);
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
 }
 
@@ -247,12 +247,12 @@
 
 .amount-row {
   font-family: var(--font-mono);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
 }
 
 .tag-status {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);
   border: 1rpx solid var(--color-border);
@@ -301,7 +301,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
@@ -323,7 +323,7 @@
 
 .status-strip-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   font-weight: 500;
 }
@@ -331,7 +331,7 @@
 .status-strip-hint {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.45;
 }
@@ -339,6 +339,6 @@
 .last-feedback {
   display: block;
   margin-bottom: var(--space-3);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }

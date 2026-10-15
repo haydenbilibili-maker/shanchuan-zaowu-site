@@ -850,3 +850,11 @@
   font-weight: 600;
   color: var(--brass-300);
 }
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .wf-skel-line,
+  .wf-more-dot {
+    animation: none;
+  }
+}

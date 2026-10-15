@@ -150,30 +150,30 @@
 }
 .wallet-leather-brand {
   font-family: var(--font-brand);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-300);
   letter-spacing: 0.08em;
 }
 .wallet-leather-tag {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-700);
   font-weight: 500;
 }
 .wallet-leather-title-muted {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   font-weight: 500;
 }
 .wallet-leather-overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.14em;
   color: var(--color-text-muted);
   margin-bottom: 12rpx;
 }
 .wallet-leather-card--checkout .wallet-leather-overline {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.06em;
   margin-bottom: 6rpx;
 }
@@ -190,13 +190,13 @@
 }
 .wallet-leather-currency {
   font-family: var(--font-mono);
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: var(--brass-400);
   padding-bottom: 10rpx;
   font-weight: 600;
 }
 .wallet-leather-card--checkout .wallet-leather-currency {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   padding-bottom: 0;
 }
 .wallet-leather-balance {
@@ -208,7 +208,7 @@
   letter-spacing: -0.02em;
 }
 .wallet-leather-card--checkout .wallet-leather-balance {
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   line-height: 1.05;
   letter-spacing: 0.02em;
 }
@@ -217,7 +217,7 @@
 }
 .wallet-leather-member {
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   letter-spacing: 0.06em;
 }
@@ -227,7 +227,7 @@
   padding-top: 20rpx;
 }
 .wallet-leather-plate-text {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.12em;
   color: var(--brass-700);
 }

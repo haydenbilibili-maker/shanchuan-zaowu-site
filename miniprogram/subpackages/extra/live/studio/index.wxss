@@ -26,7 +26,7 @@ page {
 }
 
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
 }
@@ -34,7 +34,7 @@ page {
 .brand-group .cn {
   margin-top: 6rpx;
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
 }
 
@@ -47,7 +47,7 @@ page {
 }
 
 .greeting {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
 }
@@ -65,7 +65,7 @@ page {
 }
 
 .preview-chip text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.06em;
   color: var(--brass-600);
 }
@@ -75,7 +75,7 @@ page {
 }
 
 .mode-chip text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
@@ -89,7 +89,7 @@ page {
 }
 
 .on-air-text {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   font-weight: 600;
   letter-spacing: 0.12em;
   color: var(--color-error);
@@ -98,7 +98,7 @@ page {
 .header-note {
   display: block;
   margin-top: var(--space-3);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
@@ -149,18 +149,18 @@ page {
 
 .flow-num {
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
 }
 
 .flow-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-primary);
 }
 
 .flow-sep {
   flex-shrink: 0;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-600);
   opacity: 0.7;
 }
@@ -181,20 +181,20 @@ page {
 }
 
 .next-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.14em;
   color: var(--brass-600);
 }
 
 .next-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
 }
 
 .next-body {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
@@ -216,13 +216,13 @@ page {
 }
 
 .group-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.14em;
   color: var(--brass-600);
 }
 
 .group-cn {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
@@ -232,7 +232,7 @@ page {
   background: rgba(233, 162, 59, 0.08);
   border: 1rpx solid rgba(233, 162, 59, 0.35);
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-warning);
   line-height: 1.45;
 }
@@ -295,13 +295,13 @@ page {
 }
 
 .status-card-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
 .status-card-title {
   display: block;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   color: var(--color-text-primary);
   margin-bottom: var(--space-2);
@@ -310,7 +310,7 @@ page {
 .status-card-empty {
   display: block;
   margin-bottom: var(--space-3);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.45;
 }
@@ -318,7 +318,7 @@ page {
 .status-card-sub {
   display: block;
   margin-top: var(--space-2);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
@@ -333,7 +333,7 @@ page {
   display: flex;
   align-items: center;
   gap: 10rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -379,19 +379,19 @@ page {
 .metric-val {
   display: block;
   font-family: var(--font-mono);
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--brass-400);
 }
 
 .metric-val.metric-sm {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.35;
 }
 
 .metric-lbl {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
@@ -401,7 +401,7 @@ page {
   gap: 10rpx;
   padding: 4rpx 16rpx;
   border-radius: var(--radius-sm);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   border: 1rpx solid var(--color-border);
   color: var(--color-text-secondary);
@@ -434,7 +434,7 @@ page {
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
@@ -477,7 +477,7 @@ page {
 
 .module-chevron {
   flex-shrink: 0;
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   line-height: 1;
   color: var(--brass-400);
   opacity: 0.85;
@@ -489,7 +489,7 @@ page {
 }
 
 .module-overline {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.12em;
   color: var(--color-text-secondary, #A09A90);
 }
@@ -497,7 +497,7 @@ page {
 .module-title {
   display: block;
   margin-top: var(--space-1);
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
 }
@@ -505,7 +505,7 @@ page {
 .module-desc {
   display: block;
   margin-top: var(--space-1);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.45;
 }
@@ -557,21 +557,21 @@ page {
 
 .shelf-chip-title {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary);
 }
 
 .shelf-chip-meta {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
 }
 
 .shelf-chip-warn {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-warning);
 }
 
@@ -586,7 +586,7 @@ page {
   padding: 4rpx 12rpx;
   border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-sm);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   text-align: center;
 }
@@ -621,7 +621,7 @@ page {
 .copy-hint {
   display: block;
   margin-bottom: var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-success);
 }
 
@@ -648,14 +648,14 @@ page {
 }
 
 .talk-seg-title {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
 .talk-seg-body {
   display: block;
   margin-top: 6rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -664,13 +664,13 @@ page {
 .session-summary {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
 }
 
 .notice-label {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   margin-bottom: var(--space-2);
 }
@@ -710,14 +710,14 @@ page {
 }
 
 .session-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
 .session-meta {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -730,7 +730,7 @@ page {
 
 .foot-note {
   margin: var(--space-2) 0 var(--space-4);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -760,21 +760,21 @@ page {
 }
 
 .page-boot .boot-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
 }
 
 .page-boot .boot-cn {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 6rpx;
 }
 
 .page-boot .boot-hint {
   margin-top: var(--space-4);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
 }
 
@@ -782,7 +782,7 @@ page {
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
 }
 .page-tip.is-info {

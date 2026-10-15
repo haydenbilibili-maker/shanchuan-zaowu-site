@@ -57,7 +57,7 @@
 
 .ptn-kpi-value {
   display: block;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
@@ -70,7 +70,7 @@
 .ptn-kpi-label {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -112,7 +112,7 @@
 }
 
 .tile-del-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #f5f1e8;
 }
 

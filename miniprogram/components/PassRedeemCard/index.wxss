@@ -64,7 +64,7 @@
 }
 
 .pass-redeem-status-text {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   color: #52B788;
   letter-spacing: 0.06em;
@@ -129,14 +129,14 @@
 }
 
 .pass-redeem-kicker {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.16em;
   color: var(--color-text-secondary);
 }
 
 .pass-redeem-title {
   margin-top: 10rpx;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: #FFFFFF;
   text-align: center;
@@ -152,7 +152,7 @@
 }
 
 .pass-redeem-currency {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   margin-right: 4rpx;
 }
@@ -172,15 +172,22 @@
   border: 1rpx solid #4D401A;
   background: rgba(196, 167, 108, 0.16);
   color: #C4A76C;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 600;
   letter-spacing: 0.08em;
 }
 
 .pass-redeem-note {
   margin-top: 16rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
   text-align: center;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .pass-redeem-status .signal-light.lamp-success {
+    animation: none;
+  }
 }

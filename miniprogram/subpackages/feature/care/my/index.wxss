@@ -19,20 +19,20 @@ page {
 
 .intro-overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
   letter-spacing: 0.14em;
   margin-bottom: 10rpx;
 }
 
 .intro-text {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.65;
 }
 
 .list-count {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   letter-spacing: 0.06em;
   margin-bottom: var(--space-3);
@@ -77,7 +77,7 @@ page {
 }
 
 .cover-letter {
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--brass-400);
   font-family: var(--font-brand);
 }
@@ -89,7 +89,7 @@ page {
 
 .spec-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
   margin-bottom: 10rpx;
@@ -108,7 +108,7 @@ page {
   align-items: center;
   align-self: flex-start;
   width: auto;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   padding: 4rpx 12rpx;
   border-radius: var(--radius-full);
   border: 1px solid;
@@ -121,7 +121,7 @@ page {
   align-items: center;
   align-self: flex-start;
   width: auto;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   padding: 4rpx 10rpx;
   border: 1rpx solid var(--brass-800);
@@ -131,20 +131,20 @@ page {
 }
 
 .tag-date {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
 .spec-framing {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   margin-bottom: 8rpx;
 }
 
 .spec-summary {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.5;
   display: -webkit-box;
@@ -155,7 +155,7 @@ page {
 
 .spec-chevron {
   flex-shrink: 0;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: var(--brass-400);
   line-height: 1;
   opacity: 0.75;
@@ -180,21 +180,21 @@ page {
 }
 
 .empty-icon-letter {
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-family: var(--font-brand);
   color: var(--brass-400);
 }
 
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-secondary);
   margin-bottom: 12rpx;
 }
 
 .empty-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.55;
   margin-bottom: 32rpx;
@@ -203,7 +203,7 @@ page {
 .empty-btn {
   display: inline-flex;
   align-items: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-bg);
   background: var(--brass-400);
   padding: 16rpx 40rpx;

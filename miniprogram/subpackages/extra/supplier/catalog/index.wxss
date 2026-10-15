@@ -9,7 +9,7 @@
   padding: 16rpx 20rpx;
   border-radius: var(--radius-sm);
   background: rgba(196, 167, 108, 0.12);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-500, var(--brass-600));
   line-height: 1.4;
 }
@@ -112,7 +112,7 @@
 }
 
 .cat-thumb-ph-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.08em;
   color: var(--color-text-muted);
 }
@@ -132,7 +132,7 @@
 }
 
 .in-cart-dot text {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   font-weight: 600;
   color: #1a1408;
 }
@@ -156,7 +156,7 @@
 .cat-name {
   flex: 1;
   min-width: 0;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
   line-height: 1.35;
@@ -164,27 +164,27 @@
 
 .cat-price {
   flex-shrink: 0;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-500, var(--brass-600));
   font-variant-numeric: tabular-nums;
   line-height: 1.35;
 }
 
 .cat-pack {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-600);
   line-height: 1.35;
 }
 
 .cat-meta {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
 .cat-lock-hint {
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.02em;
 }
@@ -211,7 +211,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   background: rgba(255, 255, 255, 0.03);
 }
@@ -227,7 +227,7 @@
 .qty-num {
   min-width: 48rpx;
   text-align: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
   border-left: 1rpx solid rgba(255, 255, 255, 0.08);
@@ -244,7 +244,7 @@
   border-radius: 999rpx;
   background: var(--brass-500);  /* 深字压 brass-600 仅 4.07:1 → 提一档 ≈5.3:1 */
   color: #1a1408;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
 }
 
@@ -308,7 +308,7 @@
 }
 
 .cart-bar-badge text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 600;
   color: #1a1408;
 }
@@ -322,13 +322,13 @@
 }
 
 .cart-bar-label {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: var(--color-text-primary);
 }
 
 .cart-bar-count {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-600);
 }
 
@@ -342,6 +342,6 @@
   border-radius: 999rpx;
   background: var(--brass-500);  /* 深字压 brass-600 仅 4.07:1 → 提一档 ≈5.3:1 */
   color: #1a1408;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
 }

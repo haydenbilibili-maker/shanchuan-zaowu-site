@@ -21,7 +21,7 @@ page {
 
 .page-overline {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.1em;
   color: var(--brass-400, #C4A76C);
   font-weight: 500;
@@ -31,7 +31,7 @@ page {
 .h1 {
   display: block;
   font-family: var(--font-brand, 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif);
-  font-size: 48rpx;
+  font-size: var(--fs-48);
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 12rpx;
@@ -40,7 +40,7 @@ page {
 
 .h2 {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -62,7 +62,7 @@ page {
   justify-content: center;
   gap: 8rpx;
   color: var(--color-text-secondary, #A09A90);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
 }
 
@@ -73,7 +73,7 @@ page {
 
 
 .tab-count {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   opacity: 0.85;
 }
 
@@ -87,7 +87,7 @@ page {
 
 .hint-title {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: var(--color-text-primary);
   margin-bottom: 8rpx;
@@ -95,7 +95,7 @@ page {
 
 .hint-body {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.55;
 }
@@ -104,7 +104,7 @@ page {
   padding: 80rpx 0;
   text-align: center;
   color: var(--color-text-secondary, #A09A90);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .item-card {
@@ -136,7 +136,7 @@ page {
 }
 
 .title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   font-weight: 500;
   overflow: hidden;
@@ -145,7 +145,7 @@ page {
 }
 
 .latin {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   font-style: italic; font-family: var(--font-latin);
   overflow: hidden;
@@ -163,12 +163,12 @@ page {
 
 .price {
   font-family: var(--font-mono, 'JetBrains Mono', monospace);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
 }
 
 .tag {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   padding: 2rpx 10rpx;
   border-radius: var(--radius-sm);
 }
@@ -185,7 +185,7 @@ page {
 
 .remove {
   flex-shrink: 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   padding: 12rpx 8rpx;
 }
@@ -197,14 +197,14 @@ page {
 
 .empty-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   margin-bottom: 12rpx;
 }
 
 .empty-sub {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: 40rpx;
@@ -220,7 +220,7 @@ page {
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
 }
 

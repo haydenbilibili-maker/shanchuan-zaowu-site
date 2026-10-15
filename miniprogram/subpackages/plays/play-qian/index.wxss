@@ -197,3 +197,11 @@
   padding-top: 10rpx;
   border-top: 1rpx solid rgba(122, 92, 44, 0.24);
 }
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .rp-stage.is-pending .rp-tube,
+  .rp-stage.is-pending .rp-stick.is-side {
+    animation: none;
+  }
+}

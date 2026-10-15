@@ -17,8 +17,8 @@ page { background: #1A1814; color: #fff; }
   align-items: center;
   gap: 16rpx;
 }
-.load-error-title { color: #FFFFFF; font-size: 32rpx; font-weight: 500; }
-.load-error-desc { color: #A09A90; font-size: 26rpx; line-height: 1.5; margin-bottom: 24rpx; }
+.load-error-title { color: #FFFFFF; font-size: var(--fs-32); font-weight: 500; }
+.load-error-desc { color: #A09A90; font-size: var(--fs-26); line-height: 1.5; margin-bottom: 24rpx; }
 .load-error-actions { width: 100%; display: flex; flex-direction: column; gap: 20rpx; }
 
 .hero {
@@ -37,14 +37,14 @@ page { background: #1A1814; color: #fff; }
 }
 
 .hero-overline {
-  display: block; font-size: 20rpx; color: #C4A76C; letter-spacing: 0.15em; margin-bottom: 12rpx;
+  display: block; font-size: var(--fs-20); color: #C4A76C; letter-spacing: 0.15em; margin-bottom: 12rpx;
 }
 
 .hero-title {
-  display: block; font-size: 40rpx; font-weight: 600; margin-bottom: 8rpx;
+  display: block; font-size: var(--fs-40); font-weight: 600; margin-bottom: 8rpx;
 }
 
-.hero-sub { display: block; font-size: 24rpx; color: #A09A90; }
+.hero-sub { display: block; font-size: var(--fs-24); color: #A09A90; }
 
 .preview-plate {
   margin: 32rpx; padding: 32rpx;
@@ -53,7 +53,7 @@ page { background: #1A1814; color: #fff; }
 }
 
 .plate-label {
-  display: block; font-size: 22rpx; color: #C4A76C; letter-spacing: 0.1em; margin-bottom: 24rpx;
+  display: block; font-size: var(--fs-22); color: #C4A76C; letter-spacing: 0.1em; margin-bottom: 24rpx;
 }
 
 .preview-row {
@@ -63,10 +63,10 @@ page { background: #1A1814; color: #fff; }
 
 .preview-row:last-child { border-bottom: none; }
 
-.preview-label { font-size: 24rpx; color: var(--color-text-secondary); flex-shrink: 0; }
+.preview-label { font-size: var(--fs-24); color: var(--color-text-secondary); flex-shrink: 0; }
 
 .preview-value {
-  font-size: 26rpx; color: #D5D1C8; text-align: right; flex: 1;
+  font-size: var(--fs-26); color: #D5D1C8; text-align: right; flex: 1;
 }
 
 .preview-value.latin { color: #C4A76C; font-style: italic; font-family: var(--font-latin); }
@@ -74,7 +74,7 @@ page { background: #1A1814; color: #fff; }
 .tip-box {
   margin: 0 32rpx; padding: 24rpx;
   background: rgba(196,167,108,0.08); border: 1px solid rgba(77,64,26,0.5);
-  border-radius: var(--radius-md); font-size: 24rpx; color: #A09A90; line-height: 1.6;
+  border-radius: var(--radius-md); font-size: var(--fs-24); color: #A09A90; line-height: 1.6;
 }
 
 .footer {
@@ -86,12 +86,12 @@ page { background: #1A1814; color: #fff; }
 
 .btn-primary {
   background: #C4A76C; color: #1A1814; border: none; border-radius: var(--radius-md);
-  font-size: 28rpx; font-weight: 500;
+  font-size: var(--fs-28); font-weight: 500;
 }
 
 .btn-ghost {
   background: transparent; color: #C4A76C;
-  border: 1rpx solid #C4A76C; border-radius: var(--radius-md); font-size: 28rpx;
+  border: 1rpx solid #C4A76C; border-radius: var(--radius-md); font-size: var(--fs-28);
   overflow: visible; box-sizing: border-box;
 }
 

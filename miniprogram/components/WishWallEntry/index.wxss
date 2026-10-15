@@ -68,7 +68,7 @@
   flex-shrink: 0;
   padding: 8rpx 18rpx 9rpx;
   font-family: var(--font-brand, 'Source Han Serif SC', serif);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.2;
   letter-spacing: 0.14em;
   color: #2A220E;
@@ -100,7 +100,7 @@
 .wish-wall-entry-title {
   min-width: 0;
   font-family: var(--font-brand, 'Source Han Serif SC', serif);
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0.08em;
@@ -117,13 +117,13 @@
 }
 
 .wish-wall-entry.is-compact .wish-wall-entry-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
 }
 
 .wish-wall-entry-hint {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.35;
   letter-spacing: 0.04em;
   color: rgba(90, 74, 36, 0.72);
@@ -132,7 +132,7 @@
 .wish-wall-entry-desc {
   display: block;
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   letter-spacing: 0.02em;
   color: rgba(90, 74, 36, 0.78);
@@ -196,7 +196,7 @@
   margin-right: var(--space-3, 24rpx);
   padding: 8rpx 14rpx 8rpx 12rpx;
   font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.4;
   color: #5A4A28;
   white-space: nowrap;
@@ -218,7 +218,7 @@
 
 .wish-wall-entry-mq-emoji {
   margin-right: 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .wish-wall-entry-mq-text {
@@ -263,7 +263,7 @@
 .wish-wall-entry-kicker {
   display: block;
   margin-bottom: 6rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   line-height: 1.3;
   letter-spacing: 0.24em;
   color: rgba(196, 167, 108, 0.78);
@@ -284,7 +284,7 @@
 .wish-wall-entry.is-ink .wish-wall-entry-brand {
   order: 3;
   padding: 4rpx 12rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.12em;
   color: #D4BC85;
   background: rgba(196, 167, 108, 0.08);
@@ -298,7 +298,7 @@
 
 .wish-wall-entry.is-ink .wish-wall-entry-title {
   order: 2;
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   letter-spacing: 0.12em;
   color: #F7F1E4;
   text-shadow: none;
@@ -307,7 +307,7 @@
 .wish-wall-entry.is-ink .wish-wall-entry-desc,
 .wish-wall-entry.is-ink .wish-wall-entry-hint {
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: rgba(224, 207, 163, 0.7);
 }
 
@@ -339,7 +339,7 @@
   gap: 10rpx;
   margin-right: 36rpx;
   padding: 2rpx 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #E8D6A8;
   background: transparent;
   border: 0;
@@ -361,7 +361,7 @@
 
 /* emoji 降饱和：彩色 emoji 在暗金调里最抢眼，压到与文字同一亮度层 */
 .wish-wall-entry.is-ink .wish-wall-entry-mq-emoji {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   opacity: 0.85;
   filter: saturate(0.55);
 }
@@ -374,14 +374,21 @@
 .wl-entry-mat::after { content: ''; position: absolute; top: -6rpx; left: 50%; width: 12rpx; height: 12rpx; margin-left: -6rpx; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F0E6CC, #A8903C 70%); box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.45); }
 .wl-entry-thumb { display: block; width: 112rpx; height: 112rpx; border-radius: 2rpx; background: #0E0D0B; }
 .wl-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
-.wl-entry-kicker { font-family: var(--font-mono); font-size: 18rpx; line-height: 26rpx; letter-spacing: 0.32em; color: var(--brass-400); white-space: nowrap; }
-.wl-entry-title { margin-top: 4rpx; font-family: var(--font-brand); font-size: 36rpx; line-height: 48rpx; font-weight: 500; letter-spacing: 0.12em; color: #F7F1E4; white-space: nowrap; }
-.wl-entry-meta { margin-top: 8rpx; max-width: 100%; font-size: 22rpx; line-height: 1.45; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wl-entry-kicker { font-family: var(--font-mono); font-size: var(--fs-18); line-height: 26rpx; letter-spacing: 0.32em; color: var(--brass-400); white-space: nowrap; }
+.wl-entry-title { margin-top: 4rpx; font-family: var(--font-brand); font-size: var(--fs-36); line-height: 48rpx; font-weight: 500; letter-spacing: 0.12em; color: #F7F1E4; white-space: nowrap; }
+.wl-entry-meta { margin-top: 8rpx; max-width: 100%; font-size: var(--fs-22); line-height: 1.45; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* 标签纸：米白纸 + 左端打孔 + 细内框 + 身后再叠一张（错位实影，旋转元素内不能用负 z 伪元素垫底）；手写字 */
 .wl-entry-slip { position: relative; max-width: 100%; margin: 14rpx 0 2rpx 6rpx; padding: 6rpx 22rpx 8rpx 34rpx; background: linear-gradient(172deg, #F5EEDF, #E8DFCB); border-radius: 3rpx 8rpx 8rpx 3rpx; box-shadow: 7rpx 7rpx 0 -1rpx #D3C6A8, 7rpx 7rpx 0 0 rgba(138, 117, 48, 0.25), 0 10rpx 18rpx rgba(0, 0, 0, 0.5), inset 0 0 0 1rpx rgba(138, 117, 48, 0.22); transform: rotate(-1.5deg); box-sizing: border-box; }
 .wl-entry-slip::before { content: ''; position: absolute; left: 12rpx; top: 50%; width: 10rpx; height: 10rpx; margin-top: -5rpx; border-radius: 50%; background: #1B1814; box-shadow: inset 0 1rpx 2rpx rgba(0, 0, 0, 0.6), 0 0 0 1rpx rgba(138, 117, 48, 0.35); }
-.wl-entry-slip-text { display: block; font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", serif; font-size: 28rpx; line-height: 1.35; color: #2E2618; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wl-entry-slip-text { display: block; font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", serif; font-size: var(--fs-28); line-height: 1.35; color: #2E2618; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wl-entry-chevron { flex-shrink: 0; width: 18rpx; height: 18rpx; margin-right: 6rpx; border-right: 3rpx solid var(--brass-300); border-bottom: 3rpx solid var(--brass-300); transform: rotate(-45deg); }
 .wl-entry.is-compact { padding: 20rpx 24rpx 20rpx 24rpx; gap: 24rpx; }
 .wl-entry.is-compact .wl-entry-thumb { width: 88rpx; height: 88rpx; }
-.wl-entry.is-compact .wl-entry-title { font-size: 30rpx; line-height: 40rpx; }
+.wl-entry.is-compact .wl-entry-title { font-size: var(--fs-30); line-height: 40rpx; }
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .wish-wall-entry-mq-track {
+    animation: none;
+  }
+}

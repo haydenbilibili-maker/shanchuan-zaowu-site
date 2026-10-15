@@ -5,7 +5,7 @@ page { background: #1A1814; color: #fff; }
   box-sizing: border-box;
 }
 .checking { display: flex; align-items: center; justify-content: center; }
-.muted { color: #A09A90; font-size: 26rpx; text-align: center; line-height: 1.55; }
+.muted { color: #A09A90; font-size: var(--fs-26); text-align: center; line-height: 1.55; }
 .state-block {
   display: flex;
   flex-direction: column;
@@ -27,20 +27,20 @@ page { background: #1A1814; color: #fff; }
 .intro { margin-bottom: 36rpx; }
 .overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #6B6560;
   letter-spacing: 0.12em;
   margin-bottom: 12rpx;
 }
 .title {
   display: block;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 500;
   color: #fff;
   margin-bottom: 12rpx;
   font-family: var(--font-brand);
 }
-.desc { display: block; font-size: 24rpx; color: #A09A90; line-height: 1.55; }
+.desc { display: block; font-size: var(--fs-24); color: #A09A90; line-height: 1.55; }
 
 .import-row {
   display: flex;
@@ -53,7 +53,7 @@ page { background: #1A1814; color: #fff; }
   border-radius: var(--radius-md);
 }
 .import-lbl {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #C4A76C;
   letter-spacing: 0.02em;
 }
@@ -76,16 +76,16 @@ page { background: #1A1814; color: #fff; }
 .field-picker:active {
   border-color: rgba(196, 167, 108, 0.45);
 }
-.label { display: block; font-size: 22rpx; color: #6B6560; margin-bottom: 12rpx; letter-spacing: 0.04em; }
-.input { display: block; width: 100%; font-size: 28rpx; color: #fff; }
+.label { display: block; font-size: var(--fs-22); color: #6B6560; margin-bottom: 12rpx; letter-spacing: 0.04em; }
+.input { display: block; width: 100%; font-size: var(--fs-28); color: #fff; }
 .placeholder { color: #6B6560; }
-.textarea { width: 100%; min-height: 140rpx; font-size: 28rpx; color: #fff; }
+.textarea { width: 100%; min-height: 140rpx; font-size: var(--fs-28); color: #fff; }
 
 .btn-primary {
   margin-top: 40rpx; height: 88rpx;
   display: flex; align-items: center; justify-content: center;
   background: #C4A76C; color: #1A1814;
-  font-size: 30rpx; font-weight: 500; border-radius: var(--radius-md);
+  font-size: var(--fs-30); font-weight: 500; border-radius: var(--radius-md);
   letter-spacing: 0.04em;
 }
 .btn-primary.disabled { opacity: 0.5; pointer-events: none; }
@@ -94,7 +94,7 @@ page { background: #1A1814; color: #fff; }
   display: block;
   margin-top: 24rpx;
   text-align: center;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #6B6560;
   line-height: 1.55;
 }
@@ -110,6 +110,13 @@ page { background: #1A1814; color: #fff; }
   border: 1px solid rgba(96, 90, 80, 0.5);
   border-radius: var(--radius-md);
   color: #A09A90;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   box-sizing: border-box;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .state-seal {
+    animation: none;
+  }
 }

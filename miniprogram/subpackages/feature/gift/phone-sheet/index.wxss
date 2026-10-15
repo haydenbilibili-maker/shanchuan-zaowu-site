@@ -7,17 +7,17 @@
   display:flex;
   flex-direction:column;
 }
-.ps-desc{margin-top:14rpx;font-size:24rpx;line-height:1.7;color:#B8AD98}
-.ps-input{margin-top:32rpx;height:92rpx;padding:0 28rpx;border:2rpx solid rgba(196,167,108,0.5);border-radius:var(--radius-md);background:#2A2621;color:#F3ECDD;font-size:34rpx;letter-spacing:4rpx}
-.ps-ph{color:#7D7466;letter-spacing:0;font-size:28rpx}
-.ps-error{margin-top:14rpx;font-size:24rpx;color:#E8927C}
+.ps-desc{margin-top:14rpx;font-size:var(--fs-24);line-height:1.7;color:#B8AD98}
+.ps-input{margin-top:32rpx;height:92rpx;padding:0 28rpx;border:2rpx solid rgba(196,167,108,0.5);border-radius:var(--radius-md);background:#2A2621;color:#F3ECDD;font-size:var(--fs-34);letter-spacing:4rpx}
+.ps-ph{color:#7D7466;letter-spacing:0;font-size:var(--fs-28)}
+.ps-error{margin-top:14rpx;font-size:var(--fs-24);color:#E8927C}
 .ps-btn {
   flex: none;
   margin-top:32rpx;
 }
 .ps-btn.is-busy{opacity:0.6}
 .ps-btn-press{opacity:0.85}
-.ps-link{margin-top:24rpx;text-align:center;font-size:26rpx;color:#C4A76C}
+.ps-link{margin-top:24rpx;text-align:center;font-size:var(--fs-26);color:#C4A76C}
 .ps-link-muted{color:#9A8F7C}
 
 /* 弹层规范（docs/弹层视觉规范_2026-10-13.md）：遮罩 / 牌面 / 抓手 / 眉标 / 主标 / 按钮取 ui-pop-*；抓手在内边距里，抵掉上边距 */

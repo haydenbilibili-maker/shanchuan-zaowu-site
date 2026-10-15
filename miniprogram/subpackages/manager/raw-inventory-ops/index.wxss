@@ -4,7 +4,7 @@
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
 }
 .page-tip.is-info {
@@ -25,10 +25,10 @@
   text-align: center;
   margin: 16rpx 0;
 }
-.empty-title { display: block; font-size: 28rpx; color: #f0c9c0; margin-bottom: 8rpx; }
-.empty-sub { display: block; font-size: 22rpx; color: rgba(232, 220, 192, 0.72); line-height: 1.5; }
+.empty-title { display: block; font-size: var(--fs-28); color: #f0c9c0; margin-bottom: 8rpx; }
+.empty-sub { display: block; font-size: var(--fs-22); color: rgba(232, 220, 192, 0.72); line-height: 1.5; }
 .btn-retry {
   display: inline-block; margin-top: 24rpx; padding: 12rpx 28rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.5); border-radius: 999rpx;
-  font-size: 24rpx; color: #e8dcc0;
+  font-size: var(--fs-24); color: #e8dcc0;
 }

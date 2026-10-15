@@ -27,7 +27,7 @@
   margin-bottom: 20rpx;
   padding: 18rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.55;
 }
 

@@ -28,7 +28,7 @@ page {
 
 .muted {
   color: #A09A90;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   line-height: 1.55;
   text-align: center;
 }
@@ -42,7 +42,7 @@ page {
 }
 
 .state-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: #D5D1C8;
   font-weight: 500;
 }
@@ -53,7 +53,7 @@ page {
   text-align: center;
   padding: 20rpx 32rpx;
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   box-sizing: border-box;
 }
@@ -101,7 +101,7 @@ page {
 
 .rite-overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #6B6560;
   letter-spacing: 0.14em;
   margin-bottom: 10rpx;
@@ -109,7 +109,7 @@ page {
 
 .rite-title {
   display: block;
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   font-weight: 500;
   color: #FFFFFF;
   font-family: var(--font-brand);
@@ -145,7 +145,7 @@ page {
   justify-content: center;
   overflow: hidden;
   white-space: nowrap;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   color: #FFFFFF;
   pointer-events: none;
@@ -180,7 +180,7 @@ page {
 }
 
 .step-rail-num {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #6B6560;
   letter-spacing: 0.08em;
   font-family: var(--font-mono);
@@ -192,7 +192,7 @@ page {
 }
 
 .step-rail-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #6B6560;
 }
 
@@ -228,7 +228,7 @@ page {
   align-items: center;
   gap: 8rpx;
   min-height: 64rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
 }
 .rail-sfx { justify-content: flex-end; margin-left: 12rpx; }
@@ -236,13 +236,13 @@ page {
 .section-hint {
   display: block;
   margin: -8rpx 0 20rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.55;
 }
 
 .section-hint.is-picked {
-  color: var(--text-gold);
+  color: var(--color-primary);
   animation: pick-in 0.24s ease-out;
 }
 
@@ -253,13 +253,13 @@ page {
   gap: 4rpx;
   margin-top: 4rpx;
   padding: 16rpx 20rpx;
-  border-left: 4rpx solid var(--primary);
+  border-left: 4rpx solid var(--color-primary);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--primary-light);
   animation: pick-in 0.24s ease-out;
 }
-.relation-self-k { font-size: 24rpx; font-weight: 500; color: var(--text-gold); }
-.relation-self-v { font-size: 24rpx; line-height: 1.5; color: var(--text-body); }
+.relation-self-k { font-size: var(--fs-24); font-weight: 500; color: var(--color-primary); }
+.relation-self-v { font-size: var(--fs-24); line-height: 1.5; color: var(--color-text-body); }
 
 /* 选了关系后的就近反馈：从下方轻移入场（每个关系各渲染一枚，换关系时重新播放） */
 @keyframes pick-in {
@@ -281,12 +281,12 @@ page {
 }
 
 .note-relation {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
 }
 
 .note-relation-back {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
   text-decoration: underline;
 }
@@ -302,8 +302,8 @@ page {
   transition: border-color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard);
 }
 .product-row.is-for {
-  border-color: var(--primary);
-  background: linear-gradient(180deg, rgba(196, 167, 108, 0.08), var(--bg-card) 70%);
+  border-color: var(--color-primary);
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.08), var(--color-bg-card) 70%);
 }
 
 /* 「送给 · X」小签：藏品卡里的选中摘要 */
@@ -314,9 +314,9 @@ page {
   margin-top: 14rpx;
   padding: 6rpx 18rpx 6rpx 14rpx;
   border-radius: 999rpx;
-  background: var(--primary);
-  color: var(--bg-root);
-  font-size: 22rpx;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  font-size: var(--fs-22);
   font-weight: 500;
   animation: pick-in 0.24s ease-out;
 }
@@ -324,7 +324,7 @@ page {
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  background: var(--bg-root);
+  background: var(--color-bg);
 }
 
 .product-cover-wrap {
@@ -351,7 +351,7 @@ page {
 
 .product-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: #FFFFFF;
   margin-bottom: 8rpx;
@@ -359,7 +359,7 @@ page {
 
 .product-latin {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
   font-style: italic; font-family: var(--font-latin);
   margin-bottom: 12rpx;
@@ -368,7 +368,7 @@ page {
 
 .product-sku {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
 }
 
@@ -379,7 +379,7 @@ page {
 /* 流程内小节标题（全站第二级口径）：等宽眉标 + 宋体主标；第一级见 app.wxss .mu-head */
 .section-overline {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   line-height: 26rpx;
   color: var(--brass-400);
   font-family: var(--font-mono);
@@ -389,7 +389,7 @@ page {
 
 .section-title {
   display: block;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   line-height: 44rpx;
   font-weight: 500;
   color: #FFFFFF;
@@ -401,8 +401,8 @@ page {
 /* 第 1 步「包装与价格」：包装逐项（左列项名、右列内容，不加框）+ 隐价开关行（右侧开关，开 = 金色底） */
 .wrap-list { display: flex; flex-direction: column; gap: 12rpx; }
 .wrap-item { display: flex; align-items: baseline; gap: 20rpx; }
-.wrap-k { flex: 0 0 72rpx; font-size: 22rpx; letter-spacing: 0.06em; color: var(--text-gold); }
-.wrap-v { flex: 1; min-width: 0; font-size: 24rpx; line-height: 1.55; color: var(--text-body); }
+.wrap-k { flex: 0 0 72rpx; font-size: var(--fs-22); letter-spacing: 0.06em; color: var(--color-primary); }
+.wrap-v { flex: 1; min-width: 0; font-size: var(--fs-24); line-height: 1.55; color: var(--color-text-body); }
 .switch-row {
   display: flex;
   align-items: center;
@@ -413,9 +413,9 @@ page {
   padding-top: 20rpx;
 }
 .switch-main { flex: 1; min-width: 0; }
-.switch-label { display: block; font-size: 26rpx; color: #D5D1C8; }
-.switch-tip { font-size: 22rpx; color: #A09A90; }
-.switch-sub { display: block; margin-top: 4rpx; font-size: 22rpx; color: var(--text-gold); }
+.switch-label { display: block; font-size: var(--fs-26); color: #D5D1C8; }
+.switch-tip { font-size: var(--fs-22); color: #A09A90; }
+.switch-sub { display: block; margin-top: 4rpx; font-size: var(--fs-22); color: var(--color-primary); }
 .switch-sub.is-off { color: #A09A90; }
 .switch-row.is-locked .switch-sub { color: #A09A90; }
 .switch {
@@ -452,7 +452,7 @@ page {
 
 .scene-note-label {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
   letter-spacing: 0.04em;
   margin-bottom: 8rpx;
@@ -460,7 +460,7 @@ page {
 
 .scene-note-guide {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #D5D1C8;
   line-height: 1.5;
   margin-bottom: 16rpx;
@@ -471,7 +471,7 @@ page {
   padding: 10rpx 22rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.4);
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
 }
 
@@ -502,7 +502,7 @@ page {
   padding: 10rpx 22rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.28);
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   letter-spacing: 0.02em;
   background: transparent;
@@ -516,9 +516,9 @@ page {
 
 /* 选中：实心金底 + 深色字 + 左侧勾，一眼区别于其余描边 chip */
 .note-preset.on {
-  color: var(--bg-root);
-  border-color: var(--primary);
-  background: var(--primary);
+  color: var(--color-bg);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
   font-weight: 500;
   padding-left: 16rpx;
   animation: preset-pop 0.22s ease-out;
@@ -529,8 +529,8 @@ page {
   width: 9rpx;
   height: 16rpx;
   margin: -4rpx 12rpx 0 2rpx;
-  border-right: 3rpx solid var(--bg-root);
-  border-bottom: 3rpx solid var(--bg-root);
+  border-right: 3rpx solid var(--color-bg);
+  border-bottom: 3rpx solid var(--color-bg);
   transform: rotate(45deg);
 }
 
@@ -556,7 +556,7 @@ page {
   display: block;
   margin-top: 16rpx;
   text-align: center;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #6B6560;
   letter-spacing: 0.08em;
 }
@@ -576,13 +576,13 @@ page {
 }
 
 .voice-rite-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #8A7530;
   letter-spacing: 0.12em;
 }
 
 .voice-rite-hint {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A09A90;
 }
 
@@ -595,7 +595,7 @@ page {
   border: 1px solid rgba(138, 117, 48, 0.45);
   border-radius: var(--radius-md);
   background: rgba(250, 246, 237, 0.65);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-700);
   letter-spacing: 0.04em;
 }
@@ -621,7 +621,7 @@ page {
   display: block;
   margin-top: 10rpx;
   text-align: center;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A09A90;
   letter-spacing: 0.06em;
 }
@@ -666,7 +666,7 @@ page {
   border: 1px solid rgba(138, 117, 48, 0.45);
   border-radius: var(--radius-md);
   background: rgba(250, 246, 237, 0.65);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-700);
   box-sizing: border-box;
 }
@@ -678,7 +678,7 @@ page {
 
 .voice-dur {
   margin-left: auto;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   font-family: var(--font-mono);
 }
@@ -696,7 +696,7 @@ page {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 
 .voice-hold-mini {
@@ -778,7 +778,7 @@ page {
 }
 
 .wax-seal-text {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #8A7530;
   letter-spacing: 0.04em;
   font-family: var(--font-brand);
@@ -819,7 +819,7 @@ page {
 
 .card-to-prefix {
   flex-shrink: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #8A7530;
   letter-spacing: 0.1em;
   font-family: var(--font-brand);
@@ -828,7 +828,7 @@ page {
 .card-to-dot {
   flex-shrink: 0;
   margin: 0 8rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #C4A76C;
   font-family: var(--font-brand);
 }
@@ -837,7 +837,7 @@ page {
   flex: 1;
   min-width: 0;
   height: 40rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #6B5A24;
   letter-spacing: 0.04em;
   font-family: var(--font-brand);
@@ -848,7 +848,7 @@ page {
 
 .card-to-placeholder {
   color: #A09A90;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   letter-spacing: 0.06em;
 }
 
@@ -863,7 +863,7 @@ page {
 .card-write-text {
   /* 手写体：直接写字面量栈（不依赖 var() —— iOS 实测 var 未生效 ✗） */
   font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", "Songti SC", serif;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.65;
   color: #33302C;
   /* 用户亲手写下的内容 → 手写体令牌（系统字体栈、零体积；iOS 汉仪手写体/签笔，Android 落衬线兜底） */
@@ -888,7 +888,7 @@ page {
 
 .card-write-cursor {
   display: inline;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.65;
   color: #8A7530;
   font-family: var(--font-latin);
@@ -921,7 +921,7 @@ page {
 }
 .card-epigraph-name {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 600;
   letter-spacing: 2rpx;
   color: var(--brass-400, #C4A76C);
@@ -929,14 +929,14 @@ page {
 }
 .card-epigraph-note {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.6;
   color: var(--color-text-secondary, #A09A90);
 }
 .card-input {
   width: 100%;
   min-height: 200rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #33302C;
   line-height: 1.65;
   background: transparent;
@@ -959,7 +959,7 @@ page {
 }
 
 .card-count {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
 }
 /* 正文字数：count 与"为什么有上限"的提示（2026-09-21：上限由打印尺寸反推，140 字） */
@@ -969,7 +969,7 @@ page {
 
 
 .card-sig-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #8A7530;
 }
 
@@ -1008,7 +1008,7 @@ page {
 .card-sig {
   width: 100%;
   height: 64rpx;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: #33302C;
   /* 手写感：同构预约票贵宾名 .val-calligraphy */
   font-family: 'Times New Roman', Georgia, 'Source Han Serif SC', serif;
@@ -1024,7 +1024,7 @@ page {
   padding: 6rpx 14rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   border-radius: var(--radius-sm);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-700);
   letter-spacing: 0.04em;
   background: rgba(242, 237, 228, 0.92);
@@ -1044,14 +1044,14 @@ page {
 }
 
 .note-shuffle-count {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   letter-spacing: 0.04em;
 }
 
 .note-shuffle {
   flex-shrink: 0;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
   letter-spacing: 0.04em;
   padding: 6rpx 0;
@@ -1095,7 +1095,7 @@ page {
   justify-content: center;
   background: #C4A76C;
   color: #1A1814;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -1124,11 +1124,21 @@ page {
 /* ── 音效图标（2026-09-19）── 取自 receive/index.wxss；按钮本身并进步骤轨右端（.rail-sfx） */
 .icon-sound {
   width: 22rpx; height: 22rpx; border-radius: 50%;
-  border: 1.5px solid var(--gold); box-sizing: border-box; position: relative;
+  border: 1.5px solid var(--color-primary); box-sizing: border-box; position: relative;
 }
 .icon-sound.on::after {
   content: ''; position: absolute; left: 50%; top: 50%;
   width: 8rpx; height: 8rpx; margin: -4rpx 0 0 -4rpx;
-  border-radius: 50%; background: var(--gold);
+  border-radius: 50%; background: var(--color-primary);
 }
 .icon-sound.off { opacity: 0.45; border-color: var(--color-text-muted); }
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .state-seal,
+  .voice-brass.pulse,
+  .voice-hold.recording .voice-brass,
+  .card-write-cursor.on {
+    animation: none;
+  }
+}

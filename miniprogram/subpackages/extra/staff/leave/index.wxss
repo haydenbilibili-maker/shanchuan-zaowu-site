@@ -28,13 +28,13 @@
 }
 
 .duration-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
 .duration-value {
   font-family: var(--font-mono);
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--brass-400);
 }
 
@@ -53,5 +53,5 @@
   margin-top: var(--space-2);
   display: inline-flex;
   padding: 8rpx 20rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }

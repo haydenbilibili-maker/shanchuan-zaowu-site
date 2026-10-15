@@ -39,7 +39,7 @@
 }
 
 .card-image-badge text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-weight: 500;
   color: #C4A76C;
   letter-spacing: 0.06em;
@@ -60,7 +60,7 @@
 .plate-en {
   display: block;
   margin-bottom: 12rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   font-weight: 500;
   letter-spacing: 0.16em;
   color: #8A7530;
@@ -73,7 +73,7 @@
 
 .name-zh {
   display: block;
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-weight: 600;
   font-family: var(--font-brand);
   color: #6B5A24;
@@ -84,7 +84,7 @@
 .name-latin {
   display: block;
   margin-top: 10rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
   line-height: 1.35;
@@ -98,7 +98,7 @@
 
 .plate-protection-label {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.12em;
   color: #8A7530;
   margin-bottom: 10rpx;
@@ -121,13 +121,13 @@
 }
 
 .prot-sys {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.06em;
   color: #8A7530;
 }
 
 .prot-val {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   color: #6B5A24;
 }
@@ -165,14 +165,14 @@
 }
 
 .prot-empty {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #8B6F47;
 }
 
 .prot-summary {
   display: block;
   margin-top: 12rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.6;
   color: #8B6F47;
 }
@@ -195,7 +195,7 @@
 .tax-chip {
   flex-shrink: 0;
   padding: 8rpx 18rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #D4BC85;
   background: rgba(196, 167, 108, 0.08);
   border-radius: var(--radius-sm);
@@ -219,13 +219,13 @@
 }
 
 .conf-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   letter-spacing: 0.04em;
 }
 
 .conf-pct {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   font-family: var(--font-mono, monospace);
   color: #C4A76C;
@@ -263,7 +263,7 @@
 .conf-desc {
   display: block;
   margin-top: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   line-height: 1.4;
 }
@@ -271,7 +271,7 @@
 .warn-banner {
   padding: 20rpx 22rpx;
   margin-bottom: 16rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
   color: #E9A23B;
   background: rgba(233, 162, 59, 0.08);
@@ -289,7 +289,7 @@
 
 .pt-title {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
   margin-bottom: 12rpx;
   letter-spacing: 0.06em;
@@ -297,7 +297,7 @@
 
 .pt-line {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   line-height: 1.7;
   padding-left: 2rpx;
@@ -311,7 +311,7 @@
 .disclaimer {
   display: block;
   margin-top: 28rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #6B6560;
   line-height: 1.5;
 }
@@ -335,7 +335,7 @@
 
 .sec-en {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   font-weight: 500;
   letter-spacing: 0.14em;
   color: #C4A76C;
@@ -345,7 +345,7 @@
 
 .sec-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: #FFFFFF;
 }
@@ -353,7 +353,7 @@
 .sec-toggle {
   flex-shrink: 0;
   padding: 4rpx 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
 }
 
@@ -362,7 +362,7 @@
 }
 
 .sci-text {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.75;
   color: #D5D1C8;
 }
@@ -404,14 +404,14 @@
 
 .ff-label {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #C4A76C;
   margin-bottom: 10rpx;
   letter-spacing: 0.1em;
 }
 
 .ff-text {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.65;
   color: #D5D1C8;
 }

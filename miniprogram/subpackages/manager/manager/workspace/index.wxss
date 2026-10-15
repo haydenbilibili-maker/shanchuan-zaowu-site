@@ -15,10 +15,10 @@
 .pm-play {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: 48rpx; height: 48rpx; line-height: 48rpx; text-align: center; border-radius: 50%;
-  font-size: 20rpx; color: #fff; background: rgba(0, 0, 0, 0.55);
+  font-size: var(--fs-20); color: #fff; background: rgba(0, 0, 0, 0.55);
 }
 .pm-badge {
-  position: absolute; left: 0; bottom: 0; font-size: 18rpx; color: #fff;
+  position: absolute; left: 0; bottom: 0; font-size: var(--fs-18); color: #fff;
   background: rgba(0, 0, 0, 0.65); padding: 2rpx 8rpx;
 }
-.pm-hint { display: block; font-size: 20rpx; color: var(--color-text-secondary, #A09A90); margin: 4rpx 0 16rpx; }
+.pm-hint { display: block; font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); margin: 4rpx 0 16rpx; }

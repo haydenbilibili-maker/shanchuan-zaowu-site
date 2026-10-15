@@ -20,8 +20,8 @@ page {
   gap: 16rpx;
   position: relative;
 }
-.load-error-title { color: var(--color-text-primary); font-size: 34rpx; font-weight: 500; }
-.load-error-desc { color: var(--color-text-secondary); font-size: 26rpx; line-height: 1.5; margin-bottom: 24rpx; }
+.load-error-title { color: var(--color-text-primary); font-size: var(--fs-34); font-weight: 500; }
+.load-error-desc { color: var(--color-text-secondary); font-size: var(--fs-26); line-height: 1.5; margin-bottom: 24rpx; }
 .load-error-actions {
   display: flex;
   flex-direction: column;
@@ -34,12 +34,12 @@ page {
   line-height: 88rpx;
   text-align: center;
   border-radius: var(--radius-md);
-  border: 1rpx solid var(--gold);
-  color: var(--gold);
-  font-size: 28rpx;
+  border: 1rpx solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: var(--fs-28);
 }
 .load-error-btn.primary {
-  background: var(--gold);
+  background: var(--color-primary);
   color: var(--color-bg);
   border: none;
 }
@@ -75,7 +75,7 @@ page {
   display: inline-flex;
   align-items: center;
   gap: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   background: rgba(196, 167, 108, 0.12);
   border: 1px solid rgba(77, 64, 26, 0.4);
@@ -91,7 +91,7 @@ page {
 }
 
 .article-title {
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   color: var(--color-text-primary);
   font-weight: 600;
   font-family: var(--font-brand);
@@ -105,7 +105,7 @@ page {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
@@ -188,7 +188,7 @@ page {
 }
 
 .intro-text {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 400;
   color: var(--brass-300);
   font-style: italic;
@@ -215,7 +215,7 @@ page {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   white-space: nowrap;
   box-sizing: border-box;
@@ -223,7 +223,7 @@ page {
 
 .rich-text-container {
   color: var(--color-text-body);
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   line-height: 1.8;
   text-align: justify;
   margin-bottom: 32rpx;
@@ -256,7 +256,7 @@ page {
   background: var(--brass-400);
   color: var(--color-bg);
   border-radius: var(--radius-full);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 600;
   font-family: var(--font-mono);
 }
@@ -291,7 +291,7 @@ page {
 }
 
 .stat-value {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -308,7 +308,7 @@ page {
 
 .section-overline {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-600);
   letter-spacing: 0.14em;
   margin-bottom: 6rpx;
@@ -316,7 +316,7 @@ page {
 
 .section-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 600;
   color: var(--color-text-primary);
   font-family: var(--font-heading);
@@ -357,7 +357,7 @@ page {
 }
 
 .related-title {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 8rpx;
@@ -369,7 +369,7 @@ page {
 }
 
 .related-brief {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   margin-bottom: 10rpx;
   display: -webkit-box;
@@ -387,7 +387,7 @@ page {
   display: flex;
   align-items: center;
   gap: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -408,19 +408,19 @@ page {
   flex-direction: column;
 }
 .source-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.14em;
-  color: var(--gold, #C4A76C);
+  color: var(--color-primary, #C4A76C);
   margin-bottom: 14rpx;
 }
 .source-title {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   line-height: 1.5;
   color: var(--color-text-primary, #E8E4DC);
 }
 .source-line {
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.6;
   color: var(--color-text-secondary, #A8A29A);
 }
@@ -436,7 +436,7 @@ page {
   align-self: flex-start;
   padding: 10rpx 26rpx;
   border-radius: 999rpx;
-  border: 1rpx solid var(--gold, #C4A76C);
-  font-size: 22rpx;
-  color: var(--gold, #C4A76C);
+  border: 1rpx solid var(--color-primary, #C4A76C);
+  font-size: var(--fs-22);
+  color: var(--color-primary, #C4A76C);
 }

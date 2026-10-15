@@ -10,7 +10,7 @@ page { background: #1A1814; color: #fff; }
   justify-content: center;
   flex-direction: column;
 }
-.muted { color: #A09A90; font-size: 26rpx; text-align: center; line-height: 1.55; }
+.muted { color: #A09A90; font-size: var(--fs-26); text-align: center; line-height: 1.55; }
 .state-block {
   display: flex;
   flex-direction: column;
@@ -18,7 +18,7 @@ page { background: #1A1814; color: #fff; }
   gap: 16rpx;
 }
 .state-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: #FFFFFF;
 }
 .state-seal {
@@ -277,7 +277,7 @@ page { background: #1A1814; color: #fff; }
 .wax-seal-text {
   position: relative;
   z-index: 3;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: #302810;
   font-family: var(--font-brand);
   font-weight: 600;
@@ -349,7 +349,7 @@ page { background: #1A1814; color: #fff; }
   position: relative;
   z-index: 1;
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #8A7530;
   letter-spacing: 0.16em;
   margin-bottom: 16rpx;
@@ -359,7 +359,7 @@ page { background: #1A1814; color: #fff; }
   position: relative;
   z-index: 1;
   display: block;
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   font-weight: 600;
   color: #6B5A24;
   font-family: var(--font-brand);
@@ -371,7 +371,7 @@ page { background: #1A1814; color: #fff; }
   position: relative;
   z-index: 1;
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #6B6560;
   line-height: 1.65;
 }
@@ -382,7 +382,7 @@ page { background: #1A1814; color: #fff; }
   margin-top: 22rpx;
   padding-top: 18rpx;
   border-top: 1rpx solid rgba(196, 167, 108, 0.28);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #8A7530;
   letter-spacing: 0.02em;
 }
@@ -398,21 +398,21 @@ page { background: #1A1814; color: #fff; }
   align-items: center;
 }
 .claim-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #6B6560;
   letter-spacing: 0.12em;
   margin-bottom: 12rpx;
 }
 .claim-code {
   font-family: var(--font-mono);
-  font-size: 48rpx;
+  font-size: var(--fs-48);
   font-weight: 600;
   color: #C4A76C;
   letter-spacing: 0.12em;
   margin-bottom: 12rpx;
 }
 .claim-hint {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   text-align: center;
   line-height: 1.5;
@@ -426,7 +426,7 @@ page { background: #1A1814; color: #fff; }
   border-radius: var(--radius-sm);
 }
 .claim-payload {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #6B6560;
   letter-spacing: 0.04em;
 }
@@ -447,7 +447,7 @@ page { background: #1A1814; color: #fff; }
 }
 .card-hint {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #6B6560;
   letter-spacing: 0.1em;
 }
@@ -459,20 +459,20 @@ page { background: #1A1814; color: #fff; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15rpx;
+  font-size: var(--fs-16);
   color: rgba(196, 167, 108, 0.85);
   font-family: var(--font-brand);
 }
 .card-body {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #D5D1C8;
   line-height: 1.7;
 }
 .card-voice {
   display: block;
   margin-top: 14rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A8903C;
   letter-spacing: 0.04em;
   font-family: var(--font-mono);
@@ -497,7 +497,7 @@ page { background: #1A1814; color: #fff; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A8903C;
   border: 2rpx solid rgba(168, 144, 60, 0.55);
   border-radius: 50%;
@@ -505,17 +505,17 @@ page { background: #1A1814; color: #fff; }
 }
 .voice-play-icon.is-loading { opacity: 0.5; }
 .card-voice.is-playing .voice-play-icon { background: rgba(168, 144, 60, 0.28); }
-.voice-play-text { font-size: 22rpx; }
+.voice-play-text { font-size: var(--fs-22); }
 .voice-error {
   display: block;
   margin-top: var(--space-1);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #C4756B;
 }
 .card-sig {
   display: block;
   margin-top: 18rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
   text-align: right;
 }
@@ -535,7 +535,7 @@ page { background: #1A1814; color: #fff; }
   justify-content: center;
   background: #C4A76C;
   color: #1A1814;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   letter-spacing: 0.03em;
   border-radius: var(--radius-md);
@@ -571,7 +571,7 @@ page { background: #1A1814; color: #fff; }
   align-items: center;
   justify-content: center;
   color: #C4A76C;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   letter-spacing: 0.02em;
   border: 1rpx solid rgba(196, 167, 108, 0.42);
   border-radius: var(--radius-md);
@@ -604,7 +604,7 @@ page { background: #1A1814; color: #fff; }
   display: block;
   margin-top: 4rpx;
   text-align: center;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #6B6560;
   line-height: 1.5;
 }
@@ -627,17 +627,17 @@ page { background: #1A1814; color: #fff; }
   border: 1px solid rgba(77, 64, 26, 0.7);
   border-radius: var(--radius-md);
   background: var(--color-bg-card);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 .icon-sound {
   width: 22rpx; height: 22rpx; border-radius: 50%;
-  border: 1.5px solid var(--gold); box-sizing: border-box; position: relative;
+  border: 1.5px solid var(--color-primary); box-sizing: border-box; position: relative;
 }
 .icon-sound.on::after {
   content: ''; position: absolute; left: 50%; top: 50%;
   width: 8rpx; height: 8rpx; margin: -4rpx 0 0 -4rpx;
-  border-radius: 50%; background: var(--gold);
+  border-radius: 50%; background: var(--color-primary);
 }
 .icon-sound.off { opacity: 0.45; border-color: var(--color-text-muted); }
 
@@ -647,7 +647,7 @@ page { background: #1A1814; color: #fff; }
   display: flex;
   justify-content: center;
   gap: 16rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 .verify-line-label { color: #9A8F7C; }
 .verify-line-val { color: #C4A76C; }
@@ -665,5 +665,17 @@ page { background: #1A1814; color: #fff; }
   border-radius: var(--radius-md);
   text-align: center;
 }
-.proxy-fill-label { font-size: 22rpx; color: #9A8F7C; }
-.proxy-fill-cta { font-size: 26rpx; color: #C4A76C; letter-spacing: 0.02em; }
+.proxy-fill-label { font-size: var(--fs-22); color: #9A8F7C; }
+.proxy-fill-cta { font-size: var(--fs-26); color: #C4A76C; letter-spacing: 0.02em; }
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .state-seal,
+  .envelope.breathe .wax-glow,
+  .envelope.breathe .wax-seal,
+  .envelope.breathe .envelope-body,
+  .envelope.breathe .envelope-flap-face,
+  .envelope.breathe .envelope-pocket {
+    animation: none;
+  }
+}

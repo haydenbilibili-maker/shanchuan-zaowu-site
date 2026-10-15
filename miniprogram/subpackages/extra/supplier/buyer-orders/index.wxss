@@ -14,7 +14,7 @@
 }
 
 .stat-chip text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-600);
 }
 
@@ -22,7 +22,7 @@
   margin-bottom: var(--space-3);
   padding: 18rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.45;
   display: flex;
   align-items: flex-start;
@@ -36,7 +36,7 @@
 
 .banner-x {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: inherit;
   opacity: 0.7;
   padding: 2rpx 0;
@@ -81,18 +81,18 @@
 }
 
 .link-title {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: var(--color-text-primary);
 }
 
 .link-copy {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
 .link-go {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-600);
   flex-shrink: 0;
 }
@@ -136,7 +136,7 @@
 }
 
 .empty-step {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
@@ -167,7 +167,7 @@
 }
 
 .po-no {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
@@ -181,7 +181,7 @@
 }
 
 .pay-chip text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.02em;
 }
 
@@ -219,7 +219,7 @@
 .po-brief {
   display: block;
   margin-top: 14rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.4;
 }
@@ -232,13 +232,13 @@
 }
 
 .po-fulfill-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.06em;
 }
 
 .po-fulfill {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -248,7 +248,7 @@
   padding: 12rpx 14rpx;
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.03);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.45;
 }
@@ -263,14 +263,14 @@
 }
 
 .po-amount {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   color: var(--brass-500, var(--brass-600));
   font-variant-numeric: tabular-nums;
 }
 
 .po-time {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -284,7 +284,7 @@
 .po-btn {
   padding: 14rpx 24rpx;
   border-radius: 999rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   border: 1rpx solid rgba(255, 255, 255, 0.14);
   color: var(--color-text-primary);
 }

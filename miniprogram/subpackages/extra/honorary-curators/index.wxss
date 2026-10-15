@@ -20,7 +20,7 @@ page {
 }
 
 .brand-group .en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600);
   text-transform: uppercase;
@@ -28,7 +28,7 @@ page {
 
 .brand-group .cn {
   font-family: var(--font-brand);
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: var(--color-text-primary);
   margin-top: 6rpx;
 }
@@ -36,7 +36,7 @@ page {
 .header-note {
   display: block;
   margin-top: var(--space-2);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -45,7 +45,7 @@ page {
   margin-bottom: 16rpx;
   padding: 16rpx 20rpx;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.5;
 }
 .page-tip.is-info {
@@ -83,7 +83,7 @@ page {
 }
 
 .hint-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-warning);
   line-height: 1.5;
 }
@@ -112,7 +112,7 @@ page {
 }
 
 .mode-cn {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
   font-weight: 500;
 }
@@ -122,7 +122,7 @@ page {
 }
 
 .mode-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   letter-spacing: 0.06em;
   color: var(--color-text-secondary, #A09A90);
   text-transform: uppercase;
@@ -137,13 +137,13 @@ page {
 }
 
 .section-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
 }
 
 .section-meta {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   flex-shrink: 1;
   text-align: right;
@@ -187,7 +187,7 @@ page {
 }
 
 .avatar.placeholder text {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-400);
 }
 
@@ -200,19 +200,19 @@ page {
 }
 
 .user-name {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 
 .user-phone {
   font-family: var(--font-mono);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
 .user-level {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -225,7 +225,7 @@ page {
 }
 
 .user-badge {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   padding: 2rpx 10rpx;
   border-radius: var(--radius-sm);
   background: rgba(160, 154, 144, 0.15);
@@ -246,7 +246,7 @@ page {
 .btn-outline.mini {
   min-height: 56rpx;
   padding: 0 20rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
 }
 
 .btn-outline.mini.disabled,
@@ -260,14 +260,14 @@ page {
 
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   margin-bottom: 8rpx;
 }
 
 .empty-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-4);
@@ -296,7 +296,7 @@ page {
 }
 
 .total-hint {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -313,19 +313,19 @@ page {
 }
 
 .picker-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
 .picker-value {
   flex: 1;
   margin-left: var(--space-3);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
 .picker-arrow {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
 }
 
@@ -343,14 +343,14 @@ page {
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   box-sizing: border-box;
 }
 
 .search-btn {
   min-height: 72rpx;
   padding: 0 20rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .cta-row {
@@ -360,7 +360,7 @@ page {
 .grant-btn {
   width: 100%;
   min-height: 88rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 .record {
@@ -387,13 +387,13 @@ page {
 .rec-phone {
   display: block;
   font-family: var(--font-mono);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-400);
 }
 
 .rec-status {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);
   background: rgba(160, 154, 144, 0.15);
@@ -418,7 +418,7 @@ page {
 }
 
 .rec-meta {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -438,7 +438,7 @@ page {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   box-sizing: border-box;
 }
 
@@ -474,7 +474,7 @@ page {
 .empty-ops {
   text-align: center;
   padding: var(--space-6) 0;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -490,13 +490,13 @@ page {
 }
 
 .ops-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
 }
 
 .ops-refresh {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
@@ -524,7 +524,7 @@ page {
 }
 
 .ops-action {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
@@ -538,12 +538,12 @@ page {
 
 .ops-phone {
   font-family: var(--font-mono);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body);
 }
 
 .ops-meta {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -571,7 +571,7 @@ page {
 .modal-title {
   display: block;
   font-family: var(--font-heading);
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 600;
   line-height: 1.4;
   color: var(--color-text-primary);
@@ -580,7 +580,7 @@ page {
 .modal-sub {
   display: block;
   margin-top: 16rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.55;
   color: var(--color-text-secondary, #A09A90);
   word-break: break-all;
@@ -607,7 +607,7 @@ page {
 .field-label {
   display: block;
   margin-bottom: 14rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   line-height: 1.4;
   letter-spacing: 0.04em;
@@ -621,7 +621,7 @@ page {
   border: 1rpx solid rgba(196, 167, 108, 0.28);
   border-radius: var(--radius-md);
   color: var(--color-text-primary);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   line-height: 1.45;
   box-sizing: border-box;
 }
@@ -643,7 +643,7 @@ page {
 
 .field-placeholder {
   color: var(--color-text-muted);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   line-height: 1.45;
 }
 
@@ -661,7 +661,7 @@ page {
 .modal-foot .btn-danger {
   flex: 1;
   min-height: 88rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 /* ===== 数据概览（对齐 CRM / 藏品库 pstats） ===== */
@@ -683,7 +683,7 @@ page {
 
 .overview-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
 }
@@ -691,12 +691,12 @@ page {
 .overview-sub {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-refresh {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   padding: 8rpx 0 0;
   flex-shrink: 0;
@@ -714,7 +714,7 @@ page {
 .sub-tab-row .sub-tab {
   flex: 1;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   padding: 16rpx 0;
   border-radius: var(--radius-sm);
@@ -729,13 +729,13 @@ page {
 .overview-loading {
   padding: var(--space-5) 0;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .overview-hint {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
   margin-bottom: var(--space-3);
@@ -763,7 +763,7 @@ page {
 
 .ov-val {
   display: block;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 600;
   color: var(--color-text-primary);
   font-family: var(--font-mono);
@@ -776,7 +776,7 @@ page {
 .ov-lbl {
   display: block;
   margin-top: 6rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
 }
@@ -785,7 +785,7 @@ page {
 
 .ov-sec-title {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
   letter-spacing: 0.06em;
   margin-bottom: var(--space-2);
@@ -800,7 +800,7 @@ page {
 
 .ov-bar-label {
   width: 140rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-body);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -826,7 +826,7 @@ page {
 .ov-bar-count {
   width: 56rpx;
   text-align: right;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   font-family: var(--font-mono);
 }
@@ -834,6 +834,6 @@ page {
 .ov-empty {
   padding: var(--space-3) 0;
   text-align: center;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }

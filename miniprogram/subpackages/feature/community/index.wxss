@@ -39,7 +39,7 @@ page {
 
 .brand-cn {
   display: block;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-text-primary);
@@ -48,7 +48,7 @@ page {
 
 .brand-en {
   display: block;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400);
   letter-spacing: 0.14em;
   margin-top: 6rpx;
@@ -60,7 +60,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: var(--color-text-secondary);
 }
 .back-btn:active,
@@ -94,7 +94,7 @@ page {
 
 .hero-line {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-200);
   font-family: var(--font-brand);
   letter-spacing: 0.12em;
@@ -103,7 +103,7 @@ page {
 
 .hero-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
 }
@@ -130,14 +130,14 @@ page {
 .tab-item:last-child { border-right: none; }
 
 .tab-cn {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-secondary);
   font-weight: 500;
   transition: color var(--dur-fast) var(--ease-standard);
 }
 
 .tab-en {
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   color: var(--color-text-secondary);
   letter-spacing: 0.12em;
   margin-top: 4rpx;
@@ -239,7 +239,7 @@ page {
   display: inline-flex;
   align-items: center;
   width: auto;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   /* 2026-09-21 分子级审计：原 --color-bg(#1A1814) 在 --color-forest(#2D5A3F) 上仅 2.23（AA 需 4.5）
      → 改用 --color-text-primary（8.4） */
   color: var(--color-text-primary);
@@ -268,13 +268,13 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   padding-left: 4rpx;
 }
 
 .note-title {
   padding: 14rpx 16rpx 8rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: var(--color-text-primary);
   line-height: 1.45;
@@ -307,7 +307,7 @@ page {
   background: var(--color-bg-elevated);
   border: 1rpx solid var(--color-border-highlight);
   color: var(--brass-400);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -315,7 +315,7 @@ page {
 }
 
 .note-name {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -327,7 +327,7 @@ page {
   align-items: center;
   gap: 4rpx;
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -394,7 +394,7 @@ page {
 }
 
 .fab-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   letter-spacing: 0.08em;
 }
@@ -432,7 +432,7 @@ page {
 
 .exhibition-title {
   display: block;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-text-primary);
@@ -441,13 +441,13 @@ page {
 
 .exhibition-latin {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   margin-bottom: 12rpx;
 }
 
 .exhibition-brief {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
   line-height: 1.6;
   display: -webkit-box;
@@ -459,7 +459,7 @@ page {
 .exhibition-more {
   display: block;
   margin-top: 20rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   letter-spacing: 0.04em;
 }
@@ -479,7 +479,7 @@ page {
 
 .state-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
   margin-bottom: 12rpx;
@@ -488,7 +488,7 @@ page {
 
 .state-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 

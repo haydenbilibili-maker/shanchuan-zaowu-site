@@ -24,7 +24,7 @@ page { background: #1A1814; color: #fff; }
 }
 
 .title {
-  flex: 1; font-size: 32rpx; font-weight: 600;
+  flex: 1; font-size: var(--fs-32); font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
@@ -49,21 +49,21 @@ page { background: #1A1814; color: #fff; }
 }
 
 .swiper-count {
-  display: block; font-size: 20rpx; color: #A09A90; margin-top: 8rpx;
+  display: block; font-size: var(--fs-20); color: #A09A90; margin-top: 8rpx;
 }
 
 .zone-head { padding: 0 32rpx 12rpx; }
 
-.overline { display: block; font-size: 22rpx; letter-spacing: 0.1em; margin-bottom: 12rpx; }
+.overline { display: block; font-size: var(--fs-22); letter-spacing: 0.1em; margin-bottom: 12rpx; }
 
-.zone-title { display: block; font-size: 40rpx; font-weight: 600; margin-bottom: 12rpx; }
+.zone-title { display: block; font-size: var(--fs-40); font-weight: 600; margin-bottom: 12rpx; }
 
 .store-name {
-  display: block; font-size: 24rpx; color: #A09A90; margin: 0 32rpx 24rpx;
+  display: block; font-size: var(--fs-24); color: #A09A90; margin: 0 32rpx 24rpx;
 }
 
 .desc {
-  display: block; font-size: 28rpx; color: #D5D1C8; line-height: 1.65;
+  display: block; font-size: var(--fs-28); color: #D5D1C8; line-height: 1.65;
   padding: 0 32rpx;
 }
 
@@ -71,27 +71,27 @@ page { background: #1A1814; color: #fff; }
 
 .btn-primary {
   width: 100%; height: 88rpx; line-height: 88rpx;
-  background: #C4A76C; color: #1A1814; border-radius: var(--radius-md); font-size: 28rpx; border: none;
+  background: #C4A76C; color: #1A1814; border-radius: var(--radius-md); font-size: var(--fs-28); border: none;
 }
 
 .btn-primary::after { border: none; }
 
 .section-label {
-  display: block; font-size: 20rpx; color: #A09A90; letter-spacing: 0.12em;
+  display: block; font-size: var(--fs-20); color: #A09A90; letter-spacing: 0.12em;
   margin: 32rpx 32rpx 16rpx;
 }
 
 .long-desc-block { padding-bottom: 8rpx; }
 
 .long-desc {
-  display: block; font-size: 28rpx; color: #D5D1C8; line-height: 1.7;
+  display: block; font-size: var(--fs-28); color: #D5D1C8; line-height: 1.7;
   padding: 0 32rpx; max-height: 160rpx; overflow: hidden;
 }
 
 .long-desc.expanded { max-height: none; }
 
 .long-desc-toggle {
-  display: block; font-size: 24rpx; color: #C4A76C;
+  display: block; font-size: var(--fs-24); color: #C4A76C;
   padding: 16rpx 32rpx 0;
 }
 
@@ -105,11 +105,11 @@ page { background: #1A1814; color: #fff; }
 }
 
 .species-cn {
-  display: block; font-size: 28rpx; font-weight: 600; color: #C4A76C;
+  display: block; font-size: var(--fs-28); font-weight: 600; color: #C4A76C;
 }
 
 .species-latin {
-  display: block; font-size: 24rpx; font-style: italic; font-family: var(--font-latin); color: #A09A90; margin-top: 6rpx;
+  display: block; font-size: var(--fs-24); font-style: italic; font-family: var(--font-latin); color: #A09A90; margin-top: 6rpx;
 }
 
 .related-block { margin-bottom: 8rpx; }
@@ -131,11 +131,11 @@ page { background: #1A1814; color: #fff; }
 
 .product-body { padding: 12rpx 16rpx 16rpx; }
 
-.product-title { font-size: 24rpx; color: #fff; display: block; }
+.product-title { font-size: var(--fs-24); color: #fff; display: block; }
 
-.product-latin { font-size: 20rpx; color: #A09A90; display: block; margin-top: 4rpx; }
+.product-latin { font-size: var(--fs-20); color: #A09A90; display: block; margin-top: 4rpx; }
 
-.product-price { font-size: 22rpx; color: #C4A76C; margin-top: 8rpx; display: block; }
+.product-price { font-size: var(--fs-22); color: #C4A76C; margin-top: 8rpx; display: block; }
 
 .wiki-row {
   display: flex; align-items: center; gap: 16rpx;
@@ -148,11 +148,11 @@ page { background: #1A1814; color: #fff; }
 
 .wiki-meta { flex: 1; min-width: 0; }
 
-.wiki-title { font-size: 26rpx; color: #fff; display: block; }
+.wiki-title { font-size: var(--fs-26); color: #fff; display: block; }
 
-.wiki-brief { font-size: 22rpx; color: #A09A90; display: block; margin-top: 4rpx; }
+.wiki-brief { font-size: var(--fs-22); color: #A09A90; display: block; margin-top: 4rpx; }
 
-.wiki-arr { color: #C4A76C; font-size: 28rpx; }
+.wiki-arr { color: #C4A76C; font-size: var(--fs-28); }
 
 .text-cut {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;

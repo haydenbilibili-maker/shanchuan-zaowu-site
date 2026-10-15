@@ -12,7 +12,7 @@
 
 .ti-label,
 .ti-count {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -55,7 +55,7 @@
 }
 
 .ti-mask-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   line-height: 1.5;
   color: #FFFFFF;
 }
@@ -74,7 +74,7 @@
 }
 
 .ti-del-x {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   line-height: 1;
   color: #FFFFFF;
 }
@@ -89,20 +89,20 @@
 }
 
 .ti-add-plus {
-  font-size: 48rpx;
+  font-size: var(--fs-48);
   line-height: 1;
   color: var(--color-gold, #C4A76C);
 }
 
 .ti-add-text {
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .ti-warn {
   display: block;
   margin-top: 12rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #E9A23B;
 }

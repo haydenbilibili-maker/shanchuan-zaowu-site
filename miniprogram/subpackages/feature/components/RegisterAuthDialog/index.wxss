@@ -7,7 +7,7 @@
   margin-top: 14rpx;
   font-size: var(--fs-24);
   line-height: 1.6;
-  color: var(--text-sub, #A09A90);
+  color: var(--color-text-secondary, #A09A90);
   text-align: center;
 }
 
@@ -29,13 +29,13 @@
   width: 8rpx;
   height: 8rpx;
   border-radius: 50%;
-  background: var(--gold, #C4A76C);
+  background: var(--color-primary, #C4A76C);
   margin-right: 14rpx;
   flex-shrink: 0;
 }
 .rad-perk-t {
-  font-size: 24rpx;
-  color: var(--text-body, #D5D1C8);
+  font-size: var(--fs-24);
+  color: var(--color-text-body, #D5D1C8);
   line-height: 1.5;
 }
 
@@ -58,7 +58,7 @@
   border-radius: var(--radius-sm);
   box-sizing: border-box;
 }
-.rad-check.is-on { background: var(--gold, #C4A76C); border-color: var(--gold, #C4A76C); }
+.rad-check.is-on { background: var(--color-primary, #C4A76C); border-color: var(--color-primary, #C4A76C); }
 .rad-check.is-on::after {
   content: '';
   position: absolute;
@@ -72,14 +72,14 @@
 }
 .rad-agree-t {
   flex: 1;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.6;
-  color: var(--text-sub, #A09A90);
+  color: var(--color-text-secondary, #A09A90);
 }
 .rad-agree-hint {
   align-self: flex-start;
   padding-left: 54rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-300, #D4BC85);
 }
 .rad-agree.is-shake { animation: rad-shake 0.42s ease; }
@@ -108,11 +108,11 @@
 .rad-cta[disabled] { opacity: 0.6; }
 .rad-cta.is-off { opacity: 0.55; }
 
-.rad-link { color: var(--gold, #C4A76C); }
+.rad-link { color: var(--color-primary, #C4A76C); }
 
 .rad-close {
   margin-top: 22rpx;
   padding: 10rpx 24rpx;
-  font-size: 24rpx;
-  color: var(--text-sub, #A09A90);
+  font-size: var(--fs-24);
+  color: var(--color-text-secondary, #A09A90);
 }

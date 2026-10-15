@@ -99,7 +99,7 @@ page {
 }
 
 .as-lbl {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   white-space: nowrap;
   line-height: 1.2;
@@ -136,8 +136,8 @@ page {
   background: linear-gradient(90deg, rgba(196,167,108,.55), rgba(196,167,108,.12) 60%, transparent) left bottom / 100% 1px no-repeat;
 }
 .ph-title { grid-area: cn; margin-top: 6rpx; font-size: 38rpx; line-height: 50rpx; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; }
-.ph-en { grid-area: en; font-size: 18rpx; line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
-.ph-more { grid-area: more; padding-bottom: 6rpx; font-size: 22rpx; color: var(--brass-300); letter-spacing: .12em; white-space: nowrap; }
+.ph-en { grid-area: en; font-size: var(--fs-18); line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
+.ph-more { grid-area: more; padding-bottom: 6rpx; font-size: var(--fs-22); color: var(--brass-300); letter-spacing: .12em; white-space: nowrap; }
 
 /* 数据统计预览样式 */
 .stats-preview {
@@ -156,9 +156,9 @@ page {
   min-width: 0;
 }
 .stat-val {
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 700;
-  color: var(--gold);
+  color: var(--color-primary);
   font-family: var(--font-mono);
   letter-spacing: 1rpx;
   line-height: 1;
@@ -175,7 +175,7 @@ page {
   }
 }
 .stat-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: rgba(255,255,255,0.7);
   letter-spacing: 1rpx;
 }
@@ -196,7 +196,7 @@ page {
 .om-item-press { opacity: 0.78; transform: scale(0.94); }
 .om-icon-wrap { position: relative; margin-bottom: 16rpx; }
 .om-icon { width: 48rpx; height: 48rpx; filter: invert(1); opacity: 0.7; }
-.om-item text { font-size: 22rpx; color: var(--color-text-secondary); }
+.om-item text { font-size: var(--fs-22); color: var(--color-text-secondary); }
 
 /* 列表式菜单 */
 .service-list { background: transparent; border-radius: 0; border: none; overflow: hidden; margin: 0 -32rpx -32rpx; }
@@ -216,9 +216,9 @@ page {
 .m-img, .m-img.gold, .m-img.silver, .m-img.native { width: 36rpx; height: 36rpx; margin-right: 24rpx; opacity: 1; filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%); }
 
 .m-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.m-cn { font-size: 26rpx; color: var(--color-text-body); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.m-en { font-family: var(--font-mono); font-size: 16rpx; color: var(--color-text-secondary); letter-spacing: .14em; margin-top: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.m-arr { color: var(--color-text-secondary); font-size: 32rpx; line-height: 1; flex-shrink: 0; }
+.m-cn { font-size: var(--fs-26); color: var(--color-text-body); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-en { font-family: var(--font-mono); font-size: var(--fs-16); color: var(--color-text-secondary); letter-spacing: .14em; margin-top: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-arr { color: var(--color-text-secondary); font-size: var(--fs-32); line-height: 1; flex-shrink: 0; }
 /* 菜单行行尾徽标（VIS 3.0 纪律 04：眉标一律纯英文，中文补充走这里）。
    视觉走全局 .badge-outline-brass（无底色 + 黄铜描边 + 黄铜字），
    本页只负责**行内定位** —— 不能用 .as-badge-pos（那是绝对定位到资产图标的右上角）。 */
@@ -271,7 +271,7 @@ page {
 .wb-marquee-text {
   display: inline-block;
   padding-right: 48rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 36rpx;
   letter-spacing: 0.02em;
   color: #5B8FB9;
@@ -336,14 +336,14 @@ page {
   filter: brightness(0) saturate(100%) invert(58%) sepia(18%) saturate(900%) hue-rotate(95deg) brightness(95%) contrast(88%);
 }
 .wb-cn {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary);
   font-weight: 500;
   line-height: 1.25;
 }
 .wb-en {
   margin-top: 6rpx;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   color: var(--color-text-secondary);
   letter-spacing: 0.08em;
   font-family: var(--font-mono);
@@ -361,7 +361,7 @@ page {
   gap: 8rpx;
   text-align: center;
   color: rgba(160, 154, 144, 0.85);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   margin-top: 60rpx;
   margin-bottom: 24rpx;
   letter-spacing: 0.12em;
@@ -371,7 +371,7 @@ page {
 .copyright .cr-line { display: block; }
 .copyright .cr-line.en {
   font-family: var(--font-mono);
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: rgba(196, 167, 108, 0.75);
   letter-spacing: 0.2em;
 }
@@ -386,7 +386,7 @@ page {
 }
 
 .cr-link {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: rgba(160, 154, 144, 0.9);
   letter-spacing: 0.04em;
 }
@@ -397,7 +397,7 @@ page {
 }
 
 .cr-dot {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: rgba(160, 154, 144, 0.45);
 }
 
@@ -465,12 +465,12 @@ page {
 }
 .pass-coupon-banner-text {
   flex: 1;
-  font-size: 22rpx;
-  color: var(--gold);
+  font-size: var(--fs-22);
+  color: var(--color-primary);
   line-height: 1.4;
 }
 .qr-level-badge {
-  margin-top: 12rpx; font-size: 20rpx; color: var(--gold);
+  margin-top: 12rpx; font-size: var(--fs-20); color: var(--color-primary);
   padding: 4rpx 16rpx; border-radius: var(--radius-sm); font-weight: 500;
   border: 1rpx solid var(--pop-hairline); background: transparent;
 }
@@ -540,14 +540,14 @@ page {
 }
 
 .pass-qr-empty {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #8B6F47;
   line-height: 1.5;
   text-align: center;
 }
 
 .pass-qr-retry {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #8A7530;
   border: 1px solid #D4BC85;
   border-radius: var(--radius-sm);
@@ -580,7 +580,7 @@ page {
 
 .pass-qr-timer {
   flex-shrink: 0;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: #8B6F47;
   letter-spacing: 0.02em;
   line-height: 1.2;
@@ -589,7 +589,7 @@ page {
 .pass-qr-id {
   flex: 1;
   min-width: 0;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-family: var(--font-mono);
   color: #8A7530;
   letter-spacing: 0.06em;
@@ -615,7 +615,7 @@ page {
   margin-bottom: 20rpx;
 }
 .privilege-overline {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-muted);
   letter-spacing: 0.14em;
   font-weight: 500;
@@ -623,13 +623,13 @@ page {
 .privilege-title { 
   margin-top: 4rpx;
   text-align: center;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   letter-spacing: 0.04em;
   font-weight: 500;
 }
 
-.qr-tips { text-align: center; margin-top: 24rpx; font-size: 20rpx; color: var(--color-text-secondary); }
+.qr-tips { text-align: center; margin-top: 24rpx; font-size: var(--fs-20); color: var(--color-text-secondary); }
 
 
 /* ==================== 官方社群：确认框形态（ui-pop-*），牌面内为米白二维码区 + 说明 ==================== */
@@ -771,7 +771,7 @@ page {
   height: 48rpx;
 }
 .card-val {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 700;
   color: rgba(196, 167, 108,0.9);
   font-family: var(--font-mono);
@@ -780,7 +780,7 @@ page {
   animation: numberCountUp 0.6s ease-out;
 }
 .card-label {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: rgba(255,255,255,0.7);
 }
 .stat-list {
@@ -801,7 +801,7 @@ page {
 .row-value.gold { color: var(--brass-400); }
 
 .qr-tips.sub {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   opacity: 0.65;
   margin-top: 4rpx;
 }
@@ -850,7 +850,7 @@ page {
 }
 
 .onboard-ring-val {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-family: var(--font-mono);
   color: var(--brass-400);
   font-weight: 600;
@@ -863,7 +863,7 @@ page {
 
 .onboard-banner-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-family: var(--font-brand);
   color: var(--color-text-primary);
   margin-bottom: 8rpx;
@@ -872,13 +872,13 @@ page {
 
 .onboard-banner-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
 
 .onboard-banner-cta {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   flex-shrink: 0;
   letter-spacing: 0.04em;
@@ -893,7 +893,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: var(--color-text-muted);
   line-height: 1;
 }
@@ -925,7 +925,7 @@ page {
 
 .logout-banner-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-family: var(--font-brand);
   color: var(--color-text-primary);
   margin-bottom: 6rpx;
@@ -933,13 +933,13 @@ page {
 
 .logout-banner-desc {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.45;
 }
 
 .logout-banner-cta {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   flex-shrink: 0;
 }
@@ -983,8 +983,8 @@ page {
 }
 
 .pass-perk-label {
-  font-size: 22rpx;
-  color: var(--gold);
+  font-size: var(--fs-22);
+  color: var(--color-primary);
   font-weight: 500;
   letter-spacing: 0.04em;
   line-height: 1.3;
@@ -994,14 +994,14 @@ page {
 .pass-perk-empty {
   width: 100%;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-muted);
   padding: 16rpx 0;
 }
 
 .pass-level-link {
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   padding: var(--space-2) 0;
   margin-bottom: var(--space-2);
@@ -1036,7 +1036,7 @@ page {
 
 .level-up-name {
   display: block;
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-family: var(--font-brand);
   color: var(--color-text-primary);
   margin-bottom: 16rpx;
@@ -1046,7 +1046,7 @@ page {
 
 .level-up-hint {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.55;
   margin-bottom: var(--space-4);

@@ -9,7 +9,7 @@ page { background: #1A1814; }
 
 .en {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.28em;
   color: rgba(196, 167, 108, 0.7);
 }
@@ -17,7 +17,7 @@ page { background: #1A1814; }
 .cn {
   display: block;
   margin-top: 8rpx;
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: #FFFFFF;
   font-weight: 600;
 }
@@ -26,7 +26,7 @@ page { background: #1A1814; }
   display: block;
   margin-top: 12rpx;
   margin-bottom: 16rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.6;
 }
@@ -34,7 +34,7 @@ page { background: #1A1814; }
 .back-atlas {
   display: inline-block;
   margin-bottom: 28rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
   letter-spacing: 0.04em;
 }
@@ -50,7 +50,7 @@ page { background: #1A1814; }
   height: 64rpx;
   line-height: 64rpx;
   text-align: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #A09A90;
   background: #1F1D1A;
   border: 1rpx solid #262320;
@@ -84,7 +84,7 @@ page { background: #1A1814; }
 
 .stat-num {
   display: block;
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: #C4A76C;
   font-weight: 600;
 }
@@ -92,7 +92,7 @@ page { background: #1A1814; }
 .stat-lbl {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
 }
 
@@ -118,7 +118,7 @@ page { background: #1A1814; }
   height: 56rpx;
   line-height: 56rpx;
   padding: 0 24rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   background: #1F1D1A;
   border: 1rpx solid #262320;
@@ -141,7 +141,7 @@ page { background: #1A1814; }
   padding: 80rpx 0;
   text-align: center;
   color: #A09A90;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .spinner {
@@ -162,13 +162,13 @@ page { background: #1A1814; }
 .empty-t {
   display: block;
   color: #FFFFFF;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   margin-bottom: 12rpx;
 }
 
 .empty-s {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.6;
   margin-bottom: 32rpx;
 }
@@ -218,7 +218,7 @@ page { background: #1A1814; }
 .record-name {
   flex: 1;
   min-width: 0;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: #FFFFFF;
   font-weight: 500;
   overflow: hidden;
@@ -231,7 +231,7 @@ page { background: #1A1814; }
 .record-mark {
   flex-shrink: 0;
   margin-left: 12rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #C4A76C;
   letter-spacing: 0.06em;
 }
@@ -239,7 +239,7 @@ page { background: #1A1814; }
 .record-latin {
   display: block;
   margin-top: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-style: italic; font-family: var(--font-latin);
   color: #C4A76C;
   overflow: hidden;
@@ -251,14 +251,14 @@ page { background: #1A1814; }
 .record-tax {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
 .record-excerpt {
   display: block;
   margin-top: 10rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.55;
   color: #D5D1C8;
   overflow: hidden;
@@ -267,7 +267,7 @@ page { background: #1A1814; }
 .record-fact {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -281,7 +281,7 @@ page { background: #1A1814; }
 
 .row-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: #E8E4DC;
 }
 
@@ -291,7 +291,7 @@ page { background: #1A1814; }
 .row-time {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
@@ -302,9 +302,16 @@ page { background: #1A1814; }
   padding: 0;
   background: #C4A76C;
   color: #1A1814;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   border: none;
   border-radius: var(--radius-md);
 }
 
 .btn-brass::after { border: none; }
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

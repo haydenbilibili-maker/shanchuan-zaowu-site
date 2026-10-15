@@ -25,7 +25,7 @@ page {
 
 .ops-eyebrow {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.16em;
   color: var(--brass-600, #8A7530);
   text-transform: uppercase;
@@ -35,7 +35,7 @@ page {
   display: block;
   margin-top: 8rpx;
   font-family: var(--font-brand, Georgia, serif);
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   font-weight: 600;
   color: var(--color-text-primary, #FFFFFF);
   line-height: 1.25;
@@ -44,7 +44,7 @@ page {
 .ops-note {
   display: block;
   margin-top: var(--space-2, 16rpx);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.55;
 }
@@ -66,7 +66,7 @@ page {
 }
 
 .ops-summary-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   letter-spacing: 0.04em;
   line-height: 1.4;
@@ -74,7 +74,7 @@ page {
 
 .ops-summary-value {
   font-family: var(--font-mono, monospace);
-  font-size: 44rpx;
+  font-size: var(--fs-44);
   font-weight: 600;
   color: var(--brass-400, #C4A76C);
   line-height: 1.1;
@@ -82,7 +82,7 @@ page {
 
 .ops-summary-unit {
   margin-left: 6rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 400;
   color: var(--brass-300, #D4BC85);
 }
@@ -90,14 +90,14 @@ page {
 .ops-summary-meta {
   display: block;
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .ops-summary-hint {
   display: block;
   margin-top: 10rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-700, #6B5A24);
   line-height: 1.4;
 }
@@ -112,7 +112,7 @@ page {
 .ops-chip {
   padding: 6rpx 14rpx;
   border-radius: var(--radius-sm);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-300, #D4BC85);
   background: rgba(196, 167, 108, 0.1);
   border: 1rpx solid rgba(77, 64, 26, 0.45);
@@ -135,7 +135,7 @@ page {
   background: var(--color-bg-elevated, #262320);
   border: 1rpx solid rgba(77, 64, 26, 0.4);
   color: var(--color-text-primary);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .ops-ph {
@@ -143,7 +143,7 @@ page {
 }
 
 .ops-search-clear {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   padding: 8rpx 4rpx;
 }
@@ -161,7 +161,7 @@ page {
   border-radius: 999rpx;
   border: 1rpx solid rgba(77, 64, 26, 0.5);
   background: var(--color-bg-elevated, #262320);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -180,7 +180,7 @@ page {
   border-radius: var(--radius-md);
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg, #1A1814);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
 }
 
@@ -207,7 +207,7 @@ page {
 .ops-card-title {
   flex: 1;
   min-width: 0;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
   line-height: 1.35;
@@ -222,7 +222,7 @@ page {
 }
 
 .ops-status {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   padding: 4rpx 12rpx;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
@@ -231,7 +231,7 @@ page {
 }
 
 .ops-status.brass {
-  color: var(--gold);
+  color: var(--color-primary);
   background: rgba(196, 167, 108, 0.15);
 }
 
@@ -250,7 +250,7 @@ page {
 }
 
 .ops-source {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   padding: 2rpx 10rpx;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
@@ -263,19 +263,19 @@ page {
 }
 
 .ops-source.erp {
-  color: var(--gold);
+  color: var(--color-primary);
   background: rgba(196, 167, 108, 0.12);
 }
 
 .ops-meta-inline {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .ops-amount {
   display: block;
   margin-top: 12rpx;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-family: var(--font-mono, monospace);
   font-weight: 600;
   color: var(--brass-400, #C4A76C);
@@ -284,7 +284,7 @@ page {
 .ops-meta {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.45;
 }
@@ -305,7 +305,7 @@ page {
   background: rgba(196, 167, 108, 0.14);
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   font-family: var(--font-mono, monospace);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 600;
   color: var(--brass-400, #C4A76C);
   line-height: 1.2;
@@ -315,7 +315,7 @@ page {
 .ops-qty-badge.lg {
   min-width: 72rpx;
   padding: 10rpx 16rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 /* ---------- 分组折叠 ---------- */
@@ -342,7 +342,7 @@ page {
 .ops-group-title {
   flex: 1;
   min-width: 0;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
 }
@@ -355,7 +355,7 @@ page {
 }
 
 .ops-group-chevron {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   width: 32rpx;
   text-align: center;
@@ -381,7 +381,7 @@ page {
 .ops-line-name {
   flex: 1;
   min-width: 0;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.35;
 }
@@ -389,7 +389,7 @@ page {
 .ops-line-sub {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -420,14 +420,14 @@ page {
 
 .ops-empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary, #FFFFFF);
 }
 
 .ops-empty-sub {
   display: block;
   margin-top: 10rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -438,7 +438,7 @@ page {
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary, #A09A90);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 /* ---------- Sheet 面板 ----------
@@ -463,7 +463,7 @@ page {
 }
 
 .ops-sheet-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   font-weight: 500;
 }
@@ -486,7 +486,7 @@ page {
 .ops-paste-hint {
   display: block;
   margin-bottom: 14rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.5;
 }
@@ -501,7 +501,7 @@ page {
   background: var(--color-bg, #1A1814);
   border: 1rpx solid rgba(77, 64, 26, 0.45);
   color: var(--color-text-primary);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.55;
 }
 
@@ -518,7 +518,7 @@ page {
   border-radius: var(--radius-md);
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   color: var(--brass-400, #C4A76C);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   background: transparent;
 }
 
@@ -533,7 +533,7 @@ page {
   border-radius: var(--radius-md);
   background: var(--brass-400, #C4A76C);
   color: var(--color-bg, #1A1814);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   border: 1rpx solid var(--brass-400, #C4A76C);
 }
@@ -552,7 +552,7 @@ page {
   padding: 10rpx 20rpx;
   border-radius: 999rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
 }
 
@@ -588,7 +588,7 @@ page {
 }
 
 .ops-issue-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #D64045;
 }
 
@@ -597,7 +597,7 @@ page {
 }
 
 .ops-issue-apply {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
 }
 
@@ -609,7 +609,7 @@ page {
   background: var(--color-bg, #1A1814);
   border: 1rpx solid rgba(214, 64, 69, 0.4);
   color: var(--color-text-primary);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .ops-issue-block.warn .ops-issue-input {
@@ -619,7 +619,7 @@ page {
 .ops-issue-msg {
   display: block;
   margin-top: 8rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   line-height: 1.4;
 }
@@ -633,7 +633,7 @@ page {
 }
 
 .ops-preview-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -645,7 +645,7 @@ page {
   background: var(--color-bg, #1A1814);
   border: 1rpx solid rgba(77, 64, 26, 0.45);
   color: var(--color-text-body);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .ops-preview-qty-input {
@@ -655,7 +655,7 @@ page {
   background: rgba(196, 167, 108, 0.12);
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   color: var(--brass-400, #C4A76C);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   text-align: center;
   font-family: var(--font-mono, monospace);
 }
@@ -663,7 +663,7 @@ page {
 .ops-section-label {
   display: block;
   margin: 28rpx 0 14rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.08em;
   color: var(--brass-600, #8A7530);
 }
@@ -681,7 +681,7 @@ page {
   border-radius: var(--radius-md);
   border: 1rpx solid rgba(77, 64, 26, 0.5);
   color: var(--color-text-secondary, #A09A90);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   background: var(--color-bg-card, #1F1D1A);
 }
 
@@ -716,19 +716,19 @@ page {
 
 .ops-snap-date {
   display: block;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-primary);
 }
 
 .ops-snap-meta {
   display: block;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .ops-snap-time {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   white-space: nowrap;
 }

@@ -19,13 +19,13 @@
   box-sizing: border-box;
 }
 .whb-title {
-  font-size: 34rpx;
+  font-size: var(--fs-34);
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-text-primary);
 }
 .whb-overline {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--brass-400);
   letter-spacing: 0.12em;
   margin-top: 4rpx;
@@ -81,7 +81,7 @@
 }
 
 .whb-cn {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: #A09A90;
   letter-spacing: 0.04em;
@@ -91,7 +91,7 @@
 
 .whb-en {
   margin-top: 4rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   color: var(--color-text-secondary);
   letter-spacing: 0.12em;
   line-height: 1.2;

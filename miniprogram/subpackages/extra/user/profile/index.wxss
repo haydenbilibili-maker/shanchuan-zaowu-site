@@ -33,7 +33,7 @@ page {
 }
 
 .page-profile .account-field-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
   margin-bottom: 12rpx;
@@ -41,7 +41,7 @@ page {
 
 .page-profile .account-field-input,
 .page-profile .account-picker-val {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-body);
 }
 
@@ -56,7 +56,7 @@ page {
 
 .plate-overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400);
   letter-spacing: 0.12em;
   font-style: italic;
@@ -72,7 +72,7 @@ page {
 
 .plate-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: var(--color-text-primary);
   letter-spacing: 0.04em;
@@ -80,7 +80,7 @@ page {
 
 .plate-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.5;
   margin-bottom: var(--space-3);
@@ -189,7 +189,7 @@ page {
 .avatar-hint {
   display: block;
   width: 100%;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   letter-spacing: 0.04em;
   margin-top: 16rpx;
@@ -211,7 +211,7 @@ page {
 
 .identity-overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-muted);
   letter-spacing: 0.12em;
   margin-bottom: 12rpx;
@@ -233,7 +233,7 @@ page {
   flex: 1;
   min-width: 0;
   height: 48rpx;
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-family: var(--font-brand);
   font-weight: 600;
   color: var(--color-text-primary);
@@ -326,7 +326,7 @@ page {
 }
 
 .member-plate-cn {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   color: var(--brass-300);
   letter-spacing: 0.12em;
@@ -334,7 +334,7 @@ page {
 }
 
 .member-plate-en {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   font-weight: 500;
   color: var(--brass-600);
   letter-spacing: 0.12em;
@@ -344,7 +344,7 @@ page {
 .member-plate-code {
   display: block;
   max-width: 100%;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-family: var(--font-mono);
   font-weight: 500;
   color: var(--color-text-primary);
@@ -359,7 +359,7 @@ page {
 .member-plate-note {
   display: block;
   max-width: 100%;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
   line-height: 1.4;
@@ -398,13 +398,13 @@ page {
 }
 
 .score-bar-label {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   letter-spacing: 0.04em;
 }
 
 .score-bar-val {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-family: var(--font-mono);
   color: var(--brass-400);
   font-weight: 600;
@@ -427,7 +427,7 @@ page {
 .score-bar-note {
   display: block;
   margin-top: 16rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.55;
 }
@@ -453,20 +453,20 @@ page {
 
 .phone-bound-label {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-body);
   margin-bottom: 4rpx;
 }
 
 .phone-bound-tip {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
 .phone-bound-val {
   flex-shrink: 0;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-family: var(--font-mono);
   color: var(--color-text-body);
   letter-spacing: 1rpx;
@@ -508,14 +508,14 @@ page {
 
 .phone-bind-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   margin-bottom: 6rpx;
 }
 
 .phone-bind-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.5;
   word-break: break-word;
@@ -527,7 +527,7 @@ page {
   line-height: 80rpx;
   background: transparent;
   color: var(--brass-400);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   border-radius: var(--radius-md);
   border: 1rpx solid var(--brass-400);
@@ -571,7 +571,7 @@ page {
 
 .phone-agree-text {
   flex: 1;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.6;
   color: var(--color-text-secondary);
 }
@@ -581,7 +581,7 @@ page {
 .phone-agree-hint {
   display: block;
   margin: -8rpx 0 12rpx 46rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-300, #D4BC85);
 }
 
@@ -609,7 +609,7 @@ page {
   display: block;
   text-align: right;
   margin-top: 8rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-family: var(--font-mono);
   color: var(--color-text-secondary);
 }
@@ -633,12 +633,12 @@ page {
 
 
 .profile-link-label {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-body);
 }
 
 .profile-link-arrow {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
 }
 
@@ -664,7 +664,7 @@ page {
   border: 1px solid rgba(214, 64, 69, 0.45);
   background: transparent;
   color: var(--color-error);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   letter-spacing: 0.04em;
 }
@@ -675,7 +675,7 @@ page {
 }
 
 .profile-logout-hint {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   letter-spacing: 0.02em;
   text-align: center;
@@ -704,14 +704,14 @@ page {
 
 .privacy-label {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-body);
   margin-bottom: 4rpx;
 }
 
 .privacy-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
@@ -749,7 +749,7 @@ page {
 }
 
 .interest-count {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   font-weight: 400;
   flex-shrink: 0;
@@ -760,7 +760,7 @@ page {
 }
 
 .page-profile .account-chip {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .page-profile .account-chip.interest-chip {
@@ -842,13 +842,13 @@ page {
 }
 
 .profile-state-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-body);
   margin-bottom: 12rpx;
 }
 
 .profile-state-desc {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   margin-bottom: var(--space-4);
 }
@@ -858,7 +858,7 @@ page {
   border: 1rpx solid var(--brass-400);
   border-radius: var(--radius-md);
   color: var(--brass-400);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .profile-retry-press {
@@ -915,7 +915,7 @@ page {
 
 .sensitive-option-label {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary);
   letter-spacing: 0.02em;
@@ -925,7 +925,7 @@ page {
 .sensitive-option-hint {
   display: block;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
@@ -938,7 +938,7 @@ page {
 
 .next-steps-count {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.04em;
   color: var(--brass-300);
 }
@@ -970,7 +970,7 @@ page {
   border-radius: 999rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   font-family: var(--font-mono);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-200);
 }
 
@@ -983,26 +983,26 @@ page {
 }
 
 .next-step-label {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body);
 }
 
 .next-step-desc {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.4;
   color: var(--color-text-secondary);
 }
 
 .next-step-cta {
   flex-shrink: 0;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-300);
 }
 
 .next-step-more {
   display: block;
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
@@ -1017,11 +1017,18 @@ page {
 }
 
 .next-step-empty-mark {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-success);
 }
 
 .next-step-empty-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .sk-shine {
+    animation: none;
+  }
 }

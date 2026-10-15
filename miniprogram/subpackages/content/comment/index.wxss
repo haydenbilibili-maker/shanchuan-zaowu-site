@@ -49,13 +49,13 @@ page {
 }
 
 .gate-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: #FFFFFF;
 }
 
 .gate-text {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #A09A90;
   line-height: 1.6;
 }
@@ -91,21 +91,21 @@ page {
 }
 
 .target-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   color: #FFFFFF;
   margin-bottom: 8rpx;
 }
 
 .target-subtitle {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
   font-style: italic;
   margin-bottom: 8rpx;
 }
 
 .target-hint {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
 }
 
@@ -141,7 +141,7 @@ page {
 }
 
 .chip-title {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #FFFFFF;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -149,7 +149,7 @@ page {
 }
 
 .chip-status {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: #A09A90;
 }
 
@@ -178,7 +178,7 @@ page {
 }
 
 .review-star {
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: #4A4540;
   line-height: 1;
 }
@@ -193,7 +193,7 @@ page {
   border-radius: 999rpx;
   border: 1rpx solid #C4A76C;
   color: #C4A76C;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 0.06em;
 }
 
@@ -208,7 +208,7 @@ page {
 }
 
 .review-content {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #D5D1C8;
   line-height: 1.7;
   word-break: break-all;
@@ -228,7 +228,7 @@ page {
 }
 
 .review-time {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
 }
 
@@ -242,13 +242,13 @@ page {
 }
 
 .review-reply-label {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #C4A76C;
   letter-spacing: 0.06em;
 }
 
 .review-reply-text {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: #D5D1C8;
   line-height: 1.6;
 }
@@ -263,7 +263,7 @@ page {
 }
 
 .review-note {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #A09A90;
   line-height: 1.6;
 }
@@ -273,7 +273,7 @@ page {
   border: 1rpx solid #C4A76C;
   border-radius: var(--radius-md);
   color: #C4A76C;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .rating-section,
@@ -288,7 +288,7 @@ page {
 
 .section-label {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   font-weight: 500;
   color: #C4A76C;
   margin-bottom: 24rpx;
@@ -315,7 +315,7 @@ page {
 .rating-hint {
   display: block;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: #C4A76C;
 }
 
@@ -326,7 +326,7 @@ page {
   background: #262320;
   border: 1px solid #4D401A66;
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #D5D1C8;
   line-height: 1.7;
   box-sizing: border-box;
@@ -339,7 +339,7 @@ page {
 .char-count {
   display: block;
   text-align: right;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   margin-top: 12rpx;
 }
@@ -376,7 +376,7 @@ page {
   align-items: center;
   justify-content: center;
   color: #FFFFFF;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   z-index: 10;
 }
 
@@ -393,14 +393,14 @@ page {
 }
 
 .upload-icon {
-  font-size: 40rpx;
+  font-size: var(--fs-40);
   color: #C4A76C;
   margin-bottom: 6rpx;
   font-weight: 300;
 }
 
 .upload-text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: #A09A90;
 }
 
@@ -424,7 +424,7 @@ page {
   background: #C4A76C;
   color: #1A1814;
   border-radius: var(--radius-md);
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   letter-spacing: 0.04em;
   border: none;

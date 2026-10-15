@@ -1,6 +1,6 @@
 /* pages/ticket/index.wxss */
 page {
-  --gold: #C4A76C;
+  --color-primary: #C4A76C;
   --bg: #1A1814;
   background: var(--bg);
   height: 100%;
@@ -42,7 +42,7 @@ page {
 }
 
 .page-title {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 600;
   color: var(--color-text-primary);
   letter-spacing: 2rpx;
@@ -78,13 +78,13 @@ page {
 }
 .ticket-empty-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-body);
   margin-bottom: 12rpx;
 }
 .ticket-empty-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.55;
   margin-bottom: 40rpx;
@@ -92,10 +92,10 @@ page {
 .ticket-empty-cta {
   display: inline-block;
   padding: 16rpx 40rpx;
-  border: 1rpx solid var(--gold);
-  color: var(--gold);
+  border: 1rpx solid var(--color-primary);
+  color: var(--color-primary);
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .ticket-box {
@@ -111,7 +111,7 @@ page {
 }
 
 .ticket-header {
-  background: linear-gradient(135deg, #A8903C 0%, var(--gold) 100%);
+  background: linear-gradient(135deg, #A8903C 0%, var(--color-primary) 100%);
   padding: 36rpx 32rpx;
   text-align: center;
 }
@@ -122,13 +122,13 @@ page {
 }
 
 .header-main {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 700;
   letter-spacing: 4rpx;
 }
 
 .sub {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-weight: 600;
   margin-top: 8rpx;
   letter-spacing: 2rpx;
@@ -163,7 +163,7 @@ page {
 
 .qr-tip {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: rgba(196, 167, 108, 0.9);
   margin-bottom: 8rpx;
   letter-spacing: 1rpx;
@@ -179,7 +179,7 @@ page {
 
 .qr-code {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: rgba(196, 167, 108, 0.6);
   letter-spacing: 1rpx;
   word-break: break-all;
@@ -207,7 +207,7 @@ page {
 .label {
   flex-shrink: 0;
   color: rgba(196, 167, 108, 0.7);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 2rpx;
   font-weight: 600;
   padding-top: 4rpx;
@@ -217,7 +217,7 @@ page {
   flex: 1;
   color: var(--color-text-body);
   font-weight: 600;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   text-align: right;
   line-height: 1.5;
   word-break: break-word;
@@ -236,24 +236,24 @@ page {
 .stamp-circle {
   width: 140rpx;
   height: 140rpx;
-  border: 3rpx solid var(--gold);
+  border: 3rpx solid var(--color-primary);
   border-radius: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: var(--gold);
+  color: var(--color-primary);
   font-weight: 700;
   background: rgba(196, 167, 108, 0.1);
 }
 
 .stamp-circle text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   letter-spacing: 2rpx;
 }
 
 .stamp-date {
-  font-size: 18rpx;
+  font-size: var(--fs-18);
   margin-top: 4rpx;
 }
 
@@ -276,7 +276,7 @@ page {
   justify-content: center;
   gap: 10rpx;
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   letter-spacing: 1rpx;
 }
@@ -288,7 +288,7 @@ page {
 }
 
 .footer-btn.primary {
-  background: var(--gold);
+  background: var(--color-primary);
   border: none;
   color: var(--color-bg);
 }
@@ -371,7 +371,7 @@ page {
 }
 
 .d-week {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
   margin-bottom: 6rpx;
 }
@@ -382,7 +382,7 @@ page {
 }
 
 .d-day {
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-primary);
   font-weight: 700;
 }
@@ -402,7 +402,7 @@ page {
   align-items: center;
   justify-content: center;
   color: var(--color-text-body);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
 }
 
 .time-btn.active {

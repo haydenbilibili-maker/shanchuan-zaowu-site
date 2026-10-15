@@ -67,7 +67,7 @@
   background: var(--brass-400);
   color: var(--color-bg);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   letter-spacing: 0.02em;
   text-align: center;
@@ -92,7 +92,7 @@
   padding: var(--space-3) var(--space-4);
   border: 1rpx solid var(--brass-400);
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--brass-400);
   text-align: center;
 }
@@ -111,7 +111,7 @@
   padding: var(--space-3) var(--space-4);
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
   text-align: center;
 }
@@ -124,7 +124,7 @@
   flex: none;
   min-height: 64rpx;
   padding: 12rpx 28rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 
 .workbench-btn-danger {
@@ -138,7 +138,7 @@
   color: var(--color-text-primary);
   border: 1rpx solid var(--color-error);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 1.2;
@@ -178,7 +178,7 @@
   height: auto;
   margin: 0;
   padding: var(--space-3) var(--space-4);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   letter-spacing: 0.02em;
   line-height: 1.2;
@@ -188,7 +188,7 @@
 .workbench-modal-foot > .workbench-btn-outline {
   border-color: var(--brass-400);
   color: var(--brass-400);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 /* ---------- 表单 ---------- */
@@ -199,7 +199,7 @@
 .workbench-field-label {
   display: block;
   margin-bottom: var(--space-2);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
 }
 
@@ -210,7 +210,7 @@
   background: var(--color-bg-card);
   border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
@@ -222,7 +222,7 @@
   background: var(--color-bg-card);
   border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
@@ -248,13 +248,13 @@
 
 .workbench-picker-text {
   flex: 1;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
 }
 
 .workbench-picker-chevron {
   margin-left: var(--space-2);
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   line-height: 1;
   color: var(--brass-400);
 }
@@ -263,7 +263,7 @@
 .workbench-state {
   padding: var(--space-6) var(--space-4);
   text-align: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary);
   line-height: 1.55;
   border: 1rpx dashed var(--color-border);

@@ -351,7 +351,7 @@ export function run(src = {}) {
   ok(dup.length === 0, `E7 分区页签与页面页签出现同名文案：${dup.join('/')}（两处同名都亮着 = 看着混乱）`)
   // ⑤ 维护动作不许再有一颗"金色实底主 CTA"（同步标准分类是低频且有副作用的动作）
   const syncBtn = (wxss.match(/\.cat-sync-btn \{[\s\S]*?\n\}/) || [''])[0]
-  ok(!!syncBtn && !/background\s*:\s*var\(--gold\)/.test(syncBtn),
+  ok(!!syncBtn && !/background\s*:\s*var\(--(gold|color-primary)\)/.test(syncBtn),
     'E7 「同步标准分类」又回到金色实底（低频且有副作用的动作不该是本页主 CTA）')
   // ⑥ 分类树三态：读取中 / 有数据 / 真空 —— 加载中那支必须**排在空态之前**，且空态文案不许出现在加载支里
   const loadIdx = wxml.indexOf('cat-tree-loading')

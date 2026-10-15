@@ -61,13 +61,13 @@ page {
 
 .nav-title {
   font-family: var(--font-brand, serif);
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   font-weight: 600;
   letter-spacing: 0.06em;
 }
 
 .nav-sub {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.12em;
 }
@@ -95,7 +95,7 @@ page {
 
 .intro-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--brass-400, #C4A76C);
   font-weight: 500;
   margin-bottom: 12rpx;
@@ -103,7 +103,7 @@ page {
 
 .intro-body {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.55;
 }
@@ -114,7 +114,7 @@ page {
 
 .section-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   margin-bottom: 20rpx;
@@ -142,7 +142,7 @@ page {
 
 .field-label {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   margin-bottom: 12rpx;
 }
@@ -153,7 +153,7 @@ page {
 
 .field-hint-inline {
   margin-left: 8rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   font-weight: 400;
 }
@@ -161,7 +161,7 @@ page {
 .field-input {
   width: 100%;
   height: 64rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   box-sizing: border-box;
 }
@@ -169,7 +169,7 @@ page {
 .field-textarea {
   width: 100%;
   min-height: 120rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.55;
   box-sizing: border-box;
@@ -197,7 +197,7 @@ page {
 
 .order-picker-no {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   font-family: var(--font-mono, monospace);
@@ -207,7 +207,7 @@ page {
 .order-picker-meta {
   display: block;
   margin-top: 8rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.4;
 }
@@ -218,7 +218,7 @@ page {
   align-items: center;
   gap: 8rpx;
   margin-top: 8rpx;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -227,7 +227,7 @@ page {
 }
 
 .order-picker-placeholder {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-muted, #6B6560);
   line-height: 48rpx;
 }
@@ -237,7 +237,7 @@ page {
   right: 24rpx;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
 }
 
@@ -251,7 +251,7 @@ page {
   height: 64rpx;
   line-height: 64rpx;
   text-align: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary, #A09A90);
   background: var(--color-bg-elevated, #262320);
   border: 1px solid rgba(38, 35, 32, 0.9);
@@ -282,7 +282,7 @@ page {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 500;
   letter-spacing: 0.06em;
   color: var(--color-bg, #1A1814) !important;
@@ -339,20 +339,20 @@ page {
 }
 
 .sheet-title {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
 }
 
 .sheet-close {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-secondary, #A09A90);
   padding: 8rpx;
 }
 
 .sheet-hint {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   margin-bottom: 20rpx;
 }
@@ -364,20 +364,20 @@ page {
 }
 
 .sheet-loading {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   color: var(--color-text-secondary, #A09A90);
 }
 
 .empty-title {
   display: block;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary, #FFFFFF);
   margin-bottom: 12rpx;
 }
 
 .empty-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary, #A09A90);
   margin-bottom: 32rpx;
 }
@@ -387,7 +387,7 @@ page {
   margin: 0 auto !important;
   height: 72rpx;
   line-height: 72rpx;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: var(--color-bg, #1A1814) !important;
   background: var(--brass-400, #C4A76C) !important;
@@ -431,21 +431,21 @@ page {
 }
 
 .order-item-no {
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   color: var(--color-text-primary, #FFFFFF);
   font-family: var(--font-mono, monospace);
 }
 
 .order-item-status {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400, #C4A76C);
   flex-shrink: 0;
 }
 
 .order-item-summary {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
   line-height: 1.4;
   margin-bottom: 12rpx;
@@ -458,13 +458,13 @@ page {
 }
 
 .order-item-amount {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 500;
   color: var(--brass-400, #C4A76C);
   font-family: var(--font-mono, monospace);
 }
 
 .order-item-time {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
 }

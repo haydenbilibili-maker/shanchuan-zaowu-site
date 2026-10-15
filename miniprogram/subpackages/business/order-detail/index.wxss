@@ -25,13 +25,13 @@ view, text, image, button { box-sizing: border-box; }
 }
 .detail-empty-title {
   display: block;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   color: var(--color-text-body);
   margin-bottom: 12rpx;
 }
 .detail-empty-desc {
   display: block;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.55;
   margin-bottom: 40rpx;
@@ -39,9 +39,9 @@ view, text, image, button { box-sizing: border-box; }
 .detail-empty-cta {
   display: inline-block;
   padding: 16rpx 48rpx;
-  background: var(--gold);
+  background: var(--color-primary);
   color: var(--color-bg);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
   border-radius: var(--radius-md);
 }
@@ -78,16 +78,16 @@ view, text, image, button { box-sizing: border-box; }
 }
 .fh-left, .fh-right { display: flex; flex-direction: column; }
 .fh-right { align-items: flex-end; max-width: 46%; }
-.fh-label { font-size: 18rpx; color: var(--color-text-secondary); letter-spacing: 1rpx; margin-bottom: 6rpx; font-weight: bold; }
+.fh-label { font-size: var(--fs-18); color: var(--color-text-secondary); letter-spacing: 1rpx; margin-bottom: 6rpx; font-weight: bold; }
 .fh-label .en-label { 
   font-family: var(--font-mono); 
   letter-spacing: 2rpx; 
   opacity: 0.6; 
   margin-right: 8rpx;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
 }
-.fh-val { font-family: var(--font-mono); font-size: 24rpx; color: var(--color-text-body); letter-spacing: 1rpx; }
-.fh-val.copy { text-decoration: underline; color: var(--gold); }
+.fh-val { font-family: var(--font-mono); font-size: var(--fs-24); color: var(--color-text-body); letter-spacing: 1rpx; }
+.fh-val.copy { text-decoration: underline; color: var(--color-primary); }
 .divider-dashed { width: 100%; height: 0; border-top: 1px dashed rgba(38, 35, 32, 0.7); margin-bottom: 40rpx; }
 
 /* 🟢 2. 物流标签 (航空信封风格) */
@@ -104,7 +104,7 @@ view, text, image, button { box-sizing: border-box; }
 
 .air-mail-border {
   position: absolute; top: 0; left: 0; right: 0; height: 6rpx;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
 }
 
 .sl-header { 
@@ -112,13 +112,13 @@ view, text, image, button { box-sizing: border-box; }
   border-bottom: 1px solid var(--color-bg-elevated); padding-bottom: 16rpx;
   margin-bottom: 20rpx; margin-top: 10rpx;
 }
-.sl-header text { font-size: 20rpx; font-weight: 900; letter-spacing: 1rpx; color: var(--gold); }
+.sl-header text { font-size: var(--fs-20); font-weight: 900; letter-spacing: 1rpx; color: var(--color-primary); }
 .sl-header .en-label {
   font-family: var(--font-mono);
   letter-spacing: 2rpx;
   opacity: 0.7;
   margin-right: 8rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
 }
 
 .sl-carrier { display: flex; align-items: center; gap: 10rpx; }
@@ -139,7 +139,7 @@ view, text, image, button { box-sizing: border-box; }
 
 .sl-row { display: flex; align-items: baseline; }
 .sl-lbl { 
-  width: 140rpx; font-size: 18rpx; color: var(--color-text-secondary); font-weight: bold; 
+  width: 140rpx; font-size: var(--fs-18); color: var(--color-text-secondary); font-weight: bold; 
   letter-spacing: 0.5rpx; 
 }
 .sl-lbl .en-label {
@@ -147,9 +147,9 @@ view, text, image, button { box-sizing: border-box; }
   letter-spacing: 1rpx;
   opacity: 0.6;
   margin-right: 4rpx;
-  font-size: 16rpx;
+  font-size: var(--fs-16);
 }
-.sl-val { font-size: 26rpx; color: var(--color-text-primary); font-weight: bold; flex: 1; min-width: 0; }
+.sl-val { font-size: var(--fs-26); color: var(--color-text-primary); font-weight: bold; flex: 1; min-width: 0; }
 .sl-val.code {
   font-family: var(--font-mono);
   letter-spacing: 1rpx;
@@ -179,18 +179,18 @@ view, text, image, button { box-sizing: border-box; }
 }
 .sl-copy-icon {
   flex-shrink: 0;
-  font-size: 24rpx;
-  color: var(--gold);
+  font-size: var(--fs-24);
+  color: var(--color-primary);
   line-height: 1;
   opacity: 0.85;
 }
 
 .sl-user-box { display: flex; align-items: baseline; gap: 10rpx; }
-.sl-user { font-weight: 900; font-size: 28rpx; }
+.sl-user { font-weight: 900; font-size: var(--fs-28); }
 .sl-phone { font-family: var(--font-mono); color: var(--color-text-secondary); }
 
 .sl-addr { 
-  font-size: 24rpx; line-height: 1.4; color: var(--color-text-body); 
+  font-size: var(--fs-24); line-height: 1.4; color: var(--color-text-body); 
   padding-left: 140rpx; margin-top: -8rpx; 
 }
 
@@ -200,13 +200,13 @@ view, text, image, button { box-sizing: border-box; }
   align-items: center;
   justify-content: center;
   padding: 12rpx 22rpx;
-  border: 1rpx solid var(--gold);
+  border: 1rpx solid var(--color-primary);
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--gold);
+  color: var(--color-primary);
 }
 .btn-track text {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 500;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -216,7 +216,7 @@ view, text, image, button { box-sizing: border-box; }
 }
 .sl-track-hint {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.5;
   color: var(--color-text-secondary);
   letter-spacing: 0.02em;
@@ -230,7 +230,7 @@ view, text, image, button { box-sizing: border-box; }
 }
 .btn-sign {
   width: 100%;
-  background: var(--gold);
+  background: var(--color-primary);
   color: var(--color-bg);
   padding: 22rpx 30rpx;
   border-radius: var(--radius-md);
@@ -241,20 +241,20 @@ view, text, image, button { box-sizing: border-box; }
 }
 .btn-sign:active,
 .btn-sign-press { background: #A8903C; }
-.btn-sign text { font-size: 28rpx; font-weight: 600; letter-spacing: 0.06em; }
-.btn-arrow { font-family: var(--font-latin); font-size: 28rpx; line-height: 1; }
+.btn-sign text { font-size: var(--fs-28); font-weight: 600; letter-spacing: 0.06em; }
+.btn-arrow { font-family: var(--font-latin); font-size: var(--fs-28); line-height: 1; }
 
 /* 清单 */
 .section-title { 
-  font-size: 22rpx; color: var(--color-text-body); letter-spacing: 1rpx; margin-bottom: 24rpx; 
-  display: block; border-left: 4rpx solid var(--gold); padding-left: 12rpx; font-weight: bold;
+  font-size: var(--fs-22); color: var(--color-text-body); letter-spacing: 1rpx; margin-bottom: 24rpx; 
+  display: block; border-left: 4rpx solid var(--color-primary); padding-left: 12rpx; font-weight: bold;
 }
 .section-title .en-label {
   font-family: var(--font-mono);
   letter-spacing: 2rpx;
   opacity: 0.6;
   margin-right: 8rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
 }
 
 .manifest-item { 
@@ -270,51 +270,51 @@ view, text, image, button { box-sizing: border-box; }
 .manifest-item:active,
 .manifest-item-press { opacity: 0.88; background: var(--color-bg-elevated); }
 .manifest-empty {
-  font-size: 24rpx; color: var(--color-text-muted); text-align: center; padding: 32rpx 0;
+  font-size: var(--fs-24); color: var(--color-text-muted); text-align: center; padding: 32rpx 0;
 }
 
 .m-img { width: 100rpx; height: 100rpx; background: var(--color-bg-elevated); border-radius: var(--radius-md); margin-right: 20rpx; flex-shrink: 0; border: 1px solid var(--color-bg-elevated); }
 .m-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
-.m-title { font-size: 26rpx; color: var(--color-text-primary); font-weight: bold; }
-.m-latin { font-size: 20rpx; color: var(--gold); font-style: italic; font-family: var(--font-latin); }
-.m-meta { display: flex; justify-content: space-between; font-size: 22rpx; color: var(--color-text-secondary); font-family: var(--font-mono); }
+.m-title { font-size: var(--fs-26); color: var(--color-text-primary); font-weight: bold; }
+.m-latin { font-size: var(--fs-20); color: var(--color-primary); font-style: italic; font-family: var(--font-latin); }
+.m-meta { display: flex; justify-content: space-between; font-size: var(--fs-22); color: var(--color-text-secondary); font-family: var(--font-mono); }
 .m-qty .en-label {
   font-family: var(--font-mono);
   opacity: 0.5;
   margin-right: 4rpx;
-  font-size: 18rpx;
+  font-size: var(--fs-18);
 }
-.m-price { color: var(--gold); font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
+.m-price { color: var(--color-primary); font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
 .m-price.muted { color: var(--color-text-secondary); font-weight: 400; }
 
 
 /* 财务 */
 .finance-section { border-top: 1px dashed rgba(38, 35, 32, 0.7); padding-top: 30rpx; margin-top: 30rpx; }
 /* VIS3 第 06 页两栏信息行：左标签走正文字族、右数值走等宽；减免只把**数值**染金，标签保持说明色 */
-.f-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 22rpx; color: var(--color-text-secondary); margin-bottom: 10rpx; font-family: var(--font-body); }
+.f-row { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-22); color: var(--color-text-secondary); margin-bottom: 10rpx; font-family: var(--font-body); }
 .f-row > text:last-child { font-family: var(--font-mono); color: var(--color-text-body); }
-.f-row.highlight > text:last-child { color: var(--gold); }
+.f-row.highlight > text:last-child { color: var(--color-primary); }
 .f-row > .shipping-fee-cell { font-family: var(--font-mono); }
 .f-divider { width: 100%; height: 1px; background: rgba(38, 35, 32, 0.7); margin: 20rpx 0; }
-.f-total { display: flex; justify-content: space-between; font-size: 28rpx; font-weight: bold; color: var(--color-text-primary); align-items: center; }
+.f-total { display: flex; justify-content: space-between; font-size: var(--fs-28); font-weight: bold; color: var(--color-text-primary); align-items: center; }
 .f-total .en-label {
   font-family: var(--font-mono);
   letter-spacing: 2rpx;
   opacity: 0.6;
   margin-right: 8rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
-.gold-txt { color: var(--gold); font-size: 40rpx; font-family: var(--font-mono); }  /* VIS3 纪律 05：实付金额等宽（第 06 页「实付 ¥ 1,260.00」） */
+.gold-txt { color: var(--color-primary); font-size: var(--fs-40); font-family: var(--font-mono); }  /* VIS3 纪律 05：实付金额等宽（第 06 页「实付 ¥ 1,260.00」） */
 .shipping-fee-cell {
   display: flex;
   align-items: baseline;
   gap: 12rpx;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
-.shipping-fee-cell.gold-txt { font-size: 28rpx; }
+.shipping-fee-cell.gold-txt { font-size: var(--fs-28); }
 .shipping-fee-strike {
   color: var(--color-text-muted);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   text-decoration: line-through;
   font-family: var(--font-mono), monospace;
 }
@@ -341,7 +341,7 @@ view, text, image, button { box-sizing: border-box; }
 @keyframes stampIn { to { opacity: 0.72; transform: rotate(-18deg) scale(1); } }
 
 .s-inner {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   font-weight: 900;
   letter-spacing: 1rpx;
   font-family: var(--font-mono);
@@ -352,9 +352,9 @@ view, text, image, button { box-sizing: border-box; }
   line-height: 1.25;
   max-width: 132rpx;
 }
-.stamp-mark.warn { color: var(--gold); border-color: var(--gold); }    
+.stamp-mark.warn { color: var(--color-primary); border-color: var(--color-primary); }    
 .stamp-mark.active { color: #52B788; border-color: #52B788; }  
-.stamp-mark.success { color: var(--gold); border-color: var(--gold); } 
+.stamp-mark.success { color: var(--color-primary); border-color: var(--color-primary); } 
 .stamp-mark.error { color: #ff4d4f; border-color: #ff4d4f; }   
 .stamp-mark.void { color: #A09A90; border-color: #6B6560; }          
 
@@ -405,11 +405,11 @@ view, text, image, button { box-sizing: border-box; }
   align-items: center;
   gap: 8rpx;
   padding: 0 8rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
-.od-chip-tick { font-size: 22rpx; color: var(--gold); }
+.od-chip-tick { font-size: var(--fs-22); color: var(--color-primary); }
 
 .gift-actions {
   display: flex;
@@ -421,7 +421,7 @@ view, text, image, button { box-sizing: border-box; }
 /* 门店自取：凭证入口 = 底部「自取凭证」按钮（与申请退款并列），凭证本体在独立页
    subpackages/business/pickup-pass/index */
 .btn-text.brass {
-  color: var(--gold);
+  color: var(--color-primary);
   border-color: rgba(196, 167, 108, 0.45);
   background: rgba(196, 167, 108, 0.08);
 }
@@ -451,7 +451,7 @@ view, text, image, button { box-sizing: border-box; }
   border-radius: 50%;
   border: 1rpx solid rgba(82, 183, 136, 0.55);
   color: var(--color-success);
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 .pd-main {
   display: flex;
@@ -460,12 +460,12 @@ view, text, image, button { box-sizing: border-box; }
   min-width: 0;
 }
 .pd-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   letter-spacing: 0.04em;
   color: #F2EFE8;
 }
 .pd-sub {
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.4;
 }
@@ -477,7 +477,7 @@ view, text, image, button { box-sizing: border-box; }
 }
 .gift-await-hint {
   display: block;
-  font-size: 22rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   letter-spacing: 0.02em;
   text-align: center;
@@ -489,9 +489,9 @@ view, text, image, button { box-sizing: border-box; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--gold) !important;
+  background: var(--color-primary) !important;
   color: var(--color-bg) !important;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   font-weight: 600;
   letter-spacing: 0.04em;
   border-radius: var(--radius-md);
@@ -517,20 +517,20 @@ view, text, image, button { box-sizing: border-box; }
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   letter-spacing: 0.02em;
   box-sizing: border-box;
   white-space: nowrap;
 }
 .btn-gift-secondary {
-  color: var(--gold);
+  color: var(--color-primary);
   border: 1rpx solid rgba(196, 167, 108, 0.55);
   background: transparent;
 }
 .btn-gift-fill {
   flex: none;
   width: 100%;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 .btn-gift-ghost {
   color: var(--color-text-secondary);
@@ -538,7 +538,7 @@ view, text, image, button { box-sizing: border-box; }
   background: rgba(38, 35, 32, 0.5);
   flex: 0 0 30%;
   max-width: 220rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
 }
 .share-native {
   border: none !important;
@@ -564,7 +564,7 @@ view, text, image, button { box-sizing: border-box; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 700;
   letter-spacing: 1rpx;
   border-radius: var(--radius-md);
@@ -586,13 +586,13 @@ view, text, image, button { box-sizing: border-box; }
   border: 1px solid rgba(255,255,255,0.18);
   background: rgba(255,255,255,0.04);
   white-space: nowrap;
-  font-size: 26rpx;
+  font-size: var(--fs-26);
   font-weight: 500;
 }
 
 .comment-after {
   border-color: rgba(196, 167, 108, 0.45);
-  color: var(--gold);
+  color: var(--color-primary);
 }
 
 
@@ -600,10 +600,10 @@ view, text, image, button { box-sizing: border-box; }
 .btn-main {
   flex: 1;
   min-width: 180rpx;
-  background: var(--gold);
+  background: var(--color-primary);
   color: var(--color-bg);
   border: none;
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   gap: 10rpx;
 }
 
@@ -625,19 +625,19 @@ view, text, image, button { box-sizing: border-box; }
    （overflow:hidden 使最小高度归零），横排里由 .flex-grow 分宽 */
 .hologram-btn {
   background: var(--color-bg-card);
-  border: 1rpx solid var(--gold);
-  color: var(--gold);
-  font-size: 26rpx;
+  border: 1rpx solid var(--color-primary);
+  color: var(--color-primary);
+  font-size: var(--fs-26);
 }
 
 .hologram-btn.is-busy { opacity: 0.6; }
 
 /* 每种状态唯一的主操作：金底 */
 .hologram-btn.od-primary {
-  background: var(--gold);
-  border-color: var(--gold);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
   color: var(--color-bg);
-  font-size: 28rpx;
+  font-size: var(--fs-28);
 }
 
 .pending-pay-actions {
@@ -668,7 +668,7 @@ view, text, image, button { box-sizing: border-box; }
   padding: 24rpx; margin-top: 16rpx;
   background: rgba(196, 167, 108, 0.06);
   border: 1px solid rgba(77, 64, 26, 0.45);
-  border-left: 4rpx solid var(--gold);
+  border-left: 4rpx solid var(--color-primary);
   border-radius: var(--radius-md);
 }
 
@@ -684,25 +684,25 @@ view, text, image, button { box-sizing: border-box; }
 .care-hint-main { flex: 1; min-width: 0; }
 
 .care-hint-title {
-  display: block; font-size: 28rpx; color: var(--color-text-body); font-weight: 500;
+  display: block; font-size: var(--fs-28); color: var(--color-text-body); font-weight: 500;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
 .care-hint-desc {
-  display: block; font-size: 22rpx; color: var(--color-text-secondary);
+  display: block; font-size: var(--fs-22); color: var(--color-text-secondary);
   margin-top: 8rpx; line-height: 1.5;
 }
 
 .care-hint-tag {
   display: inline-block; margin-top: 10rpx;
-  font-size: 20rpx; letter-spacing: 0.04em;
+  font-size: var(--fs-20); letter-spacing: 0.04em;
 }
 
-.care-hint-cta { font-size: 24rpx; color: var(--gold); flex-shrink: 0; }
+.care-hint-cta { font-size: var(--fs-24); color: var(--color-primary); flex-shrink: 0; }
 
 .holo-icon { 
   margin-right: 12rpx; 
-  font-size: 32rpx; 
+  font-size: var(--fs-32); 
   position: relative;
   z-index: 1;
 }
@@ -729,7 +729,7 @@ view, text, image, button { box-sizing: border-box; }
 .aftercare-title-col { flex: 1; min-width: 0; }
 .aftercare-overline {
   display: block;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   font-weight: 500;
   letter-spacing: 0.14em;
   color: #8A7530;
@@ -737,7 +737,7 @@ view, text, image, button { box-sizing: border-box; }
 .aftercare-title {
   display: block;
   margin-top: 8rpx;
-  font-size: 30rpx;
+  font-size: var(--fs-30);
   font-weight: 600;
   color: #FFFFFF;
   line-height: 1.4;
@@ -746,7 +746,7 @@ view, text, image, button { box-sizing: border-box; }
   flex-shrink: 0;
   margin-top: 4rpx;
   padding: 4rpx 14rpx;
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   line-height: 1.5;
   color: #C4A76C;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
@@ -759,7 +759,7 @@ view, text, image, button { box-sizing: border-box; }
   display: block;
   padding-left: 26rpx;
   margin-bottom: 14rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   line-height: 1.65;
   color: #A09A90;
 }
@@ -786,9 +786,9 @@ view, text, image, button { box-sizing: border-box; }
   padding: 22rpx 32rpx 24rpx;
   border-top: 1px solid rgba(77, 64, 26, 0.4);
 }
-.aftercare-link-hint { font-size: 24rpx; color: #A09A90; }
-.aftercare-link-label { font-size: 24rpx; color: #C4A76C; font-weight: 500; }
-.aftercare-link-arrow { font-size: 28rpx; line-height: 1; color: #C4A76C; }
+.aftercare-link-hint { font-size: var(--fs-24); color: #A09A90; }
+.aftercare-link-label { font-size: var(--fs-24); color: #C4A76C; font-weight: 500; }
+.aftercare-link-arrow { font-size: var(--fs-28); line-height: 1; color: #C4A76C; }
 .aftercare-link-press { background: rgba(196, 167, 108, 0.06); }
 
 .evidence-plate {
@@ -805,12 +805,12 @@ view, text, image, button { box-sizing: border-box; }
   margin-bottom: 20rpx;
 }
 .evidence-title {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: var(--color-text-primary);
   font-weight: 500;
 }
 .evidence-en {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   letter-spacing: 0.12em;
   color: #8A7530;
 }
@@ -847,10 +847,10 @@ view, text, image, button { box-sizing: border-box; }
   border-bottom: 1px dashed rgba(196, 167, 108, 0.15);
 }
 .custom-line:last-child { border-bottom: none; }
-.custom-lbl { font-size: 22rpx; color: var(--color-text-secondary); }
-.custom-val { font-size: 24rpx; color: var(--color-text-body); text-align: right; flex: 1; }
-.custom-val.latin { font-style: italic; font-family: var(--font-latin); color: var(--gold); }
-.custom-val.gold { color: var(--gold); font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
+.custom-lbl { font-size: var(--fs-22); color: var(--color-text-secondary); }
+.custom-val { font-size: var(--fs-24); color: var(--color-text-body); text-align: right; flex: 1; }
+.custom-val.latin { font-style: italic; font-family: var(--font-latin); color: var(--color-primary); }
+.custom-val.gold { color: var(--color-primary); font-family: var(--font-mono); }  /* VIS3 纪律 05：金额等宽 */
 
 /* ── 礼赠档案（2026-09-21）：把"这封信写给谁 / 进展到哪 / 回看入口"收在一张卡里 ── */
 .gift-archive { margin: 8rpx 0 24rpx; }
@@ -863,18 +863,18 @@ view, text, image, button { box-sizing: border-box; }
 }
 .ga-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
 .ga-who { display: flex; align-items: baseline; gap: 12rpx; min-width: 0; }
-.ga-label { font-size: 22rpx; color: var(--color-text-secondary); flex-shrink: 0; }
+.ga-label { font-size: var(--fs-22); color: var(--color-text-secondary); flex-shrink: 0; }
 .ga-name {
-  font-size: 32rpx; color: var(--brass-300); font-weight: 600;
+  font-size: var(--fs-32); color: var(--brass-300); font-weight: 600;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.ga-status { font-size: 22rpx; flex-shrink: 0; }
+.ga-status { font-size: var(--fs-22); flex-shrink: 0; }
 .ga-status.tone-waiting { color: var(--brass-400); }
 .ga-status.tone-moving { color: #8FB6D9; }
 .ga-status.tone-done { color: #7EDC96; }
 .ga-status.tone-muted { color: var(--color-text-secondary); }
 .ga-note { margin-top: 16rpx; }
-.ga-note-quote { font-size: 24rpx; line-height: 1.6; color: var(--color-text-body); }
+.ga-note-quote { font-size: var(--fs-24); line-height: 1.6; color: var(--color-text-body); }
 .ga-meta { display: flex; flex-wrap: wrap; gap: 16rpx; margin-top: 14rpx; }
 .ga-meta-item { font-size: var(--fs-20); color: var(--color-text-secondary); }
 .ga-entries { display: flex; gap: 16rpx; margin-top: 22rpx; }
@@ -885,7 +885,7 @@ view, text, image, button { box-sizing: border-box; }
 }
 .ga-entry.primary { background: var(--brass-400); border-color: var(--brass-400); }
 .ga-entry.primary .ga-entry-text { color: var(--color-bg); font-weight: 600; }
-.ga-entry-text { font-size: 24rpx; color: var(--brass-400); }
+.ga-entry-text { font-size: var(--fs-24); color: var(--brass-400); }
 
 /* ── 包装实拍（2026-09-21）：发货留档，顾客可回看/放大 ── */
 .pack-section { margin-top: 28rpx; }

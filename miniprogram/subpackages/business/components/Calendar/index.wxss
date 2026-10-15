@@ -41,8 +41,8 @@
 }
 
 .nav-icon {
-  font-size: 48rpx;
-  color: var(--gold);
+  font-size: var(--fs-48);
+  color: var(--color-primary);
   font-weight: bold;
   text-shadow: none;
 }
@@ -55,14 +55,14 @@
 }
 
 .year {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: rgba(196, 167, 108,0.7);
   font-family: var(--font-mono);
   letter-spacing: 2rpx;
 }
 
 .month {
-  font-size: 36rpx;
+  font-size: var(--fs-36);
   color: #fff;
   font-weight: 700;
   font-family: var(--font-latin);
@@ -81,7 +81,7 @@
 .week-day {
   flex: 1;
   text-align: center;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: rgba(196, 167, 108,0.8);
   font-weight: 600;
   letter-spacing: 1rpx;
@@ -126,7 +126,7 @@
 
 .calendar-day.selected {
   background: linear-gradient(135deg, rgba(196, 167, 108,0.95), rgba(196, 167, 108,0.85));
-  border-color: var(--gold);
+  border-color: var(--color-primary);
   box-shadow:
     inset 0 1rpx 3rpx rgba(255,255,255,0.3);
   transform: scale(1.1);
@@ -142,7 +142,7 @@
 }
 
 .day-number {
-  font-size: 28rpx;
+  font-size: var(--fs-28);
   color: #fff;
   font-weight: 600;
   z-index: 1;
@@ -164,14 +164,14 @@
 }
 
 .status-dot {
-  font-size: 16rpx;
+  font-size: var(--fs-16);
   color: rgba(255,0,0,0.8);
   font-weight: 700;
 }
 
 .selected-dot {
   color: var(--color-bg);
-  font-size: 20rpx;
+  font-size: var(--fs-20);
 }
 
 /* 图例 */
@@ -217,7 +217,7 @@
 }
 
 .legend-text {
-  font-size: 20rpx;
+  font-size: var(--fs-20);
   color: rgba(255,255,255,0.7);
   letter-spacing: 1rpx;
 }

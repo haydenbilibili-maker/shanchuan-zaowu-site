@@ -40,12 +40,12 @@ view, text, image, button { box-sizing: border-box; }
   text-align: center;
 }
 .empty-cert-title {
-  font-size: 32rpx;
+  font-size: var(--fs-32);
   color: #fff;
   margin-bottom: 12rpx;
 }
 .empty-cert-desc {
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-secondary);
   margin-bottom: 32rpx;
 }
@@ -53,8 +53,8 @@ view, text, image, button { box-sizing: border-box; }
   padding: 16rpx 48rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
   border-radius: 9999px;
-  color: var(--gold);
-  font-size: 26rpx;
+  color: var(--color-primary);
+  font-size: var(--fs-26);
 }
 
 /* 铸造动画 */
@@ -65,11 +65,11 @@ view, text, image, button { box-sizing: border-box; }
 }
 .mint-spinner {
   width: 60rpx; height: 60rpx; border: 4rpx solid rgba(196, 167, 108,0.3);
-  border-top-color: var(--gold); border-radius: 50%;
+  border-top-color: var(--color-primary); border-radius: 50%;
   animation: spin 1s linear infinite; margin-bottom: 30rpx;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.mint-txt { font-family: var(--font-mono); font-size: 24rpx; color: var(--gold); letter-spacing: 4rpx; opacity: 0.8; }
+.mint-txt { font-family: var(--font-mono); font-size: var(--fs-24); color: var(--color-primary); letter-spacing: 4rpx; opacity: 0.8; }
 
 /* 证书展示层 */
 .cert-layer {
@@ -140,8 +140,8 @@ view, text, image, button { box-sizing: border-box; }
   gap: 10rpx;
   text-align: center;
   padding: 16rpx 24rpx;
-  font-size: 24rpx;
-  color: var(--gold);
+  font-size: var(--fs-24);
+  color: var(--color-primary);
   letter-spacing: 0.06em;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   border-radius: 9999px;
@@ -176,8 +176,8 @@ view, text, image, button { box-sizing: border-box; }
   flex-direction: column; 
   align-items: center; 
   justify-content: center;
-  color: var(--gold); 
-  font-size: 20rpx; 
+  color: var(--color-primary); 
+  font-size: var(--fs-20); 
   padding: 0; 
   margin: 0;
   box-shadow:
@@ -207,13 +207,13 @@ view, text, image, button { box-sizing: border-box; }
   width: 300rpx; 
   height: 100rpx; 
   border-radius: 50rpx;
-  background: linear-gradient(135deg, #A8903C 0%, var(--gold) 100%);
+  background: linear-gradient(135deg, #A8903C 0%, var(--color-primary) 100%);
   background-size: 200% 100%;
   color: var(--color-bg);
   display: flex; 
   align-items: center; 
   justify-content: center;
-  font-size: 30rpx; 
+  font-size: var(--fs-30); 
   font-weight: 800; 
   letter-spacing: 3rpx;
   box-shadow:
@@ -253,7 +253,16 @@ view, text, image, button { box-sizing: border-box; }
 .sign-hint {
   margin-top: 24rpx;
   padding: 12rpx 24rpx;
-  font-size: 24rpx;
+  font-size: var(--fs-24);
   color: var(--brass-400);
   text-align: center;
+}
+
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .mint-spinner,
+  .cert-shadow-box,
+  .save-btn {
+    animation: none;
+  }
 }
