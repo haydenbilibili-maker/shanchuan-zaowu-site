@@ -190,7 +190,10 @@ ${FREEZE_CSS}
 const htmlPath = join(TMP_DIR, `play-preview-${PAGE_KEY}-${STAGE}.html`)
 const shotPath = join(TMP_DIR, `play-preview-shot-${PAGE_KEY}-${STAGE}.html`)
 writeFileSync(htmlPath, html.replace('</body>', `${MEASURE_JS()}</body>`))
-writeFileSync(shotPath, html.replace(FREEZE_CSS, ''))   // 出图放行动画（虚拟时间推进到真实状态）
+// 出图：进行态放行动画（虚拟时间推进到真实状态）；其它阶段把动画时长压成 0、直接落在终态 ——
+// 结果态的图片请求会吃掉虚拟时间预算，入场淡入常被截在半途（整页发灰、纸面空白，2026-10-15 实见）
+const SETTLE_CSS = '* { animation-duration: 0s !important; animation-delay: 0s !important; transition: none !important; }'
+writeFileSync(shotPath, html.replace(FREEZE_CSS, STAGE === 'pending' ? '' : SETTLE_CSS))
 
 /* 量几何的页内脚本：结果写进 <pre id="play-metrics">，靠 --dump-dom 取回。
    ⚠️ 这段是**注入到页面里的字符串**：注释里不许出现反引号（会截断外层模板，本仓栽过 8 次），一律用「」。 */

@@ -1037,7 +1037,8 @@ page {
 }
 
 .ww-lantern-line.is-idle {
-  color: var(--color-text-muted);
+  /* 2026-10-15 质感第 4 轮：灯卡是深底，muted 作说明字低于下限（纪律 08）→ secondary */
+  color: var(--color-text-secondary);
 }
 
 /* 连续天数：小铜牌，不占正文抬头 */
@@ -2218,7 +2219,7 @@ page {
 /* 距下一个节气：与节气同日出现时被 wx:elif 挡掉，所以两者不会同屏 */
 .ww-lantern-next {
   font-size: var(--fs-18);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .ww-lantern-note {
