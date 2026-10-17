@@ -100,7 +100,7 @@
   >
     <view class="assets-track">
       <!-- 钱包开启：快捷行首位为钱包；关闭且预约开启时回退为预约（与馆藏服务互斥，避免双入口） -->
-      <view class="asset-item asset-item-wallet" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="storedValue" wx:if="{{showStoredValue}}">
+      <view class="asset-item asset-item-wallet" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="storedValue" wx:if="{{showStoredValue}}">
         <view class="as-icon-wrap">
           <image class="as-icon" src="/assets/icons/wallet_gold.png" mode="aspectFit"></image>
           <view class="badge-outline-brass badge-sm as-badge-pos {{couponBadgeWide ? 'badge-wide' : ''}} badge-enter" wx:if="{{couponBadgeText}}">
@@ -109,7 +109,7 @@
         </view>
         <text class="as-lbl">我的钱包</text>
       </view>
-      <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="visitBooking" wx:elif="{{showBookingEntry}}">
+      <view class="asset-item" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="visitBooking" wx:elif="{{showBookingEntry}}">
         <view class="as-icon-wrap">
           <image class="as-icon" src="/assets/icons/calendar_gold.png" mode="aspectFit"></image>
           <view class="badge-outline-brass badge-sm as-badge-pos badge-enter" wx:if="{{bookingCount > 0}}">
@@ -121,7 +121,7 @@
 
       <view class="v-divider" wx:if="{{showStoredValue || showBookingEntry}}"></view>
 
-      <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="certificate">
+      <view class="asset-item" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="certificate">
         <!-- 2026-09-17：证书数量搬到 icon 右上角角标（原为 icon 与文案之间的数字） -->
         <view class="as-icon-wrap">
           <image class="as-icon" src="/assets/icons/medal_gold.png" mode="aspectFit"></image>
@@ -136,7 +136,7 @@
 
       <!-- 2026-09-17：积分已并入「我的钱包」（钱包/礼券夹/积分 三 tab），
            此处改为「我的档案」（原藏家档案入口上移，避免同一入口出现两次） -->
-      <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="profile">
+      <view class="asset-item" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="profile">
         <view class="as-icon-wrap">
           <!-- 2026-09-17：改用真金素材 user_gold.png（与 wallet_gold/medal_gold/gift 同色；2026-10-12 全站金色图标统一为品牌金 #C4A76C）。
                原做法是白灰 user.png + 滤镜，且滤镜那条例外把 opacity 提到 1，而 .as-icon 统一是 0.8
@@ -155,7 +155,7 @@
 
       <block wx:if="{{showGift}}">
         <view class="v-divider"></view>
-        <view class="asset-item" hover-class="asset-item-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="myGifts">
+        <view class="asset-item" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="myGifts">
           <view class="as-icon-wrap">
           <image class="as-icon" src="/assets/icons/gift.png" mode="aspectFit"></image>
           <view class="badge-outline-brass badge-sm as-badge-pos badge-enter" wx:if="{{giftTodoCount > 0}}">
@@ -207,34 +207,34 @@
     </view>
     <!-- 数字角标：待付款/待发货/待收货/售后 = 「要你处理」的状态；已签收是终态不挂角标 -->
     <view class="order-matrix">
-      <view class="om-item" bindtap="goToOrderList" data-type="pay" hover-class="om-item-press" hover-stay-time="80">
+      <view class="om-item" bindtap="goToOrderList" data-type="pay" hover-class="tap-press-soft" hover-stay-time="80">
         <view class="om-icon-wrap">
           <image class="om-icon" src="/assets/icons/pay.png" mode="aspectFit"></image>
           <view class="badge-solid-danger badge-sm as-badge-pos badge-enter" wx:if="{{orderBadges.pay}}"><text>{{orderBadges.pay}}</text></view>
         </view>
         <text>待付款</text>
       </view>
-      <view class="om-item" bindtap="goToOrderList" data-type="paid" hover-class="om-item-press" hover-stay-time="80">
+      <view class="om-item" bindtap="goToOrderList" data-type="paid" hover-class="tap-press-soft" hover-stay-time="80">
         <view class="om-icon-wrap">
           <image class="om-icon" src="/assets/icons/ship.png" mode="aspectFit"></image>
           <view class="badge-solid-danger badge-sm as-badge-pos badge-enter" wx:if="{{orderBadges.paid}}"><text>{{orderBadges.paid}}</text></view>
         </view>
         <text>待发货</text>
       </view>
-      <view class="om-item" bindtap="goToOrderList" data-type="shipped" hover-class="om-item-press" hover-stay-time="80">
+      <view class="om-item" bindtap="goToOrderList" data-type="shipped" hover-class="tap-press-soft" hover-stay-time="80">
         <view class="om-icon-wrap">
           <image class="om-icon" src="/assets/icons/deliver.png" mode="aspectFit"></image>
           <view class="badge-solid-danger badge-sm as-badge-pos badge-enter" wx:if="{{orderBadges.shipped}}"><text>{{orderBadges.shipped}}</text></view>
         </view>
         <text>待收货</text>
       </view>
-      <view class="om-item" bindtap="goToOrderList" data-type="received" hover-class="om-item-press" hover-stay-time="80">
+      <view class="om-item" bindtap="goToOrderList" data-type="received" hover-class="tap-press-soft" hover-stay-time="80">
         <view class="om-icon-wrap">
           <image class="om-icon icon-gold" src="/assets/icons/done.png" mode="aspectFit"></image>
         </view>
         <text>已签收</text>
       </view>
-      <view class="om-item" bindtap="goToOrderList" data-type="refund" hover-class="om-item-press" hover-stay-time="80">
+      <view class="om-item" bindtap="goToOrderList" data-type="refund" hover-class="tap-press-soft" hover-stay-time="80">
         <view class="om-icon-wrap">
           <image class="om-icon" src="/assets/icons/refund.png" mode="aspectFit"></image>
           <view class="badge-solid-danger badge-sm as-badge-pos badge-enter" wx:if="{{orderBadges.refund}}"><text>{{orderBadges.refund}}</text></view>
@@ -289,113 +289,100 @@
     </view>
   </view>
 
-  <!-- 3. 馆藏服务 -->
-  <view class="panel-box stagger-item" style="animation-delay: 0.2s;">
+  <!-- 3. 馆藏与服务（2026-10-17 重置）：原一张卡里 14 条平铺 + 每行英文副标 → 三组。
+       「馆藏与内容」是常去的地方，做成三列宫格；「履约与消息」「支持与品牌」是两栏行（只留中文，眉标只在组头）。
+       事件 / data-path / 条件与角标口径（styles/badges.wxss）不变。 -->
+  <view class="panel-box svc-group stagger-item" style="animation-delay: 0.2s;">
     <view class="panel-head">
-      <text class="ph-title">馆藏服务</text>
-      <text class="ph-en">SERVICES</text>
+      <text class="ph-title">馆藏与内容</text>
+      <text class="ph-en">COLLECTION</text>
     </view>
-    <view class="service-list">
-      <!-- 需求 21 / 2026-09-17：藏家档案入口已上移到资产区（原「我的积分」位置），
-           此处不再重复渲染同一入口 -->
-      <!-- 履约与消息（订单/积分/钱包已在上方资产区）；预约与快捷行互斥，仅钱包占快捷位时下沉至此 -->
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="visitBooking" wx:if="{{showBookingEntry && showStoredValue}}">
-        <image class="m-img gold" src="/assets/icons/calendar_gold.png" mode="aspectFit"></image>
-        <view class="m-info">
-          <text class="m-cn">预约参观</text>
-          <text class="m-en">BOOK A VISIT</text>
-        </view>
-        <text class="m-arr">›</text>
+    <view class="svc-grid">
+      <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="collection" wx:if="{{showAtlas}}">
+        <image class="m-img" src="/assets/icons/atlas.png" mode="aspectFit"></image>
+        <text class="svc-cn">山海图鉴</text>
+        <text class="meta-progress svc-meta" wx:if="{{atlasStats.total}}">{{atlasStats.unlocked}}/{{atlasStats.total}}</text>
       </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="address">
-        <image class="m-img silver" src="/assets/icons/map.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">地址管理</text><text class="m-en">ADDRESS</text></view><text class="m-arr">›</text>
+      <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="wishlist">
+        <image class="m-img" src="/assets/icons/heart.png" mode="aspectFit"></image>
+        <text class="svc-cn">收藏与候补</text>
       </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="orderClaim">
-        <image class="m-img gold" src="/assets/icons/list.png" mode="aspectFit"></image>
-        <view class="m-info">
-          <text class="m-cn">订单认领</text>
-          <text class="m-en">ORDER CLAIM</text>
-        </view>
-        <text class="m-arr">›</text>
-      </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToMessages">
-        <image class="m-img gold" src="/assets/icons/message.png" mode="aspectFit"></image>
-        <view class="m-info">
-          <text class="m-cn">山海有信</text>
-          <text class="m-en">MESSAGES</text>
-        </view>
-        <view class="badge-solid-danger badge-inline {{messageBadgeWide ? 'badge-wide' : ''}} badge-enter" wx:if="{{messageBadgeText}}">
-          <text>{{messageBadgeText}}</text>
-        </view>
-        <text class="m-arr">›</text>
-      </view>
-
-      <!-- 馆藏与内容 -->
-      <view class="menu-row section-start" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="collection" wx:if="{{showAtlas}}">
-        <image class="m-img native" src="/assets/icons/atlas.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">我的山海图鉴</text><text class="m-en">MY ATLAS</text></view>
-        <text class="meta-progress badge-inline" wx:if="{{atlasStats.total}}">{{atlasStats.unlocked}}/{{atlasStats.total}}</text>
-        <text class="m-arr">›</text>
-      </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="wishlist">
-        <image class="m-img gold" src="/assets/icons/heart.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">收藏与候补</text><text class="m-en">SAVED & WAITLIST</text></view>
-        <text class="m-arr">›</text>
-      </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToAchievements" wx:if="{{showAchievements}}">
-        <image class="m-img gold" src="/assets/icons/medal_gold.png" mode="aspectFit"></image>
-        <view class="m-info">
-          <text class="m-cn">我的成就</text>
-          <text class="m-en">ACHIEVEMENTS</text>
-        </view>
+      <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToAchievements" wx:if="{{showAchievements}}">
+        <image class="m-img" src="/assets/icons/medal_gold.png" mode="aspectFit"></image>
+        <text class="svc-cn">我的成就</text>
         <!-- 描边金：仅「较上次进入后的新点亮」，非已点亮总数 -->
-        <view class="badge-outline-brass badge-inline {{achievementBadgeWide ? 'badge-wide' : ''}} badge-enter" wx:if="{{achievementBadgeText}}">
+        <view class="badge-outline-brass badge-sm svc-badge {{achievementBadgeWide ? 'badge-wide' : ''}} badge-enter" wx:if="{{achievementBadgeText}}">
           <text>{{achievementBadgeText}}</text>
         </view>
-        <text class="m-arr">›</text>
       </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToCare">
-        <image class="m-img native" src="/assets/icons/care.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">标本养护</text><text class="m-en">SPECIMEN CARE</text></view><text class="m-arr">›</text>
+      <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToCare">
+        <image class="m-img" src="/assets/icons/care.png" mode="aspectFit"></image>
+        <text class="svc-cn">标本养护</text>
       </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="identify" wx:if="{{showAiIdentify}}">
-        <image class="m-img gold" src="/assets/icons/camera.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">AI 标本鉴定</text><text class="m-en">AI IDENTIFY</text></view>
-        <!-- VIS 3.0 纪律 04「英文眉题 + 中文标题」：眉题一律纯英文、不与中文混排同一行。
-             「当前免费」原写在 .m-en 里（AI IDENTIFY · 当前免费）→ 挪到行尾徽标，
-             与同页其它菜单行（优惠券 / 预约 / 证书）的「行尾徽标」语言一致。 -->
-        <view class="badge-outline-brass badge-sm m-badge" wx:if="{{showAiIdentify}}" aria-hidden="true">当前免费</view>
-        <text class="m-arr">›</text>
+      <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="identify" wx:if="{{showAiIdentify}}">
+        <image class="m-img" src="/assets/icons/camera.png" mode="aspectFit"></image>
+        <text class="svc-cn">AI 标本鉴定</text>
+        <text class="svc-meta is-free">当前免费</text>
       </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToCommunity" wx:if="{{showUserCommunity}}">
-        <image class="m-img gold" src="/assets/icons/article-tab.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">山海社区</text><text class="m-en">SHANHAI COMMUNITY</text></view><text class="m-arr">›</text>
+      <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToCommunity" wx:if="{{showUserCommunity}}">
+        <image class="m-img" src="/assets/icons/article-tab.png" mode="aspectFit"></image>
+        <text class="svc-cn">山海社区</text>
       </view>
+    </view>
+  </view>
 
-      <!-- 售后与支持 -->
-      <view class="menu-row section-start" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToSupport">
-        <image class="m-img silver" src="/assets/icons/service.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">联系专员</text><text class="m-en">SUPPORT</text></view><text class="m-arr">›</text>
+  <view class="panel-box svc-group stagger-item" style="animation-delay: 0.24s;">
+    <view class="panel-head">
+      <text class="ph-title">履约与消息</text>
+      <text class="ph-en">SERVICE</text>
+    </view>
+    <!-- 预约与资产行快捷位互斥：仅钱包占快捷位时下沉至此 -->
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="visitBooking" wx:if="{{showBookingEntry && showStoredValue}}">
+      <image class="m-img" src="/assets/icons/calendar_gold.png" mode="aspectFit"></image>
+      <text class="m-cn">预约参观</text><text class="m-arr">›</text>
+    </view>
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToMessages">
+      <image class="m-img" src="/assets/icons/message.png" mode="aspectFit"></image>
+      <text class="m-cn">山海有信</text>
+      <view class="badge-solid-danger badge-inline {{messageBadgeWide ? 'badge-wide' : ''}} badge-enter" wx:if="{{messageBadgeText}}">
+        <text>{{messageBadgeText}}</text>
       </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="feedback">
-        <image class="m-img gold" src="/assets/icons/message.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">反馈与建议</text><text class="m-en">FEEDBACK</text></view><text class="m-arr">›</text>
-      </view>
+      <text class="m-arr">›</text>
+    </view>
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="address">
+      <image class="m-img" src="/assets/icons/map.png" mode="aspectFit"></image>
+      <text class="m-cn">地址管理</text><text class="m-arr">›</text>
+    </view>
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="orderClaim">
+      <image class="m-img" src="/assets/icons/list.png" mode="aspectFit"></image>
+      <text class="m-cn">订单认领</text><text class="m-arr">›</text>
+    </view>
+  </view>
 
-      <!-- 门店运营与品牌 -->
-      <view class="menu-row section-start" hover-class="menu-row-press" hover-stay-time="80" bindtap="goToStore" wx:if="{{showStore}}">
-        <image class="m-img gold" src="/assets/icons/store.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">这有店</text><text class="m-en">STORE</text></view><text class="m-arr">›</text>
-      </view>
-      <view class="menu-row {{showStore ? '' : 'section-start'}}" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="group">
-        <image class="m-img silver" src="/assets/icons/group.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">官方社群</text><text class="m-en">COMMUNITY</text></view><text class="m-arr">›</text>
-      </view>
-      <view class="menu-row" hover-class="menu-row-press" hover-stay-time="80" bindtap="handleMenuClick" data-path="about">
-        <image class="m-img silver" src="/assets/icons/store.png" mode="aspectFit"></image>
-        <view class="m-info"><text class="m-cn">关于品牌</text><text class="m-en">ABOUT US</text></view><text class="m-arr">›</text>
-      </view>
+  <view class="panel-box svc-group stagger-item" style="animation-delay: 0.28s;">
+    <view class="panel-head">
+      <text class="ph-title">支持与品牌</text>
+      <text class="ph-en">SUPPORT</text>
+    </view>
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToSupport">
+      <image class="m-img" src="/assets/icons/service.png" mode="aspectFit"></image>
+      <text class="m-cn">联系专员</text><text class="m-arr">›</text>
+    </view>
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="feedback">
+      <image class="m-img" src="/assets/icons/message.png" mode="aspectFit"></image>
+      <text class="m-cn">反馈与建议</text><text class="m-arr">›</text>
+    </view>
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToStore" wx:if="{{showStore}}">
+      <image class="m-img" src="/assets/icons/store.png" mode="aspectFit"></image>
+      <text class="m-cn">这有店</text><text class="m-arr">›</text>
+    </view>
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="group">
+      <image class="m-img" src="/assets/icons/group.png" mode="aspectFit"></image>
+      <text class="m-cn">官方社群</text><text class="m-arr">›</text>
+    </view>
+    <view class="menu-row" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="about">
+      <image class="m-img" src="/assets/icons/store.png" mode="aspectFit"></image>
+      <text class="m-cn">关于品牌</text><text class="m-arr">›</text>
     </view>
   </view>
 

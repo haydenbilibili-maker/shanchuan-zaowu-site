@@ -301,8 +301,9 @@ function selftest () {
         name: '我的页给已签收也挂了角标',
         file: REL.userPageWxml,
         mutate: (s) => s.replace(
-          '<image class="om-icon icon-gold" src="/assets/icons/done.png"></image>',
-          '<image class="om-icon icon-gold" src="/assets/icons/done.png"></image><view wx:if="{{orderBadges.signed}}"><text>{{orderBadges.signed}}</text></view>'
+          // 锚点随源码（2026-10-17：全站质感轮给图标补了 mode="aspectFit"，旧锚点失效 → 自检一直报「锚点缺失」）
+          '<image class="om-icon icon-gold" src="/assets/icons/done.png" mode="aspectFit"></image>',
+          '<image class="om-icon icon-gold" src="/assets/icons/done.png" mode="aspectFit"></image><view wx:if="{{orderBadges.signed}}"><text>{{orderBadges.signed}}</text></view>'
         ),
         expect: /已签收角标/
       }

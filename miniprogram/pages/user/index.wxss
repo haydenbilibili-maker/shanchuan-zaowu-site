@@ -29,200 +29,91 @@ page {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* === 2. 仪表盘 === */
+/* === 2026-10-17 重置：去卡片框 —— 组与组靠留白 + 眉标组头 + 发丝线分（与藏家档案 / 心愿签同一语言） === */
 
-/* 资产行：四格三行结构（icon / value / label）；角标在 icon 容器内出血，避免裁切 */
+/* 资产行：一条发丝线夹住的四格（icon / label；角标在 icon 容器内出血） */
 .assets-panel {
-  width: 100%;
-  min-height: 160rpx;
-  background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
-  padding: 32rpx 20rpx 24rpx;
-  margin-bottom: 30rpx;
-  border: 1px solid var(--color-bg-elevated);
-  box-sizing: border-box;
+  padding: 28rpx 0 20rpx;
+  margin-top: 8rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.18);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.18);
   overflow: visible;
 }
-.assets-track {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 100%;
-  overflow: visible;
-}
-.asset-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 112rpx;
-  overflow: visible;
-}
-.asset-item-press { opacity: 0.82; transform: scale(0.96); }
-/* 预留顶/右出血，角标不伸出格子外缘被父级裁切 */
-.as-icon-wrap {
-  position: relative;
-  width: 64rpx;
-  height: 58rpx;
-  margin-bottom: 4rpx;
-  flex-shrink: 0;
-  overflow: visible;
-  box-sizing: border-box;
-}
-.as-icon-wrap .as-icon {
-  position: absolute;
-  /* wrap 加宽到 64rpx 后，left:4rpx 会让图标比下方文案偏左 8rpx —— 改为水平居中 */
-  left: 50%;
-  margin-left: -20rpx;
-  bottom: 0;
-  width: 40rpx;
-  height: 40rpx;
-  margin-bottom: 0;
-}
-.as-icon {
-  width: 40rpx;
-  height: 40rpx;
-  /* 与带角标的 as-icon-wrap 内 icon 底对齐（wrap 高 52，icon 贴底） */
-  margin: 12rpx 0 4rpx;
-  opacity: 0.8;
-  flex-shrink: 0;
-}
-/* 资产角：定位由本页负责，视觉走全局 .badge-outline-brass */
-/* 角标向外上偏移 + wrap 加大出血：避免数字压住图标主体（证书「6」与档案「100%」实测被压） */
-.as-badge-pos {
-  position: absolute;
-  /* 抬到图标顶边之上：badge 底边正好贴住图标上沿 → 数字完全不压图标主体 */
-  top: -10rpx;
-  right: -6rpx;
-  z-index: 2;
-}
+.assets-track { display: flex; justify-content: space-between; align-items: flex-start; overflow: visible; }
+.asset-item { flex: 1; display: flex; flex-direction: column; align-items: center; min-height: 112rpx; overflow: visible; }
+.as-icon-wrap { position: relative; width: 64rpx; height: 58rpx; margin-bottom: 8rpx; flex-shrink: 0; overflow: visible; }
+/* 图标在 64rpx 宽的 wrap 里水平居中、贴底 */
+.as-icon-wrap .as-icon { position: absolute; left: 50%; margin-left: -20rpx; bottom: 0; width: 40rpx; height: 40rpx; margin-bottom: 0; }
+.as-icon { width: 40rpx; height: 40rpx; margin: 12rpx 0 4rpx; opacity: 0.8; flex-shrink: 0; }
+/* 角标抬到图标顶边之上，数字不压图标主体（视觉走全局 styles/badges.wxss） */
+.as-badge-pos { position: absolute; top: -10rpx; right: -6rpx; z-index: 2; }
+.as-lbl { font-size: var(--fs-22); color: var(--color-text-body); white-space: nowrap; line-height: 1.2; }
+.v-divider { width: 1rpx; height: 40rpx; margin-top: 40rpx; background: rgba(196, 167, 108, 0.18); flex-shrink: 0; }
 
-.as-lbl {
-  font-size: var(--fs-20);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  line-height: 1.2;
-}
-.v-divider {
-  width: 1px;
-  height: 40rpx;
-  margin-top: 40rpx;
-  background: var(--color-bg-elevated);
-  flex-shrink: 0;
-}
-
-/* 会员权益 */
-
-/* === 3. 服务菜单 (保持原样，微调间距) === */
-.panel-box { 
-  margin-bottom: 40rpx; 
-  background: var(--color-bg-card); 
-  border-radius: var(--radius-lg); 
-  border: 1px solid var(--color-bg-elevated);
-  padding: 32rpx;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-/* 面板标题：同 app.wxss .mu-head（眉标在上、主标在下、无竖条）；wxml 中英顺序不动，靠两行网格排位 */
+/* 分组：不再是卡片 —— 只有组头（眉标在上、主标在下）与组内发丝线 */
+.panel-box { margin-top: 56rpx; }
 .panel-head {
   display: grid;
   grid-template-columns: 1fr auto;
   grid-template-areas: "en more" "cn more";
   align-items: end;
   column-gap: 24rpx;
-  margin-bottom: 24rpx;
   padding-bottom: 18rpx;
-  background: linear-gradient(90deg, rgba(196,167,108,.55), rgba(196,167,108,.12) 60%, transparent) left bottom / 100% 1px no-repeat;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.22);
 }
-.ph-title { grid-area: cn; margin-top: 6rpx; font-size: 38rpx; line-height: 50rpx; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; }
-.ph-en { grid-area: en; font-size: var(--fs-18); line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
-.ph-more { grid-area: more; padding-bottom: 6rpx; font-size: var(--fs-22); color: var(--brass-300); letter-spacing: .12em; white-space: nowrap; }
+.ph-title { grid-area: cn; margin-top: 6rpx; font-size: var(--fs-32); line-height: 1.4; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; }
+.ph-en { grid-area: en; font-size: var(--fs-16); line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
+.ph-more { grid-area: more; padding-bottom: 6rpx; font-size: var(--fs-22); color: var(--brass-300); letter-spacing: .08em; white-space: nowrap; }
 
-/* 数据统计预览样式 */
-.stats-preview {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0;
-  padding: 20rpx 0;
+/* 我的数据：四格等宽数字 */
+.stats-preview { display: flex; align-items: center; padding: 28rpx 0 8rpx; }
+.stat-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10rpx; min-width: 0; }
+.stat-val { font-size: var(--fs-36); font-weight: 600; color: var(--color-text-primary); font-family: var(--font-mono); line-height: 1; }
+.stat-label { font-size: var(--fs-22); color: var(--color-text-secondary); }
+.stat-divider { width: 1rpx; height: 48rpx; background: rgba(196, 167, 108, 0.18); flex-shrink: 0; }
+
+/* 数据统计弹窗的数字入场（一次性） */
+@keyframes numberCountUp {
+  from { opacity: 0; transform: translateY(10rpx) scale(0.8); }
+  to { opacity: 1; transform: none; }
 }
-.stat-item {
-  flex: 1;
+
+/* 订单五格 */
+.order-matrix { display: flex; justify-content: space-between; padding: 28rpx 0 4rpx; }
+.om-item { display: flex; flex-direction: column; align-items: center; width: 20%; }
+.om-icon-wrap { position: relative; margin-bottom: 14rpx; }
+.om-icon { width: 48rpx; height: 48rpx; filter: invert(1); opacity: 0.7; }
+.om-item text { font-size: var(--fs-22); color: var(--color-text-body); }
+
+/* 服务图标统一品牌金：先压成纯黑剪影再着色到 #C4A76C */
+.m-img { width: 36rpx; height: 36rpx; flex-shrink: 0; filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%); }
+
+/* 馆藏与内容：三列宫格（格间发丝线） */
+.svc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.svc-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8rpx;
-  min-width: 0;
+  justify-content: flex-start;
+  gap: 12rpx;
+  min-height: 168rpx;
+  padding-top: 40rpx;
+  box-sizing: border-box;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
 }
-.stat-val {
-  font-size: var(--fs-36);
-  font-weight: 700;
-  color: var(--color-primary);
-  font-family: var(--font-mono);
-  letter-spacing: 1rpx;
-  line-height: 1;
-  animation: numberCountUp 0.6s ease-out;
-}
-@keyframes numberCountUp {
-  from {
-    opacity: 0;
-    transform: translateY(10rpx) scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-.stat-label {
-  font-size: var(--fs-22);
-  color: rgba(255,255,255,0.7);
-  letter-spacing: 1rpx;
-}
-.stat-divider {
-  width: 1px;
-  height: 60rpx;
-  background: linear-gradient(to bottom, transparent, rgba(196, 167, 108,0.3), transparent);
-  flex-shrink: 0;
-}
+.svc-tile:not(:nth-child(3n)) { border-right: 1rpx solid rgba(196, 167, 108, 0.12); }
+.svc-grid .m-img { width: 44rpx; height: 44rpx; }
+.svc-cn { font-size: var(--fs-24); color: var(--color-text-body); white-space: nowrap; }
+.svc-meta { height: auto; line-height: 1.2; font-size: var(--fs-18); }
+.svc-meta.is-free { color: var(--brass-300); letter-spacing: .08em; }
+.svc-badge { position: absolute; top: 20rpx; right: 24rpx; }
 
-.order-matrix {
-  display: flex; justify-content: space-between;
-  background: transparent; padding: 8rpx 0 0; border-radius: 0;
-  border: none;
-}
-.om-item { display: flex; flex-direction: column; align-items: center; width: 20%; opacity: 0.9; transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard); }
-.om-item:active,
-.om-item-press { opacity: 0.78; transform: scale(0.94); }
-.om-icon-wrap { position: relative; margin-bottom: 16rpx; }
-.om-icon { width: 48rpx; height: 48rpx; filter: invert(1); opacity: 0.7; }
-.om-item text { font-size: var(--fs-22); color: var(--color-text-secondary); }
-
-/* 列表式菜单 */
-.service-list { background: transparent; border-radius: 0; border: none; overflow: hidden; margin: 0 -32rpx -32rpx; }
-.menu-row {
-  display: flex; align-items: center; padding: 28rpx 32rpx;
-  border-bottom: 1px solid rgba(38, 35, 32, 0.55); position: relative;
-  transition: background var(--dur-fast) var(--ease-standard);
-}
+/* 两栏行：图标 / 中文 / 角标 / › */
+.menu-row { display: flex; align-items: center; gap: 24rpx; min-height: 104rpx; border-bottom: 1rpx solid rgba(196, 167, 108, 0.12); }
 .menu-row:last-child { border-bottom: none; }
-.menu-row.section-start {
-  border-top: 1px solid rgba(38, 35, 32, 0.55);
-}
-.menu-row:active { background: var(--color-bg-elevated); }
-.menu-row-press { background: var(--color-bg-elevated); }
-
-/* 服务图标统一品牌金：先压成纯黑剪影再着色到 #C4A76C（原 gold 滤镜偏亮黄、silver 反色把蓝 / 绿素材翻成橙 / 紫，同列四种颜色） */
-.m-img, .m-img.gold, .m-img.silver, .m-img.native { width: 36rpx; height: 36rpx; margin-right: 24rpx; opacity: 1; filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%); }
-
-.m-info { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.m-cn { font-size: var(--fs-26); color: var(--color-text-body); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.m-en { font-family: var(--font-mono); font-size: var(--fs-16); color: var(--color-text-secondary); letter-spacing: .14em; margin-top: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-cn { flex: 1; min-width: 0; font-size: var(--fs-28); color: var(--color-text-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-arr { color: var(--color-text-secondary); font-size: var(--fs-32); line-height: 1; flex-shrink: 0; }
-/* 菜单行行尾徽标（VIS 3.0 纪律 04：眉标一律纯英文，中文补充走这里）。
-   视觉走全局 .badge-outline-brass（无底色 + 黄铜描边 + 黄铜字），
-   本页只负责**行内定位** —— 不能用 .as-badge-pos（那是绝对定位到资产图标的右上角）。 */
-.m-badge { flex-shrink: 0; margin-left: 12rpx; padding: 0 12rpx; white-space: nowrap; }
 
 /* 角标视觉已迁至 app.wxss：.badge-solid-danger / .badge-outline-brass / .badge-info / .meta-progress */
 
