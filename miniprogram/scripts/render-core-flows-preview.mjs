@@ -491,7 +491,23 @@ const SCENES = [
         steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'current' }] } } },
   { name: 'pickup-done', h: 1700, wxml: 'subpackages/business/pickup-pass/index', base: 'pickup', data: { showRefundEntry: false, claimedAtText: '10月17日 15:20',
       pass: { statusLabel: '已自提', statusTone: 'done', headline: '本次自取已完成', hint: '', codeText: '4826 1937',
-        steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'done' }] } } }
+        steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'done' }] } } },
+  // 2026-10-17 标本定制「定制工坊」（第 1 / 2 / 5 步）
+  { name: 'custom', h: 2200, wxml: 'subpackages/feature/custom/index', data: { loading: false, navPaddingRight: 32, headerHeight: 150, estimatedDays: 7, currentStep: 1,
+      steps: [['藏品'], ['装裱'], ['包装'], ['赠礼'], ['确认']].map(([label], i) => ({ id: i + 1, label })),
+      currentStepMeta: { title: '选藏品', desc: '从馆藏中挑选可定制藏品，每件配有物种信息' },
+      drafts: [{ _id: 'd1', title: '送给阿遥的生日框', specimenTitle: '光明女神闪蝶' }], searchKeyword: '', activeCategory: '',
+      categoryPills: [{ id: '', label: '全部' }, { id: 'butterfly', label: '蝴蝶' }, { id: 'beetle', label: '甲虫' }, { id: 'plant', label: '植物' }],
+      products: [1, 2, 3, 4], selectedProduct: { _id: 'p1', title: '光明女神闪蝶', latinName: 'Morpho helena', images: [P[0]] },
+      filteredProducts: [{ _id: 'p1', title: '光明女神闪蝶', latinName: 'Morpho helena', price: 680, images: [P[0]] }, { _id: 'p2', title: '血漪蝶', latinName: 'Cethosia biblis', price: 420, images: [P[1]] },
+        { _id: 'p3', title: '蓝闪蝶木框', latinName: 'Morpho peleides', price: 560, images: [P[2]] }, { _id: 'p4', title: '蝶植组合框', latinName: '', price: 880, images: [P[5]] }],
+      selectedFrameName: '胡桃木 · 浅框', totalPreview: 868, dimensionOptions: [{ name: '规格', values: [{ value: '20×25' }, { value: '30×40' }, { value: '40×50', disabled: true }] }], selectedSpecs: { 规格: '20×25' },
+      frames: [{ id: 'f1', name: '胡桃木 · 浅框', desc: '温润木纹，适合单只标本', priceDelta: 0 }, { id: 'f2', name: '黄铜 · 博物框', desc: '金属细边，博物馆陈列感', priceDelta: 188 }], selectedFrameId: 'f1',
+      framers: [{ id: 'm1', name: '门店标本师', type: 'store', priceDelta: 0, extraDays: 0 }, { id: 'm2', name: '林师傅', type: 'partner', bio: '十二年鳞翅目装裱', priceDelta: 120, extraDays: 3 }], selectedFramerId: 'm1',
+      previewLines: [{ label: '藏品', value: '光明女神闪蝶' }, { label: '学名', value: 'Morpho helena', latin: true }, { label: '框型', value: '胡桃木 · 浅框' }, { label: '规格', value: '20×25' }, { label: '包装', value: '礼盒包装' }, { label: '祝福卡', value: '生日快乐，愿你一直闪闪发光' }],
+      unitPrice: 680, customExtraPrice: 188, displayEstimatedDays: 7 } },
+  { name: 'custom-2', h: 2000, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 2, currentStepMeta: { title: '选装裱', desc: '框型、规格与标本师，决定装裱气质与交期' } } },
+  { name: 'custom-5', h: 2400, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 5, currentStepMeta: { title: '定制预览', desc: '核对方案与预估价格，满意后下单制作' } } }
 ]
 
 async function shoot(s) {

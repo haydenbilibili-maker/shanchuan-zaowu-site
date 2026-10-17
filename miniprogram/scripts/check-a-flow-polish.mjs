@@ -48,7 +48,9 @@ const FILES = {
   storeWxss: 'subpackages/business/store/index.wxss',
   ticketWxml: 'subpackages/business/ticket/index.wxml',
   ticketWxss: 'subpackages/business/ticket/index.wxss',
-  pickupWxss: 'subpackages/business/pickup-pass/index.wxss'
+  pickupWxss: 'subpackages/business/pickup-pass/index.wxss',
+  customWxss: 'subpackages/feature/custom/index.wxss',
+  customNav: 'subpackages/feature/utils/customNav.js'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -158,6 +160,15 @@ function checks(s) {
     solidGold(s.ticketWxss) === '.footer-btn.primary' && /class="qr-plate"/.test(s.ticketWxml) && !/signal-light/.test(s.ticketWxml))
   add('R14-2 自取凭证不用信号橙绿（状态章 / 进度点 / 已自提印章），实心金只给「订单详情」',
     !/--color-(success|warning)|82, 183, 136|233, 162, 59/.test(s.pickupWxss) && solidGold(s.pickupWxss) === '.pass-btn.primary')
+  // 2026-10-17 标本定制「定制工坊」
+  {
+    const navRpx = (k) => Number(((s.customNav.match(new RegExp(`const ${k} = rpx\\((\\d+)\\)`)) || [])[1]))
+    const cssH = (sel) => Number(((s.customWxss.match(new RegExp(`\\n\\${sel} \\{[^}]*\\n  height: (\\d+)rpx;`)) || [])[1]))
+    add('R15-1 定制页头两段高度与 customNav 预留一致（说明 88rpx / 步骤条 148rpx，否则内容区会钻进页头或留缝）',
+      navRpx('mottoHeight') > 0 && cssH('.nav-motto') === navRpx('mottoHeight') && cssH('.header-rail-full') === navRpx('stepBarHeight'))
+  }
+  add('R15-2 定制页实心金只给底栏主按钮（步骤条当前步不再是实心金圆点）',
+    solidGold(s.customWxss) === '.btn-primary' && !/grain-overlay/.test(s.customWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -398,6 +409,8 @@ if (process.argv.includes('--selftest')) {
     ['打印动画出纸被去掉', 'bookingWxss', (t) => t.replace('.ticket-paper.printing { height: 800rpx; }', '.ticket-paper.printing { }')],
     ['打印机实体被删', 'bookingWxml', (t) => t.replace('<view class="printer-slot"></view>', '')],
     ['打印动画不再触发', 'bookingJs', (t) => t.replace('this.setData({ mintAnimation: true });', 'this.setData({});')],
+    ['定制说明段高度漂移', 'customWxss', (t) => t.replace('  height: 88rpx;\n  padding: 0 32rpx;', '  height: 96rpx;\n  padding: 0 32rpx;')],
+    ['定制步骤条当前步回到实心金', 'customWxss', (t) => t.replace('.rail-dot.active { border-bottom-color: var(--brass-400); }', '.rail-dot.active {\n  background: var(--brass-400);\n}')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],

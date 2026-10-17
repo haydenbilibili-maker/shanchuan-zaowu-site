@@ -7,14 +7,16 @@ module.exports.priceDelta = function(item) {
 </wxs>
 <wxs src="../../../utils/latinDisplay.wxs" module="latin" />
 
+<!-- 2026-10-17「定制工坊」重构：页头眉标 + 宋体主标，五步进度改等宽编号 + 下划线（无实心金圆点）；
+     藏品为图版 + 图下图注、选中金线环；装裱 / 包装 / 标本师 / 升级入口改发丝线行；
+     第 5 步方案签 = 浅纸标本签；底栏专员入口收成一行；实心金只给「下一步 / 立即定制购买」。数据与流程不变。 -->
 <view class="page-custom">
-  <view class="grain-overlay"></view>
 
   <view class="sticky-header" >
     <view class="nav-row" style="padding-right: {{navPaddingRight}}px;">
       <view class="nav-brand">
+        <text class="nav-sub">SPECIMEN CUSTOM · ATELIER</text>
         <text class="nav-title">标本定制</text>
-        <text class="nav-sub">SPECIMEN CUSTOM</text>
       </view>
     </view>
 
@@ -32,7 +34,7 @@ module.exports.priceDelta = function(item) {
         >
           <view class="rail-top">
             <view class="rail-dot {{currentStep >= item.id ? 'filled' : ''}} {{currentStep === item.id ? 'active' : ''}}">
-              <text class="rail-num">{{item.id}}</text>
+              <text class="rail-num">0{{item.id}}</text>
             </view>
             <view class="rail-line {{currentStep > item.id ? 'filled' : ''}}" wx:if="{{index < steps.length - 1}}"></view>
           </view>
@@ -51,7 +53,7 @@ module.exports.priceDelta = function(item) {
       <view class="panel-lead" wx:if="{{currentStepMeta}}">
         <view class="panel-lead-head">
           <text class="panel-title">{{currentStepMeta.title}}</text>
-          <text class="panel-index">{{currentStep}} / 5</text>
+          <text class="panel-index">STEP 0{{currentStep}} / 05</text>
         </view>
         <text class="panel-desc">{{currentStepMeta.desc}}</text>
       </view>
@@ -72,7 +74,7 @@ module.exports.priceDelta = function(item) {
         </view>
 
         <view class="search-box">
-          <icon type="search" size="14" color="#6B6560"></icon>
+          <icon type="search" size="14" color="#A09A90"></icon>
           <input
             class="search-input"
             placeholder="搜索物种、拉丁名或藏品名"
@@ -261,6 +263,8 @@ module.exports.priceDelta = function(item) {
           </view>
         </view>
         <view class="preview-plate">
+          <view class="plate-pin" aria-hidden="true"></view>
+          <text class="plate-eyebrow">PLAN · 方案签</text>
           <view class="preview-row" wx:for="{{previewLines}}" wx:key="label">
             <text class="preview-label">{{item.label}}</text>
             <text class="preview-value {{item.latin ? 'latin' : ''}}">{{item.value}}</text>
@@ -293,21 +297,21 @@ module.exports.priceDelta = function(item) {
               <text class="esc-title">预约到店确认</text>
               <text class="esc-desc">保存方案后预约入店，与标本师当面确认框型与礼盒</text>
             </view>
-            <text class="esc-arrow">→</text>
+            <text class="esc-arrow">›</text>
           </view>
           <view hover-class="tap-press-soft" hover-stay-time="80" class="escalation-card" bindtap="goEnterpriseInquiry">
             <view class="esc-main">
               <text class="esc-title">企业团购意向</text>
               <text class="esc-desc">10 件以上定制，提交意向由专员报价跟进</text>
             </view>
-            <text class="esc-arrow">→</text>
+            <text class="esc-arrow">›</text>
           </view>
           <view hover-class="tap-press-soft" hover-stay-time="80" class="escalation-card ghost" bindtap="goToSupport">
             <view class="esc-main">
               <text class="esc-title">联系专员</text>
               <text class="esc-desc">非标尺寸、特殊物料等超纲需求</text>
             </view>
-            <text class="esc-arrow">→</text>
+            <text class="esc-arrow">›</text>
           </view>
         </view>
         <view class="share-row">
@@ -323,9 +327,9 @@ module.exports.priceDelta = function(item) {
     <view class="support-strip" bindtap="goToSupport" hover-class="tap-press-soft" hover-stay-time="80">
       <view class="support-strip-main">
         <text class="support-strip-title">需要专员协助？</text>
-        <text class="support-strip-desc">非标尺寸、特殊物料、交期与到店确认</text>
+        <text class="support-strip-desc">非标尺寸 · 特殊物料 · 交期</text>
       </view>
-      <text class="support-strip-cta">联系专员 →</text>
+      <text class="support-strip-cta">联系专员 ›</text>
     </view>
     <view class="footer-top" wx:if="{{selectedProduct && currentStep > 1}}">
       <view class="footer-price">
