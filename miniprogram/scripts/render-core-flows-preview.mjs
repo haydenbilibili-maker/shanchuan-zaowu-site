@@ -242,6 +242,40 @@ const SCENES = [
       }
     })()
   },
+  // 2026-10-17 页面评估用：「我的」/ 消息 / 成就（只为看全貌，数据取典型态）
+  {
+    name: 'user-home', h: 3000, wxml: 'pages/user/index', data: {
+      statusBarHeight: 44, navTop: 88, isLocalLoggedOut: false, showOnboardingBanner: false, showGiftRepairBanner: false, showProfileHint: false,
+      showStoredValue: true, showGift: true, showStore: true, showAchievements: true, showAtlas: true, showAiIdentify: true, showUserCommunity: true, showMyDataModule: true,
+      certificateCount: 2, profileScore: 52, couponBadgeText: '2', giftTodoCount: 1, messageBadgeText: '3', achievementBadgeText: '新', atlasStats: { total: 12, lit: 3 },
+      orderBadges: { pay: 1, shipped: 1 }, workbenchTiles: [], cardPending: false, cardGuest: false, bookingCount: 1,
+      myData: { collections: 6, courses: 2, days: 38 }
+    }
+  },
+  {
+    name: 'messages', h: 2000, wxml: 'subpackages/extra/user/messages/index', data: {
+      loading: false, loadError: false, hasMore: false, unreadCount: 2, activeCategory: 'all',
+      filterTabs: [{ id: 'all', label: '全部' }, { id: 'order', label: '订单' }, { id: 'gift', label: '礼赠' }, { id: 'system', label: '馆方' }],
+      messages: [
+        { _id: 'm1', title: '你的藏品已启程', preview: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。', formattedTime: '10:24', isUnread: true, kindLabel: '订单', kindLampClass: 'lamp-brass', senderName: '山海造物', hasProductCards: true, productThumbs: [P[0]], productSummary: '1 件藏品' },
+        { _id: 'm2', title: '阿禾拆开了你的礼笺', preview: '「谢谢你，我很喜欢。」', formattedTime: '昨天', isUnread: true, kindLabel: '礼赠', kindLampClass: 'lamp-forest', senderName: '礼赠' },
+        { _id: 'm3', title: '十月新到：南美闪蝶专题', preview: '本周馆藏上新 12 件，含 3 件孤品。', formattedTime: '10.12', isUnread: false, kindLabel: '馆方', kindLampClass: 'lamp-muted', senderName: '山海造物', isPaper: true }
+      ]
+    }
+  },
+  {
+    name: 'achievements', h: 2200, wxml: 'subpackages/extra/user/achievements/index', data: {
+      loading: false, viewFilter: 'all', achievementStats: { unlocked: 5, total: 18, percent: 28 },
+      filterTabs: [{ key: 'all', label: '全部' }, { key: 'unlocked', label: '已点亮' }, { key: 'locked', label: '未点亮' }],
+      achievementTypes: [
+        { type: 'collect', name: '收藏', enName: 'COLLECTING', icon: '/assets/icons/medal_gold.png', unlockedCount: 2, totalCount: 6, usePartition: true, showUnlockedBlock: true, showLockedBlock: true, lockedCount: 4,
+          unlockedList: [{ id: 'a1', name: '初入馆藏', desc: '收藏第一件标本', unlocked: true, rewardPoints: 20 }, { id: 'a2', name: '蝶翼初识', desc: '收藏 3 件鳞翅目', unlocked: true }],
+          lockedList: [{ id: 'a3', name: '百蝶图谱', desc: '收藏 20 件鳞翅目' }, { id: 'a4', name: '跨界藏家', desc: '收藏 5 个门类' }] },
+        { type: 'gift', name: '礼赠', enName: 'GIFTING', icon: '/assets/icons/medal_gold.png', unlockedCount: 1, totalCount: 4, usePartition: true, showUnlockedBlock: true, showLockedBlock: true, lockedCount: 3,
+          unlockedList: [{ id: 'b1', name: '第一封礼笺', desc: '送出第一份礼', unlocked: true, rewardPoints: 30 }], lockedList: [{ id: 'b2', name: '人情账本', desc: '送礼给 5 位不同的人' }] }
+      ]
+    }
+  },
   { name: 'gift-compose-2', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose', data: { activeStep: 2, maxStep: 2, cardFocused: false, signed: true, sigJustSigned: false } },
   { name: 'order-pending', h: 2300, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: { order: { _id: 'o2', serialNo: 'SH20261015003', status: 'pending_pay', totalPrice: '468.00', originalPrice: '468.00', discountRate: 1, couponValue: 20, shippingFee: 18, shippingFeeDisplay: '18.00', address: { name: '林', phone: '138****0012' }, addressLine: '上海市徐汇区漕溪北路 ** 号', products: [{ _id: 'p3', title: '蓝闪蝶 · A1 博物级', latin: 'Morpho menelaus', price: '468.00', count: 1, image: P[2] }] }, stampText: '待付款', stampClass: 'warn', payBtnLabel: '付款入藏', hasTracking: false } },
   { name: 'gift-receive-done', h: 1700, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, addressDone: true, phoneMasked: '138****0012', addressMaskedLine: '上海市徐汇区 ***' } },
