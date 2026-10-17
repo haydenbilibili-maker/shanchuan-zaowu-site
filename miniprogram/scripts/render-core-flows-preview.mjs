@@ -362,7 +362,7 @@ const SCENES = [
   },
   {
     name: 'wallet-coupons', h: 1700, wxml: 'subpackages/business/components/WalletPanelCoupons/index', data: {
-      loading: false, usableCouponCount: 3, expiringCount: 1, lockedCount: 1, closedCount: 2, passState: 'idle', memberNo: '0137',
+      loading: false, usableCouponCount: 3, expiringCount: 1, expiringDays: 7, lockedCount: 1, closedCount: 2, passState: 'idle', memberNo: '0137', closedExpanded: false, lockedCoupons: [{ _id: 'c9', title: '满减礼券', faceLabel: '¥30', value: 30, minSpend: 299, canUse: false, status: 'locked', channelLabel: '线上可用', expiryHint: '11.30 前有效', sourceLabel: '积分兑换' }], closedCoupons: [],
       coupons: [
         { _id: 'c1', title: '新会员礼券', faceLabel: '¥20', value: 20, minSpend: 0, canUse: true, canUseOnline: true, channelLabel: '线上 · 门店通用', expiryHint: '10.31 前有效', sourceLabel: '新会员礼包', useLabel: '去使用' },
         { _id: 'c2', title: '满减礼券', faceLabel: '¥50', value: 50, minSpend: 599, canUse: true, canUseOnline: true, channelLabel: '线上可用', expiryHint: '3 天后到期', expiringSoon: true, sourceLabel: '生日礼', useLabel: '去使用' },
@@ -374,14 +374,14 @@ const SCENES = [
     name: 'wallet-balance', h: 1700, wxml: 'subpackages/business/components/WalletPanelWallet/index', data: {
       accountReady: true, account: { availableYuan: '1,280.00', memberNo: '0137' }, allowed: true, rechargeMode: true, needLogin: false, checking: false, iosBlocked: false, flashSuccess: false, ledgerLoading: false, ledgerEmpty: false, allowCustom: true, recharge: { minCustomYuan: 100, maxCustomYuan: 20000 }, paySummaryLabel: '实付 ¥1000 · 到账 ¥1080', selectedBenefitHint: '升至「藏家」，享 9.5 折', ledgerCap: '近 30 天',
       packages: [{ id: 'k1', label: '¥500', displayPayYuan: '500', pointsLine: '+500 积分', discountLine: '到账 ¥530' }, { id: 'k2', label: '¥1000', displayPayYuan: '1000', levelBadge: '升级', levelName: '藏家', pointsLine: '+1000 积分', discountLine: '到账 ¥1080' }, { id: 'k3', label: '¥2000', displayPayYuan: '2000', levelName: '馆员', pointsLine: '+2000 积分', discountLine: '到账 ¥2200' }],
-      selectedPackageId: 'k2', rechargeMode: 'package', canPay: true, payBtnLabel: '充值 ¥1000',
+      selectedPackageId: 'k2', rechargeMode: 'package', canPay: true, payBtnLabel: '充值 ¥1000', walletPlateFooter: 'SHANHAI · MEMBER WALLET', walletRechargeLead: '选一档储值，到账即可在线上与门店消费', walletRechargeHint: '储值余额不可提现，可用于线上与门店消费', walletSecurityNote: '余额变动会推送提醒；如非本人操作请联系专员', customAmount: '', customHint: '', ledgerHasMore: false,
       ledgerTimeline: [{ week: '本周', rows: [{ typeLabel: '消费', subtitle: '光明女神闪蝶 · 玻璃罩', amountSign: '-', amountYuan: '388.00', clockText: '10.12 14:20', toneClass: 'minus', balanceAfterYuan: '1,280.00' }, { typeLabel: '充值', subtitle: '储值 ¥1000 送 ¥80', amountSign: '+', amountYuan: '1,080.00', clockText: '10.10 09:12', toneClass: 'plus', isCredit: true, balanceAfterYuan: '1,668.00' }] }]
     }
   },
   {
     name: 'wallet-points', h: 1600, wxml: 'subpackages/business/components/WalletPanelPoints/index', data: {
-      loading: false, points: 2680, pointsYuan: '26.80', curTab: 0,
-      rewards: [{ _id: 'r1', title: '黄铜书签', cost: 800, image: P[3] }, { _id: 'r2', title: '标本小卡', cost: 300, image: P[4] }]
+      loading: false, points: 2680, pointsYuan: '26.80', curTab: 0, pointsReady: true, pointsText: '2,680', levelName: '藏家', onlineSpendTotal: '3,260', storeSpendTotal: '1,180', platformSpendTotal: 0, storePointsTotal: 1180, myRewards: [],
+      rewards: [{ _id: 'r1', title: '黄铜书签', description: '蚀刻闪蝶纹样', cost: 800, stock: 12, type: 'physical', image: P[3] }, { _id: 'r2', title: '¥30 礼券', description: '全场满 199 可用', cost: 3000, stock: 99, type: 'coupon', image: P[4] }]
     }
   },
   {
@@ -449,7 +449,65 @@ const SCENES = [
         { _id: 'c2', displayTitle: '自然小匣', displayImage: P[1], dateStr: '2026.09.22', kind: 'gift_voucher', kindLabel: '赠予凭证' },
         { _id: 'c3', displayTitle: '银杏押花框', displayImage: P[2], dateStr: '2026.09.03', kind: 'gift_holder', kindLabel: '受赠' },
         { _id: 'c4', displayTitle: '紫水晶晶簇', displayImage: P[3] || P[0], dateStr: '2026.08.18', kind: 'holder', kindLabel: '' }
-      ] } }
+      ] } },
+  // 2026-10-17 预约「入馆券」（wxml-preview 已支持表达式内的 <，预约页第一次能离线出图）
+  { name: 'booking', h: 2600, wxml: 'subpackages/business/booking/index', data: {
+      ticketYear: 2026, ticketInfo: { dateStr: '10月 18', timeStr: '14:00', typeStr: '入店参观' }, bookCount: 2, contactName: '林间拾蝶', contactPhone: '',
+      currentTab: 0, storeLocked: false, storeName: '山海造物 · 主店', storeLocationLabel: '上海 · 徐汇', storeVisitTips: ['到店请出示入馆券', '馆内请勿触摸未开放标本'], storePickerOpen: false, storeList: [], storeId: 's1',
+      isCustomBooking: false, customPlanLines: [], isPetIntakeBooking: false, petPlanLines: [], showCalendar: false, selectedCalendarDate: '', unavailableDates: [], fullDates: [],
+      weekDays: [['周六', 18], ['周日', 19], ['周一', 20], ['周二', 21], ['周三', 22], ['周四', 23]].map(([week, day]) => ({ week, day })), selectedDateIndex: 0,
+      timeSlots: [{ time: '10:00', status: 'open' }, { time: '11:00', status: 'open' }, { time: '14:00', status: 'open' }, { time: '15:00', status: 'full' }, { time: '16:00', status: 'open' }, { time: '17:00', status: 'open' }], selectedTimeIndex: 2,
+      courses: [], activities: [], selectedActivityId: '', bookingHistoryTab: 0, upcomingBookings: [], historyBookings: [], loadingBookings: false,
+      showMintModal: false, mintAnimation: false, mintFinished: false, newTicketCode: '', regDialogShow: false } },
+  { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
+  { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
+      upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },
+        { _id: 'b2', type: 'handcraft_course', title: '蝴蝶标本手作课', _id_short: 'C2K9', month: '10月', day: '26', time: '14:00 - 16:00', people: 1 }] } },
+  // 2026-10-17 门店「到店指南」（到店链路 B8 第二页）
+  { name: 'store', h: 3600, wxml: 'subpackages/business/store/index', data: {
+      loading: false, scrollTop: 76, enterReady: true, storePickerOpen: false, lbsSheetOpen: false, lbsSuggestStore: null, bookingClosedToday: false, closedReasonLabel: '',
+      introExpanded: false, tipsExpanded: true, walkingGuideOpen: true, checkedInToday: false, checkInLoading: false, checkInDockVisible: true,
+      brandWebsite: 'shanchuanzaowu.com', featuresLine: '入店参观 · 馆藏零售 · 品牌体验', hasActivities: true, hasExperienceProducts: true, experienceLoading: false,
+      stores: [{ storeId: 's1', name: '山川造物', locationLabel: '这有山 · 山腰' }, { storeId: 's2', name: '星宸标本', locationLabel: '这有山 · 楼下' }],
+      store: { storeId: 's1', name: '山川造物', nameEn: 'SHANCHUAN CREATIONS', roleLabel: '品牌主店', locationLabel: '这有山 · 山腰', mallName: '这有山', floor: '山坡 X-06-1',
+        address: '吉林省长春市朝阳区红旗街959号这有山商场山坡X-06-1', phone: '18519110274', hoursText: '10:00 – 22:00', coverImage: P[2], heroTagline: '像走进一间暖光藏品馆',
+        intro: '主店位于这有山山腰，陈列昆虫、矿物、植物与海洋标本，可现场选购与预约参观。', openStatus: { label: '营业中', statusClass: 'open' },
+        visitTips: ['从商场主入口进入，沿山坡动线至 X-06-1', '建议错峰参观，周末下午客流较多', '展柜内藏品请勿触摸，如需协助可联系店员'],
+        zones: [{ zoneId: 'z1', title: '蝴蝶昆虫柜', overline: 'INSECTA', color: '#C4A76C', desc: '闪蝶、鸟翼蝶与组合框画，每件配有物种信息。', coverImage: P[0] },
+          { zoneId: 'z2', title: '矿石标本柜', overline: 'MINERALS', color: '#C4A76C', desc: '晶洞与矿石，呈现大地的色彩与几何。', coverImage: P[3] },
+          { zoneId: 'z3', title: '植物果实柜', overline: 'PLANTAE', color: '#C4A76C', desc: '押花、果实与种子，记录叶片与花的细微结构。', coverImage: P[5] }],
+        services: [{ id: 'sv1', label: '预约参观', tab: 0 }, { id: 'sv2', label: '手作课程', tab: 1 }, { id: 'sv3', label: '到店自提' }],
+        walkingGuide: { headline: '前往工坊 · 步行约 5 分钟', peerName: '星宸标本', peerLocation: '这有山 · 楼下',
+          steps: ['从主店出发，沿商场山坡动线至下行扶梯', '乘扶梯至楼下层，沿标识前往工坊', '工坊承接定制确认、装裱咨询与手作课程'], tip: '建议先逛主店选品，再到工坊确认定制方案' } },
+      experienceProducts: [{ _id: 'e1', title: '光明女神闪蝶', latinName: 'Morpho helena', priceText: '1280', image: P[0] }, { _id: 'e2', title: '血漪蝶穹顶', latinName: 'Cethosia biblis', priceText: '680', image: P[1] }, { _id: 'e3', title: '蒲公英玻璃罩', latinName: '', priceText: '268', image: P[3] }],
+      storeActivities: [{ _id: 'a1', type: 'handcraft_course', title: '蝴蝶标本手作课', date: '10月26日', time: '14:00' }, { _id: 'a2', type: 'special_activity', title: '秋夜观虫 · 灯诱讲座', date: '11月02日', time: '19:00' }] } },
+  // 2026-10-17 入馆券 / 门店自取凭证（到店链路最后两页）
+  { name: 'ticket', h: 1700, wxml: 'subpackages/business/ticket/index', data: { loadError: false, bookingShortId: 'A7F3K2', showRescheduleModal: false, weekDays: [], timeSlots: [],
+      booking: { _id: 'b1', status: 'confirmed', title: '入店参观 · 山川造物主店', date: '2026-10-18', time: '14:00', people: 2 } } },
+  { name: 'ticket-used', h: 1500, wxml: 'subpackages/business/ticket/index', base: 'ticket', data: { booking: { _id: 'b1', status: 'used', title: '蝴蝶标本手作课', date: '2026-10-12', time: '14:00', people: 1 } } },
+  { name: 'pickup', h: 2200, wxml: 'subpackages/business/pickup-pass/index', data: { loading: false, statusUnknown: false, orderNo: 'SH20261017A01', codeText: '', qrFailed: false, error: '', showRefundEntry: true, claimedAtText: '',
+      storeName: '山川造物 · 主店', storeInfo: { canNavigate: true, floor: '这有山 · 山坡 X-06-1', hours: '10:00 – 22:00', address: '吉林省长春市朝阳区红旗街959号这有山商场山坡X-06-1' },
+      pass: { statusLabel: '备妥待取', statusTone: 'ready', headline: '藏品已备妥，可到店领取', hint: '请在 7 日内到店，向专员出示二维码或自取码。', codeText: '4826 1937',
+        steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'current' }] } } },
+  { name: 'pickup-done', h: 1700, wxml: 'subpackages/business/pickup-pass/index', base: 'pickup', data: { showRefundEntry: false, claimedAtText: '10月17日 15:20',
+      pass: { statusLabel: '已自提', statusTone: 'done', headline: '本次自取已完成', hint: '', codeText: '4826 1937',
+        steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'done' }] } } },
+  // 2026-10-17 标本定制「定制工坊」（第 1 / 2 / 5 步）
+  { name: 'custom', h: 2200, wxml: 'subpackages/feature/custom/index', data: { loading: false, navPaddingRight: 32, headerHeight: 150, estimatedDays: 7, currentStep: 1,
+      steps: [['藏品'], ['装裱'], ['包装'], ['赠礼'], ['确认']].map(([label], i) => ({ id: i + 1, label })),
+      currentStepMeta: { title: '选藏品', desc: '从馆藏中挑选可定制藏品，每件配有物种信息' },
+      drafts: [{ _id: 'd1', title: '送给阿遥的生日框', specimenTitle: '光明女神闪蝶' }], searchKeyword: '', activeCategory: '',
+      categoryPills: [{ id: '', label: '全部' }, { id: 'butterfly', label: '蝴蝶' }, { id: 'beetle', label: '甲虫' }, { id: 'plant', label: '植物' }],
+      products: [1, 2, 3, 4], selectedProduct: { _id: 'p1', title: '光明女神闪蝶', latinName: 'Morpho helena', images: [P[0]] },
+      filteredProducts: [{ _id: 'p1', title: '光明女神闪蝶', latinName: 'Morpho helena', price: 680, images: [P[0]] }, { _id: 'p2', title: '血漪蝶', latinName: 'Cethosia biblis', price: 420, images: [P[1]] },
+        { _id: 'p3', title: '蓝闪蝶木框', latinName: 'Morpho peleides', price: 560, images: [P[2]] }, { _id: 'p4', title: '蝶植组合框', latinName: '', price: 880, images: [P[5]] }],
+      selectedFrameName: '胡桃木 · 浅框', totalPreview: 868, dimensionOptions: [{ name: '规格', values: [{ value: '20×25' }, { value: '30×40' }, { value: '40×50', disabled: true }] }], selectedSpecs: { 规格: '20×25' },
+      frames: [{ id: 'f1', name: '胡桃木 · 浅框', desc: '温润木纹，适合单只标本', priceDelta: 0 }, { id: 'f2', name: '黄铜 · 博物框', desc: '金属细边，博物馆陈列感', priceDelta: 188 }], selectedFrameId: 'f1',
+      framers: [{ id: 'm1', name: '门店标本师', type: 'store', priceDelta: 0, extraDays: 0 }, { id: 'm2', name: '林师傅', type: 'partner', bio: '十二年鳞翅目装裱', priceDelta: 120, extraDays: 3 }], selectedFramerId: 'm1',
+      previewLines: [{ label: '藏品', value: '光明女神闪蝶' }, { label: '学名', value: 'Morpho helena', latin: true }, { label: '框型', value: '胡桃木 · 浅框' }, { label: '规格', value: '20×25' }, { label: '包装', value: '礼盒包装' }, { label: '祝福卡', value: '生日快乐，愿你一直闪闪发光' }],
+      unitPrice: 680, customExtraPrice: 188, displayEstimatedDays: 7 } },
+  { name: 'custom-2', h: 2000, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 2, currentStepMeta: { title: '选装裱', desc: '框型、规格与标本师，决定装裱气质与交期' } } },
+  { name: 'custom-5', h: 2400, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 5, currentStepMeta: { title: '定制预览', desc: '核对方案与预估价格，满意后下单制作' } } }
 ]
 
 async function shoot(s) {

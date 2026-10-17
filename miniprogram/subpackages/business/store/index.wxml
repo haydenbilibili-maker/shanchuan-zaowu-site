@@ -1,13 +1,14 @@
 <!--subpackages/business/store/index.wxml-->
 <wxs src="../../../utils/latinDisplay.wxs" module="latin" />
 <view class="page-store">
-  <view class="grain-overlay" aria-hidden="true"></view>
+  <!-- 2026-10-17「到店指南」重构：顶栏收成一行 + 下划线店签；门店名片 = 一张浅纸标本签（地图独立成一块图版）；
+       本屏唯一实心金 = 预约参观，「我已到店」改金线环；展陈 / 体验图注落到图下；活动 / 服务 / 动线为发丝线行。数据与交互不变。 -->
 
   <!-- 顶栏：当前店 + 双店切换 -->
   <view class="sticky-top">
     <view class="store-switcher" bindtap="toggleStorePicker" hover-class="tap-press-soft" hover-stay-time="80">
       <view class="switcher-main">
-        <text class="switcher-label">当前门店</text>
+        <text class="switcher-label">STORE · 当前门店</text>
         <text class="switcher-name">{{store.name || '这有店'}}</text>
         <text class="switcher-sub" wx:if="{{store}}">{{store.locationLabel}} · {{store.roleLabel}}</text>
       </view>
@@ -23,7 +24,6 @@
         hover-class="tap-press-soft"
         hover-stay-time="80"
       >
-        <view class="pill-mark" wx:if="{{item.storeId === store.storeId}}"></view>
         <text class="pill-name">{{item.name}}</text>
         <text class="pill-loc">{{item.locationLabel}}</text>
       </view>
@@ -97,9 +97,26 @@
       <view class="mu-head"><view class="mu-head-t"><text class="mu-en">STORE PROFILE</text><text class="mu-cn">门店名片</text>
         <text class="mu-sub">地址、营业与联系方式</text></view></view>
 
+      <view class="info-map-wrap" bindtap="openMap" hover-class="info-map-press" hover-stay-time="80">
+        <map
+          class="info-map"
+          latitude="{{store.latitude}}"
+          longitude="{{store.longitude}}"
+          markers="{{store.mapMarkers}}"
+          enable-scroll="{{false}}"
+          enable-zoom="{{false}}"
+          show-location="{{false}}"
+        ></map>
+        <view class="info-map-mask">
+          <text class="info-map-cta">导航前往 ›</text>
+        </view>
+      </view>
+
       <view class="store-card">
+        <view class="card-pin" aria-hidden="true"></view>
         <view class="store-card-head">
           <view class="store-card-title-wrap">
+            <text class="store-card-eyebrow">{{store.nameEn}}</text>
             <text class="store-card-name">{{store.name}}</text>
             <text class="store-card-floor" wx:if="{{store.floor || store.mallName}}">
               {{store.mallName}}{{store.mallName && store.floor ? ' · ' : ''}}{{store.floor}}
@@ -116,21 +133,6 @@
           <text class="plate-intro-toggle">{{introExpanded ? '收起' : '展开'}}</text>
         </view>
 
-        <view class="info-map-wrap" bindtap="openMap" hover-class="info-map-press" hover-stay-time="80">
-          <map
-            class="info-map"
-            latitude="{{store.latitude}}"
-            longitude="{{store.longitude}}"
-            markers="{{store.mapMarkers}}"
-            enable-scroll="{{false}}"
-            enable-zoom="{{false}}"
-            show-location="{{false}}"
-          ></map>
-          <view class="info-map-mask">
-            <text class="info-map-cta">导航</text>
-          </view>
-        </view>
-
         <view class="store-facts">
           <view class="fact-row" bindtap="copyAddress" hover-class="fact-row-press" hover-stay-time="80">
             <view class="fact-main">
@@ -140,18 +142,27 @@
             <text class="fact-action">复制</text>
           </view>
 
-          <view class="fact-split">
-            <view class="fact-row fact-half">
+          <view class="fact-row">
+            <view class="fact-main">
               <text class="fact-label">营业</text>
               <text class="fact-val">{{store.hoursText}}</text>
             </view>
-            <view class="fact-row fact-half" bindtap="callStore" hover-class="fact-row-press" hover-stay-time="80">
-              <view class="fact-main">
-                <text class="fact-label">电话</text>
-                <text class="fact-val fact-val-accent">{{store.phone}}</text>
-              </view>
-              <text class="fact-action">拨打</text>
+          </view>
+
+          <view class="fact-row" bindtap="callStore" hover-class="fact-row-press" hover-stay-time="80">
+            <view class="fact-main">
+              <text class="fact-label">电话</text>
+              <text class="fact-val fact-val-mono">{{store.phone}}</text>
             </view>
+            <text class="fact-action">拨打</text>
+          </view>
+
+          <view class="fact-row" bindtap="copyWebsite" hover-class="fact-row-press" hover-stay-time="80">
+            <view class="fact-main">
+              <text class="fact-label">官网</text>
+              <text class="fact-val fact-val-mono">{{brandWebsite}}</text>
+            </view>
+            <text class="fact-action">复制</text>
           </view>
         </view>
 
@@ -169,12 +180,6 @@
 
         <view class="feature-line" wx:if="{{featuresLine}}">
           <text class="feature-text">{{featuresLine}}</text>
-        </view>
-
-        <view class="web-row" bindtap="copyWebsite" hover-class="tap-press-soft" hover-stay-time="80">
-          <text class="web-label">官网</text>
-          <text class="web-val">{{brandWebsite}}</text>
-          <text class="fact-action">复制</text>
         </view>
       </view>
 
@@ -203,10 +208,11 @@
           hover-class="zone-card-press"
           hover-stay-time="80"
         >
-          <image wx:if="{{item.coverImage}}" class="zone-bg" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
-          <view class="zone-overlay"></view>
+          <view class="zone-plate">
+            <image wx:if="{{item.coverImage}}" class="zone-bg" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+          </view>
           <view class="zone-content">
-            <text class="zone-overline" style="color: {{item.color}}">{{item.overline}}</text>
+            <text class="zone-overline">{{item.overline}}</text>
             <text class="zone-title">{{item.title}}</text>
             <text class="zone-desc">{{item.desc}}</text>
           </view>
@@ -266,7 +272,7 @@
             <text class="list-title">{{item.title}}</text>
             <text class="list-meta">{{item.date}} {{item.time || ''}}</text>
           </view>
-          <text class="list-arr">报名</text>
+          <text class="list-arr">报名 ›</text>
         </view>
       </view>
     </view>
@@ -287,7 +293,7 @@
           hover-stay-time="80"
         >
           <text class="list-title-solo">{{item.label}}</text>
-          <text class="list-arr">→</text>
+          <text class="list-arr">›</text>
         </view>
       </view>
       <view class="empty-block" wx:else>
@@ -309,7 +315,7 @@
         </view>
         <view class="walking-body {{walkingGuideOpen ? 'open' : ''}}">
           <view class="walking-step" wx:for="{{store.walkingGuide.steps}}" wx:key="*this">
-            <text class="walking-step-num">{{index + 1}}</text>
+            <text class="walking-step-num">{{index < 9 ? '0' + (index + 1) : index + 1}}</text>
             <text class="walking-step-text">{{item}}</text>
           </view>
           <text class="walking-tip" wx:if="{{store.walkingGuide.tip}}">{{store.walkingGuide.tip}}</text>

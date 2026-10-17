@@ -25,13 +25,27 @@ const VOID_TAGS = new Set(['input', 'image', 'img', 'br'])
 
 /* ── 1. 解析 ──────────────────────────────────────────────────────────── */
 
+/**
+ * 下一个标签起点：文本里 `{{ }}` 内的 `<` 是比较运算（如 `{{bookCount < 10 ? '0' + bookCount : bookCount}}`），
+ * 不是标签 —— 2026-10-17 前这里直接 indexOf('<')，预约页因此一直无法离线出图。
+ */
+function nextTagStart(src, from) {
+  let depth = 0
+  for (let k = from; k < src.length; k += 1) {
+    if (src.startsWith('{{', k)) { depth += 1; k += 1; continue }
+    if (depth && src.startsWith('}}', k)) { depth -= 1; k += 1; continue }
+    if (!depth && src[k] === '<') return k
+  }
+  return -1
+}
+
 /** 扫描式取标签：属性值里可能出现 `>`（如 `wx:if="{{a > b}}"`），正则会在那里截断 */
 function parseWxml(src) {
   const root = { tag: '#root', attrs: {}, kids: [] }
   const stack = [root]
   let i = 0
   while (i < src.length) {
-    const lt = src.indexOf('<', i)
+    const lt = nextTagStart(src, i)
     if (lt < 0) {
       pushText(stack[stack.length - 1], src.slice(i))
       break
@@ -157,7 +171,7 @@ const TAG_MAP = {
   switch: 'span', label: 'span', textarea: 'div', video: 'div', navigator: 'div',
   form: 'div', canvas: 'div', 'movable-area': 'div', 'movable-view': 'div',
   'cover-view': 'div', 'cover-image': 'img', 'rich-text': 'div', progress: 'div',
-  icon: 'span', slot: null, wxs: null
+  icon: 'span', map: 'div', slot: null, wxs: null // map：原生地图预览里画成空块（2026-10-17 门店页出图）
 }
 const KEEP_ATTRS = new Set(['class', 'style', 'id', 'src', 'placeholder', 'value', 'maxlength', 'type'])
 

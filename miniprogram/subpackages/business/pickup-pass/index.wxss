@@ -1,7 +1,8 @@
-/* 门店自取凭证（独立页）—— 继承 app.wxss 主题变量 */
-
+/* 门店自取凭证（2026-10-17 重构，与入馆券同一家族）
+   博物馆黑票面 + 黄铜发丝框；二维码浅纸图版；状态章改方角发丝章（铜 / 暖白 / 灰，不用信号橙绿）；
+   「已自提」为墨色印章；门店为发丝线信息块；本屏唯一实心金 = 订单详情。数据、轮询、核销联动不变。 */
 page {
-  background-color: var(--color-bg);
+  background-color: #1A1814;
   color: var(--color-text-body);
   font-family: var(--font-body);
 }
@@ -12,76 +13,92 @@ view, text, canvas { box-sizing: border-box; }
   display: flex;
   flex-direction: column;
   gap: 24rpx;
-  padding: 24rpx 30rpx calc(48rpx + env(safe-area-inset-bottom));
+  padding: 24rpx 32rpx calc(48rpx + env(safe-area-inset-bottom));
 }
 
-/* ---------- 头部 ---------- */
+/* ---------- 头部：眉标 + 宋体主标 + 状态章 ---------- */
 .pass-head {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10rpx;
-  padding: 16rpx 0 4rpx;
+  padding: 20rpx 0 4rpx;
 }
+
 .pass-eyebrow {
   font-family: var(--font-mono);
-  font-size: var(--fs-20);
-  letter-spacing: 0.26em;
-  color: var(--color-text-muted);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
+
 .pass-title {
   font-family: var(--font-brand);
   font-size: var(--fs-40);
-  letter-spacing: 0.04em;
-  color: #F2EFE8;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
+
 .pass-chip {
-  margin-top: 6rpx;
-  padding: 8rpx 24rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid;
-  font-size: var(--fs-24);
-  letter-spacing: 0.1em;
-  transform: rotate(-3deg);
+  margin-top: 8rpx;
+  padding: 6rpx 22rpx;
+  border-radius: 2rpx;
+  font-size: var(--fs-22);
+  letter-spacing: 0.16em;
 }
+
 .pass-chip-wait {
-  color: var(--color-warning);
-  border-color: rgba(233, 162, 59, 0.5);
-  background: rgba(233, 162, 59, 0.12);
+  color: #E8DFCB;
+  box-shadow: inset 0 0 0 1rpx rgba(232, 223, 203, 0.4);
 }
+
 .pass-chip-ready {
-  color: var(--color-primary);
-  border-color: rgba(196, 167, 108, 0.55);
-  background: rgba(196, 167, 108, 0.14);
+  color: var(--brass-200);
+  background: rgba(196, 167, 108, 0.1);
+  box-shadow: var(--ring-brass);
 }
+
 .pass-chip-done {
-  color: var(--color-success);
-  border-color: rgba(82, 183, 136, 0.5);
-  background: rgba(82, 183, 136, 0.12);
+  color: var(--color-text-secondary, #A09A90);
+  box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.4);
 }
+
+.pass-chip-closed {
+  color: var(--color-text-secondary, #A09A90);
+  box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.3);
+}
+
 .pass-headline {
   margin-top: 4rpx;
   font-size: var(--fs-26);
   color: var(--color-text-secondary);
 }
+
 .pass-orderno {
   font-family: var(--font-mono);
-  font-size: var(--fs-22);
-  letter-spacing: 0.08em;
-  color: var(--color-text-muted);
+  font-size: var(--fs-20);
+  letter-spacing: 0.12em;
+  color: rgba(160, 154, 144, 0.85);
 }
 
-/* ---------- 凭证主体 ---------- */
+/* ---------- 凭证主体：博物馆黑票面 ---------- */
 .pass-card {
   position: relative;
-  padding: 34rpx 32rpx 30rpx;
-  border-radius: var(--radius-lg);
-  border: 1rpx solid rgba(196, 167, 108, 0.35);
-  background:
-    radial-gradient(130% 70% at 50% 0%, rgba(196, 167, 108, 0.16) 0%, rgba(196, 167, 108, 0) 62%),
-    linear-gradient(180deg, #24211C 0%, var(--color-bg-card) 100%);
-  box-shadow: 0 14rpx 36rpx rgba(0, 0, 0, 0.38);
+  padding: 40rpx 36rpx 32rpx;
+  border-radius: 4rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.32);
+  background: linear-gradient(180deg, #24211C, #1F1D1A);
+  box-shadow: 0 16rpx 36rpx rgba(0, 0, 0, 0.5);
   overflow: hidden;
+}
+
+.pass-card::before {
+  content: '';
+  position: absolute;
+  inset: 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
+  pointer-events: none;
 }
 
 .pass-qr-wrap {
@@ -89,41 +106,48 @@ view, text, canvas { box-sizing: border-box; }
   flex-direction: column;
   align-items: center;
 }
-/* 白底 + 内边距 = 二维码静区，柜台扫一次成功 */
+
+/* 浅纸图版 + 内边距 = 二维码静区，柜台扫一次成功 */
 .pass-qr-frame {
   position: relative;
   padding: 24rpx;
-  border-radius: var(--radius-md);
-  background: var(--brass-50);
-  box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.38);
+  border-radius: 4rpx;
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  box-shadow: inset 0 0 0 1rpx rgba(46, 38, 24, 0.22), 0 10rpx 24rpx rgba(0, 0, 0, 0.36);
 }
+
 .pass-qr {
   display: block;
   width: 460rpx;
   height: 460rpx;
-  background: var(--brass-50);
-}
-.pass-qr-hint {
-  margin-top: 16rpx;
-  font-size: var(--fs-22);
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
+  background: #FAF6ED;
 }
 
-/* 已交付：二维码留在票面上但码面变灰 + 盖「已自提」水印，既联动告知也阻止二次出示 */
+.pass-qr-hint {
+  margin-top: 18rpx;
+  font-size: var(--fs-22);
+  letter-spacing: 0.06em;
+  color: var(--brass-200);
+}
+
+/* 已交付：二维码留在票面上但码面变灰 + 盖「已自提」墨色印章，既联动告知也阻止二次出示 */
 .pass-qr-used .pass-qr {
   opacity: 0.2;
 }
+
+.pass-qr-used .pass-qr-hint { color: var(--color-text-secondary, #A09A90); }
+
 .pass-qr-stamp {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%) rotate(-14deg);
   padding: 12rpx 34rpx;
-  border: 4rpx solid rgba(82, 183, 136, 0.85);
-  border-radius: var(--radius-md);
-  background: rgba(250, 247, 240, 0.72);
-  color: #2D6A4F;
+  border: 4rpx solid rgba(90, 78, 58, 0.85);
+  border-radius: 4rpx;
+  box-shadow: inset 0 0 0 4rpx rgba(243, 236, 221, 0.9), inset 0 0 0 6rpx rgba(90, 78, 58, 0.5);
+  background: rgba(243, 236, 221, 0.78);
+  color: #3D3424;
   font-family: var(--font-brand);
   font-size: 64rpx;
   font-weight: 600;
@@ -137,71 +161,82 @@ view, text, canvas { box-sizing: border-box; }
 .pass-perf {
   display: flex;
   align-items: center;
-  margin: 30rpx -32rpx 26rpx;
+  margin: 32rpx -36rpx 24rpx;
 }
+
 .pass-notch {
-  width: 28rpx;
-  height: 28rpx;
+  width: 32rpx;
+  height: 32rpx;
   flex-shrink: 0;
   border-radius: 50%;
-  background: var(--color-bg);
+  background: #1A1814;
 }
-.pass-notch-l { margin-left: -14rpx; }
-.pass-notch-r { margin-right: -14rpx; }
+
+.pass-notch-l { margin-left: -16rpx; }
+.pass-notch-r { margin-right: -16rpx; }
+
 .pass-dash {
   flex: 1;
   height: 0;
-  border-top: 1rpx dashed rgba(196, 167, 108, 0.35);
+  border-top: 2rpx dashed rgba(196, 167, 108, 0.24);
 }
 
+/* 自取码：发丝线一行（眉标 / 等宽大字 / 复制） */
 .pass-code-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16rpx;
-  padding: 20rpx 22rpx;
-  border-radius: var(--radius-md);
-  border: 1rpx dashed rgba(196, 167, 108, 0.3);
-  background: rgba(26, 24, 20, 0.6);
+  padding: 8rpx 4rpx;
 }
+
 .pass-code-main {
   display: flex;
   flex-direction: column;
-  gap: 6rpx;
+  gap: 8rpx;
   min-width: 0;
 }
+
 .pass-code-label {
-  font-size: var(--fs-20);
-  letter-spacing: 0.18em;
-  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
+
 .pass-code-value {
   font-family: var(--font-mono);
-  font-size: var(--fs-44);
+  font-size: var(--fs-48);
   font-weight: 600;
-  letter-spacing: 0.14em;
-  color: var(--color-primary);
+  letter-spacing: 0.16em;
+  color: var(--brass-200);
 }
+
 .pass-copy {
   flex-shrink: 0;
   padding: 10rpx 24rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.45);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45);
   font-size: var(--fs-22);
-  color: var(--color-primary);
+  letter-spacing: 0.08em;
+  color: var(--brass-300);
 }
 
-/* 三段进度 */
+/* 三段进度：铜点（已过 = 实点，当前 = 呼吸环，未到 = 空点） */
 .pass-steps {
   display: flex;
-  margin-top: 30rpx;
+  margin-top: 32rpx;
+  padding-top: 28rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
+
 .pass-step {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
+
 .pass-step-track {
   position: relative;
   width: 100%;
@@ -210,19 +245,25 @@ view, text, canvas { box-sizing: border-box; }
   align-items: center;
   justify-content: center;
 }
+
 .pass-dot {
   position: relative;
   z-index: 2;
   width: 14rpx;
   height: 14rpx;
   border-radius: 50%;
-  background: rgba(196, 167, 108, 0.25);
+  background: #1F1D1A;
+  box-shadow: inset 0 0 0 2rpx rgba(196, 167, 108, 0.35);
 }
-.pass-dot-done { background: var(--color-success); }
+
+.pass-dot-done { background: #8B6F47; box-shadow: none; }
+
 .pass-dot-current {
-  background: var(--color-primary);
+  background: var(--brass-300);
+  box-shadow: none;
   animation: passPulse 1.8s ease-in-out infinite;
 }
+
 .pass-line {
   position: absolute;
   top: 50%;
@@ -232,54 +273,64 @@ view, text, canvas { box-sizing: border-box; }
   height: 1rpx;
   background: rgba(196, 167, 108, 0.25);
 }
+
 .pass-step-label {
   margin-top: 14rpx;
   font-size: var(--fs-22);
-  color: var(--color-text-muted);
+  color: rgba(160, 154, 144, 0.85);
 }
+
 .pass-step-label-done { color: var(--color-text-body); }
-.pass-step-label-current { color: var(--color-primary); }
+.pass-step-label-current { color: var(--brass-200); }
+
 @keyframes passPulse {
   0%, 100% { box-shadow: 0 0 0 6rpx rgba(196, 167, 108, 0.14); }
   50% { box-shadow: 0 0 0 12rpx rgba(196, 167, 108, 0.24); }
 }
 
-/* ---------- 领取门店 ---------- */
+/* ---------- 领取门店：发丝线信息块 ---------- */
 .pass-store {
   display: flex;
   flex-direction: column;
   gap: 8rpx;
-  padding: 26rpx 28rpx;
-  border-radius: var(--radius-lg);
-  border: 1rpx solid var(--color-border);
-  background: var(--color-bg-card);
+  padding: 28rpx 4rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
+
 .pass-store-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16rpx;
 }
+
 .pass-store-label {
-  font-size: var(--fs-20);
-  letter-spacing: 0.16em;
-  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
+
 .pass-nav {
-  padding: 8rpx 20rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.45);
   font-size: var(--fs-22);
-  color: var(--color-primary);
+  letter-spacing: 0.06em;
+  color: var(--brass-300);
 }
+
 .pass-store-name {
+  margin-top: 4rpx;
+  font-family: var(--font-brand);
   font-size: var(--fs-32);
-  color: var(--color-text-body);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #F3ECDD;
 }
+
 .pass-store-line {
   font-size: var(--fs-22);
   line-height: 1.5;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* ---------- 提示 / 已完成 / 错误 ---------- */
@@ -289,52 +340,62 @@ view, text, canvas { box-sizing: border-box; }
   text-align: center;
   color: var(--color-text-secondary);
 }
+
+/* 防转发提醒：铜色（原警示橙） */
 .pass-guard {
   font-size: var(--fs-22);
   line-height: 1.6;
   text-align: center;
-  color: var(--color-warning);
+  color: var(--brass-300);
 }
+
 .pass-refresh {
   margin-top: -8rpx;
   font-size: var(--fs-20);
   line-height: 1.5;
   text-align: center;
-  color: var(--color-text-muted);
+  color: rgba(160, 154, 144, 0.85);
 }
-/* 已交付：凭证收起为核销回执，避免二次扫码 */
+
+/* 已交付 / 失效：凭证收成回执，避免二次扫码 */
 .pass-sealed {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12rpx;
-  padding: 32rpx 0 26rpx;
+  padding: 24rpx 0 30rpx;
 }
+
 .pass-sealed-tick {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 108rpx;
-  height: 108rpx;
+  width: 104rpx;
+  height: 104rpx;
   border-radius: 50%;
-  border: 1rpx solid rgba(82, 183, 136, 0.45);
-  background: rgba(82, 183, 136, 0.14);
-  color: var(--color-success);
-  font-size: 56rpx;
+  box-shadow: inset 0 0 0 2rpx rgba(212, 188, 133, 0.7), inset 0 0 0 8rpx #1F1D1A, inset 0 0 0 9rpx rgba(212, 188, 133, 0.4);
+  font-family: var(--font-brand);
+  font-size: 48rpx;
+  color: var(--brass-300);
 }
+
 .pass-sealed-title {
   font-family: var(--font-brand);
   font-size: var(--fs-34);
-  letter-spacing: 0.04em;
-  color: var(--color-text-body);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #F3ECDD;
 }
+
 .pass-sealed-sub {
   font-size: var(--fs-24);
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #A09A90);
+  text-align: center;
 }
+
 .pass-error {
   padding: 20rpx 24rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(214, 64, 69, 0.4);
   background: rgba(214, 64, 69, 0.08);
   font-size: var(--fs-22);
@@ -343,30 +404,35 @@ view, text, canvas { box-sizing: border-box; }
   text-align: center;
 }
 
-/* ---------- 底部操作 ---------- */
+/* ---------- 底部操作：本屏唯一实心金 = 订单详情 ---------- */
 .pass-actions {
   display: flex;
   gap: 20rpx;
   margin-top: 8rpx;
 }
+
 .pass-btn {
   flex: 1;
   height: 88rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   font-size: var(--fs-28);
+  letter-spacing: 0.12em;
 }
+
 .pass-btn.ghost {
-  border: 1rpx solid rgba(196, 167, 108, 0.4);
-  color: var(--color-primary);
+  box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.4);
+  color: var(--color-text-body, #D5D1C8);
 }
+
 .pass-btn.primary {
-  background: var(--color-primary);
+  background: var(--brass-400);
   color: #1A1814;
-  font-weight: 500;
+  font-weight: 600;
 }
+
 .pass-support {
   align-self: center;
   padding: 16rpx;

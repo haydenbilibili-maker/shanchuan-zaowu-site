@@ -78,15 +78,15 @@ Page(withAppModal({
     selectedActivityType: null, // 选中的类型：course 或 activity
     
     // 票据预览信息
+    isFlipped: false,
     ticketYear: new Date().getFullYear(),
     ticketInfo: {
       dateStr: '--.--',
       timeStr: '--:--',
-      typeStr: 'MUSEUM VISIT'
+      typeStr: '入店参观'
     },
 
     // 翻转状态
-    isFlipped: false,
 
     // 门票铸造动画状态
     showMintModal: false,
@@ -201,11 +201,11 @@ Page(withAppModal({
 
     if (options.from === 'custom' && options.draftId) {
       this.loadCustomDraftForBooking(options.draftId)
-      this.setData({ 'ticketInfo.typeStr': 'CUSTOM ATELIER' })
+      this.setData({ 'ticketInfo.typeStr': '定制方案' })
     }
     if (options.from === 'pet' && options.orderId) {
       this.loadPetOrderForBooking(options.orderId)
-      this.setData({ 'ticketInfo.typeStr': 'PET INTAKE' })
+      this.setData({ 'ticketInfo.typeStr': '伴宠交接' })
     }
 
     trackBehavior('booking_page_enter', 'booking', storeId, {
@@ -327,7 +327,7 @@ Page(withAppModal({
   },
 
   flipTicket() {
-    wx.vibrateShort({ type: 'light' }); 
+    wx.vibrateShort({ type: 'light' });
     this.setData({ isFlipped: !this.data.isFlipped });
   },
 
@@ -803,15 +803,15 @@ Page(withAppModal({
   },
   updateTicketType(tabIdx = this.data.currentTab) {
     if (this.data.isPetIntakeBooking && tabIdx === 0) {
-      this.setData({ 'ticketInfo.typeStr': 'PET INTAKE' });
+      this.setData({ 'ticketInfo.typeStr': '伴宠交接' });
       return;
     }
     if (this.data.isCustomBooking && tabIdx === 0) {
-      this.setData({ 'ticketInfo.typeStr': 'CUSTOM ATELIER' });
+      this.setData({ 'ticketInfo.typeStr': '定制方案' });
       return;
     }
-    const types = ['MUSEUM VISIT', 'HANDCRAFT', 'SPECIAL EVENT'];
-    this.setData({ 'ticketInfo.typeStr': types[tabIdx] || 'TICKET' });
+    const types = ['入店参观', '手作课程', '特别活动'];
+    this.setData({ 'ticketInfo.typeStr': types[tabIdx] || '预约' });
   },
 
   // 🟢 切换日历视图

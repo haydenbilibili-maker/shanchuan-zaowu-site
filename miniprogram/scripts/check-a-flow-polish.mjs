@@ -7,6 +7,7 @@
  *   node miniprogram/scripts/check-a-flow-polish.mjs
  *   node miniprogram/scripts/check-a-flow-polish.mjs --selftest   （内存注入，不写盘）
  */
+import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -39,7 +40,23 @@ const FILES = {
   cartWxss: 'pages/cart/index.wxss',
   userWxss: 'pages/user/index.wxss',
   identifyWxss: 'subpackages/feature/identify/index.wxss',
-  identifyJs: 'subpackages/feature/identify/index.js'
+  identifyJs: 'subpackages/feature/identify/index.js',
+  bookingWxml: 'subpackages/business/booking/index.wxml',
+  bookingJs: 'subpackages/business/booking/index.js',
+  bookingWxss: 'subpackages/business/booking/index.wxss',
+  previewLib: 'scripts/lib/wxml-preview.mjs',
+  storeWxml: 'subpackages/business/store/index.wxml',
+  storeWxss: 'subpackages/business/store/index.wxss',
+  ticketWxml: 'subpackages/business/ticket/index.wxml',
+  ticketWxss: 'subpackages/business/ticket/index.wxss',
+  pickupWxss: 'subpackages/business/pickup-pass/index.wxss',
+  customWxss: 'subpackages/feature/custom/index.wxss',
+  customNav: 'subpackages/feature/utils/customNav.js',
+  walletLeather: 'subpackages/business/components/WalletPanelWallet/wallet-leather.wxss',
+  walletWxss: 'subpackages/business/components/WalletPanelWallet/index.wxss',
+  couponsWxss: 'subpackages/business/components/WalletPanelCoupons/index.wxss',
+  pointsWxss: 'subpackages/business/components/WalletPanelPoints/index.wxss',
+  hubBarWxss: 'subpackages/business/components/WalletHubBar/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -112,6 +129,66 @@ function checks(s) {
     /class="recent-thumb" src="\{\{item\.thumb\}\}"[^>]*binderror="onRecentThumbError"/.test(s.identifyWxml) &&
       /wx:else class="recent-thumb is-empty"/.test(s.identifyWxml) &&
       /\[`recentList\[\$\{i\}\]\.thumb`\]: ''/.test(methodBody(s.identifyJs, 'onRecentThumbError')))
+  // 2026-10-17 预约「入馆券」：页头一张票根（不再是双面翻转票）、分区头不再「中文 | ENGLISH」并列、预览库能解析表达式里的 <
+  // 2026-10-17 产品负责人：「预约门票仍然使用之前的设计方案，按整体视觉适配即可，不要推翻重来」
+  add('R12-1 预约页头保留双面翻转典藏票（两面 + 翻面交互），只做视觉适配（无 emoji 水印）',
+    /<view class="ticket-3d-container \{\{isFlipped \? 'flipped' : ''\}\}" bindtap="flipTicket">/.test(s.bookingWxml) &&
+      /class="ticket-face face-front"/.test(s.bookingWxml) && /class="ticket-face face-back"/.test(s.bookingWxml) &&
+      /flipTicket\(\) \{[\s\S]{0,160}isFlipped: !this\.data\.isFlipped/.test(s.bookingJs) && /isFlipped: false/.test(s.bookingJs) &&
+      (s.bookingWxml.match(/class="val highlight[^"]*">\{\{ticketInfo\.timeStr\}\}/g) || []).length === 2 &&
+      !/🦋/.test(s.bookingWxml))
+  // 2026-10-17 产品负责人：「入馆券除了目前的样式，还需要保持之前的打印动画」
+  add('R12-4 预约成功的入馆券打印动画保留（打印机出纸 0→800rpx / 2.5s、进度条、扫描线，2.6s 后出操作区）',
+    /<view class="mint-machine">[\s\S]*?<view class="printer-slot"><\/view>/.test(s.bookingWxml) &&
+      /<view class="ticket-paper \{\{mintAnimation \? 'printing' : ''\}\}">/.test(s.bookingWxml) &&
+      /class="scan-bar"/.test(s.bookingWxml) && /<view class="mint-progress"><view class="mp-bar"><\/view><\/view>/.test(s.bookingWxml) &&
+      /\n\.ticket-paper \{[^}]*height: 0;[^}]*transition: height 2\.5s/.test(s.bookingWxss) && /\.ticket-paper\.printing \{ height: 800rpx; \}/.test(s.bookingWxss) &&
+      /\.mp-bar \{[^}]*animation: bk-progress 2\.5s linear forwards/.test(s.bookingWxss) &&
+      /\n\.mint-actions \{[^}]*opacity: 0;[^}]*2\.6s/.test(s.bookingWxss) &&
+      /this\.setData\(\{ mintAnimation: true \}\);[\s\S]{0,80}\}, 100\);[\s\S]{0,40}setTimeout\(\(\) => \{\s*this\.setData\(\{ mintFinished: true \}\);[\s\S]{0,60}\}, 2600\);/.test(s.bookingJs))
+  add('R12-2 预约页分区头为眉标 + 中文主标两行（不再「选择日期 | SELECT DATE」同一节点并列）',
+    !/class="section-label">[^<]*\|/.test(s.bookingWxml) && (s.bookingWxml.match(/<view class="section-label"><text class="sl-en">/g) || []).length === 4)
+  add('R12-3 wxml-preview 跳过 {{ }} 内的 <（否则预约页无法离线出图）',
+    /function nextTagStart\(src, from\)/.test(s.previewLib) && /const lt = nextTagStart\(src, i\)/.test(s.previewLib))
+  // 2026-10-17 门店「到店指南」
+  add('R13-1 门店名片是浅纸标本签，地图在签外独立成图版（不再塞进深色卡里）',
+    /class="info-map-wrap"[\s\S]*?<view class="store-card">\s*<view class="card-pin"/.test(s.storeWxml) &&
+      !/<view class="store-card">[\s\S]*?<map[\s\S]*?class="checkin-inline/.test(s.storeWxml) &&
+      /\n\.store-card \{[^}]*background: linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.storeWxss))
+  add('R13-2 门店页实心金只有「预约参观」一处（「我已到店」行内 / 浮钮都是金线环）',
+    [...s.storeWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
+      .filter(([, sel, body]) => /background: var\(--brass-400\)/.test(body) && !/press|disabled/.test(sel)).map(([, sel]) => sel.trim()).join(',') === '.booking-btn')
+  add('R13-3 wxml-preview 认识 <map>（门店页离线出图）', /\bmap: 'div'/.test(s.previewLib))
+  // 2026-10-17 入馆券 / 门店自取凭证
+  const solidGold = (css) => [...css.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
+    .filter(([, sel, body]) => /background: (var\(--brass-400\)|var\(--color-primary\)|linear-gradient\(135deg, #A8903C)/.test(body) && !/press|disabled/.test(sel)).map(([, sel]) => sel.trim()).join(',')
+  add('R14-1 入馆券是博物馆黑票面 + 浅纸二维码图版，实心金只给「改期」（金色页头带退场）',
+    solidGold(s.ticketWxss) === '.footer-btn.primary' && /class="qr-plate"/.test(s.ticketWxml) && !/signal-light/.test(s.ticketWxml))
+  add('R14-2 自取凭证不用信号橙绿（状态章 / 进度点 / 已自提印章），实心金只给「订单详情」',
+    !/--color-(success|warning)|82, 183, 136|233, 162, 59/.test(s.pickupWxss) && solidGold(s.pickupWxss) === '.pass-btn.primary')
+  // 2026-10-17 标本定制「定制工坊」
+  {
+    const navRpx = (k) => Number(((s.customNav.match(new RegExp(`const ${k} = rpx\\((\\d+)\\)`)) || [])[1]))
+    const cssH = (sel) => Number(((s.customWxss.match(new RegExp(`\\n\\${sel} \\{[^}]*\\n  height: (\\d+)rpx;`)) || [])[1]))
+    add('R15-1 定制页头两段高度与 customNav 预留一致（说明 88rpx / 步骤条 148rpx，否则内容区会钻进页头或留缝）',
+      navRpx('mottoHeight') > 0 && cssH('.nav-motto') === navRpx('mottoHeight') && cssH('.header-rail-full') === navRpx('stepBarHeight'))
+  }
+  add('R15-2 定制页实心金只给底栏主按钮（步骤条当前步不再是实心金圆点）',
+    solidGold(s.customWxss) === '.btn-primary' && !/grain-overlay/.test(s.customWxss))
+  // 2026-10-17 产品负责人：钱包 / 礼券 / 积分「不要更改卡片的金属与皮质视觉质感，只做页面的视觉对齐和细节质感提升」
+  {
+    const rule = (src, sel) => (src.match(new RegExp('(^|\\n)' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{[^}]*\\}')) || [''])[0].trim()
+    const parts = [s.walletLeather,
+      ...['.asset-face', '.asset-back', '.card-texture', '.card-inner', '.level-badge', '.num'].map((x) => rule(s.pointsWxss, x)),
+      ...['.coupon-card', '.c-left', '.texture'].map((x) => rule(s.couponsWxss, x))]
+    const fp = createHash('sha256').update(parts.join('\n/*--*/\n')).digest('hex').slice(0, 16)
+    // 指纹变了 = 有人动了卡面质感。确系产品负责人点名改卡面时，才更新这里的指纹值。
+    add(`R16-1 钱包皮质卡 / 积分黑金卡 / 礼券券面的质感规则未被改动（指纹 ${fp}）`, fp === '9c483878d63c163d')
+  }
+  add('R16-2 钱包页面对齐：顶栏下划线页签、分区去金条盒子、礼券无警示橙、兑换钮不再是实心金药丸',
+    !/\n\.whb-seg \{[^}]*background/.test(s.hubBarWxss) && /\.account-section-label::before \{ display: none; \}/.test(s.walletWxss) &&
+      !/E9A23B|233, 162, 59/.test(s.couponsWxss) && !/\.btn-outline \{[^}]*background: var\(--color-primary\)/.test(s.pointsWxss) &&
+      !/box-shadow: 0 0 10rpx var\(--color-primary\)/.test(s.pointsWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -339,6 +416,27 @@ if (process.argv.includes('--selftest')) {
     ['工坊进度磁贴去掉按压态', 'atelierWxml', (t) => t.replace('bindtap="goPetOrders" hover-class="order-tile-press" hover-stay-time="80"', 'bindtap="goPetOrders"')],
     ['鉴定步骤移回遮罩外', 'identifyWxml', (t) => t.replace(/\n      <view class="steps">[\s\S]*?\n      <\/view>/, '')],
     ['鉴定记录入口去按压态', 'identifyWxml', (t) => t.replace('bindtap="goLog" hover-class="recent-item-press" hover-stay-time="80"', 'bindtap="goLog"')],
+    ['预约页头翻转票被推翻', 'bookingWxml', (t) => t.replace('<view class="ticket-face face-back">', '<view class="ticket-face">')],
+    ['预约票翻面处理器丢失', 'bookingJs', (t) => t.replace('isFlipped: !this.data.isFlipped', 'isFlipped: false')],
+    ['预约票水印回到 emoji', 'bookingWxml', (t) => t.replace('<text class="watermark">山海</text>', '<view class="watermark">🦋</view>')],
+    ['门店地图塞回名片', 'storeWxml', (t) => t.replace('<view class="card-pin" aria-hidden="true"></view>', '<view class="card-pin" aria-hidden="true"></view><map class="info-map"></map>')],
+    ['门店名片回到深色卡', 'storeWxss', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx', '  background: #1F1D1A;\n  box-shadow: 0 12rpx 28rpx')],
+    ['签到浮钮回到实心金', 'storeWxss', (t) => t.replace('  background: #1F1D1A;\n  box-shadow: var(--ring-brass), 0 12rpx', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass), 0 12rpx')],
+    ['预览库忘了 map', 'previewLib', (t) => t.replace("map: 'div', ", '')],
+    ['入馆券页头回到实心金带', 'ticketWxss', (t) => t.replace('.ticket-header {\n  padding: 44rpx 32rpx 8rpx;', '.ticket-header {\n  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);\n  padding: 44rpx 32rpx 8rpx;')],
+    ['入馆券信号灯复活', 'ticketWxml', (t) => t.replace('<view class="live-dot"></view>', '<view class="signal-light blink"></view>')],
+    ['自取已自提回到绿章', 'pickupWxss', (t) => t.replace('  border: 4rpx solid rgba(90, 78, 58, 0.85);', '  border: 4rpx solid rgba(82, 183, 136, 0.85);')],
+    ['打印动画出纸被去掉', 'bookingWxss', (t) => t.replace('.ticket-paper.printing { height: 800rpx; }', '.ticket-paper.printing { }')],
+    ['打印机实体被删', 'bookingWxml', (t) => t.replace('<view class="printer-slot"></view>', '')],
+    ['打印动画不再触发', 'bookingJs', (t) => t.replace('this.setData({ mintAnimation: true });', 'this.setData({});')],
+    ['定制说明段高度漂移', 'customWxss', (t) => t.replace('  height: 88rpx;\n  padding: 0 32rpx;', '  height: 96rpx;\n  padding: 0 32rpx;')],
+    ['定制步骤条当前步回到实心金', 'customWxss', (t) => t.replace('.rail-dot.active { border-bottom-color: var(--brass-400); }', '.rail-dot.active {\n  background: var(--brass-400);\n}')],
+    ['积分卡斜纹质感被改', 'pointsWxss', (t) => t.replace('background-size: 20rpx 20rpx;', 'background-size: 24rpx 24rpx;')],
+    ['皮质钱包卡被改', 'walletLeather', (t) => t + '\n.wallet-leather-card { opacity: 0.98; }'],
+    ['礼券临期回到警示橙', 'couponsWxss', (t) => t.replace('  color: var(--brass-200);\n  letter-spacing: 0.04em;', '  color: #E9A23B;\n  letter-spacing: 0.04em;')],
+    ['兑换钮回到实心金药丸', 'pointsWxss', (t) => t.replace('font-size: var(--fs-22); color: var(--brass-200); background: rgba(196, 167, 108, 0.08);', 'font-size: var(--fs-22); color: #1A1814; background: var(--color-primary);')],
+    ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
+    ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
     ['最近鉴定缩略图去掉 binderror', 'identifyWxml', (t) => t.replace(' binderror="onRecentThumbError"', '')],
     ['鉴定台多一颗实心金', 'identifyWxss', (t) => t.replace('.album-link {\n', '.album-link {\n  background: var(--brass-400);\n')],

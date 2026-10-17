@@ -102,7 +102,7 @@
       <text class="claim-entry-cn">去订单认领</text>
       <text class="claim-entry-desc">门店小票 / 外部平台订单兑积分</text>
     </view>
-    <text class="claim-entry-arr">→</text>
+    <text class="claim-entry-arr">›</text>
   </view>
 
   <!-- 2. 极简 Tab 导航 (解决拥挤) -->
@@ -111,12 +111,10 @@
       <text>兑换大厅</text>
       <view class="indicator" wx:if="{{curTab===0}}"></view>
     </view>
-    <view class="tab-divider"></view>
     <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{curTab===1?'active':''}}" bindtap="switchTab" data-idx="1">
       <text>我的兑换</text>
       <view class="indicator" wx:if="{{curTab===1}}"></view>
     </view>
-    <view class="tab-divider"></view>
     <view hover-class="tap-press-soft" hover-stay-time="80" class="tab-item {{curTab===2?'active':''}}" bindtap="switchTab" data-idx="2">
       <text>积分明细</text>
       <view class="indicator" wx:if="{{curTab===2}}"></view>
@@ -131,12 +129,10 @@
       
       <!-- 🟢 保留并优化的经典标题 -->
       <view class="section-header">
-         <view class="line-l"></view>
          <view class="title-group">
-           <text class="en">TREASURY ARCHIVES</text>
+           <text class="en">TREASURY ARCHIVES · 兑换大厅</text>
            <text class="cn">山海造物 · 品牌礼遇</text>
          </view>
-         <view class="line-r"></view>
       </view>
       
       <view class="reward-grid">
