@@ -23,34 +23,35 @@
       <text class="crumb-cur">{{locked ? '未记录' : (card.nameZh || '卡片')}}</text>
     </view>
 
-    <view class="plate plate-{{card.card}} {{card.toneClass}} {{locked ? 'dim' : ''}}">
-      <view class="plate-rim"></view>
-      <text class="plate-en">SPECIMEN CARD</text>
-      <text class="plate-no" wx:if="{{card.no}}">编号 {{card.no}}</text>
-      <view class="silhouette big" wx:if="{{locked}}">
-        <view class="silhouette-ring"></view>
-      </view>
-      <view class="plate-mark-block" wx:else>
-        <text class="plate-mark-en">SPECIMEN</text>
-      </view>
-      <text class="plate-name">{{card.nameZh || '—'}}</text>
-      <text class="plate-latin" wx:if="{{!locked && card.nameLatin}}">{{card.nameLatin}}</text>
-      <view class="meta">
-        <!-- 空字段不出、分隔点随之不出（2026-10-12 全站质感：不显示「—」占位） -->
-        <text wx:if="{{card.category}}">{{card.category}}</text>
-        <text class="dot-sep" wx:if="{{card.category && card.rarityLabel}}">·</text>
-        <text wx:if="{{card.rarityLabel}}">{{card.rarityLabel}}</text>
-        <block wx:if="{{card.hasSpot}}">
-          <text class="dot-sep" wx:if="{{card.category || card.rarityLabel}}">·</text>
-          <text class="meta-spot">{{locked ? '馆内可寻' : '馆内印记'}}</text>
-        </block>
-      </view>
-      <text class="series-line" wx:if="{{seriesText}}">{{seriesText}}</text>
-      <text class="method-line" wx:if="{{methodText && !locked}}">{{methodText}}</text>
-      <view class="dots">
-        <view class="dot {{m ? 'on' : ''}}" wx:for="{{card.marks}}" wx:for-item="m" wx:for-index="di" wx:key="di"></view>
-      </view>
+    <!-- 图版（2026-10-17 重设计）：点亮 = 一整张浅纸标本签（铜别针 + 内发丝框 + 刻版线描 + 名称 / 学名 / 编号）；
+         未点亮 = 虚线空位，只露编号（不剧透形态）。 -->
+    <view class="plate {{locked ? 'is-blank' : 'is-lit'}} {{card.rarity === 'legendary' && !locked ? 'is-legend' : ''}}">
+      <block wx:if="{{!locked}}">
+        <view class="plate-pin" aria-hidden="true"></view>
+        <view class="plate-top">
+          <text class="plate-no">PLATE No.{{card.no}}</text>
+          <text class="plate-rare" wx:if="{{card.rareMark}}">{{card.rareMark}}</text>
+        </view>
+        <image class="plate-art" src="{{card.plate}}" mode="aspectFit" wx:if="{{card.plate}}"></image>
+        <text class="plate-name">{{card.nameZh}}</text>
+        <text class="plate-latin" wx:if="{{card.nameLatin}}">{{card.nameLatin}}</text>
+        <view class="plate-meta">
+          <text wx:if="{{card.category}}">{{card.category}}</text>
+          <text class="dot-sep" wx:if="{{card.category && seriesText}}">·</text>
+          <text wx:if="{{seriesText}}">{{seriesText}}</text>
+          <block wx:if="{{card.hasSpot}}">
+            <text class="dot-sep" wx:if="{{card.category || seriesText}}">·</text>
+            <text>馆内印记</text>
+          </block>
+        </view>
+      </block>
+      <block wx:else>
+        <text class="blank-no">{{card.no || '—'}}</text>
+        <text class="blank-t">这一页还空着</text>
+        <text class="blank-spot" wx:if="{{card.hasSpot}}">馆内可寻</text>
+      </block>
     </view>
+    <text class="method-line" wx:if="{{methodText && !locked}}">{{methodText}}</text>
 
     <view class="locked-note" wx:if="{{locked}}">
       <text class="essay">它在馆里，等被看见。扫到印记或拍照采集之后，这一页才会把产地、习性、柜位与那段话写给你。</text>
@@ -67,6 +68,7 @@
 
     <block wx:else>
       <view class="essay-block" wx:if="{{card.essay}}">
+        <text class="sec-eyebrow">NOTE</text>
         <text class="essay">{{card.essay}}</text>
       </view>
 

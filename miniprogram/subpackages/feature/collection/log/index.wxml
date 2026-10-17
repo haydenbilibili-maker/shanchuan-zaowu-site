@@ -3,7 +3,7 @@
     <text class="en">FIELD NOTES</text>
     <text class="cn">采集日志</text>
     <text class="sub">鉴定记录可回看百科；采集笔记对应图鉴点亮与野外偶遇。</text>
-    <text class="back-atlas" bindtap="goAtlas">返回山海图鉴</text>
+    <text class="back-atlas" bindtap="goAtlas" hover-class="tap-press" hover-stay-time="80">‹ 返回山海图鉴</text>
   </view>
 
   <view class="modes">

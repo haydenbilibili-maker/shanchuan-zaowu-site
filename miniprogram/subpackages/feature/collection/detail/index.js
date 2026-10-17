@@ -9,6 +9,9 @@ const {
   galleryCategoryOf,
   buildSpecimenFacts
 } = require('../../utils/atlas')
+const { plateOf } = require('../../utils/atlasPlates')
+
+const RARE_MARK = { rare: '稀有', legendary: '传奇' }
 
 Page({
   data: {
@@ -41,6 +44,8 @@ Page({
   applyCardPack(pack) {
     const card = enrichCardSpots(withMarks(pack.card))
     card.toneClass = card.unlocked && card.categoryTone ? `tone-${card.categoryTone}` : ''
+    card.plate = plateOf(card)
+    card.rareMark = card.unlocked ? RARE_MARK[card.rarity] || '' : ''
     const logs = (pack.logs || []).map((row, i) => ({
       id: row._id || `l-${row.createdAt || i}`,
       methodLabel: methodLabel(row.method),

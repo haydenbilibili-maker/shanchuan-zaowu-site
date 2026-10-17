@@ -8,21 +8,28 @@ const {
   formatRecentLogs,
   emptyUnlockSheet
 } = require('../utils/atlas')
+const { plateOf } = require('../utils/atlasPlates')
 
-const FILTERS = [
-  { id: 'all', label: '全部' },
-  { id: '昆虫', label: '昆虫' },
-  { id: '植物', label: '植物' },
-  { id: '矿石', label: '矿石' },
-  { id: '海洋', label: '海洋' }
-]
+/* 2026-10-17 重设计：一本「博物志 · 卷一」—— 卷首（大数字 + 每页一格的刻度）→ 卷章（三个系列）→ 图版（三列标本册，
+   按编号固定位置，未点亮的页留空位只露编号）→ 近期足迹。旧的稀有度筛选行退场（稀有 / 传奇直接写在图版角上）。
+   manageAtlas 契约、路由、埋点、分享路径全部不变。 */
+const CATEGORIES = ['昆虫', '植物', '矿石', '海洋']
 
-const RARITY_FILTERS = [
-  { id: 'all', label: '不限' },
-  { id: 'common', label: '普通' },
-  { id: 'rare', label: '稀有' },
-  { id: 'legendary', label: '传奇' }
-]
+const RARE_MARK = { rare: '稀有', legendary: '传奇' }
+
+/** 卷首那一句「下一步」：只说事实（还差几页 / 几页藏在馆内印记里），不催 */
+function nextHintOf(cards, stats, offline) {
+  if (offline) return '离线著录中，点亮需要连上云端。'
+  const total = stats.total || cards.length
+  const got = stats.unlocked || 0
+  if (!total) return ''
+  if (got >= total) return '卷一已全部翻开。下一卷装订中。'
+  if (!got) return '去馆里扫一枚印记，或拍下一件标本，翻开第一页。'
+  const inStore = cards.filter((c) => !c.unlocked && c.hasSpot).length
+  return inStore
+    ? `还差 ${total - got} 页，其中 ${inStore} 页藏在馆内印记里。`
+    : `还差 ${total - got} 页。拍下一件标本，也许就是下一页。`
+}
 
 Page({
   data: {
@@ -31,13 +38,11 @@ Page({
     offline: false,
     cards: [],
     filtered: [],
-    leftCol: [],
-    rightCol: [],
     stats: { total: 0, unlocked: 0, percent: 0, series: [] },
-    filters: FILTERS,
-    rarityFilters: RARITY_FILTERS,
+    ticks: [],
+    nextHint: '',
+    categories: [],
     filter: 'all',
-    rarityFilter: 'all',
     showAiIdentify: true,
     seriesFilter: '',
     seriesBlurb: '',
@@ -45,8 +50,7 @@ Page({
     unlockSheet: emptyUnlockSheet(),
     filterEmpty: false,
     catalogEmpty: false,
-    skelLeft: [1, 2, 3],
-    skelRight: [4, 5, 6]
+    skelPlates: [1, 2, 3, 4, 5, 6, 7, 8, 9]
   },
 
   onLoad(options) {
@@ -78,20 +82,30 @@ Page({
     const cards = (pack.cards || []).map((raw) => {
       const card = enrichCardSpots(withMarks(raw))
       card.toneClass = card.unlocked && card.categoryTone ? `tone-${card.categoryTone}` : ''
+      card.plate = plateOf(card)
+      card.rareMark = card.unlocked ? RARE_MARK[card.rarity] || '' : ''
       return card
     })
-    cards.sort((a, b) => {
-      if (!!a.unlocked !== !!b.unlocked) return a.unlocked ? -1 : 1
-      return String(a.no).localeCompare(String(b.no), 'en', { numeric: true })
-    })
+    // 标本册按编号固定位置：点亮的页就地亮起，不往前挤（「缺的那几格」本身就是收集的动力）
+    cards.sort((a, b) => String(a.no).localeCompare(String(b.no), 'en', { numeric: true }))
     const stats = pack.stats || this.data.stats
-    const recentNotes = formatRecentLogs(pack.recentLogs || [])
+    const recentNotes = formatRecentLogs(pack.recentLogs || []).slice(0, 3)
+    const categories = [{ id: 'all', label: '全部', got: stats.unlocked || 0, total: cards.length }].concat(
+      CATEGORIES.map((c) => {
+        const inCat = cards.filter((x) => x.category === c)
+        return { id: c, label: c, got: inCat.filter((x) => x.unlocked).length, total: inCat.length }
+      }).filter((c) => c.total > 0)
+    )
+    const offline = !!(extra && extra.offline)
     this.setData(
       Object.assign(
         {
           cards,
           stats,
           recentNotes,
+          ticks: cards.map((c) => ({ no: c.no, lit: !!c.unlocked })),
+          categories,
+          nextHint: nextHintOf(cards, stats, offline),
           loading: false,
           loadError: false,
           catalogEmpty: !cards.length
@@ -126,18 +140,11 @@ Page({
   },
 
   applyFilter() {
-    const { cards, filter, rarityFilter, seriesFilter, stats } = this.data
+    const { cards, filter, seriesFilter, stats } = this.data
     const filtered = cards.filter((c) => {
       if (filter !== 'all' && c.category !== filter) return false
-      if (rarityFilter !== 'all' && c.rarity !== rarityFilter) return false
       if (seriesFilter && (c.seriesIds || []).indexOf(seriesFilter) === -1) return false
       return true
-    })
-    const leftCol = []
-    const rightCol = []
-    filtered.forEach((c, i) => {
-      if (i % 2 === 0) leftCol.push(c)
-      else rightCol.push(c)
     })
     let seriesBlurb = ''
     if (seriesFilter && stats.series && stats.series.length) {
@@ -146,25 +153,20 @@ Page({
     }
     this.setData({
       filtered,
-      leftCol,
-      rightCol,
       seriesBlurb,
       filterEmpty: !filtered.length && !!cards.length
     })
   },
 
+  // 门类与卷章互斥：选一个就清掉另一个（两层筛选叠在一起时，空页的原因说不清）
   onFilter(e) {
-    this.setData({ filter: e.currentTarget.dataset.id }, () => this.applyFilter())
-  },
-
-  onRarity(e) {
-    this.setData({ rarityFilter: e.currentTarget.dataset.id }, () => this.applyFilter())
+    this.setData({ filter: e.currentTarget.dataset.id, seriesFilter: '' }, () => this.applyFilter())
   },
 
   onSeries(e) {
     const id = e.currentTarget.dataset.id
     const next = this.data.seriesFilter === id ? '' : id
-    this.setData({ seriesFilter: next }, () => this.applyFilter())
+    this.setData({ seriesFilter: next, filter: 'all' }, () => this.applyFilter())
   },
 
   onOpen(e) {
@@ -207,7 +209,7 @@ Page({
 
   clearFilters() {
     this.setData(
-      { filter: 'all', rarityFilter: 'all', seriesFilter: '', seriesBlurb: '' },
+      { filter: 'all', seriesFilter: '', seriesBlurb: '' },
       () => this.applyFilter()
     )
   },

@@ -15,6 +15,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join, resolve, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { renderWxml } from './lib/wxml-preview.mjs'
+import { loadCjsModule } from './lib/cjs-loader.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '..', '..')
@@ -108,6 +109,35 @@ const wlBase = {
   quota: { used: 1, left: 4, cap: 5, exhausted: false }, textMax: 30, inspiration: ['马上有风', '马上有暖', '马上有眠', '马上有劲'],
   voiceMax: 15, writer: '蛋炒饭', today: '2026.10.15'
 }
+
+// 2026-10-17 图鉴重设计：卷一 16 页（6 页已点亮）+ 图版详页；刻版线描取真源 atlasPlates.js
+const atlasPlates = loadCjsModule(join(MP, 'subpackages/feature/utils/atlasPlates.js'))
+const ATLAS_ROWS = [
+  ['001', '大蓝闪蝶', 'Morpho menelaus', '昆虫', 'common', 1, 1], ['004', '琉璃蛱蝶', 'Kaniska canace', '昆虫', 'common', 1, 0],
+  ['006', '柑橘凤蝶', 'Papilio xuthus', '昆虫', 'common', 0, 0], ['009', '光明女神闪蝶', 'Morpho helena', '昆虫', 'legendary', 1, 0],
+  ['012', '金斑蝶', 'Danaus chrysippus', '昆虫', 'common', 0, 0], ['015', '萤石', 'Fluorite', '矿石', 'rare', 1, 0],
+  ['017', '雅灰蝶', 'Jamides bochus', '昆虫', 'common', 0, 0], ['018', '枯叶蛱蝶', 'Kallima inachus', '昆虫', 'rare', 0, 1],
+  ['021', '大红蛱蝶', 'Vanessa indica', '昆虫', 'common', 0, 0], ['023', '血漪蛱蝶', 'Cethosia biblis', '昆虫', 'common', 0, 0],
+  ['028', '绿鸟翼凤蝶', 'Ornithoptera priamus', '昆虫', 'legendary', 0, 0], ['031', '银杏押花', 'Ginkgo biloba', '植物', 'common', 1, 1],
+  ['033', '鹦鹉螺', 'Nautilus pompilius', '海洋', 'rare', 1, 1], ['034', '唐冠螺', 'Cassis cornuta', '海洋', 'rare', 0, 0],
+  ['036', '莲花押花', 'Nelumbo nucifera', '植物', 'common', 0, 0], ['041', '紫水晶', 'Amethyst', '矿石', 'common', 0, 1]
+]
+const TONE = { 昆虫: 'insecta', 植物: 'plantae', 海洋: 'marine', 矿石: 'minerals' }
+const atlasCards = ATLAS_ROWS.map(([no, zh, la, cat, rarity, lit, spot]) => {
+  const c = { id: no, no, category: cat, categoryTone: TONE[cat], rarity, unlocked: !!lit, hasSpot: !!spot, nameZh: lit ? zh : '未记录', nameLatin: lit ? la : '' }
+  c.plate = atlasPlates.plateOf(c)
+  c.rareMark = lit ? ({ rare: '稀有', legendary: '传奇' })[rarity] || '' : ''
+  return c
+})
+const atlasCats = [{ id: 'all', label: '全部', got: 6, total: 16 }].concat(['昆虫', '植物', '矿石', '海洋'].map((c) => {
+  const x = atlasCards.filter((a) => a.category === c)
+  return { id: c, label: c, got: x.filter((a) => a.unlocked).length, total: x.length }
+}))
+const atlasStats = { total: 16, unlocked: 6, percent: 38, series: [
+  { id: 'frost', name: '霜降守望', got: 1, total: 4, complete: false, blurb: '十月末到霜降前后，颜色会自己安静下来。' },
+  { id: 'overwinter', name: '越冬者', got: 1, total: 3, complete: false, blurb: '翅面把一整季的光收进去，到来年还在。' },
+  { id: 'mountain', name: '守山者', got: 3, total: 6, complete: false, blurb: '石头、叶片与壳，都是山海留下的截面。' }
+] }
 
 const SCENES = [
   { name: 'wl-main', h: 2500, wxml: 'subpackages/feature/wish-labels/index', data: wlBase },
@@ -328,6 +358,29 @@ const SCENES = [
     name: 'wallet-points', h: 1600, wxml: 'subpackages/business/components/WalletPanelPoints/index', data: {
       loading: false, points: 2680, pointsYuan: '26.80', curTab: 0,
       rewards: [{ _id: 'r1', title: '黄铜书签', cost: 800, image: P[3] }, { _id: 'r2', title: '标本小卡', cost: 300, image: P[4] }]
+    }
+  },
+  {
+    name: 'atlas', h: 3200, wxml: 'subpackages/feature/collection/index', data: {
+      loading: false, loadError: false, offline: false, cards: atlasCards, filtered: atlasCards, stats: atlasStats,
+      ticks: atlasCards.map((c) => ({ no: c.no, lit: c.unlocked })), categories: atlasCats, filter: 'all', seriesFilter: '', seriesBlurb: '',
+      nextHint: '还差 10 页，其中 3 页藏在馆内印记里。', showAiIdentify: true, filterEmpty: false, catalogEmpty: false,
+      recentNotes: [{ id: 'n1', speciesId: '033', title: '鹦鹉螺 · 镜头记下', metaText: '10.16 21:04 · 拍照采集' }, { id: 'n2', speciesId: '031', title: '银杏押花 · 在馆里被找到', metaText: '10.12 15:20 · 主店走廊尽头' }],
+      unlockSheet: { show: false }, skelPlates: []
+    }
+  },
+  {
+    name: 'atlas-detail', h: 2600, wxml: 'subpackages/feature/collection/detail/index', data: {
+      loading: false, loadError: false, locked: false, justUnlocked: false, methodText: '镜头记下 · 2026.10.16', seriesText: '守山者',
+      card: Object.assign({}, atlasCards[12], { essay: '壳里一格一格的房间，是它一生搬过的家。最外面那一间住着现在，里面的门都关上了，只留一根细管把它们连起来。' }),
+      facts: [{ k: '产地', v: '西太平洋与印度洋的珊瑚礁外坡' }, { k: '习性', v: '白天沉在深处，夜里随水温上浮觅食' }, { k: '柜位', v: '海洋标本柜下层' }, { k: '印记码', v: 'SH-S5' }],
+      relatedProducts: [{ _id: 'p1', title: '鹦鹉螺剖面标本', latinName: 'Nautilus pompilius', image: '', priceText: '680' }],
+      logs: [{ id: 'l1', methodLabel: '拍照采集', timeText: '2026.10.16 21:04', place: '' }], hasLogs: true
+    }
+  },
+  {
+    name: 'atlas-locked', h: 1800, wxml: 'subpackages/feature/collection/detail/index', data: {
+      loading: false, loadError: false, locked: true, card: atlasCards[2], facts: [], relatedProducts: [], logs: []
     }
   }
 ]

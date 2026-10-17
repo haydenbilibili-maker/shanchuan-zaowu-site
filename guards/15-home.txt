@@ -15,3 +15,5 @@ npm run check:care-common-mirrors
 npm run test:wiki-view-stats
 # 2026-10-10：商品知识卡博物卡重构（英文按词折行 / 简介句末收尾 / 学名去重 / 缺字段降级 / 小程序码仍指向商品详情）
 npm run test:knowledge-card
+# 2026-10-17：山海图鉴卷一重设计（每页有刻版线描、未点亮不剧透、标本册按编号固定位置、门类与卷章互斥；7 个内存注入）
+npm run check:atlas-plates

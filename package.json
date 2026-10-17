@@ -367,6 +367,8 @@
     "check:a-flow-polish:selftest": "node miniprogram/scripts/check-a-flow-polish.mjs --selftest",
     "test:knowledge-card": "node miniprogram/scripts/test-knowledge-card.mjs",
     "test:knowledge-card:selftest": "node miniprogram/scripts/test-knowledge-card.mjs --selftest",
+    "check:atlas-plates": "node miniprogram/scripts/check-atlas-plates.mjs",
+    "check:atlas-plates:selftest": "node miniprogram/scripts/check-atlas-plates.mjs --selftest",
     "check:mp-caption-color": "node miniprogram/scripts/check-mp-caption-color.mjs",
     "check:mp-caption-color:selftest": "node miniprogram/scripts/check-mp-caption-color.mjs --selftest",
     "check:care-common-mirrors": "node miniprogram/scripts/check-care-common-mirrors.mjs",

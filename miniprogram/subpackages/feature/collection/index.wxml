@@ -1,107 +1,77 @@
+<!-- 山海图鉴 · 卷一（2026-10-17 重设计）：卷首 → 卷章 → 图版（三列标本册）→ 近期足迹；底部「发现印记 / 拍照采集」。
+     未点亮的页只露编号（不剧透形态）；点亮的页是一张浅纸标本签 + 刻版线描。 -->
 <view class="page">
-  <view class="hero">
-    <text class="hero-en">ATLAS VOL. I</text>
-    <text class="hero-cn">山海图鉴</text>
-    <text class="hero-sub">浏览目录 · 翻开卡片 · 回看足迹。馆里的世界，等你走过去。</text>
+  <!-- 卷首：大数字 + 每页一格的刻度 + 一句下一步 -->
+  <view class="cover">
+    <text class="cover-eyebrow">ATLAS · VOL. I · 卷一</text>
+    <text class="cover-title">山海图鉴</text>
+    <view class="cover-count" wx:if="{{!loading}}">
+      <text class="cover-num">{{stats.unlocked}}</text>
+      <text class="cover-total">/ {{stats.total}} 页已翻开</text>
+    </view>
+    <view class="ticks" wx:if="{{!loading && ticks.length}}" aria-hidden="true">
+      <view class="tick {{item.lit ? 'is-lit' : ''}}" wx:for="{{ticks}}" wx:key="no"></view>
+    </view>
+    <text class="cover-hint" wx:if="{{!loading && nextHint}}">{{nextHint}}</text>
   </view>
 
-  <view class="progress" wx:if="{{!loading}}">
-    <view class="progress-row">
-      <text class="progress-label">卷一完成度</text>
-      <text class="progress-num">{{stats.unlocked}} / {{stats.total}}</text>
+  <!-- 卷章：三个系列 = 三章，各自的进度；点一章只看这一章 -->
+  <view class="chapters" wx:if="{{stats.series.length && !loading}}">
+    <view class="sec-head">
+      <text class="sec-eyebrow">CHAPTERS</text>
+      <text class="sec-title">卷章</text>
     </view>
-    <view class="bar">
-      <view class="bar-fill" style="width: {{stats.percent}}%;"></view>
-    </view>
-    <text class="progress-note" wx:if="{{offline}}">图鉴离线著录中。点亮需要连上云端。</text>
-    <text class="progress-note" wx:else>未点亮的一页只显示编号。点亮后可见名称、学名与那段话。</text>
-  </view>
-
-  <scroll-view scroll-x class="series" wx:if="{{stats.series.length && !loading}}" enable-flex show-scrollbar="{{false}}">
-    <view class="series-inner">
-      <view
-        class="series-chip {{seriesFilter === item.id ? 'on' : ''}}"
-        wx:for="{{stats.series}}"
-        wx:key="id"
-        bindtap="onSeries"
-        data-id="{{item.id}}"
-        hover-class="tap-press"
-        hover-stay-time="80"
-      >
-        <text class="series-name">{{item.name}}</text>
-        <text class="series-count">{{item.got}}/{{item.total}}</text>
-        <text class="series-done" wx:if="{{item.complete}}">已齐</text>
+    <view
+      class="chapter {{seriesFilter === item.id ? 'is-on' : ''}}"
+      wx:for="{{stats.series}}"
+      wx:key="id"
+      bindtap="onSeries"
+      data-id="{{item.id}}"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="{{item.name}}，已翻开 {{item.got}} / {{item.total}}"
+    >
+      <text class="chapter-no">{{index + 1}}</text>
+      <view class="chapter-main">
+        <text class="chapter-name">{{item.name}}</text>
+        <text class="chapter-blurb" wx:if="{{item.blurb}}">{{item.blurb}}</text>
       </view>
+      <text class="chapter-done" wx:if="{{item.complete}}">已齐</text>
+      <text class="chapter-count" wx:else>{{item.got}}/{{item.total}}</text>
     </view>
-  </scroll-view>
-  <text class="series-blurb" wx:if="{{seriesBlurb && !loading}}">{{seriesBlurb}}</text>
-
-  <view class="browse-head" wx:if="{{!loading}}">
-    <text class="browse-t">浏览目录</text>
-    <text class="browse-link" bindtap="goNotes">近期笔记</text>
   </view>
 
-  <scroll-view scroll-x class="tabs" enable-flex show-scrollbar="{{false}}" wx:if="{{!loading}}">
-    <view class="tabs-inner">
+  <!-- 图版：门类一行（带各自进度）+ 三列标本册 -->
+  <view class="sec-head plates-head" wx:if="{{!loading}}">
+    <view class="sec-head-t">
+      <text class="sec-eyebrow">PLATES</text>
+      <text class="sec-title">图版</text>
+    </view>
+    <text class="sec-link" bindtap="goNotes" hover-class="tap-press" hover-stay-time="80">采集日志 ›</text>
+  </view>
+
+  <scroll-view scroll-x class="cats" enable-flex show-scrollbar="{{false}}" wx:if="{{!loading && categories.length}}">
+    <view class="cats-inner">
       <view
-        class="tab {{filter === item.id ? 'on' : ''}}"
-        wx:for="{{filters}}"
+        class="cat {{filter === item.id && !seriesFilter ? 'is-on' : ''}}"
+        wx:for="{{categories}}"
         wx:key="id"
         bindtap="onFilter"
         data-id="{{item.id}}"
         hover-class="tap-press"
         hover-stay-time="80"
-      >{{item.label}}</view>
+      >
+        <text class="cat-name">{{item.label}}</text>
+        <text class="cat-count">{{item.got}}/{{item.total}}</text>
+      </view>
     </view>
   </scroll-view>
-
-  <view class="rarity-row" wx:if="{{!loading}}">
-    <view
-      class="rarity-chip {{rarityFilter === item.id ? 'on' : ''}}"
-      wx:for="{{rarityFilters}}"
-      wx:key="id"
-      bindtap="onRarity"
-      data-id="{{item.id}}"
-      hover-class="tap-press"
-      hover-stay-time="80"
-    >{{item.label}}</view>
-  </view>
-
-  <view class="notes" wx:if="{{recentNotes.length && !loading}}">
-    <view class="notes-head">
-      <text class="notes-t">近期笔记</text>
-      <text class="notes-more" bindtap="goNotes">全部</text>
-    </view>
-    <view
-      class="note {{item.wild ? 'wild' : ''}}"
-      wx:for="{{recentNotes}}"
-      wx:key="id"
-      bindtap="onOpenNote"
-      data-id="{{item.speciesId}}"
-      hover-class="tap-press"
-      hover-stay-time="80"
-    >
-      <text class="note-title">{{item.title}}</text>
-      <text class="note-meta">{{item.metaText}}</text>
-    </view>
-  </view>
+  <text class="series-blurb" wx:if="{{seriesBlurb && !loading}}">{{seriesBlurb}}</text>
 
   <!-- 骨架：用 data 数组，避免内联 {{[1,2,3]}} 在部分基础库/编译器上踩坑 -->
-  <view class="grid skel" wx:if="{{loading}}">
-    <view class="col">
-      <view class="card skel-card" wx:for="{{skelLeft}}" wx:key="*this">
-        <view class="skel-plate"></view>
-        <view class="skel-line"></view>
-        <view class="skel-line short"></view>
-      </view>
-    </view>
-    <view class="col">
-      <view class="card skel-card" wx:for="{{skelRight}}" wx:key="*this">
-        <view class="skel-plate"></view>
-        <view class="skel-line"></view>
-        <view class="skel-line short"></view>
-      </view>
-    </view>
+  <view class="album skel" wx:if="{{loading}}">
+    <view class="slot skel-slot" wx:for="{{skelPlates}}" wx:key="*this"></view>
   </view>
 
   <view class="error" wx:elif="{{loadError}}">
@@ -112,8 +82,8 @@
 
   <view class="empty" wx:elif="{{filterEmpty}}">
     <text class="empty-t">这一格还是空的</text>
-    <text class="empty-s">换一个分类，或清空筛选后再看。</text>
-    <button class="btn-brass" bindtap="clearFilters">清空筛选</button>
+    <text class="empty-s">换一个门类，或回到全部。</text>
+    <button class="btn-brass" bindtap="clearFilters">看全部</button>
   </view>
 
   <view class="empty" wx:elif="{{catalogEmpty}}">
@@ -125,83 +95,60 @@
     </view>
   </view>
 
-  <view class="grid" wx:else>
-    <view class="col">
-      <view
-        class="card card-{{item.card}} {{item.toneClass}} {{item.unlocked ? 'lit' : 'dim'}}"
-        wx:for="{{leftCol}}"
-        wx:key="id"
-        bindtap="onOpen"
-        data-id="{{item.id}}"
-        hover-class="card-press"
-        hover-stay-time="80"
-      >
-        <view class="card-accent"></view>
-        <view class="card-plate">
-          <text class="card-no">No. {{item.no}}</text>
-          <view class="silhouette" wx:if="{{!item.unlocked}}">
-            <view class="silhouette-ring"></view>
-          </view>
-          <view class="plate-mark" wx:else>
-            <text class="plate-mark-en">SPECIMEN</text>
-          </view>
-          <text class="card-cat">{{item.unlocked ? item.category : '未记录'}}</text>
-          <text class="card-spot" wx:if="{{item.hasSpot}}">{{item.unlocked ? '印记' : '馆内'}}</text>
-        </view>
-        <view class="card-body">
-          <text class="card-name">{{item.nameZh}}</text>
-          <text class="card-latin" wx:if="{{item.unlocked && item.nameLatin}}">{{item.nameLatin}}</text>
-          <text class="card-origin" wx:if="{{item.unlocked && item.origin}}">{{item.origin}}</text>
-          <view class="card-foot">
-            <view class="dots">
-              <view class="dot {{m ? 'on' : ''}}" wx:for="{{item.marks}}" wx:for-item="m" wx:for-index="di" wx:key="di"></view>
-            </view>
-            <text class="card-rarity" wx:if="{{item.unlocked}}">{{item.rarityLabel}}</text>
-          </view>
-        </view>
-      </view>
+  <view class="album" wx:else>
+    <view
+      class="slot {{item.unlocked ? 'is-lit' : 'is-blank'}} {{item.rarity === 'legendary' && item.unlocked ? 'is-legend' : ''}}"
+      wx:for="{{filtered}}"
+      wx:key="id"
+      bindtap="onOpen"
+      data-id="{{item.id}}"
+      hover-class="slot-press"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="{{item.unlocked ? item.nameZh : '未记录的一页'}}，编号 {{item.no}}"
+    >
+      <block wx:if="{{item.unlocked}}">
+        <view class="slot-pin" aria-hidden="true"></view>
+        <text class="slot-no">No.{{item.no}}</text>
+        <text class="slot-rare" wx:if="{{item.rareMark}}">{{item.rareMark}}</text>
+        <image class="slot-plate" src="{{item.plate}}" mode="aspectFit" wx:if="{{item.plate}}"></image>
+        <text class="slot-name">{{item.nameZh}}</text>
+        <text class="slot-latin" wx:if="{{item.nameLatin}}">{{item.nameLatin}}</text>
+      </block>
+      <block wx:else>
+        <text class="slot-blank-no">{{item.no}}</text>
+        <text class="slot-blank-t">未记录</text>
+        <text class="slot-spot" wx:if="{{item.hasSpot}}">馆内可寻</text>
+      </block>
     </view>
-    <view class="col">
-      <view
-        class="card card-{{item.card}} {{item.toneClass}} {{item.unlocked ? 'lit' : 'dim'}}"
-        wx:for="{{rightCol}}"
-        wx:key="id"
-        bindtap="onOpen"
-        data-id="{{item.id}}"
-        hover-class="card-press"
-        hover-stay-time="80"
-      >
-        <view class="card-accent"></view>
-        <view class="card-plate">
-          <text class="card-no">No. {{item.no}}</text>
-          <view class="silhouette" wx:if="{{!item.unlocked}}">
-            <view class="silhouette-ring"></view>
-          </view>
-          <view class="plate-mark" wx:else>
-            <text class="plate-mark-en">SPECIMEN</text>
-          </view>
-          <text class="card-cat">{{item.unlocked ? item.category : '未记录'}}</text>
-          <text class="card-spot" wx:if="{{item.hasSpot}}">{{item.unlocked ? '印记' : '馆内'}}</text>
-        </view>
-        <view class="card-body">
-          <text class="card-name">{{item.nameZh}}</text>
-          <text class="card-latin" wx:if="{{item.unlocked && item.nameLatin}}">{{item.nameLatin}}</text>
-          <text class="card-origin" wx:if="{{item.unlocked && item.origin}}">{{item.origin}}</text>
-          <view class="card-foot">
-            <view class="dots">
-              <view class="dot {{m ? 'on' : ''}}" wx:for="{{item.marks}}" wx:for-item="m" wx:for-index="di" wx:key="di"></view>
-            </view>
-            <text class="card-rarity" wx:if="{{item.unlocked}}">{{item.rarityLabel}}</text>
-          </view>
-        </view>
+  </view>
+
+  <!-- 近期足迹：最近三笔，全部去采集日志 -->
+  <view class="notes" wx:if="{{recentNotes.length && !loading}}">
+    <view class="sec-head">
+      <view class="sec-head-t">
+        <text class="sec-eyebrow">FIELD NOTES</text>
+        <text class="sec-title">近期足迹</text>
       </view>
+      <text class="sec-link" bindtap="goNotes" hover-class="tap-press" hover-stay-time="80">全部 ›</text>
+    </view>
+    <view
+      class="note {{item.wild ? 'wild' : ''}}"
+      wx:for="{{recentNotes}}"
+      wx:key="id"
+      bindtap="onOpenNote"
+      data-id="{{item.speciesId}}"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+    >
+      <text class="note-title">{{item.title}}</text>
+      <text class="note-meta">{{item.metaText}}</text>
     </view>
   </view>
 
   <view class="dock">
     <view class="dock-btn" bindtap="onScan" hover-class="tap-press-soft" hover-stay-time="80">发现印记</view>
     <view class="dock-btn primary" bindtap="goIdentify" hover-class="tap-press-soft" hover-stay-time="80" wx:if="{{showAiIdentify}}">拍照采集</view>
-    <view class="dock-btn" bindtap="goLogs" hover-class="tap-press-soft" hover-stay-time="80">采集日志</view>
   </view>
 
   <view class="ui-pop-mask is-center is-deep unlock-mask" wx:if="{{unlockSheet.show}}" catchtouchmove="onUnlockStay">
