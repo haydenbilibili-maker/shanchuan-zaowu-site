@@ -1,945 +1,395 @@
-@import '../user-account.wxss';
+/* 藏家档案 · 2026-10-17 重构（产品负责人「彻底重构我的档案页面」）
+   不再 @import ../user-account.wxss（那份与 onboarding / feedback 共用，注册链路属稳定期，不动它）；
+   本页自给自足：博物黑底 + 一张纸质「藏家标本签」+ 眉标/主标分组 + 发丝线两栏行。
+   规范依据：VI 规范 v1 §6（选中 = 金线环）、§8（两栏行左标签右数值、实心金只给主按钮）、纪律 02 发丝金 1rpx。
+   类名约束：.account-nav / .account-footer（JS 实测高度）、.account-section-card next-steps-card、
+   .next-step-row / .next-step-gain / .next-step-empty（test:member-card-guest 钉住）。 */
 
-/* 页面原生滚动；头像热区用 view + chooseMedia */
 page {
   background: var(--color-bg);
 }
 
-.page-profile.account-page {
-  height: auto;
+.page-profile {
+  --paper: #F3ECDD;
+  --paper-2: #E8DFCB;
+  --ink: #2E2618;
+  --ink-2: #5A4A28;
+  --ink-3: #7C6E55;
+  position: relative;
   min-height: 100vh;
-  overflow: visible;
 }
 
-.profile-body {
-  position: relative;
+/* ── 页头：眉标 + 主标（大标题式，随页面滚走 —— 原生导航栏已常驻「藏家档案」，不再钉一条重复标题栏；
+   JS 仍量它的高度给正文让位，所以用 absolute 而不是放进文档流） ── */
+.account-nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 28rpx var(--space-4) 0;
+}
+
+.pf-nav-en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-16);
+  letter-spacing: 0.32em;
+  color: var(--brass-400);
+}
+
+.pf-nav-cn {
+  margin-top: 6rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-36);
+  letter-spacing: 0.16em;
+  color: var(--color-text-primary);
+}
+
+.pf-body {
   box-sizing: border-box;
   padding-left: var(--space-4);
   padding-right: var(--space-4);
-  overflow: visible;
 }
 
-.profile-body-pad {
-  height: var(--space-4);
-}
-
-.page-profile .account-section-card {
-  overflow: hidden;
-}
-
-.page-profile .account-section-card.profile-plate {
-  overflow: visible;
-}
-
-.page-profile .account-field-label {
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-  margin-bottom: 12rpx;
-}
-
-.page-profile .account-field-input,
-.page-profile .account-picker-val {
-  font-size: var(--fs-28);
-  color: var(--color-text-body);
-}
-
-.page-profile .account-picker-val.is-placeholder {
-  color: var(--color-text-muted);
-}
-
-/* —— 分区铜牌头 —— */
-.plate-head {
-  margin-bottom: var(--space-3);
-}
-
-.plate-overline {
-  display: block;
-  font-size: var(--fs-20);
-  color: var(--brass-400);
-  letter-spacing: 0.12em;
-  font-style: italic;
-  margin-bottom: 6rpx;
-}
-
-.plate-title-row {
+/* ── 骨架 / 失败态 ── */
+.pf-skeleton {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 24rpx;
+  padding-top: 32rpx;
+}
+
+.pf-sk-label { height: 420rpx; }
+.pf-sk-row { height: 96rpx; }
+
+.pf-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 16rpx;
+  padding: 160rpx 0 80rpx;
+  text-align: center;
 }
 
-.plate-title {
-  display: block;
-  font-size: var(--fs-30);
-  font-weight: 500;
+.pf-state-label {
+  position: relative;
+  width: 200rpx;
+  height: 120rpx;
+  margin-bottom: 16rpx;
+  border: 1rpx dashed rgba(196, 167, 108, 0.45);
+  border-radius: var(--radius-sm);
+}
+
+.pf-state-label::before {
+  content: '';
+  position: absolute;
+  top: -7rpx;
+  left: 50%;
+  width: 14rpx;
+  height: 14rpx;
+  margin-left: -7rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #F0E6CC, #A8903C);
+}
+
+.pf-state-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-32);
   color: var(--color-text-primary);
-  letter-spacing: 0.04em;
 }
 
-.plate-desc {
-  display: block;
+.pf-state-desc {
   font-size: var(--fs-24);
   color: var(--color-text-secondary);
-  line-height: 1.5;
-  margin-bottom: var(--space-3);
 }
 
-/* —— 身份卡 —— */
-.profile-plate {
-  border-color: var(--brass-800);
-  padding-top: var(--space-5);
+.pf-ghost-btn {
+  margin-top: 16rpx;
+  padding: 0 40rpx;
+  min-height: 80rpx;
+  line-height: 80rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.55);
+  border-radius: 40rpx;
+  font-size: var(--fs-26);
+  color: var(--brass-300);
 }
 
-.profile-hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: var(--space-4);
+/* ══ ① 藏家标本签 ══════════════════════════════════════════════════
+   浅纸 + 内发丝框 + 顶上一枚铜别针（与「马上有 · 心愿签」、礼赠礼笺同一张纸）。
+   原「藏家身份」：深色卡 + 铆钉铜牌 + 独立进度条，且完成度在顶栏角标 / 头像环 / 进度条出现三次。 */
+.pf-label {
   position: relative;
-  z-index: 3;
+  margin-top: 40rpx;
+  padding: 36rpx 40rpx 34rpx;
+  background: linear-gradient(170deg, var(--paper), var(--paper-2));
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  box-shadow: 0 30rpx 64rpx rgba(0, 0, 0, 0.45);
+  animation: pf-label-in var(--dur-slow) var(--ease-out-soft) both;
 }
 
-/* 整块热区：圆 + 角标 + 文案同一 tap */
-.avatar-hit {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  padding: 8rpx 24rpx 4rpx;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-
-.avatar-stack {
-  position: relative;
-  width: 168rpx;
-  height: 168rpx;
-  flex-shrink: 0;
+.pf-label::before {
+  content: '';
+  position: absolute;
+  inset: 12rpx;
+  border: 1rpx solid rgba(138, 117, 48, 0.35);
   pointer-events: none;
 }
 
-.avatar-ring {
+.pf-label::after {
+  content: '';
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 168rpx;
-  height: 168rpx;
+  top: -8rpx;
+  left: 50%;
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: -9rpx;
   border-radius: 50%;
-  box-sizing: border-box;
-  pointer-events: none;
-  z-index: 0;
+  background: radial-gradient(circle at 35% 30%, #F4ECD4, #A8903C 70%);
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.4);
 }
 
-.avatar-stack.has-error .avatar-ring {
-  background: conic-gradient(from -90deg, var(--color-error) 12%, rgba(214, 64, 69, 0.12) 0) !important;
+@keyframes pf-label-in {
+  from { opacity: 0; transform: translateY(20rpx); }
+  to { opacity: 1; transform: none; }
 }
 
-.avatar-face {
+.pf-label-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pf-label-k {
+  font-family: var(--font-mono);
+  font-size: var(--fs-16);
+  letter-spacing: 0.3em;
+  color: var(--brass-600);
+}
+
+/* 编号：等宽 + 「复制」小字，整块可点（≥ 64rpx 热区，负边距不改视觉） */
+.pf-label-no {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin: -16rpx -12rpx -16rpx 0;
+  padding: 16rpx 12rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  letter-spacing: 0.12em;
+  color: var(--ink-2);
+}
+
+.pf-label-copy {
+  padding: 0 10rpx;
+  font-family: var(--font-body);
+  font-size: var(--fs-16);
+  letter-spacing: 0.08em;
+  color: var(--brass-700);
+  border: 1rpx solid rgba(107, 90, 36, 0.45);
+  border-radius: 4rpx;
+}
+
+.pf-label-main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 32rpx;
+  margin-top: 28rpx;
+}
+
+/* 头像：外环 = 完成度（conic 由 JS 给），中间实拍，右下相机角标 */
+.pf-avatar {
+  position: relative;
+  flex-shrink: 0;
+  width: 148rpx;
+  height: 148rpx;
+}
+
+.pf-avatar-ring {
   position: absolute;
-  left: 8rpx;
-  top: 8rpx;
-  width: 152rpx;
-  height: 152rpx;
+  inset: 0;
+  border-radius: 50%;
+}
+
+.pf-avatar-face {
+  position: absolute;
+  inset: 8rpx;
   border-radius: 50%;
   overflow: hidden;
-  z-index: 1;
-  background: var(--color-bg-elevated);
-  border: 4rpx solid var(--color-bg-card);
-  box-sizing: border-box;
-  pointer-events: none;
+  background: #DCD2BC;
+  border: 4rpx solid var(--paper);
 }
 
-.avatar-hit .avatar-img {
+.pf-avatar-face.has-error {
+  border-color: #E8B4AC;
+}
+
+.pf-avatar-img {
   width: 100%;
   height: 100%;
-  display: block;
-  border-radius: 50%;
-  pointer-events: none;
-  background: var(--color-bg-elevated);
 }
 
-.avatar-badge {
+.pf-avatar-cam {
   position: absolute;
-  right: 4rpx;
+  right: 0;
   bottom: 4rpx;
-  z-index: 4;
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 50%;
-  background: var(--brass-400);
-  border: 3rpx solid var(--color-bg-card);
+  width: 44rpx;
+  height: 44rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
-  box-sizing: border-box;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 3rpx solid var(--paper);
 }
 
-.avatar-badge-icon {
-  width: 26rpx;
-  height: 26rpx;
-  filter: brightness(0) saturate(100%);
-  opacity: 0.85;
-  pointer-events: none;
+.pf-avatar-cam-icon {
+  width: 24rpx;
+  height: 24rpx;
 }
 
-.avatar-hint {
-  display: block;
-  width: 100%;
-  font-size: var(--fs-24);
-  color: var(--brass-400);
-  letter-spacing: 0.04em;
-  margin-top: 16rpx;
-  line-height: 1.4;
-  text-align: center;
-  padding: 8rpx 8rpx 0;
-  box-sizing: border-box;
-  pointer-events: none;
-}
-
-.avatar-hint.has-error {
-  color: var(--color-error);
-}
-
-/* —— 代号与会员号 —— */
-.profile-identity {
-  width: 100%;
-}
-
-.identity-overline {
-  display: block;
-  font-size: var(--fs-20);
-  color: var(--color-text-muted);
-  letter-spacing: 0.12em;
-  margin-bottom: 12rpx;
-}
-
-.nick-field {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 22rpx 24rpx;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  margin-bottom: 16rpx;
-  box-sizing: border-box;
-}
-
-.nick-input {
+.pf-identity {
   flex: 1;
   min-width: 0;
-  height: 48rpx;
-  font-size: var(--fs-32);
-  font-family: var(--font-brand);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  line-height: 48rpx;
 }
 
-.nick-placeholder {
-  color: var(--color-text-muted);
-  font-weight: 400;
-}
-
-.nick-edit-icon {
-  width: 28rpx;
-  height: 28rpx;
-  flex-shrink: 0;
-  opacity: 0.4;
-  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
-}
-
-/* 会员铭牌：实体铜牌感；代号输入框之下的身份标识，可点复制 */
-.member-plate {
-  position: relative;
-  width: 100%;
-  margin-top: 4rpx;
-  padding: 22rpx 28rpx 20rpx;
-  box-sizing: border-box;
-  border-radius: var(--radius-sm);
-  border: 1rpx solid rgba(196, 167, 108, 0.38);
-  background:
-    linear-gradient(
-      145deg,
-      rgba(212, 188, 133, 0.14) 0%,
-      rgba(77, 64, 26, 0.28) 38%,
-      rgba(48, 40, 16, 0.45) 72%,
-      rgba(196, 167, 108, 0.08) 100%
-    );
-  overflow: hidden;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* 内线：双线边层次，模拟铜牌镶边 */
-.member-plate-frame {
-  position: absolute;
-  left: 8rpx;
-  top: 8rpx;
-  right: 8rpx;
-  bottom: 8rpx;
-  border: 1rpx solid rgba(168, 144, 60, 0.28);
-  border-radius: 4rpx;
-  pointer-events: none;
-  box-sizing: border-box;
-}
-
-/* 四角铆钉点缀 */
-.member-plate-rivet {
-  position: absolute;
-  width: 8rpx;
-  height: 8rpx;
-  border-radius: 50%;
-  background: rgba(196, 167, 108, 0.55);
-  border: 1px solid rgba(232, 207, 163, 0.45);
-  box-sizing: border-box;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.member-plate-rivet.tl { left: 14rpx; top: 14rpx; }
-.member-plate-rivet.tr { right: 14rpx; top: 14rpx; }
-.member-plate-rivet.bl { left: 14rpx; bottom: 14rpx; }
-.member-plate-rivet.br { right: 14rpx; bottom: 14rpx; }
-
-.member-plate-main {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10rpx;
-  padding: 0 8rpx;
-  text-align: center;
-}
-
-.member-plate-titles {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  max-width: 100%;
-}
-
-.member-plate-cn {
-  font-size: var(--fs-24);
-  font-weight: 500;
-  color: var(--brass-300);
-  letter-spacing: 0.12em;
-  line-height: 1.2;
-}
-
-.member-plate-en {
-  font-size: var(--fs-18);
-  font-weight: 500;
-  color: var(--brass-600);
-  letter-spacing: 0.12em;
-  line-height: 1.2;
-}
-
-.member-plate-code {
+.pf-field-k {
   display: block;
-  max-width: 100%;
-  font-size: var(--fs-28);
-  font-family: var(--font-mono);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  letter-spacing: 0.1em;
-  line-height: 1.25;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: center;
-}
-
-.member-plate-note {
-  display: block;
-  max-width: 100%;
   font-size: var(--fs-20);
+  letter-spacing: 0.08em;
+  color: var(--ink-3);
+}
+
+.pf-field-k.is-dark {
+  margin-bottom: 16rpx;
   color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-  line-height: 1.4;
-  text-align: center;
 }
 
-.member-plate-press {
-  border-color: rgba(196, 167, 108, 0.58);
-  background:
-    linear-gradient(
-      145deg,
-      rgba(212, 188, 133, 0.18) 0%,
-      rgba(77, 64, 26, 0.34) 38%,
-      rgba(48, 40, 16, 0.5) 72%,
-      rgba(196, 167, 108, 0.12) 100%
-    );
+/* 代号：签面上直接写（宋体大字 + 一道墨线），不是深色输入框 */
+.pf-nick {
+  width: 100%;
+  height: 72rpx;
+  margin-top: 6rpx;
+  padding: 0;
+  font-family: var(--font-brand);
+  font-size: var(--fs-40);
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  border-bottom: 1rpx solid rgba(46, 38, 24, 0.35);
 }
 
-.member-plate-press .member-plate-frame {
-  border-color: rgba(196, 167, 108, 0.4);
+.pf-nick-ph {
+  color: rgba(46, 38, 24, 0.32);
 }
 
-/* —— 完成度 —— */
-.score-divider {
-  height: 1px;
-  margin: var(--space-4) 0 var(--space-3);
-  background: linear-gradient(90deg, transparent, var(--brass-800), transparent);
-  opacity: 0.45;
+.pf-avatar-hint {
+  display: block;
+  margin-top: 12rpx;
+  font-size: var(--fs-20);
+  color: var(--ink-3);
 }
 
-.score-bar-head {
+.pf-avatar-hint.has-error {
+  color: #9C3B33;
+}
+
+.pf-score {
+  position: relative;
+  z-index: 1;
+  margin-top: 32rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid rgba(138, 117, 48, 0.3);
+}
+
+.pf-score-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 12rpx;
+  align-items: baseline;
 }
 
-.score-bar-label {
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary);
-  letter-spacing: 0.04em;
-}
-
-.score-bar-val {
-  font-size: var(--fs-28);
+.pf-score-val {
   font-family: var(--font-mono);
-  color: var(--brass-400);
+  font-size: var(--fs-28);
   font-weight: 600;
+  color: var(--brass-700);
 }
 
-.score-bar-track {
-  height: 6rpx;
-  border-radius: var(--radius-sm);
-  background: var(--color-bg-elevated);
-  overflow: hidden;
+.pf-score-track {
+  height: 4rpx;
+  margin-top: 14rpx;
+  background: rgba(138, 117, 48, 0.18);
 }
 
-.score-bar-fill {
+.pf-score-fill {
   height: 100%;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(90deg, var(--brass-600), var(--brass-400));
+  background: var(--brass-600);
   transition: width var(--dur-slow) var(--ease-standard);
 }
 
-.score-bar-note {
+.pf-score-note {
   display: block;
   margin-top: 16rpx;
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary);
-  line-height: 1.55;
+  font-size: var(--fs-22);
+  line-height: 1.6;
+  color: var(--ink-2);
 }
 
-/* —— 手机号 —— */
-.phone-bound {
+/* ══ 分组：眉标（等宽英文）+ 主标（宋体），组与组靠留白与一道发丝线分，不再一组一张卡 ══ */
+.account-section-card {
+  margin-top: 64rpx;
+}
+
+.pf-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  margin-bottom: var(--space-3);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-sizing: border-box;
+  align-items: flex-end;
+  padding-bottom: 18rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.22);
 }
 
-.phone-bound-meta {
-  flex: 1;
-  min-width: 0;
+.pf-head-t {
+  display: flex;
+  flex-direction: column;
 }
 
-.phone-bound-label {
-  display: block;
-  font-size: var(--fs-28);
-  color: var(--color-text-body);
-  margin-bottom: 4rpx;
-}
-
-.phone-bound-tip {
-  display: block;
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary);
-}
-
-.phone-bound-val {
-  flex-shrink: 0;
-  font-size: var(--fs-26);
+.pf-en {
   font-family: var(--font-mono);
-  color: var(--color-text-body);
-  letter-spacing: 1rpx;
-}
-
-.phone-bind-block {
-  margin-bottom: var(--space-3);
-}
-
-.phone-bind-copy {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  margin-bottom: var(--space-3);
-}
-
-.phone-bind-icon-wrap {
-  width: 64rpx;
-  height: 64rpx;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(196, 167, 108, 0.1);
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-md);
-}
-
-.phone-bind-icon {
-  width: 32rpx;
-  height: 32rpx;
-  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
-}
-
-.phone-bind-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.phone-bind-title {
-  display: block;
-  font-size: var(--fs-28);
-  color: var(--color-text-primary);
-  margin-bottom: 6rpx;
-}
-
-.phone-bind-desc {
-  display: block;
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-  word-break: break-word;
-}
-
-.profile-bind-phone {
-  width: 100%;
-  height: 80rpx;
-  line-height: 80rpx;
-  background: transparent;
+  font-size: var(--fs-16);
+  letter-spacing: 0.32em;
   color: var(--brass-400);
-  font-size: var(--fs-28);
-  font-weight: 500;
-  border-radius: var(--radius-md);
-  border: 1rpx solid var(--brass-400);
-  box-sizing: border-box;
 }
 
-.profile-bind-phone::after { border: none; }
-.profile-bind-phone.is-off { opacity: 0.55; }
-
-.phone-agree-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 14rpx;
-  padding: 12rpx 0 16rpx;
+.pf-cn {
+  margin-top: 6rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-32);
+  letter-spacing: 0.12em;
+  color: var(--color-text-primary);
 }
 
-.phone-agree-check {
-  position: relative;
-  width: 32rpx;
-  height: 32rpx;
-  margin-top: 4rpx;
-  flex-shrink: 0;
-  border: 2rpx solid var(--brass-400);
-  border-radius: var(--radius-sm);
-  box-sizing: border-box;
+.pf-head-meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
 }
 
-.phone-agree-check.checked { background: var(--brass-400); }
-
-.phone-agree-check.checked::after {
-  content: '';
-  position: absolute;
-  left: 9rpx;
-  top: 3rpx;
-  width: 8rpx;
-  height: 16rpx;
-  border: solid #1A1814;
-  border-width: 0 4rpx 4rpx 0;
-  transform: rotate(45deg);
-}
-
-.phone-agree-text {
-  flex: 1;
-  font-size: var(--fs-24);
+.pf-desc {
+  display: block;
+  margin-top: 18rpx;
+  font-size: var(--fs-22);
   line-height: 1.6;
   color: var(--color-text-secondary);
 }
 
-.phone-agree-link { color: var(--brass-400); }
-
-.phone-agree-hint {
-  display: block;
-  margin: -8rpx 0 12rpx 46rpx;
-  font-size: var(--fs-22);
-  color: var(--brass-300, #D4BC85);
-}
-
-.phone-agree-row.is-shake { animation: phone-agree-shake 0.42s ease; }
-@keyframes phone-agree-shake {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-10rpx); }
-  40%, 80% { transform: translateX(10rpx); }
-}
-
-.profile-bind-press {
-  opacity: 0.88;
-  background: rgba(196, 167, 108, 0.08);
-}
-
-.bio-input {
-  height: auto;
-  min-height: 80rpx;
-  line-height: 1.5;
-  padding-top: 20rpx;
-  padding-bottom: 20rpx;
-}
-
-.bio-counter {
-  display: block;
-  text-align: right;
-  margin-top: 8rpx;
-  font-size: var(--fs-24);
-  font-family: var(--font-mono);
-  color: var(--color-text-secondary);
-}
-
-.profile-footer .account-btn-primary {
-  margin-bottom: 0;
-}
-
-.profile-link-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.profile-link-row.last {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-
-.profile-link-label {
-  font-size: var(--fs-28);
-  color: var(--color-text-body);
-}
-
-.profile-link-arrow {
-  font-size: var(--fs-24);
-  color: var(--brass-400);
-}
-
-/* —— 退出登录 —— */
-.profile-logout-block {
-  margin-top: var(--space-2);
-  margin-bottom: var(--space-4);
-  padding: var(--space-4) 0 var(--space-2);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.profile-logout-btn {
-  width: 100%;
-  box-sizing: border-box;
-  height: 88rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(214, 64, 69, 0.45);
-  background: transparent;
-  color: var(--color-error);
-  font-size: var(--fs-28);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-}
-
-.profile-logout-press {
-  opacity: 0.78;
-  background: rgba(214, 64, 69, 0.08);
-}
-
-.profile-logout-hint {
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
-  letter-spacing: 0.02em;
-  text-align: center;
-  line-height: 1.4;
-}
-
-.privacy-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.privacy-row.last {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-
-.privacy-meta {
-  flex: 1;
-  min-width: 0;
-}
-
-.privacy-label {
-  display: block;
-  font-size: var(--fs-28);
-  color: var(--color-text-body);
-  margin-bottom: 4rpx;
-}
-
-.privacy-desc {
-  display: block;
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary);
-}
-
-.privacy-switch {
-  width: 88rpx;
-  height: 48rpx;
-  border-radius: var(--radius-full);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border);
-  position: relative;
-  flex-shrink: 0;
-  transition: background var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
-}
-
-.privacy-switch::after {
-  content: '';
-  position: absolute;
-  top: 4rpx;
-  left: 4rpx;
-  width: 38rpx;
-  height: 38rpx;
-  border-radius: 50%;
-  background: var(--color-text-muted);
-  transition: transform var(--dur-base) var(--ease-standard), background var(--dur-base) var(--ease-standard);
-}
-
-.privacy-switch.on {
-  background: rgba(196, 167, 108, 0.15);
-  border-color: var(--brass-800);
-}
-
-.privacy-switch.on::after {
-  transform: translateX(40rpx);
-  background: var(--brass-400);
-}
-
-.interest-count {
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary);
-  font-weight: 400;
-  flex-shrink: 0;
-}
-
-.page-profile .account-chip-row {
-  max-width: 100%;
-}
-
-.page-profile .account-chip {
-  font-size: var(--fs-24);
-}
-
-.page-profile .account-chip.interest-chip {
-  transition: border-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
-}
-
-.page-profile .account-chip.interest-chip.active {
-  border-width: 2rpx;
-}
-
-.interest-chip-press {
-  transform: scale(0.96);
-  opacity: 0.88;
-}
-
-.page-profile .mbti-scroll {
-  margin-right: -8rpx;
-}
-
-.page-profile .mbti-inner {
-  padding-right: 8rpx;
-}
-
-.mbti-pad {
-  width: 8rpx;
-  height: 1rpx;
-  flex-shrink: 0;
-}
-
-/* —— 加载 / 失败 —— */
-.profile-skeleton {
-  padding-bottom: var(--space-2);
-}
-
-.sk-card {
-  height: 200rpx;
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-4);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  box-sizing: border-box;
-}
-
-.sk-hero {
-  height: 420rpx;
-  border-color: var(--brass-800);
-}
-
-.sk-shine {
-  background: linear-gradient(
-    90deg,
-    rgba(196, 167, 108, 0.04) 0%,
-    rgba(196, 167, 108, 0.09) 50%,
-    rgba(196, 167, 108, 0.04) 100%
-  );
-  background-size: 200% 100%;
-  animation: profileShine 1.4s ease infinite;
-}
-
-@keyframes profileShine {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-.profile-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 120rpx 48rpx 80rpx;
-  text-align: center;
-  box-sizing: border-box;
-}
-
-.profile-state-icon {
-  width: 96rpx;
-  height: 96rpx;
-  opacity: 0.28;
-  margin-bottom: var(--space-4);
-}
-
-.profile-state-title {
-  font-size: var(--fs-30);
-  color: var(--color-text-body);
-  margin-bottom: 12rpx;
-}
-
-.profile-state-desc {
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-4);
-}
-
-.profile-retry {
-  padding: 16rpx 48rpx;
-  border: 1rpx solid var(--brass-400);
-  border-radius: var(--radius-md);
-  color: var(--brass-400);
-  font-size: var(--fs-26);
-}
-
-.profile-retry-press {
-  opacity: 0.82;
-  background: rgba(196, 167, 108, 0.08);
-}
-
-.page-profile .account-scroll-pad {
-  height: calc(32rpx + env(safe-area-inset-bottom));
-}
-
-/* 敏感形态展示选项（与注册同系） */
-.sensitive-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 20rpx;
-  padding: 24rpx 20rpx;
-  margin-bottom: 16rpx;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: rgba(26, 24, 20, 0.35);
-  box-sizing: border-box;
-}
-
-.sensitive-option:last-child {
-  margin-bottom: 0;
-}
-
-.sensitive-option.active {
-  border-color: rgba(196, 167, 108, 0.55);
-  background: rgba(196, 167, 108, 0.08);
-}
-
-
-.sensitive-option-radio {
-  width: 28rpx;
-  height: 28rpx;
-  margin-top: 6rpx;
-  border-radius: 50%;
-  border: 1px solid rgba(160, 154, 144, 0.55);
-  box-sizing: border-box;
-  flex-shrink: 0;
-}
-
-.sensitive-option-radio.on {
-  border-color: var(--brass-400);
-  background: radial-gradient(circle at center, var(--brass-400) 0 40%, transparent 42%);
-}
-
-.sensitive-option-copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.sensitive-option-label {
-  display: block;
-  font-size: var(--fs-28);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  letter-spacing: 0.02em;
-  line-height: 1.4;
-}
-
-.sensitive-option-hint {
-  display: block;
-  margin-top: 8rpx;
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-}
-
-/* === 需求 21：档案「下一步」清单 ===
- * 与顶部完成度同源（calcProfileScore 的加分项），不另立一套口径。 */
-.next-steps-card {
-  border-color: rgba(196, 167, 108, 0.28);
-}
-
+/* ── ② 下一步 ── */
 .next-steps-count {
-  flex-shrink: 0;
   font-size: var(--fs-22);
-  letter-spacing: 0.04em;
   color: var(--brass-300);
 }
 
@@ -950,85 +400,430 @@ page {
 .next-step-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  padding: 18rpx 16rpx;
-  border-radius: var(--radius-md);
-  border: 1rpx solid rgba(196, 167, 108, 0.18);
-  background: rgba(196, 167, 108, 0.05);
-  margin-bottom: 12rpx;
-}
-
-.next-step-row-press {
-  background: rgba(196, 167, 108, 0.14);
+  gap: 24rpx;
+  min-height: 112rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
 }
 
 .next-step-gain {
   flex-shrink: 0;
-  min-width: 62rpx;
-  padding: 6rpx 0;
-  text-align: center;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.45);
+  width: 76rpx;
   font-family: var(--font-mono);
-  font-size: var(--fs-22);
-  color: var(--brass-200);
+  font-size: var(--fs-28);
+  font-weight: 600;
+  color: var(--brass-300);
 }
 
 .next-step-copy {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4rpx;
 }
 
 .next-step-label {
-  font-size: var(--fs-26);
-  color: var(--color-text-body);
+  display: block;
+  font-size: var(--fs-28);
+  color: var(--color-text-primary);
 }
 
 .next-step-desc {
-  font-size: var(--fs-20);
-  line-height: 1.4;
+  display: block;
+  margin-top: 4rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
 .next-step-cta {
   flex-shrink: 0;
-  font-size: var(--fs-22);
+  font-size: var(--fs-24);
   color: var(--brass-300);
 }
 
 .next-step-more {
   display: block;
-  margin-top: 4rpx;
-  font-size: var(--fs-20);
+  margin-top: 16rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
 .next-step-empty {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  padding: 18rpx 16rpx;
-  border-radius: var(--radius-md);
-  border: 1rpx dashed rgba(82, 183, 136, 0.4);
-  background: rgba(82, 183, 136, 0.07);
+  gap: 16rpx;
+  padding: 28rpx 0;
 }
 
 .next-step-empty-mark {
-  font-size: var(--fs-26);
+  width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  text-align: center;
+  border-radius: 50%;
+  font-size: var(--fs-22);
   color: var(--color-success);
+  border: 1rpx solid var(--color-success);
 }
 
 .next-step-empty-text {
+  flex: 1;
+  font-size: var(--fs-24);
+  color: var(--color-text-body);
+}
+
+/* ── 两栏行：左标签（+ 小注）/ 右数值或控件 ── */
+.pf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  min-height: 112rpx;
+  padding: 20rpx 0;
+  box-sizing: border-box;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
+}
+
+.pf-row.is-last {
+  border-bottom: none;
+}
+
+.pf-row.is-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20rpx;
+}
+
+.pf-row-l {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pf-row-k {
+  font-size: var(--fs-28);
+  color: var(--color-text-primary);
+}
+
+.pf-row-note {
+  margin-top: 4rpx;
   font-size: var(--fs-22);
+  line-height: 1.5;
   color: var(--color-text-secondary);
 }
 
-/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
-@media (prefers-reduced-motion: reduce) {
-  .sk-shine {
-    animation: none;
-  }
+.pf-row-note.is-brass {
+  color: var(--brass-300);
+}
+
+.pf-row-v {
+  flex-shrink: 0;
+  font-size: var(--fs-26);
+  color: var(--color-text-body);
+}
+
+.pf-row-v.is-mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.pf-row-v.is-empty {
+  color: var(--brass-300);
+}
+
+.pf-row-go {
+  font-size: var(--fs-32);
+  color: var(--color-text-secondary);
+}
+
+/* 手机号未绑定：整块（说明 + 勾选协议 + 绑定钮）；勾选门控结构不变（check:privacy-consent） */
+.pf-bind {
+  padding: 24rpx 0 28rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
+}
+
+.phone-agree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+  margin-top: 24rpx;
+  padding: 8rpx 0;
+}
+
+.phone-agree-row.is-shake {
+  animation: pf-shake 0.42s ease-in-out;
+}
+
+@keyframes pf-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8rpx); }
+  40%, 80% { transform: translateX(8rpx); }
+}
+
+.phone-agree-check {
+  flex-shrink: 0;
+  width: 30rpx;
+  height: 30rpx;
+  margin-top: 4rpx;
+  box-sizing: border-box;
+  border: 1rpx solid rgba(196, 167, 108, 0.6);
+  border-radius: 4rpx;
+}
+
+.phone-agree-check.checked {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  position: relative;
+}
+
+.phone-agree-check.checked::after {
+  content: '';
+  position: absolute;
+  left: 9rpx;
+  top: 3rpx;
+  width: 8rpx;
+  height: 15rpx;
+  border-right: 3rpx solid var(--color-bg);
+  border-bottom: 3rpx solid var(--color-bg);
+  transform: rotate(45deg);
+}
+
+.phone-agree-text {
+  flex: 1;
+  font-size: var(--fs-22);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.phone-agree-link {
+  color: var(--brass-300);
+}
+
+.phone-agree-hint {
+  display: block;
+  margin-top: 8rpx;
+  font-size: var(--fs-22);
+  color: var(--color-error-on-tint);
+}
+
+/* 绑定钮：描边次级（实心金只给底栏「保存」）；未勾选时降一档但仍可点（点了提示先勾选） */
+button.profile-bind-phone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 84rpx;
+  margin: 20rpx 0 0;
+  padding: 0;
+  font-size: var(--fs-26);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--brass-200);
+  background: rgba(196, 167, 108, 0.1);
+  border: 1rpx solid var(--color-primary);
+  border-radius: var(--radius-md);
+  line-height: 1.2;
+}
+
+button.profile-bind-phone::after {
+  border: none;
+}
+
+button.profile-bind-phone.is-off {
+  color: var(--color-text-secondary);
+  background: transparent;
+  border-color: rgba(196, 167, 108, 0.3);
+}
+
+/* 性别：四格分段（等宽），选中 = 金线环 */
+.pf-seg {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.pf-seg-item,
+.pf-grid-item,
+.pf-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 68rpx;
+  box-sizing: border-box;
+  font-size: var(--fs-24);
+  color: var(--color-text-body);
+  border: 1rpx solid rgba(196, 167, 108, 0.28);
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.pf-seg-item.on,
+.pf-grid-item.on,
+.pf-chip.on {
+  color: var(--brass-200);
+  border-color: var(--color-primary);
+  background: rgba(196, 167, 108, 0.12);
+  box-shadow: var(--ring-brass);
+  font-weight: 500;
+}
+
+/* 兴趣：可换行的胶囊 */
+.pf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-top: 24rpx;
+}
+
+.pf-chip {
+  padding: 0 26rpx;
+  border-radius: 999rpx;
+}
+
+/* MBTI 4×4 / 星座 4×3：全部铺开 */
+.pf-group {
+  margin-top: 36rpx;
+}
+
+.pf-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12rpx;
+}
+
+.pf-grid-item.is-mono {
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.pf-bio-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.pf-bio-count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}
+
+.pf-bio {
+  width: 100%;
+  height: 80rpx;
+  font-size: var(--fs-28);
+  color: var(--color-text-primary);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.35);
+}
+
+.pf-bio-ph {
+  color: rgba(160, 154, 144, 0.6);
+}
+
+/* 敏感形态：单选行 —— 右侧圆点，选中 = 实心金点 + 金线环 */
+.pf-radio-dot {
+  flex-shrink: 0;
+  width: 36rpx;
+  height: 36rpx;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1rpx solid rgba(196, 167, 108, 0.45);
+}
+
+.pf-radio.on .pf-radio-dot {
+  border-color: var(--color-primary);
+  background: radial-gradient(circle, var(--color-primary) 0 9rpx, transparent 10rpx);
+  box-shadow: var(--ring-brass-soft);
+}
+
+.pf-radio.on .pf-row-k {
+  color: var(--brass-200);
+}
+
+/* 开关：发丝框轨道 + 圆钮；开 = 浅金轨 + 金钮靠右 */
+.pf-switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 84rpx;
+  height: 48rpx;
+  box-sizing: border-box;
+  border-radius: 24rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.4);
+  background: rgba(255, 255, 255, 0.03);
+  transition: background-color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+}
+
+.pf-switch::after {
+  content: '';
+  position: absolute;
+  top: 6rpx;
+  left: 6rpx;
+  width: 34rpx;
+  height: 34rpx;
+  border-radius: 50%;
+  background: var(--color-text-secondary);
+  transition: transform var(--dur-fast) var(--ease-standard), background-color var(--dur-fast) var(--ease-standard);
+}
+
+.pf-switch.on {
+  border-color: var(--color-primary);
+  background: rgba(196, 167, 108, 0.22);
+}
+
+.pf-switch.on::after {
+  transform: translateX(36rpx);
+  background: var(--color-primary);
+}
+
+/* ── 退出登录：文字级危险动作 ── */
+.pf-logout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 80rpx;
+  padding-bottom: 24rpx;
+}
+
+.pf-logout-btn {
+  min-height: 80rpx;
+  line-height: 80rpx;
+  padding: 0 40rpx;
+  font-size: var(--fs-26);
+  letter-spacing: 0.08em;
+  color: var(--color-error-on-tint);
+}
+
+.pf-logout-hint {
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}
+
+/* ── 底栏：唯一实心金「保存资料」；没有改动时是描边的「已保存」 ── */
+.account-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  padding: 20rpx var(--space-4) calc(20rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(26, 24, 20, 0), var(--color-bg) 32%);
+}
+
+.pf-save {
+  height: 92rpx;
+  line-height: 92rpx;
+  text-align: center;
+  font-size: var(--fs-30);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--color-bg);
+  background: var(--brass-400);
+  border-radius: var(--radius-md);
+  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+
+.pf-save.is-off {
+  color: rgba(212, 188, 133, 0.6);
+  background: transparent;
+  border: 1rpx solid rgba(196, 167, 108, 0.3);
+  line-height: 90rpx;
 }

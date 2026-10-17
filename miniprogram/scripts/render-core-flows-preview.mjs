@@ -216,6 +216,32 @@ const SCENES = [
         list: items, activeList: items, foldedList: [], foldedCount: 0, loading: false, skelRows: [1, 2, 3] }
     })()
   },
+  {
+    name: 'profile', h: 4300, wxml: 'subpackages/extra/user/profile/index', data: (() => {
+      const interestOpts = [['INSECTA', '蝴蝶昆虫', '#52B788'], ['ANIMALIA', '动物世界', '#8B6F47'], ['PLANTAE', '植物果实', '#6DA34D'], ['MARINE', '海洋标本', '#5B8FB9'], ['MINERALS', '矿石馆', '#7B68AE'], ['FRAMING', '装裱艺术', '#C4A76C'], ['CUSTOM', '标本定制', '#C4A76C'], ['COURSE', '自然课程', '#A09A90'], ['COLLECTING', '收藏鉴赏', '#8B6F47']]
+      const picked = { INSECTA: 1, MARINE: 1 }
+      const nextSteps = [
+        { key: 'phone', gain: 25, label: '绑定手机号', desc: '下单、预约与门店通知的前提' },
+        { key: 'birthday', gain: 15, label: '填写生日', desc: '生日当天自动发礼券与祝福' },
+        { key: 'mbti', gain: 8, label: '填写 MBTI', desc: '可选，默认仅自己可见' }
+      ]
+      return {
+        loading: false, loadError: false, headerBlockPx: 120, footerPadPx: 140, navPaddingRight: 100, profileScore: 52,
+        avatarRingStyle: 'background: conic-gradient(from -90deg, #C4A76C 52%, rgba(196,167,108,0.12) 0);', avatarUrl: P[1], nickName: '林间拾蝶', memberNo: 'SH0003921',
+        rewardHint: '填写生日后，生日当天可领取生日礼券与祝福。兴趣偏好可帮助馆藏推荐。',
+        nextSteps, nextStepsTotal: 4, nextStepsMore: 1, nextStepsDone: false,
+        phoneBound: false, phoneAgreed: false, phoneMasked: '',
+        gender: 'female', genderOptions: [{ key: 'male', label: '男' }, { key: 'female', label: '女' }, { key: 'other', label: '其他' }, { key: 'prefer_not', label: '不愿透露' }],
+        birthday: '', interests: ['INSECTA', 'MARINE'],
+        interestChips: interestOpts.map(([key, label, color]) => ({ key, label, selected: !!picked[key], activeStyle: picked[key] ? `color:${color};border-color:${color};background-color:${color}22;font-weight:600;` : '' })),
+        sensitiveBlurPref: 'veil', sensitiveOptions: [{ key: 'clear', label: '可以直接展示', hint: '封面直接呈现，不再默认轻掩' }, { key: 'veil', label: '默认轻掩，由我点按启视', hint: '蛇类、两栖等封面先轻掩' }],
+        mbti: '', mbtiOptions: ['INTJ', 'INTP', 'ENTJ', 'ENTP', 'INFJ', 'INFP', 'ENFJ', 'ENFP', 'ISTJ', 'ISFJ', 'ESTJ', 'ESFJ', 'ISTP', 'ISFP', 'ESTP', 'ESFP'],
+        zodiac: 'pisces', zodiacOptions: ['摩羯座', '水瓶座', '双鱼座', '白羊座', '金牛座', '双子座', '巨蟹座', '狮子座', '处女座', '天秤座', '天蝎座', '射手座'].map((label, i) => ({ key: i === 2 ? 'pisces' : 'z' + i, label })),
+        bio: '在林子里捡到的，都想好好收着。', bioLength: 15, privacy: { showMbti: false, showZodiac: true, showBirthday: false },
+        isDirty: true, saving: false, footerPrimaryText: '保存资料'
+      }
+    })()
+  },
   { name: 'gift-compose-2', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose', data: { activeStep: 2, maxStep: 2, cardFocused: false, signed: true, sigJustSigned: false } },
   { name: 'order-pending', h: 2300, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: { order: { _id: 'o2', serialNo: 'SH20261015003', status: 'pending_pay', totalPrice: '468.00', originalPrice: '468.00', discountRate: 1, couponValue: 20, shippingFee: 18, shippingFeeDisplay: '18.00', address: { name: '林', phone: '138****0012' }, addressLine: '上海市徐汇区漕溪北路 ** 号', products: [{ _id: 'p3', title: '蓝闪蝶 · A1 博物级', latin: 'Morpho menelaus', price: '468.00', count: 1, image: P[2] }] }, stampText: '待付款', stampClass: 'warn', payBtnLabel: '付款入藏', hasTracking: false } },
   { name: 'gift-receive-done', h: 1700, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, addressDone: true, phoneMasked: '138****0012', addressMaskedLine: '上海市徐汇区 ***' } },
