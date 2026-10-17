@@ -66,11 +66,11 @@ page {
 }
 
 .nav-sub {
+  font-family: var(--font-mono);
   font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-style: italic;
 }
 
 .share-icon {
@@ -180,11 +180,11 @@ page {
 }
 
 .title-overline {
+  font-family: var(--font-mono);
   font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  font-style: italic;
   flex-shrink: 0;
 }
 
@@ -467,12 +467,14 @@ page {
   gap: 4rpx;
 }
 
+/* app.wxss 的 .section-header .title-en 走拉丁衬线（首页在用，不动全局）；本页眉标统一等宽 —— 同特异性、页面样式后载入即生效 */
+.section-header .title-en,
 .title-en {
+  font-family: var(--font-mono);
   font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-style: italic;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -549,30 +551,62 @@ page {
   overflow: hidden;
 }
 
-/* 已点亮：铜牌柜格 */
+/* 已点亮（2026-10-17 重置）：一张浅纸标本签 —— 与心愿签 / 礼笺 / 藏家档案同一种纸，内发丝框 + 顶上铜别针 */
 .achievement-item.unlocked {
-  border-color: var(--brass-800, #4D401A);
-  background: #211E19;
+  background: linear-gradient(170deg, #F3ECDD, #E8DFCB);
+  border: none;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 18rpx 36rpx rgba(0, 0, 0, 0.35);
 }
 
+.achievement-item.unlocked::before {
+  content: '';
+  position: absolute;
+  inset: 8rpx;
+  border: 1rpx solid rgba(138, 117, 48, 0.32);
+  pointer-events: none;
+}
+
+/* 原顶边金线 → 签顶一枚铜别针 */
 .achievement-item.unlocked .plate-edge {
   position: absolute;
-  left: 20rpx;
-  right: 20rpx;
-  top: 0;
-  height: 2rpx;
-  background: var(--brass-400, #C4A76C);
-  opacity: 0.55;
+  left: 50%;
+  top: 14rpx;
+  width: 14rpx;
+  height: 14rpx;
+  margin-left: -7rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #F4ECD4, #A8903C 70%);
 }
 
-/* 未点亮：更沉、可读 */
+.achievement-item.unlocked .badge-ring,
+.achievement-item.unlocked .lit-mark {
+  border-color: rgba(107, 90, 36, 0.55);
+}
+
+.achievement-item.unlocked .achievement-name {
+  color: #2E2618;
+}
+
+.achievement-item.unlocked .achievement-desc {
+  color: #5A4A28;
+}
+
+.achievement-item.unlocked .reward-badge {
+  border-color: rgba(107, 90, 36, 0.45);
+}
+
+.achievement-item.unlocked .reward-text {
+  color: var(--brass-700);
+}
+
+/* 未点亮：一张还没写的空签（虚线发丝框，透明底） */
 .achievement-item.locked {
   opacity: 1;
-  background: var(--color-bg);
-  border-color: #2A2622;
-  border-style: dashed;
+  background: transparent;
+  border: 1rpx dashed rgba(196, 167, 108, 0.32);
+  border-radius: var(--radius-sm);
 }
-
 
 .badge-ring {
   width: 80rpx;
@@ -665,7 +699,7 @@ page {
 }
 
 .achievement-item.locked .achievement-desc {
-  color: var(--color-text-muted, #6B6560);
+  color: var(--color-text-secondary);
 }
 
 .achievement-progress {
@@ -945,12 +979,12 @@ page {
 }
 
 .modal-overline {
+  font-family: var(--font-mono);
   display: block;
   text-align: center;
   font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.12em;
-  font-style: italic;
 }
 
 .modal-title {
@@ -1146,10 +1180,10 @@ page {
 }
 
 .unlock-overline {
+  font-family: var(--font-mono);
   font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.12em;
-  font-style: italic;
   margin-bottom: 8rpx;
 }
 
@@ -1247,11 +1281,11 @@ page {
 }
 
 .relics-overline {
+  font-family: var(--font-mono);
   font-size: var(--fs-20);
   color: var(--brass-400, #C4A76C);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-style: italic;
 }
 
 .relics-title-row {

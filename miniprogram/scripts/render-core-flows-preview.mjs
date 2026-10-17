@@ -254,23 +254,23 @@ const SCENES = [
   },
   {
     name: 'messages', h: 2000, wxml: 'subpackages/extra/user/messages/index', data: {
-      loading: false, loadError: false, hasMore: false, unreadCount: 2, activeCategory: 'all',
+      loading: false, loadError: false, hasMore: false, unreadCount: 2, activeCategory: 'all', activeQueue: 'customer', headerHeight: 0,
       filterTabs: [{ id: 'all', label: '全部' }, { id: 'order', label: '订单' }, { id: 'gift', label: '礼赠' }, { id: 'system', label: '馆方' }],
       messages: [
-        { _id: 'm1', title: '你的藏品已启程', preview: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。', formattedTime: '10:24', isUnread: true, kindLabel: '订单', kindLampClass: 'lamp-brass', senderName: '山海造物', hasProductCards: true, productThumbs: [P[0]], productSummary: '1 件藏品' },
-        { _id: 'm2', title: '阿禾拆开了你的礼笺', preview: '「谢谢你，我很喜欢。」', formattedTime: '昨天', isUnread: true, kindLabel: '礼赠', kindLampClass: 'lamp-forest', senderName: '礼赠' },
-        { _id: 'm3', title: '十月新到：南美闪蝶专题', preview: '本周馆藏上新 12 件，含 3 件孤品。', formattedTime: '10.12', isUnread: false, kindLabel: '馆方', kindLampClass: 'lamp-muted', senderName: '山海造物', isPaper: true }
+        { _id: 'm1', kind: 'receipt', typeName: '发货通知', readLampClass: 'lamp-brass', statusLabel: '待签收', statusLampClass: 'lamp-brass', title: '你的藏品已启程', preview: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。', formattedTime: '10:24', isUnread: true, kindLabel: '订单', kindLampClass: 'lamp-brass', senderName: '山海造物', hasProductCards: true, productThumbs: [P[0]], productSummary: '1 件藏品' },
+        { _id: 'm2', kind: 'notice', typeName: '礼赠进度', readLampClass: 'lamp-brass', statusLabel: '已拆封', statusLampClass: 'lamp-forest', title: '阿禾拆开了你的礼笺', preview: '「谢谢你，我很喜欢。」', formattedTime: '昨天', isUnread: true, kindLabel: '礼赠', kindLampClass: 'lamp-forest', senderName: '礼赠' },
+        { _id: 'm3', kind: 'campaign', typeName: '馆方来信', readLampClass: 'lamp-brass hollow', statusLabel: '已读', statusLampClass: 'lamp-muted', title: '十月新到：南美闪蝶专题', preview: '本周馆藏上新 12 件，含 3 件孤品。', formattedTime: '10.12', isUnread: false, kindLabel: '馆方', kindLampClass: 'lamp-muted', senderName: '山海造物', isPaper: true }
       ]
     }
   },
   {
     name: 'achievements', h: 2200, wxml: 'subpackages/extra/user/achievements/index', data: {
-      loading: false, viewFilter: 'all', achievementStats: { unlocked: 5, total: 18, percent: 28 },
+      loading: false, viewFilter: 'all', headerBlockPx: 120, achievementStats: { unlocked: 5, locked: 13, total: 18, progress: 28, totalRewards: 120 }, relicsName: '山海拾遗', relicsFound: 3, relicsTotal: 12, relicsPercent: 25, relicsCatalog: [],
       filterTabs: [{ key: 'all', label: '全部' }, { key: 'unlocked', label: '已点亮' }, { key: 'locked', label: '未点亮' }],
       achievementTypes: [
         { type: 'collect', name: '收藏', enName: 'COLLECTING', icon: '/assets/icons/medal_gold.png', unlockedCount: 2, totalCount: 6, usePartition: true, showUnlockedBlock: true, showLockedBlock: true, lockedCount: 4,
           unlockedList: [{ id: 'a1', name: '初入馆藏', desc: '收藏第一件标本', unlocked: true, rewardPoints: 20 }, { id: 'a2', name: '蝶翼初识', desc: '收藏 3 件鳞翅目', unlocked: true }],
-          lockedList: [{ id: 'a3', name: '百蝶图谱', desc: '收藏 20 件鳞翅目' }, { id: 'a4', name: '跨界藏家', desc: '收藏 5 个门类' }] },
+          lockedList: [{ id: 'a3', name: '百蝶图谱', desc: '收藏 20 件鳞翅目', progressPercent: 15, progressText: '3 / 20', remainText: '还差 17 件' }, { id: 'a4', name: '跨界藏家', desc: '收藏 5 个门类', progressPercent: 40, progressText: '2 / 5', remainText: '还差 3 个门类' }] },
         { type: 'gift', name: '礼赠', enName: 'GIFTING', icon: '/assets/icons/medal_gold.png', unlockedCount: 1, totalCount: 4, usePartition: true, showUnlockedBlock: true, showLockedBlock: true, lockedCount: 3,
           unlockedList: [{ id: 'b1', name: '第一封礼笺', desc: '送出第一份礼', unlocked: true, rewardPoints: 30 }], lockedList: [{ id: 'b2', name: '人情账本', desc: '送礼给 5 位不同的人' }] }
       ]

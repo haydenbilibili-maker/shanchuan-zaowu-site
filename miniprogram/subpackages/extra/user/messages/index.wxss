@@ -10,15 +10,6 @@ page {
   background: var(--color-bg, #1A1814);
 }
 
-.grain-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  z-index: 0;
-}
-
 /* —— 信号灯布局（色值见 app.wxss 全局 token） —— */
 .lamp {
   width: 14rpx;
@@ -562,6 +553,48 @@ page {
 
 .item-accent.on {
   background: var(--color-primary);
+}
+
+/* ── 顾客来信 · 信件列表（2026-10-17 重置）────────────────────────────
+   顾客队列不再是一张张卡：发丝线分隔的信件行；未读 = 标题前一枚铜点，已读不再挂灯；
+   类别只用一个黄铜眉标字（原五色类别字 + 左侧金条 + 双信号灯，一封信上三种提示语言）。
+   工作流 / 日报卡（员工队列）不在此列，保持原样。 */
+.queue-customer .message-list {
+  padding-top: 0;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) {
+  gap: 20rpx;
+  padding: 32rpx 0 30rpx;
+  margin-bottom: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-radius: 0;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .item-accent {
+  display: none;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .lamp-col {
+  width: 14rpx;
+  padding-top: 18rpx;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .lamp-col .lamp + .lamp {
+  display: none;
+}
+.queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .lamp-col .lamp {
+  visibility: hidden;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .kind-tag {
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-400);
+}
+.queue-customer .message-item.read:not(.workflow-card):not(.digest-card) {
+  opacity: 1;
+}
+.queue-customer .message-item.read .message-preview {
+  color: var(--color-text-secondary);
 }
 
 .message-body {
