@@ -2,16 +2,9 @@
 <view class="page {{paneReady ? 'pane-ready' : ''}}" wx:if="{{allowed}}">
   <scroll-view scroll-y class="scroll" enhanced show-scrollbar="{{false}}">
     <view class="hero-plate">
-      <view class="paper-fiber" aria-hidden="true"></view>
-      <view class="paper-fiber fine" aria-hidden="true"></view>
-      <view class="paper-emboss" aria-hidden="true"></view>
-      <view class="specimen-wm" aria-hidden="true"></view>
       <view class="hero-content">
         <view class="hero-over-row">
           <text class="overline">NATURE'S CREATIONS · GIFT</text>
-          <view class="hero-seal metal" aria-hidden="true">
-            <view class="hero-seal-inner"></view>
-          </view>
         </view>
         <text class="hero-brand">山海造物</text>
         <text class="title">礼赠</text>
@@ -80,7 +73,6 @@
 
       <view class="match-empty paper-state" wx:elif="{{productsError}}">
         <view class="empty-mark paper-empty" aria-hidden="true">
-          <view class="paper-fiber"></view>
           <view class="empty-ring"></view>
           <view class="signal-light lamp-warn"></view>
         </view>
@@ -139,9 +131,7 @@
 
       <view class="match-empty paper-state" wx:else>
         <view class="empty-mark paper-empty" aria-hidden="true">
-          <view class="paper-fiber"></view>
           <view class="empty-ring"></view>
-          <view class="specimen-wm sm"></view>
         </view>
         <text class="empty-title">这一格暂无匹配</text>
         <text class="muted">可换一批，或去馆藏慢慢挑</text>
@@ -191,7 +181,6 @@
 <view class="page checking" wx:else>
   <view class="state-block">
     <view class="state-mark paper-empty" aria-hidden="true">
-      <view class="paper-fiber"></view>
       <view class="empty-ring"></view>
       <view class="state-seal" aria-hidden="true"></view>
     </view>

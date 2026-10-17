@@ -276,6 +276,14 @@ const SCENES = [
       ]
     }
   },
+  { name: 'gift-mine-people', h: 1700, wxml: 'subpackages/feature/gift/my-gifts/index', base: 'gift-mine', data: { hubTab: 'people', contactsLoading: false,
+      contacts: [{ id: 'c1', name: '阿禾', nameInitial: '禾', relationLabel: '挚友', note: '喜欢蓝色的东西', giftCountLabel: '送过 2 次 · 最近 10.15', sceneKey: 'birthday' },
+        { id: 'c2', name: '林老师', nameInitial: '林', relationLabel: '师长', giftCountLabel: '还没送过' }] } },
+  { name: 'gift-mine-dates', h: 1900, wxml: 'subpackages/feature/gift/my-gifts/index', base: 'gift-mine', data: { hubTab: 'dates', datesLoading: false, datesHeadSignalClass: 'lamp-warn',
+      hotSpotlight: { untilText: '还有 3 天', title: '阿禾的生日', contactName: '阿禾', typeLabel: '生日', signalClass: 'lamp-warn', sceneKey: 'birthday' },
+      upcomingDates: [{ id: 'd1', title: '阿禾的生日', month: 10, day: 20, untilText: '3 天后', urgency: 'hot', typeLabel: '生日', contactName: '阿禾', signalClass: 'lamp-warn' },
+        { id: 'd2', title: '结婚纪念日', month: 11, day: 8, untilText: '22 天后', urgency: 'near', typeLabel: '纪念日', signalClass: 'lamp-brass' }],
+      dates: [{ id: 'd1' }] } },
   { name: 'gift-compose-2', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose', data: { activeStep: 2, maxStep: 2, cardFocused: false, signed: true, sigJustSigned: false } },
   { name: 'order-pending', h: 2300, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: { order: { _id: 'o2', serialNo: 'SH20261015003', status: 'pending_pay', totalPrice: '468.00', originalPrice: '468.00', discountRate: 1, couponValue: 20, shippingFee: 18, shippingFeeDisplay: '18.00', address: { name: '林', phone: '138****0012' }, addressLine: '上海市徐汇区漕溪北路 ** 号', products: [{ _id: 'p3', title: '蓝闪蝶 · A1 博物级', latin: 'Morpho menelaus', price: '468.00', count: 1, image: P[2] }] }, stampText: '待付款', stampClass: 'warn', payBtnLabel: '付款入藏', hasTracking: false } },
   { name: 'gift-receive-done', h: 1700, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, addressDone: true, phoneMasked: '138****0012', addressMaskedLine: '上海市徐汇区 ***' } },

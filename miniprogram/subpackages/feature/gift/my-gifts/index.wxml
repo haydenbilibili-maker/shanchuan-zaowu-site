@@ -1,10 +1,9 @@
 <template name="gift-card">
       <view
-        class="card metal-card {{item.attention || item.todo ? 'card-attention' : ''}} {{item.expireUrgent ? 'card-urgent' : ''}} {{item.inactive ? 'card-inactive' : ''}}"
+        class="card {{item.attention || item.todo ? 'card-attention' : ''}} {{item.expireUrgent ? 'card-urgent' : ''}} {{item.inactive ? 'card-inactive' : ''}}"
         hover-class="card-press"
         hover-stay-time="80"
       >
-        <view class="metal-edge" aria-hidden="true"></view>
         <view class="cover-wrap">
           <image class="cover" src="{{item.productImage}}" mode="aspectFill" lazy-load wx:if="{{item.productImage}}"></image>
           <view class="cover placeholder" wx:else>
@@ -95,17 +94,10 @@
 <view class="page {{paneReady ? 'pane-ready' : ''}}" wx:if="{{allowed}}">
   <!-- 顶区：标本纸页头 + 摘要芯片 + 信号灯 -->
   <view class="hero-plate">
-    <view class="paper-fiber" aria-hidden="true"></view>
-    <view class="paper-fiber fine" aria-hidden="true"></view>
-    <view class="paper-emboss" aria-hidden="true"></view>
-    <view class="specimen-wm" aria-hidden="true"></view>
     <view class="hero-content">
       <view class="hero-over-row">
         <text class="hero-over">NATURE'S CREATIONS · LEDGER</text>
         <view class="signal-light {{headSignalClass}}"></view>
-        <view class="hero-seal metal" aria-hidden="true">
-          <view class="hero-seal-inner"></view>
-        </view>
       </view>
       <text class="hero-brand">山海造物</text>
       <text class="hero-title">我的礼赠</text>
@@ -266,7 +258,6 @@
 
       <view class="list-error" wx:elif="{{errorMsg && !list.length}}">
         <view class="empty-mark paper-empty" aria-hidden="true">
-          <view class="paper-fiber"></view>
           <view class="empty-ring emboss-ring"></view>
           <view class="signal-light lamp-warn"></view>
         </view>
@@ -276,9 +267,7 @@
 
       <view class="empty" wx:elif="{{!loading && !list.length}}">
         <view class="empty-mark paper-empty" aria-hidden="true">
-          <view class="paper-fiber"></view>
           <view class="empty-ring emboss-ring"></view>
-          <view class="specimen-wm sm"></view>
         </view>
         <text class="empty-over">LEDGER</text>
         <text class="empty-title">{{emptyTitle}}</text>
@@ -396,16 +385,12 @@
     bindrefresherrefresh="onRefresherRefresh"
   >
     <view class="panel-head people-head">
-      <view class="dates-head-paper" aria-hidden="true">
-        <view class="paper-fiber"></view>
-        <view class="paper-emboss tight"></view>
-      </view>
       <view class="panel-titles">
         <text class="ph-over">CONTACTS</text>
         <text class="ph-title">重要馈赠对象</text>
-        <text class="ph-hint">像铜牌一样记下常想送出的人</text>
+        <text class="ph-hint">记下常想送一份山海的人</text>
       </view>
-      <view class="ph-btn metal" hover-class="ph-btn-press" hover-stay-time="80" bindtap="openContactForm">添加</view>
+      <view class="ph-btn" hover-class="ph-btn-press" hover-stay-time="80" bindtap="openContactForm">添加</view>
     </view>
 
     <view class="skel-list" wx:if="{{contactsLoading && !contacts.length}}">
@@ -415,7 +400,6 @@
 
     <view class="list-error" wx:elif="{{contactsError && !contacts.length}}">
       <view class="empty-mark paper-empty" aria-hidden="true">
-        <view class="paper-fiber"></view>
         <view class="empty-ring emboss-ring"></view>
         <view class="signal-light lamp-warn"></view>
       </view>
@@ -425,9 +409,7 @@
 
     <view class="empty" wx:elif="{{!contactsLoading && !contacts.length}}">
       <view class="empty-mark paper-empty" aria-hidden="true">
-        <view class="paper-fiber"></view>
         <view class="empty-ring emboss-ring"></view>
-        <view class="specimen-wm sm"></view>
       </view>
       <text class="empty-over">CONTACTS</text>
       <text class="empty-title">还没有记下谁</text>
@@ -439,13 +421,9 @@
     </view>
 
     <view class="people-list {{softRefreshing ? 'dim' : ''}}" wx:else>
-      <view class="plate-card brass-plate" wx:for="{{contacts}}" wx:key="id">
-        <view class="paper-fiber" aria-hidden="true"></view>
-        <view class="plate-emboss" aria-hidden="true"></view>
-        <view class="specimen-wm sm dark" aria-hidden="true"></view>
+      <view class="plate-card" wx:for="{{contacts}}" wx:key="id">
         <view class="plate-top" hover-class="tap-press-soft" hover-stay-time="80" bindtap="editContact" data-id="{{item.id}}">
           <view class="plate-avatar">
-            <view class="plate-avatar-shine" aria-hidden="true"></view>
             <text>{{item.nameInitial}}</text>
           </view>
           <view class="plate-body">
@@ -496,11 +474,6 @@
     bindrefresherrefresh="onRefresherRefresh"
   >
     <view class="panel-head dates-head">
-      <view class="dates-head-paper" aria-hidden="true">
-        <view class="paper-fiber"></view>
-        <view class="paper-fiber fine"></view>
-        <view class="paper-emboss tight"></view>
-      </view>
       <view class="panel-titles">
         <view class="ph-over-row">
           <text class="ph-over">DATES</text>
@@ -509,16 +482,13 @@
         <text class="ph-title">人情日子</text>
         <text class="ph-hint">临近七日，角标会轻轻亮起</text>
       </view>
-      <view class="ph-btn metal" hover-class="ph-btn-press" hover-stay-time="80" bindtap="openDateForm">
+      <view class="ph-btn" hover-class="ph-btn-press" hover-stay-time="80" bindtap="openDateForm">
         <text>添加</text>
       </view>
     </view>
 
     <!-- 临近焦点条 -->
     <view class="spotlight" wx:if="{{hotSpotlight}}">
-      <view class="spotlight-paper" aria-hidden="true">
-        <view class="paper-fiber"></view>
-      </view>
       <view class="spotlight-left">
         <view class="signal-light {{hotSpotlight.signalClass}}"></view>
         <view class="spotlight-copy">
@@ -545,13 +515,10 @@
         <view class="signal-light lamp-warn" wx:if="{{upcomingHotCount}}"></view>
       </view>
       <view
-        class="plate-card brass-plate date-plate {{item.urgency === 'hot' ? 'hot' : 'near'}}"
+        class="plate-card date-plate {{item.urgency === 'hot' ? 'hot' : 'near'}}"
         wx:for="{{upcomingDates}}"
         wx:key="id"
       >
-        <view class="paper-fiber" aria-hidden="true"></view>
-        <view class="plate-emboss" aria-hidden="true"></view>
-        <view class="specimen-wm sm dark" aria-hidden="true"></view>
         <view class="plate-top" hover-class="tap-press-soft" hover-stay-time="80" bindtap="editDate" data-id="{{item.id}}">
           <view class="date-badge paper {{item.urgency}}">
             <view class="date-badge-inner" aria-hidden="true"></view>
@@ -570,7 +537,7 @@
         </view>
         <view class="plate-acts">
           <view
-            class="act primary metal"
+            class="act primary"
             hover-class="act-primary-press"
             hover-stay-time="80"
             data-name="{{item.contactName}}"
@@ -590,7 +557,6 @@
 
     <view class="list-error" wx:elif="{{datesError && !dates.length}}">
       <view class="empty-mark paper-empty" aria-hidden="true">
-        <view class="paper-fiber"></view>
         <view class="empty-ring emboss-ring"></view>
         <view class="signal-light lamp-warn"></view>
       </view>
@@ -600,9 +566,7 @@
 
     <view class="empty dates-empty" wx:elif="{{!datesLoading && !dates.length}}">
       <view class="empty-mark paper-empty dates-empty-mark" aria-hidden="true">
-        <view class="paper-fiber"></view>
         <view class="empty-ring emboss-ring"></view>
-        <view class="specimen-wm sm"></view>
         <view class="signal-light lamp-muted hollow"></view>
       </view>
       <text class="empty-over">DATES</text>
@@ -617,13 +581,10 @@
     <view class="dates-list {{softRefreshing ? 'dim' : ''}}" wx:elif="{{dates.length}}">
       <text class="section-label" wx:if="{{upcomingDates.length}}">全部日子</text>
       <view
-        class="plate-card brass-plate date-plate {{item.urgency === 'hot' ? 'hot' : (item.urgency === 'near' ? 'near' : '')}}"
+        class="plate-card date-plate {{item.urgency === 'hot' ? 'hot' : (item.urgency === 'near' ? 'near' : '')}}"
         wx:for="{{dates}}"
         wx:key="id"
       >
-        <view class="paper-fiber" aria-hidden="true"></view>
-        <view class="plate-emboss" aria-hidden="true"></view>
-        <view class="specimen-wm sm dark" aria-hidden="true"></view>
         <view class="plate-top" hover-class="tap-press-soft" hover-stay-time="80" bindtap="editDate" data-id="{{item.id}}">
           <view class="date-badge paper {{item.urgency}}">
             <view class="date-badge-inner" aria-hidden="true"></view>
@@ -642,7 +603,7 @@
         </view>
         <view class="plate-acts">
           <view
-            class="act primary metal"
+            class="act primary"
             hover-class="act-primary-press"
             hover-stay-time="80"
             data-name="{{item.contactName}}"
@@ -796,7 +757,6 @@
 <view class="page checking" wx:else>
   <view class="state-block">
     <view class="state-mark paper-empty" aria-hidden="true">
-      <view class="paper-fiber"></view>
       <view class="empty-ring emboss-ring"></view>
       <view class="state-seal"></view>
     </view>
