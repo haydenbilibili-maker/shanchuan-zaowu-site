@@ -39,7 +39,10 @@ const FILES = {
   cartWxss: 'pages/cart/index.wxss',
   userWxss: 'pages/user/index.wxss',
   identifyWxss: 'subpackages/feature/identify/index.wxss',
-  identifyJs: 'subpackages/feature/identify/index.js'
+  identifyJs: 'subpackages/feature/identify/index.js',
+  bookingWxml: 'subpackages/business/booking/index.wxml',
+  bookingJs: 'subpackages/business/booking/index.js',
+  previewLib: 'scripts/lib/wxml-preview.mjs'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -112,6 +115,14 @@ function checks(s) {
     /class="recent-thumb" src="\{\{item\.thumb\}\}"[^>]*binderror="onRecentThumbError"/.test(s.identifyWxml) &&
       /wx:else class="recent-thumb is-empty"/.test(s.identifyWxml) &&
       /\[`recentList\[\$\{i\}\]\.thumb`\]: ''/.test(methodBody(s.identifyJs, 'onRecentThumbError')))
+  // 2026-10-17 预约「入馆券」：页头一张票根（不再是双面翻转票）、分区头不再「中文 | ENGLISH」并列、预览库能解析表达式里的 <
+  add('R12-1 预约页头是一张随选择更新的票根（双面翻转票退场）',
+    /<view class="stub">/.test(s.bookingWxml) && !/ticket-3d-container|flipTicket|face-back/.test(s.bookingWxml) && !/flipTicket\(\)/.test(s.bookingJs) &&
+      /class="stub-v is-key">\{\{ticketInfo\.timeStr\}\}/.test(s.bookingWxml))
+  add('R12-2 预约页分区头为眉标 + 中文主标两行（不再「选择日期 | SELECT DATE」同一节点并列）',
+    !/class="section-label">[^<]*\|/.test(s.bookingWxml) && (s.bookingWxml.match(/<view class="section-label"><text class="sl-en">/g) || []).length === 4)
+  add('R12-3 wxml-preview 跳过 {{ }} 内的 <（否则预约页无法离线出图）',
+    /function nextTagStart\(src, from\)/.test(s.previewLib) && /const lt = nextTagStart\(src, i\)/.test(s.previewLib))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -339,6 +350,9 @@ if (process.argv.includes('--selftest')) {
     ['工坊进度磁贴去掉按压态', 'atelierWxml', (t) => t.replace('bindtap="goPetOrders" hover-class="order-tile-press" hover-stay-time="80"', 'bindtap="goPetOrders"')],
     ['鉴定步骤移回遮罩外', 'identifyWxml', (t) => t.replace(/\n      <view class="steps">[\s\S]*?\n      <\/view>/, '')],
     ['鉴定记录入口去按压态', 'identifyWxml', (t) => t.replace('bindtap="goLog" hover-class="recent-item-press" hover-stay-time="80"', 'bindtap="goLog"')],
+    ['预约页头复活翻转票', 'bookingWxml', (t) => t.replace('<view class="stub">', '<view class="ticket-3d-container" bindtap="flipTicket"><view class="stub">')],
+    ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
+    ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
     ['最近鉴定缩略图去掉 binderror', 'identifyWxml', (t) => t.replace(' binderror="onRecentThumbError"', '')],
     ['鉴定台多一颗实心金', 'identifyWxss', (t) => t.replace('.album-link {\n', '.album-link {\n  background: var(--brass-400);\n')],

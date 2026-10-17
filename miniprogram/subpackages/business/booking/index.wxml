@@ -1,51 +1,24 @@
 <!--pages/booking/index.wxml-->
 <view class="container">
 
-  <!-- 1. 顶部：典藏票据预览 -->
-  <view class="ticket-header" >
-    <view class="ticket-3d-container {{isFlipped ? 'flipped' : ''}}" bindtap="flipTicket">
-      <!-- A面：黑金 -->
-      <view class="ticket-face face-front">
-        <view class="paper-texture"></view><view class="gold-strip"></view><view class="watermark">🦋</view>
-        <view class="notch left"></view><view class="notch right"></view>
-        <view class="tp-header">
-          <view class="tp-brand"><text class="tp-logo">山海造物</text><text class="tp-tagline">把山海带回家</text><text class="tp-sub">NATURE'S CREATIONS</text></view>
-          <text class="tp-serial">NO.V-{{ticketYear}}</text>
+  <!-- 1. 顶部：入馆券票根（2026-10-17 重构）—— 原双面翻转票（两面重复 + 🦋 水印 + VALID 章）收成一张浅纸票根：
+       左三格（日期 / 时段 / 人数）随选择实时更新，齿孔线右侧是持券人与类型。 -->
+  <view class="ticket-header">
+    <view class="stub">
+      <view class="stub-pin" aria-hidden="true"></view>
+      <view class="stub-main">
+        <text class="stub-eyebrow">VISIT PASS · 入馆券 · NO.V-{{ticketYear}}</text>
+        <view class="stub-row">
+          <view class="stub-cell"><text class="stub-k">日期</text><text class="stub-v">{{ticketInfo.dateStr}}</text></view>
+          <view class="stub-cell"><text class="stub-k">时段</text><text class="stub-v is-key">{{ticketInfo.timeStr}}</text></view>
+          <view class="stub-cell"><text class="stub-k">人数</text><text class="stub-v">{{bookCount < 10 ? '0' + bookCount : bookCount}} 人</text></view>
         </view>
-        <view class="tp-body">
-          <view class="info-row">
-            <view class="info-item"><text class="label">日期｜DATE</text><text class="val">{{ticketInfo.dateStr}}</text></view>
-            <view class="info-item center"><text class="label">时间｜TIME</text><text class="val highlight">{{ticketInfo.timeStr}}</text></view>
-            <view class="info-item right"><text class="label">贵宾｜HOLDER</text><text class="val-calligraphy">{{contactName || '贵宾'}}</text></view>
-          </view>
-          <view class="info-row sub">
-            <view class="info-item"><text class="label">人数｜GUEST</text><text class="val-sm">{{bookCount < 10 ? '0' + bookCount : bookCount}} 人</text></view>
-            <view class="info-item right"><text class="label">请柬｜ACCESS</text><text class="val-sm">{{ticketInfo.typeStr}}</text></view>
-          </view>
-        </view>
-        <view class="tp-footer"><view class="security-thread"><view class="scan-light"></view></view><view class="stamp-seal">VALID</view></view>
-        <view class="flip-hint">轻触翻面 ↻</view>
       </view>
-      <!-- B面：白银 -->
-      <view class="ticket-face face-back">
-        <view class="silver-strip"></view><view class="watermark light">🦋</view>
-        <view class="notch left light"></view><view class="notch right light"></view>
-        <view class="tp-header light">
-          <view class="tp-brand"><text class="tp-logo light">山海造物</text><text class="tp-tagline light">把山海带回家</text><text class="tp-sub light">NATURE'S CREATIONS</text></view>
-          <text class="tp-serial light">NO.V-{{ticketYear}}</text>
-        </view>
-        <view class="tp-body">
-          <view class="info-row">
-            <view class="info-item"><text class="label light">日期｜DATE</text><text class="val light">{{ticketInfo.dateStr}}</text></view>
-            <view class="info-item center"><text class="label light">时间｜TIME</text><text class="val highlight light">{{ticketInfo.timeStr}}</text></view>
-            <view class="info-item right"><text class="label light">贵宾｜HOLDER</text><text class="val-calligraphy light">{{contactName || '贵宾'}}</text></view>
-          </view>
-          <view class="info-row sub">
-            <view class="info-item"><text class="label light">人数｜GUEST</text><text class="val-sm light">{{bookCount < 10 ? '0' + bookCount : bookCount}} 人</text></view>
-            <view class="info-item right"><text class="label light">请柬｜ACCESS</text><text class="val-sm light">{{ticketInfo.typeStr}}</text></view>
-          </view>
-        </view>
-        <view class="tp-footer light"><view class="security-thread light"><view class="scan-light"></view></view><view class="stamp-seal light">VALID</view></view>
+      <view class="stub-tear" aria-hidden="true"></view>
+      <view class="stub-side">
+        <text class="stub-k">持券人</text>
+        <text class="stub-holder">{{contactName || '贵宾'}}</text>
+        <text class="stub-type">{{ticketInfo.typeStr}}</text>
       </view>
     </view>
   </view>
@@ -66,7 +39,7 @@
           <text class="cp-overline">STORE · 预约门店</text>
           <text class="cp-title">{{storeName}}</text>
           <text class="cp-sub" wx:if="{{storeLocationLabel}}">{{storeLocationLabel}}</text>
-          <text class="cp-switch" wx:if="{{!storeLocked}}">切换门店 ▼</text>
+          <text class="cp-switch" wx:if="{{!storeLocked}}">切换门店 ›</text>
           <text class="cp-switch locked-tip" wx:else>定制 / 伴宠服务固定预约星宸标本工作室</text>
           <block wx:for="{{storeVisitTips}}" wx:key="*this">
             <text class="cp-tip">· {{item}}</text>
@@ -105,7 +78,7 @@
           </view>
           <text class="cp-tip">请选择到店交接时间，标本师将当面确认并接收</text>
         </view>
-        <view class="section-label">选择日期 | SELECT DATE</view>
+        <view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>
         
         <!-- 日历视图 -->
         <view class="calendar-wrapper" wx:if="{{showCalendar}}">
@@ -132,7 +105,7 @@
           </block>
         </scroll-view>
         
-        <view class="section-label">预约时间 | SELECT SESSION</view>
+        <view class="section-label"><text class="sl-en">SESSION</text><text class="sl-cn">预约时段</text></view>
         <view class="time-grid">
           <block wx:for="{{timeSlots}}" wx:key="index">
             <view hover-class="tap-press" hover-stay-time="80" class="time-btn {{item.status === 'full' ? 'disabled' : ''}} {{selectedTimeIndex === index ? 'active' : ''}}" bindtap="selectTime" data-index="{{index}}" data-status="{{item.status}}">
@@ -147,7 +120,7 @@
           <text class="hint-text">该时间段已满，可加入候补列表</text>
           <view class="waitlist-btn" bindtap="addToWaitlist" hover-class="waitlist-btn-press" hover-stay-time="80">加入候补</view>
         </view>
-        <view class="section-label">参观人数 | GUEST COUNT</view>
+        <view class="section-label"><text class="sl-en">GUESTS</text><text class="sl-cn">参观人数</text></view>
         <view class="guest-card">
            <text class="guest-tip">单次预约上限 10 人</text>
            <view class="stepper"><view class="s-btn" bindtap="changeCount" hover-class="s-btn-press" hover-stay-time="80" data-type="minus">-</view><view class="s-val">{{bookCount}}</view><view class="s-btn" bindtap="changeCount" hover-class="s-btn-press" hover-stay-time="80" data-type="add">+</view></view>
@@ -162,12 +135,12 @@
               <image class="act-img" src="{{item.image}}" mode="aspectFill"></image>
               <view class="act-info">
                 <text class="act-t">{{item.title}}</text>
-                <text class="act-d">{{item.date}} | {{item.time}}</text>
+                <text class="act-d">{{item.date}} · {{item.time}}</text>
                 <view class="act-b"><text class="act-p">¥{{item.price}}</text><text class="act-seat {{item._full ? 'is-full' : ''}}" wx:if="{{item._seat}}">{{item._seat}}</text></view>
               </view>
             </view>
           </block>
-          <view class="empty-state" wx:if="{{courses.length === 0}}"><text style="color:#666; font-size:24rpx;">暂无课程排期</text></view>
+          <view class="empty-state" wx:if="{{courses.length === 0}}"><text>暂无课程排期</text></view>
         </view>
       </block>
 
@@ -179,12 +152,12 @@
               <image class="act-img" src="{{item.image}}" mode="aspectFill"></image>
               <view class="act-info">
                 <text class="act-t">{{item.title}}</text>
-                <text class="act-d">{{item.date}} | {{item.location}}</text>
+                <text class="act-d">{{item.date}} · {{item.location}}</text>
                 <view class="act-b"><text class="act-p">¥{{item.price}}</text><text class="act-seat {{item._full ? 'is-full' : ''}}" wx:if="{{item._seat}}">{{item._seat}}</text></view>
               </view>
             </view>
           </block>
-          <view class="empty-state" wx:if="{{activities.length === 0}}"><text style="color:#666; font-size:24rpx;">暂无活动安排</text></view>
+          <view class="empty-state" wx:if="{{activities.length === 0}}"><text>暂无活动安排</text></view>
         </view>
       </block>
 
@@ -203,7 +176,7 @@
                 <view class="hole-circle top"></view>
                 <view class="hole-circle bottom"></view>
                 <view class="dashed-line"></view>
-                <text class="t-type">{{item.type === 'handcraft_course' ? 'HANDCRAFT' : (item.type==='special_activity'?'EVENT':'VISIT')}}</text>
+                <text class="t-type">{{item.type === 'handcraft_course' ? '手作课' : (item.type==='special_activity'?'活动':'参观')}}</text>
               </view>
               <view class="ticket-right">
                 <view class="tr-top">
@@ -212,20 +185,20 @@
                 </view>
                 <view class="tr-mid">
                   <view class="info-col">
-                    <text class="lbl">DATE</text>
+                    <text class="lbl">日期</text>
                     <text class="val">{{item.month}} {{item.day}}</text>
                   </view>
                   <view class="info-col">
-                    <text class="lbl">TIME</text>
+                    <text class="lbl">时段</text>
                     <text class="val highlight">{{item.time}}</text>
                   </view>
                   <view class="info-col">
-                    <text class="lbl">GUEST</text>
+                    <text class="lbl">人数</text>
                     <text class="val">{{item.people}}</text>
                   </view>
                 </view>
                 <view class="tr-bot">
-                  <view class="btn-use">查看详情 →</view>
+                  <view class="btn-use">查看入馆券 ›</view>
                 </view>
               </view>
             </view>
@@ -248,7 +221,7 @@
                 <text class="hc-time">{{item.time}} · {{item.people}}人</text>
               </view>
               <view class="hc-right">
-                <view class="stamp-used">USED</view>
+                <view class="stamp-used">已使用</view>
               </view>
             </view>
           </block>
@@ -259,11 +232,11 @@
       </block>
 
       <!-- 🟢 公共部分：联系人信息 (Tab 0, 1, 2 显示，Tab 3不显示) -->
-      <view class="common-form-area" wx:if="{{currentTab < 3}}" style="margin-top: 60rpx;">
-        <view class="section-label">联系信息 | CONTACT INFO</view>
+      <view class="common-form-area" wx:if="{{currentTab < 3}}">
+        <view class="section-label"><text class="sl-en">CONTACT</text><text class="sl-cn">联系信息</text></view>
         <view class="input-group">
-           <view class="input-row"><view class="input-icon"><image src="/assets/icons/user.png" mode="aspectFit" class="icon-gold"></image></view><input class="mini-input" placeholder="姓名 / Name" placeholder-class="ph" value="{{contactName}}" bindinput="onInput" data-field="contactName"/></view>
-           <view class="input-row"><view class="input-icon"><image src="/assets/icons/phone.png" mode="aspectFit" class="icon-gold"></image></view><input class="mini-input" type="number" placeholder="手机号 / Phone" placeholder-class="ph" value="{{contactPhone}}" bindinput="onInput" data-field="contactPhone"/></view>
+           <view class="input-row"><view class="input-icon"><image src="/assets/icons/user.png" mode="aspectFit" class="icon-gold"></image></view><input class="mini-input" placeholder="姓名" placeholder-class="ph" value="{{contactName}}" bindinput="onInput" data-field="contactName"/></view>
+           <view class="input-row"><view class="input-icon"><image src="/assets/icons/phone.png" mode="aspectFit" class="icon-gold"></image></view><input class="mini-input" type="number" placeholder="手机号" placeholder-class="ph" value="{{contactPhone}}" bindinput="onInput" data-field="contactPhone"/></view>
         </view>
       </view>
 
@@ -275,15 +248,15 @@
   <view class="fixed-footer safe-area" wx:if="{{currentTab < 3}}">
     <!-- 入店参观 -->
     <view class="submit-btn full-width" wx:if="{{currentTab == 0}}" bindtap="submitBooking" hover-class="submit-btn-press" hover-stay-time="80">
-      <view class="btn-content"><text class="btn-main">免费预约</text><text class="btn-sub">GENERATE PASS</text></view><view class="btn-icon">→</view>
+      <view class="btn-content"><text class="btn-main">免费预约 · 生成入馆券</text></view>
     </view>
     <!-- 手作课程 -->
     <view class="submit-btn full-width" wx:if="{{currentTab == 1}}" bindtap="submitActivityBooking" hover-class="submit-btn-press" hover-stay-time="80">
-      <view class="btn-content"><text class="btn-main">预约课程</text><text class="btn-sub">BOOK COURSE</text></view><view class="btn-icon">→</view>
+      <view class="btn-content"><text class="btn-main">预约课程</text></view>
     </view>
     <!-- 特别活动 -->
     <view class="submit-btn full-width" wx:if="{{currentTab == 2}}" bindtap="submitActivityBooking" hover-class="submit-btn-press" hover-stay-time="80">
-      <view class="btn-content"><text class="btn-main">报名活动</text><text class="btn-sub">JOIN EVENT</text></view><view class="btn-icon">→</view>
+      <view class="btn-content"><text class="btn-main">报名活动</text></view>
     </view>
   </view>
 
@@ -297,11 +270,11 @@
       <view class="ticket-paper {{mintAnimation ? 'printing' : ''}}">
         <view class="tp-mini">
           <view class="tm-head">
-             <text class="tm-title">NATURE'S CREATIONS</text>
+             <text class="tm-title">山海造物 · 入馆券</text>
              <view class="tm-line"></view>
           </view>
           <view class="tm-invite">
-            <text class="tm-label">邀请函｜INVITATION</text>
+            <text class="tm-label">INVITATION · 邀请函</text>
             <text class="tm-name">诚邀 {{contactName ? contactName + ' 先生/女士' : '贵宾'}}</text>
             <text class="tm-desc">欢迎预约到店，慢慢看、慢慢选。</text>
           </view>
@@ -312,7 +285,7 @@
             </view>
             <text class="tm-val">{{newTicketCode}}</text>
           </view>
-          <view class="tm-foot">仅限本人｜PERSONAL USE ONLY</view>
+          <view class="tm-foot">仅限本人使用</view>
         </view>
       </view>
       <view class="mint-bottom-area">

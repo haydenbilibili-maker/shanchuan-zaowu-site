@@ -449,7 +449,19 @@ const SCENES = [
         { _id: 'c2', displayTitle: '自然小匣', displayImage: P[1], dateStr: '2026.09.22', kind: 'gift_voucher', kindLabel: '赠予凭证' },
         { _id: 'c3', displayTitle: '银杏押花框', displayImage: P[2], dateStr: '2026.09.03', kind: 'gift_holder', kindLabel: '受赠' },
         { _id: 'c4', displayTitle: '紫水晶晶簇', displayImage: P[3] || P[0], dateStr: '2026.08.18', kind: 'holder', kindLabel: '' }
-      ] } }
+      ] } },
+  // 2026-10-17 预约「入馆券」（wxml-preview 已支持表达式内的 <，预约页第一次能离线出图）
+  { name: 'booking', h: 2600, wxml: 'subpackages/business/booking/index', data: {
+      ticketYear: 2026, ticketInfo: { dateStr: '10月 18', timeStr: '14:00', typeStr: '入店参观' }, bookCount: 2, contactName: '林间拾蝶', contactPhone: '',
+      currentTab: 0, storeLocked: false, storeName: '山海造物 · 主店', storeLocationLabel: '上海 · 徐汇', storeVisitTips: ['到店请出示入馆券', '馆内请勿触摸未开放标本'], storePickerOpen: false, storeList: [], storeId: 's1',
+      isCustomBooking: false, customPlanLines: [], isPetIntakeBooking: false, petPlanLines: [], showCalendar: false, selectedCalendarDate: '', unavailableDates: [], fullDates: [],
+      weekDays: [['周六', 18], ['周日', 19], ['周一', 20], ['周二', 21], ['周三', 22], ['周四', 23]].map(([week, day]) => ({ week, day })), selectedDateIndex: 0,
+      timeSlots: [{ time: '10:00', status: 'open' }, { time: '11:00', status: 'open' }, { time: '14:00', status: 'open' }, { time: '15:00', status: 'full' }, { time: '16:00', status: 'open' }, { time: '17:00', status: 'open' }], selectedTimeIndex: 2,
+      courses: [], activities: [], selectedActivityId: '', bookingHistoryTab: 0, upcomingBookings: [], historyBookings: [], loadingBookings: false,
+      showMintModal: false, mintAnimation: false, mintFinished: false, newTicketCode: '', regDialogShow: false } },
+  { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
+      upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },
+        { _id: 'b2', type: 'handcraft_course', title: '蝴蝶标本手作课', _id_short: 'C2K9', month: '10月', day: '26', time: '14:00 - 16:00', people: 1 }] } }
 ]
 
 async function shoot(s) {
