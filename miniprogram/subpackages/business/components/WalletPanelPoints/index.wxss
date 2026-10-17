@@ -102,46 +102,43 @@
 .card-bottom .tips { font-size: var(--fs-20); color: var(--color-text-secondary); }
 
 /* 2. 极简导航 */
+/* 2026-10-17 视觉对齐：页签 = 下划线（原圆点 + 光晕 + 竖分隔），与钱包顶栏同口径 */
 .tab-navbar {
-  width: 100%; display: flex; align-items: center;
-  margin: 60rpx 0 40rpx;
+  width: 100%; display: flex; align-items: stretch;
+  margin: 52rpx 0 40rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 .tab-item {
   flex: 1; min-width: 0;
   padding: 20rpx 0; position: relative;
-  font-size: var(--fs-26); color: var(--color-text-secondary); font-weight: bold; transition: all var(--dur-base) var(--ease-standard);
+  font-size: var(--fs-26); color: var(--color-text-secondary); transition: color var(--dur-base) var(--ease-standard);
   text-align: center; white-space: nowrap;
 }
 .tab-item text { white-space: nowrap; }
-.tab-item.active { color: #fff; font-size: var(--fs-28); }
-.tab-divider {
-  flex-shrink: 0; width: 1rpx; height: 24rpx;
-  background: rgba(255, 255, 255, 0.12);
-}
+.tab-item.active { color: #F3ECDD; font-family: var(--font-brand); font-weight: 600; }
 .indicator {
-  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 8rpx; height: 8rpx; background: var(--color-primary); border-radius: 50%;
-  box-shadow: 0 0 10rpx var(--color-primary);
+  position: absolute; bottom: -1rpx; left: 24%; right: 24%;
+  height: 3rpx; background: var(--brass-400);
 }
 
 /* 3. 权益网格 (沉浸式) */
 .content-area { width: 100%; }
 .section-header { margin-bottom: 40rpx; text-align: center; }
-.title-group .en { font-family: var(--font-mono); font-size: var(--fs-20); color: var(--color-primary); letter-spacing: 6rpx; font-weight: bold; }
+.title-group .en { display: block; font-family: var(--font-mono); font-size: var(--fs-18); color: var(--brass-300); letter-spacing: 0.24em; }
+.title-group .cn { display: block; margin-top: 10rpx; font-family: var(--font-brand); font-size: 38rpx; font-weight: 500; letter-spacing: 0.12em; color: #F3ECDD; }
 
-.reward-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24rpx; }
+/* 兑换品：图版（发丝框）+ 图下图注；兑换钮为金线环 —— 一屏多颗实心金药丸 → 收口（实心金不给列表项） */
+.reward-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 36rpx 20rpx; }
 .reward-card {
-  background: var(--color-bg-card); border-radius: var(--radius-md); overflow: hidden;
   display: flex; flex-direction: column; position: relative;
-  box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.3);
 }
 
-.img-box { position: relative; width: 100%; padding-top: 100%; background: var(--color-bg); }
+.img-box { position: relative; width: 100%; padding-top: 100%; background: #1F1D1A; border-radius: 4rpx; overflow: hidden; box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22); }
 .img-box image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.9; object-fit: cover; }
 .type-badge {
-  position: absolute; top: 16rpx; left: 16rpx; font-size: var(--fs-16); font-weight: bold;
-  color: var(--color-bg); background: var(--color-primary);
-  padding: 4rpx 10rpx; border-radius: 4rpx; letter-spacing: 1rpx;
+  position: absolute; top: 14rpx; left: 14rpx; font-family: var(--font-mono); font-size: var(--fs-16);
+  color: var(--brass-200); background: rgba(26, 24, 20, 0.78); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.4);
+  padding: 4rpx 10rpx; border-radius: 2rpx; letter-spacing: 0.16em;
 }
 .sold-out-mask {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -149,48 +146,48 @@
   font-size: var(--fs-24); letter-spacing: 4rpx; font-weight: bold; font-family: var(--font-mono);
 }
 
-.info-box { padding: 24rpx; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-.r-title { font-size: var(--fs-26); color: var(--color-text-body); font-weight: bold; margin-bottom: 8rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.info-box { padding: 16rpx 2rpx 0; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+.r-title { font-family: var(--font-brand); font-size: var(--fs-26); color: #F3ECDD; font-weight: 600; margin-bottom: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .r-desc { font-size: var(--fs-20); color: var(--color-text-secondary); margin-bottom: 20rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .r-footer { display: flex; justify-content: space-between; align-items: center; }
-.cost-group .val { font-size: var(--fs-32); color: var(--color-primary); font-weight: bold; font-family: var(--font-num); }
+.cost-group .val { font-size: var(--fs-30); color: var(--brass-200); font-weight: 600; font-family: var(--font-mono); }
 .cost-group .unit { font-size: var(--fs-18); color: var(--color-text-secondary); margin-left: 4rpx; font-weight: bold; }
 
 .btn-outline {
-  font-size: var(--fs-20); color: var(--color-bg); background: var(--color-primary);
-  padding: 8rpx 24rpx; border-radius: 30rpx; font-weight: bold; 
+  font-size: var(--fs-22); color: var(--brass-200); background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass-soft);
+  padding: 8rpx 22rpx; border-radius: 4rpx; letter-spacing: 0.08em;
 }
-.btn-outline.disabled { background: #333; color: var(--color-text-muted); }
+.btn-outline.disabled { background: transparent; box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.3); color: var(--color-text-secondary); }
 
 /* 4. 我的兑换 (时间轴风格) */
-.my-list { display: flex; flex-direction: column; gap: 40rpx; padding-left: 20rpx; border-left: 1px solid rgba(255,255,255,0.1); margin-left: 20rpx; }
+.my-list { display: flex; flex-direction: column; gap: 40rpx; padding-left: 20rpx; border-left: 1rpx solid rgba(196, 167, 108, 0.22); margin-left: 20rpx; }
 .my-card {
   display: flex; position: relative; padding-left: 30rpx;
 }
 /* 时间轴点 */
 .my-card::before {
   content: ''; position: absolute; left: -25rpx; top: 10rpx;
-  width: 10rpx; height: 10rpx; background: var(--color-primary); border-radius: 50%;
-  box-shadow: 0 0 10rpx var(--color-primary);
+  width: 10rpx; height: 10rpx; background: var(--brass-300); border-radius: 50%;
 }
 
-.my-thumb { width: 100rpx; height: 100rpx; border-radius: var(--radius-sm); background: var(--color-bg); margin-right: 24rpx; flex-shrink: 0; border: 1px solid #333; }
+.my-thumb { width: 100rpx; height: 100rpx; border-radius: 4rpx; background: #1F1D1A; margin-right: 24rpx; flex-shrink: 0; border: 1rpx solid rgba(196, 167, 108, 0.22); }
 .my-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 
 .my-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8rpx; }
-.my-title { font-size: var(--fs-26); color: var(--color-text-body); font-weight: bold; }
+.my-title { font-family: var(--font-brand); font-size: var(--fs-26); color: #F3ECDD; font-weight: 600; }
 .my-meta { font-size: var(--fs-20); color: var(--color-text-secondary); font-family: var(--font-mono); }
 
 .my-action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12rpx; }
 .status-txt { font-size: var(--fs-20); color: var(--color-text-secondary); }
 .btn-small {
-  font-size: var(--fs-20); color: var(--color-primary); border: 1rpx solid var(--color-primary); 
-  padding: 4rpx 16rpx; border-radius: var(--radius-sm); font-weight: bold;
+  font-size: var(--fs-20); color: var(--brass-200); border: 1rpx solid rgba(196, 167, 108, 0.55);
+  padding: 4rpx 16rpx; border-radius: 2rpx;
 }
 .btn-track {
-  font-size: var(--fs-20); color: var(--color-text-secondary); border: 1px solid #444; 
-  padding: 4rpx 16rpx; border-radius: var(--radius-sm);
+  font-size: var(--fs-20); color: var(--color-text-secondary); border: 1rpx solid rgba(160, 154, 144, 0.35);
+  padding: 4rpx 16rpx; border-radius: 2rpx;
 }
 
 .empty-tip { text-align: center; color: var(--color-text-secondary); font-size: var(--fs-24); margin-top: 100rpx; letter-spacing: 2rpx; }
@@ -386,40 +383,40 @@
   color: var(--color-text-secondary);
 }
 
-/* 订单认领轻量入口 */
+/* 订单认领轻量入口（2026-10-17：圆角深色卡 → 发丝线行） */
 .claim-entry {
   width: 100%;
   margin: 16rpx 0 8rpx;
-  padding: 28rpx 28rpx 28rpx 32rpx;
+  padding: 28rpx 4rpx;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20rpx;
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-lg);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
   box-sizing: border-box;
-  transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 .wallet-entry {
   margin-top: 8rpx;
 }
 .claim-entry-press {
-  opacity: 0.88;
-  transform: scale(0.985);
+  background: rgba(196, 167, 108, 0.05);
 }
 .claim-entry-text { flex: 1; min-width: 0; }
 .claim-entry-en {
   display: block;
-  font-size: var(--fs-16);
-  letter-spacing: 0.14em;
-  color: var(--brass-600);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 .claim-entry-cn {
   display: block;
   margin-top: 8rpx;
-  font-size: var(--fs-28);
-  color: var(--color-text-primary);
+  font-size: var(--fs-30);
+  font-weight: 600;
+  color: #F3ECDD;
   font-family: var(--font-brand);
 }
 .claim-entry-desc {
@@ -431,8 +428,8 @@
 }
 .claim-entry-arr {
   flex-shrink: 0;
-  font-size: var(--fs-28);
-  color: var(--brass-400);
+  font-size: var(--fs-32);
+  color: var(--brass-300);
 }
 
 /* 兑换二次确认 */

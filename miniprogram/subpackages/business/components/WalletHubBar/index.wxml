@@ -22,8 +22,6 @@
       <view class="whb-ind" wx:if="{{active === 'wallet'}}"></view>
     </view>
 
-    <view class="whb-split" aria-hidden="true"></view>
-
     <view
       class="whb-item {{active === 'coupons' ? 'is-on' : ''}}"
       hover-class="whb-item-press"
@@ -42,8 +40,6 @@
       </view>
       <view class="whb-ind" wx:if="{{active === 'coupons'}}"></view>
     </view>
-
-    <view class="whb-split" aria-hidden="true"></view>
 
     <!-- 2026-09-17：积分并入钱包，作为第三个并列 tab（与礼券夹同构，交互与样式不变） -->
     <view

@@ -25,10 +25,11 @@
   color: var(--color-text-primary);
 }
 .whb-overline {
-  font-size: var(--fs-18);
-  color: var(--brass-400);
-  letter-spacing: 0.12em;
   margin-top: 4rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .whb {
@@ -38,12 +39,12 @@
   box-sizing: border-box;
 }
 
+/* 2026-10-17 视觉对齐：圆角分段框 → 下划线页签（与全站页签同口径：选中 = 暖白宋体 + 金色下划线） */
 .whb-seg {
   display: flex;
   align-items: stretch;
-  background: #1F1D1A;
-  border: 1px solid #262320;
-  border-radius: var(--radius-md);
+  margin: 0 var(--space-4);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
   overflow: visible;
 }
 
@@ -61,8 +62,7 @@
 }
 
 .whb-item-press {
-  opacity: 0.82;
-  transform: scale(0.98);
+  opacity: 0.8;
 }
 
 .whb-stack {
@@ -90,20 +90,23 @@
 }
 
 .whb-en {
-  margin-top: 4rpx;
-  font-size: var(--fs-18);
-  color: var(--color-text-secondary);
-  letter-spacing: 0.12em;
+  margin-top: 6rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-16);
+  color: rgba(160, 154, 144, 0.8);
+  letter-spacing: 0.24em;
   line-height: 1.2;
   text-align: center;
 }
 
 .whb-item.is-on .whb-cn {
-  color: var(--color-primary);
+  color: #F3ECDD;
+  font-family: var(--font-brand);
+  font-weight: 600;
 }
 
 .whb-item.is-on .whb-en {
-  color: #8A7530;
+  color: var(--brass-300);
 }
 
 .whb-badge-pos {
@@ -116,18 +119,10 @@
 
 .whb-ind {
   position: absolute;
-  left: 28%;
-  right: 28%;
-  bottom: 0;
-  height: 4rpx;
-  background: var(--color-primary);
-  border-radius: 4rpx 4rpx 0 0;
+  left: 26%;
+  right: 26%;
+  bottom: -1rpx;
+  height: 3rpx;
+  background: var(--brass-400);
 }
 
-.whb-split {
-  width: 1px;
-  align-self: stretch;
-  margin: 16rpx 0;
-  background: #262320;
-  flex-shrink: 0;
-}

@@ -26,14 +26,24 @@ view, text { box-sizing: border-box; }
   margin-top: 16rpx;
   margin-bottom: 40rpx;
 }
+/* 2026-10-17 视觉对齐：页头 = 等宽眉标 + 宋体主标（原拉丁衬线大写金字） */
 .title {
-  font-family: var(--font-latin);
-  font-size: var(--fs-36);
-  letter-spacing: 0.16em;
-  color: var(--color-primary);
-  font-weight: 700;
   display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
+.header-cn {
+  display: block;
+  margin-top: 10rpx;
+  font-family: var(--font-brand);
+  font-size: 38rpx;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
+}
+
 .sub {
   font-size: var(--fs-22);
   color: #A09A90;
@@ -42,11 +52,12 @@ view, text { box-sizing: border-box; }
   letter-spacing: 0.06em;
 }
 /* 临期提醒：只在真有 ≤7 天到期的券时出现 */
+/* 临期提醒：只在真有 ≤7 天到期的券时出现（提醒色由警示橙收到暖金，仍只给临期） */
 .sub-warn {
   display: block;
-  margin-top: 8rpx;
+  margin-top: 10rpx;
   font-size: var(--fs-20);
-  color: #E9A23B;
+  color: var(--brass-200);
   letter-spacing: 0.04em;
 }
 
@@ -211,7 +222,7 @@ view, text { box-sizing: border-box; }
   background: transparent;
   border: 1rpx solid rgba(196, 167, 108, 0.6);
   padding: 14rpx 22rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   font-weight: 600;
   letter-spacing: 0.02em;
 }
@@ -550,7 +561,7 @@ view, text { box-sizing: border-box; }
 
 .group-sub {
   font-size: var(--fs-20);
-  color: #6B6560;
+  color: var(--color-text-secondary);
 }
 
 .group-foot {
@@ -592,8 +603,10 @@ view, text { box-sizing: border-box; }
 }
 
 /* 临期券：只剩描边提示，按钮照常满血（还能用就别吓人） */
+/* 临期券：暖金描边加一圈细环（原警示橙），按钮照常满血（还能用就别吓人） */
 .coupon-card.is-soon {
-  border-color: rgba(233, 162, 59, 0.45);
+  border-color: rgba(212, 188, 133, 0.7);
+  box-shadow: 0 0 0 1rpx rgba(212, 188, 133, 0.35);
 }
 
 .c-hint {
@@ -607,10 +620,11 @@ view, text { box-sizing: border-box; }
   background: rgba(255, 255, 255, 0.03);
 }
 /* 提醒色只留给真的临期：每张券都是橙色 = 没有一张显得急 */
+/* 提醒色只留给真的临期：每张券都高亮 = 没有一张显得急 */
 .coupon-card.is-soon .c-hint {
-  color: #E9A23B;
-  border-color: rgba(233, 162, 59, 0.4);
-  background: rgba(233, 162, 59, 0.1);
+  color: var(--brass-200);
+  border-color: rgba(212, 188, 133, 0.5);
+  background: rgba(196, 167, 108, 0.12);
 }
 
 /* 骑缝打眼孔：沿骑缝均分的 7 个孔，孔 = 页面底色（真的像被打穿） */

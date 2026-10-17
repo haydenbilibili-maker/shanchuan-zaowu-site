@@ -63,8 +63,9 @@
 <view class="container">
 
   <view class="header">
-    <text class="title">MY VOUCHERS</text>
-    <text class="sub">我的礼券夹 · 可用 {{usableCouponCount}}{{closedCount ? ' · 已失效 ' + closedCount : ''}}</text>
+    <text class="title">MY VOUCHERS · 礼券夹</text>
+    <text class="header-cn">我的礼券夹</text>
+    <text class="sub">可用 {{usableCouponCount}}{{closedCount ? ' · 已失效 ' + closedCount : ''}}</text>
     <text class="sub-warn" wx:if="{{expiringCount}}">{{expiringCount}} 张礼券 {{expiringDays}} 天内到期，请尽快使用</text>
   </view>
 

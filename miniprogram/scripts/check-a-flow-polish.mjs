@@ -7,6 +7,7 @@
  *   node miniprogram/scripts/check-a-flow-polish.mjs
  *   node miniprogram/scripts/check-a-flow-polish.mjs --selftest   （内存注入，不写盘）
  */
+import { createHash } from 'node:crypto'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -50,7 +51,12 @@ const FILES = {
   ticketWxss: 'subpackages/business/ticket/index.wxss',
   pickupWxss: 'subpackages/business/pickup-pass/index.wxss',
   customWxss: 'subpackages/feature/custom/index.wxss',
-  customNav: 'subpackages/feature/utils/customNav.js'
+  customNav: 'subpackages/feature/utils/customNav.js',
+  walletLeather: 'subpackages/business/components/WalletPanelWallet/wallet-leather.wxss',
+  walletWxss: 'subpackages/business/components/WalletPanelWallet/index.wxss',
+  couponsWxss: 'subpackages/business/components/WalletPanelCoupons/index.wxss',
+  pointsWxss: 'subpackages/business/components/WalletPanelPoints/index.wxss',
+  hubBarWxss: 'subpackages/business/components/WalletHubBar/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -169,6 +175,20 @@ function checks(s) {
   }
   add('R15-2 定制页实心金只给底栏主按钮（步骤条当前步不再是实心金圆点）',
     solidGold(s.customWxss) === '.btn-primary' && !/grain-overlay/.test(s.customWxss))
+  // 2026-10-17 产品负责人：钱包 / 礼券 / 积分「不要更改卡片的金属与皮质视觉质感，只做页面的视觉对齐和细节质感提升」
+  {
+    const rule = (src, sel) => (src.match(new RegExp('(^|\\n)' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{[^}]*\\}')) || [''])[0].trim()
+    const parts = [s.walletLeather,
+      ...['.asset-face', '.asset-back', '.card-texture', '.card-inner', '.level-badge', '.num'].map((x) => rule(s.pointsWxss, x)),
+      ...['.coupon-card', '.c-left', '.texture'].map((x) => rule(s.couponsWxss, x))]
+    const fp = createHash('sha256').update(parts.join('\n/*--*/\n')).digest('hex').slice(0, 16)
+    // 指纹变了 = 有人动了卡面质感。确系产品负责人点名改卡面时，才更新这里的指纹值。
+    add(`R16-1 钱包皮质卡 / 积分黑金卡 / 礼券券面的质感规则未被改动（指纹 ${fp}）`, fp === '9c483878d63c163d')
+  }
+  add('R16-2 钱包页面对齐：顶栏下划线页签、分区去金条盒子、礼券无警示橙、兑换钮不再是实心金药丸',
+    !/\n\.whb-seg \{[^}]*background/.test(s.hubBarWxss) && /\.account-section-label::before \{ display: none; \}/.test(s.walletWxss) &&
+      !/E9A23B|233, 162, 59/.test(s.couponsWxss) && !/\.btn-outline \{[^}]*background: var\(--color-primary\)/.test(s.pointsWxss) &&
+      !/box-shadow: 0 0 10rpx var\(--color-primary\)/.test(s.pointsWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -411,6 +431,10 @@ if (process.argv.includes('--selftest')) {
     ['打印动画不再触发', 'bookingJs', (t) => t.replace('this.setData({ mintAnimation: true });', 'this.setData({});')],
     ['定制说明段高度漂移', 'customWxss', (t) => t.replace('  height: 88rpx;\n  padding: 0 32rpx;', '  height: 96rpx;\n  padding: 0 32rpx;')],
     ['定制步骤条当前步回到实心金', 'customWxss', (t) => t.replace('.rail-dot.active { border-bottom-color: var(--brass-400); }', '.rail-dot.active {\n  background: var(--brass-400);\n}')],
+    ['积分卡斜纹质感被改', 'pointsWxss', (t) => t.replace('background-size: 20rpx 20rpx;', 'background-size: 24rpx 24rpx;')],
+    ['皮质钱包卡被改', 'walletLeather', (t) => t + '\n.wallet-leather-card { opacity: 0.98; }'],
+    ['礼券临期回到警示橙', 'couponsWxss', (t) => t.replace('  color: var(--brass-200);\n  letter-spacing: 0.04em;', '  color: #E9A23B;\n  letter-spacing: 0.04em;')],
+    ['兑换钮回到实心金药丸', 'pointsWxss', (t) => t.replace('font-size: var(--fs-22); color: var(--brass-200); background: rgba(196, 167, 108, 0.08);', 'font-size: var(--fs-22); color: #1A1814; background: var(--color-primary);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],

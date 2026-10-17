@@ -1,6 +1,6 @@
 {
  "at": "2026-10-17",
- "total": 170,
+ "total": 169,
  "counts": {
   "app.wxss": 3,
   "components/MemberLevelModal/index.wxss": 7,
@@ -14,7 +14,7 @@
   "subpackages/business/about/index.wxss": 1,
   "subpackages/business/aftersale-apply/index.wxss": 1,
   "subpackages/business/ar/index.wxss": 2,
-  "subpackages/business/components/WalletPanelCoupons/index.wxss": 8,
+  "subpackages/business/components/WalletPanelCoupons/index.wxss": 7,
   "subpackages/business/components/WalletPanelPoints/index.wxss": 4,
   "subpackages/business/components/WalletPanelWallet/index.wxss": 2,
   "subpackages/business/components/WalletPanelWallet/wallet-leather.wxss": 1,

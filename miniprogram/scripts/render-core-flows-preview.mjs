@@ -362,7 +362,7 @@ const SCENES = [
   },
   {
     name: 'wallet-coupons', h: 1700, wxml: 'subpackages/business/components/WalletPanelCoupons/index', data: {
-      loading: false, usableCouponCount: 3, expiringCount: 1, lockedCount: 1, closedCount: 2, passState: 'idle', memberNo: '0137',
+      loading: false, usableCouponCount: 3, expiringCount: 1, expiringDays: 7, lockedCount: 1, closedCount: 2, passState: 'idle', memberNo: '0137', closedExpanded: false, lockedCoupons: [{ _id: 'c9', title: '满减礼券', faceLabel: '¥30', value: 30, minSpend: 299, canUse: false, status: 'locked', channelLabel: '线上可用', expiryHint: '11.30 前有效', sourceLabel: '积分兑换' }], closedCoupons: [],
       coupons: [
         { _id: 'c1', title: '新会员礼券', faceLabel: '¥20', value: 20, minSpend: 0, canUse: true, canUseOnline: true, channelLabel: '线上 · 门店通用', expiryHint: '10.31 前有效', sourceLabel: '新会员礼包', useLabel: '去使用' },
         { _id: 'c2', title: '满减礼券', faceLabel: '¥50', value: 50, minSpend: 599, canUse: true, canUseOnline: true, channelLabel: '线上可用', expiryHint: '3 天后到期', expiringSoon: true, sourceLabel: '生日礼', useLabel: '去使用' },
@@ -374,14 +374,14 @@ const SCENES = [
     name: 'wallet-balance', h: 1700, wxml: 'subpackages/business/components/WalletPanelWallet/index', data: {
       accountReady: true, account: { availableYuan: '1,280.00', memberNo: '0137' }, allowed: true, rechargeMode: true, needLogin: false, checking: false, iosBlocked: false, flashSuccess: false, ledgerLoading: false, ledgerEmpty: false, allowCustom: true, recharge: { minCustomYuan: 100, maxCustomYuan: 20000 }, paySummaryLabel: '实付 ¥1000 · 到账 ¥1080', selectedBenefitHint: '升至「藏家」，享 9.5 折', ledgerCap: '近 30 天',
       packages: [{ id: 'k1', label: '¥500', displayPayYuan: '500', pointsLine: '+500 积分', discountLine: '到账 ¥530' }, { id: 'k2', label: '¥1000', displayPayYuan: '1000', levelBadge: '升级', levelName: '藏家', pointsLine: '+1000 积分', discountLine: '到账 ¥1080' }, { id: 'k3', label: '¥2000', displayPayYuan: '2000', levelName: '馆员', pointsLine: '+2000 积分', discountLine: '到账 ¥2200' }],
-      selectedPackageId: 'k2', rechargeMode: 'package', canPay: true, payBtnLabel: '充值 ¥1000',
+      selectedPackageId: 'k2', rechargeMode: 'package', canPay: true, payBtnLabel: '充值 ¥1000', walletPlateFooter: 'SHANHAI · MEMBER WALLET', walletRechargeLead: '选一档储值，到账即可在线上与门店消费', walletRechargeHint: '储值余额不可提现，可用于线上与门店消费', walletSecurityNote: '余额变动会推送提醒；如非本人操作请联系专员', customAmount: '', customHint: '', ledgerHasMore: false,
       ledgerTimeline: [{ week: '本周', rows: [{ typeLabel: '消费', subtitle: '光明女神闪蝶 · 玻璃罩', amountSign: '-', amountYuan: '388.00', clockText: '10.12 14:20', toneClass: 'minus', balanceAfterYuan: '1,280.00' }, { typeLabel: '充值', subtitle: '储值 ¥1000 送 ¥80', amountSign: '+', amountYuan: '1,080.00', clockText: '10.10 09:12', toneClass: 'plus', isCredit: true, balanceAfterYuan: '1,668.00' }] }]
     }
   },
   {
     name: 'wallet-points', h: 1600, wxml: 'subpackages/business/components/WalletPanelPoints/index', data: {
-      loading: false, points: 2680, pointsYuan: '26.80', curTab: 0,
-      rewards: [{ _id: 'r1', title: '黄铜书签', cost: 800, image: P[3] }, { _id: 'r2', title: '标本小卡', cost: 300, image: P[4] }]
+      loading: false, points: 2680, pointsYuan: '26.80', curTab: 0, pointsReady: true, pointsText: '2,680', levelName: '藏家', onlineSpendTotal: '3,260', storeSpendTotal: '1,180', platformSpendTotal: 0, storePointsTotal: 1180, myRewards: [],
+      rewards: [{ _id: 'r1', title: '黄铜书签', description: '蚀刻闪蝶纹样', cost: 800, stock: 12, type: 'physical', image: P[3] }, { _id: 'r2', title: '¥30 礼券', description: '全场满 199 可用', cost: 3000, stock: 99, type: 'coupon', image: P[4] }]
     }
   },
   {
