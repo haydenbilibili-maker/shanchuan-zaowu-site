@@ -42,6 +42,7 @@ const FILES = {
   identifyJs: 'subpackages/feature/identify/index.js',
   bookingWxml: 'subpackages/business/booking/index.wxml',
   bookingJs: 'subpackages/business/booking/index.js',
+  bookingWxss: 'subpackages/business/booking/index.wxss',
   previewLib: 'scripts/lib/wxml-preview.mjs',
   storeWxml: 'subpackages/business/store/index.wxml',
   storeWxss: 'subpackages/business/store/index.wxss',
@@ -128,6 +129,15 @@ function checks(s) {
       /flipTicket\(\) \{[\s\S]{0,160}isFlipped: !this\.data\.isFlipped/.test(s.bookingJs) && /isFlipped: false/.test(s.bookingJs) &&
       (s.bookingWxml.match(/class="val highlight[^"]*">\{\{ticketInfo\.timeStr\}\}/g) || []).length === 2 &&
       !/🦋/.test(s.bookingWxml))
+  // 2026-10-17 产品负责人：「入馆券除了目前的样式，还需要保持之前的打印动画」
+  add('R12-4 预约成功的入馆券打印动画保留（打印机出纸 0→800rpx / 2.5s、进度条、扫描线，2.6s 后出操作区）',
+    /<view class="mint-machine">[\s\S]*?<view class="printer-slot"><\/view>/.test(s.bookingWxml) &&
+      /<view class="ticket-paper \{\{mintAnimation \? 'printing' : ''\}\}">/.test(s.bookingWxml) &&
+      /class="scan-bar"/.test(s.bookingWxml) && /<view class="mint-progress"><view class="mp-bar"><\/view><\/view>/.test(s.bookingWxml) &&
+      /\n\.ticket-paper \{[^}]*height: 0;[^}]*transition: height 2\.5s/.test(s.bookingWxss) && /\.ticket-paper\.printing \{ height: 800rpx; \}/.test(s.bookingWxss) &&
+      /\.mp-bar \{[^}]*animation: bk-progress 2\.5s linear forwards/.test(s.bookingWxss) &&
+      /\n\.mint-actions \{[^}]*opacity: 0;[^}]*2\.6s/.test(s.bookingWxss) &&
+      /this\.setData\(\{ mintAnimation: true \}\);[\s\S]{0,80}\}, 100\);[\s\S]{0,40}setTimeout\(\(\) => \{\s*this\.setData\(\{ mintFinished: true \}\);[\s\S]{0,60}\}, 2600\);/.test(s.bookingJs))
   add('R12-2 预约页分区头为眉标 + 中文主标两行（不再「选择日期 | SELECT DATE」同一节点并列）',
     !/class="section-label">[^<]*\|/.test(s.bookingWxml) && (s.bookingWxml.match(/<view class="section-label"><text class="sl-en">/g) || []).length === 4)
   add('R12-3 wxml-preview 跳过 {{ }} 内的 <（否则预约页无法离线出图）',
@@ -385,6 +395,9 @@ if (process.argv.includes('--selftest')) {
     ['入馆券页头回到实心金带', 'ticketWxss', (t) => t.replace('.ticket-header {\n  padding: 44rpx 32rpx 8rpx;', '.ticket-header {\n  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);\n  padding: 44rpx 32rpx 8rpx;')],
     ['入馆券信号灯复活', 'ticketWxml', (t) => t.replace('<view class="live-dot"></view>', '<view class="signal-light blink"></view>')],
     ['自取已自提回到绿章', 'pickupWxss', (t) => t.replace('  border: 4rpx solid rgba(90, 78, 58, 0.85);', '  border: 4rpx solid rgba(82, 183, 136, 0.85);')],
+    ['打印动画出纸被去掉', 'bookingWxss', (t) => t.replace('.ticket-paper.printing { height: 800rpx; }', '.ticket-paper.printing { }')],
+    ['打印机实体被删', 'bookingWxml', (t) => t.replace('<view class="printer-slot"></view>', '')],
+    ['打印动画不再触发', 'bookingJs', (t) => t.replace('this.setData({ mintAnimation: true });', 'this.setData({});')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
