@@ -1,6 +1,5 @@
 <!--subpackages/extra/user/messages/detail/index.wxml-->
 <view class="page-msg detail-root">
-  <view class="grain-overlay"></view>
 
   <view class="letter-page visible standalone paper-mode kind-{{selectedMessage.kind}}" wx:if="{{selectedMessage._id}}">
     <scroll-view
@@ -10,33 +9,14 @@
     >
       <view class="letter-stage paper-stage kind-{{selectedMessage.kind}} {{entered ? 'entered' : ''}}">
         <view class="letter-card paper paper-{{selectedMessage.kind}} {{entered ? 'settled' : ''}}">
+          <!-- 2026-10-17「信笺」重构：一张浅纸标本签 —— 内发丝框 + 顶边铜别针 + 方寸印（类别）；
+               纤维 / 压纹 / 磨损 / 折痕 / 折角与三枚信号灯退场 -->
           <view class="paper-plate-outer"></view>
-          <view class="paper-laid"></view>
-          <view class="paper-fiber"></view>
-          <view class="paper-fiber fine"></view>
-          <view class="paper-wear"></view>
-          <view class="paper-crease"></view>
-          <view class="paper-fold"></view>
-          <view class="letter-stamp stamp-{{selectedMessage.kind}}">
-            <text class="stamp-en">{{selectedMessage.stampEn}}</text>
-            <text class="stamp-cn">{{selectedMessage.stampCn}}</text>
-          </view>
+          <view class="letter-pin" aria-hidden="true"></view>
+          <view class="letter-seal seal-{{selectedMessage.kind}}" aria-hidden="true"><text>{{selectedMessage.stampCn}}</text></view>
 
           <view class="letter-plate">
-            <view class="letter-kicker">
-              <view class="signal-row">
-                <view class="lamp {{selectedMessage.readLampClass}}"></view>
-                <text class="signal-label">{{selectedMessage.readLabel}}</text>
-              </view>
-              <view class="signal-row">
-                <view class="lamp {{selectedMessage.kindLampClass}}"></view>
-                <text class="signal-label">{{selectedMessage.kindLabel}}</text>
-              </view>
-              <view class="signal-row">
-                <view class="lamp {{selectedMessage.statusLampClass}}"></view>
-                <text class="signal-label">{{selectedMessage.statusLabel}}</text>
-              </view>
-            </view>
+            <text class="letter-eyebrow">{{selectedMessage.stampEn}} · {{selectedMessage.kindLabel}}{{selectedMessage.statusLabel ? ' · ' + selectedMessage.statusLabel : ''}}</text>
 
             <text class="letter-sender">{{selectedMessage.senderName}}</text>
             <text class="letter-title">{{selectedMessage.title}}</text>

@@ -58,10 +58,6 @@ page {
   min-height: 520rpx;
 }
 
-.standalone .paper-fiber {
-  mix-blend-mode: normal;
-}
-
 .letter-stage {
   width: 100%;
   padding: 28rpx 28rpx 24rpx;
@@ -120,107 +116,9 @@ page {
   border-color: rgba(82, 183, 136, 0.22);
 }
 
-.paper-laid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.22;
-  background-image: repeating-linear-gradient(
-    0deg,
-    rgba(139, 111, 71, 0.07) 0,
-    rgba(139, 111, 71, 0.07) 1rpx,
-    transparent 1rpx,
-    transparent 9rpx
-  );
-}
-
-.paper-fiber {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.11;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.35' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
-}
-
-.paper-fiber.fine {
-  opacity: 0.07;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.1' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
-}
-
-.paper-wear {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1;
-  background:
-    radial-gradient(28rpx 22rpx at 10rpx 10rpx, rgba(139, 111, 71, 0.14), transparent 72%),
-    radial-gradient(24rpx 20rpx at calc(100% - 12rpx) 14rpx, rgba(77, 64, 26, 0.12), transparent 70%),
-    radial-gradient(26rpx 20rpx at 14rpx calc(100% - 10rpx), rgba(139, 111, 71, 0.1), transparent 74%),
-    radial-gradient(22rpx 18rpx at calc(100% - 10rpx) calc(100% - 12rpx), rgba(77, 64, 26, 0.1), transparent 70%),
-    linear-gradient(180deg, rgba(250, 246, 237, 0.38) 0%, transparent 16%, transparent 84%, rgba(139, 111, 71, 0.08) 100%);
-}
-
-.paper-crease {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 17%;
-  width: 2rpx;
-  pointer-events: none;
-  z-index: 1;
-  background: linear-gradient(
-    180deg,
-    rgba(139, 111, 71, 0) 0%,
-    rgba(139, 111, 71, 0.18) 16%,
-    rgba(196, 167, 108, 0.12) 48%,
-    rgba(139, 111, 71, 0.14) 84%,
-    rgba(139, 111, 71, 0) 100%
-  );
-}
-
-.paper-fold {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 36%;
-  height: 2rpx;
-  pointer-events: none;
-  z-index: 1;
-  background: linear-gradient(
-    90deg,
-    rgba(139, 111, 71, 0) 0%,
-    rgba(139, 111, 71, 0.12) 18%,
-    rgba(196, 167, 108, 0.1) 50%,
-    rgba(139, 111, 71, 0.1) 82%,
-    rgba(139, 111, 71, 0) 100%
-  );
-}
-
-.paper-mode .letter-stamp {
-  border: 1px dashed rgba(138, 117, 48, 0.55);
-  background: rgba(250, 246, 237, 0.55);
-}
-
-.stamp-receipt {
-  border-color: rgba(45, 90, 63, 0.35);
-}
-
-.stamp-digest {
-  border-color: rgba(91, 143, 185, 0.5);
-  background: rgba(232, 240, 247, 0.65);
-}
-
 .paper-mode .letter-plate {
   position: relative;
   z-index: 2;
-}
-
-.paper-mode .letter-kicker {
-  padding-right: 100rpx;
-}
-
-.paper-mode .signal-label {
-  color: #8B6F47;
 }
 
 .paper-mode .lamp-brass.hollow {
@@ -645,7 +543,6 @@ page {
   color: #8A5A2B;
 }
 
-
 .dg-tool {
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
@@ -782,7 +679,6 @@ page {
   gap: 10rpx;
   margin-bottom: var(--space-2, 16rpx);
 }
-
 
 .dg-sec-lamp {
   width: 14rpx;
@@ -940,3 +836,117 @@ page {
   color: #8A5A2B;
   opacity: 0.95;
 }
+
+/* ── 信笺（2026-10-17 第二轮重构）──────────────────────────────────────
+   与证书 / 礼笺 / 心愿签同一种纸：浅纸渐变 + 墨色 + 内发丝框 + 顶边铜别针 + 方寸印。
+   纤维 / 压纹 / 磨损 / 折痕 / 折角节点与三枚信号灯已从模板移除；日报正文版式不变。 */
+.paper-stage .letter-card.paper,
+.paper-stage .letter-card.paper-receipt,
+.paper-stage .letter-card.paper-notice {
+  position: relative;
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  border: none;
+  border-radius: 4rpx;
+  /* 内边距写在这里（不靠 @import 进来的列表页 .letter-card），纸边与内发丝框之间留足呼吸 */
+  padding: 56rpx 44rpx 48rpx;
+  box-shadow: 0 18rpx 40rpx rgba(0, 0, 0, 0.45);
+}
+
+.paper-mode .paper-plate-outer,
+.kind-receipt .paper-plate-outer {
+  inset: 16rpx;
+  border: 1rpx solid rgba(46, 38, 24, 0.22);
+  border-radius: 0;
+}
+
+.letter-pin {
+  position: absolute;
+  top: 6rpx;
+  left: 50%;
+  width: 18rpx;
+  height: 18rpx;
+  margin-left: -9rpx;
+  border-radius: 50%;
+  background: #B08D57;
+  z-index: 3;
+}
+
+/* 方寸印：类别（回执 / 通知 / 馆方 / 日报），墨铜底刻纸色字 */
+.letter-seal {
+  position: absolute;
+  top: 44rpx;
+  right: 44rpx;
+  z-index: 3;
+  min-width: 64rpx;
+  height: 64rpx;
+  padding: 0 8rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #B08D57;
+  border-radius: 4rpx;
+  transform: rotate(-6deg);
+}
+
+.letter-seal text {
+  font-family: var(--font-brand);
+  font-size: var(--fs-22);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #F3ECDD;
+}
+
+.letter-seal.seal-campaign { background: #9E3B2E; }
+.letter-seal.seal-digest { background: #5E7A93; }
+
+.paper-mode .letter-plate {
+  padding-top: 24rpx;
+}
+
+.letter-eyebrow {
+  display: block;
+  padding-right: 120rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.18em;
+  color: #8B6F47;
+}
+
+.paper-mode .letter-sender {
+  display: block;
+  margin-top: 20rpx;
+  font-size: var(--fs-22);
+  letter-spacing: 0.12em;
+  color: #8A7F6C;
+}
+
+.paper-mode .letter-title {
+  display: block;
+  margin-top: 8rpx;
+  font-size: var(--fs-36);
+  line-height: 1.4;
+  color: #2E2618;
+}
+
+.paper-mode .letter-time {
+  display: block;
+  margin-top: 8rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  color: #8A7F6C;
+}
+
+.paper-mode .letter-rule {
+  height: 1rpx;
+  margin: 28rpx 0;
+  background: rgba(46, 38, 24, 0.22);
+}
+
+.paper-mode .letter-p,
+.run-text {
+  color: #3E3626;
+}
+
+.sign-line { color: #2E2618; }
+.sign-mark { color: #8B6F47; }

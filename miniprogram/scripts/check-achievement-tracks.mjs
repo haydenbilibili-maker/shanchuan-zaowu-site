@@ -27,7 +27,10 @@ const P = {
   certJs: resolve(MP, 'subpackages/extra/user/certificates/index.js'),
   certWxml: resolve(MP, 'subpackages/extra/user/certificates/index.wxml'),
   wishJs: resolve(MP, 'subpackages/extra/user/wishlist/index.js'),
-  wishWxml: resolve(MP, 'subpackages/extra/user/wishlist/index.wxml')
+  wishWxml: resolve(MP, 'subpackages/extra/user/wishlist/index.wxml'),
+  msgJs: resolve(MP, 'subpackages/extra/user/messages/index.js'),
+  msgWxml: resolve(MP, 'subpackages/extra/user/messages/index.wxml'),
+  letterWxml: resolve(MP, 'subpackages/extra/user/messages/detail/index.wxml')
 }
 
 async function run(inject) {
@@ -108,6 +111,23 @@ async function run(inject) {
   ok(!/<scroll-view/.test(wishWxml) && !/<scroll-view/.test(certWxml) && !/headerBlockPx/.test(read(P.wishJs) + read(P.certJs)),
     'F 收藏与候补 / 荣誉档案改为页面滚动（不再 scroll-view + 量出来的顶距）')
   ok(!/&amp;/.test(wishWxml), 'F WXML 文本里不写 &amp;（真机可能原样显示）')
+
+  // G 山海有信「信笺」（2026-10-17）：按日分组的日轨 / 顾客卷首只在顾客队列 / 信笺退场旧装饰
+  const msgMod = loadCjsModule(P.msgJs, {
+    transform: (f, src) => (f === P.msgJs ? transform(f, src) + '\nmodule.exports.__withDayRail = withDayRail' : transform(f, src)),
+    globals: { getApp: () => ({ globalData: {} }), Page: () => {}, wx: {} }
+  })
+  const now = new Date(2026, 9, 17, 12)
+  const rail = msgMod.__withDayRail([{ createTime: new Date(2026, 9, 17, 9) }, { createTime: new Date(2026, 9, 17, 8) },
+    { createTime: new Date(2026, 9, 16, 20) }, { createTime: new Date(2026, 9, 12) }, { createTime: new Date(2025, 2, 2) }, {}], now).map((x) => x.dayLabel)
+  ok(rail.join('|') === '今天||昨天|10 月 12 日|2025 年 3 月 2 日|', `G 日轨须每天只标第一封、跨年带年份、无时间不标：${rail.join('|')}`)
+  const msgWxml = read(P.msgWxml)
+  ok(/class="letters-head" wx:if="\{\{!workflowMode && activeQueue === 'customer'\}\}"/.test(msgWxml) &&
+    /class="day-rail" wx:if="\{\{item\.dayLabel && !workflowMode && activeQueue === 'customer'\}\}"/.test(msgWxml),
+    'G 信箱卷首与日轨只在顾客队列出现（员工工作信息 / 日报不受影响）')
+  const letter = read(P.letterWxml)
+  ok(!/paper-fiber|paper-laid|paper-wear|paper-crease|paper-fold|signal-row|class="grain-overlay"/.test(letter) && /class="letter-seal seal-/.test(letter),
+    'G 信笺退场纤维 / 压纹 / 磨损 / 折痕 / 信号灯，换方寸印')
   return fails
 }
 
@@ -126,6 +146,8 @@ const INJECTIONS = [
   { name: '证书筛选收藏丢了受赠', file: P.certJs, find: "if (filter === 'holder') return all.filter((c) => c.kind !== 'gift_voucher')", replace: "if (filter === 'holder') return all.filter((c) => c.kind === 'holder')" },
   { name: '没赠出过也出筛选', file: P.certWxml, find: 'class="filters" wx:if="{{givenCount > 0 && !loading}}"', replace: 'class="filters" wx:if="{{!loading}}"' },
   { name: '收藏与候补回到 scroll-view', file: P.wishWxml, find: '<view class="page-wishlist">', replace: '<view class="page-wishlist"><scroll-view scroll-y class="content">' },
+  { name: '日轨每封都标日期', file: P.msgJs, find: "    const dayLabel = label && label !== prev ? label : '';", replace: "    const dayLabel = label;" },
+  { name: '信笺装饰节点复活', file: P.letterWxml, find: '          <view class="paper-plate-outer"></view>\n', replace: '          <view class="paper-plate-outer"></view>\n          <view class="paper-fiber"></view>\n' },
   { name: '刻度只数点亮的', file: P.page, find: "t.nodes.map((n) => ({ id: n.id, lit: n.unlocked }))", replace: "t.nodes.filter((n) => n.unlocked).map((n) => ({ id: n.id, lit: true }))" }
 ]
 

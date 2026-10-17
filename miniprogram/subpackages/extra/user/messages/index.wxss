@@ -1193,3 +1193,146 @@ page {
     animation: none;
   }
 }
+
+/* ── 顾客信箱「信笺」（2026-10-17 第二轮重构）────────────────────────────
+   卷首（眉标 + 未读大数字 + 全部标为已读）；分类改下划线页签；按日分组的日轨；
+   行内：宋体标题、类别 · 类型眉标、状态改一行小字（不再是灯 + 胶囊）。
+   只作用于顾客队列（.queue-customer）；员工工作信息 / 日报卡不在此列，保持原样。 */
+.letters-head {
+  padding: 28rpx 32rpx 8rpx;
+}
+
+.lh-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
+}
+
+.lh-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 12rpx;
+}
+
+.lh-count {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+}
+
+.lh-num {
+  font-family: var(--font-mono);
+  font-size: 72rpx;
+  line-height: 1;
+  color: var(--brass-200);
+}
+
+.lh-unit,
+.lh-all-read {
+  font-family: var(--font-brand);
+  font-size: var(--fs-28);
+  color: var(--color-text-body);
+}
+
+.lh-mark {
+  padding: 8rpx 0 8rpx 24rpx;
+  font-size: var(--fs-24);
+  color: var(--brass-300);
+}
+
+/* 分类：下划线页签（顾客队列） */
+.queue-customer .filter-row {
+  height: 76rpx;
+  gap: 36rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.16);
+}
+
+.queue-customer .filter-pill {
+  height: 76rpx;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 4rpx solid transparent;
+  border-radius: 0;
+}
+
+.queue-customer .filter-pill text {
+  font-size: var(--fs-26);
+  color: var(--color-text-secondary);
+}
+
+.queue-customer .filter-pill.active {
+  background: transparent;
+  border-bottom-color: var(--brass-400);
+  box-shadow: none;
+}
+
+.queue-customer .filter-pill.active text {
+  color: var(--brass-200);
+  font-weight: 500;
+}
+
+/* 日轨 */
+.day-rail {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 36rpx 0 8rpx;
+}
+
+.day-rail::after {
+  content: '';
+  flex: 1;
+  height: 1rpx;
+  background: rgba(196, 167, 108, 0.18);
+}
+
+.day-rail-t {
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  letter-spacing: 0.12em;
+  color: var(--brass-300);
+}
+
+/* 行内 */
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-30);
+  color: #F3ECDD;
+}
+
+.queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .message-title {
+  color: var(--color-text-body);
+}
+
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .type-tag {
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}
+
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .status-chip {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .status-chip .lamp {
+  display: none;
+}
+
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .status-chip text {
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}
+
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .action-hint {
+  font-size: var(--fs-22);
+  color: var(--brass-300);
+}
+
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mg-thumb {
+  border-radius: 4rpx;
+}

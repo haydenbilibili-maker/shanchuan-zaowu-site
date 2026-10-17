@@ -1,7 +1,19 @@
 <!--subpackages/extra/user/messages/index.wxml-->
 <view class="page-msg {{activeQueue === 'workflow' ? 'queue-workflow' : 'queue-customer'}} {{activeCategory === 'digest' ? 'cat-digest' : ''}}">
   <view class="sticky-header">
-    <view class="toolbar">
+    <!-- 顾客信箱卷首（2026-10-17「信笺」重构）：眉标 + 未读大数字 +「全部已读」；导航栏已写「山海有信」，这里不再重复大标题 -->
+    <view class="letters-head" wx:if="{{!workflowMode && activeQueue === 'customer'}}">
+      <text class="lh-eyebrow">LETTERS · 来信</text>
+      <view class="lh-row">
+        <view class="lh-count" wx:if="{{unreadCount > 0}}">
+          <text class="lh-num">{{unreadCount}}</text>
+          <text class="lh-unit">封未读</text>
+        </view>
+        <text class="lh-all-read" wx:else>信都读过了</text>
+        <text class="lh-mark" bindtap="markAllRead" hover-class="tap-press" hover-stay-time="80" wx:if="{{unreadCount > 0}}">全部标为已读</text>
+      </view>
+    </view>
+    <view class="toolbar" wx:if="{{workflowMode || activeQueue !== 'customer'}}">
       <view class="toolbar-meta">
         <view class="lamp {{unreadCount > 0 ? (activeQueue === 'workflow' ? 'lamp-forest' : 'lamp-brass') : 'lamp-brass hollow'}}"></view>
         <text class="unread-hint" wx:if="{{unreadCount > 0}}">{{unreadCount}} 封未读</text>
@@ -125,10 +137,13 @@
     </view>
 
     <view class="message-list" wx:else>
+      <block wx:for="{{messages}}" wx:key="_id">
+      <!-- 日轨：每天第一封信前一条日期线（只在顾客信箱出现） -->
+      <view class="day-rail" wx:if="{{item.dayLabel && !workflowMode && activeQueue === 'customer'}}">
+        <text class="day-rail-t">{{item.dayLabel}}</text>
+      </view>
       <view
         class="message-item {{item.isUnread ? 'unread' : 'read'}} {{item.isPaper ? 'paper' : item.kind}} {{activeQueue === 'workflow' || item.kind === 'workflow' || item.isDigest ? 'workflow-card' : ''}} {{item.isDigest ? 'digest-card' : ''}} {{item.digestCard ? 'health-' + item.digestCard.healthTone : ''}}"
-        wx:for="{{messages}}"
-        wx:key="_id"
         hover-class="message-item-press"
         hover-stay-time="80"
         bindtap="viewMessage"
@@ -201,6 +216,7 @@
           </view>
         </view>
       </view>
+      </block>
 
       <view class="load-more" wx:if="{{loadingMore}}">
         <view class="lamp lamp-brass dim"></view>
