@@ -17,5 +17,5 @@ npm run test:wiki-view-stats
 npm run test:knowledge-card
 # 2026-10-17：山海图鉴卷一重设计（每页有刻版线描、未点亮不剧透、标本册按编号固定位置、门类与卷章互斥）+ 同日标本养护「养护手册」（品类刻版线描、三页页面滚动、跳转走 pageScrollTo）；10 个内存注入
 npm run check:atlas-plates
-# 2026-10-17：我的成就「馆志 · 成长线」重设计（徽章一枚不丢进成长线、云端现有徽章都已登记、连线按进度填、下一枚取最近三枚、刻度一枚一格、focus=relics 不在 scroll-view 里；7 个内存注入）
+# 2026-10-17：我的成就「馆志 · 成长线」重设计（徽章一枚不丢进成长线、云端现有徽章都已登记、连线按进度填、下一枚取最近三枚、刻度一枚一格、focus=relics 不在 scroll-view 里）+ 同日「我的」子页（荣誉档案筛选与缩样印色、收藏与候补页面滚动）；10 个内存注入）
 npm run check:achievement-tracks

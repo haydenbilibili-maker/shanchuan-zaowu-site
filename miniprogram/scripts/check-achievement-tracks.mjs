@@ -23,7 +23,11 @@ const P = {
   page: resolve(MP, 'subpackages/extra/user/achievements/index.js'),
   wxml: resolve(MP, 'subpackages/extra/user/achievements/index.wxml'),
   json: resolve(MP, 'subpackages/extra/user/achievements/index.json'),
-  fn: resolve(MP, 'cloudfunctions/getUserAchievements/index.js')
+  fn: resolve(MP, 'cloudfunctions/getUserAchievements/index.js'),
+  certJs: resolve(MP, 'subpackages/extra/user/certificates/index.js'),
+  certWxml: resolve(MP, 'subpackages/extra/user/certificates/index.wxml'),
+  wishJs: resolve(MP, 'subpackages/extra/user/wishlist/index.js'),
+  wishWxml: resolve(MP, 'subpackages/extra/user/wishlist/index.wxml')
 }
 
 async function run(inject) {
@@ -81,6 +85,29 @@ async function run(inject) {
   const wxml = read(P.wxml)
   ok(!/<scroll-view/.test(wxml) && /class="block relics-card"/.test(wxml), 'E 内容不得放进 scroll-view（pageScrollTo 滚不到 .relics-card）')
   ok(/"enablePullDownRefresh": true/.test(read(P.json)) && /onPullDownRefresh\(\)/.test(read(P.page)), 'E 改回页面滚动后须开启原生下拉刷新')
+
+  // F 「我的」子页（2026-10-17 同日重构）：荣誉档案筛选 / 缩样印色；收藏与候补页面滚动
+  let certCfg = null
+  loadCjsModule(P.certJs, {
+    transform,
+    globals: { getApp: () => ({ globalData: {} }), Page: (o) => { certCfg = o }, wx: { cloud: { database: () => ({}) } } },
+    stubs: { '../../../../config/cloudEnv': { cdnPath: (x) => x } }
+  })
+  const cp = { ...certCfg, data: JSON.parse(JSON.stringify(certCfg.data)), setData(p) { Object.assign(this.data, p) } }
+  cp.data.certificates = [{ _id: 'a', kind: 'holder' }, { _id: 'b', kind: 'gift_voucher' }, { _id: 'c', kind: 'gift_holder' }]
+  cp.onFilter({ currentTarget: { dataset: { key: 'holder' } } })
+  const holderIds = cp.data.visible.map((c) => c._id).join(',')
+  cp.onFilter({ currentTarget: { dataset: { key: 'given' } } })
+  const givenIds = cp.data.visible.map((c) => c._id).join(',')
+  ok(holderIds === 'a,c' && givenIds === 'b', `F 荣誉档案筛选：收藏须含受赠、赠出只含赠予凭证（实际 收藏=${holderIds} 赠出=${givenIds}）`)
+  const certWxml = read(P.certWxml)
+  ok(/class="filters" wx:if="\{\{givenCount > 0 && !loading\}\}"/.test(certWxml), 'F 没赠出过时不出筛选（只有一类，筛选是噪音）')
+  ok(/c-seal \{\{item\.kind === 'gift_voucher' \? 'is-gift' : ''\}\}/.test(certWxml) && /wx:for="\{\{visible\}\}"/.test(certWxml),
+    'F 缩样印色按证书身份（赠予 = 朱、收藏 = 铜），列表渲染筛选后的 visible')
+  const wishWxml = read(P.wishWxml)
+  ok(!/<scroll-view/.test(wishWxml) && !/<scroll-view/.test(certWxml) && !/headerBlockPx/.test(read(P.wishJs) + read(P.certJs)),
+    'F 收藏与候补 / 荣誉档案改为页面滚动（不再 scroll-view + 量出来的顶距）')
+  ok(!/&amp;/.test(wishWxml), 'F WXML 文本里不写 &amp;（真机可能原样显示）')
   return fails
 }
 
@@ -96,6 +123,9 @@ const INJECTIONS = [
   { name: '下一枚按门槛排', file: P.page, find: '.sort((a, b) => (b.progressPercent - a.progressPercent) || (a.threshold - b.threshold))', replace: '.sort((a, b) => a.threshold - b.threshold)' },
   { name: '内容回到 scroll-view', file: P.wxml, find: '  <view class="content">\n', replace: '  <scroll-view scroll-y class="content">\n' },
   { name: '没开下拉刷新', file: P.json, find: '"enablePullDownRefresh": true', replace: '"enablePullDownRefresh": false' },
+  { name: '证书筛选收藏丢了受赠', file: P.certJs, find: "if (filter === 'holder') return all.filter((c) => c.kind !== 'gift_voucher')", replace: "if (filter === 'holder') return all.filter((c) => c.kind === 'holder')" },
+  { name: '没赠出过也出筛选', file: P.certWxml, find: 'class="filters" wx:if="{{givenCount > 0 && !loading}}"', replace: 'class="filters" wx:if="{{!loading}}"' },
+  { name: '收藏与候补回到 scroll-view', file: P.wishWxml, find: '<view class="page-wishlist">', replace: '<view class="page-wishlist"><scroll-view scroll-y class="content">' },
   { name: '刻度只数点亮的', file: P.page, find: "t.nodes.map((n) => ({ id: n.id, lit: n.unlocked }))", replace: "t.nodes.filter((n) => n.unlocked).map((n) => ({ id: n.id, lit: true }))" }
 ]
 

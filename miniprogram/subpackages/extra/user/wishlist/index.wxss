@@ -1,227 +1,209 @@
-/* Museum Mode — 收藏与候补 */
+/* 收藏与候补「藏品清单」（2026-10-17 重构）：博物黑底；下划线页签；发丝线行；本页无实心金。 */
 page {
-  background: var(--color-bg, #1A1814);
-  color: var(--color-text-primary, #FFFFFF);
+  background: #1A1814;
 }
 
 .page-wishlist {
   min-height: 100vh;
-  background: var(--color-bg, #1A1814);
-}
-
-.content {
-  padding: 0 32rpx 80rpx;
-  min-height: 100vh;
+  padding: 40rpx 32rpx calc(64rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
+  background: #1A1814;
 }
 
-.header-text {
-  margin: 32rpx 0 40rpx;
-}
-
-.page-overline {
+.eyebrow {
   display: block;
-  font-size: var(--fs-22);
-  letter-spacing: 0.1em;
-  color: var(--brass-400, #C4A76C);
-  font-weight: 500;
-  margin-bottom: 16rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
-.h1 {
+.head-title {
   display: block;
-  font-family: var(--font-brand, 'Source Han Serif SC', 'Noto Serif SC', Georgia, serif);
-  font-size: var(--fs-48);
+  margin-top: 16rpx;
+  font-family: var(--font-brand);
+  font-size: 56rpx;
   font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 12rpx;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
+  color: #F3ECDD;
 }
 
-.h2 {
-  display: block;
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary, #A09A90);
-  line-height: 1.5;
-}
-
+/* —— 下划线页签 —— */
 .tabs {
   display: flex;
-  gap: 16rpx;
-  margin-bottom: 24rpx;
+  gap: 48rpx;
+  margin-top: 36rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.16);
 }
 
 .tab {
-  flex: 1;
-  height: 72rpx;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border, #26232066);
-  background: var(--color-bg-card, #1F1D1A);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8rpx;
-  color: var(--color-text-secondary, #A09A90);
-  font-size: var(--fs-26);
-  font-weight: 500;
+  align-items: baseline;
+  gap: 10rpx;
+  height: 80rpx;
+  line-height: 80rpx;
+  margin-bottom: -1rpx;
+  border-bottom: 4rpx solid transparent;
 }
 
-.tab.on {
-  border-color: var(--brass-800, #4D401A);
-  color: var(--brass-400, #C4A76C);
+.tab-t {
+  font-size: var(--fs-28);
+  color: var(--color-text-secondary);
 }
-
 
 .tab-count {
+  font-family: var(--font-mono);
   font-size: var(--fs-22);
-  opacity: 0.85;
+  color: var(--color-text-secondary);
 }
 
-.hint-card {
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--color-border, #26232066);
-  border-radius: var(--radius-md);
-  padding: 24rpx 28rpx;
-  margin-bottom: 28rpx;
-}
+.tab.on { border-bottom-color: var(--brass-400); }
+.tab.on .tab-t { color: var(--brass-200); font-weight: 500; }
+.tab.on .tab-count { color: var(--brass-200); }
 
-.hint-title {
+.tab-note {
   display: block;
-  font-size: var(--fs-26);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  margin-bottom: 8rpx;
+  margin-top: 20rpx;
+  font-size: var(--fs-22);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }
 
-.hint-body {
-  display: block;
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary, #A09A90);
-  line-height: 1.55;
-}
+/* —— 清单 —— */
+.list { margin-top: 24rpx; }
 
-.loading-box {
-  padding: 80rpx 0;
-  text-align: center;
-  color: var(--color-text-secondary, #A09A90);
-  font-size: var(--fs-26);
-}
-
-.item-card {
+.item {
   display: flex;
   align-items: center;
   gap: 24rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid var(--color-border, #26232066);
-  border-radius: var(--radius-md);
-  padding: 20rpx;
-  margin-bottom: 20rpx;
+  padding: 28rpx 0;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
+.item:last-child { border-bottom: 1rpx solid rgba(196, 167, 108, 0.14); }
 
 .thumb {
-  width: 128rpx;
-  height: 128rpx;
-  border-radius: var(--radius-md);
-  background: var(--color-bg-elevated);
   flex-shrink: 0;
+  width: 168rpx;
+  height: 168rpx;
+  border-radius: 4rpx;
+  background: #1F1D1A;
 }
 
-.meta {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
-}
+.meta { flex: 1; min-width: 0; }
 
 .title {
+  display: block;
+  font-family: var(--font-brand);
   font-size: var(--fs-28);
-  color: var(--color-text-primary);
-  font-weight: 500;
+  color: #F3ECDD;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .latin {
+  display: block;
+  margin-top: 6rpx;
+  font-family: var(--font-latin);
+  font-style: italic;
   font-size: var(--fs-22);
-  color: var(--brass-400, #C4A76C);
-  font-style: italic; font-family: var(--font-latin);
+  color: var(--brass-300);
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12rpx;
-  flex-wrap: wrap;
-  margin-top: 4rpx;
+  margin-top: 14rpx;
 }
 
 .price {
-  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-family: var(--font-mono);
   font-size: var(--fs-26);
   color: var(--color-text-body);
 }
 
 .tag {
+  padding: 0 12rpx;
+  line-height: 36rpx;
   font-size: var(--fs-20);
-  padding: 2rpx 10rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 4rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.36);
+  color: var(--brass-200);
 }
 
-.tag.sold {
-  color: #E9A23B;
-  background: rgba(233, 162, 59, 0.12);
-}
+.tag.sold { color: var(--color-text-secondary); border-color: rgba(196, 167, 108, 0.22); }
 
-.tag.deposit {
-  color: var(--brass-400, #C4A76C);
-  background: rgba(196, 167, 108, 0.12);
+.note {
+  display: block;
+  margin-top: 10rpx;
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
 }
 
 .remove {
   flex-shrink: 0;
-  font-size: var(--fs-24);
-  color: var(--color-text-secondary, #A09A90);
-  padding: 12rpx 8rpx;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding-left: 16rpx;
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+}
+
+/* —— 骨架 / 空态 —— */
+.skeleton { margin-top: 24rpx; }
+
+.sk-row {
+  height: 168rpx;
+  margin-bottom: 24rpx;
+  border-radius: 4rpx;
+  background: #1F1D1A;
+  animation: wl-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes wl-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 .empty-state {
-  padding: 100rpx 40rpx;
-  text-align: center;
+  margin-top: 32rpx;
+  padding: 40rpx 0;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .empty-title {
   display: block;
+  font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: var(--color-text-primary);
-  margin-bottom: 12rpx;
+  color: #F3ECDD;
 }
 
 .empty-sub {
   display: block;
+  margin-top: 10rpx;
   font-size: var(--fs-24);
-  color: var(--color-text-secondary, #A09A90);
-  line-height: 1.5;
-  margin-bottom: 40rpx;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }
 
 .btn-go {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 240rpx;
-  height: 72rpx;
-  padding: 0 40rpx;
-  background: var(--brass-400, #C4A76C);
-  color: var(--color-bg);
-  border-radius: var(--radius-md);
-  font-size: var(--fs-28);
-  font-weight: 500;
+  display: inline-block;
+  margin-top: 20rpx;
+  font-size: var(--fs-24);
+  color: var(--brass-200);
 }
 
-.btn-go-press { background: #A8903C; }
+/* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
+@media (prefers-reduced-motion: reduce) {
+  .sk-row {
+    animation: none;
+  }
+}

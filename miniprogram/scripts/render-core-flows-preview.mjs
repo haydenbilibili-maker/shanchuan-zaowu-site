@@ -437,7 +437,19 @@ const SCENES = [
       warningSection: { overline: 'CAUTION', title: '异常信号', body: '出现以下情况请联系专员，不要自行拆框。', tips: ['玻璃内侧起雾或水珠', '翅面出现白色絮状物'] },
       framingTips: ['木框避免贴近暖气'], 
     }
-  }
+  },
+  // 2026-10-17 收藏与候补「藏品清单」 / 荣誉档案（证书缩样）
+  { name: 'wishlist', h: 1800, wxml: 'subpackages/extra/user/wishlist/index', data: { loading: false, tab: 'wishlist', favoriteCount: 12, wishlistCount: 2,
+      list: [{ _id: 'w1', productId: 'p1', title: '光明女神闪蝶 · A1 博物级', latinName: 'Morpho helena', price: 1280, image: P[0], soldOut: true, hasDeposit: true, savedText: '10.12 记下' },
+        { _id: 'w2', productId: 'p2', title: '鹦鹉螺剖面标本', latinName: 'Nautilus pompilius', price: 680, image: P[1], soldOut: true, hasDeposit: false, savedText: '9.28 记下' }] } },
+  { name: 'certificates', h: 2000, wxml: 'subpackages/extra/user/certificates/index', data: { loading: false, loadError: false, holderCount: 3, givenCount: 1, filter: 'all',
+      certificates: [{ _id: 'c0' }],
+      visible: [
+        { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.12', kind: 'holder', kindLabel: '' },
+        { _id: 'c2', displayTitle: '自然小匣', displayImage: P[1], dateStr: '2026.09.22', kind: 'gift_voucher', kindLabel: '赠予凭证' },
+        { _id: 'c3', displayTitle: '银杏押花框', displayImage: P[2], dateStr: '2026.09.03', kind: 'gift_holder', kindLabel: '受赠' },
+        { _id: 'c4', displayTitle: '紫水晶晶簇', displayImage: P[3] || P[0], dateStr: '2026.08.18', kind: 'holder', kindLabel: '' }
+      ] } }
 ]
 
 async function shoot(s) {

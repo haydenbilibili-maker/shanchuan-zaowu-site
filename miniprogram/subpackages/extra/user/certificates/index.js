@@ -1,7 +1,6 @@
 const app = getApp();
 const db = wx.cloud.database();
 const { cdnPath } = require('../../../../config/cloudEnv');
-const { getPageNavInsets } = require('../../utils/pageNav');
 
 function formatCertDate(raw) {
   if (!raw) return '';
@@ -32,6 +31,14 @@ function certKindOf(order, openid) {
 
 const KIND_LABEL = { holder: '', gift_holder: '受赠', gift_voucher: '赠予凭证' }
 
+/** 全部 / 收藏（含受赠）/ 赠出 */
+function filterCerts(list, filter) {
+  const all = list || []
+  if (filter === 'holder') return all.filter((c) => c.kind !== 'gift_voucher')
+  if (filter === 'given') return all.filter((c) => c.kind === 'gift_voucher')
+  return all
+}
+
 // 小程序端单次 get() 最多 20 条：按 skip 分批取完，上限 50 批（1000 单）防异常死循环
 const PAGE_SIZE = 20
 const MAX_PAGES = 50
@@ -49,8 +56,10 @@ async function fetchAllPages(buildQuery) {
 
 Page({
   data: {
-    headerBlockPx: 16,
     certificates: [],
+    /** 2026-10-17 重构：全部 / 收藏 / 赠出（只有赠出过才出现筛选） */
+    filter: 'all',
+    visible: [],
     holderCount: 0,
     givenCount: 0,
     loading: true,
@@ -59,9 +68,7 @@ Page({
   },
 
   onLoad() {
-    // 原生导航栏已显示标题；headerExtra 仅留内容顶距，避免自定义 fixed 顶栏再盖住大标题
-    const nav = getPageNavInsets({ nativeNav: true, headerExtraRpx: 16 });
-    this.setData({ headerBlockPx: nav.headerBlockPx });
+    // 原生导航栏已显示标题；内容改回页面滚动（原 scroll-view + 量出来的顶距）
     this.loadCertificates();
   },
 
@@ -120,10 +127,11 @@ Page({
       });
 
       const givenCount = list.filter((c) => c.kind === 'gift_voucher').length;
-      this.setData({ certificates: list, holderCount: list.length - givenCount, givenCount, loadError: false });
+      const filter = givenCount ? this.data.filter : 'all';
+      this.setData({ certificates: list, holderCount: list.length - givenCount, givenCount, loadError: false, filter, visible: filterCerts(list, filter) });
     } catch (e) {
       console.error(e);
-      this.setData({ certificates: [], loadError: true });
+      this.setData({ certificates: [], visible: [], loadError: true });
       wx.showToast({ title: '证书档案读取失败', icon: 'none' });
     } finally {
       wx.hideLoading();
@@ -132,9 +140,18 @@ Page({
   },
 
   onThumbError(e) {
-    const idx = e.currentTarget.dataset.index;
-    if (idx == null) return;
-    this.setData({ [`certificates[${idx}].displayImage`]: this.data.fallbackImg });
+    const id = e.currentTarget.dataset.id;
+    const all = this.data.certificates || [];
+    const i = all.findIndex((c) => c && c._id === id);
+    if (i < 0) return;
+    all[i].displayImage = this.data.fallbackImg;
+    this.setData({ certificates: all, visible: filterCerts(all, this.data.filter) });
+  },
+
+  onFilter(e) {
+    const key = e.currentTarget.dataset.key;
+    if (!key || key === this.data.filter) return;
+    this.setData({ filter: key, visible: filterCerts(this.data.certificates, key) });
   },
 
   viewCert(e) {
