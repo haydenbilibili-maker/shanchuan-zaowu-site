@@ -171,7 +171,7 @@ const TAG_MAP = {
   switch: 'span', label: 'span', textarea: 'div', video: 'div', navigator: 'div',
   form: 'div', canvas: 'div', 'movable-area': 'div', 'movable-view': 'div',
   'cover-view': 'div', 'cover-image': 'img', 'rich-text': 'div', progress: 'div',
-  icon: 'span', slot: null, wxs: null
+  icon: 'span', map: 'div', slot: null, wxs: null // map：原生地图预览里画成空块（2026-10-17 门店页出图）
 }
 const KEEP_ATTRS = new Set(['class', 'style', 'id', 'src', 'placeholder', 'value', 'maxlength', 'type'])
 

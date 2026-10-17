@@ -462,7 +462,25 @@ const SCENES = [
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },
-        { _id: 'b2', type: 'handcraft_course', title: '蝴蝶标本手作课', _id_short: 'C2K9', month: '10月', day: '26', time: '14:00 - 16:00', people: 1 }] } }
+        { _id: 'b2', type: 'handcraft_course', title: '蝴蝶标本手作课', _id_short: 'C2K9', month: '10月', day: '26', time: '14:00 - 16:00', people: 1 }] } },
+  // 2026-10-17 门店「到店指南」（到店链路 B8 第二页）
+  { name: 'store', h: 3600, wxml: 'subpackages/business/store/index', data: {
+      loading: false, scrollTop: 76, enterReady: true, storePickerOpen: false, lbsSheetOpen: false, lbsSuggestStore: null, bookingClosedToday: false, closedReasonLabel: '',
+      introExpanded: false, tipsExpanded: true, walkingGuideOpen: true, checkedInToday: false, checkInLoading: false, checkInDockVisible: true,
+      brandWebsite: 'shanchuanzaowu.com', featuresLine: '入店参观 · 馆藏零售 · 品牌体验', hasActivities: true, hasExperienceProducts: true, experienceLoading: false,
+      stores: [{ storeId: 's1', name: '山川造物', locationLabel: '这有山 · 山腰' }, { storeId: 's2', name: '星宸标本', locationLabel: '这有山 · 楼下' }],
+      store: { storeId: 's1', name: '山川造物', nameEn: 'SHANCHUAN CREATIONS', roleLabel: '品牌主店', locationLabel: '这有山 · 山腰', mallName: '这有山', floor: '山坡 X-06-1',
+        address: '吉林省长春市朝阳区红旗街959号这有山商场山坡X-06-1', phone: '18519110274', hoursText: '10:00 – 22:00', coverImage: P[2], heroTagline: '像走进一间暖光藏品馆',
+        intro: '主店位于这有山山腰，陈列昆虫、矿物、植物与海洋标本，可现场选购与预约参观。', openStatus: { label: '营业中', statusClass: 'open' },
+        visitTips: ['从商场主入口进入，沿山坡动线至 X-06-1', '建议错峰参观，周末下午客流较多', '展柜内藏品请勿触摸，如需协助可联系店员'],
+        zones: [{ zoneId: 'z1', title: '蝴蝶昆虫柜', overline: 'INSECTA', color: '#C4A76C', desc: '闪蝶、鸟翼蝶与组合框画，每件配有物种信息。', coverImage: P[0] },
+          { zoneId: 'z2', title: '矿石标本柜', overline: 'MINERALS', color: '#C4A76C', desc: '晶洞与矿石，呈现大地的色彩与几何。', coverImage: P[3] },
+          { zoneId: 'z3', title: '植物果实柜', overline: 'PLANTAE', color: '#C4A76C', desc: '押花、果实与种子，记录叶片与花的细微结构。', coverImage: P[5] }],
+        services: [{ id: 'sv1', label: '预约参观', tab: 0 }, { id: 'sv2', label: '手作课程', tab: 1 }, { id: 'sv3', label: '到店自提' }],
+        walkingGuide: { headline: '前往工坊 · 步行约 5 分钟', peerName: '星宸标本', peerLocation: '这有山 · 楼下',
+          steps: ['从主店出发，沿商场山坡动线至下行扶梯', '乘扶梯至楼下层，沿标识前往工坊', '工坊承接定制确认、装裱咨询与手作课程'], tip: '建议先逛主店选品，再到工坊确认定制方案' } },
+      experienceProducts: [{ _id: 'e1', title: '光明女神闪蝶', latinName: 'Morpho helena', priceText: '1280', image: P[0] }, { _id: 'e2', title: '血漪蝶穹顶', latinName: 'Cethosia biblis', priceText: '680', image: P[1] }, { _id: 'e3', title: '蒲公英玻璃罩', latinName: '', priceText: '268', image: P[3] }],
+      storeActivities: [{ _id: 'a1', type: 'handcraft_course', title: '蝴蝶标本手作课', date: '10月26日', time: '14:00' }, { _id: 'a2', type: 'special_activity', title: '秋夜观虫 · 灯诱讲座', date: '11月02日', time: '19:00' }] } }
 ]
 
 async function shoot(s) {

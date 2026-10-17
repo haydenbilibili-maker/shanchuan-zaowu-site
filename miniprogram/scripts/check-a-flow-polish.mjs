@@ -42,7 +42,9 @@ const FILES = {
   identifyJs: 'subpackages/feature/identify/index.js',
   bookingWxml: 'subpackages/business/booking/index.wxml',
   bookingJs: 'subpackages/business/booking/index.js',
-  previewLib: 'scripts/lib/wxml-preview.mjs'
+  previewLib: 'scripts/lib/wxml-preview.mjs',
+  storeWxml: 'subpackages/business/store/index.wxml',
+  storeWxss: 'subpackages/business/store/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -127,6 +129,15 @@ function checks(s) {
     !/class="section-label">[^<]*\|/.test(s.bookingWxml) && (s.bookingWxml.match(/<view class="section-label"><text class="sl-en">/g) || []).length === 4)
   add('R12-3 wxml-preview 跳过 {{ }} 内的 <（否则预约页无法离线出图）',
     /function nextTagStart\(src, from\)/.test(s.previewLib) && /const lt = nextTagStart\(src, i\)/.test(s.previewLib))
+  // 2026-10-17 门店「到店指南」
+  add('R13-1 门店名片是浅纸标本签，地图在签外独立成图版（不再塞进深色卡里）',
+    /class="info-map-wrap"[\s\S]*?<view class="store-card">\s*<view class="card-pin"/.test(s.storeWxml) &&
+      !/<view class="store-card">[\s\S]*?<map[\s\S]*?class="checkin-inline/.test(s.storeWxml) &&
+      /\n\.store-card \{[^}]*background: linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.storeWxss))
+  add('R13-2 门店页实心金只有「预约参观」一处（「我已到店」行内 / 浮钮都是金线环）',
+    [...s.storeWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
+      .filter(([, sel, body]) => /background: var\(--brass-400\)/.test(body) && !/press|disabled/.test(sel)).map(([, sel]) => sel.trim()).join(',') === '.booking-btn')
+  add('R13-3 wxml-preview 认识 <map>（门店页离线出图）', /\bmap: 'div'/.test(s.previewLib))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -357,6 +368,10 @@ if (process.argv.includes('--selftest')) {
     ['预约页头翻转票被推翻', 'bookingWxml', (t) => t.replace('<view class="ticket-face face-back">', '<view class="ticket-face">')],
     ['预约票翻面处理器丢失', 'bookingJs', (t) => t.replace('isFlipped: !this.data.isFlipped', 'isFlipped: false')],
     ['预约票水印回到 emoji', 'bookingWxml', (t) => t.replace('<text class="watermark">山海</text>', '<view class="watermark">🦋</view>')],
+    ['门店地图塞回名片', 'storeWxml', (t) => t.replace('<view class="card-pin" aria-hidden="true"></view>', '<view class="card-pin" aria-hidden="true"></view><map class="info-map"></map>')],
+    ['门店名片回到深色卡', 'storeWxss', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx', '  background: #1F1D1A;\n  box-shadow: 0 12rpx 28rpx')],
+    ['签到浮钮回到实心金', 'storeWxss', (t) => t.replace('  background: #1F1D1A;\n  box-shadow: var(--ring-brass), 0 12rpx', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass), 0 12rpx')],
+    ['预览库忘了 map', 'previewLib', (t) => t.replace("map: 'div', ", '')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
