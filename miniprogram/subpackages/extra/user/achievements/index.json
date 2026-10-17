@@ -8,5 +8,6 @@
   },
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",
-  "backgroundTextStyle": "light"
+  "backgroundTextStyle": "light",
+  "enablePullDownRefresh": true
 }

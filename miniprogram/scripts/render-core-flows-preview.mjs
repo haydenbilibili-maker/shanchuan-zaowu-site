@@ -139,6 +139,41 @@ const atlasStats = { total: 16, unlocked: 6, percent: 38, series: [
   { id: 'mountain', name: '守山者', got: 3, total: 6, complete: false, blurb: '石头、叶片与壳，都是山海留下的截面。' }
 ] }
 
+function achievementsSceneData() {
+  let cfg = null
+  loadCjsModule(join(MP, 'subpackages/extra/user/achievements/index.js'), {
+    globals: { getApp: () => ({ globalData: { openid: 'u1' } }), Page: (o) => { cfg = o }, wx: { vibrateShort() {}, showToast() {} }, getCurrentPages: () => [] },
+    stubs: {
+      '../../../../utils/easterEgg': { listCatalog: () => [], getProgress: () => ({ found: 0, total: 0 }), isDiscovered: () => false },
+      '../../../../utils/badgeDisplay': { markAchievementsSeen() {} }
+    }
+  })
+  const page = { ...cfg, data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } }
+  const A = (id, type, name, desc, threshold, progress, points, unit) => ({ id, type, name, desc, threshold, progress, unlocked: progress >= threshold, unit: unit || '次', reward: points ? { points, type: 'points' } : { type: 'badge' } })
+  const list = [
+    A('explore_10', 'explore', '初探者', '浏览 10 个藏品', 10, 68, 10), A('explore_50', 'explore', '探索家', '浏览 50 个藏品', 50, 68, 50), A('explore_100', 'explore', '博物学家', '浏览 100 个藏品', 100, 68, 100),
+    A('search_5', 'explore', '搜索新手', '搜索 5 次', 5, 3, 5), A('search_20', 'explore', '搜索达人', '搜索 20 次', 20, 3, 20),
+    A('collect_5', 'collect', '收藏新手', '收藏 5 件', 5, 7, 15, '件'), A('collect_10', 'collect', '收藏家', '收藏 10 件', 10, 7, 30, '件'), A('collect_50', 'collect', '收藏大师', '收藏 50 件', 50, 7, 100, '件'),
+    A('folder_3', 'collect', '整理达人', '建 3 个收藏夹', 3, 1, 20, '个'),
+    A('atlas_first', 'collect', '第一页', '图鉴点亮第一页', 1, 1, 20, '页'), A('atlas_frost', 'collect', '霜降守望', '集齐霜降守望', 4, 1, 40, '页'), A('atlas_overwinter', 'collect', '越冬者', '集齐越冬者', 3, 1, 40, '页'), A('atlas_mountain', 'collect', '守山者', '集齐守山者', 6, 3, 40, '页'), A('atlas_volume', 'collect', '山海图鉴卷一', '卷一全部点亮', 16, 6, 100, '页'),
+    A('share_1', 'social', '分享者', '分享 1 次', 1, 2), A('share_5', 'social', '分享达人', '分享 5 次', 5, 2), A('share_20', 'social', '分享大师', '分享 20 次', 20, 2),
+    A('first_purchase', 'consumption', '首次购买', '完成第一笔订单', 1, 1, 50, '单'), A('spend_500', 'consumption', '消费新星', '累计消费 ¥500', 500, 860, 100, '元'), A('spend_2000', 'consumption', '消费达人', '累计消费 ¥2000', 2000, 860, 200, '元'), A('spend_10000', 'consumption', '消费大师', '累计消费 ¥10000', 10000, 860, 500, '元'),
+    A('course_1', 'learning', '学习者', '完成 1 个课程', 1, 0, 20), A('course_5', 'learning', '学习达人', '完成 5 个课程', 5, 0, 50),
+    A('certificate_1', 'learning', '证书持有者', '获得 1 个证书', 1, 2, 20, '份'), A('certificate_5', 'learning', '证书收藏家', '获得 5 个证书', 5, 2, 50, '份')
+  ]
+  const unlocked = list.filter((a) => a.unlocked).length
+  page._applyAchievementData({ achievements: list, stats: { total: list.length, unlocked, locked: list.length - unlocked, totalRewards: 205 } })
+  return Object.assign({}, page.data, {
+    relicsName: '山海拾遗', relicsFound: 2, relicsTotal: 5, relicsUnlocked: false,
+    relicsCatalog: [
+      { id: 'r1', roman: 'I', discovered: true, plateTitle: '吉量', plateHint: '山海经 · 海内北经' },
+      { id: 'r2', roman: 'II', discovered: true, plateTitle: '鹿蜀', plateHint: '山海经 · 南山经' },
+      { id: 'r3', roman: 'III', discovered: false, plateTitle: '· · ·', plateHint: '待偶遇' },
+      { id: 'r4', roman: 'IV', discovered: false, plateTitle: '· · ·', plateHint: '待偶遇' }
+    ]
+  })
+}
+
 const SCENES = [
   { name: 'wl-main', h: 2500, wxml: 'subpackages/feature/wish-labels/index', data: wlBase },
   { name: 'wl-compose', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, composeOpen: true, draft: '马上有好睡眠', draftCount: 6, posting: false, voicePath: '' } },
@@ -293,19 +328,8 @@ const SCENES = [
       ]
     }
   },
-  {
-    name: 'achievements', h: 2200, wxml: 'subpackages/extra/user/achievements/index', data: {
-      loading: false, viewFilter: 'all', headerBlockPx: 120, achievementStats: { unlocked: 5, locked: 13, total: 18, progress: 28, totalRewards: 120 }, relicsName: '山海拾遗', relicsFound: 3, relicsTotal: 12, relicsPercent: 25, relicsCatalog: [],
-      filterTabs: [{ key: 'all', label: '全部' }, { key: 'unlocked', label: '已点亮' }, { key: 'locked', label: '未点亮' }],
-      achievementTypes: [
-        { type: 'collect', name: '收藏', enName: 'COLLECTING', icon: '/assets/icons/medal_gold.png', unlockedCount: 2, totalCount: 6, usePartition: true, showUnlockedBlock: true, showLockedBlock: true, lockedCount: 4,
-          unlockedList: [{ id: 'a1', name: '初入馆藏', desc: '收藏第一件标本', unlocked: true, rewardPoints: 20 }, { id: 'a2', name: '蝶翼初识', desc: '收藏 3 件鳞翅目', unlocked: true }],
-          lockedList: [{ id: 'a3', name: '百蝶图谱', desc: '收藏 20 件鳞翅目', progressPercent: 15, progressText: '3 / 20', remainText: '还差 17 件' }, { id: 'a4', name: '跨界藏家', desc: '收藏 5 个门类', progressPercent: 40, progressText: '2 / 5', remainText: '还差 3 个门类' }] },
-        { type: 'gift', name: '礼赠', enName: 'GIFTING', icon: '/assets/icons/medal_gold.png', unlockedCount: 1, totalCount: 4, usePartition: true, showUnlockedBlock: true, showLockedBlock: true, lockedCount: 3,
-          unlockedList: [{ id: 'b1', name: '第一封礼笺', desc: '送出第一份礼', unlocked: true, rewardPoints: 30 }], lockedList: [{ id: 'b2', name: '人情账本', desc: '送礼给 5 位不同的人' }] }
-      ]
-    }
-  },
+  // 2026-10-17 成就重设计：场景数据由**真页面** _applyAchievementData 现算（成长线 / 下一枚 / 刻度不手抄）
+  { name: 'achievements', h: 3400, wxml: 'subpackages/extra/user/achievements/index', data: achievementsSceneData() },
   { name: 'gift-mine-people', h: 1700, wxml: 'subpackages/feature/gift/my-gifts/index', base: 'gift-mine', data: { hubTab: 'people', contactsLoading: false,
       contacts: [{ id: 'c1', name: '阿禾', nameInitial: '禾', relationLabel: '挚友', note: '喜欢蓝色的东西', giftCountLabel: '送过 2 次 · 最近 10.15', sceneKey: 'birthday' },
         { id: 'c2', name: '林老师', nameInitial: '林', relationLabel: '师长', giftCountLabel: '还没送过' }] } },

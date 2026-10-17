@@ -369,6 +369,8 @@
     "test:knowledge-card:selftest": "node miniprogram/scripts/test-knowledge-card.mjs --selftest",
     "check:atlas-plates": "node miniprogram/scripts/check-atlas-plates.mjs",
     "check:atlas-plates:selftest": "node miniprogram/scripts/check-atlas-plates.mjs --selftest",
+    "check:achievement-tracks": "node miniprogram/scripts/check-achievement-tracks.mjs",
+    "check:achievement-tracks:selftest": "node miniprogram/scripts/check-achievement-tracks.mjs --selftest",
     "check:mp-caption-color": "node miniprogram/scripts/check-mp-caption-color.mjs",
     "check:mp-caption-color:selftest": "node miniprogram/scripts/check-mp-caption-color.mjs --selftest",
     "check:care-common-mirrors": "node miniprogram/scripts/check-care-common-mirrors.mjs",
