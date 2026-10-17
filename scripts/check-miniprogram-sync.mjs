@@ -144,6 +144,21 @@ function walk(base, dir = '', out = []) {
   return out
 }
 
+/** 主库里是否还有未解决的合并冲突标记（只认 git 的 7 字符标记行，避免误伤表格/分隔线） */
+function findConflictMarkers(base, rels) {
+  const out = []
+  for (const rel of rels) {
+    if (!/\.(js|mjs|cjs|json|wxml|wxss|wxs|md|ts)$/i.test(rel)) continue
+    let head = ''
+    try {
+      const fd = readFileSync(join(base, rel), 'utf8')
+      head = fd
+    } catch (e) { continue }
+    if (/^(<{7}|>{7}) /m.test(head) || /^={7}$/m.test(head)) out.push(rel)
+  }
+  return out
+}
+
 function main() {
   const fix = process.argv.includes('--fix')
   const prune = process.argv.includes('--prune')
@@ -162,6 +177,18 @@ function main() {
   const srcFiles = new Set(walk(SRC))
   const dstFiles = new Set(walk(DST))
   const problems = []
+
+  // ⚠️ 冲突标记检查（2026-10-18 真事故）：`git merge` 冲突未解决时若跑了 `--fix`，
+  //   带 `<<<<<<< / >>>>>>>` 的文件会被**原样复制进开发仓**，而开发仓就是微信上传的源
+  //   —— 等于把语法坏掉的文件交给编译器。事故成因很小：命令用 `;` 串了 merge 与 sync。
+  //   所以：主库里只要还有未解决的冲突标记，**先判红、不比对、更不修**。
+  const conflicted = findConflictMarkers(SRC, srcFiles)
+  if (conflicted.length) {
+    console.error(`✗ 主库里有 ${conflicted.length} 个文件还带合并冲突标记（先解冲突，别同步、别上传）：`)
+    for (const rel of conflicted.slice(0, 20)) console.error(`  - ${rel}`)
+    console.error('  提示：`git status` 里看 UU/AA，解完再跑本脚本。')
+    process.exit(1)
+  }
 
   for (const rel of srcFiles) {
     const a = join(SRC, rel)
@@ -321,6 +348,16 @@ function selftest() {
   run(true)
   expect('E --fix 不擅自删除开发仓多出的文件', existsSync(join(dst, 'legacy.js')))
 
+    // N：主库有合并冲突标记 → 判红、且 *不许* 用 --fix 把它复制进开发仓
+    //    （2026-10-18 真事故：merge 冲突未解时 `;` 串着跑了 sync，冲突标记被原样传进开发仓 = 上传坏文件）
+    seed()
+    writeFileSync(join(src, 'app.wxss'), 'ok\n<<<<<<< HEAD\n.a{}\n=======\n.b{}\n>>>>>>> origin/x\n')
+    const n = run(false)
+    expect('N 主库带冲突标记 → 检出', n.status === 1)
+    expect('N 报出具体文件与"冲突"字样', /app\.wxss/.test(n.stdout + n.stderr) && /冲突/.test(n.stdout + n.stderr))
+    const nf = run(true)
+    expect('N --fix 也不会把冲突文件复制进开发仓', readFileSync(join(dst, 'app.wxss'), 'utf8') === 'same\n', nf.stdout + nf.stderr)
+
     // J/K：--prune 专门收尾「删除类改动」留下的残骸，且只删该删的
     seed()
     writeFileSync(join(dst, 'legacy.js'), 'old\n')
@@ -394,7 +431,7 @@ function selftest() {
     console.error(`\n✗ selftest 失败 ${bad} 项`)
     process.exit(1)
   }
-  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致 / 产物 JSON 被忽略 / --fix 保留本机显示名 / --prune 清 .js·.wxml·.wav·.mjs·.cjs 且不碰本机产物')
+  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致 / 产物 JSON 被忽略 / --fix 保留本机显示名 / --prune 清 .js·.wxml·.wav·.mjs·.cjs 且不碰本机产物 / 冲突标记先判红且 --fix 不外传')
   process.exit(0)
 }
 
