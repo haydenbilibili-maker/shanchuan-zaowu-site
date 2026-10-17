@@ -301,7 +301,8 @@
       <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="collection" wx:if="{{showAtlas}}">
         <image class="m-img" src="/assets/icons/atlas.png" mode="aspectFit"></image>
         <text class="svc-cn">山海图鉴</text>
-        <text class="meta-progress svc-meta" wx:if="{{atlasStats.total}}">{{atlasStats.unlocked}}/{{atlasStats.total}}</text>
+        <!-- 进度 / 免费：右上角标（不另占一行，宫格等高） -->
+        <text class="svc-corner is-mono" wx:if="{{atlasStats.total}}">{{atlasStats.unlocked}}/{{atlasStats.total}}</text>
       </view>
       <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="wishlist">
         <image class="m-img" src="/assets/icons/heart.png" mode="aspectFit"></image>
@@ -322,7 +323,7 @@
       <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="identify" wx:if="{{showAiIdentify}}">
         <image class="m-img" src="/assets/icons/camera.png" mode="aspectFit"></image>
         <text class="svc-cn">AI 标本鉴定</text>
-        <text class="svc-meta is-free">当前免费</text>
+        <text class="svc-corner">免费</text>
       </view>
       <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToCommunity" wx:if="{{showUserCommunity}}">
         <image class="m-img" src="/assets/icons/article-tab.png" mode="aspectFit"></image>

@@ -3,111 +3,102 @@
 
 .page-pet { min-height: 100vh; position: relative; }
 
-/* —— Hero：中文主标题 > 英文 > 标语 > 说明 —— */
-.page-pet .hero-head {
-  padding-bottom: 8rpx;
+/* —— 页头（2026-10-17）：眉标 + 主标 + 一行安心承诺；左对齐，不再居中堆三层 —— */
+.page-pet .pet-head {
+  padding: 20rpx 32rpx 24rpx;
 }
 
-.page-pet .nav-row {
-  padding: 12rpx 32rpx 0;
-  min-height: 0;
-}
-
-.page-pet .nav-brand {
-  padding: 0 16rpx;
-}
-
-.page-pet .nav-brand .nav-title {
-  font-size: var(--fs-40);
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: 0.14em;
-  color: #FFFFFF;
-  font-family: var(--font-brand);
-}
-
-.page-pet .nav-sub {
-  margin-top: 8rpx;
+.page-pet .pet-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
   font-size: var(--fs-18);
-  line-height: 1.3;
-  letter-spacing: 0.18em;
-  color: var(--color-primary);
-}
-
-/* 顶部标语区：上紧下松（标题块 → 标语 → 安心提示），用间距令牌固定节奏 */
-.page-pet .nav-motto {
-  text-align: center;
-  padding: var(--space-3) 48rpx var(--space-4);
-  border-bottom: none;
-}
-
-.page-pet .motto-primary {
-  font-size: var(--fs-24);
-  font-weight: 400;
-  line-height: 1.65;
-  letter-spacing: 0.04em;
-  color: var(--color-primary);
-  font-family: var(--font-brand);
-}
-
-/* 「提交意向后专员评估 · 无需立即支付」是这一页**最重要的安心信息**（顾客最怕的是
-   "点一下就被扣钱"），原来它是顶部最弱的一行灰字（#A09A90 / 22rpx）。
-   改成一条有铜色描边的提示条：可读性提上来，层级也从"免责声明"变成"承诺"。 */
-.page-pet .motto-secondary {
-  display: inline-block;
-  margin-top: var(--space-2);
-  padding: 10rpx 22rpx;
-  font-size: var(--fs-22);
-  line-height: 1.45;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.24em;
   color: var(--brass-300);
-  border: 1rpx solid rgba(196, 167, 108, 0.42);
-  border-radius: 999rpx;
-  background: rgba(196, 167, 108, 0.1);
 }
 
-/* 步骤条：与标题区用边框锚定，节奏稳定 */
-.page-pet .header-rail-full {
-  padding: 20rpx 28rpx 22rpx;
-  margin-top: 4rpx;
-  background: rgba(31, 29, 26, 0.96);
-  border-top: 1px solid rgba(77, 64, 26, 0.38);
-  border-bottom: 1px solid rgba(38, 35, 32, 0.55);
+.page-pet .pet-title {
+  display: block;
+  margin-top: 12rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-34);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  color: #F3ECDD;
 }
 
-/* ⚠️ 2026-09-21：本页原来把步骤条字号**改小**（20rpx / 当前 22rpx），比共享基线
-   （22rpx / 当前 24rpx）还小 —— 结果顶部最需要被读懂的导航上下文，是全页最小的字。
-   改回不低于基线的口径，并把**未点亮**的连接线给一点存在感（原来 #262320 在深底上几乎不可见，
-   真机截图里五步之间看不出是一条轨迹）。 */
-.page-pet .rail-top {
-  margin-bottom: 12rpx;
+/* 「无需立即支付」是本页最重要的安心信息（顾客最怕点一下就被扣钱）：
+   一枚铜点 + 正文色，不再是胶囊描边条（胶囊在新语言里只给可点的东西） */
+.page-pet .pet-assure {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 12rpx;
 }
 
-.page-pet .rail-label {
-  font-size: var(--fs-22);
-  letter-spacing: 0.02em;
-  color: #A09A90;
+.page-pet .pet-assure-dot {
+  flex-shrink: 0;
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: var(--brass-400);
 }
 
-.page-pet .rail-col.past .rail-label { color: #A09A90; }
-
-.page-pet .rail-col.current .rail-label {
+.page-pet .pet-assure-t {
   font-size: var(--fs-24);
+  line-height: 1.45;
+  color: var(--color-text-body);
 }
 
-.page-pet .rail-line {
-  background: rgba(196, 167, 108, 0.18);
+/* —— 五段进度条：段 = 进度，下方「序号 + 步名」；当前段实心金（本页头唯一一处实心金），
+   已走过的段半透金且可点回，未到的段只是一道发丝 —— */
+.page-pet .pet-rail {
+  display: flex;
+  gap: 8rpx;
+  padding: 0 32rpx 20rpx;
 }
 
-/* Museum Mode：步骤点用边框层次，不用发光 */
-.page-pet .rail-dot.active {
-  box-shadow: none;
-  border-width: 2rpx;
+.page-pet .pet-rail-col {
+  flex: 1 1 0;
+  width: 0;
+  padding-top: 8rpx;
 }
 
-.page-pet .rail-col.current .rail-dot.active {
-  transform: none;
+.page-pet .pet-rail-seg {
+  height: 4rpx;
+  border-radius: 2rpx;
+  background: rgba(196, 167, 108, 0.16);
+  transition: background-color var(--dur-base) var(--ease-standard);
 }
+
+.page-pet .pet-rail-col.is-past .pet-rail-seg { background: rgba(196, 167, 108, 0.5); }
+.page-pet .pet-rail-col.is-current .pet-rail-seg { background: var(--brass-400); }
+
+.page-pet .pet-rail-cap {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  margin-top: 14rpx;
+  min-height: 44rpx;
+}
+
+.page-pet .pet-rail-num {
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}
+
+.page-pet .pet-rail-label {
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.page-pet .pet-rail-col.is-past .pet-rail-num,
+.page-pet .pet-rail-col.is-past .pet-rail-label { color: var(--color-text-body); }
+
+.page-pet .pet-rail-col.is-current .pet-rail-num,
+.page-pet .pet-rail-col.is-current .pet-rail-label { color: var(--brass-200); font-weight: 500; }
 
 /* 底栏高度：步骤 1 含固定勾选，其余更矮 */
 .page-pet .main-scroll {
@@ -151,34 +142,35 @@
   padding: 28rpx 32rpx 48rpx;
 }
 
-/* —— 知情条款：铜牌短条，避免灰字墙 —— */
+/* —— 知情条款（2026-10-17）：发丝线两栏行（左眉题、右正文），不再是左金条卡片 —— */
 .notice-plates {
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
   margin-bottom: 28rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.16);
 }
 
 .notice-plate {
-  padding: 20rpx 24rpx;
-  background: rgba(250, 246, 237, 0.04);
-  border: 1px solid rgba(77, 64, 26, 0.42);
-  border-radius: var(--radius-md);
-  border-left: 4rpx solid rgba(196, 167, 108, 0.55);
+  display: flex;
+  gap: 24rpx;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.16);
 }
 
 .notice-plate-title {
-  display: block;
+  flex-shrink: 0;
+  width: 168rpx;
   font-size: var(--fs-24);
   font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--color-primary);
+  line-height: 1.55;
+  letter-spacing: 0.04em;
+  color: var(--brass-300);
   font-family: var(--font-brand);
-  margin-bottom: 8rpx;
 }
 
 .notice-plate-body {
-  display: block;
+  flex: 1;
+  min-width: 0;
   font-size: var(--fs-24);
   color: #D5D1C8;
   line-height: 1.55;

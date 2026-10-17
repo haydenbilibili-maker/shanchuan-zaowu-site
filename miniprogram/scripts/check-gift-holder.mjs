@@ -240,7 +240,7 @@ async function runChecks() {
   {
     const { ctx, ops } = makeRecorderCtx()
     await draw.drawHolderCert(ctx, golden.fixture.w, golden.fixture.h, golden.fixture.data, makeStubCanvas(), async (s) => s)
-    ok(JSON.stringify(ops) === JSON.stringify(golden.ops), 'D 非礼赠收藏证书绘制与改动前金样不一致（非礼赠行为必须不变）')
+    ok(JSON.stringify(ops) === JSON.stringify(golden.ops), 'D 非礼赠收藏证书绘制与金样不一致（金样 2026-10-17 随新视觉重绘重录；改版式须同步重录并说明）')
   }
   async function renderPage(order, viewer) {
     const { db } = makeDb({ orders: [order], users: [{ _openid: viewer, nickName: viewer === RECV ? '林间小满' : '山海收藏家', level: 2 }] })
@@ -288,7 +288,8 @@ async function runChecks() {
   {
     const plain = await renderPage(plainOrder({ status: 'received' }), GIVER)
     ok(plain.data.certKind === 'holder' && plain.drawn, 'D 证书页：非礼赠应画收藏证书')
-    ok(JSON.stringify(normDate(plain.ops)) === JSON.stringify(normDate(golden.ops)), 'D 证书页：非礼赠整页绘制与改动前金样不一致')
+    // 页面侧录制时滤掉了 scale（dpr 缩放），金样里绘制自身的设计稿缩放也一并滤掉再比
+    ok(JSON.stringify(normDate(plain.ops)) === JSON.stringify(normDate(golden.ops.filter((op) => op[0] !== 'scale'))), 'D 证书页：非礼赠整页绘制与金样不一致')
     const giver = await renderPage(giftOrder(), GIVER)
     const recv = await renderPage(giftOrder(), RECV)
     const gt = texts(giver.ops)
@@ -313,8 +314,8 @@ async function runChecks() {
     ok(texts(fixed.ops).includes('2025.12.01'), 'D 证书日期须优先取固化的 certMeta.issuedAt')
     const save = dated.cloudCalls.find((c) => c.action === 'saveCertificate')
     ok(dated.cloudCalls.some((c) => c.upload && c.upload.startsWith('certificates/n1/holder-')) && save && save.name === 'getCareSpecimens' &&
-      save.kind === 'holder' && save.sig === 'holder|2026.01.05|v2' && /^cloud:\/\//.test(save.fileID), 'D 首次签发须上传证书图并 saveCertificate(kind, sig) 固化')
-    const cachedOrder = plainOrder({ receiveTime: recvAt, certMeta: { issuedAt: recvAt, holder: { fileID: 'cloud://certs/n1.png', openid: GIVER, sig: 'holder|2026.01.05|v2' } } })
+      save.kind === 'holder' && save.sig === 'holder|2026.01.05|v3' && /^cloud:\/\//.test(save.fileID), 'D 首次签发须上传证书图并 saveCertificate(kind, sig) 固化')
+    const cachedOrder = plainOrder({ receiveTime: recvAt, certMeta: { issuedAt: recvAt, holder: { fileID: 'cloud://certs/n1.png', openid: GIVER, sig: 'holder|2026.01.05|v3' } } })
     const cached = await renderPage(cachedOrder, GIVER)
     ok(cached.data.certImageUrl === 'https://tmp/certs/n1.png' && !cached.drawn && !texts(cached.ops).length && cached.data.showCert,
       'D 已固化且签名一致：直接展示已生成的证书图，不再重绘')
@@ -325,8 +326,12 @@ async function runChecks() {
     const { ctx, ops } = makeRecorderCtx()
     await draw.drawHolderCert(ctx, 300, 480, golden.fixture.data, makeStubCanvas(), async (s) => s)
     const sc = ops.find((op) => op[0] === 'scale')
-    ok(!!sc && Math.abs(Number(sc[1]) - 480 / 560) < 0.01 && JSON.stringify(texts(ops)) === JSON.stringify(texts(golden.ops)),
-      'D 矮屏普通证书须按 560 设计高等比缩放（文字内容不变），底部不再挤压')
+    ok(!!sc && Math.abs(Number(sc[1]) - 1) < 0.01 && JSON.stringify(texts(ops)) === JSON.stringify(texts(golden.ops)),
+      'D 证书按 300×480 设计稿等比缩放（真机 600rpx×960rpx 即 1:1；文字内容与金样相同）')
+  }
+  {
+    // 旧版的「已固化证书」不得原样复用：签名带版本号（v3），旧图签名对不上 → 现场重绘
+    ok(/const parts = \[kind, data\.date, 'v3'\]/.test(read(P.certPage)), 'D 证书签名须带当前版式版本 v3（否则重绘后旧图仍被直接展示）')
   }
 
   // E 养护提醒
@@ -716,8 +721,8 @@ const INJECTIONS = [
   { name: '判据副本漂移', file: P.holderCopies[0], find: "var VOID_STATUS = { refunded: 1, cancelled: 1, void: 1, expired_refunding: 1 }", replace: "var VOID_STATUS = { refunded: 1, cancelled: 1, void: 1 }" },
   { name: '退款礼赠仍签发证书', file: [P.holder, ...P.holderCopies], find: "if (VOID_STATUS[order.status]) return 'void'", replace: '' },
   { name: '收藏夹把送出的礼赠当持有证书', file: P.certList, find: "return receiver === openid ? 'gift_holder' : 'gift_voucher'", replace: "return 'gift_holder'" },
-  { name: '赠予凭证写成珍藏证书', file: P.certDraw, find: "ctx.fillText('山海造物 · 赠予凭证', cx, 62 * k)", replace: "ctx.fillText('山海造物 · 珍藏证书', cx, 62 * k)" },
-  { name: '非礼赠证书被改版式', file: P.certDraw, find: "ctx.fillText('以表彰其对以下自然瑰宝的永久珍藏：', w / 2, y);", replace: "ctx.fillText('以表彰其永久珍藏：', w / 2, y);" },
+  { name: '赠予凭证写成珍藏证书', file: P.certDraw, find: "drawHead(ctx, W, 'CERTIFICATE OF GIFT', '山海造物 · 赠予凭证')", replace: "drawHead(ctx, W, 'CERTIFICATE OF GIFT', '山海造物 · 珍藏证书')" },
+  { name: '非礼赠证书被改版式', file: P.certDraw, find: "ctx.fillText('兹证明下列持有人永久珍藏本件自然藏品', W / 2, y + 22)", replace: "ctx.fillText('兹证明其永久珍藏', W / 2, y + 22)" },
   { name: '证书页送礼人走持有证书', file: P.certPage, find: "(role === 'giver' ? 'gift_voucher' : 'gift_holder')", replace: "'gift_holder'" },
   { name: '证书页非礼赠走礼赠版式', file: P.certPage, find: "const certKind = !gift ? 'holder' :", replace: "const certKind = !gift ? 'gift_holder' :" },
   { name: '送礼人代点签收仍排给送礼人', file: P.reminder, find: 'next.openid = gift.holder', replace: 'next.openid = caller' },
@@ -735,7 +740,8 @@ const INJECTIONS = [
   { name: '已固化证书仍重绘', file: P.certPage, find: 'if (saved && saved.fileID && saved.openid === openid && saved.sig === sig) {', replace: 'if (false) {' },
   { name: '展示他人固化的证书图', file: P.certPage, find: 'saved.fileID && saved.openid === openid && saved.sig', replace: 'saved.fileID && saved.sig' },
   { name: '首次签发不固化', file: P.certPage, find: '            this.persistCert(r.tempFilePath);\n', replace: '' },
-  { name: '矮屏证书不缩放', file: P.certDraw, find: 'if (s >= 1) return drawHolderLayout', replace: 'if (true) return drawHolderLayout' },
+  { name: '证书不按设计稿缩放', file: P.certDraw, find: '  ctx.scale(k, k)\n', replace: '' },
+  { name: '证书签名不带版式版本', file: P.certPage, find: "const parts = [kind, data.date, 'v3'];", replace: "const parts = [kind, data.date, 'v2'];" },
   { name: '证书固化不校验身份', file: P.specimens, find: 'if (!order || certKindOf(order, openid) !== kind)', replace: 'if (!order)' },
   { name: '签发日取 now', file: P.specimens, find: "data['certMeta.issuedAt'] = issuedAt ? new Date(issuedAt) : db.serverDate()", replace: "data['certMeta.issuedAt'] = db.serverDate()" },
   { name: '送礼人代签仍发收藏证书已生成（N1 回退）', file: P.confirmReceipt, find: 'const voucherSent = giverSigned && await', replace: 'const voucherSent = false && await' },

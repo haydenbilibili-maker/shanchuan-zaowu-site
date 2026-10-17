@@ -106,6 +106,9 @@ Page({
     interestOptions: INTEREST_OPTIONS,
     mbtiOptions: MBTI_OPTIONS,
     zodiacOptions: ZODIAC_OPTIONS,
+    /** 选择器的显示列：首项「暂不填写」= 清空（下标 0），其余与 options 一一对应（下标 +1） */
+    mbtiRange: ['暂不填写'].concat(MBTI_OPTIONS),
+    zodiacRange: ['暂不填写'].concat(ZODIAC_OPTIONS.map((z) => z.label)),
     sensitiveBlurPref: '',
     sensitiveOptions: DISPLAY_OPTIONS,
     rewardHint: '',
@@ -548,12 +551,14 @@ Page({
     })
   },
 
-  selectMbti(e) {
-    this.applyPatch({ mbti: e.currentTarget.dataset.key })
+  onMbtiPick(e) {
+    const i = Number(e.detail.value) || 0
+    this.applyPatch({ mbti: i > 0 ? MBTI_OPTIONS[i - 1] || '' : '' })
   },
 
-  selectZodiac(e) {
-    this.applyPatch({ zodiac: e.currentTarget.dataset.key })
+  onZodiacPick(e) {
+    const i = Number(e.detail.value) || 0
+    this.applyPatch({ zodiac: i > 0 ? (ZODIAC_OPTIONS[i - 1] || {}).key || '' : '' })
   },
 
   selectSensitivePref(e) {

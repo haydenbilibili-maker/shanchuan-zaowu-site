@@ -95,18 +95,18 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 12rpx;
-  min-height: 168rpx;
-  padding-top: 40rpx;
+  justify-content: center;
+  gap: 14rpx;
+  min-height: 156rpx;
   box-sizing: border-box;
   border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
 }
 .svc-tile:not(:nth-child(3n)) { border-right: 1rpx solid rgba(196, 167, 108, 0.12); }
 .svc-grid .m-img { width: 44rpx; height: 44rpx; }
 .svc-cn { font-size: var(--fs-24); color: var(--color-text-body); white-space: nowrap; }
-.svc-meta { height: auto; line-height: 1.2; font-size: var(--fs-18); }
-.svc-meta.is-free { color: var(--brass-300); letter-spacing: .08em; }
+/* 右上角标：信息性（进度 / 免费），发丝描边小签 —— 不用实心红（待办）也不用描边金胶囊（新点亮） */
+.svc-corner { position: absolute; top: 16rpx; right: 16rpx; padding: 0 10rpx; line-height: 30rpx; font-size: var(--fs-18); color: var(--brass-300); border: 1rpx solid rgba(196, 167, 108, 0.32); border-radius: 4rpx; letter-spacing: .06em; }
+.svc-corner.is-mono { font-family: var(--font-mono); letter-spacing: .02em; }
 .svc-badge { position: absolute; top: 20rpx; right: 24rpx; }
 
 /* 两栏行：图标 / 中文 / 角标 / › */

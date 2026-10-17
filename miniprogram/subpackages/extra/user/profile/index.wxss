@@ -641,7 +641,6 @@ button.profile-bind-phone.is-off {
 }
 
 .pf-seg-item,
-.pf-grid-item,
 .pf-chip {
   display: flex;
   align-items: center;
@@ -656,7 +655,6 @@ button.profile-bind-phone.is-off {
 }
 
 .pf-seg-item.on,
-.pf-grid-item.on,
 .pf-chip.on {
   color: var(--brass-200);
   border-color: var(--color-primary);
@@ -678,20 +676,9 @@ button.profile-bind-phone.is-off {
   border-radius: 999rpx;
 }
 
-/* MBTI 4×4 / 星座 4×3：全部铺开 */
+/* 一句话：与上面两行选择器隔开 */
 .pf-group {
   margin-top: 36rpx;
-}
-
-.pf-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12rpx;
-}
-
-.pf-grid-item.is-mono {
-  font-family: var(--font-mono);
-  letter-spacing: 0.06em;
 }
 
 .pf-bio-head {
@@ -805,7 +792,20 @@ button.profile-bind-phone.is-off {
   bottom: 0;
   z-index: 20;
   padding: 20rpx var(--space-4) calc(20rpx + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(26, 24, 20, 0), var(--color-bg) 32%);
+  /* 底栏本体实底：「已保存」是透明描边钮，渐隐若落在钮后，滚过的正文会透出来和钮字叠在一起（2026-10-17 真机截图）。
+     渐隐只留在底栏**上方**一小段 */
+  background: var(--color-bg);
+}
+
+.account-footer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -40rpx;
+  height: 40rpx;
+  background: linear-gradient(180deg, rgba(26, 24, 20, 0), var(--color-bg));
+  pointer-events: none;
 }
 
 .pf-save {

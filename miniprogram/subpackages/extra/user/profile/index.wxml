@@ -195,40 +195,35 @@
         </view>
       </view>
 
-      <!-- ⑤ 自我标签：MBTI 16 型 4×4、星座 4×3 全部铺开（原横向滚动藏掉一半） -->
+      <!-- ⑤ 自我标签：MBTI / 星座改为原生选择器两行（原 4×4 + 4×3 宫格占两屏，2026-10-17 产品负责人点名）；
+           首项「暂不填写」= 清空。下标与显示文字由 wxs 现算，不另存一份状态。 -->
+      <wxs module="pk">
+        function at(list, v) {
+          for (var i = 0; i < list.length; i++) { if ((list[i].key || list[i]) === v) return i + 1 }
+          return 0
+        }
+        function zodiacLabel(list, v) {
+          for (var i = 0; i < list.length; i++) { if (list[i].key === v) return list[i].label }
+          return ''
+        }
+        module.exports = { at: at, zodiacLabel: zodiacLabel }
+      </wxs>
       <view class="account-section-card">
         <view class="pf-head"><view class="pf-head-t"><text class="pf-en">NOTES</text><text class="pf-cn">自我标签</text></view></view>
         <text class="pf-desc">可选填写，默认仅自己可见</text>
 
-        <view class="pf-group" id="field-mbti">
-          <text class="pf-field-k is-dark">MBTI</text>
-          <view class="pf-grid">
-            <view
-              class="pf-grid-item is-mono {{mbti === item ? 'on' : ''}}"
-              wx:for="{{mbtiOptions}}"
-              wx:key="*this"
-              hover-class="tap-press-soft"
-              hover-stay-time="80"
-              bindtap="selectMbti"
-              data-key="{{item}}"
-            >{{item}}</view>
+        <picker mode="selector" range="{{mbtiRange}}" value="{{pk.at(mbtiOptions, mbti)}}" bindchange="onMbtiPick">
+          <view class="pf-row" id="field-mbti" hover-class="tap-press-soft" hover-stay-time="80">
+            <view class="pf-row-l"><text class="pf-row-k">MBTI</text><text class="pf-row-note">16 型人格，用于玩法与推荐语气</text></view>
+            <text class="pf-row-v {{mbti ? 'is-mono' : 'is-empty'}}">{{mbti || '去选择'}} ›</text>
           </view>
-        </view>
-
-        <view class="pf-group" id="field-zodiac">
-          <text class="pf-field-k is-dark">星座</text>
-          <view class="pf-grid">
-            <view
-              class="pf-grid-item {{zodiac === item.key ? 'on' : ''}}"
-              wx:for="{{zodiacOptions}}"
-              wx:key="key"
-              hover-class="tap-press-soft"
-              hover-stay-time="80"
-              bindtap="selectZodiac"
-              data-key="{{item.key}}"
-            >{{item.label}}</view>
+        </picker>
+        <picker mode="selector" range="{{zodiacRange}}" value="{{pk.at(zodiacOptions, zodiac)}}" bindchange="onZodiacPick">
+          <view class="pf-row" id="field-zodiac" hover-class="tap-press-soft" hover-stay-time="80">
+            <view class="pf-row-l"><text class="pf-row-k">星座</text><text class="pf-row-note">填了生日会自动带出</text></view>
+            <text class="pf-row-v {{zodiac ? '' : 'is-empty'}}">{{pk.zodiacLabel(zodiacOptions, zodiac) || '去选择'}} ›</text>
           </view>
-        </view>
+        </picker>
 
         <view class="pf-group">
           <view class="pf-bio-head">
