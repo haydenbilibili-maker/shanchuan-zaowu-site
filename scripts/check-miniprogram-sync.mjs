@@ -67,9 +67,13 @@ const IGNORE_REL = /^scripts\/.*\.result\.json$/
  *   ① 只处理「主库会管理的代码/资源后缀」；
  *   ② 显式排除本机产物与身份文件 —— 这些在开发仓本来就该存在，删了会出事。
  */
-// 注意带上 wav/aac/m4a/ogg：礼笺打字机音效就是 .wav（2026-09-20），
-// 漏了它 → 删素材时 --prune 会判成"本机产物"跳过，开发仓留残骸、包体也不瘦。
-const PRUNE_SAFE_EXT = /\.(js|json|wxml|wxss|wxs|ts|png|jpe?g|gif|svg|webp|mp3|mp4|wav|aac|m4a|ogg|ttf|otf|woff2?)$/i
+// ⚠️ 这份后缀表**漏一次就会留残骸**，已经漏过两次，以后加文件类型先想着它：
+//   · 2026-09-20 `.wav`（礼笺打字机音效）—— 漏了 → 删素材时被判成"本机产物"跳过；
+//   · 2026-10-17 `.mjs` —— 漏了 → 删掉 `miniprogram/scripts/*.mjs`（预览台/工具脚本）后，
+//     `--prune` 把 4 个已成残骸的 .mjs 当本机产物跳过 → 双仓永远不一致、开发仓留残骸。
+//     （根因很隐蔽：`\.js$` **不匹配** `x.mjs`，因为末尾是 “mjs” 而不是 “.js”。）
+// 自检 M 专门钉 `.mjs`/`.cjs`。
+const PRUNE_SAFE_EXT = /\.(js|mjs|cjs|json|wxml|wxss|wxs|ts|png|jpe?g|gif|svg|webp|mp3|mp4|wav|aac|m4a|ogg|ttf|otf|woff2?)$/i
 const PRUNE_EXCLUDE_REL = [
   /(^|\/)node_modules\//,
   /(^|\/)\.git\//,
@@ -334,6 +338,17 @@ function selftest() {
     expect('L 残留 wav 已删', !existsSync(join(dst, 'legacy-sfx.wav')))
 
     seed()
+    // M：.mjs / .cjs 也是「主库会管理的代码」，删掉后必须被 --prune 清掉（2026-10-17 真事故：
+    //    `\.js$` 不匹配 `x.mjs`，4 个已删的预览台脚本被当成本机产物跳过，双仓永远不一致）
+    mkdirSync(join(dst, 'scripts'), { recursive: true })
+    writeFileSync(join(dst, 'scripts/legacy-tool.mjs'), 'export {}\n')
+    writeFileSync(join(dst, 'scripts/legacy-tool.cjs'), 'module.exports={}\n')
+    const m = run(false, ['--prune'])
+    expect('M --prune 删除开发仓残留 .mjs（主库已删）→ 0', m.status === 0, m.stderr)
+    expect('M 残留 .mjs 已删', !existsSync(join(dst, 'scripts/legacy-tool.mjs')))
+    expect('M 残留 .cjs 已删', !existsSync(join(dst, 'scripts/legacy-tool.cjs')))
+
+    seed()
     mkdirSync(join(dst, 'scripts'), { recursive: true })
     writeFileSync(join(dst, 'scripts/keep.result.json'), '{}\n')
     writeFileSync(join(dst, 'scripts/notes.log'), 'x\n')
@@ -379,7 +394,7 @@ function selftest() {
     console.error(`\n✗ selftest 失败 ${bad} 项`)
     process.exit(1)
   }
-  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致 / 产物 JSON 被忽略 / --fix 保留本机显示名')
+  console.log('\n✓ selftest 通过：一致 / 缺文件 / 内容不一致 / --fix 修复 / 多出文件 / 显示名可不同 / 其余字段仍须一致 / 产物 JSON 被忽略 / --fix 保留本机显示名 / --prune 清 .js·.wxml·.wav·.mjs·.cjs 且不碰本机产物')
   process.exit(0)
 }
 
