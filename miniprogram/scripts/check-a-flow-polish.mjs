@@ -38,7 +38,8 @@ const FILES = {
   homeWxss: 'pages/index/index.wxss',
   cartWxss: 'pages/cart/index.wxss',
   userWxss: 'pages/user/index.wxss',
-  identifyWxss: 'subpackages/feature/identify/index.wxss'
+  identifyWxss: 'subpackages/feature/identify/index.wxss',
+  identifyJs: 'subpackages/feature/identify/index.js'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -103,6 +104,19 @@ function checks(s) {
   add('R2-1 鉴定加载卡内含三步进度与上传进度条',
     /class="steps"/.test(core) && (core.match(/class="step \{\{/g) || []).length === 3 && /class="progress-bar"/.test(core))
   add('R2-1 鉴定页「鉴定记录」入口有按压态', /class="recent-link" bindtap="goLog" hover-class="recent-item-press"/.test(s.identifyWxml))
+  // 2026-10-17 鉴定台重构：取景框整框可点即拍（且等待中不重复触发）；最近鉴定缩略图读不到退回占位格；本屏只有一颗实心金
+  add('R11-1 鉴定台取景框可点即拍、有按压态，等待中不重复触发',
+    /class="frame [^"]*"\s+bindtap="onFrameTap"\s+hover-class="frame-press"/.test(s.identifyWxml) &&
+      /onFrameTap\(\) \{\s*if \(this\.data\.busy\) return\s*this\.onTakePhoto\(\)/.test(s.identifyJs))
+  add('R11-2 最近鉴定缩略图有 binderror 并按下标退回占位格',
+    /class="recent-thumb" src="\{\{item\.thumb\}\}"[^>]*binderror="onRecentThumbError"/.test(s.identifyWxml) &&
+      /wx:else class="recent-thumb is-empty"/.test(s.identifyWxml) &&
+      /\[`recentList\[\$\{i\}\]\.thumb`\]: ''/.test(methodBody(s.identifyJs, 'onRecentThumbError')))
+  add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
+    // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
+    [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
+      .filter((m) => /background: var\(--brass-400\)/.test(m[2]) && !/progress|step-line|scan/.test(m[1]))
+      .map((m) => m[1].trim()).join('|') === '.btn.primary')
 
   // R2-2 搜索：相关推荐图片失败退回占位块；标签不再重复「换个词试试」
   const relImgs = s.searchWxml.match(/wx:if="\{\{item\.image && !item\.imgBroken\}\}"[\s\S]*?binderror="onRelatedImgError"/g) || []
@@ -325,6 +339,9 @@ if (process.argv.includes('--selftest')) {
     ['工坊进度磁贴去掉按压态', 'atelierWxml', (t) => t.replace('bindtap="goPetOrders" hover-class="order-tile-press" hover-stay-time="80"', 'bindtap="goPetOrders"')],
     ['鉴定步骤移回遮罩外', 'identifyWxml', (t) => t.replace(/\n      <view class="steps">[\s\S]*?\n      <\/view>/, '')],
     ['鉴定记录入口去按压态', 'identifyWxml', (t) => t.replace('bindtap="goLog" hover-class="recent-item-press" hover-stay-time="80"', 'bindtap="goLog"')],
+    ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
+    ['最近鉴定缩略图去掉 binderror', 'identifyWxml', (t) => t.replace(' binderror="onRecentThumbError"', '')],
+    ['鉴定台多一颗实心金', 'identifyWxss', (t) => t.replace('.album-link {\n', '.album-link {\n  background: var(--brass-400);\n')],
     ['搜索相关卡图片去掉 binderror', 'searchWxml', (t) => t.replace('binderror="onRelatedImgError"', '')],
     ['搜索相关标签改回「换个词试试」', 'searchWxml', (t) => t.replace('<text class="related-label">相近线索</text>', '<text class="related-label">换个词试试</text>')],
     ['立即购买去按压态', 'detailWxml', (t) => t.replace('bindtap="handleBuyNow" hover-class="tap-press" hover-stay-time="80"', 'bindtap="handleBuyNow"')],

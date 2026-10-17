@@ -191,6 +191,12 @@ const scenes = [
   },
   { name: 'atelier', page: 'atelier', h: 1500, data: atelierData() },
   { name: 'identify-loading', page: 'identify', h: 1334, data: { busy: true, loadingText: '正在归档这件标本…', loadingStep: 2, uploadProgress: 62, recentList: [] } },
+  // 2026-10-17 鉴定台重构：空闲态（取景框 / 门类 / 三步 / 最近鉴定 / 建议）
+  { name: 'identify-idle', page: 'identify', h: 2600, data: { busy: false, categoryHint: '昆虫',
+    categoryHints: [{ id: '', label: '不限' }, { id: '昆虫', label: '昆虫' }, { id: '矿石', label: '矿石' }, { id: '植物', label: '植物' }, { id: '海洋', label: '海洋' }, { id: '动物', label: '动物' }, { id: '衍生品', label: '衍生品' }],
+    flowSteps: [{ k: '入镜', v: '拍一张或选一张' }, { k: '归档', v: '照片存入你的鉴定记录' }, { k: '解读', v: '约 15–60 秒，给出物种与手记' }],
+    photoTips: [{ k: '正对', v: '正对藏品主体，避免倾斜过大' }, { k: '柔光', v: '均匀柔光，减少玻璃罩与强反光' }, { k: '占满', v: '看翅脉或纹理时，让主体占满画面再拍' }, { k: '简洁', v: '背景简洁，主体占画面六成以上' }],
+    recentList: [{ _id: 'r1', name: '大蓝闪蝶', latin: 'Morpho menelaus', thumb: '', timeText: '12 分钟前' }, { _id: 'r2', name: '紫水晶', latin: 'Amethyst', thumb: '', timeText: '10/14' }] } },
   {
     name: 'collection-detail', page: 'wiki', h: 1700,
     data: {
@@ -246,6 +252,7 @@ const unwrapGate = (s) => s.replace(/<sensitive-blur-gate\b[^>]*>/g, '<block>').
 
 async function shoot(scene) {
   const missing = new Set()
+  // ⚠️ 2026-10-17：替换裸 page 选择器不能写 \bpage —— `.page {` 的 page 前也是词边界，会把页面根类 .page 改成 .body（页面内边距整个丢失）；与 render-core-flows-preview 同一修法
   const page = PAGES[scene.page]
   let wxml = unwrapGate(read(join(MP, page.wxml)).replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, ''))
   if (scene.fragment) {
@@ -259,7 +266,7 @@ async function shoot(scene) {
 html, body { margin: 0; padding: 0; width: 750px; background: #1a1814; color: #fff; font-family: -apple-system, "PingFang SC", sans-serif; }
 img { object-fit: cover; }
 img:not([src]), img[src=""] { visibility: hidden; }
-</style><style>${css.replace(/\bpage\s*\{/g, 'body {')}</style><style>
+</style><style>${css.replace(/(^|[\s,}>+~(])page(?=\s*\{)/g, '$1body')}</style><style>
 .main-scroll { height: auto !important; position: static !important; overflow: visible !important; }
 .page-ency .sticky-header { position: relative !important; }
 .floating, .floating-shadow, .slide-up-anim, .blink { animation: none !important; }
@@ -355,7 +362,7 @@ async function shootDevices() {
     const base = (script) => `<!doctype html><html><head><meta charset="utf-8"><style>
 html, body { margin: 0; padding: 0; width: ${d.w}px; background: #1a1814; color: #fff; font-family: -apple-system, "PingFang SC", sans-serif; }
 img { object-fit: cover; } img:not([src]), img[src=""] { visibility: hidden; }
-</style><style>${css.replace(/\bpage\s*\{/g, 'body {')}</style><style>${tab.css}</style><style>
+</style><style>${css.replace(/(^|[\s,}>+~(])page(?=\s*\{)/g, '$1body')}</style><style>${tab.css}</style><style>
 .main-scroll { overflow-y: auto; } .main-scroll::-webkit-scrollbar { display: none; }
 .floating, .floating-shadow, .slide-up-anim, .blink { animation: none !important; }
 #__wxbar { position: fixed; top: 0; left: 0; right: 0; height: ${d.top}px; z-index: 10001; font: 600 14px -apple-system; display: flex; align-items: center; padding-left: 24px; }
