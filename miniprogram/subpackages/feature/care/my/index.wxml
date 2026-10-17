@@ -1,25 +1,6 @@
 <!--subpackages/feature/care/my/index.wxml-->
 <view class="page-my-care">
-  <view class="grain-overlay"></view>
-
-  <view class="header care-header" style=" padding-right: {{navPaddingRight}}px;">
-    <view class="care-nav-inner" style="min-height: {{navBarHeight}}px;">
-      <view class="care-brand">
-        <view class="care-title-row">
-          <image class="care-title-icon" src="/assets/icons/care.png" mode="aspectFit"></image>
-          <text class="care-title">我的标本养护</text>
-        </view>
-        <text class="care-sub">MY SPECIMENS</text>
-      </view>
-    </view>
-  </view>
-
-  <scroll-view
-    scroll-y
-    class="main-scroll care-scroll"
-    show-scrollbar="{{false}}"
-    style="top: {{scrollTopPx}}px; height: {{scrollHeightPx}}px;"
-  >
+  <!-- 2026-10-17「养护手册」重构：原生导航栏已写标题，自绘页头与固定 scroll-view 退场，改为页面滚动 -->
     <view class="care-skeleton" wx:if="{{loading}}">
       <view class="sk-block sk-hero"></view>
       <view class="sk-block sk-row" wx:for="{{[1,2,3]}}" wx:key="*this"></view>
@@ -27,7 +8,8 @@
 
     <view class="care-content {{pageReady ? 'ready' : ''}}" wx:else>
       <view class="intro care-enter care-enter-d1">
-        <text class="intro-overline">YOUR COLLECTION</text>
+        <text class="intro-overline">MY SPECIMENS · 我的藏品</text>
+        <text class="intro-title">每一件，都有它自己的那一页</text>
         <text class="intro-text">已签收的藏品，点开查看对应的养护指南</text>
       </view>
 
@@ -38,12 +20,13 @@
       </view>
 
       <view class="list care-enter care-enter-d2" wx:elif="{{specimens.length}}">
-        <view class="list-count">{{specimens.length}} 件藏品</view>
+        <view class="list-count">共 {{specimens.length}} 件</view>
         <view
           class="spec-card"
           wx:for="{{specimens}}"
           wx:key="key"
-          hover-class="care-card-hover"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
           bindtap="openSpecimen"
           data-category="{{item.category}}"
           data-order-id="{{item.orderId}}"
@@ -58,7 +41,7 @@
           <view class="spec-body">
             <text class="spec-title">{{item.title}}</text>
             <view class="spec-tags">
-              <text class="tag-cat" style="color: {{item.categoryColor}}; border-color: {{item.categoryColor}}33; background: {{item.categoryColor}}12;">{{item.categoryLabel}}</text>
+              <text class="tag-cat">{{item.categoryLabel}}</text>
               <text class="tag-custom" wx:if="{{item.isCustom}}">定制</text>
               <text class="tag-date" wx:if="{{item.receiveTimeText}}">{{item.receiveTimeText}}</text>
             </view>
@@ -70,15 +53,10 @@
       </view>
 
       <view class="empty care-enter care-enter-d2" wx:else>
-        <view class="empty-icon-ring">
-          <text class="empty-icon-letter">藏</text>
-        </view>
         <text class="empty-title">还没有已签收藏品</text>
         <text class="empty-desc">确认收货后，藏品会出现在这里，并匹配对应养护指南</text>
         <view class="empty-btn" bindtap="goToHub" hover-class="care-press">浏览品类养护 →</view>
       </view>
     </view>
 
-    <view class="care-scroll-pad"></view>
-  </scroll-view>
 </view>

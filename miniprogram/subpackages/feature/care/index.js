@@ -1,21 +1,20 @@
 // subpackages/feature/care/index.js
 const app = getApp()
-const { getPageNavInsets } = require('../utils/pageNav')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const { buildGuideUrl, CATEGORY_CARDS, GENERAL_TIPS } = require('../utils/careDefaults')
 const { loadUserSpecimens } = require('../utils/careSpecimens')
 const { fetchCareHub, getSeasonalTip } = require('../utils/careApi')
-const { measureFixedScroll } = require('../../../utils/scrollArea')
+const { carePlateOf } = require('../utils/atlasPlates')
 const easterEggHost = require('../../../utils/easterEggHost')
+
+/** 品类卡配刻版线描（与山海图鉴同一套；未登记的品类不配图，卡片照常） */
+function withPlates(cards) {
+  return (cards || []).map((c) => Object.assign({}, c, { plate: carePlateOf(c.category) }))
+}
 
 Page({
   behaviors: [easterEggHost],
   data: {
-    statusBarHeight: 20,
-    navPaddingRight: 96,
-    navBarHeight: 44,
-    scrollTopPx: 100,
-    scrollHeightPx: 500,
     categoryCards: [],
     generalTips: [],
     recentSpecimens: [],
@@ -24,31 +23,19 @@ Page({
     loading: true,
     pageReady: false,
     expandedTip: 'light',
-    scrollIntoView: ''
+    seasonEyebrow: ''
   },
 
   onLoad(options) {
-    const nav = getPageNavInsets({ nativeNav: true })
+    /* 2026-10-17「养护手册」重构：原生导航栏已写「标本养护」，页内不再叠一条自绘页头 + 固定 scroll-view，改回页面滚动 */
+    const SEASON_EN = { spring: 'SPRING', summer: 'SUMMER', autumn: 'AUTUMN', winter: 'WINTER' }
+    const tip = getSeasonalTip()
     this.setData({
-      statusBarHeight: nav.statusBarHeight || 0,
-      navPaddingRight: nav.navPaddingRight,
-      navBarHeight: nav.navBarHeight,
-      seasonalTip: getSeasonalTip()
+      seasonalTip: tip,
+      seasonEyebrow: tip ? `${SEASON_EN[tip.key] || 'SEASON'} · ${new Date().getMonth() + 1} 月` : ''
     })
     trackBehavior('care_hub_enter', 'from', options.from || 'direct')
     this.bootstrap()
-  },
-
-  onReady() {
-    this.remeasureScroll()
-  },
-
-  async remeasureScroll() {
-    const area = await measureFixedScroll(this, {
-      topSelector: '.care-header',
-      fallbackTop: 100
-    })
-    this.setData(area)
   },
 
   onShow() {
@@ -60,16 +47,15 @@ Page({
     try {
       const hub = await fetchCareHub()
       this.setData({
-        categoryCards: (hub.categoryCards && hub.categoryCards.length) ? hub.categoryCards : CATEGORY_CARDS,
+        categoryCards: withPlates((hub.categoryCards && hub.categoryCards.length) ? hub.categoryCards : CATEGORY_CARDS),
         generalTips: (hub.generalTips && hub.generalTips.length) ? hub.generalTips : GENERAL_TIPS
       })
     } catch (e) {
       console.warn('care hub bootstrap', e)
-      this.setData({ categoryCards: CATEGORY_CARDS, generalTips: GENERAL_TIPS })
+      this.setData({ categoryCards: withPlates(CATEGORY_CARDS), generalTips: GENERAL_TIPS })
     }
     await this.refreshSpecimens()
     this.setData({ loading: false })
-    this.remeasureScroll()
     setTimeout(() => this.setData({ pageReady: true }), 50)
   },
 
@@ -115,8 +101,8 @@ Page({
   },
 
   scrollToCategories() {
-    this.setData({ scrollIntoView: 'care-categories' })
     wx.vibrateShort({ type: 'light' })
+    wx.pageScrollTo({ selector: '#care-categories', duration: 300, fail: () => {} })
   },
 
   goToMySpecimens() {

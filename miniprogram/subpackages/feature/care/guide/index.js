@@ -1,6 +1,5 @@
 // subpackages/feature/care/guide/index.js
 const app = getApp()
-const { getPageNavInsets } = require('../../utils/pageNav')
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const { denyOrderAccess } = require('../../../../utils/orderScope')
 const {
@@ -10,7 +9,7 @@ const {
 } = require('../../utils/careDefaults')
 const { fetchCareGuide } = require('../../utils/careApi')
 const { loadCareOrderContext } = require('../../utils/careSpecimens')
-const { measureFixedScroll } = require('../../../../utils/scrollArea')
+const { carePlateOf } = require('../../utils/atlasPlates')
 
 const SECTION_OVERLINE = {
   environment: 'ENVIRONMENT',
@@ -60,11 +59,7 @@ function contextCopy(kind) {
 
 Page({
   data: {
-    statusBarHeight: 0,
-    navPaddingRight: 96,
-    navBarHeight: 44,
-    scrollTopPx: 100,
-    scrollHeightPx: 500,
+    categoryPlate: '',
     category: 'GENERAL',
     categoryColor: '#C4A76C',
     categoryLabel: '通用安放',
@@ -88,13 +83,11 @@ Page({
     loading: true,
     loadError: false,
     pageReady: false,
-    scrollIntoView: '',
     activeSection: '',
     collapsedSections: {}
   },
 
   onLoad(options) {
-    const nav = getPageNavInsets({ nativeNav: true })
     // 印刷礼笺上的小程序码走 `wxacode.getUnlimited`：页面收到的**不是** `from=xxx`，
     // 而是整串 `scene`（同 `subpackages/feature/identify/index.js` 与祈福墙的解析方式）。
     // 不解析它 → 扫礼笺进来会被当成"没有来源"，上下文标签与归因全丢。
@@ -111,10 +104,8 @@ Page({
     const kind = contextKind(from)
 
     this.setData({
-      statusBarHeight: nav.statusBarHeight || 0,
-      navPaddingRight: nav.navPaddingRight,
-      navBarHeight: nav.navBarHeight,
       category,
+      categoryPlate: carePlateOf(category),
       categoryColor: meta.color,
       categoryLabel: meta.label,
       categoryOverline: meta.overline,
@@ -132,20 +123,6 @@ Page({
 
     this._options = options
     this._initPage(options, category)
-  },
-
-  onReady() {
-    this.remeasureScroll()
-  },
-
-  async remeasureScroll() {
-    const area = await measureFixedScroll(this, {
-      topSelector: '.care-header',
-      bottomSelector: '.guide-footer',
-      fallbackTop: 100,
-      fallbackBottom: 120
-    })
-    this.setData(area)
   },
 
   async _initPage(options, category) {
@@ -192,7 +169,6 @@ Page({
       this.applyGuide(getGuideByCategory(category), { loadError: true })
     } finally {
       this.setData({ loading: false })
-      this.remeasureScroll()
       setTimeout(() => this.setData({ pageReady: true }), 50)
     }
   },
@@ -206,7 +182,9 @@ Page({
   jumpToSection(e) {
     const key = e.currentTarget.dataset.key
     wx.vibrateShort({ type: 'light' })
-    this.setData({ scrollIntoView: `section-${key}`, activeSection: key })
+    // 2026-10-17：改回页面滚动（原自绘页头 + 固定 scroll-view 退场），章节跳转用 pageScrollTo；留出章节目录的高度
+    this.setData({ activeSection: key })
+    wx.pageScrollTo({ selector: `#section-${key}`, offsetTop: -16, duration: 300, fail: () => {} })
   },
 
   toggleSection(e) {

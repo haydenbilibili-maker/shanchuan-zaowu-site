@@ -74,6 +74,26 @@ const SHAPES = {
     '<path d="M94 58 L87 44 L76 50 L70 88 L84 92 Z"/><path d="M94 58 L83 56 L76 50 M83 56 L78 90"/>' +
     '<path d="M16 96 Q60 84 104 96"/>' +
     '<path d="M63 46 L67 44 M63 54 L67 52 M63 62 L67 60 M63 70 L67 68" stroke-width="0.7"/>',
+  // ——— 以下三版给「标本养护」品类手册用（不对应图鉴物种）———
+  // 羽毛：羽轴 + 两侧羽片 + 羽枝排线（动物世界）
+  feather:
+    '<path d="M30 110 L94 12"/>' +
+    '<path d="M94 12 C102 26 98 44 86 58 L80 54 C82 64 74 74 62 82 C56 86 50 88 46 86"/>' +
+    '<path d="M94 12 C80 18 66 30 60 44 L66 46 C58 52 52 64 50 76"/>' +
+    '<path d="M44 90 C40 86 36 88 34 92 M42 94 C38 92 34 96 34 100 M47 88 C46 82 42 80 38 82" stroke-width="0.8"/>' +
+    '<path d="M88 26 L96 28 M84 34 L95 38 M80 42 L92 47 M76 50 L84 55 M72 60 L80 64 M66 68 L74 74 M60 76 L66 80 M86 22 L78 24 M82 30 L72 34 M78 38 L68 44 M70 52 L60 58 M64 62 L54 70" stroke-width="0.7"/>',
+  // 钟罩：玻璃罩 + 底座 + 罩内一枚小标本（通用安放）
+  belljar:
+    '<path d="M34 92 L34 50 C34 30 46 18 60 18 C74 18 86 30 86 50 L86 92"/>' +
+    '<path d="M56 18 C56 13 64 13 64 18"/>' +
+    '<path d="M24 92 L96 92 L92 102 L28 102 Z"/>' +
+    '<path d="M60 86 L60 64 M60 70 C52 62 48 56 50 50 C56 52 60 60 60 70 M60 66 C68 58 72 52 70 46 C64 48 60 56 60 66" stroke-width="0.9"/>' +
+    '<path d="M42 40 C42 32 46 27 50 25" stroke-width="0.7"/>',
+  // 画框：外框 + 内衬 + 斜接角 + 框内一只蝶（装裱）
+  frame:
+    '<path d="M18 22 L102 22 L102 98 L18 98 Z"/><path d="M28 32 L92 32 L92 88 L28 88 Z"/>' +
+    '<path d="M18 22 L28 32 M102 22 L92 32 M18 98 L28 88 M102 98 L92 88"/>' +
+    '<path d="M60 52 L60 70 M60 56 C52 48 42 48 42 54 C42 60 52 62 60 60 M60 56 C68 48 78 48 78 54 C78 60 68 62 60 60 M60 62 C54 64 48 70 52 74 C56 76 60 70 60 66 M60 62 C66 64 72 70 68 74 C64 76 60 70 60 66" stroke-width="0.9"/>',
   // 萤石：八面体 + 一面排线
   fluorite:
     '<path d="M60 16 L96 60 L60 104 L24 60 Z"/><path d="M24 60 L60 72 L96 60 M60 16 L60 104"/>' +
@@ -111,4 +131,15 @@ function plateOf(card) {
   return plateUri(shape)
 }
 
-module.exports = { plateOf, plateUri, SHAPES, SHAPE_BY_SPECIES }
+/** 标本养护品类 → 版式（与图鉴同一套刻版线描；养护页印在浅纸签上） */
+const SHAPE_BY_CARE_CATEGORY = {
+  INSECTA: 'morpho', ANIMALIA: 'feather', PLANTAE: 'ginkgo', MARINE: 'nautilus',
+  MINERALS: 'quartz', GENERAL: 'belljar', FRAMING: 'frame'
+}
+
+function carePlateOf(category) {
+  const shape = SHAPE_BY_CARE_CATEGORY[String(category || '').toUpperCase()]
+  return shape ? plateUri(shape) : ''
+}
+
+module.exports = { plateOf, plateUri, carePlateOf, SHAPES, SHAPE_BY_SPECIES, SHAPE_BY_CARE_CATEGORY }

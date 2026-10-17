@@ -26,7 +26,11 @@ const P = {
   cloudCatalog: resolve(MP, 'cloudfunctions/manageAtlas/catalog.js'),
   page: resolve(MP, 'subpackages/feature/collection/index.js'),
   wxml: resolve(MP, 'subpackages/feature/collection/index.wxml'),
-  detailWxml: resolve(MP, 'subpackages/feature/collection/detail/index.wxml')
+  detailWxml: resolve(MP, 'subpackages/feature/collection/detail/index.wxml'),
+  careDefaults: resolve(MP, 'subpackages/feature/utils/careDefaults.js'),
+  careHubJs: resolve(MP, 'subpackages/feature/care/index.js'),
+  careGuideJs: resolve(MP, 'subpackages/feature/care/guide/index.js'),
+  careWxml: ['index', 'guide/index', 'my/index'].map((n) => resolve(MP, `subpackages/feature/care/${n}.wxml`))
 }
 
 async function run(inject) {
@@ -58,6 +62,17 @@ async function run(inject) {
   ok(!!blank && !/item\.(plate|nameZh|nameLatin)/.test(blank), 'B 图鉴页未点亮分支渲染了图版 / 名称 / 学名')
   const dBlank = (read(P.detailWxml).match(/<block wx:else>\s*<text class="blank-no">([\s\S]*?)<\/block>/) || [])[0] || ''
   ok(!!dBlank && !/card\.(plate|nameZh|nameLatin|essay)/.test(dBlank), 'B 详页未点亮分支渲染了图版 / 名称 / 学名')
+
+  // E 标本养护「养护手册」（2026-10-17）：品类手册与指南卷首复用同一套刻版线描；三页改页面滚动
+  const careSrc = read(P.careDefaults)
+  const careCats = [...((careSrc.match(/const CATEGORY_META = \{([\s\S]*?)\n\}/) || [])[1] || '').matchAll(/^\s{2}([A-Z]+):/gm)].map((m) => m[1])
+  const careMissing = careCats.filter((c) => !/^data:image\/svg/.test(plates.carePlateOf(c)))
+  ok(careCats.length >= 7 && !careMissing.length, `E 养护品类缺刻版线描：${careMissing.join(',')}`)
+  const stale = P.careWxml.filter((f) => /<scroll-view\s+scroll-y|class="header care-header"/.test(read(f)))
+  ok(!stale.length, `E 养护页又叠回自绘页头 / 纵向 scroll-view：${stale.map((f) => f.split('/care/')[1]).join(',')}`)
+  ok(/wx\.pageScrollTo\(\{ selector: '#care-categories'/.test(read(P.careHubJs)) &&
+    /wx\.pageScrollTo\(\{ selector: `#section-\$\{key\}`/.test(read(P.careGuideJs)),
+    'E 页面滚动后「浏览品类」与章节跳转须走 wx.pageScrollTo（scroll-into-view 已无容器可滚）')
 
   // C / D 真跑页面
   let cfg = null
@@ -98,6 +113,9 @@ const INJECTIONS = [
   { name: '空位露出名称', file: P.wxml, find: '<text class="slot-blank-t">未记录</text>', replace: '<text class="slot-blank-t">{{item.nameZh}}</text>' },
   { name: '详页空位露出图版', file: P.detailWxml, find: '<text class="blank-t">这一页还空着</text>', replace: '<image src="{{card.plate}}"></image><text class="blank-t">这一页还空着</text>' },
   { name: '门类不清卷章', file: P.page, find: "this.setData({ filter: e.currentTarget.dataset.id, seriesFilter: '' }", replace: 'this.setData({ filter: e.currentTarget.dataset.id }' },
+  { name: '养护品类漏版式', file: P.plates, find: "MINERALS: 'quartz', GENERAL: 'belljar',", replace: "MINERALS: 'quartz'," },
+  { name: '养护页叠回 scroll-view', file: P.careWxml[2], find: '  <!-- 2026-10-17「养护手册」重构', replace: '  <scroll-view scroll-y class="main-scroll">\n  <!-- 2026-10-17「养护手册」重构' },
+  { name: '章节跳转回到 scroll-into-view', file: P.careGuideJs, find: "    wx.pageScrollTo({ selector: `#section-${key}`, offsetTop: -16, duration: 300, fail: () => {} })", replace: "    this.setData({ scrollIntoView: `section-${key}` })" },
   { name: '版式不是合法 SVG', file: P.plates, find: "'\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\">' + SHAPES[key] + '</svg>'", replace: "'\" stroke-width=\"1.4\">' + SHAPES[key]" }
 ]
 

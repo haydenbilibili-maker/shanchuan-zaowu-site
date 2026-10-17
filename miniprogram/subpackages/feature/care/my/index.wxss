@@ -1,98 +1,96 @@
-/* subpackages/feature/care/my/index.wxss */
+/* subpackages/feature/care/my/index.wxss · 我的标本养护「养护手册」（2026-10-17 重构）
+   页面滚动；品类彩色标签退场 → 发丝描边小签；卡片 → 缩略图发丝线行。 */
 @import '../care-common.wxss';
 
 page {
-  background: var(--color-bg);
-  color: var(--color-text-primary);
+  background: #1A1814;
 }
 
 .page-my-care {
   min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
-  background: var(--color-bg);
+  padding: 40rpx 32rpx calc(64rpx + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  background: #1A1814;
 }
 
-.intro {
-  padding: var(--space-2) 0 var(--space-4);
-}
+.sk-hero { height: 180rpx; }
+
+.intro { padding-bottom: 32rpx; }
 
 .intro-overline {
   display: block;
-  font-size: var(--fs-20);
-  color: var(--color-text-muted);
-  letter-spacing: 0.14em;
-  margin-bottom: 10rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
+}
+
+.intro-title {
+  display: block;
+  margin-top: 14rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-40);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #F3ECDD;
 }
 
 .intro-text {
+  display: block;
+  margin-top: 10rpx;
   font-size: var(--fs-24);
   color: var(--color-text-secondary);
-  line-height: 1.65;
 }
 
 .list-count {
+  padding-bottom: 16rpx;
+  font-family: var(--font-mono);
   font-size: var(--fs-22);
-  color: var(--brass-400);
-  letter-spacing: 0.06em;
-  margin-bottom: var(--space-3);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  color: var(--color-text-secondary);
 }
 
 .spec-card {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border-highlight);
-  border-radius: var(--radius-lg);
-  transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+  align-items: center;
+  gap: 24rpx;
+  padding: 24rpx 0;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
-.spec-frame {
-  padding: 4rpx;
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
-}
+.spec-card:last-child { border-bottom: 1rpx solid rgba(196, 167, 108, 0.14); }
+
+.spec-frame { flex-shrink: 0; }
 
 .spec-cover {
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: calc(var(--radius-md) - 4rpx);
-  display: block;
-  background: var(--color-bg-elevated);
+  width: 144rpx;
+  height: 144rpx;
+  border-radius: 4rpx;
+  background: #1F1D1A;
 }
 
 .spec-cover.placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1rpx dashed rgba(196, 167, 108, 0.24);
+  box-sizing: border-box;
 }
 
 .cover-letter {
-  font-size: var(--fs-40);
-  color: var(--brass-400);
-  font-family: var(--font-brand);
+  font-family: var(--font-mono);
+  font-size: var(--fs-36);
+  color: rgba(196, 167, 108, 0.5);
 }
 
-.spec-body {
-  flex: 1;
-  min-width: 0;
-}
+.spec-body { flex: 1; min-width: 0; }
 
 .spec-title {
   display: block;
-  font-size: var(--fs-30);
-  font-weight: 500;
-  color: var(--color-text-primary);
-  margin-bottom: 10rpx;
+  font-size: var(--fs-28);
+  color: var(--color-text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .spec-tags {
@@ -100,117 +98,75 @@ page {
   flex-wrap: wrap;
   align-items: center;
   gap: 10rpx;
-  margin-bottom: 8rpx;
+  margin-top: 10rpx;
 }
 
-.tag-cat {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  width: auto;
-  font-size: var(--fs-20);
-  padding: 4rpx 12rpx;
-  border-radius: var(--radius-full);
-  border: 1px solid;
-  white-space: nowrap;
-  box-sizing: border-box;
-}
-
+.tag-cat,
 .tag-custom {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  width: auto;
+  padding: 0 12rpx;
+  line-height: 36rpx;
   font-size: var(--fs-20);
-  color: var(--brass-400);
-  padding: 4rpx 10rpx;
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-  box-sizing: border-box;
+  color: var(--brass-200);
+  border: 1rpx solid rgba(196, 167, 108, 0.36);
+  border-radius: 4rpx;
 }
 
 .tag-date {
+  font-family: var(--font-mono);
   font-size: var(--fs-20);
   color: var(--color-text-secondary);
 }
 
 .spec-framing {
   display: block;
+  margin-top: 8rpx;
   font-size: var(--fs-22);
   color: var(--color-text-secondary);
-  margin-bottom: 8rpx;
 }
 
 .spec-summary {
   display: block;
+  margin-top: 6rpx;
   font-size: var(--fs-22);
-  color: var(--color-text-secondary);
   line-height: 1.5;
+  color: var(--color-text-secondary);
   display: -webkit-box;
-  -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .spec-chevron {
   flex-shrink: 0;
-  font-size: var(--fs-36);
-  color: var(--brass-400);
-  line-height: 1;
-  opacity: 0.75;
-  padding-top: 4rpx;
+  font-size: var(--fs-32);
+  color: var(--color-text-secondary);
 }
 
-.empty {
-  padding: 80rpx 32rpx;
-  text-align: center;
-}
-
-.empty-icon-ring {
-  width: 96rpx;
-  height: 96rpx;
-  margin: 0 auto var(--space-4);
-  border-radius: 50%;
-  border: 1rpx solid var(--brass-800);
-  background: rgba(196, 167, 108, 0.06);
+.empty,
+.load-error {
   display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.empty-icon-letter {
-  font-size: var(--fs-40);
-  font-family: var(--font-brand);
-  color: var(--brass-400);
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 40rpx 0;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .empty-title {
-  display: block;
-  font-size: var(--fs-28);
-  color: var(--color-text-secondary);
-  margin-bottom: 12rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-30);
+  color: #F3ECDD;
 }
 
 .empty-desc {
-  display: block;
+  margin-top: 10rpx;
   font-size: var(--fs-24);
+  line-height: 1.6;
   color: var(--color-text-secondary);
-  line-height: 1.55;
-  margin-bottom: 32rpx;
 }
 
 .empty-btn {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--fs-26);
-  color: var(--color-bg);
-  background: var(--brass-400);
-  padding: 16rpx 40rpx;
-  border-radius: var(--radius-md);
-  font-weight: 500;
-}
-
-.sk-hero {
-  height: 100rpx;
+  margin-top: 20rpx;
+  font-size: var(--fs-24);
+  color: var(--brass-200);
 }
