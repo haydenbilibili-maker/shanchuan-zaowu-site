@@ -9,11 +9,10 @@
  *
  * 用法：
  *   node miniprogram/scripts/render-play-preview.mjs --page qian            # 出图（入口态）
- *   node miniprogram/scripts/render-play-preview.mjs --page cookie --stage result --check
- *   node miniprogram/scripts/render-play-preview.mjs --page zodiac --stage need --check
- *   node miniprogram/scripts/render-play-preview.mjs --page mbti --selftest
+ *   node miniprogram/scripts/render-play-preview.mjs --page qian --stage result --check
+ *   node miniprogram/scripts/render-play-preview.mjs --page qian --selftest
  *
- * 页面：qian（签筒）/ cookie（签饼）/ zodiac（星盘）/ mbti（双极轴）/ solar（时令叶）/ coin（方孔钱）
+ * 页面：qian（签筒）。2026-10-17 旧祈福墙退场，拆签饼 / 星座签 / MBTI / 节气签 / 铜钱签五个玩法页已删，只剩今日一签。
  * 阶段：entry（未开始）/ pending（进行中）/ need（缺资料）/ result（结果纸面）/ archive（留档展开）
  *
  * 判据（每一条都配 --selftest 注入，证明它会红）：
@@ -43,12 +42,7 @@ const argOf = (n, d) => {
 
 const PAGES = {
   // form = 入口形态；paper = 结果纸面的**内容类**（各页各自的纸面语言，不是同一种）
-  qian: { id: 'qian', label: '今日一签', form: '.rp-tube', paper: '.rp-paper-title' },
-  cookie: { id: 'cookie', label: '拆签饼', form: '.rp-shell', paper: '.rp-cookie-line' },
-  zodiac: { id: 'zodiac', label: '星座签', form: '.rp-wheel', paper: '.rp-paper-title' },
-  mbti: { id: 'mbti', label: 'MBTI 贴士', form: '.rp-axis', paper: '.rp-paper-title' },
-  solar: { id: 'solar', label: '节气签', form: '.rp-leaf', paper: '.rp-solar-line' },
-  coin: { id: 'coin', label: '铜钱签', form: '.rp-coin', paper: '.rp-coin-line' }
+  qian: { id: 'qian', label: '今日一签', form: '.rp-tube', paper: '.rp-paper-title' }
 }
 const STAGES = ['entry', 'pending', 'need', 'result', 'archive']
 const PAGE_KEY = argOf('--page', 'qian')
@@ -111,12 +105,7 @@ const baseData = factory.createRitualPlayPage(PAGE.id).data
 
 /** 结果纸面样本：各玩法各用**自己的纸面语言** */
 const RESULT = {
-  qian: { mark: '签', name: '今日一签', overline: '今日一签', title: '宜 开口', sub: '忌 憋着', lines: ['想要什么就说出来，说出口才有回音。'], note: '今天只做一件小事也算数。', wish: '马上有回应' },
-  cookie: { mark: '饼', name: '拆签饼', overline: '拆签饼', title: '馅是「先开口」', sub: '', lines: ['先开口的人先拿到答案。', '今天别把话憋成心里的疙瘩。'], note: '', wish: '马上有回音' },
-  zodiac: { mark: '座', name: '星座签', overline: '天蝎座 · 今日', title: '放下一 点', sub: '', lines: ['握住的东西少一点，走起来轻一点。', '走到户外十分钟，比再想十分钟有用。'], note: '', wish: '马上有风' },
-  mbti: { mark: '我', name: 'MBTI 贴士', overline: 'INFP · 今日', title: '先照顾自己的电量', sub: '', lines: ['把今天最难的一件事排在精力最好的那两小时。', '不必向谁解释你的节奏。'], note: '', wish: '马上有劲' },
-  solar: { mark: '节', name: '节气签', overline: '距秋分 5 天', title: '秋分', sub: '秋季', lines: ['昼夜再平，适合把两边都照顾到。', '工作之余，联系一位老朋友。'], note: '二十四节气是农历里按太阳位置划分的时令。', wish: '马上有缘' },
-  coin: { mark: '钱', name: '铜钱签', overline: '铜钱签', title: '余', sub: '今日一枚', lines: ['留一点空，事才装得下。', '今天少排一件可推迟的事。'], note: '方孔铜钱是古代流通货币。', wish: '马上有余地' }
+  qian: { mark: '签', name: '今日一签', overline: '今日一签', title: '宜 开口', sub: '忌 憋着', lines: ['想要什么就说出来，说出口才有回音。'], note: '今天只做一件小事也算数。', wish: '马上有回应' }
 }
 
 function stagePatch (stage) {

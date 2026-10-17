@@ -42,13 +42,14 @@ const MANAGER_FORM = 'miniprogram/subpackages/manager/manager/managerPageConfig.
 const MANAGER_VIEW = 'miniprogram/subpackages/manager/manager/workspace/_subviews.wxml'
 const ERP_FORM = 'admin/src/App.vue'
 const URL_BUILDER = 'miniprogram/utils/wishWall.js'
-const WALL_PAGE = 'miniprogram/subpackages/feature/wish-wall/index.js'
-const WALL_VIEW = 'miniprogram/subpackages/feature/wish-wall/index.wxml'
+// 2026-10-17 旧祈福墙退场：祈运标签在 C 端只剩一处消费 —— 今日一签的「为你配一件」推荐（页面工厂读 bless 参数）。
+//   旧墙页的页头祈运 chip / 按标签重排玩法随页面下线，相关判据改为守今日一签的读取与推荐出口。
+const PLAY_FACTORY = 'miniprogram/subpackages/plays/utils/ritualPlayPage.js'
 /**
  * 玩法页（PRD v1.4 §11.4「玩法各开一页」）——推荐行与"写成心愿"从那之后都在这里。
  * 本守卫只关心"用户真的看得见祈运依据与推荐出口"，所以判据目标跟着代码搬。
  */
-const PLAY_VIEWS = ['play-qian', 'play-cookie', 'play-zodiac', 'play-mbti', 'play-solar', 'play-coin']
+const PLAY_VIEWS = ['play-qian']
   .map((n) => `miniprogram/subpackages/plays/${n}/index.wxml`)
 // 玩法注册表：`plays` 的合法 id 集合**唯一事实源**（本文件不写死任何一个 id）
 const PLAYS = 'miniprogram/subpackages/plays/config/ritualPlays.js'
@@ -278,24 +279,18 @@ check('ERP：复选框 + 读回 + 提交三处都接了 blessTags',
     /blessTags: sanitizeBlessTags\(form\.value\.blessTags\)/.test(erpForm))
 
 const urlBuilder = stripComments(read(URL_BUILDER))
-const wallPage = stripComments(read(WALL_PAGE))
-const wallView = stripComments(read(WALL_VIEW))
+const playFactory = stripComments(read(PLAY_FACTORY))
 check('入口 URL 带祈运标签（bless 参数）', /bless=\$\{encodeURIComponent\(bless\)\}/.test(urlBuilder))
 check('入口用 resolveBlessTags（显式优先 + 场景兜底）——存量商品不必先回填',
   /resolveBlessTags\(p\)\.join/.test(urlBuilder) && /require\('\.\.\/config\/blessTags'\)/.test(urlBuilder))
 // 2026-09-24 P2-6：第二参 productKey 供 wallDefaultBlessTags 兜底；判据允许单参/双参
-check('页面读 bless 并重排玩法（applyBlessScope）',
-  /applyBlessScope\(opts\.bless(?:,\s*productKey)?\)/.test(wallPage) && /blessPlayIds\(tags\)/.test(wallPage))
-// 口径更新（2026-09-18 产品确认）：祈运提示从玩法区**挪进页头**那颗 chip（`blessLabelText`），
-// 玩法区不再有 .ww-plays-guide —— 判据跟着口径走，仍然要求"用户真的看得见"
-check('页面显示祈运 chip + 商品入口',
-  // ⚠️ 2026-09-21（P2-7）：页头商品 chip 的 handler 从 `goProduct` 改为 `goWallProduct`
-  // —— 那里没有任何玩法发生，复用玩法转化事件会把 ERP「参与玩法」比率推到 >100%。
-  // ⚠️ 2026-09-21（§11.4）：玩法结果页那条 `reco ? goRecoProduct : goProduct` 随玩法搬到玩法页，
-  // 判据目标跟着搬。语义不变："用户真的看得见那颗祈运 chip、也有能点的商品/推荐入口"。
-  /class="ww-bless"/.test(wallView) && /blessLabelText/.test(wallView) &&
-    /bindtap="goWallProduct"/.test(wallView) &&
-    PLAY_VIEWS.every((f) => /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(read(f))))
+check('今日一签读 bless 参数（归一化后取首个标签作推荐依据与页头文案）',
+  /sanitizeBlessTags\(opts\.bless \|\| ''\)/.test(playFactory) && /blessLabelText:\s*tags\.length \? blessLabel\(tags\[0\]\)/.test(playFactory))
+check('今日一签带着 bless 去写心愿 / 推荐按首个标签取（标签不在路上丢）',
+  /bless=\$\{encodeURIComponent\(this\.data\.blessTags\.join\(','\)\)\}/.test(playFactory) &&
+    /pickReco\(res && res\.result, tag, blessLabel\(tag\)\)/.test(playFactory))
+check('今日一签结果页有能点的推荐 / 商品入口',
+  PLAY_VIEWS.every((f) => /bindtap="\{\{reco \? 'goRecoProduct' : 'goProduct'\}\}"/.test(read(f))))
 
 /* ── 汇总 ───────────────────────────────────────────────────────────── */
 if (process.argv.includes('--selftest')) {
@@ -368,4 +363,4 @@ if (failed) {
   console.error(`✗ 失败 ${failed} 项`)
   process.exit(1)
 }
-console.log('✓ 四处副本同源、云函数接线完整、两端表单可编辑、C 端按标签重排玩法')
+console.log('✓ 四处副本同源、云函数接线完整、两端表单可编辑、今日一签按标签推荐')

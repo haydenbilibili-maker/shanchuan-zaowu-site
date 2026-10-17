@@ -434,7 +434,8 @@ const INJECTIONS = [
   { name: '注册页重新加回昵称输入', key: 'onbWxml', from: '      <view class="phone-bound-plate"', to: '      <input type="nickname" bindinput="onNickInput" />\n      <view class="phone-bound-plate"' },
   { name: '注册补丁丢掉同意时间', key: 'onbJs', from: "      agreedTermsAt: new Date().toISOString(),\n      onboardingStep: 1", to: '      onboardingStep: 1' },
   { name: '默认昵称不再是「藏家」', key: 'onbJs', from: "const FALLBACK_NICK = '藏家'", to: "const FALLBACK_NICK = ''" },
-  { name: '「我的」补资料提示不可关', key: 'userWxml', from: '    <view class="onboard-banner-close" catchtap="dismissProfileHint">×</view>\n', to: '' },
+  // 锚点随源码（2026-10-17：关闭钮补了 hover-class，旧锚点失效）
+  { name: '「我的」补资料提示不可关', key: 'userWxml', from: '    <view class="onboard-banner-close" catchtap="dismissProfileHint" hover-class="tap-press" hover-stay-time="80">×</view>\n', to: '' },
   { name: '补资料提示对未注册的人也出', key: 'userJs', from: 'showProfileHint: !needOnboard && !!session.onboardingDone && ', to: 'showProfileHint: ' },
   { name: '证书改名回来无条件重签', key: 'certJs', from: '      if (!nick || nick === DEFAULT_NICK) return;\n', to: '' },
   { name: '证书默认署名不提示', key: 'certJs', from: '          this.setData({ signHint: !nick || nick === DEFAULT_NICK });\n', to: '' },

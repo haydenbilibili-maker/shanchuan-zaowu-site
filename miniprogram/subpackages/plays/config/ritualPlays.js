@@ -157,7 +157,8 @@ const NEED_PROFILE_FIELDS = {
 const PROFILE_PAGE = '/subpackages/extra/user/profile/index'
 
 /** 祈福墙页路径（玩法页「写成心愿」把文案带回这里；降级用 reLaunch 也走它） */
-const WISH_WALL_PAGE = '/subpackages/feature/wish-wall/index'
+// 「写成心愿」的回落页 = 心愿签（2026-10-17 旧祈福墙退场；旧路径只剩转跳薄壳，不再作为目的地）
+const WISH_WALL_PAGE = '/subpackages/feature/wish-labels/index'
 
 function findPlay(id) {
   const key = String(id || '')

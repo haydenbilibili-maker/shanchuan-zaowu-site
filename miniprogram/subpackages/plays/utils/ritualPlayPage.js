@@ -22,7 +22,7 @@ const handoff = require('./wishHandoff')
 const { sanitizeBlessTags, blessLabel } = require('../../../config/blessTags')
 const { recoCacheKey, pickReco } = require('./blessProducts')
 const { shanghaiDayKey, TEXT_MAX } = require('../../../utils/wishWall')
-const { wishTextTruncate, wishTextCount } = require('../../../utils/wishTextCount')
+const { wishTextTruncate } = require('../../../utils/wishTextCount')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const { exhibitFor } = require('../../../config/wallExhibit')
 
@@ -77,11 +77,6 @@ function emptyData(play, id) {
     recoFailed: false,
     /** 分享来源标记（本页只有玩法结果一种分享，仍显式落标记 —— 与愿签分享同形） */
     shareFrom: '',
-    textMax: TEXT_MAX,
-    /** 墙页弹层形态（PlayBody 组件里为真）：结果下方出「挂签条」，就地改一句挂上 */
-    embedded: false,
-    wishDraft: '',
-    wishCount: 0,
     /** 轻提示（AppToast 组件；本页不用原生 toast —— 原生弹窗在全仓是棘轮） */
     toastShow: false,
     toastOverline: '',
@@ -119,8 +114,7 @@ function createRitualPlayPage(playId) {
         blessLabelText: tags.length ? blessLabel(tags[0]) : ''
       })
       // 标题也来自注册表（页面 json 只是兜底文案）—— 页面不写死玩法名
-      // 嵌入祈福墙弹层时不许改标题：导航栏属于墙页
-      try { if (!this._embedded && play && play.name) wx.setNavigationBarTitle({ title: play.name }) } catch (e) { console.warn('title', e) }
+      try { if (play && play.name) wx.setNavigationBarTitle({ title: play.name }) } catch (e) { console.warn('title', e) }
       // 缺资料的玩法：先读资料 —— 读不到就停在"去补资料"这一态（不给假结果）
       if ((play.needs || []).length) {
         this.hydrateProfile()
@@ -186,7 +180,6 @@ function createRitualPlayPage(playId) {
       this.refreshArchive()
       if (entry) {
         this.setData({ stage: 'result', result: this.entryToResult(entry), need: null })
-        this.primeWishDraft(this.data.result)
         // 回看留档也要拉弱推：否则「今天已玩过」进页只有结果、没有出墙商品叙事
         this.loadBlessReco()
         return
@@ -282,7 +275,6 @@ function createRitualPlayPage(playId) {
       }
       archive.saveResult(id, this._dayKey, result)
       this.setData({ stage: 'result', result, need: null, sheetDragY: 0 })
-      this.primeWishDraft(result)
       this.refreshArchive()
       try { wx.vibrateShort({ type: 'light' }) } catch (e) { console.warn('vibrate', e) }
       this.loadBlessReco()
@@ -300,7 +292,6 @@ function createRitualPlayPage(playId) {
       if (entry) {
         // 这个维度今天已经看过：直接摊开留档，不再播一次进行态（省得"换一个"变成等待）
         this.setData({ stage: 'result', result: this.entryToResult(entry), sheetDragY: 0 })
-        this.primeWishDraft(this.data.result)
         this.loadBlessReco()
         return
       }
@@ -337,12 +328,12 @@ function createRitualPlayPage(playId) {
     /* ───────────────── 下一步：写成心愿 / 分享 / 推荐 / 补资料 ───────────────── */
 
     /**
-     * 结果 → 写成心愿：把心愿词**带回祈福墙页**（§11.4 动线不能断）。
+     * 结果 → 写成心愿：把心愿词**带回心愿签页**（§11.4 动线不能断；2026-10-17 旧祈福墙退场后改落心愿签）。
      *
-     * 带回方式：写一份**一次性**本地交接（`utils/wishHandoff`），祈福墙 `onShow` 取走并预填。
-     *   · 上一页就是祈福墙 → `navigateBack`，回来即取；
-     *   · 上一页不是 / 页面栈只剩本页（直接进入、分享进入）→ `reLaunch` 回祈福墙，同样取得到；
-     *   · 用户在这里杀掉小程序 → 存档留在本地，5 分钟内再进祈福墙照样带出来（超时丢弃）。
+     * 带回方式：写一份**一次性**本地交接（`utils/wishHandoff`），心愿签 `onShow` / 闸门放行时取走，预填并打开写签层。
+     *   · 上一页就是心愿签 → `navigateBack`，回来即取；
+     *   · 上一页不是 / 页面栈只剩本页（直接进入、分享进入）→ `reLaunch` 回心愿签，同样取得到；
+     *   · 用户在这里杀掉小程序 → 存档留在本地，5 分钟内再进心愿签照样带出来（超时丢弃）。
      * 交接**读到即删 + 5 分钟时效**：不会之后每次进墙都诡异地预填一句旧心愿。
      */
     writeWish() {
@@ -351,14 +342,9 @@ function createRitualPlayPage(playId) {
       const draft = wishTextTruncate(r.wish || '马上有', TEXT_MAX)
       handoff.stash({ draft, echo: String((play && play.echo) || r.echo || '') })
       trackBehavior('wish_wall_play', 'play', r.id || id, { step: 'to_wish' })
-      // 弹层形态：人本来就在祈福墙上 —— 不跳页，交给墙页收起弹层后当场取走交接
-      if (this._embedded) {
-        this.triggerEvent('wish')
-        return
-      }
       const pages = (typeof getCurrentPages === 'function' && getCurrentPages()) || []
       const prev = pages.length > 1 ? pages[pages.length - 2] : null
-      const backToWall = !!prev && String(prev.route || '').indexOf('wish-wall/index') !== -1
+      const backToWall = !!prev && String(prev.route || '').indexOf('wish-labels/index') !== -1
       if (backToWall) {
         try {
           wx.navigateBack({ delta: 1, fail: () => this.fallbackToWall() })
@@ -368,34 +354,7 @@ function createRitualPlayPage(playId) {
       this.fallbackToWall()
     },
 
-    /** 弹层挂签条的初值 = 本次结果的心愿词（与 writeWish 同一口径截断）；独立页不渲染挂签条，不写 */
-    primeWishDraft(r) {
-      if (!this._embedded) return
-      const draft = wishTextTruncate((r && r.wish) || '马上有', TEXT_MAX)
-      this.setData({ wishDraft: draft, wishCount: wishTextCount(draft) })
-    },
-
-    onWishDraftInput(e) {
-      const draft = wishTextTruncate(String((e && e.detail && e.detail.value) || ''), TEXT_MAX)
-      this.setData({ wishDraft: draft, wishCount: wishTextCount(draft) })
-      return draft
-    },
-
-    /**
-     * 弹层挂签条「挂上墙」：一步落愿（不经过挂签台、不聚焦键盘）。
-     * 只抛 `post` 事件把这句交给墙页 —— 校验 / 注册门禁 / 额度 / 云函数都由墙页唯一的 submitWish 负责，
-     * 这里不另写一套发布。墙上回声由落愿那一声统一给（不再先回一声"我摇了…"再回一声"挂上了"）。
-     */
-    postWish() {
-      const r = this.data.result
-      if (!r || !this._embedded) return
-      const text = String(this.data.wishDraft || '').trim()
-      if (!text) return
-      trackBehavior('wish_wall_play', 'play', r.id || id, { step: 'to_wish' })
-      this.triggerEvent('post', { text })
-    },
-
-    /** 降级：直接把用户送回祈福墙（交接已写好，回去照样预填）—— 带上本品/祈运，避免出墙再进墙丢上下文 */
+    /** 降级：直接把用户送回心愿签（交接已写好，回去照样预填）—— 带上本品/祈运，避免出墙再进墙丢上下文 */
     fallbackToWall() {
       const params = []
       if (this.data.productId) params.push(`productId=${encodeURIComponent(this.data.productId)}`)
@@ -417,8 +376,6 @@ function createRitualPlayPage(playId) {
       if (!r) return
       this.setData({ shareFrom: 'play' })
       trackBehavior('wish_wall_play', 'play', r.id || id, { step: 'share' })
-      // 弹层形态：转发由墙页的 onShareAppMessage 应答，只把 result.share 递过去（不含"依据"）
-      if (this._embedded) this.triggerEvent('share', { id: r.id || id, title: String(r.share || '') })
     },
 
     /**
@@ -548,60 +505,8 @@ function createRitualPlayPage(playId) {
   return config
 }
 
-/** 页面生命周期与页面级回调：组件形态里由 lifetimes / pageLifetimes / 墙页接管 */
-const PAGE_ONLY_KEYS = ['onLoad', 'onShow', 'onUnload', 'onShareAppMessage']
-
-/**
- * 祈福墙弹层里的玩法本体（自定义组件配置）。
- *
- * 与独立页**同一份**行为：方法全部取自 `createRitualPlayPage(playId)`，只换三处宿主差异 ——
- *   · 上下文从 `ctx` 属性进来（productId / productKey / title / blessTags），不从 URL；
- *   · 「写成心愿」「分享」改成向墙页抛事件（`wish` / `share`，见上面两处 `_embedded` 分支）；
- *     另多一条挂签条「挂上墙」（`post`，detail = { text }），发布仍由墙页 submitWish 唯一实现；
- *   · 从资料页回来的重读挂在 `pageLifetimes.show`（墙页 onShow 时触发）。
- * `apply-shared`：与页面一样吃 app.wxss（骨架屏等全局类）；玩法样式全是 `rp-` 前缀，与墙页 `ww-` 不相交。
- */
-function createRitualPlayBody(playId) {
-  const page = createRitualPlayPage(playId)
-  const methods = {}
-  Object.keys(page).forEach((k) => {
-    if (typeof page[k] === 'function' && PAGE_ONLY_KEYS.indexOf(k) === -1) methods[k] = page[k]
-  })
-  return {
-    options: { styleIsolation: 'apply-shared' },
-    properties: {
-      ctx: { type: Object, value: {} }
-    },
-    data: page.data,
-    lifetimes: {
-      attached() {
-        this._embedded = true
-        this.setData({ embedded: true })
-        const c = this.data.ctx || {}
-        const tags = Array.isArray(c.blessTags) ? c.blessTags : []
-        page.onLoad.call(this, {
-          productId: String(c.productId || ''),
-          productKey: String(c.productKey || ''),
-          title: c.title ? encodeURIComponent(String(c.title)) : '',
-          bless: tags.join(',')
-        })
-      },
-      detached() {
-        page.onUnload.call(this)
-      }
-    },
-    pageLifetimes: {
-      show() {
-        page.onShow.call(this)
-      }
-    },
-    methods
-  }
-}
-
 module.exports = {
   createRitualPlayPage,
-  createRitualPlayBody,
   safeSpinMs,
   sheetDragShouldClose,
   RESULT_CLOSE_DRAG_PX

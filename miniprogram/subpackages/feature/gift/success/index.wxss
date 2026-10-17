@@ -30,9 +30,11 @@ page { background: #1A1814; color: #fff; }
 }
 
 /* —— 封缄信封（标本纸 · 封舌 · 蜡封） —— */
+/* 封缄仪式（2026-10-17）：进页时信封从下方轻轻落定，随后蜡印「按下去」—— 一次性动作，之后才进入呼吸 */
 .envelope {
   position: relative;
   margin-bottom: 40rpx;
+  animation: env-settle 560ms var(--ease-out-soft) both;
   border-radius: var(--radius-md);
   overflow: visible;
   filter: drop-shadow(0 10rpx 28rpx rgba(26, 24, 20, 0.55));
@@ -54,7 +56,16 @@ page { background: #1A1814; color: #fff; }
   animation: wax-glow 4.2s ease-in-out infinite;
 }
 .envelope.breathe .wax-seal {
-  animation: wax-breathe 4.2s ease-in-out infinite;
+  animation: wax-stamp 720ms var(--ease-out-soft) 360ms both, wax-breathe 4.2s ease-in-out 1080ms infinite;
+}
+@keyframes env-settle {
+  0% { opacity: 0; transform: translateY(28rpx); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes wax-stamp {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-36rpx) scale(1.6); }
+  55% { opacity: 1; transform: translateX(-50%) translateY(0) scale(0.92); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
 }
 .envelope.breathe .envelope-body,
 .envelope.breathe .envelope-flap-face,
@@ -431,13 +442,26 @@ page { background: #1A1814; color: #fff; }
   letter-spacing: 0.04em;
 }
 
-/* 礼笺预览：暗色铜牌感，让位给上方标本纸信封 */
+/* 礼笺预览（2026-10-17）：就是 TA 拆开会看到的**同一张纸** —— 与收礼页 .letter 同色同框
+   （原暗色铜牌：送礼人看到的是一张卡，受礼人拆开的是另一张纸，仪式断了一截）；
+   从信封口下方稍错开探出，读成「从信封里抽出来的那张」 */
 .card-preview {
-  padding: 28rpx 32rpx;
-  background: rgba(31, 29, 26, 0.92);
-  border: 1px solid rgba(77, 64, 26, 0.72);
+  position: relative;
+  padding: 32rpx 36rpx 28rpx;
+  background: #F2EDE4;
+  border: 1px solid #E0CFA3;
   border-radius: var(--radius-md);
-  margin-bottom: 40rpx;
+  margin: -8rpx 16rpx 40rpx;
+  box-shadow: 0 18rpx 40rpx rgba(0, 0, 0, 0.35);
+  animation: env-settle 560ms var(--ease-out-soft) 520ms both;
+}
+.card-preview::before {
+  content: '';
+  position: absolute;
+  inset: 10rpx;
+  border: 1rpx solid rgba(138, 117, 48, 0.28);
+  border-radius: 4rpx;
+  pointer-events: none;
 }
 .card-preview-head {
   display: flex;
@@ -448,26 +472,28 @@ page { background: #1A1814; color: #fff; }
 .card-hint {
   display: block;
   font-size: var(--fs-20);
-  color: #6B6560;
+  color: var(--brass-700);
   letter-spacing: 0.1em;
 }
 .mini-seal {
   width: 40rpx;
   height: 40rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.42);
+  border: 1rpx solid rgba(138, 117, 48, 0.55);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: var(--fs-16);
-  color: rgba(196, 167, 108, 0.85);
+  color: var(--brass-600);
   font-family: var(--font-brand);
 }
+/* 正文字族与收礼页 .letter-body 同源 */
 .card-body {
   display: block;
-  font-size: var(--fs-26);
-  color: #D5D1C8;
-  line-height: 1.7;
+  font-size: var(--fs-28);
+  color: #33302C;
+  line-height: 1.75;
+  font-family: Georgia, 'Source Han Serif SC', serif;
 }
 .card-voice {
   display: block;
@@ -490,6 +516,7 @@ page { background: #1A1814; color: #fff; }
   font-family: inherit;
   letter-spacing: 0.02em;
 }
+.card-voice.is-playable { color: var(--brass-700); }
 .voice-play-icon {
   flex-shrink: 0;
   width: 44rpx;
@@ -498,8 +525,8 @@ page { background: #1A1814; color: #fff; }
   align-items: center;
   justify-content: center;
   font-size: var(--fs-20);
-  color: #A8903C;
-  border: 2rpx solid rgba(168, 144, 60, 0.55);
+  color: var(--brass-700);
+  border: 2rpx solid rgba(107, 90, 36, 0.55);
   border-radius: 50%;
   background: rgba(168, 144, 60, 0.12);
 }
@@ -510,13 +537,15 @@ page { background: #1A1814; color: #fff; }
   display: block;
   margin-top: var(--space-1);
   font-size: var(--fs-20);
-  color: #C4756B;
+  color: #9C3B33;
 }
 .card-sig {
+  position: relative;
   display: block;
   margin-top: 18rpx;
-  font-size: var(--fs-24);
-  color: var(--color-primary);
+  font-size: var(--fs-26);
+  font-style: italic;
+  color: #8A7530;
   text-align: right;
 }
 
@@ -582,8 +611,18 @@ page { background: #1A1814; color: #fff; }
   text-align: center;
   line-height: 1.25;
 }
+/* 结果页 = 一个主按钮 + 文字链（VI 规范 §11「结果页」）：单独成行的次要动作不再是一整条描边大钮 */
 .btn-secondary-solo {
   width: 100%;
+  height: 64rpx;
+  border: none;
+  background: transparent;
+  color: var(--brass-300);
+  font-size: var(--fs-26);
+}
+.btn-secondary-solo::after {
+  content: ' ›';
+  margin-left: 6rpx;
 }
 .btn-ghost {
   border-color: rgba(160, 154, 144, 0.32);
@@ -671,6 +710,8 @@ page { background: #1A1814; color: #fff; }
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {
   .state-seal,
+  .envelope,
+  .card-preview,
   .envelope.breathe .wax-glow,
   .envelope.breathe .wax-seal,
   .envelope.breathe .envelope-body,

@@ -26,7 +26,10 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(HERE, '../..')
 
 const WISH_WALL_UTIL = 'miniprogram/utils/wishWall.js'
-const WALL_PAGE = 'miniprogram/subpackages/feature/wish-wall/index.js'
+// 2026-10-17：scene 解析判据改读**现役页面**「马上有 · 心愿签」；门店码印的仍是旧路径（PAGE_PATH），
+//   旧页已退场为转跳薄壳 —— 另加一条「旧路径原样转发参数（含 scene）」的判据，两段一起才是「扫码落到墙」。
+const WALL_PAGE = 'miniprogram/subpackages/feature/wish-labels/index.js'
+const LEGACY_WALL_PAGE = 'miniprogram/subpackages/feature/wish-wall/index.js'
 const QR_FN = 'miniprogram/cloudfunctions/getStoreQRCode/index.js'
 const QR_CLI = 'miniprogram/scripts/generate-store-qr.js'
 const MANIFEST = 'miniprogram/scripts/qr-assets/wish-wall-store-qr.json'
@@ -119,6 +122,15 @@ check(
   /normalizeProductKey\(opts\.productKey \|\| fromScene\.productKey\)/.test(pageSrc) &&
     /String\(opts\.from \|\| fromScene\.from \|\| 'direct'\)/.test(pageSrc)
 )
+{
+  const legacy = stripComments(read(LEGACY_WALL_PAGE))
+  const fwd = (/Object\.keys\(opts\)\.filter\(([^\n]*)\)/.exec(legacy) || [])[1] || ''
+  check(
+    '★ 门店码印的旧路径把参数（含 scene）原样转给心愿签（否则已印的码扫进来丢了门店来源）',
+    /WISH_LABELS_PATH/.test(legacy) && /wx\.redirectTo\(/.test(legacy) && fwd.length > 0 && !/'scene'/.test(fwd),
+    fwd || '（没找到转发参数的那一行）'
+  )
+}
 check(
   '门店来源进埋点（否则"现场扫码"与线上入口分不开）',
   /entryFrom:/.test(pageSrc) && /trackBehavior\('wish_wall_enter', 'from', this\.data\.entryFrom\)/.test(pageSrc)
@@ -226,6 +238,28 @@ if (process.argv.includes('--selftest')) {
     console.error('✗ selftest 失败：把祈福墙踢出白名单，守卫居然没红')
     process.exit(1)
   }
+  // 注入（2026-10-17）：旧路径转发时把 scene 过滤掉 → 已印门店码扫进来丢了门店来源，守卫必须红
+  {
+    const legacyAbs = resolve(ROOT, LEGACY_WALL_PAGE)
+    const legacyOrig = readFileSync(legacyAbs, 'utf8')
+    const legacyDrift = legacyOrig.replace("k !== 'play'", "k !== 'play' && k !== 'scene'")
+    if (legacyDrift === legacyOrig) {
+      console.error('✗ selftest 无法注入（旧路径转发锚点没找到）')
+      process.exit(1)
+    }
+    let caughtFwd = false
+    try {
+      writeFileSync(legacyAbs, legacyDrift)
+      const run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { encoding: 'utf8' })
+      caughtFwd = run.status !== 0
+    } finally {
+      writeFileSync(legacyAbs, legacyOrig)
+    }
+    if (!caughtFwd) {
+      console.error('✗ selftest 失败：旧路径不再转发 scene，守卫居然没红')
+      process.exit(1)
+    }
+  }
   // 第二条注入：把**所有** .gitignore 里的密钥文件规则删掉 → 守卫必须红
   // ⚠️ 第一版只改 miniprogram/.gitignore，而根 .gitignore 也有同名规则 → 判据仍然满足、注入没被检出。
   // 注入必须打到"判据真正读取的全部来源"，否则就是一条假自检。
@@ -314,7 +348,7 @@ if (process.argv.includes('--selftest')) {
     console.error('✗ selftest 失败：去掉 getEnterOptionsSync 兜底，守卫居然没红')
     process.exit(1)
   }
-  console.log('✓ selftest 通过：注入「页面不在白名单」「密钥文件不再被忽略」「拆掉识别码兜底路由」「清单 page 未登记」「去掉热启动 scene 兜底」均被检出，且已还原源文件')
+  console.log('✓ selftest 通过：注入「页面不在白名单」「旧路径不再转发 scene」「密钥文件不再被忽略」「拆掉识别码兜底路由」「清单 page 未登记」「去掉热启动 scene 兜底」均被检出，且已还原源文件')
   process.exit(0)
 }
 

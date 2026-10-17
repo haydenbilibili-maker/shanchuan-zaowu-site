@@ -401,7 +401,8 @@ check('★★ 多源链：**https 优先**（实测公开可读、不依赖 clou
 check('★★ 不得把本地临时路径直接交给 loadFontFace（它只接受网络 URL）',
   !/loadFontFace\(\{[^}]*tempFilePath/s.test(handFontJs))
 check('★ WXSS 里自定义族名 **ShanhaiHand 置首**（系统名仅作兜底）',
-  /font-family: 'ShanhaiHand', /.test(composeWxssSrc) && /font-family: 'ShanhaiHand', /.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss'), 'utf8')))
+  // 2026-10-17：旧祈福墙退场，同机制的第二处改为现役的「马上有 · 心愿签」
+  /font-family: 'ShanhaiHand', /.test(composeWxssSrc) && /font-family: 'ShanhaiHand', /.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-labels/index.wxss'), 'utf8')))
 check('★ OFL 许可与托管已记录（许可要求保留版权声明）', /OFL-1\.1/.test(readFileSync(resolve(ROOT, 'miniprogram/docs/手写体字体_许可与托管.md'), 'utf8')))
 check('★★ 礼笺展示元素用**字面量**手写体栈（不再依赖 var() —— iOS 实测 var 未生效）',
   /"HanziPen SC"/.test(ruleOf(composeWxssSrc, '.card-write-text'))
@@ -410,8 +411,11 @@ check('★★ 礼笺展示元素用**字面量**手写体栈（不再依赖 var(
 check('★★ --font-hand 的值必须**单行**（跨行是小程序 WXSS 编译器的已知风险点）',
   /--font-hand:[^;\n]*;[ \t]*\n/.test(appWxss) && !/--font-hand:[^;\n]*,\s*\n/.test(appWxss),
   '自定义属性值跨行可能导致变量解析失败')
-check('祈福墙同机制一并修好（字面量栈）',
-  /"HanziPen SC"/.test(readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-wall/index.wxss'), 'utf8')))
+check('心愿签 / 今日一签同机制一并修好（字面量栈，签面上不出现 var() 手写体）', (() => {
+  const wl = readFileSync(resolve(ROOT, 'miniprogram/subpackages/feature/wish-labels/index.wxss'), 'utf8')
+  const qian = readFileSync(resolve(ROOT, 'miniprogram/subpackages/plays/play-qian/index.wxss'), 'utf8')
+  return /"HanziPen SC"/.test(wl) && !/font-family:\s*var\(--(?:font-)?hand\)/.test(wl + qian)
+})())
 // 2026-09-19 署名默认带出账号昵称：函数原本只在 onLoad 调一次，而那时 globalData.userSession
 // 尚未灌入 → 昵称取不到（看起来像"没有自动带出"）。修法：onShow 再调 + 空则 800ms 重试 + 输入框启用微信昵称填写。
 check('★ 署名默认带昵称：**onLoad 与 onShow 两处都调**（后者修时序）',

@@ -394,7 +394,8 @@
 /* 签文：手写体（心愿签上写字的那支笔），居中 */
 .rp-line {
   margin-top: 28rpx;
-  font-family: var(--font-hand);
+  /* 字面量手写体栈（iOS 上 font-family 走 var() 会落回默认字体） */
+  font-family: 'ShanhaiHand', "HanziPen SC", "Hannotate SC", "STKaiti", "Kaiti SC", KaiTi, "楷体", serif;
   font-size: var(--fs-34);
   line-height: 1.5;
   text-align: center;

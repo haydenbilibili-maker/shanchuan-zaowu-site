@@ -170,12 +170,7 @@
       "root": "subpackages/plays",
       "name": "plays",
       "pages": [
-        "play-qian/index",
-        "play-cookie/index",
-        "play-zodiac/index",
-        "play-mbti/index",
-        "play-solar/index",
-        "play-coin/index"
+        "play-qian/index"
       ]
     },
     {
@@ -258,12 +253,6 @@
       ]
     }
   ],
-  "preloadRule": {
-    "subpackages/feature/wish-wall/index": {
-      "network": "all",
-      "packages": ["plays"]
-    }
-  },
   "requiredPrivateInfos": [
     "chooseAddress",
     "getLocation"

@@ -44,14 +44,12 @@
       <text class="rp-note" wx:if="{{result.note}}">{{result.note}}</text>
     </view>
 
-    <!-- 墙页弹层里改一句就地挂上（embedded 只在 PlayBody 组件里为真；独立页照旧回墙预填） -->
-    <include src="../play-shared/post.wxml" />
-    <view class="rp-return" wx:if="{{!embedded}}" aria-hidden="true">
+    <view class="rp-return" aria-hidden="true">
       <view class="rp-return-seal"><text class="rp-return-seal-t">回</text></view>
       <text class="rp-return-text">把这句带回墙上 · 挂成心愿</text>
     </view>
     <view class="rp-acts">
-      <view class="rp-act is-primary" wx:if="{{!embedded}}" bindtap="writeWish" hover-class="rp-press" hover-stay-time="70" aria-role="button">
+      <view class="rp-act is-primary" bindtap="writeWish" hover-class="rp-press" hover-stay-time="70" aria-role="button">
         {{result.wish ? '写成心愿' : '写下我的心愿'}}
       </view>
       <button

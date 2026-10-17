@@ -1,7 +1,5 @@
 <!--subpackages/extra/user/messages/index.wxml-->
 <view class="page-msg {{activeQueue === 'workflow' ? 'queue-workflow' : 'queue-customer'}} {{activeCategory === 'digest' ? 'cat-digest' : ''}}">
-  <view class="grain-overlay"></view>
-
   <view class="sticky-header">
     <view class="toolbar">
       <view class="toolbar-meta">

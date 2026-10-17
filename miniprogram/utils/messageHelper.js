@@ -346,11 +346,18 @@ const MOVED_SUBPACKAGE_ALIASES = [
   { from: '/subpackages/manager/staff-permissions', to: '/subpackages/extra/staff-permissions' },
   // ④ 2026-09-27 主包体积治理：玩法页 → plays；影像/评价/馆藏详情 → content
   { from: '/subpackages/feature/play-qian', to: '/subpackages/plays/play-qian' },
-  { from: '/subpackages/feature/play-cookie', to: '/subpackages/plays/play-cookie' },
-  { from: '/subpackages/feature/play-zodiac', to: '/subpackages/plays/play-zodiac' },
-  { from: '/subpackages/feature/play-mbti', to: '/subpackages/plays/play-mbti' },
-  { from: '/subpackages/feature/play-solar', to: '/subpackages/plays/play-solar' },
-  { from: '/subpackages/feature/play-coin', to: '/subpackages/plays/play-coin' },
+  // ⑤ 2026-10-17 旧祈福墙退场：拆签饼 / 星座签 / MBTI / 节气签 / 铜钱签下线（今日一签保留）——
+  //    两代旧路径（feature/* 与 plays/*）都落到「马上有 · 心愿签」，已发出的消息 / 横幅 / 分享卡不会打到空页
+  { from: '/subpackages/feature/play-cookie', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/feature/play-zodiac', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/feature/play-mbti', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/feature/play-solar', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/feature/play-coin', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/plays/play-cookie', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/plays/play-zodiac', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/plays/play-mbti', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/plays/play-solar', to: '/subpackages/feature/wish-labels' },
+  { from: '/subpackages/plays/play-coin', to: '/subpackages/feature/wish-labels' },
   { from: '/subpackages/feature/videos', to: '/subpackages/content/videos' },
   { from: '/subpackages/feature/comment', to: '/subpackages/content/comment' },
   { from: '/subpackages/feature/collection-detail', to: '/subpackages/content/collection-detail' },

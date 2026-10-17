@@ -244,8 +244,11 @@ function polishChecks(js, wxml, wxss, ok) {
   const selfAt = s1.indexOf('<view class="relation-self-note" wx:if="{{selfTreat}}">')
   ok('S4 犒劳自己提示紧跟关系 chip（就近），在包装与价格之前，且只有一处', (wxml.match(/class="relation-self-note"/g) || []).length === 1 && wrapAt > 0 && selfAt > wrapAt && selfAt < s1.indexOf('<view class="section sec-wrap">'))
   const pre = rule(wxss, '.note-preset.on')
-  ok('S5 选中样式与入场：chip 实心金底 + 勾 + 弹一下；小签 / 提示签 / 已选提示从下方轻移入场；藏品卡描金',
-    /background:\s*var\(--(?:color-)?primary\)/.test(pre) && /animation:\s*preset-pop/.test(pre) && /border-right:/.test(rule(wxss, '.note-preset.on .note-preset-check')) &&
+  // 2026-10-17 礼赠仪式感第 2 轮：产品负责人「再对齐」→ 选中态按 VI 规范 §6 改为金线环（原 10-12 版为实心金底）。
+  //   判据随之换成「有金线环、且**不是**实心金底」—— 实心金只给底栏「下一步」（纪律 03）
+  ok('S5 选中样式与入场：chip 金线环 + 浅金底（非实心金）+ 勾 + 弹一下；小签发丝金描边（非实心金）；小签 / 提示签 / 已选提示从下方轻移入场；藏品卡描金',
+    /box-shadow:\s*var\(--ring-brass\)/.test(pre) && !/background:\s*var\(--(?:color-)?primary\)/.test(pre) &&
+    !/background:\s*var\(--(?:color-)?primary\)/.test(rule(wxss, '.for-tag')) && /animation:\s*preset-pop/.test(pre) && /border-right:/.test(rule(wxss, '.note-preset.on .note-preset-check')) &&
     ['.for-tag', '.relation-self-note', '.section-hint.is-picked'].every((s) => /animation:\s*pick-in/.test(rule(wxss, s))) &&
     /@keyframes pick-in \{/.test(wxss) && /@keyframes preset-pop \{/.test(wxss) && /border-color:\s*var\(--(?:color-)?primary\)/.test(rule(wxss, '.product-row.is-for')))
   ok('S6 选中反馈不新增状态：只读 activeNotePresetId / selfTreat（不出现 forWhom 一类新字段），selfTreat 进出仍只在 enterSelfTreat / exitSelfTreat',
@@ -621,7 +624,9 @@ const INJECTIONS = [
   { name: '包装说明丢了雪梨纸', file: P.packaging, find: "{ k: '包装', v: '牛皮纸 + 雪梨纸简约裹封' }", replace: "{ k: '包装', v: '牛皮纸简约裹封' }" },
   { name: '包装项不渲染', file: P.wxml, find: 'wx:for="{{packagingItems}}"', replace: 'wx:for="{{[]}}"' },
   // S 选中反馈
-  { name: '选中 chip 不再实心', file: P.wxss, find: '  background: var(--color-primary);\n  font-weight: 500;\n  padding-left: 16rpx;', replace: '  background: transparent;\n  font-weight: 500;\n  padding-left: 16rpx;' },
+  { name: '选中 chip 丢了金线环', file: P.wxss, find: '  box-shadow: var(--ring-brass);\n  font-weight: 500;\n  padding-left: 16rpx;', replace: '  font-weight: 500;\n  padding-left: 16rpx;' },
+  { name: '选中 chip 回到实心金底（与底栏主按钮抢主位）', file: P.wxss, find: '  background: rgba(196, 167, 108, 0.14);\n  box-shadow: var(--ring-brass);', replace: '  background: var(--color-primary);\n  box-shadow: var(--ring-brass);' },
+  { name: '「送给」小签回到实心金', file: P.wxss, find: '  background: rgba(196, 167, 108, 0.1);\n  color: var(--brass-200);\n  font-size: var(--fs-22);', replace: '  background: var(--color-primary);\n  color: var(--brass-200);\n  font-size: var(--fs-22);' },
   { name: '选中 chip 没有勾', file: P.wxml, find: '            <view class="note-preset-check" aria-hidden="true"></view>\n', replace: '' },
   { name: '犒劳自己（正文手改后）chip 不亮', file: P.wxml, find: "{{activeNotePresetId === item.id || (selfTreat && item.id === 'self') ? 'on' : ''}}", replace: "{{activeNotePresetId === item.id ? 'on' : ''}}" },
   { name: '藏品卡没有「送给」小签', file: P.wxml, find: '<view class="for-tag" wx:if="{{item.id === activeNotePresetId}}">', replace: '<view class="for-tag" wx:if="{{false}}">' },
@@ -679,7 +684,7 @@ async function main() {
     console.error('✗ 送礼页（礼赠编排）版式 / 分步不合格：\n  - ' + fails.join('\n  - '))
     process.exit(1)
   }
-  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 两步各放各的（01 选礼 / 02 写笺）· 交付/地址/门店/核验整块不在送礼页（唯一入口在确认页） · 送礼页无支付按钮（底栏只有「下一步」，第 2 步写「交付与支付」）· 写笺在第 2 步就地校验、进确认页前再过一遍 · 第 3 格步骤轨 = 去确认页（到过写笺才可点）· 自定义顶栏按胶囊算高、左上返回第 2 步回上一步 / 第 1 步离开 · 左缘右滑 / 步骤轨回退 · 隐价与包装逐项说明在第 1 步（隐价语义不变） · 选了关系整页有反馈（chip 实心 + 勾 / 藏品卡「送给 · X」/ 犒劳自己就近提示） · 交付草稿经 giftDraft 往返（换藏品失效 / 已关自提回落）· 交给确认页的 giftMeta 字段与改前一致 · 不再写 globalData.giftReceiverPhone / giftShipAddress')
+  console.log('✓ check:gift-compose-steps：滚动区止于底栏顶边、最后一行不被遮挡 · 两步各放各的（01 选礼 / 02 写笺）· 交付/地址/门店/核验整块不在送礼页（唯一入口在确认页） · 送礼页无支付按钮（底栏只有「下一步」，第 2 步写「交付与支付」）· 写笺在第 2 步就地校验、进确认页前再过一遍 · 第 3 格步骤轨 = 去确认页（到过写笺才可点）· 自定义顶栏按胶囊算高、左上返回第 2 步回上一步 / 第 1 步离开 · 左缘右滑 / 步骤轨回退 · 隐价与包装逐项说明在第 1 步（隐价语义不变） · 选了关系整页有反馈（chip 金线环 + 勾 / 藏品卡「送给 · X」/ 犒劳自己就近提示） · 交付草稿经 giftDraft 往返（换藏品失效 / 已关自提回落）· 交给确认页的 giftMeta 字段与改前一致 · 不再写 globalData.giftReceiverPhone / giftShipAddress')
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })

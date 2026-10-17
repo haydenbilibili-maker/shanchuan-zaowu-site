@@ -27,7 +27,11 @@ const ROOT = resolve(HERE, '../..')
 const MONITOR_UTIL = 'admin/src/utils/wishWallMonitor.js'
 const ERP_SCHEMA = 'admin/src/utils/analyticsSchema.js'
 const MP_SCHEMA = 'miniprogram/utils/analytics/eventSchema.js'
-const WALL_PAGE = 'miniprogram/subpackages/feature/wish-wall/index.js'
+// 2026-10-17：判据改读**现役页面**「马上有 · 心愿签」。旧祈福墙页已退场为转跳薄壳，
+//   继续读它会让本守卫守着一张没人用的页面 —— 新页上线后带语音的落愿 targetId 写成 'voice'、
+//   「落愿成功」行漏计，正是因为本守卫当时还在读旧页而没拦住。
+const WALL_PAGE = 'miniprogram/subpackages/feature/wish-labels/index.js'
+const WALL_WXML = 'miniprogram/subpackages/feature/wish-labels/index.wxml'
 const ERP_VIEW = 'admin/src/components/BehaviorAnalytics.vue'
 
 let passed = 0
@@ -187,7 +191,8 @@ check(
 // step 字符串在页面上真实存在，用户行为真的能落进这张表的行里）。
 // 只收**像 step 的字面量**（小写+下划线），不会把同一方法调用里的 `resumeWishBase` 之类标识符收进来。
 const emittedSteps = new Set([
-  ...[...pageSrc.matchAll(/step:\s*'([a-z_]+)'/g)].map((m) => m[1]),
+  // `step: 'x'` 与 `step: cond ? 'a' : 'b'`（现役页的续发结果分支）—— step 表达式里的每个字面量都算发出
+  ...[...pageSrc.matchAll(/step:\s*([^,}\n]+)/g)].flatMap((m) => [...m[1].matchAll(/'([a-z_]+)'/g)].map((x) => x[1])),
   // 收口形态：`trackRitualGate('show')` / `trackRitualGate(cond ? 'a' : 'b')`
   // —— 把整段调用的实参里的所有字符串字面量都算作"页面真的会发出这个 step"。
   ...[...pageSrc.matchAll(/trackRitualGate\(([^)]*)\)/g)]
@@ -328,7 +333,7 @@ COVERED_PAIRS.forEach(({ gate, payload, view }) => {
 check(
   '祈福墙漏斗块把「去注册」也算进去（只有曝光与完成，中间那段永远是黑箱）',
   /wallStep\('go_register'\)/.test(dashFnSrc) && /step: 'go_register'/.test(pageSrc) &&
-    /bind:cta="onRegisterDialogCta"/.test(read('miniprogram/subpackages/feature/wish-wall/index.wxml'))
+    /bind:cta="onRegisterDialogCta"/.test(read(WALL_WXML))
 )
 
 /* ── ④ 纯逻辑：分母 0 → null；UV 去重 ─────────────────────────────────── */

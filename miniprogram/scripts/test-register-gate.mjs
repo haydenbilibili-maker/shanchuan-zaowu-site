@@ -43,9 +43,10 @@ const F = {
   resultWxss: 'subpackages/feature/identify/result/index.wxss',
   resultJson: 'subpackages/feature/identify/result/index.json',
   // 祈福墙：注册**软钩子**（口径与上面两处硬门禁相反，见需求28 玩法专项 §1 与 §4）
-  wallJs: 'subpackages/feature/wish-wall/index.js',
-  wallWxml: 'subpackages/feature/wish-wall/index.wxml',
-  wallJson: 'subpackages/feature/wish-wall/index.json'
+  // 2026-10-17：改读现役页「马上有 · 心愿签」—— 旧祈福墙页已退场为转跳薄壳，软钩子口径原样跟到新页
+  wallJs: 'subpackages/feature/wish-labels/index.js',
+  wallWxml: 'subpackages/feature/wish-labels/index.wxml',
+  wallJson: 'subpackages/feature/wish-labels/index.json'
 }
 
 const read = (rel) => {
@@ -208,32 +209,28 @@ function runChecks(r) {
     check('★ 落愿路径记漏斗 step=show（曝光可量化，否则漏斗第一环缺失）',
       /wish_wall_register_gate[\s\S]{0,160}step:\s*'show'/.test(submit))
     check('★ 防死循环：续发时跳过门禁（否则会话未刷新 → 又弹一次 → 死循环）',
-      /if\s*\(\s*!resumingAfterRegister\s*&&\s*await\s+this\.isGuestUser\(\)\s*\)/.test(submit)
+      /if\s*\(\s*!resuming\s*&&\s*await\s+this\.isGuestUser\(\)\s*\)/.test(submit)
       && /_resumeAfterRegister\s*=\s*false/.test(submit))
   }
   const wishDialog = dialogTag(wallWxml, 'showRegisterDialog')
   check('★ 祈福墙弹窗是**软钩子**：closable=true（与硬门禁刻意相反，不困住用户）',
     wishDialog.length > 0 && /closable="\{\{true\}\}"/.test(wishDialog))
   {
-    // 「同类错误第二次」的补丁：只钉住注册弹窗时，同页另外两个门禁弹窗（连灯 / 功德证）
-    // 被谁改成闭不掉的硬门禁**没有任何断言会发现** —— 而本页口径是"三个都是软钩子"
-    // （每个弹窗自己的注释都写明 closable=true 的理由）。所以这里断言**整页所有**注册弹窗都是软的。
+    // 「同类错误第二次」的补丁：断言**整页所有**注册弹窗都是软的（旧页有三个：落愿 / 连灯 / 功德证；
+    // 心愿签只剩落愿这一个 —— 判据仍是「每一个」，新增的弹窗若闭不掉照样红，见自检注入）
     const dialogs = wallWxml.match(/<register-auth-dialog\b[^>]*>/g) || []
-    check('★ 祈福墙三个注册弹窗**全部**是软钩子（一个都不许变成闭不掉的硬门禁）',
-      dialogs.length >= 3 && dialogs.every((tag) => /closable="\{\{true\}\}"/.test(tag)))
+    check('★ 祈福墙（心愿签）注册弹窗**全部**是软钩子（一个都不许变成闭不掉的硬门禁）',
+      dialogs.length >= 1 && dialogs.every((tag) => /closable="\{\{true\}\}"/.test(tag)))
   }
   {
     const ok = fnBody(wallJs, 'onRegisterSuccess')
     check('★ 注册成功后自动续发那条心愿（意图不该丢）',
-      // ⚠️ 2026-09-21（P2-8）：续发抽成 `resumeWishAfterRegister()` —— 终点要等
-      // `submitWish` 的**真实结果**，所以这里锚"调了那次续发"，而不是锚 submitWish 的字面量。
+      // 心愿签：续发就在 onRegisterSuccess 里 —— 置续发标记、回填草稿、等 submitWish 的**真实结果**
       /_resumeAfterRegister\s*=\s*true/.test(ok) && /draft:\s*text/.test(ok)
-      && /this\.resumeWishAfterRegister\(\)/.test(ok))
+      && /await\s+this\.submitWish\(\)/.test(ok))
     check('★ 注册成功记 step=resume_success（按续发真实结果分支）',
-      // 终点现在在 `resumeWishAfterRegister` 里：成功 resume_success、失败 fail_resume。
-      // 判据语义不变：**成功那条路的 step 仍然是 resume_success**（报表的终点行靠它）。
-      /resumeWishAfterRegister\(\)\s*\{[\s\S]{0,600}?'resume_success'/.test(wallJs) &&
-      /this\.trackRitualGate\(ok === true \? 'resume_success' : 'fail_resume'\)/.test(wallJs))
+      // 判据语义不变：**成功那条路的 step 仍然是 resume_success**（报表的终点行靠它），失败是 fail_resume
+      /step:\s*ok\s*\?\s*'resume_success'\s*:\s*'fail_resume'/.test(ok))
   }
   {
     const close = fnBody(wallJs, 'onRegisterDialogClose')
@@ -294,13 +291,13 @@ function selftest() {
         (tag) => tag.replace(/closable="\{\{true\}\}"/, 'closable="{{false}}"'))],
     // 只改**第三个**弹窗（功德证门禁），前两个仍是 closable=true：
     // 旧判据「整页某处有 closable=true」在这条注入下**必然假绿** —— 这就是它当年漏掉的那类错。
-    ['祈福墙功德证门禁弹窗被改成硬门禁（注册弹窗仍为软，旧判据会假绿）', F.wallWxml,
-      (s) => s.replace(/<register-auth-dialog\b[^>]*show="\{\{showCertDialog\}\}"[^>]*>/,
-        (tag) => tag.replace(/closable="\{\{true\}\}"/, 'closable="{{false}}"'))],
+    // 新增一个闭不掉的注册弹窗（原注册弹窗仍为软）：判据若只看「某处有 closable=true」就会假绿
+    ['祈福墙（心愿签）新增一个闭不掉的注册弹窗（原弹窗仍为软，旧判据会假绿）', F.wallWxml,
+      (s) => s.replace('<app-toast ', '<register-auth-dialog show="{{showExtraGate}}" closable="{{false}}" />\n<app-toast ')],
     ['祈福墙落愿不再弹注册（转化链路断掉）', F.wallJs,
       (s) => s.replace(/this\.setData\(\{ showRegisterDialog: true \}\)/, 'void 0')],
     ['祈福墙丢掉防死循环（会话未刷新 → 注册后又弹一次）', F.wallJs,
-      (s) => s.replace(/if \(!resumingAfterRegister && await this\.isGuestUser\(\)\)/,
+      (s) => s.replace(/if \(!resuming && await this\.isGuestUser\(\)\)/,
         'if (await this.isGuestUser())')],
     ['祈福墙关掉弹窗时清空草稿（制造白写的挫败）', F.wallJs,
       (s) => s.replace(/onRegisterDialogClose\(\) \{\n/,
