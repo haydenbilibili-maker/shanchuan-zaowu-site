@@ -199,6 +199,23 @@ const SCENES = [
       canProxyAddress: true, selfTreat: false, canNudge: false, voucherReady: true, verify: { receiverVerify: true, phoneTail: '0012', editable: true }, verifyLabel: '受礼人手机号已核验'
     }
   },
+  {
+    name: 'gift-mine', h: 2300, wxml: 'subpackages/feature/gift/my-gifts/index', data: (() => {
+      const rail = (labels, cur) => ({ steps: labels.map((label, i) => ({ label, state: i < cur ? 'done' : i === cur ? 'current' : 'todo' })) })
+      const L = ['付款', '启封', '填址', '启程', '送达']
+      const items = [
+        { orderId: 'g1', flowTab: 'sent', roleLabel: '送出', productImage: P[0], productTitle: '光明女神闪蝶 · 玻璃罩', recipientName: '阿禾', progressLabel: '等 TA 启封', signalClass: 'lamp-brass', todo: true, expireHint: '6 天后退回',
+          receiverVerify: true, verifyPhoneTail: '0012', verifyEditable: true, cardSnippet: '愿你的每个清晨都像这只蝴蝶一样，有光。', showRail: true, progressSteps: rail(L, 1), paidText: '10.15 付款', totalPrice: '388.00',
+          primaryAction: { key: 'share', label: '再交给 TA 一次' }, secondaryAction: { key: 'detail', label: '礼赠进度' }, hasVoice: true },
+        { orderId: 'g2', flowTab: 'sent', roleLabel: '送出', productImage: P[3], productTitle: '蒲公英 · 玻璃罩', recipientName: '小满', progressLabel: '已启程', signalClass: 'lamp-ok', claimMode: 'link', claimerLabel: '已由 小满 收下',
+          showRail: true, progressSteps: rail(L, 3), paidText: '10.08 付款', totalPrice: '198.00', primaryAction: { key: 'detail', label: '礼赠进度' } }
+      ]
+      return { allowed: true, paneReady: true, hubTab: 'flow', flowTab: 'sent', activeSegment: 'all', heroSummary: '记下往来、对象与日子——像一本博物柜里的人情账本。', headSignalClass: 'lamp-brass',
+        counts: { sent: 5, received: 2 }, contactsCount: 3, upcomingHotCount: 1, flowBadge: 1,
+        segments: [{ key: 'all', label: '全部', count: 5 }, { key: 'awaiting_open', label: '待启封', count: 1 }, { key: 'awaiting_address', label: '待填址' }, { key: 'fulfillment', label: '履约中', count: 1 }, { key: 'done', label: '已完成', count: 3 }],
+        list: items, activeList: items, foldedList: [], foldedCount: 0, loading: false, skelRows: [1, 2, 3] }
+    })()
+  },
   { name: 'gift-compose-2', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose', data: { activeStep: 2, maxStep: 2, cardFocused: false, signed: true, sigJustSigned: false } },
   { name: 'order-pending', h: 2300, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: { order: { _id: 'o2', serialNo: 'SH20261015003', status: 'pending_pay', totalPrice: '468.00', originalPrice: '468.00', discountRate: 1, couponValue: 20, shippingFee: 18, shippingFeeDisplay: '18.00', address: { name: '林', phone: '138****0012' }, addressLine: '上海市徐汇区漕溪北路 ** 号', products: [{ _id: 'p3', title: '蓝闪蝶 · A1 博物级', latin: 'Morpho menelaus', price: '468.00', count: 1, image: P[2] }] }, stampText: '待付款', stampClass: 'warn', payBtnLabel: '付款入藏', hasTracking: false } },
   { name: 'gift-receive-done', h: 1700, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, addressDone: true, phoneMasked: '138****0012', addressMaskedLine: '上海市徐汇区 ***' } },

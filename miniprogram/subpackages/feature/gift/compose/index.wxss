@@ -314,8 +314,10 @@ page {
   margin-top: 14rpx;
   padding: 6rpx 18rpx 6rpx 14rpx;
   border-radius: 999rpx;
-  background: var(--color-primary);
-  color: var(--color-bg);
+  /* 发丝金描边小签（原实心金胶囊：与底栏主按钮、选中 chip 三处实心金同屏） */
+  border: 1rpx solid rgba(196, 167, 108, 0.7);
+  background: rgba(196, 167, 108, 0.1);
+  color: var(--brass-200);
   font-size: var(--fs-22);
   font-weight: 500;
   animation: pick-in 0.24s ease-out;
@@ -324,7 +326,7 @@ page {
   width: 12rpx;
   height: 12rpx;
   border-radius: 50%;
-  background: var(--color-bg);
+  background: var(--color-primary);
 }
 
 .product-cover-wrap {
@@ -514,11 +516,14 @@ page {
   border-color: rgba(196, 167, 108, 0.55);
 }
 
-/* 选中：实心金底 + 深色字 + 左侧勾，一眼区别于其余描边 chip */
+/* 选中（2026-10-17 礼赠仪式感第 2 轮，对齐 VI 规范 §6「选中态 = 金线环」）：
+   金线环 + 浅金底 + 金字 + 左侧勾 + 轻弹 —— 选中仍一眼可辨，实心金只留给底栏「下一步」。
+   （原 2026-10-12 实心金底版本见 git 历史；回退只需改这一块与 .for-tag，守卫 S5 同步） */
 .note-preset.on {
-  color: var(--color-bg);
+  color: var(--brass-200);
   border-color: var(--color-primary);
-  background: var(--color-primary);
+  background: rgba(196, 167, 108, 0.14);
+  box-shadow: var(--ring-brass);
   font-weight: 500;
   padding-left: 16rpx;
   animation: preset-pop 0.22s ease-out;
@@ -529,8 +534,8 @@ page {
   width: 9rpx;
   height: 16rpx;
   margin: -4rpx 12rpx 0 2rpx;
-  border-right: 3rpx solid var(--color-bg);
-  border-bottom: 3rpx solid var(--color-bg);
+  border-right: 3rpx solid var(--color-primary);
+  border-bottom: 3rpx solid var(--color-primary);
   transform: rotate(45deg);
 }
 
