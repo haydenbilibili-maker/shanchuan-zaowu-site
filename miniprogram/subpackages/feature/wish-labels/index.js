@@ -498,7 +498,10 @@ Page({
     })
     this.applyView()
     try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* ignore */ }
-    trackBehavior('wish_wall_post', 'ok', voiceFileID ? 'voice' : 'ok')
+    // ⚠️ targetId 必须是 'ok'：ERP 监测表按 String(ev.targetId) === 'ok' 计「落愿成功」与按来源转化
+    //   （admin/src/utils/wishWallMonitor.js；旧页 P1-3 同一个坑）。2026-10-17 前这里带语音时写 'voice' → 带语音的签全被漏计。
+    //   是否带语音放 extra，不占 targetId。
+    trackBehavior('wish_wall_post', 'ok', 'ok', { properties: { voice: voiceFileID ? 1 : 0 } })
     if (voiceFileID) this.toast('已别上墙，声音试听通过后公开')
     // 弹层收起后再滚到墙，让「刚别上」那张的落签动效在视野里；离页即取消
     this._wallTimer = setTimeout(() => { this._wallTimer = null; if (!this._unloaded) this.goWall() }, 320)
