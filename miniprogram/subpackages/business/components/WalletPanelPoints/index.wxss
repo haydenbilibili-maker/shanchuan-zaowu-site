@@ -154,7 +154,9 @@
 .r-desc { font-size: var(--fs-20); color: var(--color-text-secondary); margin-bottom: 20rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .r-footer { display: flex; justify-content: space-between; align-items: center; }
-.cost-group .val { font-size: var(--fs-32); color: var(--color-primary); font-weight: bold; font-family: var(--font-num); }
+/* 2026-10-16：原 `var(--font-num)` 从未定义（`--font-num` 不是令牌；`app.wxss` 里只有**类** `.font-num`）
+   → 整条 font-family 失效。按 VI 规范 v1「数字一律 --font-mono」改（其回退链含 DIN / DIN Alternate）。 */
+.cost-group .val { font-size: var(--fs-32); color: var(--color-primary); font-weight: bold; font-family: var(--font-mono); }
 .cost-group .unit { font-size: var(--fs-18); color: var(--color-text-secondary); margin-left: 4rpx; font-weight: bold; }
 
 .btn-outline {

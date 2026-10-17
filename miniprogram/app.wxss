@@ -11,6 +11,11 @@ page {
   --radius-md: 16rpx;
   --radius-lg: 24rpx;
   --radius-xl: 32rpx;
+  /* 2026-10-16 补定义：`--radius-full` 被 **53 处 / 30 个文件**引用（pill / 全圆角），
+     但**从未定义过** → `border-radius: var(--radius-full)` 整条声明失效（回落 0 = 直角），
+     而且静默不报错。判据见 check:wxss-syntax 的 A10（不带兜底的 var 必须能解析）。
+     ⚠️ 别把它和 `page{}` 之外的地方混用：custom-tab-bar 取不到本块任何令牌（见 A9）。 */
+  --radius-full: 9999rpx;
 
   /* 设计系统完整令牌（Museum Mode） */
   --color-primary: #C4A76C;
