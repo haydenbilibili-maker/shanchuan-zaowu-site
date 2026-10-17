@@ -21,7 +21,8 @@ function formatCertDay(ms) {
 const DEFAULT_NICK = '藏家';
 
 function certSig(kind, data) {
-  const parts = [kind, data.date, 'v2'];
+  // v3（2026-10-17）：证书按新视觉规范重绘 —— 版本号进签名，已固化的旧版图签名对不上，下次打开现场重绘并重新固化
+  const parts = [kind, data.date, 'v3'];
   if (kind === 'gift_voucher' && data.gift) parts.push(data.gift.statusLabel || '', data.gift.recipientName || '');
   return parts.join('|');
 }

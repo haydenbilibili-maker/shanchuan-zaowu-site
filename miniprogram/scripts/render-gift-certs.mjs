@@ -19,7 +19,11 @@ const { createCanvas, Image, GlobalFonts } = require('@napi-rs/canvas')
 for (const [file, alias] of [
   ['/System/Library/Fonts/Supplemental/Songti.ttc', 'serif'],
   ['/System/Library/Fonts/Hiragino Sans GB.ttc', 'sans-serif'],
-  ['/System/Library/Fonts/STHeiti Medium.ttc', 'sans-serif']
+  ['/System/Library/Fonts/STHeiti Medium.ttc', 'sans-serif'],
+  // Linux 容器（云端会话）：文泉驿正黑兜底，宋体效果不准，只看版式
+  ['/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc', 'serif'],
+  ['/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc', 'sans-serif'],
+  ['/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc', 'monospace']
 ]) {
   try { GlobalFonts.registerFromPath(file, alias) } catch (e) { /* 非 macOS 环境 */ }
 }

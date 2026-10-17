@@ -1,15 +1,31 @@
 /**
  * 证书绘制（纯函数，不依赖 wx —— check:gift-holder 在 Node 里录制指令 / 离线出图）
  *
- * drawHolderCert  非礼赠收藏证书：版式为原 drawPerfectCert（设计高 560，金样 scripts/fixtures/certHolderGolden.json 逐条相同）；
- *                 画布矮于 560（真机 600rpx×960rpx ≈ 300×480）时整体等比缩放，不再挤压重叠（2026-09-28 N5 点名顺手修）
- * drawGiftHolderCert  受礼人收藏证书：同一金色家族 + 「由 X 赠予」与赠言，日期为签收日
- * drawGiftVoucher  送礼人赠予凭证：象牙纸 + 朱砂，记录赠予对象 / 藏品 / 赠言 / 日期
- * 礼赠两版按画布高度等比排版（原版为固定像素，375 宽真机底部会挤，非礼赠不改）。
- * VIS 3.0：赠予凭证的钤印改为品牌方寸篆印（朱砂）；非礼赠证书的 drawSeal 受金样锁定，未改。
+ * 2026-10-17 按新视觉规范重绘（产品负责人点名）：三种证书统一成**纸质标本签**一种纸 ——
+ * 浅纸渐变 #F3ECDD → #E8DFCB + 墨色 #2E2618 + 内发丝框 + 顶上一枚铜别针；
+ * 眉标（等宽英文）+ 主标（宋体）+ 藏品实拍（标本框）+ 发丝线两栏行 + 方寸篆印（全张唯一一处实色）。
+ * 与礼笺、心愿签、藏家档案是同一种纸；旧版的深底金框 / 朱砂双框 / 英文花体已退场。
+ *
+ * drawHolderCert      非礼赠收藏证书：持有人 / 藏家等级 / 签发日；铜印
+ * drawGiftHolderCert  受礼人收藏证书：持有人 + 「由 X 赠予」+ 赠言，日期为签收日；铜印
+ * drawGiftVoucher     送礼人赠予凭证：赠予人 / 受赠人 / 状态 / 日期 + 赠言；朱印（礼赠钤印，VIS 3.0）
+ *
+ * 版式按 300 × 480 设计稿排，真机画布（600rpx × 960rpx）等比缩放、水平垂直居中，任何宽高比都不挤压。
  */
 
 const { drawBrandSeal } = require('../utils/brandSeal')
+
+const DESIGN_W = 300
+const DESIGN_H = 480
+const PAPER_TOP = '#F3ECDD'
+const PAPER_BOTTOM = '#E8DFCB'
+const INK = '#2E2618'
+const INK_SOFT = '#5E5444'
+const INK_MUTE = '#8A7F6C'
+const BRASS = '#8B6F47'
+const BRASS_PIN = '#B08D57'
+const HAIR = 'rgba(46, 38, 24, 0.22)'
+const CINNABAR = '#9E3B2E'
 
 async function loadImage(canvas, getImagePath, src) {
   const url = await getImagePath(src)
@@ -41,297 +57,176 @@ function clip(text, max) {
   return t.length > max ? `${t.slice(0, max)}…` : t
 }
 
-function drawSeal(ctx, x, y) {
-  ctx.save(); ctx.translate(x, y); ctx.rotate(-15 * Math.PI / 180);
-  const color = 'rgba(180, 40, 40, 0.9)';
-  ctx.strokeStyle = color; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(0, 0, 30, 0, 2 * Math.PI); ctx.stroke();
-  ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(0, 0, 26, 0, 2 * Math.PI); ctx.stroke();
-
-  ctx.fillStyle = color;
-  ctx.font = 'bold 10px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('山海造物', 0, -8);
-  ctx.font = '8px sans-serif'; ctx.fillText('CERTIFIED', 0, 8);
-  ctx.font = '14px serif'; ctx.fillText('★', 0, 22);
-  ctx.restore();
+function line(ctx, x1, y1, x2, y2) {
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke()
 }
 
-/** 普通收藏证书的设计高度：原固定像素版式在此高度下排得下 */
-const HOLDER_DESIGN_H = 560
+/** 纸：渐变底（桩 ctx 无渐变对象时落回中间色）+ 内发丝框 + 顶边铜别针 */
+function drawPaper(ctx, w, h) {
+  const grad = typeof ctx.createLinearGradient === 'function' ? ctx.createLinearGradient(0, 0, 0, h) : null
+  if (grad && typeof grad.addColorStop === 'function') {
+    grad.addColorStop(0, PAPER_TOP)
+    grad.addColorStop(1, PAPER_BOTTOM)
+    ctx.fillStyle = grad
+  } else {
+    ctx.fillStyle = '#EEE6D4'
+  }
+  ctx.fillRect(0, 0, w, h)
+  ctx.strokeStyle = HAIR; ctx.lineWidth = 0.75
+  ctx.strokeRect(14, 14, w - 28, h - 28)
+  // 铜别针：钉在内框顶边正中（一圈深铜 + 一点高光，不发光）
+  ctx.fillStyle = BRASS_PIN
+  ctx.beginPath(); ctx.arc(w / 2, 14, 4.5, 0, 2 * Math.PI); ctx.fill()
+  ctx.fillStyle = 'rgba(255, 248, 230, 0.7)'
+  ctx.beginPath(); ctx.arc(w / 2 - 1.2, 12.8, 1.3, 0, 2 * Math.PI); ctx.fill()
+}
 
-async function drawHolderCert(ctx, w, h, data, canvas, getImagePath) {
-  const s = h / HOLDER_DESIGN_H
-  if (s >= 1) return drawHolderLayout(ctx, w, h, data, canvas, getImagePath)
+/** 眉标 + 主标 + 一道发丝线 */
+function drawHead(ctx, w, eyebrow, title) {
+  const cx = w / 2
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
+  ctx.fillStyle = BRASS; ctx.font = '8px monospace'; ctx.letterSpacing = '3px'
+  ctx.fillText(eyebrow, cx, 44)
+  ctx.fillStyle = INK; ctx.font = 'bold 16px serif'; ctx.letterSpacing = '3px'
+  ctx.fillText(title, cx, 68)
+  ctx.letterSpacing = '0px'
+  ctx.strokeStyle = HAIR; ctx.lineWidth = 0.75
+  line(ctx, 36, 82, w - 36, 82)
+}
+
+/** 藏品实拍：标本框（外发丝 + 4px 纸边） */
+async function drawSpecimen(ctx, w, top, size, product, canvas, getImagePath) {
+  const x = (w - size) / 2
+  ctx.strokeStyle = HAIR; ctx.lineWidth = 0.75
+  ctx.strokeRect(x - 5, top - 5, size + 10, size + 10)
+  const img = await loadImage(canvas, getImagePath, product.image)
+  if (img) {
+    const s = Math.min(img.width, img.height)
+    ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, x, top, size, size)
+  } else {
+    ctx.fillStyle = 'rgba(46, 38, 24, 0.06)'
+    ctx.fillRect(x, top, size, size)
+  }
+  const cx = w / 2
+  let y = top + size + 28
+  ctx.textAlign = 'center'
+  ctx.fillStyle = INK
+  const title = `《 ${product.title} 》`
+  fitFont(ctx, title, w - 72, 16, 11, 'bold')
+  ctx.fillText(title, cx, y)
+  if (product.latin) {
+    y += 14
+    ctx.fillStyle = BRASS; ctx.font = 'italic 9px serif'
+    ctx.fillText(product.latin, cx, y)
+  }
+  return y
+}
+
+/** 发丝线两栏行：左 = 签名（灰），右 = 值（墨） */
+function drawRows(ctx, w, top, rows) {
+  const left = 40
+  const right = w - 40
+  let y = top
+  ctx.strokeStyle = HAIR; ctx.lineWidth = 0.75
+  line(ctx, left, y, right, y)
+  rows.forEach(([k, v]) => {
+    y += 22
+    ctx.textAlign = 'left'; ctx.fillStyle = INK_MUTE; ctx.font = '9px sans-serif'; ctx.letterSpacing = '1px'
+    ctx.fillText(k, left, y - 7)
+    ctx.letterSpacing = '0px'
+    ctx.textAlign = 'right'; ctx.fillStyle = INK
+    fitFont(ctx, String(v), right - left - 70, 11, 8, '')
+    ctx.fillText(String(v), right, y - 7)
+    line(ctx, left, y, right, y)
+  })
+  ctx.textAlign = 'center'
+  return y
+}
+
+/** 赠言：至多两行，斜体 */
+function drawNote(ctx, w, top, note) {
+  const text = String(note || '')
+  if (!text) return top
+  const cx = w / 2
+  let y = top + 20
+  ctx.textAlign = 'center'; ctx.fillStyle = INK_SOFT; ctx.font = 'italic 10px serif'
+  ctx.fillText(`“${text.slice(0, 17)}${text.length > 17 ? '' : '”'}`, cx, y)
+  if (text.length > 17) {
+    y += 15
+    ctx.fillText(`${clip(text.slice(17), 15)}”`, cx, y)
+  }
+  return y
+}
+
+/** 页脚：编号（左）+ 签发方（中）+ 方寸篆印（右下，全张唯一实色） */
+function drawFoot(ctx, w, h, serial, signLabel, sealColor) {
+  const y = h - 30
+  ctx.letterSpacing = '0px'
+  ctx.textAlign = 'left'; ctx.fillStyle = INK_MUTE; ctx.font = '7.5px monospace'
+  ctx.fillText(`NO.${serial}`, 30, y)
+  ctx.strokeStyle = HAIR; ctx.lineWidth = 0.75
+  line(ctx, w / 2 - 44, y - 22, w / 2 + 44, y - 22)
+  ctx.textAlign = 'center'; ctx.fillStyle = INK_MUTE; ctx.font = '8px sans-serif'; ctx.letterSpacing = '2px'
+  ctx.fillText(signLabel, w / 2, y - 10)
+  ctx.letterSpacing = '0px'
+  drawBrandSeal(ctx, w - 52, h - 62, 34, { color: sealColor, ground: PAPER_BOTTOM, rotate: -6 })
+}
+
+/** 按设计稿 300 × 480 等比缩放并居中（任何画布宽高比都不挤压） */
+async function onDesign(ctx, w, h, body) {
+  const k = Math.min(w / DESIGN_W, h / DESIGN_H)
   ctx.save()
-  ctx.scale(s, s)
-  await drawHolderLayout(ctx, w / s, HOLDER_DESIGN_H, data, canvas, getImagePath)
+  // 纸铺满整张画布；版式在居中的设计框里
+  drawPaper(ctx, w, h)
+  ctx.translate((w - DESIGN_W * k) / 2, (h - DESIGN_H * k) / 2)
+  ctx.scale(k, k)
+  await body(DESIGN_W, DESIGN_H)
   ctx.restore()
 }
 
-async function drawHolderLayout(ctx, w, h, data, canvas, getImagePath) {
-  // 1. 背景
-  ctx.fillStyle = '#1F1D1A';
-  ctx.fillRect(0, 0, w, h);
-
-  // 2. 边框 (Art Deco)
-  const p = 20;
-  ctx.strokeStyle = '#C4A76C'; ctx.lineWidth = 1;
-  ctx.strokeRect(p, p, w - p*2, h - p*2);
-  ctx.strokeStyle = 'rgba(196, 167, 108, 0.3)';
-  ctx.strokeRect(p+4, p+4, w - (p+4)*2, h - (p+4)*2);
-
-  // 3. 头部
-  let y = 55;
-  ctx.textAlign = 'center';
-
-  ctx.fillStyle = '#666'; ctx.font = '9px sans-serif'; ctx.letterSpacing = '2px';
-  ctx.fillText("BRING NATURE HOME", w / 2, y);
-
-  y += 20;
-  ctx.fillStyle = '#C4A76C'; ctx.font = 'bold 15px serif';
-  ctx.fillText('山海造物 · 珍藏证书', w / 2, y);
-
-  y += 35;
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 20px serif';
-  ctx.letterSpacing = '4px';
-  ctx.fillText('馆藏证书·仅此一件', w / 2, y);
-
-  y += 25;
-  ctx.fillStyle = '#bfa15f'; ctx.font = '10px sans-serif'; ctx.letterSpacing = '1px';
-  ctx.fillText('CERTIFICATE OF HONOR', w / 2, y);
-
-  // 4. 图片
-  const imgUrl = await getImagePath(data.product.image);
-
-  y += 25;
-  const imgSize = 150;
-
-  if (imgUrl) {
-      const img = canvas.createImage();
-      img.src = imgUrl;
-      await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
-
-      if (img.width && img.height) {
-        const imgX = (w - imgSize) / 2;
-        ctx.strokeStyle = 'rgba(196, 167, 108, 0.6)'; ctx.lineWidth = 1;
-        ctx.strokeRect(imgX - 5, y - 5, imgSize + 10, imgSize + 10);
-
-        const sSize = Math.min(img.width, img.height);
-        ctx.drawImage(img, (img.width - sSize)/2, (img.height - sSize)/2, sSize, sSize, imgX, y, imgSize, imgSize);
-      }
-
-      ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.font = 'italic 9px serif';
-      ctx.fillText('Exhibited Specimen', w/2, y + imgSize + 14);
-
-      y += imgSize + 40;
-  } else {
-      y += 200;
-  }
-
-  // 5. 授予文案区
-  ctx.fillStyle = '#888'; ctx.font = '10px sans-serif'; ctx.letterSpacing = '2px';
-  ctx.fillText('兹授予 / Hereby Grants', w / 2, y);
-
-  y += 30;
-  ctx.fillStyle = '#C4A76C'; ctx.font = 'bold 30px serif';
-  ctx.fillText(data.user, w / 2, y);
-
-  y += 20;
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 12px sans-serif';
-  ctx.fillText(`「 ${data.level} 」`, w / 2, y);
-
-  y += 30;
-  ctx.fillStyle = '#aaa'; ctx.font = '10px serif'; ctx.letterSpacing = '1px';
-  ctx.fillText('以表彰其对以下自然瑰宝的永久珍藏：', w / 2, y);
-
-  y += 30;
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 24px serif';
-  ctx.fillText(`《 ${data.product.title} 》`, w / 2, y);
-
-  y += 16;
-  ctx.fillStyle = '#C4A76C'; ctx.font = 'italic 10px serif';
-  ctx.fillText(data.product.latin || '', w / 2, y);
-
-  // 6. 底部签名 & 编号
-  const footerY = h - 40;
-
-  ctx.fillStyle = '#444'; ctx.font = '9px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText(`NO.${data.orderNo}`, 30, footerY);
-  ctx.textAlign = 'right';
-  ctx.fillText(data.date, w - 30, footerY);
-
-  const signY = footerY - 30;
-  ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(w/2 - 60, signY); ctx.lineTo(w/2 + 60, signY); ctx.stroke();
-  ctx.fillStyle = '#666'; ctx.font = '9px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText('山海造物 · 签发', w / 2, signY + 14);
-
-  // 7. 印章
-  drawSeal(ctx, w - 80, h - 100);
-}
-
-function drawSquareImage(ctx, img, x, y, size, frameColor) {
-  ctx.strokeStyle = frameColor; ctx.lineWidth = 1;
-  ctx.strokeRect(x - 4, y - 4, size + 8, size + 8);
-  if (!img) return
-  const s = Math.min(img.width, img.height);
-  ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, x, y, size, size);
-}
-
-function drawFooter(ctx, w, h, k, serial, date, signLabel, color, lineColor) {
-  const footerY = h - 26 * k;
-  ctx.letterSpacing = '0px';
-  ctx.fillStyle = color; ctx.font = '8px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText(`NO.${serial}`, 28, footerY);
-  ctx.textAlign = 'right';
-  ctx.fillText(date, w - 28, footerY);
-  const signY = footerY - 24 * k;
-  ctx.strokeStyle = lineColor; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(w / 2 - 50, signY); ctx.lineTo(w / 2 + 50, signY); ctx.stroke();
-  ctx.fillStyle = color; ctx.font = '8px sans-serif'; ctx.textAlign = 'center';
-  ctx.fillText(signLabel, w / 2, signY + 12);
+/** 非礼赠收藏证书 */
+async function drawHolderCert(ctx, w, h, data, canvas, getImagePath) {
+  await onDesign(ctx, w, h, async (W, H) => {
+    drawHead(ctx, W, 'CERTIFICATE OF COLLECTION', '山海造物 · 珍藏证书')
+    const y = await drawSpecimen(ctx, W, 98, 122, data.product, canvas, getImagePath)
+    ctx.fillStyle = INK_SOFT; ctx.font = '9px serif'; ctx.letterSpacing = '1px'
+    ctx.fillText('兹证明下列持有人永久珍藏本件自然藏品', W / 2, y + 22)
+    ctx.letterSpacing = '0px'
+    drawRows(ctx, W, y + 34, [['持有人', data.user], ['藏家等级', data.level], ['签发日', data.date]])
+    drawFoot(ctx, W, H, data.orderNo, '山海造物 · 签发', BRASS_PIN)
+  })
 }
 
 /** 受礼人（持有人）收藏证书 */
 async function drawGiftHolderCert(ctx, w, h, data, canvas, getImagePath) {
   const gift = data.gift || {}
-  const k = h / 480
-  const cx = w / 2
-  ctx.fillStyle = '#1F1D1A'; ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = '#C4A76C'; ctx.lineWidth = 1;
-  ctx.strokeRect(18, 18, w - 36, h - 36);
-  ctx.strokeStyle = 'rgba(196, 167, 108, 0.3)';
-  ctx.strokeRect(22, 22, w - 44, h - 44);
-
-  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = '#666'; ctx.font = '8px sans-serif'; ctx.letterSpacing = '2px';
-  ctx.fillText('BRING NATURE HOME', cx, 40 * k);
-  ctx.fillStyle = '#C4A76C'; ctx.font = 'bold 14px serif';
-  ctx.fillText('山海造物 · 珍藏证书', cx, 58 * k);
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 18px serif'; ctx.letterSpacing = '3px';
-  ctx.fillText('馆藏证书·仅此一件', cx, 82 * k);
-  ctx.fillStyle = '#bfa15f'; ctx.font = '9px sans-serif'; ctx.letterSpacing = '1px';
-  ctx.fillText('CERTIFICATE OF HONOR', cx, 98 * k);
-
-  const size = Math.min(104 * k, w * 0.38)
-  const top = 110 * k
-  const img = await loadImage(canvas, getImagePath, data.product.image)
-  drawSquareImage(ctx, img, cx - size / 2, top, size, 'rgba(196, 167, 108, 0.6)')
-
-  let y = top + size + 24 * k
-  ctx.fillStyle = '#888'; ctx.font = '9px sans-serif'; ctx.letterSpacing = '2px';
-  ctx.fillText('兹授予 / Hereby Grants', cx, y)
-  y += 26 * k
-  ctx.letterSpacing = '0px'
-  ctx.fillStyle = '#C4A76C'
-  fitFont(ctx, data.user, w - 70, 24, 14, 'bold')
-  ctx.fillText(data.user, cx, y)
-  y += 18 * k
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif';
-  ctx.fillText(`「 ${data.level} 」`, cx, y)
-  y += 22 * k
-  ctx.fillStyle = '#aaa'; ctx.font = '9px serif'; ctx.letterSpacing = '1px';
-  ctx.fillText('以表彰其对以下自然瑰宝的永久珍藏：', cx, y)
-  y += 24 * k
-  ctx.letterSpacing = '0px'; ctx.fillStyle = '#fff'
-  const title = `《 ${data.product.title} 》`
-  fitFont(ctx, title, w - 60, 18, 11, 'bold')
-  ctx.fillText(title, cx, y)
-  y += 14 * k
-  ctx.fillStyle = '#C4A76C'; ctx.font = 'italic 9px serif';
-  ctx.fillText(data.product.latin || '', cx, y)
-
-  // 礼赠带：由谁赠予 + 赠言（收藏证书与赠予凭证的区别在此）
-  y += 20 * k
-  ctx.strokeStyle = 'rgba(196, 167, 108, 0.35)'; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(cx - 70, y - 12 * k); ctx.lineTo(cx + 70, y - 12 * k); ctx.stroke();
-  ctx.fillStyle = '#C4A76C'; ctx.font = '10px serif';
-  ctx.fillText(`由「${clip(gift.fromName || '一位友人', 10)}」赠予 · ${data.date}`, cx, y)
-  if (gift.note) {
-    y += 15 * k
-    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = 'italic 9px serif';
-    ctx.fillText(`“${clip(gift.note, 18)}”`, cx, y)
-  }
-
-  drawFooter(ctx, w, h, k, data.serial, data.date, '山海造物 · 签发', '#555', '#333')
-  ctx.save(); ctx.translate(w - 50, h - 64 * k); ctx.scale(0.72, 0.72)
-  drawSeal(ctx, 0, 0)
-  ctx.restore()
-}
-
-function drawGiftSeal(ctx, x, y) {
-  drawBrandSeal(ctx, x, y, 40, { color: '#9E3B2E', ground: '#F3ECDD', rotate: -8 })
+  await onDesign(ctx, w, h, async (W, H) => {
+    drawHead(ctx, W, 'CERTIFICATE OF COLLECTION', '山海造物 · 珍藏证书')
+    const y = await drawSpecimen(ctx, W, 98, 112, data.product, canvas, getImagePath)
+    ctx.fillStyle = BRASS; ctx.font = '10px serif'; ctx.letterSpacing = '1px'
+    ctx.fillText(`由「${clip(gift.fromName || '一位友人', 10)}」赠予`, W / 2, y + 22)
+    ctx.letterSpacing = '0px'
+    const rowsEnd = drawRows(ctx, W, y + 34, [['持有人', data.user], ['签收日', data.date]])
+    drawNote(ctx, W, rowsEnd, gift.note)
+    drawFoot(ctx, W, H, data.serial, '山海造物 · 签发', BRASS_PIN)
+  })
 }
 
 /** 送礼人赠予凭证 */
 async function drawGiftVoucher(ctx, w, h, data, canvas, getImagePath) {
   const gift = data.gift || {}
-  const k = h / 480
-  const cx = w / 2
-  const ink = '#2C2C2C'
-  const cinnabar = '#9E3B2E'
-  const brass = '#8B6F47'
-  ctx.fillStyle = '#F3ECDD'; ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = cinnabar; ctx.lineWidth = 1.5;
-  ctx.strokeRect(16, 16, w - 32, h - 32);
-  ctx.strokeStyle = 'rgba(158, 59, 46, 0.35)'; ctx.lineWidth = 1;
-  ctx.strokeRect(21, 21, w - 42, h - 42);
-
-  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = brass; ctx.font = '8px sans-serif'; ctx.letterSpacing = '2px';
-  ctx.fillText('A GIFT FROM NATURE', cx, 40 * k)
-  ctx.fillStyle = cinnabar; ctx.font = 'bold 16px serif'; ctx.letterSpacing = '3px';
-  ctx.fillText('山海造物 · 赠予凭证', cx, 62 * k)
-  ctx.fillStyle = brass; ctx.font = '9px sans-serif'; ctx.letterSpacing = '1px';
-  ctx.fillText('CERTIFICATE OF GIFT', cx, 78 * k)
-
-  const size = Math.min(92 * k, w * 0.34)
-  const top = 92 * k
-  const img = await loadImage(canvas, getImagePath, data.product.image)
-  drawSquareImage(ctx, img, cx - size / 2, top, size, 'rgba(158, 59, 46, 0.5)')
-
-  let y = top + size + 26 * k
-  ctx.fillStyle = '#7A7268'; ctx.font = '10px serif'; ctx.letterSpacing = '2px';
-  ctx.fillText('兹证明', cx, y)
-  y += 26 * k
-  ctx.letterSpacing = '0px'; ctx.fillStyle = ink
-  fitFont(ctx, data.user, w - 70, 22, 14, 'bold')
-  ctx.fillText(data.user, cx, y)
-  y += 22 * k
-  ctx.fillStyle = '#7A7268'; ctx.font = '10px serif'; ctx.letterSpacing = '1px';
-  ctx.fillText('将以下藏品郑重赠予', cx, y)
-  y += 26 * k
-  ctx.letterSpacing = '0px'; ctx.fillStyle = cinnabar
-  const to = `「 ${clip(gift.recipientName || 'TA', 12)} 」`
-  fitFont(ctx, to, w - 70, 18, 12, 'bold')
-  ctx.fillText(to, cx, y)
-  y += 26 * k
-  ctx.fillStyle = ink
-  const title = `《 ${data.product.title} 》`
-  fitFont(ctx, title, w - 60, 16, 11, 'bold')
-  ctx.fillText(title, cx, y)
-  y += 14 * k
-  ctx.fillStyle = brass; ctx.font = 'italic 9px serif';
-  ctx.fillText(data.product.latin || '', cx, y)
-
-  if (gift.note) {
-    y += 22 * k
-    ctx.fillStyle = '#5E564C'; ctx.font = 'italic 10px serif';
-    const note = String(gift.note)
-    ctx.fillText(`“${note.slice(0, 16)}${note.length > 16 ? '' : '”'}`, cx, y)
-    if (note.length > 16) {
-      y += 15 * k
-      ctx.fillText(`${clip(note.slice(16), 15)}”`, cx, y)
-    }
-  }
-  y += 22 * k
-  ctx.fillStyle = brass; ctx.font = '10px sans-serif';
-  ctx.fillText(`${gift.statusLabel || 'TA 已收到'} · ${data.date}`, cx, y)
-
-  drawFooter(ctx, w, h, k, data.serial, data.date, '山海造物 · 见证', '#8A8176', 'rgba(44,44,44,0.3)')
-  drawGiftSeal(ctx, w - 56, h - 78 * k)
+  await onDesign(ctx, w, h, async (W, H) => {
+    drawHead(ctx, W, 'CERTIFICATE OF GIFT', '山海造物 · 赠予凭证')
+    const y = await drawSpecimen(ctx, W, 98, 104, data.product, canvas, getImagePath)
+    const rowsEnd = drawRows(ctx, W, y + 16, [
+      ['赠予人', data.user],
+      ['受赠人', clip(gift.recipientName || 'TA', 12)],
+      ['状态', gift.statusLabel || 'TA 已收到'],
+      ['日期', data.date]
+    ])
+    drawNote(ctx, W, rowsEnd, gift.note)
+    drawFoot(ctx, W, H, data.serial, '山海造物 · 见证', CINNABAR)
+  })
 }
 
 async function drawCertificate(ctx, w, h, view, canvas, getImagePath) {

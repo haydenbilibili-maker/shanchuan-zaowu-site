@@ -2,35 +2,34 @@
 <view class="page-pet {{currentStep === 1 ? 'step-consent' : ''}}">
   <view class="grain-overlay"></view>
 
+  <!-- 页头（2026-10-17 重做）：导航栏已写「伴宠记忆」，页内不再重复一块居中大标题 ——
+       眉标 + 一句主标 + 安心承诺（一行）+ 五段进度条；已走过的步骤可点回。 -->
   <view class="sticky-header">
-    <view class="hero-head">
-      <view class="nav-row" style="padding-right: {{navPaddingRight}}px;">
-        <view class="nav-brand">
-          <text class="nav-title">伴宠记忆</text>
-          <text class="nav-sub">PET MEMORIAL</text>
-        </view>
-      </view>
-
-      <view class="nav-motto">
-        <text class="motto-primary">为已逝的伙伴留一件可触摸的记忆</text>
-        <text class="motto-secondary">提交意向后专员评估 · 无需立即支付</text>
+    <view class="pet-head">
+      <text class="pet-eyebrow">PET MEMORIAL · 伴宠定制</text>
+      <text class="pet-title">为已逝的伙伴，留一件可触摸的记忆</text>
+      <view class="pet-assure">
+        <view class="pet-assure-dot" aria-hidden="true"></view>
+        <text class="pet-assure-t">提交意向后专员评估，无需立即支付</text>
       </view>
     </view>
 
-    <view class="header-rail-full">
-      <view class="atelier-rail">
-        <view
-          class="rail-col {{currentStep > item.id ? 'past' : ''}} {{currentStep === item.id ? 'current' : ''}}"
-          wx:for="{{steps}}"
-          wx:key="id"
-        >
-          <view class="rail-top">
-            <view class="rail-dot {{currentStep >= item.id ? 'filled' : ''}} {{currentStep === item.id ? 'active' : ''}}">
-              <text class="rail-num">{{item.id}}</text>
-            </view>
-            <view class="rail-line {{currentStep > item.id ? 'filled' : ''}}" wx:if="{{index < steps.length - 1}}"></view>
-          </view>
-          <text class="rail-label">{{item.label}}</text>
+    <view class="pet-rail" aria-role="list">
+      <view
+        class="pet-rail-col {{currentStep > item.id ? 'is-past' : ''}} {{currentStep === item.id ? 'is-current' : ''}}"
+        wx:for="{{steps}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onRailTap"
+        hover-class="{{currentStep > item.id ? 'tap-press-soft' : ''}}"
+        hover-stay-time="80"
+        aria-role="{{currentStep > item.id ? 'button' : 'listitem'}}"
+        aria-label="第 {{item.id}} 步 {{item.label}}{{currentStep > item.id ? '，已完成，点按返回' : ''}}"
+      >
+        <view class="pet-rail-seg"></view>
+        <view class="pet-rail-cap">
+          <text class="pet-rail-num">{{item.id}}</text>
+          <text class="pet-rail-label">{{item.label}}</text>
         </view>
       </view>
     </view>
@@ -53,7 +52,6 @@
       <view class="panel-lead" wx:if="{{currentStepMeta}}">
         <view class="panel-lead-head">
           <text class="panel-title">{{currentStepMeta.title}}</text>
-          <text class="panel-index">{{currentStep}} / 5</text>
         </view>
         <text class="panel-desc">{{currentStepMeta.desc}}</text>
       </view>

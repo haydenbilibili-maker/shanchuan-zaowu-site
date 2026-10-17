@@ -337,6 +337,15 @@ Page({
     trackBehavior('pet_memorial_step_view', 'step', String(next))
   },
 
+  /** 进度条：只许点回**已走过**的步骤（往回不需要校验；往前仍必须走「下一步」的校验） */
+  onRailTap(e) {
+    const id = Number(e.currentTarget.dataset.id) || 0
+    if (!id || id >= this.data.currentStep) return
+    this.setData({ currentStep: id })
+    this.updateStepUi(id)
+    this.scrollPanelToTop()
+  },
+
   goPrev() {
     const prev = Math.max(this.data.currentStep - 1, 1)
     this.setData({ currentStep: prev })

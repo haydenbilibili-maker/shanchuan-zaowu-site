@@ -90,170 +90,179 @@ page { background: #1A1814; }
   color: var(--color-primary);
 }
 
+/* —— 图版（2026-10-17）：点亮 = 浅纸标本签；未点亮 = 虚线空位 —— */
 .plate {
   position: relative;
-  padding: 40rpx 32rpx 36rpx;
-  background: #1F1D1A;
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-lg);
-  margin-bottom: 32rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding: 56rpx 40rpx 44rpx;
+  box-sizing: border-box;
+  border-radius: 4rpx;
   overflow: hidden;
 }
 
-.plate-rim {
+.plate.is-lit {
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.45);
+}
+
+.plate.is-lit::before {
+  content: '';
   position: absolute;
-  left: 16rpx;
-  right: 16rpx;
-  top: 16rpx;
-  bottom: 16rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.18);
-  border-radius: var(--radius-md);
+  inset: 16rpx;
+  border: 1rpx solid rgba(46, 38, 24, 0.22);
   pointer-events: none;
 }
 
-.plate-silver { border-color: #8A8A8A; }
-.plate-gold { border-color: var(--color-primary); }
-.plate.dim { opacity: 0.9; }
+.plate.is-legend::before { border-color: rgba(176, 141, 87, 0.8); }
 
-.tone-insecta .plate-rim { border-color: rgba(82, 183, 136, 0.22); }
-.tone-plantae .plate-rim { border-color: rgba(109, 163, 77, 0.22); }
-.tone-minerals .plate-rim { border-color: rgba(123, 104, 174, 0.22); }
-.tone-marine .plate-rim { border-color: rgba(91, 143, 185, 0.22); }
+.plate-pin {
+  position: absolute;
+  top: 8rpx;
+  left: 50%;
+  width: 20rpx;
+  height: 20rpx;
+  margin-left: -10rpx;
+  border-radius: 50%;
+  background: #B08D57;
+}
 
-.plate-en {
-  position: relative;
-  display: block;
-  font-size: var(--fs-18);
-  letter-spacing: 0.28em;
-  color: rgba(196, 167, 108, 0.65);
+.plate-top {
+  align-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .plate-no {
-  position: relative;
-  display: block;
-  margin-top: 8rpx;
-  font-size: var(--fs-22);
-  color: var(--color-primary);
-  letter-spacing: 0.12em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  letter-spacing: 0.16em;
+  color: #8A7F6C;
 }
 
-.silhouette.big {
-  position: relative;
-  width: 120rpx;
-  height: 120rpx;
-  margin: 32rpx auto;
-  border-radius: 50%;
-  background: radial-gradient(circle, #2A2620 0%, #171512 70%);
-  border: 1rpx solid #302810;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.plate-rare {
+  padding: 0 10rpx;
+  line-height: 32rpx;
+  font-size: var(--fs-20);
+  color: #8B6F47;
+  border: 1rpx solid rgba(139, 111, 71, 0.5);
+  border-radius: 4rpx;
 }
 
-.silhouette-ring {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 50%;
-  border: 1rpx solid var(--brass-800);
-  opacity: 0.75;
-}
-
-.plate-mark-block {
-  position: relative;
-  display: inline-block;
-  margin: 28rpx 0 0;
-  padding: 12rpx 24rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.35);
-  border-radius: var(--radius-sm);
-  background: rgba(196, 167, 108, 0.06);
-}
-
-.plate-mark-en {
-  font-size: var(--fs-18);
-  letter-spacing: 0.22em;
-  color: rgba(196, 167, 108, 0.8);
+.plate-art {
+  width: 360rpx;
+  height: 360rpx;
+  margin-top: 12rpx;
 }
 
 .plate-name {
-  position: relative;
   display: block;
-  margin-top: 24rpx;
-  font-size: var(--fs-44);
-  color: #FFFFFF;
+  margin-top: 12rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-40);
   font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #2E2618;
+  text-align: center;
 }
 
 .plate-latin {
-  position: relative;
   display: block;
   margin-top: 8rpx;
-  font-size: var(--fs-26);
-  font-style: italic; font-family: var(--font-latin);
-  color: var(--color-primary);
+  font-family: var(--font-latin);
+  font-style: italic;
+  font-size: var(--fs-24);
+  color: #8B6F47;
+  text-align: center;
 }
 
-.meta {
-  position: relative;
+.plate-meta {
   display: flex;
-  gap: 8rpx;
-  margin-top: 20rpx;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10rpx;
+  margin-top: 24rpx;
+  padding-top: 20rpx;
+  border-top: 1rpx solid rgba(46, 38, 24, 0.18);
   font-size: var(--fs-22);
-  color: #A09A90;
+  color: #5E5444;
 }
 
-.dot-sep { color: #4A4540; }
+.dot-sep { color: #8A7F6C; }
 
-.meta-spot {
-  color: var(--color-primary);
-  letter-spacing: 0.04em;
+.plate.is-blank {
+  min-height: 520rpx;
+  justify-content: center;
+  border: 2rpx dashed rgba(196, 167, 108, 0.24);
 }
 
-.dots {
-  position: relative;
-  display: flex;
-  gap: 8rpx;
-  margin-top: 20rpx;
+.blank-no {
+  font-family: var(--font-mono);
+  font-size: 96rpx;
+  color: rgba(196, 167, 108, 0.42);
 }
 
-.dot {
-  width: 12rpx;
-  height: 12rpx;
-  border-radius: 50%;
-  background: #302810;
+.blank-t {
+  margin-top: 16rpx;
+  font-size: var(--fs-24);
+  color: var(--color-text-secondary);
 }
 
-.dot.on { background: var(--color-primary); }
-.plate-silver .dot.on { background: #C8C8C8; }
+.blank-spot {
+  margin-top: 12rpx;
+  font-size: var(--fs-22);
+  color: var(--brass-300);
+  letter-spacing: 0.08em;
+}
+
+.sec-eyebrow {
+  display: block;
+  margin-bottom: 16rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
+}
 
 .locked-note,
 .essay-block {
-  margin-bottom: 32rpx;
+  margin: 40rpx 0 32rpx;
 }
 
+/* 那段话：宋体、宽行距 —— 图鉴的正文 */
 .essay {
   display: block;
+  font-family: var(--font-brand);
   font-size: var(--fs-30);
-  line-height: 1.75;
-  color: #D5D1C8;
+  line-height: 1.9;
+  color: #E0DAD0;
 }
 
 .facts {
-  border-top: 1rpx solid #262320;
-  padding-top: 8rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
+/* 事实条：发丝线两栏行（左签名、右正文） */
 .fact {
+  display: flex;
+  gap: 24rpx;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #262320;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .fact-k {
-  display: block;
-  font-size: var(--fs-20);
-  letter-spacing: 0.16em;
+  flex-shrink: 0;
+  width: 112rpx;
+  font-size: var(--fs-22);
+  line-height: 1.6;
+  letter-spacing: 0.08em;
   color: var(--color-text-secondary);
-  margin-bottom: 8rpx;
 }
+
+.fact-row { flex: 1; min-width: 0; }
 
 .fact-row {
   display: flex;
@@ -287,11 +296,7 @@ page { background: #1A1814; }
 
 
 .related {
-  margin-top: 48rpx;
-  padding: 32rpx;
-  background: #1F1D1A;
-  border: 1rpx solid rgba(38, 35, 32, 0.66);
-  border-radius: var(--radius-lg);
+  margin-top: 56rpx;
 }
 
 .related.soft {
@@ -336,7 +341,7 @@ page { background: #1A1814; }
   display: flex;
   align-items: flex-start;
   padding: 24rpx 0 0;
-  border-top: 1rpx solid rgba(38, 35, 32, 0.66);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .product + .product {
@@ -395,7 +400,7 @@ page { background: #1A1814; }
   letter-spacing: 0.02em;
 }
 
-.logs { margin-top: 48rpx; }
+.logs { margin-top: 56rpx; }
 
 .logs-head {
   display: flex;
@@ -412,9 +417,10 @@ page { background: #1A1814; }
 
 .sec-t {
   display: block;
-  font-size: var(--fs-22);
-  letter-spacing: 0.16em;
-  color: #A09A90;
+  font-family: var(--font-brand);
+  font-size: var(--fs-30);
+  letter-spacing: 0.08em;
+  color: #F3ECDD;
 }
 
 .logs > .sec-t {
@@ -489,9 +495,13 @@ page { background: #1A1814; }
 
 .collect-dock {
   position: fixed;
-  left: 32rpx;
-  right: 32rpx;
-  bottom: calc(24rpx + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* 实底底栏（2026-10-17）：浮空按钮下滚过的正文会从缝里露出来 */
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: #1A1814;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
   z-index: 20;
   display: flex;
 }
@@ -529,23 +539,23 @@ page { background: #1A1814; }
 }
 
 
-.series-line,
 .method-line {
-  position: relative;
   display: block;
-  margin-top: 12rpx;
+  text-align: center;
   font-size: var(--fs-22);
-  color: var(--color-primary);
+  color: var(--color-text-secondary);
   letter-spacing: 0.08em;
 }
 
-.method-line { color: #A09A90; }
-
 .share-dock {
   position: fixed;
-  left: 32rpx;
-  right: 32rpx;
-  bottom: calc(24rpx + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* 实底底栏（2026-10-17）：浮空按钮下滚过的正文会从缝里露出来 */
+  padding: 20rpx 32rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: #1A1814;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
   z-index: 20;
   display: flex;
   flex-direction: column;

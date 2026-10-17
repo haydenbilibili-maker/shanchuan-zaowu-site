@@ -1,6 +1,5 @@
 // subpackages/extra/user/achievements/index.js
 const app = getApp();
-const { getPageNavInsets } = require('../../utils/pageNav');
 const easterEgg = require('../../../../utils/easterEgg');
 const { markAchievementsSeen } = require('../../../../utils/badgeDisplay');
 
@@ -67,60 +66,118 @@ function buildRemainText(id, progress, threshold, unit) {
   return remain > 0 ? `还差 ${remain}${u} 即可点亮` : '即将点亮';
 }
 
-function buildFilterTabs(stats) {
-  const s = stats || {};
-  return [
-    { key: 'all', label: '全部', count: s.total != null ? s.total : null },
-    { key: 'unlocked', label: '已点亮', count: s.unlocked != null ? s.unlocked : null },
-    { key: 'locked', label: '未点亮', count: s.locked != null ? s.locked : null }
-  ];
+/*
+ * 2026-10-17 重设计「馆志 · 成长线」：
+ * 同一件事的分档徽章（浏览 10 → 50 → 100）原来是三张各带进度条的卡片 —— 24 张卡、三层筛选。
+ * 现在按「成长线」收成一行：一串铭牌节点（点亮 = 纸面铭牌、未点亮 = 发丝空环），
+ * 通往下一枚的那段线按进度部分填色，行尾一句「下一枚『探索家』· 还差 32 次」。
+ * 分组只在前端（云函数 getUserAchievements 出入参不变）；云端新增未登记的徽章自动按 id 前缀成线，不会丢。
+ */
+const TRACK_DEFS = [
+  { key: 'explore', type: 'explore', name: '浏览', ids: ['explore_10', 'explore_50', 'explore_100'], labels: ['10', '50', '100'] },
+  { key: 'search', type: 'explore', name: '检索', ids: ['search_5', 'search_20'], labels: ['5', '20'] },
+  { key: 'collect', type: 'collect', name: '收藏', ids: ['collect_5', 'collect_10', 'collect_50'], labels: ['5', '10', '50'] },
+  { key: 'folder', type: 'collect', name: '收藏夹', ids: ['folder_3'], labels: ['3'] },
+  { key: 'atlas', type: 'collect', name: '山海图鉴', ids: ['atlas_first', 'atlas_frost', 'atlas_overwinter', 'atlas_mountain', 'atlas_volume'], labels: ['第一页', '霜降', '越冬', '守山', '卷一'] },
+  { key: 'share', type: 'social', name: '分享', ids: ['share_1', 'share_5', 'share_20'], labels: ['1', '5', '20'] },
+  { key: 'spend', type: 'consumption', name: '馆藏', ids: ['first_purchase', 'spend_500', 'spend_2000', 'spend_10000'], labels: ['首单', '¥500', '¥2000', '¥1万'] },
+  { key: 'course', type: 'learning', name: '课程', ids: ['course_1', 'course_5'], labels: ['1', '5'] },
+  { key: 'certificate', type: 'learning', name: '证书', ids: ['certificate_1', 'certificate_5'], labels: ['1', '5'] }
+];
+
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
+
+/** 一条成长线的视图：节点 + 每段连线的填充比例 + 下一枚 */
+function trackView(def, list) {
+  const nodes = list.map((a, i) => ({
+    id: a.id,
+    roman: ROMAN[i] || String(i + 1),
+    label: (def.labels && def.labels[def.ids.indexOf(a.id)]) || a.name,
+    unlocked: a.unlocked,
+    achievement: a
+  }));
+  const next = list.find((a) => !a.unlocked) || null;
+  const nextIndex = next ? list.indexOf(next) : -1;
+  // 第 i 段连线连着节点 i 与 i+1：两端都亮 = 满；通往「下一枚」的那段按它的进度填
+  const links = nodes.slice(1).map((n, i) => {
+    if (n.unlocked) return 100;
+    if (i + 1 === nextIndex && nodes[i].unlocked) return next.progressPercent;
+    return 0;
+  });
+  nodes.forEach((n, i) => { n.linkFill = i < links.length ? links[i] : -1; });
+  const got = list.filter((a) => a.unlocked).length;
+  return {
+    key: def.key,
+    name: def.name,
+    got,
+    total: list.length,
+    done: !next,
+    nodes,
+    nextName: next ? next.name : '',
+    // 行内已有「下一枚」，去掉 remainText 尾巴上的「即可点亮」
+    nextRemain: next ? String(next.remainText || '').replace(/\s*即可点亮$/, '') : '',
+    nextPercent: next ? next.progressPercent : 100,
+    nextAchievement: next
+  };
 }
 
-function buildSections(achievementsByType, viewFilter) {
-  return TYPE_DEFS.map((def) => {
-    const all = (Array.isArray(achievementsByType[def.type]) ? achievementsByType[def.type] : [])
-      .map(normalizeAchievement)
-      .filter(Boolean);
-
-    const unlockedList = all.filter((a) => a.unlocked);
-    const lockedList = all.filter((a) => !a.unlocked);
-
-    let visible = all;
-    if (viewFilter === 'unlocked') visible = unlockedList;
-    if (viewFilter === 'locked') visible = lockedList;
-
-    const usePartition = viewFilter === 'all';
-
+/** 五章（按类型）× 成长线 */
+function buildChapters(all) {
+  const byId = {};
+  all.forEach((a) => { if (a && a.id) byId[a.id] = a; });
+  const used = {};
+  const tracksByType = {};
+  TRACK_DEFS.forEach((def) => {
+    const list = def.ids.map((id) => byId[id]).filter(Boolean);
+    if (!list.length) return;
+    list.forEach((a) => { used[a.id] = true; });
+    (tracksByType[def.type] = tracksByType[def.type] || []).push(trackView(def, list));
+  });
+  // 云端新加、前端未登记的徽章：按 id 前缀（去掉末段）成线，门槛从小到大
+  const rest = {};
+  all.filter((a) => a && a.id && !used[a.id]).forEach((a) => {
+    const key = `${a.type || 'other'}:${String(a.id).replace(/_[^_]*$/, '')}`;
+    (rest[key] = rest[key] || []).push(a);
+  });
+  Object.keys(rest).forEach((key) => {
+    const list = rest[key].sort((x, y) => x.threshold - y.threshold);
+    const type = key.split(':')[0];
+    const def = { key, type, name: list[0].name, ids: list.map((a) => a.id) };
+    (tracksByType[type] = tracksByType[type] || []).push(trackView(def, list));
+  });
+  return TYPE_DEFS.map((def, i) => {
+    const tracks = tracksByType[def.type] || [];
     return {
-      ...def,
-      achievements: all,
-      unlockedList,
-      lockedList,
-      visible,
-      unlockedCount: unlockedList.length,
-      lockedCount: lockedList.length,
-      totalCount: all.length,
-      usePartition,
-      showUnlockedBlock: usePartition && unlockedList.length > 0,
-      showLockedBlock: usePartition && lockedList.length > 0,
-      isEmpty: visible.length === 0
+      type: def.type,
+      no: ROMAN[i],
+      name: def.name.replace(/类$/, ''),
+      enName: def.enName,
+      tracks,
+      got: tracks.reduce((n, t) => n + t.got, 0),
+      total: tracks.reduce((n, t) => n + t.total, 0)
     };
-  }).filter((section) => section.totalCount > 0 && (viewFilter === 'all' || !section.isEmpty));
+  }).filter((c) => c.tracks.length);
+}
+
+/** 下一枚：离点亮最近的三枚（进度高者优先；全是 0 时按门槛小者优先 —— 最容易的先给） */
+function buildNextUp(all) {
+  return all
+    .filter((a) => a && !a.unlocked)
+    .sort((a, b) => (b.progressPercent - a.progressPercent) || (a.threshold - b.threshold))
+    .slice(0, 3);
 }
 
 Page({
   data: {
-    statusBarHeight: 20,
-    navPaddingRight: 16,
-    headerBlockPx: 88,
     loading: true,
     refreshing: false,
     loadError: false,
     achievements: [],
     achievementTypes: [],
     achievementStats: null,
-    viewFilter: 'all',
-    filterTabs: buildFilterTabs(null),
+    chapters: [],
+    nextUp: [],
+    ticks: [],
     showModal: false,
     selectedAchievement: null,
     lastLoadTime: 0,
@@ -135,27 +192,13 @@ Page({
     relicsTotal: 0,
     relicsPercent: 0,
     relicsUnlocked: false,
-    relicsName: '山海拾遗',
-    emptyFilterHint: ''
+    relicsName: '山海拾遗'
   },
 
   onLoad(options) {
-    try {
-      const nav = getPageNavInsets({ headerExtraRpx: 112, nativeNav: true });
-      this.setData({
-        statusBarHeight: nav.statusBarHeight,
-        navPaddingRight: nav.navPaddingRight,
-        headerBlockPx: nav.headerBlockPx
-      });
-    } catch (e) {
-      console.warn('获取系统信息失败:', e);
-    }
-
-    // 需求 28：从祈福墙的「博物笔记」入口进来时直接落到遗物区。
-    // 遗物卡片只在「全部」筛选下渲染，所以先确保筛选是 all，再滚动。
+    // 需求 28：从「博物笔记」入口进来时直接落到遗物区（山海拾遗常驻页底，无筛选）
     if (String((options && options.focus) || '').trim() === 'relics') {
       this._focusRelics = true;
-      if (this.data.viewFilter !== 'all') this.setData({ viewFilter: 'all' });
     }
 
     this.loadAchievements();
@@ -244,10 +287,13 @@ Page({
       currentStats.progress = Math.round((currentStats.unlocked / currentStats.total) * 100);
     }
 
-    const viewFilter = options.viewFilter || this.data.viewFilter || 'all';
-    const achievementTypes = buildSections(byType, viewFilter);
-    const emptyFilterHint = this._emptyFilterHint(viewFilter, currentStats);
-    const filterTabs = buildFilterTabs(currentStats);
+    const allByType = [];
+    TYPE_DEFS.forEach((def) => { allByType.push(...byType[def.type]); });
+    // 类型不在五章里的（云端新类型）也收进来，按 buildChapters 的兜底成线
+    normalized.forEach((a) => { if (!allByType.find((x) => x.id === a.id)) allByType.push(a); });
+    const chapters = buildChapters(allByType);
+    const nextUp = buildNextUp(allByType);
+    const ticks = chapters.reduce((acc, c) => acc.concat(...c.tracks.map((t) => t.nodes.map((n) => ({ id: n.id, lit: n.unlocked })))), []);
 
     const currentUnlockedCount = currentStats.unlocked || 0;
     if (
@@ -270,40 +316,18 @@ Page({
 
     this.setData({
       achievements: normalized,
-      achievementTypes,
+      achievementTypes: chapters,
+      chapters,
+      nextUp,
+      ticks,
       achievementStats: currentStats,
-      viewFilter,
-      filterTabs,
-      emptyFilterHint,
       loading: false,
       refreshing: false,
       loadError: false,
       lastLoadTime: Date.now(),
       previousUnlockedCount: currentUnlockedCount
     }, () => {
-      this.animateProgress();
       this._markAchievementsSeenLocal();
-    });
-  },
-
-  _emptyFilterHint(viewFilter, stats) {
-    if (viewFilter === 'unlocked' && (!stats || !stats.unlocked)) {
-      return '还没有点亮的徽章。去馆里逛逛，慢慢收集吧。';
-    }
-    if (viewFilter === 'locked' && stats && stats.locked === 0) {
-      return '所有徽章都已点亮，铜牌柜满格。';
-    }
-    return '';
-  },
-
-  _rebuildSections(viewFilter) {
-    const byType = this._rawByType || {};
-    const achievementTypes = buildSections(byType, viewFilter);
-    const emptyFilterHint = this._emptyFilterHint(viewFilter, this.data.achievementStats);
-    this.setData({
-      viewFilter,
-      achievementTypes,
-      emptyFilterHint
     });
   },
 
@@ -357,20 +381,20 @@ Page({
     }
   },
 
-  onFilterChange(e) {
-    const key = e.currentTarget.dataset.key;
-    if (!key || key === this.data.viewFilter) return;
-    wx.vibrateShort({ type: 'light' });
-    this._rebuildSections(key);
-  },
-
   onRefresh() {
     this.setData({ refreshing: true });
     this.loadAchievements(true);
   },
 
+  // 2026-10-17：内容改回页面滚动（原 scroll-view 里 wx.pageScrollTo 滚不动，focus=relics 从未真正落到山海拾遗）
+  onPullDownRefresh() {
+    Promise.resolve(this.loadAchievements(true)).finally(() => wx.stopPullDownRefresh());
+  },
+
+  /** 点成长线上的节点 / 下一枚的行：按 id 取（dataset 里不再塞整个对象） */
   viewAchievement(e) {
-    const achievement = e.currentTarget.dataset.achievement;
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    const achievement = ds.achievement || (this.data.achievements || []).find((a) => a && a.id === ds.id);
     if (!achievement) return;
     wx.vibrateShort({ type: 'light' });
     this.setData({
@@ -390,14 +414,6 @@ Page({
 
   onRetry() {
     this.loadAchievements(true);
-  },
-
-  animateProgress() {
-    setTimeout(() => {
-      const query = wx.createSelectorQuery();
-      query.selectAll('.progress-fill').boundingClientRect();
-      query.exec(() => {});
-    }, 100);
   },
 
   showUnlockAnimation(achievement) {
@@ -493,7 +509,6 @@ Page({
   },
 
   loadRelics() {
-    const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
     const shortSource = (source) => {
       const s = String(source || '');
       const m = s.match(/·([^》]+)/);
