@@ -21,6 +21,7 @@ const {
 } = require('../../../utils/wishWall')
 const { wishTextCount, wishTextTruncate } = require('../../../utils/wishTextCount')
 const { pickWallProduct, buildExhibitView } = require('../utils/wallExhibitProduct')
+const wishHandoff = require('../utils/wishHandoff')
 const { getCustomNavLayout } = require('../utils/customNav')
 const { trackBehavior } = require('../../../utils/trackBehavior')
 const { fetchContentDisplayFlags, toastWishWallClosed } = require('../../../utils/contentDisplayFlags')
@@ -149,7 +150,24 @@ Page({
     this.setData({ allowed, flagChecked: true, loading: allowed, gateError: false })
     if (!allowed) return
     void this.resolveExhibit()
+    this.applyPlayHandoff()
     await this.refresh()
+  },
+
+  onShow() {
+    if (this.data.allowed) this.applyPlayHandoff()
+  },
+
+  /**
+   * 今日一签「写成心愿」带回的一句（`utils/wishHandoff`，一次性、5 分钟时效、读到即删）：
+   * 预填进写签层并直接打开 —— 返回（navigateBack → onShow）与重进（reLaunch → 闸门放行）两条路都接得住。
+   */
+  applyPlayHandoff() {
+    const h = wishHandoff.take()
+    if (!h || !h.draft) return
+    const text = wishTextTruncate(h.draft, TEXT_MAX)
+    this.setData({ draft: text, draftCount: wishTextCount(text) })
+    this.openCompose()
   },
 
   onGateRetry() {

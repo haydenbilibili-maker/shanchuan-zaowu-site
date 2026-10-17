@@ -143,20 +143,6 @@ const R2_LIGHT_SOURCE = {
   'components/WishWallEntry/index.wxss': [
     [/wish-wall-entry-lamp$/, '入口的一盏灯（祈福墙「灯」意象）']
   ],
-  'subpackages/feature/wish-wall/index.wxss': [
-    [/^\.ww-lantern$/, '厅顶灯笼'],
-    [/^\.ww-lamp-dot$/, '灯点'],
-    [/^\.ww-dm-spark$/, '弹幕落点火花'],
-    [/^\.ww-dm-slip\.is-landing$/, '落愿瞬间回响（瞬态，非常驻）'],
-    [/^\.ww-desk\.is-posted$/, '落愿瞬间回响（瞬态）'],
-    [/^\.ww-tag\.is-fresh$/, '刚落愿的签（瞬态）'],
-    [/^\.ww-echo$/, '墙脚回声带（瞬态）'],
-    [/^30%$/, '墙体回响关键帧（瞬态）']
-  ],
-  'subpackages/plays/play-zodiac/index.wxss': [
-    [/^\.rp-dot$/, '星盘星点'],
-    [/^\.rp-wheel-needle::before$/, '指针星芒']
-  ]
 }
 const isLightSource = (relPath, sel) => {
   const key = Object.keys(R2_LIGHT_SOURCE).find((k) => relPath.endsWith(k))

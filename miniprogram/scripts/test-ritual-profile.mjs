@@ -28,7 +28,6 @@ const ROOT = resolve(HERE, '..', '..')
 const nodeRequire = createRequire(import.meta.url)
 
 const R = (p) => resolve(ROOT, p)
-const CORE_PATH = R('miniprogram/subpackages/feature/utils/ritualProfileCore.js')
 const CORE_COPY_PATH = R('miniprogram/cloudfunctions/wishRitualProfile/ritualProfileCore.js')
 const CLOUD_INDEX = R('miniprogram/cloudfunctions/wishRitualProfile/index.js')
 
@@ -104,23 +103,16 @@ function record(list, prefix) {
  * 0) 契约面：文件同源 / 三处同步 / 云函数登记
  * ------------------------------------------------------------------ */
 
-const core = loadCjs('miniprogram/subpackages/feature/utils/ritualProfileCore.js', { require: markerRequire })
-const coreCopy = loadCjs('miniprogram/cloudfunctions/wishRitualProfile/ritualProfileCore.js', { require: markerRequire })
-const wishRitual = loadCjs('miniprogram/subpackages/feature/utils/wishRitual.js', { require: markerRequire })
-const ritualProfile = loadCjs('miniprogram/subpackages/feature/utils/ritualProfile.js', { require: markerRequire })
+// 2026-10-17 旧祈福墙退场：点灯 / 木鱼及其客户端封装（feature/utils/ritualProfile*、wishRitual）随页面删除，
+//   C 端已无调用方；云函数 wishRitualProfile 仍在线上（删函数属部署动作，另行处理），
+//   所以本守卫只保留**服务端**：纯函数核（云函数副本）+ 集合规则 + 云函数真实分支。
+const core = loadCjs('miniprogram/cloudfunctions/wishRitualProfile/ritualProfileCore.js', { require: markerRequire })
 
 function isIdenticalText(a, b) {
   return String(a) === String(b)
 }
 
-const coreText = readFileSync(CORE_PATH, 'utf8')
-const coreCopyText = readFileSync(CORE_COPY_PATH, 'utf8')
-check(
-  '纯函数核两份副本逐字节同源（客户端 ↔ 云函数）',
-  isIdenticalText(coreText, coreCopyText),
-  '改一份必须同步另一份；否则合并语义漂移'
-)
-eq('STREAK_MAX 与本地存档窗口 KEEP_DAYS 一致（防两处漂移）', core.STREAK_MAX, wishRitual.KEEP_DAYS)
+const coreText = readFileSync(CORE_COPY_PATH, 'utf8')
 
 const rule = JSON.parse(readFileSync(R('cloudbase/rules/wish_ritual_profiles.json'), 'utf8'))
 eq('集合规则 write 必须为 false（禁止客户端直写绕过校验）', rule.write, false)
@@ -145,7 +137,6 @@ check(
 )
 check('云函数目录至少含 index.js / package.json / ritualProfileCore.js', ['index.js', 'package.json', 'ritualProfileCore.js']
   .every((f) => existsSync(resolve(dirname(CLOUD_INDEX), f))))
-eq('客户端封装的云函数名与目录/登记一致', ritualProfile.CLOUD_FN, 'wishRitualProfile')
 
 /* ------------------------------------------------------------------ *
  * 1) 纯函数核：合并语义 / 校验 / 跳变闸
@@ -261,118 +252,6 @@ function coreChecks(C) {
 const realCoreFailures = coreChecks(core)
 record(realCoreFailures, '[core] ')
 check('纯函数核自身零失败（--selftest 的对照）', realCoreFailures.every((r) => r.cond), `${realCoreFailures.filter((r) => !r.cond).length} 条失败`)
-
-/* ------------------------------------------------------------------ *
- * 2) 客户端封装：本地快照 / 恢复回填 / 失败静默降级
- * ------------------------------------------------------------------ */
-
-// 内存版 wx 存储桩（wishRitual 读写都走 wx.getStorageSync / setStorageSync）
-const store = new Map()
-const baseWx = {
-  getStorageSync: (k) => (store.has(k) ? store.get(k) : ''),
-  setStorageSync: (k, v) => { store.set(k, v) },
-  removeStorageSync: (k) => { store.delete(k) }
-}
-globalThis.wx = baseWx
-function resetStore() {
-  store.clear()
-  delete globalThis.wx.cloud
-}
-
-// 2a. 纯函数：本地快照 / 恢复计划
-const snapEmpty = ritualProfile.snapshotFromState({ days: {} }, 0)
-check('空存档快照为全 0', snapEmpty.streak === 0 && snapEmpty.lastLitDayKey === '' && snapEmpty.muyuCount === 0)
-const snap = ritualProfile.snapshotFromState(
-  { days: { '2026-09-18': { litAt: 1 }, '2026-09-19': { litAt: 2 }, '2026-09-20': { litAt: 3 } } },
-  7
-)
-eq('快照连续天数 = 3', snap.streak, 3)
-eq('快照最近点灯日', snap.lastLitDayKey, '2026-09-20')
-eq('快照功德', snap.muyuCount, 7)
-const snapGap = ritualProfile.snapshotFromState(
-  { days: { '2026-09-17': { litAt: 1 }, '2026-09-19': { litAt: 2 }, '2026-09-20': { litAt: 3 } } },
-  0
-)
-eq('断档后只算截至最近连续段（19→20 = 2）', snapGap.streak, 2)
-check('快照锚点是最近点灯日（今天没点也不为 0）', snap.streak === 3)
-eq('恢复计划按从早到晚给出日期', JSON.stringify(ritualProfile.planRestoreDays({ streak: 3, lastLitDayKey: '2026-09-20' })),
-  JSON.stringify(['2026-09-18', '2026-09-19', '2026-09-20']))
-eq('streak=0 不恢复任何日期', ritualProfile.planRestoreDays({ streak: 0, lastLitDayKey: '2026-09-20' }).length, 0)
-eq('无锚点不恢复任何日期', ritualProfile.planRestoreDays({ streak: 5, lastLitDayKey: '' }).length, 0)
-eq('恢复计划钳到本地窗口（99 → 30）', ritualProfile.planRestoreDays({ streak: 99, lastLitDayKey: '2026-09-20' }).length, core.STREAK_MAX)
-
-// 2b. 回填本地：读得回来，且不超窗口
-resetStore()
-const after1 = ritualProfile.applyProfileToLocal({ streak: 3, lastLitDayKey: '2026-09-20', muyuCount: 12 })
-eq('回填后本地连续天数 = 3', after1.streak, 3)
-eq('回填后本地功德 = 12', after1.muyuCount, 12)
-eq('回填后本地最近点灯日', after1.lastLitDayKey, '2026-09-20')
-resetStore()
-const after2 = ritualProfile.applyProfileToLocal({ streak: 99, lastLitDayKey: '2026-09-20', muyuCount: 1 })
-eq('超窗口回填被钳到 30', after2.streak, core.STREAK_MAX)
-check('超窗口回填后本地实际日期键 ≤ 30', Object.keys(wishRitual.readState().days).length <= core.STREAK_MAX,
-  `got ${Object.keys(wishRitual.readState().days).length}`)
-
-// 2c. 降级路径：没有 wx.cloud / 调用抛错 / 服务端拒绝 → 本地照常可用
-resetStore()
-wishRitual.writeMuyuCount(5)
-wishRitual.lightLamp('2026-09-20') // 本地已经有状态
-const localBefore = ritualProfile.readLocalProfile()
-const noCloudLoad = await ritualProfile.loadFromCloud()
-check('wx.cloud 缺失时 loadFromCloud 不抛、返回降级', noCloudLoad.ok === false && noCloudLoad.degraded === true)
-eq('降级时返回本地档案（streak）', noCloudLoad.profile.streak, localBefore.streak)
-eq('降级时返回本地档案（muyu）', noCloudLoad.profile.muyuCount, 5)
-const noCloudSync = await ritualProfile.syncToCloud()
-check('wx.cloud 缺失时 syncToCloud 不抛、返回降级', noCloudSync.ok === false && noCloudSync.degraded === true)
-eq('降级后本地功德未被清零', wishRitual.readMuyuCount(), 5)
-eq('降级后本地点灯记录仍在', wishRitual.getLamp('2026-09-20').lit, true)
-
-resetStore()
-wishRitual.writeMuyuCount(9)
-globalThis.wx.cloud = { callFunction: async () => { throw new Error('network down') } }
-const throwLoad = await ritualProfile.loadFromCloud()
-check('callFunction 抛错时 loadFromCloud 静默降级', throwLoad.ok === false && throwLoad.degraded === true)
-eq('抛错后本地功德仍在', wishRitual.readMuyuCount(), 9)
-const throwSync = await ritualProfile.syncToCloud()
-check('callFunction 抛错时 syncToCloud 静默降级', throwSync.ok === false && throwSync.degraded === true)
-eq('抛错后本地功德仍为 9', wishRitual.readMuyuCount(), 9)
-
-resetStore()
-globalThis.wx.cloud = { callFunction: async () => ({ result: { success: false, code: 'MUYU_JUMP', msg: '跳变过大' } }) }
-const rejected = await ritualProfile.syncToCloud()
-check('服务端拒绝时客户端降级并带 code', rejected.ok === false && rejected.degraded === true && rejected.code === 'MUYU_JUMP')
-
-// 2d. 正常路径：推送负载正确 / 云端合并结果回填本地
-resetStore()
-wishRitual.writeMuyuCount(4)
-wishRitual.lightLamp('2026-09-20')
-let sent = null
-globalThis.wx.cloud = {
-  callFunction: async (args) => {
-    sent = args
-    return { result: { success: true, changed: true, profile: { streak: 8, lastLitDayKey: '2026-09-20', muyuCount: 90 } } }
-  }
-}
-const syncOk = await ritualProfile.syncToCloud()
-check('正常同步返回 ok', syncOk.ok === true && syncOk.degraded === false)
-eq('推送给云函数的 action', sent && sent.data && sent.data.action, 'sync')
-eq('推送给云函数的云函数名', sent && sent.name, 'wishRitualProfile')
-eq('推送 payload 含本地 streak', sent.data.streak, 1)
-eq('推送 payload 含本地 lastLitDayKey', sent.data.lastLitDayKey, '2026-09-20')
-eq('推送 payload 含本地 muyuCount', sent.data.muyuCount, 4)
-eq('云端更大的 streak 回填本地', ritualProfile.readLocalProfile().streak, 8)
-eq('云端更大的 muyuCount 回填本地', ritualProfile.readLocalProfile().muyuCount, 90)
-
-resetStore()
-globalThis.wx.cloud = {
-  callFunction: async () => ({ result: { success: true, exists: true, profile: { streak: 6, lastLitDayKey: '2026-09-19', muyuCount: 42 } } })
-}
-const loadOk = await ritualProfile.loadFromCloud()
-check('正常 loadFromCloud 返回 ok', loadOk.ok === true && loadOk.degraded === false)
-eq('loadFromCloud 合并后 streak', loadOk.profile.streak, 6)
-eq('loadFromCloud 后本地功德已回填', wishRitual.readMuyuCount(), 42)
-eq('loadFromCloud 后本地点灯记录已恢复', ritualProfile.readLocalProfile().streak, 6)
-delete globalThis.wx.cloud
 
 /* ------------------------------------------------------------------ *
  * 3) 云函数：真源码加载 + stub db，跑真实分支（幂等 / 合并 / 校验 / 归属）
@@ -538,7 +417,7 @@ async function cloudChecks(C) {
   return out
 }
 
-const realCloudFailures = await cloudChecks(coreCopy) // 用云函数自己的副本，顺便证明副本真能跑
+const realCloudFailures = await cloudChecks(core) // 用云函数自己的副本，顺便证明副本真能跑
 record(realCloudFailures, '[cloud] ')
 check('云函数行为零失败（--selftest 的对照）', realCloudFailures.every((r) => r.cond), `${realCloudFailures.filter((r) => !r.cond).length} 条失败`)
 
@@ -556,16 +435,16 @@ if (process.argv.includes('--selftest')) {
   const brokenJump = coreChecks({ ...core, checkMonotonicJump: () => ({ ok: true }) })
   check('[selftest] 去掉跳变闸 会被纯函数断言检出', brokenJump.some((r) => !r.cond))
 
-  const brokenCloud = await cloudChecks({ ...coreCopy, validateProfileInput: () => ({ ok: true, profile: { streak: 0, lastLitDayKey: '', muyuCount: 0 } }) })
+  const brokenCloud = await cloudChecks({ ...core, validateProfileInput: () => ({ ok: true, profile: { streak: 0, lastLitDayKey: '', muyuCount: 0 } }) })
   check('[selftest] 云函数侧去掉校验会被行为断言检出', brokenCloud.some((r) => !r.cond))
 
-  const brokenCloudMerge = await cloudChecks({ ...coreCopy, mergeProfiles: (l, r) => coreCopy.pickProfile(r) })
+  const brokenCloudMerge = await cloudChecks({ ...core, mergeProfiles: (l, r) => core.pickProfile(r) })
   check('[selftest] 云函数侧"整份取新"（而非逐字段取优）会被行为断言检出', brokenCloudMerge.some((r) => !r.cond))
 
   check('[selftest] 文件同源判据在内容不同时报 false', isIdenticalText(coreText, coreText + '\n// drift') === false)
 
   const brokenIdempotent = await cloudChecks({
-    ...coreCopy,
+    ...core,
     sameProfile: () => false // 每次调用都当作"有变化" → 幂等断言必须失败
   })
   check('[selftest] 破坏"无变化不写库"会被幂等断言检出', brokenIdempotent.some((r) => !r.cond))

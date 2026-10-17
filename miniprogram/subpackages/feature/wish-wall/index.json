@@ -1,20 +1,7 @@
 {
-  "navigationBarTitleText": "祈福墙",
-  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTitleText": "马上有 · 心愿签",
+  "navigationBarBackgroundColor": "#151412",
   "navigationBarTextStyle": "white",
-  "backgroundColor": "#1A1814",
-  "backgroundColorTop": "#1A1814",
-  "backgroundColorBottom": "#1A1814",
-  "backgroundTextStyle": "light",
-  "enablePullDownRefresh": true,
-  "usingComponents": {
-    "easter-egg-note": "/components/EasterEggNote/index",
-    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index",
-    "app-toast": "/components/AppToast/index",
-    "wall-feed": "/subpackages/feature/components/WallFeed/index",
-    "play-sheet": "/subpackages/plays/components/PlaySheet/index"
-  },
-  "componentPlaceholder": {
-    "play-sheet": "view"
-  }
+  "backgroundColor": "#151412",
+  "usingComponents": {}
 }

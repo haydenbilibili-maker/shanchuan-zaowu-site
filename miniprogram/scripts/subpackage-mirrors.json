@@ -245,16 +245,6 @@
     "identical": true
   },
   {
-    "source": "subpackages/plays/config/ritualPlays.js",
-    "mirror": "subpackages/feature/config/ritualPlays.js",
-    "identical": true
-  },
-  {
-    "source": "subpackages/plays/utils/ritualPlayArchive.js",
-    "mirror": "subpackages/feature/utils/ritualPlayArchive.js",
-    "identical": true
-  },
-  {
     "source": "subpackages/plays/utils/wishHandoff.js",
     "mirror": "subpackages/feature/utils/wishHandoff.js",
     "identical": true
