@@ -116,9 +116,13 @@ function checks(s) {
       /wx:else class="recent-thumb is-empty"/.test(s.identifyWxml) &&
       /\[`recentList\[\$\{i\}\]\.thumb`\]: ''/.test(methodBody(s.identifyJs, 'onRecentThumbError')))
   // 2026-10-17 预约「入馆券」：页头一张票根（不再是双面翻转票）、分区头不再「中文 | ENGLISH」并列、预览库能解析表达式里的 <
-  add('R12-1 预约页头是一张随选择更新的票根（双面翻转票退场）',
-    /<view class="stub">/.test(s.bookingWxml) && !/ticket-3d-container|flipTicket|face-back/.test(s.bookingWxml) && !/flipTicket\(\)/.test(s.bookingJs) &&
-      /class="stub-v is-key">\{\{ticketInfo\.timeStr\}\}/.test(s.bookingWxml))
+  // 2026-10-17 产品负责人：「预约门票仍然使用之前的设计方案，按整体视觉适配即可，不要推翻重来」
+  add('R12-1 预约页头保留双面翻转典藏票（两面 + 翻面交互），只做视觉适配（无 emoji 水印）',
+    /<view class="ticket-3d-container \{\{isFlipped \? 'flipped' : ''\}\}" bindtap="flipTicket">/.test(s.bookingWxml) &&
+      /class="ticket-face face-front"/.test(s.bookingWxml) && /class="ticket-face face-back"/.test(s.bookingWxml) &&
+      /flipTicket\(\) \{[\s\S]{0,160}isFlipped: !this\.data\.isFlipped/.test(s.bookingJs) && /isFlipped: false/.test(s.bookingJs) &&
+      (s.bookingWxml.match(/class="val highlight[^"]*">\{\{ticketInfo\.timeStr\}\}/g) || []).length === 2 &&
+      !/🦋/.test(s.bookingWxml))
   add('R12-2 预约页分区头为眉标 + 中文主标两行（不再「选择日期 | SELECT DATE」同一节点并列）',
     !/class="section-label">[^<]*\|/.test(s.bookingWxml) && (s.bookingWxml.match(/<view class="section-label"><text class="sl-en">/g) || []).length === 4)
   add('R12-3 wxml-preview 跳过 {{ }} 内的 <（否则预约页无法离线出图）',
@@ -350,7 +354,9 @@ if (process.argv.includes('--selftest')) {
     ['工坊进度磁贴去掉按压态', 'atelierWxml', (t) => t.replace('bindtap="goPetOrders" hover-class="order-tile-press" hover-stay-time="80"', 'bindtap="goPetOrders"')],
     ['鉴定步骤移回遮罩外', 'identifyWxml', (t) => t.replace(/\n      <view class="steps">[\s\S]*?\n      <\/view>/, '')],
     ['鉴定记录入口去按压态', 'identifyWxml', (t) => t.replace('bindtap="goLog" hover-class="recent-item-press" hover-stay-time="80"', 'bindtap="goLog"')],
-    ['预约页头复活翻转票', 'bookingWxml', (t) => t.replace('<view class="stub">', '<view class="ticket-3d-container" bindtap="flipTicket"><view class="stub">')],
+    ['预约页头翻转票被推翻', 'bookingWxml', (t) => t.replace('<view class="ticket-face face-back">', '<view class="ticket-face">')],
+    ['预约票翻面处理器丢失', 'bookingJs', (t) => t.replace('isFlipped: !this.data.isFlipped', 'isFlipped: false')],
+    ['预约票水印回到 emoji', 'bookingWxml', (t) => t.replace('<text class="watermark">山海</text>', '<view class="watermark">🦋</view>')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],

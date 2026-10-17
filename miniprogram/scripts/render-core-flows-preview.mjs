@@ -459,6 +459,7 @@ const SCENES = [
       timeSlots: [{ time: '10:00', status: 'open' }, { time: '11:00', status: 'open' }, { time: '14:00', status: 'open' }, { time: '15:00', status: 'full' }, { time: '16:00', status: 'open' }, { time: '17:00', status: 'open' }], selectedTimeIndex: 2,
       courses: [], activities: [], selectedActivityId: '', bookingHistoryTab: 0, upcomingBookings: [], historyBookings: [], loadingBookings: false,
       showMintModal: false, mintAnimation: false, mintFinished: false, newTicketCode: '', regDialogShow: false } },
+  { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },
         { _id: 'b2', type: 'handcraft_course', title: '蝴蝶标本手作课', _id_short: 'C2K9', month: '10月', day: '26', time: '14:00 - 16:00', people: 1 }] } }

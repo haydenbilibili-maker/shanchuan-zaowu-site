@@ -78,6 +78,7 @@ Page(withAppModal({
     selectedActivityType: null, // 选中的类型：course 或 activity
     
     // 票据预览信息
+    isFlipped: false,
     ticketYear: new Date().getFullYear(),
     ticketInfo: {
       dateStr: '--.--',
@@ -323,6 +324,11 @@ Page(withAppModal({
     if (this.data.currentTab === 3) {
       this.loadBookingHistory();
     }
+  },
+
+  flipTicket() {
+    wx.vibrateShort({ type: 'light' });
+    this.setData({ isFlipped: !this.data.isFlipped });
   },
 
   async loadActivities() {

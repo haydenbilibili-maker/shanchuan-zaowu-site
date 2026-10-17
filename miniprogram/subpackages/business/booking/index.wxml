@@ -1,24 +1,53 @@
 <!--pages/booking/index.wxml-->
 <view class="container">
 
-  <!-- 1. 顶部：入馆券票根（2026-10-17 重构）—— 原双面翻转票（两面重复 + 🦋 水印 + VALID 章）收成一张浅纸票根：
-       左三格（日期 / 时段 / 人数）随选择实时更新，齿孔线右侧是持券人与类型。 -->
+  <!-- 1. 顶部：典藏票据预览（双面翻转票，2026-10-17 按整体视觉适配：A 面博物馆黑 + 黄铜，B 面浅纸 + 墨色；
+       结构与翻面交互保持原设计，只换配色 / 字体 / 水印，不推翻） -->
   <view class="ticket-header">
-    <view class="stub">
-      <view class="stub-pin" aria-hidden="true"></view>
-      <view class="stub-main">
-        <text class="stub-eyebrow">VISIT PASS · 入馆券 · NO.V-{{ticketYear}}</text>
-        <view class="stub-row">
-          <view class="stub-cell"><text class="stub-k">日期</text><text class="stub-v">{{ticketInfo.dateStr}}</text></view>
-          <view class="stub-cell"><text class="stub-k">时段</text><text class="stub-v is-key">{{ticketInfo.timeStr}}</text></view>
-          <view class="stub-cell"><text class="stub-k">人数</text><text class="stub-v">{{bookCount < 10 ? '0' + bookCount : bookCount}} 人</text></view>
+    <view class="ticket-3d-container {{isFlipped ? 'flipped' : ''}}" bindtap="flipTicket">
+      <!-- A面：博物馆黑 · 黄铜 -->
+      <view class="ticket-face face-front">
+        <view class="paper-texture"></view><view class="gold-strip"></view><text class="watermark">山海</text>
+        <view class="notch left"></view><view class="notch right"></view>
+        <view class="tp-header">
+          <view class="tp-brand"><text class="tp-logo">山海造物</text><text class="tp-tagline">把山海带回家</text><text class="tp-sub">NATURE'S CREATIONS</text></view>
+          <text class="tp-serial">NO.V-{{ticketYear}}</text>
         </view>
+        <view class="tp-body">
+          <view class="info-row">
+            <view class="info-item"><text class="label">日期 · DATE</text><text class="val">{{ticketInfo.dateStr}}</text></view>
+            <view class="info-item center"><text class="label">时间 · TIME</text><text class="val highlight">{{ticketInfo.timeStr}}</text></view>
+            <view class="info-item right"><text class="label">贵宾 · HOLDER</text><text class="val-calligraphy">{{contactName || '贵宾'}}</text></view>
+          </view>
+          <view class="info-row sub">
+            <view class="info-item"><text class="label">人数 · GUEST</text><text class="val-sm">{{bookCount < 10 ? '0' + bookCount : bookCount}} 人</text></view>
+            <view class="info-item right"><text class="label">请柬 · ACCESS</text><text class="val-sm">{{ticketInfo.typeStr}}</text></view>
+          </view>
+        </view>
+        <view class="tp-footer"><view class="security-thread"><view class="scan-light"></view></view><view class="stamp-seal">VALID</view></view>
+        <view class="flip-hint">轻触翻面 ↻</view>
       </view>
-      <view class="stub-tear" aria-hidden="true"></view>
-      <view class="stub-side">
-        <text class="stub-k">持券人</text>
-        <text class="stub-holder">{{contactName || '贵宾'}}</text>
-        <text class="stub-type">{{ticketInfo.typeStr}}</text>
+      <!-- B面：浅纸 · 墨色 -->
+      <view class="ticket-face face-back">
+        <view class="silver-strip"></view><text class="watermark light">山海</text>
+        <view class="notch left light"></view><view class="notch right light"></view>
+        <view class="tp-header light">
+          <view class="tp-brand"><text class="tp-logo light">山海造物</text><text class="tp-tagline light">把山海带回家</text><text class="tp-sub light">NATURE'S CREATIONS</text></view>
+          <text class="tp-serial light">NO.V-{{ticketYear}}</text>
+        </view>
+        <view class="tp-body">
+          <view class="info-row">
+            <view class="info-item"><text class="label light">日期 · DATE</text><text class="val light">{{ticketInfo.dateStr}}</text></view>
+            <view class="info-item center"><text class="label light">时间 · TIME</text><text class="val highlight light">{{ticketInfo.timeStr}}</text></view>
+            <view class="info-item right"><text class="label light">贵宾 · HOLDER</text><text class="val-calligraphy light">{{contactName || '贵宾'}}</text></view>
+          </view>
+          <view class="info-row sub">
+            <view class="info-item"><text class="label light">人数 · GUEST</text><text class="val-sm light">{{bookCount < 10 ? '0' + bookCount : bookCount}} 人</text></view>
+            <view class="info-item right"><text class="label light">请柬 · ACCESS</text><text class="val-sm light">{{ticketInfo.typeStr}}</text></view>
+          </view>
+        </view>
+        <view class="tp-footer light"><view class="security-thread light"><view class="scan-light"></view></view><view class="stamp-seal light">VALID</view></view>
+        <view class="flip-hint light">轻触翻面 ↻</view>
       </view>
     </view>
   </view>
