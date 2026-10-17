@@ -61,6 +61,37 @@ const WORKFLOW_CONTEXT = {
 
 const DETAIL_URL = '/subpackages/extra/user/messages/detail/index';
 
+/**
+ * 日轨（2026-10-17「信笺」重构）：信按日分组，每天第一封带一个 dayLabel（今天 / 昨天 / 10 月 12 日 / 2025 年 3 月 2 日）。
+ * 只读信上已有的 createTime（与 messageHelper 的 formattedTime 同源字段），不改共享件 messageHelper。
+ */
+function dayKeyOf(m) {
+  const raw = m && (m.createTime || m._createTime);
+  const d = raw ? new Date(raw) : null;
+  return d && !Number.isNaN(d.getTime()) ? d : null;
+}
+
+function dayLabelOf(d, now) {
+  const start = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((start(now) - start(d)) / 86400000);
+  if (diff === 0) return '今天';
+  if (diff === 1) return '昨天';
+  if (d.getFullYear() === now.getFullYear()) return `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+  return `${d.getFullYear()} 年 ${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+}
+
+function withDayRail(list, now) {
+  const today = now || new Date();
+  let prev = '';
+  return (list || []).map((m) => {
+    const d = dayKeyOf(m);
+    const label = d ? dayLabelOf(d, today) : '';
+    const dayLabel = label && label !== prev ? label : '';
+    if (label) prev = label;
+    return m && m.dayLabel === dayLabel ? m : Object.assign({}, m, { dayLabel });
+  });
+}
+
 function withDigestCard(message) {
   const enriched = enrichMessage(message);
   if (!enriched || !enriched.isDigest) return enriched;
@@ -165,7 +196,7 @@ Page({
     const workflowMode = queueOpt === 'workflow';
 
     try {
-      const nav = getPageNavInsets({ nativeNav: true, headerExtraRpx: workflowMode ? 200 : 168 });
+      const nav = getPageNavInsets({ nativeNav: true, headerExtraRpx: workflowMode ? 200 : 236 });
       this.setData({
         navPaddingRight: Math.min(nav.navPaddingRight || 16, 24),
         headerHeight: nav.headerBlockPx || this.estimateHeaderHeight()
@@ -246,7 +277,7 @@ Page({
       windowWidth = sys.windowWidth || 375;
     } catch (e) {}
     const px = windowWidth / 750;
-    return Math.ceil((this.data.isStaff ? 240 : 168) * px);
+    return Math.ceil((this.data.isStaff ? 240 : 236) * px);
   },
 
   measureHeader() {
@@ -468,7 +499,7 @@ Page({
         const raw = Array.isArray(res.result.messages) ? res.result.messages : [];
         const batch = dedupeInboxMessages(raw).map(withDigestCard);
         const merged = reset ? batch : [...this.data.messages, ...batch];
-        const messages = dedupeInboxMessages(merged);
+        const messages = withDayRail(dedupeInboxMessages(merged));
         const isStaff = res.result.isStaff === true || this.data.isStaff;
 
         const patch = {
@@ -565,6 +596,7 @@ Page({
     if (!current.isUnread) return;
     const messages = [...this.data.messages];
     messages[index] = withDigestCard({ ...current, read: true });
+    messages[index].dayLabel = current.dayLabel || '';
     const unreadCount = Math.max(0, this.data.unreadCount - 1);
     const patch = {
       messages,
@@ -596,7 +628,7 @@ Page({
   applyLocalDelete(messageId) {
     if (!messageId) return;
     const removed = this.data.messages.find((m) => m._id === messageId || m._altId === messageId);
-    const messages = this.data.messages.filter((m) => m._id !== messageId && m._altId !== messageId);
+    const messages = withDayRail(this.data.messages.filter((m) => m._id !== messageId && m._altId !== messageId));
     const unreadCount = removed && removed.isUnread
       ? Math.max(0, this.data.unreadCount - 1)
       : this.data.unreadCount;

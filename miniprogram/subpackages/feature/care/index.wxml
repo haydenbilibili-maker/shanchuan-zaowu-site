@@ -1,181 +1,132 @@
-<!--subpackages/feature/care/index.wxml-->
+<!--subpackages/feature/care/index.wxml · 标本养护「养护手册」（2026-10-17 重构）
+    原生导航栏已写「标本养护」：页内不再叠自绘页头与固定 scroll-view，改为页面滚动。
+    卷首 → 当季纸签 → 我的藏品 → 品类手册（浅纸签 + 刻版线描）→ 日常要点 → 联系专员。数据与跳转不变。 -->
 <view class="page-care">
-  <view class="grain-overlay"></view>
-
-  <view class="header care-header" style=" padding-right: {{navPaddingRight}}px;">
-    <view class="care-nav-inner" style="min-height: {{navBarHeight}}px;">
-      <view class="care-brand" catchlongpress="onEasterEggLongPress" data-egg-id="kuafu">
-        <view class="care-title-row">
-          <image class="care-title-icon" src="/assets/icons/care.png" mode="aspectFit"></image>
-          <text class="care-title">标本养护</text>
-        </view>
-        <text class="care-sub">SPECIMEN CARE</text>
-      </view>
+  <view class="care-skeleton" wx:if="{{loading}}">
+    <view class="sk-block sk-hero"></view>
+    <view class="sk-block sk-row" wx:for="{{[1,2]}}" wx:key="*this"></view>
+    <view class="sk-grid">
+      <view class="sk-block sk-grid-item" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
     </view>
   </view>
 
-  <scroll-view
-    scroll-y
-    class="main-scroll care-scroll"
-    show-scrollbar="{{false}}"
-    scroll-into-view="{{scrollIntoView}}"
-    style="top: {{scrollTopPx}}px; height: {{scrollHeightPx}}px;"
-  >
-    <!-- 骨架屏 -->
-    <view class="care-skeleton" wx:if="{{loading}}">
-      <view class="sk-block sk-hero"></view>
-      <view class="sk-block sk-row" wx:for="{{[1,2]}}" wx:key="*this"></view>
-      <view class="sk-grid">
-        <view class="sk-block sk-grid-item" wx:for="{{[1,2,3,4]}}" wx:key="*this"></view>
-      </view>
+  <view class="care-content {{pageReady ? 'ready' : ''}}" wx:else>
+    <!-- 卷首 -->
+    <view class="head care-enter care-enter-d1" catchlongpress="onEasterEggLongPress" data-egg-id="kuafu">
+      <text class="eyebrow">SPECIMEN CARE · 养护手册</text>
+      <text class="head-title">把山海安放好</text>
+      <text class="head-sub">按品类查看养护要点；签收的藏品，在这里找到它自己的那一页。</text>
     </view>
 
-    <view class="care-content {{pageReady ? 'ready' : ''}}" wx:else>
-      <!-- Hero -->
-      <view class="hero care-enter care-enter-d1">
-        <text class="hero-overline">CARE HUB</text>
-        <text class="hero-tagline">把山海带回家，也要好好安放</text>
-        <view class="hero-divider"></view>
-        <text class="hero-desc">按品类查看养护要点，签收藏品可在此找到专属指南</text>
-        <view class="hero-stat" wx:if="{{specimenTotal > 0}}" bindtap="goToMySpecimens" hover-class="care-press">
-          <text class="stat-num">{{specimenTotal}}</text>
-          <text class="stat-label">件藏品待养护</text>
-          <text class="stat-arrow">→</text>
-        </view>
-      </view>
+    <!-- 当季：一张浅纸签 -->
+    <view class="season care-enter care-enter-d2" wx:if="{{seasonalTip}}">
+      <view class="season-pin" aria-hidden="true"></view>
+      <text class="season-eyebrow">{{seasonEyebrow}}</text>
+      <text class="season-title">{{seasonalTip.title}}</text>
+      <text class="season-desc">{{seasonalTip.desc}}</text>
+    </view>
 
-      <!-- 季节提示 -->
-      <view class="season-banner care-enter care-enter-d2" wx:if="{{seasonalTip}}">
-        <view class="season-icon">
-          <view class="season-pulse"></view>
+    <!-- 我的藏品 -->
+    <view class="block care-enter care-enter-d3" wx:if="{{recentSpecimens.length}}">
+      <view class="sec-head">
+        <view class="sec-head-t">
+          <text class="eyebrow">MY SPECIMENS</text>
+          <text class="sec-title">我的藏品</text>
         </view>
-        <view class="season-body">
-          <text class="season-label">{{seasonalTip.title}}</text>
-          <text class="season-desc">{{seasonalTip.desc}}</text>
-        </view>
+        <text class="sec-link" hover-class="care-press" bindtap="goToMySpecimens" wx:if="{{specimenTotal > 0}}">全部 {{specimenTotal}} 件 ›</text>
       </view>
-
-      <!-- 我的藏品 -->
-      <view class="care-section care-enter care-enter-d3" wx:if="{{recentSpecimens.length}}">
-        <view class="care-section-head">
-          <text class="care-section-label">我的藏品</text>
-          <text
-            class="care-section-more"
-            hover-class="care-more-hover"
-            bindtap="goToMySpecimens"
-            wx:if="{{specimenTotal > 0}}"
-          >查看全部 {{specimenTotal}} 件 →</text>
-        </view>
-        <view
-          class="specimen-card"
-          wx:for="{{recentSpecimens}}"
-          wx:key="key"
-          hover-class="care-card-hover"
-          bindtap="openSpecimenCare"
-          data-category="{{item.category}}"
-          data-order-id="{{item.orderId}}"
-          data-product-id="{{item.productId}}"
-          style="animation-delay: {{0.08 * index}}s;"
-        >
-          <view class="specimen-frame">
-            <image class="specimen-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
-            <view class="specimen-thumb placeholder" wx:else>
-              <text class="ph-letter">{{item.categoryLabel[0]}}</text>
-            </view>
-          </view>
-          <view class="specimen-main">
-            <text class="specimen-title">{{item.title}}</text>
-            <view class="specimen-meta">
-              <text class="specimen-tag" style="color: {{item.categoryColor}}; background: {{item.categoryColor}}18;">{{item.categoryLabel}}</text>
-              <text class="specimen-date" wx:if="{{item.receiveTimeText}}">{{item.receiveTimeText}} 签收</text>
-            </view>
-            <text class="specimen-summary">{{item.careSummary}}</text>
-          </view>
-          <view class="specimen-chevron">
-            <text>›</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 空态 -->
-      <view class="care-section care-enter care-enter-d3 empty-my" wx:elif="{{!loading}}">
-        <view class="empty-card">
-          <view class="empty-icon-ring">
-            <image class="empty-icon-img" src="/assets/icons/care.png" mode="aspectFit"></image>
-          </view>
-          <text class="empty-title">暂无已签收藏品</text>
-          <text class="empty-desc">签收后可在此查看专属养护指南，也可先按品类浏览通用要点</text>
-          <view class="empty-cta" bindtap="scrollToCategories" hover-class="care-press">
-            <text>浏览品类指南</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 品类网格 -->
-      <view class="care-section care-enter care-enter-d4" id="care-categories">
-        <text class="care-section-label">按品类浏览</text>
-        <view class="category-grid">
-          <view
-            class="category-card {{item.wide ? 'wide' : ''}}"
-            wx:for="{{categoryCards}}"
-            wx:key="category"
-            hover-class="care-card-hover"
-            bindtap="openCategory"
-            data-category="{{item.category}}"
-            style="border-color: {{item.color}}33; --cat-color: {{item.color}};"
-          >
-            <view class="cat-stripe" style="background: {{item.color}};"></view>
-            <view class="cat-inner">
-              <text class="cat-overline">{{item.overline}}</text>
-              <text class="cat-title">{{item.label}}</text>
-              <text class="cat-desc">{{item.desc}}</text>
-            </view>
-            <view class="cat-arrow" style="color: {{item.color}};">›</view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 日常要点 -->
-      <view class="care-section care-enter care-enter-d5">
-        <text class="care-section-label">日常要点</text>
-        <view class="tip-list">
-          <view
-            class="tip-item {{expandedTip === item.key ? 'expanded' : ''}}"
-            wx:for="{{generalTips}}"
-            wx:key="key"
-            bindtap="toggleTip"
-            data-key="{{item.key}}"
-            hover-class="care-card-hover"
-          >
-            <view class="tip-index">{{index + 1}}</view>
-            <view class="tip-body">
-              <view class="tip-head">
-                <text class="tip-title">{{item.title}}</text>
-                <text class="tip-toggle">{{expandedTip === item.key ? '−' : '+'}}</text>
-              </view>
-              <view class="tip-desc-wrap">
-                <text class="tip-desc">{{item.desc}}</text>
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
-
-      <!-- 联系专员 -->
       <view
-        class="care-support care-enter care-enter-d6"
-        hover-class="care-support-hover"
-        bindtap="goToSupport"
+        class="spec-row"
+        wx:for="{{recentSpecimens}}"
+        wx:key="key"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        bindtap="openSpecimenCare"
+        data-category="{{item.category}}"
+        data-order-id="{{item.orderId}}"
+        data-product-id="{{item.productId}}"
       >
-        <view class="care-support-main">
-          <text class="care-support-title">仍有问题？</text>
-          <text class="care-support-desc">变色、返潮、框体异常等，联系专员协助查看</text>
+        <image class="spec-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+        <view class="spec-thumb is-empty" wx:else><text class="spec-letter">{{item.categoryLabel[0]}}</text></view>
+        <view class="spec-main">
+          <text class="spec-eyebrow">{{item.categoryLabel}}{{item.receiveTimeText ? ' · ' + item.receiveTimeText + ' 签收' : ''}}</text>
+          <text class="spec-title">{{item.title}}</text>
+          <text class="spec-summary">{{item.careSummary}}</text>
         </view>
-        <text class="care-support-cta">→</text>
+        <text class="spec-chevron">›</text>
       </view>
     </view>
 
-    <view class="care-scroll-pad"></view>
-  </scroll-view>
+    <!-- 空态 -->
+    <view class="block empty care-enter care-enter-d3" wx:elif="{{!loading}}">
+      <text class="empty-title">还没有已签收的藏品</text>
+      <text class="empty-desc">签收后，这里会出现它专属的养护指南。也可以先按品类浏览通用要点。</text>
+      <view class="empty-cta" bindtap="scrollToCategories" hover-class="care-press">浏览品类手册 ›</view>
+    </view>
+
+    <!-- 品类手册：浅纸签 + 刻版线描 -->
+    <view class="block care-enter care-enter-d4" id="care-categories">
+      <view class="sec-head-t">
+        <text class="eyebrow">BY CATEGORY</text>
+        <text class="sec-title">品类手册</text>
+      </view>
+      <view class="cat-grid">
+        <view
+          class="cat {{item.wide ? 'is-wide' : ''}}"
+          wx:for="{{categoryCards}}"
+          wx:key="category"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+          bindtap="openCategory"
+          data-category="{{item.category}}"
+          aria-role="button"
+          aria-label="{{item.label}}养护指南"
+        >
+          <image class="cat-plate" src="{{item.plate}}" mode="aspectFit" wx:if="{{item.plate}}"></image>
+          <view class="cat-copy">
+            <text class="cat-overline">{{item.overline}}</text>
+            <text class="cat-title">{{item.label}}</text>
+            <text class="cat-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 日常要点：编号发丝线手风琴 -->
+    <view class="block care-enter care-enter-d5">
+      <view class="sec-head-t">
+        <text class="eyebrow">EVERYDAY</text>
+        <text class="sec-title">日常要点</text>
+      </view>
+      <view class="tips">
+        <view
+          class="tip {{expandedTip === item.key ? 'is-open' : ''}}"
+          wx:for="{{generalTips}}"
+          wx:key="key"
+          bindtap="toggleTip"
+          data-key="{{item.key}}"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+          aria-role="button"
+        >
+          <view class="tip-head">
+            <text class="tip-no">0{{index + 1}}</text>
+            <text class="tip-title">{{item.title}}</text>
+            <text class="tip-toggle">{{expandedTip === item.key ? '−' : '+'}}</text>
+          </view>
+          <text class="tip-desc" wx:if="{{expandedTip === item.key}}">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 联系专员 -->
+    <view class="support care-enter care-enter-d6" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToSupport" aria-role="button">
+      <view class="support-main">
+        <text class="support-title">仍有问题？</text>
+        <text class="support-desc">变色、返潮、框体异常，联系专员协助查看</text>
+      </view>
+      <text class="support-cta">联系专员 ›</text>
+    </view>
+  </view>
   <easter-egg-note id="easterEggNote" />
 </view>

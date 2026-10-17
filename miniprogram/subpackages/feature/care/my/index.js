@@ -1,18 +1,11 @@
 // subpackages/feature/care/my/index.js
 const app = getApp()
-const { getPageNavInsets } = require('../../utils/pageNav')
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const { buildGuideUrl } = require('../../utils/careDefaults')
 const { loadUserSpecimens } = require('../../utils/careSpecimens')
-const { measureFixedScroll } = require('../../../../utils/scrollArea')
 
 Page({
   data: {
-    statusBarHeight: 20,
-    navPaddingRight: 96,
-    navBarHeight: 44,
-    scrollTopPx: 100,
-    scrollHeightPx: 500,
     specimens: [],
     loading: true,
     loadError: false,
@@ -20,26 +13,8 @@ Page({
   },
 
   onLoad(options) {
-    const nav = getPageNavInsets({ nativeNav: true })
-    this.setData({
-      statusBarHeight: nav.statusBarHeight || 0,
-      navPaddingRight: nav.navPaddingRight,
-      navBarHeight: nav.navBarHeight
-    })
     trackBehavior('care_hub_enter', 'from', options.from ? `my_${options.from}` : 'my')
     this.loadList()
-  },
-
-  onReady() {
-    this.remeasureScroll()
-  },
-
-  async remeasureScroll() {
-    const area = await measureFixedScroll(this, {
-      topSelector: '.care-header',
-      fallbackTop: 100
-    })
-    this.setData(area)
   },
 
   onShow() {
@@ -57,7 +32,6 @@ Page({
       wx.showToast({ title: '藏品加载失败', icon: 'none' })
     } finally {
       this.setData({ loading: false })
-      this.remeasureScroll()
       setTimeout(() => this.setData({ pageReady: true }), 50)
     }
   },

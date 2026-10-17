@@ -1,63 +1,57 @@
-<!--subpackages/extra/user/wishlist/index.wxml-->
+<!--subpackages/extra/user/wishlist/index.wxml · 收藏与候补「藏品清单」（2026-10-17 重构）
+    页面滚动；下划线页签带数；每个页签一句说明；发丝线行（缩略图 / 名称 / 学名 / 价格 / 状态 / 移除）。读写与跳转不变。 -->
 <view class="page-wishlist">
-  <scroll-view scroll-y class="content" style="padding-top: {{headerBlockPx}}px">
-    <view class="header-text">
-      <text class="page-overline">收藏与候补｜SAVED & WAITLIST</text>
-      <text class="h1">我的清单</text>
-      <text class="h2">收藏是轻量备忘；想要是售罄候补</text>
-    </view>
+  <view class="head">
+    <text class="eyebrow">SAVED · WAITLIST · 清单</text>
+    <text class="head-title">收藏与候补</text>
+  </view>
 
-    <view class="tabs">
-      <view class="tab {{tab === 'favorite' ? 'on' : ''}}" data-tab="favorite" bindtap="switchTab" hover-class="tap-press-soft">
-        <text>收藏</text>
-        <text class="tab-count" wx:if="{{favoriteCount}}">{{favoriteCount}}</text>
-      </view>
-      <view class="tab {{tab === 'wishlist' ? 'on' : ''}}" data-tab="wishlist" bindtap="switchTab" hover-class="tap-press-soft">
-        <text>想要候补</text>
-        <text class="tab-count" wx:if="{{wishlistCount}}">{{wishlistCount}}</text>
-      </view>
+  <view class="tabs">
+    <view class="tab {{tab === 'favorite' ? 'on' : ''}}" data-tab="favorite" bindtap="switchTab" hover-class="tap-press-soft" hover-stay-time="80" aria-role="tab">
+      <text class="tab-t">收藏</text>
+      <text class="tab-count" wx:if="{{favoriteCount}}">{{favoriteCount}}</text>
     </view>
+    <view class="tab {{tab === 'wishlist' ? 'on' : ''}}" data-tab="wishlist" bindtap="switchTab" hover-class="tap-press-soft" hover-stay-time="80" aria-role="tab">
+      <text class="tab-t">想要候补</text>
+      <text class="tab-count" wx:if="{{wishlistCount}}">{{wishlistCount}}</text>
+    </view>
+  </view>
+  <text class="tab-note" wx:if="{{tab === 'favorite'}}">有货藏品的个人备忘，不会通知馆员补货。</text>
+  <text class="tab-note" wx:else>只用于售罄藏品：登记到货意向；付定金可进一步锁定优先制作权。</text>
 
-    <view class="hint-card" wx:if="{{tab === 'favorite'}}">
-      <text class="hint-title">收藏</text>
-      <text class="hint-body">有货藏品的个人备忘，不会通知馆员补货。</text>
-    </view>
-    <view class="hint-card" wx:else>
-      <text class="hint-title">想要候补</text>
-      <text class="hint-body">仅用于售罄藏品：登记到货意向；付定金可进一步锁定优先制作权。</text>
-    </view>
+  <view class="skeleton" wx:if="{{loading}}">
+    <view class="sk-row" wx:for="{{[1,2,3]}}" wx:key="*this"></view>
+  </view>
 
-    <view class="loading-box" wx:if="{{loading}}">
-      <text>整理清单中…</text>
-    </view>
-
-    <block wx:elif="{{list.length}}">
-      <view
-        class="item-card"
-        wx:for="{{list}}"
-        wx:key="_id"
-        hover-class="tap-press-soft"
-        bindtap="goDetail"
-        data-id="{{item.productId}}"
-      >
-        <image class="thumb" src="{{item.image}}" mode="aspectFill" lazy-load binderror="onThumbError" data-index="{{index}}"></image>
-        <view class="meta">
-          <text class="title">{{item.title || '藏品'}}</text>
-          <text class="latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
-          <view class="row">
-            <text class="price" wx:if="{{item.price != null}}">¥{{item.price}}</text>
-            <text class="tag sold" wx:if="{{item.soldOut || tab === 'wishlist'}}">售罄候补</text>
-            <text class="tag deposit" wx:if="{{item.hasDeposit}}">定金意向</text>
-          </view>
+  <view class="list" wx:elif="{{list.length}}">
+    <view
+      class="item"
+      wx:for="{{list}}"
+      wx:key="_id"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+      bindtap="goDetail"
+      data-id="{{item.productId}}"
+    >
+      <image class="thumb" src="{{item.image}}" mode="aspectFill" lazy-load binderror="onThumbError" data-index="{{index}}"></image>
+      <view class="meta">
+        <text class="title">{{item.title || '藏品'}}</text>
+        <text class="latin" wx:if="{{item.latinName}}">{{item.latinName}}</text>
+        <view class="row">
+          <text class="price" wx:if="{{item.price != null}}">¥{{item.price}}</text>
+          <text class="tag sold" wx:if="{{item.soldOut || tab === 'wishlist'}}">售罄候补</text>
+          <text class="tag deposit" wx:if="{{item.hasDeposit}}">定金意向</text>
         </view>
-        <view class="remove" catchtap="removeItem" data-id="{{item._id}}" data-pid="{{item.productId}}" hover-class="tap-press" hover-stop-propagation>移除</view>
+        <text class="note" wx:if="{{tab === 'wishlist'}}">到货时馆员会优先联系你{{item.savedText ? ' · ' + item.savedText : ''}}</text>
+        <text class="note" wx:elif="{{item.savedText}}">{{item.savedText}}</text>
       </view>
-    </block>
-
-    <view class="empty-state" wx:else>
-      <text class="empty-title">{{tab === 'favorite' ? '还没有收藏' : '还没有想要候补'}}</text>
-      <text class="empty-sub">{{tab === 'favorite' ? '在商详点「收藏」即可记下心仪藏品' : '售罄时点「想要」，到货会优先通知馆员'}}</text>
-      <view class="btn-go" hover-class="btn-go-press" bindtap="goExplore">去探索</view>
+      <view class="remove" catchtap="removeItem" data-id="{{item._id}}" data-pid="{{item.productId}}" hover-class="tap-press" hover-stop-propagation aria-role="button">移除</view>
     </view>
-  </scroll-view>
+  </view>
+
+  <view class="empty-state" wx:else>
+    <text class="empty-title">{{tab === 'favorite' ? '还没有收藏' : '还没有想要候补'}}</text>
+    <text class="empty-sub">{{tab === 'favorite' ? '在藏品详情点「收藏」，即可记下心仪的那一件' : '售罄时点「想要」，到货会优先通知馆员'}}</text>
+    <view class="btn-go" hover-class="tap-press" hover-stay-time="80" bindtap="goExplore">去馆里看看 ›</view>
+  </view>
 </view>

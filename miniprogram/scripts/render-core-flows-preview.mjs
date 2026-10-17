@@ -319,12 +319,12 @@ const SCENES = [
   },
   {
     name: 'messages', h: 2000, wxml: 'subpackages/extra/user/messages/index', data: {
-      loading: false, loadError: false, hasMore: false, unreadCount: 2, activeCategory: 'all', activeQueue: 'customer', headerHeight: 0,
+      loading: false, loadError: false, hasMore: false, unreadCount: 2, activeCategory: 'all', activeQueue: 'customer', workflowMode: false, isStaff: false, showQueueTabs: false, headerHeight: 210,
       filterTabs: [{ id: 'all', label: '全部' }, { id: 'order', label: '订单' }, { id: 'gift', label: '礼赠' }, { id: 'system', label: '馆方' }],
       messages: [
-        { _id: 'm1', kind: 'receipt', typeName: '发货通知', readLampClass: 'lamp-brass', statusLabel: '待签收', statusLampClass: 'lamp-brass', title: '你的藏品已启程', preview: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。', formattedTime: '10:24', isUnread: true, kindLabel: '订单', kindLampClass: 'lamp-brass', senderName: '山海造物', hasProductCards: true, productThumbs: [P[0]], productSummary: '1 件藏品' },
-        { _id: 'm2', kind: 'notice', typeName: '礼赠进度', readLampClass: 'lamp-brass', statusLabel: '已拆封', statusLampClass: 'lamp-forest', title: '阿禾拆开了你的礼笺', preview: '「谢谢你，我很喜欢。」', formattedTime: '昨天', isUnread: true, kindLabel: '礼赠', kindLampClass: 'lamp-forest', senderName: '礼赠' },
-        { _id: 'm3', kind: 'campaign', typeName: '馆方来信', readLampClass: 'lamp-brass hollow', statusLabel: '已读', statusLampClass: 'lamp-muted', title: '十月新到：南美闪蝶专题', preview: '本周馆藏上新 12 件，含 3 件孤品。', formattedTime: '10.12', isUnread: false, kindLabel: '馆方', kindLampClass: 'lamp-muted', senderName: '山海造物', isPaper: true }
+        { _id: 'm1', dayLabel: '今天', kind: 'receipt', typeName: '发货通知', readLampClass: 'lamp-brass', statusLabel: '待签收', statusLampClass: 'lamp-brass', title: '你的藏品已启程', preview: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。', formattedTime: '10:24', isUnread: true, kindLabel: '订单', kindLampClass: 'lamp-brass', senderName: '山海造物', hasProductCards: true, productThumbs: [P[0]], productSummary: '1 件藏品' },
+        { _id: 'm2', dayLabel: '昨天', kind: 'notice', typeName: '礼赠进度', readLampClass: 'lamp-brass', statusLabel: '已拆封', statusLampClass: 'lamp-forest', title: '阿禾拆开了你的礼笺', preview: '「谢谢你，我很喜欢。」', formattedTime: '昨天', isUnread: true, kindLabel: '礼赠', kindLampClass: 'lamp-forest', senderName: '礼赠' },
+        { _id: 'm3', dayLabel: '10 月 12 日', kind: 'campaign', typeName: '馆方来信', readLampClass: 'lamp-brass hollow', statusLabel: '已读', statusLampClass: 'lamp-muted', title: '十月新到：南美闪蝶专题', preview: '本周馆藏上新 12 件，含 3 件孤品。', formattedTime: '10.12', isUnread: false, kindLabel: '馆方', kindLampClass: 'lamp-muted', senderName: '山海造物', isPaper: true }
       ]
     }
   },
@@ -406,7 +406,50 @@ const SCENES = [
     name: 'atlas-locked', h: 1800, wxml: 'subpackages/feature/collection/detail/index', data: {
       loading: false, loadError: false, locked: true, card: atlasCards[2], facts: [], relatedProducts: [], logs: []
     }
-  }
+  },
+  // 2026-10-17 标本养护「养护手册」：品类卡的刻版线描取真源 carePlateOf
+  {
+    name: 'care-hub', h: 3000, wxml: 'subpackages/feature/care/index', data: {
+      loading: false, pageReady: false, expandedTip: 'light', seasonEyebrow: 'AUTUMN · 10 月',
+      seasonalTip: { key: 'autumn', title: '秋季提醒', desc: '秋燥与早晚温差加大，留意框体背板与玻璃面的细小起雾。' },
+      specimenTotal: 4,
+      recentSpecimens: [
+        { key: 's1', title: '光明女神闪蝶 · A1 博物级', image: '', categoryLabel: '蝴蝶昆虫', receiveTimeText: '2026.10.12', careSummary: '避光、干爽，框面朝外平稳悬挂；季节交替时检查背板。' },
+        { key: 's2', title: '鹦鹉螺剖面标本', image: '', categoryLabel: '海洋标本', receiveTimeText: '2026.09.28', careSummary: '远离水汽，软毛刷单向除尘，不用湿布擦拭。' }
+      ],
+      categoryCards: [['INSECTA', '蝴蝶昆虫', '框画与展柜昆虫标本'], ['ANIMALIA', '动物世界', '剥制、骨骼与皮张藏品'], ['PLANTAE', '植物果实', '押花、干制与植物标本'], ['MARINE', '海洋标本', '海洋干制与浸液标本'], ['MINERALS', '矿石馆', '矿物与晶洞陈列'], ['GENERAL', '通用安放', '摆放、避光与运输'], ['FRAMING', '装裱养护', '木框、金属框与定制装裱']]
+        .map(([category, label, desc], i) => ({ category, label, desc, overline: category, wide: i === 6, plate: atlasPlates.carePlateOf(category) })),
+      generalTips: [{ key: 'light', title: '避光安放', desc: '远离南向窗台与射灯长时间直射' }, { key: 'humidity', title: '干爽环境', desc: '室内相对湿度建议 45–60%，避免浴室与厨房旁' }, { key: 'touch', title: '少触碰', desc: '观赏时轻拿框架，避免手指直接按压藏品表面' }, { key: 'move', title: '搬运原则', desc: '原包装+缓冲材，框面或玻璃面向上平放' }]
+    }
+  },
+  {
+    name: 'care-guide', h: 2600, wxml: 'subpackages/feature/care/guide/index', data: {
+      loading: false, loadError: false, hasGuide: true, pageReady: false, categoryPlate: atlasPlates.carePlateOf('INSECTA'),
+      categoryOverline: 'INSECTA', categoryHeading: '昆虫标本养护', categoryLead: '框画与展柜', categoryLabel: '蝴蝶昆虫',
+      contextOverline: 'YOUR SPECIMEN', contextLabelText: '这件藏品', contextTitle: '光明女神闪蝶 · A1 博物级', framingName: '胡桃木浅框', isCustom: false, orderId: 'o1',
+      guide: { summary: '避光、干爽、少碰。鳞片怕光怕潮，框体怕温差。', disclaimer: '以下为一般性安放建议，不构成保存保证，请以随件说明或专员指引为准。' },
+      activeSection: 'environment', collapsedSections: { cleaning: true },
+      contentSections: [
+        { key: 'environment', indexLabel: '01', overline: 'ENVIRONMENT', title: '适宜环境', body: '鳞翅目标本对光与湿度敏感。长时间日照会让结构色褪淡，高湿会让翅面起霉。', tips: ['避开南向窗台与射灯直射', '相对湿度 45–60%'] },
+        { key: 'placement', indexLabel: '02', overline: 'PLACEMENT', title: '日常摆放', body: '框画宜挂在视线高度、少人流碰撞处。', tips: ['不与花瓶、饮料同层'] },
+        { key: 'cleaning', indexLabel: '03', overline: 'CLEANING', title: '清洁与除尘', body: '', tips: [] }
+      ],
+      warningSection: { overline: 'CAUTION', title: '异常信号', body: '出现以下情况请联系专员，不要自行拆框。', tips: ['玻璃内侧起雾或水珠', '翅面出现白色絮状物'] },
+      framingTips: ['木框避免贴近暖气'], 
+    }
+  },
+  // 2026-10-17 收藏与候补「藏品清单」 / 荣誉档案（证书缩样）
+  { name: 'wishlist', h: 1800, wxml: 'subpackages/extra/user/wishlist/index', data: { loading: false, tab: 'wishlist', favoriteCount: 12, wishlistCount: 2,
+      list: [{ _id: 'w1', productId: 'p1', title: '光明女神闪蝶 · A1 博物级', latinName: 'Morpho helena', price: 1280, image: P[0], soldOut: true, hasDeposit: true, savedText: '10.12 记下' },
+        { _id: 'w2', productId: 'p2', title: '鹦鹉螺剖面标本', latinName: 'Nautilus pompilius', price: 680, image: P[1], soldOut: true, hasDeposit: false, savedText: '9.28 记下' }] } },
+  { name: 'certificates', h: 2000, wxml: 'subpackages/extra/user/certificates/index', data: { loading: false, loadError: false, holderCount: 3, givenCount: 1, filter: 'all',
+      certificates: [{ _id: 'c0' }],
+      visible: [
+        { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.12', kind: 'holder', kindLabel: '' },
+        { _id: 'c2', displayTitle: '自然小匣', displayImage: P[1], dateStr: '2026.09.22', kind: 'gift_voucher', kindLabel: '赠予凭证' },
+        { _id: 'c3', displayTitle: '银杏押花框', displayImage: P[2], dateStr: '2026.09.03', kind: 'gift_holder', kindLabel: '受赠' },
+        { _id: 'c4', displayTitle: '紫水晶晶簇', displayImage: P[3] || P[0], dateStr: '2026.08.18', kind: 'holder', kindLabel: '' }
+      ] } }
 ]
 
 async function shoot(s) {

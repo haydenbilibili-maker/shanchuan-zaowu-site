@@ -22,13 +22,20 @@ const CATEGORY_HINTS = [
   { id: '衍生品', label: '衍生品' }
 ]
 
+/* 拍摄建议（2026-10-17 鉴定台重构：一条一格，2×2 发丝网格；文案口径不变）。
+   需求 2：原为「可再拍一张细节图」——拍摄与相册均只支持**一张图**，改为单图内可执行的构图建议。 */
 const PHOTO_TIPS = [
-  '尽量正对藏品主体，避免倾斜过大',
-  '选择均匀柔光，减少玻璃罩与强反光',
-  // 需求 2：原为「可再拍一张细节图（翅脉、纹理、晶体面）」——拍摄与相册均只支持**一张图**，
-  // 该引导与能力矛盾（还会诱发多拍/重复上传）。改为单图内可执行的构图建议。
-  '若需看清翅脉或纹理，请让主体占满画面后重新拍摄',
-  '背景尽量简洁，让主体占画面 60% 以上'
+  { k: '正对', v: '正对藏品主体，避免倾斜过大' },
+  { k: '柔光', v: '均匀柔光，减少玻璃罩与强反光' },
+  { k: '占满', v: '看翅脉或纹理时，让主体占满画面再拍' },
+  { k: '简洁', v: '背景简洁，主体占画面六成以上' }
+]
+
+/** 鉴定三步（与等待卡上的三步同名：入镜 → 归档 → 解读） */
+const FLOW_STEPS = [
+  { k: '入镜', v: '拍一张或选一张' },
+  { k: '归档', v: '照片存入你的鉴定记录' },
+  { k: '解读', v: '约 15–60 秒，给出物种与手记' }
 ]
 
 Page({
@@ -43,6 +50,7 @@ Page({
     categoryHint: '',
     entrySource: 'user_menu',
     photoTips: PHOTO_TIPS,
+    flowSteps: FLOW_STEPS,
     entryBlocked: false
   },
 
@@ -88,9 +96,12 @@ Page({
         name: 'identifySpecimen',
         data: { action: 'list_recent', limit: 5 }
       })
-      const list = ((res.result && res.result.data) || []).map((doc) => ({
+      // 缩略图直接用记录里的 cloud:// fileID（<image> 原生支持）；读不到就退回占位格（onRecentThumbError）
+      const list = ((res.result && res.result.data) || []).slice(0, 3).map((doc) => ({
         _id: doc._id,
         name: (doc.species_info && doc.species_info.species_name_zh) || '未知物种',
+        latin: (doc.species_info && doc.species_info.species_name_latin) || '',
+        thumb: /^cloud:\/\//.test(String(doc.image_url || '')) ? doc.image_url : '',
         timeText: this.formatTime(doc.created_at)
       }))
       this.setData({ recentList: list })
@@ -110,6 +121,17 @@ Page({
     if (hr < 24) return `${hr} 小时前`
     const d = new Date(ts)
     return `${d.getMonth() + 1}/${d.getDate()}`
+  },
+
+  onRecentThumbError(e) {
+    const i = Number(e.currentTarget.dataset.index)
+    if (Number.isInteger(i) && i >= 0) this.setData({ [`recentList[${i}].thumb`]: '' })
+  },
+
+  /** 取景框本身就是快门：点框 = 拍照（相册走框下的文字链） */
+  onFrameTap() {
+    if (this.data.busy) return
+    this.onTakePhoto()
   },
 
   onCategoryHint(e) {

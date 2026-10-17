@@ -126,7 +126,11 @@ const pageData = (msg) => ({
   scrollStyle: '',
   entered: true,
   loadError: false,
-  digestView: null
+  digestView: null,
+  digestPayloadMissing: false,
+  letterLoading: false,
+  actionPadStyle: '',
+  sectionCollapsed: {}
 })
 
 const SCENES = {

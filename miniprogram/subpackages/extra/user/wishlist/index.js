@@ -1,12 +1,18 @@
 const app = getApp();
 const { ensureOpenId } = require('../../../../utils/cartHelper');
-const { getPageNavInsets } = require('../../utils/pageNav');
 const { cdnPath } = require('../../../../config/cloudEnv');
 const { navigateToProductDetail } = require('../../../../utils/productDetailNav');
 
+/** 记下的日子：「10.12 记下」（读不到不写，不编造） */
+function formatSavedDay(raw) {
+  if (!raw) return '';
+  const d = raw instanceof Date ? raw : new Date(raw);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getMonth() + 1}.${String(d.getDate()).padStart(2, '0')} 记下`;
+}
+
 Page({
   data: {
-    headerBlockPx: 16,
     tab: 'favorite',
     list: [],
     favoriteCount: 0,
@@ -16,9 +22,9 @@ Page({
   },
 
   onLoad(query) {
-    const nav = getPageNavInsets({ nativeNav: true, headerExtraRpx: 16 });
+    // 2026-10-17 重构：内容改回页面滚动（原 scroll-view + 量出来的顶距），原生导航栏已写标题
     const tab = query && query.tab === 'wishlist' ? 'wishlist' : 'favorite';
-    this.setData({ headerBlockPx: nav.headerBlockPx, tab });
+    this.setData({ tab });
   },
 
   onShow() {
@@ -64,7 +70,8 @@ Page({
         price: row.price,
         latinName: row.latinName || '',
         soldOut: !!row.soldOut,
-        hasDeposit: !!depositSet[row.productId]
+        hasDeposit: !!depositSet[row.productId],
+        savedText: formatSavedDay(row.createTime)
       });
 
       this._favorites = ((favRes && favRes.data) || []).map(mapRow);
