@@ -8,17 +8,22 @@
       <view class="ticket-empty-cta" bindtap="goBack" hover-class="tap-press-soft" hover-stay-time="80">返回预约</view>
     </view>
 
+    <!-- 2026-10-17「入馆券」重构：与预约页翻转票 A 面同一家族 —— 博物馆黑 + 黄铜发丝框；二维码落在浅纸图版上；
+         撕票线两端半圆缺口；核销章 = 黄铜圆章「已使用」。数据、改期、取消流程不变。 -->
     <view class="ticket-wrap" wx:else>
       <view class="ticket-box">
         <view class="ticket-header">
-          <text class="header-main">MUSEUM PASS</text>
-          <text class="sub">山海造物 · 把山海带回家</text>
+          <text class="header-eyebrow">MUSEUM PASS · 入馆券</text>
+          <text class="header-main">山海造物</text>
+          <text class="sub">把山海带回家</text>
         </view>
 
         <view class="qr-section">
-          <canvas type="2d" id="ticketQrCanvas" class="qr-img" style="width: 280rpx; height: 280rpx;"></canvas>
+          <view class="qr-plate">
+            <canvas type="2d" id="ticketQrCanvas" class="qr-img" style="width: 280rpx; height: 280rpx;"></canvas>
+          </view>
           <view class="qr-live-row" wx:if="{{booking.status === 'confirmed'}}">
-            <view class="signal-light blink"></view>
+            <view class="live-dot"></view>
             <text class="qr-tip">请向工作人员出示此码</text>
           </view>
           <text class="qr-tip muted" wx:elif="{{booking.status === 'used'}}">已核销，凭证仅供留存</text>
@@ -27,25 +32,31 @@
           <text class="qr-code">NO. {{bookingShortId}}</text>
         </view>
 
+        <view class="perf" aria-hidden="true">
+          <view class="perf-notch perf-l"></view>
+          <view class="perf-dash"></view>
+          <view class="perf-notch perf-r"></view>
+        </view>
+
         <view class="info-section">
           <view class="row">
             <text class="label">项目｜PROJECT</text>
-            <text class="val">{{booking.title}}</text>
+            <text class="val val-title">{{booking.title}}</text>
           </view>
           <view class="row">
             <text class="label">日期｜DATE</text>
-            <text class="val">{{booking.date}} {{booking.time}}</text>
+            <text class="val val-mono">{{booking.date}} {{booking.time}}</text>
           </view>
           <view class="row">
             <text class="label">人数｜GUEST</text>
-            <text class="val">{{booking.people}} 位</text>
+            <text class="val val-mono">{{booking.people}} 位</text>
           </view>
         </view>
 
         <view class="stamp" wx:if="{{booking.status === 'used'}}">
           <view class="stamp-circle">
             <text>USED</text>
-            <text class="stamp-date">已核销</text>
+            <text class="stamp-date">已使用</text>
           </view>
         </view>
       </view>

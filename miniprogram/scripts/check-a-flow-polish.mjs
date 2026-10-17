@@ -44,7 +44,10 @@ const FILES = {
   bookingJs: 'subpackages/business/booking/index.js',
   previewLib: 'scripts/lib/wxml-preview.mjs',
   storeWxml: 'subpackages/business/store/index.wxml',
-  storeWxss: 'subpackages/business/store/index.wxss'
+  storeWxss: 'subpackages/business/store/index.wxss',
+  ticketWxml: 'subpackages/business/ticket/index.wxml',
+  ticketWxss: 'subpackages/business/ticket/index.wxss',
+  pickupWxss: 'subpackages/business/pickup-pass/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -138,6 +141,13 @@ function checks(s) {
     [...s.storeWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
       .filter(([, sel, body]) => /background: var\(--brass-400\)/.test(body) && !/press|disabled/.test(sel)).map(([, sel]) => sel.trim()).join(',') === '.booking-btn')
   add('R13-3 wxml-preview 认识 <map>（门店页离线出图）', /\bmap: 'div'/.test(s.previewLib))
+  // 2026-10-17 入馆券 / 门店自取凭证
+  const solidGold = (css) => [...css.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
+    .filter(([, sel, body]) => /background: (var\(--brass-400\)|var\(--color-primary\)|linear-gradient\(135deg, #A8903C)/.test(body) && !/press|disabled/.test(sel)).map(([, sel]) => sel.trim()).join(',')
+  add('R14-1 入馆券是博物馆黑票面 + 浅纸二维码图版，实心金只给「改期」（金色页头带退场）',
+    solidGold(s.ticketWxss) === '.footer-btn.primary' && /class="qr-plate"/.test(s.ticketWxml) && !/signal-light/.test(s.ticketWxml))
+  add('R14-2 自取凭证不用信号橙绿（状态章 / 进度点 / 已自提印章），实心金只给「订单详情」',
+    !/--color-(success|warning)|82, 183, 136|233, 162, 59/.test(s.pickupWxss) && solidGold(s.pickupWxss) === '.pass-btn.primary')
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -372,6 +382,9 @@ if (process.argv.includes('--selftest')) {
     ['门店名片回到深色卡', 'storeWxss', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx', '  background: #1F1D1A;\n  box-shadow: 0 12rpx 28rpx')],
     ['签到浮钮回到实心金', 'storeWxss', (t) => t.replace('  background: #1F1D1A;\n  box-shadow: var(--ring-brass), 0 12rpx', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass), 0 12rpx')],
     ['预览库忘了 map', 'previewLib', (t) => t.replace("map: 'div', ", '')],
+    ['入馆券页头回到实心金带', 'ticketWxss', (t) => t.replace('.ticket-header {\n  padding: 44rpx 32rpx 8rpx;', '.ticket-header {\n  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);\n  padding: 44rpx 32rpx 8rpx;')],
+    ['入馆券信号灯复活', 'ticketWxml', (t) => t.replace('<view class="live-dot"></view>', '<view class="signal-light blink"></view>')],
+    ['自取已自提回到绿章', 'pickupWxss', (t) => t.replace('  border: 4rpx solid rgba(90, 78, 58, 0.85);', '  border: 4rpx solid rgba(82, 183, 136, 0.85);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],

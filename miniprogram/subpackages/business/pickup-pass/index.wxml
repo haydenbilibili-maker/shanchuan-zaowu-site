@@ -79,7 +79,7 @@
         bindtap="goStore"
         hover-class="tap-press"
         hover-stay-time="80"
-      >导航到店 →</view>
+      >导航到店 ›</view>
     </view>
     <text class="pass-store-name">{{storeName}}</text>
     <text class="pass-store-line" wx:if="{{storeInfo.floor}}">{{storeInfo.floor}}</text>

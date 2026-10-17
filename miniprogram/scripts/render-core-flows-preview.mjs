@@ -480,7 +480,18 @@ const SCENES = [
         walkingGuide: { headline: '前往工坊 · 步行约 5 分钟', peerName: '星宸标本', peerLocation: '这有山 · 楼下',
           steps: ['从主店出发，沿商场山坡动线至下行扶梯', '乘扶梯至楼下层，沿标识前往工坊', '工坊承接定制确认、装裱咨询与手作课程'], tip: '建议先逛主店选品，再到工坊确认定制方案' } },
       experienceProducts: [{ _id: 'e1', title: '光明女神闪蝶', latinName: 'Morpho helena', priceText: '1280', image: P[0] }, { _id: 'e2', title: '血漪蝶穹顶', latinName: 'Cethosia biblis', priceText: '680', image: P[1] }, { _id: 'e3', title: '蒲公英玻璃罩', latinName: '', priceText: '268', image: P[3] }],
-      storeActivities: [{ _id: 'a1', type: 'handcraft_course', title: '蝴蝶标本手作课', date: '10月26日', time: '14:00' }, { _id: 'a2', type: 'special_activity', title: '秋夜观虫 · 灯诱讲座', date: '11月02日', time: '19:00' }] } }
+      storeActivities: [{ _id: 'a1', type: 'handcraft_course', title: '蝴蝶标本手作课', date: '10月26日', time: '14:00' }, { _id: 'a2', type: 'special_activity', title: '秋夜观虫 · 灯诱讲座', date: '11月02日', time: '19:00' }] } },
+  // 2026-10-17 入馆券 / 门店自取凭证（到店链路最后两页）
+  { name: 'ticket', h: 1700, wxml: 'subpackages/business/ticket/index', data: { loadError: false, bookingShortId: 'A7F3K2', showRescheduleModal: false, weekDays: [], timeSlots: [],
+      booking: { _id: 'b1', status: 'confirmed', title: '入店参观 · 山川造物主店', date: '2026-10-18', time: '14:00', people: 2 } } },
+  { name: 'ticket-used', h: 1500, wxml: 'subpackages/business/ticket/index', base: 'ticket', data: { booking: { _id: 'b1', status: 'used', title: '蝴蝶标本手作课', date: '2026-10-12', time: '14:00', people: 1 } } },
+  { name: 'pickup', h: 2200, wxml: 'subpackages/business/pickup-pass/index', data: { loading: false, statusUnknown: false, orderNo: 'SH20261017A01', codeText: '', qrFailed: false, error: '', showRefundEntry: true, claimedAtText: '',
+      storeName: '山川造物 · 主店', storeInfo: { canNavigate: true, floor: '这有山 · 山坡 X-06-1', hours: '10:00 – 22:00', address: '吉林省长春市朝阳区红旗街959号这有山商场山坡X-06-1' },
+      pass: { statusLabel: '备妥待取', statusTone: 'ready', headline: '藏品已备妥，可到店领取', hint: '请在 7 日内到店，向专员出示二维码或自取码。', codeText: '4826 1937',
+        steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'current' }] } } },
+  { name: 'pickup-done', h: 1700, wxml: 'subpackages/business/pickup-pass/index', base: 'pickup', data: { showRefundEntry: false, claimedAtText: '10月17日 15:20',
+      pass: { statusLabel: '已自提', statusTone: 'done', headline: '本次自取已完成', hint: '', codeText: '4826 1937',
+        steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'done' }] } } }
 ]
 
 async function shoot(s) {
