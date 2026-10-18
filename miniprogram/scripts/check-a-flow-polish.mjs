@@ -109,9 +109,7 @@ const FILES = {
   identifyJs: 'subpackages/feature/identify/index.js',
   identifyResultJs: 'subpackages/feature/identify/result/index.js',
   pickupJs: 'subpackages/business/pickup-pass/index.js',
-  pickupWxml: 'subpackages/business/pickup-pass/index.wxml',
-  vipWxss: 'components/UserVipCard/index.wxss',
-  walletLeatherCo: 'subpackages/business/confirm-order/wallet-leather.wxss'
+  pickupWxml: 'subpackages/business/pickup-pass/index.wxml'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -274,18 +272,14 @@ function checks(s) {
   add('R15-2 定制页实心金只给底栏主按钮（步骤条当前步不再是实心金圆点）',
     solidGold(s.customWxss) === '.btn-primary' && !/grain-overlay/.test(s.customWxss))
   // 2026-10-17 产品负责人：钱包 / 礼券 / 积分「不要更改卡片的金属与皮质视觉质感，只做页面的视觉对齐和细节质感提升」
-  // 2026-10-18 产品负责人点名「会员卡卡面设计，钱包蟒蛇鳄鱼皮质，积分卡，礼券夹，金属质，纸质感的持续加强和真实化」→
-  //   各文件末尾追加「材质真实化 v2」覆盖层，指纹按点名更新；同时把 v2 段（含会员卡七档）纳入指纹，避免追加层游离在锁外
   {
-    const v2 = (src) => { const i = src.indexOf('材质真实化 v2'); return i < 0 ? '' : src.slice(src.lastIndexOf('/*', i)) }
     const rule = (src, sel) => (src.match(new RegExp('(^|\\n)' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{[^}]*\\}')) || [''])[0].trim()
     const parts = [s.walletLeather,
       ...['.asset-face', '.asset-back', '.card-texture', '.card-inner', '.level-badge', '.num'].map((x) => rule(s.pointsWxss, x)),
-      ...['.coupon-card', '.c-left', '.texture'].map((x) => rule(s.couponsWxss, x)),
-      v2(s.pointsWxss), v2(s.couponsWxss), v2(s.vipWxss)]
+      ...['.coupon-card', '.c-left', '.texture'].map((x) => rule(s.couponsWxss, x))]
     const fp = createHash('sha256').update(parts.join('\n/*--*/\n')).digest('hex').slice(0, 16)
     // 指纹变了 = 有人动了卡面质感。确系产品负责人点名改卡面时，才更新这里的指纹值。
-    add(`R16-1 卡面材质（钱包鳄鱼皮 / 积分黑钛 / 礼券纸存根 / 会员卡七档 v2）未被改动（指纹 ${fp}）`, fp === '5a2419fbbe51ca9a')
+    add(`R16-1 钱包皮质卡 / 积分黑金卡 / 礼券券面的质感规则未被改动（指纹 ${fp}）`, fp === '9c483878d63c163d')
   }
   add('R16-2 钱包页面对齐：顶栏下划线页签、分区去金条盒子、礼券无警示橙、兑换钮不再是实心金药丸',
     !/\n\.whb-seg \{[^}]*background/.test(s.hubBarWxss) && /\.account-section-label::before \{ display: none; \}/.test(s.walletWxss) &&
@@ -503,17 +497,6 @@ function checks(s) {
         (s.pickupJs.match(/claimLive: true/g) || []).length === 1 &&
         /<view class="pass-qr-frame \{\{claimLive \? 'is-live' : ''\}\}">/.test(s.pickupWxml) &&
         /class="pass-qr-stamp" wx:if="\{\{pass\.statusTone === 'done'\}\}" aria-hidden="true">已自提</.test(s.pickupWxml))
-  }
-  // 2026-10-18 材质真实化 v2：五个文件都有覆盖层、两份鳄鱼皮一字不差、纹理不用 SVG 滤镜（真机不稳）、单张纹理有体积上限
-  {
-    const v2 = (src) => { const i = src.indexOf('材质真实化 v2'); return i < 0 ? '' : src.slice(src.lastIndexOf('/*', i)) }
-    const blocks = [s.vipWxss, s.walletLeather, s.walletLeatherCo, s.pointsWxss, s.couponsWxss].map(v2)
-    const svgs = blocks.join('\n').match(/url\("data:image\/svg\+xml,[^"]*"\)/g) || []
-    add(`R39-1 材质 v2：五处覆盖层齐、钱包两份鳄鱼皮一致、${svgs.length} 张纹理无 SVG 滤镜且单张 ≤8KB`,
-      blocks.every(Boolean) && blocks[1] === blocks[2] && svgs.length === 7 &&
-        svgs.every((u) => !/filter|feTurbulence|feGaussian/i.test(u) && u.length <= 8192) &&
-        /level-skin-99 \.card-grain/.test(blocks[0]) && /level-skin-5 \.card-grain/.test(blocks[0]) && /level-skin-6 \.card-grain/.test(blocks[0]) &&
-        /\.coupon-card\.is-void \.c-left \{ background-color: #2A2722; background-image: none;/.test(blocks[4]))
   }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
@@ -804,9 +787,6 @@ if (process.argv.includes('--selftest')) {
     ['打字机对同一学名重打', 'spcJs', (t) => t.replace(" || this._typedFor === latin) {", ") {")],
     ['从最近记录进也打字', 'identifyJs', (t) => t.replace("      url += '&fresh=1'\n", '')],
     ['历史已核销也落印', 'pickupJs', (t) => t.replace("      const closedNow = pass.statusTone === 'closed';", "      const closedNow = pass.statusTone === 'closed';\n      if (claimedNow) this.setData({ claimLive: true });")],
-    ['确认订单页鳄鱼皮与钱包页漂移', 'walletLeatherCo', (t) => t.replace('128rpx 124rpx', '160rpx 124rpx')],
-    ['纹理偷用 SVG 滤镜', 'pointsWxss', (t) => t.replace("%3Csvg xmlns='http://www.w3.org/2000/svg' width='2'", "%3Csvg xmlns='http://www.w3.org/2000/svg' filter='url(%23n)' width='2'")],
-    ['失效券存根也变成新纸', 'couponsWxss', (t) => t.replace('.coupon-card.is-void .c-left { background-color: #2A2722; background-image: none; box-shadow: none; }', '')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

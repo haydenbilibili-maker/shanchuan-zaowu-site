@@ -375,14 +375,6 @@ const SCENES = [
       orders: [{ _id: 'po1', status: 'quoted', petTitle: '团子', statusLabel: '待确认报价', orderNo: 'PM20261012003', craftName: '仿生标本', formatTime: '10.12', quoteText: '报价 ¥3,800' }, { _id: 'po2', status: 'in_production', petTitle: '豆豆', statusLabel: '制作中', orderNo: 'PM20260901011', craftName: '骨骼标本', formatTime: '09.01' }]
     }
   },
-  // 2026-10-18 材质真实化：会员卡七档（纸 / 木 / 金属 / 黑蟒皮）逐档出图（组件直出，页面里的 user-vip-card 会被预览跳过）
-  ...[['1', '🍀', '见习藏家'], ['2', '🦀', '初识藏家'], ['3', '🐞', '雅好藏家'], ['4', '🦋', '资深藏家'], ['5', '🦎', '白银藏家'], ['6', '💎', '黄金藏家'], ['99', '🏵', '荣誉馆长']].map(([lv, emoji, name]) => ({
-    name: `vip-skin-${lv}`, h: 560, wxml: 'components/UserVipCard/index', data: {
-      cardGuest: false, cardPending: false, cardFlipped: false, cardSkinClass: `level-skin-${lv}`, specimenEmoji: emoji, hasCheckedIn: false,
-      userInfo: { nickName: '林间拾蝶', avatarUrl: '' }, levelName: name, discountRate: 0.95, discountText: '95 折', profileScore: 80,
-      growthIsMax: false, growthValueDisplay: '2,480', nextThresholdDisplay: '5,000', growthGapLine: '再 2,520 成长值升级', growthPerkDelta: '下一档 9 折', progressWidth: '49%',
-      memberNo: 'MT-7Q2K-9X4A', cardBirthday: {}, cardConsumptionDisplay: '¥12,860', statistics: { orderCount: 18 }, cardPointsDisplay: '3,260', cardInterestTags: [], cardPersona: '', specimenName: '', specimenLatin: ''
-    } })),
   {
     name: 'wallet-coupons', h: 1700, wxml: 'subpackages/business/components/WalletPanelCoupons/index', data: {
       loading: false, usableCouponCount: 3, expiringCount: 1, expiringDays: 7, lockedCount: 1, closedCount: 2, passState: 'idle', memberNo: '0137', closedExpanded: false, lockedCoupons: [{ _id: 'c9', title: '满减礼券', faceLabel: '¥30', value: 30, minSpend: 299, canUse: false, status: 'locked', channelLabel: '线上可用', expiryHint: '11.30 前有效', sourceLabel: '积分兑换' }], closedCoupons: [],
