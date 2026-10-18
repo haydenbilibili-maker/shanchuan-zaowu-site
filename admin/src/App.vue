@@ -1082,7 +1082,7 @@
                         <el-input v-model="externalDraft.title" size="small" maxlength="40" placeholder="标题（选填）" />
                         <el-button size="small" type="primary" plain @click="addExternalVideo">添加</el-button>
                     </div>
-                    <span class="sku-hint-muted">主推本馆<b>同主体视频号</b>：第一条作为详情页价格下方的大幅主片，头图出现「实拍视频」角标直达；播放流量由微信承担，还给视频号涨播放。视频号 ID 会记住，下次只需填 feedId。非同主体需 feedToken（未填则为跳转卡片）；B站 / 抖音 / 小红书小程序内不能打开，只显示卡片 + 复制链接。</span>
+                    <span class="sku-hint-muted">主推本馆<b>同主体视频号</b>（2026-10-18 已确认：企业主体、本馆视频号与小程序同主体，无需 feedToken）：第一条作为详情页价格下方的大幅主片，头图出现「实拍视频」角标直达；播放流量由微信承担，还给视频号涨播放。视频号 ID 会记住，下次只需填 feedId。非同主体需 feedToken（未填则为跳转卡片）；B站 / 抖音 / 小红书小程序内不能打开，只显示卡片 + 复制链接。</span>
                 </div>
             </el-form-item>
 
