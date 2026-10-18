@@ -585,7 +585,19 @@ const SCENES = [
         { id: 's2', name: '毛利率', value: '52%', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '正常', target: 'profit' },
         { id: 's3', name: '商场扣点', value: '¥9,320', tone: 'flat', status: 'warn', lampClass: 'warn', statusLabel: '需关注', reason: '已过保底线 82%', target: 'mall' },
         { id: 's4', name: '回本进度', value: '41%', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '正常', target: 'equity' }] },
-      equity: { statusTone: 'brass', statusLabel: '回本前', personalDividendFmt: '163,200', personalRoiPct: 41, personalRoiBar: 'width:41%', poolRoiPct: 38, poolRoiBar: 'width:38%' } } }
+      equity: { statusTone: 'brass', statusLabel: '回本前', personalDividendFmt: '163,200', personalRoiPct: 41, personalRoiBar: 'width:41%', poolRoiPct: 38, poolRoiBar: 'width:38%' } } },
+  // 2026-10-18 投资观测台（只读看板，「逐个工作台优化」）
+  { name: 'investor', h: 2000, wxml: 'subpackages/extra/investor/index', data: { ready: true, entered: true, staffName: '周总', loading: false, legendOpen: false, numPulse: false, canFinance: true, canAnalytics: true,
+      rangeTabs: [{ key: 'today', label: '今日' }, { key: 'month', label: '按月' }, { key: 'quarter', label: '本季' }, { key: 'all', label: '累计' }], rangeKey: 'month', rangeType: 'month', rangeLabel: '10 月',
+      monthKey: '2026-10', monthCurrent: '2026-10', monthPrev: '2026-09', monthLabel: '2026-10', monthMax: '2026-10',
+      verdict: { className: 'blink', tone: 'up', title: '营收稳步上行', label: '正常', insight: '两店合计 GMV 环比 +12%，线上占比升至 34%；退款率 1.8% 在阈值内。', updatedAt: '10.18 09:20' },
+      signalBoard: { summary: { ok: 4, warn: 1, danger: 0 }, rulesNote: '阈值按近 3 月均值 ±15% 判定', items: [
+        { id: 'i1', name: 'GMV', value: '¥312,800', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '向好' },
+        { id: 'i2', name: '客单价', value: '¥486', tone: 'flat', status: 'ok', lampClass: 'blink', statusLabel: '正常' },
+        { id: 'i3', name: '退款率', value: '1.8%', tone: 'flat', status: 'ok', lampClass: 'blink', statusLabel: '正常' },
+        { id: 'i4', name: '新客', value: '214', tone: 'down', status: 'warn', lampClass: 'warn', statusLabel: '需关注', reason: '环比 -16%' }] },
+      headline: { grandFmt: '312,800', gmvPaidFmt: '206,400', offlineFmt: '106,400', netOnlineFmt: '201,300', refundFmt: '5,100', paidOrders: 644, aovFmt: '486', newUsers: 214 },
+      ledgerByStore: [{ storeId: 's1', name: '山川造物 · 主店', pct: 68, barStyle: 'width:68%', valFmt: '¥212,700' }, { storeId: 's2', name: '星宸标本 · 工坊', pct: 32, barStyle: 'width:32%', valFmt: '¥100,100' }] } }
 ]
 
 async function shoot(s) {

@@ -1,3 +1,6 @@
+/* 投资观测台（2026-10-18 视觉对齐，产品负责人「继续逐个工作台优化」；与股东观测台同口径，只改样式）
+   眉标等宽 + 宋体主标；区间页签选中由实心金改金线环（筛选不该是一屏最亮的东西）；卡片 / 指标格方角；数值暖白。
+   信号灯与股权结构条、状态圆点保持圆；.mini-cell 的 calc 宽度在 check:rpx-zero-slack 白名单里，不动。 */
 page {
   background: var(--color-bg, #1A1814);
   color: var(--color-text-body, #D5D1C8);
@@ -34,16 +37,19 @@ page {
 }
 
 .boot-en {
-  font-size: var(--fs-20);
-  letter-spacing: 0.12em;
-  color: var(--brass-600, #8A7530);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .boot-cn {
   margin-top: 8rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-40);
-  color: var(--color-text-primary, #FFFFFF);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .boot-hint {
@@ -84,9 +90,10 @@ page {
 
 .brand-group .en {
   display: block;
-  font-size: var(--fs-20);
-  letter-spacing: 0.1em;
-  color: var(--brass-600, #8A7530);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
   padding-left: 2rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -95,10 +102,12 @@ page {
 
 .brand-group .cn {
   display: block;
-  margin-top: 6rpx;
+  margin-top: 8rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-40);
-  color: var(--color-text-primary, #FFFFFF);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
   word-break: break-word;
 }
 
@@ -117,7 +126,7 @@ page {
   min-width: 0;
   font-size: var(--fs-26);
   font-weight: 500;
-  color: var(--color-text-primary, #FFFFFF);
+  color: #F3ECDD;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -130,7 +139,7 @@ page {
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
   border: 1rpx solid var(--brass-800, #4D401A);
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   background: rgba(196, 167, 108, 0.06);
 }
 
@@ -154,18 +163,19 @@ page {
   min-width: 0;
   text-align: center;
   padding: 14rpx 4rpx;
-  border-radius: var(--radius-md);
-  border: 1rpx solid var(--brass-800, #4D401A);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.24);
   font-size: var(--fs-22);
-  color: var(--brass-400, #C4A76C);
+  color: var(--color-text-secondary, #A09A90);
   box-sizing: border-box;
-  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+  transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
 }
 
+/* 区间选中：金线环（原实心金块） */
 .range-tab.on {
-  background: var(--brass-400, #C4A76C);
-  border-color: var(--brass-400, #C4A76C);
-  color: var(--color-bg, #1A1814);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass);
+  color: var(--brass-200);
   font-weight: 500;
 }
 
@@ -182,18 +192,17 @@ page {
   min-width: 0;
   text-align: center;
   padding: 12rpx 8rpx;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border, #26232066);
-  background: var(--color-bg-card, #1F1D1A);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
   font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
   box-sizing: border-box;
 }
 
 .month-chip.on {
-  border-color: var(--brass-800, #4D401A);
-  color: var(--brass-400, #C4A76C);
+  color: var(--brass-200);
   background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass);
 }
 
 .month-chip.pick {
@@ -204,7 +213,7 @@ page {
 .verdict-card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid var(--brass-800, #4D401A);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
   padding: 24rpx 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -239,16 +248,18 @@ page {
 }
 
 .verdict-en {
+  font-family: var(--font-mono);
   font-size: var(--fs-18);
-  letter-spacing: 0.1em;
-  color: var(--color-text-secondary, #A09A90);
+  letter-spacing: 0.2em;
+  color: var(--brass-300);
 }
 
 .verdict-title {
   margin-top: 6rpx;
+  font-family: var(--font-brand);
   font-size: var(--fs-32);
-  font-weight: 500;
-  color: var(--color-text-primary, #FFFFFF);
+  font-weight: 600;
+  color: #F3ECDD;
   line-height: 1.35;
   word-break: break-word;
 }
@@ -256,12 +267,12 @@ page {
 .verdict-title.up { color: var(--color-success, #52B788); }
 .verdict-title.warn { color: var(--color-warning, #E9A23B); }
 .verdict-title.down { color: var(--color-error, #D64045); }
-.verdict-title.flat { color: var(--color-text-primary, #FFFFFF); }
+.verdict-title.flat { color: #F3ECDD; }
 
 .verdict-badge {
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   font-size: var(--fs-22);
   font-family: var(--font-mono);
   border: 1px solid var(--color-border, #26232066);
@@ -304,7 +315,7 @@ page {
 
 .sum-chip {
   padding: 4rpx 12rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   font-size: var(--fs-20);
   font-family: var(--font-mono);
   border: 1px solid transparent;
@@ -383,7 +394,7 @@ page {
 .card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
   padding: 24rpx 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -403,9 +414,11 @@ page {
 }
 
 .card-title {
-  font-size: var(--fs-26);
-  font-weight: 500;
-  color: var(--color-text-primary, #FFFFFF);
+  font-family: var(--font-brand);
+  font-size: var(--fs-28);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #F3ECDD;
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -464,7 +477,7 @@ page {
   align-items: flex-start;
   gap: 12rpx;
   padding: 16rpx 14rpx 16rpx 18rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(38, 35, 32, 0.95);
   box-sizing: border-box;
@@ -517,7 +530,7 @@ page {
   font-size: var(--fs-26);
   font-family: var(--font-mono);
   font-weight: 600;
-  color: var(--color-text-primary, #FFFFFF);
+  color: #F3ECDD;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -540,28 +553,34 @@ page {
   box-sizing: border-box;
 }
 
+/* 分区头 = 等宽眉标 + 宋体主标 + 渐隐金线（与全站 mu-head 同口径） */
 .group-head {
   display: flex;
   flex-direction: column;
-  margin-bottom: 14rpx;
+  gap: 6rpx;
+  margin-bottom: 20rpx;
+  padding-bottom: 14rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(196, 167, 108, 0.12) 60%, transparent) left bottom / 100% 1px no-repeat;
 }
 
 .group-en {
-  font-size: var(--fs-20);
-  letter-spacing: 0.1em;
-  color: var(--color-text-secondary, #A09A90);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .group-cn {
-  margin-top: 4rpx;
-  font-size: var(--fs-28);
+  font-family: var(--font-brand);
+  font-size: 34rpx;
   font-weight: 500;
-  color: var(--color-text-primary, #FFFFFF);
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .hero-card {
   background: linear-gradient(135deg, var(--brass-500, #A8903C) 0%, var(--brass-400, #C4A76C) 100%);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
   padding: 28rpx 28rpx 24rpx;
   margin-bottom: 16rpx;
   width: 100%;
@@ -598,7 +617,7 @@ page {
   font-family: var(--font-mono);
   font-size: var(--fs-48);
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: #F3ECDD;
   letter-spacing: 0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -630,7 +649,7 @@ page {
   margin-top: 6rpx;
   font-family: var(--font-mono);
   font-size: var(--fs-22);
-  color: var(--color-text-primary);
+  color: #F3ECDD;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -649,7 +668,7 @@ page {
   padding: 16rpx 8rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   text-align: center;
   box-sizing: border-box;
 }
@@ -669,7 +688,7 @@ page {
   font-family: var(--font-mono);
   font-size: var(--fs-24);
   font-weight: 600;
-  color: var(--color-text-primary, #FFFFFF);
+  color: #F3ECDD;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -772,7 +791,7 @@ page {
   text-align: center;
   padding: 12rpx 6rpx;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   box-sizing: border-box;
 }
 
@@ -781,7 +800,7 @@ page {
   font-family: var(--font-mono);
   font-size: var(--fs-26);
   font-weight: 600;
-  color: var(--color-text-primary, #FFFFFF);
+  color: #F3ECDD;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -864,7 +883,7 @@ page {
   min-height: 40rpx;
   max-width: 100%;
   background: rgba(255, 255, 255, 0.04);
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   display: flex;
   flex-direction: column-reverse;
   overflow: hidden;
@@ -916,7 +935,7 @@ page {
 .skel-card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
   padding: 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -925,7 +944,7 @@ page {
 
 .skel-line {
   height: 24rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   background: linear-gradient(90deg, var(--color-bg-elevated) 0%, #33302C 50%, var(--color-bg-elevated) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
@@ -949,7 +968,7 @@ page {
   flex: 1;
   min-width: 0;
   height: 80rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   background: linear-gradient(90deg, var(--color-bg-elevated) 0%, #33302C 50%, var(--color-bg-elevated) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
@@ -968,7 +987,7 @@ page {
 .empty-card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
   padding: 40rpx 28rpx;
   text-align: center;
   margin-bottom: 20rpx;
@@ -979,7 +998,7 @@ page {
 .empty-title {
   display: block;
   font-size: var(--fs-28);
-  color: var(--color-text-primary, #FFFFFF);
+  color: #F3ECDD;
 }
 
 .empty-desc {
@@ -995,7 +1014,7 @@ page {
   padding: 28rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid rgba(77, 64, 26, 0.55);
-  border-radius: var(--radius-lg, 24rpx);
+  border-radius: 4rpx;
   box-sizing: border-box;
 }
 
