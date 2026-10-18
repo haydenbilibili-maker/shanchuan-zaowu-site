@@ -1119,3 +1119,39 @@ page { background: var(--color-bg); color: #fff; }
     animation: none;
   }
 }
+
+/* 仪式感：礼笺「已收」朱印（2026-10-18 产品负责人点名「做强礼赠流程仪式感」）
+   与送礼成功页蜡封「封」一来一回：送 = 封，收 = 已收。落在礼笺右上角空白处 ——
+   右下是落款「— 署名」与「山海」小印的位置，压上去会遮字（出图实测）。 */
+.accept-seal {
+  position: absolute;
+  right: 36rpx;
+  top: 36rpx;
+  width: 84rpx;
+  height: 84rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid rgba(168, 53, 42, 0.82);
+  border-radius: 6rpx;
+  box-shadow: inset 0 0 0 3rpx rgba(242, 237, 228, 0.6), inset 0 0 0 5rpx rgba(168, 53, 42, 0.5);
+  color: rgba(168, 53, 42, 0.88);
+  transform: rotate(-10deg);
+  pointer-events: none;
+}
+.accept-seal-ch {
+  font-family: var(--font-brand);
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 32rpx;
+}
+.accept-seal.is-live { animation: accept-seal-stamp 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes accept-seal-stamp {
+  0% { opacity: 0; transform: rotate(-10deg) scale(1.9); }
+  60% { opacity: 1; transform: rotate(-10deg) scale(0.94); }
+  100% { opacity: 1; transform: rotate(-10deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .accept-seal.is-live { animation: none; }
+}

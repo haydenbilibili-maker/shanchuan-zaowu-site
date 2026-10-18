@@ -97,7 +97,13 @@ const FILES = {
   attJs: 'subpackages/extra/staff/attendance/index.js',
   todoWxml: 'subpackages/extra/staff/store-todos/index.wxml',
   todoJs: 'subpackages/extra/staff/store-todos/index.js',
-  todoWxss: 'subpackages/extra/staff/store-todos/index.wxss'
+  todoWxss: 'subpackages/extra/staff/store-todos/index.wxss',
+  coJs: 'subpackages/business/confirm-order/index.js',
+  coWxml: 'subpackages/business/confirm-order/index.wxml',
+  coWxss: 'subpackages/business/confirm-order/index.wxss',
+  rcvJs: 'subpackages/feature/gift/receive/index.js',
+  rcvWxml: 'subpackages/feature/gift/receive/index.wxml',
+  rcvWxss: 'subpackages/feature/gift/receive/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -400,6 +406,22 @@ function checks(s) {
         /ceremony: shiftStatus === 'done' \? ceremonyOf\(this\.data\.shift\) : '',\s*ceremonyLive: false,/.test(s.todoJs) && /class="ceremony \{\{ceremony\}\} \{\{ceremonyLive \? 'is-live' : ''\}\}"/.test(s.todoWxml) &&
         /prefers-reduced-motion[\s\S]*\.ceremony\.is-live \.cer-lamp \{ animation: none; \}/.test(s.todoWxss))
   }
+  // 2026-10-18 产品负责人点名「做强下单主流程与礼赠流程仪式感」—— 稳定期模块，只动展示层：
+  // 跳转去向、payForOrder / manageGift 调用与 success 语义不变（下面同时锁住，防止「顺手」改了流程）
+  add('R36-1 支付成功「已入藏」标本签：仅普通单（确认中 / 礼赠单仍 toast）、遮罩用 ui-pop-mask、三条跳转去向不变',
+    /const paidRite = !pending && !this\.data\.isGiftOrder/.test(s.coJs) &&
+      /\} else \{\s*wx\.showToast\(\{\s*title: pending \? '支付确认中' : '支付成功'/.test(s.coJs) &&
+      /\}, paidRite \? 1700 : 1200\)/.test(s.coJs) &&
+      /url: `\/subpackages\/feature\/gift\/success\/index\?orderId=\$\{result\.orderId\}`/.test(s.coJs) &&
+      /url: `\/subpackages\/business\/pickup-pass\/index\?id=\$\{encodeURIComponent\(result\.orderId\)\}`/.test(s.coJs) &&
+      /url: '\/subpackages\/business\/orders\/index\?type=paid'\n/.test(s.coJs) &&
+      /<view class="ui-pop-mask is-center is-deep paid-rite" wx:if="\{\{paidRite\.show\}\}"/.test(s.coWxml) &&
+      /prefers-reduced-motion[\s\S]*\.paid-seal \{ animation: none; \}/.test(s.coWxss))
+  add('R36-2 礼笺「已收」朱印：两条收下路径都点亮、只给收礼人、落右上角不压落款；manageGift accept 调用不变',
+    (s.rcvJs.match(/acceptStampLive: true/g) || []).length === 2 && /acceptStampLive: false,/.test(s.rcvJs) &&
+      /class="accept-seal \{\{acceptStampLive \? 'is-live' : ''\}\}" wx:if="\{\{accepted && !isSender\}\}"/.test(s.rcvWxml) &&
+      /\n\.accept-seal \{[^}]*top: 36rpx;/.test(s.rcvWxss) &&
+      /action: 'accept',\s*token: this\.data\.token,\s*orderId: this\.data\.orderId/.test(s.rcvJs))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -680,6 +702,9 @@ if (process.argv.includes('--selftest')) {
     ['打孔卡同孔不再准时优先', 'punchJs', (t) => t.replace("    if (cell[slot] !== 'ok') cell[slot] = tone\n", '    cell[slot] = tone\n')],
     ['打孔卡周起点错成周日', 'punchJs', (t) => t.replace('today.getDate() - ((today.getDay() + 6) % 7)', 'today.getDate() - today.getDay()')],
     ['进页已完成也播开馆动画', 'todoJs', (t) => t.replace("ceremony: shiftStatus === 'done' ? ceremonyOf(this.data.shift) : '',\n        ceremonyLive: false,", "ceremony: shiftStatus === 'done' ? ceremonyOf(this.data.shift) : '',\n        ceremonyLive: true,")],
+    ['礼赠单也弹入藏签（叠两次仪式）', 'coJs', (t) => t.replace('const paidRite = !pending && !this.data.isGiftOrder', 'const paidRite = !pending')],
+    ['入藏仪式顺手改了跳转去向', 'coJs', (t) => t.replace("url: '/subpackages/business/orders/index?type=paid'\n", "url: '/subpackages/business/orders/index'\n")],
+    ['凭礼笺收下不再盖已收', 'rcvJs', (t) => t.replace('this.setData({ accepted: true, holderCard: true, acceptStampLive: true })', 'this.setData({ accepted: true, holderCard: true })')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

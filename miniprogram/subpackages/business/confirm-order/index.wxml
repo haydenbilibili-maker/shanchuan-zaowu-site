@@ -746,5 +746,19 @@
   bind:close="onRegDialogClose"
 />
 
+<!-- 仪式感（2026-10-18 产品负责人点名）：普通单支付成功 → 「已入藏」标本签自下浮起、朱印「入藏」落下，约 1.7s 后照原路跳转。
+     纯展示层：不改下单 / 支付契约与跳转去向；支付确认中、礼赠单不出现 -->
+<view class="ui-pop-mask is-center is-deep paid-rite" wx:if="{{paidRite.show}}" catchtouchmove="true" aria-label="支付成功，已入藏">
+  <view class="paid-label">
+    <text class="paid-en">ACCESSION</text>
+    <text class="paid-title">已入藏</text>
+    <view class="paid-rule"></view>
+    <text class="paid-item">{{paidRite.title}}{{paidRite.more ? ' 等 ' + (paidRite.more + 1) + ' 件' : ''}}</text>
+    <text class="paid-meta">订单尾号 · {{paidRite.tail}}</text>
+    <text class="paid-meta">{{paidRite.pickup ? '凭自取码到店领取' : '馆员正在为你备妥寄出'}}</text>
+    <view class="paid-seal" aria-hidden="true"><text class="paid-seal-ch">入</text><text class="paid-seal-ch">藏</text></view>
+  </view>
+</view>
+
 <!-- 全站样式化弹窗宿主（替代 wx.showModal）；详见 utils/appModal.js -->
 <app-modal id="appModal" />

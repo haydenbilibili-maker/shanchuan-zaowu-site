@@ -53,6 +53,8 @@ Page({
     showLetterCursor: false,
     product: null,
     accepted: false,
+    // 仪式感（2026-10-18 产品负责人点名「做强礼赠流程仪式感」）：本页亲手收下 → 礼笺上「已收」朱印落下；已收过则静态
+    acceptStampLive: false,
     addressDone: false,
     addressMaskedLine: '',
     phoneMasked: '',
@@ -828,7 +830,8 @@ Page({
         return
       }
       trackBehavior('gift_receive_accept', 'order', this.data.orderId, { mode: 'phone', ok: true })
-      this.setData({ accepted: true })
+      this.setData({ accepted: true, acceptStampLive: true })
+      try { wx.vibrateShort({ type: 'medium' }) } catch (e) { /* 低版本基础库无 type 参数 */ }
       wx.showToast({ title: '已收下', icon: 'success' })
       setTimeout(() => this.goAddress(), 500)
     } catch (e) {
@@ -874,7 +877,8 @@ Page({
     this._claimName = claimName
     this.setData({ claimBusy: false })
     if (this.data.isInvite) {
-      this.setData({ accepted: true, holderCard: true })
+      this.setData({ accepted: true, holderCard: true, acceptStampLive: true })
+      try { wx.vibrateShort({ type: 'medium' }) } catch (e) { /* 低版本基础库无 type 参数 */ }
       this._maybeShowRegCard()
       return
     }

@@ -162,6 +162,8 @@
         wx:if="{{cardSignature && letterSigReady}}"
       >— {{cardSignature}}</text>
       <view class="seal-mark" aria-hidden="true">山海</view>
+      <!-- 仪式感：收下即在礼笺上盖「已收」朱印（与送礼人封缄的「封」相应）；本页亲手收下才播落印 -->
+      <view class="accept-seal {{acceptStampLive ? 'is-live' : ''}}" wx:if="{{accepted && !isSender}}" aria-hidden="true"><text class="accept-seal-ch">已</text><text class="accept-seal-ch">收</text></view>
     </view>
 
     <!-- 语音：对齐 compose voice-rite / giftVoice 播放器 -->

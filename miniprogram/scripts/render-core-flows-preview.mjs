@@ -341,6 +341,13 @@ const SCENES = [
   { name: 'gift-compose-2', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose', data: { activeStep: 2, maxStep: 2, cardFocused: false, signed: true, sigJustSigned: false } },
   { name: 'order-pending', h: 2300, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: { order: { _id: 'o2', serialNo: 'SH20261015003', status: 'pending_pay', totalPrice: '468.00', originalPrice: '468.00', discountRate: 1, couponValue: 20, shippingFee: 18, shippingFeeDisplay: '18.00', address: { name: '林', phone: '138****0012' }, addressLine: '上海市徐汇区漕溪北路 ** 号', products: [{ _id: 'p3', title: '蓝闪蝶 · A1 博物级', latin: 'Morpho menelaus', price: '468.00', count: 1, image: P[2] }] }, stampText: '待付款', stampClass: 'warn', payBtnLabel: '付款入藏', hasTracking: false } },
   { name: 'gift-receive-done', h: 1700, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, addressDone: true, phoneMasked: '138****0012', addressMaskedLine: '上海市徐汇区 ***' } },
+  // 2026-10-18 仪式感（产品负责人点名）：收下 → 礼笺「已收」朱印
+  { name: 'gift-receive-accepted', h: 1300, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, acceptStampLive: true, addressDone: false, holderCard: true } },
+  // 支付成功「已入藏」标本签（背后页只给最少数据，深遮罩盖住）
+  { name: 'order-paid-rite', h: 1300, wxml: 'subpackages/business/confirm-order/index', data: {
+      items: [{ productId: 'p1', title: '光明女神闪蝶 · 原色标本框', image: '' }, { productId: 'p2', title: '蓝闪蝶', image: '' }],
+      paidRite: { show: true, title: '光明女神闪蝶 · 原色标本框', more: 1, tail: 'K7Q2M9', pickup: false } },
+    css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
   { name: 'gift-receive-box', h: 1500, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { revealed: false, ritePhase: 'idle', letterToShown: false, letterBodyShown: false } },
   { name: 'pet-1', h: 2000, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 1, currentStepMeta: petMeta(1) } },
   { name: 'pet-2', h: 2200, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 2, currentStepMeta: petMeta(2) } },

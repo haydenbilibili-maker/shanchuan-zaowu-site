@@ -341,6 +341,8 @@ Page(withAppModal({
   ...giftCheckoutMethods,
   data: {
     items: [],
+    // 仪式感（2026-10-18 产品负责人点名「做强下单主流程仪式感」）：支付成功的「已入藏」标本签；纯展示层
+    paidRite: { show: false, title: '', more: 0, tail: '', pickup: false },
     source: 'cart',
     address: null,
     coupons: [],
@@ -1681,10 +1683,27 @@ Page(withAppModal({
         }
 
         const pending = !!(payResult && payResult.pendingConfirm)
-        wx.showToast({
-          title: pending ? '支付确认中' : '支付成功',
-          icon: pending ? 'none' : 'success'
-        })
+        // 仪式感：普通单支付成功 → 「已入藏」标本签 + 朱印（替代 toast，跳转去向不变）；
+        // 支付确认中照旧 toast；礼赠单去礼赠成功页（那里有封缄信封），不叠两次仪式
+        const paidRite = !pending && !this.data.isGiftOrder
+        if (paidRite) {
+          const list = this.data.items || []
+          this.setData({
+            paidRite: {
+              show: true,
+              title: (list[0] && list[0].title) || '山海藏品',
+              more: Math.max(0, list.length - 1),
+              tail: String(result.orderId || '').slice(-6).toUpperCase(),
+              pickup: !!this.data.storePickup
+            }
+          })
+          try { wx.vibrateShort({ type: 'medium' }) } catch (e) { /* 低版本基础库无 type 参数 */ }
+        } else {
+          wx.showToast({
+            title: pending ? '支付确认中' : '支付成功',
+            icon: pending ? 'none' : 'success'
+          })
+        }
         try {
           const { invalidateAfterOrder } = require('../utils/cacheInvalidate')
           invalidateAfterOrder()
@@ -1712,7 +1731,7 @@ Page(withAppModal({
               url: '/subpackages/business/orders/index?type=paid'
             })
           }
-        }, 1200)
+        }, paidRite ? 1700 : 1200)
       } catch (payErr) {
         wx.hideLoading()
         const msg = payErr.message || '支付失败'
