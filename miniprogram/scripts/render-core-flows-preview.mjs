@@ -462,6 +462,23 @@ const SCENES = [
   // 2026-10-18 打印弹层防遮挡：按矮屏（iPhone SE 级）出图，按钮须完整落在出纸下方
   { name: 'booking-mint', h: 1180, wxml: 'subpackages/business/booking/index', base: 'booking', data: { showMintModal: true, mintAnimation: true, mintFinished: true, newTicketCode: 'A7F3K2' },
     css: '.ui-pop-mask.mint-modal.is-open { display: flex !important; } .mint-modal, .mint-modal * { transition: none !important; }' },
+  // 2026-10-18 店员工作台（逐个工作台优化）
+  { name: 'staff-hub', h: 2300, wxml: 'subpackages/extra/staff/index', data: {
+      ready: true, roleText: '店员', staffName: '阿桃', storeNames: ['山海造物 · 主店'], storeIndex: 0, storeName: '山海造物 · 主店', showScanCta: true, hasScenes: true,
+      groups: [
+        { key: 'onsite', title: '现场服务', en: 'ON-SITE', items: [
+          { key: 'verify', title: '核销验票', desc: '会员码 · 预约票 · 门店礼券 · 礼赠自提', en: 'TICKET', icon: '/assets/icons/qrcode.png', badge: 3 },
+          { key: 'grant', title: '消费赠分', desc: '扫会员码录入消费并赠分', en: 'GRANT', icon: '/assets/icons/coin_gold.png' },
+          { key: 'visit', title: '到店签到', desc: '查看今日到店人数', en: 'VISIT', icon: '/assets/icons/checkin.png' },
+          { key: 'records', title: '赠分流水', desc: '本人或本店今日赠分记录', en: 'LEDGER', icon: '/assets/icons/list.png' }] },
+        { key: 'shift', title: '班次日常', en: 'SHIFT', items: [
+          { key: 'attendance', title: '考勤打卡', desc: '上下班打卡，记录门店与时间', en: 'ATTENDANCE', icon: '/subpackages/manager/assets/icons/clock.png' },
+          { key: 'leave', title: '请假申请', desc: '事假病假年假调休，提交后待审批', en: 'LEAVE', icon: '/assets/icons/list.png' },
+          { key: 'todos', title: '早晚门店清单', desc: '开闭店陈列、收银与安防核对', en: 'CHECKLIST', icon: '/assets/icons/done.png', badge: 2 }] },
+        { key: 'hr', title: '人事与薪酬', en: 'PAYROLL', items: [
+          { key: 'payslip', title: '工资条明细', desc: '应发实发 · 所属门店销售分成 1%', en: 'PAYSLIP', icon: '/assets/icons/wallet_gold.png' },
+          { key: 'reimburse', title: '报销申请', desc: '提交费用报销并跟踪审核', en: 'EXPENSE', icon: '/assets/icons/pay.png' }] }
+      ] } },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },

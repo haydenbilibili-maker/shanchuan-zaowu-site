@@ -74,7 +74,9 @@ const FILES = {
   deskCommon: 'subpackages/b2bdesk/desk-common.wxss',
   deskCenter: 'subpackages/b2bdesk/center/index.wxss',
   shareholderWxss: 'subpackages/extra/shareholder/index.wxss',
-  investorWxss: 'subpackages/extra/investor/index.wxss'
+  investorWxss: 'subpackages/extra/investor/index.wxss',
+  staffHubWxml: 'subpackages/extra/staff/index.wxml',
+  staffHubWxss: 'subpackages/extra/staff/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -288,6 +290,13 @@ function checks(s) {
       pills.length === 0 && /\.range-tab\.on \{[^}]*var\(--ring-brass\)/.test(s.investorWxss) && !/\.range-tab\.on \{[^}]*background: var\(--brass-400/.test(s.investorWxss) &&
         /\n\.group-cn \{[^}]*font-family: var\(--font-brand\)/.test(s.investorWxss))
   }
+  // 2026-10-18 店员工作台（只覆盖本页；scene.wxss / field 为子页共用件不动）
+  add('R28-1 店员工作台：分区头眉标 + 宋体两行、场景格方角发丝账格、角标退为金线环（实心金只留扫码主按钮）',
+    /<view class="group-head"><text class="group-en">\{\{item\.en\}\}<\/text><text class="group-cn">\{\{item\.title\}\}<\/text><\/view>/.test(s.staffHubWxml) &&
+      !/\{\{item\.title\}\} \/ \{\{item\.en\}\}/.test(s.staffHubWxml) &&
+      /\n\.link-row \.link-btn \{[^}]*border-radius: 4rpx;/.test(s.staffHubWxss) &&
+      /\n\.link-btn \.scene-badge \{[^}]*background: #1A1814;[^}]*var\(--ring-brass\)/.test(s.staffHubWxss) &&
+      /\n\.scene-header \.picker-inner \{[^}]*background: transparent;/.test(s.staffHubWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -549,6 +558,8 @@ if (process.argv.includes('--selftest')) {
     ['加入采购车回到实心金药丸', 'buyCatalog', (t) => t.replace('  border-radius: 4rpx;\n  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);', '  border-radius: 999rpx;\n  background: var(--brass-400);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);')],
     ['供应商管理分段回到胶囊', 'deskCommon', (t) => t.replace('.chip {\n  padding: 10rpx 22rpx;\n  border-radius: 2rpx;', '.chip {\n  padding: 10rpx 22rpx;\n  border-radius: 999rpx;')],
     ['股东观测台卡片回到大圆角', 'shareholderWxss', (t) => t.replace('.verdict-card {\n  background: var(--color-bg-card, #1F1D1A);\n  border: 1rpx solid var(--brass-800, #4D401A);\n  border-radius: 4rpx;', '.verdict-card {\n  background: var(--color-bg-card, #1F1D1A);\n  border: 1rpx solid var(--brass-800, #4D401A);\n  border-radius: var(--radius-lg, 24rpx);')],
+    ['店员分区头回到中英同行', 'staffHubWxml', (t) => t.replace('<view class="group-head"><text class="group-en">{{item.en}}</text><text class="group-cn">{{item.title}}</text></view>', '<view class="panel-title sub">{{item.title}} / {{item.en}}</view>')],
+    ['店员角标回到实心金', 'staffHubWxss', (t) => t.replace('  background: #1A1814;\n  box-shadow: var(--ring-brass);', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass);')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

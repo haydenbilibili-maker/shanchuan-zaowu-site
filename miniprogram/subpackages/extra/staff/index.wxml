@@ -45,7 +45,7 @@
 
   <block wx:if="{{hasScenes}}">
     <view class="scene-group" wx:for="{{groups}}" wx:key="key">
-      <view class="panel-title sub">{{item.title}} / {{item.en}}</view>
+      <view class="group-head"><text class="group-en">{{item.en}}</text><text class="group-cn">{{item.title}}</text></view>
       <view class="link-row">
         <view
           class="link-btn"
@@ -66,6 +66,7 @@
           </view>
           <text class="lb-cn">{{scene.title}}</text>
           <text class="lb-desc">{{scene.desc}}</text>
+          <text class="lb-arrow" aria-hidden="true">›</text>
         </view>
       </view>
     </view>
