@@ -86,7 +86,10 @@ const FILES = {
   payslipAdminWxml: 'subpackages/manager/payslip/admin/index.wxml',
   wsSubviewsWxml: 'subpackages/manager/manager/workspace/_subviews.wxml',
   petSheetWxml: 'subpackages/manager/manager/workspace/petMemorialSheet.wxml',
-  shCfgWxss: 'subpackages/extra/shareholder-config/index.wxss'
+  shCfgWxss: 'subpackages/extra/shareholder-config/index.wxss',
+  apJs: 'subpackages/extra/approvals/index.js',
+  apWxml: 'subpackages/extra/approvals/index.wxml',
+  apReasons: 'subpackages/extra/approvals/rejectReasons.js'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -334,6 +337,23 @@ function checks(s) {
     /\n\.card \{[^}]*border-radius: 4rpx;/.test(s.shCfgWxss) && /\n\.ratio-cell \{[^}]*width: 48\.5%;/.test(s.shCfgWxss) &&
       /\n\.ratio-cell \{[^}]*border-radius: 2rpx;/.test(s.shCfgWxss) && /\n\.formula-card \{[^}]*border-left: 2rpx solid/.test(s.shCfgWxss) &&
       /\n\.input \{[^}]*height: 80rpx;[^}]*box-sizing: border-box;/.test(s.shCfgWxss))
+  // 2026-10-18 审批中心驳回面板（前端旁路：提交口径仍是 manageApprovals reject + rejectReason 字符串）
+  {
+    let rr = {}
+    try { const m = { exports: {} }; new Function('module', 'exports', s.apReasons)(m, m.exports); rr = m.exports } catch (e) { rr = {} }
+    const okFns = typeof rr.reasonsFor === 'function' && typeof rr.composeReason === 'function'
+    const claim = okFns ? rr.reasonsFor('points_receipt_claim') : []
+    const unknown = okFns ? rr.reasonsFor('nope') : []
+    add('R33-1 驳回常用原因：按类型给 ≤5 枚、未知类型只给通用一条；快选 + 补充说明以「；」拼接，空即空',
+      okFns && claim.length === 5 && claim[0] === '小票照片看不清' && unknown.length === 1 &&
+        Object.values(rr.BY_TYPE || {}).every((list) => list.length <= 4) &&
+        rr.composeReason(['甲', ' 乙 '], ' 丙 ') === '甲；乙；丙' && rr.composeReason([], '  ') === '' && rr.composeReason(null, '丁') === '丁')
+    add('R33-2 驳回走自绘面板（不再系统 editable 弹窗）：快选 / 补充 / 预览齐全，必填类型拦 <2 字；提交仍为 reject + rejectReason',
+      !/editable: true/.test(s.apJs) && /rejectSheet\.show/.test(s.apWxml) && /bindtap="onRejectReasonTap"/.test(s.apWxml) &&
+        /bindinput="onRejectNoteInput"/.test(s.apWxml) && /\{\{rejectSheet\.preview\}\}/.test(s.apWxml) && /bindtap="confirmReject"/.test(s.apWxml) &&
+        /sheet\.requireReason && reason\.length < 2/.test(s.apJs) &&
+        /action: 'reject',\s*approvalId: id,\s*rejectReason: reason \|\| '已驳回'/.test(s.apJs))
+  }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -605,6 +625,9 @@ if (process.argv.includes('--selftest')) {
     ['伴宠工单弹层正文退回 view', 'petSheetWxml', (t) => t.replace('<scroll-view scroll-y class="modal-body pm-sheet-body">', '<view class="modal-body pm-sheet-body">')],
     ['权限配置正文贴边被裁', 'permMgrWxss', (t) => t.replace('  padding: 24rpx 4rpx 16rpx;', '  padding: 24rpx 0 16rpx;')],
     ['股东档案卡回到圆角', 'shCfgWxss', (t) => t.replace('  border: 1rpx solid rgba(196, 167, 108, 0.16);\n  border-radius: 4rpx;\n}\n.card-title', '  border: 1rpx solid rgba(196, 167, 108, 0.16);\n  border-radius: var(--radius-md);\n}\n.card-title')],
+    ['驳回原因拼接丢了补充说明', 'apReasons', (t) => t.replace('  if (extra) parts.push(extra)\n', '')],
+    ['驳回退回系统输入弹窗', 'apJs', (t) => t.replace("      approvePendingId: '',\n      ignorePendingId: '',\n      rejectSheet: {", "      approvePendingId: '',\n      editable: true,\n      ignorePendingId: '',\n      rejectSheet: {")],
+    ['必填驳回不再拦空原因', 'apJs', (t) => t.replace('if (sheet.requireReason && reason.length < 2)', 'if (false)')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

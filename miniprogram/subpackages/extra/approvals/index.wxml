@@ -349,6 +349,46 @@
 
 </view>
 
+<!-- 驳回面板（2026-10-18）：常用原因可多选 + 补充说明，实时预览将发送的原因；取代系统 editable 弹窗。
+     提交仍走 manageApprovals reject + rejectReason，口径不变 -->
+<view class="ui-pop-mask is-center" wx:if="{{rejectSheet.show}}" bindtap="closeRejectSheet" catchtouchmove="true">
+  <view class="ui-pop-dialog modal reject-sheet" catchtap="true">
+    <view class="ui-pop-head">
+      <text class="ui-pop-kicker">REJECT</text>
+      <text class="ui-pop-title">驳回{{rejectSheet.typeLabel ? ' · ' + rejectSheet.typeLabel : ''}}</text>
+      <text class="ui-pop-sub" wx:if="{{rejectSheet.title}}">{{rejectSheet.title}}</text>
+    </view>
+    <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">
+      <view class="field">
+        <text class="field-label">常用原因{{rejectSheet.reasons.length > 1 ? '（可多选）' : ''}}</text>
+        <view class="seg-row wrap">
+          <view hover-class="tap-press-soft" hover-stay-time="80"
+            class="seg-item reason-chip {{item.on ? 'on' : ''}}"
+            wx:for="{{rejectSheet.reasons}}"
+            wx:key="label"
+            bindtap="onRejectReasonTap"
+            data-idx="{{index}}"
+          >{{item.label}}</view>
+        </view>
+      </view>
+      <view class="field">
+        <text class="field-label">补充说明{{rejectSheet.requireReason ? '' : '（选填）'}}</text>
+        <textarea class="input reject-note" value="{{rejectSheet.note}}" bindinput="onRejectNoteInput" maxlength="120"
+          placeholder="{{rejectSheet.requireReason ? '必填：点选常用原因或写明至少 2 个字' : '写给提交人的话'}}" placeholder-class="ph" auto-height="{{false}}" />
+      </view>
+      <view class="reject-preview" wx:if="{{rejectSheet.preview}}">
+        <text class="reject-preview-label">提交人将看到</text>
+        <text class="reject-preview-text">{{rejectSheet.preview}}</text>
+      </view>
+      <view class="page-tip is-warn" wx:if="{{rejectSheet.tip}}"><text>{{rejectSheet.tip}}</text></view>
+    </scroll-view>
+    <view class="workbench-modal-foot">
+      <view hover-class="tap-press-soft" hover-stay-time="80" class="workbench-btn-outline" bindtap="closeRejectSheet">取消</view>
+      <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-danger" bindtap="confirmReject">确认驳回</view>
+    </view>
+  </view>
+</view>
+
 <!-- 撤销弹窗（积分流水）—— 形态取 app.wxss 的 ui-pop-*（docs/弹层视觉规范_2026-10-13.md） -->
 <view class="ui-pop-mask is-center" wx:if="{{showRevokeModal}}" bindtap="closeRevoke" catchtouchmove="true">
   <view class="ui-pop-dialog modal" catchtap="true">

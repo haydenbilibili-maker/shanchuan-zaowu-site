@@ -1041,3 +1041,117 @@ page {
   flex: 1;
   width: auto;
 }
+
+/* ================================================================
+   2026-10-18 审批中心：视觉对齐 + 驳回面板（产品负责人「可适当做前端交互与新的功能创新」）
+   等宽眉标 + 宋体；卡片方角发丝框（超时仍是左侧警示线、驳回 / 通过仍是红绿边语义）；
+   胶囊（筛选 / 状态 / 原因签 / 重试）改方签；审核区 = 方角分段；「通过」仍是卡内唯一实心金。
+   ================================================================ */
+.brand-group .en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
+}
+.brand-group .cn {
+  margin-top: 8rpx;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
+}
+
+.overview-panel {
+  background: rgba(243, 236, 221, 0.02);
+  border-color: rgba(196, 167, 108, 0.16);
+  border-radius: 4rpx;
+}
+.sub-tab-row,
+.sub-tab-row .sub-tab,
+.ov-card,
+.picker-inner,
+.input,
+.page-tip,
+.empty.is-error { border-radius: 2rpx; }
+
+.audit-hub-chip {
+  border-radius: 2rpx;
+  background: transparent;
+  border-color: rgba(196, 167, 108, 0.16);
+}
+.audit-hub-chip.active {
+  color: var(--brass-200);
+  border-color: rgba(196, 167, 108, 0.55);
+  background: rgba(196, 167, 108, 0.08);
+}
+
+.filter-pill {
+  border-radius: 2rpx;
+}
+
+.card {
+  background: rgba(243, 236, 221, 0.02);
+  border: 1rpx solid rgba(196, 167, 108, 0.16);
+  border-radius: 4rpx;
+}
+.card.open { border-color: rgba(196, 167, 108, 0.45); }
+.card-title {
+  font-family: var(--font-brand);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #F3ECDD;
+}
+.status-pill,
+.type-tag,
+.reject-bar,
+.card-detail,
+.btn-nudge,
+.btn-danger-mini { border-radius: 2rpx; }
+.card-actions.decide .btn-reject,
+.card-actions.decide .btn-ignore,
+.card-actions.decide .btn-approve { border-radius: 4rpx; }
+.btn-retry {
+  border-radius: 2rpx;
+  color: var(--brass-200);
+}
+
+/* 驳回面板 */
+.reject-sheet .reason-chip,
+.seg-item { border-radius: 2rpx; }
+.reject-sheet .reason-chip {
+  padding: 14rpx 20rpx;
+  border-color: rgba(196, 167, 108, 0.2);
+  color: var(--color-text-body);
+}
+.reject-sheet .reason-chip.on {
+  color: #F0C9C0;
+  border-color: rgba(214, 64, 69, 0.55);
+  background: rgba(214, 64, 69, 0.1);
+}
+.reject-note {
+  height: 168rpx;
+  min-height: 168rpx;
+  padding: 18rpx 20rpx;
+  line-height: 1.5;
+  width: 100%;
+  box-sizing: border-box;
+}
+.reject-preview {
+  margin-top: 4rpx;
+  padding: 4rpx 0 4rpx 20rpx;
+  border-left: 2rpx solid rgba(214, 64, 69, 0.5);
+}
+.reject-preview-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.16em;
+  color: var(--color-text-secondary);
+}
+.reject-preview-text {
+  display: block;
+  margin-top: 6rpx;
+  font-size: var(--fs-26);
+  line-height: 1.5;
+  color: #F3ECDD;
+}
+.reject-sheet .page-tip { margin-top: 16rpx; }

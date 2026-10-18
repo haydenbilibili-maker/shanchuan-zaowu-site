@@ -503,6 +503,23 @@ const SCENES = [
       form: { phone: '13800001234', openid: 'oa22', openidTail: 'Qu71iyll', name: '林岚', staffNo: 'SH-01', ownershipRatio: '30', capitalContribution: '300000', dividendRatioBeforePayback: '50', dividendRatioAfterPayback: '35', effectiveDate: '2025-03-01' },
       storeChecks: [{ key: 's1', storeId: 's1', name: '山川造物 · 主店', selected: true }, { key: 's2', storeId: 's2', name: '星宸标本 · 工坊', selected: false }] },
     css: '.ui-pop-mask.ui-pop-mask { display: block !important; }' },
+  // 2026-10-18 审批中心（视觉对齐 + 驳回面板：常用原因快选 + 补充说明 + 预览）
+  { name: 'approvals', h: 1900, wxml: 'subpackages/extra/approvals/index', data: {
+      ready: true, scopeHint: '超管 · 全部门店', hubFlow: false, viewMode: 'inbox', overdueCount: 1, slaHours: 24, tipText: '', canDecideTabs: true,
+      overviewExpanded: false, overviewReady: true, overviewSummary: '待我审 3 · 超时 1', overviewLoading: false,
+      auditHub: [{ key: 'list', label: '审批' }, { key: 'flow', label: '积分流水' }, { key: 'claim', label: '小票认领' }], hubMode: 'list',
+      pendingBadge: 3, statusOptions: ['全部'], statusIndex: 0, typeOptions: ['全部类型', '小票认领', '门店赠分'], typeIndex: 0, total: 3,
+      expandedId: '', deciding: false, decidingId: '', decidingAction: '', approvePendingId: '', ignorePendingId: '', loading: false, listError: false, hasMore: false,
+      list: [
+        { _id: 'a1', status: 'pending', statusText: '待审核', overdue: true, title: '小票认领 · 林间拾蝶 ¥286', actionType: 'points_receipt_claim', actionLabel: '小票认领', overdueText: '已超时 30h', summary: '小票号 0921-0087 · 申请 +286 分', showAttachmentBlock: true, hasAttachments: false, metaLine: '店员 阿桃 · 10-17 08:12', canDecide: true, canIgnore: true, requireRejectReason: false, detailLines: [] },
+        { _id: 'a2', status: 'pending', statusText: '待审核', overdue: false, title: '订单退款 · SO20261016-031', actionType: 'order_refund', actionLabel: '订单退款', overdueText: '剩余 18h', summary: '退款 ¥1,280 · 顾客称运输破损', showAttachmentBlock: false, metaLine: '店长 林岚 · 10-18 09:40', canDecide: true, canIgnore: false, requireRejectReason: true, detailLines: [] }
+      ],
+      rejectSheet: { show: false, reasons: [], picked: [] } } },
+  { name: 'approvals-reject', h: 1500, wxml: 'subpackages/extra/approvals/index', base: 'approvals', data: {
+      rejectSheet: { show: true, id: 'a2', title: '订单退款 · SO20261016-031', typeLabel: '订单退款', requireReason: true,
+        reasons: [{ label: '不符合退款条件', on: false }, { label: '请先与顾客沟通', on: true }, { label: '退款金额有误', on: true }, { label: '信息不全，请补充后重新提交', on: false }],
+        picked: ['请先与顾客沟通', '退款金额有误'], note: '破损照片未上传', preview: '请先与顾客沟通；退款金额有误；破损照片未上传', tip: '' } },
+    css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },
@@ -649,7 +666,8 @@ async function shoot(s) {
   let wxml = inlineTemplates(read(join(MP, s.wxml + '.wxml')))
     .replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, '')
     .replace(/<checkbox-group\b/g, '<view').replace(/<\/checkbox-group>/g, '</view>').replace(/<checkbox\b[^>]*?\/>/g, '<view class="__cb"></view>').replace(/<checkbox\b([^>]*)>[\s\S]*?<\/checkbox>/g, '<view class="__cb"></view>')
-    .replace(/<picker\b[^>]*>/g, '<view>').replace(/<\/picker>/g, '</view>')
+    // picker → view 时保留条件链（picker 上的 wx:if 丢了，后面的 wx:else 会悬空）
+    .replace(/<picker\b([^>]*)>/g, (_, attrs) => `<view${(attrs.match(/\swx:(?:if|elif)="[^"]*"|\swx:else\b/) || [''])[0]}>`).replace(/<\/picker>/g, '</view>')
     .replace(/<scroll-view\b/g, '<view').replace(/<\/scroll-view>/g, '</view>')
     .replace(/<sensitive-blur-gate\b[^>]*>/g, '<view>').replace(/<\/sensitive-blur-gate>/g, '</view>')
     .replace(/<swiper-item\b/g, '<view').replace(/<\/swiper-item>/g, '</view>').replace(/<swiper(?=[\s>])/g, '<view').replace(/<\/swiper>/g, '</view>')

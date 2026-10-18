@@ -8,6 +8,7 @@ const { formatCloudFnError } = require('../utils/memberScan');
 const { fetchStoreCatalog, mapStoreOptions } = require('../../../utils/storeCatalog');
 const { displayStoreName } = require('../../../utils/storeName');
 const { getPreferredStoreId } = require('../../../utils/storeHelper');
+const { reasonsFor, composeReason } = require('./rejectReasons');
 const {
   REVOKE_REASONS,
   PURCHASE_STATUS_TEXT,
@@ -321,6 +322,7 @@ Page({
     flowStatusIndex: 0,
     flowFilterStatus: '',
     showRevokeModal: false,
+    rejectSheet: { show: false, id: '', title: '', requireReason: false, reasons: [], picked: [], note: '', preview: '', tip: '' },
     revokeTarget: null,
     revokeReasons: REVOKE_REASONS,
     revokeReasonLabels: REVOKE_REASONS.map((r) => r.label),
@@ -912,29 +914,70 @@ Page({
     }
   },
 
-  async rejectItem(e) {
+  // 驳回：自绘面板（常用原因快选 + 补充说明），取代系统 editable 弹窗；提交口径不变（rejectReason 字符串）
+  rejectItem(e) {
     const id = e.currentTarget.dataset.id;
     const requireReason = !!(e.currentTarget.dataset.require === '1' || e.currentTarget.dataset.require === true);
     if (!id || this.data.deciding) return;
-
-    // 驳回需可填原因：保留系统 editable modal（无自定义表单时的最小输入面）
-    const modal = await new Promise((resolve) => {
-      // ⚠️ 保留系统弹窗：需要输入框（editable），AppModal 不支持（docs/弹层视觉规范_2026-10-13.md §7）
-      wx.showModal({
-        title: '驳回原因',
-        editable: true,
-        placeholderText: requireReason ? '必填，至少 2 字' : '选填驳回说明',
-        success: (r) => resolve(r)
-      });
+    const item = (this.data.list || []).find((row) => row._id === id) || {};
+    this.setData({
+      approvePendingId: '',
+      ignorePendingId: '',
+      rejectSheet: {
+        show: true,
+        id,
+        title: item.title || item.actionLabel || '',
+        typeLabel: item.actionLabel || '',
+        requireReason,
+        reasons: reasonsFor(item.actionType).map((label) => ({ label, on: false })),
+        picked: [],
+        note: '',
+        preview: '',
+        tip: ''
+      }
     });
-    if (!modal || !modal.confirm) return;
+  },
 
-    const reason = String(modal.content || '').trim();
-    if (requireReason && reason.length < 2) {
-      this.setData({ tipTone: 'warn', tipText: '请填写驳回原因（至少 2 字）' });
+  closeRejectSheet() {
+    this.setData({ 'rejectSheet.show': false });
+  },
+
+  onRejectReasonTap(e) {
+    const idx = parseInt(e.currentTarget.dataset.idx, 10);
+    const sheet = this.data.rejectSheet;
+    const target = sheet.reasons[idx];
+    if (!target) return;
+    const picked = target.on ? sheet.picked.filter((label) => label !== target.label) : sheet.picked.concat(target.label);
+    this.setData({
+      [`rejectSheet.reasons[${idx}].on`]: !target.on,
+      'rejectSheet.picked': picked,
+      'rejectSheet.preview': composeReason(picked, sheet.note),
+      'rejectSheet.tip': ''
+    });
+  },
+
+  onRejectNoteInput(e) {
+    const note = e.detail.value;
+    this.setData({
+      'rejectSheet.note': note,
+      'rejectSheet.preview': composeReason(this.data.rejectSheet.picked, note),
+      'rejectSheet.tip': ''
+    });
+  },
+
+  confirmReject() {
+    const sheet = this.data.rejectSheet;
+    if (!sheet.show || this.data.deciding) return;
+    const reason = composeReason(sheet.picked, sheet.note);
+    if (sheet.requireReason && reason.length < 2) {
+      this.setData({ 'rejectSheet.tip': '这类审批需写明驳回原因：点选一条常用原因，或补充至少 2 个字' });
       return;
     }
+    this.setData({ 'rejectSheet.show': false });
+    this.submitReject(sheet.id, reason);
+  },
 
+  async submitReject(id, reason) {
     this.setData({ deciding: true, decidingId: id, decidingAction: 'reject', tipTone: 'info', tipText: '处理中…' });
     try {
       const res = await wx.cloud.callFunction({
