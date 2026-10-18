@@ -46,6 +46,7 @@
       aiContent="{{aiContent}}"
       confidenceLevel="{{confidenceLevel}}"
       showConfidence="{{true}}"
+      typewriter="{{typewriter}}"
       rootCategoryTag="{{rootCategoryTag}}"
       showProtection="{{showSpeciesArchive}}"
       protectionTags="{{speciesProfile.protectionTags}}"

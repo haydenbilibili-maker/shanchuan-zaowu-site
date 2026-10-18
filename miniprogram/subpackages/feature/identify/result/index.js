@@ -32,6 +32,8 @@ function friendlyLoadErrorText(msg) {
 
 Page({
   data: {
+    // 仪式感（2026-10-18）：刚鉴定完 → 标本牌上的学名逐字敲出（SpeciesCard typewriter）
+    typewriter: false,
     loading: true,
     loadError: false,
     loadErrorKind: '',
@@ -71,6 +73,7 @@ Page({
   },
 
   onLoad(options) {
+    if (options.fresh === '1') this.setData({ typewriter: true })
     if (options.from_cache === '1') {
       setTimeout(() => {
         wx.showToast({ title: '与上次同图，已跳过重复识别', icon: 'none', duration: 2500 })

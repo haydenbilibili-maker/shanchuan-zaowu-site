@@ -206,6 +206,10 @@ const SCENES = [
       protectionTags: [{ label: '无保护等级', tone: 'muted' }]
     }
   },
+  // 2026-10-18 仪式感：鉴定结果「打字机」打到一半（中文名已晕开、学名敲到一半 + 黄铜光标、置信度尚未填）
+  { name: 'species-card-typing', h: 1100, wxml: 'subpackages/feature/components/SpeciesCard/index', base: 'species-card', data: {
+      typewriter: true, inkIn: true, latinShown: 'Morpho hel', latinTyping: true, confReady: false, confPct: 92, confTone: 'high', confidenceDesc: '较高 · 可作为参考' },
+    css: '.latin-caret { animation: none !important; }' },
   {
     name: 'order-detail', h: 2200, wxml: 'subpackages/business/order-detail/index', data: {
       loading: false, loadError: false, isDecrypted: true, showOrderPrice: true, statusBarHeight: 44,
@@ -581,6 +585,9 @@ const SCENES = [
   { name: 'pickup-done', h: 1700, wxml: 'subpackages/business/pickup-pass/index', base: 'pickup', data: { showRefundEntry: false, claimedAtText: '10月17日 15:20',
       pass: { statusLabel: '已自提', statusTone: 'done', headline: '本次自取已完成', hint: '', codeText: '4826 1937',
         steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'done' }] } } },
+  // 柜台当场核销：「已自提」印落下途中（定格在放大回落的一帧）
+  { name: 'pickup-claim-live', h: 1100, wxml: 'subpackages/business/pickup-pass/index', base: 'pickup-done', data: { claimLive: true },
+    css: '.pass-qr-frame.is-live .pass-qr-stamp { animation: none !important; transform: translate(-50%, -50%) rotate(-14deg) scale(1.3) !important; opacity: 0.7; }' },
   // 2026-10-17 标本定制「定制工坊」（第 1 / 2 / 5 步）
   { name: 'custom', h: 2200, wxml: 'subpackages/feature/custom/index', data: { loading: false, navPaddingRight: 32, headerHeight: 150, estimatedDays: 7, currentStep: 1,
       steps: [['藏品'], ['装裱'], ['包装'], ['赠礼'], ['确认']].map(([label], i) => ({ id: i + 1, label })),

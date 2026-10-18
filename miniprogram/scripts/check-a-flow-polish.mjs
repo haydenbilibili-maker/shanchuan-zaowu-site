@@ -103,11 +103,50 @@ const FILES = {
   coWxss: 'subpackages/business/confirm-order/index.wxss',
   rcvJs: 'subpackages/feature/gift/receive/index.js',
   rcvWxml: 'subpackages/feature/gift/receive/index.wxml',
-  rcvWxss: 'subpackages/feature/gift/receive/index.wxss'
+  rcvWxss: 'subpackages/feature/gift/receive/index.wxss',
+  spcJs: 'subpackages/feature/components/SpeciesCard/index.js',
+  spcWxml: 'subpackages/feature/components/SpeciesCard/index.wxml',
+  identifyJs: 'subpackages/feature/identify/index.js',
+  identifyResultJs: 'subpackages/feature/identify/result/index.js',
+  pickupJs: 'subpackages/business/pickup-pass/index.js',
+  pickupWxml: 'subpackages/business/pickup-pass/index.wxml'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
 /** 取 Page 方法体：从 `  name(` 到下一个同缩进的方法头（按语法边界，不用固定长度；错题本 E7） */
+/** 用假定时器跑 SpeciesCard：拿到「刚开始 / 敲完 / 再给同一学名 / 非 fresh」四个快照 */
+function runSpeciesTypewriter(src) {
+  let def = null
+  new Function('Component', 'require', src)((d) => { def = d }, () => ({ toChineseTaxonomy: () => ({}), translateTaxonValue: () => '' }))
+  const timers = []
+  const fake = { setTimeout: (fn) => { timers.push(fn); return timers.length }, clearTimeout() {}, setInterval: (fn) => { timers.push({ every: fn }); return timers.length }, clearInterval() {} }
+  const make = (tw) => {
+    const inst = { data: { ...def.data, typewriter: tw }, setData(p) { Object.assign(this.data, p) } }
+    Object.keys(def.methods).forEach((k) => { inst[k] = def.methods[k].bind(inst) })
+    return inst
+  }
+  const obs = def.observers['speciesInfo, imageUrl, confidenceLevel']
+  const g = globalThis
+  const saved = { st: g.setTimeout, ct: g.clearTimeout, si: g.setInterval, ci: g.clearInterval }
+  Object.assign(g, { setTimeout: fake.setTimeout, clearTimeout: fake.clearTimeout, setInterval: fake.setInterval, clearInterval: fake.clearInterval })
+  try {
+    const a = make(true)
+    obs.call(a, { species_name_latin: 'Morpho helena', confidence: 0.92 }, '', 'high')
+    const start = { ...a.data }
+    timers.shift()()
+    const tick = timers.shift().every
+    for (let i = 0; i < 40 && a.data.latinTyping; i += 1) tick()
+    const end = { ...a.data }
+    obs.call(a, { species_name_latin: 'Morpho helena', confidence: 0.92 }, '', 'high')
+    const again = { ...a.data }
+    const b = make(false)
+    obs.call(b, { species_name_latin: 'Papilio maackii' }, '', 'high')
+    return { start, end, again, plain: { ...b.data } }
+  } finally {
+    Object.assign(g, { setTimeout: saved.st, clearTimeout: saved.ct, setInterval: saved.si, clearInterval: saved.ci })
+  }
+}
+
 function methodBody(src, name) {
   const m = new RegExp(`\\n  (?:async )?${name}\\([^)]*\\) \\{`).exec(src)
   if (!m) return ''
@@ -442,6 +481,23 @@ function checks(s) {
         /senderTitle: '对方已留下去处'/.test(s.rcvJs) && /senderTitle: '对方已到店领取'/.test(s.rcvJs) &&
         /<block wx:if="\{\{senderReceipt\}\}"><text class="receipt-ch">已<\/text><text class="receipt-ch">收<\/text><\/block>/.test(s.rcvWxml))
   }
+  // 2026-10-18 仪式感：鉴定结果打字机（只在刚鉴定完）/ 自取码柜台当场核销落印
+  {
+    let tw = null
+    try { tw = runSpeciesTypewriter(s.spcJs) } catch (e) { tw = null }
+    add('R38-1 鉴定结果打字机：刚鉴定完学名从空逐字敲到全文、敲完才填置信度；同一学名不重打；非刚鉴定直接全文',
+      !!tw && tw.start.latinShown === '' && tw.start.latinTyping && !tw.start.confReady && tw.start.inkIn &&
+        tw.end.latinShown === 'Morpho helena' && !tw.end.latinTyping && tw.end.confReady &&
+        !tw.again.latinTyping && tw.again.latinShown === 'Morpho helena' &&
+        tw.plain.latinShown === 'Papilio maackii' && !tw.plain.latinTyping && tw.plain.confReady && !tw.plain.inkIn &&
+        /url \+= '&fresh=1'/.test(s.identifyJs) && /if \(options\.fresh === '1'\) this\.setData\(\{ typewriter: true \}\)/.test(s.identifyResultJs) &&
+        /style="width: \{\{confReady \? confPct : 0\}\}%;"/.test(s.spcWxml) && /<view class="specimen-plate" bindtap="skipTyping">/.test(s.spcWxml))
+    add('R38-2 自取码：只有亲眼看着柜台核销（announceClaimed）才落印，历史已核销静态；水印锚点不动',
+      /announceClaimed\(\) \{\s*\/\/[^\n]*\n\s*this\.setData\(\{ claimLive: true \}\);/.test(s.pickupJs) &&
+        (s.pickupJs.match(/claimLive: true/g) || []).length === 1 &&
+        /<view class="pass-qr-frame \{\{claimLive \? 'is-live' : ''\}\}">/.test(s.pickupWxml) &&
+        /class="pass-qr-stamp" wx:if="\{\{pass\.statusTone === 'done'\}\}" aria-hidden="true">已自提</.test(s.pickupWxml))
+  }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -727,6 +783,10 @@ if (process.argv.includes('--selftest')) {
     ['凭礼笺收下不再盖已收', 'rcvJs', (t) => t.replace('this.setData({ accepted: true, holderCard: true, acceptStampLive: true })', 'this.setData({ accepted: true, holderCard: true })')],
     ['回执印每次进页都重播', 'rcvJs', (t) => t.replace('    if (live) wx.setStorageSync(key, 1)\n', '')],
     ['等待对方打开也盖已收', 'rcvJs', (t) => t.replace('const RECEIPT_PHASES = { waiting_address: true,', 'const RECEIPT_PHASES = { waiting_open: true, waiting_address: true,')],
+    ['打字机不再等敲完才填置信度', 'spcJs', (t) => t.replace("this.setData({ latinShown: '', latinTyping: true, confReady: false, inkIn: true })", "this.setData({ latinShown: '', latinTyping: true, confReady: true, inkIn: true })")],
+    ['打字机对同一学名重打', 'spcJs', (t) => t.replace(" || this._typedFor === latin) {", ") {")],
+    ['从最近记录进也打字', 'identifyJs', (t) => t.replace("      url += '&fresh=1'\n", '')],
+    ['历史已核销也落印', 'pickupJs', (t) => t.replace("      const closedNow = pass.statusTone === 'closed';", "      const closedNow = pass.statusTone === 'closed';\n      if (claimedNow) this.setData({ claimLive: true });")],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
