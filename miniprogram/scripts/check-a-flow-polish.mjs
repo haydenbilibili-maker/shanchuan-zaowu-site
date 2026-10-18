@@ -422,6 +422,26 @@ function checks(s) {
       /class="accept-seal \{\{acceptStampLive \? 'is-live' : ''\}\}" wx:if="\{\{accepted && !isSender\}\}"/.test(s.rcvWxml) &&
       /\n\.accept-seal \{[^}]*top: 36rpx;/.test(s.rcvWxss) &&
       /action: 'accept',\s*token: this\.data\.token,\s*orderId: this\.data\.orderId/.test(s.rcvJs))
+  // 送礼人回执印：只在「对方已收下 / 已留址 / 已到店领取」三态；本机首次落印，之后静态；送礼人状态文案与 manageGift 出参不变
+  {
+    let rcpt = null
+    try {
+      const store = {}
+      const wxMock = { getStorageSync: (k) => store[k], setStorageSync: (k, v) => { store[k] = v } }
+      const src = (s.rcvJs.match(/const RECEIPT_PHASES[\s\S]*?\nfunction senderReceiptOf[\s\S]*?\n\}\n/) || [''])[0]
+      rcpt = new Function('wx', `${src}; return senderReceiptOf`)(wxMock)
+    } catch (e) { rcpt = null }
+    const first = rcpt && rcpt('address_done', 'o1')
+    const again = rcpt && rcpt('address_done', 'o1')
+    const other = rcpt && rcpt('claimed', 'o2')
+    const waiting = rcpt && rcpt('waiting_open', 'o3')
+    add('R37-1 送礼人回执印「已收」：收下 / 留址 / 到店领取三态才盖，同一订单本机只首次落印，等待态仍是「待」',
+      !!rcpt && first.senderReceipt && first.senderReceiptLive && again.senderReceipt && !again.senderReceiptLive &&
+        other.senderReceiptLive && !waiting.senderReceipt && !waiting.senderReceiptLive &&
+        /\.\.\.sender,\s*\.\.\.receipt\s*\}\)/.test(s.rcvJs) &&
+        /senderTitle: '对方已留下去处'/.test(s.rcvJs) && /senderTitle: '对方已到店领取'/.test(s.rcvJs) &&
+        /<block wx:if="\{\{senderReceipt\}\}"><text class="receipt-ch">已<\/text><text class="receipt-ch">收<\/text><\/block>/.test(s.rcvWxml))
+  }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -705,6 +725,8 @@ if (process.argv.includes('--selftest')) {
     ['礼赠单也弹入藏签（叠两次仪式）', 'coJs', (t) => t.replace('const paidRite = !pending && !this.data.isGiftOrder', 'const paidRite = !pending')],
     ['入藏仪式顺手改了跳转去向', 'coJs', (t) => t.replace("url: '/subpackages/business/orders/index?type=paid'\n", "url: '/subpackages/business/orders/index'\n")],
     ['凭礼笺收下不再盖已收', 'rcvJs', (t) => t.replace('this.setData({ accepted: true, holderCard: true, acceptStampLive: true })', 'this.setData({ accepted: true, holderCard: true })')],
+    ['回执印每次进页都重播', 'rcvJs', (t) => t.replace('    if (live) wx.setStorageSync(key, 1)\n', '')],
+    ['等待对方打开也盖已收', 'rcvJs', (t) => t.replace('const RECEIPT_PHASES = { waiting_address: true,', 'const RECEIPT_PHASES = { waiting_open: true, waiting_address: true,')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

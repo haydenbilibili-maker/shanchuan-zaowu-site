@@ -1155,3 +1155,36 @@ page { background: var(--color-bg); color: #fff; }
 @media (prefers-reduced-motion: reduce) {
   .accept-seal.is-live { animation: none; }
 }
+
+/* 仪式感：送礼人回执印「已收」（2026-10-18）—— 深底上用亮一档的朱色；本机首次看到时落印，之后静态 */
+.sender-seal.is-receipt {
+  flex-direction: column;
+  border: 4rpx solid rgba(196, 72, 58, 0.88);
+  border-radius: 6rpx;
+  box-shadow: inset 0 0 0 5rpx rgba(26, 24, 20, 0.9), inset 0 0 0 7rpx rgba(196, 72, 58, 0.5);
+  transform: rotate(-10deg);
+}
+.receipt-ch {
+  font-family: var(--font-brand);
+  font-size: 36rpx;
+  font-weight: 700;
+  line-height: 40rpx;
+  color: rgba(214, 92, 76, 0.95);
+}
+.sender-seal.is-receipt.is-live { animation: receipt-stamp 0.46s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.12s both; }
+@keyframes receipt-stamp {
+  0% { opacity: 0; transform: rotate(-10deg) scale(1.9); }
+  60% { opacity: 1; transform: rotate(-10deg) scale(0.94); }
+  100% { opacity: 1; transform: rotate(-10deg) scale(1); }
+}
+.receipt-line {
+  display: block;
+  margin: -4rpx 0 16rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-26);
+  letter-spacing: 0.08em;
+  color: var(--brass-200);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sender-seal.is-receipt.is-live { animation: none; }
+}

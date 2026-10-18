@@ -3,12 +3,17 @@
   <!-- 送礼人：等待 / 回执态（不进开盒仪式） -->
   <block wx:if="{{isSender}}">
     <view class="sender-stage phase-{{senderPhase}}">
-      <view class="sender-seal" aria-hidden="true">
-        <view class="sender-seal-ring"></view>
-        <text class="sender-seal-glyph">{{senderPhase === 'waiting_open' || senderPhase === 'waiting_pickup' ? '待' : (senderPhase === 'expired' ? '逾' : '启')}}</text>
+      <!-- 仪式感：对方收下 / 领取后，状态印换成朱印「已收」（与受礼人礼笺上的「已收」相呼应）；本机首次看到时落印 -->
+      <view class="sender-seal {{senderReceipt ? 'is-receipt' : ''}} {{senderReceiptLive ? 'is-live' : ''}}" aria-hidden="true">
+        <block wx:if="{{senderReceipt}}"><text class="receipt-ch">已</text><text class="receipt-ch">收</text></block>
+        <block wx:else>
+          <view class="sender-seal-ring"></view>
+          <text class="sender-seal-glyph">{{senderPhase === 'waiting_open' || senderPhase === 'waiting_pickup' ? '待' : (senderPhase === 'expired' ? '逾' : '启')}}</text>
+        </block>
       </view>
       <text class="stage-over">{{senderOverline}}</text>
       <text class="stage-title">{{senderTitle}}</text>
+      <text class="receipt-line" wx:if="{{senderReceipt}}">{{recipientName || 'TA'}} {{senderPhase === 'claimed' ? '已在门店接过你的山海' : '收下了你的山海'}}</text>
       <text class="sender-desc">{{senderDesc}}</text>
 
       <view class="specimen sender-specimen" wx:if="{{product}}">

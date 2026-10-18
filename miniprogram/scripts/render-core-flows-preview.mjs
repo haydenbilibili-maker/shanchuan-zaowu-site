@@ -348,6 +348,10 @@ const SCENES = [
       items: [{ productId: 'p1', title: '光明女神闪蝶 · 原色标本框', image: '' }, { productId: 'p2', title: '蓝闪蝶', image: '' }],
       paidRite: { show: true, title: '光明女神闪蝶 · 原色标本框', more: 1, tail: 'K7Q2M9', pickup: false } },
     css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  // 送礼人回执：对方已留址 → 状态印换朱印「已收」+ 回执落款
+  { name: 'gift-sender-receipt', h: 1250, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: {
+      isSender: true, senderPhase: 'address_done', senderOverline: 'RECEIPT', senderTitle: '对方已留下去处', senderDesc: '这份山海即将启程。可在订单中查看履约与物流进度。',
+      senderCanShare: false, senderCanNudge: false, senderReceipt: true, senderReceiptLive: true, recipientName: '阿禾' } },
   { name: 'gift-receive-box', h: 1500, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { revealed: false, ritePhase: 'idle', letterToShown: false, letterBodyShown: false } },
   { name: 'pet-1', h: 2000, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 1, currentStepMeta: petMeta(1) } },
   { name: 'pet-2', h: 2200, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 2, currentStepMeta: petMeta(2) } },
