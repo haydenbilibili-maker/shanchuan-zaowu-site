@@ -13,6 +13,8 @@ const CATEGORIES = [
 
 Page({
   data: {
+    // 仪式感（2026-10-18）：提交成功的纸质回执（编号 / 类型 / 去处 + 「已收」朱印），约 1.8s 后照原路去山海有信
+    receipt: { show: false, no: '', label: '' },
     statusBarHeight: 20,
     navPaddingRight: 16,
     headerBlockPx: 88,
@@ -117,14 +119,24 @@ Page({
       const result = res.result || {}
       if (result.success) {
         trackBehavior('feedback_submit', 'category', this.data.activeCategory)
-        this.setData({ messageText: '', ticketImages: [], ticketImgBusy: false, ticketImgFailed: 0 })
-        wx.showToast({ title: '感谢反馈', icon: 'success' })
+        this.setData({
+          messageText: '',
+          ticketImages: [],
+          ticketImgBusy: false,
+          ticketImgFailed: 0,
+          receipt: {
+            show: true,
+            no: `FB-${String(result.ticketId || '').slice(-6).toUpperCase() || '------'}`,
+            label: category ? category.label : '建议'
+          }
+        })
+        try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* 低版本基础库无 type 参数 */ }
         setTimeout(() => {
           wx.redirectTo({
             url: '/subpackages/extra/user/messages/index?category=system',
             fail: () => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/user/index' }) })
           })
-        }, 1200)
+        }, 1800)
       } else {
         wx.showToast({ title: result.msg || '提交失败', icon: 'none' })
       }

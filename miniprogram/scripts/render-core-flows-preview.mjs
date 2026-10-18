@@ -552,6 +552,16 @@ const SCENES = [
     css: '.ceremony.is-live .cer-door { animation: none !important; opacity: 1; } .cer-door.left { transform: translateX(-58%) !important; } .cer-door.right { transform: translateX(58%) !important; }' },
   { name: 'todos-close', h: 600, wxml: 'subpackages/extra/staff/store-todos/index', base: 'todos-open', data: { shift: 'evening', ceremony: 'close', ceremonyTime: '21:08' },
     css: '.ceremony.is-live .cer-lamp { animation: none !important; background: #C9A55E; box-shadow: 0 0 0 2rpx rgba(196,167,108,.5), 0 0 30px 8px rgba(242,213,142,.28); }' },
+  // 2026-10-18 阅读仪式：标题下预计时长、顶部进度线（读到 62%）、正文末尾「读毕」（mp-html 正文在预览里会被跳过）
+  { name: 'article-read', h: 1250, wxml: 'subpackages/feature/articles/detail/index', data: {
+      loadError: false, articleId: 'a1', fallbackCover: P[0], categoryIcon: '', iconView: '', iconLike: '', iconCollect: '', iconShare: '', isLiked: false, isCollected: false, savingCard: false,
+      article: { title: '闪蝶的蓝从哪里来', author: '山海编辑部', category: 'knowledge', coverImage: P[0], createTime: 0, images: [], tags: ['结构色', '闪蝶'], brief: '那抹蓝不是颜料，是光在鳞片里走了一段路。', stats: { views: 1280, likes: 96 } },
+      readMinutes: 6, readProgress: 0.62, readDone: true, readSpent: 5, relatedArticles: [] } },
+  // 反馈回执单（提交成功后 1.8s 内）
+  { name: 'feedback-receipt', h: 1100, wxml: 'subpackages/extra/user/feedback/index', data: {
+      categories: [{ id: 'product', label: '藏品建议' }], activeCategory: 'product', messageText: '', ticketImages: [], maxTicketImages: 3, contactPhone: '', submitting: false,
+      receipt: { show: true, no: 'FB-7Q2K9X', label: '藏品建议' } },
+    css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },

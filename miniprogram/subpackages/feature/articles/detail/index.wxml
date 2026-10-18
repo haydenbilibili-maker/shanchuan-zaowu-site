@@ -10,6 +10,8 @@
   </view>
 
   <block wx:else>
+  <!-- 阅读仪式（2026-10-18）：顶部黄铜进度线，随滚动由左至右 -->
+  <view class="read-progress" wx:if="{{readMinutes}}" aria-hidden="true"><view class="read-progress-fill" style="width: {{readProgress * 100}}%;"></view></view>
   
   <!-- 1. 沉浸式 Header / 多图笔记 -->
   <view class="hero-area" wx:if="{{!article.images || article.images.length <= 1}}">
@@ -26,8 +28,9 @@
       <text class="article-title">{{article.title}}</text>
       <view class="article-meta">
         <text class="meta-item">{{article.author}}</text>
-        <text class="meta-divider">•</text>
-        <text class="meta-item">{{article.createTime ? (article.createTime < 86400000 ? '今日' : article.createTime < 604800000 ? '本周' : '更早') : ''}}</text>
+        <block wx:if="{{article.createTime}}"><text class="meta-divider">•</text>
+        <text class="meta-item">{{article.createTime < 86400000 ? '今日' : article.createTime < 604800000 ? '本周' : '更早'}}</text></block>
+        <block wx:if="{{readMinutes}}"><text class="meta-divider">•</text><text class="meta-item">约 {{readMinutes}} 分钟读完</text></block>
       </view>
     </view>
 
@@ -47,6 +50,7 @@
       <text class="article-title gallery-title">{{article.title}}</text>
       <view class="article-meta">
         <text class="meta-item">{{article.author}}</text>
+        <block wx:if="{{readMinutes}}"><text class="meta-divider">•</text><text class="meta-item">约 {{readMinutes}} 分钟读完</text></block>
       </view>
     </view>
   </view>
@@ -71,6 +75,18 @@
         tag-style="{{tagStyle}}" 
         container-style="color:#ccc;"
       />
+    </view>
+
+    <!-- 阅读仪式：正文末尾标记；读到这里（且滚动过）盖一方「读毕」小朱印，附实际用时 -->
+    <view class="read-end" wx:if="{{readMinutes}}">
+      <view class="read-end-rule"></view>
+      <view class="read-end-row" wx:if="{{readDone}}">
+        <view class="read-seal" aria-hidden="true"><text class="read-seal-ch">读</text><text class="read-seal-ch">毕</text></view>
+        <view class="read-end-copy">
+          <text class="read-end-en">FINISHED</text>
+          <text class="read-end-cn">用时 {{readSpent}} 分钟 · 全文约 {{readMinutes}} 分钟</text>
+        </view>
+      </view>
     </view>
 
     <!-- 转载来源与许可：仅转载类内容展示（末尾标注，符合署名要求） -->

@@ -6,6 +6,7 @@ const uiIcons = require('../../utils/uiIcons')
 const { getWindowInfo } = require('../../../../utils/systemInfo')
 const { cdnPath } = require('../../../../config/cloudEnv')
 const { openAppModal } = require('../../../../utils/appModal')
+const { estimateReadMinutes, progressOf } = require('./readingMeta')
 
 const FALLBACK_COVER = cdnPath('stores/store_shanhaizaowu.png')
 
@@ -37,6 +38,11 @@ Page({
     articleId: '',
     loadError: false,
     article: { stats: { views: 0, likes: 0, comments: 0 }, images: [], tags: [] },
+    // 阅读仪式（2026-10-18）：预计时长 / 顶部进度线 / 读到末尾盖「读毕」
+    readMinutes: 0,
+    readProgress: 0,
+    readDone: false,
+    readSpent: 0,
     /** 已解析成 https 的分享封面（coverImage 是 cloud:// fileID，分享卡片渲染不了） */
     shareImageUrl: '',
     relatedArticles: [],
@@ -60,7 +66,45 @@ Page({
     }
   },
 
+  onUnload() {
+    if (this._readObserver) this._readObserver.disconnect()
+    if (this._progressTimer) clearTimeout(this._progressTimer)
+  },
+
+  /** 阅读进度线：滚动节流 120ms，读视口滚动量（mp-html 异步排版，页高会变，每次现量） */
+  onPageScroll() {
+    this._scrolled = true
+    if (this._progressTimer) return
+    this._progressTimer = setTimeout(() => {
+      this._progressTimer = null
+      if (!this._viewH) {
+        try { this._viewH = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).windowHeight } catch (e) { this._viewH = 600 }
+      }
+      wx.createSelectorQuery().selectViewport().scrollOffset().exec((res) => {
+        const r = res && res[0]
+        if (!r) return
+        const p = Math.round(progressOf(r.scrollTop, r.scrollHeight, this._viewH) * 100) / 100
+        if (p !== this.data.readProgress) this.setData({ readProgress: p })
+      })
+    }, 120)
+  },
+
+  /** 正文末尾标记进入视口（且读者滚动过）→ 盖「读毕」并记用时；每次进页只盖一次 */
+  watchReadEnd() {
+    if (this._readObserver) this._readObserver.disconnect()
+    if (!this.data.readMinutes) return
+    wx.nextTick(() => {
+      this._readObserver = this.createIntersectionObserver().relativeToViewport({ bottom: 0 })
+      this._readObserver.observe('.read-end', (res) => {
+        if (!res || !(res.intersectionRatio > 0) || this.data.readDone || !this._scrolled) return
+        this.setData({ readDone: true, readSpent: Math.max(1, Math.round((Date.now() - (this._openedAt || Date.now())) / 60000)) })
+        if (this._readObserver) this._readObserver.disconnect()
+      })
+    })
+  },
+
   onLoad(options) {
+    this._openedAt = Date.now()
     const win = getWindowInfo()
     this.setData({ statusBarHeight: win.statusBarHeight || 20 })
 
@@ -94,10 +138,12 @@ Page({
         const related = (res.result.relatedArticles || []).map((item) => normalizeArticle(item))
         this.setData({
           article,
+          readMinutes: estimateReadMinutes(article && article.content),
           relatedArticles: related,
           categoryIcon: uiIcons.categoryIcon(article.category || 'knowledge'),
           loadError: false
         })
+        this.watchReadEnd()
         // 封面（含 FALLBACK_COVER）是 cloud:// → 预解析成 https，否则分享卡片是黑块
         this.hydrateShareImage(article && article.coverImage)
       } else {

@@ -108,3 +108,16 @@
     </view>
   </view>
 </view>
+
+<!-- 仪式感（2026-10-18）：提交成功 → 纸质回执单（编号 / 类型 / 去处）+「已收」朱印；约 1.8s 后照原路去「山海有信」 -->
+<view class="ui-pop-mask is-center is-deep fb-receipt-mask" wx:if="{{receipt.show}}" catchtouchmove="true" aria-label="反馈已提交">
+  <view class="fb-receipt">
+    <text class="fb-receipt-en">RECEIPT</text>
+    <text class="fb-receipt-title">已收到你的建议</text>
+    <view class="fb-receipt-rule"></view>
+    <view class="fb-receipt-row"><text class="fb-receipt-k">编号</text><text class="fb-receipt-v mono">{{receipt.no}}</text></view>
+    <view class="fb-receipt-row"><text class="fb-receipt-k">类型</text><text class="fb-receipt-v">{{receipt.label}}</text></view>
+    <view class="fb-receipt-row"><text class="fb-receipt-k">回信</text><text class="fb-receipt-v">寄到「山海有信」</text></view>
+    <view class="fb-receipt-seal" aria-hidden="true"><text class="fb-receipt-seal-ch">已</text><text class="fb-receipt-seal-ch">收</text></view>
+  </view>
+</view>

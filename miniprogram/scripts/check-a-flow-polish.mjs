@@ -109,7 +109,12 @@ const FILES = {
   identifyJs: 'subpackages/feature/identify/index.js',
   identifyResultJs: 'subpackages/feature/identify/result/index.js',
   pickupJs: 'subpackages/business/pickup-pass/index.js',
-  pickupWxml: 'subpackages/business/pickup-pass/index.wxml'
+  pickupWxml: 'subpackages/business/pickup-pass/index.wxml',
+  artMetaJs: 'subpackages/feature/articles/detail/readingMeta.js',
+  artJs: 'subpackages/feature/articles/detail/index.js',
+  artWxml: 'subpackages/feature/articles/detail/index.wxml',
+  fbJs: 'subpackages/extra/user/feedback/index.js',
+  fbWxml: 'subpackages/extra/user/feedback/index.wxml'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -498,6 +503,26 @@ function checks(s) {
         /<view class="pass-qr-frame \{\{claimLive \? 'is-live' : ''\}\}">/.test(s.pickupWxml) &&
         /class="pass-qr-stamp" wx:if="\{\{pass\.statusTone === 'done'\}\}" aria-hidden="true">已自提</.test(s.pickupWxml))
   }
+  // 2026-10-18 阅读仪式 + 反馈回执（产品负责人「继续看还有哪些模块，方向，动线可做微创新和优化」）
+  {
+    let rm = {}
+    try { const m = { exports: {} }; new Function('module', 'exports', s.artMetaJs)(m, m.exports); rm = m.exports } catch (e) { rm = {} }
+    let ok = false
+    try {
+      ok = rm.estimateReadMinutes('<p>' + '蝶'.repeat(1200) + '</p>') === 3 && rm.estimateReadMinutes('') === 0 &&
+        rm.estimateReadMinutes('<style>' + 'a'.repeat(5000) + '</style><p>短</p>') === 1 && rm.plainTextOf('<b>甲</b>&nbsp;乙') === '甲乙' &&
+        rm.progressOf(500, 1500, 500) === 0.5 && rm.progressOf(0, 400, 600) === 1 && rm.progressOf(2000, 1500, 500) === 1 && rm.progressOf(-5, 1500, 500) === 0
+    } catch (e) { ok = false }
+    add('R40-1 文章阅读：预计时长 / 进度纯函数正确；读到末尾且滚动过才盖「读毕」、只盖一次；离页断开观察；日期为空不留孤点',
+      ok && /if \(!res \|\| !\(res\.intersectionRatio > 0\) \|\| this\.data\.readDone \|\| !this\._scrolled\) return/.test(s.artJs) &&
+        /onUnload\(\) \{\s*if \(this\._readObserver\) this\._readObserver\.disconnect\(\)/.test(s.artJs) &&
+        /<view class="read-end-row" wx:if="\{\{readDone\}\}">/.test(s.artWxml) &&
+        /<block wx:if="\{\{article\.createTime\}\}"><text class="meta-divider">•<\/text>/.test(s.artWxml))
+    add('R40-2 反馈回执单：提交成功出纸质回执（编号取 ticketId 尾 6 位）+「已收」印，遮罩用 ui-pop-mask，去向仍是山海有信',
+      /no: `FB-\$\{String\(result\.ticketId \|\| ''\)\.slice\(-6\)\.toUpperCase\(\) \|\| '------'\}`/.test(s.fbJs) &&
+        /url: '\/subpackages\/extra\/user\/messages\/index\?category=system'/.test(s.fbJs) &&
+        /<view class="ui-pop-mask is-center is-deep fb-receipt-mask" wx:if="\{\{receipt\.show\}\}"/.test(s.fbWxml))
+  }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -787,6 +812,9 @@ if (process.argv.includes('--selftest')) {
     ['打字机对同一学名重打', 'spcJs', (t) => t.replace(" || this._typedFor === latin) {", ") {")],
     ['从最近记录进也打字', 'identifyJs', (t) => t.replace("      url += '&fresh=1'\n", '')],
     ['历史已核销也落印', 'pickupJs', (t) => t.replace("      const closedNow = pass.statusTone === 'closed';", "      const closedNow = pass.statusTone === 'closed';\n      if (claimedNow) this.setData({ claimLive: true });")],
+    ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
+    ['阅读时长把样式表字数也算进去', 'artMetaJs', (t) => t.replace(".replace(/<(style|script)[\\s\\S]*?<\\/\\1>/gi, '')\n", '')],
+    ['反馈回执改了去向', 'fbJs', (t) => t.replace("url: '/subpackages/extra/user/messages/index?category=system'", "url: '/subpackages/extra/user/messages/index'")],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
