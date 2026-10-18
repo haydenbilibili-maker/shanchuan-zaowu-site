@@ -1,35 +1,38 @@
 @import '../index.wxss';
 @import '../../utils/workbench-nav.wxss';
 
+/* 2026-10-18 视觉对齐（产品负责人点名「继续子页面重构」；与标本师工作台首页同口径，只改样式）：
+   页头不再装盒（眉标 + 宋体主标）；筛选为方角发丝签、选中金线环；作品 / 工单为发丝线行；
+   状态签颜色（已上架绿 / 待确认黄 / 驳回红 / 装裱铜 / 打包蓝）为员工端语义，保留。详情弹层壳由 ui-pop-* 管，不动。 */
+
 .page-mode-manage .mode-banner {
-  border-color: var(--brass-800);
-  background: linear-gradient(135deg, rgba(77, 64, 26, 0.35) 0%, var(--color-bg-card) 100%);
+  background: transparent;
 }
 
 .page-mode-works .mode-banner {
-  border-color: var(--color-border);
+  background: transparent;
 }
 
 .mode-banner {
-  padding: var(--space-4);
-  margin-bottom: var(--space-3);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-lg);
+  padding: var(--space-5) 0 var(--space-4);
+  margin-bottom: var(--space-2);
 }
 
 .mode-tag {
-  font-size: var(--fs-20);
-  letter-spacing: 0.14em;
-  color: var(--brass-600);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .mode-title {
   display: block;
-  margin-top: var(--space-2);
-  font-size: var(--fs-36);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  margin-top: 8rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-40);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .mode-banner .sub {
@@ -67,7 +70,7 @@
 
 .filter-chip {
   flex: 1;
-  min-height: 80rpx;
+  min-height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -75,37 +78,34 @@
   box-sizing: border-box;
   font-size: var(--fs-24);
   color: var(--color-text-secondary);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
   text-align: center;
 }
 
 .filter-chip.on {
-  color: var(--brass-400);
-  border-color: var(--brass-800);
-  background: var(--color-bg-elevated);
+  color: var(--brass-200);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass);
 }
 
 .skeleton-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .skeleton-card {
   display: flex;
   gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-lg);
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .sk-cover {
   width: 120rpx;
   height: 120rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   background: var(--color-bg-elevated);
   animation: sk-pulse 1.2s ease-in-out infinite;
 }
@@ -159,22 +159,21 @@
 .work-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
+/* 作品 / 工单行：发丝线（原圆角卡），选中 = 淡金底 + 左侧金线 */
 .work-card {
   display: flex;
   align-items: stretch;
   gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-lg);
+  padding: 22rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .work-card.is-selected {
-  border-color: var(--brass-800);
-  background: var(--color-bg-elevated);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: inset 3rpx 0 0 var(--brass-400);
 }
 
 .select-mark {
@@ -182,31 +181,30 @@
   align-self: center;
   min-width: 72rpx;
   padding: 6rpx 10rpx;
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.35);
   font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
   text-align: center;
 }
 
 .select-mark.on {
-  color: var(--brass-400);
-  border-color: var(--brass-800);
+  color: var(--brass-200);
+  box-shadow: var(--ring-brass);
 }
 
 .work-card-press {
-  border-color: var(--brass-800);
-  background: var(--color-bg-elevated);
+  background: rgba(196, 167, 108, 0.06);
 }
 
 .cover {
   width: 140rpx;
   height: 140rpx;
-  border-radius: var(--radius-md);
-  border: 1rpx solid var(--color-border);
+  border-radius: 4rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
   flex-shrink: 0;
   overflow: hidden;
-  background: var(--color-bg-elevated);
+  background: #1F1D1A;
 }
 
 .cover image {
@@ -224,8 +222,10 @@
 }
 
 .work-title {
+  font-family: var(--font-brand);
   font-size: var(--fs-28);
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -261,9 +261,10 @@
 }
 
 .shelf-tag {
-  font-size: var(--fs-22);
+  font-size: var(--fs-20);
   padding: 4rpx 12rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
+  letter-spacing: 0.04em;
   color: var(--color-text-secondary);
   background: rgba(107, 101, 96, 0.2);
 }
@@ -310,10 +311,8 @@
 }
 
 .job-card {
-  padding: var(--space-4);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-lg);
+  padding: 26rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .job-top {
@@ -324,16 +323,19 @@
 }
 
 .job-no {
-  font-size: var(--fs-22);
-  letter-spacing: 0.06em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  letter-spacing: 0.08em;
   color: var(--color-text-secondary, #A09A90);
 }
 
 .job-title {
   display: block;
   margin-top: var(--space-2);
+  font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .job-meta {
@@ -358,14 +360,14 @@
   width: 72rpx;
   height: 6rpx;
   margin: 0 auto var(--space-4);
-  border-radius: var(--radius-full);
+  border-radius: 2rpx;
   background: var(--brass-800);
 }
 
 .detail-cover {
   width: 100%;
   height: 280rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   overflow: hidden;
   background: var(--color-bg-elevated);
   border: 1rpx solid var(--color-border);
@@ -405,7 +407,7 @@
   padding: var(--space-3);
   background: var(--color-bg-elevated);
   border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
 }
 
 .detail-fact {

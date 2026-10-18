@@ -61,7 +61,12 @@ const FILES = {
   supportWxss: 'subpackages/extra/user/support/index.wxss',
   searchWxss: 'subpackages/feature/search/index.wxss',
   liveWxss: 'subpackages/extra/live/studio/index.wxss',
-  artisanWxss: 'subpackages/extra/artisan/index.wxss'
+  artisanWxss: 'subpackages/extra/artisan/index.wxss',
+  artCommission: 'subpackages/extra/artisan/commission/index.wxss',
+  artPet: 'subpackages/extra/artisan/pet/index.wxss',
+  artWorks: 'subpackages/extra/artisan/works/index.wxss',
+  artProfile: 'subpackages/extra/artisan/profile/index.wxss',
+  artConcept: 'subpackages/extra/artisan/concept/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -213,6 +218,16 @@ function checks(s) {
   add('R20-1 标本师工作台：入口为发丝线行（非大圆角卡）、待办有待办格金线环、分区头为眉标 + 宋体',
     !/\n\.module-card \{[^}]*border-radius/.test(s.artisanWxss) && /\.todo-chip\.hot \{[^}]*var\(--ring-brass-soft\)/.test(s.artisanWxss) &&
       /\n\.group-cn \{[^}]*font-family: var\(--font-brand\)/.test(s.artisanWxss))
+  // 2026-10-18 标本师五个子页（员工端，点名）
+  {
+    const subs = ['artCommission', 'artPet', 'artWorks', 'artProfile', 'artConcept']
+    const rounded = subs.filter((k) => /border-radius: var\(--radius-(lg|md|full)\)|border-radius: (999rpx|9999px)/.test(s[k]))
+    add(`R21-1 标本师子页卡片方角、签不再是胶囊${rounded.length ? '（仍圆角：' + rounded.join(',') + '）' : ''}`, rounded.length === 0)
+  }
+  add('R21-2 标本师子页：提成 / 伴宠汇总为浅纸账签，概念卡为浅纸标本签，档案选项签选中不再实心金',
+    ['artCommission', 'artPet'].every((k) => /\n\.summary-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s[k])) &&
+      /\n\.plate-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.artConcept) &&
+      !/\.type-chip\.is-on \{[^}]*background: var\(--brass-400\)/.test(s.artProfile))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -466,6 +481,8 @@ if (process.argv.includes('--selftest')) {
     ['主播职责回到大圆角卡', 'liveWxss', (t) => t.replace('  padding: 26rpx 8rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 26rpx 8rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
     ['在播步骤丢了红色语义', 'liveWxss', (t) => t.replace('.flow-step-btn.on-air {\n  border-bottom-color: var(--color-error);', '.flow-step-btn.on-air {\n  border-bottom-color: var(--brass-400);')],
     ['标本师入口回到大圆角卡', 'artisanWxss', (t) => t.replace('  padding: 24rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 24rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
+    ['标本师作品卡回到大圆角', 'artWorks', (t) => t.replace('  padding: 22rpx 4rpx;\n  border-bottom', '  padding: 22rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom')],
+    ['概念卡回到深色铜牌', 'artConcept', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;', '  background: var(--color-bg-card);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],

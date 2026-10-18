@@ -1,6 +1,10 @@
 @import '../index.wxss';
 @import '../../utils/workbench-nav.wxss';
 
+/* 2026-10-18 视觉对齐（产品负责人点名「继续子页面重构」；与标本师工作台首页同口径，只改样式）：
+   分区头随 ../index.wxss（眉标 + 宋体 + 渐隐金线）；卡片 / 头像行方角发丝；选项签选中为金线环（实心金留给底栏保存）；
+   「对外展示 / 伴宠资质」关闭态的黄色是员工端提醒语义，保留。表单零件 workbench-* 由共享件管，不动。 */
+
 .page {
   /* 双按钮底栏：padding + 88rpx 按钮 + safe-area */
   padding-bottom: calc(168rpx + env(safe-area-inset-bottom));
@@ -16,9 +20,11 @@
 }
 
 .header .title {
-  font-size: var(--fs-36);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-family: var(--font-brand);
+  font-size: var(--fs-40);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .header .sub {
@@ -33,7 +39,7 @@
   padding: var(--space-4);
   background: var(--color-bg-card);
   border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
 }
 
 .visibility-card.is-on {
@@ -58,17 +64,19 @@
 
 .visibility-title {
   display: block;
+  font-family: var(--font-brand);
   font-size: var(--fs-30);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .visibility-status {
   display: block;
   margin-top: 6rpx;
-  font-size: var(--fs-22);
-  letter-spacing: 0.04em;
-  color: var(--brass-400);
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  letter-spacing: 0.16em;
+  color: var(--brass-300);
 }
 
 .visibility-card.is-off .visibility-status {
@@ -95,7 +103,7 @@
   padding: var(--space-4);
   background: var(--color-bg-card);
   border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
 }
 
 .qualify-card.is-on {
@@ -120,17 +128,19 @@
 
 .qualify-title {
   display: block;
+  font-family: var(--font-brand);
   font-size: var(--fs-30);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .qualify-status {
   display: block;
   margin-top: 6rpx;
-  font-size: var(--fs-22);
-  letter-spacing: 0.04em;
-  color: var(--brass-400);
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  letter-spacing: 0.16em;
+  color: var(--brass-300);
 }
 
 .qualify-card.is-off .qualify-status {
@@ -176,7 +186,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(26, 24, 20, 0.55);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
 }
 
 .avatar-mask text {
@@ -204,15 +214,15 @@
   text-align: center;
   font-size: var(--fs-26);
   color: var(--color-text-secondary);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.24);
 }
 
+/* 选中 = 金线环（原实心金，与底栏「保存」抢主次） */
 .type-chip.is-on {
-  color: var(--color-bg);
-  background: var(--brass-400);
-  border-color: var(--brass-400);
+  color: var(--brass-200);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass);
 }
 
 .years-row {
@@ -226,11 +236,11 @@
   height: 72rpx;
   line-height: 72rpx;
   text-align: center;
-  font-size: var(--fs-36);
-  color: var(--brass-400);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: var(--fs-34);
+  color: var(--brass-200);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.4);
 }
 
 .years-input {
@@ -250,7 +260,7 @@
   padding: var(--space-4);
   background: var(--color-bg-card);
   border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
 }
 
 .cover-row.is-busy {
@@ -266,7 +276,7 @@
   width: 240rpx;
   height: 120rpx;
   flex-shrink: 0;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   overflow: hidden;
   background: var(--color-bg-elevated);
   border: 1rpx solid var(--brass-800);
@@ -303,7 +313,7 @@
 .gallery-add {
   width: 210rpx;
   height: 210rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -369,7 +379,7 @@
   color: var(--color-text-secondary);
   background: var(--color-bg-card);
   border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-full);
+  border-radius: 2rpx;
 }
 
 .tag-chip.is-on {
@@ -386,7 +396,7 @@
   padding: var(--space-4);
   background: var(--color-bg-card);
   border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
 }
 
 .avatar-row-press {
@@ -397,7 +407,7 @@
 .avatar {
   width: 100%;
   height: 100%;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid var(--brass-800);
   background: var(--color-bg-elevated);
 }

@@ -1,5 +1,8 @@
 @import '../../utils/workbench-nav.wxss';
 
+/* 2026-10-18 视觉对齐（产品负责人点名「继续子页面重构」；与标本师工作台首页同口径，只改样式）：
+   方角（卡 4rpx / 签 2rpx）、眉标等宽、标题宋体；列表为发丝线行；状态色（待办黄 / 驳回红 / 已上架绿 …）为员工端语义，保留。 */
+
 page {
   background: var(--color-bg);
   color: var(--color-text-body);
@@ -16,16 +19,19 @@ page {
 .brand-group { display: flex; flex-direction: column; }
 
 .brand-group .en {
-  font-size: var(--fs-20);
-  letter-spacing: 0.16em;
-  color: var(--brass-600);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .brand-group .cn {
+  margin-top: 8rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-40);
-  color: var(--color-text-primary);
-  margin-top: 6rpx;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .header-note {
@@ -36,45 +42,60 @@ page {
   line-height: 1.6;
 }
 
+/* 汇总 = 浅纸账签 */
 .summary-card {
-  padding: var(--space-4);
-  margin-bottom: var(--space-4);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--brass-800);
-  border-radius: var(--radius-lg);
+  position: relative;
+  padding: 40rpx 32rpx 28rpx;
+  margin-bottom: var(--space-5);
+  border-radius: 4rpx;
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  inset: 12rpx;
+  border: 1rpx solid rgba(46, 38, 24, 0.22);
+  pointer-events: none;
 }
 
 .summary-label {
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary, #A09A90);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: #8B6F47;
 }
 
 .summary-value {
-  margin-top: 8rpx;
+  margin-top: 10rpx;
   font-family: var(--font-mono);
   font-size: var(--fs-48);
-  color: var(--brass-400);
+  color: #2E2618;
 }
 
 .summary-sub {
   margin-top: 10rpx;
   font-size: var(--fs-22);
-  color: var(--color-text-secondary);
-  line-height: 1.5;
+  line-height: 1.55;
+  color: #5A4E3A;
 }
 
 .section-title {
-  font-size: var(--fs-26);
-  color: var(--color-text-primary);
   margin-bottom: var(--space-3);
+  padding-bottom: 14rpx;
+  font-family: var(--font-brand);
+  font-size: 34rpx;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(196, 167, 108, 0.12) 60%, transparent) left bottom / 100% 1px no-repeat;
 }
 
+/* 工单：发丝线块（原圆角卡） */
 .pet-card {
-  padding: var(--space-3);
-  margin-bottom: var(--space-2);
-  background: var(--color-bg-card);
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-md);
+  padding: 26rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .pet-top {
@@ -100,8 +121,10 @@ page {
 
 .pet-title {
   margin-top: 8rpx;
-  font-size: var(--fs-28);
-  color: var(--color-text-primary);
+  font-family: var(--font-brand);
+  font-size: var(--fs-30);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .pet-meta {
@@ -120,21 +143,20 @@ page {
 
 .btn-ghost,
 .btn-primary {
-  padding: 12rpx 28rpx;
-  border-radius: 999rpx;
+  padding: 14rpx 30rpx;
+  border-radius: 4rpx;
   font-size: var(--fs-24);
+  letter-spacing: 0.08em;
 }
-
 .btn-ghost {
-  color: var(--brass-400);
-  border: 1rpx solid var(--brass-800);
+  color: var(--brass-200);
+  box-shadow: var(--ring-brass-soft);
 }
-
 .btn-primary {
-  color: var(--color-bg);
+  color: #1A1814;
   background: var(--brass-400);
+  font-weight: 600;
 }
-
 .pet-done {
   font-size: var(--fs-22);
   color: var(--color-success);

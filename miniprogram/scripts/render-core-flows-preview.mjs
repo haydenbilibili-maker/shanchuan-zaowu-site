@@ -543,7 +543,22 @@ const SCENES = [
       todoLamps: { pending: 'warn', make: 'warn', ship: 'lamp-muted', framing: 'lamp-info', deposit: 'warn', display: 'lamp-forest' }, petOrderLamp: 'warn', petOrderTodo: 1,
       depositPreview: [{ _id: 'd1', title: '蝶翅画 · 秋林', previewMeta: '待确认收款', depositAmount: 300, productId: 'p1' }],
       jobPreview: [{ _id: 'j1', specimenTitle: '光明女神闪蝶 · 胡桃木浅框', orderNo: 'CU20261016008', productionLabel: '待制作', productionStatus: 'pending_make' }],
-      workTotal: 46, workOnShelf: 38, commissionLoaded: true, commissionNet: '1,860' } }
+      workTotal: 46, workOnShelf: 38, commissionLoaded: true, commissionNet: '1,860' } },
+  // 2026-10-18 标本师子页（员工端，点名）
+  { name: 'artisan-commission', h: 1300, wxml: 'subpackages/extra/artisan/commission/index', data: { ready: true, loading: false, enabled: true, ratePercent: 12, ruleText: '关联藏品售出后按 12% 计入，退款自动冲正',
+      summary: { netAmount: '1,860.00', earnAmount: '2,016.00', reverseAmount: '156.00', salesAmount: '16,800.00' },
+      list: [{ _id: 'l1', type: 'earn', typeLabel: '入账', amountAbs: '153.60', productTitle: '蝶翅画 · 秋林', salesAmount: '1,280', ratePercent: 12, orderNo: 'SH20261016021', createTimeText: '10.16 20:14' },
+        { _id: 'l2', type: 'reverse', typeLabel: '冲正', amountAbs: '67.20', productTitle: '蝶翅书签 · 晨雾', salesAmount: '560', ratePercent: 12, orderNo: 'SH20261012007', createTimeText: '10.12 11:02' }] } },
+  { name: 'artisan-pet', h: 1300, wxml: 'subpackages/extra/artisan/pet/index', data: { ready: true, loading: false, pendingCount: 1,
+      list: [{ _id: 'p1', orderNo: 'PM20261017003', accepted: false, petTitle: '团子 · 英短', craftName: '仿生标本', intakeText: '10.20 到店交接', contactText: '林女士 · 138****2201', contactPhone: '13800002201' },
+        { _id: 'p2', orderNo: 'PM20261002011', accepted: true, statusLabel: '制作中', petTitle: '豆豆 · 柯基', craftName: '骨骼标本', quoteText: '¥3,800', acceptedAt: '10.03 09:20' }] } },
+  { name: 'artisan-works', h: 1500, wxml: 'subpackages/extra/artisan/works/index', data: { ready: true, pageMode: 'works', pageTitle: '作品库', pageSub: '封面、状态与上下架；申请上架后由店长审核', selectMode: false, loading: false, loadError: false, hasProfile: true, canProfile: true,
+      shelfFilter: 'all', filterCounts: { all: 46, on: 38, pending: 2, rejected: 1, off: 5 }, listAll: [1],
+      list: [{ _id: 'w1', title: '光明女神闪蝶 · A1', latinName: 'Morpho helena', coverImage: P[0], shelfKey: 'on', shelfLabel: '已上架', priceText: '1,280' }, { _id: 'w2', title: '蝶翅画 · 秋林', latinName: '', coverImage: P[4], shelfKey: 'pending', shelfLabel: '待确认', priceText: '980' }, { _id: 'w3', title: '血漪蝶穹顶', latinName: 'Cethosia biblis', coverImage: P[1], shelfKey: 'rejected', shelfLabel: '已驳回', priceText: '680' }] } },
+  { name: 'artisan-concept', h: 2400, wxml: 'subpackages/extra/artisan/concept/index', data: { ready: true, generating: false, progressPct: 0, statusText: '', lastError: '', notesOpen: false, notes: '', historyOpen: false, history: [], batchResults: [],
+      productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
+      categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
+      concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } }
 ]
 
 async function shoot(s) {
