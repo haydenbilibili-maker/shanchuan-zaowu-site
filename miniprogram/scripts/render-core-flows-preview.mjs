@@ -459,6 +459,9 @@ const SCENES = [
       timeSlots: [{ time: '10:00', status: 'open' }, { time: '11:00', status: 'open' }, { time: '14:00', status: 'open' }, { time: '15:00', status: 'full' }, { time: '16:00', status: 'open' }, { time: '17:00', status: 'open' }], selectedTimeIndex: 2,
       courses: [], activities: [], selectedActivityId: '', bookingHistoryTab: 0, upcomingBookings: [], historyBookings: [], loadingBookings: false,
       showMintModal: false, mintAnimation: false, mintFinished: false, newTicketCode: '', regDialogShow: false } },
+  // 2026-10-18 打印弹层防遮挡：按矮屏（iPhone SE 级）出图，按钮须完整落在出纸下方
+  { name: 'booking-mint', h: 1180, wxml: 'subpackages/business/booking/index', base: 'booking', data: { showMintModal: true, mintAnimation: true, mintFinished: true, newTicketCode: 'A7F3K2' },
+    css: '.ui-pop-mask.mint-modal.is-open { display: flex !important; } .mint-modal, .mint-modal * { transition: none !important; }' },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },
@@ -623,6 +626,7 @@ div, span, img { box-sizing: border-box; }
 .sticky-header { position: relative !important; }
 .footer-bar { position: relative !important; }
 .__cb { display: inline-block; width: 28px; height: 28px; border: 1px solid #c4a76c; border-radius: 4px; vertical-align: middle; }
+${s.css ? '/* 场景专属：如需出图某个弹层 */\n' + s.css : ''}
 </style></head><body>${body}</body></html>`
   const htmlPath = join(tmpdir(), `core-${s.name}-${process.pid}.html`)
   writeFileSync(htmlPath, html)

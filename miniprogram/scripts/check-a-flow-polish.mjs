@@ -156,14 +156,24 @@ function checks(s) {
       (s.bookingWxml.match(/class="val highlight[^"]*">\{\{ticketInfo\.timeStr\}\}/g) || []).length === 2 &&
       !/🦋/.test(s.bookingWxml))
   // 2026-10-17 产品负责人：「入馆券除了目前的样式，还需要保持之前的打印动画」
-  add('R12-4 预约成功的入馆券打印动画保留（打印机出纸 0→800rpx / 2.5s、进度条、扫描线，2.6s 后出操作区）',
+  add('R12-4 预约成功的入馆券打印动画保留（打印机出纸 0→720rpx / 2.5s、进度条、扫描线，2.6s 后出操作区）',
     /<view class="mint-machine">[\s\S]*?<view class="printer-slot"><\/view>/.test(s.bookingWxml) &&
       /<view class="ticket-paper \{\{mintAnimation \? 'printing' : ''\}\}">/.test(s.bookingWxml) &&
       /class="scan-bar"/.test(s.bookingWxml) && /<view class="mint-progress"><view class="mp-bar"><\/view><\/view>/.test(s.bookingWxml) &&
-      /\n\.ticket-paper \{[^}]*height: 0;[^}]*transition: height 2\.5s/.test(s.bookingWxss) && /\.ticket-paper\.printing \{ height: 800rpx; \}/.test(s.bookingWxss) &&
+      /\n\.ticket-paper \{[^}]*height: 0;[^}]*transition: height 2\.5s/.test(s.bookingWxss) && /\.ticket-paper\.printing \{ height: 720rpx; \}/.test(s.bookingWxss) &&
       /\.mp-bar \{[^}]*animation: bk-progress 2\.5s linear forwards/.test(s.bookingWxss) &&
       /\n\.mint-actions \{[^}]*opacity: 0;[^}]*2\.6s/.test(s.bookingWxss) &&
       /this\.setData\(\{ mintAnimation: true \}\);[\s\S]{0,80}\}, 100\);[\s\S]{0,40}setTimeout\(\(\) => \{\s*this\.setData\(\{ mintFinished: true \}\);[\s\S]{0,60}\}, 2600\);/.test(s.bookingJs))
+  // 2026-10-18 产品负责人截图：「查看凭证 / 继续预约」压住出纸底边（80vh 定高 + bottom 绝对定位，矮屏必叠）
+  {
+    const top = +((s.bookingWxss.match(/\n\.ticket-paper \{[^}]*?top: (\d+)rpx/) || [])[1] || NaN)
+    const h = +((s.bookingWxss.match(/\.ticket-paper\.printing \{ height: (\d+)rpx; \}/) || [])[1] || NaN)
+    const mh = +((s.bookingWxss.match(/\n\.mint-machine \{[^}]*?height: (\d+)rpx/) || [])[1] || NaN)
+    const area = (s.bookingWxss.match(/\n\.mint-bottom-area \{([^}]*)\}/) || [])[1] || ''
+    const mt = +((area.match(/margin-top: (\d+)rpx/) || [])[1] || NaN)
+    add(`R27-1 入馆券打印弹层：操作区在文档流、让出整张纸（纸底 ${top + h} ≤ 操作区顶 ${mh + mt} − 32）`,
+      !/position: absolute/.test(area) && !/\n\.mint-content \{[^}]*height: \d+vh/.test(s.bookingWxss) && mh + mt - (top + h) >= 32)
+  }
   add('R12-2 预约页分区头为眉标 + 中文主标两行（不再「选择日期 | SELECT DATE」同一节点并列）',
     !/class="section-label">[^<]*\|/.test(s.bookingWxml) && (s.bookingWxml.match(/<view class="section-label"><text class="sl-en">/g) || []).length === 4)
   add('R12-3 wxml-preview 跳过 {{ }} 内的 <（否则预约页无法离线出图）',
@@ -515,7 +525,9 @@ if (process.argv.includes('--selftest')) {
     ['入馆券页头回到实心金带', 'ticketWxss', (t) => t.replace('.ticket-header {\n  padding: 44rpx 32rpx 8rpx;', '.ticket-header {\n  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);\n  padding: 44rpx 32rpx 8rpx;')],
     ['入馆券信号灯复活', 'ticketWxml', (t) => t.replace('<view class="live-dot"></view>', '<view class="signal-light blink"></view>')],
     ['自取已自提回到绿章', 'pickupWxss', (t) => t.replace('  border: 4rpx solid rgba(90, 78, 58, 0.85);', '  border: 4rpx solid rgba(82, 183, 136, 0.85);')],
-    ['打印动画出纸被去掉', 'bookingWxss', (t) => t.replace('.ticket-paper.printing { height: 800rpx; }', '.ticket-paper.printing { }')],
+    ['打印动画出纸被去掉', 'bookingWxss', (t) => t.replace('.ticket-paper.printing { height: 720rpx; }', '.ticket-paper.printing { }')],
+    ['打印操作区回到底部绝对定位', 'bookingWxss', (t) => t.replace('.mint-bottom-area {\n  position: relative;', '.mint-bottom-area {\n  position: absolute;')],
+    ['操作区让位不足压住出纸', 'bookingWxss', (t) => t.replace('margin-top: 748rpx;', 'margin-top: 640rpx;')],
     ['打印机实体被删', 'bookingWxml', (t) => t.replace('<view class="printer-slot"></view>', '')],
     ['打印动画不再触发', 'bookingJs', (t) => t.replace('this.setData({ mintAnimation: true });', 'this.setData({});')],
     ['定制说明段高度漂移', 'customWxss', (t) => t.replace('  height: 88rpx;\n  padding: 0 32rpx;', '  height: 96rpx;\n  padding: 0 32rpx;')],
