@@ -52,6 +52,7 @@ const {
 } = require('./productTaxonomy')
 const { resolveSensitiveBlurForSave } = require('./sensitiveMorphology')
 const { sanitizeProductMedia, stripVideoUrls, isVideoUrl } = require('./productMedia')
+const { sanitizeExternalVideos } = require('./externalVideos')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -100,6 +101,9 @@ const ALLOWED_FIELDS = [
   'themeName', 'themeNote',
   // 需求 28 · item 6：商品祈运标签（受控枚举，见 blessTags.js）—— 玩法推荐与祈福墙文案的匹配依据之一
   'blessTags',
+  // 2026-10-18 产品点名：外平台实拍视频（视频号可内嵌 / B站等只给链接卡）—— 见 externalVideos.js；
+  // 刻意不并进 media：店长端编辑器会把非 video/live 条目洗掉。（排在 media 前：check:product-media 的自检以 media 收尾为锚点）
+  'externalVideos',
   // 2026-09-28 产品点名：视频 / 实况（可选；只有详情页轮播读它，images 仍只放图片）—— 见 productMedia.js
   'media'
 ]
@@ -309,6 +313,9 @@ function prepareProductData(raw) {
   }
   if (Object.prototype.hasOwnProperty.call(data, 'media')) {
     data.media = sanitizeProductMedia(data.media)
+  }
+  if (Object.prototype.hasOwnProperty.call(data, 'externalVideos')) {
+    data.externalVideos = sanitizeExternalVideos(data.externalVideos)
   }
   if (Array.isArray(data.images)) {
     data.images = stripVideoUrls(data.images)

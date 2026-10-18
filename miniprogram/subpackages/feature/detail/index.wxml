@@ -350,6 +350,37 @@ module.exports.saveLabel = saveLabel;
       </view>
     </view>
 
+    <!-- 实拍影像（2026-10-18 产品负责人点名）：外平台实拍视频；云存储上传的实拍视频在顶部主图里，这里只提示段数。
+         视频号可小程序内嵌播放（需 feedToken）；B站 / 抖音 / 小红书小程序内不能打开，只给卡片 + 复制链接。 -->
+    <block wx:if="{{externalVideos.length}}">
+      <view class="section-title"><text class="st-en">FILMS</text><text class="st-zh">实拍影像</text></view>
+      <view class="films">
+        <text class="films-hint" wx:if="{{heroVideoCount > 0}}">顶部主图另有 {{heroVideoCount}} 段实拍视频，左滑即看</text>
+        <block wx:for="{{externalVideos}}" wx:key="key">
+          <view class="film-embed" wx:if="{{item.embed}}">
+            <channel-video class="film-channel" feed-id="{{item.feedId}}" finder-user-name="{{item.finderUserName}}" feed-token="{{item.feedToken}}" autoplay="{{false}}" loop="{{false}}" muted="{{true}}" object-fit="contain" binderror="onChannelEmbedError" data-index="{{index}}"></channel-video>
+            <text class="film-cap">{{item.title}} · 视频号</text>
+          </view>
+          <view class="film-card" wx:elif="{{item.platform === 'channels'}}" bindtap="openChannelsVideo" data-finder="{{item.finderUserName}}" data-feed="{{item.feedId}}" hover-class="tap-press" hover-stay-time="80">
+            <view class="film-play" aria-hidden="true"></view>
+            <view class="film-body">
+              <text class="film-title">{{item.title}}</text>
+              <text class="film-meta">视频号 · 轻点前往观看</text>
+            </view>
+            <text class="film-go">›</text>
+          </view>
+          <view class="film-card" wx:else bindtap="copyExternalVideo" data-url="{{item.url}}" data-label="{{item.label}}" hover-class="tap-press" hover-stay-time="80">
+            <view class="film-play is-ext" aria-hidden="true"></view>
+            <view class="film-body">
+              <text class="film-title">{{item.title}}</text>
+              <text class="film-meta">{{item.label}}{{item.bvid ? ' · ' + item.bvid : ''}} · 轻点复制链接</text>
+            </view>
+            <text class="film-go">复制</text>
+          </view>
+        </block>
+      </view>
+    </block>
+
     <!-- 商品参数 -->
     <view class="section-title"><text class="st-en">PARAMETERS</text><text class="st-zh">藏品参数</text></view>
     <view class="params-card">
@@ -859,3 +890,6 @@ module.exports.saveLabel = saveLabel;
 
 <!-- 全站样式化弹窗宿主（替代 wx.showModal）；详见 utils/appModal.js -->
 <app-modal id="appModal" />
+
+<!-- 实拍影像区的样式化轻提示（2026-10-18）：复制链接 / 视频号打不开 -->
+<app-toast show="{{filmToast.show}}" overline="FILMS" title="{{filmToast.title}}" desc="{{filmToast.desc}}" bind:close="onFilmToastClose" />

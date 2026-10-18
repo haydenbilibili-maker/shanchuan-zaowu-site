@@ -46,6 +46,7 @@ const { ensureOpenId, markCartDirty, fetchCartCount, updateCartTabBadge } = requ
 const { getCustomNavLayout } = require('../utils/customNav');
 const { getWindowInfo } = require('../../../utils/systemInfo');
 const { buildHeroSlides } = require('../utils/heroMedia');
+const { buildExternalVideos } = require('../utils/externalVideos');
 const {
   ANIMAL_ETHICS_LABEL,
   ANIMAL_ETHICS_SUMMARY,
@@ -410,6 +411,10 @@ Page(withAppModal({
     imageIndex: 0,
     imageTotal: 0,
     heroSlides: [],
+    /** 实拍影像区块（2026-10-18）：外平台视频 + 主图里实拍视频的段数提示 */
+    externalVideos: [],
+    heroVideoCount: 0,
+    filmToast: { show: false, title: '', desc: '' },
     heroPlaying: '',
     buyCount: 1,
     cartCount: 0,
@@ -966,6 +971,8 @@ Page(withAppModal({
       imageTotal: heroSlides.length || images.length,
       imageIndex: 0,
       heroSlides,
+      externalVideos: buildExternalVideos(data.externalVideos),
+      heroVideoCount: heroSlides.filter((x) => x.kind !== 'image').length,
       buyCount: 1,
       commerceReady,
       // 预填无图时继续骨架；完整档案到位后关闭（避免黑主图）
@@ -1454,6 +1461,46 @@ Page(withAppModal({
 
   onHide() {
     if ((this.data.heroSlides || []).length) this.pauseHeroVideos();
+  },
+
+  /** 实拍影像区的轻提示：样式化 AppToast（全站弹窗棘轮不许新增原生 showToast） */
+  showFilmToast(title, desc) {
+    this.setData({ filmToast: { show: true, title, desc } });
+  },
+
+  onFilmToastClose() {
+    this.setData({ 'filmToast.show': false });
+  },
+
+  /** 视频号内嵌报错（主体 / token 不符、基础库过低等）：就地降级成跳转卡片，不自动跳走 */
+  onChannelEmbedError(e) {
+    const idx = Number(e.currentTarget.dataset.index);
+    if (!(idx >= 0) || !(this.data.externalVideos || [])[idx]) return;
+    this.setData({ [`externalVideos[${idx}].embed`]: false });
+  },
+
+  /** 视频号：未内嵌（非同主体且无 feedToken）或内嵌失败后，轻点跳到视频号里看 */
+  openChannelsVideo(e) {
+    const { finder, feed } = e.currentTarget.dataset;
+    if (!finder || !feed || !wx.openChannelsActivity) {
+      this.showFilmToast('暂时打不开视频号', '请升级微信后再试');
+      return;
+    }
+    wx.openChannelsActivity({
+      finderUserName: finder,
+      feedId: feed,
+      fail: () => this.showFilmToast('视频暂时打不开', '可在视频号里搜索本店观看')
+    });
+  },
+
+  /** B站 / 抖音 / 小红书：小程序内不能打开外平台网页，复制链接到剪贴板 */
+  copyExternalVideo(e) {
+    const { url, label } = e.currentTarget.dataset;
+    if (!url) return;
+    wx.setClipboardData({
+      data: url,
+      success: () => this.showFilmToast('链接已复制', `可在${label || '对应平台'}打开观看`)
+    });
   },
 
   skuConfirmLabel(action) {

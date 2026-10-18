@@ -562,6 +562,13 @@ const SCENES = [
       categories: [{ id: 'product', label: '藏品建议' }], activeCategory: 'product', messageText: '', ticketImages: [], maxTicketImages: 3, contactPhone: '', submitting: false,
       receipt: { show: true, no: 'FB-7Q2K9X', label: '藏品建议' } },
     css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  // 2026-10-18 产品点名：详情页「实拍影像」区块（视频号跳转卡片 + B站 / 抖音复制链接卡；channel-video 内嵌在预览里不渲染）
+  { name: 'detail-films', h: 3000, wxml: 'subpackages/feature/detail/index', base: 'detail', data: {
+      heroVideoCount: 1,
+      externalVideos: [
+        { key: 'ev0', platform: 'channels', label: '视频号', title: '光明女神闪蝶 · 展翅实拍', feedId: 'f1', finderUserName: 'sphShanhai', embed: false },
+        { key: 'ev1', platform: 'bilibili', label: '哔哩哔哩', title: '玻璃罩里的蓝 · 360° 环拍', url: 'https://b23.tv/x', bvid: 'BV1xx411c7mD', embed: false },
+        { key: 'ev2', platform: 'douyin', label: '抖音', title: '', url: 'https://v.douyin.com/x', bvid: '', embed: false }] } },
   // 2026-10-18 方向池 ★★★：拆信 / 火漆 / 续播 / 标本旅程 + 入藏卡（🔒 点名）/ 请假天数 / 报销核准
   { name: 'messages-env', h: 1300, wxml: 'subpackages/extra/user/messages/index', base: 'messages', data: {
       messages: [

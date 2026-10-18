@@ -1053,6 +1053,79 @@
                 </div>
             </el-form-item>
 
+            <!-- 2026-10-18 产品点名：实拍视频。云存储视频进 media（详情页顶部主图轮播，封面图之后），外平台进 externalVideos（详情页「实拍影像」区块）。
+                 评估与取舍：miniprogram/docs/藏品视频_外平台与云存储评估_2026-10-18.md -->
+            <el-divider content-position="left">实拍视频（media · 外平台）</el-divider>
+            <el-form-item label="上传视频">
+                <div class="product-media-gallery">
+                    <div v-if="form.media?.length" class="gallery-thumbs">
+                        <div
+                            v-for="(m, idx) in form.media"
+                            :key="'mv-' + idx + '-' + m.url"
+                            class="gallery-thumb"
+                        >
+                            <video
+                                :src="form.mediaPreviews?.[idx]?.url"
+                                :poster="form.mediaPreviews?.[idx]?.poster || undefined"
+                                class="gallery-thumb-img"
+                                controls
+                                muted
+                                preload="metadata"
+                            />
+                            <div class="gallery-thumb-actions">
+                                <el-button size="small" link @click="toggleProductVideoType(idx)">{{ m.type === 'live' ? '转视频' : '转实况' }}</el-button>
+                                <el-button v-if="idx > 0" size="small" link @click="moveProductVideo(idx, -1)">左移</el-button>
+                                <el-button size="small" link type="danger" @click="removeProductVideo(idx)">删除</el-button>
+                            </div>
+                            <span class="cover-badge">{{ m.type === 'live' ? '实况' : '视频' }} {{ formatVideoDuration(m.duration) }}</span>
+                        </div>
+                    </div>
+                    <el-upload
+                        v-if="(form.media?.length || 0) < MAX_MEDIA"
+                        drag
+                        class="product-image-upload"
+                        :show-file-list="false"
+                        :accept="VIDEO_ACCEPT"
+                        :disabled="productMediaUploading"
+                        :before-upload="beforeProductVideoUpload"
+                        :http-request="uploadProductVideo"
+                    >
+                        <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+                        <div class="el-upload__text">点击或拖拽视频到此处（≤ 60 秒 · ≤ 50MB · 最多 {{ MAX_MEDIA }} 段）</div>
+                    </el-upload>
+                    <el-progress v-if="videoUploadPct > 0" :percentage="videoUploadPct" :stroke-width="6" />
+                    <span class="sku-hint-muted">显示在小程序详情页顶部主图里（封面图之后）；店长端上传的视频也在这里。建议导出 720p、H.264、码率 ≤ 2.5Mbps，起播更快；封面自动截取第 0.5 秒画面。</span>
+                </div>
+            </el-form-item>
+            <el-form-item label="外平台">
+                <div class="product-media-gallery">
+                    <div v-for="(v, idx) in form.externalVideos" :key="'ev-' + idx + '-' + (v.url || v.feedId)" class="ext-video-row">
+                        <el-tag size="small" :type="v.platform === 'channels' ? 'success' : 'info'">{{ externalLabel(v.platform) }}</el-tag>
+                        <el-input v-model="v.title" size="small" maxlength="40" placeholder="标题（选填）" class="ext-video-title" />
+                        <span class="sku-hint-muted ext-video-ref">{{ v.platform === 'channels' ? (v.finderUserName + ' · ' + v.feedId + (v.feedToken || v.sameSubject ? ' · 可内嵌' : ' · 跳转观看')) : v.url }}</span>
+                        <el-button size="small" link type="danger" @click="removeExternalVideo(idx)">删除</el-button>
+                    </div>
+                    <div v-if="(form.externalVideos?.length || 0) < MAX_EXTERNAL" class="ext-video-add">
+                        <el-radio-group v-model="externalDraft.kind" size="small">
+                            <el-radio-button value="link">B站 / 抖音 / 小红书链接</el-radio-button>
+                            <el-radio-button value="channels">视频号</el-radio-button>
+                        </el-radio-group>
+                        <template v-if="externalDraft.kind === 'link'">
+                            <el-input v-model="externalDraft.url" size="small" placeholder="粘贴分享链接或整段分享文案（自动提取 https 链接）" />
+                        </template>
+                        <template v-else>
+                            <el-input v-model="externalDraft.finderUserName" size="small" placeholder="视频号 ID（sph 开头）" />
+                            <el-input v-model="externalDraft.feedId" size="small" placeholder="视频 feedId" />
+                            <el-input v-model="externalDraft.feedToken" size="small" placeholder="feedToken（选填；非同主体内嵌必需）" />
+                            <el-checkbox v-model="externalDraft.sameSubject" size="small">视频号与小程序同主体</el-checkbox>
+                        </template>
+                        <el-input v-model="externalDraft.title" size="small" maxlength="40" placeholder="标题（选填）" />
+                        <el-button size="small" type="primary" plain @click="addExternalVideo">添加</el-button>
+                    </div>
+                    <span class="sku-hint-muted">视频号可在小程序内播放（同主体直接内嵌；非同主体需 feedToken，未填则显示为跳转卡片）；B站 / 抖音 / 小红书微信不允许在小程序内打开，详情页显示为卡片，顾客轻点复制链接。</span>
+                </div>
+            </el-form-item>
+
             <el-divider content-position="left">图文详情</el-divider>
             <el-form-item label="详情图">
                 <div class="product-media-gallery">
@@ -1352,6 +1425,11 @@ import { sanitizeProductTags, readProductTags, MAX_TAGS } from './utils/productT
 import { normalizeOverlayList, resolveCraftOptions } from './utils/productTaxonomyOverlay'
 import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftScenes'
 import { BLESS_TAGS, MAX_BLESS_TAGS, sanitizeBlessTags, readBlessTags } from './utils/blessTags'
+// 2026-10-18 产品点名：藏品实拍视频（云存储 media + 外平台 externalVideos）
+import {
+    MAX_MEDIA, VIDEO_ACCEPT, MAX_EXTERNAL, formatVideoDuration, checkVideoFile, toPayloadMedia,
+    externalLabel, parseExternalDraft, readVideoMeta, captureVideoFrame
+} from './utils/productVideos'
 import { establishAdminSession, clearAdminSession, probeAdminSession } from './utils/cloudbaseCdnDb'
 import { ADMIN_TOKEN_KEY, ADMIN_TOKEN_VALUE } from './utils/cloudFnErrors'
 import { isActiveCategory } from './utils/categoryActive'
@@ -1850,6 +1928,7 @@ const form = ref({
     images: [], imagePreviews: [],
     detailImages: [], detailImagePreviews: [],
     detailHtml: '',
+    media: [], mediaPreviews: [], mediaOrigCount: 0, externalVideos: [], externalOrigCount: 0,
     hasSku: false, skus: [], skuDimensionsStr: '',
     seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
@@ -1858,6 +1937,11 @@ const giftSceneOptions = GIFT_SCENES
 const blessTagOptions = BLESS_TAGS
 const maxBlessTags = MAX_BLESS_TAGS
 const productMediaUploading = ref(false)
+/** 实拍视频上传进度 0–100（0 = 不显示进度条） */
+const videoUploadPct = ref(0)
+const externalDraft = ref({ kind: 'link', url: '', title: '', finderUserName: '', feedId: '', feedToken: '', sameSubject: false })
+/** before-upload 读到的元数据，交给 http-request 用（同一 File 对象） */
+const pendingVideoMeta = new WeakMap()
 const latinAiLoading = ref(false)
 const productAiFillLoading = ref(false)
 /** 用户在库存=1 时手动关掉孤品后，不再因 stock===1 反复强开 */
@@ -3359,6 +3443,7 @@ const blankProductForm = () => ({
     images: [], imagePreviews: [],
     detailImages: [], detailImagePreviews: [],
     detailHtml: '',
+    media: [], mediaPreviews: [], mediaOrigCount: 0, externalVideos: [], externalOrigCount: 0,
     hasSku: false, skus: [], skuDimensionsStr: '',
     seckillEnabled: false, seckillPrice: 0, seckillStock: 0, seckillStartTime: null, seckillEndTime: null, seckillLimitPerUser: 1,
     groupBuyingEnabled: false, groupBuyingPrice: 0, groupBuyingSize: 2
@@ -3673,9 +3758,12 @@ const editItem = async (row) => {
             specs: s.specs || null,
         }
     }))
-    const [imagePreviews, detailImagePreviews] = await Promise.all([
+    const media = Array.isArray(row.media) ? row.media.filter((m) => m && m.url && (m.type === 'video' || m.type === 'live')) : []
+    const externalVideos = Array.isArray(row.externalVideos) ? row.externalVideos.filter(Boolean).map((v) => ({ ...v })) : []
+    const [imagePreviews, detailImagePreviews, mediaPreviews] = await Promise.all([
         getTempFileUrls(images),
         getTempFileUrls(detailImages),
+        buildMediaPreviews(media),
     ])
     const sizeParts = parseProductSize(row.size)
     const tax = row.taxonomy || {}
@@ -3700,6 +3788,11 @@ const editItem = async (row) => {
         detailImages,
         detailImagePreviews,
         detailHtml: row.detailHtml || '',
+        media,
+        mediaPreviews,
+        mediaOrigCount: Array.isArray(row.media) ? row.media.length : 0,
+        externalVideos,
+        externalOrigCount: Array.isArray(row.externalVideos) ? row.externalVideos.length : 0,
         hasSku: !!(row.hasSku && skus.length),
         skus,
         skuDimensionsStr: Array.isArray(row.skuDimensions) ? row.skuDimensions.join(',') : '',
@@ -3903,6 +3996,113 @@ const uploadDetailImage = async (opt) => {
     }
 }
 
+/** 视频与封面帧的临时地址（一次批量换） */
+const buildMediaPreviews = async (media) => {
+    const list = Array.isArray(media) ? media : []
+    if (!list.length) return []
+    const ids = []
+    list.forEach((m) => { ids.push(m.url); ids.push(m.poster || '') })
+    const urls = await getTempFileUrls(ids.filter(Boolean))
+    const map = {}
+    ids.filter(Boolean).forEach((id, i) => { map[id] = urls[i] || id })
+    return list.map((m) => ({ url: map[m.url] || m.url, poster: m.poster ? (map[m.poster] || m.poster) : '' }))
+}
+const refreshMediaPreviews = async () => {
+    form.value.mediaPreviews = await buildMediaPreviews(form.value.media)
+}
+
+const beforeProductVideoUpload = async (file) => {
+    if (!/^video\//.test(file.type || '') && !/\.(mp4|mov|m4v)$/i.test(file.name || '')) {
+        ElMessage.error('请选择 MP4 / MOV 视频')
+        return false
+    }
+    if ((form.value.media || []).length >= MAX_MEDIA) {
+        ElMessage.error(`最多 ${MAX_MEDIA} 段视频`)
+        return false
+    }
+    const meta = await readVideoMeta(file)
+    const check = checkVideoFile({ size: file.size, duration: meta.duration })
+    if (!check.ok) {
+        ElMessage.error(check.reason)
+        return false
+    }
+    if (check.warn) ElMessage.warning(check.warn)
+    pendingVideoMeta.set(file, meta)
+    return true
+}
+
+const uploadProductVideo = async (opt) => {
+    const file = opt.file
+    const meta = pendingVideoMeta.get(file) || await readVideoMeta(file)
+    productMediaUploading.value = true
+    videoUploadPct.value = 1
+    try {
+        const url = await uploadAdminBinary(file, 'products', { onProgress: (p) => { videoUploadPct.value = Math.max(1, Math.min(99, p)) } })
+        // 封面帧：浏览器解不了的编码（部分 HEVC .mov）截不到，就留空 —— 详情页回落到封面图
+        let poster = ''
+        const frame = await captureVideoFrame(file)
+        if (frame) {
+            try {
+                poster = await uploadAdminBinary(new File([frame], `poster_${Date.now()}.jpg`, { type: 'image/jpeg' }), 'products')
+            } catch (e) {
+                poster = ''
+            }
+        }
+        form.value.media = [...(form.value.media || []), {
+            type: 'video', url, poster,
+            duration: Math.round((meta.duration || 0) * 10) / 10,
+            width: meta.width || 0, height: meta.height || 0, size: file.size || 0
+        }]
+        await refreshMediaPreviews()
+        ElMessage.success(poster ? '视频已上传' : '视频已上传（未能截取封面帧，详情页将用封面图）')
+    } catch (e) {
+        ElMessage.error('视频上传失败: ' + (e.message || '未知错误'))
+    } finally {
+        productMediaUploading.value = false
+        videoUploadPct.value = 0
+        pendingVideoMeta.delete(file)
+    }
+}
+
+const removeProductVideo = async (idx) => {
+    const list = [...(form.value.media || [])]
+    list.splice(idx, 1)
+    form.value.media = list
+    await refreshMediaPreviews()
+}
+
+const moveProductVideo = async (idx, delta) => {
+    const list = [...(form.value.media || [])]
+    const j = idx + delta
+    if (j < 0 || j >= list.length) return
+    ;[list[idx], list[j]] = [list[j], list[idx]]
+    form.value.media = list
+    await refreshMediaPreviews()
+}
+
+const toggleProductVideoType = (idx) => {
+    const list = [...(form.value.media || [])]
+    if (!list[idx]) return
+    list[idx] = { ...list[idx], type: list[idx].type === 'live' ? 'video' : 'live' }
+    form.value.media = list
+}
+
+const addExternalVideo = () => {
+    const res = parseExternalDraft(externalDraft.value, form.value.externalVideos || [])
+    if (res.error) {
+        ElMessage.error(res.error)
+        return
+    }
+    form.value.externalVideos = [...(form.value.externalVideos || []), res.item]
+    externalDraft.value = { kind: externalDraft.value.kind, url: '', title: '', finderUserName: '', feedId: '', feedToken: '', sameSubject: externalDraft.value.sameSubject }
+}
+
+const removeExternalVideo = (idx) => {
+    const list = [...(form.value.externalVideos || [])]
+    list.splice(idx, 1)
+    form.value.externalVideos = list
+}
+
 const removeProductImage = async (idx) => {
     const imgs = [...(form.value.images || [])]
     imgs.splice(idx, 1)
@@ -4091,6 +4291,11 @@ const saveProduct = async () => {
             images,
             detailImages,
             detailHtml,
+            // 只在「有值」或「原本有值、被删光」时才送：没载入过的入口保存不会清掉库里视频（与店长端同口径）
+            ...((form.value.media || []).length || form.value.mediaOrigCount ? { media: toPayloadMedia(form.value.media) } : {}),
+            ...((form.value.externalVideos || []).length || form.value.externalOrigCount
+                ? { externalVideos: (form.value.externalVideos || []).map(({ platform, title, url, bvid, feedId, finderUserName, feedToken, sameSubject }) => ({ platform, title, url, bvid, feedId, finderUserName, feedToken, sameSubject: !!sameSubject })) }
+                : {}),
             hasSku,
             skus: hasSku ? skus : [],
             skuDimensions: hasSku ? skuDimensions : [],
@@ -4898,6 +5103,30 @@ body { margin: 0; background: var(--bg-light); font-family: var(--font-cn-body),
 .product-media-gallery .gallery-thumb.is-cover {
   border-color: #C4A76C;
 }
+/* 实拍视频（2026-10-18）：视频缩略与图片同尺寸；外平台一行一条 */
+video.gallery-thumb-img { object-fit: cover; }
+.ext-video-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.ext-video-title { width: 180px; flex-shrink: 0; }
+.ext-video-ref {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ext-video-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+.ext-video-add .el-input { width: 220px; }
 .product-media-gallery .gallery-thumb-img {
   width: 96px;
   height: 96px;

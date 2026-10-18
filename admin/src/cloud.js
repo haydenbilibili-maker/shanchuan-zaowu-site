@@ -310,7 +310,7 @@ export const getTempFileUrl = async (cloudPath) => {
 /**
  * 管理后台通用：上传二进制到云存储，返回 fileID（cloud://…）
  */
-export const uploadAdminBinary = async (file, folder = 'erp-store') => {
+export const uploadAdminBinary = async (file, folder = 'erp-store', { onProgress } = {}) => {
   if (!file || !(file instanceof Blob)) {
     throw new Error('无效文件')
   }
@@ -318,7 +318,12 @@ export const uploadAdminBinary = async (file, folder = 'erp-store') => {
   const rawName = file.name || 'file'
   const safe = String(rawName).replace(/[^\w.\-\u4e00-\u9fa5]/g, '_')
   const cloudPath = `${folder}/${Date.now()}_${safe}`
-  const res = await app.uploadFile({ cloudPath, filePath: file })
+  // onProgress（可选，2026-10-18 藏品视频上传）：回调 0–100；不传则与原来完全一致
+  const res = await app.uploadFile({
+    cloudPath,
+    filePath: file,
+    ...(onProgress ? { onUploadProgress: (e) => { if (e && e.total) onProgress(Math.round((e.loaded / e.total) * 100)) } } : {})
+  })
   const fileID = res?.fileID
   if (!fileID) {
     throw new Error('上传未返回 fileID')

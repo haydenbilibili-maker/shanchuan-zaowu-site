@@ -350,6 +350,8 @@
     "check:product-save-fields:selftest": "node miniprogram/scripts/check-product-save-fields.mjs --selftest",
     "check:product-media": "node miniprogram/scripts/check-product-media.mjs",
     "check:product-media:selftest": "node miniprogram/scripts/check-product-media.mjs --selftest",
+    "check:product-external-videos": "node miniprogram/scripts/check-product-external-videos.mjs",
+    "check:product-external-videos:selftest": "node miniprogram/scripts/check-product-external-videos.mjs --selftest",
     "check:bflow-polish": "node miniprogram/scripts/check-bflow-polish.mjs",
     "check:bflow-polish:selftest": "node miniprogram/scripts/check-bflow-polish.mjs --selftest",
     "check:package-photos": "node miniprogram/scripts/check-package-photos.mjs",
