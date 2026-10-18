@@ -111,6 +111,7 @@
 | 目录 | 内容 |
 |------|------|
 | `社区内容重写_2026-09-15/` | 社区/展览内容重写（含 `raw/` 原始 json 与 `_生成报告.json`） |
+| `标本档案内容_第一批_2026-10-18.md` | 馆藏「标本档案」第一批 13 条物种档案审阅稿（全文 + 事实核查 + 合规排除 + 入库步骤）；数据源 `scripts/specimen-archive-seeds/`，守卫 `check:specimen-archive-seeds`，入库 `seed:specimen-archive`（默认 dry-run、写入为草稿） |
 | `转载内容重写_2026-09-15/` | 转载内容重写 |
 | `品牌专项/` | Logo 候选稿与包装 SKU 盘点（含 `logo-candidates/`） |
 

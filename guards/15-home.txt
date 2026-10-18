@@ -19,3 +19,5 @@ npm run test:knowledge-card
 npm run check:atlas-plates
 # 2026-10-17：我的成就「馆志 · 成长线」重设计（徽章一枚不丢进成长线、云端现有徽章都已登记、连线按进度填、下一枚取最近三枚、刻度一枚一格、focus=relics 不在 scroll-view 里）+ 同日「我的」子页（荣誉档案筛选与缩样印色、收藏与候补页面滚动；山海有信日轨 / 卷首只在顾客队列 / 信笺退场旧装饰）；12 个内存注入）
 npm run check:achievement-tracks
+# 2026-10-18：馆藏「标本档案」第一批内容种子（scripts/specimen-archive-seeds/）：保护等级留空、合规选题、禁玄学与营销词、结构与篇幅、默认草稿；15 个内存注入
+npm run check:specimen-archive-seeds
