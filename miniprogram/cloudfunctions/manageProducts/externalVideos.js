@@ -24,6 +24,8 @@ const PLATFORMS = {
   douyin: { label: '抖音', hosts: ['douyin.com', 'iesdouyin.com'] },
   xiaohongshu: { label: '小红书', hosts: ['xiaohongshu.com', 'xhslink.com'] }
 }
+/** 本馆视频号（与小程序同主体，2026-10-18 产品负责人确认并提供）：这些 ID 的条目一律按同主体处理，录入时漏勾也不降级 */
+const STORE_FINDERS = ['sphbtKfDFOzLQXM']
 const FINDER_RE = /^sph[A-Za-z0-9_-]{3,60}$/
 const FEED_RE = /^[A-Za-z0-9_=+/-]{6,300}$/
 const TOKEN_RE = /^[A-Za-z0-9_=+/.-]{6,1024}$/
@@ -67,7 +69,7 @@ function sanitizeExternalVideos(list) {
       if (!FINDER_RE.test(finderUserName) || !FEED_RE.test(feedId) || seen.has(`ch:${feedId}`)) continue
       const feedToken = String(raw.feedToken || '').trim()
       seen.add(`ch:${feedId}`)
-      out.push({ platform: 'channels', title, url: '', bvid: '', feedId, finderUserName, feedToken: TOKEN_RE.test(feedToken) ? feedToken : '', sameSubject: raw.sameSubject === true })
+      out.push({ platform: 'channels', title, url: '', bvid: '', feedId, finderUserName, feedToken: TOKEN_RE.test(feedToken) ? feedToken : '', sameSubject: raw.sameSubject === true || STORE_FINDERS.includes(finderUserName) })
       continue
     }
     const url = pickUrl(raw.url)
@@ -80,4 +82,4 @@ function sanitizeExternalVideos(list) {
   return out
 }
 
-module.exports = { MAX_EXTERNAL, PLATFORMS, pickUrl, platformOfUrl, sanitizeExternalVideos }
+module.exports = { MAX_EXTERNAL, PLATFORMS, STORE_FINDERS, pickUrl, platformOfUrl, sanitizeExternalVideos }

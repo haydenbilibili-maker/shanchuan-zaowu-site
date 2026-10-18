@@ -25,6 +25,8 @@ export const PLATFORMS = {
   douyin: { label: '抖音', hosts: ['douyin.com', 'iesdouyin.com'] },
   xiaohongshu: { label: '小红书', hosts: ['xiaohongshu.com', 'xhslink.com'] }
 }
+/** 本馆视频号（与小程序同主体，2026-10-18 产品负责人提供）：录入默认值；服务端同名常量会把它强制按同主体处理 */
+export const STORE_FINDERS = ['sphbtKfDFOzLQXM']
 const FINDER_RE = /^sph[A-Za-z0-9_-]{3,60}$/
 const FEED_RE = /^[A-Za-z0-9_=+/-]{6,300}$/
 const BVID_RE = /BV[0-9A-Za-z]{10}/
@@ -95,7 +97,7 @@ export function parseExternalDraft(draft, existing = []) {
     if (!FINDER_RE.test(finderUserName)) return { error: '视频号 ID 应以 sph 开头（视频号助手 → 帐号设置里可见）' }
     if (!FEED_RE.test(feedId)) return { error: '视频 feedId 格式不对（视频号助手 → 视频管理 → 复制视频 ID）' }
     if (existing.some((v) => v.feedId === feedId)) return { error: '这条视频号视频已添加' }
-    return { item: { platform: 'channels', title, url: '', bvid: '', feedId, finderUserName, feedToken: String(d.feedToken || '').trim(), sameSubject: d.sameSubject === true } }
+    return { item: { platform: 'channels', title, url: '', bvid: '', feedId, finderUserName, feedToken: String(d.feedToken || '').trim(), sameSubject: d.sameSubject === true || STORE_FINDERS.includes(finderUserName) } }
   }
   const url = pickUrl(d.url)
   if (!url) return { error: '没有识别到 https 链接（http 链接不收）' }

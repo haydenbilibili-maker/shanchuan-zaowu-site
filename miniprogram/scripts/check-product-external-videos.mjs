@@ -85,7 +85,13 @@ async function checks(s) {
 
   // B
   const same = (x, y) => JSON.stringify(x) === JSON.stringify(y)
-  add('B1 ERP 与服务端外平台常量同口径（条数 / 平台域名）', srv.MAX_EXTERNAL === adm.MAX_EXTERNAL && same(srv.PLATFORMS, adm.PLATFORMS))
+  add('B1 ERP 与服务端外平台常量同口径（条数 / 平台域名 / 本馆视频号）', srv.MAX_EXTERNAL === adm.MAX_EXTERNAL && same(srv.PLATFORMS, adm.PLATFORMS) && same(srv.STORE_FINDERS, adm.STORE_FINDERS))
+  let b4 = false
+  try {
+    const r = srv.sanitizeExternalVideos([{ platform: 'channels', finderUserName: 'sphbtKfDFOzLQXM', feedId: 'feed000002' }])
+    b4 = r[0].sameSubject === true && adm.parseExternalDraft({ kind: 'channels', finderUserName: 'sphbtKfDFOzLQXM', feedId: 'feed000002', sameSubject: false }, []).item.sameSubject === true
+  } catch (e) { b4 = false }
+  add('B4 本馆视频号（sphbtKfDFOzLQXM）一律按同主体处理：录入漏勾也内嵌为主片', b4)
   add('B2 ERP 与服务端 media 常量同口径（条数 / 时长 / 体积）',
     srvMedia.MAX_MEDIA === adm.MAX_MEDIA && srvMedia.MAX_VIDEO_SECONDS === adm.MAX_VIDEO_SECONDS && srvMedia.MAX_VIDEO_BYTES === adm.MAX_VIDEO_BYTES)
   let b3 = false
@@ -181,6 +187,7 @@ const INJ = [
   ['非同主体视频号也当主片', 'detailUtil', (t) => t.replace("const leadAt = rows.findIndex((v) => v.platform === 'channels' && v.sameSubject);", "const leadAt = rows.findIndex((v) => v.platform === 'channels');")],
   ['实拍影像挪回藏品参数前', 'detailWxml', (t) => t.replace('<view class="section-title" id="films">', '<view class="section-title" id="films-x">').replace('<!-- 商品参数 -->', '<view class="section-title" id="films"></view><!-- 商品参数 -->')],
   ['ERP 默认改回外平台链接', 'adminApp', (t) => t.replace("const externalDraft = ref({ kind: 'channels',", "const externalDraft = ref({ kind: 'link',")],
+  ['服务端不再把本馆视频号当同主体', 'srvExt', (t) => t.replace(" || STORE_FINDERS.includes(finderUserName) })", " })")],
   ['schema 漏登记', 'schema', (t) => t.replace('| `externalVideos` |', '| `extVideos` |')]
 ]
 

@@ -1428,7 +1428,7 @@ import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftSce
 import { BLESS_TAGS, MAX_BLESS_TAGS, sanitizeBlessTags, readBlessTags } from './utils/blessTags'
 // 2026-10-18 产品点名：藏品实拍视频（云存储 media + 外平台 externalVideos）
 import {
-    MAX_MEDIA, VIDEO_ACCEPT, MAX_EXTERNAL, formatVideoDuration, checkVideoFile, toPayloadMedia,
+    MAX_MEDIA, VIDEO_ACCEPT, MAX_EXTERNAL, STORE_FINDERS, formatVideoDuration, checkVideoFile, toPayloadMedia,
     externalLabel, parseExternalDraft, readVideoMeta, captureVideoFrame
 } from './utils/productVideos'
 import { establishAdminSession, clearAdminSession, probeAdminSession } from './utils/cloudbaseCdnDb'
@@ -1943,10 +1943,11 @@ const videoUploadPct = ref(0)
 const FINDER_KEY = 'erp_channels_finder'
 const readSavedFinder = () => {
     try {
-        return localStorage.getItem(FINDER_KEY) || ''
+        // 没记过就用本馆视频号（同主体）兜底
+        return localStorage.getItem(FINDER_KEY) || STORE_FINDERS[0]
     } catch (e) {
-        console.warn('[藏品视频] 读不到本机记住的视频号 ID（无痕模式等），需手填', e)
-        return ''
+        console.warn('[藏品视频] 读不到本机记住的视频号 ID（无痕模式等），回落本馆视频号', e)
+        return STORE_FINDERS[0]
     }
 }
 const saveFinder = (v) => {
