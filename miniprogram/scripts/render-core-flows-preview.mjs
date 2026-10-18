@@ -490,6 +490,19 @@ const SCENES = [
       showStoreScope: true, showShareholderConfig: false, staffStoreChecks: [{ key: 'all', name: '全部门店', selected: true, isAll: true }, { key: 's1', name: '山海造物 · 主店', storeId: 's1' }],
       formTip: '', staffSaving: false },
     css: '.ui-pop-mask.is-center { display: flex !important; }' },
+  // 2026-10-18 股东配置（超管二级页，逐页视觉对齐）：列表 + 编辑抽屉两张图
+  { name: 'shareholder-config', h: 2000, wxml: 'subpackages/extra/shareholder-config/index', data: {
+      ready: true, obsPending: false, tipText: '', loading: false, listError: false, filterLabels: ['全部门店', '山川造物', '星宸标本'], filterIndex: 0, showForm: false, disablePendingId: '', enablePendingId: '',
+      list: [
+        { _id: 'h1', name: '林岚', status: 'active', statusLabel: '生效', staffNo: 'SH-01', storeName: '山川造物 · 主店', openidTail: 'Qu71iyll', ownershipRatioText: '30%', beforeText: '50%', afterText: '35%', capitalText: '¥300,000', effectiveDate: '2025-03-01' },
+        { _id: 'h2', name: '周砚', status: 'disabled', statusLabel: '已停用', staffNo: '', storeName: '星宸标本 · 工坊', openidTail: 'Zx90abQe', ownershipRatioText: '12%', beforeText: '20%', afterText: '20%', capitalText: '¥120,000', effectiveDate: '2024-11-15' }
+      ] } },
+  { name: 'shareholder-config-form', h: 1700, wxml: 'subpackages/extra/shareholder-config/index', base: 'shareholder-config', data: {
+      showForm: true, editingId: '', lookingUp: false, matchHint: '', candidates: [], saving: false, formTip: '',
+      matched: { openid: 'oa22', nickName: '林岚', openidTail: 'Qu71iyll' },
+      form: { phone: '13800001234', openid: 'oa22', openidTail: 'Qu71iyll', name: '林岚', staffNo: 'SH-01', ownershipRatio: '30', capitalContribution: '300000', dividendRatioBeforePayback: '50', dividendRatioAfterPayback: '35', effectiveDate: '2025-03-01' },
+      storeChecks: [{ key: 's1', storeId: 's1', name: '山川造物 · 主店', selected: true }, { key: 's2', storeId: 's2', name: '星宸标本 · 工坊', selected: false }] },
+    css: '.ui-pop-mask.ui-pop-mask { display: block !important; }' },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },

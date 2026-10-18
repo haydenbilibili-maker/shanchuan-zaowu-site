@@ -85,7 +85,8 @@ const FILES = {
   approvalsWxml: 'subpackages/extra/approvals/index.wxml',
   payslipAdminWxml: 'subpackages/manager/payslip/admin/index.wxml',
   wsSubviewsWxml: 'subpackages/manager/manager/workspace/_subviews.wxml',
-  petSheetWxml: 'subpackages/manager/manager/workspace/petMemorialSheet.wxml'
+  petSheetWxml: 'subpackages/manager/manager/workspace/petMemorialSheet.wxml',
+  shCfgWxss: 'subpackages/extra/shareholder-config/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -329,6 +330,10 @@ function checks(s) {
       [s.permWxss, s.permMgrWxss].every((t) => /\n\.modal-body \{\s*flex: 1 1 auto;\s*min-height: 0;\s*max-height: calc\(100vh - 600rpx\);\s*padding: 24rpx 4rpx 16rpx;/.test(t) &&
         /\n\.modal \.workbench-modal-foot \{[^}]*background: transparent;/.test(t)))
   }
+  add('R32-1 股东配置：档案卡方角发丝框、比例格发丝账格（仍 48.5%）、口径说明改左金线注记、输入框定高 border-box',
+    /\n\.card \{[^}]*border-radius: 4rpx;/.test(s.shCfgWxss) && /\n\.ratio-cell \{[^}]*width: 48\.5%;/.test(s.shCfgWxss) &&
+      /\n\.ratio-cell \{[^}]*border-radius: 2rpx;/.test(s.shCfgWxss) && /\n\.formula-card \{[^}]*border-left: 2rpx solid/.test(s.shCfgWxss) &&
+      /\n\.input \{[^}]*height: 80rpx;[^}]*box-sizing: border-box;/.test(s.shCfgWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -599,6 +604,7 @@ if (process.argv.includes('--selftest')) {
     ['权限配置正文退回 view', 'permWxml', (t) => t.replace('<scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">', '<view class="modal-body">')],
     ['伴宠工单弹层正文退回 view', 'petSheetWxml', (t) => t.replace('<scroll-view scroll-y class="modal-body pm-sheet-body">', '<view class="modal-body pm-sheet-body">')],
     ['权限配置正文贴边被裁', 'permMgrWxss', (t) => t.replace('  padding: 24rpx 4rpx 16rpx;', '  padding: 24rpx 0 16rpx;')],
+    ['股东档案卡回到圆角', 'shCfgWxss', (t) => t.replace('  border: 1rpx solid rgba(196, 167, 108, 0.16);\n  border-radius: 4rpx;\n}\n.card-title', '  border: 1rpx solid rgba(196, 167, 108, 0.16);\n  border-radius: var(--radius-md);\n}\n.card-title')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

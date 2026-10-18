@@ -400,3 +400,160 @@ page {
   color: var(--color-text-secondary, #A09A90);
   font-size: var(--fs-26);
 }
+
+/* ================================================================
+   2026-10-18 股东配置视觉对齐（超管二级页，产品负责人「继续」）
+   等宽眉标 + 宋体；股东 = 方角发丝档案卡，四格比例 = 发丝账格；口径说明 = 左金线注记；
+   胶囊签全部改方签；实心金只留「新增股东」与抽屉里的「保存」。
+   输入框补定高 + border-box：原来只靠 padding 撑高，半宽两栏里会贴边、真机行高不稳。
+   比例格保持 48.5% + space-between（错题本 E26，不用 50% − gap）。
+   ================================================================ */
+.brand-group .en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
+}
+.brand-group .cn {
+  margin-top: 8rpx;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
+}
+.link-chip {
+  padding: 8rpx 18rpx;
+  border: none;
+  border-radius: 2rpx;
+  box-shadow: var(--ring-brass-soft);
+  color: var(--brass-200);
+}
+
+.filter-row { margin-top: 8rpx; }
+.filter-chip {
+  padding: 12rpx 20rpx;
+  border: none;
+  border-radius: 2rpx;
+  background: transparent;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
+  color: var(--brass-200);
+}
+.btn-add {
+  padding: 14rpx 28rpx;
+  border-radius: 4rpx;
+  font-weight: 600;
+  color: #1A1814;
+}
+
+/* 口径说明：左金线注记（原深色圆角卡） */
+.formula-card {
+  margin: 8rpx 0 32rpx;
+  padding: 4rpx 0 4rpx 24rpx;
+  background: transparent;
+  border: none;
+  border-left: 2rpx solid rgba(196, 167, 108, 0.55);
+  border-radius: 0;
+}
+.formula-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-26);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--brass-200);
+}
+
+/* 股东档案卡 */
+.card {
+  padding: 28rpx 28rpx 24rpx;
+  background: rgba(243, 236, 221, 0.02);
+  border: 1rpx solid rgba(196, 167, 108, 0.16);
+  border-radius: 4rpx;
+}
+.card-title {
+  font-family: var(--font-brand);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #F3ECDD;
+}
+.status-tag {
+  border-radius: 2rpx;
+  background: transparent;
+  box-shadow: inset 0 0 0 1rpx rgba(185, 173, 150, 0.35);
+}
+.status-tag.brass {
+  color: var(--brass-200);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: var(--ring-brass-soft);
+}
+.ratio-cell {
+  border-radius: 2rpx;
+  background: transparent;
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
+}
+.ratio-label { letter-spacing: 0.04em; }
+.ratio-value { color: var(--brass-200); }
+.card-actions {
+  padding-top: 20rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+}
+.chip-btn {
+  padding: 10rpx 24rpx;
+  border-radius: 2rpx;
+}
+
+.empty-tip.is-error,
+.match-card { border-radius: 4rpx; }
+.btn-retry,
+.page-tip,
+.candidate-row,
+.lookup-btn { border-radius: 2rpx; }
+
+/* 编辑抽屉 */
+.sheet-title {
+  font-family: var(--font-brand);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #F3ECDD;
+}
+.sheet-close { color: var(--brass-200); }
+.field-label { letter-spacing: 0.04em; }
+.input {
+  display: block;
+  width: 100%;
+  height: 80rpx;
+  min-height: 80rpx;
+  padding: 0 20rpx;
+  line-height: normal;
+  box-sizing: border-box;
+  border-radius: 2rpx;
+  background: rgba(243, 236, 221, 0.03);
+  border: 1rpx solid rgba(196, 167, 108, 0.22);
+}
+.picker-like {
+  display: flex;
+  align-items: center;
+}
+.phone-toolbar { align-items: stretch; }
+.lookup-btn {
+  display: flex;
+  align-items: center;
+  padding: 0 26rpx;
+  background: transparent;
+  box-shadow: var(--ring-brass-soft);
+  color: var(--brass-200);
+}
+.store-check {
+  border-radius: 2rpx;
+  border-color: rgba(196, 167, 108, 0.18);
+  background: transparent;
+}
+.store-check.on {
+  background: rgba(196, 167, 108, 0.08);
+  border-color: rgba(196, 167, 108, 0.55);
+  color: var(--brass-200);
+}
+.btn.primary {
+  border-radius: 4rpx;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #1A1814;
+}
