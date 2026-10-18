@@ -514,7 +514,17 @@ const SCENES = [
       config: { hours: '每日 10:00 – 22:00', responseHint: '工作时间内约 10 分钟回复；夜间留言次日处理', phone: '185 1911 0274', address: '吉林省长春市朝阳区红旗街 959 号这有山商场山坡 X-06-1', communityQr: '' },
       topics: [{ id: 'order', label: '订单与物流', desc: '发货、签收、改地址' }, { id: 'aftersale', label: '售后与退换', desc: '破损、退款、换货' }, { id: 'custom', label: '定制咨询', desc: '框型、交期、报价' }, { id: 'care', label: '标本养护', desc: '防潮、清洁、摆放' }], activeTopic: 'custom',
       messageText: '', contactPhone: '', ticketImages: [], maxTicketImages: 3, ticketImgFailed: 0, ticketImgBusy: false, submitting: false,
-      faqs: [{ q: '标本可以退换吗？', a: '未拆封且签收 7 日内可申请；定制藏品按确认方案制作，不接受退款。' }, { q: '多久可以发货？', a: '现货 48 小时内发出；定制按方案页交期。' }, { q: '门店可以自取吗？', a: '下单时选择门店自取，备妥后凭自取码到店领取。' }], expandedFaq: 0, showCommunity: false } }
+      faqs: [{ q: '标本可以退换吗？', a: '未拆封且签收 7 日内可申请；定制藏品按确认方案制作，不接受退款。' }, { q: '多久可以发货？', a: '现货 48 小时内发出；定制按方案页交期。' }, { q: '门店可以自取吗？', a: '下单时选择门店自取，备妥后凭自取码到店领取。' }], expandedFaq: 0, showCommunity: false } },
+  // 2026-10-18 搜索「检索台」（空闲 / 结果）
+  { name: 'search', h: 1500, wxml: 'subpackages/feature/search/index', data: { headerHeight: 64, keyword: '', inputFocused: false, isSearching: false, showAiIdentify: true, scopeCategoryName: '', showSpecimenArchive: true,
+      hotKeys: ['闪蝶', '鹦鹉螺', '紫水晶', '蝴蝶标本框', '押花', '甲虫'], loadingHotKeys: false, historyList: [{ keyword: '光明女神闪蝶' }, { keyword: 'Morpho' }, { keyword: '玻璃罩' }],
+      showSuggestions: false, suggestions: [], filterTabs: [], displayList: [], relatedList: [], relatedTerms: [] } },
+  { name: 'search-result', h: 1900, wxml: 'subpackages/feature/search/index', base: 'search', data: { keyword: '闪蝶', isSearching: true, loading: false, loadError: false, resultMode: 'all', resultTotal: 3,
+      filterTabs: [{ id: 'all', label: '全部', count: 3 }, { id: 'product', label: '藏品', count: 2 }, { id: 'archive', label: '档案', count: 1 }, { id: 'activity', label: '活动', count: 0 }],
+      displayList: [{ resultKey: 'a', _id: 'p1', type: 'product', title: '光明女神闪蝶 · A1 博物级', subTitle: 'Morpho helena', image: P[0], tag: '藏品', priceText: '1,280', matchStrong: true, displayTags: ['闪蝶', '南美'], craftTags: [{ key: 'k1', label: '玻璃罩' }] },
+        { resultKey: 'b', _id: 'p2', type: 'product', title: '蓝闪蝶木框', subTitle: 'Morpho peleides', image: P[2], tag: '藏品', priceText: '560', displayTags: ['闪蝶'] },
+        { resultKey: 'c', _id: 'w1', type: 'wiki', title: '闪蝶科 · 结构色', subTitle: 'Morphinae', image: P[4], tag: '档案' }],
+      resultList: [1, 2, 3], relatedLoading: false, relatedList: [{ resultKey: 'r1', _id: 'p5', type: 'product', title: '血漪蝶穹顶', subTitle: 'Cethosia biblis', image: P[1], priceText: '680' }] } }
 ]
 
 async function shoot(s) {

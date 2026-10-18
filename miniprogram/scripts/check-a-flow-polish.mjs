@@ -58,7 +58,8 @@ const FILES = {
   pointsWxss: 'subpackages/business/components/WalletPanelPoints/index.wxss',
   hubBarWxss: 'subpackages/business/components/WalletHubBar/index.wxss',
   supportWxml: 'subpackages/extra/user/support/index.wxml',
-  supportWxss: 'subpackages/extra/user/support/index.wxss'
+  supportWxss: 'subpackages/extra/user/support/index.wxss',
+  searchWxss: 'subpackages/feature/search/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -197,6 +198,10 @@ function checks(s) {
   add('R17-2 联系专员留言写在浅纸便笺上、无 grain-overlay、联系方式为发丝线行（不再是圆角卡）',
     /\n\.form-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
       !/\n\.channel-item \{[^}]*border-radius/.test(s.supportWxss))
+  // 2026-10-18 搜索「检索台」
+  add('R18-1 搜索结果为发丝线行、分类为下划线页签、签为方角（不再是圆角卡 / 胶囊），颗粒层退场',
+    !/\n\.archive-card \{[^}]*border-radius/.test(s.searchWxss) && /\n\.filter-pill \{[^}]*border-bottom: 3rpx solid transparent/.test(s.searchWxss) &&
+      !/9999px/.test(s.searchWxss) && !/grain-overlay/.test(s.searchWxml) && !/font-style: italic;\n  color: var\(--brass-400/.test(s.searchWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -445,6 +450,8 @@ if (process.argv.includes('--selftest')) {
     ['兑换钮回到实心金药丸', 'pointsWxss', (t) => t.replace('font-size: var(--fs-22); color: var(--brass-200); background: rgba(196, 167, 108, 0.08);', 'font-size: var(--fs-22); color: #1A1814; background: var(--color-primary);')],
     ['留言提交回到实心金', 'supportWxss', (t) => t.replace('  background: transparent !important;\n  box-shadow: inset 0 0 0 2rpx #8B6F47;', '  background: var(--brass-400) !important;\n  box-shadow: inset 0 0 0 2rpx #8B6F47;')],
     ['联系方式回到圆角卡', 'supportWxss', (t) => t.replace('  padding: 28rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n}\n\n.channel-info', '  padding: 28rpx 4rpx;\n  border-radius: 24rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n}\n\n.channel-info')],
+    ['搜索结果回到圆角卡', 'searchWxss', (t) => t.replace('  padding: 24rpx 0;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n  box-sizing: border-box;\n  overflow: hidden;', '  padding: 24rpx 0;\n  border-radius: 24rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n  box-sizing: border-box;\n  overflow: hidden;')],
+    ['搜索签回到胶囊', 'searchWxss', (t) => t.replace('  min-height: 56rpx;\n  padding: 0;\n  border-radius: 2rpx;', '  min-height: 56rpx;\n  padding: 0;\n  border-radius: 9999px;')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
