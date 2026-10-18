@@ -524,7 +524,19 @@ const SCENES = [
       displayList: [{ resultKey: 'a', _id: 'p1', type: 'product', title: '光明女神闪蝶 · A1 博物级', subTitle: 'Morpho helena', image: P[0], tag: '藏品', priceText: '1,280', matchStrong: true, displayTags: ['闪蝶', '南美'], craftTags: [{ key: 'k1', label: '玻璃罩' }] },
         { resultKey: 'b', _id: 'p2', type: 'product', title: '蓝闪蝶木框', subTitle: 'Morpho peleides', image: P[2], tag: '藏品', priceText: '560', displayTags: ['闪蝶'] },
         { resultKey: 'c', _id: 'w1', type: 'wiki', title: '闪蝶科 · 结构色', subTitle: 'Morphinae', image: P[4], tag: '档案' }],
-      resultList: [1, 2, 3], relatedLoading: false, relatedList: [{ resultKey: 'r1', _id: 'p5', type: 'product', title: '血漪蝶穹顶', subTitle: 'Cethosia biblis', image: P[1], priceText: '680' }] } }
+      resultList: [1, 2, 3], relatedLoading: false, relatedList: [{ resultKey: 'r1', _id: 'p5', type: 'product', title: '血漪蝶穹顶', subTitle: 'Cethosia biblis', image: P[1], priceText: '680' }] } },
+  // 2026-10-18 主播工作台（员工端，点名重构）
+  { name: 'live-studio', h: 3400, wxml: 'subpackages/extra/live/studio/index', data: { ready: true, greeting: '晚上好，阿遥', isPreview: false, modeLabel: '主播', showOnAir: true,
+      roleHint: '开播、挂品与讲解在本台；全店配置走超管工作台。', tipText: '', flowHot1: false, flowHot2: false, flowHot3: true, liveDashLoading: false, loadError: '',
+      nextStepTitle: '正在直播：留意讲解中藏品', nextStepBody: '已挂 3 件，当前讲解「光明女神闪蝶」。下播前记得结束本场，场次数据才会归档。', nextStepCta: '去开播控制台',
+      adminHint: '', otherLiveHint: '',
+      statusCard: { statusTone: 'live', statusLabel: '直播中', statusLightClass: 'live blink', title: '秋夜观蝶 · 闪蝶专场', viewerCount: 128, likeCount: 2316, messageCount: 87, shelfCount: 3, peakViewers: 164, joinCount: 412, reminderCount: 58, startLabel: '19:30' },
+      configured: true, enabled: true, configLightClass: 'on', enabledLightClass: 'on', canYouxin: true, canAttendance: true, canPayslip: true,
+      mineSessionId: 's1', shelfPreview: [{ _id: 'x1', title: '光明女神闪蝶 · A1', priceLabel: '¥1,280', spotlight: true, canMoveUp: false, canMoveDown: true }, { _id: 'x2', title: '蓝闪蝶木框', priceLabel: '¥560', canMoveUp: true, canMoveDown: true, warnText: '库存仅 1 件' }],
+      talkSegments: [{ key: 'k0', heading: '开场', body: '欢迎来到山海造物的秋夜观蝶专场……' }, { key: 'k1', heading: '01 · 光明女神闪蝶', body: '结构色不是颜料，是翅鳞的纳米结构在反射光。', spotlight: true }],
+      noticeSessionId: 's1', noticeDraft: '今晚 21:00 前下单送标本小卡',
+      recentSessions: [{ _id: 's0', title: '鞘翅目夜话', hostName: '阿遥', timeHint: '10.12 · 1 小时 20 分', statusText: '已结束', chipClass: 'chip-ended', status: 'ended', summary: '峰值 96 · 成交 4 单' }],
+      primaryCtaLabel: '去开播控制台', creating: false, canEndSession: true, ending: false } }
 ]
 
 async function shoot(s) {
