@@ -23,6 +23,22 @@
       <text class="status-strip-title">{{shift === 'evening' ? '晚班' : '早班'}} · {{shiftStatusLabel}}</text>
       <text class="status-strip-hint">{{storeName}} · {{dateKey}} · {{progress.done}} / {{progress.total}}</text>
     </view>
+    <!-- 仪式感：全部勾完 —— 早班两扇铜门向两侧推开「今日开馆」；晚班一盏灯缓缓熄灭「闭馆 · 今日辛苦了」 -->
+    <view class="ceremony {{ceremony}} {{ceremonyLive ? 'is-live' : ''}}" wx:if="{{ceremony}}">
+      <block wx:if="{{ceremony === 'open'}}">
+        <view class="cer-door left"></view>
+        <view class="cer-door right"></view>
+        <text class="cer-en">OPEN</text>
+        <text class="cer-cn">今日开馆{{ceremonyTime ? ' · ' + ceremonyTime : ''}}</text>
+        <text class="cer-sub">展柜已亮，欢迎第一位来客</text>
+      </block>
+      <block wx:else>
+        <view class="cer-lamp"></view>
+        <text class="cer-en">CLOSED</text>
+        <text class="cer-cn">闭馆{{ceremonyTime ? ' · ' + ceremonyTime : ''}}</text>
+        <text class="cer-sub">灯已熄，今日辛苦了</text>
+      </block>
+    </view>
     <text class="last-feedback" wx:if="{{lastSave}}">{{lastSave}}</text>
     <view class="check-row" wx:for="{{items}}" wx:key="id" bindtap="toggleItem" data-id="{{item.id}}" hover-class="record-press" hover-stay-time="80">
       <view class="check-box {{item.checked ? 'on' : ''}}"></view>

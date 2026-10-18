@@ -1,5 +1,6 @@
 const { formatCloudFnError } = require('../../utils/storePoints')
 const { initStaffStores, applyStoreChange, formatTime, statusTextAttendance, resolveStoreFromQuery } = require('../utils/pageSetup')
+const { buildWeek, weekSummary, mergeRecords } = require('./punchCard')
 
 Page({
   data: {
@@ -20,7 +21,10 @@ Page({
     leaveHint: '',
     recent: [],
     loading: false,
-    clocking: false
+    clocking: false,
+    week: buildWeek([], new Date()),
+    weekSummary: '',
+    justPunched: ''
   },
 
   async onLoad(options) {
@@ -108,10 +112,13 @@ Page({
         todayStatusHint = `${leave.startKey || ''} ~ ${leave.endKey || ''} · ${leave.durationLabel || ''} · 不计异常缺勤`
       }
 
+      const week = buildWeek(mergeRecords(today, recent), new Date())
       this.setData({
         loading: false,
         today,
         recent,
+        week,
+        weekSummary: weekSummary(week),
         canClockIn: todayR.canClockIn !== false,
         canClockOut: !!todayR.canClockOut,
         onLeave,
@@ -149,7 +156,11 @@ Page({
       }
       const label = type === 'in' ? '上班' : '下班'
       const statusText = result.statusText || '已记录'
-      this.setData({ lastClock: `${label}打卡成功 · ${statusText}` })
+      // 仪式感：今天那一格「咔哒」打出一个孔 + 一下轻震（震动失败不影响打卡）
+      this.setData({ lastClock: `${label}打卡成功 · ${statusText}`, justPunched: type })
+      try { wx.vibrateShort({ type: 'medium' }) } catch (err) { /* 低版本基础库无 type 参数 */ }
+      clearTimeout(this._punchTimer)
+      this._punchTimer = setTimeout(() => this.setData({ justPunched: '' }), 1400)
       wx.showToast({ title: `${label} · ${statusText}`, icon: 'success' })
       this.refresh()
     }).catch((err) => {

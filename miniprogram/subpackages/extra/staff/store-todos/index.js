@@ -1,6 +1,14 @@
 const { formatCloudFnError } = require('../../utils/storePoints')
 const { initStaffStores, applyStoreChange, formatTime, resolveStoreFromQuery } = require('../utils/pageSetup')
 
+function ceremonyOf(shift) {
+  return shift === 'evening' ? 'close' : 'open'
+}
+
+function clockText(d) {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 Page({
   data: {
     ready: false,
@@ -16,7 +24,11 @@ Page({
     dateKey: '',
     lastSave: '',
     shiftStatus: 'none',
-    shiftStatusLabel: '尚未勾选'
+    shiftStatusLabel: '尚未勾选',
+    // 仪式感：全部勾完 → 早班「开馆」（铜门推开）/ 晚班「闭馆」（灯熄）；live = 刚在本页亲手勾完（播动画），否则静态
+    ceremony: '',
+    ceremonyLive: false,
+    ceremonyTime: ''
   },
 
   async onLoad(options) {
@@ -95,7 +107,10 @@ Page({
         progress,
         dateKey: result.dateKey || '',
         shiftStatus,
-        shiftStatusLabel
+        shiftStatusLabel,
+        ceremony: shiftStatus === 'done' ? ceremonyOf(this.data.shift) : '',
+        ceremonyLive: false,
+        ceremonyTime: ''
       })
     } catch (e) {
       wx.showToast({ title: formatCloudFnError(e, '加载失败'), icon: 'none' })
@@ -124,7 +139,20 @@ Page({
       shiftStatus = 'in'
       shiftStatusLabel = `进行中 ${done} / ${total}`
     }
-    this.setData({ items, progress: { done, total }, shiftStatus, shiftStatusLabel, lastSave: '' })
+    const justDone = shiftStatus === 'done' && this.data.shiftStatus !== 'done'
+    this.setData({
+      items,
+      progress: { done, total },
+      shiftStatus,
+      shiftStatusLabel,
+      lastSave: '',
+      ceremony: shiftStatus === 'done' ? ceremonyOf(this.data.shift) : '',
+      ceremonyLive: justDone || (shiftStatus === 'done' && this.data.ceremonyLive),
+      ceremonyTime: justDone ? clockText(new Date()) : (shiftStatus === 'done' ? this.data.ceremonyTime : '')
+    })
+    if (justDone) {
+      try { wx.vibrateShort({ type: 'heavy' }) } catch (err) { /* 低版本基础库无 type 参数 */ }
+    }
   },
 
   saveTodo() {

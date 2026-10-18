@@ -523,6 +523,20 @@ const SCENES = [
         reasons: [{ label: '不符合退款条件', on: false }, { label: '请先与顾客沟通', on: true }, { label: '退款金额有误', on: true }, { label: '信息不全，请补充后重新提交', on: false }],
         picked: ['请先与顾客沟通', '退款金额有误'], note: '破损照片未上传', preview: '请先与顾客沟通；退款金额有误；破损照片未上传', tip: '' } },
     css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  // 2026-10-18 仪式感：考勤打孔卡 / 门店清单开馆·闭馆
+  { name: 'staff-attendance', h: 1250, wxml: 'subpackages/extra/staff/attendance/index', data: {
+      ready: true, storeNames: ['山海造物 · 主店'], storeIndex: 0, storeName: '山海造物 · 主店', todayStatus: 'in', todayStatusLabel: '已上班，待下班', todayStatusHint: '上班 10-18 09:12 · 准时',
+      lastClock: '上班打卡成功 · 准时', canClockIn: false, canClockOut: true, onLeave: false, leaveHint: '', loading: false, clocking: false, justPunched: 'in',
+      today: [{ _id: 't1', typeLabel: '上班', statusLabel: '准时', timeText: '10-18 09:12' }], recent: [{ _id: 'r1', storeName: '山海造物 · 主店', typeLabel: '下班', timeText: '10-17 21:05', statusLabel: '准时' }],
+      weekSummary: '本周出勤 5 天 · 迟到早退 1 次',
+      week: [['一', 12, 'ok', 'ok'], ['二', 13, 'ok', 'warn'], ['三', 14, '', ''], ['四', 15, 'ok', 'ok'], ['五', 16, 'warn', 'ok'], ['六', 17, 'ok', 'ok'], ['日', 18, 'ok', '']].map(([dow, day, i, o], k) => ({ key: 'd' + k, dow, day, in: i, out: o, isToday: k === 6, isFuture: false })) } },
+  { name: 'todos-open', h: 900, wxml: 'subpackages/extra/staff/store-todos/index', data: {
+      ready: true, storeNames: ['山海造物 · 主店'], storeIndex: 0, storeName: '山海造物 · 主店', shift: 'morning', dateKey: '2026-10-18', saving: false, lastSave: '',
+      progress: { done: 3, total: 3 }, shiftStatus: 'done', shiftStatusLabel: '本班次已全部完成', ceremony: 'open', ceremonyLive: true, ceremonyTime: '09:26',
+      items: [{ id: 'a', label: '展柜灯与温湿度', checked: true, checkedAtText: '10-18 09:20' }, { id: 'b', label: '收银备用金核对', checked: true, checkedAtText: '10-18 09:24' }, { id: 'c', label: '门口陈列与地面', checked: true, checkedAtText: '10-18 09:26' }] },
+    css: '.ceremony.is-live .cer-door { animation: none !important; opacity: 1; } .cer-door.left { transform: translateX(-58%) !important; } .cer-door.right { transform: translateX(58%) !important; }' },
+  { name: 'todos-close', h: 600, wxml: 'subpackages/extra/staff/store-todos/index', base: 'todos-open', data: { shift: 'evening', ceremony: 'close', ceremonyTime: '21:08' },
+    css: '.ceremony.is-live .cer-lamp { animation: none !important; background: #C9A55E; box-shadow: 0 0 0 2rpx rgba(196,167,108,.5), 0 0 30px 8px rgba(242,213,142,.28); }' },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },

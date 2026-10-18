@@ -23,6 +23,21 @@
       <text class="status-strip-hint">{{todayStatusHint}}</text>
       <text class="status-strip-hint" wx:if="{{leaveHint}}">事由：{{leaveHint}}</text>
     </view>
+    <!-- 仪式感：本周打孔卡（上孔上班、下孔下班；朱圈 = 迟到 / 早退）；打卡成功时今天那一格当场打孔 -->
+    <view class="punch-card">
+      <view class="punch-head">
+        <text class="punch-en">WEEK CARD</text>
+        <text class="punch-sum" wx:if="{{weekSummary}}">{{weekSummary}}</text>
+      </view>
+      <view class="punch-row">
+        <view class="punch-cell {{c.isToday ? 'today' : ''}} {{c.isFuture ? 'future' : ''}}" wx:for="{{week}}" wx:for-item="c" wx:key="key">
+          <text class="punch-dow">{{c.dow}}</text>
+          <view class="punch-hole {{c.in}} {{c.isToday && justPunched === 'in' ? 'just' : ''}}"></view>
+          <view class="punch-hole {{c.out}} {{c.isToday && justPunched === 'out' ? 'just' : ''}}"></view>
+          <text class="punch-day">{{c.day}}</text>
+        </view>
+      </view>
+    </view>
     <text class="last-feedback" wx:if="{{lastClock}}">{{lastClock}}</text>
     <view class="btn-row">
       <view class="btn-primary {{canClockIn && !clocking ? '' : 'disabled'}}" hover-class="btn-primary-press" hover-stay-time="100" bindtap="clock" data-type="in">{{clocking ? '打卡中…' : '上班打卡'}}</view>

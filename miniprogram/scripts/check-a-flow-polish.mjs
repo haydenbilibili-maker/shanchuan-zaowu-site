@@ -91,7 +91,13 @@ const FILES = {
   apWxml: 'subpackages/extra/approvals/index.wxml',
   apReasons: 'subpackages/extra/approvals/rejectReasons.js',
   apWxss: 'subpackages/extra/approvals/index.wxss',
-  mgrWxml: 'subpackages/manager/manager/index.wxml'
+  mgrWxml: 'subpackages/manager/manager/index.wxml',
+  punchJs: 'subpackages/extra/staff/attendance/punchCard.js',
+  attWxml: 'subpackages/extra/staff/attendance/index.wxml',
+  attJs: 'subpackages/extra/staff/attendance/index.js',
+  todoWxml: 'subpackages/extra/staff/store-todos/index.wxml',
+  todoJs: 'subpackages/extra/staff/store-todos/index.js',
+  todoWxss: 'subpackages/extra/staff/store-todos/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -368,6 +374,32 @@ function checks(s) {
   add('R34-3 店长 / 超管待处理清零盖小朱印「清」（方框宋体，不与红色数字角标混淆）',
     /<view class="hub-clear-seal" aria-hidden="true"><text>清<\/text><\/view>/.test(s.mgrWxml) &&
       /\n\.hub-clear-seal \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss))
+  // 2026-10-18 仪式感：考勤打孔卡 / 门店清单开馆·闭馆（纯前端派生，不改 manageStaffWorkspace）
+  {
+    let pc = {}
+    try { const m = { exports: {} }; new Function('module', 'exports', s.punchJs)(m, m.exports); pc = m.exports } catch (e) { pc = {} }
+    let weekOk = false
+    try {
+      const now = new Date(2026, 9, 18, 15, 0) // 周日
+      const recs = [
+        { _id: '1', type: 'in', status: 'on_time', clockAt: new Date(2026, 9, 13, 9, 1) },
+        { _id: '2', type: 'out', status: 'early', clockAt: new Date(2026, 9, 13, 20, 0) },
+        { _id: '5', type: 'in', status: 'on_time', clockAt: new Date(2026, 9, 18, 9, 0) },
+        { _id: '3', type: 'in', status: 'late', clockAt: new Date(2026, 9, 18, 10, 0) },
+        { _id: '4', type: 'in', status: 'on_time', clockAt: new Date(2026, 9, 6, 9, 0) }
+      ]
+      const w = pc.buildWeek(pc.mergeRecords(recs.slice(0, 3), recs.slice(2)), now)
+      weekOk = w.length === 7 && w[0].day === 12 && w[6].isToday && w[1].in === 'ok' && w[1].out === 'warn' &&
+        w[6].in === 'ok' && w.every((c) => !c.isFuture) && pc.weekSummary(w) === '本周出勤 2 天 · 迟到早退 1 次' &&
+        pc.weekSummary(pc.buildWeek([], now)) === '' && pc.buildWeek(null, now).length === 7
+    } catch (e) { weekOk = false }
+    add('R35-1 打孔卡：周一起算 7 格、上孔上班下孔下班、同孔准时优先、跨周记录不进卡、按 _id 去重、汇总文案',
+      weekOk && /justPunched: type/.test(s.attJs) && /class="punch-hole \{\{c\.in\}\} \{\{c\.isToday && justPunched === 'in' \? 'just' : ''\}\}"/.test(s.attWxml))
+    add('R35-2 门店清单：本页亲手勾完才播开馆 / 闭馆动画（进页已完成 = 静态终态），减弱动效下直接终态',
+      /const justDone = shiftStatus === 'done' && this\.data\.shiftStatus !== 'done'/.test(s.todoJs) &&
+        /ceremony: shiftStatus === 'done' \? ceremonyOf\(this\.data\.shift\) : '',\s*ceremonyLive: false,/.test(s.todoJs) && /class="ceremony \{\{ceremony\}\} \{\{ceremonyLive \? 'is-live' : ''\}\}"/.test(s.todoWxml) &&
+        /prefers-reduced-motion[\s\S]*\.ceremony\.is-live \.cer-lamp \{ animation: none; \}/.test(s.todoWxss))
+  }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -645,6 +677,9 @@ if (process.argv.includes('--selftest')) {
     ['入馆印不再随出纸完成盖下', 'bookingWxml', (t) => t.replace("<view class=\"tm-seal {{mintFinished ? 'is-stamped' : ''}}\"", '<view class="tm-seal"')],
     ['审毕印对首次空列表也盖', 'apWxml', (t) => t.replace("wx:if=\"{{viewMode === 'inbox' && sessionDecided > 0}}\" aria-hidden", "wx:if=\"{{viewMode === 'inbox'}}\" aria-hidden")],
     ['驳回不再计入本轮', 'apJs', (t) => t.replace("expandedId: '', sessionDecided: this.data.sessionDecided + 1, tipTone: 'info', tipText: '已驳回'", "expandedId: '', tipTone: 'info', tipText: '已驳回'")],
+    ['打孔卡同孔不再准时优先', 'punchJs', (t) => t.replace("    if (cell[slot] !== 'ok') cell[slot] = tone\n", '    cell[slot] = tone\n')],
+    ['打孔卡周起点错成周日', 'punchJs', (t) => t.replace('today.getDate() - ((today.getDay() + 6) % 7)', 'today.getDate() - today.getDay()')],
+    ['进页已完成也播开馆动画', 'todoJs', (t) => t.replace("ceremony: shiftStatus === 'done' ? ceremonyOf(this.data.shift) : '',\n        ceremonyLive: false,", "ceremony: shiftStatus === 'done' ? ceremonyOf(this.data.shift) : '',\n        ceremonyLive: true,")],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
