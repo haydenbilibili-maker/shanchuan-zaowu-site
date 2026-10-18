@@ -89,6 +89,10 @@ function cut(src, startMarks, endMark) {
 
 function segments(src, overlay) {
   // 2026-10-18 整屏看板（页头 → 待处理 → 金卡 → 经营信号 → 扫码 → 常用 → 功能入口），供逐个工作台视觉对齐出图
+  // 整页看板（含数据卡与页脚）：从页头截到常用编辑面板前，末尾补一个 </view> 收 dashboard-view
+  if (overlay === 'page') {
+    return `<view class="container"><view class="content-area dashboard-view">${cut(src, ['<!-- 头部问候与日期'], '<!-- 常用编辑面板')}</view>`
+  }
   if (overlay === 'full') {
     const top = cut(src, ['<!-- 头部问候与日期'], '<!-- 瀑布流布局容器')
     const menu = cut(src, ['<!-- 功能入口', '<!-- 快捷菜单'], '<!-- 数据图表')
@@ -150,7 +154,16 @@ const FULL = {
   opsSignalExpanded: false,
   opsSignalSummary: { worstLamp: 'warn', attentionCount: 2, label: '2 项待关注', chips: [{ id: 'a', lamp: 'warn', text: '待发订单 3', target: 'pending' }, { id: 'b', lamp: 'danger', text: '售后 1', target: 'aftersale' }] }
 }
+const PAGE_SUPER = {
+  ...FULL, hubCat: { search: true, total: 46 }, hubQuery: '审批', hubAllCollapsed: false,
+  hubFound: [{ id: 'approvals', icon: '/assets/icons/done.png', label: '审批中心', desc: '请假 · 报销 · 调级', badge: 4 }, { id: 'leaveReview', icon: '/assets/icons/list.png', label: '请假审批', desc: '同事请假与店长请假' }],
+  stats: { ...FULL.stats, ratioEmpty: false, donutStyle: 'background: conic-gradient(#C4A76C 0 67%, #52B788 67% 100%);', onlineRatio: 67, offlineRatio: 33, orderCountFmt: '214', avgOrderFmt: '¥403', visitCountFmt: '86', dailyAvgFmt: '4,120', momClass: 'up', momLabel: '+12%' },
+  opsSignals: { mom: 'blink', stock: 'warn' }, trendMeta: { empty: false, weekTotalFmt: '28,840', weekOnlineFmt: '19,320', weekOfflineFmt: '9,520', weekOnlineBar: 'width:67%', weekOfflineBar: 'width:33%' },
+  trendData: [52, 70, 44, 88, 61, 96, 75].map((h, i) => ({ dateKey: 'd' + i, day: ['12', '13', '14', '15', '16', '17', '18'][i], showVal: i === 5, valShort: '5.9k', styleOnline: `height:${Math.round(h * 0.65)}%`, styleOffline: `height:${Math.round(h * 0.35)}%` })),
+  dashStock: { ready: true, empty: false, onShelf: 128, offShelf: 14, stockTotal: 362, topCats: [{ key: 'a', name: '蝴蝶', count: 64, barStyle: 'width:100%' }, { key: 'b', name: '甲虫', count: 38, barStyle: 'width:59%' }, { key: 'c', name: '矿物', count: 26, barStyle: 'width:41%' }] }
+}
 scenes.push(
+  { name: 'page-super', wxml: afterWxml, h: 4200, overlay: 'page', data: dataFor(roles.WORKSPACE_SUPER_ADMIN, PAGE_SUPER) },
   { name: 'full-manager', wxml: afterWxml, h: 2600, overlay: 'full', data: dataFor(roles.WORKSPACE_STORE_MANAGER, FULL) },
   { name: 'after-super', wxml: afterWxml, h: 2700, data: dataFor(roles.WORKSPACE_SUPER_ADMIN) },
   { name: 'after-manager', wxml: afterWxml, h: 1500, data: dataFor(roles.WORKSPACE_STORE_MANAGER) },

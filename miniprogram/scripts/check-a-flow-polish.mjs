@@ -307,6 +307,10 @@ function checks(s) {
       /\n\.hub-grp \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) &&
       /\.sub-welcome \{ font-family: var\(--font-brand\);/.test(s.mgrWxss) && /\n\.kpi-card \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) &&
       /\n\.ops-signal-board \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) && /\n\.hub-scan-btn \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss))
+  add('R30-1 超管 / 店长看板下半屏：功能搜索方框、数据卡方角发丝框、空态说明与页脚中文可读（不再用 #4A4540 一类近黑灰）',
+    /\n\.hub-search-box \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) && /\n\.hub-found \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) &&
+      /\n\.grid-item \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) && /\n\.kpi-mini-cell \{[^}]*border-radius: 2rpx;/.test(s.mgrWxss) &&
+      !/\.chart-empty-hint \{[^}]*#4A4540/i.test(s.mgrWxss) && !/\.footer-cn \{[^}]*#4a4640/i.test(s.mgrWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -572,6 +576,8 @@ if (process.argv.includes('--selftest')) {
     ['店员角标回到实心金', 'staffHubWxss', (t) => t.replace('  background: #1A1814;\n  box-shadow: var(--ring-brass);', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass);')],
     ['店长常用回到金边盒', 'mgrHubNavWxss', (t) => t.replace('.hub-fav {\n  padding: 0;', '.hub-fav {\n  background: #262017;\n  border-radius: var(--radius-lg);\n  padding: 0;')],
     ['店长金卡回到大圆角', 'mgrWxss', (t) => t.replace('border-radius: 4rpx; padding: 40rpx;', 'border-radius: var(--radius-lg); padding: 40rpx;')],
+    ['超管搜索框回到胶囊', 'mgrHubNavWxss', (t) => t.replace('border-radius: 4rpx;  /* 2026-10-18 视觉对齐：方角（原 40rpx 胶囊） */', 'border-radius: 40rpx;')],
+    ['看板空态说明回到近黑灰', 'mgrWxss', (t) => t.replace('.chart-empty-hint { font-size: var(--fs-18); color: rgba(185, 173, 150, 0.75); }', '.chart-empty-hint { font-size: var(--fs-18); color: #4A4540; }')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

@@ -367,13 +367,13 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   grid-template-columns: 1fr;
 }
 .grid-item {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-lg);
+  background: rgba(243, 236, 221, 0.02);
+  border-radius: 4rpx;  /* 2026-10-18 视觉对齐：方角发丝框（原 radius-lg + 白 5% 边） */
   padding: 30rpx;
   width: auto;
   min-width: 0;
   max-width: 100%;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -507,14 +507,15 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--color-text-secondary, #A09A90);
   font-size: var(--fs-22);
 }
-.chart-empty-hint { font-size: var(--fs-18); color: #4A4540; }
+.chart-empty-hint { font-size: var(--fs-18); color: rgba(185, 173, 150, 0.75); }  /* 原 #4A4540 在深底几乎不可读 */
 .dash-retry {
   margin-top: 16rpx;
   padding: 10rpx 24rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.45);
-  border-radius: 999rpx;
+  border: none;
+  border-radius: 2rpx;
+  box-shadow: var(--ring-brass-soft);
   font-size: var(--fs-22);
-  color: #e8dcc0;
+  color: var(--brass-200);
 }
 .page-tip {
   margin: 0 24rpx 16rpx;
@@ -699,9 +700,9 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .kpi-mini-cell {
   flex: 1;
   padding: 12rpx 14rpx;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.04);
-  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-radius: 2rpx;
 }
 .kpi-mini-l { display: block; font-size: var(--fs-18); color: var(--color-text-secondary, #A09A90); margin-bottom: 4rpx; }
 .kpi-mini-v {
@@ -781,8 +782,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .week-split-hint { margin-top: 8rpx; font-size: var(--fs-18); color: #4A4540; }
 
 .footer-logo { text-align: center; color: var(--color-text-secondary); font-size: var(--fs-20); margin-top: 60rpx; letter-spacing: 4rpx; }
-.footer-en { display: block; font-family: var(--font-mono); font-size: var(--fs-18); }
-.footer-cn { display: block; margin-top: 6rpx; font-size: var(--fs-20); color: #4a4640; }
+.footer-en { display: block; font-family: var(--font-mono); font-size: var(--fs-18); color: var(--brass-300); opacity: 0.7; letter-spacing: 0.24em; }
+.footer-cn { display: block; margin-top: 6rpx; font-family: var(--font-brand); font-size: var(--fs-20); color: var(--color-text-secondary); }
 
 /* ==================== 3. 子页面样式 (Sub Views) ==================== */
 /* 同页 curTab 切换：轻量淡入，与 navigateTo 独立页的系统滑入区分但各自统一 */
