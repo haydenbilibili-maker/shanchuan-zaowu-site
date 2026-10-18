@@ -98,7 +98,7 @@
         >
           <view class="wl-label-top">
             <text class="wl-label-no">{{item.no}}</text>
-            <text class="wl-label-tag" wx:if="{{item.fresh}}">刚别上</text>
+            <text class="wl-label-tag" wx:if="{{item.fresh}}">刚钉上</text>
             <text class="wl-label-tag" wx:elif="{{item.hidden}}">已收起</text>
             <text class="wl-label-tag" wx:elif="{{item.voiceTag}}">{{item.voiceTag}}</text>
             <text class="wl-label-tag" wx:elif="{{item.pinned}}">置顶</text>
@@ -151,7 +151,7 @@
     />
     <view class="wl-paper-grid">
       <view class="wl-paper-field" wx:if="{{writer}}"><text class="k">写签人</text><text class="v">{{writer}}</text></view>
-      <view class="wl-paper-field"><text class="k">别于</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
+      <view class="wl-paper-field"><text class="k">许给</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
     </view>
   </view>
   <!-- 语音（选附，≤ 15 秒；全部人工试听后才公开）：按住说话 → 试听 / 删除 -->
@@ -187,7 +187,7 @@
     <text wx:else>今日还可写 {{quota.left}} 张</text>
     <text class="wl-count">{{draftCount}}/{{textMax}}</text>
   </view>
-  <view class="wl-primary {{posting || !draft ? 'is-off' : ''}}" bindtap="submitWish" hover-class="tap-press" hover-stay-time="80" aria-role="button">{{posting ? '正在别上…' : '别上墙'}}</view>
+  <view class="wl-primary {{posting || !draft ? 'is-off' : ''}}" bindtap="submitWish" hover-class="tap-press" hover-stay-time="80" aria-role="button">{{posting ? '正在钉上…' : '钉上墙'}}</view>
 </view>
 
 <!-- 签详情 -->
@@ -205,7 +205,7 @@
     <text wx:elif="{{card.voiceTag}}" class="wl-paper-note">{{card.voiceTag}}：试听通过后其他人也能听到</text>
     <view class="wl-paper-grid">
       <view class="wl-paper-field"><text class="k">写签人</text><text class="v">{{card.official ? '山海造物' : card.author}}</text></view>
-      <view class="wl-paper-field"><text class="k">别于</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
+      <view class="wl-paper-field"><text class="k">许给</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
     </view>
   </view>
   <view class="wl-card-acts">
@@ -225,7 +225,7 @@
   show="{{showRegisterDialog}}"
   overline="WISH LABEL"
   title="注册后心愿签才别得住"
-  desc="一键注册即可把这张签别上墙、收进「我的」，以后回来都看得到它。"
+  desc="一键注册即可把这张签钉上墙、收进「我的」，以后回来都看得到它。"
   cta="一键注册"
   closable="{{true}}"
   close-text="先不写"
