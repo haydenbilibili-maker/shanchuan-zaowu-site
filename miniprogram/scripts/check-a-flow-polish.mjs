@@ -60,7 +60,8 @@ const FILES = {
   supportWxml: 'subpackages/extra/user/support/index.wxml',
   supportWxss: 'subpackages/extra/user/support/index.wxss',
   searchWxss: 'subpackages/feature/search/index.wxss',
-  liveWxss: 'subpackages/extra/live/studio/index.wxss'
+  liveWxss: 'subpackages/extra/live/studio/index.wxss',
+  artisanWxss: 'subpackages/extra/artisan/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -208,6 +209,10 @@ function checks(s) {
     !/\n\.module-card \{[^}]*border-radius/.test(s.liveWxss) && /\n\.next-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.liveWxss) &&
       /\.flow-step-btn\.hot \{\s*border-bottom-color: var\(--brass-400\);/.test(s.liveWxss) && /\.flow-step-btn\.on-air \{\s*border-bottom-color: var\(--color-error\);/.test(s.liveWxss) &&
       /\.footer-end \{[^}]*var\(--color-error\)/.test(s.liveWxss))
+  // 2026-10-18 标本师工作台（员工端，产品负责人点名）
+  add('R20-1 标本师工作台：入口为发丝线行（非大圆角卡）、待办有待办格金线环、分区头为眉标 + 宋体',
+    !/\n\.module-card \{[^}]*border-radius/.test(s.artisanWxss) && /\.todo-chip\.hot \{[^}]*var\(--ring-brass-soft\)/.test(s.artisanWxss) &&
+      /\n\.group-cn \{[^}]*font-family: var\(--font-brand\)/.test(s.artisanWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -460,6 +465,7 @@ if (process.argv.includes('--selftest')) {
     ['搜索签回到胶囊', 'searchWxss', (t) => t.replace('  min-height: 56rpx;\n  padding: 0;\n  border-radius: 2rpx;', '  min-height: 56rpx;\n  padding: 0;\n  border-radius: 9999px;')],
     ['主播职责回到大圆角卡', 'liveWxss', (t) => t.replace('  padding: 26rpx 8rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 26rpx 8rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
     ['在播步骤丢了红色语义', 'liveWxss', (t) => t.replace('.flow-step-btn.on-air {\n  border-bottom-color: var(--color-error);', '.flow-step-btn.on-air {\n  border-bottom-color: var(--brass-400);')],
+    ['标本师入口回到大圆角卡', 'artisanWxss', (t) => t.replace('  padding: 24rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 24rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],

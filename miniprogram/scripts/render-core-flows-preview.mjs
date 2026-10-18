@@ -536,7 +536,14 @@ const SCENES = [
       talkSegments: [{ key: 'k0', heading: '开场', body: '欢迎来到山海造物的秋夜观蝶专场……' }, { key: 'k1', heading: '01 · 光明女神闪蝶', body: '结构色不是颜料，是翅鳞的纳米结构在反射光。', spotlight: true }],
       noticeSessionId: 's1', noticeDraft: '今晚 21:00 前下单送标本小卡',
       recentSessions: [{ _id: 's0', title: '鞘翅目夜话', hostName: '阿遥', timeHint: '10.12 · 1 小时 20 分', statusText: '已结束', chipClass: 'chip-ended', status: 'ended', summary: '峰值 96 · 成交 4 单' }],
-      primaryCtaLabel: '去开播控制台', creating: false, canEndSession: true, ending: false } }
+      primaryCtaLabel: '去开播控制台', creating: false, canEndSession: true, ending: false } },
+  // 2026-10-18 标本师工作台（员工端，点名重构）
+  { name: 'artisan', h: 2900, wxml: 'subpackages/extra/artisan/index', data: { ready: true, artisanDisplayName: '林师傅', canProducts: true, canWorks: true, canConcept: true, canPetOrders: true, canProfile: true, canAttendance: true, canPayslip: true,
+      statsLoading: false, workPendingShelf: 2, jobPendingMake: 3, jobPendingShip: 0, jobInProgress: 1, depositTodo: 1, todoTotal: 7,
+      todoLamps: { pending: 'warn', make: 'warn', ship: 'lamp-muted', framing: 'lamp-info', deposit: 'warn', display: 'lamp-forest' }, petOrderLamp: 'warn', petOrderTodo: 1,
+      depositPreview: [{ _id: 'd1', title: '蝶翅画 · 秋林', previewMeta: '待确认收款', depositAmount: 300, productId: 'p1' }],
+      jobPreview: [{ _id: 'j1', specimenTitle: '光明女神闪蝶 · 胡桃木浅框', orderNo: 'CU20261016008', productionLabel: '待制作', productionStatus: 'pending_make' }],
+      workTotal: 46, workOnShelf: 38, commissionLoaded: true, commissionNet: '1,860' } }
 ]
 
 async function shoot(s) {
