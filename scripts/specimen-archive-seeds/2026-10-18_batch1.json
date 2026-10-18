@@ -1,7 +1,7 @@
 {
   "batch": "specimen_archive_2026-10-18",
   "collection": "cms_wikis",
-  "note": "馆藏标本档案第一批（13 条）。入库默认 status=draft（getEncyclopediaFeed 过滤 draft），审定后再发布；保护等级三字段一律留空，由馆员对照官方名录填写；封面与关联藏品入库后在后台补。",
+  "note": "馆藏标本档案第一批（13 条）。入库默认 status=draft（getEncyclopediaFeed 过滤 draft），审定后再发布；保护等级三字段一律留空，由馆员对照官方名录填写；配图与「馆藏关联」由入库脚本按 productMatch 关键词从 products 取（首图作封面），馆员可在后台调整。",
   "entries": [
     {
       "seedKey": "archive_morpho_helena",
@@ -33,6 +33,10 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "光明女神闪蝶"
+      ],
+      "sourceProducts": [],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -104,6 +108,15 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "大蓝闪蝶"
+      ],
+      "sourceProducts": [
+        "大蓝闪蝶相框",
+        "大蓝闪蝶玻璃罩",
+        "多重大蓝闪蝶框",
+        "大蓝闪蝶实木底座定制玻璃罩"
+      ],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -175,6 +188,10 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "黑框蓝闪蝶"
+      ],
+      "sourceProducts": [],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -246,6 +263,12 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "红锯蛱蝶"
+      ],
+      "sourceProducts": [
+        "红锯蛱蝶（雌蝶）"
+      ],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -318,6 +341,14 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "乌干达花金龟",
+        "绿花金龟"
+      ],
+      "sourceProducts": [
+        "乌干达花金龟（蓝色）",
+        "乌干达花金龟（红色）"
+      ],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -389,6 +420,12 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "熊蜂"
+      ],
+      "sourceProducts": [
+        "熊蜂（蜂王）"
+      ],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -456,6 +493,11 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "紫水晶",
+        "紫晶"
+      ],
+      "sourceProducts": [],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -523,6 +565,10 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "方解石"
+      ],
+      "sourceProducts": [],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -590,6 +636,10 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "黄铁矿"
+      ],
+      "sourceProducts": [],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -660,6 +710,12 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "三叶虫"
+      ],
+      "sourceProducts": [
+        "三叶虫化石"
+      ],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -729,6 +785,14 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "菊石",
+        "菊螺"
+      ],
+      "sourceProducts": [
+        "马达加斯加菊螺化石切片",
+        "巴普洛夫菊石装饰框"
+      ],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -800,6 +864,10 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "银杏"
+      ],
+      "sourceProducts": [],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],
@@ -871,6 +939,10 @@
       "iucn": "",
       "protectionLevel": "",
       "cites": "",
+      "productMatch": [
+        "铁线蕨"
+      ],
+      "sourceProducts": [],
       "coverImage": "",
       "gallery": [],
       "relatedProductIds": [],

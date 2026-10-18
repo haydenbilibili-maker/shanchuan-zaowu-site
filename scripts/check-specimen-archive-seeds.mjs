@@ -10,7 +10,10 @@
  *   ④ 结构：必填字段齐、4–7 节且每节有标题与正文、正文 450–3000 汉字、引言 20–90 字、分布与形态两栏必填；
  *   ⑤ 入库形态：type=specimen、status=draft（getEncyclopediaFeed 过滤 draft，审定后才对用户可见）、
  *      一级馆名在 seedCategories 品类树中真实存在、category 以该馆名开头（二级筛选按 category 模糊匹配）；
- *   ⑥ 去重：seedKey 形如 archive_xxx 且跨批次唯一，标题跨批次唯一。
+ *   ⑥ 去重：seedKey 形如 archive_xxx 且跨批次唯一，标题跨批次唯一；
+ *   ⑦ 对上馆藏（2026-10-18 产品负责人「配图可取商品图，并优先根据馆藏商品创作」）：每条须有 productMatch 关键词（入库脚本据此取商品首图
+ *      作封面、挂「馆藏关联」）；sourceProducts 里的商品名必须真实出现在商品清单（docs/主题名候选_存量复核_2026-09-17.md，
+ *      对线上 products 的只读扫描）中 —— 防止凭空写「对应商品」；productFirst 批次每条至少对上一件。
  *
  * 用法：
  *   node scripts/check-specimen-archive-seeds.mjs
@@ -35,15 +38,28 @@ const PROTECTION_FIELDS = ['iucn', 'protectionLevel', 'cites']
 const EXCLUDED_TAXA = [
   'Ornithoptera', 'Troides', 'Trogonoptera', 'Teinopalpus', 'Bhutanitis', 'Parnassius apollo',
   'Nautilus', 'Allonautilus', 'Scleractinia', 'Antipatharia', 'Tridacna', 'Hippoporus', 'Strombus gigas',
-  'Cassis cornuta', 'Charonia', 'Hippocampus', 'Pandinus', 'Dynastes hercules'
+  'Cassis cornuta', 'Charonia', 'Hippocampus', 'Pandinus', 'Lambis', 'Turbo marmoratus'
 ]
+// 2026-10-18 第二批：去掉第一批保守列入的 Dynastes hercules（长戟大兜虫不在 CITES 附录，且是馆藏重点商品）；补上蝎子螺 / 夜光蝾螺（保护口径存疑，商品清单里有）
+
+/** 商品清单：对线上 products 的只读扫描（标准名列） */
+const INVENTORY_DOC = resolve(ROOT, 'docs/主题名候选_存量复核_2026-09-17.md')
+export function inventoryTitles(src = readFileSync(INVENTORY_DOC, 'utf8')) {
+  const out = new Set()
+  for (const line of src.split('\n')) {
+    const m = /^\|\s*\d+\s*\|\s*([^|]+?)\s*\|/.exec(line)
+    if (m) out.add(m[1].trim())
+  }
+  return out
+}
 
 const BANNED = [
   [/IUCN|CITES|保护等级|保护级别|国家重点|国家一级|国家二级|濒危|易危|极危|红色名录|附录\s*[IⅠ一二Ⅱ]/i, '保护名录类字眼'],
   [/合法带证|带证|证件齐全/, '「带证」类话术'],
   [/投资|升值|保值|收益|分红|回报/, '投资暗示'],
   [/震撼|绝美|独一无二|必看|神器|顶级|天花板|极品/, '营销词'],
-  [/能量|疗愈|辟邪|招财|风水|磁场|开运|灵性|净化身心/, '晶石玄学'],
+  // 「能量」只拦玄学搭配：生物学里「储存的能量」是正常用法（第二批长尾大蚕蛾 / 大王具足虫曾被宽判据误伤）
+  [/能量石|能量场|正能量|水晶能量|能量水晶|疗愈|辟邪|招财|风水|磁场|开运|灵性|净化身心/, '晶石玄学'],
   [/[!！]/, '感叹号'],
   [/https?:\/\/|www\./i, '外链'],
   [/<[a-z/][^>]*>/i, 'HTML 标签']
@@ -57,7 +73,7 @@ function textsOf(e) {
   return out.filter((x) => typeof x === 'string')
 }
 
-export function judge(batches) {
+export function judge(batches, inventory = inventoryTitles()) {
   const errs = []
   const seenKey = new Map()
   const seenTitle = new Map()
@@ -80,6 +96,12 @@ export function judge(batches) {
       if (!ROOT_NAMES.has(e.rootCategoryName)) errs.push(`${tag}：一级馆「${e.rootCategoryName}」不在品类树中`)
       if (FORBIDDEN_ROOTS.has(e.rootCategoryName)) errs.push(`${tag}：不写「${e.rootCategoryName}」档案`)
       if (!String(e.category || '').startsWith(String(e.rootCategoryName || '\u0000'))) errs.push(`${tag}：category 须以一级馆名开头`)
+      // ⑦ 对上馆藏
+      const kws = Array.isArray(e.productMatch) ? e.productMatch : []
+      if (!kws.length || kws.some((k) => typeof k !== 'string' || k.trim().length < 2)) errs.push(`${tag}：productMatch 须为至少 1 个、每个 ≥2 字的商品关键词`)
+      const src = Array.isArray(e.sourceProducts) ? e.sourceProducts : []
+      for (const t of src) if (!inventory.has(t)) errs.push(`${tag}：sourceProducts「${t}」不在商品清单中`)
+      if (batch.productFirst && !src.length) errs.push(`${tag}：商品优先批次须至少对上一件在售商品（sourceProducts）`)
       // ① 不编造保护等级
       for (const f of PROTECTION_FIELDS) if (e[f] !== '') errs.push(`${tag}：${f} 须为空串（不编造保护等级，由馆员对照官方名录填写）`)
       // ② 合规选题
@@ -122,6 +144,7 @@ function selftest() {
     ['选了鸟翼凤蝶', (b) => { first(b).latinName = 'Ornithoptera priamus' }, /排除类群 Ornithoptera/],
     ['写动物馆', (b) => { first(b).rootCategoryName = '动物馆'; first(b).category = '动物馆 · 鸟纲' }, /不写「动物馆」档案/],
     ['晶石玄学', (b) => { first(b).brief += '据说能带来正能量与疗愈。' }, /晶石玄学/],
+    ['能量石话术', (b) => { first(b).sections[0].paragraphs[0] += '这是一块能量石。' }, /晶石玄学/],
     ['投资暗示', (b) => { first(b).habits = '稀有品种，升值空间大。' }, /投资暗示/],
     ['感叹号', (b) => { first(b).sections[1].paragraphs[0] += '太美了！' }, /感叹号/],
     ['夹带外链', (b) => { first(b).distribution += ' 详见 https://example.com' }, /外链/],
@@ -131,8 +154,19 @@ function selftest() {
     ['形态栏留空', (b) => { first(b).morphology = '' }, /morphology 必填/],
     ['seedKey 重复', (b) => { b[0].batch.entries[1].seedKey = first(b).seedKey }, /seedKey 与 .* 重复/],
     ['馆名写错', (b) => { first(b).rootCategoryName = '蝴蝶馆'; first(b).category = '蝴蝶馆' }, /不在品类树中/],
-    ['category 不带馆名（二级筛选匹配不到）', (b) => { first(b).category = '鳞翅目 · 蝴蝶' }, /category 须以一级馆名开头/]
+    ['category 不带馆名（二级筛选匹配不到）', (b) => { first(b).category = '鳞翅目 · 蝴蝶' }, /category 须以一级馆名开头/],
+    ['凭空写对应商品', (b) => { first(b).sourceProducts = ['并不存在的商品'] }, /不在商品清单中/],
+    ['没有商品关键词（取不到配图）', (b) => { first(b).productMatch = [] }, /productMatch 须为/],
+    ['商品优先批次没对上商品', (b) => { const pb = b.find((x) => x.batch.productFirst); pb.batch.entries[0].sourceProducts = [] }, /商品优先批次须至少对上一件/],
+    ['选了蝎子螺', (b) => { first(b).latinName = 'Lambis scorpius' }, /排除类群 Lambis/]
   ]
+  // 不误报对照：生物学的「能量」不得被当成玄学
+  {
+    const b = clone()
+    first(b).habits = '成虫不取食，依靠幼虫期储存的能量生活。'
+    if (judge(b).some((e) => /晶石玄学/.test(e))) { console.error('✗ 不误报对照失败：生物学用法「储存的能量」被判成晶石玄学'); process.exit(1) }
+    console.log('  ✓ 不误报对照：生物学用法「储存的能量」放行')
+  }
   const baseErrs = judge(base)
   if (baseErrs.length) { console.error('✗ 自检前提失败：基线本身不绿\n  - ' + baseErrs.join('\n  - ')); process.exit(1) }
   let fail = 0
