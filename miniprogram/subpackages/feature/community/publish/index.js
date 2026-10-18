@@ -8,6 +8,8 @@ const { openAppModal } = require('../../../../utils/appModal')
 
 Page({
   data: {
+    /** 入展展签（发布成功后 1.8s 内）：标题 / 日期，「入展」印 + 审核去向 */
+    exhibitTag: { show: false, title: '', date: '' },
     statusBarHeight: 20,
     navBarHeight: 44,
     navPaddingRight: 96,
@@ -185,6 +187,8 @@ Page({
     return up.fileID
   },
 
+  noop() {},
+
   async submit() {
     // 在途守卫：逐张上传图片可能耗时数秒，避免重复点击产生重复笔记
     if (this.data.submitting) return
@@ -267,10 +271,20 @@ Page({
       trackBehavior('community_publish_success', 'community', type, { title: data.title })
 
       wx.hideLoading()
-      wx.showToast({ title: '已提交审核', icon: 'success' })
+      // 入展印（2026-10-18 方向池 ★★）：原 toast「已提交审核」改为一张展签 + 「入展」朱印，写明审核去向；去向不变
+      const now = new Date()
+      const pad = (n) => String(n).padStart(2, '0')
+      this.setData({
+        exhibitTag: {
+          show: true,
+          title: data.title || '我的笔记',
+          date: `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}`
+        }
+      })
+      wx.vibrateShort({ type: 'light' })
       setTimeout(() => {
         wx.redirectTo({ url: '/subpackages/feature/community/index?from=publish' })
-      }, 800)
+      }, 1800)
     } catch (e) {
       wx.hideLoading()
       console.error('publish failed', e)

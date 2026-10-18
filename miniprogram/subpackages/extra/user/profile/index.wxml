@@ -70,7 +70,10 @@
         <view class="pf-score">
           <view class="pf-score-head">
             <text class="pf-field-k">档案完成度</text>
-            <text class="pf-score-val">{{profileScore}}%</text>
+            <view class="pf-score-valwrap">
+              <text class="pf-score-bump" wx:if="{{scoreBump}}" aria-hidden="true">{{scoreBump}}</text>
+              <text class="pf-score-val {{scoreBump ? 'is-bump' : ''}}">{{profileScore}}%</text>
+            </view>
           </view>
           <view class="pf-score-track"><view class="pf-score-fill" style="width: {{profileScore}}%;"></view></view>
           <text class="pf-score-note">{{rewardHint}}</text>

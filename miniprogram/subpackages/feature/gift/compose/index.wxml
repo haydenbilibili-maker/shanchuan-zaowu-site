@@ -218,7 +218,9 @@
 
       <view class="envelope-shell">
         <view class="envelope-flap"></view>
-        <view class="card-plate {{noteWriting ? 'writing' : ''}}">
+        <!-- 封缄火漆（2026-10-18）：交付那一刻落下，跨在礼笺下沿右侧；挂在信封层（礼笺本身 overflow:hidden 会裁掉）。返回后仍在，点卡面拆封再改 -->
+        <view class="card-seal" wx:if="{{letterSealed}}" aria-hidden="true"><text>封</text></view>
+        <view class="card-plate {{noteWriting ? 'writing' : ''}} {{letterSealed ? 'is-sealed' : ''}}" bindtap="unsealLetter">
           <!-- 标本纸底纹：黄铜纹样，禁 emoji -->
           <view class="watermark light" aria-hidden="true">山海</view>
           <view class="card-plate-head">

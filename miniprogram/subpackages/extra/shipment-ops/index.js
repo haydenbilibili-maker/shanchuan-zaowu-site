@@ -140,6 +140,8 @@ const baseData = {
   detail: null,
   detailBusy: false,
   detailTip: '',
+  /** 发货封条落贴动画只播一次（亲手发货的那一刻） */
+  sealLive: false,
   detailTipTone: 'info',
   shipForm: { expressCompany: '', trackingNo: '' },
   nextActions: [],
@@ -674,13 +676,14 @@ const coreMethods = {
       shipForm: { expressCompany: row.expressCompany || '', trackingNo: row.trackingNo || '' },
       detailTip: '',
       detailTipTone: 'info',
-      detailBusy: false
+      detailBusy: false,
+      sealLive: false
     })
   },
 
   closeDetail() {
     if (this.data.detailBusy) return
-    this.setData({ showDetail: false, detail: null, nextActions: [], detailTip: '' })
+    this.setData({ showDetail: false, detail: null, nextActions: [], detailTip: '', sealLive: false })
   },
 
   onShipFormInput(e) {
@@ -722,6 +725,8 @@ const coreMethods = {
         shipForm: { expressCompany: item.expressCompany || '', trackingNo: item.trackingNo || '' },
         detailTip: `已流转为「${item.statusLabel}」`,
         detailTipTone: 'info',
+        // 封条（2026-10-18 方向池 ★★）：只在本页亲手点「已发货」那一刻贴封条；之后打开是静态封条
+        sealLive: status === 'shipped',
         detailBusy: false,
         dashLoaded: false
       })

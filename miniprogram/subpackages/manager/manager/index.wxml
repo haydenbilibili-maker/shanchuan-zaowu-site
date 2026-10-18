@@ -735,6 +735,12 @@
              </view>
           </view>
        </view>
+       <!-- 今日 · 较昨日（2026-10-18 方向池 ★★）：同一份 7 日数据现算 -->
+       <view class="trend-today" wx:if="{{!trendMeta.empty && trendMeta.todayFmt}}">
+          <text class="trend-today-k">今日</text>
+          <text class="trend-today-v">¥{{trendMeta.todayFmt}}</text>
+          <text class="trend-today-d {{trendMeta.dayDeltaClass}}" wx:if="{{trendMeta.dayDeltaText}}">{{trendMeta.dayDeltaText}}</text>
+       </view>
        <view class="trend-bars" id="dash-trend-bars" style="{{chartLayout.trendBarsStyle}}" wx:if="{{!trendMeta.empty}}">
           <block wx:for="{{trendData}}" wx:key="dateKey">
              <view class="bar-col">

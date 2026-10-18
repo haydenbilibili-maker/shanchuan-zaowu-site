@@ -1150,3 +1150,31 @@ page {
     animation: none;
   }
 }
+
+/* 礼笺封缄（2026-10-18）：交付时纸下沿右侧落一枚朱红火漆（放大 → 回落 → 轻回弹 0.42s），卡面轻轻压暗一档 */
+.card-plate.is-sealed { filter: saturate(0.92); }
+.card-seal {
+  position: absolute;
+  /* 跨在纸下沿右侧（像封口）：右上角已有圆形控件，压上去会挡点按 */
+  bottom: -22rpx;
+  right: 40rpx;
+  z-index: 6;
+  width: 76rpx;
+  height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #B5483A, #8E2F24 72%);
+  box-shadow: 0 6rpx 14rpx rgba(0, 0, 0, 0.35), inset 0 0 0 5rpx rgba(0, 0, 0, 0.12);
+  animation: card-seal-drop 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.card-seal text { font-family: var(--font-brand); font-size: var(--fs-28); font-weight: 700; color: rgba(243, 236, 221, 0.92); }
+@keyframes card-seal-drop {
+  0% { opacity: 0; transform: scale(1.9); }
+  60% { opacity: 1; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-seal { animation: none; }
+}

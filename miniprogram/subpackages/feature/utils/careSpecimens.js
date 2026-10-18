@@ -20,6 +20,20 @@ function formatReceiveTime(ts) {
   return `${y}.${m}.${day}`
 }
 
+/** 陪伴天数（2026-10-18 方向池 ★★「养护打孔卡」的落地版：养护页没有养护记录可打孔，改给「陪伴第 N 天」）。
+ *  只认真实签收时间 receiveTime（不拿 update/createTime 兜底，免得天数失真）；签收当天算第 1 天。 */
+function companionDaysOf(order, now) {
+  const raw = order && order.receiveTime
+  if (!raw) return 0
+  const d = raw instanceof Date ? raw : new Date(raw)
+  if (Number.isNaN(d.getTime())) return 0
+  const today = now instanceof Date ? now : new Date()
+  const start = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const days = Math.round((end - start) / 86400000) + 1
+  return days > 0 ? days : 0
+}
+
 function pickReceiveTime(order) {
   if (!order) return null
   if (order.receiveTime) return order.receiveTime
@@ -52,7 +66,8 @@ function buildSpecimenItem(order, product, index) {
     framingName,
     isCustom: !!(order.customMeta && order.customMeta.isCustom),
     careSummary: getCareSummary(guide, framingName),
-    receiveTimeText: formatReceiveTime(receiveTs)
+    receiveTimeText: formatReceiveTime(receiveTs),
+    companionDays: companionDaysOf(order)
   }
 }
 
@@ -181,5 +196,6 @@ module.exports = {
   formatReceiveTime,
   buildSpecimenItem,
   loadUserSpecimens,
-  loadCareOrderContext
+  loadCareOrderContext,
+  companionDaysOf
 }

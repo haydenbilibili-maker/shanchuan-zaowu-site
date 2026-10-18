@@ -214,7 +214,19 @@ Page({
       mbti: this.data.mbti,
       zodiac: this.data.zodiac
     })
+    // 当场 +N% 回弹（2026-10-18 方向池 ★★）：补全一项、分数涨了才弹；降分不弹
+    const gain = (parseInt(score, 10) || 0) - (parseInt(this.data.profileScore, 10) || 0)
+    if (gain > 0) this.bumpScore(gain)
     this.syncProfileHeader(score)
+  },
+
+  bumpScore(gain) {
+    clearTimeout(this._bumpTimer)
+    // 先清再设：连续补两项时动画能重播
+    this.setData({ scoreBump: '' }, () => {
+      this.setData({ scoreBump: `+${gain}%` })
+      this._bumpTimer = setTimeout(() => this.setData({ scoreBump: '' }), 1100)
+    })
   },
 
   getDraftState() {

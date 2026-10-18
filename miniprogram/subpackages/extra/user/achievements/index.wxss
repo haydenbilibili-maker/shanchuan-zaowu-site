@@ -602,3 +602,31 @@ page {
     animation: none;
   }
 }
+
+/* 新点亮射灯（2026-10-18）：本机第一次见到的已点亮成就 —— 由暗到亮 + 一道光斜扫过铭牌，只播一次 */
+.node.is-fresh { overflow: hidden; animation: node-fresh-lit 0.9s ease-out 0.3s both; }
+.node.is-fresh::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -60%;
+  width: 40%;
+  height: 140%;
+  background: linear-gradient(90deg, rgba(255, 248, 230, 0), rgba(255, 248, 230, 0.85), rgba(255, 248, 230, 0));
+  transform: rotate(18deg);
+  animation: node-fresh-sweep 0.9s ease-in-out 0.9s both;
+}
+@keyframes node-fresh-lit {
+  0% { filter: brightness(0.35); box-shadow: 0 0 0 0 rgba(242, 213, 142, 0); }
+  70% { filter: brightness(1.1); box-shadow: 0 0 0 10rpx rgba(242, 213, 142, 0.25); }
+  100% { filter: brightness(1); box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.35); }
+}
+@keyframes node-fresh-sweep {
+  0% { left: -60%; opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 130%; opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .node.is-fresh,
+  .node.is-fresh::after { animation: none; }
+}

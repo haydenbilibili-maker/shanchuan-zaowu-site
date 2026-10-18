@@ -6128,3 +6128,11 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
     animation: none;
   }
 }
+
+/* 今日 · 较昨日（2026-10-18）：趋势图上方一行；涨跌色与「环比」同口径 */
+.trend-today { display: flex; align-items: baseline; gap: 12rpx; margin: 4rpx 0 12rpx; }
+.trend-today-k { font-size: var(--fs-22); color: var(--color-text-secondary); }
+.trend-today-v { font-family: var(--font-mono); font-size: var(--fs-30); color: var(--brass-300); }
+.trend-today-d { font-size: var(--fs-22); color: var(--color-text-secondary); }
+.trend-today-d.up { color: var(--color-success); }
+.trend-today-d.down { color: #D64045; }

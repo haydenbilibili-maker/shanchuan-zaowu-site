@@ -130,7 +130,24 @@ const FILES = {
   leaveSpanJs: 'subpackages/extra/staff/leave/leaveSpan.js',
   leaveWxml: 'subpackages/extra/staff/leave/index.wxml',
   reimLedgerJs: 'subpackages/extra/staff/reimbursements/reimburseLedger.js',
-  reimWxml: 'subpackages/extra/staff/reimbursements/index.wxml'
+  reimWxml: 'subpackages/extra/staff/reimbursements/index.wxml',
+  achLitJs: 'subpackages/extra/user/achievements/litSeen.js',
+  achJs: 'subpackages/extra/user/achievements/index.js',
+  achWxml: 'subpackages/extra/user/achievements/index.wxml',
+  pfJs: 'subpackages/extra/user/profile/index.js',
+  pfWxml: 'subpackages/extra/user/profile/index.wxml',
+  pubJs: 'subpackages/feature/community/publish/index.js',
+  pubWxml: 'subpackages/feature/community/publish/index.wxml',
+  careSpecJs: 'subpackages/feature/utils/careSpecimens.js',
+  careMyWxml: 'subpackages/feature/care/my/index.wxml',
+  homeGreetJs: 'pages/index/homeGreeting.js',
+  gcJs: 'subpackages/feature/gift/compose/index.js',
+  gcWxml: 'subpackages/feature/gift/compose/index.wxml',
+  shipJs: 'subpackages/extra/shipment-ops/index.js',
+  shipWxml: 'subpackages/extra/shipment-ops/index.wxml',
+  dayDeltaJs: 'subpackages/manager/utils/dayDelta.js',
+  mgrCfgJs: 'subpackages/manager/manager/managerPageConfig.js',
+  staffHubJs: 'subpackages/extra/staff/index.js'
 }
 /** 无 require 的 CommonJS 小模块：内存里求值拿 exports（失败返回 {}） */
 function loadCjs(src) {
@@ -642,6 +659,83 @@ function checks(s) {
     add('R41-6 报销账页：本月已通过 / 审核中合计；已通过盖「核准」（不写「已入账」，通过≠已打款）；只在本机第一次看到时落印',
       ok && /aria-hidden="true">核准<\/view>/.test(s.reimWxml) && !/已入账/.test(s.reimWxml))
   }
+  // 2026-10-18 方向池 ★★（产品负责人「继续按方向池推进剩下的 ★★ 项」；🔒 写礼笺在上轮点名范围内，只做展示层）
+  {
+    const lit = loadCjs(s.achLitJs)
+    let ok = false
+    try {
+      const st = memStorage()
+      const a = lit.takeFreshLit(['a1', 'a2'], st, 'u1')
+      const b = lit.takeFreshLit(['a1', 'a2', 'a3'], st, 'u1')
+      const c = lit.takeFreshLit(['a1', 'a2', 'a3'], st, 'u1')
+      ok = a.length === 0 && b.join() === 'a3' && c.length === 0
+    } catch (e) { ok = false }
+    add('R42-1 成就新点亮射灯：本机首次进页不播；之后只给新点亮的那枚扫一次光',
+      ok && /class="node \{\{node\.unlocked \? 'is-lit' : ''\}\} \{\{node\.fresh \? 'is-fresh' : ''\}\}"/.test(s.achWxml) && /takeFreshLit\(normalized\.filter\(\(a\) => a\.unlocked\)/.test(s.achJs))
+  }
+  add('R42-2 档案完成度：补全一项、分数涨了才弹「+N%」（降分不弹；初次载入不走这条）',
+    /const gain = \(parseInt\(score, 10\) \|\| 0\) - \(parseInt\(this\.data\.profileScore, 10\) \|\| 0\)\s*\n\s*if \(gain > 0\) this\.bumpScore\(gain\)/.test(s.pfJs) &&
+      /<text class="pf-score-bump" wx:if="\{\{scoreBump\}\}"/.test(s.pfWxml))
+  add('R42-3 社区发布：成功后出「入展」展签（写明审核去向），去向仍是社区页；遮罩用 ui-pop-mask',
+    /<view class="ui-pop-mask is-center is-deep exhibit-mask" wx:if="\{\{exhibitTag\.show\}\}"/.test(s.pubWxml) &&
+      /wx\.redirectTo\(\{ url: '\/subpackages\/feature\/community\/index\?from=publish' \}\)/.test(s.pubJs) && !/title: '已提交审核'/.test(s.pubJs))
+  {
+    let fn = null
+    try { fn = new Function(`${(s.careSpecJs.match(/function companionDaysOf[\s\S]*?\n\}\n/) || [''])[0]}; return companionDaysOf`)() } catch (e) { fn = null }
+    let ok = false
+    try {
+      const now = new Date(2026, 9, 18, 10)
+      ok = fn({ receiveTime: new Date(2026, 9, 18, 23) }, now) === 1 && fn({ receiveTime: new Date(2026, 6, 11, 9) }, now) === 100 &&
+        fn({ updateTime: new Date(2026, 6, 11) }, now) === 0 && fn({ receiveTime: 'bad' }, now) === 0
+    } catch (e) { ok = false }
+    add('R42-4 养护「陪伴第 N 天」：只认真实签收时间、签收当天算第 1 天（打孔卡无养护记录可依，按此落地）',
+      ok && /wx:if="\{\{item\.companionDays > 0\}\}"/.test(s.careMyWxml))
+  }
+  {
+    const hg = loadCjs(s.homeGreetJs)
+    let ok = false
+    try {
+      const st = { name: '主店', hours: { open: '10:00', close: '21:00' } }
+      const at = (h, m) => new Date(2026, 9, 18, h, m)
+      ok = hg.buildHomeGreeting(st, at(8, 0)).line === '主店 10:00 开馆，先逛逛线上馆藏' && hg.buildHomeGreeting(st, at(8, 0)).word === '早上好' &&
+        hg.buildHomeGreeting(st, at(15, 0)).line === '主店营业中，开到 21:00' && hg.buildHomeGreeting(st, at(20, 30)).line === '主店营业中，21:00 闭馆，还来得及' &&
+        hg.buildHomeGreeting(st, at(22, 0)).line === '主店已闭馆，明天 10:00 见' && hg.buildHomeGreeting({ name: '主店' }, at(15, 0)).line === ''
+    } catch (e) { ok = false }
+    add('R42-5 首页馆员问候：时段 + 开馆前 / 营业中 / 临近闭馆 / 已闭馆；没有营业时间只问候、不报营业状态',
+      ok && /<view class="home-greet" wx:if="\{\{homeGreeting\.word\}\}">/.test(s.homeWxml) && /homeGreeting: buildHomeGreeting\(store\),/.test(s.homeJs))
+  }
+  add('R42-6 写礼笺封缄（🔒 只做展示）：交付时与 paying 同一次 setData 落火漆，跳转仍同步（不延时）；点卡面拆封',
+    /this\.setData\(\{ paying: true, letterSealed: true \}\)/.test(s.gcJs) && !/setTimeout\(\(\) => \{?\s*navigateToConfirmOrder/.test(s.gcJs) &&
+      /unsealLetter\(\) \{\s*if \(this\.data\.letterSealed\) this\.setData\(\{ letterSealed: false \}\)/.test(s.gcJs) &&
+      /<view class="card-seal" wx:if="\{\{letterSealed\}\}"/.test(s.gcWxml) && /bindtap="unsealLetter"/.test(s.gcWxml))
+  add('R42-7 发货封条：已发货及之后贴封条；只在本页亲手点「已发货」那一刻落贴，开 / 关详情都复位',
+    /sealLive: status === 'shipped',/.test(s.shipJs) && (s.shipJs.match(/sealLive: false/g) || []).length >= 3 &&
+      /class="ops-seal-tape \{\{sealLive \? 'is-live' : ''\}\}" wx:if="\{\{detail\.status === 'shipped' \|\| detail\.status === 'received' \|\| detail\.status === 'completed'\}\}"/.test(s.shipWxml))
+  {
+    const dd = loadCjs(s.dayDeltaJs)
+    let ok = false
+    try {
+      const f = (n) => `F${n}`
+      const up = dd.dayVsYesterday([{ total: 1 }, { total: 100 }, { total: 112 }], f)
+      const down = dd.dayVsYesterday([{ total: 200 }, { total: 150 }], f)
+      const zero = dd.dayVsYesterday([{ total: 0 }, { total: 80 }], f)
+      const flat = dd.dayVsYesterday([{ total: 50 }, { total: 50 }], f)
+      ok = up.dayDeltaText === '较昨日 ↑12%' && up.dayDeltaClass === 'up' && up.todayFmt === 'F112' && down.dayDeltaText === '较昨日 ↓25%' &&
+        zero.dayDeltaText === '昨日无营收' && flat.dayDeltaText === '较昨日持平' && dd.dayVsYesterday([], f).todayFmt === ''
+    } catch (e) { ok = false }
+    add('R42-8 店长看板「今日 · 较昨日」：同一份 7 日数据现算（不另打云端），昨日为 0 不给百分比',
+      ok && /\.\.\.require\('\.\.\/utils\/dayDelta'\)\.dayVsYesterday\(days, /.test(s.mgrCfgJs))
+  }
+  {
+    let same = false
+    try {
+      const grab = (src, name) => new Function(`${(src.match(new RegExp(`function ${name}\\(hour\\) \\{[\\s\\S]*?\\n\\}\\n`)) || [''])[0]}; return ${name}`)()
+      const a = grab(s.staffHubJs, 'greetWordByHour')
+      const b = grab(s.mgrCfgJs, 'greetByHour')
+      same = Array.from({ length: 24 }, (_, h) => h).every((h) => a(h) === b(h))
+    } catch (e) { same = false }
+    add('R42-9 店员工作台问候与店长首页 greetByHour 逐时段一致', same)
+  }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -932,6 +1026,15 @@ if (process.argv.includes('--selftest')) {
     ['从最近记录进也打字', 'identifyJs', (t) => t.replace("      url += '&fresh=1'\n", '')],
     ['历史已核销也落印', 'pickupJs', (t) => t.replace("      const closedNow = pass.statusTone === 'closed';", "      const closedNow = pass.statusTone === 'closed';\n      if (claimedNow) this.setData({ claimLive: true });")],
     ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
+    ['射灯首次进页全部重播', 'achLitJs', (t) => t.replace('const fresh = seen === null ? [] :', 'const fresh = seen === null ? ids :')],
+    ['档案降分也弹', 'pfJs', (t) => t.replace('if (gain > 0) this.bumpScore(gain)', 'if (gain !== 0) this.bumpScore(gain)')],
+    ['社区发布改回 toast', 'pubWxml', (t) => t.replace('exhibit-mask" wx:if="{{exhibitTag.show}}"', 'exhibit-mask" wx:if="{{false}}"')],
+    ['陪伴天数拿创建时间兜底', 'careSpecJs', (t) => t.replace('const raw = order && order.receiveTime', 'const raw = order && (order.receiveTime || order.updateTime)')],
+    ['首页问候缺营业时间也报营业中', 'homeGreetJs', (t) => t.replace("if (open == null || close == null) return { word, line: '' };", "if (open == null || close == null) return { word, line: `${name}营业中` };")],
+    ['礼笺封缄改成延时跳转', 'gcJs', (t) => t.replace('    navigateToConfirmOrder([{', '    setTimeout(() => navigateToConfirmOrder([{')],
+    ['封条打开详情不复位', 'shipJs', (t) => t.replace("      detailBusy: false,\n      sealLive: false\n", "      detailBusy: false\n")],
+    ['较昨日除以 0', 'dayDeltaJs', (t) => t.replace('  if (yest <= 0) {', '  if (yest < 0) {')],
+    ['工作台问候分段漂移', 'staffHubJs', (t) => t.replace("if (h >= 5 && h < 9) return '早安'", "if (h >= 5 && h < 10) return '早安'")],
     ['拆信每次回调都重播', 'msgDetailJs', (t) => t.replace('if (!this._unsealDecided) {\n      this._unsealDecided = true;', 'if (true) {\n      this._unsealDecided = true;')],
     ['首次进页老证书全被封上', 'certSealJs', (t) => t.replace('return rows.map((c) => ({ ...c, sealed: false }));', 'return rows.map((c) => ({ ...c, sealed: true }));')],
     ['续播看完不清', 'vrJs', (t) => t.replace('  else delete map[id]\n', '')],

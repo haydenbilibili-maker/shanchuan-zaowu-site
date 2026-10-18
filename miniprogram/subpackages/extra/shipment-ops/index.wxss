@@ -188,3 +188,29 @@
 .sc-lib-inline.is-warn { background: rgba(196, 92, 74, 0.12); border-color: rgba(196, 92, 74, 0.5); }
 .sc-lib-inline-text { display: block; font-size: var(--fs-22); color: #e8dcc0; line-height: 1.5; }
 .sc-lib-inline-btns { display: flex; justify-content: flex-end; gap: 12rpx; margin-top: 12rpx; }
+
+/* 发货封条（2026-10-18）：一道斜贴的牛皮纸封条，朱字「山海造物 · 封」+ 单号；亲手发货那一刻从右侧贴上 */
+.ops-seal-tape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin: 4rpx 0 18rpx;
+  padding: 10rpx 24rpx;
+  background: linear-gradient(180deg, #D9C7A2, #C9B48A);
+  border-top: 1rpx dashed rgba(46, 38, 24, 0.35);
+  border-bottom: 1rpx dashed rgba(46, 38, 24, 0.35);
+  transform: rotate(-1.5deg);
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.3);
+}
+.ops-seal-t { font-family: var(--font-brand); font-size: var(--fs-24); font-weight: 700; letter-spacing: 0.24em; color: #8E2F24; }
+.ops-seal-no { font-family: var(--font-mono); font-size: var(--fs-20); color: #5C513D; }
+.ops-seal-tape.is-live { animation: ops-seal-stick 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.1) both; }
+@keyframes ops-seal-stick {
+  0% { opacity: 0; transform: translateX(60%) rotate(-6deg); }
+  70% { opacity: 1; transform: translateX(-2%) rotate(-1deg); }
+  100% { opacity: 1; transform: translateX(0) rotate(-1.5deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ops-seal-tape.is-live { animation: none; }
+}

@@ -351,3 +351,60 @@ page {
 .footer-submit.ready:active {
   background: var(--brass-500);
 }
+
+/* 入展展签（2026-10-18）：与反馈回执 / 入藏卡同一张纸、同一方朱印 */
+.exhibit-mask { z-index: 900; }
+.exhibit-tag {
+  position: relative;
+  width: 540rpx;
+  padding: 44rpx 44rpx 40rpx;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  border-radius: 4rpx;
+  box-shadow: inset 0 0 0 14rpx #F0E8D6, inset 0 0 0 15rpx rgba(46, 38, 24, 0.22), 0 24rpx 60rpx rgba(0, 0, 0, 0.55);
+  animation: ex-rise 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.ex-en { display: block; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: 0.28em; color: #8B6F47; }
+.ex-title {
+  display: block;
+  margin-top: 10rpx;
+  padding-right: 110rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-32);
+  font-weight: 700;
+  line-height: 1.35;
+  color: #2E2618;
+}
+.ex-rule { width: 72rpx; height: 2rpx; margin: 18rpx 0 14rpx; background: #B08D57; }
+.ex-row { display: flex; gap: 20rpx; padding: 6rpx 0; font-size: var(--fs-24); }
+.ex-k { flex-shrink: 0; color: #8A7F6C; letter-spacing: 0.1em; }
+.ex-v { color: #2E2618; }
+.ex-v.mono { font-family: var(--font-mono); letter-spacing: 0.06em; }
+.ex-seal {
+  position: absolute;
+  right: 40rpx;
+  top: 40rpx;
+  width: 92rpx;
+  height: 92rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx solid rgba(168, 53, 42, 0.85);
+  border-radius: 6rpx;
+  box-shadow: inset 0 0 0 3rpx rgba(243, 236, 221, 0.5), inset 0 0 0 5rpx rgba(168, 53, 42, 0.5);
+  color: rgba(168, 53, 42, 0.9);
+  transform: rotate(-12deg);
+  animation: ex-seal 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.4s both;
+}
+.ex-seal-ch { font-family: var(--font-brand); font-size: 30rpx; font-weight: 700; line-height: 34rpx; }
+@keyframes ex-rise { from { opacity: 0; transform: translateY(48rpx); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ex-seal {
+  0% { opacity: 0; transform: rotate(-12deg) scale(1.9); }
+  60% { opacity: 1; transform: rotate(-12deg) scale(0.94); }
+  100% { opacity: 1; transform: rotate(-12deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .exhibit-tag,
+  .ex-seal { animation: none; }
+}

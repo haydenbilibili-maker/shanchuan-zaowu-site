@@ -1217,6 +1217,11 @@
         <text class="ops-meta-inline warn" wx:if="{{detail.pricingIncomplete}}">核价未完</text>
         <text class="ops-meta-inline" wx:if="{{detail.entryPathLabel}}">{{detail.entryPathLabel}}</text>
       </view>
+      <!-- 发货封条（2026-10-18）：已发货及之后的状态贴一道「山海造物 · 封」封条；亲手发货那一刻落贴 -->
+      <view class="ops-seal-tape {{sealLive ? 'is-live' : ''}}" wx:if="{{detail.status === 'shipped' || detail.status === 'received' || detail.status === 'completed'}}" aria-hidden="true">
+        <text class="ops-seal-t">山海造物 · 封</text>
+        <text class="ops-seal-no">{{detail.shipmentNo}}</text>
+      </view>
       <text class="ops-meta">{{detail.shipmentNo}} · {{detail.shipmentDate}}</text>
       <text class="ops-meta" wx:if="{{detail.buyerName}}">购买人 {{detail.buyerName}}</text>
       <text class="ops-amount">{{detail.totalQty}} 件 · {{detail.itemCount}} 行{{detail.amountText ? ' · ¥' + detail.amountText : ''}}</text>

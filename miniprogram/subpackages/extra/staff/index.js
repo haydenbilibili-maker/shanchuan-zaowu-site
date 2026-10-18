@@ -156,11 +156,24 @@ function canShowScanCta(role) {
   return SCAN_CTA_PERMS.some((p) => hasPermission(role, p))
 }
 
+/** 时段问候：逐字沿用店长首页 managerPageConfig.greetByHour 的分段（跨分包不能 require） */
+function greetWordByHour(hour) {
+  const h = Number(hour)
+  if (!Number.isFinite(h)) return '你好'
+  if (h >= 5 && h < 9) return '早安'
+  if (h >= 9 && h < 12) return '上午好'
+  if (h >= 12 && h < 14) return '午安'
+  if (h >= 14 && h < 18) return '下午好'
+  if (h >= 18 && h < 23) return '晚上好'
+  return '夜深了'
+}
+
 Page({
   data: {
     ready: false,
     roleText: '',
     staffName: '',
+    greetWord: '',
     storeOptions: [],
     storeNames: [],
     storeIndex: 0,
@@ -181,6 +194,8 @@ Page({
         ready: true,
         roleText: setup.roleText,
         staffName: setup.staffName,
+        // 工作台问候（2026-10-18 方向池 ★）：按时段一句，与店长首页 greetByHour 同口径
+        greetWord: greetWordByHour(new Date().getHours()),
         storeOptions: setup.storeOptions,
         storeNames: setup.storeNames,
         storeIndex: setup.storeIndex,

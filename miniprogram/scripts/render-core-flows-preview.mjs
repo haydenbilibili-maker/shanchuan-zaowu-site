@@ -562,6 +562,20 @@ const SCENES = [
       categories: [{ id: 'product', label: '藏品建议' }], activeCategory: 'product', messageText: '', ticketImages: [], maxTicketImages: 3, contactPhone: '', submitting: false,
       receipt: { show: true, no: 'FB-7Q2K9X', label: '藏品建议' } },
     css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  // 2026-10-18 方向池 ★★：礼笺封缄 / 工作台问候 / 档案 +N% / 入展展签 / 陪伴天数
+  { name: 'gift-seal', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose-2', data: { letterSealed: true },
+    css: '.card-seal { animation: none !important; }' },
+  { name: 'staff-greet', h: 900, wxml: 'subpackages/extra/staff/index', base: 'staff-hub', data: { greetWord: '下午好' } },
+  { name: 'profile-bump', h: 1100, wxml: 'subpackages/extra/user/profile/index', base: 'profile', data: { scoreBump: '+15%' },
+    css: '.pf-score-bump, .pf-score-val.is-bump { animation: none !important; opacity: 1 !important; }' },
+  { name: 'publish-exhibit', h: 1100, wxml: 'subpackages/feature/community/publish/index', data: {
+      type: 'note', images: [], title: '', content: '', tagsStr: '', categories: [], canSubmit: true, submitting: true,
+      exhibitTag: { show: true, title: '雨后林下的一只锹甲', date: '2026.10.18' } },
+    css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; } .exhibit-tag, .ex-seal { animation: none !important; }' },
+  { name: 'care-days', h: 900, wxml: 'subpackages/feature/care/my/index', data: { loading: false, loadError: false,
+      specimens: [
+        { key: 'k1', title: '光明女神闪蝶 · 玻璃罩', image: P[0], categoryLabel: '蝶类', categoryOverline: 'LEPIDOPTERA', receiveTimeText: '2026.07.11', companionDays: 100, careSummary: '避光、防潮，每季检查一次干燥剂' },
+        { key: 'k2', title: '银杏押花框', image: P[2], categoryLabel: '植物', categoryOverline: 'PLANTAE', receiveTimeText: '2026.10.03', companionDays: 16, careSummary: '远离直射光' }] } },
   // 2026-10-18 产品点名：详情页「实拍影像」区块（视频号跳转卡片 + B站 / 抖音复制链接卡；channel-video 内嵌在预览里不渲染）
   { name: 'detail-films', h: 3000, wxml: 'subpackages/feature/detail/index', base: 'detail', data: {
       heroVideoCount: 1, filmLead: true,

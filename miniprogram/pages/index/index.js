@@ -174,6 +174,8 @@ Page({
     showNewArrivals: true,
 
     exploreStore: null,
+    /** 馆员问候（homeGreeting.js）：门店数据到了才有 word */
+    homeGreeting: { word: '', line: '' },
     showExploreStore: false,
     loadingExploreStore: false,
 
@@ -1366,8 +1368,11 @@ Page({
     }
     const finish = (distanceText) => {
       const openStatus = store.openStatus || { statusClass: '', label: '' };
+      const { buildHomeGreeting } = require('./homeGreeting');
       this.setData({
         exploreStore: { ...store, distanceText, openStatus },
+        // 馆员问候（2026-10-18）：时段 + 门店营业状态；无营业时间只问候
+        homeGreeting: buildHomeGreeting(store),
         loadingExploreStore: false
       });
     };
