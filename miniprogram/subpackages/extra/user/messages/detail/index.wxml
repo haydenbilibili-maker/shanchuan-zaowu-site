@@ -7,7 +7,16 @@
       class="letter-scroll"
       style="{{scrollStyle}}"
     >
-      <view class="letter-stage paper-stage kind-{{selectedMessage.kind}} {{entered ? 'entered' : ''}}">
+      <view class="letter-stage paper-stage kind-{{selectedMessage.kind}} {{entered ? 'entered' : ''}} {{unsealing ? 'unseal-' + unsealing : ''}}">
+        <!-- 拆信仪式（2026-10-18）：未读纸信先是一只封好的信封，掀开封口、信纸抽出；点信封可直接拆开 -->
+        <view class="unseal-envelope" wx:if="{{unsealing && unsealing !== 'done'}}" bindtap="skipUnseal">
+          <view class="ue-body">
+            <text class="ue-from">{{selectedMessage.senderName}} 寄</text>
+            <text class="ue-en">SHANHAI · LETTER</text>
+          </view>
+          <view class="ue-flap"></view>
+          <view class="ue-wax" aria-hidden="true"><text>{{selectedMessage.stampCn}}</text></view>
+        </view>
         <view class="letter-card paper paper-{{selectedMessage.kind}} {{entered ? 'settled' : ''}}">
           <!-- 2026-10-17「信笺」重构：一张浅纸标本签 —— 内发丝框 + 顶边铜别针 + 方寸印（类别）；
                纤维 / 压纹 / 磨损 / 折痕 / 折角与三枚信号灯退场 -->

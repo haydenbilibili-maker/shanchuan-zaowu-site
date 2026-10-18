@@ -492,6 +492,7 @@ const photoLegacyRow = {
     loadError: false,
     digestView: null,
     digestPayloadMissing: false,
+    unsealing: '', // 2026-10-18 拆信仪式的页面级字段（detail/index.js data 默认 ''）
     actionPadStyle: ''
   })
   check('真渲染：出现「包装实拍」区块', rendered.includes('包装实拍'))
@@ -589,6 +590,7 @@ const digestRow = {
       loadError: false,
       digestView: view,
       digestPayloadMissing: false,
+    unsealing: '', // 2026-10-18 拆信仪式的页面级字段（detail/index.js data 默认 ''）
       actionPadStyle: '',
       sectionCollapsed: {},
       showSources: false

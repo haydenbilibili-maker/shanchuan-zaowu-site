@@ -114,7 +114,32 @@ const FILES = {
   artJs: 'subpackages/feature/articles/detail/index.js',
   artWxml: 'subpackages/feature/articles/detail/index.wxml',
   fbJs: 'subpackages/extra/user/feedback/index.js',
-  fbWxml: 'subpackages/extra/user/feedback/index.wxml'
+  fbWxml: 'subpackages/extra/user/feedback/index.wxml',
+  msgDetailJs: 'subpackages/extra/user/messages/detail/index.js',
+  msgDetailWxml: 'subpackages/extra/user/messages/detail/index.wxml',
+  msgListWxml: 'subpackages/extra/user/messages/index.wxml',
+  certJs: 'subpackages/extra/user/certificates/index.js',
+  certSealJs: 'subpackages/extra/user/certificates/certSeal.js',
+  certWxml: 'subpackages/extra/user/certificates/index.wxml',
+  vrJs: 'subpackages/feature/articles/detail/videoResume.js',
+  videosJs: 'subpackages/content/videos/index.js',
+  videosWxml: 'subpackages/content/videos/index.wxml',
+  odJs: 'subpackages/business/order-detail/index.js',
+  odWxml: 'subpackages/business/order-detail/index.wxml',
+  journeyJs: 'subpackages/business/order-detail/specimenJourney.js',
+  leaveSpanJs: 'subpackages/extra/staff/leave/leaveSpan.js',
+  leaveWxml: 'subpackages/extra/staff/leave/index.wxml',
+  reimLedgerJs: 'subpackages/extra/staff/reimbursements/reimburseLedger.js',
+  reimWxml: 'subpackages/extra/staff/reimbursements/index.wxml'
+}
+/** 无 require 的 CommonJS 小模块：内存里求值拿 exports（失败返回 {}） */
+function loadCjs(src) {
+  try { const m = { exports: {} }; new Function('module', 'exports', src)(m, m.exports); return m.exports } catch (e) { return {} }
+}
+/** 假本机缓存 */
+function memStorage() {
+  const store = {}
+  return { store, getStorageSync: (k) => store[k], setStorageSync: (k, v) => { store[k] = JSON.parse(JSON.stringify(v)) } }
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -523,6 +548,100 @@ function checks(s) {
         /url: '\/subpackages\/extra\/user\/messages\/index\?category=system'/.test(s.fbJs) &&
         /<view class="ui-pop-mask is-center is-deep fb-receipt-mask" wx:if="\{\{receipt\.show\}\}"/.test(s.fbWxml))
   }
+  // 2026-10-18 方向池 ★★★（产品负责人「继续按照优先级推进」；🔒 标本旅程 / 入藏卡已获点名，只做展示层）
+  add('R41-1 来信拆信：只在第一次展示未读纸信时拆封（日报不拆、两次回调不重播）；点信封可跳过；离页清定时器；列表信封记号只给顾客纸信',
+    /if \(!this\._unsealDecided\) \{\s*this\._unsealDecided = true;\s*if \(wasUnread && !isDigest\) this\.playUnseal\(\);/.test(s.msgDetailJs) &&
+      /onUnload\(\) \{\s*\(this\._unsealTimers \|\| \[\]\)\.forEach\(clearTimeout\);/.test(s.msgDetailJs) &&
+      /<view class="unseal-envelope" wx:if="\{\{unsealing && unsealing !== 'done'\}\}" bindtap="skipUnseal">/.test(s.msgDetailWxml) &&
+      /class="env-mark \{\{item\.isUnread \? 'is-sealed' : 'is-opened'\}\}" wx:if="\{\{item\.isPaper && !workflowMode && activeQueue === 'customer'\}\}"/.test(s.msgListWxml))
+  {
+    const cs = loadCjs(s.certSealJs)
+    let ok = false
+    try {
+      const st = memStorage()
+      const a = cs.applySeals([{ _id: 'c1' }, { _id: 'c2' }], st)
+      const b = cs.applySeals([{ _id: 'c3' }, { _id: 'c1' }, { _id: 'c2' }], st)
+      cs.markUnsealed('c3', st)
+      const c = cs.applySeals([{ _id: 'c3' }, { _id: 'c1' }], st)
+      ok = a.every((x) => !x.sealed) && b[0].sealed && !b[1].sealed && !b[2].sealed && c.every((x) => !x.sealed)
+    } catch (e) { ok = false }
+    add('R41-2 证书火漆：首次进页老证书不封；之后新签发的才封；启封即记、不重封；掰开后才进证书',
+      ok && /if \(i >= 0 && all\[i\]\.sealed\) \{[\s\S]*?markUnsealed\(id, wx\);[\s\S]*?this\.openCert\(id\);[\s\S]*?return;\s*\}\s*this\.openCert\(id\);/.test(s.certJs) &&
+        /<view class="c-wax \{\{item\.breaking \? 'is-breaking' : ''\}\}" wx:if="\{\{item\.sealed\}\}"/.test(s.certWxml))
+  }
+  {
+    const vr = loadCjs(s.vrJs)
+    let ok = false
+    try {
+      const st = memStorage()
+      vr.record(st, 'v1', 134.6, 600, 1)
+      const r1 = vr.resumeOf(st, 'v1')
+      vr.record(st, 'v1', 597, 600, 2)
+      const r2 = vr.resumeOf(st, 'v1')
+      vr.record(st, 'v2', 3, 600, 3)
+      ok = vr.fmtClock(134) === '02:14' && vr.fmtClock(3725) === '1:02:05' &&
+        r1 && r1.t === 134 && r1.label === '02:14' && r1.pct === 22 && r2 === null && vr.resumeOf(st, 'v2') === null &&
+        vr.worthKeeping(50, 0) && !vr.worthKeeping(4, 0)
+    } catch (e) { ok = false }
+    add('R41-3 视频续播：5 秒以上且未到结尾才记、看完即清；播放页一键续播；影像列表读同一个本机 KEY',
+      ok && vr.KEY === 'video_resume_v1' && /const RESUME_KEY = 'video_resume_v1'/.test(s.videosJs) &&
+        /bindtimeupdate="onVideoTime"/.test(s.artWxml) && /<view class="video-resume" wx:if="\{\{videoResumeAt\}\}" bindtap="resumeVideo"/.test(s.artWxml) &&
+        /onVideoEnd\(\) \{[\s\S]{0,120}videoResume\.clear\(wx, this\.data\.article\._id\)/.test(s.artJs) &&
+        /wx:if="\{\{item\.resumeLabel\}\}"/.test(s.videosWxml))
+  }
+  {
+    const jn = loadCjs(s.journeyJs)
+    let ok = false
+    try {
+      const pending = jn.buildJourney({ status: 'paid' })
+      const ship = jn.buildJourney({ status: 'shipped', createTime: '2026-10-10T10:00:00', logistics: { carrier: '顺丰速运', shipTime: '2026-10-11T09:05:00' } })
+      const recv = jn.buildJourney({ status: 'received', logistics: {}, receiveTime: '2026-10-13T15:30:00' })
+      ok = pending.length === 0 && ship.map((x) => x.state).join() === 'done,done,now,todo' && ship[1].sub === '交 顺丰速运 承运' &&
+        ship[1].time === '10.11 09:05' && recv[3].state === 'done' && recv[3].time === '10.13 15:30' && recv[1].sub === '已交承运'
+    } catch (e) { ok = false }
+    add('R41-4 标本旅程 + 入藏卡（🔒 点名）：四站只读现有字段；「已达」只在亲手签收那一刻落印；入藏卡不给送礼人，遮罩用 ui-pop-mask',
+      ok && (s.odJs.match(/arriveLive: true/g) || []).length === 1 &&
+        /if \(this\.data\.order\.status === 'received' && this\.data\.certRole !== 'giver'\) \{/.test(s.odJs) &&
+        /class="sj-stamp \{\{arriveLive \? 'is-live' : ''\}\}" wx:if="\{\{item\.key === 'arrive' && item\.state === 'done'\}\}"/.test(s.odWxml) &&
+        /<view class="ui-pop-mask is-center is-deep archive-card-mask" wx:if="\{\{archiveCard\.show\}\}"/.test(s.odWxml) &&
+        /confirmReceiptOnOrder\(this\.data\.order\._id, orderSnapshot\)/.test(s.odJs))
+  }
+  {
+    const ls = loadCjs(s.leaveSpanJs)
+    let ok = false
+    try {
+      const a = ls.buildSpan('2026-10-16', '09:00', '2026-10-18', '13:00')
+      ok = a.days === 2.5 && a.label === '共 2.5 天' && a.cells.map((c) => c.fill).join() === 'full,full,half' && a.cells[1].weekend && !a.cells[0].weekend &&
+        ls.buildSpan('2026-10-16', '14:00', '2026-10-16', '18:00').days === 0.5 &&
+        ls.buildSpan('2026-10-16', '19:00', '2026-10-16', '20:00').label === '不足半天' &&
+        ls.buildSpan('2026-10-17', '09:00', '2026-10-16', '18:00') === null &&
+        ls.buildSpan('2026-10-01', '09:00', '2026-10-20', '18:00').cells.length === 14 && ls.buildSpan('2026-10-01', '09:00', '2026-10-20', '18:00').more === 6
+    } catch (e) { ok = false }
+    add('R41-5 请假天数：每天按 09:00–18:00 覆盖折半天 / 一天，周末照算只标出，起止颠倒给「起止有误」，日历条最多 14 格',
+      ok && /<text class="duration-value">\{\{span \? span\.label : '起止有误'\}\}<\/text>/.test(s.leaveWxml))
+  }
+  {
+    const rl = loadCjs(s.reimLedgerJs)
+    let ok = false
+    try {
+      const st = memStorage()
+      const now = new Date(2026, 9, 18)
+      const rows = [
+        { _id: 'r1', status: 'approved', amount: 1200.5, createTime: new Date(2026, 9, 3) },
+        { _id: 'r2', status: 'pending', amount: 80, createTime: new Date(2026, 9, 9) },
+        { _id: 'r3', status: 'approved', amount: 999, createTime: new Date(2026, 8, 30) }
+      ]
+      const sum = rl.monthSummary(rows, now)
+      const first = rl.applyStamps(rows, st)
+      const later = rl.applyStamps(rows.concat([{ _id: 'r4', status: 'approved', amount: 5 }]), st)
+      const again = rl.applyStamps(rows.concat([{ _id: 'r4', status: 'approved', amount: 5 }]), st)
+      ok = sum.month === 10 && sum.count === 2 && sum.approvedText === '1,200.50' && sum.pendingText === '80.00' &&
+        first.every((r) => !r.stampLive) && first[0].stamped && !first[1].stamped &&
+        later[3].stampLive && !later[0].stampLive && !again[3].stampLive && again[3].stamped
+    } catch (e) { ok = false }
+    add('R41-6 报销账页：本月已通过 / 审核中合计；已通过盖「核准」（不写「已入账」，通过≠已打款）；只在本机第一次看到时落印',
+      ok && /aria-hidden="true">核准<\/view>/.test(s.reimWxml) && !/已入账/.test(s.reimWxml))
+  }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -813,6 +932,15 @@ if (process.argv.includes('--selftest')) {
     ['从最近记录进也打字', 'identifyJs', (t) => t.replace("      url += '&fresh=1'\n", '')],
     ['历史已核销也落印', 'pickupJs', (t) => t.replace("      const closedNow = pass.statusTone === 'closed';", "      const closedNow = pass.statusTone === 'closed';\n      if (claimedNow) this.setData({ claimLive: true });")],
     ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
+    ['拆信每次回调都重播', 'msgDetailJs', (t) => t.replace('if (!this._unsealDecided) {\n      this._unsealDecided = true;', 'if (true) {\n      this._unsealDecided = true;')],
+    ['首次进页老证书全被封上', 'certSealJs', (t) => t.replace('return rows.map((c) => ({ ...c, sealed: false }));', 'return rows.map((c) => ({ ...c, sealed: true }));')],
+    ['续播看完不清', 'vrJs', (t) => t.replace('  else delete map[id]\n', '')],
+    ['列表续播 KEY 写错', 'videosJs', (t) => t.replace("const RESUME_KEY = 'video_resume_v1'", "const RESUME_KEY = 'video_resume'")],
+    ['旅程在途站不亮当前', 'journeyJs', (t) => t.replace("state: arrived ? 'done' : 'now'", "state: arrived ? 'done' : 'todo'")],
+    ['入藏卡也给送礼人', 'odJs', (t) => t.replace("if (this.data.order.status === 'received' && this.data.certRole !== 'giver') {", "if (this.data.order.status === 'received') {")],
+    ['请假周末被扣掉', 'leaveSpanJs', (t) => t.replace('    days += portion\n', "    if (d.getDay() !== 0 && d.getDay() !== 6) days += portion\n")],
+    ['报销首次进页全部落印', 'reimLedgerJs', (t) => t.replace('const live = stamped && !first &&', 'const live = stamped &&')],
+    ['报销印文写成已入账', 'reimWxml', (t) => t.replace('aria-hidden="true">核准</view>', 'aria-hidden="true">已入账</view>')],
     ['阅读时长把样式表字数也算进去', 'artMetaJs', (t) => t.replace(".replace(/<(style|script)[\\s\\S]*?<\\/\\1>/gi, '')\n", '')],
     ['反馈回执改了去向', 'fbJs', (t) => t.replace("url: '/subpackages/extra/user/messages/index?category=system'", "url: '/subpackages/extra/user/messages/index'")],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],

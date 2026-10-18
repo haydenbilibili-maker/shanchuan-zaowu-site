@@ -161,6 +161,8 @@
             <text class="kind-tag kind-{{item.kind}}">{{item.kindLabel}}</text>
             <text class="type-tag">{{item.typeName}}</text>
             <text class="message-time">{{item.formattedTime}}</text>
+            <!-- 信封记号（2026-10-18）：未读是封好的信封（一点火漆），已读的封口敞开 -->
+            <view class="env-mark {{item.isUnread ? 'is-sealed' : 'is-opened'}}" wx:if="{{item.isPaper && !workflowMode && activeQueue === 'customer'}}" aria-hidden="true"></view>
           </view>
           <text class="message-title">{{item.digestCard.headline || item.title}}</text>
           <text class="message-sender" wx:if="{{item.isPaper && !item.isDigest}}">寄件 · {{item.senderName}}</text>

@@ -70,6 +70,8 @@ Page({
     letterLoading: false,
     loadError: false,
     entered: false,
+    // 拆信仪式（2026-10-18）：'' 不播 → sealed 封着 → open 掀封口 → out 信纸抽出 → done 信封退场
+    unsealing: '',
     scrollHeightPx: 0,
     scrollStyle: '',
     actionPadStyle: ''
@@ -173,6 +175,11 @@ Page({
     const enriched = enrichMessage({ ...message, read: true });
     const digestView = buildDigestView(message);
     const isDigest = !!(enriched.isDigest || String(message.type || '') === 'daily_digest');
+    // 只在第一次展示时决定：未读的纸信才拆封；eventChannel 与 fetch 两次回调不重播，日报不拆
+    if (!this._unsealDecided) {
+      this._unsealDecided = true;
+      if (wasUnread && !isDigest) this.playUnseal();
+    }
     const sectionCollapsed = {};
     if (digestView && Array.isArray(digestView.sections)) {
       digestView.sections.forEach((sec) => {
@@ -209,6 +216,27 @@ Page({
       });
       trackBehavior('message_read', 'message', id, { category: enriched.category });
     }
+  },
+
+  /** 拆信：封着 → 掀封口 → 信纸抽出 → 信封退场；纯展示，已读照常在 displayLetter 里标 */
+  playUnseal() {
+    this._unsealTimers = [];
+    this.setData({ unsealing: 'sealed' });
+    const at = (ms, phase) => this._unsealTimers.push(setTimeout(() => this.setData({ unsealing: phase }), ms));
+    at(420, 'open');
+    at(860, 'out');
+    at(1500, 'done');
+  },
+
+  /** 点信封直接拆开（不想等的人） */
+  skipUnseal() {
+    (this._unsealTimers || []).forEach(clearTimeout);
+    this._unsealTimers = [];
+    this.setData({ unsealing: 'done' });
+  },
+
+  onUnload() {
+    (this._unsealTimers || []).forEach(clearTimeout);
   },
 
   async fetchLetter(messageId) {

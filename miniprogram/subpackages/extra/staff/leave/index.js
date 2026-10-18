@@ -7,6 +7,7 @@ const {
   statusTextLeave,
   resolveStoreFromQuery
 } = require('../utils/pageSetup')
+const { buildSpan } = require('./leaveSpan')
 
 function todayKey() {
   const d = new Date()
@@ -50,6 +51,8 @@ Page({
       reason: ''
     },
     durationPreview: '—',
+    /** 天数 + 日历条预览（leaveSpan.js）；起止无效时为 null */
+    span: null,
     list: [],
     submitting: false,
     cancellingId: ''
@@ -148,7 +151,10 @@ Page({
   updateDurationPreview() {
     const { startDate, startTime, endDate, endTime } = this.data.form
     const hours = calcDurationHours(startDate, startTime, endDate, endTime)
-    this.setData({ durationPreview: durationLabel(hours) })
+    this.setData({
+      durationPreview: durationLabel(hours),
+      span: buildSpan(startDate, startTime, endDate, endTime)
+    })
   },
 
   async loadList() {

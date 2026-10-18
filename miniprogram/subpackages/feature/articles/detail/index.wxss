@@ -517,3 +517,22 @@ page {
   .read-seal { animation: none; }
   .read-progress-fill { transition: none; }
 }
+
+/* 续播条（2026-10-18）：视频下方一条，不叠在原生 video 上（同层渲染外的覆盖不可靠） */
+.video-resume {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.18);
+}
+.video-resume-k {
+  font-family: var(--font-mono);
+  font-size: var(--fs-22);
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+.video-resume-go {
+  font-size: var(--fs-24);
+  color: var(--brass-300);
+}

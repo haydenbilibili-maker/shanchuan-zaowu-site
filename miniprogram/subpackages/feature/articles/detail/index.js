@@ -7,6 +7,7 @@ const { getWindowInfo } = require('../../../../utils/systemInfo')
 const { cdnPath } = require('../../../../config/cloudEnv')
 const { openAppModal } = require('../../../../utils/appModal')
 const { estimateReadMinutes, progressOf } = require('./readingMeta')
+const videoResume = require('./videoResume')
 
 const FALLBACK_COVER = cdnPath('stores/store_shanhaizaowu.png')
 
@@ -49,6 +50,8 @@ Page({
     isCollected: false,
     isLiked: false,
     showVideoControls: false,
+    /** 续播（2026-10-18）：本机记得上次看到哪 → { t, label }；点了或看过那个位置就收起 */
+    videoResumeAt: null,
     videoSpeed: 1.0,
     videoContext: null,
     savingCard: false,
@@ -68,6 +71,7 @@ Page({
 
   onUnload() {
     if (this._readObserver) this._readObserver.disconnect()
+    this.saveVideoSpot()
     if (this._progressTimer) clearTimeout(this._progressTimer)
   },
 
@@ -144,6 +148,7 @@ Page({
           loadError: false
         })
         this.watchReadEnd()
+        if (article && article.videoUrl) this.setData({ videoResumeAt: videoResume.resumeOf(wx, article._id || id) })
         // 封面（含 FALLBACK_COVER）是 cloud:// → 预解析成 https，否则分享卡片是黑块
         this.hydrateShareImage(article && article.coverImage)
       } else {
@@ -403,10 +408,42 @@ Page({
   },
 
   onVideoPause() {
-    // 暂停时不隐藏控制栏，方便操作
+    // 暂停时不隐藏控制栏，方便操作；顺手记下看到哪
+    this.saveVideoSpot()
+  },
+
+  /** 播放进度：只记在内存，每过 5 秒落一次盘；看过续播点就收起「继续」条 */
+  onVideoTime(e) {
+    const d = (e && e.detail) || {}
+    this._videoSpot = { t: Number(d.currentTime) || 0, d: Number(d.duration) || 0 }
+    const resume = this.data.videoResumeAt
+    if (resume && this._videoSpot.t >= resume.t) this.setData({ videoResumeAt: null })
+    if (Math.abs(this._videoSpot.t - (this._videoSavedAt || 0)) >= 5) this.saveVideoSpot()
+  },
+
+  saveVideoSpot() {
+    const spot = this._videoSpot
+    const id = this.data.article && this.data.article._id
+    if (!spot || !id) return
+    this._videoSavedAt = spot.t
+    videoResume.record(wx, id, spot.t, spot.d)
+  },
+
+  /** 一键续播：跳到上次的位置并播放 */
+  resumeVideo() {
+    const resume = this.data.videoResumeAt
+    if (!resume) return
+    this.setData({ videoResumeAt: null })
+    if (!this.videoContext) this.videoContext = wx.createVideoContext('article-video', this)
+    this.videoContext.seek(resume.t)
+    this.videoContext.play()
   },
 
   onVideoEnd() {
+    // 看完：不再续播
+    this._videoSpot = null
+    if (this.data.article && this.data.article._id) videoResume.clear(wx, this.data.article._id)
+    this.setData({ videoResumeAt: null })
     // 播放结束，记录完整播放
     if (app.globalData.userInfo) {
       wx.cloud.callFunction({

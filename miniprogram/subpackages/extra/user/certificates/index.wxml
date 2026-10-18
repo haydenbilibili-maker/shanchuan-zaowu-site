@@ -17,12 +17,18 @@
 
   <view class="cert-grid" wx:if="{{visible.length}}">
     <block wx:for="{{visible}}" wx:key="_id">
-      <view class="cert-item stagger-item" style="animation-delay: {{index < 8 ? index * 0.06 : 0.48}}s" hover-class="tap-press-soft" hover-stay-time="80" bindtap="viewCert" data-id="{{item._id}}" aria-role="button" aria-label="{{item.displayTitle}}{{item.kindLabel ? '，' + item.kindLabel : ''}}">
+      <view class="cert-item stagger-item {{item.sealed ? 'is-sealed' : ''}}" style="animation-delay: {{index < 8 ? index * 0.06 : 0.48}}s" hover-class="tap-press-soft" hover-stay-time="80" bindtap="viewCert" data-id="{{item._id}}" aria-role="button" aria-label="{{item.displayTitle}}{{item.kindLabel ? '，' + item.kindLabel : ''}}">
         <view class="cert-pin" aria-hidden="true"></view>
         <text class="c-eyebrow">{{item.kind === 'gift_voucher' ? 'CERTIFICATE OF GIFT' : 'CERTIFICATE'}}</text>
         <view class="c-frame">
           <image src="{{item.displayImage}}" mode="aspectFill" class="c-img" binderror="onThumbError" data-id="{{item._id}}"></image>
           <view class="c-seal {{item.kind === 'gift_voucher' ? 'is-gift' : ''}}" aria-hidden="true"><text>{{item.kind === 'gift_voucher' ? '赠' : '藏'}}</text></view>
+        </view>
+        <!-- 火漆（2026-10-18）：新签发、本机未启封过的证书；点一下掰开再进证书 -->
+        <view class="c-wax {{item.breaking ? 'is-breaking' : ''}}" wx:if="{{item.sealed}}" aria-hidden="true">
+          <view class="c-wax-half is-l"><text>封</text></view>
+          <view class="c-wax-half is-r"><text>封</text></view>
+          <text class="c-wax-tip">新签发 · 轻点启封</text>
         </view>
         <text class="c-name">{{item.displayTitle}}</text>
         <view class="c-foot">

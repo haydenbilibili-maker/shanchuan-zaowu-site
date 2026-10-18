@@ -243,3 +243,18 @@ page {
   color: var(--brass-400);
   font-size: var(--fs-24);
 }
+
+/* 续播进度（2026-10-18）：封面底一条黄铜细线 + 角标「看到 02:14」 */
+.video-duration.is-resume { color: var(--brass-200); bottom: 18rpx; }
+.video-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6rpx;
+  background: rgba(26, 24, 20, 0.6);
+}
+.video-progress-bar {
+  height: 100%;
+  background: var(--brass-400);
+}

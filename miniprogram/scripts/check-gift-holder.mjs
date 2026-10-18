@@ -219,7 +219,8 @@ async function runChecks() {
   {
     let page = null
     const mod = loadCjsModule(P.certList, {
-      transform: (f, s) => transform(f, s) + '\nmodule.exports.__certKindOf = certKindOf',
+      // 只给证书页本身追加导出：页面 require 的同目录小模块（如 certSeal.js）没有 certKindOf
+      transform: (f, s) => transform(f, s) + (f === P.certList ? '\nmodule.exports.__certKindOf = certKindOf' : ''),
       stubs: { '../../../../config/cloudEnv': { cdnPath: (x) => x }, '../../utils/pageNav': { getPageNavInsets: () => ({}) } },
       globals: { getApp: () => ({ globalData: {} }), wx: { cloud: { database: () => ({}) } }, Page: (o) => { page = o } }
     })

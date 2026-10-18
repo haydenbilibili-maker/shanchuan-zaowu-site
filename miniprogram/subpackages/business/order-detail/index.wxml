@@ -68,6 +68,23 @@
         <text class="sl-addr">{{order.addressLine || '地址待补充'}}</text>
       </view>
 
+      <!-- 标本旅程（2026-10-18，产品负责人点名）：入册 → 启程 → 在途 → 抵达；抵达站盖「已达」，亲手签收那一刻才播落印 -->
+      <view class="sj" wx:if="{{journey.length}}">
+        <text class="sj-head"><text class="en-label">SPECIMEN JOURNEY</text> 标本旅程</text>
+        <view class="sj-step is-{{item.state}}" wx:for="{{journey}}" wx:key="key">
+          <view class="sj-rail"><view class="sj-dot"></view></view>
+          <view class="sj-main">
+            <view class="sj-row">
+              <text class="sj-cn">{{item.cn}}</text>
+              <text class="sj-en">{{item.en}}</text>
+              <text class="sj-time" wx:if="{{item.time}}">{{item.time}}</text>
+            </view>
+            <text class="sj-sub">{{item.sub}}</text>
+          </view>
+          <view class="sj-stamp {{arriveLive ? 'is-live' : ''}}" wx:if="{{item.key === 'arrive' && item.state === 'done'}}" aria-hidden="true">已达</view>
+        </view>
+      </view>
+
       <view class="confirm-btn-area" wx:if="{{order.status === 'shipped'}}">
          <view class="btn-sign" bindtap="confirmReceipt" hover-class="btn-sign-press" hover-stay-time="80">
             <text>确认签收</text>
@@ -401,4 +418,21 @@
 </view>
 
 <!-- 全站样式化弹窗宿主（替代 wx.showModal）；详见 utils/appModal.js -->
+<!-- 签收入藏卡（2026-10-18，产品负责人点名）：亲手签收成功后出现一次；遮罩取 ui-pop-mask is-center is-deep -->
+<view class="ui-pop-mask is-center is-deep archive-card-mask" wx:if="{{archiveCard.show}}" catchtouchmove="noop" bindtap="closeArchiveCard">
+  <view class="archive-card" catchtap="noop">
+    <text class="ac-en">ACCESSION · 入藏</text>
+    <text class="ac-title">{{archiveCard.title}}</text>
+    <view class="ac-rule"></view>
+    <view class="ac-row"><text class="ac-k">入藏日期</text><text class="ac-v mono">{{archiveCard.date}}</text></view>
+    <view class="ac-row"><text class="ac-k">收藏证书</text><text class="ac-v">已签发，随时可查</text></view>
+    <view class="ac-row" wx:if="{{archiveCard.points > 0}}"><text class="ac-k">签收赠分</text><text class="ac-v mono">+{{archiveCard.points}}</text></view>
+    <view class="ac-seal" aria-hidden="true"><text class="ac-seal-ch">入</text><text class="ac-seal-ch">藏</text></view>
+    <view class="ac-actions">
+      <view class="ac-btn is-ghost" bindtap="closeArchiveCard" hover-class="tap-press" hover-stay-time="80">稍后</view>
+      <view class="ac-btn" bindtap="openCertFromCard" hover-class="tap-press" hover-stay-time="80">查看证书</view>
+    </view>
+  </view>
+</view>
+
 <app-modal id="appModal" />

@@ -34,7 +34,9 @@
             <view class="play-btn">▶</view>
           </view>
           <text class="video-badge">{{item.typeLabel}}</text>
-          <text class="video-duration" wx:if="{{item.duration && item.duration !== '00:00'}}">{{item.duration}}</text>
+          <text class="video-duration is-resume" wx:if="{{item.resumeLabel}}">{{item.resumeLabel}}</text>
+          <text class="video-duration" wx:elif="{{item.duration && item.duration !== '00:00'}}">{{item.duration}}</text>
+          <view class="video-progress" wx:if="{{item.resumePct > 0}}" aria-hidden="true"><view class="video-progress-bar" style="width: {{item.resumePct}}%;"></view></view>
         </view>
         <view class="video-body">
           <text class="video-title">{{item.title}}</text>

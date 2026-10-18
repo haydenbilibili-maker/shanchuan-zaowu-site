@@ -118,6 +118,7 @@
         bindplay="onVideoPlay"
         bindpause="onVideoPause"
         bindended="onVideoEnd"
+        bindtimeupdate="onVideoTime"
         show-center-play-btn="{{true}}"
         enable-play-gesture="{{true}}"
         show-play-btn="{{true}}"
@@ -125,6 +126,11 @@
         show-progress="{{true}}"
         object-fit="contain"
       ></video>
+      <!-- 续播（2026-10-18）：本机记得上次看到哪，一键接着看 -->
+      <view class="video-resume" wx:if="{{videoResumeAt}}" bindtap="resumeVideo" hover-class="tap-press" hover-stay-time="80">
+        <text class="video-resume-k">上次看到 {{videoResumeAt.label}}</text>
+        <text class="video-resume-go">从这里继续 ›</text>
+      </view>
       <view class="video-controls" wx:if="{{showVideoControls}}">
         <view class="control-item" hover-class="tap-press-soft" bindtap="toggleVideoSpeed">
           <text>{{videoSpeed}}x</text>

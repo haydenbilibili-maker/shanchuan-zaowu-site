@@ -562,6 +562,52 @@ const SCENES = [
       categories: [{ id: 'product', label: '藏品建议' }], activeCategory: 'product', messageText: '', ticketImages: [], maxTicketImages: 3, contactPhone: '', submitting: false,
       receipt: { show: true, no: 'FB-7Q2K9X', label: '藏品建议' } },
     css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  // 2026-10-18 方向池 ★★★：拆信 / 火漆 / 续播 / 标本旅程 + 入藏卡（🔒 点名）/ 请假天数 / 报销核准
+  { name: 'messages-env', h: 1300, wxml: 'subpackages/extra/user/messages/index', base: 'messages', data: {
+      messages: [
+        { _id: 'm1', dayLabel: '今天', kind: 'receipt', typeName: '发货通知', statusLabel: '待签收', title: '你的藏品已启程', preview: '光明女神闪蝶 · 玻璃罩 已由顺丰发出。', formattedTime: '10:24', isUnread: true, kindLabel: '订单', senderName: '山海造物', isPaper: true },
+        { _id: 'm3', dayLabel: '10 月 12 日', kind: 'campaign', typeName: '馆方来信', statusLabel: '已读', title: '十月新到：南美闪蝶专题', preview: '本周馆藏上新 12 件。', formattedTime: '10.12', isUnread: false, kindLabel: '馆方', senderName: '山海造物', isPaper: true }] } },
+  { name: 'letter-sealed', h: 1000, wxml: 'subpackages/extra/user/messages/detail/index', data: {
+      entered: true, unsealing: 'sealed', scrollStyle: '', digestView: null,
+      selectedMessage: { _id: 'm1', kind: 'receipt', stampCn: '回执', stampEn: 'RECEIPT', kindLabel: '订单', statusLabel: '待签收', senderName: '山海造物', title: '你的藏品已启程', formattedTime: '10:24', typeName: '发货通知', bodyBlocks: [], summaries: [] } },
+    // 详情页根节点 height:100% 靠真机视口撑开，离线预览没有视口高度 → 放开裁切（预览专用，真机不受影响）
+    css: 'page, .page-msg.detail-root { height: auto !important; overflow: visible !important; } .paper-mode.letter-page.standalone { position: relative !important; overflow: visible !important; } .standalone .letter-scroll { height: auto !important; }' },
+  { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
+      visible: [
+        { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },
+        { _id: 'c3', displayTitle: '银杏押花框', displayImage: P[2], dateStr: '2026.09.03', kind: 'gift_holder', kindLabel: '受赠' }] } },
+  { name: 'videos-resume', h: 1000, wxml: 'subpackages/content/videos/index', data: {
+      categories: [{ name: '全部', value: 'all' }, { name: '制作过程', value: 'craft' }], activeCategory: 'all', loading: false, noMore: false, fallbackCover: P[0],
+      videos: [
+        { _id: 'v1', title: '一只闪蝶的展翅', coverImage: P[0], typeLabel: '制作过程', duration: '08:12', playCount: 320, stats: { likes: 41 }, resumeLabel: '看到 02:14', resumePct: 27 },
+        { _id: 'v2', title: '玻璃罩里的光', coverImage: P[1], typeLabel: '标本展示', duration: '03:40', playCount: 118, stats: { likes: 12 }, resumeLabel: '', resumePct: 0 }] } },
+  { name: 'order-journey', h: 1500, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: {
+      journey: [
+        { key: 'order', cn: '入册', en: 'LOGGED', sub: '订单建档', time: '10.12 20:41', state: 'done' },
+        { key: 'ship', cn: '启程', en: 'DEPARTED', sub: '交 顺丰速运 承运', time: '10.13 09:05', state: 'done' },
+        { key: 'transit', cn: '在途', en: 'IN TRANSIT', sub: '途经站点以承运商轨迹为准', time: '', state: 'now' },
+        { key: 'arrive', cn: '抵达', en: 'ARRIVED', sub: '待你签收', time: '', state: 'todo' }] },
+    css: '.sj-step.is-now .sj-dot { animation: none !important; }' },
+  { name: 'order-archive-card', h: 1500, wxml: 'subpackages/business/order-detail/index', base: 'order-journey', data: {
+      journey: [
+        { key: 'order', cn: '入册', en: 'LOGGED', sub: '订单建档', time: '10.12 20:41', state: 'done' },
+        { key: 'ship', cn: '启程', en: 'DEPARTED', sub: '交 顺丰速运 承运', time: '10.13 09:05', state: 'done' },
+        { key: 'transit', cn: '在途', en: 'IN TRANSIT', sub: '一路平安', time: '', state: 'done' },
+        { key: 'arrive', cn: '抵达', en: 'ARRIVED', sub: '已签收入藏', time: '10.15 14:20', state: 'done' }],
+      archiveCard: { show: true, title: '光明女神闪蝶 · 玻璃罩', date: '2026.10.15', points: 126 } },
+    css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  { name: 'leave-span', h: 1300, wxml: 'subpackages/extra/staff/leave/index', data: {
+      ready: true, storeNames: ['山海造物主店'], storeIndex: 0, storeName: '山海造物主店', leaveTypeLabels: ['事假'], leaveTypeIndex: 0,
+      form: { startDate: '2026-10-16', startTime: '09:00', endDate: '2026-10-18', endTime: '13:00', reason: '' }, list: [],
+      span: { days: 2.5, label: '共 2.5 天', rangeText: '10.16 – 10.18 · 跨 3 个日历日', more: 0,
+        cells: [{ key: 'a', dow: '五', day: 16, fill: 'full', weekend: false }, { key: 'b', dow: '六', day: 17, fill: 'full', weekend: true }, { key: 'c', dow: '日', day: 18, fill: 'half', weekend: true }] } } },
+  { name: 'reimb-ledger', h: 1500, wxml: 'subpackages/extra/staff/reimbursements/index', data: {
+      ready: true, storeNames: ['山海造物主店'], storeIndex: 0, storeName: '山海造物主店', categories: ['物料'], categoryIndex: 0, form: { amount: '', remark: '' }, images: [],
+      summary: { month: 10, count: 3, approvedText: '1,200.50', pendingText: '80.00', hasPending: true },
+      list: [
+        { _id: 'r1', category: '物料', amountText: '1,200.50', status: 'approved', statusLabel: '已通过', timeText: '10.03 14:20', remark: '展柜射灯', stamped: true },
+        { _id: 'r2', category: '交通', amountText: '80.00', status: 'pending', statusLabel: '待审核', timeText: '10.09 18:02', remark: '取件打车' },
+        { _id: 'r3', category: '其他', amountText: '36.00', status: 'rejected', statusLabel: '已驳回', timeText: '10.10 11:30', reviewNote: '请附小票' }] } },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },

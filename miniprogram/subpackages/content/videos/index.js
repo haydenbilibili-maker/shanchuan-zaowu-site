@@ -7,6 +7,25 @@ const { cdnPath } = require('../../../config/cloudEnv')
 
 const FALLBACK_COVER = cdnPath('stores/store_shanhaizaowu.png')
 
+// 续播进度（2026-10-18）：与 feature/articles/detail/videoResume.js 同一个本机 KEY 与结构；跨分包不能 require，只读不写
+const RESUME_KEY = 'video_resume_v1'
+function readResume() {
+  try {
+    const raw = wx.getStorageSync(RESUME_KEY)
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+  } catch (e) {
+    return {}
+  }
+}
+function withResume(list, map) {
+  return list.map((item) => {
+    const hit = map[item._id]
+    const pct = hit && hit.d > 0 ? Math.min(100, Math.round((hit.t / hit.d) * 100)) : 0
+    const t = Math.floor((hit && hit.t) || 0)
+    return { ...item, resumePct: pct, resumeLabel: t >= 5 ? `看到 ${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}` : '' }
+  })
+}
+
 const TYPE_LABELS = {
   all: '全部',
   craft: '制作过程',
@@ -39,6 +58,11 @@ Page({
     const win = getWindowInfo()
     this.setData({ statusBarHeight: win.statusBarHeight || 20 })
     this.loadVideos(true)
+  },
+
+  onShow() {
+    // 从播放页回来：刷新「看到哪」
+    if (this.data.videos.length) this.setData({ videos: withResume(this.data.videos, readResume()) })
   },
 
   onReachBottom() {
@@ -94,9 +118,10 @@ Page({
           playCount: item.playCount || (item.stats && item.stats.views) || 0
         }
       })
-      const videos = activeCategory === 'all'
+      const picked = activeCategory === 'all'
         ? mapped
         : mapped.filter((item) => item.videoType === activeCategory)
+      const videos = withResume(picked, readResume())
 
       this.setData({
         videos: refresh ? videos : this.data.videos.concat(videos),
