@@ -22,7 +22,7 @@
 | `isOffShelf` | boolean | 下架 |
 | `images` / `cover` | array/string | 主图（**只放图片**；`images[0]` = 全站封面） |
 | `media` | array（可选） | 视频 / 实况：`[{ type: 'video'\|'live', url, poster, duration, width, height, size }]`，≤3 段、≤60s、≤50MB；只有详情页主图轮播读它，缺省 = 无视频。2026-09-28 新增，见 `miniprogram/docs/藏品视频与实况_2026-09-28.md` |
-| `externalVideos` | array（可选） | 外平台实拍视频：`[{ platform: 'channels'\|'bilibili'\|'douyin'\|'xiaohongshu', title, url, bvid, feedId, finderUserName, feedToken, sameSubject }]`，≤3 条；视频号（sph ID + feedId）小程序内可嵌入（同主体或带 feedToken），其余平台只存 https 白名单链接、详情页显示卡片 + 复制链接。ERP 藏品档案库录入，店长端不送此字段。2026-10-18 新增，见 `miniprogram/docs/藏品视频_外平台与云存储评估_2026-10-18.md` |
+| `externalVideos` | array（可选） | 外平台实拍视频：`[{ platform: 'channels'\|'bilibili'\|'douyin'\|'xiaohongshu', title, url, bvid, feedId, finderUserName, feedToken, sameSubject }]`，≤3 条；**同主体视频号是详情页主视频方案**（排第一、价格卡下大幅主片）；视频号（sph ID + feedId）小程序内可嵌入（同主体或带 feedToken），其余平台只存 https 白名单链接、详情页显示卡片 + 复制链接。ERP 藏品档案库录入，店长端不送此字段。2026-10-18 新增，见 `miniprogram/docs/藏品视频_外平台与云存储评估_2026-10-18.md` |
 | `species` / `latin` | string | 物种信息 |
 | `framerId` | string | 装裱师（可选） |
 | `protectionType` | string | 防护/裱装类型 |

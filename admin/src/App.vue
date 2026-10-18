@@ -1055,8 +1055,38 @@
 
             <!-- 2026-10-18 产品点名：实拍视频。云存储视频进 media（详情页顶部主图轮播，封面图之后），外平台进 externalVideos（详情页「实拍影像」区块）。
                  评估与取舍：miniprogram/docs/藏品视频_外平台与云存储评估_2026-10-18.md -->
-            <el-divider content-position="left">实拍视频（media · 外平台）</el-divider>
-            <el-form-item label="上传视频">
+            <!-- 2026-10-18 产品负责人：同主体视频号是详情页最主要的视频展示方案 → 视频号录入在前、默认同主体；云存储上传降为备选 -->
+            <el-divider content-position="left">实拍视频（主推：本馆视频号）</el-divider>
+            <el-form-item label="视频号 / 外平台">
+                <div class="product-media-gallery">
+                    <div v-for="(v, idx) in form.externalVideos" :key="'ev-' + idx + '-' + (v.url || v.feedId)" class="ext-video-row">
+                        <el-tag size="small" :type="v.platform === 'channels' ? 'success' : 'info'">{{ externalLabel(v.platform) }}</el-tag>
+                        <el-input v-model="v.title" size="small" maxlength="40" placeholder="标题（选填）" class="ext-video-title" />
+                        <span class="sku-hint-muted ext-video-ref">{{ v.platform === 'channels' ? (v.finderUserName + ' · ' + v.feedId + (v.feedToken || v.sameSubject ? ' · 可内嵌' : ' · 跳转观看')) : v.url }}</span>
+                        <el-button size="small" link type="danger" @click="removeExternalVideo(idx)">删除</el-button>
+                    </div>
+                    <div v-if="(form.externalVideos?.length || 0) < MAX_EXTERNAL" class="ext-video-add">
+                        <el-radio-group v-model="externalDraft.kind" size="small">
+                            <el-radio-button value="channels">视频号（主推）</el-radio-button>
+                            <el-radio-button value="link">B站 / 抖音 / 小红书链接</el-radio-button>
+                        </el-radio-group>
+                        <template v-if="externalDraft.kind === 'link'">
+                            <el-input v-model="externalDraft.url" size="small" placeholder="粘贴分享链接或整段分享文案（自动提取 https 链接）" />
+                        </template>
+                        <template v-else>
+                            <el-input v-model="externalDraft.finderUserName" size="small" placeholder="视频号 ID（sph 开头）" />
+                            <el-input v-model="externalDraft.feedId" size="small" placeholder="视频 feedId" />
+                            <el-input v-model="externalDraft.feedToken" size="small" placeholder="feedToken（选填；非同主体内嵌必需）" />
+                            <el-checkbox v-model="externalDraft.sameSubject" size="small">视频号与小程序同主体</el-checkbox>
+                        </template>
+                        <el-input v-model="externalDraft.title" size="small" maxlength="40" placeholder="标题（选填）" />
+                        <el-button size="small" type="primary" plain @click="addExternalVideo">添加</el-button>
+                    </div>
+                    <span class="sku-hint-muted">主推本馆<b>同主体视频号</b>：第一条作为详情页价格下方的大幅主片，头图出现「实拍视频」角标直达；播放流量由微信承担，还给视频号涨播放。视频号 ID 会记住，下次只需填 feedId。非同主体需 feedToken（未填则为跳转卡片）；B站 / 抖音 / 小红书小程序内不能打开，只显示卡片 + 复制链接。</span>
+                </div>
+            </el-form-item>
+
+            <el-form-item label="云存储（备选）">
                 <div class="product-media-gallery">
                     <div v-if="form.media?.length" class="gallery-thumbs">
                         <div
@@ -1094,38 +1124,9 @@
                         <div class="el-upload__text">点击或拖拽视频到此处（≤ 60 秒 · ≤ 50MB · 最多 {{ MAX_MEDIA }} 段）</div>
                     </el-upload>
                     <el-progress v-if="videoUploadPct > 0" :percentage="videoUploadPct" :stroke-width="6" />
-                    <span class="sku-hint-muted">显示在小程序详情页顶部主图里（封面图之后）；店长端上传的视频也在这里。建议导出 720p、H.264、码率 ≤ 2.5Mbps，起播更快；封面自动截取第 0.5 秒画面。</span>
+                    <span class="sku-hint-muted">备选：没有视频号视频时用；显示在小程序详情页顶部主图里（封面图之后），流量计入云开发账单；店长端上传的视频也在这里。建议导出 720p、H.264、码率 ≤ 2.5Mbps，起播更快；封面自动截取第 0.5 秒画面。</span>
                 </div>
             </el-form-item>
-            <el-form-item label="外平台">
-                <div class="product-media-gallery">
-                    <div v-for="(v, idx) in form.externalVideos" :key="'ev-' + idx + '-' + (v.url || v.feedId)" class="ext-video-row">
-                        <el-tag size="small" :type="v.platform === 'channels' ? 'success' : 'info'">{{ externalLabel(v.platform) }}</el-tag>
-                        <el-input v-model="v.title" size="small" maxlength="40" placeholder="标题（选填）" class="ext-video-title" />
-                        <span class="sku-hint-muted ext-video-ref">{{ v.platform === 'channels' ? (v.finderUserName + ' · ' + v.feedId + (v.feedToken || v.sameSubject ? ' · 可内嵌' : ' · 跳转观看')) : v.url }}</span>
-                        <el-button size="small" link type="danger" @click="removeExternalVideo(idx)">删除</el-button>
-                    </div>
-                    <div v-if="(form.externalVideos?.length || 0) < MAX_EXTERNAL" class="ext-video-add">
-                        <el-radio-group v-model="externalDraft.kind" size="small">
-                            <el-radio-button value="link">B站 / 抖音 / 小红书链接</el-radio-button>
-                            <el-radio-button value="channels">视频号</el-radio-button>
-                        </el-radio-group>
-                        <template v-if="externalDraft.kind === 'link'">
-                            <el-input v-model="externalDraft.url" size="small" placeholder="粘贴分享链接或整段分享文案（自动提取 https 链接）" />
-                        </template>
-                        <template v-else>
-                            <el-input v-model="externalDraft.finderUserName" size="small" placeholder="视频号 ID（sph 开头）" />
-                            <el-input v-model="externalDraft.feedId" size="small" placeholder="视频 feedId" />
-                            <el-input v-model="externalDraft.feedToken" size="small" placeholder="feedToken（选填；非同主体内嵌必需）" />
-                            <el-checkbox v-model="externalDraft.sameSubject" size="small">视频号与小程序同主体</el-checkbox>
-                        </template>
-                        <el-input v-model="externalDraft.title" size="small" maxlength="40" placeholder="标题（选填）" />
-                        <el-button size="small" type="primary" plain @click="addExternalVideo">添加</el-button>
-                    </div>
-                    <span class="sku-hint-muted">视频号可在小程序内播放（同主体直接内嵌；非同主体需 feedToken，未填则显示为跳转卡片）；B站 / 抖音 / 小红书微信不允许在小程序内打开，详情页显示为卡片，顾客轻点复制链接。</span>
-                </div>
-            </el-form-item>
-
             <el-divider content-position="left">图文详情</el-divider>
             <el-form-item label="详情图">
                 <div class="product-media-gallery">
@@ -1939,7 +1940,24 @@ const maxBlessTags = MAX_BLESS_TAGS
 const productMediaUploading = ref(false)
 /** 实拍视频上传进度 0–100（0 = 不显示进度条） */
 const videoUploadPct = ref(0)
-const externalDraft = ref({ kind: 'link', url: '', title: '', finderUserName: '', feedId: '', feedToken: '', sameSubject: false })
+const FINDER_KEY = 'erp_channels_finder'
+const readSavedFinder = () => {
+    try {
+        return localStorage.getItem(FINDER_KEY) || ''
+    } catch (e) {
+        console.warn('[藏品视频] 读不到本机记住的视频号 ID（无痕模式等），需手填', e)
+        return ''
+    }
+}
+const saveFinder = (v) => {
+    try {
+        if (v) localStorage.setItem(FINDER_KEY, v)
+    } catch (e) {
+        console.warn('[藏品视频] 本机记不住视频号 ID（无痕模式等），不影响录入', e)
+    }
+}
+// 默认录视频号、默认同主体（主方案）；视频号 ID 记在本机，下次只需填 feedId
+const externalDraft = ref({ kind: 'channels', url: '', title: '', finderUserName: readSavedFinder(), feedId: '', feedToken: '', sameSubject: true })
 /** before-upload 读到的元数据，交给 http-request 用（同一 File 对象） */
 const pendingVideoMeta = new WeakMap()
 const latinAiLoading = ref(false)
@@ -4094,7 +4112,8 @@ const addExternalVideo = () => {
         return
     }
     form.value.externalVideos = [...(form.value.externalVideos || []), res.item]
-    externalDraft.value = { kind: externalDraft.value.kind, url: '', title: '', finderUserName: '', feedId: '', feedToken: '', sameSubject: externalDraft.value.sameSubject }
+    if (res.item.platform === 'channels') saveFinder(res.item.finderUserName)
+    externalDraft.value = { kind: externalDraft.value.kind, url: '', title: '', finderUserName: readSavedFinder(), feedId: '', feedToken: '', sameSubject: externalDraft.value.sameSubject }
 }
 
 const removeExternalVideo = (idx) => {

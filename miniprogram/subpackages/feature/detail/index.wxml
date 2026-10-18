@@ -126,6 +126,11 @@ module.exports.saveLabel = saveLabel;
     <view class="hero-badge-stack" wx:if="{{isProtected && !sensitiveVeiled}}">
       <protected-badge show="{{true}}" size="sm" corner="static" />
     </view>
+    <!-- 主片直达（2026-10-18）：有可内嵌的同主体视频号时，头图底部居中一枚「实拍视频」角标，轻点滚到价格卡下的主片 -->
+    <view class="hero-film-chip" wx:if="{{filmLead && !sensitiveVeiled}}" catchtap="scrollToFilms" hover-class="tap-press" hover-stay-time="80">
+      <view class="hero-film-tri" aria-hidden="true"></view>
+      <text>实拍视频</text>
+    </view>
     <view class="img-counter" wx:if="{{imageTotal > 1 && !sensitiveVeiled}}">{{imageIndex + 1}}/{{imageTotal}}</view>
     <view class="hero-overlay"></view>
     </block>
@@ -253,6 +258,42 @@ module.exports.saveLabel = saveLabel;
       </view>
     </view>
 
+    <!-- 实拍影像（2026-10-18 产品负责人点名；同日定为**详情页最主要的视频展示**）：紧接价格卡。
+         主方案 = 同主体视频号：第一条内嵌为大幅主片（头图有「实拍视频」角标直达）；其余视频号 / 外平台在其下。
+         非同主体视频号带 feedToken 也可内嵌，否则为跳转卡片；B站 / 抖音 / 小红书小程序内不能打开，只给卡片 + 复制链接。
+         云存储上传的视频仍在顶部主图里，这里只提示段数。 -->
+    <block wx:if="{{externalVideos.length}}">
+      <view class="section-title" id="films"><text class="st-en">FILMS</text><text class="st-zh">实拍影像</text></view>
+      <view class="films">
+        <block wx:for="{{externalVideos}}" wx:key="key">
+          <view class="film-embed {{item.lead ? 'is-lead' : ''}}" wx:if="{{item.embed}}">
+            <channel-video class="film-channel" feed-id="{{item.feedId}}" finder-user-name="{{item.finderUserName}}" feed-token="{{item.feedToken}}" autoplay="{{false}}" loop="{{false}}" muted="{{true}}" object-fit="contain" binderror="onChannelEmbedError" data-index="{{index}}"></channel-video>
+            <view class="film-cap">
+              <text class="film-cap-t">{{item.title}}</text>
+              <text class="film-cap-k">{{item.sameSubject ? '本馆视频号 · 实拍' : '视频号'}}</text>
+            </view>
+          </view>
+          <view class="film-card" wx:elif="{{item.platform === 'channels'}}" bindtap="openChannelsVideo" data-finder="{{item.finderUserName}}" data-feed="{{item.feedId}}" hover-class="tap-press" hover-stay-time="80">
+            <view class="film-play" aria-hidden="true"></view>
+            <view class="film-body">
+              <text class="film-title">{{item.title}}</text>
+              <text class="film-meta">视频号 · 轻点前往观看</text>
+            </view>
+            <text class="film-go">›</text>
+          </view>
+          <view class="film-card" wx:else bindtap="copyExternalVideo" data-url="{{item.url}}" data-label="{{item.label}}" hover-class="tap-press" hover-stay-time="80">
+            <view class="film-play is-ext" aria-hidden="true"></view>
+            <view class="film-body">
+              <text class="film-title">{{item.title}}</text>
+              <text class="film-meta">{{item.label}}{{item.bvid ? ' · ' + item.bvid : ''}} · 轻点复制链接</text>
+            </view>
+            <text class="film-go">复制</text>
+          </view>
+        </block>
+        <text class="films-hint" wx:if="{{heroVideoCount > 0}}">顶部主图另有 {{heroVideoCount}} 段实拍视频，左滑即看</text>
+      </view>
+    </block>
+
     <!-- 优惠券条：标签展示券面，右侧仅放操作文案，避免「可省」重复 -->
     <view class="coupon-strip" wx:if="{{showCouponStrip}}" bindtap="openCouponSheet" hover-class="coupon-strip-press" hover-stay-time="80">
       <view class="coupon-strip-label">优惠</view>
@@ -349,37 +390,6 @@ module.exports.saveLabel = saveLabel;
         <text>讲解</text>
       </view>
     </view>
-
-    <!-- 实拍影像（2026-10-18 产品负责人点名）：外平台实拍视频；云存储上传的实拍视频在顶部主图里，这里只提示段数。
-         视频号可小程序内嵌播放（需 feedToken）；B站 / 抖音 / 小红书小程序内不能打开，只给卡片 + 复制链接。 -->
-    <block wx:if="{{externalVideos.length}}">
-      <view class="section-title"><text class="st-en">FILMS</text><text class="st-zh">实拍影像</text></view>
-      <view class="films">
-        <text class="films-hint" wx:if="{{heroVideoCount > 0}}">顶部主图另有 {{heroVideoCount}} 段实拍视频，左滑即看</text>
-        <block wx:for="{{externalVideos}}" wx:key="key">
-          <view class="film-embed" wx:if="{{item.embed}}">
-            <channel-video class="film-channel" feed-id="{{item.feedId}}" finder-user-name="{{item.finderUserName}}" feed-token="{{item.feedToken}}" autoplay="{{false}}" loop="{{false}}" muted="{{true}}" object-fit="contain" binderror="onChannelEmbedError" data-index="{{index}}"></channel-video>
-            <text class="film-cap">{{item.title}} · 视频号</text>
-          </view>
-          <view class="film-card" wx:elif="{{item.platform === 'channels'}}" bindtap="openChannelsVideo" data-finder="{{item.finderUserName}}" data-feed="{{item.feedId}}" hover-class="tap-press" hover-stay-time="80">
-            <view class="film-play" aria-hidden="true"></view>
-            <view class="film-body">
-              <text class="film-title">{{item.title}}</text>
-              <text class="film-meta">视频号 · 轻点前往观看</text>
-            </view>
-            <text class="film-go">›</text>
-          </view>
-          <view class="film-card" wx:else bindtap="copyExternalVideo" data-url="{{item.url}}" data-label="{{item.label}}" hover-class="tap-press" hover-stay-time="80">
-            <view class="film-play is-ext" aria-hidden="true"></view>
-            <view class="film-body">
-              <text class="film-title">{{item.title}}</text>
-              <text class="film-meta">{{item.label}}{{item.bvid ? ' · ' + item.bvid : ''}} · 轻点复制链接</text>
-            </view>
-            <text class="film-go">复制</text>
-          </view>
-        </block>
-      </view>
-    </block>
 
     <!-- 商品参数 -->
     <view class="section-title"><text class="st-en">PARAMETERS</text><text class="st-zh">藏品参数</text></view>

@@ -21,5 +21,5 @@ npm run check:atlas-plates
 npm run check:achievement-tracks
 # 2026-10-18：馆藏「标本档案」第一批内容种子（scripts/specimen-archive-seeds/）：保护等级留空、合规选题、禁玄学与营销词、结构与篇幅、默认草稿；15 个内存注入
 npm run check:specimen-archive-seeds
-# 2026-10-18：藏品实拍视频 —— 外平台（视频号内嵌 / B站等仅卡片+复制链接）净化、ERP 录入与服务端同口径、保存不清库里视频、店长端不送 externalVideos；11 个内存注入
+# 2026-10-18：藏品实拍视频 —— 外平台（视频号内嵌 / B站等仅卡片+复制链接）净化、ERP 录入与服务端同口径、保存不清库里视频、店长端不送 externalVideos；同主体视频号为主方案（排序领衔 / 主片紧接价格卡 / 头图角标 / ERP 默认）；16 个内存注入
 npm run check:product-external-videos

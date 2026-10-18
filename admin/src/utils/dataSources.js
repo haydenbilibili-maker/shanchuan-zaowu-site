@@ -498,6 +498,7 @@ export const SOURCE_REGISTRY = {
   'local:sc_admin_pinned_modules': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
   'local:sc_admin_recent_modules': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
   'local:sc_admin_recent_collapsed': { concept: 'generic_config', role: 'ui-state', confidence: 'high' },
+  'local:erp_channels_finder': { concept: 'products', role: 'ui-state', confidence: 'high', note: '2026-10-18 藏品实拍视频：记住上次录入的本馆视频号 ID（只是录入便利，事实仍在 products.externalVideos）' },
   'local:ai_center_persona_panel': { concept: 'analytics', role: 'ui-state', confidence: 'medium' },
   'local:ai_center_recent_features': { concept: 'analytics', role: 'ui-state', confidence: 'medium' },
   'local:ai_center_recent_tasks': { concept: 'analytics', role: 'ui-state', confidence: 'medium' },

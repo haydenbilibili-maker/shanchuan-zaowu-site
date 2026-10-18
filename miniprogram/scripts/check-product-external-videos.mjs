@@ -13,6 +13,7 @@
  *   E. 详情页：外平台只做卡片 + 复制链接 / 视频号跳转，不出现 web-view / navigateToMiniProgram；
  *      视频号只有带 feedToken 才内嵌；不读 .media（media 归主图轮播，守卫 check:product-media）。
  *   F. cloudbase/schema/products.md 登记了 externalVideos。
+ *   G.（同日追加）主方案 = 同主体视频号：排序领衔、主片大幅紧接价格卡、头图角标直达、ERP 默认视频号 + 同主体（E5 / E6 / C3）。
  *
  * 自检在内存副本上注入（不写盘）。
  * 用法：node miniprogram/scripts/check-product-external-videos.mjs [--selftest]
@@ -123,9 +124,33 @@ async function checks(s) {
       { platform: 'youtube', url: 'https://youtube.com/x' }
     ])
     const same = det.buildExternalVideos([{ platform: 'channels', finderUserName: 'sphA1b2', feedId: 'f777777', sameSubject: true }])
-    e1 = v.length === 3 && v[0].label === '哔哩哔哩' && !v[0].embed && !v[1].embed && v[2].embed && same[0].embed && det.buildExternalVideos(null).length === 0
+    e1 = v.length === 3 && v[2].label === '哔哩哔哩' && !v[2].embed && !v[0].embed && v[1].embed && same[0].embed && det.buildExternalVideos(null).length === 0
   } catch (e) { e1 = false }
   add('E1 详情页视图模型：只认四个平台；视频号同主体或带 feedToken 才内嵌', e1)
+  let e5 = false
+  try {
+    const r = det.buildExternalVideos([
+      { platform: 'bilibili', url: 'https://b23.tv/x' },
+      { platform: 'channels', finderUserName: 'sphA1b2', feedId: 'other01', feedToken: 'tok_abcdef' },
+      { platform: 'channels', finderUserName: 'sphShop', feedId: 'same01', sameSubject: true }
+    ])
+    const none = det.buildExternalVideos([{ platform: 'channels', finderUserName: 'sphA1b2', feedId: 'other01', feedToken: 'tok_abcdef' }])
+    e5 = r.map((x) => x.feedId || x.platform).join() === 'same01,other01,bilibili' && r[0].lead && !r[1].lead && !r[2].lead && !none[0].lead
+  } catch (e) { e5 = false }
+  add('E5 主方案 = 同主体视频号：排序 同主体视频号 → 其它视频号 → 外平台；只有同主体那条是主片（lead）', e5)
+  {
+    const iFilms = s.detailWxml.indexOf('<view class="section-title" id="films">')
+    const iInfoEnd = s.detailWxml.indexOf('<!-- 服务保障 -->')
+    const iCoupon = s.detailWxml.indexOf('<!-- 优惠券条')
+    add('E6 实拍影像紧接价格卡（在优惠券 / 规格之前）；主片大幅；头图「实拍视频」角标只在有主片时出现并直达',
+      iInfoEnd > 0 && iFilms > iInfoEnd && iFilms < iCoupon &&
+        /class="film-embed \{\{item\.lead \? 'is-lead' : ''\}\}"/.test(s.detailWxml) &&
+        /class="hero-film-chip" wx:if="\{\{filmLead && !sensitiveVeiled\}\}" catchtap="scrollToFilms"/.test(s.detailWxml) &&
+        /filmLead: filmRows\.some\(\(f\) => f\.lead\),/.test(s.detailJs) && /selector: '#films'/.test(s.detailJs))
+  }
+  add('C3 ERP 录入默认视频号 + 同主体，视频号录入排在云存储上传之前',
+    /const externalDraft = ref\(\{ kind: 'channels', [^\n]*sameSubject: true \}\)/.test(s.adminApp) &&
+      s.adminApp.indexOf('label="视频号 / 外平台"') > 0 && s.adminApp.indexOf('label="视频号 / 外平台"') < s.adminApp.indexOf('label="云存储（备选）"'))
   add('E4 视频号内嵌报错就地降级成卡片，不自动跳离详情页',
     /binderror="onChannelEmbedError"/.test(s.detailWxml) && /onChannelEmbedError\(e\) \{[\s\S]{0,240}\.embed`\]: false/.test(s.detailJs) && !/binderror="openChannelsVideo"/.test(s.detailWxml))
   add('E2 详情页不内嵌外平台网页、不跳外部小程序；B站等卡片走复制链接；视频号内嵌带 feed-token',
@@ -133,7 +158,7 @@ async function checks(s) {
       /bindtap="copyExternalVideo" data-url="\{\{item\.url\}\}"/.test(s.detailWxml) &&
       /<channel-video [^>]*feed-token="\{\{item\.feedToken\}\}"/.test(s.detailWxml) &&
       /wx\.setClipboardData\(\{\s*data: url,/.test(s.detailJs))
-  add('E3 详情页视图模型不读 .media（media 归主图轮播）', !/\.media\b/.test(s.detailUtil) && /externalVideos: buildExternalVideos\(data\.externalVideos\),/.test(s.detailJs))
+  add('E3 详情页视图模型不读 .media（media 归主图轮播）', !/\.media\b/.test(s.detailUtil) && /const filmRows = buildExternalVideos\(data\.externalVideos\);/.test(s.detailJs) && /externalVideos: filmRows,/.test(s.detailJs))
 
   // F
   add('F1 cloudbase/schema/products.md 登记 externalVideos', /\| `externalVideos` \|/.test(s.schema))
@@ -152,6 +177,10 @@ const INJ = [
   ['详情页视频号无 token 也内嵌', 'detailUtil', (t) => t.replace("embed: v.platform === 'channels' && !!(v.feedToken || v.sameSubject)", "embed: v.platform === 'channels'")],
   ['详情页改用 web-view 打开 B站', 'detailWxml', (t) => t.replace('<view class="films">', '<view class="films"><web-view src="https://www.bilibili.com"></web-view>')],
   ['视频号内嵌报错改成自动跳走', 'detailWxml', (t) => t.replace('binderror="onChannelEmbedError" data-index="{{index}}"', 'binderror="openChannelsVideo" data-index="{{index}}"')],
+  ['排序回到录入顺序（同主体视频号不再领衔）', 'detailUtil', (t) => t.replace('.sort((a, b) => rankOf(a.v) - rankOf(b.v) || a.i - b.i)', '')],
+  ['非同主体视频号也当主片', 'detailUtil', (t) => t.replace("const leadAt = rows.findIndex((v) => v.platform === 'channels' && v.sameSubject);", "const leadAt = rows.findIndex((v) => v.platform === 'channels');")],
+  ['实拍影像挪回藏品参数前', 'detailWxml', (t) => t.replace('<view class="section-title" id="films">', '<view class="section-title" id="films-x">').replace('<!-- 商品参数 -->', '<view class="section-title" id="films"></view><!-- 商品参数 -->')],
+  ['ERP 默认改回外平台链接', 'adminApp', (t) => t.replace("const externalDraft = ref({ kind: 'channels',", "const externalDraft = ref({ kind: 'link',")],
   ['schema 漏登记', 'schema', (t) => t.replace('| `externalVideos` |', '| `extVideos` |')]
 ]
 

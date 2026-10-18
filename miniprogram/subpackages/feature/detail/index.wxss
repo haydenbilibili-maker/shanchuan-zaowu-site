@@ -1864,3 +1864,41 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 .film-meta { display: block; margin-top: 6rpx; font-size: var(--fs-22); color: var(--color-text-secondary); }
 .film-go { flex-shrink: 0; font-size: var(--fs-24); color: var(--brass-300); }
+
+/* 主方案 = 同主体视频号（2026-10-18）：主片大幅（视频号实拍多为竖 3:4，取 5:6 折中，contain 不裁）；标题 + 「本馆视频号 · 实拍」 */
+.film-embed.is-lead .film-channel { height: 820rpx; }
+.film-cap { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
+.film-cap-t {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-26);
+  color: var(--color-text-body);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.film-cap-k { flex-shrink: 0; font-size: var(--fs-20); letter-spacing: 0.08em; color: var(--brass-300); }
+.hero-film-chip {
+  position: absolute;
+  left: 50%;
+  bottom: 96rpx;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 8rpx 22rpx 8rpx 18rpx;
+  transform: translateX(-50%);
+  background: rgba(26, 24, 20, 0.62);
+  border: 1rpx solid rgba(212, 188, 133, 0.55);
+  border-radius: 9999px;
+  font-size: var(--fs-22);
+  letter-spacing: 0.08em;
+  color: var(--brass-200);
+}
+.hero-film-tri {
+  width: 0;
+  height: 0;
+  border-left: 14rpx solid var(--brass-300);
+  border-top: 9rpx solid transparent;
+  border-bottom: 9rpx solid transparent;
+}
