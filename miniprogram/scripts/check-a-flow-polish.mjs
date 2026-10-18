@@ -76,7 +76,9 @@ const FILES = {
   shareholderWxss: 'subpackages/extra/shareholder/index.wxss',
   investorWxss: 'subpackages/extra/investor/index.wxss',
   staffHubWxml: 'subpackages/extra/staff/index.wxml',
-  staffHubWxss: 'subpackages/extra/staff/index.wxss'
+  staffHubWxss: 'subpackages/extra/staff/index.wxss',
+  mgrHubNavWxss: 'subpackages/manager/manager/hubNav.wxss',
+  mgrWxss: 'subpackages/manager/manager/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -297,6 +299,14 @@ function checks(s) {
       /\n\.link-row \.link-btn \{[^}]*border-radius: 4rpx;/.test(s.staffHubWxss) &&
       /\n\.link-btn \.scene-badge \{[^}]*background: #1A1814;[^}]*var\(--ring-brass\)/.test(s.staffHubWxss) &&
       /\n\.scene-header \.picker-inner \{[^}]*background: transparent;/.test(s.staffHubWxss))
+  // 2026-10-18 店长 / 超管工作台（同一页 manager/manager，按角色出看板）：容器方角、常用为开放分区；
+  // 4 列圆形图标宫格与红色数字角标是 2026-10-10 产品负责人口径，归 check:hub-entries 守，这里不碰
+  add('R29-1 店长工作台：待处理 / 金卡 / 经营信号 / 分类卡方角，常用去盒改开放分区，胶囊签改方签，宋体主标',
+    /\n\.hub-todo \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) && /\n\.hub-todo-chip \{[^}]*border-radius: 2rpx;/.test(s.mgrHubNavWxss) &&
+      /\n\.hub-fav \{\s*padding: 0;/.test(s.mgrHubNavWxss) && /\n\.hub-fav-edit \{[^}]*border-radius: 2rpx;/.test(s.mgrHubNavWxss) &&
+      /\n\.hub-grp \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) &&
+      /\.sub-welcome \{ font-family: var\(--font-brand\);/.test(s.mgrWxss) && /\n\.kpi-card \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) &&
+      /\n\.ops-signal-board \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) && /\n\.hub-scan-btn \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -560,6 +570,8 @@ if (process.argv.includes('--selftest')) {
     ['股东观测台卡片回到大圆角', 'shareholderWxss', (t) => t.replace('.verdict-card {\n  background: var(--color-bg-card, #1F1D1A);\n  border: 1rpx solid var(--brass-800, #4D401A);\n  border-radius: 4rpx;', '.verdict-card {\n  background: var(--color-bg-card, #1F1D1A);\n  border: 1rpx solid var(--brass-800, #4D401A);\n  border-radius: var(--radius-lg, 24rpx);')],
     ['店员分区头回到中英同行', 'staffHubWxml', (t) => t.replace('<view class="group-head"><text class="group-en">{{item.en}}</text><text class="group-cn">{{item.title}}</text></view>', '<view class="panel-title sub">{{item.title}} / {{item.en}}</view>')],
     ['店员角标回到实心金', 'staffHubWxss', (t) => t.replace('  background: #1A1814;\n  box-shadow: var(--ring-brass);', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass);')],
+    ['店长常用回到金边盒', 'mgrHubNavWxss', (t) => t.replace('.hub-fav {\n  padding: 0;', '.hub-fav {\n  background: #262017;\n  border-radius: var(--radius-lg);\n  padding: 0;')],
+    ['店长金卡回到大圆角', 'mgrWxss', (t) => t.replace('border-radius: 4rpx; padding: 40rpx;', 'border-radius: var(--radius-lg); padding: 40rpx;')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

@@ -88,6 +88,12 @@ function cut(src, startMarks, endMark) {
 }
 
 function segments(src, overlay) {
+  // 2026-10-18 整屏看板（页头 → 待处理 → 金卡 → 经营信号 → 扫码 → 常用 → 功能入口），供逐个工作台视觉对齐出图
+  if (overlay === 'full') {
+    const top = cut(src, ['<!-- 头部问候与日期'], '<!-- 瀑布流布局容器')
+    const menu = cut(src, ['<!-- 功能入口', '<!-- 快捷菜单'], '<!-- 数据图表')
+    return `<view class="container"><view class="content-area dashboard-view">${top}<view class="dashboard-grid">${menu}</view></view></view>`
+  }
   // 2026-10-02：金卡已上移；扫码 + 常用在搜索 / 待办之后、瀑布流之前
   const cta = cut(src, ['<!-- 首屏主 CTA'], '<!-- 瀑布流布局容器')
   const menu = cut(src, ['<!-- 功能入口', '<!-- 快捷菜单'], '<!-- 数据图表')
@@ -138,7 +144,14 @@ if (beforeRev) {
   const git = (rel) => execFileSync('git', ['show', `${beforeRev}:${rel}`], { cwd: ROOT, encoding: 'utf8' })
   scenes.push({ name: 'before-super', wxml: git(REL_WXML), wxssText: git(REL_WXSS), h: 2000, data: dataFor(roles.WORKSPACE_SUPER_ADMIN) })
 }
+const FULL = {
+  greeting: '下午好', staffName: '林岚', todayDate: '10月18日 周六', workspaceReady: true,
+  stats: { displayGrand: '128,640', onlineTotal: '86,240', offlineTotal: '42,400', offlineSplitText: '现金 12,400 · 扫码 30,000' },
+  opsSignalExpanded: false,
+  opsSignalSummary: { worstLamp: 'warn', attentionCount: 2, label: '2 项待关注', chips: [{ id: 'a', lamp: 'warn', text: '待发订单 3', target: 'pending' }, { id: 'b', lamp: 'danger', text: '售后 1', target: 'aftersale' }] }
+}
 scenes.push(
+  { name: 'full-manager', wxml: afterWxml, h: 2600, overlay: 'full', data: dataFor(roles.WORKSPACE_STORE_MANAGER, FULL) },
   { name: 'after-super', wxml: afterWxml, h: 2700, data: dataFor(roles.WORKSPACE_SUPER_ADMIN) },
   { name: 'after-manager', wxml: afterWxml, h: 1500, data: dataFor(roles.WORKSPACE_STORE_MANAGER) },
   {

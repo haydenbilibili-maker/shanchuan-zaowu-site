@@ -108,7 +108,7 @@
 .hub-todo {
   background: linear-gradient(135deg, #3B301C 0%, #261F15 100%);
   border: 1rpx solid rgba(196, 167, 108, 0.5);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;  /* 2026-10-18 视觉对齐：方角（原 radius-lg） */
   padding: 22rpx 0 22rpx 24rpx;
   margin-bottom: 24rpx;
 }
@@ -129,10 +129,10 @@
 .hub-todo-chip {
   display: inline-flex;
   align-items: center;
-  height: 72rpx;
-  padding: 0 18rpx 0 24rpx;
-  margin-right: 14rpx;
-  border-radius: 36rpx;
+  height: 68rpx;
+  padding: 0 16rpx 0 22rpx;
+  margin-right: 12rpx;
+  border-radius: 2rpx;
   background: rgba(20, 18, 14, 0.5);
   border: 1rpx solid rgba(196, 167, 108, 0.32);
 }
@@ -154,29 +154,29 @@
   color: #B9AD96;
 }
 
-/* ── 我的常用（首屏核心）：4 列大图标，「编辑」是唯一的增删入口 ── */
+/* ── 我的常用（首屏核心）：4 列大图标，「编辑」是唯一的增删入口 ──
+   2026-10-18 视觉对齐：去掉金边大圆角盒，改为开放分区（眉标 + 宋体 + 渐隐金线），与「全部功能」同级 */
 .hub-fav {
-  background: #262017;
-  border: 1rpx solid rgba(196, 167, 108, 0.4);
-  border-radius: var(--radius-lg);
-  padding: 22rpx 16rpx 12rpx;
-  margin-bottom: 28rpx;
+  padding: 0;
+  margin-bottom: 36rpx;
 }
 .hub-fav-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  padding: 0 8rpx;
-  margin-bottom: 12rpx;
+  padding: 0 4rpx 16rpx;
+  margin-bottom: 16rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(196, 167, 108, 0.12) 60%, transparent) left bottom / 100% 1px no-repeat;
 }
 .hub-fav-edit {
-  height: 60rpx;
-  line-height: 58rpx;
-  padding: 0 30rpx;
-  border-radius: 30rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.5);
-  font-size: var(--fs-24);
-  color: #E0C58A;
+  height: 52rpx;
+  line-height: 52rpx;
+  padding: 0 24rpx;
+  border-radius: 2rpx;
+  box-shadow: var(--ring-brass-soft);
+  font-size: var(--fs-22);
+  letter-spacing: 0.08em;
+  color: var(--brass-200);
 }
 .hub-grid--fav {
   display: grid;
@@ -205,7 +205,7 @@
   position: absolute;
   top: -8rpx;
   right: -14rpx;
-  border: 2rpx solid #262017;
+  border: 2rpx solid #1A1814;
 }
 .hub-tile > text {
   display: block;
@@ -251,8 +251,9 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 0 4rpx;
+  padding: 0 4rpx 16rpx;
   margin-bottom: 18rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(196, 167, 108, 0.12) 60%, transparent) left bottom / 100% 1px no-repeat;
 }
 .hub-cat-side {
   display: flex;
@@ -266,17 +267,17 @@
 .hub-cat-toggle {
   margin-left: 16rpx;
   height: 52rpx;
-  line-height: 50rpx;
+  line-height: 52rpx;
   padding: 0 22rpx;
-  border-radius: 26rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.5);
+  border-radius: 2rpx;
+  box-shadow: var(--ring-brass-soft);
   font-size: var(--fs-22);
-  color: #E0C58A;
+  color: var(--brass-200);
 }
 .hub-grp {
-  background: #211E19;
-  border: 1rpx solid rgba(196, 167, 108, 0.14);
-  border-radius: var(--radius-lg);
+  background: rgba(243, 236, 221, 0.02);
+  border: 1rpx solid rgba(196, 167, 108, 0.16);
+  border-radius: 4rpx;
   padding: 0 18rpx;
   margin-bottom: 20rpx;
 }
