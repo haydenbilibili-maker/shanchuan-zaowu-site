@@ -1,5 +1,9 @@
 @import '../utils/supplier-common.wxss';
 
+/* 2026-10-18 视觉对齐（产品负责人点名「继续重构采购商子页面」；与采购商工作台 supplier-common 同口径，只改样式）：
+   方角（卡 4rpx / 签 2rpx）、标题宋体、数量金额等宽暖金；列表项不给实心金。
+   本页唯一实心金 = 底栏「提交」；横幅的成功绿 / 错误红为反馈语义，保留。 */
+
 .header.compact {
   padding-bottom: var(--space-3);
 }
@@ -7,7 +11,7 @@
 .banner {
   margin-bottom: var(--space-3);
   padding: 20rpx 24rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   font-size: var(--fs-24);
   line-height: 1.45;
 }
@@ -35,19 +39,24 @@
   display: flex;
   flex-direction: column;
   margin-bottom: var(--space-3);
+  padding-bottom: 14rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(196, 167, 108, 0.12) 60%, transparent) left bottom / 100% 1px no-repeat;
 }
 
 .sec-en {
+  font-family: var(--font-mono);
   font-size: var(--fs-18);
-  letter-spacing: 0.14em;
-  color: var(--color-text-secondary, #A09A90);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .sec-cn {
-  margin-top: 4rpx;
-  font-size: var(--fs-26);
+  margin-top: 6rpx;
+  font-family: var(--font-brand);
+  font-size: 34rpx;
   font-weight: 500;
-  color: var(--color-text-primary);
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .cart-list {
@@ -60,16 +69,17 @@
   align-items: flex-start;
   gap: 16rpx;
   padding: 22rpx 0;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .cart-thumb {
   width: 96rpx;
   height: 96rpx;
   flex-shrink: 0;
-  border-radius: var(--radius-sm);
+  border-radius: 4rpx;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.04);
+  background: #1F1D1A;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
 }
 
 .cart-thumb image {
@@ -100,15 +110,16 @@
 }
 
 .cart-name {
+  font-family: var(--font-brand);
   font-size: var(--fs-28);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
   line-height: 1.3;
 }
 
 .cart-pack {
   font-size: var(--fs-22);
-  color: var(--brass-600);
+  color: var(--brass-300);
 }
 
 .cart-unit {
@@ -125,8 +136,9 @@
 }
 
 .cart-line-total {
+  font-family: var(--font-mono);
   font-size: var(--fs-26);
-  color: var(--brass-500, var(--brass-600));
+  color: var(--brass-200);
   font-variant-numeric: tabular-nums;
 }
 
@@ -134,8 +146,8 @@
   display: flex;
   align-items: center;
   height: 52rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3);
   overflow: hidden;
 }
 
@@ -178,14 +190,14 @@
 
 .form-card {
   padding: 8rpx 20rpx 4rpx;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-radius: 4rpx;
+  background: #1F1D1A;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
 }
 
 .form-row {
   padding: 16rpx 0;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .form-row.last {
@@ -195,15 +207,17 @@
 .form-label {
   display: block;
   margin-bottom: 8rpx;
-  font-size: var(--fs-20);
-  letter-spacing: 0.04em;
-  color: var(--color-text-secondary, #A09A90);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.2em;
+  color: var(--brass-300);
 }
 
 .form-input {
   height: 56rpx;
   width: 100%;
-  color: var(--color-text-primary);
+  background: transparent;
+  color: #F3ECDD;
   font-size: var(--fs-28);
 }
 
@@ -217,7 +231,7 @@
   right: 0;
   bottom: 0;
   padding: 18rpx var(--space-4) calc(18rpx + env(safe-area-inset-bottom));
-  background: rgba(10, 10, 12, 0.97);
+  background: rgba(26, 24, 20, 0.98);
   border-top: 1rpx solid rgba(196, 167, 108, 0.22);
   display: flex;
   flex-direction: column;
@@ -244,9 +258,10 @@
 }
 
 .checkout-total-val {
+  font-family: var(--font-mono);
   font-size: var(--fs-36);
-  font-weight: 500;
-  color: var(--brass-500, var(--brass-600));
+  font-weight: 600;
+  color: var(--brass-200);
   font-variant-numeric: tabular-nums;
 }
 
@@ -267,20 +282,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   font-size: var(--fs-28);
 }
 
 .btn-ghost {
-  border: 1rpx solid rgba(255, 255, 255, 0.16);
-  color: var(--color-text-primary);
+  box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.4);
+  color: var(--color-text-body, #D5D1C8);
+  letter-spacing: 0.08em;
 }
 
 .btn-primary {
   flex: 1.35;
-  background: var(--brass-500);  /* 深字压 brass-600 仅 4.07:1 → 提一档 ≈5.3:1 */
-  color: #1a1408;
-  font-weight: 500;
+  background: var(--brass-400);
+  color: #1A1814;
+  font-weight: 600;
+  letter-spacing: 0.12em;
 }
 
 .btn-press {

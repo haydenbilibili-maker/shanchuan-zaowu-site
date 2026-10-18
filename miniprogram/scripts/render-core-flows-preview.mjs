@@ -562,7 +562,18 @@ const SCENES = [
   // 2026-10-18 采购商工作台（员工 / 合作方端，点名）
   { name: 'supplier-desk', h: 1700, wxml: 'subpackages/extra/supplier/index', data: { ready: true, staffName: '长白山店 · 王店长', isPreview: false, modeLabel: '采购商', demoOn: false, roleHint: '向总部采购价目内藏品；下单后在「我的采购单」支付与跟进。', features: null, cartCount: 2,
       buyerModules: [{ key: 'catalog', title: '价目选购', desc: '按总部价目挑选，可加入采购车', icon: '/assets/icons/tab-collection.png' }, { key: 'buyer-cart', title: '采购车', desc: '确认数量与收货信息后下单', icon: '/assets/icons/cart.png', badge: 2 }, { key: 'buyer-orders', title: '我的采购单', desc: '待支付 1 · 已发货 3', icon: '/assets/icons/order.png' }],
-      showSupplierSection: true, supplierOpen: true, visibleSupplierModules: [{ key: 'orders', title: '供货需求', desc: '总部发给供货方的需求单', icon: '/assets/icons/order.png' }, { key: 'ship', title: '发货登记', desc: '填写物流单号', icon: '/assets/icons/gift.png' }], isBuyer: true } }
+      showSupplierSection: true, supplierOpen: true, visibleSupplierModules: [{ key: 'orders', title: '供货需求', desc: '总部发给供货方的需求单', icon: '/assets/icons/order.png' }, { key: 'ship', title: '发货登记', desc: '填写物流单号', icon: '/assets/icons/gift.png' }], isBuyer: true } },
+  // 2026-10-18 采购商子页（价目选购 / 采购车 / 我的采购单）
+  { name: 'buyer-catalog', h: 1500, wxml: 'subpackages/extra/supplier/catalog/index', data: { ready: true, loading: false, loadError: false, isPreview: false, cartCount: 3, flash: '已加入采购车 · 光明女神闪蝶 × 2', flashKind: 'ok', staffName: '王店长',
+      items: [{ name: '光明女神闪蝶 · A1 博物级', priceText: '¥680', packText: '1 只 / 盒', meta: '起订 2 · 现货', thumbUrl: P[0], orderable: true, qty: 2, inCart: 2, addLabel: '已在采购车' },
+        { name: '蓝闪蝶木框', priceText: '¥320', packText: '1 框 / 箱', meta: '起订 1 · 7 天发货', thumbUrl: P[2], orderable: true, qty: 1, inCart: 0, addLabel: '加入采购车' },
+        { name: '蝶植组合框', priceText: '¥460', packText: '1 框 / 箱', meta: '本季未开放订货', thumbUrl: P[5], orderable: false, qty: 1, inCart: 0, addLabel: '暂不可订' }] } },
+  { name: 'buyer-cart', h: 1900, wxml: 'subpackages/extra/supplier/buyer-cart/index', data: { ready: true, isPreview: false, banner: '', bannerKind: '', itemCount: 3, totalText: '¥1,680', company: '长白山店', contactName: '王店长', contactPhone: '138 0000 2201', shipToAddress: '吉林省白山市长白山景区游客中心 B 座 12 号', note: '',
+      items: [{ skuId: 'a', name: '光明女神闪蝶 · A1 博物级', packText: '1 只 / 盒', unitText: '¥680 / 盒', quantity: 2, lineTotalText: '¥1,360', thumbUrl: P[0] }, { skuId: 'b', name: '蓝闪蝶木框', packText: '1 框 / 箱', unitText: '¥320 / 箱', quantity: 1, lineTotalText: '¥320', thumbUrl: P[2] }] } },
+  { name: 'buyer-orders', h: 1900, wxml: 'subpackages/extra/supplier/buyer-orders/index', data: { ready: true, loadError: false, isPreview: false, unpaidCount: 1, cartCount: 0, banner: '', bannerKind: '',
+      filters: [{ key: 'all', label: '全部', on: true }, { key: 'unpaid', label: '待支付' }, { key: 'shipping', label: '已发货' }, { key: 'done', label: '已完成' }],
+      list: [{ id: 'o1', orderNo: 'PO20261018002', payTone: 'warn', paymentText: '待支付', itemsBrief: '光明女神闪蝶 × 2 · 蓝闪蝶木框 × 1', fulfillText: '待支付后备货', nextStep: '下一步：完成微信支付，总部当日备货', amountText: '¥1,680', timeText: '10.18 10:24', canPay: true, canAct: true },
+        { id: 'o2', orderNo: 'PO20261009011', payTone: 'ok', paymentText: '已支付', itemsBrief: '血漪蝶穹顶 × 4', fulfillText: '已发货 · 顺丰 SF1234567890', nextStep: '', amountText: '¥2,720', timeText: '10.09 16:02', canPay: false, canAct: true }] } }
 ]
 
 async function shoot(s) {
