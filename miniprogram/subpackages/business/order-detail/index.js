@@ -25,6 +25,7 @@ const { buildGuideUrl } = require('../utils/careDefaults');
 const { ensureOpenId, isOrderOwnedBy, isGiftReceiverOf, canAccessOrder, denyOrderAccess } = require('../../../utils/orderScope');
 const { formatPickupTime } = require('../utils/pickupPass');
 const { resolveCertRole } = require('../utils/giftHolder');
+const { buildJourney } = require('./specimenJourney');
 const { fetchStoreCatalog, findCatalogStore } = require('../../../utils/storeCatalog');
 const shippingConfig = require('../../../config/shipping');
 const {
@@ -145,6 +146,11 @@ Page(withAppModal({
     /** 当前用户是否为礼赠受赠人（非付款人） */
     isGiftReceiver: false,
     certRole: 'holder',
+    /** 标本旅程四站（specimenJourney.js）；arriveLive 只在本页亲手签收那一刻为 true */
+    journey: [],
+    arriveLive: false,
+    /** 签收入藏卡：亲手签收成功后出现一次 */
+    archiveCard: { show: false, title: '', date: '', points: 0 },
     /** 受礼人待填址 */
     giftReceiverNeedsAddress: false,
     /** 是否展示金额（受赠人 + hidePrice 时隐藏） */
@@ -466,6 +472,7 @@ Page(withAppModal({
 
       this.setData({ 
         order: orderPayload,
+        journey: buildJourney({ ...data, logistics: data.logistics || {} }),
         hasTracking,
         waybillToken,
         canOpenWxTrack,
@@ -953,10 +960,27 @@ Page(withAppModal({
         const orderSnapshot = { ...this.data.order };
         const care = await confirmReceiptOnOrder(this.data.order._id, orderSnapshot);
         await this.loadOrderDetail(this.data.order._id);
+        const points = (care && care.pointsGranted) || 0;
+        if (this.data.order.status === 'received' && this.data.certRole !== 'giver') {
+          // 亲手签收：旅程「抵达」站当场落「已达」印 + 一张入藏卡（积分写进卡里，不再另弹 toast）
+          const first = (this.data.order.products || [])[0] || {};
+          const pad = (n) => String(n).padStart(2, '0');
+          const now = new Date();
+          this.setData({
+            arriveLive: true,
+            archiveCard: {
+              show: true,
+              title: first.title || '珍藏藏品',
+              date: `${now.getFullYear()}.${pad(now.getMonth() + 1)}.${pad(now.getDate())}`,
+              points
+            }
+          });
+          return;
+        }
         // 确认收货赠分提示（与门店同规则，按订单幂等）
-        if (care && care.pointsGranted > 0) {
+        if (points > 0) {
           wx.showToast({
-            title: `已签收，获赠 ${care.pointsGranted} 积分`,
+            title: `已签收，获赠 ${points} 积分`,
             icon: 'none',
             duration: 2600
           });
@@ -1032,6 +1056,18 @@ Page(withAppModal({
   },
 
   // 查看证书 (跳转证书页)
+  noop() {},
+
+  closeArchiveCard() {
+    this.setData({ 'archiveCard.show': false });
+  },
+
+  /** 入藏卡 →「查看证书」 */
+  openCertFromCard() {
+    this.setData({ 'archiveCard.show': false });
+    this.viewCertificate();
+  },
+
   viewCertificate() {
     wx.vibrateShort({ type: 'heavy' });
     const orderId = this.data.order._id;

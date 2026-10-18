@@ -141,6 +141,8 @@ Page({
     /** 超管是否允许顾客切换「隐藏价格」；false 时强制隐价 */
     allowHidePriceToggle: true,
     paying: false,
+    /** 礼笺已封缄（交付后返回本页时仍显示火漆；点卡面拆封） */
+    letterSealed: false,
     /** 分步编排（2026-10-12，§15 起两步）：当前步 1 选礼 / 2 写笺（交付与支付在确认页）；maxStep = 已到过的最远一步（步骤轨只能点回 ≤ 它的步） */
     statusBarHeight: 20,
     navBarHeight: 44,
@@ -1202,6 +1204,11 @@ Page({
    * 第 2 步「下一步 · 交付与支付」→ 确认页（§15：交付方式 / 地址 / 门店 / 领取核验都在确认页录入与校验）。
    * giftDraft = 上次在确认页填过的交付草稿（确认页返回时经 saveGiftDeliveryDraft 交回），再进入原样带回
    */
+  /** 再动礼笺（点卡面任一处）即拆封：封缄只表示「这一版已交付」 */
+  unsealLetter() {
+    if (this.data.letterSealed) this.setData({ letterSealed: false })
+  },
+
   goPay() {
     if (this.data.paying || this.data.voiceUploading) return
     if (this.data.activeStep !== 2) return
@@ -1219,7 +1226,9 @@ Page({
 
     const sku = this.data.selectedSku
     const count = this.data.count || 1
-    this.setData({ paying: true })
+    // 封缄（2026-10-18 方向池 ★★，礼赠链路在点名范围内，只做展示）：交付那一刻礼笺落一枚火漆；
+    // 跳转照旧同步进行（不延时、不改交给确认页的 giftMeta），返回时礼笺保持封缄，再动笔即拆封
+    this.setData({ paying: true, letterSealed: true })
     trackBehavior('gift_pay_click', 'product', p._id, {
       deliveryType,
       hidePrice: this.data.hidePrice,

@@ -1,5 +1,6 @@
 const { formatCloudFnError } = require('../../utils/storePoints')
 const { initStaffStores, applyStoreChange, formatTime, statusTextReimburse, resolveStoreFromQuery } = require('../utils/pageSetup')
+const { monthSummary, applyStamps, money } = require('./reimburseLedger')
 
 Page({
   data: {
@@ -14,6 +15,8 @@ Page({
     form: { amount: '', remark: '' },
     images: [],
     list: [],
+    /** 本月合计（reimburseLedger.monthSummary）；无本月记录时 count 为 0 → 整条不出现 */
+    summary: null,
     submitting: false
   },
 
@@ -115,12 +118,13 @@ Page({
         data: { action: 'reimburseList' }
       })
       const result = (res && res.result) || {}
-      const list = (result.list || []).map((row) => ({
+      const rows = (result.list || []).map((row) => ({
         ...row,
+        amountText: money(row.amount),
         timeText: formatTime(row.createTime),
         statusLabel: statusTextReimburse(row.status)
       }))
-      this.setData({ list })
+      this.setData({ list: applyStamps(rows, wx), summary: monthSummary(rows) })
     } catch (e) {
       wx.showToast({ title: formatCloudFnError(e, '列表加载失败'), icon: 'none' })
     }

@@ -379,6 +379,7 @@ function assertCustomerCanSeePhotos() {
     loadError: false,
     digestView: null,
     digestPayloadMissing: false,
+    unsealing: '', // 2026-10-18 拆信仪式的页面级字段（detail/index.js data 默认 ''）
     actionPadStyle: ''
   })
   const renderWith = renderWxml(wxml, detailData(withPhotos))

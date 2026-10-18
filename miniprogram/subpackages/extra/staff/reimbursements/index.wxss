@@ -5,3 +5,46 @@
   padding: var(--space-4);
   box-sizing: border-box;
 }
+
+/* 本月合计 + 核准印（2026-10-18） */
+.reim-sum {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.reim-sum-cell {
+  flex: 1;
+  padding: var(--space-3);
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}
+.reim-sum-k { display: block; font-size: var(--fs-22); color: var(--color-text-secondary); }
+.reim-sum-v { display: block; margin-top: 6rpx; font-family: var(--font-mono); font-size: var(--fs-30); color: var(--brass-400); }
+.reim-sum-cell.is-quiet .reim-sum-v { color: var(--color-text-secondary); }
+.record { position: relative; }
+.record.is-stamped .rec-meta { padding-right: 120rpx; }
+.reim-stamp {
+  position: absolute;
+  right: 24rpx;
+  bottom: 20rpx;
+  padding: 4rpx 12rpx;
+  border: 3rpx solid rgba(212, 97, 79, 0.85);
+  border-radius: 6rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-24);
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #D4614F;
+  transform: rotate(-10deg);
+  opacity: 0.9;
+}
+.reim-stamp.is-live { animation: reim-stamp-drop 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.3s both; }
+@keyframes reim-stamp-drop {
+  0% { opacity: 0; transform: rotate(-10deg) scale(1.9); }
+  60% { opacity: 1; transform: rotate(-10deg) scale(0.94); }
+  100% { opacity: 0.9; transform: rotate(-10deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reim-stamp.is-live { animation: none; }
+}

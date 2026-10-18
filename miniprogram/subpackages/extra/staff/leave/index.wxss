@@ -17,9 +17,6 @@
 }
 
 .duration-box {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
   margin: var(--space-3) 0;
   padding: var(--space-3) var(--space-4);
   border: 1rpx solid var(--brass-800);
@@ -55,3 +52,55 @@
   padding: 8rpx 20rpx;
   font-size: var(--fs-22);
 }
+
+/* 天数即时预览（2026-10-18）：一天一格，整天满格、半天半格；周末格字色换成铜色只作标示 */
+.duration-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.duration-box.is-invalid .duration-value { color: var(--color-warning, #C9A24A); font-size: var(--fs-26); }
+.duration-range {
+  display: block;
+  margin-top: 6rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}
+.span-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: 8rpx;
+  margin-top: var(--space-3);
+}
+.span-cell {
+  flex: 1;
+  max-width: 64rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+.span-dow { font-size: var(--fs-18); color: var(--color-text-secondary); }
+.span-cell.is-weekend .span-dow { color: var(--brass-300); }
+.span-bar {
+  position: relative;
+  width: 100%;
+  height: 40rpx;
+  border-radius: 4rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35);
+  overflow: hidden;
+}
+.span-bar-in {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+  background: var(--brass-400);
+  transition: height 0.24s ease;
+}
+.span-cell.fill-full .span-bar-in { height: 100%; }
+.span-cell.fill-half .span-bar-in { height: 50%; }
+.span-day { font-family: var(--font-mono); font-size: var(--fs-20); color: var(--color-text-body); }
+.span-more { align-self: center; font-family: var(--font-mono); font-size: var(--fs-20); color: var(--color-text-secondary); }

@@ -214,3 +214,60 @@ page {
   font-size: var(--fs-24);
   color: var(--brass-200);
 }
+
+/* ── 火漆（2026-10-18 仪式感）────────────────────────────────────────
+   新签发、本机未启封的证书：纸面罩一层薄纸 + 中央一枚朱红火漆；点一下火漆左右掰开落下、薄纸退去，再进证书。
+   只在亲手启封那一刻播；启封过的就是普通卡。 */
+.c-wax {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: 4rpx;
+  background: rgba(232, 223, 203, 0.72);
+  transition: opacity 0.3s ease 0.26s;
+}
+.c-wax-half {
+  position: absolute;
+  top: 136rpx;
+  left: 50%;
+  width: 104rpx;
+  height: 104rpx;
+  margin-left: -52rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #B5483A, #8E2F24 72%);
+  box-shadow: 0 6rpx 14rpx rgba(0, 0, 0, 0.35), inset 0 0 0 6rpx rgba(0, 0, 0, 0.12);
+  transition: transform 0.42s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.42s ease;
+}
+.c-wax-half.is-l { clip-path: polygon(0 0, 54% 0, 46% 100%, 0 100%); }
+.c-wax-half.is-r { clip-path: polygon(54% 0, 100% 0, 100% 100%, 46% 100%); }
+.c-wax-half text {
+  font-family: var(--font-brand);
+  font-size: var(--fs-36);
+  font-weight: 700;
+  color: rgba(243, 236, 221, 0.92);
+}
+.c-wax-tip {
+  position: absolute;
+  left: 50%;
+  top: 262rpx;
+  padding: 4rpx 14rpx;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  background: rgba(243, 236, 221, 0.92);
+  border-radius: 4rpx;
+  text-align: center;
+  font-size: var(--fs-20);
+  letter-spacing: 0.16em;
+  color: #8E2F24;
+}
+.c-wax.is-breaking { opacity: 0; }
+.c-wax.is-breaking .c-wax-half.is-l { transform: translate(-28rpx, 60rpx) rotate(-24deg); opacity: 0; }
+.c-wax.is-breaking .c-wax-half.is-r { transform: translate(28rpx, 60rpx) rotate(24deg); opacity: 0; }
+.c-wax.is-breaking .c-wax-tip { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .c-wax,
+  .c-wax-half { transition: none; }
+}

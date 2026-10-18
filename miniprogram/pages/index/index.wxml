@@ -49,6 +49,12 @@
     bindrefresherrefresh="onHomeRefresherRefresh"
   >
     
+    <!-- 馆员问候（2026-10-18 方向池 ★★）：一行小字，时段问候 + 门店营业状态；门店数据到了才出现 -->
+    <view class="home-greet" wx:if="{{homeGreeting.word}}">
+      <text class="home-greet-w">{{homeGreeting.word}}</text>
+      <text class="home-greet-l" wx:if="{{homeGreeting.line}}">{{homeGreeting.line}}</text>
+    </view>
+
     <!-- 轮播图模块：有直播时首位抢插「直播中」帧；无直播时恢复 baseBanners -->
     <view class="hero-section" wx:if="{{showBanners || (showLive && liveSession && liveSession.pullUrl)}}">
       <!-- 骨架屏 -->

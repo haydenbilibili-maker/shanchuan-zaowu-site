@@ -1,6 +1,7 @@
 const app = getApp();
 const db = wx.cloud.database();
 const { cdnPath } = require('../../../../config/cloudEnv');
+const { applySeals, markUnsealed } = require('./certSeal');
 
 function formatCertDate(raw) {
   if (!raw) return '';
@@ -126,9 +127,10 @@ Page({
         };
       });
 
-      const givenCount = list.filter((c) => c.kind === 'gift_voucher').length;
+      const sealedList = applySeals(list, wx);
+      const givenCount = sealedList.filter((c) => c.kind === 'gift_voucher').length;
       const filter = givenCount ? this.data.filter : 'all';
-      this.setData({ certificates: list, holderCount: list.length - givenCount, givenCount, loadError: false, filter, visible: filterCerts(list, filter) });
+      this.setData({ certificates: sealedList, holderCount: list.length - givenCount, givenCount, loadError: false, filter, visible: filterCerts(sealedList, filter) });
     } catch (e) {
       console.error(e);
       this.setData({ certificates: [], visible: [], loadError: true });
@@ -160,6 +162,31 @@ Page({
       wx.showToast({ title: '证书不存在', icon: 'none' });
       return;
     }
+    const all = this.data.certificates || [];
+    const i = all.findIndex((c) => c && c._id === id);
+    if (i >= 0 && all[i].sealed) {
+      // 掰开火漆：两半错开落下 0.5s，再进证书；返回时这张已是普通卡
+      if (this._breaking) return;
+      this._breaking = true;
+      markUnsealed(id, wx);
+      all[i] = { ...all[i], breaking: true };
+      this.setData({ certificates: all, visible: filterCerts(all, this.data.filter) });
+      this._breakTimer = setTimeout(() => {
+        this._breaking = false;
+        all[i] = { ...all[i], sealed: false, breaking: false };
+        this.setData({ certificates: all, visible: filterCerts(all, this.data.filter) });
+        this.openCert(id);
+      }, 560);
+      return;
+    }
+    this.openCert(id);
+  },
+
+  onUnload() {
+    clearTimeout(this._breakTimer);
+  },
+
+  openCert(id) {
     wx.navigateTo({
       url: `/subpackages/business/certificate/index?id=${id}`,
       fail: () => wx.showToast({ title: '无法打开证书', icon: 'none' })

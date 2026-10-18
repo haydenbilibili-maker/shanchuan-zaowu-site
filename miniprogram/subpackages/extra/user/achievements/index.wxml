@@ -88,7 +88,7 @@
               <view class="node-line-fill" style="width: {{node.linkFill}}%;"></view>
             </view>
             <view
-              class="node {{node.unlocked ? 'is-lit' : ''}}"
+              class="node {{node.unlocked ? 'is-lit' : ''}} {{node.fresh ? 'is-fresh' : ''}}"
               bindtap="viewAchievement"
               data-id="{{node.id}}"
               hover-class="tap-press"

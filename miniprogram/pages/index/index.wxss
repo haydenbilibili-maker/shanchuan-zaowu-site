@@ -1092,3 +1092,21 @@ page {
     animation: none;
   }
 }
+
+/* 馆员问候（2026-10-18）：banner 上方一行，衬线问候 + 次级状态 */
+.home-greet {
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+  padding: 12rpx 32rpx 16rpx;
+}
+.home-greet-w { flex-shrink: 0; font-family: var(--font-brand); font-size: var(--fs-26); color: var(--brass-200); }
+.home-greet-l {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

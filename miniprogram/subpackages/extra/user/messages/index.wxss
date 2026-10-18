@@ -1336,3 +1336,41 @@ page {
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .mg-thumb {
   border-radius: 4rpx;
 }
+
+/* 信封记号（2026-10-18）：未读 = 封好的信封 + 一点火漆；已读 = 封口朝上敞开、颜色退一档 */
+.env-mark {
+  position: relative;
+  width: 34rpx;
+  height: 24rpx;
+  margin-top: 8rpx;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: 2rpx solid var(--brass-300);
+  border-radius: 2rpx;
+}
+.env-mark::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -11rpx;
+  width: 20rpx;
+  height: 20rpx;
+  margin-left: -10rpx;
+  box-sizing: border-box;
+  border: 0 solid var(--brass-300);
+  transform: rotate(45deg);
+}
+.env-mark.is-sealed::before { border-right-width: 2rpx; border-bottom-width: 2rpx; }
+.env-mark.is-sealed::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 9rpx;
+  width: 10rpx;
+  height: 10rpx;
+  margin-left: -5rpx;
+  border-radius: 50%;
+  background: #B5483A;
+}
+.env-mark.is-opened { border-color: rgba(196, 167, 108, 0.45); }
+.env-mark.is-opened::before { border-color: rgba(196, 167, 108, 0.45); border-top-width: 2rpx; border-left-width: 2rpx; }

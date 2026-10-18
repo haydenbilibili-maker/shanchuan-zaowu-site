@@ -43,13 +43,27 @@
 
   <view class="section">
     <view class="section-title"><text class="st-cn">我的申请</text></view>
+    <!-- 本月合计（2026-10-18）：按提交时间；「已通过」不等于已打款 -->
+    <view class="reim-sum" wx:if="{{summary && summary.count > 0}}">
+      <view class="reim-sum-cell">
+        <text class="reim-sum-k">{{summary.month}} 月已通过</text>
+        <text class="reim-sum-v">¥{{summary.approvedText}}</text>
+      </view>
+      <view class="reim-sum-cell {{summary.hasPending ? '' : 'is-quiet'}}">
+        <text class="reim-sum-k">审核中</text>
+        <text class="reim-sum-v">¥{{summary.pendingText}}</text>
+      </view>
+    </view>
     <view class="list">
-      <view class="record" wx:for="{{list}}" wx:key="_id">
+      <view class="record {{item.stamped ? 'is-stamped' : ''}}" wx:for="{{list}}" wx:key="_id">
         <view class="rec-top">
-          <text class="rec-member">{{item.category}} · ¥{{item.amount}}</text>
+          <text class="rec-member">{{item.category}} · ¥{{item.amountText}}</text>
           <text class="tag-status {{item.status}}">{{item.statusLabel}}</text>
         </view>
         <text class="rec-meta">{{item.timeText}}{{item.remark ? ' · ' + item.remark : ''}}</text>
+        <text class="rec-meta soft" wx:if="{{item.status === 'rejected' && item.reviewNote}}">驳回说明：{{item.reviewNote}}</text>
+        <!-- 核准印：本机第一次看到这条通过时落印，之后静态 -->
+        <view class="reim-stamp {{item.stampLive ? 'is-live' : ''}}" wx:if="{{item.stamped}}" aria-hidden="true">核准</view>
       </view>
     </view>
     <view class="empty" wx:if="{{list.length === 0}}">

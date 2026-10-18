@@ -170,3 +170,13 @@ page {
   font-size: var(--fs-24);
   color: var(--brass-200);
 }
+
+/* 陪伴天数（2026-10-18）：一行小字，数字用等宽铜色；整百天换成描边小印 */
+.spec-days { display: inline-flex; align-items: baseline; gap: 6rpx; margin-top: 10rpx; }
+.spec-days-k { font-size: var(--fs-20); color: var(--color-text-secondary); }
+.spec-days-n { font-family: var(--font-mono); font-size: var(--fs-26); color: var(--brass-300); }
+.spec-days.is-mark {
+  padding: 2rpx 12rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.6);
+  border-radius: 4rpx;
+}

@@ -950,3 +950,95 @@ page {
 
 .sign-line { color: #2E2618; }
 .sign-mark { color: #8B6F47; }
+
+/* ── 拆信仪式（2026-10-18）────────────────────────────────────────────
+   未读纸信：信封封着 → 掀封口 → 信纸从信封里抽出、信封沉下退场。只在亲手打开未读信时播；已读信直接展开。 */
+.letter-stage { position: relative; }
+.unseal-envelope {
+  position: absolute;
+  top: 60rpx;
+  left: 64rpx;
+  right: 64rpx;
+  height: 340rpx;
+  z-index: 8;
+  perspective: 1200rpx;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease 0.1s;
+}
+.ue-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 36rpx 36rpx;
+  background: linear-gradient(180deg, #E6DAC2, #D9CAAD);
+  border-radius: 6rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(46, 38, 24, 0.18), 0 20rpx 44rpx rgba(0, 0, 0, 0.5);
+}
+.ue-from {
+  font-family: var(--font-brand);
+  font-size: var(--fs-26);
+  letter-spacing: 0.12em;
+  color: #2E2618;
+}
+.ue-en {
+  margin-top: 8rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: #8B6F47;
+}
+/* 封口：上沿铰链的三角，掀开即绕 X 轴翻到背后 */
+.ue-flap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200rpx;
+  background: linear-gradient(180deg, #DDD0B5, #CFBE9C);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: 50% 0;
+  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ue-wax {
+  position: absolute;
+  top: 164rpx;
+  left: 50%;
+  width: 72rpx;
+  height: 72rpx;
+  margin-left: -36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 34%, #B5483A, #8E2F24 70%);
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.35);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.ue-wax text {
+  font-family: var(--font-brand);
+  font-size: var(--fs-20);
+  font-weight: 600;
+  color: #F3ECDD;
+}
+.unseal-open .ue-flap,
+.unseal-out .ue-flap { transform: rotateX(180deg); }
+.unseal-open .ue-wax,
+.unseal-out .ue-wax { opacity: 0; transform: scale(1.3); }
+.unseal-out .unseal-envelope { transform: translateY(240rpx); opacity: 0; }
+/* 封着 / 掀口时信纸藏在信封里；抽出时沿用 .entered .settled 的上浮过渡 */
+.letter-stage.paper-stage.unseal-sealed .letter-card.settled,
+.letter-stage.paper-stage.unseal-open .letter-card.settled,
+.letter-stage.paper-stage.unseal-sealed .letter-card,
+.letter-stage.paper-stage.unseal-open .letter-card {
+  opacity: 0;
+  transform: translateY(120rpx) scale(0.94);
+}
+.letter-stage.paper-stage.unseal-out .letter-card.settled {
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.3, 1), opacity 0.4s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .unseal-envelope { display: none; }
+  .letter-stage.paper-stage.unseal-sealed .letter-card.settled,
+  .letter-stage.paper-stage.unseal-open .letter-card.settled { opacity: 1; transform: none; }
+}

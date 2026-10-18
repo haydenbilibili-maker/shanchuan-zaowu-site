@@ -45,6 +45,12 @@
               <text class="tag-custom" wx:if="{{item.isCustom}}">定制</text>
               <text class="tag-date" wx:if="{{item.receiveTimeText}}">{{item.receiveTimeText}}</text>
             </view>
+            <!-- 陪伴第 N 天（2026-10-18）：只按真实签收时间算；整百天换成铜色小印 -->
+            <view class="spec-days {{item.companionDays % 100 === 0 ? 'is-mark' : ''}}" wx:if="{{item.companionDays > 0}}">
+              <text class="spec-days-k">陪伴第</text>
+              <text class="spec-days-n">{{item.companionDays}}</text>
+              <text class="spec-days-k">天</text>
+            </view>
             <text class="spec-framing" wx:if="{{item.framingName}}">装裱：{{item.framingName}}</text>
             <text class="spec-summary">{{item.careSummary}}</text>
           </view>

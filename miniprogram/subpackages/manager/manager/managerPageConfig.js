@@ -1491,6 +1491,9 @@ const managerPageConfig = {
       weekOnlineBar: 'width:0%',
       weekOfflineBar: 'width:0%',
       momClass: 'flat',
+      todayFmt: '',
+      dayDeltaText: '',
+      dayDeltaClass: 'flat',
     },
     chartLayout: computeDashChartLayout(0, 0, 375),
     dashStock: {
@@ -2282,6 +2285,9 @@ const managerPageConfig = {
         weekOnlineBar: 'width:0%',
         weekOfflineBar: 'width:0%',
         momClass: 'flat',
+        todayFmt: '',
+        dayDeltaText: '',
+        dayDeltaClass: 'flat',
       },
       'tempRevenue.date': dbDateStr,
       ledgerMonth,
@@ -3526,6 +3532,8 @@ const managerPageConfig = {
             weekOnlineBar: `width:${pct(weekOnline)}%`,
             weekOfflineBar: `width:${pct(weekOffline)}%`,
             momClass: this.data.stats.momClass || 'flat',
+            // 今日 · 较昨日（2026-10-18）：同一份 7 日数据现算，不另打云端
+            ...require('../utils/dayDelta').dayVsYesterday(days, (n) => storeLedger.formatMoney(n)),
           },
         },
         () => this.scheduleChartLayout()

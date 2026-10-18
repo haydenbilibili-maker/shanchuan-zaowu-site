@@ -10,7 +10,8 @@
     "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
     "wish-wall-entry": "/components/WishWallEntry/index",
     "nav-back": "/components/NavBack/index",
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "app-toast": "/components/AppToast/index"
   },
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",

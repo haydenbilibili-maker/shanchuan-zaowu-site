@@ -15,6 +15,7 @@
         <text>{{roleText}}{{staffName ? ' · ' + staffName : ''}}</text>
       </view>
     </view>
+    <text class="scene-greet" wx:if="{{greetWord}}">{{greetWord}}{{staffName ? '，' + staffName : ''}}</text>
     <text class="scene-note">现场常用：核销、到店、班次与人事。</text>
     <view class="signal-legend header-legend">
       <view class="signal-legend-item"><view class="signal-light blink"></view><text class="signal-legend-text">绿 · 成功</text></view>

@@ -124,5 +124,17 @@
   </view>
 </view>
 
+<!-- 入展展签（2026-10-18）：发布成功后出现，约 1.8s 后照原路去社区；遮罩取 ui-pop-mask is-center is-deep -->
+<view class="ui-pop-mask is-center is-deep exhibit-mask" wx:if="{{exhibitTag.show}}" catchtouchmove="noop">
+  <view class="exhibit-tag">
+    <text class="ex-en">EXHIBIT · 入展</text>
+    <text class="ex-title">{{exhibitTag.title}}</text>
+    <view class="ex-rule"></view>
+    <view class="ex-row"><text class="ex-k">投展日期</text><text class="ex-v mono">{{exhibitTag.date}}</text></view>
+    <view class="ex-row"><text class="ex-k">展出去向</text><text class="ex-v">馆员审核通过后在社区展出</text></view>
+    <view class="ex-seal" aria-hidden="true"><text class="ex-seal-ch">入</text><text class="ex-seal-ch">展</text></view>
+  </view>
+</view>
+
 <!-- 全站样式化弹窗宿主（替代 wx.showModal；utils/appModal.js 的 openAppModal 在此查找）；docs/弹层视觉规范_2026-10-13.md -->
 <app-modal id="appModal" />

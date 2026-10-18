@@ -2,6 +2,7 @@
 const app = getApp();
 const easterEgg = require('../../../../utils/easterEgg');
 const { markAchievementsSeen } = require('../../../../utils/badgeDisplay');
+const { takeFreshLit } = require('./litSeen');
 
 const TYPE_DEFS = [
   { type: 'explore', name: '探索类', enName: 'EXPLORATION', icon: '/assets/icons/knowledge.png' },
@@ -291,7 +292,23 @@ Page({
     TYPE_DEFS.forEach((def) => { allByType.push(...byType[def.type]); });
     // 类型不在五章里的（云端新类型）也收进来，按 buildChapters 的兜底成线
     normalized.forEach((a) => { if (!allByType.find((x) => x.id === a.id)) allByType.push(a); });
-    const chapters = buildChapters(allByType);
+    const builtChapters = buildChapters(allByType);
+    // 新点亮射灯：本机第一次见到的已点亮成就，节点扫一次光（只播一次）
+    let freshLit = [];
+    try {
+      const openid = (app && app.globalData && app.globalData.openid) || '';
+      freshLit = typeof wx !== 'undefined' && wx.getStorageSync
+        ? takeFreshLit(normalized.filter((a) => a.unlocked).map((a) => a.id), wx, openid)
+        : [];
+    } catch (e) {
+      freshLit = [];
+    }
+    const chapters = freshLit.length
+      ? builtChapters.map((c) => ({
+        ...c,
+        tracks: c.tracks.map((t) => ({ ...t, nodes: t.nodes.map((n) => (freshLit.indexOf(n.id) >= 0 ? { ...n, fresh: true } : n)) }))
+      }))
+      : builtChapters;
     const nextUp = buildNextUp(allByType);
     const ticks = chapters.reduce((acc, c) => acc.concat(...c.tracks.map((t) => t.nodes.map((n) => ({ id: n.id, lit: n.unlocked })))), []);
 
