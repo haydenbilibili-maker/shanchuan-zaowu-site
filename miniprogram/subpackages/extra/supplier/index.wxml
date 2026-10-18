@@ -28,7 +28,7 @@
         bindtap="onModuleTap"
         hover-class="flow-press"
       >
-        <text class="flow-num">1</text>
+        <text class="flow-num">01</text>
         <text class="flow-label">选购</text>
       </view>
       <text class="flow-sep">›</text>
@@ -37,7 +37,7 @@
         bindtap="onFlowCart"
         hover-class="flow-press"
       >
-        <text class="flow-num">2</text>
+        <text class="flow-num">02</text>
         <text class="flow-label">确认下单</text>
       </view>
       <text class="flow-sep">›</text>
@@ -47,7 +47,7 @@
         bindtap="onModuleTap"
         hover-class="flow-press"
       >
-        <text class="flow-num">3</text>
+        <text class="flow-num">03</text>
         <text class="flow-label">支付结果</text>
       </view>
     </view>

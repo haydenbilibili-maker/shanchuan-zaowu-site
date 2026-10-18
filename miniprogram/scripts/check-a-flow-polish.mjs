@@ -66,7 +66,8 @@ const FILES = {
   artPet: 'subpackages/extra/artisan/pet/index.wxss',
   artWorks: 'subpackages/extra/artisan/works/index.wxss',
   artProfile: 'subpackages/extra/artisan/profile/index.wxss',
-  artConcept: 'subpackages/extra/artisan/concept/index.wxss'
+  artConcept: 'subpackages/extra/artisan/concept/index.wxss',
+  supplierCommon: 'subpackages/extra/supplier/utils/supplier-common.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -228,6 +229,10 @@ function checks(s) {
     ['artCommission', 'artPet'].every((k) => /\n\.summary-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s[k])) &&
       /\n\.plate-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.artConcept) &&
       !/\.type-chip\.is-on \{[^}]*background: var\(--brass-400\)/.test(s.artProfile))
+  // 2026-10-18 采购商工作台（共享 supplier-common，含六个子页的公共零件）
+  add('R22-1 采购商工作台：入口为发丝线行、流程为下划线、行内动作非实心金药丸、无胶囊半径；演示橙保留',
+    !/\n\.module-card \{[^}]*border-radius/.test(s.supplierCommon) && /\.flow-step-btn\.hot \{\s*border-bottom-color: var\(--brass-400\);/.test(s.supplierCommon) &&
+      !/\n\.list-action \{[^}]*background: var\(--brass-500\)/.test(s.supplierCommon) && !/999rpx/.test(s.supplierCommon) && /#e07a5f/.test(s.supplierCommon))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -483,6 +488,7 @@ if (process.argv.includes('--selftest')) {
     ['标本师入口回到大圆角卡', 'artisanWxss', (t) => t.replace('  padding: 24rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 24rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
     ['标本师作品卡回到大圆角', 'artWorks', (t) => t.replace('  padding: 22rpx 4rpx;\n  border-bottom', '  padding: 22rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom')],
     ['概念卡回到深色铜牌', 'artConcept', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;', '  background: var(--color-bg-card);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;')],
+    ['采购商行内动作回到实心金', 'supplierCommon', (t) => t.replace('  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-22);', '  background: var(--brass-500);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-22);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
