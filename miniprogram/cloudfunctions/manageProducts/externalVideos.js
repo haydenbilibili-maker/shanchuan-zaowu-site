@@ -14,7 +14,7 @@
  *     详情页只展示卡片 + 复制链接（见评估文档 §2）。
  *   - 最多 3 条；非法项丢弃（与 media / tags 同口径：宁可不写，不写脏值）。
  *
- * 同口径副本：admin/src/utils/externalVideos.js（后台录入预览）—— 守卫 check:product-external-videos 比对常量。
+ * 同口径副本：admin/src/utils/productVideos.js（后台录入预览）—— 守卫 check:product-external-videos 比对常量。
  */
 
 const MAX_EXTERNAL = 3
