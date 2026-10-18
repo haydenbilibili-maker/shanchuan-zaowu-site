@@ -1,5 +1,9 @@
 @import '../utils/supplier-common.wxss';
 
+/* 2026-10-18 视觉对齐（产品负责人点名「继续重构采购商子页面」；与采购商工作台 supplier-common 同口径，只改样式）：
+   方角（卡 4rpx / 签 2rpx）、标题宋体、数量金额等宽暖金；列表项不给实心金。
+   采购单为发丝线块（当前单左侧金线）；「去支付」等行内主操作改金线环；支付状态签的待付铜 / 已付绿 / 处理中蓝为语义，保留，只改方角。 */
+
 .header.compact {
   padding-bottom: var(--space-3);
 }
@@ -8,20 +12,20 @@
   display: inline-flex;
   align-items: center;
   padding: 4rpx 14rpx;
-  border-radius: 999rpx;
-  background: rgba(196, 167, 108, 0.15);
-  border: 1rpx solid rgba(196, 167, 108, 0.35);
+  border-radius: 2rpx;
+  box-shadow: var(--ring-brass-soft);
+  background: rgba(196, 167, 108, 0.08);
 }
 
 .stat-chip text {
   font-size: var(--fs-20);
-  color: var(--brass-600);
+  color: var(--brass-200);
 }
 
 .banner {
   margin-bottom: var(--space-3);
   padding: 18rpx 20rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   font-size: var(--fs-24);
   line-height: 1.45;
   display: flex;
@@ -64,9 +68,9 @@
   gap: 16rpx;
   margin-bottom: var(--space-3);
   padding: 20rpx 22rpx;
-  border-radius: var(--radius-md);
-  background: rgba(196, 167, 108, 0.08);
-  border: 1rpx solid rgba(196, 167, 108, 0.28);
+  border-radius: 4rpx;
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: var(--ring-brass-soft);
 }
 
 .link-press {
@@ -81,9 +85,10 @@
 }
 
 .link-title {
+  font-family: var(--font-brand);
   font-size: var(--fs-26);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .link-copy {
@@ -93,7 +98,7 @@
 
 .link-go {
   font-size: var(--fs-24);
-  color: var(--brass-600);
+  color: var(--brass-300);
   flex-shrink: 0;
 }
 
@@ -104,7 +109,7 @@
 .po-skeleton {
   margin-top: 24rpx;
   padding: 24rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   background: rgba(255, 255, 255, 0.03);
   opacity: 0.55;
 }
@@ -112,7 +117,7 @@
 .sk-line {
   height: 20rpx;
   margin-bottom: 14rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   background: rgba(255, 255, 255, 0.06);
 }
 
@@ -130,7 +135,7 @@
   gap: 10rpx;
   margin-top: var(--space-4);
   padding: 16rpx 18rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   background: rgba(255, 255, 255, 0.03);
   border: 1rpx solid rgba(255, 255, 255, 0.06);
 }
@@ -143,20 +148,20 @@
 .po-list {
   display: flex;
   flex-direction: column;
-  gap: 18rpx;
   padding-bottom: var(--space-4);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
+/* 采购单：发丝线块（原圆角卡） */
 .po-card {
-  padding: 26rpx 24rpx;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1rpx solid rgba(255, 255, 255, 0.06);
+  padding: 28rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .po-card.on {
-  border-color: rgba(196, 167, 108, 0.55);
-  box-shadow: 0 0 0 2rpx rgba(196, 167, 108, 0.12);
+  padding-left: 20rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.1), transparent 70%);
+  box-shadow: inset 3rpx 0 0 var(--brass-400);
 }
 
 .po-top {
@@ -167,17 +172,18 @@
 }
 
 .po-no {
-  font-size: var(--fs-28);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-26);
+  letter-spacing: 0.04em;
+  color: #F3ECDD;
   font-variant-numeric: tabular-nums;
 }
 
 .pay-chip {
   flex-shrink: 0;
   padding: 6rpx 16rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.12);
+  border-radius: 2rpx;
+  border: 1rpx solid rgba(160, 154, 144, 0.3);
 }
 
 .pay-chip text {
@@ -191,7 +197,7 @@
 }
 
 .pay-chip.warn text {
-  color: var(--brass-600);
+  color: var(--brass-200);
 }
 
 .pay-chip.ok {
@@ -245,12 +251,11 @@
 .po-next {
   display: block;
   margin-top: 12rpx;
-  padding: 12rpx 14rpx;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.03);
+  padding: 4rpx 0 4rpx 16rpx;
+  border-left: 2rpx solid rgba(196, 167, 108, 0.35);
   font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
-  line-height: 1.45;
+  line-height: 1.5;
 }
 
 .po-meta {
@@ -259,18 +264,20 @@
   justify-content: space-between;
   margin-top: 18rpx;
   padding-top: 16rpx;
-  border-top: 1rpx solid rgba(255, 255, 255, 0.05);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .po-amount {
+  font-family: var(--font-mono);
   font-size: var(--fs-32);
-  font-weight: 500;
-  color: var(--brass-500, var(--brass-600));
+  font-weight: 600;
+  color: var(--brass-200);
   font-variant-numeric: tabular-nums;
 }
 
 .po-time {
-  font-size: var(--fs-22);
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
   color: var(--color-text-secondary, #A09A90);
 }
 
@@ -283,21 +290,22 @@
 
 .po-btn {
   padding: 14rpx 24rpx;
-  border-radius: 999rpx;
+  border-radius: 4rpx;
   font-size: var(--fs-24);
-  border: 1rpx solid rgba(255, 255, 255, 0.14);
-  color: var(--color-text-primary);
+  letter-spacing: 0.06em;
+  box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.35);
+  color: var(--color-text-body, #D5D1C8);
 }
 
+/* 行内主操作（去支付 / 确认收货…）：金线环 —— 列表每张单一颗实心金会把整屏点亮 */
 .po-btn.primary {
-  background: var(--brass-500);  /* 深字压 brass-600 仅 4.07:1 → 提一档 ≈5.3:1 */
-  border-color: transparent;
-  color: #1a1408;
-  font-weight: 500;
+  background: rgba(196, 167, 108, 0.1);
+  box-shadow: var(--ring-brass);
+  color: var(--brass-200);
 }
 
 .po-btn.ghost {
-  border-style: dashed;
+  box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.25);
   color: var(--color-text-secondary, #A09A90);
 }
 

@@ -72,7 +72,7 @@
       <text class="ui-pop-sub">输入手机号或会员号查找</text>
     </view>
 
-    <view class="modal-body">
+    <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">
       <view class="field">
         <text class="field-label">手机号 / 会员号查找</text>
         <view class="phone-toolbar">
@@ -223,7 +223,7 @@
         <text class="field-label">单日发放积分上限</text>
         <input class="input" type="number" value="{{staffForm.dailyGrantCap}}" bindinput="onStaffInput" data-field="dailyGrantCap" placeholder="0 = 不额外限制" placeholder-class="ph" />
       </view>
-    </view>
+    </scroll-view>
 
     <view class="page-tip is-warn" wx:if="{{formTip}}" style="margin:0 24rpx 16rpx;"><text>{{formTip}}</text></view>
     <view class="workbench-modal-foot">

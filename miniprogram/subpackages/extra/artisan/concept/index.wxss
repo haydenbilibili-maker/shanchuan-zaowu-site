@@ -1,5 +1,9 @@
 @import '../../utils/workbench-nav.wxss';
 
+/* 2026-10-18 视觉对齐（产品负责人点名「继续子页面重构」；与标本师工作台首页同口径，只改样式）：
+   眉标等宽 + 宋体主标 + 渐隐金线分区头；类型 / 参数 / 变体为方角发丝签、选中金线环；
+   生成结果「铜牌概念卡」改为**浅纸标本签**（铜钉 + 内发丝框 + 墨色），签内按钮随纸面换墨铜线。 */
+
 page {
   background: var(--color-bg);
   color: var(--color-text-body);
@@ -24,18 +28,21 @@ page {
 
 .boot-en,
 .hero .en {
-  font-size: var(--fs-20);
-  letter-spacing: 0.16em;
-  color: var(--brass-600);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .boot-cn,
 .hero .cn {
   display: block;
+  margin-top: 8rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-40);
-  color: var(--color-text-primary);
-  margin-top: 8rpx;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .skel-line {
@@ -52,7 +59,7 @@ page {
 .skel-block {
   margin-top: var(--space-4);
   height: 160rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   background: var(--color-bg-elevated);
 }
 
@@ -72,7 +79,7 @@ page {
 .composer {
   margin-bottom: var(--space-5);
   padding: var(--space-4);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
   border: 1rpx solid var(--brass-800);
   background: var(--color-bg-card);
 }
@@ -92,27 +99,27 @@ page {
   min-width: 148rpx;
   margin-right: 12rpx;
   padding: 18rpx 22rpx;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
   box-sizing: border-box;
 }
 
 .type-press { opacity: 0.85; }
 
 .type-card.on {
-  border-color: var(--brass-400);
-  background: rgba(196, 167, 108, 0.1);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass);
 }
 
 .type-name {
   display: block;
+  font-family: var(--font-brand);
   font-size: var(--fs-26);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
-.type-card.on .type-name { color: var(--brass-400); }
+.type-card.on .type-name { color: var(--brass-200); }
 
 .type-meta {
   display: block;
@@ -122,7 +129,7 @@ page {
   color: var(--color-text-secondary, #A09A90);
 }
 
-.type-card.on .type-meta { color: var(--brass-600); }
+.type-card.on .type-meta { color: var(--brass-300); }
 
 .filter-sheet { margin-bottom: var(--space-2); }
 
@@ -139,15 +146,15 @@ page {
   flex-direction: column;
   gap: 4rpx;
   padding: 16rpx 18rpx;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
 }
 
 .picker-k {
-  font-size: var(--fs-18);
-  letter-spacing: 0.08em;
-  color: var(--color-text-secondary, #A09A90);
+  font-family: var(--font-mono);
+  font-size: var(--fs-16);
+  letter-spacing: 0.2em;
+  color: var(--brass-300);
 }
 
 .picker-v {
@@ -182,7 +189,7 @@ page {
   margin-bottom: var(--space-3);
   padding: var(--space-3);
   box-sizing: border-box;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1px solid var(--color-border);
   background: var(--color-bg);
   font-size: var(--fs-26);
@@ -203,10 +210,10 @@ page {
   flex-shrink: 0;
   margin-right: 12rpx;
   padding: 8rpx 18rpx;
-  border-radius: var(--radius-sm);
-  border: 1rpx solid var(--brass-800);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.32);
   font-size: var(--fs-22);
-  color: var(--brass-400);
+  color: var(--brass-200);
 }
 
 .chip-press { opacity: 0.8; }
@@ -237,7 +244,7 @@ page {
   background: var(--brass-400);
   color: var(--color-bg);
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   font-weight: 500;
   font-size: var(--fs-28);
 }
@@ -246,14 +253,14 @@ page {
   background: transparent;
   color: var(--brass-400);
   border: 1rpx solid var(--brass-400);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
 }
 
 .btn-ghost {
   background: transparent;
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
 }
 
 .btn-primary::after,
@@ -285,7 +292,7 @@ page {
 .error-box {
   margin-top: var(--space-3);
   padding: var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1px solid rgba(214, 64, 69, 0.3);
   background: rgba(214, 64, 69, 0.06);
   display: flex;
@@ -308,27 +315,34 @@ page {
 /* —— result —— */
 .group { margin-bottom: var(--space-5); }
 
-.group-head.tight { margin-bottom: var(--space-3); }
+.group-head.tight {
+  margin-bottom: var(--space-3);
+  padding-bottom: 14rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(196, 167, 108, 0.12) 60%, transparent) left bottom / 100% 1px no-repeat;
+}
 
 .group-en {
   display: block;
-  font-size: var(--fs-20);
-  letter-spacing: 0.14em;
-  color: var(--color-text-secondary, #A09A90);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .group-cn {
   display: block;
-  margin-top: 4rpx;
-  font-size: var(--fs-28);
+  margin-top: 6rpx;
+  font-family: var(--font-brand);
+  font-size: 34rpx;
   font-weight: 500;
-  color: var(--color-text-primary);
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .empty-plate {
   padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  border: 1px dashed var(--color-border);
+  border-radius: 4rpx;
+  border: 1rpx dashed rgba(196, 167, 108, 0.24);
   background: transparent;
 }
 
@@ -350,38 +364,58 @@ page {
 
 .plate-card.skel {
   padding: var(--space-5);
-  border-radius: var(--radius-lg);
+  border-radius: 4rpx;
   border: 1rpx solid var(--brass-800);
   background: var(--color-bg-card);
 }
 
 /* 铜牌概念卡 */
+/* 概念卡 = 浅纸标本签（原深色铜牌卡 + 左侧金条） */
 .plate-card {
   position: relative;
-  border-radius: var(--radius-lg);
-  border: 1rpx solid var(--brass-800);
-  background: var(--color-bg-card);
   overflow: hidden;
+  border-radius: 4rpx;
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
+  color: #2E2618;
+}
+
+.plate-card::before {
+  content: '';
+  position: absolute;
+  inset: 12rpx;
+  border: 1rpx solid rgba(46, 38, 24, 0.22);
+  pointer-events: none;
+}
+
+.plate-card::after {
+  content: '';
+  position: absolute;
+  top: 4rpx;
+  left: 50%;
+  width: 14rpx;
+  height: 14rpx;
+  margin-left: -7rpx;
+  border-radius: 50%;
+  background: #B08D57;
 }
 
 .plate-rail {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 6rpx;
-  background: linear-gradient(180deg, var(--brass-400) 0%, var(--brass-700) 100%);
+  display: none;
 }
 
 .plate-body {
-  padding: var(--space-4) var(--space-4) var(--space-4) calc(var(--space-4) + 8rpx);
+  position: relative;
+  z-index: 1;
+  padding: 44rpx 36rpx 32rpx;
 }
 
 .plate-en {
   display: block;
+  font-family: var(--font-mono);
   font-size: var(--fs-18);
-  letter-spacing: 0.14em;
-  color: var(--brass-600);
+  letter-spacing: 0.24em;
+  color: #8B6F47;
 }
 
 .plate-name {
@@ -389,8 +423,9 @@ page {
   margin-top: 10rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-36);
+  font-weight: 600;
   line-height: 1.3;
-  color: var(--color-text-primary);
+  color: #2E2618;
   word-break: break-word;
 }
 
@@ -406,13 +441,13 @@ page {
   font-family: var(--font-mono);
   font-size: var(--fs-34);
   font-weight: 600;
-  color: var(--brass-400);
+  color: #5A4527;
 }
 
 .plate-pos,
 .plate-margin {
   font-size: var(--fs-22);
-  color: var(--color-text-secondary);
+  color: #5A4E3A;
 }
 
 .plate-tags {
@@ -425,45 +460,46 @@ page {
 .ptag {
   font-size: var(--fs-20);
   padding: 4rpx 12rpx;
-  border-radius: var(--radius-sm);
-  border: 1rpx solid var(--brass-800);
-  color: var(--brass-600);
+  border-radius: 2rpx;
+  border: 1rpx solid rgba(139, 111, 71, 0.5);
+  color: #6B5435;
 }
 
 .plate-sec {
   margin-top: var(--space-4);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
+  border-top: 1rpx solid rgba(46, 38, 24, 0.14);
 }
 
 .plate-lab {
   display: block;
   margin-bottom: 10rpx;
-  font-size: var(--fs-20);
-  letter-spacing: 0.1em;
-  color: var(--brass-600);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.2em;
+  color: #8B6F47;
 }
 
 .plate-bullet {
   margin-bottom: 8rpx;
   padding-left: 16rpx;
-  border-left: 2rpx solid var(--brass-800);
+  border-left: 2rpx solid rgba(139, 111, 71, 0.45);
   font-size: var(--fs-26);
-  line-height: 1.45;
-  color: var(--color-text-body);
+  line-height: 1.5;
+  color: #2E2618;
 }
 
 .plate-copy {
   display: block;
   font-size: var(--fs-26);
-  line-height: 1.55;
-  color: var(--color-text-body);
+  line-height: 1.6;
+  color: #2E2618;
   word-break: break-word;
 }
 
 .plate-copy.dim {
   margin-top: 8rpx;
-  color: var(--color-text-secondary);
+  color: #5A4E3A;
 }
 
 .plate-split {
@@ -471,7 +507,7 @@ page {
   gap: var(--space-3);
   margin-top: var(--space-4);
   padding-top: var(--space-3);
-  border-top: 1px solid var(--color-border);
+  border-top: 1rpx solid rgba(46, 38, 24, 0.14);
 }
 
 .plate-col {
@@ -483,17 +519,30 @@ page {
   display: block;
   margin-bottom: 6rpx;
   font-size: var(--fs-22);
-  line-height: 1.4;
-  color: var(--color-text-body);
+  line-height: 1.45;
+  color: #2E2618;
 }
 
-.plate-mini.warn { color: var(--color-text-secondary); }
+.plate-mini.warn {
+  color: #5A4E3A;
+}
 
 .plate-actions {
   margin-top: var(--space-5);
   display: flex;
   flex-direction: column;
   gap: 12rpx;
+}
+
+/* 签内按钮随纸面：主按钮保持实心金，描边 / 幽灵换墨铜线 */
+.plate-card .btn-brass-outline {
+  color: #5A4527;
+  border-color: #8B6F47;
+}
+
+.plate-card .btn-ghost {
+  color: #5A4E3A;
+  border-color: rgba(46, 38, 24, 0.28);
 }
 
 /* 变体对比 */
@@ -509,13 +558,14 @@ page {
   width: 200rpx;
   margin-right: 12rpx;
   padding: 16rpx 18rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
 }
 
 .variant-chip.on {
-  border-color: var(--brass-400);
+  box-shadow: var(--ring-brass);
+  border-color: transparent;
   background: rgba(196, 167, 108, 0.08);
 }
 
@@ -575,7 +625,7 @@ page {
 .search-input {
   flex: 1;
   padding: 14rpx 20rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
   font-size: var(--fs-24);

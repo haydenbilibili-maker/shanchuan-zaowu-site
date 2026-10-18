@@ -206,6 +206,10 @@ const SCENES = [
       protectionTags: [{ label: '无保护等级', tone: 'muted' }]
     }
   },
+  // 2026-10-18 仪式感：鉴定结果「打字机」打到一半（中文名已晕开、学名敲到一半 + 黄铜光标、置信度尚未填）
+  { name: 'species-card-typing', h: 1100, wxml: 'subpackages/feature/components/SpeciesCard/index', base: 'species-card', data: {
+      typewriter: true, inkIn: true, latinShown: 'Morpho hel', latinTyping: true, confReady: false, confPct: 92, confTone: 'high', confidenceDesc: '较高 · 可作为参考' },
+    css: '.latin-caret { animation: none !important; }' },
   {
     name: 'order-detail', h: 2200, wxml: 'subpackages/business/order-detail/index', data: {
       loading: false, loadError: false, isDecrypted: true, showOrderPrice: true, statusBarHeight: 44,
@@ -341,6 +345,17 @@ const SCENES = [
   { name: 'gift-compose-2', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose', data: { activeStep: 2, maxStep: 2, cardFocused: false, signed: true, sigJustSigned: false } },
   { name: 'order-pending', h: 2300, wxml: 'subpackages/business/order-detail/index', base: 'order-detail', data: { order: { _id: 'o2', serialNo: 'SH20261015003', status: 'pending_pay', totalPrice: '468.00', originalPrice: '468.00', discountRate: 1, couponValue: 20, shippingFee: 18, shippingFeeDisplay: '18.00', address: { name: '林', phone: '138****0012' }, addressLine: '上海市徐汇区漕溪北路 ** 号', products: [{ _id: 'p3', title: '蓝闪蝶 · A1 博物级', latin: 'Morpho menelaus', price: '468.00', count: 1, image: P[2] }] }, stampText: '待付款', stampClass: 'warn', payBtnLabel: '付款入藏', hasTracking: false } },
   { name: 'gift-receive-done', h: 1700, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, addressDone: true, phoneMasked: '138****0012', addressMaskedLine: '上海市徐汇区 ***' } },
+  // 2026-10-18 仪式感（产品负责人点名）：收下 → 礼笺「已收」朱印
+  { name: 'gift-receive-accepted', h: 1300, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { accepted: true, acceptStampLive: true, addressDone: false, holderCard: true } },
+  // 支付成功「已入藏」标本签（背后页只给最少数据，深遮罩盖住）
+  { name: 'order-paid-rite', h: 1300, wxml: 'subpackages/business/confirm-order/index', data: {
+      items: [{ productId: 'p1', title: '光明女神闪蝶 · 原色标本框', image: '' }, { productId: 'p2', title: '蓝闪蝶', image: '' }],
+      paidRite: { show: true, title: '光明女神闪蝶 · 原色标本框', more: 1, tail: 'K7Q2M9', pickup: false } },
+    css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  // 送礼人回执：对方已留址 → 状态印换朱印「已收」+ 回执落款
+  { name: 'gift-sender-receipt', h: 1250, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: {
+      isSender: true, senderPhase: 'address_done', senderOverline: 'RECEIPT', senderTitle: '对方已留下去处', senderDesc: '这份山海即将启程。可在订单中查看履约与物流进度。',
+      senderCanShare: false, senderCanNudge: false, senderReceipt: true, senderReceiptLive: true, recipientName: '阿禾' } },
   { name: 'gift-receive-box', h: 1500, wxml: 'subpackages/feature/gift/receive/index', base: 'gift-receive', data: { revealed: false, ritePhase: 'idle', letterToShown: false, letterBodyShown: false } },
   { name: 'pet-1', h: 2000, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 1, currentStepMeta: petMeta(1) } },
   { name: 'pet-2', h: 2200, wxml: 'subpackages/feature/custom/pet/index', data: { ...petBase, currentStep: 2, currentStepMeta: petMeta(2) } },
@@ -459,6 +474,84 @@ const SCENES = [
       timeSlots: [{ time: '10:00', status: 'open' }, { time: '11:00', status: 'open' }, { time: '14:00', status: 'open' }, { time: '15:00', status: 'full' }, { time: '16:00', status: 'open' }, { time: '17:00', status: 'open' }], selectedTimeIndex: 2,
       courses: [], activities: [], selectedActivityId: '', bookingHistoryTab: 0, upcomingBookings: [], historyBookings: [], loadingBookings: false,
       showMintModal: false, mintAnimation: false, mintFinished: false, newTicketCode: '', regDialogShow: false } },
+  // 2026-10-18 打印弹层防遮挡：按矮屏（iPhone SE 级）出图，按钮须完整落在出纸下方
+  { name: 'booking-mint', h: 1180, wxml: 'subpackages/business/booking/index', base: 'booking', data: { showMintModal: true, mintAnimation: true, mintFinished: true, newTicketCode: 'A7F3K2' },
+    css: '.ui-pop-mask.mint-modal.is-open { display: flex !important; } .mint-modal, .mint-modal * { transition: none !important; }' },
+  // 2026-10-18 店员工作台（逐个工作台优化）
+  { name: 'staff-hub', h: 2300, wxml: 'subpackages/extra/staff/index', data: {
+      ready: true, roleText: '店员', staffName: '阿桃', storeNames: ['山海造物 · 主店'], storeIndex: 0, storeName: '山海造物 · 主店', showScanCta: true, hasScenes: true,
+      groups: [
+        { key: 'onsite', title: '现场服务', en: 'ON-SITE', items: [
+          { key: 'verify', title: '核销验票', desc: '会员码 · 预约票 · 门店礼券 · 礼赠自提', en: 'TICKET', icon: '/assets/icons/qrcode.png', badge: 3 },
+          { key: 'grant', title: '消费赠分', desc: '扫会员码录入消费并赠分', en: 'GRANT', icon: '/assets/icons/coin_gold.png' },
+          { key: 'visit', title: '到店签到', desc: '查看今日到店人数', en: 'VISIT', icon: '/assets/icons/checkin.png' },
+          { key: 'records', title: '赠分流水', desc: '本人或本店今日赠分记录', en: 'LEDGER', icon: '/assets/icons/list.png' }] },
+        { key: 'shift', title: '班次日常', en: 'SHIFT', items: [
+          { key: 'attendance', title: '考勤打卡', desc: '上下班打卡，记录门店与时间', en: 'ATTENDANCE', icon: '/subpackages/manager/assets/icons/clock.png' },
+          { key: 'leave', title: '请假申请', desc: '事假病假年假调休，提交后待审批', en: 'LEAVE', icon: '/assets/icons/list.png' },
+          { key: 'todos', title: '早晚门店清单', desc: '开闭店陈列、收银与安防核对', en: 'CHECKLIST', icon: '/assets/icons/done.png', badge: 2 }] },
+        { key: 'hr', title: '人事与薪酬', en: 'PAYROLL', items: [
+          { key: 'payslip', title: '工资条明细', desc: '应发实发 · 所属门店销售分成 1%', en: 'PAYSLIP', icon: '/assets/icons/wallet_gold.png' },
+          { key: 'reimburse', title: '报销申请', desc: '提交费用报销并跟踪审核', en: 'EXPENSE', icon: '/assets/icons/pay.png' }] }
+      ] } },
+  // 2026-10-18 权限配置「编辑权限」弹窗（真机反馈滑不动 + 右缘被裁）：正文改 scroll-view，按 iPhone 级高度出图
+  { name: 'staff-perm-modal', h: 1500, wxml: 'subpackages/extra/staff-permissions/index', data: {
+      ready: true, tipText: '', loading: false, listError: false, staffList: [{ _id: 's1', name: '藏家', roleText: '店长', status: 'active', openidTail: 'Qu71iyll', showStoreScope: true, storeIds: [], dailyGrantCap: 0 }],
+      showStaffModal: true, staffLookingUp: false, staffMatchHint: '', staffCandidates: [], staffMemberNoInput: '',
+      staffMatched: { openid: 'oa22', nickName: '藏家', openidTail: 'Qu71iyll' },
+      staffForm: { phone: '', openid: 'oa22s5Z2JcC1FGKRfYB0Qu71iyll', openidTail: 'Qu71iyll', name: '藏家', staffNo: '' },
+      staffRoleLabels: ['店员', '店长', '超管', '标本师', '主播', '股东'], staffRoleValues: ['staff', 'manager', 'super', 'artisan', 'host', 'holder'], staffRoleSelected: { manager: true },
+      featureGroups: [{ roleKey: 'manager', title: '店长工作台', en: 'MANAGER', items: [{ key: 'a', label: '订单', checked: true }, { key: 'b', label: '账本', checked: true }, { key: 'c', label: '审批', checked: false }] }],
+      showStoreScope: true, showShareholderConfig: false, staffStoreChecks: [{ key: 'all', name: '全部门店', selected: true, isAll: true }, { key: 's1', name: '山海造物 · 主店', storeId: 's1' }],
+      formTip: '', staffSaving: false },
+    css: '.ui-pop-mask.is-center { display: flex !important; }' },
+  // 2026-10-18 股东配置（超管二级页，逐页视觉对齐）：列表 + 编辑抽屉两张图
+  { name: 'shareholder-config', h: 2000, wxml: 'subpackages/extra/shareholder-config/index', data: {
+      ready: true, obsPending: false, tipText: '', loading: false, listError: false, filterLabels: ['全部门店', '山川造物', '星宸标本'], filterIndex: 0, showForm: false, disablePendingId: '', enablePendingId: '',
+      list: [
+        { _id: 'h1', name: '林岚', status: 'active', statusLabel: '生效', staffNo: 'SH-01', storeName: '山川造物 · 主店', openidTail: 'Qu71iyll', ownershipRatioText: '30%', beforeText: '50%', afterText: '35%', capitalText: '¥300,000', effectiveDate: '2025-03-01' },
+        { _id: 'h2', name: '周砚', status: 'disabled', statusLabel: '已停用', staffNo: '', storeName: '星宸标本 · 工坊', openidTail: 'Zx90abQe', ownershipRatioText: '12%', beforeText: '20%', afterText: '20%', capitalText: '¥120,000', effectiveDate: '2024-11-15' }
+      ] } },
+  { name: 'shareholder-config-form', h: 1700, wxml: 'subpackages/extra/shareholder-config/index', base: 'shareholder-config', data: {
+      showForm: true, editingId: '', lookingUp: false, matchHint: '', candidates: [], saving: false, formTip: '',
+      matched: { openid: 'oa22', nickName: '林岚', openidTail: 'Qu71iyll' },
+      form: { phone: '13800001234', openid: 'oa22', openidTail: 'Qu71iyll', name: '林岚', staffNo: 'SH-01', ownershipRatio: '30', capitalContribution: '300000', dividendRatioBeforePayback: '50', dividendRatioAfterPayback: '35', effectiveDate: '2025-03-01' },
+      storeChecks: [{ key: 's1', storeId: 's1', name: '山川造物 · 主店', selected: true }, { key: 's2', storeId: 's2', name: '星宸标本 · 工坊', selected: false }] },
+    css: '.ui-pop-mask.ui-pop-mask { display: block !important; }' },
+  // 2026-10-18 审批中心（视觉对齐 + 驳回面板：常用原因快选 + 补充说明 + 预览）
+  { name: 'approvals', h: 1900, wxml: 'subpackages/extra/approvals/index', data: {
+      ready: true, scopeHint: '超管 · 全部门店', hubFlow: false, viewMode: 'inbox', overdueCount: 1, slaHours: 24, tipText: '', canDecideTabs: true,
+      overviewExpanded: false, overviewReady: true, overviewSummary: '待我审 3 · 超时 1', overviewLoading: false,
+      auditHub: [{ key: 'list', label: '审批' }, { key: 'flow', label: '积分流水' }, { key: 'claim', label: '小票认领' }], hubMode: 'list',
+      pendingBadge: 3, statusOptions: ['全部'], statusIndex: 0, typeOptions: ['全部类型', '小票认领', '门店赠分'], typeIndex: 0, total: 3,
+      expandedId: '', deciding: false, decidingId: '', decidingAction: '', approvePendingId: '', ignorePendingId: '', loading: false, listError: false, hasMore: false,
+      list: [
+        { _id: 'a1', status: 'pending', statusText: '待审核', overdue: true, title: '小票认领 · 林间拾蝶 ¥286', actionType: 'points_receipt_claim', actionLabel: '小票认领', overdueText: '已超时 30h', summary: '小票号 0921-0087 · 申请 +286 分', showAttachmentBlock: true, hasAttachments: false, metaLine: '店员 阿桃 · 10-17 08:12', canDecide: true, canIgnore: true, requireRejectReason: false, detailLines: [] },
+        { _id: 'a2', status: 'pending', statusText: '待审核', overdue: false, title: '订单退款 · SO20261016-031', actionType: 'order_refund', actionLabel: '订单退款', overdueText: '剩余 18h', summary: '退款 ¥1,280 · 顾客称运输破损', showAttachmentBlock: false, metaLine: '店长 林岚 · 10-18 09:40', canDecide: true, canIgnore: false, requireRejectReason: true, detailLines: [] }
+      ],
+      rejectSheet: { show: false, reasons: [], picked: [] } } },
+  // 小惊喜：本次进页后把待审清空 → 「审毕」朱印 + 本轮件数
+  { name: 'approvals-cleared', h: 1100, wxml: 'subpackages/extra/approvals/index', base: 'approvals', data: {
+      list: [], total: 0, pendingBadge: 0, overdueCount: 0, sessionDecided: 4, emptyTitle: '待审已清空', emptyHint: '新的申请会出现在这里' } },
+  { name: 'approvals-reject', h: 1500, wxml: 'subpackages/extra/approvals/index', base: 'approvals', data: {
+      rejectSheet: { show: true, id: 'a2', title: '订单退款 · SO20261016-031', typeLabel: '订单退款', requireReason: true,
+        reasons: [{ label: '不符合退款条件', on: false }, { label: '请先与顾客沟通', on: true }, { label: '退款金额有误', on: true }, { label: '信息不全，请补充后重新提交', on: false }],
+        picked: ['请先与顾客沟通', '退款金额有误'], note: '破损照片未上传', preview: '请先与顾客沟通；退款金额有误；破损照片未上传', tip: '' } },
+    css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  // 2026-10-18 仪式感：考勤打孔卡 / 门店清单开馆·闭馆
+  { name: 'staff-attendance', h: 1250, wxml: 'subpackages/extra/staff/attendance/index', data: {
+      ready: true, storeNames: ['山海造物 · 主店'], storeIndex: 0, storeName: '山海造物 · 主店', todayStatus: 'in', todayStatusLabel: '已上班，待下班', todayStatusHint: '上班 10-18 09:12 · 准时',
+      lastClock: '上班打卡成功 · 准时', canClockIn: false, canClockOut: true, onLeave: false, leaveHint: '', loading: false, clocking: false, justPunched: 'in',
+      today: [{ _id: 't1', typeLabel: '上班', statusLabel: '准时', timeText: '10-18 09:12' }], recent: [{ _id: 'r1', storeName: '山海造物 · 主店', typeLabel: '下班', timeText: '10-17 21:05', statusLabel: '准时' }],
+      weekSummary: '本周出勤 5 天 · 迟到早退 1 次',
+      week: [['一', 12, 'ok', 'ok'], ['二', 13, 'ok', 'warn'], ['三', 14, '', ''], ['四', 15, 'ok', 'ok'], ['五', 16, 'warn', 'ok'], ['六', 17, 'ok', 'ok'], ['日', 18, 'ok', '']].map(([dow, day, i, o], k) => ({ key: 'd' + k, dow, day, in: i, out: o, isToday: k === 6, isFuture: false })) } },
+  { name: 'todos-open', h: 900, wxml: 'subpackages/extra/staff/store-todos/index', data: {
+      ready: true, storeNames: ['山海造物 · 主店'], storeIndex: 0, storeName: '山海造物 · 主店', shift: 'morning', dateKey: '2026-10-18', saving: false, lastSave: '',
+      progress: { done: 3, total: 3 }, shiftStatus: 'done', shiftStatusLabel: '本班次已全部完成', ceremony: 'open', ceremonyLive: true, ceremonyTime: '09:26',
+      items: [{ id: 'a', label: '展柜灯与温湿度', checked: true, checkedAtText: '10-18 09:20' }, { id: 'b', label: '收银备用金核对', checked: true, checkedAtText: '10-18 09:24' }, { id: 'c', label: '门口陈列与地面', checked: true, checkedAtText: '10-18 09:26' }] },
+    css: '.ceremony.is-live .cer-door { animation: none !important; opacity: 1; } .cer-door.left { transform: translateX(-58%) !important; } .cer-door.right { transform: translateX(58%) !important; }' },
+  { name: 'todos-close', h: 600, wxml: 'subpackages/extra/staff/store-todos/index', base: 'todos-open', data: { shift: 'evening', ceremony: 'close', ceremonyTime: '21:08' },
+    css: '.ceremony.is-live .cer-lamp { animation: none !important; background: #C9A55E; box-shadow: 0 0 0 2rpx rgba(196,167,108,.5), 0 0 30px 8px rgba(242,213,142,.28); }' },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },
@@ -492,6 +585,9 @@ const SCENES = [
   { name: 'pickup-done', h: 1700, wxml: 'subpackages/business/pickup-pass/index', base: 'pickup', data: { showRefundEntry: false, claimedAtText: '10月17日 15:20',
       pass: { statusLabel: '已自提', statusTone: 'done', headline: '本次自取已完成', hint: '', codeText: '4826 1937',
         steps: [{ label: '支付完成', state: 'done' }, { label: '备妥待取', state: 'done' }, { label: '到店领取', state: 'done' }] } } },
+  // 柜台当场核销：「已自提」印落下途中（定格在放大回落的一帧）
+  { name: 'pickup-claim-live', h: 1100, wxml: 'subpackages/business/pickup-pass/index', base: 'pickup-done', data: { claimLive: true },
+    css: '.pass-qr-frame.is-live .pass-qr-stamp { animation: none !important; transform: translate(-50%, -50%) rotate(-14deg) scale(1.3) !important; opacity: 0.7; }' },
   // 2026-10-17 标本定制「定制工坊」（第 1 / 2 / 5 步）
   { name: 'custom', h: 2200, wxml: 'subpackages/feature/custom/index', data: { loading: false, navPaddingRight: 32, headerHeight: 150, estimatedDays: 7, currentStep: 1,
       steps: [['藏品'], ['装裱'], ['包装'], ['赠礼'], ['确认']].map(([label], i) => ({ id: i + 1, label })),
@@ -507,7 +603,97 @@ const SCENES = [
       previewLines: [{ label: '藏品', value: '光明女神闪蝶' }, { label: '学名', value: 'Morpho helena', latin: true }, { label: '框型', value: '胡桃木 · 浅框' }, { label: '规格', value: '20×25' }, { label: '包装', value: '礼盒包装' }, { label: '祝福卡', value: '生日快乐，愿你一直闪闪发光' }],
       unitPrice: 680, customExtraPrice: 188, displayEstimatedDays: 7 } },
   { name: 'custom-2', h: 2000, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 2, currentStepMeta: { title: '选装裱', desc: '框型、规格与标本师，决定装裱气质与交期' } } },
-  { name: 'custom-5', h: 2400, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 5, currentStepMeta: { title: '定制预览', desc: '核对方案与预估价格，满意后下单制作' } } }
+  { name: 'custom-5', h: 2400, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 5, currentStepMeta: { title: '定制预览', desc: '核对方案与预估价格，满意后下单制作' } } },
+  // 2026-10-17 联系专员「专员服务台」
+  { name: 'support', h: 3000, wxml: 'subpackages/extra/user/support/index', data: { loading: false, navPaddingRight: 32, headerHeight: 64, scrollTop: 64,
+      contextCard: { visible: false }, contextSummary: '', hasConsultContext: false, sessionFrom: '', showMessageCard: false,
+      config: { hours: '每日 10:00 – 22:00', responseHint: '工作时间内约 10 分钟回复；夜间留言次日处理', phone: '185 1911 0274', address: '吉林省长春市朝阳区红旗街 959 号这有山商场山坡 X-06-1', communityQr: '' },
+      topics: [{ id: 'order', label: '订单与物流', desc: '发货、签收、改地址' }, { id: 'aftersale', label: '售后与退换', desc: '破损、退款、换货' }, { id: 'custom', label: '定制咨询', desc: '框型、交期、报价' }, { id: 'care', label: '标本养护', desc: '防潮、清洁、摆放' }], activeTopic: 'custom',
+      messageText: '', contactPhone: '', ticketImages: [], maxTicketImages: 3, ticketImgFailed: 0, ticketImgBusy: false, submitting: false,
+      faqs: [{ q: '标本可以退换吗？', a: '未拆封且签收 7 日内可申请；定制藏品按确认方案制作，不接受退款。' }, { q: '多久可以发货？', a: '现货 48 小时内发出；定制按方案页交期。' }, { q: '门店可以自取吗？', a: '下单时选择门店自取，备妥后凭自取码到店领取。' }], expandedFaq: 0, showCommunity: false } },
+  // 2026-10-18 搜索「检索台」（空闲 / 结果）
+  { name: 'search', h: 1500, wxml: 'subpackages/feature/search/index', data: { headerHeight: 64, keyword: '', inputFocused: false, isSearching: false, showAiIdentify: true, scopeCategoryName: '', showSpecimenArchive: true,
+      hotKeys: ['闪蝶', '鹦鹉螺', '紫水晶', '蝴蝶标本框', '押花', '甲虫'], loadingHotKeys: false, historyList: [{ keyword: '光明女神闪蝶' }, { keyword: 'Morpho' }, { keyword: '玻璃罩' }],
+      showSuggestions: false, suggestions: [], filterTabs: [], displayList: [], relatedList: [], relatedTerms: [] } },
+  { name: 'search-result', h: 1900, wxml: 'subpackages/feature/search/index', base: 'search', data: { keyword: '闪蝶', isSearching: true, loading: false, loadError: false, resultMode: 'all', resultTotal: 3,
+      filterTabs: [{ id: 'all', label: '全部', count: 3 }, { id: 'product', label: '藏品', count: 2 }, { id: 'archive', label: '档案', count: 1 }, { id: 'activity', label: '活动', count: 0 }],
+      displayList: [{ resultKey: 'a', _id: 'p1', type: 'product', title: '光明女神闪蝶 · A1 博物级', subTitle: 'Morpho helena', image: P[0], tag: '藏品', priceText: '1,280', matchStrong: true, displayTags: ['闪蝶', '南美'], craftTags: [{ key: 'k1', label: '玻璃罩' }] },
+        { resultKey: 'b', _id: 'p2', type: 'product', title: '蓝闪蝶木框', subTitle: 'Morpho peleides', image: P[2], tag: '藏品', priceText: '560', displayTags: ['闪蝶'] },
+        { resultKey: 'c', _id: 'w1', type: 'wiki', title: '闪蝶科 · 结构色', subTitle: 'Morphinae', image: P[4], tag: '档案' }],
+      resultList: [1, 2, 3], relatedLoading: false, relatedList: [{ resultKey: 'r1', _id: 'p5', type: 'product', title: '血漪蝶穹顶', subTitle: 'Cethosia biblis', image: P[1], priceText: '680' }] } },
+  // 2026-10-18 主播工作台（员工端，点名重构）
+  { name: 'live-studio', h: 3400, wxml: 'subpackages/extra/live/studio/index', data: { ready: true, greeting: '晚上好，阿遥', isPreview: false, modeLabel: '主播', showOnAir: true,
+      roleHint: '开播、挂品与讲解在本台；全店配置走超管工作台。', tipText: '', flowHot1: false, flowHot2: false, flowHot3: true, liveDashLoading: false, loadError: '',
+      nextStepTitle: '正在直播：留意讲解中藏品', nextStepBody: '已挂 3 件，当前讲解「光明女神闪蝶」。下播前记得结束本场，场次数据才会归档。', nextStepCta: '去开播控制台',
+      adminHint: '', otherLiveHint: '',
+      statusCard: { statusTone: 'live', statusLabel: '直播中', statusLightClass: 'live blink', title: '秋夜观蝶 · 闪蝶专场', viewerCount: 128, likeCount: 2316, messageCount: 87, shelfCount: 3, peakViewers: 164, joinCount: 412, reminderCount: 58, startLabel: '19:30' },
+      configured: true, enabled: true, configLightClass: 'on', enabledLightClass: 'on', canYouxin: true, canAttendance: true, canPayslip: true,
+      mineSessionId: 's1', shelfPreview: [{ _id: 'x1', title: '光明女神闪蝶 · A1', priceLabel: '¥1,280', spotlight: true, canMoveUp: false, canMoveDown: true }, { _id: 'x2', title: '蓝闪蝶木框', priceLabel: '¥560', canMoveUp: true, canMoveDown: true, warnText: '库存仅 1 件' }],
+      talkSegments: [{ key: 'k0', heading: '开场', body: '欢迎来到山海造物的秋夜观蝶专场……' }, { key: 'k1', heading: '01 · 光明女神闪蝶', body: '结构色不是颜料，是翅鳞的纳米结构在反射光。', spotlight: true }],
+      noticeSessionId: 's1', noticeDraft: '今晚 21:00 前下单送标本小卡',
+      recentSessions: [{ _id: 's0', title: '鞘翅目夜话', hostName: '阿遥', timeHint: '10.12 · 1 小时 20 分', statusText: '已结束', chipClass: 'chip-ended', status: 'ended', summary: '峰值 96 · 成交 4 单' }],
+      primaryCtaLabel: '去开播控制台', creating: false, canEndSession: true, ending: false } },
+  // 2026-10-18 标本师工作台（员工端，点名重构）
+  { name: 'artisan', h: 2900, wxml: 'subpackages/extra/artisan/index', data: { ready: true, artisanDisplayName: '林师傅', canProducts: true, canWorks: true, canConcept: true, canPetOrders: true, canProfile: true, canAttendance: true, canPayslip: true,
+      statsLoading: false, workPendingShelf: 2, jobPendingMake: 3, jobPendingShip: 0, jobInProgress: 1, depositTodo: 1, todoTotal: 7,
+      todoLamps: { pending: 'warn', make: 'warn', ship: 'lamp-muted', framing: 'lamp-info', deposit: 'warn', display: 'lamp-forest' }, petOrderLamp: 'warn', petOrderTodo: 1,
+      depositPreview: [{ _id: 'd1', title: '蝶翅画 · 秋林', previewMeta: '待确认收款', depositAmount: 300, productId: 'p1' }],
+      jobPreview: [{ _id: 'j1', specimenTitle: '光明女神闪蝶 · 胡桃木浅框', orderNo: 'CU20261016008', productionLabel: '待制作', productionStatus: 'pending_make' }],
+      workTotal: 46, workOnShelf: 38, commissionLoaded: true, commissionNet: '1,860' } },
+  // 2026-10-18 标本师子页（员工端，点名）
+  { name: 'artisan-commission', h: 1300, wxml: 'subpackages/extra/artisan/commission/index', data: { ready: true, loading: false, enabled: true, ratePercent: 12, ruleText: '关联藏品售出后按 12% 计入，退款自动冲正',
+      summary: { netAmount: '1,860.00', earnAmount: '2,016.00', reverseAmount: '156.00', salesAmount: '16,800.00' },
+      list: [{ _id: 'l1', type: 'earn', typeLabel: '入账', amountAbs: '153.60', productTitle: '蝶翅画 · 秋林', salesAmount: '1,280', ratePercent: 12, orderNo: 'SH20261016021', createTimeText: '10.16 20:14' },
+        { _id: 'l2', type: 'reverse', typeLabel: '冲正', amountAbs: '67.20', productTitle: '蝶翅书签 · 晨雾', salesAmount: '560', ratePercent: 12, orderNo: 'SH20261012007', createTimeText: '10.12 11:02' }] } },
+  { name: 'artisan-pet', h: 1300, wxml: 'subpackages/extra/artisan/pet/index', data: { ready: true, loading: false, pendingCount: 1,
+      list: [{ _id: 'p1', orderNo: 'PM20261017003', accepted: false, petTitle: '团子 · 英短', craftName: '仿生标本', intakeText: '10.20 到店交接', contactText: '林女士 · 138****2201', contactPhone: '13800002201' },
+        { _id: 'p2', orderNo: 'PM20261002011', accepted: true, statusLabel: '制作中', petTitle: '豆豆 · 柯基', craftName: '骨骼标本', quoteText: '¥3,800', acceptedAt: '10.03 09:20' }] } },
+  { name: 'artisan-works', h: 1500, wxml: 'subpackages/extra/artisan/works/index', data: { ready: true, pageMode: 'works', pageTitle: '作品库', pageSub: '封面、状态与上下架；申请上架后由店长审核', selectMode: false, loading: false, loadError: false, hasProfile: true, canProfile: true,
+      shelfFilter: 'all', filterCounts: { all: 46, on: 38, pending: 2, rejected: 1, off: 5 }, listAll: [1],
+      list: [{ _id: 'w1', title: '光明女神闪蝶 · A1', latinName: 'Morpho helena', coverImage: P[0], shelfKey: 'on', shelfLabel: '已上架', priceText: '1,280' }, { _id: 'w2', title: '蝶翅画 · 秋林', latinName: '', coverImage: P[4], shelfKey: 'pending', shelfLabel: '待确认', priceText: '980' }, { _id: 'w3', title: '血漪蝶穹顶', latinName: 'Cethosia biblis', coverImage: P[1], shelfKey: 'rejected', shelfLabel: '已驳回', priceText: '680' }] } },
+  { name: 'artisan-concept', h: 2400, wxml: 'subpackages/extra/artisan/concept/index', data: { ready: true, generating: false, progressPct: 0, statusText: '', lastError: '', notesOpen: false, notes: '', historyOpen: false, history: [], batchResults: [],
+      productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
+      categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
+      concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
+  // 2026-10-18 采购商工作台（员工 / 合作方端，点名）
+  { name: 'supplier-desk', h: 1700, wxml: 'subpackages/extra/supplier/index', data: { ready: true, staffName: '长白山店 · 王店长', isPreview: false, modeLabel: '采购商', demoOn: false, roleHint: '向总部采购价目内藏品；下单后在「我的采购单」支付与跟进。', features: null, cartCount: 2,
+      buyerModules: [{ key: 'catalog', title: '价目选购', desc: '按总部价目挑选，可加入采购车', icon: '/assets/icons/tab-collection.png' }, { key: 'buyer-cart', title: '采购车', desc: '确认数量与收货信息后下单', icon: '/assets/icons/cart.png', badge: 2 }, { key: 'buyer-orders', title: '我的采购单', desc: '待支付 1 · 已发货 3', icon: '/assets/icons/order.png' }],
+      showSupplierSection: true, supplierOpen: true, visibleSupplierModules: [{ key: 'orders', title: '供货需求', desc: '总部发给供货方的需求单', icon: '/assets/icons/order.png' }, { key: 'ship', title: '发货登记', desc: '填写物流单号', icon: '/assets/icons/gift.png' }], isBuyer: true } },
+  // 2026-10-18 采购商子页（价目选购 / 采购车 / 我的采购单）
+  { name: 'buyer-catalog', h: 1500, wxml: 'subpackages/extra/supplier/catalog/index', data: { ready: true, loading: false, loadError: false, isPreview: false, cartCount: 3, flash: '已加入采购车 · 光明女神闪蝶 × 2', flashKind: 'ok', staffName: '王店长',
+      items: [{ name: '光明女神闪蝶 · A1 博物级', priceText: '¥680', packText: '1 只 / 盒', meta: '起订 2 · 现货', thumbUrl: P[0], orderable: true, qty: 2, inCart: 2, addLabel: '已在采购车' },
+        { name: '蓝闪蝶木框', priceText: '¥320', packText: '1 框 / 箱', meta: '起订 1 · 7 天发货', thumbUrl: P[2], orderable: true, qty: 1, inCart: 0, addLabel: '加入采购车' },
+        { name: '蝶植组合框', priceText: '¥460', packText: '1 框 / 箱', meta: '本季未开放订货', thumbUrl: P[5], orderable: false, qty: 1, inCart: 0, addLabel: '暂不可订' }] } },
+  { name: 'buyer-cart', h: 1900, wxml: 'subpackages/extra/supplier/buyer-cart/index', data: { ready: true, isPreview: false, banner: '', bannerKind: '', itemCount: 3, totalText: '¥1,680', company: '长白山店', contactName: '王店长', contactPhone: '138 0000 2201', shipToAddress: '吉林省白山市长白山景区游客中心 B 座 12 号', note: '',
+      items: [{ skuId: 'a', name: '光明女神闪蝶 · A1 博物级', packText: '1 只 / 盒', unitText: '¥680 / 盒', quantity: 2, lineTotalText: '¥1,360', thumbUrl: P[0] }, { skuId: 'b', name: '蓝闪蝶木框', packText: '1 框 / 箱', unitText: '¥320 / 箱', quantity: 1, lineTotalText: '¥320', thumbUrl: P[2] }] } },
+  { name: 'buyer-orders', h: 1900, wxml: 'subpackages/extra/supplier/buyer-orders/index', data: { ready: true, loadError: false, isPreview: false, unpaidCount: 1, cartCount: 0, banner: '', bannerKind: '',
+      filters: [{ key: 'all', label: '全部', on: true }, { key: 'unpaid', label: '待支付' }, { key: 'shipping', label: '已发货' }, { key: 'done', label: '已完成' }],
+      list: [{ id: 'o1', orderNo: 'PO20261018002', payTone: 'warn', paymentText: '待支付', itemsBrief: '光明女神闪蝶 × 2 · 蓝闪蝶木框 × 1', fulfillText: '待支付后备货', nextStep: '下一步：完成微信支付，总部当日备货', amountText: '¥1,680', timeText: '10.18 10:24', canPay: true, canAct: true },
+        { id: 'o2', orderNo: 'PO20261009011', payTone: 'ok', paymentText: '已支付', itemsBrief: '血漪蝶穹顶 × 4', fulfillText: '已发货 · 顺丰 SF1234567890', nextStep: '', amountText: '¥2,720', timeText: '10.09 16:02', canPay: false, canAct: true }] } },
+  // 2026-10-18 股东观测台（只读看板，点名「逐个工作台优化」）
+  { name: 'shareholder', h: 2100, wxml: 'subpackages/extra/shareholder/index', data: { ready: true, entered: true, staffName: '李董', loading: false, legendOpen: true, numPulse: false,
+      profile: { storeName: '山川造物 · 主店', ownershipRatio: 20, dividendRatioBeforePayback: 30, dividendRatioAfterPayback: 20, capitalContributionFmt: '400,000', effectiveDate: '2026-03-01' },
+      rangeTabs: [{ key: 'month', label: '按月' }, { key: 'quarter', label: '本季' }, { key: 'year', label: '本年' }, { key: 'all', label: '累计' }], rangeKey: 'month', rangeType: 'month', rangeLabel: '10 月',
+      monthKey: '2026-10', monthCurrent: '2026-10', monthPrev: '2026-09', monthLabel: '2026-10', monthMax: '2026-10',
+      verdict: { className: 'blink', tone: 'up', title: '经营向好 · 回本提速', label: '正常', insight: '本月营收环比 +18%，毛利率回到 52%；按当前节奏预计 2027 年 3 月个人回本。', updatedAt: '10.18 09:20' },
+      signalBoard: { summary: { ok: 3, warn: 1, danger: 0 }, rulesNote: '阈值按近 3 月均值 ±15% 判定', items: [
+        { id: 's1', name: '营收', value: '¥186,400', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '向好', target: 'revenue' },
+        { id: 's2', name: '毛利率', value: '52%', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '正常', target: 'profit' },
+        { id: 's3', name: '商场扣点', value: '¥9,320', tone: 'flat', status: 'warn', lampClass: 'warn', statusLabel: '需关注', reason: '已过保底线 82%', target: 'mall' },
+        { id: 's4', name: '回本进度', value: '41%', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '正常', target: 'equity' }] },
+      equity: { statusTone: 'brass', statusLabel: '回本前', personalDividendFmt: '163,200', personalRoiPct: 41, personalRoiBar: 'width:41%', poolRoiPct: 38, poolRoiBar: 'width:38%' } } },
+  // 2026-10-18 投资观测台（只读看板，「逐个工作台优化」）
+  { name: 'investor', h: 2000, wxml: 'subpackages/extra/investor/index', data: { ready: true, entered: true, staffName: '周总', loading: false, legendOpen: false, numPulse: false, canFinance: true, canAnalytics: true,
+      rangeTabs: [{ key: 'today', label: '今日' }, { key: 'month', label: '按月' }, { key: 'quarter', label: '本季' }, { key: 'all', label: '累计' }], rangeKey: 'month', rangeType: 'month', rangeLabel: '10 月',
+      monthKey: '2026-10', monthCurrent: '2026-10', monthPrev: '2026-09', monthLabel: '2026-10', monthMax: '2026-10',
+      verdict: { className: 'blink', tone: 'up', title: '营收稳步上行', label: '正常', insight: '两店合计 GMV 环比 +12%，线上占比升至 34%；退款率 1.8% 在阈值内。', updatedAt: '10.18 09:20' },
+      signalBoard: { summary: { ok: 4, warn: 1, danger: 0 }, rulesNote: '阈值按近 3 月均值 ±15% 判定', items: [
+        { id: 'i1', name: 'GMV', value: '¥312,800', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '向好' },
+        { id: 'i2', name: '客单价', value: '¥486', tone: 'flat', status: 'ok', lampClass: 'blink', statusLabel: '正常' },
+        { id: 'i3', name: '退款率', value: '1.8%', tone: 'flat', status: 'ok', lampClass: 'blink', statusLabel: '正常' },
+        { id: 'i4', name: '新客', value: '214', tone: 'down', status: 'warn', lampClass: 'warn', statusLabel: '需关注', reason: '环比 -16%' }] },
+      headline: { grandFmt: '312,800', gmvPaidFmt: '206,400', offlineFmt: '106,400', netOnlineFmt: '201,300', refundFmt: '5,100', paidOrders: 644, aovFmt: '486', newUsers: 214 },
+      ledgerByStore: [{ storeId: 's1', name: '山川造物 · 主店', pct: 68, barStyle: 'width:68%', valFmt: '¥212,700' }, { storeId: 's2', name: '星宸标本 · 工坊', pct: 32, barStyle: 'width:32%', valFmt: '¥100,100' }] } }
 ]
 
 async function shoot(s) {
@@ -515,7 +701,8 @@ async function shoot(s) {
   let wxml = inlineTemplates(read(join(MP, s.wxml + '.wxml')))
     .replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, '')
     .replace(/<checkbox-group\b/g, '<view').replace(/<\/checkbox-group>/g, '</view>').replace(/<checkbox\b[^>]*?\/>/g, '<view class="__cb"></view>').replace(/<checkbox\b([^>]*)>[\s\S]*?<\/checkbox>/g, '<view class="__cb"></view>')
-    .replace(/<picker\b[^>]*>/g, '<view>').replace(/<\/picker>/g, '</view>')
+    // picker → view 时保留条件链（picker 上的 wx:if 丢了，后面的 wx:else 会悬空）
+    .replace(/<picker\b([^>]*)>/g, (_, attrs) => `<view${(attrs.match(/\swx:(?:if|elif)="[^"]*"|\swx:else\b/) || [''])[0]}>`).replace(/<\/picker>/g, '</view>')
     .replace(/<scroll-view\b/g, '<view').replace(/<\/scroll-view>/g, '</view>')
     .replace(/<sensitive-blur-gate\b[^>]*>/g, '<view>').replace(/<\/sensitive-blur-gate>/g, '</view>')
     .replace(/<swiper-item\b/g, '<view').replace(/<\/swiper-item>/g, '</view>').replace(/<swiper(?=[\s>])/g, '<view').replace(/<\/swiper>/g, '</view>')
@@ -533,6 +720,7 @@ div, span, img { box-sizing: border-box; }
 .sticky-header { position: relative !important; }
 .footer-bar { position: relative !important; }
 .__cb { display: inline-block; width: 28px; height: 28px; border: 1px solid #c4a76c; border-radius: 4px; vertical-align: middle; }
+${s.css ? '/* 场景专属：如需出图某个弹层 */\n' + s.css : ''}
 </style></head><body>${body}</body></html>`
   const htmlPath = join(tmpdir(), `core-${s.name}-${process.pid}.html`)
   writeFileSync(htmlPath, html)

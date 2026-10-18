@@ -1,5 +1,10 @@
 @import '../../utils/workbench-nav.wxss';
 
+/* 采购商 / 供货方工作台共享样式（2026-10-18 视觉对齐，产品负责人点名「采购商工作台」；与主播 / 标本师工作台同口径）
+   眉标等宽 + 宋体主标；三步流程 = 等宽编号 + 下划线；入口 / 列表为发丝线行 + 方印图标；状态页签为方角发丝签、选中金线环；
+   列表行动作不再是实心金药丸（一屏多行 = 多颗实心金）。演示模式的橙色是「假数据」警示，保留。
+   本文件被工作台与 catalog / buyer-cart / buyer-orders / orders / ship / settlement 六个子页共用。 */
+
 page {
   background: var(--color-bg);
   color: var(--color-text-body);
@@ -22,17 +27,20 @@ page {
 
 .boot-en,
 .brand-group .en {
-  font-size: var(--fs-20);
-  letter-spacing: 0.16em;
-  color: var(--brass-600);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .boot-cn,
 .brand-group .cn {
-  margin-top: 6rpx;
+  margin-top: 8rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-40);
-  color: var(--color-text-primary);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .boot-hint {
@@ -59,9 +67,10 @@ page {
 }
 
 .greeting {
+  font-family: var(--font-brand);
   font-size: var(--fs-28);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .preview-chip,
@@ -69,7 +78,7 @@ page {
   display: inline-flex;
   align-items: center;
   padding: 4rpx 14rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
 }
 
 .preview-chip {
@@ -97,7 +106,7 @@ page {
   display: inline-flex;
   align-items: center;
   padding: 4rpx 14rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.16);
 }
 
@@ -106,29 +115,29 @@ page {
   color: var(--color-text-secondary);
 }
 
+/* 三步流程：等宽编号 + 下划线（原金底圆角条 + 圆圈编号） */
 .flow-strip {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8rpx;
-  margin-bottom: var(--space-4);
-  padding: 14rpx 12rpx;
-  border-radius: var(--radius-md);
-  background: rgba(196, 167, 108, 0.06);
-  border: 1rpx solid rgba(196, 167, 108, 0.2);
+  margin-bottom: var(--space-5);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .flow-step-btn {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
-  padding: 12rpx 8rpx;
-  border-radius: var(--radius-sm);
+  gap: 4rpx;
+  padding: 14rpx 8rpx 16rpx;
+  border-bottom: 3rpx solid transparent;
+  margin-bottom: -1rpx;
 }
 
 .flow-step-btn.hot {
-  background: rgba(196, 167, 108, 0.12);
+  border-bottom-color: var(--brass-400);
 }
 
 .flow-press {
@@ -136,25 +145,24 @@ page {
 }
 
 .flow-num {
-  width: 32rpx;
-  height: 32rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.45);
-  font-size: var(--fs-18);
-  color: var(--brass-600);
-  text-align: center;
-  line-height: 30rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  letter-spacing: 0.1em;
+  color: var(--brass-300);
 }
 
 .flow-label {
-  font-size: var(--fs-22);
-  color: var(--color-text-primary);
+  font-size: var(--fs-26);
+  color: var(--color-text-secondary, #A09A90);
 }
 
+.flow-step-btn.hot .flow-label { color: #F3ECDD; font-family: var(--font-brand); font-weight: 600; }
+
 .flow-sep {
-  font-size: var(--fs-22);
-  color: var(--color-text-muted);
   flex-shrink: 0;
+  align-self: center;
+  font-size: var(--fs-26);
+  color: rgba(196, 167, 108, 0.45);
 }
 
 .flow-step {
@@ -171,13 +179,13 @@ page {
 
 .module-badge {
   position: absolute;
-  top: -8rpx;
-  right: -8rpx;
-  min-width: 32rpx;
-  height: 32rpx;
+  top: -10rpx;
+  right: -10rpx;
+  min-width: 30rpx;
+  height: 30rpx;
   padding: 0 8rpx;
-  border-radius: 999rpx;
-  background: var(--brass-600);
+  border-radius: 2rpx;
+  background: var(--brass-300);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -198,30 +206,36 @@ page {
 }
 
 .group {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-5);
 }
 
+/* 分区头 = 等宽眉标 + 宋体主标 + 渐隐金线 */
 .group-head {
   display: flex;
   flex-direction: column;
+  gap: 6rpx;
   margin-bottom: var(--space-3);
+  padding-bottom: 16rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(196, 167, 108, 0.12) 60%, transparent) left bottom / 100% 1px no-repeat;
 }
 
 .group-en {
-  font-size: var(--fs-20);
-  letter-spacing: 0.14em;
-  color: var(--color-text-secondary, #A09A90);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .group-cn {
-  margin-top: 4rpx;
-  font-size: var(--fs-28);
+  font-family: var(--font-brand);
+  font-size: 34rpx;
   font-weight: 500;
-  color: var(--color-text-primary);
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .module-card.primary-card {
-  border-color: rgba(196, 167, 108, 0.28);
+  background: transparent;
 }
 
 .module-card.muted-card {
@@ -251,47 +265,42 @@ page {
 .fold-chevron {
   flex-shrink: 0;
   font-size: var(--fs-22);
-  color: var(--brass-600);
+  color: var(--brass-300);
   padding: 8rpx 0;
 }
 
 .supplier-group {
-  margin-top: var(--space-2);
-  padding-top: var(--space-2);
-  border-top: 1rpx solid rgba(255, 255, 255, 0.05);
+  margin-top: var(--space-4);
 }
 
+/* 入口：发丝线行 + 方印图标（原圆角卡） */
 .module-card {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  padding: 28rpx 24rpx;
-  margin-bottom: 16rpx;
-  border: 1rpx solid var(--color-border, rgba(255, 255, 255, 0.08));
-  border-radius: var(--radius-md, 16rpx);
-  background: var(--color-surface, rgba(255, 255, 255, 0.03));
+  padding: 24rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .module-card-press {
-  opacity: 0.85;
-  border-color: rgba(196, 167, 108, 0.45);
+  background: rgba(196, 167, 108, 0.06);
 }
 
 .module-icon {
   position: relative;
-  width: 72rpx;
-  height: 72rpx;
+  width: 64rpx;
+  height: 64rpx;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md, 12rpx);
-  background: rgba(196, 167, 108, 0.1);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35);
 }
 
 .module-icon image {
-  width: 40rpx;
-  height: 40rpx;
+  width: 36rpx;
+  height: 36rpx;
 }
 
 .module-card-body {
@@ -301,25 +310,25 @@ page {
 
 .module-title {
   display: block;
-  font-size: var(--fs-30);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-family: var(--font-brand);
+  font-size: var(--fs-28);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .module-desc {
   display: block;
-  margin-top: 6rpx;
-  font-size: var(--fs-24);
+  margin-top: 4rpx;
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
   line-height: 1.45;
 }
 
 .module-chevron {
   flex-shrink: 0;
-  font-size: var(--fs-40);
+  font-size: var(--fs-36);
   line-height: 1;
-  color: var(--brass-400, var(--brass-600));
-  opacity: 0.85;
+  color: var(--brass-300);
 }
 
 .demo-bar {
@@ -330,7 +339,7 @@ page {
   margin-bottom: var(--space-4);
   padding: 20rpx 24rpx;
   border: 1rpx dashed rgba(224, 122, 95, 0.4);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   background: rgba(224, 122, 95, 0.06);
 }
 
@@ -360,7 +369,7 @@ page {
   font-size: var(--fs-22);
   color: #e07a5f;
   border: 1rpx solid rgba(224, 122, 95, 0.5);
-  border-radius: 999rpx;
+  border-radius: 2rpx;
 }
 
 .demo-toggle.on {
@@ -374,18 +383,19 @@ page {
   margin-bottom: var(--space-4);
 }
 
+/* 状态页签：方角发丝签，选中金线环 */
 .status-tab {
   padding: 12rpx 22rpx;
   font-size: var(--fs-24);
   color: var(--color-text-secondary);
-  border: 1rpx solid rgba(255, 255, 255, 0.08);
-  border-radius: 999rpx;
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
 }
 
 .status-tab.on {
-  color: var(--color-text-primary);
-  border-color: rgba(196, 167, 108, 0.55);
+  color: var(--brass-200);
   background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass);
 }
 
 .list-card {
@@ -393,8 +403,8 @@ page {
   align-items: flex-start;
   justify-content: space-between;
   gap: 20rpx;
-  padding: 28rpx 0;
-  border-bottom: 1rpx solid rgba(255, 255, 255, 0.06);
+  padding: 26rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .list-main {
@@ -406,9 +416,10 @@ page {
 }
 
 .list-title {
+  font-family: var(--font-brand);
   font-size: var(--fs-28);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .list-meta,
@@ -419,7 +430,7 @@ page {
 }
 
 .list-hint {
-  color: var(--brass-600);
+  color: var(--brass-300);
 }
 
 .list-side {
@@ -433,8 +444,9 @@ page {
 
 .list-qty,
 .list-amount {
+  font-family: var(--font-mono);
   font-size: var(--fs-28);
-  color: var(--brass-500, var(--brass-600));
+  color: var(--brass-200);
   font-variant-numeric: tabular-nums;
 }
 
@@ -446,16 +458,17 @@ page {
 .empty-panel {
   margin-top: var(--space-2);
   padding: var(--space-5);
-  border: 1rpx dashed var(--color-border, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-md);
+  border: 1rpx dashed rgba(196, 167, 108, 0.24);
+  border-radius: 4rpx;
   text-align: center;
 }
 
 .empty-panel-title {
   display: block;
+  font-family: var(--font-brand);
   font-size: var(--fs-28);
-  font-weight: 500;
-  color: var(--color-text-primary);
+  font-weight: 600;
+  color: #F3ECDD;
 }
 
 .empty-panel-body {
@@ -470,7 +483,7 @@ page {
   margin-top: var(--space-2);
   padding: var(--space-5);
   border: 1rpx solid rgba(224, 122, 95, 0.35);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   background: rgba(224, 122, 95, 0.06);
 }
 
@@ -494,9 +507,9 @@ page {
   margin-top: var(--space-4);
   padding: 12rpx 28rpx;
   font-size: var(--fs-24);
-  color: var(--color-text-primary);
-  border: 1rpx solid rgba(196, 167, 108, 0.5);
-  border-radius: 999rpx;
+  color: var(--brass-200);
+  border-radius: 4rpx;
+  box-shadow: var(--ring-brass-soft);
 }
 
 .foot-note {
@@ -513,22 +526,25 @@ page {
 .flash-bar {
   margin-bottom: var(--space-3);
   padding: 16rpx 20rpx;
-  border-radius: var(--radius-sm);
-  background: rgba(196, 167, 108, 0.12);
+  border-radius: 4rpx;
+  background: rgba(196, 167, 108, 0.1);
+  box-shadow: var(--ring-brass-soft);
   font-size: var(--fs-24);
-  color: var(--brass-500, var(--brass-600));
+  color: var(--brass-200);
   line-height: 1.45;
 }
 
+/* 行内动作：金线环（原实心金药丸 —— 列表每行一颗实心金会把整屏点亮） */
 .list-action {
   margin-top: 12rpx;
   align-self: flex-start;
-  padding: 10rpx 20rpx;
-  border-radius: 999rpx;
-  background: var(--brass-500);  /* 深字压 brass-600 仅 4.07:1 → 提一档 ≈5.3:1 */
-  color: #1a1408;
+  padding: 10rpx 22rpx;
+  border-radius: 4rpx;
+  background: rgba(196, 167, 108, 0.1);
+  box-shadow: var(--ring-brass);
+  color: var(--brass-200);
   font-size: var(--fs-22);
-  font-weight: 500;
+  letter-spacing: 0.06em;
 }
 
 .link-row {
@@ -538,9 +554,9 @@ page {
   gap: 16rpx;
   margin: 16rpx 0 8rpx;
   padding: 16rpx 20rpx;
-  border-radius: var(--radius-md);
-  background: rgba(196, 167, 108, 0.08);
-  border: 1rpx solid rgba(196, 167, 108, 0.25);
+  border-radius: 4rpx;
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: var(--ring-brass-soft);
 }
 
 .link-copy {
@@ -550,7 +566,7 @@ page {
 
 .link-go {
   font-size: var(--fs-24);
-  color: var(--brass-600);
+  color: var(--brass-300);
   flex-shrink: 0;
 }
 
@@ -570,7 +586,7 @@ page {
 .ship-form .form-input {
   height: 72rpx;
   padding: 0 20rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   background: rgba(255, 255, 255, 0.04);
   border: 1rpx solid rgba(255, 255, 255, 0.08);
   color: var(--color-text-primary);

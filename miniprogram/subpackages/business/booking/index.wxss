@@ -903,14 +903,16 @@
 
 .mint-content {
   width: 100%;
-  height: 80vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 100rpx;
+  padding-bottom: env(safe-area-inset-bottom);
   position: relative;
 }
+/* 2026-10-18 防遮挡：不再用 80vh 定高 + 底部绝对定位（矮屏上按钮会压住出纸底边）。
+   出纸仍绝对定位、从打印机下沿 0→720rpx 展开；操作区回到文档流，
+   margin-top 恰好让出整张纸 + 48rpx 间距 —— 无论屏多矮，按钮永远在纸下方，遮罩居中整组。 */
 
 .mint-machine {
   width: 520rpx;
@@ -936,7 +938,7 @@
 
 .ticket-paper {
   position: absolute;
-  top: 120rpx;
+  top: 20rpx;
   left: 0;
   right: 0;
   margin: 0 auto;
@@ -950,7 +952,7 @@
   transition: height 2.5s var(--ease-standard);
 }
 
-.ticket-paper.printing { height: 800rpx; }
+.ticket-paper.printing { height: 720rpx; }
 
 .tp-mini {
   position: relative;
@@ -971,7 +973,7 @@
   pointer-events: none;
 }
 
-.tm-head { text-align: center; margin-bottom: 30rpx; width: 100%; }
+.tm-head { text-align: center; margin-bottom: 24rpx; width: 100%; }
 
 .tm-title {
   font-family: var(--font-brand);
@@ -983,7 +985,7 @@
 
 .tm-line { width: 60rpx; height: 1rpx; background: rgba(46, 38, 24, 0.3); margin: 16rpx auto 0; }
 
-.tm-invite { text-align: center; margin-bottom: 40rpx; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.tm-invite { text-align: center; margin-bottom: 24rpx; flex: 1; display: flex; flex-direction: column; justify-content: center; }
 
 .tm-label {
   display: block;
@@ -1039,9 +1041,10 @@
 .tm-foot { margin-top: 16rpx; font-size: var(--fs-18); letter-spacing: 0.12em; color: #8A7F6C; }
 
 .mint-bottom-area {
-  position: absolute;
-  bottom: 80rpx;
-  left: 0;
+  position: relative;
+  /* = 出纸 top 20 + 高 720 − 打印机高 40 + 间距 48 */
+  margin-top: 748rpx;
+  min-height: 184rpx;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -1101,10 +1104,45 @@
 
 .btn-sub-act-press { opacity: 0.8; }
 
+/* 小惊喜：朱印「入馆」—— 出纸完成时自上而下盖印（放大 → 回落 → 轻微回弹），落在票纸右下角内框上；
+   朱色只在纸面上出现，是整张入馆券唯一的红 */
+.tm-seal {
+  position: absolute;
+  right: 34rpx;
+  bottom: 44rpx;
+  width: 96rpx;
+  height: 96rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx solid rgba(168, 53, 42, 0.82);
+  border-radius: 6rpx;
+  box-shadow: inset 0 0 0 3rpx rgba(243, 236, 221, 0.5), inset 0 0 0 5rpx rgba(168, 53, 42, 0.55);
+  color: rgba(168, 53, 42, 0.86);
+  transform: rotate(-12deg) scale(1.9);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.tm-seal-ch {
+  font-family: var(--font-brand);
+  font-size: 32rpx;
+  font-weight: 700;
+  line-height: 36rpx;
+}
+.tm-seal.is-stamped { animation: tm-seal-stamp 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes tm-seal-stamp {
+  0% { opacity: 0; transform: rotate(-12deg) scale(1.9); }
+  60% { opacity: 0.95; transform: rotate(-12deg) scale(0.94); }
+  100% { opacity: 0.9; transform: rotate(-12deg) scale(1); }
+}
+
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {
   .scan-bar,
   .mint-tip {
     animation: none;
   }
+  .tm-seal.is-stamped { animation: none; opacity: 0.9; transform: rotate(-12deg); }
 }

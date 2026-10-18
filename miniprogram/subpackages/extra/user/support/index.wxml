@@ -1,12 +1,13 @@
 <!--subpackages/extra/user/support/index.wxml-->
+<!-- 2026-10-17「专员服务台」重构：页头眉标 + 宋体主标；服务时间 / 响应为发丝线两栏行；咨询类型方角发丝签、选中金线环；
+     联系方式发丝线行，实心金只给「开始对话」（微信专员 = 主路径）；留言写在浅纸便笺上，提交为金线环；FAQ / 到店为发丝线行。数据与交互不变。 -->
 <view class="page-support">
-  <view class="grain-overlay"></view>
 
   <view class="sticky-header" style="padding-right: {{navPaddingRight}}px;">
     <view class="nav-row">
       <view class="nav-brand">
+        <text class="nav-sub">SUPPORT DESK · 专员服务台</text>
         <text class="nav-title">联系专员</text>
-        <text class="nav-sub">SUPPORT</text>
       </view>
     </view>
   </view>
@@ -119,7 +120,7 @@
               <text class="channel-name">电话专线</text>
               <text class="channel-desc">{{config.phone}}</text>
             </view>
-            <text class="channel-arrow">→</text>
+            <text class="channel-arrow">›</text>
           </view>
 
           <view class="channel-item" hover-class="tap-press-soft" bindtap="goMessages">
@@ -127,7 +128,7 @@
               <text class="channel-name">山海有信</text>
               <text class="channel-desc">查看系统通知与留言回执</text>
             </view>
-            <text class="channel-arrow">→</text>
+            <text class="channel-arrow">›</text>
           </view>
 
           <view class="channel-item" hover-class="tap-press-soft" bindtap="openCommunity">
@@ -135,7 +136,7 @@
               <text class="channel-name">官方社群</text>
               <text class="channel-desc">添加微信助手后入群</text>
             </view>
-            <text class="channel-arrow">→</text>
+            <text class="channel-arrow">›</text>
           </view>
         </view>
       </view>
@@ -223,7 +224,7 @@
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">VISIT US</text><text class="mu-cn">到店咨询</text></view></view>
         <view class="visit-card" hover-class="tap-press-soft" bindtap="openMap">
           <text class="visit-addr">{{config.address || '门店地址加载中'}}</text>
-          <text class="visit-link">点击导航 →</text>
+          <text class="visit-link">导航前往 ›</text>
         </view>
       </view>
 

@@ -38,7 +38,9 @@ Component({
     protectionEmpty: { type: Boolean, value: false },
     protectionEmptyLabel: { type: String, value: '暂无等级' },
     protectionSummary: { type: String, value: '' },
-    showProtection: { type: Boolean, value: false }
+    showProtection: { type: Boolean, value: false },
+    // 仪式感（2026-10-18）：true = 刚鉴定完，中文名墨迹晕开、学名逐字敲出、置信度随后填满；点标本牌可跳过
+    typewriter: { type: Boolean, value: false }
   },
 
   data: {
@@ -49,7 +51,11 @@ Component({
     expanded: false,
     warningText: '',
     confidenceDesc: '',
-    showPhotoTips: false
+    showPhotoTips: false,
+    latinShown: '',
+    latinTyping: false,
+    confReady: true,
+    inkIn: false
   },
 
   observers: {
@@ -67,6 +73,7 @@ Component({
         warningText = '识别不太确定，建议按下方提示重新拍摄'
         showPhotoTips = true
       }
+      this._syncLatin(speciesInfo)
       this.setData({
         displayImage: imageUrl || '',
         taxTags: tags,
@@ -79,7 +86,54 @@ Component({
     }
   },
 
+  lifetimes: {
+    detached() {
+      this._stopTyping()
+    }
+  },
+
   methods: {
+    /** 学名展示：typewriter 时只在第一次拿到学名时逐字敲出；其余情况直接全文 */
+    _syncLatin(speciesInfo) {
+      const latin = String((speciesInfo && speciesInfo.species_name_latin) || '')
+      if (!this.data.typewriter || !latin || this._typedFor === latin) {
+        if (!this._typing) this.setData({ latinShown: latin, latinTyping: false, confReady: true })
+        return
+      }
+      this._typedFor = latin
+      this._stopTyping()
+      this._typing = true
+      this.setData({ latinShown: '', latinTyping: true, confReady: false, inkIn: true })
+      const step = Math.max(35, Math.min(75, Math.round(1300 / latin.length)))
+      let i = 0
+      this._typeTimer = setTimeout(() => {
+        this._typeTimer = setInterval(() => {
+          i += 1
+          this.setData({ latinShown: latin.slice(0, i) })
+          if (i >= latin.length) this._finishTyping()
+        }, step)
+      }, 520)
+    },
+
+    _stopTyping() {
+      if (this._typeTimer) {
+        clearTimeout(this._typeTimer)
+        clearInterval(this._typeTimer)
+        this._typeTimer = null
+      }
+    },
+
+    _finishTyping() {
+      this._stopTyping()
+      this._typing = false
+      this.setData({ latinShown: this._typedFor || this.data.latinShown, latinTyping: false, confReady: true })
+    },
+
+    /** 点标本牌：跳过打字，直接全文 */
+    skipTyping() {
+      if (this._typing) this._finishTyping()
+    },
+
     toggleExpand() {
       this.setData({ expanded: !this.data.expanded })
     }

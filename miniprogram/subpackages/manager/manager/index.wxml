@@ -165,7 +165,11 @@
       <text class="hub-en">TO DO</text>
       <text class="hub-cn">待处理</text>
     </view>
-    <text class="hub-todo-ok">已全部处理</text>
+    <view class="hub-todo-ok-row">
+      <!-- 小惊喜（2026-10-18）：待处理清零时盖一方小朱印「清」 -->
+      <view class="hub-clear-seal" aria-hidden="true"><text>清</text></view>
+      <text class="hub-todo-ok">已全部处理</text>
+    </view>
   </view>
 
   <!-- 核心指标卡片 (金卡) -->

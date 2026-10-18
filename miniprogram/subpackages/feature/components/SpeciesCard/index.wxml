@@ -8,11 +8,15 @@
   </view>
 
   <view class="card-body">
-    <view class="specimen-plate">
+    <view class="specimen-plate" bindtap="skipTyping">
       <text class="plate-en">SPECIMEN PLATE</text>
-      <view class="name-block">
-        <text class="name-zh">{{speciesInfo.species_name_zh || '—'}}</text>
-        <text class="name-latin" wx:if="{{speciesInfo.species_name_latin}}">{{speciesInfo.species_name_latin}}</text>
+      <!-- 仪式感（2026-10-18）：刚鉴定完 → 中文名墨迹晕开、学名逐字敲出 + 黄铜光标、敲完画一道标签线；点牌跳过 -->
+      <view class="name-block {{typewriter ? 'is-typewriter' : ''}}">
+        <text class="name-zh {{inkIn ? 'ink-in' : ''}}">{{speciesInfo.species_name_zh || '—'}}</text>
+        <view class="latin-line" wx:if="{{speciesInfo.species_name_latin}}">
+          <text class="name-latin">{{latinShown}}</text><text class="latin-caret" wx:if="{{latinTyping}}" aria-hidden="true">▍</text>
+        </view>
+        <view class="latin-rule {{typewriter && !latinTyping && latinShown ? 'drawn' : ''}}" wx:if="{{typewriter && speciesInfo.species_name_latin}}"></view>
       </view>
       <view class="plate-protection" wx:if="{{showProtection}}">
         <text class="plate-protection-label">保护等级</text>
@@ -41,7 +45,7 @@
         <text class="conf-pct tone-{{confTone}}">{{confPct}}%</text>
       </view>
       <view class="conf-track">
-        <view class="conf-fill tone-{{confTone}}" style="width: {{confPct}}%;"></view>
+        <view class="conf-fill tone-{{confTone}}" style="width: {{confReady ? confPct : 0}}%;"></view>
       </view>
       <text class="conf-desc">{{confidenceDesc}}</text>
     </view>

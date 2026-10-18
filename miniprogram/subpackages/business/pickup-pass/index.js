@@ -33,6 +33,7 @@ Page({
     storeName: '山川造物',
     storeInfo: null,
     claimedAtText: '',
+    claimLive: false,
     qrReady: false,
     /** 二维码绘制失败：降级为口报自取码，不影响交付 */
     qrFailed: false,
@@ -156,6 +157,8 @@ Page({
 
   /** 现场核销成功的顾客端反馈：震动 + 轻提示，并停止维持最亮屏（凭证已无需出示） */
   announceClaimed() {
+    // 仪式感（2026-10-18 产品负责人点名）：柜台当场核销 → 「已自提」印当场盖下、二维码褪灰（历史已核销的直接静态）
+    this.setData({ claimLive: true });
     try {
       wx.vibrateShort({ type: 'medium' });
     } catch (e) { /* 旧基础库 */ }

@@ -32,7 +32,7 @@
       </view>
 
       <view class="pass-qr-wrap {{pass.statusTone === 'done' ? 'pass-qr-used' : ''}}">
-        <view class="pass-qr-frame">
+        <view class="pass-qr-frame {{claimLive ? 'is-live' : ''}}">
           <canvas type="2d" id="passQrCanvas" class="pass-qr"></canvas>
           <!-- 核销联动：店员核销成功后二维码压上「已自提」水印，码面变灰不可再扫 -->
           <view class="pass-qr-stamp" wx:if="{{pass.statusTone === 'done'}}" aria-hidden="true">已自提</view>

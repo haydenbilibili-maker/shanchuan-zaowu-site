@@ -42,7 +42,7 @@
         bindtap="onFlowTap"
         hover-class="flow-press"
       >
-        <text class="flow-num">1</text>
+        <text class="flow-num">01</text>
         <text class="flow-label">建场</text>
       </view>
       <text class="flow-sep">›</text>
@@ -52,7 +52,7 @@
         bindtap="onFlowTap"
         hover-class="flow-press"
       >
-        <text class="flow-num">2</text>
+        <text class="flow-num">02</text>
         <text class="flow-label">挂品</text>
       </view>
       <text class="flow-sep">›</text>
@@ -62,7 +62,7 @@
         bindtap="onFlowTap"
         hover-class="flow-press"
       >
-        <text class="flow-num">3</text>
+        <text class="flow-num">03</text>
         <text class="flow-label">开播</text>
       </view>
     </view>

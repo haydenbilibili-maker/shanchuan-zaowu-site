@@ -304,6 +304,8 @@ Page({
       if (result.data.from_cache) {
         url += '&from_cache=1'
       }
+      // 仪式感：刚鉴定完才让结果页「打字机」敲出学名；从最近记录 / 分享进来的直接展全文
+      url += '&fresh=1'
       wx.navigateTo({
         url,
         fail: () => wx.redirectTo({

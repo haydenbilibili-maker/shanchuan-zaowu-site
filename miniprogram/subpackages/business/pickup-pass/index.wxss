@@ -454,3 +454,18 @@ view, text, canvas { box-sizing: border-box; }
     animation: none;
   }
 }
+
+/* 仪式感：柜台当场核销（2026-10-18 产品负责人点名「做强下单主流程仪式感」）
+   顾客正举着凭证时状态翻成已交付：二维码 0.6s 褪灰，「已自提」印从放大落下（0.46s）——与馆印同一套落印动作。
+   只在本页亲眼看着核销时播（announceClaimed）；历史已核销进页直接静态。 */
+.pass-qr { transition: opacity 0.6s ease-out; }
+.pass-qr-frame.is-live .pass-qr-stamp { animation: pass-stamp-land 0.46s cubic-bezier(0.2, 0.9, 0.3, 1.2) 0.2s both; }
+@keyframes pass-stamp-land {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(-14deg) scale(1.9); }
+  60% { opacity: 1; transform: translate(-50%, -50%) rotate(-14deg) scale(0.94); }
+  100% { opacity: 1; transform: translate(-50%, -50%) rotate(-14deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pass-qr { transition: none; }
+  .pass-qr-frame.is-live .pass-qr-stamp { animation: none; }
+}

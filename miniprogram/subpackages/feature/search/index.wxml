@@ -1,5 +1,6 @@
+<!-- 2026-10-18「检索台」：检索框方角发丝（聚焦金线环）；识图鉴定为发丝线行 + 方印「鉴」；热门 / 最近为方角发丝签；
+     结果分类为下划线页签；结果与同标签藏品为发丝线行（宋体名 + 斜体学名 + 等宽价）。数据与交互不变。 -->
 <view class="page-search">
-  <view class="grain-overlay"></view>
 
   <!-- 系统导航栏下方检索条，勿改 custom -->
   <view class="sticky-header">
@@ -128,7 +129,7 @@
             <text class="identify-plate-cn">识图鉴定</text>
             <text class="identify-plate-desc">拍一张，对照馆藏档案</text>
           </view>
-          <text class="identify-plate-arr">→</text>
+          <text class="identify-plate-arr">›</text>
         </view>
 
         <view class="zone-section">

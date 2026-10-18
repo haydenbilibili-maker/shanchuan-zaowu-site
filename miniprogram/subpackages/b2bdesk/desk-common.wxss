@@ -1,4 +1,7 @@
-/* 供应商管理中心 · 分包公共样式（深色馆藏风，与供应商工作台同一套色阶） */
+/* 供应商管理中心 · 分包公共样式（深色馆藏风，与供应商工作台同一套色阶）
+   2026-10-18 视觉对齐（产品负责人点名「供应商管理工作台」；与采购商 / 主播 / 标本师工作台同口径，只改样式）：
+   页头眉标等宽 + 宋体；顶部分段改下划线页签；筛选芯片 / 分段 / 搜索 / 卡片 / 按钮方角（卡 4rpx、签 2rpx），选中为金线环；
+   圆点 / 开关 / 进度条 / 时间轴点仍为圆。指标两列网格的「48.5% + space-between」写法是真机防折行的守卫约束（check:supplier-desk），不动。 */
 page {
   background: var(--color-bg);
   color: var(--color-text-body);
@@ -16,17 +19,20 @@ page {
 
 .head-en {
   display: block;
-  font-size: var(--fs-20);
-  letter-spacing: 0.16em;
-  color: var(--brass-400);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .head-cn {
   display: block;
-  margin-top: 6rpx;
+  margin-top: 8rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-40);
-  color: var(--color-text-primary);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .head-note {
@@ -38,23 +44,23 @@ page {
 }
 
 /* 顶部分段 */
+/* 顶部分段：下划线页签（原胶囊分段 + 填色选中） */
 .tabs {
   display: flex;
   margin: var(--space-2) 0 var(--space-4);
-  padding: 6rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .tab {
   flex: 1;
-  padding: 16rpx 0;
-  border-radius: 999rpx;
+  padding: 18rpx 0 16rpx;
+  margin-bottom: -1rpx;
+  border-bottom: 3rpx solid transparent;
   text-align: center;
 }
 
 .tab.on {
-  background: rgba(196, 167, 108, 0.16);
+  border-bottom-color: var(--brass-400);
 }
 
 .tab-text {
@@ -63,8 +69,9 @@ page {
 }
 
 .tab.on .tab-text {
-  color: var(--color-text-primary);
-  font-weight: 500;
+  color: #F3ECDD;
+  font-family: var(--font-brand);
+  font-weight: 600;
 }
 
 /* 筛选芯片 */
@@ -77,13 +84,13 @@ page {
 
 .chip {
   padding: 10rpx 22rpx;
-  border-radius: 999rpx;
-  border: 1rpx solid rgba(255, 255, 255, 0.1);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
 }
 
 .chip.on {
-  border-color: rgba(196, 167, 108, 0.6);
-  background: rgba(196, 167, 108, 0.1);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass);
 }
 
 .chip-text {
@@ -92,7 +99,7 @@ page {
 }
 
 .chip.on .chip-text {
-  color: var(--color-text-primary);
+  color: var(--brass-200);
 }
 
 .row-label {
@@ -115,7 +122,7 @@ page {
   flex: 1;
   height: 72rpx;
   padding: 0 24rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   color: var(--color-text-primary);
@@ -125,7 +132,7 @@ page {
 .search-go {
   flex-shrink: 0;
   padding: 16rpx 26rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.5);
 }
 
@@ -150,7 +157,7 @@ page {
   box-sizing: border-box;
   margin-bottom: 16rpx;
   padding: 24rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.03);
 }
@@ -196,7 +203,7 @@ page {
 .sum-card {
   margin-bottom: 16rpx;
   padding: 28rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.4);
   background: rgba(196, 167, 108, 0.07);
 }
@@ -373,7 +380,7 @@ page {
   display: block;
   margin-bottom: 16rpx;
   padding: 24rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.03);
 }
@@ -434,7 +441,7 @@ page {
 
 .tag {
   padding: 4rpx 14rpx;
-  border-radius: var(--radius-sm);
+  border-radius: 2rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.14);
 }
 
@@ -479,7 +486,7 @@ page {
 .state {
   margin-top: var(--space-2);
   padding: var(--space-5);
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx dashed rgba(255, 255, 255, 0.12);
   text-align: center;
 }
@@ -512,7 +519,7 @@ page {
   display: inline-block;
   margin-top: var(--space-3);
   padding: 12rpx 32rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.5);
 }
 
@@ -524,7 +531,7 @@ page {
 .flash {
   margin-bottom: var(--space-3);
   padding: 16rpx 20rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
 }
 
@@ -549,7 +556,7 @@ page {
   box-sizing: border-box;
   margin-top: var(--space-3);
   padding: 24rpx 0;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   text-align: center;
   background: var(--brass-500);
 }
@@ -742,7 +749,7 @@ page {
 .field-input {
   height: 80rpx;
   padding: 0 24rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   color: var(--color-text-primary);
@@ -845,7 +852,7 @@ page {
   margin-left: 8rpx;
   padding: 0 10rpx;
   min-width: 20rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   font-size: var(--fs-18);
   line-height: 28rpx;
@@ -880,7 +887,7 @@ page {
   align-items: center;
   height: 76rpx;
   padding: 0 24rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
 }
@@ -901,7 +908,7 @@ page {
 .filter-btn {
   flex-shrink: 0;
   padding: 18rpx 26rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.14);
 }
 
@@ -917,7 +924,7 @@ page {
 .filter-panel {
   margin: -8rpx 0 var(--space-3);
   padding: 8rpx 24rpx 12rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.22);
 }
 
@@ -927,12 +934,11 @@ page {
 }
 
 /* 分段筛选：等分，flex 撑满（不用百分比列宽） */
+/* 分段筛选：等分方角发丝签，选中金线环（原圆角框内填色块） */
 .seg {
   display: flex;
+  gap: 12rpx;
   margin-bottom: var(--space-3);
-  padding: 6rpx;
-  border-radius: var(--radius-md);
-  border: 1rpx solid rgba(255, 255, 255, 0.08);
 }
 
 .seg-item {
@@ -941,11 +947,13 @@ page {
   align-items: center;
   justify-content: center;
   padding: 14rpx 0;
-  border-radius: var(--radius-md);
+  border-radius: 2rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
 }
 
 .seg-item.on {
-  background: rgba(196, 167, 108, 0.16);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass);
 }
 
 .seg-text {
@@ -954,7 +962,7 @@ page {
 }
 
 .seg-item.on .seg-text {
-  color: var(--color-text-primary);
+  color: var(--brass-200);
   font-weight: 500;
 }
 
@@ -970,7 +978,7 @@ page {
   width: 100%;
   height: 150rpx;
   margin: 0 0 16rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
 }
 
 .skel-block.tall {
@@ -1004,7 +1012,7 @@ page {
 .skel-thumb {
   width: 140rpx;
   height: 140rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
 }
 
 .skel-avatar {
@@ -1057,7 +1065,7 @@ page {
 .pill {
   flex-shrink: 0;
   padding: 2rpx 14rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.16);
 }
 
@@ -1111,7 +1119,7 @@ page {
 .panel {
   margin-bottom: var(--space-4);
   padding: 28rpx;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.025);
 }
@@ -1173,7 +1181,7 @@ page {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.3);
 }
 
@@ -1210,7 +1218,7 @@ page {
 .sheet-cancel {
   margin-top: 20rpx;
   padding: 24rpx 0;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.12);
   text-align: center;
 }
@@ -1242,7 +1250,7 @@ page {
 .bar-ghost {
   flex-shrink: 0;
   padding: 22rpx 30rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.16);
 }
 
@@ -1254,7 +1262,7 @@ page {
 .bar-main {
   flex: 1;
   padding: 24rpx 0;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   text-align: center;
   background: var(--brass-500);
 }
@@ -1280,7 +1288,7 @@ page {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: var(--radius-md);
+  border-radius: 4rpx;
   border: 1rpx dashed rgba(196, 167, 108, 0.45);
   background: rgba(196, 167, 108, 0.04);
 }
@@ -1345,7 +1353,7 @@ page {
 
 .img-act {
   padding: 12rpx 28rpx;
-  border-radius: 999rpx;
+  border-radius: 2rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.45);
 }
 

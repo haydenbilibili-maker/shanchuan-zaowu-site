@@ -35,6 +35,26 @@ const LETTER_TYPE_MAX = 200
 const DEFAULT_LETTER_BODY =
   '柜中挑了一件安静的藏品，希望它落在你桌上时，也像一句不急着说完的谢谢。'
 
+/**
+ * 仪式感（2026-10-18 产品负责人点名「做强礼赠流程仪式感」）：送礼人回执印。
+ * 对方收下（填址邀约：已打开 / 已留址）或到店领取后，送礼人页的状态印由「启」换成朱印「已收」，
+ * 与受礼人礼笺上的「已收」相呼应。本机第一次看到这个状态时播落印，之后静态（按订单记在本地）。
+ * 只读现有 giftMeta 状态派生，不改 manageGift 出参。
+ */
+const RECEIPT_PHASES = { waiting_address: true, address_done: true, claimed: true }
+const RECEIPT_SEEN_KEY = 'gift_receipt_seen_'
+
+function senderReceiptOf(phase, orderId) {
+  if (!RECEIPT_PHASES[phase]) return { senderReceipt: false, senderReceiptLive: false }
+  let live = false
+  try {
+    const key = RECEIPT_SEEN_KEY + String(orderId || '')
+    live = !!orderId && !wx.getStorageSync(key)
+    if (live) wx.setStorageSync(key, 1)
+  } catch (e) { live = false }
+  return { senderReceipt: true, senderReceiptLive: live }
+}
+
 Page({
   data: {
     ready: false,
@@ -53,6 +73,8 @@ Page({
     showLetterCursor: false,
     product: null,
     accepted: false,
+    // 仪式感（2026-10-18 产品负责人点名「做强礼赠流程仪式感」）：本页亲手收下 → 礼笺上「已收」朱印落下；已收过则静态
+    acceptStampLive: false,
     addressDone: false,
     addressMaskedLine: '',
     phoneMasked: '',
@@ -494,6 +516,7 @@ Page({
         let product = (gift.products && gift.products[0]) || null
         product = await this._enrichProtectionType(product)
         const sender = this._buildSenderStatus(gift)
+        const receipt = senderReceiptOf(sender.senderPhase, gift.orderId || this._orderId)
         const token = String(gift.shareToken || this._token || '').trim()
         this.setData({
           ready: true,
@@ -526,8 +549,12 @@ Page({
           hidePrice: gift.hidePrice !== false,
           needFriendShare: false,
           shareTitle: '请拆开这封山海礼笺',
-          ...sender
+          ...sender,
+          ...receipt
         })
+        if (receipt.senderReceiptLive) {
+          setTimeout(() => { try { wx.vibrateShort({ type: 'light' }) } catch (e) { /* 低版本基础库无 type 参数 */ } }, 280)
+        }
         this._hydrateProductCover(product)
         return
       }
@@ -828,7 +855,8 @@ Page({
         return
       }
       trackBehavior('gift_receive_accept', 'order', this.data.orderId, { mode: 'phone', ok: true })
-      this.setData({ accepted: true })
+      this.setData({ accepted: true, acceptStampLive: true })
+      try { wx.vibrateShort({ type: 'medium' }) } catch (e) { /* 低版本基础库无 type 参数 */ }
       wx.showToast({ title: '已收下', icon: 'success' })
       setTimeout(() => this.goAddress(), 500)
     } catch (e) {
@@ -874,7 +902,8 @@ Page({
     this._claimName = claimName
     this.setData({ claimBusy: false })
     if (this.data.isInvite) {
-      this.setData({ accepted: true, holderCard: true })
+      this.setData({ accepted: true, holderCard: true, acceptStampLive: true })
+      try { wx.vibrateShort({ type: 'medium' }) } catch (e) { /* 低版本基础库无 type 参数 */ }
       this._maybeShowRegCard()
       return
     }

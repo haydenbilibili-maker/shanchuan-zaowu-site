@@ -315,6 +315,8 @@
             <text class="tm-val">{{newTicketCode}}</text>
           </view>
           <view class="tm-foot">仅限本人使用</view>
+          <!-- 小惊喜（2026-10-18）：出纸完成（mintFinished）时盖下一方朱印「入馆」 -->
+          <view class="tm-seal {{mintFinished ? 'is-stamped' : ''}}" aria-hidden="true"><text class="tm-seal-ch">入</text><text class="tm-seal-ch">馆</text></view>
         </view>
       </view>
       <view class="mint-bottom-area">

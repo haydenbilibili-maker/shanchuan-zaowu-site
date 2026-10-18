@@ -52,7 +52,7 @@
     <view class="ui-pop-head">
       <text class="ui-pop-title">{{form.id ? '编辑' : '新建'}}工资条</text>
     </view>
-    <view class="modal-body">
+    <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">
       <view class="field">
         <text class="field-label">员工</text>
         <picker mode="selector" range="{{staffNames}}" bindchange="onFormStaffPick">
@@ -114,7 +114,7 @@
         <text class="field-label">备注</text>
         <input class="input" value="{{form.remark}}" data-field="remark" bindinput="onFormInput" maxlength="200" />
       </view>
-    </view>
+    </scroll-view>
     <view class="workbench-modal-foot">
       <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-outline" bindtap="closeEditor">取消</view>
       <view hover-class="wb-press" hover-stay-time="80" class="workbench-btn-primary {{saving ? 'is-disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中' : '保存'}}</view>
