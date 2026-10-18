@@ -72,7 +72,8 @@ const FILES = {
   buyCart: 'subpackages/extra/supplier/buyer-cart/index.wxss',
   buyOrders: 'subpackages/extra/supplier/buyer-orders/index.wxss',
   deskCommon: 'subpackages/b2bdesk/desk-common.wxss',
-  deskCenter: 'subpackages/b2bdesk/center/index.wxss'
+  deskCenter: 'subpackages/b2bdesk/center/index.wxss',
+  shareholderWxss: 'subpackages/extra/shareholder/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -258,6 +259,14 @@ function checks(s) {
     add(`R24-1 供应商管理：分段 / 芯片 / 卡片 / 按钮方角，仅圆点 / 开关 / 进度条 / 时间轴保持圆${pills.length ? '（仍圆角：' + pills.slice(0, 4).join(',') + '）' : ''}`, pills.length === 0)
     add('R24-2 供应商管理：顶部分段为下划线页签、「供」为方印',
       /\.tab\.on \{\s*border-bottom-color: var\(--brass-400\);/.test(s.deskCommon) && /\n\.hero-mark \{[^}]*border-radius: 2rpx;/.test(s.deskCenter))
+  }
+  // 2026-10-18 股东观测台
+  {
+    const KEEP = /^\.(boot-mark|signal-light|progress-track|progress-fill|share-track|share-fill)$/
+    const pills = [...s.shareholderWxss.matchAll(/\n([^\n{]+?)\s*\{([^}]*)\}/g)]
+      .filter(([, sel, body]) => /border-radius: (9999px|999rpx|var\(--radius-(lg|md|full))/.test(body) && !KEEP.test(sel.trim())).map(([, sel]) => sel.trim())
+    add(`R25-1 股东观测台：页签 / 卡片 / 指标格方角，信号灯与进度条保持圆${pills.length ? '（仍圆角：' + pills.slice(0, 4).join(',') + '）' : ''}`,
+      pills.length === 0 && /\.range-tab\.on, \.month-chip\.on \{[^}]*var\(--ring-brass\)/.test(s.shareholderWxss))
   }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
@@ -517,6 +526,7 @@ if (process.argv.includes('--selftest')) {
     ['采购商行内动作回到实心金', 'supplierCommon', (t) => t.replace('  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-22);', '  background: var(--brass-500);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-22);')],
     ['加入采购车回到实心金药丸', 'buyCatalog', (t) => t.replace('  border-radius: 4rpx;\n  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);', '  border-radius: 999rpx;\n  background: var(--brass-400);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);')],
     ['供应商管理分段回到胶囊', 'deskCommon', (t) => t.replace('.chip {\n  padding: 10rpx 22rpx;\n  border-radius: 2rpx;', '.chip {\n  padding: 10rpx 22rpx;\n  border-radius: 999rpx;')],
+    ['股东观测台卡片回到大圆角', 'shareholderWxss', (t) => t.replace('.verdict-card {\n  background: var(--color-bg-card, #1F1D1A);\n  border: 1rpx solid var(--brass-800, #4D401A);\n  border-radius: 4rpx;', '.verdict-card {\n  background: var(--color-bg-card, #1F1D1A);\n  border: 1rpx solid var(--brass-800, #4D401A);\n  border-radius: var(--radius-lg, 24rpx);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],

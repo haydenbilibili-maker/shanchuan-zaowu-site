@@ -573,7 +573,19 @@ const SCENES = [
   { name: 'buyer-orders', h: 1900, wxml: 'subpackages/extra/supplier/buyer-orders/index', data: { ready: true, loadError: false, isPreview: false, unpaidCount: 1, cartCount: 0, banner: '', bannerKind: '',
       filters: [{ key: 'all', label: '全部', on: true }, { key: 'unpaid', label: '待支付' }, { key: 'shipping', label: '已发货' }, { key: 'done', label: '已完成' }],
       list: [{ id: 'o1', orderNo: 'PO20261018002', payTone: 'warn', paymentText: '待支付', itemsBrief: '光明女神闪蝶 × 2 · 蓝闪蝶木框 × 1', fulfillText: '待支付后备货', nextStep: '下一步：完成微信支付，总部当日备货', amountText: '¥1,680', timeText: '10.18 10:24', canPay: true, canAct: true },
-        { id: 'o2', orderNo: 'PO20261009011', payTone: 'ok', paymentText: '已支付', itemsBrief: '血漪蝶穹顶 × 4', fulfillText: '已发货 · 顺丰 SF1234567890', nextStep: '', amountText: '¥2,720', timeText: '10.09 16:02', canPay: false, canAct: true }] } }
+        { id: 'o2', orderNo: 'PO20261009011', payTone: 'ok', paymentText: '已支付', itemsBrief: '血漪蝶穹顶 × 4', fulfillText: '已发货 · 顺丰 SF1234567890', nextStep: '', amountText: '¥2,720', timeText: '10.09 16:02', canPay: false, canAct: true }] } },
+  // 2026-10-18 股东观测台（只读看板，点名「逐个工作台优化」）
+  { name: 'shareholder', h: 2100, wxml: 'subpackages/extra/shareholder/index', data: { ready: true, entered: true, staffName: '李董', loading: false, legendOpen: true, numPulse: false,
+      profile: { storeName: '山川造物 · 主店', ownershipRatio: 20, dividendRatioBeforePayback: 30, dividendRatioAfterPayback: 20, capitalContributionFmt: '400,000', effectiveDate: '2026-03-01' },
+      rangeTabs: [{ key: 'month', label: '按月' }, { key: 'quarter', label: '本季' }, { key: 'year', label: '本年' }, { key: 'all', label: '累计' }], rangeKey: 'month', rangeType: 'month', rangeLabel: '10 月',
+      monthKey: '2026-10', monthCurrent: '2026-10', monthPrev: '2026-09', monthLabel: '2026-10', monthMax: '2026-10',
+      verdict: { className: 'blink', tone: 'up', title: '经营向好 · 回本提速', label: '正常', insight: '本月营收环比 +18%，毛利率回到 52%；按当前节奏预计 2027 年 3 月个人回本。', updatedAt: '10.18 09:20' },
+      signalBoard: { summary: { ok: 3, warn: 1, danger: 0 }, rulesNote: '阈值按近 3 月均值 ±15% 判定', items: [
+        { id: 's1', name: '营收', value: '¥186,400', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '向好', target: 'revenue' },
+        { id: 's2', name: '毛利率', value: '52%', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '正常', target: 'profit' },
+        { id: 's3', name: '商场扣点', value: '¥9,320', tone: 'flat', status: 'warn', lampClass: 'warn', statusLabel: '需关注', reason: '已过保底线 82%', target: 'mall' },
+        { id: 's4', name: '回本进度', value: '41%', tone: 'up', status: 'ok', lampClass: 'blink', statusLabel: '正常', target: 'equity' }] },
+      equity: { statusTone: 'brass', statusLabel: '回本前', personalDividendFmt: '163,200', personalRoiPct: 41, personalRoiBar: 'width:41%', poolRoiPct: 38, poolRoiBar: 'width:38%' } } }
 ]
 
 async function shoot(s) {
