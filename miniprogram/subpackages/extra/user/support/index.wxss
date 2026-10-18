@@ -1,80 +1,59 @@
-/* subpackages/feature/user/support/index.wxss */
+/* 联系专员 · 专员服务台（2026-10-17 重构）
+   页头眉标 + 宋体主标；服务时间 / 响应为发丝线两栏行；咨询类型方角发丝签、选中金线环；
+   联系方式为发丝线行，实心金只给「开始对话」（微信专员是主路径）；留言写在浅纸便笺上，提交为金线环；
+   FAQ / 到店为发丝线行。页头高度仍由 index.js 按 statusBar + 72px 计算，内容高度不得超过它。
+   附图九宫格样式在 ../../utils/ticket-images.wxss（与意见反馈共用，勿在此改）。 */
 @import '../../utils/ticket-images.wxss';
+
 page {
-  background: var(--color-bg, #1A1814);
-  color: var(--color-text-primary, #FFFFFF);
+  background: #1A1814;
+  color: #F3ECDD;
 }
 
 .page-support {
   min-height: 100vh;
   position: relative;
-  background: var(--color-bg, #1A1814);
+  background: #1A1814;
 }
 
-.grain-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.03;
-  z-index: 0;
-}
-
+/* —— 页头 —— */
 .sticky-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(26, 24, 20, 0.96);
-  border-bottom: 1px solid rgba(38, 35, 32, 0.6);
-  backdrop-filter: blur(12px);
+  background: rgba(26, 24, 20, 0.97);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .nav-row {
   display: flex;
   align-items: center;
-  padding: 16rpx 32rpx 20rpx;
   gap: 16rpx;
-}
-
-.back-btn {
-  width: 72rpx;
-  height: 72rpx;
-  min-width: 72rpx;
-  min-height: 72rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.back-btn-press {
-  opacity: 0.7;
-  transform: scale(0.94);
+  padding: 18rpx 32rpx 20rpx;
 }
 
 .nav-brand {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4rpx;
-}
-
-.nav-title {
-  font-family: var(--font-brand, serif);
-  font-size: var(--fs-36);
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  gap: 6rpx;
 }
 
 .nav-sub {
-  font-size: var(--fs-20);
-  color: var(--brass-400, #C4A76C);
-  letter-spacing: 0.12em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
-.nav-spacer {
-  width: 56rpx;
+.nav-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-36);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
 }
 
 .main-scroll {
@@ -85,21 +64,20 @@ page {
   box-sizing: border-box;
 }
 
-.skeleton-wrap {
-  padding: 32rpx;
-}
+/* —— 骨架 —— */
+.skeleton-wrap { padding: 32rpx; }
 
 .sk-card {
   height: 180rpx;
-  border-radius: var(--radius-lg, 24rpx);
   margin-bottom: 24rpx;
-  background: var(--color-bg-card, #1F1D1A);
+  border-radius: 4rpx;
+  background: #1F1D1A;
 }
 
 .sk-card.short { height: 120rpx; }
 
 .sk-shine {
-  background: linear-gradient(90deg, rgba(196,167,108,0.04) 0%, rgba(196,167,108,0.09) 50%, rgba(196,167,108,0.04) 100%);
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.04) 0%, rgba(196, 167, 108, 0.09) 50%, rgba(196, 167, 108, 0.04) 100%);
   background-size: 200% 100%;
   animation: shine 1.4s ease infinite;
 }
@@ -109,115 +87,97 @@ page {
   100% { background-position: -200% 0; }
 }
 
-.section {
-  padding: 0 32rpx 32rpx;
-}
-
-.section-title {
-  display: block;
-  font-size: var(--fs-28);
-  font-weight: 600;
-  color: var(--color-text-primary, #FFFFFF);
-  margin-bottom: 20rpx;
-  letter-spacing: 0.04em;
-}
+/* —— 分区 —— */
+.section { padding: 0 32rpx 48rpx; }
 
 .section-hint {
   display: block;
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
   margin: -8rpx 0 20rpx;
-  line-height: 1.5;
+  font-size: var(--fs-22);
+  line-height: 1.55;
+  color: var(--color-text-secondary, #A09A90);
 }
 
+/* —— 服务信息：发丝线两栏行 —— */
 .service-card {
-  margin: 24rpx 32rpx 8rpx;
-  padding: 28rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1rpx solid rgba(196, 167, 108, 0.2);
-  border-radius: var(--radius-lg, 24rpx);
+  margin: 28rpx 32rpx 44rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .service-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: baseline;
   gap: 24rpx;
-  margin-bottom: 16rpx;
+  padding: 22rpx 0;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
-.service-row:last-child { margin-bottom: 0; }
-
 .service-label {
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
   flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.2em;
+  color: var(--brass-300);
 }
 
 .service-val {
-  font-size: var(--fs-24);
-  color: var(--color-text-body, #D5D1C8);
-  text-align: right;
   flex: 1;
+  text-align: right;
+  font-size: var(--fs-26);
+  color: #F3ECDD;
 }
 
 .service-val.muted {
   font-size: var(--fs-22);
+  line-height: 1.55;
   color: var(--color-text-secondary, #A09A90);
 }
 
 .context-banner {
   margin-top: 20rpx;
   padding: 16rpx 20rpx;
+  border-radius: 4rpx;
   background: rgba(196, 167, 108, 0.08);
-  border: 1rpx solid rgba(196, 167, 108, 0.2);
-  border-radius: var(--radius-md, 16rpx);
+  box-shadow: var(--ring-brass-soft);
 }
 
-.context-banner.soft {
-  background: rgba(196, 167, 108, 0.05);
-  border-color: rgba(77, 64, 26, 0.55);
-}
+.context-banner.soft { background: transparent; box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2); }
 
 .context-text {
   font-size: var(--fs-22);
-  color: var(--brass-400, #C4A76C);
   line-height: 1.6;
   white-space: pre-wrap;
+  color: var(--brass-200);
 }
 
+.context-banner.soft .context-text { color: var(--color-text-secondary, #A09A90); }
+
+/* —— 会话上下文条（订单 / 藏品进线时固定） —— */
 .context-strip {
   position: fixed;
   left: 0;
   right: 0;
   z-index: 99;
   box-sizing: border-box;
-  padding: 12rpx 24rpx 16rpx;
-  background: rgba(26, 24, 20, 0.96);
-  border-bottom: 1px solid rgba(38, 35, 32, 0.55);
-  backdrop-filter: blur(12px);
+  padding: 12rpx 32rpx 16rpx;
+  background: rgba(26, 24, 20, 0.97);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .context-card {
   display: flex;
   flex-direction: column;
-  gap: 0;
-  padding: 20rpx 22rpx 18rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1rpx solid rgba(196, 167, 108, 0.28);
-  border-radius: var(--radius-lg, 24rpx);
+  padding: 18rpx 20rpx 16rpx;
+  border-radius: 4rpx;
+  background: #1F1D1A;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
   box-sizing: border-box;
 }
 
-.context-card.is-tappable {
-  border-color: rgba(196, 167, 108, 0.38);
-}
+.context-card.is-tappable { box-shadow: var(--ring-brass-soft); }
 
-.context-card-press {
-  opacity: 0.9;
-  transform: scale(0.985);
-  background: rgba(196, 167, 108, 0.06);
-}
+.context-card-press { background: rgba(196, 167, 108, 0.06); }
 
 .context-card-main {
   display: flex;
@@ -227,12 +187,12 @@ page {
 }
 
 .context-thumb {
+  flex-shrink: 0;
   width: 96rpx;
   height: 96rpx;
-  border-radius: var(--radius-sm, 8rpx);
-  background: var(--color-bg-elevated, #262320);
-  border: 1rpx solid rgba(196, 167, 108, 0.28);
-  flex-shrink: 0;
+  border-radius: 2rpx;
+  background: #262320;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
 }
 
 .context-thumb.placeholder {
@@ -242,9 +202,9 @@ page {
 }
 
 .context-thumb-mark {
+  font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: var(--brass-400, #C4A76C);
-  font-family: var(--font-brand, serif);
+  color: var(--brass-300);
 }
 
 .context-meta {
@@ -256,17 +216,19 @@ page {
 }
 
 .context-kind {
-  font-size: var(--fs-20);
-  color: var(--brass-400, #C4A76C);
-  letter-spacing: 0.1em;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.2em;
   line-height: 1.2;
+  color: var(--brass-300);
 }
 
 .context-title {
+  font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: var(--color-text-primary, #FFFFFF);
   line-height: 1.35;
+  color: #F3ECDD;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -274,8 +236,8 @@ page {
 
 .context-sub {
   font-size: var(--fs-22);
-  color: var(--color-text-secondary, #A09A90);
   line-height: 1.35;
+  color: var(--color-text-secondary, #A09A90);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -285,41 +247,41 @@ page {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 2rpx;
+  gap: 4rpx;
   min-height: 56rpx;
   padding: 0 18rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.45);
-  border-radius: var(--radius-full, 9999px);
-  background: rgba(196, 167, 108, 0.1);
+  border-radius: 4rpx;
+  box-shadow: var(--ring-brass-soft);
+  background: rgba(196, 167, 108, 0.08);
 }
 
 .context-go-label {
   font-size: var(--fs-22);
-  font-weight: 500;
-  color: var(--brass-400, #C4A76C);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  color: var(--brass-200);
 }
 
 .context-go-arrow {
+  margin-top: -2rpx;
   font-size: var(--fs-28);
   line-height: 1;
-  color: var(--brass-400, #C4A76C);
-  margin-top: -2rpx;
+  color: var(--brass-200);
 }
 
 .context-tip {
-  margin-top: 16rpx;
-  padding-top: 14rpx;
-  border-top: 1px solid rgba(77, 64, 26, 0.45);
+  margin-top: 14rpx;
+  padding-top: 12rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .context-tip-text {
   display: block;
   font-size: var(--fs-20);
-  color: var(--color-text-secondary);
   line-height: 1.5;
+  color: var(--color-text-secondary, #A09A90);
 }
 
+/* —— 咨询类型：方角发丝签，选中金线环 —— */
 .topic-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -328,219 +290,123 @@ page {
 }
 
 .topic-item {
-  width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  padding: 24rpx 20rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: var(--radius-lg, 24rpx);
   display: flex;
   flex-direction: column;
   gap: 8rpx;
+  width: 100%;
+  min-width: 0;
+  padding: 24rpx 22rpx;
+  border-radius: 4rpx;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
+  box-sizing: border-box;
 }
 
-.topic-item.active {
-  border-color: rgba(196, 167, 108, 0.45);
-  background: rgba(196, 167, 108, 0.08);
-}
+.topic-item.active { background: rgba(196, 167, 108, 0.08); box-shadow: var(--ring-brass); }
 
-
-.topic-icon {
-  width: 36rpx;
-  height: 36rpx;
-  opacity: 0.85;
-}
+.topic-icon { width: 36rpx; height: 36rpx; opacity: 0.85; }
 
 .topic-label {
+  font-family: var(--font-brand);
   font-size: var(--fs-26);
   font-weight: 600;
-  color: var(--color-text-primary, #FFFFFF);
   line-height: 1.35;
+  color: #F3ECDD;
 }
+
+.topic-item.active .topic-label { color: var(--brass-200); }
 
 .topic-desc {
   font-size: var(--fs-20);
-  color: var(--color-text-secondary);
-  line-height: 1.4;
+  line-height: 1.45;
   word-break: break-all;
-}
-
-.invoice-note {
-  margin-bottom: 20rpx;
-  padding: 24rpx 28rpx;
-  background: rgba(196, 167, 108, 0.08);
-  border: 1rpx solid rgba(196, 167, 108, 0.25);
-  border-radius: var(--radius-md);
-}
-.invoice-note-title {
-  display: block;
-  font-size: var(--fs-26);
-  color: var(--brass-400, #C4A76C);
-  font-weight: 500;
-  margin-bottom: 10rpx;
-}
-.invoice-note-body {
-  display: block;
-  font-size: var(--fs-24);
-  color: var(--color-text-body, #D5D1C8);
-  line-height: 1.55;
-}
-
-.invoice-form .field-row {
-  margin-bottom: 28rpx;
-  padding-bottom: 28rpx;
-  border-bottom: 1px solid rgba(38, 35, 32, 0.8);
-}
-
-.invoice-form .field-row-last {
-  margin-bottom: 0;
-  padding-bottom: 0;
-  border-bottom: none;
-}
-
-.field-label {
-  display: block;
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
-  margin-bottom: 12rpx;
-}
-
-.field-label .req {
-  color: var(--brass-400, #C4A76C);
-}
-
-.field-hint-inline {
-  margin-left: 8rpx;
-  font-size: var(--fs-20);
-  color: var(--color-text-muted, #6B6560);
-  font-weight: 400;
-}
-
-.field-input {
-  width: 100%;
-  height: 64rpx;
-  font-size: var(--fs-26);
-  color: var(--color-text-body, #D5D1C8);
-  box-sizing: border-box;
-}
-
-.field-textarea {
-  width: 100%;
-  min-height: 120rpx;
-  font-size: var(--fs-26);
-  color: var(--color-text-body, #D5D1C8);
-  line-height: 1.55;
-  box-sizing: border-box;
-}
-
-.type-pills {
-  display: flex;
-  gap: 16rpx;
-}
-
-.type-pill {
-  flex: 1;
-  height: 64rpx;
-  line-height: 64rpx;
-  text-align: center;
-  font-size: var(--fs-26);
   color: var(--color-text-secondary, #A09A90);
-  background: var(--color-bg-elevated, #262320);
-  border: 1px solid rgba(38, 35, 32, 0.9);
-  border-radius: var(--radius-md, 16rpx);
 }
 
-.type-pill.active {
-  color: var(--color-bg, #1A1814);
-  background: var(--brass-400, #C4A76C);
-  border-color: var(--brass-400, #C4A76C);
-  font-weight: 500;
-}
-
-.type-pill-press {
-  opacity: 0.85;
-}
-
-.channel-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
+/* —— 联系方式：发丝线行；实心金只给「开始对话」 —— */
+.channel-list { border-top: 1rpx solid rgba(196, 167, 108, 0.14); }
 
 .channel-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20rpx;
-  padding: 28rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: var(--radius-lg, 24rpx);
+  padding: 28rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
-.channel-item.primary {
-  border-color: rgba(196, 167, 108, 0.35);
-}
-
-.channel-info {
-  flex: 1;
-  min-width: 0;
-}
+.channel-info { flex: 1; min-width: 0; }
 
 .channel-name {
   display: block;
+  margin-bottom: 6rpx;
+  font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  margin-bottom: 6rpx;
+  color: #F3ECDD;
 }
 
 .channel-desc {
   display: block;
   font-size: var(--fs-22);
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #A09A90);
 }
+
+.channel-item.primary .channel-desc { color: var(--brass-200); }
 
 .channel-btn {
   flex-shrink: 0;
-  height: 64rpx;
-  line-height: 64rpx;
-  padding: 0 28rpx;
-  font-size: var(--fs-24);
-  font-weight: 500;
-  color: var(--color-bg, #1A1814);
-  background: var(--brass-400, #C4A76C);
-  border-radius: var(--radius-full, 9999px);
+  height: 68rpx;
+  line-height: 68rpx;
+  margin: 0;
+  padding: 0 30rpx;
   border: none;
+  border-radius: 4rpx;
+  background: var(--brass-400);
+  font-size: var(--fs-24);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #1A1814;
 }
 
 .channel-btn::after { border: none; }
 
 .channel-arrow {
-  font-size: var(--fs-28);
-  color: var(--brass-400, #C4A76C);
   flex-shrink: 0;
+  font-size: var(--fs-32);
+  color: var(--brass-300);
 }
 
+/* —— 留言：浅纸便笺（墨色宋体），提交为金线环 —— */
 .form-card {
-  padding: 28rpx 28rpx 24rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: var(--radius-lg, 24rpx);
+  position: relative;
+  padding: 32rpx 28rpx 28rpx;
+  border-radius: 4rpx;
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
+  color: #2E2618;
 }
 
 .message-input {
   width: 100%;
-  min-height: 180rpx;
-  font-size: var(--fs-26);
-  color: var(--color-text-body, #D5D1C8);
-  line-height: 1.6;
+  min-height: 200rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-28);
+  line-height: 1.75;
+  color: #2E2618;
   box-sizing: border-box;
 }
 
-.ph {
-  color: var(--color-text-muted, #6B6560);
-}
+.ph { color: rgba(46, 38, 24, 0.42); }
+
+/* 附图块落在浅纸上：只改字色，九宫格本体沿用共享样式 */
+.form-card .ti-label,
+.form-card .ti-count { color: #8A7F6C; }
+
+.form-card .ti-warn { color: #8B4A2B; }
+
+.form-card .ti-add { background: rgba(46, 38, 24, 0.04); border-color: rgba(139, 111, 71, 0.5); }
+.form-card .ti-add-plus { color: #8B6F47; }
+.form-card .ti-add-text { color: #8A7F6C; }
 
 .phone-row {
   display: flex;
@@ -548,75 +414,71 @@ page {
   gap: 16rpx;
   margin-top: 20rpx;
   padding-top: 20rpx;
-  border-top: 1px solid rgba(38, 35, 32, 0.8);
+  border-top: 1rpx solid rgba(46, 38, 24, 0.14);
 }
 
 .phone-label {
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
   flex-shrink: 0;
+  font-size: var(--fs-22);
+  color: #8A7F6C;
 }
 
 .phone-input {
   flex: 1;
+  background: transparent;
+  font-family: var(--font-mono);
   font-size: var(--fs-26);
-  color: var(--color-text-body, #D5D1C8);
+  color: #2E2618;
 }
 
 .form-actions {
-  margin-top: 32rpx;
-  padding-top: 28rpx;
-  border-top: 1px solid rgba(77, 64, 26, 0.35);
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 1rpx solid rgba(46, 38, 24, 0.14);
 }
 
+/* 原生 <button> 自带 margin / 宽度，需 !important 才压得住（沿用原写法） */
 .submit-btn {
   width: 100% !important;
   margin: 0 !important;
   padding: 0 32rpx;
-  height: 88rpx;
-  line-height: 88rpx;
+  height: 84rpx;
+  line-height: 84rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  font-size: var(--fs-30);
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  color: var(--color-bg, #1A1814) !important;
-  background: var(--brass-400, #C4A76C) !important;
-  border-radius: var(--radius-md, 16rpx);
   border: none;
+  border-radius: 4rpx;
+  background: transparent !important;
+  box-shadow: inset 0 0 0 2rpx #8B6F47;
+  font-size: var(--fs-28);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #5A4527 !important;
 }
 
-.submit-btn::after {
-  border: none;
-}
+.submit-btn::after { border: none; }
 
-.submit-btn-press {
-  background: var(--brass-500, #A8903C) !important;
-  opacity: 0.92;
-  transform: scale(0.985);
-}
+.submit-btn-press { background: rgba(139, 111, 71, 0.1) !important; }
 
 .submit-btn[disabled],
 .submit-btn.is-loading {
-  background: var(--color-bg-elevated, #262320) !important;
-  color: var(--color-text-muted, #6B6560) !important;
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1rpx rgba(46, 38, 24, 0.24);
+  color: rgba(46, 38, 24, 0.45) !important;
   opacity: 1;
 }
 
-.faq-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-}
+/* —— FAQ：发丝线行 —— */
+.faq-list { border-top: 1rpx solid rgba(196, 167, 108, 0.14); }
 
 .faq-item {
-  padding: 24rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: var(--radius-md, 16rpx);
+  padding: 26rpx 4rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
+
+.faq-item.expanded { background: rgba(196, 167, 108, 0.04); }
 
 .faq-q {
   display: flex;
@@ -624,53 +486,56 @@ page {
   align-items: flex-start;
   gap: 16rpx;
   font-size: var(--fs-26);
-  color: var(--color-text-body, #D5D1C8);
   line-height: 1.5;
+  color: #F3ECDD;
 }
 
 .faq-toggle {
-  font-size: var(--fs-32);
-  color: var(--brass-400, #C4A76C);
   flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-32);
   line-height: 1;
+  color: var(--brass-300);
 }
 
 .faq-a {
   display: block;
-  margin-top: 16rpx;
-  padding-top: 16rpx;
-  border-top: 1px solid rgba(38, 35, 32, 0.6);
+  margin-top: 14rpx;
+  padding-left: 20rpx;
+  border-left: 2rpx solid rgba(196, 167, 108, 0.35);
   font-size: var(--fs-24);
+  line-height: 1.7;
   color: var(--color-text-secondary, #A09A90);
-  line-height: 1.65;
 }
 
+/* —— 到店：发丝线行 —— */
 .visit-card {
-  padding: 28rpx;
-  background: var(--color-bg-card, #1F1D1A);
-  border: 1px solid rgba(38, 35, 32, 0.8);
-  border-radius: var(--radius-lg, 24rpx);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 28rpx 4rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .visit-addr {
-  display: block;
+  flex: 1;
+  min-width: 0;
   font-size: var(--fs-24);
-  color: var(--color-text-body, #D5D1C8);
   line-height: 1.6;
-  margin-bottom: 12rpx;
+  color: #F3ECDD;
 }
 
 .visit-link {
+  flex-shrink: 0;
   font-size: var(--fs-22);
-  color: var(--brass-400, #C4A76C);
+  color: var(--brass-300);
 }
 
-.footer-pad {
-  height: calc(48rpx + env(safe-area-inset-bottom));
-}
+.footer-pad { height: calc(48rpx + env(safe-area-inset-bottom)); }
 
-/* 社群弹窗 */
-
+/* —— 社群弹窗（壳由 ui-pop-* 统一，这里只排内容） —— */
 .modal-mask.active {
   opacity: 1;
   pointer-events: all;
@@ -693,39 +558,42 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-secondary, #A09A90);
   font-size: var(--fs-28);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 .modal-title {
+  margin-bottom: 8rpx;
+  font-family: var(--font-brand);
   font-size: var(--fs-32);
   font-weight: 600;
-  margin-bottom: 8rpx;
+  letter-spacing: 0.08em;
 }
 
 .modal-sub {
-  font-size: var(--fs-20);
-  color: var(--brass-400, #C4A76C);
-  letter-spacing: 0.1em;
   margin-bottom: 32rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
 }
 
 .community-qr {
   width: 360rpx;
   height: 360rpx;
-  border: 1rpx solid rgba(196, 167, 108, 0.2);
-  border-radius: var(--radius-md, 16rpx);
+  padding: 16rpx;
+  border-radius: 4rpx;
+  background: #F3ECDD;
+  box-sizing: border-box;
 }
 
 .modal-tip {
   margin-top: 24rpx;
   font-size: var(--fs-22);
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #A09A90);
 }
 
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {
-  .sk-shine {
-    animation: none;
-  }
+  .sk-shine { animation: none; }
 }

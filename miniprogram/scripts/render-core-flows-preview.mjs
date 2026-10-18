@@ -507,7 +507,14 @@ const SCENES = [
       previewLines: [{ label: '藏品', value: '光明女神闪蝶' }, { label: '学名', value: 'Morpho helena', latin: true }, { label: '框型', value: '胡桃木 · 浅框' }, { label: '规格', value: '20×25' }, { label: '包装', value: '礼盒包装' }, { label: '祝福卡', value: '生日快乐，愿你一直闪闪发光' }],
       unitPrice: 680, customExtraPrice: 188, displayEstimatedDays: 7 } },
   { name: 'custom-2', h: 2000, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 2, currentStepMeta: { title: '选装裱', desc: '框型、规格与标本师，决定装裱气质与交期' } } },
-  { name: 'custom-5', h: 2400, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 5, currentStepMeta: { title: '定制预览', desc: '核对方案与预估价格，满意后下单制作' } } }
+  { name: 'custom-5', h: 2400, wxml: 'subpackages/feature/custom/index', base: 'custom', data: { currentStep: 5, currentStepMeta: { title: '定制预览', desc: '核对方案与预估价格，满意后下单制作' } } },
+  // 2026-10-17 联系专员「专员服务台」
+  { name: 'support', h: 3000, wxml: 'subpackages/extra/user/support/index', data: { loading: false, navPaddingRight: 32, headerHeight: 64, scrollTop: 64,
+      contextCard: { visible: false }, contextSummary: '', hasConsultContext: false, sessionFrom: '', showMessageCard: false,
+      config: { hours: '每日 10:00 – 22:00', responseHint: '工作时间内约 10 分钟回复；夜间留言次日处理', phone: '185 1911 0274', address: '吉林省长春市朝阳区红旗街 959 号这有山商场山坡 X-06-1', communityQr: '' },
+      topics: [{ id: 'order', label: '订单与物流', desc: '发货、签收、改地址' }, { id: 'aftersale', label: '售后与退换', desc: '破损、退款、换货' }, { id: 'custom', label: '定制咨询', desc: '框型、交期、报价' }, { id: 'care', label: '标本养护', desc: '防潮、清洁、摆放' }], activeTopic: 'custom',
+      messageText: '', contactPhone: '', ticketImages: [], maxTicketImages: 3, ticketImgFailed: 0, ticketImgBusy: false, submitting: false,
+      faqs: [{ q: '标本可以退换吗？', a: '未拆封且签收 7 日内可申请；定制藏品按确认方案制作，不接受退款。' }, { q: '多久可以发货？', a: '现货 48 小时内发出；定制按方案页交期。' }, { q: '门店可以自取吗？', a: '下单时选择门店自取，备妥后凭自取码到店领取。' }], expandedFaq: 0, showCommunity: false } }
 ]
 
 async function shoot(s) {

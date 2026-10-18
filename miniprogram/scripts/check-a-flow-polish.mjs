@@ -56,7 +56,9 @@ const FILES = {
   walletWxss: 'subpackages/business/components/WalletPanelWallet/index.wxss',
   couponsWxss: 'subpackages/business/components/WalletPanelCoupons/index.wxss',
   pointsWxss: 'subpackages/business/components/WalletPanelPoints/index.wxss',
-  hubBarWxss: 'subpackages/business/components/WalletHubBar/index.wxss'
+  hubBarWxss: 'subpackages/business/components/WalletHubBar/index.wxss',
+  supportWxml: 'subpackages/extra/user/support/index.wxml',
+  supportWxss: 'subpackages/extra/user/support/index.wxss'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -189,6 +191,12 @@ function checks(s) {
     !/\n\.whb-seg \{[^}]*background/.test(s.hubBarWxss) && /\.account-section-label::before \{ display: none; \}/.test(s.walletWxss) &&
       !/E9A23B|233, 162, 59/.test(s.couponsWxss) && !/\.btn-outline \{[^}]*background: var\(--color-primary\)/.test(s.pointsWxss) &&
       !/box-shadow: 0 0 10rpx var\(--color-primary\)/.test(s.pointsWxss))
+  // 2026-10-17 联系专员「专员服务台」
+  add('R17-1 联系专员实心金只给「开始对话」（微信专员是主路径），留言提交为金线环',
+    solidGold(s.supportWxss) === '.channel-btn' && /\n\.submit-btn \{[^}]*background: transparent !important;/.test(s.supportWxss))
+  add('R17-2 联系专员留言写在浅纸便笺上、无 grain-overlay、联系方式为发丝线行（不再是圆角卡）',
+    /\n\.form-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
+      !/\n\.channel-item \{[^}]*border-radius/.test(s.supportWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -435,6 +443,8 @@ if (process.argv.includes('--selftest')) {
     ['皮质钱包卡被改', 'walletLeather', (t) => t + '\n.wallet-leather-card { opacity: 0.98; }'],
     ['礼券临期回到警示橙', 'couponsWxss', (t) => t.replace('  color: var(--brass-200);\n  letter-spacing: 0.04em;', '  color: #E9A23B;\n  letter-spacing: 0.04em;')],
     ['兑换钮回到实心金药丸', 'pointsWxss', (t) => t.replace('font-size: var(--fs-22); color: var(--brass-200); background: rgba(196, 167, 108, 0.08);', 'font-size: var(--fs-22); color: #1A1814; background: var(--color-primary);')],
+    ['留言提交回到实心金', 'supportWxss', (t) => t.replace('  background: transparent !important;\n  box-shadow: inset 0 0 0 2rpx #8B6F47;', '  background: var(--brass-400) !important;\n  box-shadow: inset 0 0 0 2rpx #8B6F47;')],
+    ['联系方式回到圆角卡', 'supportWxss', (t) => t.replace('  padding: 28rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n}\n\n.channel-info', '  padding: 28rpx 4rpx;\n  border-radius: 24rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n}\n\n.channel-info')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
