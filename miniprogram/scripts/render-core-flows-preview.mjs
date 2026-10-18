@@ -479,6 +479,17 @@ const SCENES = [
           { key: 'payslip', title: '工资条明细', desc: '应发实发 · 所属门店销售分成 1%', en: 'PAYSLIP', icon: '/assets/icons/wallet_gold.png' },
           { key: 'reimburse', title: '报销申请', desc: '提交费用报销并跟踪审核', en: 'EXPENSE', icon: '/assets/icons/pay.png' }] }
       ] } },
+  // 2026-10-18 权限配置「编辑权限」弹窗（真机反馈滑不动 + 右缘被裁）：正文改 scroll-view，按 iPhone 级高度出图
+  { name: 'staff-perm-modal', h: 1500, wxml: 'subpackages/extra/staff-permissions/index', data: {
+      ready: true, tipText: '', loading: false, listError: false, staffList: [{ _id: 's1', name: '藏家', roleText: '店长', status: 'active', openidTail: 'Qu71iyll', showStoreScope: true, storeIds: [], dailyGrantCap: 0 }],
+      showStaffModal: true, staffLookingUp: false, staffMatchHint: '', staffCandidates: [], staffMemberNoInput: '',
+      staffMatched: { openid: 'oa22', nickName: '藏家', openidTail: 'Qu71iyll' },
+      staffForm: { phone: '', openid: 'oa22s5Z2JcC1FGKRfYB0Qu71iyll', openidTail: 'Qu71iyll', name: '藏家', staffNo: '' },
+      staffRoleLabels: ['店员', '店长', '超管', '标本师', '主播', '股东'], staffRoleValues: ['staff', 'manager', 'super', 'artisan', 'host', 'holder'], staffRoleSelected: { manager: true },
+      featureGroups: [{ roleKey: 'manager', title: '店长工作台', en: 'MANAGER', items: [{ key: 'a', label: '订单', checked: true }, { key: 'b', label: '账本', checked: true }, { key: 'c', label: '审批', checked: false }] }],
+      showStoreScope: true, showShareholderConfig: false, staffStoreChecks: [{ key: 'all', name: '全部门店', selected: true, isAll: true }, { key: 's1', name: '山海造物 · 主店', storeId: 's1' }],
+      formTip: '', staffSaving: false },
+    css: '.ui-pop-mask.is-center { display: flex !important; }' },
   { name: 'booking-back', h: 900, wxml: 'subpackages/business/booking/index', base: 'booking', data: { isFlipped: true } },
   { name: 'booking-mine', h: 1800, wxml: 'subpackages/business/booking/index', base: 'booking', data: { currentTab: 3, bookingHistoryTab: 0,
       upcomingBookings: [{ _id: 'b1', type: 'visit', title: '入店参观 · 山海造物主店', _id_short: 'A7F3', month: '10月', day: '18', time: '14:00', people: 2 },

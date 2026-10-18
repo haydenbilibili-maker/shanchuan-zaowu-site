@@ -78,7 +78,14 @@ const FILES = {
   staffHubWxml: 'subpackages/extra/staff/index.wxml',
   staffHubWxss: 'subpackages/extra/staff/index.wxss',
   mgrHubNavWxss: 'subpackages/manager/manager/hubNav.wxss',
-  mgrWxss: 'subpackages/manager/manager/index.wxss'
+  mgrWxss: 'subpackages/manager/manager/index.wxss',
+  permWxml: 'subpackages/extra/staff-permissions/index.wxml',
+  permWxss: 'subpackages/extra/staff-permissions/index.wxss',
+  permMgrWxss: 'subpackages/manager/staff-permissions/index.wxss',
+  approvalsWxml: 'subpackages/extra/approvals/index.wxml',
+  payslipAdminWxml: 'subpackages/manager/payslip/admin/index.wxml',
+  wsSubviewsWxml: 'subpackages/manager/manager/workspace/_subviews.wxml',
+  petSheetWxml: 'subpackages/manager/manager/workspace/petMemorialSheet.wxml'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -311,6 +318,17 @@ function checks(s) {
     /\n\.hub-search-box \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) && /\n\.hub-found \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) &&
       /\n\.grid-item \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) && /\n\.kpi-mini-cell \{[^}]*border-radius: 2rpx;/.test(s.mgrWxss) &&
       !/\.chart-empty-hint \{[^}]*#4A4540/i.test(s.mgrWxss) && !/\.footer-cn \{[^}]*#4a4640/i.test(s.mgrWxss))
+  // 2026-10-18 产品负责人真机：权限配置「编辑权限」滑不动。遮罩 catchtouchmove 会吞掉 view 的 overflow 滚动 ——
+  // 弹窗正文必须是 <scroll-view scroll-y>（docs/弹层视觉规范：长内容用 scroll-view）。唯一豁免：回复评价（正文只有一个 textarea，不需要滚）
+  {
+    const viewBodies = ['permWxml', 'approvalsWxml', 'payslipAdminWxml', 'wsSubviewsWxml', 'petSheetWxml'].flatMap((k) =>
+      [...s[k].matchAll(/<view class="modal-body[^"]*"/g)].filter((m) => !/comment-reply-panel[\s\S]{0,400}$/.test(s[k].slice(0, m.index))).map(() => k))
+    add(`R31-1 工作台弹窗正文为 scroll-view（遮罩 catchtouchmove 下 view 滑不动）${viewBodies.length ? '（仍为 view：' + viewBodies.join(',') + '）' : ''}`,
+      viewBodies.length === 0)
+    add('R31-2 权限配置弹窗：正文限高 + 左右 4rpx 不裁描边、底栏去抽屉卡底；两份样式（manager / extra）同写',
+      [s.permWxss, s.permMgrWxss].every((t) => /\n\.modal-body \{\s*flex: 1 1 auto;\s*min-height: 0;\s*max-height: calc\(100vh - 600rpx\);\s*padding: 24rpx 4rpx 16rpx;/.test(t) &&
+        /\n\.modal \.workbench-modal-foot \{[^}]*background: transparent;/.test(t)))
+  }
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -578,6 +596,9 @@ if (process.argv.includes('--selftest')) {
     ['店长金卡回到大圆角', 'mgrWxss', (t) => t.replace('border-radius: 4rpx; padding: 40rpx;', 'border-radius: var(--radius-lg); padding: 40rpx;')],
     ['超管搜索框回到胶囊', 'mgrHubNavWxss', (t) => t.replace('border-radius: 4rpx;  /* 2026-10-18 视觉对齐：方角（原 40rpx 胶囊） */', 'border-radius: 40rpx;')],
     ['看板空态说明回到近黑灰', 'mgrWxss', (t) => t.replace('.chart-empty-hint { font-size: var(--fs-18); color: rgba(185, 173, 150, 0.75); }', '.chart-empty-hint { font-size: var(--fs-18); color: #4A4540; }')],
+    ['权限配置正文退回 view', 'permWxml', (t) => t.replace('<scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">', '<view class="modal-body">')],
+    ['伴宠工单弹层正文退回 view', 'petSheetWxml', (t) => t.replace('<scroll-view scroll-y class="modal-body pm-sheet-body">', '<view class="modal-body pm-sheet-body">')],
+    ['权限配置正文贴边被裁', 'permMgrWxss', (t) => t.replace('  padding: 24rpx 4rpx 16rpx;', '  padding: 24rpx 0 16rpx;')],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

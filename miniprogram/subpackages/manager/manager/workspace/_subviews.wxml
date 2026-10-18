@@ -3137,7 +3137,7 @@
       <text>会员核验</text>
       <view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeMemberPassResult">✕</view>
     </view>
-    <view class="modal-body member-pass-body">
+    <scroll-view scroll-y class="modal-body member-pass-body">
       <view class="mp-status-row">
         <view class="signal-light {{memberPassResult.valid ? 'blink' : ''}}"></view>
         <view class="mp-status {{memberPassResult.valid ? 'ok' : 'bad'}}">
@@ -3170,7 +3170,7 @@
           </view>
         </view>
       </view>
-    </view>
+    </scroll-view>
     <view class="modal-foot">
       <view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="closeMemberPassResult">完成</view>
     </view>
@@ -3974,7 +3974,7 @@
         <view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closeModal">✕</view>
       </view>
 
-      <view class="modal-body ship-modal-body">
+      <scroll-view scroll-y class="modal-body ship-modal-body">
         <view class="ship-order-hint">
           当前操作订单：<text class="ship-order-no">{{tempShip.orderNo}}</text>
         </view>
@@ -4060,7 +4060,7 @@
           <text class="ship-photo-hint muted" wx:else>不传也可以，发货流程与原来一致</text>
           <text class="ship-photo-err" wx:if="{{tempShip.packagePhotoError}}">{{tempShip.packagePhotoError}}</text>
         </view>
-      </view>
+      </scroll-view>
 
       <view class="modal-foot ship-modal-foot">
         <view hover-class="tap-press" hover-stay-time="80" class="btn-full ship-submit-btn" catchtap="submitShip">确认发出并通知</view>
@@ -4256,11 +4256,11 @@
   <view class="ui-pop-mask" wx:if="{{showPushConfirm}}" catchtap="closePushConfirm" catchtouchmove="true">
     <view class="ui-pop-sheet modal-panel" catchtap="true">
       <view class="modal-head"><text>确认发送</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closePushConfirm">✕</view></view>
-      <view class="modal-body">
+      <scroll-view scroll-y class="modal-body">
         <text class="p-name">将向约 {{pushEstimate}} 位藏家发送公告</text>
         <text class="addr-detail" style="margin-top:16rpx;display:block;">{{pushForm.title}}</text>
         <text class="addr-detail">{{pushForm.content}}</text>
-      </view>
+      </scroll-view>
       <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" catchtap="submitPush">确认发送</view></view>
     </view>
   </view>

@@ -970,11 +970,13 @@ page {
 }
 
 .modal-body {
-  flex-shrink: 0;
-  max-height: calc(86vh - 160rpx);
+  /* 2026-10-18 改为 <scroll-view scroll-y>：遮罩 catchtouchmove 会吞掉 view 的 overflow 滚动，长表单滑不动 */
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(86vh - 260rpx);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 8rpx 0 0;
+  padding: 8rpx 4rpx 0;
   box-sizing: border-box;
 }
 

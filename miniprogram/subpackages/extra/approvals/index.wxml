@@ -357,7 +357,7 @@
       <text class="ui-pop-title">撤销赠分</text>
       <text class="ui-pop-sub">{{revokeTarget.memberName || revokeTarget.memberNo}} · 原消费 ¥{{revokeTarget.amount}} / 赠 {{revokeTarget.pointsGranted}} 分</text>
     </view>
-    <view class="modal-body">
+    <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">
       <view class="field">
         <text class="field-label">撤销原因</text>
         <view class="seg-row wrap">
@@ -378,7 +378,7 @@
 
       <text class="field-hint">按比例向上取整扣回。积分不足时记欠账，后续赠分自动抵扣。</text>
       <view class="page-tip is-warn" wx:if="{{formTip}}" style="margin-top:16rpx;"><text>{{formTip}}</text></view>
-    </view>
+    </scroll-view>
     <view class="workbench-modal-foot">
       <view hover-class="tap-press-soft" hover-stay-time="80" class="workbench-btn-outline" bindtap="closeRevoke">取消</view>
       <view hover-class="tap-press" hover-stay-time="80" class="workbench-btn-danger" bindtap="confirmRevoke">确认撤销</view>

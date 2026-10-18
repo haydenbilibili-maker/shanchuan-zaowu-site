@@ -477,3 +477,108 @@ page {
   width: auto;
   min-width: 0;
 }
+
+/* ================================================================
+   2026-10-18 产品负责人真机截图「此页面无法滑动」+「相关二级页面修复提升」
+   ① 滑不动：遮罩 catchtouchmove 会吞掉 view 的 overflow 滚动 → 弹窗正文改 <scroll-view scroll-y>
+     （docs/弹层视觉规范 §遮罩：长内容用 scroll-view）；正文限高，底栏永远可见。
+   ② 右缘被裁：正文左右留 4rpx，1rpx 描边不再落在裁切边上（真机 0.5px 取整被吃掉）。
+   ③ 底栏：workbench-modal-foot 是抽屉用的（卡底 + 安全区内边距），放进居中弹窗只留发丝顶线。
+   ④ 视觉对齐：方角发丝框、等宽眉标 + 宋体、方签；实心金只留主按钮（「开通后台角色」/「保存」）。
+   本文件 manager / extra 两份（subpackage-mirrors 登记为非一致镜像），本段两份同写。
+   ================================================================ */
+.modal {
+  max-height: calc(100vh - 160rpx);
+}
+.modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(100vh - 600rpx);
+  padding: 24rpx 4rpx 16rpx;
+}
+.modal .workbench-modal-foot {
+  gap: 20rpx;
+  padding: 24rpx 4rpx 0;
+  background: transparent;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+}
+
+.brand-group .en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.24em;
+  color: var(--brass-300);
+}
+.brand-group .cn {
+  margin-top: 8rpx;
+  font-size: var(--fs-40);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #F3ECDD;
+}
+.section {
+  background: rgba(243, 236, 221, 0.02);
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-radius: 4rpx;
+}
+.section-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-30);
+  letter-spacing: 0.08em;
+  color: #F3ECDD;
+}
+.row { border-bottom-color: rgba(196, 167, 108, 0.14); }
+.btn-primary {
+  border-radius: 4rpx;
+  font-weight: 600;
+  color: #1A1814;
+}
+.staff-btn,
+.tag,
+.lookup-btn,
+.seg-item,
+.store-check,
+.input,
+.match-badge,
+.btn-retry,
+.page-tip {
+  border-radius: 2rpx;
+}
+.lookup-btn { background: transparent; }
+.seg-item.on,
+.store-check.on {
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass-soft);
+}
+.match-card,
+.candidate,
+.empty.is-error {
+  border-radius: 4rpx;
+}
+.feature-group { border-top-color: rgba(196, 167, 108, 0.14); }
+.feature-group-title {
+  font-family: var(--font-brand);
+  font-weight: 600;
+  color: #F3ECDD;
+}
+.feature-group-en {
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.2em;
+  color: var(--brass-300);
+}
+.feature-check {
+  border-radius: 2rpx;
+  background: transparent;
+  border-color: rgba(196, 167, 108, 0.14);
+}
+.feature-check.on {
+  background: rgba(196, 167, 108, 0.06);
+  border-color: rgba(196, 167, 108, 0.45);
+}
+.feature-check-state {
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+  color: rgba(185, 173, 150, 0.8);
+}
+.feature-check.on .feature-check-state { color: var(--brass-200); }

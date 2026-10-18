@@ -2,7 +2,7 @@
 <view class="ui-pop-mask pm-sheet-mask" wx:if="{{petSheet.show}}" bindtap="closePetSheet" catchtouchmove="true">
   <view class="ui-pop-sheet modal-panel pm-sheet" catchtap="true">
     <view class="modal-head"><text>{{petSheet.title}}</text><view class="close-btn" hover-class="tap-press" hover-stay-time="80" bindtap="closePetSheet">✕</view></view>
-    <view class="modal-body pm-sheet-body">
+    <scroll-view scroll-y class="modal-body pm-sheet-body">
       <text class="pm-sheet-order">{{petSheet.petName}} · {{petSheet.orderNo}}</text>
       <text class="pm-sheet-label">常用{{petSheet.mode === 'decline' ? '理由' : '补充项'}}（点选后可再修改）</text>
       <view class="pm-chips">
@@ -14,7 +14,7 @@
         <text class="pm-sheet-hint" wx:else>{{petSheet.hint}}</text>
         <text class="pm-sheet-count">{{petSheet.len || 0}}/{{petSheet.max}}</text>
       </view>
-    </view>
+    </scroll-view>
     <view class="modal-foot pm-sheet-actions">
       <view class="pm-btn sub" hover-class="tap-press" hover-stay-time="80" bindtap="closePetSheet">取消</view>
       <view class="pm-btn main {{petSheet.busy ? 'is-busy' : ''}}" hover-class="tap-press" hover-stay-time="80" bindtap="submitPetSheet">{{petSheet.busy ? '处理中…' : petSheet.confirmText}}</view>
