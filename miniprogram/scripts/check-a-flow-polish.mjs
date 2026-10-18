@@ -89,7 +89,9 @@ const FILES = {
   shCfgWxss: 'subpackages/extra/shareholder-config/index.wxss',
   apJs: 'subpackages/extra/approvals/index.js',
   apWxml: 'subpackages/extra/approvals/index.wxml',
-  apReasons: 'subpackages/extra/approvals/rejectReasons.js'
+  apReasons: 'subpackages/extra/approvals/rejectReasons.js',
+  apWxss: 'subpackages/extra/approvals/index.wxss',
+  mgrWxml: 'subpackages/manager/manager/index.wxml'
 }
 const readAll = () => Object.fromEntries(Object.entries(FILES).map(([k, p]) => [k, readFileSync(join(MP, p), 'utf8')]))
 
@@ -354,6 +356,18 @@ function checks(s) {
         /sheet\.requireReason && reason\.length < 2/.test(s.apJs) &&
         /action: 'reject',\s*approvalId: id,\s*rejectReason: reason \|\| '已驳回'/.test(s.apJs))
   }
+  // 2026-10-18 小惊喜「馆印」：完成时刻盖一方朱印（纯前端、尊重减弱动效）
+  add('R34-1 入馆券出纸完成（mintFinished）盖「入馆」朱印，减弱动效下直接静止显示',
+    /<view class="tm-seal \{\{mintFinished \? 'is-stamped' : ''\}\}"/.test(s.bookingWxml) &&
+      /\.tm-seal\.is-stamped \{ animation: tm-seal-stamp/.test(s.bookingWxss) &&
+      /prefers-reduced-motion[\s\S]*\.tm-seal\.is-stamped \{ animation: none;/.test(s.bookingWxss))
+  add('R34-2 审批：只有本次进页后亲手办结过才盖「审毕」（首次打开就空不盖），三种办结都计数',
+    (s.apWxml.match(/wx:if="\{\{viewMode === 'inbox' && sessionDecided > 0\}\}"/g) || []).length === 2 && /sessionDecided: 0,/.test(s.apJs) &&
+      (s.apJs.match(/sessionDecided: this\.data\.sessionDecided \+ 1/g) || []).length === 3 &&
+      /prefers-reduced-motion[^{]*\{\s*\.clear-seal \{ animation: none; \}/.test(s.apWxss))
+  add('R34-3 店长 / 超管待处理清零盖小朱印「清」（方框宋体，不与红色数字角标混淆）',
+    /<view class="hub-clear-seal" aria-hidden="true"><text>清<\/text><\/view>/.test(s.mgrWxml) &&
+      /\n\.hub-clear-seal \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -628,6 +642,9 @@ if (process.argv.includes('--selftest')) {
     ['驳回原因拼接丢了补充说明', 'apReasons', (t) => t.replace('  if (extra) parts.push(extra)\n', '')],
     ['驳回退回系统输入弹窗', 'apJs', (t) => t.replace("      approvePendingId: '',\n      ignorePendingId: '',\n      rejectSheet: {", "      approvePendingId: '',\n      editable: true,\n      ignorePendingId: '',\n      rejectSheet: {")],
     ['必填驳回不再拦空原因', 'apJs', (t) => t.replace('if (sheet.requireReason && reason.length < 2)', 'if (false)')],
+    ['入馆印不再随出纸完成盖下', 'bookingWxml', (t) => t.replace("<view class=\"tm-seal {{mintFinished ? 'is-stamped' : ''}}\"", '<view class="tm-seal"')],
+    ['审毕印对首次空列表也盖', 'apWxml', (t) => t.replace("wx:if=\"{{viewMode === 'inbox' && sessionDecided > 0}}\" aria-hidden", "wx:if=\"{{viewMode === 'inbox'}}\" aria-hidden")],
+    ['驳回不再计入本轮', 'apJs', (t) => t.replace("expandedId: '', sessionDecided: this.data.sessionDecided + 1, tipTone: 'info', tipText: '已驳回'", "expandedId: '', tipTone: 'info', tipText: '已驳回'")],
     ['投资观测台区间回到实心金', 'investorWxss', (t) => t.replace('.range-tab.on {\n  background: rgba(196, 167, 108, 0.08);', '.range-tab.on {\n  background: var(--brass-400, #C4A76C);')],
     ['预约分区头回到中英并列', 'bookingWxml', (t) => t.replace('<view class="section-label"><text class="sl-en">DATE</text><text class="sl-cn">选择日期</text></view>', '<view class="section-label">选择日期 | SELECT DATE</view>')],
     ['预览库回到 indexOf 找标签', 'previewLib', (t) => t.replace('const lt = nextTagStart(src, i)', "const lt = src.indexOf('<', i)")],

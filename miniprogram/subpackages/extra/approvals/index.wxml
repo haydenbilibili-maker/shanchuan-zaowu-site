@@ -339,6 +339,9 @@
   </view>
 
   <view class="empty" wx:elif="{{!listError}}">
+    <!-- 小惊喜（2026-10-18）：本次进页后亲手把待审清空 → 盖一方「审毕」朱印，并报本轮件数 -->
+    <view class="clear-seal" wx:if="{{viewMode === 'inbox' && sessionDecided > 0}}" aria-hidden="true"><text class="clear-seal-ch">审</text><text class="clear-seal-ch">毕</text></view>
+    <text class="clear-count" wx:if="{{viewMode === 'inbox' && sessionDecided > 0}}">本轮已办 {{sessionDecided}} 件</text>
     <text class="empty-title">{{emptyTitle}}</text>
     <text class="empty-hint">{{emptyHint}}</text>
   </view>

@@ -515,6 +515,9 @@ const SCENES = [
         { _id: 'a2', status: 'pending', statusText: '待审核', overdue: false, title: '订单退款 · SO20261016-031', actionType: 'order_refund', actionLabel: '订单退款', overdueText: '剩余 18h', summary: '退款 ¥1,280 · 顾客称运输破损', showAttachmentBlock: false, metaLine: '店长 林岚 · 10-18 09:40', canDecide: true, canIgnore: false, requireRejectReason: true, detailLines: [] }
       ],
       rejectSheet: { show: false, reasons: [], picked: [] } } },
+  // 小惊喜：本次进页后把待审清空 → 「审毕」朱印 + 本轮件数
+  { name: 'approvals-cleared', h: 1100, wxml: 'subpackages/extra/approvals/index', base: 'approvals', data: {
+      list: [], total: 0, pendingBadge: 0, overdueCount: 0, sessionDecided: 4, emptyTitle: '待审已清空', emptyHint: '新的申请会出现在这里' } },
   { name: 'approvals-reject', h: 1500, wxml: 'subpackages/extra/approvals/index', base: 'approvals', data: {
       rejectSheet: { show: true, id: 'a2', title: '订单退款 · SO20261016-031', typeLabel: '订单退款', requireReason: true,
         reasons: [{ label: '不符合退款条件', on: false }, { label: '请先与顾客沟通', on: true }, { label: '退款金额有误', on: true }, { label: '信息不全，请补充后重新提交', on: false }],

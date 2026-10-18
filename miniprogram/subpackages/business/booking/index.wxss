@@ -1104,10 +1104,45 @@
 
 .btn-sub-act-press { opacity: 0.8; }
 
+/* 小惊喜：朱印「入馆」—— 出纸完成时自上而下盖印（放大 → 回落 → 轻微回弹），落在票纸右下角内框上；
+   朱色只在纸面上出现，是整张入馆券唯一的红 */
+.tm-seal {
+  position: absolute;
+  right: 34rpx;
+  bottom: 44rpx;
+  width: 96rpx;
+  height: 96rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx solid rgba(168, 53, 42, 0.82);
+  border-radius: 6rpx;
+  box-shadow: inset 0 0 0 3rpx rgba(243, 236, 221, 0.5), inset 0 0 0 5rpx rgba(168, 53, 42, 0.55);
+  color: rgba(168, 53, 42, 0.86);
+  transform: rotate(-12deg) scale(1.9);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.tm-seal-ch {
+  font-family: var(--font-brand);
+  font-size: 32rpx;
+  font-weight: 700;
+  line-height: 36rpx;
+}
+.tm-seal.is-stamped { animation: tm-seal-stamp 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes tm-seal-stamp {
+  0% { opacity: 0; transform: rotate(-12deg) scale(1.9); }
+  60% { opacity: 0.95; transform: rotate(-12deg) scale(0.94); }
+  100% { opacity: 0.9; transform: rotate(-12deg) scale(1); }
+}
+
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {
   .scan-bar,
   .mint-tip {
     animation: none;
   }
+  .tm-seal.is-stamped { animation: none; opacity: 0.9; transform: rotate(-12deg); }
 }

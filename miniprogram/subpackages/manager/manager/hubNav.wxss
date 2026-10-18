@@ -153,6 +153,35 @@
   font-size: var(--fs-24);
   color: #B9AD96;
 }
+/* 小惊喜：待处理清零 = 小朱印「清」（2026-10-18）；只此一处用朱色，不与红色数字角标混淆（印是方框 + 宋体字，角标是实心圆） */
+.hub-todo-ok-row {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+.hub-clear-seal {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid rgba(196, 72, 58, 0.85);
+  border-radius: 4rpx;
+  color: rgba(214, 92, 76, 0.95);
+  font-family: var(--font-brand);
+  font-size: 28rpx;
+  font-weight: 700;
+  transform: rotate(-10deg);
+  animation: hub-seal-stamp 0.42s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+@keyframes hub-seal-stamp {
+  0% { opacity: 0; transform: rotate(-10deg) scale(1.9); }
+  60% { opacity: 1; transform: rotate(-10deg) scale(0.92); }
+  100% { opacity: 1; transform: rotate(-10deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hub-clear-seal { animation: none; }
+}
 
 /* ── 我的常用（首屏核心）：4 列大图标，「编辑」是唯一的增删入口 ──
    2026-10-18 视觉对齐：去掉金边大圆角盒，改为开放分区（眉标 + 宋体 + 渐隐金线），与「全部功能」同级 */

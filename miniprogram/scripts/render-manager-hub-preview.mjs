@@ -135,7 +135,7 @@ function dataFor(role, extra = {}) {
     hubSec: hubNav.sectionFlags(menu),
     ...extra
   }
-  d.hubTodo = hubNav.buildTodos(d)
+  d.hubTodo = extra.hubTodo || hubNav.buildTodos(d)
   const favIds = extra.favIds || hubNav.defaultFavs(role, menu)
   d.hubFav = hubNav.buildFavView(favIds, d)
   d.hubFavEdit = extra.favEdit ? hubNav.buildFavEditor(favIds, menu) : { open: false, selected: [], groups: [] }
@@ -164,6 +164,8 @@ const PAGE_SUPER = {
 }
 scenes.push(
   { name: 'page-super', wxml: afterWxml, h: 4200, overlay: 'page', data: dataFor(roles.WORKSPACE_SUPER_ADMIN, PAGE_SUPER) },
+  // 小惊喜：待处理清零 → 小朱印「清」
+  { name: 'clear-manager', wxml: afterWxml, h: 900, overlay: 'full', data: dataFor(roles.WORKSPACE_STORE_MANAGER, { ...FULL, hubTodo: { items: [], any: true, totalText: '0' } }) },
   { name: 'full-manager', wxml: afterWxml, h: 2600, overlay: 'full', data: dataFor(roles.WORKSPACE_STORE_MANAGER, FULL) },
   { name: 'after-super', wxml: afterWxml, h: 2700, data: dataFor(roles.WORKSPACE_SUPER_ADMIN) },
   { name: 'after-manager', wxml: afterWxml, h: 1500, data: dataFor(roles.WORKSPACE_STORE_MANAGER) },

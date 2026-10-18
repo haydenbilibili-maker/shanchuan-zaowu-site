@@ -322,6 +322,7 @@ Page({
     flowStatusIndex: 0,
     flowFilterStatus: '',
     showRevokeModal: false,
+    sessionDecided: 0,
     rejectSheet: { show: false, id: '', title: '', requireReason: false, reasons: [], picked: [], note: '', preview: '', tip: '' },
     revokeTarget: null,
     revokeReasons: REVOKE_REASONS,
@@ -903,7 +904,7 @@ Page({
         this.setData({ tipTone: 'warn', tipText: result.msg || '通过失败' });
         return;
       }
-      this.setData({ expandedId: '', tipTone: 'info', tipText: result.msg || '已通过' });
+      this.setData({ expandedId: '', sessionDecided: this.data.sessionDecided + 1, tipTone: 'info', tipText: result.msg || '已通过' });
       this.loadList(true);
       this.refreshPendingBadge();
       if (this.data.overviewReady) this.loadOverview(true);
@@ -993,7 +994,7 @@ Page({
         this.setData({ tipTone: 'warn', tipText: result.msg || '驳回失败' });
         return;
       }
-      this.setData({ expandedId: '', tipTone: 'info', tipText: '已驳回' });
+      this.setData({ expandedId: '', sessionDecided: this.data.sessionDecided + 1, tipTone: 'info', tipText: '已驳回' });
       this.loadList(true);
       this.refreshPendingBadge();
       if (this.data.overviewReady) this.loadOverview(true);
@@ -1028,7 +1029,7 @@ Page({
         this.setData({ tipTone: 'warn', tipText: result.msg || '忽略失败' });
         return;
       }
-      this.setData({ expandedId: '', tipTone: 'info', tipText: result.msg || '已忽略' });
+      this.setData({ expandedId: '', sessionDecided: this.data.sessionDecided + 1, tipTone: 'info', tipText: result.msg || '已忽略' });
       this.loadList(true);
       this.refreshPendingBadge();
       if (this.data.overviewReady) this.loadOverview(true);
