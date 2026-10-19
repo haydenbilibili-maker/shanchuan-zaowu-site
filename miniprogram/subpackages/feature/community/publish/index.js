@@ -189,6 +189,11 @@ Page({
 
   noop() {},
 
+  onUnload() {
+    this._unloaded = true
+    clearTimeout(this._exhibitTimer)
+  },
+
   async submit() {
     // 在途守卫：逐张上传图片可能耗时数秒，避免重复点击产生重复笔记
     if (this.data.submitting) return
@@ -282,7 +287,9 @@ Page({
         }
       })
       wx.vibrateShort({ type: 'light' })
-      setTimeout(() => {
+      // 展签停 1.8s：期间若已返回离页，不再 redirect（否则会替换掉别的页面）（2026-10-19 核查）
+      this._exhibitTimer = setTimeout(() => {
+        if (this._unloaded) return
         wx.redirectTo({ url: '/subpackages/feature/community/index?from=publish' })
       }, 1800)
     } catch (e) {

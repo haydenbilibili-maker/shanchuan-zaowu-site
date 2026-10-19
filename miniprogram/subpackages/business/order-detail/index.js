@@ -958,7 +958,9 @@ Page(withAppModal({
 
       try {
         const orderSnapshot = { ...this.data.order };
-        const care = await confirmReceiptOnOrder(this.data.order._id, orderSnapshot);
+        // 送礼人走原来的签收后动作单；其余人看入藏卡（卡上自带 查看证书 / 养护 / 评价），不再与动作单叠两层（2026-10-19 核查）
+        const willShowCard = this.data.certRole !== 'giver';
+        const care = await confirmReceiptOnOrder(this.data.order._id, orderSnapshot, { prompt: !willShowCard });
         await this.loadOrderDetail(this.data.order._id);
         const points = (care && care.pointsGranted) || 0;
         if (this.data.order.status === 'received' && this.data.certRole !== 'giver') {
@@ -1060,6 +1062,16 @@ Page(withAppModal({
 
   closeArchiveCard() {
     this.setData({ 'archiveCard.show': false });
+  },
+
+  /** 入藏卡 → 养护指南 / 写评价（原签收后动作单里的两项，并进卡里） */
+  openCareFromCard() {
+    this.setData({ 'archiveCard.show': false });
+    this.goToCare();
+  },
+  openCommentFromCard() {
+    this.setData({ 'archiveCard.show': false });
+    this.goToComment();
   },
 
   /** 入藏卡 →「查看证书」 */

@@ -4,10 +4,33 @@
   <view class="nav-bar" style="top:{{statusBarHeight}}px">
   </view>
 
-  <!-- 1. 铸造动画 -->
+  <!-- 1. 打印动画（2026-10-19 产品负责人「正在铸造改为正在打印，打印机动画参考预约打印与代金券打印」）：
+       同一套打印机（深色顶杆 + 铜光出纸口 + 三灯）。证书生成时长不定 → 纸张循环吐出（不是出一张就停），
+       纸上依次露出眉标 / 标题 / 正文行 / 方印；下方同款细进度条往复。 -->
   <view class="minting-layer" wx:if="{{isMinting}}">
-    <view class="mint-spinner"></view>
-    <text class="mint-txt">正在铸造专属证书…</text>
+    <view class="cp-printer" aria-hidden="true">
+      <view class="cp-machine">
+        <view class="cp-slot"></view>
+        <view class="cp-lights">
+          <view class="signal-light warn blink"></view>
+          <view class="signal-light lamp-muted"></view>
+          <view class="signal-light lamp-muted"></view>
+        </view>
+      </view>
+      <view class="cp-window">
+        <view class="cp-paper">
+          <text class="cp-en">CERTIFICATE OF COLLECTION</text>
+          <view class="cp-rule"></view>
+          <text class="cp-title">珍 藏 证 书</text>
+          <view class="cp-ink"></view>
+          <view class="cp-ink is-short"></view>
+          <view class="cp-ink"></view>
+          <view class="cp-seal"><text>山海</text></view>
+        </view>
+      </view>
+    </view>
+    <text class="mint-txt">正在打印专属证书…</text>
+    <view class="cp-progress"><view class="cp-progress-bar"></view></view>
   </view>
 
   <view class="empty-cert" wx:if="{{missingId && !isMinting}}">

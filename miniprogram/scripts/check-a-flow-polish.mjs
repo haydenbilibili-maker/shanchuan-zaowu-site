@@ -147,7 +147,11 @@ const FILES = {
   shipWxml: 'subpackages/extra/shipment-ops/index.wxml',
   dayDeltaJs: 'subpackages/manager/utils/dayDelta.js',
   mgrCfgJs: 'subpackages/manager/manager/managerPageConfig.js',
-  staffHubJs: 'subpackages/extra/staff/index.js'
+  staffHubJs: 'subpackages/extra/staff/index.js',
+  certPageWxml: 'subpackages/business/certificate/index.wxml',
+  certPageWxss: 'subpackages/business/certificate/index.wxss',
+  customJs: 'subpackages/feature/custom/index.js',
+  customWxml: 'subpackages/feature/custom/index.wxml'
 }
 /** 无 require 的 CommonJS 小模块：内存里求值拿 exports（失败返回 {}） */
 function loadCjs(src) {
@@ -316,6 +320,11 @@ function checks(s) {
     add('R15-1 定制页头两段高度与 customNav 预留一致（说明 88rpx / 步骤条 148rpx，否则内容区会钻进页头或留缝）',
       navRpx('mottoHeight') > 0 && cssH('.nav-motto') === navRpx('mottoHeight') && cssH('.header-rail-full') === navRpx('stepBarHeight'))
   }
+  // 2026-10-19 产品负责人「优化此页面顶部样式」（真机：主标题偏左、步骤条下大段空白）
+  add('R15-3 定制页（系统导航栏）：标题行左右对称不让胶囊；顶距不含状态栏 / 胶囊栏，onReady 按页头实测高度锚定；不重复「STEP 0x / 05」',
+    /<view class="nav-row">/.test(s.customWxml) && !/navPaddingRight/.test(s.customWxml) &&
+      /headerHeight: nav\.headerHeight - nav\.statusBarHeight - nav\.navBarHeight/.test(s.customJs) &&
+      /onReady\(\) \{\s*this\.syncStickyHeaderHeight\(\)/.test(s.customJs) && !/panel-index/.test(s.customWxml))
   add('R15-2 定制页实心金只给底栏主按钮（步骤条当前步不再是实心金圆点）',
     solidGold(s.customWxss) === '.btn-primary' && !/grain-overlay/.test(s.customWxss))
   // 2026-10-17 产品负责人：钱包 / 礼券 / 积分「不要更改卡片的金属与皮质视觉质感，只做页面的视觉对齐和细节质感提升」
@@ -583,7 +592,7 @@ function checks(s) {
       ok = a.every((x) => !x.sealed) && b[0].sealed && !b[1].sealed && !b[2].sealed && c.every((x) => !x.sealed)
     } catch (e) { ok = false }
     add('R41-2 证书火漆：首次进页老证书不封；之后新签发的才封；启封即记、不重封；掰开后才进证书',
-      ok && /if \(i >= 0 && all\[i\]\.sealed\) \{[\s\S]*?markUnsealed\(id, wx\);[\s\S]*?this\.openCert\(id\);[\s\S]*?return;\s*\}\s*this\.openCert\(id\);/.test(s.certJs) &&
+      ok && /if \(i >= 0 && all\[i\]\.sealed\) \{[\s\S]*?markUnsealed\(id, wx(?:, [^;]+)?\);[\s\S]*?this\.openCert\(id\);[\s\S]*?return;\s*\}\s*this\.openCert\(id\);/.test(s.certJs) &&
         /<view class="c-wax \{\{item\.breaking \? 'is-breaking' : ''\}\}" wx:if="\{\{item\.sealed\}\}"/.test(s.certWxml))
   }
   {
@@ -621,7 +630,7 @@ function checks(s) {
         /if \(this\.data\.order\.status === 'received' && this\.data\.certRole !== 'giver'\) \{/.test(s.odJs) &&
         /class="sj-stamp \{\{arriveLive \? 'is-live' : ''\}\}" wx:if="\{\{item\.key === 'arrive' && item\.state === 'done'\}\}"/.test(s.odWxml) &&
         /<view class="ui-pop-mask is-center is-deep archive-card-mask" wx:if="\{\{archiveCard\.show\}\}"/.test(s.odWxml) &&
-        /confirmReceiptOnOrder\(this\.data\.order\._id, orderSnapshot\)/.test(s.odJs))
+        /confirmReceiptOnOrder\(this\.data\.order\._id, orderSnapshot(?:, \{ prompt: !willShowCard \})?\)/.test(s.odJs))
   }
   {
     const ls = loadCjs(s.leaveSpanJs)
@@ -736,6 +745,11 @@ function checks(s) {
     } catch (e) { same = false }
     add('R42-9 店员工作台问候与店长首页 greetByHour 逐时段一致', same)
   }
+  // 2026-10-19 产品负责人「正在铸造改为正在打印，打印机动画参考预约打印与代金券打印」
+  add('R43-1 证书加载：文案「正在打印专属证书…」，同款打印机（顶杆 + 出纸口 + 三灯）循环出纸 + 往复进度条；不再是转圈 / 「铸造」',
+    /<text class="mint-txt">正在打印专属证书…<\/text>/.test(s.certPageWxml) && !/铸造/.test(s.certPageWxml.replace(/<!--[\s\S]*?-->/g, '')) &&
+      /<view class="cp-machine">[\s\S]*?<view class="cp-slot"><\/view>[\s\S]*?<view class="cp-lights">/.test(s.certPageWxml) &&
+      /animation: cp-feed 3\.2s [^;]*infinite;/.test(s.certPageWxss) && !/mint-spinner/.test(s.certPageWxml))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -815,6 +829,12 @@ function checks(s) {
     // 2026-10-13 弹层规范：详情礼券抽屉空态改用全局 .ui-pop-empty（判据不变：说明字 = secondary）
     ['.gift-panel-sub', '.gift-scene-label', '.param-k'].every((x) => colorOf(s.detailWxss, x) === SEC) &&
     /\n\.ui-pop-empty \{[^}]*color: var\(--color-text-secondary\);/.test(s.appWxss))
+  // 2026-10-19 产品负责人「继续优化馆藏页顶部筛选器样式」
+  add('R4-5 馆藏品类一行横滑（不再折行），切换时选中项滑入视野；档案横滑去掉压边圆点，改「04 / 13」+ 细进度线',
+    /<scroll-view scroll-x class="category-scroll"[^>]*scroll-into-view="\{\{hallIntoView\}\}"/.test(s.catWxml) &&
+      /id="hall-\{\{index\}\}"/.test(s.catWxml) && /hallIntoView: `hall-\$\{Math\.max\(0, idx - 1\)\}`/.test(s.catJs) &&
+      /\.category-wrap \{ display: inline-flex; flex-wrap: nowrap;/.test(s.catWxss) &&
+      !/indicator-dots="\{\{contentTotal > 1\}\}"/.test(s.catWxml) && /class="archive-progress"/.test(s.catWxml))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
 
   // R5-1 首页恰好一屏：容器 100vh 纵向 flex 且裁切，顶部占位 + 滚动区（flex:1）+ 底栏让位 = 视口；不再「占位 + 满屏滚动区」叠高
@@ -1026,6 +1046,12 @@ if (process.argv.includes('--selftest')) {
     ['从最近记录进也打字', 'identifyJs', (t) => t.replace("      url += '&fresh=1'\n", '')],
     ['历史已核销也落印', 'pickupJs', (t) => t.replace("      const closedNow = pass.statusTone === 'closed';", "      const closedNow = pass.statusTone === 'closed';\n      if (claimedNow) this.setData({ claimLive: true });")],
     ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
+    ['定制页标题行又让胶囊', 'customWxml', (t) => t.replace('<view class="nav-row">', '<view class="nav-row" style="padding-right: {{navPaddingRight}}px;">')],
+    ['定制页顶距又含系统导航', 'customJs', (t) => t.replace('headerHeight: nav.headerHeight - nav.statusBarHeight - nav.navBarHeight + Math.round((nav.mottoHeight / 88) * 110),', 'headerHeight: nav.headerHeight,')],
+    ['馆藏品类又折行', 'catWxss', (t) => t.replace('.category-wrap { display: inline-flex; flex-wrap: nowrap;', '.category-wrap { display: flex; flex-wrap: wrap;')],
+    ['档案圆点回来', 'catWxml', (t) => t.replace('current="{{archiveIndex}}"', 'current="{{archiveIndex}}"\n          indicator-dots="{{contentTotal > 1}}"')],
+    ['证书加载改回铸造', 'certPageWxml', (t) => t.replace('正在打印专属证书…', '正在铸造专属证书…')],
+    ['证书纸只出一次不循环', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) infinite;', 'animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) forwards;')],
     ['射灯首次进页全部重播', 'achLitJs', (t) => t.replace('const fresh = seen === null ? [] :', 'const fresh = seen === null ? ids :')],
     ['档案降分也弹', 'pfJs', (t) => t.replace('if (gain > 0) this.bumpScore(gain)', 'if (gain !== 0) this.bumpScore(gain)')],
     ['社区发布改回 toast', 'pubWxml', (t) => t.replace('exhibit-mask" wx:if="{{exhibitTag.show}}"', 'exhibit-mask" wx:if="{{false}}"')],

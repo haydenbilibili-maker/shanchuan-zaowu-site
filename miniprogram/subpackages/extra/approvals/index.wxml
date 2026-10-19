@@ -354,7 +354,7 @@
 
 <!-- 驳回面板（2026-10-18）：常用原因可多选 + 补充说明，实时预览将发送的原因；取代系统 editable 弹窗。
      提交仍走 manageApprovals reject + rejectReason，口径不变 -->
-<view class="ui-pop-mask is-center" wx:if="{{rejectSheet.show}}" bindtap="closeRejectSheet" catchtouchmove="true">
+<view class="ui-pop-mask is-center" wx:if="{{rejectSheet.show}}" bindtap="onRejectMaskTap" catchtouchmove="true">
   <view class="ui-pop-dialog modal reject-sheet" catchtap="true">
     <view class="ui-pop-head">
       <text class="ui-pop-kicker">REJECT</text>

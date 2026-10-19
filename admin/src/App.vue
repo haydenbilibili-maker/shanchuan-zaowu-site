@@ -1428,7 +1428,7 @@ import { GIFT_SCENES, sanitizeGiftScenes, readGiftScenes } from './utils/giftSce
 import { BLESS_TAGS, MAX_BLESS_TAGS, sanitizeBlessTags, readBlessTags } from './utils/blessTags'
 // 2026-10-18 产品点名：藏品实拍视频（云存储 media + 外平台 externalVideos）
 import {
-    MAX_MEDIA, VIDEO_ACCEPT, MAX_EXTERNAL, STORE_FINDERS, formatVideoDuration, checkVideoFile, toPayloadMedia,
+    MAX_MEDIA, VIDEO_ACCEPT, VIDEO_NAME_RE, MAX_EXTERNAL, STORE_FINDERS, formatVideoDuration, checkVideoFile, toPayloadMedia,
     externalLabel, parseExternalDraft, readVideoMeta, captureVideoFrame
 } from './utils/productVideos'
 import { establishAdminSession, clearAdminSession, probeAdminSession } from './utils/cloudbaseCdnDb'
@@ -1961,6 +1961,17 @@ const saveFinder = (v) => {
 const externalDraft = ref({ kind: 'channels', url: '', title: '', finderUserName: readSavedFinder(), feedId: '', feedToken: '', sameSubject: true })
 /** before-upload 读到的元数据，交给 http-request 用（同一 File 对象） */
 const pendingVideoMeta = new WeakMap()
+/** 在途视频数：before-upload（读元数据）起就计入 —— 连拖两段时上限与「上传中」状态按它算（2026-10-19 核查） */
+let videoInflight = 0
+const videoUploadDone = () => {
+    videoInflight = Math.max(0, videoInflight - 1)
+    if (!videoInflight) {
+        productMediaUploading.value = false
+        videoUploadPct.value = 0
+    }
+}
+/** 预览刷新代次：连点「左移 / 删除」时只认最后一次的结果，避免缩略图错位 */
+let mediaPreviewGen = 0
 const latinAiLoading = ref(false)
 const productAiFillLoading = ref(false)
 /** 用户在库存=1 时手动关掉孤品后，不再因 stock===1 反复强开 */
@@ -4027,22 +4038,29 @@ const buildMediaPreviews = async (media) => {
     return list.map((m) => ({ url: map[m.url] || m.url, poster: m.poster ? (map[m.poster] || m.poster) : '' }))
 }
 const refreshMediaPreviews = async () => {
-    form.value.mediaPreviews = await buildMediaPreviews(form.value.media)
+    const gen = ++mediaPreviewGen
+    const target = form.value
+    const previews = await buildMediaPreviews(target.media)
+    if (gen === mediaPreviewGen && form.value === target) target.mediaPreviews = previews
 }
 
 const beforeProductVideoUpload = async (file) => {
-    if (!/^video\//.test(file.type || '') && !/\.(mp4|mov|m4v)$/i.test(file.name || '')) {
-        ElMessage.error('请选择 MP4 / MOV 视频')
+    // 拖拽进来的文件不受 accept 约束：扩展名必须是 mp4 / mov / m4v（服务端按扩展名认视频，小程序也只播这些）
+    if (!VIDEO_NAME_RE.test(file.name || '')) {
+        ElMessage.error('请选择 .mp4 / .mov / .m4v 视频')
         return false
     }
-    if ((form.value.media || []).length >= MAX_MEDIA) {
+    if ((form.value.media || []).length + videoInflight >= MAX_MEDIA) {
         ElMessage.error(`最多 ${MAX_MEDIA} 段视频`)
         return false
     }
+    videoInflight += 1
+    productMediaUploading.value = true
     const meta = await readVideoMeta(file)
     const check = checkVideoFile({ size: file.size, duration: meta.duration })
     if (!check.ok) {
         ElMessage.error(check.reason)
+        videoUploadDone()
         return false
     }
     if (check.warn) ElMessage.warning(check.warn)
@@ -4052,9 +4070,10 @@ const beforeProductVideoUpload = async (file) => {
 
 const uploadProductVideo = async (opt) => {
     const file = opt.file
+    // 上传要几十秒：记住发起时的那张表单，传完若已切到别的藏品 / 关了弹窗就丢弃，不落到别人身上（2026-10-19 核查）
+    const target = form.value
     const meta = pendingVideoMeta.get(file) || await readVideoMeta(file)
-    productMediaUploading.value = true
-    videoUploadPct.value = 1
+    videoUploadPct.value = Math.max(1, videoUploadPct.value)
     try {
         const url = await uploadAdminBinary(file, 'products', { onProgress: (p) => { videoUploadPct.value = Math.max(1, Math.min(99, p)) } })
         // 封面帧：浏览器解不了的编码（部分 HEVC .mov）截不到，就留空 —— 详情页回落到封面图
@@ -4067,7 +4086,11 @@ const uploadProductVideo = async (opt) => {
                 poster = ''
             }
         }
-        form.value.media = [...(form.value.media || []), {
+        if (form.value !== target || !dialogVisible.value) {
+            ElMessage.warning('视频已传完，但编辑的藏品已切换，这段没有加入（重新上传即可）')
+            return
+        }
+        target.media = [...(target.media || []), {
             type: 'video', url, poster,
             duration: Math.round((meta.duration || 0) * 10) / 10,
             width: meta.width || 0, height: meta.height || 0, size: file.size || 0
@@ -4077,9 +4100,8 @@ const uploadProductVideo = async (opt) => {
     } catch (e) {
         ElMessage.error('视频上传失败: ' + (e.message || '未知错误'))
     } finally {
-        productMediaUploading.value = false
-        videoUploadPct.value = 0
         pendingVideoMeta.delete(file)
+        videoUploadDone()
     }
 }
 

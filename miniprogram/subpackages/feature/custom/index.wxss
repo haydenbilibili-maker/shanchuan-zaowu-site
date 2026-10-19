@@ -22,8 +22,8 @@ view, text, image { box-sizing: border-box; }
 .nav-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10rpx 32rpx 0;
+  justify-content: center;
+  padding: 28rpx 32rpx 0;
   min-height: 56rpx;
 }
 
@@ -182,13 +182,6 @@ view, text, image { box-sizing: border-box; }
   color: #F3ECDD;
 }
 
-.panel-index {
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: var(--fs-18);
-  letter-spacing: 0.2em;
-  color: var(--brass-300);
-}
 
 .panel-desc {
   display: block;

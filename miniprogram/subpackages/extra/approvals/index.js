@@ -724,6 +724,7 @@ Page({
       viewMode: mode,
       page: 1,
       expandedId: '',
+      sessionDecided: 0,
       hubFlow: false,
       hubMode: clearingFlow ? '' : prevHub,
       ...(clearingFlow ? { typeIndex: 0, filterActionType: '' } : {}),
@@ -737,7 +738,9 @@ Page({
     const values = this.data.statusValues || [];
     this.setData({
       statusIndex: idx,
-      filterStatus: values[idx] || 'all'
+      filterStatus: values[idx] || 'all',
+      // 「审毕」只属于本轮清空的那张列表：换筛选 / 类型 / 视图就归零（2026-10-19 核查）
+      sessionDecided: 0
     });
     this.loadList(true);
   },
@@ -752,7 +755,8 @@ Page({
       typeIndex: idx,
       filterActionType: actionType,
       hubMode,
-      hubFlow: false
+      hubFlow: false,
+      sessionDecided: 0
     });
     this.loadList(true);
   },
@@ -943,6 +947,16 @@ Page({
     this.setData({ 'rejectSheet.show': false });
   },
 
+  /** 点遮罩：已点选原因或写了补充说明就不收（防误触丢掉写好的原因）；空的才收 */
+  onRejectMaskTap() {
+    const sheet = this.data.rejectSheet || {};
+    if ((sheet.picked && sheet.picked.length) || String(sheet.note || '').trim()) {
+      this.setData({ 'rejectSheet.tip': '原因已填，确认驳回或点「取消」关闭' });
+      return;
+    }
+    this.closeRejectSheet();
+  },
+
   onRejectReasonTap(e) {
     const idx = parseInt(e.currentTarget.dataset.idx, 10);
     const sheet = this.data.rejectSheet;
@@ -974,7 +988,7 @@ Page({
       this.setData({ 'rejectSheet.tip': '这类审批需写明驳回原因：点选一条常用原因，或补充至少 2 个字' });
       return;
     }
-    this.setData({ 'rejectSheet.show': false });
+    // 驳回面板留到云端成功再收：失败时原因还在、可直接重试（2026-10-19 核查）
     this.submitReject(sheet.id, reason);
   },
 
@@ -991,10 +1005,10 @@ Page({
       });
       const result = (res && res.result) || {};
       if (!result.success) {
-        this.setData({ tipTone: 'warn', tipText: result.msg || '驳回失败' });
+        this.setData({ tipTone: 'warn', tipText: result.msg || '驳回失败', 'rejectSheet.tip': `${result.msg || '驳回失败'}，原因已保留，可重试` });
         return;
       }
-      this.setData({ expandedId: '', sessionDecided: this.data.sessionDecided + 1, tipTone: 'info', tipText: '已驳回' });
+      this.setData({ 'rejectSheet.show': false, expandedId: '', sessionDecided: this.data.sessionDecided + 1, tipTone: 'info', tipText: '已驳回' });
       this.loadList(true);
       this.refreshPendingBadge();
       if (this.data.overviewReady) this.loadOverview(true);

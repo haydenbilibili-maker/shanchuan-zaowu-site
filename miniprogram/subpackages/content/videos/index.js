@@ -62,7 +62,16 @@ Page({
 
   onShow() {
     // 从播放页回来：刷新「看到哪」
-    if (this.data.videos.length) this.setData({ videos: withResume(this.data.videos, readResume()) })
+    // 只按路径改进度字段，不把整列（含正文 content）重新 setData（2026-10-19 核查）
+    const list = this.data.videos || []
+    if (!list.length) return
+    const fresh = withResume(list, readResume())
+    const patch = {}
+    fresh.forEach((v, i) => {
+      if (v.resumePct !== list[i].resumePct) patch[`videos[${i}].resumePct`] = v.resumePct
+      if (v.resumeLabel !== list[i].resumeLabel) patch[`videos[${i}].resumeLabel`] = v.resumeLabel
+    })
+    if (Object.keys(patch).length) this.setData(patch)
   },
 
   onReachBottom() {

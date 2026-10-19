@@ -11,7 +11,7 @@
       hover-class="guest-envelope-press"
       hover-stay-time="80"
       aria-role="button"
-      aria-label="{{guestLoggedOut ? '轻触开启信封并重新进入，长按可直接进入' : '轻触开启信封并建立藏家档案，长按可直接进入'}}"
+      aria-label="{{guestLoggedOut ? '已退出本机登录，轻触启封并重新进入' : '轻触启封并建立藏家档案'}}"
     >
       <view class="ge-glow" aria-hidden="true"></view>
       <view class="ge-shadow" aria-hidden="true"></view>
@@ -28,6 +28,12 @@
       <view class="ge-face" aria-hidden="true">
         <text class="ge-overline">COLLECTOR PROFILE</text>
         <text class="ge-title">{{guestLoggedOut ? '会员卡 · 待恢复' : '藏家档案 · 尚未开启'}}</text>
+      </view>
+      <!-- 2026-10-18 产品负责人「优化未登录态顶部卡片」：本机退出的状态并进信封左上角小签
+           （页面顶部红框横幅在信封卡出现时不再重复）；启封时随提示一起淡出 -->
+      <view class="ge-status" wx:if="{{guestLoggedOut}}" aria-hidden="true">
+        <view class="ge-status-dot"></view>
+        <text>已退出本机登录 · 档案仍在</text>
       </view>
 
       <!-- 信纸：启封后自袋中升起，承载说明与去处 -->
@@ -70,10 +76,12 @@
         <image class="ge-butterfly-img" src="/assets/envelope/butterfly_pink.png" mode="aspectFit"></image>
       </view>
 
-      <!-- 封缄态手势提示（启封时淡出） -->
+      <!-- 封缄态手势提示（启封时淡出）：只写一个手势，做成铜描边按钮式；长按跳过仍生效，只是不再写出来 -->
       <view class="ge-hint" aria-hidden="true">
-        <text class="ge-hint-over">SEALED PROFILE</text>
-        <text class="ge-hint-line">轻触开启 · 长按可直接进入</text>
+        <view class="ge-hint-pill">
+          <text class="ge-hint-line">轻触启封 · {{guestLoggedOut ? '重新进入' : '开启档案'}}</text>
+          <text class="ge-hint-arr">→</text>
+        </view>
       </view>
     </view>
   </view>

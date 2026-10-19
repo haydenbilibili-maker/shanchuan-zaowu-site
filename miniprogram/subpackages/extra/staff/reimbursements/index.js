@@ -124,7 +124,8 @@ Page({
         timeText: formatTime(row.createTime),
         statusLabel: statusTextReimburse(row.status)
       }))
-      this.setData({ list: applyStamps(rows, wx), summary: monthSummary(rows) })
+      const owner = (rows[0] && rows[0].staffOpenid) || ''
+      this.setData({ list: applyStamps(rows, wx, owner), summary: monthSummary(rows) })
     } catch (e) {
       wx.showToast({ title: formatCloudFnError(e, '列表加载失败'), icon: 'none' })
     }

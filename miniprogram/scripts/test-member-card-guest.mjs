@@ -479,7 +479,12 @@ function cssRpx(block, prop) {
 }
 check('信封有封盖（斜切两片）与封盖折痕', /ge-flap-half ge-flap-l/.test(cardWxml) && /ge-flap-half ge-flap-r/.test(cardWxml) && /ge-flap-crease/.test(cardWxml))
 check('信封有信纸层（启封后升起）', /class="ge-letter"/.test(cardWxml) && /ge-letter-deco/.test(cardWxml))
-check('信封有手势提示（轻触 / 长按）', /轻触开启 · 长按可直接进入/.test(cardWxml))
+// 2026-10-18 产品负责人「优化未登录态顶部卡片」：提示只写一个手势（按钮式），长按跳过仍接线但不再写出来；
+// 本机退出状态并进信封左上角小签，页面顶部红框横幅在信封卡出现时不重复
+check('信封手势提示只写一个手势（轻触启封 · 重新进入 / 开启档案），不再写「长按」', /轻触启封 · \{\{guestLoggedOut \? '重新进入' : '开启档案'\}\}/.test(cardWxml) && !/长按可直接进入|SEALED PROFILE/.test(cardWxml))
+check('★ 本机退出状态在信封面上（左上角小签），页面红框横幅只在信封卡不出现时兜底',
+  /<view class="ge-status" wx:if="\{\{guestLoggedOut\}\}"/.test(cardWxml) &&
+    /<view class="logout-banner stagger-item" wx:if="\{\{isLocalLoggedOut && !cardGuest\}\}"/.test(readFileSync(resolve(ROOT, 'miniprogram/pages/user/index.wxml'), 'utf8')))
 check('轻触 / 长按 / 按住三个手势都已接线', /bindtap="onGuestRite"/.test(cardWxml) && /bindlongpress="onGuestSkip"/.test(cardWxml) && /bindtouchstart="onGuestTouchStart"/.test(cardWxml))
 check('信封已声明为可点区域（aria-role / aria-label）', /aria-role="button"/.test(cardWxml) && /aria-label="\{\{guestLoggedOut/.test(cardWxml))
 

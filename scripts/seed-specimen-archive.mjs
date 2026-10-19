@@ -22,9 +22,9 @@
  * 用法：
  *   node scripts/seed-specimen-archive.mjs [--file <json>]              # dry-run
  *   node scripts/seed-specimen-archive.mjs [--file <json>] --apply      # 写入（草稿）
- *   node scripts/seed-specimen-archive.mjs [--file <json>] --publish    # 整批发布（status → published）
- *   node scripts/seed-specimen-archive.mjs [--file <json>] --unpublish  # 整批撤回为草稿
- *   node scripts/seed-specimen-archive.mjs [--file <json>] --remove     # 整批删除（先快照）
+ *   node scripts/seed-specimen-archive.mjs --file <json> --publish      # 整批发布（status → published；以下三种必须 --file）
+ *   node scripts/seed-specimen-archive.mjs --file <json> --unpublish    # 整批撤回为草稿
+ *   node scripts/seed-specimen-archive.mjs --file <json> --remove       # 整批删除（先快照）
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
@@ -117,6 +117,12 @@ function readCreds() {
 }
 
 async function main() {
+  // 整批发布 / 撤回 / 删除是批量改线上数据：必须 --file 点名批次，不许默认挑「目录里排序最后的那个」
+  if (['publish', 'unpublish', 'remove'].includes(MODE) && !fileArg) {
+    console.error(`✗ --${MODE} 必须带 --file <json> 指明批次（默认文件会是 ${dataFile.split('/').pop()}，误操作风险太大）`)
+    process.exit(2)
+  }
+  console.log(`数据文件 ${dataFile}`)
   console.log(`批次 ${BATCH} · ${batch.entries.length} 条 · 模式 ${MODE}${MODE === 'dry' ? '（只预览，不写库）' : ''}`)
 
   const guard = spawnSync(process.execPath, [resolve(HERE, 'check-specimen-archive-seeds.mjs')], { stdio: 'inherit' })

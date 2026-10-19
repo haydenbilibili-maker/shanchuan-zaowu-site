@@ -35,11 +35,16 @@ function monthSummary(list, now) {
 }
 
 /** 给已通过的打 stamped；本机第一次看到的通过打 stampLive */
-function applyStamps(list, storage) {
+/** 按员工分开记：门店共用手机换人登录，不该把对方的老记录全部重播落印（2026-10-19 核查） */
+function keyOf(owner) {
+  return owner ? `${KEY}:${owner}` : KEY
+}
+
+function applyStamps(list, storage, owner) {
   const rows = Array.isArray(list) ? list : []
   let seen = null
   try {
-    const raw = storage.getStorageSync(KEY)
+    const raw = storage.getStorageSync(keyOf(owner))
     seen = Array.isArray(raw) ? raw : null
   } catch (e) { seen = null }
   const first = seen === null
@@ -53,9 +58,9 @@ function applyStamps(list, storage) {
     return { ...row, stamped, stampLive: live }
   })
   if (fresh.length || first) {
-    try { storage.setStorageSync(KEY, (seen || []).concat(fresh).slice(-MAX)) } catch (e) { /* 存不下下次再播 */ }
+    try { storage.setStorageSync(keyOf(owner), (seen || []).concat(fresh).slice(-MAX)) } catch (e) { /* 存不下下次再播 */ }
   }
   return out
 }
 
-module.exports = { monthSummary, applyStamps, money, KEY }
+module.exports = { monthSummary, applyStamps, money, KEY, keyOf }

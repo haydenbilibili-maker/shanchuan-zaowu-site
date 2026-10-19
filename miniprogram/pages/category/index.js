@@ -121,6 +121,10 @@ Page({
     scrollTop: 0,
     keyword: '',
     headerHeight: 220,
+    /** 品类横滑：切换后把选中项滑入视野（hall-<index>） */
+    hallIntoView: '',
+    /** 标本档案横滑当前序号（替代压在卡片底边上的指示圆点） */
+    archiveIndex: 0,
     parentCategory: '',
     showContentSection: true,
     /** 内容运营开关：馆藏「标本档案」；缺配置默认关闭 */
@@ -544,6 +548,9 @@ Page({
     );
     this._appliedFilters = nextApplied;
     this.setData({
+      // 品类改一行横滑后，从筛选面板切馆也要把选中项滑入视野（2026-10-19 核查）
+      hallIntoView: `hall-${Math.max(0, idx - 1)}`,
+      archiveIndex: 0,
       currentId: rootItem._id,
       currentName: rootItem.name,
       currentSubtitle: rootItem.subtitle || this.data.currentSubtitle,
@@ -658,6 +665,7 @@ Page({
         this.setData({
           listLoading: true,
           loadingMore: false,
+          archiveIndex: 0,
           contentItems: [],
           orphanProducts: [],
           contentSkip: 0,
@@ -755,6 +763,7 @@ Page({
     }
 
     this.setData({
+      ...(reset ? { archiveIndex: 0 } : {}),
       contentItems: reset
         ? mergeUniqueById([], newContent)
         : mergeUniqueById(this.data.contentItems, newContent),
@@ -884,6 +893,7 @@ Page({
 
   onArchiveSwiperChange(e) {
     const idx = e.detail.current;
+    if (idx !== this.data.archiveIndex) this.setData({ archiveIndex: idx });
     if (idx >= this.data.contentItems.length - 2 && this.data.hasMoreContent && !this._feedLoading && !this.data.loadingMore) {
       this.loadMoreContent();
     }
@@ -982,6 +992,9 @@ Page({
     this._appliedFilters = applied;
     const subRow = this.syncSubCategoryRow(item._id, '', item.name);
     this.setData({
+      // 选中项滑入视野，左侧留一个邻居做上下文
+      hallIntoView: `hall-${Math.max(0, idx - 1)}`,
+      archiveIndex: 0,
       currentId: item._id,
       currentName: item.name,
       currentSubtitle: item.subtitle,

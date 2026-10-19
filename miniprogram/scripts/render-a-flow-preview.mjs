@@ -138,14 +138,16 @@ function categoryData(extra = {}) {
     statusBarHeight: 44, headerHeight: 250, listLoading: false, currentSubtitle: '全部品类', keyword: '',
     showAiIdentify: true, showSpecimenCustom: true,
     categories: [
-      { _id: 'all', shortName: '全部' }, { _id: 'c1', shortName: '昆虫' }, { _id: 'c2', shortName: '植物' }, { _id: 'c3', shortName: '海洋' }
+      // 2026-10-19：按线上真实八个馆（含长名），看得出一行横滑与右侧渐隐
+      { _id: 'all', shortName: '全部' }, { _id: 'c1', shortName: '蝴蝶昆虫馆' }, { _id: 'c2', shortName: '首饰馆' }, { _id: 'c3', shortName: '植物馆' },
+      { _id: 'c4', shortName: '动物馆' }, { _id: 'c5', shortName: '海洋馆' }, { _id: 'c6', shortName: '矿石馆' }, { _id: 'c7', shortName: '衍生品' }
     ],
     currentId: 'all', currentSubId: '', subCategories: [], subRowLabel: '',
     filterActiveCount: 0, filterSummary: '', pageError: false, pageErrorMsg: '',
     scrollTop: 0, scrollIntoView: '', fallbackImg: '',
     showSpecimenArchive: true, showContentSection: true,
     contentItems: [{ _id: 'w1', coverImage: pics[0], typeLabel: '物种档案', title: '光明女神闪蝶', latinName: 'Morpho helena' }],
-    contentTotal: 12,
+    contentTotal: 12, archiveIndex: 3, hallIntoView: '',
     orphanProducts: products, orphanTotal: 4,
     loadingMore: false, hasMoreContent: false, hasMoreProducts: false,
     filterPanelVisible: false, filterRootName: '', filterCategoryOptions: [], appliedFilters: {},

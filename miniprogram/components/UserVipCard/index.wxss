@@ -3123,15 +3123,56 @@
 .phase-done .ge-hint {
   opacity: 0;
 }
-.ge-hint-over {
-  font-family: var(--font-mono);
-  font-size: var(--fs-16);
-  letter-spacing: 0.24em;
-  color: rgba(196, 167, 108, 0.62);
+.ge-hint {
+  /* 按真机坐标核算：标题底边约 373rpx；按钮高约 50rpx + 底距 14rpx → 顶边约 384rpx，不压标题 */
+  bottom: 14rpx;
+}
+/* 2026-10-18：提示改成铜描边按钮式，一眼看出「点这里」；与卡面同一深墨底，不抢封蜡 */
+.ge-hint-pill {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 8rpx 28rpx;
+  border-radius: 9999px;
+  border: 1rpx solid rgba(196, 167, 108, 0.6);
+  background: rgba(15, 12, 9, 0.55);
 }
 .ge-hint-line {
+  font-size: var(--fs-24);
+  letter-spacing: 0.06em;
+  color: var(--brass-200, #E2D3A8);
+}
+.ge-hint-arr { font-size: var(--fs-24); color: var(--brass-300); }
+/* 本机退出状态小签：信封左上角，深墨底 + 铜发丝边；启封时淡出 */
+.ge-status {
+  position: absolute;
+  top: 24rpx;
+  left: 28rpx;
+  /* 压在封盖（6）/ 封蜡（7）/ 蝴蝶（8）之上，否则左上角被封盖盖住 */
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 6rpx 16rpx;
+  border-radius: 6rpx;
+  background: rgba(15, 12, 9, 0.62);
+  border: 1rpx solid rgba(196, 167, 108, 0.32);
   font-size: var(--fs-20);
-  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  transition: opacity var(--dur-base) var(--ease-standard);
+  pointer-events: none;
+}
+.ge-status-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: var(--brass-400);
+}
+.phase-seal .ge-status,
+.phase-lid .ge-status,
+.phase-done .ge-status {
+  opacity: 0;
 }
 
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */

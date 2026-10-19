@@ -562,6 +562,10 @@ const SCENES = [
       categories: [{ id: 'product', label: '藏品建议' }], activeCategory: 'product', messageText: '', ticketImages: [], maxTicketImages: 3, contactPhone: '', submitting: false,
       receipt: { show: true, no: 'FB-7Q2K9X', label: '藏品建议' } },
     css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
+  // 2026-10-19 证书加载：打印机出纸（定格在纸已吐出的一帧）
+  { name: 'cert-printing', h: 1100, wxml: 'subpackages/business/certificate/index', data: { isMinting: true, statusBarHeight: 44, missingId: false, certState: '' },
+    // 加载层是 absolute + 100% 高，靠真机视口撑开；离线预览改为正常流排布（预览专用）
+    css: '.minting-layer { position: relative !important; height: auto !important; padding: 160px 0 !important; } .cp-paper, .cp-progress-bar, .cp-slot { animation: none !important; } .cp-progress-bar { transform: translateX(60%); }' },
   // 2026-10-18 方向池 ★★：礼笺封缄 / 工作台问候 / 档案 +N% / 入展展签 / 陪伴天数
   { name: 'gift-seal', h: 2200, wxml: 'subpackages/feature/gift/compose/index', base: 'gift-compose-2', data: { letterSealed: true },
     css: '.card-seal { animation: none !important; }' },

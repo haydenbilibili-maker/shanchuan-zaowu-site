@@ -147,12 +147,11 @@ Page({
       shiftStatusLabel,
       lastSave: '',
       ceremony: shiftStatus === 'done' ? ceremonyOf(this.data.shift) : '',
-      ceremonyLive: justDone || (shiftStatus === 'done' && this.data.ceremonyLive),
-      ceremonyTime: justDone ? clockText(new Date()) : (shiftStatus === 'done' ? this.data.ceremonyTime : '')
+      // 勾满只是「待保存」：开馆 / 闭馆仪式等保存成功才播（原先勾满即播，没保存离页会丢）（2026-10-19 核查）
+      ceremonyLive: shiftStatus === 'done' && this.data.ceremonyLive && !justDone,
+      ceremonyTime: shiftStatus === 'done' ? this.data.ceremonyTime : ''
     })
-    if (justDone) {
-      try { wx.vibrateShort({ type: 'heavy' }) } catch (err) { /* 低版本基础库无 type 参数 */ }
-    }
+    this._ceremonyPending = shiftStatus === 'done' && (justDone || this._ceremonyPending)
   },
 
   saveTodo() {
@@ -181,7 +180,13 @@ Page({
       const progress = result.progress || this.data.progress
       const done = (progress && progress.done) || 0
       const total = (progress && progress.total) || 0
+      const playCeremony = !!this._ceremonyPending && total > 0 && done >= total
+      this._ceremonyPending = false
+      if (playCeremony) {
+        try { wx.vibrateShort({ type: 'heavy' }) } catch (err) { /* 低版本基础库无 type 参数 */ }
+      }
       this.setData({
+        ...(playCeremony ? { ceremonyLive: true, ceremonyTime: clockText(new Date()) } : {}),
         progress,
         lastSave: `已保存 ${formatTime(new Date())} · ${done}/${total}`,
         shiftStatus: total > 0 && done >= total ? 'done' : (done > 0 ? 'in' : 'none'),

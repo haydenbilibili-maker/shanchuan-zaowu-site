@@ -948,7 +948,10 @@ Page(withAppModal({
 
     const images = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
     const heroSlides = buildHeroSlides(images, data.media);
-    const filmRows = buildExternalVideos(data.externalVideos);
+    // 本页已内嵌失败过的视频号（主体 / token 不符等）：后续刷新（缓存 → 现取 / 下单前现取）不再重新内嵌、也不再当主片
+    const failed = this._filmEmbedFailed || {};
+    const filmRows = buildExternalVideos(data.externalVideos)
+      .map((f) => (failed[f.feedId] ? { ...f, embed: false, lead: false } : f));
     const stockForCta = displayStock != null ? displayStock : 0;
 
     const patch = {
@@ -1469,7 +1472,10 @@ Page(withAppModal({
 
   /** 实拍影像区的轻提示：样式化 AppToast（全站弹窗棘轮不许新增原生 showToast） */
   showFilmToast(title, desc) {
-    this.setData({ filmToast: { show: true, title, desc } });
+    // AppToast 只在 show 由假变真时开场：先落 false 再开，连点两次第二条也能完整出现
+    this.setData({ 'filmToast.show': false }, () => {
+      this.setData({ filmToast: { show: true, title, desc } });
+    });
   },
 
   onFilmToastClose() {
@@ -1478,9 +1484,10 @@ Page(withAppModal({
 
   /** 头图「实拍视频」角标 → 滚到价格卡下的主片 */
   scrollToFilms() {
+    // 滚过 420px 会出现吸顶页签（约 45px），与 computeSectionTops 同口径留 100px，标题不被页签盖住
     wx.pageScrollTo({
       selector: '#films',
-      offsetTop: -((this.data.statusBarHeight || 20) + (this.data.navBarHeight || 44) + 12),
+      offsetTop: -((this.data.statusBarHeight || 20) + (this.data.navBarHeight || 44) + 56),
       duration: 300
     });
   },
@@ -1489,7 +1496,9 @@ Page(withAppModal({
   onChannelEmbedError(e) {
     const idx = Number(e.currentTarget.dataset.index);
     if (!(idx >= 0) || !(this.data.externalVideos || [])[idx]) return;
-    const patch = { [`externalVideos[${idx}].embed`]: false };
+    const row = this.data.externalVideos[idx];
+    if (row.feedId) this._filmEmbedFailed = { ...(this._filmEmbedFailed || {}), [row.feedId]: true };
+    const patch = { [`externalVideos[${idx}].embed`]: false, [`externalVideos[${idx}].lead`]: false };
     // 主片降级成卡片后，头图角标也不再指向「可直接播放」的主片
     if (this.data.externalVideos[idx].lead) patch.filmLead = false;
     this.setData(patch);
@@ -1505,7 +1514,7 @@ Page(withAppModal({
     wx.openChannelsActivity({
       finderUserName: finder,
       feedId: feed,
-      fail: () => this.showFilmToast('视频暂时打不开', '可在视频号里搜索本店观看')
+      fail: () => this.showFilmToast('视频暂时打不开', '可在视频号里搜索观看')
     });
   },
 
@@ -1515,7 +1524,11 @@ Page(withAppModal({
     if (!url) return;
     wx.setClipboardData({
       data: url,
-      success: () => this.showFilmToast('链接已复制', `可在${label || '对应平台'}打开观看`)
+      success: () => {
+        // 收起微信自带的「内容已复制」，只留样式化提示（不叠两层）
+        wx.hideToast();
+        this.showFilmToast('链接已复制', `可在${label || '对应平台'}打开观看`);
+      }
     });
   },
 

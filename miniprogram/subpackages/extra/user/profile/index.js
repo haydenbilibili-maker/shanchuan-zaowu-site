@@ -141,6 +141,7 @@ Page({
   },
 
   onUnload() {
+    clearTimeout(this._bumpTimer)
     this.disableLeaveGuard()
   },
 

@@ -1087,3 +1087,6 @@ view, text, image, button { box-sizing: border-box; }
   .archive-card,
   .ac-seal { animation: none; }
 }
+
+.ac-links { display: flex; justify-content: center; gap: 40rpx; margin-top: 22rpx; }
+.ac-link { font-size: var(--fs-22); color: #6E5A3A; letter-spacing: 0.04em; }

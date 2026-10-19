@@ -9,7 +9,7 @@
  *   B 闸门：未开放 / 读失败**不发任何云调用**；开放后才 list + mine
  *   C 写签：游客 → 注册弹层且**不 post**；post 失败 → 不落签、草稿保留；成功 → 新签置顶、额度 −1、弹层收起
  *   D 我也想要：自己的签 / 本地条目不调用；成功后按钮态与计数更新并本地记住
- *   E 版式（产品负责人拍板）：首屏不显示统计数字；实心金只给「写一张心愿签 / 别上墙」；
+ *   E 版式（产品负责人拍板）：首屏不显示统计数字；实心金只给「写一张心愿签 / 钉上墙」；
  *     不再有木鱼 / 点灯 / 功德 / 弹幕等旧仪式；不用原生 toast；分享不传 cloud:// 封面
  *   F 云函数：echo 幂等键稳定且不含明文 openid；公开行只多回 echoCount
  *
@@ -155,7 +155,7 @@ async function runChecks() {
   const left0 = page.data.quota.left
   const r3 = await page.submitWish()
   const first = page.data.columns[0][0]
-  ok('C3 成功：新签置顶并标「刚别上」、额度 −1、弹层收起、草稿清空', r3 === true && first && first._id === 'srv0001' && first.fresh === true && first.isMine === true && page.data.quota.left === left0 - 1 && page.data.composeOpen === false && page.data.draft === '')
+  ok('C3 成功：新签置顶并标「刚钉上」、额度 −1、弹层收起、草稿清空', r3 === true && first && first._id === 'srv0001' && first.fresh === true && first.isMine === true && page.data.quota.left === left0 - 1 && page.data.composeOpen === false && page.data.draft === '')
   // 语音：失败要删掉刚传的文件；成功带上 fileID 与时长，新签对作者标「声音审核中」
   postResult = { success: false, msg: '慢一点' }
   page.setData({ draft: '马上有回音', voicePath: '/tmp/v.mp3', voiceSec: 8, quota: { used: 1, left: 4, cap: 5, exhausted: false } })
@@ -196,7 +196,7 @@ async function runChecks() {
   const wxss = read(PAGE + '.wxss')
   const js = read(PAGE + '.js')
   ok('E2 首屏不显示统计数字（产品负责人拍板）', !/(\d|\}\})\s*(<\/text>)?\s*张心愿签|今日新签|位写签人|wl-stats/.test(wxml))
-  ok('E3 实心金只给主操作：wl-primary 仅「写一张心愿签」与「别上墙」两处（不同屏）', (wxml.match(/class="wl-primary/g) || []).length === 2 && /写一张心愿签/.test(wxml) && /别上墙/.test(wxml))
+  ok('E3 实心金只给主操作：wl-primary 仅「写一张心愿签」与「钉上墙」两处（不同屏）', (wxml.match(/class="wl-primary/g) || []).length === 2 && /写一张心愿签/.test(wxml) && /钉上墙/.test(wxml) && !/别上墙|刚别上|>别于</.test(wxml))
   ok('E4 今日一签是文字链（非实心钮）', /class="wl-link"[^>]*bindtap="goQian"/.test(wxml))
   ok('E5 旧仪式不再出现（木鱼 / 点灯 / 功德 / 弹幕 / 音效）', !/木鱼|点灯|功德|danmaku|弹幕|音效/.test(wxml + js))
   ok('E6 不用原生 toast / modal', !/wx\.show(Toast|Modal)\(/.test(js))
