@@ -68,6 +68,11 @@ Page({
     })
   },
 
+  onUnload() {
+    this._unloaded = true
+    clearTimeout(this._punchTimer)
+  },
+
   async refresh() {
     this.setData({ loading: true })
     try {
@@ -157,12 +162,16 @@ Page({
       const label = type === 'in' ? '上班' : '下班'
       const statusText = result.statusText || '已记录'
       // 仪式感：今天那一格「咔哒」打出一个孔 + 一下轻震（震动失败不影响打卡）
-      this.setData({ lastClock: `${label}打卡成功 · ${statusText}`, justPunched: type })
+      this.setData({ lastClock: `${label}打卡成功 · ${statusText}` })
       try { wx.vibrateShort({ type: 'medium' }) } catch (err) { /* 低版本基础库无 type 参数 */ }
-      clearTimeout(this._punchTimer)
-      this._punchTimer = setTimeout(() => this.setData({ justPunched: '' }), 1400)
       wx.showToast({ title: `${label} · ${statusText}`, icon: 'success' })
-      this.refresh()
+      // 先刷新把孔填上，再播「咔哒」打孔（原先在刷新前播，动画落在空孔上）（2026-10-19 核查）
+      Promise.resolve(this.refresh()).then(() => {
+        if (this._unloaded) return
+        this.setData({ justPunched: type })
+        clearTimeout(this._punchTimer)
+        this._punchTimer = setTimeout(() => { if (!this._unloaded) this.setData({ justPunched: '' }) }, 1400)
+      })
     }).catch((err) => {
       wx.hideLoading()
       this.setData({ clocking: false })

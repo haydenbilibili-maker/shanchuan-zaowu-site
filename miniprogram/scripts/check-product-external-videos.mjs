@@ -56,7 +56,13 @@ const SAMPLES = [
   { url: 'https://evil.com/?u=bilibili.com' },
   { url: 'https://v.douyin.com/iABCdef/' },
   { url: 'https://www.xiaohongshu.com/explore/123' },
-  { url: 'https://youtube.com/watch?v=1' }
+  { url: 'https://youtube.com/watch?v=1' },
+  // 2026-10-19 核查：反斜杠 / @ / % / 非 443 端口绕过域名校验；尾随全角标点
+  { url: 'https://evil.com\\.bilibili.com/x' },
+  { url: 'https://evil.com\\@www.bilibili.com/' },
+  { url: 'https://x.com%2F.bilibili.com/' },
+  { url: 'https://www.bilibili.com:8080/v' },
+  { url: '看这个 https://b23.tv/abcd；' }
 ]
 
 async function checks(s) {
@@ -82,6 +88,16 @@ async function checks(s) {
       r[2].bvid === 'BV1xx411c7mD' && srv.sanitizeExternalVideos('x').length === 0
   } catch (e) { a = false }
   add('A1 服务端净化：只收 https + 白名单平台（仿冒域名 / http 丢弃）；视频号要 sph ID + feedId；≤3 条、去重；分享文案能提取链接', a)
+  let a3 = false
+  try {
+    const bad = SAMPLES.slice(8, 12).every((x) => srv.sanitizeExternalVideos([x]).length === 0)
+    const tail = srv.sanitizeExternalVideos([SAMPLES[12]])
+    const dup = srv.sanitizeExternalVideos([{ url: 'https://b23.tv/abc' }, { url: 'https://b23.tv/abc?share=1' }])
+    const long = srv.sanitizeExternalVideos([{ url: 'https://b23.tv/' + 'a'.repeat(600) }])
+    const p443 = srv.sanitizeExternalVideos([{ url: 'https://www.bilibili.com:443/video/BV1xx411c7mD' }])
+    a3 = bad && tail.length === 1 && tail[0].url === 'https://b23.tv/abcd' && dup.length === 1 && long.length === 0 && p443.length === 1
+  } catch (e) { a3 = false }
+  add('A3 链接严格解析（2026-10-19 核查）：反斜杠 / @ / % / 非 443 端口不能冒充白名单域名；≤512 字；尾随全角标点剥掉；同一视频带不同参数算一条', a3)
   add('A2 externalVideos 进 ALLOWED_FIELDS，且 prepareProductData 里过 sanitizeExternalVideos',
     /'externalVideos'/.test((/const ALLOWED_FIELDS = \[(.*?)\n\]/s.exec(s.srvIndex) || [])[1] || '') &&
       /if \(Object\.prototype\.hasOwnProperty\.call\(data, 'externalVideos'\)\) \{\s*data\.externalVideos = sanitizeExternalVideos\(data\.externalVideos\)/.test(s.srvIndex))
@@ -170,20 +186,25 @@ async function checks(s) {
     add('E6 实拍影像紧接价格卡（在优惠券 / 规格之前）；主片大幅；头图「实拍视频」角标只在有主片时出现并直达',
       iInfoEnd > 0 && iFilms > iInfoEnd && iFilms < iCoupon &&
         /class="film-embed \{\{item\.lead \? 'is-lead' : ''\}\}"/.test(s.detailWxml) &&
-        /class="hero-film-chip" wx:if="\{\{filmLead && !sensitiveVeiled\}\}" catchtap="scrollToFilms"/.test(s.detailWxml) &&
+        /class="hero-film-chip" wx:if="\{\{filmLead && !sensitiveVeiled && !isSinglePage\}\}" catchtap="scrollToFilms"/.test(s.detailWxml) &&
+        /<block wx:if="\{\{externalVideos\.length && !sensitiveVeiled && !isSinglePage\}\}">/.test(s.detailWxml) &&
         /filmLead: filmRows\.some\(\(f\) => f\.lead\),/.test(s.detailJs) && /selector: '#films'/.test(s.detailJs))
   }
+  add('E7 核查修复（2026-10-19）：内嵌失败本页记住、刷新不复活；角标滚动扣吸顶页签；复制链接收起原生提示；提示连点能重开',
+    /wx\.hideToast\(\);\s*this\.showFilmToast\('链接已复制'/.test(s.detailJs) &&
+      /this\.setData\(\{ 'filmToast\.show': false \}, \(\) => \{\s*this\.setData\(\{ filmToast: \{ show: true, title, desc \} \}\);/.test(s.detailJs) &&
+      /\(this\.data\.navBarHeight \|\| 44\) \+ 56\)/.test(s.detailJs))
   add('C3 ERP 录入默认视频号 + 同主体，视频号录入排在云存储上传之前',
     /const externalDraft = ref\(\{ kind: 'channels', [^\n]*sameSubject: true \}\)/.test(s.adminApp) &&
       s.adminApp.indexOf('label="视频号 / 外平台"') > 0 && s.adminApp.indexOf('label="视频号 / 外平台"') < s.adminApp.indexOf('label="云存储（备选）"'))
   add('E4 视频号内嵌报错就地降级成卡片，不自动跳离详情页',
-    /binderror="onChannelEmbedError"/.test(s.detailWxml) && /onChannelEmbedError\(e\) \{[\s\S]{0,240}\.embed`\]: false/.test(s.detailJs) && !/binderror="openChannelsVideo"/.test(s.detailWxml))
+    /binderror="onChannelEmbedError"/.test(s.detailWxml) && /onChannelEmbedError\(e\) \{[\s\S]{0,400}this\._filmEmbedFailed = \{[\s\S]{0,200}\.embed`\]: false/.test(s.detailJs) && !/binderror="openChannelsVideo"/.test(s.detailWxml))
   add('E2 详情页不内嵌外平台网页、不跳外部小程序；B站等卡片走复制链接；视频号内嵌带 feed-token',
     !/<web-view/.test(s.detailWxml) && !/navigateToMiniProgram/.test(s.detailJs) &&
       /bindtap="copyExternalVideo" data-url="\{\{item\.url\}\}"/.test(s.detailWxml) &&
       /<channel-video [^>]*feed-token="\{\{item\.feedToken\}\}"/.test(s.detailWxml) &&
       /wx\.setClipboardData\(\{\s*data: url,/.test(s.detailJs))
-  add('E3 详情页视图模型不读 .media（media 归主图轮播）', !/\.media\b/.test(s.detailUtil) && /const filmRows = buildExternalVideos\(data\.externalVideos\);/.test(s.detailJs) && /externalVideos: filmRows,/.test(s.detailJs))
+  add('E3 详情页视图模型不读 .media（media 归主图轮播）', !/\.media\b/.test(s.detailUtil) && /const filmRows = buildExternalVideos\(data\.externalVideos\)\s*\.map\(\(f\) => \(failed\[f\.feedId\] \? \{ \.\.\.f, embed: false, lead: false \} : f\)\);/.test(s.detailJs) && /externalVideos: filmRows,/.test(s.detailJs))
 
   // F
   add('F1 cloudbase/schema/products.md 登记 externalVideos', /\| `externalVideos` \|/.test(s.schema))
@@ -191,8 +212,8 @@ async function checks(s) {
 }
 
 const INJ = [
-  ['净化放过 http 链接', 'srvExt', (t) => t.replace("/https:\\/\\/[^\\s\"'<>，。]+/i", "/https?:\\/\\/[^\\s\"'<>，。]+/i").replace(".replace(/^https:\\/\\//i, '')", ".replace(/^https?:\\/\\//i, '')")],
-  ['平台域名改成包含匹配（仿冒域名过关）', 'srvExt', (t) => t.replace("host === h || host.endsWith(`.${h}`)", 'host.includes(h)')],
+  ['净化放过 http 链接', 'srvExt', (t) => t.replace("/https:\\/\\/[^\\s\"'<>，。]+/i", "/https?:\\/\\/[^\\s\"'<>，。]+/i").replace("/^https:\\/\\/([A-Za-z0-9.-]+)", "/^https?:\\/\\/([A-Za-z0-9.-]+)")],
+  ['平台域名改成包含匹配（仿冒域名过关）', 'srvExt', (t) => t.replace("u.host === h || u.host.endsWith(`.${h}`)", 'u.host.includes(h)')],
   ['视频号不校验 sph ID', 'srvExt', (t) => t.replace('if (!FINDER_RE.test(finderUserName) || ', 'if (')],
   ['白名单漏登记 externalVideos', 'srvIndex', (t) => t.replace("  'externalVideos',\n", '')],
   ['ERP 条数常量与服务端不一致', 'adminUtil', (t) => t.replace('export const MAX_EXTERNAL = 3', 'export const MAX_EXTERNAL = 5')],
@@ -209,6 +230,11 @@ const INJ = [
   ['实拍影像挪回藏品参数前', 'detailWxml', (t) => t.replace('<view class="section-title" id="films">', '<view class="section-title" id="films-x">').replace('<!-- 商品参数 -->', '<view class="section-title" id="films"></view><!-- 商品参数 -->')],
   ['ERP 默认改回外平台链接', 'adminApp', (t) => t.replace("const externalDraft = ref({ kind: 'channels',", "const externalDraft = ref({ kind: 'link',")],
   ['服务端不再把本馆视频号当同主体', 'srvExt', (t) => t.replace(" || STORE_FINDERS.includes(finderUserName) })", " })")],
+  ['内嵌失败刷新后又复活', 'detailJs', (t) => t.replace("(failed[f.feedId] ? { ...f, embed: false, lead: false } : f)", '(f)')],
+  ['敏感罩层下仍露实拍影像', 'detailWxml', (t) => t.replace('<block wx:if="{{externalVideos.length && !sensitiveVeiled && !isSinglePage}}">', '<block wx:if="{{externalVideos.length}}">')],
+  ['复制链接叠两层提示', 'detailJs', (t) => t.replace("wx.hideToast();\n        this.showFilmToast('链接已复制'", "this.showFilmToast('链接已复制'")],
+  ['域名解析又放过反斜杠', 'srvExt', (t) => t.replace("/^https:\\/\\/([A-Za-z0-9.-]+)(?::443)?(\\/[^\\s\\\\]*)?$/", "/^https:\\/\\/([^/?#]+?)(?::443)?(\\/[^\\s]*)?$/")],
+  ['链接不限长', 'srvExt', (t) => t.replace('if (s.length > MAX_URL_LEN) return null', '')],
   ['schema 漏登记', 'schema', (t) => t.replace('| `externalVideos` |', '| `extVideos` |')]
 ]
 

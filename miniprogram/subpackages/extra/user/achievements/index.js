@@ -297,9 +297,13 @@ Page({
     let freshLit = [];
     try {
       const openid = (app && app.globalData && app.globalData.openid) || '';
-      freshLit = typeof wx !== 'undefined' && wx.getStorageSync
-        ? takeFreshLit(normalized.filter((a) => a.unlocked).map((a) => a.id), wx, openid)
-        : [];
+      // 每个页面实例只取一次：onLoad 与 onShow 首次会并发拉两次，第二次若再取会拿到 [] 把射灯抹掉（2026-10-19 核查）
+      if (!this._freshLit) {
+        this._freshLit = typeof wx !== 'undefined' && wx.getStorageSync
+          ? takeFreshLit(normalized.filter((a) => a.unlocked).map((a) => a.id), wx, openid)
+          : [];
+      }
+      freshLit = this._freshLit;
     } catch (e) {
       freshLit = [];
     }

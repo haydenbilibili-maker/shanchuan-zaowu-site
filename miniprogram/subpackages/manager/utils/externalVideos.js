@@ -6,6 +6,7 @@
  * 保存规则与 media 同口径：只在「有值」或「原本有值、被删光」时才送 externalVideos。
  */
 const MAX_EXTERNAL = 3;
+const MAX_URL_LEN = 512;
 const PLATFORMS = {
   channels: { label: '视频号', hosts: [] },
   bilibili: { label: '哔哩哔哩', hosts: ['bilibili.com', 'b23.tv'] },
@@ -16,18 +17,37 @@ const STORE_FINDERS = ['sphbtKfDFOzLQXM'];
 const FINDER_RE = /^sph[A-Za-z0-9_-]{3,60}$/;
 const FEED_RE = /^[A-Za-z0-9_=+/-]{6,300}$/;
 const BVID_RE = /BV[0-9A-Za-z]{10}/;
+const TOKEN_RE = /^[A-Za-z0-9_=+/.-]{6,1024}$/;
 
 function pickUrl(text) {
   const m = /https:\/\/[^\s"'<>，。]+/i.exec(String(text || ''));
-  return m ? m[0].replace(/[)）\]】]+$/, '') : '';
+  // 去掉粘在链接尾巴上的中英文标点（分享文案常见：）】；！、”。）
+  return m ? m[0].replace(/[)）\]】；;，,。.！!、"”'’]+$/, '') : '';
 }
 
+/** 严格解析：域名只许字母数字点横杠（反斜杠 / @ / % / 非 443 端口一律不收），≤512 字；返回 { host, path } 或 null */
+function parseHttps(url) {
+  const s = String(url || '');
+  if (s.length > MAX_URL_LEN) return null;
+  const m = /^https:\/\/([A-Za-z0-9.-]+)(?::443)?(\/[^\s\\]*)?$/.exec(s);
+  if (!m) return null;
+  return { host: m[1].toLowerCase(), path: (m[2] || '/').split(/[?#]/)[0] };
+}
+
+/** 链接属于哪个白名单平台；不认识返回 '' */
 function platformOfUrl(url) {
-  const host = String(url || '').replace(/^https:\/\//i, '').split(/[/?#]/)[0].toLowerCase();
+  const u = parseHttps(url);
+  if (!u) return '';
   for (const key of Object.keys(PLATFORMS)) {
-    if (PLATFORMS[key].hosts.some((h) => host === h || host.endsWith(`.${h}`))) return key;
+    if (PLATFORMS[key].hosts.some((h) => u.host === h || u.host.endsWith(`.${h}`))) return key;
   }
   return '';
+}
+
+/** 去重键：域名 + 路径（同一视频带不同分享参数算一条） */
+function urlKey(url) {
+  const u = parseHttps(url);
+  return u ? `${u.host}${u.path}` : String(url || '');
 }
 
 function labelOf(platform) {
@@ -62,13 +82,15 @@ function parseExternalDraft(draft, existing) {
     if (!FEED_RE.test(feedId)) return { error: '视频 ID 格式不对（视频号助手 → 视频管理 → 复制视频 ID）' };
     if (list.some((v) => v.feedId === feedId)) return { error: '这条视频号视频已添加' };
     const feedToken = String(d.feedToken || '').trim();
+    if (feedToken && !TOKEN_RE.test(feedToken)) return { error: 'feedToken 格式不对，请重新复制' };
     return { item: { platform: 'channels', title, url: '', bvid: '', feedId, finderUserName, feedToken, sameSubject: STORE_FINDERS.includes(finderUserName) || d.sameSubject === true } };
   }
   const url = pickUrl(d.url);
   if (!url) return { error: '没有识别到 https 链接（http 链接不收）' };
   const platform = platformOfUrl(url);
+  if (url.length > MAX_URL_LEN) return { error: '链接过长，请用平台的短链接' };
   if (!platform) return { error: '只支持哔哩哔哩 / 抖音 / 小红书的链接' };
-  if (list.some((v) => v.url === url)) return { error: '这条链接已添加' };
+  if (list.some((v) => urlKey(v.url) === urlKey(url))) return { error: '这条链接已添加' };
   const bvid = platform === 'bilibili' ? ((BVID_RE.exec(url) || [])[0] || '') : '';
   return { item: { platform, title, url, bvid, feedId: '', finderUserName: '', feedToken: '', sameSubject: false } };
 }
@@ -91,8 +113,11 @@ module.exports = {
   MAX_EXTERNAL,
   PLATFORMS,
   STORE_FINDERS,
+  MAX_URL_LEN,
   pickUrl,
+  parseHttps,
   platformOfUrl,
+  urlKey,
   labelOf,
   toEditorExternal,
   decorate,

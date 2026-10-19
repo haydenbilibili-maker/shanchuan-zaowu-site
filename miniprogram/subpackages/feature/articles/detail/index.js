@@ -78,6 +78,10 @@ Page({
   /** 阅读进度线：滚动节流 120ms，读视口滚动量（mp-html 异步排版，页高会变，每次现量） */
   onPageScroll() {
     this._scrolled = true
+    if (this._endVisible && !this.data.readDone) {
+      this.setData({ readDone: true, readSpent: Math.max(1, Math.round((Date.now() - (this._openedAt || Date.now())) / 60000)) })
+      if (this._readObserver) this._readObserver.disconnect()
+    }
     if (this._progressTimer) return
     this._progressTimer = setTimeout(() => {
       this._progressTimer = null
@@ -100,6 +104,8 @@ Page({
     wx.nextTick(() => {
       this._readObserver = this.createIntersectionObserver().relativeToViewport({ bottom: 0 })
       this._readObserver.observe('.read-end', (res) => {
+        // 记下末尾是否已在视口：短文一打开就整篇可见，之后小幅滚动不会再触发相交回调 → 由 onPageScroll 补盖（2026-10-19 核查）
+        if (res) this._endVisible = res.intersectionRatio > 0
         if (!res || !(res.intersectionRatio > 0) || this.data.readDone || !this._scrolled) return
         this.setData({ readDone: true, readSpent: Math.max(1, Math.round((Date.now() - (this._openedAt || Date.now())) / 60000)) })
         if (this._readObserver) this._readObserver.disconnect()
@@ -425,6 +431,9 @@ Page({
     const spot = this._videoSpot
     const id = this.data.article && this.data.article._id
     if (!spot || !id) return
+    // 「上次看到」条还在、而这次是从头在看（还没看到那个位置）：不覆盖原续播点（2026-10-19 核查）
+    const resume = this.data.videoResumeAt
+    if (resume && spot.t < resume.t) return
     this._videoSavedAt = spot.t
     videoResume.record(wx, id, spot.t, spot.d)
   },

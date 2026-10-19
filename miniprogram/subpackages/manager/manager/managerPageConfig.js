@@ -1605,6 +1605,7 @@ const managerPageConfig = {
     showProductModal: false, showFramerModal: false, showCatModal: false,
     /** 藏品编辑 · 实拍视频（外平台）录入草稿 */
     extDraft: { kind: 'channels', finderUserName: '', feedId: '', feedToken: '', url: '', title: '' },
+    extForeignFinder: false,
     showCatLinkModal: false,
     catLinkTarget: null,
     catLinkMode: 'auto',
@@ -3535,7 +3536,7 @@ const managerPageConfig = {
             weekOfflineBar: `width:${pct(weekOffline)}%`,
             momClass: this.data.stats.momClass || 'flat',
             // 今日 · 较昨日（2026-10-18）：同一份 7 日数据现算，不另打云端
-            ...require('../utils/dayDelta').dayVsYesterday(days, (n) => storeLedger.formatMoney(n)),
+            ...require('../utils/dayDelta').dayVsYesterday(days, (n) => storeLedger.formatMoney(n), new Date().getHours()),
           },
         },
         () => this.scheduleChartLayout()
@@ -5315,6 +5316,7 @@ const managerPageConfig = {
         productFormTab: 'basic',
         // 实拍视频录入草稿：默认录本馆视频号（主方案，同主体）
         extDraft: { kind: 'channels', finderUserName: require('../utils/externalVideos').STORE_FINDERS[0], feedId: '', feedToken: '', url: '', title: '' },
+        extForeignFinder: false,
         skuBulkPrice: '',
         skuBulkStock: '',
         skuStockTotal: skus.reduce((n, s) => n + (parseInt(s && s.stock, 10) || 0), 0),
@@ -5660,7 +5662,12 @@ const managerPageConfig = {
   bindExtDraft(e) {
     const field = e.currentTarget.dataset.field;
     if (!['finderUserName', 'feedId', 'feedToken', 'url', 'title'].includes(field)) return;
-    this.setData({ [`extDraft.${field}`]: e.detail.value });
+    const patch = { [`extDraft.${field}`]: e.detail.value };
+    if (field === 'finderUserName') {
+      const v = String(e.detail.value || '').trim();
+      patch.extForeignFinder = !!v && !require('../utils/externalVideos').STORE_FINDERS.includes(v);
+    }
+    this.setData(patch);
   },
   addExternalVideo() {
     const ev = require('../utils/externalVideos');
@@ -6421,6 +6428,23 @@ const managerPageConfig = {
       const hasCert = !!(p.tempCertificate || p.collectionCertificate);
       if (needsCert && !hasCert) {
         return this.showHubTip('请上传收藏证书', 'warn');
+      }
+
+      // 视频录入框里填了却没点『添加』：与下方批量工具同理，保存时替用户落地；解析不过则拦下，不静默丢弃
+      const extDraft = this.data.extDraft || {};
+      const extPending = extDraft.kind === 'link' ? String(extDraft.url || '').trim() : String(extDraft.feedId || '').trim();
+      if (extPending) {
+        const ev = require('../utils/externalVideos');
+        const res = ev.parseExternalDraft(extDraft, p.externalVideos || []);
+        if (res.error) return this.showHubTip(`有未添加的视频：${res.error}`, 'warn');
+        p.externalVideos = (p.externalVideos || []).concat([res.item]).map((v, i) => ev.decorate(v, i));
+        this.setData({
+          'tempProduct.externalVideos': p.externalVideos,
+          'extDraft.feedId': '',
+          'extDraft.feedToken': '',
+          'extDraft.url': '',
+          'extDraft.title': ''
+        });
       }
 
       // 保存前把「批量工具」里填了却没点『应用到全部』的统一价/统一库存**落地**。

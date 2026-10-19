@@ -3280,7 +3280,7 @@
             </view>
           </view>
           <view hover-class="tap-press" hover-stay-time="80" class="detail-img-add" bindtap="chooseProductImages" wx:if="{{!tempProduct.images || tempProduct.images.length < 12}}">
-            <text>+ 图片</text>
+            <text>+ 图片/视频</text>
           </view>
         </view>
 
@@ -3307,6 +3307,8 @@
             <block wx:if="{{extDraft.kind === 'channels'}}">
               <input class="pv-input" value="{{extDraft.feedId}}" bindinput="bindExtDraft" data-field="feedId" placeholder="视频 ID（视频号助手 → 视频管理 → 复制视频 ID）"/>
               <input class="pv-input" value="{{extDraft.finderUserName}}" bindinput="bindExtDraft" data-field="finderUserName" placeholder="视频号 ID（sph 开头，默认本馆）"/>
+              <!-- 非本馆视频号（非同主体）须带 feedToken 才能内嵌播放；本馆视频号不需要，不显示 -->
+              <input class="pv-input" wx:if="{{extForeignFinder}}" value="{{extDraft.feedToken}}" bindinput="bindExtDraft" data-field="feedToken" placeholder="feedToken（非本馆视频号必填才能内嵌，选填）"/>
             </block>
             <input class="pv-input" wx:else value="{{extDraft.url}}" bindinput="bindExtDraft" data-field="url" placeholder="粘贴分享链接或整段分享文案"/>
             <input class="pv-input" value="{{extDraft.title}}" bindinput="bindExtDraft" data-field="title" maxlength="40" placeholder="标题（选填，如「展翅实拍」）"/>

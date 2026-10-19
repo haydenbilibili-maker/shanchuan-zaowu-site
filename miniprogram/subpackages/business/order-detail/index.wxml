@@ -432,6 +432,10 @@
       <view class="ac-btn is-ghost" bindtap="closeArchiveCard" hover-class="tap-press" hover-stay-time="80">稍后</view>
       <view class="ac-btn" bindtap="openCertFromCard" hover-class="tap-press" hover-stay-time="80">查看证书</view>
     </view>
+    <view class="ac-links">
+      <text class="ac-link" bindtap="openCareFromCard" hover-class="tap-press" hover-stay-time="80">养护指南 ›</text>
+      <text class="ac-link" bindtap="openCommentFromCard" hover-class="tap-press" hover-stay-time="80">写一条评价 ›</text>
+    </view>
   </view>
 </view>
 

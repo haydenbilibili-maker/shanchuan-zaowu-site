@@ -224,7 +224,7 @@
 <register-auth-dialog
   show="{{showRegisterDialog}}"
   overline="WISH LABEL"
-  title="注册后心愿签才别得住"
+  title="注册后心愿签才钉得住"
   desc="一键注册即可把这张签钉上墙、收进「我的」，以后回来都看得到它。"
   cta="一键注册"
   closable="{{true}}"

@@ -127,7 +127,7 @@ Page({
         };
       });
 
-      const sealedList = applySeals(list, wx);
+      const sealedList = applySeals(list, wx, openid);
       const givenCount = sealedList.filter((c) => c.kind === 'gift_voucher').length;
       const filter = givenCount ? this.data.filter : 'all';
       this.setData({ certificates: sealedList, holderCount: list.length - givenCount, givenCount, loadError: false, filter, visible: filterCerts(sealedList, filter) });
@@ -168,7 +168,7 @@ Page({
       // 掰开火漆：两半错开落下 0.5s，再进证书；返回时这张已是普通卡
       if (this._breaking) return;
       this._breaking = true;
-      markUnsealed(id, wx);
+      markUnsealed(id, wx, (app.globalData && app.globalData.openid) || '');
       all[i] = { ...all[i], breaking: true };
       this.setData({ certificates: all, visible: filterCerts(all, this.data.filter) });
       this._breakTimer = setTimeout(() => {

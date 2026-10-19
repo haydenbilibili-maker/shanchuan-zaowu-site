@@ -548,6 +548,9 @@ Page({
     );
     this._appliedFilters = nextApplied;
     this.setData({
+      // 品类改一行横滑后，从筛选面板切馆也要把选中项滑入视野（2026-10-19 核查）
+      hallIntoView: `hall-${Math.max(0, idx - 1)}`,
+      archiveIndex: 0,
       currentId: rootItem._id,
       currentName: rootItem.name,
       currentSubtitle: rootItem.subtitle || this.data.currentSubtitle,

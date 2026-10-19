@@ -592,7 +592,7 @@ function checks(s) {
       ok = a.every((x) => !x.sealed) && b[0].sealed && !b[1].sealed && !b[2].sealed && c.every((x) => !x.sealed)
     } catch (e) { ok = false }
     add('R41-2 证书火漆：首次进页老证书不封；之后新签发的才封；启封即记、不重封；掰开后才进证书',
-      ok && /if \(i >= 0 && all\[i\]\.sealed\) \{[\s\S]*?markUnsealed\(id, wx\);[\s\S]*?this\.openCert\(id\);[\s\S]*?return;\s*\}\s*this\.openCert\(id\);/.test(s.certJs) &&
+      ok && /if \(i >= 0 && all\[i\]\.sealed\) \{[\s\S]*?markUnsealed\(id, wx(?:, [^;]+)?\);[\s\S]*?this\.openCert\(id\);[\s\S]*?return;\s*\}\s*this\.openCert\(id\);/.test(s.certJs) &&
         /<view class="c-wax \{\{item\.breaking \? 'is-breaking' : ''\}\}" wx:if="\{\{item\.sealed\}\}"/.test(s.certWxml))
   }
   {
@@ -630,7 +630,7 @@ function checks(s) {
         /if \(this\.data\.order\.status === 'received' && this\.data\.certRole !== 'giver'\) \{/.test(s.odJs) &&
         /class="sj-stamp \{\{arriveLive \? 'is-live' : ''\}\}" wx:if="\{\{item\.key === 'arrive' && item\.state === 'done'\}\}"/.test(s.odWxml) &&
         /<view class="ui-pop-mask is-center is-deep archive-card-mask" wx:if="\{\{archiveCard\.show\}\}"/.test(s.odWxml) &&
-        /confirmReceiptOnOrder\(this\.data\.order\._id, orderSnapshot\)/.test(s.odJs))
+        /confirmReceiptOnOrder\(this\.data\.order\._id, orderSnapshot(?:, \{ prompt: !willShowCard \})?\)/.test(s.odJs))
   }
   {
     const ls = loadCjs(s.leaveSpanJs)

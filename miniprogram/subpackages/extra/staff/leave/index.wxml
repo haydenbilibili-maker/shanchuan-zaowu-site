@@ -58,7 +58,8 @@
         <text class="duration-value">{{span ? span.label : '起止有误'}}</text>
       </view>
       <block wx:if="{{span}}">
-        <text class="duration-range">{{span.rangeText}}</text>
+        <text class="duration-range">{{span.rangeText}} · 合计 {{durationPreview}}</text>
+        <text class="duration-note">天数按每天 09:00–18:00 折算，仅供参考；记录与审批以时长为准</text>
         <view class="span-strip">
           <view class="span-cell fill-{{item.fill}} {{item.weekend ? 'is-weekend' : ''}}" wx:for="{{span.cells}}" wx:key="key">
             <text class="span-dow">{{item.dow}}</text>

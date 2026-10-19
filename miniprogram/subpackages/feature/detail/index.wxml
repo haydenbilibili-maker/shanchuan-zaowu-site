@@ -127,7 +127,7 @@ module.exports.saveLabel = saveLabel;
       <protected-badge show="{{true}}" size="sm" corner="static" />
     </view>
     <!-- 主片直达（2026-10-18）：有可内嵌的同主体视频号时，头图底部居中一枚「实拍视频」角标，轻点滚到价格卡下的主片 -->
-    <view class="hero-film-chip" wx:if="{{filmLead && !sensitiveVeiled}}" catchtap="scrollToFilms" hover-class="tap-press" hover-stay-time="80">
+    <view class="hero-film-chip" wx:if="{{filmLead && !sensitiveVeiled && !isSinglePage}}" catchtap="scrollToFilms" hover-class="tap-press" hover-stay-time="80">
       <view class="hero-film-tri" aria-hidden="true"></view>
       <text>实拍视频</text>
     </view>
@@ -262,7 +262,8 @@ module.exports.saveLabel = saveLabel;
          主方案 = 同主体视频号：第一条内嵌为大幅主片（头图有「实拍视频」角标直达）；其余视频号 / 外平台在其下。
          非同主体视频号带 feedToken 也可内嵌，否则为跳转卡片；B站 / 抖音 / 小红书小程序内不能打开，只给卡片 + 复制链接。
          云存储上传的视频仍在顶部主图里，这里只提示段数。 -->
-    <block wx:if="{{externalVideos.length}}">
+    <!-- 敏感图罩层打开时不出（大幅主片会把真实画面露在罩层下方）；朋友圈单页快照不出（视频号能力不可用） -->
+    <block wx:if="{{externalVideos.length && !sensitiveVeiled && !isSinglePage}}">
       <view class="section-title" id="films"><text class="st-en">FILMS</text><text class="st-zh">实拍影像</text></view>
       <view class="films">
         <block wx:for="{{externalVideos}}" wx:key="key">

@@ -18,6 +18,8 @@
  */
 
 const MAX_EXTERNAL = 3
+/** 链接上限：防止超长串把商品文档撑大（2026-10-19 核查） */
+const MAX_URL_LEN = 512
 const PLATFORMS = {
   channels: { label: '视频号', hosts: [] },
   bilibili: { label: '哔哩哔哩', hosts: ['bilibili.com', 'b23.tv'] },
@@ -34,21 +36,33 @@ const BVID_RE = /BV[0-9A-Za-z]{10}/
 /** 从「【标题】 https://b23.tv/xxx」这类分享文案里取第一个 https 链接；http 一律不收 */
 function pickUrl(text) {
   const m = /https:\/\/[^\s"'<>，。]+/i.exec(String(text || ''))
-  return m ? m[0].replace(/[)）\]】]+$/, '') : ''
+  // 去掉粘在链接尾巴上的中英文标点（分享文案常见：）】；！、”。）
+  return m ? m[0].replace(/[)）\]】；;，,。.！!、"”'’]+$/, '') : ''
+}
+
+/** 严格解析：域名只许字母数字点横杠（反斜杠 / @ / % / 非 443 端口一律不收），≤512 字；返回 { host, path } 或 null */
+function parseHttps(url) {
+  const s = String(url || '')
+  if (s.length > MAX_URL_LEN) return null
+  const m = /^https:\/\/([A-Za-z0-9.-]+)(?::443)?(\/[^\s\\]*)?$/.exec(s)
+  if (!m) return null
+  return { host: m[1].toLowerCase(), path: (m[2] || '/').split(/[?#]/)[0] }
 }
 
 /** 链接属于哪个白名单平台；不认识返回 '' */
 function platformOfUrl(url) {
-  let host = ''
-  try {
-    host = String(url).replace(/^https:\/\//i, '').split(/[/?#]/)[0].toLowerCase()
-  } catch (e) {
-    return ''
-  }
+  const u = parseHttps(url)
+  if (!u) return ''
   for (const key of Object.keys(PLATFORMS)) {
-    if (PLATFORMS[key].hosts.some((h) => host === h || host.endsWith(`.${h}`))) return key
+    if (PLATFORMS[key].hosts.some((h) => u.host === h || u.host.endsWith(`.${h}`))) return key
   }
   return ''
+}
+
+/** 去重键：域名 + 路径（同一视频带不同分享参数算一条） */
+function urlKey(url) {
+  const u = parseHttps(url)
+  return u ? `${u.host}${u.path}` : String(url || '')
 }
 
 function cleanTitle(v) {
@@ -74,12 +88,12 @@ function sanitizeExternalVideos(list) {
     }
     const url = pickUrl(raw.url)
     const platform = url ? platformOfUrl(url) : ''
-    if (!platform || seen.has(url)) continue
-    seen.add(url)
+    if (!platform || seen.has(urlKey(url))) continue
+    seen.add(urlKey(url))
     const bvid = platform === 'bilibili' ? ((BVID_RE.exec(url) || [])[0] || '') : ''
     out.push({ platform, title, url, bvid, feedId: '', finderUserName: '', feedToken: '', sameSubject: false })
   }
   return out
 }
 
-module.exports = { MAX_EXTERNAL, PLATFORMS, STORE_FINDERS, pickUrl, platformOfUrl, sanitizeExternalVideos }
+module.exports = { MAX_EXTERNAL, MAX_URL_LEN, PLATFORMS, STORE_FINDERS, pickUrl, parseHttps, platformOfUrl, urlKey, sanitizeExternalVideos }

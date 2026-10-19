@@ -104,3 +104,5 @@
 .span-cell.fill-half .span-bar-in { height: 50%; }
 .span-day { font-family: var(--font-mono); font-size: var(--fs-20); color: var(--color-text-body); }
 .span-more { align-self: center; font-family: var(--font-mono); font-size: var(--fs-20); color: var(--color-text-secondary); }
+
+.duration-note { display: block; margin-top: 4rpx; font-size: var(--fs-20); color: var(--color-text-secondary); }
