@@ -147,7 +147,9 @@ const FILES = {
   shipWxml: 'subpackages/extra/shipment-ops/index.wxml',
   dayDeltaJs: 'subpackages/manager/utils/dayDelta.js',
   mgrCfgJs: 'subpackages/manager/manager/managerPageConfig.js',
-  staffHubJs: 'subpackages/extra/staff/index.js'
+  staffHubJs: 'subpackages/extra/staff/index.js',
+  certPageWxml: 'subpackages/business/certificate/index.wxml',
+  certPageWxss: 'subpackages/business/certificate/index.wxss'
 }
 /** 无 require 的 CommonJS 小模块：内存里求值拿 exports（失败返回 {}） */
 function loadCjs(src) {
@@ -736,6 +738,11 @@ function checks(s) {
     } catch (e) { same = false }
     add('R42-9 店员工作台问候与店长首页 greetByHour 逐时段一致', same)
   }
+  // 2026-10-19 产品负责人「正在铸造改为正在打印，打印机动画参考预约打印与代金券打印」
+  add('R43-1 证书加载：文案「正在打印专属证书…」，同款打印机（顶杆 + 出纸口 + 三灯）循环出纸 + 往复进度条；不再是转圈 / 「铸造」',
+    /<text class="mint-txt">正在打印专属证书…<\/text>/.test(s.certPageWxml) && !/铸造/.test(s.certPageWxml.replace(/<!--[\s\S]*?-->/g, '')) &&
+      /<view class="cp-machine">[\s\S]*?<view class="cp-slot"><\/view>[\s\S]*?<view class="cp-lights">/.test(s.certPageWxml) &&
+      /animation: cp-feed 3\.2s [^;]*infinite;/.test(s.certPageWxss) && !/mint-spinner/.test(s.certPageWxml))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
@@ -1026,6 +1033,8 @@ if (process.argv.includes('--selftest')) {
     ['从最近记录进也打字', 'identifyJs', (t) => t.replace("      url += '&fresh=1'\n", '')],
     ['历史已核销也落印', 'pickupJs', (t) => t.replace("      const closedNow = pass.statusTone === 'closed';", "      const closedNow = pass.statusTone === 'closed';\n      if (claimedNow) this.setData({ claimLive: true });")],
     ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
+    ['证书加载改回铸造', 'certPageWxml', (t) => t.replace('正在打印专属证书…', '正在铸造专属证书…')],
+    ['证书纸只出一次不循环', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) infinite;', 'animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) forwards;')],
     ['射灯首次进页全部重播', 'achLitJs', (t) => t.replace('const fresh = seen === null ? [] :', 'const fresh = seen === null ? ids :')],
     ['档案降分也弹', 'pfJs', (t) => t.replace('if (gain > 0) this.bumpScore(gain)', 'if (gain !== 0) this.bumpScore(gain)')],
     ['社区发布改回 toast', 'pubWxml', (t) => t.replace('exhibit-mask" wx:if="{{exhibitTag.show}}"', 'exhibit-mask" wx:if="{{false}}"')],

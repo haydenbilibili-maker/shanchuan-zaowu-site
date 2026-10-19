@@ -57,19 +57,113 @@ view, text, image, button { box-sizing: border-box; }
   font-size: var(--fs-26);
 }
 
-/* 铸造动画 */
+/* 打印动画（2026-10-19）：与预约出票 / 代金券打印同一台打印机；证书生成时长不定 → 纸张循环吐出 */
 .minting-layer {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   background: var(--color-bg); z-index: 50;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.mint-spinner {
-  width: 60rpx; height: 60rpx; border: 4rpx solid rgba(196, 167, 108,0.3);
-  border-top-color: var(--color-primary); border-radius: 50%;
-  animation: spin 1s linear infinite; margin-bottom: 30rpx;
+.cp-printer {
+  width: 520rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 44rpx;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
-.mint-txt { font-family: var(--font-mono); font-size: var(--fs-24); color: var(--color-primary); letter-spacing: 4rpx; opacity: 0.8; }
+.cp-machine {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 44rpx;
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(to bottom, #33302C, #1A1814);
+  border: 2rpx solid #4A4540;
+  border-radius: 30rpx;
+  box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.72);
+}
+.cp-slot {
+  /* 不碰右侧三灯（灯组约占右侧 70rpx） */
+  width: 64%;
+  height: 6rpx;
+  margin-top: 18rpx;
+  background: #1A1814;
+  border-radius: 4rpx;
+  box-shadow: 0 0 8rpx rgba(196, 167, 108, 0.55);
+  animation: cp-slot-glow 1.2s ease-in-out infinite;
+}
+.cp-lights {
+  position: absolute;
+  right: 18rpx;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.cp-lights .signal-light { width: 12rpx; height: 12rpx; }
+/* 出纸口下方的取景窗：纸从口里往下吐，超出窗口的部分看不到 */
+.cp-window {
+  width: 82%;
+  height: 330rpx;
+  margin-top: -2rpx;
+  overflow: hidden;
+}
+.cp-paper {
+  position: relative;
+  height: 330rpx;
+  padding: 28rpx 32rpx;
+  box-sizing: border-box;
+  background-color: #F2EDE4;
+  background-image: radial-gradient(rgba(196, 167, 108, 0.22) 0.7px, transparent 0.7px);
+  background-size: 12rpx 12rpx;
+  border: 3rpx solid var(--color-primary);
+  border-top: none;
+  border-radius: 0 0 12rpx 12rpx;
+  box-shadow: 0 18rpx 48rpx rgba(0, 0, 0, 0.42);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) infinite;
+}
+.cp-en { font-family: var(--font-mono); font-size: var(--fs-16); letter-spacing: 0.22em; color: #8B6F47; }
+.cp-rule { width: 64rpx; height: 2rpx; margin: 14rpx 0; background: #B08D57; }
+.cp-title { font-family: var(--font-brand); font-size: var(--fs-30); font-weight: 700; letter-spacing: 0.1em; color: #2E2618; }
+.cp-ink { width: 80%; height: 8rpx; margin-top: 18rpx; border-radius: 4rpx; background: rgba(46, 38, 24, 0.16); }
+.cp-ink.is-short { width: 56%; }
+.cp-seal {
+  position: absolute;
+  right: 28rpx;
+  bottom: 24rpx;
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid rgba(168, 53, 42, 0.8);
+  border-radius: 6rpx;
+  transform: rotate(-10deg);
+}
+.cp-seal text { font-family: var(--font-brand); font-size: var(--fs-18); font-weight: 700; color: rgba(168, 53, 42, 0.85); }
+.mint-txt { margin-top: 8rpx; font-family: var(--font-mono); font-size: var(--fs-24); color: var(--color-primary); letter-spacing: 4rpx; opacity: 0.85; }
+/* 同款细进度条（预约出票 mint-progress）：时长不定 → 往复扫 */
+.cp-progress { width: 300rpx; height: 4rpx; margin-top: 24rpx; background: rgba(196, 167, 108, 0.16); border-radius: 2rpx; overflow: hidden; }
+.cp-progress-bar { width: 40%; height: 100%; background: var(--brass-400); animation: cp-progress 1.6s ease-in-out infinite; }
+/* 纸：从出纸口吐出 → 停一拍 → 淡出换下一张 */
+@keyframes cp-feed {
+  0% { transform: translateY(-100%); opacity: 1; }
+  68% { transform: translateY(0); opacity: 1; }
+  88% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(0); opacity: 0; }
+}
+@keyframes cp-slot-glow {
+  0%, 100% { box-shadow: 0 0 6rpx rgba(196, 167, 108, 0.4); }
+  50% { box-shadow: 0 0 14rpx rgba(196, 167, 108, 0.85); }
+}
+@keyframes cp-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
 
 /* 证书展示层 */
 .cert-layer {
@@ -194,7 +288,9 @@ view, text, image, button { box-sizing: border-box; }
 
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {
-  .mint-spinner {
+  .cp-paper,
+  .cp-slot,
+  .cp-progress-bar {
     animation: none;
   }
 }
