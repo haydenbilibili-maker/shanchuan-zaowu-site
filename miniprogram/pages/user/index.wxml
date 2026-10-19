@@ -2,8 +2,9 @@
 <!-- padding-top：自定义导航下避让状态栏 + 胶囊（onLoad 用 menu.bottom+6，与购物车页一致） -->
 <view class="container" style="padding-top: {{statusBarHeight}}px;">
 
-  <!-- 本机已退出：重新进入入口 -->
-  <view class="logout-banner stagger-item" wx:if="{{isLocalLoggedOut}}" style="animation-delay: 0s;">
+  <!-- 本机已退出：重新进入入口。信封卡在场时不重复（状态与入口都在信封面上，2026-10-18 产品负责人「优化未登录态顶部卡片」）；
+       只在信封卡不出现时（如骨架态）兜底显示 -->
+  <view class="logout-banner stagger-item" wx:if="{{isLocalLoggedOut && !cardGuest}}" style="animation-delay: 0s;">
     <view class="logout-banner-body" bindtap="onResumeLoginTap" hover-class="logout-banner-press" hover-stay-time="80">
       <view class="logout-banner-text">
         <text class="logout-banner-title">已退出本机登录</text>
