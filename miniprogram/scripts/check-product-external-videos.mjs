@@ -9,7 +9,8 @@
  *   B. ERP 工具与服务端同口径：外平台常量（条数 / 平台域名 / 视频号正则）、media 常量（条数 / 时长 / 体积）；
  *      录入解析与服务端净化对同一批样例给出同样结论。
  *   C. ERP 保存：media / externalVideos 都只在「有值或原本有值」时才送（不清库里已有视频）；视频传到 products/ 目录。
- *   D. 店长端编辑器不送 externalVideos（它不认识这个字段 —— 送了就会洗掉；不送则合并写保留）。
+ *   D. 店长端（超管工作台 · 藏品库）：2026-10-19 起也能编辑外平台视频（产品负责人「藏品编辑没有看到视频编辑模块」）。
+ *      载入时记原条数、只在「有值或原本有值」时才送；店长端工具常量与云端同口径；编辑区有独立的「实拍视频」模块。
  *   E. 详情页：外平台只做卡片 + 复制链接 / 视频号跳转，不出现 web-view / navigateToMiniProgram；
  *      视频号只有带 feedToken 才内嵌；不读 .media（media 归主图轮播，守卫 check:product-media）。
  *   F. cloudbase/schema/products.md 登记了 externalVideos。
@@ -31,6 +32,8 @@ const FILES = {
   adminApp: 'admin/src/App.vue',
   adminCloud: 'admin/src/cloud.js',
   manager: 'miniprogram/subpackages/manager/manager/managerPageConfig.js',
+  managerUtil: 'miniprogram/subpackages/manager/utils/externalVideos.js',
+  managerWxml: 'miniprogram/subpackages/manager/manager/workspace/_subviews.wxml',
   detailUtil: 'miniprogram/subpackages/feature/utils/externalVideos.js',
   detailJs: 'miniprogram/subpackages/feature/detail/index.js',
   detailWxml: 'miniprogram/subpackages/feature/detail/index.wxml',
@@ -118,7 +121,23 @@ async function checks(s) {
       /export const uploadAdminBinary = async \(file, folder = 'erp-store', \{ onProgress \} = \{\}\) =>/.test(s.adminCloud))
 
   // D
-  add('D1 店长端编辑器不送 externalVideos（合并写保留 ERP 录入的外平台视频）', !/externalVideos/.test(s.manager))
+  const mgr = cjs(s.managerUtil)
+  let d2 = false
+  try {
+    const okCh = mgr.parseExternalDraft({ kind: 'channels', finderUserName: 'sphbtKfDFOzLQXM', feedId: 'feed000003' }, [])
+    const back = srv.sanitizeExternalVideos(mgr.toPayloadExternal([okCh.item]))
+    d2 = okCh.item.sameSubject === true && back.length === 1 && back[0].feedId === 'feed000003' && back[0].sameSubject === true &&
+      SAMPLES.every((x) => { const m = mgr.parseExternalDraft({ kind: 'link', url: x.url }, []); const t = srv.sanitizeExternalVideos([x]); return m.item ? (t.length === 1 && t[0].url === m.item.url) : t.length === 0 }) &&
+      !('key' in mgr.toPayloadExternal([mgr.decorate(okCh.item, 0)])[0])
+  } catch (e) { d2 = false }
+  add('D1 店长端保存：externalVideos 只在有值或原本有值时才送；载入时记原条数（不清 ERP 录入的视频）',
+    /externalOrigCount: Array\.isArray\(item\.externalVideos\) \? item\.externalVideos\.length : 0,/.test(s.manager) &&
+      /\.\.\.\(\(p\.externalVideos \|\| \[\]\)\.length \|\| p\.externalOrigCount\s*\? \{ externalVideos: require\('\.\.\/utils\/externalVideos'\)\.toPayloadExternal\(p\.externalVideos\) \}/.test(s.manager))
+  add('D2 店长端工具与服务端同口径（条数 / 平台 / 本馆视频号；解析结论一致；载荷不带编辑区专用键）',
+    mgr.MAX_EXTERNAL === srv.MAX_EXTERNAL && same(mgr.PLATFORMS, srv.PLATFORMS) && same(mgr.STORE_FINDERS, srv.STORE_FINDERS) && d2)
+  add('D3 店长端编辑区有独立「实拍视频」模块：视频号录入 + 云存储「上传视频」入口（不再只混在轮播图里）',
+    /<view class="pv-section">/.test(s.managerWxml) && /bindtap="addExternalVideo"/.test(s.managerWxml) &&
+      /bindtap="chooseProductVideos"/.test(s.managerWxml) && /wx:for="\{\{tempProduct\.externalVideos\}\}"/.test(s.managerWxml))
 
   // E
   let e1 = false
@@ -179,7 +198,9 @@ const INJ = [
   ['ERP 条数常量与服务端不一致', 'adminUtil', (t) => t.replace('export const MAX_EXTERNAL = 3', 'export const MAX_EXTERNAL = 5')],
   ['ERP media 时长上限漂移', 'adminUtil', (t) => t.replace('export const MAX_VIDEO_SECONDS = 60', 'export const MAX_VIDEO_SECONDS = 90')],
   ['ERP 每次保存都送 media（会清掉店长传的视频）', 'adminApp', (t) => t.replace('...((form.value.media || []).length || form.value.mediaOrigCount ? { media: toPayloadMedia(form.value.media) } : {}),', 'media: toPayloadMedia(form.value.media),')],
-  ['店长端开始送 externalVideos', 'manager', (t) => t + '\n// externalVideos: []\n'],
+  ['店长端每次保存都送 externalVideos', 'manager', (t) => t.replace("...((p.externalVideos || []).length || p.externalOrigCount\n          ? { externalVideos: require('../utils/externalVideos').toPayloadExternal(p.externalVideos) }\n          : {}),", "externalVideos: require('../utils/externalVideos').toPayloadExternal(p.externalVideos),")],
+  ['店长端工具漏本馆视频号', 'managerUtil', (t) => t.replace("const STORE_FINDERS = ['sphbtKfDFOzLQXM'];", 'const STORE_FINDERS = [];')],
+  ['店长端编辑区去掉视频号录入', 'managerWxml', (t) => t.replace('bindtap="addExternalVideo"', 'bindtap="noop"')],
   ['详情页视频号无 token 也内嵌', 'detailUtil', (t) => t.replace("embed: v.platform === 'channels' && !!(v.feedToken || v.sameSubject)", "embed: v.platform === 'channels'")],
   ['详情页改用 web-view 打开 B站', 'detailWxml', (t) => t.replace('<view class="films">', '<view class="films"><web-view src="https://www.bilibili.com"></web-view>')],
   ['视频号内嵌报错改成自动跳走', 'detailWxml', (t) => t.replace('binderror="onChannelEmbedError" data-index="{{index}}"', 'binderror="openChannelsVideo" data-index="{{index}}"')],

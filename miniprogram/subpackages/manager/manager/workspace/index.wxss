@@ -22,3 +22,78 @@
   background: rgba(0, 0, 0, 0.65); padding: 2rpx 8rpx;
 }
 .pm-hint { display: block; font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); margin: 4rpx 0 16rpx; }
+
+/* 藏品编辑 · 实拍视频模块（2026-10-19）：视频号为主方案（铜描边标签），外平台次之；云存储视频格子沿用轮播图样式 */
+.pv-section {
+  margin: 8rpx 0 12rpx;
+  padding: 16rpx 20rpx 4rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.22);
+  border-radius: var(--radius-md);
+}
+.pv-section .form-label { margin-top: 4rpx; padding-left: 0; color: var(--color-text-body); }
+.pv-sub {
+  display: block;
+  margin: 14rpx 0 10rpx;
+  font-size: var(--fs-22);
+  letter-spacing: 0.06em;
+  color: var(--brass-300);
+}
+.pv-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
+}
+.pv-tag {
+  flex-shrink: 0;
+  padding: 2rpx 12rpx;
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+  border: 1rpx solid rgba(196, 167, 108, 0.3);
+  border-radius: 4rpx;
+}
+.pv-tag.is-main { color: var(--brass-200); border-color: rgba(196, 167, 108, 0.7); }
+.pv-row-body { flex: 1; min-width: 0; }
+.pv-title { display: block; font-size: var(--fs-26); color: var(--color-text-body); }
+.pv-ref {
+  display: block;
+  margin-top: 4rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pv-del { flex-shrink: 0; padding: 8rpx 14rpx; font-size: var(--fs-30); color: var(--color-text-secondary); }
+.pv-add { margin-top: 12rpx; }
+.pv-kinds { display: flex; gap: 12rpx; margin-bottom: 12rpx; }
+.pv-kind {
+  padding: 8rpx 20rpx;
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+  border: 1rpx solid rgba(196, 167, 108, 0.24);
+  border-radius: 9999px;
+}
+.pv-kind.on { color: var(--brass-200); border-color: rgba(196, 167, 108, 0.7); }
+.pv-input {
+  height: 72rpx;
+  margin-bottom: 10rpx;
+  padding: 0 20rpx;
+  font-size: var(--fs-24);
+  color: var(--color-text-body);
+  background: var(--color-bg);
+  border: 1rpx solid #333;
+  border-radius: var(--radius-sm);
+}
+.pv-add-btn {
+  height: 68rpx;
+  line-height: 68rpx;
+  margin-bottom: 8rpx;
+  text-align: center;
+  font-size: var(--fs-24);
+  color: var(--brass-200);
+  border: 1rpx solid rgba(196, 167, 108, 0.6);
+  border-radius: var(--radius-sm);
+}

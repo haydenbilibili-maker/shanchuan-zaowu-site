@@ -1603,6 +1603,8 @@ const managerPageConfig = {
     skuDimBuilder: [{ name: '', valuesStr: '' }],
     
     showProductModal: false, showFramerModal: false, showCatModal: false,
+    /** 藏品编辑 · 实拍视频（外平台）录入草稿 */
+    extDraft: { kind: 'channels', finderUserName: '', feedId: '', feedToken: '', url: '', title: '' },
     showCatLinkModal: false,
     catLinkTarget: null,
     catLinkMode: 'auto',
@@ -5311,6 +5313,8 @@ const managerPageConfig = {
         editId: item?item._id:'',
         oneOfAKindManualOff: false,
         productFormTab: 'basic',
+        // 实拍视频录入草稿：默认录本馆视频号（主方案，同主体）
+        extDraft: { kind: 'channels', finderUserName: require('../utils/externalVideos').STORE_FINDERS[0], feedId: '', feedToken: '', url: '', title: '' },
         skuBulkPrice: '',
         skuBulkStock: '',
         skuStockTotal: skus.reduce((n, s) => n + (parseInt(s && s.stock, 10) || 0), 0),
@@ -5323,6 +5327,10 @@ const managerPageConfig = {
           tempImg: images[0] || '', 
           media: require('../utils/productMedia').toEditorMedia(item.media),
           mediaOrigCount: Array.isArray(item.media) ? item.media.length : 0,
+          // 2026-10-19 产品负责人「藏品编辑没有看到视频编辑模块」：外平台视频（视频号为主方案）在店长端也能编辑；
+          // 与 media 同口径：载入时记原条数，保存时只在「有值或原本有值」时才送
+          externalVideos: require('../utils/externalVideos').toEditorExternal(item.externalVideos),
+          externalOrigCount: Array.isArray(item.externalVideos) ? item.externalVideos.length : 0,
           detailImages: item.detailImages || [],
           detailHtml: item.detailHtml || '',
           sizeL, sizeW, sizeH,
@@ -5370,6 +5378,8 @@ const managerPageConfig = {
           images: [],
           media: [],
           mediaOrigCount: 0,
+          externalVideos: [],
+          externalOrigCount: 0,
           tempImg: '', title: '', price: '', costPrice: '', stock: 1, category: '', categoryId: '', rootCategoryName: '', rootCategoryId: '', categoryType: '', framerName: '', framerId: '', description: '', origin: '', latinName: '', sizeL:'', sizeW:'', sizeH:'', collectDate: '', isTreasure: false, isOneOfAKind: true, depositEligible: true, inArchive: true, memberDiscountEnabled: true, supportsCustom: false, giftEligible: true, sensitiveBlur: false, sensitiveBlurSetByUser: false, productRarity: 'common', productRaritySetByUser: false, hasSku: false, skus: [], skuDimensionsStr: '', detailImages: [], detailHtml: '',
           channel: '', craftType: '', craftProcess: '',
           protectionType: 'none',
@@ -5625,6 +5635,54 @@ const managerPageConfig = {
     if (next === 'live' && m.duration > LIVE_HINT_SECONDS) {
       this.showHubTip(`实况建议 ${LIVE_HINT_SECONDS} 秒内，这段更像普通视频`, 'warn');
     }
+  },
+  /** 实拍视频模块 · 只选视频（与轮播图的图片 / 视频混选是两个入口，选到的都只进 tempProduct.media） */
+  chooseProductVideos() {
+    const { MAX_MEDIA } = require('../utils/productMedia');
+    const remain = Math.max(0, MAX_MEDIA - (this.data.tempProduct.media || []).length);
+    if (remain <= 0) return this.showHubTip(`云存储视频最多 ${MAX_MEDIA} 段`, 'warn');
+    wx.chooseMedia({
+      count: remain,
+      mediaType: ['video'],
+      sourceType: ['album', 'camera'],
+      maxDuration: 60,
+      success: async (res) => {
+        const files = (res.tempFiles || []).filter(Boolean);
+        if (files.length) await this.appendProductVideos(files);
+      }
+    });
+  },
+  /** 外平台视频录入：切换「视频号 / 链接」 */
+  setExtDraftKind(e) {
+    const kind = e.currentTarget.dataset.kind === 'link' ? 'link' : 'channels';
+    this.setData({ 'extDraft.kind': kind });
+  },
+  bindExtDraft(e) {
+    const field = e.currentTarget.dataset.field;
+    if (!['finderUserName', 'feedId', 'feedToken', 'url', 'title'].includes(field)) return;
+    this.setData({ [`extDraft.${field}`]: e.detail.value });
+  },
+  addExternalVideo() {
+    const ev = require('../utils/externalVideos');
+    const list = this.data.tempProduct.externalVideos || [];
+    const res = ev.parseExternalDraft(this.data.extDraft, list);
+    if (res.error) return this.showHubTip(res.error, 'warn');
+    const next = list.concat([res.item]).map((v, i) => ev.decorate(v, i));
+    this.setData({
+      'tempProduct.externalVideos': next,
+      'extDraft.feedId': '',
+      'extDraft.feedToken': '',
+      'extDraft.url': '',
+      'extDraft.title': ''
+    });
+  },
+  removeExternalVideo(e) {
+    const ev = require('../utils/externalVideos');
+    const idx = Number(e.currentTarget.dataset.index);
+    const list = [...(this.data.tempProduct.externalVideos || [])];
+    if (idx < 0 || idx >= list.length) return;
+    list.splice(idx, 1);
+    this.setData({ 'tempProduct.externalVideos': list.map((v, i) => ev.decorate(v, i)) });
   },
   /** 保存时上传一段视频：带进度、失败自动重试 3 次；仍失败则抛错中止保存（不静默丢视频，已传的不重传） */
   async uploadProductVideo(item, i) {
@@ -6615,6 +6673,10 @@ const managerPageConfig = {
         images,
         // 只在"有视频"或"原本有、被删光"时才送 media：没载入过 media 的入口保存时不会把库里的视频清掉
         ...(media.length || p.mediaOrigCount ? { media: require('../utils/productMedia').toPayloadMedia(media) } : {}),
+        // 外平台视频（视频号主方案）：同口径 —— 只在「有值或原本有值、被删光」时才送，未载入过的入口保存不会清空
+        ...((p.externalVideos || []).length || p.externalOrigCount
+          ? { externalVideos: require('../utils/externalVideos').toPayloadExternal(p.externalVideos) }
+          : {}),
         // 上下架仅走 manageApprovals，保存时不改 isOffShelf（云函数也会剥离）
         // 写库必须走 manageProducts；禁止客户端直写 products
         seckill,
