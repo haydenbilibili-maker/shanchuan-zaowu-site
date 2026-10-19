@@ -83,14 +83,13 @@ view, text, image, button { box-sizing: border-box; }
   box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.72);
 }
 .cp-slot {
-  /* 不碰右侧三灯（灯组约占右侧 70rpx） */
+  /* 不碰右侧三灯（灯组约占右侧 70rpx）；视觉规范 R2 不用金色外发光 → 出纸口内一道铜色细线，透明度呼吸 */
   width: 64%;
   height: 6rpx;
   margin-top: 18rpx;
-  background: #1A1814;
+  background: linear-gradient(180deg, #0F0D0B 0%, #0F0D0B 50%, rgba(196, 167, 108, 0.75) 50%, rgba(196, 167, 108, 0.75) 100%);
   border-radius: 4rpx;
-  box-shadow: 0 0 8rpx rgba(196, 167, 108, 0.55);
-  animation: cp-slot-glow 1.2s ease-in-out infinite;
+  animation: cp-slot-pulse 1.2s ease-in-out infinite;
 }
 .cp-lights {
   position: absolute;
@@ -156,9 +155,9 @@ view, text, image, button { box-sizing: border-box; }
   88% { transform: translateY(0); opacity: 1; }
   100% { transform: translateY(0); opacity: 0; }
 }
-@keyframes cp-slot-glow {
-  0%, 100% { box-shadow: 0 0 6rpx rgba(196, 167, 108, 0.4); }
-  50% { box-shadow: 0 0 14rpx rgba(196, 167, 108, 0.85); }
+@keyframes cp-slot-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 @keyframes cp-progress {
   0% { transform: translateX(-100%); }
