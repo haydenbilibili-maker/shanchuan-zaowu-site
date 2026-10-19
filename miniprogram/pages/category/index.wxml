@@ -22,9 +22,13 @@
       </view>
     </view>
     <view class="cat-filter-block">
+      <!-- 2026-10-19 产品负责人「继续优化馆藏页顶部筛选器样式」：九个馆原先折成三行占掉近四分之一屏 →
+           一行横滑（切换时选中项自动滑入视野），筛选钮固定在右侧并带渐隐；「定制」是跳转入口，用分隔线 + 「›」与筛选区分 -->
       <view class="cat-filter-row">
+        <scroll-view scroll-x class="category-scroll" enable-flex show-scrollbar="{{false}}" scroll-into-view="{{hallIntoView}}" scroll-with-animation>
         <view class="category-wrap">
           <view
+            id="hall-{{index}}"
             class="cat-pill cat-pill-l1 {{currentId === item._id ? 'active' : ''}}"
             wx:for="{{categories}}"
             wx:key="_id"
@@ -35,10 +39,14 @@
           >
             <text>{{item.shortName}}</text>
           </view>
+          <view class="cat-pill-sep" wx:if="{{showSpecimenCustom}}" aria-hidden="true"></view>
           <view class="cat-pill cat-pill-custom" bindtap="goCustom" hover-class="cat-pill-press" hover-stay-time="80" wx:if="{{showSpecimenCustom}}">
             <text>定制</text>
+            <text class="cat-pill-arr">›</text>
           </view>
+          <view class="category-pad" aria-hidden="true"></view>
         </view>
+        </scroll-view>
         <view class="filter-entry-wrap">
           <view
             class="filter-entry {{filterActiveCount > 0 ? 'on' : ''}}"
@@ -124,18 +132,18 @@
       <view class="feed-block archive-block" wx:if="{{showSpecimenArchive && (showContentSection || contentItems.length)}}">
         <view class="mu-head">
           <view class="mu-head-t"><text class="mu-en">SPECIMEN ARCHIVES</text><text class="mu-cn">标本档案</text></view>
+          <!-- 13 个指示圆点压在卡片底边上 → 改为「左滑 · 04 / 13」+ 卡片下一条细进度线 -->
           <view class="mu-act mu-act-muted">
-            <text wx:if="{{contentTotal > 1}}">左滑更多</text>
-            <text wx:if="{{contentTotal > 0}}">{{contentTotal}} 篇</text>
+            <text wx:if="{{contentTotal > 1}}">左滑 ·</text>
+            <text class="archive-count" wx:if="{{contentTotal > 1}}">{{archiveIndex < 9 ? '0' : ''}}{{archiveIndex + 1}} / {{contentTotal}}</text>
+            <text wx:elif="{{contentTotal > 0}}">{{contentTotal}} 篇</text>
           </view>
         </view>
 
         <swiper
           wx:if="{{contentItems.length}}"
           class="archive-swiper"
-          indicator-dots="{{contentTotal > 1}}"
-          indicator-color="rgba(255,255,255,0.15)"
-          indicator-active-color="#C4A76C"
+          current="{{archiveIndex}}"
           next-margin="48rpx"
           bindchange="onArchiveSwiperChange"
         >
@@ -151,6 +159,9 @@
             </view>
           </swiper-item>
         </swiper>
+        <view class="archive-progress" wx:if="{{contentItems.length && contentTotal > 1}}" aria-hidden="true">
+          <view class="archive-progress-bar" style="width: {{(archiveIndex + 1) * 100 / contentTotal}}%;"></view>
+        </view>
 
         <view class="empty-tip" wx:if="{{contentItems.length === 0}}">该品类档案筹备中</view>
       </view>

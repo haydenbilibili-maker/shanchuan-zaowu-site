@@ -829,6 +829,12 @@ function checks(s) {
     // 2026-10-13 弹层规范：详情礼券抽屉空态改用全局 .ui-pop-empty（判据不变：说明字 = secondary）
     ['.gift-panel-sub', '.gift-scene-label', '.param-k'].every((x) => colorOf(s.detailWxss, x) === SEC) &&
     /\n\.ui-pop-empty \{[^}]*color: var\(--color-text-secondary\);/.test(s.appWxss))
+  // 2026-10-19 产品负责人「继续优化馆藏页顶部筛选器样式」
+  add('R4-5 馆藏品类一行横滑（不再折行），切换时选中项滑入视野；档案横滑去掉压边圆点，改「04 / 13」+ 细进度线',
+    /<scroll-view scroll-x class="category-scroll"[^>]*scroll-into-view="\{\{hallIntoView\}\}"/.test(s.catWxml) &&
+      /id="hall-\{\{index\}\}"/.test(s.catWxml) && /hallIntoView: `hall-\$\{Math\.max\(0, idx - 1\)\}`/.test(s.catJs) &&
+      /\.category-wrap \{ display: inline-flex; flex-wrap: nowrap;/.test(s.catWxss) &&
+      !/indicator-dots="\{\{contentTotal > 1\}\}"/.test(s.catWxml) && /class="archive-progress"/.test(s.catWxml))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
 
   // R5-1 首页恰好一屏：容器 100vh 纵向 flex 且裁切，顶部占位 + 滚动区（flex:1）+ 底栏让位 = 视口；不再「占位 + 满屏滚动区」叠高
@@ -1042,6 +1048,8 @@ if (process.argv.includes('--selftest')) {
     ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
     ['定制页标题行又让胶囊', 'customWxml', (t) => t.replace('<view class="nav-row">', '<view class="nav-row" style="padding-right: {{navPaddingRight}}px;">')],
     ['定制页顶距又含系统导航', 'customJs', (t) => t.replace('headerHeight: nav.headerHeight - nav.statusBarHeight - nav.navBarHeight + Math.round((nav.mottoHeight / 88) * 110),', 'headerHeight: nav.headerHeight,')],
+    ['馆藏品类又折行', 'catWxss', (t) => t.replace('.category-wrap { display: inline-flex; flex-wrap: nowrap;', '.category-wrap { display: flex; flex-wrap: wrap;')],
+    ['档案圆点回来', 'catWxml', (t) => t.replace('current="{{archiveIndex}}"', 'current="{{archiveIndex}}"\n          indicator-dots="{{contentTotal > 1}}"')],
     ['证书加载改回铸造', 'certPageWxml', (t) => t.replace('正在打印专属证书…', '正在铸造专属证书…')],
     ['证书纸只出一次不循环', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) infinite;', 'animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) forwards;')],
     ['射灯首次进页全部重播', 'achLitJs', (t) => t.replace('const fresh = seen === null ? [] :', 'const fresh = seen === null ? ids :')],
