@@ -86,7 +86,9 @@ Page({
     this.setData({
       statusBarHeight: nav.statusBarHeight,
       navPaddingRight: nav.navPaddingRight,
-      headerHeight: nav.headerHeight,
+      // 本页用系统导航栏（json 未设 navigationStyle: custom）：customNav.headerHeight 含状态栏 + 胶囊栏，
+      // 直接用会在步骤条下多出一截空白 → 首帧先扣掉这两段，onReady 再按页头实测高度锚定（与宠物定制页同口径）
+      headerHeight: nav.headerHeight - nav.statusBarHeight - nav.navBarHeight + Math.round((nav.mottoHeight / 88) * 110),
       activeCategory: options.category || '',
       theme: options.theme || '',
       selectedPackagingId,
@@ -112,6 +114,25 @@ Page({
     trackBehavior('custom_enter', 'source', (options && options.from) || 'direct')
     this.updateStepUi(1)
     this.bootstrap(options)
+  },
+
+  onReady() {
+    this.syncStickyHeaderHeight()
+  },
+
+  /** 按页头实际高度锚定滚动区，避免遮挡或断层（同 custom/pet） */
+  syncStickyHeaderHeight() {
+    wx.createSelectorQuery()
+      .in(this)
+      .select('.sticky-header')
+      .boundingClientRect((rect) => {
+        if (!rect || !rect.height) return
+        const next = Math.ceil(rect.bottom)
+        if (next > 0 && next !== this.data.headerHeight) {
+          this.setData({ headerHeight: next })
+        }
+      })
+      .exec()
   },
 
   onShow() {

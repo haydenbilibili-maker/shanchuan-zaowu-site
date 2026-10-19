@@ -13,7 +13,8 @@ module.exports.priceDelta = function(item) {
 <view class="page-custom">
 
   <view class="sticky-header" >
-    <view class="nav-row" style="padding-right: {{navPaddingRight}}px;">
+    <!-- 2026-10-19 产品负责人「优化此页面顶部样式」：本页是系统导航栏，胶囊不在页面里 → 标题行左右对称留白（原右侧让胶囊导致主标题偏左） -->
+    <view class="nav-row">
       <view class="nav-brand">
         <text class="nav-sub">SPECIMEN CUSTOM · ATELIER</text>
         <text class="nav-title">标本定制</text>
@@ -22,7 +23,7 @@ module.exports.priceDelta = function(item) {
 
     <view class="nav-motto">
       <text class="motto-primary">把山海带回家</text>
-      <text class="motto-secondary">五步完成方案 · 门店制作约 {{estimatedDays}} 个工作日</text>
+      <text class="motto-secondary">门店制作约 {{estimatedDays}} 个工作日</text>
     </view>
 
     <view class="header-rail-full">
@@ -53,7 +54,6 @@ module.exports.priceDelta = function(item) {
       <view class="panel-lead" wx:if="{{currentStepMeta}}">
         <view class="panel-lead-head">
           <text class="panel-title">{{currentStepMeta.title}}</text>
-          <text class="panel-index">STEP 0{{currentStep}} / 05</text>
         </view>
         <text class="panel-desc">{{currentStepMeta.desc}}</text>
       </view>

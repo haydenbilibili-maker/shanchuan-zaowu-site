@@ -149,7 +149,9 @@ const FILES = {
   mgrCfgJs: 'subpackages/manager/manager/managerPageConfig.js',
   staffHubJs: 'subpackages/extra/staff/index.js',
   certPageWxml: 'subpackages/business/certificate/index.wxml',
-  certPageWxss: 'subpackages/business/certificate/index.wxss'
+  certPageWxss: 'subpackages/business/certificate/index.wxss',
+  customJs: 'subpackages/feature/custom/index.js',
+  customWxml: 'subpackages/feature/custom/index.wxml'
 }
 /** 无 require 的 CommonJS 小模块：内存里求值拿 exports（失败返回 {}） */
 function loadCjs(src) {
@@ -318,6 +320,11 @@ function checks(s) {
     add('R15-1 定制页头两段高度与 customNav 预留一致（说明 88rpx / 步骤条 148rpx，否则内容区会钻进页头或留缝）',
       navRpx('mottoHeight') > 0 && cssH('.nav-motto') === navRpx('mottoHeight') && cssH('.header-rail-full') === navRpx('stepBarHeight'))
   }
+  // 2026-10-19 产品负责人「优化此页面顶部样式」（真机：主标题偏左、步骤条下大段空白）
+  add('R15-3 定制页（系统导航栏）：标题行左右对称不让胶囊；顶距不含状态栏 / 胶囊栏，onReady 按页头实测高度锚定；不重复「STEP 0x / 05」',
+    /<view class="nav-row">/.test(s.customWxml) && !/navPaddingRight/.test(s.customWxml) &&
+      /headerHeight: nav\.headerHeight - nav\.statusBarHeight - nav\.navBarHeight/.test(s.customJs) &&
+      /onReady\(\) \{\s*this\.syncStickyHeaderHeight\(\)/.test(s.customJs) && !/panel-index/.test(s.customWxml))
   add('R15-2 定制页实心金只给底栏主按钮（步骤条当前步不再是实心金圆点）',
     solidGold(s.customWxss) === '.btn-primary' && !/grain-overlay/.test(s.customWxss))
   // 2026-10-17 产品负责人：钱包 / 礼券 / 积分「不要更改卡片的金属与皮质视觉质感，只做页面的视觉对齐和细节质感提升」
@@ -1033,6 +1040,8 @@ if (process.argv.includes('--selftest')) {
     ['从最近记录进也打字', 'identifyJs', (t) => t.replace("      url += '&fresh=1'\n", '')],
     ['历史已核销也落印', 'pickupJs', (t) => t.replace("      const closedNow = pass.statusTone === 'closed';", "      const closedNow = pass.statusTone === 'closed';\n      if (claimedNow) this.setData({ claimLive: true });")],
     ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
+    ['定制页标题行又让胶囊', 'customWxml', (t) => t.replace('<view class="nav-row">', '<view class="nav-row" style="padding-right: {{navPaddingRight}}px;">')],
+    ['定制页顶距又含系统导航', 'customJs', (t) => t.replace('headerHeight: nav.headerHeight - nav.statusBarHeight - nav.navBarHeight + Math.round((nav.mottoHeight / 88) * 110),', 'headerHeight: nav.headerHeight,')],
     ['证书加载改回铸造', 'certPageWxml', (t) => t.replace('正在打印专属证书…', '正在铸造专属证书…')],
     ['证书纸只出一次不循环', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) infinite;', 'animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) forwards;')],
     ['射灯首次进页全部重播', 'achLitJs', (t) => t.replace('const fresh = seen === null ? [] :', 'const fresh = seen === null ? ids :')],
