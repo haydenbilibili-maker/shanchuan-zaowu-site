@@ -7,8 +7,8 @@
   <view class="cart-header">
     <view class="header-left">
       <view class="header-title">
-        <text class="title-cn">购物车</text>
         <text class="title-en">SHOPPING CART</text>
+        <text class="title-cn">购物车</text>
       </view>
       <text class="header-meta" wx:if="{{!loading && cartList.length > 0}}">{{cartList.length}} 件待结算</text>
       <text class="header-meta" wx:elif="{{!loading && currentFolder !== 'all'}}">当前：{{currentFolderName}}</text>
@@ -246,38 +246,8 @@
       </view>
       <view class="addon-close" catchtap="dismissCheckoutAddon" hover-class="tap-press" hover-stay-time="80">×</view>
     </view>
-    <view class="coupon-chip" bindtap="openCouponModal" hover-class="tap-press">
-      <image class="coupon-icon" src="/assets/icons/coupon.png" mode="aspectFit"></image>
-      <text wx:if="{{selectedCoupon && selectedCoupon.type === 'freeShipping'}}">免邮券</text>
-      <text wx:elif="{{selectedCoupon && couponSaved > 0}}">已减 ¥{{couponSaved}}</text>
-      <text wx:elif="{{selectedCoupon}}">已选礼券</text>
-      <text wx:else>选择礼券</text>
-    </view>
-
-    <view class="bar-main">
-      <view class="select-all" bindtap="toggleSelectAll" hover-class="tap-press" hover-stay-time="80">
-        <view class="gold-checkbox sm {{allSelected ? 'checked' : ''}}">
-          <view class="tick" wx:if="{{allSelected}}"><image src="/assets/icons/done.png" mode="aspectFit"></image></view>
-        </view>
-        <text class="select-label">全选</text>
-      </view>
-
-      <view class="total-block">
-        <view class="total-row" wx:if="{{vipSaved > 0 || couponSaved > 0}}">
-          <text class="total-hint" wx:if="{{vipSaved > 0}}">会员 -¥{{vipSaved}}</text>
-          <text class="total-hint" wx:if="{{couponSaved > 0}}">礼券 -¥{{couponSaved}}</text>
-        </view>
-        <view class="total-main">
-          <text class="total-label">合计</text>
-          <text class="total-val">¥{{finalPrice}}</text>
-        </view>
-      </view>
-
-      <view class="checkout-btn {{selectedCount === 0 ? 'disabled' : ''}}" bindtap="handleCheckout" hover-class="{{selectedCount === 0 ? '' : 'checkout-btn-hover'}}">
-        <text>付款入藏</text>
-        <text class="checkout-count" wx:if="{{selectedCount > 0}}">({{selectedCount}})</text>
-      </view>
-    </view>
+    <!-- 2026-10-19 产品负责人「购物车整体质感优化，交互提升」：底部原来叠四层（漂浮礼券标签 + 顺手带走 + 结算栏 + 运费行）。
+         包邮进度挪到结算栏上方（一条线）；礼券入口并进合计下方；结算栏顶部渐隐接清单。计算与流程一概不动。 -->
     <!-- 需求 2/3：免邮凑单 —— 未达包邮门槛时把「还差多少 + 加哪一件」说清；已包邮则回落到规则文案 -->
     <view class="freeship-row" wx:if="{{freeShip && !freeShip.reached}}">
       <view class="freeship-head">
@@ -300,6 +270,39 @@
     </view>
     <view class="shipping-hint-row" wx:elif="{{shippingHint}}">
       <text class="shipping-hint">{{shippingHint}}</text>
+    </view>
+
+    <view class="bar-main">
+      <view class="select-all" bindtap="toggleSelectAll" hover-class="tap-press" hover-stay-time="80">
+        <view class="gold-checkbox sm {{allSelected ? 'checked' : ''}}">
+          <view class="tick" wx:if="{{allSelected}}"><image src="/assets/icons/done.png" mode="aspectFit"></image></view>
+        </view>
+        <text class="select-label">全选</text>
+      </view>
+
+      <view class="total-block">
+        <view class="total-main">
+          <text class="total-label">合计</text>
+          <text class="total-val" wx:if="{{selectedCount > 0}}">¥{{finalPrice}}</text>
+          <text class="total-empty" wx:else>未选藏品</text>
+        </view>
+        <view class="total-row">
+          <text class="total-hint" wx:if="{{vipSaved > 0}}">会员 -¥{{vipSaved}}</text>
+          <view class="coupon-chip" bindtap="openCouponModal" hover-class="tap-press" hover-stay-time="80">
+            <image class="coupon-icon" src="/assets/icons/coupon.png" mode="aspectFit"></image>
+            <text wx:if="{{selectedCoupon && selectedCoupon.type === 'freeShipping'}}">免邮券</text>
+            <text wx:elif="{{selectedCoupon && couponSaved > 0}}">礼券 -¥{{couponSaved}}</text>
+            <text wx:elif="{{selectedCoupon}}">已选礼券</text>
+            <text wx:else>礼券 · 选择</text>
+            <text class="coupon-arr">›</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="checkout-btn {{selectedCount === 0 ? 'disabled' : ''}}" bindtap="handleCheckout" hover-class="{{selectedCount === 0 ? '' : 'checkout-btn-hover'}}">
+        <text>付款入藏</text>
+        <text class="checkout-count" wx:if="{{selectedCount > 0}}">({{selectedCount}})</text>
+      </view>
     </view>
   </view>
 
