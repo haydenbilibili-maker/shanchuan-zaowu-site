@@ -562,25 +562,6 @@ const SCENES = [
       categories: [{ id: 'product', label: '藏品建议' }], activeCategory: 'product', messageText: '', ticketImages: [], maxTicketImages: 3, contactPhone: '', submitting: false,
       receipt: { show: true, no: 'FB-7Q2K9X', label: '藏品建议' } },
     css: '.ui-pop-mask.ui-pop-mask.is-center { display: flex !important; }' },
-  // 2026-10-19 购物车整体质感：未选 / 已选两态（滚动区与结算栏是 fixed，预览改为正常流排布）
-  { name: 'cart-none', h: 1500, wxml: 'pages/cart/index', data: {
-      loading: false, statusBarHeight: 44, scrollTopPx: 0, scrollHeightPx: 900, currentFolder: 'all', currentFolderName: '全部', folders: [], invalidCount: 0,
-      cartList: [
-        { id: 'a', productId: 'p1', title: '贝壳杯垫', image: P[0], price: 39, count: 1, stock: 5, selected: false },
-        { id: 'b', productId: 'p2', title: '乌桕叶标本', latinName: 'Triadica sebifera', image: P[1], price: 5, count: 1, stock: 5, selected: false },
-        { id: 'c', productId: 'p3', title: '幸运四叶草标本', latinName: 'Trifolium repens', image: P[2], price: 19, count: 1, stock: 5, selected: false }],
-      addonPick: { id: 'p9', image: P[3] || P[0] }, addonText: { title: '顺手带走一件', reason: '10 元以下 · 结账台上随手带一件', priceText: '¥5.00', cta: '带走' },
-      freeShip: { reached: false, gapTitle: '全场满 ¥299 免运费', detailText: '顺丰 · 当前运费 ¥18', progress: 0 },
-      selectedCount: 0, allSelected: false, finalPrice: '0.00', vipSaved: 0, couponSaved: 0, selectedCoupon: null, recommendList: [] },
-    css: '.scroll-panel { position: relative !important; top: 0 !important; height: auto !important; } .checkout-bar { position: relative !important; bottom: 0 !important; margin-top: 60px; } .gold-checkbox.checked { animation: none !important; }' },
-  { name: 'cart-some', h: 1500, wxml: 'pages/cart/index', base: 'cart-none', data: {
-      cartList: [
-        { id: 'a', productId: 'p1', title: '贝壳杯垫', image: P[0], price: 39, count: 1, stock: 5, selected: true },
-        { id: 'b', productId: 'p2', title: '乌桕叶标本', latinName: 'Triadica sebifera', image: P[1], price: 5, count: 1, stock: 5, selected: true },
-        { id: 'c', productId: 'p3', title: '幸运四叶草标本', latinName: 'Trifolium repens', image: P[2], price: 19, count: 1, stock: 5, selected: false }],
-      freeShip: { reached: false, gapTitle: '再选 ¥255 包邮', detailText: '顺丰 · 当前运费 ¥18', progress: 15 },
-      selectedCount: 2, finalPrice: '44.00', vipSaved: 2.2, couponSaved: 0 },
-    css: '.scroll-panel { position: relative !important; top: 0 !important; height: auto !important; } .cart-scroll { overflow: visible !important; } .checkout-bar { position: relative !important; bottom: 0 !important; margin-top: 60px; } .gold-checkbox.checked { animation: none !important; }' },
   // 2026-10-19 证书加载：打印机出纸（定格在纸已吐出的一帧）
   { name: 'cert-printing', h: 1100, wxml: 'subpackages/business/certificate/index', data: { isMinting: true, statusBarHeight: 44, missingId: false, certState: '' },
     // 加载层是 absolute + 100% 高，靠真机视口撑开；离线预览改为正常流排布（预览专用）

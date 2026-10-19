@@ -55,11 +55,10 @@ page {
 }
 
 .title-en {
-  font-family: var(--font-mono);
   font-size: var(--fs-18);
   color: var(--brass-400);
-  letter-spacing: 0.22em;
-  margin-bottom: 6rpx;
+  letter-spacing: 0.14em;
+  margin-top: 6rpx;
 }
 
 .header-meta {
@@ -106,10 +105,9 @@ page {
 }
 
 .filter-chip.active {
-  /* 2026-10-19：实心金只留给「付款入藏」，分类选中改铜边浅底（与馆藏页品类同语言） */
-  background: rgba(196, 167, 108, 0.14);
+  background: var(--brass-400);
   border-color: var(--brass-400);
-  color: var(--brass-300);
+  color: var(--color-bg);
   font-weight: 500;
 }
 
@@ -234,24 +232,17 @@ page {
   margin-right: var(--space-3);
   margin-top: 4rpx;
   flex-shrink: 0;
-  /* 2026-10-19：未选圆圈原为 brass-800 发丝 + 深底，几乎看不见 → 铜色描边、透明底 */
-  border: 2rpx solid rgba(196, 167, 108, 0.55);
+  border: 1rpx solid var(--brass-800);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  background: var(--color-bg-elevated);
 }
 
 .gold-checkbox.checked {
   background: var(--brass-400);
   border-color: var(--brass-400);
-  animation: cb-pop 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.4);
-}
-@keyframes cb-pop {
-  0% { transform: scale(0.8); }
-  60% { transform: scale(1.12); }
-  100% { transform: scale(1); }
 }
 
 .gold-checkbox.disabled { opacity: 0.35; }
@@ -662,34 +653,28 @@ page {
   right: 0;
   bottom: var(--tabbar-offset);
   z-index: 100;
-  padding: 12rpx var(--space-4) var(--space-3);
+  padding: 0 var(--space-4) var(--space-3);
   /* 实色底：运费行与结算区同属一块，不再像挤在底栏与 tabBar 缝里 */
   background: var(--color-bg);
   box-sizing: border-box;
 }
 
-/* 清单滚到结算栏处渐隐，不再被硬切（2026-10-19） */
-.checkout-bar::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -56rpx;
-  height: 56rpx;
-  background: linear-gradient(180deg, rgba(26, 24, 20, 0), var(--color-bg));
-  pointer-events: none;
-}
-
-/* 礼券入口：原为浮在结算栏上方的小标签页，并进合计下方一行（2026-10-19） */
 .coupon-chip {
-  display: inline-flex;
+  position: absolute;
+  top: -44rpx;
+  right: var(--space-4);
+  z-index: 2;
+  display: flex;
   align-items: center;
-  gap: 6rpx;
-  padding: 4rpx 0 4rpx 12rpx;
+  gap: 8rpx;
+  padding: 8rpx 20rpx;
+  background: var(--color-bg-card);
+  border: 1rpx solid var(--brass-800);
+  border-bottom: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   font-size: var(--fs-20);
-  color: var(--brass-300);
+  color: var(--brass-400);
 }
-.coupon-arr { font-size: var(--fs-22); color: var(--brass-400); }
 
 .coupon-icon { width: 24rpx; height: 24rpx; }
 
@@ -708,10 +693,7 @@ page {
 .select-all { display: flex; align-items: center; flex-shrink: 0; }
 .select-label { font-size: var(--fs-24); color: var(--color-text-body); }
 .total-block { flex: 1; min-width: 0; text-align: right; }
-.total-row { display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-end; gap: 4rpx; margin-top: 4rpx; white-space: nowrap; }
-.total-row .total-hint,
-.total-row .coupon-chip { flex-shrink: 0; white-space: nowrap; }
-.total-empty { font-size: var(--fs-24); color: var(--color-text-secondary); letter-spacing: 0.04em; }
+.total-row { margin-bottom: 4rpx; }
 .total-hint { font-size: var(--fs-20); color: var(--color-primary); font-family: var(--font-mono); margin-left: 8rpx; }  /* VIS3 纪律 05：减免为金色（原弱化色 #6B6560 也低于说明文字下限 #A09A90） */
 
 .total-main {
@@ -731,7 +713,7 @@ page {
 }
 
 .shipping-hint-row {
-  margin-bottom: 12rpx;
+  margin-top: 10rpx;
   padding: 0 8rpx 4rpx;
   text-align: center;
 }
@@ -760,10 +742,8 @@ page {
 }
 
 .checkout-btn.disabled {
-  /* 未选：描边空按钮（原为看不清的暗色块），选了才是实心金 */
-  background: transparent;
-  color: var(--color-text-secondary);
-  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
 }
 
 .checkout-btn-hover { background: var(--brass-500); }
@@ -873,7 +853,7 @@ page {
 
 /* === 需求 2/3：免邮凑单行（未达包邮门槛时替代纯规则文案） === */
 .freeship-row {
-  margin: 0 8rpx 14rpx;
+  margin-top: 10rpx;
   display: flex;
   flex-direction: column;
   gap: 10rpx;
@@ -957,8 +937,4 @@ page {
   .scanner {
     animation: none;
   }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gold-checkbox.checked { animation: none; }
 }

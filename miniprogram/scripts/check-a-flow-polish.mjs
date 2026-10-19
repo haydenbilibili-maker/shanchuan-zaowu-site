@@ -151,9 +151,7 @@ const FILES = {
   certPageWxml: 'subpackages/business/certificate/index.wxml',
   certPageWxss: 'subpackages/business/certificate/index.wxss',
   customJs: 'subpackages/feature/custom/index.js',
-  customWxml: 'subpackages/feature/custom/index.wxml',
-  cartWxml: 'pages/cart/index.wxml',
-  cartJs: 'pages/cart/index.js'
+  customWxml: 'subpackages/feature/custom/index.wxml'
 }
 /** 无 require 的 CommonJS 小模块：内存里求值拿 exports（失败返回 {}） */
 function loadCjs(src) {
@@ -837,13 +835,6 @@ function checks(s) {
       /id="hall-\{\{index\}\}"/.test(s.catWxml) && /hallIntoView: `hall-\$\{Math\.max\(0, idx - 1\)\}`/.test(s.catJs) &&
       /\.category-wrap \{ display: inline-flex; flex-wrap: nowrap;/.test(s.catWxss) &&
       !/indicator-dots="\{\{contentTotal > 1\}\}"/.test(s.catWxml) && /class="archive-progress"/.test(s.catWxml))
-  // 2026-10-19 产品负责人「购物车整体质感优化，交互提升」
-  add('R4-6 购物车底部收成一块：礼券入口并进合计下方（不再浮标）、包邮进度在结算栏上方、未选显示「未选藏品」、分类选中不是实心金',
-    /<view class="total-row">[\s\S]*?<view class="coupon-chip" bindtap="openCouponModal"/.test(s.cartWxml) &&
-      /<text class="total-empty" wx:else>未选藏品<\/text>/.test(s.cartWxml) &&
-      s.cartWxml.indexOf('class="freeship-row"') < s.cartWxml.indexOf('class="bar-main"') &&
-      !/\.coupon-chip \{[^}]*position: absolute/.test(s.cartWxss) && /const bottomOverhangPx = 0/.test(s.cartJs) &&
-      !/\.filter-chip\.active \{[^}]*background: var\(--brass-400\)/.test(s.cartWxss))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
 
   // R5-1 首页恰好一屏：容器 100vh 纵向 flex 且裁切，顶部占位 + 滚动区（flex:1）+ 底栏让位 = 视口；不再「占位 + 满屏滚动区」叠高
@@ -1057,8 +1048,6 @@ if (process.argv.includes('--selftest')) {
     ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
     ['定制页标题行又让胶囊', 'customWxml', (t) => t.replace('<view class="nav-row">', '<view class="nav-row" style="padding-right: {{navPaddingRight}}px;">')],
     ['定制页顶距又含系统导航', 'customJs', (t) => t.replace('headerHeight: nav.headerHeight - nav.statusBarHeight - nav.navBarHeight + Math.round((nav.mottoHeight / 88) * 110),', 'headerHeight: nav.headerHeight,')],
-    ['购物车礼券又浮在结算栏上方', 'cartWxss', (t) => t.replace('.coupon-chip {\n  display: inline-flex;', '.coupon-chip {\n  position: absolute;\n  display: inline-flex;')],
-    ['购物车未选又显示 ¥0.00', 'cartWxml', (t) => t.replace('<text class="total-empty" wx:else>未选藏品</text>', '')],
     ['馆藏品类又折行', 'catWxss', (t) => t.replace('.category-wrap { display: inline-flex; flex-wrap: nowrap;', '.category-wrap { display: flex; flex-wrap: wrap;')],
     ['档案圆点回来', 'catWxml', (t) => t.replace('current="{{archiveIndex}}"', 'current="{{archiveIndex}}"\n          indicator-dots="{{contentTotal > 1}}"')],
     ['证书加载改回铸造', 'certPageWxml', (t) => t.replace('正在打印专属证书…', '正在铸造专属证书…')],

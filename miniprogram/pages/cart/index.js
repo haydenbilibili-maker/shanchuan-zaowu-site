@@ -136,9 +136,8 @@ Page(withAppModal({
   async remeasureScroll() {
     const tabPx = estimateTabBarPx()
     const hasCheckout = this.data.cartList.length > 0 && !this.data.loading
-    // 2026-10-19：礼券入口已并进结算栏（原 absolute top:-44rpx 浮标需避让 52rpx）；
-    // 结算栏顶部的渐隐层是要盖在清单上的（清单末尾有 scroll-spacer 留白），不再额外避让
-    const bottomOverhangPx = 0
+    // 礼券 chip absolute top:-44rpx，测量底栏 top 时需额外避让
+    const bottomOverhangPx = hasCheckout ? rpxToPx(52) : 0
     const statusPad = this.data.statusBarHeight || 20
     const area = await measureFixedScroll(this, {
       topSelector: '.cart-top',
