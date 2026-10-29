@@ -815,6 +815,7 @@ module.exports.saveLabel = saveLabel;
     visible="{{showCouponPrint}}"
     title="{{printCoupon.title}}"
     value="{{printCoupon.value}}"
+    type="{{printCoupon.type}}"
     minSpend="{{printCoupon.minSpend}}"
     expireDate="{{printCoupon.expireDate}}"
     channel="{{printCoupon.channel}}"

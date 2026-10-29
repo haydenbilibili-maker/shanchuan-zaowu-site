@@ -1,4 +1,4 @@
-const { couponChannelLabel } = require('../../../../utils/couponHelper')
+const { couponChannelLabel, couponFaceLabel } = require('../../../../utils/couponHelper')
 const {
   LAMP,
   printPhaseLamp,
@@ -17,6 +17,8 @@ Component({
     visible: { type: Boolean, value: false },
     title: { type: String, value: '礼券' },
     value: { type: Number, value: 0 },
+    // 可选：discount 时券面印「8折」而非「¥8」；不传按金额券（旧调用方不变）
+    type: { type: String, value: '' },
     minSpend: { type: Number, value: 0 },
     expireDate: { type: String, value: '' },
     channel: { type: String, value: 'all' },
@@ -30,6 +32,7 @@ Component({
     failedShow: false,
     animating: false,
     valueLabel: '0',
+    isFold: false,
     minSpendLabel: '',
     channelLabel: '',
     printLightClass: LAMP.muted,
@@ -109,7 +112,10 @@ Component({
         printing: false,
         finished: false,
         failedShow: false,
-        valueLabel: String(value),
+        valueLabel: this.properties.type === 'discount'
+          ? couponFaceLabel({ type: 'discount', value }).replace(/折$/, '')
+          : String(value),
+        isFold: this.properties.type === 'discount',
         minSpendLabel: minSpend > 0 ? `满 ¥${minSpend} 可用` : '无门槛',
         channelLabel,
         printLightClass: printPhaseLamp('standby'),

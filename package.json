@@ -184,6 +184,8 @@
     "test:wallet-ledger:selftest": "node miniprogram/scripts/test-wallet-ledger.mjs --selftest",
     "test:coupon-fold": "node miniprogram/scripts/test-coupon-fold.mjs",
     "test:coupon-fold:selftest": "node miniprogram/scripts/test-coupon-fold.mjs --selftest",
+    "test:coupon-campaign-window": "node miniprogram/scripts/test-coupon-campaign-window.mjs",
+    "test:coupon-campaign-window:selftest": "node miniprogram/scripts/test-coupon-campaign-window.mjs --selftest",
     "test:pickup-pass": "node miniprogram/scripts/test-pickup-pass-refresh.mjs",
     "test:pickup-pass:selftest": "node miniprogram/scripts/test-pickup-pass-refresh.mjs --selftest",
     "test:member-card-guest": "node miniprogram/scripts/test-member-card-guest.mjs",

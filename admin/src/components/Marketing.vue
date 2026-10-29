@@ -44,6 +44,16 @@
               </template>
             </el-table-column>
             <el-table-column prop="condition" label="门槛" />
+            <el-table-column label="领取时间" min-width="150">
+              <template #default="{ row }">
+                {{ describeCouponWindow(row) || '不限' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="有效期" min-width="130">
+              <template #default="{ row }">
+                {{ describeCouponExpiry(row) }}
+              </template>
+            </el-table-column>
             <el-table-column label="渠道" width="110">
               <template #default="{ row }">
                 {{ channelLabel(row.channel) }}
@@ -202,11 +212,11 @@
                   </div>
                   <div class="c-right">
                     <div class="c-name">{{ previewItem.name || '优惠券名称' }}</div>
-                    <div class="c-time">有效期：2025.12.31</div>
+                    <div class="c-time">有效期：{{ previewExpiryText }}</div>
                     <div class="c-btn">立即领取</div>
                   </div>
                 </div>
-                <div class="preview-tip">效果将实时同步至小程序“领券中心”</div>
+                <div class="preview-tip">启用且在领取时间内的券，出现在小程序商品详情页「礼券」抽屉的「可领取」</div>
               </div>
 
               <div v-if="activeModule === 'vip'" class="preview-vip-wrap">
@@ -280,7 +290,43 @@
             <el-input-number v-model="form.minSpend" :min="0" :precision="0" />
             <span class="hint" style="margin-left:8px;color:#999;font-size:12px;">写入 minSpend，小程序运行时热读</span>
           </el-form-item>
-          <el-form-item label="有效天数"><el-input-number v-model="form.expireDays" :min="1" :precision="0" /></el-form-item>
+          <el-form-item label="领取时间" prop="endTime">
+            <div class="coupon-window">
+              <el-date-picker
+                v-model="form.startTime"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                format="YYYY-MM-DD HH:mm:ss"
+                placeholder="开始（不填=立即）"
+              />
+              <span class="coupon-window-sep">至</span>
+              <el-date-picker
+                v-model="form.endTime"
+                type="datetime"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                format="YYYY-MM-DD HH:mm:ss"
+                placeholder="截止（不填=不限）"
+              />
+            </div>
+            <span class="coupon-form-hint">北京时间；不填与以前一样，启用即可领</span>
+          </el-form-item>
+          <el-form-item label="到期方式" prop="fixedExpireTime">
+            <el-radio-group v-model="form.expireMode">
+              <el-radio value="days">领取后 N 天</el-radio>
+              <el-radio value="fixed">固定到期日</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item v-if="form.expireMode === 'fixed'" label="统一到期">
+            <el-date-picker
+              v-model="form.fixedExpireTime"
+              type="datetime"
+              value-format="YYYY-MM-DD HH:mm:ss"
+              format="YYYY-MM-DD HH:mm:ss"
+              placeholder="北京时间，如 2026-11-15 23:59:59"
+            />
+            <span class="coupon-form-hint is-inline">领到的券都在这一刻失效</span>
+          </el-form-item>
+          <el-form-item v-else label="有效天数"><el-input-number v-model="form.expireDays" :min="1" :precision="0" /></el-form-item>
           <el-form-item label="每人限领"><el-input-number v-model="form.limitPerUser" :min="0" :precision="0" /></el-form-item>
           <el-form-item label="适用渠道">
             <el-radio-group v-model="form.channel">
@@ -374,6 +420,7 @@ import { COLLECTIONS, fetchCollectionSorted, cdnAdd, cdnUpdate, cdnRemove, getTe
 import { Plus, Edit, Delete, Ticket, Connection, Select, Picture, Minus } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import ImageUploadField from './ImageUploadField.vue'
+import { toInstant, bjWallToDate, dateToBjWall, describeCouponExpiry, describeCouponWindow } from '../utils/couponWindow.js'
 
 const CHANNEL_OPTIONS = ['online', 'store', 'all']
 
@@ -404,7 +451,12 @@ function emptyForm(module = 'coupon') {
     isOffShelf: false,
     expireDays: 30,
     limitPerUser: 0,
-    channel: 'all'
+    channel: 'all',
+    // 券模板时间窗（北京时间墙钟字符串，保存时换成绝对时刻）
+    startTime: '',
+    endTime: '',
+    expireMode: 'days',
+    fixedExpireTime: ''
   }
 }
 
@@ -422,6 +474,7 @@ const listData = ref([])
 const previewItem = ref({}) // 当前预览的对象
 const dialogVisible = ref(false)
 const isEditing = ref(false) // 标记是新增还是编辑
+const editingRow = ref(null) // 编辑前的原始行：清空时间字段时据此写 null
 const imageUploading = ref(false)
 const onImageUploading = (v) => {
   imageUploading.value = !!v
@@ -515,6 +568,14 @@ watch(form, (newVal) => {
   }
 }, { deep: true })
 
+/** 预览卡「有效期」：编辑中读表单（北京时间墙钟），否则读行 */
+const previewExpiryText = computed(() => {
+  const p = previewItem.value || {}
+  if (p.expireMode === 'fixed') return p.fixedExpireTime ? `至 ${String(p.fixedExpireTime).slice(0, 16)}` : '未选到期时间'
+  if (p.expireMode === 'days') return `领取后${parseInt(p.expireDays, 10) > 0 ? parseInt(p.expireDays, 10) : 30}天`
+  return describeCouponExpiry(p)
+})
+
 const dialogTitle = computed(() => {
   const action = isEditing.value ? '编辑' : '新建'
   const map = { coupon: '优惠券', reward: '积分兑换品', vip: '会员权益卡', virtual: '权益商品' }
@@ -523,6 +584,7 @@ const dialogTitle = computed(() => {
 
 const openEditor = (module) => {
   isEditing.value = false
+  editingRow.value = null
   imageUploading.value = false
   Object.assign(form, emptyForm(module))
   previewItem.value = { ...form }
@@ -542,8 +604,13 @@ const editItem = (row) => {
     expireDays: parseInt(row && row.expireDays, 10) > 0 ? parseInt(row.expireDays, 10) : 30,
     limitPerUser: parseInt(row && row.limitPerUser, 10) || 0,
     active: row && row.active !== false,
-    isOffShelf: !!(row && row.isOffShelf)
+    isOffShelf: !!(row && row.isOffShelf),
+    startTime: dateToBjWall(row && row.startTime),
+    endTime: dateToBjWall(row && row.endTime),
+    expireMode: toInstant(row && row.fixedExpireTime) ? 'fixed' : 'days',
+    fixedExpireTime: dateToBjWall(row && row.fixedExpireTime)
   })
+  editingRow.value = row || null
   previewItem.value = { ...form }
   dialogVisible.value = true
 }
@@ -560,18 +627,32 @@ function buildCouponPayload() {
   const name = String(form.name || '').trim()
   const minSpend = Number(form.minSpend) || 0
   const channel = normalizeChannel(form.channel)
-  return {
+  const fixedMode = form.expireMode === 'fixed'
+  const payload = {
     name,
     type: form.type === 'discount' ? 'discount' : 'cash',
     value: Number(form.value) || 0,
     minSpend,
     condition: String(form.condition || '').trim() || (minSpend > 0 ? `满${minSpend}可用` : '无门槛'),
-    expireDays: parseInt(form.expireDays, 10) > 0 ? parseInt(form.expireDays, 10) : 30,
+    // 固定到期：不再叠「领取后 N 天」（receiveCoupon 见 expireDays 为 0 即只按固定到期日）
+    expireDays: fixedMode ? 0 : (parseInt(form.expireDays, 10) > 0 ? parseInt(form.expireDays, 10) : 30),
     limitPerUser: parseInt(form.limitPerUser, 10) || 0,
     channel,
     active: form.active !== false,
     updateTime: Date.now()
   }
+  // 时间字段：填了才写；编辑时清空原有值写 null（receiveCoupon / getProductCoupons 视 null 为未设）
+  const prev = (isEditing.value && editingRow.value) || {}
+  const timeFields = {
+    startTime: bjWallToDate(form.startTime),
+    endTime: bjWallToDate(form.endTime),
+    fixedExpireTime: fixedMode ? bjWallToDate(form.fixedExpireTime) : null
+  }
+  Object.keys(timeFields).forEach((key) => {
+    if (timeFields[key]) payload[key] = timeFields[key]
+    else if (prev[key] != null && prev[key] !== '') payload[key] = null
+  })
+  return payload
 }
 
 function buildRewardPayload() {
@@ -652,7 +733,33 @@ const rewardRules = computed(() => {
 const moduleFormRules = computed(() => {
   if (activeModule.value === 'reward') return rewardRules.value
   if (activeModule.value === 'coupon') {
-    return { name: [{ required: true, message: '请填写优惠券名', trigger: 'blur' }] }
+    return {
+      name: [{ required: true, message: '请填写优惠券名', trigger: 'blur' }],
+      endTime: [{
+        validator: (rule, value, callback) => {
+          if (form.startTime && !bjWallToDate(form.startTime)) return callback(new Error('开始时间格式不对'))
+          if (form.endTime && !bjWallToDate(form.endTime)) return callback(new Error('截止时间格式不对'))
+          const s = bjWallToDate(form.startTime)
+          const e = bjWallToDate(form.endTime)
+          if (s && e && e.getTime() <= s.getTime()) return callback(new Error('截止时间须晚于开始时间'))
+          callback()
+        },
+        trigger: 'change'
+      }],
+      fixedExpireTime: [{
+        validator: (rule, value, callback) => {
+          if (form.expireMode !== 'fixed') return callback()
+          const f = bjWallToDate(form.fixedExpireTime)
+          if (!f) return callback(new Error('请选择统一到期时间'))
+          const s = bjWallToDate(form.startTime)
+          const e = bjWallToDate(form.endTime)
+          if (s && f.getTime() <= s.getTime()) return callback(new Error('到期时间须晚于开始领取时间'))
+          if (e && f.getTime() < e.getTime()) return callback(new Error('到期早于领取截止：截止前领到的券会立即过期'))
+          callback()
+        },
+        trigger: 'change'
+      }]
+    }
   }
   return {}
 })
@@ -786,6 +893,10 @@ onMounted(() => refreshData())
 .missing-collection-alert { margin-bottom: 16px; }
 .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
 .tip { font-size: 12px; color: #999; }
+.coupon-window { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.coupon-window-sep { font-size: 12px; color: var(--el-text-color-secondary); }
+.coupon-form-hint { display: block; width: 100%; font-size: 12px; color: var(--el-text-color-secondary); }
+.coupon-form-hint.is-inline { display: inline; width: auto; margin-left: 8px; }
 .highlight { color: #d4af37; font-weight: bold; }
 
 /* VIP Grid */

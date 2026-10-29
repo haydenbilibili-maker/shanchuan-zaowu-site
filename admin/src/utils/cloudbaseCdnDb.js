@@ -408,6 +408,7 @@ export const PROXY_WRITE_COLLECTIONS = new Set([
   'search_hot_keywords',
   'support_configs',
   'user_behavior_config',
+  'coupons',
 ])
 
 function shouldProxyWrite(collectionName) {

@@ -1298,6 +1298,7 @@ Page(withAppModal({
           printCoupon: {
             title: coupon.title || claimed.title || '礼券',
             value: Number(coupon.value != null ? coupon.value : claimed.value) || 0,
+            type: coupon.type || claimed.type || '',
             minSpend: Number(coupon.minSpend) || 0,
             expireDate,
             channel: coupon.channel || 'all'

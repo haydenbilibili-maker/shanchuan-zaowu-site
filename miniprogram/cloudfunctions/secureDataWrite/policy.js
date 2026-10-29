@@ -51,7 +51,9 @@ const WRITE_POLICY = {
   search_blacklist: { ops: ['add', 'update', 'remove'] },
   search_hot_keywords: { ops: ['add', 'update', 'remove'] },
   support_configs: { ops: ['add', 'update', 'remove'] },
-  user_behavior_config: { ops: ['add', 'update'] }
+  user_behavior_config: { ops: ['add', 'update'] },
+  // 券模板（ERP 营销中心）：规则 write:false，2026-10-29 前 ERP 直写必被拒
+  coupons: { ops: ['add', 'update', 'remove'] }
 }
 
 const OPS = { add: 1, update: 1, remove: 1 }

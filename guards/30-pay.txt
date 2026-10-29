@@ -11,3 +11,5 @@ npm run test:b2b-pay
 npm run check:b2b-pay-submch
 # 2026-10-08：支付「超时后才付款」竞态（confirmPayment / payCallback 共用 fulfillOrder：条件作废 / 有流水号不作废 / 超管补履约过期单不抛异常）
 npm run test:pay-timeout-race
+# 2026-10-29：券模板「领取时间窗 + 固定到期日」（双十一八折券：北京时间三时刻 / 旧券到期不变 / 限 1 含锁定与并发 / 计价地板 / 礼赠 / 门店核销）
+npm run test:coupon-campaign-window

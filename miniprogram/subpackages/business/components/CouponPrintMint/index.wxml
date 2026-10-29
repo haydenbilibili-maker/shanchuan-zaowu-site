@@ -20,8 +20,9 @@
         </view>
 
         <view class="tm-face">
-          <text class="tm-currency">¥</text>
+          <text class="tm-currency" wx:if="{{!isFold}}">¥</text>
           <text class="tm-amount">{{valueLabel}}</text>
+          <text class="tm-currency" wx:if="{{isFold}}">折</text>
         </view>
         <text class="tm-name">{{title}}</text>
 

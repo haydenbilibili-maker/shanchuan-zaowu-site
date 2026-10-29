@@ -57,7 +57,7 @@
     "stock_movements"
   ],
   "_writeDoc": "写权限收紧（2026-09-28 第二轮）。写保护集合 = collections ∪ writeProtectedExtra：写字段（write/create/update/delete）不得对 Web 匿名放行，pendingWrite 内与 writeExceptions 点名的字段除外。ERP 写入已改走 secureDataWrite / syncFinanceData 云函数，新版 ERP 经 CI 上线后应用 staged 规则、再从 pendingWrite / liveWriteDrift 删掉对应项并调小 pendingWriteMax。2026-09-29 第三轮把 products + 17 张内容/配置表纳入写保护（守卫范围扩大，不是回退）：products 与 notification_templates 已是 write:false；其余 16 张 ERP 写入已改走 secureDataWrite，暂列 pendingWrite（13→29），上线后按同法收紧。",
-  "writeProtectedExtra": ["stores", "store_zones", "home_configs", "pet_craft_configs", "products", "notification_templates", "achievement_configs", "benchmark_research_docs", "booking_rules", "content_analytics", "content_assets", "content_display_flags", "content_pieces", "content_reviews", "content_topics", "marketing_rules_config", "member_levels", "recommend_algorithm_config", "search_blacklist", "search_hot_keywords", "support_configs", "user_behavior_config"],
+  "writeProtectedExtra": ["stores", "store_zones", "home_configs", "pet_craft_configs", "products", "notification_templates", "achievement_configs", "benchmark_research_docs", "booking_rules", "content_analytics", "content_assets", "content_display_flags", "content_pieces", "content_reviews", "content_topics", "marketing_rules_config", "member_levels", "recommend_algorithm_config", "search_blacklist", "search_hot_keywords", "support_configs", "user_behavior_config", "coupons"],
   "_writeExceptionsDoc": "允许对匿名放行的写字段（精确值）。purchase_intents.create = 官网询价表单匿名提交（src/lib/purchaseIntent.ts），必须保留。",
   "writeExceptions": {
     "purchase_intents": { "create": "auth != null" }
