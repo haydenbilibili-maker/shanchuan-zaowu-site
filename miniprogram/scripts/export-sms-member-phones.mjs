@@ -15,7 +15,8 @@
  * 剔除规则（被剔除的号码另存一份供核对）：
  *   1. 无手机号 / 不是大陆 11 位手机号（须匹配 ^1[3-9]\d{9}$）—— 只计数；
  *   2. 已注销：users.status === 'cancelled'；
- *   3. 内部账号：openid 在 staff_members（任何状态，含已停用、股东、标本师），或 users.staffRole 非空、users.isAdmin === true；
+ *   3. 内部账号：staff_members（任何状态，含已停用）里角色含 员工/店长/超管 之一，或 users.staffRole 为这三者之一、users.isAdmin === true；
+ *      股东（investor）与标本师（specimen_artisan）**不算内部账号**，照常发送（2026-10-29 产品负责人拍板）；
  *      该号码在任何一个账号上命中内部账号，就整号剔除（同号的其它账号也不发）；
  *   4. 疑似测试：昵称含 测试/test/demo/体验，或号码为同一数字重复 / 13800138000 / 12345678901 一类；
  *   5. 去重：同一号码多个账号只保留一条（取注册最早的账号做明细），明细里记同号账户数。
@@ -47,6 +48,7 @@ const { buildProfile, VALID_ORDER_STATUS } = require(resolve(CRM_DIR, 'segmentat
 const { loadMemberLevels, resolveMemberLevel } = require(resolve(CRM_DIR, 'memberLevels.js'))
 
 const PHONE_RE = /^1[3-9]\d{9}$/
+const INTERNAL_ROLES = new Set(['staff', 'manager', 'super_admin'])
 const TEST_NICK_RE = /测试|test|demo|体验/i
 const TEST_PHONES = new Set(['13800138000', '13800000000', '12345678901', '13888888888'])
 
@@ -120,7 +122,8 @@ const csv = (header, rows) => '\uFEFF' + [header, ...rows].map((r) => r.map(csvC
 
 /** 纯函数：给定原始数据产出名单（selftest 直接调它） */
 export function buildList ({ users, staff, orders, levels }) {
-  const staffOpenids = new Set(staff.map((s) => s.openid).filter(Boolean))
+  const rolesOf = (s) => [s.role, ...(Array.isArray(s.roles) ? s.roles : [])].filter(Boolean)
+  const staffOpenids = new Set(staff.filter((s) => rolesOf(s).some((r) => INTERNAL_ROLES.has(r))).map((s) => s.openid).filter(Boolean))
   const validOrders = new Map()
   for (const o of orders) {
     if (!o || !VALID_ORDER_STATUS.has(o.status)) continue
@@ -139,9 +142,9 @@ export function buildList ({ users, staff, orders, levels }) {
     if (u.status === 'cancelled') reasons.push('已注销')
     if (staffOpenids.has(u._openid)) {
       const s = staff.find((x) => x.openid === u._openid)
-      reasons.push(`内部账号(staff_members:${(s && s.role) || ''}${s && s.status && s.status !== 'active' ? '/' + s.status : ''})`)
+      reasons.push(`内部账号(staff_members:${rolesOf(s).join('+')}${s.status && s.status !== 'active' ? '/' + s.status : ''})`)
     }
-    if (u.staffRole) reasons.push(`内部账号(users.staffRole:${u.staffRole})`)
+    if (INTERNAL_ROLES.has(u.staffRole)) reasons.push(`内部账号(users.staffRole:${u.staffRole})`)
     if (u.isAdmin === true) reasons.push('内部账号(users.isAdmin)')
     if (TEST_NICK_RE.test(String(u.nickName || ''))) reasons.push('疑似测试(昵称)')
     if (looksLikeTestPhone(phone)) reasons.push('疑似测试(号码)')
@@ -196,25 +199,36 @@ function selftest () {
     { _openid: 'g', phone: '13600004444', nickName: '丁', status: 'cancelled', createTime: 8 },
     { _openid: 'h', nickName: '无号', createTime: 9 },
     { _openid: 'i', phone: '0571-8888', nickName: '座机', createTime: 10 },
-    { _openid: 'j', phone: '15800005555', nickName: '店长', staffRole: 'manager', createTime: 11 }
+    { _openid: 'j', phone: '15800005555', nickName: '店长', staffRole: 'manager', createTime: 11 },
+    { _openid: 'k', phone: '15800006666', nickName: '股东', staffRole: 'investor', createTime: 12 },
+    { _openid: 'l', phone: '15800007777', nickName: '标本师', createTime: 13 },
+    { _openid: 'm', phone: '15800008888', nickName: '股东兼店长', createTime: 14 },
+    { _openid: 'n', phone: '15800009999', nickName: '已停用股东', createTime: 15 }
   ]
-  const staff = [{ openid: 'c', role: 'staff', status: 'active' }]
+  const staff = [
+    { openid: 'c', role: 'staff', status: 'active' },
+    { openid: 'k', role: 'investor', status: 'active' },
+    { openid: 'l', role: 'specimen_artisan', status: 'active' },
+    { openid: 'm', role: 'investor', roles: ['investor', 'manager'], status: 'active' },
+    { openid: 'n', role: 'investor', status: 'disabled' }
+  ]
   const orders = [{ _openid: 'b', status: 'paid', totalPrice: 10 }, { _openid: 'a', status: 'pending_pay' }]
   const r = buildList({ users, staff, orders, levels })
   const phones = r.kept.map((k) => k.phone).sort()
   const fails = []
   const expect = (cond, msg) => { if (!cond) fails.push(msg) }
-  expect(JSON.stringify(phones) === JSON.stringify(['13500002222', '13912345678']), '保留名单应只有 2 个号（去重 + 规范化 +86）：' + phones.join(','))
+  expect(JSON.stringify(phones) === JSON.stringify(['13500002222', '13912345678', '15800006666', '15800007777', '15800009999']), '保留名单应为 2 个普通会员 + 股东 + 标本师 + 已停用股东：' + phones.join(','))
+  expect(r.excluded.some((e) => e.phone === '15800008888' && /manager/.test(e.reasons)), '股东兼店长（roles 含 manager）仍须剔除')
   expect(r.kept.find((k) => k.phone === '13912345678').hasOrder === '是', '同号小号的有效订单要计入「下过单」')
   expect(r.kept.find((k) => k.phone === '13912345678').accounts === 2, '同号账户数应为 2')
   expect(r.excluded.some((e) => e.phone === '13700001111' && /内部账号/.test(e.reasons)), '员工号（含同号另一账号）必须整号剔除')
-  expect(r.excluded.some((e) => e.phone === '15800005555'), 'users.staffRole 非空必须剔除')
+  expect(r.excluded.some((e) => e.phone === '15800005555'), 'users.staffRole 为员工/店长/超管必须剔除')
   expect(r.excluded.some((e) => e.phone === '13600004444' && /已注销/.test(e.reasons)), '已注销必须剔除')
   expect(r.excluded.some((e) => e.phone === '13600003333'), '昵称含 test 必须剔除')
   expect(r.counts.noPhone === 1 && r.counts.badFormat === 2, '无号 1 / 非大陆手机号 2（座机 + 12 开头）')
   expect(mask('15912345772') === '159****5772', '打码格式')
   if (fails.length) { console.error('selftest 失败：\n- ' + fails.join('\n- ')); process.exit(1) }
-  console.log('selftest 通过（去重 / +86 规范化 / 员工整号剔除 / 注销 / 测试 / 格式 / 打码）')
+  console.log('selftest 通过（去重 / +86 规范化 / 员工整号剔除 / 股东与标本师保留 / 注销 / 测试 / 格式 / 打码）')
 }
 
 async function main () {
