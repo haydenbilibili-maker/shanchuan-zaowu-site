@@ -18,6 +18,7 @@
 | [提审前专项发版审计_2026-09-15.md](./提审前专项发版审计_2026-09-15.md) | 活文档 | 提审前**必读**：P0 阻断 / 高危 / 文案与交互 / 部署与密钥轮换清单 |
 | [快速测试清单.md](./快速测试清单.md) | 活文档 | 手工冒烟 |
 | [release-registry.md](./release-registry.md) | 活文档 | 上传版本号 + 变更摘要登记（补 CI 缺口） |
+| [双十一短信与横幅_2026-10-29.md](./双十一短信与横幅_2026-10-29.md) | 过程 | 免发版活动落地页取证（藏品详情礼券抽屉）、横幅不支持定时、URL Link 脚本与云函数 `generateUrlLink`、会员号码导出口径、腾讯云营销短信规则 |
 | [database-security-rules.md](./database-security-rules.md) | 活文档 | 安全规则说明 |
 | [idle-cloudfunctions.md](./idle-cloudfunctions.md) | 活文档 | 闲置云函数（待产品确认，勿擅删） |
 | [cloudfunction-sdk.md](./cloudfunction-sdk.md) | 活文档 | wx-server-sdk 已统一 `~3.0.1`（部署后生效） |
