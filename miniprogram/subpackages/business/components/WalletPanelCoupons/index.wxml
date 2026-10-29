@@ -68,6 +68,53 @@
     <text class="sub-warn" wx:if="{{expiringCount}}">{{expiringCount}} 张礼券 {{expiringDays}} 天内到期，请尽快使用</text>
   </view>
 
+  <!-- 可领取：只在有可领券时渲染；发券只由「领取」按钮触发（receiveCoupon） -->
+  <view class="claim-block" wx:if="{{claimables.length}}">
+    <view class="group-head">
+      <text class="group-dot" aria-hidden="true"></text>
+      <text class="group-title">可领取</text>
+      <text class="group-sub">领取后放入下方「可用」</text>
+    </view>
+    <view class="coupon-list">
+      <view class="coupon-card claim-card {{item.claimed ? 'is-claimed' : ''}}" wx:for="{{claimables}}" wx:key="_id">
+        <view class="c-left">
+          <view class="val-box">
+            <text class="amount">{{item.faceLabel}}</text>
+          </view>
+          <text class="condition">{{item.minSpend > 0 ? '满 ' + item.minSpend + ' 可用' : '无门槛'}}</text>
+        </view>
+        <view class="split-line" aria-hidden="true">
+          <view class="circle top"></view>
+          <view class="line"></view>
+          <view class="circle bottom"></view>
+        </view>
+        <view class="c-right">
+          <view class="info">
+            <text class="c-name">{{item.title}}</text>
+            <view class="c-meta-row">
+              <text class="c-tag {{item.channel}}" wx:if="{{item.channelLabel}}">{{item.channelLabel}}</text>
+              <text class="c-date">{{item.expireText}}</text>
+            </view>
+            <view class="c-sub-row" wx:if="{{item.limitText}}">
+              <text class="c-source">{{item.limitText}}</text>
+            </view>
+            <text class="claim-err" wx:if="{{item.claimError}}">{{item.claimError}}</text>
+          </view>
+          <view
+            class="c-status clickable"
+            wx:if="{{!item.claimed}}"
+            bindtap="onClaimTap"
+            hover-class="c-status-press"
+            hover-stay-time="80"
+            data-id="{{item._id}}"
+          >{{claimingId === item._id ? '领取中' : '领取'}}</view>
+          <view class="c-status muted" wx:else>已领取</view>
+        </view>
+        <view class="texture" aria-hidden="true"></view>
+      </view>
+    </view>
+  </view>
+
   <!-- 可用券：平铺 -->
   <view class="coupon-list" wx:if="{{usableCouponCount}}">
     <block wx:for="{{coupons}}" wx:key="_id">

@@ -186,6 +186,8 @@
     "test:coupon-fold:selftest": "node miniprogram/scripts/test-coupon-fold.mjs --selftest",
     "test:coupon-campaign-window": "node miniprogram/scripts/test-coupon-campaign-window.mjs",
     "test:coupon-campaign-window:selftest": "node miniprogram/scripts/test-coupon-campaign-window.mjs --selftest",
+    "test:wallet-claim-block": "node miniprogram/scripts/test-wallet-claim-block.mjs",
+    "test:wallet-claim-block:selftest": "node miniprogram/scripts/test-wallet-claim-block.mjs --selftest",
     "test:pickup-pass": "node miniprogram/scripts/test-pickup-pass-refresh.mjs",
     "test:pickup-pass:selftest": "node miniprogram/scripts/test-pickup-pass-refresh.mjs --selftest",
     "test:member-card-guest": "node miniprogram/scripts/test-member-card-guest.mjs",

@@ -13,3 +13,5 @@ npm run check:b2b-pay-submch
 npm run test:pay-timeout-race
 # 2026-10-29：券模板「领取时间窗 + 固定到期日」（双十一八折券：北京时间三时刻 / 旧券到期不变 / 限 1 含锁定与并发 / 计价地板 / 礼赠 / 门店核销）
 npm run test:coupon-campaign-window
+# 2026-10-29：券夹「可领取」区块（无可领券不渲染 / 已领满无领取按钮 / 不静默发券 / receiveCoupon manual / 就地反馈 / 云函数可领口径与 receiveCoupon 同源且只写行为表）
+npm run test:wallet-claim-block

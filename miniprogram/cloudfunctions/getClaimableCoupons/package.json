@@ -1,0 +1,9 @@
+{
+  "name": "getClaimableCoupons",
+  "version": "1.0.0",
+  "description": "券夹可领取礼券列表（只读旁路）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

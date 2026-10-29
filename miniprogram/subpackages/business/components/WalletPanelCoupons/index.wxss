@@ -557,6 +557,24 @@ view, text { box-sizing: border-box; }
   margin-top: 34rpx;
 }
 
+/* 可领取：铜金实线描边与可用券同族，与下方「可用」分组留出与使用中分组同等的间距 */
+.claim-block {
+  margin-bottom: 34rpx;
+}
+.coupon-card.claim-card {
+  border-color: #8A7530;
+}
+.coupon-card.claim-card.is-claimed {
+  border-color: #4D401A;
+}
+.claim-err {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  line-height: 1.4;
+  color: var(--color-warning, #E9A23B);
+}
+
 /* 占用中：虚线描边 = 临时、会被收回 */
 .coupon-card.is-locked {
   border-style: dashed;

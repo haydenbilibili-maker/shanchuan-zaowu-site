@@ -162,6 +162,8 @@ const requireStub = (id) => {
   // 2026-09-18：到店亮码改为**同步** require 同分包的 qrCanvas（事故前写的是
   // require.async('../utils/qrCanvas.js')，路径还不存在 —— 见 check:qr-draw）
   if (key.includes('qrCanvas')) return { drawMemberQr: () => Promise.resolve(true) }
+  // 2026-10-29：可领取区块的展示派生（行为由 test:wallet-claim-block 覆盖）
+  if (key.includes('claimableCoupons')) return { decorateClaimable: (c) => c, isClaimLimitMsg: () => false }
   throw new Error('unexpected require ' + id)
 }
 
@@ -342,7 +344,9 @@ check('失效券盖斜章', /class="void-stamp \{\{item\.voidKind\}\}"/.test(wxm
 {
   // 券面右侧只允许两个状态节点：可用券的「去使用」按钮、占用中的「占用中」胶囊。
   // 失效券若再补一个胶囊，就会与斜章在右侧重叠（原草稿的真实缺陷）。
-  const chips = wxml.match(/<view\s+class="c-status[^>]*>[\s\S]*?<\/view>/g) || []
+  // 只数持有券模板内（可领取区块是另一套卡，按钮由 test:wallet-claim-block 管）
+  const tpl = (/<template name="coupon-card">[\s\S]*?<\/template>/.exec(wxml) || [''])[0]
+  const chips = tpl.match(/<view\s+class="c-status[^>]*>[\s\S]*?<\/view>/g) || []
   eq('★ 状态节点只有 2 个（可用按钮 + 占用中胶囊）', chips.length, 2)
   eq('★ 失效券的状态只由斜章承载，胶囊里不得再出现 voidLabel', chips.filter((c) => c.includes('voidLabel')).length, 0)
   check('第 2 个状态节点是占用中', /locked/.test(chips[1] || ''))

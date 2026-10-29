@@ -983,6 +983,13 @@
       "installDependency": true
     },
     {
+      "name": "getClaimableCoupons",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "wishRitualProfile",
       "timeout": 20,
       "runtime": "Nodejs16.13",
