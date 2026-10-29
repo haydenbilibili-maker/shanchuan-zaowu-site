@@ -1023,6 +1023,13 @@
       "runtime": "Nodejs16.13",
       "handler": "index.main",
       "installDependency": true
+    },
+    {
+      "name": "issueCampaignCoupon",
+      "timeout": 60,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
     }
   ]
 }
