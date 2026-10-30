@@ -5,17 +5,17 @@
  * 真跑云函数真源（receiveCoupon / makeOrder / verifyStoreCoupon 的临时副本 + 桩 wx-server-sdk + 内存库），
  * 进程时区固定 UTC（与云函数运行时一致），用假时钟逐个时刻验：
  *   T  模板常量（create-double11-coupon.mjs）：三个时刻是北京时间 10-30 00:00:00 / 11-15 23:59:59 的绝对时刻；
- *      八折（倍率 0.8）、limitPerUser=1、channel=all、active、无 stackable / totalStock、expireDays=0
+ *      八折（倍率 0.8）、limitPerUser=1、channel=online（2026-10-30 改口仅线上）、active、无 stackable / totalStock、expireDays=0
  *   E  ERP 换算（admin/src/utils/couponWindow.js）：北京墙钟 ↔ 绝对时刻在 UTC 进程里不漂移
  *   W  时间窗：10-29 23:59:59 不可领、10-30 00:00:00 可领、11-16 00:00:00 不可领
  *   X  领到的券 expireTime = 11-15 23:59:59（+08:00）；fixedExpireTime 与 expireDays 并存取较早者
  *   L  每人限 1：第 2 次被拒；第 1 张锁在待支付单（locked）时也被拒；并发双击只落 1 张
  *   O  旧模板行为不变：expireDays → 领取后 N 天；无 expireDays 有模板 expireTime → 用它；都没有 → 30 天
  *   P  makeOrder 计价预览：¥299 非会员 → 239.2；会员价 269.1（0.9）叠加 → 卡在地板 224.25；礼赠单同样可用
- *   S  门店核销 verifyStoreCoupon：有效期内可核销（status→used）；11-16 00:00 拒「已过期」
+ *   S  门店核销 verifyStoreCoupon：channel=online → 拒「仅限线上」；11-16 00:00 拒「已过期」
  *   A  自动发放 issueCampaignCoupon（产品负责人 2026-10-29 改口「直接发到券夹」）：10-29 23:59:59 / 11-16 00:00 空转
  *      （模板 startTime 被改早也不发）；只发未注销会员（含员工）；手动领过 / 已用过的不再发；重跑与并发只落 1 张；
- *      文档与 receiveCoupon 同构（同 _id 规则，receiveType=auto_campaign）；到期 11-15 23:59:59；只认定时触发器，dryRun 仅超管
+ *      文档与 receiveCoupon 同构（同 _id 规则，receiveType=auto_campaign，channel 从模板拷贝为 online）；到期 11-15 23:59:59；只认定时触发器，dryRun 仅超管
  *
  *   node miniprogram/scripts/test-coupon-campaign-window.mjs
  *   node miniprogram/scripts/test-coupon-campaign-window.mjs --selftest   # 临时副本里逐条注入回归 → 必须检出（不写工作区）
@@ -213,8 +213,12 @@ async function runCases(dir) {
   ok(doc.fixedExpireTime.getTime() === T_LAST, `T3 fixedExpireTime 应为北京 11-15 23:59:59，实为 ${doc.fixedExpireTime.toISOString()}`)
   ok(doc.type === 'discount' && Math.abs(rules.couponDiscountMultiplier(doc.value) - 0.8) < 1e-9, 'T4 应为八折折扣券')
   ok(rules.validateDiscountCoupon(doc.value).ok, 'T4b 折扣须过 7.5 折地板校验')
-  ok(doc.limitPerUser === 1 && doc.channel === 'all' && doc.active === true && !doc.expireDays && (Number(doc.minSpend) || 0) === 0, 'T5 limitPerUser=1 / channel=all / active / expireDays=0 / 无门槛')
+  ok(doc.limitPerUser === 1 && doc.channel === 'online' && doc.active === true && !doc.expireDays && (Number(doc.minSpend) || 0) === 0, 'T5 limitPerUser=1 / channel=online / active / expireDays=0 / 无门槛')
   ok(!('stackable' in doc) && !('totalStock' in doc), 'T6 不得设 stackable / totalStock')
+  ok(/线上/.test(String(doc.name || '')) && !/全场/.test(String(doc.name || '')), `T7 名称须含「线上」且不含「全场」，实为 ${doc.name}`)
+  const chRules = require(join(dir, 'makeOrder/couponChannel.js'))
+  ok(chRules.couponChannelAllows(doc, 'online') === true && chRules.couponChannelAllows(doc, 'store') === false,
+    'T8 channel=online 须允许线上、拒绝门店')
 
   // E ERP 换算（进程时区 UTC）
   ok(erp.bjWallToDate('2026-10-30 00:00:00') && erp.bjWallToDate('2026-10-30 00:00:00').getTime() === T_START, 'E1 ERP 北京墙钟 → 绝对时刻在 UTC 进程漂移')
@@ -340,16 +344,20 @@ async function runCases(dir) {
   r = await preview('u_bob', bobCoupon && bobCoupon._id, false)
   ok(r && r.success === false && /过期/.test(r.msg || ''), `P4 11-16 下单用券应「已过期」，实为 ${JSON.stringify(r && { s: r.success, msg: r.msg })}`)
 
-  // S 门店核销
+  // S 门店核销（2026-10-30：仅线上 → 门店必须拒）
   global.__CW.openid = 'staff_1'
   const redeem = (id, req) => verify({ action: 'redeem', storeId: 'store_1', clientRequestId: req, userCouponId: id, amount: 299, receiptImages: ['cloud://env/receipt.jpg'] })
   setNow(T_AFTER)
   r = await redeem('uc_member', 'req_late')
   ok(r && r.success === false && /过期/.test(r.msg || ''), `S1 11-16 门店核销应「已过期」，实为 ${JSON.stringify(r && { s: r.success, msg: r.msg })}`)
   setNow(T_LAST - 60e3)
-  r = await redeem('uc_member', 'req_ok')
-  const used = global.__CW.db.user_coupons.find((c) => c._id === 'uc_member')
-  ok(r && r.success === true && used && used.status === 'used' && used.usedChannel === 'store', `S2 有效期内门店可核销八折券，实为 ${JSON.stringify(r && { s: r.success, msg: r.msg })}`)
+  const beforeRedeem = global.__CW.db.user_coupons.find((c) => c._id === 'uc_member')
+  ok(beforeRedeem && chRules.couponChannelAllows(beforeRedeem, 'store') === false && chRules.couponChannelAllows(beforeRedeem, 'online') === true,
+    `S2a 用户券 channel 须 online-only，实为 ${JSON.stringify(beforeRedeem && { ch: beforeRedeem.channel, st: beforeRedeem.status })}`)
+  r = await redeem('uc_member', 'req_online_block')
+  const stillUnused = global.__CW.db.user_coupons.find((c) => c._id === 'uc_member')
+  ok(r && r.success === false && /仅限线上/.test(r.msg || '') && stillUnused && stillUnused.status === 'unused',
+    `S2 有效期内门店核销仅线上券应拒，实为 ${JSON.stringify(r && { s: r.success, msg: r.msg, st: stillUnused && stillUnused.status })}`)
 
   await runAutoIssueCases(dir, doc, receive, ok)
 
@@ -422,6 +430,9 @@ async function runAutoIssueCases(dir, doc, receive, ok) {
   ok(auto && auto._id === `cw_${AUTO_ID}_m_one` && auto.receiveType === 'auto_campaign' && auto.status === 'unused',
     `A9 _id 同 receiveCoupon 活动券规则、receiveType=auto_campaign、未使用，实为 ${JSON.stringify(auto && { id: auto._id, rt: auto.receiveType, s: auto.status })}`)
   ok(auto && new RealDate(auto.expireTime).getTime() === T_LAST, `A10 自动发放券应在 11-15 23:59:59（+08:00）到期，实为 ${auto && new RealDate(auto.expireTime).toISOString()}`)
+  const issueCh = require(join(dir, 'issueCampaignCoupon/couponChannel.js'))
+  ok(auto && auto.channel === 'online' && issueCh.couponChannelAllows(auto, 'online') && !issueCh.couponChannelAllows(auto, 'store'),
+    `A10b 自动发放须拷贝模板 channel=online（允许线上、拒绝门店），实为 ${JSON.stringify(auto && { ch: auto.channel })}`)
 
   r = await timer()
   ok(ucs().length === 4 && r.results[0].issued === 0, `A11 重跑不得重发，实为 ${ucs().length} 张 / ${JSON.stringify(r.results[0])}`)
@@ -472,7 +483,10 @@ const INJECTIONS = [
   { name: '自动发放：小程序端可触发发放', file: 'issueCampaignCoupon/index.js', from: "if (openid || ev.Type !== 'Timer')", to: "if (ev.Type !== 'Timer')" },
   { name: '自动发放：dryRun 不鉴权', file: 'issueCampaignCoupon/index.js', from: "if (!guard || !guard.ok) return", to: 'if (false) return' },
   { name: '自动发放：折扣规则副本漂移', file: 'issueCampaignCoupon/couponDiscountRules.js', from: 'function', to: 'function /* drift */' },
-  { name: '模板设了 stackable', file: 'extra/create-double11-coupon.mjs', from: "  campaignKey: CAMPAIGN_KEY\n}", to: "  campaignKey: CAMPAIGN_KEY,\n  stackable: true\n}" }
+  { name: '模板设了 stackable', file: 'extra/create-double11-coupon.mjs', from: "  campaignKey: CAMPAIGN_KEY\n}", to: "  campaignKey: CAMPAIGN_KEY,\n  stackable: true\n}" },
+  { name: '模板渠道退回 all（门店又能核销）', file: 'extra/create-double11-coupon.mjs', from: "  channel: 'online',", to: "  channel: 'all'," },
+  { name: '自动发放写死 channel=all', file: 'issueCampaignCoupon/index.js', from: '    channel: normalizeCouponChannel(coupon.channel),\n', to: "    channel: 'all',\n" },
+  { name: '名称仍写「全场」', file: 'extra/create-double11-coupon.mjs', from: "name: '双十一 · 线上八折券',", to: "name: '双十一 · 全场八折券'," }
 ]
 
 async function main() {
@@ -486,7 +500,7 @@ async function main() {
         fails.forEach((f) => console.error('  - ' + f))
         process.exitCode = 1
       } else {
-        console.log('✓ test:coupon-campaign-window：模板常量 / ERP 换算 / 领取窗三时刻 / 固定到期 / 限 1 含锁定与并发 / 旧券三种到期 / 普通·会员地板·礼赠计价 / 门店核销与过期 / 自动发放 全部通过')
+        console.log('✓ test:coupon-campaign-window：模板常量 / ERP 换算 / 领取窗三时刻 / 固定到期 / 限 1 含锁定与并发 / 旧券三种到期 / 普通·会员地板·礼赠计价 / 门店拒仅线上券与过期 / 自动发放 全部通过')
       }
     } finally { rmSync(dir, { recursive: true, force: true }) }
     return

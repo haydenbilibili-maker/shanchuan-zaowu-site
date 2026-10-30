@@ -22,7 +22,8 @@ export const ENV_ID = 'cloud1-8gnkty5bfff9f0bf'
 export const CAMPAIGN_KEY = 'double11_2026'
 
 export const DOUBLE11_TEMPLATE = {
-  name: '双十一 · 全场八折券',
+  // 2026-10-30 产品负责人改口：仅限线上（含礼赠），门店核销不可用 —— 勿再写「全场」
+  name: '双十一 · 线上八折券',
   type: 'discount',
   // 与 ERP 表单「折扣券(折)」同一写法：8 = 八折（couponDiscountRules.couponDiscountMultiplier(8) = 0.8）
   value: 8,
@@ -30,7 +31,7 @@ export const DOUBLE11_TEMPLATE = {
   condition: '无门槛',
   expireDays: 0,
   limitPerUser: 1,
-  channel: 'all',
+  channel: 'online',
   active: true,
   startTime: '2026-10-30T00:00:00+08:00',
   endTime: '2026-11-15T23:59:59+08:00',
