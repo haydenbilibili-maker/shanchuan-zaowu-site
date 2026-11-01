@@ -1,7 +1,7 @@
 {
   "miniVersion": "v2",
-  "name": "%name%",
-  "version": "0.0.1",
+  "name": "山海造物",
+  "version": "1.0.0",
   "versionCode": 100,
   "i18nFilePath": "i18n",
   "mini-ohos": {
@@ -41,28 +41,54 @@
       "WeAppOpenFuns": true,
       "WeAppNetwork": false,
       "WeAppBluetooth": false,
-      "WeAppMedia": false,
-      "WeAppLBS": false,
+      "WeAppMedia": true,
+      "WeAppLBS": true,
       "WeAppOthers": false
     },
-    "enableVConsole": "open",
+    "enableVConsole": "close",
     "icons": {
-      "mainIcon120": "",
-      "mainIcon180": "",
-      "spotlightIcon80": "",
-      "spotlightIcon120": "",
-      "settingsIcon58": "",
-      "settingsIcon87": "",
-      "notificationIcon40": "",
-      "notificationIcon60": "",
-      "appStore1024": ""
+      "mainIcon120": "miniapp/ios/icons/mainIcon120.png",
+      "mainIcon180": "miniapp/ios/icons/mainIcon180.png",
+      "spotlightIcon80": "miniapp/ios/icons/spotlightIcon80.png",
+      "spotlightIcon120": "miniapp/ios/icons/spotlightIcon120.png",
+      "settingsIcon58": "miniapp/ios/icons/settingsIcon58.png",
+      "settingsIcon87": "miniapp/ios/icons/settingsIcon87.png",
+      "notificationIcon40": "miniapp/ios/icons/notificationIcon40.png",
+      "notificationIcon60": "miniapp/ios/icons/notificationIcon60.png",
+      "appStore1024": "miniapp/ios/icons/appStore1024.png"
     },
     "splashScreen": {
-      "customImage": ""
+      "customImage": "miniapp/ios/splash/launch.png"
     },
     "privacy": {
-      "enable": false
+      "enable": true,
+      "template": "miniapp/ios/privacy.json",
+      "enableViewOnly": false
     },
-    "enableOpenUrlNavigate": true
+    "enableOpenUrlNavigate": true,
+    "privateDescriptions": {
+      "NSCameraUsageDescription": "用于标本鉴定、AR 试摆、扫码和拍摄头像。仅在你主动拍摄时使用相机。",
+      "NSPhotoLibraryUsageDescription": "用于从相册选择鉴定、社区发布或头像图片。",
+      "NSPhotoLibraryAddUsageDescription": "用于将会员证书和鉴定分享图保存到你的相册。",
+      "NSMicrophoneUsageDescription": "用于录制礼赠语音礼笺。仅在你按住说话时录音。",
+      "NSLocationWhenInUseUsageDescription": "用于在你授权后计算与门店的距离。不授权不影响浏览和购买。",
+      "NSLocationAlwaysUsageDescription": "当前应用程序需要始终访问用户的位置，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSLocationAlwaysAndWhenInUseUsageDescription": "当前应用程序需要始终和在使用时访问用户的位置，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSContactsUsageDescription": "当前应用程序需要访问用户的联系人，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSCalendarsUsageDescription": "当前应用程序需要访问用户的日历，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSRemindersUsageDescription": "当前应用程序需要访问用户的提醒事项，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSBluetoothPeripheralUsageDescription": "当前应用程序需要访问用户的蓝牙，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSBluetoothAlwaysUsageDescription": "当前应用程序需要始终访问用户的蓝牙，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSSpeechRecognitionUsageDescription": "当前应用程序需要使用语音识别，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSLocalNetworkUsageDescription": "当前应用程序需要访问本地网络，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」",
+      "NSSystemAdministrationUsageDescription": "当前应用程序需要进行系统管理操作，如需修改描述请前往「project.miniapp.json - 隐私信息访问许可描述」修改，并且关闭「自动使用默认描述补全默认隐私信息访问许可」"
+    },
+    "customInfoPlist": {
+      "CFBundleDisplayName": "山海造物",
+      "ITSAppUsesNonExemptEncryption": false
+    },
+    "buildCloud": {
+      "useRemote": false
+    }
   }
 }

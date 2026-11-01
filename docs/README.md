@@ -134,6 +134,7 @@
 |------|------|
 | `../admin/docs/README.md` | ERP 蓝图、PRD、专项说明（⚠ 漏登记 7 份） |
 | `../miniprogram/docs/README.md` | 小程序 PRD、审计、操作清单（⚠ 漏登记约 38 份） |
+| `../miniprogram/docs/iOS_TestFlight_2026-11-02.md` | 小程序多端 iOS → TestFlight：沿用微信 miniapp，不重写；签名材料清单与构建命令 |
 | `../cloudbase/rules/README.md` | 云规则维护流程 |
 
 ---
