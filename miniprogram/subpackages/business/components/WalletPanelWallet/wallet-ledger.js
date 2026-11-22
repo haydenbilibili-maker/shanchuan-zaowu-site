@@ -124,6 +124,13 @@ const LEDGER_GLYPHS = {
   expire: '期'
 }
 
+/** 行首图标（2026-11-22 产品负责人点名）：只有这三类有附件 icon，其余仍用一字方印 */
+const LEDGER_ICON_KEYS = {
+  order_pay: 'buy',
+  recharge: 'recharge',
+  order_unfreeze: 'refund'
+}
+
 function glyphOf(row) {
   const t = row && row.type
   if (t && LEDGER_GLYPHS[t]) return LEDGER_GLYPHS[t]
@@ -170,6 +177,7 @@ function mapLedgerRow(row, nowMs) {
     tappable,
     orderId: tappable ? orderId : '',
     glyph: glyphOf(row),
+    iconKey: (row && LEDGER_ICON_KEYS[row.type]) || '',
     refShort: refShortOf(row),
     _nowMs: nowMs
   }
@@ -291,6 +299,7 @@ module.exports = {
   fenToYuanText,
   signedYuanText,
   LEDGER_GLYPHS,
+  LEDGER_ICON_KEYS,
   glyphOf,
   refShortOf,
   mapLedgerRow,

@@ -207,7 +207,7 @@
                   hover-class="{{row.tappable ? 'sv-ledger-row-press' : 'none'}}"
                   hover-stay-time="80"
                 >
-                  <view class="sv-ledger-glyph {{row.toneClass}}" aria-hidden="true"><text>{{row.glyph}}</text></view>
+                  <view class="sv-ledger-glyph {{row.toneClass}}" aria-hidden="true"><image wx:if="{{row.iconKey === 'buy'}}" class="sv-ledger-icon" src="{{ledgerIcons.buy}}" mode="aspectFit"></image><image wx:elif="{{row.iconKey === 'recharge'}}" class="sv-ledger-icon" src="{{ledgerIcons.recharge}}" mode="aspectFit"></image><image wx:elif="{{row.iconKey === 'refund'}}" class="sv-ledger-icon" src="{{ledgerIcons.refund}}" mode="aspectFit"></image><text wx:else>{{row.glyph}}</text></view>
                   <view class="sv-ledger-main">
                     <text class="sv-ledger-type">{{row.typeLabel}}</text>
                     <text class="sv-ledger-meta"><text class="sv-ledger-day-label">{{item.label}}</text><text class="sv-ledger-clock">{{row.clockText}}</text><block wx:if="{{row.refShort}}"> · {{row.refShort}}</block></text>

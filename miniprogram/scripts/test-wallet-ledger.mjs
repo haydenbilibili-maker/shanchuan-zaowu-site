@@ -308,6 +308,14 @@ eq('空列表不出文案', ledger.ledgerCapText(0, false), '')
 
 /* ───────────────────────── 6) 真分页：去重 + 游标 ───────────────────────── */
 
+// 图标模块（CJS、无依赖）直接求值：证明三枚都是内联 svg，而不是网络图或文字回退
+const ICONS = (() => {
+  const m = { exports: {} }
+  // eslint-disable-next-line no-new-func
+  new Function('module', 'exports', readSrc('miniprogram/subpackages/business/components/WalletPanelWallet/ledger-icons.js'))(m, m.exports)
+  return m.exports.LEDGER_ICONS || {}
+})()
+
 const page = (() => {
   const noop = () => {}
   const captured = { config: null }
@@ -319,6 +327,7 @@ const page = (() => {
     (id) => {
       const key = String(id)
       if (key.includes('wallet-ledger')) return ledger
+      if (key.includes('ledger-icons')) return { LEDGER_ICONS: ICONS }
       if (key.includes('walletCopy')) return { POINTS_RULE: '', PLATE_FOOTER: '', RECHARGE_HINT: '', SECURITY_NOTE: '', RECHARGE_LEAD: '', rechargeModalSuffix: '' }
       if (key.includes('contentDisplayFlags')) {
         return { fetchContentDisplayFlags: async () => ({ flags: {} }), getCachedContentDisplayFlags: () => null, toastStoredValueClosed: noop }
@@ -399,6 +408,7 @@ function makeCtx(initial) {
     (id) => {
       const key = String(id)
       if (key.includes('wallet-ledger')) return ledger
+      if (key.includes('ledger-icons')) return { LEDGER_ICONS: ICONS }
       if (key.includes('walletCopy')) return { POINTS_RULE: '', PLATE_FOOTER: '', RECHARGE_HINT: '', SECURITY_NOTE: '', RECHARGE_LEAD: '', rechargeModalSuffix: '' }
       if (key.includes('contentDisplayFlags')) {
         return { fetchContentDisplayFlags: async () => ({ flags: {} }), getCachedContentDisplayFlags: () => null, toastStoredValueClosed: () => {} }
@@ -460,6 +470,12 @@ function makeCtx(initial) {
   eq('短引用：长备注截 14 字', ledger.refShortOf({ remark: '一二三四五六七八九十一二三四五六' }), '一二三四五六七八九十一二三四…')
   const m = ledger.mapLedgerRow({ id: 'x', type: 'recharge', typeLabel: '充值', amountFen: 100, orderNo: 'ORDABC123456' }, NOW)
   eq('mapLedgerRow 带出 glyph / refShort', `${m.glyph}|${m.refShort}`, '充|…123456')
+  // 2026-11-22 产品负责人点名：账单红框内的「付 / 充 / 回」改用附件 icon（其余仍是一字方印）
+  const iconKeyOf = (type) => ledger.mapLedgerRow({ type }, NOW).iconKey
+  eq('图标：订单消费 → 购买', iconKeyOf('order_pay'), 'buy')
+  eq('图标：充值 → 充值', iconKeyOf('recharge'), 'recharge')
+  eq('图标：支付回账 → 退款', iconKeyOf('order_unfreeze'), 'refund')
+  eq('图标：其余类型不走图标（保留一字方印）', iconKeyOf('refund_credit') + iconKeyOf('adjust') + iconKeyOf('xx'), '')
 }
 
 const pageSrc = readSrc(PAGE)
@@ -490,7 +506,19 @@ check('月带只在 kind=month 渲染', /wx:if="\{\{item\.kind === 'month'\}\}"/
 // 日期并进行内 meta。原先「未完那天不谎报净额」的约束随之变成「根本不展示净额与余额」。
 check('★ 行内带日标签 + 时分（日期不靠日头）', /class="sv-ledger-meta"><text class="sv-ledger-day-label">\{\{item\.label\}\}<\/text><text class="sv-ledger-clock">\{\{row\.clockText\}\}<\/text>/.test(wxml))
 check('★ 不再展示当日净额与余额（降噪；也就不存在分页未完那天谎报净额）', !/item\.netText|row\.balanceAfterYuan|sv-ledger-day-week/.test(wxml))
-check('行首一字方印按色调分类', /class="sv-ledger-glyph \{\{row\.toneClass\}\}"/.test(wxml) && /\{\{row\.glyph\}\}/.test(wxml))
+check('行首方印按色调分类，且三类改用图标、其余仍是一字',
+  /class="sv-ledger-glyph \{\{row\.toneClass\}\}"/.test(wxml) &&
+  /wx:if="\{\{row\.iconKey === 'buy'\}\}"[^>]*src="\{\{ledgerIcons\.buy\}\}"/.test(wxml) &&
+  /wx:elif="\{\{row\.iconKey === 'recharge'\}\}"[^>]*src="\{\{ledgerIcons\.recharge\}\}"/.test(wxml) &&
+  /wx:elif="\{\{row\.iconKey === 'refund'\}\}"[^>]*src="\{\{ledgerIcons\.refund\}\}"/.test(wxml) &&
+  /\{\{row\.glyph\}\}/.test(wxml))
+check('★ 三枚图标都是内联 svg data URI、且已重上品牌铜金（不回退网络图 / 不保留原色）',
+  ['buy', 'recharge', 'refund'].every((k) => {
+    const uri = ICONS[k] || ''
+    if (!/^data:image\/svg\+xml/.test(uri)) return false
+    const svg = decodeURIComponent(uri.split(',')[1] || '')
+    return /viewBox="0 0 1024 1024"/.test(svg) && /fill="#D4BC85"/.test(svg) && !/#333333|#F9BA48|#B15FC6/.test(svg)
+  }))
 check('★ 行内不再重复完整日期', !/class="sv-ledger-time"/.test(wxml) && /sv-ledger-clock/.test(wxml))
 check('可点行带 data-order-id', /data-order-id="\{\{row\.orderId\}\}"/.test(wxml))
 check('★ 箭头只在可点行渲染（不给假入口）', /class="sv-ledger-chevron" wx:if="\{\{row\.tappable\}\}"/.test(wxml))

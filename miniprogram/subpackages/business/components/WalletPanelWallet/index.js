@@ -5,6 +5,7 @@ const {
 } = require('../../../../utils/contentDisplayFlags')
 const { isLocalLoggedOut, resumeLocalSession, ensureSession } = require('../../../../utils/userSession')
 const walletCopy = require('./walletCopy')
+const { LEDGER_ICONS } = require('./ledger-icons')
 const { openAppModal } = require('../../../../utils/appModal')
 const {
   buildLedgerTimeline,
@@ -163,6 +164,7 @@ function buildLevelReachHint(matched) {
 
 const _pageCfg = {
   data: {
+    ledgerIcons: LEDGER_ICONS,
     scrollIntoView: '',
     allowed: false,
     checking: true,

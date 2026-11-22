@@ -422,6 +422,12 @@
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
 }
 
+.sv-ledger-icon {
+  width: 30rpx;
+  height: 30rpx;
+  display: block;
+}
+
 .sv-ledger-glyph.is-credit {
   color: var(--brass-200);
   background: rgba(196, 167, 108, 0.14);
