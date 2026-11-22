@@ -19,3 +19,5 @@ npm run check:vis3-rules
 npm run check:ui-parts
 # 2026-11-22：圆角融合（miniprogram/docs/圆角规范_直角圆角融合_2026-11-22.md）—— 容器与控件圆、物件方、线条细；卡片 / 标签 / 按钮 / 输入不许 ≤4rpx 直角，存量按文件只减不增
 npm run check:radius-roles
+# 2026-11-22：交互质感巡查 —— hover-class 必须配 hover-stay-time（微信 view 默认 400ms，松手后仍暗、显得粘手；项目口径 80）
+npm run check:hover-stay
