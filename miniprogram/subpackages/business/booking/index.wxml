@@ -7,7 +7,7 @@
     <view class="ticket-3d-container {{isFlipped ? 'flipped' : ''}}" bindtap="flipTicket">
       <!-- A面：博物馆黑 · 黄铜 -->
       <view class="ticket-face face-front">
-        <view class="paper-texture"></view><view class="gold-strip"></view><text class="watermark">山海</text>
+        <view class="paper-texture"></view><view class="gold-strip"></view><view class="watermark">🦋</view>
         <view class="notch left"></view><view class="notch right"></view>
         <view class="tp-header">
           <view class="tp-brand"><text class="tp-logo">山海造物</text><text class="tp-tagline">把山海带回家</text><text class="tp-sub">NATURE'S CREATIONS</text></view>
@@ -29,7 +29,7 @@
       </view>
       <!-- B面：浅纸 · 墨色 -->
       <view class="ticket-face face-back">
-        <view class="silver-strip"></view><text class="watermark light">山海</text>
+        <view class="silver-strip"></view><view class="watermark light">🦋</view>
         <view class="notch left light"></view><view class="notch right light"></view>
         <view class="tp-header light">
           <view class="tp-brand"><text class="tp-logo light">山海造物</text><text class="tp-tagline light">把山海带回家</text><text class="tp-sub light">NATURE'S CREATIONS</text></view>
