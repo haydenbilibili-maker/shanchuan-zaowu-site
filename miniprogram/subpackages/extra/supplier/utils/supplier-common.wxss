@@ -78,7 +78,7 @@ page {
   display: inline-flex;
   align-items: center;
   padding: 4rpx 14rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .preview-chip {
@@ -106,7 +106,7 @@ page {
   display: inline-flex;
   align-items: center;
   padding: 4rpx 14rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.16);
 }
 
@@ -184,7 +184,7 @@ page {
   min-width: 30rpx;
   height: 30rpx;
   padding: 0 8rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   background: var(--brass-300);
   display: flex;
   align-items: center;
@@ -294,7 +294,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 2rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35);
 }
 
@@ -339,7 +339,7 @@ page {
   margin-bottom: var(--space-4);
   padding: 20rpx 24rpx;
   border: 1rpx dashed rgba(224, 122, 95, 0.4);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: rgba(224, 122, 95, 0.06);
 }
 
@@ -369,7 +369,7 @@ page {
   font-size: var(--fs-22);
   color: #e07a5f;
   border: 1rpx solid rgba(224, 122, 95, 0.5);
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .demo-toggle.on {
@@ -388,7 +388,7 @@ page {
   padding: 12rpx 22rpx;
   font-size: var(--fs-24);
   color: var(--color-text-secondary);
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
 }
 
@@ -459,7 +459,7 @@ page {
   margin-top: var(--space-2);
   padding: var(--space-5);
   border: 1rpx dashed rgba(196, 167, 108, 0.24);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   text-align: center;
 }
 
@@ -483,7 +483,7 @@ page {
   margin-top: var(--space-2);
   padding: var(--space-5);
   border: 1rpx solid rgba(224, 122, 95, 0.35);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: rgba(224, 122, 95, 0.06);
 }
 
@@ -508,7 +508,7 @@ page {
   padding: 12rpx 28rpx;
   font-size: var(--fs-24);
   color: var(--brass-200);
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   box-shadow: var(--ring-brass-soft);
 }
 
@@ -526,7 +526,7 @@ page {
 .flash-bar {
   margin-bottom: var(--space-3);
   padding: 16rpx 20rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: rgba(196, 167, 108, 0.1);
   box-shadow: var(--ring-brass-soft);
   font-size: var(--fs-24);
@@ -539,7 +539,7 @@ page {
   margin-top: 12rpx;
   align-self: flex-start;
   padding: 10rpx 22rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   background: rgba(196, 167, 108, 0.1);
   box-shadow: var(--ring-brass);
   color: var(--brass-200);
@@ -554,7 +554,7 @@ page {
   gap: 16rpx;
   margin: 16rpx 0 8rpx;
   padding: 16rpx 20rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: rgba(196, 167, 108, 0.06);
   box-shadow: var(--ring-brass-soft);
 }
@@ -586,7 +586,7 @@ page {
 .ship-form .form-input {
   height: 72rpx;
   padding: 0 20rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-control, 16rpx);
   background: rgba(255, 255, 255, 0.04);
   border: 1rpx solid rgba(255, 255, 255, 0.08);
   color: var(--color-text-primary);

@@ -84,7 +84,7 @@ page {
 
 .chip {
   padding: 10rpx 22rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
 }
 
@@ -122,7 +122,7 @@ page {
   flex: 1;
   height: 72rpx;
   padding: 0 24rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   color: var(--color-text-primary);
@@ -132,7 +132,7 @@ page {
 .search-go {
   flex-shrink: 0;
   padding: 16rpx 26rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(196, 167, 108, 0.5);
 }
 
@@ -157,7 +157,7 @@ page {
   box-sizing: border-box;
   margin-bottom: 16rpx;
   padding: 24rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.03);
 }
@@ -203,7 +203,7 @@ page {
 .sum-card {
   margin-bottom: 16rpx;
   padding: 28rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   border: 1rpx solid rgba(196, 167, 108, 0.4);
   background: rgba(196, 167, 108, 0.07);
 }
@@ -380,7 +380,7 @@ page {
   display: block;
   margin-bottom: 16rpx;
   padding: 24rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.03);
 }
@@ -441,7 +441,7 @@ page {
 
 .tag {
   padding: 4rpx 14rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.14);
 }
 
@@ -486,7 +486,7 @@ page {
 .state {
   margin-top: var(--space-2);
   padding: var(--space-5);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   border: 1rpx dashed rgba(255, 255, 255, 0.12);
   text-align: center;
 }
@@ -519,7 +519,7 @@ page {
   display: inline-block;
   margin-top: var(--space-3);
   padding: 12rpx 32rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-control, 16rpx);
   border: 1rpx solid rgba(196, 167, 108, 0.5);
 }
 
@@ -531,7 +531,7 @@ page {
 .flash {
   margin-bottom: var(--space-3);
   padding: 16rpx 20rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   border: 1rpx solid rgba(196, 167, 108, 0.35);
 }
 
@@ -556,7 +556,7 @@ page {
   box-sizing: border-box;
   margin-top: var(--space-3);
   padding: 24rpx 0;
-  border-radius: 2rpx;
+  border-radius: var(--r-control, 16rpx);
   text-align: center;
   background: var(--brass-500);
 }
@@ -749,7 +749,7 @@ page {
 .field-input {
   height: 80rpx;
   padding: 0 24rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
   color: var(--color-text-primary);
@@ -852,7 +852,7 @@ page {
   margin-left: 8rpx;
   padding: 0 10rpx;
   min-width: 20rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   font-size: var(--fs-18);
   line-height: 28rpx;
@@ -887,7 +887,7 @@ page {
   align-items: center;
   height: 76rpx;
   padding: 0 24rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.04);
 }
@@ -908,7 +908,7 @@ page {
 .filter-btn {
   flex-shrink: 0;
   padding: 18rpx 26rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.14);
 }
 
@@ -924,7 +924,7 @@ page {
 .filter-panel {
   margin: -8rpx 0 var(--space-3);
   padding: 8rpx 24rpx 12rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   border: 1rpx solid rgba(196, 167, 108, 0.22);
 }
 
@@ -947,7 +947,7 @@ page {
   align-items: center;
   justify-content: center;
   padding: 14rpx 0;
-  border-radius: 2rpx;
+  border-radius: var(--r-control, 16rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
 }
 
@@ -978,7 +978,7 @@ page {
   width: 100%;
   height: 150rpx;
   margin: 0 0 16rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
 }
 
 .skel-block.tall {
@@ -1012,7 +1012,7 @@ page {
 .skel-thumb {
   width: 140rpx;
   height: 140rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-thumb, 16rpx);
 }
 
 .skel-avatar {
@@ -1065,7 +1065,7 @@ page {
 .pill {
   flex-shrink: 0;
   padding: 2rpx 14rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.16);
 }
 
@@ -1119,7 +1119,7 @@ page {
 .panel {
   margin-bottom: var(--space-4);
   padding: 28rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.07);
   background: rgba(255, 255, 255, 0.025);
 }
@@ -1181,7 +1181,7 @@ page {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 4rpx;
+  border-radius: var(--r-thumb, 16rpx);
   border: 1rpx solid rgba(196, 167, 108, 0.3);
 }
 
@@ -1218,7 +1218,7 @@ page {
 .sheet-cancel {
   margin-top: 20rpx;
   padding: 24rpx 0;
-  border-radius: 2rpx;
+  border-radius: var(--r-control, 16rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.12);
   text-align: center;
 }
@@ -1250,7 +1250,7 @@ page {
 .bar-ghost {
   flex-shrink: 0;
   padding: 22rpx 30rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-control, 16rpx);
   border: 1rpx solid rgba(255, 255, 255, 0.16);
 }
 
@@ -1262,7 +1262,7 @@ page {
 .bar-main {
   flex: 1;
   padding: 24rpx 0;
-  border-radius: 2rpx;
+  border-radius: var(--r-control, 16rpx);
   text-align: center;
   background: var(--brass-500);
 }
@@ -1288,7 +1288,7 @@ page {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 4rpx;
+  border-radius: var(--r-thumb, 16rpx);
   border: 1rpx dashed rgba(196, 167, 108, 0.45);
   background: rgba(196, 167, 108, 0.04);
 }
@@ -1353,7 +1353,7 @@ page {
 
 .img-act {
   padding: 12rpx 28rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   border: 1rpx solid rgba(196, 167, 108, 0.45);
 }
 

@@ -139,7 +139,7 @@ page {
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
   border: 1rpx solid var(--brass-800, #4D401A);
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   background: rgba(196, 167, 108, 0.06);
 }
 
@@ -163,7 +163,7 @@ page {
   min-width: 0;
   text-align: center;
   padding: 14rpx 4rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.24);
   font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
@@ -192,7 +192,7 @@ page {
   min-width: 0;
   text-align: center;
   padding: 12rpx 8rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
   font-size: var(--fs-22);
   color: var(--color-text-secondary, #A09A90);
@@ -213,7 +213,7 @@ page {
 .verdict-card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid var(--brass-800, #4D401A);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   padding: 24rpx 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -272,7 +272,7 @@ page {
 .verdict-badge {
   flex: 0 0 auto;
   padding: 6rpx 14rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   font-size: var(--fs-22);
   font-family: var(--font-mono);
   border: 1px solid var(--color-border, #26232066);
@@ -315,7 +315,7 @@ page {
 
 .sum-chip {
   padding: 4rpx 12rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   font-size: var(--fs-20);
   font-family: var(--font-mono);
   border: 1px solid transparent;
@@ -394,7 +394,7 @@ page {
 .card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   padding: 24rpx 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -477,7 +477,7 @@ page {
   align-items: flex-start;
   gap: 12rpx;
   padding: 16rpx 14rpx 16rpx 18rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(38, 35, 32, 0.95);
   box-sizing: border-box;
@@ -580,7 +580,7 @@ page {
 
 .hero-card {
   background: linear-gradient(135deg, var(--brass-500, #A8903C) 0%, var(--brass-400, #C4A76C) 100%);
-  border-radius: 4rpx;
+  border-radius: var(--r-hero, 24rpx);
   padding: 28rpx 28rpx 24rpx;
   margin-bottom: 16rpx;
   width: 100%;
@@ -668,7 +668,7 @@ page {
   padding: 16rpx 8rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: 4rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
   text-align: center;
   box-sizing: border-box;
 }
@@ -791,7 +791,7 @@ page {
   text-align: center;
   padding: 12rpx 6rpx;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 2rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
   box-sizing: border-box;
 }
 
@@ -935,7 +935,7 @@ page {
 .skel-card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   padding: 28rpx;
   margin-bottom: 20rpx;
   width: 100%;
@@ -968,7 +968,7 @@ page {
   flex: 1;
   min-width: 0;
   height: 80rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-card, 16rpx);
   background: linear-gradient(90deg, var(--color-bg-elevated) 0%, #33302C 50%, var(--color-bg-elevated) 100%);
   background-size: 200% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
@@ -987,7 +987,7 @@ page {
 .empty-card {
   background: var(--color-bg-card, #1F1D1A);
   border: 1px solid var(--color-border, #26232066);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   padding: 40rpx 28rpx;
   text-align: center;
   margin-bottom: 20rpx;
@@ -1014,7 +1014,7 @@ page {
   padding: 28rpx;
   background: var(--color-bg-card, #1F1D1A);
   border: 1rpx solid rgba(77, 64, 26, 0.55);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   box-sizing: border-box;
 }
 
