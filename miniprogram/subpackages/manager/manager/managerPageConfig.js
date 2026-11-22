@@ -1507,6 +1507,8 @@ const managerPageConfig = {
       topCats: [],
     },
     todayDate: '',
+    /** 问候行时钟「11.23 00:06」（分钟级，见 updateTime） */
+    clockText: '',
     greeting: '你好',
 
     // 🟢 [新增] 发货弹窗相关数据
@@ -2209,24 +2211,29 @@ const managerPageConfig = {
   startClock() {
     this.stopClock();
     this.updateTime();
+    // 时钟只到分钟：10 秒一查足够（原 1 秒一次 setData）
     this.data.timer = setInterval(() => {
       this.updateTime();
-    }, 1000);
+    }, 10000);
   },
 
   stopClock() {
     if (this.data.timer) clearInterval(this.data.timer);
   },
 
+  /**
+   * 问候行时钟（2026-11-22 屏效改版：独立日期胶囊并进问候行，「11.23 00:06」）。
+   * 只在分钟 / 问候变化时 setData —— 原实现每秒 setData 整页重渲染，
+   * 且把带时分秒的串写进 todayDate，导致「录入营收」弹窗的日期一栏显示成「2026-11-23 00:06:39」。
+   * todayDate 现在只由 setToday 写（纯日期）。
+   */
   updateTime() {
     const d = new Date();
-    // 格式：2023.11.25 14:30:05
-    const str = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
-    
-    const hour = d.getHours();
-    const greet = greetByHour(hour);
-
-    this.setData({ todayDate: str, greeting: greet });
+    const pad = (n) => String(n).padStart(2, '0');
+    const clockText = `${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const greet = greetByHour(d.getHours());
+    if (clockText === this.data.clockText && greet === this.data.greeting) return;
+    this.setData({ clockText, greeting: greet });
   },
 
   onPullDownRefresh() {

@@ -559,8 +559,9 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
   const favAt = at(/<view class="hub-fav">/)
   const catAt = at(/<view class="grid-item full-width hub-nav">/)
   if ([feedAt, searchAt, todoAt, kpiAt, signalAt, ctaAt, favAt, catAt].some((x) => x < 0)
-    || !(feedAt < searchAt && searchAt < todoAt && todoAt < kpiAt && kpiAt < signalAt && signalAt < ctaAt && ctaAt < favAt && favAt < catAt)) {
-    errs.push('N3 首屏顺序须为「信息流 → 搜索（超管）→ 待处理横条 → 金卡 → 经营信号 → 扫码主按钮 → 我的常用 → 全部功能」')
+    || !(searchAt < feedAt && feedAt < todoAt && todoAt < kpiAt && kpiAt < signalAt && signalAt < ctaAt && ctaAt < favAt && favAt < catAt)) {
+    // 2026-11-22 屏效改版（产品负责人「顶部搜索、处理动态等效率较低」）：搜索收进标题行，信息流与待处理合成一张状态条
+    errs.push('N3 首屏顺序须为「搜索（超管，标题行）→ 状态条（信息流）→ 待处理横条 → 金卡 → 经营信号 → 扫码主按钮 → 我的常用 → 全部功能」')
   }
 
   // ── N4「编辑」是常用的显式入口 ──
