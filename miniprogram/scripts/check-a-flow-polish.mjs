@@ -151,7 +151,19 @@ const FILES = {
   certPageWxml: 'subpackages/business/certificate/index.wxml',
   certPageWxss: 'subpackages/business/certificate/index.wxss',
   customJs: 'subpackages/feature/custom/index.js',
-  customWxml: 'subpackages/feature/custom/index.wxml'
+  customWxml: 'subpackages/feature/custom/index.wxml',
+  dnLedger: 'cloudfunctions/getMyDonations/donationLedger.js',
+  dnFn: 'cloudfunctions/getMyDonations/index.js',
+  dnFinance: 'cloudfunctions/syncFinanceData/index.js',
+  dnPledge: 'subpackages/business/utils/onePercentPledge.js',
+  dnView: 'subpackages/business/donations/donationView.js',
+  dnCopy: 'subpackages/business/donations/donationCopy.js',
+  dnJs: 'subpackages/business/donations/index.js',
+  dnWxml: 'subpackages/business/donations/index.wxml',
+  walletJs: 'subpackages/business/components/WalletPanelWallet/index.js',
+  walletWxml: 'subpackages/business/components/WalletPanelWallet/index.wxml',
+  appJson: 'app.json',
+  cloudrc: 'cloudbaserc.json'
 }
 /** 无 require 的 CommonJS 小模块：内存里求值拿 exports（失败返回 {}） */
 function loadCjs(src) {
@@ -960,6 +972,54 @@ function checks(s) {
     /ratio > 1 \? half : Math\.round\(w\)/.test(s.detailJs) &&
     /const heroFit = 'aspectFill'/.test(s.detailJs) &&
     /syncHeroHeight\(\)/.test(s.detailJs) && /onHeroImageLoad\(e\)/.test(s.detailJs))
+
+  // R60 我的捐赠（2026-11-22 产品负责人：钱包新增「我的捐赠」，累计实付 1% 由山海万物公益基金代为捐赠）
+  {
+    const L = loadCjs(s.dnLedger)
+    const P = loadCjs(s.dnPledge)
+    let ok = false
+    try {
+      const now = Date.parse('2026-11-22T10:00:00+08:00')
+      const r = L.buildLedger([
+        { _id: 'a', status: 'received', totalPrice: 1288, paidTime: '2026-03-02T10:00:00+08:00', products: [{ title: '蓝闪蝶', quantity: 2 }] },
+        { _id: 'b', status: 'refunded', totalPrice: 99, refundFee: 99, paidTime: '2025-12-31T23:30:00+08:00' },
+        { _id: 'c', status: 'refunded', totalPrice: 200, refundFee: 150, paidTime: '2025-06-01T08:00:00+08:00' },
+        { _id: 'd', status: 'refunding', totalPrice: 50 },
+        { _id: 'e', status: 'pending_pay', totalPrice: 999 },
+        { _id: 'f', status: 'refunded', totalPrice: 10, paidTime: '2026-01-01T08:00:00+08:00' }
+      ], { now })
+      const sameRounding = [0.5, 1.49, 12.345, 99.99, 1288, 3.33, 0.01].every((y) => L.pledgeFen(L.toFen(y)) === Math.round(P.calcOnePercentYuan(y) * 100))
+      const fin = (s.dnFinance.match(/reconcileOnlineOrders[\s\S]*?status: _\.in\(\[([\s\S]*?)\]\)/) || [])[1] || ''
+      const finSet = (fin.match(/'([a-z_]+)'/g) || []).map((x) => x.slice(1, -1)).sort().join()
+      ok = r.netFen === 133800 && r.pledgeFen === 1338 && r.orderCount === 2 && r.pendingCount === 1 &&
+        r.years.map((y) => `${y.year}:${y.pledgeFen}:${y.phase}`).join() === '2026:1288:open,2025:50:closed' &&
+        r.rows.find((x) => x.id === 'f').state === 'refunded' && r.rows.find((x) => x.id === 'c').state === 'partial' &&
+        r.rows.find((x) => x.id === 'd').state === 'pending' && !r.rows.some((x) => x.id === 'e') &&
+        L.buildLedger([], { now, withRows: false }).rows === undefined && sameRounding &&
+        finSet === L.ALL_STATUSES.slice().sort().join()
+    } catch (e) { ok = false }
+    add('R60-1 我的捐赠口径：计入状态与店内账本同一组；退款扣回（无 refundFee 的已退款按全额）；退款中暂不计；1% 取整与 onePercentPledge 一致',
+      ok)
+    add('R60-2 只查本人：OPENID 取自上下文，不收 targetOpenId；只读（无 add / update / remove）；已登记 cloudbaserc',
+      /const \{ OPENID \} = cloud\.getWXContext\(\)/.test(s.dnFn) && /_openid: openid/.test(s.dnFn) && !/targetOpenId/.test(s.dnFn) &&
+        !/\.(add|update|remove|set)\(/.test(s.dnFn) && /"name": "getMyDonations"/.test(s.cloudrc))
+    const V = loadCjs(s.dnView)
+    const C = loadCjs(s.dnCopy)
+    let vok = false
+    try {
+      vok = V.fmtFen(123456789) === '1,234,567.89' && V.fmtFen(-3) === '0.00' &&
+        V.buildView({ pledgeFen: 0, rows: [] }, 'x').hero.empty === true &&
+        V.pickRows(Array.from({ length: 25 }, (_, i) => ({ id: i, year: 2026 })), 'all', 20).more === true
+    } catch (e) { vok = false }
+    add('R60-3 我的捐赠页：基金名「山海万物公益基金」；讲清不另收费与以年度报告为准；不编造换算；分享不带个人金额',
+      vok && C.FUND_NAME === '山海万物公益基金' && /不另向您收取/.test(C.NO_EXTRA) && /以年度捐赠报告为准/.test(C.FOOT) &&
+        !/棵树|相当于/.test(s.dnCopy) && /onShareAppMessage\(\) \{[\s\S]{0,120}title: copy\.SHARE_TITLE, path: '\/subpackages\/business\/donations\/index' \}/.test(s.dnJs) &&
+        /wx:elif="\{\{phase === 'guest'\}\}"/.test(s.dnWxml) && /bindtap="onRetry"/.test(s.dnWxml))
+    add('R60-4 钱包入口：登录态第一张卡进「我的捐赠」；合计只取 summaryOnly；页面已登记分包',
+      /<view class="sv-giving" bindtap="goDonations"/.test(s.walletWxml) &&
+        /goDonations\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/business\/donations\/index' \}\)/.test(s.walletJs) &&
+        /name: 'getMyDonations', data: \{ summaryOnly: true \}/.test(s.walletJs) && /"donations\/index"/.test(s.appJson))
+  }
   return out
 }
 
@@ -1127,6 +1187,13 @@ if (process.argv.includes('--selftest')) {
     ['全局 icon-gold 回到偏浅近似链', 'appWxss', (t) => t.replace('.icon-gold {\n  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);', '.icon-gold {\n  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);')],
     ['详情页又写开发术语', 'detailWxml', (t) => t.replace('<text class="st-zh">藏品参数</text>', '<text class="st-zh">藏品参数（字段）</text>')],
     ['礼赠面板一键送礼不再直达写笺', 'detailWxml', (t) => t.replace('class="gift-cta" bindtap="goGiftCompose"', 'class="gift-cta" bindtap="goToGift"')],
+    ['捐赠口径把退款中算进去', 'dnLedger', (t) => t.replace("if (PENDING.indexOf(o.status) >= 0) return { paidFen, refundFen: 0, netFen: 0, state: 'pending' }", '')],
+    ['捐赠口径忘了无 refundFee 的已退款', 'dnLedger', (t) => t.replace("else if (o.status === 'refunded') refundFen = paidFen", '')],
+    ['捐赠 1% 改成直接截断', 'dnLedger', (t) => t.replace('Math.round(Math.round(b) * 0.01)', 'Math.floor(b * 0.01)')],
+    ['捐赠云函数开放查他人', 'dnFn', (t) => t.replace('const { OPENID } = cloud.getWXContext()', 'const { OPENID: CTX } = cloud.getWXContext(); const OPENID = (event && event.targetOpenId) || CTX')],
+    ['基金名被改', 'dnCopy', (t) => t.replace("const FUND_NAME = '山海万物公益基金'", "const FUND_NAME = '山海公益'")],
+    ['分享带上个人金额', 'dnJs', (t) => t.replace('title: copy.SHARE_TITLE,', 'title: `我已捐 ¥${this.data.heroAmount}`,')],
+    ['钱包入口被删', 'walletWxml', (t) => t.replace('<view class="sv-giving" bindtap="goDonations"', '<view class="sv-giving"')],
   ]
   let ok = baseOk
   console.log(`${baseOk ? '✓' : '✗'} 基线：真源码全部断言通过`)

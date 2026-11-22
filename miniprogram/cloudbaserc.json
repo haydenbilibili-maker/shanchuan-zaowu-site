@@ -787,6 +787,13 @@
       "installDependency": true
     },
     {
+      "name": "getMyDonations",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "getUserStatistics",
       "timeout": 20,
       "runtime": "Nodejs16.13",

@@ -1,0 +1,9 @@
+{
+  "name": "getMyDonations",
+  "version": "1.0.0",
+  "description": "我的捐赠：本人小程序累计实付 × 1%（只读，口径同店内账本 pledgeDue）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

@@ -174,6 +174,22 @@ function achievementsSceneData() {
   })
 }
 
+// 我的捐赠（2026-11-22）：真实文案源 + 真实视图组装，样例账本走 donationLedger 同一口径
+const dnCopy = loadCjsModule(join(MP, 'subpackages/business/donations/donationCopy.js'))
+const dnViewMod = loadCjsModule(join(MP, 'subpackages/business/donations/donationView.js'))
+const dnLedgerMod = loadCjsModule(join(MP, 'cloudfunctions/getMyDonations/donationLedger.js'))
+const dnView = dnViewMod.buildView(dnLedgerMod.buildLedger([
+  { _id: 'o1', status: 'received', totalPrice: 3680, paidTime: '2026-10-28T15:20:00+08:00', products: [{ title: '光明女神闪蝶 · 玻璃罩', quantity: 1 }] },
+  { _id: 'o2', status: 'shipped', totalPrice: 1288, paidTime: '2026-09-12T11:02:00+08:00', products: [{ title: '蓝闪蝶 · 胡桃木框', quantity: 2 }] },
+  { _id: 'o3', status: 'refunded', totalPrice: 860, refundFee: 430, paidTime: '2026-06-03T20:41:00+08:00', products: [{ title: '甲虫三联标本', quantity: 1 }] },
+  { _id: 'o4', status: 'refunding', totalPrice: 199, paidTime: '2026-11-20T09:00:00+08:00', products: [{ title: '矿物原石 · 紫水晶', quantity: 1 }] },
+  { _id: 'o5', status: 'received', totalPrice: 5260, paidTime: '2025-12-18T16:30:00+08:00', products: [{ title: '鹦鹉螺化石剖面', quantity: 1 }] },
+  { _id: 'o6', status: 'received', totalPrice: 2310, paidTime: '2025-08-02T10:10:00+08:00', products: [{ title: '枯叶蛱蝶 · 圆框', quantity: 1 }] }
+], { now: Date.parse('2026-11-22T10:00:00+08:00') }), dnCopy.FUND_NAME)
+const dnData = {
+  copy: dnCopy, phase: 'ready', hero: dnView.hero, heroAmount: dnView.hero.amount, years: dnView.years, yearTabs: dnView.yearTabs,
+  yearKey: 'all', shownRows: dnView.rows, rowsMore: false, notes: dnView.notes, faqOpen: 0, flowLit: true
+}
 const SCENES = [
   { name: 'wl-main', h: 2500, wxml: 'subpackages/feature/wish-labels/index', data: wlBase },
   { name: 'wl-compose', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, composeOpen: true, draft: '马上有好睡眠', draftCount: 6, posting: false, voicePath: '' } },
@@ -387,12 +403,14 @@ const SCENES = [
   },
   {
     name: 'wallet-balance', h: 1700, wxml: 'subpackages/business/components/WalletPanelWallet/index', data: {
-      accountReady: true, account: { availableYuan: '1,280.00', memberNo: '0137' }, allowed: true, rechargeMode: true, needLogin: false, checking: false, iosBlocked: false, flashSuccess: false, ledgerLoading: false, ledgerEmpty: false, allowCustom: true, recharge: { minCustomYuan: 100, maxCustomYuan: 20000 }, paySummaryLabel: '实付 ¥1000 · 到账 ¥1080', selectedBenefitHint: '升至「藏家」，享 9.5 折', ledgerCap: '近 30 天',
+      accountReady: true, account: { availableYuan: '1,280.00', memberNo: '0137' }, allowed: true, rechargeMode: true, needLogin: false, checking: false, iosBlocked: false, flashSuccess: false, ledgerLoading: false, ledgerEmpty: false, allowCustom: true, recharge: { minCustomYuan: 100, maxCustomYuan: 20000 }, paySummaryLabel: '实付 ¥1000 · 到账 ¥1080', selectedBenefitHint: '升至「藏家」，享 9.5 折', ledgerCap: '近 30 天', givingAmount: '138.48',
       packages: [{ id: 'k1', label: '¥500', displayPayYuan: '500', pointsLine: '+500 积分', discountLine: '到账 ¥530' }, { id: 'k2', label: '¥1000', displayPayYuan: '1000', levelBadge: '升级', levelName: '藏家', pointsLine: '+1000 积分', discountLine: '到账 ¥1080' }, { id: 'k3', label: '¥2000', displayPayYuan: '2000', levelName: '馆员', pointsLine: '+2000 积分', discountLine: '到账 ¥2200' }],
       selectedPackageId: 'k2', rechargeMode: 'package', canPay: true, payBtnLabel: '充值 ¥1000', walletPlateFooter: 'SHANHAI · MEMBER WALLET', walletRechargeLead: '选一档储值，到账即可在线上与门店消费', walletRechargeHint: '储值余额不可提现，可用于线上与门店消费', walletSecurityNote: '余额变动会推送提醒；如非本人操作请联系专员', customAmount: '', customHint: '', ledgerHasMore: false,
       ledgerTimeline: [{ week: '本周', rows: [{ typeLabel: '消费', subtitle: '光明女神闪蝶 · 玻璃罩', amountSign: '-', amountYuan: '388.00', clockText: '10.12 14:20', toneClass: 'minus', balanceAfterYuan: '1,280.00' }, { typeLabel: '充值', subtitle: '储值 ¥1000 送 ¥80', amountSign: '+', amountYuan: '1,080.00', clockText: '10.10 09:12', toneClass: 'plus', isCredit: true, balanceAfterYuan: '1,668.00' }] }]
     }
   },
+  { name: 'donations', h: 3900, wxml: 'subpackages/business/donations/index', data: dnData },
+  { name: 'donations-guest', h: 1500, wxml: 'subpackages/business/donations/index', data: { ...dnData, phase: 'guest', faqOpen: -1 } },
   {
     name: 'wallet-points', h: 1600, wxml: 'subpackages/business/components/WalletPanelPoints/index', data: {
       loading: false, points: 2680, pointsYuan: '26.80', curTab: 0, pointsReady: true, pointsText: '2,680', levelName: '藏家', onlineSpendTotal: '3,260', storeSpendTotal: '1,180', platformSpendTotal: 0, storePointsTotal: 1180, myRewards: [],
