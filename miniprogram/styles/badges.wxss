@@ -5,6 +5,8 @@
  * 图鉴进度等 → .meta-progress（金色文案，非圆点）
  * 规则：0 / 空不渲染；>99 显示 99+；禁 emoji；禁闪烁循环动画。
  * 尺寸：默认行内 36rpx；.badge-sm 图标角 / Tab 角 28rpx。
+ * ⚠️ 本文件被 custom-tab-bar @import：tab 栏在页面树之外，取不到 app.wxss 的 page{} 变量 ——
+ *    每个 var() 都必须带字面量兜底（2026-11-22 购物车角标变大真事故；check:wxss-syntax A10 钉住）。
  */
 .badge-solid-danger,
 .badge-outline-brass,
@@ -19,7 +21,7 @@
   padding: 0 10rpx;
   border-radius: 9999px;
   pointer-events: none;
-  font-size: var(--fs-20);
+  font-size: var(--fs-20, 20rpx);
   line-height: 1;
   font-weight: 600;
   font-family: var(--font-mono, 'DIN', monospace);
@@ -62,10 +64,10 @@
   /* 2026-09-21 分子级审计：#5A86A8 与白字仅 3.88（AA 需 4.5）→ 同色相只降亮度到 4.62 */
   background: #517999;
   border: 1px solid rgba(91, 143, 185, 0.4);
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #FFFFFF);
 }
 .badge-info text {
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #FFFFFF);
 }
 
 .meta-progress {
@@ -73,7 +75,7 @@
   display: inline-flex;
   align-items: center;
   height: 36rpx;
-  font-size: var(--fs-22);
+  font-size: var(--fs-22, 22rpx);
   line-height: 36rpx;
   color: var(--brass-400, #C4A76C);
   font-family: var(--font-mono, 'DIN', monospace);
@@ -96,7 +98,7 @@
   min-width: 28rpx;
   height: 28rpx;
   padding: 0 6rpx;
-  font-size: var(--fs-16);
+  font-size: var(--fs-16, 16rpx);
   font-weight: 600;
 }
 

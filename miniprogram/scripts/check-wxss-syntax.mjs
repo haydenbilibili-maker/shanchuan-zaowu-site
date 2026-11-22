@@ -36,6 +36,23 @@ function walk(dir, out = []) {
 
 const strip = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '')
 
+/** custom-tab-bar 的 @import 闭包（不含它自己；A9 管它自己） */
+const TABBAR_IMPORTS = (() => {
+  const out = new Set()
+  const visit = (file) => {
+    let src = ''
+    try { src = strip(readFileSync(file, 'utf8')) } catch (e) { return }
+    for (const m of src.matchAll(/@import\s+['"]([^'"]+)['"]/g)) {
+      const next = resolve(dirname(file), m[1])
+      if (out.has(next)) continue
+      out.add(next)
+      visit(next)
+    }
+  }
+  visit(join(MP, 'custom-tab-bar/index.wxss'))
+  return out
+})()
+
 function inspect(abs) {
   const src = strip(readFileSync(abs, 'utf8'))
   const problems = []
@@ -81,6 +98,15 @@ function inspect(abs) {
     const own = new Set([...src.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]))
     for (const m of src.matchAll(/var\(\s*(--[\w-]+)/g)) {
       if (!own.has(m[1])) problems.push(`A9 custom-tab-bar 用了页面令牌 var(${m[1]})（tab 栏在页面树之外，取不到 app.wxss 的 page{} 变量 → 声明失效）：请写字面量`)
+    }
+  }
+  // A10：custom-tab-bar **@import 进来的公共样式**同样在页面树之外（2026-11-22 真事故：styles/badges.wxss 被 P3 令牌化成
+  //   var(--fs-16)，tab 栏购物车角标字号失效、回落默认大字，A9 只查 tab 栏自身文件没拦住）。
+  //   公共文件还要给页面用，不必改回字面量：每个 var() 都必须带字面量兜底 var(--x, 值)。
+  if (TABBAR_IMPORTS.has(abs)) {
+    const own = new Set([...src.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]))
+    for (const m of src.matchAll(/var\(\s*(--[\w-]+)\s*\)/g)) {
+      if (!own.has(m[1])) problems.push(`A10 被 custom-tab-bar 引入的样式用了无兜底令牌 var(${m[1]})（tab 栏取不到 page{} 变量 → 声明失效）：写成 var(${m[1]}, 字面量)`)
     }
   }
   return problems
@@ -132,7 +158,8 @@ if (process.argv.includes('--selftest')) {
     { name: '少一个收尾 }', inject: '\n.x-orphan { color: red;\n' },
     { name: 'font-family 里未加引号的中文族名', inject: '\n.x-font { font-family: KaiTi, 楷体, serif; }\n' },
     { name: 'A8 新增无限动画但没有减弱动效分支', inject: '\n.x-spin { animation: x-spin 1s linear infinite; }\n' },
-    { name: 'A9 custom-tab-bar 用页面令牌（底部 tab 字号变大真事故）', file: join(MP, 'custom-tab-bar/index.wxss'), inject: '\n.tab-text { font-size: var(--fs-20); }\n' }
+    { name: 'A9 custom-tab-bar 用页面令牌（底部 tab 字号变大真事故）', file: join(MP, 'custom-tab-bar/index.wxss'), inject: '\n.tab-text { font-size: var(--fs-20); }\n' },
+    { name: 'A10 tab 栏引入的公共样式用无兜底令牌（购物车角标变大真事故）', file: join(MP, 'styles/badges.wxss'), inject: '\n.badge-solid-danger.badge-sm { font-size: var(--fs-16); }\n' }
   ]
   for (const c of cases) {
     const t = c.file || target
