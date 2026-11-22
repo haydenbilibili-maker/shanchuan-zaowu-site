@@ -30,9 +30,9 @@
       <view class="rad-check {{agreed ? 'is-on' : ''}}"></view>
       <view class="rad-agree-t">
         <text>我已阅读并同意</text>
-        <text class="rad-link" data-kind="terms" catchtap="onAgreementTap">《用户服务协议》</text>
+        <text class="rad-link" data-kind="terms" catchtap="onAgreementTap" hover-class="tap-press" hover-stay-time="80">《用户服务协议》</text>
         <text>和</text>
-        <text class="rad-link" data-kind="privacy" catchtap="onAgreementTap">《隐私政策》</text>
+        <text class="rad-link" data-kind="privacy" catchtap="onAgreementTap" hover-class="tap-press" hover-stay-time="80">《隐私政策》</text>
       </view>
     </view>
     <text wx:if="{{agreeHint && !agreed}}" class="rad-agree-hint">请先阅读并勾选同意</text>

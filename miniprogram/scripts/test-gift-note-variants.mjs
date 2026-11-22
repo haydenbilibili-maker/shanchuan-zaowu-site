@@ -551,7 +551,7 @@ function selftest() {
     {
       name: '去掉「换一句」入口（只剩关系 chip）',
       file: COMPOSE_WXML,
-      from: '        <text class="note-shuffle" bindtap="onNoteShuffle">换一句 ↻</text>\n',
+      from: '          <text class="note-shuffle" bindtap="onNoteShuffle" hover-class="tap-press" hover-stay-time="80">换一句 ↻</text>\n',
       to: ''
     },
     {

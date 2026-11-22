@@ -6,7 +6,7 @@
   bindtap="onMaskTap"
 >
   <view class="ui-pop-dialog am-plate" catchtap="noop">
-    <text class="ui-pop-close" wx:if="{{closeBtn}}" bindtap="onCancel">✕</text>
+    <text class="ui-pop-close" wx:if="{{closeBtn}}" bindtap="onCancel" hover-class="tap-press" hover-stay-time="80">✕</text>
 
     <view class="ui-pop-head is-center">
       <text class="ui-pop-kicker" wx:if="{{overline}}">{{overline}}</text>

@@ -58,8 +58,8 @@
     <view class="mu-head">
       <view class="mu-head-t"><text class="mu-en">THE WALL</text><text class="mu-cn">心愿签墙</text></view>
       <view class="wl-seg" aria-role="tablist">
-        <text class="wl-seg-item {{viewMode === 'latest' ? 'is-on' : ''}}" data-mode="latest" bindtap="switchView" aria-role="tab">最新</text>
-        <text class="wl-seg-item {{viewMode === 'mine' ? 'is-on' : ''}}" data-mode="mine" bindtap="switchView" aria-role="tab">我的</text>
+        <text class="wl-seg-item {{viewMode === 'latest' ? 'is-on' : ''}}" data-mode="latest" bindtap="switchView" aria-role="tab" hover-class="tap-press" hover-stay-time="80">最新</text>
+        <text class="wl-seg-item {{viewMode === 'mine' ? 'is-on' : ''}}" data-mode="mine" bindtap="switchView" aria-role="tab" hover-class="tap-press" hover-stay-time="80">我的</text>
       </view>
     </view>
 
@@ -133,7 +133,7 @@
   <view class="wl-grab" aria-hidden="true"></view>
   <view class="mu-head">
     <view class="mu-head-t"><text class="mu-en">SPECIMEN LABEL</text><text class="mu-cn">写一张心愿签</text></view>
-    <text class="wl-close" bindtap="closeCompose" aria-role="button" aria-label="关闭">×</text>
+    <text class="wl-close" bindtap="closeCompose" aria-role="button" aria-label="关闭" hover-class="tap-press" hover-stay-time="80">×</text>
   </view>
   <view class="wl-paper">
     <view class="wl-paper-top"><text>MA SHANG YOU</text><text>{{today}}</text></view>
@@ -173,7 +173,7 @@
         <view class="wl-voice-ico" aria-hidden="true"></view>
         <text>{{playingId === 'draft' ? '正在播放' : '试听'}} · {{voiceText}}</text>
       </view>
-      <text class="wl-voice-del" bindtap="onVoiceClear" aria-role="button">删除</text>
+      <text class="wl-voice-del" bindtap="onVoiceClear" aria-role="button" hover-class="tap-press" hover-stay-time="80">删除</text>
     </view>
     <text class="wl-voice-note">声音经馆方试听后公开，之前只有你自己听得到</text>
   </view>
@@ -217,7 +217,7 @@
       hover-stay-time="80"
       aria-role="button"
     >{{card.echoed ? '已表示也想要' : '我也想要'}}{{card.echoCount ? ' · ' + card.echoCount : ''}}</view>
-    <button class="wl-share" open-type="share" hover-class="tap-press-soft">分享这张签</button>
+    <button class="wl-share" open-type="share" hover-class="tap-press-soft" hover-stay-time="80">分享这张签</button>
   </view>
 </view>
 

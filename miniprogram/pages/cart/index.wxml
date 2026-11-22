@@ -53,7 +53,7 @@
     >
       <view class="invalid-banner" wx:if="{{invalidCount > 0}}">
         <text class="invalid-text">{{invalidCount}} 件藏品已失效</text>
-        <text class="invalid-action" bindtap="clearInvalidItems">清理</text>
+        <text class="invalid-action" bindtap="clearInvalidItems" hover-class="tap-press" hover-stay-time="80">清理</text>
       </view>
 
       <view class="slot-list">
@@ -133,7 +133,7 @@
       <view class="recommend-section" wx:if="{{collectionRecommendations.length > 0 && currentFolder === 'all'}}">
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">YOU MAY ALSO LIKE</text><text class="mu-cn">你可能也喜欢</text></view></view>
         <scroll-view scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
-          <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
+          <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover" hover-stay-time="80">
             <view class="rec-img-wrap">
               <!-- 需求 11：敏感形态模糊（收藏推荐位此前封面直出） -->
               <sensitive-blur-gate
@@ -182,10 +182,10 @@
         <text class="empty-desc" wx:elif="{{currentFolder === 'all'}}">在馆藏或藏品详情页加入购物车，待结算的藏品会出现在这里</text>
         <text class="empty-desc" wx:else>切换上方分类标签查看，或返回全部列表</text>
         <view class="empty-actions">
-          <view class="empty-cta-primary" wx:if="{{loadError}}" bindtap="loadCollection" hover-class="empty-cta-press">
+          <view class="empty-cta-primary" wx:if="{{loadError}}" bindtap="loadCollection" hover-class="empty-cta-press" hover-stay-time="80">
             <text>重新加载</text>
           </view>
-          <view class="empty-cta-primary" wx:else bindtap="goHome" hover-class="empty-cta-press">
+          <view class="empty-cta-primary" wx:else bindtap="goHome" hover-class="empty-cta-press" hover-stay-time="80">
             <text>去逛逛</text>
           </view>
           <view class="empty-cta-secondary" wx:if="{{!loadError && currentFolder === 'all'}}" bindtap="goCategory" hover-class="empty-cta-secondary-press" hover-stay-time="80">
@@ -200,7 +200,7 @@
       <view class="recommend-section empty-rec" wx:if="{{collectionRecommendations.length > 0 && currentFolder === 'all'}}">
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">FOR YOU</text><text class="mu-cn">为你推荐</text></view></view>
         <scroll-view scroll-x class="recommend-scroll" enable-flex show-scrollbar="{{false}}">
-          <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
+          <view class="rec-card" wx:for="{{collectionRecommendations}}" wx:key="_id" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover" hover-stay-time="80">
             <view class="rec-img-wrap">
               <image
                 class="rec-img"
@@ -246,7 +246,7 @@
       </view>
       <view class="addon-close" catchtap="dismissCheckoutAddon" hover-class="tap-press" hover-stay-time="80">×</view>
     </view>
-    <view class="coupon-chip" bindtap="openCouponModal" hover-class="tap-press">
+    <view class="coupon-chip" bindtap="openCouponModal" hover-class="tap-press" hover-stay-time="80">
       <image class="coupon-icon" src="/assets/icons/coupon.png" mode="aspectFit"></image>
       <text wx:if="{{selectedCoupon && selectedCoupon.type === 'freeShipping'}}">免邮券</text>
       <text wx:elif="{{selectedCoupon && couponSaved > 0}}">已减 ¥{{couponSaved}}</text>
@@ -273,7 +273,7 @@
         </view>
       </view>
 
-      <view class="checkout-btn {{selectedCount === 0 ? 'disabled' : ''}}" bindtap="handleCheckout" hover-class="{{selectedCount === 0 ? '' : 'checkout-btn-hover'}}">
+      <view class="checkout-btn {{selectedCount === 0 ? 'disabled' : ''}}" bindtap="handleCheckout" hover-class="{{selectedCount === 0 ? '' : 'checkout-btn-hover'}}" hover-stay-time="80">
         <text>付款入藏</text>
         <text class="checkout-count" wx:if="{{selectedCount > 0}}">({{selectedCount}})</text>
       </view>
@@ -310,7 +310,7 @@
       <view class="ui-pop-head">
         <text class="ui-pop-kicker">COUPONS</text>
         <text class="ui-pop-title">选择礼券</text>
-        <text class="ui-pop-close" bindtap="closeCouponModal">✕</text>
+        <text class="ui-pop-close" bindtap="closeCouponModal" hover-class="tap-press" hover-stay-time="80">✕</text>
       </view>
       <!-- 列表区按条数定高（券行约 156rpx、「不使用」行 112rpx），满 4 张再封顶 56vh：券少时不再空出半屏 -->
       <scroll-view scroll-y class="sheet-list" style="height: {{coupons.length >= 4 ? '56vh' : (coupons.length * 156 + 136) + 'rpx'}};" enhanced show-scrollbar="{{false}}">

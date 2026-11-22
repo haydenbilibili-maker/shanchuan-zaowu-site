@@ -24,8 +24,8 @@
       </view>
       <text class="addr-detail">{{item.region[0]}} {{item.region[1]}} {{item.region[2]}} {{item.detail}}</text>
       <view class="addr-actions" catchtap="true">
-        <view class="act-btn" wx:if="{{!item.isDefault}}" catchtap="setDefault" data-id="{{item._id}}" hover-class="tap-press" hover-stop-propagation>设为默认</view>
-        <view class="act-btn danger" catchtap="deleteAddress" data-id="{{item._id}}" hover-class="tap-press" hover-stop-propagation>删除</view>
+        <view class="act-btn" wx:if="{{!item.isDefault}}" catchtap="setDefault" data-id="{{item._id}}" hover-class="tap-press" hover-stay-time="80" hover-stop-propagation>设为默认</view>
+        <view class="act-btn danger" catchtap="deleteAddress" data-id="{{item._id}}" hover-class="tap-press" hover-stay-time="80" hover-stop-propagation>删除</view>
       </view>
     </view>
   </view>

@@ -442,3 +442,6 @@ page {
   background: #262320;
   color: #6B6560;
 }
+
+/* 2026-11-22 交互巡查：可点区域扩到约 72rpx（视觉不变；透明 ::after 外扩，事件冒泡到本元素） */
+.delete-btn::after { content: ''; position: absolute; top: -16rpx; right: -16rpx; bottom: -16rpx; left: -16rpx; }

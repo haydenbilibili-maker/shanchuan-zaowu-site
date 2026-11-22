@@ -148,7 +148,7 @@
           bindchange="onArchiveSwiperChange"
         >
           <swiper-item wx:for="{{contentItems}}" wx:key="_id" class="archive-swiper-item">
-            <view class="archive-card" hover-class="archive-card-active" bindtap="goToWikiDetail" data-id="{{item._id}}">
+            <view class="archive-card" hover-class="archive-card-active" hover-stay-time="80" bindtap="goToWikiDetail" data-id="{{item._id}}">
               <image class="archive-thumb" src="{{item.coverImage || fallbackImg}}" mode="aspectFill" lazy-load binderror="onFeedImageError" data-kind="content" data-id="{{item._id}}"></image>
               <view class="archive-body">
                 <view class="tag-type">{{item.typeLabel}}</view>
@@ -171,7 +171,7 @@
         <view class="mu-head">
           <view class="mu-head-t"><text class="mu-en">AVAILABLE</text><text class="mu-cn">{{showContentSection ? '本类可购' : '可购藏品'}}</text></view>
           <view class="mu-act">
-            <text class="filter-summary" wx:if="{{filterSummary}}" bindtap="openFilterPanel">{{filterSummary}}</text>
+            <text class="filter-summary" wx:if="{{filterSummary}}" bindtap="openFilterPanel" hover-class="tap-press" hover-stay-time="80">{{filterSummary}}</text>
             <text class="mu-act-muted" wx:if="{{orphanTotal >= 0 && (filterActiveCount > 0 || orphanTotal > 0)}}">{{orphanTotal}} 件</text>
           </view>
         </view>

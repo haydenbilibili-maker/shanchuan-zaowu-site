@@ -81,7 +81,7 @@
               <!-- 操作按钮 -->
               <view class="btn-group" style="display:flex; gap:20rpx;">
                  <!-- 待付款 -> 去支付（仅买家） -->
-                 <view class="btn-action primary {{payingId === item._id ? 'is-busy' : ''}}" hover-class="btn-action-press" 
+                 <view class="btn-action primary {{payingId === item._id ? 'is-busy' : ''}}" hover-class="btn-action-press" hover-stay-time="80" 
                       wx:if="{{item.status === 'pending_pay' && !item.isGiftReceiver}}" 
                       catchtap="handlePay" 
                       data-id="{{item._id}}">
@@ -89,7 +89,7 @@
                 </view>
 
                 <!-- 送礼人：待填址 -> 分享礼笺 -->
-                <view class="btn-action gold" hover-class="btn-action-press"
+                <view class="btn-action gold" hover-class="btn-action-press" hover-stay-time="80"
                       wx:if="{{item.giftNeedsAddress && !item.isGiftReceiver}}"
                       catchtap="handleOrderClick"
                       data-id="{{item._id}}"
@@ -98,7 +98,7 @@
                 </view>
 
                 <!-- 受礼人：待填址 -> 填写地址 -->
-                <view class="btn-action primary" hover-class="btn-action-press"
+                <view class="btn-action primary" hover-class="btn-action-press" hover-stay-time="80"
                       wx:if="{{item.giftNeedsAddress && item.isGiftReceiver}}"
                       catchtap="goFillGiftAddress"
                       data-id="{{item._id}}">
@@ -106,7 +106,7 @@
                 </view>
 
                 <!-- 待收货 -> 确认签收 -->
-                <view class="btn-action" hover-class="btn-action-press" 
+                <view class="btn-action" hover-class="btn-action-press" hover-stay-time="80" 
                       wx:if="{{item.status === 'shipped'}}" 
                       catchtap="confirmReceipt" 
                       data-id="{{item._id}}">
@@ -114,7 +114,7 @@
                 </view>
                 
                 <!-- 已签收 -> 评价 / 详情（评价状态由 orderReviewMap 批量补齐：可写才给「写下感受」，评完显示状态） -->
-                <view class="btn-action" hover-class="btn-action-press"
+                <view class="btn-action" hover-class="btn-action-press" hover-stay-time="80"
                       wx:if="{{(item.status === 'received' || item.status === 'signed') && !item.isVoucherOrder && item.reviewCanWrite}}"
                       catchtap="goToReview"
                       data-id="{{item._id}}"
@@ -127,7 +127,7 @@
                       catchtap="goToReview"
                       data-id="{{item._id}}"
                       data-item="{{item}}">{{item.reviewChip}}</view>
-                <view class="btn-action gold" hover-class="btn-action-press" 
+                <view class="btn-action gold" hover-class="btn-action-press" hover-stay-time="80" 
                       wx:if="{{item.status === 'received' || item.status === 'signed'}}" 
                       catchtap="handleOrderClick" 
                       data-id="{{item._id}}">
@@ -155,8 +155,8 @@
         </view>
         <text class="empty-title">{{loadError ? '档案读取失败' : tabs[curTab].emptyTitle}}</text>
         <text class="empty-desc">{{loadError ? '请检查网络后重试' : tabs[curTab].emptyDesc}}</text>
-        <view class="empty-cta" wx:if="{{loadError}}" bindtap="loadOrders" hover-class="empty-cta-press">重新加载</view>
-        <navigator class="empty-cta" wx:else url="/pages/index/index" open-type="switchTab" hover-class="empty-cta-press">去逛逛</navigator>
+        <view class="empty-cta" wx:if="{{loadError}}" bindtap="loadOrders" hover-class="empty-cta-press" hover-stay-time="80">重新加载</view>
+        <navigator class="empty-cta" wx:else url="/pages/index/index" open-type="switchTab" hover-class="empty-cta-press" hover-stay-time="80">去逛逛</navigator>
       </view>
     </block>
 

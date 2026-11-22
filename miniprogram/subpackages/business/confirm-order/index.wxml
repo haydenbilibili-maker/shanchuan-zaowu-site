@@ -6,7 +6,7 @@
     class="auth-resume-hint"
     wx:if="{{showAuthResumeHint}}"
     bindtap="dismissAuthResumeHint"
-    hover-class="tap-press-soft"
+    hover-class="tap-press-soft" hover-stay-time="80"
   >
     <text class="auth-resume-hint-text">{{authResumeHint}}</text>
     <text class="auth-resume-hint-close">收起</text>
@@ -98,7 +98,7 @@
         <text class="delivery-desc">{{giftDeliveryHint}}</text>
       </view>
     </view>
-    <text class="claim-switch self-exit" wx:if="{{giftCanEditSteps}}" bindtap="onGiftRailTap" data-step="1">其实是送给别人？回到选礼换关系 ›</text>
+    <text class="claim-switch self-exit" wx:if="{{giftCanEditSteps}}" bindtap="onGiftRailTap" data-step="1" hover-class="tap-press" hover-stay-time="80">其实是送给别人？回到选礼换关系 ›</text>
     </block>
     <block wx:else>
     <view class="delivery-grid">
@@ -228,7 +228,7 @@
         </view>
       </view>
       <view class="verify-links">
-        <text class="why-toggle {{giftVerifyWhyOpen ? 'open' : ''}}" bindtap="toggleGiftVerifyWhy">{{giftVerifyWhyOpen ? '收起规则' : '领取规则'}}</text>
+        <text class="why-toggle {{giftVerifyWhyOpen ? 'open' : ''}}" bindtap="toggleGiftVerifyWhy" hover-class="tap-press" hover-stay-time="80">{{giftVerifyWhyOpen ? '收起规则' : '领取规则'}}</text>
       </view>
       <text class="verify-set-hint" wx:if="{{giftVerifyWhyOpen}}">TA 点「收下」即领取，仅限一人；收下前你可随时作废换链接。口令只有你看得到，礼笺不能发朋友圈。</text>
       </block>
@@ -248,7 +248,7 @@
         <text>{{giftPhoneError}}</text>
       </view>
       <view class="verify-links">
-        <text class="why-toggle {{giftVerifyWhyOpen ? 'open' : ''}}" bindtap="toggleGiftVerifyWhy">{{giftVerifyWhyOpen ? '收起' : '为什么要填？'}}</text>
+        <text class="why-toggle {{giftVerifyWhyOpen ? 'open' : ''}}" bindtap="toggleGiftVerifyWhy" hover-class="tap-press" hover-stay-time="80">{{giftVerifyWhyOpen ? '收起' : '为什么要填？'}}</text>
       </view>
       <text class="verify-set-hint" wx:if="{{giftVerifyWhyOpen}}">用于 TA 领取时核验，防止被他人领走；号码加密保存。</text>
       </block>
@@ -257,7 +257,7 @@
   </block>
 
   <!-- 收货地址：普通订单（门店自取不展示）；礼赠的地址在上面的交付卡里 -->
-  <view class="card address-card" bindtap="chooseAddress" hover-class="address-card-hover" wx:if="{{!isGiftOrder && !storePickup}}">
+  <view class="card address-card" bindtap="chooseAddress" hover-class="address-card-hover" hover-stay-time="80" wx:if="{{!isGiftOrder && !storePickup}}">
     <block wx:if="{{address}}">
       <view class="addr-head">
         <text class="addr-name">{{address.name}}</text>
@@ -389,7 +389,7 @@
     <block wx:else>
       <view class="remark-open-head">
         <text class="remark-label">订单备注</text>
-        <text class="remark-done" bindtap="closeRemarkIfEmpty" wx:if="{{!remark}}">收起</text>
+        <text class="remark-done" bindtap="closeRemarkIfEmpty" wx:if="{{!remark}}" hover-class="tap-press" hover-stay-time="80">收起</text>
       </view>
       <textarea
         class="remark-input {{remarkFocused ? 'is-focused' : ''}}"
@@ -548,7 +548,7 @@
       <!-- 有会员省额时底栏说一句（礼赠与普通订单同一口径；送礼页不再报价，2026-10-12） -->
       <text class="fp-note" wx:if="{{discountRate < 1 && vipSaved > 0}}">{{levelName}} {{discountText}} · 已省 ¥{{vipSavedYuan}}</text>
     </view>
-    <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitOrder" hover-class="{{submitting ? '' : 'submit-btn-hover'}}">
+    <view class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submitOrder" hover-class="{{submitting ? '' : 'submit-btn-hover'}}" hover-stay-time="80">
       {{submitting ? (isGiftOrder ? '备妥中…' : '处理中…') : (isGiftOrder ? (useWalletPay && wxpayYuan === '0.00' ? '钱包支付并备妥' : '支付并备妥') : (useWalletPay && wxpayYuan === '0.00' ? '钱包支付' : '提交订单'))}}
     </view>
   </view>
@@ -561,7 +561,7 @@
     <view class="ui-pop-head">
       <text class="ui-pop-kicker">COUPONS</text>
       <text class="ui-pop-title">选择礼券</text>
-      <text class="ui-pop-close" bindtap="closeCouponModal">✕</text>
+      <text class="ui-pop-close" bindtap="closeCouponModal" hover-class="tap-press" hover-stay-time="80">✕</text>
     </view>
     <!-- 列表区按条数定高（券行约 156rpx、「不使用」行 112rpx），满 4 张再封顶 50vh -->
     <scroll-view scroll-y class="coupon-scroll" style="height: {{coupons.length >= 4 ? '50vh' : (coupons.length * 156 + 136) + 'rpx'}};" enhanced show-scrollbar="{{false}}">

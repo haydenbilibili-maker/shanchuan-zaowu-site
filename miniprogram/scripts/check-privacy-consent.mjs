@@ -248,7 +248,7 @@ function selftest() {
     ['新增一个不受门控的手机号按钮', 'miniprogram/subpackages/feature/detail/wiki-detail/index.wxml',
       (s) => s + '\n<button open-type="getPhoneNumber" bindgetphonenumber="x">授权</button>\n'],
     ['弹层授权回调不再挡未勾选', D.js, (s) => s.replace('if (this.data.saving || !this.data.agreed) return\n      const detail', 'if (this.data.saving) return\n      const detail')],
-    ['弹层协议名改成 bindtap（点协议名会顺带勾选）', D.wxml, (s) => s.replace(/catchtap="onAgreementTap">《隐私政策》/, 'bindtap="onAgreementTap">《隐私政策》')],
+    ['弹层协议名改成 bindtap（点协议名会顺带勾选）', D.wxml, (s) => s.replace(/catchtap="onAgreementTap"( [^>]*)?>《隐私政策》/, 'bindtap="onAgreementTap"$1>《隐私政策》')],
     ['资料页删掉《隐私政策》入口', P.wxml, (s) => s.replace(/<text[^>]*>《隐私政策》<\/text>/, '')],
     ['图鉴详情门禁删掉「先不注册」出口（又成关不掉的门禁）', 'miniprogram/subpackages/feature/detail/wiki-detail/index.wxml',
       (s) => s.replace(/\n\s*closable="\{\{true\}\}"/, '')],

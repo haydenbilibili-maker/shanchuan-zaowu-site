@@ -83,11 +83,11 @@
           </view>
           <view class="row">
             <text class="lbl">联系电话｜TEL</text>
-            <text class="val underline" hover-class="tap-press" bindtap="callPhone">{{phone}}</text>
+            <text class="val underline" hover-class="tap-press" hover-stay-time="80" bindtap="callPhone">{{phone}}</text>
           </view>
           <view class="row">
             <text class="lbl">品牌官网｜WEB</text>
-            <text class="val underline" hover-class="tap-press" bindtap="copyWebsite">{{brandWebsite}}</text>
+            <text class="val underline" hover-class="tap-press" hover-stay-time="80" bindtap="copyWebsite">{{brandWebsite}}</text>
           </view>
           <view class="row">
             <text class="lbl">地址｜ADD</text>
@@ -96,7 +96,7 @@
         </view>
 
         <!-- 嵌入地图 -->
-        <view class="map-box" hover-class="tap-press" bindtap="openMap">
+        <view class="map-box" hover-class="tap-press" hover-stay-time="80" bindtap="openMap">
            <map 
             class="mini-map"
             latitude="{{markers[0].latitude}}" 
@@ -110,10 +110,10 @@
           </view>
         </view>
 
-        <view class="store-link-btn" hover-class="tap-press" bindtap="goToStoreTab" wx:if="{{showStore}}">
+        <view class="store-link-btn" hover-class="tap-press" hover-stay-time="80" bindtap="goToStoreTab" wx:if="{{showStore}}">
           <text>走进这有店 · 查看两家门店</text>
         </view>
-        <view class="recruit-link-btn" hover-class="tap-press" bindtap="goToFramerRecruit">
+        <view class="recruit-link-btn" hover-class="tap-press" hover-stay-time="80" bindtap="goToFramerRecruit">
           <text>标本师招募 · 了解合作</text>
         </view>
       </view>

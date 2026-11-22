@@ -380,7 +380,7 @@
         <view class="coupon-panel-head">
           <view
             class="coupon-panel-back"
-            hover-class="coupon-panel-back-press"
+            hover-class="coupon-panel-back-press" hover-stay-time="80"
             bindtap="backToPassSummary"
           >‹ 返回</view>
           <view class="coupon-panel-head-main">
@@ -395,7 +395,7 @@
             class="coupon-pick {{couponRedeemForm.userCouponId===item._id?'on':''}}"
             wx:for="{{memberPassResult.storeCoupons}}"
             wx:key="_id"
-            hover-class="coupon-pick-press"
+            hover-class="coupon-pick-press" hover-stay-time="80"
             bindtap="pickStoreCoupon"
             data-id="{{item._id}}"
             data-title="{{item.title}}"
@@ -466,7 +466,7 @@
           <view
             class="receipt-add {{couponRedeemForm.userCouponId && couponReceiptPaths.length < 3 ? '' : 'is-disabled'}}"
             wx:if="{{couponReceiptPaths.length < 3}}"
-            hover-class="btn-ghost-press"
+            hover-class="btn-ghost-press" hover-stay-time="80"
             bindtap="chooseCouponReceipt"
           >
             <text class="receipt-add-plus">+</text>
@@ -517,7 +517,7 @@
           <view class="perk-section" wx:if="{{memberPassResult.perks.length}}">
             <view
               class="perk-fold {{passPerksExpanded ? 'is-open' : ''}}"
-              hover-class="perk-fold-press"
+              hover-class="perk-fold-press" hover-stay-time="80"
               bindtap="togglePassPerks"
             >
               <text class="perk-fold-text">会员权益 {{memberPassResult.perks.length}} 项</text>
@@ -538,7 +538,7 @@
           </view>
           <view class="coupon-summary empty" wx:elif="{{memberPassResult.storeCouponError}}">
             <text class="coupon-hint-text">{{memberPassResult.storeCouponError}}</text>
-            <view class="btn-outline coupon-retry" hover-class="btn-ghost-press" bindtap="retryLoadStoreCoupons">重新查询</view>
+            <view class="btn-outline coupon-retry" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="retryLoadStoreCoupons">重新查询</view>
           </view>
           <view class="coupon-summary empty" wx:elif="{{!memberPassResult.storeCoupons.length}}">
             <text class="coupon-hint-text">该会员暂无门店可用礼券</text>
@@ -556,7 +556,7 @@
           <view
             class="btn-primary"
             wx:if="{{memberPassResult.storeCouponsLoaded && memberPassResult.storeCoupons.length}}"
-            hover-class="btn-primary-press"
+            hover-class="btn-primary-press" hover-stay-time="80"
             bindtap="openStoreCouponRedeem"
           >核销礼券（{{memberPassResult.storeCoupons.length}}）</view>
           <view
@@ -565,15 +565,15 @@
           >查询可用礼券…</view>
           <view
             class="{{memberPassResult.storeCouponsLoaded && memberPassResult.storeCoupons.length ? 'btn-ghost' : 'btn-primary'}}"
-            hover-class="{{memberPassResult.storeCouponsLoaded && memberPassResult.storeCoupons.length ? 'btn-ghost-press' : 'btn-primary-press'}}"
+            hover-class="{{memberPassResult.storeCouponsLoaded && memberPassResult.storeCoupons.length ? 'btn-ghost-press' : 'btn-primary-press'}}" hover-stay-time="80"
             bindtap="closeMemberPassResult"
           >知道了</view>
         </view>
       </view>
       <view class="pass-foot" wx:else>
         <view class="btn-row pass-fail-actions">
-          <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="closeMemberPassResult">关闭</view>
-          <view class="btn-primary" hover-class="btn-primary-press" bindtap="retryLastVerify">再扫一次</view>
+          <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="closeMemberPassResult">关闭</view>
+          <view class="btn-primary" hover-class="btn-primary-press" hover-stay-time="80" bindtap="retryLastVerify">再扫一次</view>
         </view>
       </view>
     </block>
@@ -598,10 +598,10 @@
     <text class="modal-tip tip-warn" wx:if="{{couponRedeemResult.tip}}">{{couponRedeemResult.tip}}</text>
 
     <view class="btn-row modal-result-actions" wx:if="{{couponRedeemResult.showGrantLink}}">
-      <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="goCouponRedeemGrantTab">去消费赠分补录</view>
-      <view class="btn-primary" hover-class="btn-primary-press" bindtap="closeCouponRedeemResult">完成</view>
+      <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="goCouponRedeemGrantTab">去消费赠分补录</view>
+      <view class="btn-primary" hover-class="btn-primary-press" hover-stay-time="80" bindtap="closeCouponRedeemResult">完成</view>
     </view>
-    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" bindtap="closeCouponRedeemResult">完成</view>
+    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" hover-stay-time="80" bindtap="closeCouponRedeemResult">完成</view>
   </view>
 </view>
 
@@ -617,10 +617,10 @@
     <text class="modal-sub">{{bookingVerifyResult.bookingTitle}}{{bookingVerifyResult.ticketCode ? ' · ' + bookingVerifyResult.ticketCode : ''}}{{bookingVerifyResult.people ? ' · ' + bookingVerifyResult.people + '人' : ''}}</text>
     <text class="modal-tip" wx:if="{{bookingVerifyResult.msg}}">{{bookingVerifyResult.msg}}</text>
     <view class="btn-row modal-result-actions" wx:if="{{bookingVerifyResult.already}}">
-      <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="closeBookingVerifyResult">关闭</view>
-      <view class="btn-primary" hover-class="btn-primary-press" bindtap="requestBookingReverse">申请冲正</view>
+      <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="closeBookingVerifyResult">关闭</view>
+      <view class="btn-primary" hover-class="btn-primary-press" hover-stay-time="80" bindtap="requestBookingReverse">申请冲正</view>
     </view>
-    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" bindtap="closeBookingVerifyResult">知道了</view>
+    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" hover-stay-time="80" bindtap="closeBookingVerifyResult">知道了</view>
   </view>
 </view>
 
@@ -660,8 +660,8 @@
     </view>
     <text class="modal-tip">请当面核对买家手机尾号与件数，确认无误后再交付。</text>
     <view class="btn-row modal-result-actions">
-      <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="closePickupConfirm">再核对一下</view>
-      <view class="btn-primary {{pickupConfirmBusy ? 'disabled' : ''}}" hover-class="btn-primary-press" bindtap="confirmPickupDelivery">{{pickupConfirmBusy ? '核销中…' : '确认交付'}}</view>
+      <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="closePickupConfirm">再核对一下</view>
+      <view class="btn-primary {{pickupConfirmBusy ? 'disabled' : ''}}" hover-class="btn-primary-press" hover-stay-time="80" bindtap="confirmPickupDelivery">{{pickupConfirmBusy ? '核销中…' : '确认交付'}}</view>
     </view>
   </view>
 </view>
@@ -682,10 +682,10 @@
     <text class="modal-sub modal-sub-brass" wx:if="{{pickupVerifyResult.pointsText}}">{{pickupVerifyResult.pointsText}}</text>
     <text class="modal-tip {{pickupVerifyResult.ok ? '' : 'tip-warn'}}" wx:if="{{pickupVerifyResult.msg}}">{{pickupVerifyResult.msg}}</text>
     <view class="btn-row modal-result-actions" wx:if="{{pickupVerifyResult.canRetry}}">
-      <view class="btn-ghost" hover-class="btn-ghost-press" bindtap="closePickupVerifyResult">关闭</view>
-      <view class="btn-primary" hover-class="btn-primary-press" bindtap="retryLastVerify">{{pickupVerifyResult.retryText || '再试一次'}}</view>
+      <view class="btn-ghost" hover-class="btn-ghost-press" hover-stay-time="80" bindtap="closePickupVerifyResult">关闭</view>
+      <view class="btn-primary" hover-class="btn-primary-press" hover-stay-time="80" bindtap="retryLastVerify">{{pickupVerifyResult.retryText || '再试一次'}}</view>
     </view>
-    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" bindtap="closePickupVerifyResult">完成</view>
+    <view class="btn-primary modal-result-cta" wx:else hover-class="btn-primary-press" hover-stay-time="80" bindtap="closePickupVerifyResult">完成</view>
   </view>
 </view>
 

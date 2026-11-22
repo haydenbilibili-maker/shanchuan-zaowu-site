@@ -251,3 +251,6 @@
   color: var(--color-text-secondary, #A09A90);
   font-size: var(--fs-26);
 }
+
+/* 2026-11-22 交互巡查：可点区域扩到约 68rpx（视觉不变；透明 ::after 外扩，事件冒泡到本元素） */
+.upload-del::after { content: ''; position: absolute; top: -14rpx; right: -14rpx; bottom: -14rpx; left: -14rpx; }

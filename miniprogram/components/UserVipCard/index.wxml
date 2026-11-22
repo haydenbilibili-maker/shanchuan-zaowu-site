@@ -275,9 +275,9 @@
               <text class="cb-row-val">{{cardBirthday.headline}}</text>
               <text class="cb-row-sub">{{cardBirthday.subline}}</text>
             </view>
-            <text class="cb-row-link" wx:else catchtap="onGoProfileFromCardBack">填写生日 →</text>
+            <text class="cb-row-link" wx:else catchtap="onGoProfileFromCardBack" hover-class="tap-press" hover-stay-time="80">填写生日 →</text>
             <!-- 需求 21：生日已填也保留档案入口（此前只在缺失时才出现，老用户背板无路可走） -->
-            <text class="cb-row-link" wx:if="{{cardBirthday.hasBirthday}}" catchtap="onGoProfileFromCardBack">档案 →</text>
+            <text class="cb-row-link" wx:if="{{cardBirthday.hasBirthday}}" catchtap="onGoProfileFromCardBack" hover-class="tap-press" hover-stay-time="80">档案 →</text>
           </view>
 
           <view class="cb-stats-row">
@@ -308,9 +308,9 @@
               </view>
             </scroll-view>
             <text class="cb-persona" wx:if="{{cardPersona}}">{{cardPersona}}</text>
-            <text class="cb-tags-empty" wx:if="{{!cardInterestTags.length && !cardPersona}}" catchtap="onGoProfileFromCardBack">添加兴趣标签 →</text>
+            <text class="cb-tags-empty" wx:if="{{!cardInterestTags.length && !cardPersona}}" catchtap="onGoProfileFromCardBack" hover-class="tap-press" hover-stay-time="80">添加兴趣标签 →</text>
             <!-- 需求 21：已有标签也保留入口，避免「背板只有展示、没有去处」 -->
-            <text class="cb-tags-link" wx:if="{{cardInterestTags.length || cardPersona}}" catchtap="onGoProfileFromCardBack">管理档案 →</text>
+            <text class="cb-tags-link" wx:if="{{cardInterestTags.length || cardPersona}}" catchtap="onGoProfileFromCardBack" hover-class="tap-press" hover-stay-time="80">管理档案 →</text>
           </view>
         </view>
 

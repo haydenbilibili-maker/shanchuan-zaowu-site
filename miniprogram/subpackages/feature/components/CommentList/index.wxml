@@ -28,17 +28,17 @@
       <view class="filter-chips">
         <view 
           class="filter-chip {{sortBy === 'time' ? 'active' : ''}}" 
-          hover-class="filter-chip-press"
+          hover-class="filter-chip-press" hover-stay-time="80"
           bindtap="onSortChange" 
           data-sort="time">最新</view>
         <view 
           class="filter-chip {{sortBy === 'hot' ? 'active' : ''}}" 
-          hover-class="filter-chip-press"
+          hover-class="filter-chip-press" hover-stay-time="80"
           bindtap="onSortChange" 
           data-sort="hot">最热</view>
         <view 
           class="filter-chip {{sortBy === 'rating' ? 'active' : ''}}" 
-          hover-class="filter-chip-press"
+          hover-class="filter-chip-press" hover-stay-time="80"
           bindtap="onSortChange" 
           data-sort="rating">评分</view>
       </view>
@@ -48,17 +48,17 @@
       <view class="filter-chips">
         <view 
           class="filter-chip {{filter === 'all' ? 'active' : ''}}" 
-          hover-class="filter-chip-press"
+          hover-class="filter-chip-press" hover-stay-time="80"
           bindtap="onFilterChange" 
           data-filter="all">全部</view>
         <view 
           class="filter-chip {{filter === 'withImages' ? 'active' : ''}}" 
-          hover-class="filter-chip-press"
+          hover-class="filter-chip-press" hover-stay-time="80"
           bindtap="onFilterChange" 
           data-filter="withImages">有图</view>
         <view 
           class="filter-chip {{filter === 'highRating' ? 'active' : ''}}" 
-          hover-class="filter-chip-press"
+          hover-class="filter-chip-press" hover-stay-time="80"
           bindtap="onFilterChange" 
           data-filter="highRating">好评</view>
       </view>
@@ -107,7 +107,7 @@
         <view class="comment-footer">
           <view 
             class="comment-like {{item.userLiked ? 'liked' : ''}}" 
-            hover-class="comment-like-press"
+            hover-class="comment-like-press" hover-stay-time="80"
             bindtap="onLikeComment"
             data-id="{{item._id}}"
             data-liked="{{item.userLiked}}">
@@ -121,7 +121,7 @@
 
   <!-- 加载更多 -->
   <view class="load-more" wx:if="{{hasMore && !loading}}">
-    <text hover-class="load-more-press" bindtap="loadMore">加载更多</text>
+    <text hover-class="load-more-press" hover-stay-time="80" bindtap="loadMore">加载更多</text>
   </view>
 
   <!-- 加载中 -->

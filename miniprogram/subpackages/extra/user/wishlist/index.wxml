@@ -45,7 +45,7 @@
         <text class="note" wx:if="{{tab === 'wishlist'}}">到货时馆员会优先联系你{{item.savedText ? ' · ' + item.savedText : ''}}</text>
         <text class="note" wx:elif="{{item.savedText}}">{{item.savedText}}</text>
       </view>
-      <view class="remove" catchtap="removeItem" data-id="{{item._id}}" data-pid="{{item.productId}}" hover-class="tap-press" hover-stop-propagation aria-role="button">移除</view>
+      <view class="remove" catchtap="removeItem" data-id="{{item._id}}" data-pid="{{item.productId}}" hover-class="tap-press" hover-stay-time="80" hover-stop-propagation aria-role="button">移除</view>
     </view>
   </view>
 

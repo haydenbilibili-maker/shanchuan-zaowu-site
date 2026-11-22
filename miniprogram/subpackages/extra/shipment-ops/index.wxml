@@ -76,11 +76,11 @@
       <!-- 选 SKU（仅超管） -->
       <block wx:if="{{createMode === 'sku'}}">
         <view class="ss-add-row">
-          <view class="ss-add-btn is-primary {{pricingEnabled ? '' : 'is-disabled'}}" hover-class="ss-press" bindtap="openSkuPicker">
+          <view class="ss-add-btn is-primary {{pricingEnabled ? '' : 'is-disabled'}}" hover-class="ss-press" hover-stay-time="80" bindtap="openSkuPicker">
             <text class="ss-add-title">选已有 SKU</text>
             <text class="ss-add-sub">常用 · 直接开单</text>
           </view>
-          <view class="ss-add-btn is-secondary {{pricingEnabled ? '' : 'is-disabled'}}" hover-class="ss-press" bindtap="openSkuForm">
+          <view class="ss-add-btn is-secondary {{pricingEnabled ? '' : 'is-disabled'}}" hover-class="ss-press" hover-stay-time="80" bindtap="openSkuForm">
             <text class="ss-add-title">新建 SKU</text>
             <text class="ss-add-sub">原材料 × 包装方式</text>
           </view>
@@ -123,7 +123,7 @@
           </view>
         </view>
 
-        <view class="ss-empty-box {{pricingEnabled ? '' : 'is-disabled'}}" wx:if="{{!lines.length && !createBusy}}" hover-class="ss-press" bindtap="openSkuPicker">
+        <view class="ss-empty-box {{pricingEnabled ? '' : 'is-disabled'}}" wx:if="{{!lines.length && !createBusy}}" hover-class="ss-press" hover-stay-time="80" bindtap="openSkuPicker">
           <view class="ss-empty-mark"><text>+</text></view>
           <text class="ss-empty-title">还没有明细</text>
           <text class="ss-empty-hint">点此选已有 SKU，或上方「新建 SKU」</text>
@@ -840,7 +840,7 @@
     <view
       class="ss-cta {{canSave && !createBusy ? '' : 'is-disabled'}}"
       style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;"
-      hover-class="{{canSave && !createBusy ? 'ss-cta-press' : ''}}"
+      hover-class="{{canSave && !createBusy ? 'ss-cta-press' : ''}}" hover-stay-time="80"
       bindtap="onSaveSku"
     >
       <text>{{createBusy ? '处理中…' : '保存出货单'}}</text>
@@ -1082,7 +1082,7 @@
       </view>
     </scroll-view>
     <view class="ss-actions is-in-sheet" catchtouchmove="noop">
-      <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitSkuEdit">
+      <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" hover-stay-time="80" bindtap="submitSkuEdit">
         <text>{{skuEdit.saving ? '保存中…' : (skuEdit.mode === 'edit' ? '保存修改' : (skuEdit.origin === 'create' ? '创建并加入明细' : '创建 SKU'))}}</text>
       </view>
     </view>
@@ -1194,7 +1194,7 @@
       <view class="ss-problems" wx:if="{{libForm.problems}}"><text>· {{libForm.problems}}</text></view>
     </scroll-view>
     <view class="ss-actions is-in-sheet" catchtouchmove="noop">
-      <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" bindtap="submitLibForm">
+      <view class="ss-cta" style="width:100%;min-width:100%;max-width:100%;display:flex;box-sizing:border-box;" hover-class="ss-cta-press" hover-stay-time="80" bindtap="submitLibForm">
         <text>{{libForm.saving ? '保存中…' : '保存'}}</text>
       </view>
     </view>

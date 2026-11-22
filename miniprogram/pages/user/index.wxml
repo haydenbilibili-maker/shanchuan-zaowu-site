@@ -15,7 +15,7 @@
   </view>
 
   <!-- 新用户引导条（可关闭，不强制跳转） -->
-  <view class="onboard-banner stagger-item" wx:if="{{showOnboardingBanner && !isLocalLoggedOut}}" style="animation-delay: 0s;" hover-class="onboard-banner-press">
+  <view class="onboard-banner stagger-item" wx:if="{{showOnboardingBanner && !isLocalLoggedOut}}" style="animation-delay: 0s;" hover-class="onboard-banner-press" hover-stay-time="80">
     <view class="onboard-banner-body" bindtap="startOnboarding" hover-class="tap-press" hover-stay-time="80">
       <view class="onboard-ring" style="background: conic-gradient(from -90deg, #C4A76C {{profileScore}}%, rgba(196,167,108,0.12) 0);">
         <view class="onboard-ring-inner"><text class="onboard-ring-val">{{profileScore}}</text></view>
@@ -30,7 +30,7 @@
   </view>
 
   <!-- 注册礼包补领（完成注册但发放失败/未打标） -->
-  <view class="onboard-banner gift-repair-banner stagger-item" wx:if="{{showGiftRepairBanner && !isLocalLoggedOut && !showOnboardingBanner}}" style="animation-delay: 0s;" hover-class="onboard-banner-press">
+  <view class="onboard-banner gift-repair-banner stagger-item" wx:if="{{showGiftRepairBanner && !isLocalLoggedOut && !showOnboardingBanner}}" style="animation-delay: 0s;" hover-class="onboard-banner-press" hover-stay-time="80">
     <view class="onboard-banner-body" bindtap="repairWelcomeGift" hover-class="tap-press" hover-stay-time="80">
       <view class="onboard-banner-text">
         <text class="onboard-banner-title">新客礼待放入</text>
@@ -42,7 +42,7 @@
   </view>
 
   <!-- 资料后补（注册只问手机号）：已注册而昵称仍为默认「藏家」或没头像时提示，可关 -->
-  <view class="onboard-banner stagger-item" wx:if="{{showProfileHint && !isLocalLoggedOut && !showOnboardingBanner && !showGiftRepairBanner}}" style="animation-delay: 0s;" hover-class="onboard-banner-press">
+  <view class="onboard-banner stagger-item" wx:if="{{showProfileHint && !isLocalLoggedOut && !showOnboardingBanner && !showGiftRepairBanner}}" style="animation-delay: 0s;" hover-class="onboard-banner-press" hover-stay-time="80">
     <view class="onboard-banner-body" bindtap="goProfileHint" hover-class="tap-press" hover-stay-time="80">
       <view class="onboard-banner-text">
         <text class="onboard-banner-title">补全藏家档案</text>
@@ -393,11 +393,11 @@
     <text class="cr-line">把山海带回家</text>
     <text class="cr-line en">NATURE'S CREATIONS</text>
     <view class="cr-legal">
-      <text class="cr-link" hover-class="cr-link-press" bindtap="goToLegal" data-type="terms">用户协议</text>
+      <text class="cr-link" hover-class="cr-link-press" hover-stay-time="80" bindtap="goToLegal" data-type="terms">用户协议</text>
       <text class="cr-dot">·</text>
-      <text class="cr-link" hover-class="cr-link-press" bindtap="goToLegal" data-type="privacy">隐私政策</text>
+      <text class="cr-link" hover-class="cr-link-press" hover-stay-time="80" bindtap="goToLegal" data-type="privacy">隐私政策</text>
       <text class="cr-dot">·</text>
-      <text class="cr-link" hover-class="cr-link-press" bindtap="goToFeedback">反馈建议</text>
+      <text class="cr-link" hover-class="cr-link-press" hover-stay-time="80" bindtap="goToFeedback">反馈建议</text>
     </view>
   </view>
 
@@ -435,7 +435,7 @@
           <view class="pass-qr-empty" wx:if="{{passState === 'guest'}}">登录后可生成动态会员码</view>
           <view class="pass-qr-empty-wrap" wx:elif="{{passState === 'error'}}">
             <text class="pass-qr-empty">{{passErrorMsg || '会员码暂时无法生成'}}</text>
-            <text class="pass-qr-retry" catchtap="refreshMemberPass">重新获取</text>
+            <text class="pass-qr-retry" catchtap="refreshMemberPass" hover-class="tap-press" hover-stay-time="80">重新获取</text>
           </view>
           <view class="pass-qr-frame" wx:else>
             <canvas

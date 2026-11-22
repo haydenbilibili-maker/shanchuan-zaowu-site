@@ -242,7 +242,7 @@
             <text
               wx:if="{{item.phoneCopyable}}"
               class="spec-copy"
-              hover-class="spec-copy-pressed"
+              hover-class="spec-copy-pressed" hover-stay-time="80"
               catchtap="onCopyPhone"
               bindlongpress="onCopyPhone"
               data-phone="{{item.phone}}"
@@ -289,7 +289,7 @@
           <view
             wx:if="{{detail}}"
             class="btn-youxin-fill compact"
-            hover-class="btn-youxin-fill-pressed"
+            hover-class="btn-youxin-fill-pressed" hover-stay-time="80"
             catchtap="openYouxinFromCard"
             data-openid="{{detail.openid}}"
           >写一封</view>

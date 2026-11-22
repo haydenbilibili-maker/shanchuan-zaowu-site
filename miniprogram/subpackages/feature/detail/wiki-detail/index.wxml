@@ -132,7 +132,7 @@
       class="notes-item"
       wx:for="{{relatedArticles}}"
       wx:key="_id"
-      hover-class="tap-press-soft"
+      hover-class="tap-press-soft" hover-stay-time="80"
       bindtap="goToRelatedArticle"
       data-id="{{item._id}}"
     >

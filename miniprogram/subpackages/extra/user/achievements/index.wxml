@@ -6,7 +6,7 @@
     <view class="share-tip-body">
       <image class="share-tip-icon icon-gold" src="/assets/icons/share.png" mode="aspectFit"></image>
       <text class="share-tip-text">请点右上角 ··· 分享</text>
-      <view class="share-tip-close" hover-class="tap-press" catchtap="dismissShareTip">
+      <view class="share-tip-close" hover-class="tap-press" hover-stay-time="80" catchtap="dismissShareTip">
         <image class="share-tip-close-icon icon-gold" src="/subpackages/feature/assets/icons/nav-close-brass.png" mode="aspectFit"></image>
       </view>
     </view>
@@ -143,7 +143,7 @@
     <view class="empty-state" wx:if="{{!loading && loadError && !chapters.length}}">
       <text class="empty-title">档案暂时读不出</text>
       <text class="empty-text">网络不稳或尚未登录时，成就会空着</text>
-      <view class="retry-btn" hover-class="tap-press" bindtap="onRetry">重新读取</view>
+      <view class="retry-btn" hover-class="tap-press" hover-stay-time="80" bindtap="onRetry">重新读取</view>
     </view>
 
   </view>
@@ -151,7 +151,7 @@
   <!-- 成就详情：一枚纸面铭牌 -->
   <view class="ui-pop-mask is-center achievement-modal {{showModal ? 'show' : ''}}" wx:if="{{selectedAchievement}}" catchtap="closeModal" catchtouchmove="true">
     <view class="ui-pop-dialog modal-content" catchtap="stopPropagation">
-      <view class="modal-close" hover-class="tap-press" bindtap="closeModal">
+      <view class="modal-close" hover-class="tap-press" hover-stay-time="80" bindtap="closeModal">
         <image class="modal-close-icon icon-gold" src="/subpackages/feature/assets/icons/nav-close-brass.png" mode="aspectFit"></image>
       </view>
       <view class="medal {{selectedAchievement.unlocked ? 'is-lit' : ''}}">

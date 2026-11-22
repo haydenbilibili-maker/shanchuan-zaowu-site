@@ -40,7 +40,7 @@
         class="flow-step-btn {{flowHot1 ? 'hot' : ''}}"
         data-step="1"
         bindtap="onFlowTap"
-        hover-class="flow-press"
+        hover-class="flow-press" hover-stay-time="80"
       >
         <text class="flow-num">01</text>
         <text class="flow-label">建场</text>
@@ -50,7 +50,7 @@
         class="flow-step-btn {{flowHot2 ? 'hot' : ''}}"
         data-step="2"
         bindtap="onFlowTap"
-        hover-class="flow-press"
+        hover-class="flow-press" hover-stay-time="80"
       >
         <text class="flow-num">02</text>
         <text class="flow-label">挂品</text>
@@ -60,7 +60,7 @@
         class="flow-step-btn {{flowHot3 ? 'hot' : ''}} {{showOnAir ? 'on-air' : ''}}"
         data-step="3"
         bindtap="onFlowTap"
-        hover-class="flow-press"
+        hover-class="flow-press" hover-stay-time="80"
       >
         <text class="flow-num">03</text>
         <text class="flow-label">开播</text>
@@ -184,7 +184,7 @@
           <text class="group-cn">主播职责</text>
         </view>
         <view class="module-list">
-          <view class="module-card primary-card" hover-class="module-card-press" bindtap="goBroadcast">
+          <view class="module-card primary-card" hover-class="module-card-press" hover-stay-time="80" bindtap="goBroadcast">
             <image class="module-icon icon-gold" src="/assets/icons/video-tab.png" mode="aspectFit"></image>
             <view class="module-card-body">
               <text class="module-overline">BROADCAST</text>
@@ -194,7 +194,7 @@
             <text class="module-chevron">›</text>
           </view>
 
-          <view class="module-card" hover-class="module-card-press" bindtap="goShelf">
+          <view class="module-card" hover-class="module-card-press" hover-stay-time="80" bindtap="goShelf">
             <image class="module-icon icon-gold" src="/assets/icons/tab-collection.png" mode="aspectFit"></image>
             <view class="module-card-body">
               <text class="module-overline">SHELF</text>
@@ -204,7 +204,7 @@
             <text class="module-chevron">›</text>
           </view>
 
-          <view class="module-card" hover-class="module-card-press" bindtap="goTalkSection">
+          <view class="module-card" hover-class="module-card-press" hover-stay-time="80" bindtap="goTalkSection">
             <image class="module-icon icon-gold" src="/assets/icons/article-tab.png" mode="aspectFit"></image>
             <view class="module-card-body">
               <text class="module-overline">SCRIPT</text>
@@ -214,7 +214,7 @@
             <text class="module-chevron">›</text>
           </view>
 
-          <view class="module-card" hover-class="module-card-press" bindtap="goYouxin">
+          <view class="module-card" hover-class="module-card-press" hover-stay-time="80" bindtap="goYouxin">
             <image class="module-icon icon-gold" src="/assets/icons/message.png" mode="aspectFit"></image>
             <view class="module-card-body">
               <text class="module-overline">YOUXIN</text>
@@ -224,7 +224,7 @@
             <text class="module-chevron">›</text>
           </view>
 
-          <view class="module-card muted-card" wx:if="{{canAttendance}}" hover-class="module-card-press" bindtap="goAttendance">
+          <view class="module-card muted-card" wx:if="{{canAttendance}}" hover-class="module-card-press" hover-stay-time="80" bindtap="goAttendance">
             <image class="module-icon icon-gold" src="/subpackages/manager/assets/icons/clock.png" mode="aspectFit"></image>
             <view class="module-card-body">
               <text class="module-overline">ATTENDANCE</text>
@@ -234,7 +234,7 @@
             <text class="module-chevron">›</text>
           </view>
 
-          <view class="module-card muted-card" wx:if="{{canPayslip}}" hover-class="module-card-press" bindtap="goPayslip">
+          <view class="module-card muted-card" wx:if="{{canPayslip}}" hover-class="module-card-press" hover-stay-time="80" bindtap="goPayslip">
             <image class="module-icon icon-gold" src="/assets/icons/coin_gold.png" mode="aspectFit"></image>
             <view class="module-card-body">
               <text class="module-overline">PAYROLL</text>
@@ -324,7 +324,7 @@
             class="session-row"
             wx:for="{{recentSessions}}"
             wx:key="_id"
-            hover-class="session-row-press"
+            hover-class="session-row-press" hover-stay-time="80"
             bindtap="onSessionTap"
             data-item="{{item}}"
           >

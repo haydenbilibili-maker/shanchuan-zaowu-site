@@ -151,7 +151,7 @@
         </view>
       </view>
     </view>
-    <view class="dn-more" wx:if="{{rowsMore}}" bindtap="onMoreRows" hover-class="dn-tab-press">再看 20 笔</view>
+    <view class="dn-more" wx:if="{{rowsMore}}" bindtap="onMoreRows" hover-class="dn-tab-press" hover-stay-time="80">再看 20 笔</view>
     <text class="dn-note" wx:for="{{notes}}" wx:key="*this">{{item}}</text>
   </view>
 

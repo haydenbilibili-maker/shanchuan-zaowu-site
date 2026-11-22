@@ -106,3 +106,6 @@
   font-size: var(--fs-22);
   color: #E9A23B;
 }
+
+/* 2026-11-22 交互巡查：可点区域扩到约 64rpx（视觉不变；透明 ::after 外扩，事件冒泡到本元素） */
+.ti-del::after { content: ''; position: absolute; top: -12rpx; right: -12rpx; bottom: -12rpx; left: -12rpx; }

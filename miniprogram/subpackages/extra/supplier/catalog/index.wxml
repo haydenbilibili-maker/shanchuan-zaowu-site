@@ -57,7 +57,7 @@
           class="cat-thumb-wrap"
           data-idx="{{idx}}"
           bindtap="onPreview"
-          hover-class="cat-thumb-press"
+          hover-class="cat-thumb-press" hover-stay-time="80"
         >
           <image
             wx:if="{{item.thumbUrl && !item.imgBroken}}"
@@ -83,15 +83,15 @@
           <text class="cat-lock-hint" wx:if="{{!item.orderable}}">区间/议价 · 需总部确认单价</text>
           <view class="cat-ops" wx:if="{{item.orderable}}">
             <view class="qty-stepper">
-              <view class="qty-btn {{item.qty<=1?'dim':''}}" data-idx="{{idx}}" bindtap="onQtyMinus" hover-class="qty-press">−</view>
+              <view class="qty-btn {{item.qty<=1?'dim':''}}" data-idx="{{idx}}" bindtap="onQtyMinus" hover-class="qty-press" hover-stay-time="80">−</view>
               <text class="qty-num">{{item.qty}}</text>
-              <view class="qty-btn" data-idx="{{idx}}" bindtap="onQtyPlus" hover-class="qty-press">+</view>
+              <view class="qty-btn" data-idx="{{idx}}" bindtap="onQtyPlus" hover-class="qty-press" hover-stay-time="80">+</view>
             </view>
             <view
               class="add-btn {{item.inCart ? 'in' : ''}} {{item.adding ? 'busy' : ''}}"
               data-idx="{{idx}}"
               bindtap="onAdd"
-              hover-class="add-press"
+              hover-class="add-press" hover-stay-time="80"
             >{{item.addLabel}}</view>
           </view>
           <view class="cat-ops locked-ops" wx:else>
@@ -101,7 +101,7 @@
       </view>
     </view>
 
-    <view class="cart-bar {{cartCount > 0 ? 'ready' : 'idle'}}" bindtap="goCart" hover-class="cart-bar-press">
+    <view class="cart-bar {{cartCount > 0 ? 'ready' : 'idle'}}" bindtap="goCart" hover-class="cart-bar-press" hover-stay-time="80">
       <view class="cart-bar-badge" wx:if="{{cartCount > 0}}">
         <text>{{cartCount}}</text>
       </view>

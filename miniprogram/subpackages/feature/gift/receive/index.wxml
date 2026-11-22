@@ -226,7 +226,7 @@
           <text class="verify-over">领取核验</text>
           <text class="verify-title">送礼人为这份礼赠设了身份核验</text>
           <text class="verify-desc">核验通过后，这份山海才会记在你名下。手机号只用于比对，不会展示给任何人。</text>
-          <view class="btn-primary {{verifyBusy ? 'is-busy' : ''}}" bindtap="verifyByAccount" hover-class="{{verifyBusy ? '' : 'btn-primary-press'}}">{{verifyBusy ? '核验中…' : '用我的微信手机号核验'}}</view>
+          <view class="btn-primary {{verifyBusy ? 'is-busy' : ''}}" bindtap="verifyByAccount" hover-class="{{verifyBusy ? '' : 'btn-primary-press'}}" hover-stay-time="80">{{verifyBusy ? '核验中…' : '用我的微信手机号核验'}}</view>
           <view hover-class="tap-press" hover-stay-time="80" class="verify-alt" bindtap="openManualVerify">换一个号码 · 手动输入核验</view>
           <text class="verify-error" wx:if="{{verifyError && !verifySheet}}">{{verifyError}}</text>
         </view>
@@ -268,9 +268,9 @@
       <block wx:elif="{{isPickup}}">
         <view class="pickup-card" wx:if="{{claimCode && !claimClaimed}}">
           <text class="pickup-label">门店领取码</text>
-          <text class="pickup-code" bindtap="copyClaimCode">{{claimCode}}</text>
+          <text class="pickup-code" bindtap="copyClaimCode" hover-class="tap-press" hover-stay-time="80">{{claimCode}}</text>
           <text class="pickup-hint">{{pickupHint}}</text>
-          <text class="pickup-copy" bindtap="copyClaimCode">轻触复制</text>
+          <text class="pickup-copy" bindtap="copyClaimCode" hover-class="tap-press" hover-stay-time="80">轻触复制</text>
         </view>
         <view class="addr-done" wx:else>
           <text class="btn-done">{{claimClaimed ? '已到店领取' : '门店正在备妥'}}</text>
