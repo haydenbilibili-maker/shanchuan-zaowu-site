@@ -1,0 +1,12 @@
+{
+  "title": "隐私政策",
+  "confirm": "同意并继续",
+  "cancel": "暂不同意",
+  "message": "欢迎使用山海造物。为提供藏品浏览与购买、门店距离、标本鉴定、头像与社区图片、以及礼赠语音，我们会在你授权后使用相机、相册、麦克风和位置，并收集账号与订单所必需的信息。未授权位置不影响浏览与购买。完整说明见应用内「隐私政策」。点击下方按钮即表示你已阅读并同意。",
+  "styles": {
+    "title": { "color": "#2C2C2C" },
+    "confirmButton": { "color": "#FAFAF5", "backgroundColor": "#2D6A4F" },
+    "cancelButton": { "color": "#8B6F47" },
+    "message": { "color": "#2C2C2C" }
+  }
+}
