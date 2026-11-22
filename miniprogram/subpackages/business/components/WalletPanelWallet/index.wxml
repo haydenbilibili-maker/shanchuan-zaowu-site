@@ -69,13 +69,13 @@
     </block>
 
     <block wx:if="{{allowed && !needLogin}}">
-      <!-- 我的捐赠（2026-11-22 产品负责人点名）：累计实付的 1% 由山海万物公益基金代为捐赠 → 进「我的捐赠」页 -->
+      <!-- 我的捐赠（2026-11-22 产品负责人点名）：累计实付的 1% 由山海造物公益基金代为捐赠 → 进「我的捐赠」页 -->
       <view class="sv-giving" bindtap="goDonations" hover-class="sv-giving-press" hover-stay-time="80">
         <view class="sv-giving-main">
           <text class="sv-giving-overline">GIVING · 1%</text>
           <text class="sv-giving-title">我的捐赠</text>
-          <text class="sv-giving-line" wx:if="{{givingAmount}}">累计 <text class="sv-giving-amt">¥{{givingAmount}}</text> 将由山海万物公益基金代为捐赠</text>
-          <text class="sv-giving-line" wx:else>累计实付的 1%，将由山海万物公益基金代为捐赠</text>
+          <text class="sv-giving-line" wx:if="{{givingAmount}}">累计 <text class="sv-giving-amt">¥{{givingAmount}}</text> 将由山海造物公益基金代为捐赠</text>
+          <text class="sv-giving-line" wx:else>累计实付的 1%，将由山海造物公益基金代为捐赠</text>
         </view>
         <view class="sv-giving-side">
           <text class="sv-giving-pct">1%</text>

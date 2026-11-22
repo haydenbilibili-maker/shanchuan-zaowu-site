@@ -3,11 +3,13 @@
  */
 
 const ONE_PERCENT_PLEDGE_LABEL = 'GIVING · 1%'
+/** 代捐主体（2026-11-22 产品负责人统一：下单页 / 品牌故事 / 我的捐赠 三处同名） */
+const ONE_PERCENT_FUND_NAME = '山海造物公益基金'
 /** 下单温馨提示 / 品牌脚注 slogan */
 const ONE_PERCENT_PLEDGE_SLOGAN = '取自山海，还于自然'
-const ONE_PERCENT_PLEDGE_SUMMARY = '取自山海，还于自然。您的1%心意我们将代为捐赠。'
+const ONE_PERCENT_PLEDGE_SUMMARY = `取自山海，还于自然。您的1%心意将由${ONE_PERCENT_FUND_NAME}代为捐赠。`
 const ONE_PERCENT_PLEDGE_NOTE =
-  '山海造物承诺将本平台营收的1%捐赠给动植物保护、护林员关爱、国家公园建设、自然环境保护等相关公益组织，感谢您选择与我们同行。年度捐赠报告届时将通过私信转呈于您。'
+  `山海造物承诺将本平台营收的1%，经${ONE_PERCENT_FUND_NAME}捐赠给动植物保护、护林员关爱、国家公园建设、自然环境保护等相关公益组织，感谢您选择与我们同行。年度捐赠报告届时将通过私信转呈于您。`
 
 /** 下单确认：致谢（短句，可与金额行并用） */
 const ONE_PERCENT_PLEDGE_ACK = '感谢您与山海造物同行。'
@@ -44,7 +46,7 @@ function calcPledgeAmount(orderAmountYuan) {
     const lineBefore = '本单约 '
     const lineAmount = `¥${amountText}`
     const lineAfter =
-      ' 将由山海造物代为捐赠动植物与自然环境保护组织，感谢您与山海造物同行。'
+      ` 将由${ONE_PERCENT_FUND_NAME}代为捐赠动植物与自然环境保护组织，感谢您与山海造物同行。`
     return {
       amount,
       amountText,
@@ -56,7 +58,7 @@ function calcPledgeAmount(orderAmountYuan) {
     }
   }
   const line =
-    '本单将由山海造物代为捐赠动植物与自然环境保护组织，感谢您与山海造物同行。'
+    `本单将由${ONE_PERCENT_FUND_NAME}代为捐赠动植物与自然环境保护组织，感谢您与山海造物同行。`
   return {
     amount,
     amountText,
@@ -92,6 +94,7 @@ function calcPledgeDueFromMp(mpOnline, mpRefund) {
 
 module.exports = {
   ONE_PERCENT_PLEDGE_LABEL,
+  ONE_PERCENT_FUND_NAME,
   ONE_PERCENT_PLEDGE_SLOGAN,
   ONE_PERCENT_PLEDGE_SUMMARY,
   ONE_PERCENT_PLEDGE_NOTE,

@@ -973,7 +973,7 @@ function checks(s) {
     /const heroFit = 'aspectFill'/.test(s.detailJs) &&
     /syncHeroHeight\(\)/.test(s.detailJs) && /onHeroImageLoad\(e\)/.test(s.detailJs))
 
-  // R60 我的捐赠（2026-11-22 产品负责人：钱包新增「我的捐赠」，累计实付 1% 由山海万物公益基金代为捐赠）
+  // R60 我的捐赠（2026-11-22 产品负责人：钱包新增「我的捐赠」，累计实付 1% 由山海造物公益基金代为捐赠）
   {
     const L = loadCjs(s.dnLedger)
     const P = loadCjs(s.dnPledge)
@@ -1011,8 +1011,9 @@ function checks(s) {
         V.buildView({ pledgeFen: 0, rows: [] }, 'x').hero.empty === true &&
         V.pickRows(Array.from({ length: 25 }, (_, i) => ({ id: i, year: 2026 })), 'all', 20).more === true
     } catch (e) { vok = false }
-    add('R60-3 我的捐赠页：基金名「山海万物公益基金」；讲清不另收费与以年度报告为准；不编造换算；分享不带个人金额',
-      vok && C.FUND_NAME === '山海万物公益基金' && /不另向您收取/.test(C.NO_EXTRA) && /以年度捐赠报告为准/.test(C.FOOT) &&
+    add('R60-3 我的捐赠页：基金名「山海造物公益基金」，与下单页 / 品牌故事（onePercentPledge）同名；讲清不另收费与以年度报告为准；不编造换算；分享不带个人金额',
+      vok && C.FUND_NAME === '山海造物公益基金' && C.FUND_NAME === P.ONE_PERCENT_FUND_NAME &&
+        [P.ONE_PERCENT_PLEDGE_SUMMARY, P.ONE_PERCENT_PLEDGE_NOTE, P.calcPledgeAmount(100).line, P.calcPledgeAmount(0).line].every((t) => t.includes(C.FUND_NAME)) && /不另向您收取/.test(C.NO_EXTRA) && /以年度捐赠报告为准/.test(C.FOOT) &&
         !/棵树|相当于/.test(s.dnCopy) && /onShareAppMessage\(\) \{[\s\S]{0,120}title: copy\.SHARE_TITLE, path: '\/subpackages\/business\/donations\/index' \}/.test(s.dnJs) &&
         /wx:elif="\{\{phase === 'guest'\}\}"/.test(s.dnWxml) && /bindtap="onRetry"/.test(s.dnWxml))
     add('R60-4 钱包入口：登录态第一张卡进「我的捐赠」；合计只取 summaryOnly；页面已登记分包',
@@ -1191,7 +1192,8 @@ if (process.argv.includes('--selftest')) {
     ['捐赠口径忘了无 refundFee 的已退款', 'dnLedger', (t) => t.replace("else if (o.status === 'refunded') refundFen = paidFen", '')],
     ['捐赠 1% 改成直接截断', 'dnLedger', (t) => t.replace('Math.round(Math.round(b) * 0.01)', 'Math.floor(b * 0.01)')],
     ['捐赠云函数开放查他人', 'dnFn', (t) => t.replace('const { OPENID } = cloud.getWXContext()', 'const { OPENID: CTX } = cloud.getWXContext(); const OPENID = (event && event.targetOpenId) || CTX')],
-    ['基金名被改', 'dnCopy', (t) => t.replace("const FUND_NAME = '山海万物公益基金'", "const FUND_NAME = '山海公益'")],
+    ['下单页基金名与我的捐赠不一致', 'dnPledge', (t) => t.replace("const ONE_PERCENT_FUND_NAME = '山海造物公益基金'", "const ONE_PERCENT_FUND_NAME = '山海万物公益基金'")],
+    ['基金名被改', 'dnCopy', (t) => t.replace("const FUND_NAME = '山海造物公益基金'", "const FUND_NAME = '山海公益'")],
     ['分享带上个人金额', 'dnJs', (t) => t.replace('title: copy.SHARE_TITLE,', 'title: `我已捐 ¥${this.data.heroAmount}`,')],
     ['钱包入口被删', 'walletWxml', (t) => t.replace('<view class="sv-giving" bindtap="goDonations"', '<view class="sv-giving"')],
   ]
