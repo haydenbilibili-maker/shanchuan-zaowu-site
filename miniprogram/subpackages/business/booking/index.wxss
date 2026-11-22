@@ -81,23 +81,13 @@
 .gold-strip { position: absolute; top: 0; left: 30rpx; bottom: 0; width: 2rpx; background: linear-gradient(to bottom, transparent, var(--brass-400), transparent); z-index: 5; opacity: 0.5; }
 .silver-strip { position: absolute; top: 0; left: 30rpx; bottom: 0; width: 2rpx; background: linear-gradient(to bottom, transparent, #B08D57, transparent); z-index: 5; opacity: 0.6; }
 
-/* 水印：宋体「山海」刻字（原 🦋 emoji） */
+/* 水印：🦋（2026-11-22 产品负责人点名恢复；10-17 曾改为宋体「山海」刻字，样式按改前原样还原） */
 .watermark {
-  position: absolute;
-  right: 12rpx;
-  bottom: 44rpx;
-  font-family: var(--font-brand);
-  font-size: 150rpx;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  color: #C4A76C;
-  opacity: 0.06;
-  transform: rotate(-8deg);
-  pointer-events: none;
-  z-index: 1;
+  position: absolute; bottom: -20rpx; right: -10rpx; font-size: 260rpx;
+  opacity: 0.08; pointer-events: none; transform: rotate(-15deg);
+  filter: grayscale(1) contrast(1.2); z-index: 1; font-family: var(--font-brand);
 }
-.watermark.light { color: #2E2618; opacity: 0.05; }
+.watermark.light { opacity: 0.05; filter: none; color: var(--color-bg); }
 
 /* 齿孔缺口：挖成页面底色 */
 .notch { position: absolute; top: 160rpx; width: 32rpx; height: 32rpx; background: #1A1814; border-radius: 50%; z-index: 5; }

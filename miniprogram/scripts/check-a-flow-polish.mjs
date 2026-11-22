@@ -282,12 +282,12 @@ function checks(s) {
       /\[`recentList\[\$\{i\}\]\.thumb`\]: ''/.test(methodBody(s.identifyJs, 'onRecentThumbError')))
   // 2026-10-17 预约「入馆券」：页头一张票根（不再是双面翻转票）、分区头不再「中文 | ENGLISH」并列、预览库能解析表达式里的 <
   // 2026-10-17 产品负责人：「预约门票仍然使用之前的设计方案，按整体视觉适配即可，不要推翻重来」
-  add('R12-1 预约页头保留双面翻转典藏票（两面 + 翻面交互），只做视觉适配（无 emoji 水印）',
+  add('R12-1 预约页头保留双面翻转典藏票（两面 + 翻面交互），只做视觉适配；两面水印为 🦋（2026-11-22 产品负责人点名恢复）',
     /<view class="ticket-3d-container \{\{isFlipped \? 'flipped' : ''\}\}" bindtap="flipTicket">/.test(s.bookingWxml) &&
       /class="ticket-face face-front"/.test(s.bookingWxml) && /class="ticket-face face-back"/.test(s.bookingWxml) &&
       /flipTicket\(\) \{[\s\S]{0,160}isFlipped: !this\.data\.isFlipped/.test(s.bookingJs) && /isFlipped: false/.test(s.bookingJs) &&
       (s.bookingWxml.match(/class="val highlight[^"]*">\{\{ticketInfo\.timeStr\}\}/g) || []).length === 2 &&
-      !/🦋/.test(s.bookingWxml))
+      /<view class="watermark">🦋<\/view>/.test(s.bookingWxml) && /<view class="watermark light">🦋<\/view>/.test(s.bookingWxml))
   // 2026-10-17 产品负责人：「入馆券除了目前的样式，还需要保持之前的打印动画」
   add('R12-4 预约成功的入馆券打印动画保留（打印机出纸 0→720rpx / 2.5s、进度条、扫描线，2.6s 后出操作区）',
     /<view class="mint-machine">[\s\S]*?<view class="printer-slot"><\/view>/.test(s.bookingWxml) &&
@@ -1075,7 +1075,7 @@ if (process.argv.includes('--selftest')) {
     ['鉴定记录入口去按压态', 'identifyWxml', (t) => t.replace('bindtap="goLog" hover-class="recent-item-press" hover-stay-time="80"', 'bindtap="goLog"')],
     ['预约页头翻转票被推翻', 'bookingWxml', (t) => t.replace('<view class="ticket-face face-back">', '<view class="ticket-face">')],
     ['预约票翻面处理器丢失', 'bookingJs', (t) => t.replace('isFlipped: !this.data.isFlipped', 'isFlipped: false')],
-    ['预约票水印回到 emoji', 'bookingWxml', (t) => t.replace('<text class="watermark">山海</text>', '<view class="watermark">🦋</view>')],
+    ['预约票水印又换成文字', 'bookingWxml', (t) => t.replace('<view class="watermark">🦋</view>', '<text class="watermark">山海</text>')],
     ['门店地图塞回名片', 'storeWxml', (t) => t.replace('<view class="card-pin" aria-hidden="true"></view>', '<view class="card-pin" aria-hidden="true"></view><map class="info-map"></map>')],
     ['门店名片回到深色卡', 'storeWxss', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx', '  background: #1F1D1A;\n  box-shadow: 0 12rpx 28rpx')],
     ['签到浮钮回到实心金', 'storeWxss', (t) => t.replace('  background: #1F1D1A;\n  box-shadow: var(--ring-brass), 0 12rpx', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass), 0 12rpx')],
