@@ -378,6 +378,8 @@
     "check:achievement-tracks:selftest": "node miniprogram/scripts/check-achievement-tracks.mjs --selftest",
     "check:mp-caption-color": "node miniprogram/scripts/check-mp-caption-color.mjs",
     "check:mp-caption-color:selftest": "node miniprogram/scripts/check-mp-caption-color.mjs --selftest",
+    "check:radius-roles": "node miniprogram/scripts/check-radius-roles.mjs",
+    "check:radius-roles:selftest": "node miniprogram/scripts/check-radius-roles.mjs --selftest",
     "check:care-common-mirrors": "node miniprogram/scripts/check-care-common-mirrors.mjs",
     "check:care-common-mirrors:selftest": "node miniprogram/scripts/check-care-common-mirrors.mjs --selftest",
     "test:wiki-view-stats": "node miniprogram/scripts/test-wiki-view-stats.mjs",

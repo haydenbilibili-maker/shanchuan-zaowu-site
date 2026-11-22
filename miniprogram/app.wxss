@@ -11,6 +11,15 @@ page {
   --radius-md: 16rpx;
   --radius-lg: 24rpx;
   --radius-xl: 32rpx;
+  /* 圆角语义令牌（2026-11-22 直角 / 圆角融合，见 docs/圆角规范_直角圆角融合_2026-11-22.md）：
+     容器与控件圆、物件方、线条细。值都落在上面的刻度上；按「元素角色」取用，不按页面取用 */
+  --r-object: 4rpx;
+  --r-thumb-sm: 8rpx;
+  --r-thumb: 16rpx;
+  --r-control: 16rpx;
+  --r-card: 16rpx;
+  --r-hero: 24rpx;
+  --r-pill: 999rpx;
 
   /* 设计系统完整令牌（Museum Mode） */
   --color-primary: #C4A76C;

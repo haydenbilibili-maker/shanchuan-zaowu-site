@@ -53,7 +53,7 @@ page {
   height: 72rpx;
   padding: 0 16rpx 0 22rpx;
   background: #1F1D1A;
-  border-radius: 4rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
   box-sizing: border-box;
 }
@@ -93,7 +93,7 @@ page {
   letter-spacing: 0.04em;
   color: var(--color-text-secondary, #A09A90);
   line-height: 1;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .clear-btn-press {
@@ -117,7 +117,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 2rpx;
+  /* radius:object */ border-radius: 2rpx;
   box-shadow: inset 0 0 0 2rpx rgba(212, 188, 133, 0.6);
 }
 
@@ -159,7 +159,7 @@ page {
   gap: 10rpx;
   min-width: 0;
   padding: 8rpx 18rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   background: rgba(196, 167, 108, 0.08);
   box-shadow: var(--ring-brass-soft);
 }
@@ -202,7 +202,7 @@ page {
   overflow-y: auto;
   overflow-x: hidden;
   background: #1F1D1A;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.32), 0 16rpx 36rpx rgba(0, 0, 0, 0.5);
 }
 
@@ -397,7 +397,7 @@ page {
   max-width: 100%;
   min-height: 56rpx;
   padding: 0;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3);
   box-sizing: border-box;
 }
@@ -446,7 +446,7 @@ page {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .chip-del-icon {
@@ -475,7 +475,7 @@ page {
   align-items: center;
   justify-content: center;
   margin-bottom: 24rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-card, 16rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3);
 }
 
@@ -641,7 +641,7 @@ page {
   height: 152rpx;
   flex-shrink: 0;
   overflow: hidden;
-  border-radius: 4rpx;
+  border-radius: var(--r-thumb, 16rpx);
   background: #1F1D1A;
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
   box-sizing: border-box;
@@ -705,7 +705,7 @@ page {
 .ac-match {
   flex-shrink: 0;
   padding: 2rpx 10rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: var(--ring-brass-soft);
   font-family: var(--font-mono);
   font-size: var(--fs-16);
@@ -761,7 +761,7 @@ page {
 
 .ac-craft-tag {
   padding: 2rpx 10rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
   font-size: var(--fs-18);
   line-height: 1.3;
@@ -773,7 +773,7 @@ page {
 .ac-tag-chip {
   max-width: 100%;
   padding: 4rpx 12rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
   font-size: var(--fs-20);
   line-height: 1.3;
@@ -807,7 +807,7 @@ page {
 .retry-btn {
   margin-top: 32rpx;
   padding: 16rpx 48rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   box-shadow: var(--ring-brass-soft);
   font-size: var(--fs-26);
   letter-spacing: 0.08em;
@@ -892,7 +892,7 @@ page {
   width: 152rpx;
   height: 152rpx;
   flex-shrink: 0;
-  border-radius: 4rpx;
+  border-radius: var(--r-thumb, 16rpx);
   background: #262320;
 }
 

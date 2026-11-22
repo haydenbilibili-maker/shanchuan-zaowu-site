@@ -212,7 +212,7 @@ view, text, image { box-sizing: border-box; }
   max-width: 320rpx;
   margin-right: 16rpx;
   overflow: hidden;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.32);
 }
 
@@ -294,7 +294,7 @@ view, text, image { box-sizing: border-box; }
   position: relative;
   width: 100%;
   overflow: hidden;
-  border-radius: 4rpx;
+  border-radius: var(--r-thumb, 16rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
 }
 
@@ -312,7 +312,7 @@ view, text, image { box-sizing: border-box; }
   top: 12rpx;
   left: 12rpx;
   padding: 4rpx 12rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   background: rgba(26, 24, 20, 0.78);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.4);
   font-size: var(--fs-18);
@@ -445,7 +445,7 @@ view, text, image { box-sizing: border-box; }
 
 .option-pill {
   padding: 12rpx 26rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.24);
   font-size: var(--fs-24);
   color: var(--color-text-body, #D5D1C8);
@@ -507,7 +507,7 @@ view, text, image { box-sizing: border-box; }
   padding: 0;
   overflow: visible;
   border: none;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   background: rgba(196, 167, 108, 0.08);
   box-shadow: var(--ring-brass-soft);
   font-size: var(--fs-24);
@@ -545,7 +545,7 @@ view, text, image { box-sizing: border-box; }
   min-height: 160rpx;
   margin: 20rpx 0 24rpx;
   padding: 24rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
   font-family: var(--font-brand);
   font-size: var(--fs-26);
@@ -689,7 +689,7 @@ view, text, image { box-sizing: border-box; }
   height: 80rpx;
   line-height: 80rpx;
   border: none;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   background: transparent;
   box-shadow: var(--ring-brass-soft);
   font-size: var(--fs-26);
@@ -752,7 +752,7 @@ view, text, image { box-sizing: border-box; }
   height: 84rpx;
   margin: 0;
   padding: 0;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   text-align: center;
   font-size: var(--fs-28);
   font-weight: 500;

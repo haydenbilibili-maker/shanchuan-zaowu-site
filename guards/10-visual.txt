@@ -17,3 +17,5 @@ npm run check:mp-contrast
 npm run check:vis3-rules
 # 2026-10-15：全局零件（VI 规范 v1 §8.9 · 升级路线 P6）—— 两栏行 / 金额 / 状态 pill 在场，等宽、on-tint、不发光不回退；5 条内存注入
 npm run check:ui-parts
+# 2026-11-22：圆角融合（miniprogram/docs/圆角规范_直角圆角融合_2026-11-22.md）—— 容器与控件圆、物件方、线条细；卡片 / 标签 / 按钮 / 输入不许 ≤4rpx 直角，存量按文件只减不增
+npm run check:radius-roles
