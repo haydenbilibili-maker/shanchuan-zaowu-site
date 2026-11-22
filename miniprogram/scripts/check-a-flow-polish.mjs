@@ -1029,6 +1029,17 @@ function checks(s) {
         /<image wx:if="\{\{item\.icon\}\}" class="dn-seal-icon" src="\{\{item\.icon\}\}" mode="aspectFit"><\/image>/.test(s.dnWxml) &&
         /<text wx:else>\{\{item\.seal\}\}<\/text>/.test(s.dnWxml) && /\.dn-seal-icon \{[^}]*width: 38rpx;/.test(s.dnWxss))
   }
+  // R63 超管 / 店长工作台顶部屏效（2026-11-22 产品负责人「顶部的多个栏目如搜索、处理动态等效率较低」）
+  {
+    const upd = (s.mgrCfgJs.match(/\n  updateTime\(\) \{[\s\S]*?\n  \},/) || [''])[0]
+    const head = (s.mgrWxml.match(/<view class="dashboard-header">[\s\S]*?<view class="page-tip/) || [''])[0]
+    add('R63 工作台顶部：时钟并进问候行且只按分钟刷新（不再每秒 setData、不写 todayDate）；搜索在标题行；待处理合计与信息流合成一张状态条',
+      /if \(clockText === this\.data\.clockText && greet === this\.data\.greeting\) return;/.test(upd) && !/todayDate/.test(upd) &&
+        /\}, 10000\);/.test(s.mgrCfgJs) && !/date-badge/.test(s.mgrWxml) &&
+        /<view class="dashboard-title-row">[\s\S]*<view class="hub-search" wx:if="\{\{hubCat\.search\}\}">/.test(head) &&
+        /<view class="hub-status [^"]*" wx:if="\{\{hubTodo\.any \|\| opsInfoFeed\.length\}\}">[\s\S]{0,200}<view class="hub-status-todo/.test(s.mgrWxml) &&
+        /<view class="ops-info-feed ops-info-feed--status"/.test(s.mgrWxml))
+  }
   // R62 证书打印动画收尾（2026-11-22 产品负责人「动画很好但是时间特别快，还没看清楚就跳到证书页」）
   {
     const T = loadCjs(s.certTimingJs)
@@ -1116,7 +1127,7 @@ if (process.argv.includes('--selftest')) {
     ['店员分区头回到中英同行', 'staffHubWxml', (t) => t.replace('<view class="group-head"><text class="group-en">{{item.en}}</text><text class="group-cn">{{item.title}}</text></view>', '<view class="panel-title sub">{{item.title}} / {{item.en}}</view>')],
     ['店员角标回到实心金', 'staffHubWxss', (t) => t.replace('  background: #1A1814;\n  box-shadow: var(--ring-brass);', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass);')],
     ['店长常用回到金边盒', 'mgrHubNavWxss', (t) => t.replace('.hub-fav {\n  padding: 0;', '.hub-fav {\n  background: #262017;\n  border-radius: var(--radius-lg);\n  padding: 0;')],
-    ['店长金卡退回方角', 'mgrWxss', (t) => t.replace('border-radius: var(--r-card, 16rpx); padding: 40rpx;', 'border-radius: 4rpx; padding: 40rpx;')],
+    ['店长金卡退回方角', 'mgrWxss', (t) => t.replace('border-radius: var(--r-card, 16rpx); padding: 32rpx 32rpx 28rpx;', 'border-radius: 4rpx; padding: 32rpx 32rpx 28rpx;')],
     ['超管搜索框退回方角', 'mgrHubNavWxss', (t) => t.replace('border-radius: var(--r-pill, 999rpx);  /* 2026-11-22 圆角融合：搜索框胶囊（10-18 曾为方角） */', 'border-radius: 4rpx;')],
     ['看板空态说明回到近黑灰', 'mgrWxss', (t) => t.replace('.chart-empty-hint { font-size: var(--fs-18); color: rgba(185, 173, 150, 0.75); }', '.chart-empty-hint { font-size: var(--fs-18); color: #4A4540; }')],
     ['权限配置正文退回 view', 'permWxml', (t) => t.replace('<scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">', '<view class="modal-body">')],
@@ -1233,6 +1244,8 @@ if (process.argv.includes('--selftest')) {
     ['已签发证书又秒切', 'certPageJs', (t) => t.replace("this.setData({ certImageUrl: url });\n          this.finishPrint({ showCert: true });", "this.setData({ certImageUrl: url, isMinting: false, showCert: true });")],
     ['打印收尾不等整张纸', 'certTimingJs', (t) => t.replace('if (phase < from) return Math.round(from - phase)', 'if (phase < from) return 0')],
     ['纸张动画改了时长没同步', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s', 'animation: cp-feed 2.4s')],
+    ['工作台时钟又每秒写 todayDate', 'mgrCfgJs', (t) => t.replace('this.setData({ clockText, greeting: greet });', 'this.setData({ clockText, greeting: greet, todayDate: clockText });')],
+    ['工作台搜索又单占一行', 'mgrWxml', (t) => t.replace('      <work-notice-voice />\n    </view>\n    </view>\n  </view>', '      <work-notice-voice />\n    </view>\n    </view>\n  </view>\n  <view class="hub-search-row"></view>').replace('<view class="dashboard-title-row">', '<view class="dashboard-title-row-x">')],
     ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
     ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
     ['捐赠铭牌水印改回 1% 文字', 'dnWxml', (t) => t.replace('aria-hidden="true">❤️</text>', 'aria-hidden="true">1%</text>')],

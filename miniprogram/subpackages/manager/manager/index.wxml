@@ -61,25 +61,65 @@
 <!-- ==================== 2. 主视图：经营看板 (Dashboard) ==================== -->
 <view class="content-area dashboard-view" wx:if="{{curTab === 0 && workspaceReady && !artisanEmbed}}">
   
-  <!-- 头部问候与日期 -->
+  <!-- 头部（2026-11-22 屏效：问候 + 时钟一行、标题 + 搜索 + 通知一行；原独立日期胶囊 / 搜索行 / 待处理卡合并） -->
   <view class="dashboard-header">
+    <text class="welcome">{{greeting}}{{staffName ? '，' + staffName : ''}}<text class="welcome-clock" wx:if="{{clockText}}"> · {{clockText}}</text></text>
+    <view class="dashboard-title-row">
     <view class="header-left">
-      <text class="welcome">{{greeting}}{{staffName ? '，' + staffName : ''}}</text>
       <text class="sub-welcome">{{isSuperAdmin ? '超管工作台' : '店长工作台'}}</text>
     </view>
     <view class="header-right">
-       <!-- 工作通知声音（#29）：点=开关，长按=试听 -->
-       <work-notice-voice />
-       <text class="date-badge">{{todayDate}}</text>
+      <!-- 功能搜索（入口 > 20 的角色才有，即超管）：收进标题行；结果仍在下方展开，点按走 onHubFav（再判权限后进原入口） -->
+      <view class="hub-search" wx:if="{{hubCat.search}}">
+        <view class="hub-search-box">
+          <image class="hub-search-ico" src="/assets/icons/search.png" mode="aspectFit" />
+          <input class="hub-search-input" value="{{hubQuery}}" placeholder="搜功能" placeholder-class="hub-search-ph" confirm-type="search" maxlength="20" bindinput="onHubSearch" />
+          <view class="hub-search-clear" wx:if="{{hubQuery}}" bindtap="onHubSearchClear" hover-class="tap-press" hover-stay-time="80">清除</view>
+        </view>
+      </view>
+      <!-- 工作通知声音（#29）：点=开关，长按=试听 -->
+      <work-notice-voice />
+    </view>
     </view>
   </view>
 
   <view class="page-tip is-{{hubTipTone}}" wx:if="{{hubTipText}}"><text>{{hubTipText}}</text></view>
 
-  <!-- 信息流跑马灯：标题下 / 搜索·待处理之上；仅有待办/异常时展示，不挤标题行 -->
-  <view class="ops-info-feed ops-info-feed--header" wx:if="{{opsInfoFeed.length}}">
-    <view class="ops-info-feed-rail">
-      <text class="ops-info-feed-tag">信息流</text>
+  <!-- 搜索结果（超管）：紧贴标题行展开 -->
+  <view class="hub-list hub-found" wx:if="{{hubCat.search && hubQuery}}">
+    <view
+      class="hub-row"
+      wx:for="{{hubFound}}"
+      wx:key="id"
+      bindtap="onHubFav"
+      data-id="{{item.id}}"
+      hover-class="tap-press"
+      hover-stay-time="80"
+    >
+      <view class="hub-ico"><image class="hub-ico-img" src="{{item.icon}}" mode="aspectFit" /></view>
+      <view class="hub-row-main"><text class="hub-row-name">{{item.label}}</text><text class="hub-row-desc">{{item.desc}}</text></view>
+      <view class="hub-badge" wx:if="{{item.badge}}">{{item.badge}}</view>
+      <text class="hub-row-go">›</text>
+    </view>
+    <view class="hub-found-empty" wx:if="{{!hubFound.length}}"><text>没找到「{{hubQuery}}」，换个说法试试</text></view>
+  </view>
+
+  <!-- 状态条（2026-11-22 屏效）：左 = 待处理计数（清零时盖「清」印），右 = 信息流跑马灯；一行说完「有没有要处理的 + 最新动态」 -->
+  <view class="hub-status {{hubTodo.items.length ? 'is-hot' : ''}}" wx:if="{{hubTodo.any || opsInfoFeed.length}}">
+    <view class="hub-status-row">
+    <view class="hub-status-todo {{hubTodo.items.length ? 'has' : ''}}" wx:if="{{hubTodo.any}}">
+      <block wx:if="{{hubTodo.items.length}}">
+        <text class="hub-status-k">待处理</text>
+        <text class="hub-badge">{{hubTodo.totalText}}</text>
+      </block>
+      <block wx:else>
+        <!-- 小惊喜（2026-10-18）：待处理清零时盖一方小朱印「清」 -->
+        <view class="hub-clear-seal" aria-hidden="true"><text>清</text></view>
+        <text class="hub-status-k is-clear">已全部处理</text>
+      </block>
+    </view>
+    <!-- 信息流跑马灯：仅有待办/异常时展示 -->
+    <view class="ops-info-feed ops-info-feed--status" wx:if="{{opsInfoFeed.length}}">
       <view class="ops-info-feed-viewport">
         <view
           class="ops-info-feed-track {{opsInfoFeedAnimSec ? 'is-marquee' : ''}}"
@@ -108,67 +148,24 @@
         </view>
       </view>
     </view>
-  </view>
-
-  <!-- 功能搜索（入口 > 20 的角色才有，即超管）：按名称 / 别名 / 分组名匹配，结果点按走 onHubFav（再判权限后进原入口） -->
-  <view class="hub-search" wx:if="{{hubCat.search}}">
-    <view class="hub-search-box">
-      <image class="hub-search-ico" src="/assets/icons/search.png" mode="aspectFit" />
-      <input class="hub-search-input" value="{{hubQuery}}" placeholder="搜功能，如「审批」「出货」「工资」" placeholder-class="hub-search-ph" confirm-type="search" maxlength="20" bindinput="onHubSearch" />
-      <view class="hub-search-clear" wx:if="{{hubQuery}}" bindtap="onHubSearchClear" hover-class="tap-press" hover-stay-time="80">清除</view>
     </view>
-    <view class="hub-list hub-found" wx:if="{{hubQuery}}">
-      <view
-        class="hub-row"
-        wx:for="{{hubFound}}"
-        wx:key="id"
-        bindtap="onHubFav"
-        data-id="{{item.id}}"
-        hover-class="tap-press"
-        hover-stay-time="80"
-      >
-        <view class="hub-ico"><image class="hub-ico-img" src="{{item.icon}}" mode="aspectFit" /></view>
-        <view class="hub-row-main"><text class="hub-row-name">{{item.label}}</text><text class="hub-row-desc">{{item.desc}}</text></view>
-        <view class="hub-badge" wx:if="{{item.badge}}">{{item.badge}}</view>
-        <text class="hub-row-go">›</text>
-      </view>
-      <view class="hub-found-empty" wx:if="{{!hubFound.length}}"><text>没找到「{{hubQuery}}」，换个说法试试</text></view>
-    </view>
-  </view>
-
-  <!-- 待办卡（2026-10-01 待办优先）：带角标入口的计数都汇总成一排红色数字（hubNav.HUB_TODOS，check:hub-entries 守），点按直达原入口 -->
-  <view class="hub-todo" wx:if="{{hubTodo.items.length}}">
-    <view class="hub-todo-head">
-      <view class="hub-titles">
-        <text class="hub-en">TO DO</text>
-        <text class="hub-cn">待处理</text>
-      </view>
-      <text class="hub-todo-sum">共 {{hubTodo.totalText}} 件</text>
-    </view>
-    <scroll-view class="hub-todo-strip" scroll-x enhanced show-scrollbar="{{false}}">
-      <view
-        class="hub-todo-chip"
-        wx:for="{{hubTodo.items}}"
-        wx:key="id"
-        bindtap="onHubTodo"
-        data-id="{{item.id}}"
-        hover-class="tap-press"
-        hover-stay-time="80"
-      >
-        <text class="hub-todo-label">{{item.label}}</text>
-        <text class="hub-badge">{{item.count}}</text>
-      </view>
-    </scroll-view>
-  </view>
-  <view class="hub-todo hub-todo--clear" wx:elif="{{hubTodo.any}}">
-    <view class="hub-titles">
-      <text class="hub-en">TO DO</text>
-      <text class="hub-cn">待处理</text>
-    </view>
-    <view class="hub-todo-ok-row">
-      <!-- 小惊喜（2026-10-18）：待处理清零时盖一方小朱印「清」 -->
-      <view class="hub-clear-seal" aria-hidden="true"><text>清</text></view>
-      <text class="hub-todo-ok">已全部处理</text>
+    <!-- 待处理横条（2026-10-01 待办优先）：带角标入口的计数都汇总成一排红色数字（hubNav.HUB_TODOS，check:hub-entries 守），点按直达原入口；
+         2026-11-22 屏效：标题与合计并进上方状态条，这里只剩一排签；清零时不再单占一张卡 -->
+    <view class="hub-todo" wx:if="{{hubTodo.items.length}}">
+      <scroll-view class="hub-todo-strip" scroll-x enhanced show-scrollbar="{{false}}">
+        <view
+          class="hub-todo-chip"
+          wx:for="{{hubTodo.items}}"
+          wx:key="id"
+          bindtap="onHubTodo"
+          data-id="{{item.id}}"
+          hover-class="tap-press"
+          hover-stay-time="80"
+        >
+          <text class="hub-todo-label">{{item.label}}</text>
+          <text class="hub-badge">{{item.count}}</text>
+        </view>
+      </scroll-view>
     </view>
   </view>
 

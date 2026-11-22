@@ -91,10 +91,10 @@ function segments(src, overlay) {
   // 2026-10-18 整屏看板（页头 → 待处理 → 金卡 → 经营信号 → 扫码 → 常用 → 功能入口），供逐个工作台视觉对齐出图
   // 整页看板（含数据卡与页脚）：从页头截到常用编辑面板前，末尾补一个 </view> 收 dashboard-view
   if (overlay === 'page') {
-    return `<view class="container"><view class="content-area dashboard-view">${cut(src, ['<!-- 头部问候与日期'], '<!-- 常用编辑面板')}</view>`
+    return `<view class="container"><view class="content-area dashboard-view">${cut(src, ['<!-- 头部问候与日期', '<!-- 头部（2026-11-22 屏效'], '<!-- 常用编辑面板')}</view>`
   }
   if (overlay === 'full') {
-    const top = cut(src, ['<!-- 头部问候与日期'], '<!-- 瀑布流布局容器')
+    const top = cut(src, ['<!-- 头部问候与日期', '<!-- 头部（2026-11-22 屏效'], '<!-- 瀑布流布局容器')
     const menu = cut(src, ['<!-- 功能入口', '<!-- 快捷菜单'], '<!-- 数据图表')
     return `<view class="container"><view class="content-area dashboard-view">${top}<view class="dashboard-grid">${menu}</view></view></view>`
   }
@@ -154,8 +154,11 @@ const FULL = {
   opsSignalExpanded: false,
   opsSignalSummary: { worstLamp: 'warn', attentionCount: 2, label: '2 项待关注', chips: [{ id: 'a', lamp: 'warn', text: '待发订单 3', target: 'pending' }, { id: 'b', lamp: 'danger', text: '售后 1', target: 'aftersale' }] }
 }
+// 信息流样例（2026-11-22 状态条右半）：与线上 opsInfoFeed 同形
+const FEED = [{ id: 'f1', lamp: 'warn', text: '营收环比 −55.3%', target: 'revenue' }, { id: 'f2', lamp: 'blink', text: '待发订单 3', target: 'orders' }]
 const PAGE_SUPER = {
-  ...FULL, hubCat: { search: true, total: 46 }, hubQuery: '审批', hubAllCollapsed: false,
+  ...FULL, hubCat: { search: true, total: 46 }, hubQuery: '', hubAllCollapsed: false,
+  opsInfoFeed: FEED, opsInfoFeedSets: [FEED], clockText: '11.23 00:06', greeting: '夜深了', staffName: '令狐冲大哥',
   hubFound: [{ id: 'approvals', icon: '/assets/icons/done.png', label: '审批中心', desc: '请假 · 报销 · 调级', badge: 4 }, { id: 'leaveReview', icon: '/assets/icons/list.png', label: '请假审批', desc: '同事请假与店长请假' }],
   stats: { ...FULL.stats, ratioEmpty: false, donutStyle: 'background: conic-gradient(#C4A76C 0 67%, #52B788 67% 100%);', onlineRatio: 67, offlineRatio: 33, orderCountFmt: '214', avgOrderFmt: '¥403', visitCountFmt: '86', dailyAvgFmt: '4,120', momClass: 'up', momLabel: '+12%' },
   opsSignals: { mom: 'blink', stock: 'warn' }, trendMeta: { empty: false, weekTotalFmt: '28,840', weekOnlineFmt: '19,320', weekOfflineFmt: '9,520', weekOnlineBar: 'width:67%', weekOfflineBar: 'width:33%' },
