@@ -55,36 +55,36 @@
     <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">
       <view class="field">
         <text class="field-label">员工</text>
-        <picker mode="selector" range="{{staffNames}}" bindchange="onFormStaffPick">
+        <picker mode="selector" range="{{staffNames}}" disabled="{{saving}}" bindchange="onFormStaffPick">
           <view class="input picker-row">{{form.staffName || '选择员工'}}</view>
         </picker>
       </view>
       <view class="field">
         <text class="field-label">月份 YYYY-MM</text>
-        <input class="input" value="{{form.month}}" data-field="month" bindinput="onFormInput" />
+        <input class="input" value="{{form.month}}" disabled="{{saving}}" data-field="month" bindinput="onFormInput" />
       </view>
       <view class="field">
         <text class="field-label">基本工资</text>
-        <input class="input" type="digit" value="{{form.base}}" data-field="base" bindinput="onFormInput" />
+        <input class="input" type="digit" value="{{form.base}}" disabled="{{saving}}" data-field="base" bindinput="onFormInput" />
       </view>
       <view class="field">
         <text class="field-label">奖金 / 补贴</text>
-        <input class="input" type="digit" value="{{form.bonus}}" data-field="bonus" bindinput="onFormInput" />
+        <input class="input" type="digit" value="{{form.bonus}}" disabled="{{saving}}" data-field="bonus" bindinput="onFormInput" />
       </view>
       <view class="field">
         <text class="field-label">{{form.siOn ? '其他扣款（考勤等，不含社保）' : '扣款'}}</text>
-        <input class="input" type="digit" value="{{form.deduction}}" data-field="deduction" bindinput="onFormInput" />
+        <input class="input" type="digit" value="{{form.deduction}}" disabled="{{saving}}" data-field="deduction" bindinput="onFormInput" />
       </view>
       <view class="field si-box">
         <view class="si-switch-row">
           <text class="field-label">套用社保扣缴标准</text>
-          <switch checked="{{form.siOn}}" color="#C4A76C" bindchange="onSiToggle" />
+          <switch checked="{{form.siOn}}" disabled="{{saving}}" color="#C4A76C" bindchange="onSiToggle" />
         </view>
         <block wx:if="{{form.siOn}}">
           <text class="si-hint">每月按同一份月度扣缴标准扣{{siPreview.standardLabel ? '（' + siPreview.standardLabel + '）' : ''}}；没有新版标准时沿用上一版</text>
           <view class="si-switch-row" wx:if="{{!siPreview.snapshot || siPreview.snapshot.annualAvailable}}">
             <text class="field-label">含大额医疗互助（全年一次）</text>
-            <switch checked="{{form.siIncludeAnnual}}" color="#C4A76C" bindchange="onSiAnnualToggle" />
+            <switch checked="{{form.siIncludeAnnual}}" disabled="{{saving}}" color="#C4A76C" bindchange="onSiAnnualToggle" />
           </view>
           <text class="si-hint" wx:if="{{siPreview.loading}}">正在计算社保明细…</text>
           <text class="si-hint is-warn" wx:elif="{{siPreview.msg}}">{{siPreview.msg}}</text>
@@ -112,7 +112,7 @@
       </view>
       <view class="field">
         <text class="field-label">备注</text>
-        <input class="input" value="{{form.remark}}" data-field="remark" bindinput="onFormInput" maxlength="200" />
+        <input class="input" value="{{form.remark}}" disabled="{{saving}}" data-field="remark" bindinput="onFormInput" maxlength="200" />
       </view>
     </scroll-view>
     <view class="workbench-modal-foot">

@@ -7,7 +7,7 @@ function currentYearMonth() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-const YM_RE = /^\d{4}-\d{2}$/
+const YM_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 
 function emptySiPreview() {
   return { loading: false, snapshot: null, lines: [], infos: [], standardLabel: '', msg: '', personalTotalFmt: '', companyTotalFmt: '', netFmt: '' }
@@ -125,6 +125,8 @@ Page({
   },
 
   openCreate() {
+    if (this.data.saving) return
+    this._siPreviewRequest = (this._siPreviewRequest || 0) + 1
     const first = this.data.staffOptions[0]
     this.setData({
       showEditor: true,
@@ -144,9 +146,11 @@ Page({
   },
 
   openEdit(e) {
+    if (this.data.saving) return
     const id = String((e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
     const row = (this.data.list || []).find((r) => r._id === id)
     if (!row) return
+    this._siPreviewRequest = (this._siPreviewRequest || 0) + 1
     const si = row.socialInsurance || null
     const deduction = si ? row.otherDeduction : row.deduction
     this.setData({
@@ -170,22 +174,27 @@ Page({
   },
 
   onSiToggle(e) {
+    if (this.data.saving) return
     const on = !!(e.detail && e.detail.value)
     this.setData({
       'form.siOn': on,
       'form.siIncludeAnnual': null,
       siPreview: emptySiPreview()
     })
-    if (on) this.refreshSiPreview()
+    this.refreshSiPreview()
   },
 
   onSiAnnualToggle(e) {
+    if (this.data.saving) return
     this.setData({ 'form.siIncludeAnnual': !!(e.detail && e.detail.value) })
     this.refreshSiPreview()
   },
 
   async refreshSiPreview() {
+    // 每次输入变化先废弃旧快照；晚到的成功/失败不能污染另一员工或月份。
+    const request = this._siPreviewRequest = (this._siPreviewRequest || 0) + 1
     const f = this.data.form
+    this.setData({ siPreview: emptySiPreview() })
     if (!f.siOn || !f.staffOpenid || !YM_RE.test(String(f.month || ''))) return
     this.setData({ 'siPreview.loading': true })
     try {
@@ -198,6 +207,7 @@ Page({
           socialInsurance: { includeAnnual: f.siIncludeAnnual }
         }
       })
+      if (request !== this._siPreviewRequest) return
       const result = (res && res.result) || {}
       const snap = result.snapshot || null
       const patch = {
@@ -210,21 +220,29 @@ Page({
           msg: result.success === false || !snap ? (result.msg || '暂时算不出社保明细') : '',
           personalTotalFmt: snap ? Number(snap.personalTotal).toFixed(2) : '',
           companyTotalFmt: snap ? Number(snap.companyTotal).toFixed(2) : '',
-          netFmt: snap ? estimateNet(f, snap.personalTotal) : ''
+          netFmt: snap ? estimateNet(this.data.form, snap.personalTotal) : ''
         }
       }
       if (snap) patch['form.siIncludeAnnual'] = !!snap.annualIncluded
       this.setData(patch)
     } catch (e) {
+      if (request !== this._siPreviewRequest) return
       this.setData({ siPreview: { ...emptySiPreview(), msg: formatCloudFnError(e, '社保明细加载失败') } })
     }
   },
 
   closeEditor() {
+    if (this.data.saving) return
+    this._siPreviewRequest = (this._siPreviewRequest || 0) + 1
     this.setData({ showEditor: false })
   },
 
+  onUnload() {
+    this._siPreviewRequest = (this._siPreviewRequest || 0) + 1
+  },
+
   onFormInput(e) {
+    if (this.data.saving) return
     const field = e.currentTarget.dataset.field
     if (!field) return
     const patch = { [`form.${field}`]: e.detail.value }
@@ -232,13 +250,14 @@ Page({
     this.setData(patch)
     if (!this.data.form.siOn) return
     if (field === 'month') {
-      if (YM_RE.test(String(e.detail.value || ''))) this.refreshSiPreview()
+      this.refreshSiPreview()
     } else if (this.data.siPreview.snapshot) {
       this.setData({ 'siPreview.netFmt': estimateNet(this.data.form, this.data.siPreview.snapshot.personalTotal) })
     }
   },
 
   onFormStaffPick(e) {
+    if (this.data.saving) return
     const index = parseInt(e.detail.value, 10) || 0
     const row = this.data.staffOptions[index]
     if (!row) return
@@ -255,11 +274,11 @@ Page({
     const f = this.data.form
     const staffOpenid = String(f.staffOpenid || '').trim()
     const month = String(f.month || '').trim()
-    if (!staffOpenid || !/^\d{4}-\d{2}$/.test(month)) {
+    if (!staffOpenid || !YM_RE.test(month)) {
       wx.showToast({ title: '请填写员工与月份 YYYY-MM', icon: 'none' })
       return
     }
-    if (f.siOn && !this.data.siPreview.snapshot) {
+    if (f.siOn && (this.data.siPreview.loading || !this.data.siPreview.snapshot)) {
       if (!this.data.siPreview.msg) this.setData({ 'siPreview.msg': '社保明细还没算出来，请稍候再保存' })
       return
     }

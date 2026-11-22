@@ -23,6 +23,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import Module from 'node:module'
+import { runInNewContext } from 'node:vm'
 import { isDeepStrictEqual } from 'node:util'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -374,6 +375,124 @@ function checkMiniprogram(t, src, SI) {
   t.ok('E5 不新增原生弹窗', !/wx\.showModal/.test(src.pageJs) && (src.adminJs.match(/wx\.showModal/g) || []).length <= 1)
 }
 
+// 真跑页面方法，用可控 Promise 复现弱网乱序；不联网、不写真实工资条。
+async function checkEditor(t, src) {
+  const controls = [...src.adminWxml.matchAll(/<(input|switch|picker)\b[^>]*>/g)]
+    .map((m) => m[0]).filter((tag) => /onFormInput|onFormStaffPick|onSiToggle|onSiAnnualToggle/.test(tag))
+  t.ok('F0 表单八个原生控件保存中禁用', controls.length === 8 && controls.every((tag) => tag.includes('disabled="{{saving}}"')))
+  let config
+  const calls = []
+  runInNewContext(src.adminJs, {
+    Page: (value) => { config = value },
+    require: () => ({ formatCloudFnError: (_, fallback) => fallback }),
+    wx: { showToast() {}, cloud: { callFunction(options) {
+      return new Promise((resolve, reject) => calls.push({ options, resolve, reject }))
+    } } },
+  })
+  const page = { ...config, data: structuredClone(config.data), setData(patch) {
+    // 每次替换数据对象，避免测试依赖「旧 form 引用会自动更新」这一假设。
+    this.data = structuredClone(this.data)
+    for (const [key, value] of Object.entries(patch)) {
+      const parts = key.split('.')
+      let target = this.data
+      for (const part of parts.slice(0, -1)) target = target[part]
+      target[parts.at(-1)] = value
+    }
+  } }
+  page.setData({ staffOptions: [{ openid: 'A', name: '甲' }, { openid: 'B', name: '乙' }] })
+  page.openCreate()
+  page.setData({ 'form.siOn': true, 'form.month': '2026-10', 'form.base': '4000' })
+  const reply = (tag) => ({ result: { success: true, snapshot: {
+    standardLabel: tag, personalTotal: 100, companyTotal: 200, annualIncluded: false,
+    personal: [], company: [], info: [],
+  } } })
+  const input = (field, value) => page.onFormInput({ currentTarget: { dataset: { field } }, detail: { value } })
+  const flush = async () => { await Promise.resolve(); await Promise.resolve() }
+  const first = page.refreshSiPreview()
+  page.onFormStaffPick({ detail: { value: 1 } })
+  calls.at(-1).resolve(reply('乙'))
+  await flush()
+  calls[0].resolve(reply('甲'))
+  await first
+  t.ok('F1 旧员工预览不能覆盖新员工', page.data.siPreview.standardLabel === '乙')
+
+  const staleFailure = page.refreshSiPreview()
+  const failureCall = calls.at(-1)
+  input('month', '2026-11')
+  t.ok('F2 切换月份立即清掉旧快照', page.data.siPreview.snapshot === null && page.data.siPreview.loading)
+  const beforeSave = calls.length
+  await page.saveForm()
+  t.ok('F2 预览未完成不提交', calls.length === beforeSave)
+  input('base', '5000')
+  calls.at(-1).resolve(reply('十一月'))
+  await flush()
+  failureCall.reject(new Error('old network failure'))
+  await staleFailure
+  t.ok('F3 旧请求失败不清空新预览', page.data.siPreview.standardLabel === '十一月' && !page.data.siPreview.msg)
+  t.ok('F4 请求期间改金额按最新表单算实发', page.data.siPreview.netFmt === '4900.00')
+
+  const disabled = page.refreshSiPreview()
+  const disabledCall = calls.at(-1)
+  page.onSiToggle({ detail: { value: false } })
+  disabledCall.resolve(reply('已关闭'))
+  await disabled
+  t.ok('F5 关闭社保后晚到结果不回填', page.data.siPreview.snapshot === null && page.data.form.siIncludeAnnual === null)
+
+  page.setData({ 'form.siOn': true })
+  const invalid = page.refreshSiPreview()
+  const invalidCall = calls.at(-1)
+  input('month', '2026-')
+  invalidCall.resolve(reply('不完整月份'))
+  await invalid
+  t.ok('F6 月份输入未完成时清空且废弃旧响应', page.data.siPreview.snapshot === null && !page.data.siPreview.loading)
+  for (const month of ['2026-00', '2026-13']) {
+    const count = calls.length
+    input('month', month)
+    await page.saveForm()
+    t.ok(`F6 非法月份 ${month} 不预览也不保存`, calls.length === count)
+  }
+
+  for (const action of ['closeEditor', 'openCreate', 'onUnload']) {
+    page.setData({ 'form.month': '2026-10', 'form.siOn': true })
+    const pending = page.refreshSiPreview()
+    const call = calls.at(-1)
+    page[action]()
+    const before = JSON.stringify(page.data)
+    call.resolve(reply('过期弹窗'))
+    await pending
+    t.ok(`F7 ${action} 后旧响应不修改页面`, JSON.stringify(page.data) === before)
+  }
+
+  page.openCreate()
+  page.setData({ 'form.month': '2026-10', 'form.base': '4000' })
+  const saving = page.saveForm()
+  const saveCall = calls.at(-1)
+  const formBefore = JSON.stringify(page.data.form)
+  page.closeEditor()
+  page.openCreate()
+  input('base', '9000')
+  page.onFormStaffPick({ detail: { value: 1 } })
+  page.onSiToggle({ detail: { value: true } })
+  page.onSiAnnualToggle({ detail: { value: true } })
+  t.ok('F8 保存中不关闭或修改提交中的表单', page.data.showEditor && JSON.stringify(page.data.form) === formBefore)
+  const count = calls.length
+  await page.saveForm()
+  t.ok('F8 连点保存只发一次', calls.length === count)
+  saveCall.resolve({ result: { success: false, msg: '保存失败' } })
+  await saving
+  t.ok('F9 保存失败保留输入并释放提交锁', page.data.showEditor && !page.data.saving && JSON.stringify(page.data.form) === formBefore)
+  const retry = page.saveForm()
+  calls.at(-1).reject(new Error('network failure'))
+  await retry
+  t.ok('F9 网络失败后仍可重试', calls.length === count + 1 && !page.data.saving && page.data.showEditor)
+  let reloads = 0
+  page.loadList = () => { reloads += 1 }
+  const success = page.saveForm()
+  calls.at(-1).resolve({ result: { success: true } })
+  await success
+  t.ok('F10 保存成功关闭弹窗并刷新一次', !page.data.showEditor && !page.data.saving && reloads === 1)
+}
+
 async function runAll(src) {
   const t = makeAsserter()
   let SI
@@ -388,6 +507,7 @@ async function runAll(src) {
   await checkCloudFn(t, src, SI)
   await checkErpEngine(t, src)
   checkMiniprogram(t, src, SI)
+  await checkEditor(t, src)
   return t
 }
 
@@ -399,6 +519,13 @@ function inject(key, from, to) {
 }
 
 const INJECTIONS = [
+  ['表单保存期间仍可输入', inject('adminWxml', 'disabled="{{saving}}"', ''), /F0/],
+  ['旧成功响应回填', inject('adminJs', 'if (request !== this._siPreviewRequest) return', '/* stale success allowed */'), /F1|F5|F6|F7/],
+  ['旧失败响应回填', inject('adminJs', "} catch (e) {\n      if (request !== this._siPreviewRequest) return", '} catch (e) {'), /F3/],
+  ['预览不清旧快照', inject('adminJs', 'this.setData({ siPreview: emptySiPreview() })', '/* keep old preview */'), /F2|F6/],
+  ['保存中允许关闭', inject('adminJs', 'closeEditor() {\n    if (this.data.saving) return', 'closeEditor() {'), /F8/],
+  ['实发使用请求前的金额', inject('adminJs', 'estimateNet(this.data.form, snap.personalTotal)', 'estimateNet(f, snap.personalTotal)'), /F4/],
+  ['月份只校验位数', inject('adminJs', 'const YM_RE = /^\\d{4}-(0[1-9]|1[0-2])$/', 'const YM_RE = /^\\d{4}-\\d{2}$/'), /F6/],
   ['工伤个人部分被填了金额', inject('siCjs', "{ key: 'injury', personalTotal: 0,", "{ key: 'injury', personalTotal: 28.12,"), /A1|A2/],
   ['个人金额没除以折算人数', inject('siCjs', 'return Math.round(toCents(total) / hc) / 100', 'return Math.round(toCents(total)) / 100'), /A3 .*÷|A4/],
   ['工伤品目丢了「仅公司缴纳」标记', inject('siCjs', "item: '工伤保险费', companyOnly: true }", "item: '工伤保险费' }"), /A1|A2/],

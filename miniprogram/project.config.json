@@ -125,8 +125,8 @@
         "type": "folder"
       },
       {
-        "type": "folder",
-        "value": "/minitest"
+        "value": "/minitest",
+        "type": "folder"
       },
       {
         "value": ".tmp",
