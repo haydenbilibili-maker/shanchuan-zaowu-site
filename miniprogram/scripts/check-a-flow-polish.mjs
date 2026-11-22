@@ -162,6 +162,8 @@ const FILES = {
   dnCopy: 'subpackages/business/donations/donationCopy.js',
   dnJs: 'subpackages/business/donations/index.js',
   dnWxml: 'subpackages/business/donations/index.wxml',
+  dnWxss: 'subpackages/business/donations/index.wxss',
+  dnIcons: 'subpackages/business/donations/donation-icons.js',
   walletJs: 'subpackages/business/components/WalletPanelWallet/index.js',
   walletWxml: 'subpackages/business/components/WalletPanelWallet/index.wxml',
   appJson: 'app.json',
@@ -1022,6 +1024,20 @@ function checks(s) {
       /<view class="sv-giving" bindtap="goDonations"/.test(s.walletWxml) &&
         /goDonations\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/business\/donations\/index' \}\)/.test(s.walletJs) &&
         /name: 'getMyDonations', data: \{ summaryOnly: true \}/.test(s.walletJs) && /"donations\/index"/.test(s.appJson))
+    const DI = loadCjs(s.dnIcons)
+    let iconOk = false
+    try {
+      iconOk = ['wild', 'ranger', 'park', 'earth'].every((k) => {
+        const uri = (DI.DONATION_ICONS || {})[k] || ''
+        if (!/^data:image\/svg\+xml/.test(uri)) return false
+        const svg = decodeURIComponent(uri.split(',')[1] || '')
+        return /viewBox="0 0 1024 1024"/.test(svg) && /fill="#E0CFA3"/.test(svg) && !/#52E217|#333333/.test(svg)
+      })
+    } catch (e) { iconOk = false }
+    add('R60-5 去向四枚改用附件 icon（生/林/园/境 → 熊猫/森林/公园/环保），重上铜金、其余仍是方印字',
+      iconOk && /icon: DONATION_ICONS\[d\.key\]/.test(s.dnJs) &&
+        /<image wx:if="\{\{item\.icon\}\}" class="dn-seal-icon" src="\{\{item\.icon\}\}" mode="aspectFit"><\/image>/.test(s.dnWxml) &&
+        /<text wx:else>\{\{item\.seal\}\}<\/text>/.test(s.dnWxml) && /\.dn-seal-icon \{[^}]*width: 38rpx;/.test(s.dnWxss))
   }
   // R62 证书打印动画收尾（2026-11-22 产品负责人「动画很好但是时间特别快，还没看清楚就跳到证书页」）
   {
@@ -1230,6 +1246,7 @@ if (process.argv.includes('--selftest')) {
     ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
     ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
     ['钱包入口被删', 'walletWxml', (t) => t.replace('<view class="sv-giving" bindtap="goDonations"', '<view class="sv-giving"')],
+    ['去向图标退回方印字', 'dnWxml', (t) => t.replace('<image wx:if="{{item.icon}}" class="dn-seal-icon" src="{{item.icon}}" mode="aspectFit"></image>', '')],
   ]
   let ok = baseOk
   console.log(`${baseOk ? '✓' : '✗'} 基线：真源码全部断言通过`)

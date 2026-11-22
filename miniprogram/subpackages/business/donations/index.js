@@ -6,7 +6,13 @@
  *       规则、流向、去向与问答照常展示，只有金额区给出可重试的说明 —— 不拿 0 冒充「您还没捐」。
  * 本页只读：不写库、不改订单 / 钱包任何字段。
  */
-const copy = require('./donationCopy')
+const { DONATION_ICONS } = require('./donation-icons')
+const baseCopy = require('./donationCopy')
+/** 去向四个方向：文案仍以 donationCopy 为唯一事实源，这里只补图标（data URI，页面级只序列化一次） */
+const copy = {
+  ...baseCopy,
+  DIRECTIONS: baseCopy.DIRECTIONS.map((d) => ({ ...d, icon: DONATION_ICONS[d.key] || '' }))
+}
 const { buildView, pickRows, PAGE_ROWS } = require('./donationView')
 const { isLocalLoggedOut } = require('../../../utils/userSession')
 

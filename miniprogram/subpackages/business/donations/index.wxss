@@ -255,6 +255,12 @@ page { background: var(--color-bg, #1A1814); }
   background: var(--color-bg-card, #1F1D1A);
   box-shadow: inset 0 0 0 1rpx rgba(38, 35, 32, 0.9);
 }
+.dn-seal-icon {
+  width: 38rpx;
+  height: 38rpx;
+  display: block;
+}
+
 .dn-seal {
   flex: none;
   width: 68rpx;

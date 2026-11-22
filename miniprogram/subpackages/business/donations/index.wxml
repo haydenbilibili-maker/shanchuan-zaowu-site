@@ -88,7 +88,7 @@
     </view>
     <view class="dn-dirs">
       <view class="dn-dir" wx:for="{{copy.DIRECTIONS}}" wx:key="key">
-        <view class="dn-seal"><text>{{item.seal}}</text></view>
+        <view class="dn-seal"><image wx:if="{{item.icon}}" class="dn-seal-icon" src="{{item.icon}}" mode="aspectFit"></image><text wx:else>{{item.seal}}</text></view>
         <view class="dn-dir-body">
           <text class="dn-dir-title">{{item.title}}</text>
           <text class="dn-dir-desc">{{item.desc}}</text>
