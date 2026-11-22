@@ -128,7 +128,7 @@
   bottom: 24rpx;
   width: 4rpx;
   background: var(--color-primary);
-  border-radius: 2rpx;
+  /* radius:object */ border-radius: 2rpx;
 }
 
 .filter-right {

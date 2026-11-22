@@ -43,7 +43,7 @@ page {
   position: relative;
   padding: 40rpx 32rpx 28rpx;
   margin-bottom: var(--space-5);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
   box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
 }

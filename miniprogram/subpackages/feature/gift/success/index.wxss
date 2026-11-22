@@ -460,7 +460,7 @@ page { background: #1A1814; color: #fff; }
   position: absolute;
   inset: 10rpx;
   border: 1rpx solid rgba(138, 117, 48, 0.28);
-  border-radius: 4rpx;
+  /* radius:object */ border-radius: 4rpx;
   pointer-events: none;
 }
 .card-preview-head {

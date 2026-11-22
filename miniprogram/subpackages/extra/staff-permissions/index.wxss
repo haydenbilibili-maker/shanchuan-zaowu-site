@@ -575,7 +575,7 @@ page {
 .section {
   background: rgba(243, 236, 221, 0.02);
   border: 1rpx solid rgba(196, 167, 108, 0.14);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
 }
 .section-title {
   font-family: var(--font-brand);
@@ -585,7 +585,7 @@ page {
 }
 .row { border-bottom-color: rgba(196, 167, 108, 0.14); }
 .btn-primary {
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   font-weight: 600;
   color: #1A1814;
 }
@@ -598,7 +598,7 @@ page {
 .match-badge,
 .btn-retry,
 .page-tip {
-  border-radius: 2rpx;
+  border-radius: var(--r-card, 16rpx);
 }
 .lookup-btn { background: transparent; }
 .seg-item.on,
@@ -609,7 +609,7 @@ page {
 .match-card,
 .candidate,
 .empty.is-error {
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
 }
 .feature-group { border-top-color: rgba(196, 167, 108, 0.14); }
 .feature-group-title {
@@ -624,7 +624,7 @@ page {
   color: var(--brass-300);
 }
 .feature-check {
-  border-radius: 2rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
   background: transparent;
   border-color: rgba(196, 167, 108, 0.14);
 }

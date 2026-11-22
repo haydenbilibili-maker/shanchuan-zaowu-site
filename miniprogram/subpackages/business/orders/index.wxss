@@ -118,7 +118,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .prod-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .prod-name { font-size: var(--fs-28); font-weight: bold; color: #D5D1C8; margin-bottom: 6rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .prod-latin { font-family: var(--font-latin); font-style: italic; font-size: var(--fs-22); color: var(--color-primary); margin-bottom: 12rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sku-tag { font-size: var(--fs-20); color: #A09A90; border: 1px solid #262320; align-self: flex-start; padding: 2rpx 8rpx; border-radius: 4rpx; }
+.sku-tag { font-size: var(--fs-20); color: #A09A90; border: 1px solid #262320; align-self: flex-start; padding: 2rpx 8rpx; border-radius: var(--r-pill, 999rpx); }
 .sku-tag.gift { color: var(--color-primary); border-color: rgba(196, 167, 108, 0.45); margin-top: 8rpx; }
 
 /* 底部 */

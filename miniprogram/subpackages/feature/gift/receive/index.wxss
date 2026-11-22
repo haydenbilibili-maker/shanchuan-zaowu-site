@@ -366,7 +366,7 @@ page { background: var(--color-bg); color: #fff; }
   position: absolute;
   width: 18rpx;
   height: 18rpx;
-  border-radius: 3rpx;
+  /* radius:object */ border-radius: 3rpx;
   background: linear-gradient(135deg, #D4BC85 0%, #A8903C 48%, #6B5A24 100%);
   opacity: 0.85;
   z-index: 3;

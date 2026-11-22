@@ -51,7 +51,7 @@
   font-size: var(--fs-20);
   color: var(--color-text-secondary);
   border: 1rpx solid rgba(196, 167, 108, 0.3);
-  border-radius: 4rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 .pv-tag.is-main { color: var(--brass-200); border-color: rgba(196, 167, 108, 0.7); }
 .pv-row-body { flex: 1; min-width: 0; }

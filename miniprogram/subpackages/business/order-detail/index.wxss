@@ -1019,7 +1019,7 @@ view, text, image, button { box-sizing: border-box; }
   padding: 48rpx 44rpx 40rpx;
   box-sizing: border-box;
   background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
-  border-radius: 4rpx;
+  /* radius:object */ border-radius: 4rpx;
   box-shadow: inset 0 0 0 14rpx #F0E8D6, inset 0 0 0 15rpx rgba(46, 38, 24, 0.22), 0 24rpx 60rpx rgba(0, 0, 0, 0.55);
   animation: ac-rise 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
@@ -1069,7 +1069,7 @@ view, text, image, button { box-sizing: border-box; }
   height: 76rpx;
   line-height: 76rpx;
   text-align: center;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   font-size: var(--fs-26);
   background: #2E2618;
   color: #F3ECDD;

@@ -83,7 +83,7 @@
   width: auto;
   height: auto;
   margin: 0;
-  border-radius: 0;
+  /* radius:object */ border-radius: 0;
   background: none;
   box-shadow: none;
   font-family: var(--font-mono);
@@ -102,7 +102,7 @@
   width: 360rpx;
   height: 1rpx;
   margin-left: -180rpx;
-  border-radius: 0;
+  /* radius:object */ border-radius: 0;
   background: linear-gradient(90deg, transparent, rgba(196, 167, 108, 0.5), transparent);
   box-shadow: none;
 }

@@ -41,7 +41,7 @@ page {
   align-items: center;
   gap: 28rpx;
   padding: 44rpx 36rpx 36rpx;
-  border-radius: 4rpx;
+  /* radius:object */ border-radius: 4rpx;  /* 养护牌：顶部带钉的奶白铭牌，属物件，保持直角 */
   background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
   box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.42);
 }
@@ -142,7 +142,7 @@ page {
   font-size: var(--fs-20);
   color: var(--brass-200);
   border: 1rpx solid rgba(196, 167, 108, 0.36);
-  border-radius: 4rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .ctx-tag.muted { color: var(--color-text-secondary); border-color: rgba(196, 167, 108, 0.2); }
@@ -226,7 +226,7 @@ page {
   font-size: var(--fs-24);
   color: var(--color-text-body);
   border: 1rpx solid rgba(196, 167, 108, 0.28);
-  border-radius: var(--radius-sm);
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .toc-chip.active {
@@ -440,7 +440,7 @@ page {
   font-size: var(--fs-20);
   color: var(--brass-200);
   border: 1rpx solid rgba(196, 167, 108, 0.36);
-  border-radius: 4rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .framing-desc {

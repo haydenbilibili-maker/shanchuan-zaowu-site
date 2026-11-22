@@ -102,7 +102,7 @@ page {
   flex: 1;
   min-width: 46%;
   padding: 22rpx 24rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.18);
   box-sizing: border-box;
 }
@@ -152,7 +152,7 @@ page {
   margin-top: var(--space-3);
   padding: var(--space-3) var(--space-4);
   border: 1rpx dashed rgba(196, 167, 108, 0.24);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.5;
@@ -221,7 +221,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 2rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35);
 }
 
@@ -270,7 +270,7 @@ page {
   margin-top: var(--space-6);
   padding: var(--space-4);
   border: 1rpx dashed rgba(196, 167, 108, 0.24);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   font-size: var(--fs-26);
   color: var(--color-text-secondary);
   text-align: center;

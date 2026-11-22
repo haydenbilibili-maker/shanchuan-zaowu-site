@@ -364,9 +364,10 @@ function checks(s) {
     /\n\.form-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
       !/\n\.channel-item \{[^}]*border-radius/.test(s.supportWxss))
   // 2026-10-18 搜索「检索台」
-  add('R18-1 搜索结果为发丝线行、分类为下划线页签、签为方角（不再是圆角卡 / 胶囊），颗粒层退场',
+  // 2026-11-22 圆角融合（产品负责人确认方向）：签由方角改为胶囊（var(--r-pill)），结果行与页签不变
+  add('R18-1 搜索结果为发丝线行、分类为下划线页签、签为胶囊（圆角融合：标签一律胶囊），颗粒层退场',
     !/\n\.archive-card \{[^}]*border-radius/.test(s.searchWxss) && /\n\.filter-pill \{[^}]*border-bottom: 3rpx solid transparent/.test(s.searchWxss) &&
-      !/9999px/.test(s.searchWxss) && !/grain-overlay/.test(s.searchWxml) && !/font-style: italic;\n  color: var\(--brass-400/.test(s.searchWxss))
+      /\n\.chip \{[^}]*border-radius: var\(--r-pill, 999rpx\);/.test(s.searchWxss) && !/grain-overlay/.test(s.searchWxml) && !/font-style: italic;\n  color: var\(--brass-400/.test(s.searchWxss))
   // 2026-10-18 主播工作台（员工端，产品负责人点名）
   add('R19-1 主播工作台：主播职责为发丝线行（非圆角卡）、「下一步」为浅纸指引签、流程为下划线；员工端红 / 黄语义色保留',
     !/\n\.module-card \{[^}]*border-radius/.test(s.liveWxss) && /\n\.next-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.liveWxss) &&
@@ -379,73 +380,61 @@ function checks(s) {
   // 2026-10-18 标本师五个子页（员工端，点名）
   {
     const subs = ['artCommission', 'artPet', 'artWorks', 'artProfile', 'artConcept']
-    const rounded = subs.filter((k) => /border-radius: var\(--radius-(lg|md|full)\)|border-radius: (999rpx|9999px)/.test(s[k]))
-    add(`R21-1 标本师子页卡片方角、签不再是胶囊${rounded.length ? '（仍圆角：' + rounded.join(',') + '）' : ''}`, rounded.length === 0)
+    const unfused = subs.filter((k) => !/var\(--r-(card|pill|control|thumb|thumb-sm|hero), /.test(s[k]))
+    add(`R21-1 标本师子页按圆角融合取角色令牌（2026-11-22 圆角融合：原「方角 / 无胶囊」口径作废，按角色取 --r-* 令牌；直角越线由 check:radius-roles 统一管）${unfused.length ? '（未取令牌：' + unfused.join(',') + '）' : ''}`, unfused.length === 0)
   }
   add('R21-2 标本师子页：提成 / 伴宠汇总为浅纸账签，概念卡为浅纸标本签，档案选项签选中不再实心金',
     ['artCommission', 'artPet'].every((k) => /\n\.summary-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s[k])) &&
       /\n\.plate-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.artConcept) &&
       !/\.type-chip\.is-on \{[^}]*background: var\(--brass-400\)/.test(s.artProfile))
   // 2026-10-18 采购商工作台（共享 supplier-common，含六个子页的公共零件）
-  add('R22-1 采购商工作台：入口为发丝线行、流程为下划线、行内动作非实心金药丸、无胶囊半径；演示橙保留',
+  add('R22-1 采购商工作台：入口为发丝线行、流程为下划线、行内动作非实心金药丸、签为胶囊（圆角融合）；演示橙保留',
     !/\n\.module-card \{[^}]*border-radius/.test(s.supplierCommon) && /\.flow-step-btn\.hot \{\s*border-bottom-color: var\(--brass-400\);/.test(s.supplierCommon) &&
-      !/\n\.list-action \{[^}]*background: var\(--brass-500\)/.test(s.supplierCommon) && !/999rpx/.test(s.supplierCommon) && /#e07a5f/.test(s.supplierCommon))
+      !/\n\.list-action \{[^}]*background: var\(--brass-500\)/.test(s.supplierCommon) && /var\(--r-pill, 999rpx\)/.test(s.supplierCommon) && /#e07a5f/.test(s.supplierCommon))
   // 2026-10-18 采购商子页（价目选购 / 采购车 / 我的采购单）
   {
     const pages = ['buyCatalog', 'buyCart', 'buyOrders']
-    const rounded = pages.filter((k) => /999rpx|border-radius: var\(--radius-(lg|md|sm|full)\)/.test(s[k]))
-    add(`R23-1 采购商子页方角、无胶囊${rounded.length ? '（仍圆角：' + rounded.join(',') + '）' : ''}`, rounded.length === 0)
+    const unfused = pages.filter((k) => !/var\(--r-(card|pill|control|thumb|thumb-sm|hero), /.test(s[k]))
+    add(`R23-1 采购商子页按圆角融合取角色令牌（2026-11-22 圆角融合：原「方角 / 无胶囊」口径作废，按角色取 --r-* 令牌；直角越线由 check:radius-roles 统一管）${unfused.length ? '（未取令牌：' + unfused.join(',') + '）' : ''}`, unfused.length === 0)
     add('R23-2 采购商子页实心金只给页面主操作：选购页「去下单」、采购车「提交」；「加入采购车」与采购单「去支付」为金线环',
       solidGold(s.buyCatalog) === '.cart-bar-cta' && solidGold(s.buyCart) === '.btn-primary' && solidGold(s.buyOrders) === '')
   }
   // 2026-10-18 供应商管理工作台（b2bdesk）
   {
-    const ROUND = /^\.(kpi-dot|bar-track|bar-fill|tl-dot|toggle|toggle-knob|tab-dot|skel-avatar|state-mark|avatar)$/
-    const pills = []
-    for (const k of ['deskCommon', 'deskCenter']) {
-      for (const [, sel, body] of s[k].matchAll(/\n([^\n{]+?)\s*\{([^}]*)\}/g)) {
-        if (/border-radius: (999rpx|var\(--radius-(lg|md)\))/.test(body) && !ROUND.test(sel.trim())) pills.push(sel.trim())
-      }
-    }
-    add(`R24-1 供应商管理：分段 / 芯片 / 卡片 / 按钮方角，仅圆点 / 开关 / 进度条 / 时间轴保持圆${pills.length ? '（仍圆角：' + pills.slice(0, 4).join(',') + '）' : ''}`, pills.length === 0)
+    add('R24-1 供应商管理：芯片 / 卡片 / 按钮按圆角融合取角色令牌（2026-11-22 圆角融合：原「方角 / 无胶囊」口径作废，按角色取 --r-* 令牌；直角越线由 check:radius-roles 统一管）',
+      ['deskCommon', 'deskCenter'].every((k) => /var\(--r-(card|pill|control|thumb|thumb-sm|hero), /.test(s[k])))
     add('R24-2 供应商管理：顶部分段为下划线页签、「供」为方印',
       /\.tab\.on \{\s*border-bottom-color: var\(--brass-400\);/.test(s.deskCommon) && /\n\.hero-mark \{[^}]*border-radius: 2rpx;/.test(s.deskCenter))
   }
   // 2026-10-18 股东观测台
   {
-    const KEEP = /^\.(boot-mark|signal-light|progress-track|progress-fill|share-track|share-fill)$/
-    const pills = [...s.shareholderWxss.matchAll(/\n([^\n{]+?)\s*\{([^}]*)\}/g)]
-      .filter(([, sel, body]) => /border-radius: (9999px|999rpx|var\(--radius-(lg|md|full))/.test(body) && !KEEP.test(sel.trim())).map(([, sel]) => sel.trim())
-    add(`R25-1 股东观测台：页签 / 卡片 / 指标格方角，信号灯与进度条保持圆${pills.length ? '（仍圆角：' + pills.slice(0, 4).join(',') + '）' : ''}`,
-      pills.length === 0 && /\.range-tab\.on, \.month-chip\.on \{[^}]*var\(--ring-brass\)/.test(s.shareholderWxss))
+    add('R25-1 股东观测台：页签 / 卡片 / 指标格按圆角融合取角色令牌（2026-11-22 圆角融合：原「方角 / 无胶囊」口径作废，按角色取 --r-* 令牌；直角越线由 check:radius-roles 统一管）；页签选中为金线环',
+      /var\(--r-(card|pill|control|thumb|thumb-sm|hero), /.test(s.shareholderWxss) && /\.range-tab\.on, \.month-chip\.on \{[^}]*var\(--ring-brass\)/.test(s.shareholderWxss))
   }
   // 2026-10-18 投资观测台
   {
-    const KEEP = /^\.(boot-mark|share-track|share-fill|dot)$/
-    const pills = [...s.investorWxss.matchAll(/\n([^\n{]+?)\s*\{([^}]*)\}/g)]
-      .filter(([, sel, body]) => /border-radius: (9999px|999rpx|var\(--radius-(lg|md|full))/.test(body) && !KEEP.test(sel.trim())).map(([, sel]) => sel.trim())
-    add(`R26-1 投资观测台：区间页签选中为金线环（非实心金）、卡片方角、分区头宋体${pills.length ? '（仍圆角：' + pills.slice(0, 4).join(',') + '）' : ''}`,
-      pills.length === 0 && /\.range-tab\.on \{[^}]*var\(--ring-brass\)/.test(s.investorWxss) && !/\.range-tab\.on \{[^}]*background: var\(--brass-400/.test(s.investorWxss) &&
+    add('R26-1 投资观测台：区间页签选中为金线环（非实心金）、卡片按圆角融合取角色令牌（2026-11-22 圆角融合：原「方角 / 无胶囊」口径作废，按角色取 --r-* 令牌；直角越线由 check:radius-roles 统一管）、分区头宋体',
+      /var\(--r-(card|pill|control|thumb|thumb-sm|hero), /.test(s.investorWxss) && /\.range-tab\.on \{[^}]*var\(--ring-brass\)/.test(s.investorWxss) && !/\.range-tab\.on \{[^}]*background: var\(--brass-400/.test(s.investorWxss) &&
         /\n\.group-cn \{[^}]*font-family: var\(--font-brand\)/.test(s.investorWxss))
   }
   // 2026-10-18 店员工作台（只覆盖本页；scene.wxss / field 为子页共用件不动）
-  add('R28-1 店员工作台：分区头眉标 + 宋体两行、场景格方角发丝账格、角标退为金线环（实心金只留扫码主按钮）',
+  add('R28-1 店员工作台：分区头眉标 + 宋体两行、场景格为圆角发丝账格（圆角融合）、角标退为金线环（实心金只留扫码主按钮）',
     /<view class="group-head"><text class="group-en">\{\{item\.en\}\}<\/text><text class="group-cn">\{\{item\.title\}\}<\/text><\/view>/.test(s.staffHubWxml) &&
       !/\{\{item\.title\}\} \/ \{\{item\.en\}\}/.test(s.staffHubWxml) &&
-      /\n\.link-row \.link-btn \{[^}]*border-radius: 4rpx;/.test(s.staffHubWxss) &&
+      /\n\.link-row \.link-btn \{[^}]*border-radius: var\(--r-card, 16rpx\);/.test(s.staffHubWxss) &&
       /\n\.link-btn \.scene-badge \{[^}]*background: #1A1814;[^}]*var\(--ring-brass\)/.test(s.staffHubWxss) &&
       /\n\.scene-header \.picker-inner \{[^}]*background: transparent;/.test(s.staffHubWxss))
   // 2026-10-18 店长 / 超管工作台（同一页 manager/manager，按角色出看板）：容器方角、常用为开放分区；
   // 4 列圆形图标宫格与红色数字角标是 2026-10-10 产品负责人口径，归 check:hub-entries 守，这里不碰
-  add('R29-1 店长工作台：待处理 / 金卡 / 经营信号 / 分类卡方角，常用去盒改开放分区，胶囊签改方签，宋体主标',
-    /\n\.hub-todo \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) && /\n\.hub-todo-chip \{[^}]*border-radius: 2rpx;/.test(s.mgrHubNavWxss) &&
-      /\n\.hub-fav \{\s*padding: 0;/.test(s.mgrHubNavWxss) && /\n\.hub-fav-edit \{[^}]*border-radius: 2rpx;/.test(s.mgrHubNavWxss) &&
-      /\n\.hub-grp \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) &&
-      /\.sub-welcome \{ font-family: var\(--font-brand\);/.test(s.mgrWxss) && /\n\.kpi-card \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) &&
-      /\n\.ops-signal-board \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) && /\n\.hub-scan-btn \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss))
-  add('R30-1 超管 / 店长看板下半屏：功能搜索方框、数据卡方角发丝框、空态说明与页脚中文可读（不再用 #4A4540 一类近黑灰）',
-    /\n\.hub-search-box \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) && /\n\.hub-found \{[^}]*border-radius: 4rpx;/.test(s.mgrHubNavWxss) &&
-      /\n\.grid-item \{[^}]*border-radius: 4rpx;/.test(s.mgrWxss) && /\n\.kpi-mini-cell \{[^}]*border-radius: 2rpx;/.test(s.mgrWxss) &&
+  add('R29-1 店长工作台：待处理 / 金卡 / 经营信号 / 分类卡为圆角卡、签为胶囊（圆角融合），常用去盒改开放分区，宋体主标',
+    /\n\.hub-todo \{[^}]*border-radius: var\(--r-card, 16rpx\);/.test(s.mgrHubNavWxss) && /\n\.hub-todo-chip \{[^}]*border-radius: var\(--r-pill, 999rpx\);/.test(s.mgrHubNavWxss) &&
+      /\n\.hub-fav \{\s*padding: 0;/.test(s.mgrHubNavWxss) && /\n\.hub-fav-edit \{[^}]*border-radius: var\(--r-pill, 999rpx\);/.test(s.mgrHubNavWxss) &&
+      /\n\.hub-grp \{[^}]*border-radius: var\(--r-card, 16rpx\);/.test(s.mgrHubNavWxss) &&
+      /\.sub-welcome \{ font-family: var\(--font-brand\);/.test(s.mgrWxss) && /\n\.kpi-card \{[^}]*border-radius: var\(--r-card, 16rpx\);/.test(s.mgrWxss) &&
+      /\n\.ops-signal-board \{[^}]*border-radius: var\(--r-card, 16rpx\);/.test(s.mgrWxss) && /\n\.hub-scan-btn \{[^}]*border-radius: var\(--r-control, 16rpx\);/.test(s.mgrWxss))
+  add('R30-1 超管 / 店长看板下半屏：功能搜索胶囊框、数据卡圆角发丝框（圆角融合）、空态说明与页脚中文可读（不再用 #4A4540 一类近黑灰）',
+    /\n\.hub-search-box \{[^}]*border-radius: var\(--r-pill, 999rpx\);/.test(s.mgrHubNavWxss) && /\n\.hub-found \{[^}]*border-radius: var\(--r-card, 16rpx\);/.test(s.mgrHubNavWxss) &&
+      /\n\.grid-item \{[^}]*border-radius: var\(--r-card, 16rpx\);/.test(s.mgrWxss) && /\n\.kpi-mini-cell \{[^}]*border-radius: var\(--r-thumb-sm, 8rpx\);/.test(s.mgrWxss) &&
       !/\.chart-empty-hint \{[^}]*#4A4540/i.test(s.mgrWxss) && !/\.footer-cn \{[^}]*#4a4640/i.test(s.mgrWxss))
   // 2026-10-18 产品负责人真机：权限配置「编辑权限」滑不动。遮罩 catchtouchmove 会吞掉 view 的 overflow 滚动 ——
   // 弹窗正文必须是 <scroll-view scroll-y>（docs/弹层视觉规范：长内容用 scroll-view）。唯一豁免：回复评价（正文只有一个 textarea，不需要滚）
@@ -458,9 +447,9 @@ function checks(s) {
       [s.permWxss, s.permMgrWxss].every((t) => /\n\.modal-body \{\s*flex: 1 1 auto;\s*min-height: 0;\s*max-height: calc\(100vh - 600rpx\);\s*padding: 24rpx 4rpx 16rpx;/.test(t) &&
         /\n\.modal \.workbench-modal-foot \{[^}]*background: transparent;/.test(t)))
   }
-  add('R32-1 股东配置：档案卡方角发丝框、比例格发丝账格（仍 48.5%）、口径说明改左金线注记、输入框定高 border-box',
-    /\n\.card \{[^}]*border-radius: 4rpx;/.test(s.shCfgWxss) && /\n\.ratio-cell \{[^}]*width: 48\.5%;/.test(s.shCfgWxss) &&
-      /\n\.ratio-cell \{[^}]*border-radius: 2rpx;/.test(s.shCfgWxss) && /\n\.formula-card \{[^}]*border-left: 2rpx solid/.test(s.shCfgWxss) &&
+  add('R32-1 股东配置：档案卡圆角发丝框、比例格圆角发丝账格（圆角融合；仍 48.5%）、口径说明改左金线注记、输入框定高 border-box',
+    /\n\.card \{[^}]*border-radius: var\(--r-card, 16rpx\);/.test(s.shCfgWxss) && /\n\.ratio-cell \{[^}]*width: 48\.5%;/.test(s.shCfgWxss) &&
+      /\n\.ratio-cell \{[^}]*border-radius: var\(--r-thumb-sm, 8rpx\);/.test(s.shCfgWxss) && /\n\.formula-card \{[^}]*border-left: 2rpx solid/.test(s.shCfgWxss) &&
       /\n\.input \{[^}]*height: 80rpx;[^}]*box-sizing: border-box;/.test(s.shCfgWxss))
   // 2026-10-18 审批中心驳回面板（前端旁路：提交口径仍是 manageApprovals reject + rejectReason 字符串）
   {
@@ -1015,11 +1004,12 @@ function checks(s) {
         V.buildView({ pledgeFen: 0, rows: [] }, 'x').hero.empty === true &&
         V.pickRows(Array.from({ length: 25 }, (_, i) => ({ id: i, year: 2026 })), 'all', 20).more === true
     } catch (e) { vok = false }
-    add('R60-3 我的捐赠页：基金名「山海造物公益基金」，与下单页 / 品牌故事（onePercentPledge）同名；讲清不另收费与以年度报告为准；不编造换算；分享不带个人金额',
+    add('R60-3 我的捐赠页：铭牌水印 ❤️；基金名「山海造物公益基金」，与下单页 / 品牌故事（onePercentPledge）同名；讲清不另收费与以年度报告为准；不编造换算；分享不带个人金额',
       vok && C.FUND_NAME === '山海造物公益基金' && C.FUND_NAME === P.ONE_PERCENT_FUND_NAME &&
         [P.ONE_PERCENT_PLEDGE_SUMMARY, P.ONE_PERCENT_PLEDGE_NOTE, P.calcPledgeAmount(100).line, P.calcPledgeAmount(0).line].every((t) => t.includes(C.FUND_NAME)) && /不另向您收取/.test(C.NO_EXTRA) && /以年度捐赠报告为准/.test(C.FOOT) &&
         !/棵树|相当于/.test(s.dnCopy) && /onShareAppMessage\(\) \{[\s\S]{0,120}title: copy\.SHARE_TITLE, path: '\/subpackages\/business\/donations\/index' \}/.test(s.dnJs) &&
-        /wx:elif="\{\{phase === 'guest'\}\}"/.test(s.dnWxml) && /bindtap="onRetry"/.test(s.dnWxml))
+        /wx:elif="\{\{phase === 'guest'\}\}"/.test(s.dnWxml) && /bindtap="onRetry"/.test(s.dnWxml) &&
+        /<text class="dn-plaque-mark" aria-hidden="true">❤️<\/text>/.test(s.dnWxml))
     add('R60-4 钱包入口：登录态第一张卡进「我的捐赠」；合计只取 summaryOnly；页面已登记分包',
       /<view class="sv-giving" bindtap="goDonations"/.test(s.walletWxml) &&
         /goDonations\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/business\/donations\/index' \}\)/.test(s.walletJs) &&
@@ -1113,26 +1103,26 @@ if (process.argv.includes('--selftest')) {
     ['留言提交回到实心金', 'supportWxss', (t) => t.replace('  background: transparent !important;\n  box-shadow: inset 0 0 0 2rpx #8B6F47;', '  background: var(--brass-400) !important;\n  box-shadow: inset 0 0 0 2rpx #8B6F47;')],
     ['联系方式回到圆角卡', 'supportWxss', (t) => t.replace('  padding: 28rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n}\n\n.channel-info', '  padding: 28rpx 4rpx;\n  border-radius: 24rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n}\n\n.channel-info')],
     ['搜索结果回到圆角卡', 'searchWxss', (t) => t.replace('  padding: 24rpx 0;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n  box-sizing: border-box;\n  overflow: hidden;', '  padding: 24rpx 0;\n  border-radius: 24rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n  box-sizing: border-box;\n  overflow: hidden;')],
-    ['搜索签回到胶囊', 'searchWxss', (t) => t.replace('  min-height: 56rpx;\n  padding: 0;\n  border-radius: 2rpx;', '  min-height: 56rpx;\n  padding: 0;\n  border-radius: 9999px;')],
+    ['搜索签回到方角', 'searchWxss', (t) => t.replace('  min-height: 56rpx;\n  padding: 0;\n  border-radius: var(--r-pill, 999rpx);', '  min-height: 56rpx;\n  padding: 0;\n  border-radius: 2rpx;')],
     ['主播职责回到大圆角卡', 'liveWxss', (t) => t.replace('  padding: 26rpx 8rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 26rpx 8rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
     ['在播步骤丢了红色语义', 'liveWxss', (t) => t.replace('.flow-step-btn.on-air {\n  border-bottom-color: var(--color-error);', '.flow-step-btn.on-air {\n  border-bottom-color: var(--brass-400);')],
     ['标本师入口回到大圆角卡', 'artisanWxss', (t) => t.replace('  padding: 24rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 24rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
-    ['标本师作品卡回到大圆角', 'artWorks', (t) => t.replace('  padding: 22rpx 4rpx;\n  border-bottom', '  padding: 22rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom')],
+    ['标本师作品库整页退回方角', 'artWorks', (t) => t.replace(/var\(--r-[a-z-]+, [^)]+\)/g, '2rpx')],
     ['概念卡回到深色铜牌', 'artConcept', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;', '  background: var(--color-bg-card);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;')],
     ['采购商行内动作回到实心金', 'supplierCommon', (t) => t.replace('  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-22);', '  background: var(--brass-500);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-22);')],
-    ['加入采购车回到实心金药丸', 'buyCatalog', (t) => t.replace('  border-radius: 4rpx;\n  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);', '  border-radius: 999rpx;\n  background: var(--brass-400);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);')],
-    ['供应商管理分段回到胶囊', 'deskCommon', (t) => t.replace('.chip {\n  padding: 10rpx 22rpx;\n  border-radius: 2rpx;', '.chip {\n  padding: 10rpx 22rpx;\n  border-radius: 999rpx;')],
-    ['股东观测台卡片回到大圆角', 'shareholderWxss', (t) => t.replace('.verdict-card {\n  background: var(--color-bg-card, #1F1D1A);\n  border: 1rpx solid var(--brass-800, #4D401A);\n  border-radius: 4rpx;', '.verdict-card {\n  background: var(--color-bg-card, #1F1D1A);\n  border: 1rpx solid var(--brass-800, #4D401A);\n  border-radius: var(--radius-lg, 24rpx);')],
+    ['加入采购车回到实心金药丸', 'buyCatalog', (t) => t.replace('  border-radius: var(--r-control, 16rpx);\n  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);', '  border-radius: 999rpx;\n  background: var(--brass-400);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);')],
+    ['供应商管理整页退回方角', 'deskCommon', (t) => t.replace(/var\(--r-[a-z-]+, [^)]+\)/g, '2rpx')],
+    ['股东观测台整页退回方角', 'shareholderWxss', (t) => t.replace(/var\(--r-[a-z-]+, [^)]+\)/g, '2rpx')],
     ['店员分区头回到中英同行', 'staffHubWxml', (t) => t.replace('<view class="group-head"><text class="group-en">{{item.en}}</text><text class="group-cn">{{item.title}}</text></view>', '<view class="panel-title sub">{{item.title}} / {{item.en}}</view>')],
     ['店员角标回到实心金', 'staffHubWxss', (t) => t.replace('  background: #1A1814;\n  box-shadow: var(--ring-brass);', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass);')],
     ['店长常用回到金边盒', 'mgrHubNavWxss', (t) => t.replace('.hub-fav {\n  padding: 0;', '.hub-fav {\n  background: #262017;\n  border-radius: var(--radius-lg);\n  padding: 0;')],
-    ['店长金卡回到大圆角', 'mgrWxss', (t) => t.replace('border-radius: 4rpx; padding: 40rpx;', 'border-radius: var(--radius-lg); padding: 40rpx;')],
-    ['超管搜索框回到胶囊', 'mgrHubNavWxss', (t) => t.replace('border-radius: 4rpx;  /* 2026-10-18 视觉对齐：方角（原 40rpx 胶囊） */', 'border-radius: 40rpx;')],
+    ['店长金卡退回方角', 'mgrWxss', (t) => t.replace('border-radius: var(--r-card, 16rpx); padding: 40rpx;', 'border-radius: 4rpx; padding: 40rpx;')],
+    ['超管搜索框退回方角', 'mgrHubNavWxss', (t) => t.replace('border-radius: var(--r-pill, 999rpx);  /* 2026-11-22 圆角融合：搜索框胶囊（10-18 曾为方角） */', 'border-radius: 4rpx;')],
     ['看板空态说明回到近黑灰', 'mgrWxss', (t) => t.replace('.chart-empty-hint { font-size: var(--fs-18); color: rgba(185, 173, 150, 0.75); }', '.chart-empty-hint { font-size: var(--fs-18); color: #4A4540; }')],
     ['权限配置正文退回 view', 'permWxml', (t) => t.replace('<scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="modal-body">', '<view class="modal-body">')],
     ['伴宠工单弹层正文退回 view', 'petSheetWxml', (t) => t.replace('<scroll-view scroll-y class="modal-body pm-sheet-body">', '<view class="modal-body pm-sheet-body">')],
     ['权限配置正文贴边被裁', 'permMgrWxss', (t) => t.replace('  padding: 24rpx 4rpx 16rpx;', '  padding: 24rpx 0 16rpx;')],
-    ['股东档案卡回到圆角', 'shCfgWxss', (t) => t.replace('  border: 1rpx solid rgba(196, 167, 108, 0.16);\n  border-radius: 4rpx;\n}\n.card-title', '  border: 1rpx solid rgba(196, 167, 108, 0.16);\n  border-radius: var(--radius-md);\n}\n.card-title')],
+    ['股东档案卡退回方角', 'shCfgWxss', (t) => t.replace('  border: 1rpx solid rgba(196, 167, 108, 0.16);\n  border-radius: var(--r-card, 16rpx);\n}\n.card-title', '  border: 1rpx solid rgba(196, 167, 108, 0.16);\n  border-radius: 4rpx;\n}\n.card-title')],
     ['驳回原因拼接丢了补充说明', 'apReasons', (t) => t.replace('  if (extra) parts.push(extra)\n', '')],
     ['驳回退回系统输入弹窗', 'apJs', (t) => t.replace("      approvePendingId: '',\n      ignorePendingId: '',\n      rejectSheet: {", "      approvePendingId: '',\n      editable: true,\n      ignorePendingId: '',\n      rejectSheet: {")],
     ['必填驳回不再拦空原因', 'apJs', (t) => t.replace('if (sheet.requireReason && reason.length < 2)', 'if (false)')],
@@ -1245,6 +1235,7 @@ if (process.argv.includes('--selftest')) {
     ['纸张动画改了时长没同步', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s', 'animation: cp-feed 2.4s')],
     ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
     ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
+    ['捐赠铭牌水印改回 1% 文字', 'dnWxml', (t) => t.replace('aria-hidden="true">❤️</text>', 'aria-hidden="true">1%</text>')],
     ['钱包入口被删', 'walletWxml', (t) => t.replace('<view class="sv-giving" bindtap="goDonations"', '<view class="sv-giving"')],
     ['去向图标退回方印字', 'dnWxml', (t) => t.replace('<image wx:if="{{item.icon}}" class="dn-seal-icon" src="{{item.icon}}" mode="aspectFit"></image>', '')],
   ]

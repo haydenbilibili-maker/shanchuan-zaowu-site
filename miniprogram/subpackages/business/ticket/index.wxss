@@ -94,7 +94,7 @@ page {
   padding: 16rpx 40rpx;
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45);
   color: var(--brass-300);
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   font-size: var(--fs-26);
 }
 
@@ -331,7 +331,7 @@ page {
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   font-size: var(--fs-28);
   letter-spacing: 0.12em;
 }

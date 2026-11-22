@@ -65,7 +65,7 @@ page {
   display: inline-flex;
   align-items: center;
   padding: 4rpx 14rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .preview-chip {
@@ -93,7 +93,7 @@ page {
   gap: 8rpx;
   padding: 4rpx 12rpx;
   border: 1rpx solid rgba(214, 64, 69, 0.45);
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
 }
 
 .on-air-text {
@@ -178,7 +178,7 @@ page {
   position: relative;
   margin-bottom: var(--space-5);
   padding: 40rpx 32rpx 28rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
   box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
 }
@@ -238,7 +238,7 @@ page {
   display: inline-flex;
   margin-top: var(--space-3);
   border-color: #8B6F47;
-  border-radius: 4rpx;
+  border-radius: var(--r-control, 16rpx);
   background: transparent;
   color: #5A4527;
 }
@@ -277,7 +277,7 @@ page {
   padding: var(--space-3) var(--space-4);
   background: rgba(233, 162, 59, 0.08);
   border: 1rpx solid rgba(233, 162, 59, 0.35);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   font-size: var(--fs-24);
   color: var(--color-warning);
   line-height: 1.45;
@@ -303,7 +303,7 @@ page {
   overflow: hidden;
   margin-bottom: 0;
   padding: 28rpx 32rpx 28rpx 36rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: #1F1D1A;
   border: 1rpx solid rgba(196, 167, 108, 0.24);
 }
@@ -450,7 +450,7 @@ page {
   align-items: center;
   gap: 10rpx;
   padding: 4rpx 14rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-pill, 999rpx);
   font-size: var(--fs-22);
   border: 1rpx solid rgba(160, 154, 144, 0.3);
   color: var(--color-text-secondary);
@@ -566,7 +566,7 @@ page {
 .notice-card {
   margin-bottom: var(--space-5);
   padding: var(--space-4);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   background: #1F1D1A;
   border: 1rpx solid rgba(196, 167, 108, 0.2);
 }
@@ -639,7 +639,7 @@ page {
 .ghost-mini {
   padding: 6rpx 14rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.4);
-  border-radius: 2rpx;
+  border-radius: var(--r-control, 16rpx);
   font-size: var(--fs-20);
   text-align: center;
   color: var(--brass-200);
@@ -839,7 +839,7 @@ page {
 .page-tip {
   margin: 0 0 16rpx;
   padding: 16rpx 20rpx;
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   font-size: var(--fs-24);
   line-height: 1.5;
 }
