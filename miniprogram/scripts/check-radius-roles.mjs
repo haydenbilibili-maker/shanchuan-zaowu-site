@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const MP = resolve(HERE, '..')
 const BASELINE = join(HERE, 'radius-roles-baseline.json')
-const SKIP = new Set(['node_modules', 'miniprogram_npm', '.git'])
+const SKIP = new Set(['node_modules', 'miniprogram_npm', '.git', 'scripts', '.tmp']) // scripts/.tmp 是其它守卫自检的临时 wxss，不是产品样式
 
 /** 该圆的角色：选择器最后一个类名里出现这些词 */
 const ROLE = /(card|panel|chip|tag|pill|btn|button|input|field|tile|block|box|banner|item|composer|cta)/i
