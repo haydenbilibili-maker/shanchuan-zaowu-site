@@ -6,6 +6,7 @@ const { buildGuideUrl, resolveCareCategory } = require('../utils/careDefaults');
 const { resolveCareContext } = require('../utils/careHelper');
 const { isGiftOrder, resolveCertRole, giftCertInfo, certSerial, receiverOf, certIssuedAt } = require('../utils/giftHolder');
 const { drawCertificate } = require('./certDraw');
+const { printWaitMs, PRINT_HOLD_MS } = require('./certPrintTiming');
 const { openAppModal } = require('../../../utils/appModal')
 
 function formatCertDay(ms) {
@@ -43,6 +44,8 @@ Page({
   data: {
     statusBarHeight: 20,
     isMinting: true,
+    /** 打印收尾：纸定格 + 「打印完成」，随后翻到证书 */
+    printDone: false,
     showCert: false,
     missingId: false,
     tempFilePath: '',
@@ -59,6 +62,7 @@ Page({
   onLoad(options) {
     const { statusBarHeight } = wx.getSystemInfoSync();
     this.setData({ statusBarHeight, orderId: options.id || '' });
+    this._printStart = Date.now();
     if (options.id) {
       this.startMinting(options.id);
     } else {
@@ -76,8 +80,38 @@ Page({
       const nick = String(((res.data || [])[0] || {}).nickName || '').trim();
       if (!nick || nick === DEFAULT_NICK) return;
     } catch (e) { return; }
-    this.setData({ signHint: false, certImageUrl: '', isMinting: true, showCert: false });
+    this.beginPrint({ signHint: false, certImageUrl: '' });
     this.mintFresh();
+  },
+
+  onUnload() {
+    this._unloaded = true;
+    clearTimeout(this._printTimer);
+  },
+
+  /** 重新进入打印态（改名重签 / 固化图加载失败重画）：动画从头算 */
+  beginPrint(patch) {
+    clearTimeout(this._printTimer);
+    this._printStart = Date.now();
+    this.setData({ ...(patch || {}), isMinting: true, printDone: false, showCert: false });
+  },
+
+  /**
+   * 打印收尾：等到纸整张停住（至少看完一张），定格「打印完成」PRINT_HOLD_MS，再翻到证书。
+   * 失败 / 无权 / 礼赠未签发等分支不走这里 —— 那些不该让人干等动画。
+   */
+  finishPrint(patch, after) {
+    clearTimeout(this._printTimer);
+    const wait = printWaitMs(Date.now() - (this._printStart || 0));
+    this._printTimer = setTimeout(() => {
+      if (this._unloaded) return;
+      this.setData({ printDone: true });
+      this._printTimer = setTimeout(() => {
+        if (this._unloaded) return;
+        this.setData({ ...(patch || {}), isMinting: false, printDone: false });
+        if (typeof after === 'function') after();
+      }, PRINT_HOLD_MS);
+    }, wait);
   },
 
   goRename() {
@@ -157,14 +191,16 @@ Page({
       if (saved && saved.fileID && saved.openid === openid && saved.sig === sig) {
         const url = await this.getImagePath(saved.fileID).catch(() => '');
         if (url && url !== saved.fileID) {
-          this.setData({ certImageUrl: url, isMinting: false, showCert: true });
+          // 图先挂上（在打印层后面加载），打印走完一张再翻过来
+          this.setData({ certImageUrl: url });
+          this.finishPrint({ showCert: true });
           return;
         }
       }
       await this.mintFresh();
     } catch (err) {
       console.error(err);
-      wx.showToast({ title: '铸造中断', icon: 'none' });
+      wx.showToast({ title: '打印中断', icon: 'none' });
       this.setData({ isMinting: false });
     }
   },
@@ -221,10 +257,7 @@ Page({
           }
         });
 
-        setTimeout(() => {
-           this.setData({ isMinting: false, showCert: true });
-           wx.vibrateLong();
-        }, 1500);
+        this.finishPrint({ showCert: true }, () => wx.vibrateLong());
     });
   },
 
@@ -245,7 +278,7 @@ Page({
   /** 已固化的证书图加载失败 → 退回现场绘制 */
   onCertImageError() {
     if (!this._mint || !this.data.certImageUrl) return;
-    this.setData({ certImageUrl: '', isMinting: true, showCert: false });
+    this.beginPrint({ certImageUrl: '' });
     this.mintFresh();
   },
 

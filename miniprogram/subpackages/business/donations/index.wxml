@@ -1,0 +1,182 @@
+<!-- 我的捐赠：① 公益铭牌（金额）② 规则 ③ 1% 如何流动 ④ 去向 ⑤ 年度 ⑥ 逐笔明细 ⑦ 问答 -->
+<view class="dn-page">
+
+  <!-- ① 公益铭牌：页面主角。底纹是一枚放大的「1%」 -->
+  <view class="dn-plaque">
+    <text class="dn-plaque-mark" aria-hidden="true">1%</text>
+    <view class="dn-plaque-head">
+      <text class="dn-overline">{{copy.OVERLINE}}</text>
+      <text class="dn-slogan">{{copy.SLOGAN}}</text>
+    </view>
+
+    <block wx:if="{{phase === 'ready'}}">
+      <text class="dn-plaque-k">{{hero.empty ? '您的第一笔 1% 还在路上' : '您的 1% · 累计将代为捐赠'}}</text>
+      <view class="dn-plaque-amt">
+        <text class="dn-yen">¥</text>
+        <text class="dn-amt">{{heroAmount}}</text>
+      </view>
+      <view class="dn-formula">
+        <text class="dn-formula-k">累计实付</text>
+        <text class="dn-formula-v">¥{{hero.paid}}</text>
+        <text class="dn-formula-op">×</text>
+        <text class="dn-formula-v">1%</text>
+      </view>
+      <view class="dn-plaque-meta" wx:if="{{!hero.empty}}">
+        <text>{{hero.orderCount}} 笔订单</text>
+        <text class="dn-dot" wx:if="{{hero.since}}">·</text>
+        <text wx:if="{{hero.since}}">{{hero.since}}</text>
+        <text class="dn-dot" wx:if="{{hero.days}}">·</text>
+        <text wx:if="{{hero.days}}">{{hero.days}}</text>
+      </view>
+      <view class="dn-btn" wx:else bindtap="goBrowse" hover-class="dn-btn-press" hover-stay-time="80">去馆藏看看</view>
+    </block>
+
+    <block wx:elif="{{phase === 'loading'}}">
+      <text class="dn-plaque-k">正在核算您的 1%…</text>
+      <view class="dn-skel dn-skel-amt"></view>
+      <view class="dn-skel dn-skel-line"></view>
+    </block>
+
+    <block wx:elif="{{phase === 'guest'}}">
+      <text class="dn-plaque-k">登录后查看您的 1%</text>
+      <text class="dn-plaque-sub">{{copy.RULE}}</text>
+      <view class="dn-btn" bindtap="goLogin" hover-class="dn-btn-press" hover-stay-time="80">去登录</view>
+    </block>
+
+    <block wx:else>
+      <text class="dn-plaque-k">暂时查不到您的捐赠记录</text>
+      <text class="dn-plaque-sub">规则照常生效，金额稍后再看；也可以下拉刷新。</text>
+      <view class="dn-btn" bindtap="onRetry" hover-class="dn-btn-press" hover-stay-time="80">重试</view>
+    </block>
+
+    <view class="dn-plaque-foot">
+      <view class="dn-plaque-rule"></view>
+      <text class="dn-plaque-fund">由 {{copy.FUND_NAME}} 代为捐赠</text>
+      <view class="dn-plaque-rule"></view>
+    </view>
+  </view>
+
+  <!-- ② 规则一句话 -->
+  <view class="dn-rule">
+    <text class="dn-rule-main">{{copy.RULE}}</text>
+    <text class="dn-rule-sub">{{copy.NO_EXTRA}}</text>
+  </view>
+
+  <!-- ③ 1% 如何流动：三站依次点亮 -->
+  <view class="dn-sec">
+    <view class="dn-sec-head">
+      <text class="dn-overline">HOW IT FLOWS</text>
+      <text class="dn-sec-title">1% 如何流动</text>
+    </view>
+    <view class="dn-flow {{flowLit ? 'is-lit' : ''}}">
+      <block wx:for="{{copy.FLOW}}" wx:key="key">
+        <view class="dn-flow-node" style="transition-delay: {{index * 160}}ms;">
+          <view class="dn-flow-dot"><text>{{index + 1}}</text></view>
+          <text class="dn-flow-k">{{item.k}}</text>
+          <text class="dn-flow-v">{{item.v}}</text>
+        </view>
+        <view class="dn-flow-link" wx:if="{{index < copy.FLOW.length - 1}}" style="transition-delay: {{index * 160 + 80}}ms;"></view>
+      </block>
+    </view>
+  </view>
+
+  <!-- ④ 去向：四枚方印 -->
+  <view class="dn-sec">
+    <view class="dn-sec-head">
+      <text class="dn-overline">WHERE IT GOES</text>
+      <text class="dn-sec-title">去向</text>
+    </view>
+    <view class="dn-dirs">
+      <view class="dn-dir" wx:for="{{copy.DIRECTIONS}}" wx:key="key">
+        <view class="dn-seal"><text>{{item.seal}}</text></view>
+        <view class="dn-dir-body">
+          <text class="dn-dir-title">{{item.title}}</text>
+          <text class="dn-dir-desc">{{item.desc}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ⑤ 年度 -->
+  <view class="dn-sec" wx:if="{{phase === 'ready' && years.length}}">
+    <view class="dn-sec-head">
+      <text class="dn-overline">BY YEAR</text>
+      <text class="dn-sec-title">年度</text>
+    </view>
+    <view class="dn-year {{item.phase === 'open' ? 'is-open' : ''}}" wx:for="{{years}}" wx:key="year">
+      <view class="dn-year-top">
+        <text class="dn-year-y">{{item.year}}</text>
+        <text class="dn-year-amt">¥{{item.amount}}</text>
+      </view>
+      <text class="dn-year-sub">实付 ¥{{item.paid}} · {{item.orderCount}} 笔</text>
+      <text class="dn-year-phase">{{item.phaseText}}</text>
+    </view>
+  </view>
+
+  <!-- ⑥ 逐笔明细 -->
+  <view class="dn-sec" wx:if="{{phase === 'ready' && shownRows.length}}">
+    <view class="dn-sec-head">
+      <text class="dn-overline">LEDGER</text>
+      <text class="dn-sec-title">逐笔明细</text>
+    </view>
+    <scroll-view class="dn-tabs" scroll-x enable-flex wx:if="{{yearTabs.length}}">
+      <text
+        class="dn-tab {{yearKey === item.key ? 'is-on' : ''}}"
+        wx:for="{{yearTabs}}"
+        wx:key="key"
+        data-key="{{item.key}}"
+        bindtap="onYearTap"
+        hover-class="dn-tab-press"
+        hover-stay-time="80"
+      >{{item.label}}</text>
+    </scroll-view>
+    <view class="dn-rows">
+      <view
+        class="dn-row {{item.muted ? 'is-off' : ''}}"
+        wx:for="{{shownRows}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onRowTap"
+        hover-class="dn-row-press"
+        hover-stay-time="80"
+      >
+        <view class="dn-row-main">
+          <text class="dn-row-title">{{item.title}}</text>
+          <text class="dn-row-sub">{{item.date}}<block wx:if="{{item.countText}}"> · {{item.countText}}</block> · 实付 ¥{{item.paid}}</text>
+          <text class="dn-row-state" wx:if="{{item.stateText}}">{{item.stateText}}</text>
+        </view>
+        <view class="dn-row-side">
+          <text class="dn-row-pledge">¥{{item.pledge}}</text>
+          <text class="dn-row-pct">1%</text>
+        </view>
+      </view>
+    </view>
+    <view class="dn-more" wx:if="{{rowsMore}}" bindtap="onMoreRows" hover-class="dn-tab-press">再看 20 笔</view>
+    <text class="dn-note" wx:for="{{notes}}" wx:key="*this">{{item}}</text>
+  </view>
+
+  <!-- ⑦ 问答 -->
+  <view class="dn-sec">
+    <view class="dn-sec-head">
+      <text class="dn-overline">FAQ</text>
+      <text class="dn-sec-title">常见问题</text>
+    </view>
+    <view
+      class="dn-faq {{faqOpen === index ? 'is-open' : ''}}"
+      wx:for="{{copy.FAQ}}"
+      wx:key="q"
+      data-index="{{index}}"
+      bindtap="onFaqTap"
+      hover-class="dn-row-press"
+      hover-stay-time="80"
+    >
+      <view class="dn-faq-q">
+        <text>{{item.q}}</text>
+        <view class="dn-faq-chev"></view>
+      </view>
+      <text class="dn-faq-a" wx:if="{{faqOpen === index}}">{{item.a}}</text>
+    </view>
+  </view>
+
+  <text class="dn-foot">{{copy.FOOT}}</text>
+</view>

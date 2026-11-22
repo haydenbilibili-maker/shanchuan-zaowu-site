@@ -150,8 +150,22 @@ const FILES = {
   staffHubJs: 'subpackages/extra/staff/index.js',
   certPageWxml: 'subpackages/business/certificate/index.wxml',
   certPageWxss: 'subpackages/business/certificate/index.wxss',
+  certPageJs: 'subpackages/business/certificate/index.js',
+  certTimingJs: 'subpackages/business/certificate/certPrintTiming.js',
   customJs: 'subpackages/feature/custom/index.js',
-  customWxml: 'subpackages/feature/custom/index.wxml'
+  customWxml: 'subpackages/feature/custom/index.wxml',
+  dnLedger: 'cloudfunctions/getMyDonations/donationLedger.js',
+  dnFn: 'cloudfunctions/getMyDonations/index.js',
+  dnFinance: 'cloudfunctions/syncFinanceData/index.js',
+  dnPledge: 'subpackages/business/utils/onePercentPledge.js',
+  dnView: 'subpackages/business/donations/donationView.js',
+  dnCopy: 'subpackages/business/donations/donationCopy.js',
+  dnJs: 'subpackages/business/donations/index.js',
+  dnWxml: 'subpackages/business/donations/index.wxml',
+  walletJs: 'subpackages/business/components/WalletPanelWallet/index.js',
+  walletWxml: 'subpackages/business/components/WalletPanelWallet/index.wxml',
+  appJson: 'app.json',
+  cloudrc: 'cloudbaserc.json'
 }
 /** 无 require 的 CommonJS 小模块：内存里求值拿 exports（失败返回 {}） */
 function loadCjs(src) {
@@ -747,7 +761,7 @@ function checks(s) {
   }
   // 2026-10-19 产品负责人「正在铸造改为正在打印，打印机动画参考预约打印与代金券打印」
   add('R43-1 证书加载：文案「正在打印专属证书…」，同款打印机（顶杆 + 出纸口 + 三灯）循环出纸 + 往复进度条；不再是转圈 / 「铸造」',
-    /<text class="mint-txt">正在打印专属证书…<\/text>/.test(s.certPageWxml) && !/铸造/.test(s.certPageWxml.replace(/<!--[\s\S]*?-->/g, '')) &&
+    /<text class="mint-txt">\{\{printDone \? '打印完成' : '正在打印专属证书…'\}\}<\/text>/.test(s.certPageWxml) && !/铸造/.test(s.certPageWxml.replace(/<!--[\s\S]*?-->/g, '')) &&
       /<view class="cp-machine">[\s\S]*?<view class="cp-slot"><\/view>[\s\S]*?<view class="cp-lights">/.test(s.certPageWxml) &&
       /animation: cp-feed 3\.2s [^;]*infinite;/.test(s.certPageWxss) && !/mint-spinner/.test(s.certPageWxml))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
@@ -960,6 +974,82 @@ function checks(s) {
     /ratio > 1 \? half : Math\.round\(w\)/.test(s.detailJs) &&
     /const heroFit = 'aspectFill'/.test(s.detailJs) &&
     /syncHeroHeight\(\)/.test(s.detailJs) && /onHeroImageLoad\(e\)/.test(s.detailJs))
+
+  // R60 我的捐赠（2026-11-22 产品负责人：钱包新增「我的捐赠」，累计实付 1% 由山海造物公益基金代为捐赠）
+  {
+    const L = loadCjs(s.dnLedger)
+    const P = loadCjs(s.dnPledge)
+    let ok = false
+    try {
+      const now = Date.parse('2026-11-22T10:00:00+08:00')
+      const r = L.buildLedger([
+        { _id: 'a', status: 'received', totalPrice: 1288, paidTime: '2026-03-02T10:00:00+08:00', products: [{ title: '蓝闪蝶', quantity: 2 }] },
+        { _id: 'b', status: 'refunded', totalPrice: 99, refundFee: 99, paidTime: '2025-12-31T23:30:00+08:00' },
+        { _id: 'c', status: 'refunded', totalPrice: 200, refundFee: 150, paidTime: '2025-06-01T08:00:00+08:00' },
+        { _id: 'd', status: 'refunding', totalPrice: 50 },
+        { _id: 'e', status: 'pending_pay', totalPrice: 999 },
+        { _id: 'f', status: 'refunded', totalPrice: 10, paidTime: '2026-01-01T08:00:00+08:00' }
+      ], { now })
+      const sameRounding = [0.5, 1.49, 12.345, 99.99, 1288, 3.33, 0.01].every((y) => L.pledgeFen(L.toFen(y)) === Math.round(P.calcOnePercentYuan(y) * 100))
+      const fin = (s.dnFinance.match(/reconcileOnlineOrders[\s\S]*?status: _\.in\(\[([\s\S]*?)\]\)/) || [])[1] || ''
+      const finSet = (fin.match(/'([a-z_]+)'/g) || []).map((x) => x.slice(1, -1)).sort().join()
+      ok = r.netFen === 133800 && r.pledgeFen === 1338 && r.orderCount === 2 && r.pendingCount === 1 &&
+        r.years.map((y) => `${y.year}:${y.pledgeFen}:${y.phase}`).join() === '2026:1288:open,2025:50:closed' &&
+        r.rows.find((x) => x.id === 'f').state === 'refunded' && r.rows.find((x) => x.id === 'c').state === 'partial' &&
+        r.rows.find((x) => x.id === 'd').state === 'pending' && !r.rows.some((x) => x.id === 'e') &&
+        L.buildLedger([], { now, withRows: false }).rows === undefined && sameRounding &&
+        finSet === L.ALL_STATUSES.slice().sort().join()
+    } catch (e) { ok = false }
+    add('R60-1 我的捐赠口径：计入状态与店内账本同一组；退款扣回（无 refundFee 的已退款按全额）；退款中暂不计；1% 取整与 onePercentPledge 一致',
+      ok)
+    add('R60-2 只查本人：OPENID 取自上下文，不收 targetOpenId；只读（无 add / update / remove）；已登记 cloudbaserc',
+      /const \{ OPENID \} = cloud\.getWXContext\(\)/.test(s.dnFn) && /_openid: openid/.test(s.dnFn) && !/targetOpenId/.test(s.dnFn) &&
+        !/\.(add|update|remove|set)\(/.test(s.dnFn) && /"name": "getMyDonations"/.test(s.cloudrc))
+    const V = loadCjs(s.dnView)
+    const C = loadCjs(s.dnCopy)
+    let vok = false
+    try {
+      vok = V.fmtFen(123456789) === '1,234,567.89' && V.fmtFen(-3) === '0.00' &&
+        V.buildView({ pledgeFen: 0, rows: [] }, 'x').hero.empty === true &&
+        V.pickRows(Array.from({ length: 25 }, (_, i) => ({ id: i, year: 2026 })), 'all', 20).more === true
+    } catch (e) { vok = false }
+    add('R60-3 我的捐赠页：基金名「山海造物公益基金」，与下单页 / 品牌故事（onePercentPledge）同名；讲清不另收费与以年度报告为准；不编造换算；分享不带个人金额',
+      vok && C.FUND_NAME === '山海造物公益基金' && C.FUND_NAME === P.ONE_PERCENT_FUND_NAME &&
+        [P.ONE_PERCENT_PLEDGE_SUMMARY, P.ONE_PERCENT_PLEDGE_NOTE, P.calcPledgeAmount(100).line, P.calcPledgeAmount(0).line].every((t) => t.includes(C.FUND_NAME)) && /不另向您收取/.test(C.NO_EXTRA) && /以年度捐赠报告为准/.test(C.FOOT) &&
+        !/棵树|相当于/.test(s.dnCopy) && /onShareAppMessage\(\) \{[\s\S]{0,120}title: copy\.SHARE_TITLE, path: '\/subpackages\/business\/donations\/index' \}/.test(s.dnJs) &&
+        /wx:elif="\{\{phase === 'guest'\}\}"/.test(s.dnWxml) && /bindtap="onRetry"/.test(s.dnWxml))
+    add('R60-4 钱包入口：登录态第一张卡进「我的捐赠」；合计只取 summaryOnly；页面已登记分包',
+      /<view class="sv-giving" bindtap="goDonations"/.test(s.walletWxml) &&
+        /goDonations\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/business\/donations\/index' \}\)/.test(s.walletJs) &&
+        /name: 'getMyDonations', data: \{ summaryOnly: true \}/.test(s.walletJs) && /"donations\/index"/.test(s.appJson))
+  }
+  // R62 证书打印动画收尾（2026-11-22 产品负责人「动画很好但是时间特别快，还没看清楚就跳到证书页」）
+  {
+    const T = loadCjs(s.certTimingJs)
+    let ok = false
+    try {
+      const w = T.printWaitMs
+      // 一圈 3200：整张停住窗口 [2176, 2816)
+      ok = T.FEED_CYCLE_MS === 3200 && w(0) === 2176 && w(300) === 1876 && w(2200) === 0 && w(2816) === 2560 &&
+        w(3300) === 2076 && T.PRINT_HOLD_MS >= 800 && [0, 500, 1500, 2100].every((e) => e + w(e) >= 2176)
+    } catch (e) { ok = false }
+    const feed = (s.certPageWxss.match(/\.cp-paper \{[^}]*animation: cp-feed ([\d.]+)s/) || [])[1]
+    add('R62 证书打印：至少看完一整张纸、在整张停住时收尾，「打印完成」定格后再翻到证书；时长与 cp-feed 一致',
+      ok && Number(feed) * 1000 === T.FEED_CYCLE_MS &&
+        /this\.finishPrint\(\{ showCert: true \}\);/.test(s.certPageJs) && /this\.finishPrint\(\{ showCert: true \}, \(\) => wx\.vibrateLong\(\)\);/.test(s.certPageJs) &&
+        !/isMinting: false, showCert: true/.test(s.certPageJs) && /onUnload\(\) \{\s*this\._unloaded = true;\s*clearTimeout\(this\._printTimer\);/.test(s.certPageJs) &&
+        /<view class="minting-layer \{\{printDone \? 'is-done' : ''\}\}"/.test(s.certPageWxml) && /\.minting-layer\.is-done \.cp-paper \{ animation: none;/.test(s.certPageWxss))
+  }
+  // R61 钱包 / 积分 tab 顶部卡同一规格（2026-11-22 产品负责人「切换会导致视觉偏移」）：距顶栏 32rpx、高 440rpx、左右 32rpx
+  {
+    const blk = (src, sel) => (src.match(new RegExp('\\n' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{[^}]*\\}')) || [''])[0]
+    const wf = blk(s.walletWxss, '.wallet-flip')
+    const af = blk(s.pointsWxss, '.asset-flip')
+    const pc = blk(s.pointsWxss, '.container')
+    add('R61 钱包卡与积分卡同规格：距顶栏 var(--space-4)、高 440rpx、左右 var(--space-4)（切 tab 不跳）',
+      /margin: var\(--space-4\) 0 var\(--space-4\);/.test(wf) && /\n  height: 440rpx;/.test(wf) && !/min-height/.test(wf) &&
+        /height: 440rpx; margin-top: var\(--space-4\);/.test(af) && /padding: 0 var\(--space-4\);/.test(pc))
+  }
   return out
 }
 
@@ -1127,6 +1217,19 @@ if (process.argv.includes('--selftest')) {
     ['全局 icon-gold 回到偏浅近似链', 'appWxss', (t) => t.replace('.icon-gold {\n  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);', '.icon-gold {\n  filter: brightness(0) saturate(100%) invert(72%) sepia(28%) saturate(380%) hue-rotate(358deg) brightness(96%) contrast(88%);')],
     ['详情页又写开发术语', 'detailWxml', (t) => t.replace('<text class="st-zh">藏品参数</text>', '<text class="st-zh">藏品参数（字段）</text>')],
     ['礼赠面板一键送礼不再直达写笺', 'detailWxml', (t) => t.replace('class="gift-cta" bindtap="goGiftCompose"', 'class="gift-cta" bindtap="goToGift"')],
+    ['捐赠口径把退款中算进去', 'dnLedger', (t) => t.replace("if (PENDING.indexOf(o.status) >= 0) return { paidFen, refundFen: 0, netFen: 0, state: 'pending' }", '')],
+    ['捐赠口径忘了无 refundFee 的已退款', 'dnLedger', (t) => t.replace("else if (o.status === 'refunded') refundFen = paidFen", '')],
+    ['捐赠 1% 改成直接截断', 'dnLedger', (t) => t.replace('Math.round(Math.round(b) * 0.01)', 'Math.floor(b * 0.01)')],
+    ['捐赠云函数开放查他人', 'dnFn', (t) => t.replace('const { OPENID } = cloud.getWXContext()', 'const { OPENID: CTX } = cloud.getWXContext(); const OPENID = (event && event.targetOpenId) || CTX')],
+    ['下单页基金名与我的捐赠不一致', 'dnPledge', (t) => t.replace("const ONE_PERCENT_FUND_NAME = '山海造物公益基金'", "const ONE_PERCENT_FUND_NAME = '山海万物公益基金'")],
+    ['基金名被改', 'dnCopy', (t) => t.replace("const FUND_NAME = '山海造物公益基金'", "const FUND_NAME = '山海公益'")],
+    ['分享带上个人金额', 'dnJs', (t) => t.replace('title: copy.SHARE_TITLE,', 'title: `我已捐 ¥${this.data.heroAmount}`,')],
+    ['已签发证书又秒切', 'certPageJs', (t) => t.replace("this.setData({ certImageUrl: url });\n          this.finishPrint({ showCert: true });", "this.setData({ certImageUrl: url, isMinting: false, showCert: true });")],
+    ['打印收尾不等整张纸', 'certTimingJs', (t) => t.replace('if (phase < from) return Math.round(from - phase)', 'if (phase < from) return 0')],
+    ['纸张动画改了时长没同步', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s', 'animation: cp-feed 2.4s')],
+    ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
+    ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
+    ['钱包入口被删', 'walletWxml', (t) => t.replace('<view class="sv-giving" bindtap="goDonations"', '<view class="sv-giving"')],
   ]
   let ok = baseOk
   console.log(`${baseOk ? '✓' : '✗'} 基线：真源码全部断言通过`)

@@ -198,6 +198,7 @@ const _pageCfg = {
     pointsRuleText: walletCopy.POINTS_RULE,
     walletPlateFooter: walletCopy.PLATE_FOOTER,
     walletRechargeHint: walletCopy.RECHARGE_HINT,
+    walletRechargeHintShort: walletCopy.RECHARGE_HINT_SHORT,
     walletSecurityNote: walletCopy.SECURITY_NOTE,
     walletRechargeLead: walletCopy.RECHARGE_LEAD,
     usableCouponCount: 0,
@@ -208,7 +209,9 @@ const _pageCfg = {
      */
     iosBlocked: false,
     /** 需求 8：余额卡翻面（正面余额 / 背面支付权益） */
-    cardFlipped: false
+    cardFlipped: false,
+    /** 我的捐赠入口：累计 1% 金额（「1,234.56」）；查不到 / 为 0 时为空串，入口只讲规则 */
+    givingAmount: ''
   },
 
   applyGuestWalletState() {
@@ -237,7 +240,8 @@ const _pageCfg = {
       canPay: false,
       paySummaryLabel: '',
       payBtnLabel: '充值',
-      selectedBenefitHint: ''
+      selectedBenefitHint: '',
+      givingAmount: ''
     })
   },
 
@@ -292,6 +296,7 @@ const _pageCfg = {
       wx.stopPullDownRefresh()
       return
     }
+    this.loadGivingSummary()
     this.refreshAccount({ resetLedgers: true })
       .finally(() => wx.stopPullDownRefresh())
   },
@@ -325,6 +330,7 @@ const _pageCfg = {
       await this.releaseHeldQuiet()
       await this.refreshAccount({ resetLedgers: true })
       this.loadUsableCouponCount()
+      this.loadGivingSummary()
     } catch (e) {
       toastStoredValueClosed()
       this.setData({ allowed: false, checking: false })
@@ -883,6 +889,26 @@ const _pageCfg = {
 
   goSupport() {
     wx.navigateTo({ url: '/subpackages/extra/user/support/index' })
+  },
+
+  goDonations() {
+    wx.navigateTo({ url: '/subpackages/business/donations/index' })
+  },
+
+  /** 入口卡上的累计 1%：只要合计（summaryOnly），失败静默保持「只讲规则」—— 不影响钱包本身 */
+  async loadGivingSummary() {
+    if (isLocalLoggedOut()) return
+    try {
+      const res = await wx.cloud.callFunction({ name: 'getMyDonations', data: { summaryOnly: true } })
+      const r = (res && res.result) || {}
+      const fen = r.success && r.data ? Math.max(0, Math.round(Number(r.data.pledgeFen) || 0)) : 0
+      const text = fen > 0
+        ? `${String(Math.floor(fen / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}.${String(fen % 100).padStart(2, '0')}`
+        : ''
+      if (text !== this.data.givingAmount) this.setData({ givingAmount: text })
+    } catch (e) {
+      console.warn('[wallet] 捐赠合计读取失败', e)
+    }
   }
 }
 

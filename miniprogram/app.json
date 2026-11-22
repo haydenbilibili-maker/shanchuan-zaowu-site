@@ -98,7 +98,8 @@
         "booking/index",
         "store/index",
         "store-zone/index",
-        "wallet-hub/index"
+        "wallet-hub/index",
+        "donations/index"
       ]
     },
     {

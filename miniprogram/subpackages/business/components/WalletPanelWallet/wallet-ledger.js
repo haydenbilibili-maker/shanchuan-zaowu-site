@@ -112,7 +112,38 @@ function signedYuanText(fen) {
   return '¥0.00'
 }
 
-/** 单行派生：与旧实现字段名保持一致（WXML 不需要改）,新增 clockText / tappable */
+/** 行首方印字（2026-11-22 账单降噪）：一字说清类型，类型名不再靠副标题重复 */
+const LEDGER_GLYPHS = {
+  recharge: '充',
+  recharge_bonus: '赠',
+  order_pay: '付',
+  order_unfreeze: '回',
+  refund_credit: '退',
+  store_debit: '店',
+  adjust: '调',
+  expire: '期'
+}
+
+function glyphOf(row) {
+  const t = row && row.type
+  if (t && LEDGER_GLYPHS[t]) return LEDGER_GLYPHS[t]
+  const label = String((row && row.typeLabel) || '').trim()
+  return label ? label.charAt(0) : '账'
+}
+
+/**
+ * 行内短引用：有单号只露尾 6 位；否则只在备注**不是**类型说明的复述时才给（云端 subtitle 多半就是类型说明）
+ */
+function refShortOf(row) {
+  if (!row) return ''
+  const no = String(row.orderNo || '').trim()
+  if (no) return no.length > 6 ? `…${no.slice(-6)}` : no
+  const remark = String(row.remark || '').trim()
+  if (!remark || remark === String(row.typeLabel || '').trim()) return ''
+  return remark.length > 14 ? `${remark.slice(0, 14)}…` : remark
+}
+
+/** 单行派生：与旧实现字段名保持一致,新增 clockText / tappable / glyph / refShort */
 function mapLedgerRow(row, nowMs) {
   const ms = ledgerTimeMs(row && row.createTime)
   const amountFen = Number((row && row.amountFen) || 0)
@@ -138,6 +169,8 @@ function mapLedgerRow(row, nowMs) {
     balanceAfterYuan: (row && row.balanceAfterYuan) || '',
     tappable,
     orderId: tappable ? orderId : '',
+    glyph: glyphOf(row),
+    refShort: refShortOf(row),
     _nowMs: nowMs
   }
 }
@@ -257,6 +290,9 @@ module.exports = {
   monthLabel,
   fenToYuanText,
   signedYuanText,
+  LEDGER_GLYPHS,
+  glyphOf,
+  refShortOf,
   mapLedgerRow,
   buildLedgerTimeline,
   ledgerCapText

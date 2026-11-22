@@ -13,6 +13,8 @@
  *   ⑤ A9 `custom-tab-bar` 只许用自己的变量（它在**页面树之外**，取不到 `page{}` 令牌）；
  *   ⑥ **A10 全站**：`var(--x)` **不带兜底**时 `--x` 必须能解析（本文件 / `page{}` / `@import` 链 /
  *      运行时注入白名单）—— 见 A10 注释里的 `--radius-full` 真事故。
+ *   ⑦ **A11 tab 栏 @import 闭包**：被 `custom-tab-bar` @import 的公共样式里，`var(--x)` 必须带字面量兜底 ——
+ *      令牌能解析不代表 tab 栏取得到（它在页面树之外）。见 A11 注释里的购物车角标真事故。
  *
  * 用法：
  *   node miniprogram/scripts/check-wxss-syntax.mjs
@@ -98,6 +100,23 @@ function varCalls(src) {
   return out
 }
 
+/** custom-tab-bar 的 @import 闭包（不含它自己；A9 管它自己） */
+const TABBAR_IMPORTS = (() => {
+  const out = new Set()
+  const visit = (file) => {
+    let src = ''
+    try { src = strip(readFileSync(file, 'utf8')) } catch (e) { return }
+    for (const m of src.matchAll(/@import\s+['"]([^'"]+)['"]/g)) {
+      const next = resolve(dirname(file), m[1])
+      if (out.has(next)) continue
+      out.add(next)
+      visit(next)
+    }
+  }
+  visit(join(MP, 'custom-tab-bar/index.wxss'))
+  return out
+})()
+
 function inspect(abs) {
   const src = strip(readFileSync(abs, 'utf8'))
   const problems = []
@@ -158,6 +177,15 @@ function inspect(abs) {
     if (RUNTIME_SET_VARS[name]) continue
     problems.push(`A10 var(${name}) 解析不到（本文件与 app.wxss 的 page{} 与 @import 链都没有${name}，也不是运行时注入）→ 整条声明失效且无兜底：请定义令牌、或改成字面量、或写成 var(${name}, 兜底值)`)
   }
+  // A11：custom-tab-bar **@import 进来的公共样式**同样在页面树之外（2026-11-22 真事故：styles/badges.wxss 被 P3 令牌化成
+  //   var(--fs-16)，tab 栏购物车角标字号失效、回落默认大字，A9 只查 tab 栏自身文件没拦住）。
+  //   公共文件还要给页面用，不必改回字面量：每个 var() 都必须带字面量兜底 var(--x, 值)。
+  if (TABBAR_IMPORTS.has(abs)) {
+    const own = new Set([...src.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]))
+    for (const m of src.matchAll(/var\(\s*(--[\w-]+)\s*\)/g)) {
+      if (!own.has(m[1])) problems.push(`A11 被 custom-tab-bar 引入的样式用了无兜底令牌 var(${m[1]})（tab 栏取不到 page{} 变量 → 声明失效）：写成 var(${m[1]}, 字面量)`)
+    }
+  }
   return problems
 }
 
@@ -209,7 +237,8 @@ if (process.argv.includes('--selftest')) {
     { name: 'A8 新增无限动画但没有减弱动效分支', inject: '\n.x-spin { animation: x-spin 1s linear infinite; }\n' },
     { name: 'A9 custom-tab-bar 用页面令牌（底部 tab 字号变大真事故）', file: join(MP, 'custom-tab-bar/index.wxss'), inject: '\n.tab-text { font-size: var(--fs-20); }\n' },
     { name: 'A10 用了从未定义的令牌且无兜底（--radius-full 真事故）', file: join(MP, 'components/UserVipCard/index.wxss'), inject: '\n.x-probe { border-radius: var(--radius-nonexistent); }\n' },
-    { name: 'A10 负例：带兜底值的未定义令牌应放行', file: join(MP, 'components/UserVipCard/index.wxss'), inject: '\n.x-probe-ok { color: var(--x-not-defined, #fff); }\n', expectPass: true }
+    { name: 'A10 负例：带兜底值的未定义令牌应放行', file: join(MP, 'components/UserVipCard/index.wxss'), inject: '\n.x-probe-ok { color: var(--x-not-defined, #fff); }\n', expectPass: true },
+    { name: 'A11 tab 栏引入的公共样式用无兜底令牌（购物车角标变大真事故）', file: join(MP, 'styles/badges.wxss'), inject: '\n.badge-solid-danger.badge-sm { font-size: var(--fs-16); }\n' }
   ]
   for (const c of cases) {
     const t = c.file || target

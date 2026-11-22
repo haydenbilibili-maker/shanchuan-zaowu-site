@@ -264,7 +264,8 @@ async function runChecks() {
     }
     const app = { globalData: { openid: viewer } }
     load(P.certPage, {
-      stubs: { './userSession': { isLocalLoggedOut: () => false } },
+      // 打印动画收尾时长（2026-11-22 起至少看完一张纸）由 check:a-flow-polish R62 钉；这里只关心「展示哪张证书」，时长置 0
+      stubs: { './userSession': { isLocalLoggedOut: () => false }, './certPrintTiming': { printWaitMs: () => 0, PRINT_HOLD_MS: 0 } },
       globals: { getApp: () => app, wx, Page: (o) => { page = o } }
     })
     const inst = { ...page, data: { ...page.data }, setData(p) { Object.assign(this.data, p) } }

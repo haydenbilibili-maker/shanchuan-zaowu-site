@@ -174,6 +174,34 @@ function achievementsSceneData() {
   })
 }
 
+// 我的捐赠（2026-11-22）：真实文案源 + 真实视图组装，样例账本走 donationLedger 同一口径
+const dnCopy = loadCjsModule(join(MP, 'subpackages/business/donations/donationCopy.js'))
+const dnViewMod = loadCjsModule(join(MP, 'subpackages/business/donations/donationView.js'))
+const dnLedgerMod = loadCjsModule(join(MP, 'cloudfunctions/getMyDonations/donationLedger.js'))
+const dnView = dnViewMod.buildView(dnLedgerMod.buildLedger([
+  { _id: 'o1', status: 'received', totalPrice: 3680, paidTime: '2026-10-28T15:20:00+08:00', products: [{ title: '光明女神闪蝶 · 玻璃罩', quantity: 1 }] },
+  { _id: 'o2', status: 'shipped', totalPrice: 1288, paidTime: '2026-09-12T11:02:00+08:00', products: [{ title: '蓝闪蝶 · 胡桃木框', quantity: 2 }] },
+  { _id: 'o3', status: 'refunded', totalPrice: 860, refundFee: 430, paidTime: '2026-06-03T20:41:00+08:00', products: [{ title: '甲虫三联标本', quantity: 1 }] },
+  { _id: 'o4', status: 'refunding', totalPrice: 199, paidTime: '2026-11-20T09:00:00+08:00', products: [{ title: '矿物原石 · 紫水晶', quantity: 1 }] },
+  { _id: 'o5', status: 'received', totalPrice: 5260, paidTime: '2025-12-18T16:30:00+08:00', products: [{ title: '鹦鹉螺化石剖面', quantity: 1 }] },
+  { _id: 'o6', status: 'received', totalPrice: 2310, paidTime: '2025-08-02T10:10:00+08:00', products: [{ title: '枯叶蛱蝶 · 圆框', quantity: 1 }] }
+], { now: Date.parse('2026-11-22T10:00:00+08:00') }), dnCopy.FUND_NAME)
+const dnData = {
+  copy: dnCopy, phase: 'ready', hero: dnView.hero, heroAmount: dnView.hero.amount, years: dnView.years, yearTabs: dnView.yearTabs,
+  yearKey: 'all', shownRows: dnView.rows, rowsMore: false, notes: dnView.notes, faqOpen: 0, flowLit: true
+}
+// 钱包账单（2026-11-22 降噪）：用真实 buildLedgerTimeline + 云端同形行，出图即线上形态
+const wlLedgerMod = loadCjsModule(join(MP, 'subpackages/business/components/WalletPanelWallet/wallet-ledger.js'))
+const wlNow = Date.parse('2026-11-22T20:00:00+08:00')
+const wlRow = (id, type, typeLabel, amountFen, iso, extra = {}) => ({ id, type, typeLabel, amountFen, amountYuan: (Math.abs(amountFen) / 100).toFixed(2), createTime: iso, isCredit: amountFen >= 0, ...extra })
+const wlLedger = wlLedgerMod.buildLedgerTimeline([
+  wlRow('l1', 'order_pay', '订单消费', -38800, '2026-11-22T14:20:00+08:00', { orderNo: 'ORD20261122142012', refType: 'order', refId: 'o1', subtitle: '订单支付扣款 · ORD20261122142012' }),
+  wlRow('l2', 'refund_credit', '退款入账', 12900, '2026-11-21T10:05:00+08:00', { orderNo: 'ORD20261118093344', refType: 'order', refId: 'o2', subtitle: '订单退款退回钱包 · ORD20261118093344' }),
+  wlRow('l3', 'recharge', '充值', 100000, '2026-11-18T09:12:00+08:00', { subtitle: '微信支付入账' }),
+  wlRow('l4', 'store_debit', '门店扣款', -12800, '2026-11-02T16:40:00+08:00', { remark: '长春店 · 蝶翼书签', subtitle: '长春店 · 蝶翼书签' }),
+  wlRow('l5', 'order_pay', '订单消费', -56000, '2026-10-28T20:31:00+08:00', { orderNo: 'ORD20261028203101', refType: 'order', refId: 'o3', subtitle: '订单支付扣款 · ORD20261028203101' }),
+  wlRow('l6', 'recharge', '充值', 50000, '2026-10-10T09:00:00+08:00', { subtitle: '微信支付入账' })
+], { now: wlNow, hasMore: false })
 const SCENES = [
   { name: 'wl-main', h: 2500, wxml: 'subpackages/feature/wish-labels/index', data: wlBase },
   { name: 'wl-compose', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, composeOpen: true, draft: '马上有好睡眠', draftCount: 6, posting: false, voicePath: '' } },
@@ -386,13 +414,15 @@ const SCENES = [
     }
   },
   {
-    name: 'wallet-balance', h: 1700, wxml: 'subpackages/business/components/WalletPanelWallet/index', data: {
-      accountReady: true, account: { availableYuan: '1,280.00', memberNo: '0137' }, allowed: true, rechargeMode: true, needLogin: false, checking: false, iosBlocked: false, flashSuccess: false, ledgerLoading: false, ledgerEmpty: false, allowCustom: true, recharge: { minCustomYuan: 100, maxCustomYuan: 20000 }, paySummaryLabel: '实付 ¥1000 · 到账 ¥1080', selectedBenefitHint: '升至「藏家」，享 9.5 折', ledgerCap: '近 30 天',
+    name: 'wallet-balance', h: 2700, wxml: 'subpackages/business/components/WalletPanelWallet/index', data: {
+      accountReady: true, account: { availableYuan: '1,280.00', memberNo: '0137' }, allowed: true, rechargeMode: true, needLogin: false, checking: false, iosBlocked: false, flashSuccess: false, ledgerLoading: false, ledgerEmpty: false, allowCustom: true, recharge: { minCustomYuan: 100, maxCustomYuan: 20000 }, paySummaryLabel: '实付 ¥1000 · 到账 ¥1080', selectedBenefitHint: '升至「藏家」，享 9.5 折', givingAmount: '138.48',
       packages: [{ id: 'k1', label: '¥500', displayPayYuan: '500', pointsLine: '+500 积分', discountLine: '到账 ¥530' }, { id: 'k2', label: '¥1000', displayPayYuan: '1000', levelBadge: '升级', levelName: '藏家', pointsLine: '+1000 积分', discountLine: '到账 ¥1080' }, { id: 'k3', label: '¥2000', displayPayYuan: '2000', levelName: '馆员', pointsLine: '+2000 积分', discountLine: '到账 ¥2200' }],
       selectedPackageId: 'k2', rechargeMode: 'package', canPay: true, payBtnLabel: '充值 ¥1000', walletPlateFooter: 'SHANHAI · MEMBER WALLET', walletRechargeLead: '选一档储值，到账即可在线上与门店消费', walletRechargeHint: '储值余额不可提现，可用于线上与门店消费', walletSecurityNote: '余额变动会推送提醒；如非本人操作请联系专员', customAmount: '', customHint: '', ledgerHasMore: false,
-      ledgerTimeline: [{ week: '本周', rows: [{ typeLabel: '消费', subtitle: '光明女神闪蝶 · 玻璃罩', amountSign: '-', amountYuan: '388.00', clockText: '10.12 14:20', toneClass: 'minus', balanceAfterYuan: '1,280.00' }, { typeLabel: '充值', subtitle: '储值 ¥1000 送 ¥80', amountSign: '+', amountYuan: '1,080.00', clockText: '10.10 09:12', toneClass: 'plus', isCredit: true, balanceAfterYuan: '1,668.00' }] }]
+      ledgerTimeline: wlLedger.timeline, ledgerCap: '共 6 笔', paying: false, walletRechargeHintShort: '到账以微信支付成功为准 · 积分与成长值规则见卡背', walletSecurityNote: '仅小程序内支付，不含线下门店；不可提现转赠，以流水为准。'
     }
   },
+  { name: 'donations', h: 3900, wxml: 'subpackages/business/donations/index', data: dnData },
+  { name: 'donations-guest', h: 1500, wxml: 'subpackages/business/donations/index', data: { ...dnData, phase: 'guest', faqOpen: -1 } },
   {
     name: 'wallet-points', h: 1600, wxml: 'subpackages/business/components/WalletPanelPoints/index', data: {
       loading: false, points: 2680, pointsYuan: '26.80', curTab: 0, pointsReady: true, pointsText: '2,680', levelName: '藏家', onlineSpendTotal: '3,260', storeSpendTotal: '1,180', platformSpendTotal: 0, storePointsTotal: 1180, myRewards: [],

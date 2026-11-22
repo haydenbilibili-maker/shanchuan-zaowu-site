@@ -448,6 +448,20 @@ function makeCtx(initial) {
 
 /* ───────────────────────── 7) 页面数据与结构 ───────────────────────── */
 
+// 方印字与短引用（纯函数）
+{
+  const g = (r) => ledger.glyphOf(r)
+  eq('方印：订单消费 = 付', g({ type: 'order_pay', typeLabel: '订单消费' }), '付')
+  eq('方印：退款入账 = 退', g({ type: 'refund_credit' }), '退')
+  eq('方印：未知类型取类型名首字', g({ type: 'xx', typeLabel: '奖励' }), '奖')
+  eq('方印：什么都没有 = 账', g({}), '账')
+  eq('短引用：单号只露尾 6 位', ledger.refShortOf({ orderNo: 'ORD20261122123456' }), '…123456')
+  eq('短引用：备注只是类型名的复述 → 不给', ledger.refShortOf({ remark: '充值', typeLabel: '充值' }), '')
+  eq('短引用：长备注截 14 字', ledger.refShortOf({ remark: '一二三四五六七八九十一二三四五六' }), '一二三四五六七八九十一二三四…')
+  const m = ledger.mapLedgerRow({ id: 'x', type: 'recharge', typeLabel: '充值', amountFen: 100, orderNo: 'ORDABC123456' }, NOW)
+  eq('mapLedgerRow 带出 glyph / refShort', `${m.glyph}|${m.refShort}`, '充|…123456')
+}
+
 const pageSrc = readSrc(PAGE)
 const wxml = readSrc(WXML)
 
@@ -472,9 +486,11 @@ check('保留「加载更多」兜底按钮', /class="sv-ledger-more"/.test(wxml
 }
 check('时间轴由 ledgerTimeline 单层驱动', /wx:for="\{\{ledgerTimeline\}\}"/.test(wxml))
 check('月带只在 kind=month 渲染', /wx:if="\{\{item\.kind === 'month'\}\}"/.test(wxml))
-check('日头含日标签与星期', /sv-ledger-day-label/.test(wxml) && /sv-ledger-day-week/.test(wxml))
-check('★ 未完那天文案独立分支', /wx:elif="\{\{!item\.complete\}\}">未完</.test(wxml))
-check('轨道线以 isLast 收口', /sv-ledger-line" wx:if="\{\{!row\.isLast\}\}"/.test(wxml))
+// 2026-11-22 账单降噪（产品负责人「下方文字较多，特别是账单流水」）：日头 / 星期 / 当日净额 / 余额 / 轨道线取消，
+// 日期并进行内 meta。原先「未完那天不谎报净额」的约束随之变成「根本不展示净额与余额」。
+check('★ 行内带日标签 + 时分（日期不靠日头）', /class="sv-ledger-meta"><text class="sv-ledger-day-label">\{\{item\.label\}\}<\/text><text class="sv-ledger-clock">\{\{row\.clockText\}\}<\/text>/.test(wxml))
+check('★ 不再展示当日净额与余额（降噪；也就不存在分页未完那天谎报净额）', !/item\.netText|row\.balanceAfterYuan|sv-ledger-day-week/.test(wxml))
+check('行首一字方印按色调分类', /class="sv-ledger-glyph \{\{row\.toneClass\}\}"/.test(wxml) && /\{\{row\.glyph\}\}/.test(wxml))
 check('★ 行内不再重复完整日期', !/class="sv-ledger-time"/.test(wxml) && /sv-ledger-clock/.test(wxml))
 check('可点行带 data-order-id', /data-order-id="\{\{row\.orderId\}\}"/.test(wxml))
 check('★ 箭头只在可点行渲染（不给假入口）', /class="sv-ledger-chevron" wx:if="\{\{row\.tappable\}\}"/.test(wxml))

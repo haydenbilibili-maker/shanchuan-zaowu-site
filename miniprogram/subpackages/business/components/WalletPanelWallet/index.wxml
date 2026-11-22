@@ -69,13 +69,26 @@
     </block>
 
     <block wx:if="{{allowed && !needLogin}}">
+      <!-- 我的捐赠（2026-11-22 产品负责人点名）：累计实付的 1% 由山海造物公益基金代为捐赠 → 进「我的捐赠」页 -->
+      <view class="sv-giving" bindtap="goDonations" hover-class="sv-giving-press" hover-stay-time="80">
+        <view class="sv-giving-main">
+          <text class="sv-giving-overline">GIVING · 1%</text>
+          <text class="sv-giving-title">我的捐赠</text>
+          <text class="sv-giving-line" wx:if="{{givingAmount}}">累计 <text class="sv-giving-amt">¥{{givingAmount}}</text> 将由山海造物公益基金代为捐赠</text>
+          <text class="sv-giving-line" wx:else>累计实付的 1%，将由山海造物公益基金代为捐赠</text>
+        </view>
+        <view class="sv-giving-side">
+          <text class="sv-giving-pct">1%</text>
+          <view class="sv-giving-chev"></view>
+        </view>
+      </view>
+
       <view class="sv-flash" wx:if="{{flashSuccess}}">
         <text class="sv-flash-text">{{flashSuccess}}</text>
       </view>
 
       <view class="account-section-card sv-recharge-card" wx:if="{{!iosBlocked}}">
         <text class="account-section-label">充值</text>
-        <text class="sv-recharge-lead">{{walletRechargeLead}}</text>
 
         <view class="sv-pkg-grid" wx:if="{{packages.length}}">
           <view
@@ -140,7 +153,7 @@
           bindtap="onRechargeTap"
           hover-class="sv-pay-press"
         >{{paying ? '处理中…' : payBtnLabel}}</view>
-        <text class="sv-pay-hint">{{walletRechargeHint}}</text>
+        <text class="sv-pay-hint">{{walletRechargeHintShort}}</text>
       </view>
 
       <!-- 充值受限态：由超管开关控制（默认不限制，见 content_display_flags.allowIosStoredValue） -->
@@ -174,7 +187,8 @@
           <text class="sv-muted">完成充值或用钱包支付后，将在此展示充值、消费与回账记录。</text>
         </view>
 
-        <!-- 时间轴：月带 + 日组（组内是当天全部已加载流水，按时间倒序） -->
+        <!-- 账单（2026-11-22 降噪）：月带 + 逐笔。日期并进行内「今天 14:20」，
+             不再有日头 / 星期 / 当日净额 / 余额 / 轨道线 —— 每笔只剩「方印 · 类型 · 时间 · 金额」 -->
         <view class="sv-ledger-timeline" wx:else>
           <block wx:for="{{ledgerTimeline}}" wx:key="key">
             <view class="sv-ledger-month" wx:if="{{item.kind === 'month'}}">
@@ -182,17 +196,7 @@
               <view class="sv-ledger-month-rule"></view>
             </view>
 
-            <view class="sv-ledger-day" wx:else>
-              <view class="sv-ledger-day-head">
-                <text class="sv-ledger-day-label">{{item.label}}</text>
-                <text class="sv-ledger-day-week" wx:if="{{item.week}}">{{item.week}}</text>
-                <view class="sv-ledger-day-spacer"></view>
-                <text class="sv-ledger-day-net {{item.netTone}}" wx:if="{{item.netText}}">{{item.netText}}</text>
-                <!-- 分页未完的那一天：当日净额算不出来，宁可不给，也不谎报 -->
-                <text class="sv-ledger-day-net is-open" wx:elif="{{!item.complete}}">未完</text>
-              </view>
-
-              <view class="sv-ledger-rows">
+            <block wx:else>
                 <view
                   class="sv-ledger-row {{row.tappable ? 'is-tappable' : ''}}"
                   wx:for="{{item.rows}}"
@@ -203,25 +207,15 @@
                   hover-class="{{row.tappable ? 'sv-ledger-row-press' : 'none'}}"
                   hover-stay-time="80"
                 >
-                  <view class="sv-ledger-rail" aria-hidden="true">
-                    <view class="sv-ledger-dot {{row.toneClass}}"></view>
-                    <view class="sv-ledger-line" wx:if="{{!row.isLast}}"></view>
-                  </view>
+                  <view class="sv-ledger-glyph {{row.toneClass}}" aria-hidden="true"><text>{{row.glyph}}</text></view>
                   <view class="sv-ledger-main">
-                    <view class="sv-ledger-top">
-                      <text class="sv-ledger-type">{{row.typeLabel}}</text>
-                      <text class="sv-ledger-clock">{{row.clockText}}</text>
-                    </view>
-                    <text class="sv-ledger-sub" wx:if="{{row.subtitle}}">{{row.subtitle}}</text>
+                    <text class="sv-ledger-type">{{row.typeLabel}}</text>
+                    <text class="sv-ledger-meta"><text class="sv-ledger-day-label">{{item.label}}</text><text class="sv-ledger-clock">{{row.clockText}}</text><block wx:if="{{row.refShort}}"> · {{row.refShort}}</block></text>
                   </view>
-                  <view class="sv-ledger-side">
-                    <text class="sv-ledger-amt {{row.isCredit ? 'is-plus' : 'is-minus'}}">{{row.amountSign}}¥{{row.amountYuan}}</text>
-                    <text class="sv-ledger-bal" wx:if="{{row.balanceAfterYuan}}">余 ¥{{row.balanceAfterYuan}}</text>
-                  </view>
+                  <text class="sv-ledger-amt {{row.isCredit ? 'is-plus' : 'is-minus'}}">{{row.amountSign}}¥{{row.amountYuan}}</text>
                   <view class="sv-ledger-chevron" wx:if="{{row.tappable}}" aria-hidden="true"></view>
                 </view>
-              </view>
-            </view>
+            </block>
           </block>
         </view>
 
@@ -234,10 +228,10 @@
         <text class="sv-ledger-fin" wx:elif="{{!ledgerLoading && !ledgerEmpty}}">· 已到最早一笔 ·</text>
       </view>
 
-      <view class="account-section-card sv-note">
-        <text class="account-section-label">安全提示</text>
-        <text class="sv-note-text">{{walletSecurityNote}}</text>
-        <view class="sv-link" hover-class="sv-link-press" bindtap="goSupport">联系专员 →</view>
+      <!-- 安全提示（2026-11-22）：整段分区收成页脚一行，规则不删 -->
+      <view class="sv-foot">
+        <text class="sv-foot-text">{{walletSecurityNote}}</text>
+        <text class="sv-foot-link" bindtap="goSupport" hover-class="sv-link-press">联系专员 ›</text>
       </view>
     </block>
 
