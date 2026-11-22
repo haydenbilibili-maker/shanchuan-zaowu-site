@@ -281,8 +281,7 @@
 }
 
 .sv-pay-hint,
-.sv-muted,
-.sv-note-text {
+.sv-muted {
   font-size: var(--fs-24);
   color: var(--color-text-secondary);
   line-height: 1.55;
@@ -290,15 +289,18 @@
 
 .sv-pay-hint {
   display: block;
+  margin-top: 4rpx;
+  font-size: var(--fs-20);
+  text-align: center;
 }
 
-/* ── 账单流水：时间轴（月带 / 日组 / 轨道 / 行内降噪） ────────────────
+/* ── 账单流水（2026-11-22 降噪，产品负责人「下方文字较多，特别是账单流水」）────
  *
- * 为什么改成时间轴：旧实现是一列平铺行，每行把「类型 / 说明 / 完整日期」竖着堆三行，
- * 20 笔就是 60 行文字墙，且看不出「哪天花了多少」。现在：
- *   · 月带承担月份，日头承担日期与当日净额，行内只留「时分」
- *   · 轨道线把同一天的流水串起来，分组不再靠边框
- *   · 分页未完的那一天不给净额（宁可不给，也不谎报）
+ * 旧版（2026-09 时间轴）每笔 = 日头（日期·星期·当日净额）+ 轨道点 + 类型/时分 + 副标题 + 金额/余额，
+ * 一笔四五段字；云端副标题又多半是类型说明的复述（「订单消费 / 订单支付扣款 · ORD…」）。现在：
+ *   · 月带保留；日头取消，日期并进行内 meta（「今天 14:20」）
+ *   · 行 = 一字方印（付/充/退…）+ 类型 + 一行 meta（时间 · 单号尾 6 位）+ 金额
+ *   · 不再展示余额与当日净额（余额看卡面；也就不存在「分页未完那天净额谎报」的问题）
  */
 
 .sv-ledger-head {
@@ -323,13 +325,13 @@
 .sv-ledger-skel-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  padding: 22rpx 0;
+  gap: 20rpx;
+  padding: 20rpx 0;
 }
 
 .sv-ledger-skel-dot {
-  width: 12rpx;
-  height: 12rpx;
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -387,126 +389,59 @@
   background: rgba(196, 167, 108, 0.16);
 }
 
-/* 日头：日期 + 星期在左，当日净额在右。
-   ⚠️ padding-right 必须等于 .sv-ledger-row 的右内边距（箭头槽位），
-   否则日净额会比逐笔金额多出 26rpx，右边缘对不齐。 */
-.sv-ledger-day-head {
-  display: flex;
-  align-items: baseline;
-  gap: 12rpx;
-  padding: 12rpx 26rpx 4rpx 0;
-}
-
-.sv-ledger-day + .sv-ledger-day .sv-ledger-day-head {
-  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
-  margin-top: 12rpx;
-  padding-top: 20rpx;
-}
-
-.sv-ledger-day-label {
-  font-size: var(--fs-24);
-  color: var(--color-text-body);
-}
-
-.sv-ledger-day-week {
-  font-size: var(--fs-20);
-  color: var(--color-text-secondary);
-}
-
-.sv-ledger-day-spacer {
-  flex: 1;
-}
-
-.sv-ledger-day-net {
-  font-size: var(--fs-22);
-  font-family: var(--font-mono);
-}
-
-.sv-ledger-day-net.is-plus {
-  color: var(--brass-300);
-}
-
-.sv-ledger-day-net.is-minus {
-  color: var(--color-text-secondary);
-}
-
-.sv-ledger-day-net.is-flat,
-.sv-ledger-day-net.is-open {
-  color: var(--color-text-secondary);
-}
-
-/* 行：轨道 + 类型/时分 + 金额/余额；行内不再重复日期 */
+/* 行：方印 | 类型 + meta | 金额（右侧留箭头槽位，有无箭头金额都对齐） */
 .sv-ledger-row {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 16rpx;
-  /* 右内边距 = 箭头槽位：有箭头与没箭头的行金额右边缘必须对齐，否则金额列会左右跳 */
-  padding: 18rpx 26rpx 18rpx 30rpx;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 30rpx 20rpx 0;
+}
+
+.sv-ledger-row + .sv-ledger-row {
+  border-top: 1rpx solid rgba(196, 167, 108, 0.08);
 }
 
 .sv-ledger-row-press {
   background: rgba(196, 167, 108, 0.06);
 }
 
-.sv-ledger-rail {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 12rpx;
-}
-
-.sv-ledger-dot {
-  position: absolute;
-  left: 0;
-  top: 30rpx;
-  width: 12rpx;
-  height: 12rpx;
+/* 一字方印：入账铜底、支出暗底、退款/回账空心铜圈 */
+.sv-ledger-glyph {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 50%;
-  background: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-brand);
+  font-size: var(--fs-24);
+  color: var(--color-text-body);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
 }
 
-.sv-ledger-dot.is-credit {
-  background: var(--brass-400);
+.sv-ledger-glyph.is-credit {
+  color: var(--brass-200);
+  background: rgba(196, 167, 108, 0.14);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45);
 }
 
-.sv-ledger-dot.is-debit {
-  background: var(--color-text-secondary);
-}
-
-/* 退款：空心铜点（原信号绿），与入账实点区分 */
-.sv-ledger-dot.is-refund {
-  background: #1A1814;
-  box-shadow: inset 0 0 0 2rpx var(--brass-300);
-}
-
-/* 轨道线：从圆点下方连到**下一行圆点的上沿**，中途不断开。
-   下一行圆点上沿距其行顶 30rpx，而本行底边即下一行行顶 → 向下溢出 30rpx 刚好接上。
-   ⚠️ 改 .sv-ledger-dot 的 top 时必须同步改这里，否则轨道会断开或糊到圆点上。
-   当天最后一笔、以及全表最后一行不画线（由 isLast 控制），轨道到此为止。 */
-.sv-ledger-line {
-  position: absolute;
-  left: 5rpx;
-  top: 46rpx;
-  bottom: -30rpx;
-  width: 1px;
-  background: rgba(196, 167, 108, 0.22);
+.sv-ledger-glyph.is-refund {
+  color: var(--brass-300);
+  background: transparent;
+  box-shadow: inset 0 0 0 2rpx rgba(196, 167, 108, 0.55);
 }
 
 .sv-ledger-main {
   flex: 1;
   min-width: 0;
-}
-
-.sv-ledger-top {
   display: flex;
-  align-items: baseline;
-  gap: 12rpx;
+  flex-direction: column;
 }
 
 .sv-ledger-type {
-  min-width: 0;
   font-size: var(--fs-26);
   color: var(--color-text-primary);
   overflow: hidden;
@@ -514,66 +449,46 @@
   white-space: nowrap;
 }
 
-/* 时分右对齐：类型名长短不一时，时间仍是一列 */
-.sv-ledger-clock {
-  flex-shrink: 0;
-  margin-left: auto;
-  font-size: var(--fs-20);
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-}
-
-.sv-ledger-sub {
-  display: block;
+.sv-ledger-meta {
   margin-top: 6rpx;
-  font-size: var(--fs-22);
+  font-size: var(--fs-20);
   color: var(--color-text-secondary);
-  line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.sv-ledger-side {
-  /* 固定最小宽度：金额位数一变（如 -¥56.00 vs -¥1286.00）列宽就会跳，
-     连带把左边的时分列也推歪。定宽后金额、余额、时分三列都是一条直线。 */
-  flex-shrink: 0;
-  min-width: 188rpx;
-  text-align: right;
+.sv-ledger-clock {
+  margin-left: 10rpx;
+  font-family: var(--font-mono);
 }
 
+/* 金额定宽右对齐：位数变化时整列不跳 */
 .sv-ledger-amt {
-  display: block;
+  flex-shrink: 0;
+  min-width: 160rpx;
+  text-align: right;
   font-family: var(--font-mono);
   font-size: var(--fs-28);
 }
 
 .sv-ledger-amt.is-plus {
-  color: var(--brass-400);
+  color: var(--brass-300);
 }
 
 .sv-ledger-amt.is-minus {
   color: var(--color-text-body);
 }
 
-.sv-ledger-bal {
-  display: block;
-  margin-top: 4rpx;
-  font-size: var(--fs-20);
-  color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-}
-
-/* 可点行：右箭头 = 打开关联订单。绝对定位在右侧槽位里（不参与宽度分配），
-   行高变化时仍垂直居中，也不会把金额列推来推去 */
+/* 可点行：右箭头 = 打开关联订单。绝对定位在右侧槽位里，不推动金额列 */
 .sv-ledger-chevron {
   position: absolute;
-  right: 0;
+  right: 4rpx;
   top: 50%;
-  width: 14rpx;
-  height: 14rpx;
-  border-right: 2rpx solid var(--color-text-muted);
-  border-bottom: 2rpx solid var(--color-text-muted);
+  width: 12rpx;
+  height: 12rpx;
+  border-right: 2rpx solid var(--brass-600);
+  border-bottom: 2rpx solid var(--brass-600);
   transform: translateY(-50%) rotate(-45deg);
 }
 
@@ -611,18 +526,26 @@
   height: 1px;
 }
 
-.sv-note {
-  margin-top: var(--space-2);
+/* 安全提示页脚（2026-11-22）：一行说明 + 联系专员，不再单立一个分区 */
+.sv-foot {
+  margin-top: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  text-align: center;
 }
 
-.sv-note .account-section-label {
-  margin-bottom: 12rpx;
-  font-size: var(--fs-28);
+.sv-foot-text {
+  display: block;
+  font-size: var(--fs-20);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
 }
 
-.sv-link {
-  margin-top: 20rpx;
-  font-size: var(--fs-26);
+.sv-foot-link {
+  display: inline-block;
+  margin-top: 10rpx;
+  padding: 6rpx 12rpx;
+  font-size: var(--fs-22);
   color: var(--brass-400);
 }
 
@@ -646,8 +569,9 @@
 
 .wallet-flip {
   position: relative;
-  margin: 0 0 var(--space-4);
-  min-height: 470rpx;
+  /* 2026-11-22：与积分卡同一规格 —— 距顶栏 32rpx、高 440rpx（原 0 / 470），切 tab 卡面不再跳 */
+  margin: var(--space-4) 0 var(--space-4);
+  height: 440rpx;
   transform-style: preserve-3d;
   transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -677,6 +601,22 @@
 .wallet-flip__front {
   z-index: 2;
   margin: 0;
+}
+
+/* 2026-11-22 定高 440rpx 后（实测量自预览，相对卡顶）：
+   内层撑满卡高 → 缝线框底边落在 426rpx（原内层约 450rpx 高，缝线穿过翻面提示）；
+   卡头间距 36 → 24rpx，铭牌文字底约 363rpx；提示 bottom 26rpx → 约 390–414rpx，落在铭牌与缝线之间。
+   皮质纹理本身（wallet-leather.wxss，R16-1 指纹锁定）不动。 */
+.wallet-flip__front .wallet-leather-card__inner {
+  height: 100%;
+  box-sizing: border-box;
+}
+.wallet-flip__front .wallet-leather-card__head {
+  margin-bottom: 24rpx;
+}
+.wallet-flip__front .wallet-flip-hint {
+  bottom: 26rpx;
+  z-index: 4;
 }
 
 /* 背面：略浅一档 + 黄铜描边，翻面可感知（与积分卡背面同一语言） */

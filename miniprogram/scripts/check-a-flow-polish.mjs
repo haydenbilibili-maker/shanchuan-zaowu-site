@@ -1021,6 +1021,16 @@ function checks(s) {
         /goDonations\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/business\/donations\/index' \}\)/.test(s.walletJs) &&
         /name: 'getMyDonations', data: \{ summaryOnly: true \}/.test(s.walletJs) && /"donations\/index"/.test(s.appJson))
   }
+  // R61 钱包 / 积分 tab 顶部卡同一规格（2026-11-22 产品负责人「切换会导致视觉偏移」）：距顶栏 32rpx、高 440rpx、左右 32rpx
+  {
+    const blk = (src, sel) => (src.match(new RegExp('\\n' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{[^}]*\\}')) || [''])[0]
+    const wf = blk(s.walletWxss, '.wallet-flip')
+    const af = blk(s.pointsWxss, '.asset-flip')
+    const pc = blk(s.pointsWxss, '.container')
+    add('R61 钱包卡与积分卡同规格：距顶栏 var(--space-4)、高 440rpx、左右 var(--space-4)（切 tab 不跳）',
+      /margin: var\(--space-4\) 0 var\(--space-4\);/.test(wf) && /\n  height: 440rpx;/.test(wf) && !/min-height/.test(wf) &&
+        /height: 440rpx; margin-top: var\(--space-4\);/.test(af) && /padding: 0 var\(--space-4\);/.test(pc))
+  }
   return out
 }
 
@@ -1195,6 +1205,8 @@ if (process.argv.includes('--selftest')) {
     ['下单页基金名与我的捐赠不一致', 'dnPledge', (t) => t.replace("const ONE_PERCENT_FUND_NAME = '山海造物公益基金'", "const ONE_PERCENT_FUND_NAME = '山海万物公益基金'")],
     ['基金名被改', 'dnCopy', (t) => t.replace("const FUND_NAME = '山海造物公益基金'", "const FUND_NAME = '山海公益'")],
     ['分享带上个人金额', 'dnJs', (t) => t.replace('title: copy.SHARE_TITLE,', 'title: `我已捐 ¥${this.data.heroAmount}`,')],
+    ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
+    ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
     ['钱包入口被删', 'walletWxml', (t) => t.replace('<view class="sv-giving" bindtap="goDonations"', '<view class="sv-giving"')],
   ]
   let ok = baseOk

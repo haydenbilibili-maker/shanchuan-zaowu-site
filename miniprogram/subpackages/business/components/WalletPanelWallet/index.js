@@ -198,6 +198,7 @@ const _pageCfg = {
     pointsRuleText: walletCopy.POINTS_RULE,
     walletPlateFooter: walletCopy.PLATE_FOOTER,
     walletRechargeHint: walletCopy.RECHARGE_HINT,
+    walletRechargeHintShort: walletCopy.RECHARGE_HINT_SHORT,
     walletSecurityNote: walletCopy.SECURITY_NOTE,
     walletRechargeLead: walletCopy.RECHARGE_LEAD,
     usableCouponCount: 0,

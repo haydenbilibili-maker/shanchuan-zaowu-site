@@ -2,12 +2,13 @@
 /* 继承 app.wxss */
 
 
-.container { padding: 0 30rpx; width: 100%; display: flex; flex-direction: column; align-items: center; }
+/* 2026-11-22：左右 32rpx、卡距顶栏 32rpx、卡高 440rpx —— 与钱包 tab 同一规格（--space-4），切 tab 卡面不跳 */
+.container { padding: 0 var(--space-4); width: 100%; display: flex; flex-direction: column; align-items: center; box-sizing: border-box; }
 
 /* 1. 资产卡 · 黑金翻转（正面=积分余额，背面=积分规则；与预约票据卡同一交互） */
 .asset-flip {
   position: relative;
-  width: 100%; height: 440rpx; margin-top: 30rpx;
+  width: 100%; height: 440rpx; margin-top: var(--space-4);
   transform-style: preserve-3d;
   transition: transform .8s cubic-bezier(.175, .885, .32, 1.275);
 }
