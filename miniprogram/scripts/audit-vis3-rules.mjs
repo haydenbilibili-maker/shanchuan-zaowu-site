@@ -557,11 +557,12 @@ if (has('--selftest')) {
       '.a { box-shadow: inset 0 1rpx 0 rgba(212, 188, 133, 0.08); }', null],   // 发丝线 = 合规
     ['R2-neg2', 'miniprogram/x/index.wxss', 'wxss',
       '.a { text-shadow: 1rpx 1.2rpx 0.6rpx rgba(224, 196, 132, 0.42); }', null],   // 亚像素凹刻高光 = 发丝线
-    ['R2-neg3', 'miniprogram/subpackages/feature/wish-wall/index.wxss', 'wxss',
-      '.ww-lamp-dot { box-shadow: 0 0 8rpx rgba(233, 190, 110, 0.7); }', null],     // 登记过的光源
+    // 2026-11-22：旧祈福墙页已为薄壳、其光源登记随之撤销 → 改用仍在登记表里的心愿墙入口灯
+    ['R2-neg3', 'miniprogram/components/WishWallEntry/index.wxss', 'wxss',
+      '.wish-wall-entry-lamp { box-shadow: 0 0 8rpx rgba(233, 190, 110, 0.7); }', null],     // 登记过的光源
     // 光源豁免只认**登记的选择器**：同一文件里别的元素发光仍须红
-    ['R2-pos2', 'miniprogram/subpackages/feature/wish-wall/index.wxss', 'wxss',
-      '.ww-sec-mark { box-shadow: 0 2rpx 12rpx rgba(196, 167, 108, 0.35); }', '金色发光'],
+    ['R2-pos2', 'miniprogram/components/WishWallEntry/index.wxss', 'wxss',
+      '.wl-entry-mat { box-shadow: 0 2rpx 12rpx rgba(196, 167, 108, 0.35); }', '金色发光'],
     ['R3', 'miniprogram/x/index.wxml', 'wxml',
       '<view class="row"><view class="btn-primary">A</view><view class="btn-primary">B</view></view>', '并列'],
     ['R3-neg', 'miniprogram/x/index.wxml', 'wxml',

@@ -234,9 +234,10 @@ function selftest() {
   const G = ENTRIES.find((e) => e.js.includes('/gift/reg-card/'))
   const injections = [
     ['弹层恢复「点击即表示同意」小字', D.wxml, (s) => s.replace('<text>我已阅读并同意</text>', '<text>点击即表示同意</text>')],
-    ['祈福墙按钮文案恢复「同意并一键注册」', 'miniprogram/subpackages/feature/wish-wall/index.wxml',
+    // 2026-11-22：原注入目标已下线（旧祈福墙页 A3 第 2 期改为薄壳、ERP 报表标签改写），改打仍在线的同类文案
+    ['百科注册门禁按钮文案写成「同意并一键注册」', 'miniprogram/subpackages/feature/detail/wiki-detail/index.wxml',
       (s) => s.replace(/cta="一键注册"/, 'cta="同意并一键注册"')],
-    ['ERP 报表标签写回「同意并一键注册」', 'admin/src/utils/analyticsSchema.js', (s) => s.replace('点「一键注册」', '点「同意并一键注册」')],
+    ['ERP 报表说明写回「同意并一键注册」', 'admin/src/utils/analyticsSchema.js', (s) => s.replace('原地一键注册', '原地同意并一键注册')],
     ['弹层勾选默认为已勾', D.js, (s) => s.replace('agreed: false,', 'agreed: true,')],
     ['注册页按已注册态自动勾上', O.js, (s) => s.replace('agreed: false,', 'agreed: !!(u.agreedTermsAt || u.phone),')],
     ['资料页从缓存预置勾选', P.js, (s) => s.replace('phoneAgreed: false,', "phoneAgreed: !!wx.getStorageSync('agreed'),")],
@@ -253,8 +254,9 @@ function selftest() {
       (s) => s.replace(/\n\s*closable="\{\{true\}\}"/, '')],
     ['鉴定结果页删掉关闭处理函数（按钮点了没反应）', 'miniprogram/subpackages/feature/identify/result/index.js',
       (s) => s.replace(/onRegisterDialogClose\(\) \{/, 'onRegisterDialogClose_removed() {')],
-    ['祈福墙功德证弹层改成关不掉', 'miniprogram/subpackages/feature/wish-wall/index.wxml',
-      (s) => s.replace(/(show="\{\{showCertDialog\}\}"[\s\S]*?)closable="\{\{true\}\}"/, '$1closable="{{false}}"')],
+    // 2026-11-22：旧祈福墙页已为薄壳，改打鉴定结果页的注册弹层（同一「必须关得掉」口径）
+    ['鉴定结果注册弹层改成关不掉', 'miniprogram/subpackages/feature/identify/result/index.wxml',
+      (s) => s.replace(/closable="\{\{true\}\}"/, 'closable="{{false}}"')],
     ['弹层组件删掉关闭按钮', D.wxml, (s) => s.replace(/bindtap="onClose"/, '')],
     ['礼赠注册卡勾选默认为已勾（「无感」= 默认同意）', G.js, (s) => s.replace('agreed: false,', 'agreed: true,')],
     ['礼赠注册卡授权按钮去掉勾选门控', G.wxml, (s) => s.replace('wx:if="{{agreed}}"', 'wx:if="{{true}}"')],
