@@ -343,7 +343,7 @@
   color: #E8D6A8;
   background: transparent;
   border: 0;
-  border-radius: 0;
+  /* radius:object */ border-radius: 0;
   box-shadow: none;
   letter-spacing: 0.04em;
 }
@@ -372,7 +372,7 @@
 /* 卡纸裱照：米白卡纸 + 底边留宽（像相片卡）+ 微斜 + 落影 */
 .wl-entry-mat { position: relative; flex-shrink: 0; padding: 8rpx 8rpx 18rpx; background: linear-gradient(170deg, #F6F0E2, #E6DCC6); border-radius: 4rpx; box-shadow: 0 10rpx 22rpx rgba(0, 0, 0, 0.5), inset 0 0 0 1rpx rgba(138, 117, 48, 0.25); transform: rotate(-3deg); }
 .wl-entry-mat::after { content: ''; position: absolute; top: -6rpx; left: 50%; width: 12rpx; height: 12rpx; margin-left: -6rpx; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #F0E6CC, #A8903C 70%); box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.45); }
-.wl-entry-thumb { display: block; width: 112rpx; height: 112rpx; border-radius: 2rpx; background: #0E0D0B; }
+.wl-entry-thumb { display: block; width: 112rpx; height: 112rpx; border-radius: var(--r-thumb-sm, 8rpx); background: #0E0D0B; }
 .wl-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
 .wl-entry-kicker { font-family: var(--font-mono); font-size: var(--fs-18); line-height: 26rpx; letter-spacing: 0.32em; color: var(--brass-400); white-space: nowrap; }
 .wl-entry-title { margin-top: 4rpx; font-family: var(--font-brand); font-size: var(--fs-36); line-height: 48rpx; font-weight: 500; letter-spacing: 0.12em; color: #F7F1E4; white-space: nowrap; }

@@ -30,7 +30,7 @@
   margin-bottom: var(--space-3);
   padding: 20rpx 20rpx 16rpx;
   background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
-  border-radius: 4rpx;
+  border-radius: var(--r-card, 16rpx);
   box-shadow: inset 0 0 0 1rpx rgba(46, 38, 24, 0.22), 0 8rpx 20rpx rgba(0, 0, 0, 0.35);
 }
 .punch-head {
@@ -62,7 +62,7 @@
   align-items: center;
   gap: 10rpx;
   padding: 10rpx 0 8rpx;
-  border-radius: 2rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
   box-shadow: inset 0 0 0 1rpx rgba(46, 38, 24, 0.12);
 }
 .punch-cell.today { box-shadow: inset 0 0 0 2rpx #B08D57; }

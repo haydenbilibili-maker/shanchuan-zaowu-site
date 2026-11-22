@@ -266,7 +266,7 @@ button.nav-share-btn::after { display: none; border: none; }
   width: 48rpx;
   height: 4rpx;
   background: var(--color-primary);
-  border-radius: 2rpx;
+  /* radius:object */ border-radius: 2rpx;
 }
 .tab-count { font-size: var(--fs-22); margin-left: 4rpx; }
 

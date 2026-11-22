@@ -569,7 +569,7 @@ page {
   background: transparent;
   border: none;
   border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
-  border-radius: 0;
+  /* radius:object */ border-radius: 0;
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .item-accent {
   display: none;
@@ -1256,7 +1256,7 @@ page {
   background: transparent;
   border: none;
   border-bottom: 4rpx solid transparent;
-  border-radius: 0;
+  /* radius:object */ border-radius: 0;
 }
 
 .queue-customer .filter-pill text {
@@ -1334,7 +1334,7 @@ page {
 }
 
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .mg-thumb {
-  border-radius: 4rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
 }
 
 /* 信封记号（2026-10-18）：未读 = 封好的信封 + 一点火漆；已读 = 封口朝上敞开、颜色退一档 */
