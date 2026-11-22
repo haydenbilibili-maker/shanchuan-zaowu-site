@@ -976,6 +976,20 @@
       "installDependency": true
     },
     {
+      "name": "generateUrlLink",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "getClaimableCoupons",
+      "timeout": 20,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "wishRitualProfile",
       "timeout": 20,
       "runtime": "Nodejs16.13",
@@ -1005,6 +1019,13 @@
     },
     {
       "name": "dailyDigest",
+      "timeout": 60,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
+      "name": "issueCampaignCoupon",
       "timeout": 60,
       "runtime": "Nodejs16.13",
       "handler": "index.main",

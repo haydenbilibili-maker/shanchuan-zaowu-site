@@ -689,6 +689,7 @@ Page({
         userCouponId: pick._id || '',
         title: pick.title || '',
         value: Number(pick.value) || 0,
+        type: pick.type || '',
         minSpend: Number(pick.minSpend) || 0,
         amount: ''
       },
@@ -956,6 +957,7 @@ Page({
         userCouponId: id,
         title: ds.title || '',
         value: Number(ds.value) || 0,
+        type: ds.type || '',
         minSpend: Number(ds.min) || 0
       },
       'memberPassResult.couponPrefill': !!(preferred && id && preferred === id)
@@ -1072,7 +1074,8 @@ Page({
           titleLamp: 'blink',
           sub: [
             result.title,
-            result.value != null ? `抵 ¥${result.value}` : ''
+            result.value == null ? ''
+              : (form.type === 'discount' ? `${result.value}折（请按折扣收款）` : `抵 ¥${result.value}`)
           ].filter(Boolean).join(' · '),
           pointsStatus,
           pointsTitle,

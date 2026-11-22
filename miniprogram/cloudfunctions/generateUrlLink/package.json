@@ -1,0 +1,9 @@
+{
+  "name": "generateUrlLink",
+  "version": "1.0.0",
+  "description": "小程序 URL Link 生成（urllink.generate，仅超管 / ADMIN_OPS_KEY），短信等微信外渠道用",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

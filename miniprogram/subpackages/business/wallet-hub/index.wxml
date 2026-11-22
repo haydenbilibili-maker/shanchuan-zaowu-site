@@ -18,6 +18,7 @@
     <wallet-panel-coupons
       wx:if="{{curTab === 'coupons'}}"
       id="panel-coupons"
+      from="{{from}}"
       bind:couponcount="onCouponCount"
     ></wallet-panel-coupons>
     <wallet-panel-wallet

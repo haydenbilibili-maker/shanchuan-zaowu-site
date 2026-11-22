@@ -10,6 +10,43 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+const DAY_MS = 24 * 60 * 60 * 1000
+// 每人限领计数：locked（挂在待支付单上）也算已领，否则下单后可再领一张
+const HELD_STATUSES = ['unused', 'available', 'locked', 'used']
+
+/** 模板时刻字段 → Date；Date / ISO（须带时区）/ 毫秒 / {$date} 均可，无法解析返回 null */
+function toInstant(raw) {
+  if (raw == null || raw === '') return null
+  const v = raw && typeof raw === 'object' && !(raw instanceof Date) && raw.$date != null ? raw.$date : raw
+  const d = v instanceof Date ? new Date(v.getTime()) : new Date(v)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/**
+ * 用户券到期时刻。
+ * 模板有 fixedExpireTime（活动统一截止）→ 取它；同时有 expireDays → 取二者较早者。
+ * 没有 fixedExpireTime 的旧模板：expireDays → 领取后 N 天，否则模板 expireTime，否则 30 天（与原逻辑逐字同义）。
+ */
+function resolveUserCouponExpire(coupon, nowMs) {
+  const fixed = toInstant(coupon.fixedExpireTime)
+  if (fixed) {
+    if (coupon.expireDays) {
+      const byDays = new Date(nowMs + coupon.expireDays * DAY_MS)
+      return byDays.getTime() < fixed.getTime() ? byDays : fixed
+    }
+    return fixed
+  }
+  return coupon.expireDays
+    ? new Date(nowMs + coupon.expireDays * DAY_MS)
+    : (coupon.expireTime || new Date(nowMs + 30 * DAY_MS))
+}
+
+/** limitPerUser=1 的活动券用确定性 _id：并发双击只能写进一条 */
+function campaignUserCouponId(couponId, openid) {
+  const id = `cw_${couponId}_${openid}`
+  return /^[\w-]{1,64}$/.test(id) ? id : ''
+}
+
 /**
  * 优惠券领取功能
  * 支持：自动发放、手动领取、分享领取
@@ -64,6 +101,11 @@ exports.main = async (event, context) => {
         msg: '优惠券已过期'
       }
     }
+    if (coupon.fixedExpireTime != null && coupon.fixedExpireTime !== '') {
+      const fixed = toInstant(coupon.fixedExpireTime)
+      if (!fixed) return { success: false, msg: '优惠券配置异常，请稍后再试' }
+      if (fixed.getTime() <= now.getTime()) return { success: false, msg: '优惠券已过期' }
+    }
 
     // 3. 检查库存
     if (coupon.totalStock !== undefined && coupon.totalStock <= 0) {
@@ -79,7 +121,7 @@ exports.main = async (event, context) => {
         .where({
           _openid: openid,
           couponId: couponId,
-          status: _.in(['unused', 'used']) // 已使用和未使用的都算已领取
+          status: _.in(HELD_STATUSES)
         })
         .count()
 
@@ -116,9 +158,7 @@ exports.main = async (event, context) => {
     }
 
     // 6. 创建用户优惠券记录
-    const expireTime = coupon.expireDays 
-      ? new Date(Date.now() + coupon.expireDays * 24 * 60 * 60 * 1000)
-      : (coupon.expireTime || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
+    const expireTime = resolveUserCouponExpire(coupon, Date.now())
 
     const parseMinSpend = (coupon) => {
       if (coupon.minSpend != null && coupon.minSpend !== '') {
@@ -177,9 +217,21 @@ exports.main = async (event, context) => {
       stackable: coupon.stackable === true
     }
 
-    const addRes = await db.collection('user_coupons').add({
-      data: userCouponData
-    })
+    const fixedId = toInstant(coupon.fixedExpireTime) && Number(coupon.limitPerUser) === 1
+      ? campaignUserCouponId(couponId, openid)
+      : ''
+    let addRes
+    try {
+      addRes = await db.collection('user_coupons').add({
+        data: fixedId ? { ...userCouponData, _id: fixedId } : userCouponData
+      })
+    } catch (addErr) {
+      if (fixedId) {
+        const dup = await db.collection('user_coupons').where({ _id: fixedId }).count().catch(() => null)
+        if (dup && dup.total > 0) return { success: false, msg: `每人限领${coupon.limitPerUser}张` }
+      }
+      throw addErr
+    }
 
     // 7. 扣减优惠券库存
     if (coupon.totalStock !== undefined) {

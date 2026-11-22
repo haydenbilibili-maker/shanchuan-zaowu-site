@@ -18,6 +18,7 @@ const {
 } = require('../../../../utils/passRedeemFeedback')
 // 同分包模块一律**同步** require（分包异步化只用于跨包；且见下方 drawPassQr 的事故注释）
 const { drawMemberQr } = require('../../utils/qrCanvas')
+const { decorateClaimable, isClaimLimitMsg } = require('../../utils/claimableCoupons')
 
 /** 二维码绘制重试：失败要有限次，且**用尽后必须落到可见的 error 态** */
 const DRAW_RETRY_MAX = 4
@@ -119,6 +120,10 @@ const _pageCfg = {
     expiringCount: 0,
     expiringDays: EXPIRING_SOON_DAYS,
 
+    // 可领取区块（getClaimableCoupons）：空数组 = 整块不渲染
+    claimables: [],
+    claimingId: '',
+
     // 双渠道选择底栏
     showUseSheet: false,
     sheetCoupon: null,
@@ -139,6 +144,7 @@ const _pageCfg = {
 
   onShow() {
     this.loadCoupons()
+    this.loadClaimables()
     this.refreshEmptyCta()
     // 息屏/切后台后回来：保持弹层，恢复倒计时与核销轮询
     if (this.data.showPassModal && this.data.passState !== 'redeemed') {
@@ -161,6 +167,8 @@ const _pageCfg = {
       needOnboarding: false,
       emptyCtaText: '重新进入',
       coupons: [],
+      claimables: [],
+      claimingId: '',
       usableCouponCount: 0,
       lockedCoupons: [],
       lockedCount: 0,
@@ -275,6 +283,93 @@ const _pageCfg = {
     } finally {
       this._loadingCoupons = false
     }
+  },
+
+  /**
+   * 可领取区块取数。只读：发券只能由 onClaimTap（用户点击）触发。
+   * 失败一律不显示区块，不影响下方券夹；本次会话已就地领取的卡保留「已领取」直到面板销毁。
+   */
+  async loadClaimables() {
+    if (this._loadingClaimables) return
+    if (isLocalLoggedOut()) {
+      this.setData({ claimables: [], claimingId: '' })
+      return
+    }
+    this._loadingClaimables = true
+    const expose = !this._claimExposed
+    const keepClaimed = () => (this.data.claimables || []).filter((c) => c.claimed)
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'getClaimableCoupons',
+        data: { action: 'list', from: this.data.from || '', expose }
+      })
+      if (isLocalLoggedOut()) return
+      const r = (res && res.result) || {}
+      const fresh = r.success && Array.isArray(r.list) ? r.list.map(decorateClaimable) : []
+      const kept = keepClaimed().filter((c) => !fresh.some((x) => x._id === c._id))
+      if (expose && fresh.length) this._claimExposed = true
+      this.setData({ claimables: kept.concat(fresh) })
+    } catch (e) {
+      this.setData({ claimables: keepClaimed() })
+    } finally {
+      this._loadingClaimables = false
+    }
+  },
+
+  async onClaimTap(e) {
+    const id = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.id) || '')
+    const list = this.data.claimables || []
+    const item = list.find((c) => c._id === id)
+    if (!id || !item || item.claimed || this._claiming) return
+    if (isLocalLoggedOut()) {
+      this.goResumeLogin()
+      return
+    }
+    this._claiming = true
+    softVibrate('light')
+    const at0 = list.indexOf(item)
+    this.setData({ claimingId: id, [`claimables[${at0}].claimError`]: '' })
+
+    let ok = false
+    let msg = ''
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'receiveCoupon',
+        data: { couponId: id, receiveType: 'manual' }
+      })
+      const r = (res && res.result) || {}
+      ok = r.success === true
+      msg = ok ? '' : (r.msg || '领取失败，请稍后重试')
+    } catch (err) {
+      msg = '网络异常，请稍后重试'
+    }
+    this._claiming = false
+
+    const full = !ok && isClaimLimitMsg(msg)
+    const at = (this.data.claimables || []).findIndex((c) => c._id === id)
+    const patch = { claimingId: '' }
+    if (at >= 0) {
+      patch[`claimables[${at}].claimed`] = ok || full
+      patch[`claimables[${at}].claimError`] = ok || full ? '' : msg
+    }
+    if (ok) {
+      Object.assign(patch, {
+        toastShow: true,
+        toastOverline: 'VOUCHER',
+        toastTitle: '领取成功',
+        toastDesc: '已放入下方「可用」礼券'
+      })
+    }
+    this.setData(patch)
+    if (ok) {
+      // loadCoupons 自带重入锁：正在加载时这次刷新会被吞掉，稍后补一次
+      if (this._loadingCoupons) setTimeout(() => this.loadCoupons(), 800)
+      else this.loadCoupons()
+    }
+    wx.cloud.callFunction({
+      name: 'getClaimableCoupons',
+      data: { action: 'track', couponId: id, from: this.data.from || '', ok, msg }
+    }).catch(() => {})
   },
 
   /** 需求 7：展开/收起失效券券包 */
@@ -681,6 +776,7 @@ const _pageCfg = {
       wx.hideLoading()
       this.setData({ needLogin: false })
       await this.loadCoupons()
+      this.loadClaimables()
       this.refreshEmptyCta()
       // 主视觉铭牌提示（原生 toast 与界面脱节）；失败分支仍是原样 toast
       this.showWelcomeBack('你的礼券已恢复')
@@ -729,6 +825,10 @@ Object.keys(_pageCfg).forEach((k) => { if (k !== 'data') _methods[k] = _pageCfg[
  */
 Component({
   options: { addGlobalClass: true },
+  properties: {
+    /** 入口渠道（宿主页 options.from，如 sms1111），只用于可领取区块的曝光/领取埋点 */
+    from: { type: String, value: '' }
+  },
   data: Object.assign({}, _pageCfg.data, {
     toastShow: false,
     toastOverline: 'WELCOME BACK',
