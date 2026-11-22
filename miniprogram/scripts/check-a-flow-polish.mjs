@@ -362,9 +362,10 @@ function checks(s) {
     /\n\.form-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
       !/\n\.channel-item \{[^}]*border-radius/.test(s.supportWxss))
   // 2026-10-18 搜索「检索台」
-  add('R18-1 搜索结果为发丝线行、分类为下划线页签、签为方角（不再是圆角卡 / 胶囊），颗粒层退场',
+  // 2026-11-22 圆角融合（产品负责人确认方向）：签由方角改为胶囊（var(--r-pill)），结果行与页签不变
+  add('R18-1 搜索结果为发丝线行、分类为下划线页签、签为胶囊（圆角融合：标签一律胶囊），颗粒层退场',
     !/\n\.archive-card \{[^}]*border-radius/.test(s.searchWxss) && /\n\.filter-pill \{[^}]*border-bottom: 3rpx solid transparent/.test(s.searchWxss) &&
-      !/9999px/.test(s.searchWxss) && !/grain-overlay/.test(s.searchWxml) && !/font-style: italic;\n  color: var\(--brass-400/.test(s.searchWxss))
+      /\n\.chip \{[^}]*border-radius: var\(--r-pill, 999rpx\);/.test(s.searchWxss) && !/grain-overlay/.test(s.searchWxml) && !/font-style: italic;\n  color: var\(--brass-400/.test(s.searchWxss))
   // 2026-10-18 主播工作台（员工端，产品负责人点名）
   add('R19-1 主播工作台：主播职责为发丝线行（非圆角卡）、「下一步」为浅纸指引签、流程为下划线；员工端红 / 黄语义色保留',
     !/\n\.module-card \{[^}]*border-radius/.test(s.liveWxss) && /\n\.next-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.liveWxss) &&
@@ -1013,11 +1014,12 @@ function checks(s) {
         V.buildView({ pledgeFen: 0, rows: [] }, 'x').hero.empty === true &&
         V.pickRows(Array.from({ length: 25 }, (_, i) => ({ id: i, year: 2026 })), 'all', 20).more === true
     } catch (e) { vok = false }
-    add('R60-3 我的捐赠页：基金名「山海造物公益基金」，与下单页 / 品牌故事（onePercentPledge）同名；讲清不另收费与以年度报告为准；不编造换算；分享不带个人金额',
+    add('R60-3 我的捐赠页：铭牌水印 ❤️；基金名「山海造物公益基金」，与下单页 / 品牌故事（onePercentPledge）同名；讲清不另收费与以年度报告为准；不编造换算；分享不带个人金额',
       vok && C.FUND_NAME === '山海造物公益基金' && C.FUND_NAME === P.ONE_PERCENT_FUND_NAME &&
         [P.ONE_PERCENT_PLEDGE_SUMMARY, P.ONE_PERCENT_PLEDGE_NOTE, P.calcPledgeAmount(100).line, P.calcPledgeAmount(0).line].every((t) => t.includes(C.FUND_NAME)) && /不另向您收取/.test(C.NO_EXTRA) && /以年度捐赠报告为准/.test(C.FOOT) &&
         !/棵树|相当于/.test(s.dnCopy) && /onShareAppMessage\(\) \{[\s\S]{0,120}title: copy\.SHARE_TITLE, path: '\/subpackages\/business\/donations\/index' \}/.test(s.dnJs) &&
-        /wx:elif="\{\{phase === 'guest'\}\}"/.test(s.dnWxml) && /bindtap="onRetry"/.test(s.dnWxml))
+        /wx:elif="\{\{phase === 'guest'\}\}"/.test(s.dnWxml) && /bindtap="onRetry"/.test(s.dnWxml) &&
+        /<text class="dn-plaque-mark" aria-hidden="true">❤️<\/text>/.test(s.dnWxml))
     add('R60-4 钱包入口：登录态第一张卡进「我的捐赠」；合计只取 summaryOnly；页面已登记分包',
       /<view class="sv-giving" bindtap="goDonations"/.test(s.walletWxml) &&
         /goDonations\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/business\/donations\/index' \}\)/.test(s.walletJs) &&
@@ -1097,7 +1099,7 @@ if (process.argv.includes('--selftest')) {
     ['留言提交回到实心金', 'supportWxss', (t) => t.replace('  background: transparent !important;\n  box-shadow: inset 0 0 0 2rpx #8B6F47;', '  background: var(--brass-400) !important;\n  box-shadow: inset 0 0 0 2rpx #8B6F47;')],
     ['联系方式回到圆角卡', 'supportWxss', (t) => t.replace('  padding: 28rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n}\n\n.channel-info', '  padding: 28rpx 4rpx;\n  border-radius: 24rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n}\n\n.channel-info')],
     ['搜索结果回到圆角卡', 'searchWxss', (t) => t.replace('  padding: 24rpx 0;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n  box-sizing: border-box;\n  overflow: hidden;', '  padding: 24rpx 0;\n  border-radius: 24rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);\n  box-sizing: border-box;\n  overflow: hidden;')],
-    ['搜索签回到胶囊', 'searchWxss', (t) => t.replace('  min-height: 56rpx;\n  padding: 0;\n  border-radius: 2rpx;', '  min-height: 56rpx;\n  padding: 0;\n  border-radius: 9999px;')],
+    ['搜索签回到方角', 'searchWxss', (t) => t.replace('  min-height: 56rpx;\n  padding: 0;\n  border-radius: var(--r-pill, 999rpx);', '  min-height: 56rpx;\n  padding: 0;\n  border-radius: 2rpx;')],
     ['主播职责回到大圆角卡', 'liveWxss', (t) => t.replace('  padding: 26rpx 8rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 26rpx 8rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
     ['在播步骤丢了红色语义', 'liveWxss', (t) => t.replace('.flow-step-btn.on-air {\n  border-bottom-color: var(--color-error);', '.flow-step-btn.on-air {\n  border-bottom-color: var(--brass-400);')],
     ['标本师入口回到大圆角卡', 'artisanWxss', (t) => t.replace('  padding: 24rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 24rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
@@ -1229,6 +1231,7 @@ if (process.argv.includes('--selftest')) {
     ['纸张动画改了时长没同步', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s', 'animation: cp-feed 2.4s')],
     ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
     ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
+    ['捐赠铭牌水印改回 1% 文字', 'dnWxml', (t) => t.replace('aria-hidden="true">❤️</text>', 'aria-hidden="true">1%</text>')],
     ['钱包入口被删', 'walletWxml', (t) => t.replace('<view class="sv-giving" bindtap="goDonations"', '<view class="sv-giving"')],
   ]
   let ok = baseOk

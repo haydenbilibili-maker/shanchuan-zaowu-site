@@ -1,9 +1,9 @@
 <!-- 我的捐赠：① 公益铭牌（金额）② 规则 ③ 1% 如何流动 ④ 去向 ⑤ 年度 ⑥ 逐笔明细 ⑦ 问答 -->
 <view class="dn-page">
 
-  <!-- ① 公益铭牌：页面主角。底纹是一枚放大的「1%」 -->
+  <!-- ① 公益铭牌：页面主角。底纹是一枚放大的 ❤️（2026-11-22 产品负责人点名，原为「1%」文字） -->
   <view class="dn-plaque">
-    <text class="dn-plaque-mark" aria-hidden="true">1%</text>
+    <text class="dn-plaque-mark" aria-hidden="true">❤️</text>
     <view class="dn-plaque-head">
       <text class="dn-overline">{{copy.OVERLINE}}</text>
       <text class="dn-slogan">{{copy.SLOGAN}}</text>

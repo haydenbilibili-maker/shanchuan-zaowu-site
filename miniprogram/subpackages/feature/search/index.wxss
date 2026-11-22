@@ -390,7 +390,7 @@ page {
   box-sizing: border-box;
 }
 
-/* 热门 / 最近：方角发丝签（原金边胶囊） */
+/* 热门 / 最近：发丝胶囊签（2026-11-22 圆角融合：标签一律胶囊；10-18 曾为方角） */
 .chip {
   display: inline-flex;
   align-items: center;
