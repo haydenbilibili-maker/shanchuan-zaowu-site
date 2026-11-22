@@ -150,6 +150,8 @@ const FILES = {
   staffHubJs: 'subpackages/extra/staff/index.js',
   certPageWxml: 'subpackages/business/certificate/index.wxml',
   certPageWxss: 'subpackages/business/certificate/index.wxss',
+  certPageJs: 'subpackages/business/certificate/index.js',
+  certTimingJs: 'subpackages/business/certificate/certPrintTiming.js',
   customJs: 'subpackages/feature/custom/index.js',
   customWxml: 'subpackages/feature/custom/index.wxml',
   dnLedger: 'cloudfunctions/getMyDonations/donationLedger.js',
@@ -759,7 +761,7 @@ function checks(s) {
   }
   // 2026-10-19 产品负责人「正在铸造改为正在打印，打印机动画参考预约打印与代金券打印」
   add('R43-1 证书加载：文案「正在打印专属证书…」，同款打印机（顶杆 + 出纸口 + 三灯）循环出纸 + 往复进度条；不再是转圈 / 「铸造」',
-    /<text class="mint-txt">正在打印专属证书…<\/text>/.test(s.certPageWxml) && !/铸造/.test(s.certPageWxml.replace(/<!--[\s\S]*?-->/g, '')) &&
+    /<text class="mint-txt">\{\{printDone \? '打印完成' : '正在打印专属证书…'\}\}<\/text>/.test(s.certPageWxml) && !/铸造/.test(s.certPageWxml.replace(/<!--[\s\S]*?-->/g, '')) &&
       /<view class="cp-machine">[\s\S]*?<view class="cp-slot"><\/view>[\s\S]*?<view class="cp-lights">/.test(s.certPageWxml) &&
       /animation: cp-feed 3\.2s [^;]*infinite;/.test(s.certPageWxss) && !/mint-spinner/.test(s.certPageWxml))
   add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
@@ -1021,6 +1023,23 @@ function checks(s) {
         /goDonations\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/business\/donations\/index' \}\)/.test(s.walletJs) &&
         /name: 'getMyDonations', data: \{ summaryOnly: true \}/.test(s.walletJs) && /"donations\/index"/.test(s.appJson))
   }
+  // R62 证书打印动画收尾（2026-11-22 产品负责人「动画很好但是时间特别快，还没看清楚就跳到证书页」）
+  {
+    const T = loadCjs(s.certTimingJs)
+    let ok = false
+    try {
+      const w = T.printWaitMs
+      // 一圈 3200：整张停住窗口 [2176, 2816)
+      ok = T.FEED_CYCLE_MS === 3200 && w(0) === 2176 && w(300) === 1876 && w(2200) === 0 && w(2816) === 2560 &&
+        w(3300) === 2076 && T.PRINT_HOLD_MS >= 800 && [0, 500, 1500, 2100].every((e) => e + w(e) >= 2176)
+    } catch (e) { ok = false }
+    const feed = (s.certPageWxss.match(/\.cp-paper \{[^}]*animation: cp-feed ([\d.]+)s/) || [])[1]
+    add('R62 证书打印：至少看完一整张纸、在整张停住时收尾，「打印完成」定格后再翻到证书；时长与 cp-feed 一致',
+      ok && Number(feed) * 1000 === T.FEED_CYCLE_MS &&
+        /this\.finishPrint\(\{ showCert: true \}\);/.test(s.certPageJs) && /this\.finishPrint\(\{ showCert: true \}, \(\) => wx\.vibrateLong\(\)\);/.test(s.certPageJs) &&
+        !/isMinting: false, showCert: true/.test(s.certPageJs) && /onUnload\(\) \{\s*this\._unloaded = true;\s*clearTimeout\(this\._printTimer\);/.test(s.certPageJs) &&
+        /<view class="minting-layer \{\{printDone \? 'is-done' : ''\}\}"/.test(s.certPageWxml) && /\.minting-layer\.is-done \.cp-paper \{ animation: none;/.test(s.certPageWxss))
+  }
   // R61 钱包 / 积分 tab 顶部卡同一规格（2026-11-22 产品负责人「切换会导致视觉偏移」）：距顶栏 32rpx、高 440rpx、左右 32rpx
   {
     const blk = (src, sel) => (src.match(new RegExp('\\n' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\{[^}]*\\}')) || [''])[0]
@@ -1205,6 +1224,9 @@ if (process.argv.includes('--selftest')) {
     ['下单页基金名与我的捐赠不一致', 'dnPledge', (t) => t.replace("const ONE_PERCENT_FUND_NAME = '山海造物公益基金'", "const ONE_PERCENT_FUND_NAME = '山海万物公益基金'")],
     ['基金名被改', 'dnCopy', (t) => t.replace("const FUND_NAME = '山海造物公益基金'", "const FUND_NAME = '山海公益'")],
     ['分享带上个人金额', 'dnJs', (t) => t.replace('title: copy.SHARE_TITLE,', 'title: `我已捐 ¥${this.data.heroAmount}`,')],
+    ['已签发证书又秒切', 'certPageJs', (t) => t.replace("this.setData({ certImageUrl: url });\n          this.finishPrint({ showCert: true });", "this.setData({ certImageUrl: url, isMinting: false, showCert: true });")],
+    ['打印收尾不等整张纸', 'certTimingJs', (t) => t.replace('if (phase < from) return Math.round(from - phase)', 'if (phase < from) return 0')],
+    ['纸张动画改了时长没同步', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s', 'animation: cp-feed 2.4s')],
     ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
     ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
     ['钱包入口被删', 'walletWxml', (t) => t.replace('<view class="sv-giving" bindtap="goDonations"', '<view class="sv-giving"')],

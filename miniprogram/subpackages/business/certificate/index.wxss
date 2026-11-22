@@ -164,6 +164,11 @@ view, text, image, button { box-sizing: border-box; }
   100% { transform: translateX(250%); }
 }
 
+/* 打印收尾（2026-11-22）：纸定格在整张吐出的位置、进度条走满、出纸口停止呼吸，停一拍再翻到证书 */
+.minting-layer.is-done .cp-paper { animation: none; transform: translateY(0); opacity: 1; }
+.minting-layer.is-done .cp-slot { animation: none; opacity: 1; }
+.minting-layer.is-done .cp-progress-bar { animation: none; width: 100%; transform: none; transition: width 0.3s var(--ease-standard); }
+
 /* 证书展示层 */
 .cert-layer {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
