@@ -98,6 +98,14 @@ async function run(inject) {
   ok(page.data.filter === 'all' && page.data.filtered.map((c) => c.no).join(',') === '031', 'D 选卷章须回到全部门类并只看这一章')
   page.onFilter({ currentTarget: { dataset: { id: '昆虫' } } })
   ok(page.data.seriesFilter === '' && page.data.filtered.length === 3, 'D 选门类须清掉卷章筛选')
+  // F 只看已翻开（2026-11-22）：只留点亮页、与门类叠加、「看全部」一并清掉
+  page.onFilter({ currentTarget: { dataset: { id: 'all' } } })
+  page.onToggleOnlyLit()
+  ok(page.data.onlyLit === true && page.data.filtered.map((c) => c.no).join(',') === '004,031,041', 'F 只看已翻开：须只剩点亮的页（仍按编号）')
+  page.onFilter({ currentTarget: { dataset: { id: '昆虫' } } })
+  ok(page.data.filtered.map((c) => c.no).join(',') === '004', 'F 只看已翻开须与门类叠加')
+  page.clearFilters()
+  ok(page.data.onlyLit === false && page.data.filtered.length === 5, 'F 「看全部」须一并关掉只看已翻开')
   return fails
 }
 
@@ -107,6 +115,7 @@ function apply(src, inj) {
 }
 
 const INJECTIONS = [
+  { name: '只看已翻开不再过滤', file: P.page, find: 'if (onlyLit && !c.unlocked) return false', replace: '' },
   { name: '物种漏登记版式', file: P.plates, find: "'041': 'quartz', ", replace: '' },
   { name: '未点亮也给图', file: P.plates, find: '  if (!card || !card.unlocked) return \'\'\n', replace: "  if (!card) return ''\n" },
   { name: '标本册回到点亮优先', file: P.page, find: "    cards.sort((a, b) => String(a.no).localeCompare(String(b.no), 'en', { numeric: true }))", replace: "    cards.sort((a, b) => (!!a.unlocked !== !!b.unlocked ? (a.unlocked ? -1 : 1) : String(a.no).localeCompare(String(b.no), 'en', { numeric: true })))" },

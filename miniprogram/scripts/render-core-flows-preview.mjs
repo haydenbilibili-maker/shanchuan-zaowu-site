@@ -442,6 +442,7 @@ const SCENES = [
       rewards: [{ _id: 'r1', title: '黄铜书签', description: '蚀刻闪蝶纹样', cost: 800, stock: 12, type: 'physical', image: P[3] }, { _id: 'r2', title: '¥30 礼券', description: '全场满 199 可用', cost: 3000, stock: 99, type: 'coupon', image: P[4] }]
     }
   },
+  { name: 'atlas-onlylit', base: 'atlas', h: 2200, wxml: 'subpackages/feature/collection/index', data: { onlyLit: true, filtered: atlasCards.filter((c) => c.unlocked) } },
   {
     name: 'atlas', h: 9600, wxml: 'subpackages/feature/collection/index', data: {
       loading: false, loadError: false, offline: false, cards: atlasCards, filtered: atlasCards, stats: atlasStats,

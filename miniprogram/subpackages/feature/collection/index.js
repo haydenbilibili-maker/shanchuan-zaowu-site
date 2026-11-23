@@ -32,6 +32,8 @@ function nextHintOf(cards, stats, offline) {
     : `还差 ${total - got} 页。拍下一件标本，也许就是下一页。`
 }
 
+
+const ONLY_LIT_KEY = 'atlas_only_lit_v1'
 Page({
   data: {
     loading: true,
@@ -50,12 +52,17 @@ Page({
     recentNotes: [],
     unlockSheet: emptyUnlockSheet(),
     filterEmpty: false,
+    /** 「只看已翻开」（2026-11-22 图鉴扩到 80 页后，标本册约 27 行）：本机记住 */
+    onlyLit: false,
     catalogEmpty: false,
     skelPlates: [1, 2, 3, 4, 5, 6, 7, 8, 9]
   },
 
   onLoad(options) {
     this._pendingSpot = parseEnterSpot(options)
+    try {
+      if (wx.getStorageSync && wx.getStorageSync(ONLY_LIT_KEY)) this.setData({ onlyLit: true })
+    } catch (e) { /* 读不到就按默认看全部 */ }
     trackBehavior('atlas_view', 'atlas', 'index', {})
     this.loadDisplayFlags()
   },
@@ -149,7 +156,9 @@ Page({
 
   applyFilter() {
     const { cards, filter, seriesFilter, stats } = this.data
+    const onlyLit = !!this.data.onlyLit
     const filtered = cards.filter((c) => {
+      if (onlyLit && !c.unlocked) return false
       if (filter !== 'all' && c.category !== filter) return false
       if (seriesFilter && (c.seriesIds || []).indexOf(seriesFilter) === -1) return false
       return true
@@ -217,9 +226,18 @@ Page({
     wx.navigateTo({ url: '/subpackages/feature/collection/log/index?tab=notes' })
   },
 
+  /** 只看已翻开：与门类 / 卷章叠加；详页翻页也随之只在已翻开的页之间翻（rememberOrder 用的是 filtered） */
+  onToggleOnlyLit() {
+    const onlyLit = !this.data.onlyLit
+    try {
+      if (wx.setStorageSync) wx.setStorageSync(ONLY_LIT_KEY, onlyLit)
+    } catch (e) { /* 记不住不影响本次切换 */ }
+    this.setData({ onlyLit }, () => this.applyFilter())
+  },
+
   clearFilters() {
     this.setData(
-      { filter: 'all', seriesFilter: '', seriesBlurb: '' },
+      { filter: 'all', seriesFilter: '', seriesBlurb: '', onlyLit: false },
       () => this.applyFilter()
     )
   },
