@@ -30,7 +30,8 @@ const P = {
   careDefaults: resolve(MP, 'subpackages/feature/utils/careDefaults.js'),
   careHubJs: resolve(MP, 'subpackages/feature/care/index.js'),
   careGuideJs: resolve(MP, 'subpackages/feature/care/guide/index.js'),
-  careWxml: ['index', 'guide/index', 'my/index'].map((n) => resolve(MP, `subpackages/feature/care/${n}.wxml`))
+  careWxml: ['index', 'guide/index', 'my/index'].map((n) => resolve(MP, `subpackages/feature/care/${n}.wxml`)),
+  achievements: resolve(MP, 'cloudfunctions/getUserAchievements/index.js')
 }
 
 async function run(inject) {
@@ -106,6 +107,38 @@ async function run(inject) {
   ok(page.data.filtered.map((c) => c.no).join(',') === '004', 'F 只看已翻开须与门类叠加')
   page.clearFilters()
   ok(page.data.onlyLit === false && page.data.filtered.length === 5, 'F 「看全部」须一并关掉只看已翻开')
+
+  // G 全册归章（2026-11-23 产品负责人「图鉴已有 200，章节中数量不足 200」）：两份目录各自 200 页每页恰好一章、
+  //   章 → 页与页 → 章双向一致、两份目录章节完全相同；前三章页集与成就 ATLAS_SETS 逐一相同（成就绑定，不许动）
+  const cloud = load(P.cloudCatalog)
+  for (const [tag, cat] of [['小程序', catalog], ['云端', cloud]]) {
+    const owner = new Map()
+    let dupOrMiss = 0
+    cat.ATLAS_SERIES.forEach((sr) => sr.speciesIds.forEach((id) => {
+      const sp = cat.ATLAS_SPECIES.find((x) => x.id === id)
+      if (owner.has(id) || !sp || !(sp.seriesIds || []).includes(sr.id)) dupOrMiss += 1
+      owner.set(id, sr.id)
+    }))
+    const orphans = cat.ATLAS_SPECIES.filter((sp) => (sp.seriesIds || []).length !== 1 || owner.get(sp.id) !== sp.seriesIds[0]).map((sp) => sp.id)
+    ok(owner.size === cat.ATLAS_SPECIES.length && !dupOrMiss && !orphans.length,
+      `G ${tag}目录：${cat.ATLAS_SPECIES.length} 页里 ${owner.size} 页归了章，重复 / 双向不一致 ${dupOrMiss} 处，未归章或多章：${orphans.slice(0, 8).join(',')}`)
+  }
+  const chap = (cat) => JSON.stringify(cat.ATLAS_SERIES.map((sr) => [sr.id, sr.name, sr.speciesIds]))
+  ok(chap(catalog) === chap(cloud), 'G 小程序与云端两份目录的卷章不一致')
+  ok(catalog.ATLAS_SERIES.length % 3 === 0, `G 卷章卡三张一行：章数须为 3 的倍数（现在 ${catalog.ATLAS_SERIES.length}）`)
+  const ach = read(P.achievements)
+  const setOf = (k) => ((new RegExp(`${k}: \\[([^\\]]*)\\]`).exec(ach) || [])[1] || '').split(',').map((x) => x.trim().replace(/'/g, '')).filter(Boolean).join(',')
+  ok(['frost', 'overwinter', 'mountain'].every((id, i) => catalog.ATLAS_SERIES[i] && catalog.ATLAS_SERIES[i].id === id && catalog.ATLAS_SERIES[i].speciesIds.join(',') === setOf(`atlas_${id}`)),
+    'G 前三章（霜降守望 / 越冬者 / 守山者）页集须与成就 ATLAS_SETS 逐一相同')
+  // 刻度：最多 8 格一行、按比例点亮（翻开过至少 1 格、未翻满不全亮）
+  const pageSrc = read(P.page)
+  const at = pageSrc.indexOf('const PIP_MAX = ')
+  let pips = null
+  try { pips = new Function(pageSrc.slice(at, pageSrc.indexOf('\nPage({', at)) + '\nreturn chapterPips')() } catch (e) { pips = null }
+  const litN = (g, t) => (pips ? pips(g, t).filter((p) => p.lit).length : -1)
+  ok(!!pips && pips(5, 32).length === 8 && litN(5, 32) === 1 && litN(1, 32) === 1 && litN(31, 32) === 7 && litN(32, 32) === 8 && litN(0, 32) === 0 &&
+    pips(2, 4).length === 4 && litN(2, 4) === 2 && /pips: chapterPips\(sr\.got, sr\.total\)/.test(pageSrc),
+    'G 卷章刻度须最多 8 格一行、按比例点亮（翻开过至少 1 格、未翻满不全亮）')
   return fails
 }
 
@@ -125,6 +158,10 @@ const INJECTIONS = [
   { name: '养护品类漏版式', file: P.plates, find: "MINERALS: 'quartz', GENERAL: 'belljar',", replace: "MINERALS: 'quartz'," },
   { name: '养护页叠回 scroll-view', file: P.careWxml[2], find: '  <!-- 2026-10-17「养护手册」重构', replace: '  <scroll-view scroll-y class="main-scroll">\n  <!-- 2026-10-17「养护手册」重构' },
   { name: '章节跳转回到 scroll-into-view', file: P.careGuideJs, find: "    wx.pageScrollTo({ selector: `#section-${key}`, offsetTop: -16, duration: 300, fail: () => {} })", replace: "    this.setData({ scrollIntoView: `section-${key}` })" },
+  { name: '某页没归章', file: P.catalog, find: "    seriesIds: ['lode'],\n    aliases: ['辉锑矿'", replace: "    seriesIds: [],\n    aliases: ['辉锑矿'" },
+  { name: '云端目录卷章漂移', file: P.cloudCatalog, find: "  {\n    id: 'lode',\n    name: '矿脉',", replace: "  {\n    id: 'lode',\n    name: '矿石脉',", },
+  { name: '动了成就绑定的前三章', file: P.catalog, find: "speciesIds: ['001', '012', '028']", replace: "speciesIds: ['001', '012', '028', '009']" },
+  { name: '刻度按页数点亮', file: P.page, find: '  let lit = t <= PIP_MAX ? g : Math.round((g / t) * n)', replace: '  let lit = g' },
   { name: '版式不是合法 SVG', file: P.plates, find: "'\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\">' + SHAPES[key] + '</svg>'", replace: "'\" stroke-width=\"1.4\">' + SHAPES[key]" }
 ]
 

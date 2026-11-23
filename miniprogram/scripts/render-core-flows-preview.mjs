@@ -155,10 +155,22 @@ const atlasStats = { total: atlasCards.length, unlocked: atlasCards.filter((c) =
   { id: 'shellroad', name: '贝壳之路', got: 0, total: 6, complete: false },
   { id: 'deeptime', name: '深时', got: 0, total: 5, complete: false },
   { id: 'swallowtail', name: '燕尾', got: 0, total: 6, complete: false },
-  { id: 'refraction', name: '折光', got: 0, total: 6, complete: false }
+  { id: 'refraction', name: '折光', got: 0, total: 16, complete: false },
+  // 2026-11-23 全册归章：再加三章（总页数取真目录）
+  { id: 'wings', name: '翅影', got: 5, total: 32, complete: false },
+  { id: 'understory', name: '林下与孑遗', got: 0, total: 15, complete: false },
+  { id: 'lode', name: '矿脉', got: 2, total: 12, complete: false }
 ] }
 // 卷章刻度（2026-11-22，与页面 applyPack 同算法）
-atlasStats.series = atlasStats.series.map((sr) => ({ ...sr, pips: Array.from({ length: sr.total }, (_, i) => ({ i, lit: i < sr.got })) }))
+// 2026-11-23：刻度直接用页面的 chapterPips（最多 8 格、按比例点亮），各章总页数取真目录
+const atlasPageSrc = readFileSync(join(MP, 'subpackages/feature/collection/index.js'), 'utf8')
+const atlasPipAt = atlasPageSrc.indexOf('const PIP_MAX = ')
+const chapterPips = new Function(atlasPageSrc.slice(atlasPipAt, atlasPageSrc.indexOf('\nPage({', atlasPipAt)) + '\nreturn chapterPips')()
+atlasStats.series = atlasStats.series.map((sr) => {
+  const real = atlasCatalogMod.ATLAS_SERIES.find((x) => x.id === sr.id)
+  const total = real ? real.speciesIds.length : sr.total
+  return { ...sr, total, pips: chapterPips(sr.got, total) }
+})
 
 /** 2026-11-23 超管「博物君」：用真聚合（museumGuideMonitor.summarize）+ 真视图（monitorView.buildView）现算，样例日志为合成数据 */
 function museumGuideMonitorSceneData() {
