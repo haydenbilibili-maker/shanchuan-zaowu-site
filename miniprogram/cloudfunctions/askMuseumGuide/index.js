@@ -148,6 +148,19 @@ function parseReply(text) {
   return { answer, followUps, actions }
 }
 
+/**
+ * 这次该讲哪几种图鉴物种（2026-11-23 修：问「大蓝闪蝶」却出了上一条回答里的巴黎翠凤蝶 / 天堂凤蝶 ——
+ * 原来把问题和最近两条历史（含博物君自己的长回答）拼在一起按名字长短排，长名字压过了真正问的那一种）：
+ *   问题里点了名 → 只用问题里的；
+ *   问题里没点名（「它现在还活着吗」这类追问）→ 用**上一个访客问题**里的，不看博物君的回答。
+ */
+function speciesFor(question, history) {
+  const fromQ = matchSpecies(question, 3)
+  if (fromQ.length) return fromQ
+  const lastUser = (history || []).filter((h) => h.role === 'user').slice(-1)[0]
+  return lastUser ? matchSpecies(lastUser.content, 3) : []
+}
+
 /* ------------------------------ 外部调用 ------------------------------ */
 
 function httpsPostJson(path, body, headers) {
@@ -316,8 +329,7 @@ exports.main = async (event) => {
 
   // 先记一次（防并发刷量）；模型全挂时退回这一次
   await bumpUsage(usageId, OPENID, day, 1)
-  const recent = input.history.map((h) => h.content).slice(-2).join('\n')
-  const matched = matchSpecies(input.question + '\n' + recent, 3)
+  const matched = speciesFor(input.question, input.history)
   let reply
   let model = ''
   try {
@@ -349,4 +361,4 @@ exports.main = async (event) => {
   }, { model, species, actions: reply.actions, aLen: reply.answer.length })
 }
 
-exports._test = { VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }
+exports._test = { speciesFor, VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }
