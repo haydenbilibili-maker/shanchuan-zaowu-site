@@ -98,4 +98,19 @@ function buildView(d) {
   }
 }
 
-module.exports = { DAILY_LIMIT_OPTIONS, FAIL_LABELS, PLACE_LABELS, ENTRY_LABELS, buildView, msText, shortDay }
+/** 错误 → 给运营看的一句话（2026-11-23：原先把 errMsg 原文连堆栈一起渲染给超管了） */
+const ERROR_NOT_DEPLOYED = '监测函数还没部署，请在开发者工具里上传 museumGuideMonitor'
+const ERROR_TIMEOUT = '报表算得有点久，超时了；过一会儿再试'
+const ERROR_NETWORK = '网络不太稳，没能取回报表'
+const ERROR_GENERIC = '暂时取回报表失败，过一会儿再试'
+
+function friendlyError(err) {
+  if (err && err.business) return String(err.message || ERROR_GENERIC)
+  const s = String((err && (err.errMsg || err.message)) || err || '')
+  if (/FUNCTION_NOT_FOUND|FunctionName parameter could not be found|-505005/i.test(s)) return ERROR_NOT_DEPLOYED
+  if (/timeout|timed out|超时/i.test(s)) return ERROR_TIMEOUT
+  if (/network|request:fail|errCode: -1\b/i.test(s)) return ERROR_NETWORK
+  return ERROR_GENERIC
+}
+
+module.exports = { DAILY_LIMIT_OPTIONS, FAIL_LABELS, PLACE_LABELS, ENTRY_LABELS, buildView, msText, shortDay, friendlyError, ERROR_NOT_DEPLOYED }

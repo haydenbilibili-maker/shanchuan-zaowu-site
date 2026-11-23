@@ -160,6 +160,13 @@ async function runChecks() {
   ok('M4 按日新到旧、最大一天 100%、失败只列出现过的、闭馆状态与额度文案',
     full.bars[0].day === '2026-11-23' && full.bars[0].width === 100 && full.fails.every((f) => f.n > 0) && full.fails.length === 4 &&
     full.config.stateText === '闭馆中' && /20 问/.test(full.config.limitText) && full.kpis[5].v === '3 / 20')
+  const notDeployed = V.friendlyError({ errMsg: 'cloud.callFunction:fail Error: errCode: -505005 | errMsg: FunctionName parameter could not be found. 更多错误信息请访问：https://docs.cloudbase.net/error-code/basic/FUNCTIONS_NOT_FOUND' })
+  const timeoutErr = V.friendlyError({ errMsg: 'Error: task timeout' })
+  const businessErr = Object.assign(new Error('只读模式'), { business: true })
+  ok('M7 取数失败只给一句话（不渲染 errMsg / 堆栈 / 文档链接）；未部署 / 超时 / 业务错误分开',
+    notDeployed === V.ERROR_NOT_DEPLOYED && !/errCode|docs\.cloudbase|callFunction/i.test(notDeployed) &&
+    /超时/.test(timeoutErr) && V.friendlyError(businessErr) === '只读模式' &&
+    /loadError: V\.friendlyError\(e\)/.test(read(P.page)) && !/没能取回报表/.test(read(P.page)))
   const K = loadCjsModule(P.knowledge, {})
   ok('M4 去处 key 与博物君云函数一致', Object.keys(V.PLACE_LABELS).sort().join() === K.PLACE_KEYS.slice().sort().join())
   const wxml = read(P.wxml)
@@ -223,6 +230,7 @@ const INJECTIONS = [
   { name: '内容开关读不到就关', file: P.flagsFn, find: '  } catch (e) {\n    return true\n  }', replace: '  } catch (e) {\n    return false\n  }' },
   { name: '内容开关不带出博物君', file: P.flagsFn, find: 'flags: Object.assign({}, res.flags, { museumGuideOpen })', replace: 'flags: res.flags' },
   { name: '小程序端缺省关闭', file: P.flagsUtil, find: 'museumGuideOpen: src.museumGuideOpen !== false', replace: 'museumGuideOpen: src.museumGuideOpen === true' },
+  { name: '错误原文又渲染给超管', file: P.page, find: 'loadError: V.friendlyError(e)', replace: 'loadError: `没能取回报表：${(e && e.message) || e}`' },
   { name: '磁贴处理函数不判权限', file: P.mgrCfg, find: '    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.MUSEUM_GUIDE_MONITOR)) return;\n', replace: '' }
 ]
 

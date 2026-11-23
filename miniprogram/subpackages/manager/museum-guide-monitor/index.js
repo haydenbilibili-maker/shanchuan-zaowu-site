@@ -48,7 +48,7 @@ Page({
   callFn(data) {
     return wx.cloud.callFunction({ name: FN, data }).then((res) => {
       const body = (res && res.result) || {}
-      if (body.success === false) throw new Error(body.msg || '请求失败')
+      if (body.success === false) { const e = new Error(body.msg || '请求失败'); e.business = true; throw e }
       return body.data
     })
   },
@@ -65,7 +65,7 @@ Page({
       const d = await this.callFn({ action: 'overview', days: this.data.days })
       this.setData({ view: V.buildView(d), loading: false })
     } catch (e) {
-      this.setData({ loading: false, loadError: `没能取回报表：${(e && e.message) || e}` })
+      this.setData({ loading: false, loadError: V.friendlyError(e) })
     }
   },
 
