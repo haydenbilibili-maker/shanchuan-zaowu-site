@@ -6,7 +6,7 @@
  *      闭馆不播通知、不带去博物君的问题；一知按日期轮换、同日两条不同；每条文案 ≤ 22 字（首页单行，第二版）
  *   H2 超管写入：口播通知去空白 / 去空串 / ≤ 3 条 / 每条 ≤ 22 字 / 非数组拒绝；首次写配置不丢已存通知
  *   H3 只读带出：getContentDisplayFlags 开馆带出通知、闭馆与没配置为空、save 不写它；小程序端归一丢掉非字符串
- *   H4 接线：首页口播挂在原问候位、回到首页重排、门店 / 开关到了重排、点按只预填不自动提问、from=home 三端登记、
+ *   H4 接线：首页口播叠在头图顶部（第三版；无头图退回独立一条）、挂在原问候位、回到首页重排、门店 / 开关到了重排、点按只预填不自动提问、from=home 三端登记、
  *      超管页有编辑框与保存
  *
  *   node miniprogram/scripts/test-home-broadcast.mjs [--selftest]
@@ -144,8 +144,18 @@ async function runChecks() {
   const js = read(P.homeJs)
   const wxml = read(P.homeWxml)
   const wxss = read(P.homeWxss)
-  ok('H4 首页口播挂在原问候位（轮播图之前）、旧问候行已移除',
-    /<view class="home-cast" wx:if="\{\{cast\.hello\}\}">/.test(wxml) && wxml.indexOf('class="home-cast"') < wxml.indexOf('class="hero-section"') && !/class="home-greet"/.test(wxml))
+  // 第三版（2026-11-23）：有头图时叠在头图顶部；头图不出时才退回独立口播带（条件与头图互斥，不会两条同时出）
+  const heroCond = 'showBanners || (showLive && liveSession && liveSession.pullUrl)'
+  const heroAt = wxml.indexOf('class="hero-section')
+  const heroEnd = wxml.indexOf('class="dots-row"', heroAt)
+  const onHero = wxml.indexOf('<view class="home-cast is-on-hero" wx:if="{{cast.hello}}">')
+  ok('H4 口播叠在头图顶部（头图内、点位之前，带顶部压暗）、旧问候行已移除',
+    onHero > heroAt && onHero < heroEnd && /<view class="hero-cast-scrim" wx:if="\{\{cast\.hello\}\}"><\/view>/.test(wxml) && !/class="home-greet"/.test(wxml))
+  ok('H4 无头图时退回独立口播带（与头图条件互斥）',
+    wxml.includes(`<view class="home-cast" wx:if="{{cast.hello && !(${heroCond})}}">`) && wxml.includes(`<view class="hero-section {{cast.hello ? 'has-cast' : ''}}" wx:if="{{${heroCond}}}">`))
+  ok('H4 两处共用同一份口播结构（template）', (wxml.match(/<template is="home-cast-body" data="\{\{cast\}\}" \/>/g) || []).length === 2 && /<template name="home-cast-body">/.test(wxml))
+  ok('H4 叠层不拦头图点击（只有可点那一行接手）', /\.home-cast\.is-on-hero \{[^}]*pointer-events: none;/.test(wxss) && /\.home-cast\.is-on-hero \.home-cast-item \{ pointer-events: auto; \}/.test(wxss))
+  ok('H4 头图加高、口播带取消后头部更省', /\.hero-section\.has-cast \{ height: 560rpx; \}/.test(wxss))
   ok('H4 点按走 onCastTap、可点条目带 ›', /bindtap="onCastTap"/.test(wxml) && /class="home-cast-go" wx:if="\{\{item\.q \|\| item\.store\}\}"/.test(wxml))
   ok('H4 回到首页重排（昵称 / 时段）', /onShow\(\) \{[\s\S]{0,400}this\.refreshCast\(\);/.test(js))
   ok('H4 门店状态到了重排', /homeGreeting: buildHomeGreeting\(store\),[\s\S]{0,120}this\.refreshCast\(\);/.test(js))
@@ -182,7 +192,10 @@ const INJECTIONS = [
   { name: '小程序端不归一通知', file: P.flagsUtil, find: ".filter((t) => typeof t === 'string' && t.trim())", replace: '' },
   { name: '回到首页不重排', file: P.homeJs, find: '    // 口播每次回到首页重排一次：昵称（刚登录 / 刚改名）与时段问候跟着变\n    this.refreshCast();\n', replace: '' },
   { name: '每次都 setData', file: P.homeJs, find: 'if (sig === this._castSig) return;', replace: '' },
-  { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast" wx:if="{{cast.hello}}">', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n    <view class="home-cast" wx:if="{{cast.hello}}">' },
+  { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast is-on-hero" wx:if="{{cast.hello}}">', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n      <view class="home-cast is-on-hero" wx:if="{{cast.hello}}">' },
+  { name: '有头图时独立口播带也出（两条重复）', file: P.homeWxml, find: '<view class="home-cast" wx:if="{{cast.hello && !(showBanners || (showLive && liveSession && liveSession.pullUrl))}}">', replace: '<view class="home-cast" wx:if="{{cast.hello}}">' },
+  { name: '叠层拦住头图点击', file: P.homeWxss, find: '  /* 口播层不拦头图点击：只有可点的那一行接手 */\n  pointer-events: none;\n', replace: '' },
+  { name: '口播不叠在头图上', file: P.homeWxml, find: '      <view class="home-cast is-on-hero" wx:if="{{cast.hello}}">\n        <template is="home-cast-body" data="{{cast}}" />\n      </view>\n', replace: '' },
   { name: '口播文案折行', file: P.homeWxss, find: '  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.home-cast-go', replace: '  overflow: hidden;\n}\n.home-cast-go' },
   { name: '口播套回卡片底色', file: P.homeWxss, find: '  margin: 0 32rpx 20rpx;\n  padding: 10rpx 0 18rpx;\n}', replace: '  margin: 0 32rpx 20rpx;\n  padding: 10rpx 0 18rpx;\n  background: rgba(196, 167, 108, 0.1);\n}' },
   { name: '通知放宽到 36 字', file: P.monFn, find: 'const NOTICE_LEN = 22', replace: 'const NOTICE_LEN = 36' },

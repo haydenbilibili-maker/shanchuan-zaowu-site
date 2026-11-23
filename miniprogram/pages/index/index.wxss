@@ -1183,6 +1183,41 @@ page {
 }
 .home-cast-go { flex-shrink: 0; font-size: var(--fs-24); color: rgba(196, 167, 108, 0.7); line-height: 1; }
 
+/* —— 第三版（2026-11-23，产品负责人「与顶部头图融合，部分内容叠加在图片上」）——
+ * 口播叠在头图顶部：头图略加高（500 → 560rpx）而独立口播带（约 120rpx）取消，头部总高省约 80rpx、图反而更大；
+ * 顶部一层由页面底色渐隐的压暗，把图融进导航区，同时保证口播文字在任何图上都读得清。 */
+.hero-section.has-cast { height: 560rpx; }
+.hero-section.has-cast .skeleton-banner { height: 100%; }
+.hero-cast-scrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 230rpx;
+  z-index: 3;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--color-bg) 0%, rgba(26, 24, 20, 0.78) 34%, rgba(26, 24, 20, 0.32) 70%, rgba(26, 24, 20, 0) 100%);
+}
+.home-cast.is-on-hero {
+  position: absolute;
+  top: 12rpx;
+  left: 32rpx;
+  right: 32rpx;
+  z-index: 4;
+  margin: 0;
+  padding: 0;
+  /* 口播层不拦头图点击：只有可点的那一行接手 */
+  pointer-events: none;
+}
+.home-cast.is-on-hero::after { display: none; }
+.home-cast.is-on-hero .home-cast-item { pointer-events: auto; }
+.home-cast.is-on-hero .home-cast-seal {
+  background: radial-gradient(circle at 50% 35%, rgba(196, 167, 108, 0.22) 0%, rgba(26, 24, 20, 0.55) 75%);
+}
+.home-cast.is-on-hero .home-cast-hello,
+.home-cast.is-on-hero .home-cast-t,
+.home-cast.is-on-hero .home-cast-tag { text-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.55); }
+
 /* 减弱动效：口播呼吸灯停在常亮 */
 @media (prefers-reduced-motion: reduce) {
   .home-cast-dot { animation: none; opacity: 1; }
