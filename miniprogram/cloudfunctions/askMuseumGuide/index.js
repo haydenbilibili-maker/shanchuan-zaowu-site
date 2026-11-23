@@ -18,6 +18,7 @@ const { contextFor, loadSnapshot, pulseOf, asOfText, lastAsOf } = require('./sta
 const { findIssues, runPatrol, readPatrolConfig, writePatrolConfig } = require('./staffPatrol')
 const { assertStaff, resolveSuperAdminOpenids } = require('./staffGuard')
 const { taskById } = require('./staffTasks')
+const { detectFabrication, CORRECTION_PROMPT } = require('./staffGuardrails')
 const { buildMessages } = require('./persona')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -488,6 +489,26 @@ async function staffDebate(event, openid) {
  * - 人设只在服务端（staffPersonas.js），客户端只传 roleId。
  * - 问答都过内容安全；不写库、不留对话（会话存本机）。
  */
+async function askStaffModel(system, history, apiKey) {
+  const messages = [{ role: 'system', content: system }].concat(history)
+  for (const model of modelChain(process.env.MUSEUM_GUIDE_MODELS)) {
+    try {
+      const res = await httpsPostJson(TEXT_PATH, {
+        model,
+        input: { messages },
+        // 事实护栏上线后温度降到 0.4：越低越不容易「补细节」
+        parameters: { result_format: 'message', enable_thinking: false, temperature: 0.4, max_tokens: 900 }
+      }, { Authorization: `Bearer ${apiKey}` })
+      const answer = plainAnswer(extractText(res))
+      if (!usableAnswer(answer)) continue
+      return answer
+    } catch (e) {
+      console.warn(`AI中心 模型[${model}] 失败`, e.message)
+    }
+  }
+  return ''
+}
+
 async function staffChat(event, openid) {
   const gate = await staffGate(openid)
   if (!gate.ok) return gate.out
@@ -514,24 +535,26 @@ async function staffChat(event, openid) {
   try { context = await contextFor(roleId, db) } catch (e) { context = '' }
   const system = systemPromptOf(roleId) +
     (context ? `\n\n【当前经营数据（近 ${30} 天，服务端实时汇总；未出现的指标就是没有数据，不要推算）】\n${context}` : '')
-  const messages = [{ role: 'system', content: system }].concat(history, [{ role: 'user', content: question }])
-  let lastErr = null
-  for (const model of modelChain(process.env.MUSEUM_GUIDE_MODELS)) {
-    try {
-      const res = await httpsPostJson(TEXT_PATH, {
-        model,
-        input: { messages },
-        parameters: { result_format: 'message', enable_thinking: false, temperature: 0.6, max_tokens: 900 }
-      }, { Authorization: `Bearer ${apiKey}` })
-      const answer = plainAnswer(extractText(res))
-      if (!usableAnswer(answer)) { lastErr = new Error('empty answer'); continue }
-      return { success: true, roleId, roleName: STAFF_ROLES[roleId].name, person: STAFF_ROLES[roleId].person, answer, asOf: context ? lastAsOf() : '' }
-    } catch (e) {
-      lastErr = e
-      console.warn(`AI中心[${roleId}] 模型[${model}] 失败`, e.message)
-    }
+  const messages = history.concat([{ role: 'user', content: question }])
+  let answer = await askStaffModel(system, messages, apiKey)
+  if (!answer) return { success: false, error_type: 'ai_service', msg: '这位同事一时没接上话，稍后再试' }
+
+  // 事实护栏：命中「供应商 / 合作年限 / 账期 / 破损率 / 合同 / 政策」这类资料里没有的对象 → 重写一次
+  let flags = detectFabrication(answer)
+  if (flags.length) {
+    const retry = await askStaffModel(`${system}\n\n${CORRECTION_PROMPT}`, messages, apiKey)
+    if (retry) { answer = retry; flags = detectFabrication(answer) }
   }
-  return { success: false, error_type: 'ai_service', msg: '这位同事一时没接上话，稍后再试', detail: lastErr ? String(lastErr.message || '').slice(0, 80) : '' }
+  return {
+    success: true,
+    roleId,
+    roleName: STAFF_ROLES[roleId].name,
+    person: STAFF_ROLES[roleId].person,
+    answer,
+    asOf: context ? lastAsOf() : '',
+    needsVerify: flags.length > 0,
+    verifyFlags: flags
+  }
 }
 
 exports.main = async (event) => {

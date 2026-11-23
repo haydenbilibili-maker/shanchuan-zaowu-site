@@ -128,6 +128,7 @@
           </view>
           <view class="ac-acts" wx:if="{{item.role === 'assistant' && !item.pending}}">
             <text class="ac-basis" wx:if="{{item.asOf}}">依据 {{item.asOf}} 的经营数据</text>
+            <text class="ac-verify" wx:if="{{item.needsVerify}}">⚠ 含资料未提供的信息（{{item.verifyFlags.length ? item.verifyFlags[0] : '需核实'}}等），请核实后再用</text>
             <text class="ac-act" data-text="{{item.text}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
             <text class="ac-act" wx:if="{{index === messages.length - 1 && !sending}}" bindtap="onRetry" hover-class="tap-press" hover-stay-time="80">重试</text>
           </view>

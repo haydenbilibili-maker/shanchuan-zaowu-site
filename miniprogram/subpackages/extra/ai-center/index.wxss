@@ -126,3 +126,6 @@
 @media (prefers-reduced-motion: reduce) {
   .ac-dot { animation: none; opacity: .7; }
 }
+
+/* 事实护栏：回答里出现资料未提供的对象时的提示 */
+.ac-verify { display: block; margin-top: 6rpx; font-size: 19rpx; line-height: 1.5; color: #D08A5A; }

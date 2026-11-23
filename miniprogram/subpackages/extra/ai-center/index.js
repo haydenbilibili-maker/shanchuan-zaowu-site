@@ -438,7 +438,7 @@ Page({
       const body = (res && res.result) || {}
       if (body.error_type === 'forbidden') this.setData({ forbidden: body.msg || 'AI 智能中心仅限员工使用' })
       reply = body.success && body.answer
-        ? { role: 'assistant', text: String(body.answer), asOf: String(body.asOf || '') }
+        ? { role: 'assistant', text: String(body.answer), asOf: String(body.asOf || ''), needsVerify: body.needsVerify === true, verifyFlags: Array.isArray(body.verifyFlags) ? body.verifyFlags : [] }
         : { role: 'assistant', text: body.msg || `${role.person}一时没接上话，稍后再试`, isError: true }
     } catch (err) {
       if (this._abort || reqId !== this._reqId) return

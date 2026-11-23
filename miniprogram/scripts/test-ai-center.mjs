@@ -23,6 +23,7 @@ const P = {
   wxml: join(MP, 'subpackages/extra/ai-center/index.wxml'),
   personas: join(MP, 'cloudfunctions/askMuseumGuide/staffPersonas.js'),
   ctx: join(MP, 'cloudfunctions/askMuseumGuide/staffContext.js'),
+  rails: join(MP, 'cloudfunctions/askMuseumGuide/staffGuardrails.js'),
   debate: join(MP, 'subpackages/extra/ai-debate/index.js'),
   debateWxml: join(MP, 'subpackages/extra/ai-debate/index.wxml'),
   tasksClient: join(MP, 'subpackages/extra/ai-center/tasks.js'),
@@ -207,6 +208,16 @@ function runChecks() {
     /mode: 'staffBrief'/.test(page) && /if \(ask\) this\.setData\(\{ draft: ask\.slice\(0, 200\) \}\)/.test(page) && !/if \(ask\) this\.send\(\)/.test(page) &&
     /<view class="ac-patrol" wx:if="\{\{isSuper\}\}">/.test(wxml) && /bindtap="onPatrolRun"/.test(wxml) && /bindchange="onPatrolToggle"/.test(wxml) &&
     /'重命名', '复制全文', '删除这条会话'/.test(page) && /class="ac-basis" wx:if="\{\{item\.asOf\}\}"/.test(wxml) && /class="ac-seal/.test(wxml) && !/item\.emoji/.test(wxml), fails)
+  const R = loadCjsModule(P.rails, { transform })
+  const bad = R.detectFabrication('给云南那家合作三年的蝴蝶场发消息，重点盯账期和破损率承诺，签合同条款')
+  const good = R.detectFabrication('优先补货量按近 7 天订单量×1.5 倍估算，验证指标看售罄率')
+  ok('A9 事实护栏：供应商 / 合作年限 / 账期 / 破损率 / 合同 / 政策 都能识别，正常分析不误伤',
+    bad.length >= 4 && good.length === 0 && R.FABRICATION_RULES.length >= 6, fails)
+  ok('A9 护栏接线：staffChat 命中后重写一次、仍命中则 needsVerify；提示词明确禁止编造这几类',
+    /detectFabrication\(answer\)/.test(fn) && /if \(flags\.length\) \{\s*\n\s*const retry = await askStaffModel\(/.test(fn) && /needsVerify: flags\.length > 0/.test(fn) &&
+    /不得编造以下具体信息/.test(server.STAFF_SYSTEM_SUFFIX) && /需核实/.test(server.STAFF_SYSTEM_SUFFIX), fails)
+  ok('A9 页面：需要核实的气泡有明确提示，且请求结果带 needsVerify',
+    /ac-verify/.test(read(P.wxml)) && /item\.needsVerify/.test(read(P.wxml)) && /needsVerify: body\.needsVerify === true/.test(page), fails)
   return fails
 }
 
@@ -223,6 +234,8 @@ if (process.argv.includes('--selftest')) {
     { name: '上下文里带手机号', file: P.ctx, find: ".field({ stock: true, category: true, isOffShelf: true })", replace: ".field({ stock: true, category: true, isOffShelf: true, phone: true })" },
     { name: '未知任务不拒', file: P.fn, find: "if (event && event.taskId && !task) return { success: false, error_type: 'invalid', msg: '没有这个任务' }", replace: 'if (false) return {}' },
     { name: '任务角色对不上', file: P.tasksClient, find: "roleId: 'cfo', title: '现金流体检'", replace: "roleId: 'marketing', title: '现金流体检'" },
+    { name: '护栏不检测账期', file: P.rails, find: "{ key: 'terms', label: '账期', re: /账期/ },", replace: '' },
+    { name: '命中后不重写', file: P.fn, find: 'if (flags.length) {', replace: 'if (false) {' },
     { name: '辩论不分发', file: P.fn, find: "if (event && event.mode === 'debate') return staffDebate(event, OPENID)", replace: 'if (false) return null' },
     { name: '辩论允许单人', file: P.fn, find: 'if (members.length < 2) return', replace: 'if (members.length < 0) return' },
     { name: '去掉停止', file: P.page, find: '  onStop() {', replace: '  onStopX() {' },
