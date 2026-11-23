@@ -163,6 +163,11 @@ async function run(inject) {
   ok(n1 && n1.id === 'd' && n1.remain === 2 && n2 && n2.id === 'a' && n2.remain === 1 && n3 === null &&
     nextOf({ ...box, messages: [{ _id: 'a', isUnread: true }] }, 'a') === null,
     `H 下一封未读须取当前之后的纸信、到底回头、不含日报/工作信息/当前这封（${JSON.stringify([n1, n2, n3])}）`)
+  // I 列表直达（2026-11-23）：动作字 catchtap（不触发拆信）→ 去相关页，未读的同时本地 + 云端记已读
+  const qa = (read(P.msgJs).match(/\n  quickAction\(e\) \{[\s\S]*?\n  \},/) || [''])[0]
+  ok(/class="action-hint is-go" wx:elif="\{\{item\.actionUrl\}\}" catchtap="quickAction"/.test(msgWxml) &&
+    /this\.applyLocalRead\(id\)/.test(qa) && /action: 'markRead'/.test(qa) && /openMiniProgramUrl\(message\.actionUrl\)/.test(qa),
+    'I 信箱行尾动作字须可直达（catchtap，不拆信），未读的同时记已读')
   ok(/class="next-letter" wx:if="\{\{nextUnread && !digestView\}\}" bindtap="goNextUnread"/.test(read(P.letterWxml)), 'H 信页须有「下一封未读」入口（日报不出）')
   return fails
 }
@@ -173,6 +178,7 @@ function apply(src, inj) {
 }
 
 const INJECTIONS = [
+  { name: '列表直达不记已读', file: P.msgJs, find: "      this.applyLocalRead(id);\n", replace: "" },
   { name: '下一封未读不跳过当前这封', file: P.letterJs, find: "m.isUnread && m._id !== currentId && m._altId !== currentId", replace: "m.isUnread" },
   { name: '下一封未读混进日报', file: P.letterJs, find: "!m.isDigest && m.kind !== 'workflow'", replace: "m.kind !== 'workflow'" },
   { name: '待点亮积分算成全部', file: P.page, find: "normalized.filter((a) => !a.unlocked).reduce(", replace: "normalized.reduce(" },

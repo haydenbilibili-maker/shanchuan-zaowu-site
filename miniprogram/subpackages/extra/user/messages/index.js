@@ -1,5 +1,5 @@
 // subpackages/extra/user/messages/index.js
-const { enrichMessage, dedupeInboxMessages } = require('../../../../utils/messageHelper');
+const { enrichMessage, dedupeInboxMessages, openMiniProgramUrl } = require('../../../../utils/messageHelper');
 const { buildDigestListCard } = require('../../utils/digestView');
 const { getPageNavInsets } = require('../../utils/pageNav');
 const { trackBehavior } = require('../../../../utils/trackBehavior');
@@ -656,6 +656,24 @@ Page({
       });
     }
     this.syncParentUnreadCount();
+  },
+
+  /**
+   * 列表直达（2026-11-23）：行尾动作字（如「查看物流」）直接去相关页，不必先拆信。
+   * 未读的同时记为已读 —— 与信页拆开时同一条 markRead（不改契约）。
+   */
+  quickAction(e) {
+    const index = e && e.currentTarget && e.currentTarget.dataset.index;
+    const message = this.data.messages[index];
+    if (!message || !message.actionUrl) return;
+    const id = message._id;
+    if (message.isUnread && id) {
+      this.applyLocalRead(id);
+      wx.cloud.callFunction({ name: 'getUserMessages', data: { action: 'markRead', messageId: id } })
+        .catch((err) => console.error('标记已读失败:', err));
+    }
+    trackBehavior('message_action', 'message', id, { category: message.category, actionUrl: message.actionUrl, from: 'list' });
+    openMiniProgramUrl(message.actionUrl);
   },
 
   onLongPressDelete(e) {
