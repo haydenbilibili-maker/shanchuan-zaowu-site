@@ -17,6 +17,31 @@ function hasInboxListInStack() {
   return !!(prev && isInboxListRoute(prev.route));
 }
 
+/** 栈里的信箱列表页（没有时为 null） */
+function inboxListPage() {
+  const pages = getCurrentPages();
+  for (let i = pages.length - 2; i >= 0; i--) {
+    if (pages[i] && isInboxListRoute(pages[i].route)) return pages[i];
+  }
+  return null;
+}
+
+/**
+ * 下一封未读（2026-11-23）：只在顾客信箱里、只看纸信（日报 / 工作信息不参与）。
+ * 从当前这封之后往下找，找不到再从头找；返回 { id, title, remain }，没有时 null。
+ * 只读列表页已拿到的数据，不另打云端。
+ */
+function nextUnreadOf(listData, currentId) {
+  if (!listData || listData.workflowMode || listData.activeQueue !== 'customer') return null;
+  const list = (listData.messages || []).filter((m) => m && m._id && !m.isDigest && m.kind !== 'workflow');
+  const unread = list.filter((m) => m.isUnread && m._id !== currentId && m._altId !== currentId);
+  if (!unread.length) return null;
+  const at = list.findIndex((m) => m._id === currentId || m._altId === currentId);
+  const after = unread.find((m) => list.indexOf(m) > at);
+  const next = after || unread[0];
+  return { id: next._id, title: next.title || next.typeName || '一封来信', remain: unread.length };
+}
+
 function goInboxListReplace(isDigest) {
   const url = isDigest ? WORKFLOW_DIGEST_LIST_URL : LIST_URL;
   wx.redirectTo({
@@ -66,6 +91,7 @@ Page({
     // 每日日报的结构化视图模型（非日报消息恒为 null → WXML 整块不出现）
     digestView: null,
     digestPayloadMissing: false,
+    nextUnread: null,
     sectionCollapsed: {},
     letterLoading: false,
     loadError: false,
@@ -127,6 +153,7 @@ Page({
     this.guessScrollPane();
     const id = String(options.messageId || options.id || options.msgId || '').trim();
     this._letterId = id;
+    this._fromNext = options.from === 'next';
 
     const stack = getCurrentPages();
     if (stack.length <= 1 && id) {
@@ -153,6 +180,13 @@ Page({
       }
     } catch (e) {
       // 深链直达时没有 opener
+    }
+
+    // 从「下一封未读」翻过来（redirectTo 没有 eventChannel）：先用信箱里已有的这封立刻展开，云端那份随后覆盖
+    if (id && this._fromNext) {
+      const list = inboxListPage();
+      const cached = list && (list.data.messages || []).find((m) => m && (m._id === id || m._altId === id));
+      if (cached && cached.title) this.displayLetter(cached);
     }
 
     if (id) {
@@ -206,6 +240,11 @@ Page({
 
     const id = enriched._id || this._letterId;
     this.notifyListRead(id);
+    // 读完这封，信纸下方给「下一封未读」（列表已先把这封标成已读）
+    if (!isDigest) {
+      const list = inboxListPage();
+      this.setData({ nextUnread: list ? nextUnreadOf(list.data, id) : null }, () => this.syncScrollPane());
+    }
 
     if (wasUnread && id) {
       wx.cloud.callFunction({
@@ -362,6 +401,17 @@ Page({
         page.loadUnreadMessageCount();
       }
     }
+  },
+
+  /** 翻到下一封未读：替换当前信页（不叠栈），返回仍回信箱 */
+  goNextUnread() {
+    const next = this.data.nextUnread;
+    if (!next || !next.id || this._leaving) return;
+    this._leaving = true;
+    wx.redirectTo({
+      url: `/subpackages/extra/user/messages/detail/index?id=${encodeURIComponent(next.id)}&from=next`,
+      fail: () => { this._leaving = false; }
+    });
   },
 
   leaveLetter() {

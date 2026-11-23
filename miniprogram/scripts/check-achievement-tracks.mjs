@@ -30,7 +30,8 @@ const P = {
   wishWxml: resolve(MP, 'subpackages/extra/user/wishlist/index.wxml'),
   msgJs: resolve(MP, 'subpackages/extra/user/messages/index.js'),
   msgWxml: resolve(MP, 'subpackages/extra/user/messages/index.wxml'),
-  letterWxml: resolve(MP, 'subpackages/extra/user/messages/detail/index.wxml')
+  letterWxml: resolve(MP, 'subpackages/extra/user/messages/detail/index.wxml'),
+  letterJs: resolve(MP, 'subpackages/extra/user/messages/detail/index.js')
 }
 
 async function run(inject) {
@@ -149,6 +150,20 @@ async function run(inject) {
   const letter = read(P.letterWxml)
   ok(!/paper-fiber|paper-laid|paper-wear|paper-crease|paper-fold|signal-row|class="grain-overlay"/.test(letter) && /class="letter-seal seal-/.test(letter),
     'G 信笺退场纤维 / 压纹 / 磨损 / 折痕 / 信号灯，换方寸印')
+  // H 下一封未读（2026-11-23）：只在顾客信箱、跳过日报 / 工作信息与当前这封；当前之后优先，找不到回到头
+  const letterMod = loadCjsModule(P.letterJs, {
+    transform: (f, src) => (f === P.letterJs ? transform(f, src) + '\nmodule.exports.__nextUnreadOf = nextUnreadOf' : transform(f, src)),
+    globals: { getApp: () => ({ globalData: {} }), Page: () => {}, getCurrentPages: () => [], wx: {} }
+  })
+  const box = { activeQueue: 'customer', workflowMode: false, messages: [
+    { _id: 'a', isUnread: true, title: '甲' }, { _id: 'b', isUnread: false, title: '乙' }, { _id: 'c', isUnread: true, isDigest: true, title: '日报' },
+    { _id: 'd', isUnread: true, title: '丁' }, { _id: 'e', isUnread: true, kind: 'workflow', title: '工作' }] }
+  const nextOf = letterMod.__nextUnreadOf
+  const n1 = nextOf(box, 'b'); const n2 = nextOf(box, 'd'); const n3 = nextOf({ ...box, activeQueue: 'workflow' }, 'b')
+  ok(n1 && n1.id === 'd' && n1.remain === 2 && n2 && n2.id === 'a' && n2.remain === 1 && n3 === null &&
+    nextOf({ ...box, messages: [{ _id: 'a', isUnread: true }] }, 'a') === null,
+    `H 下一封未读须取当前之后的纸信、到底回头、不含日报/工作信息/当前这封（${JSON.stringify([n1, n2, n3])}）`)
+  ok(/class="next-letter" wx:if="\{\{nextUnread && !digestView\}\}" bindtap="goNextUnread"/.test(read(P.letterWxml)), 'H 信页须有「下一封未读」入口（日报不出）')
   return fails
 }
 
@@ -158,6 +173,8 @@ function apply(src, inj) {
 }
 
 const INJECTIONS = [
+  { name: '下一封未读不跳过当前这封', file: P.letterJs, find: "m.isUnread && m._id !== currentId && m._altId !== currentId", replace: "m.isUnread" },
+  { name: '下一封未读混进日报', file: P.letterJs, find: "!m.isDigest && m.kind !== 'workflow'", replace: "m.kind !== 'workflow'" },
   { name: '待点亮积分算成全部', file: P.page, find: "normalized.filter((a) => !a.unlocked).reduce(", replace: "normalized.reduce(" },
   { name: '成长线节点不可点', file: P.wxml, find: 'wx:key="id" bindtap="viewAchievement" data-id="{{item.id}}"', replace: 'wx:key="id"' },
   { name: '弹层成长线不标当前枚', file: P.page, find: 'current: n.id === id', replace: 'current: false' },

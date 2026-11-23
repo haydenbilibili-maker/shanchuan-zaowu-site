@@ -658,6 +658,11 @@ const SCENES = [
       selectedMessage: { _id: 'm1', kind: 'receipt', stampCn: '回执', stampEn: 'RECEIPT', kindLabel: '订单', statusLabel: '待签收', senderName: '山海造物', title: '你的藏品已启程', formattedTime: '10:24', typeName: '发货通知', bodyBlocks: [], summaries: [] } },
     // 详情页根节点 height:100% 靠真机视口撑开，离线预览没有视口高度 → 放开裁切（预览专用，真机不受影响）
     css: 'page, .page-msg.detail-root { height: auto !important; overflow: visible !important; } .paper-mode.letter-page.standalone { position: relative !important; overflow: visible !important; } .standalone .letter-scroll { height: auto !important; }' },
+  // 2026-11-23：读完一封，操作区顶部「下一封未读」
+  { name: 'letter-next', h: 1500, wxml: 'subpackages/extra/user/messages/detail/index', base: 'letter-sealed', data: {
+      unsealing: 'done', nextUnread: { id: 'm2', title: '阿禾拆开了你的礼笺', remain: 2 },
+      selectedMessage: { _id: 'm1', kind: 'receipt', stampCn: '回执', stampEn: 'RECEIPT', kindLabel: '订单', statusLabel: '待签收', senderName: '山海造物', signOff: '馆员 敬上', title: '你的藏品已启程', formattedTime: '10:24', typeName: '发货通知',
+        bodyBlocks: [{ id: 'b1', runs: [{ rid: 'r1', type: 'text', text: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。' }] }], summaries: [], hasAction: true, actionLabel: '查看物流' } } },
   { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
       visible: [
         { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },
@@ -887,7 +892,12 @@ ${s.css ? '/* 场景专属：如需出图某个弹层 */\n' + s.css : ''}
   console.log(`✓ ${s.name} → ${out}（缺字段 ${missing.size}）`)
 }
 
-for (const s of SCENES) if (s.base) s.data = { ...SCENES.find((x) => x.name === s.base).data, ...s.data }
+// base：继承数据；自己没写 css 时也继承 base 的预览专用 css（2026-11-23：letter-next 少了 letter-sealed 的放开裁切 → 出白图）
+for (const s of SCENES) if (s.base) {
+  const b = SCENES.find((x) => x.name === s.base)
+  s.data = { ...b.data, ...s.data }
+  if (s.css === undefined && b.css) s.css = b.css
+}
 for (const s of SCENES) {
   if (only.length && !only.includes(s.name)) continue
   try { await shoot(s) } catch (e) { console.log(`✗ ${s.name}：${e.message.split('\n')[0]}（订单列表等页另有 render-bflow-preview）`) }
