@@ -1128,6 +1128,11 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
 }
+.home-cast-seal-icon {
+  width: 36rpx;
+  height: 36rpx;
+  display: block;
+}
 .home-cast-main { flex: 1; min-width: 0; }
 .home-cast-head { display: flex; align-items: center; gap: 16rpx; }
 .home-cast-hello {

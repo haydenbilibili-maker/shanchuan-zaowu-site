@@ -23,7 +23,7 @@ const P = {
   chat: join(MP, 'subpackages/feature/museum-guide/guideChat.js'),
   page: join(MP, 'subpackages/feature/museum-guide/index.js'),
   wxml: join(MP, 'subpackages/feature/museum-guide/index.wxml'),
-  avatar: join(MP, 'subpackages/feature/utils/guideAvatar.js'),
+  avatar: join(MP, 'utils/guideAvatar.js'),
   cloudrc: join(MP, 'cloudbaserc.json'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
   knowledge: join(MP, 'cloudfunctions/askMuseumGuide/knowledge.js'),

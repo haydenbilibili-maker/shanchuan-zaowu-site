@@ -1,7 +1,7 @@
 <wxs src="../../utils/latinDisplay.wxs" module="latin" />
 <!-- 博物君口播的主体（2026-11-23）：叠在头图上 / 无头图时独立一条，两处共用一份结构 -->
 <template name="home-cast-body">
-  <view class="home-cast-seal" aria-hidden="true"><text>博</text></view>
+  <view class="home-cast-seal" aria-hidden="true"><image class="home-cast-seal-icon" src="{{cast.avatar}}" mode="aspectFit"></image></view>
   <view class="home-cast-main">
     <view class="home-cast-head">
       <text class="home-cast-hello">{{cast.hello}}</text>

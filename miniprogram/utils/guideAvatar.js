@@ -10,6 +10,17 @@ const BODY = '<path d="M119.560037 151.590842a17.024016 17.024016 0 0 1 14.12413
 
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">' + BODY + '</svg>'
 
-const GUIDE_AVATAR = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(SVG)
+const cache = {}
 
-module.exports = { GUIDE_AVATAR, COLOR }
+/** 同一条线稿按用途换色（首页口播印章是 brass-200，方印是宣纸白） */
+function avatarOf(color) {
+  const c = String(color || COLOR)
+  if (cache[c]) return cache[c]
+  const svg = c === COLOR ? SVG : SVG.split(COLOR).join(c)
+  cache[c] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+  return cache[c]
+}
+
+const GUIDE_AVATAR = avatarOf()
+
+module.exports = { GUIDE_AVATAR, COLOR, avatarOf }

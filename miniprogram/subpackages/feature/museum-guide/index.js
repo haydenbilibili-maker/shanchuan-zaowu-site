@@ -4,7 +4,7 @@
  * 纯函数在 guideChat.js（守卫 test:museum-guide）；云函数 askMuseumGuide。
  */
 const G = require('./guideChat')
-const { GUIDE_AVATAR } = require('../utils/guideAvatar')
+const { GUIDE_AVATAR } = require('../../../utils/guideAvatar')
 const N = require('./naturalist')
 const { openAppModal } = require('../../../utils/appModal')
 

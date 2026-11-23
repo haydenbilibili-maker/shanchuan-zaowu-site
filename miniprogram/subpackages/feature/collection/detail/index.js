@@ -11,7 +11,7 @@ const {
   buildSpecimenFacts
 } = require('../../utils/atlas')
 const { plateOf, ghostOf } = require('../../utils/atlasPlates')
-const { GUIDE_AVATAR } = require('../../utils/guideAvatar')
+const { GUIDE_AVATAR } = require('../../../../utils/guideAvatar')
 
 const RARE_MARK = { rare: '稀有', legendary: '传奇' }
 

@@ -4,6 +4,7 @@ const app = getApp();
 const db = wx.cloud.database();
 const _ = db.command;
 const { getFirstImage, batchTempFileURLs } = require('../../utils/util');
+const { avatarOf } = require('../../utils/guideAvatar');
 const { setCache, getCache, clearCache } = require('../../utils/cache');
 const { xingchenCover } = require('../../config/storeMediaCdn');
 const { enrichStore, setPreferredStoreId } = require('../../utils/storeHelper');
@@ -126,6 +127,7 @@ async function hydrateBannerImages(list) {
 Page({
   behaviors: [easterEggHost],
   data: {
+    castAvatar: avatarOf('#E0CFA3'),
     navTop: 40,
     isScrolled: false,
     homeRefreshing: false,
@@ -1411,6 +1413,8 @@ Page({
       });
       const sig = JSON.stringify(cast);
       if (sig === this._castSig) return;
+      // 头像不进签名（8KB data URI 会让每次刷新都重算签名），只在真正 setData 时挂上
+      cast.avatar = this.data.castAvatar;
       this._castSig = sig;
       this.setData({ cast });
     } catch (e) { /* 口播是装饰层，出错不影响首页 */ }

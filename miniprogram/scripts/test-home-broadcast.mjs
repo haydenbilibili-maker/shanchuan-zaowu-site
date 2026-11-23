@@ -23,6 +23,7 @@ const P = {
   homeJs: join(MP, 'pages/index/index.js'),
   homeWxml: join(MP, 'pages/index/index.wxml'),
   homeWxss: join(MP, 'pages/index/index.wxss'),
+  avatar: join(MP, 'utils/guideAvatar.js'),
   monFn: join(MP, 'cloudfunctions/museumGuideMonitor/index.js'),
   flagsFn: join(MP, 'cloudfunctions/getContentDisplayFlags/index.js'),
   flagsUtil: join(MP, 'utils/contentDisplayFlags.js'),
@@ -174,11 +175,20 @@ async function runChecks() {
   const monPage = read(P.monPage)
   ok('H4 超管页有口播编辑框与保存', /bindinput="onNoticeInput"/.test(monWxml) && /bindtap="onSaveNotices"/.test(monWxml) && /maxlength="\{\{noticeLen\}\}"/.test(monWxml))
   ok('H4 保存只提交非空条目、没改不提交', /if \(this\.data\.saving \|\| !this\.data\.noticeDirty\) return/.test(monPage) && /\.filter\(Boolean\) \}\)/.test(monPage))
+  const avatarMod = loadCjsModule(P.avatar)
+  const brassAvatar = avatarMod.avatarOf('#E0CFA3')
+  ok('H5 口播印章用「科学家」头像（不是「博」字），颜色随印章铜金',
+    /<view class="home-cast-seal"[^>]*><image class="home-cast-seal-icon" src="\{\{cast\.avatar\}\}"/.test(read(P.homeWxml)) &&
+    /castAvatar: avatarOf\('#E0CFA3'\)/.test(read(P.homeJs)) && /cast\.avatar = this\.data\.castAvatar;/.test(read(P.homeJs)) &&
+    /\.home-cast-seal-icon \{[^}]*width: 36rpx;/.test(read(P.homeWxss)) &&
+    /^data:image\/svg\+xml/.test(brassAvatar) && decodeURIComponent(brassAvatar.split(',')[1] || '').includes('fill="#E0CFA3"') &&
+    !/<view class="home-cast-seal"[^>]*><text>博<\/text>/.test(read(P.homeWxml)))
   ok('H4 刷新报表不冲掉正在编辑的草稿', /if \(!this\.data\.noticeDirty\) patch\.noticeDrafts/.test(monPage))
   return fails
 }
 
 const INJECTIONS = [
+  { name: '口播印章退回「博」字', file: P.homeWxml, find: '<image class="home-cast-seal-icon" src="{{cast.avatar}}" mode="aspectFit"></image>', replace: '<text>博</text>' },
   { name: '访客问候露出空昵称', file: P.cast, find: "${nick || '欢迎来馆'}", replace: '${nick}' },
   { name: '昵称不截断', file: P.cast, find: "return s.length > NICK_MAX ? s.slice(0, NICK_MAX) + '…' : s;", replace: 'return s;' },
   { name: '闭馆仍播通知', file: P.cast, find: '  if (open) {\n    (Array.isArray', replace: '  if (true) {\n    (Array.isArray' },
