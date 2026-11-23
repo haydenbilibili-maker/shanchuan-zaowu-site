@@ -93,12 +93,19 @@ function runChecks() {
     /collection\('orders'\)/.test(ctxSrc) && /collection\('products'\)/.test(ctxSrc) &&
     /collection\('users'\)/.test(ctxSrc) && /collection\('bookings'\)/.test(ctxSrc) && /collection\('finance_records'\)/.test(ctxSrc) &&
     /collection\('purchase_orders'\)/.test(ctxSrc) && /collection\('stock_movements'\)/.test(ctxSrc) &&
+    /collection\('ops_purchases'\)/.test(ctxSrc) &&
     !/phone|mobile|openid|realName|receiver/i.test(ctxSrc) &&
     /TTL_MS/.test(ctxSrc) && C.TEXT_MAX <= 800, fails)
   const pur = C.summarizePurchases([{ totalAmount: 1200, paymentStatus: 'paid' }, { totalAmount: 800, paymentStatus: 'unpaid' }])
   const mv = C.summarizeMoves([{ delta: 5 }, { delta: -3 }, { delta: -2 }])
   ok('A5 采购单与库存流水：金额按单累计、已付按支付状态；入库 / 出库 / 净变化口径正确',
     pur.count === 2 && pur.amount === 2000 && pur.paid === 1 && mv.inQty === 5 && mv.outQty === 5 && mv.net === 0, fails)
+  const op = C.summarizeOpsPurchases([
+    { amount: 100, status: 'paid', scope: 'store' }, { qty: 2, unitPrice: 50, status: 'cancelled' },
+    { amount: 80, status: 'received', scope: 'studio' }, { amount: 999, deleted: true }
+  ])
+  ok('A5 店内采购（ops_purchases）：跳过已取消 / 已删除，金额回退 qty×unitPrice，门店与工作室分列，未结口径正确',
+    op.count === 2 && op.amount === 180 && op.openCount === 1 && op.storeAmount === 100 && op.studioAmount === 80, fails)
   const tc = loadCjsModule(P.tasksClient, { transform })
   const ts = loadCjsModule(P.tasksServer, { transform })
   const cTasks = tc.TASKS.map((t) => `${t.id}:${t.roleId}`).sort()

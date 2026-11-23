@@ -3,7 +3,7 @@
  *
  * 口径：
  * - 只做**近 30 天**的服务端汇总，5 分钟内存缓存（同一函数实例复用），避免每次提问都扫库；
- * - 只读 orders / products / users / bookings / finance_records / purchase_orders / stock_movements 七张表，**不取姓名 / 手机 / 账号标识等个人信息**；
+ * - 只读 orders / products / users / bookings / finance_records / purchase_orders / stock_movements / ops_purchases 八张表，**不取姓名 / 手机 / 账号标识等个人信息**；
  * - 每个块独立 try/catch：某张表失败就少一块，不影响其它块，也不把错误抛给调用方；
  * - 输出一段 ≤ 760 字的中文事实清单，交给模型当「当前经营数据」，并明确「没出现的指标就是没有数据」。
  *
@@ -79,6 +79,29 @@ function summarizePurchases(rows) {
   return { count, amount, paid }
 }
 
+const OPS_OPEN_STATUS = ['draft', 'pending_pay', 'paid', 'ordered', 'pending_ship', 'shipped']
+
+function summarizeOpsPurchases(rows) {
+  const list = Array.isArray(rows) ? rows : []
+  let count = 0
+  let amount = 0
+  let openCount = 0
+  let storeAmount = 0
+  let studioAmount = 0
+  for (const r of list) {
+    if (!r || r.deleted === true) continue
+    const st = String(r.status || '')
+    if (st === 'cancelled') continue
+    const amt = r.amount != null ? fenOfYuan(r.amount) : (Number(r.qty) || 0) * (Number(r.unitPrice) || 0)
+    count += 1
+    amount += amt
+    if (OPS_OPEN_STATUS.indexOf(st) >= 0) openCount += 1
+    if (String(r.scope || '') === 'studio') studioAmount += amt
+    else storeAmount += amt
+  }
+  return { count, amount, openCount, storeAmount, studioAmount }
+}
+
 function summarizeMoves(rows) {
   const list = Array.isArray(rows) ? rows : []
   let inQty = 0
@@ -114,7 +137,7 @@ async function loadSnapshot(db) {
   if (cache.value && now - cache.at < TTL_MS) return cache.value
   const since = new Date(now - WINDOW_DAYS * DAY_MS)
   const _ = db.command
-  const out = { orders: null, products: null, users: null, bookings: null, finance: null, purchases: null, moves: null }
+  const out = { orders: null, products: null, users: null, bookings: null, finance: null, purchases: null, moves: null, ops: null }
 
   const tasks = [
     (async () => {
@@ -155,6 +178,16 @@ async function loadSnapshot(db) {
           .field({ totalAmount: true, status: true, paymentStatus: true, createdAt: true })
           .limit(500).get()
         out.purchases = summarizePurchases(r && r.data)
+      } catch (e) { /* ignore */ }
+    })(),
+    (async () => {
+      // 店内采购（订货履约 SSOT）：门店 / 工作室两套账，只取金额与状态
+      try {
+        const r = await db.collection('ops_purchases')
+          .where({ createdAt: _.gte(now - WINDOW_DAYS * DAY_MS) })
+          .field({ amount: true, qty: true, unitPrice: true, status: true, scope: true, deleted: true, createdAt: true })
+          .limit(1000).get()
+        out.ops = summarizeOpsPurchases(r && r.data)
       } catch (e) { /* ignore */ }
     })(),
     (async () => {
@@ -220,12 +253,17 @@ async function contextFor(roleId, db) {
     if (p && p.count) lines.push(`近 ${WINDOW_DAYS} 天 B2B 采购单 ${p.count} 张，合计 ¥${money(p.amount)}（已付 ${p.paid} 张）`)
     const m = snap.moves
     if (m) lines.push(`近 ${WINDOW_DAYS} 天库存流水：入库 ${m.inQty} 件、出库 ${m.outQty} 件、净变化 ${m.net >= 0 ? '+' : ''}${m.net} 件`)
+    const o = snap.ops
+    if (o && o.count) lines.push(`近 ${WINDOW_DAYS} 天店内采购 ${o.count} 单、合计 ¥${money(o.amount)}（门店 ¥${money(o.storeAmount)} / 工作室 ¥${money(o.studioAmount)}），其中未结 ${o.openCount} 单`)
   }
   if (roleId === 'store_manager' && snap.bookings) lines.push(`近 ${WINDOW_DAYS} 天预约 ${snap.bookings.count} 单`)
+  if (roleId === 'store_manager' && snap.ops && snap.ops.count) {
+    lines.push(`近 ${WINDOW_DAYS} 天店内采购 ${snap.ops.count} 单、合计 ¥${money(snap.ops.amount)}，其中未结 ${snap.ops.openCount} 单`)
+  }
   if ((roleId === 'marketing' || roleId === 'data_analyst') && snap.users) lines.push(`近 ${WINDOW_DAYS} 天新增会员 ${snap.users.newCount} 人`)
   if (roleId === 'creative_director' && snap.orders) lines.push(`近 ${WINDOW_DAYS} 天订单 ${snap.orders.total} 笔`)
   if (!lines.length) return ''
   return lines.join('；').slice(0, TEXT_MAX)
 }
 
-module.exports = { contextFor, loadSnapshot, summarizeOrders, summarizeProducts, summarizeFinance, summarizePurchases, summarizeMoves, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }
+module.exports = { contextFor, loadSnapshot, summarizeOrders, summarizeProducts, summarizeFinance, summarizePurchases, summarizeMoves, summarizeOpsPurchases, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }
