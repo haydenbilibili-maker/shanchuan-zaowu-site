@@ -53,6 +53,19 @@
     </view>
     <text class="method-line" wx:if="{{methodText && !locked}}">{{methodText}}</text>
 
+    <!-- 翻页条（2026-11-22）：按标本册当前顺序翻上一页 / 下一页；未点亮的邻页只露编号（不剧透） -->
+    <view class="pager" wx:if="{{pagerPrev || pagerNext}}">
+      <view class="pager-btn {{pagerPrev ? '' : 'is-off'}}" bindtap="onTurnPage" data-id="{{pagerPrev.id}}" hover-class="{{pagerPrev ? 'tap-press' : 'none'}}" hover-stay-time="80">
+        <text class="pager-arrow">‹</text>
+        <view class="pager-t" wx:if="{{pagerPrev}}"><text class="pager-no">No.{{pagerPrev.no}}</text><text class="pager-name">{{pagerPrev.label}}</text></view>
+      </view>
+      <text class="pager-pos">{{pagerPos}}</text>
+      <view class="pager-btn is-next {{pagerNext ? '' : 'is-off'}}" bindtap="onTurnPage" data-id="{{pagerNext.id}}" hover-class="{{pagerNext ? 'tap-press' : 'none'}}" hover-stay-time="80">
+        <view class="pager-t" wx:if="{{pagerNext}}"><text class="pager-no">No.{{pagerNext.no}}</text><text class="pager-name">{{pagerNext.label}}</text></view>
+        <text class="pager-arrow">›</text>
+      </view>
+    </view>
+
     <view class="locked-note" wx:if="{{locked}}">
       <text class="essay">它在馆里，等被看见。扫到印记或拍照采集之后，这一页才会把产地、习性、柜位与那段话写给你。</text>
     </view>

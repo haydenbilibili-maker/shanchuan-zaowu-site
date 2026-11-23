@@ -443,6 +443,7 @@ const SCENES = [
   },
   {
     name: 'atlas-detail', h: 2600, wxml: 'subpackages/feature/collection/detail/index', data: {
+      pagerPrev: { id: '031', no: '031', label: '银杏押花' }, pagerNext: { id: '034', no: '034', label: '未记录' }, pagerPos: '13 / 16',
       loading: false, loadError: false, locked: false, justUnlocked: false, methodText: '镜头记下 · 2026.10.16', seriesText: '守山者',
       card: Object.assign({}, atlasCards[12], { essay: '壳里一格一格的房间，是它一生搬过的家。最外面那一间住着现在，里面的门都关上了，只留一根细管把它们连起来。' }),
       facts: [{ k: '产地', v: '西太平洋与印度洋的珊瑚礁外坡' }, { k: '习性', v: '白天沉在深处，夜里随水温上浮觅食' }, { k: '柜位', v: '海洋标本柜下层' }, { k: '印记码', v: 'SH-S5' }],

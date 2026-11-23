@@ -9,6 +9,7 @@ const {
   emptyUnlockSheet
 } = require('../utils/atlas')
 const { plateOf, ghostOf } = require('../utils/atlasPlates')
+const { rememberOrder } = require('./atlasPager')
 
 /* 2026-10-17 重设计：一本「博物志 · 卷一」—— 卷首（大数字 + 每页一格的刻度）→ 卷章（三个系列）→ 图版（三列标本册，
    按编号固定位置，未点亮的页留空位只露编号）→ 近期足迹。旧的稀有度筛选行退场（稀有 / 传奇直接写在图版角上）。
@@ -163,6 +164,8 @@ Page({
       seriesBlurb,
       filterEmpty: !filtered.length && !!cards.length
     })
+    // 详页翻页按「当前看到的这一册」顺序（门类 / 卷章筛选后）
+    rememberOrder(getApp(), filtered)
   },
 
   // 门类与卷章互斥：选一个就清掉另一个（两层筛选叠在一起时，空页的原因说不清）

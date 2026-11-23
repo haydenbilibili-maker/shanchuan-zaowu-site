@@ -421,6 +421,8 @@ page {
   height: 100%;
   background: var(--brass-400);
 }
+/* 进度细线已当分隔：第一条成长线不再画自己的顶边（否则两道线贴在一起） */
+.chapter-bar + .track { border-top: none; }
 .chapter-seal {
   padding: 4rpx 14rpx;
   border: 2rpx solid rgba(196, 72, 58, 0.8);

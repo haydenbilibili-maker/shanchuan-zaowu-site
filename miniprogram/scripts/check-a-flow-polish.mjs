@@ -155,6 +155,8 @@ const FILES = {
   atlasPlatesJs: 'subpackages/feature/utils/atlasPlates.js',
   atlasIdxWxml: 'subpackages/feature/collection/index.wxml',
   atlasIdxJs: 'subpackages/feature/collection/index.js',
+  atlasPagerJs: 'subpackages/feature/collection/atlasPager.js',
+  atlasDetailJs: 'subpackages/feature/collection/detail/index.js',
   achWxss: 'subpackages/extra/user/achievements/index.wxss',
   customJs: 'subpackages/feature/custom/index.js',
   customWxml: 'subpackages/feature/custom/index.wxml',
@@ -1036,6 +1038,22 @@ function checks(s) {
         !/下一枚「\{\{track\.nextName\}\}」/.test(s.achWxml) && /<text class="chapter-seal" wx:if="\{\{chapter\.complete\}\}">全章点亮<\/text>/.test(s.achWxml) &&
         /\n\.track \{[^}]*display: flex;/.test(s.achWxss))
   }
+  {
+    const PG = loadCjs(s.atlasPagerJs)
+    let ok = false
+    try {
+      const app = { globalData: {} }
+      PG.rememberOrder(app, [{ id: 'a', no: '001', unlocked: true, nameZh: '大蓝闪蝶' }, { id: 'b', no: '004', unlocked: false, nameZh: '琉璃蛱蝶' }, { id: 'c', no: '009', unlocked: true, nameZh: '光明女神闪蝶' }])
+      const mid = PG.neighbors(PG.readOrder(app), 'b')
+      const head = PG.neighbors(PG.readOrder(app), 'a')
+      const none = PG.neighbors(PG.readOrder({ globalData: {} }), 'b')
+      ok = mid.prev.id === 'a' && mid.next.id === 'c' && mid.pos === '2 / 3' && head.prev === null &&
+        PG.readOrder(app)[1].label === '未记录' && none.prev === null && none.next === null
+    } catch (e) { ok = false }
+    add('R66-3 图鉴详页翻页：按首页当前筛选后的顺序；未点亮邻页只写「未记录」不带名；分享直达无顺序不出条；redirectTo 不叠页栈',
+      ok && /rememberOrder\(getApp\(\), filtered\)/.test(s.atlasIdxJs) && /neighbors\(readOrder\(getApp\(\)\), this\.speciesId\)/.test(s.atlasDetailJs) &&
+        /onTurnPage\(e\) \{[\s\S]{0,260}wx\.redirectTo\(/.test(s.atlasDetailJs))
+  }
   // R63 超管 / 店长工作台顶部屏效（2026-11-22 产品负责人「顶部的多个栏目如搜索、处理动态等效率较低」）
   {
     const upd = (s.mgrCfgJs.match(/\n  updateTime\(\) \{[\s\S]*?\n  \},/) || [''])[0]
@@ -1255,6 +1273,7 @@ if (process.argv.includes('--selftest')) {
     ['工作台搜索又单占一行', 'mgrWxml', (t) => t.replace('      <work-notice-voice />\n    </view>\n    </view>\n  </view>', '      <work-notice-voice />\n    </view>\n    </view>\n  </view>\n  <view class="hub-search-row"></view>').replace('<view class="dashboard-title-row">', '<view class="dashboard-title-row-x">')],
     ['图鉴门类剪影改成按物种出图（剧透）', 'atlasPlatesJs', (t) => t.replace('const shape = SHAPE_BY_TONE[card.categoryTone]\n  if (!shape', 'const shape = SHAPE_BY_SPECIES[card.id] || SHAPE_BY_TONE[card.categoryTone]\n  if (!shape')],
     ['成就行尾又重复「下一枚」句', 'achWxml', (t) => t.replace('<text class="track-next" wx:else>{{track.nextRemain}}</text>', '<text class="track-next" wx:else>下一枚「{{track.nextName}}」· {{track.nextRemain}}</text>')],
+    ['图鉴翻页剧透未点亮邻页的名称', 'atlasPagerJs', (t) => t.replace("label: c.unlocked ? String(c.nameZh || '') : '未记录'", "label: String(c.nameZh || '')")],
     ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
     ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
     ['捐赠铭牌水印改回 1% 文字', 'dnWxml', (t) => t.replace('aria-hidden="true">❤️</text>', 'aria-hidden="true">1%</text>')],

@@ -627,3 +627,53 @@ button.btn-share::after {
     animation: none;
   }
 }
+
+/* 翻页条（2026-11-22）：上一页 / 位置 / 下一页；未点亮邻页只露编号 */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  margin: 24rpx 0 8rpx;
+  padding: 16rpx 0;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
+}
+.pager-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-height: 72rpx;
+}
+.pager-btn.is-next { justify-content: flex-end; text-align: right; }
+.pager-btn.is-off { visibility: hidden; }
+.pager-arrow {
+  flex: none;
+  font-size: var(--fs-40);
+  line-height: 1;
+  color: var(--brass-300);
+}
+.pager-t { min-width: 0; display: flex; flex-direction: column; }
+.pager-no {
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.08em;
+  color: var(--color-text-secondary);
+}
+.pager-name {
+  margin-top: 2rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-24);
+  color: var(--color-text-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pager-pos {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}
