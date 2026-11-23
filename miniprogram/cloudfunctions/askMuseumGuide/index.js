@@ -14,6 +14,7 @@ const https = require('https')
 const { checkText } = require('./contentSecurity')
 const { matchSpecies, PLACE_KEYS } = require('./knowledge')
 const { STAFF_ROLES, ROLE_IDS, systemPromptOf } = require('./staffPersonas')
+const { contextFor } = require('./staffContext')
 const { buildMessages } = require('./persona')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -356,7 +357,12 @@ async function staffChat(event, openid) {
   const apiKey = process.env.DASHSCOPE_API_KEY || ''
   if (!apiKey) return { success: false, error_type: 'ai_service', msg: 'AI 服务还没配置，请联系超管' }
 
-  const messages = [{ role: 'system', content: systemPromptOf(roleId) }].concat(history, [{ role: 'user', content: question }])
+  // 经营上下文（近 30 天服务端汇总；查不到就只给人设，不编数据）
+  let context = ''
+  try { context = await contextFor(roleId, db) } catch (e) { context = '' }
+  const system = systemPromptOf(roleId) +
+    (context ? `\n\n【当前经营数据（近 ${30} 天，服务端实时汇总；未出现的指标就是没有数据，不要推算）】\n${context}` : '')
+  const messages = [{ role: 'system', content: system }].concat(history, [{ role: 'user', content: question }])
   let lastErr = null
   for (const model of modelChain(process.env.MUSEUM_GUIDE_MODELS)) {
     try {

@@ -22,6 +22,7 @@ const P = {
   page: join(MP, 'subpackages/extra/ai-center/index.js'),
   wxml: join(MP, 'subpackages/extra/ai-center/index.wxml'),
   personas: join(MP, 'cloudfunctions/askMuseumGuide/staffPersonas.js'),
+  ctx: join(MP, 'cloudfunctions/askMuseumGuide/staffContext.js'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
   userJs: join(MP, 'pages/user/index.js')
 }
@@ -65,6 +66,23 @@ function runChecks() {
   const page = read(P.page)
   ok('A4 会话只存本机（按角色分桶、最多 80 条），不上云',
     /ai_center_session_v1_/.test(page) && /MAX_KEEP = 80/.test(page) && !/db\.collection|\.add\(/.test(page) && /wx\.getStorageSync/.test(page) && /wx\.setStorageSync\(/.test(page), fails)
+  const ctxSrc = read(P.ctx)
+  const C = loadCjsModule(P.ctx, { transform })
+  const orders = C.summarizeOrders([
+    { status: 'paid', totalPrice: 680 }, { status: 'shipped', payAmount: 320, refundFee: 100 }, { status: 'pending_pay', totalPrice: 999 }
+  ])
+  const products = C.summarizeProducts([
+    { stock: 1, category: '昆虫' }, { stock: 9, category: '昆虫' }, { stock: 0, category: '矿石' }, { stock: 5, category: '植物', isOffShelf: true }
+  ])
+  ok('A5 经营上下文：只汇总已付态 / 退款单算 / 客单价按已付笔数；在售与低库存口径正确',
+    orders.paidCount === 2 && orders.gmv === 1000 && orders.refund === 100 && orders.aov === 500 &&
+    products.onSale === 3 && products.lowStock === 2 && /昆虫 2/.test(products.top), fails)
+  ok('A5 上下文注入 staffChat：system 里带「当前经营数据」块；只查 4 张表且不含个人信息；有缓存与字数上限',
+    /contextFor\(roleId, db\)/.test(fn) && /【当前经营数据/.test(fn) &&
+    /collection\('orders'\)/.test(ctxSrc) && /collection\('products'\)/.test(ctxSrc) &&
+    /collection\('users'\)/.test(ctxSrc) && /collection\('bookings'\)/.test(ctxSrc) &&
+    !/phone|mobile|openid|realName|receiver/i.test(ctxSrc) &&
+    /TTL_MS/.test(ctxSrc) && C.TEXT_MAX <= 600, fails)
   return fails
 }
 
@@ -77,6 +95,8 @@ if (process.argv.includes('--selftest')) {
     { name: '角色表与云端不一致', file: P.roles, find: "id: 'cfo'", replace: "id: 'cfo2'" },
     { name: '云端不校验 roleId', file: P.fn, find: 'if (ROLE_IDS.indexOf(roleId) < 0) return', replace: 'if (false) return' },
     { name: '缺 Key 也放行', file: P.fn, find: "if (!apiKey) return { success: false, error_type: 'ai_service'", replace: "if (false) return { success: false, error_type: 'ai_service'" },
+    { name: '上下文不注入 system', file: P.fn, find: 'try { context = await contextFor(roleId, db) } catch (e) { context = \'\' }', replace: 'context = \'\'' },
+    { name: '上下文里带手机号', file: P.ctx, find: ".field({ stock: true, category: true, isOffShelf: true })", replace: ".field({ stock: true, category: true, isOffShelf: true, phone: true })" },
     { name: '会话改存云端', file: P.page, find: 'wx.setStorageSync(', replace: 'wx.cloud.callFunction({ name: "x", data: {' }
   ].filter((x) => x.find !== '')
   let bad = 0
