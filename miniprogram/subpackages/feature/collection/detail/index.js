@@ -1,4 +1,4 @@
-const { neighbors, readOrder } = require('../atlasPager')
+const { neighbors, readOrder, readAll, chapterOf } = require('../atlasPager')
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const {
   callAtlas,
@@ -10,10 +10,23 @@ const {
   galleryCategoryOf,
   buildSpecimenFacts
 } = require('../../utils/atlas')
-const { plateOf } = require('../../utils/atlasPlates')
+const { plateOf, ghostOf } = require('../../utils/atlasPlates')
 
 const RARE_MARK = { rare: '稀有', legendary: '传奇' }
 
+
+/**
+ * 未点亮页的补充（2026-11-23）：门类剪影（同门类统一线描，不剧透物种）+「怎样翻开」路径。
+ * 馆内印记只在真有印记时出；收藏路径写「如有」—— 受保护物种没有对应藏品。
+ */
+function unlockWaysOf(card) {
+  if (!card || card.unlocked) return []
+  return [
+    { k: '拍照采集', v: '对准实物或馆内藏品拍一张，认出它就翻开' },
+    card.hasSpot ? { k: '馆内印记', v: '馆里有它的印记，扫到就翻开' } : null,
+    { k: '收藏藏品', v: '收藏馆内对应的藏品（如有），会自动落进这一页' }
+  ].filter(Boolean)
+}
 Page({
   data: {
     loading: true,
@@ -50,6 +63,7 @@ Page({
     card.toneClass = card.unlocked && card.categoryTone ? `tone-${card.categoryTone}` : ''
     card.plate = plateOf(card)
     card.rareMark = card.unlocked ? RARE_MARK[card.rarity] || '' : ''
+    card.ghost = ghostOf(card)
     const logs = (pack.logs || []).map((row, i) => ({
       id: row._id || `l-${row.createdAt || i}`,
       methodLabel: methodLabel(row.method),
@@ -79,6 +93,8 @@ Page({
       justUnlocked: !!this.justUnlocked && !!card.unlocked,
       methodText: card.methodLabel || methodLabel(card.method) || '',
       seriesText: (card.seriesNames || []).join(' · '),
+      chapter: chapterOf(readAll(getApp()), card),
+      unlockWays: unlockWaysOf(card),
       shareImage
     })
     // 商品图是 cloud:// fileID → 预解析成 https，分享卡片才有封面（否则黑块）
@@ -116,6 +132,7 @@ Page({
         if (sp) {
           const card = enrichCardSpots(withMarks(publicSpecies(sp, false)))
           card.toneClass = ''
+          card.ghost = ghostOf(card)
           this.setData({
             card,
             logs: [],
@@ -127,6 +144,8 @@ Page({
             loadError: false,
             methodText: '',
             seriesText: (card.seriesNames || []).join(' · '),
+            chapter: chapterOf(readAll(getApp()), card),
+            unlockWays: unlockWaysOf(card),
             shareImage: ''
           })
           wx.setNavigationBarTitle({ title: '图鉴卡片' })

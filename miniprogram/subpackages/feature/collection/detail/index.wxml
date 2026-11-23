@@ -47,7 +47,16 @@
       </block>
       <block wx:else>
         <text class="blank-no">{{card.no || '—'}}</text>
+        <!-- 2026-11-23：门类剪影（同门类统一线描）+ 门类 / 卷章 / 稀有度，都不涉及具体物种 -->
+        <image class="blank-ghost" src="{{card.ghost}}" mode="aspectFit" wx:if="{{card.ghost}}" aria-hidden="true"></image>
         <text class="blank-t">这一页还空着</text>
+        <view class="blank-meta">
+          <text wx:if="{{card.category}}">{{card.category}}</text>
+          <text class="dot-sep" wx:if="{{card.category && seriesText}}">·</text>
+          <text wx:if="{{seriesText}}">{{seriesText}}</text>
+          <text class="dot-sep" wx:if="{{card.rarityLabel && (card.category || seriesText)}}">·</text>
+          <text wx:if="{{card.rarityLabel}}">{{card.rarityLabel}}</text>
+        </view>
         <text class="blank-spot" wx:if="{{card.hasSpot}}">馆内可寻</text>
       </block>
     </view>
@@ -66,8 +75,38 @@
       </view>
     </view>
 
+    <!-- 未点亮：「怎样翻开这一页」（馆内印记只在真有印记时出），替代原一段说明 -->
     <view class="locked-note" wx:if="{{locked}}">
-      <text class="essay">它在馆里，等被看见。扫到印记或拍照采集之后，这一页才会把产地、习性、柜位与那段话写给你。</text>
+      <text class="sec-eyebrow">HOW TO TURN</text>
+      <text class="ways-title">怎样翻开这一页</text>
+      <view class="way" wx:for="{{unlockWays}}" wx:key="k">
+        <text class="way-no">{{index + 1}}</text>
+        <view class="way-main"><text class="way-k">{{item.k}}</text><text class="way-v">{{item.v}}</text></view>
+      </view>
+      <text class="ways-foot">翻开之后，产地、习性、柜位与那段话会写在这里。</text>
+    </view>
+
+    <!-- 同章小格（2026-11-23）：这一章各页一排；点亮的给线描与名称，未点亮只露编号；点一格翻到那页。分享直达无整册数据 → 不出 -->
+    <view class="chapter-strip" wx:if="{{chapter}}">
+      <view class="chapter-strip-head">
+        <text class="chapter-strip-t">同章 · {{chapter.name}}</text>
+        <text class="chapter-strip-n">{{chapter.got}}/{{chapter.total}}</text>
+      </view>
+      <scroll-view class="chapter-strip-row" scroll-x enable-flex show-scrollbar="{{false}}">
+        <view
+          class="cs-cell {{item.unlocked ? 'is-lit' : ''}} {{item.current ? 'is-current' : ''}}"
+          wx:for="{{chapter.items}}"
+          wx:key="id"
+          bindtap="onTurnPage"
+          data-id="{{item.current ? '' : item.id}}"
+          hover-class="{{item.current ? 'none' : 'tap-press'}}"
+          hover-stay-time="80"
+        >
+          <image class="cs-art" src="{{item.plate}}" mode="aspectFit" wx:if="{{item.plate}}"></image>
+          <text class="cs-no">{{item.no}}</text>
+          <text class="cs-name" wx:if="{{item.label}}">{{item.label}}</text>
+        </view>
+      </scroll-view>
     </view>
 
     <view class="collect-dock dual" wx:if="{{locked}}">

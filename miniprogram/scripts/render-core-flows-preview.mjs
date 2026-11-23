@@ -215,6 +215,12 @@ const wlLedger = wlLedgerMod.buildLedgerTimeline([
   wlRow('l5', 'order_pay', '订单消费', -56000, '2026-10-28T20:31:00+08:00', { orderNo: 'ORD20261028203101', refType: 'order', refId: 'o3', subtitle: '订单支付扣款 · ORD20261028203101' }),
   wlRow('l6', 'recharge', '充值', 50000, '2026-10-10T09:00:00+08:00', { subtitle: '微信支付入账' })
 ], { now: wlNow, hasMore: false })
+// 同章小格样例（2026-11-23）：守山者真章节，点亮与否取预览 atlasCards
+const atlasMountain = atlasCatalogMod.ATLAS_SERIES.find((x) => x.id === 'mountain')
+const atlasChapterDemo = { id: 'mountain', name: '守山者', items: atlasMountain.speciesIds.map((id) => atlasCards.find((c) => c.id === id)).filter(Boolean)
+  .sort((a, b) => a.no.localeCompare(b.no)).map((c) => ({ id: c.id, no: c.no, unlocked: c.unlocked, label: c.unlocked ? c.nameZh : '', plate: c.unlocked ? c.plate : '', current: c.no === '033' })) }
+atlasChapterDemo.got = atlasChapterDemo.items.filter((c) => c.unlocked).length
+atlasChapterDemo.total = atlasChapterDemo.items.length
 const SCENES = [
   { name: 'wl-main', h: 2500, wxml: 'subpackages/feature/wish-labels/index', data: wlBase },
   { name: 'wl-compose', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, composeOpen: true, draft: '马上有好睡眠', draftCount: 6, posting: false, voicePath: '' } },
@@ -456,7 +462,7 @@ const SCENES = [
     name: 'atlas-detail', h: 2600, wxml: 'subpackages/feature/collection/detail/index', data: {
       pagerPrev: { id: '031', no: '031', label: '银杏押花' }, pagerNext: { id: '034', no: '034', label: '未记录' }, pagerPos: '13 / 16',
       loading: false, loadError: false, locked: false, justUnlocked: false, methodText: '镜头记下 · 2026.10.16', seriesText: '守山者',
-      card: Object.assign({}, atlasCards[12], { essay: '壳里一格一格的房间，是它一生搬过的家。最外面那一间住着现在，里面的门都关上了，只留一根细管把它们连起来。' }),
+      chapter: atlasChapterDemo, card: Object.assign({}, atlasCards.find((c) => c.no === '033'), { essay: '壳里一格一格的房间，是它一生搬过的家。最外面那一间住着现在，里面的门都关上了，只留一根细管把它们连起来。' }),
       facts: [{ k: '产地', v: '西太平洋与印度洋的珊瑚礁外坡' }, { k: '习性', v: '白天沉在深处，夜里随水温上浮觅食' }, { k: '柜位', v: '海洋标本柜下层' }, { k: '印记码', v: 'SH-S5' }],
       relatedProducts: [{ _id: 'p1', title: '鹦鹉螺剖面标本', latinName: 'Nautilus pompilius', image: '', priceText: '680' }],
       logs: [{ id: 'l1', methodLabel: '拍照采集', timeText: '2026.10.16 21:04', place: '' }], hasLogs: true
@@ -464,7 +470,8 @@ const SCENES = [
   },
   {
     name: 'atlas-locked', h: 1800, wxml: 'subpackages/feature/collection/detail/index', data: {
-      loading: false, loadError: false, locked: true, card: atlasCards[2], facts: [], relatedProducts: [], logs: []
+      loading: false, loadError: false, locked: true, card: Object.assign({}, atlasCards.find((c) => c.no === '006'), { ghost: atlasPlates.ghostOf(atlasCards.find((c) => c.no === '006')), rarityLabel: '普通' }), seriesText: '', facts: [], relatedProducts: [], logs: [],
+      unlockWays: [{ k: '拍照采集', v: '对准实物或馆内藏品拍一张，认出它就翻开' }, { k: '收藏藏品', v: '收藏馆内对应的藏品（如有），会自动落进这一页' }]
     }
   },
   // 2026-10-17 标本养护「养护手册」：品类卡的刻版线描取真源 carePlateOf

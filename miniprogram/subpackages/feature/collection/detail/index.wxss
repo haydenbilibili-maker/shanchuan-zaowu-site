@@ -211,6 +211,27 @@ page { background: #1A1814; }
   color: var(--color-text-secondary);
 }
 
+/* 门类剪影：铺在空页中央，极淡；编号与文字压在上面 */
+.plate.is-blank { position: relative; overflow: hidden; }
+.blank-ghost {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 360rpx;
+  height: 360rpx;
+  transform: translate(-50%, -50%);
+  opacity: 0.08;
+  pointer-events: none;
+}
+.blank-no, .blank-t, .blank-meta, .blank-spot { position: relative; }
+.blank-meta {
+  display: flex;
+  gap: 10rpx;
+  margin-top: 10rpx;
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+}
+
 .blank-spot {
   margin-top: 12rpx;
   font-size: var(--fs-22);
@@ -676,4 +697,85 @@ button.btn-share::after {
   font-family: var(--font-mono);
   font-size: var(--fs-20);
   color: var(--color-text-secondary);
+}
+
+/* 怎样翻开这一页（2026-11-23）：编号 + 路径 + 一句说明 */
+.ways-title {
+  display: block;
+  font-family: var(--font-brand);
+  font-size: var(--fs-32);
+  color: #F3ECDD;
+  margin-bottom: 12rpx;
+}
+.way {
+  display: flex;
+  align-items: flex-start;
+  gap: 20rpx;
+  padding: 20rpx 0;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+}
+.way-no {
+  flex: none;
+  width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
+  text-align: center;
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  color: var(--brass-300);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.5);
+}
+.way-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.way-k { font-size: var(--fs-26); color: var(--color-text-body); }
+.way-v { font-size: var(--fs-22); line-height: 1.6; color: var(--color-text-secondary); }
+.ways-foot {
+  display: block;
+  margin-top: 8rpx;
+  padding-top: 18rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+}
+
+/* 同章小格（2026-11-23）：一章各页横排；当前页铜框，点亮页浅纸 + 线描，未点亮只露编号 */
+.chapter-strip { margin: 32rpx 0 8rpx; }
+.chapter-strip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+.chapter-strip-t { font-family: var(--font-brand); font-size: var(--fs-28); color: #F3ECDD; }
+.chapter-strip-n { font-family: var(--font-mono); font-size: var(--fs-22); color: var(--color-text-secondary); }
+.chapter-strip-row { white-space: nowrap; }
+.cs-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  vertical-align: top;
+  width: 128rpx;
+  height: 168rpx;
+  margin-right: 12rpx;
+  box-sizing: border-box;
+  border-radius: 4rpx;
+  border: 2rpx dashed rgba(196, 167, 108, 0.24);
+}
+.cs-cell.is-lit {
+  border: none;
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+}
+.cs-cell.is-current { box-shadow: 0 0 0 3rpx var(--brass-400, #C4A76C); }
+.cs-art { width: 72rpx; height: 72rpx; }
+.cs-no { font-family: var(--font-mono); font-size: var(--fs-20); color: rgba(196, 167, 108, 0.55); }
+.cs-cell.is-lit .cs-no { margin-top: 2rpx; font-size: var(--fs-16); color: #8B6F47; }
+.cs-name {
+  max-width: 116rpx;
+  margin-top: 2rpx;
+  font-size: var(--fs-18);
+  color: #2E2618;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
