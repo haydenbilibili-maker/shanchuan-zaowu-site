@@ -3,7 +3,8 @@
     "protected-badge": "/components/ProtectedBadge/index",
     "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
     "app-modal": "/components/AppModal/index",
-    "app-toast": "/components/AppToast/index"
+    "app-toast": "/components/AppToast/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "navigationStyle": "custom",
   "enablePullDownRefresh": true,

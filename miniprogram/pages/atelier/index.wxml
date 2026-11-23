@@ -3,7 +3,7 @@
   <view class="grain-overlay"></view>
 
   <view class="hero">
-    <image class="hero-bg" src="{{heroImage}}" mode="aspectFill"></image>
+    <shan-img ext-class="hero-bg" src="{{heroImage}}" mode="aspectFill" />
     <view class="hero-mask"></view>
     <!-- 品牌标题 + slogan 同左缘、锚在 hero 下缘，读成一块构图；避开顶栏胶囊 -->
     <view class="hero-content">

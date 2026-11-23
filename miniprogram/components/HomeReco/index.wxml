@@ -35,7 +35,7 @@
       <view class="hr-card" id="hr-c{{index}}" wx:for="{{cards}}" wx:key="_id" aria-role="button" aria-label="{{item.title}}" bindtap="onCardTap" data-pos="{{item.pos}}" hover-class="tap-press-soft" hover-stay-time="80">
         <view class="hr-img-box">
           <sensitive-blur-gate enabled="{{item.sensitiveBlur}}" product-id="{{item._id}}" size="card">
-            <image class="hr-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" lazy-load />
+            <shan-img ext-class="hr-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" />
             <view class="hr-img-ph" wx:else></view>
           </sensitive-blur-gate>
           <view class="hr-fade"></view>

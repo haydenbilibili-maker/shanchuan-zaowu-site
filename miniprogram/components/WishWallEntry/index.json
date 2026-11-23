@@ -1,4 +1,6 @@
 {
   "component": true,
-  "usingComponents": {}
+  "usingComponents": {
+    "shan-img": "/components/ShanImage/index"
+  }
 }

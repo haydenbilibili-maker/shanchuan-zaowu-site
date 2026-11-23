@@ -4,6 +4,7 @@
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
   "usingComponents": {
-    "easter-egg-note": "/components/EasterEggNote/index"
+    "easter-egg-note": "/components/EasterEggNote/index",
+    "shan-img": "/components/ShanImage/index"
   }
 }

@@ -12,7 +12,7 @@
     
     <!-- 2. 沉浸式首图 (The Opening) -->
     <view class="hero-poster">
-      <image class="hero-img" src="{{heroImage}}" mode="aspectFill"></image>
+      <shan-img ext-class="hero-img" src="{{heroImage}}" mode="aspectFill" />
       <view class="hero-mask"></view>
       <view class="hero-text {{isLoaded ? 'active' : ''}}" catchlongpress="onEasterEggLongPress" data-egg-id="kunlun">
         <text class="h-sub">EST. 2026</text>

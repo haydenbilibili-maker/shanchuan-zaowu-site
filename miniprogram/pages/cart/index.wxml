@@ -231,7 +231,7 @@
     <!-- 需求 1：结账台「顺手带走一件」——像吧台口香糖，一次点按带走（¥10 以下优先，其次 ¥50 以下） -->
     <view class="addon-strip" wx:if="{{addonPick && addonText}}">
       <view class="addon-thumb-wrap" bindtap="goToDetail" data-id="{{addonPick.id}}" hover-class="tap-press" hover-stay-time="80">
-        <image class="addon-thumb" wx:if="{{addonPick.image}}" src="{{addonPick.image}}" mode="aspectFill" lazy-load></image>
+        <shan-img ext-class="addon-thumb" wx:if="{{addonPick.image}}" src="{{addonPick.image}}" mode="aspectFill" mark="{{false}}" />
         <view class="addon-thumb-ph" wx:else>
           <image class="addon-thumb-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
         </view>

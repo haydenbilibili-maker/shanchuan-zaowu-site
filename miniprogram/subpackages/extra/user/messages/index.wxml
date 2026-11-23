@@ -191,15 +191,7 @@
           <text class="message-preview" wx:elif="{{item.preview}}">{{item.preview}}</text>
           <!-- 需求 10：列表也给出商品线索（缩略图 + 首件名称），不再只有订单号 -->
           <view class="message-goods" wx:if="{{item.hasProductCards}}">
-            <image
-              wx:for="{{item.productThumbs}}"
-              wx:for-item="thumb"
-              wx:key="id"
-              class="mg-thumb"
-              src="{{thumb.image}}"
-              mode="aspectFill"
-              lazy-load
-            ></image>
+            <shan-img wx:for="{{item.productThumbs}}" wx:for-item="thumb" wx:key="id" ext-class="mg-thumb" src="{{thumb.image}}" mode="aspectFill" mark="{{false}}" />
             <text class="mg-text">{{item.productSummary}}</text>
           </view>
           <!-- 发货包装图片（可选附件）：列表里先给一个「这封信里有实拍」的线索，

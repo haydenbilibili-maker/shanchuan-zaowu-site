@@ -161,7 +161,7 @@
         <view class="activity-list">
           <block wx:for="{{courses}}" wx:key="_id">
             <view class="act-card {{selectedActivityId === item._id ? 'selected' : ''}} {{item._full ? 'is-full' : ''}}" bindtap="selectActivity" hover-class="act-card-press" hover-stay-time="80" data-id="{{item._id}}" data-status="{{item._full ? 'full' : item.status}}" data-type="course">
-              <image class="act-img" src="{{item.image}}" mode="aspectFill"></image>
+              <shan-img ext-class="act-img" src="{{item.image}}" mode="aspectFill" />
               <view class="act-info">
                 <text class="act-t">{{item.title}}</text>
                 <text class="act-d">{{item.date}} · {{item.time}}</text>
@@ -178,7 +178,7 @@
         <view class="activity-list">
           <block wx:for="{{activities}}" wx:key="_id">
             <view class="act-card {{selectedActivityId === item._id ? 'selected' : ''}} {{item._full ? 'is-full' : ''}}" bindtap="selectActivity" hover-class="act-card-press" hover-stay-time="80" data-id="{{item._id}}" data-status="{{item._full ? 'full' : item.status}}" data-type="activity">
-              <image class="act-img" src="{{item.image}}" mode="aspectFill"></image>
+              <shan-img ext-class="act-img" src="{{item.image}}" mode="aspectFill" />
               <view class="act-info">
                 <text class="act-t">{{item.title}}</text>
                 <text class="act-d">{{item.date}} · {{item.location}}</text>

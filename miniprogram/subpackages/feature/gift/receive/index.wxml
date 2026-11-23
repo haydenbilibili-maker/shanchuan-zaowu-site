@@ -18,7 +18,7 @@
 
       <view class="specimen sender-specimen" wx:if="{{product}}">
         <view class="specimen-img-wrap">
-          <image class="specimen-img" src="{{product.image}}" mode="aspectFill" wx:if="{{product.image}}"></image>
+          <shan-img ext-class="specimen-img" src="{{product.image}}" mode="aspectFill" wx:if="{{product.image}}" />
           <protected-badge product="{{product}}" size="xs" corner="bl" />
         </view>
         <view class="specimen-meta">
@@ -191,7 +191,7 @@
 
     <view class="specimen" wx:if="{{product}}">
       <view class="specimen-img-wrap">
-        <image class="specimen-img" src="{{product.image}}" mode="aspectFill" wx:if="{{product.image}}"></image>
+        <shan-img ext-class="specimen-img" src="{{product.image}}" mode="aspectFill" wx:if="{{product.image}}" />
         <protected-badge product="{{product}}" size="xs" corner="bl" />
       </view>
       <view class="specimen-meta">

@@ -225,7 +225,8 @@ t('卡片统一 3:4（300×400 图 + 定高体）、图 aspectFill + lazy-load�
   const s = read('components/HomeReco/index.wxss')
   const js = read('components/HomeReco/index.js')
   const card = cssRule(s, '.hr-card, .hr-more-card'), img = cssRule(s, '.hr-img-box')
-  return pxOf(card, 'width') === 300 && pxOf(img, 'height') === 400 && /<image class="hr-img"[^>]*mode="aspectFill" lazy-load/.test(w) &&
+  return pxOf(card, 'width') === 300 && pxOf(img, 'height') === 400 && // 2026-11-23 全站图片：换成 <shan-img>（默认懒加载；不得显式关掉）
+    (/<image class="hr-img"[^>]*mode="aspectFill" lazy-load/.test(w) || (/<shan-img ext-class="hr-img"[^>]*mode="aspectFill"/.test(w) && !/ext-class="hr-img"[^>]*lazy="\{\{false\}\}"/.test(w))) &&
     !/coverGeo|cardGeo|RATIO_KEY|onImgLoad|tier/.test(js + w)
 })
 t('图底渐隐压在图上（.hr-fade z-index 1，角标 z-index 2，均高于敏感模糊门宿主），渐隐终点 = 卡体底色', () => {
@@ -352,7 +353,7 @@ function selftest() {
     { name: '卡上加了假销量', file: 'components/HomeReco/index.wxml', from: '<text class="hr-soldout" wx:if="{{item.soldOut}}">售罄</text>', to: '<text class="hr-soldout" wx:if="{{item.soldOut}}">售罄</text><text>已售 99+</text>', expect: '提审红线' },
     { name: '换一批不回到第一张', file: 'components/HomeReco/index.js', from: "scrollTo: 'hr-c0'", to: "scrollTo: ''", expect: '横滑展柜' },
     { name: '末尾「逛全部藏品」被删', file: 'components/HomeReco/index.wxml', from: '<text class="hr-more-cn">逛全部藏品</text>', to: '', expect: '横滑展柜' },
-    { name: '图片改回 widthFix（卡片参差）', file: 'components/HomeReco/index.wxml', from: 'mode="aspectFill" lazy-load', to: 'mode="widthFix" lazy-load', expect: '3:4' },
+    { name: '图片改回 widthFix（卡片参差）', file: 'components/HomeReco/index.wxml', from: 'ext-class="hr-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill"', to: 'ext-class="hr-img" wx:if="{{item.image}}" src="{{item.image}}" mode="widthFix"', expect: '3:4' },
     { name: '渐隐被压到模糊门下面', file: 'components/HomeReco/index.wxss', from: '.hr-fade { position: absolute; z-index: 1;', to: '.hr-fade { position: absolute; z-index: 0;', expect: '图底渐隐' },
     { name: '无价写成 ¥0', file: 'components/HomeReco/logic.js', from: "if (!Number.isFinite(price) || price <= 0) return { priceText: '', priceFrom: false }", to: "if (!Number.isFinite(price)) return { priceText: '', priceFrom: false }", expect: '价格' },
     { name: '祈福墙时间窗放宽', file: 'components/HomeReco/logic.js', from: 'const WALL_RECENT_DAYS = 14', to: 'const WALL_RECENT_DAYS = 365', expect: '近 14 天' },

@@ -46,7 +46,7 @@
         data-order-id="{{item.orderId}}"
         data-product-id="{{item.productId}}"
       >
-        <image class="spec-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+        <shan-img ext-class="spec-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}" mark="{{false}}" />
         <view class="spec-thumb is-empty" wx:else><text class="spec-letter">{{item.categoryLabel[0]}}</text></view>
         <view class="spec-main">
           <text class="spec-eyebrow">{{item.categoryLabel}}{{item.receiveTimeText ? ' · ' + item.receiveTimeText + ' 签收' : ''}}</text>

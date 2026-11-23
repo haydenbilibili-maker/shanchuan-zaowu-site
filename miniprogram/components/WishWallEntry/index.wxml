@@ -13,7 +13,7 @@
 >
   <!-- 实拍裱在米白卡纸上、微斜，像钉在展板上的照片 -->
   <view class="wl-entry-mat" wx:if="{{cover}}" aria-hidden="true">
-    <image class="wl-entry-thumb" src="{{cover}}" mode="aspectFill" />
+    <shan-img ext-class="wl-entry-thumb" src="{{cover}}" mode="aspectFill" mark="{{false}}" />
   </view>
   <view class="wl-entry-main">
     <text class="wl-entry-kicker">WISH LABELS</text>

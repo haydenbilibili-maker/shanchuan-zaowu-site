@@ -158,7 +158,7 @@
       <block wx:if="{{order.products && order.products.length}}">
         <block wx:for="{{order.products}}" wx:key="id" wx:for-index="prodIndex">
           <view class="manifest-item" bindtap="goToProduct" data-id="{{item.id || item.productId || item._id}}" hover-class="manifest-item-press" hover-stay-time="80">
-            <image src="{{item.image}}" mode="aspectFill" class="m-img"></image>
+            <shan-img src="{{item.image}}" mode="aspectFill" ext-class="m-img" />
             <view class="m-info">
               <text class="m-title">{{item.title}}</text>
               <text class="m-latin">{{item.latin}}</text>
@@ -179,16 +179,7 @@
     <view class="pack-section slide-in-delay-2" wx:if="{{order.packagePhotos && order.packagePhotos.length}}">
       <view class="mu-head"><view class="mu-head-t"><text class="mu-en">PACKING</text><text class="mu-cn">包装实拍</text></view></view>
       <view class="pack-grid">
-        <image
-          class="pack-item"
-          wx:for="{{order.packagePhotos}}"
-          wx:key="*this"
-          src="{{item}}"
-          mode="aspectFill"
-          data-src="{{item}}"
-          bindtap="previewPackagePhoto"
-          lazy-load
-        ></image>
+        <shan-img ext-class="pack-item" wx:for="{{order.packagePhotos}}" wx:key="*this" src="{{item}}" mode="aspectFill" data-src="{{item}}" bindtap="previewPackagePhoto" />
       </view>
       <text class="pack-tip">这是这件的打包留影；点击可放大查看。</text>
     </view>
@@ -284,16 +275,7 @@
         show-center-play-btn
       ></video>
       <view class="evidence-imgs" wx:if="{{evidenceImageUrls.length}}">
-        <image
-          wx:for="{{evidenceImageUrls}}"
-          wx:key="*this"
-          wx:for-index="idx"
-          class="evidence-img"
-          src="{{item}}"
-          mode="aspectFill"
-          bindtap="previewEvidenceImage"
-          data-idx="{{idx}}"
-        ></image>
+        <shan-img wx:for="{{evidenceImageUrls}}" wx:key="*this" wx:for-index="idx" ext-class="evidence-img" src="{{item}}" mode="aspectFill" bindtap="previewEvidenceImage" data-idx="{{idx}}" />
       </view>
     </view>
 

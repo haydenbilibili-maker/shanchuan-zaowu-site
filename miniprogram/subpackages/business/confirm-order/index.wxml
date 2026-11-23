@@ -52,7 +52,7 @@
   <view class="card gift-summary-card">
     <view class="gift-sum-goods" wx:for="{{items}}" wx:key="productId">
       <view class="gift-sum-img-wrap">
-        <image class="gift-sum-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill"></image>
+        <shan-img ext-class="gift-sum-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" />
         <view class="gift-sum-img goods-img-ph" wx:else>
           <image class="goods-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
         </view>
@@ -323,7 +323,7 @@
     <view class="section-label">藏品清单</view>
     <view class="goods-item" wx:for="{{items}}" wx:key="productId">
       <view class="goods-img-wrap">
-        <image class="goods-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill"></image>
+        <shan-img ext-class="goods-img" wx:if="{{item.image}}" src="{{item.image}}" mode="aspectFill" />
         <view class="goods-img goods-img-ph" wx:else>
           <image class="goods-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
         </view>

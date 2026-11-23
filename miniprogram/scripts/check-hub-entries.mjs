@@ -710,8 +710,8 @@ const SPLIT = {
   payslip: ['myPayslip', 'payslipAdmin'],
   rules: ['shipping', 'bookingRules', 'supportConfig']
 }
-/** 入口总数棘轮：只许多不许少（拆分后 48；2026-10-10 加「SKU 维护」→ 49；删入口须产品负责人点名并在此改数） */
-const MIN_ENTRIES = 49
+/** 入口总数棘轮：只许多不许少（拆分后 48；2026-10-10 加「SKU 维护」→ 49；2026-11-23 加「博物君」开关·监测 → 50；删入口须产品负责人点名并在此改数） */
+const MIN_ENTRIES = 50
 
 function judgeSplit(src, nav, roles, tiles, errs) {
   const entries = nav.HUB_ENTRIES || []
@@ -904,7 +904,7 @@ if (!selftest) {
       const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="wxNotify"[\s\S]*?<text class="hub-cell-sub">订单·工单提醒<\/text>\s*<\/view>/)
       if (!m) throw new Error('注入锚点失效：微信通知磁贴')
       return rep('hubNav', "  { id: 'wxNotify',", "  // { id: 'wxNotify',")({ ...s, wxml: s.wxml.replace(m[0], '') })
-    }, /N7 入口总数 48 < 49/],
+    }, /N7 入口总数 49 < 50/],
     ['N5 SKU 维护搜不到', rep('hubNav', "alias: ['SKU', '商品', '价目', '出货 SKU', '定价']", "alias: ['出货 SKU']"), /N5 超管搜「商品」须找到「SKU 维护」/],
     ['N7 旧折叠常用映射到无权限子入口', rep('hubNav', 'Array.isArray(to) ? to.find((x) => entryVisible(findEntry(x), menu)) : to', 'Array.isArray(to) ? to[0] : to'), /N7 只有部分子功能权限时/],
     ['N7 子入口丢了角标', rep('hubNav', "tap: 'goGiftOps', badge: 'giftTodoCount' }", "tap: 'goGiftOps' }"), /N7 旧「礼赠」常用映射到礼赠履约后须带上礼赠待办红点/],

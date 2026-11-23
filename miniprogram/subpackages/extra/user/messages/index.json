@@ -8,6 +8,7 @@
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",
   "usingComponents": {
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "shan-img": "/components/ShanImage/index"
   }
 }

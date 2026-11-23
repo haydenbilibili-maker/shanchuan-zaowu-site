@@ -59,13 +59,7 @@
                 <text class="goods-head-count">{{selectedMessage.productCards.length}} 项</text>
               </view>
               <view class="goods-row" wx:for="{{selectedMessage.productCards}}" wx:key="id">
-                <image
-                  wx:if="{{item.hasImage}}"
-                  class="goods-thumb"
-                  src="{{item.image}}"
-                  mode="aspectFill"
-                  lazy-load
-                ></image>
+                <shan-img wx:if="{{item.hasImage}}" ext-class="goods-thumb" src="{{item.image}}" mode="aspectFill" mark="{{false}}" />
                 <view class="goods-thumb goods-thumb-empty" wx:else>
                   <text class="goods-thumb-mark">山海</text>
                 </view>
@@ -85,16 +79,7 @@
                 <text class="photos-head-count" wx:if="{{selectedMessage.packagePhotoCountText}}">{{selectedMessage.packagePhotoCountText}}</text>
               </view>
               <view class="photos-grid">
-                <image
-                  class="photos-item"
-                  wx:for="{{selectedMessage.packagePhotos}}"
-                  wx:key="*this"
-                  src="{{item}}"
-                  mode="aspectFill"
-                  data-src="{{item}}"
-                  bindtap="previewPackagePhoto"
-                  lazy-load
-                ></image>
+                <shan-img ext-class="photos-item" wx:for="{{selectedMessage.packagePhotos}}" wx:key="*this" src="{{item}}" mode="aspectFill" data-src="{{item}}" bindtap="previewPackagePhoto" />
               </view>
               <text class="photos-tip">这是这件的打包留影；点击可放大查看。</text>
             </view>

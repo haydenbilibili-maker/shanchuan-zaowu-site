@@ -232,7 +232,7 @@
           hover-class="wiki-row-press"
           hover-stay-time="80"
         >
-          <image class="wiki-thumb" src="{{item.coverImage || displayImage}}" mode="aspectFill" />
+          <shan-img ext-class="wiki-thumb" src="{{item.coverImage || displayImage}}" mode="aspectFill" mark="{{false}}" />
           <view class="wiki-meta">
             <text class="wiki-title">{{item.title}}</text>
             <text class="wiki-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>
@@ -253,7 +253,7 @@
                 hover-class="p-card-press"
                 hover-stay-time="80"
               >
-                <image class="p-img" src="{{item.cover}}" mode="aspectFill" />
+                <shan-img ext-class="p-img" src="{{item.cover}}" mode="aspectFill" />
                 <text class="p-name">{{item.title}}</text>
                 <text class="p-price" wx:if="{{item.price}}">¥{{item.price}}</text>
               </view>

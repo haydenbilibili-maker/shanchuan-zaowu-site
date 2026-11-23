@@ -18,7 +18,7 @@
         bindchange="onSwiperChange"
       >
         <swiper-item wx:for="{{swiperImages}}" wx:key="*this">
-          <image class="zone-hero-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-src="{{item}}"></image>
+          <shan-img ext-class="zone-hero-img" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-src="{{item}}" />
         </swiper-item>
       </swiper>
       <view class="zone-hero-mask"></view>
@@ -71,7 +71,7 @@
               product-id="{{item._id}}"
               size="card"
             >
-              <image class="product-img" src="{{item.image}}" mode="aspectFill"></image>
+              <shan-img ext-class="product-img" src="{{item.image}}" mode="aspectFill" />
             </sensitive-blur-gate>
           </view>
           <view class="product-body">
@@ -93,7 +93,7 @@
         bindtap="goWiki"
         data-id="{{item._id}}"
       >
-        <image class="wiki-thumb" src="{{item.coverImage}}" mode="aspectFill" wx:if="{{item.coverImage}}"></image>
+        <shan-img ext-class="wiki-thumb" src="{{item.coverImage}}" mode="aspectFill" wx:if="{{item.coverImage}}" mark="{{false}}" />
         <view class="wiki-meta">
           <text class="wiki-title text-cut">{{item.title}}</text>
           <text class="wiki-brief text-cut">{{item.brief || latin.display(item.latinName)}}</text>
