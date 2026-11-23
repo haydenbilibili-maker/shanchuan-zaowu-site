@@ -3,7 +3,10 @@
  *
  * 动作：
  *   overview  { days: 7 | 30 }            近 N 天按日统计 + 失败分布 + 热门物种 / 去处 / 入口 / 模型 + 当前配置
- *   setConfig { enabled?, dailyLimit? }    改开关与每日额度（先写审计，审计失败即拒绝）
+ *   setConfig { enabled?, dailyLimit?, notices? }  改开关 / 每日额度 / 首页口播通知（先写审计，审计失败即拒绝）
+ *
+ * 口播通知（2026-11-23）：首页「博物君口播」里的「馆内通知」条，最多 3 条、每条 ≤ 36 字；
+ *   getContentDisplayFlags 只读带出 museumGuideNotices（与 museumGuideOpen 同一份文档）。
  *
  * 鉴权：staffGuard.assertStaff({ requireSuperAdmin: true })，只认小程序身份。
  * 数据：museum_guide_logs 由 askMuseumGuide 每次提问写一条（**不含问题与回答原文**）；
@@ -27,6 +30,8 @@ const MAX_ROWS = 20000
 const LIMIT_MIN = 5
 const LIMIT_MAX = 200
 const DEFAULT_LIMIT = 30
+const NOTICE_MAX = 3
+const NOTICE_LEN = 36
 
 function fail(code, msg) {
   return { success: false, code, msg }
@@ -46,6 +51,21 @@ function normalizeDays(v) {
   return Number(v) === 30 ? 30 : 7
 }
 
+/** 一条口播通知：去控制字符、压空白；空串 → '' */
+function cleanNotice(v) {
+  return String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/** 口播通知入参：数组、去空、≤ NOTICE_MAX 条、每条 ≤ NOTICE_LEN 字；传空数组 = 清空 */
+function normalizeNotices(list) {
+  if (!Array.isArray(list)) return { error: '口播通知格式不对' }
+  const out = list.map(cleanNotice).filter(Boolean)
+  if (out.length > NOTICE_MAX) return { error: `口播通知最多 ${NOTICE_MAX} 条` }
+  const long = out.find((t) => t.length > NOTICE_LEN)
+  if (long) return { error: `每条口播通知不超过 ${NOTICE_LEN} 字` }
+  return { notices: out }
+}
+
 /** 配置入参校验：只认布尔开关与 5–200 的整数额度；都没给 / 不合法 → error */
 function normalizeConfigInput(event) {
   const out = {}
@@ -54,6 +74,11 @@ function normalizeConfigInput(event) {
     const n = Number(event.dailyLimit)
     if (!Number.isInteger(n) || n < LIMIT_MIN || n > LIMIT_MAX) return { error: `每日额度须为 ${LIMIT_MIN}–${LIMIT_MAX} 的整数` }
     out.dailyLimit = n
+  }
+  if (event.notices !== undefined) {
+    const n = normalizeNotices(event.notices)
+    if (n.error) return { error: n.error }
+    out.notices = n.notices
   }
   if (!Object.keys(out).length) return { error: '没有要改的设置' }
   return { patch: out }
@@ -66,6 +91,7 @@ function viewConfig(doc) {
     enabled: d.enabled !== false,
     dailyLimit: Number.isFinite(n) && n >= LIMIT_MIN && n <= LIMIT_MAX ? n : null,
     defaultLimit: DEFAULT_LIMIT,
+    notices: (normalizeNotices(Array.isArray(d.notices) ? d.notices.slice(0, NOTICE_MAX) : []).notices || []),
     updatedAt: d.updatedAt || 0,
     updatedByName: d.updatedByName || ''
   }
@@ -227,7 +253,7 @@ async function setConfig(event, actor) {
   if (v.error) return fail('BAD_INPUT', v.error)
   const before = viewConfig(await readConfigDoc())
   try {
-    await audit(actor, { before: { enabled: before.enabled, dailyLimit: before.dailyLimit }, patch: v.patch })
+    await audit(actor, { before: { enabled: before.enabled, dailyLimit: before.dailyLimit, notices: before.notices }, patch: v.patch })
   } catch (e) {
     return fail('AUDIT_FAILED', `修改须先记审计日志，写入失败：${(e && e.message) || e}`)
   }
@@ -243,6 +269,7 @@ async function setConfig(event, actor) {
     // 文档不存在（首次设置）：带上改前的值整份写，不丢另一个设置
     const keep = { enabled: before.enabled }
     if (before.dailyLimit) keep.dailyLimit = before.dailyLimit
+    if (before.notices.length) keep.notices = before.notices
     await db.collection(CONFIG).doc(CONFIG_DOC).set({ data: Object.assign(keep, data) })
   }
   return { success: true, data: viewConfig(await readConfigDoc()) }
@@ -266,4 +293,4 @@ exports.main = async (event = {}) => {
   }
 }
 
-exports._test = { summarize, normalizeConfigInput, viewConfig, normalizeDays, bjDayText, LIMIT_MIN, LIMIT_MAX }
+exports._test = { summarize, normalizeConfigInput, normalizeNotices, viewConfig, NOTICE_MAX, NOTICE_LEN, normalizeDays, bjDayText, LIMIT_MIN, LIMIT_MAX }

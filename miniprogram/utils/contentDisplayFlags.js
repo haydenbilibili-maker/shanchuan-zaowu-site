@@ -38,6 +38,10 @@ function normalizeContentDisplayFlags(raw) {
     // 刻意不叫 showXxx：它不在 content_display_flags 里、ERP / 店长端也不写它（唯一写入方是超管「博物君」页），
     // 不属于 check:hook-registration 管的「展示开关」一族；端到端由 test:museum-guide-monitor 的 M5 钉住。
     museumGuideOpen: src.museumGuideOpen !== false,
+    // 首页「博物君口播」的馆内通知（2026-11-23）：只读，唯一写入方同上；最多 3 条，非字符串 / 空串丢掉
+    museumGuideNotices: Array.isArray(src.museumGuideNotices)
+      ? src.museumGuideNotices.filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim().slice(0, 36)).slice(0, 3)
+      : [],
     // 缺字段 / undefined → 开启；现网已有门店，仅显式 false 关闭
     showStore: src.showStore !== false,
     // 缺字段 / undefined → 开启；门店自取在售，仅显式 false 关闭

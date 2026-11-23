@@ -906,6 +906,12 @@ const SCENES = [
       productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
+  // 2026-11-23 首页博物君口播（只看顶部一带；其余区块数据留空不渲染）
+  { name: 'home-cast', h: 700, wxml: 'pages/index/index', data: (() => {
+    const { buildBroadcast } = loadCjsModule(join(MP, 'pages/index/guideBroadcast.js'))
+    const cast = buildBroadcast({ nick: '蛋炒饭', now: new Date(2026, 10, 23, 20, 50), greeting: { line: '山川造物营业中，开到 22:00' }, notices: ['周六下午有标本制作体验课，欢迎来馆'], guideOpen: true })
+    return { cast, homeGreeting: { word: '晚上好', line: '' }, statusBarHeight: 88, navTop: 88, isSinglePage: false, showBanners: false, showLive: false, loading: false }
+  })() },
   // 2026-11-23 购物车（产品负责人点名：顶部上移、清单多出空间、质感细节）。px 按 2 倍代入（预览 1rpx = 1px）
   { name: 'cart', h: 1624, wxml: 'pages/cart/index', data: (() => {
     const items = [

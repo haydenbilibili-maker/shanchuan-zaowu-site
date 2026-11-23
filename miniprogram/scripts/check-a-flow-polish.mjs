@@ -720,8 +720,9 @@ function checks(s) {
         hg.buildHomeGreeting(st, at(15, 0)).line === '主店营业中，开到 21:00' && hg.buildHomeGreeting(st, at(20, 30)).line === '主店营业中，21:00 闭馆，还来得及' &&
         hg.buildHomeGreeting(st, at(22, 0)).line === '主店已闭馆，明天 10:00 见' && hg.buildHomeGreeting({ name: '主店' }, at(15, 0)).line === ''
     } catch (e) { ok = false }
-    add('R42-5 首页馆员问候：时段 + 开馆前 / 营业中 / 临近闭馆 / 已闭馆；没有营业时间只问候、不报营业状态',
-      ok && /<view class="home-greet" wx:if="\{\{homeGreeting\.word\}\}">/.test(s.homeWxml) && /homeGreeting: buildHomeGreeting\(store\),/.test(s.homeJs))
+    // 2026-11-23：问候行升级为「博物君口播」（pages/index/guideBroadcast.js，守卫 test:home-broadcast），门店状态行作为口播里的「今日开馆」条
+    add('R42-5 首页馆员问候：时段 + 开馆前 / 营业中 / 临近闭馆 / 已闭馆；没有营业时间只问候、不报营业状态（现作为博物君口播的「今日开馆」条）',
+      ok && /greeting: this\.data\.homeGreeting,/.test(s.homeJs) && /homeGreeting: buildHomeGreeting\(store\),/.test(s.homeJs))
   }
   add('R42-6 写礼笺封缄（🔒 只做展示）：交付时与 paying 同一次 setData 落火漆，跳转仍同步（不延时）；点卡面拆封',
     /this\.setData\(\{ paying: true, letterSealed: true \}\)/.test(s.gcJs) && !/setTimeout\(\(\) => \{?\s*navigateToConfirmOrder/.test(s.gcJs) &&

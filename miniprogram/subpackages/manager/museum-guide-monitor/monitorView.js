@@ -20,7 +20,7 @@ const PLACE_LABELS = {
   donations: '我的捐赠', achievements: '我的成就', shop: '馆藏'
 }
 
-const ENTRY_LABELS = { user: '我的', atlas: '图鉴页', identify: 'AI 鉴定结果', share: '分享卡片', daily: '今日一物', quiz: '博物小测', notes: '博物笔记', workshop: '标本工坊', direct: '其它' }
+const ENTRY_LABELS = { user: '我的', atlas: '图鉴页', identify: 'AI 鉴定结果', share: '分享卡片', daily: '今日一物', quiz: '博物小测', notes: '博物笔记', workshop: '标本工坊', home: '首页口播', direct: '其它' }
 
 function msText(ms) {
   if (typeof ms !== 'number') return '—'
@@ -52,6 +52,17 @@ function listOf(rows, labels) {
  * 云函数 overview → 页面数据。
  * bars 的宽度按区间内最大提问数折算（最大的一天 = 100%），没有提问的天宽 0。
  */
+/** 首页口播「馆内通知」：最多 3 条、每条 ≤ 36 字（与云函数 museumGuideMonitor 同口径） */
+const NOTICE_MAX = 3
+const NOTICE_LEN = 36
+
+/** 编辑框草稿：已存的通知补满 3 格（空格子留空） */
+function noticeDrafts(notices) {
+  const list = Array.isArray(notices) ? notices.slice(0, NOTICE_MAX) : []
+  while (list.length < NOTICE_MAX) list.push('')
+  return list
+}
+
 function buildView(d) {
   const data = d || {}
   const series = data.series || []
@@ -66,6 +77,7 @@ function buildView(d) {
       stateText: cfg.enabled === false ? '闭馆中' : '开馆中',
       dailyLimit: cfg.dailyLimit || null,
       limitText: cfg.dailyLimit ? `每人每天 ${cfg.dailyLimit} 问` : `每人每天 ${cfg.defaultLimit || 30} 问（默认）`,
+      notices: Array.isArray(cfg.notices) ? cfg.notices.slice(0, NOTICE_MAX) : [],
       updatedText: cfg.updatedAt ? `最近修改 ${timeText(cfg.updatedAt)}${cfg.updatedByName ? ' · ' + cfg.updatedByName : ''}` : ''
     },
     kpis: [
@@ -98,4 +110,4 @@ function buildView(d) {
   }
 }
 
-module.exports = { DAILY_LIMIT_OPTIONS, FAIL_LABELS, PLACE_LABELS, ENTRY_LABELS, buildView, msText, shortDay }
+module.exports = { NOTICE_MAX, NOTICE_LEN, noticeDrafts, DAILY_LIMIT_OPTIONS, FAIL_LABELS, PLACE_LABELS, ENTRY_LABELS, buildView, msText, shortDay }
