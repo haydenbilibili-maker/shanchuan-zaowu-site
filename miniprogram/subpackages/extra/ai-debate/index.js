@@ -123,7 +123,7 @@ Page({
     for (let i = 0; i < members.length; i += 1) {
       if (this._abort || reqId !== this._reqId) return
       const role = byId(members[i])
-      this.setData({ progressText: `${role.name} 正在发言（${i + 1}/${members.length}）` })
+      this.setData({ progressText: `${role.person}（${role.name}）正在发言（${i + 1}/${members.length}）` })
       try {
         const res = await wx.cloud.callFunction({
           name: 'askMuseumGuide',
@@ -132,7 +132,8 @@ Page({
         const body = (res && res.result) || {}
         if (this._abort || reqId !== this._reqId) return
         if (!body.success) throw new Error(body.msg || '发言失败')
-        speeches.push({ roleId: role.id, name: role.name, emoji: role.emoji, text: String(body.answer) })
+        // 2026-11-23 第六轮：以「名字（岗位）」署名，后面的董事能点名回应；姓氏小印代替 emoji
+        speeches.push({ roleId: role.id, name: `${role.person}（${role.name}）`, seal: role.seal, tone: role.tone, emoji: role.emoji, text: String(body.answer) })
         this.setData({ speeches: speeches.slice() })
       } catch (err) {
         if (this._abort || reqId !== this._reqId) return

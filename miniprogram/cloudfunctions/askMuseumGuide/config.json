@@ -6,5 +6,12 @@
       "security.mediaCheckAsync"
     ]
   },
-  "timeout": 60
+  "timeout": 60,
+  "triggers": [
+    {
+      "name": "staffPatrolRun",
+      "type": "timer",
+      "config": "0 30 9,17 * * * *"
+    }
+  ]
 }

@@ -28,6 +28,11 @@ const P = {
   tasksClient: join(MP, 'subpackages/extra/ai-center/tasks.js'),
   tasksServer: join(MP, 'cloudfunctions/askMuseumGuide/staffTasks.js'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
+  patrol: join(MP, 'cloudfunctions/askMuseumGuide/staffPatrol.js'),
+  guardCopy: join(MP, 'cloudfunctions/askMuseumGuide/staffGuard.js'),
+  guardCanon: join(MP, 'cloudfunctions/manageStaff/staffGuard.js'),
+  fnConfig: join(MP, 'cloudfunctions/askMuseumGuide/config.json'),
+  view: join(MP, 'subpackages/extra/ai-center/centerView.js'),
   userJs: join(MP, 'pages/user/index.js')
 }
 
@@ -89,7 +94,8 @@ function runChecks() {
   const fin = C.summarizeFinance([{ cash: 100, pos: 50, online: 30, refund: 10 }, { cashIncome: 20, pos: 0, online: 0 }])
   ok('A5 门店日账汇总：现金 / POS / 线上 / 退款分开累计，合计不含退款', fin.total === 200 && fin.refund === 10 && fin.days === 2, fails)
   ok('A5 上下文注入 staffChat：system 里带「当前经营数据」块；只查 4 张表且不含个人信息；有缓存与字数上限',
-    /contextFor\(roleId, db\)/.test(fn) && /【当前经营数据/.test(fn) &&
+    // 2026-11-23：辩论也调 contextFor，改为钉住 staffChat 自己的那一句（否则 staffChat 不注入也会被辩论那处满足）
+    /try \{ context = await contextFor\(roleId, db\) \} catch \(e\) \{ context = '' \}/.test(fn) && /【当前经营数据/.test(fn) &&
     /collection\('orders'\)/.test(ctxSrc) && /collection\('products'\)/.test(ctxSrc) &&
     /collection\('users'\)/.test(ctxSrc) && /collection\('bookings'\)/.test(ctxSrc) && /collection\('finance_records'\)/.test(ctxSrc) &&
     /collection\('purchase_orders'\)/.test(ctxSrc) && /collection\('stock_movements'\)/.test(ctxSrc) &&
@@ -145,6 +151,62 @@ function runChecks() {
   ok('A7 页面：串行发言 + 停止 + 本机保存上一场 + 复制',
     /for \(let i = 0; i < members\.length/.test(debate) && /onStop\(\)/.test(debate) &&
     /ai_debate_last/.test(debate) && /onCopy\(/.test(debate), fails)
+
+  /* ---------------- A8 第六轮（2026-11-23）：人设 / 门禁 / 全局上下文 / 主动巡检 / 页面 ---------------- */
+  ok('A8 每位同事有名字 / 三行履历 / 口头禅，客户端与云端逐一一致；人设提示词带身份与说话方式',
+    client.ROLES.every((r) => {
+      const s = server.STAFF_ROLES[r.id]
+      return s && r.person && s.person === r.person && s.motto === r.motto && JSON.stringify(s.cv) === JSON.stringify(r.cv) && r.cv.length === 3 && r.seal === r.person.slice(0, 1)
+    }) && new Set(client.ROLES.map((r) => r.person)).size === client.ROLES.length &&
+    server.ROLE_IDS.every((id) => server.systemPromptOf(id).indexOf(`你叫${server.STAFF_ROLES[id].person}`) === 0), fails)
+  ok('A8 话风：拟人、不说「作为 AI」、回答引用具体数字并给可验证的建议',
+    /不要说「作为 AI」/.test(server.STAFF_SYSTEM_SUFFIX) && /引用下面「当前经营数据」里的具体数字/.test(server.STAFF_SYSTEM_SUFFIX) && /看哪个指标验证/.test(server.STAFF_SYSTEM_SUFFIX), fails)
+  const gateCalls = (fn.match(/const gate = await staffGate\(openid(, \{ requireSuperAdmin: true \})?\)\n  if \(!gate\.ok\) return gate\.out/g) || []).length
+  ok('A8 员工门禁：staff / debate / staffBrief / staffPatrol 四条通道都先过 staffGuard（巡检要超管）；staffGuard 是规范副本',
+    gateCalls === 4 && /staffGate\(openid, \{ requireSuperAdmin: true \}\)/.test(fn) &&
+    read(P.guardCopy) === read(P.guardCanon) && /async function staffChat\(event, openid\) \{\n  const gate = await staffGate\(openid\)/.test(fn), fails)
+  const D = 86400000
+  const now = Date.UTC(2026, 10, 23, 12)
+  const tr = C.summarizeTrend([
+    { status: 'paid', totalPrice: 100, createTime: new Date(now - D) }, { status: 'pending', totalPrice: 900, createTime: now - D },
+    { status: 'shipped', totalPrice: 50, createTime: now - 9 * D }, { status: 'paid', totalPrice: 30, createTime: now - 60000 }
+  ], now)
+  ok('A8 趋势：只算已付、近 7 天与前 7 天分开、今天单独计；前期 < 3 不给百分比',
+    tr.last7 === 2 && tr.prev7 === 1 && tr.gmv7 === 130 && tr.today === 1 && C.changePct(2, 1) === null && C.changePct(6, 10) === -40, fails)
+  const gl = C.globalLine({ trend: { last7: 6, prev7: 10, gmv7: 900, today: 1 }, products: { onSale: 40, lowStock: 6 }, users: { last7: 3, prev7: 5 }, hr: { pendingLeaves: 2, gross: 99999 } })
+  ok('A8 全局一句：每个角色都先看到经营全貌（订单趋势 / 在售与低库存 / 新会员），不带工资；上下文标明数据时间',
+    /^全局：/.test(gl) && /↓40%/.test(gl) && /库存 ≤3 的 6 件/.test(gl) && !/99999|工资/.test(gl) &&
+    /const g = globalLine\(snap\)\n  if \(g\) lines\.push\(g\)/.test(ctxSrc) && /数据截至北京时间/.test(ctxSrc) &&
+    !/gross|net|wage|salary/i.test(JSON.stringify(Object.keys(C.pulseOf({ hr: { gross: 1 } })))), fails)
+  const PT = loadCjsModule(P.patrol, { transform })
+  const issues = PT.findIssues({ trend: { last7: 4, prev7: 12, today: 0 }, products: { onSale: 40, lowStock: 9 }, orders: { gmv: 20000, refund: 2000 }, hr: { pendingLeaves: 3, late: 1, early: 0 }, users: { last7: 2, prev7: 10 } })
+  ok('A8 巡检规则：只按阈值判（样本太小不判）、严重的在前、最多 4 条、每条归到一位同事',
+    issues.length === PT.MAX_ISSUES && issues[0].level === 'high' && issues.every((i) => server.STAFF_ROLES[i.roleId] && i.person === server.STAFF_ROLES[i.roleId].person) &&
+    PT.findIssues({}).length === 0 && PT.findIssues({ trend: { last7: 0, prev7: 2 } }).length === 0 &&
+    PT.findIssues({ products: { onSale: 40, lowStock: 5 } }).length === 0, fails)
+  const L = PT.letterOf(issues[0], '11-23 21:40', now)
+  ok('A8 工作信息：标题带名字与岗位、正文落款并写明数据时间；进工作信息队列；同一问题每人每天一封；点开进 AI 中心对应同事且问题预填',
+    L.title.indexOf(`${issues[0].person}（${issues[0].roleName}）：`) === 0 && /—— /.test(L.content) && /11-23 21:40/.test(L.content) &&
+    L.category === 'ops' && L.queue === 'workflow' && L.relatedId === `${issues[0].id}:2026-11-23` &&
+    L.actionUrl.indexOf(`subpackages/extra/ai-center/index?roleId=${issues[0].roleId}&ask=`) === 0, fails)
+  const patrolSrc = read(P.patrol)
+  ok('A8 巡检投递：试跑不发信；收件人只取超管；关掉开关定时不跑；改开关先记审计；定时只认「无 OPENID 的 Timer」；配置了每天两次触发器',
+    /if \(!ctx\.dryRun\) \{/.test(patrolSrc) && /const recipients = dryRun \? \[\] : await resolveSuperAdminOpenids\(db\)/.test(fn) &&
+    /if \(!cfg\.enabled\) return \{ success: true, skipped: 'disabled' \}/.test(fn) &&
+    fn.indexOf("collection('admin_operation_logs').add") < fn.indexOf('await writePatrolConfig(db, { enabled') &&
+    /if \(!OPENID && isTimerEvent\(event\)\) return timerPatrol\(\)/.test(fn) &&
+    /"name": "staffPatrolRun"/.test(read(P.fnConfig)) && /"type": "timer"/.test(read(P.fnConfig)), fails)
+  const V = loadCjsModule(P.view, { transform })
+  const cells = V.pulseCells({ orders7: 8, ordersChange: -33, gmv7: 12680, today: 1, onSale: 46, lowStock: 9, members7: null, membersChange: null })
+  ok('A8 页面纯函数：脉搏读不到写「—」不编 0、下降染色、复制全文跳过出错与进行中、会话名 ≤16 字',
+    cells[0].value === '8' && cells[0].sub === '↓33%' && cells[0].tone === 'down' && cells[1].value === '¥1.3万' && cells[3].value === '—' && cells[2].tone === 'warn' &&
+    V.transcriptOf([{ role: 'user', text: '问' }, { role: 'assistant', text: '答' }, { role: 'assistant', text: 'x', isError: true }, { role: 'assistant', pending: true, text: '' }], '周砚') === '我：问\n\n周砚：答' &&
+    V.cleanTitle('  一二三四五六七八九十一二三四五六七  ') === '一二三四五六七八九十一二三四五六' && V.issueCountByRole([{ roleId: 'cfo' }, { roleId: 'cfo' }]).cfo === 2, fails)
+  const wxml = read(P.wxml)
+  ok('A8 页面接线：进页取脉搏（staffBrief）、工作信息带来的问题只预填不自动发、超管才有巡检按钮与开关、会话可重命名与复制全文、回答写明依据时间',
+    /mode: 'staffBrief'/.test(page) && /if \(ask\) this\.setData\(\{ draft: ask\.slice\(0, 200\) \}\)/.test(page) && !/if \(ask\) this\.send\(\)/.test(page) &&
+    /<view class="ac-patrol" wx:if="\{\{isSuper\}\}">/.test(wxml) && /bindtap="onPatrolRun"/.test(wxml) && /bindchange="onPatrolToggle"/.test(wxml) &&
+    /'重命名', '复制全文', '删除这条会话'/.test(page) && /class="ac-basis" wx:if="\{\{item\.asOf\}\}"/.test(wxml) && /class="ac-seal/.test(wxml) && !/item\.emoji/.test(wxml), fails)
   return fails
 }
 
@@ -164,7 +226,20 @@ if (process.argv.includes('--selftest')) {
     { name: '辩论不分发', file: P.fn, find: "if (event && event.mode === 'debate') return staffDebate(event, OPENID)", replace: 'if (false) return null' },
     { name: '辩论允许单人', file: P.fn, find: 'if (members.length < 2) return', replace: 'if (members.length < 0) return' },
     { name: '去掉停止', file: P.page, find: '  onStop() {', replace: '  onStopX() {' },
-    { name: '会话改存云端', file: P.page, find: 'wx.setStorageSync(', replace: 'wx.cloud.callFunction({ name: "x", data: {' }
+    { name: '会话改存云端', file: P.page, find: 'wx.setStorageSync(', replace: 'wx.cloud.callFunction({ name: "x", data: {' },
+    { name: '客户端名字与云端不一致', file: P.roles, find: "person: '周砚'", replace: "person: '周岩'" },
+    { name: '人设丢了「不说作为 AI」', file: P.personas, find: "不要说「作为 AI」", replace: '尽量自然' },
+    { name: '员工对话不过门禁', file: P.fn, find: 'async function staffChat(event, openid) {\n  const gate = await staffGate(openid)\n  if (!gate.ok) return gate.out\n', replace: 'async function staffChat(event, openid) {\n' },
+    { name: '巡检不要求超管', file: P.fn, find: 'staffGate(openid, { requireSuperAdmin: true })', replace: 'staffGate(openid)' },
+    { name: '全局一句没进上下文', file: P.ctx, find: '  const g = globalLine(snap)\n  if (g) lines.push(g)\n', replace: '' },
+    { name: '小样本也报环比', file: P.ctx, find: '  if (!(prev >= 3)) return null\n', replace: '' },
+    { name: '低库存阈值放宽到 1 件', file: P.patrol, find: 'const need = Math.max(5, Math.ceil(p.onSale * 0.15))', replace: 'const need = 1' },
+    { name: '工作信息不按天去重', file: P.patrol, find: 'relatedId: `${issue.id}:${day}`', replace: 'relatedId: `${issue.id}:${now}`' },
+    { name: '试跑也发信', file: P.patrol, find: '  if (!ctx.dryRun) {', replace: '  if (true) {' },
+    { name: '定时巡检可被客户端伪造', file: P.fn, find: 'if (!OPENID && isTimerEvent(event)) return timerPatrol()', replace: 'if (isTimerEvent(event)) return timerPatrol()' },
+    { name: '工作信息带来的问题自动发出', file: P.page, find: 'if (ask) this.setData({ draft: ask.slice(0, 200) })', replace: 'if (ask) this.setData({ draft: ask.slice(0, 200) }, () => this.send())\n    if (ask) this.send()' },
+    { name: '非超管也有巡检按钮', file: P.wxml, find: '<view class="ac-patrol" wx:if="{{isSuper}}">', replace: '<view class="ac-patrol">' },
+    { name: '脉搏读不到编 0', file: P.view, find: "return n == null || !Number.isFinite(Number(n)) ? '—' : String(n)", replace: 'return String(n || 0)' }
   ].filter((x) => x.find !== '')
   let bad = 0
   for (const inj of INJ) {
@@ -181,5 +256,5 @@ if (process.argv.includes('--selftest')) {
 } else {
   const fails = runChecks()
   if (fails.length) { console.error('✗ AI 智能中心不合格：\n  - ' + fails.join('\n  - ')); process.exit(1) }
-  console.log('✓ test:ai-center：入口 / 角色同源 / 云端白名单与兜底 / 本机会话 全部通过')
+  console.log('✓ test:ai-center：入口 / 角色同源 / 云端白名单与兜底 / 本机会话 / 人设与门禁 / 全局上下文 / 主动巡检 全部通过')
 }

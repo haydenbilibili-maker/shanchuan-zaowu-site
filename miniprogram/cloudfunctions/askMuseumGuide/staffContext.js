@@ -16,7 +16,8 @@
 const DAY_MS = 86400000
 const WINDOW_DAYS = 30
 const TTL_MS = 5 * 60 * 1000
-const TEXT_MAX = 760
+const TEXT_MAX = 800
+const WEEK_MS = 7 * DAY_MS
 
 const PAID_STATUS = ['paid', 'paid_awaiting_address', 'shipped', 'received', 'aftersales', 'refunded']
 
@@ -46,6 +47,46 @@ function summarizeOrders(rows) {
     if (rf > 0) refund += rf
   }
   return { total: list.length, paidCount, gmv, refund, aov: paidCount ? Math.round(gmv / paidCount) : 0 }
+}
+
+/**
+ * 近 7 天 vs 前 7 天（2026-11-23 第六轮「根据最新的数据给出决策参考」）：只算已付单的笔数与金额，外加今天（北京时间）的已付笔数。
+ * createTime 可能是 Date / 时间戳 / 字符串，统一转毫秒；转不出来的那条不进趋势（仍计入 30 天合计）。
+ */
+function toMs(v) {
+  if (v == null) return NaN
+  if (typeof v === 'number') return v
+  if (v instanceof Date) return v.getTime()
+  if (typeof v === 'object' && v.$date != null) return toMs(v.$date)
+  const t = new Date(v).getTime()
+  return Number.isFinite(t) ? t : NaN
+}
+
+function summarizeTrend(rows, now) {
+  const list = Array.isArray(rows) ? rows : []
+  const t = Number(now) || Date.now()
+  const bjDayStart = Math.floor((t + 8 * 3600000) / DAY_MS) * DAY_MS - 8 * 3600000
+  const out = { last7: 0, prev7: 0, gmv7: 0, gmvPrev7: 0, today: 0 }
+  for (const o of list) {
+    if (!o || PAID_STATUS.indexOf(String(o.status || '')) < 0) continue
+    const at = toMs(o.createTime)
+    if (!Number.isFinite(at)) continue
+    const amount = fenOfYuan(o.totalPrice != null ? o.totalPrice : (o.payAmount != null ? o.payAmount : o.amount))
+    if (at >= t - WEEK_MS) { out.last7 += 1; out.gmv7 += amount } else if (at >= t - 2 * WEEK_MS) { out.prev7 += 1; out.gmvPrev7 += amount }
+    if (at >= bjDayStart) out.today += 1
+  }
+  return out
+}
+
+/** 环比：前一期 < 3 时不算百分比（样本太小，百分比会吓人） */
+function changePct(cur, prev) {
+  if (!(prev >= 3)) return null
+  return Math.round(((cur - prev) / prev) * 100)
+}
+
+function pctText(p) {
+  if (p == null) return ''
+  return p === 0 ? '持平' : `${p > 0 ? '↑' : '↓'}${Math.abs(p)}%`
 }
 
 function summarizeProducts(rows) {
@@ -183,16 +224,17 @@ async function loadSnapshot(db) {
   if (cache.value && now - cache.at < TTL_MS) return cache.value
   const since = new Date(now - WINDOW_DAYS * DAY_MS)
   const _ = db.command
-  const out = { orders: null, products: null, users: null, bookings: null, finance: null, purchases: null, moves: null, ops: null, feishuInv: null, hr: null }
+  const out = { at: now, orders: null, trend: null, products: null, users: null, bookings: null, finance: null, purchases: null, moves: null, ops: null, feishuInv: null, hr: null }
 
   const tasks = [
     (async () => {
       try {
         const r = await db.collection('orders')
           .where({ createTime: _.gte(since) })
-          .field({ status: true, totalPrice: true, payAmount: true, amount: true, refundFee: true, refundAmount: true })
+          .field({ status: true, totalPrice: true, payAmount: true, amount: true, refundFee: true, refundAmount: true, createTime: true })
           .limit(1000).get()
         out.orders = summarizeOrders(r && r.data)
+        out.trend = summarizeTrend(r && r.data, now)
       } catch (e) { /* 少一块不影响其它 */ }
     })(),
     (async () => {
@@ -206,8 +248,12 @@ async function loadSnapshot(db) {
     })(),
     (async () => {
       try {
-        const r = await db.collection('users').where({ createTime: _.gte(since) }).count()
-        out.users = { newCount: (r && r.total) || 0 }
+        const [r, r7, rPrev] = await Promise.all([
+          db.collection('users').where({ createTime: _.gte(since) }).count(),
+          db.collection('users').where({ createTime: _.gte(new Date(now - WEEK_MS)) }).count(),
+          db.collection('users').where({ createTime: _.and(_.gte(new Date(now - 2 * WEEK_MS)), _.lt(new Date(now - WEEK_MS))) }).count()
+        ])
+        out.users = { newCount: (r && r.total) || 0, last7: (r7 && r7.total) || 0, prev7: (rPrev && rPrev.total) || 0 }
       } catch (e) { /* ignore */ }
     })(),
     (async () => {
@@ -299,13 +345,65 @@ function productLine(p) {
   return `在售藏品 ${p.onSale} 件，其中库存 ≤3 的 ${p.lowStock} 件${p.top ? `；门类分布前三：${p.top}` : ''}`
 }
 
+/** 数据时间（北京时间 MM-DD HH:mm）：回答与页面都标上「截至几点」，决策时知道数据有多新 */
+function asOfText(at) {
+  const t = Number(at)
+  if (!Number.isFinite(t) || t <= 0) return ''
+  const d = new Date(t + 8 * 3600000).toISOString()
+  return `${d.slice(5, 10)} ${d.slice(11, 16)}`
+}
+
 /**
- * 角色 → 上下文。只给这个角色真正用得上的块；没有的指标不编。
+ * 全局一句（2026-11-23 第六轮「每一个虚拟员工都具有应该具有的全局信息」）：每个角色都先看到同一份经营全貌，
+ * 再看到自己专业那几块。只放计数与金额合计，不放工资（工资合计只给人事经理）。
+ */
+/** 最近一次快照的时间（回答里「依据几点的数据」用；没有快照返回空串） */
+function lastAsOf() {
+  return cache && cache.value ? asOfText(cache.at) : ''
+}
+
+function globalLine(snap) {
+  const s = snap || {}
+  const parts = []
+  const tr = s.trend
+  if (tr) {
+    const p = pctText(changePct(tr.last7, tr.prev7))
+    parts.push(`近 7 天已付订单 ${tr.last7} 笔${p ? `（前 7 天 ${tr.prev7} 笔，${p}）` : `（前 7 天 ${tr.prev7} 笔）`}、实付 ¥${money(tr.gmv7)}，今天已付 ${tr.today} 笔`)
+  }
+  if (s.products) parts.push(`在售 ${s.products.onSale} 件（库存 ≤3 的 ${s.products.lowStock} 件）`)
+  if (s.users) parts.push(`近 7 天新增会员 ${s.users.last7} 人（前 7 天 ${s.users.prev7} 人）`)
+  if (s.hr && s.hr.pendingLeaves) parts.push(`待审批请假 ${s.hr.pendingLeaves} 条`)
+  return parts.length ? `全局：${parts.join('；')}` : ''
+}
+
+/**
+ * 给页面的「经营脉搏」（只给计数与金额合计；不含工资）。字段缺失即 null，页面写「—」不编 0。
+ */
+function pulseOf(snap) {
+  const s = snap || {}
+  const tr = s.trend
+  return {
+    asOf: asOfText(s.at),
+    orders7: tr ? tr.last7 : null,
+    ordersChange: tr ? changePct(tr.last7, tr.prev7) : null,
+    gmv7: tr ? Math.round(tr.gmv7) : null,
+    today: tr ? tr.today : null,
+    onSale: s.products ? s.products.onSale : null,
+    lowStock: s.products ? s.products.lowStock : null,
+    members7: s.users ? s.users.last7 : null,
+    membersChange: s.users ? changePct(s.users.last7, s.users.prev7) : null
+  }
+}
+
+/**
+ * 角色 → 上下文。先给全局一句，再给这个角色专业上用得上的块；没有的指标不编。
  * @returns {Promise<string>} 空串表示这次没有可用上下文
  */
 async function contextFor(roleId, db) {
   const snap = await loadSnapshot(db)
   const lines = []
+  const g = globalLine(snap)
+  if (g) lines.push(g)
   const financeRoles = ['cfo', 'data_analyst', 'store_manager', 'marketing']
   if (financeRoles.indexOf(roleId) >= 0) {
     const l = financeLine(snap.orders)
@@ -343,7 +441,8 @@ async function contextFor(roleId, db) {
   if ((roleId === 'marketing' || roleId === 'data_analyst') && snap.users) lines.push(`近 ${WINDOW_DAYS} 天新增会员 ${snap.users.newCount} 人`)
   if (roleId === 'creative_director' && snap.orders) lines.push(`近 ${WINDOW_DAYS} 天订单 ${snap.orders.total} 笔`)
   if (!lines.length) return ''
-  return lines.join('；').slice(0, TEXT_MAX)
+  const asOf = asOfText(snap.at)
+  return `${asOf ? `（数据截至北京时间 ${asOf}）` : ''}${lines.join('；')}`.slice(0, TEXT_MAX)
 }
 
-module.exports = { contextFor, loadSnapshot, summarizeOrders, summarizeProducts, summarizeFinance, summarizePurchases, summarizeMoves, summarizeOpsPurchases, summarizeFeishuInventory, summarizeHr, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }
+module.exports = { lastAsOf, contextFor, loadSnapshot, summarizeTrend, changePct, pctText, globalLine, pulseOf, asOfText, toMs, summarizeOrders, summarizeProducts, summarizeFinance, summarizePurchases, summarizeMoves, summarizeOpsPurchases, summarizeFeishuInventory, summarizeHr, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }

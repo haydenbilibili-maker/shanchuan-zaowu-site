@@ -1,7 +1,10 @@
 {
   "navigationBarTitleText": "AI 智能中心",
-  "navigationBarBackgroundColor": "#12100D",
+  "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
-  "backgroundColor": "#12100D",
-  "usingComponents": {}
+  "backgroundColor": "#1A1814",
+  "disableScroll": true,
+  "usingComponents": {
+    "app-modal": "/components/AppModal/index"
+  }
 }

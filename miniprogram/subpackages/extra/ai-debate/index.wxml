@@ -37,8 +37,8 @@
         hover-class="tap-press-soft"
         hover-stay-time="80"
       >
-        <text class="db-member-emoji">{{item.emoji}}</text>
-        <text class="db-member-name">{{item.name}}</text>
+        <text class="db-seal" style="background: {{item.tone}};">{{item.seal}}</text>
+        <text class="db-member-name">{{item.person}} · {{item.name}}</text>
       </view>
     </view>
   </view>
@@ -59,7 +59,8 @@
   <view class="db-timeline" wx:if="{{speeches.length}}">
     <view class="db-item" wx:for="{{speeches}}" wx:key="index">
       <view class="db-item-head">
-        <text class="db-item-emoji">{{item.emoji}}</text>
+        <text class="db-seal" wx:if="{{item.seal}}" style="background: {{item.tone}};">{{item.seal}}</text>
+        <text class="db-item-emoji" wx:else>{{item.emoji}}</text>
         <text class="db-item-name">{{item.name}}</text>
         <text class="db-copy" data-text="{{item.text}}" bindtap="onCopy">复制</text>
       </view>

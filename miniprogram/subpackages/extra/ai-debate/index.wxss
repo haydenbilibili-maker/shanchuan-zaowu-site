@@ -17,7 +17,6 @@
 .db-members { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 14rpx; }
 .db-member { display: flex; align-items: center; gap: 8rpx; padding: 12rpx 18rpx; border-radius: 12rpx; background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.14); }
 .db-member.is-on { background: rgba(196,167,108,.14); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.6); }
-.db-member-emoji { font-size: 26rpx; }
 .db-member-name { font-size: 22rpx; color: #D9C9A8; }
 
 .db-actions { display: flex; align-items: center; gap: 20rpx; margin: 26rpx 32rpx 0; }
@@ -48,3 +47,6 @@
 .db-verdict-head { display: flex; align-items: center; justify-content: space-between; }
 .db-verdict-title { font-size: 23rpx; color: #E3D2AC; letter-spacing: .06em; }
 .db-verdict-text { display: block; margin-top: 12rpx; font-size: 25rpx; line-height: 1.7; color: #EDE3CC; }
+
+/* 2026-11-23 第六轮：董事用姓氏小印（与 AI 智能中心同一套） */
+.db-seal { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 40rpx; height: 40rpx; border-radius: 10rpx; font-family: var(--font-brand); font-size: 22rpx; color: #F3E7D3; box-shadow: inset 0 0 0 1rpx rgba(243, 231, 211, 0.28); }

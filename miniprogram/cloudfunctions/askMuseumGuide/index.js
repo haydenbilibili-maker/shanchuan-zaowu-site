@@ -13,8 +13,10 @@ const cloud = require('wx-server-sdk')
 const https = require('https')
 const { checkText } = require('./contentSecurity')
 const { matchSpecies, PLACE_KEYS } = require('./knowledge')
-const { STAFF_ROLES, ROLE_IDS, systemPromptOf } = require('./staffPersonas')
-const { contextFor } = require('./staffContext')
+const { STAFF_ROLES, ROLE_IDS, systemPromptOf, identityOf, displayOf } = require('./staffPersonas')
+const { contextFor, loadSnapshot, pulseOf, asOfText, lastAsOf } = require('./staffContext')
+const { findIssues, runPatrol, readPatrolConfig, writePatrolConfig } = require('./staffPatrol')
+const { assertStaff, resolveSuperAdminOpenids } = require('./staffGuard')
 const { taskById } = require('./staffTasks')
 const { buildMessages } = require('./persona')
 
@@ -336,6 +338,87 @@ function bjDayText(now) {
   return d.toISOString().slice(0, 10)
 }
 
+/* ------------------------------ AI 智能中心 · 门禁 / 脉搏 / 主动巡检（2026-11-23 第六轮） ------------------------------ */
+
+/**
+ * 员工门禁（2026-11-23 第六轮补）：AI 智能中心的回答里带近 30 天经营数据（GMV / 采购额 / 工资合计），
+ * 原先只靠「我的·工作台」磁贴不展示来挡，云端没有校验 —— 任何小程序用户直接调 mode:'staff' 就能拿到。
+ * 现在三条员工通道（staff / debate / staffBrief）都先过 staffGuard.assertStaff（纯投资人 / 采购商账号也拒）。
+ */
+async function staffGate(openid, options) {
+  try {
+    const g = await assertStaff(db, openid, options || {})
+    if (g && g.ok) return { ok: true, actor: g.actor }
+    return { ok: false, out: { success: false, error_type: 'forbidden', msg: (g && g.msg) || 'AI 智能中心仅限员工使用' } }
+  } catch (e) {
+    return { ok: false, out: { success: false, error_type: 'forbidden', msg: 'AI 智能中心仅限员工使用' } }
+  }
+}
+
+function isSuperActor(actor) {
+  if (!actor) return false
+  if (actor.superAdmin) return true
+  return Array.isArray(actor.roles) && actor.roles.indexOf('super_admin') >= 0
+}
+
+/** 页面一进来：经营脉搏 + 同事们发现的问题 +（超管才有）巡检开关与上次巡检 */
+async function staffBrief(event, openid) {
+  const gate = await staffGate(openid)
+  if (!gate.ok) return gate.out
+  let snap = null
+  try { snap = await loadSnapshot(db) } catch (e) { snap = null }
+  const isSuper = isSuperActor(gate.actor)
+  const out = { success: true, pulse: pulseOf(snap), issues: findIssues(snap), isSuper }
+  if (isSuper) out.patrol = await readPatrolConfig(db)
+  return out
+}
+
+/** 投递一封工作信息（走既有 dispatchMessage；category ops → 工作信息队列；同一问题每人每天一封） */
+async function dispatchLetter(payload) {
+  const res = await cloud.callFunction({ name: 'dispatchMessage', data: Object.assign({ action: 'dispatch' }, payload) })
+  return (res && res.result) || { success: false }
+}
+
+async function patrolOnce(dryRun) {
+  const snap = await loadSnapshot(db)
+  const recipients = dryRun ? [] : await resolveSuperAdminOpenids(db)
+  return runPatrol({ db, snapshot: snap, asOf: asOfText(snap && snap.at), recipients, dispatch: dispatchLetter, dryRun })
+}
+
+/** 超管：立即巡检（并投递） / 开关自动巡检。改开关先留审计，审计写不进就不改。 */
+async function staffPatrol(event, openid) {
+  const gate = await staffGate(openid, { requireSuperAdmin: true })
+  if (!gate.ok) return gate.out
+  const op = String((event && event.op) || 'run')
+  if (op === 'toggle') {
+    const enabled = !!(event && event.enabled)
+    try {
+      await db.collection('admin_operation_logs').add({
+        data: { module: 'config', action: 'staff_patrol_toggle', operatorOpenid: openid, username: (gate.actor && gate.actor.name) || '', source: 'askMuseumGuide', detail: { enabled }, timestamp: Date.now() }
+      })
+    } catch (e) {
+      return { success: false, error_type: 'audit', msg: '改开关须先记审计日志，这次没写进去，先别改' }
+    }
+    await writePatrolConfig(db, { enabled, updatedBy: openid })
+    return { success: true, patrol: await readPatrolConfig(db) }
+  }
+  const r = await patrolOnce(false)
+  return { success: true, issues: r.issues, sent: r.sent, patrol: await readPatrolConfig(db) }
+}
+
+/** 定时触发（config.json 的 staffPatrolRun）：开关关着就什么也不做 */
+function isTimerEvent(event) {
+  const t = (event && (event.Type || event.triggerType || event.triggerSource)) || ''
+  return /timer/i.test(String(t)) || !!(event && event.TriggerName)
+}
+
+async function timerPatrol() {
+  const cfg = await readPatrolConfig(db)
+  if (!cfg.enabled) return { success: true, skipped: 'disabled' }
+  const r = await patrolOnce(false)
+  return { success: true, issues: r.issues.length, sent: r.sent }
+}
+
 /**
  * 董事会辩论（2026-11-23 第三轮）：几位虚拟员工就同一辩题依次发言，最后由主持人收口。
  *
@@ -345,6 +428,8 @@ function bjDayText(now) {
  * 人设与边界仍来自 staffPersonas；发言顺序由客户端按 members 顺序串行。
  */
 async function staffDebate(event, openid) {
+  const gate = await staffGate(openid)
+  if (!gate.ok) return gate.out
   const topic = String((event && event.topic) || '').trim().slice(0, 120)
   if (topic.length < 4) return { success: false, error_type: 'invalid', msg: '辩题太短了' }
   const members = (Array.isArray(event && event.members) ? event.members : [])
@@ -369,8 +454,12 @@ async function staffDebate(event, openid) {
     if (members.indexOf(roleId) < 0) return { success: false, error_type: 'invalid', msg: '这位董事不在本场名单里' }
     const role = STAFF_ROLES[roleId]
     const said = history.map((h) => `【${h.name}】${h.text}`).join('\n')
-    system = `你是山海造物的${role.name}，正在参加董事会辩论。你的职责：${role.prompt.replace(/^你是山海造物的[^。]*。/, '')}\n\n` +
-      '规则：站在你的专业立场给出明确判断；若前面有人与你不一致，直接指出分歧点；200 字内；中文；不写 Markdown 标题；不编数据。'
+    // 2026-11-23 第六轮：董事以本人身份发言（名字 / 履历 / 说话方式），并看到同一份经营数据
+    let ctx = ''
+    try { ctx = await contextFor(roleId, db) } catch (e) { ctx = '' }
+    system = `${identityOf(roleId)}\n你正在参加董事会辩论。你的职责：${role.prompt}\n\n` +
+      (ctx ? `【当前经营数据（未出现的指标就是没有数据，不要推算）】\n${ctx}\n\n` : '') +
+      '规则：站在你的专业立场给出明确判断，能引用数据就引用；若前面有人与你不一致，直接点名指出分歧；口语化，像开会时当面说话；200 字内；中文；不写 Markdown 标题；不编数据。'
     user = `辩题：${topic}${said ? `\n\n前面发言：\n${said}` : ''}\n\n请发言。`
   }
 
@@ -385,7 +474,7 @@ async function staffDebate(event, openid) {
       if (!usableAnswer(answer)) continue
       const sec = await checkText(openid, answer, 2)
       const text = sec.ok ? answer : '（这段发言没有通过内容安全校验，已省略）'
-      return { success: true, step, answer: text, roleName: step === 'verdict' ? '主持人' : STAFF_ROLES[String(event.roleId)].name }
+      return { success: true, step, answer: text, roleName: step === 'verdict' ? '主持人' : displayOf(String(event.roleId)) }
     } catch (e) {
       console.warn(`董事会辩论[${step}] 失败`, e.message)
     }
@@ -400,6 +489,8 @@ async function staffDebate(event, openid) {
  * - 问答都过内容安全；不写库、不留对话（会话存本机）。
  */
 async function staffChat(event, openid) {
+  const gate = await staffGate(openid)
+  if (!gate.ok) return gate.out
   // 一键任务：taskId 优先，角色与问题都取自服务端任务表（客户端改不了）
   const task = event && event.taskId ? taskById(String(event.taskId).trim()) : null
   if (event && event.taskId && !task) return { success: false, error_type: 'invalid', msg: '没有这个任务' }
@@ -434,7 +525,7 @@ async function staffChat(event, openid) {
       }, { Authorization: `Bearer ${apiKey}` })
       const answer = plainAnswer(extractText(res))
       if (!usableAnswer(answer)) { lastErr = new Error('empty answer'); continue }
-      return { success: true, roleId, roleName: STAFF_ROLES[roleId].name, answer }
+      return { success: true, roleId, roleName: STAFF_ROLES[roleId].name, person: STAFF_ROLES[roleId].person, answer, asOf: context ? lastAsOf() : '' }
     } catch (e) {
       lastErr = e
       console.warn(`AI中心[${roleId}] 模型[${model}] 失败`, e.message)
@@ -445,11 +536,15 @@ async function staffChat(event, openid) {
 
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
+  // 定时巡检：只认「没有 OPENID 且是 Timer 事件」—— 小程序端的调用总带 OPENID，伪造不了
+  if (!OPENID && isTimerEvent(event)) return timerPatrol()
   if (!OPENID) return { success: false, error_type: 'invalid', msg: '请在小程序内使用' }
 
   if (event && event.action === 'feedback') return feedback(event, OPENID)
   if (event && event.mode === 'staff') return staffChat(event, OPENID)
   if (event && event.mode === 'debate') return staffDebate(event, OPENID)
+  if (event && event.mode === 'staffBrief') return staffBrief(event, OPENID)
+  if (event && event.mode === 'staffPatrol') return staffPatrol(event, OPENID)
 
   const t0 = Date.now()
   const cfg = effectiveConfig(await readConfig(), process.env.MUSEUM_GUIDE_DAILY_LIMIT)
