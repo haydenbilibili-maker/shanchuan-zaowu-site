@@ -175,6 +175,41 @@ function museumGuideMonitorSceneData() {
   return { ready: true, loading: false, saving: false, days: 7, view: V.buildView(d), loadError: '', tipText: '', tipTone: 'info', confirmToggle: false, limitOptions: V.DAILY_LIMIT_OPTIONS }
 }
 
+/** 2026-11-23 博物君对话之外：今日一物 / 博物小测 —— 数据由真模块 + 真图鉴目录现算 */
+function naturalistScenes() {
+  const N = loadCjsModule(join(MP, 'subpackages/feature/museum-guide/naturalist.js'), {})
+  const C = loadCjsModule(join(MP, 'subpackages/feature/config/atlasCatalog.js'), {})
+  const now = Date.UTC(2026, 10, 23, 4)
+  const quiz = N.buildQuiz(C.ATLAS_SPECIES, C.ATLAS_SERIES, now)
+  const wrong = (quiz[1].answer + 1) % 4
+  const answers = quiz.map((q, i) => (i === 1 ? wrong : q.answer))
+  const review = quiz.map((q, i) => ({ prompt: q.prompt, mine: q.options[answers[i]], right: q.options[q.answer], ok: answers[i] === q.answer, explain: q.explain, askQ: q.askQ, no: q.no }))
+  return {
+    daily: { card: N.dailyCard(C.ATLAS_SPECIES, C.ATLAS_SERIES, now), past: N.pastDaily(C.ATLAS_SPECIES, now, 6) },
+    quizAsk: { quiz, total: quiz.length, idx: 1, picked: wrong, answers: answers.slice(0, 2), done: false, result: null, review: [] },
+    quizDone: { quiz, total: quiz.length, idx: 4, picked: -1, answers, done: true, review, result: { score: 4, total: 5, line: N.scoreLine(4, 5), streak: 3, best: 5, fresh: true } }
+  }
+}
+
+/** 2026-11-23 博物君 · 标本工坊：作品卡 / 灵感签由真模块现算（藏品卡是自定义组件，预览里不画） */
+function workshopScenes() {
+  const W = loadCjsModule(join(MP, 'subpackages/feature/museum-guide/workshopKit.js'), {})
+  const C = loadCjsModule(join(MP, 'subpackages/feature/config/atlasCatalog.js'), {})
+  const sp = W.makeableSpecies(C.ATLAS_SPECIES)[0]
+  const results = [W.scoreRelax(2100), W.scoreSpread(88), W.scorePin(57), W.scoreDry(9), W.scoreFrame('cloche')]
+  const work = W.buildWork(sp, results, 'cloche', 'ink', Date.UTC(2026, 10, 23, 4))
+  const base = { tab: 'make', phase: 'step', choices: [], species: { no: sp.no, nameZh: sp.nameZh, nameLatin: sp.nameLatin }, stepIdx: 1, steps: W.STEPS, stepResult: results[1], results: results.slice(0, 2),
+    holdSec: '2.1', holding: false, spreadDeg: 88, pinPos: 57, pinStopped: true, dryDays: 9, crafts: W.CRAFTS, backdrops: W.BACKDROPS, craftKey: 'cloche', backdropKey: 'ink', work: null,
+    spaces: W.SPACES, moods: W.MOODS, budgets: W.BUDGETS, spaceKey: '', moodKey: '', budgetKey: 'b4', plan: null, insp: null, products: [], productsLoading: false, productsEmpty: false }
+  let k = 0
+  const insp = W.drawInspiration(C.ATLAS_SPECIES, () => [0.02, 0.6][k++ % 2])
+  return {
+    step: base,
+    done: Object.assign({}, base, { phase: 'done', work, productsLoading: true }),
+    idea: Object.assign({}, base, { tab: 'idea', insp, productsLoading: true })
+  }
+}
+
 function achievementsSceneData() {
   let cfg = null
   loadCjsModule(join(MP, 'subpackages/extra/user/achievements/index.js'), {
@@ -716,6 +751,12 @@ const SCENES = [
       loading: false, fallbackImg: WL_COVER,
       wiki: { _id: 'w1', type: 'specimen', title: '黑马标本', latinName: 'Equus caballus', coverImage: WL_COVER, gallery: [WL_COVER, WL_COVER, WL_COVER, WL_COVER] },
       relatedProducts: [], articleContent: '', notes: [] } },
+  { name: 'mg-daily', h: 1900, wxml: 'subpackages/feature/museum-guide/daily/index', data: naturalistScenes().daily },
+  { name: 'mg-quiz', h: 1500, wxml: 'subpackages/feature/museum-guide/quiz/index', data: naturalistScenes().quizAsk },
+  { name: 'mg-quiz-done', h: 2600, wxml: 'subpackages/feature/museum-guide/quiz/index', data: naturalistScenes().quizDone },
+  { name: 'ws-step', h: 1500, wxml: 'subpackages/feature/museum-guide/workshop/index', data: workshopScenes().step },
+  { name: 'ws-done', h: 1700, wxml: 'subpackages/feature/museum-guide/workshop/index', data: workshopScenes().done },
+  { name: 'ws-idea', h: 1300, wxml: 'subpackages/feature/museum-guide/workshop/index', data: workshopScenes().idea },
   { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
       visible: [
         { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },

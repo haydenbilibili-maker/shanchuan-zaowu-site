@@ -1,0 +1,27 @@
+<!-- 博物君 · 博物笔记（2026-11-23）：问答里收藏的回答，存本机。 -->
+<view class="nt-page">
+  <view class="nt-head">
+    <text class="nt-eyebrow">NOTEBOOK · 博物笔记</text>
+    <text class="nt-title">博物笔记</text>
+    <text class="nt-desc">在问答里点「收藏」的回答都在这里，只存在这台手机上。</text>
+  </view>
+
+  <view class="nb-empty" wx:if="{{!notes.length}}">
+    <text class="nb-empty-t">还没有收藏的回答</text>
+    <text class="nb-empty-d">问博物君一个问题，觉得值得留着，就点回答下面的「收藏」。</text>
+    <view class="nt-btns"><view class="nt-btn is-primary" bindtap="onGoGuide" hover-class="tap-press" hover-stay-time="80">去问博物君</view></view>
+  </view>
+
+  <view class="nt-paper nb-card" wx:for="{{notes}}" wx:key="id">
+    <view class="nt-paper-top"><text>NOTE · {{item.when}}</text><text>博物君</text></view>
+    <text class="nb-q" wx:if="{{item.q}}">问：{{item.q}}</text>
+    <text class="nb-a {{openId === item.id ? 'is-open' : ''}}" user-select data-id="{{item.id}}" bindtap="onToggle">{{item.a}}</text>
+    <view class="nb-acts">
+      <text class="nb-act" data-id="{{item.id}}" bindtap="onToggle" hover-class="tap-press" hover-stay-time="80">{{openId === item.id ? '收起' : '展开'}}</text>
+      <text class="nb-act" data-id="{{item.id}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
+      <text class="nb-act" data-id="{{item.id}}" bindtap="onAskMore" hover-class="tap-press" hover-stay-time="80">接着问</text>
+      <text class="nb-act {{confirmId === item.id ? 'is-danger' : ''}}" data-id="{{item.id}}" bindtap="onDelete" hover-class="tap-press" hover-stay-time="80">{{confirmId === item.id ? '再点一次删除' : '删除'}}</text>
+    </view>
+  </view>
+  <text class="nt-foot" wx:if="{{notes.length}}">最多留 50 条，新的在前。</text>
+</view>

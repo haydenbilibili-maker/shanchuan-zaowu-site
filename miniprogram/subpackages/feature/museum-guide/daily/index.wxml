@@ -1,0 +1,38 @@
+<!-- 博物君 · 今日一物（2026-11-23）：一张文字标本签 + 往日一物。不出图版。 -->
+<view class="nt-page">
+  <view class="nt-head">
+    <text class="nt-eyebrow">TODAY · 今日一物{{card ? ' · ' + card.dayText : ''}}</text>
+    <text class="nt-title">今日一物</text>
+    <text class="nt-desc">博物君每天从山海图鉴里取出一件，讲给你听。明天会换一件。</text>
+  </view>
+
+  <view class="nt-paper dl-card" wx:if="{{card}}">
+    <view class="nt-paper-top"><text>No.{{card.no}}</text><text>{{card.category}}{{card.chapter ? ' · ' + card.chapter : ''}}</text></view>
+    <text class="dl-name">{{card.nameZh}}</text>
+    <text class="dl-latin" wx:if="{{card.nameLatin}}">{{card.nameLatin}}</text>
+    <view class="nt-rule"></view>
+    <view class="dl-field" wx:if="{{card.origin}}"><text class="nt-k">产地</text><text class="nt-v">{{card.origin}}</text></view>
+    <view class="dl-field" wx:if="{{card.habit}}"><text class="nt-k">习性</text><text class="nt-v">{{card.habit}}</text></view>
+    <view class="dl-essay" wx:if="{{card.essay}}">
+      <text class="nt-k">馆方短文</text>
+      <text class="dl-essay-t">{{card.essay}}</text>
+    </view>
+    <text class="dl-sign">山海造物 · 博物君 荐</text>
+  </view>
+
+  <view class="nt-btns" wx:if="{{card}}">
+    <view class="nt-btn is-primary" bindtap="onAsk" hover-class="tap-press" hover-stay-time="80">问博物君关于它</view>
+    <view class="nt-btn" bindtap="onAtlas" hover-class="tap-press" hover-stay-time="80">去图鉴看看</view>
+  </view>
+
+  <view class="nt-sec" wx:if="{{past.length}}">
+    <text class="nt-sec-k">EARLIER</text>
+    <text class="nt-sec-t">往日一物</text>
+    <view class="nt-row" wx:for="{{past}}" wx:key="day" data-no="{{item.no}}" bindtap="onAtlas" hover-class="tap-press-soft" hover-stay-time="80">
+      <text class="nt-row-d">{{item.dayText}}</text>
+      <text class="nt-row-t">{{item.nameZh}}</text>
+      <text class="nt-row-s">{{item.category}} ›</text>
+    </view>
+  </view>
+  <text class="nt-foot">一件一件看下去，八十天走完整本山海图鉴。</text>
+</view>
