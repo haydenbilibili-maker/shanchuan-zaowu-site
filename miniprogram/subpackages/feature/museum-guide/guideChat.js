@@ -101,6 +101,7 @@ const ERROR_COPY = {
   quota: '今天问得够多啦，明天再来找博物君',
   ai_service: '博物君一时没翻到答案，请稍后再试',
   not_deployed: '博物君还在布展，过几天再来',
+  off: '博物君暂时闭馆整理，过些日子再来',
   network: '网络不太稳，没能把问题送到博物君那里'
 }
 
@@ -168,6 +169,17 @@ function isNotDeployed(err) {
 }
 
 /**
+ * 进页状态（askMuseumGuide action: 'status'）→ { closed, closedText, quota }。
+ * 读不到 / 没部署 / 旧版云函数没有 status：当作开着、额度未知（不因为状态读失败把人挡在门外）。
+ */
+function statusView(result) {
+  const r = result || {}
+  if (!r.success) return { closed: false, closedText: '', quota: null }
+  const quota = r.quota && typeof r.quota.left === 'number' ? { left: r.quota.left, cap: r.quota.cap } : null
+  return { closed: r.enabled === false, closedText: r.enabled === false ? (r.msg || ERROR_COPY.off) : '', quota }
+}
+
+/**
  * 云函数结果 → 一条博物君消息 + 额度。
  * 成功：回答 + 追问 + 去处；失败：错误气泡（isError，不进历史）。
  */
@@ -177,6 +189,7 @@ function replyToMessage(result) {
   if (r.success && r.answer) {
     return {
       message: makeMessage('guide', plainAnswer(r.answer), {
+        logId: typeof r.logId === 'string' && r.logId.length <= 64 ? r.logId : '',
         followUps: (r.followUps || []).filter(Boolean).slice(0, 3),
         actions: actionButtons(r.actions),
         species: speciesLinks(r.species)
@@ -243,6 +256,7 @@ module.exports = {
   cleanQuestion,
   isNotDeployed,
   replyToMessage,
+  statusView,
   toStored,
   fromStored,
   quotaText

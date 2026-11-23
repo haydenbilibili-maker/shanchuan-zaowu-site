@@ -76,7 +76,9 @@ const MENU_KEYS = {
   MY_PAYSLIP: 'myPayslip',
   PAYSLIP_ADMIN: 'payslipAdmin',
   /** AI 鉴定监测：用户鉴定照片与结果 —— 仅超管（不进任何非超管菜单） */
-  AI_IDENTIFY_MONITOR: 'aiIdentifyMonitor'
+  AI_IDENTIFY_MONITOR: 'aiIdentifyMonitor',
+  /** 博物君（AI 馆员）开关 / 额度 / 使用监测 —— 仅超管（不进任何非超管菜单，2026-11-23） */
+  MUSEUM_GUIDE_MONITOR: 'museumGuideMonitor'
 }
 
 /** curTab idx → menu key（仅 manager 页内 switchTab） */

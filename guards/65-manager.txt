@@ -26,3 +26,5 @@ npm run test:payslip-social-insurance
 # 2026-10-13（提审前点名）：藏品库高风险（三有/保护类）一键上下线 + 操作后停留当前页 + 商品图水印可辨
 #   miniprogram/docs/藏品库_高风险一键上下线_2026-10-13.md
 npm run check:product-lib-risk
+# 2026-11-23：超管工作台「博物君」开关与监测 —— 报表聚合（日补零 / 成功率分母 / 只算已回答）、配置入参 5–200、非超管零读写、改设置审计先行、视图不编 0、开关两步确认、内容开关只读带出且 save 不冲掉、接线；12 个内存注入
+npm run test:museum-guide-monitor

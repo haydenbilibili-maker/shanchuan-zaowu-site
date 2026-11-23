@@ -2839,6 +2839,15 @@ const managerPageConfig = {
     });
   },
 
+  /** 博物君开关与监测 —— **仅超管**（2026-11-23）。同形：磁贴由 menu.museumGuideMonitor 控制，页内与云函数各自再判 */
+  goMuseumGuideMonitorGuarded() {
+    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.MUSEUM_GUIDE_MONITOR)) return;
+    wx.navigateTo({
+      url: '/subpackages/manager/museum-guide-monitor/index',
+      fail: () => this.showHubTip('页面暂不可用', 'warn')
+    });
+  },
+
   goStudioBillsGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.STUDIO_BILLS)) return;
     goStudioBills();

@@ -153,6 +153,28 @@ const atlasStats = { total: atlasCards.length, unlocked: atlasCards.filter((c) =
 // 卷章刻度（2026-11-22，与页面 applyPack 同算法）
 atlasStats.series = atlasStats.series.map((sr) => ({ ...sr, pips: Array.from({ length: sr.total }, (_, i) => ({ i, lit: i < sr.got })) }))
 
+/** 2026-11-23 超管「博物君」：用真聚合（museumGuideMonitor.summarize）+ 真视图（monitorView.buildView）现算，样例日志为合成数据 */
+function museumGuideMonitorSceneData() {
+  const fn = loadCjsModule(join(MP, 'cloudfunctions/museumGuideMonitor/index.js'), {
+    stubs: { 'wx-server-sdk': { init() {}, DYNAMIC_CURRENT_ENV: 'x', database: () => ({ command: {} }), getWXContext: () => ({}) }, './staffGuard': { assertStaff: async () => ({ ok: false }) } }
+  })
+  const V = loadCjsModule(join(MP, 'subpackages/manager/museum-guide-monitor/monitorView.js'), {})
+  const now = Date.UTC(2026, 10, 23, 6)
+  const day = (i) => new Date(now + 8 * 3600 * 1000 - i * 86400000).toISOString().slice(0, 10)
+  const sp = [{ no: '001', zh: '大蓝闪蝶' }, { no: '033', zh: '鹦鹉螺' }, { no: '039', zh: '虎斑宝贝' }, { no: '031', zh: '银杏押花' }]
+  const rows = []
+  const perDay = [14, 9, 11, 6, 8, 4, 3]
+  perDay.forEach((n, i) => {
+    for (let k = 0; k < n; k++) {
+      const status = k === 0 && i % 3 === 0 ? 'ai_service' : (k === 1 && i === 0 ? 'quota' : (k === 2 && i === 2 ? 'risky' : 'ok'))
+      rows.push({ day: day(i), openid: 'u' + ((k * 7 + i) % (n > 8 ? 6 : 4)), status, duration_ms: 2200 + ((k * 431) % 2600), model: k % 5 === 0 ? 'qwen-flash' : 'qwen-plus',
+        species: k % 2 ? [sp[(k + i) % sp.length]] : [], actions: k % 3 === 0 ? ['atlas'] : (k % 4 === 0 ? ['care'] : []), entry: ['user', 'atlas', 'identify', 'user'][k % 4] })
+    }
+  })
+  const d = Object.assign(fn._test.summarize(rows, now, 7), { truncated: false, config: { enabled: true, dailyLimit: 30, defaultLimit: 30, updatedAt: now - 3600000, updatedByName: '馆长' } })
+  return { ready: true, loading: false, saving: false, days: 7, view: V.buildView(d), loadError: '', tipText: '', tipTone: 'info', confirmToggle: false, limitOptions: V.DAILY_LIMIT_OPTIONS }
+}
+
 function achievementsSceneData() {
   let cfg = null
   loadCjsModule(join(MP, 'subpackages/extra/user/achievements/index.js'), {
@@ -676,7 +698,7 @@ const SCENES = [
         { id: 'g0', role: 'guide', isWelcome: true, text: '你好，我是博物君，山海造物标本馆的馆员。关于蝴蝶、贝壳、矿物与化石，关于标本怎么保存，关于山海造物这座馆，都可以问我。', followUps: [], actions: [] },
         { id: 'u1', role: 'user', text: '大蓝闪蝶为什么是蓝色的？' },
         { id: 'g1', role: 'guide', text: '它的蓝不是色素，是结构色。翅面鳞片上有极细的层状脊纹，间距与蓝光的波长相当，白光照进去，只有蓝色那一段被反复加强、反射回来，其它颜色互相抵消。\n\n所以换个角度看，它会忽明忽暗；把鳞片浸进酒精，折射率一变，蓝会暂时褪去，干了又回来。馆里的图鉴第 001 页就是它，产自中美洲到南美北部的雨林。',
-          species: [{ no: '001', zh: '大蓝闪蝶' }],
+          species: [{ no: '001', zh: '大蓝闪蝶' }], logId: 'L1',
           followUps: ['还有哪些动物是结构色？', '闪蝶标本会褪色吗？', '雌蝶也一样蓝吗？'],
           actions: [{ key: 'atlas', label: '翻山海图鉴', url: '/subpackages/feature/collection/index', tab: false }, { key: 'care', label: '看标本养护', url: '/subpackages/feature/care/index', tab: false }] }
       ] } },
@@ -688,6 +710,7 @@ const SCENES = [
         { id: 'g1', role: 'guide', revealing: true, text: '因为它的样子几亿年没怎么变。', shown: '因为它的身体构造在四亿多年里变化很小：一枚分成许多气室的螺旋壳，靠调节气室里的气体与液体',
           species: [{ no: '033', zh: '鹦鹉螺' }], followUps: ['它现在还活着吗？'], actions: [] }
       ] } },
+  { name: 'museum-guide-monitor', h: 3000, wxml: 'subpackages/manager/museum-guide-monitor/index', data: museumGuideMonitorSceneData() },
   { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
       visible: [
         { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },

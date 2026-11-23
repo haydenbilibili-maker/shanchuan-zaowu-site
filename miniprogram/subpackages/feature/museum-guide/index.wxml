@@ -36,6 +36,17 @@
             <view class="mg-acts" wx:if="{{item.actions.length && !item.revealing}}">
               <text class="mg-act" wx:for="{{item.actions}}" wx:for-item="act" wx:key="key" data-url="{{act.url}}" data-tab="{{act.tab}}" data-key="{{act.key}}" bindtap="onTapAction" hover-class="tap-press" hover-stay-time="80">{{act.label}} ›</text>
             </view>
+            <!-- 反馈 / 复制（2026-11-23）：写完的正式回答才出；投过票只留一句谢谢 -->
+            <view class="mg-fb" wx:if="{{!item.isError && !item.isWelcome && !item.pending && !item.revealing && item.text}}">
+              <block wx:if="{{item.logId}}">
+                <text class="mg-fb-done" wx:if="{{item.vote}}">{{item.vote === 'up' ? '谢谢，博物君记下了' : '谢谢，博物君会再翻翻书'}}</text>
+                <block wx:else>
+                  <text class="mg-fb-btn" data-index="{{index}}" data-vote="up" bindtap="onVote" hover-class="tap-press" hover-stay-time="80">有帮助</text>
+                  <text class="mg-fb-btn" data-index="{{index}}" data-vote="down" bindtap="onVote" hover-class="tap-press" hover-stay-time="80">没帮助</text>
+                </block>
+              </block>
+              <text class="mg-fb-btn" data-index="{{index}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
+            </view>
             <!-- 追问 -->
             <view class="mg-follow" wx:if="{{item.followUps.length && !sending && !item.revealing}}">
               <text class="mg-chip" wx:for="{{item.followUps}}" wx:for-item="q" wx:key="*this" data-q="{{q}}" bindtap="onTapFollowUp" hover-class="tap-press-soft" hover-stay-time="80">{{q}}</text>
@@ -46,7 +57,13 @@
     </view>
 
     <!-- 开场问题：还没问过时出现 -->
-    <view class="mg-starters" wx:if="{{!hasAsked}}">
+    <!-- 闭馆（超管工作台关掉博物君，2026-11-23）：一句说明，开场问题与输入条收起；本机旧对话仍可回看 -->
+    <view class="mg-closed" wx:if="{{closed}}">
+      <text class="mg-closed-k">CLOSED · 闭馆整理中</text>
+      <text class="mg-closed-t">{{closedText}}</text>
+    </view>
+
+    <view class="mg-starters" wx:if="{{!hasAsked && !closed}}">
       <text class="mg-starters-k">可以这样问</text>
       <text class="mg-chip is-block" wx:for="{{starters}}" wx:key="*this" data-q="{{item}}" bindtap="onTapStarter" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
     </view>
@@ -56,7 +73,7 @@
   </scroll-view>
 
   <!-- 底部输入条 -->
-  <view class="mg-bar safe-area">
+  <view class="mg-bar safe-area" wx:if="{{!closed}}">
     <view class="mg-bar-meta">
       <text class="mg-quota">{{quotaText || '问博物君关于自然与这座馆的事'}}</text>
       <text class="mg-clear" wx:if="{{hasAsked}}" bindtap="onClear" hover-class="tap-press" hover-stay-time="80">清空对话</text>

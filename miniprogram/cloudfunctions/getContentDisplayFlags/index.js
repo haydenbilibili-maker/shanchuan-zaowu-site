@@ -208,13 +208,28 @@ async function saveFlags(event, openid) {
   }
 }
 
+/**
+ * 博物君开关（2026-11-23）：**只读**带出 museumGuideOpen —— 开关存在博物君自己的配置里（museum_guide_config/main，
+ * 只有超管工作台「博物君」能改），不在本集合，save 也不写它：ERP / 店长端保存内容开关不会把它改回开启。
+ * 读不到 → 开启（缺省开启口径）。
+ */
+async function readMuseumGuideOpen() {
+  try {
+    const r = await db.collection('museum_guide_config').doc('main').get()
+    return !(r && r.data && r.data.enabled === false)
+  } catch (e) {
+    return true
+  }
+}
+
 exports.main = async (event) => {
   const openid = cloud.getWXContext().OPENID
   const action = (event && event.action) || 'get'
 
   try {
     if (action === 'save') return await saveFlags(event, openid)
-    return await readFlags()
+    const [res, museumGuideOpen] = await Promise.all([readFlags(), readMuseumGuideOpen()])
+    return Object.assign({}, res, { flags: Object.assign({}, res.flags, { museumGuideOpen }) })
   } catch (e) {
     console.error('getContentDisplayFlags', e)
     return {

@@ -34,6 +34,10 @@ function normalizeContentDisplayFlags(raw) {
     showStoredValue: src.showStoredValue === true,
     // 缺字段 / undefined → 开启；现网已开放，仅显式 false 关闭
     showAiIdentify: src.showAiIdentify !== false,
+    // 博物君开馆状态（2026-11-23）：缺字段 / undefined → 开启；超管工作台「博物君」闭馆时为 false。
+    // 刻意不叫 showXxx：它不在 content_display_flags 里、ERP / 店长端也不写它（唯一写入方是超管「博物君」页），
+    // 不属于 check:hook-registration 管的「展示开关」一族；端到端由 test:museum-guide-monitor 的 M5 钉住。
+    museumGuideOpen: src.museumGuideOpen !== false,
     // 缺字段 / undefined → 开启；现网已有门店，仅显式 false 关闭
     showStore: src.showStore !== false,
     // 缺字段 / undefined → 开启；门店自取在售，仅显式 false 关闭

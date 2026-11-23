@@ -19,6 +19,9 @@ Page({
     sending: false,
     quota: null,
     quotaText: '',
+    /** 超管工作台闭馆（2026-11-23）：开场问题与输入条收起，只留一句说明 */
+    closed: false,
+    closedText: '',
     scrollTo: '',
     questionMax: G.QUESTION_MAX
   },
@@ -29,12 +32,27 @@ Page({
     try { stored = G.fromStored(wx.getStorageSync(G.storeKey(this._openid))) } catch (e) { stored = [] }
     const welcome = G.makeMessage('guide', G.WELCOME, { isWelcome: true })
     this.setData({ messages: [welcome].concat(stored), hasAsked: stored.some((m) => m.role === 'user') }, () => this.scrollToEnd())
-    // 外部带问题进来（如二期 AI 鉴定结果页「问问博物君」）：预填不自动发
+    this._from = ['user', 'atlas', 'identify', 'share'].indexOf(options && options.from) >= 0 ? options.from : 'direct'
+    this.loadStatus()
     // 带着问题进来（AI 鉴定结果 / 图鉴页「问问博物君」）：auto=1 直接发问，否则只预填
     const q = G.entryQuestion(options)
     if (q && options.auto === '1') this.ask(q)
     else if (q) this.setData({ draft: q })
     // 埋点（打开 / 提问 / 去处）待产品负责人点名后登记进埋点双端 schema 再接（稳定期共享件，见蓝图 §5）
+  },
+
+  /** 进页取一次状态：开没开、今天还剩几问（不计次） */
+  async loadStatus() {
+    let v
+    try {
+      const res = await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { action: 'status' } })
+      v = G.statusView(res && res.result)
+    } catch (e) {
+      v = G.statusView(null)
+    }
+    const patch = { closed: v.closed, closedText: v.closedText }
+    if (v.quota && !this.data.quota) Object.assign(patch, { quota: v.quota, quotaText: G.quotaText(v.quota) })
+    this.setData(patch)
   },
 
   onShareAppMessage() {
@@ -62,7 +80,7 @@ Page({
   /* ------------------------------ 提问 ------------------------------ */
 
   async ask(raw) {
-    if (this.data.sending) return
+    if (this.data.sending || this.data.closed) return
     // 上一条还在逐字写：先写完再问
     if (this._revealTimer && this._revealIndex >= 0) this.finishReveal(this._revealIndex)
     const c = G.cleanQuestion(raw)
@@ -76,7 +94,7 @@ Page({
 
     let reply
     try {
-      const res = await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { question: c.question, history } })
+      const res = await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { question: c.question, history, from: this._from || 'direct' } })
       reply = G.replyToMessage(res && res.result)
     } catch (err) {
       const type = G.isNotDeployed(err) ? 'not_deployed' : 'network'
@@ -84,6 +102,8 @@ Page({
     }
     const messages = this.data.messages.filter((m) => !m.pending).concat(reply.message)
     const quota = reply.quota || this.data.quota
+    // 提问时才发现已闭馆（进页后超管刚关）：收起输入条
+    if (reply.message.errorType === 'off') this.setData({ closed: true, closedText: reply.message.text })
     this.persist(messages)
     // 新回答逐字出来（错误提示直接出）；写完前追问 / 去处 / 图鉴链接先不出
     if (!reply.message.isError) {
@@ -126,6 +146,27 @@ Page({
   stopReveal() {
     if (this._revealTimer) clearInterval(this._revealTimer)
     this._revealTimer = null
+  },
+
+  /* ------------------------------ 反馈 / 复制 ------------------------------ */
+
+  /** 有帮助 / 没帮助：只投一次；先在本机标上（不等云端），云端失败也不打扰 */
+  async onVote(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const vote = e.currentTarget.dataset.vote === 'down' ? 'down' : 'up'
+    const msg = this.data.messages[index]
+    if (!msg || !msg.logId || msg.vote) return
+    this.setData({ [`messages[${index}].vote`]: vote })
+    this.persist(this.data.messages)
+    try {
+      await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { action: 'feedback', logId: msg.logId, vote } })
+    } catch (err) { /* 反馈没送到只影响报表，不打扰提问的人 */ }
+  },
+
+  onCopy(e) {
+    const msg = this.data.messages[Number(e.currentTarget.dataset.index)]
+    if (!msg || !msg.text) return
+    wx.setClipboardData({ data: msg.text })
   },
 
   /** 点正在写的气泡：直接写完 */

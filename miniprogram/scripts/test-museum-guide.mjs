@@ -93,12 +93,33 @@ async function runChecks() {
   const st = G.toStored([G.makeMessage('guide', '整段', { shown: '整', revealing: true })])
   ok('A13 存储不带逐字中间态、读回时旧记录也去 Markdown', st[0].text === '整段' && !('shown' in st[0]) && !('revealing' in st[0]) &&
     G.fromStored([{ role: 'guide', text: '**粗**', shown: 'x', revealing: true }])[0].text === '粗' && !('revealing' in G.fromStored([{ role: 'guide', text: 'a', revealing: true }])[0]))
+  const sv1 = G.statusView({ success: true, enabled: false, msg: '闭馆了', quota: { left: 3, cap: 12 } })
+  const sv2 = G.statusView(null)
+  ok('A14 进页状态：闭馆带说明与额度；读不到当开着（不把人挡在门外）', sv1.closed === true && sv1.closedText === '闭馆了' && sv1.quota.cap === 12 && sv2.closed === false && sv2.quota === null)
+  const withLog = G.replyToMessage({ success: true, answer: '答', logId: 'L9' })
+  const badLog = G.replyToMessage({ success: true, answer: '答', logId: { $ne: 1 } })
+  ok('A15 回答带日志号（只收 ≤64 字的字符串）', withLog.message.logId === 'L9' && badLog.message.logId === '')
   ok('A7 额度文案', G.quotaText({ left: 3, cap: 30 }) === '今日还可问 3 次' && G.quotaText({ left: 0, cap: 30 }) === '今日次数已用完' && G.quotaText(null) === '')
 
   /* ---------------- B 云函数纯函数 ---------------- */
   const secCalls = []
   let modelCalls = 0
-  const fakeDb = { collection: () => ({ doc: () => ({ get: async () => ({ data: { count: 0 } }), update: async () => ({ stats: { updated: 1 } }), set: async () => ({}) }) }), command: { inc: (n) => n }, serverDate: () => 0 }
+  // 按集合分的内存库：config / usage 文档、日志 add 记下来（2026-11-23 超管开关与监测）
+  const dbStore = { museum_guide_config: {}, museum_guide_usage: {} }
+  const logs = []
+  let usageWrites = 0
+  const fakeDb = {
+    collection: (name) => ({
+      doc: (id) => ({
+        get: async () => { const d = (dbStore[name] || {})[id]; if (!d) throw new Error('document not exist'); return { data: d } },
+        update: async ({ data }) => { usageWrites++; const d = dbStore[name] && dbStore[name][id]; if (d && name === 'museum_guide_logs') Object.assign(d, data); return { stats: { updated: d ? 1 : 0 } } },
+        set: async ({ data }) => { usageWrites++; (dbStore[name] = dbStore[name] || {})[id] = data }
+      }),
+      add: async ({ data }) => { if (name === 'museum_guide_logs') { logs.push(data); (dbStore[name] = dbStore[name] || {})['l' + logs.length] = data } return { _id: 'l' + logs.length } }
+    }),
+    command: { inc: (n) => n },
+    serverDate: () => 0
+  }
   const fn = loadCjsModule(P.fn, {
     transform,
     stubs: {
@@ -130,7 +151,36 @@ async function runChecks() {
   ok('C3 问题在调模型之前过内容安全；回答也过一次，有风险换固定回复', iSec > 0 && iModel > iSec && /await checkText\(OPENID, reply\.answer/.test(src) && /reply = \{ answer: SAFE_ANSWER/.test(src))
   ok('C4 密钥只从环境变量读、源码无明文 key', /process\.env\.DASHSCOPE_API_KEY/.test(src) && !/sk-[A-Za-z0-9]{12,}/.test(src + read(P.knowledge) + read(P.persona)))
   const setBlock = (src.match(/\.set\(\{ data: \{([^}]*)\}/) || [])[1] || ''
-  ok('C5 计数集合只记 openid / day / count / updatedAt，不存问题与回答', /openid/.test(setBlock) && /count/.test(setBlock) && !/question|answer|history|content/.test(setBlock) && !/collection\([^)]*\)\.add\(/.test(src))
+  const LOG_KEYS = 'a_len,actions,created_at,day,duration_ms,entry,history_len,model,openid,q_len,species,status'
+  const fakeLog = T.buildLog({ openid: 'o1', dayText: '2026-11-23', status: 'ok', question: '原文问题', answer: '原文回答', species: [{ no: '001', zh: '大蓝闪蝶' }], actions: ['atlas'], qLen: 4, aLen: 4, entry: 'evil', now: 1 })
+  ok('C5 计数集合只记 openid / day / count / updatedAt；运营日志字段白名单、不存问题与回答原文、入口只认白名单',
+    /openid/.test(setBlock) && /count/.test(setBlock) && !/question|answer|history|content/.test(setBlock) &&
+    Object.keys(fakeLog).sort().join() === LOG_KEYS && !/原文/.test(JSON.stringify(fakeLog)) && fakeLog.entry === 'direct' &&
+    logs.length === 2 && logs.every((l) => Object.keys(l).sort().join() === LOG_KEYS && !/炸药|蓝色/.test(JSON.stringify(l))) &&
+    logs[0].status === 'risky' && logs[1].status === 'ai_service')
+  // C7 进页状态：不计次、不记日志；C8 闭馆：提问不过内容安全、不调模型、记 off；额度取超管配置
+  const logN = logs.length; const uw = usageWrites; const secN = secCalls.length
+  const stA = await fn.main({ action: 'status' })
+  ok('C7 status：开着、给今日额度；不计次、不记日志', stA.success && stA.enabled === true && stA.quota.cap === 30 && stA.quota.left === 30 && logs.length === logN && usageWrites === uw)
+  dbStore.museum_guide_config.main = { enabled: false, dailyLimit: 12 }
+  const off = await fn.main({ question: '蝴蝶是什么', from: 'atlas' })
+  const stB = await fn.main({ action: 'status' })
+  ok('C8 闭馆：error_type off、不过内容安全不调模型、日志记 off 与入口；status 报闭馆且额度取超管配置',
+    off.success === false && off.error_type === 'off' && secCalls.length === secN && modelCalls === 0 && logs[logs.length - 1].status === 'off' && logs[logs.length - 1].entry === 'atlas' &&
+    stB.enabled === false && stB.quota.cap === 12)
+  dbStore.museum_guide_config.main = undefined
+  // C10 回答反馈：只认本人、只记一次、只认两种票；日志号只随真正的回答返回
+  dbStore.museum_guide_logs = Object.assign(dbStore.museum_guide_logs || {}, { L1: { openid: 'o1', status: 'ok' }, L2: { openid: 'someone-else', status: 'ok' } })
+  const fb1 = await fn.main({ action: 'feedback', logId: 'L1', vote: 'up' })
+  const fb2 = await fn.main({ action: 'feedback', logId: 'L1', vote: 'down' })
+  const fb3 = await fn.main({ action: 'feedback', logId: 'L2', vote: 'down' })
+  const fb4 = await fn.main({ action: 'feedback', logId: 'L1', vote: 'meh' })
+  ok('C10 反馈：本人一次有效、重复不改票、别人的回答与非法票拒绝；只有成功回答才带日志号',
+    fb1.success && dbStore.museum_guide_logs.L1.vote === 'up' && fb2.already === true && dbStore.museum_guide_logs.L1.vote === 'up' &&
+    fb3.success === false && !dbStore.museum_guide_logs.L2.vote && fb4.success === false &&
+    /if \(out && out\.success && logId\) out\.logId = logId/.test(src))
+  ok('C9 生效配置：额度 5–200 才认、否则回落环境变量；读不到配置 = 开启', T.effectiveConfig({ dailyLimit: 3 }, '40').cap === 40 && T.effectiveConfig({ dailyLimit: 50 }, '40').cap === 50 &&
+    T.effectiveConfig(null, '').enabled === true && T.effectiveConfig({ enabled: false }, '').enabled === false)
   ok('C6 config.json 声明 msgSecCheck 权限', /security\.msgSecCheck/.test(readFileSync(P.fnConfig, 'utf8')))
 
   /* ---------------- D 知识 ---------------- */
@@ -154,7 +204,7 @@ async function runChecks() {
   const userWxml = read(P.userWxml)
   ok('E2 「我的 · 馆藏与内容」有博物君入口（用「科学家」图标）且路由到页面',
     /data-path="museumGuide"[\s\S]{0,200}<text class="svc-cn">博物君<\/text>/.test(userWxml) &&
-    /data-path="museumGuide">\s*<image class="m-img" src="\/assets\/icons\/museum-guide\.png"/.test(userWxml) &&
+    /data-path="museumGuide"[^>]*>\s*<image class="m-img" src="\/assets\/icons\/museum-guide\.png"/.test(userWxml) &&
     existsSync(join(MP, 'assets/icons/museum-guide.png')) &&
     /case 'museumGuide':\s*\n\s*go\('\/subpackages\/feature\/museum-guide\/index/.test(read(P.userJs)))
   const rule = JSON.parse(readFileSync(P.rule, 'utf8'))
@@ -220,10 +270,33 @@ async function runChecks() {
   ok('F5 逐字显示：新回答先写、点气泡写完；写完前追问 / 去处 / 图鉴链接不出', w1 && w2 && lastIdx >= 0 &&
     /class="mg-species" wx:if="\{\{item\.species\.length && !item\.revealing\}\}"/.test(mgWxml) && /class="mg-acts" wx:if="\{\{item\.actions\.length && !item\.revealing\}\}"/.test(mgWxml) &&
     /class="mg-follow" wx:if="\{\{item\.followUps\.length && !sending && !item\.revealing\}\}"/.test(mgWxml))
+  // F6 闭馆：进页 status 报闭馆 → 输入条与开场问题收起，ask 不发云调用
+  let askCalls = 0
+  wxStub.cloud.callFunction = async (o) => { if (o && o.data && o.data.action === 'status') return { result: { success: true, enabled: false, msg: '闭馆整理中', quota: { left: 30, cap: 30 } } }; askCalls++; return reply }
+  const pc = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
+  pc.onLoad({})
+  await new Promise((r) => setTimeout(r, 0))
+  await pc.ask('还能问吗')
+  const mgW = read(P.wxml)
+  ok('F6 闭馆：页面收起输入条与开场问题、提问不发云调用', pc.data.closed === true && pc.data.closedText === '闭馆整理中' && askCalls === 0 &&
+    /<view class="mg-bar safe-area" wx:if="\{\{!closed\}\}">/.test(mgW) && /class="mg-starters" wx:if="\{\{!hasAsked && !closed\}\}"/.test(mgW))
+  // F7 反馈：投一次就记在本机、只发一次；没有日志号的回答不出票（只留复制）
+  let fbCalls = 0
+  wxStub.cloud.callFunction = async (o) => { if (o && o.data && o.data.action === 'feedback') fbCalls++; return { result: { success: true } } }
+  const pv = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { for (const k of Object.keys(p)) { const m = k.match(/^messages\[(\d+)\]\.(\w+)$/); if (m) this.data.messages[+m[1]][m[2]] = p[k]; else this.data[k] = p[k] } if (cb) cb() } })
+  pv.onLoad({})
+  pv.setData({ messages: pv.data.messages.concat(G.makeMessage('guide', '答', { logId: 'L7' })) })
+  const vi = pv.data.messages.length - 1
+  await pv.onVote({ currentTarget: { dataset: { index: vi, vote: 'down' } } })
+  await pv.onVote({ currentTarget: { dataset: { index: vi, vote: 'up' } } })
+  pv.onUnload()
+  ok('F7 反馈只投一次并存本机；无日志号不出票', pv.data.messages[vi].vote === 'down' && fbCalls === 1 &&
+    (store[G.storeKey('o1')] || []).some((m) => m.logId === 'L7' && m.vote === 'down') &&
+    /<block wx:if="\{\{item\.logId\}\}">/.test(read(P.wxml)))
   // F4 带着问题进来：auto=1 直接发问并带回图鉴物种链接；不带 auto 只预填
   let calls = 0
   reply = { result: { success: true, answer: '闪蝶的蓝来自鳞片。', species: [{ no: '001', zh: '大蓝闪蝶' }], quota: { left: 28, cap: 30 } } }
-  wxStub.cloud.callFunction = async () => { calls++; return reply }
+  wxStub.cloud.callFunction = async (o) => { if (!(o && o.data && o.data.action === 'status')) calls++; return reply }
   const p2 = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
   p2.onLoad({ from: 'atlas', auto: '1', q: encodeURIComponent('大蓝闪蝶有什么有意思的地方？') })
   await new Promise((r) => setTimeout(r, 0))
@@ -260,7 +333,17 @@ const INJECTIONS = [
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' },
   { name: '宫格博物君图标退回旧图', file: P.userWxml, find: 'src="/assets/icons/museum-guide.png"', replace: 'src="/assets/icons/knowledge.png"' },
   { name: 'askMuseumGuide 漏登记 cloudbaserc', file: P.cloudrc, find: '"name": "askMuseumGuide"', replace: '"name": "askMuseumGuideX"' },
-  { name: '博物君头像退回「博」字', file: P.wxml, find: '<image class="mg-seal-icon" src="{{guideAvatar}}" mode="aspectFit"></image>', replace: '<text>博</text>' }
+  { name: '博物君头像退回「博」字', file: P.wxml, find: '<image class="mg-seal-icon" src="{{guideAvatar}}" mode="aspectFit"></image>', replace: '<text>博</text>' },
+  { name: '日志记了问题原文', file: P.fn, find: '    q_len: o.qLen | 0,', replace: '    q_len: o.qLen | 0,\n    question: o.question,' },
+  { name: '闭馆照样回答', file: P.fn, find: "  if (!cfg.enabled) return finish('off'", replace: "  if (false) return finish('off'" },
+  { name: 'status 也计次', file: P.fn, find: "  if (event && event.action === 'status') {\n", replace: "  if (event && event.action === 'status') {\n    await bumpUsage(usageId, OPENID, day, 1)\n" },
+  { name: '超管额度不设上下限', file: P.fn, find: 'Number.isFinite(n) && n >= 5 && n <= 200 ? n : dailyLimit(envLimit)', replace: 'Number.isFinite(n) && n > 0 ? n : dailyLimit(envLimit)' },
+  { name: '读不到状态就当闭馆', file: P.chat, find: "  if (!r.success) return { closed: false, closedText: '', quota: null }", replace: "  if (!r.success) return { closed: true, closedText: '', quota: null }" },
+  { name: '闭馆还能提问', file: P.page, find: '    if (this.data.sending || this.data.closed) return', replace: '    if (this.data.sending) return' },
+  { name: '反馈不认本人', file: P.fn, find: "if (!doc || doc.openid !== openid) return", replace: "if (!doc) return" },
+  { name: '反馈可以改票', file: P.fn, find: "  if (doc.vote) return { success: true, already: true, vote: doc.vote }\n", replace: '' },
+  { name: '失败也带日志号', file: P.fn, find: 'if (out && out.success && logId) out.logId = logId', replace: 'if (out && logId) out.logId = logId' },
+  { name: '页面可以重复投票', file: P.page, find: '    if (!msg || !msg.logId || msg.vote) return', replace: '    if (!msg || !msg.logId) return' },
 ]
 
 if (process.argv.includes('--selftest')) {
