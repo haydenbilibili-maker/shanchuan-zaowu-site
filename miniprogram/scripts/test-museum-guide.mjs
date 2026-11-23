@@ -151,7 +151,11 @@ async function runChecks() {
   const app = JSON.parse(readFileSync(P.appJson, 'utf8'))
   const feature = app.subpackages.find((s) => /subpackages\/feature\/?$/.test(s.root))
   ok('E1 页面注册在 feature 分包', !!feature && feature.pages.includes('museum-guide/index'))
-  ok('E2 「我的 · 馆藏与内容」有博物君入口且路由到页面', /data-path="museumGuide"[\s\S]{0,300}<text class="svc-cn">博物君<\/text>/.test(read(P.userWxml)) &&
+  const userWxml = read(P.userWxml)
+  ok('E2 「我的 · 馆藏与内容」有博物君入口（用「科学家」图标）且路由到页面',
+    /data-path="museumGuide"[\s\S]{0,200}<text class="svc-cn">博物君<\/text>/.test(userWxml) &&
+    /data-path="museumGuide">\s*<image class="m-img" src="\/assets\/icons\/museum-guide\.png"/.test(userWxml) &&
+    existsSync(join(MP, 'assets/icons/museum-guide.png')) &&
     /case 'museumGuide':\s*\n\s*go\('\/subpackages\/feature\/museum-guide\/index/.test(read(P.userJs)))
   const rule = JSON.parse(readFileSync(P.rule, 'utf8'))
   const sens = JSON.parse(readFileSync(P.sensitive, 'utf8'))
@@ -254,6 +258,7 @@ const INJECTIONS = [
   { name: '云端不去 Markdown', file: P.fn, find: "const answer = plainAnswer((obj && obj.answer) || (obj ? '' : t))", replace: "const answer = String((obj && obj.answer) || (obj ? '' : t)).trim()" },
   { name: '点气泡不跳过', file: P.page, find: '    if (cur && cur.revealing) this.finishReveal(index)', replace: '' },
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' },
+  { name: '宫格博物君图标退回旧图', file: P.userWxml, find: 'src="/assets/icons/museum-guide.png"', replace: 'src="/assets/icons/knowledge.png"' },
   { name: 'askMuseumGuide 漏登记 cloudbaserc', file: P.cloudrc, find: '"name": "askMuseumGuide"', replace: '"name": "askMuseumGuideX"' },
   { name: '博物君头像退回「博」字', file: P.wxml, find: '<image class="mg-seal-icon" src="{{guideAvatar}}" mode="aspectFit"></image>', replace: '<text>博</text>' }
 ]
