@@ -110,8 +110,11 @@ function sanitizeInput(event) {
 function extractText(res) {
   const out = res && res.output
   if (!out) return ''
-  if (out.choices && out.choices[0] && out.choices[0].message) return String(out.choices[0].message.content || '')
-  return String(out.text || '')
+  // 2026-11-23 真机：模型偶发把 content 直接给成数字（-1.5642379800000002）——
+  // 只认字符串，别把非字符串 String() 成"回答"。
+  const msg = out.choices && out.choices[0] && out.choices[0].message
+  if (msg) return typeof msg.content === 'string' ? msg.content : ''
+  return typeof out.text === 'string' ? out.text : ''
 }
 
 /**
@@ -169,7 +172,8 @@ function parseReply(text) {
   if (s >= 0 && e > s) {
     try { obj = JSON.parse(t.slice(s, e + 1)) } catch (err) { obj = null }
   }
-  if (obj && typeof obj.answer !== 'string') obj = null
+  // JSON 里 answer 不是字符串（模型给了个数字）→ 解析失败，不能把 {"answer": -1.56} 当正文
+  if (obj && typeof obj.answer !== 'string') return { answer: '', followUps: [], actions: [] }
   const loose = obj ? null : salvageFields(t)
   const answer = plainAnswer(obj ? obj.answer : loose.answer)
   const followUps = (obj && Array.isArray(obj.follow_ups) ? obj.follow_ups : loose ? loose.followUps : [])
