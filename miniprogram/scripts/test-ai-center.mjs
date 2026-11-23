@@ -23,6 +23,8 @@ const P = {
   wxml: join(MP, 'subpackages/extra/ai-center/index.wxml'),
   personas: join(MP, 'cloudfunctions/askMuseumGuide/staffPersonas.js'),
   ctx: join(MP, 'cloudfunctions/askMuseumGuide/staffContext.js'),
+  tasksClient: join(MP, 'subpackages/extra/ai-center/tasks.js'),
+  tasksServer: join(MP, 'cloudfunctions/askMuseumGuide/staffTasks.js'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
   userJs: join(MP, 'pages/user/index.js')
 }
@@ -90,6 +92,21 @@ function runChecks() {
     /collection\('users'\)/.test(ctxSrc) && /collection\('bookings'\)/.test(ctxSrc) && /collection\('finance_records'\)/.test(ctxSrc) &&
     !/phone|mobile|openid|realName|receiver/i.test(ctxSrc) &&
     /TTL_MS/.test(ctxSrc) && C.TEXT_MAX <= 600, fails)
+  const tc = loadCjsModule(P.tasksClient, { transform })
+  const ts = loadCjsModule(P.tasksServer, { transform })
+  const cTasks = tc.TASKS.map((t) => `${t.id}:${t.roleId}`).sort()
+  const sTasks = ts.TASKS.map((t) => `${t.id}:${t.roleId}`).sort()
+  const rolesWithTask = new Set(ts.TASKS.map((t) => t.roleId))
+  ok('A6 一键任务：客户端与服务端 id+角色逐一一致，每个员工至少一个任务',
+    JSON.stringify(cTasks) === JSON.stringify(sTasks) && ts.TASKS.length >= 6 &&
+    server.ROLE_IDS.every((id) => rolesWithTask.has(id)), fails)
+  ok('A6 任务提示词只在服务端：客户端无 question，云端 taskId 优先且未知任务直接拒',
+    !/question/.test(read(P.tasksClient)) && /taskById\(String\(event\.taskId\)/.test(fn) &&
+    /if \(event && event\.taskId && !task\) return \{ success: false, error_type: 'invalid'/.test(fn) &&
+    /const question = \(task \? task\.question/.test(fn), fails)
+  ok('A6 页面有一键任务条与 runTask，请求带 taskId，重试按任务重发',
+    /class="ac-task/.test(read(P.wxml)) && /runTask\(e\)/.test(page) && /taskId: task\.taskId/.test(page) &&
+    /if \(last\.taskId\) this\._ask/.test(page), fails)
   return fails
 }
 
@@ -104,6 +121,8 @@ if (process.argv.includes('--selftest')) {
     { name: '缺 Key 也放行', file: P.fn, find: "if (!apiKey) return { success: false, error_type: 'ai_service'", replace: "if (false) return { success: false, error_type: 'ai_service'" },
     { name: '上下文不注入 system', file: P.fn, find: 'try { context = await contextFor(roleId, db) } catch (e) { context = \'\' }', replace: 'context = \'\'' },
     { name: '上下文里带手机号', file: P.ctx, find: ".field({ stock: true, category: true, isOffShelf: true })", replace: ".field({ stock: true, category: true, isOffShelf: true, phone: true })" },
+    { name: '未知任务不拒', file: P.fn, find: "if (event && event.taskId && !task) return { success: false, error_type: 'invalid', msg: '没有这个任务' }", replace: 'if (false) return {}' },
+    { name: '任务角色对不上', file: P.tasksClient, find: "roleId: 'cfo', title: '现金流体检'", replace: "roleId: 'marketing', title: '现金流体检'" },
     { name: '去掉停止', file: P.page, find: '  onStop() {', replace: '  onStopX() {' },
     { name: '会话改存云端', file: P.page, find: 'wx.setStorageSync(', replace: 'wx.cloud.callFunction({ name: "x", data: {' }
   ].filter((x) => x.find !== '')

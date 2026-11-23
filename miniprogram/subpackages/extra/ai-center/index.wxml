@@ -38,6 +38,18 @@
     >{{item.title}}</view>
   </scroll-view>
 
+  <scroll-view class="ac-tasks" scroll-x enhanced show-scrollbar="{{false}}" wx:if="{{tasks.length}}">
+    <view
+      class="ac-task"
+      wx:for="{{tasks}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="runTask"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+    >⚡ {{item.title}}</view>
+  </scroll-view>
+
   <scroll-view class="ac-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
     <view class="ac-empty" wx:if="{{!messages.length}}">
       <text class="ac-empty-title">你好，我是{{role.name}}</text>

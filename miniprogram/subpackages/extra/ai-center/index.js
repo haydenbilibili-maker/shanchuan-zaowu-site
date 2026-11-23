@@ -9,6 +9,7 @@
  *   - 兼容上一版单会话（`ai_center_session_v1_<roleId>` 的数组），首次读取时迁移成一条会话。
  */
 const { ROLES, byId } = require('./roles')
+const { tasksOf } = require('./tasks')
 const { openAppModal } = require('../../../utils/appModal')
 
 const STORE_V2 = 'ai_center_v2_'
@@ -87,6 +88,7 @@ Page({
     roles: ROLES,
     roleId: ROLES[0].id,
     role: ROLES[0],
+    tasks: tasksOf(ROLES[0].id),
     sessions: [],
     activeId: '',
     messages: [],
@@ -118,6 +120,7 @@ Page({
     this.setData({
       roleId: role.id,
       role,
+      tasks: tasksOf(role.id),
       sessions: state.list,
       activeId: active ? active.id : '',
       messages: active ? active.messages : [],
@@ -175,6 +178,13 @@ Page({
     })
   },
 
+  runTask(e) {
+    const id = String(e.currentTarget.dataset.id || '')
+    const task = (this.data.tasks || []).find((t) => t.id === id)
+    if (!task || this.data.sending) return
+    this._ask('', { taskId: task.id, label: task.title })
+  },
+
   onInput(e) {
     this.setData({ draft: String((e.detail && e.detail.value) || '') })
   },
@@ -221,11 +231,12 @@ Page({
       if (messages[i].role === 'user') { lastUser = i; break }
     }
     if (lastUser < 0) return
-    const question = messages[lastUser].text
+    const last = messages[lastUser]
     const kept = messages.slice(0, lastUser)
     this.setData({ messages: kept }, () => {
       this.persist()
-      this._ask(question)
+      if (last.taskId) this._ask('', { taskId: last.taskId, label: String(last.text || '').replace(/^一键任务 · /, '') })
+      else this._ask(last.text)
     })
   },
 
@@ -236,13 +247,15 @@ Page({
     this._ask(question)
   },
 
-  async _ask(question) {
+  async _ask(question, task) {
     const role = this.data.role
     const history = this.data.messages.slice(-6).map((m) => ({ role: m.role, content: m.text }))
     const reqId = (this._reqId || 0) + 1
     this._reqId = reqId
     this._abort = false
-    const userMsg = { role: 'user', text: question }
+    const userMsg = task
+      ? { role: 'user', text: `一键任务 · ${task.label}`, taskId: task.taskId }
+      : { role: 'user', text: question }
     const pending = { role: 'assistant', text: '', pending: true }
     const messages = this.data.messages.concat(userMsg, pending)
     this.setData({ messages, sending: true }, () => this.scrollToEnd())
@@ -251,7 +264,7 @@ Page({
     try {
       const res = await wx.cloud.callFunction({
         name: 'askMuseumGuide',
-        data: { mode: 'staff', roleId: role.id, question, history }
+        data: task ? { mode: 'staff', taskId: task.taskId, history } : { mode: 'staff', roleId: role.id, question, history }
       })
       if (this._abort || reqId !== this._reqId) return
       const body = (res && res.result) || {}

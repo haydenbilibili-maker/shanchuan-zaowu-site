@@ -15,6 +15,7 @@ const { checkText } = require('./contentSecurity')
 const { matchSpecies, PLACE_KEYS } = require('./knowledge')
 const { STAFF_ROLES, ROLE_IDS, systemPromptOf } = require('./staffPersonas')
 const { contextFor } = require('./staffContext')
+const { taskById } = require('./staffTasks')
 const { buildMessages } = require('./persona')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -342,9 +343,12 @@ function bjDayText(now) {
  * - 问答都过内容安全；不写库、不留对话（会话存本机）。
  */
 async function staffChat(event, openid) {
-  const roleId = String((event && event.roleId) || '').trim()
+  // 一键任务：taskId 优先，角色与问题都取自服务端任务表（客户端改不了）
+  const task = event && event.taskId ? taskById(String(event.taskId).trim()) : null
+  if (event && event.taskId && !task) return { success: false, error_type: 'invalid', msg: '没有这个任务' }
+  const roleId = task ? task.roleId : String((event && event.roleId) || '').trim()
   if (ROLE_IDS.indexOf(roleId) < 0) return { success: false, error_type: 'invalid', msg: '没有这个虚拟员工' }
-  const question = String((event && event.question) || '').trim().slice(0, 600)
+  const question = (task ? task.question : String((event && event.question) || '')).trim().slice(0, 600)
   if (!question) return { success: false, error_type: 'invalid', msg: '先说要问什么' }
   const history = (Array.isArray(event && event.history) ? event.history : [])
     .filter((h) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.content === 'string')
