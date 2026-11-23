@@ -142,6 +142,18 @@ async function runChecks() {
   const r1 = T.parseReply('```json\n{"answer":"答","follow_ups":["一","二","三","四"],"actions":["atlas","hack","atlas"]}\n```')
   const r2 = T.parseReply('就是一段话')
   ok('B2 回复解析：剥代码块、追问 ≤ 3、去处白名单去重；非 JSON 整段当回答', r1.answer === '答' && r1.followUps.length === 3 && r1.actions.join() === 'atlas' && r2.answer === '就是一段话' && !r2.actions.length)
+  // 2026-11-23 真机截图：模型没按 JSON 回，正文后面另起几行写 follow_ups / actions，原样露在气泡里
+  const leak = '萤火虫发光是生物荧光。\n\nfollow_ups: ["萤火虫的光有几种颜色？", "为什么不发热？"]\nactions: ["atlas", "hack"]'
+  const r3 = T.parseReply(leak)
+  ok('B6 非 JSON 回答：摘掉 follow_ups / actions 字段行，条目捞回（去处仍过白名单）',
+    r3.answer === '萤火虫发光是生物荧光。' && JSON.stringify(r3.followUps) === JSON.stringify(['萤火虫的光有几种颜色？', '为什么不发热？']) && JSON.stringify(r3.actions) === JSON.stringify(['atlas']))
+  const r4 = T.parseReply('数组 [1,2] 写在正文里不受影响。\n"追问"：[“它吃什么？”]')
+  ok('B6 中文键名 / 全角冒号 / 中文引号也认；正文里的方括号不误伤', r4.answer === '数组 [1,2] 写在正文里不受影响。' && JSON.stringify(r4.followUps) === JSON.stringify(['它吃什么？']))
+  ok('B6 提示词：除拉丁学名外不夹英文单词', /除拉丁学名外不要夹带英文单词/.test(read(P.persona)))
+  const old = G.replyToMessage({ success: true, answer: leak })
+  ok('B6 页面兜底（旧版云函数）：气泡不露字段行、追问还原成按钮、去处过白名单',
+    old.message.text === '萤火虫发光是生物荧光。' && old.message.followUps.length === 2 && old.message.actions.map((a) => a.key).join() === 'atlas' &&
+    G.plainAnswer('旧记录\nactions: ["atlas"]') === '旧记录')
   ok('B5 云端回答也去 Markdown（与页面同口径）', T.parseReply('{"answer":"**蓝**\\n- 甲"}').answer === '蓝\n· 甲' && T.plainAnswer('### 题') === '题')
   ok('B3 北京时间切日（UTC 16:30 = 次日 00:30）', T.dayKey(Date.UTC(2026, 10, 23, 16, 30)) === '20261124' && T.dayKey(Date.UTC(2026, 10, 23, 15, 59)) === '20261123')
   ok('B4 额度：环境变量可改、非法回落 30；模型链环境变量在前且去重', T.dailyLimit('50') === 50 && T.dailyLimit('x') === 30 && T.modelChain('qwen-max, qwen-plus').join() === 'qwen-max,qwen-plus,qwen-flash')
@@ -479,7 +491,12 @@ const INJECTIONS = [
   { name: '逐字显示太慢', file: P.chat, find: 'Math.min(Math.ceil(n / 3), Math.floor(REVEAL_MAX_MS / REVEAL_TICK_MS))', replace: 'Math.ceil(n / 3)' },
   { name: '页面不去 Markdown', file: P.chat, find: ".replace(/\\*\\*([^*\\n]+)\\*\\*/g, '$1')", replace: '' },
   { name: '存储带着逐字中间态', file: P.chat, find: '    delete base.shown\n', replace: '' },
-  { name: '云端不去 Markdown', file: P.fn, find: "const answer = plainAnswer((obj && obj.answer) || (obj ? '' : t))", replace: "const answer = String((obj && obj.answer) || (obj ? '' : t)).trim()" },
+  { name: '云端不去 Markdown', file: P.fn, find: 'const answer = plainAnswer(obj ? obj.answer : loose.answer)', replace: 'const answer = String(obj ? obj.answer : loose.answer).trim()' },
+  { name: '非 JSON 回答不摘字段行', file: P.fn, find: '  const loose = obj ? null : salvageFields(t)', replace: "  const loose = obj ? null : { answer: t, followUps: [], actions: [] }" },
+  { name: '字段行里的去处不过白名单', file: P.fn, find: "    .map((a) => String(a || '').trim()).filter((a, i, arr) => PLACE_KEYS.indexOf(a) >= 0 && arr.indexOf(a) === i).slice(0, 2)", replace: "    .map((a) => String(a || '').trim()).slice(0, 2)" },
+  { name: '页面不清字段行', file: P.chat, find: "  return stripFieldLines(text)\n", replace: "  return String(text || '')\n" },
+  { name: '页面不还原追问按钮', file: P.chat, find: ': lost.followUps).filter(', replace: ': []).filter(' },
+  { name: '提示词不禁英文单词', file: P.persona, find: '；除拉丁学名外不要夹带英文单词。', replace: '。' },
   { name: '点气泡不跳过', file: P.page, find: '    if (cur && cur.revealing) this.finishReveal(index)', replace: '' },
   { name: '日志记了问题原文', file: P.fn, find: '    q_len: o.qLen | 0,', replace: '    q_len: o.qLen | 0,\n    question: o.question,' },
   { name: '闭馆照样回答', file: P.fn, find: "  if (!cfg.enabled) return finish('off'", replace: "  if (false) return finish('off'" },

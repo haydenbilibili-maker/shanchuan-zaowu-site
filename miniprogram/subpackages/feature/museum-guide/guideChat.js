@@ -66,8 +66,30 @@ function starterCards(now) {
 /**
  * 回答去 Markdown（与云函数 plainAnswer 同口径；本机旧记录与旧版云函数的回答也走一遍）。
  */
+/**
+ * 正文后面露出的「follow_ups: [...]」「actions: [...]」字段行（2026-11-23 真机截图：模型没按 JSON 回，
+ * 旧版云函数把这几行原样当回答）。与云函数 salvageFields 同口径；本机旧记录也会被清掉。
+ */
+const FIELD_LINE_RE = /(^|\n)[ \t]*["'“]?(follow_ups|followUps|follow-ups|追问|actions|去处)["'”]?[ \t]*[:：][ \t]*\[([\s\S]*?)\][ \t]*,?[ \t]*(?=\n|$)/gi
+
+/** 从正文里的字段行捞回条目（旧版云函数没捞时，客户端兜底把追问 / 去处还原成按钮） */
+function salvagedFields(text) {
+  const out = { followUps: [], actions: [] }
+  String(text || '').replace(FIELD_LINE_RE, (m, lead, key, body) => {
+    const items = (String(body).match(/["“'‘][^"”'’]*["”'’]/g) || []).map((x) => x.slice(1, -1).trim()).filter(Boolean)
+    if (/^(actions|去处)$/i.test(key)) out.actions = items
+    else out.followUps = items
+    return lead
+  })
+  return out
+}
+
+function stripFieldLines(text) {
+  return String(text || '').replace(FIELD_LINE_RE, '$1').replace(/^[ \t]*["'“]?(answer|回答)["'”]?[ \t]*[:：][ \t]*/i, '')
+}
+
 function plainAnswer(text) {
-  return String(text || '')
+  return stripFieldLines(text)
     .replace(/\r\n?/g, '\n')
     .replace(/\*\*([^*\n]+)\*\*/g, '$1')
     .replace(/__([^_\n]+)__/g, '$1')
@@ -203,11 +225,12 @@ function replyToMessage(result) {
   const r = result || {}
   const quota = r.quota && typeof r.quota.left === 'number' ? { left: r.quota.left, cap: r.quota.cap } : null
   if (r.success && r.answer) {
+    const lost = salvagedFields(r.answer)
     return {
       message: makeMessage('guide', plainAnswer(r.answer), {
         logId: typeof r.logId === 'string' && r.logId.length <= 64 ? r.logId : '',
-        followUps: (r.followUps || []).filter(Boolean).slice(0, 3),
-        actions: actionButtons(r.actions),
+        followUps: ((r.followUps && r.followUps.length) ? r.followUps : lost.followUps).filter((q) => q && String(q).length <= 30).slice(0, 3),
+        actions: actionButtons((r.actions && r.actions.length) ? r.actions : lost.actions),
         species: speciesLinks(r.species)
       }),
       quota
@@ -261,6 +284,7 @@ module.exports = {
   startersFor,
   starterCards,
   plainAnswer,
+  salvagedFields,
   revealSteps,
   ACTIONS,
   ERROR_COPY,
