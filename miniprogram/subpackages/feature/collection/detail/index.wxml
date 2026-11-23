@@ -156,7 +156,7 @@
           hover-class="tap-press"
           hover-stay-time="80"
         >
-          <image wx:if="{{item.image}}" class="product-img" src="{{item.image}}" mode="aspectFill" />
+          <shan-img wx:if="{{item.image}}" ext-class="product-img" src="{{item.image}}" mode="aspectFill" mark="{{false}}" />
           <view wx:else class="product-img empty"></view>
           <view class="product-body">
             <text class="product-title">{{item.title}}</text>

@@ -11,7 +11,8 @@
     "wish-wall-entry": "/components/WishWallEntry/index",
     "nav-back": "/components/NavBack/index",
     "app-modal": "/components/AppModal/index",
-    "app-toast": "/components/AppToast/index"
+    "app-toast": "/components/AppToast/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",

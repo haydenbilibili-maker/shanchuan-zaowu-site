@@ -212,6 +212,11 @@ Page({
   },
 
   // 预览画廊大图
+  /** 头图加载失败（2026-11-23）：通知缩略图链路回落原图；底色占位由样式给（不出破图图标以外的空洞） */
+  onHeaderImgError() {
+    try { require('../../../utils/imageUrl').onImageError() } catch (e) { /* 工具缺失不影响占位 */ }
+  },
+
   previewGallery(e) {
     const current = e.currentTarget.dataset.src;
     wx.previewImage({

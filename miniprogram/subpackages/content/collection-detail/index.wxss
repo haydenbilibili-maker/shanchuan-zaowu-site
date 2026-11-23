@@ -35,6 +35,8 @@ page {
 }
 .header-bg {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  /* 头图未到时的暖深底（2026-11-23；此处用原生 image —— 视差 transform 要直接落在图上） */
+  background: #24211D;
   will-change: transform; /* 性能优化 */
 }
 .header-mask {
@@ -111,6 +113,7 @@ page {
   border-radius: var(--radius-md); overflow: hidden; border: 1px solid #333;
 }
 .gallery-item image { width: 100%; height: 100%; }
+.g-fill { width: 100%; height: 100%; }
 
 /* 4. 关联商品 (玻璃拟态) */
 .product-card-glass {

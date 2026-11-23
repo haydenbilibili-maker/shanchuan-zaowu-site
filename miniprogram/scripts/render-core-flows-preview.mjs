@@ -711,6 +711,11 @@ const SCENES = [
           species: [{ no: '033', zh: '鹦鹉螺' }], followUps: ['它现在还活着吗？'], actions: [] }
       ] } },
   { name: 'museum-guide-monitor', h: 3000, wxml: 'subpackages/manager/museum-guide-monitor/index', data: museumGuideMonitorSceneData() },
+  // 2026-11-23 全站图片第 2 轮：百科详情（画廊横排 / 头图 / 关联藏品缩略图）
+  { name: 'wiki-detail', h: 1500, wxml: 'subpackages/feature/detail/wiki-detail/index', data: {
+      loading: false, fallbackImg: WL_COVER,
+      wiki: { _id: 'w1', type: 'specimen', title: '黑马标本', latinName: 'Equus caballus', coverImage: WL_COVER, gallery: [WL_COVER, WL_COVER, WL_COVER, WL_COVER] },
+      relatedProducts: [], articleContent: '', notes: [] } },
   { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
       visible: [
         { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },

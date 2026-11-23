@@ -90,8 +90,30 @@ function checkComponent(read) {
   return fails
 }
 
+const R2 = {
+  wiki: join(MP, 'subpackages/feature/detail/wiki-detail/index.wxml'),
+  wikiWxss: join(MP, 'subpackages/feature/detail/wiki-detail/index.wxss'),
+  detail: join(MP, 'subpackages/feature/detail/index.wxml'),
+  detailWxss: join(MP, 'subpackages/feature/detail/index.wxss'),
+  detailJs: join(MP, 'subpackages/feature/detail/index.js'),
+  coll: join(MP, 'subpackages/content/collection-detail/index.wxml')
+}
+
+/** 第 2 轮（详情类页）落点 */
+function checkRound2(read) {
+  const fails = []
+  // 百科画廊：格子必须带上有尺寸的样式（原来只有 .gallery-item、样式表里没有 → 竖叠被裁，只露半张）
+  if (!/<view class="gallery-item g-img"/.test(read(R2.wiki)) || !/\.g-img \{[^}]*width: 360rpx; height: 240rpx;[^}]*overflow: hidden;/.test(read(R2.wikiWxss))) fails.push('I4 百科画廊格又没尺寸（竖叠、只露半张）')
+  // 商品图文长图：未到前占位高度，到了撤掉（不让整页往下跳）
+  if (!/class="detail-img \{\{detailImgLoaded\[index\] \? '' : 'is-wait'\}\}"/.test(read(R2.detail)) || !/bindload="onDetailImgLoad"/.test(read(R2.detail)) ||
+    !/\.detail-img\.is-wait \{ min-height: 560rpx;/.test(read(R2.detailWxss)) || !/onDetailImgLoad\(e\) \{/.test(read(R2.detailJs))) fails.push('I4 商品图文长图没有加载前占位（一张张到时整页往下跳）')
+  // 馆藏详情头图：视差 transform 要落在图上 → 用原生 image，但须有失败回落与底色
+  if (!/<image class="header-bg"[^>]*binderror="onHeaderImgError"/.test(read(R2.coll))) fails.push('I4 馆藏详情头图没接失败回落')
+  return fails
+}
+
 function runChecks(read = (f) => readFileSync(f, 'utf8'), baseline = JSON.parse(readFileSync(BASELINE_FILE, 'utf8'))) {
-  const fails = checkComponent(read)
+  const fails = checkComponent(read).concat(checkRound2(read))
   const { counts, badModes } = currentCounts(read)
   const base = baseline.counts || {}
   const grew = Object.keys(counts).filter((f) => counts[f] > (base[f] || 0)).map((f) => `${f}：${base[f] || 0} → ${counts[f]}`)
@@ -122,6 +144,9 @@ if (argv.includes('--print-baseline')) {
     ['失败不通知回落', swap(COMP.js, "require('../../utils/imageUrl').onImageError()", 'void 0')],
     ['换图不重置', swap(COMP.js, 'this.setData({ loaded: false, failed: false })', 'void 0')],
     ['首页退回裸 <image>', swap(home, '<shan-img ext-class="op-img" src="{{item.image}}" mode="aspectFill" />', '<image class="op-img" src="{{item.image}}" mode="aspectFill" lazy-load></image>')],
+    ['百科画廊格丢了尺寸类', swap(R2.wiki, '<view class="gallery-item g-img"', '<view class="gallery-item"')],
+    ['长图不占位', swap(R2.detailWxss, '.detail-img.is-wait { min-height: 560rpx;', '.detail-img.is-wait { min-height: 0;')],
+    ['馆藏头图失败不回落', swap(R2.coll, ' binderror="onHeaderImgError"', '')],
     ['shan-img 配 widthFix', swap(home, '<shan-img ext-class="op-img" src="{{item.image}}" mode="aspectFill" />', '<shan-img ext-class="op-img" src="{{item.image}}" mode="widthFix" />')]
   ]
   let bad = 0

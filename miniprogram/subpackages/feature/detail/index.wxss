@@ -913,6 +913,8 @@ button.nav-share-btn::after { display: none; border: none; }
   transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 .detail-img:last-child { margin-bottom: 0; }
+/* 图文长图未到（2026-11-23）：widthFix 在图到之前高为 0 —— 先占一块 3:4 的暖深底，到了再按真实比例撑开，页面不往下跳 */
+.detail-img.is-wait { min-height: 560rpx; background: #24211D; }
 .detail-img-press {
   opacity: 0.86;
   transform: scale(0.988);
