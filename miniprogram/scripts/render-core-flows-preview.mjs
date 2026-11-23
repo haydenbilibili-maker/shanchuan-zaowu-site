@@ -153,7 +153,9 @@ const atlasStats = { total: atlasCards.length, unlocked: atlasCards.filter((c) =
   { id: 'jewel', name: '宝石甲', got: 0, total: 8, complete: false },
   { id: 'meadow', name: '原野花事', got: 0, total: 6, complete: false },
   { id: 'shellroad', name: '贝壳之路', got: 0, total: 6, complete: false },
-  { id: 'deeptime', name: '深时', got: 0, total: 5, complete: false }
+  { id: 'deeptime', name: '深时', got: 0, total: 5, complete: false },
+  { id: 'swallowtail', name: '燕尾', got: 0, total: 6, complete: false },
+  { id: 'refraction', name: '折光', got: 0, total: 6, complete: false }
 ] }
 // 卷章刻度（2026-11-22，与页面 applyPack 同算法）
 atlasStats.series = atlasStats.series.map((sr) => ({ ...sr, pips: Array.from({ length: sr.total }, (_, i) => ({ i, lit: i < sr.got })) }))
