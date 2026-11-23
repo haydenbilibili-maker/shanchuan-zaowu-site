@@ -154,7 +154,7 @@
       bindtap="onAvatarTap"
     >
       <view class="avatar-wrap">
-        <image class="avatar" src="{{form.avatarDisplay || fallbackAvatar}}" mode="aspectFill" />
+        <shan-img ext-class="avatar" src="{{form.avatarDisplay || fallbackAvatar}}" mode="aspectFill" mark="{{false}}" />
         <view class="avatar-mask" wx:if="{{avatarUploading}}">
           <text>上传中</text>
         </view>
@@ -172,7 +172,7 @@
       bindtap="onCoverTap"
     >
       <view class="cover-wrap">
-        <image wx:if="{{form.coverDisplay}}" class="cover-img" src="{{form.coverDisplay}}" mode="aspectFill" />
+        <shan-img wx:if="{{form.coverDisplay}}" ext-class="cover-img" src="{{form.coverDisplay}}" mode="aspectFill" />
         <view class="cover-empty" wx:else>
           <text>上传封面</text>
         </view>
@@ -190,7 +190,7 @@
       <text class="workbench-field-label">作品照片</text>
       <view class="gallery-grid">
         <view class="gallery-cell" wx:for="{{form.galleryDisplay}}" wx:key="index">
-          <image class="gallery-img" src="{{item.url}}" mode="aspectFill" />
+          <shan-img ext-class="gallery-img" src="{{item.url}}" mode="aspectFill" />
           <view hover-class="tap-press" hover-stay-time="80" class="gallery-del" catchtap="removeGallery" data-index="{{index}}">删除</view>
         </view>
         <view hover-class="tap-press" hover-stay-time="80"

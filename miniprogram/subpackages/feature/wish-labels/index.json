@@ -10,6 +10,7 @@
   "usingComponents": {
     "nav-back": "/components/NavBack/index",
     "app-toast": "/components/AppToast/index",
-    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index"
+    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index",
+    "shan-img": "/components/ShanImage/index"
   }
 }

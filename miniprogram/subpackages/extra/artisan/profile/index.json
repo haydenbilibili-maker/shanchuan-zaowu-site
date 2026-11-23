@@ -1,7 +1,8 @@
 {
   "navigationBarTitleText": "个人主页",
   "usingComponents": {
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",

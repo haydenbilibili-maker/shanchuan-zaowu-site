@@ -275,7 +275,7 @@
       <block wx:for="{{products}}" wx:key="_id">
         <view class="product-row {{item.isOffShelf ? 'disabled' : ''}}">
           <view class="p-cover">
-            <image class="p-img" src="{{item.images[0]}}" mode="aspectFill"></image>
+            <shan-img ext-class="p-img" src="{{item.images[0]}}" mode="aspectFill" />
             <view class="p-wm {{item.shelfWmClass}}" wx:if="{{item.shelfWm}}">
               <text class="p-wm-text">{{item.shelfWm}}</text>
             </view>
@@ -453,7 +453,7 @@
         <block wx:for="{{products}}" wx:key="_id">
           <view class="product-row {{item.isOffShelf ? 'disabled' : ''}}">
             <view class="p-cover">
-              <image class="p-img" src="{{item.images[0]}}" mode="aspectFill"></image>
+              <shan-img ext-class="p-img" src="{{item.images[0]}}" mode="aspectFill" />
               <view class="p-wm {{item.shelfWmClass}}" wx:if="{{item.shelfWm}}">
                 <text class="p-wm-text">{{item.shelfWm}}</text>
               </view>
@@ -596,7 +596,7 @@
             <text class="pstats-sec-title">销量 Top</text>
             <view class="pstats-sales-row" wx:for="{{productStats.salesTop}}" wx:key="_id">
               <text class="pstats-sales-rank">{{index + 1}}</text>
-              <image class="pstats-sales-img" wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill"/>
+              <shan-img ext-class="pstats-sales-img" wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill" />
               <view class="pstats-sales-info">
                 <text class="pstats-sales-title">{{item.title}}</text>
                 <text class="pstats-sales-meta">{{item.rootCategoryName}} · ¥{{item.price}}</text>
@@ -778,7 +778,7 @@
 
         <view class="cfg-card" wx:else>
           <view class="pf-row {{item.rowState ? 'is-' + item.rowState : ''}}" wx:for="{{pfVisible}}" wx:key="_id">
-            <image class="pf-cover" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+            <shan-img ext-class="pf-cover" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}" />
             <view class="pf-main">
               <view class="pf-head">
                 <text class="pf-title">{{item.title}}</text>
@@ -910,12 +910,7 @@
             </view>
           </view>
           <view class="om-buyer" wx:if="{{item.buyer}}">
-            <image
-              wx:if="{{item.buyer.hasAvatar}}"
-              class="om-buyer-avatar"
-              src="{{item.buyer.avatarUrl}}"
-              mode="aspectFill"
-            ></image>
+            <shan-img wx:if="{{item.buyer.hasAvatar}}" ext-class="om-buyer-avatar" src="{{item.buyer.avatarUrl}}" mode="aspectFill" mark="{{false}}" />
             <view class="om-buyer-avatar om-buyer-avatar-ph" wx:else>
               <text>{{item.buyer.avatarInitial}}</text>
             </view>
@@ -937,7 +932,7 @@
           <view class="om-sku-list" wx:if="{{item.skuList.length}}">
             <block wx:for="{{item.skuList}}" wx:for-item="prod" wx:for-index="pIdx" wx:key="key">
               <view class="om-sku-row" wx:if="{{item.skuExpanded || pIdx < 3}}">
-                <image class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill"></image>
+                <shan-img ext-class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill" mark="{{false}}" />
                 <view class="om-sku-body">
                   <text class="om-sku-title">{{prod.title}}</text>
                   <text class="om-sku-spec" wx:if="{{prod.skuLabel}}">{{prod.skuLabel}}</text>
@@ -1057,12 +1052,7 @@
             </view>
           </view>
           <view class="om-buyer" wx:if="{{item.buyer}}">
-            <image
-              wx:if="{{item.buyer.hasAvatar}}"
-              class="om-buyer-avatar"
-              src="{{item.buyer.avatarUrl}}"
-              mode="aspectFill"
-            ></image>
+            <shan-img wx:if="{{item.buyer.hasAvatar}}" ext-class="om-buyer-avatar" src="{{item.buyer.avatarUrl}}" mode="aspectFill" mark="{{false}}" />
             <view class="om-buyer-avatar om-buyer-avatar-ph" wx:else>
               <text>{{item.buyer.avatarInitial}}</text>
             </view>
@@ -1084,7 +1074,7 @@
           <view class="om-sku-list" wx:if="{{item.skuList.length}}">
             <block wx:for="{{item.skuList}}" wx:for-item="prod" wx:for-index="pIdx" wx:key="key">
               <view class="om-sku-row" wx:if="{{item.skuExpanded || pIdx < 3}}">
-                <image class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill"></image>
+                <shan-img ext-class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill" mark="{{false}}" />
                 <view class="om-sku-body">
                   <text class="om-sku-title">{{prod.title}}</text>
                   <text class="om-sku-spec" wx:if="{{prod.skuLabel}}">{{prod.skuLabel}}</text>
@@ -1153,12 +1143,7 @@
             </view>
           </view>
           <view class="om-buyer" wx:if="{{item.buyer}}">
-            <image
-              wx:if="{{item.buyer.hasAvatar}}"
-              class="om-buyer-avatar"
-              src="{{item.buyer.avatarUrl}}"
-              mode="aspectFill"
-            ></image>
+            <shan-img wx:if="{{item.buyer.hasAvatar}}" ext-class="om-buyer-avatar" src="{{item.buyer.avatarUrl}}" mode="aspectFill" mark="{{false}}" />
             <view class="om-buyer-avatar om-buyer-avatar-ph" wx:else>
               <text>{{item.buyer.avatarInitial}}</text>
             </view>
@@ -1180,7 +1165,7 @@
           <view class="om-sku-list" wx:if="{{item.skuList.length}}">
             <block wx:for="{{item.skuList}}" wx:for-item="prod" wx:for-index="pIdx" wx:key="key">
               <view class="om-sku-row" wx:if="{{item.skuExpanded || pIdx < 3}}">
-                <image class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill"></image>
+                <shan-img ext-class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill" mark="{{false}}" />
                 <view class="om-sku-body">
                   <text class="om-sku-title">{{prod.title}}</text>
                   <text class="om-sku-spec" wx:if="{{prod.skuLabel}}">{{prod.skuLabel}}</text>
@@ -1248,12 +1233,7 @@
             </view>
           </view>
           <view class="om-buyer" wx:if="{{item.buyer}}">
-            <image
-              wx:if="{{item.buyer.hasAvatar}}"
-              class="om-buyer-avatar"
-              src="{{item.buyer.avatarUrl}}"
-              mode="aspectFill"
-            ></image>
+            <shan-img wx:if="{{item.buyer.hasAvatar}}" ext-class="om-buyer-avatar" src="{{item.buyer.avatarUrl}}" mode="aspectFill" mark="{{false}}" />
             <view class="om-buyer-avatar om-buyer-avatar-ph" wx:else>
               <text>{{item.buyer.avatarInitial}}</text>
             </view>
@@ -1275,7 +1255,7 @@
           <view class="om-sku-list" wx:if="{{item.skuList.length}}">
             <block wx:for="{{item.skuList}}" wx:for-item="prod" wx:for-index="pIdx" wx:key="key">
               <view class="om-sku-row" wx:if="{{item.skuExpanded || pIdx < 3}}">
-                <image class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill"></image>
+                <shan-img ext-class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill" mark="{{false}}" />
                 <view class="om-sku-body">
                   <text class="om-sku-title">{{prod.title}}</text>
                   <text class="om-sku-spec" wx:if="{{prod.skuLabel}}">{{prod.skuLabel}}</text>
@@ -1303,18 +1283,7 @@
                 show-center-play-btn
               ></video>
               <view class="om-evidence-imgs" wx:if="{{item.evidenceImageUrls.length}}">
-                <image
-                  wx:for="{{item.evidenceImageUrls}}"
-                  wx:for-item="img"
-                  wx:for-index="imgIdx"
-                  wx:key="*this"
-                  class="om-evidence-img"
-                  src="{{img}}"
-                  mode="aspectFill"
-                  catchtap="previewRefundEvidenceImage"
-                  data-id="{{item._id}}"
-                  data-idx="{{imgIdx}}"
-                ></image>
+                <shan-img wx:for="{{item.evidenceImageUrls}}" wx:for-item="img" wx:for-index="imgIdx" wx:key="*this" ext-class="om-evidence-img" src="{{img}}" mode="aspectFill" catchtap="previewRefundEvidenceImage" data-id="{{item._id}}" data-idx="{{imgIdx}}" />
               </view>
             </view>
           </view>
@@ -1363,12 +1332,7 @@
             </view>
           </view>
           <view class="om-buyer" wx:if="{{item.buyer}}">
-            <image
-              wx:if="{{item.buyer.hasAvatar}}"
-              class="om-buyer-avatar"
-              src="{{item.buyer.avatarUrl}}"
-              mode="aspectFill"
-            ></image>
+            <shan-img wx:if="{{item.buyer.hasAvatar}}" ext-class="om-buyer-avatar" src="{{item.buyer.avatarUrl}}" mode="aspectFill" mark="{{false}}" />
             <view class="om-buyer-avatar om-buyer-avatar-ph" wx:else>
               <text>{{item.buyer.avatarInitial}}</text>
             </view>
@@ -1390,7 +1354,7 @@
           <view class="om-sku-list" wx:if="{{item.skuList.length}}">
             <block wx:for="{{item.skuList}}" wx:for-item="prod" wx:for-index="pIdx" wx:key="key">
               <view class="om-sku-row" wx:if="{{item.skuExpanded || pIdx < 3}}">
-                <image class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill"></image>
+                <shan-img ext-class="om-sku-thumb" src="{{prod.image}}" mode="aspectFill" mark="{{false}}" />
                 <view class="om-sku-body">
                   <text class="om-sku-title">{{prod.title}}</text>
                   <text class="om-sku-spec" wx:if="{{prod.skuLabel}}">{{prod.skuLabel}}</text>
@@ -1463,7 +1427,7 @@
   <block wx:if="{{curTab===4}}">
     <view class="section-title">预约页头图</view>
     <view class="manage-card hero-edit-card">
-      <image src="{{bookingHero || defaultBookingHero}}" mode="aspectFill" class="hero-preview"></image>
+      <shan-img src="{{bookingHero || defaultBookingHero}}" mode="aspectFill" ext-class="hero-preview" />
       <view class="card-actions right">
         <view hover-class="tap-press" hover-stay-time="80" class="btn-small gold" bindtap="changeBookingHero">更换图片</view>
       </view>
@@ -1472,7 +1436,7 @@
     <view class="banner-list">
       <block wx:for="{{banners}}" wx:key="_id">
         <view class="banner-item">
-          <image class="b-thumb" src="{{item.image}}" mode="aspectFill"></image>
+          <shan-img ext-class="b-thumb" src="{{item.image}}" mode="aspectFill" mark="{{false}}" />
           <view class="b-info">
             <text class="b-title">{{item.title}}</text>
             <text class="b-sub">{{item.subtitle || '无副标题'}}</text>
@@ -1548,13 +1512,7 @@
 
     <block wx:for="{{framersView}}" wx:key="_id">
       <view class="framer-card {{item.active ? '' : 'off'}} {{item.isDuplicate ? 'dup' : ''}}">
-        <image
-          class="f-avatar"
-          src="{{item.avatar || '/assets/icons/user.png'}}"
-          mode="aspectFill"
-          bindtap="openFramerPublic"
-          data-id="{{item._id}}"
-        ></image>
+        <shan-img ext-class="f-avatar" src="{{item.avatar || '/assets/icons/user.png'}}" mode="aspectFill" bindtap="openFramerPublic" data-id="{{item._id}}" mark="{{false}}" />
         <view class="f-main">
           <view class="f-title-row">
             <text class="f-name">{{item.name}}</text>
@@ -1652,7 +1610,7 @@
     <block wx:if="{{subTabReward===0}}">
       <block wx:for="{{rewards}}" wx:key="_id">
         <view class="manage-card">
-          <image class="m-img" src="{{item.image}}" mode="aspectFill"></image>
+          <shan-img ext-class="m-img" src="{{item.image}}" mode="aspectFill" />
           <view class="m-info">
             <view class="m-row top"><text class="m-title">{{item.title}}</text><view hover-class="tap-press" hover-stay-time="80" class="icon-btn" bindtap="openRewardModal" data-id="{{item._id}}">✎</view></view>
             <view class="m-row middle"><text class="tag-f">{{item.type==='virtual'?'虚拟':'实物'}}</text><text class="tag-f profit">库存：{{item.stock}}</text></view>
@@ -1738,7 +1696,7 @@
             </view>
             <text class="act-line">{{item.time?item.time+' · ':''}}{{item.place}}</text>
           </view>
-          <image wx:if="{{item.cover}}" class="act-cover" src="{{item.cover}}" mode="aspectFill" lazy-load="{{true}}" />
+          <shan-img wx:if="{{item.cover}}" ext-class="act-cover" src="{{item.cover}}" mode="aspectFill" lazy="{{true}}" />
         </view>
         <view class="act-stats">
           <view class="act-stat"><text class="act-stat-n">{{item.statKnown?item.capText:'—'}}</text><text class="act-stat-l">报名</text></view>
@@ -1790,7 +1748,7 @@
     <block wx:if="{{contentType==='exhibition'}}">
       <block wx:for="{{exhibitions}}" wx:key="_id">
         <view class="manage-card">
-          <image class="m-img" src="{{item.coverImage || item.cover}}" mode="aspectFill"></image>
+          <shan-img ext-class="m-img" src="{{item.coverImage || item.cover}}" mode="aspectFill" />
           <view class="m-info">
             <view class="m-row top">
               <text class="m-title">{{item.title}}</text>
@@ -1813,7 +1771,7 @@
     <block wx:if="{{contentType==='article'}}">
       <block wx:for="{{articles}}" wx:key="_id">
         <view class="manage-card">
-          <image class="m-img" src="{{item.coverImage}}" mode="aspectFill"></image>
+          <shan-img ext-class="m-img" src="{{item.coverImage}}" mode="aspectFill" />
           <view class="m-info">
             <view class="m-row top">
               <text class="m-title">{{item.title}}</text>
@@ -2191,7 +2149,7 @@
           <text class="ticket-empty" wx:else>顾客没有写正文，只带入了上面的藏品 / 订单信息。可点「回复并通知」请对方补充说明{{item.contactPhone ? '，或按留的电话回拨' : ''}}。</text>
           <view class="ticket-more" wx:if="{{item.canExpand}}" hover-class="wb-press" hover-stay-time="80" bindtap="toggleTicketExpand" data-idx="{{index}}">{{item.expanded ? '收起' : '展开全文'}}</view>
           <view class="ticket-imgs" wx:if="{{item.images.length}}">
-            <image wx:for="{{item.images}}" wx:for-item="url" wx:for-index="imgIdx" wx:key="*this" class="ticket-img" src="{{url}}" mode="aspectFill" lazy-load bindtap="previewTicketImage" data-idx="{{index}}" data-url="{{url}}"/>
+            <shan-img wx:for="{{item.images}}" wx:for-item="url" wx:for-index="imgIdx" wx:key="*this" ext-class="ticket-img" src="{{url}}" mode="aspectFill" bindtap="previewTicketImage" data-idx="{{index}}" data-url="{{url}}" />
           </view>
           <text class="ticket-phone" wx:if="{{item.contactPhone}}">联系电话 {{item.contactPhone}}</text>
           <text class="addr-detail">{{item.formatTime}}</text>
@@ -3600,12 +3558,7 @@
           <block wx:if="{{tempProduct.protectionType && tempProduct.protectionType !== 'none'}}">
             <view class="form-label cert-required">收藏证书 *（必填）</view>
             <view class="cert-upload-area" bindtap="chooseCertificateImage">
-              <image
-                wx:if="{{tempProduct.tempCertificate || tempProduct.collectionCertificate}}"
-                class="cert-preview"
-                src="{{tempProduct.tempCertificate || tempProduct.collectionCertificate}}"
-                mode="aspectFit"
-              />
+              <shan-img wx:if="{{tempProduct.tempCertificate || tempProduct.collectionCertificate}}" ext-class="cert-preview" src="{{tempProduct.tempCertificate || tempProduct.collectionCertificate}}" mode="aspectFit" />
               <view wx:else class="cert-placeholder">
                 <text class="cert-plus">+</text>
                 <text>上传合法收藏证书</text>
@@ -4094,13 +4047,7 @@
               wx:for="{{tempShip.packagePhotos}}"
               wx:key="*this"
             >
-              <image
-                class="ship-photo-img"
-                src="{{item}}"
-                mode="aspectFill"
-                data-index="{{index}}"
-                catchtap="previewShipPhoto"
-              ></image>
+              <shan-img ext-class="ship-photo-img" src="{{item}}" mode="aspectFill" data-index="{{index}}" catchtap="previewShipPhoto" />
               <view hover-class="tap-press" hover-stay-time="80"
                 class="ship-photo-del"
                 data-index="{{index}}"
@@ -4187,7 +4134,7 @@
             <view class="related-products-field">
               <view class="related-list" wx:if="{{relatedProductPreview.length}}">
                 <view class="related-item" wx:for="{{relatedProductPreview}}" wx:key="key">
-                  <image class="related-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+                  <shan-img ext-class="related-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}" mark="{{false}}" />
                   <view class="related-meta">
                     <text class="related-title">{{item.title}}</text>
                     <text class="related-sku" wx:if="{{item.skuLabel}}">{{item.skuLabel}}</text>
@@ -4234,7 +4181,7 @@
           data-id="{{item.key}}"
           data-label="{{item.skuLabel}}"
         >
-          <image class="picker-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+          <shan-img ext-class="picker-thumb" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}" mark="{{false}}" />
           <view class="picker-info">
             <text class="picker-title">{{item.title}}</text>
             <text class="picker-sku" wx:if="{{item.skuLabel}}">{{item.skuLabel}}</text>
@@ -4362,7 +4309,7 @@
           <text class="ticket-msg" user-select wx:if="{{!tempTicketReply.bodyEmpty}}">{{tempTicketReply.body}}</text>
           <text class="ticket-empty" wx:else>顾客没有写正文，建议回复时请对方补充想咨询的内容。</text>
           <view class="ticket-imgs" wx:if="{{tempTicketReply.images.length}}">
-            <image wx:for="{{tempTicketReply.images}}" wx:for-item="url" wx:key="*this" class="ticket-img" src="{{url}}" mode="aspectFill" bindtap="previewReplyImage" data-url="{{url}}"/>
+            <shan-img wx:for="{{tempTicketReply.images}}" wx:for-item="url" wx:key="*this" ext-class="ticket-img" src="{{url}}" mode="aspectFill" bindtap="previewReplyImage" data-url="{{url}}" />
           </view>
           <text class="ticket-phone" wx:if="{{tempTicketReply.contactPhone}}">联系电话 {{tempTicketReply.contactPhone}} · {{tempTicketReply.formatTime}}</text>
           <text class="ticket-phone" wx:else>{{tempTicketReply.formatTime}}</text>

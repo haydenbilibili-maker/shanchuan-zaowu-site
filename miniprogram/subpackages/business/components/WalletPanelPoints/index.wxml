@@ -179,7 +179,7 @@
       <view class="my-list">
         <block wx:for="{{myRewards}}" wx:key="_id">
           <view class="my-card">
-            <image class="my-thumb" src="{{item.products[0].image}}" mode="aspectFill"></image>
+            <shan-img ext-class="my-thumb" src="{{item.products[0].image}}" mode="aspectFill" mark="{{false}}" />
             <view class="my-info">
               <view class="my-top">
                 <text class="my-title">{{item.products[0].title}}</text>

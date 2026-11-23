@@ -454,13 +454,7 @@
             wx:key="*this"
             wx:for-index="idx"
           >
-            <image
-              class="receipt-thumb-img"
-              src="{{item}}"
-              mode="aspectFill"
-              catchtap="previewCouponReceipt"
-              data-idx="{{idx}}"
-            ></image>
+            <shan-img ext-class="receipt-thumb-img" src="{{item}}" mode="aspectFill" catchtap="previewCouponReceipt" data-idx="{{idx}}" mark="{{false}}" />
             <view hover-class="tap-press-soft" hover-stay-time="80" class="receipt-thumb-x" catchtap="removeCouponReceipt" data-idx="{{idx}}">×</view>
           </view>
           <view

@@ -10,7 +10,7 @@
     style="top: {{headerBlockPx}}px; height: {{scrollHeightPx}}px;"
   >
     <view class="hero">
-      <image class="hero-img" src="{{heroImage}}" mode="aspectFill"></image>
+      <shan-img ext-class="hero-img" src="{{heroImage}}" mode="aspectFill" />
       <view class="hero-mask"></view>
       <view class="hero-copy">
         <text class="hero-kicker">NATURE'S CREATIONS</text>

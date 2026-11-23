@@ -164,7 +164,7 @@
         <text class="ops-empty-sub">{{detailError}}</text>
       </view>
       <block wx:else>
-        <image wx:if="{{detail.imageUrl}}" class="im-hero" src="{{detail.imageUrl}}" mode="aspectFit" bindtap="previewImage" />
+        <shan-img wx:if="{{detail.imageUrl}}" ext-class="im-hero" src="{{detail.imageUrl}}" mode="aspectFit" bindtap="previewImage" />
         <view class="im-hero im-thumb-empty" wx:else><text>照片不可用</text></view>
         <text class="im-hint" wx:if="{{detail.imageUrl}}">点图可放大查看</text>
 
@@ -210,7 +210,7 @@
         <view class="im-block" wx:if="{{detail.products.length}}">
           <text class="im-block-title">匹配藏品</text>
           <view hover-class="tap-press" hover-stay-time="80" class="im-prod" wx:for="{{detail.products}}" wx:key="id" data-id="{{item.id}}" bindtap="openProduct">
-            <image wx:if="{{item.cover}}" class="im-prod-img" src="{{item.cover}}" mode="aspectFill" lazy-load />
+            <shan-img wx:if="{{item.cover}}" ext-class="im-prod-img" src="{{item.cover}}" mode="aspectFill" />
             <view class="im-prod-img im-thumb-empty" wx:else></view>
             <text class="im-prod-title">{{item.title}}</text>
             <text class="im-prod-price">{{item.priceText}}</text>

@@ -2,7 +2,9 @@
   "navigationBarTitleText": "供应商管理",
   "enablePullDownRefresh": true,
   "backgroundTextStyle": "light",
-  "usingComponents": {},
+  "usingComponents": {
+    "shan-img": "/components/ShanImage/index"
+  },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814"

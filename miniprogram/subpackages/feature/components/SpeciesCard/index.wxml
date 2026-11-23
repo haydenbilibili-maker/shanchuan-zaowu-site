@@ -1,6 +1,6 @@
 <view class="species-card">
   <view class="card-image-wrap">
-    <image class="card-image" src="{{displayImage}}" mode="aspectFill" />
+    <shan-img ext-class="card-image" src="{{displayImage}}" mode="aspectFill" />
     <view class="card-image-veil"></view>
     <view class="card-image-badge" wx:if="{{rootCategoryTag}}">
       <text>{{rootCategoryTag}}</text>

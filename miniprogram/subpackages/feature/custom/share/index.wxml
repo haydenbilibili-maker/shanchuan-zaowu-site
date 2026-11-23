@@ -17,7 +17,7 @@
 
   <block wx:else>
     <view class="hero">
-      <image wx:if="{{specimenImage}}" class="hero-img" src="{{specimenImage}}" mode="aspectFill"></image>
+      <shan-img wx:if="{{specimenImage}}" ext-class="hero-img" src="{{specimenImage}}" mode="aspectFill" />
       <view class="hero-mask"></view>
       <view class="hero-text">
         <text class="hero-overline">NATURE'S CREATIONS</text>

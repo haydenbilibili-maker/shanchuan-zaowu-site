@@ -377,7 +377,7 @@
       <view wx:for="{{partners.shown}}" wx:key="staffId" class="card ptn-card {{item.status === 'active' ? '' : 'off'}}" hover-class="card-press" hover-stay-time="80" data-id="{{item.staffId}}" bindtap="openPartner">
         <view class="ptn-top">
           <view class="avatar">
-            <image wx:if="{{item.logoThumb}}" class="avatar-img" src="{{item.logoThumb}}" mode="aspectFill" lazy-load />
+            <shan-img wx:if="{{item.logoThumb}}" ext-class="avatar-img" src="{{item.logoThumb}}" mode="aspectFill" mark="{{false}}" />
             <text wx:else class="avatar-text">{{item.initial}}</text>
           </view>
           <view class="card-main">
@@ -421,7 +421,7 @@
     <view class="ui-pop-sheet sheet" catchtap="true">
       <view class="sheet-head">
         <view class="sheet-thumb">
-          <image wx:if="{{sheet.thumb}}" class="pthumb-img" src="{{sheet.thumb}}" mode="aspectFill" />
+          <shan-img wx:if="{{sheet.thumb}}" ext-class="pthumb-img" src="{{sheet.thumb}}" mode="aspectFill" mark="{{false}}" />
           <text wx:else class="pthumb-ph-text">{{sheet.initial}}</text>
         </view>
         <view class="card-main">

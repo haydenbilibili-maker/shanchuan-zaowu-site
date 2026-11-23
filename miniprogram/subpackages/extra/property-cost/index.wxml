@@ -75,17 +75,7 @@
         <text class="meta">支付日 {{item.paidAt || '—'}} · 更新 {{item.updatedAtText}}</text>
         <text class="meta" wx:if="{{item.note}}">{{item.note}}</text>
         <view class="receipt-row" wx:if="{{item.receiptCount}}">
-          <image
-            wx:for="{{item.receiptPreviews}}"
-            wx:for-item="pic"
-            wx:key="fileId"
-            class="receipt-thumb"
-            src="{{pic.url}}"
-            mode="aspectFill"
-            data-id="{{item._id}}"
-            data-url="{{pic.url}}"
-            bindtap="previewListReceipt"
-          />
+          <shan-img wx:for="{{item.receiptPreviews}}" wx:for-item="pic" wx:key="fileId" ext-class="receipt-thumb" src="{{pic.url}}" mode="aspectFill" data-id="{{item._id}}" data-url="{{pic.url}}" bindtap="previewListReceipt" mark="{{false}}" />
           <text class="meta">{{item.receiptCount}} 张票据</text>
         </view>
         <view class="card-actions">
@@ -153,13 +143,7 @@
         <view class="receipt-edit">
           <view class="receipt-grid" wx:if="{{receiptPreviews.length}}">
             <view class="receipt-item" wx:for="{{receiptPreviews}}" wx:key="fileId">
-              <image
-                class="receipt-thumb lg"
-                src="{{item.url}}"
-                mode="aspectFill"
-                data-url="{{item.url}}"
-                bindtap="previewReceipt"
-              />
+              <shan-img ext-class="receipt-thumb lg" src="{{item.url}}" mode="aspectFill" data-url="{{item.url}}" bindtap="previewReceipt" mark="{{false}}" />
               <view hover-class="tap-press" hover-stay-time="80" class="receipt-del" data-index="{{index}}" catchtap="removeReceipt">删</view>
             </view>
           </view>

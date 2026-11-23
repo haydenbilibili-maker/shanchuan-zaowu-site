@@ -103,7 +103,7 @@ module.exports.priceDelta = function(item) {
             data-id="{{item._id}}"
           >
             <view class="product-thumb-wrap">
-              <image class="product-img" src="{{item.images[0]}}" mode="aspectFill" lazy-load></image>
+              <shan-img ext-class="product-img" src="{{item.images[0]}}" mode="aspectFill" />
               <text class="custom-tag">可定制</text>
             </view>
             <view class="product-info">
@@ -124,7 +124,7 @@ module.exports.priceDelta = function(item) {
         <view class="workbench" wx:if="{{selectedProduct}}">
           <view class="workbench-visual">
             <view class="workbench-frame"></view>
-            <image class="workbench-img" src="{{selectedProduct.images[0]}}" mode="aspectFill"></image>
+            <shan-img ext-class="workbench-img" src="{{selectedProduct.images[0]}}" mode="aspectFill" />
           </view>
           <view class="workbench-info">
             <text class="workbench-overline">当前方案</text>
@@ -186,7 +186,7 @@ module.exports.priceDelta = function(item) {
             bindtap="selectFramer"
             data-id="{{item.id}}"
           >
-            <image wx:if="{{item.avatar}}" class="framer-avatar" src="{{item.avatar}}" mode="aspectFill"></image>
+            <shan-img wx:if="{{item.avatar}}" ext-class="framer-avatar" src="{{item.avatar}}" mode="aspectFill" mark="{{false}}" />
             <view class="framer-main">
               <text class="config-name">{{item.name}}</text>
               <text class="config-desc">{{item.bio || (item.type === 'partner' ? '特邀标本师' : '门店制作')}}</text>
@@ -255,7 +255,7 @@ module.exports.priceDelta = function(item) {
       <view class="step-panel" wx:if="{{currentStep === 5}}">
         <view class="preview-hero" wx:if="{{selectedProduct}}">
           <view class="preview-frame">
-            <image class="preview-hero-img" src="{{selectedProduct.images[0]}}" mode="aspectFill"></image>
+            <shan-img ext-class="preview-hero-img" src="{{selectedProduct.images[0]}}" mode="aspectFill" />
           </view>
           <view class="preview-hero-meta">
             <text class="preview-hero-name">{{selectedProduct.title}}</text>

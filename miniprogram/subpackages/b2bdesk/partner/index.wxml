@@ -69,7 +69,7 @@
       <text class="row-label">资质照（营业执照、许可证等，最多 {{licenseMax}} 张）</text>
       <view class="img-row wrap">
         <view wx:for="{{licenses}}" wx:key="*this" class="uploader tile has">
-          <image class="uploader-img" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewLicense" />
+          <shan-img ext-class="uploader-img" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewLicense" />
           <view class="tile-del" hover-class="btn-press" hover-stay-time="80" data-index="{{index}}" catchtap="removeLicense"><text class="tile-del-text">删除</text></view>
         </view>
         <view wx:if="{{licenses.length < licenseMax}}" class="uploader tile" hover-class="card-press" hover-stay-time="80" bindtap="addLicense">

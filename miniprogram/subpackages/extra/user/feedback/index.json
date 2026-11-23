@@ -5,5 +5,8 @@
   "navigationBarTextStyle": "white",
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",
-  "backgroundTextStyle": "light"
+  "backgroundTextStyle": "light",
+  "usingComponents": {
+    "shan-img": "/components/ShanImage/index"
+  }
 }
