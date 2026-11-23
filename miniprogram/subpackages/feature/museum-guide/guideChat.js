@@ -12,7 +12,7 @@ const QUESTION_MAX = 300
 
 const WELCOME = '你好，我是博物君，山海造物标本馆的馆员。关于蝴蝶、贝壳、矿物与化石，关于标本怎么保存，关于山海造物这座馆，都可以问我。'
 
-/** 开场问题：品牌 / 公益 / 科普 / 养护 / 到馆 各一 */
+/** 开场问题：品牌 / 公益 / 科普 / 养护 / 到馆 各一（首日的样子；之后按天从问题池轮换） */
 const STARTERS = [
   '山海造物是一座怎样的馆？',
   '1% 公益是怎么回事？',
@@ -20,6 +20,65 @@ const STARTERS = [
   '蝴蝶标本怎么防潮防虫？',
   '怎么预约到馆参观？'
 ]
+
+/**
+ * 开场问题池（2026-11-23）：每天每类取一个，回访的人看到的不总是同五个。
+ * 只放博物君答得了的问题：品牌与公益用馆方事实，科普只问通识，物种只选图鉴里有的。
+ */
+const STARTER_POOL = {
+  brand: ['山海造物是一座怎样的馆？', '「把山海带回家」是什么意思？', '馆里的标本都从哪里来？', '山海图鉴怎么一页页翻开？'],
+  giving: ['1% 公益是怎么回事？', '1% 的捐赠会用在哪里？', '我怎么知道捐赠真的发生了？'],
+  nature: ['大蓝闪蝶为什么是蓝色的？', '鹦鹉螺为什么被叫作活化石？', '虎斑宝贝的壳为什么那么光亮？', '蝴蝶和蛾子怎么区分？', '银杏为什么被叫作植物界的大熊猫？', '甲虫为什么是种类最多的动物？', '贝壳上的花纹是怎么长出来的？'],
+  care: ['蝴蝶标本怎么防潮防虫？', '标本放在哪里不容易褪色？', '矿物标本可以用水洗吗？', '押花标本会变色吗？'],
+  visit: ['怎么预约到馆参观？', '到馆参观可以看到什么？', '馆里有适合孩子的自然课吗？']
+}
+
+/** 北京时间的日序号（按天轮换开场问题用） */
+function dayIndex(now) {
+  return Math.floor(((now || Date.now()) + 8 * 3600 * 1000) / 86400000)
+}
+
+/** 今天的五个开场问题：每类一个，按日序号轮换 */
+function startersFor(now) {
+  const d = dayIndex(now)
+  return ['brand', 'giving', 'nature', 'care', 'visit'].map((k, i) => {
+    const pool = STARTER_POOL[k]
+    return pool[(d + i * 3) % pool.length]
+  })
+}
+
+/**
+ * 回答去 Markdown（与云函数 plainAnswer 同口径；本机旧记录与旧版云函数的回答也走一遍）。
+ */
+function plainAnswer(text) {
+  return String(text || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+    .replace(/__([^_\n]+)__/g, '$1')
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '· ')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/**
+ * 逐字显示（2026-11-23）：新回答「边想边说」地出来。每拍多少字随长度变 —— 不论多长都在约 1.6 秒内写完，
+ * 短回答不至于一个字一个字地磨。返回每一拍显示到第几个字。
+ */
+const REVEAL_TICK_MS = 40
+const REVEAL_MAX_MS = 1600
+function revealSteps(len) {
+  const n = Math.max(0, len | 0)
+  if (!n) return []
+  const ticks = Math.max(1, Math.min(Math.ceil(n / 3), Math.floor(REVEAL_MAX_MS / REVEAL_TICK_MS)))
+  const per = Math.ceil(n / ticks)
+  const out = []
+  for (let i = per; i < n; i += per) out.push(i)
+  out.push(n)
+  return out
+}
 
 /**
  * 馆内去处白名单（key 与云函数 knowledge.PLACES 一一对应）。
@@ -117,7 +176,7 @@ function replyToMessage(result) {
   const quota = r.quota && typeof r.quota.left === 'number' ? { left: r.quota.left, cap: r.quota.cap } : null
   if (r.success && r.answer) {
     return {
-      message: makeMessage('guide', r.answer, {
+      message: makeMessage('guide', plainAnswer(r.answer), {
         followUps: (r.followUps || []).filter(Boolean).slice(0, 3),
         actions: actionButtons(r.actions),
         species: speciesLinks(r.species)
@@ -132,7 +191,13 @@ function replyToMessage(result) {
 /** 存本机：去掉欢迎语、只留最近 40 条；追问 / 去处只保留在最后一条上 */
 function toStored(messages) {
   const list = (messages || []).filter((m) => m && !m.isWelcome && !m.pending).slice(-STORE_MAX)
-  return list.map((m, i) => (i === list.length - 1 ? m : Object.assign({}, m, { followUps: [], actions: [] })))
+  return list.map((m, i) => {
+    // 逐字显示的中间态不进存储：存的永远是整段回答
+    const base = Object.assign({}, m)
+    delete base.shown
+    delete base.revealing
+    return i === list.length - 1 ? base : Object.assign(base, { followUps: [], actions: [] })
+  })
 }
 
 /** 读本机：坏数据丢掉 */
@@ -140,6 +205,13 @@ function fromStored(raw) {
   return (Array.isArray(raw) ? raw : [])
     .filter((m) => m && (m.role === 'user' || m.role === 'guide') && typeof m.text === 'string' && m.text)
     .slice(-STORE_MAX)
+    .map((m) => {
+      const out = Object.assign({}, m)
+      delete out.shown
+      delete out.revealing
+      if (out.role === 'guide') out.text = plainAnswer(out.text)
+      return out
+    })
 }
 
 function quotaText(quota) {
@@ -155,6 +227,11 @@ module.exports = {
   QUESTION_MAX,
   WELCOME,
   STARTERS,
+  STARTER_POOL,
+  REVEAL_TICK_MS,
+  startersFor,
+  plainAnswer,
+  revealSteps,
   ACTIONS,
   ERROR_COPY,
   storeKey,

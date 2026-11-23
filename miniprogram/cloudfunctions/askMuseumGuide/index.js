@@ -69,6 +69,23 @@ function extractText(res) {
   return String(out.text || '')
 }
 
+/**
+ * 回答去 Markdown（2026-11-23）：气泡是纯文本，模型偶尔仍会写 **粗体** / ## 标题 / - 列表 / `代码`，
+ * 原样显示会露出符号。粗体、标题号、代码号去掉；列表号换成「· 」；三个以上空行压成一个。
+ */
+function plainAnswer(text) {
+  return String(text || '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/\*\*([^*\n]+)\*\*/g, '$1')
+    .replace(/__([^_\n]+)__/g, '$1')
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '· ')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 /** 解析模型输出：优先 JSON；不是 JSON 时整段当回答。去处只认白名单，追问最多 3 个。 */
 function parseReply(text) {
   const t = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
@@ -78,7 +95,7 @@ function parseReply(text) {
   if (s >= 0 && e > s) {
     try { obj = JSON.parse(t.slice(s, e + 1)) } catch (err) { obj = null }
   }
-  const answer = String((obj && obj.answer) || (obj ? '' : t)).trim()
+  const answer = plainAnswer((obj && obj.answer) || (obj ? '' : t))
   const followUps = (obj && Array.isArray(obj.follow_ups) ? obj.follow_ups : [])
     .map((q) => String(q || '').trim()).filter((q) => q && q.length <= 30).slice(0, 3)
   const actions = (obj && Array.isArray(obj.actions) ? obj.actions : [])
@@ -214,4 +231,4 @@ exports.main = async (event) => {
   }
 }
 
-exports._test = { modelChain, dailyLimit, dayKey, sanitizeInput, parseReply, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }
+exports._test = { modelChain, dailyLimit, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }

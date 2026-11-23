@@ -79,6 +79,18 @@ async function runChecks() {
   ok('A8 图鉴物种链接：编号只认三位数字、最多 2 个', sl.map((x) => x.no).join() === '001,024')
   ok('A9 入口问题：解码、清洗；坏编码 / 空 / 超长按无', G.entryQuestion({ q: encodeURIComponent(' 大蓝闪蝶 有什么 ') }) === '大蓝闪蝶 有什么' &&
     G.entryQuestion({ q: '%E0%A4%A' }) === '' && G.entryQuestion({}) === '' && G.entryQuestion({ q: encodeURIComponent('x'.repeat(G.QUESTION_MAX + 1)) }) === '')
+  const d0 = Date.UTC(2026, 10, 23, 4); const d1 = d0 + 86400000
+  const st0 = G.startersFor(d0); const st1 = G.startersFor(d1)
+  const pools = ['brand', 'giving', 'nature', 'care', 'visit']
+  ok('A10 开场问题：每类一个共 5 个、同一天固定、隔天会换', st0.length === 5 && st0.every((q, i) => G.STARTER_POOL[pools[i]].includes(q)) &&
+    G.startersFor(d0 + 3600000).join() === st0.join() && st1.join() !== st0.join())
+  const rs = G.revealSteps(300); const rs1 = G.revealSteps(5)
+  ok('A11 逐字显示：单调递增、最后一拍写完、长回答也在 1.6 秒内（≤ 40 拍）、短回答不磨', rs[rs.length - 1] === 300 && rs.every((v, i) => i === 0 || v > rs[i - 1]) &&
+    rs.length <= 40 && rs1[rs1.length - 1] === 5 && rs1.length <= 2 && G.revealSteps(0).length === 0)
+  ok('A12 回答去 Markdown：粗体 / 标题号 / 代码号去掉、列表换「· 」', G.plainAnswer('## 结构色\n**蓝**来自`鳞片`\n- 一\n* 二\n\n\n\n尾') === '结构色\n蓝来自鳞片\n· 一\n· 二\n\n尾')
+  const st = G.toStored([G.makeMessage('guide', '整段', { shown: '整', revealing: true })])
+  ok('A13 存储不带逐字中间态、读回时旧记录也去 Markdown', st[0].text === '整段' && !('shown' in st[0]) && !('revealing' in st[0]) &&
+    G.fromStored([{ role: 'guide', text: '**粗**', shown: 'x', revealing: true }])[0].text === '粗' && !('revealing' in G.fromStored([{ role: 'guide', text: 'a', revealing: true }])[0]))
   ok('A7 额度文案', G.quotaText({ left: 3, cap: 30 }) === '今日还可问 3 次' && G.quotaText({ left: 0, cap: 30 }) === '今日次数已用完' && G.quotaText(null) === '')
 
   /* ---------------- B 云函数纯函数 ---------------- */
@@ -101,6 +113,7 @@ async function runChecks() {
   const r1 = T.parseReply('```json\n{"answer":"答","follow_ups":["一","二","三","四"],"actions":["atlas","hack","atlas"]}\n```')
   const r2 = T.parseReply('就是一段话')
   ok('B2 回复解析：剥代码块、追问 ≤ 3、去处白名单去重；非 JSON 整段当回答', r1.answer === '答' && r1.followUps.length === 3 && r1.actions.join() === 'atlas' && r2.answer === '就是一段话' && !r2.actions.length)
+  ok('B5 云端回答也去 Markdown（与页面同口径）', T.parseReply('{"answer":"**蓝**\\n- 甲"}').answer === '蓝\n· 甲' && T.plainAnswer('### 题') === '题')
   ok('B3 北京时间切日（UTC 16:30 = 次日 00:30）', T.dayKey(Date.UTC(2026, 10, 23, 16, 30)) === '20261124' && T.dayKey(Date.UTC(2026, 10, 23, 15, 59)) === '20261123')
   ok('B4 额度：环境变量可改、非法回落 30；模型链环境变量在前且去重', T.dailyLimit('50') === 50 && T.dailyLimit('x') === 30 && T.modelChain('qwen-max, qwen-plus').join() === 'qwen-max,qwen-plus,qwen-flash')
 
@@ -176,6 +189,22 @@ async function runChecks() {
   const last2 = page.data.messages[page.data.messages.length - 1]
   ok('F3 云函数未部署 → 「还在布展」错误气泡，不进下一次历史；上一条的追问收起', last2.isError && last2.text === G.ERROR_COPY.not_deployed &&
     !G.historyForRequest(page.data.messages).some((x) => x.content === G.ERROR_COPY.not_deployed) && !page.data.messages[2].followUps.length)
+  // F5 逐字显示：新回答先 revealing，点气泡立刻写完；写完前不出追问 / 去处 / 图鉴链接
+  const lastIdx = page.data.messages.length - 1
+  const pg = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { for (const k of Object.keys(p)) { const m = k.match(/^messages\[(\d+)\]\.(\w+)$/); if (m) this.data.messages[+m[1]][m[2]] = p[k]; else this.data[k] = p[k] } if (cb) cb() } })
+  reply = { result: { success: true, answer: '一段比较长的回答，用来看逐字显示。', followUps: ['追问'], quota: { left: 27, cap: 30 } } }
+  wxStub.cloud.callFunction = async () => reply
+  pg.onLoad({})
+  await pg.ask('问')
+  const li = pg.data.messages.length - 1
+  const w1 = pg.data.messages[li].revealing === true && pg.data.messages[li].shown !== pg.data.messages[li].text
+  pg.onTapBubble({ currentTarget: { dataset: { index: li } } })
+  const w2 = pg.data.messages[li].revealing === false && pg.data.messages[li].shown === pg.data.messages[li].text
+  pg.onUnload()
+  const mgWxml = read(P.wxml)
+  ok('F5 逐字显示：新回答先写、点气泡写完；写完前追问 / 去处 / 图鉴链接不出', w1 && w2 && lastIdx >= 0 &&
+    /class="mg-species" wx:if="\{\{item\.species\.length && !item\.revealing\}\}"/.test(mgWxml) && /class="mg-acts" wx:if="\{\{item\.actions\.length && !item\.revealing\}\}"/.test(mgWxml) &&
+    /class="mg-follow" wx:if="\{\{item\.followUps\.length && !sending && !item\.revealing\}\}"/.test(mgWxml))
   // F4 带着问题进来：auto=1 直接发问并带回图鉴物种链接；不带 auto 只预填
   let calls = 0
   reply = { result: { success: true, answer: '闪蝶的蓝来自鳞片。', species: [{ no: '001', zh: '大蓝闪蝶' }], quota: { left: 28, cap: 30 } } }
@@ -207,6 +236,12 @@ const INJECTIONS = [
   { name: '物种编号不校验', file: P.chat, find: ".filter((s) => s && /^\\d{3}$/.test(String(s.no || '')) && s.zh)", replace: ".filter((s) => s && s.zh)" },
   { name: '带问题进来不自动发', file: P.page, find: "if (q && options.auto === '1') this.ask(q)", replace: "if (false) this.ask(q)" },
   { name: '未翻开的页也出问问博物君', file: P.atlasJs, find: 'if (this.data.locked || !card.nameZh) return', replace: 'if (!card.nameZh) return' },
+  { name: '开场问题不轮换', file: P.chat, find: 'return pool[(d + i * 3) % pool.length]', replace: 'return pool[0]' },
+  { name: '逐字显示太慢', file: P.chat, find: 'Math.min(Math.ceil(n / 3), Math.floor(REVEAL_MAX_MS / REVEAL_TICK_MS))', replace: 'Math.ceil(n / 3)' },
+  { name: '页面不去 Markdown', file: P.chat, find: ".replace(/\\*\\*([^*\\n]+)\\*\\*/g, '$1')", replace: '' },
+  { name: '存储带着逐字中间态', file: P.chat, find: '    delete base.shown\n', replace: '' },
+  { name: '云端不去 Markdown', file: P.fn, find: "const answer = plainAnswer((obj && obj.answer) || (obj ? '' : t))", replace: "const answer = String((obj && obj.answer) || (obj ? '' : t)).trim()" },
+  { name: '点气泡不跳过', file: P.page, find: '    if (cur && cur.revealing) this.finishReveal(index)', replace: '' },
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' }
 ]
 

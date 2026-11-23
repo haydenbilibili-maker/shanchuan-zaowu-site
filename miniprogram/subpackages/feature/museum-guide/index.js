@@ -11,7 +11,7 @@ const app = getApp()
 Page({
   data: {
     messages: [],
-    starters: G.STARTERS,
+    starters: G.startersFor(),
     hasAsked: false,
     draft: '',
     sending: false,
@@ -61,6 +61,8 @@ Page({
 
   async ask(raw) {
     if (this.data.sending) return
+    // 上一条还在逐字写：先写完再问
+    if (this._revealTimer && this._revealIndex >= 0) this.finishReveal(this._revealIndex)
     const c = G.cleanQuestion(raw)
     if (c.error) return
     const history = G.historyForRequest(this.data.messages)
@@ -80,8 +82,59 @@ Page({
     }
     const messages = this.data.messages.filter((m) => !m.pending).concat(reply.message)
     const quota = reply.quota || this.data.quota
-    this.setData({ messages, sending: false, quota, quotaText: G.quotaText(quota) }, () => this.scrollToEnd())
     this.persist(messages)
+    // 新回答逐字出来（错误提示直接出）；写完前追问 / 去处 / 图鉴链接先不出
+    if (!reply.message.isError) {
+      const last = messages.length - 1
+      messages[last] = Object.assign({}, reply.message, { shown: '', revealing: true })
+      this.setData({ messages, sending: false, quota, quotaText: G.quotaText(quota) }, () => this.startReveal(last))
+    } else {
+      this.setData({ messages, sending: false, quota, quotaText: G.quotaText(quota) }, () => this.scrollToEnd())
+    }
+  },
+
+  /* ------------------------------ 逐字显示 ------------------------------ */
+
+  startReveal(index) {
+    this.stopReveal()
+    const msg = this.data.messages[index]
+    if (!msg) return
+    const steps = G.revealSteps(msg.text.length)
+    let i = 0
+    const tick = () => {
+      const cur = this.data.messages[index]
+      if (!cur || cur.id !== msg.id) return this.stopReveal()
+      i += 1
+      if (i >= steps.length) return this.finishReveal(index)
+      this.setData({ [`messages[${index}].shown`]: msg.text.slice(0, steps[i - 1]) })
+      if (i % 8 === 0) this.scrollToEnd()
+    }
+    this._revealTimer = setInterval(tick, G.REVEAL_TICK_MS)
+    this._revealIndex = index
+  },
+
+  /** 写完（或点气泡跳过）：整段显示，追问 / 去处 / 图鉴链接出现 */
+  finishReveal(index) {
+    this.stopReveal()
+    const cur = this.data.messages[index]
+    if (!cur || !cur.revealing) return
+    this.setData({ [`messages[${index}].shown`]: cur.text, [`messages[${index}].revealing`]: false }, () => this.scrollToEnd())
+  },
+
+  stopReveal() {
+    if (this._revealTimer) clearInterval(this._revealTimer)
+    this._revealTimer = null
+  },
+
+  /** 点正在写的气泡：直接写完 */
+  onTapBubble(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const cur = this.data.messages[index]
+    if (cur && cur.revealing) this.finishReveal(index)
+  },
+
+  onUnload() {
+    this.stopReveal()
   },
 
   persist(messages) {

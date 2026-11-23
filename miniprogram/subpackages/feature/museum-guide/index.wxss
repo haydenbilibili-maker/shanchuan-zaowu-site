@@ -133,3 +133,8 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 .mg-sp-zh { font-size: var(--fs-24); color: var(--brass-200, #E3D2AC); }
 .mg-sp-go { font-size: var(--fs-24); color: var(--brass-300, #D4BC8A); }
 
+/* 逐字显示中（2026-11-23）：末尾一枚铜色光标（嵌套 text：真机 text 组件上 ::after 不可靠） */
+.mg-caret { margin-left: 2rpx; color: #B08D57; animation: mg-caret 0.8s steps(1) infinite; }
+@keyframes mg-caret { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .mg-caret { animation: none; } }
+

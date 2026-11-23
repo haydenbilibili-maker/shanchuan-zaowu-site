@@ -680,6 +680,14 @@ const SCENES = [
           followUps: ['还有哪些动物是结构色？', '闪蝶标本会褪色吗？', '雌蝶也一样蓝吗？'],
           actions: [{ key: 'atlas', label: '翻山海图鉴', url: '/subpackages/feature/collection/index', tab: false }, { key: 'care', label: '看标本养护', url: '/subpackages/feature/care/index', tab: false }] }
       ] } },
+  // 2026-11-23 博物君逐字显示中：末尾铜色光标，追问 / 去处 / 图鉴链接写完才出
+  { name: 'museum-guide-writing', h: 1500, wxml: 'subpackages/feature/museum-guide/index', base: 'museum-guide-empty', data: {
+      hasAsked: true, quotaText: '今日还可问 27 次',
+      messages: [
+        { id: 'u1', role: 'user', text: '鹦鹉螺为什么被叫作活化石？' },
+        { id: 'g1', role: 'guide', revealing: true, text: '因为它的样子几亿年没怎么变。', shown: '因为它的身体构造在四亿多年里变化很小：一枚分成许多气室的螺旋壳，靠调节气室里的气体与液体',
+          species: [{ no: '033', zh: '鹦鹉螺' }], followUps: ['它现在还活着吗？'], actions: [] }
+      ] } },
   { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
       visible: [
         { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },

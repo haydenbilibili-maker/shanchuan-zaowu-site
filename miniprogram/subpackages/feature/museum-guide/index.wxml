@@ -22,9 +22,10 @@
               <text class="mg-pending-t">博物君正在翻书</text>
               <view class="mg-dots" aria-hidden="true"><view class="mg-dot"></view><view class="mg-dot"></view><view class="mg-dot"></view></view>
             </view>
-            <text class="mg-bubble is-guide {{item.isError ? 'is-error' : ''}}" user-select wx:else>{{item.text}}</text>
+            <!-- 逐字显示（2026-11-23）：revealing 时显示 shown，点气泡直接写完 -->
+            <text class="mg-bubble is-guide {{item.isError ? 'is-error' : ''}} {{item.revealing ? 'is-writing' : ''}}" user-select wx:else data-index="{{index}}" bindtap="onTapBubble">{{item.revealing ? item.shown : item.text}}<text class="mg-caret" wx:if="{{item.revealing}}" aria-hidden="true">▍</text></text>
             <!-- 回答里提到的图鉴物种（2026-11-23）→ 那一页 -->
-            <view class="mg-species" wx:if="{{item.species.length}}">
+            <view class="mg-species" wx:if="{{item.species.length && !item.revealing}}">
               <view class="mg-sp" wx:for="{{item.species}}" wx:for-item="sp" wx:key="no" data-no="{{sp.no}}" bindtap="onTapSpecies" hover-class="tap-press-soft" hover-stay-time="80">
                 <text class="mg-sp-no">No.{{sp.no}}</text>
                 <text class="mg-sp-zh">图鉴 · {{sp.zh}}</text>
@@ -32,11 +33,11 @@
               </view>
             </view>
             <!-- 馆内去处（白名单） -->
-            <view class="mg-acts" wx:if="{{item.actions.length}}">
+            <view class="mg-acts" wx:if="{{item.actions.length && !item.revealing}}">
               <text class="mg-act" wx:for="{{item.actions}}" wx:for-item="act" wx:key="key" data-url="{{act.url}}" data-tab="{{act.tab}}" data-key="{{act.key}}" bindtap="onTapAction" hover-class="tap-press" hover-stay-time="80">{{act.label}} ›</text>
             </view>
             <!-- 追问 -->
-            <view class="mg-follow" wx:if="{{item.followUps.length && !sending}}">
+            <view class="mg-follow" wx:if="{{item.followUps.length && !sending && !item.revealing}}">
               <text class="mg-chip" wx:for="{{item.followUps}}" wx:for-item="q" wx:key="*this" data-q="{{q}}" bindtap="onTapFollowUp" hover-class="tap-press-soft" hover-stay-time="80">{{q}}</text>
             </view>
           </view>
