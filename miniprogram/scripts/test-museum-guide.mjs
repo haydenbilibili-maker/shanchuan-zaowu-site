@@ -187,6 +187,11 @@ async function runChecks() {
     fb1.success && dbStore.museum_guide_logs.L1.vote === 'up' && fb2.already === true && dbStore.museum_guide_logs.L1.vote === 'up' &&
     fb3.success === false && !dbStore.museum_guide_logs.L2.vote && fb4.success === false &&
     /if \(out && out\.success && logId\) out\.logId = logId/.test(src))
+  // C11 物种匹配（2026-11-23 修）：问题里点名的优先；没点名才看上一个访客问题；不看博物君自己的回答
+  const sf1 = T.speciesFor('大蓝闪蝶有什么有意思的地方？', [{ role: 'user', content: '凤蝶为什么那么大' }, { role: 'assistant', content: '巴黎翠凤蝶、天堂凤蝶都属于凤蝶科……' }])
+  const sf2 = T.speciesFor('它现在还活着吗？', [{ role: 'user', content: '鹦鹉螺是活化石吗' }, { role: 'assistant', content: '是的，和大蓝闪蝶不同……' }])
+  ok('C11 物种匹配：问题点名的优先（不被上一条回答里的长名字顶掉）；追问用上一个访客问题、不看回答', sf1.length >= 1 && sf1[0].zh === '大蓝闪蝶' && !sf1.some((x) => /凤蝶/.test(x.zh)) &&
+    sf2.length === 1 && sf2[0].zh === '鹦鹉螺')
   ok('C9 生效配置：额度 5–200 才认、否则回落环境变量；读不到配置 = 开启', T.effectiveConfig({ dailyLimit: 3 }, '40').cap === 40 && T.effectiveConfig({ dailyLimit: 50 }, '40').cap === 50 &&
     T.effectiveConfig(null, '').enabled === true && T.effectiveConfig({ enabled: false }, '').enabled === false)
   ok('C6 config.json 声明 msgSecCheck 权限', /security\.msgSecCheck/.test(readFileSync(P.fnConfig, 'utf8')))
@@ -276,8 +281,29 @@ async function runChecks() {
   pg.onUnload()
   const mgWxml = read(P.wxml)
   ok('F5 逐字显示：新回答先写、点气泡写完；写完前追问 / 去处 / 图鉴链接不出', w1 && w2 && lastIdx >= 0 &&
-    /class="mg-species" wx:if="\{\{item\.species\.length && !item\.revealing\}\}"/.test(mgWxml) && /class="mg-acts" wx:if="\{\{item\.actions\.length && !item\.revealing\}\}"/.test(mgWxml) &&
-    /class="mg-follow" wx:if="\{\{item\.followUps\.length && !sending && !item\.revealing\}\}"/.test(mgWxml))
+    /class="mg-strip-box" wx:if="\{\{\(item\.species\.length \|\| item\.actions\.length\) && !item\.revealing\}\}"/.test(mgWxml) &&
+    /class="mg-strip-box" wx:if="\{\{item\.followUps\.length && !sending && !item\.revealing\}\}"/.test(mgWxml) &&
+    /class="mg-fb" wx:if="\{\{!item\.isError && !item\.isWelcome && !item\.pending && !item\.revealing && item\.text\}\}"/.test(mgWxml))
+  // F8 回答区重排（2026-11-23 产品负责人截图）：签脚贴在回答底边；延伸 / 接着问各一行横滑（不再竖着叠一屏按钮）
+  const mgWxss = readFileSync(P.wxml.replace(/\.wxml$/, '.wxss'), 'utf8')
+  const strips = (mgWxml.match(/<scroll-view class="mg-strip" scroll-x/g) || []).length
+  ok('F8 回答区：签脚贴底（回答签底角取直 + 签脚同色纸面）；延伸与接着问各一行横滑、单行不换行',
+    strips === 2 && /\.mg-bubble\.is-guide\.has-foot \{[^}]*border-bottom-left-radius: 0;/.test(mgWxss) && /\.mg-fb \{[^}]*background: #E6DBC4;/.test(mgWxss) &&
+    /\.mg-strip \{[^}]*white-space: nowrap;/.test(mgWxss) && /\.mg-strip-row \{[^}]*display: inline-flex;/.test(mgWxss) && !/class="mg-follow"|class="mg-species"/.test(mgWxml))
+  // F9 页面优化（2026-11-23）：开场问题卡两列带门类、科普置顶；问过之后卷首收紧；往上翻远了出「回到最新」，滚动时状态不变不 setData
+  const cards = G.starterCards(Date.UTC(2026, 10, 23, 4))
+  const pj = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { this._sets = (this._sets || 0) + 1; Object.assign(this.data, p); if (cb) cb() } })
+  pj._winH = 700
+  pj.onScroll({ detail: { scrollTop: 0, scrollHeight: 3000 } })
+  const s1 = pj.data.showJump; const n1 = pj._sets
+  pj.onScroll({ detail: { scrollTop: 10, scrollHeight: 3000 } })
+  const n2 = pj._sets
+  pj.onScroll({ detail: { scrollTop: 2250, scrollHeight: 3000 } })
+  const s3 = pj.data.showJump
+  ok('F9 开场卡五类各一、科普置顶；问过之后说明行收起；「回到最新」离底一屏以上才出、状态不变不重复 setData',
+    cards.length === 5 && cards[0].key === 'nature' && new Set(cards.map((c) => c.kind)).size === 5 && cards.every((c) => c.q) &&
+    s1 === true && n2 === n1 && s3 === false && /<text class="mg-desc" wx:if="\{\{!hasAsked\}\}">/.test(mgWxml) && /bindscroll="onScroll"/.test(mgWxml) &&
+    /class="mg-jump[^"]*" wx:if="\{\{showJump\}\}" bindtap="onJump"/.test(mgWxml))
   // F6 闭馆：进页 status 报闭馆 → 输入条与开场问题收起，ask 不发云调用
   let askCalls = 0
   wxStub.cloud.callFunction = async (o) => { if (o && o.data && o.data.action === 'status') return { result: { success: true, enabled: false, msg: '闭馆整理中', quota: { left: 30, cap: 30 } } }; askCalls++; return reply }
@@ -496,6 +522,10 @@ const INJECTIONS = [
   { name: '售罄排在前面', file: P.workshop, find: '  return inStock.concat(sold).slice(0, 4)', replace: '  return all.slice(0, 4)' },
   { name: '工坊推荐改调别的云函数', file: P.wsJs, find: "wx.cloud.callFunction({ name: 'getEncyclopediaFeed', data: q })", replace: "wx.cloud.callFunction({ name: 'getRecommendations', data: q })" },
   { name: '点藏品不进详情', file: P.wsJs, find: "    if (id) wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}` })", replace: '' },
+  { name: '物种又拿历史与回答一起排', file: P.fn, find: '  const fromQ = matchSpecies(question, 3)\n  if (fromQ.length) return fromQ\n', replace: "  const fromQ = matchSpecies(question + '\\n' + (history || []).map((h) => h.content).join('\\n'), 3)\n  if (fromQ.length) return fromQ\n" },
+  { name: '追问又竖着叠', file: P.wxml, find: '<scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"', replace: '<view class="mg-strip">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"' },
+  { name: '滚一下就 setData', file: P.page, find: '    if (far !== this.data.showJump) this.setData({ showJump: far })', replace: '    this.setData({ showJump: far })' },
+  { name: '开场卡科普不置顶', file: P.chat, find: "  return cards.filter((c) => c.key === 'nature').concat(cards.filter((c) => c.key !== 'nature'))", replace: '  return cards' },
 ]
 
 if (process.argv.includes('--selftest')) {

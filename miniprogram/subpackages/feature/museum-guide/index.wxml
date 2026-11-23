@@ -1,11 +1,12 @@
 <!-- 博物君 · 山海造物标本馆的 AI 馆员（2026-11-23）。蓝图 docs/博物君_AI馆员_蓝图_2026-11-23.md
      结构：卷首 → 对话（博物君 = 纸面签，访客 = 铜描边）→ 开场问题 / 追问 / 馆内去处 → 底部输入条 -->
 <view class="mg-page">
-  <scroll-view class="mg-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+  <scroll-view class="mg-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}" bindscroll="onScroll">
     <view class="mg-head">
       <text class="mg-eyebrow">MUSEUM GUIDE · 博物君</text>
       <text class="mg-title">博物君</text>
-      <text class="mg-desc">山海造物标本馆的馆员。懂这座馆，也懂一点自然史。</text>
+      <!-- 问过之后卷首收紧（2026-11-23）：说明行与工坊副标题收起，对话往上提 -->
+      <text class="mg-desc" wx:if="{{!hasAsked}}">山海造物标本馆的馆员。懂这座馆，也懂一点自然史。</text>
       <!-- 对话之外（2026-11-23）：今日一物 / 博物小测 / 博物笔记 —— 全部读本地图鉴，不占提问次数 -->
       <view class="mg-tools">
         <view class="mg-tool" data-url="/subpackages/feature/museum-guide/daily/index" bindtap="onTool" hover-class="tap-press-soft" hover-stay-time="80">
@@ -23,7 +24,7 @@
         <view class="mg-workshop-main">
           <text class="mg-tool-k">WORKSHOP</text>
           <text class="mg-workshop-t">标本工坊 · 亲手做一只标本</text>
-          <text class="mg-workshop-d">回软、展翅、下针、干燥、装裱，做完看看馆里的同类藏品</text>
+          <text class="mg-workshop-d" wx:if="{{!hasAsked}}">回软、展翅、下针、干燥、装裱，做完看看馆里的同类藏品</text>
         </view>
         <text class="mg-workshop-go">›</text>
       </view>
@@ -43,56 +44,82 @@
               <text class="mg-pending-t">博物君正在翻书</text>
               <view class="mg-dots" aria-hidden="true"><view class="mg-dot"></view><view class="mg-dot"></view><view class="mg-dot"></view></view>
             </view>
-            <!-- 逐字显示（2026-11-23）：revealing 时显示 shown，点气泡直接写完 -->
-            <text class="mg-bubble is-guide {{item.isError ? 'is-error' : ''}} {{item.revealing ? 'is-writing' : ''}}" user-select wx:else data-index="{{index}}" bindtap="onTapBubble">{{item.revealing ? item.shown : item.text}}<text class="mg-caret" wx:if="{{item.revealing}}" aria-hidden="true">▍</text></text>
-            <!-- 回答里提到的图鉴物种（2026-11-23）→ 那一页 -->
-            <view class="mg-species" wx:if="{{item.species.length && !item.revealing}}">
-              <view class="mg-sp" wx:for="{{item.species}}" wx:for-item="sp" wx:key="no" data-no="{{sp.no}}" bindtap="onTapSpecies" hover-class="tap-press-soft" hover-stay-time="80">
-                <text class="mg-sp-no">No.{{sp.no}}</text>
-                <text class="mg-sp-zh">图鉴 · {{sp.zh}}</text>
-                <text class="mg-sp-go">›</text>
+            <!-- 2026-11-23 回答区重排（产品负责人截图「前端设计和交互可以再优化」）：
+                 原来回答下面竖着叠五层（两条物种签 / 两个去处 / 四个小字钮 / 三条追问），一屏半都是按钮。
+                 现在：① 反馈 / 复制 / 收藏贴在回答纸签底边，像一张签的页脚；② 图鉴物种 + 馆内去处合成一行横滑「延伸」；
+                 ③ 追问一行横滑「接着问」。写完之前都不出。 -->
+            <block wx:else>
+              <!-- 逐字显示：revealing 时显示 shown，点气泡直接写完 -->
+              <text class="mg-bubble is-guide {{item.isError ? 'is-error' : ''}} {{item.revealing ? 'is-writing' : ''}} {{item.text && !item.isError && !item.isWelcome && !item.revealing ? 'has-foot' : ''}}" user-select data-index="{{index}}" bindtap="onTapBubble">{{item.revealing ? item.shown : item.text}}<text class="mg-caret" wx:if="{{item.revealing}}" aria-hidden="true">▍</text></text>
+              <!-- ① 签脚：反馈在左，复制 / 收藏在右 -->
+              <view class="mg-fb" wx:if="{{!item.isError && !item.isWelcome && !item.pending && !item.revealing && item.text}}">
+                <view class="mg-fb-l">
+                  <block wx:if="{{item.logId}}">
+                    <text class="mg-fb-done" wx:if="{{item.vote}}">{{item.vote === 'up' ? '谢谢，博物君记下了' : '谢谢，博物君会再翻翻书'}}</text>
+                    <block wx:else>
+                      <text class="mg-fb-btn" data-index="{{index}}" data-vote="up" bindtap="onVote" hover-class="tap-press" hover-stay-time="80">有帮助</text>
+                      <text class="mg-fb-sep">·</text>
+                      <text class="mg-fb-btn" data-index="{{index}}" data-vote="down" bindtap="onVote" hover-class="tap-press" hover-stay-time="80">没帮助</text>
+                    </block>
+                  </block>
+                </view>
+                <view class="mg-fb-r">
+                  <text class="mg-fb-btn" data-index="{{index}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
+                  <text class="mg-fb-sep">·</text>
+                  <text class="mg-fb-btn {{item.saved ? 'is-saved' : ''}}" data-index="{{index}}" bindtap="onSave" hover-class="tap-press" hover-stay-time="80">{{item.saved ? '已收藏' : '收藏'}}</text>
+                </view>
               </view>
-            </view>
-            <!-- 馆内去处（白名单） -->
-            <view class="mg-acts" wx:if="{{item.actions.length && !item.revealing}}">
-              <text class="mg-act" wx:for="{{item.actions}}" wx:for-item="act" wx:key="key" data-url="{{act.url}}" data-tab="{{act.tab}}" data-key="{{act.key}}" bindtap="onTapAction" hover-class="tap-press" hover-stay-time="80">{{act.label}} ›</text>
-            </view>
-            <!-- 反馈 / 复制（2026-11-23）：写完的正式回答才出；投过票只留一句谢谢 -->
-            <view class="mg-fb" wx:if="{{!item.isError && !item.isWelcome && !item.pending && !item.revealing && item.text}}">
-              <block wx:if="{{item.logId}}">
-                <text class="mg-fb-done" wx:if="{{item.vote}}">{{item.vote === 'up' ? '谢谢，博物君记下了' : '谢谢，博物君会再翻翻书'}}</text>
-                <block wx:else>
-                  <text class="mg-fb-btn" data-index="{{index}}" data-vote="up" bindtap="onVote" hover-class="tap-press" hover-stay-time="80">有帮助</text>
-                  <text class="mg-fb-btn" data-index="{{index}}" data-vote="down" bindtap="onVote" hover-class="tap-press" hover-stay-time="80">没帮助</text>
-                </block>
-              </block>
-              <text class="mg-fb-btn" data-index="{{index}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
-              <text class="mg-fb-btn {{item.saved ? 'is-saved' : ''}}" data-index="{{index}}" bindtap="onSave" hover-class="tap-press" hover-stay-time="80">{{item.saved ? '已收藏' : '收藏'}}</text>
-            </view>
-            <!-- 追问 -->
-            <view class="mg-follow" wx:if="{{item.followUps.length && !sending && !item.revealing}}">
-              <text class="mg-chip" wx:for="{{item.followUps}}" wx:for-item="q" wx:key="*this" data-q="{{q}}" bindtap="onTapFollowUp" hover-class="tap-press-soft" hover-stay-time="80">{{q}}</text>
-            </view>
+              <!-- ② 延伸：图鉴物种 + 馆内去处，一行横滑 -->
+              <view class="mg-strip-box" wx:if="{{(item.species.length || item.actions.length) && !item.revealing}}">
+                <text class="mg-strip-k">延伸</text>
+                <scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">
+                  <view class="mg-strip-row">
+                    <view class="mg-sp" wx:for="{{item.species}}" wx:for-item="sp" wx:key="no" data-no="{{sp.no}}" bindtap="onTapSpecies" hover-class="tap-press-soft" hover-stay-time="80">
+                      <text class="mg-sp-no">No.{{sp.no}}</text>
+                      <text class="mg-sp-zh">{{sp.zh}}</text>
+                    </view>
+                    <text class="mg-act" wx:for="{{item.actions}}" wx:for-item="act" wx:key="key" data-url="{{act.url}}" data-tab="{{act.tab}}" data-key="{{act.key}}" bindtap="onTapAction" hover-class="tap-press-soft" hover-stay-time="80">{{act.label}} ›</text>
+                  </view>
+                </scroll-view>
+              </view>
+              <!-- ③ 接着问：追问一行横滑 -->
+              <view class="mg-strip-box" wx:if="{{item.followUps.length && !sending && !item.revealing}}">
+                <text class="mg-strip-k">接着问</text>
+                <scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">
+                  <view class="mg-strip-row">
+                    <text class="mg-chip" wx:for="{{item.followUps}}" wx:for-item="q" wx:key="*this" data-q="{{q}}" bindtap="onTapFollowUp" hover-class="tap-press-soft" hover-stay-time="80">{{q}}</text>
+                  </view>
+                </scroll-view>
+              </view>
+            </block>
           </view>
         </view>
       </block>
     </view>
 
-    <!-- 开场问题：还没问过时出现 -->
     <!-- 闭馆（超管工作台关掉博物君，2026-11-23）：一句说明，开场问题与输入条收起；本机旧对话仍可回看 -->
     <view class="mg-closed" wx:if="{{closed}}">
       <text class="mg-closed-k">CLOSED · 闭馆整理中</text>
       <text class="mg-closed-t">{{closedText}}</text>
     </view>
 
+    <!-- 开场问题：还没问过时出现。两列卡片，带门类小签；科普一张通栏置顶（2026-11-23） -->
     <view class="mg-starters" wx:if="{{!hasAsked && !closed}}">
       <text class="mg-starters-k">可以这样问</text>
-      <text class="mg-chip is-block" wx:for="{{starters}}" wx:key="*this" data-q="{{item}}" bindtap="onTapStarter" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
+      <view class="mg-st-grid">
+        <view class="mg-st {{index === 0 ? 'is-wide' : ''}}" wx:for="{{starterCards}}" wx:key="key" data-q="{{item.q}}" bindtap="onTapStarter" hover-class="tap-press-soft" hover-stay-time="80">
+          <text class="mg-st-k">{{item.kind}}</text>
+          <text class="mg-st-q">{{item.q}}</text>
+        </view>
+      </view>
     </view>
 
     <text class="mg-note">博物君的回答由 AI 生成，仅供参考；馆藏、价格与开放时间以页面为准。对话只存在这台手机上。</text>
     <view id="mg-end" class="mg-end"></view>
   </scroll-view>
+
+  <!-- 回到最新：往上翻远了才出 -->
+  <view class="mg-jump {{showJump ? 'is-on' : ''}}" wx:if="{{showJump}}" bindtap="onJump" hover-class="tap-press" hover-stay-time="80" aria-role="button">回到最新 ↓</view>
 
   <!-- 底部输入条 -->
   <view class="mg-bar safe-area" wx:if="{{!closed}}">
@@ -105,7 +132,7 @@
         class="mg-input"
         value="{{draft}}"
         maxlength="{{questionMax}}"
-        placeholder="问博物君…"
+        placeholder="比如：{{placeholderQ}}"
         placeholder-class="mg-input-ph"
         confirm-type="send"
         cursor-spacing="24"
