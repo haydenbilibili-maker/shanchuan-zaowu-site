@@ -69,6 +69,8 @@ function normalizeFlags(doc) {
     showStoredValue: src.showStoredValue === true,
     // 缺字段 / undefined → true；现网已开放，仅显式 false 关闭
     showAiIdentify: src.showAiIdentify !== false,
+    // 博物君展示开关（2026-11-23 起并入 ERP「商品内容-开关」）：缺字段 → true；与超管「开馆/闭馆」取 AND
+    museumGuideOpen: src.museumGuideOpen !== false,
     // 缺字段 / undefined → true；现网已有门店，仅显式 false 关闭
     showStore: src.showStore !== false,
     // 缺字段 / undefined → true；门店自取在售，仅显式 false 关闭
@@ -239,7 +241,9 @@ exports.main = async (event) => {
   try {
     if (action === 'save') return await saveFlags(event, openid)
     const box = {}
-    const [res, museumGuideOpen] = await Promise.all([readFlags(), readMuseumGuideOpen(box)])
+    const [res, configOpen] = await Promise.all([readFlags(), readMuseumGuideOpen(box)])
+    // 两处开关取 AND：ERP 商品内容-开关（展示）与 超管「开馆/闭馆」（服务）任一关闭即视为关闭
+    const museumGuideOpen = configOpen && res.flags.museumGuideOpen !== false
     const out = Object.assign({}, res, { flags: Object.assign({}, res.flags, { museumGuideOpen }) })
     out.flags.museumGuideNotices = museumGuideNoticesFrom(box.doc, museumGuideOpen)
     return out

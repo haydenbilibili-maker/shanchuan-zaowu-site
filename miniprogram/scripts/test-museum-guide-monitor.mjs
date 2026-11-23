@@ -28,6 +28,7 @@ const P = {
   page: join(MP, 'subpackages/manager/museum-guide-monitor/index.js'),
   wxml: join(MP, 'subpackages/manager/museum-guide-monitor/index.wxml'),
   flagsUtil: join(MP, 'utils/contentDisplayFlags.js'),
+  erpFlags: join(ROOT, 'admin/src/components/ContentDisplayFlags.vue'),
   roles: join(MP, 'utils/workspaceRoles.js'),
   hubNav: join(MP, 'subpackages/manager/manager/hubNav.js'),
   mgrCfg: join(MP, 'subpackages/manager/manager/managerPageConfig.js'),
@@ -175,7 +176,7 @@ async function runChecks() {
   ok('M4 开关两步确认（第一下只亮出确认）', /if \(!this\.data\.confirmToggle\) \{/.test(pageJs) && /再点一次确认闭馆/.test(wxml))
 
   /* ---------------- M5 开关落地 ---------------- */
-  const flagDb = (cfg) => memDb(Object.assign({ content_display_flags: { f1: { status: 'active', priority: 100, showAiIdentify: true } } }, cfg ? { museum_guide_config: { main: cfg } } : {}))
+  const flagDb = (cfg, patch) => memDb(Object.assign({ content_display_flags: { f1: Object.assign({ status: 'active', priority: 100, showAiIdentify: true }, patch || {}) } }, cfg ? { museum_guide_config: { main: cfg } } : {}))
   const loadFlags = (db) => loadCjsModule(P.flagsFn, {
     transform,
     stubs: { 'wx-server-sdk': { init() {}, DYNAMIC_CURRENT_ENV: 'x', database: () => db, getWXContext: () => ({ OPENID: 'u1' }), serverDate: () => 0 }, './staffGuard': { assertStaff: async () => ({ ok: true, actor: { openid: 'm' } }), ROLE_MANAGER: 'manager' } },
@@ -183,11 +184,17 @@ async function runChecks() {
   })
   const fOff = await loadFlags(flagDb({ enabled: false })).main({})
   const fNone = await loadFlags(flagDb(null)).main({})
+  const fFlagOff = await loadFlags(flagDb({ enabled: true }, { museumGuideOpen: false })).main({})
+  const fBoth = await loadFlags(flagDb({ enabled: true }, { museumGuideOpen: true })).main({})
   const saveDb = flagDb({ enabled: false })
   await loadFlags(saveDb).main({ action: 'save', flags: { showAiIdentify: true, museumGuideOpen: true } })
-  ok('M5 内容开关：闭馆 → museumGuideOpen false；没配置 → true；save 不写它（不会被店长端 / ERP 保存改回开启）',
-    fOff.flags.museumGuideOpen === false && fNone.flags.museumGuideOpen === true && fOff.flags.showAiIdentify === true &&
+  ok('M5 两把开关取 AND：超管闭馆 → false；ERP 商品内容-开关关闭 → false；都没配 → true；两者都开 → true；save 不写它',
+    fOff.flags.museumGuideOpen === false && fNone.flags.museumGuideOpen === true && fFlagOff.flags.museumGuideOpen === false &&
+    fBoth.flags.museumGuideOpen === true && fOff.flags.showAiIdentify === true &&
     saveDb.docs.museum_guide_config.main.enabled === false && !('museumGuideOpen' in saveDb.docs.content_display_flags.f1))
+  ok('M5 ERP「商品内容-开关」有博物君开关（读 / 写 / 默认三处齐全）',
+    /v-model="form\.museumGuideOpen"/.test(read(P.erpFlags)) && /form\.museumGuideOpen = raw\.museumGuideOpen !== false/.test(read(P.erpFlags)) &&
+    /museumGuideOpen: form\.museumGuideOpen !== false/.test(read(P.erpFlags)) && /museumGuideOpen: true/.test(read(P.erpFlags)))
   ok('M5 小程序端开关归一（缺省开启）与「我的」入口跟随', /museumGuideOpen: src\.museumGuideOpen !== false/.test(read(P.flagsUtil)) &&
     /data-path="museumGuide" wx:if="\{\{museumGuideOpen\}\}"/.test(read(P.userWxml)) && /museumGuideOpen: flags\.museumGuideOpen !== false/.test(read(P.userJs)))
 

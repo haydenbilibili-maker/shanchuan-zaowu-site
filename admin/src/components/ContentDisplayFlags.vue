@@ -175,6 +175,21 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="AI · 博物君">
+          <div class="switch-row">
+            <el-switch
+              v-model="form.museumGuideOpen"
+              active-text="展示"
+              inactive-text="隐藏"
+              inline-prompt
+            />
+            <span class="hint">
+              关闭后「我的 · 馆藏与内容」不再展示博物君入口，首页口播也不再出声；已打开的对话页按闭馆态处理。
+              与超管工作台「博物君」的开馆 / 闭馆是<b>两把开关</b>：任一关闭即不展示。缺配置默认开启。
+            </span>
+          </div>
+        </el-form-item>
+
         <el-form-item label="门店 · 到店自取">
           <div class="switch-row">
             <el-switch
@@ -230,6 +245,7 @@ const DEFAULT_FLAGS = {
   showAtlas: true,
   showAchievements: true,
   showAiIdentify: true,
+  museumGuideOpen: true,
   showStorePickup: true
 }
 
@@ -258,6 +274,7 @@ function applyFlags(raw = {}, id = '') {
   form.showAtlas = raw.showAtlas !== false
   form.showAchievements = raw.showAchievements !== false
   form.showAiIdentify = raw.showAiIdentify !== false
+  form.museumGuideOpen = raw.museumGuideOpen !== false
   form.showStorePickup = raw.showStorePickup !== false
   docId.value = id || ''
   updatedAtText.value = formatTime(raw.updateTime || raw._updateTime || raw.updatedAt || null)
@@ -303,6 +320,7 @@ function buildPayload() {
     showAtlas: form.showAtlas !== false,
     showAchievements: form.showAchievements !== false,
     showAiIdentify: form.showAiIdentify !== false,
+    museumGuideOpen: form.museumGuideOpen !== false,
     showStorePickup: form.showStorePickup !== false,
     updateTime: Date.now(),
     _updateTime: Date.now()
@@ -345,6 +363,7 @@ function resetDefaults() {
   form.showAtlas = DEFAULT_FLAGS.showAtlas
   form.showAchievements = DEFAULT_FLAGS.showAchievements
   form.showAiIdentify = DEFAULT_FLAGS.showAiIdentify
+  form.museumGuideOpen = DEFAULT_FLAGS.museumGuideOpen
   form.showStorePickup = DEFAULT_FLAGS.showStorePickup
   ElMessage.info('已恢复本地默认值，点击「保存开关」写入云库')
 }
