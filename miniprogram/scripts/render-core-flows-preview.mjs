@@ -698,6 +698,13 @@ const SCENES = [
         { key: 'k1', title: '光明女神闪蝶 · 玻璃罩', image: P[0], categoryLabel: '蝶类', categoryOverline: 'LEPIDOPTERA', receiveTimeText: '2026.07.11', companionDays: 100, careSummary: '避光、防潮，每季检查一次干燥剂' },
         { key: 'k2', title: '银杏押花框', image: P[2], categoryLabel: '植物', categoryOverline: 'PLANTAE', receiveTimeText: '2026.10.03', companionDays: 16, careSummary: '远离直射光' }] } },
   // 2026-10-18 产品点名：详情页「实拍影像」区块（视频号跳转卡片 + B站 / 抖音复制链接卡；channel-video 内嵌在预览里不渲染）
+  // 2026-11-23 详情页档案区：科学分类知识卡 / 标本档案（含原藏品参数，「其它」不出）/ 养护说明深卡
+  { name: 'detail-archive', h: 5600, wxml: 'subpackages/feature/detail/index', base: 'detail', data: {
+      product: Object.assign({}, product, { title: '光明女神闪蝶标本', latinName: 'Morpho helena', category: '昆虫纲',
+        taxonomy: { kingdom: '动物界', phylum: '节肢动物门', class: '昆虫纲', order: '鳞翅目', family: '蛱蝶科', genus: '闪蝶属' } }),
+      archiveDisplay: { origin: '南美 · 秘鲁', originEmpty: false, size: '18 × 24 cm', sizeEmpty: false, date: '2026.09', dateEmpty: false, framerName: '林一', framerEmpty: false, framerId: 'f1',
+        framingMethod: '其它', framingEmpty: false, framingShow: false, craftProcess: '针插标本', craftProcessEmpty: false, craftProcessShow: true },
+      showCareStrip: true, careSummary: '干燥防虫、避晒、不湿擦', careCategoryLabel: '昆虫标本', careCategoryColor: '#C4A76C' } },
   { name: 'detail-films', h: 3000, wxml: 'subpackages/feature/detail/index', base: 'detail', data: {
       heroVideoCount: 1, filmLead: true,
       externalVideos: [

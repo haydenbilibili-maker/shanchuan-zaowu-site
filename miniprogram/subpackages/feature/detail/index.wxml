@@ -328,32 +328,43 @@ module.exports.saveLabel = saveLabel;
     </view>
 
     <!-- 档案区 -->
+    <!-- 2026-11-23 产品负责人「科学分类卡片知识卡化 / 养护说明与页面其他模块适配 / 整体排版更合理」：
+         顺序 = 识物（科学分类知识卡 → 标本档案，原「藏品参数」并入）→ 养护说明 → 来源说明 → 快捷功能 → 图文详情；
+         「其它 / 其他」这类兜底值不出。 -->
     <view id="section-archive">
-      <!-- 2026-11-22 产品负责人「科学分类放在上方」：档案区整体上移到规格 / 运费之后，区内科学分类排第一；无分类信息时整段不出（不再在上方摆「暂无」） -->
       <view class="section-title" wx:if="{{(product.taxonomy && (product.taxonomy.kingdom || product.taxonomy.phylum || product.taxonomy.class)) || product.category}}"><text class="st-en">TAXONOMY</text><text class="st-zh">科学分类</text></view>
-      <!-- 2026-11-22 科学分类上移后改成「阶元梯」：界 › 门 › 纲 › 目 › 科 › 属 一行折排（原 7 行约 300px 压在价格卡下），种名单独一行作结论 -->
-      <view class="taxonomy-card is-ladder" wx:if="{{product.taxonomy && (product.taxonomy.kingdom || product.taxonomy.phylum || product.taxonomy.class)}}">
-        <view class="tax-ladder">
-          <view class="tax-step" wx:if="{{product.taxonomy.kingdom}}"><text class="tax-rank">界</text><text class="tax-name">{{product.taxonomy.kingdom}}</text></view>
-          <view class="tax-step" wx:if="{{product.taxonomy.phylum}}"><text class="tax-rank">门</text><text class="tax-name">{{product.taxonomy.phylum}}</text></view>
-          <view class="tax-step" wx:if="{{product.taxonomy.class}}"><text class="tax-rank">纲</text><text class="tax-name">{{product.taxonomy.class}}</text></view>
-          <view class="tax-step" wx:if="{{product.taxonomy.order}}"><text class="tax-rank">目</text><text class="tax-name">{{product.taxonomy.order}}</text></view>
-          <view class="tax-step" wx:if="{{product.taxonomy.family}}"><text class="tax-rank">科</text><text class="tax-name">{{product.taxonomy.family}}</text></view>
-          <view class="tax-step" wx:if="{{product.taxonomy.genus}}"><text class="tax-rank">属</text><text class="tax-name">{{product.taxonomy.genus}}</text></view>
+      <!-- 知识卡：浅纸标本签 —— 中文名 + 拉丁学名作抬头，六级阶元两列表格，种名落款 + 方印 -->
+      <view class="tax-card" wx:if="{{product.taxonomy && (product.taxonomy.kingdom || product.taxonomy.phylum || product.taxonomy.class)}}">
+        <view class="tax-card-top"><text>SPECIMEN LABEL · 标本签</text><text>山海造物 · 馆藏</text></view>
+        <text class="tax-card-name">{{product.title}}</text>
+        <text class="tax-card-latin" wx:if="{{latin.display(product.latinName)}}">{{latin.display(product.latinName)}}</text>
+        <view class="tax-card-rule"></view>
+        <view class="tax-grid">
+          <view class="tax-cell" wx:if="{{product.taxonomy.kingdom}}"><text class="tax-rank">界</text><text class="tax-name">{{product.taxonomy.kingdom}}</text></view>
+          <view class="tax-cell" wx:if="{{product.taxonomy.phylum}}"><text class="tax-rank">门</text><text class="tax-name">{{product.taxonomy.phylum}}</text></view>
+          <view class="tax-cell" wx:if="{{product.taxonomy.class}}"><text class="tax-rank">纲</text><text class="tax-name">{{product.taxonomy.class}}</text></view>
+          <view class="tax-cell" wx:if="{{product.taxonomy.order}}"><text class="tax-rank">目</text><text class="tax-name">{{product.taxonomy.order}}</text></view>
+          <view class="tax-cell" wx:if="{{product.taxonomy.family}}"><text class="tax-rank">科</text><text class="tax-name">{{product.taxonomy.family}}</text></view>
+          <view class="tax-cell" wx:if="{{product.taxonomy.genus}}"><text class="tax-rank">属</text><text class="tax-name">{{product.taxonomy.genus}}</text></view>
         </view>
-        <view class="tax-species" wx:if="{{latin.display(product.latinName)}}">
-          <text class="tax-species-k">种 SPECIES</text>
-          <text class="tax-species-v">{{latin.display(product.latinName)}}</text>
+        <view class="tax-card-foot" wx:if="{{latin.display(product.latinName)}}">
+          <text class="tax-foot-k">种 SPECIES</text>
+          <text class="tax-foot-v">{{latin.display(product.latinName)}}</text>
         </view>
+        <view class="tax-seal" aria-hidden="true"><text>山海</text></view>
       </view>
       <view class="taxonomy-card" wx:elif="{{product.category}}">
         <view class="tax-row highlight"><text class="k">分类 Category</text><text class="v">{{product.rootCategoryName ? product.rootCategoryName + ' · ' : ''}}{{product.category}}</text></view>
         <view class="tax-row highlight" wx:if="{{latin.display(product.latinName)}}"><text class="k">种 Species</text><text class="v">{{latin.display(product.latinName)}}</text></view>
       </view>
 
-      <view class="section-title" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty)}}"><text class="st-en">SPECIMEN ARCHIVES</text><text class="st-zh">标本档案</text></view>
-      <!-- 空字段整卡不出（不再满屏「—」）；剩奇数张时末张通栏 -->
-      <view class="archive-grid" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty)}}">
+      <!-- 标本档案：采集地 / 时间 / 尺寸 / 标本师 + 原「藏品参数」（品类 / 制作工艺 / 装裱方式）合成一张格；空字段与「其它」不出 -->
+      <view class="section-title" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty) || product.category || archiveDisplay.craftProcessShow || archiveDisplay.framingShow}}"><text class="st-en">SPECIMEN ARCHIVES</text><text class="st-zh">标本档案</text></view>
+      <view class="archive-grid" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty) || product.category || archiveDisplay.craftProcessShow || archiveDisplay.framingShow}}">
+        <view class="archive-item" wx:if="{{product.category}}">
+          <text class="lbl">品类 CATEGORY</text>
+          <text class="val">{{product.category}}</text>
+        </view>
         <view class="archive-item" wx:if="{{!archiveDisplay.originEmpty}}">
           <text class="lbl">采集地 ORIGIN</text>
           <text class="val {{archiveDisplay.originEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.origin}}</text>
@@ -365,6 +376,14 @@ module.exports.saveLabel = saveLabel;
         <view class="archive-item" wx:if="{{!archiveDisplay.sizeEmpty}}">
           <text class="lbl">装裱尺寸 SIZE</text>
           <text class="val {{archiveDisplay.sizeEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.size}}</text>
+        </view>
+        <view class="archive-item" wx:if="{{archiveDisplay.craftProcessShow}}">
+          <text class="lbl">制作工艺 CRAFT</text>
+          <text class="val">{{archiveDisplay.craftProcess}}</text>
+        </view>
+        <view class="archive-item" wx:if="{{archiveDisplay.framingShow}}">
+          <text class="lbl">装裱方式 MOUNT</text>
+          <text class="val">{{archiveDisplay.framingMethod}}</text>
         </view>
         <view
           wx:if="{{!archiveDisplay.framerEmpty}}"
@@ -381,33 +400,33 @@ module.exports.saveLabel = saveLabel;
           </view>
         </view>
       </view>
+    </view>
 
-      <block wx:if="{{showProtectionCert}}">
-        <view class="section-title"><text class="st-en">PROVENANCE</text><text class="st-zh">来源说明</text></view>
-        <view class="cert-card" bindtap="previewCertificate" hover-class="tap-press-soft" hover-stay-time="80">
-          <view class="cert-badge">{{protectionLabel}}</view>
-          <view class="cert-body">
-            <image class="cert-image" src="{{certificateUrl}}" mode="widthFix" />
-            <view class="cert-footer">
-              <text class="cert-tip">本藏品随附来源与合规文件（见下图）</text>
-              <text class="cert-action">点击查看大图 →</text>
-            </view>
+    <!-- 养护说明：与其它模块同一套「眉标 + 中文主标 + 深卡」（原左侧金条 + 图标的条幅自成一格） -->
+    <block wx:if="{{showCareStrip}}">
+      <view class="section-title"><text class="st-en">SPECIMEN CARE</text><text class="st-zh">养护说明</text></view>
+      <view class="care-card" bindtap="goToCareGuide" hover-class="tap-press-soft" hover-stay-time="80">
+        <view class="care-card-main">
+          <text class="care-card-sum">{{careSummary}}</text>
+          <text class="care-card-tag" style="color: {{careCategoryColor}};">{{careCategoryLabel}}</text>
+        </view>
+        <text class="care-card-go">查看养护指南 ›</text>
+      </view>
+    </block>
+
+    <block wx:if="{{showProtectionCert}}">
+      <view class="section-title"><text class="st-en">PROVENANCE</text><text class="st-zh">来源说明</text></view>
+      <view class="cert-card" bindtap="previewCertificate" hover-class="tap-press-soft" hover-stay-time="80">
+        <view class="cert-badge">{{protectionLabel}}</view>
+        <view class="cert-body">
+          <image class="cert-image" src="{{certificateUrl}}" mode="widthFix" />
+          <view class="cert-footer">
+            <text class="cert-tip">本藏品随附来源与合规文件（见下图）</text>
+            <text class="cert-action">点击查看大图 →</text>
           </view>
         </view>
-      </block>
-    </view>
-
-    <!-- 标本养护摘要（购前预览） -->
-    <view class="care-strip" wx:if="{{showCareStrip}}" bindtap="goToCareGuide" hover-class="care-strip-press" hover-stay-time="80">
-      <view class="care-strip-accent"></view>
-      <image class="care-strip-icon" src="/assets/icons/care.png" mode="aspectFit"></image>
-      <view class="care-strip-main">
-        <text class="care-strip-overline">SPECIMEN CARE · 养护说明</text>
-        <text class="care-strip-summary">{{careSummary}}</text>
-        <text class="care-strip-tag" style="color: {{careCategoryColor}};">{{careCategoryLabel}}</text>
       </view>
-      <text class="care-strip-cta">查看指南 →</text>
-    </view>
+    </block>
 
     <!-- 快捷功能 -->
     <view class="quick-actions">
@@ -427,14 +446,6 @@ module.exports.saveLabel = saveLabel;
         <image src="/subpackages/feature/assets/icons/audio.png" class="quick-icon" mode="aspectFit"></image>
         <text>讲解</text>
       </view>
-    </view>
-
-    <!-- 商品参数（2026-11-22：采集地 / 时间 / 尺寸 / 标本师已在上方「标本档案」、拉丁学名已在标题下与科学分类，此处不再重复） -->
-    <view class="section-title"><text class="st-en">PARAMETERS</text><text class="st-zh">藏品参数</text></view>
-    <view class="params-card">
-      <view class="param-row" wx:if="{{product.category}}"><text class="param-k">品类</text><text class="param-v">{{product.category}}</text></view>
-      <view class="param-row" wx:if="{{!archiveDisplay.craftProcessEmpty}}"><text class="param-k">制作工艺</text><text class="param-v">{{archiveDisplay.craftProcess}}</text></view>
-      <view class="param-row" wx:if="{{!archiveDisplay.framingEmpty}}"><text class="param-k">装裱方式</text><text class="param-v">{{archiveDisplay.framingMethod}}</text></view>
     </view>
 
     <!-- 图文详情 -->

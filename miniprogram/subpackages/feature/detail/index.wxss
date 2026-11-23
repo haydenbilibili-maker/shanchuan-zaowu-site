@@ -582,66 +582,8 @@ button.nav-share-btn::after { display: none; border: none; }
   letter-spacing: 0.04em;
 }
 .info-arrow { color: var(--color-text-secondary); font-size: var(--fs-32); margin-left: 8rpx; }
-
-/* 标本养护摘要条 */
-.care-strip {
-  display: flex;
-  align-items: stretch;
-  margin-bottom: 24rpx;
-  background: var(--color-bg-card);
-  border: 1px solid rgba(38, 35, 32, 0.85);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
 .coupon-strip:active,
 .coupon-strip-press { opacity: 0.85; }
-.care-strip:active,
-.care-strip-press { opacity: 0.92; }
-.care-strip-accent {
-  width: 6rpx;
-  flex-shrink: 0;
-  background: var(--color-primary);
-}
-.care-strip-icon {
-  width: 40rpx;
-  height: 40rpx;
-  flex-shrink: 0;
-  align-self: center;
-  margin-left: 20rpx;
-}
-.care-strip-main {
-  flex: 1;
-  min-width: 0;
-  padding: 24rpx 20rpx;
-}
-.care-strip-overline {
-  display: block;
-  font-size: var(--fs-24);
-  color: var(--color-primary);
-  letter-spacing: 0.1em;
-  margin-bottom: 8rpx;
-}
-.care-strip-summary {
-  display: block;
-  /* 养护提醒是顾客最关心的部分（NPS 投诉重点）→ 与区块标题同级，并加重字重 */
-  font-size: var(--fs-30);
-  font-weight: 500;
-  color: var(--color-text-body);
-  line-height: 1.5;
-  margin-bottom: 10rpx;
-}
-.care-strip-tag {
-  display: inline-block;
-  font-size: var(--fs-22);
-  letter-spacing: 0.04em;
-}
-.care-strip-cta {
-  align-self: center;
-  flex-shrink: 0;
-  padding-right: 24rpx;
-  font-size: var(--fs-24);
-  color: var(--color-primary);
-}
 
 /* 品牌说明：统一轻量脚注区；摘要一行，点开展开 */
 .brand-notes {
@@ -823,27 +765,6 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 .quick-btn-press { background: var(--color-bg-elevated); opacity: 0.88; }
 .quick-icon { width: 40rpx; height: 40rpx; opacity: 0.6; filter: brightness(0) invert(1); }
-
-/* 参数表 */
-.params-card {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(38,35,32,0.8);
-  padding: 8rpx 24rpx;
-  margin-bottom: 48rpx;
-}
-.param-row {
-  display: flex;
-  padding: 20rpx 0;
-  border-bottom: 1px dashed rgba(38,35,32,0.8);
-}
-.param-row:last-child { border-bottom: none; }
-.param-k { width: 160rpx; font-size: var(--fs-24); color: var(--color-text-secondary); flex-shrink: 0; }
-.param-v { flex: 1; font-size: var(--fs-24); color: var(--color-text-body); text-align: right; }
-.param-v.is-placeholder { color: var(--color-text-secondary); }
-.param-v.gold { color: var(--color-primary); }
-.param-v.gold.is-placeholder { color: var(--color-text-secondary); }
-.param-v.latin { font-style: italic; font-family: var(--font-latin); color: var(--color-primary); }
 
 /* 图文详情 — Museum prose */
 .detail-content {
@@ -1069,23 +990,6 @@ button.nav-share-btn::after { display: none; border: none; }
   text-overflow: ellipsis; 
 }
 .tax-row.highlight .v { color: var(--color-primary); font-weight: bold; }
-/* 阶元梯（2026-11-22）：六级一行折排，级与级之间一枚铜色 ›；种名作结论单独一行 */
-.taxonomy-card.is-ladder { padding: 26rpx 28rpx; margin-bottom: 40rpx; }
-.tax-ladder { display: flex; flex-wrap: wrap; align-items: baseline; row-gap: 14rpx; }
-.tax-step { display: inline-flex; align-items: baseline; }
-.tax-step + .tax-step::before { content: '›'; margin: 0 14rpx; font-size: var(--fs-24); color: rgba(196, 167, 108, 0.6); }
-.tax-rank { margin-right: 6rpx; font-size: var(--fs-18); color: var(--color-text-secondary); }
-.tax-name { font-family: var(--font-brand); font-size: var(--fs-26); color: var(--color-text-body); }
-.tax-species {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-top: 20rpx;
-  padding-top: 18rpx;
-  border-top: 1px dashed rgba(196, 167, 108, 0.2);
-}
-.tax-species-k { font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: 0.16em; color: var(--color-text-secondary); }
-.tax-species-v { font-family: var(--font-latin); font-style: italic; font-size: var(--fs-30); color: var(--brass-200); }
 .taxonomy-empty {
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
@@ -1921,3 +1825,38 @@ button.nav-share-btn::after { display: none; border: none; }
   border-top: 9rpx solid transparent;
   border-bottom: 9rpx solid transparent;
 }
+
+/* 科学分类知识卡（2026-11-23）：浅纸标本签 —— 抬头中文名 + 拉丁学名，六级阶元两列表，种名落款，右下朱色方印 */
+.tax-card {
+  position: relative;
+  width: 100%;
+  margin-bottom: 48rpx;
+  padding: 32rpx 32rpx 36rpx;
+  box-sizing: border-box;
+  border-radius: var(--r-card, 16rpx);
+  background: linear-gradient(180deg, #F3ECDD, #E9DFCA);
+  box-shadow: inset 0 0 0 1rpx rgba(176, 141, 87, 0.35), 0 12rpx 32rpx rgba(0, 0, 0, 0.35);
+  color: #2E2618;
+  overflow: hidden;
+}
+.tax-card::before { content: ''; position: absolute; left: 14rpx; right: 14rpx; top: 14rpx; bottom: 14rpx; border: 1rpx solid rgba(176, 141, 87, 0.32); border-radius: var(--r-thumb-sm, 8rpx); pointer-events: none; }
+.tax-card-top { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .12em; color: #8A6F45; }
+.tax-card-name { display: block; margin-top: 22rpx; font-family: var(--font-brand); font-size: 44rpx; letter-spacing: .1em; color: #2E2618; }
+.tax-card-latin { display: block; margin-top: 6rpx; font-family: var(--font-latin); font-style: italic; font-size: var(--fs-28); color: #6B5A3E; }
+.tax-card-rule { height: 1rpx; margin: 24rpx 0 8rpx; background: rgba(138, 111, 69, 0.35); }
+.tax-grid { display: flex; flex-wrap: wrap; justify-content: space-between; }
+.tax-cell { width: 48%; display: flex; align-items: baseline; gap: 14rpx; padding: 16rpx 0; border-bottom: 1rpx dashed rgba(138, 111, 69, 0.3); }
+.tax-rank { flex-shrink: 0; width: 38rpx; height: 38rpx; line-height: 38rpx; text-align: center; border-radius: 50%; font-family: var(--font-brand); font-size: var(--fs-20); color: #8A6F45; box-shadow: inset 0 0 0 1rpx rgba(138, 111, 69, 0.5); }
+.tax-name { flex: 1; min-width: 0; font-family: var(--font-brand); font-size: var(--fs-26); color: #2E2618; }
+.tax-card-foot { display: flex; align-items: baseline; gap: 18rpx; margin-top: 22rpx; padding-right: 110rpx; }
+.tax-foot-k { flex-shrink: 0; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .14em; color: #8A6F45; }
+.tax-foot-v { font-family: var(--font-latin); font-style: italic; font-size: var(--fs-30, 30rpx); color: #2E2618; }
+.tax-seal { position: absolute; right: 30rpx; bottom: 30rpx; padding: 8rpx 10rpx; border-radius: var(--r-thumb-sm, 8rpx); background: #8E3B2E; color: #F3E7D3; font-family: var(--font-brand); font-size: var(--fs-22); letter-spacing: .1em; transform: rotate(-6deg); opacity: .9; }
+
+/* 养护说明（2026-11-23）：与标本档案同一种深卡（不再左侧金条 + 图标自成一格） */
+.care-card { width: 100%; margin-bottom: 48rpx; padding: 26rpx 28rpx; box-sizing: border-box; display: flex; align-items: center; gap: 20rpx; background: var(--color-bg-card); border-radius: var(--radius-md); border: 1px solid rgba(38, 35, 32, 0.8); }
+.care-card-main { flex: 1; min-width: 0; }
+.care-card-sum { display: block; font-size: var(--fs-28); line-height: 1.5; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .04em; }
+.care-card-tag { display: block; margin-top: 8rpx; font-size: var(--fs-22); }
+.care-card-go { flex-shrink: 0; font-size: var(--fs-24); color: var(--color-primary); }
+
