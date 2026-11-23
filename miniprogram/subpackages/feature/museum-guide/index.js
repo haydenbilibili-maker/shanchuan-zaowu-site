@@ -4,6 +4,7 @@
  * 纯函数在 guideChat.js（守卫 test:museum-guide）；云函数 askMuseumGuide。
  */
 const G = require('./guideChat')
+const N = require('./naturalist')
 const { openAppModal } = require('../../../utils/appModal')
 
 const app = getApp()
@@ -30,7 +31,7 @@ Page({
     try { stored = G.fromStored(wx.getStorageSync(G.storeKey(this._openid))) } catch (e) { stored = [] }
     const welcome = G.makeMessage('guide', G.WELCOME, { isWelcome: true })
     this.setData({ messages: [welcome].concat(stored), hasAsked: stored.some((m) => m.role === 'user') }, () => this.scrollToEnd())
-    this._from = ['user', 'atlas', 'identify', 'share'].indexOf(options && options.from) >= 0 ? options.from : 'direct'
+    this._from = ['user', 'atlas', 'identify', 'share', 'daily', 'quiz', 'notes'].indexOf(options && options.from) >= 0 ? options.from : 'direct'
     this.loadStatus()
     // 带着问题进来（AI 鉴定结果 / 图鉴页「问问博物君」）：auto=1 直接发问，否则只预填
     const q = G.entryQuestion(options)
@@ -159,6 +160,27 @@ Page({
     try {
       await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { action: 'feedback', logId: msg.logId, vote } })
     } catch (err) { /* 反馈没送到只影响报表，不打扰提问的人 */ }
+  },
+
+  /** 对话之外的三件工具（今日一物 / 博物小测 / 博物笔记） */
+  onTool(e) {
+    const url = e.currentTarget.dataset.url
+    if (url) wx.navigateTo({ url })
+  },
+
+  /** 收藏这条回答进「博物笔记」（连同它回答的那个问题；同一段不重复收） */
+  onSave(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const msg = this.data.messages[index]
+    if (!msg || !msg.text || msg.saved) return
+    const prev = this.data.messages[index - 1]
+    const key = this._openid ? `museum_guide_notes_v1_${this._openid}` : 'museum_guide_notes_v1'
+    let notes = []
+    try { notes = wx.getStorageSync(key) || [] } catch (err) { notes = [] }
+    notes = N.addNote(notes, { q: prev && prev.role === 'user' ? prev.text : '', a: msg.text }, Date.now())
+    try { wx.setStorageSync(key, notes) } catch (err) { /* 存不下就算了 */ }
+    this.setData({ [`messages[${index}].saved`]: true })
+    this.persist(this.data.messages)
   },
 
   onCopy(e) {

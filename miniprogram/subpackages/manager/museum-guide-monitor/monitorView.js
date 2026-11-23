@@ -20,7 +20,7 @@ const PLACE_LABELS = {
   donations: '我的捐赠', achievements: '我的成就', shop: '馆藏'
 }
 
-const ENTRY_LABELS = { user: '我的', atlas: '图鉴页', identify: 'AI 鉴定结果', share: '分享卡片', direct: '其它' }
+const ENTRY_LABELS = { user: '我的', atlas: '图鉴页', identify: 'AI 鉴定结果', share: '分享卡片', daily: '今日一物', quiz: '博物小测', notes: '博物笔记', direct: '其它' }
 
 function msText(ms) {
   if (typeof ms !== 'number') return '—'

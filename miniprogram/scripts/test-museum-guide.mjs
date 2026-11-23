@@ -30,6 +30,10 @@ const P = {
   appJson: join(MP, 'app.json'),
   userWxml: join(MP, 'pages/user/index.wxml'),
   userJs: join(MP, 'pages/user/index.js'),
+  naturalist: join(MP, 'subpackages/feature/museum-guide/naturalist.js'),
+  dailyWxml: join(MP, 'subpackages/feature/museum-guide/daily/index.wxml'),
+  quizWxml: join(MP, 'subpackages/feature/museum-guide/quiz/index.wxml'),
+  quizJs: join(MP, 'subpackages/feature/museum-guide/quiz/index.js'),
   atlasWxml: join(MP, 'subpackages/feature/collection/detail/index.wxml'),
   atlasJs: join(MP, 'subpackages/feature/collection/detail/index.js'),
   idWxml: join(MP, 'subpackages/feature/identify/result/index.wxml'),
@@ -289,6 +293,76 @@ async function runChecks() {
   const p3 = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
   p3.onLoad({ q: encodeURIComponent('只预填') })
   ok('F4 auto=1 自动发问并带图鉴链接；不带 auto 只预填不发', calls === 1 && l2.species && l2.species[0].no === '001' && p3.data.draft === '只预填' && calls === 1)
+  /* ---------------- N 对话之外：今日一物 / 博物小测 / 博物笔记（2026-11-23） ---------------- */
+  const NT = loadCjsModule(P.naturalist, { transform })
+  const CAT = loadCjsModule(join(MP, 'subpackages/feature/config/atlasCatalog.js'), {})
+  const SP = CAT.ATLAS_SPECIES
+  const SE = CAT.ATLAS_SERIES
+  const t0 = Date.UTC(2026, 10, 23, 4)
+  const dayMs = 86400000
+  const n_c1 = NT.dailyCard(SP, SE, t0)
+  const n_c2 = NT.dailyCard(SP, SE, t0 + 3600000)
+  const cycleStart = (Math.floor(NT.dayIndex(t0) / SP.length) * SP.length) * dayMs - 8 * 3600000 + 1
+  const inCycle = new Set(Array.from({ length: SP.length }, (_, i) => NT.dailySpecies(SP, cycleStart + i * dayMs).no))
+  const real = SP.find((x) => x.no === n_c1.no)
+  ok('N1 今日一物：同一天人人同一件；一轮 80 天每种恰好一次；字段取自图鉴；不出图版', n_c1.no === n_c2.no && inCycle.size === SP.length &&
+    n_c1.nameZh === real.nameZh && n_c1.essay === real.essay && n_c1.origin === real.origin && !('plate' in n_c1) && !('ghost' in n_c1) &&
+    NT.pastDaily(SP, t0, 6).length === 6 && NT.pastDaily(SP, t0, 6)[0].no !== n_c1.no)
+  const n_qz = NT.buildQuiz(SP, SE, t0)
+  const qz2 = NT.buildQuiz(SP, SE, t0 + 3600000)
+  const qzTomorrow = NT.buildQuiz(SP, SE, t0 + dayMs)
+  const names = new Set(SP.map((x) => x.nameZh))
+  const cats = new Set(SP.map((x) => x.category))
+  const chapters = new Set(SE.map((x) => x.name))
+  const factOk = n_qz.every((q) => {
+    const sp = SP.find((x) => x.no === q.no)
+    const right = q.options[q.answer]
+    if (new Set(q.options).size !== q.options.length || q.options.length !== 4) return false
+    if (q.kind === 'category') return right === sp.category && q.options.every((o) => cats.has(o))
+    if (q.kind === 'chapter') return (sp.seriesIds || []).some((id) => (SE.find((x) => x.id === id) || {}).name === right) && q.options.every((o) => chapters.has(o))
+    return right === sp.nameZh && q.options.every((o) => names.has(o))
+  })
+  ok('N2 博物小测：5 题、物种不重复、正确项与图鉴事实一致、选项全是图鉴里真有的（不编）、同一天同一组、隔天换', n_qz.length === 5 &&
+    new Set(n_qz.map((q) => q.no)).size === 5 && factOk && JSON.stringify(n_qz) === JSON.stringify(qz2) && n_qz.map((q) => q.no).join() !== qzTomorrow.map((q) => q.no).join() &&
+    ['category', 'origin', 'latin', 'habit'].every((k) => n_qz.some((q) => q.kind === k)))
+  const n_d0 = NT.dayIndex(t0)
+  const allRight = n_qz.map((q) => q.answer)
+  let n_st = NT.recordQuiz(null, n_d0, allRight, n_qz)
+  const stSame = NT.recordQuiz(n_st, n_d0, allRight, n_qz)
+  const stNext = NT.recordQuiz(n_st, n_d0 + 1, [0, 0, 0, 0, 0], n_qz)
+  const stGap = NT.recordQuiz(stNext, n_d0 + 3, allRight, n_qz)
+  ok('N3 小测记分：全对 5 分；同一天重记不加连续；隔天 +1；断一天从 1 开始；最好成绩取最高；断了的连续今天显示 0',
+    n_st.score === 5 && n_st.streak === 1 && stSame.streak === 1 && stNext.streak === 2 && NT.recordQuiz(stNext, n_d0 + 1, allRight, n_qz).streak === 2 && stGap.streak === 1 && stGap.best === 5 &&
+    NT.liveStreak(stNext, t0 + dayMs) === 2 && NT.liveStreak(stNext, t0 + 5 * dayMs) === 0)
+  let n_nb = []
+  for (let i = 0; i < 60; i++) n_nb = NT.addNote(n_nb, { q: 'q' + i, a: 'a' + i }, 1000 + i)
+  const nbDup = NT.addNote(n_nb, { q: 'x', a: 'a59' }, 9999)
+  ok('N4 博物笔记：最多 50、新的在前、同一段不重复、可删', n_nb.length === 50 && n_nb[0].a === 'a59' && nbDup.length === 50 && nbDup.filter((x) => x.a === 'a59').length === 1 &&
+    NT.removeNote(n_nb, n_nb[0].id).length === 49 && NT.hasNote(n_nb, 'a40') && !NT.hasNote(n_nb, 'a1'))
+  const appJ = JSON.parse(readFileSync(P.appJson, 'utf8'))
+  const feat = appJ.subpackages.find((x) => /subpackages\/feature\/?$/.test(x.root))
+  const dailyW = read(P.dailyWxml)
+  const quizW = read(P.quizWxml)
+  const chatW = read(P.wxml)
+  const chatJ = read(P.page)
+  ok('N5 接线：三页注册；今日一物 / 小测页不出图版；问答页有三件工具与「收藏」；入口来源三端一致（页面 / 云函数 / 超管报表）',
+    ['museum-guide/daily/index', 'museum-guide/quiz/index', 'museum-guide/notes/index'].every((x) => feat.pages.includes(x)) &&
+    !/plate|ghost|<image/.test(dailyW + quizW) && /bindtap="onTool"/.test(chatW) && /bindtap="onSave"/.test(chatW) &&
+    ['daily', 'quiz', 'notes'].every((k) => chatJ.indexOf(`'${k}'`) >= 0 && src.indexOf(`'${k}'`) >= 0) &&
+    ['daily', 'quiz', 'notes'].every((k) => new RegExp(`${k}: '`).test(readFileSync(join(MP, 'subpackages/manager/museum-guide-monitor/monitorView.js'), 'utf8'))))
+  // N6 小测页：今天答过 → 直接出结果、不能再答（同一组题不能刷分）
+  let qcfg = null
+  const qStore = {}
+  const qWx = { getStorageSync: (k) => qStore[k], setStorageSync: (k, v) => { qStore[k] = v }, navigateTo() {}, redirectTo() {} }
+  loadCjsModule(P.quizJs, { transform, globals: { getApp: () => ({ globalData: { openid: 'o1' } }), Page: (c) => { qcfg = c }, wx: qWx } })
+  const mkQ = () => Object.assign({}, qcfg, { data: JSON.parse(JSON.stringify(qcfg.data)), setData(p) { Object.assign(this.data, p) } })
+  const qp = mkQ(); qp.onLoad()
+  const qs = qp.data.quiz
+  qs.forEach((q, i) => { qp.onPick({ currentTarget: { dataset: { i: q.answer } } }); qp.onNext() })
+  const qp2 = mkQ(); qp2.onLoad()
+  qp2.onPick({ currentTarget: { dataset: { i: 0 } } })
+  ok('N6 小测页：答完记分存本机；今天再进直接看结果、不能再答', qp.data.done && qp.data.result.score === qs.length && qp2.data.done && qp2.data.result.fresh === false && qp2.data.picked === -1 &&
+    !!qStore.museum_guide_quiz_v1_o1)
   return fails
 }
 
@@ -325,6 +399,12 @@ const INJECTIONS = [
   { name: '反馈可以改票', file: P.fn, find: "  if (doc.vote) return { success: true, already: true, vote: doc.vote }\n", replace: '' },
   { name: '失败也带日志号', file: P.fn, find: 'if (out && out.success && logId) out.logId = logId', replace: 'if (out && logId) out.logId = logId' },
   { name: '页面可以重复投票', file: P.page, find: '    if (!msg || !msg.logId || msg.vote) return', replace: '    if (!msg || !msg.logId) return' },
+  { name: '今日一物不按天轮换', file: P.naturalist, find: '  return list[cycleOrder(n, Math.floor(day / n))[day % n]]', replace: '  return list[day % 3]' },
+  { name: '小测正确项编了一个', file: P.naturalist, find: "makeQ('latin', `学名「${s3.nameLatin}」是哪一种？`, s3.nameZh,", replace: "makeQ('latin', `学名「${s3.nameLatin}」是哪一种？`, s3.nameZh + '蝶'," },
+  { name: '同一天重记也加连续', file: P.naturalist, find: '  if (!already) streak = ', replace: '  streak = ' },
+  { name: '笔记不去重', file: P.naturalist, find: '  if (list.some((n) => n.a === a)) return list\n', replace: '' },
+  { name: '今天答过还能重答', file: P.quizJs, find: '    if (today) this.showResult(today.answers, state, false)', replace: '' },
+  { name: '今日一物露出图版', file: P.dailyWxml, find: '<text class="dl-name">{{card.nameZh}}</text>', replace: '<image class="dl-plate" src="{{card.plate}}" /><text class="dl-name">{{card.nameZh}}</text>' },
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' }
 ]
 

@@ -148,3 +148,10 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 .mg-fb-btn { padding: 10rpx 0; font-size: var(--fs-22); color: var(--color-text-secondary); }
 .mg-fb-done { padding: 10rpx 0; font-size: var(--fs-22); color: var(--brass-300, #D4BC8A); }
 
+/* 对话之外的三件工具（2026-11-23）：卷首下一排三张小签 */
+.mg-tools { display: flex; justify-content: space-between; margin-top: 24rpx; }
+.mg-tool { width: 31.5%; padding: 18rpx 0; border-radius: var(--r-control, 16rpx); text-align: center; box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.32); background: rgba(196, 167, 108, 0.06); }
+.mg-tool-k { display: block; font-family: var(--font-mono); font-size: var(--fs-16, 16rpx); letter-spacing: .18em; color: var(--brass-300, #D4BC8A); }
+.mg-tool-t { display: block; margin-top: 4rpx; font-size: var(--fs-26); color: var(--brass-100, #F1E6CC); }
+.mg-fb-btn.is-saved { color: var(--brass-300, #D4BC8A); }
+

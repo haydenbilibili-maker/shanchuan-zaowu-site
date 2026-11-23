@@ -6,6 +6,18 @@
       <text class="mg-eyebrow">MUSEUM GUIDE · 博物君</text>
       <text class="mg-title">博物君</text>
       <text class="mg-desc">山海造物标本馆的馆员。懂这座馆，也懂一点自然史。</text>
+      <!-- 对话之外（2026-11-23）：今日一物 / 博物小测 / 博物笔记 —— 全部读本地图鉴，不占提问次数 -->
+      <view class="mg-tools">
+        <view class="mg-tool" data-url="/subpackages/feature/museum-guide/daily/index" bindtap="onTool" hover-class="tap-press-soft" hover-stay-time="80">
+          <text class="mg-tool-k">TODAY</text><text class="mg-tool-t">今日一物</text>
+        </view>
+        <view class="mg-tool" data-url="/subpackages/feature/museum-guide/quiz/index" bindtap="onTool" hover-class="tap-press-soft" hover-stay-time="80">
+          <text class="mg-tool-k">QUIZ</text><text class="mg-tool-t">博物小测</text>
+        </view>
+        <view class="mg-tool" data-url="/subpackages/feature/museum-guide/notes/index" bindtap="onTool" hover-class="tap-press-soft" hover-stay-time="80">
+          <text class="mg-tool-k">NOTES</text><text class="mg-tool-t">博物笔记</text>
+        </view>
+      </view>
     </view>
 
     <view class="mg-list">
@@ -46,6 +58,7 @@
                 </block>
               </block>
               <text class="mg-fb-btn" data-index="{{index}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
+              <text class="mg-fb-btn {{item.saved ? 'is-saved' : ''}}" data-index="{{index}}" bindtap="onSave" hover-class="tap-press" hover-stay-time="80">{{item.saved ? '已收藏' : '收藏'}}</text>
             </view>
             <!-- 追问 -->
             <view class="mg-follow" wx:if="{{item.followUps.length && !sending && !item.revealing}}">

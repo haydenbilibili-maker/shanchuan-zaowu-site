@@ -1,0 +1,71 @@
+<!-- 博物君 · 博物小测（2026-11-23）：每天 5 题，题目全部来自山海图鉴的馆藏事实；答一题揭晓一题。 -->
+<view class="nt-page">
+  <view class="nt-head">
+    <text class="nt-eyebrow">QUIZ · 博物小测</text>
+    <text class="nt-title">博物小测</text>
+    <text class="nt-desc">每天 5 道，题目都出自山海图鉴。今天人人同一组，明天换新的。</text>
+  </view>
+
+  <!-- 答题中 -->
+  <block wx:if="{{!done && quiz.length}}">
+    <view class="qz-pips" aria-hidden="true">
+      <view class="qz-pip {{index < idx ? 'is-past' : ''}} {{index === idx ? 'is-on' : ''}}" wx:for="{{quiz}}" wx:key="no"></view>
+    </view>
+    <view class="nt-paper qz-card">
+      <view class="nt-paper-top"><text>第 {{idx + 1}} / {{total}} 题</text><text>山海图鉴</text></view>
+      <text class="qz-prompt">{{quiz[idx].prompt}}</text>
+      <view class="qz-opts">
+        <view
+          wx:for="{{quiz[idx].options}}"
+          wx:key="*this"
+          class="qz-opt {{picked >= 0 && index === quiz[idx].answer ? 'is-right' : ''}} {{picked === index && index !== quiz[idx].answer ? 'is-wrong' : ''}} {{picked >= 0 ? 'is-locked' : ''}}"
+          data-i="{{index}}"
+          bindtap="onPick"
+          hover-class="{{picked >= 0 ? 'none' : 'tap-press-soft'}}"
+          hover-stay-time="80"
+        >
+          <text class="qz-opt-k">{{index === 0 ? 'A' : (index === 1 ? 'B' : (index === 2 ? 'C' : 'D'))}}</text>
+          <text class="qz-opt-t">{{item}}</text>
+          <text class="qz-opt-mark" wx:if="{{picked >= 0 && index === quiz[idx].answer}}">✓</text>
+          <text class="qz-opt-mark" wx:elif="{{picked === index}}">×</text>
+        </view>
+      </view>
+      <view class="qz-explain" wx:if="{{picked >= 0}}">
+        <text class="nt-k">{{picked === quiz[idx].answer ? '答对了' : '正确答案：' + quiz[idx].options[quiz[idx].answer]}}</text>
+        <text class="nt-v">{{quiz[idx].explain}}</text>
+      </view>
+    </view>
+    <view class="nt-btns" wx:if="{{picked >= 0}}">
+      <view class="nt-btn is-primary" bindtap="onNext" hover-class="tap-press" hover-stay-time="80">{{idx + 1 < total ? '下一题' : '看结果'}}</view>
+    </view>
+  </block>
+
+  <!-- 结果 -->
+  <block wx:if="{{done && result}}">
+    <view class="nt-paper qz-result">
+      <view class="nt-paper-top"><text>今日成绩</text><text>{{result.fresh ? '刚刚答完' : '今天已答'}}</text></view>
+      <view class="qz-score"><text class="qz-score-n">{{result.score}}</text><text class="qz-score-t">/ {{result.total}}</text></view>
+      <text class="qz-line">{{result.line}}</text>
+      <view class="nt-rule"></view>
+      <view class="qz-stats">
+        <view class="qz-stat"><text class="qz-stat-n">{{result.streak}}</text><text class="nt-k">连续天数</text></view>
+        <view class="qz-stat"><text class="qz-stat-n">{{result.best}}</text><text class="nt-k">最好成绩</text></view>
+      </view>
+    </view>
+
+    <view class="nt-sec">
+      <text class="nt-sec-k">REVIEW</text>
+      <text class="nt-sec-t">逐题回看</text>
+      <view class="qz-rv" wx:for="{{review}}" wx:key="no">
+        <text class="qz-rv-p">{{index + 1}}. {{item.prompt}}</text>
+        <text class="qz-rv-a {{item.ok ? 'is-ok' : 'is-no'}}">{{item.ok ? '✓ ' + item.right : '× 你选了「' + item.mine + '」，答案是「' + item.right + '」'}}</text>
+        <text class="qz-rv-e">{{item.explain}}</text>
+        <text class="qz-rv-ask" data-q="{{item.askQ}}" bindtap="onAsk" hover-class="tap-press" hover-stay-time="80">问博物君 ›</text>
+      </view>
+    </view>
+    <view class="nt-btns">
+      <view class="nt-btn" bindtap="onDaily" hover-class="tap-press" hover-stay-time="80">看今日一物</view>
+    </view>
+    <text class="nt-foot">明天会有新的一组题。</text>
+  </block>
+</view>

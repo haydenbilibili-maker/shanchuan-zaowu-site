@@ -175,6 +175,22 @@ function museumGuideMonitorSceneData() {
   return { ready: true, loading: false, saving: false, days: 7, view: V.buildView(d), loadError: '', tipText: '', tipTone: 'info', confirmToggle: false, limitOptions: V.DAILY_LIMIT_OPTIONS }
 }
 
+/** 2026-11-23 博物君对话之外：今日一物 / 博物小测 —— 数据由真模块 + 真图鉴目录现算 */
+function naturalistScenes() {
+  const N = loadCjsModule(join(MP, 'subpackages/feature/museum-guide/naturalist.js'), {})
+  const C = loadCjsModule(join(MP, 'subpackages/feature/config/atlasCatalog.js'), {})
+  const now = Date.UTC(2026, 10, 23, 4)
+  const quiz = N.buildQuiz(C.ATLAS_SPECIES, C.ATLAS_SERIES, now)
+  const wrong = (quiz[1].answer + 1) % 4
+  const answers = quiz.map((q, i) => (i === 1 ? wrong : q.answer))
+  const review = quiz.map((q, i) => ({ prompt: q.prompt, mine: q.options[answers[i]], right: q.options[q.answer], ok: answers[i] === q.answer, explain: q.explain, askQ: q.askQ, no: q.no }))
+  return {
+    daily: { card: N.dailyCard(C.ATLAS_SPECIES, C.ATLAS_SERIES, now), past: N.pastDaily(C.ATLAS_SPECIES, now, 6) },
+    quizAsk: { quiz, total: quiz.length, idx: 1, picked: wrong, answers: answers.slice(0, 2), done: false, result: null, review: [] },
+    quizDone: { quiz, total: quiz.length, idx: 4, picked: -1, answers, done: true, review, result: { score: 4, total: 5, line: N.scoreLine(4, 5), streak: 3, best: 5, fresh: true } }
+  }
+}
+
 function achievementsSceneData() {
   let cfg = null
   loadCjsModule(join(MP, 'subpackages/extra/user/achievements/index.js'), {
@@ -716,6 +732,9 @@ const SCENES = [
       loading: false, fallbackImg: WL_COVER,
       wiki: { _id: 'w1', type: 'specimen', title: '黑马标本', latinName: 'Equus caballus', coverImage: WL_COVER, gallery: [WL_COVER, WL_COVER, WL_COVER, WL_COVER] },
       relatedProducts: [], articleContent: '', notes: [] } },
+  { name: 'mg-daily', h: 1900, wxml: 'subpackages/feature/museum-guide/daily/index', data: naturalistScenes().daily },
+  { name: 'mg-quiz', h: 1500, wxml: 'subpackages/feature/museum-guide/quiz/index', data: naturalistScenes().quizAsk },
+  { name: 'mg-quiz-done', h: 2600, wxml: 'subpackages/feature/museum-guide/quiz/index', data: naturalistScenes().quizDone },
   { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
       visible: [
         { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },
