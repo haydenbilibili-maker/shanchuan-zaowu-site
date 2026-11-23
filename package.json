@@ -307,6 +307,8 @@
     "test:museum-guide": "node miniprogram/scripts/test-museum-guide.mjs",
     "test:museum-guide:selftest": "node miniprogram/scripts/test-museum-guide.mjs --selftest",
     "test:museum-guide-monitor": "node miniprogram/scripts/test-museum-guide-monitor.mjs",
+    "check:image-quality": "node miniprogram/scripts/check-image-quality.mjs",
+    "check:image-quality:selftest": "node miniprogram/scripts/check-image-quality.mjs --selftest",
     "test:museum-guide-monitor:selftest": "node miniprogram/scripts/test-museum-guide-monitor.mjs --selftest",
     "build:museum-guide-atlas": "node miniprogram/scripts/build-museum-guide-atlas.mjs",
     "check:wish-seeds": "node scripts/check-wish-seed-batch.mjs",

@@ -5,15 +5,15 @@
       product-id="{{productId}}"
       size="card"
     >
-      <image
-        class="p-img"
+      <!-- 2026-11-23 全站图片：加载中暖底 + 淡方印、加载完淡入、失败不出破图（<shan-img>）；失败仍走原 onImgError -->
+      <shan-img
+        ext-class="p-img"
         wx:if="{{info.httpImage && !imgBroken}}"
         src="{{info.httpImage}}"
         mode="aspectFill"
-        lazy-load
-        binderror="onImgError"
+        bind:error="onImgError"
       />
-      <view class="p-img-ph" wx:else></view>
+      <view class="p-img-ph" wx:else><text class="p-img-ph-mark">山海</text></view>
     </sensitive-blur-gate>
     <!-- NEW 角标与「馆方新藏」同源（isNewArrival）：两者必须一起出现/一起不出现 -->
     <view wx:if="{{isNewArrival}}" class="tag-new">NEW</view>
