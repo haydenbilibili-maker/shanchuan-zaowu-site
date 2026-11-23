@@ -374,9 +374,10 @@ exports.main = async (event, context) => {
       {
         id: 'atlas_volume',
         type: 'collect',
-        name: '山海图鉴卷一',
-        desc: '卷一十六页全部点亮',
-        condition: '山海图鉴卷一 16 页全部点亮',
+        // 2026-11-22 图鉴扩到 80 页：门槛仍是 16 页（不加难度、已得者不受影响），文案改为「翻开十六页」
+        name: '翻开十六页',
+        desc: '山海图鉴翻开十六页',
+        condition: '山海图鉴累计翻开 16 页',
         icon: '/assets/icons/atlas.png',
         threshold: 16,
         unit: '页',

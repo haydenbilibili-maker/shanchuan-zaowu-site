@@ -79,7 +79,7 @@ const TRACK_DEFS = [
   { key: 'search', type: 'explore', name: '检索', ids: ['search_5', 'search_20'], labels: ['5', '20'] },
   { key: 'collect', type: 'collect', name: '收藏', ids: ['collect_5', 'collect_10', 'collect_50'], labels: ['5', '10', '50'] },
   { key: 'folder', type: 'collect', name: '收藏夹', ids: ['folder_3'], labels: ['3'] },
-  { key: 'atlas', type: 'collect', name: '山海图鉴', ids: ['atlas_first', 'atlas_frost', 'atlas_overwinter', 'atlas_mountain', 'atlas_volume'], labels: ['第一页', '霜降', '越冬', '守山', '卷一'] },
+  { key: 'atlas', type: 'collect', name: '山海图鉴', ids: ['atlas_first', 'atlas_frost', 'atlas_overwinter', 'atlas_mountain', 'atlas_volume'], labels: ['第一页', '霜降', '越冬', '守山', '十六页'] },
   { key: 'share', type: 'social', name: '分享', ids: ['share_1', 'share_5', 'share_20'], labels: ['1', '5', '20'] },
   { key: 'spend', type: 'consumption', name: '馆藏', ids: ['first_purchase', 'spend_500', 'spend_2000', 'spend_10000'], labels: ['首单', '¥500', '¥2000', '¥1万'] },
   { key: 'course', type: 'learning', name: '课程', ids: ['course_1', 'course_5'], labels: ['1', '5'] },

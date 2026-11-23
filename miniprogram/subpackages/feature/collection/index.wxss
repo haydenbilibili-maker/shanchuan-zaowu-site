@@ -116,11 +116,14 @@ page {
 /* —— 卷章（2026-11-22）：三章并排书脊卡 + 每章一排小格（原三行列表，只有「1/4」分数）—— */
 .chapter-row {
   display: flex;
-  gap: 16rpx;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: 16rpx;
 }
 
+/* 2026-11-22 图鉴扩到 80 页后共六章：一行三张、自动折行（31% 留余量，不用 calc(百分比 − 定长)） */
 .chapter {
-  flex: 1 1 0;
+  flex: 0 0 31.5%;
   min-width: 0;
   display: flex;
   flex-direction: column;
