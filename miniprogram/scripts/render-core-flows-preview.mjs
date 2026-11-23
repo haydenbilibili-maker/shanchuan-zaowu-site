@@ -105,7 +105,8 @@ const wlLabels = [
 ]
 const wlBase = {
   statusBarHeight: 44, navBarHeight: 44, navTotal: 88, allowed: true, flagChecked: true, loading: false, exhibit: wlExhibit, cover: WL_COVER,
-  peek: [wlLabels[0][0], wlLabels[1][0], wlLabels[0][1]], columns: wlLabels, viewMode: 'latest', capped: true, listLimit: 60,
+  // 2026-11-23 露角 = 大家最想要（按想要人数，不够用最新补满）
+  peek: [wlLabels[1][0], wlLabels[0][1], wlLabels[0][0]], peekMode: 'echo', cardPos: null, columns: wlLabels, viewMode: 'latest', capped: true, listLimit: 60,
   quota: { used: 1, left: 4, cap: 5, exhausted: false }, textMax: 30, inspiration: ['马上有风', '马上有暖', '马上有眠', '马上有劲'],
   voiceMax: 15, writer: '蛋炒饭', today: '2026.10.15'
 }
@@ -228,7 +229,7 @@ atlasChapterDemo.total = atlasChapterDemo.items.length
 const SCENES = [
   { name: 'wl-main', h: 2500, wxml: 'subpackages/feature/wish-labels/index', data: wlBase },
   { name: 'wl-compose', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, composeOpen: true, draft: '马上有好睡眠', draftCount: 6, posting: false, voicePath: '' } },
-  { name: 'wl-card', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, card: { ...wlLabels[1][0], date: '2026.10.15', echoed: false } } },
+  { name: 'wl-card', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, card: { ...wlLabels[1][0], date: '2026.10.15', echoed: false }, cardPos: { index: 2, total: 6, prevId: 'a', nextId: 'b' } } },
   { name: 'wl-empty-mine', h: 1900, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, viewMode: 'mine', columns: [[], []], quota: { used: 5, left: 0, cap: 5, exhausted: true } } },
   {
     name: 'detail', h: 5200, wxml: 'subpackages/feature/detail/index', data: {

@@ -70,6 +70,35 @@ function voiceLabel(sec) {
 }
 
 /** 两列错落：按序交替入列（与旧墙一致的确定性，不做测高） */
+/**
+ * 首屏露角选哪几张（2026-11-23）：墙紧挨在下面已经按「最新」排了，露角再放最新三张是重复；
+ * 改成「大家最想要」—— 按「我也想要」人数取前几张（同数取新的），不够数用最新补满；还没人点过时退回最新。
+ * 返回 { list, mode }，mode = 'echo' | 'latest'。收起的签不进露角。
+ */
+function peekOf(wall, n) {
+  const count = n || PEEK_COUNT
+  const visible = (wall || []).filter((l) => l && !l.hidden)
+  const echoed = visible.filter((l) => (l.echoCount || 0) > 0)
+  if (!echoed.length) return { list: visible.slice(0, count), mode: 'latest' }
+  const order = new Map(visible.map((l, i) => [l._id, i]))
+  const top = echoed.slice().sort((a, b) => (b.echoCount - a.echoCount) || (order.get(a._id) - order.get(b._id))).slice(0, count)
+  // 想要的不够数时用最新的补满，首屏仍是一整排
+  const picked = new Set(top.map((l) => l._id))
+  const list = top.concat(visible.filter((l) => !picked.has(l._id)).slice(0, count - top.length))
+  return { list, mode: 'echo' }
+}
+
+/**
+ * 签详情翻页（2026-11-23）：在当前这面墙（最新 / 我的）的顺序里，算出这张的位置与前后两张。
+ * 返回 { index, total, prevId, nextId }；不在列表里时 null。
+ */
+function cardPager(list, id) {
+  const ids = (list || []).filter((l) => l && l._id).map((l) => l._id)
+  const i = ids.indexOf(id)
+  if (i < 0 || ids.length < 2) return null
+  return { index: i + 1, total: ids.length, prevId: i > 0 ? ids[i - 1] : '', nextId: i < ids.length - 1 ? ids[i + 1] : '' }
+}
+
 function splitColumns(labels) {
   const cols = [[], []]
   ;(labels || []).forEach((l, i) => cols[i % 2].push(l))
@@ -115,6 +144,8 @@ module.exports = {
   labelDate,
   toLabel,
   splitColumns,
+  peekOf,
+  cardPager,
   voiceTag,
   voiceLabel,
   mineToLabels,

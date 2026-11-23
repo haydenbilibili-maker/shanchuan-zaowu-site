@@ -145,3 +145,13 @@ page {
     animation: none;
   }
 }
+/* 露角眉标（2026-11-23）：说明这一排是什么（大家最想要 / 刚钉上的） */
+.wl-peek-k { display: block; margin: 40rpx 44rpx 0; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .16em; color: var(--brass-300, #D4BC8A); }
+.wl-peek-k + .wl-peek { margin-top: 8rpx; }
+/* 签详情翻页（2026-11-23）：一行三段，两端文字钮，中间等宽页码 */
+.wl-card-pager { display: flex; align-items: center; justify-content: space-between; margin-top: 28rpx; }
+.wl-pg-btn { padding: 14rpx 8rpx; font-size: var(--fs-24); color: var(--brass-200, #E3D2AC); }
+.wl-pg-btn.is-off { color: var(--color-text-secondary); opacity: .45; }
+.wl-pg-pos { font-family: var(--font-mono); font-size: var(--fs-22); color: var(--color-text-secondary); letter-spacing: .08em; }
+.wl-card-pager + .wl-card-acts { margin-top: 20rpx; }
+

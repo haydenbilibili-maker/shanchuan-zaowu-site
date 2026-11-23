@@ -61,6 +61,14 @@ async function runChecks() {
   ok('A3 日期按北京时间（UTC 16:30 = 次日）', L.labelDate(Date.UTC(2026, 9, 12, 16, 30)) === '2026.10.13')
   ok('A4 无时间不出占位', L.labelDate(null) === '' && L.labelDate('') === '')
   const lab = L.toLabel({ _id: 'x1', text: ' 马上有  光 ', nickname: '', source: 'seed', echoCount: '3', _openid: 'o1', openid: 'o1' }, Date.now(), new Set(['x1']))
+  // A6 露角 = 大家最想要（不够数用最新补满、收起的不进、没人点过退回最新）；A7 签详情翻页位置（2026-11-23）
+  const pw = [{ _id: 'n1', echoCount: 0 }, { _id: 'n2', echoCount: 5 }, { _id: 'n3', echoCount: 0, hidden: true }, { _id: 'n4', echoCount: 9 }, { _id: 'n5', echoCount: 0 }]
+  const pk = L.peekOf(pw, 3); const pk0 = L.peekOf(pw.map((l) => ({ ...l, echoCount: 0 })), 3)
+  ok('A6 露角按想要人数排、补满、不含收起、无人想要退回最新', pk.mode === 'echo' && pk.list.map((l) => l._id).join() === 'n4,n2,n1' &&
+    pk0.mode === 'latest' && pk0.list.map((l) => l._id).join() === 'n1,n2,n4')
+  const cp = L.cardPager(pw, 'n1'); const cp2 = L.cardPager(pw, 'n3')
+  ok('A7 签详情翻页：位置与前后两张，首张无上一张，不在列表 / 单张不翻', cp && cp.index === 1 && cp.total === 5 && cp.prevId === '' && cp.nextId === 'n2' &&
+    cp2.prevId === 'n2' && cp2.nextId === 'n4' && L.cardPager(pw, 'zz') === null && L.cardPager([pw[0]], 'n1') === null)
   ok('A5 公开行 → 标签：文案归一、匿名兜底、馆方标记、计数、已点', lab.text === '马上有 光' && lab.author === '匿名藏家' && lab.official && lab.echoCount === 3 && lab.echoed)
   ok('A6 视图不携带 openid', !('openid' in lab) && !('_openid' in lab))
   const cols = L.splitColumns([1, 2, 3, 4, 5].map((i) => ({ _id: String(i) })))
@@ -241,9 +249,9 @@ const INJECTIONS = [
   { name: '编号改成流水号', file: LABELS, find: "return 'No.' + s.slice(-4).toUpperCase()", replace: "return 'No.0001'" },
   { name: '闸门关闭仍拉列表', file: PAGE + '.js', find: '    if (!allowed) return\n    void this.resolveExhibit()', replace: '    void this.refresh()\n    if (!allowed) return\n    void this.resolveExhibit()' },
   { name: '游客直接 post', file: PAGE + '.js', find: "    if (!resuming && await this.isGuestUser()) {", replace: '    if (false) {' },
-  { name: '失败也落签', file: PAGE + '.js', find: "    if (!result || !result.success) {\n      this.setData({ posting: false })", replace: "    if (false) {\n      this.setData({ posting: false })" },
+  { name: '失败也落签', file: PAGE + '.js', find: "    if (!result || !result.success) {\n", replace: "    if (false) {\n" },
   { name: '自己的签也能点', file: PAGE + '.js', find: '    if (!card || card.echoed || card.isMine || this.data.echoBusy) return', replace: '    if (!card || card.echoed || this.data.echoBusy) return' },
-  { name: '首屏加回统计数字', file: PAGE + '.wxml', find: '  <!-- 最新三张露角，点即看墙 -->', replace: '  <view class="wl-stats"><text>57</text>张心愿签</view>\n  <!-- 最新三张露角，点即看墙 -->' },
+  { name: '首屏加回统计数字', file: PAGE + '.wxml', find: '  <scroll-view class="wl-peek"', replace: '  <view class="wl-stats"><text>57</text>张心愿签</view>\n  <scroll-view class="wl-peek"' },
   { name: '今日一签改实心钮', file: PAGE + '.wxml', find: '<text class="wl-link" bindtap="goQian"', replace: '<view class="wl-primary" bindtap="goQianX"></view><text class="wl-link" bindtap="goQian"' },
   { name: '分享带 cloud:// 封面', file: PAGE + '.js', find: "    return { title: (ex && ex.line) || '马上有 · 心愿签', path }", replace: "    return { title: (ex && ex.line) || '马上有 · 心愿签', path, imageUrl: this.data.cover }" },
   { name: '每次都加计数（不判重）', file: FN, find: '  if (!already) await db.collection(COLLECTION)', replace: '  if (true) await db.collection(COLLECTION)' },
@@ -251,7 +259,9 @@ const INJECTIONS = [
   { name: '公开行露出待试听的声音', file: FN, find: 'voiceDuration: doc.voiceStatus === VOICE_APPROVED && doc.voiceFileID ?', replace: 'voiceDuration: doc.voiceFileID ?' },
   { name: '发布失败不删声音', file: PAGE + '.js', find: '      if (voiceFileID) deleteCloudVoice(voiceFileID)\n', replace: '' },
   { name: '公开领链接不看试听状态', file: FN, find: "composed, (d) => d.voiceStatus === VOICE_APPROVED)", replace: 'composed, () => true)' },
-  { name: '公开行回 openid', file: FN, find: '    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0)\n  }', replace: '    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0),\n    openid: doc.openid\n  }' }
+  { name: '露角收起的签也进', file: LABELS, find: "(wall || []).filter((l) => l && !l.hidden)", replace: "(wall || []).filter((l) => l)" },
+  { name: '露角回到最新三张', file: LABELS, find: "  if (!echoed.length) return { list: visible.slice(0, count), mode: 'latest' }", replace: "  if (true) return { list: visible.slice(0, count), mode: 'latest' }" },
+  { name: '公开行回 openid', file: FN, find: '    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0),\n', replace: '    echoCount: Math.max(0, parseInt(doc.echoCount, 10) || 0),\n    openid: doc.openid,\n' }
 ]
 
 if (process.argv.includes('--selftest')) {
@@ -263,7 +273,9 @@ if (process.argv.includes('--selftest')) {
     let res
     try { res = await runChecks() } catch (e) { res = ['抛错：' + e.message] }
     INJECT = null
-    if (res.length) console.log(`✓ 注入「${inj.name}」→ 检出（${res[0]}）`)
+    // 锚点失效 ≠ 检出：注入根本没发生，算自检失败（2026-11-23：「公开行回 openid」因语音字段插在后面失效多时却一直显示「检出」）
+    if (res.length && /注入锚点失效/.test(res[0])) { bad++; console.log(`✗ 注入「${inj.name}」→ 锚点失效（注入未发生）`) }
+    else if (res.length) console.log(`✓ 注入「${inj.name}」→ 检出（${res[0]}）`)
     else { bad++; console.log(`✗ 注入「${inj.name}」→ 未检出`) }
   }
   if (bad) { console.error(`\n✗ test:wish-labels 自检失败 ${bad} 项`); process.exit(1) }
