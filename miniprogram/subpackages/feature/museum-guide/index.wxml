@@ -1,0 +1,73 @@
+<!-- 博物君 · 山海造物标本馆的 AI 馆员（2026-11-23）。蓝图 docs/博物君_AI馆员_蓝图_2026-11-23.md
+     结构：卷首 → 对话（博物君 = 纸面签，访客 = 铜描边）→ 开场问题 / 追问 / 馆内去处 → 底部输入条 -->
+<view class="mg-page">
+  <scroll-view class="mg-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+    <view class="mg-head">
+      <text class="mg-eyebrow">MUSEUM GUIDE · 博物君</text>
+      <text class="mg-title">博物君</text>
+      <text class="mg-desc">山海造物标本馆的馆员。懂这座馆，也懂一点自然史。</text>
+    </view>
+
+    <view class="mg-list">
+      <block wx:for="{{messages}}" wx:key="id">
+        <!-- 访客 -->
+        <view class="mg-row is-user" wx:if="{{item.role === 'user'}}">
+          <text class="mg-bubble is-user" user-select>{{item.text}}</text>
+        </view>
+        <!-- 博物君 -->
+        <view class="mg-row is-guide" wx:else>
+          <view class="mg-seal" aria-hidden="true"><text>博</text></view>
+          <view class="mg-col">
+            <view class="mg-bubble is-guide is-pending" wx:if="{{item.pending}}">
+              <text class="mg-pending-t">博物君正在翻书</text>
+              <view class="mg-dots" aria-hidden="true"><view class="mg-dot"></view><view class="mg-dot"></view><view class="mg-dot"></view></view>
+            </view>
+            <text class="mg-bubble is-guide {{item.isError ? 'is-error' : ''}}" user-select wx:else>{{item.text}}</text>
+            <!-- 馆内去处（白名单） -->
+            <view class="mg-acts" wx:if="{{item.actions.length}}">
+              <text class="mg-act" wx:for="{{item.actions}}" wx:for-item="act" wx:key="key" data-url="{{act.url}}" data-tab="{{act.tab}}" data-key="{{act.key}}" bindtap="onTapAction" hover-class="tap-press" hover-stay-time="80">{{act.label}} ›</text>
+            </view>
+            <!-- 追问 -->
+            <view class="mg-follow" wx:if="{{item.followUps.length && !sending}}">
+              <text class="mg-chip" wx:for="{{item.followUps}}" wx:for-item="q" wx:key="*this" data-q="{{q}}" bindtap="onTapFollowUp" hover-class="tap-press-soft" hover-stay-time="80">{{q}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <!-- 开场问题：还没问过时出现 -->
+    <view class="mg-starters" wx:if="{{!hasAsked}}">
+      <text class="mg-starters-k">可以这样问</text>
+      <text class="mg-chip is-block" wx:for="{{starters}}" wx:key="*this" data-q="{{item}}" bindtap="onTapStarter" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
+    </view>
+
+    <text class="mg-note">博物君的回答由 AI 生成，仅供参考；馆藏、价格与开放时间以页面为准。对话只存在这台手机上。</text>
+    <view id="mg-end" class="mg-end"></view>
+  </scroll-view>
+
+  <!-- 底部输入条 -->
+  <view class="mg-bar safe-area">
+    <view class="mg-bar-meta">
+      <text class="mg-quota">{{quotaText || '问博物君关于自然与这座馆的事'}}</text>
+      <text class="mg-clear" wx:if="{{hasAsked}}" bindtap="onClear" hover-class="tap-press" hover-stay-time="80">清空对话</text>
+    </view>
+    <view class="mg-bar-row">
+      <input
+        class="mg-input"
+        value="{{draft}}"
+        maxlength="{{questionMax}}"
+        placeholder="问博物君…"
+        placeholder-class="mg-input-ph"
+        confirm-type="send"
+        cursor-spacing="24"
+        adjust-position
+        bindinput="onDraftInput"
+        bindconfirm="onSend"
+      />
+      <view class="mg-send {{sending || !draft ? 'is-off' : ''}}" bindtap="onSend" hover-class="tap-press" hover-stay-time="80" aria-role="button" aria-label="发送">{{sending ? '…' : '问'}}</view>
+    </view>
+  </view>
+</view>
+
+<app-modal id="appModal" />

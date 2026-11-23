@@ -1,0 +1,9 @@
+{
+  "name": "askMuseumGuide",
+  "version": "1.0.0",
+  "description": "博物君：山海造物标本馆的 AI 馆员（品牌 + 自然博物问答）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

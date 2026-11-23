@@ -326,6 +326,12 @@
         <text class="svc-cn">AI 标本鉴定</text>
         <text class="svc-corner">免费</text>
       </view>
+      <!-- 博物君（2026-11-23 产品负责人点名）：山海造物标本馆的 AI 馆员；云函数未部署时页面自己给「还在布展」 -->
+      <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="museumGuide">
+        <image class="m-img" src="/assets/icons/knowledge.png" mode="aspectFit"></image>
+        <text class="svc-cn">博物君</text>
+        <text class="svc-corner is-mono">AI</text>
+      </view>
       <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToCommunity" wx:if="{{showUserCommunity}}">
         <image class="m-img" src="/assets/icons/article-tab.png" mode="aspectFit"></image>
         <text class="svc-cn">山海社区</text>

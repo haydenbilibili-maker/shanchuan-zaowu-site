@@ -1863,6 +1863,9 @@ Page(withAppModal({
       case 'identify':
         go('/subpackages/feature/identify/index');
         break;
+      case 'museumGuide':
+        go('/subpackages/feature/museum-guide/index?from=user');
+        break;
       case 'collection':
         // 需求 22：开关关闭时不放行（UI 已隐藏，此处兜底，避免深链/旧缓存进入）
         if (this.data.showAtlas === false) {

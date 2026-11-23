@@ -569,6 +569,7 @@ export const COLLECTIONS = {
   STORED_VALUE_LEDGERS: 'stored_value_ledgers',                 // 储值流水台账（manageStoredValue）
   STORED_VALUE_RECHARGE_ORDERS: 'stored_value_recharge_orders', // 储值充值订单（manageStoredValue）
   AI_IDENTIFY_LOGS: 'ai_identify_logs',                         // AI 鉴定调用日志：含用户照片，仅云函数可读写（identifySpecimen 写 / aiIdentifyMonitor 超管读）
+  MUSEUM_GUIDE_USAGE: 'museum_guide_usage',                     // 博物君每日提问计数（openid_YYYYMMDD → count，不存对话内容）：仅云函数可读写（askMuseumGuide，2026-11-23）
 };
 
 // =================================================

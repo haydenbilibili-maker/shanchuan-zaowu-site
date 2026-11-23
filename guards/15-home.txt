@@ -23,3 +23,5 @@ npm run check:achievement-tracks
 npm run check:specimen-archive-seeds
 # 2026-10-18：藏品实拍视频 —— 外平台（视频号内嵌 / B站等仅卡片+复制链接）净化、ERP 录入与服务端同口径、保存不清库里视频、店长端不送 externalVideos；同主体视频号为主方案（排序领衔 / 主片紧接价格卡 / 头图角标 / ERP 默认）；16 个内存注入
 npm run check:product-external-videos
+# 2026-11-23：博物君（AI 馆员）—— 页面纯函数 / 云函数清洗与解析 / 内容安全双检 / 密钥与隐私（计数集合不存对话）/ 知识同源（图鉴摘要不过期、公益口径）/ 接线 / 页面行为；14 个内存注入
+npm run test:museum-guide
