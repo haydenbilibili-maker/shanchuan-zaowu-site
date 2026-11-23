@@ -910,7 +910,7 @@ const SCENES = [
   { name: 'home-cast', h: 700, wxml: 'pages/index/index', data: (() => {
     const { buildBroadcast } = loadCjsModule(join(MP, 'pages/index/guideBroadcast.js'))
     const cast = buildBroadcast({ nick: '蛋炒饭', now: new Date(2026, 10, 23, 20, 50), greeting: { line: '山川造物营业中，开到 22:00' }, notices: ['周六下午有标本体验课，欢迎来馆'], guideOpen: true })
-    return { cast, homeGreeting: { word: '晚上好', line: '' }, statusBarHeight: 88, navTop: 88, isSinglePage: false, showBanners: false, showLive: false, loading: false }
+    return { cast, homeGreeting: { word: '晚上好', line: '' }, statusBarHeight: 88, navTop: 88, isSinglePage: false, showBanners: true, loadingBanners: false, currentBannerIndex: 0, banners: [{ id: 'b1', image: P[2], badge: '精选', title: '上传购物小票可自助认领会员积分', subtitle: '积分可兑换代金券' }], showLive: false, loading: false }
   })() },
   // 2026-11-23 购物车（产品负责人点名：顶部上移、清单多出空间、质感细节）。px 按 2 倍代入（预览 1rpx = 1px）
   { name: 'cart', h: 1624, wxml: 'pages/cart/index', data: (() => {

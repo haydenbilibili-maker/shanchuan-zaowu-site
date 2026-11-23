@@ -1,4 +1,24 @@
 <wxs src="../../utils/latinDisplay.wxs" module="latin" />
+<!-- 博物君口播的主体（2026-11-23）：叠在头图上 / 无头图时独立一条，两处共用一份结构 -->
+<template name="home-cast-body">
+  <view class="home-cast-seal" aria-hidden="true"><text>博</text></view>
+  <view class="home-cast-main">
+    <view class="home-cast-head">
+      <text class="home-cast-hello">{{cast.hello}}</text>
+      <view class="home-cast-live" aria-hidden="true"><view class="home-cast-dot"></view><text>口播</text></view>
+    </view>
+    <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}">
+      <swiper-item wx:for="{{cast.items}}" wx:key="key">
+        <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store ? 'tap-press-soft' : ''}}" hover-stay-time="80">
+          <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text><text class="home-cast-sep">·</text>
+          <text class="home-cast-t">{{item.text}}</text>
+          <text class="home-cast-go" wx:if="{{item.q || item.store}}">›</text>
+        </view>
+      </swiper-item>
+    </swiper>
+  </view>
+</template>
+
 <view class="container {{isSinglePage ? 'is-single-page' : ''}}">
   
   <!-- 🔧 重写：状态栏占位，防止内容被遮挡；单页模式改用微信固定顶栏 -->
@@ -49,32 +69,15 @@
     bindrefresherrefresh="onHomeRefresherRefresh"
   >
     
-    <!-- 博物君口播（2026-11-23，原馆员问候行升级）：博物君小印 + 「时段问候，藏家昵称」+ 竖向轮播一行
-         （馆内通知 / 今日开馆 / 博物一知 / 小提示）。条目来自 guideBroadcast.js；馆内通知由超管「博物君」页配置。
-         带 › 的条目可点：博物一知 / 小提示 → 博物君（只预填问题），今日开馆 → 门店。 -->
-    <!-- 2026-11-23 第二版（产品负责人真机截图「风格与样式比较丑陋」）：去掉卡片框与实心红印，
-         改成一条无框的口播带 —— 描边小印 + 问候 / 右侧「口播」呼吸灯；下面一行「小签 · 文案」单行轮播，不折行 -->
-    <view class="home-cast" wx:if="{{cast.hello}}">
-      <view class="home-cast-seal" aria-hidden="true"><text>博</text></view>
-      <view class="home-cast-main">
-        <view class="home-cast-head">
-          <text class="home-cast-hello">{{cast.hello}}</text>
-          <view class="home-cast-live" aria-hidden="true"><view class="home-cast-dot"></view><text>口播</text></view>
-        </view>
-        <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}">
-          <swiper-item wx:for="{{cast.items}}" wx:key="key">
-            <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store ? 'tap-press-soft' : ''}}" hover-stay-time="80">
-              <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text><text class="home-cast-sep">·</text>
-              <text class="home-cast-t">{{item.text}}</text>
-              <text class="home-cast-go" wx:if="{{item.q || item.store}}">›</text>
-            </view>
-          </swiper-item>
-        </swiper>
-      </view>
+    <!-- 博物君口播（2026-11-23）：问候 + 昵称 + 单行轮播（馆内通知 / 今日开馆 / 博物一知 / 趣味提示），条目来自 guideBroadcast.js。
+         第三版（产品负责人「与顶部头图模块融合，部分内容叠加在图片上，提升头部空间利用率」）：
+         有头图时叠在头图顶部（见 hero-section 内 is-on-hero）；头图关掉 / 无数据时才退回这条独立口播带。 -->
+    <view class="home-cast" wx:if="{{cast.hello && !(showBanners || (showLive && liveSession && liveSession.pullUrl))}}">
+      <template is="home-cast-body" data="{{cast}}" />
     </view>
 
     <!-- 轮播图模块：有直播时首位抢插「直播中」帧；无直播时恢复 baseBanners -->
-    <view class="hero-section" wx:if="{{showBanners || (showLive && liveSession && liveSession.pullUrl)}}">
+    <view class="hero-section {{cast.hello ? 'has-cast' : ''}}" wx:if="{{showBanners || (showLive && liveSession && liveSession.pullUrl)}}">
       <!-- 骨架屏 -->
       <view class="skeleton-banner" wx:if="{{loadingBanners}}">
         <view class="sk-banner-item"></view>
@@ -127,6 +130,11 @@
           </swiper-item>
         </block>
       </swiper>
+      <!-- 博物君口播叠在头图顶部：顶部压暗渐变把图融进导航区；口播层本身不拦点击，只有可点的那一行接手 -->
+      <view class="hero-cast-scrim" wx:if="{{cast.hello}}"></view>
+      <view class="home-cast is-on-hero" wx:if="{{cast.hello}}">
+        <template is="home-cast-body" data="{{cast}}" />
+      </view>
       <view class="dots-row">
         <block wx:for="{{banners}}" wx:key="id">
            <view class="dot-line {{currentBannerIndex === index ? 'active' : ''}} {{item.isLive ? 'live' : ''}}">
