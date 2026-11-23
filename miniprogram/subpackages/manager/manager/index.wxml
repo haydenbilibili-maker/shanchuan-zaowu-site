@@ -657,6 +657,11 @@
               <text class="hub-cell-name">AI 鉴定</text>
               <text class="hub-cell-sub">鉴定监测</text>
             </view>
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="museumGuide" wx:if="{{menu.museumGuideMonitor}}" bindtap="goMuseumGuideMonitorGuarded">
+              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/knowledge.png" mode="aspectFit" /></view>
+              <text class="hub-cell-name">博物君</text>
+              <text class="hub-cell-sub">开关·监测</text>
+            </view>
           </view>
         </view>
       </view>

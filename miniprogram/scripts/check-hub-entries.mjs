@@ -75,6 +75,8 @@ const ORIGINAL = [
   { name: '会员调级', handlers: ['goMemberLevelAdjust', 'goMemberLevelAdjustGuarded'], keys: ['memberLevelAdjust'] },
   { name: '荣誉馆长', handlers: ['goHonoraryCurators', 'goHonoraryCuratorsGuarded'], keys: ['honoraryCurators'] },
   { name: 'AI 鉴定', handlers: ['goIdentifyMonitorGuarded'], keys: ['aiIdentifyMonitor'] },
+  // 2026-11-23 产品负责人点名：超管「博物君」开关与监测（仅超管）
+  { name: '博物君', handlers: ['goMuseumGuideMonitorGuarded'], keys: ['museumGuideMonitor'] },
   { name: '员工', handlers: ['goStaffDirectory', 'goStaffDirectoryGuarded'], keys: ['staffDirectory'] },
   { name: '权限配置', handlers: ['goStoreStaffPermissions', 'goStoreStaffPermissionsGuarded'], keys: ['staffPermissions'] },
   { name: '股东配置', handlers: ['goShareholderConfig', 'goShareholderConfigGuarded'], keys: ['shareholderConfig'] },

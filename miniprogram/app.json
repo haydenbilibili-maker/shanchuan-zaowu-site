@@ -126,7 +126,8 @@
         "payslip/index",
         "payslip/admin/index",
         "feishu-sync/index",
-        "identify-monitor/index"
+        "identify-monitor/index",
+        "museum-guide-monitor/index"
       ]
     },
     {

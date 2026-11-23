@@ -1,0 +1,100 @@
+<!-- 超管工作台「博物君」：开关 / 每日额度 / 使用监测（2026-11-23）。只统计次数与状态，没有问答原文。 -->
+<view class="ops-boot" wx:if="{{!ready}}">柜门缓缓开启…</view>
+
+<view class="ops-page" wx:if="{{ready}}">
+  <view class="ops-container">
+    <view class="ops-header compact">
+      <text class="ops-eyebrow">MUSEUM GUIDE</text>
+      <view class="ops-title-row">
+        <text class="ops-title">博物君</text>
+        <text class="ops-meta-chip" wx:if="{{loading || saving}}">{{saving ? '保存中' : '刷新中'}}</text>
+      </view>
+      <text class="ops-note">AI 馆员的开关、每日额度与使用情况。只统计次数与状态，不记录问题与回答原文。</text>
+    </view>
+
+    <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
+    <!-- 开关与额度 -->
+    <view class="gm-card" wx:if="{{view}}">
+      <view class="gm-switch-row">
+        <view class="gm-switch-main">
+          <view class="gm-lamp {{view.config.enabled ? 'is-on' : ''}}" aria-hidden="true"></view>
+          <text class="gm-state">{{view.config.stateText}}</text>
+        </view>
+        <view class="gm-toggle {{confirmToggle ? 'is-confirm' : ''}} {{view.config.enabled ? 'is-danger' : ''}}" bindtap="onToggle" hover-class="tap-press" hover-stay-time="80" aria-role="button">
+          {{confirmToggle ? (view.config.enabled ? '再点一次确认闭馆' : '再点一次确认开馆') : (view.config.enabled ? '闭馆' : '开馆')}}
+        </view>
+      </view>
+      <text class="gm-hint">{{view.config.enabled ? '闭馆后「我的」入口隐藏，正在用的人提问会收到闭馆提示。' : '闭馆中：入口已隐藏，提问一律收到闭馆提示。'}}</text>
+      <view class="gm-limit">
+        <text class="gm-limit-k">每日额度 · {{view.config.limitText}}</text>
+        <view class="ops-filter-row">
+          <view class="ops-filter-chip {{view.config.dailyLimit === item ? 'brass' : ''}}" wx:for="{{limitOptions}}" wx:key="*this" data-n="{{item}}" bindtap="onLimit" hover-class="tap-press" hover-stay-time="80">{{item}} 问</view>
+        </view>
+      </view>
+      <text class="gm-hint" wx:if="{{view.config.updatedText}}">{{view.config.updatedText}}</text>
+    </view>
+
+    <view class="ops-filter-row gm-range">
+      <view class="ops-filter-chip {{days === 7 ? 'brass' : ''}}" data-days="7" bindtap="onDays" hover-class="tap-press" hover-stay-time="80">近 7 天</view>
+      <view class="ops-filter-chip {{days === 30 ? 'brass' : ''}}" data-days="30" bindtap="onDays" hover-class="tap-press" hover-stay-time="80">近 30 天</view>
+    </view>
+
+    <view class="ops-skeleton" wx:if="{{loading && !view}}">
+      <view class="ui-sk-card"><view class="ui-sk-line wide"></view><view class="ui-sk-line"></view></view>
+    </view>
+    <view class="gm-empty" wx:elif="{{loadError}}">
+      <text>{{loadError}}</text>
+      <view class="gm-retry" bindtap="load" hover-class="tap-press" hover-stay-time="80">再试一次</view>
+    </view>
+
+    <block wx:if="{{view}}">
+      <view class="gm-kpis">
+        <view class="gm-kpi" wx:for="{{view.kpis}}" wx:key="k">
+          <text class="gm-kpi-v">{{item.v}}</text>
+          <text class="gm-kpi-k">{{item.k}}</text>
+        </view>
+      </view>
+      <text class="gm-totals">{{view.totalsText}}</text>
+      <text class="gm-hint" wx:if="{{view.truncatedText}}">{{view.truncatedText}}</text>
+
+      <!-- 按日 -->
+      <view class="gm-sec">
+        <text class="gm-sec-t">按日提问</text>
+        <view class="gm-bar-row" wx:for="{{view.bars}}" wx:key="day">
+          <text class="gm-bar-day">{{item.label}}</text>
+          <view class="gm-bar-track"><view class="gm-bar-fill" style="width: {{item.width}}%;"></view></view>
+          <text class="gm-bar-n">{{item.asks}}</text>
+          <text class="gm-bar-sub" wx:if="{{item.sub}}">{{item.sub}}</text>
+        </view>
+      </view>
+
+      <view class="gm-sec" wx:if="{{view.fails.length}}">
+        <text class="gm-sec-t">没答上的原因</text>
+        <view class="gm-li" wx:for="{{view.fails}}" wx:key="key"><text class="gm-li-k">{{item.label}}</text><text class="gm-li-v">{{item.n}}</text></view>
+      </view>
+
+      <view class="gm-sec" wx:if="{{view.species.length}}">
+        <text class="gm-sec-t">大家在问的图鉴物种</text>
+        <view class="gm-li" wx:for="{{view.species}}" wx:key="no"><text class="gm-li-k">{{item.label}}</text><text class="gm-li-v">{{item.n}} 次</text></view>
+      </view>
+
+      <view class="gm-sec" wx:if="{{view.actions.length}}">
+        <text class="gm-sec-t">博物君推荐的去处</text>
+        <view class="gm-li" wx:for="{{view.actions}}" wx:key="key"><text class="gm-li-k">{{item.label}}</text><text class="gm-li-v">{{item.n}} 次 · {{item.pct}}%</text></view>
+      </view>
+
+      <view class="gm-sec" wx:if="{{view.entries.length}}">
+        <text class="gm-sec-t">从哪里进来提问</text>
+        <view class="gm-li" wx:for="{{view.entries}}" wx:key="key"><text class="gm-li-k">{{item.label}}</text><text class="gm-li-v">{{item.n}} 次 · {{item.pct}}%</text></view>
+      </view>
+
+      <view class="gm-sec" wx:if="{{view.models.length}}">
+        <text class="gm-sec-t">实际回答的模型</text>
+        <view class="gm-li" wx:for="{{view.models}}" wx:key="key"><text class="gm-li-k">{{item.label}}</text><text class="gm-li-v">{{item.n}} 次 · {{item.pct}}%</text></view>
+      </view>
+
+      <text class="gm-empty-t" wx:if="{{!view.bars.length || view.totalsText.indexOf(' 共 0 问') >= 0}}">这段时间还没有人提问。</text>
+    </block>
+  </view>
+</view>
