@@ -109,6 +109,7 @@ function summarize(rows, now, days) {
   const okMs = []
   let counted = 0
   let answered = 0
+  const votes = { up: 0, down: 0 }
   ;(rows || []).forEach((r) => {
     if (!r || !byDay[r.day]) return
     const d = byDay[r.day]
@@ -123,6 +124,7 @@ function summarize(rows, now, days) {
       ;(r.species || []).forEach((sp) => { if (sp && sp.no) { species[sp.no] = (species[sp.no] || 0) + 1; speciesName[sp.no] = sp.zh || '' } })
       ;(r.actions || []).forEach((a) => { actions[a] = (actions[a] || 0) + 1 })
       if (r.model) models[r.model] = (models[r.model] || 0) + 1
+      if (r.vote === 'up' || r.vote === 'down') votes[r.vote] += 1
     }
     if (r.status === 'ai_service') d.failed += 1
     if (r.status === 'risky' || r.status === 'answer_risky') d.risky += 1
@@ -161,6 +163,8 @@ function summarize(rows, now, days) {
       p90Ms: p90(okMs)
     },
     fails,
+    // 满意度：有帮助 / （有帮助 + 没帮助）；没人投票时为 null（页面写「—」）
+    votes: { up: votes.up, down: votes.down, rate: pct(votes.up, votes.up + votes.down) },
     topSpecies: topOf(species, 8).map((x) => ({ no: x.key, zh: speciesName[x.key] || '', n: x.n })),
     actions: topOf(actions, 7),
     entries: topOf(entries, 5),
@@ -186,7 +190,7 @@ async function loadRows(since) {
       .orderBy('created_at', 'asc')
       .skip(skip)
       .limit(BATCH)
-      .field({ openid: true, day: true, status: true, model: true, duration_ms: true, species: true, actions: true, entry: true })
+      .field({ openid: true, day: true, status: true, model: true, duration_ms: true, species: true, actions: true, entry: true, vote: true })
       .get()
     const got = (res && res.data) || []
     rows.push(...got)

@@ -232,11 +232,36 @@ async function readConfig() {
 /** 写运营日志：1.5 秒上限、吞错 —— 日志写不进去也不影响回答 */
 async function writeLog(entry) {
   try {
-    await Promise.race([
+    const r = await Promise.race([
       db.collection(LOG_COLLECTION).add({ data: buildLog(entry) }),
       new Promise((resolve) => setTimeout(resolve, LOG_TIMEOUT_MS))
     ])
-  } catch (e) { console.warn('博物君 日志写入失败', e.message) }
+    return (r && r._id) || ''
+  } catch (e) {
+    console.warn('博物君 日志写入失败', e.message)
+    return ''
+  }
+}
+
+const VOTES = ['up', 'down']
+
+/**
+ * 回答反馈（2026-11-23）：「有帮助 / 没帮助」记在这次提问的那条日志上 —— 只认本人、只记一次、只认两种票。
+ * 不另存任何内容；超管报表据此算满意度。
+ */
+async function feedback(event, openid) {
+  const logId = String((event && event.logId) || '').trim()
+  const vote = String((event && event.vote) || '')
+  if (!logId || logId.length > 64 || VOTES.indexOf(vote) < 0) return { success: false, error_type: 'invalid', msg: '反馈参数不对' }
+  let doc = null
+  try {
+    const r = await db.collection(LOG_COLLECTION).doc(logId).get()
+    doc = r && r.data
+  } catch (e) { doc = null }
+  if (!doc || doc.openid !== openid) return { success: false, error_type: 'invalid', msg: '找不到这次回答' }
+  if (doc.vote) return { success: true, already: true, vote: doc.vote }
+  await db.collection(LOG_COLLECTION).doc(logId).update({ data: { vote, voted_at: Date.now() } })
+  return { success: true, vote }
 }
 
 function bjDayText(now) {
@@ -247,6 +272,8 @@ function bjDayText(now) {
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   if (!OPENID) return { success: false, error_type: 'invalid', msg: '请在小程序内使用' }
+
+  if (event && event.action === 'feedback') return feedback(event, OPENID)
 
   const t0 = Date.now()
   const cfg = effectiveConfig(await readConfig(), process.env.MUSEUM_GUIDE_DAILY_LIMIT)
@@ -262,7 +289,9 @@ exports.main = async (event) => {
 
   const base = { openid: OPENID, dayText: bjDayText(t0), entry: event && event.from, historyLen: Array.isArray(event && event.history) ? event.history.length : 0, now: t0 }
   const finish = async (status, out, extra) => {
-    await writeLog(Object.assign({}, base, { status, durationMs: Date.now() - t0 }, extra || {}))
+    const logId = await writeLog(Object.assign({}, base, { status, durationMs: Date.now() - t0 }, extra || {}))
+    // 只有真正回答了的才带日志号（页面据此出「有帮助 / 没帮助」）
+    if (out && out.success && logId) out.logId = logId
     return out
   }
 
@@ -320,4 +349,4 @@ exports.main = async (event) => {
   }, { model, species, actions: reply.actions, aLen: reply.answer.length })
 }
 
-exports._test = { modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }
+exports._test = { VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }

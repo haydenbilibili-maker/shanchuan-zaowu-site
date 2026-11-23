@@ -143,3 +143,8 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 .mg-closed-k { display: block; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .16em; color: var(--brass-300, #D4BC8A); }
 .mg-closed-t { display: block; margin-top: 10rpx; font-size: var(--fs-26); line-height: 1.6; color: var(--brass-200, #E3D2AC); }
 
+/* 回答反馈 / 复制（2026-11-23）：气泡下一行小字，命中区上下补足 */
+.mg-fb { display: flex; align-items: center; gap: 28rpx; margin-top: 8rpx; }
+.mg-fb-btn { padding: 10rpx 0; font-size: var(--fs-22); color: var(--color-text-secondary); }
+.mg-fb-done { padding: 10rpx 0; font-size: var(--fs-22); color: var(--brass-300, #D4BC8A); }
+

@@ -146,6 +146,27 @@ Page({
     this._revealTimer = null
   },
 
+  /* ------------------------------ 反馈 / 复制 ------------------------------ */
+
+  /** 有帮助 / 没帮助：只投一次；先在本机标上（不等云端），云端失败也不打扰 */
+  async onVote(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const vote = e.currentTarget.dataset.vote === 'down' ? 'down' : 'up'
+    const msg = this.data.messages[index]
+    if (!msg || !msg.logId || msg.vote) return
+    this.setData({ [`messages[${index}].vote`]: vote })
+    this.persist(this.data.messages)
+    try {
+      await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { action: 'feedback', logId: msg.logId, vote } })
+    } catch (err) { /* 反馈没送到只影响报表，不打扰提问的人 */ }
+  },
+
+  onCopy(e) {
+    const msg = this.data.messages[Number(e.currentTarget.dataset.index)]
+    if (!msg || !msg.text) return
+    wx.setClipboardData({ data: msg.text })
+  },
+
   /** 点正在写的气泡：直接写完 */
   onTapBubble(e) {
     const index = Number(e.currentTarget.dataset.index)

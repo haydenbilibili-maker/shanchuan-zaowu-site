@@ -78,6 +78,10 @@ function buildView(d) {
       { k: '单人今日最多', v: today.maxPerUser ? `${today.maxPerUser} / ${limit}` : '—' }
     ],
     totalsText: `${data.days || 7} 天共 ${t.asks || 0} 问 · ${t.users || 0} 人 · 回答 ${t.answered || 0} 次`,
+    // 回答反馈：投票的人少时满意度不稳，票数一起写出来
+    satisfactionText: data.votes && (data.votes.up + data.votes.down)
+      ? `满意度 ${rateText(data.votes.rate)}（有帮助 ${data.votes.up} · 没帮助 ${data.votes.down}）`
+      : '满意度 —（还没有人投票）',
     bars: series.map((s) => ({
       day: s.day,
       label: shortDay(s.day),

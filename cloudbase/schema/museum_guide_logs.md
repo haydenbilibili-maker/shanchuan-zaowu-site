@@ -20,6 +20,7 @@
 - `model` 实际回答的模型；`duration_ms` 函数内耗时
 - `species` 命中的图鉴物种 `[{ no, zh }]`（≤3）；`actions` 回答推荐的馆内去处 key（≤2）
 - `q_len` / `a_len` / `history_len` 问题字数 / 回答字数 / 带的历史条数
+- `vote` / `voted_at` 提问的人对这次回答的反馈 `up` 有帮助 / `down` 没帮助（2026-11-23；只认本人、只记一次，经 `askMuseumGuide` 的 `feedback` 动作写入）
 - `entry` 入口：`user` 我的 / `atlas` 图鉴页 / `identify` AI 鉴定结果 / `share` 分享 / `direct`
 
 ## 写入方

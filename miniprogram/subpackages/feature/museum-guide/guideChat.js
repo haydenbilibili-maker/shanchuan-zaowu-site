@@ -189,6 +189,7 @@ function replyToMessage(result) {
   if (r.success && r.answer) {
     return {
       message: makeMessage('guide', plainAnswer(r.answer), {
+        logId: typeof r.logId === 'string' && r.logId.length <= 64 ? r.logId : '',
         followUps: (r.followUps || []).filter(Boolean).slice(0, 3),
         actions: actionButtons(r.actions),
         species: speciesLinks(r.species)

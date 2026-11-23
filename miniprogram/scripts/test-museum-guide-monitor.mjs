@@ -100,11 +100,11 @@ async function runChecks() {
   const now = Date.UTC(2026, 10, 23, 4) // 北京时间 11-23 12:00
   const row = (day, openid, status, extra) => Object.assign({ day, openid, status, duration_ms: 1000, species: [], actions: [], entry: 'user', model: 'qwen-plus' }, extra || {})
   const rows = [
-    row('2026-11-23', 'a', 'ok', { duration_ms: 2000, species: [{ no: '001', zh: '大蓝闪蝶' }], actions: ['atlas'] }),
-    row('2026-11-23', 'a', 'ok', { duration_ms: 4000, species: [{ no: '001', zh: '大蓝闪蝶' }] }),
+    row('2026-11-23', 'a', 'ok', { duration_ms: 2000, species: [{ no: '001', zh: '大蓝闪蝶' }], actions: ['atlas'], vote: 'up' }),
+    row('2026-11-23', 'a', 'ok', { duration_ms: 4000, species: [{ no: '001', zh: '大蓝闪蝶' }], vote: 'down' }),
     row('2026-11-23', 'a', 'quota'),
-    row('2026-11-23', 'b', 'ai_service', { species: [{ no: '033', zh: '鹦鹉螺' }] }),
-    row('2026-11-21', 'c', 'answer_risky', { entry: 'atlas' }),
+    row('2026-11-23', 'b', 'ai_service', { species: [{ no: '033', zh: '鹦鹉螺' }], vote: 'down' }),
+    row('2026-11-21', 'c', 'answer_risky', { entry: 'atlas', vote: 'up' }),
     row('2026-11-21', 'c', 'off'),
     row('2026-11-10', 'z', 'ok')
   ]
@@ -114,6 +114,7 @@ async function runChecks() {
   ok('M1 今日：问 4 · 人 2 · 回答 2 · 单人最多 3', today.asks === 4 && today.users === 2 && today.ok === 2 && today.maxPerUser === 3 && today.failed === 1 && today.quota === 1)
   ok('M1 成功率分母只算问到模型那一步的（3/4 = 75%，不含额度满与闭馆）', s.totals.successRate === 75 && s.totals.answered === 3)
   ok('M1 物种 / 去处只算已回答（出错那条的鹦鹉螺不算）', s.topSpecies.length === 1 && s.topSpecies[0].no === '001' && s.topSpecies[0].n === 2 && s.actions[0].key === 'atlas')
+  ok('M1 满意度：只算已回答里的票（出错那条的票不算）2/3', s.votes.up === 2 && s.votes.down === 1 && s.votes.rate === 66.7)
   ok('M1 耗时：平均 / 九成只算已回答', s.totals.avgMs === 2333 && s.totals.p90Ms === 4000)
   ok('M1 失败分布与 30 天窗口', s.fails.quota === 1 && s.fails.off === 1 && s.fails.answer_risky === 1 && s.fails.ai_service === 1 && T.summarize(rows, now, 30).series.length === 30 && T.summarize(rows, now, 30).totals.asks === 7)
 
@@ -154,7 +155,7 @@ async function runChecks() {
   /* ---------------- M4 视图 ---------------- */
   const V = loadCjsModule(P.view, { transform })
   const empty = V.buildView({ days: 7, series: [{ day: '2026-11-22', asks: 0, users: 0 }, { day: '2026-11-23', asks: 0, users: 0 }], totals: {}, today: {}, fails: {}, config: { enabled: true, defaultLimit: 30 } })
-  ok('M4 没有数据写「—」不编 0（成功率 / 耗时 / 单人最多）', empty.kpis[2].v === '—' && empty.kpis[3].v === '—' && empty.kpis[4].v === '—' && empty.kpis[5].v === '—' && empty.bars.every((b) => b.width === 0))
+  ok('M4 没有数据写「—」不编 0（成功率 / 耗时 / 单人最多 / 满意度）', /满意度 —/.test(empty.satisfactionText) && /满意度 66\.7%（有帮助 2 · 没帮助 1）/.test(V.buildView(s).satisfactionText) && empty.kpis[2].v === '—' && empty.kpis[3].v === '—' && empty.kpis[4].v === '—' && empty.kpis[5].v === '—' && empty.bars.every((b) => b.width === 0))
   const full = V.buildView(Object.assign({}, s, { config: { enabled: false, dailyLimit: 20, defaultLimit: 30 } }))
   ok('M4 按日新到旧、最大一天 100%、失败只列出现过的、闭馆状态与额度文案',
     full.bars[0].day === '2026-11-23' && full.bars[0].width === 100 && full.fails.every((f) => f.n > 0) && full.fails.length === 4 &&
@@ -216,6 +217,7 @@ const INJECTIONS = [
   { name: '审计失败照写配置', file: P.fn, find: "    return fail('AUDIT_FAILED', `修改须先记审计日志，写入失败：${(e && e.message) || e}`)", replace: '    console.warn(e)' },
   { name: '首次写丢了开关', file: P.fn, find: '    const keep = { enabled: before.enabled }', replace: '    const keep = { enabled: true }' },
   { name: '非超管也放行', file: P.fn, find: 'if (!guard.ok) return fail(', replace: 'if (false) return fail(' },
+  { name: '出错的票也算满意度', file: P.fn, find: "    if (r.status === 'ai_service') d.failed += 1", replace: "    if (r.status === 'ai_service' && r.vote) votes[r.vote] += 1\n    if (r.status === 'ai_service') d.failed += 1" },
   { name: '没数据编 0', file: P.view, find: "  return typeof r === 'number' ? `${r}%` : '—'", replace: "  return `${r || 0}%`" },
   { name: '开关一下就改', file: P.page, find: '    if (!this.data.confirmToggle) {', replace: '    if (false) {' },
   { name: '内容开关读不到就关', file: P.flagsFn, find: '  } catch (e) {\n    return true\n  }', replace: '  } catch (e) {\n    return false\n  }' },
