@@ -24,6 +24,7 @@ const P = {
   page: join(MP, 'subpackages/feature/museum-guide/index.js'),
   wxml: join(MP, 'subpackages/feature/museum-guide/index.wxml'),
   avatar: join(MP, 'subpackages/feature/utils/guideAvatar.js'),
+  cloudrc: join(MP, 'cloudbaserc.json'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
   knowledge: join(MP, 'cloudfunctions/askMuseumGuide/knowledge.js'),
   persona: join(MP, 'cloudfunctions/askMuseumGuide/persona.js'),
@@ -169,6 +170,8 @@ async function runChecks() {
     /<image class="ask-guide-seal" src="\{\{guideAvatar\}\}" mode="aspectFit"/.test(read(P.atlasWxml)) &&
     /^data:image\/svg\+xml/.test(avatar) && avatarSvg.includes('viewBox="0 0 1024 1024"') && avatarSvg.includes('fill="#F3E7D3"') &&
     !/<view class="mg-seal"[^>]*><text>博<\/text>/.test(read(P.wxml)))
+  ok('E7 askMuseumGuide 已登记 cloudbaserc（否则 tcb / deploy-drifted 永远不会部署它）',
+    /"name":\s*"askMuseumGuide"/.test(read(P.cloudrc)))
   ok('E4 页脚写明 AI 生成仅供参考、对话只存本机', /由 AI 生成，仅供参考/.test(read(P.wxml)) && /只存在这台手机上/.test(read(P.wxml)))
 
   /* ---------------- F 页面行为 ---------------- */
@@ -251,6 +254,7 @@ const INJECTIONS = [
   { name: '云端不去 Markdown', file: P.fn, find: "const answer = plainAnswer((obj && obj.answer) || (obj ? '' : t))", replace: "const answer = String((obj && obj.answer) || (obj ? '' : t)).trim()" },
   { name: '点气泡不跳过', file: P.page, find: '    if (cur && cur.revealing) this.finishReveal(index)', replace: '' },
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' },
+  { name: 'askMuseumGuide 漏登记 cloudbaserc', file: P.cloudrc, find: '"name": "askMuseumGuide"', replace: '"name": "askMuseumGuideX"' },
   { name: '博物君头像退回「博」字', file: P.wxml, find: '<image class="mg-seal-icon" src="{{guideAvatar}}" mode="aspectFit"></image>', replace: '<text>博</text>' }
 ]
 
