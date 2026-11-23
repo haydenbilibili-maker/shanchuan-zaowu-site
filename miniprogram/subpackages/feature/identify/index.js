@@ -10,6 +10,8 @@ const {
 } = require('../../../utils/contentDisplayFlags')
 
 const CLOUD_PREFIX = 'identify'
+/** 本机记一笔「这个人有过鉴定记录」：进页第一帧就按它决定拍摄建议收不收，免得列表回来后再跳一下 */
+const HAS_RECORD_KEY = 'identify_has_record_v1'
 const IDENTIFY_CF_TIMEOUT_MS = 60000
 
 const CATEGORY_HINTS = [
@@ -31,13 +33,6 @@ const PHOTO_TIPS = [
   { k: '简洁', v: '背景简洁，主体占画面六成以上' }
 ]
 
-/** 鉴定三步（与等待卡上的三步同名：入镜 → 归档 → 解读） */
-const FLOW_STEPS = [
-  { k: '入镜', v: '拍一张或选一张' },
-  { k: '归档', v: '照片存入你的鉴定记录' },
-  { k: '解读', v: '约 15–60 秒，给出物种与手记' }
-]
-
 Page({
   behaviors: [easterEggHost],
   data: {
@@ -50,7 +45,8 @@ Page({
     categoryHint: '',
     entrySource: 'user_menu',
     photoTips: PHOTO_TIPS,
-    flowSteps: FLOW_STEPS,
+    /** 拍摄建议展开：没有鉴定记录（第一次来）时展开，有记录时收起；用户手动点过就不再自动改 */
+    tipsOpen: true,
     entryBlocked: false
   },
 
@@ -62,7 +58,9 @@ Page({
       const m = /(?:^|[&?])from=([^&]+)/.exec(sceneText)
       if (m && m[1]) from = decodeURIComponent(m[1])
     } catch (e) { /* ignore */ }
-    this.setData({ entrySource: from })
+    let hasRecord = false
+    try { hasRecord = !!wx.getStorageSync(HAS_RECORD_KEY) } catch (e) { /* ignore */ }
+    this.setData({ entrySource: from, tipsOpen: !hasRecord })
     this.guardEntry(from)
   },
 
@@ -86,6 +84,11 @@ Page({
     this.loadRecent()
   },
 
+  onToggleTips() {
+    this._tipsTouched = true
+    this.setData({ tipsOpen: !this.data.tipsOpen })
+  },
+
   genLocalName() {
     return `${CLOUD_PREFIX}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`
   },
@@ -104,7 +107,10 @@ Page({
         thumb: /^cloud:\/\//.test(String(doc.image_url || '')) ? doc.image_url : '',
         timeText: this.formatTime(doc.created_at)
       }))
-      this.setData({ recentList: list })
+      const patch = { recentList: list }
+      if (!this._tipsTouched) patch.tipsOpen = list.length === 0
+      this.setData(patch)
+      try { wx.setStorageSync(HAS_RECORD_KEY, list.length > 0 ? 1 : '') } catch (e) { /* ignore */ }
     } catch (e) {
       console.warn('loadRecent', e)
       this.setData({ recentList: [] })

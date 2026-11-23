@@ -30,6 +30,14 @@ function friendlyLoadErrorText(msg) {
   return t
 }
 
+/**
+ * 鉴定百科是否「只剩标题」（2026-11-23）：没有一块可见的正文区块（「著录来源」块本来就隐藏，不算）。
+ * 他人分享的鉴定不会触发补全、补全回来全是空块时都会这样 —— 页面改出空态卡，不再只挂一个标题。
+ */
+function archiveIsEmpty(profile) {
+  return !((profile && profile.blocks) || []).some((b) => b && b.visible && b.type !== 'source')
+}
+
 Page({
   data: {
     // 仪式感（2026-10-18）：刚鉴定完 → 标本牌上的学名逐字敲出（SpeciesCard typewriter）
@@ -51,6 +59,8 @@ Page({
     galleryCategory: '',
     speciesProfile: normalizeProfile(null),
     showSpeciesArchive: false,
+    /** 鉴定百科没有可见正文区块（见 archiveIsEmpty） */
+    archiveEmpty: false,
     profileEnriching: false,
     profileEnrichError: false,
     sectionExpanded: {},
@@ -186,6 +196,7 @@ Page({
         galleryCategory,
         speciesProfile,
         showSpeciesArchive,
+        archiveEmpty: archiveIsEmpty(speciesProfile),
         archiveNav,
         activeArchiveId: archiveNav.length ? archiveNav[0].id : '',
         loadError: false,
@@ -296,8 +307,10 @@ Page({
       if (!profile) {
         throw new Error((res && res.result && res.result.msg) || '补全失败')
       }
+      const next = normalizeProfile(profile)
       this.setData({
-        speciesProfile: normalizeProfile(profile),
+        speciesProfile: next,
+        archiveEmpty: archiveIsEmpty(next),
         profileEnriching: false,
         profileEnrichError: false
       })

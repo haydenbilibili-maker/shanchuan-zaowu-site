@@ -32,6 +32,8 @@
   <view class="actions">
     <button class="btn primary" bindtap="onTakePhoto" disabled="{{busy}}">拍照鉴定</button>
     <view class="album-link" bindtap="onChooseAlbum" hover-class="tap-press" hover-stay-time="80" aria-role="button">从相册选一张 ›</view>
+    <!-- 原独立「三步」区块收成一行小字（2026-11-23）：等待卡上仍有入镜 → 归档 → 解读三步 -->
+    <text class="act-meta">入镜 → 归档 → 解读 · 约 15–60 秒给出物种与手记</text>
   </view>
 
   <!-- 门类提示：可选，选了识别更准 -->
@@ -53,15 +55,6 @@
         >{{item.label}}</view>
       </view>
     </scroll-view>
-  </view>
-
-  <!-- 三步（与等待卡同名） -->
-  <view class="flow">
-    <view class="flow-step" wx:for="{{flowSteps}}" wx:key="k">
-      <text class="flow-no">{{index + 1}}</text>
-      <text class="flow-k">{{item.k}}</text>
-      <text class="flow-v">{{item.v}}</text>
-    </view>
   </view>
 
   <view class="recent" wx:if="{{recentList.length && !busy}}">
@@ -117,12 +110,16 @@
     </view>
   </view>
 
+  <!-- 拍摄建议可折叠（2026-11-23）：第一次来（还没有鉴定记录）默认展开，老用户默认收起，不占篇幅 -->
   <view class="tips">
-    <view class="sec-head-t">
-      <text class="sec-eyebrow">FIELD TIPS</text>
-      <text class="tip-title">拍摄建议</text>
+    <view class="tips-head" bindtap="onToggleTips" hover-class="tap-press" hover-stay-time="80" aria-role="button">
+      <view class="sec-head-t">
+        <text class="sec-eyebrow">FIELD TIPS</text>
+        <text class="tip-title">拍摄建议</text>
+      </view>
+      <text class="tips-toggle">{{tipsOpen ? '收起' : '展开'}}</text>
     </view>
-    <view class="tip-grid">
+    <view class="tip-grid" wx:if="{{tipsOpen}}">
       <view class="tip-cell" wx:for="{{photoTips}}" wx:key="k">
         <text class="tip-k">{{item.k}}</text>
         <text class="tip-v">{{item.v}}</text>

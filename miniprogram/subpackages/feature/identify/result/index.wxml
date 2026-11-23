@@ -126,6 +126,17 @@
         <view class="ency-retry-btn" bindtap="retryEnrichProfile" hover-class="tap-press" hover-stay-time="80">重试补全</view>
       </view>
 
+      <!-- 空态（2026-11-23）：没有一块可见正文、也不在补全 / 补全失败时，不再只留一个标题 ——
+           说明这一页还没著录，本人可让 AI 再整理一次，所有人都可以去问问博物君 -->
+      <view class="ency-empty-card" wx:if="{{archiveEmpty && !profileEnriching && !profileEnrichError}}">
+        <text class="ency-empty-t">这一页还没有著录</text>
+        <text class="ency-empty-d">{{isOwner && recordId ? '可以让 AI 再整理一次物种档案，或者直接问问博物君。' : '可以问问博物君，听它讲讲这个物种。'}}</text>
+        <view class="ency-empty-acts">
+          <view class="ency-empty-btn" wx:if="{{isOwner && recordId}}" bindtap="retryEnrichProfile" hover-class="tap-press" hover-stay-time="80">整理档案</view>
+          <view class="ency-empty-btn is-ghost" wx:if="{{speciesInfo.species_name_zh}}" bindtap="onAskGuide" hover-class="tap-press" hover-stay-time="80">问问博物君</view>
+        </view>
+      </view>
+
       <block wx:for="{{speciesProfile.blocks}}" wx:key="id" wx:for-item="block">
         <view
           class="ency-block fade-in"

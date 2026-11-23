@@ -298,7 +298,15 @@ const SCENES = [
     }
   },
   {
+    // 2026-11-23 鉴定台：三步收成一行小字、拍摄建议折叠（老用户默认收起）
+    name: 'identify', h: 1900, wxml: 'subpackages/feature/identify/index', data: {
+      busy: false, categoryHints: [{ id: '', label: '不限' }, { id: '昆虫', label: '昆虫' }, { id: '矿石', label: '矿石' }, { id: '植物', label: '植物' }, { id: '海洋', label: '海洋' }], categoryHint: '',
+      recentList: [{ _id: 'r1', name: '光明女神闪蝶', latin: 'Morpho helena', thumb: P[0], timeText: '2 小时前' }, { _id: 'r2', name: '血漪蝶', latin: 'Cethosia biblis', thumb: P[1], timeText: '昨天' }],
+      tipsOpen: false, photoTips: [{ k: '正对', v: '正对藏品主体' }]
+    } },
+  {
     name: 'identify-result', h: 2400, wxml: 'subpackages/feature/identify/result/index', data: {
+      archiveEmpty: true, profileEnriching: false, profileEnrichError: false,
       loading: false, loadError: false, displayImage: P[0], confidenceLevel: 'high', recordId: 'r1', isOwner: true, showSpeciesArchive: true,
       speciesInfo: { is_specimen: true, species_name_zh: '光明女神闪蝶', species_name_latin: 'Morpho helena', confidence: 0.92, confidencePct: 92 },
       rootCategoryTag: { label: '昆虫', tone: 'insecta' },
