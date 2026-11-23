@@ -156,6 +156,7 @@ const FILES = {
   atlasIdxWxml: 'subpackages/feature/collection/index.wxml',
   atlasIdxJs: 'subpackages/feature/collection/index.js',
   atlasPagerJs: 'subpackages/feature/collection/atlasPager.js',
+  achRoutesJs: 'subpackages/extra/user/achievements/achievementRoutes.js',
   atlasDetailJs: 'subpackages/feature/collection/detail/index.js',
   achWxss: 'subpackages/extra/user/achievements/index.wxss',
   customJs: 'subpackages/feature/custom/index.js',
@@ -1070,6 +1071,40 @@ function checks(s) {
       ok && /rememberOrder\(getApp\(\), filtered\)/.test(s.atlasIdxJs) && /neighbors\(readOrder\(getApp\(\)\), this\.speciesId\)/.test(s.atlasDetailJs) &&
         /onTurnPage\(e\) \{[\s\S]{0,260}wx\.redirectTo\(/.test(s.atlasDetailJs))
   }
+  {
+    const PG = loadCjs(s.atlasPagerJs)
+    let ok = false
+    try {
+      const app = { globalData: {} }
+      PG.rememberAll(app, [
+        { id: '041', no: '041', unlocked: true, nameZh: '紫水晶', plate: 'data:x', seriesIds: ['mountain'] },
+        { id: '031', no: '031', unlocked: false, nameZh: '银杏押花', plate: '', seriesIds: ['mountain'] },
+        { id: '001', no: '001', unlocked: true, nameZh: '大蓝闪蝶', plate: 'data:y', seriesIds: ['overwinter'] }
+      ])
+      const ch = PG.chapterOf(PG.readAll(app), { id: '041', seriesIds: ['mountain'], seriesNames: ['守山者'] })
+      const lockedSib = ch.items.find((c) => c.id === '031')
+      ok = ch.name === '守山者' && ch.items.map((c) => c.no).join(',') === '031,041' && ch.got === 1 && ch.total === 2 &&
+        ch.items.find((c) => c.id === '041').current === true && lockedSib.label === '' && lockedSib.plate === '' &&
+        PG.chapterOf([], { id: '041', seriesIds: ['mountain'] }) === null && PG.chapterOf(PG.readAll(app), { id: '001', seriesIds: [] }) === null
+    } catch (e) { ok = false }
+    add('R66-4 图鉴详页同章小格：按编号、标当前页；未点亮的同章页不带名称与图版；无整册数据 / 不属任何章不出；未点亮页给「怎样翻开」且馆内印记只在有印记时出',
+      ok && /chapter: chapterOf\(readAll\(getApp\(\)\), card\)/.test(s.atlasDetailJs) && /card\.hasSpot \? \{ k: '馆内印记'/.test(s.atlasDetailJs) &&
+        /rememberAll\(getApp\(\), cards\)/.test(s.atlasIdxJs))
+  }
+  {
+    const AR = loadCjs(s.achRoutesJs)
+    let ok = false
+    try {
+      const app = JSON.parse(s.appJson)
+      const pages = new Set([...app.pages, ...(app.subpackages || []).flatMap((x) => x.pages.map((pg) => `${x.root.replace(/\/$/, '')}/${pg}`))])
+      const tabs = new Set(((app.tabBar && app.tabBar.list) || []).map((t) => t.pagePath))
+      ok = AR.ROUTES.every((r) => pages.has(r.url.slice(1)) && (r.tab === tabs.has(r.url.slice(1)))) &&
+        AR.routeOf('collect_10').url === '/pages/category/index' && AR.routeOf('atlas_frost').url === '/subpackages/feature/collection/index' &&
+        AR.routeOf('share_5') === null && /分享/.test(AR.hintOf('share_5'))
+    } catch (e) { ok = false }
+    add('R66-5 成就「去点亮」：落点都是已注册页面、tab 页走 switchTab；分享没有落点只给提示；下一枚行内「去点亮」不冒泡开弹层',
+      ok && /catchtap="goAchieve" data-url="\{\{item\.route\.url\}\}"/.test(s.achWxml) && /goAchieve\(e\) \{[\s\S]{0,300}if \(ds\.tab\) wx\.switchTab/.test(s.achJs))
+  }
   // R63 超管 / 店长工作台顶部屏效（2026-11-22 产品负责人「顶部的多个栏目如搜索、处理动态等效率较低」）
   {
     const upd = (s.mgrCfgJs.match(/\n  updateTime\(\) \{[\s\S]*?\n  \},/) || [''])[0]
@@ -1290,6 +1325,8 @@ if (process.argv.includes('--selftest')) {
     ['图鉴门类剪影改成按物种出图（剧透）', 'atlasPlatesJs', (t) => t.replace('const shape = SHAPE_BY_TONE[card.categoryTone]\n  if (!shape', 'const shape = SHAPE_BY_SPECIES[card.id] || SHAPE_BY_TONE[card.categoryTone]\n  if (!shape')],
     ['成就行尾又重复「下一枚」句', 'achWxml', (t) => t.replace('<text class="track-next" wx:else>{{track.nextRemain}}</text>', '<text class="track-next" wx:else>下一枚「{{track.nextName}}」· {{track.nextRemain}}</text>')],
     ['图鉴翻页剧透未点亮邻页的名称', 'atlasPagerJs', (t) => t.replace("label: c.unlocked ? String(c.nameZh || '') : '未记录'", "label: String(c.nameZh || '')")],
+    ['同章小格剧透未点亮页名称', 'atlasPagerJs', (t) => t.replace("label: c.unlocked ? String(c.nameZh || '') : '',", "label: String(c.nameZh || ''),")],
+    ['成就去点亮指向不存在的页面', 'achRoutesJs', (t) => t.replace("url: '/subpackages/feature/search/index'", "url: '/subpackages/feature/search/nope'")],
     ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
     ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
     ['捐赠铭牌水印改回 1% 文字', 'dnWxml', (t) => t.replace('aria-hidden="true">❤️</text>', 'aria-hidden="true">1%</text>')],

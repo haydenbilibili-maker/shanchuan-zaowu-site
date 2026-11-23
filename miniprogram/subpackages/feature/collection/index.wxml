@@ -51,7 +51,22 @@
       <text class="sec-eyebrow">PLATES</text>
       <text class="sec-title">图版</text>
     </view>
-    <text class="sec-link" bindtap="goNotes" hover-class="tap-press" hover-stay-time="80">采集日志 ›</text>
+    <view class="sec-head-actions">
+      <!-- 只看已翻开（2026-11-22）：80 页标本册里先看自己翻开的那几页；与门类 / 卷章叠加，本机记住 -->
+      <view
+        class="lit-toggle {{onlyLit ? 'is-on' : ''}}"
+        bindtap="onToggleOnlyLit"
+        hover-class="tap-press"
+        hover-stay-time="80"
+        aria-role="switch"
+        aria-label="只看已翻开，{{onlyLit ? '已开' : '已关'}}"
+      >
+        <view class="lit-toggle-dot"></view>
+        <text class="lit-toggle-t">只看已翻开</text>
+        <text class="lit-toggle-n">{{stats.unlocked}}</text>
+      </view>
+      <text class="sec-link" bindtap="goNotes" hover-class="tap-press" hover-stay-time="80">采集日志 ›</text>
+    </view>
   </view>
 
   <scroll-view scroll-x class="cats" enable-flex show-scrollbar="{{false}}" wx:if="{{!loading && categories.length}}">
@@ -84,8 +99,8 @@
   </view>
 
   <view class="empty" wx:elif="{{filterEmpty}}">
-    <text class="empty-t">这一格还是空的</text>
-    <text class="empty-s">换一个门类，或回到全部。</text>
+    <text class="empty-t">{{onlyLit ? '这里还没有翻开的页' : '这一格还是空的'}}</text>
+    <text class="empty-s">{{onlyLit ? '扫到馆内印记或拍照采集，翻开的页会出现在这里。' : '换一个门类，或回到全部。'}}</text>
     <button class="btn-brass" bindtap="clearFilters">看全部</button>
   </view>
 

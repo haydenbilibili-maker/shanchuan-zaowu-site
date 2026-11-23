@@ -1374,3 +1374,15 @@ page {
 }
 .env-mark.is-opened { border-color: rgba(196, 167, 108, 0.45); }
 .env-mark.is-opened::before { border-color: rgba(196, 167, 108, 0.45); border-top-width: 2rpx; border-left-width: 2rpx; }
+
+/* 列表直达（2026-11-23）：动作字可点 —— 加「›」与命中区（上下 12rpx、左 16rpx），视觉位置不变 */
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .action-hint.is-go {
+  padding: 12rpx 0 12rpx 16rpx;
+  margin: -12rpx 0;
+  color: var(--brass-200, #E3D2AC);
+}
+.load-more.muted { flex-direction: column; gap: 8rpx; }
+.load-more-tip {
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}

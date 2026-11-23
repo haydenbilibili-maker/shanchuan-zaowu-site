@@ -9,7 +9,7 @@ const {
   emptyUnlockSheet
 } = require('../utils/atlas')
 const { plateOf, ghostOf } = require('../utils/atlasPlates')
-const { rememberOrder } = require('./atlasPager')
+const { rememberOrder, rememberAll } = require('./atlasPager')
 
 /* 2026-10-17 重设计：一本「博物志 · 卷一」—— 卷首（大数字 + 每页一格的刻度）→ 卷章（三个系列）→ 图版（三列标本册，
    按编号固定位置，未点亮的页留空位只露编号）→ 近期足迹。旧的稀有度筛选行退场（稀有 / 传奇直接写在图版角上）。
@@ -32,6 +32,8 @@ function nextHintOf(cards, stats, offline) {
     : `还差 ${total - got} 页。拍下一件标本，也许就是下一页。`
 }
 
+
+const ONLY_LIT_KEY = 'atlas_only_lit_v1'
 Page({
   data: {
     loading: true,
@@ -50,12 +52,17 @@ Page({
     recentNotes: [],
     unlockSheet: emptyUnlockSheet(),
     filterEmpty: false,
+    /** 「只看已翻开」（2026-11-22 图鉴扩到 80 页后，标本册约 27 行）：本机记住 */
+    onlyLit: false,
     catalogEmpty: false,
     skelPlates: [1, 2, 3, 4, 5, 6, 7, 8, 9]
   },
 
   onLoad(options) {
     this._pendingSpot = parseEnterSpot(options)
+    try {
+      if (wx.getStorageSync && wx.getStorageSync(ONLY_LIT_KEY)) this.setData({ onlyLit: true })
+    } catch (e) { /* 读不到就按默认看全部 */ }
     trackBehavior('atlas_view', 'atlas', 'index', {})
     this.loadDisplayFlags()
   },
@@ -90,6 +97,8 @@ Page({
     })
     // 标本册按编号固定位置：点亮的页就地亮起，不往前挤（「缺的那几格」本身就是收集的动力）
     cards.sort((a, b) => String(a.no).localeCompare(String(b.no), 'en', { numeric: true }))
+    // 详页「同章小格」用整册（不受筛选影响）
+    rememberAll(getApp(), cards)
     const rawStats = pack.stats || this.data.stats
     // 卷章刻度（2026-11-22）：每章一排小格，亮 = 已翻开（原只有「1/4」分数）
     const stats = Object.assign({}, rawStats, {
@@ -149,7 +158,9 @@ Page({
 
   applyFilter() {
     const { cards, filter, seriesFilter, stats } = this.data
+    const onlyLit = !!this.data.onlyLit
     const filtered = cards.filter((c) => {
+      if (onlyLit && !c.unlocked) return false
       if (filter !== 'all' && c.category !== filter) return false
       if (seriesFilter && (c.seriesIds || []).indexOf(seriesFilter) === -1) return false
       return true
@@ -217,9 +228,18 @@ Page({
     wx.navigateTo({ url: '/subpackages/feature/collection/log/index?tab=notes' })
   },
 
+  /** 只看已翻开：与门类 / 卷章叠加；详页翻页也随之只在已翻开的页之间翻（rememberOrder 用的是 filtered） */
+  onToggleOnlyLit() {
+    const onlyLit = !this.data.onlyLit
+    try {
+      if (wx.setStorageSync) wx.setStorageSync(ONLY_LIT_KEY, onlyLit)
+    } catch (e) { /* 记不住不影响本次切换 */ }
+    this.setData({ onlyLit }, () => this.applyFilter())
+  },
+
   clearFilters() {
     this.setData(
-      { filter: 'all', seriesFilter: '', seriesBlurb: '' },
+      { filter: 'all', seriesFilter: '', seriesBlurb: '', onlyLit: false },
       () => this.applyFilter()
     )
   },

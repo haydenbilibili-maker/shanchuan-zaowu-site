@@ -1067,6 +1067,23 @@ button.nav-share-btn::after { display: none; border: none; }
   text-overflow: ellipsis; 
 }
 .tax-row.highlight .v { color: var(--color-primary); font-weight: bold; }
+/* 阶元梯（2026-11-22）：六级一行折排，级与级之间一枚铜色 ›；种名作结论单独一行 */
+.taxonomy-card.is-ladder { padding: 26rpx 28rpx; margin-bottom: 40rpx; }
+.tax-ladder { display: flex; flex-wrap: wrap; align-items: baseline; row-gap: 14rpx; }
+.tax-step { display: inline-flex; align-items: baseline; }
+.tax-step + .tax-step::before { content: '›'; margin: 0 14rpx; font-size: var(--fs-24); color: rgba(196, 167, 108, 0.6); }
+.tax-rank { margin-right: 6rpx; font-size: var(--fs-18); color: var(--color-text-secondary); }
+.tax-name { font-family: var(--font-brand); font-size: var(--fs-26); color: var(--color-text-body); }
+.tax-species {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 20rpx;
+  padding-top: 18rpx;
+  border-top: 1px dashed rgba(196, 167, 108, 0.2);
+}
+.tax-species-k { font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: 0.16em; color: var(--color-text-secondary); }
+.tax-species-v { font-family: var(--font-latin); font-style: italic; font-size: var(--fs-30); color: var(--brass-200); }
 .taxonomy-empty {
   background: var(--color-bg-card);
   border-radius: var(--radius-md);

@@ -3,6 +3,7 @@ const app = getApp();
 const easterEgg = require('../../../../utils/easterEgg');
 const { markAchievementsSeen } = require('../../../../utils/badgeDisplay');
 const { takeFreshLit } = require('./litSeen');
+const { routeOf, hintOf } = require('./achievementRoutes');
 
 const TYPE_DEFS = [
   { type: 'explore', name: '探索类', enName: 'EXPLORATION', icon: '/assets/icons/knowledge.png' },
@@ -176,9 +177,27 @@ function buildNextUp(all) {
   return all
     .filter((a) => a && !a.unlocked)
     .sort((a, b) => (b.progressPercent - a.progressPercent) || (a.threshold - b.threshold))
-    .slice(0, 3);
+    .slice(0, 3)
+    // 2026-11-23：每枚带「去点亮」落点（没有落点的只给提示）
+    .map((a) => ({ ...a, route: routeOf(a.id), routeHint: hintOf(a.id) }));
 }
 
+
+/**
+ * 弹层里的「这条成长线」（2026-11-23）：找到这枚所在的线，节点标出当前这枚；单枚成线不出（没有梯可看）。
+ */
+function trackOfAchievement(chapters, id) {
+  for (const c of chapters || []) {
+    for (const t of c.tracks || []) {
+      if (!(t.nodes || []).some((n) => n.id === id) || t.nodes.length < 2) continue;
+      return {
+        name: t.name,
+        nodes: t.nodes.map((n) => ({ id: n.id, roman: n.roman, label: n.label, unlocked: n.unlocked, current: n.id === id }))
+      };
+    }
+  }
+  return null;
+}
 Page({
   data: {
     loading: true,
@@ -189,6 +208,10 @@ Page({
     achievementStats: null,
     chapters: [],
     nextUp: [],
+    freshText: '',
+    freshFirstId: '',
+    pendingRewards: 0,
+    selectedTrack: null,
     ticks: [],
     showModal: false,
     selectedAchievement: null,
@@ -345,13 +368,25 @@ Page({
     }
 
     this._rawByType = byType;
+    // 新点亮一句话（2026-11-23）：射灯只在节点上扫一下，这里用字写出来；最多列三枚，其余写「等 N 枚」
+    const freshNames = normalized.filter((a) => freshLit.indexOf(a.id) >= 0).map((a) => a.name).filter(Boolean);
+    const freshText = freshNames.length
+      ? freshNames.slice(0, 3).join('、') + (freshNames.length > 3 ? ` 等 ${freshNames.length} 枚` : '')
+      : '';
+
+    // 尚有多少积分待点亮（2026-11-23）：未点亮徽章的奖励合计
+    const pendingRewards = normalized.filter((a) => !a.unlocked).reduce((sum, a) => sum + (a.rewardPoints || 0), 0);
+    const freshFirstId = (normalized.find((a) => freshLit.indexOf(a.id) >= 0) || {}).id || '';
 
     this.setData({
       achievements: normalized,
+      pendingRewards,
+      freshFirstId,
       achievementTypes: chapters,
       chapters,
       nextUp,
       ticks,
+      freshText,
       achievementStats: currentStats,
       loading: false,
       refreshing: false,
@@ -435,17 +470,30 @@ Page({
     const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
     const achievement = ds.achievement || (this.data.achievements || []).find((a) => a && a.id === ds.id);
     if (!achievement) return;
-    wx.vibrateShort({ type: 'light' });
+    // 弹层里沿成长线切换不再震（只在打开时震一下）
+    if (!this.data.showModal) wx.vibrateShort({ type: 'light' });
+    const selected = normalizeAchievement(achievement);
     this.setData({
-      selectedAchievement: normalizeAchievement(achievement),
+      selectedAchievement: { ...selected, route: selected.unlocked ? null : routeOf(selected.id), routeHint: selected.unlocked ? '' : hintOf(selected.id) },
+      selectedTrack: trackOfAchievement(this.data.chapters, selected.id),
       showModal: true
     });
+  },
+
+  /** 去点亮：tab 页用 switchTab，其余 navigateTo；从弹层里点先收起弹层 */
+  goAchieve(e) {
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    if (!ds.url) return;
+    if (this.data.showModal) this.setData({ showModal: false, selectedAchievement: null });
+    if (ds.tab) wx.switchTab({ url: ds.url });
+    else wx.navigateTo({ url: ds.url });
   },
 
   closeModal() {
     this.setData({
       showModal: false,
-      selectedAchievement: null
+      selectedAchievement: null,
+      selectedTrack: null
     });
   },
 

@@ -154,6 +154,7 @@
         "identify/index",
         "identify/result/index",
         "identify/share/index",
+        "museum-guide/index",
         "collection/index",
         "collection/detail/index",
         "collection/log/index",

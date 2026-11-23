@@ -214,7 +214,8 @@
               <text>{{item.statusLabel}}</text>
             </view>
             <text class="action-hint" wx:if="{{item.isDigest}}">{{item.digestPayloadMissing ? '查看原文' : '查看详情'}}</text>
-            <text class="action-hint" wx:elif="{{item.actionUrl}}">{{item.actionLabel || '打开相关页'}}</text>
+            <!-- 列表直达（2026-11-23）：动作字可直接点，不必先拆信；这封同时记为已读 -->
+            <text class="action-hint is-go" wx:elif="{{item.actionUrl}}" catchtap="quickAction" data-index="{{index}}" hover-class="tap-press" hover-stay-time="80">{{item.actionLabel || '打开相关页'}} ›</text>
           </view>
         </view>
       </view>
@@ -226,6 +227,7 @@
       </view>
       <view class="load-more muted" wx:elif="{{!hasMore && messages.length > 0}}">
         <text>{{activeCategory === 'digest' ? '以上是可回看的日报' : '以上是全部来信'}}</text>
+        <text class="load-more-tip" wx:if="{{!workflowMode && activeQueue === 'customer'}}">长按一封可从信箱移除</text>
       </view>
     </view>
   </scroll-view>

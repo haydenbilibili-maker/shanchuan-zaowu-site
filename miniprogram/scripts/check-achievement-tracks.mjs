@@ -30,7 +30,8 @@ const P = {
   wishWxml: resolve(MP, 'subpackages/extra/user/wishlist/index.wxml'),
   msgJs: resolve(MP, 'subpackages/extra/user/messages/index.js'),
   msgWxml: resolve(MP, 'subpackages/extra/user/messages/index.wxml'),
-  letterWxml: resolve(MP, 'subpackages/extra/user/messages/detail/index.wxml')
+  letterWxml: resolve(MP, 'subpackages/extra/user/messages/detail/index.wxml'),
+  letterJs: resolve(MP, 'subpackages/extra/user/messages/detail/index.js')
 }
 
 async function run(inject) {
@@ -85,6 +86,27 @@ async function run(inject) {
     `C 下一枚须为三枚未点亮、进度高者优先：${nu.map((a) => a.id + ':' + a.progressPercent).join(',')}`)
   ok(page.data.ticks.length === list.length && page.data.ticks.filter((t) => t.lit).length === 1, 'D 卷首刻度须每枚一格、亮格 = 已点亮数')
 
+  // F（2026-11-23）弹层成长线：标出当前这枚；单枚成线不出梯
+  page.viewAchievement({ currentTarget: { dataset: { id: 'explore_50' } } })
+  const st = page.data.selectedTrack
+  ok(!!st && st.nodes.map((n) => n.roman).join(',') === 'I,II,III' && st.nodes.filter((n) => n.current).map((n) => n.id).join() === 'explore_50',
+    'F 徽章弹层须带这条成长线并只标当前这一枚')
+  page.viewAchievement({ currentTarget: { dataset: { id: 'folder_3' } } })
+  ok(page.data.selectedTrack === null, 'F 单枚成线（收藏夹）不出成长线梯')
+  page.closeModal()
+  // G 新点亮一句话：只列本机新见到的那几枚，超过三枚写「等 N 枚」；没有新点亮时为空
+  ok(page.data.freshText === '', 'G 没有新点亮时不出「新点亮」')
+  page._freshLit = ['explore_10', 'collect_5', 'share_1', 'course_1']
+  page._applyAchievementData({ achievements: list.map((a) => (['collect_5', 'share_1', 'course_1'].includes(a.id) ? { ...a, progress: a.threshold, unlocked: true } : a)), stats: {} })
+  ok(page.data.freshText === 'explore_10、collect_5、share_1 等 4 枚', `G 新点亮一句话须列前三枚 + 等 N 枚，实际「${page.data.freshText}」`)
+  page._freshLit = null
+  // H（2026-11-23 续）尚有 N 待点亮 = 未点亮徽章奖励合计；新点亮一句话可点到第一枚；成长线节点可点切换
+  const expectPending = list.filter((x) => x.progress < x.threshold && !['collect_5', 'share_1', 'course_1'].includes(x.id)).reduce((sum, x) => sum + ((x.reward && x.reward.points) || 0), 0)
+  ok(page.data.pendingRewards === expectPending, `H 尚有待点亮积分须为未点亮徽章奖励合计（期望 ${expectPending}，实际 ${page.data.pendingRewards}）`)
+  const achWxml = read(P.wxml)
+  ok(/class="fresh-note"[^>]*bindtap="viewAchievement" data-id="\{\{freshFirstId\}\}"/.test(achWxml), 'H 新点亮一句话须可点开第一枚')
+  ok(/class="mt-cell"[^>]*bindtap="viewAchievement" data-id="\{\{item\.id\}\}"/.test(achWxml), 'H 弹层成长线节点须可点切换')
+
   const wxml = read(P.wxml)
   ok(!/<scroll-view/.test(wxml) && /class="block relics-card"/.test(wxml), 'E 内容不得放进 scroll-view（pageScrollTo 滚不到 .relics-card）')
   ok(/"enablePullDownRefresh": true/.test(read(P.json)) && /onPullDownRefresh\(\)/.test(read(P.page)), 'E 改回页面滚动后须开启原生下拉刷新')
@@ -128,6 +150,25 @@ async function run(inject) {
   const letter = read(P.letterWxml)
   ok(!/paper-fiber|paper-laid|paper-wear|paper-crease|paper-fold|signal-row|class="grain-overlay"/.test(letter) && /class="letter-seal seal-/.test(letter),
     'G 信笺退场纤维 / 压纹 / 磨损 / 折痕 / 信号灯，换方寸印')
+  // H 下一封未读（2026-11-23）：只在顾客信箱、跳过日报 / 工作信息与当前这封；当前之后优先，找不到回到头
+  const letterMod = loadCjsModule(P.letterJs, {
+    transform: (f, src) => (f === P.letterJs ? transform(f, src) + '\nmodule.exports.__nextUnreadOf = nextUnreadOf' : transform(f, src)),
+    globals: { getApp: () => ({ globalData: {} }), Page: () => {}, getCurrentPages: () => [], wx: {} }
+  })
+  const box = { activeQueue: 'customer', workflowMode: false, messages: [
+    { _id: 'a', isUnread: true, title: '甲' }, { _id: 'b', isUnread: false, title: '乙' }, { _id: 'c', isUnread: true, isDigest: true, title: '日报' },
+    { _id: 'd', isUnread: true, title: '丁' }, { _id: 'e', isUnread: true, kind: 'workflow', title: '工作' }] }
+  const nextOf = letterMod.__nextUnreadOf
+  const n1 = nextOf(box, 'b'); const n2 = nextOf(box, 'd'); const n3 = nextOf({ ...box, activeQueue: 'workflow' }, 'b')
+  ok(n1 && n1.id === 'd' && n1.remain === 2 && n2 && n2.id === 'a' && n2.remain === 1 && n3 === null &&
+    nextOf({ ...box, messages: [{ _id: 'a', isUnread: true }] }, 'a') === null,
+    `H 下一封未读须取当前之后的纸信、到底回头、不含日报/工作信息/当前这封（${JSON.stringify([n1, n2, n3])}）`)
+  // I 列表直达（2026-11-23）：动作字 catchtap（不触发拆信）→ 去相关页，未读的同时本地 + 云端记已读
+  const qa = (read(P.msgJs).match(/\n  quickAction\(e\) \{[\s\S]*?\n  \},/) || [''])[0]
+  ok(/class="action-hint is-go" wx:elif="\{\{item\.actionUrl\}\}" catchtap="quickAction"/.test(msgWxml) &&
+    /this\.applyLocalRead\(id\)/.test(qa) && /action: 'markRead'/.test(qa) && /openMiniProgramUrl\(message\.actionUrl\)/.test(qa),
+    'I 信箱行尾动作字须可直达（catchtap，不拆信），未读的同时记已读')
+  ok(/class="next-letter" wx:if="\{\{nextUnread && !digestView\}\}" bindtap="goNextUnread"/.test(read(P.letterWxml)), 'H 信页须有「下一封未读」入口（日报不出）')
   return fails
 }
 
@@ -137,6 +178,12 @@ function apply(src, inj) {
 }
 
 const INJECTIONS = [
+  { name: '列表直达不记已读', file: P.msgJs, find: "      this.applyLocalRead(id);\n", replace: "" },
+  { name: '下一封未读不跳过当前这封', file: P.letterJs, find: "m.isUnread && m._id !== currentId && m._altId !== currentId", replace: "m.isUnread" },
+  { name: '下一封未读混进日报', file: P.letterJs, find: "!m.isDigest && m.kind !== 'workflow'", replace: "m.kind !== 'workflow'" },
+  { name: '待点亮积分算成全部', file: P.page, find: "normalized.filter((a) => !a.unlocked).reduce(", replace: "normalized.reduce(" },
+  { name: '成长线节点不可点', file: P.wxml, find: 'wx:key="id" bindtap="viewAchievement" data-id="{{item.id}}"', replace: 'wx:key="id"' },
+  { name: '弹层成长线不标当前枚', file: P.page, find: 'current: n.id === id', replace: 'current: false' },
   { name: '未登记徽章被丢弃', file: P.page, find: "  all.filter((a) => a && a.id && !used[a.id]).forEach((a) => {", replace: "  [].forEach((a) => {" },
   { name: '登记表漏一个 id', file: P.page, find: "'atlas_mountain', 'atlas_volume'", replace: "'atlas_mountain'" },
   { name: '连线不按进度填', file: P.page, find: '    if (i + 1 === nextIndex && nodes[i].unlocked) return next.progressPercent;\n', replace: '' },

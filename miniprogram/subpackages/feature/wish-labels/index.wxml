@@ -42,13 +42,14 @@
     <text class="wl-sub is-note" wx:if="{{exhibit.visitNote}}">{{exhibit.visitNote}}</text>
   </view>
 
-  <!-- 最新三张露角，点即看墙 -->
+  <!-- 露角（2026-11-23）：大家最想要的三张（还没人点「我也想要」时退回最新三张）；墙在下面按最新排，不再重复 -->
+  <text class="wl-peek-k" wx:if="{{peek.length}}">{{peekMode === 'echo' ? 'MOST WANTED · 大家最想要' : 'JUST PINNED · 刚钉上的'}}</text>
   <scroll-view class="wl-peek" scroll-x enhanced show-scrollbar="{{false}}" wx:if="{{peek.length}}">
     <view class="wl-peek-row">
       <view class="wl-mini" wx:for="{{peek}}" wx:key="_id" data-id="{{item._id}}" bindtap="openLabel" hover-class="tap-press-soft" hover-stay-time="80">
         <text class="wl-mini-no" wx:if="{{item.no}}">{{item.no}}</text>
         <text class="wl-mini-text">{{item.text}}</text>
-        <text class="wl-mini-by">{{item.author}}{{item.timeText ? ' · ' + item.timeText : ''}}</text>
+        <text class="wl-mini-by">{{item.author}}{{item.echoCount > 0 && peekMode === 'echo' ? ' · ' + item.echoCount + ' 人也想要' : (item.timeText ? ' · ' + item.timeText : '')}}</text>
       </view>
     </view>
   </scroll-view>
@@ -207,6 +208,12 @@
       <view class="wl-paper-field"><text class="k">写签人</text><text class="v">{{card.official ? '山海造物' : card.author}}</text></view>
       <view class="wl-paper-field"><text class="k">许给</text><text class="v">{{exhibit.species || '展品'}} · {{exhibit.name || '马上有'}}</text></view>
     </view>
+  </view>
+  <!-- 翻页（2026-11-23）：按当前这面墙的顺序看上一张 / 下一张，不必关了再点 -->
+  <view class="wl-card-pager" wx:if="{{cardPos}}">
+    <text class="wl-pg-btn {{cardPos.prevId ? '' : 'is-off'}}" data-id="{{cardPos.prevId}}" bindtap="turnCard" hover-class="{{cardPos.prevId ? 'tap-press' : 'none'}}" hover-stay-time="80" aria-role="button">‹ 上一张</text>
+    <text class="wl-pg-pos">{{cardPos.index}} / {{cardPos.total}}</text>
+    <text class="wl-pg-btn {{cardPos.nextId ? '' : 'is-off'}}" data-id="{{cardPos.nextId}}" bindtap="turnCard" hover-class="{{cardPos.nextId ? 'tap-press' : 'none'}}" hover-stay-time="80" aria-role="button">下一张 ›</text>
   </view>
   <view class="wl-card-acts">
     <view

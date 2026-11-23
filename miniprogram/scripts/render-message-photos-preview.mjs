@@ -128,6 +128,7 @@ const pageData = (msg) => ({
   loadError: false,
   digestView: null,
   digestPayloadMissing: false,
+  nextUnread: null, // 2026-11-23 下一封未读（detail/index.js data 默认 null）
   letterLoading: false,
   actionPadStyle: '',
   sectionCollapsed: {}

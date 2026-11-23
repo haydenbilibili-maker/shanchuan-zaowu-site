@@ -29,12 +29,23 @@
         <view class="ticks" wx:if="{{ticks.length}}" aria-hidden="true">
           <view class="tick {{item.lit ? 'is-lit' : ''}}" wx:for="{{ticks}}" wx:key="id"></view>
         </view>
-        <view class="cover-points" wx:if="{{achievementStats.totalRewards}}">
+        <view class="cover-points" wx:if="{{achievementStats.totalRewards || pendingRewards}}">
           <image class="cover-points-icon icon-gold" src="/assets/icons/coin_gold.png" mode="aspectFit"></image>
-          <text class="cover-points-t">点亮累计获得积分</text>
-          <text class="cover-points-v">{{achievementStats.totalRewards}}</text>
+          <block wx:if="{{achievementStats.totalRewards}}">
+            <text class="cover-points-t">点亮累计获得积分</text>
+            <text class="cover-points-v">{{achievementStats.totalRewards}}</text>
+          </block>
+          <!-- 还没拿到的（2026-11-23）：未点亮徽章的积分合计，给一个往前走的理由 -->
+          <text class="cover-points-more" wx:if="{{pendingRewards}}">尚有 {{pendingRewards}} 积分待点亮</text>
         </view>
       </block>
+    </view>
+
+    <!-- 新点亮（2026-11-23）：上次来过之后点亮了哪几枚，用字写出来（射灯只在节点上扫一下）；本机首次进页不出 -->
+    <view class="fresh-note" wx:if="{{freshText}}" bindtap="viewAchievement" data-id="{{freshFirstId}}" hover-class="tap-press-soft" hover-stay-time="80">
+      <text class="fresh-k">新点亮</text>
+      <text class="fresh-v">{{freshText}}</text>
+      <text class="fresh-go">看看 ›</text>
     </view>
 
     <!-- 章目录（2026-11-22）：五章一排，各带进度弧；点一章直接滚到该章 —— 页面长，先给一张地图 -->
@@ -77,12 +88,15 @@
       >
         <view class="next-top">
           <text class="next-name">{{item.name}}</text>
+          <text class="next-reward" wx:if="{{item.rewardPoints > 0}}">+{{item.rewardPoints}} 积分</text>
           <text class="next-pct">{{item.progressPercent}}%</text>
         </view>
         <view class="next-bar"><view class="next-fill" style="width: {{item.progressPercent}}%;"></view></view>
         <view class="next-foot">
-          <text class="next-desc">{{item.desc}}</text>
           <text class="next-remain">{{item.remainText}}</text>
+          <!-- 2026-11-23：「还差」后面直接给一步可走的路；没有落点的只写提示 -->
+          <text class="next-go" wx:if="{{item.route}}" catchtap="goAchieve" data-url="{{item.route.url}}" data-tab="{{item.route.tab}}" hover-class="tap-press" hover-stay-time="80">{{item.route.label}} ›</text>
+          <text class="next-hint" wx:elif="{{item.routeHint}}">{{item.routeHint}}</text>
         </view>
       </view>
     </view>
@@ -185,6 +199,17 @@
       <text class="modal-title">{{selectedAchievement.name}}</text>
       <text class="modal-cond">{{selectedAchievement.condition || selectedAchievement.desc}}</text>
 
+      <!-- 这条成长线（2026-11-23）：这一枚在梯上的位置，当前这枚铜框 -->
+      <view class="modal-track" wx:if="{{selectedTrack}}">
+        <text class="modal-track-t">{{selectedTrack.name}} · 成长线 · 点一枚可切换</text>
+        <view class="modal-track-nodes">
+          <view class="mt-cell" wx:for="{{selectedTrack.nodes}}" wx:key="id" bindtap="viewAchievement" data-id="{{item.id}}" hover-class="tap-press" hover-stay-time="80">
+            <view class="mt-node {{item.unlocked ? 'is-lit' : ''}} {{item.current ? 'is-current' : ''}}"><text class="mt-roman">{{item.roman}}</text></view>
+            <text class="mt-label {{item.current ? 'is-current' : ''}}">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+
       <view class="modal-rows">
         <view class="modal-row" wx:if="{{!selectedAchievement.unlocked}}">
           <text class="modal-k">进度</text>
@@ -199,7 +224,14 @@
       </view>
 
       <view class="modal-btn is-primary" wx:if="{{selectedAchievement.unlocked}}" hover-class="tap-press" hover-stay-time="80" bindtap="shareSingleAchievement">分享这枚徽章</view>
-      <view class="modal-btn" wx:else hover-class="tap-press" hover-stay-time="80" bindtap="closeModal">知道了</view>
+      <!-- 2026-11-23：未点亮给「去点亮」主按钮（有落点时），没有落点写一句提示 -->
+      <block wx:else>
+        <text class="modal-hint" wx:if="{{!selectedAchievement.route && selectedAchievement.routeHint}}">{{selectedAchievement.routeHint}}</text>
+        <view class="modal-actions">
+          <view class="modal-btn" hover-class="tap-press" hover-stay-time="80" bindtap="closeModal">知道了</view>
+          <view class="modal-btn is-primary" wx:if="{{selectedAchievement.route}}" hover-class="tap-press" hover-stay-time="80" bindtap="goAchieve" data-url="{{selectedAchievement.route.url}}" data-tab="{{selectedAchievement.route.tab}}">{{selectedAchievement.route.label}}</view>
+        </view>
+      </block>
     </view>
   </view>
 

@@ -105,7 +105,8 @@ const wlLabels = [
 ]
 const wlBase = {
   statusBarHeight: 44, navBarHeight: 44, navTotal: 88, allowed: true, flagChecked: true, loading: false, exhibit: wlExhibit, cover: WL_COVER,
-  peek: [wlLabels[0][0], wlLabels[1][0], wlLabels[0][1]], columns: wlLabels, viewMode: 'latest', capped: true, listLimit: 60,
+  // 2026-11-23 露角 = 大家最想要（按想要人数，不够用最新补满）
+  peek: [wlLabels[1][0], wlLabels[0][1], wlLabels[0][0]], peekMode: 'echo', cardPos: null, columns: wlLabels, viewMode: 'latest', capped: true, listLimit: 60,
   quota: { used: 1, left: 4, cap: 5, exhausted: false }, textMax: 30, inspiration: ['马上有风', '马上有暖', '马上有眠', '马上有劲'],
   voiceMax: 15, writer: '蛋炒饭', today: '2026.10.15'
 }
@@ -175,8 +176,12 @@ function achievementsSceneData() {
     A('certificate_1', 'learning', '证书持有者', '获得 1 个证书', 1, 2, 20, '份'), A('certificate_5', 'learning', '证书收藏家', '获得 5 个证书', 5, 2, 50, '份')
   ]
   const unlocked = list.filter((a) => a.unlocked).length
+  page._freshLit = ['spend_500', 'certificate_1']
   page._applyAchievementData({ achievements: list, stats: { total: list.length, unlocked, locked: list.length - unlocked, totalRewards: 205 } })
-  return Object.assign({}, page.data, {
+  page.viewAchievement({ currentTarget: { dataset: { id: page.data.nextUp[0].id } } })
+  const demoTrack = page.data.selectedTrack
+  page.closeModal()
+  return Object.assign({}, page.data, { _demoTrack: demoTrack,
     relicsName: '山海拾遗', relicsFound: 2, relicsTotal: 5, relicsUnlocked: false,
     relicsCatalog: [
       { id: 'r1', roman: 'I', discovered: true, plateTitle: '吉量', plateHint: '山海经 · 海内北经' },
@@ -215,13 +220,19 @@ const wlLedger = wlLedgerMod.buildLedgerTimeline([
   wlRow('l5', 'order_pay', '订单消费', -56000, '2026-10-28T20:31:00+08:00', { orderNo: 'ORD20261028203101', refType: 'order', refId: 'o3', subtitle: '订单支付扣款 · ORD20261028203101' }),
   wlRow('l6', 'recharge', '充值', 50000, '2026-10-10T09:00:00+08:00', { subtitle: '微信支付入账' })
 ], { now: wlNow, hasMore: false })
+// 同章小格样例（2026-11-23）：守山者真章节，点亮与否取预览 atlasCards
+const atlasMountain = atlasCatalogMod.ATLAS_SERIES.find((x) => x.id === 'mountain')
+const atlasChapterDemo = { id: 'mountain', name: '守山者', items: atlasMountain.speciesIds.map((id) => atlasCards.find((c) => c.id === id)).filter(Boolean)
+  .sort((a, b) => a.no.localeCompare(b.no)).map((c) => ({ id: c.id, no: c.no, unlocked: c.unlocked, label: c.unlocked ? c.nameZh : '', plate: c.unlocked ? c.plate : '', current: c.no === '033' })) }
+atlasChapterDemo.got = atlasChapterDemo.items.filter((c) => c.unlocked).length
+atlasChapterDemo.total = atlasChapterDemo.items.length
 const SCENES = [
   { name: 'wl-main', h: 2500, wxml: 'subpackages/feature/wish-labels/index', data: wlBase },
   { name: 'wl-compose', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, composeOpen: true, draft: '马上有好睡眠', draftCount: 6, posting: false, voicePath: '' } },
-  { name: 'wl-card', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, card: { ...wlLabels[1][0], date: '2026.10.15', echoed: false } } },
+  { name: 'wl-card', h: 1500, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, card: { ...wlLabels[1][0], date: '2026.10.15', echoed: false }, cardPos: { index: 2, total: 6, prevId: 'a', nextId: 'b' } } },
   { name: 'wl-empty-mine', h: 1900, wxml: 'subpackages/feature/wish-labels/index', data: { ...wlBase, viewMode: 'mine', columns: [[], []], quota: { used: 5, left: 0, cap: 5, exhausted: true } } },
   {
-    name: 'detail', h: 3000, wxml: 'subpackages/feature/detail/index', data: {
+    name: 'detail', h: 5200, wxml: 'subpackages/feature/detail/index', data: {
       product, commerceReady: true, displayPrice: '388', displayStock: 6, heroSlides: [{ key: 'h1', kind: 'image', src: P[0] }, { key: 'h2', kind: 'image', src: P[2] }], heroFit: 'aspectFill', heroSwiperH: 520,
       imageTotal: 2, activeTab: 'detail', statusBarHeight: 44, navBarHeight: 44, navOpacity: 0, craftTags: [{ key: 'dome', label: '玻璃罩' }, { key: 'hand', label: '手作' }],
       isShippingFree: true, shippingHint: '满 ¥199 包邮', archiveDisplay: { origin: '南美 · 秘鲁', size: '18 × 24 cm', framingMethod: '玻璃罩', framerName: '林一', date: '2026.09', craftProcess: '展翅 · 还软 · 定型 72 小时' },
@@ -367,14 +378,17 @@ const SCENES = [
       loading: false, loadError: false, hasMore: false, unreadCount: 2, activeCategory: 'all', activeQueue: 'customer', workflowMode: false, isStaff: false, showQueueTabs: false, headerHeight: 210,
       filterTabs: [{ id: 'all', label: '全部' }, { id: 'order', label: '订单' }, { id: 'gift', label: '礼赠' }, { id: 'system', label: '馆方' }],
       messages: [
-        { _id: 'm1', dayLabel: '今天', kind: 'receipt', typeName: '发货通知', readLampClass: 'lamp-brass', statusLabel: '待签收', statusLampClass: 'lamp-brass', title: '你的藏品已启程', preview: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。', formattedTime: '10:24', isUnread: true, kindLabel: '订单', kindLampClass: 'lamp-brass', senderName: '山海造物', hasProductCards: true, productThumbs: [P[0]], productSummary: '1 件藏品' },
+        { _id: 'm1', dayLabel: '今天', kind: 'receipt', typeName: '发货通知', actionUrl: '/subpackages/business/order-detail/index?id=o1', actionLabel: '查看物流', readLampClass: 'lamp-brass', statusLabel: '待签收', statusLampClass: 'lamp-brass', title: '你的藏品已启程', preview: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。', formattedTime: '10:24', isUnread: true, kindLabel: '订单', kindLampClass: 'lamp-brass', senderName: '山海造物', hasProductCards: true, productThumbs: [P[0]], productSummary: '1 件藏品' },
         { _id: 'm2', dayLabel: '昨天', kind: 'notice', typeName: '礼赠进度', readLampClass: 'lamp-brass', statusLabel: '已拆封', statusLampClass: 'lamp-forest', title: '阿禾拆开了你的礼笺', preview: '「谢谢你，我很喜欢。」', formattedTime: '昨天', isUnread: true, kindLabel: '礼赠', kindLampClass: 'lamp-forest', senderName: '礼赠' },
         { _id: 'm3', dayLabel: '10 月 12 日', kind: 'campaign', typeName: '馆方来信', readLampClass: 'lamp-brass hollow', statusLabel: '已读', statusLampClass: 'lamp-muted', title: '十月新到：南美闪蝶专题', preview: '本周馆藏上新 12 件，含 3 件孤品。', formattedTime: '10.12', isUnread: false, kindLabel: '馆方', kindLampClass: 'lamp-muted', senderName: '山海造物', isPaper: true }
       ]
     }
   },
   // 2026-10-17 成就重设计：场景数据由**真页面** _applyAchievementData 现算（成长线 / 下一枚 / 刻度不手抄）
-  { name: 'achievements', h: 3400, wxml: 'subpackages/extra/user/achievements/index', data: achievementsSceneData() },
+  // 2026-11-23：未点亮徽章详情（带「去点亮」）
+  { name: 'achievements-modal', h: 1400, wxml: 'subpackages/extra/user/achievements/index', data: (() => { const d = achievementsSceneData(); const n = d.nextUp[0]; return { ...d, showModal: true, selectedTrack: d._demoTrack, selectedAchievement: { ...n, statusLabel: '未点亮', typeEn: 'COLLECTION' } } })(),
+    css: '.ui-pop-mask.achievement-modal.show, .ui-pop-mask.achievement-modal { display: flex !important; position: fixed; inset: 0; z-index: 50; background: rgba(10,9,7,0.72); align-items: center; justify-content: center; }' },
+  { name: 'achievements', h: 4200, wxml: 'subpackages/extra/user/achievements/index', data: achievementsSceneData() },
   { name: 'gift-mine-people', h: 1700, wxml: 'subpackages/feature/gift/my-gifts/index', base: 'gift-mine', data: { hubTab: 'people', contactsLoading: false,
       contacts: [{ id: 'c1', name: '阿禾', nameInitial: '禾', relationLabel: '挚友', note: '喜欢蓝色的东西', giftCountLabel: '送过 2 次 · 最近 10.15', sceneKey: 'birthday' },
         { id: 'c2', name: '林老师', nameInitial: '林', relationLabel: '师长', giftCountLabel: '还没送过' }] } },
@@ -442,6 +456,7 @@ const SCENES = [
       rewards: [{ _id: 'r1', title: '黄铜书签', description: '蚀刻闪蝶纹样', cost: 800, stock: 12, type: 'physical', image: P[3] }, { _id: 'r2', title: '¥30 礼券', description: '全场满 199 可用', cost: 3000, stock: 99, type: 'coupon', image: P[4] }]
     }
   },
+  { name: 'atlas-onlylit', base: 'atlas', h: 2200, wxml: 'subpackages/feature/collection/index', data: { onlyLit: true, filtered: atlasCards.filter((c) => c.unlocked) } },
   {
     name: 'atlas', h: 9600, wxml: 'subpackages/feature/collection/index', data: {
       loading: false, loadError: false, offline: false, cards: atlasCards, filtered: atlasCards, stats: atlasStats,
@@ -455,7 +470,7 @@ const SCENES = [
     name: 'atlas-detail', h: 2600, wxml: 'subpackages/feature/collection/detail/index', data: {
       pagerPrev: { id: '031', no: '031', label: '银杏押花' }, pagerNext: { id: '034', no: '034', label: '未记录' }, pagerPos: '13 / 16',
       loading: false, loadError: false, locked: false, justUnlocked: false, methodText: '镜头记下 · 2026.10.16', seriesText: '守山者',
-      card: Object.assign({}, atlasCards[12], { essay: '壳里一格一格的房间，是它一生搬过的家。最外面那一间住着现在，里面的门都关上了，只留一根细管把它们连起来。' }),
+      chapter: atlasChapterDemo, card: Object.assign({}, atlasCards.find((c) => c.no === '033'), { essay: '壳里一格一格的房间，是它一生搬过的家。最外面那一间住着现在，里面的门都关上了，只留一根细管把它们连起来。' }),
       facts: [{ k: '产地', v: '西太平洋与印度洋的珊瑚礁外坡' }, { k: '习性', v: '白天沉在深处，夜里随水温上浮觅食' }, { k: '柜位', v: '海洋标本柜下层' }, { k: '印记码', v: 'SH-S5' }],
       relatedProducts: [{ _id: 'p1', title: '鹦鹉螺剖面标本', latinName: 'Nautilus pompilius', image: '', priceText: '680' }],
       logs: [{ id: 'l1', methodLabel: '拍照采集', timeText: '2026.10.16 21:04', place: '' }], hasLogs: true
@@ -463,7 +478,8 @@ const SCENES = [
   },
   {
     name: 'atlas-locked', h: 1800, wxml: 'subpackages/feature/collection/detail/index', data: {
-      loading: false, loadError: false, locked: true, card: atlasCards[2], facts: [], relatedProducts: [], logs: []
+      loading: false, loadError: false, locked: true, card: Object.assign({}, atlasCards.find((c) => c.no === '006'), { ghost: atlasPlates.ghostOf(atlasCards.find((c) => c.no === '006')), rarityLabel: '普通' }), seriesText: '', facts: [], relatedProducts: [], logs: [],
+      unlockWays: [{ k: '拍照采集', v: '对准实物或馆内藏品拍一张，认出它就翻开' }, { k: '收藏藏品', v: '收藏馆内对应的藏品（如有），会自动落进这一页' }]
     }
   },
   // 2026-10-17 标本养护「养护手册」：品类卡的刻版线描取真源 carePlateOf
@@ -643,6 +659,35 @@ const SCENES = [
       selectedMessage: { _id: 'm1', kind: 'receipt', stampCn: '回执', stampEn: 'RECEIPT', kindLabel: '订单', statusLabel: '待签收', senderName: '山海造物', title: '你的藏品已启程', formattedTime: '10:24', typeName: '发货通知', bodyBlocks: [], summaries: [] } },
     // 详情页根节点 height:100% 靠真机视口撑开，离线预览没有视口高度 → 放开裁切（预览专用，真机不受影响）
     css: 'page, .page-msg.detail-root { height: auto !important; overflow: visible !important; } .paper-mode.letter-page.standalone { position: relative !important; overflow: visible !important; } .standalone .letter-scroll { height: auto !important; }' },
+  // 2026-11-23：读完一封，操作区顶部「下一封未读」
+  { name: 'letter-next', h: 1500, wxml: 'subpackages/extra/user/messages/detail/index', base: 'letter-sealed', data: {
+      unsealing: 'done', nextUnread: { id: 'm2', title: '阿禾拆开了你的礼笺', remain: 2 },
+      selectedMessage: { _id: 'm1', kind: 'receipt', stampCn: '回执', stampEn: 'RECEIPT', kindLabel: '订单', statusLabel: '待签收', senderName: '山海造物', signOff: '馆员 敬上', title: '你的藏品已启程', formattedTime: '10:24', typeName: '发货通知',
+        bodyBlocks: [{ id: 'b1', runs: [{ rid: 'r1', type: 'text', text: '光明女神闪蝶 · 玻璃罩 已由顺丰发出，预计 2 天送达。' }] }], summaries: [], hasAction: true, actionLabel: '查看物流' } } },
+  // 2026-11-23 博物君（AI 馆员）：首访（欢迎语 + 开场问题）/ 一轮问答（回答 + 去处 + 追问）
+  { name: 'museum-guide-empty', h: 1500, wxml: 'subpackages/feature/museum-guide/index', data: {
+      messages: [{ id: 'g0', role: 'guide', isWelcome: true, text: '你好，我是博物君，山海造物标本馆的馆员。关于蝴蝶、贝壳、矿物与化石，关于标本怎么保存，关于山海造物这座馆，都可以问我。', followUps: [], actions: [] }],
+      starters: ['山海造物是一座怎样的馆？', '1% 公益是怎么回事？', '大蓝闪蝶为什么是蓝色的？', '蝴蝶标本怎么防潮防虫？', '怎么预约到馆参观？'],
+      hasAsked: false, draft: '', sending: false, quota: null, quotaText: '', scrollTo: '', questionMax: 300 },
+    css: '.mg-page { height: auto !important; } .mg-scroll { height: auto !important; }' },
+  { name: 'museum-guide', h: 1900, wxml: 'subpackages/feature/museum-guide/index', base: 'museum-guide-empty', data: {
+      hasAsked: true, quotaText: '今日还可问 28 次',
+      messages: [
+        { id: 'g0', role: 'guide', isWelcome: true, text: '你好，我是博物君，山海造物标本馆的馆员。关于蝴蝶、贝壳、矿物与化石，关于标本怎么保存，关于山海造物这座馆，都可以问我。', followUps: [], actions: [] },
+        { id: 'u1', role: 'user', text: '大蓝闪蝶为什么是蓝色的？' },
+        { id: 'g1', role: 'guide', text: '它的蓝不是色素，是结构色。翅面鳞片上有极细的层状脊纹，间距与蓝光的波长相当，白光照进去，只有蓝色那一段被反复加强、反射回来，其它颜色互相抵消。\n\n所以换个角度看，它会忽明忽暗；把鳞片浸进酒精，折射率一变，蓝会暂时褪去，干了又回来。馆里的图鉴第 001 页就是它，产自中美洲到南美北部的雨林。',
+          species: [{ no: '001', zh: '大蓝闪蝶' }],
+          followUps: ['还有哪些动物是结构色？', '闪蝶标本会褪色吗？', '雌蝶也一样蓝吗？'],
+          actions: [{ key: 'atlas', label: '翻山海图鉴', url: '/subpackages/feature/collection/index', tab: false }, { key: 'care', label: '看标本养护', url: '/subpackages/feature/care/index', tab: false }] }
+      ] } },
+  // 2026-11-23 博物君逐字显示中：末尾铜色光标，追问 / 去处 / 图鉴链接写完才出
+  { name: 'museum-guide-writing', h: 1500, wxml: 'subpackages/feature/museum-guide/index', base: 'museum-guide-empty', data: {
+      hasAsked: true, quotaText: '今日还可问 27 次',
+      messages: [
+        { id: 'u1', role: 'user', text: '鹦鹉螺为什么被叫作活化石？' },
+        { id: 'g1', role: 'guide', revealing: true, text: '因为它的样子几亿年没怎么变。', shown: '因为它的身体构造在四亿多年里变化很小：一枚分成许多气室的螺旋壳，靠调节气室里的气体与液体',
+          species: [{ no: '033', zh: '鹦鹉螺' }], followUps: ['它现在还活着吗？'], actions: [] }
+      ] } },
   { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
       visible: [
         { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },
@@ -872,7 +917,12 @@ ${s.css ? '/* 场景专属：如需出图某个弹层 */\n' + s.css : ''}
   console.log(`✓ ${s.name} → ${out}（缺字段 ${missing.size}）`)
 }
 
-for (const s of SCENES) if (s.base) s.data = { ...SCENES.find((x) => x.name === s.base).data, ...s.data }
+// base：继承数据；自己没写 css 时也继承 base 的预览专用 css（2026-11-23：letter-next 少了 letter-sealed 的放开裁切 → 出白图）
+for (const s of SCENES) if (s.base) {
+  const b = SCENES.find((x) => x.name === s.base)
+  s.data = { ...b.data, ...s.data }
+  if (s.css === undefined && b.css) s.css = b.css
+}
 for (const s of SCENES) {
   if (only.length && !only.includes(s.name)) continue
   try { await shoot(s) } catch (e) { console.log(`✗ ${s.name}：${e.message.split('\n')[0]}（订单列表等页另有 render-bflow-preview）`) }

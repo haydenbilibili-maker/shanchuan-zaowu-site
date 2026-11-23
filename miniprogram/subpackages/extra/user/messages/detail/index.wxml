@@ -204,6 +204,12 @@
     </scroll-view>
 
     <view class="letter-actions on-paper {{digestView ? 'digest-actions' : ''}}" style="{{actionPadStyle}}">
+      <!-- 下一封未读（2026-11-23）：读完一封不用退回信箱再找下一封；只在顾客信箱、还有未读时出现 -->
+      <view class="next-letter" wx:if="{{nextUnread && !digestView}}" bindtap="goNextUnread" hover-class="tap-press-soft" hover-stay-time="80">
+        <text class="nl-k">下一封未读</text>
+        <text class="nl-title">{{nextUnread.title}}</text>
+        <text class="nl-remain">{{nextUnread.remain > 1 ? '还有 ' + nextUnread.remain + ' 封' : '最后一封'}} ›</text>
+      </view>
       <button
         class="btn-primary"
         bindtap="handleAction"

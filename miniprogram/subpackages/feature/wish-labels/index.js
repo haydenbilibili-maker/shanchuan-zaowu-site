@@ -67,6 +67,8 @@ Page({
     exhibit: null,
     cover: '',
     peek: [],
+    peekMode: 'latest',
+    cardPos: null,
     columns: [[], []],
     viewMode: 'latest',
     mineLabels: [],
@@ -272,8 +274,10 @@ Page({
     const src = this.data.viewMode === 'mine' ? (this._mine || []) : wall
     const freshId = this.data.freshId
     const mark = (l) => (freshId && l._id === freshId ? Object.assign({}, l, { fresh: true }) : l)
+    const peek = L.peekOf(wall, L.PEEK_COUNT)
     this.setData({
-      peek: wall.slice(0, L.PEEK_COUNT),
+      peek: peek.list,
+      peekMode: peek.mode,
       columns: L.splitColumns(src.map(mark))
     })
   },
@@ -565,14 +569,30 @@ Page({
     return all.find((l) => l && l._id === id) || null
   },
 
+  /** 当前这面墙（最新 / 我的）的顺序 —— 签详情翻页按它走 */
+  currentList() {
+    return this.data.viewMode === 'mine' ? (this._mine || []) : (this._wall || [])
+  },
+
   openLabel(e) {
-    const label = this.findLabel(String(e.currentTarget.dataset.id || ''))
-    if (label) this.setData({ card: label })
+    const id = String(e.currentTarget.dataset.id || '')
+    const label = this.findLabel(id)
+    // 从露角点开的签可能按「想要人数」排，不在当前墙的顺序里 —— 那时不给翻页
+    if (label) this.setData({ card: label, cardPos: L.cardPager(this.currentList(), id) })
+  },
+
+  /** 签详情里翻到上一张 / 下一张（不关弹层；正在播放的声音先停） */
+  turnCard(e) {
+    const id = String(e.currentTarget.dataset.id || '')
+    const label = id && this.findLabel(id)
+    if (!label) return
+    this.stopPlay()
+    this.setData({ card: label, cardPos: L.cardPager(this.currentList(), id) })
   },
 
   closeLabel() {
     this.stopPlay()
-    this.setData({ card: null })
+    this.setData({ card: null, cardPos: null })
   },
 
   patchLabel(id, patch) {

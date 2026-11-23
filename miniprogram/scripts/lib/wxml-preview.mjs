@@ -139,7 +139,19 @@ function evalJs(expr, scope) {
   try {
     return fn(scope)
   } catch (e) {
-    if (ON_MISSING) { ON_MISSING(expr); return undefined }
+    if (ON_MISSING) {
+      // 宽免模式按 WXML 的语义重试一次：真机里 `a.b.c` 在 a.b 缺失时得 undefined 而不是抛错，
+      // 于是 `{{item.digestCard.headline || item.title}}` 会落到 title（2026-11-23：信箱预览标题曾显示 "undefined"）。
+      // 严格模式不重试 —— 心愿墙预览要的就是「缺字段当场报」。
+      const safe = expr.replace(/([\w$\]\)])\.(?=[A-Za-z_$])/g, '$1?.')
+      if (safe !== expr) {
+        try {
+          // eslint-disable-next-line no-new-func
+          return new Function('$scope', `with ($scope) { return (${safe}); }`)(scope)
+        } catch (e2) { /* 落回下面记缺字段 */ }
+      }
+      ON_MISSING(expr); return undefined
+    }
     throw new Error(`wxml-preview：表达式 {{${expr}}} 求值失败 —— ${e.message}（多半是样例数据缺字段）`)
   }
 }

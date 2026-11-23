@@ -379,6 +379,7 @@ function assertCustomerCanSeePhotos() {
     loadError: false,
     digestView: null,
     digestPayloadMissing: false,
+    nextUnread: null, // 2026-11-23 下一封未读（detail/index.js data 默认 null）
     unsealing: '', // 2026-10-18 拆信仪式的页面级字段（detail/index.js data 默认 ''）
     actionPadStyle: ''
   })

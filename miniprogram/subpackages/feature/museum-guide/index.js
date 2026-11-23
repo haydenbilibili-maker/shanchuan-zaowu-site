@@ -1,0 +1,181 @@
+/**
+ * 博物君 · 山海造物标本馆的 AI 馆员（2026-11-23）
+ * 蓝图：miniprogram/docs/博物君_AI馆员_蓝图_2026-11-23.md
+ * 纯函数在 guideChat.js（守卫 test:museum-guide）；云函数 askMuseumGuide。
+ */
+const G = require('./guideChat')
+const { openAppModal } = require('../../../utils/appModal')
+
+const app = getApp()
+
+Page({
+  data: {
+    messages: [],
+    starters: G.startersFor(),
+    hasAsked: false,
+    draft: '',
+    sending: false,
+    quota: null,
+    quotaText: '',
+    scrollTo: '',
+    questionMax: G.QUESTION_MAX
+  },
+
+  onLoad(options) {
+    this._openid = (app && app.globalData && app.globalData.openid) || ''
+    let stored = []
+    try { stored = G.fromStored(wx.getStorageSync(G.storeKey(this._openid))) } catch (e) { stored = [] }
+    const welcome = G.makeMessage('guide', G.WELCOME, { isWelcome: true })
+    this.setData({ messages: [welcome].concat(stored), hasAsked: stored.some((m) => m.role === 'user') }, () => this.scrollToEnd())
+    // 外部带问题进来（如二期 AI 鉴定结果页「问问博物君」）：预填不自动发
+    // 带着问题进来（AI 鉴定结果 / 图鉴页「问问博物君」）：auto=1 直接发问，否则只预填
+    const q = G.entryQuestion(options)
+    if (q && options.auto === '1') this.ask(q)
+    else if (q) this.setData({ draft: q })
+    // 埋点（打开 / 提问 / 去处）待产品负责人点名后登记进埋点双端 schema 再接（稳定期共享件，见蓝图 §5）
+  },
+
+  onShareAppMessage() {
+    return { title: '博物君 · 山海造物标本馆的馆员', path: '/subpackages/feature/museum-guide/index?from=share' }
+  },
+
+  /* ------------------------------ 输入 ------------------------------ */
+
+  onDraftInput(e) {
+    this.setData({ draft: e.detail.value })
+  },
+
+  onSend() {
+    this.ask(this.data.draft)
+  },
+
+  onTapStarter(e) {
+    this.ask(e.currentTarget.dataset.q)
+  },
+
+  onTapFollowUp(e) {
+    this.ask(e.currentTarget.dataset.q)
+  },
+
+  /* ------------------------------ 提问 ------------------------------ */
+
+  async ask(raw) {
+    if (this.data.sending) return
+    // 上一条还在逐字写：先写完再问
+    if (this._revealTimer && this._revealIndex >= 0) this.finishReveal(this._revealIndex)
+    const c = G.cleanQuestion(raw)
+    if (c.error) return
+    const history = G.historyForRequest(this.data.messages)
+    const userMsg = G.makeMessage('user', c.question)
+    const pending = G.makeMessage('guide', '', { pending: true })
+    // 上一条回答的追问 / 去处在新问题发出后收起（只在最新一条上出现）
+    const prev = this.data.messages.map((m) => (m.followUps && m.followUps.length) || (m.actions && m.actions.length) ? Object.assign({}, m, { followUps: [], actions: [] }) : m)
+    this.setData({ messages: prev.concat(userMsg, pending), draft: '', sending: true, hasAsked: true }, () => this.scrollToEnd())
+
+    let reply
+    try {
+      const res = await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { question: c.question, history } })
+      reply = G.replyToMessage(res && res.result)
+    } catch (err) {
+      const type = G.isNotDeployed(err) ? 'not_deployed' : 'network'
+      reply = { message: G.makeMessage('guide', G.ERROR_COPY[type], { isError: true, errorType: type }), quota: null }
+    }
+    const messages = this.data.messages.filter((m) => !m.pending).concat(reply.message)
+    const quota = reply.quota || this.data.quota
+    this.persist(messages)
+    // 新回答逐字出来（错误提示直接出）；写完前追问 / 去处 / 图鉴链接先不出
+    if (!reply.message.isError) {
+      const last = messages.length - 1
+      messages[last] = Object.assign({}, reply.message, { shown: '', revealing: true })
+      this.setData({ messages, sending: false, quota, quotaText: G.quotaText(quota) }, () => this.startReveal(last))
+    } else {
+      this.setData({ messages, sending: false, quota, quotaText: G.quotaText(quota) }, () => this.scrollToEnd())
+    }
+  },
+
+  /* ------------------------------ 逐字显示 ------------------------------ */
+
+  startReveal(index) {
+    this.stopReveal()
+    const msg = this.data.messages[index]
+    if (!msg) return
+    const steps = G.revealSteps(msg.text.length)
+    let i = 0
+    const tick = () => {
+      const cur = this.data.messages[index]
+      if (!cur || cur.id !== msg.id) return this.stopReveal()
+      i += 1
+      if (i >= steps.length) return this.finishReveal(index)
+      this.setData({ [`messages[${index}].shown`]: msg.text.slice(0, steps[i - 1]) })
+      if (i % 8 === 0) this.scrollToEnd()
+    }
+    this._revealTimer = setInterval(tick, G.REVEAL_TICK_MS)
+    this._revealIndex = index
+  },
+
+  /** 写完（或点气泡跳过）：整段显示，追问 / 去处 / 图鉴链接出现 */
+  finishReveal(index) {
+    this.stopReveal()
+    const cur = this.data.messages[index]
+    if (!cur || !cur.revealing) return
+    this.setData({ [`messages[${index}].shown`]: cur.text, [`messages[${index}].revealing`]: false }, () => this.scrollToEnd())
+  },
+
+  stopReveal() {
+    if (this._revealTimer) clearInterval(this._revealTimer)
+    this._revealTimer = null
+  },
+
+  /** 点正在写的气泡：直接写完 */
+  onTapBubble(e) {
+    const index = Number(e.currentTarget.dataset.index)
+    const cur = this.data.messages[index]
+    if (cur && cur.revealing) this.finishReveal(index)
+  },
+
+  onUnload() {
+    this.stopReveal()
+  },
+
+  persist(messages) {
+    try { wx.setStorageSync(G.storeKey(this._openid), G.toStored(messages)) } catch (e) { /* 存不下只影响下次回看 */ }
+  },
+
+  scrollToEnd() {
+    this.setData({ scrollTo: '' }, () => this.setData({ scrollTo: 'mg-end' }))
+  },
+
+  /* ------------------------------ 去处 / 清空 ------------------------------ */
+
+  /** 回答里提到的图鉴物种 → 图鉴那一页（未翻开的页由详情页自己显示空页，不额外泄露） */
+  onTapSpecies(e) {
+    const no = e.currentTarget.dataset.no
+    if (!no) return
+    wx.navigateTo({ url: `/subpackages/feature/collection/detail/index?id=${encodeURIComponent(no)}` })
+  },
+
+  onTapAction(e) {
+    const ds = e.currentTarget.dataset || {}
+    if (!ds.url) return
+    if (ds.tab) wx.switchTab({ url: ds.url })
+    else wx.navigateTo({ url: ds.url })
+  },
+
+  onClear() {
+    if (this.data.sending) return
+    openAppModal({
+      title: '清空对话',
+      content: '只清空这台手机上的对话记录，博物君那边本来就不留存。',
+      confirmText: '清空',
+      confirmColor: '#C4A76C',
+      success: (r) => {
+        if (!r.confirm) return
+        const welcome = G.makeMessage('guide', G.WELCOME, { isWelcome: true })
+        this.setData({ messages: [welcome], hasAsked: false })
+        try { wx.removeStorageSync(G.storeKey(this._openid)) } catch (e) { /* ignore */ }
+      }
+    }, this)
+  },
+
+  noop() {}
+})
