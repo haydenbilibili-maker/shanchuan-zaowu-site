@@ -285,8 +285,29 @@ async function runChecks() {
   const mgWxss = readFileSync(P.wxml.replace(/\.wxml$/, '.wxss'), 'utf8')
   const strips = (mgWxml.match(/<scroll-view class="mg-strip" scroll-x/g) || []).length
   ok('F8 回答区：签脚贴底（回答签底角取直 + 签脚同色纸面）；延伸与接着问各一行横滑、单行不换行',
-    strips === 2 && /\.mg-bubble\.is-guide\.has-foot \{[^}]*border-bottom-left-radius: 0;/.test(mgWxss) && /\.mg-fb \{[^}]*background: #E6DBC4;/.test(mgWxss) &&
+    strips === 3 && /\.mg-bubble\.is-guide\.has-foot \{[^}]*border-bottom-left-radius: 0;/.test(mgWxss) && /\.mg-fb \{[^}]*background: #E6DBC4;/.test(mgWxss) &&
     /\.mg-strip \{[^}]*white-space: nowrap;/.test(mgWxss) && /\.mg-strip-row \{[^}]*display: inline-flex;/.test(mgWxss) && !/class="mg-follow"|class="mg-species"/.test(mgWxml))
+  // F10 第六轮（2026-11-23）：回答分段 + 学名斜体；「馆里有这件」只读馆藏、查不到不出、不进存储；JSON 模式降级
+  const rp = G.richParas('大蓝闪蝶（Morpho menelaus）分布于南美。\n\n它的蓝来自 Morpho 鳞片。')
+  ok('F10 回答分段：空行分段、拉丁双名单独成段文字、单个英文词不当学名',
+    rp.length === 2 && rp[0].segs.map((x) => x.latin).join() === 'false,true,false' && rp[0].segs[1].t === 'Morpho menelaus' && rp[1].segs.length === 1 && !rp[1].segs[0].latin)
+  ok('F10 馆藏查询：只用第一种物种中文名，只要商品；没有物种不查',
+    JSON.stringify(G.goodsQuery([{ no: '001', zh: '大蓝闪蝶' }, { no: '024', zh: '尖翅蓝闪蝶' }])) === JSON.stringify({ keyword: '大蓝闪蝶', contentLimit: 0, productLimit: 6 }) && G.goodsQuery([]) === null)
+  const gc = G.goodsCards([{ _id: 'a', title: '甲', price: 10, soldOut: true }, { _id: 'b', title: '乙', price: 20, displayImage: 'u' }, { _id: 'b', title: '乙' }, { _id: 'c' }, { _id: 'd', title: '丁' }, { _id: 'e', title: '戊' }], (u) => 'T' + u)
+  ok('F10 馆藏小卡：去重、无名丢掉、有货在前、最多 3 件、无图不拼坏地址',
+    gc.map((x) => x.id).join() === 'b,d,e' && gc[0].image === 'Tu' && gc[1].image === '' && gc[0].price === '¥20' && G.GOODS_MAX === 3)
+  const stored10 = G.toStored([G.makeMessage('guide', '答', { paras: [{ key: 'p0', segs: [] }], goods: [{ id: 'x' }] })])
+  const back = G.fromStored([{ role: 'guide', text: '甲\n\n乙', goods: [{ id: 'x' }] }])
+  ok('F10 分段与馆藏推荐不进本机存储；读回时重算分段、不带推荐',
+    !('paras' in stored10[0]) && !('goods' in stored10[0]) && back[0].paras.length === 2 && !('goods' in back[0]))
+  ok('F10 页面：写完才换分段版、馆藏推荐在写完后只读既有接口、点卡进详情',
+    /wx:if="\{\{!item\.revealing && item\.paras && item\.paras\.length\}\}"/.test(mgWxml) && /class="\{\{seg\.latin \? 'mg-latin' : ''\}\}"/.test(mgWxml) &&
+    /class="mg-goods" wx:if="\{\{item\.goods && item\.goods\.length && !item\.revealing\}\}"/.test(mgWxml) &&
+    /this\.loadGoods\(index\)/.test(read(P.page)) && /name: 'getEncyclopediaFeed', data: q/.test(read(P.page)) && /\/subpackages\/feature\/detail\/index\?id=/.test(read(P.page)))
+  ok('F10 推荐回来时这条回答已换掉就不贴（防串到别的回答上）', /if \(!goods\.length \|\| !cur \|\| cur\.id !== msg\.id\) return/.test(read(P.page)))
+  ok('F10 云端 JSON 模式：带 response_format，参数不被接受（400）时同模型去掉再试',
+    JSON.stringify(T.modelParams(true).response_format) === JSON.stringify({ type: 'json_object' }) && !('response_format' in T.modelParams(false)) &&
+    /for \(const jsonMode of \[true, false\]\)/.test(src) && /if \(!\(jsonMode && e\.statusCode === 400\)\) break/.test(src))
   // F9 页面优化（2026-11-23）：开场问题卡两列带门类、科普置顶；问过之后卷首收紧；往上翻远了出「回到最新」，滚动时状态不变不 setData
   const cards = G.starterCards(Date.UTC(2026, 10, 23, 4))
   const pj = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { this._sets = (this._sets || 0) + 1; Object.assign(this.data, p); if (cb) cb() } })
@@ -496,6 +517,12 @@ const INJECTIONS = [
   { name: '字段行里的去处不过白名单', file: P.fn, find: "    .map((a) => String(a || '').trim()).filter((a, i, arr) => PLACE_KEYS.indexOf(a) >= 0 && arr.indexOf(a) === i).slice(0, 2)", replace: "    .map((a) => String(a || '').trim()).slice(0, 2)" },
   { name: '页面不清字段行', file: P.chat, find: "  return stripFieldLines(text)\n", replace: "  return String(text || '')\n" },
   { name: '页面不还原追问按钮', file: P.chat, find: ': lost.followUps).filter(', replace: ': []).filter(' },
+  { name: '单个英文词当学名', file: P.chat, find: 'const LATIN_RE = /\\b[A-Z][a-z]{2,}(?: [a-z]{3,}){1,2}\\b/g', replace: 'const LATIN_RE = /\\b[A-Z][a-z]{2,}(?: [a-z]{3,}){0,2}\\b/g' },
+  { name: '售罄排在前面', file: P.chat, find: 'return all.filter((p) => !p.soldOut).concat(all.filter((p) => p.soldOut)).slice(0, GOODS_MAX)', replace: 'return all.slice(0, GOODS_MAX)' },
+  { name: '馆藏推荐进了存储', file: P.chat, find: '    delete base.goods\n', replace: '' },
+  { name: '推荐串到别的回答', file: P.page, find: 'if (!goods.length || !cur || cur.id !== msg.id) return', replace: 'if (!goods.length) return' },
+  { name: '不开 JSON 模式', file: P.fn, find: "  if (jsonMode) p.response_format = { type: 'json_object' }\n", replace: '' },
+  { name: '超时也同模型重试', file: P.fn, find: '        if (!(jsonMode && e.statusCode === 400)) break', replace: '        if (!jsonMode) break' },
   { name: '提示词不禁英文单词', file: P.persona, find: '；除拉丁学名外不要夹带英文单词。', replace: '。' },
   { name: '点气泡不跳过', file: P.page, find: '    if (cur && cur.revealing) this.finishReveal(index)', replace: '' },
   { name: '日志记了问题原文', file: P.fn, find: '    q_len: o.qLen | 0,', replace: '    q_len: o.qLen | 0,\n    question: o.question,' },

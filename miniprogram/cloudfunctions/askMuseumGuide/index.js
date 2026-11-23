@@ -213,21 +213,37 @@ function httpsPostJson(path, body, headers) {
   })
 }
 
+/**
+ * 请求参数（2026-11-23）：开 JSON 模式（response_format json_object）—— 模型偶尔不按「只输出 JSON」回、
+ * 把 follow_ups / actions 写成正文后面的字段行（真机截图），JSON 模式从源头约束；解析侧 salvageFields 仍兜底。
+ * 某个模型不认这个参数（HTTP 400）时，同一模型去掉它再试一次，不因格式约束丢掉一次回答。
+ */
+function modelParams(jsonMode) {
+  const p = { result_format: 'message', enable_thinking: false, temperature: 0.6, max_tokens: 900 }
+  if (jsonMode) p.response_format = { type: 'json_object' }
+  return p
+}
+
 async function askModel(messages, apiKey) {
   let lastErr = null
   for (const model of modelChain(process.env.MUSEUM_GUIDE_MODELS)) {
-    try {
-      const res = await httpsPostJson(TEXT_PATH, {
-        model,
-        input: { messages },
-        parameters: { result_format: 'message', enable_thinking: false, temperature: 0.6, max_tokens: 900 }
-      }, { Authorization: `Bearer ${apiKey}` })
-      const text = extractText(res)
-      if (text) return { text, model }
-      lastErr = new Error('empty reply')
-    } catch (e) {
-      lastErr = e
-      console.warn(`博物君 模型[${model}] 失败`, e.message)
+    for (const jsonMode of [true, false]) {
+      try {
+        const res = await httpsPostJson(TEXT_PATH, {
+          model,
+          input: { messages },
+          parameters: modelParams(jsonMode)
+        }, { Authorization: `Bearer ${apiKey}` })
+        const text = extractText(res)
+        if (text) return { text, model }
+        lastErr = new Error('empty reply')
+        break
+      } catch (e) {
+        lastErr = e
+        console.warn(`博物君 模型[${model}]${jsonMode ? '(json)' : ''} 失败`, e.message)
+        // 只有「参数不被接受」才同模型降级重试；超时 / 鉴权 / 限流直接换下一个模型
+        if (!(jsonMode && e.statusCode === 400)) break
+      }
     }
   }
   throw lastErr || new Error('all models failed')
@@ -380,4 +396,4 @@ exports.main = async (event) => {
   }, { model, species, actions: reply.actions, aLen: reply.answer.length })
 }
 
-exports._test = { salvageFields, speciesFor, VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }
+exports._test = { modelParams, salvageFields, speciesFor, VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }

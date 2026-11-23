@@ -158,6 +158,49 @@ function makeMessage(role, text, extra) {
   return Object.assign({ id: newId(role === 'user' ? 'u' : 'g'), role, text: String(text || '') }, extra || {})
 }
 
+/**
+ * 回答排版（2026-11-23）：按空行分段；段内的拉丁双名 / 三名（Morpho menelaus）单独成一段文字，页面用斜体铜色，
+ * 像标本签上的学名。写完之前（逐字显示）仍显示纯文本，写完才换成分段版。
+ * 只认「首字母大写的属名 + 1–2 个全小写词」，单个英文词不当学名。
+ */
+const LATIN_RE = /\b[A-Z][a-z]{2,}(?: [a-z]{3,}){1,2}\b/g
+function richParas(text) {
+  return String(text || '').split(/\n{2,}/).map((p) => p.trim()).filter(Boolean).map((p, i) => {
+    const segs = []
+    let last = 0
+    p.replace(LATIN_RE, (m, off) => {
+      if (off > last) segs.push({ t: p.slice(last, off), latin: false })
+      segs.push({ t: m, latin: true })
+      last = off + m.length
+      return m
+    })
+    if (last < p.length) segs.push({ t: p.slice(last), latin: false })
+    return { key: `p${i}`, segs }
+  })
+}
+
+/**
+ * 「馆里有这件」（2026-11-23）：回答点到图鉴物种时，用物种中文名查馆藏（只读既有 getEncyclopediaFeed，
+ * 与馆藏 Tab / 标本工坊同一个接口），最多 3 件、有货在前；查不到就不出，不拿别的东西凑。
+ */
+const GOODS_MAX = 3
+function goodsQuery(species) {
+  const sp = (Array.isArray(species) ? species : []).find((x) => x && x.zh)
+  return sp ? { keyword: String(sp.zh), contentLimit: 0, productLimit: 6 } : null
+}
+
+function goodsCards(rows, toImage) {
+  const seen = new Set()
+  const all = (Array.isArray(rows) ? rows : []).filter((p) => p && p._id && p.title && !seen.has(p._id) && seen.add(p._id))
+  return all.filter((p) => !p.soldOut).concat(all.filter((p) => p.soldOut)).slice(0, GOODS_MAX).map((p) => ({
+    id: String(p._id),
+    title: String(p.title),
+    price: p.price != null && p.price !== '' ? `¥${p.price}` : '',
+    soldOut: !!p.soldOut,
+    image: !p.displayImage ? '' : (typeof toImage === 'function' ? toImage(p.displayImage) : p.displayImage)
+  }))
+}
+
 /** 把云函数给的 action key 映射成按钮；不在白名单的丢掉 */
 function actionButtons(keys) {
   return (keys || []).filter((k, i, arr) => ACTIONS[k] && arr.indexOf(k) === i).slice(0, 2)
@@ -228,6 +271,7 @@ function replyToMessage(result) {
     const lost = salvagedFields(r.answer)
     return {
       message: makeMessage('guide', plainAnswer(r.answer), {
+        paras: richParas(plainAnswer(r.answer)),
         logId: typeof r.logId === 'string' && r.logId.length <= 64 ? r.logId : '',
         followUps: ((r.followUps && r.followUps.length) ? r.followUps : lost.followUps).filter((q) => q && String(q).length <= 30).slice(0, 3),
         actions: actionButtons((r.actions && r.actions.length) ? r.actions : lost.actions),
@@ -248,6 +292,9 @@ function toStored(messages) {
     const base = Object.assign({}, m)
     delete base.shown
     delete base.revealing
+    // 分段与馆藏推荐都是派生 / 临时数据，不进存储（读回时重算分段；推荐只在当场出）
+    delete base.paras
+    delete base.goods
     return i === list.length - 1 ? base : Object.assign(base, { followUps: [], actions: [] })
   })
 }
@@ -262,6 +309,8 @@ function fromStored(raw) {
       delete out.shown
       delete out.revealing
       if (out.role === 'guide') out.text = plainAnswer(out.text)
+      if (out.role === 'guide' && !out.isError) out.paras = richParas(out.text)
+      delete out.goods
       return out
     })
 }
@@ -285,6 +334,10 @@ module.exports = {
   starterCards,
   plainAnswer,
   salvagedFields,
+  richParas,
+  goodsQuery,
+  goodsCards,
+  GOODS_MAX,
   revealSteps,
   ACTIONS,
   ERROR_COPY,

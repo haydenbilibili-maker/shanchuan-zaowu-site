@@ -50,7 +50,11 @@
                  ③ 追问一行横滑「接着问」。写完之前都不出。 -->
             <block wx:else>
               <!-- 逐字显示：revealing 时显示 shown，点气泡直接写完 -->
-              <text class="mg-bubble is-guide {{item.isError ? 'is-error' : ''}} {{item.revealing ? 'is-writing' : ''}} {{item.text && !item.isError && !item.isWelcome && !item.revealing ? 'has-foot' : ''}}" user-select data-index="{{index}}" bindtap="onTapBubble">{{item.revealing ? item.shown : item.text}}<text class="mg-caret" wx:if="{{item.revealing}}" aria-hidden="true">▍</text></text>
+              <!-- 写完后换成分段版（2026-11-23）：空行分段，拉丁学名斜体铜色；写的过程中仍是纯文本逐字出 -->
+              <view class="mg-bubble is-guide is-rich {{item.text && !item.isError && !item.isWelcome ? 'has-foot' : ''}}" wx:if="{{!item.revealing && item.paras && item.paras.length}}">
+                <text class="mg-para" user-select wx:for="{{item.paras}}" wx:for-item="para" wx:key="key"><text wx:for="{{para.segs}}" wx:for-item="seg" wx:key="index" class="{{seg.latin ? 'mg-latin' : ''}}">{{seg.t}}</text></text>
+              </view>
+              <text wx:else class="mg-bubble is-guide {{item.isError ? 'is-error' : ''}} {{item.revealing ? 'is-writing' : ''}} {{item.text && !item.isError && !item.isWelcome && !item.revealing ? 'has-foot' : ''}}" user-select data-index="{{index}}" bindtap="onTapBubble">{{item.revealing ? item.shown : item.text}}<text class="mg-caret" wx:if="{{item.revealing}}" aria-hidden="true">▍</text></text>
               <!-- ① 签脚：反馈在左，复制 / 收藏在右 -->
               <view class="mg-fb" wx:if="{{!item.isError && !item.isWelcome && !item.pending && !item.revealing && item.text}}">
                 <view class="mg-fb-l">
@@ -68,6 +72,21 @@
                   <text class="mg-fb-sep">·</text>
                   <text class="mg-fb-btn {{item.saved ? 'is-saved' : ''}}" data-index="{{index}}" bindtap="onSave" hover-class="tap-press" hover-stay-time="80">{{item.saved ? '已收藏' : '收藏'}}</text>
                 </view>
+              </view>
+              <!-- 馆里有这件（2026-11-23）：回答点到的图鉴物种在馆里有藏品 → 最多 3 件小卡，点进详情（原购买动线） -->
+              <view class="mg-goods" wx:if="{{item.goods && item.goods.length && !item.revealing}}">
+                <text class="mg-goods-k">馆里有这件</text>
+                <scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">
+                  <view class="mg-strip-row">
+                    <view class="mg-good" wx:for="{{item.goods}}" wx:for-item="g" wx:key="id" data-id="{{g.id}}" bindtap="onTapGoods" hover-class="tap-press-soft" hover-stay-time="80">
+                      <shan-img ext-class="mg-good-img" src="{{g.image}}" mode="aspectFill" mark="{{false}}" />
+                      <view class="mg-good-body">
+                        <text class="mg-good-t">{{g.title}}</text>
+                        <text class="mg-good-p">{{g.soldOut ? '暂时售罄' : g.price}}</text>
+                      </view>
+                    </view>
+                  </view>
+                </scroll-view>
               </view>
               <!-- ② 延伸：图鉴物种 + 馆内去处，一行横滑 -->
               <view class="mg-strip-box" wx:if="{{(item.species.length || item.actions.length) && !item.revealing}}">
