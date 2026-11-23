@@ -1,11 +1,12 @@
 <!-- 博物君 · 山海造物标本馆的 AI 馆员（2026-11-23）。蓝图 docs/博物君_AI馆员_蓝图_2026-11-23.md
      结构：卷首 → 对话（博物君 = 纸面签，访客 = 铜描边）→ 开场问题 / 追问 / 馆内去处 → 底部输入条 -->
 <view class="mg-page">
-  <scroll-view class="mg-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+  <scroll-view class="mg-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}" bindscroll="onScroll">
     <view class="mg-head">
       <text class="mg-eyebrow">MUSEUM GUIDE · 博物君</text>
       <text class="mg-title">博物君</text>
-      <text class="mg-desc">山海造物标本馆的馆员。懂这座馆，也懂一点自然史。</text>
+      <!-- 问过之后卷首收紧（2026-11-23）：说明行与工坊副标题收起，对话往上提 -->
+      <text class="mg-desc" wx:if="{{!hasAsked}}">山海造物标本馆的馆员。懂这座馆，也懂一点自然史。</text>
       <!-- 对话之外（2026-11-23）：今日一物 / 博物小测 / 博物笔记 —— 全部读本地图鉴，不占提问次数 -->
       <view class="mg-tools">
         <view class="mg-tool" data-url="/subpackages/feature/museum-guide/daily/index" bindtap="onTool" hover-class="tap-press-soft" hover-stay-time="80">
@@ -23,7 +24,7 @@
         <view class="mg-workshop-main">
           <text class="mg-tool-k">WORKSHOP</text>
           <text class="mg-workshop-t">标本工坊 · 亲手做一只标本</text>
-          <text class="mg-workshop-d">回软、展翅、下针、干燥、装裱，做完看看馆里的同类藏品</text>
+          <text class="mg-workshop-d" wx:if="{{!hasAsked}}">回软、展翅、下针、干燥、装裱，做完看看馆里的同类藏品</text>
         </view>
         <text class="mg-workshop-go">›</text>
       </view>
@@ -96,21 +97,29 @@
       </block>
     </view>
 
-    <!-- 开场问题：还没问过时出现 -->
     <!-- 闭馆（超管工作台关掉博物君，2026-11-23）：一句说明，开场问题与输入条收起；本机旧对话仍可回看 -->
     <view class="mg-closed" wx:if="{{closed}}">
       <text class="mg-closed-k">CLOSED · 闭馆整理中</text>
       <text class="mg-closed-t">{{closedText}}</text>
     </view>
 
+    <!-- 开场问题：还没问过时出现。两列卡片，带门类小签；科普一张通栏置顶（2026-11-23） -->
     <view class="mg-starters" wx:if="{{!hasAsked && !closed}}">
       <text class="mg-starters-k">可以这样问</text>
-      <text class="mg-chip is-block" wx:for="{{starters}}" wx:key="*this" data-q="{{item}}" bindtap="onTapStarter" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
+      <view class="mg-st-grid">
+        <view class="mg-st {{index === 0 ? 'is-wide' : ''}}" wx:for="{{starterCards}}" wx:key="key" data-q="{{item.q}}" bindtap="onTapStarter" hover-class="tap-press-soft" hover-stay-time="80">
+          <text class="mg-st-k">{{item.kind}}</text>
+          <text class="mg-st-q">{{item.q}}</text>
+        </view>
+      </view>
     </view>
 
     <text class="mg-note">博物君的回答由 AI 生成，仅供参考；馆藏、价格与开放时间以页面为准。对话只存在这台手机上。</text>
     <view id="mg-end" class="mg-end"></view>
   </scroll-view>
+
+  <!-- 回到最新：往上翻远了才出 -->
+  <view class="mg-jump {{showJump ? 'is-on' : ''}}" wx:if="{{showJump}}" bindtap="onJump" hover-class="tap-press" hover-stay-time="80" aria-role="button">回到最新 ↓</view>
 
   <!-- 底部输入条 -->
   <view class="mg-bar safe-area" wx:if="{{!closed}}">
@@ -123,7 +132,7 @@
         class="mg-input"
         value="{{draft}}"
         maxlength="{{questionMax}}"
-        placeholder="问博物君…"
+        placeholder="比如：{{placeholderQ}}"
         placeholder-class="mg-input-ph"
         confirm-type="send"
         cursor-spacing="24"

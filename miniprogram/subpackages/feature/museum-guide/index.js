@@ -13,6 +13,11 @@ Page({
   data: {
     messages: [],
     starters: G.startersFor(),
+    /** 开场问题卡（两列，科普置顶）与输入框里的示例（2026-11-23 页面优化） */
+    starterCards: G.starterCards(),
+    placeholderQ: G.starterCards()[0].q,
+    /** 往上翻远了才出「回到最新」 */
+    showJump: false,
     hasAsked: false,
     draft: '',
     sending: false,
@@ -206,6 +211,21 @@ Page({
 
   scrollToEnd() {
     this.setData({ scrollTo: '' }, () => this.setData({ scrollTo: 'mg-end' }))
+  },
+
+  /** 滚动：离底部超过约一屏才亮「回到最新」；状态不变不 setData（滚动事件很密） */
+  onScroll(e) {
+    const d = (e && e.detail) || {}
+    if (!this._winH) {
+      try { this._winH = (wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync()).windowHeight || 667 } catch (err) { this._winH = 667 }
+    }
+    const far = (d.scrollHeight || 0) - (d.scrollTop || 0) - this._winH > this._winH
+    if (far !== this.data.showJump) this.setData({ showJump: far })
+  },
+
+  onJump() {
+    this.setData({ showJump: false })
+    this.scrollToEnd()
   },
 
   /* ------------------------------ 去处 / 清空 ------------------------------ */

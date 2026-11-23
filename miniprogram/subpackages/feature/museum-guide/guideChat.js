@@ -47,6 +47,22 @@ function startersFor(now) {
   })
 }
 
+/** 开场问题的门类标签（与 startersFor 的顺序一一对应） */
+const STARTER_KINDS = [
+  { key: 'brand', label: '品牌' },
+  { key: 'giving', label: '公益' },
+  { key: 'nature', label: '科普' },
+  { key: 'care', label: '养护' },
+  { key: 'visit', label: '到馆' }
+]
+
+/** 今天的开场问题卡：{ kind, q }；科普排第一（开场最想让人问的） */
+function starterCards(now) {
+  const qs = startersFor(now)
+  const cards = STARTER_KINDS.map((k, i) => ({ kind: k.label, key: k.key, q: qs[i] }))
+  return cards.filter((c) => c.key === 'nature').concat(cards.filter((c) => c.key !== 'nature'))
+}
+
 /**
  * 回答去 Markdown（与云函数 plainAnswer 同口径；本机旧记录与旧版云函数的回答也走一遍）。
  */
@@ -243,6 +259,7 @@ module.exports = {
   STARTER_POOL,
   REVEAL_TICK_MS,
   startersFor,
+  starterCards,
   plainAnswer,
   revealSteps,
   ACTIONS,

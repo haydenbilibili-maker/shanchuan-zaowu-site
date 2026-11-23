@@ -275,6 +275,20 @@ async function runChecks() {
   ok('F8 回答区：签脚贴底（回答签底角取直 + 签脚同色纸面）；延伸与接着问各一行横滑、单行不换行',
     strips === 2 && /\.mg-bubble\.is-guide\.has-foot \{[^}]*border-bottom-left-radius: 0;/.test(mgWxss) && /\.mg-fb \{[^}]*background: #E6DBC4;/.test(mgWxss) &&
     /\.mg-strip \{[^}]*white-space: nowrap;/.test(mgWxss) && /\.mg-strip-row \{[^}]*display: inline-flex;/.test(mgWxss) && !/class="mg-follow"|class="mg-species"/.test(mgWxml))
+  // F9 页面优化（2026-11-23）：开场问题卡两列带门类、科普置顶；问过之后卷首收紧；往上翻远了出「回到最新」，滚动时状态不变不 setData
+  const cards = G.starterCards(Date.UTC(2026, 10, 23, 4))
+  const pj = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { this._sets = (this._sets || 0) + 1; Object.assign(this.data, p); if (cb) cb() } })
+  pj._winH = 700
+  pj.onScroll({ detail: { scrollTop: 0, scrollHeight: 3000 } })
+  const s1 = pj.data.showJump; const n1 = pj._sets
+  pj.onScroll({ detail: { scrollTop: 10, scrollHeight: 3000 } })
+  const n2 = pj._sets
+  pj.onScroll({ detail: { scrollTop: 2250, scrollHeight: 3000 } })
+  const s3 = pj.data.showJump
+  ok('F9 开场卡五类各一、科普置顶；问过之后说明行收起；「回到最新」离底一屏以上才出、状态不变不重复 setData',
+    cards.length === 5 && cards[0].key === 'nature' && new Set(cards.map((c) => c.kind)).size === 5 && cards.every((c) => c.q) &&
+    s1 === true && n2 === n1 && s3 === false && /<text class="mg-desc" wx:if="\{\{!hasAsked\}\}">/.test(mgWxml) && /bindscroll="onScroll"/.test(mgWxml) &&
+    /class="mg-jump[^"]*" wx:if="\{\{showJump\}\}" bindtap="onJump"/.test(mgWxml))
   // F6 闭馆：进页 status 报闭馆 → 输入条与开场问题收起，ask 不发云调用
   let askCalls = 0
   wxStub.cloud.callFunction = async (o) => { if (o && o.data && o.data.action === 'status') return { result: { success: true, enabled: false, msg: '闭馆整理中', quota: { left: 30, cap: 30 } } }; askCalls++; return reply }
@@ -491,6 +505,8 @@ const INJECTIONS = [
   { name: '点藏品不进详情', file: P.wsJs, find: "    if (id) wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}` })", replace: '' },
   { name: '物种又拿历史与回答一起排', file: P.fn, find: '  const fromQ = matchSpecies(question, 3)\n  if (fromQ.length) return fromQ\n', replace: "  const fromQ = matchSpecies(question + '\\n' + (history || []).map((h) => h.content).join('\\n'), 3)\n  if (fromQ.length) return fromQ\n" },
   { name: '追问又竖着叠', file: P.wxml, find: '<scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"', replace: '<view class="mg-strip">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"' },
+  { name: '滚一下就 setData', file: P.page, find: '    if (far !== this.data.showJump) this.setData({ showJump: far })', replace: '    this.setData({ showJump: far })' },
+  { name: '开场卡科普不置顶', file: P.chat, find: "  return cards.filter((c) => c.key === 'nature').concat(cards.filter((c) => c.key !== 'nature'))", replace: '  return cards' },
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' }
 ]
 
