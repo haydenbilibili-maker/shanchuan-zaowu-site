@@ -906,6 +906,23 @@ const SCENES = [
       productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
+  // 2026-11-23 购物车（产品负责人点名：顶部上移、清单多出空间、质感细节）。px 按 2 倍代入（预览 1rpx = 1px）
+  { name: 'cart', h: 1624, wxml: 'pages/cart/index', data: (() => {
+    const items = [
+      ['光明女神闪蝶 · 单只玻璃罩', 'Morpho helena', 1280, 1, true, ''],
+      ['血漪蝶 · 玻璃穹顶摆件（含底座与铭牌，适合书房陈列）', 'Cethosia biblis', 468, 2, true, '胡桃木底座'],
+      ['蓝闪蝶 · 胡桃木框', 'Morpho menelaus', 880, 1, false, ''],
+      ['蒲公英 · 玻璃穹顶', 'Taraxacum mongolicum', 168, 1, false, ''],
+      ['国产蝶类混装框', '', 398, 1, false, '']
+    ].map(([title, latinName, price, count, selected, skuLabel], i) => ({ _id: 'c' + i, productId: 'p' + i, title, latinName, price, count, selected, skuLabel, stock: 9, image: P[i % P.length] }))
+    return {
+      loading: false, loadError: false, statusBarHeight: 88, navBarHeight: 80, capsulePad: 200, scrollTopPx: 256, scrollHeightPx: 1000,
+      cartList: items, folders: [], currentFolder: 'all', currentFolderName: '全部', invalidCount: 0, collectionRecommendations: [],
+      allSelected: false, selectedCount: 2, finalPrice: '2,216.00', vipSaved: 0, couponSaved: 0, selectedCoupon: null, coupons: [], showCouponModal: false,
+      addonPick: { id: 'a1', image: P[3] }, addonText: { title: '蒲公英书签 · 押花', reason: '结账台顺手带走一件', priceText: '¥9.9', cta: '带走' },
+      freeShip: null, shippingHint: '全场满 ¥299 免运费 · 当前已包邮'
+    }
+  })() },
   // 2026-10-18 采购商工作台（员工 / 合作方端，点名）
   { name: 'supplier-desk', h: 1700, wxml: 'subpackages/extra/supplier/index', data: { ready: true, staffName: '长白山店 · 王店长', isPreview: false, modeLabel: '采购商', demoOn: false, roleHint: '向总部采购价目内藏品；下单后在「我的采购单」支付与跟进。', features: null, cartCount: 2,
       buyerModules: [{ key: 'catalog', title: '价目选购', desc: '按总部价目挑选，可加入采购车', icon: '/assets/icons/tab-collection.png' }, { key: 'buyer-cart', title: '采购车', desc: '确认数量与收货信息后下单', icon: '/assets/icons/cart.png', badge: 2 }, { key: 'buyer-orders', title: '我的采购单', desc: '待支付 1 · 已发货 3', icon: '/assets/icons/order.png' }],

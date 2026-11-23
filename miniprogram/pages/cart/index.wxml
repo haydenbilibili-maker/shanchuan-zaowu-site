@@ -3,13 +3,11 @@
 <view class="page-cart {{!loading && cartList.length > 0 ? 'has-items' : ''}}" style="padding-top: {{statusBarHeight}}px;">
 
   <view class="cart-top">
-  <!-- 顶部（navigationStyle:custom，与其它 Tab 统一，避免 iOS 切 Tab 白闪） -->
-  <view class="cart-header">
+  <!-- 顶部（navigationStyle:custom，与其它 Tab 统一，避免 iOS 切 Tab 白闪）
+       2026-11-23：标题与胶囊同一行（行高 = 胶囊行高，右侧让出胶囊），件数跟在标题后面，列表多出一个导航行的高度 -->
+  <view class="cart-header" style="height: {{navBarHeight}}px; padding-right: {{capsulePad}}px;">
     <view class="header-left">
-      <view class="header-title">
-        <text class="title-cn">购物车</text>
-        <text class="title-en">SHOPPING CART</text>
-      </view>
+      <text class="title-cn">购物车</text>
       <text class="header-meta" wx:if="{{!loading && cartList.length > 0}}">{{cartList.length}} 件待结算</text>
       <text class="header-meta" wx:elif="{{!loading && currentFolder !== 'all'}}">当前：{{currentFolderName}}</text>
     </view>
@@ -107,7 +105,7 @@
                       <text class="invalid-reason" wx:if="{{item.invalid}}">{{item.invalidReason}}</text>
                     </view>
                     <view class="info-btm">
-                      <text class="price">¥{{item.price}}</text>
+                      <text class="price"><text class="price-sym">¥</text>{{item.price}}</text>
                       <view class="qty-stepper" catchtap="noop" wx:if="{{!item.invalid && item.stock > 0}}">
                         <view class="qty-btn {{item.count <= 1 ? 'disabled' : ''}}" catchtap="changeCount" hover-class="qty-btn-press" hover-stay-time="80" data-index="{{index}}" data-type="minus">−</view>
                         <text class="qty-val">{{item.count}}</text>
@@ -269,7 +267,7 @@
         </view>
         <view class="total-main">
           <text class="total-label">合计</text>
-          <text class="total-val">¥{{finalPrice}}</text>
+          <text class="total-val"><text class="price-sym">¥</text>{{finalPrice}}</text>
         </view>
       </view>
 
