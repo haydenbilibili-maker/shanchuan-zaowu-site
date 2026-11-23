@@ -14,7 +14,7 @@
         <view
           class="account-btn-primary sv-pay-btn"
           bindtap="goResumeLogin"
-          hover-class="sv-pay-press"
+          hover-class="sv-pay-press" hover-stay-time="80"
         >重新进入</view>
       </view>
     </block>
@@ -122,7 +122,7 @@
           <view
             class="sv-custom-head {{rechargeMode === 'custom' ? 'is-on' : ''}}"
             bindtap="onSelectCustom"
-            hover-class="sv-pkg-press"
+            hover-class="sv-pkg-press" hover-stay-time="80"
           >
             <text class="sv-custom-label">自定义金额</text>
             <text class="sv-custom-range">¥{{recharge.minCustomYuan}} – ¥{{recharge.maxCustomYuan}}</text>
@@ -151,7 +151,7 @@
         <view
           class="account-btn-primary sv-pay-btn {{paying || !canPay ? 'is-disabled' : ''}}"
           bindtap="onRechargeTap"
-          hover-class="sv-pay-press"
+          hover-class="sv-pay-press" hover-stay-time="80"
         >{{paying ? '处理中…' : payBtnLabel}}</view>
         <text class="sv-pay-hint">{{walletRechargeHintShort}}</text>
       </view>
@@ -223,7 +223,7 @@
           class="sv-ledger-more"
           wx:if="{{ledgerHasMore}}"
           bindtap="onLoadMoreLedgers"
-          hover-class="sv-link-press"
+          hover-class="sv-link-press" hover-stay-time="80"
         >{{ledgerLoadingMore ? '加载中…' : '加载更多'}}</view>
         <text class="sv-ledger-fin" wx:elif="{{!ledgerLoading && !ledgerEmpty}}">· 已到最早一笔 ·</text>
       </view>
@@ -231,7 +231,7 @@
       <!-- 安全提示（2026-11-22）：整段分区收成页脚一行，规则不删 -->
       <view class="sv-foot">
         <text class="sv-foot-text">{{walletSecurityNote}}</text>
-        <text class="sv-foot-link" bindtap="goSupport" hover-class="sv-link-press">联系专员 ›</text>
+        <text class="sv-foot-link" bindtap="goSupport" hover-class="sv-link-press" hover-stay-time="80">联系专员 ›</text>
       </view>
     </block>
 

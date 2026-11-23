@@ -196,6 +196,8 @@
       <view class="ops-signal-title-row">
         <text class="ops-signal-title">经营信号</text>
         <view class="signal-light {{opsSignalSummary.worstLamp}}" wx:if="{{!opsSignalExpanded}}"></view>
+        <!-- 收起态一行说完（2026-11-22 屏效）：逐条信号已在顶部状态条滚动，这里只报「几项待关注 / 全部健康」，点「展开」看分区 -->
+        <text class="ops-signal-inline {{opsSignalSummary.attentionCount ? '' : 'is-ok'}}" wx:if="{{!opsSignalExpanded}}">{{opsSignalSummary.attentionCount ? opsSignalSummary.label : '全部健康'}}</text>
       </view>
       <view class="ops-signal-top-actions">
         <text
@@ -205,28 +207,6 @@
         >{{opsLegendOpen ? '收起图例' : '图例'}}</text>
         <text class="ops-signal-fold">{{opsSignalExpanded ? '收起' : '展开'}}</text>
       </view>
-    </view>
-
-    <!-- 收起态：精简摘要 -->
-    <view class="ops-signal-summary" wx:if="{{!opsSignalExpanded}}">
-      <block wx:if="{{opsSignalSummary.attentionCount}}">
-        <text class="ops-signal-summary-label">{{opsSignalSummary.label}}</text>
-        <view class="ops-signal-summary-chips">
-          <view
-            class="ops-signal-summary-chip"
-            wx:for="{{opsSignalSummary.chips}}"
-            wx:key="id"
-            catchtap="goOpsSignal"
-            data-target="{{item.target}}"
-            hover-class="ops-signal-press"
-            hover-stay-time="80"
-          >
-            <view class="signal-light {{item.lamp}}"></view>
-            <text class="ops-signal-summary-text">{{item.text}}</text>
-          </view>
-        </view>
-      </block>
-      <text class="ops-signal-summary-ok" wx:else>全部健康</text>
     </view>
 
     <!-- 展开态：完整分区 -->

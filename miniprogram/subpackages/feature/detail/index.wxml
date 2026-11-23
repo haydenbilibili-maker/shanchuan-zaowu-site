@@ -47,10 +47,10 @@ module.exports.saveLabel = saveLabel;
       <nav-back ext-class="nav-icon-btn back-icon" bind:back="goBack" />
       <text class="nav-title" wx:if="{{navOpacity > 0.5}}">{{product.title}}</text>
       <view class="nav-right-group" style="padding-right: {{navPaddingRight}}px;">
-        <button class="nav-icon-btn nav-share-btn" plain open-type="share" hover-class="nav-share-hover">
+        <button class="nav-icon-btn nav-share-btn" plain open-type="share" hover-class="nav-share-hover" hover-stay-time="80">
           <image src="/assets/icons/share.png" class="nav-action-icon" mode="aspectFit"></image>
         </button>
-        <view class="nav-icon-btn nav-cart-btn" bindtap="goToCart" hover-class="nav-icon-press">
+        <view class="nav-icon-btn nav-cart-btn" bindtap="goToCart" hover-class="nav-icon-press" hover-stay-time="80">
           <image src="/assets/icons/tab-cart.png" class="nav-action-icon" mode="aspectFit"></image>
           <view class="badge-solid-danger badge-sm cart-badge badge-enter" wx:if="{{cartCount > 0}}">{{cartCount > 99 ? '99+' : cartCount}}</view>
         </view>
@@ -240,17 +240,17 @@ module.exports.saveLabel = saveLabel;
             wx:key="key"
             data-key="{{item.key}}"
             bindtap="goGiftScene"
-            hover-class="gift-scene-chip-press"
+            hover-class="gift-scene-chip-press" hover-stay-time="80"
           >{{item.label}}</view>
         </view>
-        <view class="gift-cta" bindtap="goGiftCompose" hover-class="tap-press-soft">一键送礼 · 写礼笺</view>
+        <view class="gift-cta" bindtap="goGiftCompose" hover-class="tap-press-soft" hover-stay-time="80">一键送礼 · 写礼笺</view>
       </view>
 
       <!-- 服务保障 -->
       <view class="service-row">
         <view class="service-item"><text class="service-dot"></text><text>博物级装裱</text></view>
         <view class="service-item"><text class="service-dot"></text><text>正品保障</text></view>
-        <view class="service-item" bindtap="openRefundSheet" hover-class="tap-press">
+        <view class="service-item" bindtap="openRefundSheet" hover-class="tap-press" hover-stay-time="80">
           <text class="service-dot"></text>
           <text>{{refundServiceLabel}}</text>
           <text class="service-more">说明</text>
@@ -401,7 +401,7 @@ module.exports.saveLabel = saveLabel;
       <view class="param-row" wx:if="{{!archiveDisplay.originEmpty}}"><text class="param-k">采集地</text><text class="param-v {{archiveDisplay.originEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.origin}}</text></view>
       <view class="param-row" wx:if="{{!archiveDisplay.dateEmpty}}"><text class="param-k">采集时间</text><text class="param-v {{archiveDisplay.dateEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.date}}</text></view>
       <view class="param-row" wx:if="{{!archiveDisplay.sizeEmpty}}"><text class="param-k">装裱尺寸</text><text class="param-v {{archiveDisplay.sizeEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.size}}</text></view>
-      <view class="param-row" wx:if="{{!archiveDisplay.framerEmpty}}"><text class="param-k">标本师</text><text class="param-v gold {{archiveDisplay.framerEmpty ? 'is-placeholder' : ''}}" bindtap="goToFramer" data-id="{{archiveDisplay.framerId}}">{{archiveDisplay.framerName}}</text></view>
+      <view class="param-row" wx:if="{{!archiveDisplay.framerEmpty}}"><text class="param-k">标本师</text><text class="param-v gold {{archiveDisplay.framerEmpty ? 'is-placeholder' : ''}}" bindtap="goToFramer" data-id="{{archiveDisplay.framerId}}" hover-class="tap-press" hover-stay-time="80">{{archiveDisplay.framerName}}</text></view>
       <view class="param-row" wx:if="{{latin.display(product.latinName)}}"><text class="param-k">拉丁学名</text><text class="param-v latin">{{latin.display(product.latinName)}}</text></view>
     </view>
 
@@ -584,7 +584,7 @@ module.exports.saveLabel = saveLabel;
       <view class="section-title"><text class="st-en">RELATED</text><text class="st-zh">相关推荐</text></view>
       <scroll-view class="recommend-scroll" scroll-x="true" enable-flex="true">
         <block wx:for="{{recommends}}" wx:key="_id">
-          <view class="rec-card" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover">
+          <view class="rec-card" bindtap="goToDetail" data-id="{{item._id}}" hover-class="rec-card-hover" hover-stay-time="80">
             <view class="rec-img-wrap">
               <sensitive-blur-gate
                 enabled="{{item.sensitiveBlur}}"

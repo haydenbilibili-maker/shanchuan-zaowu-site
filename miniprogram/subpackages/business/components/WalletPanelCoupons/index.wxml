@@ -126,7 +126,7 @@
   <!-- 一张可用券都没有时，不留死胡同：给一个直达出口 -->
   <view class="inline-cta" wx:if="{{!usableCouponCount && closedCount}}">
     <text class="inline-cta-text">当前没有可用礼券</text>
-    <view class="inline-cta-btn" hover-class="inline-cta-btn-press" bindtap="goWelcomeOrPoints">{{emptyCtaText}}</view>
+    <view class="inline-cta-btn" hover-class="inline-cta-btn-press" hover-stay-time="80" bindtap="goWelcomeOrPoints">{{emptyCtaText}}</view>
   </view>
 
   <!-- 需求 7：占用中（进行时）单列，不折叠、不标失效 -->
@@ -212,14 +212,14 @@
       </view>
       <text class="sheet-coupon" wx:if="{{sheetCoupon.title}}">{{sheetCoupon.title}}{{sheetCoupon.value ? ' · ¥' + sheetCoupon.value : ''}}</text>
 
-      <view class="sheet-option" hover-class="sheet-option-press" bindtap="onSheetOnline">
+      <view class="sheet-option" hover-class="sheet-option-press" hover-stay-time="80" bindtap="onSheetOnline">
         <view class="sheet-option-main">
           <text class="sheet-opt-title">线上商城抵扣</text>
           <text class="sheet-opt-sub">下单结算时选用此礼券</text>
         </view>
         <text class="sheet-arrow">›</text>
       </view>
-      <view class="sheet-option primary" hover-class="sheet-option-press" bindtap="onSheetStore">
+      <view class="sheet-option primary" hover-class="sheet-option-press" hover-stay-time="80" bindtap="onSheetStore">
         <view class="sheet-option-main">
           <text class="sheet-opt-title">到店亮码核销</text>
           <text class="sheet-opt-sub">出示会员码，请店员核销礼券</text>
@@ -263,7 +263,7 @@
         <view class="pass-qr-empty" wx:if="{{passState === 'loading'}}">正在生成会员码…</view>
         <view class="pass-qr-empty-wrap" wx:elif="{{passState === 'error'}}">
           <text class="pass-qr-empty">{{passErrorMsg || '会员码暂时无法生成'}}</text>
-          <text class="pass-qr-retry" bindtap="refreshPassQr">重新获取</text>
+          <text class="pass-qr-retry" bindtap="refreshPassQr" hover-class="tap-press" hover-stay-time="80">重新获取</text>
         </view>
         <view class="pass-qr-frame" wx:else>
           <canvas
@@ -283,7 +283,7 @@
       </view>
 
       <block wx:if="{{passState === 'redeemed'}}">
-        <view class="pass-done-btn" hover-class="pass-done-btn-press" bindtap="closePassModal">完成</view>
+        <view class="pass-done-btn" hover-class="pass-done-btn-press" hover-stay-time="80" bindtap="closePassModal">完成</view>
       </block>
       <block wx:else>
         <text class="pass-foot">动态会员码 · 请勿截图转发</text>

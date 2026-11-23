@@ -48,9 +48,9 @@
               <text class="cart-unit">{{item.unitText}}</text>
               <view class="cart-row-ops">
                 <view class="qty-stepper sm">
-                  <view class="qty-btn" data-sku="{{item.skuId}}" bindtap="onQtyMinus" hover-class="qty-press">−</view>
+                  <view class="qty-btn" data-sku="{{item.skuId}}" bindtap="onQtyMinus" hover-class="qty-press" hover-stay-time="80">−</view>
                   <text class="qty-num">{{item.quantity}}</text>
-                  <view class="qty-btn" data-sku="{{item.skuId}}" bindtap="onQtyPlus" hover-class="qty-press">+</view>
+                  <view class="qty-btn" data-sku="{{item.skuId}}" bindtap="onQtyPlus" hover-class="qty-press" hover-stay-time="80">+</view>
                 </view>
                 <text class="cart-line-total">{{item.lineTotalText}}</text>
               </view>
@@ -100,8 +100,8 @@
           <text class="checkout-hint">{{submitting ? '提交中…' : '可先下单后支付'}}</text>
         </view>
         <view class="checkout-actions">
-          <view class="btn-ghost {{submitting ? 'disabled' : ''}}" bindtap="onSubmitOnly" hover-class="btn-press">仅下单</view>
-          <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="onSubmit" hover-class="btn-press">下单并支付</view>
+          <view class="btn-ghost {{submitting ? 'disabled' : ''}}" bindtap="onSubmitOnly" hover-class="btn-press" hover-stay-time="80">仅下单</view>
+          <view class="btn-primary {{submitting ? 'disabled' : ''}}" bindtap="onSubmit" hover-class="btn-press" hover-stay-time="80">下单并支付</view>
         </view>
       </view>
     </block>

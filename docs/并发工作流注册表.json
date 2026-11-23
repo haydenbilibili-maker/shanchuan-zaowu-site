@@ -1,7 +1,7 @@
 {
   "_doc": "并发工作流归属注册表 · 单一事实源。守卫：scripts/check-workstream-ownership.mjs（npm run check:workstream-ownership）。规则与理由见 docs/并发工作流治理与契约基线_2026-09-18.md §3。",
   "version": 1,
-  "updated": "2026-09-19",
+  "updated": "2026-11-22",
   "frozenMode": "warn",
   "frozenModeNote": "本仓 git 身份共享（所有 agent 都是 Hadyen），无法从提交者推断动作者，故冻结违约先是告警；worktree+短分支纪律落地后改 strict。",
   "streams": [
@@ -59,11 +59,6 @@
         "miniprogram/subpackages/manager/wish-wall/**",
         "miniprogram/components/WishWallEntry/**",
         "miniprogram/utils/wishWall.js",
-        "miniprogram/utils/wishRitual.js",
-        "miniprogram/utils/ritualFeedback.js",
-        "miniprogram/utils/blessProducts.js",
-        "miniprogram/config/ritualPlays.js",
-        "miniprogram/config/ritualPlayContent.js",
         "miniprogram/config/blessTags.js",
         "miniprogram/cloudfunctions/getBlessProducts/**",
         "miniprogram/cloudfunctions/manageProducts/blessTags.js",
@@ -76,15 +71,14 @@
         "miniprogram/scripts/check-wall-monitor.mjs",
         "miniprogram/scripts/render-play-preview.mjs",
         "miniprogram/scripts/qr-assets/**",
-        "scripts/wish-wall-seeds/**",
-        "scripts/seed-wish-wall-batch.mjs",
-        "scripts/check-wish-seed-batch.mjs"
+        "miniprogram/subpackages/feature/wish-labels/**",
+        "miniprogram/subpackages/plays/play-qian/**"
       ],
       "consumes": [
         "miniprogram/components/AppModal",
         "miniprogram/components/AppToast",
-        "miniprogram/components/RegisterAuthDialog",
-        "miniprogram/utils/workNoticeVoice.js",
+        "miniprogram/subpackages/feature/components/RegisterAuthDialog",
+        "miniprogram/subpackages/manager/utils/workNoticeVoice.js",
         "miniprogram/app.json",
         "package.json"
       ],
@@ -169,7 +163,7 @@
         "tailwind.config.mjs"
       ],
       "consumes": [
-        "miniprogram/components/RegisterAuthDialog",
+        "miniprogram/subpackages/feature/components/RegisterAuthDialog",
         "miniprogram/components/MemberLevelModal",
         "miniprogram/components/SensitiveBlurGate"
       ],
@@ -226,7 +220,9 @@
         "!admin/scripts/check-proxy-allowlist-sync.mjs",
         "!admin/scripts/aliyunNlsPopSign.mjs",
         "!admin/scripts/viteAliyunNlsPlugin.mjs",
-        "!admin/scripts/viteOssTtsPlugin.mjs"
+        "!admin/scripts/viteOssTtsPlugin.mjs",
+        "miniprogram/subpackages/manager/feishu-sync/**",
+        "miniprogram/subpackages/manager/identify-monitor/**"
       ],
       "consumes": [
         "miniprogram/utils/analytics/eventSchema.js",
@@ -256,12 +252,14 @@
       "phase": 1,
       "owns": [
         "miniprogram/subpackages/extra/live/**",
-        "miniprogram/subpackages/feature/live/**",
+        "miniprogram/subpackages/content/live/**",
         "miniprogram/subpackages/manager/studio-dashboard/**",
         "miniprogram/subpackages/manager/components/WorkNoticeVoice/**",
         "miniprogram/subpackages/extra/components/WorkNoticeVoice/**",
-        "miniprogram/utils/workNoticeVoice.js",
-        "miniprogram/utils/workNoticeCatalog.js",
+        "miniprogram/subpackages/extra/utils/workNoticeVoice.js",
+        "miniprogram/subpackages/manager/utils/workNoticeVoice.js",
+        "miniprogram/subpackages/extra/utils/workNoticeCatalog.js",
+        "miniprogram/subpackages/manager/utils/workNoticeCatalog.js",
         "miniprogram/cloudfunctions/manageLiveSession/**",
         "miniprogram/scripts/check-work-notice-voice.cjs",
         "miniprogram/docs/live-streaming.md",
@@ -274,7 +272,6 @@
         "admin/scripts/viteOssTtsPlugin.mjs"
       ],
       "consumes": [
-        "miniprogram/utils/ritualFeedback.js",
         "miniprogram/app.json"
       ],
       "guards": [
@@ -368,7 +365,8 @@
         "admin/src/components/MarketingOpsHub.vue",
         "admin/src/components/WalletConfig.vue",
         "miniprogram/scripts/check-dedupe-index-coverage.mjs",
-        "miniprogram/scripts/ensure-dedupe-indexes.cjs"
+        "miniprogram/scripts/ensure-dedupe-indexes.cjs",
+        "miniprogram/subpackages/business/donations/**"
       ],
       "consumes": [
         "miniprogram/utils/analytics/eventSchema.js",
@@ -395,8 +393,8 @@
       "owner": "agent:onboarding",
       "phase": 3,
       "owns": [
-        "miniprogram/components/RegisterAuthDialog/**",
-        "miniprogram/utils/registerPhone.js",
+        "miniprogram/subpackages/feature/components/RegisterAuthDialog/**",
+        "miniprogram/subpackages/feature/utils/registerPhone.js",
         "miniprogram/utils/profileConstants.js",
         "miniprogram/subpackages/extra/user/profile/**",
         "miniprogram/subpackages/manager/welcome-gift/**",
@@ -448,8 +446,7 @@
       "note": "2026-09-19 立：为「注册换真实价值」钩子提供连续点灯/木鱼功德的云端档案。⚠️ 越界声明：本流修改了 admin/src/cloud.js（C9 集合登记，归 integration）—— 集成官本人已批准该一次性越界，理由是 C9 三处同步必须同批落，否则集合无规则。",
       "owns": [
         "miniprogram/cloudfunctions/wishRitualProfile/**",
-        "miniprogram/utils/ritualProfile.js",
-        "miniprogram/utils/ritualProfileCore.js",
+        "miniprogram/cloudfunctions/wishRitualProfile/ritualProfileCore.js",
         "miniprogram/scripts/test-ritual-profile.mjs"
       ],
       "consumes": [
@@ -533,7 +530,9 @@
       "phase": 1,
       "owns": [
         "miniprogram/subpackages/feature/gift/compose/**",
-        "miniprogram/utils/giftShareCard.js"
+        "miniprogram/subpackages/business/gift/giftShareCard.js",
+        "miniprogram/subpackages/feature/gift/giftShareCard.js",
+        "miniprogram/subpackages/manager/utils/giftShareCard.js"
       ],
       "note": "2026-09-19 经产品负责人决定「把贴纸版式并入 gift-print」而改名（原 id=gift-label）。**改名理由（重要治理发现）**：仓库里已有提交以 style(gift-print)/feat(gift-print) 署名在改 miniprogram/utils/giftShareCard.js（65a87cd 码缩小右移+手写体放大、9de5e87 去「山海」印章、044865e 码改透明PNG+正文不截断），但注册表里**没有 gift-print 这条流** ⇒ 那是一个**未注册的动作者**。故本次把注册表补齐到现实：登记 gift-print 这个名字并承接其改动的文件认领。owns 含 compose/** 与 utils/giftShareCard.js（后者原属无人认领页面基线，覆盖棘轮规定不可撤回，故只能承接不能撤销）。任务范围：A6 既有版式 + 新增热敏不干胶贴纸（90×110mm）版式；测量与推导见 admin/docs/礼笺贴纸版式_技术蓝图.md §2/§3（可打印区影像预估 ≈75×69mm；A6 宽高比 1:1.41 vs 可打印区 1:0.92 ⇒ 无论怎么缩都放不进，需重排版式而非缩小）。"
     }
@@ -572,6 +571,11 @@
     "pages/category/index",
     "pages/index/index",
     "pages/user/index",
+    "subpackages/b2bdesk/center/index",
+    "subpackages/b2bdesk/order/index",
+    "subpackages/b2bdesk/partner/index",
+    "subpackages/b2bdesk/price-edit/index",
+    "subpackages/b2bdesk/statement/index",
     "subpackages/business/about/index",
     "subpackages/business/address/index",
     "subpackages/business/ar/index",
@@ -583,6 +587,10 @@
     "subpackages/business/store-zone/index",
     "subpackages/business/store/index",
     "subpackages/business/ticket/index",
+    "subpackages/content/collection-detail/index",
+    "subpackages/content/comment/index",
+    "subpackages/content/user/legal/index",
+    "subpackages/content/videos/index",
     "subpackages/extra/approvals/index",
     "subpackages/extra/artisan-commission/index",
     "subpackages/extra/artisan/commission/index",
@@ -602,6 +610,7 @@
     "subpackages/extra/shareholder/index",
     "subpackages/extra/shipment-edit/index",
     "subpackages/extra/shipment-ops/index",
+    "subpackages/extra/shipment-sku/index",
     "subpackages/extra/staff-permissions/index",
     "subpackages/extra/staff/attendance/index",
     "subpackages/extra/staff/field/index",
@@ -612,11 +621,17 @@
     "subpackages/extra/staff/reimburse-review/index",
     "subpackages/extra/staff/reimbursements/index",
     "subpackages/extra/staff/store-todos/index",
+    "subpackages/extra/supplier/buyer-cart/index",
+    "subpackages/extra/supplier/buyer-orders/index",
+    "subpackages/extra/supplier/catalog/index",
+    "subpackages/extra/supplier/index",
+    "subpackages/extra/supplier/orders/index",
+    "subpackages/extra/supplier/settlement/index",
+    "subpackages/extra/supplier/ship/index",
     "subpackages/extra/user/achievements/index",
     "subpackages/extra/user/certificates/index",
     "subpackages/extra/user/feedback/index",
     "subpackages/extra/user/invoice-request/index",
-    "subpackages/extra/user/legal/index",
     "subpackages/extra/user/messages/detail/index",
     "subpackages/extra/user/messages/index",
     "subpackages/extra/user/onboarding/done",
@@ -628,11 +643,9 @@
     "subpackages/feature/care/guide/index",
     "subpackages/feature/care/index",
     "subpackages/feature/care/my/index",
-    "subpackages/feature/collection-detail/index",
     "subpackages/feature/collection/detail/index",
     "subpackages/feature/collection/index",
     "subpackages/feature/collection/log/index",
-    "subpackages/feature/comment/index",
     "subpackages/feature/community/index",
     "subpackages/feature/community/publish/index",
     "subpackages/feature/custom/hub/index",
@@ -654,7 +667,6 @@
     "subpackages/feature/identify/result/index",
     "subpackages/feature/identify/share/index",
     "subpackages/feature/search/index",
-    "subpackages/feature/videos/index",
     "subpackages/manager/birthday-gift/index",
     "subpackages/manager/booking-rules/index",
     "subpackages/manager/deposit-ops/index",

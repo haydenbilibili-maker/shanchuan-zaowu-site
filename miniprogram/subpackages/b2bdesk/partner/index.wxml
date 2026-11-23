@@ -11,7 +11,7 @@
   </view>
   <block wx:elif="{{partner}}">
     <view class="ptn-hero">
-      <view class="ptn-logo" hover-class="card-press" bindtap="onLogoTap">
+      <view class="ptn-logo" hover-class="card-press" hover-stay-time="80" bindtap="onLogoTap">
         <image wx:if="{{logoThumb}}" class="avatar-img" src="{{logoThumb}}" mode="aspectFill" binderror="onLogoError" />
         <text wx:else class="ptn-logo-text">{{initial}}</text>
         <view wx:if="{{busy === 'logo'}}" class="uploader-busy"><text class="uploader-busy-text">上传中</text></view>
@@ -27,15 +27,15 @@
       </view>
     </view>
     <view class="ptn-kpis">
-      <view class="ptn-kpi" hover-class="card-press" bindtap="openOrders">
+      <view class="ptn-kpi" hover-class="card-press" hover-stay-time="80" bindtap="openOrders">
         <text class="ptn-kpi-value">{{partner.orders.count}}</text>
         <text class="ptn-kpi-label">单子</text>
       </view>
-      <view class="ptn-kpi" hover-class="card-press" bindtap="openOrders">
+      <view class="ptn-kpi" hover-class="card-press" hover-stay-time="80" bindtap="openOrders">
         <text class="ptn-kpi-value">{{partner.orders.amountText}}</text>
         <text class="ptn-kpi-label">金额</text>
       </view>
-      <view class="ptn-kpi" hover-class="card-press" bindtap="openOrders">
+      <view class="ptn-kpi" hover-class="card-press" hover-stay-time="80" bindtap="openOrders">
         <text class="ptn-kpi-value {{partner.orders.dueFen ? 'warn' : ''}}">{{partner.orders.dueFen ? partner.orders.dueText : '—'}}</text>
         <text class="ptn-kpi-label">待收款</text>
       </view>
@@ -52,7 +52,7 @@
       </view>
       <text class="row-label">门头 / 标志</text>
       <view class="img-row">
-        <view class="uploader tile {{logoThumb ? 'has' : ''}}" hover-class="card-press" bindtap="onLogoTap">
+        <view class="uploader tile {{logoThumb ? 'has' : ''}}" hover-class="card-press" hover-stay-time="80" bindtap="onLogoTap">
           <image wx:if="{{logoThumb}}" class="uploader-img" src="{{logoThumb}}" mode="aspectFill" binderror="onLogoError" />
           <view wx:else class="uploader-empty">
             <text class="uploader-plus">＋</text>
@@ -61,8 +61,8 @@
           <view wx:if="{{busy === 'logo'}}" class="uploader-busy"><text class="uploader-busy-text">上传中</text></view>
         </view>
         <view wx:if="{{logoThumb}}" class="img-side">
-          <view class="img-act" hover-class="btn-press" bindtap="chooseLogo"><text class="img-act-text">更换</text></view>
-          <view class="img-act danger" hover-class="btn-press" bindtap="removeLogo"><text class="img-act-text">移除</text></view>
+          <view class="img-act" hover-class="btn-press" hover-stay-time="80" bindtap="chooseLogo"><text class="img-act-text">更换</text></view>
+          <view class="img-act danger" hover-class="btn-press" hover-stay-time="80" bindtap="removeLogo"><text class="img-act-text">移除</text></view>
         </view>
       </view>
 
@@ -70,9 +70,9 @@
       <view class="img-row wrap">
         <view wx:for="{{licenses}}" wx:key="*this" class="uploader tile has">
           <image class="uploader-img" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewLicense" />
-          <view class="tile-del" hover-class="btn-press" data-index="{{index}}" catchtap="removeLicense"><text class="tile-del-text">删除</text></view>
+          <view class="tile-del" hover-class="btn-press" hover-stay-time="80" data-index="{{index}}" catchtap="removeLicense"><text class="tile-del-text">删除</text></view>
         </view>
-        <view wx:if="{{licenses.length < licenseMax}}" class="uploader tile" hover-class="card-press" bindtap="addLicense">
+        <view wx:if="{{licenses.length < licenseMax}}" class="uploader tile" hover-class="card-press" hover-stay-time="80" bindtap="addLicense">
           <view class="uploader-empty">
             <text class="uploader-plus">＋</text>
             <text class="uploader-sub">加一张</text>
@@ -123,12 +123,12 @@
       </view>
     </view>
 
-    <view wx:if="{{partner.orders.count}}" class="btn ghost" hover-class="btn-press" bindtap="openOrders"><text class="btn-text">查看 TA 的订单</text></view>
+    <view wx:if="{{partner.orders.count}}" class="btn ghost" hover-class="btn-press" hover-stay-time="80" bindtap="openOrders"><text class="btn-text">查看 TA 的订单</text></view>
     <text class="foot">每次保存、启停、改图都会留下操作记录。开通新账号、改角色请到「店员花名册」。</text>
 
     <view class="bar">
-      <view class="bar-ghost" hover-class="btn-press" bindtap="previewStatement"><text class="bar-ghost-text">预览对账</text></view>
-      <view class="bar-main {{saving ? 'busy' : ''}} {{dirty ? '' : 'idle'}}" hover-class="btn-press" bindtap="save">
+      <view class="bar-ghost" hover-class="btn-press" hover-stay-time="80" bindtap="previewStatement"><text class="bar-ghost-text">预览对账</text></view>
+      <view class="bar-main {{saving ? 'busy' : ''}} {{dirty ? '' : 'idle'}}" hover-class="btn-press" hover-stay-time="80" bindtap="save">
         <text class="bar-main-text">{{saving ? '保存中…' : dirty ? '保存权限配置' : '已是最新配置'}}</text>
       </view>
     </view>

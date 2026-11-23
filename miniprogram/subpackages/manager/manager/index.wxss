@@ -124,6 +124,21 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   gap: 12rpx;
   min-width: 0;
 }
+/* 收起态摘要并进标题行（2026-11-22 屏效） */
+.ops-signal-inline {
+  margin-left: 4rpx;
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ops-signal-inline.is-ok {
+  color: var(--color-success);
+}
+.ops-signal-board.is-collapsed {
+  padding-bottom: 18rpx;
+}
 .ops-signal-title {
   font-family: var(--font-brand);
   font-size: var(--fs-28);

@@ -6,7 +6,7 @@
 <view class="cd-state" wx:if="{{loadError}}">
   <text class="cd-state-title">内容加载失败</text>
   <text class="cd-state-sub">{{errorMsg || '请检查网络后重试'}}</text>
-  <view class="cd-state-btn" bindtap="retryLoad" hover-class="tap-press">重新加载</view>
+  <view class="cd-state-btn" bindtap="retryLoad" hover-class="tap-press" hover-stay-time="80">重新加载</view>
   <text class="cd-state-link" bindtap="goBack" hover-class="tap-press" hover-stay-time="80">返回上一页</text>
 </view>
 

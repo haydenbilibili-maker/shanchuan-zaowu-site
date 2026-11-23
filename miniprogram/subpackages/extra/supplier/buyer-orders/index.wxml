@@ -24,7 +24,7 @@
       <text class="banner-x" bindtap="dismissBanner">关闭</text>
     </view>
 
-    <view class="link-row" wx:if="{{cartCount > 0}}" bindtap="goCart" hover-class="link-press">
+    <view class="link-row" wx:if="{{cartCount > 0}}" bindtap="goCart" hover-class="link-press" hover-stay-time="80">
       <view class="link-main">
         <text class="link-title">采购车未提交</text>
         <text class="link-copy">还有 {{cartCount}} 件在车里</text>
@@ -95,20 +95,20 @@
             wx:if="{{item.canPay}}"
             data-id="{{item.id}}"
             bindtap="onPay"
-            hover-class="po-btn-press"
+            hover-class="po-btn-press" hover-stay-time="80"
           >{{item.paying ? '处理中…' : '微信支付'}}</view>
           <view
             class="po-btn {{item.paying ? 'disabled' : ''}}"
             data-id="{{item.id}}"
             bindtap="onOffline"
-            hover-class="po-btn-press"
+            hover-class="po-btn-press" hover-stay-time="80"
           >待对公</view>
           <view
             class="po-btn ghost {{item.paying ? 'disabled' : ''}}"
             wx:if="{{isPreview}}"
             data-id="{{item.id}}"
             bindtap="onPreviewMark"
-            hover-class="po-btn-press"
+            hover-class="po-btn-press" hover-stay-time="80"
           >验收标记</view>
         </view>
       </view>

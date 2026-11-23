@@ -123,21 +123,34 @@ const ATLAS_ROWS = [
   ['036', '莲花押花', 'Nelumbo nucifera', '植物', 'common', 0, 0], ['041', '紫水晶', 'Amethyst', '矿石', 'common', 0, 1]
 ]
 const TONE = { 昆虫: 'insecta', 植物: 'plantae', 海洋: 'marine', 矿石: 'minerals' }
-const atlasCards = ATLAS_ROWS.map(([no, zh, la, cat, rarity, lit, spot]) => {
+// 2026-11-22：图鉴扩到 80 页 —— 预览改读真目录（原 16 行样例保留为点亮 / 馆内可寻的设定），其余页按编号接上
+const atlasCatalogMod = loadCjsModule(join(MP, 'subpackages/feature/config/atlasCatalog.js'))
+const ATLAS_EXTRA_LIT = new Set(['044', '055', '069', '075'])
+const atlasRowsAll = atlasCatalogMod.ATLAS_SPECIES.map((sp) => {
+  const hit = ATLAS_ROWS.find((r) => r[0] === sp.no)
+  return hit || [sp.no, sp.nameZh, sp.nameLatin, sp.category, sp.rarity, ATLAS_EXTRA_LIT.has(sp.no) ? 1 : 0, 0]
+}).sort((a, b) => a[0].localeCompare(b[0]))
+const atlasCards = atlasRowsAll.map(([no, zh, la, cat, rarity, lit, spot]) => {
   const c = { id: no, no, category: cat, categoryTone: TONE[cat], rarity, unlocked: !!lit, hasSpot: !!spot, nameZh: lit ? zh : '未记录', nameLatin: lit ? la : '' }
   c.plate = atlasPlates.plateOf(c)
+  c.ghost = atlasPlates.ghostOf ? atlasPlates.ghostOf(c) : ''
   c.rareMark = lit ? ({ rare: '稀有', legendary: '传奇' })[rarity] || '' : ''
   return c
 })
-const atlasCats = [{ id: 'all', label: '全部', got: 6, total: 16 }].concat(['昆虫', '植物', '矿石', '海洋'].map((c) => {
+const atlasCats = [{ id: 'all', label: '全部', got: atlasCards.filter((c) => c.unlocked).length, total: atlasCards.length }].concat(['昆虫', '植物', '矿石', '海洋'].map((c) => {
   const x = atlasCards.filter((a) => a.category === c)
   return { id: c, label: c, got: x.filter((a) => a.unlocked).length, total: x.length }
 }))
-const atlasStats = { total: 16, unlocked: 6, percent: 38, series: [
+const atlasStats = { total: atlasCards.length, unlocked: atlasCards.filter((c) => c.unlocked).length, percent: 13, series: [
   { id: 'frost', name: '霜降守望', got: 1, total: 4, complete: false, blurb: '十月末到霜降前后，颜色会自己安静下来。' },
   { id: 'overwinter', name: '越冬者', got: 1, total: 3, complete: false, blurb: '翅面把一整季的光收进去，到来年还在。' },
-  { id: 'mountain', name: '守山者', got: 3, total: 6, complete: false, blurb: '石头、叶片与壳，都是山海留下的截面。' }
+  { id: 'mountain', name: '守山者', got: 3, total: 6, complete: false, blurb: '石头、叶片与壳，都是山海留下的截面。' },
+  { id: 'armored', name: '甲胄者', got: 1, total: 11, complete: false },
+  { id: 'nocturne', name: '夜行者', got: 1, total: 6, complete: false },
+  { id: 'tidepool', name: '潮间带', got: 1, total: 4, complete: false }
 ] }
+// 卷章刻度（2026-11-22，与页面 applyPack 同算法）
+atlasStats.series = atlasStats.series.map((sr) => ({ ...sr, pips: Array.from({ length: sr.total }, (_, i) => ({ i, lit: i < sr.got })) }))
 
 function achievementsSceneData() {
   let cfg = null
@@ -155,7 +168,7 @@ function achievementsSceneData() {
     A('search_5', 'explore', '搜索新手', '搜索 5 次', 5, 3, 5), A('search_20', 'explore', '搜索达人', '搜索 20 次', 20, 3, 20),
     A('collect_5', 'collect', '收藏新手', '收藏 5 件', 5, 7, 15, '件'), A('collect_10', 'collect', '收藏家', '收藏 10 件', 10, 7, 30, '件'), A('collect_50', 'collect', '收藏大师', '收藏 50 件', 50, 7, 100, '件'),
     A('folder_3', 'collect', '整理达人', '建 3 个收藏夹', 3, 1, 20, '个'),
-    A('atlas_first', 'collect', '第一页', '图鉴点亮第一页', 1, 1, 20, '页'), A('atlas_frost', 'collect', '霜降守望', '集齐霜降守望', 4, 1, 40, '页'), A('atlas_overwinter', 'collect', '越冬者', '集齐越冬者', 3, 1, 40, '页'), A('atlas_mountain', 'collect', '守山者', '集齐守山者', 6, 3, 40, '页'), A('atlas_volume', 'collect', '山海图鉴卷一', '卷一全部点亮', 16, 6, 100, '页'),
+    A('atlas_first', 'collect', '第一页', '图鉴点亮第一页', 1, 1, 20, '页'), A('atlas_frost', 'collect', '霜降守望', '集齐霜降守望', 4, 1, 40, '页'), A('atlas_overwinter', 'collect', '越冬者', '集齐越冬者', 3, 1, 40, '页'), A('atlas_mountain', 'collect', '守山者', '集齐守山者', 6, 3, 40, '页'), A('atlas_volume', 'collect', '翻开十六页', '山海图鉴翻开十六页', 16, 6, 100, '页'),
     A('share_1', 'social', '分享者', '分享 1 次', 1, 2), A('share_5', 'social', '分享达人', '分享 5 次', 5, 2), A('share_20', 'social', '分享大师', '分享 20 次', 20, 2),
     A('first_purchase', 'consumption', '首次购买', '完成第一笔订单', 1, 1, 50, '单'), A('spend_500', 'consumption', '消费新星', '累计消费 ¥500', 500, 860, 100, '元'), A('spend_2000', 'consumption', '消费达人', '累计消费 ¥2000', 2000, 860, 200, '元'), A('spend_10000', 'consumption', '消费大师', '累计消费 ¥10000', 10000, 860, 500, '元'),
     A('course_1', 'learning', '学习者', '完成 1 个课程', 1, 0, 20), A('course_5', 'learning', '学习达人', '完成 5 个课程', 5, 0, 50),
@@ -430,7 +443,7 @@ const SCENES = [
     }
   },
   {
-    name: 'atlas', h: 3200, wxml: 'subpackages/feature/collection/index', data: {
+    name: 'atlas', h: 9600, wxml: 'subpackages/feature/collection/index', data: {
       loading: false, loadError: false, offline: false, cards: atlasCards, filtered: atlasCards, stats: atlasStats,
       ticks: atlasCards.map((c) => ({ no: c.no, lit: c.unlocked })), categories: atlasCats, filter: 'all', seriesFilter: '', seriesBlurb: '',
       nextHint: '还差 10 页，其中 3 页藏在馆内印记里。', showAiIdentify: true, filterEmpty: false, catalogEmpty: false,
@@ -440,6 +453,7 @@ const SCENES = [
   },
   {
     name: 'atlas-detail', h: 2600, wxml: 'subpackages/feature/collection/detail/index', data: {
+      pagerPrev: { id: '031', no: '031', label: '银杏押花' }, pagerNext: { id: '034', no: '034', label: '未记录' }, pagerPos: '13 / 16',
       loading: false, loadError: false, locked: false, justUnlocked: false, methodText: '镜头记下 · 2026.10.16', seriesText: '守山者',
       card: Object.assign({}, atlasCards[12], { essay: '壳里一格一格的房间，是它一生搬过的家。最外面那一间住着现在，里面的门都关上了，只留一根细管把它们连起来。' }),
       facts: [{ k: '产地', v: '西太平洋与印度洋的珊瑚礁外坡' }, { k: '习性', v: '白天沉在深处，夜里随水温上浮觅食' }, { k: '柜位', v: '海洋标本柜下层' }, { k: '印记码', v: 'SH-S5' }],

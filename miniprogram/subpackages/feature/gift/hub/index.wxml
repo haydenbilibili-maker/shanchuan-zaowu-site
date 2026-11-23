@@ -78,7 +78,7 @@
         </view>
         <text class="empty-title">柜门片刻未开</text>
         <text class="muted">{{productsError}}</text>
-        <text class="match-link" bindtap="onRefreshBatch">再试一次</text>
+        <text class="match-link" bindtap="onRefreshBatch" hover-class="tap-press" hover-stay-time="80">再试一次</text>
       </view>
 
       <view class="product-grid" wx:elif="{{products.length}}">
@@ -136,8 +136,8 @@
         <text class="empty-title">这一格暂无匹配</text>
         <text class="muted">可换一批，或去馆藏慢慢挑</text>
         <view class="match-empty-actions">
-          <text class="match-link" bindtap="onRefreshBatch">换一批</text>
-          <text class="match-link" bindtap="goBrowse">去馆藏</text>
+          <text class="match-link" bindtap="onRefreshBatch" hover-class="tap-press" hover-stay-time="80">换一批</text>
+          <text class="match-link" bindtap="goBrowse" hover-class="tap-press" hover-stay-time="80">去馆藏</text>
         </view>
       </view>
     </view>

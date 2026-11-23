@@ -1,3 +1,4 @@
+const { neighbors, readOrder } = require('../atlasPager')
 const { trackBehavior } = require('../../../../utils/trackBehavior')
 const {
   callAtlas,
@@ -33,6 +34,9 @@ Page({
 
   onLoad(options) {
     this.speciesId = options.id || options.speciesId || ''
+    // 翻页条（2026-11-22）：首页记下的标本册顺序里找邻页；分享直达没有顺序 → 不出
+    const nb = neighbors(readOrder(getApp()), this.speciesId)
+    this.setData({ pagerPrev: nb.prev, pagerNext: nb.next, pagerPos: nb.pos })
     this.justUnlocked = options.first === '1'
     if (!this.speciesId) {
       this.setData({ loading: false, loadError: true })
@@ -83,6 +87,14 @@ Page({
     wx.setNavigationBarTitle({
       title: card.unlocked && card.nameZh ? card.nameZh : '图鉴卡片'
     })
+  },
+
+  /** 翻到邻页：redirectTo 替换当前页，翻多少页返回键都只回图鉴一次 */
+  onTurnPage(e) {
+    const id = e.currentTarget.dataset.id
+    if (!id) return
+    // 不加原生 toast 兜底（弹窗棘轮）：同包内已注册页的 redirectTo 失败概率极低，失败则停在本页
+    wx.redirectTo({ url: `/subpackages/feature/collection/detail/index?id=${id}` })
   },
 
   async loadCard() {

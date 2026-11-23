@@ -369,8 +369,8 @@
         maxlength="500"
       />
       <view class="ui-pop-foot">
-        <button class="ui-pop-btn is-ghost fb-btn" hover-class="tap-press" bindtap="closeFeedback">取消</button>
-        <button class="ui-pop-btn is-primary fb-btn" hover-class="tap-press" bindtap="submitFeedback" loading="{{feedbackSubmitting}}">提交</button>
+        <button class="ui-pop-btn is-ghost fb-btn" hover-class="tap-press" hover-stay-time="80" bindtap="closeFeedback">取消</button>
+        <button class="ui-pop-btn is-primary fb-btn" hover-class="tap-press" hover-stay-time="80" bindtap="submitFeedback" loading="{{feedbackSubmitting}}">提交</button>
       </view>
     </view>
   </view>

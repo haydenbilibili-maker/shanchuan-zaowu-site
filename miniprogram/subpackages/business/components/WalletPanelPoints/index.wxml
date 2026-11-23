@@ -33,7 +33,7 @@
         </view>
 
         <view class="card-bottom">
-          <text class="tips" wx:if="{{pointsError}}" catchtap="retryPoints">积分加载失败，点此重试</text>
+          <text class="tips" wx:if="{{pointsError}}" catchtap="retryPoints" hover-class="tap-press" hover-stay-time="80">积分加载失败，点此重试</text>
           <text class="tips" wx:elif="{{!pointsReady}}">正在核对积分余额</text>
           <text class="tips" wx:else>积分用于兑换限量藏品与特权</text>
         </view>
@@ -283,7 +283,7 @@
           </block>
         </view>
 
-        <view class="pt-ledger-more" wx:if="{{recordsHasMore}}" bindtap="loadMoreRecords" hover-class="pt-ledger-more-press">
+        <view class="pt-ledger-more" wx:if="{{recordsHasMore}}" bindtap="loadMoreRecords" hover-class="pt-ledger-more-press" hover-stay-time="80">
           {{recordsLoadingMore ? '加载中…' : '加载更多'}}
         </view>
         <text class="pt-ledger-fin" wx:elif="{{records.length && !recordsLoading}}">· 已到最早一笔 ·</text>

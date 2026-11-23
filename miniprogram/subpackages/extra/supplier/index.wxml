@@ -26,7 +26,7 @@
         class="flow-step-btn {{cartCount > 0 ? 'hot' : ''}}"
         data-key="catalog"
         bindtap="onModuleTap"
-        hover-class="flow-press"
+        hover-class="flow-press" hover-stay-time="80"
       >
         <text class="flow-num">01</text>
         <text class="flow-label">选购</text>
@@ -35,7 +35,7 @@
       <view
         class="flow-step-btn {{cartCount > 0 ? 'hot' : ''}}"
         bindtap="onFlowCart"
-        hover-class="flow-press"
+        hover-class="flow-press" hover-stay-time="80"
       >
         <text class="flow-num">02</text>
         <text class="flow-label">确认下单</text>
@@ -45,7 +45,7 @@
         class="flow-step-btn"
         data-key="buyer-orders"
         bindtap="onModuleTap"
-        hover-class="flow-press"
+        hover-class="flow-press" hover-stay-time="80"
       >
         <text class="flow-num">03</text>
         <text class="flow-label">支付结果</text>
@@ -61,7 +61,7 @@
         class="module-card primary-card"
         wx:for="{{buyerModules}}"
         wx:key="key"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         data-key="{{item.key}}"
         bindtap="onModuleTap"
       >
@@ -78,7 +78,7 @@
     </view>
 
     <view class="group supplier-group" wx:if="{{showSupplierSection}}">
-      <view class="group-head fold" bindtap="toggleSupplier" hover-class="flow-press">
+      <view class="group-head fold" bindtap="toggleSupplier" hover-class="flow-press" hover-stay-time="80">
         <view class="group-head-text">
           <text class="group-en">SUPPLIER</text>
           <text class="group-cn">第三方供货方履约</text>
@@ -101,7 +101,7 @@
           class="module-card muted-card"
           wx:for="{{visibleSupplierModules}}"
           wx:key="key"
-          hover-class="module-card-press"
+          hover-class="module-card-press" hover-stay-time="80"
           data-key="{{item.key}}"
           bindtap="onModuleTap"
         >

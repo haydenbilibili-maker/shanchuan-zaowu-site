@@ -771,7 +771,7 @@ check('★ 点名字/称号区仍可进档案（入口没丢）',
   '移除 chip 时把 .text-meta 的档案入口也删了')
 check('裸「›」入口已移除', !/class="profile-edit-hint"/.test(cardWxml))
 check('死样式 profile-edit-hint 已清理', !/profile-edit-hint/.test(cardWxss))
-check('★ 背板生日行常驻档案入口', /wx:if="\{\{cardBirthday\.hasBirthday\}\}" catchtap="onGoProfileFromCardBack">档案 →/.test(cardWxml))
+check('★ 背板生日行常驻档案入口', /wx:if="\{\{cardBirthday\.hasBirthday\}\}" catchtap="onGoProfileFromCardBack"[^>]*>档案 →/.test(cardWxml))
 check('★ 背板标签区常驻档案入口', /class="cb-tags-link"[\s\S]*?管理档案 →/.test(cardWxml))
 check('★ 背板页脚常驻「完善藏家档案」', /class="cb-profile-cta"[\s\S]*?完善藏家档案 →/.test(cardWxml))
 

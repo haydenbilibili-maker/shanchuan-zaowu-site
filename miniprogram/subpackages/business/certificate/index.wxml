@@ -36,14 +36,14 @@
   <view class="empty-cert" wx:if="{{missingId && !isMinting}}">
     <text class="empty-cert-title">未找到证书</text>
     <text class="empty-cert-desc">请从证书收藏夹进入，或查看已签收订单</text>
-    <view class="empty-cert-btn" hover-class="tap-press" bindtap="goBack">返回</view>
+    <view class="empty-cert-btn" hover-class="tap-press" hover-stay-time="80" bindtap="goBack">返回</view>
   </view>
 
   <!-- 礼赠证书未签发：待签收 / 礼赠已结束 -->
   <view class="empty-cert" wx:if="{{certState && !isMinting}}">
     <text class="empty-cert-title">{{certStateTitle}}</text>
     <text class="empty-cert-desc">{{certStateDesc}}</text>
-    <view class="empty-cert-btn" hover-class="tap-press" bindtap="goBack">返回</view>
+    <view class="empty-cert-btn" hover-class="tap-press" hover-stay-time="80" bindtap="goBack">返回</view>
   </view>
 
   <!-- 2. 证书展示 -->
@@ -62,12 +62,12 @@
         <text>如何养护这件藏品 →</text>
       </view>
       <view class="action-row">
-        <button class="icon-btn share" open-type="share" hover-class="tap-press">
+        <button class="icon-btn share" open-type="share" hover-class="tap-press" hover-stay-time="80">
           <image src="/assets/icons/share.png" class="btn-icon" mode="aspectFit"></image>
           <text>分享</text>
         </button>
         
-        <view class="save-btn" hover-class="tap-press" bindtap="saveImage">
+        <view class="save-btn" hover-class="tap-press" hover-stay-time="80" bindtap="saveImage">
           <text>保存到相册</text>
         </view>
       </view>

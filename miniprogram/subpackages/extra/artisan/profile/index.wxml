@@ -150,7 +150,7 @@
 
     <view
       class="avatar-row {{avatarUploading ? 'is-busy' : ''}} {{avatarError ? 'is-error' : ''}}"
-      hover-class="avatar-row-press"
+      hover-class="avatar-row-press" hover-stay-time="80"
       bindtap="onAvatarTap"
     >
       <view class="avatar-wrap">
@@ -168,7 +168,7 @@
 
     <view
       class="cover-row {{coverUploading ? 'is-busy' : ''}} {{coverError ? 'is-error' : ''}}"
-      hover-class="avatar-row-press"
+      hover-class="avatar-row-press" hover-stay-time="80"
       bindtap="onCoverTap"
     >
       <view class="cover-wrap">

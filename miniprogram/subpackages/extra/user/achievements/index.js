@@ -79,7 +79,7 @@ const TRACK_DEFS = [
   { key: 'search', type: 'explore', name: '检索', ids: ['search_5', 'search_20'], labels: ['5', '20'] },
   { key: 'collect', type: 'collect', name: '收藏', ids: ['collect_5', 'collect_10', 'collect_50'], labels: ['5', '10', '50'] },
   { key: 'folder', type: 'collect', name: '收藏夹', ids: ['folder_3'], labels: ['3'] },
-  { key: 'atlas', type: 'collect', name: '山海图鉴', ids: ['atlas_first', 'atlas_frost', 'atlas_overwinter', 'atlas_mountain', 'atlas_volume'], labels: ['第一页', '霜降', '越冬', '守山', '卷一'] },
+  { key: 'atlas', type: 'collect', name: '山海图鉴', ids: ['atlas_first', 'atlas_frost', 'atlas_overwinter', 'atlas_mountain', 'atlas_volume'], labels: ['第一页', '霜降', '越冬', '守山', '十六页'] },
   { key: 'share', type: 'social', name: '分享', ids: ['share_1', 'share_5', 'share_20'], labels: ['1', '5', '20'] },
   { key: 'spend', type: 'consumption', name: '馆藏', ids: ['first_purchase', 'spend_500', 'spend_2000', 'spend_10000'], labels: ['首单', '¥500', '¥2000', '¥1万'] },
   { key: 'course', type: 'learning', name: '课程', ids: ['course_1', 'course_5'], labels: ['1', '5'] },
@@ -106,6 +106,11 @@ function trackView(def, list) {
     return 0;
   });
   nodes.forEach((n, i) => { n.linkFill = i < links.length ? links[i] : -1; });
+  // 2026-11-22：「下一枚」直接标在节点下（铜色「还差 3 件」），行首不再重复一句「下一枚『…』· 还差」
+  if (nextIndex >= 0) {
+    nodes[nextIndex].isNext = true;
+    nodes[nextIndex].nextHint = String(next.remainText || '').replace(/\s*即可点亮$/, '');
+  }
   const got = list.filter((a) => a.unlocked).length;
   return {
     key: def.key,
@@ -157,7 +162,13 @@ function buildChapters(all) {
       got: tracks.reduce((n, t) => n + t.got, 0),
       total: tracks.reduce((n, t) => n + t.total, 0)
     };
-  }).filter((c) => c.tracks.length);
+  }).filter((c) => c.tracks.length).map((c) => ({
+    ...c,
+    // 章目录（2026-11-22）：卷首下一排五章，点一章滚到该章；整章点亮盖「全章点亮」
+    anchor: `ch-${c.type}`,
+    pct: c.total ? Math.round((c.got / c.total) * 100) : 0,
+    complete: c.total > 0 && c.got === c.total
+  }));
 }
 
 /** 下一枚：离点亮最近的三枚（进度高者优先；全是 0 时按门槛小者优先 —— 最容易的先给） */
@@ -413,6 +424,13 @@ Page({
   },
 
   /** 点成长线上的节点 / 下一枚的行：按 id 取（dataset 里不再塞整个对象） */
+  /** 章目录：滚到该章（内容不在 scroll-view 里，pageScrollTo 可达；见 check:achievement-tracks E） */
+  jumpChapter(e) {
+    const anchor = e.currentTarget.dataset.anchor;
+    if (!anchor) return;
+    wx.pageScrollTo({ selector: `#${anchor}`, offsetTop: -16, duration: 300 });
+  },
+
   viewAchievement(e) {
     const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
     const achievement = ds.achievement || (this.data.achievements || []).find((a) => a && a.id === ds.id);

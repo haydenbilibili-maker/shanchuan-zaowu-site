@@ -213,7 +213,7 @@
     <view class="filter-chip" wx:if="{{filterLabel}}">
       <view class="signal-light lamp-brass"></view>
       <text class="filter-chip-txt">{{filterLabel}}</text>
-      <text class="filter-chip-clear" bindtap="clearRecipientFilter">清除</text>
+      <text class="filter-chip-clear" bindtap="clearRecipientFilter" hover-class="tap-press" hover-stay-time="80">清除</text>
     </view>
 
     <scroll-view class="segments" scroll-x enhanced show-scrollbar="{{false}}" enable-flex>
@@ -262,7 +262,7 @@
           <view class="signal-light lamp-warn"></view>
         </view>
         <text class="muted">{{errorMsg}}</text>
-        <text class="link" bindtap="reloadFlow">再试一次</text>
+        <text class="link" bindtap="reloadFlow" hover-class="tap-press" hover-stay-time="80">再试一次</text>
       </view>
 
       <view class="empty" wx:elif="{{!loading && !list.length}}">
@@ -404,7 +404,7 @@
         <view class="signal-light lamp-warn"></view>
       </view>
       <text class="muted">{{contactsError}}</text>
-      <text class="link" bindtap="loadContacts">再试一次</text>
+      <text class="link" bindtap="loadContacts" hover-class="tap-press" hover-stay-time="80">再试一次</text>
     </view>
 
     <view class="empty" wx:elif="{{!contactsLoading && !contacts.length}}">
@@ -561,7 +561,7 @@
         <view class="signal-light lamp-warn"></view>
       </view>
       <text class="muted">{{datesError}}</text>
-      <text class="link" bindtap="loadDates">再试一次</text>
+      <text class="link" bindtap="loadDates" hover-class="tap-press" hover-stay-time="80">再试一次</text>
     </view>
 
     <view class="empty dates-empty" wx:elif="{{!datesLoading && !dates.length}}">

@@ -16,7 +16,7 @@
       <view class="load-error care-enter care-enter-d2" wx:if="{{loadError}}">
         <text class="empty-title">藏品加载失败</text>
         <text class="empty-desc">请检查网络后重试</text>
-        <view class="empty-btn" bindtap="retryLoad" hover-class="care-press">重新加载</view>
+        <view class="empty-btn" bindtap="retryLoad" hover-class="care-press" hover-stay-time="80">重新加载</view>
       </view>
 
       <view class="list care-enter care-enter-d2" wx:elif="{{specimens.length}}">
@@ -61,7 +61,7 @@
       <view class="empty care-enter care-enter-d2" wx:else>
         <text class="empty-title">还没有已签收藏品</text>
         <text class="empty-desc">确认收货后，藏品会出现在这里，并匹配对应养护指南</text>
-        <view class="empty-btn" bindtap="goToHub" hover-class="care-press">浏览品类养护 →</view>
+        <view class="empty-btn" bindtap="goToHub" hover-class="care-press" hover-stay-time="80">浏览品类养护 →</view>
       </view>
     </view>
 

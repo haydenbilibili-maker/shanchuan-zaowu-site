@@ -16,7 +16,7 @@
     <view class="folder-header">
       <view class="fh-left">
         <text class="fh-label"><text class="en-label">ARCHIVE NO.</text> 订单编号</text>
-        <text class="fh-val copy" bindtap="copyOrderNo">{{order.serialNo}} ❐</text>
+        <text class="fh-val copy" bindtap="copyOrderNo" hover-class="tap-press" hover-stay-time="80">{{order.serialNo}} ❐</text>
       </view>
       <view class="fh-right">
         <text class="fh-label"><text class="en-label">DATE</text> 日期</text>
@@ -213,7 +213,7 @@
 
     <view class="care-section slide-in-delay-2" wx:if="{{order.status === 'received' && showCare}}">
       <view class="mu-head"><view class="mu-head-t"><text class="mu-en">SPECIMEN CARE</text><text class="mu-cn">养护提醒</text></view></view>
-      <view class="care-hint-strip" bindtap="goToCare" hover-class="care-hint-press">
+      <view class="care-hint-strip" bindtap="goToCare" hover-class="care-hint-press" hover-stay-time="80">
         <image class="care-hint-icon" src="/assets/icons/care.png" mode="aspectFit"></image>
         <view class="care-hint-main">
           <text class="care-hint-title">{{careContext.productTitle}}</text>
@@ -357,7 +357,7 @@
     <!-- 礼赠待填址：主操作 = 分享礼笺；次 = 提醒 / 退款；联系专员仅留 aftercare -->
     <view class="gift-await-bar" wx:if="{{isGiftOrder && giftAwaitingAddress}}">
       <text class="gift-await-hint" wx:if="{{giftExpireHint}}">{{giftExpireHint}}</text>
-      <button class="btn-gift-primary share-native" open-type="share" hover-class="tap-press-soft">把礼笺交给 TA</button>
+      <button class="btn-gift-primary share-native" open-type="share" hover-class="tap-press-soft" hover-stay-time="80">把礼笺交给 TA</button>
       <view class="btn-gift-secondary btn-gift-fill" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goProxyFillAddress">已拿到地址或送给自己？我来填写收货地址</view>
       <view class="gift-await-row">
         <view class="btn-gift-secondary" hover-class="tap-press-soft" hover-stay-time="80" bindtap="nudgeGift">再轻轻提醒一声</view>

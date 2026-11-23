@@ -207,12 +207,12 @@
         <block wx:for="{{notePresets}}" wx:key="id">
           <text class="note-relation" wx:if="{{item.id === activeNotePresetId}}">按「{{item.label}}」起草</text>
         </block>
-        <text class="note-relation-back" wx:if="{{!activeNotePresetId}}" data-step="1" bindtap="onRailTap">想要推荐句？回「选礼」挑个关系 ›</text>
+        <text class="note-relation-back" wx:if="{{!activeNotePresetId}}" data-step="1" bindtap="onRailTap" hover-class="tap-press" hover-stay-time="80">想要推荐句？回「选礼」挑个关系 ›</text>
         <!-- 2026-09-17：一个关系现在有多句候选 —— 这里给出「换一句」与句序（第 2/3 句）。
              顾客原话：「点进去好几次都是同样一段话，也没有更新的标」。与关系同一行，少占一行 -->
         <view class="note-shuffle-row" wx:if="{{activeNotePresetId && noteVariantTotal > 1}}">
           <text class="note-shuffle-count">第 {{noteVariantLabel}} 句</text>
-          <text class="note-shuffle" bindtap="onNoteShuffle">换一句 ↻</text>
+          <text class="note-shuffle" bindtap="onNoteShuffle" hover-class="tap-press" hover-stay-time="80">换一句 ↻</text>
         </view>
       </view>
 

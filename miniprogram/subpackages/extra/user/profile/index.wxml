@@ -132,9 +132,9 @@
             <view class="phone-agree-check {{phoneAgreed ? 'checked' : ''}}"></view>
             <view class="phone-agree-text">
               <text>我已阅读并同意</text>
-              <text class="phone-agree-link" catchtap="openLegal" data-type="terms">《用户服务协议》</text>
+              <text class="phone-agree-link" catchtap="openLegal" data-type="terms" hover-class="tap-press" hover-stay-time="80">《用户服务协议》</text>
               <text>和</text>
-              <text class="phone-agree-link" catchtap="openLegal" data-type="privacy">《隐私政策》</text>
+              <text class="phone-agree-link" catchtap="openLegal" data-type="privacy" hover-class="tap-press" hover-stay-time="80">《隐私政策》</text>
             </view>
           </view>
           <text wx:if="{{phoneAgreeHint && !phoneAgreed}}" class="phone-agree-hint">请先阅读并勾选同意</text>

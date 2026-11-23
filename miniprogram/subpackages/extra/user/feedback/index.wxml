@@ -31,7 +31,7 @@
           class="account-chip {{activeCategory === item.id ? 'active' : ''}}"
           wx:for="{{categories}}"
           wx:key="id"
-          hover-class="account-chip-press"
+          hover-class="account-chip-press" hover-stay-time="80"
           bindtap="selectCategory"
           data-id="{{item.id}}"
         >{{item.label}}</view>
@@ -58,10 +58,10 @@
           <view class="ti-cell" wx:for="{{ticketImages}}" wx:key="key">
             <image class="ti-img" src="{{item.local}}" mode="aspectFill" bindtap="previewTicketImage" data-url="{{item.local}}"/>
             <view class="ti-mask" wx:if="{{item.status === 'uploading'}}"><text class="ti-mask-text">上传中…</text></view>
-            <view class="ti-mask is-failed" wx:elif="{{item.status === 'failed'}}" hover-class="tap-press-soft" catchtap="retryTicketImage" data-key="{{item.key}}"><text class="ti-mask-text">上传失败</text><text class="ti-mask-text">点此重试</text></view>
+            <view class="ti-mask is-failed" wx:elif="{{item.status === 'failed'}}" hover-class="tap-press-soft" hover-stay-time="80" catchtap="retryTicketImage" data-key="{{item.key}}"><text class="ti-mask-text">上传失败</text><text class="ti-mask-text">点此重试</text></view>
             <view hover-class="tap-press" hover-stay-time="80" class="ti-del" catchtap="removeTicketImage" data-key="{{item.key}}"><text class="ti-del-x">×</text></view>
           </view>
-          <view class="ti-cell ti-add" wx:if="{{ticketImages.length < maxTicketImages}}" hover-class="tap-press-soft" bindtap="chooseTicketImages">
+          <view class="ti-cell ti-add" wx:if="{{ticketImages.length < maxTicketImages}}" hover-class="tap-press-soft" hover-stay-time="80" bindtap="chooseTicketImages">
             <text class="ti-add-plus">+</text>
             <text class="ti-add-text">添加图片</text>
           </view>
@@ -85,15 +85,15 @@
     </view>
 
     <view class="account-section-card fb-links">
-      <view class="fb-link-row" hover-class="tap-press" bindtap="openLegal" data-type="terms">
+      <view class="fb-link-row" hover-class="tap-press" hover-stay-time="80" bindtap="openLegal" data-type="terms">
         <text class="fb-link-label">用户服务协议</text>
         <text class="fb-link-arrow">→</text>
       </view>
-      <view class="fb-link-row" hover-class="tap-press" bindtap="openLegal" data-type="privacy">
+      <view class="fb-link-row" hover-class="tap-press" hover-stay-time="80" bindtap="openLegal" data-type="privacy">
         <text class="fb-link-label">隐私政策</text>
         <text class="fb-link-arrow">→</text>
       </view>
-      <view class="fb-link-row last" hover-class="tap-press" bindtap="goSupport">
+      <view class="fb-link-row last" hover-class="tap-press" hover-stay-time="80" bindtap="goSupport">
         <text class="fb-link-label">需要订单/售后帮助？联系专员</text>
         <text class="fb-link-arrow">→</text>
       </view>

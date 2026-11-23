@@ -95,9 +95,9 @@
       <view class="agree-check {{agreed ? 'checked' : ''}}"></view>
       <view class="agree-copy">
         <text class="agree-text">我已阅读并同意</text>
-        <text class="agree-link" hover-class="tap-press" catchtap="openTerms">《用户服务协议》</text>
+        <text class="agree-link" hover-class="tap-press" hover-stay-time="80" catchtap="openTerms">《用户服务协议》</text>
         <text class="agree-sep">和</text>
-        <text class="agree-link" hover-class="tap-press" catchtap="openPrivacy">《隐私政策》</text>
+        <text class="agree-link" hover-class="tap-press" hover-stay-time="80" catchtap="openPrivacy">《隐私政策》</text>
       </view>
     </view>
     <button
@@ -173,25 +173,25 @@
     <text class="done-warn-msg" wx:if="{{giftMsg}}">{{giftMsg}}</text>
     <view
       class="account-btn-ghost done-warn-btn"
-      hover-class="done-btn-press"
+      hover-class="done-btn-press" hover-stay-time="80"
       bindtap="retryGift"
     >{{repairing ? '补领中…' : '补领新客礼'}}</view>
   </view>
 
   <!-- 明确选择：逛馆 / 去礼券夹核销（无自动跳转） -->
   <view class="done-choices done-enter done-enter-d2">
-    <view class="account-btn-primary done-btn" hover-class="done-btn-press" bindtap="goPrimary">{{primaryCta}}</view>
+    <view class="account-btn-primary done-btn" hover-class="done-btn-press" hover-stay-time="80" bindtap="goPrimary">{{primaryCta}}</view>
 
     <view
       class="account-btn-ghost done-btn"
-      hover-class="done-btn-press"
+      hover-class="done-btn-press" hover-stay-time="80"
       bindtap="goCoupons"
       wx:if="{{showCouponsEntry && !hasReturn}}"
     >去礼券夹核销{{giftCoupons > 0 ? ' · ' + giftCoupons + ' 张' : ''}}</view>
 
     <view
       class="done-sub-link"
-      hover-class="tap-press"
+      hover-class="tap-press" hover-stay-time="80"
       bindtap="goBrowse"
       wx:if="{{hasReturn}}"
     >先去逛逛馆 ›</view>

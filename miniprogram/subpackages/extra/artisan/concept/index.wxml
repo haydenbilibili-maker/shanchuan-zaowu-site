@@ -31,7 +31,7 @@
             wx:for="{{productTypes}}"
             wx:key="value"
             data-value="{{item.value}}"
-            hover-class="type-press"
+            hover-class="type-press" hover-stay-time="80"
             bindtap="selectProductType"
           >
             <text class="type-name">{{item.name}}</text>
@@ -92,7 +92,7 @@
             wx:for="{{examples}}"
             wx:key="id"
             data-id="{{item.id}}"
-            hover-class="chip-press"
+            hover-class="chip-press" hover-stay-time="80"
             bindtap="applyExample"
           >{{item.label}}</view>
         </view>
@@ -254,7 +254,7 @@
           class="history-row"
           wx:for="{{historyView}}"
           wx:key="id"
-          hover-class="history-press"
+          hover-class="history-press" hover-stay-time="80"
           bindtap="loadHistoryItem"
           data-id="{{item.id}}"
         >

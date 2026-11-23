@@ -69,7 +69,7 @@
         class="work-card {{item.selected ? 'is-selected' : ''}}"
         wx:for="{{list}}"
         wx:key="_id"
-        hover-class="work-card-press"
+        hover-class="work-card-press" hover-stay-time="80"
         bindtap="onCardTap"
         data-id="{{item._id}}"
       >

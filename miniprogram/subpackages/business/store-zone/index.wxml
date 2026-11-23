@@ -40,7 +40,7 @@
     <view class="long-desc-block" wx:if="{{zone.longDesc}}">
       <text class="section-label">策展手记 | CURATOR</text>
       <text class="long-desc {{longDescExpanded ? 'expanded' : ''}}">{{zone.longDesc}}</text>
-      <text class="long-desc-toggle" bindtap="toggleLongDesc">{{longDescExpanded ? '收起' : '展开阅读'}}</text>
+      <text class="long-desc-toggle" bindtap="toggleLongDesc" hover-class="tap-press" hover-stay-time="80">{{longDescExpanded ? '收起' : '展开阅读'}}</text>
     </view>
 
     <view class="species-block" wx:if="{{zone.featuredSpecies.length}}">

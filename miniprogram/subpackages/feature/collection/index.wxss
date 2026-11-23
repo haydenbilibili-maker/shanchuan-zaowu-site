@@ -113,67 +113,84 @@ page {
   color: var(--brass-300);
 }
 
-/* —— 卷章：发丝线行 —— */
-.chapter {
+/* —— 卷章（2026-11-22）：三章并排书脊卡 + 每章一排小格（原三行列表，只有「1/4」分数）—— */
+.chapter-row {
   display: flex;
-  align-items: center;
-  gap: 24rpx;
-  min-height: 112rpx;
-  padding: 20rpx 0;
-  box-sizing: border-box;
-  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  flex-wrap: wrap;
+  justify-content: space-between;
+  row-gap: 16rpx;
 }
 
-.chapter:last-child { border-bottom: 1rpx solid rgba(196, 167, 108, 0.14); }
+/* 2026-11-22 图鉴扩到 80 页后共六章：一行三张、自动折行（31% 留余量，不用 calc(百分比 − 定长)） */
+.chapter {
+  flex: 0 0 31.5%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20rpx 18rpx 18rpx;
+  box-sizing: border-box;
+  border-radius: var(--r-card, 16rpx);
+  background: #1F1D1A;
+  border: 1rpx solid rgba(196, 167, 108, 0.16);
+}
 
 .chapter-no {
-  flex-shrink: 0;
-  width: 40rpx;
   font-family: var(--font-mono);
-  font-size: var(--fs-24);
+  font-size: var(--fs-18);
+  letter-spacing: 0.12em;
   color: var(--color-text-secondary);
 }
-
-.chapter-main { flex: 1; min-width: 0; }
 
 .chapter-name {
   display: block;
+  margin-top: 6rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   color: var(--color-text-body);
-}
-
-.chapter-blurb {
-  display: block;
-  margin-top: 6rpx;
-  font-size: var(--fs-22);
-  line-height: 1.5;
-  color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.chapter-pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6rpx;
+  margin-top: 14rpx;
+}
+
+.chapter-pip {
+  width: 18rpx;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: rgba(196, 167, 108, 0.18);
+}
+
+.chapter-pip.is-lit { background: var(--brass-400); }
+
 .chapter-count {
-  flex-shrink: 0;
+  margin-top: 10rpx;
   font-family: var(--font-mono);
-  font-size: var(--fs-24);
+  font-size: var(--fs-22);
   color: var(--color-text-secondary);
 }
 
 .chapter-done {
-  flex-shrink: 0;
+  margin-top: 10rpx;
   font-size: var(--fs-22);
   color: var(--brass-300);
   letter-spacing: 0.1em;
 }
 
-/* 选中的一章：整行转金字（行本身已是发丝线框，不再叠环） */
-.chapter.is-on .chapter-no,
+/* 选中的一章：铜框 + 金字；整章翻齐：浅铜底 */
+.chapter.is-on {
+  border-color: var(--brass-400);
+  background: rgba(196, 167, 108, 0.08);
+}
 .chapter.is-on .chapter-name,
 .chapter.is-on .chapter-count { color: var(--brass-200); }
-
 .chapter.is-on .chapter-name { font-weight: 600; }
+.chapter.is-done { border-color: rgba(196, 167, 108, 0.4); }
 
 /* —— 门类行 —— */
 .cats {
@@ -332,7 +349,20 @@ page {
   border: 2rpx dashed rgba(196, 167, 108, 0.22);
 }
 
+/* 门类剪影：极淡铜线描铺在空位中央，编号压在上面 */
+.slot-ghost {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 180rpx;
+  height: 180rpx;
+  transform: translate(-50%, -50%);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
 .slot-blank-no {
+  position: relative;
   font-family: var(--font-mono);
   font-size: 44rpx;
   color: rgba(196, 167, 108, 0.42);
@@ -340,6 +370,7 @@ page {
 }
 
 .slot-blank-t {
+  position: relative;
   margin-top: 10rpx;
   font-size: var(--fs-20);
   color: var(--color-text-secondary);

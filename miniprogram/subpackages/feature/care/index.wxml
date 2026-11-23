@@ -33,7 +33,7 @@
           <text class="eyebrow">MY SPECIMENS</text>
           <text class="sec-title">我的藏品</text>
         </view>
-        <text class="sec-link" hover-class="care-press" bindtap="goToMySpecimens" wx:if="{{specimenTotal > 0}}">全部 {{specimenTotal}} 件 ›</text>
+        <text class="sec-link" hover-class="care-press" hover-stay-time="80" bindtap="goToMySpecimens" wx:if="{{specimenTotal > 0}}">全部 {{specimenTotal}} 件 ›</text>
       </view>
       <view
         class="spec-row"
@@ -61,7 +61,7 @@
     <view class="block empty care-enter care-enter-d3" wx:elif="{{!loading}}">
       <text class="empty-title">还没有已签收的藏品</text>
       <text class="empty-desc">签收后，这里会出现它专属的养护指南。也可以先按品类浏览通用要点。</text>
-      <view class="empty-cta" bindtap="scrollToCategories" hover-class="care-press">浏览品类手册 ›</view>
+      <view class="empty-cta" bindtap="scrollToCategories" hover-class="care-press" hover-stay-time="80">浏览品类手册 ›</view>
     </view>
 
     <!-- 品类手册：浅纸签 + 刻版线描 -->

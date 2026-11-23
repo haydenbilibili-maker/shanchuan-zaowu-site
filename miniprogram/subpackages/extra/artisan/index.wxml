@@ -34,7 +34,7 @@
       <view class="todo-grid">
         <view
           class="todo-chip {{workPendingShelf > 0 ? 'hot' : ''}}"
-          hover-class="todo-chip-press"
+          hover-class="todo-chip-press" hover-stay-time="80"
           bindtap="goWorks"
           data-filter="pending"
         >
@@ -46,7 +46,7 @@
         </view>
         <view
           class="todo-chip {{jobPendingMake > 0 ? 'hot' : ''}}"
-          hover-class="todo-chip-press"
+          hover-class="todo-chip-press" hover-stay-time="80"
           bindtap="goJobs"
           data-filter="pending_make"
         >
@@ -58,7 +58,7 @@
         </view>
         <view
           class="todo-chip {{jobPendingShip > 0 ? 'hot' : ''}}"
-          hover-class="todo-chip-press"
+          hover-class="todo-chip-press" hover-stay-time="80"
           bindtap="goJobs"
           data-filter="packing"
         >
@@ -70,7 +70,7 @@
         </view>
         <view
           class="todo-chip {{jobInProgress > 0 ? 'hot' : ''}}"
-          hover-class="todo-chip-press"
+          hover-class="todo-chip-press" hover-stay-time="80"
           bindtap="goJobs"
           data-filter="framing"
         >
@@ -82,7 +82,7 @@
         </view>
         <view
           class="todo-chip {{depositTodo > 0 ? 'hot' : ''}}"
-          hover-class="todo-chip-press"
+          hover-class="todo-chip-press" hover-stay-time="80"
           bindtap="goDeposit"
         >
           <view class="todo-chip-head">
@@ -100,7 +100,7 @@
           class="job-preview-row"
           wx:for="{{depositPreview}}"
           wx:key="_id"
-          hover-class="job-preview-press"
+          hover-class="job-preview-press" hover-stay-time="80"
           bindtap="goDeposit"
           data-pid="{{item.productId}}"
         >
@@ -114,7 +114,7 @@
           class="job-preview-row"
           wx:for="{{jobPreview}}"
           wx:key="_id"
-          hover-class="job-preview-press"
+          hover-class="job-preview-press" hover-stay-time="80"
           bindtap="goJobs"
           data-filter="{{item.productionStatus}}"
         >
@@ -135,7 +135,7 @@
       <view
         class="module-card"
         wx:if="{{canProducts}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goUpload"
       >
         <view class="module-icon icon-gold">
@@ -150,7 +150,7 @@
       <view
         class="module-card"
         wx:if="{{canConcept}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goConcept"
       >
         <view class="module-icon icon-gold">
@@ -165,7 +165,7 @@
       <view
         class="module-card"
         wx:if="{{canWorks}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goWorks"
       >
         <view class="module-icon icon-gold">
@@ -183,7 +183,7 @@
       <view
         class="module-card"
         wx:if="{{canWorks}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goJobs"
       >
         <view class="module-icon icon-gold">
@@ -199,7 +199,7 @@
       <view
         class="module-card"
         wx:if="{{canPetOrders}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goPetOrders"
       >
         <view class="module-icon icon-gold">
@@ -224,7 +224,7 @@
       <view
         class="module-card"
         wx:if="{{canProfile}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goProfile"
       >
         <view class="module-icon icon-gold">
@@ -239,7 +239,7 @@
       <view
         class="module-card"
         wx:if="{{canAttendance}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goAttendance"
       >
         <view class="module-icon icon-gold">
@@ -254,7 +254,7 @@
       <view
         class="module-card"
         wx:if="{{canPayslip}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goCommission"
       >
         <view class="module-icon icon-gold">
@@ -269,7 +269,7 @@
       <view
         class="module-card"
         wx:if="{{canPayslip}}"
-        hover-class="module-card-press"
+        hover-class="module-card-press" hover-stay-time="80"
         bindtap="goPayslip"
       >
         <view class="module-icon icon-gold">

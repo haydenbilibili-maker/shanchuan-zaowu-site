@@ -11,13 +11,13 @@
     <view class="cs-row" wx:if="{{!state.claimer}}">
       <text class="cs-k">领取口令</text>
       <block wx:if="{{state.passcode}}">
-        <text class="cs-code" bindtap="onCopyCode">{{state.passcode}}</text>
+        <text class="cs-code" bindtap="onCopyCode" hover-class="tap-press" hover-stay-time="80">{{state.passcode}}</text>
         <text class="cs-mini">轻触复制。请另外告诉 TA，别和礼笺发在同一处。</text>
-        <text class="cs-link cs-link-muted" bindtap="onRemoveCode">去掉口令</text>
+        <text class="cs-link cs-link-muted" bindtap="onRemoveCode" hover-class="tap-press" hover-stay-time="80">去掉口令</text>
       </block>
       <block wx:else>
         <text class="cs-v">未加口令（持礼笺者点「收下」即可领取）</text>
-        <text class="cs-link" bindtap="onAddCode">加 6 位领取口令</text>
+        <text class="cs-link" bindtap="onAddCode" hover-class="tap-press" hover-stay-time="80">加 6 位领取口令</text>
       </block>
     </view>
     <text class="cs-notice" wx:if="{{notice}}">{{notice}}</text>
