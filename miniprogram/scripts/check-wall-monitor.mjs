@@ -305,14 +305,15 @@ const COVERED_PAIRS = [
  * 为什么必须**两侧一起**钉：ERP 监测表与小程序的数字**必须能对上**（本文件头注的既定约束）；
  * 只改一侧 → 两边数字不一致，而且「参与玩法」被无玩法的点击抬高（分母是进页 UV → 可 >100%）。 */
 {
-  const engageRow = (monitor.WALL_MONITOR_ROWS || []).find((r) => r.key === 'engage')
+  // 2026-11-23：「参与仪式 / 玩法」退役为「抽今日一签」（点灯 / 音效已下线），product 排除沿用
+  const engageRow = (monitor.WALL_MONITOR_ROWS || []).find((r) => r.key === 'qian')
   check(
-    '★ ERP engage 行排除 targetType=product（页头 chip 的商品点击不算「参与玩法」）',
-    !!engageRow && Array.isArray(engageRow.excludeTargetTypes) && engageRow.excludeTargetTypes.includes('product'),
-    engageRow ? JSON.stringify(engageRow.excludeTargetTypes || null) : 'engage 行不存在'
+    '★ ERP「抽今日一签」行排除 targetType=product 且只数主动作（noStep）',
+    !!engageRow && Array.isArray(engageRow.excludeTargetTypes) && engageRow.excludeTargetTypes.includes('product') && engageRow.noStep === true,
+    engageRow ? JSON.stringify({ ex: engageRow.excludeTargetTypes || null, noStep: engageRow.noStep }) : 'qian 行不存在'
   )
   check(
-    '★ 小程序报表的「参与玩法」同样排除 targetType=product（与 ERP 同口径，两边数字才能对上）',
+    '★ 小程序报表的「抽今日一签」同样排除 targetType=product（与 ERP 同口径，两边数字才能对上）',
     /action === 'wish_wall_play'[\s\S]{0,140}?targetType[^\n]*!==\s*'product'/.test(dashFnSrc),
     '未在 getAnalyticsDashboard 里找到 wish_wall_play 的 product 排除'
   )
@@ -336,6 +337,23 @@ check(
     /bind:cta="onRegisterDialogCta"/.test(read(WALL_WXML))
 )
 
+/* ── ③c 下线功能退场（2026-11-23 产品负责人：「有部分功能已经下线」）──────────────
+   点灯 / 音效随心愿签重做下线、现网无页面再发：两边报表都不得再统计，也不得再出现「参与仪式」字样；
+   心愿签重做后的「我也想要」两边都要有。 */
+{
+  const retired = monitor.WALL_RETIRED_ACTIONS || []
+  const rowActions = (monitor.WALL_MONITOR_ROWS || []).flatMap((r) => r.actions || [])
+  check('★ 退役动作（点灯 / 音效）不在 ERP 监测表任何一行', retired.length === 2 && retired.every((a) => !rowActions.includes(a)), rowActions.join(','))
+  check('★ 小程序报表不再统计点灯 / 音效，也不再有「参与仪式」卡行',
+    !/'wish_wall_lamp'|'wish_wall_sound'/.test(dashFnSrc) && !/参与仪式/.test(reportViewSrc.replace(/<!--[\s\S]*?-->/g, '')))
+  check('★ 退役动作现网确实没有页面再发（否则就不是「下线」）',
+    !/trackBehavior\(\s*'wish_wall_(lamp|sound)'/.test(pageSrc + read('miniprogram/subpackages/plays/utils/ritualPlayPage.js')))
+  check('★「我也想要」两边都有（ERP 行 + 小程序云函数 + 报表卡）',
+    rowActions.includes('wish_wall_echo') && /echo: wallEcho/.test(dashFnSrc) && /funnel\.wishWall\.echo/.test(reportViewSrc))
+  check('小程序报表：没有游客触发注册引导时五行收成一句（不摆一排 0 · 0%）',
+    /<block wx:if="\{\{analyticsReport\.behavior\.funnel\.wishWall\.gate\.show\}\}">/.test(reportViewSrc) && /本期未触发/.test(reportViewSrc))
+}
+
 /* ── ④ 纯逻辑：分母 0 → null；UV 去重 ─────────────────────────────────── */
 check('★ 转化率分母为 0 时返回 null（返回 0% 会被读成"转化极差"，而真相是"没曝光"）',
   monitor.rate(0, 0) === null && monitor.rate(1, 0) === null && monitor.rate(1, 4) === 25)
@@ -344,6 +362,10 @@ const FX = [
   { action: 'wish_wall_enter', targetId: 'store_qr', userId: 'u1' },
   { action: 'wish_wall_enter', targetId: 'detail', userId: 'u2' },
   { action: 'wish_wall_lamp', userId: 'u1' },
+  { action: 'wish_wall_play', targetType: 'play', targetId: 'qian', userId: 'u1' },
+  { action: 'wish_wall_play', targetType: 'play', targetId: 'qian', step: 'to_wish', userId: 'u1' },
+  { action: 'wish_wall_play', targetType: 'product', targetId: 'p1', userId: 'u2' },
+  { action: 'wish_wall_echo', targetType: 'ok', targetId: 'w1', userId: 'u2' },
   { action: 'wish_wall_register_gate', step: 'show', userId: 'u3' },
   { action: 'wish_wall_register_gate', step: 'resume_success', userId: 'u3' },
   { action: 'wish_wall_post', targetId: 'ok', userId: 'u3' },
@@ -355,8 +377,8 @@ const rowOf = (k) => t.steps.find((s) => s.key === k)
 check('★ UV 去重（同一用户刷两次只算 1 人，次数仍算 2）',
   rowOf('enter').count === 3 && rowOf('enter').uv === 2 && rowOf('enterStore').count === 2 && rowOf('enterStore').uv === 1)
 check('转化率按"上一环"算（门店扫码占进墙 66.7%）', rowOf('enterStore').rate === 66.7 && rowOf('enter').rate === null)
-check('非祈福墙事件不混进来（other_module_action 不计入任何一行）',
-  t.steps.every((s) => s.count <= FX.length) && t.steps.find((s) => s.key === 'engage').count === 1)
+check('非心愿签事件不混进来；「抽今日一签」只数主动作（后续步骤 / 商品 chip 不算）；点灯不计入任何一行；我也想要计 1',
+  t.steps.every((s) => s.count <= FX.length) && rowOf('qian').count === 1 && rowOf('echo').count === 1 && t.steps.every((s) => s.key !== 'engage'))
 check('来源拆分：门店码 / 详情页 / 其它三桶齐全，且互不重叠',
   t.sources.map((s) => s.key).join(',') === 'store_qr,detail,__other__' &&
     t.sources.find((s) => s.key === 'store_qr').enter === 2 &&
@@ -385,8 +407,8 @@ if (process.argv.includes('--selftest')) {
     {
       name: '数据报表页读错祈福墙的键（卡片永远不渲染）',
       file: MP_REPORT,
-      from: '{{analyticsReport.behavior.funnel.wishWall.gate.show || 0}}',
-      to: '{{analyticsReport.behavior.funnel.wishWallOff.gate.show || 0}}'
+      // 2026-11-23：卡片里 gate.show 出现多处（引导行 + 收起判断 + 口径行），整卡改键才是「读错键」
+      apply: (src) => src.split('.funnel.wishWall.').join('.funnel.wishWallOff.')
     },
     {
       name: '报表云函数不再返回祈福墙漏斗块',
@@ -409,8 +431,8 @@ if (process.argv.includes('--selftest')) {
     {
       name: 'step 名打错（与漏斗/客户端不一致）',
       file: MONITOR_UTIL,
-      from: "  { key: 'gateOk', label: '注册成功并自动续发', actions: ['wish_wall_register_gate'], step: 'resume_success'",
-      to: "  { key: 'gateOk', label: '注册成功并自动续发', actions: ['wish_wall_register_gate'], step: 'resume_succes'"
+      from: "  { key: 'gateOk', label: '注册后自动钉上墙', actions: ['wish_wall_register_gate'], step: 'resume_success'",
+      to: "  { key: 'gateOk', label: '注册后自动钉上墙', actions: ['wish_wall_register_gate'], step: 'resume_succes'"
     },
     // 2026-09-20 新增：连灯记录云存钩子同样要"进报表"（否则就是第三次"埋点发了、报表没有"）
     // 2026-09-20 新增：功德证钩子同样要"进报表"（否则就是第四次"埋点发了、报表没有"）
@@ -429,6 +451,18 @@ if (process.argv.includes('--selftest')) {
     },
     // 2026-09-21 新增（P2-7 报表侧）：两侧的 product 排除各证明一半 ——
     // 去掉任一侧，「参与玩法」都会被无玩法的商品点击抬高，且两边数字对不上。
+    {
+      name: '小程序报表又数回点灯（已下线功能复活进报表）',
+      file: 'miniprogram/cloudfunctions/getAnalyticsDashboard/index.js',
+      from: "  const wallEcho = count('wish_wall_echo')",
+      to: "  const wallEcho = count('wish_wall_echo') + count('wish_wall_lamp')"
+    },
+    {
+      name: '「抽今日一签」把后续步骤也算进来',
+      file: MONITOR_UTIL,
+      from: "  if (row.noStep && stepOf(ev)) return false",
+      to: "  if (row.noStep && false) return false"
+    },
     {
       name: 'ERP engage 行不再排除 product（页头 chip 被算成「参与玩法」）',
       file: MONITOR_UTIL,

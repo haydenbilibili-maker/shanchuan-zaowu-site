@@ -563,14 +563,18 @@ function buildFunnel(rows, dailyRows = []) {
   // 「参与仪式 / 玩法」抬高（分母是进页 UV，所以可以 >100%）。
   // 与 ERP `admin/src/utils/wishWallMonitor.js` 的 engage 行**同一口径**（那边用 `excludeTargetTypes: ['product']`），
   // 两边的数字必须能对上（本文件头注已声明这条约束）。
-  const wallPlay = rows.filter(
-    (r) => r.action === 'wish_wall_play' && String(r.targetType || '') !== 'product'
-  ).length
-  // engage：玩法类优先明细（需排除 product chip）；明细空时回落 daily 粗算（含 chip，略偏高）
-  const wallEngage =
-    rows.length > 0
-      ? count('wish_wall_lamp') + wallPlay + count('wish_wall_sound')
-      : dailyCount('wish_wall_lamp') + dailyCount('wish_wall_play') + dailyCount('wish_wall_sound')
+  // 2026-11-23（产品负责人：马上有注册链路模块里有部分功能已下线）：「参与仪式 / 玩法」退役 ——
+  // 点灯 wish_wall_lamp / 音效 wish_wall_sound 随 2026-10-13 心愿签重做下线，现网无页面再发；
+  // 玩法只剩「今日一签」→ 改为「抽今日一签」，只数真正抽了签的那条（不带 step：提示补资料 / 失败 / 写成心愿都是后续步骤）。
+  // 与 ERP wishWallMonitor 的 qian 行同口径（excludeTargetTypes product + noStep）。
+  // 明细为空时回落 daily 粗算（含后续步骤，略偏高 —— 与原「参与玩法」的回落同一做法）
+  const wallQian = rows.length > 0
+    ? rows.filter(
+      (r) => r.action === 'wish_wall_play' && String(r.targetType || '') !== 'product' && !String(r.step || (r.properties && r.properties.step) || '')
+    ).length
+    : dailyCount('wish_wall_play')
+  // 心愿签重做后的新互动：「我也想要」（原表没有）
+  const wallEcho = count('wish_wall_echo')
 
   // AI 识别「保存图鉴」注册钩子漏斗：show（弹窗）→ go_register（去注册）/ dismiss（暂不保存）
   // → resume_success（注册完成后自动续写成功）
@@ -622,7 +626,8 @@ function buildFunnel(rows, dailyRows = []) {
     },
     wishWall: {
       enter: wallEnter,
-      engage: wallEngage,
+      qian: wallQian,
+      echo: wallEcho,
       post: wallPost,
       // 落愿成功占进墙（整条链路的终点）
       postRate: pct(wallPost, wallEnter),

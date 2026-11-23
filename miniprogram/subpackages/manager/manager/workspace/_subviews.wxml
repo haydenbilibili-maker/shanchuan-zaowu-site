@@ -2862,18 +2862,26 @@
           <view class="visit-stats-row"><text class="visit-stats-name">去注册→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.identify.resultGate.resumeRate || 0}}%</text></view>
           <text class="week-split-hint">口径同上（相对曝光）</text>
         </view>
+        <!-- 2026-11-23 产品负责人：「马上有的注册链路检测模块，有部分功能已经下线」——
+             「参与仪式 / 玩法」退役（点灯 / 音效随心愿签重做下线），改为「抽今日一签」；新增「我也想要」；
+             措辞跟现役页面（先不写 / 自动钉上墙）；本期没有游客触发注册引导时，五行收成一句，不再摆一排「0 · 0%」。 -->
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.wishWall}}">
           <view class="card-top"><text class="no">马上有 · 心愿签 转化</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">进心愿签（含门店码扫码）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.enter || 0}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">参与仪式 / 玩法</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.engage || 0}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">写签时弹出注册引导</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.show || 0}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">点「去注册」</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.goRegister || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.goRate || 0}}%</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">先不挂（关掉弹窗）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.dismiss || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.dismissRate || 0}}%</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">注册未完成（授权失败）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.fail || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.failRate || 0}}%</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">注册完成并自动续发</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.completeRate || 0}}%</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">上墙成功</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.post || 0}} · {{analyticsReport.behavior.funnel.wishWall.postRate || 0}}%</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">去注册→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.resumeRate || 0}}%</text></view>
-          <text class="week-split-hint">口径：曝光/去注册/失败/完成率相对曝光；去注册→完成率相对「点去注册」人次；落愿成功率相对进墙</text>
+          <view class="visit-stats-row"><text class="visit-stats-name">钉上墙</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.post || 0}}{{analyticsReport.behavior.funnel.wishWall.enter ? ' · ' + analyticsReport.behavior.funnel.wishWall.postRate + '%' : ''}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">我也想要</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.echo || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">抽今日一签</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.qian || 0}}</text></view>
+          <block wx:if="{{analyticsReport.behavior.funnel.wishWall.gate.show}}">
+            <view class="visit-stats-row"><text class="visit-stats-name">游客钉签遇注册引导</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.show || 0}}</text></view>
+            <view class="visit-stats-row"><text class="visit-stats-name">　点「去注册」</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.goRegister || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.goRate || 0}}%</text></view>
+            <view class="visit-stats-row"><text class="visit-stats-name">　先不写（关掉弹窗）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.dismiss || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.dismissRate || 0}}%</text></view>
+            <view class="visit-stats-row"><text class="visit-stats-name">　注册未完成（授权失败）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.fail || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.failRate || 0}}%</text></view>
+            <view class="visit-stats-row"><text class="visit-stats-name">　注册后自动钉上墙</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.resumeSuccess || 0}} · {{analyticsReport.behavior.funnel.wishWall.gate.completeRate || 0}}%</text></view>
+            <view class="visit-stats-row"><text class="visit-stats-name">去注册→完成率</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.wishWall.gate.goRegister ? analyticsReport.behavior.funnel.wishWall.gate.resumeRate + '%' : '—'}}</text></view>
+          </block>
+          <view class="visit-stats-row" wx:else><text class="visit-stats-name">游客注册引导</text><text class="visit-stats-count">本期未触发</text></view>
+          <text class="week-split-hint" wx:if="{{analyticsReport.behavior.funnel.wishWall.gate.show}}">口径：钉上墙相对进心愿签；注册引导四个分流相对引导曝光；去注册→完成率相对「点去注册」人次</text>
+          <text class="week-split-hint" wx:else>口径：钉上墙相对进心愿签。注册引导只在游客点「钉上墙」时出现，已注册用户不经过；点灯 / 音效等旧仪式已下线，不再统计</text>
         </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.commerce}}">
           <view class="card-top"><text class="no">电商路径</text></view>

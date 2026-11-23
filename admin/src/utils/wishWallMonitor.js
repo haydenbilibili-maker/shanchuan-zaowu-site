@@ -10,7 +10,13 @@
  * 既没有 step 也没有来源维度，做不了这张表）。
  *
  * 行结构（全部来自真实埋点，不发明环节）：
- *   进墙 → 其中门店码扫码 → 参与仪式/玩法 → 落愿遇注册钩子 → 先不挂 / 注册未完成 / 成功续发 → 落愿成功
+ *   进心愿签 → 其中门店码扫码 → 钉上墙 → 我也想要 → 抽今日一签 → 游客钉签遇注册引导 → 去注册 / 先不写 / 注册未完成 / 注册后自动钉上墙
+ *
+ * 2026-11-23（产品负责人：「报表中马上有的注册链路检测模块，有部分功能已经下线」）：
+ *   - 「参与仪式 / 玩法」退役：点灯（wish_wall_lamp）与音效（wish_wall_sound）随 2026-10-13 心愿签重做下线，现网无任何页面再发；
+ *     玩法只剩「今日一签」（play-qian，心愿签页「今日一签 ›」进入）→ 改为「抽今日一签」，只数真正抽了签的（不带 step）；
+ *   - 新增「我也想要」（wish_wall_echo）：心愿签重做后的新互动，原表没有；
+ *   - 措辞跟现役页面：注册弹层关闭钮是「先不写」、注册后是「自动钉上墙」。
  */
 
 /** 来源拆分：门店现场 vs 线上入口（来源值取自 wish_wall_enter 的 targetId/from） */
@@ -28,16 +34,20 @@ export const WALL_SOURCES = [
  * - `of`：转化率的分母行 key（不填则只给绝对数）
  */
 export const WALL_MONITOR_ROWS = [
-  { key: 'enter', label: '进祈福墙', actions: ['wish_wall_enter'], desc: '进页即上报（含所有入口）' },
+  { key: 'enter', label: '进心愿签', actions: ['wish_wall_enter'], desc: '进页即上报（含所有入口）' },
   { key: 'enterStore', label: '其中：门店码扫码', actions: ['wish_wall_enter'], from: 'store_qr', indent: true, of: 'enter', desc: '门店现场物料带来的进页' },
-  { key: 'engage', label: '参与仪式 / 玩法', actions: ['wish_wall_lamp', 'wish_wall_play', 'wish_wall_sound'], of: 'enter', excludeTargetTypes: ['product'], desc: '点灯 / 抽玩法 / 切音效（同一动作多次只按次计）。⚠️ 排除 targetType=product：那是**页头藏品 chip** 的商品点击（复用同一 action，但没有任何玩法发生），不排除会让本行比率 >100%' },
-  { key: 'gateShow', label: '落愿遇注册钩子', actions: ['wish_wall_register_gate'], step: 'show', of: 'enter', desc: '未注册用户点「挂上墙」时弹注册' },
+  { key: 'post', label: '钉上墙', actions: ['wish_wall_post'], target: 'ok', of: 'enter', desc: '含已注册用户直接钉签；游客注册后自动钉上墙也走这里' },
+  { key: 'echo', label: '我也想要', actions: ['wish_wall_echo'], of: 'enter', desc: '在别人的签上点「我也想要」（同一张签服务端只记一次）' },
+  { key: 'qian', label: '抽今日一签', actions: ['wish_wall_play'], noStep: true, of: 'enter', excludeTargetTypes: ['product'], desc: '心愿签页「今日一签」真正抽了签（不含提示补资料 / 失败 / 写成心愿这些后续步骤）。⚠️ 排除 targetType=product（旧页头藏品 chip 复用过同一 action）' },
+  { key: 'gateShow', label: '游客钉签遇注册引导', actions: ['wish_wall_register_gate'], step: 'show', of: 'enter', desc: '未注册用户点「钉上墙」时弹注册（已注册用户不会经过这几步）' },
   { key: 'gateGo', label: '点「去注册」', actions: ['wish_wall_register_gate'], step: 'go_register', indent: true, of: 'gateShow', desc: '弹窗里的授权按钮被点（还没拿到手机号）' },
-  { key: 'gateDismiss', label: '先不挂（关掉弹窗）', actions: ['wish_wall_register_gate'], step: 'dismiss', indent: true, of: 'gateShow', desc: '弹窗可关：关掉是"暂时不挂"，不是流失' },
+  { key: 'gateDismiss', label: '先不写（关掉弹窗）', actions: ['wish_wall_register_gate'], step: 'dismiss', indent: true, of: 'gateShow', desc: '弹窗可关：关掉是"暂时不写"，不是流失' },
   { key: 'gateFail', label: '注册未完成（失败）', actions: ['wish_wall_register_gate'], stepPrefix: 'fail_', indent: true, of: 'gateShow', desc: '授权失败/拒绝等，按 fail_* 归并' },
-  { key: 'gateOk', label: '注册成功并自动续发', actions: ['wish_wall_register_gate'], step: 'resume_success', of: 'gateShow', desc: '钩子的终点：注册完成 + 那条心愿自动发出' },
-  { key: 'post', label: '落愿成功（上墙）', actions: ['wish_wall_post'], target: 'ok', of: 'enter', desc: '含已注册用户直接落愿；注册续发也走这里' }
+  { key: 'gateOk', label: '注册后自动钉上墙', actions: ['wish_wall_register_gate'], step: 'resume_success', of: 'gateShow', desc: '引导的终点：注册完成 + 刚写的那张签自动钉上墙' }
 ]
+
+/** 2026-11-23 退役的行（现网无页面再发这些 action）：只作记录，监测表不再统计 */
+export const WALL_RETIRED_ACTIONS = ['wish_wall_lamp', 'wish_wall_sound']
 
 /** 取一行明细的 step（properties 可能被摊平到顶层，两种位置都认） */
 export function stepOf(ev) {
@@ -64,6 +74,8 @@ export function matchRow(ev, row) {
   if (!actions.includes(action)) return false
   if (row.step && stepOf(ev) !== row.step) return false
   if (row.stepPrefix && !stepOf(ev).startsWith(row.stepPrefix)) return false
+  // noStep：只要「主动作」那一条（如今日一签真正抽签），带 step 的后续步骤不算
+  if (row.noStep && stepOf(ev)) return false
   if (row.target && String(ev.targetId || '') !== row.target) return false
   if (row.from && fromOf(ev) !== row.from) return false
   // 2026-09-21（P2-7 报表侧）：**按 targetType 排除**。
