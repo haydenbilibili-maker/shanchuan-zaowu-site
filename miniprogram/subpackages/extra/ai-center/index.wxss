@@ -38,3 +38,14 @@
 .ac-ph { color: #6F675B; }
 .ac-send { flex: none; min-width: 110rpx; height: 76rpx; line-height: 76rpx; text-align: center; border-radius: 14rpx; background: var(--brass-400, #C4A76C); color: #191713; font-size: 26rpx; }
 .ac-send.is-dim { opacity: .5; }
+
+/* 会话条（第二轮：多会话） */
+.ac-sessions { white-space: nowrap; padding: 6rpx 32rpx 10rpx; box-sizing: border-box; }
+.ac-session { display: inline-block; max-width: 260rpx; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; margin-right: 12rpx; padding: 10rpx 18rpx; border-radius: 999rpx; font-size: 20rpx; color: #9A9286; background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.14); }
+.ac-session.is-on { color: #191713; background: var(--brass-400, #C4A76C); box-shadow: none; }
+.ac-session.is-new { color: #C4A76C; }
+
+/* 消息操作 */
+.ac-acts { display: flex; gap: 18rpx; margin-top: 8rpx; }
+.ac-act { font-size: 18rpx; color: #7E7568; padding: 4rpx 2rpx; }
+.ac-send.is-stop { background: rgba(196,167,108,.18); color: #E3D2AC; box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.5); }

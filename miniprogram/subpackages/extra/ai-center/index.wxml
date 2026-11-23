@@ -1,9 +1,9 @@
-<!-- AI 智能中心（员工端）：虚拟员工对话。人设在云端，本页只管展示与本机会话。 -->
+<!-- AI 智能中心（员工端）：虚拟员工 + 多会话。人设在云端，会话只存本机。 -->
 <view class="ac-page">
   <view class="ac-head">
     <text class="ac-eyebrow">AI CENTER</text>
     <text class="ac-title">问一位同事</text>
-    <text class="ac-desc">六位虚拟员工，各自懂一块业务。回答由 AI 生成，重要决策请再核一遍。</text>
+    <text class="ac-desc">六位虚拟员工，各自懂一块业务、也能看到最近的经营数据。回答由 AI 生成，重要决策请再核一遍。</text>
   </view>
 
   <scroll-view class="ac-roles" scroll-x enhanced show-scrollbar="{{false}}">
@@ -24,13 +24,27 @@
     </view>
   </scroll-view>
 
+  <scroll-view class="ac-sessions" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="ac-session is-new" bindtap="onNewSession" hover-class="tap-press-soft" hover-stay-time="80">＋ 新对话</view>
+    <view
+      class="ac-session {{item.id === activeId ? 'is-on' : ''}}"
+      wx:for="{{sessions}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onSessionTap"
+      bindlongpress="onDeleteSession"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+    >{{item.title}}</view>
+  </scroll-view>
+
   <scroll-view class="ac-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
     <view class="ac-empty" wx:if="{{!messages.length}}">
       <text class="ac-empty-title">你好，我是{{role.name}}</text>
-      <text class="ac-empty-desc">直接提问，或点下面的一条示例开始。</text>
+      <text class="ac-empty-desc">直接提问，或点下面的一条示例开始。长按会话签可删除。</text>
       <view
         class="ac-starter"
-        wx:for="{{starters}}"
+        wx:for="{{role.starters}}"
         wx:key="*this"
         data-text="{{item}}"
         bindtap="onStarterTap"
@@ -45,6 +59,10 @@
           <text wx:if="{{item.pending}}" class="ac-pending">同事正在想…</text>
           <text wx:else user-select>{{item.text}}</text>
         </view>
+        <view class="ac-acts" wx:if="{{item.role === 'assistant' && !item.pending}}">
+          <text class="ac-act" data-text="{{item.text}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
+          <text class="ac-act" wx:if="{{index === messages.length - 1 && !sending}}" bindtap="onRetry" hover-class="tap-press" hover-stay-time="80">重试</text>
+        </view>
       </view>
     </view>
   </scroll-view>
@@ -52,7 +70,7 @@
   <view class="ac-foot">
     <view class="ac-foot-head">
       <text class="ac-foot-hint">与{{role.name}}对话 · 只存在这台手机上</text>
-      <text class="ac-clear" bindtap="onClear" wx:if="{{hasSession}}">清空</text>
+      <text class="ac-clear" bindtap="onClear" wx:if="{{messages.length}}">清空</text>
     </view>
     <view class="ac-input-row">
       <input
@@ -65,9 +83,8 @@
         bindconfirm="send"
         disabled="{{sending}}"
       />
-      <view class="ac-send {{sending || !draft ? 'is-dim' : ''}}" bindtap="send" hover-class="tap-press" hover-stay-time="80">
-        {{sending ? '…' : '发送'}}
-      </view>
+      <view class="ac-send is-stop" wx:if="{{sending}}" bindtap="onStop" hover-class="tap-press" hover-stay-time="80">停止</view>
+      <view class="ac-send {{draft ? '' : 'is-dim'}}" wx:else bindtap="send" hover-class="tap-press" hover-stay-time="80">发送</view>
     </view>
   </view>
 </view>

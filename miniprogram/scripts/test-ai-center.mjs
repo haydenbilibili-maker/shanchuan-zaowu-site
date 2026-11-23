@@ -64,8 +64,13 @@ function runChecks() {
     /const sec = await checkText\(openid, question, 2\)/.test(fn) && !/db\.collection\([^)]*\)\.(add|set|update|remove)\(/.test(fn.slice(fn.indexOf('async function staffChat'), fn.indexOf('exports.main'))), fails)
 
   const page = read(P.page)
-  ok('A4 会话只存本机（按角色分桶、最多 80 条），不上云',
-    /ai_center_session_v1_/.test(page) && /MAX_KEEP = 80/.test(page) && !/db\.collection|\.add\(/.test(page) && /wx\.getStorageSync/.test(page) && /wx\.setStorageSync\(/.test(page), fails)
+  ok('A4 会话只存本机（v2 多会话、按角色分桶、≤20 条会话 / 每条 ≤80 条消息），不上云，兼容 v1 迁移',
+    /ai_center_v2_/.test(page) && /MAX_SESSIONS = 20/.test(page) && /MAX_KEEP = 80/.test(page) &&
+    /ai_center_session_v1_/.test(page) && /wx\.getStorageSync/.test(page) && /wx\.setStorageSync\(/.test(page) &&
+    !/db\.collection|\.add\(/.test(page), fails)
+  ok('A4 基础操作：新建 / 切换 / 删除会话 + 复制 / 重试 / 停止',
+    /onNewSession\(\)/.test(page) && /onSessionTap\(/.test(page) && /onDeleteSession\(/.test(page) &&
+    /onCopy\(/.test(page) && /onRetry\(\)/.test(page) && /onStop\(\)/.test(page) && /this\._abort/.test(page), fails)
   const ctxSrc = read(P.ctx)
   const C = loadCjsModule(P.ctx, { transform })
   const orders = C.summarizeOrders([
@@ -99,6 +104,7 @@ if (process.argv.includes('--selftest')) {
     { name: '缺 Key 也放行', file: P.fn, find: "if (!apiKey) return { success: false, error_type: 'ai_service'", replace: "if (false) return { success: false, error_type: 'ai_service'" },
     { name: '上下文不注入 system', file: P.fn, find: 'try { context = await contextFor(roleId, db) } catch (e) { context = \'\' }', replace: 'context = \'\'' },
     { name: '上下文里带手机号', file: P.ctx, find: ".field({ stock: true, category: true, isOffShelf: true })", replace: ".field({ stock: true, category: true, isOffShelf: true, phone: true })" },
+    { name: '去掉停止', file: P.page, find: '  onStop() {', replace: '  onStopX() {' },
     { name: '会话改存云端', file: P.page, find: 'wx.setStorageSync(', replace: 'wx.cloud.callFunction({ name: "x", data: {' }
   ].filter((x) => x.find !== '')
   let bad = 0

@@ -1,36 +1,71 @@
 /**
- * AI 智能中心（员工端 · 2026-11-23 产品负责人「把 ERP 的 AI 智能中心复制到小程序」）
+ * AI 智能中心（员工端 · 2026-11-23）
  *
- * 与 ERP 的差异（一期）：
- *   - 只搬「虚拟员工对话」这一条主线；ERP 的工具链 / OpenClaw / 辩论模式不搬（蓝图见 docs）。
- *   - 人设与边界只在云函数 `askMuseumGuide`（mode: 'staff'），客户端只传 roleId。
- *   - 会话只存本机（按角色分桶），不上云；换设备不同步。
+ * 与 ERP 的差异：只搬「虚拟员工对话」，不搬工具链 / OpenClaw / 辩论。
+ * 基础能力（第二轮补齐）：多会话（新建 / 切换 / 重命名 / 删除）、复制回答、重试、停止。
+ *
+ * 存储：按角色分桶 `ai_center_v2_<roleId>` = { activeId, list: [{ id, title, at, messages }] }
+ *   - 只存本机，不上云；
+ *   - 兼容上一版单会话（`ai_center_session_v1_<roleId>` 的数组），首次读取时迁移成一条会话。
  */
 const { ROLES, byId } = require('./roles')
 const { openAppModal } = require('../../../utils/appModal')
 
-const STORE_PREFIX = 'ai_center_session_v1_'
+const STORE_V2 = 'ai_center_v2_'
+const STORE_V1 = 'ai_center_session_v1_'
+const MAX_SESSIONS = 20
 const MAX_KEEP = 80
-const NO_KEY_TEXT = 'AI 服务还没配置，请联系超管'
 const NOT_DEPLOYED_TEXT = 'AI 服务还没部署，稍后再试'
 
-function storeKey(roleId) {
-  return `${STORE_PREFIX}${roleId}`
+function newId() {
+  return `s${Date.now().toString(36)}${Math.floor(Math.random() * 1000)}`
 }
 
-function loadSession(roleId) {
-  try {
-    const list = wx.getStorageSync(storeKey(roleId))
-    if (!Array.isArray(list)) return []
-    return list.filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.text === 'string').slice(-MAX_KEEP)
-  } catch (e) {
-    return []
-  }
+function cleanMessages(list) {
+  return (Array.isArray(list) ? list : [])
+    .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.text === 'string')
+    .slice(-MAX_KEEP)
 }
 
-function saveSession(roleId, messages) {
+function titleOf(messages) {
+  const first = (messages || []).find((m) => m.role === 'user' && m.text)
+  const t = first ? String(first.text).trim() : ''
+  return t ? t.slice(0, 16) : '新对话'
+}
+
+function loadState(roleId) {
   try {
-    wx.setStorageSync(storeKey(roleId), (messages || []).slice(-MAX_KEEP))
+    const saved = wx.getStorageSync(STORE_V2 + roleId)
+    if (saved && Array.isArray(saved.list) && saved.list.length) {
+      const list = saved.list.map((s) => ({
+        id: String(s.id || newId()),
+        title: String(s.title || titleOf(s.messages)),
+        at: Number(s.at) || 0,
+        messages: cleanMessages(s.messages)
+      }))
+      const activeId = list.some((s) => s.id === saved.activeId) ? saved.activeId : list[0].id
+      return { activeId, list }
+    }
+    // 迁移上一版单会话
+    const legacy = wx.getStorageSync(STORE_V1 + roleId)
+    const messages = cleanMessages(legacy)
+    if (messages.length) {
+      const s = { id: newId(), title: titleOf(messages), at: Date.now(), messages }
+      return { activeId: s.id, list: [s] }
+    }
+  } catch (e) { /* 读不到就当空 */ }
+  return { activeId: '', list: [] }
+}
+
+function saveState(roleId, state) {
+  try {
+    const list = (state.list || []).slice(0, MAX_SESSIONS).map((s) => ({
+      id: s.id,
+      title: s.title || titleOf(s.messages),
+      at: s.at || 0,
+      messages: cleanMessages(s.messages)
+    }))
+    wx.setStorageSync(STORE_V2 + roleId, { activeId: state.activeId, list })
   } catch (e) { /* 存不下不影响对话 */ }
 }
 
@@ -52,36 +87,92 @@ Page({
     roles: ROLES,
     roleId: ROLES[0].id,
     role: ROLES[0],
+    sessions: [],
+    activeId: '',
     messages: [],
-    starters: ROLES[0].starters,
+    title: '',
     draft: '',
     sending: false,
     scrollTo: '',
-    hasSession: false
+    canRetry: false
   },
 
   onLoad(options) {
-    const initial = options && options.roleId && byId(options.roleId) ? byId(options.roleId) : ROLES[0]
-    this.switchRole(initial.id, false)
+    const role = options && options.roleId && byId(options.roleId) ? byId(options.roleId) : ROLES[0]
+    this.switchRole(role.id)
   },
 
-  switchRole(roleId, reset = true) {
+  switchRole(roleId) {
     const role = byId(roleId)
-    const messages = loadSession(role.id)
+    const state = loadState(role.id)
+    if (!state.list.length) {
+      const s = { id: newId(), title: '新对话', at: Date.now(), messages: [] }
+      state.list = [s]
+      state.activeId = s.id
+    }
+    this.applyState(role, state)
+  },
+
+  applyState(role, state) {
+    const active = state.list.find((s) => s.id === state.activeId) || state.list[0]
     this.setData({
       roleId: role.id,
       role,
-      starters: role.starters,
-      messages,
-      hasSession: messages.length > 0,
-      scrollTo: messages.length ? `m${messages.length - 1}` : ''
-    }, () => { if (reset) this.scrollToEnd() })
+      sessions: state.list,
+      activeId: active ? active.id : '',
+      messages: active ? active.messages : [],
+      title: active ? active.title : '',
+      canRetry: !!(active && active.messages.some((m) => m.role === 'user')),
+      scrollTo: active && active.messages.length ? `m${active.messages.length - 1}` : ''
+    })
+  },
+
+  persist() {
+    const state = { activeId: this.data.activeId, list: this.data.sessions.map((s) => (s.id === this.data.activeId ? Object.assign({}, s, { messages: this.data.messages, title: titleOf(this.data.messages), at: Date.now() }) : s)) }
+    saveState(this.data.roleId, state)
+    this.setData({ sessions: state.list, title: titleOf(this.data.messages) })
   },
 
   onRoleTap(e) {
     const id = String(e.currentTarget.dataset.id || '')
     if (!id || id === this.data.roleId || this.data.sending) return
     this.switchRole(id)
+  },
+
+  onSessionTap(e) {
+    const id = String(e.currentTarget.dataset.id || '')
+    if (!id || id === this.data.activeId || this.data.sending) return
+    this.setData({ activeId: id }, () => {
+      const s = this.data.sessions.find((x) => x.id === id)
+      this.applyState(this.data.role, { activeId: id, list: this.data.sessions })
+      if (s) this.scrollToEnd()
+    })
+  },
+
+  onNewSession() {
+    if (this.data.sending) return
+    const s = { id: newId(), title: '新对话', at: Date.now(), messages: [] }
+    const list = [s].concat(this.data.sessions).slice(0, MAX_SESSIONS)
+    this.setData({ sessions: list, activeId: s.id, messages: [], title: '新对话', canRetry: false, scrollTo: '' })
+    saveState(this.data.roleId, { activeId: s.id, list })
+  },
+
+  onDeleteSession(e) {
+    const id = String(e.currentTarget.dataset.id || '')
+    if (!id || this.data.sending) return
+    wx.vibrateShort({ type: 'light' })
+    wx.showActionSheet({
+      itemList: ['删除这条会话'],
+      itemColor: '#B4453C',
+      success: (res) => {
+        if (res.tapIndex !== 0) return
+        const list = this.data.sessions.filter((s) => s.id !== id)
+        const next = list.length ? list : [{ id: newId(), title: '新对话', at: Date.now(), messages: [] }]
+        const activeId = id === this.data.activeId ? next[0].id : this.data.activeId
+        this.setData({ sessions: next, activeId, messages: (next.find((s) => s.id === activeId) || next[0]).messages, title: (next.find((s) => s.id === activeId) || next[0]).title })
+        saveState(this.data.roleId, { activeId, list: next })
+      }
+    })
   },
 
   onInput(e) {
@@ -96,44 +187,84 @@ Page({
   },
 
   onClear() {
+    if (!this.data.messages.length) return
     openAppModal({
-      title: '清空对话',
-      content: `清空与「${this.data.role.name}」的本机会话？`,
+      title: '清空当前对话',
+      content: '只清空这一条会话，其它会话保留。',
       confirmText: '清空',
       danger: true,
       success: (res) => {
         if (!res.confirm) return
-        saveSession(this.data.roleId, [])
-        this.setData({ messages: [], hasSession: false, scrollTo: '' })
+        this.setData({ messages: [], title: '新对话', canRetry: false })
+        this.persist()
       }
     })
   },
 
-  async send() {
+  onCopy(e) {
+    const text = String(e.currentTarget.dataset.text || '')
+    if (!text) return
+    wx.setClipboardData({ data: text })
+  },
+
+  onStop() {
+    this._abort = true
+    const messages = this.data.messages.filter((m) => !m.pending)
+    this.setData({ messages, sending: false }, () => this.persist())
+  },
+
+  onRetry() {
+    if (this.data.sending) return
+    const messages = this.data.messages.slice()
+    let lastUser = -1
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].role === 'user') { lastUser = i; break }
+    }
+    if (lastUser < 0) return
+    const question = messages[lastUser].text
+    const kept = messages.slice(0, lastUser)
+    this.setData({ messages: kept }, () => {
+      this.persist()
+      this._ask(question)
+    })
+  },
+
+  send() {
     const question = String(this.data.draft || '').trim()
     if (!question || this.data.sending) return
+    this.setData({ draft: '' })
+    this._ask(question)
+  },
+
+  async _ask(question) {
     const role = this.data.role
-    const history = (this.data.messages || []).slice(-6).map((m) => ({ role: m.role, content: m.text }))
+    const history = this.data.messages.slice(-6).map((m) => ({ role: m.role, content: m.text }))
+    const reqId = (this._reqId || 0) + 1
+    this._reqId = reqId
+    this._abort = false
     const userMsg = { role: 'user', text: question }
     const pending = { role: 'assistant', text: '', pending: true }
     const messages = this.data.messages.concat(userMsg, pending)
-    this.setData({ messages, draft: '', sending: true }, () => this.scrollToEnd())
+    this.setData({ messages, sending: true }, () => this.scrollToEnd())
 
-    let reply = null
+    let reply
     try {
       const res = await wx.cloud.callFunction({
         name: 'askMuseumGuide',
         data: { mode: 'staff', roleId: role.id, question, history }
       })
+      if (this._abort || reqId !== this._reqId) return
       const body = (res && res.result) || {}
-      if (body.success && body.answer) reply = { role: 'assistant', text: String(body.answer) }
-      else reply = { role: 'assistant', text: body.msg || '这位同事一时没接上话，稍后再试', isError: true }
+      reply = body.success && body.answer
+        ? { role: 'assistant', text: String(body.answer) }
+        : { role: 'assistant', text: body.msg || '这位同事一时没接上话，稍后再试', isError: true }
     } catch (err) {
+      if (this._abort || reqId !== this._reqId) return
       reply = { role: 'assistant', text: errText(err), isError: true }
     }
     const next = this.data.messages.filter((m) => !m.pending).concat(reply)
-    this.setData({ messages: next, sending: false, hasSession: true }, () => this.scrollToEnd())
-    saveSession(role.id, next)
+    this.setData({ messages: next, sending: false, canRetry: true }, () => this.scrollToEnd())
+    this.persist()
   },
 
   scrollToEnd() {
