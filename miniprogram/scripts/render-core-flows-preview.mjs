@@ -926,11 +926,15 @@ const SCENES = [
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
   // 2026-11-23 AI 智能中心第六轮：脉搏 / 同事们 / 注意到的问题 / 档案卡（收起）/ 对话（依据时间）
-  { name: 'ai-center', h: 2600, wxml: 'subpackages/extra/ai-center/index', data: (() => {
-    const R = loadCjsModule(join(MP, 'subpackages/extra/ai-center/roles.js'))
-    const T = loadCjsModule(join(MP, 'subpackages/extra/ai-center/tasks.js'))
-    const V = loadCjsModule(join(MP, 'subpackages/extra/ai-center/centerView.js'))
+  { name: 'ai-center', h: 2600, wxml: 'subpackages/ai/ai-center/index', data: (() => {
+    const R = loadCjsModule(join(MP, 'subpackages/ai/ai-center/roles.js'))
+    const T = loadCjsModule(join(MP, 'subpackages/ai/ai-center/tasks.js'))
+    const V = loadCjsModule(join(MP, 'subpackages/ai/ai-center/centerView.js'))
     const role = R.byId('procurement')
+    const PT = loadCjsModule(join(MP, 'cloudfunctions/askMuseumGuide/staffPatrol.js'))
+    const rules = PT.ruleViews({ muted: ['attendance'], limits: { orders_drop: 25 } })
+    const now = Date.UTC(2026, 10, 23, 9, 30)
+    const historyRows = V.historyRows([{ at: now, by: 'timer', ids: ['orders_drop', 'low_stock'], sent: 2 }, { at: now - 16 * 3600000, by: 'manual', ids: [], sent: 0 }], rules, 5)
     const issues = [
       { id: 'orders_drop', roleId: 'store_manager', person: '林晓棠', roleName: '门店运营经理', level: 'high', title: '近 7 天已付订单少了 33%', ask: 'x' },
       { id: 'low_stock', roleId: 'procurement', person: '周砚', roleName: '采购专家', level: 'warn', title: '9 件在售藏品快见底了', ask: 'x' }
@@ -940,10 +944,13 @@ const SCENES = [
       pulseCells: V.pulseCells({ orders7: 8, ordersChange: -33, gmv7: 12680, today: 1, onSale: 46, lowStock: 9, members7: 14, membersChange: 27 }),
       asOf: '11-23 21:40', issues, issueCount: V.issueCountByRole(issues), isSuper: true, patrol: { enabled: true }, patrolBusy: false, forbidden: '', tipText: '',
       profileOpen: false, renameId: '', renameText: '', draft: '', sending: false, scrollTo: '', canRetry: true,
+      rules, historyRows, settingsOpen: false, settingsDirty: false,
+      memo: [{ id: 'm1', text: '周六下午有标本体验课，前台多排一个人', until: '2026-11-28' }, { id: 'm2', text: '双十二不打折，改为满额送礼券', until: '2026-12-12' }, { id: 'm3', text: '玻璃罩类暂停向义乌那家进货（破损率高）', until: '' }],
+      memoEdit: false, memoDraft: [], memoText: '', memoUntil: '', memoMax: 6, memoLen: 60, memoBusy: false,
       sessions: [{ id: 's1', title: '哪些藏品最该先补货？' }, { id: 's2', title: '易碎品运输' }], activeId: 's1',
       messages: [
-        { role: 'user', text: '哪些藏品最该先补货？' },
-        { role: 'assistant', asOf: '11-23 21:40', text: '先补那 9 件快见底的，但别一口气全补。\n\n我看了一下：在售 46 件里有 9 件库存只剩 3 件以内，近 7 天已付 8 笔、比前一周少了三成，说明这周不是补货压力最大的时候。\n\n我的建议：一，先补近 30 天卖过两次以上的那几件；二，易碎的玻璃罩类按「到货破损率」挑供应商，而不是只看单价；三，补不上的在详情页标「少量」。下周再看一次低库存数，降到 5 件以内就算稳住了。' }
+        { role: 'user', text: '哪些藏品最该先补货？', relayFrom: '林晓棠' },
+        { role: 'assistant', asOf: '11-23 21:40', text: '先补那 9 件快见底的，但别一口气全补。\n\n我看了一下：在售 46 件里有 9 件库存只剩 3 件以内，近 7 天已付 8 笔、比前一周少了三成，说明这周不是补货压力最大的时候。\n\n我的建议：一，先补近 30 天卖过两次以上的那几件；二，易碎的玻璃罩类按「到货破损率」挑供应商，而不是只看单价；三，补不上的在详情页标「少量」。下周再看一次低库存数，降到 5 件以内就算稳住了。', vote: 'down' }
       ]
     }
   })() },

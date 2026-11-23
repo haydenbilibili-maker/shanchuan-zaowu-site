@@ -31,6 +31,11 @@
     "subpackages/b2bdesk": {
       "compiledBytes": 114529,
       "rawBytes": 139225
+    },
+    "subpackages/ai": {
+      "compiledBytes": 60620,
+      "rawBytes": 60620,
+      "provisional": "2026-11-23 AI 智能中心迁出 extra 时本环境无微信开发者工具，按「编译后 = 源码原始字节」上界临时登记（历史实测编译后均小于源码）；须本机 --measure 实测覆盖"
     }
   }
 }

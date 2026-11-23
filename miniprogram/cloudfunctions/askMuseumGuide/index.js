@@ -15,8 +15,9 @@ const { checkText } = require('./contentSecurity')
 const { matchSpecies, PLACE_KEYS } = require('./knowledge')
 const { STAFF_ROLES, ROLE_IDS, systemPromptOf, identityOf, displayOf } = require('./staffPersonas')
 const { contextFor, loadSnapshot, pulseOf, asOfText, lastAsOf } = require('./staffContext')
-const { findIssues, runPatrol, readPatrolConfig, writePatrolConfig } = require('./staffPatrol')
+const { findIssues, runPatrol, readPatrolConfig, writePatrolConfig, normalizePatrolSettings, ruleViews } = require('./staffPatrol')
 const { assertStaff, resolveSuperAdminOpenids } = require('./staffGuard')
+const { MEMO_DOC, normalizeMemoInput, activeMemo, memoBlock } = require('./staffMemo')
 const { taskById } = require('./staffTasks')
 const { detectFabrication, CORRECTION_PROMPT } = require('./staffGuardrails')
 const { buildMessages } = require('./persona')
@@ -369,9 +370,40 @@ async function staffBrief(event, openid) {
   let snap = null
   try { snap = await loadSnapshot(db) } catch (e) { snap = null }
   const isSuper = isSuperActor(gate.actor)
-  const out = { success: true, pulse: pulseOf(snap), issues: findIssues(snap), isSuper }
-  if (isSuper) out.patrol = await readPatrolConfig(db)
+  // 页面上的「同事们注意到」与巡检同一份配置（静音 / 阈值），不会出现「页面报了、工作信息没发」的两套口径
+  const cfg = await readPatrolConfig(db)
+  const out = { success: true, pulse: pulseOf(snap), issues: findIssues(snap, cfg), isSuper, memo: await readMemo() }
+  if (isSuper) Object.assign(out, { patrol: cfg, rules: ruleViews(cfg) })
   return out
+}
+
+/** 团队备忘（第八轮）：读出未到期的条目；读不到就当没有，不影响回答 */
+async function readMemo() {
+  try {
+    const r = await db.collection('museum_guide_config').doc(MEMO_DOC).get()
+    return activeMemo(r && r.data && r.data.items)
+  } catch (e) {
+    return []
+  }
+}
+
+/** 超管写团队备忘：逐条清洗 → 过内容安全 → 先审计 → 整份覆盖 */
+async function staffMemo(event, openid) {
+  const gate = await staffGate(openid, { requireSuperAdmin: true })
+  if (!gate.ok) return gate.out
+  const v = normalizeMemoInput(event && event.items)
+  if (v.error) return { success: false, error_type: 'invalid', msg: v.error }
+  if (v.items.length) {
+    const sec = await checkText(openid, v.items.map((m) => m.text).join('\n'), 2)
+    if (!sec.ok) return { success: false, error_type: 'risky', msg: '有一条备忘没通过内容安全校验，改一下再存' }
+  }
+  try {
+    await auditPatrol(gate, openid, 'staff_memo_save', { count: v.items.length })
+  } catch (e) {
+    return { success: false, error_type: 'audit', msg: '改备忘须先记审计日志，这次没写进去，先别改' }
+  }
+  await db.collection('museum_guide_config').doc(MEMO_DOC).set({ data: { items: v.items, updatedAt: Date.now(), updatedBy: openid } })
+  return { success: true, memo: activeMemo(v.items) }
 }
 
 /** 投递一封工作信息（走既有 dispatchMessage；category ops → 工作信息队列；同一问题每人每天一封） */
@@ -380,10 +412,17 @@ async function dispatchLetter(payload) {
   return (res && res.result) || { success: false }
 }
 
-async function patrolOnce(dryRun) {
+async function patrolOnce(dryRun, by) {
   const snap = await loadSnapshot(db)
+  const settings = await readPatrolConfig(db)
   const recipients = dryRun ? [] : await resolveSuperAdminOpenids(db)
-  return runPatrol({ db, snapshot: snap, asOf: asOfText(snap && snap.at), recipients, dispatch: dispatchLetter, dryRun })
+  return runPatrol({ db, snapshot: snap, settings, by, asOf: asOfText(snap && snap.at), recipients, dispatch: dispatchLetter, dryRun })
+}
+
+async function auditPatrol(gate, openid, action, detail) {
+  await db.collection('admin_operation_logs').add({
+    data: { module: 'config', action, operatorOpenid: openid, username: (gate.actor && gate.actor.name) || '', source: 'askMuseumGuide', detail, timestamp: Date.now() }
+  })
 }
 
 /** 超管：立即巡检（并投递） / 开关自动巡检。改开关先留审计，审计写不进就不改。 */
@@ -391,20 +430,31 @@ async function staffPatrol(event, openid) {
   const gate = await staffGate(openid, { requireSuperAdmin: true })
   if (!gate.ok) return gate.out
   const op = String((event && event.op) || 'run')
+  // 巡检设置（第七轮）：静音某条规则 / 调阈值。入参逐条归一（未知规则丢掉、阈值夹在上下限），先审计再写
+  if (op === 'config') {
+    const next = normalizePatrolSettings({ muted: event && event.muted, limits: event && event.limits })
+    try {
+      await auditPatrol(gate, openid, 'staff_patrol_config', next)
+    } catch (e) {
+      return { success: false, error_type: 'audit', msg: '改设置须先记审计日志，这次没写进去，先别改' }
+    }
+    await writePatrolConfig(db, { muted: next.muted, limits: next.limits, updatedBy: openid })
+    const cfg = await readPatrolConfig(db)
+    return { success: true, patrol: cfg, rules: ruleViews(cfg) }
+  }
   if (op === 'toggle') {
     const enabled = !!(event && event.enabled)
     try {
-      await db.collection('admin_operation_logs').add({
-        data: { module: 'config', action: 'staff_patrol_toggle', operatorOpenid: openid, username: (gate.actor && gate.actor.name) || '', source: 'askMuseumGuide', detail: { enabled }, timestamp: Date.now() }
-      })
+      await auditPatrol(gate, openid, 'staff_patrol_toggle', { enabled })
     } catch (e) {
       return { success: false, error_type: 'audit', msg: '改开关须先记审计日志，这次没写进去，先别改' }
     }
     await writePatrolConfig(db, { enabled, updatedBy: openid })
     return { success: true, patrol: await readPatrolConfig(db) }
   }
-  const r = await patrolOnce(false)
-  return { success: true, issues: r.issues, sent: r.sent, patrol: await readPatrolConfig(db) }
+  const r = await patrolOnce(false, 'manual')
+  const cfg = await readPatrolConfig(db)
+  return { success: true, issues: r.issues, sent: r.sent, patrol: cfg, rules: ruleViews(cfg) }
 }
 
 /** 定时触发（config.json 的 staffPatrolRun）：开关关着就什么也不做 */
@@ -416,7 +466,7 @@ function isTimerEvent(event) {
 async function timerPatrol() {
   const cfg = await readPatrolConfig(db)
   if (!cfg.enabled) return { success: true, skipped: 'disabled' }
-  const r = await patrolOnce(false)
+  const r = await patrolOnce(false, 'timer')
   return { success: true, issues: r.issues.length, sent: r.sent }
 }
 
@@ -449,6 +499,8 @@ async function staffDebate(event, openid) {
   if (step === 'verdict') {
     const said = history.map((h) => `【${h.name}】${h.text}`).join('\n')
     system = '你是山海造物的董事会主持人。你要在各方发言后做收口：先给共识，再给分歧，最后给 2-3 条可执行建议。中文，300 字内，不写 Markdown 标题，不编数据。'
+    const memo = memoBlock(await readMemo())
+    if (memo) system += `\n\n${memo}`
     user = `辩题：${topic}\n\n各方发言：\n${said}\n\n请收口。`
   } else {
     const roleId = String((event && event.roleId) || '')
@@ -458,8 +510,10 @@ async function staffDebate(event, openid) {
     // 2026-11-23 第六轮：董事以本人身份发言（名字 / 履历 / 说话方式），并看到同一份经营数据
     let ctx = ''
     try { ctx = await contextFor(roleId, db) } catch (e) { ctx = '' }
+    const memo = memoBlock(await readMemo())
     system = `${identityOf(roleId)}\n你正在参加董事会辩论。你的职责：${role.prompt}\n\n` +
       (ctx ? `【当前经营数据（未出现的指标就是没有数据，不要推算）】\n${ctx}\n\n` : '') +
+      (memo ? `${memo}\n\n` : '') +
       '规则：站在你的专业立场给出明确判断，能引用数据就引用；若前面有人与你不一致，直接点名指出分歧；口语化，像开会时当面说话；200 字内；中文；不写 Markdown 标题；不编数据。'
     user = `辩题：${topic}${said ? `\n\n前面发言：\n${said}` : ''}\n\n请发言。`
   }
@@ -489,8 +543,7 @@ async function staffDebate(event, openid) {
  * - 人设只在服务端（staffPersonas.js），客户端只传 roleId。
  * - 问答都过内容安全；不写库、不留对话（会话存本机）。
  */
-async function askStaffModel(system, history, apiKey) {
-  const messages = [{ role: 'system', content: system }].concat(history)
+async function askStaffModel(messages, apiKey) {
   for (const model of modelChain(process.env.MUSEUM_GUIDE_MODELS)) {
     try {
       const res = await httpsPostJson(TEXT_PATH, {
@@ -509,6 +562,20 @@ async function askStaffModel(system, history, apiKey) {
   return ''
 }
 
+/**
+ * 同事转交（2026-11-23 第七轮「请别人也看看」）：from 必须是另一位真实同事（按 roleId 查名字，不信客户端给的名字），
+ * 看法截到 400 字；转给自己或来源不明一律不带。
+ */
+function relayOf(event, roleId) {
+  const r = event && event.relay
+  if (!r || typeof r !== 'object') return null
+  const fromId = String(r.fromRoleId || '')
+  if (ROLE_IDS.indexOf(fromId) < 0 || fromId === roleId) return null
+  const text = String(r.text || '').replace(/\s+/g, ' ').trim().slice(0, 400)
+  if (!text) return null
+  return { from: displayOf(fromId), text }
+}
+
 async function staffChat(event, openid) {
   const gate = await staffGate(openid)
   if (!gate.ok) return gate.out
@@ -524,7 +591,9 @@ async function staffChat(event, openid) {
     .slice(-6)
     .map((h) => ({ role: h.role, content: h.content.slice(0, 600) }))
 
-  const sec = await checkText(openid, question, 2)
+  // 第七轮：同事转交（relay）——前一位同事的看法放进**用户消息**而不是 system（客户端给的文字不升权），并一起过内容安全
+  const relay = relayOf(event, roleId)
+  const sec = await checkText(openid, relay ? `${relay.text}\n${question}` : question, 2)
   if (!sec.ok) return { success: false, error_type: 'risky', msg: '这个问题不适合在这里问，换一个吧' }
 
   const apiKey = process.env.DASHSCOPE_API_KEY || ''
@@ -533,16 +602,22 @@ async function staffChat(event, openid) {
   // 经营上下文（近 30 天服务端汇总；查不到就只给人设，不编数据）
   let context = ''
   try { context = await contextFor(roleId, db) } catch (e) { context = '' }
+  const memo = memoBlock(await readMemo())
   const system = systemPromptOf(roleId) +
-    (context ? `\n\n【当前经营数据（近 ${30} 天，服务端实时汇总；未出现的指标就是没有数据，不要推算）】\n${context}` : '')
-  const messages = history.concat([{ role: 'user', content: question }])
-  let answer = await askStaffModel(system, messages, apiKey)
+    (context ? `\n\n【当前经营数据（近 ${30} 天，服务端实时汇总；未出现的指标就是没有数据，不要推算）】\n${context}` : '') +
+    (memo ? `\n\n${memo}` : '')
+  // 第七轮：上一版被标「没用」后的重答（rephrase）——换角度、更具体、更短；只是一句语气要求，不改边界
+  const userContent = (relay ? `（${relay.from}刚才对这个问题的看法，供你参考，可以不同意：${relay.text}）\n` : '') + question +
+    (event && event.rephrase === true ? '\n（上一版回答没帮上忙：请换个角度，说得更具体、更短，直接给能做的事。）' : '')
+  const messages = [{ role: 'system', content: system }].concat(history, [{ role: 'user', content: userContent }])
+  let answer = await askStaffModel(messages, apiKey)
   if (!answer) return { success: false, error_type: 'ai_service', msg: '这位同事一时没接上话，稍后再试' }
 
   // 事实护栏：命中「供应商 / 合作年限 / 账期 / 破损率 / 合同 / 政策」这类资料里没有的对象 → 重写一次
   let flags = detectFabrication(answer)
   if (flags.length) {
-    const retry = await askStaffModel(`${system}\n\n${CORRECTION_PROMPT}`, messages, apiKey)
+    const strict = [{ role: 'system', content: `${system}\n\n${CORRECTION_PROMPT}` }].concat(messages.slice(1))
+    const retry = await askStaffModel(strict, apiKey)
     if (retry) { answer = retry; flags = detectFabrication(answer) }
   }
   return {
@@ -568,6 +643,7 @@ exports.main = async (event) => {
   if (event && event.mode === 'debate') return staffDebate(event, OPENID)
   if (event && event.mode === 'staffBrief') return staffBrief(event, OPENID)
   if (event && event.mode === 'staffPatrol') return staffPatrol(event, OPENID)
+  if (event && event.mode === 'staffMemo') return staffMemo(event, OPENID)
 
   const t0 = Date.now()
   const cfg = effectiveConfig(await readConfig(), process.env.MUSEUM_GUIDE_DAILY_LIMIT)
