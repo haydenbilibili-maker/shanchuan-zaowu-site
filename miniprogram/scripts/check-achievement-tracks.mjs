@@ -99,6 +99,12 @@ async function run(inject) {
   page._applyAchievementData({ achievements: list.map((a) => (['collect_5', 'share_1', 'course_1'].includes(a.id) ? { ...a, progress: a.threshold, unlocked: true } : a)), stats: {} })
   ok(page.data.freshText === 'explore_10、collect_5、share_1 等 4 枚', `G 新点亮一句话须列前三枚 + 等 N 枚，实际「${page.data.freshText}」`)
   page._freshLit = null
+  // H（2026-11-23 续）尚有 N 待点亮 = 未点亮徽章奖励合计；新点亮一句话可点到第一枚；成长线节点可点切换
+  const expectPending = list.filter((x) => x.progress < x.threshold && !['collect_5', 'share_1', 'course_1'].includes(x.id)).reduce((sum, x) => sum + ((x.reward && x.reward.points) || 0), 0)
+  ok(page.data.pendingRewards === expectPending, `H 尚有待点亮积分须为未点亮徽章奖励合计（期望 ${expectPending}，实际 ${page.data.pendingRewards}）`)
+  const achWxml = read(P.wxml)
+  ok(/class="fresh-note"[^>]*bindtap="viewAchievement" data-id="\{\{freshFirstId\}\}"/.test(achWxml), 'H 新点亮一句话须可点开第一枚')
+  ok(/class="mt-cell"[^>]*bindtap="viewAchievement" data-id="\{\{item\.id\}\}"/.test(achWxml), 'H 弹层成长线节点须可点切换')
 
   const wxml = read(P.wxml)
   ok(!/<scroll-view/.test(wxml) && /class="block relics-card"/.test(wxml), 'E 内容不得放进 scroll-view（pageScrollTo 滚不到 .relics-card）')
@@ -152,6 +158,8 @@ function apply(src, inj) {
 }
 
 const INJECTIONS = [
+  { name: '待点亮积分算成全部', file: P.page, find: "normalized.filter((a) => !a.unlocked).reduce(", replace: "normalized.reduce(" },
+  { name: '成长线节点不可点', file: P.wxml, find: 'wx:key="id" bindtap="viewAchievement" data-id="{{item.id}}"', replace: 'wx:key="id"' },
   { name: '弹层成长线不标当前枚', file: P.page, find: 'current: n.id === id', replace: 'current: false' },
   { name: '未登记徽章被丢弃', file: P.page, find: "  all.filter((a) => a && a.id && !used[a.id]).forEach((a) => {", replace: "  [].forEach((a) => {" },
   { name: '登记表漏一个 id', file: P.page, find: "'atlas_mountain', 'atlas_volume'", replace: "'atlas_mountain'" },

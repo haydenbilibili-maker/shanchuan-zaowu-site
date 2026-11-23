@@ -209,6 +209,8 @@ Page({
     chapters: [],
     nextUp: [],
     freshText: '',
+    freshFirstId: '',
+    pendingRewards: 0,
     selectedTrack: null,
     ticks: [],
     showModal: false,
@@ -372,8 +374,14 @@ Page({
       ? freshNames.slice(0, 3).join('、') + (freshNames.length > 3 ? ` 等 ${freshNames.length} 枚` : '')
       : '';
 
+    // 尚有多少积分待点亮（2026-11-23）：未点亮徽章的奖励合计
+    const pendingRewards = normalized.filter((a) => !a.unlocked).reduce((sum, a) => sum + (a.rewardPoints || 0), 0);
+    const freshFirstId = (normalized.find((a) => freshLit.indexOf(a.id) >= 0) || {}).id || '';
+
     this.setData({
       achievements: normalized,
+      pendingRewards,
+      freshFirstId,
       achievementTypes: chapters,
       chapters,
       nextUp,
@@ -462,7 +470,8 @@ Page({
     const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
     const achievement = ds.achievement || (this.data.achievements || []).find((a) => a && a.id === ds.id);
     if (!achievement) return;
-    wx.vibrateShort({ type: 'light' });
+    // 弹层里沿成长线切换不再震（只在打开时震一下）
+    if (!this.data.showModal) wx.vibrateShort({ type: 'light' });
     const selected = normalizeAchievement(achievement);
     this.setData({
       selectedAchievement: { ...selected, route: selected.unlocked ? null : routeOf(selected.id), routeHint: selected.unlocked ? '' : hintOf(selected.id) },

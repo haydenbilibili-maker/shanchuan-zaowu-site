@@ -834,3 +834,19 @@ page {
   text-overflow: ellipsis;
 }
 .mt-label.is-current { color: var(--brass-200); }
+
+/* 尚有 N 待点亮（2026-11-23）：同一行靠右，弱一档 */
+.cover-points-more {
+  margin-left: auto;
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+}
+.fresh-note { align-items: center; }
+.fresh-v { flex: 1; }
+.fresh-go {
+  flex-shrink: 0;
+  font-size: var(--fs-22);
+  color: var(--brass-300);
+}
+/* 成长线节点可点：命中区补足到 84rpx 宽、上下留白 */
+.mt-cell { padding: 6rpx 0; border-radius: var(--r-control, 16rpx); }
