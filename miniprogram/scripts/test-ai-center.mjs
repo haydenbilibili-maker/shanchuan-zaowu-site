@@ -77,10 +77,12 @@ function runChecks() {
   ok('A5 经营上下文：只汇总已付态 / 退款单算 / 客单价按已付笔数；在售与低库存口径正确',
     orders.paidCount === 2 && orders.gmv === 1000 && orders.refund === 100 && orders.aov === 500 &&
     products.onSale === 3 && products.lowStock === 2 && /昆虫 2/.test(products.top), fails)
+  const fin = C.summarizeFinance([{ cash: 100, pos: 50, online: 30, refund: 10 }, { cashIncome: 20, pos: 0, online: 0 }])
+  ok('A5 门店日账汇总：现金 / POS / 线上 / 退款分开累计，合计不含退款', fin.total === 200 && fin.refund === 10 && fin.days === 2, fails)
   ok('A5 上下文注入 staffChat：system 里带「当前经营数据」块；只查 4 张表且不含个人信息；有缓存与字数上限',
     /contextFor\(roleId, db\)/.test(fn) && /【当前经营数据/.test(fn) &&
     /collection\('orders'\)/.test(ctxSrc) && /collection\('products'\)/.test(ctxSrc) &&
-    /collection\('users'\)/.test(ctxSrc) && /collection\('bookings'\)/.test(ctxSrc) &&
+    /collection\('users'\)/.test(ctxSrc) && /collection\('bookings'\)/.test(ctxSrc) && /collection\('finance_records'\)/.test(ctxSrc) &&
     !/phone|mobile|openid|realName|receiver/i.test(ctxSrc) &&
     /TTL_MS/.test(ctxSrc) && C.TEXT_MAX <= 600, fails)
   return fails

@@ -3,7 +3,7 @@
  *
  * 口径：
  * - 只做**近 30 天**的服务端汇总，5 分钟内存缓存（同一函数实例复用），避免每次提问都扫库；
- * - 只读 orders / products / users / bookings 四张表，**不取姓名 / 手机 / 账号标识等个人信息**；
+ * - 只读 orders / products / users / bookings / finance_records 五张表，**不取姓名 / 手机 / 账号标识等个人信息**；
  * - 每个块独立 try/catch：某张表失败就少一块，不影响其它块，也不把错误抛给调用方；
  * - 输出一段 ≤ 500 字的中文事实清单，交给模型当「当前经营数据」，并明确「没出现的指标就是没有数据」。
  *
@@ -65,12 +65,29 @@ function summarizeProducts(rows) {
   return { onSale, lowStock, top }
 }
 
+function summarizeFinance(rows) {
+  const list = Array.isArray(rows) ? rows : []
+  let cash = 0
+  let pos = 0
+  let online = 0
+  let refund = 0
+  for (const r of list) {
+    if (!r) continue
+    cash += fenOfYuan(r.cashIncome != null ? r.cashIncome : r.cash)
+    pos += fenOfYuan(r.pos)
+    online += fenOfYuan(r.online)
+    refund += fenOfYuan(r.refund)
+  }
+  const total = cash + pos + online
+  return { days: list.length, cash, pos, online, refund, total }
+}
+
 async function loadSnapshot(db) {
   const now = Date.now()
   if (cache.value && now - cache.at < TTL_MS) return cache.value
   const since = new Date(now - WINDOW_DAYS * DAY_MS)
   const _ = db.command
-  const out = { orders: null, products: null, users: null, bookings: null }
+  const out = { orders: null, products: null, users: null, bookings: null, finance: null }
 
   const tasks = [
     (async () => {
@@ -102,6 +119,19 @@ async function loadSnapshot(db) {
         const r = await db.collection('bookings').where({ createTime: _.gte(since) }).count()
         out.bookings = { count: (r && r.total) || 0 }
       } catch (e) { /* ignore */ }
+    })(),
+    (async () => {
+      // 门店日账（ERP 维护）：date 是 'YYYY-MM-DD' 字符串，按北京时间近 30 天取
+      try {
+        const bj = new Date(now + 8 * 3600000)
+        const start = new Date(bj.getTime() - WINDOW_DAYS * DAY_MS)
+        const startStr = start.toISOString().slice(0, 10)
+        const r = await db.collection('finance_records')
+          .where({ date: _.gte(startStr) })
+          .field({ date: true, cash: true, cashIncome: true, pos: true, online: true, refund: true })
+          .limit(500).get()
+        out.finance = summarizeFinance(r && r.data)
+      } catch (e) { /* ignore */ }
     })()
   ]
   await Promise.all(tasks)
@@ -130,6 +160,8 @@ async function contextFor(roleId, db) {
   if (financeRoles.indexOf(roleId) >= 0) {
     const l = financeLine(snap.orders)
     if (l) lines.push(l)
+    const f = snap.finance
+    if (f && f.total > 0) lines.push(`近 ${WINDOW_DAYS} 天门店日账合计 ¥${money(f.total)}（现金 ¥${money(f.cash)} / POS ¥${money(f.pos)} / 线上 ¥${money(f.online)}，退款 ¥${money(f.refund)}）`)
   }
   if (roleId === 'procurement' || roleId === 'creative_director') {
     const l = productLine(snap.products)
@@ -143,4 +175,4 @@ async function contextFor(roleId, db) {
   return lines.join('；').slice(0, TEXT_MAX)
 }
 
-module.exports = { contextFor, loadSnapshot, summarizeOrders, summarizeProducts, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }
+module.exports = { contextFor, loadSnapshot, summarizeOrders, summarizeProducts, summarizeFinance, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }
