@@ -657,6 +657,8 @@ function buildFunnel(rows, dailyRows = []) {
     commerce: {
       productView: count('product_view') + count('view'),
       addCart: count('product_add_cart'),
+      // ⚠️ 现网没有页面发 order_submit（恒 0）—— 报表改用订单库的 commerceOrders / commercePaid（见 report 组装处）；
+      // 这里保留字段只为旧版报表页不报错
       orderSubmit: count('order_submit')
     },
     // 诊断：方便区分「未部署 / 明细空 / 真无鉴定流量」
@@ -1530,6 +1532,10 @@ async function ordersMetrics(event, scope) {
   let commerceGmv = 0
   let customGmv = 0
   let exchangeCount = 0
+  // 电商路径的「下单 / 已付款」（2026-11-23）：藏品订单（commerce 桶，不含礼赠 / 定金 / 尾款 / 定制）。
+  // 起因：漏斗原来数埋点 order_submit，但现网**没有任何页面发它** → 「提交订单」恒 0；订单库才是真数。
+  let commerceOrders = 0
+  let commercePaid = 0
   const payingUsers = new Set()
   const levelMap = {}
   const categoryMap = {}
@@ -1552,6 +1558,7 @@ async function ordersMetrics(event, scope) {
     if (dayAgg[createDk]) {
       dayAgg[createDk].orders += 1
       totalOrders += 1
+      if (bucket === 'commerce') commerceOrders += 1
       if (UNPAID_STATUS.indexOf(st) !== -1) {
         dayAgg[createDk].unpaid += 1
         totalUnpaid += 1
@@ -1578,6 +1585,7 @@ async function ordersMetrics(event, scope) {
         customGmv += amt
       } else {
         commerceGmv += amt
+        commercePaid += 1
       }
 
       const lv = String((o.levelName || (o.level && o.level.name) || '未定级')).trim() || '未定级'
@@ -1667,6 +1675,8 @@ async function ordersMetrics(event, scope) {
     ledgerMode: (ledgerPack && ledgerPack.mode) || 'dual',
     totals: {
       orders: totalOrders,
+      commerceOrders,
+      commercePaid,
       paid: totalPaid,
       unpaid: totalUnpaid,
       refunded: totalRefunded,
@@ -2465,7 +2475,17 @@ async function report(event, actor) {
     signals: trafficLights,
     trafficLights,
     behavior: {
-      funnel: behavior.funnel,
+      // 电商路径：浏览 / 加购来自行为埋点，下单 / 已付款来自订单库（埋点 order_submit 现网无人发，恒 0）
+      funnel: Object.assign({}, behavior.funnel, behavior.funnel && behavior.funnel.commerce ? {
+        commerce: Object.assign({}, behavior.funnel.commerce, {
+          orders: (orders.totals && orders.totals.commerceOrders) || 0,
+          paid: (orders.totals && orders.totals.commercePaid) || 0,
+          // 下单为 0 时不给比率（页面不显示），不写 0%
+          paidRate: orders.totals && orders.totals.commerceOrders
+            ? Math.round((orders.totals.commercePaid / orders.totals.commerceOrders) * 100)
+            : null
+        })
+      } : {}),
       topEvents: (users.topEvents && users.topEvents.length
         ? users.topEvents
         : (behavior.summary && behavior.summary.byAction) || []

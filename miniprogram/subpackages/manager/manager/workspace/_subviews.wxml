@@ -2884,10 +2884,22 @@
           <text class="week-split-hint" wx:else>口径：钉上墙相对进心愿签。注册引导只在游客点「钉上墙」时出现，已注册用户不经过；点灯 / 音效等旧仪式已下线，不再统计</text>
         </view>
         <view class="card" wx:if="{{analyticsReport.behavior.funnel.commerce}}">
+          <!-- 2026-11-23：「提交订单」原数埋点 order_submit，现网无页面发 → 恒 0；改为订单库里的藏品订单「下单 / 已付款」 -->
           <view class="card-top"><text class="no">电商路径</text></view>
           <view class="visit-stats-row"><text class="visit-stats-name">藏品浏览</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.productView || 0}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">加购</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.addCart || 0}}</text></view>
-          <view class="visit-stats-row"><text class="visit-stats-name">提交订单</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.orderSubmit || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">加入购物车</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.addCart || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">下单（藏品订单）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.orders || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">已付款（不含已退款）</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.commerce.paid || 0}}{{analyticsReport.behavior.funnel.commerce.paidRate !== null && analyticsReport.behavior.funnel.commerce.paidRate !== undefined ? ' · ' + analyticsReport.behavior.funnel.commerce.paidRate + '%' : ''}}</text></view>
+          <text class="week-split-hint">口径：浏览 / 加购为抽样行为数据；下单 / 已付款取自订单库的藏品订单（不含礼赠、定金、定制），下单按下单日、已付款按付款日</text>
+        </view>
+        <!-- 这有店（2026-11-23）：云函数一直在算门店页四步、页面也一直在发，但报表从没画过这张卡 -->
+        <view class="card" wx:if="{{analyticsReport.behavior.funnel.store}}">
+          <view class="card-top"><text class="no">这有店 · 门店页</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">进门店页</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.store.tabEnter || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">看展区详情</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.store.zoneDetail || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">点预约</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.store.bookingClick || 0}}</text></view>
+          <view class="visit-stats-row"><text class="visit-stats-name">到店打卡</text><text class="visit-stats-count">{{analyticsReport.behavior.funnel.store.checkin || 0}}</text></view>
+          <text class="week-split-hint">口径：次数（抽样行为数据）；到店打卡 = 门店页扫店内码或手动打卡，同一人重复打卡也计次</text>
         </view>
         <view class="card" wx:if="{{reportDiagOpen && analyticsReport.behavior.topEvents.length}}">
           <view class="card-top"><text class="no">最常发生的动作（原始事件名，排障用）</text></view>
