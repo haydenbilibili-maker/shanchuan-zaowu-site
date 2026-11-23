@@ -3,6 +3,7 @@ const app = getApp();
 const easterEgg = require('../../../../utils/easterEgg');
 const { markAchievementsSeen } = require('../../../../utils/badgeDisplay');
 const { takeFreshLit } = require('./litSeen');
+const { routeOf, hintOf } = require('./achievementRoutes');
 
 const TYPE_DEFS = [
   { type: 'explore', name: '探索类', enName: 'EXPLORATION', icon: '/assets/icons/knowledge.png' },
@@ -176,7 +177,9 @@ function buildNextUp(all) {
   return all
     .filter((a) => a && !a.unlocked)
     .sort((a, b) => (b.progressPercent - a.progressPercent) || (a.threshold - b.threshold))
-    .slice(0, 3);
+    .slice(0, 3)
+    // 2026-11-23：每枚带「去点亮」落点（没有落点的只给提示）
+    .map((a) => ({ ...a, route: routeOf(a.id), routeHint: hintOf(a.id) }));
 }
 
 Page({
@@ -436,10 +439,20 @@ Page({
     const achievement = ds.achievement || (this.data.achievements || []).find((a) => a && a.id === ds.id);
     if (!achievement) return;
     wx.vibrateShort({ type: 'light' });
+    const selected = normalizeAchievement(achievement);
     this.setData({
-      selectedAchievement: normalizeAchievement(achievement),
+      selectedAchievement: { ...selected, route: selected.unlocked ? null : routeOf(selected.id), routeHint: selected.unlocked ? '' : hintOf(selected.id) },
       showModal: true
     });
+  },
+
+  /** 去点亮：tab 页用 switchTab，其余 navigateTo；从弹层里点先收起弹层 */
+  goAchieve(e) {
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    if (!ds.url) return;
+    if (this.data.showModal) this.setData({ showModal: false, selectedAchievement: null });
+    if (ds.tab) wx.switchTab({ url: ds.url });
+    else wx.navigateTo({ url: ds.url });
   },
 
   closeModal() {

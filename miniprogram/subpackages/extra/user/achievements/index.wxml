@@ -77,12 +77,15 @@
       >
         <view class="next-top">
           <text class="next-name">{{item.name}}</text>
+          <text class="next-reward" wx:if="{{item.rewardPoints > 0}}">+{{item.rewardPoints}} 积分</text>
           <text class="next-pct">{{item.progressPercent}}%</text>
         </view>
         <view class="next-bar"><view class="next-fill" style="width: {{item.progressPercent}}%;"></view></view>
         <view class="next-foot">
-          <text class="next-desc">{{item.desc}}</text>
           <text class="next-remain">{{item.remainText}}</text>
+          <!-- 2026-11-23：「还差」后面直接给一步可走的路；没有落点的只写提示 -->
+          <text class="next-go" wx:if="{{item.route}}" catchtap="goAchieve" data-url="{{item.route.url}}" data-tab="{{item.route.tab}}" hover-class="tap-press" hover-stay-time="80">{{item.route.label}} ›</text>
+          <text class="next-hint" wx:elif="{{item.routeHint}}">{{item.routeHint}}</text>
         </view>
       </view>
     </view>
@@ -199,7 +202,14 @@
       </view>
 
       <view class="modal-btn is-primary" wx:if="{{selectedAchievement.unlocked}}" hover-class="tap-press" hover-stay-time="80" bindtap="shareSingleAchievement">分享这枚徽章</view>
-      <view class="modal-btn" wx:else hover-class="tap-press" hover-stay-time="80" bindtap="closeModal">知道了</view>
+      <!-- 2026-11-23：未点亮给「去点亮」主按钮（有落点时），没有落点写一句提示 -->
+      <block wx:else>
+        <text class="modal-hint" wx:if="{{!selectedAchievement.route && selectedAchievement.routeHint}}">{{selectedAchievement.routeHint}}</text>
+        <view class="modal-actions">
+          <view class="modal-btn" hover-class="tap-press" hover-stay-time="80" bindtap="closeModal">知道了</view>
+          <view class="modal-btn is-primary" wx:if="{{selectedAchievement.route}}" hover-class="tap-press" hover-stay-time="80" bindtap="goAchieve" data-url="{{selectedAchievement.route.url}}" data-tab="{{selectedAchievement.route.tab}}">{{selectedAchievement.route.label}}</view>
+        </view>
+      </block>
     </view>
   </view>
 

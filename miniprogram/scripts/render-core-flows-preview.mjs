@@ -380,6 +380,9 @@ const SCENES = [
     }
   },
   // 2026-10-17 成就重设计：场景数据由**真页面** _applyAchievementData 现算（成长线 / 下一枚 / 刻度不手抄）
+  // 2026-11-23：未点亮徽章详情（带「去点亮」）
+  { name: 'achievements-modal', h: 1400, wxml: 'subpackages/extra/user/achievements/index', data: (() => { const d = achievementsSceneData(); const n = d.nextUp[0]; return { ...d, showModal: true, selectedAchievement: { ...n, statusLabel: '未点亮', typeEn: 'COLLECTION' } } })(),
+    css: '.ui-pop-mask.achievement-modal.show, .ui-pop-mask.achievement-modal { display: flex !important; position: fixed; inset: 0; z-index: 50; background: rgba(10,9,7,0.72); align-items: center; justify-content: center; }' },
   { name: 'achievements', h: 3400, wxml: 'subpackages/extra/user/achievements/index', data: achievementsSceneData() },
   { name: 'gift-mine-people', h: 1700, wxml: 'subpackages/feature/gift/my-gifts/index', base: 'gift-mine', data: { hubTab: 'people', contactsLoading: false,
       contacts: [{ id: 'c1', name: '阿禾', nameInitial: '禾', relationLabel: '挚友', note: '喜欢蓝色的东西', giftCountLabel: '送过 2 次 · 最近 10.15', sceneKey: 'birthday' },
