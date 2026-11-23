@@ -2621,7 +2621,7 @@ Page(withAppModal({
       return;
     }
     if (key === 'ai_center') {
-      wx.navigateTo({ url: '/subpackages/extra/ai-center/index' });
+      wx.navigateTo({ url: '/subpackages/ai/ai-center/index' });
       return;
     }
     requestWorkspaceAccess(String(ds.kind || '').trim(), ds.workspace || '');

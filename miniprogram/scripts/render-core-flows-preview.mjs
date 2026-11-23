@@ -926,10 +926,10 @@ const SCENES = [
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
   // 2026-11-23 AI 智能中心第六轮：脉搏 / 同事们 / 注意到的问题 / 档案卡（收起）/ 对话（依据时间）
-  { name: 'ai-center', h: 2600, wxml: 'subpackages/extra/ai-center/index', data: (() => {
-    const R = loadCjsModule(join(MP, 'subpackages/extra/ai-center/roles.js'))
-    const T = loadCjsModule(join(MP, 'subpackages/extra/ai-center/tasks.js'))
-    const V = loadCjsModule(join(MP, 'subpackages/extra/ai-center/centerView.js'))
+  { name: 'ai-center', h: 2600, wxml: 'subpackages/ai/ai-center/index', data: (() => {
+    const R = loadCjsModule(join(MP, 'subpackages/ai/ai-center/roles.js'))
+    const T = loadCjsModule(join(MP, 'subpackages/ai/ai-center/tasks.js'))
+    const V = loadCjsModule(join(MP, 'subpackages/ai/ai-center/centerView.js'))
     const role = R.byId('procurement')
     const issues = [
       { id: 'orders_drop', roleId: 'store_manager', person: '林晓棠', roleName: '门店运营经理', level: 'high', title: '近 7 天已付订单少了 33%', ask: 'x' },

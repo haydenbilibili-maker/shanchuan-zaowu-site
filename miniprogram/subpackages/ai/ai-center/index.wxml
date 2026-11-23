@@ -1,0 +1,169 @@
+<!-- AI 智能中心（员工端）。人设在云端，会话只存本机。
+     2026-11-23 第六轮重排（产品负责人五条）：整页一条滚动（卷首 → 经营脉搏 → 同事们 → 注意到的问题 → 档案卡 → 会话与对话），
+     只有底部输入条固定；同事用姓氏小印 + 名字，回答下方写明依据几点的经营数据。 -->
+<view class="ac-page">
+  <scroll-view class="ac-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+    <view class="ac-head">
+      <view class="ac-head-row">
+        <view class="ac-head-main">
+          <text class="ac-eyebrow">AI CENTER</text>
+          <text class="ac-title">今天想找谁聊？</text>
+        </view>
+        <view class="ac-debate" bindtap="goDebate" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button">
+          <text class="ac-debate-k">BOARD</text>
+          <text class="ac-debate-t">董事会辩论 ›</text>
+        </view>
+      </view>
+      <text class="ac-desc">七位同事各管一摊，都看得到同一份最新经营数据。回答由 AI 生成，人设为虚构，重要决策请再核一遍。</text>
+    </view>
+
+    <view class="ac-forbidden" wx:if="{{forbidden}}"><text>{{forbidden}}</text></view>
+
+    <!-- 经营脉搏：近 7 天已付 / 实付 / 低库存 / 新会员（读不到写「—」） -->
+    <view class="ac-pulse">
+      <view class="ac-pulse-cell" wx:for="{{pulseCells}}" wx:key="k">
+        <text class="ac-pulse-k">{{item.label}}</text>
+        <text class="ac-pulse-v">{{item.value}}</text>
+        <text class="ac-pulse-s is-{{item.tone}}" wx:if="{{item.sub}}">{{item.sub}}</text>
+      </view>
+    </view>
+    <text class="ac-asof">{{asOf ? '数据截至北京时间 ' + asOf + ' · 每 5 分钟刷新' : '经营数据加载中…'}}</text>
+
+    <!-- 同事们：姓氏小印 + 名字 + 岗位；身上有问题的挂一个小红点 -->
+    <scroll-view class="ac-roster" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="ac-roster-row">
+        <view
+          class="ac-mate {{item.id === roleId ? 'is-on' : ''}}"
+          wx:for="{{roles}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onRoleTap"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+        >
+          <view class="ac-seal" style="background: {{item.tone}};"><text>{{item.seal}}</text></view>
+          <text class="ac-mate-name">{{item.person}}</text>
+          <text class="ac-mate-role">{{item.name}}</text>
+          <view class="ac-mate-dot" wx:if="{{issueCount[item.id]}}" aria-label="有提醒"></view>
+        </view>
+      </view>
+    </scroll-view>
+
+    <!-- 同事们注意到的问题（规则巡检，不靠模型猜）；点一条 = 找那位同事，问题预填好 -->
+    <view class="ac-issues" wx:if="{{issues.length || isSuper}}">
+      <view class="ac-sec-head">
+        <text class="ac-sec-k">NOTICED</text>
+        <text class="ac-sec-t">同事们注意到</text>
+      </view>
+      <view class="ac-issue is-{{item.level}}" wx:for="{{issues}}" wx:key="id" data-index="{{index}}" bindtap="onIssueTap" hover-class="tap-press-soft" hover-stay-time="80">
+        <view class="ac-issue-main">
+          <text class="ac-issue-who">{{item.person}} · {{item.roleName}}</text>
+          <text class="ac-issue-t">{{item.title}}</text>
+        </view>
+        <text class="ac-issue-go">问问 ›</text>
+      </view>
+      <text class="ac-issues-empty" wx:if="{{!issues.length}}">暂时没有需要提醒的问题。</text>
+      <!-- 超管：立即巡检 + 自动巡检开关（问题以同事口吻发到工作信息，同一问题每天一封） -->
+      <view class="ac-patrol" wx:if="{{isSuper}}">
+        <view class="ac-patrol-run {{patrolBusy ? 'is-busy' : ''}}" bindtap="onPatrolRun" hover-class="tap-press" hover-stay-time="80" aria-role="button">{{patrolBusy ? '巡检中…' : '立即巡检并通知我'}}</view>
+        <view class="ac-patrol-auto">
+          <text class="ac-patrol-k">自动巡检 9:30 / 17:30</text>
+          <switch class="ac-switch" checked="{{patrol ? patrol.enabled : true}}" disabled="{{patrolBusy}}" color="#C4A76C" bindchange="onPatrolToggle" />
+        </view>
+      </view>
+    </view>
+    <view class="ac-tip" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
+
+    <!-- 档案卡：名字 / 岗位 / 三行履历 / 口头禅；有对话后收起，点名字可再展开 -->
+    <view class="ac-profile" wx:if="{{profileOpen}}">
+      <view class="ac-profile-head">
+        <view class="ac-seal is-lg" style="background: {{role.tone}};"><text>{{role.seal}}</text></view>
+        <view class="ac-profile-id">
+          <text class="ac-profile-name">{{role.person}}</text>
+          <text class="ac-profile-role">{{role.name}} · {{role.desc}}</text>
+        </view>
+      </view>
+      <view class="ac-cv">
+        <text class="ac-cv-line" wx:for="{{role.cv}}" wx:key="*this">{{item}}</text>
+      </view>
+      <text class="ac-motto">「{{role.motto}}」</text>
+      <view class="ac-starters">
+        <view class="ac-starter" wx:for="{{role.starters}}" wx:key="*this" data-text="{{item}}" bindtap="onStarterTap" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</view>
+      </view>
+    </view>
+
+    <!-- 会话：＋新对话 / 切换；长按 = 重命名 / 复制全文 / 删除；重命名在这里行内改 -->
+    <view class="ac-rename" wx:if="{{renameId}}">
+      <input class="ac-rename-in" value="{{renameText}}" maxlength="16" focus placeholder="给这条会话起个名字" placeholder-class="ac-ph" bindinput="onRenameInput" bindconfirm="onRenameSave" />
+      <text class="ac-rename-btn" bindtap="onRenameSave" hover-class="tap-press" hover-stay-time="80">保存</text>
+      <text class="ac-rename-btn is-ghost" bindtap="onRenameCancel" hover-class="tap-press" hover-stay-time="80">取消</text>
+    </view>
+    <scroll-view class="ac-sessions" scroll-x enhanced show-scrollbar="{{false}}" wx:else>
+      <view class="ac-sessions-row">
+        <view class="ac-session is-new" bindtap="onNewSession" hover-class="tap-press-soft" hover-stay-time="80">＋ 新对话</view>
+        <view
+          class="ac-session {{item.id === activeId ? 'is-on' : ''}}"
+          wx:for="{{sessions}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="onSessionTap"
+          bindlongpress="onDeleteSession"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+        >{{item.title}}</view>
+      </view>
+    </scroll-view>
+
+    <view class="ac-list">
+      <view class="ac-row {{item.role === 'user' ? 'is-user' : 'is-ai'}}" wx:for="{{messages}}" wx:key="index" id="m{{index}}">
+        <view class="ac-seal is-sm" wx:if="{{item.role !== 'user'}}" style="background: {{role.tone}};" bindtap="onToggleProfile"><text>{{role.seal}}</text></view>
+        <view class="ac-col">
+          <text class="ac-who" wx:if="{{item.role !== 'user'}}">{{role.person}}</text>
+          <view class="ac-bubble {{item.role === 'user' ? 'is-user' : 'is-ai'}} {{item.isError ? 'is-error' : ''}}">
+            <view wx:if="{{item.pending}}" class="ac-pending">
+              <text>{{role.person}}在翻数据</text>
+              <view class="ac-dots" aria-hidden="true"><view class="ac-dot"></view><view class="ac-dot"></view><view class="ac-dot"></view></view>
+            </view>
+            <text wx:else user-select>{{item.text}}</text>
+          </view>
+          <view class="ac-acts" wx:if="{{item.role === 'assistant' && !item.pending}}">
+            <text class="ac-basis" wx:if="{{item.asOf}}">依据 {{item.asOf}} 的经营数据</text>
+            <text class="ac-act" data-text="{{item.text}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
+            <text class="ac-act" wx:if="{{index === messages.length - 1 && !sending}}" bindtap="onRetry" hover-class="tap-press" hover-stay-time="80">重试</text>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="ac-end"></view>
+  </scroll-view>
+
+  <view class="ac-foot">
+    <!-- 一键任务（提示词在云端，只出当前同事的） -->
+    <scroll-view class="ac-tasks" scroll-x enhanced show-scrollbar="{{false}}" wx:if="{{tasks.length}}">
+      <view class="ac-tasks-row">
+        <view class="ac-task" wx:for="{{tasks}}" wx:key="id" data-id="{{item.id}}" bindtap="runTask" hover-class="tap-press-soft" hover-stay-time="80">{{item.title}}</view>
+      </view>
+    </scroll-view>
+    <view class="ac-input-row">
+      <input
+        class="ac-input"
+        value="{{draft}}"
+        placeholder="问{{role.person}}…"
+        placeholder-class="ac-ph"
+        confirm-type="send"
+        cursor-spacing="24"
+        bindinput="onInput"
+        bindconfirm="send"
+        disabled="{{sending}}"
+      />
+      <view class="ac-send is-stop" wx:if="{{sending}}" bindtap="onStop" hover-class="tap-press" hover-stay-time="80">停止</view>
+      <view class="ac-send {{draft ? '' : 'is-dim'}}" wx:else bindtap="send" hover-class="tap-press" hover-stay-time="80">发送</view>
+    </view>
+    <view class="ac-foot-meta">
+      <text class="ac-foot-hint">与{{role.person}}的对话只存在这台手机上</text>
+      <text class="ac-clear" bindtap="onClear" wx:if="{{messages.length}}" hover-class="tap-press" hover-stay-time="80">清空</text>
+    </view>
+  </view>
+</view>
+
+<app-modal id="appModal" />

@@ -142,7 +142,7 @@ function letterOf(issue, asOf, now) {
     relatedId: `${issue.id}:${day}`,
     title: `${issue.person}（${issue.roleName}）：${issue.title}`,
     content: `${issue.detail}\n\n${asOf ? `（依据北京时间 ${asOf} 的经营数据）\n` : ''}—— ${issue.person}\n点开和我聊聊，我把细节和建议一起给你。`,
-    actionUrl: `subpackages/extra/ai-center/index?roleId=${issue.roleId}&ask=${encodeURIComponent(issue.ask)}`,
+    actionUrl: `subpackages/ai/ai-center/index?roleId=${issue.roleId}&ask=${encodeURIComponent(issue.ask)}`,
     category: 'ops',
     queue: 'workflow'
   }

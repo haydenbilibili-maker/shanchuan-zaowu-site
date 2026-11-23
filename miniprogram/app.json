@@ -260,6 +260,14 @@
         "partner/index",
         "statement/index"
       ]
+    },
+    {
+      "root": "subpackages/ai",
+      "name": "ai",
+      "pages": [
+        "ai-center/index",
+        "ai-debate/index"
+      ]
     }
   ],
   "requiredPrivateInfos": [

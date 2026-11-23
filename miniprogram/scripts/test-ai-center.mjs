@@ -18,21 +18,21 @@ const MP = join(dirname(fileURLToPath(import.meta.url)), '..')
 const ROOT = join(MP, '..')
 const P = {
   appJson: join(MP, 'app.json'),
-  roles: join(MP, 'subpackages/extra/ai-center/roles.js'),
-  page: join(MP, 'subpackages/extra/ai-center/index.js'),
-  wxml: join(MP, 'subpackages/extra/ai-center/index.wxml'),
+  roles: join(MP, 'subpackages/ai/ai-center/roles.js'),
+  page: join(MP, 'subpackages/ai/ai-center/index.js'),
+  wxml: join(MP, 'subpackages/ai/ai-center/index.wxml'),
   personas: join(MP, 'cloudfunctions/askMuseumGuide/staffPersonas.js'),
   ctx: join(MP, 'cloudfunctions/askMuseumGuide/staffContext.js'),
-  debate: join(MP, 'subpackages/extra/ai-debate/index.js'),
-  debateWxml: join(MP, 'subpackages/extra/ai-debate/index.wxml'),
-  tasksClient: join(MP, 'subpackages/extra/ai-center/tasks.js'),
+  debate: join(MP, 'subpackages/ai/ai-debate/index.js'),
+  debateWxml: join(MP, 'subpackages/ai/ai-debate/index.wxml'),
+  tasksClient: join(MP, 'subpackages/ai/ai-center/tasks.js'),
   tasksServer: join(MP, 'cloudfunctions/askMuseumGuide/staffTasks.js'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
   patrol: join(MP, 'cloudfunctions/askMuseumGuide/staffPatrol.js'),
   guardCopy: join(MP, 'cloudfunctions/askMuseumGuide/staffGuard.js'),
   guardCanon: join(MP, 'cloudfunctions/manageStaff/staffGuard.js'),
   fnConfig: join(MP, 'cloudfunctions/askMuseumGuide/config.json'),
-  view: join(MP, 'subpackages/extra/ai-center/centerView.js'),
+  view: join(MP, 'subpackages/ai/ai-center/centerView.js'),
   userJs: join(MP, 'pages/user/index.js')
 }
 
@@ -48,12 +48,20 @@ const ok = (name, cond, fails) => { if (!cond) fails.push(name) }
 function runChecks() {
   const fails = []
   const app = JSON.parse(read(P.appJson))
-  const extra = app.subpackages.find((s) => s.root === 'subpackages/extra')
-  ok('A1 页面注册在 extra 分包', !!extra && extra.pages.includes('ai-center/index'), fails)
+  // 2026-11-23 第七轮：迁到独立分包 subpackages/ai（extra 余量告急）；extra 原地址留跳转页，旧工作信息链接不失效
+  const extra = app.subpackages.find((s) => s.root === 'subpackages/ai')
+  const oldPack = app.subpackages.find((s) => s.root === 'subpackages/extra')
+  ok('A1 页面注册在独立分包 subpackages/ai；extra 原地址仍注册为跳转页', !!extra && extra.pages.includes('ai-center/index') &&
+    !!oldPack && oldPack.pages.includes('ai-center/index') && oldPack.pages.includes('ai-debate/index'), fails)
+  const stubs = ['ai-center', 'ai-debate'].map((n) => read(join(MP, `subpackages/extra/${n}/index.js`)))
+  ok('A1 旧地址跳转页：原样带参数 redirectTo 新地址、不含业务逻辑', stubs.every((t, i) => {
+    const n = ['ai-center', 'ai-debate'][i]
+    return t.includes(`wx.redirectTo({ url: \`/subpackages/ai/${n}/index`) && /encodeURIComponent\(options\[k\]\)/.test(t) && !/callFunction|setStorageSync/.test(t)
+  }), fails)
   const userJs = read(P.userJs)
   ok('A1 我的·工作台有 ai_center 磁贴，点了进 AI 智能中心',
     /key: 'ai_center'/.test(userJs) && /title: 'AI 智能中心'/.test(userJs) &&
-    /if \(key === 'ai_center'\) \{\s*\n\s*wx\.navigateTo\(\{ url: '\/subpackages\/extra\/ai-center\/index' \}\)/.test(userJs), fails)
+    /if \(key === 'ai_center'\) \{\s*\n\s*wx\.navigateTo\(\{ url: '\/subpackages\/ai\/ai-center\/index' \}\)/.test(userJs), fails)
 
   const client = loadCjsModule(P.roles, { transform })
   const server = loadCjsModule(P.personas, { transform })
@@ -188,7 +196,7 @@ function runChecks() {
   ok('A8 工作信息：标题带名字与岗位、正文落款并写明数据时间；进工作信息队列；同一问题每人每天一封；点开进 AI 中心对应同事且问题预填',
     L.title.indexOf(`${issues[0].person}（${issues[0].roleName}）：`) === 0 && /—— /.test(L.content) && /11-23 21:40/.test(L.content) &&
     L.category === 'ops' && L.queue === 'workflow' && L.relatedId === `${issues[0].id}:2026-11-23` &&
-    L.actionUrl.indexOf(`subpackages/extra/ai-center/index?roleId=${issues[0].roleId}&ask=`) === 0, fails)
+    L.actionUrl.indexOf(`subpackages/ai/ai-center/index?roleId=${issues[0].roleId}&ask=`) === 0, fails)
   const patrolSrc = read(P.patrol)
   ok('A8 巡检投递：试跑不发信；收件人只取超管；关掉开关定时不跑；改开关先记审计；定时只认「无 OPENID 的 Timer」；配置了每天两次触发器',
     /if \(!ctx\.dryRun\) \{/.test(patrolSrc) && /const recipients = dryRun \? \[\] : await resolveSuperAdminOpenids\(db\)/.test(fn) &&

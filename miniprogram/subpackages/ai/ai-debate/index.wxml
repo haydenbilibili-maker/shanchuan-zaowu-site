@@ -1,0 +1,78 @@
+<!-- 董事会辩论：选辩题 + 2–4 位董事，依次发言，主持人收口。提示词只在云端。 -->
+<view class="db-page">
+  <view class="db-head">
+    <text class="db-eyebrow">BOARD DEBATE</text>
+    <text class="db-title">让几位董事吵一架</text>
+    <text class="db-desc">选一个辩题、挑 2–4 位董事，他们依次发言，最后主持人给共识与建议。回答由 AI 生成，只作决策参考。</text>
+  </view>
+
+  <view class="db-block">
+    <text class="db-label">辩题</text>
+    <input
+      class="db-topic"
+      value="{{topic}}"
+      placeholder="例如：要不要把营业时间延长到 21:00"
+      placeholder-class="db-ph"
+      maxlength="60"
+      bindinput="onTopicInput"
+      disabled="{{running}}"
+    />
+    <view class="db-presets">
+      <text class="db-preset" wx:for="{{presets}}" wx:key="*this" data-text="{{item}}" bindtap="onPresetTap" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
+    </view>
+  </view>
+
+  <view class="db-block">
+    <view class="db-label-row">
+      <text class="db-label">董事</text>
+      <text class="db-count">{{members.length}} / 4</text>
+    </view>
+    <view class="db-members">
+      <view
+        class="db-member {{members.indexOf(item.id) >= 0 ? 'is-on' : ''}}"
+        wx:for="{{roles}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onMemberTap"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+      >
+        <text class="db-seal" style="background: {{item.tone}};">{{item.seal}}</text>
+        <text class="db-member-name">{{item.person}} · {{item.name}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="db-actions">
+    <view class="db-start {{canStart && !running ? '' : 'is-dim'}}" wx:if="{{!running}}" bindtap="startDebate" hover-class="tap-press" hover-stay-time="80">开始辩论</view>
+    <view class="db-start is-stop" wx:else bindtap="onStop" hover-class="tap-press" hover-stay-time="80">停止</view>
+    <text class="db-reset" wx:if="{{speeches.length && !running}}" bindtap="onReset">清空</text>
+  </view>
+
+  <view class="db-hint" wx:if="{{hint}}">{{hint}}</view>
+
+  <view class="db-progress" wx:if="{{progressText}}">
+    <view class="db-dot"></view>
+    <text>{{progressText}}</text>
+  </view>
+
+  <view class="db-timeline" wx:if="{{speeches.length}}">
+    <view class="db-item" wx:for="{{speeches}}" wx:key="index">
+      <view class="db-item-head">
+        <text class="db-seal" wx:if="{{item.seal}}" style="background: {{item.tone}};">{{item.seal}}</text>
+        <text class="db-item-emoji" wx:else>{{item.emoji}}</text>
+        <text class="db-item-name">{{item.name}}</text>
+        <text class="db-copy" data-text="{{item.text}}" bindtap="onCopy">复制</text>
+      </view>
+      <view class="db-bubble"><text user-select>{{item.text}}</text></view>
+    </view>
+  </view>
+
+  <view class="db-verdict" wx:if="{{verdict}}">
+    <view class="db-verdict-head">
+      <text class="db-verdict-title">主持人收口</text>
+      <text class="db-copy" data-text="{{verdict}}" bindtap="onCopy">复制</text>
+    </view>
+    <text class="db-verdict-text" user-select>{{verdict}}</text>
+  </view>
+</view>
