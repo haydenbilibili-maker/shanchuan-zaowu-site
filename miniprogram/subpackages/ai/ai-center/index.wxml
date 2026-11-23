@@ -71,6 +71,34 @@
           <switch class="ac-switch" checked="{{patrol ? patrol.enabled : true}}" disabled="{{patrolBusy}}" color="#C4A76C" bindchange="onPatrolToggle" />
         </view>
       </view>
+      <!-- 巡检设置（第七轮）：逐条启用 / 阈值 −+ / 保存；下面是最近几次巡检记录 -->
+      <view class="ac-set-toggle" wx:if="{{isSuper}}" bindtap="onToggleSettings" hover-class="tap-press" hover-stay-time="80">
+        <text>巡检设置与记录</text>
+        <text class="ac-set-arrow">{{settingsOpen ? '收起' : '展开'}}</text>
+      </view>
+      <view class="ac-settings" wx:if="{{isSuper && settingsOpen}}">
+        <view class="ac-rule {{item.muted ? 'is-muted' : ''}}" wx:for="{{rules}}" wx:key="id">
+          <view class="ac-rule-main">
+            <text class="ac-rule-who">{{item.person}}</text>
+            <text class="ac-rule-t">{{item.label}}</text>
+          </view>
+          <view class="ac-step" wx:if="{{item.limit !== null}}">
+            <text class="ac-step-btn" data-index="{{index}}" data-dir="-1" bindtap="onRuleStep" hover-class="tap-press" hover-stay-time="80">−</text>
+            <text class="ac-step-v">{{item.limit}}{{item.unit}}</text>
+            <text class="ac-step-btn" data-index="{{index}}" data-dir="1" bindtap="onRuleStep" hover-class="tap-press" hover-stay-time="80">＋</text>
+          </view>
+          <switch class="ac-switch" checked="{{!item.muted}}" color="#C4A76C" data-index="{{index}}" bindchange="onRuleMute" />
+        </view>
+        <view class="ac-set-save {{settingsDirty && !patrolBusy ? '' : 'is-off'}}" bindtap="onSaveSettings" hover-class="tap-press" hover-stay-time="80" aria-role="button">保存设置</view>
+        <view class="ac-history" wx:if="{{historyRows.length}}">
+          <text class="ac-history-k">最近巡检</text>
+          <view class="ac-history-row" wx:for="{{historyRows}}" wx:key="key">
+            <text class="ac-history-when">{{item.when}} · {{item.by}}</text>
+            <text class="ac-history-t">{{item.text}}</text>
+          </view>
+        </view>
+        <text class="ac-issues-empty" wx:else>还没有巡检记录。</text>
+      </view>
     </view>
     <view class="ac-tip" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
@@ -119,6 +147,7 @@
         <view class="ac-seal is-sm" wx:if="{{item.role !== 'user'}}" style="background: {{role.tone}};" bindtap="onToggleProfile"><text>{{role.seal}}</text></view>
         <view class="ac-col">
           <text class="ac-who" wx:if="{{item.role !== 'user'}}">{{role.person}}</text>
+          <text class="ac-relay" wx:if="{{item.relayFrom}}">{{item.relayFrom}} 转来的问题</text>
           <view class="ac-bubble {{item.role === 'user' ? 'is-user' : 'is-ai'}} {{item.isError ? 'is-error' : ''}}">
             <view wx:if="{{item.pending}}" class="ac-pending">
               <text>{{role.person}}在翻数据</text>
@@ -130,6 +159,13 @@
             <text class="ac-basis" wx:if="{{item.asOf}}">依据 {{item.asOf}} 的经营数据</text>
             <text class="ac-act" data-text="{{item.text}}" bindtap="onCopy" hover-class="tap-press" hover-stay-time="80">复制</text>
             <text class="ac-act" wx:if="{{index === messages.length - 1 && !sending}}" bindtap="onRetry" hover-class="tap-press" hover-stay-time="80">重试</text>
+          </view>
+          <!-- 第七轮：有用 / 没用（只记本机）；没用了可「换个说法」；「请…也看看」转给另一位同事 -->
+          <view class="ac-acts is-sub" wx:if="{{item.role === 'assistant' && !item.pending && !item.isError}}">
+            <text class="ac-vote {{item.vote === 'up' ? 'is-on' : ''}}" data-index="{{index}}" data-vote="up" bindtap="onVote" hover-class="tap-press" hover-stay-time="80">有用</text>
+            <text class="ac-vote {{item.vote === 'down' ? 'is-on' : ''}}" data-index="{{index}}" data-vote="down" bindtap="onVote" hover-class="tap-press" hover-stay-time="80">没用</text>
+            <text class="ac-act" wx:if="{{item.vote === 'down' && index === messages.length - 1 && !sending}}" bindtap="onRephrase" hover-class="tap-press" hover-stay-time="80">换个说法</text>
+            <text class="ac-act" data-index="{{index}}" bindtap="onHandoff" hover-class="tap-press" hover-stay-time="80">请别人也看看</text>
           </view>
         </view>
       </view>

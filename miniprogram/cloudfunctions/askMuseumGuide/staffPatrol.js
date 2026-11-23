@@ -32,10 +32,11 @@ function money(n) {
 const RULES = [
   {
     id: 'orders_drop', roleId: 'store_manager', level: 'high',
-    test: (s) => {
+    param: { label: '已付订单比前一周降幅达到', def: 30, min: 10, max: 80, step: 5, unit: '%' },
+    test: (s, limit) => {
       const t = s.trend
       const p = t ? changePct(t.last7, t.prev7) : null
-      return t && t.prev7 >= 5 && p != null && p <= -30 ? { p, t } : null
+      return t && t.prev7 >= 5 && p != null && p <= -limit ? { p, t } : null
     },
     title: ({ p }) => `近 7 天已付订单少了 ${Math.abs(p)}%`,
     detail: ({ p, t }) => `我对了一下这两周的单：近 7 天已付 ${t.last7} 笔，前 7 天是 ${t.prev7} 笔，掉了 ${Math.abs(p)}%。先别急着打折，我想先看看是进店的人少了，还是进来了没成交。建议这两天先在门口和收银各记一下客流。`,
@@ -43,10 +44,11 @@ const RULES = [
   },
   {
     id: 'low_stock', roleId: 'procurement', level: 'warn',
-    test: (s) => {
+    param: { label: '库存 ≤3 的在售藏品至少', def: 5, min: 2, max: 50, step: 1, unit: '件' },
+    test: (s, limit) => {
       const p = s.products
       if (!p || p.onSale < 10) return null
-      const need = Math.max(5, Math.ceil(p.onSale * 0.15))
+      const need = Math.max(limit, Math.ceil(p.onSale * 0.15))
       return p.lowStock >= need ? { p } : null
     },
     title: ({ p }) => `${p.lowStock} 件在售藏品快见底了`,
@@ -55,43 +57,48 @@ const RULES = [
   },
   {
     id: 'ops_open', roleId: 'procurement', level: 'warn',
-    test: (s) => (s.ops && s.ops.openCount >= 8 ? { o: s.ops } : null),
+    param: { label: '未结的店内采购单达到', def: 8, min: 3, max: 30, step: 1, unit: '张' },
+    test: (s, limit) => (s.ops && s.ops.openCount >= limit ? { o: s.ops } : null),
     title: ({ o }) => `${o.openCount} 张店内采购单还没结`,
     detail: ({ o }) => `近 30 天的店内采购里，还有 ${o.openCount} 张单停在下单、待付或待发的状态（合计 ¥${money(o.amount)}）。单子拖久了，到货和账期都容易对不上，建议这周集中跟一次。`,
     ask: '店内采购未结的单比较多，怎么排一个清单把它们跟完？'
   },
   {
     id: 'refund_high', roleId: 'cfo', level: 'high',
-    test: (s) => {
+    param: { label: '近 30 天退款占实付达到', def: 8, min: 3, max: 30, step: 1, unit: '%' },
+    test: (s, limit) => {
       const o = s.orders
       if (!o || o.gmv < 1000) return null
       const rate = o.refund / o.gmv
-      return rate >= 0.08 ? { o, rate } : null
+      return rate >= limit / 100 ? { o, rate, limit } : null
     },
     title: ({ rate }) => `近 30 天退款占实付 ${Math.round(rate * 100)}%`,
-    detail: ({ o, rate }) => `近 30 天实付 ¥${money(o.gmv)}，退款 ¥${money(o.refund)}，占 ${Math.round(rate * 100)}%，比我心里的警戒线（8%）高。退款会直接吃掉现金流，想先弄清楚是哪几类藏品、哪种原因退得多。`,
+    detail: ({ o, rate, limit }) => `近 30 天实付 ¥${money(o.gmv)}，退款 ¥${money(o.refund)}，占 ${Math.round(rate * 100)}%，比我心里的警戒线（${limit}%）高。退款会直接吃掉现金流，想先弄清楚是哪几类藏品、哪种原因退得多。`,
     ask: '退款占比偏高，帮我列一下排查顺序和要看的数据。'
   },
   {
     id: 'leave_pending', roleId: 'hr_manager', level: 'warn',
-    test: (s) => (s.hr && s.hr.pendingLeaves >= 3 ? { h: s.hr } : null),
+    param: { label: '待审批请假达到', def: 3, min: 1, max: 20, step: 1, unit: '条' },
+    test: (s, limit) => (s.hr && s.hr.pendingLeaves >= limit ? { h: s.hr } : null),
     title: ({ h }) => `${h.pendingLeaves} 条请假还在等审批`,
     detail: ({ h }) => `现在有 ${h.pendingLeaves} 条请假申请还没批。批晚了，排班就容易临时补人，同事心里也不踏实。方便的时候集中处理一下，我可以帮你把这几天的人手先排一排。`,
     ask: '有几条请假待审批，帮我看看这几天的排班怎么补位。'
   },
   {
     id: 'attendance', roleId: 'hr_manager', level: 'warn',
-    test: (s) => (s.hr && s.hr.late + s.hr.early >= 10 ? { h: s.hr } : null),
+    param: { label: '本月迟到早退合计达到', def: 10, min: 3, max: 60, step: 1, unit: '次' },
+    test: (s, limit) => (s.hr && s.hr.late + s.hr.early >= limit ? { h: s.hr } : null),
     title: ({ h }) => `本月迟到早退已有 ${h.late + h.early} 次`,
     detail: ({ h }) => `本月考勤里，迟到 ${h.late} 次、早退 ${h.early} 次。我不想点谁的名，更想先看看是不是排班或通勤出了问题。建议先把班次时间和高峰时段对一下。`,
     ask: '本月迟到早退偏多，先从排班还是制度入手？'
   },
   {
     id: 'members_drop', roleId: 'marketing', level: 'warn',
-    test: (s) => {
+    param: { label: '新会员比前一周降幅达到', def: 40, min: 10, max: 80, step: 5, unit: '%' },
+    test: (s, limit) => {
       const u = s.users
       const p = u ? changePct(u.last7, u.prev7) : null
-      return u && u.prev7 >= 5 && p != null && p <= -40 ? { u, p } : null
+      return u && u.prev7 >= 5 && p != null && p <= -limit ? { u, p } : null
     },
     title: ({ p }) => `新会员比前一周少了 ${Math.abs(p)}%`,
     detail: ({ u, p }) => `近 7 天新增会员 ${u.last7} 人，前 7 天是 ${u.prev7} 人，少了 ${Math.abs(p)}%。拉新一断，后面的复购都会跟着淡。我想这周先补一条能让熟客愿意转发的内容。`,
@@ -106,13 +113,57 @@ const RULES = [
   }
 ]
 
-/** 经营快照 → 问题清单（按严重程度排序，最多 MAX_ISSUES 条）。纯函数。 */
-function findIssues(snap) {
+/**
+ * 阈值归一（2026-11-23 第七轮「巡检可配置」）：只认 RULES 里有 param 的规则、整数、夹在 [min, max]；
+ * 其它一律回默认值。超管页改的就是这里的 limits。
+ */
+function limitOf(rule, limits) {
+  if (!rule.param) return null
+  const raw = limits && Object.prototype.hasOwnProperty.call(limits, rule.id) ? Number(limits[rule.id]) : NaN
+  if (!Number.isInteger(raw)) return rule.param.def
+  return Math.min(rule.param.max, Math.max(rule.param.min, raw))
+}
+
+/** 配置入参：静音的规则 id（只认存在的）+ 阈值（逐条归一）；返回可直接存的干净配置 */
+function normalizePatrolSettings(input) {
+  const src = input || {}
+  const ids = RULES.map((r) => r.id)
+  const muted = (Array.isArray(src.muted) ? src.muted : []).map(String).filter((id, i, arr) => ids.indexOf(id) >= 0 && arr.indexOf(id) === i)
+  const limits = {}
+  RULES.forEach((r) => { if (r.param) limits[r.id] = limitOf(r, src.limits) })
+  return { muted, limits }
+}
+
+/** 给超管页的规则清单：归属同事 / 说明 / 当前阈值 / 是否静音 */
+function ruleViews(settings) {
+  const cfg = normalizePatrolSettings(settings)
+  return RULES.map((r) => {
+    const role = STAFF_ROLES[r.roleId]
+    return {
+      id: r.id,
+      roleId: r.roleId,
+      person: role ? role.person : '',
+      level: r.level,
+      label: r.param ? r.param.label : '近 7 天一笔已付都没有（前 7 天 ≥ 3 笔）',
+      unit: r.param ? r.param.unit : '',
+      min: r.param ? r.param.min : null,
+      max: r.param ? r.param.max : null,
+      step: r.param ? r.param.step : null,
+      limit: r.param ? cfg.limits[r.id] : null,
+      muted: cfg.muted.indexOf(r.id) >= 0
+    }
+  })
+}
+
+/** 经营快照 →（按超管配置）问题清单（按严重程度排序，最多 MAX_ISSUES 条）。纯函数。 */
+function findIssues(snap, settings) {
   const s = snap || {}
+  const cfg = normalizePatrolSettings(settings)
   const out = []
   RULES.forEach((r) => {
+    if (cfg.muted.indexOf(r.id) >= 0) return
     let hit = null
-    try { hit = r.test(s) } catch (e) { hit = null }
+    try { hit = r.test(s, limitOf(r, cfg.limits)) } catch (e) { hit = null }
     if (!hit) return
     const role = STAFF_ROLES[r.roleId]
     out.push({
@@ -148,13 +199,26 @@ function letterOf(issue, asOf, now) {
   }
 }
 
+/** 巡检记录：最近 HISTORY_MAX 次（时间 / 触发方式 / 发现了哪些规则 / 发出几封），新的在前；脏数据丢掉 */
+const HISTORY_MAX = 14
+function historyOf(list) {
+  const ids = RULES.map((r) => r.id)
+  return (Array.isArray(list) ? list : [])
+    .filter((h) => h && Number(h.at) > 0)
+    .map((h) => ({ at: Number(h.at), by: h.by === 'timer' ? 'timer' : 'manual', ids: (Array.isArray(h.ids) ? h.ids : []).map(String).filter((id) => ids.indexOf(id) >= 0), sent: Number(h.sent) || 0 }))
+    .sort((a, b) => b.at - a.at)
+    .slice(0, HISTORY_MAX)
+}
+
 async function readPatrolConfig(db) {
   try {
     const r = await db.collection(CONFIG_COLLECTION).doc(PATROL_DOC).get()
     const d = (r && r.data) || {}
-    return { enabled: d.enabled !== false, lastRunAt: Number(d.lastRunAt) || 0, lastIssues: Number(d.lastIssues) || 0, lastSent: Number(d.lastSent) || 0 }
+    const st = normalizePatrolSettings(d)
+    return { enabled: d.enabled !== false, lastRunAt: Number(d.lastRunAt) || 0, lastIssues: Number(d.lastIssues) || 0, lastSent: Number(d.lastSent) || 0, muted: st.muted, limits: st.limits, history: historyOf(d.history) }
   } catch (e) {
-    return { enabled: true, lastRunAt: 0, lastIssues: 0, lastSent: 0 }
+    const st = normalizePatrolSettings(null)
+    return { enabled: true, lastRunAt: 0, lastIssues: 0, lastSent: 0, muted: st.muted, limits: st.limits, history: [] }
   }
 }
 
@@ -174,7 +238,7 @@ async function writePatrolConfig(db, patch) {
  */
 async function runPatrol(ctx) {
   const now = ctx.now || Date.now()
-  const issues = findIssues(ctx.snapshot)
+  const issues = findIssues(ctx.snapshot, ctx.settings)
   let sent = 0
   if (!ctx.dryRun) {
     for (const issue of issues) {
@@ -186,9 +250,13 @@ async function runPatrol(ctx) {
         } catch (e) { /* 少一封不影响其它 */ }
       }
     }
-    try { await writePatrolConfig(ctx.db, { lastRunAt: now, lastIssues: issues.length, lastSent: sent }) } catch (e) { /* ignore */ }
+    try {
+      const prev = ctx.settings && Array.isArray(ctx.settings.history) ? ctx.settings.history : []
+      const history = historyOf([{ at: now, by: ctx.by, ids: issues.map((i) => i.id), sent }].concat(prev))
+      await writePatrolConfig(ctx.db, { lastRunAt: now, lastIssues: issues.length, lastSent: sent, history })
+    } catch (e) { /* ignore */ }
   }
   return { issues, sent }
 }
 
-module.exports = { RULES, findIssues, letterOf, runPatrol, readPatrolConfig, writePatrolConfig, bjDayText, EVENT_TYPE, PATROL_DOC, CONFIG_COLLECTION, MAX_ISSUES }
+module.exports = { RULES, limitOf, normalizePatrolSettings, ruleViews, historyOf, HISTORY_MAX, findIssues, letterOf, runPatrol, readPatrolConfig, writePatrolConfig, bjDayText, EVENT_TYPE, PATROL_DOC, CONFIG_COLLECTION, MAX_ISSUES }

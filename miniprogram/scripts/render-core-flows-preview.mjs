@@ -931,6 +931,10 @@ const SCENES = [
     const T = loadCjsModule(join(MP, 'subpackages/ai/ai-center/tasks.js'))
     const V = loadCjsModule(join(MP, 'subpackages/ai/ai-center/centerView.js'))
     const role = R.byId('procurement')
+    const PT = loadCjsModule(join(MP, 'cloudfunctions/askMuseumGuide/staffPatrol.js'))
+    const rules = PT.ruleViews({ muted: ['attendance'], limits: { orders_drop: 25 } })
+    const now = Date.UTC(2026, 10, 23, 9, 30)
+    const historyRows = V.historyRows([{ at: now, by: 'timer', ids: ['orders_drop', 'low_stock'], sent: 2 }, { at: now - 16 * 3600000, by: 'manual', ids: [], sent: 0 }], rules, 5)
     const issues = [
       { id: 'orders_drop', roleId: 'store_manager', person: '林晓棠', roleName: '门店运营经理', level: 'high', title: '近 7 天已付订单少了 33%', ask: 'x' },
       { id: 'low_stock', roleId: 'procurement', person: '周砚', roleName: '采购专家', level: 'warn', title: '9 件在售藏品快见底了', ask: 'x' }
@@ -940,10 +944,11 @@ const SCENES = [
       pulseCells: V.pulseCells({ orders7: 8, ordersChange: -33, gmv7: 12680, today: 1, onSale: 46, lowStock: 9, members7: 14, membersChange: 27 }),
       asOf: '11-23 21:40', issues, issueCount: V.issueCountByRole(issues), isSuper: true, patrol: { enabled: true }, patrolBusy: false, forbidden: '', tipText: '',
       profileOpen: false, renameId: '', renameText: '', draft: '', sending: false, scrollTo: '', canRetry: true,
+      rules, historyRows, settingsOpen: true, settingsDirty: true,
       sessions: [{ id: 's1', title: '哪些藏品最该先补货？' }, { id: 's2', title: '易碎品运输' }], activeId: 's1',
       messages: [
-        { role: 'user', text: '哪些藏品最该先补货？' },
-        { role: 'assistant', asOf: '11-23 21:40', text: '先补那 9 件快见底的，但别一口气全补。\n\n我看了一下：在售 46 件里有 9 件库存只剩 3 件以内，近 7 天已付 8 笔、比前一周少了三成，说明这周不是补货压力最大的时候。\n\n我的建议：一，先补近 30 天卖过两次以上的那几件；二，易碎的玻璃罩类按「到货破损率」挑供应商，而不是只看单价；三，补不上的在详情页标「少量」。下周再看一次低库存数，降到 5 件以内就算稳住了。' }
+        { role: 'user', text: '哪些藏品最该先补货？', relayFrom: '林晓棠' },
+        { role: 'assistant', asOf: '11-23 21:40', text: '先补那 9 件快见底的，但别一口气全补。\n\n我看了一下：在售 46 件里有 9 件库存只剩 3 件以内，近 7 天已付 8 笔、比前一周少了三成，说明这周不是补货压力最大的时候。\n\n我的建议：一，先补近 30 天卖过两次以上的那几件；二，易碎的玻璃罩类按「到货破损率」挑供应商，而不是只看单价；三，补不上的在详情页标「少量」。下周再看一次低库存数，降到 5 件以内就算稳住了。', vote: 'down' }
       ]
     }
   })() },

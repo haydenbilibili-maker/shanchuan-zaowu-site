@@ -78,7 +78,7 @@ function runChecks() {
   ok('A3 云端：mode=staff 分发 + roleId 白名单 + 缺 Key 兜底 + 问答都过内容安全',
     /event\.mode === 'staff'\) return staffChat/.test(fn) && /ROLE_IDS\.indexOf\(roleId\) < 0/.test(fn) &&
     /if \(!apiKey\) return \{ success: false, error_type: 'ai_service', msg: 'AI 服务还没配置，请联系超管' \}\n\n  \/\/ 经营上下文/.test(fn) &&
-    /const sec = await checkText\(openid, question, 2\)/.test(fn) && !/db\.collection\([^)]*\)\.(add|set|update|remove)\(/.test(fn.slice(fn.indexOf('async function staffChat'), fn.indexOf('exports.main'))), fails)
+    /const sec = await checkText\(openid, relay \? `\$\{relay\.text\}\\n\$\{question\}` : question, 2\)/.test(fn) && !/db\.collection\([^)]*\)\.(add|set|update|remove)\(/.test(fn.slice(fn.indexOf('async function staffChat'), fn.indexOf('exports.main'))), fails)
 
   const page = read(P.page)
   ok('A4 会话只存本机（v2 多会话、按角色分桶、≤20 条会话 / 每条 ≤80 条消息），不上云，兼容 v1 迁移',
@@ -87,7 +87,7 @@ function runChecks() {
     !/db\.collection|\.add\(/.test(page), fails)
   ok('A4 基础操作：新建 / 切换 / 删除会话 + 复制 / 重试 / 停止',
     /onNewSession\(\)/.test(page) && /onSessionTap\(/.test(page) && /onDeleteSession\(/.test(page) &&
-    /onCopy\(/.test(page) && /onRetry\(\)/.test(page) && /onStop\(\)/.test(page) && /this\._abort/.test(page), fails)
+    /onCopy\(/.test(page) && /\n  onRetry\((opts)?\) \{/.test(page) && /onStop\(\)/.test(page) && /this\._abort/.test(page), fails)
   const ctxSrc = read(P.ctx)
   const C = loadCjsModule(P.ctx, { transform })
   const orders = C.summarizeOrders([
@@ -201,7 +201,7 @@ function runChecks() {
   ok('A8 巡检投递：试跑不发信；收件人只取超管；关掉开关定时不跑；改开关先记审计；定时只认「无 OPENID 的 Timer」；配置了每天两次触发器',
     /if \(!ctx\.dryRun\) \{/.test(patrolSrc) && /const recipients = dryRun \? \[\] : await resolveSuperAdminOpenids\(db\)/.test(fn) &&
     /if \(!cfg\.enabled\) return \{ success: true, skipped: 'disabled' \}/.test(fn) &&
-    fn.indexOf("collection('admin_operation_logs').add") < fn.indexOf('await writePatrolConfig(db, { enabled') &&
+    fn.indexOf("collection('admin_operation_logs').add") >= 0 && fn.indexOf("collection('admin_operation_logs').add") < fn.indexOf('await writePatrolConfig(db, { enabled') &&
     /if \(!OPENID && isTimerEvent\(event\)\) return timerPatrol\(\)/.test(fn) &&
     /"name": "staffPatrolRun"/.test(read(P.fnConfig)) && /"type": "timer"/.test(read(P.fnConfig)), fails)
   const V = loadCjsModule(P.view, { transform })
@@ -215,6 +215,40 @@ function runChecks() {
     /mode: 'staffBrief'/.test(page) && /if \(ask\) this\.setData\(\{ draft: ask\.slice\(0, 200\) \}\)/.test(page) && !/if \(ask\) this\.send\(\)/.test(page) &&
     /<view class="ac-patrol" wx:if="\{\{isSuper\}\}">/.test(wxml) && /bindtap="onPatrolRun"/.test(wxml) && /bindchange="onPatrolToggle"/.test(wxml) &&
     /'重命名', '复制全文', '删除这条会话'/.test(page) && /class="ac-basis" wx:if="\{\{item\.asOf\}\}"/.test(wxml) && /class="ac-seal/.test(wxml) && !/item\.emoji/.test(wxml), fails)
+
+  /* ---------------- A9 第七轮（2026-11-23）：巡检可配置可追溯 / 转交与换个说法 ---------------- */
+  const ns = PT.normalizePatrolSettings({ muted: ['low_stock', 'nope', 'low_stock'], limits: { orders_drop: 999, low_stock: '3.5', refund_high: 5 } })
+  ok('A9 巡检设置归一：未知规则丢掉、静音去重、阈值取整并夹在上下限、缺省回默认',
+    JSON.stringify(ns.muted) === '["low_stock"]' && ns.limits.orders_drop === 80 && ns.limits.low_stock === 5 && ns.limits.refund_high === 5 && ns.limits.leave_pending === 3 && !('no_orders' in ns.limits), fails)
+  const sn = { trend: { last7: 7, prev7: 10 }, products: { onSale: 40, lowStock: 6 } }
+  ok('A9 判定按配置：静音的规则不报、阈值调高后不报',
+    PT.findIssues(sn).length === 2 && PT.findIssues(sn, { muted: ['low_stock'] }).map((i) => i.id).join() === 'orders_drop' &&
+    PT.findIssues(sn, { limits: { orders_drop: 35, low_stock: 7 } }).length === 0, fails)
+  const hist = PT.historyOf(Array.from({ length: 20 }, (_, i) => ({ at: i + 1, by: i % 2 ? 'timer' : 'x', ids: ['low_stock', 'bad'], sent: 1 })))
+  ok('A9 巡检记录：新的在前、最多 14 条、触发方式只认定时 / 手动、未知规则丢掉',
+    hist.length === PT.HISTORY_MAX && PT.HISTORY_MAX === 14 && hist[0].at === 20 && hist.every((h) => h.by === 'timer' || h.by === 'manual') && hist.every((h) => h.ids.join() === 'low_stock') &&
+    /const history = historyOf\(\[\{ at: now, by: ctx\.by/.test(patrolSrc) && /patrolOnce\(false, 'timer'\)/.test(fn) && /patrolOnce\(false, 'manual'\)/.test(fn), fails)
+  ok('A9 页面提醒与巡检同一份配置；改设置先审计再写；超管才拿到规则清单',
+    /issues: findIssues\(snap, cfg\)/.test(fn) && /const settings = await readPatrolConfig\(db\)/.test(fn) &&
+    // indexOf 必须先判 ≥ 0：审计语句被删时 -1 也「小于」写入位置，旧写法会被绕过（错题本：守卫判据自身错误）
+    [["await auditPatrol(gate, openid, 'staff_patrol_config', next)", 'await writePatrolConfig(db, { muted: next.muted'],
+      ["await auditPatrol(gate, openid, 'staff_patrol_toggle', { enabled })", 'await writePatrolConfig(db, { enabled']]
+      .every(([a, w]) => fn.indexOf(a) >= 0 && fn.indexOf(a) < fn.indexOf(w)) &&
+    /if \(isSuper\) Object\.assign\(out, \{ patrol: cfg, rules: ruleViews\(cfg\) \}\)/.test(fn), fails)
+  ok('A9 转交：来源必须是另一位真实同事（名字按 roleId 取）、看法 ≤400 字、放在用户消息不进 system、与问题一起过内容安全；换个说法只追加一句语气要求',
+    /if \(ROLE_IDS\.indexOf\(fromId\) < 0 \|\| fromId === roleId\) return null/.test(fn) && /return \{ from: displayOf\(fromId\), text \}/.test(fn) && /\.slice\(0, 400\)/.test(fn) &&
+    /const messages = \[\{ role: 'system', content: system \}\]\.concat\(history, \[\{ role: 'user', content: userContent \}\]\)/.test(fn) &&
+    !/system \+?= .*relay|relay\.text[^\n]*system/.test(fn) && /event\.rephrase === true/.test(fn), fails)
+  ok('A9 页面纯函数：巡检记录换成同事名字、阈值按步长夹边、设置回存、转交取最近的问题且一键任务不转',
+    V.historyRows([{ at: 1, by: 'timer', ids: ['orders_drop', 'low_stock'], sent: 2 }], [{ id: 'orders_drop', person: '林晓棠' }, { id: 'low_stock', person: '周砚' }])[0].text === '发现 2 项（林晓棠、周砚）· 发出 2 封' &&
+    V.stepLimit({ limit: 30, step: 5, min: 10, max: 32 }, 1) === 32 && V.stepLimit({ limit: 10, step: 5, min: 10, max: 80 }, -1) === 10 &&
+    JSON.stringify(V.settingsOf([{ id: 'a', muted: true, limit: 3 }, { id: 'b', muted: false, limit: null }])) === '{"muted":["a"],"limits":{"a":3}}' &&
+    V.questionBefore([{ role: 'user', text: 'q' }, { role: 'assistant', text: 'a' }], 1) === 'q' && V.questionBefore([{ role: 'user', text: 't', taskId: 'x' }, { role: 'assistant', text: 'a' }], 1) === '', fails)
+  ok('A9 页面接线：设置面板只给超管、存设置走 op config；有用 / 没用只记本机；没用才出换个说法；转交带 relay 与来源标签',
+    /<view class="ac-settings" wx:if="\{\{isSuper && settingsOpen\}\}">/.test(wxml) && /op: 'config' \}, V\.settingsOf\(this\.data\.rules\)/.test(page) &&
+    /bindtap="onVote"/.test(wxml) && !/callFunction[^\n]*vote/.test(page) &&
+    /wx:if="\{\{item\.vote === 'down' && index === messages\.length - 1 && !sending\}\}" bindtap="onRephrase"/.test(wxml) && /this\.onRetry\(\{ rephrase: true \}\)/.test(page) &&
+    /bindtap="onHandoff"/.test(wxml) && /relay: \{ fromRoleId: from\.id/.test(page) && /class="ac-relay" wx:if="\{\{item\.relayFrom\}\}"/.test(wxml), fails)
   return fails
 }
 
@@ -241,12 +275,21 @@ if (process.argv.includes('--selftest')) {
     { name: '巡检不要求超管', file: P.fn, find: 'staffGate(openid, { requireSuperAdmin: true })', replace: 'staffGate(openid)' },
     { name: '全局一句没进上下文', file: P.ctx, find: '  const g = globalLine(snap)\n  if (g) lines.push(g)\n', replace: '' },
     { name: '小样本也报环比', file: P.ctx, find: '  if (!(prev >= 3)) return null\n', replace: '' },
-    { name: '低库存阈值放宽到 1 件', file: P.patrol, find: 'const need = Math.max(5, Math.ceil(p.onSale * 0.15))', replace: 'const need = 1' },
+    { name: '低库存阈值放宽到 1 件', file: P.patrol, find: 'const need = Math.max(limit, Math.ceil(p.onSale * 0.15))', replace: 'const need = 1' },
     { name: '工作信息不按天去重', file: P.patrol, find: 'relatedId: `${issue.id}:${day}`', replace: 'relatedId: `${issue.id}:${now}`' },
     { name: '试跑也发信', file: P.patrol, find: '  if (!ctx.dryRun) {', replace: '  if (true) {' },
     { name: '定时巡检可被客户端伪造', file: P.fn, find: 'if (!OPENID && isTimerEvent(event)) return timerPatrol()', replace: 'if (isTimerEvent(event)) return timerPatrol()' },
     { name: '工作信息带来的问题自动发出', file: P.page, find: 'if (ask) this.setData({ draft: ask.slice(0, 200) })', replace: 'if (ask) this.setData({ draft: ask.slice(0, 200) }, () => this.send())\n    if (ask) this.send()' },
     { name: '非超管也有巡检按钮', file: P.wxml, find: '<view class="ac-patrol" wx:if="{{isSuper}}">', replace: '<view class="ac-patrol">' },
+    { name: '静音的规则照样报', file: P.patrol, find: '    if (cfg.muted.indexOf(r.id) >= 0) return\n', replace: '' },
+    { name: '阈值不夹边', file: P.patrol, find: '  return Math.min(rule.param.max, Math.max(rule.param.min, raw))', replace: '  return raw' },
+    { name: '巡检记录不封顶', file: P.patrol, find: '    .slice(0, HISTORY_MAX)\n', replace: '\n' },
+    { name: '页面提醒不按配置', file: P.fn, find: 'issues: findIssues(snap, cfg)', replace: 'issues: findIssues(snap)' },
+    { name: '改设置不审计', file: P.fn, find: "      await auditPatrol(gate, openid, 'staff_patrol_config', next)\n", replace: '' },
+    { name: '转交给自己也收', file: P.fn, find: 'if (ROLE_IDS.indexOf(fromId) < 0 || fromId === roleId) return null', replace: 'if (ROLE_IDS.indexOf(fromId) < 0) return null' },
+    { name: '转交看法进 system', file: P.fn, find: "const messages = [{ role: 'system', content: system }].concat(history, [{ role: 'user', content: userContent }])", replace: "const messages = [{ role: 'system', content: system + userContent }].concat(history, [{ role: 'user', content: question }])" },
+    { name: '一键任务也转交', file: P.view, find: "return m.taskId ? '' : String(m.text || '')", replace: "return String(m.text || '')" },
+    { name: '非超管也有设置面板', file: P.wxml, find: '<view class="ac-settings" wx:if="{{isSuper && settingsOpen}}">', replace: '<view class="ac-settings" wx:if="{{settingsOpen}}">' },
     { name: '脉搏读不到编 0', file: P.view, find: "return n == null || !Number.isFinite(Number(n)) ? '—' : String(n)", replace: 'return String(n || 0)' }
   ].filter((x) => x.find !== '')
   let bad = 0

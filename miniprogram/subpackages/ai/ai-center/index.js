@@ -10,6 +10,9 @@
  *   - 超管可「立即巡检并通知我」、开关自动巡检（mode:'staffPatrol'，问题以同事口吻发到工作信息）；
  *   - 回答下方写明「依据几点的经营数据」；从工作信息点进来（?roleId=&ask=）直接落到那位同事、问题预填。
  *
+ * 第七轮（2026-11-23）：迁到独立分包 subpackages/ai；超管「巡检设置」（逐条启用 / 阈值 / 最近巡检记录）；
+ *   回答「有用 / 没用」，没用可「换个说法」（rephrase）；「请…也看看」把问题连同这位同事的看法转给另一位（relay）。
+ *
  * 存储：按角色分桶 `ai_center_v2_<roleId>` = { activeId, list: [{ id, title, at, messages }] }
  *   - 只存本机，不上云；
  *   - 兼容上一版单会话（`ai_center_session_v1_<roleId>` 的数组），首次读取时迁移成一条会话。
@@ -121,7 +124,12 @@ Page({
     /** 会话重命名（行内输入，不另起弹层） */
     renameId: '',
     renameText: '',
-    tipText: ''
+    tipText: '',
+    /** 超管 · 巡检设置（第七轮） */
+    rules: [],
+    historyRows: [],
+    settingsOpen: false,
+    settingsDirty: false
   },
 
   onLoad(options) {
@@ -162,6 +170,7 @@ Page({
         patrol: body.patrol || null,
         forbidden: ''
       })
+      if (body.isSuper) this.applyPatrol(body.patrol, body.rules)
     } catch (e) { /* 脉搏读不到不影响对话 */ }
   },
 
@@ -183,6 +192,7 @@ Page({
       if (!body.success) throw new Error(body.msg || '巡检失败')
       const n = (body.issues || []).length
       this.setData({ patrol: body.patrol || this.data.patrol, issues: body.issues || [], issueCount: V.issueCountByRole(body.issues) })
+      this.applyPatrol(body.patrol, body.rules)
       this.showTip(n ? `巡检完成：发现 ${n} 个问题，已发 ${body.sent || 0} 封工作信息（同一问题每天只发一次）` : '巡检完成：暂时没发现需要提醒的问题')
     } catch (err) {
       this.showTip(`没巡检成：${(err && err.message) || '稍后再试'}`)
@@ -203,6 +213,51 @@ Page({
     } catch (err) {
       this.setData({ patrol: Object.assign({}, this.data.patrol, { enabled: !enabled }) })
       this.showTip(`没改成：${(err && err.message) || '稍后再试'}`)
+    }
+    this.setData({ patrolBusy: false })
+  },
+
+  /** 巡检配置 → 页面（规则清单 + 最近巡检记录）；有未保存的改动时不覆盖规则 */
+  applyPatrol(patrol, rules) {
+    const patch = { historyRows: V.historyRows(patrol && patrol.history, rules || this.data.rules, 5) }
+    if (Array.isArray(rules) && !this.data.settingsDirty) patch.rules = rules
+    this.setData(patch)
+  },
+
+  onToggleSettings() {
+    this.setData({ settingsOpen: !this.data.settingsOpen })
+  },
+
+  onRuleStep(e) {
+    const i = Number(e.currentTarget.dataset.index)
+    const r = this.data.rules[i]
+    if (!r || r.limit == null) return
+    const next = V.stepLimit(r, Number(e.currentTarget.dataset.dir))
+    if (next === r.limit) return
+    this.setData({ [`rules[${i}].limit`]: next, settingsDirty: true })
+  },
+
+  onRuleMute(e) {
+    const i = Number(e.currentTarget.dataset.index)
+    if (!this.data.rules[i]) return
+    // 开关显示的是「启用」：关掉 = 静音这条规则
+    this.setData({ [`rules[${i}].muted`]: !(e.detail && e.detail.value), settingsDirty: true })
+  },
+
+  async onSaveSettings() {
+    if (!this.data.isSuper || !this.data.settingsDirty || this.data.patrolBusy) return
+    this.setData({ patrolBusy: true })
+    try {
+      const res = await wx.cloud.callFunction({ name: 'askMuseumGuide', data: Object.assign({ mode: 'staffPatrol', op: 'config' }, V.settingsOf(this.data.rules)) })
+      const body = (res && res.result) || {}
+      if (!body.success) throw new Error(body.msg || '没存上')
+      this.setData({ settingsDirty: false, patrol: body.patrol })
+      this.applyPatrol(body.patrol, body.rules)
+      this.showTip('巡检设置已保存：页面上的提醒与下一次巡检都按新设置')
+      this._briefAt = 0
+      this.loadBrief()
+    } catch (err) {
+      this.showTip(`没存上：${(err && err.message) || '稍后再试'}`)
     }
     this.setData({ patrolBusy: false })
   },
@@ -385,14 +440,49 @@ Page({
     wx.setClipboardData({ data: text })
   },
 
+  /** 有用 / 没用：只记在本机这条回答上；标了「没用」才出「换个说法」 */
+  onVote(e) {
+    const i = Number(e.currentTarget.dataset.index)
+    const m = this.data.messages[i]
+    if (!m || m.role !== 'assistant' || m.pending || m.isError) return
+    const vote = e.currentTarget.dataset.vote === 'down' ? 'down' : 'up'
+    this.setData({ [`messages[${i}].vote`]: m.vote === vote ? '' : vote }, () => this.persist())
+  },
+
+  /** 换个说法：和「重试」一样丢掉最后一条回答重问，但告诉同事上一版没帮上忙 */
+  onRephrase() {
+    this.onRetry({ rephrase: true })
+  },
+
+  /** 请…也看看：把这条回答对应的问题，连同这位同事的看法，转给另一位同事 */
+  onHandoff(e) {
+    if (this.data.sending) return
+    const i = Number(e.currentTarget.dataset.index)
+    const m = this.data.messages[i]
+    const question = V.questionBefore(this.data.messages, i)
+    if (!m || !question) { this.showTip('一键任务的结果不转交，可以直接去找那位同事'); return }
+    const from = this.data.role
+    const others = this.data.roles.filter((r) => r.id !== from.id)
+    wx.showActionSheet({
+      itemList: others.map((r) => `${r.person} · ${r.name}`),
+      success: (res) => {
+        const to = others[res.tapIndex]
+        if (!to) return
+        this.switchRole(to.id)
+        this._ask(question, null, { relay: { fromRoleId: from.id, text: String(m.text || '').slice(0, 400) }, relayFrom: from.person })
+      }
+    })
+  },
+
   onStop() {
     this._abort = true
     const messages = this.data.messages.filter((m) => !m.pending)
     this.setData({ messages, sending: false }, () => this.persist())
   },
 
-  onRetry() {
+  onRetry(opts) {
     if (this.data.sending) return
+    const extra = opts && opts.rephrase === true ? { rephrase: true } : null
     const messages = this.data.messages.slice()
     let lastUser = -1
     for (let i = messages.length - 1; i >= 0; i -= 1) {
@@ -403,8 +493,8 @@ Page({
     const kept = messages.slice(0, lastUser)
     this.setData({ messages: kept }, () => {
       this.persist()
-      if (last.taskId) this._ask('', { taskId: last.taskId, label: String(last.text || '').replace(/^一键任务 · /, '') })
-      else this._ask(last.text)
+      if (last.taskId) this._ask('', { taskId: last.taskId, label: String(last.text || '').replace(/^一键任务 · /, '') }, extra)
+      else this._ask(last.text, null, extra)
     })
   },
 
@@ -415,7 +505,8 @@ Page({
     this._ask(question)
   },
 
-  async _ask(question, task) {
+  async _ask(question, task, opts) {
+    const o = opts || {}
     const role = this.data.role
     const history = this.data.messages.filter((m) => !m.isError).slice(-6).map((m) => ({ role: m.role, content: m.text }))
     const reqId = (this._reqId || 0) + 1
@@ -423,7 +514,7 @@ Page({
     this._abort = false
     const userMsg = task
       ? { role: 'user', text: `一键任务 · ${task.label}`, taskId: task.taskId }
-      : { role: 'user', text: question }
+      : Object.assign({ role: 'user', text: question }, o.relayFrom ? { relayFrom: o.relayFrom } : {})
     const pending = { role: 'assistant', text: '', pending: true }
     const messages = this.data.messages.concat(userMsg, pending)
     this.setData({ messages, sending: true, profileOpen: false }, () => this.scrollToEnd())
@@ -432,7 +523,11 @@ Page({
     try {
       const res = await wx.cloud.callFunction({
         name: 'askMuseumGuide',
-        data: task ? { mode: 'staff', taskId: task.taskId, history } : { mode: 'staff', roleId: role.id, question, history }
+        data: Object.assign(
+          task ? { mode: 'staff', taskId: task.taskId, history } : { mode: 'staff', roleId: role.id, question, history },
+          o.rephrase ? { rephrase: true } : {},
+          o.relay && !task ? { relay: o.relay } : {}
+        )
       })
       if (this._abort || reqId !== this._reqId) return
       const body = (res && res.result) || {}
