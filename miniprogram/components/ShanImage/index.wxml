@@ -1,13 +1,18 @@
+<!-- 外层 .si 只挂 ext-class（位置 / 尺寸 / 圆角 / 滤镜全由页面给），自己**不声明任何布局属性**；
+     底色、裁切、图片定位都在内层 .si-in —— 2026-11-23 修：外层原有 position:relative，
+     与页面 ext-class 的 position:absolute 冲突（微信不保证谁优先），真机上首页「标本工坊」等头图掉回文档流、把文字挤没了 -->
 <view class="si ext-class {{loaded ? 'is-loaded' : ''}}">
-  <text class="si-mark" wx:if="{{mark && !loaded}}" aria-hidden="true">山海</text>
-  <image
-    wx:if="{{src && !failed}}"
-    class="si-img"
-    src="{{src}}"
-    mode="{{mode}}"
-    lazy-load="{{lazy}}"
-    show-menu-by-longpress="{{showMenuByLongpress}}"
-    bindload="onLoad"
-    binderror="onError"
-  />
+  <view class="si-in">
+    <text class="si-mark" wx:if="{{mark && !loaded}}" aria-hidden="true">山海</text>
+    <image
+      wx:if="{{src && !failed}}"
+      class="si-img"
+      src="{{src}}"
+      mode="{{mode}}"
+      lazy-load="{{lazy}}"
+      show-menu-by-longpress="{{showMenuByLongpress}}"
+      bindload="onLoad"
+      binderror="onError"
+    />
+  </view>
 </view>

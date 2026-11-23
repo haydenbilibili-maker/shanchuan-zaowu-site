@@ -79,7 +79,14 @@ function checkComponent(read) {
   const js = read(COMP.js)
   const wxml = read(COMP.wxml)
   const wxss = read(COMP.wxss)
-  if (!/\.si \{[\s\S]*?background: #24211D;/.test(wxss)) fails.push('I1 加载中没有暖深底（外框 background）')
+  if (!/\.si-in \{[\s\S]*?background: #24211D;/.test(wxss)) fails.push('I1 加载中没有暖深底（内层 .si-in background）')
+  // I5（2026-11-23 真机事故）：外层 .si 与页面 ext-class 在同一节点，属性冲突时微信不保证谁优先 ——
+  //   外层原有 position:relative 压过了首页「标本工坊」头图的 position:absolute，头图掉回文档流、文字被挤出卡外。
+  //   外层只许承接 ext-class，不得声明布局 / 盒模型属性；这些都写在内层 .si-in
+  const outer = (wxss.match(/(^|\n)\.si \{([^}]*)\}/) || [])[2] || ''
+  const banned = (outer.match(/\b(position|display|overflow|background|width|height|top|left|right|bottom|inset|margin|padding|border-radius|z-index)\s*:/g) || [])
+  if (banned.length) fails.push(`I5 外层 .si 声明了布局属性（${banned.join(' ')}）—— 会与页面 ext-class 冲突（首页标本工坊头图掉回文档流就是这样），挪到内层 .si-in`)
+  if (!/<view class="si ext-class[^"]*">\s*<view class="si-in">/.test(wxml)) fails.push('I5 缺内层 .si-in（底色 / 裁切 / 定位须在组件自己控制的内层）')
   if (!/<text class="si-mark" wx:if="\{\{mark && !loaded\}\}"/.test(wxml)) fails.push('I1 加载中 / 失败没有淡方印')
   if (!/\.si-img \{[\s\S]*?opacity: 0;[\s\S]*?transition: opacity/.test(wxss) || !/\.si\.is-loaded \.si-img \{ opacity: 1; \}/.test(wxss)) fails.push('I1 加载完不淡入')
   if (!/@media \(prefers-reduced-motion: reduce\) \{\s*\.si-img \{ transition: none; \}/.test(wxss)) fails.push('I1 淡入没有减弱动效分支')
@@ -138,6 +145,7 @@ if (argv.includes('--print-baseline')) {
   const home = join(MP, 'pages/index/index.wxml')
   const cases = [
     ['加载中没底', swap(COMP.wxss, 'background: #24211D;', 'background: transparent;')],
+    ['外层又写 position（首页标本工坊头图事故）', swap(COMP.wxss, '.si-in {\n  position: relative;', '.si { position: relative; }\n.si-in {\n  position: relative;')],
     ['不淡入', swap(COMP.wxss, '.si.is-loaded .si-img { opacity: 1; }', '')],
     ['淡入没有减弱动效', swap(COMP.wxss, '.si-img { transition: none; }', '')],
     ['失败照样出破图', swap(COMP.wxml, 'wx:if="{{src && !failed}}"', 'wx:if="{{src}}"')],
