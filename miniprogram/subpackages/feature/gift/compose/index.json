@@ -10,7 +10,8 @@
     "app-toast": "/components/AppToast/index",
     "page-edge-back": "/components/PageEdgeBack/index",
     "nav-back": "/components/NavBack/index",
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "backgroundColorTop": "#1A1814",
   "backgroundColorBottom": "#1A1814",

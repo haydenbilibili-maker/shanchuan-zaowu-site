@@ -2,7 +2,9 @@
   "navigationBarTitleText": "伙伴权限",
   "enablePullDownRefresh": false,
   "backgroundTextStyle": "light",
-  "usingComponents": {},
+  "usingComponents": {
+    "shan-img": "/components/ShanImage/index"
+  },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814"

@@ -2,7 +2,8 @@
   "navigationBarTitleText": "图鉴详情",
   "usingComponents": {
     "mp-html": "/subpackages/content/components/mp-html/index",
-    "sensitive-blur-gate": "/components/SensitiveBlurGate/index"
+    "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",

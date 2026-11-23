@@ -32,7 +32,7 @@
         <view class="waterfall-col">
           <view class="note-card" wx:for="{{leftCol}}" wx:key="_id" bindtap="goToArticle" data-id="{{item._id}}" hover-class="note-card-press" hover-stay-time="80">
             <view class="note-cover {{item.cardRatio}}">
-              <image class="note-img" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+              <shan-img ext-class="note-img" src="{{item.coverImage}}" mode="aspectFill" />
               <text class="note-badge" wx:if="{{item.isUGC}}">笔记</text>
             </view>
             <text class="note-title">{{item.title}}</text>
@@ -51,7 +51,7 @@
         <view class="waterfall-col">
           <view class="note-card" wx:for="{{rightCol}}" wx:key="_id" bindtap="goToArticle" data-id="{{item._id}}" hover-class="note-card-press" hover-stay-time="80">
             <view class="note-cover {{item.cardRatio}}">
-              <image class="note-img" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+              <shan-img ext-class="note-img" src="{{item.coverImage}}" mode="aspectFill" />
               <text class="note-badge" wx:if="{{item.isUGC}}">笔记</text>
             </view>
             <text class="note-title">{{item.title}}</text>
@@ -83,7 +83,7 @@
         <view class="waterfall-col">
           <view class="note-card" wx:for="{{videoLeftCol}}" wx:key="_id" bindtap="goToVideo" data-id="{{item._id}}" hover-class="note-card-press" hover-stay-time="80">
             <view class="note-cover {{item.cardRatio}}">
-              <image class="note-img" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+              <shan-img ext-class="note-img" src="{{item.coverImage}}" mode="aspectFill" />
               <view class="note-play"><view class="play-btn">▶</view></view>
             </view>
             <text class="note-title">{{item.title}}</text>
@@ -102,7 +102,7 @@
         <view class="waterfall-col">
           <view class="note-card" wx:for="{{videoRightCol}}" wx:key="_id" bindtap="goToVideo" data-id="{{item._id}}" hover-class="note-card-press" hover-stay-time="80">
             <view class="note-cover {{item.cardRatio}}">
-              <image class="note-img" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+              <shan-img ext-class="note-img" src="{{item.coverImage}}" mode="aspectFill" />
               <view class="note-play"><view class="play-btn">▶</view></view>
             </view>
             <text class="note-title">{{item.title}}</text>
@@ -133,7 +133,7 @@
       <view class="exhibition-list">
         <block wx:for="{{exhibitions}}" wx:key="_id">
           <view class="exhibition-card" bindtap="goToExhibition" data-id="{{item._id}}" hover-class="exhibition-card-press" hover-stay-time="80">
-            <image class="exhibition-cover" src="{{item.coverImage || item.cover}}" mode="aspectFill" lazy-load></image>
+            <shan-img ext-class="exhibition-cover" src="{{item.coverImage || item.cover}}" mode="aspectFill" />
             <view class="exhibition-body">
               <text class="exhibition-title">{{item.title}}</text>
               <text class="exhibition-latin text-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>

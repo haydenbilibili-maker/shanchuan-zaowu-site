@@ -179,14 +179,7 @@
           <text class="pending-link">去待我审 ›</text>
         </view>
         <view hover-class="tap-press-soft" hover-stay-time="80" class="claim-thumbs" wx:if="{{item.attachmentImages && item.attachmentImages.length}}" catchtap="previewFlowImages" data-id="{{item._id}}">
-          <image
-            wx:for="{{item.attachmentImages}}"
-            wx:for-item="img"
-            wx:key="*this"
-            src="{{img}}"
-            mode="aspectFill"
-            class="claim-thumb"
-          ></image>
+          <shan-img wx:for="{{item.attachmentImages}}" wx:for-item="img" wx:key="*this" src="{{img}}" mode="aspectFill" ext-class="claim-thumb" mark="{{false}}" />
         </view>
         <view class="rec-actions" wx:if="{{item.canRevoke}}">
           <view hover-class="tap-press" hover-stay-time="80" class="btn-danger-mini" catchtap="openRevoke" data-id="{{item._id}}">撤销</view>
@@ -261,17 +254,7 @@
 
       <view class="attach-block" wx:if="{{item.showAttachmentBlock}}" catchtap="noop">
         <view class="claim-thumbs" wx:if="{{item.hasAttachments}}">
-          <image
-            wx:for="{{item.attachmentImages}}"
-            wx:for-item="img"
-            wx:key="*this"
-            src="{{img}}"
-            mode="aspectFill"
-            class="claim-thumb"
-            catchtap="previewAttachment"
-            data-id="{{item._id}}"
-            data-url="{{img}}"
-          ></image>
+          <shan-img wx:for="{{item.attachmentImages}}" wx:for-item="img" wx:key="*this" src="{{img}}" mode="aspectFill" ext-class="claim-thumb" catchtap="previewAttachment" data-id="{{item._id}}" data-url="{{img}}" mark="{{false}}" />
         </view>
         <text class="attach-empty" wx:else>无附件</text>
       </view>

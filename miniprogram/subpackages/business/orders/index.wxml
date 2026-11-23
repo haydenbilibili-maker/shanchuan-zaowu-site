@@ -55,7 +55,7 @@
             <view class="card-body">
               <block wx:for="{{item.products}}" wx:key="id" wx:for-item="prod" wx:if="{{index < 1}}">
                 <view class="prod-img-wrap">
-                  <image wx:if="{{prod.image}}" src="{{prod.image}}" mode="aspectFill" class="prod-img" lazy-load></image>
+                  <shan-img wx:if="{{prod.image}}" src="{{prod.image}}" mode="aspectFill" ext-class="prod-img" />
                   <view wx:else class="prod-img prod-img-ph">
                     <image class="prod-img-ph-icon" src="/assets/icons/box.png" mode="aspectFit"></image>
                   </view>

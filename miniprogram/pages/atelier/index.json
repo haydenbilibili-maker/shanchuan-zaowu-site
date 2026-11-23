@@ -1,5 +1,7 @@
 {
-  "usingComponents": {},
+  "usingComponents": {
+    "shan-img": "/components/ShanImage/index"
+  },
   "navigationStyle": "custom",
   "navigationBarTitleText": "标本工坊",
   "navigationBarBackgroundColor": "#1A1814",

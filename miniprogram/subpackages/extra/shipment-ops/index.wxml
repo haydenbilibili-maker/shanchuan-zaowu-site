@@ -1109,7 +1109,7 @@
       <block wx:else>
         <view class="ss-group" wx:for="{{picker.list}}" wx:key="key">
           <view hover-class="tap-press" hover-stay-time="80" class="ss-group-head" data-key="{{item.key}}" bindtap="onToggleGroup">
-            <image class="ss-group-thumb" wx:if="{{item.thumb}}" src="{{item.thumb}}" mode="aspectFill" lazy-load />
+            <shan-img ext-class="ss-group-thumb" wx:if="{{item.thumb}}" src="{{item.thumb}}" mode="aspectFill" mark="{{false}}" />
             <view class="ss-group-main">
               <text class="ss-group-name">{{item.displayName}}</text>
               <text class="ss-group-meta" wx:if="{{item.aliasesText}}">别名 {{item.aliasesText}}</text>

@@ -21,3 +21,5 @@ npm run check:ui-parts
 npm run check:radius-roles
 # 2026-11-22：交互质感巡查 —— hover-class 必须配 hover-stay-time（微信 view 默认 400ms，松手后仍暗、显得粘手；项目口径 80）
 npm run check:hover-stay
+# 2026-11-23：全站图片质感（多轮）—— <shan-img> 加载中暖底 + 淡方印 / 淡入（含减弱动效）/ 失败不破图并通知 imageUrl 回落 / 换图重置；裸远程 <image> 无 binderror 按文件棘轮只许变少；shan-img 不配撑高模式；9 个内存注入
+npm run check:image-quality

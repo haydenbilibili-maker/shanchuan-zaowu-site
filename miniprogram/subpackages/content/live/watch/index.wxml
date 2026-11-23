@@ -32,12 +32,7 @@
 
   <block wx:elif="{{viewState === 'ended'}}">
     <view class="state-box replay">
-      <image
-        wx:if="{{endedReplay.coverUrl}}"
-        class="replay-cover"
-        src="{{endedReplay.coverUrl}}"
-        mode="aspectFill"
-      />
+      <shan-img wx:if="{{endedReplay.coverUrl}}" ext-class="replay-cover" src="{{endedReplay.coverUrl}}" mode="aspectFill" />
       <text class="state-kicker">ENDED</text>
       <text class="state-title">{{endedReplay.title || '主播已结束本场'}}</text>
       <text class="state-text">{{endedReplay.replayHint || '回放筹备中。感谢收看，馆员再次开播后可从首页进入。'}}</text>
@@ -48,12 +43,7 @@
 
   <block wx:elif="{{!session || !session.pullUrl}}">
     <view class="state-box">
-      <image
-        wx:if="{{upcoming.coverUrl || endedReplay.coverUrl}}"
-        class="upcoming-cover"
-        src="{{upcoming.coverUrl || endedReplay.coverUrl}}"
-        mode="aspectFill"
-      />
+      <shan-img wx:if="{{upcoming.coverUrl || endedReplay.coverUrl}}" ext-class="upcoming-cover" src="{{upcoming.coverUrl || endedReplay.coverUrl}}" mode="aspectFill" />
       <text class="state-kicker">{{emptyCode === 'NOT_CONFIGURED' ? 'SETUP' : (emptyCode === 'SCHEDULED' ? 'SOON' : 'OFF AIR')}}</text>
       <text class="state-title">{{emptyTitle}}</text>
       <text class="state-text">{{emptyMsg}}</text>
@@ -146,7 +136,7 @@
         <text class="shelf-fab-count">{{shelfCount}}</text>
       </view>
       <view hover-class="tap-press" hover-stay-time="80" class="spotlight-chip {{spotlightItem.soldOut ? 'sold' : 'pulse'}}" wx:if="{{spotlightItem}}" bindtap="openShelf">
-        <image class="spotlight-cover" wx:if="{{spotlightItem.cover}}" src="{{spotlightItem.cover}}" mode="aspectFill"/>
+        <shan-img ext-class="spotlight-cover" wx:if="{{spotlightItem.cover}}" src="{{spotlightItem.cover}}" mode="aspectFill" />
         <view class="spotlight-cover ph" wx:else></view>
         <view class="spotlight-body">
           <text class="spotlight-kicker">{{spotlightItem.soldOut ? '讲解中 · 售罄' : '讲解中'}}</text>
@@ -168,7 +158,7 @@
       </view>
       <scroll-view class="shelf-list" scroll-y>
         <view class="shelf-row {{item.spotlight ? 'spot' : ''}} {{item.soldOut || !item.onShelf ? 'disabled-row' : ''}}" wx:for="{{shelfItems}}" wx:key="_id">
-          <image class="shelf-cover" wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill" bindtap="onShelfDetail" data-id="{{item._id}}"/>
+          <shan-img ext-class="shelf-cover" wx:if="{{item.cover}}" src="{{item.cover}}" mode="aspectFill" bindtap="onShelfDetail" data-id="{{item._id}}" />
           <view hover-class="tap-press-soft" hover-stay-time="80" class="shelf-cover ph" wx:else bindtap="onShelfDetail" data-id="{{item._id}}"><text>缺图</text></view>
           <view hover-class="tap-press-soft" hover-stay-time="80" class="shelf-info" bindtap="onShelfDetail" data-id="{{item._id}}">
             <text class="shelf-name">{{item.title}}</text>
@@ -196,7 +186,7 @@
         <view class="ui-pop-close" bindtap="closeSkuSheet" hover-class="tap-press" hover-stay-time="80">✕</view>
       </view>
       <view class="sku-product" wx:if="{{skuProduct}}">
-        <image class="sku-cover" src="{{skuProduct.cover}}" mode="aspectFill"/>
+        <shan-img ext-class="sku-cover" src="{{skuProduct.cover}}" mode="aspectFill" />
         <view class="sku-info">
           <text class="sku-name">{{skuProduct.title}}</text>
           <text class="sku-price">¥{{selectedSku.price || skuProduct.price}}</text>

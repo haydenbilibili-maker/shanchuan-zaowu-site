@@ -25,7 +25,7 @@
   <view class="wd-gate {{registerGated ? 'is-gated' : ''}}">
   <!-- 1. 沉浸式 Header -->
   <view class="hero-area">
-    <image class="hero-img" src="{{wiki.coverImage || fallbackImg}}" mode="aspectFill"></image>
+    <shan-img ext-class="hero-img" src="{{wiki.coverImage || fallbackImg}}" mode="aspectFill" lazy="{{false}}" />
     <view class="hero-overlay"></view>
     
     <view class="hero-text">
@@ -71,8 +71,10 @@
     <!-- 画廊 (标本模式显示) -->
     <scroll-view scroll-x class="gallery-scroll" wx:if="{{wiki.type !== 'exhibition' && wiki.gallery && wiki.gallery.length > 0}}">
       <block wx:for="{{wiki.gallery}}" wx:key="*this">
-        <view class="gallery-item" bindtap="previewImage" data-src="{{item}}" hover-class="tap-press-soft" hover-stay-time="80">
-           <image src="{{item}}" mode="aspectFill" lazy-load></image>
+        <!-- 2026-11-23：画廊格原来只有 .gallery-item（样式表里没有这条）→ 竖着叠、被 240rpx 高裁掉，只露半张；
+             样式表里早就写好的 .g-img（360×240、圆角、发丝边）一直没被用上 —— 接回去 -->
+        <view class="gallery-item g-img" bindtap="previewImage" data-src="{{item}}" hover-class="tap-press-soft" hover-stay-time="80">
+           <shan-img ext-class="g-fill" src="{{item}}" mode="aspectFill" />
         </view>
       </block>
     </scroll-view>
@@ -106,7 +108,7 @@
             product-id="{{item._id}}"
             size="thumb"
           >
-            <image src="{{item.images[0] || item.image || item.httpImage}}" mode="aspectFill" class="p-thumb" lazy-load></image>
+            <shan-img src="{{item.images[0] || item.image || item.httpImage}}" mode="aspectFill" ext-class="p-thumb" mark="{{false}}" />
           </sensitive-blur-gate>
         </view>
         <view class="p-info">
@@ -136,7 +138,7 @@
       bindtap="goToRelatedArticle"
       data-id="{{item._id}}"
     >
-      <image class="notes-cover" src="{{item.coverImage || fallbackImg}}" mode="aspectFill" lazy-load></image>
+      <shan-img ext-class="notes-cover" src="{{item.coverImage || fallbackImg}}" mode="aspectFill" mark="{{false}}" />
       <view class="notes-meta">
         <text class="notes-name">{{item.title}}</text>
         <text class="notes-brief" wx:if="{{item.brief}}">{{item.brief}}</text>

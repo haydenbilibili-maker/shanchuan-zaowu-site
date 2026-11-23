@@ -221,7 +221,7 @@ async function runChecks() {
   const avatarSvg = decodeURIComponent(avatar.split(',')[1] || '')
   ok('E6 博物君头像 = 附件「科学家」icon（方印内是内联 svg，两处入口都换，不是「博」字）',
     /<view class="mg-seal"[^>]*><image class="mg-seal-icon" src="\{\{guideAvatar\}\}" mode="aspectFit"><\/image><\/view>/.test(read(P.wxml)) &&
-    /<image class="ask-guide-seal" src="\{\{guideAvatar\}\}" mode="aspectFit"/.test(read(P.atlasWxml)) &&
+    /<image class="ask-guide-seal-icon" src="\{\{guideAvatar\}\}" mode="aspectFit"/.test(read(P.atlasWxml)) &&
     /^data:image\/svg\+xml/.test(avatar) && avatarSvg.includes('viewBox="0 0 1024 1024"') && avatarSvg.includes('fill="#F3E7D3"') &&
     !/<view class="mg-seal"[^>]*><text>博<\/text>/.test(read(P.wxml)))
   ok('E7 askMuseumGuide 已登记 cloudbaserc（否则 tcb / deploy-drifted 永远不会部署它）',

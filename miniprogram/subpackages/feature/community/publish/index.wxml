@@ -14,7 +14,7 @@
       <view class="media-grid">
         <block wx:for="{{images}}" wx:key="*this">
           <view class="media-cell">
-            <image class="media-img" src="{{item}}" mode="aspectFill"></image>
+            <shan-img ext-class="media-img" src="{{item}}" mode="aspectFill" />
             <view hover-class="tap-press" hover-stay-time="80" class="media-del" bindtap="removeImage" data-index="{{index}}">×</view>
             <view class="media-cover-tag" wx:if="{{index === 0}}">封面</view>
           </view>
@@ -33,7 +33,7 @@
     <!-- 视频：封面 + 链接 -->
     <view class="media-section" wx:if="{{type === 'video'}}">
       <view hover-class="tap-press-soft" hover-stay-time="80" class="video-cover-box" bindtap="chooseVideoCover">
-        <image wx:if="{{coverImage}}" class="video-cover-img" src="{{coverImage}}" mode="aspectFill"></image>
+        <shan-img wx:if="{{coverImage}}" ext-class="video-cover-img" src="{{coverImage}}" mode="aspectFill" />
         <view wx:else class="video-cover-empty">
           <view class="add-plus" aria-hidden="true">
             <view class="add-plus-h"></view>

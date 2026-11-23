@@ -25,12 +25,7 @@
       bindtap="openContextTarget"
     >
       <view class="context-card-main">
-        <image
-          class="context-thumb"
-          wx:if="{{contextCard.image}}"
-          src="{{contextCard.image}}"
-          mode="aspectFill"
-        ></image>
+        <shan-img ext-class="context-thumb" wx:if="{{contextCard.image}}" src="{{contextCard.image}}" mode="aspectFill" mark="{{false}}" />
         <view class="context-thumb placeholder" wx:else>
           <text class="context-thumb-mark">{{contextCard.kind === 'order' ? '单' : '藏'}}</text>
         </view>
@@ -162,7 +157,7 @@
             </view>
             <view class="ti-grid">
               <view class="ti-cell" wx:for="{{ticketImages}}" wx:key="key">
-                <image class="ti-img" src="{{item.local}}" mode="aspectFill" bindtap="previewTicketImage" data-url="{{item.local}}"/>
+                <shan-img ext-class="ti-img" src="{{item.local}}" mode="aspectFill" bindtap="previewTicketImage" data-url="{{item.local}}" />
                 <view class="ti-mask" wx:if="{{item.status === 'uploading'}}"><text class="ti-mask-text">上传中…</text></view>
                 <view class="ti-mask is-failed" wx:elif="{{item.status === 'failed'}}" hover-class="tap-press-soft" hover-stay-time="80" catchtap="retryTicketImage" data-key="{{item.key}}"><text class="ti-mask-text">上传失败</text><text class="ti-mask-text">点此重试</text></view>
                 <view hover-class="tap-press" hover-stay-time="80" class="ti-del" catchtap="removeTicketImage" data-key="{{item.key}}"><text class="ti-del-x">×</text></view>
@@ -238,7 +233,7 @@
       <view hover-class="tap-press" hover-stay-time="80" class="modal-close" bindtap="closeCommunity">✕</view>
       <text class="modal-title">官方社群</text>
       <text class="modal-sub">COMMUNITY</text>
-      <image class="community-qr" src="{{config.communityQr}}" mode="aspectFit" show-menu-by-longpress="{{true}}"></image>
+      <shan-img ext-class="community-qr" src="{{config.communityQr}}" mode="aspectFit" show-menu-by-longpress="{{true}}" />
       <text class="modal-tip">长按识别添加微信助手，随后拉入官方服务微信群</text>
     </view>
   </view>

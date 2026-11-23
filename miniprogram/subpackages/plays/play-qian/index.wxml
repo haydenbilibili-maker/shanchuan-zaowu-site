@@ -73,7 +73,7 @@
       aria-label="{{reco ? ('去看推荐藏品 ' + reco.title) : (productTitle ? ('去看这面墙的藏品 ' + productTitle) : '去看藏品')}}"
     >
       <view class="rp-reco-thumb {{reco ? 'is-live' : ''}}" aria-hidden="true">
-        <image wx:if="{{reco.cover}}" class="rp-reco-img" src="{{reco.cover}}" mode="aspectFill" lazy-load />
+        <shan-img wx:if="{{reco.cover}}" ext-class="rp-reco-img" src="{{reco.cover}}" mode="aspectFill" />
         <view wx:else class="rp-reco-thumb-ph"></view>
       </view>
       <view class="rp-reco-copy">

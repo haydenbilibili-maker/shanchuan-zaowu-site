@@ -3,7 +3,8 @@
   "usingComponents": {
     "protected-badge": "/components/ProtectedBadge/index",
     "app-modal": "/components/AppModal/index",
-    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index"
+    "register-auth-dialog": "/subpackages/feature/components/RegisterAuthDialog/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "componentPlaceholder": {
     "register-auth-dialog": "view"

@@ -107,7 +107,7 @@
             bindtap="openDetail"
           >
             <text class="ov-rank-no">{{item.rank}}</text>
-            <image wx:if="{{item.hasAvatar}}" class="ov-rank-avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+            <shan-img wx:if="{{item.hasAvatar}}" ext-class="ov-rank-avatar" src="{{item.avatarUrl}}" mode="aspectFill" mark="{{false}}" />
             <view wx:else class="ov-rank-avatar placeholder"><text>{{item.avatarInitial}}</text></view>
             <view class="ov-rank-main">
               <view class="ov-rank-top">
@@ -303,7 +303,7 @@
         <!-- 头卡：昵称/手机、等级、积分、累计、最近 -->
         <view class="d-hero">
           <view class="d-hero-top">
-            <image wx:if="{{detail.hasAvatar}}" class="avatar lg" src="{{detail.avatarUrl}}" mode="aspectFill" />
+            <shan-img wx:if="{{detail.hasAvatar}}" ext-class="avatar lg" src="{{detail.avatarUrl}}" mode="aspectFill" mark="{{false}}" />
             <view wx:else class="avatar lg placeholder"><text>{{detail.avatarInitial}}</text></view>
             <view class="d-info">
               <view class="d-name-row">

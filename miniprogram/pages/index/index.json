@@ -4,7 +4,8 @@
     "sensitive-blur-gate": "/components/SensitiveBlurGate/index",
     "easter-egg-note": "/components/EasterEggNote/index",
     "wish-wall-entry": "/components/WishWallEntry/index",
-    "home-reco": "/components/HomeReco/index"
+    "home-reco": "/components/HomeReco/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "navigationStyle": "custom",
   "navigationBarTitleText": "山海造物",

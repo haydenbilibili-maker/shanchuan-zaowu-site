@@ -145,7 +145,7 @@
       </view>
       <view class="user-card" wx:for="{{candidates}}" wx:key="openid">
         <view class="user-left">
-          <image wx:if="{{item.hasAvatar}}" class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" />
+          <shan-img wx:if="{{item.hasAvatar}}" ext-class="avatar" src="{{item.avatarUrl}}" mode="aspectFill" mark="{{false}}" />
           <view wx:else class="avatar placeholder"><text>{{item.avatarInitial}}</text></view>
           <view class="user-main">
             <text class="user-name">{{item.nickName}}</text>

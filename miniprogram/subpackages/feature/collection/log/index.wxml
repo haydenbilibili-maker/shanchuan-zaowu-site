@@ -58,7 +58,7 @@
         hover-stay-time="80"
       >
         <view class="thumb">
-          <image wx:if="{{item.imageUrl}}" class="thumb-img" src="{{item.imageUrl}}" mode="aspectFill" />
+          <shan-img wx:if="{{item.imageUrl}}" ext-class="thumb-img" src="{{item.imageUrl}}" mode="aspectFill" mark="{{false}}" />
           <view wx:else class="thumb-empty"></view>
         </view>
         <view class="record-body">

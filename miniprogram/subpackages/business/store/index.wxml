@@ -45,7 +45,7 @@
       hover-class="tap-press-soft"
       hover-stay-time="80"
     >
-      <image wx:if="{{item.coverImage}}" class="picker-thumb" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+      <shan-img wx:if="{{item.coverImage}}" ext-class="picker-thumb" src="{{item.coverImage}}" mode="aspectFill" mark="{{false}}" />
       <view class="picker-body">
         <text class="picker-name">{{item.name}}</text>
         <text class="picker-loc">{{item.locationLabel}}</text>
@@ -58,7 +58,7 @@
   <scroll-view scroll-y class="main-scroll" style="top: {{scrollTop}}px;" wx:if="{{!loading && store}}">
     <!-- Hero：一张图 + 店名 + 一句说明 -->
     <view class="hero {{enterReady ? 'reveal reveal-0' : 'is-entering'}}" bindtap="previewHero" hover-class="tap-press-soft" hover-stay-time="80">
-      <image wx:if="{{store.coverImage}}" class="hero-img" src="{{store.coverImage}}" mode="aspectFill"></image>
+      <shan-img wx:if="{{store.coverImage}}" ext-class="hero-img" src="{{store.coverImage}}" mode="aspectFill" />
       <view class="hero-placeholder" wx:else></view>
       <view class="hero-mask"></view>
       <view class="hero-closed-badge" wx:if="{{bookingClosedToday}}">
@@ -209,7 +209,7 @@
           hover-stay-time="80"
         >
           <view class="zone-plate">
-            <image wx:if="{{item.coverImage}}" class="zone-bg" src="{{item.coverImage}}" mode="aspectFill" lazy-load></image>
+            <shan-img wx:if="{{item.coverImage}}" ext-class="zone-bg" src="{{item.coverImage}}" mode="aspectFill" />
           </view>
           <view class="zone-content">
             <text class="zone-overline">{{item.overline}}</text>
@@ -239,7 +239,7 @@
             hover-class="exp-card-hover"
             hover-stay-time="80"
           >
-            <image class="exp-img" src="{{item.image}}" mode="aspectFill" lazy-load></image>
+            <shan-img ext-class="exp-img" src="{{item.image}}" mode="aspectFill" />
             <view class="exp-body">
               <text class="exp-title">{{item.title}}</text>
               <text class="exp-latin" wx:if="{{latin.display(item.latinName)}}">{{latin.display(item.latinName)}}</text>

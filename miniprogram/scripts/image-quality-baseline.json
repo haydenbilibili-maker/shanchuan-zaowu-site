@@ -1,0 +1,24 @@
+{
+  "_doc": "远程图用裸 <image> 且无 binderror 的处数（文件 → 处数），只许变少；生成：node miniprogram/scripts/check-image-quality.mjs --print-baseline",
+  "total": 35,
+  "counts": {
+    "subpackages/business/aftersale-apply/index.wxml": 1,
+    "subpackages/business/ar/index.wxml": 2,
+    "subpackages/business/components/WalletPanelPoints/index.wxml": 1,
+    "subpackages/business/order-claim/index.wxml": 1,
+    "subpackages/content/components/mp-html/node/node.wxml": 1,
+    "subpackages/extra/artisan/works/index.wxml": 2,
+    "subpackages/extra/member-crm/index.wxml": 1,
+    "subpackages/extra/supplier/buyer-cart/index.wxml": 1,
+    "subpackages/extra/supplier/index.wxml": 2,
+    "subpackages/feature/care/guide/index.wxml": 1,
+    "subpackages/feature/care/index.wxml": 1,
+    "subpackages/feature/collection/detail/index.wxml": 3,
+    "subpackages/feature/collection/index.wxml": 2,
+    "subpackages/feature/components/mp-html/node/node.wxml": 1,
+    "subpackages/feature/custom/pet/index.wxml": 1,
+    "subpackages/feature/detail/index.wxml": 4,
+    "subpackages/manager/gift-ops/index.wxml": 1,
+    "subpackages/manager/manager/workspace/_subviews.wxml": 9
+  }
+}

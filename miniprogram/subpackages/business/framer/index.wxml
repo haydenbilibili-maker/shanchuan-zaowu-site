@@ -57,15 +57,7 @@
   <view class="gallery-section" wx:if="{{framer.gallery.length}}">
     <view class="mu-head"><view class="mu-head-t"><text class="mu-en">GALLERY</text><text class="mu-cn">作品照片</text></view></view>
     <scroll-view class="gallery-scroll" scroll-x="true" enhanced="true" show-scrollbar="{{false}}">
-      <image
-        class="gallery-shot"
-        wx:for="{{framer.gallery}}"
-        wx:key="*this"
-        src="{{item}}"
-        mode="aspectFill"
-        bindtap="previewGallery"
-        data-index="{{index}}"
-      />
+      <shan-img ext-class="gallery-shot" wx:for="{{framer.gallery}}" wx:key="*this" src="{{item}}" mode="aspectFill" bindtap="previewGallery" data-index="{{index}}" />
     </scroll-view>
   </view>
 

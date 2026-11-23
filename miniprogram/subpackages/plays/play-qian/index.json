@@ -7,6 +7,7 @@
   "backgroundColorBottom": "#151412",
   "backgroundTextStyle": "light",
   "usingComponents": {
-    "app-toast": "/components/AppToast/index"
+    "app-toast": "/components/AppToast/index",
+    "shan-img": "/components/ShanImage/index"
   }
 }

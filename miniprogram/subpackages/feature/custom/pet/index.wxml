@@ -182,7 +182,7 @@
             bindtap="selectArtisan"
             data-id="{{item.id}}"
           >
-            <image wx:if="{{item.avatar}}" class="artisan-avatar" src="{{item.avatar}}" mode="aspectFill"></image>
+            <shan-img wx:if="{{item.avatar}}" ext-class="artisan-avatar" src="{{item.avatar}}" mode="aspectFill" mark="{{false}}" />
             <view class="artisan-main">
               <text class="artisan-name">{{item.name}}</text>
               <text class="artisan-desc">{{item.bio || (item.type === 'partner' ? '特邀标本师' : '门店制作')}}</text>

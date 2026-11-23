@@ -390,6 +390,8 @@ Page(withAppModal({
     craftTags: [],
     // 需求 17：详情页分级图 —— 按显示宽度取图，原图只留给全屏查看器
     imgView: {},
+    /** 图文长图是否已加载（2026-11-23）：没到之前先占一块高度，避免一张张到时整页往下跳 */
+    detailImgLoaded: {},
     imgThumbView: {},
 
     hasSku: false,
@@ -1844,6 +1846,13 @@ Page(withAppModal({
   },
 
   /** 规格大图加载：记原图高宽比；是当前这张就按比例给 swiper 定高 */
+  /** 图文长图加载完：撤掉占位高度（按序号记，换图不串） */
+  onDetailImgLoad(e) {
+    const i = e && e.currentTarget && e.currentTarget.dataset.i
+    if (i === undefined || (this.data.detailImgLoaded || {})[i]) return;
+    this.setData({ [`detailImgLoaded.${i}`]: true });
+  },
+
   onSpecImageLoad(e) {
     const { width, height } = e.detail || {};
     const src = e.currentTarget.dataset.src;

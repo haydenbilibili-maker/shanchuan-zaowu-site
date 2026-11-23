@@ -1,0 +1,13 @@
+<view class="si ext-class {{loaded ? 'is-loaded' : ''}}">
+  <text class="si-mark" wx:if="{{mark && !loaded}}" aria-hidden="true">山海</text>
+  <image
+    wx:if="{{src && !failed}}"
+    class="si-img"
+    src="{{src}}"
+    mode="{{mode}}"
+    lazy-load="{{lazy}}"
+    show-menu-by-longpress="{{showMenuByLongpress}}"
+    bindload="onLoad"
+    binderror="onError"
+  />
+</view>

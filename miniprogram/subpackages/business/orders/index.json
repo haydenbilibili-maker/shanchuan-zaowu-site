@@ -1,6 +1,7 @@
 {
   "usingComponents": {
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "backgroundColor": "#1A1814",
   "navigationBarBackgroundColor": "#1A1814",

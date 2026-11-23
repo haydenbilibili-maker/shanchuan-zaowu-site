@@ -3,5 +3,8 @@
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
   "backgroundColor": "#1A1814",
-  "enablePullDownRefresh": true
+  "enablePullDownRefresh": true,
+  "usingComponents": {
+    "shan-img": "/components/ShanImage/index"
+  }
 }

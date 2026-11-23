@@ -23,7 +23,7 @@
 <view class="wl-page" wx:else>
   <!-- ① 展品首屏 -->
   <view class="wl-hero">
-    <image class="wl-hero-img" wx:if="{{cover}}" src="{{cover}}" mode="aspectFill" />
+    <shan-img ext-class="wl-hero-img" wx:if="{{cover}}" src="{{cover}}" mode="aspectFill" />
     <view class="wl-hero-shade" aria-hidden="true"></view>
     <view class="wl-credit" style="top: {{navTotal + 8}}px;" aria-hidden="true">
       <text class="wl-credit-en">NATURE'S CREATIONS</text>

@@ -961,7 +961,8 @@ function checks(s) {
 
   // R8 横图铺成正方形；竖图仍是半屏居中裁切，高度切换有过渡
   add('R8 头图两处按 heroFit 显示，并用 bindload 量原比例',
-    (s.detailWxml.match(/class="slide-image" mode="\{\{heroFit\}\}" bindload="onHeroImageLoad"/g) || []).length === 2)
+    // 2026-11-23：头图换成 <shan-img>（ext-class 承尺寸、组件事件 bind:load 透传原生 load 的宽高），口径不变
+    (s.detailWxml.match(/ext-class="slide-image" mode="\{\{heroFit\}\}" bind:load="onHeroImageLoad"/g) || []).length === 2)
   add('R8 头图高度跟 heroSwiperH，盒子有高度过渡',
     /heroSwiperH/.test(openTag(s.detailWxml, /<view class="hero-stage/)) &&
     /transition: height /.test(rule(s.detailWxss, '.hero-stage')) &&

@@ -241,6 +241,13 @@ function renderNode(n, scope) {
 }
 
 function renderElement(n, scope) {
+  // <shan-img>（2026-11-23 全站图片组件）：预览里按改造前的 <image> 画 —— ext-class 落到 <img> 上，
+  // 与页面样式的对应关系不变；否则作为自定义组件整棵跳过，首页 / 商品卡的图在预览里全没了
+  if (n.tag === 'shan-img') {
+    const cls = evalAttr(n.attrs['ext-class'] || '', scope)
+    const src = evalAttr(n.attrs.src || '', scope)
+    return `<img class="${escAttr(String(cls || '').trim())}" src="${escAttr(src == null ? '' : src)}">`
+  }
   const mapped = TAG_MAP[n.tag]
   if (mapped === undefined) {
     // 自定义组件：预览里没有它的实现，整棵跳过（不渲染成一堆文字，也不报错）

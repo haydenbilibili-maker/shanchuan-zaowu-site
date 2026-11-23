@@ -8,7 +8,8 @@
   "backgroundColorContent": "#1A1814",
   "backgroundTextStyle": "light",
   "usingComponents": {
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "shan-img": "/components/ShanImage/index"
   },
   "enablePullDownRefresh": true
 }

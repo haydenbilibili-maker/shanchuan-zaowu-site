@@ -19,11 +19,7 @@
       <block wx:else>
         <view class="header-section">
           <view class="target-info" wx:if="{{targetInfo}}">
-            <image
-              class="target-image"
-              src="{{targetInfo.images && targetInfo.images[0] ? targetInfo.images[0] : targetInfo.image}}"
-              mode="aspectFill"
-            ></image>
+            <shan-img ext-class="target-image" src="{{targetInfo.images && targetInfo.images[0] ? targetInfo.images[0] : targetInfo.image}}" mode="aspectFill" />
             <view class="target-details">
               <text class="target-title">{{targetInfo.title || targetInfo.name}}</text>
               <text class="target-subtitle" wx:if="{{latin.display(targetInfo.latinName)}}">{{latin.display(targetInfo.latinName)}}</text>
@@ -61,15 +57,7 @@
           </view>
           <text class="review-content" wx:if="{{viewReview.content}}" user-select="{{true}}">{{viewReview.content}}</text>
           <view class="review-images" wx:if="{{viewReview.images.length}}">
-            <image
-              class="review-image"
-              wx:for="{{viewReview.images}}"
-              wx:key="*this"
-              src="{{item}}"
-              mode="aspectFill"
-              bindtap="previewMyImage"
-              data-index="{{index}}"
-            ></image>
+            <shan-img ext-class="review-image" wx:for="{{viewReview.images}}" wx:key="*this" src="{{item}}" mode="aspectFill" bindtap="previewMyImage" data-index="{{index}}" />
           </view>
           <text class="review-time" wx:if="{{viewReview.timeText}}">提交于 {{viewReview.timeText}}</text>
           <view class="review-reply" wx:if="{{viewReview.merchantReply}}">
@@ -125,13 +113,7 @@
               <view class="image-list">
                 <block wx:for="{{images}}" wx:key="*this" wx:for-index="index">
                   <view class="image-item">
-                    <image
-                      class="uploaded-image"
-                      src="{{item}}"
-                      mode="aspectFill"
-                      bindtap="previewImage"
-                      data-index="{{index}}"
-                    ></image>
+                    <shan-img ext-class="uploaded-image" src="{{item}}" mode="aspectFill" bindtap="previewImage" data-index="{{index}}" />
                     <view hover-class="tap-press" hover-stay-time="80" class="delete-btn" catchtap="deleteImage" data-index="{{index}}">×</view>
                   </view>
                 </block>

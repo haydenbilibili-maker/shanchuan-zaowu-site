@@ -82,7 +82,7 @@
               data-id="{{item.id}}"
               data-link="{{item.link}}"
             >
-              <image class="hero-img" src="{{item.image}}" mode="aspectFill" lazy-load="{{index > 0}}" />
+              <shan-img ext-class="hero-img" src="{{item.image}}" mode="aspectFill" lazy="{{index > 0}}" />
               <view class="hero-mask-vignette"></view>
               <!-- 直播信号叠层：加深蒙版 + 细线框 + 扫描线 + 信号条 -->
               <block wx:if="{{item.isLive}}">
@@ -189,7 +189,7 @@
                         product-id="{{item._id}}"
                         size="card"
                       >
-                        <image class="op-img" src="{{item.image}}" mode="aspectFill" lazy-load></image>
+                        <shan-img ext-class="op-img" src="{{item.image}}" mode="aspectFill" />
                       </sensitive-blur-gate>
                       <view class="op-rare-tag" wx:if="{{item.productRarity === 'rare' || item.productRarity === 'legendary'}}">珍稀</view>
                    </view>
@@ -239,7 +239,7 @@
         </view>
       </view>
       <view class="atelier-card-pro" bindtap="goToCustom" hover-class="tap-press-soft" hover-stay-time="80">
-        <image class="atelier-hero-img" src="{{atelierHeroImage}}" mode="aspectFill" lazy-load />
+        <shan-img ext-class="atelier-hero-img" src="{{atelierHeroImage}}" mode="aspectFill" />
         <view class="atelier-hero-mask"></view>
         <view class="atelier-content">
           <text class="atelier-badge">{{workshopStoreName}}</text>
@@ -274,7 +274,7 @@
       <scroll-view wx:elif="{{collections.length > 0}}" scroll-x class="exhibit-scroll" enable-flex show-scrollbar="{{false}}">
         <block wx:for="{{collections}}" wx:key="_id">
           <view class="exhibit-card-pro" bindtap="goToCollectionDetail" data-id="{{item._id}}" hover-class="exhibit-card-press" hover-stay-time="80">
-            <image class="ec-img" src="{{item.cover}}" mode="aspectFill" lazy-load />
+            <shan-img ext-class="ec-img" src="{{item.cover}}" mode="aspectFill" />
             <view class="ec-overlay"></view>
             <view class="ec-info">
                <view class="ec-tag">专题</view>
@@ -302,7 +302,7 @@
           <view class="artist-card-v3" bindtap="goToFramer" data-id="{{item._id}}" hover-class="tap-press-soft" hover-stay-time="80">
              <!-- 图片容器 -->
              <view class="ac-image-wrapper">
-               <image class="ac-bg" src="{{item.avatar}}" mode="aspectFill" lazy-load></image>
+               <shan-img ext-class="ac-bg" src="{{item.avatar}}" mode="aspectFill" />
                <!-- 图片渐变遮罩 -->
                <view class="ac-image-overlay"></view>
              </view>
@@ -355,7 +355,7 @@
                 <view class="rip-line"></view>
              </view>
              <view class="ticket-main">
-                <image class="tm-bg" src="{{item.cover}}" mode="aspectFill" lazy-load></image>
+                <shan-img ext-class="tm-bg" src="{{item.cover}}" mode="aspectFill" />
                 <view class="tm-mask"></view>
                 <view class="tm-content">
                    <view class="tm-top">

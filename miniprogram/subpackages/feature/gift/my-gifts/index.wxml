@@ -5,7 +5,7 @@
         hover-stay-time="80"
       >
         <view class="cover-wrap">
-          <image class="cover" src="{{item.productImage}}" mode="aspectFill" lazy-load wx:if="{{item.productImage}}"></image>
+          <shan-img ext-class="cover" src="{{item.productImage}}" mode="aspectFill" wx:if="{{item.productImage}}" />
           <view class="cover placeholder" wx:else>
             <view class="cover-plate"></view>
           </view>

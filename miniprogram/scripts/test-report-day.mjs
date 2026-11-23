@@ -193,6 +193,23 @@ t('对比：近 8 日走势只取窗口内、按日期升序、当日高亮', ()
 })
 t('诚实：分时段分布无数据源时明说未展示', () => /分时段分布暂无数据源/.test(wxml))
 
+/* 行为漏斗卡（2026-11-23「继续优化数据报表」）：只画有真数据源的行 */
+t('电商路径：不再读恒 0 的 order_submit，下单 / 已付款取订单库藏品订单', () => {
+  const fn = read('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')
+  return !/funnel\.commerce\.orderSubmit/.test(wxml) && /funnel\.commerce\.orders/.test(wxml) && /funnel\.commerce\.paid /.test(wxml.replace(/\|\|/g, ' ')) &&
+    /if \(bucket === 'commerce'\) commerceOrders \+= 1/.test(fn) && /commerceGmv \+= amt\n\s*commercePaid \+= 1/.test(fn) &&
+    /orders: \(orders\.totals && orders\.totals\.commerceOrders\) \|\| 0/.test(fn)
+})
+t('电商路径：下单为 0 不给比率（不写 0%）', () => {
+  const fn = read('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')
+  return /paidRate: orders\.totals && orders\.totals\.commerceOrders\s*\?[\s\S]{0,120}?: null/.test(fn) && /commerce\.paidRate !== null/.test(wxml)
+})
+t('这有店：云函数算的门店页四步有卡片画出来', () => {
+  const fn = read('miniprogram/cloudfunctions/getAnalyticsDashboard/index.js')
+  return /store: \{\s*tabEnter: count\('store_tab_enter'\)/.test(fn) &&
+    ['tabEnter', 'zoneDetail', 'bookingClick', 'checkin'].every((k) => wxml.indexOf(`funnel.store.${k}`) >= 0)
+})
+
 /* ERP 行为看板 */
 t('ERP：行为看板「昨日」按北京时间取 dateKey', () => {
   const vue = read('admin/src/components/BehaviorAnalytics.vue')
@@ -232,6 +249,10 @@ function selftest() {
     { name: '分段控件允许换行（自然月掉孤行）', file: 'miniprogram/subpackages/manager/manager/index.wxss', from: '.report-seg {\n  display: flex;\n', to: '.report-seg {\n  display: flex;\n  flex-wrap: wrap;\n', expect: '一行等分' },
     { name: '次级导航日期又做成实心金', file: 'miniprogram/subpackages/manager/manager/index.wxss', from: '.report-subnav-label {\n  display: block;\n', to: '.report-subnav-label {\n  display: block;\n  background: #C4A76C;\n', expect: '实心底' },
     { name: '口径说明回到裸数字', file: WX, from: "'口径说明（' + analyticsReport.notes.length + ' 条）'", to: "'查看口径说明'}} · {{analyticsReport.notes.length", expect: 'N 条' },
+    { name: '电商路径又读回恒 0 的埋点', file: WX, from: '{{analyticsReport.behavior.funnel.commerce.orders || 0}}', to: '{{analyticsReport.behavior.funnel.commerce.orderSubmit || 0}}', expect: '恒 0' },
+    { name: '下单把礼赠定金也算进藏品订单', file: 'miniprogram/cloudfunctions/getAnalyticsDashboard/index.js', from: "      if (bucket === 'commerce') commerceOrders += 1", to: '      commerceOrders += 1', expect: '恒 0' },
+    { name: '下单为 0 写成 0%', file: 'miniprogram/cloudfunctions/getAnalyticsDashboard/index.js', from: '            : null\n        })', to: '            : 0\n        })', expect: '不写 0%' },
+    { name: '这有店卡丢了打卡行', file: WX, from: '{{analyticsReport.behavior.funnel.store.checkin || 0}}', to: '0', expect: '这有店' },
     { name: 'ERP 昨日按 UTC', file: 'admin/src/components/BehaviorAnalytics.vue', from: 'new Date(Date.now() + 8 * 3600 * 1000 + offsetDays * 86400000)', to: 'new Date(Date.now() + offsetDays * 86400000)', expect: 'ERP' }
   ]
   let ok = true

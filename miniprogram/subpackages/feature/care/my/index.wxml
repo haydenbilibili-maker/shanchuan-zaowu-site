@@ -33,7 +33,7 @@
           data-product-id="{{item.productId}}"
         >
           <view class="spec-frame">
-            <image class="spec-cover" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}"></image>
+            <shan-img ext-class="spec-cover" src="{{item.image}}" mode="aspectFill" wx:if="{{item.image}}" />
             <view class="spec-cover placeholder" wx:else>
               <text class="cover-letter">{{item.categoryOverline[0]}}</text>
             </view>

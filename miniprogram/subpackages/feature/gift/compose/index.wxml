@@ -86,7 +86,7 @@
     <view class="section sec-specimen">
       <view class="product-row {{activeNotePresetId || selfTreat ? 'is-for' : ''}}">
         <view class="product-cover-wrap">
-          <image class="product-cover" src="{{cover}}" mode="aspectFill"></image>
+          <shan-img ext-class="product-cover" src="{{cover}}" mode="aspectFill" />
           <protected-badge product="{{product}}" size="xs" corner="bl" />
         </view>
         <view class="product-meta">

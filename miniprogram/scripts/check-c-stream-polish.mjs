@@ -734,7 +734,7 @@ function selftest() {
     ['行为漏斗回到「注册钩子」', (s) => ({ ...s, subviews: s.subviews.replace('AI 识别 · 保存图鉴时引导注册', 'AI 识别 · 注册钩子') }), /R4-3 行为漏斗可见文案出现技术词「钩子」/],
     ['构建指纹搬出「更多」', (s) => ({ ...s, subviews: s.subviews.replace('<block wx:if="{{reportDiagOpen}}">', '<view class="visit-stats-row"><text class="visit-stats-name">构建指纹</text></view>\n          <block wx:if="{{reportDiagOpen}}">') }), /R4-3 行为漏斗可见文案出现技术词「指纹」/],
     // 2026-11-22：ritualGate 卡已于 10-13 退役，改打仍在线的心愿签注册引导曝光绑定
-    ['行为漏斗改了数据绑定', (s) => ({ ...s, subviews: s.subviews.replace('analyticsReport.behavior.funnel.wishWall.gate.show || 0', 'analyticsReport.behavior.funnel.wishWall.gate.goRegister || 0') }), /R4-3 行为漏斗的数据绑定 funnel\.wishWall\.gate\.show/],
+    ['行为漏斗改了数据绑定', (s) => ({ ...s, subviews: s.subviews.split('analyticsReport.behavior.funnel.wishWall.gate.show').join('analyticsReport.behavior.funnel.wishWall.gate.goRegister') }), /R4-3 行为漏斗的数据绑定 funnel\.wishWall\.gate\.show/],
     ['会员号覆盖了带手机号的旧调用', (s) => ({ ...s, staffFn: s.staffFn.replace("const memberNo = !phone ? normalizeMemberNo(event && event.memberNo) : ''", 'const memberNo = normalizeMemberNo(event && event.memberNo)') }), /R4-4 lookupByPhone 的 memberNo 不是/],
     ['会员号候选带出原手机号', (s) => ({ ...s, staffFn: s.staffFn.replace('        phoneMasked: maskPhone(user.phone),\n        name: user.name', '        phoneMasked: maskPhone(user.phone),\n        phone: user.phone,\n        name: user.name') }), /R4-4 会员号查人的候选带出了未脱敏手机号/],
     ['会员号规范化漏了 - / _', (s) => ({ ...s, staffFn: s.staffFn.replace('([A-Z0-9_-]{4})-([A-Z0-9_-]{4})$/) ||', '([A-Z0-9]{4})-([A-Z0-9]{4})$/) ||'), crmFn: s.crmFn.replace('([A-Z0-9_-]{4})-([A-Z0-9_-]{4})$/) ||', '([A-Z0-9]{4})-([A-Z0-9]{4})$/) ||') }), /R4-4 normalizeMemberNo\("MT--_XY-12ZZ"\)/],
