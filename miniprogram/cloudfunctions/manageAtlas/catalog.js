@@ -51,6 +51,31 @@ const ATLAS_SERIES = [
     name: '潮间带',
     speciesIds: ['038', '039', '069', '073'],
     blurb: '水退下去的那几个小时，海把一些形状留在礁石上。'
+  },
+  // 2026-11-23 图鉴扩到 200 页：再加四章（原六章页集不变）
+  {
+    id: 'jewel',
+    name: '宝石甲',
+    speciesIds: ['106', '107', '108', '109', '110', '111', '112', '113'],
+    blurb: '光落在壳上碎成一层彩，颜色是角度给的。'
+  },
+  {
+    id: 'meadow',
+    name: '原野花事',
+    speciesIds: ['126', '127', '128', '129', '130', '142'],
+    blurb: '一季的花压进纸里，颜色走得比那个下午慢一点。'
+  },
+  {
+    id: 'shellroad',
+    name: '贝壳之路',
+    speciesIds: ['151', '152', '153', '154', '164', '167'],
+    blurb: '贝壳做过钱，也做过路标；潮水把它们一枚一枚推上岸。'
+  },
+  {
+    id: 'deeptime',
+    name: '深时',
+    speciesIds: ['187', '188', '189', '190', '200'],
+    blurb: '琥珀、菊石、三叶虫与陨铁，时间在它们身上按万年计。'
   }
 ]
 
@@ -1258,7 +1283,7 @@ const ATLAS_SPECIES = [
     habit: '三斜晶系斜长石，因内部薄层干涉转动时泛蓝绿晕彩',
     collectHint: '收藏馆内对应藏品后自动落入',
     seriesIds: [],
-    aliases: ['拉长石', '光谱石', 'Labradorite', '月光石'],
+    aliases: ['拉长石', '光谱石', 'Labradorite'],
     essay:
       '正面看只是一块灰黑的石头，稍稍转动，蓝和绿忽然从深处浮上来。那光不是颜色，是矿物里极薄的层片让光彼此干涉。换一个角度，它又沉回灰色里去。'
   },
@@ -1276,6 +1301,1807 @@ const ATLAS_SPECIES = [
     aliases: ['辰砂', '朱砂', '丹砂', 'Cinnabar'],
     essay:
       '它的名字来自湖南的辰州，那里出的晶体红得最透。小小的菱面体伏在白色的白云石上，像一滴凝住的血。古人拿它作颜料与印泥，也拿它炼丹，后者伤了不少人。'
+  },
+  // ——— 2026-11-23 图鉴扩到 200 页：新增 120 页（081–200），昆虫 +40 / 植物 +30 / 海洋 +25 / 矿石 +25 ———
+  {
+    id: '081',
+    no: '081',
+    nameZh: '金凤蝶',
+    nameLatin: 'Papilio machaon',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '欧亚大陆与北美的山地、草甸，中国南北多地可见',
+    habit: '幼虫取食伞形科茴香、胡萝卜等，成虫喜访花',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['金凤蝶', '黄凤蝶', 'Old World swallowtail', 'Papilio machaon'],
+    essay:
+      '黄与黑在翅面上分得很清楚，后翅尾突旁各有一枚带蓝鳞的红斑。初夏的山坡上，它常停在开着小白花的伞形科植物上，翅膀张开又合拢，像在数阳光。'
+  },
+  {
+    id: '082',
+    no: '082',
+    nameZh: '玉带凤蝶',
+    nameLatin: 'Papilio polytes',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国长江以南至东南亚、南亚',
+    habit: '幼虫取食柑橘类叶片，雌蝶有多种拟态型',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['玉带凤蝶', '白带凤蝶', 'Common Mormon', 'Papilio polytes'],
+    essay:
+      '黑色的翅上横着一条白斑，像系了一根玉带。雌蝶有好几种模样，有的会模仿带毒的红珠凤蝶，把后翅染上红点。同一个名字下，藏着几种不同的打扮。'
+  },
+  {
+    id: '083',
+    no: '083',
+    nameZh: '青凤蝶',
+    nameLatin: 'Graphium sarpedon',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方、东南亚至澳大利亚东北部',
+    habit: '飞行迅速，雄蝶常聚集在湿地吸水',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['青凤蝶', '青带凤蝶', 'Common Bluebottle', 'Graphium sarpedon'],
+    essay:
+      '一道半透明的青色斑带从前翅贯穿到后翅，像一条细河。它飞得很快，很少停下来，只在雨后的溪边和泥地上聚成一小群，低头喝水。'
+  },
+  {
+    id: '084',
+    no: '084',
+    nameZh: '美凤蝶',
+    nameLatin: 'Papilio memnon',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方、东南亚至印度东北部',
+    habit: '雌雄异型，雌蝶有有尾与无尾等多种型',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['美凤蝶', '大凤蝶', 'Great Mormon', 'Papilio memnon'],
+    essay:
+      '雄蝶是一整片带蓝光的黑，雌蝶却花样繁多，后翅有的拖着尾，有的没有，翅基还常带一抹红。图鉴里只能先收下一种模样，其余的留给下一次遇见。'
+  },
+  {
+    id: '085',
+    no: '085',
+    nameZh: '燕凤蝶',
+    nameLatin: 'Lamproptera curius',
+    category: '昆虫',
+    rarity: 'rare',
+    origin: '中国华南、西南至东南亚的溪谷林缘',
+    habit: '体形很小，后翅尾突极长，悬停时像蜻蜓',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['燕凤蝶', '白带燕凤蝶', 'White Dragontail', 'Lamproptera curius'],
+    essay:
+      '它的尾突比翅膀还长，飞起来时两条白尾一直在身后摆动。在溪边悬停的样子，更像一只小蜻蜓，而不像凤蝶。正午的水面上，最容易看见它。'
+  },
+  {
+    id: '086',
+    no: '086',
+    nameZh: '丝带凤蝶',
+    nameLatin: 'Sericinus montela',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国东北、华北至华东，朝鲜半岛',
+    habit: '幼虫取食马兜铃，成虫飞行缓慢、贴地滑翔',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['丝带凤蝶', '软尾亚凤蝶', 'Sericinus montela'],
+    essay:
+      '翅膀薄得近乎透光，后翅拖着一条柔软的长尾，飞起来像一段被风牵着的丝带。它飞得很慢，常贴着草丛滑过去，春夏之间各出一代。'
+  },
+  {
+    id: '087',
+    no: '087',
+    nameZh: '冰清绢蝶',
+    nameLatin: 'Parnassius glacialis',
+    category: '昆虫',
+    rarity: 'rare',
+    origin: '中国东北、华北至华东山地，日本与朝鲜半岛',
+    habit: '一年一代，春末出现，翅面鳞片稀薄近半透明',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['冰清绢蝶', '白绢蝶', 'Parnassius glacialis'],
+    essay:
+      '它的翅膀像一张起了薄雾的宣纸，几乎透得过光，只在边缘留着一点灰。它只在春末短短出现几周，之后的一整年，都以卵的样子等在山里。'
+  },
+  {
+    id: '088',
+    no: '088',
+    nameZh: '虎斑蝶',
+    nameLatin: 'Danaus genutia',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方、南亚至澳大利亚北部',
+    habit: '幼虫取食萝藦科植物，体内积累毒素以防天敌',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['虎斑蝶', '黑脉桦斑蝶', 'Common Tiger', 'Danaus genutia'],
+    essay:
+      '橙色的翅面上，黑色翅脉像一张摊开的网。它飞得从容，因为幼虫吃下的植物让它带着苦味，鸟很少碰它。这种不慌不忙，本身就是一种警告。'
+  },
+  {
+    id: '089',
+    no: '089',
+    nameZh: '青斑蝶',
+    nameLatin: 'Tirumala limniace',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方、南亚与东南亚',
+    habit: '常在林缘访花，成群越冬',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['青斑蝶', '淡色青斑蝶', 'Blue Tiger', 'Tirumala limniace'],
+    essay:
+      '黑底上散着一片片淡青色的斑，像冬天窗玻璃上的冰花。天冷的时候，它们会聚到背风的山谷里，挂满一整片树枝，等到回暖再散开。'
+  },
+  {
+    id: '090',
+    no: '090',
+    nameZh: '大绢斑蝶',
+    nameLatin: 'Parantica sita',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方、西南至日本、喜马拉雅一带',
+    habit: '能长距离迁飞，日本有秋季南迁的记录',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['大绢斑蝶', 'Chestnut Tiger', 'Parantica sita'],
+    essay:
+      '前翅是半透明的淡青，后翅染着栗色，像同一张纸被分成了两种季节。秋天，有人在它的翅上写下编号放飞，几个月后在千里之外又找到同一只。'
+  },
+  {
+    id: '091',
+    no: '091',
+    nameZh: '海伦闪蝶',
+    nameLatin: 'Morpho helenor',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中美洲至南美洲热带森林',
+    habit: '常沿林道与溪谷低飞，嗜食腐熟落果',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['海伦闪蝶', '蓝带闪蝶', 'Morpho helenor'],
+    essay:
+      '黑色的翅面中间一道宽阔的蓝带，飞起来时蓝和黑一明一灭，在林间忽隐忽现。合起翅膀，背面是褐色的眼斑，一下子就不见了。'
+  },
+  {
+    id: '092',
+    no: '092',
+    nameZh: '黑框蓝闪蝶',
+    nameLatin: 'Morpho peleides',
+    category: '昆虫',
+    rarity: 'rare',
+    origin: '墨西哥至南美北部的热带森林',
+    habit: '翅面蓝色为结构色，合翅时只露褐色眼斑',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['黑框蓝闪蝶', '蓝闪蝶', 'Peleides Blue Morpho', 'Morpho peleides'],
+    essay:
+      '亮蓝的翅面外镶着一圈黑框，像一扇被描了边的窗。那层蓝来自鳞片上细密的结构，换个角度，蓝会变暗，再转回来，又亮起来。'
+  },
+  {
+    id: '093',
+    no: '093',
+    nameZh: '白闪蝶',
+    nameLatin: 'Morpho polyphemus',
+    category: '昆虫',
+    rarity: 'legendary',
+    origin: '墨西哥至中美洲的山地森林',
+    habit: '翅面乳白带珍珠光泽，多在林冠与林缘缓飞',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['白闪蝶', '白色闪蝶', 'White Morpho', 'Morpho polyphemus'],
+    essay:
+      '闪蝶大多是蓝的，它却是一片带着珍珠光的白。阴天的林子里，它飞过的地方像有一盏灯在慢慢移动。翅缘几枚小小的眼斑，是这片白里唯一的标点。'
+  },
+  {
+    id: '094',
+    no: '094',
+    nameZh: '蓝凤蝶',
+    nameLatin: 'Papilio protenor',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国长江以南至日本、朝鲜半岛与喜马拉雅',
+    habit: '幼虫取食柑橘类，成虫喜在林荫下穿行',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['蓝凤蝶', '黑凤蝶', 'Spangle', 'Papilio protenor'],
+    essay:
+      '远看是一只黑凤蝶，走近了，翅面上才浮出一层暗蓝的光。它喜欢在树荫里穿行，光斑落在翅上时，那层蓝会短暂地亮一下。'
+  },
+  {
+    id: '095',
+    no: '095',
+    nameZh: '白带锯蛱蝶',
+    nameLatin: 'Cethosia cyane',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国华南、西南至印度与东南亚',
+    habit: '翅缘呈锯齿状，幼虫取食西番莲科植物',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['白带锯蛱蝶', '锯蛱蝶', 'Leopard Lacewing', 'Cethosia cyane'],
+    essay:
+      '翅缘一圈细密的锯齿，像被剪刀仔细修过。前翅的白带横在橙红与黑之间，把颜色分成了两半。它和血漪蛱蝶是近亲，花纹却是另一种安排。'
+  },
+  {
+    id: '096',
+    no: '096',
+    nameZh: '斐豹蛱蝶',
+    nameLatin: 'Argynnis hyperbius',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国大部分地区，至东亚、南亚与澳大利亚',
+    habit: '幼虫取食堇菜，雌蝶前翅端部黑紫带白斑',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['斐豹蛱蝶', '黑端豹斑蝶', 'Indian Fritillary', 'Argynnis hyperbius'],
+    essay:
+      '橙黄的翅面上撒满黑色圆点，像一块豹纹。雌蝶的前翅尖却是另一副样子，黑紫色上缀着白斑，学的是有毒的斑蝶。城市花坛的堇菜边，常有它的幼虫。'
+  },
+  {
+    id: '097',
+    no: '097',
+    nameZh: '绿豹蛱蝶',
+    nameLatin: 'Argynnis paphia',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '欧亚大陆温带林缘，中国北方与西南山地',
+    habit: '后翅反面带银绿色条纹，夏季常访蓟类花',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['绿豹蛱蝶', '银纹豹蛱蝶', 'Silver-washed Fritillary', 'Argynnis paphia'],
+    essay:
+      '正面是豹斑，翻过来，后翅反面却是一片带银光的淡绿，像林间被风吹翻的叶背。盛夏的林缘，它常停在紫色的蓟花上，一待很久。'
+  },
+  {
+    id: '098',
+    no: '098',
+    nameZh: '美眼蛱蝶',
+    nameLatin: 'Junonia almana',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方至南亚、东南亚',
+    habit: '有明显季节型，旱季型翅反面似枯叶',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['美眼蛱蝶', '孔雀眼蛱蝶', 'Peacock Pansy', 'Junonia almana'],
+    essay:
+      '后翅上一枚大眼斑，带着金色的圈，像一只一直睁着的眼睛。到了旱季，下一代的翅背会变得像枯叶，同一种蝴蝶，随季节换了一身衣裳。'
+  },
+  {
+    id: '099',
+    no: '099',
+    nameZh: '翠蓝眼蛱蝶',
+    nameLatin: 'Junonia orithya',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方至非洲、南亚与澳大利亚',
+    habit: '喜开阔草地，雄蝶后翅翠蓝色',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['翠蓝眼蛱蝶', '青眼蛱蝶', 'Blue Pansy', 'Junonia orithya'],
+    essay:
+      '雄蝶后翅是一片翠蓝，边上缀着两枚小眼斑，在草地上低低飞过时，像一小片掉下来的天。它喜欢开阔向阳的地方，路边、田埂都能遇见。'
+  },
+  {
+    id: '100',
+    no: '100',
+    nameZh: '傲白蛱蝶',
+    nameLatin: 'Helcyra superba',
+    category: '昆虫',
+    rarity: 'rare',
+    origin: '中国华东、华南与西南山地，台湾',
+    habit: '多在林冠活动，偶下到地面吸食树汁',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['傲白蛱蝶', '白蛱蝶', 'Helcyra superba'],
+    essay:
+      '翅正面几乎全白，只在翅尖留着一点黑，反面则带着银白的光泽。它大多待在高高的树冠上，难得下来一次，下来时也只停在流着树汁的地方。'
+  },
+  {
+    id: '101',
+    no: '101',
+    nameZh: '宽边黄粉蝶',
+    nameLatin: 'Eurema hecabe',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方至亚洲、非洲与澳大利亚的热带亚热带',
+    habit: '幼虫取食豆科植物，成虫常在路边低飞',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['宽边黄粉蝶', '黄蝶', 'Common Grass Yellow', 'Eurema hecabe'],
+    essay:
+      '一枚柠檬黄，外缘镶着一道黑边。它在路旁的草丛上低低地飞，一停一停，像被风吹着走的落叶。南方的冬天，它还在飞。'
+  },
+  {
+    id: '102',
+    no: '102',
+    nameZh: '黄尖襟粉蝶',
+    nameLatin: 'Anthocharis scolymus',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国东北、华北至华中，日本与朝鲜半岛',
+    habit: '一年一代，早春出现，雄蝶前翅尖橙黄色',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['黄尖襟粉蝶', '襟粉蝶', 'Yellow Tip', 'Anthocharis scolymus'],
+    essay:
+      '白色的前翅尖上点着一点橙黄，像蘸过颜料的笔尖。它只在早春出现，十字花科的野花一开，它就来了，花谢了，它也就不见了。'
+  },
+  {
+    id: '103',
+    no: '103',
+    nameZh: '菜粉蝶',
+    nameLatin: 'Pieris rapae',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '原产欧亚，现广布北半球温带与澳大利亚',
+    habit: '幼虫取食十字花科蔬菜，一年多代',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['菜粉蝶', '白粉蝶', 'Small White', 'Pieris rapae'],
+    essay:
+      '菜园里最常见的那只白蝴蝶，前翅上一两枚黑点。它太常见了，常见到很少有人停下来看它。在放大镜下，白色的鳞片像撒了一层细盐。'
+  },
+  {
+    id: '104',
+    no: '104',
+    nameZh: '苎麻珍蝶',
+    nameLatin: 'Acraea issoria',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方至东南亚、喜马拉雅',
+    habit: '幼虫取食苎麻等荨麻科植物，体含毒素',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['苎麻珍蝶', '珍蝶', 'Yellow Coster', 'Acraea issoria'],
+    essay:
+      '翅膀是半透明的橙黄，鳞片稀疏，迎着光能看见翅脉。它飞得懒洋洋的，因为身体里带着苦涩的毒，不必着急。苎麻地边，常常一飞就是一片。'
+  },
+  {
+    id: '105',
+    no: '105',
+    nameZh: '曲纹紫灰蝶',
+    nameLatin: 'Chilades pandava',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方至南亚、东南亚',
+    habit: '幼虫取食苏铁嫩叶，城市绿化中常见',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['曲纹紫灰蝶', '苏铁小灰蝶', 'Plains Cupid', 'Chilades pandava'],
+    essay:
+      '小得只有指甲盖大，正面是带紫光的蓝，反面灰白，缀着曲折的细纹。它的幼虫只吃苏铁的新叶，于是城市里种了苏铁的地方，就有了它。'
+  },
+  {
+    id: '106',
+    no: '106',
+    nameZh: '扁锹甲',
+    nameLatin: 'Dorcus titanus',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国大部分地区至东亚、东南亚',
+    habit: '幼虫在朽木中发育，成虫夜行，舔食树汁',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: ['jewel'],
+    aliases: ['扁锹甲', '扁锹形虫', '扁锹', 'Dorcus titanus'],
+    essay:
+      '身体扁平，黑得发亮，一对大颚像张开的钳子。夏夜，它会在流着树汁的树干上出现，与别的甲虫争一个位置。白天，它躲进树皮的缝里。'
+  },
+  {
+    id: '107',
+    no: '107',
+    nameZh: '彩虹锹甲',
+    nameLatin: 'Phalacrognathus muelleri',
+    category: '昆虫',
+    rarity: 'legendary',
+    origin: '澳大利亚昆士兰北部与新几内亚的热带雨林',
+    habit: '幼虫取食腐朽木材，成虫体表金属光泽随角度变色',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: ['jewel'],
+    aliases: ['彩虹锹甲', '彩虹锹形虫', 'Rainbow Stag Beetle', 'Phalacrognathus muelleri'],
+    essay:
+      '它的甲壳像一块被打磨过的金属，绿、铜、紫随着角度流动。那些颜色不是颜料，是外壳表层的结构把光分开了。转一转，它就换一种颜色。'
+  },
+  {
+    id: '108',
+    no: '108',
+    nameZh: '双叉犀金龟',
+    nameLatin: 'Trypoxylus dichotomus',
+    category: '昆虫',
+    rarity: 'rare',
+    origin: '中国大部分地区至日本、朝鲜半岛与东南亚',
+    habit: '幼虫在腐殖土中发育，雄虫头角末端二分叉',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: ['jewel'],
+    aliases: ['双叉犀金龟', '独角仙', 'Japanese Rhinoceros Beetle', 'Trypoxylus dichotomus'],
+    essay:
+      '人们常叫它独角仙，那只角的末端却分成了两叉。盛夏的夜里，它会循着灯光飞来，落地时发出一声闷响。它的力气，能推动比自己重得多的东西。'
+  },
+  {
+    id: '109',
+    no: '109',
+    nameZh: '白星花金龟',
+    nameLatin: 'Protaetia brevitarsis',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国大部分地区至东亚',
+    habit: '成虫白天活动，取食成熟果实与树汁',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: ['jewel'],
+    aliases: ['白星花金龟', '白纹铜花金龟', 'Protaetia brevitarsis'],
+    essay:
+      '古铜色的鞘翅上，散落着不规则的白色斑点，像落了一层细雪。它白天飞行，飞的时候鞘翅不张开，只从侧面伸出后翅，嗡嗡地落在熟透的果子上。'
+  },
+  {
+    id: '110',
+    no: '110',
+    nameZh: '七星瓢虫',
+    nameLatin: 'Coccinella septempunctata',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '欧亚大陆广布，后引入北美',
+    habit: '成虫与幼虫均捕食蚜虫，成虫可群聚越冬',
+    collectHint: '拍照识别',
+    seriesIds: ['jewel'],
+    aliases: ['七星瓢虫', '花大姐', 'Seven-spot Ladybird', 'Coccinella septempunctata'],
+    essay:
+      '红色的圆壳上七枚黑点，三加三，再加中间一枚。它一生要吃掉成百上千只蚜虫。受了惊，它会从腿节渗出一点黄色的苦液，提醒对方别碰。'
+  },
+  {
+    id: '111',
+    no: '111',
+    nameZh: '宝石象鼻虫',
+    nameLatin: 'Eupholus schoenherrii',
+    category: '昆虫',
+    rarity: 'rare',
+    origin: '新几内亚及邻近岛屿的雨林',
+    habit: '体表覆盖蓝绿鳞片，颜色来自鳞片微结构',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: ['jewel'],
+    aliases: ['宝石象鼻虫', '蓝宝石象甲', 'Eupholus schoenherrii'],
+    essay:
+      '蓝与绿一圈一圈地铺在背上，中间夹着黑色的条纹，像一块嵌了珐琅的首饰。它的颜色来自鳞片里细小的结构，在雨林的绿里反而显得很亮。'
+  },
+  {
+    id: '112',
+    no: '112',
+    nameZh: '圣甲虫',
+    nameLatin: 'Scarabaeus sacer',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '地中海沿岸、北非至西亚的干旱地带',
+    habit: '把粪便滚成球推回洞中，供自身与幼虫取食',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: ['jewel'],
+    aliases: ['圣甲虫', '蜣螂', '屎壳郎', 'Sacred Scarab', 'Scarabaeus sacer'],
+    essay:
+      '它倒立着，用后腿推着一颗圆球，一路滚过沙地。古埃及人看见这个画面，想到的是推着太阳走过天空的神。几千年后，这颗球依旧是它的口粮。'
+  },
+  {
+    id: '113',
+    no: '113',
+    nameZh: '中华虎甲',
+    nameLatin: 'Cicindela chinensis',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国大部分地区至东亚',
+    habit: '捕食性，常在山路上贴地疾跑，遇人飞出几步再落下',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: ['jewel'],
+    aliases: ['中华虎甲', '引路虫', 'Cicindela chinensis'],
+    essay:
+      '红、绿、蓝三色拼在一身，在山路上一闪就跑出去好远。人走近，它飞起几步又落下，总在前面一点点，所以有人叫它引路虫。'
+  },
+  {
+    id: '114',
+    no: '114',
+    nameZh: '红尾大蚕蛾',
+    nameLatin: 'Actias rhodopneuma',
+    category: '昆虫',
+    rarity: 'legendary',
+    origin: '中国南部至越南、老挝的山地森林',
+    habit: '成虫口器退化不进食，后翅拖着带红色的长尾',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['红尾大蚕蛾', '粉尾大蚕蛾', 'Actias rhodopneuma'],
+    essay:
+      '淡绿的翅膀，后翅拖着两条长尾，尾端染成了粉红。它羽化之后不再进食，只靠幼虫时攒下的那点力气，活上一周左右，完成一件事就离开。'
+  },
+  {
+    id: '115',
+    no: '115',
+    nameZh: '柞蚕蛾',
+    nameLatin: 'Antheraea pernyi',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '原产中国，东北、山东等地放养历史悠久',
+    habit: '幼虫取食柞树叶，茧丝可缫制柞蚕丝',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['柞蚕蛾', '柞蚕', 'Chinese Tussah Moth', 'Antheraea pernyi'],
+    essay:
+      '黄褐色的翅上各有一枚透明的眼斑，像四扇小窗。它的幼虫被放在柞树林里吃叶子，吐出的丝比家蚕的粗一些，织成的绸带着天然的米黄。'
+  },
+  {
+    id: '116',
+    no: '116',
+    nameZh: '家蚕蛾',
+    nameLatin: 'Bombyx mori',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '由野桑蚕在中国驯化而来，驯化史逾五千年',
+    habit: '成虫几乎不能飞，幼虫只吃桑叶',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['家蚕蛾', '家蚕', '桑蚕', 'Silkworm Moth', 'Bombyx mori'],
+    essay:
+      '一身米白，翅膀短小，已经飞不起来了。几千年里，人们只留下那些不乱跑、吐丝多的，于是它离开人就活不下去。一根丝，从这里一直通到长安以西。'
+  },
+  {
+    id: '117',
+    no: '117',
+    nameZh: '鬼脸天蛾',
+    nameLatin: 'Acherontia lachesis',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南方至南亚、东南亚',
+    habit: '胸背有似人脸的斑纹，受惊时能发出吱吱声，会潜入蜂巢偷蜜',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['鬼脸天蛾', '人面天蛾', 'Greater Death\'s Head Hawkmoth', 'Acherontia lachesis'],
+    essay:
+      '胸背上的斑纹像一张人脸，传说也因此多了起来。其实它只是爱吃蜜，会悄悄钻进蜂巢里偷吃。被抓住时，它会从口中挤出空气，发出细细的吱吱声。'
+  },
+  {
+    id: '118',
+    no: '118',
+    nameZh: '黄蜻',
+    nameLatin: 'Pantala flavescens',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '全球热带至温带广布，中国各地常见',
+    habit: '能跨洋长距离迁飞，常在雨前成群低飞',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['黄蜻', '小黄', 'Wandering Glider', 'Pantala flavescens'],
+    essay:
+      '夏天傍晚，雨来之前，成群低飞的往往就是它。它是飞得最远的昆虫之一，一代接一代，能跨过印度洋。那样远的路，靠的只是一对透明的翅膀。'
+  },
+  {
+    id: '119',
+    no: '119',
+    nameZh: '红蜻',
+    nameLatin: 'Crocothemis servilia',
+    category: '昆虫',
+    rarity: 'common',
+    origin: '中国南北各地，至东亚、南亚与东南亚',
+    habit: '雄性通体鲜红，常停在水边枝头守着领地',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['红蜻', '赤卒', '红蜻蜓', 'Scarlet Skimmer', 'Crocothemis servilia'],
+    essay:
+      '雄性从头到尾一身鲜红，停在水边的芦苇尖上，一动不动。有别的蜻蜓飞过，它就冲出去追一圈，再回到同一根芦苇尖上。'
+  },
+  {
+    id: '120',
+    no: '120',
+    nameZh: '透顶单脉色蟌',
+    nameLatin: 'Matrona basilaris',
+    category: '昆虫',
+    rarity: 'rare',
+    origin: '中国华东、华南与西南的山间溪流',
+    habit: '豆娘的一种，雄性翅膀深蓝黑色带金属光泽',
+    collectHint: '拍照识别，或收藏馆内对应藏品',
+    seriesIds: [],
+    aliases: ['透顶单脉色蟌', '黑翅豆娘', 'Matrona basilaris'],
+    essay:
+      '它是豆娘，停下时翅膀合起来竖在背上。雄性的翅是深深的蓝黑，身体泛着金属绿，在溪边的树影里，一扇一合，像在打着慢慢的信号。'
+  },
+  {
+    id: '121',
+    no: '121',
+    nameZh: '三角枫押花',
+    nameLatin: 'Acer buergerianum',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国长江流域至华南，日本有栽培',
+    habit: '落叶乔木，叶常三浅裂，秋季转为橙红',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['三角枫', '三角槭', 'Trident Maple', 'Acer buergerianum'],
+    essay:
+      '叶片只分三瓣，像一枚小小的三叉。秋天，它的红比鸡爪槭来得早一些，也更偏橙。压在纸里，那点橙会慢慢沉成铁锈色。'
+  },
+  {
+    id: '122',
+    no: '122',
+    nameZh: '乌桕叶押花',
+    nameLatin: 'Triadica sebifera',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国秦岭淮河以南广布，日本与越南有分布',
+    habit: '落叶乔木，叶菱形，秋叶红、黄、紫同在一树',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['乌桕', '乌桕叶', 'Chinese Tallow', 'Triadica sebifera'],
+    essay:
+      '菱形的叶子，秋天能在同一棵树上同时红、黄、紫。古人说「乌桕赤于枫」。冬天叶落之后，枝头挂着一串串白色的种子，像没化的雪。'
+  },
+  {
+    id: '123',
+    no: '123',
+    nameZh: '黄栌押花',
+    nameLatin: 'Cotinus coggygria',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国华北、西南至南欧，北京香山红叶即以它为主',
+    habit: '落叶灌木或小乔木，叶近圆形，秋季变红',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['黄栌', '香山红叶', 'Smoke Tree', 'Cotinus coggygria'],
+    essay:
+      '北京秋天满山的红叶，大多是它。叶子圆圆的，像一枚枚铜钱，入秋之后由绿转黄再转红。夏天花谢后，花梗上会长出一团团羽毛似的烟。'
+  },
+  {
+    id: '124',
+    no: '124',
+    nameZh: '鹅掌楸押花',
+    nameLatin: 'Liriodendron chinense',
+    category: '植物',
+    rarity: 'rare',
+    origin: '中国长江以南山地，野生种群稀少，馆藏取自栽培',
+    habit: '落叶乔木，叶形似马褂，古老的木兰科孑遗种',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['鹅掌楸', '马褂木', 'Chinese Tulip Tree', 'Liriodendron chinense'],
+    essay:
+      '叶子的轮廓像一件马褂，两侧各收进去一块，顶端平平地截断。它的家族在冰期之前遍布北半球，如今只剩下两种，一种在中国，一种在北美。'
+  },
+  {
+    id: '125',
+    no: '125',
+    nameZh: '悬铃木叶押花',
+    nameLatin: 'Platanus acerifolia',
+    category: '植物',
+    rarity: 'common',
+    origin: '杂交起源，广植于世界各地城市，上海、南京行道树常见',
+    habit: '落叶大乔木，树皮片状剥落，球果悬垂如铃',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['悬铃木', '法国梧桐', '二球悬铃木', 'London Plane', 'Platanus acerifolia'],
+    essay:
+      '人们叫它法国梧桐，它既不来自法国，也不是梧桐。宽大的叶子在秋天落满街道，踩上去是一种很脆的声音。枝头挂着的小球，到冬天还在摇。'
+  },
+  {
+    id: '126',
+    no: '126',
+    nameZh: '蒲公英标本',
+    nameLatin: 'Taraxacum mongolicum',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国南北各地的路边、草地与田野',
+    habit: '菊科多年生草本，瘦果带冠毛，随风传播',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['meadow'],
+    aliases: ['蒲公英', '婆婆丁', 'Dandelion', 'Taraxacum mongolicum'],
+    essay:
+      '一整颗白色的绒球，每一根绒毛下都挂着一粒种子。风一来，它们各自飞走。封进玻璃罩里的这一颗，把那个将散未散的瞬间留住了。'
+  },
+  {
+    id: '127',
+    no: '127',
+    nameZh: '满天星',
+    nameLatin: 'Gypsophila paniculata',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产欧洲东部至中亚，现广泛栽培',
+    habit: '石竹科多年生草本，圆锥花序上开满白色小花',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['meadow'],
+    aliases: ['满天星', '圆锥石头花', 'Baby\'s Breath', 'Gypsophila paniculata'],
+    essay:
+      '成百上千朵小白花挤在细枝上，远看像一团雾。它常常被放在花束的边上，衬着别的花。干了以后，形状几乎不变，只是白色里多了一点米黄。'
+  },
+  {
+    id: '128',
+    no: '128',
+    nameZh: '勿忘我押花',
+    nameLatin: 'Myosotis sylvatica',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产欧洲，各地有栽培',
+    habit: '紫草科草本，花小，天蓝色，花心一圈黄',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['meadow'],
+    aliases: ['勿忘我', '森林勿忘草', 'Forget-me-not', 'Myosotis sylvatica'],
+    essay:
+      '五片天蓝色的小花瓣，中间一圈淡黄。它的名字是一句请求。压进纸里之后，那点蓝会比别的颜色留得更久一些。'
+  },
+  {
+    id: '129',
+    no: '129',
+    nameZh: '三色堇押花',
+    nameLatin: 'Viola tricolor',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产欧洲，园艺品种广泛栽培',
+    habit: '堇菜科草本，花瓣常有紫、黄、白三色',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['meadow'],
+    aliases: ['三色堇', '猫脸花', 'Heartsease', 'Viola tricolor'],
+    essay:
+      '花瓣上的深色纹路，像一张小小的脸，所以有人叫它猫脸花。它很适合押花，花瓣薄，压平之后，纹路一条不少。'
+  },
+  {
+    id: '130',
+    no: '130',
+    nameZh: '波斯菊押花',
+    nameLatin: 'Cosmos bipinnatus',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产墨西哥，现世界各地广泛栽培与逸生',
+    habit: '菊科一年生草本，叶细裂如羽，秋季花开成片',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['meadow'],
+    aliases: ['波斯菊', '格桑花', '秋英', 'Garden Cosmos', 'Cosmos bipinnatus'],
+    essay:
+      '细长的茎顶着一朵花，风一吹，满坡都在点头。它来自墨西哥，却在高原上有了另一个名字，格桑花。压平的花瓣，边缘还留着细细的齿。'
+  },
+  {
+    id: '131',
+    no: '131',
+    nameZh: '千日红',
+    nameLatin: 'Gomphrena globosa',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产美洲热带，中国南北常见栽培',
+    habit: '苋科一年生草本，球形花序由干膜质苞片组成，久不褪色',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['千日红', '百日红', 'Globe Amaranth', 'Gomphrena globosa'],
+    essay:
+      '一颗颗紫红色的小圆球，看上去像花，其实是一层层干膜似的苞片。它天生就干燥，剪下来放上很久，颜色也不怎么变，所以叫千日红。'
+  },
+  {
+    id: '132',
+    no: '132',
+    nameZh: '鼠尾草标本',
+    nameLatin: 'Salvia officinalis',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产地中海沿岸，现广泛栽培',
+    habit: '唇形科亚灌木，叶灰绿有绒毛，揉之有香气',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['鼠尾草', '药用鼠尾草', 'Common Sage', 'Salvia officinalis'],
+    essay:
+      '灰绿色的叶子上有一层细绒，摸上去像旧呢子。揉一揉，手指上就留下一股暖暖的草香。干燥之后，香气淡了，那层绒还在。'
+  },
+  {
+    id: '133',
+    no: '133',
+    nameZh: '狗尾草标本',
+    nameLatin: 'Setaria viridis',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国南北各地，广布全球温带',
+    habit: '禾本科一年生草本，圆锥花序紧密成穗，带长刚毛',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['狗尾草', '毛毛草', 'Green Foxtail', 'Setaria viridis'],
+    essay:
+      '路边、墙角、田埂上，一根根毛茸茸的穗子在风里弯着腰。几乎每个人小时候都折过一根。干了以后，它的颜色从绿变成了浅金。'
+  },
+  {
+    id: '134',
+    no: '134',
+    nameZh: '芦苇标本',
+    nameLatin: 'Phragmites australis',
+    category: '植物',
+    rarity: 'common',
+    origin: '全球广布的湿地植物，中国各地水边常见',
+    habit: '禾本科多年生高大草本，秋季圆锥花序呈银灰或紫褐',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['芦苇', '蒹葭', 'Common Reed', 'Phragmites australis'],
+    essay:
+      '《诗经》里写「蒹葭苍苍」，说的就是它。秋天，水边一片银灰色的穗子，被风推着一齐倒向一边。剪下一枝放进瓶里，可以放到第二年。'
+  },
+  {
+    id: '135',
+    no: '135',
+    nameZh: '兔尾草',
+    nameLatin: 'Lagurus ovatus',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产地中海沿岸，现作观赏草栽培',
+    habit: '禾本科一年生草本，花序卵圆形，密被柔毛',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['兔尾草', '兔子尾巴草', 'Hare\'s-tail Grass', 'Lagurus ovatus'],
+    essay:
+      '每一根细茎的顶端，都顶着一团软绒绒的小穗，真像一截兔子尾巴。它干了也不掉毛，常被扎进干花束里，摸一下，指尖是软的。'
+  },
+  {
+    id: '136',
+    no: '136',
+    nameZh: '尤加利叶标本',
+    nameLatin: 'Eucalyptus cinerea',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产澳大利亚东南部，现作切叶广泛栽培',
+    habit: '桃金娘科乔木，幼叶圆形，灰蓝色被白粉',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['尤加利', '银元桉', '银叶桉', 'Silver Dollar Gum', 'Eucalyptus cinerea'],
+    essay:
+      '圆圆的叶子一枚接一枚串在枝上，像一串灰蓝色的硬币。叶面覆着一层白粉，揉开有清凉的气味。干燥后，那层灰蓝会更明显一点。'
+  },
+  {
+    id: '137',
+    no: '137',
+    nameZh: '棉花标本',
+    nameLatin: 'Gossypium hirsutum',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产中美洲，现为世界主要栽培棉种，中国新疆为主产区',
+    habit: '锦葵科，蒴果成熟开裂，种子表皮纤维即棉絮',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['棉花', '陆地棉', 'Upland Cotton', 'Gossypium hirsutum'],
+    essay:
+      '棉桃裂开，里面是一团团雪白的纤维，裹着黑色的种子。我们身上穿的，最初就是这样的一团。秋天的新疆，整片田地都是这种白。'
+  },
+  {
+    id: '138',
+    no: '138',
+    nameZh: '玉兰押花',
+    nameLatin: 'Yulania denudata',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国中部，各地广泛栽培，上海市花',
+    habit: '木兰科落叶乔木，先花后叶，早春开花',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['玉兰', '白玉兰', 'Yulan Magnolia', 'Yulania denudata'],
+    essay:
+      '叶子还没长出来，花就先开了，一树白，像一盏盏点起来的灯。花瓣厚，押花时要多换几次吸水纸，才能留住那一点象牙色。'
+  },
+  {
+    id: '139',
+    no: '139',
+    nameZh: '山茶押花',
+    nameLatin: 'Camellia japonica',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国东部、日本与朝鲜半岛，园艺品种极多',
+    habit: '山茶科常绿灌木或小乔木，冬末春初开花，花常整朵落下',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['山茶', '茶花', 'Camellia', 'Camellia japonica'],
+    essay:
+      '它开在冬末，凋谢时不是一瓣一瓣地落，而是整朵掉下来，落在地上还是完整的一朵。叶子厚而亮，像上过一层蜡。'
+  },
+  {
+    id: '140',
+    no: '140',
+    nameZh: '紫藤押花',
+    nameLatin: 'Wisteria sinensis',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国华北至华南，各地庭院广泛栽培',
+    habit: '豆科落叶木质藤本，总状花序下垂，紫色，春季开花',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['紫藤', '藤萝', 'Chinese Wisteria', 'Wisteria sinensis'],
+    essay:
+      '四月，一串串紫色的花从架子上垂下来，风一吹，整面墙都在晃。走过的时候，能闻到一点淡淡的甜。押平的小花，像一只只停下的蝶。'
+  },
+  {
+    id: '141',
+    no: '141',
+    nameZh: '鸢尾押花',
+    nameLatin: 'Iris tectorum',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国中部、西南，日本与朝鲜半岛有栽培',
+    habit: '鸢尾科多年生草本，外花被片带深紫色脉纹与鸡冠状附属物',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['鸢尾', '蓝蝴蝶', 'Roof Iris', 'Iris tectorum'],
+    essay:
+      '它的花像一只停下的蓝紫色蝴蝶，外面三片向下垂，里面三片向上收。花瓣上的深色脉纹，是给昆虫画的路标，指向藏着花蜜的地方。'
+  },
+  {
+    id: '142',
+    no: '142',
+    nameZh: '虞美人押花',
+    nameLatin: 'Papaver rhoeas',
+    category: '植物',
+    rarity: 'common',
+    origin: '原产欧洲与北非，各地广泛栽培',
+    habit: '罂粟科一年生草本，花瓣薄如绉纸，不含成瘾物质',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['meadow'],
+    aliases: ['虞美人', '丽春花', 'Corn Poppy', 'Papaver rhoeas'],
+    essay:
+      '花瓣薄得像一张揉过又摊开的绉纸，红得很纯，靠近中心有一块黑斑。它的花期很短，一朵往往只开一两天。押花时，那片薄最难留住。'
+  },
+  {
+    id: '143',
+    no: '143',
+    nameZh: '王莲叶脉',
+    nameLatin: 'Victoria amazonica',
+    category: '植物',
+    rarity: 'legendary',
+    origin: '南美亚马孙河流域的静水湖泊与河湾',
+    habit: '睡莲科水生草本，巨叶直径可逾两米，叶背有粗壮的网状叶脉',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['王莲', '亚马孙王莲', 'Giant Water Lily', 'Victoria amazonica'],
+    essay:
+      '它的叶子大到能托起一个孩子，叶缘翻起，像一只浮在水上的盘子。秘密在叶背，一张粗壮的叶脉网撑着整片叶，有建筑师从这里得到过灵感。'
+  },
+  {
+    id: '144',
+    no: '144',
+    nameZh: '卷柏标本',
+    nameLatin: 'Selaginella tamariscina',
+    category: '植物',
+    rarity: 'rare',
+    origin: '中国南北各地的岩石缝隙中',
+    habit: '卷柏科多年生草本，干旱时枝叶卷缩如拳，遇水即舒展',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['卷柏', '九死还魂草', 'Selaginella tamariscina'],
+    essay:
+      '天旱的时候，它把枝叶向内卷起，缩成一个干枯的拳头，像死了一样。等到一场雨，几个小时之内，它又一点一点舒展开，重新变绿。'
+  },
+  {
+    id: '145',
+    no: '145',
+    nameZh: '肾蕨标本',
+    nameLatin: 'Nephrolepis cordifolia',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国南方至全球热带亚热带',
+    habit: '肾蕨科多年生草本，羽片整齐排列，常作观叶与切叶',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['肾蕨', '蜈蚣草', 'Fishbone Fern', 'Nephrolepis cordifolia'],
+    essay:
+      '一根长长的叶轴，两侧排着整整齐齐的小羽片，像一把细齿的梳子。它不开花，靠叶背的孢子繁衍，这个办法已经用了几亿年。'
+  },
+  {
+    id: '146',
+    no: '146',
+    nameZh: '鹿角蕨',
+    nameLatin: 'Platycerium bifurcatum',
+    category: '植物',
+    rarity: 'rare',
+    origin: '原产澳大利亚东部与新几内亚，现为常见附生观叶植物',
+    habit: '附生蕨类，营养叶贴树干，孢子叶分叉如鹿角',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['鹿角蕨', '二歧鹿角蕨', 'Staghorn Fern', 'Platycerium bifurcatum'],
+    essay:
+      '它不长在土里，而是抱在树干上。贴着树皮的那层叶子负责接住落叶和雨水，向外伸出的叶子分了一叉又一叉，像一对鹿角挂在墙上。'
+  },
+  {
+    id: '147',
+    no: '147',
+    nameZh: '大灰藓',
+    nameLatin: 'Hypnum plumaeforme',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国南北各地的林下、树干与岩面',
+    habit: '灰藓科藓类，茎匍匐，羽状分枝，常成片生长',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['大灰藓', '苔藓', 'Hypnum plumaeforme'],
+    essay:
+      '林子里最安静的那一层绿。它没有根，也没有花，靠一层层细小的叶子留住雾气和雨水。蹲下来细看，每一根小茎都是一枚羽毛的形状。'
+  },
+  {
+    id: '148',
+    no: '148',
+    nameZh: '红松松塔',
+    nameLatin: 'Pinus koraiensis',
+    category: '植物',
+    rarity: 'common',
+    origin: '中国东北长白山、小兴安岭至朝鲜半岛、俄罗斯远东',
+    habit: '松科常绿乔木，球果大，种子即松子，可食',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['红松', '松塔', '果松', 'Korean Pine', 'Pinus koraiensis'],
+    essay:
+      '一枚松塔要在树上长两年才熟。每一片鳞片下面藏着两粒松子，松鼠和星鸦把它们埋起来过冬，忘了取回的那些，就在来年长成小树。'
+  },
+  {
+    id: '149',
+    no: '149',
+    nameZh: '龙胆标本',
+    nameLatin: 'Gentiana scabra',
+    category: '植物',
+    rarity: 'rare',
+    origin: '中国东北至华东、华南的山坡草地',
+    habit: '龙胆科多年生草本，秋季开蓝紫色钟形花，根味极苦',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['龙胆', '龙胆草', 'Japanese Gentian', 'Gentiana scabra'],
+    essay:
+      '深秋的山坡，草都黄了，它才开出蓝紫色的钟形花。名字里有龙，是因为它的根苦得像胆。阴天它把花合起来，太阳一出又张开。'
+  },
+  {
+    id: '150',
+    no: '150',
+    nameZh: '水杉枝叶标本',
+    nameLatin: 'Metasequoia glyptostroboides',
+    category: '植物',
+    rarity: 'legendary',
+    origin: '野生种群仅见于湖北利川一带，现世界各地广泛栽培，馆藏取自栽培',
+    habit: '柏科落叶乔木，线形叶对生成羽状，秋季转为红褐后脱落',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['水杉', 'Dawn Redwood', 'Metasequoia glyptostroboides'],
+    essay:
+      '它先在化石里被认出来，人们以为它早已灭绝。几年之后，在湖北的山村里找到了活着的树。那一排排羽状的小叶，秋天会一起变成红褐色。'
+  },
+  {
+    id: '151',
+    no: '151',
+    nameZh: '阿拉伯宝螺',
+    nameLatin: 'Mauritia arabica',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—太平洋热带浅海，中国南海与台湾',
+    habit: '外套膜包覆壳面使其光亮，壳背有似文字的细纹',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['shellroad'],
+    aliases: ['阿拉伯宝螺', '阿拉伯绶贝', 'Arabian Cowry', 'Mauritia arabica'],
+    essay:
+      '壳背上布满褐色的细纹，交错得像一行行写下的字，它的名字就从这里来。壳面光亮，是活着时外套膜一遍遍抹出来的，像上过釉的瓷。'
+  },
+  {
+    id: '152',
+    no: '152',
+    nameZh: '货贝',
+    nameLatin: 'Monetaria moneta',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—太平洋热带浅海，马尔代夫一带尤多',
+    habit: '小型宝螺，壳淡黄，古代在亚非多地被用作货币',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['shellroad'],
+    aliases: ['货贝', '黄宝螺', '贝币', 'Money Cowry', 'Monetaria moneta'],
+    essay:
+      '它小得能握一把在手心，淡黄色，光滑。几千年前，它是钱，从印度洋运到中原，「财」「货」「贵」这些字里，都还留着一个贝。'
+  },
+  {
+    id: '153',
+    no: '153',
+    nameZh: '蝎螺',
+    nameLatin: 'Lambis scorpius',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—太平洋热带珊瑚礁浅海，中国南海',
+    habit: '壳口外唇伸出多根带节的长棘，似蝎尾',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['shellroad'],
+    aliases: ['蝎螺', '蝎尾螺', 'Scorpion Conch', 'Lambis scorpius'],
+    essay:
+      '壳口伸出几根长长的棘，每一根上都带着一节一节的疙瘩，像蝎子翘起的尾巴。它和水字螺是近亲，在礁石间慢慢爬，靠那些棘撑住身体。'
+  },
+  {
+    id: '154',
+    no: '154',
+    nameZh: '篱凤螺',
+    nameLatin: 'Conomurex luhuanus',
+    category: '海洋',
+    rarity: 'common',
+    origin: '西太平洋热带浅海砂底，中国南海与台湾',
+    habit: '壳口内缘橙红，边缘黑褐，以细长的口盖撑地跳跃前进',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['shellroad'],
+    aliases: ['篱凤螺', '红口凤螺', 'Strawberry Conch', 'Conomurex luhuanus'],
+    essay:
+      '翻过来，壳口里是一片橙红，边上镶着一道黑。它走路不是爬，而是用一片尖尖的口盖撑住沙地，一下一下地跳着往前。'
+  },
+  {
+    id: '155',
+    no: '155',
+    nameZh: '金口蝾螺',
+    nameLatin: 'Turbo chrysostomus',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—太平洋热带浅海礁石，中国南海',
+    habit: '壳口内呈金黄色，有石灰质厚口盖',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['金口蝾螺', '金口螺', 'Gold-mouth Turban', 'Turbo chrysostomus'],
+    essay:
+      '壳外是粗糙的灰绿，翻过来，壳口里却是一圈亮亮的金黄。它用一块厚厚的石灰质口盖把门关上，那块口盖被人叫作猫眼。'
+  },
+  {
+    id: '156',
+    no: '156',
+    nameZh: '夜光蝾螺',
+    nameLatin: 'Turbo marmoratus',
+    category: '海洋',
+    rarity: 'rare',
+    origin: '印度—西太平洋热带珊瑚礁',
+    habit: '大型蝾螺，壳内为厚层珍珠质，历来用于螺钿镶嵌',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['夜光蝾螺', '夜光螺', 'Green Turban', 'Turbo marmoratus'],
+    essay:
+      '外壳是暗绿色带斑纹的，磨开之后，里面是一层厚厚的珍珠光。古代的螺钿漆器，许多就用它切成薄片，一片片嵌进黑漆里，光在里面流动。'
+  },
+  {
+    id: '157',
+    no: '157',
+    nameZh: '皱纹盘鲍',
+    nameLatin: 'Haliotis discus hannai',
+    category: '海洋',
+    rarity: 'common',
+    origin: '中国黄渤海沿岸，日本与朝鲜半岛，现大量养殖',
+    habit: '壳扁平呈耳状，一侧有一列呼吸孔，内壁珍珠层五彩',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['皱纹盘鲍', '鲍鱼', '九孔', 'Haliotis discus hannai'],
+    essay:
+      '壳像一只摊开的耳朵，沿边一排小孔，是它呼吸和排水的地方。外面粗糙，里面却是一片流动的虹彩，绿、紫、粉都在，转一下就换一种。'
+  },
+  {
+    id: '158',
+    no: '158',
+    nameZh: '马氏珠母贝',
+    nameLatin: 'Pinctada fucata',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—太平洋暖水海域，中国广西北海、广东湛江为养殖地',
+    habit: '珍珠贝科双壳类，海水珍珠的主要母贝',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['马氏珠母贝', '合浦珠母贝', '珍珠贝', 'Akoya Pearl Oyster', 'Pinctada fucata'],
+    essay:
+      '一粒沙或一小片植入的核进到壳里，它就一层一层地分泌珍珠质把它包起来。「合浦珠还」说的就是它的故乡。壳的内壁，和珍珠是同一种光。'
+  },
+  {
+    id: '159',
+    no: '159',
+    nameZh: '栉江珧',
+    nameLatin: 'Atrina pectinata',
+    category: '海洋',
+    rarity: 'common',
+    origin: '中国沿海至西太平洋、印度洋的泥沙底',
+    habit: '大型双壳类，尖端插入泥沙中直立生活，以足丝固着',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['栉江珧', '江珧', '带子', 'Pen Shell', 'Atrina pectinata'],
+    essay:
+      '壳是一个细长的三角，尖的那头插在海底的泥沙里，宽的那头朝上张开。它用一束丝固定自己，古时候，有人用这类贝的丝织过布。'
+  },
+  {
+    id: '160',
+    no: '160',
+    nameZh: '日月贝',
+    nameLatin: 'Amusium pleuronectes',
+    category: '海洋',
+    rarity: 'common',
+    origin: '西太平洋热带浅海砂底，中国南海北部湾',
+    habit: '扇贝科，两壳颜色不同，一面红褐一面白，能开合双壳游泳',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['日月贝', '海扇', 'Asian Moon Scallop', 'Amusium pleuronectes'],
+    essay:
+      '一面是红褐，像太阳；一面是乳白，像月亮，所以叫日月贝。它能把两片壳快速开合，喷着水在海里一跳一跳地游，扇贝里它游得最好。'
+  },
+  {
+    id: '161',
+    no: '161',
+    nameZh: '心鸟蛤',
+    nameLatin: 'Corculum cardissa',
+    category: '海洋',
+    rarity: 'rare',
+    origin: '印度—西太平洋热带珊瑚礁浅海',
+    habit: '双壳侧扁成心形，体内共生藻类，半透明的壳让光透进去',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['心鸟蛤', '心形贝', 'Heart Cockle', 'Corculum cardissa'],
+    essay:
+      '从正面看，两片壳合起来，就是一颗心的形状。它的壳有一部分是半透明的，阳光照进去，养活住在它身体里的藻，藻再分给它一点养分。'
+  },
+  {
+    id: '162',
+    no: '162',
+    nameZh: '船蛸壳',
+    nameLatin: 'Argonauta argo',
+    category: '海洋',
+    rarity: 'legendary',
+    origin: '全球热带至温带海域的表层水',
+    habit: '章鱼的近亲，雌性以腕分泌出薄如纸的卵壳，携卵漂游',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['船蛸', '纸鹦鹉螺', 'Paper Nautilus', 'Argonauta argo'],
+    essay:
+      '它不是螺，也不是鹦鹉螺，而是一种章鱼。雌性用两条腕分泌出一只薄得透光的壳，把卵放在里面，抱着它在海面附近漂。那只壳，只为一窝卵而做。'
+  },
+  {
+    id: '163',
+    no: '163',
+    nameZh: '地纹芋螺',
+    nameLatin: 'Conus geographus',
+    category: '海洋',
+    rarity: 'rare',
+    origin: '印度—太平洋热带珊瑚礁',
+    habit: '以毒齿舌捕鱼，毒性极强，活体切勿触碰',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['地纹芋螺', '杀手芋螺', 'Geography Cone', 'Conus geographus'],
+    essay:
+      '壳上褐色的斑纹，像一张画着山川的旧地图。它在夜里张开口，把小鱼整个吞进去，靠的是一枚带毒的齿舌。这里陈列的，是早已空了的壳。'
+  },
+  {
+    id: '164',
+    no: '164',
+    nameZh: '笔螺',
+    nameLatin: 'Mitra mitra',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—太平洋热带浅海砂底',
+    habit: '壳细长如笔尖，白底上排列橙红色方斑',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['shellroad'],
+    aliases: ['笔螺', '主教冠螺', 'Episcopal Miter', 'Mitra mitra'],
+    essay:
+      '壳又细又长，尖得像一支笔，也像主教头上的冠。白色的壳面上，一排排橙红色的方块整整齐齐，仿佛有人用印章一格一格盖上去。'
+  },
+  {
+    id: '165',
+    no: '165',
+    nameZh: '红口榧螺',
+    nameLatin: 'Oliva miniacea',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—太平洋热带浅海砂底',
+    habit: '壳呈橄榄形，光滑，壳口内橙红，夜间在沙中觅食',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['红口榧螺', '橄榄螺', 'Red-mouth Olive', 'Oliva miniacea'],
+    essay:
+      '形状像一颗橄榄，表面光滑得不用打磨。白天它把自己埋进沙里，夜里才出来。翻过来看，壳口里藏着一抹橙红。'
+  },
+  {
+    id: '166',
+    no: '166',
+    nameZh: '千手螺',
+    nameLatin: 'Chicoreus ramosus',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—西太平洋热带浅海，中国南海',
+    habit: '大型骨螺，壳上生有多列分枝状棘刺，捕食双壳类',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['千手螺', '大千手螺', 'Ramose Murex', 'Chicoreus ramosus'],
+    essay:
+      '壳上长着一列列分叉的棘，像一只伸出很多只手的螺。它是骨螺家族里块头大的，能撬开别的贝壳。棘的末端，常常还带着一点粉色。'
+  },
+  {
+    id: '167',
+    no: '167',
+    nameZh: '绮蛳螺',
+    nameLatin: 'Epitonium scalare',
+    category: '海洋',
+    rarity: 'legendary',
+    origin: '西太平洋至印度洋，日本、中国台湾与菲律宾',
+    habit: '螺层之间不相连，只靠一圈圈纵肋撑起，形如旋梯',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: ['shellroad'],
+    aliases: ['绮蛳螺', '梯螺', '名贵梯螺', 'Precious Wentletrap', 'Epitonium scalare'],
+    essay:
+      '它的螺层彼此并不相贴，中间是空的，只靠一圈圈细肋把整座旋梯撑起来。十八世纪的欧洲，一枚这样的壳价值不菲，据说有人用米粉做过仿品。'
+  },
+  {
+    id: '168',
+    no: '168',
+    nameZh: '紫海胆壳',
+    nameLatin: 'Heliocidaris crassispina',
+    category: '海洋',
+    rarity: 'common',
+    origin: '中国东海、南海沿岸岩礁，至日本南部',
+    habit: '棘皮动物，壳由石灰质骨板拼成，五辐射对称',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['紫海胆', '海胆', 'Purple Sea Urchin', 'Heliocidaris crassispina'],
+    essay:
+      '刺褪去之后，留下的是一个圆圆的壳，上面排着一圈圈细小的瘤点，五道纹路从顶上分下来。它和海星是近亲，同样是五的倍数。'
+  },
+  {
+    id: '169',
+    no: '169',
+    nameZh: '面包海星',
+    nameLatin: 'Culcita novaeguineae',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—西太平洋热带珊瑚礁',
+    habit: '腕极短，身体鼓起成五边形面包状，以珊瑚表面的有机物为食',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['面包海星', '馒头海星', 'Cushion Star', 'Culcita novaeguineae'],
+    essay:
+      '它的五条腕短得几乎看不出来，整个身体鼓起来，像一块刚出炉的面包。仔细看，背上的纹路仍然能数出五个方向。'
+  },
+  {
+    id: '170',
+    no: '170',
+    nameZh: '华贵栉孔扇贝',
+    nameLatin: 'Mimachlamys nobilis',
+    category: '海洋',
+    rarity: 'common',
+    origin: '中国福建、广东、广西沿海至日本南部',
+    habit: '扇贝科，壳色多变，有紫、橙、黄、白等，现多养殖',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['华贵栉孔扇贝', 'Noble Scallop', 'Mimachlamys nobilis'],
+    essay:
+      '同一种扇贝，壳的颜色却各不相同，紫的、橙的、柠檬黄的，排在一起像一盘色卡。放射状的肋一条一条，从壳顶散开，像扇子的骨。'
+  },
+  {
+    id: '171',
+    no: '171',
+    nameZh: '文蛤',
+    nameLatin: 'Meretrix meretrix',
+    category: '海洋',
+    rarity: 'common',
+    origin: '中国沿海潮间带至浅海砂底，江苏如东一带尤多',
+    habit: '帘蛤科双壳类，壳面光滑，花纹因个体而异',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['文蛤', '花蛤', 'Asiatic Hard Clam', 'Meretrix meretrix'],
+    essay:
+      '壳面光滑，每一只身上的花纹都不一样，有的是细细的折线，有的是一片墨色。潮水退去，人们在沙滩上踩一踩，脚底下鼓起的地方就是它。'
+  },
+  {
+    id: '172',
+    no: '172',
+    nameZh: '大角贝',
+    nameLatin: 'Pictodentalium vernedei',
+    category: '海洋',
+    rarity: 'common',
+    origin: '西太平洋，日本、中国东海与南海的砂泥底',
+    habit: '掘足纲软体动物，壳呈两端开口的弯管状',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['大角贝', '象牙贝', 'Tusk Shell', 'Pictodentalium vernedei'],
+    essay:
+      '它的壳是一根微微弯着的细管，两头都开着口，像一枚小小的象牙。它把宽的一头插进海底的泥沙里，细的一头露出来，用来换水。'
+  },
+  {
+    id: '173',
+    no: '173',
+    nameZh: '蛇首宝螺',
+    nameLatin: 'Monetaria caputserpentis',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—太平洋热带浅海岩礁，中国南海与台湾',
+    habit: '壳背褐底散布白斑，两侧深褐，形似蛇头',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['蛇首宝螺', '蛇首眼球贝', 'Serpent\'s Head Cowry', 'Monetaria caputserpentis'],
+    essay:
+      '从上往下看，深褐色的壳背缀满白点，两侧颜色更深，整枚贝像一只昂起的蛇头。它住在潮间带的岩缝里，退潮时也能看见。'
+  },
+  {
+    id: '174',
+    no: '174',
+    nameZh: '黑蝶珍珠贝',
+    nameLatin: 'Pinctada margaritifera',
+    category: '海洋',
+    rarity: 'rare',
+    origin: '印度—太平洋热带海域，法属波利尼西亚为主要养殖地',
+    habit: '珍珠贝科大型双壳类，壳内缘带黑色珍珠层，出产黑珍珠',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['黑蝶珍珠贝', '珠母贝', '黑蝶贝', 'Black-lip Pearl Oyster', 'Pinctada margaritifera'],
+    essay:
+      '壳的内壁大部分是银白的珍珠光，靠近边缘却渐渐暗成黑灰。大溪地的黑珍珠就从这里来，那一点墨色，是它边缘这道黑留下的。'
+  },
+  {
+    id: '175',
+    no: '175',
+    nameZh: '笋螺',
+    nameLatin: 'Turritella terebra',
+    category: '海洋',
+    rarity: 'common',
+    origin: '印度—西太平洋，中国东海、南海的泥沙底',
+    habit: '壳呈细长塔形，螺层多达二十层以上，滤食为生',
+    collectHint: '收藏馆内对应藏品后自动落入',
+    seriesIds: [],
+    aliases: ['笋螺', '锥螺', '塔螺', 'Screw Shell', 'Turritella terebra'],
+    essay:
+      '壳细长，一层一层盘上去，像一根剥了皮的笋，又像一座塔。数一数，螺层有二十多圈。它不太爬动，把自己埋在泥沙里，滤着海水过日子。'
+  },
+  {
+    id: '176',
+    no: '176',
+    nameZh: '冰洲石',
+    nameLatin: 'Calcite',
+    category: '矿石',
+    rarity: 'common',
+    origin: '冰岛、墨西哥，中国内蒙古、贵州等地',
+    habit: '三方晶系碳酸钙，透明者有显著双折射，菱面体完全解理',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['冰洲石', '方解石', 'Iceland Spar', 'Calcite'],
+    essay:
+      '把它放在一行字上，透过去看，字会变成两行。这是光进去之后分成了两条路。它敲开时总沿着同一个方向裂开，碎块仍然是一个个小菱面体。'
+  },
+  {
+    id: '177',
+    no: '177',
+    nameZh: '白水晶',
+    nameLatin: 'Rock Crystal',
+    category: '矿石',
+    rarity: 'common',
+    origin: '巴西、马达加斯加、美国阿肯色，中国江苏东海',
+    habit: '三方晶系二氧化硅，六方柱状晶体，透明无色',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['白水晶', '石英', '水晶', 'Rock Crystal', 'Quartz'],
+    essay:
+      '六面的柱子，顶上收成一个尖，透明得像结了冰的水。古人以为它就是千年的冰。东海的水晶矿，曾经出过重达数吨的晶体。'
+  },
+  {
+    id: '178',
+    no: '178',
+    nameZh: '黄水晶',
+    nameLatin: 'Citrine',
+    category: '矿石',
+    rarity: 'common',
+    origin: '巴西、马达加斯加、玻利维亚',
+    habit: '含微量铁的石英，天然者色淡，市售多为紫晶加热所得',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['黄水晶', 'Citrine'],
+    essay:
+      '颜色像一杯淡淡的茶，又像秋天下午的光。天然的黄水晶并不多，许多是紫水晶加热后褪成的黄。同一种石头，火给了它另一种颜色。'
+  },
+  {
+    id: '179',
+    no: '179',
+    nameZh: '烟晶',
+    nameLatin: 'Smoky Quartz',
+    category: '矿石',
+    rarity: 'common',
+    origin: '瑞士阿尔卑斯山、巴西，中国新疆与福建',
+    habit: '石英晶体受天然辐射后呈烟褐色',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['烟晶', '茶晶', '墨晶', 'Smoky Quartz'],
+    essay:
+      '它的颜色像一缕烟停在了晶体里，从浅褐到近乎黑。那层烟是岩石里微弱的天然辐射，在漫长的时间里一点点染上去的。'
+  },
+  {
+    id: '180',
+    no: '180',
+    nameZh: '绿松石',
+    nameLatin: 'Turquoise',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '中国湖北十堰竹山、安徽马鞍山，伊朗与美国西南部',
+    habit: '含铜的磷酸盐矿物，常带褐色铁线，质软怕油污',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['绿松石', '松石', 'Turquoise'],
+    essay:
+      '它的蓝里带一点绿，像远处的湖。褐色的铁线在上面弯弯曲曲，像一张网。湖北竹山出产的松石，已经有几千年开采的历史，二里头的绿松石龙就是它。'
+  },
+  {
+    id: '181',
+    no: '181',
+    nameZh: '青金石',
+    nameLatin: 'Lapis Lazuli',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '阿富汗巴达赫尚，智利与俄罗斯贝加尔湖一带',
+    habit: '以青金石矿物为主的岩石，深蓝色中常夹黄铁矿金点',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['青金石', 'Lapis Lazuli'],
+    essay:
+      '深沉的蓝里，撒着一粒粒金色的黄铁矿，像夜空里的星。它被磨成粉，就是古代最贵的颜料「群青」。敦煌壁画里的蓝，许多是它。'
+  },
+  {
+    id: '182',
+    no: '182',
+    nameZh: '蓝铜矿',
+    nameLatin: 'Azurite',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '中国湖北大冶、安徽铜陵，摩洛哥、纳米比亚',
+    habit: '含铜碳酸盐矿物，深蓝色，常与孔雀石共生',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['蓝铜矿', '石青', 'Azurite'],
+    essay:
+      '它的蓝比天空更深，常和绿色的孔雀石长在一起，一蓝一绿。古人把它研成颜料，叫作石青。时间久了，它会慢慢变成孔雀石，蓝退成绿。'
+  },
+  {
+    id: '183',
+    no: '183',
+    nameZh: '菱锰矿',
+    nameLatin: 'Rhodochrosite',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '阿根廷卡塔马卡、美国科罗拉多，中国广西梧州',
+    habit: '碳酸锰矿物，玫瑰红色，块状者常有同心环带',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['菱锰矿', '红纹石', 'Rhodochrosite'],
+    essay:
+      '切开它，里面是一圈一圈玫瑰色的环，深浅相间，像一朵被剖开的花。这些环是一层层沉淀下来的，每一圈都记着一段不一样的水。'
+  },
+  {
+    id: '184',
+    no: '184',
+    nameZh: '石榴石',
+    nameLatin: 'Garnet',
+    category: '矿石',
+    rarity: 'common',
+    origin: '印度、斯里兰卡、马达加斯加，中国江苏、新疆',
+    habit: '等轴晶系硅酸盐矿物族，常呈菱形十二面体，以暗红色最常见',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['石榴石', '紫牙乌', 'Garnet'],
+    essay:
+      '它的晶体常常长成十二个菱面的小球，深红色的，像一粒熟透的石榴籽。它的名字就是从石榴来的。石榴石是一个家族，颜色其实不止红色。'
+  },
+  {
+    id: '185',
+    no: '185',
+    nameZh: '月光石',
+    nameLatin: 'Moonstone',
+    category: '矿石',
+    rarity: 'common',
+    origin: '斯里兰卡、印度、缅甸',
+    habit: '长石族矿物，内部层状结构使表面浮出蓝白色游彩',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['月光石', 'Moonstone'],
+    essay:
+      '转动它的时候，表面会浮起一层蓝白色的光，像月亮从云后面移出来。这层光不是颜色，是石头里极薄的层状结构把光散开了。'
+  },
+  {
+    id: '186',
+    no: '186',
+    nameZh: '黑曜石',
+    nameLatin: 'Obsidian',
+    category: '矿石',
+    rarity: 'common',
+    origin: '墨西哥、美国、冰岛与日本等火山地区',
+    habit: '火山玻璃，熔岩急速冷却来不及结晶而成，断口呈贝壳状',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['黑曜石', '火山玻璃', 'Obsidian'],
+    essay:
+      '岩浆流出来，冷得太快，来不及长成晶体，就凝成了一块黑色的玻璃。它的断口锋利，古人用它做刀和箭头。对着光，有的边缘会透出一点烟色。'
+  },
+  {
+    id: '187',
+    no: '187',
+    nameZh: '琥珀',
+    nameLatin: 'Amber',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '波罗的海沿岸、缅甸、多米尼加，中国辽宁抚顺',
+    habit: '远古树脂经地质作用石化而成，质轻，可浮于饱和盐水',
+    collectHint: '拍照识别',
+    seriesIds: ['deeptime'],
+    aliases: ['琥珀', '蜜蜡', 'Amber'],
+    essay:
+      '几千万年前，一滴树脂从树上流下来，把路过的一只小虫裹了进去。树早就没了，那滴树脂慢慢硬成了石头。光从里面透过来，还是蜂蜜的颜色。'
+  },
+  {
+    id: '188',
+    no: '188',
+    nameZh: '菊石',
+    nameLatin: 'Ammonite',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '世界各地中生代海相地层，中国西藏、马达加斯加、摩洛哥常见',
+    habit: '已灭绝的头足类软体动物化石，壳内有复杂缝合线',
+    collectHint: '拍照识别',
+    seriesIds: ['deeptime'],
+    aliases: ['菊石', '鹦鹉螺化石', 'Ammonite'],
+    essay:
+      '它和鹦鹉螺是远亲，在海里游了三亿多年，和恐龙一起在白垩纪末消失。切开来，壳里一道道弯曲的缝合线，像菊花的花瓣，名字就是这么来的。'
+  },
+  {
+    id: '189',
+    no: '189',
+    nameZh: '三叶虫',
+    nameLatin: 'Trilobite',
+    category: '矿石',
+    rarity: 'legendary',
+    origin: '世界各地古生代海相地层，中国山东、云南澄江，摩洛哥',
+    habit: '已灭绝的海洋节肢动物化石，身体纵分为三叶',
+    collectHint: '拍照识别',
+    seriesIds: ['deeptime'],
+    aliases: ['三叶虫', '蝙蝠石', 'Trilobite'],
+    essay:
+      '它的身体从中间到两侧分成三条，所以叫三叶虫。它在海底爬了将近三亿年，眼睛由方解石的晶体组成。山东的人把它叫作蝙蝠石。'
+  },
+  {
+    id: '190',
+    no: '190',
+    nameZh: '硅化木',
+    nameLatin: 'Petrified Wood',
+    category: '矿石',
+    rarity: 'common',
+    origin: '美国亚利桑那、中国新疆奇台与辽宁朝阳',
+    habit: '树木被掩埋后，组织逐渐被二氧化硅置换而成的化石',
+    collectHint: '拍照识别',
+    seriesIds: ['deeptime'],
+    aliases: ['硅化木', '木化石', 'Petrified Wood'],
+    essay:
+      '一棵树被埋进泥沙里，地下的水带着硅一点点渗进去，替换了木头本身。千万年后，它变成了石头，年轮和木纹却一圈不少地留了下来。'
+  },
+  {
+    id: '191',
+    no: '191',
+    nameZh: '天河石',
+    nameLatin: 'Amazonite',
+    category: '矿石',
+    rarity: 'common',
+    origin: '巴西、马达加斯加、美国科罗拉多',
+    habit: '微斜长石的蓝绿色变种，常有白色格子状纹理',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['天河石', '亚马逊石', 'Amazonite'],
+    essay:
+      '蓝绿色，像浅海的水，里面交织着白色的细格。它是长石的一种，颜色来自极微量的铅。名字叫亚马逊石，河边却并不出产。'
+  },
+  {
+    id: '192',
+    no: '192',
+    nameZh: '海蓝宝',
+    nameLatin: 'Aquamarine',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '巴西、巴基斯坦、马达加斯加，中国新疆阿勒泰',
+    habit: '绿柱石的浅蓝色变种，六方柱状晶体，含微量铁',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['海蓝宝', '海蓝宝石', 'Aquamarine', 'Beryl'],
+    essay:
+      '六方柱形的晶体，颜色像退潮后浅滩上的水。它和祖母绿是同一种矿物，只是里面带进去的元素不同，一个成了蓝，一个成了绿。'
+  },
+  {
+    id: '193',
+    no: '193',
+    nameZh: '磷灰石',
+    nameLatin: 'Apatite',
+    category: '矿石',
+    rarity: 'common',
+    origin: '墨西哥、马达加斯加、巴西，中国云南',
+    habit: '磷酸钙矿物，六方柱状，颜色多样，与骨骼牙齿成分相近',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['磷灰石', 'Apatite'],
+    essay:
+      '它的颜色很多，蓝的、绿的、黄的都有，常常被认错，名字的原意就是「欺骗」。我们的骨头和牙齿里，也有和它很接近的成分。'
+  },
+  {
+    id: '194',
+    no: '194',
+    nameZh: '重晶石',
+    nameLatin: 'Baryte',
+    category: '矿石',
+    rarity: 'common',
+    origin: '中国湖南、贵州，英国与摩洛哥',
+    habit: '硫酸钡矿物，比重大，板状晶体常聚成玫瑰花状',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['重晶石', '沙漠玫瑰', 'Baryte'],
+    essay:
+      '拿起来比看上去重得多，名字就是这么来的。它的板状晶体有时一片片叠在一起，长成一朵石头玫瑰。医院里拍消化道的造影剂，就是它的成分。'
+  },
+  {
+    id: '195',
+    no: '195',
+    nameZh: '雄黄',
+    nameLatin: 'Realgar',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '中国湖南石门、贵州，美国与罗马尼亚',
+    habit: '硫化砷矿物，橙红色，含砷有毒，久晒会粉化变黄',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['雄黄', '鸡冠石', 'Realgar'],
+    essay:
+      '橙红的颜色像一枚鸡冠，端午时人们说起的雄黄酒，就跟它有关。它含砷，有毒，光照久了会碎成黄色的粉末，所以要避光收着，不可入口。'
+  },
+  {
+    id: '196',
+    no: '196',
+    nameZh: '辉锑矿',
+    nameLatin: 'Stibnite',
+    category: '矿石',
+    rarity: 'legendary',
+    origin: '中国湖南冷水江锡矿山、江西，日本与罗马尼亚',
+    habit: '硫化锑矿物，铅灰色长柱状晶体，具强金属光泽',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['辉锑矿', 'Stibnite'],
+    essay:
+      '一束束铅灰色的长柱，像剑一样伸出来，表面亮得能映出人影。湖南的锡矿山是世界上最大的锑矿之一，那里出产的辉锑矿晶簇，被许多博物馆收藏。'
+  },
+  {
+    id: '197',
+    no: '197',
+    nameZh: '白钨矿',
+    nameLatin: 'Scheelite',
+    category: '矿石',
+    rarity: 'rare',
+    origin: '中国江西、湖南，奥地利与澳大利亚',
+    habit: '钨酸钙矿物，短波紫外线下发出明亮的蓝白色荧光',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['白钨矿', 'Scheelite'],
+    essay:
+      '白天看，它只是一块不起眼的米黄色晶体。关上灯，用紫外线一照，它会发出蓝白色的光。找矿的人，曾经在夜里提着灯沿着矿洞找它。'
+  },
+  {
+    id: '198',
+    no: '198',
+    nameZh: '文石',
+    nameLatin: 'Aragonite',
+    category: '矿石',
+    rarity: 'common',
+    origin: '西班牙阿拉贡、摩洛哥，中国湖北',
+    habit: '斜方晶系碳酸钙，与方解石成分相同而结构不同，常呈放射状或珊瑚状',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['文石', '霰石', 'Aragonite'],
+    essay:
+      '它和方解石是同一种成分，只是原子排列不同，长出来的样子也就不同。贝壳的珍珠层、珍珠本身，都是由它一层层叠成的。'
+  },
+  {
+    id: '199',
+    no: '199',
+    nameZh: '绿帘石',
+    nameLatin: 'Epidote',
+    category: '矿石',
+    rarity: 'common',
+    origin: '奥地利、巴基斯坦、秘鲁，中国新疆',
+    habit: '单斜晶系硅酸盐矿物，开心果绿至墨绿，柱状晶体带纵纹',
+    collectHint: '拍照识别',
+    seriesIds: [],
+    aliases: ['绿帘石', 'Epidote'],
+    essay:
+      '它的颜色像开心果，深的地方几乎是墨绿。柱状的晶体上刻着一条条纵纹，从不同方向看，颜色会在黄绿和褐绿之间变换。'
+  },
+  {
+    id: '200',
+    no: '200',
+    nameZh: '铁陨石',
+    nameLatin: 'Iron Meteorite',
+    category: '矿石',
+    rarity: 'legendary',
+    origin: '来自小行星内核的铁镍合金，纳米比亚吉贝恩、中国新疆青河等地有发现',
+    habit: '主要由铁镍矿物组成，切面酸蚀后显出维斯台登纹',
+    collectHint: '拍照识别',
+    seriesIds: ['deeptime'],
+    aliases: ['铁陨石', '陨铁', '陨石', 'Iron Meteorite'],
+    essay:
+      '它来自比地球还古老的地方，是一颗小行星碎掉的内核。切开、抛光，再用酸轻轻一蚀，表面会浮出交叉的纹路，那是它在太空里冷却了几百万年才长出来的。'
   }
 ]
 
