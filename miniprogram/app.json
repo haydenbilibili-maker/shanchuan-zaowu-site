@@ -159,6 +159,7 @@
         "museum-guide/daily/index",
         "museum-guide/quiz/index",
         "museum-guide/notes/index",
+        "museum-guide/workshop/index",
         "collection/index",
         "collection/detail/index",
         "collection/log/index",

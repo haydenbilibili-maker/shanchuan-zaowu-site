@@ -31,7 +31,7 @@ Page({
     try { stored = G.fromStored(wx.getStorageSync(G.storeKey(this._openid))) } catch (e) { stored = [] }
     const welcome = G.makeMessage('guide', G.WELCOME, { isWelcome: true })
     this.setData({ messages: [welcome].concat(stored), hasAsked: stored.some((m) => m.role === 'user') }, () => this.scrollToEnd())
-    this._from = ['user', 'atlas', 'identify', 'share', 'daily', 'quiz', 'notes'].indexOf(options && options.from) >= 0 ? options.from : 'direct'
+    this._from = ['user', 'atlas', 'identify', 'share', 'daily', 'quiz', 'notes', 'workshop'].indexOf(options && options.from) >= 0 ? options.from : 'direct'
     this.loadStatus()
     // 带着问题进来（AI 鉴定结果 / 图鉴页「问问博物君」）：auto=1 直接发问，否则只预填
     const q = G.entryQuestion(options)

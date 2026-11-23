@@ -191,6 +191,25 @@ function naturalistScenes() {
   }
 }
 
+/** 2026-11-23 博物君 · 标本工坊：作品卡 / 灵感签由真模块现算（藏品卡是自定义组件，预览里不画） */
+function workshopScenes() {
+  const W = loadCjsModule(join(MP, 'subpackages/feature/museum-guide/workshopKit.js'), {})
+  const C = loadCjsModule(join(MP, 'subpackages/feature/config/atlasCatalog.js'), {})
+  const sp = W.makeableSpecies(C.ATLAS_SPECIES)[0]
+  const results = [W.scoreRelax(2100), W.scoreSpread(88), W.scorePin(57), W.scoreDry(9), W.scoreFrame('cloche')]
+  const work = W.buildWork(sp, results, 'cloche', 'ink', Date.UTC(2026, 10, 23, 4))
+  const base = { tab: 'make', phase: 'step', choices: [], species: { no: sp.no, nameZh: sp.nameZh, nameLatin: sp.nameLatin }, stepIdx: 1, steps: W.STEPS, stepResult: results[1], results: results.slice(0, 2),
+    holdSec: '2.1', holding: false, spreadDeg: 88, pinPos: 57, pinStopped: true, dryDays: 9, crafts: W.CRAFTS, backdrops: W.BACKDROPS, craftKey: 'cloche', backdropKey: 'ink', work: null,
+    spaces: W.SPACES, moods: W.MOODS, budgets: W.BUDGETS, spaceKey: '', moodKey: '', budgetKey: 'b4', plan: null, insp: null, products: [], productsLoading: false, productsEmpty: false }
+  let k = 0
+  const insp = W.drawInspiration(C.ATLAS_SPECIES, () => [0.02, 0.6][k++ % 2])
+  return {
+    step: base,
+    done: Object.assign({}, base, { phase: 'done', work, productsLoading: true }),
+    idea: Object.assign({}, base, { tab: 'idea', insp, productsLoading: true })
+  }
+}
+
 function achievementsSceneData() {
   let cfg = null
   loadCjsModule(join(MP, 'subpackages/extra/user/achievements/index.js'), {
@@ -735,6 +754,9 @@ const SCENES = [
   { name: 'mg-daily', h: 1900, wxml: 'subpackages/feature/museum-guide/daily/index', data: naturalistScenes().daily },
   { name: 'mg-quiz', h: 1500, wxml: 'subpackages/feature/museum-guide/quiz/index', data: naturalistScenes().quizAsk },
   { name: 'mg-quiz-done', h: 2600, wxml: 'subpackages/feature/museum-guide/quiz/index', data: naturalistScenes().quizDone },
+  { name: 'ws-step', h: 1500, wxml: 'subpackages/feature/museum-guide/workshop/index', data: workshopScenes().step },
+  { name: 'ws-done', h: 1700, wxml: 'subpackages/feature/museum-guide/workshop/index', data: workshopScenes().done },
+  { name: 'ws-idea', h: 1300, wxml: 'subpackages/feature/museum-guide/workshop/index', data: workshopScenes().idea },
   { name: 'cert-sealed', h: 900, wxml: 'subpackages/extra/user/certificates/index', base: 'certificates', data: {
       visible: [
         { _id: 'c1', displayTitle: '光明女神闪蝶', displayImage: P[0], dateStr: '2026.10.18', kind: 'holder', kindLabel: '', sealed: true },

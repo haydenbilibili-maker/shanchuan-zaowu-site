@@ -26,7 +26,7 @@ const CONFIG_DOC = 'main'
 /** 每次提问一条运营日志：只记状态 / 耗时 / 模型 / 命中物种 / 去处 / 字数，不记问题与回答原文 */
 const LOG_COLLECTION = 'museum_guide_logs'
 const LOG_TIMEOUT_MS = 1500
-const ENTRY_SOURCES = ['user', 'atlas', 'identify', 'share', 'daily', 'quiz', 'notes', 'direct']
+const ENTRY_SOURCES = ['user', 'atlas', 'identify', 'share', 'daily', 'quiz', 'notes', 'workshop', 'direct']
 const CLOSED_MSG = '博物君暂时闭馆整理，过些日子再来'
 const DASHSCOPE_HOST = 'dashscope.aliyuncs.com'
 const TEXT_PATH = '/api/v1/services/aigc/text-generation/generation'

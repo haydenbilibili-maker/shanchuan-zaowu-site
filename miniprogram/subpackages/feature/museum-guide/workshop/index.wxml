@@ -1,0 +1,168 @@
+<!-- 博物君 · 标本工坊（2026-11-23）：制作体验 / 陈列体验 / 标本灵感 → 馆里的同类藏品 → 详情页购买 -->
+<view class="nt-page">
+  <view class="nt-head">
+    <text class="nt-eyebrow">WORKSHOP · 标本工坊</text>
+    <text class="nt-title">标本工坊</text>
+    <text class="nt-desc">亲手做一只、为空间挑一件、抽一张灵感 —— 每条路的尽头，都是馆里真的有的藏品。</text>
+  </view>
+
+  <view class="ws-tabs">
+    <text class="ws-tab {{tab === 'make' ? 'is-on' : ''}}" data-tab="make" bindtap="onTab" hover-class="tap-press" hover-stay-time="80">制作体验</text>
+    <text class="ws-tab {{tab === 'display' ? 'is-on' : ''}}" data-tab="display" bindtap="onTab" hover-class="tap-press" hover-stay-time="80">陈列体验</text>
+    <text class="ws-tab {{tab === 'idea' ? 'is-on' : ''}}" data-tab="idea" bindtap="onTab" hover-class="tap-press" hover-stay-time="80">标本灵感</text>
+  </view>
+
+  <!-- ① 制作体验 -->
+  <block wx:if="{{tab === 'make'}}">
+    <!-- 选一只 -->
+    <block wx:if="{{phase === 'pick'}}">
+      <text class="ws-lead">从山海图鉴里挑一只蝶，跟着五步做成标本。</text>
+      <view class="ws-choice" wx:for="{{choices}}" wx:key="no" data-no="{{item.no}}" bindtap="onPickSpecies" hover-class="tap-press-soft" hover-stay-time="80">
+        <text class="ws-choice-no">No.{{item.no}}</text>
+        <view class="ws-choice-main">
+          <text class="ws-choice-name">{{item.nameZh}}</text>
+          <text class="ws-choice-latin">{{item.nameLatin}}</text>
+        </view>
+        <text class="ws-choice-go">做这只 ›</text>
+      </view>
+      <text class="ws-link" bindtap="newChoices" hover-class="tap-press" hover-stay-time="80">换三只</text>
+    </block>
+
+    <!-- 五步 -->
+    <block wx:elif="{{phase === 'step'}}">
+      <view class="ws-steps" aria-hidden="true">
+        <view class="ws-step-pip {{index < stepIdx ? 'is-past' : ''}} {{index === stepIdx ? 'is-on' : ''}}" wx:for="{{steps}}" wx:key="key">
+          <text>{{item.title}}</text>
+        </view>
+      </view>
+      <view class="nt-paper ws-card">
+        <view class="nt-paper-top"><text>第 {{stepIdx + 1}} / 5 步 · {{steps[stepIdx].title}}</text><text>{{species.nameZh}}</text></view>
+        <text class="ws-how">{{steps[stepIdx].how}}</text>
+
+        <!-- 回软：按住 -->
+        <view class="ws-stage" wx:if="{{steps[stepIdx].key === 'relax'}}">
+          <view class="ws-gauge"><view class="ws-gauge-zone" style="left: 45%; width: 20%;"></view><view class="ws-gauge-fill" style="width: {{holdSec * 25 > 100 ? 100 : holdSec * 25}}%;"></view></view>
+          <text class="ws-readout">{{holdSec}} 秒</text>
+          <view class="ws-hold {{holding ? 'is-holding' : ''}} {{stepResult ? 'is-done' : ''}}" bindtouchstart="onHoldStart" bindtouchend="onHoldEnd" bindtouchcancel="onHoldEnd">{{holding ? '回软中…松手' : (stepResult ? '已回软' : '按住 回软')}}</view>
+        </view>
+
+        <!-- 展翅：滑动 -->
+        <view class="ws-stage" wx:elif="{{steps[stepIdx].key === 'spread'}}">
+          <view class="ws-bfly" aria-hidden="true">
+            <view class="ws-wing is-left" style="transform: rotate({{90 - spreadDeg}}deg);"></view>
+            <view class="ws-body"></view>
+            <view class="ws-wing is-right" style="transform: rotate({{spreadDeg - 90}}deg);"></view>
+          </view>
+          <text class="ws-readout">前翅后缘与身体 {{spreadDeg}}°</text>
+          <slider min="60" max="120" value="{{spreadDeg}}" disabled="{{stepResult ? true : false}}" activeColor="#B08D57" backgroundColor="rgba(138,111,69,0.25)" block-size="22" bindchanging="onSpread" bindchange="onSpread" />
+          <view class="nt-btn is-primary ws-act" wx:if="{{!stepResult}}" bindtap="onSpreadDone" hover-class="tap-press" hover-stay-time="80">定下来</view>
+        </view>
+
+        <!-- 下针：点时机 -->
+        <view class="ws-stage" wx:elif="{{steps[stepIdx].key === 'pin'}}">
+          <view class="ws-track"><view class="ws-target"></view><view class="ws-needle" style="left: {{pinPos}}%;"></view></view>
+          <view class="nt-btn is-primary ws-act" wx:if="{{!stepResult}}" bindtap="onPinTap" hover-class="tap-press" hover-stay-time="80">下针</view>
+        </view>
+
+        <!-- 干燥：选天数 -->
+        <view class="ws-stage" wx:elif="{{steps[stepIdx].key === 'dry'}}">
+          <text class="ws-readout ws-big">{{dryDays}} 天</text>
+          <slider min="1" max="21" value="{{dryDays}}" disabled="{{stepResult ? true : false}}" activeColor="#B08D57" backgroundColor="rgba(138,111,69,0.25)" block-size="22" bindchanging="onDry" bindchange="onDry" />
+          <view class="nt-btn is-primary ws-act" wx:if="{{!stepResult}}" bindtap="onDryDone" hover-class="tap-press" hover-stay-time="80">取下来</view>
+        </view>
+
+        <!-- 装裱：选 -->
+        <view class="ws-stage" wx:elif="{{steps[stepIdx].key === 'frame'}}">
+          <view class="ws-chips">
+            <text class="ws-chip {{craftKey === item.key ? 'is-on' : ''}}" wx:for="{{crafts}}" wx:key="key" data-key="{{item.key}}" bindtap="onCraft" hover-class="tap-press-soft" hover-stay-time="80">{{item.label}}</text>
+          </view>
+          <text class="ws-sub">衬底</text>
+          <view class="ws-chips">
+            <text class="ws-chip {{backdropKey === item.key ? 'is-on' : ''}}" wx:for="{{backdrops}}" wx:key="key" data-key="{{item.key}}" bindtap="onBackdrop" hover-class="tap-press-soft" hover-stay-time="80">{{item.label}}</text>
+          </view>
+          <view class="nt-btn is-primary ws-act {{craftKey ? '' : 'is-off'}}" wx:if="{{!stepResult}}" bindtap="onFrameDone" hover-class="tap-press" hover-stay-time="80">装好了</view>
+        </view>
+
+        <!-- 本步结果 + 知识 -->
+        <view class="ws-result" wx:if="{{stepResult}}">
+          <view class="ws-result-top"><text class="nt-k">本步 {{stepResult.score}} / 20</text></view>
+          <text class="nt-v">{{stepResult.note}}</text>
+          <text class="ws-why">{{steps[stepIdx].why}}</text>
+        </view>
+      </view>
+      <view class="nt-btns" wx:if="{{stepResult}}">
+        <view class="nt-btn is-primary" bindtap="onNextStep" hover-class="tap-press" hover-stay-time="80">{{stepIdx < 4 ? '下一步' : '看作品'}}</view>
+      </view>
+    </block>
+
+    <!-- 作品卡 -->
+    <block wx:elif="{{phase === 'done' && work}}">
+      <view class="ws-work bd-{{work.backdrop.key}}">
+        <view class="ws-work-in">
+          <view class="ws-work-top"><text>No.{{work.no}} · {{work.craft.label}}</text><text>{{work.dateText}}</text></view>
+          <text class="ws-work-name">{{work.nameZh}}</text>
+          <text class="ws-work-latin">{{work.nameLatin}}</text>
+          <view class="ws-work-seal"><text>{{work.grade.label}}</text></view>
+          <text class="ws-work-score">{{work.total}} / 100 · {{work.grade.line}}</text>
+          <view class="ws-work-notes">
+            <view class="ws-work-note" wx:for="{{work.notes}}" wx:key="step"><text class="ws-wn-k">{{item.step}} {{item.score}}</text><text class="ws-wn-v">{{item.note}}</text></view>
+          </view>
+          <text class="ws-work-sign">山海造物 · 标本工坊 体验作品</text>
+        </view>
+      </view>
+      <view class="nt-btns">
+        <view class="nt-btn" bindtap="onRemake" hover-class="tap-press" hover-stay-time="80">再做一只</view>
+        <view class="nt-btn" data-q="{{work.askQ}}" bindtap="onAsk" hover-class="tap-press" hover-stay-time="80">问博物君真正怎么做</view>
+      </view>
+    </block>
+  </block>
+
+  <!-- ② 陈列体验 -->
+  <block wx:elif="{{tab === 'display'}}">
+    <text class="ws-lead">告诉博物君放在哪、想要什么气质，给你一份陈列方案。</text>
+    <text class="ws-sub">放在哪</text>
+    <view class="ws-chips"><text class="ws-chip is-dark {{spaceKey === item.key ? 'is-on' : ''}}" wx:for="{{spaces}}" wx:key="key" data-key="{{item.key}}" bindtap="onSpace" hover-class="tap-press-soft" hover-stay-time="80">{{item.label}}</text></view>
+    <text class="ws-sub">想要的气质</text>
+    <view class="ws-chips"><text class="ws-chip is-dark {{moodKey === item.key ? 'is-on' : ''}}" wx:for="{{moods}}" wx:key="key" data-key="{{item.key}}" bindtap="onMood" hover-class="tap-press-soft" hover-stay-time="80">{{item.label}}</text></view>
+    <text class="ws-sub">预算</text>
+    <view class="ws-chips"><text class="ws-chip is-dark {{budgetKey === item.key ? 'is-on' : ''}}" wx:for="{{budgets}}" wx:key="key" data-key="{{item.key}}" bindtap="onBudget" hover-class="tap-press-soft" hover-stay-time="80">{{item.label}}</text></view>
+    <view class="nt-btns"><view class="nt-btn is-primary {{spaceKey && moodKey ? '' : 'is-off'}}" bindtap="onPlan" hover-class="tap-press" hover-stay-time="80">给我一份方案</view></view>
+    <view class="nt-paper" wx:if="{{plan}}">
+      <view class="nt-paper-top"><text>陈列方案</text><text>{{plan.budgetText}}</text></view>
+      <text class="ws-plan-t">{{plan.title}}</text>
+      <text class="nt-v">{{plan.line}}</text>
+      <view class="nt-rule"></view>
+      <text class="nt-k">养护</text>
+      <text class="nt-v">{{plan.care}}</text>
+    </view>
+  </block>
+
+  <!-- ③ 标本灵感 -->
+  <block wx:else>
+    <text class="ws-lead">图鉴里的一件 × 一种真实的制作工艺。抽一张，看看它可以变成什么。</text>
+    <view class="nt-btns"><view class="nt-btn is-primary" bindtap="onDraw" hover-class="tap-press" hover-stay-time="80">{{insp ? '再抽一张' : '抽一张灵感签'}}</view></view>
+    <view class="nt-paper ws-insp" wx:if="{{insp}}">
+      <view class="nt-paper-top"><text>INSPIRATION · No.{{insp.no}}</text><text>{{insp.category}}</text></view>
+      <text class="ws-insp-t">{{insp.nameZh}} × {{insp.process}}</text>
+      <text class="dl-latin">{{insp.nameLatin}}</text>
+      <view class="nt-rule"></view>
+      <text class="nt-v">{{insp.processDesc}}</text>
+      <text class="ws-insp-line" wx:if="{{insp.line}}">「{{insp.line}}」</text>
+      <text class="ws-link-dark" data-q="{{insp.askQ}}" bindtap="onAsk" hover-class="tap-press" hover-stay-time="80">问博物君：{{insp.askQ}} ›</text>
+    </view>
+  </block>
+
+  <!-- 推荐：三条路的共同终点 -->
+  <view class="nt-sec" wx:if="{{productsLoading || products.length || productsEmpty}}">
+    <text class="nt-sec-k">IN THE COLLECTION</text>
+    <text class="nt-sec-t">馆里的同类藏品</text>
+    <text class="ws-loading" wx:if="{{productsLoading}}">博物君正在馆里找…</text>
+    <view class="ws-grid" wx:elif="{{products.length}}">
+      <view class="ws-cell" wx:for="{{products}}" wx:key="_id">
+        <product-card info="{{item}}" bind:cardtap="onProductTap" />
+      </view>
+    </view>
+    <text class="ws-loading" wx:else>馆里暂时没有对得上的藏品，去馆藏逛逛吧。</text>
+    <text class="ws-link" bindtap="onShopAll" hover-class="tap-press" hover-stay-time="80">逛全部馆藏 ›</text>
+  </view>
+</view>

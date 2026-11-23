@@ -18,6 +18,15 @@
           <text class="mg-tool-k">NOTES</text><text class="mg-tool-t">博物笔记</text>
         </view>
       </view>
+      <!-- 标本工坊（2026-11-23）：制作体验 / 陈列体验 / 标本灵感 → 馆里的同类藏品 -->
+      <view class="mg-workshop" data-url="/subpackages/feature/museum-guide/workshop/index" bindtap="onTool" hover-class="tap-press-soft" hover-stay-time="80">
+        <view class="mg-workshop-main">
+          <text class="mg-tool-k">WORKSHOP</text>
+          <text class="mg-workshop-t">标本工坊 · 亲手做一只标本</text>
+          <text class="mg-workshop-d">回软、展翅、下针、干燥、装裱，做完看看馆里的同类藏品</text>
+        </view>
+        <text class="mg-workshop-go">›</text>
+      </view>
     </view>
 
     <view class="mg-list">

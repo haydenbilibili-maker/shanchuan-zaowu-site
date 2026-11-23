@@ -34,6 +34,10 @@ const P = {
   dailyWxml: join(MP, 'subpackages/feature/museum-guide/daily/index.wxml'),
   quizWxml: join(MP, 'subpackages/feature/museum-guide/quiz/index.wxml'),
   quizJs: join(MP, 'subpackages/feature/museum-guide/quiz/index.js'),
+  workshop: join(MP, 'subpackages/feature/museum-guide/workshopKit.js'),
+  wsJs: join(MP, 'subpackages/feature/museum-guide/workshop/index.js'),
+  wsWxml: join(MP, 'subpackages/feature/museum-guide/workshop/index.wxml'),
+  wsJson: join(MP, 'subpackages/feature/museum-guide/workshop/index.json'),
   atlasWxml: join(MP, 'subpackages/feature/collection/detail/index.wxml'),
   atlasJs: join(MP, 'subpackages/feature/collection/detail/index.js'),
   idWxml: join(MP, 'subpackages/feature/identify/result/index.wxml'),
@@ -363,6 +367,68 @@ async function runChecks() {
   qp2.onPick({ currentTarget: { dataset: { i: 0 } } })
   ok('N6 小测页：答完记分存本机；今天再进直接看结果、不能再答', qp.data.done && qp.data.result.score === qs.length && qp2.data.done && qp2.data.result.fresh === false && qp2.data.picked === -1 &&
     !!qStore.museum_guide_quiz_v1_o1)
+  /* ---------------- W 标本工坊：制作 / 陈列 / 灵感 → 馆里真的在卖的藏品（2026-11-23） ---------------- */
+  const WS = loadCjsModule(P.workshop, { transform })
+  const TAX = loadCjsModule(join(MP, 'config/productTaxonomy.js'), {})
+  const craftKeys = new Set(TAX.CRAFT_TYPE_OPTIONS.map((o) => o.value))
+  const procKeys = new Set(TAX.CRAFT_PROCESS_OPTIONS.map((o) => o.value))
+  ok('W1 装裱 / 工艺的 key 都是商品库里真有的（推荐能按它筛到真藏品）',
+    WS.CRAFTS.every((c) => craftKeys.has(c.key)) && WS.PROCESSES.every((p) => procKeys.has(p.key)) && WS.SPACES.every((x) => x.crafts.every((k) => craftKeys.has(k))))
+  ok('W2 判分边界：回软 1.8–2.6 秒 / 展翅 90° / 下针正中 / 干燥 7–14 天满分；越界降档；装裱选了就满分', WS.scoreRelax(2000).score === 20 && WS.scoreRelax(1500).score === 14 && WS.scoreRelax(300).score === 6 &&
+    WS.scoreSpread(90).score === 20 && WS.scoreSpread(100).score === 10 && WS.scoreSpread(60).score === 4 && WS.scorePin(52).score === 20 && WS.scorePin(62).score === 14 && WS.scorePin(5).score === 6 &&
+    WS.scoreDry(10).score === 20 && WS.scoreDry(5).score === 13 && WS.scoreDry(1).score === 5 && WS.scoreFrame('frame').score === 20 && WS.scoreFrame('x').score === 0)
+  const mk = WS.makeableSpecies(SP)
+  ok('W3 能做的只有图鉴里的蝶 / 蛾（展翅这套步骤只对鳞翅目成立）', mk.length >= 10 && mk.every((x) => x.category === '昆虫' && /蝶|蛾/.test(x.nameZh)))
+  const work = WS.buildWork(mk[0], [{ score: 20 }, { score: 20 }, { score: 20 }, { score: 20 }, { score: 15 }], 'cloche', 'ink', t0)
+  const plan = WS.buildDisplayPlan('gift', 'ancient', 'b2')
+  ok('W4 作品卡：总分 / 等级 / 推荐意图带物种与所选装裱；陈列方案：装裱取空间首选、价格取预算、关键词取气质', work.total === 95 && work.grade.label === '馆藏级' &&
+    work.intent.keyword === mk[0].nameZh && work.intent.craftType === 'cloche' && WS.gradeOf(70).label === '陈列级' && WS.gradeOf(69).label === '习作级' &&
+    plan.intent.craftType === 'cloche_round' && plan.intent.priceMin === 300 && plan.intent.priceMax === 1000 && plan.intent.keyword === '石' && WS.buildDisplayPlan('x', 'calm') === null)
+  let seq = 0
+  const rnd = () => [0.99, 0.1][seq++ % 2]
+  const mineral = SP.filter((x) => x.category === '矿石')
+  const insM = WS.drawInspiration(mineral, () => 0)
+  const insAll = Array.from({ length: 40 }, (_, i) => WS.drawInspiration(SP, ((k) => () => ((k * 7 + 3) % 97) / 97)(i)))
+  const forCat = (c) => WS.PROCESSES.filter((p) => p.cats.indexOf(c) >= 0).map((p) => p.key).sort().join()
+  ok('W5 灵感签：工艺只配适用的门类（昆虫：针插 / 包埋；植物：压制 / 包埋；海洋：包埋 / 浸制）；矿石用「原石陈列」', insM.process === '原石陈列' &&
+    forCat('昆虫') === 'pinned,resin_embed' && forCat('植物') === 'pressed,resin_embed' && forCat('海洋') === 'immersion,resin_embed' && forCat('矿石') === '' &&
+    insAll.every((x) => x.process === '原石陈列' || WS.PROCESSES.find((p) => p.label === x.process).cats.indexOf(x.category) >= 0) && rnd() > 0)
+  const qs1 = WS.productQueries(work.intent)
+  const qs2 = WS.productQueries(plan.intent)
+  ok('W6 推荐查询逐级放宽：先「物种 + 装裱」再「物种」再备用词；只查藏品（contentLimit 0）；价格区间带上；不重复',
+    qs1[0].keyword === mk[0].nameZh && qs1[0].craftType === 'cloche' && qs1[1].keyword === mk[0].nameZh && !qs1[1].craftType && qs1.every((q) => q.contentLimit === 0) &&
+    new Set(qs1.map((q) => JSON.stringify(q))).size === qs1.length && qs2.every((q) => q.priceMin === 300 && q.priceMax === 1000))
+  const merged = WS.mergeProducts([[{ _id: 'a', soldOut: true, displayImage: 'x' }, { _id: 'b' }], [{ _id: 'b' }, { _id: 'c' }, { _id: 'd' }, { _id: 'e' }]], (u) => 'T:' + u)
+  ok('W7 合并推荐：去重、有货在前、最多 4 件、图片走缩略图', merged.length === 4 && merged.map((x) => x._id).join() === 'b,c,d,e' && merged[0].httpImage === '' &&
+    WS.mergeProducts([[{ _id: 'a', soldOut: true, displayImage: 'x' }]], (u) => 'T:' + u)[0].httpImage === 'T:x')
+  // W8 工坊页：一局走完 → 作品卡 + 推荐真藏品；点藏品进详情页（原购买链路）；只调既有 getEncyclopediaFeed
+  let wcfg = null
+  const wCalls = []
+  const wNav = []
+  const wWx = {
+    cloud: { callFunction: async (o) => { wCalls.push(o); return { result: { orphanProducts: [{ _id: 'p' + wCalls.length, title: '藏品', price: 100, displayImage: 'cloud://x/y.jpg' }, { _id: 'q' + wCalls.length }] } } } },
+    navigateTo: (o) => wNav.push(o.url), switchTab: (o) => wNav.push(o.url)
+  }
+  loadCjsModule(P.wsJs, { transform, stubs: { '../../../../utils/imageUrl': { thumbUrl: (u) => 'thumb:' + u } }, globals: { Page: (c) => { wcfg = c }, wx: wWx, setInterval: () => 1, clearInterval: () => {} } })
+  const wp = Object.assign({}, wcfg, { data: JSON.parse(JSON.stringify(wcfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
+  wp.onLoad({})
+  wp.onPickSpecies({ currentTarget: { dataset: { no: wp.data.choices[0].no } } })
+  wp.onHoldStart(); wp._holdAt = Date.now() - 2000; wp.onHoldEnd(); wp.onNextStep()
+  wp.onSpread({ detail: { value: 90 } }); wp.onSpreadDone(); wp.onNextStep()
+  wp.setData({ pinPos: 50 }); wp.onPinTap(); wp.onNextStep()
+  wp.onDry({ detail: { value: 10 } }); wp.onDryDone(); wp.onNextStep()
+  wp.onCraft({ currentTarget: { dataset: { key: 'frame' } } }); wp.onFrameDone(); wp.onNextStep()
+  await new Promise((r) => setTimeout(r, 0)); await new Promise((r) => setTimeout(r, 0))
+  wp.onProductTap({ detail: { id: wp.data.products[0] && wp.data.products[0]._id } })
+  ok('W8 工坊页一局走完：五步满分出「馆藏级」作品卡；推荐只调 getEncyclopediaFeed、带物种与装裱；藏品图走缩略图；点藏品进商品详情',
+    wp.data.phase === 'done' && wp.data.work.total === 100 && wp.data.work.grade.label === '馆藏级' && wCalls.length >= 1 && wCalls.every((c) => c.name === 'getEncyclopediaFeed') &&
+    wCalls[0].data.craftType === 'frame' && wCalls[0].data.keyword === wp.data.species.nameZh && wp.data.products.length === 4 && wp.data.products[0].httpImage === 'thumb:cloud://x/y.jpg' &&
+    /^\/subpackages\/feature\/detail\/index\?id=p1$/.test(wNav[0] || ''))
+  const wsW = read(P.wsWxml)
+  ok('W9 接线：工坊页注册且声明商品卡；问答页有工坊入口；来源 workshop 三端一致；查不到藏品明说、不编',
+    feat.pages.includes('museum-guide/workshop/index') && /"product-card": "\/components\/ProductCard\/index"/.test(readFileSync(P.wsJson, 'utf8')) &&
+    /data-url="\/subpackages\/feature\/museum-guide\/workshop\/index"/.test(chatW) && chatJ.indexOf("'workshop'") >= 0 && src.indexOf("'workshop'") >= 0 &&
+    /workshop: '标本工坊'/.test(readFileSync(join(MP, 'subpackages/manager/museum-guide-monitor/monitorView.js'), 'utf8')) && /馆里暂时没有对得上的藏品/.test(wsW))
   return fails
 }
 
@@ -405,6 +471,12 @@ const INJECTIONS = [
   { name: '笔记不去重', file: P.naturalist, find: '  if (list.some((n) => n.a === a)) return list\n', replace: '' },
   { name: '今天答过还能重答', file: P.quizJs, find: '    if (today) this.showResult(today.answers, state, false)', replace: '' },
   { name: '今日一物露出图版', file: P.dailyWxml, find: '<text class="dl-name">{{card.nameZh}}</text>', replace: '<image class="dl-plate" src="{{card.plate}}" /><text class="dl-name">{{card.nameZh}}</text>' },
+  { name: '装裱 key 写成商品库没有的', file: P.workshop, find: "{ key: 'cloche_round', label: '圆形玻璃罩'", replace: "{ key: 'round_dome', label: '圆形玻璃罩'" },
+  { name: '昆虫配了压制工艺', file: P.workshop, find: "{ key: 'pressed', label: '压制', desc: '把植物压平脱水，做成可以长久保存的腊叶标本。', cats: ['植物'] }", replace: "{ key: 'pressed', label: '压制', desc: '把植物压平脱水，做成可以长久保存的腊叶标本。', cats: ['植物', '昆虫'] }" },
+  { name: '推荐不按装裱筛', file: P.workshop, find: "    crafts.forEach((c) => push(Object.assign({}, base, { keyword: kw, craftType: c })))\n", replace: '' },
+  { name: '售罄排在前面', file: P.workshop, find: '  return inStock.concat(sold).slice(0, 4)', replace: '  return all.slice(0, 4)' },
+  { name: '工坊推荐改调别的云函数', file: P.wsJs, find: "wx.cloud.callFunction({ name: 'getEncyclopediaFeed', data: q })", replace: "wx.cloud.callFunction({ name: 'getRecommendations', data: q })" },
+  { name: '点藏品不进详情', file: P.wsJs, find: "    if (id) wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}` })", replace: '' },
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' }
 ]
 
