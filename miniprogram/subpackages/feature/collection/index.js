@@ -8,7 +8,7 @@ const {
   formatRecentLogs,
   emptyUnlockSheet
 } = require('../utils/atlas')
-const { plateOf } = require('../utils/atlasPlates')
+const { plateOf, ghostOf } = require('../utils/atlasPlates')
 
 /* 2026-10-17 重设计：一本「博物志 · 卷一」—— 卷首（大数字 + 每页一格的刻度）→ 卷章（三个系列）→ 图版（三列标本册，
    按编号固定位置，未点亮的页留空位只露编号）→ 近期足迹。旧的稀有度筛选行退场（稀有 / 传奇直接写在图版角上）。
@@ -83,12 +83,19 @@ Page({
       const card = enrichCardSpots(withMarks(raw))
       card.toneClass = card.unlocked && card.categoryTone ? `tone-${card.categoryTone}` : ''
       card.plate = plateOf(card)
+      card.ghost = ghostOf(card)
       card.rareMark = card.unlocked ? RARE_MARK[card.rarity] || '' : ''
       return card
     })
     // 标本册按编号固定位置：点亮的页就地亮起，不往前挤（「缺的那几格」本身就是收集的动力）
     cards.sort((a, b) => String(a.no).localeCompare(String(b.no), 'en', { numeric: true }))
-    const stats = pack.stats || this.data.stats
+    const rawStats = pack.stats || this.data.stats
+    // 卷章刻度（2026-11-22）：每章一排小格，亮 = 已翻开（原只有「1/4」分数）
+    const stats = Object.assign({}, rawStats, {
+      series: (rawStats.series || []).map((sr) => Object.assign({}, sr, {
+        pips: Array.from({ length: Math.min(12, Number(sr.total) || 0) }, (_, i) => ({ i, lit: i < (Number(sr.got) || 0) }))
+      }))
+    })
     const recentNotes = formatRecentLogs(pack.recentLogs || []).slice(0, 3)
     const categories = [{ id: 'all', label: '全部', got: stats.unlocked || 0, total: cards.length }].concat(
       CATEGORIES.map((c) => {

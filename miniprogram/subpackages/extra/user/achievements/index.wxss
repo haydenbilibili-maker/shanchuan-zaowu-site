@@ -235,17 +235,23 @@ page {
 
 /* —— 成长线 —— */
 .track {
-  padding: 28rpx 0 20rpx;
+  /* 2026-11-22 一行成长线：左列线名 + 差额，右侧节点（原两行：名 + 「下一枚」句，节点另起一行） */
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 22rpx 0 16rpx;
   border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
 .track:last-child { border-bottom: 1rpx solid rgba(196, 167, 108, 0.14); }
 
 .track-head {
+  flex: none;
+  width: 150rpx;
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 24rpx;
+  flex-direction: column;
+  gap: 6rpx;
+  padding-top: 8rpx;
 }
 
 .track-name {
@@ -257,28 +263,29 @@ page {
 
 .track-next {
   min-width: 0;
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
+  font-size: var(--fs-20);
+  color: var(--brass-300);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .track-done {
-  font-size: var(--fs-22);
+  font-size: var(--fs-20);
   color: var(--brass-300);
   letter-spacing: 0.08em;
 }
 
 /* 节点：固定格宽（五枚 = 640rpx 以内），单枚的线也从左起 */
 .nodes {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
-  margin-top: 24rpx;
 }
 
 .node-cell {
   position: relative;
-  width: 128rpx;
+  width: 104rpx;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -288,9 +295,9 @@ page {
 /* 连线：从本节点圆心到下一节点圆心；通往「下一枚」的那段按进度部分填 */
 .node-line {
   position: absolute;
-  top: 35rpx;
+  top: 29rpx;
   left: 50%;
-  width: 128rpx;
+  width: 104rpx;
   height: 2rpx;
   background: rgba(196, 167, 108, 0.18);
 }
@@ -303,8 +310,8 @@ page {
 .node {
   position: relative;
   z-index: 1;
-  width: 72rpx;
-  height: 72rpx;
+  width: 60rpx;
+  height: 60rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -330,8 +337,8 @@ page {
 .node.is-lit .node-roman { color: #2E2618; font-weight: 600; }
 
 .node-label {
-  margin-top: 12rpx;
-  max-width: 120rpx;
+  margin-top: 10rpx;
+  max-width: 100rpx;
   font-size: var(--fs-20);
   color: var(--color-text-secondary);
   white-space: nowrap;
@@ -340,6 +347,89 @@ page {
 }
 
 .node-label.is-lit { color: var(--brass-200); }
+
+/* 下一枚：铜色虚环 + 标签提亮 —— 一眼看出这条线下一步在哪 */
+.node.is-next {
+  border: 2rpx dashed var(--brass-400, #C4A76C);
+}
+.node.is-next .node-roman { color: var(--brass-300); }
+.node-label.is-next { color: var(--brass-300); }
+
+/* —— 章目录（2026-11-22）：五章一排，进度弧 + 罗马章号；点一章滚到该章 —— */
+.toc {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40rpx;
+  padding: 24rpx 8rpx 20rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
+}
+.toc-cell {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.toc-ring {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.toc-ring-in {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 50%;
+  background: #1A1814;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.toc-cell.is-done .toc-ring-in {
+  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+}
+.toc-no {
+  font-family: var(--font-latin);
+  font-size: var(--fs-20);
+  color: var(--brass-300);
+}
+.toc-cell.is-done .toc-no { color: #2E2618; font-weight: 600; }
+.toc-name {
+  margin-top: 10rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-24);
+  color: var(--color-text-body);
+}
+.toc-count {
+  margin-top: 2rpx;
+  font-family: var(--font-mono);
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+}
+.toc-cell.is-done .toc-count { color: var(--brass-300); }
+
+/* 章进度细线 + 全章点亮印 */
+.chapter-bar {
+  height: 2rpx;
+  margin: 0 0 4rpx;
+  background: rgba(196, 167, 108, 0.14);
+}
+.chapter-bar-fill {
+  height: 100%;
+  background: var(--brass-400);
+}
+.chapter-seal {
+  padding: 4rpx 14rpx;
+  border: 2rpx solid rgba(196, 72, 58, 0.8);
+  border-radius: 4rpx;
+  font-family: var(--font-brand);
+  font-size: var(--fs-20);
+  color: rgba(214, 92, 76, 0.95);
+  transform: rotate(-4deg);
+}
 
 /* —— 山海拾遗：两列纸签（已偶遇 = 浅纸，未偶遇 = 虚线空签）—— */
 .relics-desc {

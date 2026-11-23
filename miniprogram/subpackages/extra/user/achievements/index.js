@@ -106,6 +106,11 @@ function trackView(def, list) {
     return 0;
   });
   nodes.forEach((n, i) => { n.linkFill = i < links.length ? links[i] : -1; });
+  // 2026-11-22：「下一枚」直接标在节点下（铜色「还差 3 件」），行首不再重复一句「下一枚『…』· 还差」
+  if (nextIndex >= 0) {
+    nodes[nextIndex].isNext = true;
+    nodes[nextIndex].nextHint = String(next.remainText || '').replace(/\s*即可点亮$/, '');
+  }
   const got = list.filter((a) => a.unlocked).length;
   return {
     key: def.key,
@@ -157,7 +162,13 @@ function buildChapters(all) {
       got: tracks.reduce((n, t) => n + t.got, 0),
       total: tracks.reduce((n, t) => n + t.total, 0)
     };
-  }).filter((c) => c.tracks.length);
+  }).filter((c) => c.tracks.length).map((c) => ({
+    ...c,
+    // 章目录（2026-11-22）：卷首下一排五章，点一章滚到该章；整章点亮盖「全章点亮」
+    anchor: `ch-${c.type}`,
+    pct: c.total ? Math.round((c.got / c.total) * 100) : 0,
+    complete: c.total > 0 && c.got === c.total
+  }));
 }
 
 /** 下一枚：离点亮最近的三枚（进度高者优先；全是 0 时按门槛小者优先 —— 最容易的先给） */
@@ -413,6 +424,13 @@ Page({
   },
 
   /** 点成长线上的节点 / 下一枚的行：按 id 取（dataset 里不再塞整个对象） */
+  /** 章目录：滚到该章（内容不在 scroll-view 里，pageScrollTo 可达；见 check:achievement-tracks E） */
+  jumpChapter(e) {
+    const anchor = e.currentTarget.dataset.anchor;
+    if (!anchor) return;
+    wx.pageScrollTo({ selector: `#${anchor}`, offsetTop: -16, duration: 300 });
+  },
+
   viewAchievement(e) {
     const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
     const achievement = ds.achievement || (this.data.achievements || []).find((a) => a && a.id === ds.id);

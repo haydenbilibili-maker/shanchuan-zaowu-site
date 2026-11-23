@@ -126,6 +126,7 @@ const TONE = { 昆虫: 'insecta', 植物: 'plantae', 海洋: 'marine', 矿石: '
 const atlasCards = ATLAS_ROWS.map(([no, zh, la, cat, rarity, lit, spot]) => {
   const c = { id: no, no, category: cat, categoryTone: TONE[cat], rarity, unlocked: !!lit, hasSpot: !!spot, nameZh: lit ? zh : '未记录', nameLatin: lit ? la : '' }
   c.plate = atlasPlates.plateOf(c)
+  c.ghost = atlasPlates.ghostOf ? atlasPlates.ghostOf(c) : ''
   c.rareMark = lit ? ({ rare: '稀有', legendary: '传奇' })[rarity] || '' : ''
   return c
 })
@@ -138,6 +139,8 @@ const atlasStats = { total: 16, unlocked: 6, percent: 38, series: [
   { id: 'overwinter', name: '越冬者', got: 1, total: 3, complete: false, blurb: '翅面把一整季的光收进去，到来年还在。' },
   { id: 'mountain', name: '守山者', got: 3, total: 6, complete: false, blurb: '石头、叶片与壳，都是山海留下的截面。' }
 ] }
+// 卷章刻度（2026-11-22，与页面 applyPack 同算法）
+atlasStats.series = atlasStats.series.map((sr) => ({ ...sr, pips: Array.from({ length: sr.total }, (_, i) => ({ i, lit: i < sr.got })) }))
 
 function achievementsSceneData() {
   let cfg = null

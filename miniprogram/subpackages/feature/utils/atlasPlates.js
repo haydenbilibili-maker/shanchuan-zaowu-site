@@ -131,6 +131,22 @@ function plateOf(card) {
   return plateUri(shape)
 }
 
+/**
+ * 未点亮页的「门类剪影」（2026-11-22）：同一门类统一一种线描（昆虫都是同一只蝶、矿石都是同一块晶），
+ * 只提示「这一格属于哪一门」，**不对应具体物种**，不破「不剧透形态」；铜色描边、页面上再压到极淡。
+ * 与 plateOf 分开：plateOf 对未点亮仍一律返回空串（check:atlas-plates B）。
+ */
+const ghostCache = {}
+function ghostOf(card) {
+  if (!card || card.unlocked) return ''
+  const shape = SHAPE_BY_TONE[card.categoryTone]
+  if (!shape || !SHAPES[shape]) return ''
+  if (ghostCache[shape]) return ghostCache[shape]
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="#C4A76C" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' + SHAPES[shape] + '</svg>'
+  ghostCache[shape] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+  return ghostCache[shape]
+}
+
 /** 标本养护品类 → 版式（与图鉴同一套刻版线描；养护页印在浅纸签上） */
 const SHAPE_BY_CARE_CATEGORY = {
   INSECTA: 'morpho', ANIMALIA: 'feather', PLANTAE: 'ginkgo', MARINE: 'nautilus',
@@ -142,4 +158,4 @@ function carePlateOf(category) {
   return shape ? plateUri(shape) : ''
 }
 
-module.exports = { plateOf, plateUri, carePlateOf, SHAPES, SHAPE_BY_SPECIES, SHAPE_BY_CARE_CATEGORY }
+module.exports = { plateOf, ghostOf, plateUri, carePlateOf, SHAPES, SHAPE_BY_SPECIES, SHAPE_BY_CARE_CATEGORY }

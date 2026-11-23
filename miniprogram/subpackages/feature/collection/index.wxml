@@ -21,24 +21,27 @@
       <text class="sec-eyebrow">CHAPTERS</text>
       <text class="sec-title">卷章</text>
     </view>
-    <view
-      class="chapter {{seriesFilter === item.id ? 'is-on' : ''}}"
-      wx:for="{{stats.series}}"
-      wx:key="id"
-      bindtap="onSeries"
-      data-id="{{item.id}}"
-      hover-class="tap-press-soft"
-      hover-stay-time="80"
-      aria-role="button"
-      aria-label="{{item.name}}，已翻开 {{item.got}} / {{item.total}}"
-    >
-      <text class="chapter-no">{{index + 1}}</text>
-      <view class="chapter-main">
+    <!-- 2026-11-22：三章并排成一排书脊卡（原三行列表）；每章一排小格表示翻开几页；章简介在选中后显示于门类下方 -->
+    <view class="chapter-row">
+      <view
+        class="chapter {{seriesFilter === item.id ? 'is-on' : ''}} {{item.complete ? 'is-done' : ''}}"
+        wx:for="{{stats.series}}"
+        wx:key="id"
+        bindtap="onSeries"
+        data-id="{{item.id}}"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        aria-role="button"
+        aria-label="{{item.name}}，已翻开 {{item.got}} / {{item.total}}"
+      >
+        <text class="chapter-no">第 {{index + 1}} 章</text>
         <text class="chapter-name">{{item.name}}</text>
-        <text class="chapter-blurb" wx:if="{{item.blurb}}">{{item.blurb}}</text>
+        <view class="chapter-pips" aria-hidden="true">
+          <view class="chapter-pip {{p.lit ? 'is-lit' : ''}}" wx:for="{{item.pips}}" wx:for-item="p" wx:key="i"></view>
+        </view>
+        <text class="chapter-done" wx:if="{{item.complete}}">已齐</text>
+        <text class="chapter-count" wx:else>{{item.got}}/{{item.total}}</text>
       </view>
-      <text class="chapter-done" wx:if="{{item.complete}}">已齐</text>
-      <text class="chapter-count" wx:else>{{item.got}}/{{item.total}}</text>
     </view>
   </view>
 
@@ -116,6 +119,8 @@
         <text class="slot-latin" wx:if="{{item.nameLatin}}">{{item.nameLatin}}</text>
       </block>
       <block wx:else>
+        <!-- 门类剪影（2026-11-22）：同门类统一一种淡线描，只提示门类、不对应具体物种 -->
+        <image class="slot-ghost" src="{{item.ghost}}" mode="aspectFit" wx:if="{{item.ghost}}" aria-hidden="true"></image>
         <text class="slot-blank-no">{{item.no}}</text>
         <text class="slot-blank-t">未记录</text>
         <text class="slot-spot" wx:if="{{item.hasSpot}}">馆内可寻</text>

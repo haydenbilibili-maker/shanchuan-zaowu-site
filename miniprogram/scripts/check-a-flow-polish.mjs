@@ -152,6 +152,10 @@ const FILES = {
   certPageWxss: 'subpackages/business/certificate/index.wxss',
   certPageJs: 'subpackages/business/certificate/index.js',
   certTimingJs: 'subpackages/business/certificate/certPrintTiming.js',
+  atlasPlatesJs: 'subpackages/feature/utils/atlasPlates.js',
+  atlasIdxWxml: 'subpackages/feature/collection/index.wxml',
+  atlasIdxJs: 'subpackages/feature/collection/index.js',
+  achWxss: 'subpackages/extra/user/achievements/index.wxss',
   customJs: 'subpackages/feature/custom/index.js',
   customWxml: 'subpackages/feature/custom/index.wxml',
   dnLedger: 'cloudfunctions/getMyDonations/donationLedger.js',
@@ -683,7 +687,7 @@ function checks(s) {
       ok = a.length === 0 && b.join() === 'a3' && c.length === 0
     } catch (e) { ok = false }
     add('R42-1 成就新点亮射灯：本机首次进页不播；之后只给新点亮的那枚扫一次光',
-      ok && /class="node \{\{node\.unlocked \? 'is-lit' : ''\}\} \{\{node\.fresh \? 'is-fresh' : ''\}\}"/.test(s.achWxml) && /takeFreshLit\(normalized\.filter\(\(a\) => a\.unlocked\)/.test(s.achJs))
+      ok && /class="node \{\{node\.unlocked \? 'is-lit' : ''\}\} \{\{node\.fresh \? 'is-fresh' : ''\}\}( \{\{node\.isNext \? 'is-next' : ''\}\})?"/.test(s.achWxml) && /takeFreshLit\(normalized\.filter\(\(a\) => a\.unlocked\)/.test(s.achJs))
   }
   add('R42-2 档案完成度：补全一项、分数涨了才弹「+N%」（降分不弹；初次载入不走这条）',
     /const gain = \(parseInt\(score, 10\) \|\| 0\) - \(parseInt\(this\.data\.profileScore, 10\) \|\| 0\)\s*\n\s*if \(gain > 0\) this\.bumpScore\(gain\)/.test(s.pfJs) &&
@@ -1013,6 +1017,25 @@ function checks(s) {
         /goDonations\(\) \{\s*wx\.navigateTo\(\{ url: '\/subpackages\/business\/donations\/index' \}\)/.test(s.walletJs) &&
         /name: 'getMyDonations', data: \{ summaryOnly: true \}/.test(s.walletJs) && /"donations\/index"/.test(s.appJson))
   }
+  // R66 山海图鉴 / 我的成就 大幅优化（2026-11-22 产品负责人「继续大幅优化提升山海图鉴与我的成就两个模块」）
+  {
+    const AP = loadCjs(s.atlasPlatesJs)
+    let ok = false
+    try {
+      const g1 = AP.ghostOf({ id: '001', categoryTone: 'insecta', unlocked: false })
+      const g2 = AP.ghostOf({ id: '004', categoryTone: 'insecta', unlocked: false })
+      ok = /^data:image\/svg/.test(g1) && g1 === g2 && AP.ghostOf({ id: '001', categoryTone: 'insecta', unlocked: true }) === '' &&
+        AP.plateOf({ id: '001', categoryTone: 'insecta', unlocked: false }) === ''
+    } catch (e) { ok = false }
+    add('R66-1 图鉴空位门类剪影：只给未点亮页、同门类同一线描（不对应物种），plateOf 对未点亮仍为空；卷章并排带刻度',
+      ok && /<image class="slot-ghost" src="\{\{item\.ghost\}\}"/.test(s.atlasIdxWxml) && /card\.ghost = ghostOf\(card\)/.test(s.atlasIdxJs) &&
+        /<view class="chapter-row">/.test(s.atlasIdxWxml) && /class="chapter-pip \{\{p\.lit \? 'is-lit' : ''\}\}"/.test(s.atlasIdxWxml))
+    add('R66-2 我的成就：章目录点一章滚到该章（pageScrollTo + 章锚点）；成长线一行、下一枚节点虚环、行尾不再重复「下一枚」句；整章点亮盖印',
+      /bindtap="jumpChapter"[\s\S]{0,40}data-anchor="\{\{item\.anchor\}\}"/.test(s.achWxml) && /id="\{\{chapter\.anchor\}\}"/.test(s.achWxml) &&
+        /wx\.pageScrollTo\(\{ selector: `#\$\{anchor\}`/.test(s.achJs) && /nodes\[nextIndex\]\.isNext = true;/.test(s.achJs) &&
+        !/下一枚「\{\{track\.nextName\}\}」/.test(s.achWxml) && /<text class="chapter-seal" wx:if="\{\{chapter\.complete\}\}">全章点亮<\/text>/.test(s.achWxml) &&
+        /\n\.track \{[^}]*display: flex;/.test(s.achWxss))
+  }
   // R63 超管 / 店长工作台顶部屏效（2026-11-22 产品负责人「顶部的多个栏目如搜索、处理动态等效率较低」）
   {
     const upd = (s.mgrCfgJs.match(/\n  updateTime\(\) \{[\s\S]*?\n  \},/) || [''])[0]
@@ -1230,6 +1253,8 @@ if (process.argv.includes('--selftest')) {
     ['纸张动画改了时长没同步', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s', 'animation: cp-feed 2.4s')],
     ['工作台时钟又每秒写 todayDate', 'mgrCfgJs', (t) => t.replace('this.setData({ clockText, greeting: greet });', 'this.setData({ clockText, greeting: greet, todayDate: clockText });')],
     ['工作台搜索又单占一行', 'mgrWxml', (t) => t.replace('      <work-notice-voice />\n    </view>\n    </view>\n  </view>', '      <work-notice-voice />\n    </view>\n    </view>\n  </view>\n  <view class="hub-search-row"></view>').replace('<view class="dashboard-title-row">', '<view class="dashboard-title-row-x">')],
+    ['图鉴门类剪影改成按物种出图（剧透）', 'atlasPlatesJs', (t) => t.replace('const shape = SHAPE_BY_TONE[card.categoryTone]\n  if (!shape', 'const shape = SHAPE_BY_SPECIES[card.id] || SHAPE_BY_TONE[card.categoryTone]\n  if (!shape')],
+    ['成就行尾又重复「下一枚」句', 'achWxml', (t) => t.replace('<text class="track-next" wx:else>{{track.nextRemain}}</text>', '<text class="track-next" wx:else>下一枚「{{track.nextName}}」· {{track.nextRemain}}</text>')],
     ['钱包卡回到贴顶', 'walletWxss', (t) => t.replace('margin: var(--space-4) 0 var(--space-4);\n  height: 440rpx;', 'margin: 0 0 var(--space-4);\n  height: 440rpx;')],
     ['积分卡左右边距回到 30rpx', 'pointsWxss', (t) => t.replace('.container { padding: 0 var(--space-4);', '.container { padding: 0 30rpx;')],
     ['捐赠铭牌水印改回 1% 文字', 'dnWxml', (t) => t.replace('aria-hidden="true">❤️</text>', 'aria-hidden="true">1%</text>')],

@@ -37,6 +37,27 @@
       </block>
     </view>
 
+    <!-- 章目录（2026-11-22）：五章一排，各带进度弧；点一章直接滚到该章 —— 页面长，先给一张地图 -->
+    <view class="toc" wx:if="{{chapters.length > 1}}">
+      <view
+        class="toc-cell {{item.complete ? 'is-done' : ''}}"
+        wx:for="{{chapters}}"
+        wx:key="type"
+        bindtap="jumpChapter"
+        data-anchor="{{item.anchor}}"
+        hover-class="tap-press"
+        hover-stay-time="80"
+        aria-role="button"
+        aria-label="{{item.name}}，{{item.got}} / {{item.total}}"
+      >
+        <view class="toc-ring" style="background: conic-gradient(var(--brass-400, #C4A76C) {{item.pct}}%, rgba(196, 167, 108, 0.16) 0);">
+          <view class="toc-ring-in"><text class="toc-no">{{item.no}}</text></view>
+        </view>
+        <text class="toc-name">{{item.name}}</text>
+        <text class="toc-count">{{item.complete ? '全亮' : item.got + '/' + item.total}}</text>
+      </view>
+    </view>
+
     <!-- 下一枚：离点亮最近的三枚 -->
     <view class="block" wx:if="{{nextUp.length}}">
       <view class="sec-head">
@@ -67,20 +88,23 @@
     </view>
 
     <!-- 五章 × 成长线 -->
-    <view class="block chapter" wx:for="{{chapters}}" wx:key="type" wx:for-item="chapter">
+    <view class="block chapter {{chapter.complete ? 'is-done' : ''}}" id="{{chapter.anchor}}" wx:for="{{chapters}}" wx:key="type" wx:for-item="chapter">
       <view class="sec-head is-row">
         <view class="sec-head-t">
           <text class="sec-eyebrow">{{chapter.no}} · {{chapter.enName}}</text>
           <text class="sec-title">{{chapter.name}}</text>
         </view>
-        <text class="sec-count">{{chapter.got}}/{{chapter.total}}</text>
+        <text class="chapter-seal" wx:if="{{chapter.complete}}">全章点亮</text>
+        <text class="sec-count" wx:else>{{chapter.got}}/{{chapter.total}}</text>
       </view>
+      <view class="chapter-bar" aria-hidden="true"><view class="chapter-bar-fill" style="width: {{chapter.pct}}%;"></view></view>
 
       <view class="track" wx:for="{{chapter.tracks}}" wx:key="key" wx:for-item="track">
+        <!-- 2026-11-22：成长线一行 —— 左列 = 线名 + 一句差额（原行尾「下一枚『…』· 还差」与上方「下一枚」重复），右侧 = 节点；下一枚节点铜色虚环 -->
         <view class="track-head">
           <text class="track-name">{{track.name}}</text>
           <text class="track-done" wx:if="{{track.done}}">已全部点亮</text>
-          <text class="track-next" wx:else>下一枚「{{track.nextName}}」· {{track.nextRemain}}</text>
+          <text class="track-next" wx:else>{{track.nextRemain}}</text>
         </view>
         <view class="nodes">
           <view class="node-cell" wx:for="{{track.nodes}}" wx:key="id" wx:for-item="node">
@@ -88,7 +112,7 @@
               <view class="node-line-fill" style="width: {{node.linkFill}}%;"></view>
             </view>
             <view
-              class="node {{node.unlocked ? 'is-lit' : ''}} {{node.fresh ? 'is-fresh' : ''}}"
+              class="node {{node.unlocked ? 'is-lit' : ''}} {{node.fresh ? 'is-fresh' : ''}} {{node.isNext ? 'is-next' : ''}}"
               bindtap="viewAchievement"
               data-id="{{node.id}}"
               hover-class="tap-press"
@@ -98,7 +122,7 @@
             >
               <text class="node-roman">{{node.roman}}</text>
             </view>
-            <text class="node-label {{node.unlocked ? 'is-lit' : ''}}">{{node.label}}</text>
+            <text class="node-label {{node.unlocked ? 'is-lit' : ''}} {{node.isNext ? 'is-next' : ''}}">{{node.label}}</text>
           </view>
         </view>
       </view>
