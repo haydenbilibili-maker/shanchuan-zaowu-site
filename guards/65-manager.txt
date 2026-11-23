@@ -30,3 +30,4 @@ npm run check:product-lib-risk
 npm run test:museum-guide-monitor
 # 2026-11-23：AI 鉴定 —— 结果页行动区三层（九个出口全在、工具带 ≤ 4 格）/ 鉴定百科空态 / 鉴定台三步收行与拍摄建议折叠；16 个内存注入
 npm run check:identify-dock
+npm run test:ai-center

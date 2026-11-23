@@ -1,0 +1,73 @@
+<!-- AI 智能中心（员工端）：虚拟员工对话。人设在云端，本页只管展示与本机会话。 -->
+<view class="ac-page">
+  <view class="ac-head">
+    <text class="ac-eyebrow">AI CENTER</text>
+    <text class="ac-title">问一位同事</text>
+    <text class="ac-desc">六位虚拟员工，各自懂一块业务。回答由 AI 生成，重要决策请再核一遍。</text>
+  </view>
+
+  <scroll-view class="ac-roles" scroll-x enhanced show-scrollbar="{{false}}">
+    <view
+      class="ac-role {{item.id === roleId ? 'is-on' : ''}}"
+      wx:for="{{roles}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="onRoleTap"
+      hover-class="tap-press-soft"
+      hover-stay-time="80"
+    >
+      <text class="ac-role-emoji">{{item.emoji}}</text>
+      <view class="ac-role-body">
+        <text class="ac-role-name">{{item.name}}</text>
+        <text class="ac-role-desc">{{item.desc}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <scroll-view class="ac-scroll" scroll-y scroll-into-view="{{scrollTo}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+    <view class="ac-empty" wx:if="{{!messages.length}}">
+      <text class="ac-empty-title">你好，我是{{role.name}}</text>
+      <text class="ac-empty-desc">直接提问，或点下面的一条示例开始。</text>
+      <view
+        class="ac-starter"
+        wx:for="{{starters}}"
+        wx:key="*this"
+        data-text="{{item}}"
+        bindtap="onStarterTap"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+      >{{item}}</view>
+    </view>
+
+    <view class="ac-list" wx:else>
+      <view class="ac-row {{item.role === 'user' ? 'is-user' : 'is-ai'}}" wx:for="{{messages}}" wx:key="index" id="m{{index}}">
+        <view class="ac-bubble {{item.role === 'user' ? 'is-user' : 'is-ai'}} {{item.isError ? 'is-error' : ''}}">
+          <text wx:if="{{item.pending}}" class="ac-pending">同事正在想…</text>
+          <text wx:else user-select>{{item.text}}</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <view class="ac-foot">
+    <view class="ac-foot-head">
+      <text class="ac-foot-hint">与{{role.name}}对话 · 只存在这台手机上</text>
+      <text class="ac-clear" bindtap="onClear" wx:if="{{hasSession}}">清空</text>
+    </view>
+    <view class="ac-input-row">
+      <input
+        class="ac-input"
+        value="{{draft}}"
+        placeholder="说点什么…"
+        placeholder-class="ac-ph"
+        confirm-type="send"
+        bindinput="onInput"
+        bindconfirm="send"
+        disabled="{{sending}}"
+      />
+      <view class="ac-send {{sending || !draft ? 'is-dim' : ''}}" bindtap="send" hover-class="tap-press" hover-stay-time="80">
+        {{sending ? '…' : '发送'}}
+      </view>
+    </view>
+  </view>
+</view>

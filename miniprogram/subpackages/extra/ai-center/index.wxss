@@ -1,0 +1,40 @@
+/* AI 智能中心：夜墨底 + 铜金；与博物君同一套视觉语言 */
+.ac-page { min-height: 100vh; background: #12100D; display: flex; flex-direction: column; }
+.ac-head { padding: 32rpx 32rpx 8rpx; }
+.ac-eyebrow { display: block; font-family: var(--font-mono); font-size: 18rpx; letter-spacing: .2em; color: var(--brass-300, #D4BC8A); }
+.ac-title { display: block; margin-top: 10rpx; font-family: var(--font-brand); font-size: 44rpx; letter-spacing: .1em; color: var(--brass-100, #F1E6CC); }
+.ac-desc { display: block; margin-top: 8rpx; font-size: 22rpx; line-height: 1.6; color: #8C8478; }
+
+.ac-roles { white-space: nowrap; padding: 20rpx 32rpx 8rpx; box-sizing: border-box; }
+.ac-role { display: inline-flex; align-items: center; gap: 12rpx; margin-right: 16rpx; padding: 14rpx 20rpx; border-radius: 16rpx; background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.18); }
+.ac-role.is-on { background: rgba(196,167,108,.12); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.55); }
+.ac-role-emoji { font-size: 30rpx; }
+.ac-role-body { display: flex; flex-direction: column; }
+.ac-role-name { font-size: 24rpx; color: #E3D2AC; }
+.ac-role-desc { margin-top: 2rpx; font-size: 18rpx; color: #7E7568; }
+
+.ac-scroll { flex: 1; min-height: 0; padding: 12rpx 32rpx 0; box-sizing: border-box; }
+.ac-empty { padding: 48rpx 0; }
+.ac-empty-title { display: block; font-size: 32rpx; color: #F1E6CC; }
+.ac-empty-desc { display: block; margin-top: 8rpx; font-size: 22rpx; color: #8C8478; }
+.ac-starter { margin-top: 18rpx; padding: 20rpx 24rpx; border-radius: 14rpx; font-size: 24rpx; line-height: 1.5; color: #D9C9A8; background: rgba(196,167,108,.06); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.2); }
+
+.ac-list { padding: 12rpx 0 24rpx; }
+.ac-row { display: flex; margin-top: 20rpx; }
+.ac-row.is-user { justify-content: flex-end; }
+.ac-row.is-ai { justify-content: flex-start; }
+.ac-bubble { max-width: 86%; padding: 22rpx 26rpx; border-radius: 16rpx; font-size: 26rpx; line-height: 1.7; word-break: break-word; }
+.ac-bubble.is-ai { background: #F3EDDF; color: #2A2620; border-top-left-radius: 6rpx; }
+.ac-bubble.is-user { background: transparent; color: #E3D2AC; box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.45); border-top-right-radius: 6rpx; }
+.ac-bubble.is-error { background: rgba(196,167,108,.08); color: #D9C9A8; box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.3); }
+.ac-pending { color: #6B5A3E; }
+
+.ac-foot { padding: 12rpx 32rpx calc(24rpx + env(safe-area-inset-bottom)); background: #12100D; box-shadow: 0 -1rpx 0 rgba(196,167,108,.14); }
+.ac-foot-head { display: flex; align-items: center; justify-content: space-between; }
+.ac-foot-hint { font-size: 18rpx; color: #6F675B; }
+.ac-clear { font-size: 20rpx; color: #B08D57; padding: 6rpx 4rpx; }
+.ac-input-row { display: flex; align-items: center; gap: 14rpx; margin-top: 10rpx; }
+.ac-input { flex: 1; height: 76rpx; padding: 0 22rpx; border-radius: 14rpx; background: rgba(255,255,255,.04); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.22); font-size: 26rpx; color: #EDE3CC; }
+.ac-ph { color: #6F675B; }
+.ac-send { flex: none; min-width: 110rpx; height: 76rpx; line-height: 76rpx; text-align: center; border-radius: 14rpx; background: var(--brass-400, #C4A76C); color: #191713; font-size: 26rpx; }
+.ac-send.is-dim { opacity: .5; }

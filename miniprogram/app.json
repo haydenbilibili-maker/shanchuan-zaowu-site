@@ -195,6 +195,7 @@
       "root": "subpackages/extra",
       "name": "extra",
       "pages": [
+        "ai-center/index",
         "user/onboarding/index",
         "user/onboarding/done",
         "user/profile/index",

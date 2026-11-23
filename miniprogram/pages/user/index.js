@@ -182,6 +182,18 @@ function buildWorkbenchTilesFromCounts(entries, counts = {}) {
      工作台再开一个入口是重复入口。可达性不受影响：
        · 工作信息瓦片的角标本来就统计整个 workflow 队列（日报也在里面）；
        · 进去之后「日报」档就在筛选分栏上，历史日报照旧可翻。 */
+  // AI 智能中心（2026-11-23）：与超管 / 投资观测台并列的一级员工入口，不挂角标
+  tiles.push({
+    key: 'ai_center',
+    kind: 'ai_center',
+    title: 'AI 智能中心',
+    en: 'AI CENTER',
+    workspace: '',
+    icon: '/assets/icons/knowledge.png',
+    badgeCount: 0,
+    badgeText: '',
+    badgeWide: false
+  });
   list.forEach((e) => {
     let badgeCount = 0;
     if (e.kind === 'super_admin' || e.kind === 'manager') {
@@ -2606,6 +2618,10 @@ Page(withAppModal({
     } catch (err) { /* ignore */ }
     if (key === 'workflow') {
       this.goToWorkflowMessages();
+      return;
+    }
+    if (key === 'ai_center') {
+      wx.navigateTo({ url: '/subpackages/extra/ai-center/index' });
       return;
     }
     requestWorkspaceAccess(String(ds.kind || '').trim(), ds.workspace || '');

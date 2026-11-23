@@ -13,6 +13,7 @@ const cloud = require('wx-server-sdk')
 const https = require('https')
 const { checkText } = require('./contentSecurity')
 const { matchSpecies, PLACE_KEYS } = require('./knowledge')
+const { STAFF_ROLES, ROLE_IDS, systemPromptOf } = require('./staffPersonas')
 const { buildMessages } = require('./persona')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -333,11 +334,54 @@ function bjDayText(now) {
   return d.toISOString().slice(0, 10)
 }
 
+/**
+ * AI 智能中心（员工端，2026-11-23）：虚拟员工对话。
+ * - 不走博物君的开馆 / 每日 30 问：这是员工工具，额度另计（这里不设上限，按模型侧限流）。
+ * - 人设只在服务端（staffPersonas.js），客户端只传 roleId。
+ * - 问答都过内容安全；不写库、不留对话（会话存本机）。
+ */
+async function staffChat(event, openid) {
+  const roleId = String((event && event.roleId) || '').trim()
+  if (ROLE_IDS.indexOf(roleId) < 0) return { success: false, error_type: 'invalid', msg: '没有这个虚拟员工' }
+  const question = String((event && event.question) || '').trim().slice(0, 600)
+  if (!question) return { success: false, error_type: 'invalid', msg: '先说要问什么' }
+  const history = (Array.isArray(event && event.history) ? event.history : [])
+    .filter((h) => h && (h.role === 'user' || h.role === 'assistant') && typeof h.content === 'string')
+    .slice(-6)
+    .map((h) => ({ role: h.role, content: h.content.slice(0, 600) }))
+
+  const sec = await checkText(openid, question, 2)
+  if (!sec.ok) return { success: false, error_type: 'risky', msg: '这个问题不适合在这里问，换一个吧' }
+
+  const apiKey = process.env.DASHSCOPE_API_KEY || ''
+  if (!apiKey) return { success: false, error_type: 'ai_service', msg: 'AI 服务还没配置，请联系超管' }
+
+  const messages = [{ role: 'system', content: systemPromptOf(roleId) }].concat(history, [{ role: 'user', content: question }])
+  let lastErr = null
+  for (const model of modelChain(process.env.MUSEUM_GUIDE_MODELS)) {
+    try {
+      const res = await httpsPostJson(TEXT_PATH, {
+        model,
+        input: { messages },
+        parameters: { result_format: 'message', enable_thinking: false, temperature: 0.6, max_tokens: 900 }
+      }, { Authorization: `Bearer ${apiKey}` })
+      const answer = plainAnswer(extractText(res))
+      if (!usableAnswer(answer)) { lastErr = new Error('empty answer'); continue }
+      return { success: true, roleId, roleName: STAFF_ROLES[roleId].name, answer }
+    } catch (e) {
+      lastErr = e
+      console.warn(`AI中心[${roleId}] 模型[${model}] 失败`, e.message)
+    }
+  }
+  return { success: false, error_type: 'ai_service', msg: '这位同事一时没接上话，稍后再试', detail: lastErr ? String(lastErr.message || '').slice(0, 80) : '' }
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   if (!OPENID) return { success: false, error_type: 'invalid', msg: '请在小程序内使用' }
 
   if (event && event.action === 'feedback') return feedback(event, OPENID)
+  if (event && event.mode === 'staff') return staffChat(event, OPENID)
 
   const t0 = Date.now()
   const cfg = effectiveConfig(await readConfig(), process.env.MUSEUM_GUIDE_DAILY_LIMIT)
