@@ -1094,67 +1094,96 @@ page {
 }
 
 /* 馆员问候（2026-10-18）：banner 上方一行，衬线问候 + 次级状态 */
-/* 博物君口播（2026-11-23）：一枚朱砂小印 + 两行（问候 / 竖向轮播），整体仍是顶部一条细带，不抢轮播图 */
+/* 博物君口播（2026-11-23 第二版）：无框口播带，像展厅入口的导览广播。
+ * 左：描边铜印「博」；右上：问候（品牌字）+ 口播呼吸灯；右下：「小签 · 文案」单行竖向轮播。
+ * 底部一道向右淡出的细铜线，把它和下面的轮播图分开，而不是再套一个盒子。 */
 .home-cast {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 18rpx;
-  margin: 4rpx 32rpx 18rpx;
-  padding: 14rpx 20rpx 14rpx 16rpx;
-  border-radius: var(--radius-md);
-  background: linear-gradient(90deg, rgba(196, 167, 108, 0.10) 0%, rgba(196, 167, 108, 0.02) 100%);
-  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
+  gap: 20rpx;
+  margin: 0 32rpx 20rpx;
+  padding: 10rpx 0 18rpx;
+}
+.home-cast::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1rpx;
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.45) 0%, rgba(196, 167, 108, 0.12) 55%, rgba(196, 167, 108, 0) 100%);
 }
 .home-cast-seal {
   flex-shrink: 0;
-  width: 60rpx;
-  height: 60rpx;
-  border-radius: 12rpx;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #8E3B2E;
-  box-shadow: inset 0 0 0 2rpx rgba(241, 230, 204, 0.35);
-  color: #F1E6CC;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.55), 0 0 0 6rpx rgba(196, 167, 108, 0.06);
+  background: radial-gradient(circle at 50% 35%, rgba(196, 167, 108, 0.18) 0%, rgba(196, 167, 108, 0.02) 70%);
+  color: var(--brass-200);
   font-family: var(--font-brand);
-  font-size: var(--fs-30);
+  font-size: var(--fs-28);
 }
 .home-cast-main { flex: 1; min-width: 0; }
-.home-cast-head { display: flex; align-items: baseline; gap: 14rpx; }
+.home-cast-head { display: flex; align-items: center; gap: 16rpx; }
 .home-cast-hello {
   flex: 1;
   min-width: 0;
   font-family: var(--font-brand);
-  font-size: var(--fs-26);
-  color: var(--brass-200);
+  font-size: var(--fs-28);
+  color: var(--brass-100);
+  letter-spacing: 0.04em;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.home-cast-by { flex-shrink: 0; font-size: var(--fs-20); color: var(--color-text-secondary); letter-spacing: 0.06em; }
-/* 每条最多两行（博物一知约 28 字，一行只放得下约 20 字）；高度固定，轮播不跳 */
-.home-cast-swiper { height: 68rpx; margin-top: 6rpx; }
-.home-cast-item { display: flex; align-items: flex-start; gap: 12rpx; height: 68rpx; }
+.home-cast-live {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: var(--fs-18);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.2em;
+}
+.home-cast-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: var(--brass-400);
+  animation: home-cast-breath 2.4s ease-in-out infinite;
+}
+@keyframes home-cast-breath {
+  0%, 100% { opacity: 0.35; box-shadow: 0 0 0 0 rgba(196, 167, 108, 0); }
+  50% { opacity: 1; box-shadow: 0 0 0 6rpx rgba(196, 167, 108, 0.16); }
+}
+/* 单行定高：轮播不跳、不折行（文案上限 22 字，guideBroadcast.LINE_MAX） */
+.home-cast-swiper { height: 40rpx; margin-top: 6rpx; }
+.home-cast-item { display: flex; align-items: center; gap: 14rpx; height: 40rpx; }
 .home-cast-tag {
   flex-shrink: 0;
-  padding: 0 10rpx;
-  border-radius: 6rpx;
-  margin-top: 2rpx;
-  font-size: var(--fs-18);
-  line-height: 30rpx;
-  color: var(--brass-300);
-  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45);
+  font-size: var(--fs-20);
+  color: var(--brass-400);
+  letter-spacing: 0.08em;
 }
-.home-cast-tag.is-notice { color: #1A1814; background: var(--brass-400); box-shadow: none; }
+.home-cast-sep { flex-shrink: 0; margin-left: -6rpx; color: rgba(196, 167, 108, 0.45); font-size: var(--fs-20); }
+.home-cast-tag.is-notice { color: var(--brass-200); font-weight: 600; }
 .home-cast-t {
   flex: 1;
   min-width: 0;
-  font-size: var(--fs-22);
-  line-height: 34rpx;
+  font-size: var(--fs-24);
   color: var(--color-text-body);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
-.home-cast-go { flex-shrink: 0; align-self: center; font-size: var(--fs-26); color: var(--brass-400); line-height: 1; }
+.home-cast-go { flex-shrink: 0; font-size: var(--fs-24); color: rgba(196, 167, 108, 0.7); line-height: 1; }
+
+/* 减弱动效：口播呼吸灯停在常亮 */
+@media (prefers-reduced-motion: reduce) {
+  .home-cast-dot { animation: none; opacity: 1; }
+}

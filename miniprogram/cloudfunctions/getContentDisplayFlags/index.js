@@ -225,11 +225,11 @@ async function readMuseumGuideOpen(box) {
 
 /**
  * 首页「博物君口播」的馆内通知（2026-11-23）：同一份 museum_guide_config/main 的 notices，只读带出；
- * 闭馆时不带（口播里博物君不再出声）。最多 3 条、每条 36 字，写入侧 museumGuideMonitor 已校验，这里只兜底截断。
+ * 闭馆时不带（口播里博物君不再出声）。最多 3 条、每条 22 字，写入侧 museumGuideMonitor 已校验，这里只兜底截断。
  */
 function museumGuideNoticesFrom(doc, open) {
   if (!open || !doc || !Array.isArray(doc.notices)) return []
-  return doc.notices.map((t) => String(t == null ? '' : t).trim().slice(0, 36)).filter(Boolean).slice(0, 3)
+  return doc.notices.map((t) => String(t == null ? '' : t).trim().slice(0, 22)).filter(Boolean).slice(0, 3)
 }
 
 exports.main = async (event) => {

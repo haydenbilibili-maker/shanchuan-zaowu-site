@@ -5,7 +5,7 @@
  *   overview  { days: 7 | 30 }            近 N 天按日统计 + 失败分布 + 热门物种 / 去处 / 入口 / 模型 + 当前配置
  *   setConfig { enabled?, dailyLimit?, notices? }  改开关 / 每日额度 / 首页口播通知（先写审计，审计失败即拒绝）
  *
- * 口播通知（2026-11-23）：首页「博物君口播」里的「馆内通知」条，最多 3 条、每条 ≤ 36 字；
+ * 口播通知（2026-11-23）：首页「博物君口播」里的「馆内通知」条，最多 3 条、每条 ≤ 22 字（首页一行放得下）；
  *   getContentDisplayFlags 只读带出 museumGuideNotices（与 museumGuideOpen 同一份文档）。
  *
  * 鉴权：staffGuard.assertStaff({ requireSuperAdmin: true })，只认小程序身份。
@@ -31,7 +31,7 @@ const LIMIT_MIN = 5
 const LIMIT_MAX = 200
 const DEFAULT_LIMIT = 30
 const NOTICE_MAX = 3
-const NOTICE_LEN = 36
+const NOTICE_LEN = 22
 
 function fail(code, msg) {
   return { success: false, code, msg }
