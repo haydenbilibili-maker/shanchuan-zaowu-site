@@ -102,6 +102,40 @@
     </view>
     <view class="ac-tip" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
+    <!-- 团队备忘（第八轮）：库里查不到、但同事们给建议时必须知道的近期安排与已定的事；所有人可见，超管行内改 -->
+    <view class="ac-memo" wx:if="{{memo.length || isSuper}}">
+      <view class="ac-sec-head ac-memo-head">
+        <text class="ac-sec-k">MEMO</text>
+        <text class="ac-sec-t">团队备忘</text>
+        <text class="ac-memo-edit" wx:if="{{isSuper && !memoEdit}}" bindtap="onMemoEdit" hover-class="tap-press" hover-stay-time="80">编辑</text>
+      </view>
+      <block wx:if="{{!memoEdit}}">
+        <view class="ac-memo-item" wx:for="{{memo}}" wx:key="id">
+          <text class="ac-memo-t">{{item.text}}</text>
+          <text class="ac-memo-until" wx:if="{{item.until}}">到 {{item.until}}</text>
+        </view>
+        <text class="ac-issues-empty" wx:if="{{!memo.length}}">还没有备忘。写下近期安排或已定的事，七位同事给建议时都会按它来。</text>
+      </block>
+      <block wx:else>
+        <view class="ac-memo-item is-edit" wx:for="{{memoDraft}}" wx:key="index">
+          <text class="ac-memo-t">{{item.text}}</text>
+          <text class="ac-memo-until" wx:if="{{item.until}}">到 {{item.until}}</text>
+          <text class="ac-memo-del" data-index="{{index}}" bindtap="onMemoDel" hover-class="tap-press" hover-stay-time="80">删除</text>
+        </view>
+        <view class="ac-memo-add" wx:if="{{memoDraft.length < memoMax}}">
+          <input class="ac-memo-in" value="{{memoText}}" maxlength="{{memoLen}}" placeholder="例：周六下午有标本体验课" placeholder-class="ac-ph" bindinput="onMemoText" />
+          <picker mode="date" value="{{memoUntil}}" bindchange="onMemoUntil">
+            <view class="ac-memo-date">{{memoUntil ? '到 ' + memoUntil : '到期日（可选）'}}</view>
+          </picker>
+          <text class="ac-memo-plus" bindtap="onMemoAdd" hover-class="tap-press" hover-stay-time="80">加一条</text>
+        </view>
+        <view class="ac-memo-acts">
+          <view class="ac-set-save {{memoBusy ? 'is-off' : ''}}" bindtap="onMemoSave" hover-class="tap-press" hover-stay-time="80" aria-role="button">保存备忘</view>
+          <text class="ac-memo-cancel" bindtap="onMemoCancel" hover-class="tap-press" hover-stay-time="80">取消</text>
+        </view>
+      </block>
+    </view>
+
     <!-- 档案卡：名字 / 岗位 / 三行履历 / 口头禅；有对话后收起，点名字可再展开 -->
     <view class="ac-profile" wx:if="{{profileOpen}}">
       <view class="ac-profile-head">

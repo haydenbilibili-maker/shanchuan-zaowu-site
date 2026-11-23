@@ -29,6 +29,7 @@ const P = {
   tasksServer: join(MP, 'cloudfunctions/askMuseumGuide/staffTasks.js'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
   patrol: join(MP, 'cloudfunctions/askMuseumGuide/staffPatrol.js'),
+  memo: join(MP, 'cloudfunctions/askMuseumGuide/staffMemo.js'),
   guardCopy: join(MP, 'cloudfunctions/askMuseumGuide/staffGuard.js'),
   guardCanon: join(MP, 'cloudfunctions/manageStaff/staffGuard.js'),
   fnConfig: join(MP, 'cloudfunctions/askMuseumGuide/config.json'),
@@ -169,9 +170,10 @@ function runChecks() {
     server.ROLE_IDS.every((id) => server.systemPromptOf(id).indexOf(`你叫${server.STAFF_ROLES[id].person}`) === 0), fails)
   ok('A8 话风：拟人、不说「作为 AI」、回答引用具体数字并给可验证的建议',
     /不要说「作为 AI」/.test(server.STAFF_SYSTEM_SUFFIX) && /引用下面「当前经营数据」里的具体数字/.test(server.STAFF_SYSTEM_SUFFIX) && /看哪个指标验证/.test(server.STAFF_SYSTEM_SUFFIX), fails)
-  const gateCalls = (fn.match(/const gate = await staffGate\(openid(, \{ requireSuperAdmin: true \})?\)\n  if \(!gate\.ok\) return gate\.out/g) || []).length
-  ok('A8 员工门禁：staff / debate / staffBrief / staffPatrol 四条通道都先过 staffGuard（巡检要超管）；staffGuard 是规范副本',
-    gateCalls === 4 && /staffGate\(openid, \{ requireSuperAdmin: true \}\)/.test(fn) &&
+  // 逐个通道点名（不数个数）：员工通道开头先过门禁；巡检 / 备忘要超管
+  const gated = (name, sup) => fn.includes(`async function ${name}(event, openid) {\n  const gate = await staffGate(openid${sup ? ', { requireSuperAdmin: true }' : ''})\n  if (!gate.ok) return gate.out\n`)
+  ok('A8 员工门禁：staff / debate / staffBrief 先过 staffGuard，staffPatrol / staffMemo 要超管；staffGuard 是规范副本',
+    gated('staffChat') && gated('staffDebate') && gated('staffBrief') && gated('staffPatrol', true) && gated('staffMemo', true) &&
     read(P.guardCopy) === read(P.guardCanon) && /async function staffChat\(event, openid\) \{\n  const gate = await staffGate\(openid\)/.test(fn), fails)
   const D = 86400000
   const now = Date.UTC(2026, 10, 23, 12)
@@ -249,6 +251,35 @@ function runChecks() {
     /bindtap="onVote"/.test(wxml) && !/callFunction[^\n]*vote/.test(page) &&
     /wx:if="\{\{item\.vote === 'down' && index === messages\.length - 1 && !sending\}\}" bindtap="onRephrase"/.test(wxml) && /this\.onRetry\(\{ rephrase: true \}\)/.test(page) &&
     /bindtap="onHandoff"/.test(wxml) && /relay: \{ fromRoleId: from\.id/.test(page) && /class="ac-relay" wx:if="\{\{item\.relayFrom\}\}"/.test(wxml), fails)
+
+  /* ---------------- A10 第八轮（2026-11-23）：团队备忘 / 礼券数据 ---------------- */
+  const MM = loadCjsModule(P.memo, { transform })
+  const mIn = MM.normalizeMemoInput([{ text: ' 周六下午  有课 ' }, { text: '' }, { text: '双十二', until: '2026-12-12' }, { text: 'x', until: '12/12' }])
+  ok('A10 备忘写入归一：空条丢掉、压空白、到期日只认 YYYY-MM-DD；超字数 / 超条数直接拒（不偷偷截）',
+    mIn.items.length === 3 && mIn.items[0].text === '周六下午 有课' && mIn.items[1].until === '2026-12-12' && mIn.items[2].until === '' &&
+    !!MM.normalizeMemoInput([{ text: '字'.repeat(MM.MEMO_LEN + 1) }]).error && !!MM.normalizeMemoInput(Array.from({ length: MM.MEMO_MAX + 1 }, () => ({ text: 'a' }))).error &&
+    !!MM.normalizeMemoInput('x').error, fails)
+  const memoNow = Date.UTC(2026, 10, 23, 4)
+  ok('A10 备忘读出：到期的不带（到期日当天仍有效）、拼成一段给模型且要求不提冲突方案',
+    MM.activeMemo([{ text: '过期', until: '2026-11-22' }, { text: '当天', until: '2026-11-23' }, { text: '长期' }], memoNow).map((m) => m.text).join() === '当天,长期' &&
+    /不要提出与之冲突的方案/.test(MM.memoBlock([{ text: 'a', until: '' }])) && MM.memoBlock([]) === '', fails)
+  const gatedMemo = fn.slice(fn.indexOf('async function staffMemo'), fn.indexOf('/** 投递一封工作信息'))
+  ok('A10 写备忘：只有超管、先过内容安全、再审计、最后整份覆盖',
+    gated('staffMemo', true) && gatedMemo.indexOf('await checkText(openid') > 0 && gatedMemo.indexOf('await checkText(openid') < gatedMemo.indexOf("await auditPatrol(gate, openid, 'staff_memo_save'") &&
+    gatedMemo.indexOf("await auditPatrol(gate, openid, 'staff_memo_save'") < gatedMemo.indexOf('.doc(MEMO_DOC).set('), fails)
+  ok('A10 备忘进上下文：对话、董事发言、主持人收口都带；页面所有员工可见',
+    /const memo = memoBlock\(await readMemo\(\)\)\n  const system = systemPromptOf\(roleId\)/.test(fn) && /\(memo \? `\\n\\n\$\{memo\}` : ''\)/.test(fn) &&
+    (fn.match(/memoBlock\(await readMemo\(\)\)/g) || []).length === 3 && /isSuper, memo: await readMemo\(\) \}/.test(fn), fails)
+  ok('A10 礼券：两次 count、不取持券人；核销率样本 < 10 不给；只进市场 / 财务 / 数据',
+    /collection\('user_coupons'\)\.where\(\{ createTime: _\.gte\(since\) \}\)\.count\(\)/.test(ctxSrc) &&
+    /collection\('user_coupons'\)\.where\(\{ status: 'used', usedTime: _\.gte\(since\) \}\)\.count\(\)/.test(ctxSrc) &&
+    C.summarizeCoupons(9, 3).rate === null && C.summarizeCoupons(20, 5).rate === 25 &&
+    /\['marketing', 'cfo', 'data_analyst'\]\.indexOf\(roleId\) >= 0 && snap\.coupons/.test(ctxSrc), fails)
+  const ma = V.memoAdd([], '  周六 有课 ', '2026-12-12')
+  ok('A10 页面：备忘草稿与云端同口径（≤60 字 / ≤6 条 / 空的拒）；编辑只给超管；保存走 staffMemo',
+    ma.list && ma.list[0].text === '周六 有课' && ma.list[0].until === '2026-12-12' && !!V.memoAdd([], '', '').error &&
+    !!V.memoAdd([], '字'.repeat(61), '').error && !!V.memoAdd(Array.from({ length: 6 }, () => ({})), 'a', '').error && V.MEMO_LEN === MM.MEMO_LEN && V.MEMO_MAX === MM.MEMO_MAX &&
+    /class="ac-memo-edit" wx:if="\{\{isSuper && !memoEdit\}\}"/.test(wxml) && /mode: 'staffMemo', items: this\.data\.memoDraft/.test(page) && /if \(!this\.data\.isSuper\) return/.test(page), fails)
   return fails
 }
 
@@ -290,6 +321,12 @@ if (process.argv.includes('--selftest')) {
     { name: '转交看法进 system', file: P.fn, find: "const messages = [{ role: 'system', content: system }].concat(history, [{ role: 'user', content: userContent }])", replace: "const messages = [{ role: 'system', content: system + userContent }].concat(history, [{ role: 'user', content: question }])" },
     { name: '一键任务也转交', file: P.view, find: "return m.taskId ? '' : String(m.text || '')", replace: "return String(m.text || '')" },
     { name: '非超管也有设置面板', file: P.wxml, find: '<view class="ac-settings" wx:if="{{isSuper && settingsOpen}}">', replace: '<view class="ac-settings" wx:if="{{settingsOpen}}">' },
+    { name: '备忘超字数偷偷截断', file: P.memo, find: "  if (text.length > MEMO_LEN) return { error: `每条备忘不超过 ${MEMO_LEN} 字` }\n", replace: '' },
+    { name: '过期备忘照样带', file: P.memo, find: '    .filter((m) => !m.until || m.until >= today)\n', replace: '' },
+    { name: '备忘不过内容安全', file: P.fn, find: "    const sec = await checkText(openid, v.items.map((m) => m.text).join('\\n'), 2)\n", replace: '    const sec = { ok: true }\n' },
+    { name: '员工也能写备忘', file: P.fn, find: 'async function staffMemo(event, openid) {\n  const gate = await staffGate(openid, { requireSuperAdmin: true })', replace: 'async function staffMemo(event, openid) {\n  const gate = await staffGate(openid)' },
+    { name: '对话不带备忘', file: P.fn, find: "    (context ? `\\n\\n【当前经营数据（近 ${30} 天，服务端实时汇总；未出现的指标就是没有数据，不要推算）】\\n${context}` : '') +\n    (memo ? `\\n\\n${memo}` : '')", replace: "    (context ? `\\n\\n【当前经营数据（近 ${30} 天，服务端实时汇总；未出现的指标就是没有数据，不要推算）】\\n${context}` : '')" },
+    { name: '礼券小样本也给核销率', file: P.ctx, find: 'rate: i >= 10 ?', replace: 'rate: i >= 1 ?' },
     { name: '脉搏读不到编 0', file: P.view, find: "return n == null || !Number.isFinite(Number(n)) ? '—' : String(n)", replace: 'return String(n || 0)' }
   ].filter((x) => x.find !== '')
   let bad = 0

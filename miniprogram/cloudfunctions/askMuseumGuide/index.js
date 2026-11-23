@@ -17,6 +17,7 @@ const { STAFF_ROLES, ROLE_IDS, systemPromptOf, identityOf, displayOf } = require
 const { contextFor, loadSnapshot, pulseOf, asOfText, lastAsOf } = require('./staffContext')
 const { findIssues, runPatrol, readPatrolConfig, writePatrolConfig, normalizePatrolSettings, ruleViews } = require('./staffPatrol')
 const { assertStaff, resolveSuperAdminOpenids } = require('./staffGuard')
+const { MEMO_DOC, normalizeMemoInput, activeMemo, memoBlock } = require('./staffMemo')
 const { taskById } = require('./staffTasks')
 const { buildMessages } = require('./persona')
 
@@ -370,9 +371,38 @@ async function staffBrief(event, openid) {
   const isSuper = isSuperActor(gate.actor)
   // 页面上的「同事们注意到」与巡检同一份配置（静音 / 阈值），不会出现「页面报了、工作信息没发」的两套口径
   const cfg = await readPatrolConfig(db)
-  const out = { success: true, pulse: pulseOf(snap), issues: findIssues(snap, cfg), isSuper }
+  const out = { success: true, pulse: pulseOf(snap), issues: findIssues(snap, cfg), isSuper, memo: await readMemo() }
   if (isSuper) Object.assign(out, { patrol: cfg, rules: ruleViews(cfg) })
   return out
+}
+
+/** 团队备忘（第八轮）：读出未到期的条目；读不到就当没有，不影响回答 */
+async function readMemo() {
+  try {
+    const r = await db.collection('museum_guide_config').doc(MEMO_DOC).get()
+    return activeMemo(r && r.data && r.data.items)
+  } catch (e) {
+    return []
+  }
+}
+
+/** 超管写团队备忘：逐条清洗 → 过内容安全 → 先审计 → 整份覆盖 */
+async function staffMemo(event, openid) {
+  const gate = await staffGate(openid, { requireSuperAdmin: true })
+  if (!gate.ok) return gate.out
+  const v = normalizeMemoInput(event && event.items)
+  if (v.error) return { success: false, error_type: 'invalid', msg: v.error }
+  if (v.items.length) {
+    const sec = await checkText(openid, v.items.map((m) => m.text).join('\n'), 2)
+    if (!sec.ok) return { success: false, error_type: 'risky', msg: '有一条备忘没通过内容安全校验，改一下再存' }
+  }
+  try {
+    await auditPatrol(gate, openid, 'staff_memo_save', { count: v.items.length })
+  } catch (e) {
+    return { success: false, error_type: 'audit', msg: '改备忘须先记审计日志，这次没写进去，先别改' }
+  }
+  await db.collection('museum_guide_config').doc(MEMO_DOC).set({ data: { items: v.items, updatedAt: Date.now(), updatedBy: openid } })
+  return { success: true, memo: activeMemo(v.items) }
 }
 
 /** 投递一封工作信息（走既有 dispatchMessage；category ops → 工作信息队列；同一问题每人每天一封） */
@@ -468,6 +498,8 @@ async function staffDebate(event, openid) {
   if (step === 'verdict') {
     const said = history.map((h) => `【${h.name}】${h.text}`).join('\n')
     system = '你是山海造物的董事会主持人。你要在各方发言后做收口：先给共识，再给分歧，最后给 2-3 条可执行建议。中文，300 字内，不写 Markdown 标题，不编数据。'
+    const memo = memoBlock(await readMemo())
+    if (memo) system += `\n\n${memo}`
     user = `辩题：${topic}\n\n各方发言：\n${said}\n\n请收口。`
   } else {
     const roleId = String((event && event.roleId) || '')
@@ -477,8 +509,10 @@ async function staffDebate(event, openid) {
     // 2026-11-23 第六轮：董事以本人身份发言（名字 / 履历 / 说话方式），并看到同一份经营数据
     let ctx = ''
     try { ctx = await contextFor(roleId, db) } catch (e) { ctx = '' }
+    const memo = memoBlock(await readMemo())
     system = `${identityOf(roleId)}\n你正在参加董事会辩论。你的职责：${role.prompt}\n\n` +
       (ctx ? `【当前经营数据（未出现的指标就是没有数据，不要推算）】\n${ctx}\n\n` : '') +
+      (memo ? `${memo}\n\n` : '') +
       '规则：站在你的专业立场给出明确判断，能引用数据就引用；若前面有人与你不一致，直接点名指出分歧；口语化，像开会时当面说话；200 字内；中文；不写 Markdown 标题；不编数据。'
     user = `辩题：${topic}${said ? `\n\n前面发言：\n${said}` : ''}\n\n请发言。`
   }
@@ -548,8 +582,10 @@ async function staffChat(event, openid) {
   // 经营上下文（近 30 天服务端汇总；查不到就只给人设，不编数据）
   let context = ''
   try { context = await contextFor(roleId, db) } catch (e) { context = '' }
+  const memo = memoBlock(await readMemo())
   const system = systemPromptOf(roleId) +
-    (context ? `\n\n【当前经营数据（近 ${30} 天，服务端实时汇总；未出现的指标就是没有数据，不要推算）】\n${context}` : '')
+    (context ? `\n\n【当前经营数据（近 ${30} 天，服务端实时汇总；未出现的指标就是没有数据，不要推算）】\n${context}` : '') +
+    (memo ? `\n\n${memo}` : '')
   // 第七轮：上一版被标「没用」后的重答（rephrase）——换角度、更具体、更短；只是一句语气要求，不改边界
   const userContent = (relay ? `（${relay.from}刚才对这个问题的看法，供你参考，可以不同意：${relay.text}）\n` : '') + question +
     (event && event.rephrase === true ? '\n（上一版回答没帮上忙：请换个角度，说得更具体、更短，直接给能做的事。）' : '')
@@ -584,6 +620,7 @@ exports.main = async (event) => {
   if (event && event.mode === 'debate') return staffDebate(event, OPENID)
   if (event && event.mode === 'staffBrief') return staffBrief(event, OPENID)
   if (event && event.mode === 'staffPatrol') return staffPatrol(event, OPENID)
+  if (event && event.mode === 'staffMemo') return staffMemo(event, OPENID)
 
   const t0 = Date.now()
   const cfg = effectiveConfig(await readConfig(), process.env.MUSEUM_GUIDE_DAILY_LIMIT)

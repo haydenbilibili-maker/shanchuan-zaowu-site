@@ -89,6 +89,13 @@ function pctText(p) {
   return p === 0 ? '持平' : `${p > 0 ? '↑' : '↓'}${Math.abs(p)}%`
 }
 
+/** 礼券：近 30 天发出 / 核销；核销率只在发出 ≥ 10 张时给（样本太小不给百分比） */
+function summarizeCoupons(issued, used) {
+  const i = Math.max(0, Number(issued) || 0)
+  const u = Math.max(0, Number(used) || 0)
+  return { issued: i, used: u, rate: i >= 10 ? Math.round((u / i) * 100) : null }
+}
+
 function summarizeProducts(rows) {
   const list = Array.isArray(rows) ? rows : []
   let onSale = 0
@@ -224,7 +231,7 @@ async function loadSnapshot(db) {
   if (cache.value && now - cache.at < TTL_MS) return cache.value
   const since = new Date(now - WINDOW_DAYS * DAY_MS)
   const _ = db.command
-  const out = { at: now, orders: null, trend: null, products: null, users: null, bookings: null, finance: null, purchases: null, moves: null, ops: null, feishuInv: null, hr: null }
+  const out = { at: now, coupons: null, orders: null, trend: null, products: null, users: null, bookings: null, finance: null, purchases: null, moves: null, ops: null, feishuInv: null, hr: null }
 
   const tasks = [
     (async () => {
@@ -260,6 +267,18 @@ async function loadSnapshot(db) {
       try {
         const r = await db.collection('bookings').where({ createTime: _.gte(since) }).count()
         out.bookings = { count: (r && r.total) || 0 }
+      } catch (e) { /* ignore */ }
+    })(),
+    (async () => {
+      // 礼券（2026-11-23 第八轮，市场 / 财务 / 数据）：字段已在写入方核对 ——
+      //   领取 receiveCoupon / issueCampaignCoupon：status 'unused' + createTime；
+      //   核销 confirmPayment/fulfillOrder、verifyStoreCoupon：status 'used' + usedTime。只做两次 count，不取持券人。
+      try {
+        const [issued, used] = await Promise.all([
+          db.collection('user_coupons').where({ createTime: _.gte(since) }).count(),
+          db.collection('user_coupons').where({ status: 'used', usedTime: _.gte(since) }).count()
+        ])
+        out.coupons = summarizeCoupons((issued && issued.total) || 0, (used && used.total) || 0)
       } catch (e) { /* ignore */ }
     })(),
     (async () => {
@@ -439,10 +458,14 @@ async function contextFor(roleId, db) {
     lines.push(`近 ${WINDOW_DAYS} 天店内采购 ${snap.ops.count} 单、合计 ¥${money(snap.ops.amount)}，其中未结 ${snap.ops.openCount} 单`)
   }
   if ((roleId === 'marketing' || roleId === 'data_analyst') && snap.users) lines.push(`近 ${WINDOW_DAYS} 天新增会员 ${snap.users.newCount} 人`)
+  if (['marketing', 'cfo', 'data_analyst'].indexOf(roleId) >= 0 && snap.coupons && (snap.coupons.issued || snap.coupons.used)) {
+    const c = snap.coupons
+    lines.push(`近 ${WINDOW_DAYS} 天发出礼券 ${c.issued} 张、核销 ${c.used} 张${c.rate != null ? `（核销率约 ${c.rate}%，核销含更早领的券）` : ''}`)
+  }
   if (roleId === 'creative_director' && snap.orders) lines.push(`近 ${WINDOW_DAYS} 天订单 ${snap.orders.total} 笔`)
   if (!lines.length) return ''
   const asOf = asOfText(snap.at)
   return `${asOf ? `（数据截至北京时间 ${asOf}）` : ''}${lines.join('；')}`.slice(0, TEXT_MAX)
 }
 
-module.exports = { lastAsOf, contextFor, loadSnapshot, summarizeTrend, changePct, pctText, globalLine, pulseOf, asOfText, toMs, summarizeOrders, summarizeProducts, summarizeFinance, summarizePurchases, summarizeMoves, summarizeOpsPurchases, summarizeFeishuInventory, summarizeHr, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }
+module.exports = { summarizeCoupons, lastAsOf, contextFor, loadSnapshot, summarizeTrend, changePct, pctText, globalLine, pulseOf, asOfText, toMs, summarizeOrders, summarizeProducts, summarizeFinance, summarizePurchases, summarizeMoves, summarizeOpsPurchases, summarizeFeishuInventory, summarizeHr, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }

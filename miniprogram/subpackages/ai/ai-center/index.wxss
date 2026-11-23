@@ -147,6 +147,23 @@
 .ac-vote { padding: 4rpx 14rpx; border-radius: var(--r-pill, 999rpx); font-size: var(--fs-18, 18rpx); color: var(--color-text-secondary, #A09A90); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22); }
 .ac-vote.is-on { color: #1A1814; background: var(--brass-400, #C4A76C); box-shadow: none; }
 
+/* —— 第八轮：团队备忘 —— */
+.ac-memo { margin: 32rpx 32rpx 0; padding: 24rpx 26rpx; border-radius: var(--r-card, 16rpx); background: rgba(255, 255, 255, 0.02); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22); }
+.ac-memo-head { margin-bottom: 4rpx; }
+.ac-memo-edit { margin-left: auto; font-size: var(--fs-20, 20rpx); color: var(--brass-400, #C4A76C); }
+.ac-memo-item { display: flex; align-items: baseline; gap: 12rpx; padding: 12rpx 0; border-bottom: 1rpx solid rgba(196, 167, 108, 0.1); }
+.ac-memo-item:last-of-type { border-bottom: none; }
+.ac-memo-t { flex: 1; min-width: 0; position: relative; padding-left: 20rpx; font-size: var(--fs-24, 24rpx); line-height: 1.55; color: var(--brass-100, #F1E6CC); }
+.ac-memo-t::before { content: ''; position: absolute; left: 2rpx; top: 18rpx; width: 8rpx; height: 8rpx; border-radius: 50%; background: var(--brass-400, #C4A76C); }
+.ac-memo-until { flex: none; font-family: var(--font-mono); font-size: var(--fs-18, 18rpx); color: var(--color-text-secondary, #A09A90); }
+.ac-memo-del { flex: none; font-size: var(--fs-20, 20rpx); color: #E08A7A; }
+.ac-memo-add { display: flex; align-items: center; gap: 10rpx; margin-top: 14rpx; }
+.ac-memo-in { flex: 1; min-width: 0; height: 64rpx; padding: 0 18rpx; border-radius: var(--r-control, 16rpx); font-size: var(--fs-22, 22rpx); color: #EDE3CC; background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3); }
+.ac-memo-date { flex: none; padding: 0 14rpx; height: 64rpx; line-height: 64rpx; border-radius: var(--r-control, 16rpx); font-size: var(--fs-20, 20rpx); color: var(--brass-200, #E3D2AC); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3); }
+.ac-memo-plus { flex: none; font-size: var(--fs-22, 22rpx); color: var(--brass-400, #C4A76C); }
+.ac-memo-acts { display: flex; align-items: center; gap: 24rpx; }
+.ac-memo-cancel { margin-top: 18rpx; font-size: var(--fs-22, 22rpx); color: var(--color-text-secondary, #A09A90); }
+
 @media (prefers-reduced-motion: reduce) {
   .ac-dot { animation: none; opacity: .7; }
 }

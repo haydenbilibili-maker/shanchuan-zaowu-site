@@ -944,7 +944,9 @@ const SCENES = [
       pulseCells: V.pulseCells({ orders7: 8, ordersChange: -33, gmv7: 12680, today: 1, onSale: 46, lowStock: 9, members7: 14, membersChange: 27 }),
       asOf: '11-23 21:40', issues, issueCount: V.issueCountByRole(issues), isSuper: true, patrol: { enabled: true }, patrolBusy: false, forbidden: '', tipText: '',
       profileOpen: false, renameId: '', renameText: '', draft: '', sending: false, scrollTo: '', canRetry: true,
-      rules, historyRows, settingsOpen: true, settingsDirty: true,
+      rules, historyRows, settingsOpen: false, settingsDirty: false,
+      memo: [{ id: 'm1', text: '周六下午有标本体验课，前台多排一个人', until: '2026-11-28' }, { id: 'm2', text: '双十二不打折，改为满额送礼券', until: '2026-12-12' }, { id: 'm3', text: '玻璃罩类暂停向义乌那家进货（破损率高）', until: '' }],
+      memoEdit: false, memoDraft: [], memoText: '', memoUntil: '', memoMax: 6, memoLen: 60, memoBusy: false,
       sessions: [{ id: 's1', title: '哪些藏品最该先补货？' }, { id: 's2', title: '易碎品运输' }], activeId: 's1',
       messages: [
         { role: 'user', text: '哪些藏品最该先补货？', relayFrom: '林晓棠' },

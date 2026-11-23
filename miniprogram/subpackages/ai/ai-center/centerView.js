@@ -114,4 +114,20 @@ function questionBefore(messages, index) {
   return ''
 }
 
-module.exports = { changeText, moneyText, countText, pulseCells, issueCountByRole, transcriptOf, cleanTitle, bjTime, historyRows, stepLimit, settingsOf, questionBefore }
+/**
+ * 团队备忘草稿：加一条（与云端 staffMemo 同口径：≤ 6 条、每条 ≤ 60 字；到期日可空）。
+ * 返回 { list } 或 { error }；不改原数组。
+ */
+const MEMO_MAX = 6
+const MEMO_LEN = 60
+function memoAdd(list, text, until) {
+  const t = String(text == null ? '' : text).replace(/\s+/g, ' ').trim()
+  const cur = Array.isArray(list) ? list : []
+  if (!t) return { error: '先写一句备忘' }
+  if (t.length > MEMO_LEN) return { error: `每条不超过 ${MEMO_LEN} 字` }
+  if (cur.length >= MEMO_MAX) return { error: `最多 ${MEMO_MAX} 条，先删一条` }
+  const u = /^\d{4}-\d{2}-\d{2}$/.test(String(until || '')) ? String(until) : ''
+  return { list: cur.concat({ id: '', text: t, until: u }) }
+}
+
+module.exports = { MEMO_MAX, MEMO_LEN, memoAdd, changeText, moneyText, countText, pulseCells, issueCountByRole, transcriptOf, cleanTitle, bjTime, historyRows, stepLimit, settingsOf, questionBefore }

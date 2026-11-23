@@ -129,7 +129,16 @@ Page({
     rules: [],
     historyRows: [],
     settingsOpen: false,
-    settingsDirty: false
+    settingsDirty: false,
+    /** 团队备忘（第八轮）：所有员工可见，超管行内编辑 */
+    memo: [],
+    memoEdit: false,
+    memoDraft: [],
+    memoText: '',
+    memoUntil: '',
+    memoMax: V.MEMO_MAX,
+    memoLen: V.MEMO_LEN,
+    memoBusy: false
   },
 
   onLoad(options) {
@@ -168,6 +177,7 @@ Page({
         issueCount: V.issueCountByRole(issues),
         isSuper: !!body.isSuper,
         patrol: body.patrol || null,
+        memo: this.data.memoEdit ? this.data.memo : (Array.isArray(body.memo) ? body.memo : []),
         forbidden: ''
       })
       if (body.isSuper) this.applyPatrol(body.patrol, body.rules)
@@ -260,6 +270,51 @@ Page({
       this.showTip(`没存上：${(err && err.message) || '稍后再试'}`)
     }
     this.setData({ patrolBusy: false })
+  },
+
+  /* ------------------------------ 团队备忘（第八轮，超管编辑） ------------------------------ */
+
+  onMemoEdit() {
+    if (!this.data.isSuper) return
+    this.setData({ memoEdit: true, memoDraft: this.data.memo.slice(), memoText: '', memoUntil: '' })
+  },
+
+  onMemoCancel() {
+    this.setData({ memoEdit: false, memoText: '', memoUntil: '' })
+  },
+
+  onMemoText(e) {
+    this.setData({ memoText: String((e.detail && e.detail.value) || '') })
+  },
+
+  onMemoUntil(e) {
+    this.setData({ memoUntil: String((e.detail && e.detail.value) || '') })
+  },
+
+  onMemoAdd() {
+    const r = V.memoAdd(this.data.memoDraft, this.data.memoText, this.data.memoUntil)
+    if (r.error) { this.showTip(r.error); return }
+    this.setData({ memoDraft: r.list, memoText: '', memoUntil: '' })
+  },
+
+  onMemoDel(e) {
+    const i = Number(e.currentTarget.dataset.index)
+    this.setData({ memoDraft: this.data.memoDraft.filter((_, j) => j !== i) })
+  },
+
+  async onMemoSave() {
+    if (!this.data.isSuper || this.data.memoBusy) return
+    this.setData({ memoBusy: true })
+    try {
+      const res = await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { mode: 'staffMemo', items: this.data.memoDraft } })
+      const body = (res && res.result) || {}
+      if (!body.success) throw new Error(body.msg || '没存上')
+      this.setData({ memo: body.memo || [], memoEdit: false })
+      this.showTip('团队备忘已保存：七位同事接下来都会按它给建议')
+    } catch (err) {
+      this.showTip(`没存上：${(err && err.message) || '稍后再试'}`)
+    }
+    this.setData({ memoBusy: false })
   },
 
   showTip(text) {
