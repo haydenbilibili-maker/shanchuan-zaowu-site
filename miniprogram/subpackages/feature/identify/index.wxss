@@ -377,6 +377,53 @@
   overflow: hidden;
 }
 
+/* 有照片时扫描框放大成取景窗：照片铺满（四角括线压在照片上），一层薄暗幕让扫描线看得清 */
+.scan.has-photo {
+  width: 300rpx;
+  height: 300rpx;
+}
+
+.scan-photo {
+  position: absolute;
+  top: 10rpx;
+  left: 10rpx;
+  right: 10rpx;
+  bottom: 10rpx;
+  width: calc(100% - 20rpx);
+  height: calc(100% - 20rpx);
+  border-radius: 6rpx;
+  animation: scan-photo-in 360ms ease-out both;
+}
+
+.scan-veil {
+  position: absolute;
+  top: 10rpx;
+  left: 10rpx;
+  width: calc(100% - 20rpx);
+  height: calc(100% - 20rpx);
+  border-radius: 6rpx;
+  background: linear-gradient(180deg, rgba(26, 24, 20, 0.15), rgba(26, 24, 20, 0.45));
+}
+
+@keyframes scan-photo-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.scan.has-photo .scan-line {
+  z-index: 2;
+  height: 3rpx;
+  box-shadow: 0 0 12rpx rgba(0, 0, 0, 0.35);
+  animation-name: scan-sweep-photo;
+}
+
+.scan.has-photo .scan-corner { z-index: 2; }
+
+@keyframes scan-sweep-photo {
+  from { transform: translateY(0); }
+  to { transform: translateY(266rpx); }
+}
+
 .scan-corner {
   position: absolute;
   width: 40rpx;
@@ -466,6 +513,7 @@
 
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {
+  .scan-photo { animation: none; }
   .scan-line {
     animation: none;
   }

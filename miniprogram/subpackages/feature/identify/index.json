@@ -5,6 +5,7 @@
   "backgroundColor": "#1A1814",
   "usingComponents": {
     "easter-egg-note": "/components/EasterEggNote/index",
-    "app-modal": "/components/AppModal/index"
+    "app-modal": "/components/AppModal/index",
+    "shan-img": "/components/ShanImage/index"
   }
 }

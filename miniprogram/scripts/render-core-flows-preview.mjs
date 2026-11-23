@@ -323,6 +323,8 @@ const SCENES = [
       recentList: [{ _id: 'r1', name: '光明女神闪蝶', latin: 'Morpho helena', thumb: P[0], timeText: '2 小时前' }, { _id: 'r2', name: '血漪蝶', latin: 'Cethosia biblis', thumb: P[1], timeText: '昨天' }],
       tipsOpen: false, photoTips: [{ k: '正对', v: '正对藏品主体' }]
     } },
+  // 2026-11-23 鉴定中：扫描框里显示刚拍的照片
+  { name: 'identify-loading', base: 'identify', h: 1500, wxml: 'subpackages/feature/identify/index', data: { busy: true, scanPhoto: P[0], loadingText: '博物解读中，约需 15–60 秒…', loadingStep: 3, uploadProgress: 96 } },
   {
     name: 'identify-result', h: 2400, wxml: 'subpackages/feature/identify/result/index', data: {
       archiveEmpty: true, profileEnriching: false, profileEnrichError: false,

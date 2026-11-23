@@ -95,7 +95,10 @@
   <view class="ui-pop-mask is-center loading-mask" wx:if="{{busy}}" catchtouchmove="true">
     <!-- 步骤与进度放进加载卡：放在遮罩下面时被压暗，等待 15–60 秒只看得到一个转圈 -->
     <view class="loading-core">
-      <view class="scan" aria-hidden="true">
+      <view class="scan {{scanPhoto ? 'has-photo' : ''}}" aria-hidden="true">
+        <!-- 2026-11-23 产品负责人截图：等待时扫描框里放刚拍 / 刚选的那张照片，扫描线从照片上扫过 -->
+        <shan-img ext-class="scan-photo" wx:if="{{scanPhoto}}" src="{{scanPhoto}}" mode="aspectFill" mark="{{false}}" />
+        <view class="scan-veil" wx:if="{{scanPhoto}}"></view>
         <view class="scan-corner is-tl"></view>
         <view class="scan-corner is-tr"></view>
         <view class="scan-corner is-bl"></view>
