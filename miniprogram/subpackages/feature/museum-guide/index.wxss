@@ -199,3 +199,29 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 /* 回到最新（2026-11-23）：输入条上方居中一枚小胶囊 */
 .mg-jump { position: absolute; left: 50%; bottom: 220rpx; z-index: 5; transform: translateX(-50%); padding: 14rpx 28rpx; border-radius: var(--r-pill, 999rpx); background: rgba(36, 33, 29, 0.96); box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.45), inset 0 0 0 1rpx rgba(196, 167, 108, 0.45); font-size: var(--fs-22); color: var(--brass-200, #E3D2AC); }
 
+
+/* —— 回答分段与学名（2026-11-23）：段间留白；拉丁学名斜体深铜，像标本签上的学名行 —— */
+.mg-bubble.is-rich { white-space: normal; }
+.mg-para { display: block; white-space: pre-wrap; }
+.mg-para + .mg-para { margin-top: 18rpx; }
+.mg-latin { font-family: var(--font-latin, Georgia, serif); font-style: italic; color: #7A5A2B; letter-spacing: 0.01em; }
+
+/* —— 馆里有这件（2026-11-23）：回答点到的图鉴物种在馆里有藏品 —— 横滑小卡，点进详情走原购买动线 —— */
+.mg-goods { align-self: stretch; margin-top: 18rpx; }
+.mg-goods-k { display: block; margin-bottom: 10rpx; font-size: var(--fs-20); letter-spacing: .08em; color: var(--brass-300, #D4BC8A); }
+.mg-good {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  width: 340rpx;
+  padding: 10rpx 16rpx 10rpx 10rpx;
+  box-sizing: border-box;
+  border-radius: var(--r-card, 16rpx);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
+}
+.mg-good-img { flex-shrink: 0; width: 88rpx; height: 88rpx; border-radius: 10rpx; }
+.mg-good-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
+.mg-good-t { font-size: var(--fs-24); color: var(--brass-100, #F1E6CC); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.mg-good-p { font-family: var(--font-mono); font-size: var(--fs-22); color: var(--brass-400, #C4A76C); }

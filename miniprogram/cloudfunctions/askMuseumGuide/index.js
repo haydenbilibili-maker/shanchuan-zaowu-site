@@ -131,7 +131,24 @@ function plainAnswer(text) {
     .trim()
 }
 
-/** 解析模型输出：优先 JSON；不是 JSON 时整段当回答。去处只认白名单，追问最多 3 个。 */
+/**
+ * 模型没按 JSON 回、而是在正文后面另起几行写「follow_ups: [...]」「actions: [...]」（2026-11-23 真机截图：
+ * 这几行原样露在回答气泡里）。把这类字段行从正文里摘掉，并把里面的条目捞回来。
+ * 认：follow_ups / followUps / 追问 / actions / 去处，键名可带引号，冒号全半角都认，数组可跨行。
+ */
+const FIELD_LINE_RE = /(^|\n)[ \t]*["'“]?(follow_ups|followUps|follow-ups|追问|actions|去处)["'”]?[ \t]*[:：][ \t]*\[([\s\S]*?)\][ \t]*,?[ \t]*(?=\n|$)/gi
+function salvageFields(text) {
+  const found = { followUps: [], actions: [] }
+  const answer = String(text || '').replace(FIELD_LINE_RE, (m, lead, key, body) => {
+    const items = (String(body).match(/["“'‘][^"”'’]*["”'’]/g) || []).map((x) => x.slice(1, -1).trim()).filter(Boolean)
+    if (/^(actions|去处)$/i.test(key)) found.actions = items
+    else found.followUps = items
+    return lead
+  }).replace(/^[ \t]*["'“]?(answer|回答)["'”]?[ \t]*[:：][ \t]*/i, '')
+  return { answer: answer.trim(), followUps: found.followUps, actions: found.actions }
+}
+
+/** 解析模型输出：优先 JSON；不是 JSON 时整段当回答，但先摘掉正文后面的 follow_ups / actions 字段行（见 salvageFields）。去处只认白名单，追问最多 3 个。 */
 function parseReply(text) {
   const t = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
   let obj = null
@@ -140,10 +157,12 @@ function parseReply(text) {
   if (s >= 0 && e > s) {
     try { obj = JSON.parse(t.slice(s, e + 1)) } catch (err) { obj = null }
   }
-  const answer = plainAnswer((obj && obj.answer) || (obj ? '' : t))
-  const followUps = (obj && Array.isArray(obj.follow_ups) ? obj.follow_ups : [])
+  if (obj && typeof obj.answer !== 'string') obj = null
+  const loose = obj ? null : salvageFields(t)
+  const answer = plainAnswer(obj ? obj.answer : loose.answer)
+  const followUps = (obj && Array.isArray(obj.follow_ups) ? obj.follow_ups : loose ? loose.followUps : [])
     .map((q) => String(q || '').trim()).filter((q) => q && q.length <= 30).slice(0, 3)
-  const actions = (obj && Array.isArray(obj.actions) ? obj.actions : [])
+  const actions = (obj && Array.isArray(obj.actions) ? obj.actions : loose ? loose.actions : [])
     .map((a) => String(a || '').trim()).filter((a, i, arr) => PLACE_KEYS.indexOf(a) >= 0 && arr.indexOf(a) === i).slice(0, 2)
   return { answer, followUps, actions }
 }
@@ -194,21 +213,37 @@ function httpsPostJson(path, body, headers) {
   })
 }
 
+/**
+ * 请求参数（2026-11-23）：开 JSON 模式（response_format json_object）—— 模型偶尔不按「只输出 JSON」回、
+ * 把 follow_ups / actions 写成正文后面的字段行（真机截图），JSON 模式从源头约束；解析侧 salvageFields 仍兜底。
+ * 某个模型不认这个参数（HTTP 400）时，同一模型去掉它再试一次，不因格式约束丢掉一次回答。
+ */
+function modelParams(jsonMode) {
+  const p = { result_format: 'message', enable_thinking: false, temperature: 0.6, max_tokens: 900 }
+  if (jsonMode) p.response_format = { type: 'json_object' }
+  return p
+}
+
 async function askModel(messages, apiKey) {
   let lastErr = null
   for (const model of modelChain(process.env.MUSEUM_GUIDE_MODELS)) {
-    try {
-      const res = await httpsPostJson(TEXT_PATH, {
-        model,
-        input: { messages },
-        parameters: { result_format: 'message', enable_thinking: false, temperature: 0.6, max_tokens: 900 }
-      }, { Authorization: `Bearer ${apiKey}` })
-      const text = extractText(res)
-      if (text) return { text, model }
-      lastErr = new Error('empty reply')
-    } catch (e) {
-      lastErr = e
-      console.warn(`博物君 模型[${model}] 失败`, e.message)
+    for (const jsonMode of [true, false]) {
+      try {
+        const res = await httpsPostJson(TEXT_PATH, {
+          model,
+          input: { messages },
+          parameters: modelParams(jsonMode)
+        }, { Authorization: `Bearer ${apiKey}` })
+        const text = extractText(res)
+        if (text) return { text, model }
+        lastErr = new Error('empty reply')
+        break
+      } catch (e) {
+        lastErr = e
+        console.warn(`博物君 模型[${model}]${jsonMode ? '(json)' : ''} 失败`, e.message)
+        // 只有「参数不被接受」才同模型降级重试；超时 / 鉴权 / 限流直接换下一个模型
+        if (!(jsonMode && e.statusCode === 400)) break
+      }
     }
   }
   throw lastErr || new Error('all models failed')
@@ -361,4 +396,4 @@ exports.main = async (event) => {
   }, { model, species, actions: reply.actions, aLen: reply.answer.length })
 }
 
-exports._test = { speciesFor, VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }
+exports._test = { modelParams, salvageFields, speciesFor, VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }

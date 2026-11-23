@@ -744,6 +744,9 @@ const SCENES = [
         { id: 'u1', role: 'user', text: '大蓝闪蝶为什么是蓝色的？' },
         { id: 'g1', role: 'guide', text: '它的蓝不是色素，是结构色。翅面鳞片上有极细的层状脊纹，间距与蓝光的波长相当，白光照进去，只有蓝色那一段被反复加强、反射回来，其它颜色互相抵消。\n\n所以换个角度看，它会忽明忽暗；把鳞片浸进酒精，折射率一变，蓝会暂时褪去，干了又回来。馆里的图鉴第 001 页就是它，产自中美洲到南美北部的雨林。',
           species: [{ no: '001', zh: '大蓝闪蝶' }, { no: '024', zh: '尖翅蓝闪蝶' }], logId: 'L1',
+          // 第六轮：分段 + 学名斜体（richParas），「馆里有这件」小卡
+          paras: [{ key: 'p0', segs: [{ t: '大蓝闪蝶（', latin: false }, { t: 'Morpho menelaus', latin: true }, { t: '）的蓝不是色素，是结构色。翅面鳞片上有极细的层状脊纹，只有蓝色那一段被反复加强、反射回来。', latin: false }] }, { key: 'p1', segs: [{ t: '所以换个角度看，它会忽明忽暗；把鳞片浸进酒精，蓝会暂时褪去，干了又回来。', latin: false }] }],
+          goods: [{ id: 'p1', title: '大蓝闪蝶 · 单只玻璃罩', price: '¥1280', image: P[0] }, { id: 'p2', title: '蓝闪蝶 · 胡桃木框', price: '¥880', image: P[2] }],
           followUps: ['还有哪些动物是结构色？', '闪蝶标本会褪色吗？', '雌蝶也一样蓝吗？'],
           actions: [{ key: 'atlas', label: '翻山海图鉴', url: '/subpackages/feature/collection/index', tab: false }, { key: 'care', label: '看标本养护', url: '/subpackages/feature/care/index', tab: false }] }
       ] } },

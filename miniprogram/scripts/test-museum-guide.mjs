@@ -144,6 +144,18 @@ async function runChecks() {
   const r1 = T.parseReply('```json\n{"answer":"答","follow_ups":["一","二","三","四"],"actions":["atlas","hack","atlas"]}\n```')
   const r2 = T.parseReply('就是一段话')
   ok('B2 回复解析：剥代码块、追问 ≤ 3、去处白名单去重；非 JSON 整段当回答', r1.answer === '答' && r1.followUps.length === 3 && r1.actions.join() === 'atlas' && r2.answer === '就是一段话' && !r2.actions.length)
+  // 2026-11-23 真机截图：模型没按 JSON 回，正文后面另起几行写 follow_ups / actions，原样露在气泡里
+  const leak = '萤火虫发光是生物荧光。\n\nfollow_ups: ["萤火虫的光有几种颜色？", "为什么不发热？"]\nactions: ["atlas", "hack"]'
+  const r3 = T.parseReply(leak)
+  ok('B6 非 JSON 回答：摘掉 follow_ups / actions 字段行，条目捞回（去处仍过白名单）',
+    r3.answer === '萤火虫发光是生物荧光。' && JSON.stringify(r3.followUps) === JSON.stringify(['萤火虫的光有几种颜色？', '为什么不发热？']) && JSON.stringify(r3.actions) === JSON.stringify(['atlas']))
+  const r4 = T.parseReply('数组 [1,2] 写在正文里不受影响。\n"追问"：[“它吃什么？”]')
+  ok('B6 中文键名 / 全角冒号 / 中文引号也认；正文里的方括号不误伤', r4.answer === '数组 [1,2] 写在正文里不受影响。' && JSON.stringify(r4.followUps) === JSON.stringify(['它吃什么？']))
+  ok('B6 提示词：除拉丁学名外不夹英文单词', /除拉丁学名外不要夹带英文单词/.test(read(P.persona)))
+  const old = G.replyToMessage({ success: true, answer: leak })
+  ok('B6 页面兜底（旧版云函数）：气泡不露字段行、追问还原成按钮、去处过白名单',
+    old.message.text === '萤火虫发光是生物荧光。' && old.message.followUps.length === 2 && old.message.actions.map((a) => a.key).join() === 'atlas' &&
+    G.plainAnswer('旧记录\nactions: ["atlas"]') === '旧记录')
   ok('B5 云端回答也去 Markdown（与页面同口径）', T.parseReply('{"answer":"**蓝**\\n- 甲"}').answer === '蓝\n· 甲' && T.plainAnswer('### 题') === '题')
   ok('B3 北京时间切日（UTC 16:30 = 次日 00:30）', T.dayKey(Date.UTC(2026, 10, 23, 16, 30)) === '20261124' && T.dayKey(Date.UTC(2026, 10, 23, 15, 59)) === '20261123')
   ok('B4 额度：环境变量可改、非法回落 30；模型链环境变量在前且去重', T.dailyLimit('50') === 50 && T.dailyLimit('x') === 30 && T.modelChain('qwen-max, qwen-plus').join() === 'qwen-max,qwen-plus,qwen-flash')
@@ -288,8 +300,29 @@ async function runChecks() {
   const mgWxss = readFileSync(P.wxml.replace(/\.wxml$/, '.wxss'), 'utf8')
   const strips = (mgWxml.match(/<scroll-view class="mg-strip" scroll-x/g) || []).length
   ok('F8 回答区：签脚贴底（回答签底角取直 + 签脚同色纸面）；延伸与接着问各一行横滑、单行不换行',
-    strips === 2 && /\.mg-bubble\.is-guide\.has-foot \{[^}]*border-bottom-left-radius: 0;/.test(mgWxss) && /\.mg-fb \{[^}]*background: #E6DBC4;/.test(mgWxss) &&
+    strips === 3 && /\.mg-bubble\.is-guide\.has-foot \{[^}]*border-bottom-left-radius: 0;/.test(mgWxss) && /\.mg-fb \{[^}]*background: #E6DBC4;/.test(mgWxss) &&
     /\.mg-strip \{[^}]*white-space: nowrap;/.test(mgWxss) && /\.mg-strip-row \{[^}]*display: inline-flex;/.test(mgWxss) && !/class="mg-follow"|class="mg-species"/.test(mgWxml))
+  // F10 第六轮（2026-11-23）：回答分段 + 学名斜体；「馆里有这件」只读馆藏、查不到不出、不进存储；JSON 模式降级
+  const rp = G.richParas('大蓝闪蝶（Morpho menelaus）分布于南美。\n\n它的蓝来自 Morpho 鳞片。')
+  ok('F10 回答分段：空行分段、拉丁双名单独成段文字、单个英文词不当学名',
+    rp.length === 2 && rp[0].segs.map((x) => x.latin).join() === 'false,true,false' && rp[0].segs[1].t === 'Morpho menelaus' && rp[1].segs.length === 1 && !rp[1].segs[0].latin)
+  ok('F10 馆藏查询：只用第一种物种中文名，只要商品；没有物种不查',
+    JSON.stringify(G.goodsQuery([{ no: '001', zh: '大蓝闪蝶' }, { no: '024', zh: '尖翅蓝闪蝶' }])) === JSON.stringify({ keyword: '大蓝闪蝶', contentLimit: 0, productLimit: 6 }) && G.goodsQuery([]) === null)
+  const gc = G.goodsCards([{ _id: 'a', title: '甲', price: 10, soldOut: true }, { _id: 'b', title: '乙', price: 20, displayImage: 'u' }, { _id: 'b', title: '乙' }, { _id: 'c' }, { _id: 'd', title: '丁' }, { _id: 'e', title: '戊' }], (u) => 'T' + u)
+  ok('F10 馆藏小卡：去重、无名丢掉、有货在前、最多 3 件、无图不拼坏地址',
+    gc.map((x) => x.id).join() === 'b,d,e' && gc[0].image === 'Tu' && gc[1].image === '' && gc[0].price === '¥20' && G.GOODS_MAX === 3)
+  const stored10 = G.toStored([G.makeMessage('guide', '答', { paras: [{ key: 'p0', segs: [] }], goods: [{ id: 'x' }] })])
+  const back = G.fromStored([{ role: 'guide', text: '甲\n\n乙', goods: [{ id: 'x' }] }])
+  ok('F10 分段与馆藏推荐不进本机存储；读回时重算分段、不带推荐',
+    !('paras' in stored10[0]) && !('goods' in stored10[0]) && back[0].paras.length === 2 && !('goods' in back[0]))
+  ok('F10 页面：写完才换分段版、馆藏推荐在写完后只读既有接口、点卡进详情',
+    /wx:if="\{\{!item\.revealing && item\.paras && item\.paras\.length\}\}"/.test(mgWxml) && /class="\{\{seg\.latin \? 'mg-latin' : ''\}\}"/.test(mgWxml) &&
+    /class="mg-goods" wx:if="\{\{item\.goods && item\.goods\.length && !item\.revealing\}\}"/.test(mgWxml) &&
+    /this\.loadGoods\(index\)/.test(read(P.page)) && /name: 'getEncyclopediaFeed', data: q/.test(read(P.page)) && /\/subpackages\/feature\/detail\/index\?id=/.test(read(P.page)))
+  ok('F10 推荐回来时这条回答已换掉就不贴（防串到别的回答上）', /if \(!goods\.length \|\| !cur \|\| cur\.id !== msg\.id\) return/.test(read(P.page)))
+  ok('F10 云端 JSON 模式：带 response_format，参数不被接受（400）时同模型去掉再试',
+    JSON.stringify(T.modelParams(true).response_format) === JSON.stringify({ type: 'json_object' }) && !('response_format' in T.modelParams(false)) &&
+    /for \(const jsonMode of \[true, false\]\)/.test(src) && /if \(!\(jsonMode && e\.statusCode === 400\)\) break/.test(src))
   // F9 页面优化（2026-11-23）：开场问题卡两列带门类、科普置顶；问过之后卷首收紧；往上翻远了出「回到最新」，滚动时状态不变不 setData
   const cards = G.starterCards(Date.UTC(2026, 10, 23, 4))
   const pj = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { this._sets = (this._sets || 0) + 1; Object.assign(this.data, p); if (cb) cb() } })
@@ -494,7 +527,18 @@ const INJECTIONS = [
   { name: '逐字显示太慢', file: P.chat, find: 'Math.min(Math.ceil(n / 3), Math.floor(REVEAL_MAX_MS / REVEAL_TICK_MS))', replace: 'Math.ceil(n / 3)' },
   { name: '页面不去 Markdown', file: P.chat, find: ".replace(/\\*\\*([^*\\n]+)\\*\\*/g, '$1')", replace: '' },
   { name: '存储带着逐字中间态', file: P.chat, find: '    delete base.shown\n', replace: '' },
-  { name: '云端不去 Markdown', file: P.fn, find: "const answer = plainAnswer((obj && obj.answer) || (obj ? '' : t))", replace: "const answer = String((obj && obj.answer) || (obj ? '' : t)).trim()" },
+  { name: '云端不去 Markdown', file: P.fn, find: 'const answer = plainAnswer(obj ? obj.answer : loose.answer)', replace: 'const answer = String(obj ? obj.answer : loose.answer).trim()' },
+  { name: '非 JSON 回答不摘字段行', file: P.fn, find: '  const loose = obj ? null : salvageFields(t)', replace: "  const loose = obj ? null : { answer: t, followUps: [], actions: [] }" },
+  { name: '字段行里的去处不过白名单', file: P.fn, find: "    .map((a) => String(a || '').trim()).filter((a, i, arr) => PLACE_KEYS.indexOf(a) >= 0 && arr.indexOf(a) === i).slice(0, 2)", replace: "    .map((a) => String(a || '').trim()).slice(0, 2)" },
+  { name: '页面不清字段行', file: P.chat, find: "  return stripFieldLines(text)\n", replace: "  return String(text || '')\n" },
+  { name: '页面不还原追问按钮', file: P.chat, find: ': lost.followUps).filter(', replace: ': []).filter(' },
+  { name: '单个英文词当学名', file: P.chat, find: 'const LATIN_RE = /\\b[A-Z][a-z]{2,}(?: [a-z]{3,}){1,2}\\b/g', replace: 'const LATIN_RE = /\\b[A-Z][a-z]{2,}(?: [a-z]{3,}){0,2}\\b/g' },
+  { name: '售罄排在前面', file: P.chat, find: 'return all.filter((p) => !p.soldOut).concat(all.filter((p) => p.soldOut)).slice(0, GOODS_MAX)', replace: 'return all.slice(0, GOODS_MAX)' },
+  { name: '馆藏推荐进了存储', file: P.chat, find: '    delete base.goods\n', replace: '' },
+  { name: '推荐串到别的回答', file: P.page, find: 'if (!goods.length || !cur || cur.id !== msg.id) return', replace: 'if (!goods.length) return' },
+  { name: '不开 JSON 模式', file: P.fn, find: "  if (jsonMode) p.response_format = { type: 'json_object' }\n", replace: '' },
+  { name: '超时也同模型重试', file: P.fn, find: '        if (!(jsonMode && e.statusCode === 400)) break', replace: '        if (!jsonMode) break' },
+  { name: '提示词不禁英文单词', file: P.persona, find: '；除拉丁学名外不要夹带英文单词。', replace: '。' },
   { name: '点气泡不跳过', file: P.page, find: '    if (cur && cur.revealing) this.finishReveal(index)', replace: '' },
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' },
   { name: '宫格博物君图标退回旧图', file: P.userWxml, find: 'src="/assets/icons/museum-guide.png"', replace: 'src="/assets/icons/knowledge.png"' },

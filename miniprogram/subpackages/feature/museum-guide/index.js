@@ -7,6 +7,7 @@ const G = require('./guideChat')
 const { GUIDE_AVATAR } = require('../../../utils/guideAvatar')
 const N = require('./naturalist')
 const { openAppModal } = require('../../../utils/appModal')
+const { thumbUrl } = require('../../../utils/imageUrl')
 
 const app = getApp()
 
@@ -147,6 +148,31 @@ Page({
     const cur = this.data.messages[index]
     if (!cur || !cur.revealing) return
     this.setData({ [`messages[${index}].shown`]: cur.text, [`messages[${index}].revealing`]: false }, () => this.scrollToEnd())
+    this.loadGoods(index)
+  },
+
+  /**
+   * 「馆里有这件」：回答写完后，按点到的第一种图鉴物种查馆藏（只读 getEncyclopediaFeed）；
+   * 查不到 / 查失败都不出这一栏。只挂在当场这条回答上，不进本机存储。
+   */
+  async loadGoods(index) {
+    const msg = this.data.messages[index]
+    const q = msg && !msg.isError && G.goodsQuery(msg.species)
+    if (!q) return
+    let rows = []
+    try {
+      const res = await wx.cloud.callFunction({ name: 'getEncyclopediaFeed', data: q })
+      rows = (res && res.result && res.result.orphanProducts) || []
+    } catch (e) { return }
+    const goods = G.goodsCards(rows, (u) => (u ? thumbUrl(u) : ''))
+    const cur = this.data.messages[index]
+    if (!goods.length || !cur || cur.id !== msg.id) return
+    this.setData({ [`messages[${index}].goods`]: goods })
+  },
+
+  onTapGoods(e) {
+    const id = e.currentTarget.dataset.id
+    if (id) wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}` })
   },
 
   stopReveal() {
