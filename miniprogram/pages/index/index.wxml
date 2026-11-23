@@ -52,17 +52,19 @@
     <!-- 博物君口播（2026-11-23，原馆员问候行升级）：博物君小印 + 「时段问候，藏家昵称」+ 竖向轮播一行
          （馆内通知 / 今日开馆 / 博物一知 / 小提示）。条目来自 guideBroadcast.js；馆内通知由超管「博物君」页配置。
          带 › 的条目可点：博物一知 / 小提示 → 博物君（只预填问题），今日开馆 → 门店。 -->
+    <!-- 2026-11-23 第二版（产品负责人真机截图「风格与样式比较丑陋」）：去掉卡片框与实心红印，
+         改成一条无框的口播带 —— 描边小印 + 问候 / 右侧「口播」呼吸灯；下面一行「小签 · 文案」单行轮播，不折行 -->
     <view class="home-cast" wx:if="{{cast.hello}}">
       <view class="home-cast-seal" aria-hidden="true"><text>博</text></view>
       <view class="home-cast-main">
         <view class="home-cast-head">
           <text class="home-cast-hello">{{cast.hello}}</text>
-          <text class="home-cast-by">博物君 · 口播</text>
+          <view class="home-cast-live" aria-hidden="true"><view class="home-cast-dot"></view><text>口播</text></view>
         </view>
         <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}">
           <swiper-item wx:for="{{cast.items}}" wx:key="key">
             <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store ? 'tap-press-soft' : ''}}" hover-stay-time="80">
-              <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text>
+              <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text><text class="home-cast-sep">·</text>
               <text class="home-cast-t">{{item.text}}</text>
               <text class="home-cast-go" wx:if="{{item.q || item.store}}">›</text>
             </view>

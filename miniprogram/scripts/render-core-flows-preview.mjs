@@ -909,7 +909,7 @@ const SCENES = [
   // 2026-11-23 首页博物君口播（只看顶部一带；其余区块数据留空不渲染）
   { name: 'home-cast', h: 700, wxml: 'pages/index/index', data: (() => {
     const { buildBroadcast } = loadCjsModule(join(MP, 'pages/index/guideBroadcast.js'))
-    const cast = buildBroadcast({ nick: '蛋炒饭', now: new Date(2026, 10, 23, 20, 50), greeting: { line: '山川造物营业中，开到 22:00' }, notices: ['周六下午有标本制作体验课，欢迎来馆'], guideOpen: true })
+    const cast = buildBroadcast({ nick: '蛋炒饭', now: new Date(2026, 10, 23, 20, 50), greeting: { line: '山川造物营业中，开到 22:00' }, notices: ['周六下午有标本体验课，欢迎来馆'], guideOpen: true })
     return { cast, homeGreeting: { word: '晚上好', line: '' }, statusBarHeight: 88, navTop: 88, isSinglePage: false, showBanners: false, showLive: false, loading: false }
   })() },
   // 2026-11-23 购物车（产品负责人点名：顶部上移、清单多出空间、质感细节）。px 按 2 倍代入（预览 1rpx = 1px）

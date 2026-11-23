@@ -52,9 +52,9 @@ function listOf(rows, labels) {
  * 云函数 overview → 页面数据。
  * bars 的宽度按区间内最大提问数折算（最大的一天 = 100%），没有提问的天宽 0。
  */
-/** 首页口播「馆内通知」：最多 3 条、每条 ≤ 36 字（与云函数 museumGuideMonitor 同口径） */
+/** 首页口播「馆内通知」：最多 3 条、每条 ≤ 22 字（首页一行放得下，与云函数 museumGuideMonitor 同口径） */
 const NOTICE_MAX = 3
-const NOTICE_LEN = 36
+const NOTICE_LEN = 22
 
 /** 编辑框草稿：已存的通知补满 3 格（空格子留空） */
 function noticeDrafts(notices) {

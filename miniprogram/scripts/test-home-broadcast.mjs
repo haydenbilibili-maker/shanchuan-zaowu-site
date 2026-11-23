@@ -3,8 +3,8 @@
  * test:home-broadcast —— 首页「博物君口播」（2026-11-23，产品负责人点名：原馆员问候行升级为博物君口播）
  *
  *   H1 纯函数：问候带昵称（过长截断、占位名当没有）/ 访客「欢迎来馆」；顺序 通知 → 开馆 → 一知 ×2 → 提示；
- *      闭馆不播通知、不带去博物君的问题；一知按日期轮换、同日两条不同；每条文案 ≤ 40 字（两行放得下）
- *   H2 超管写入：口播通知去空白 / 去空串 / ≤ 3 条 / 每条 ≤ 36 字 / 非数组拒绝；首次写配置不丢已存通知
+ *      闭馆不播通知、不带去博物君的问题；一知按日期轮换、同日两条不同；每条文案 ≤ 22 字（首页单行，第二版）
+ *   H2 超管写入：口播通知去空白 / 去空串 / ≤ 3 条 / 每条 ≤ 22 字 / 非数组拒绝；首次写配置不丢已存通知
  *   H3 只读带出：getContentDisplayFlags 开馆带出通知、闭馆与没配置为空、save 不写它；小程序端归一丢掉非字符串
  *   H4 接线：首页口播挂在原问候位、回到首页重排、门店 / 开关到了重排、点按只预填不自动提问、from=home 三端登记、
  *      超管页有编辑框与保存
@@ -89,7 +89,7 @@ async function runChecks() {
   const tipAt = (h) => C.buildBroadcast({ now: at(10, 23, h) }).items.find((i) => i.kind === 'tip').text
   ok('H1 提示按时段分组（早 / 午 / 夜 不同组）', C.TIPS.morning.some((t) => t.t === tipAt(8)) && C.TIPS.day.some((t) => t.t === tipAt(15)) && C.TIPS.night.some((t) => t.t === tipAt(23)))
   const all = C.FACTS.concat(C.TIPS.morning, C.TIPS.day, C.TIPS.night)
-  ok('H1 每条文案 ≤ 40 字（两行放得下）', all.every((x) => x.t && x.t.length <= 40))
+  ok('H1 每条文案 ≤ 22 字（首页单行放得下，不折行）', C.LINE_MAX === 22 && all.every((x) => x.t && x.t.length <= C.LINE_MAX))
   ok('H1 每条一知都带问题', C.FACTS.every((x) => x.q && x.q.length <= 40))
   ok('H1 去博物君只预填（from=home，不带 auto=1）', C.guideUrl('为什么？') === '/subpackages/feature/museum-guide/index?from=home&q=' + encodeURIComponent('为什么？'))
   const castSrc = read(P.cast)
@@ -105,7 +105,7 @@ async function runChecks() {
   const n = (v) => T.normalizeNotices(v)
   ok('H2 去空白 / 去空串', JSON.stringify(n([' a  b ', '', '  ', 'c'])) === JSON.stringify({ notices: ['a b', 'c'] }))
   ok('H2 超过 3 条拒绝', !!n(['1', '2', '3', '4']).error)
-  ok('H2 单条超过 36 字拒绝', !!n(['字'.repeat(37)]).error && !n(['字'.repeat(36)]).error)
+  ok('H2 单条超过 22 字拒绝（与首页单行同口径）', !!n(['字'.repeat(23)]).error && !n(['字'.repeat(22)]).error && T.NOTICE_LEN === 22)
   ok('H2 非数组拒绝、空数组 = 清空', !!n('abc').error && JSON.stringify(n([])) === JSON.stringify({ notices: [] }))
   ok('H2 配置入参带上通知', JSON.stringify(T.normalizeConfigInput({ notices: ['x'] })) === JSON.stringify({ patch: { notices: ['x'] } }) && !!T.normalizeConfigInput({ notices: ['1', '2', '3', '4'] }).error)
   ok('H2 视图带出通知（脏数据截断）', JSON.stringify(T.viewConfig({ notices: ['a', 'b', 'c', 'd'] }).notices) === JSON.stringify(['a', 'b', 'c']) && JSON.stringify(T.viewConfig(null).notices) === '[]')
@@ -128,7 +128,7 @@ async function runChecks() {
   const fOn = await loadFlags(flagDb({ notices: ['周六有课', '', 3, '字'.repeat(50), 'd', 'e'] })).main({})
   const fOff = await loadFlags(flagDb({ enabled: false, notices: ['周六有课'] })).main({})
   const fNone = await loadFlags(flagDb(null)).main({})
-  ok('H3 开馆带出通知（去空、截断 36 字、最多 3 条）', JSON.stringify(fOn.flags.museumGuideNotices) === JSON.stringify(['周六有课', '3', '字'.repeat(36)]))
+  ok('H3 开馆带出通知（去空、截断 22 字、最多 3 条）', JSON.stringify(fOn.flags.museumGuideNotices) === JSON.stringify(['周六有课', '3', '字'.repeat(22)]))
   ok('H3 闭馆 / 没配置 → 空', JSON.stringify(fOff.flags.museumGuideNotices) === '[]' && JSON.stringify(fNone.flags.museumGuideNotices) === '[]')
   const saveDb = flagDb({ notices: ['x'] })
   await loadFlags(saveDb).main({ action: 'save', flags: { museumGuideNotices: ['被写进来'] } })
@@ -153,7 +153,10 @@ async function runChecks() {
   ok('H4 内容没变不 setData（不让轮播跳回第一条）', /if \(sig === this\._castSig\) return;/.test(js))
   ok('H4 昵称来自 resolvePrefillNickName', /nick: resolvePrefillNickName\(getApp\(\)\)/.test(js))
   ok('H4 开馆条走 goToBooking（门店开关在那里判）', /if \(item\.store\) \{ this\.goToBooking\(\); return; \}/.test(js))
-  ok('H4 两行定高（轮播不跳）', /\.home-cast-swiper \{ height: 68rpx;/.test(wxss) && /-webkit-line-clamp: 2;/.test(wxss.slice(wxss.indexOf('.home-cast-t {'))))
+  const castT = wxss.slice(wxss.indexOf('.home-cast-t {'), wxss.indexOf('}', wxss.indexOf('.home-cast-t {')))
+  ok('H4 单行定高、不折行（轮播不跳）', /\.home-cast-swiper \{ height: 40rpx;/.test(wxss) && /white-space: nowrap;/.test(castT) && /text-overflow: ellipsis;/.test(castT))
+  ok('H4 无框口播带：不再套卡片底色 / 实心红印', !/#8E3B2E/.test(wxss) && !/\.home-cast \{[^}]*background:/.test(wxss))
+  ok('H4 小程序端 / 超管页通知截断与云端同口径（22 字）', /\.slice\(0, 22\)\)\.slice\(0, 3\)/.test(read(P.flagsUtil)) && /const NOTICE_LEN = 22/.test(read(P.monView)))
   ok('H4 from=home 三端登记（页面白名单 / 云函数入口 / 超管报表标签）',
     /'workshop', 'home'\]\.indexOf\(options && options\.from\)/.test(read(P.guidePage)) &&
     /const ENTRY_SOURCES = \[[^\]]*'home'/.test(read(P.askFn)) && /home: '首页口播'/.test(read(P.monView)))
@@ -172,7 +175,7 @@ const INJECTIONS = [
   { name: '闭馆仍带问题', file: P.cast, find: 'q: open && q ? q : \'\'', replace: "q: q || ''" },
   { name: '同日两条一知相同', file: P.cast, find: 'FACTS[(di + 5) % FACTS.length]', replace: 'FACTS[di % FACTS.length]' },
   { name: '点口播直接提问', file: P.cast, find: '?from=home&q=${encodeURIComponent(q)}', replace: '?from=home&auto=1&q=${encodeURIComponent(q)}' },
-  { name: '一知写超长', file: P.cast, find: "{ t: '大蓝闪蝶的蓝不是颜料，", replace: "{ t: '大蓝闪蝶的蓝不是颜料，它其实是一种非常非常非常特别的结构色，" },
+  { name: '一知写超长（会折行）', file: P.cast, find: "{ t: '大蓝闪蝶的蓝来自鳞片结构，不是色素'", replace: "{ t: '大蓝闪蝶的蓝来自鳞片上的微结构对光的干涉，不是色素'" },
   { name: '通知不设条数上限', file: P.monFn, find: '  if (out.length > NOTICE_MAX) return', replace: '  if (false) return' },
   { name: '首次写丢了通知', file: P.monFn, find: '    if (before.notices.length) keep.notices = before.notices\n', replace: '' },
   { name: '闭馆仍带出通知', file: P.flagsFn, find: '  if (!open || !doc || !Array.isArray(doc.notices)) return []', replace: '  if (!doc || !Array.isArray(doc.notices)) return []' },
@@ -180,7 +183,9 @@ const INJECTIONS = [
   { name: '回到首页不重排', file: P.homeJs, find: '    // 口播每次回到首页重排一次：昵称（刚登录 / 刚改名）与时段问候跟着变\n    this.refreshCast();\n', replace: '' },
   { name: '每次都 setData', file: P.homeJs, find: 'if (sig === this._castSig) return;', replace: '' },
   { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast" wx:if="{{cast.hello}}">', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n    <view class="home-cast" wx:if="{{cast.hello}}">' },
-  { name: '口播一行放不下', file: P.homeWxss, find: '.home-cast-swiper { height: 68rpx;', replace: '.home-cast-swiper { height: 40rpx;' },
+  { name: '口播文案折行', file: P.homeWxss, find: '  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.home-cast-go', replace: '  overflow: hidden;\n}\n.home-cast-go' },
+  { name: '口播套回卡片底色', file: P.homeWxss, find: '  margin: 0 32rpx 20rpx;\n  padding: 10rpx 0 18rpx;\n}', replace: '  margin: 0 32rpx 20rpx;\n  padding: 10rpx 0 18rpx;\n  background: rgba(196, 167, 108, 0.1);\n}' },
+  { name: '通知放宽到 36 字', file: P.monFn, find: 'const NOTICE_LEN = 22', replace: 'const NOTICE_LEN = 36' },
   { name: '入口没登记 home', file: P.askFn, find: "'workshop', 'home', 'direct'", replace: "'workshop', 'direct'" },
   { name: '刷新冲掉草稿', file: P.monPage, find: 'if (!this.data.noticeDirty) patch.noticeDrafts', replace: 'patch.noticeDrafts' }
 ]
