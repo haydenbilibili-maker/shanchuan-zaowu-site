@@ -180,23 +180,8 @@
   gap: 8rpx 16rpx;
 }
 
-.act-grid {
-  display: flex;
-  flex-direction: row;
-  gap: 16rpx;
-}
 
-.act-grid .act {
-  flex: 1;
-  min-width: 0;
-  padding-left: 12rpx;
-  padding-right: 12rpx;
-  box-sizing: border-box;
-}
 
-.act-grid-span {
-  flex: 1 1 100%;
-}
 
 .act {
   height: 88rpx;
@@ -777,15 +762,6 @@
   line-height: 1.6;
 }
 
-.act.compact {
-  height: 72rpx;
-  line-height: 72rpx;
-  font-size: var(--fs-26);
-  padding-left: 8rpx;
-  padding-right: 8rpx;
-  box-sizing: border-box;
-  white-space: nowrap;
-}
 
 .product-strip {
   margin-top: 40rpx;
@@ -927,38 +903,7 @@
   font-size: var(--fs-32);
 }
 
-.foot-links {
-  margin-top: 0;
-  padding-top: 8rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16rpx;
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
-}
-.foot-link {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-  color: var(--color-text-secondary);
-}
-.foot-link-text {
-  color: var(--color-text-secondary);
-}
-.foot-link-icon {
-  width: 24rpx;
-  height: 24rpx;
-  opacity: 0.7;
-}
-.foot-link-press {
-  color: var(--color-primary);
-  opacity: 0.85;
-}
 
-.foot-links .dot {
-  color: #4A4540;
-}
 
 .again {
   display: none;
@@ -1064,3 +1009,36 @@
     animation: none;
   }
 }
+
+/* —— 行动区三层（2026-11-23）：② 四格工具 —— 发丝分隔的一条工具带，中英两行，像展柜下沿的功能签 —— */
+.tool-grid {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--r-card, 16rpx);
+  background: var(--color-bg-card);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
+  overflow: hidden;
+}
+.tool {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  padding: 22rpx 8rpx 20rpx;
+  position: relative;
+}
+.tool + .tool::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 24rpx;
+  bottom: 24rpx;
+  width: 1rpx;
+  background: rgba(196, 167, 108, 0.2);
+}
+.tool-press { background: rgba(196, 167, 108, 0.1); }
+.tool-en { font-size: var(--fs-18); letter-spacing: 0.18em; color: var(--brass-400, #C4A76C); }
+.tool-t { font-size: var(--fs-24); color: var(--brass-100, #F1E6CC); white-space: nowrap; }
+.action-dock .action-group-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8rpx 16rpx; }

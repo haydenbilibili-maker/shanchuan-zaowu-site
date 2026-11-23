@@ -268,20 +268,13 @@
       <button class="act primary" bindtap="onRetake" hover-class="act-primary-press" hover-stay-time="80">重新拍摄</button>
     </view>
 
+    <!-- 行动区（2026-11-23 重排，产品负责人「继续优化 AI 标本鉴定页面」）：
+         原先两颗描边钮 + 图鉴钮 + 四个文字链 + 两个页脚链，九个出口三种样式摊在一起。现在三层：
+         ① 主行动：存进 / 已在山海图鉴（逻辑不变）；② 四格工具：问问博物君 / 分享海报 / 馆藏同类 / 再拍一张（按条件出）；
+         ③ 一行小字：识别纠错 · 鉴定疑问 · 相关藏品 · 我的图鉴。每个出口的处理函数都不变。 -->
     <view class="action-dock">
-      <view class="action-group" wx:if="{{speciesInfo.is_specimen !== false}}">
-        <view class="fallback-note" wx:if="{{showFallback}}">
-          <text class="fallback-tip">暂未匹配到馆藏档案或可购藏品，你可以浏览同类内容或咨询专员。</text>
-        </view>
-        <view class="act-grid">
-          <button class="act ghost compact" bindtap="onGoGallery" hover-class="act-ghost-press" hover-stay-time="80">馆藏同类</button>
-          <button class="act ghost compact" bindtap="onExpertHelp" hover-class="act-ghost-press" hover-stay-time="80">鉴定疑问</button>
-        </view>
-      </view>
-      <view class="action-group" wx:elif="{{speciesInfo.is_specimen === false}}">
-        <view class="act-grid">
-          <button class="act ghost compact act-grid-span" bindtap="onExpertHelp" hover-class="act-ghost-press" hover-stay-time="80">鉴定疑问</button>
-        </view>
+      <view class="fallback-note" wx:if="{{showFallback && speciesInfo.is_specimen !== false}}">
+        <text class="fallback-tip">暂未匹配到馆藏档案或可购藏品，你可以浏览同类内容或咨询专员。</text>
       </view>
 
       <view class="action-group action-group-atlas" wx:if="{{speciesInfo.is_specimen !== false}}">
@@ -318,36 +311,39 @@
         </view>
       </view>
 
-      <view class="action-group action-group-meta">
+      <view class="tool-grid">
         <!-- 问问博物君（2026-11-23）：识别出物种才出，带着物种名去追问 -->
-        <block wx:if="{{speciesInfo.species_name_zh && speciesInfo.is_specimen !== false}}">
-          <text class="meta-link" bindtap="onAskGuide" hover-class="meta-link-press" hover-stay-time="80">问问博物君</text>
+        <view class="tool" wx:if="{{speciesInfo.species_name_zh && speciesInfo.is_specimen !== false}}" bindtap="onAskGuide" hover-class="tool-press" hover-stay-time="80" aria-role="button">
+          <text class="tool-en">ASK</text>
+          <text class="tool-t">问问博物君</text>
+        </view>
+        <view class="tool" bindtap="onGoShare" hover-class="tool-press" hover-stay-time="80" aria-role="button">
+          <text class="tool-en">SHARE</text>
+          <text class="tool-t">分享海报</text>
+        </view>
+        <view class="tool" wx:if="{{speciesInfo.is_specimen !== false}}" bindtap="onGoGallery" hover-class="tool-press" hover-stay-time="80" aria-role="button">
+          <text class="tool-en">CABINET</text>
+          <text class="tool-t">馆藏同类</text>
+        </view>
+        <!-- 低置信 / 非标本时上面已有「重新拍摄」主按钮，这里不重复 -->
+        <view class="tool" wx:if="{{confidenceLevel !== 'low' && speciesInfo.is_specimen !== false}}" bindtap="onRetake" hover-class="tool-press" hover-stay-time="80" aria-role="button">
+          <text class="tool-en">AGAIN</text>
+          <text class="tool-t">再拍一张</text>
+        </view>
+      </view>
+
+      <view class="action-group-meta">
+        <block wx:if="{{recordId}}">
+          <text class="meta-link" bindtap="openFeedback" hover-class="meta-link-press" hover-stay-time="80">识别纠错</text>
           <text class="meta-dot">·</text>
         </block>
-        <text class="meta-link" bindtap="onGoShare" hover-class="meta-link-press" hover-stay-time="80">分享海报</text>
-        <text class="meta-dot" wx:if="{{recordId}}">·</text>
-        <text
-          class="meta-link"
-          wx:if="{{recordId}}"
-          bindtap="openFeedback"
-          hover-class="meta-link-press"
-          hover-stay-time="80"
-        >识别纠错</text>
+        <text class="meta-link" bindtap="onExpertHelp" hover-class="meta-link-press" hover-stay-time="80">鉴定疑问</text>
         <block wx:if="{{relatedProducts.length > 0}}">
           <text class="meta-dot">·</text>
           <text class="meta-link" bindtap="onViewProducts" hover-class="meta-link-press" hover-stay-time="80">相关藏品</text>
         </block>
-      </view>
-
-      <view class="foot-links">
-        <view class="foot-link" bindtap="onGoAtlas" hover-class="foot-link-press" hover-stay-time="80">
-          <image class="foot-link-icon" src="/assets/icons/atlas.png" mode="aspectFit" />
-          <text>我的山海图鉴</text>
-        </view>
-        <block wx:if="{{confidenceLevel !== 'low' && speciesInfo.is_specimen !== false}}">
-          <text class="dot">·</text>
-          <text class="foot-link-text" bindtap="onRetake" hover-class="foot-link-press" hover-stay-time="80">再拍一张</text>
-        </block>
+        <text class="meta-dot">·</text>
+        <text class="meta-link" bindtap="onGoAtlas" hover-class="meta-link-press" hover-stay-time="80">我的图鉴</text>
       </view>
     </view>
   </view>
