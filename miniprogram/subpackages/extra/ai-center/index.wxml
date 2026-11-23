@@ -6,6 +6,14 @@
     <text class="ac-desc">六位虚拟员工，各自懂一块业务、也能看到最近的经营数据。回答由 AI 生成，重要决策请再核一遍。</text>
   </view>
 
+  <view class="ac-debate" bindtap="goDebate" hover-class="tap-press-soft" hover-stay-time="80">
+    <view class="ac-debate-body">
+      <text class="ac-debate-title">董事会辩论</text>
+      <text class="ac-debate-desc">选一个辩题，让 2–4 位董事依次发言，主持人收口</text>
+    </view>
+    <text class="ac-debate-go">去开一场 ›</text>
+  </view>
+
   <scroll-view class="ac-roles" scroll-x enhanced show-scrollbar="{{false}}">
     <view
       class="ac-role {{item.id === roleId ? 'is-on' : ''}}"

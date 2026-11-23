@@ -337,6 +337,63 @@ function bjDayText(now) {
 }
 
 /**
+ * 董事会辩论（2026-11-23 第三轮）：几位虚拟员工就同一辩题依次发言，最后由主持人收口。
+ *
+ * 一次请求只做一件事（客户端串行调用，避免一次请求超时）：
+ *   step='speak'   → roleId 这一位的发言（要接住前面的人，明确立场）
+ *   step='verdict' → 主持人总结（共识 / 分歧 / 可执行建议）
+ * 人设与边界仍来自 staffPersonas；发言顺序由客户端按 members 顺序串行。
+ */
+async function staffDebate(event, openid) {
+  const topic = String((event && event.topic) || '').trim().slice(0, 120)
+  if (topic.length < 4) return { success: false, error_type: 'invalid', msg: '辩题太短了' }
+  const members = (Array.isArray(event && event.members) ? event.members : [])
+    .map((x) => String(x || '')).filter((id, i, arr) => ROLE_IDS.indexOf(id) >= 0 && arr.indexOf(id) === i).slice(0, 4)
+  if (members.length < 2) return { success: false, error_type: 'invalid', msg: '至少选两位董事' }
+  const step = String((event && event.step) || 'speak')
+  const history = (Array.isArray(event && event.speeches) ? event.speeches : [])
+    .filter((x) => x && typeof x.text === 'string')
+    .map((x) => ({ roleId: String(x.roleId || ''), name: String(x.name || ''), text: x.text.slice(0, 800) }))
+
+  const apiKey = process.env.DASHSCOPE_API_KEY || ''
+  if (!apiKey) return { success: false, error_type: 'ai_service', msg: 'AI 服务还没配置，请联系超管' }
+
+  let system = ''
+  let user = ''
+  if (step === 'verdict') {
+    const said = history.map((h) => `【${h.name}】${h.text}`).join('\n')
+    system = '你是山海造物的董事会主持人。你要在各方发言后做收口：先给共识，再给分歧，最后给 2-3 条可执行建议。中文，300 字内，不写 Markdown 标题，不编数据。'
+    user = `辩题：${topic}\n\n各方发言：\n${said}\n\n请收口。`
+  } else {
+    const roleId = String((event && event.roleId) || '')
+    if (members.indexOf(roleId) < 0) return { success: false, error_type: 'invalid', msg: '这位董事不在本场名单里' }
+    const role = STAFF_ROLES[roleId]
+    const said = history.map((h) => `【${h.name}】${h.text}`).join('\n')
+    system = `你是山海造物的${role.name}，正在参加董事会辩论。你的职责：${role.prompt.replace(/^你是山海造物的[^。]*。/, '')}\n\n` +
+      '规则：站在你的专业立场给出明确判断；若前面有人与你不一致，直接指出分歧点；200 字内；中文；不写 Markdown 标题；不编数据。'
+    user = `辩题：${topic}${said ? `\n\n前面发言：\n${said}` : ''}\n\n请发言。`
+  }
+
+  for (const model of modelChain(process.env.MUSEUM_GUIDE_MODELS)) {
+    try {
+      const res = await httpsPostJson(TEXT_PATH, {
+        model,
+        input: { messages: [{ role: 'system', content: system }, { role: 'user', content: user }] },
+        parameters: { result_format: 'message', enable_thinking: false, temperature: 0.7, max_tokens: 700 }
+      }, { Authorization: `Bearer ${apiKey}` })
+      const answer = plainAnswer(extractText(res))
+      if (!usableAnswer(answer)) continue
+      const sec = await checkText(openid, answer, 2)
+      const text = sec.ok ? answer : '（这段发言没有通过内容安全校验，已省略）'
+      return { success: true, step, answer: text, roleName: step === 'verdict' ? '主持人' : STAFF_ROLES[String(event.roleId)].name }
+    } catch (e) {
+      console.warn(`董事会辩论[${step}] 失败`, e.message)
+    }
+  }
+  return { success: false, error_type: 'ai_service', msg: '辩论中断了一下，稍后再试' }
+}
+
+/**
  * AI 智能中心（员工端，2026-11-23）：虚拟员工对话。
  * - 不走博物君的开馆 / 每日 30 问：这是员工工具，额度另计（这里不设上限，按模型侧限流）。
  * - 人设只在服务端（staffPersonas.js），客户端只传 roleId。
@@ -392,6 +449,7 @@ exports.main = async (event) => {
 
   if (event && event.action === 'feedback') return feedback(event, OPENID)
   if (event && event.mode === 'staff') return staffChat(event, OPENID)
+  if (event && event.mode === 'debate') return staffDebate(event, OPENID)
 
   const t0 = Date.now()
   const cfg = effectiveConfig(await readConfig(), process.env.MUSEUM_GUIDE_DAILY_LIMIT)

@@ -23,6 +23,8 @@ const P = {
   wxml: join(MP, 'subpackages/extra/ai-center/index.wxml'),
   personas: join(MP, 'cloudfunctions/askMuseumGuide/staffPersonas.js'),
   ctx: join(MP, 'cloudfunctions/askMuseumGuide/staffContext.js'),
+  debate: join(MP, 'subpackages/extra/ai-debate/index.js'),
+  debateWxml: join(MP, 'subpackages/extra/ai-debate/index.wxml'),
   tasksClient: join(MP, 'subpackages/extra/ai-center/tasks.js'),
   tasksServer: join(MP, 'cloudfunctions/askMuseumGuide/staffTasks.js'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
@@ -62,7 +64,7 @@ function runChecks() {
   const fn = read(P.fn)
   ok('A3 云端：mode=staff 分发 + roleId 白名单 + 缺 Key 兜底 + 问答都过内容安全',
     /event\.mode === 'staff'\) return staffChat/.test(fn) && /ROLE_IDS\.indexOf\(roleId\) < 0/.test(fn) &&
-    /if \(!apiKey\) return \{ success: false, error_type: 'ai_service'/.test(fn) &&
+    /if \(!apiKey\) return \{ success: false, error_type: 'ai_service', msg: 'AI 服务还没配置，请联系超管' \}\n\n  \/\/ 经营上下文/.test(fn) &&
     /const sec = await checkText\(openid, question, 2\)/.test(fn) && !/db\.collection\([^)]*\)\.(add|set|update|remove)\(/.test(fn.slice(fn.indexOf('async function staffChat'), fn.indexOf('exports.main'))), fails)
 
   const page = read(P.page)
@@ -107,6 +109,18 @@ function runChecks() {
   ok('A6 页面有一键任务条与 runTask，请求带 taskId，重试按任务重发',
     /class="ac-task/.test(read(P.wxml)) && /runTask\(e\)/.test(page) && /taskId: task\.taskId/.test(page) &&
     /if \(last\.taskId\) this\._ask/.test(page), fails)
+  const debate = read(P.debate)
+  ok('A7 董事会辩论：页面注册 + AI 中心有入口',
+    extra.pages.includes('ai-debate/index') && /goDebate\(\)/.test(read(P.page)) &&
+    /ac-debate/.test(read(P.wxml)) && /ai-debate\/index/.test(read(P.page)), fails)
+  ok('A7 云端：mode=debate 分发、2–4 位董事、发言者必须在名单内、收口单独一步、提示词不在客户端',
+    /event\.mode === 'debate'\) return staffDebate/.test(fn) &&
+    /members\.length < 2/.test(fn) && /members\.indexOf\(roleId\) < 0/.test(fn) &&
+    /step === 'verdict'/.test(fn) && /你是山海造物的董事会主持人/.test(fn) &&
+    !/你是山海造物的/.test(debate), fails)
+  ok('A7 页面：串行发言 + 停止 + 本机保存上一场 + 复制',
+    /for \(let i = 0; i < members\.length/.test(debate) && /onStop\(\)/.test(debate) &&
+    /ai_debate_last/.test(debate) && /onCopy\(/.test(debate), fails)
   return fails
 }
 
@@ -118,11 +132,13 @@ if (process.argv.includes('--selftest')) {
     { name: '页面没注册', file: P.page, find: '', replace: '' },
     { name: '角色表与云端不一致', file: P.roles, find: "id: 'cfo'", replace: "id: 'cfo2'" },
     { name: '云端不校验 roleId', file: P.fn, find: 'if (ROLE_IDS.indexOf(roleId) < 0) return', replace: 'if (false) return' },
-    { name: '缺 Key 也放行', file: P.fn, find: "if (!apiKey) return { success: false, error_type: 'ai_service'", replace: "if (false) return { success: false, error_type: 'ai_service'" },
+    { name: '缺 Key 也放行', file: P.fn, find: "  if (!apiKey) return { success: false, error_type: 'ai_service', msg: 'AI 服务还没配置，请联系超管' }\n\n  // 经营上下文", replace: "  if (false) return { success: false, error_type: 'ai_service', msg: 'AI 服务还没配置，请联系超管' }\n\n  // 经营上下文" },
     { name: '上下文不注入 system', file: P.fn, find: 'try { context = await contextFor(roleId, db) } catch (e) { context = \'\' }', replace: 'context = \'\'' },
     { name: '上下文里带手机号', file: P.ctx, find: ".field({ stock: true, category: true, isOffShelf: true })", replace: ".field({ stock: true, category: true, isOffShelf: true, phone: true })" },
     { name: '未知任务不拒', file: P.fn, find: "if (event && event.taskId && !task) return { success: false, error_type: 'invalid', msg: '没有这个任务' }", replace: 'if (false) return {}' },
     { name: '任务角色对不上', file: P.tasksClient, find: "roleId: 'cfo', title: '现金流体检'", replace: "roleId: 'marketing', title: '现金流体检'" },
+    { name: '辩论不分发', file: P.fn, find: "if (event && event.mode === 'debate') return staffDebate(event, OPENID)", replace: 'if (false) return null' },
+    { name: '辩论允许单人', file: P.fn, find: 'if (members.length < 2) return', replace: 'if (members.length < 0) return' },
     { name: '去掉停止', file: P.page, find: '  onStop() {', replace: '  onStopX() {' },
     { name: '会话改存云端', file: P.page, find: 'wx.setStorageSync(', replace: 'wx.cloud.callFunction({ name: "x", data: {' }
   ].filter((x) => x.find !== '')

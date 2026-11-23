@@ -196,6 +196,7 @@
       "name": "extra",
       "pages": [
         "ai-center/index",
+        "ai-debate/index",
         "user/onboarding/index",
         "user/onboarding/done",
         "user/profile/index",

@@ -53,3 +53,10 @@
 /* 一键任务条（第三轮）：固定问题 + 固定角色，提示词只在云端 */
 .ac-tasks { white-space: nowrap; padding: 0 32rpx 8rpx; box-sizing: border-box; }
 .ac-task { display: inline-block; margin-right: 12rpx; padding: 12rpx 20rpx; border-radius: 12rpx; font-size: 20rpx; color: #D9C9A8; background: rgba(196,167,108,.08); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.28); }
+
+/* 董事会辩论入口 */
+.ac-debate { display: flex; align-items: center; gap: 16rpx; margin: 18rpx 32rpx 0; padding: 20rpx 24rpx; border-radius: 16rpx; background: rgba(196,167,108,.08); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.3); }
+.ac-debate-body { flex: 1; min-width: 0; }
+.ac-debate-title { display: block; font-size: 26rpx; color: #E3D2AC; }
+.ac-debate-desc { display: block; margin-top: 4rpx; font-size: 19rpx; color: #948C80; }
+.ac-debate-go { flex: none; font-size: 21rpx; color: #C4A76C; }

@@ -178,6 +178,11 @@ Page({
     })
   },
 
+  goDebate() {
+    if (this.data.sending) return
+    wx.navigateTo({ url: '/subpackages/extra/ai-debate/index' })
+  },
+
   runTask(e) {
     const id = String(e.currentTarget.dataset.id || '')
     const task = (this.data.tasks || []).find((t) => t.id === id)

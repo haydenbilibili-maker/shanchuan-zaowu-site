@@ -1,0 +1,50 @@
+/* 董事会辩论：与 AI 智能中心同一套夜墨 + 铜金 */
+.db-page { min-height: 100vh; background: #12100D; padding: 0 0 calc(40rpx + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.db-head { padding: 32rpx 32rpx 8rpx; }
+.db-eyebrow { display: block; font-family: var(--font-mono); font-size: 18rpx; letter-spacing: .2em; color: var(--brass-300, #D4BC8A); }
+.db-title { display: block; margin-top: 10rpx; font-family: var(--font-brand); font-size: 44rpx; letter-spacing: .08em; color: var(--brass-100, #F1E6CC); }
+.db-desc { display: block; margin-top: 8rpx; font-size: 22rpx; line-height: 1.6; color: #948C80; }
+
+.db-block { margin: 20rpx 32rpx 0; padding: 24rpx; border-radius: 18rpx; background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.16); }
+.db-label-row { display: flex; align-items: center; justify-content: space-between; }
+.db-label { font-size: 22rpx; color: #C4A76C; letter-spacing: .08em; }
+.db-count { font-size: 20rpx; color: #948C80; }
+.db-topic { margin-top: 14rpx; height: 76rpx; padding: 0 20rpx; border-radius: 12rpx; background: rgba(0,0,0,.24); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.2); font-size: 26rpx; color: #EDE3CC; }
+.db-ph { color: #6F675B; }
+.db-presets { margin-top: 14rpx; }
+.db-preset { display: block; margin-top: 10rpx; font-size: 21rpx; line-height: 1.5; color: #B9AC93; }
+
+.db-members { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 14rpx; }
+.db-member { display: flex; align-items: center; gap: 8rpx; padding: 12rpx 18rpx; border-radius: 12rpx; background: rgba(255,255,255,.03); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.14); }
+.db-member.is-on { background: rgba(196,167,108,.14); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.6); }
+.db-member-emoji { font-size: 26rpx; }
+.db-member-name { font-size: 22rpx; color: #D9C9A8; }
+
+.db-actions { display: flex; align-items: center; gap: 20rpx; margin: 26rpx 32rpx 0; }
+.db-start { flex: 1; height: 84rpx; line-height: 84rpx; text-align: center; border-radius: 14rpx; background: var(--brass-400, #C4A76C); color: #191713; font-size: 27rpx; letter-spacing: .06em; }
+.db-start.is-dim { opacity: .45; }
+.db-start.is-stop { background: rgba(196,167,108,.16); color: #E3D2AC; box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.5); }
+.db-reset { font-size: 21rpx; color: #948C80; padding: 10rpx; }
+
+.db-progress { display: flex; align-items: center; gap: 12rpx; margin: 26rpx 32rpx 0; font-size: 22rpx; color: #C4A76C; }
+.db-dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: #C4A76C; animation: db-pulse 1.2s ease-in-out infinite; }
+@keyframes db-pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+
+.db-hint { margin: 20rpx 32rpx 0; font-size: 22rpx; color: #C4A76C; }
+
+@media (prefers-reduced-motion: reduce) {
+  .db-dot { animation: none; opacity: 1; }
+}
+
+.db-timeline { margin: 24rpx 32rpx 0; }
+.db-item { margin-top: 22rpx; }
+.db-item-head { display: flex; align-items: center; gap: 10rpx; }
+.db-item-emoji { font-size: 26rpx; }
+.db-item-name { flex: 1; font-size: 22rpx; color: #C4A76C; }
+.db-copy { font-size: 19rpx; color: #948C80; padding: 4rpx 6rpx; }
+.db-bubble { margin-top: 10rpx; padding: 22rpx 24rpx; border-radius: 14rpx; background: #F3EDDF; color: #2A2620; font-size: 25rpx; line-height: 1.7; }
+
+.db-verdict { margin: 28rpx 32rpx 0; padding: 24rpx; border-radius: 16rpx; background: rgba(196,167,108,.08); box-shadow: inset 0 0 0 1rpx rgba(196,167,108,.35); }
+.db-verdict-head { display: flex; align-items: center; justify-content: space-between; }
+.db-verdict-title { font-size: 23rpx; color: #E3D2AC; letter-spacing: .06em; }
+.db-verdict-text { display: block; margin-top: 12rpx; font-size: 25rpx; line-height: 1.7; color: #EDE3CC; }
