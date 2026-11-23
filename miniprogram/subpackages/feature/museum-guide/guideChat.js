@@ -66,6 +66,23 @@ function actionButtons(keys) {
     .map((k) => ({ key: k, label: ACTIONS[k].label, url: ACTIONS[k].url, tab: !!ACTIONS[k].tab }))
 }
 
+/** 云函数返回的图鉴物种（{ no, zh }）→ 链接；编号只认三位数字，最多 2 个 */
+function speciesLinks(list) {
+  return (Array.isArray(list) ? list : [])
+    .filter((s) => s && /^\d{3}$/.test(String(s.no || '')) && s.zh)
+    .slice(0, 2)
+    .map((s) => ({ no: String(s.no), zh: String(s.zh) }))
+}
+
+/** 入口带来的问题（?q=，已 encode）：解码失败 / 空 / 超长都按无 */
+function entryQuestion(options) {
+  if (!options || !options.q) return ''
+  let q = ''
+  try { q = decodeURIComponent(options.q) } catch (e) { return '' }
+  const c = cleanQuestion(q)
+  return c.error ? '' : c.question
+}
+
 /**
  * 发给云函数的历史：只取正常的问答（失败提示 / 欢迎语不算），最近 6 条，guide → assistant。
  */
@@ -102,7 +119,8 @@ function replyToMessage(result) {
     return {
       message: makeMessage('guide', r.answer, {
         followUps: (r.followUps || []).filter(Boolean).slice(0, 3),
-        actions: actionButtons(r.actions)
+        actions: actionButtons(r.actions),
+        species: speciesLinks(r.species)
       }),
       quota
     }
@@ -142,6 +160,8 @@ module.exports = {
   storeKey,
   makeMessage,
   actionButtons,
+  speciesLinks,
+  entryQuestion,
   historyForRequest,
   cleanQuestion,
   isNotDeployed,

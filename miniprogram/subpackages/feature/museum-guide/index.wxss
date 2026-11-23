@@ -125,3 +125,11 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
   justify-content: center;
 }
 .mg-send.is-off { opacity: .45; }
+
+/* 图鉴物种链接（2026-11-23）：回答下方一枚小标本签 */
+.mg-species { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 14rpx; }
+.mg-sp { display: flex; align-items: center; gap: 12rpx; padding: 12rpx 20rpx; border-radius: var(--r-control, 16rpx); background: rgba(196, 167, 108, 0.08); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3); }
+.mg-sp-no { font-family: var(--font-mono); font-size: var(--fs-18); color: var(--brass-300, #D4BC8A); letter-spacing: .06em; }
+.mg-sp-zh { font-size: var(--fs-24); color: var(--brass-200, #E3D2AC); }
+.mg-sp-go { font-size: var(--fs-24); color: var(--brass-300, #D4BC8A); }
+

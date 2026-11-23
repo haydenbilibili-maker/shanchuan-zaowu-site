@@ -319,6 +319,11 @@
       </view>
 
       <view class="action-group action-group-meta">
+        <!-- 问问博物君（2026-11-23）：识别出物种才出，带着物种名去追问 -->
+        <block wx:if="{{speciesInfo.species_name_zh && speciesInfo.is_specimen !== false}}">
+          <text class="meta-link" bindtap="onAskGuide" hover-class="meta-link-press" hover-stay-time="80">问问博物君</text>
+          <text class="meta-dot">·</text>
+        </block>
         <text class="meta-link" bindtap="onGoShare" hover-class="meta-link-press" hover-stay-time="80">分享海报</text>
         <text class="meta-dot" wx:if="{{recordId}}">·</text>
         <text

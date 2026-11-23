@@ -676,6 +676,7 @@ const SCENES = [
         { id: 'g0', role: 'guide', isWelcome: true, text: '你好，我是博物君，山海造物标本馆的馆员。关于蝴蝶、贝壳、矿物与化石，关于标本怎么保存，关于山海造物这座馆，都可以问我。', followUps: [], actions: [] },
         { id: 'u1', role: 'user', text: '大蓝闪蝶为什么是蓝色的？' },
         { id: 'g1', role: 'guide', text: '它的蓝不是色素，是结构色。翅面鳞片上有极细的层状脊纹，间距与蓝光的波长相当，白光照进去，只有蓝色那一段被反复加强、反射回来，其它颜色互相抵消。\n\n所以换个角度看，它会忽明忽暗；把鳞片浸进酒精，折射率一变，蓝会暂时褪去，干了又回来。馆里的图鉴第 001 页就是它，产自中美洲到南美北部的雨林。',
+          species: [{ no: '001', zh: '大蓝闪蝶' }],
           followUps: ['还有哪些动物是结构色？', '闪蝶标本会褪色吗？', '雌蝶也一样蓝吗？'],
           actions: [{ key: 'atlas', label: '翻山海图鉴', url: '/subpackages/feature/collection/index', tab: false }, { key: 'care', label: '看标本养护', url: '/subpackages/feature/care/index', tab: false }] }
       ] } },

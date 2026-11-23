@@ -124,6 +124,13 @@
         <text class="essay">{{card.essay}}</text>
       </view>
 
+      <!-- 问问博物君（2026-11-23）：只在已翻开的页出现（未翻开不露名字） -->
+      <view class="ask-guide" bindtap="askGuide" hover-class="tap-press-soft" hover-stay-time="80">
+        <text class="ask-guide-seal" aria-hidden="true">博</text>
+        <text class="ask-guide-t">问问博物君：关于{{card.nameZh}}</text>
+        <text class="ask-guide-go">›</text>
+      </view>
+
       <view class="facts">
         <view class="fact" wx:for="{{facts}}" wx:key="k">
           <text class="fact-k">{{item.k}}</text>

@@ -30,6 +30,10 @@ const P = {
   appJson: join(MP, 'app.json'),
   userWxml: join(MP, 'pages/user/index.wxml'),
   userJs: join(MP, 'pages/user/index.js'),
+  atlasWxml: join(MP, 'subpackages/feature/collection/detail/index.wxml'),
+  atlasJs: join(MP, 'subpackages/feature/collection/detail/index.js'),
+  idWxml: join(MP, 'subpackages/feature/identify/result/index.wxml'),
+  idJs: join(MP, 'subpackages/feature/identify/result/index.js'),
   donation: join(MP, 'subpackages/business/donations/donationCopy.js'),
   cloudJs: join(ROOT, 'admin/src/cloud.js'),
   rule: join(ROOT, 'cloudbase/rules/museum_guide_usage.json'),
@@ -71,6 +75,10 @@ async function runChecks() {
   ok('A5 本机存储：去掉欢迎语与「翻书中」、只最后一条留追问', !stored.some((m) => m.isWelcome || m.pending) && stored[stored.length - 1].followUps.length === 3 &&
     stored.slice(0, -1).every((m) => !(m.followUps && m.followUps.length)) && stored.length <= G.STORE_MAX)
   ok('A6 云函数未部署识别', G.isNotDeployed({ errMsg: 'cloud.callFunction:fail -501000 FUNCTION_NOT_FOUND' }) && !G.isNotDeployed({ errMsg: 'timeout' }))
+  const sl = G.speciesLinks([{ no: '001', zh: '大蓝闪蝶' }, { no: '../x', zh: '坏' }, { no: '024', zh: '尖翅蓝闪蝶' }, { no: '030', zh: '多' }])
+  ok('A8 图鉴物种链接：编号只认三位数字、最多 2 个', sl.map((x) => x.no).join() === '001,024')
+  ok('A9 入口问题：解码、清洗；坏编码 / 空 / 超长按无', G.entryQuestion({ q: encodeURIComponent(' 大蓝闪蝶 有什么 ') }) === '大蓝闪蝶 有什么' &&
+    G.entryQuestion({ q: '%E0%A4%A' }) === '' && G.entryQuestion({}) === '' && G.entryQuestion({ q: encodeURIComponent('x'.repeat(G.QUESTION_MAX + 1)) }) === '')
   ok('A7 额度文案', G.quotaText({ left: 3, cap: 30 }) === '今日还可问 3 次' && G.quotaText({ left: 0, cap: 30 }) === '今日次数已用完' && G.quotaText(null) === '')
 
   /* ---------------- B 云函数纯函数 ---------------- */
@@ -134,6 +142,12 @@ async function runChecks() {
   const sens = JSON.parse(readFileSync(P.sensitive, 'utf8'))
   ok('E3 集合 museum_guide_usage 三处同步 + serverOnly', rule.read === false && rule.write === false && existsSync(P.schema) &&
     /MUSEUM_GUIDE_USAGE: 'museum_guide_usage'/.test(readFileSync(P.cloudJs, 'utf8')) && sens.serverOnly.includes('museum_guide_usage') && /'museum_guide_usage'/.test(src))
+  const atlasWxml = read(P.atlasWxml)
+  const lockedElse = atlasWxml.indexOf('<block wx:else>', atlasWxml.indexOf('class="collect-dock dual" wx:if="{{locked}}"'))
+  const askAt = atlasWxml.indexOf('bindtap="askGuide"')
+  ok('E5 入口：图鉴页「问问博物君」只在已翻开分支、带名自动发问；AI 鉴定结果页识别出物种才出',
+    lockedElse > 0 && askAt > lockedElse && /if \(this\.data\.locked \|\| !card\.nameZh\) return/.test(read(P.atlasJs)) && /museum-guide\/index\?from=atlas&auto=1&q=\$\{encodeURIComponent\(q\)\}/.test(read(P.atlasJs)) &&
+    /wx:if="\{\{speciesInfo\.species_name_zh && speciesInfo\.is_specimen !== false\}\}">\s*<text class="meta-link" bindtap="onAskGuide"/.test(read(P.idWxml)) && /museum-guide\/index\?from=identify&auto=1/.test(read(P.idJs)))
   ok('E4 页脚写明 AI 生成仅供参考、对话只存本机', /由 AI 生成，仅供参考/.test(read(P.wxml)) && /只存在这台手机上/.test(read(P.wxml)))
 
   /* ---------------- F 页面行为 ---------------- */
@@ -162,6 +176,17 @@ async function runChecks() {
   const last2 = page.data.messages[page.data.messages.length - 1]
   ok('F3 云函数未部署 → 「还在布展」错误气泡，不进下一次历史；上一条的追问收起', last2.isError && last2.text === G.ERROR_COPY.not_deployed &&
     !G.historyForRequest(page.data.messages).some((x) => x.content === G.ERROR_COPY.not_deployed) && !page.data.messages[2].followUps.length)
+  // F4 带着问题进来：auto=1 直接发问并带回图鉴物种链接；不带 auto 只预填
+  let calls = 0
+  reply = { result: { success: true, answer: '闪蝶的蓝来自鳞片。', species: [{ no: '001', zh: '大蓝闪蝶' }], quota: { left: 28, cap: 30 } } }
+  wxStub.cloud.callFunction = async () => { calls++; return reply }
+  const p2 = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
+  p2.onLoad({ from: 'atlas', auto: '1', q: encodeURIComponent('大蓝闪蝶有什么有意思的地方？') })
+  await new Promise((r) => setTimeout(r, 0))
+  const l2 = p2.data.messages[p2.data.messages.length - 1]
+  const p3 = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
+  p3.onLoad({ q: encodeURIComponent('只预填') })
+  ok('F4 auto=1 自动发问并带图鉴链接；不带 auto 只预填不发', calls === 1 && l2.species && l2.species[0].no === '001' && p3.data.draft === '只预填' && calls === 1)
   return fails
 }
 
@@ -179,6 +204,9 @@ const INJECTIONS = [
   { name: '人设丢了「不要编」', file: P.persona, find: '不要编', replace: '尽量回答' },
   { name: '未部署当成网络错误', file: P.page, find: "G.isNotDeployed(err) ? 'not_deployed' : 'network'", replace: "'network'" },
   { name: '页面不存本机', file: P.page, find: '    this.persist(messages)\n', replace: '' },
+  { name: '物种编号不校验', file: P.chat, find: ".filter((s) => s && /^\\d{3}$/.test(String(s.no || '')) && s.zh)", replace: ".filter((s) => s && s.zh)" },
+  { name: '带问题进来不自动发', file: P.page, find: "if (q && options.auto === '1') this.ask(q)", replace: "if (false) this.ask(q)" },
+  { name: '未翻开的页也出问问博物君', file: P.atlasJs, find: 'if (this.data.locked || !card.nameZh) return', replace: 'if (!card.nameZh) return' },
   { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' }
 ]
 

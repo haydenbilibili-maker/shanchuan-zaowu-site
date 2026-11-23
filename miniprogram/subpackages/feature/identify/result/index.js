@@ -706,6 +706,14 @@ Page({
     }
   },
 
+  /** 问问博物君（2026-11-23）：带着识别出的物种名过去，自动发问 */
+  onAskGuide() {
+    const zh = (this.data.speciesInfo && this.data.speciesInfo.species_name_zh) || ''
+    if (!zh) return
+    const q = `${zh}是一种怎样的生物？`
+    wx.navigateTo({ url: `/subpackages/feature/museum-guide/index?from=identify&auto=1&q=${encodeURIComponent(q)}` })
+  },
+
   onGoShare() {
     if (!this.data.recordId) {
       wx.showToast({ title: '暂无鉴定记录', icon: 'none' })

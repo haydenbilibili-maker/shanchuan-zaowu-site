@@ -28,7 +28,10 @@ Page({
     const welcome = G.makeMessage('guide', G.WELCOME, { isWelcome: true })
     this.setData({ messages: [welcome].concat(stored), hasAsked: stored.some((m) => m.role === 'user') }, () => this.scrollToEnd())
     // 外部带问题进来（如二期 AI 鉴定结果页「问问博物君」）：预填不自动发
-    if (options && options.q) this.setData({ draft: decodeURIComponent(options.q).slice(0, G.QUESTION_MAX) })
+    // 带着问题进来（AI 鉴定结果 / 图鉴页「问问博物君」）：auto=1 直接发问，否则只预填
+    const q = G.entryQuestion(options)
+    if (q && options.auto === '1') this.ask(q)
+    else if (q) this.setData({ draft: q })
     // 埋点（打开 / 提问 / 去处）待产品负责人点名后登记进埋点双端 schema 再接（稳定期共享件，见蓝图 §5）
   },
 
@@ -90,6 +93,13 @@ Page({
   },
 
   /* ------------------------------ 去处 / 清空 ------------------------------ */
+
+  /** 回答里提到的图鉴物种 → 图鉴那一页（未翻开的页由详情页自己显示空页，不额外泄露） */
+  onTapSpecies(e) {
+    const no = e.currentTarget.dataset.no
+    if (!no) return
+    wx.navigateTo({ url: `/subpackages/feature/collection/detail/index?id=${encodeURIComponent(no)}` })
+  },
 
   onTapAction(e) {
     const ds = e.currentTarget.dataset || {}

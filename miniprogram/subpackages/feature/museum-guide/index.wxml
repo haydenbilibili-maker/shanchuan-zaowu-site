@@ -23,6 +23,14 @@
               <view class="mg-dots" aria-hidden="true"><view class="mg-dot"></view><view class="mg-dot"></view><view class="mg-dot"></view></view>
             </view>
             <text class="mg-bubble is-guide {{item.isError ? 'is-error' : ''}}" user-select wx:else>{{item.text}}</text>
+            <!-- 回答里提到的图鉴物种（2026-11-23）→ 那一页 -->
+            <view class="mg-species" wx:if="{{item.species.length}}">
+              <view class="mg-sp" wx:for="{{item.species}}" wx:for-item="sp" wx:key="no" data-no="{{sp.no}}" bindtap="onTapSpecies" hover-class="tap-press-soft" hover-stay-time="80">
+                <text class="mg-sp-no">No.{{sp.no}}</text>
+                <text class="mg-sp-zh">图鉴 · {{sp.zh}}</text>
+                <text class="mg-sp-go">›</text>
+              </view>
+            </view>
             <!-- 馆内去处（白名单） -->
             <view class="mg-acts" wx:if="{{item.actions.length}}">
               <text class="mg-act" wx:for="{{item.actions}}" wx:for-item="act" wx:key="key" data-url="{{act.url}}" data-tab="{{act.tab}}" data-key="{{act.key}}" bindtap="onTapAction" hover-class="tap-press" hover-stay-time="80">{{act.label}} ›</text>

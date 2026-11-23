@@ -156,6 +156,14 @@ Page({
     }
   },
 
+  /** 问问博物君（2026-11-23）：带着这一页的物种名过去，自动发问；未翻开的页不给入口 */
+  askGuide() {
+    const card = this.data.card || {}
+    if (this.data.locked || !card.nameZh) return
+    const q = `${card.nameZh}有什么有意思的地方？`
+    wx.navigateTo({ url: `/subpackages/feature/museum-guide/index?from=atlas&auto=1&q=${encodeURIComponent(q)}` })
+  },
+
   goIdentify() {
     wx.navigateTo({ url: '/subpackages/feature/identify/index?from=atlas_card' })
   },
