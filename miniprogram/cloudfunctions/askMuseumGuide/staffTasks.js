@@ -66,6 +66,18 @@ const TASKS = [
     question: '给一个盈亏平衡测算模板（固定成本 / 毛利率 / 保本营业额），用现有数据能填的填上，填不了的列出需要补的科目。'
   },
   {
+    id: 'hr_cost',
+    roleId: 'hr_manager',
+    title: '人力成本体检',
+    question: '基于本月工资条与在职人数，做一次人力成本体检：人均应发、扣款占比、需要关注的 3 个风险点；只谈合计与结构，不要列任何个人姓名或单人薪资。'
+  },
+  {
+    id: 'hr_attendance',
+    roleId: 'hr_manager',
+    title: '考勤与排班风险',
+    question: '基于本月打卡与待审批请假，指出考勤与排班的风险点（迟到早退集中时段、请假积压），给 3 条可执行改进，并说明需要补哪些数据。'
+  },
+  {
     id: 'mkt_topic',
     roleId: 'marketing',
     title: '内容选题 5 条',

@@ -13,6 +13,8 @@ const TASKS = [
   { id: 'data_repeat', roleId: 'data_analyst', title: '复购归因思路' },
   { id: 'cfo_cash', roleId: 'cfo', title: '现金流体检' },
   { id: 'cfo_breakeven', roleId: 'cfo', title: '盈亏平衡测算' },
+  { id: 'hr_cost', roleId: 'hr_manager', title: '人力成本体检' },
+  { id: 'hr_attendance', roleId: 'hr_manager', title: '考勤与排班风险' },
   { id: 'mkt_topic', roleId: 'marketing', title: '内容选题 5 条' },
   { id: 'mkt_recall', roleId: 'marketing', title: '老客回流方案' }
 ]

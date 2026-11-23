@@ -94,6 +94,9 @@ function runChecks() {
     /collection\('users'\)/.test(ctxSrc) && /collection\('bookings'\)/.test(ctxSrc) && /collection\('finance_records'\)/.test(ctxSrc) &&
     /collection\('purchase_orders'\)/.test(ctxSrc) && /collection\('stock_movements'\)/.test(ctxSrc) &&
     /collection\('ops_purchases'\)/.test(ctxSrc) &&
+    /collection\('feishu_inventory'\)/.test(ctxSrc) && /collection\('staff_members'\)/.test(ctxSrc) &&
+    /collection\('staff_payslips'\)/.test(ctxSrc) && /collection\('staff_attendance'\)/.test(ctxSrc) &&
+    /collection\('staff_leave_requests'\)/.test(ctxSrc) &&
     !/phone|mobile|openid|realName|receiver/i.test(ctxSrc) &&
     /TTL_MS/.test(ctxSrc) && C.TEXT_MAX <= 800, fails)
   const pur = C.summarizePurchases([{ totalAmount: 1200, paymentStatus: 'paid' }, { totalAmount: 800, paymentStatus: 'unpaid' }])
@@ -106,6 +109,15 @@ function runChecks() {
   ])
   ok('A5 店内采购（ops_purchases）：跳过已取消 / 已删除，金额回退 qty×unitPrice，门店与工作室分列，未结口径正确',
     op.count === 2 && op.amount === 180 && op.openCount === 1 && op.storeAmount === 100 && op.studioAmount === 80, fails)
+  const hr = C.summarizeHr({
+    month: '2026-11', members: { total: 12 },
+    payslips: { data: [{ gross: 8000, net: 6500, deduction: 1500 }, { gross: 6000, net: 5000, deduction: 1000 }] },
+    attendance: { data: [{ status: 'late' }, { status: 'on_time' }] }, leaves: { total: 3 }
+  })
+  const fi = C.summarizeFeishuInventory([{ qty: 12 }, { qty: '8' }, { qty: null }])
+  ok('A5 HR 只给聚合：人数 / 工资合计 / 迟到早退 / 待审批请假；飞书库存只累计数量',
+    hr.headcount === 12 && hr.payslipCount === 2 && hr.gross === 14000 && hr.net === 11500 && hr.deduction === 2500 &&
+    hr.punches === 2 && hr.late === 1 && hr.pendingLeaves === 3 && fi.lines === 2 && fi.qty === 20, fails)
   const tc = loadCjsModule(P.tasksClient, { transform })
   const ts = loadCjsModule(P.tasksServer, { transform })
   const cTasks = tc.TASKS.map((t) => `${t.id}:${t.roleId}`).sort()

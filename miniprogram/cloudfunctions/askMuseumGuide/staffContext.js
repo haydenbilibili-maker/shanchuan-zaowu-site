@@ -3,7 +3,7 @@
  *
  * 口径：
  * - 只做**近 30 天**的服务端汇总，5 分钟内存缓存（同一函数实例复用），避免每次提问都扫库；
- * - 只读 orders / products / users / bookings / finance_records / purchase_orders / stock_movements / ops_purchases 八张表，**不取姓名 / 手机 / 账号标识等个人信息**；
+ * - 只读 orders / products / users / bookings / finance_records / purchase_orders / stock_movements / ops_purchases 八张表 + 飞书成品库存 + 员工花名册 / 工资条 / 考勤 / 请假，**不取姓名 / 手机 / 账号标识等个人信息**；
  * - 每个块独立 try/catch：某张表失败就少一块，不影响其它块，也不把错误抛给调用方；
  * - 输出一段 ≤ 760 字的中文事实清单，交给模型当「当前经营数据」，并明确「没出现的指标就是没有数据」。
  *
@@ -79,6 +79,52 @@ function summarizePurchases(rows) {
   return { count, amount, paid }
 }
 
+function summarizeFeishuInventory(rows) {
+  const list = Array.isArray(rows) ? rows : []
+  let qty = 0
+  let lines = 0
+  for (const r of list) {
+    if (!r) continue
+    if (r.qty == null || r.qty === '') continue
+    const q = Number(r.qty)
+    if (!Number.isFinite(q)) continue
+    qty += q
+    lines += 1
+  }
+  return { lines, qty }
+}
+
+function summarizeHr(pack) {
+  const p = (pack && pack) || {}
+  const pays = p.payslips && Array.isArray(p.payslips.data) ? p.payslips.data : []
+  let gross = 0
+  let net = 0
+  let deduction = 0
+  for (const r of pays) {
+    if (!r) continue
+    gross += fenOfYuan(r.gross)
+    net += fenOfYuan(r.net)
+    deduction += fenOfYuan(r.deduction)
+  }
+  const att = p.attendance && Array.isArray(p.attendance.data) ? p.attendance.data : []
+  let late = 0
+  let early = 0
+  for (const a of att) {
+    const st = String(a && a.status || '')
+    if (st === 'late') late += 1
+    else if (st === 'early_leave') early += 1
+  }
+  return {
+    month: p.month || '',
+    headcount: (p.members && p.members.total) || 0,
+    payslipCount: pays.length,
+    gross, net, deduction,
+    punches: att.length,
+    late, early,
+    pendingLeaves: (p.leaves && p.leaves.total) || 0
+  }
+}
+
 const OPS_OPEN_STATUS = ['draft', 'pending_pay', 'paid', 'ordered', 'pending_ship', 'shipped']
 
 function summarizeOpsPurchases(rows) {
@@ -137,7 +183,7 @@ async function loadSnapshot(db) {
   if (cache.value && now - cache.at < TTL_MS) return cache.value
   const since = new Date(now - WINDOW_DAYS * DAY_MS)
   const _ = db.command
-  const out = { orders: null, products: null, users: null, bookings: null, finance: null, purchases: null, moves: null, ops: null }
+  const out = { orders: null, products: null, users: null, bookings: null, finance: null, purchases: null, moves: null, ops: null, feishuInv: null, hr: null }
 
   const tasks = [
     (async () => {
@@ -201,6 +247,30 @@ async function loadSnapshot(db) {
       } catch (e) { /* ignore */ }
     })(),
     (async () => {
+      // 飞书「成品库存」镜像：只取数量，用于和流水对账（采购已由 ops_purchases 覆盖，不重复计）
+      try {
+        const r = await db.collection('feishu_inventory')
+          .field({ qty: true })
+          .limit(1000).get()
+        out.feishuInv = summarizeFeishuInventory(r && r.data)
+      } catch (e) { /* ignore */ }
+    })(),
+    (async () => {
+      // HR：只做**聚合**——不取姓名、不取单人薪资（隐私红线）
+      try {
+        const bj = new Date(now + 8 * 3600000)
+        const month = bj.toISOString().slice(0, 7)
+        const monthStart = `${month}-01`
+        const [members, payslips, attendance, leaves] = await Promise.all([
+          db.collection('staff_members').where({ status: 'active' }).count().catch(() => null),
+          db.collection('staff_payslips').where({ month }).field({ gross: true, net: true, deduction: true }).limit(500).get().catch(() => null),
+          db.collection('staff_attendance').where({ dateKey: _.gte(monthStart) }).field({ status: true }).limit(1000).get().catch(() => null),
+          db.collection('staff_leave_requests').where({ status: 'pending' }).count().catch(() => null)
+        ])
+        out.hr = summarizeHr({ month, members, payslips, attendance, leaves })
+      } catch (e) { /* ignore */ }
+    })(),
+    (async () => {
       // 门店日账（ERP 维护）：date 是 'YYYY-MM-DD' 字符串，按北京时间近 30 天取
       try {
         const bj = new Date(now + 8 * 3600000)
@@ -248,6 +318,9 @@ async function contextFor(roleId, db) {
     if (l) lines.push(l)
     if (roleId === 'procurement' && snap.orders) lines.push(`近 ${WINDOW_DAYS} 天订单 ${snap.orders.total} 笔`)
   }
+  if ((roleId === 'procurement' || roleId === 'creative_director') && snap.feishuInv && snap.feishuInv.lines) {
+    lines.push(`飞书成品库存镜像 ${snap.feishuInv.lines} 行、合计 ${snap.feishuInv.qty} 件（与库存流水对账用）`)
+  }
   if (roleId === 'procurement') {
     const p = snap.purchases
     if (p && p.count) lines.push(`近 ${WINDOW_DAYS} 天 B2B 采购单 ${p.count} 张，合计 ¥${money(p.amount)}（已付 ${p.paid} 张）`)
@@ -257,6 +330,13 @@ async function contextFor(roleId, db) {
     if (o && o.count) lines.push(`近 ${WINDOW_DAYS} 天店内采购 ${o.count} 单、合计 ¥${money(o.amount)}（门店 ¥${money(o.storeAmount)} / 工作室 ¥${money(o.studioAmount)}），其中未结 ${o.openCount} 单`)
   }
   if (roleId === 'store_manager' && snap.bookings) lines.push(`近 ${WINDOW_DAYS} 天预约 ${snap.bookings.count} 单`)
+  if (roleId === 'hr_manager' && snap.hr) {
+    const h = snap.hr
+    if (h.headcount) lines.push(`在职员工 ${h.headcount} 人`)
+    if (h.payslipCount) lines.push(`${h.month} 工资条 ${h.payslipCount} 份：应发合计 ¥${money(h.gross)}、实发合计 ¥${money(h.net)}、扣款合计 ¥${money(h.deduction)}（只给合计，不含个人明细）`)
+    if (h.punches) lines.push(`本月考勤打卡 ${h.punches} 次，其中迟到 ${h.late} 次、早退 ${h.early} 次`)
+    if (h.pendingLeaves) lines.push(`待审批请假 ${h.pendingLeaves} 条`)
+  }
   if (roleId === 'store_manager' && snap.ops && snap.ops.count) {
     lines.push(`近 ${WINDOW_DAYS} 天店内采购 ${snap.ops.count} 单、合计 ¥${money(snap.ops.amount)}，其中未结 ${snap.ops.openCount} 单`)
   }
@@ -266,4 +346,4 @@ async function contextFor(roleId, db) {
   return lines.join('；').slice(0, TEXT_MAX)
 }
 
-module.exports = { contextFor, loadSnapshot, summarizeOrders, summarizeProducts, summarizeFinance, summarizePurchases, summarizeMoves, summarizeOpsPurchases, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }
+module.exports = { contextFor, loadSnapshot, summarizeOrders, summarizeProducts, summarizeFinance, summarizePurchases, summarizeMoves, summarizeOpsPurchases, summarizeFeishuInventory, summarizeHr, PAID_STATUS, WINDOW_DAYS, TEXT_MAX, __resetCache: () => { cache = { at: 0, value: null } } }
