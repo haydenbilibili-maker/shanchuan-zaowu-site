@@ -144,7 +144,28 @@ const SHAPE_BY_SPECIES = {
   '059': 'moth', '060': 'moth', '061': 'dragonfly', '062': 'dragonfly', '063': 'dragonfly', '064': 'leaf',
   '065': 'leaf', '066': 'fern', '067': 'lotus', '068': 'scallop', '069': 'starfish', '070': 'conch',
   '071': 'conch', '072': 'scallop', '073': 'starfish', '074': 'agate', '075': 'agate', '076': 'quartz',
-  '077': 'quartz', '078': 'quartz', '079': 'agate', '080': 'quartz'
+  '077': 'quartz', '078': 'quartz', '079': 'agate', '080': 'quartz',
+  // 2026-11-23 图鉴扩到 200 页（081–200）：沿用既有刻版，蒲公英用玻璃罩、菊石用鹦鹉螺、三叶虫用甲虫
+  '081': 'swallowtail', '082': 'swallowtail', '083': 'swallowtail', '084': 'swallowtail', '085': 'swallowtail', '086': 'swallowtail',
+  '087': 'morpho', '088': 'morpho', '089': 'morpho', '090': 'morpho', '091': 'morpho', '092': 'morpho',
+  '093': 'morpho', '094': 'swallowtail', '095': 'nymphalid', '096': 'nymphalid', '097': 'nymphalid', '098': 'nymphalid',
+  '099': 'nymphalid', '100': 'nymphalid', '101': 'morpho', '102': 'morpho', '103': 'morpho', '104': 'morpho',
+  '105': 'morpho', '106': 'beetle', '107': 'beetle', '108': 'beetle', '109': 'beetle', '110': 'beetle',
+  '111': 'beetle', '112': 'beetle', '113': 'beetle', '114': 'moth', '115': 'moth', '116': 'moth',
+  '117': 'moth', '118': 'dragonfly', '119': 'dragonfly', '120': 'dragonfly', '121': 'leaf', '122': 'leaf',
+  '123': 'leaf', '124': 'leaf', '125': 'leaf', '126': 'belljar', '127': 'lotus', '128': 'lotus',
+  '129': 'lotus', '130': 'lotus', '131': 'lotus', '132': 'leaf', '133': 'leaf', '134': 'leaf',
+  '135': 'leaf', '136': 'leaf', '137': 'lotus', '138': 'lotus', '139': 'lotus', '140': 'lotus',
+  '141': 'lotus', '142': 'lotus', '143': 'lotus', '144': 'fern', '145': 'fern', '146': 'fern',
+  '147': 'fern', '148': 'leaf', '149': 'lotus', '150': 'fern', '151': 'conch', '152': 'conch',
+  '153': 'conch', '154': 'conch', '155': 'conch', '156': 'conch', '157': 'scallop', '158': 'scallop',
+  '159': 'scallop', '160': 'scallop', '161': 'scallop', '162': 'nautilus', '163': 'conch', '164': 'conch',
+  '165': 'conch', '166': 'conch', '167': 'conch', '168': 'starfish', '169': 'starfish', '170': 'scallop',
+  '171': 'scallop', '172': 'conch', '173': 'conch', '174': 'scallop', '175': 'conch', '176': 'cube',
+  '177': 'quartz', '178': 'quartz', '179': 'quartz', '180': 'agate', '181': 'agate', '182': 'agate',
+  '183': 'agate', '184': 'fluorite', '185': 'agate', '186': 'agate', '187': 'agate', '188': 'nautilus',
+  '189': 'beetle', '190': 'agate', '191': 'agate', '192': 'quartz', '193': 'quartz', '194': 'cube',
+  '195': 'quartz', '196': 'quartz', '197': 'quartz', '198': 'fluorite', '199': 'quartz', '200': 'agate'
 }
 
 /** 新物种未登记时按门类回落 */

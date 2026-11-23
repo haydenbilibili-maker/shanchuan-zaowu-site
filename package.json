@@ -316,6 +316,8 @@
     "test:museum-guide-monitor:selftest": "node miniprogram/scripts/test-museum-guide-monitor.mjs --selftest",
     "test:home-broadcast": "node miniprogram/scripts/test-home-broadcast.mjs",
     "test:home-broadcast:selftest": "node miniprogram/scripts/test-home-broadcast.mjs --selftest",
+    "check:identify-dock": "node miniprogram/scripts/check-identify-dock.mjs",
+    "check:identify-dock:selftest": "node miniprogram/scripts/check-identify-dock.mjs --selftest",
     "build:museum-guide-atlas": "node miniprogram/scripts/build-museum-guide-atlas.mjs",
     "check:wish-seeds": "node scripts/check-wish-seed-batch.mjs",
     "check:wish-seeds:selftest": "node scripts/check-wish-seed-batch.mjs --selftest",

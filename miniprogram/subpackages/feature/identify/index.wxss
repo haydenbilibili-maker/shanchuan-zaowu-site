@@ -150,6 +150,12 @@
 
 .btn[disabled] { opacity: 0.5; }
 
+.act-meta {
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.04em;
+}
+
 .album-link {
   padding: 8rpx 24rpx;
   font-size: var(--fs-26);
@@ -209,47 +215,6 @@
 }
 
 /* —— 三步 —— */
-.flow {
-  display: flex;
-  margin-top: 48rpx;
-  border-top: 1rpx solid rgba(196, 167, 108, 0.16);
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.16);
-}
-
-.flow-step {
-  flex: 1;
-  min-width: 0;
-  padding: 24rpx 16rpx 24rpx 0;
-}
-
-.flow-step + .flow-step {
-  padding-left: 20rpx;
-  border-left: 1rpx solid rgba(196, 167, 108, 0.12);
-}
-
-.flow-no {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: var(--fs-20);
-  color: var(--brass-300);
-}
-
-.flow-k {
-  display: block;
-  margin-top: 6rpx;
-  font-family: var(--font-brand);
-  font-size: var(--fs-28);
-  color: #F3ECDD;
-}
-
-.flow-v {
-  display: block;
-  margin-top: 6rpx;
-  font-size: var(--fs-20);
-  line-height: 1.5;
-  color: var(--color-text-secondary);
-}
-
 /* —— 最近鉴定 —— */
 .recent { margin-top: 56rpx; }
 
@@ -335,6 +300,8 @@
 
 /* —— 拍摄建议：2×2 发丝网格 —— */
 .tips { margin-top: 56rpx; }
+.tips-head { display: flex; align-items: flex-end; justify-content: space-between; }
+.tips-toggle { padding: 8rpx 0 8rpx 24rpx; font-size: var(--fs-22); color: var(--brass-300); }
 
 .tip-grid {
   display: grid;

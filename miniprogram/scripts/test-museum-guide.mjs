@@ -241,7 +241,7 @@ async function runChecks() {
   const askAt = atlasWxml.indexOf('bindtap="askGuide"')
   ok('E5 入口：图鉴页「问问博物君」只在已翻开分支、带名自动发问；AI 鉴定结果页识别出物种才出',
     lockedElse > 0 && askAt > lockedElse && /if \(this\.data\.locked \|\| !card\.nameZh\) return/.test(read(P.atlasJs)) && /museum-guide\/index\?from=atlas&auto=1&q=\$\{encodeURIComponent\(q\)\}/.test(read(P.atlasJs)) &&
-    /wx:if="\{\{speciesInfo\.species_name_zh && speciesInfo\.is_specimen !== false\}\}">\s*<text class="meta-link" bindtap="onAskGuide"/.test(read(P.idWxml)) && /museum-guide\/index\?from=identify&auto=1/.test(read(P.idJs)))
+    /<view class="tool" wx:if="\{\{speciesInfo\.species_name_zh && speciesInfo\.is_specimen !== false\}\}" bindtap="onAskGuide"/.test(read(P.idWxml)) && /museum-guide\/index\?from=identify&auto=1/.test(read(P.idJs)))
   const avatar = loadCjsModule(P.avatar).GUIDE_AVATAR || ''
   const avatarSvg = decodeURIComponent(avatar.split(',')[1] || '')
   ok('E6 博物君头像 = 附件「科学家」icon（方印内是内联 svg，两处入口都换，不是「博」字）',

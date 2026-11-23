@@ -148,7 +148,12 @@ const atlasStats = { total: atlasCards.length, unlocked: atlasCards.filter((c) =
   { id: 'mountain', name: '守山者', got: 3, total: 6, complete: false, blurb: '石头、叶片与壳，都是山海留下的截面。' },
   { id: 'armored', name: '甲胄者', got: 1, total: 11, complete: false },
   { id: 'nocturne', name: '夜行者', got: 1, total: 6, complete: false },
-  { id: 'tidepool', name: '潮间带', got: 1, total: 4, complete: false }
+  { id: 'tidepool', name: '潮间带', got: 1, total: 4, complete: false },
+  // 2026-11-23 图鉴扩到 200 页：再加四章
+  { id: 'jewel', name: '宝石甲', got: 0, total: 8, complete: false },
+  { id: 'meadow', name: '原野花事', got: 0, total: 6, complete: false },
+  { id: 'shellroad', name: '贝壳之路', got: 0, total: 6, complete: false },
+  { id: 'deeptime', name: '深时', got: 0, total: 5, complete: false }
 ] }
 // 卷章刻度（2026-11-22，与页面 applyPack 同算法）
 atlasStats.series = atlasStats.series.map((sr) => ({ ...sr, pips: Array.from({ length: sr.total }, (_, i) => ({ i, lit: i < sr.got })) }))
@@ -298,7 +303,15 @@ const SCENES = [
     }
   },
   {
+    // 2026-11-23 鉴定台：三步收成一行小字、拍摄建议折叠（老用户默认收起）
+    name: 'identify', h: 1900, wxml: 'subpackages/feature/identify/index', data: {
+      busy: false, categoryHints: [{ id: '', label: '不限' }, { id: '昆虫', label: '昆虫' }, { id: '矿石', label: '矿石' }, { id: '植物', label: '植物' }, { id: '海洋', label: '海洋' }], categoryHint: '',
+      recentList: [{ _id: 'r1', name: '光明女神闪蝶', latin: 'Morpho helena', thumb: P[0], timeText: '2 小时前' }, { _id: 'r2', name: '血漪蝶', latin: 'Cethosia biblis', thumb: P[1], timeText: '昨天' }],
+      tipsOpen: false, photoTips: [{ k: '正对', v: '正对藏品主体' }]
+    } },
+  {
     name: 'identify-result', h: 2400, wxml: 'subpackages/feature/identify/result/index', data: {
+      archiveEmpty: true, profileEnriching: false, profileEnrichError: false,
       loading: false, loadError: false, displayImage: P[0], confidenceLevel: 'high', recordId: 'r1', isOwner: true, showSpeciesArchive: true,
       speciesInfo: { is_specimen: true, species_name_zh: '光明女神闪蝶', species_name_latin: 'Morpho helena', confidence: 0.92, confidencePct: 92 },
       rootCategoryTag: { label: '昆虫', tone: 'insecta' },
@@ -513,6 +526,7 @@ const SCENES = [
       rewards: [{ _id: 'r1', title: '黄铜书签', description: '蚀刻闪蝶纹样', cost: 800, stock: 12, type: 'physical', image: P[3] }, { _id: 'r2', title: '¥30 礼券', description: '全场满 199 可用', cost: 3000, stock: 99, type: 'coupon', image: P[4] }]
     }
   },
+  { name: 'atlas-head', base: 'atlas', h: 3000, wxml: 'subpackages/feature/collection/index', data: {} },
   { name: 'atlas-onlylit', base: 'atlas', h: 2200, wxml: 'subpackages/feature/collection/index', data: { onlyLit: true, filtered: atlasCards.filter((c) => c.unlocked) } },
   {
     name: 'atlas', h: 9600, wxml: 'subpackages/feature/collection/index', data: {
