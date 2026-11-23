@@ -11,6 +11,7 @@ const {
   buildSpecimenFacts
 } = require('../../utils/atlas')
 const { plateOf, ghostOf } = require('../../utils/atlasPlates')
+const { GUIDE_AVATAR } = require('../../utils/guideAvatar')
 
 const RARE_MARK = { rare: '稀有', legendary: '传奇' }
 
@@ -29,6 +30,7 @@ function unlockWaysOf(card) {
 }
 Page({
   data: {
+    guideAvatar: GUIDE_AVATAR,
     loading: true,
     loadError: false,
     locked: true,

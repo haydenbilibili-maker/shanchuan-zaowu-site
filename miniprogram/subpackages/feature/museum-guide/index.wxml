@@ -16,7 +16,7 @@
         </view>
         <!-- 博物君 -->
         <view class="mg-row is-guide" wx:else>
-          <view class="mg-seal" aria-hidden="true"><text>博</text></view>
+          <view class="mg-seal" aria-hidden="true"><image class="mg-seal-icon" src="{{guideAvatar}}" mode="aspectFit"></image></view>
           <view class="mg-col">
             <view class="mg-bubble is-guide is-pending" wx:if="{{item.pending}}">
               <text class="mg-pending-t">博物君正在翻书</text>

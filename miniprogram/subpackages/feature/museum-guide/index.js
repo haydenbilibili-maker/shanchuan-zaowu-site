@@ -4,12 +4,14 @@
  * 纯函数在 guideChat.js（守卫 test:museum-guide）；云函数 askMuseumGuide。
  */
 const G = require('./guideChat')
+const { GUIDE_AVATAR } = require('../utils/guideAvatar')
 const { openAppModal } = require('../../../utils/appModal')
 
 const app = getApp()
 
 Page({
   data: {
+    guideAvatar: GUIDE_AVATAR,
     messages: [],
     starters: G.startersFor(),
     hasAsked: false,

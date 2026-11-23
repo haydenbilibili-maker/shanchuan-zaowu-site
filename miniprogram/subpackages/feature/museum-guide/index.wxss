@@ -33,6 +33,12 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
   color: #F3E7D3;
 }
 
+.mg-seal-icon {
+  width: 34rpx;
+  height: 34rpx;
+  display: block;
+}
+
 .mg-bubble {
   display: block;
   max-width: 100%;

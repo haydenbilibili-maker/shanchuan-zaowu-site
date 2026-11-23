@@ -23,6 +23,7 @@ const P = {
   chat: join(MP, 'subpackages/feature/museum-guide/guideChat.js'),
   page: join(MP, 'subpackages/feature/museum-guide/index.js'),
   wxml: join(MP, 'subpackages/feature/museum-guide/index.wxml'),
+  avatar: join(MP, 'subpackages/feature/utils/guideAvatar.js'),
   fn: join(MP, 'cloudfunctions/askMuseumGuide/index.js'),
   knowledge: join(MP, 'cloudfunctions/askMuseumGuide/knowledge.js'),
   persona: join(MP, 'cloudfunctions/askMuseumGuide/persona.js'),
@@ -161,6 +162,13 @@ async function runChecks() {
   ok('E5 入口：图鉴页「问问博物君」只在已翻开分支、带名自动发问；AI 鉴定结果页识别出物种才出',
     lockedElse > 0 && askAt > lockedElse && /if \(this\.data\.locked \|\| !card\.nameZh\) return/.test(read(P.atlasJs)) && /museum-guide\/index\?from=atlas&auto=1&q=\$\{encodeURIComponent\(q\)\}/.test(read(P.atlasJs)) &&
     /wx:if="\{\{speciesInfo\.species_name_zh && speciesInfo\.is_specimen !== false\}\}">\s*<text class="meta-link" bindtap="onAskGuide"/.test(read(P.idWxml)) && /museum-guide\/index\?from=identify&auto=1/.test(read(P.idJs)))
+  const avatar = loadCjsModule(P.avatar).GUIDE_AVATAR || ''
+  const avatarSvg = decodeURIComponent(avatar.split(',')[1] || '')
+  ok('E6 博物君头像 = 附件「科学家」icon（方印内是内联 svg，两处入口都换，不是「博」字）',
+    /<view class="mg-seal"[^>]*><image class="mg-seal-icon" src="\{\{guideAvatar\}\}" mode="aspectFit"><\/image><\/view>/.test(read(P.wxml)) &&
+    /<image class="ask-guide-seal" src="\{\{guideAvatar\}\}" mode="aspectFit"/.test(read(P.atlasWxml)) &&
+    /^data:image\/svg\+xml/.test(avatar) && avatarSvg.includes('viewBox="0 0 1024 1024"') && avatarSvg.includes('fill="#F3E7D3"') &&
+    !/<view class="mg-seal"[^>]*><text>博<\/text>/.test(read(P.wxml)))
   ok('E4 页脚写明 AI 生成仅供参考、对话只存本机', /由 AI 生成，仅供参考/.test(read(P.wxml)) && /只存在这台手机上/.test(read(P.wxml)))
 
   /* ---------------- F 页面行为 ---------------- */
@@ -242,7 +250,8 @@ const INJECTIONS = [
   { name: '存储带着逐字中间态', file: P.chat, find: '    delete base.shown\n', replace: '' },
   { name: '云端不去 Markdown', file: P.fn, find: "const answer = plainAnswer((obj && obj.answer) || (obj ? '' : t))", replace: "const answer = String((obj && obj.answer) || (obj ? '' : t)).trim()" },
   { name: '点气泡不跳过', file: P.page, find: '    if (cur && cur.revealing) this.finishReveal(index)', replace: '' },
-  { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' }
+  { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' },
+  { name: '博物君头像退回「博」字', file: P.wxml, find: '<image class="mg-seal-icon" src="{{guideAvatar}}" mode="aspectFit"></image>', replace: '<text>博</text>' }
 ]
 
 if (process.argv.includes('--selftest')) {
