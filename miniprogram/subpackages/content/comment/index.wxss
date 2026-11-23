@@ -17,8 +17,8 @@ page {
 .scroll-container {
   width: 100%;
   flex-shrink: 0;
-  height: calc(100vh - 160rpx - env(safe-area-inset-bottom));
-  max-height: calc(100vh - 160rpx - env(safe-area-inset-bottom));
+  height: calc(100vh - 196rpx - env(safe-area-inset-bottom));
+  max-height: calc(100vh - 196rpx - env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -34,7 +34,7 @@ page {
 }
 
 .bottom-spacer {
-  height: calc(160rpx + env(safe-area-inset-bottom));
+  height: 24rpx;
 }
 
 .gate-card {
@@ -410,37 +410,112 @@ page {
   left: 0;
   right: 0;
   width: 100%;
-  padding: 20rpx 32rpx;
+  padding: 16rpx 32rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #1A1814;
-  border-top: 1px solid #26232066;
+  box-shadow: 0 -1rpx 0 rgba(196, 167, 108, 0.16), 0 -16rpx 32rpx rgba(0, 0, 0, 0.35);
   z-index: 100;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
 }
 
+/* 还差什么 / 可以发布了 */
+.submit-hint {
+  font-size: var(--fs-22);
+  color: #A09A90;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.submit-hint.is-ready {
+  color: var(--brass-300);
+}
+
+/* 发布按钮：view 做（避开微信 button 内置 184px 宽），通栏胶囊、铜金实底 */
 .submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  height: 96rpx;
-  background: var(--color-primary);
+  height: 92rpx;
+  box-sizing: border-box;
+  border-radius: var(--r-pill, 999rpx);
+  background: linear-gradient(180deg, #D2B67A 0%, var(--color-primary) 100%);
+  box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.25);
   color: #1A1814;
-  border-radius: var(--radius-md);
   font-size: var(--fs-30);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  border: none;
-  padding: 0;
-  margin: 0;
-  line-height: 96rpx;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  transition: opacity var(--dur-base, 200ms) var(--ease-standard, ease), transform var(--dur-base, 200ms) var(--ease-standard, ease);
 }
 
-.submit-btn:active {
-  background: #A8903C;
+.submit-btn-press {
+  transform: scale(0.98);
+  opacity: 0.9;
 }
 
-.submit-btn.submitting,
-.submit-btn[disabled] {
+/* 未就绪：淡显（仍可点，点了按原逻辑提示还差什么） */
+.submit-btn.is-wait {
+  background: rgba(196, 167, 108, 0.16);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35);
+  color: var(--brass-200);
+}
+
+.submit-btn.is-busy {
   background: #262320;
-  color: #6B6560;
+  box-shadow: none;
+  color: #A09A90;
+}
+
+/* 星星按压 */
+.star-press {
+  transform: scale(1.12);
+}
+
+.star {
+  transition: transform 120ms ease, color 120ms ease;
+}
+
+.rating-hint.is-idle {
+  color: #A09A90;
+}
+
+/* 常用说法 */
+.phrase-scroll {
+  width: 100%;
+  margin-top: 16rpx;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.phrase-row {
+  display: inline-flex;
+  gap: 12rpx;
+}
+
+.phrase {
+  flex-shrink: 0;
+  padding: 10rpx 20rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-22);
+  color: var(--brass-200);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3);
+}
+
+/* 图片段：标题 + 计数同一行 */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.section-count {
+  font-size: var(--fs-22);
+  color: #A09A90;
+  font-family: var(--font-mono);
 }
 
 /* 2026-11-22 交互巡查：可点区域扩到约 72rpx（视觉不变；透明 ::after 外扩，事件冒泡到本元素） */

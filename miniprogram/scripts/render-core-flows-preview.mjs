@@ -925,6 +925,13 @@ const SCENES = [
       productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
+  // 2026-11-23 发表评价：通栏发布按钮 + 状态说明 + 常用说法
+  { name: 'comment-compose', h: 1800, wxml: 'subpackages/content/comment/index', data: {
+    loadingGate: false, canReview: true, viewReview: null, productOptions: [], targetId: 'p1', submitting: false,
+    targetInfo: { title: '玫瑰俏眼蝶闹钟', images: [P[1]], latinName: '' },
+    rating: 4, content: '比图片更好看，摆在书房刚好', images: [P[0]],
+    phrases: ['包装很用心', '比图片更好看', '做工细致', '适合送人', '摆在书房刚好', '颜色很正']
+  } },
   // 2026-11-23 AI 智能中心第六轮：脉搏 / 同事们 / 注意到的问题 / 档案卡（收起）/ 对话（依据时间）
   { name: 'ai-center', h: 2600, wxml: 'subpackages/ai/ai-center/index', data: (() => {
     const R = loadCjsModule(join(MP, 'subpackages/ai/ai-center/roles.js'))

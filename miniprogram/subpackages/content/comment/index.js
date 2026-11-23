@@ -58,7 +58,9 @@ Page({
     productOptions: [],
     summaryLabel: '',
     alreadyRating: 0,
-    viewReview: null
+    viewReview: null,
+    /** 常用说法（2026-11-23）：点一下接到正文后面 */
+    phrases: ['包装很用心', '比图片更好看', '做工细致', '适合送人', '摆在书房刚好', '颜色很正']
   },
 
   onLoad(options) {
@@ -231,6 +233,17 @@ Page({
 
   onContentInput(e) {
     this.setData({ content: e.detail.value })
+  },
+
+  /** 常用说法：接在已写内容后面（中间补一个逗号），不超过 500 字；已经写过这一句就不重复 */
+  onPhrase(e) {
+    if (!this.data.canReview) return
+    const p = String(e.currentTarget.dataset.text || '')
+    const cur = String(this.data.content || '')
+    if (!p || cur.indexOf(p) >= 0) return
+    const next = (cur.trim() ? `${cur.replace(/[，,。\s]+$/, '')}，${p}` : p).slice(0, 500)
+    wx.vibrateShort({ type: 'light' })
+    this.setData({ content: next })
   },
 
   chooseImage() {
