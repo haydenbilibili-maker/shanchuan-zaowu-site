@@ -21,7 +21,7 @@ const RULES = [
 ].join('\n')
 
 const FORMAT = [
-  '只输出一个 JSON 对象，不要代码块，不要多余文字：',
+  '只输出一个 JSON 对象，不要代码块，不要多余文字（answer 必须是完整的中文句子，不要只给数字、日期或符号）：',
   '{"answer": "回答正文", "follow_ups": ["对方可能接着问的问题，最多 3 个，每个不超过 16 字"], "actions": ["从这些 key 里挑 0–2 个最相关的馆内去处：' + PLACE_KEYS.join(' / ') + '"]}'
 ].join('\n')
 

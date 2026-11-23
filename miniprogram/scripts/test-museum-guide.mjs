@@ -149,6 +149,9 @@ async function runChecks() {
   const r3 = T.parseReply(leak)
   ok('B6 非 JSON 回答：摘掉 follow_ups / actions 字段行，条目捞回（去处仍过白名单）',
     r3.answer === '萤火虫发光是生物荧光。' && JSON.stringify(r3.followUps) === JSON.stringify(['萤火虫的光有几种颜色？', '为什么不发热？']) && JSON.stringify(r3.actions) === JSON.stringify(['atlas']))
+  ok('B7 纯数字不当作回答（真机：萤火虫为什么发光 → -1.5642379800000002）',
+    T.parseReply('-1.5642379800000002').answer === '' && T.parseReply('42').answer === '' && T.parseReply('-1.5e-7').answer === '' &&
+    T.parseReply('萤火虫发光靠荧光素酶。').answer !== '' && T.usableAnswer('萤火虫发光靠荧光素酶。') === true && T.usableAnswer('-1.56') === false)
   const r4 = T.parseReply('数组 [1,2] 写在正文里不受影响。\n"追问"：[“它吃什么？”]')
   ok('B6 中文键名 / 全角冒号 / 中文引号也认；正文里的方括号不误伤', r4.answer === '数组 [1,2] 写在正文里不受影响。' && JSON.stringify(r4.followUps) === JSON.stringify(['它吃什么？']))
   ok('B6 提示词：除拉丁学名外不夹英文单词', /除拉丁学名外不要夹带英文单词/.test(read(P.persona)))
@@ -566,6 +569,7 @@ const INJECTIONS = [
   { name: '售罄排在前面', file: P.workshop, find: '  return inStock.concat(sold).slice(0, 4)', replace: '  return all.slice(0, 4)' },
   { name: '工坊推荐改调别的云函数', file: P.wsJs, find: "wx.cloud.callFunction({ name: 'getEncyclopediaFeed', data: q })", replace: "wx.cloud.callFunction({ name: 'getRecommendations', data: q })" },
   { name: '点藏品不进详情', file: P.wsJs, find: "    if (id) wx.navigateTo({ url: `/subpackages/feature/detail/index?id=${encodeURIComponent(id)}` })", replace: '' },
+  { name: '纯数字也当回答', file: P.fn, find: '  if (PURE_NUM.test(s)) return false', replace: '  if (false) return false' },
   { name: '物种又拿历史与回答一起排', file: P.fn, find: '  const fromQ = matchSpecies(question, 3)\n  if (fromQ.length) return fromQ\n', replace: "  const fromQ = matchSpecies(question + '\\n' + (history || []).map((h) => h.content).join('\\n'), 3)\n  if (fromQ.length) return fromQ\n" },
   { name: '追问又竖着叠', file: P.wxml, find: '<scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"', replace: '<view class="mg-strip">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"' },
   { name: '滚一下就 setData', file: P.page, find: '    if (far !== this.data.showJump) this.setData({ showJump: far })', replace: '    this.setData({ showJump: far })' },

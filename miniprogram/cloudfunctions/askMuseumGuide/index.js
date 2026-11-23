@@ -148,6 +148,18 @@ function salvageFields(text) {
   return { answer: answer.trim(), followUps: found.followUps, actions: found.actions }
 }
 
+/**
+ * 回答是否「像一句话」（2026-11-23 真机：问萤火虫为什么发光，气泡里出现 `-1.5642379800000002`）
+ * 纯数字 / 纯符号 / 空 → 视为解析失败，走 ai_service 失败分支，不把垃圾当回答。
+ */
+const PURE_NUM = /^[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?$/
+function usableAnswer(a) {
+  const s = String(a || '').trim()
+  if (!s) return false
+  if (PURE_NUM.test(s)) return false
+  return /[\u4e00-\u9fa5A-Za-z]/.test(s)
+}
+
 /** 解析模型输出：优先 JSON；不是 JSON 时整段当回答，但先摘掉正文后面的 follow_ups / actions 字段行（见 salvageFields）。去处只认白名单，追问最多 3 个。 */
 function parseReply(text) {
   const t = String(text || '').trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
@@ -164,7 +176,7 @@ function parseReply(text) {
     .map((q) => String(q || '').trim()).filter((q) => q && q.length <= 30).slice(0, 3)
   const actions = (obj && Array.isArray(obj.actions) ? obj.actions : loose ? loose.actions : [])
     .map((a) => String(a || '').trim()).filter((a, i, arr) => PLACE_KEYS.indexOf(a) >= 0 && arr.indexOf(a) === i).slice(0, 2)
-  return { answer, followUps, actions }
+  return { answer: usableAnswer(answer) ? answer : '', followUps, actions }
 }
 
 /**
@@ -396,4 +408,4 @@ exports.main = async (event) => {
   }, { model, species, actions: reply.actions, aLen: reply.answer.length })
 }
 
-exports._test = { modelParams, salvageFields, speciesFor, VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }
+exports._test = { modelParams, salvageFields, speciesFor, VOTES, modelChain, dailyLimit, effectiveConfig, buildLog, entryOf, dayKey, sanitizeInput, parseReply, plainAnswer, usableAnswer, extractText, SAFE_ANSWER, QUESTION_MAX, HISTORY_MAX }
