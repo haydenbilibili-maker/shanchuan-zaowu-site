@@ -176,6 +176,8 @@ Page({
     exploreStore: null,
     /** 馆员问候（homeGreeting.js）：门店数据到了才有 word */
     homeGreeting: { word: '', line: '' },
+    /** 博物君口播（guideBroadcast.js，2026-11-23）：问候 + 昵称 + 轮播（馆内通知 / 今日开馆 / 博物一知 / 小提示） */
+    cast: { hello: '', items: [] },
     showExploreStore: false,
     loadingExploreStore: false,
 
@@ -224,6 +226,7 @@ Page({
           showExploreStore: showStore && this.data.showExploreStore
         });
         if (cached.flags.showMaShangYou === true) this.loadWishWallMarquee();
+        this._castFlags = cached.flags;
       }
     } catch (e) { /* ignore */ }
 
@@ -292,6 +295,8 @@ Page({
           showExploreStore: showStore && this.data.showExploreStore
         });
         if (flags.showMaShangYou === true) this.loadWishWallMarquee();
+        this._castFlags = flags;
+        this.refreshCast();
         return flags.showLive === true;
       };
       const { flags } = await fetchContentDisplayFlags({
@@ -399,6 +404,8 @@ Page({
       this.getTabBar().setData({ selected: 0 });
     }
     if (!this.data.heroAutoplay) this.setData({ heroAutoplay: true });
+    // 口播每次回到首页重排一次：昵称（刚登录 / 刚改名）与时段问候跟着变
+    this.refreshCast();
     if (this.data.showLive) this.loadActiveLive();
     wx.nextTick(() => this._setupFeedScrollGuard());
   },
@@ -1375,6 +1382,7 @@ Page({
         homeGreeting: buildHomeGreeting(store),
         loadingExploreStore: false
       });
+      this.refreshCast();
     };
     const loc = await getAuthorizedLocation({ type: 'gcj02' });
     if (!loc) {
@@ -1389,6 +1397,35 @@ Page({
     if (blockIfSinglePage()) return;
     wx.switchTab({ url: e.currentTarget.dataset.url });
   },
+  /** 博物君口播：重排条目（纯函数 guideBroadcast.buildBroadcast；内容相同不 setData，避免轮播跳回第一条） */
+  refreshCast() {
+    try {
+      const { buildBroadcast } = require('./guideBroadcast');
+      const { resolvePrefillNickName } = require('../../utils/profileHelper');
+      const flags = this._castFlags || {};
+      const cast = buildBroadcast({
+        nick: resolvePrefillNickName(getApp()),
+        greeting: this.data.homeGreeting,
+        notices: flags.museumGuideNotices,
+        guideOpen: flags.museumGuideOpen !== false
+      });
+      const sig = JSON.stringify(cast);
+      if (sig === this._castSig) return;
+      this._castSig = sig;
+      this.setData({ cast });
+    } catch (e) { /* 口播是装饰层，出错不影响首页 */ }
+  },
+
+  /** 点口播：博物一知 / 小提示 → 博物君（只预填问题）；今日开馆 → 门店；馆内通知只读 */
+  onCastTap(e) {
+    const item = (this.data.cast.items || [])[Number(e.currentTarget.dataset.i)];
+    if (!item) return;
+    if (item.store) { this.goToBooking(); return; }
+    if (!item.q || blockIfSinglePage()) return;
+    const { guideUrl } = require('./guideBroadcast');
+    wx.navigateTo({ url: guideUrl(item.q) });
+  },
+
   goToBooking() {
     if (blockIfSinglePage()) return;
     if (!this.data.showStore) {

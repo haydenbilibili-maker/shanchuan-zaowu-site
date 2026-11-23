@@ -32,6 +32,16 @@
           <view class="ops-filter-chip {{view.config.dailyLimit === item ? 'brass' : ''}}" wx:for="{{limitOptions}}" wx:key="*this" data-n="{{item}}" bindtap="onLimit" hover-class="tap-press" hover-stay-time="80">{{item}} 问</view>
         </view>
       </view>
+      <!-- 首页口播 · 馆内通知（2026-11-23）：首页顶部「博物君口播」轮播里的「馆内通知」条 -->
+      <view class="gm-limit">
+        <text class="gm-limit-k">首页口播 · 馆内通知</text>
+        <view class="gm-notice" wx:for="{{noticeDrafts}}" wx:key="index">
+          <input class="gm-notice-in" value="{{item}}" data-i="{{index}}" maxlength="{{noticeLen}}" placeholder="{{index === 0 ? '例：周六下午有标本制作体验课，欢迎来馆' : '（空着就不播）'}}" placeholder-class="gm-notice-ph" bindinput="onNoticeInput" />
+          <text class="gm-notice-n">{{item.length}}/{{noticeLen}}</text>
+        </view>
+        <view class="gm-notice-save {{noticeDirty && !saving ? '' : 'is-off'}}" bindtap="onSaveNotices" hover-class="tap-press" hover-stay-time="80" aria-role="button">保存口播</view>
+        <text class="gm-hint">最多 3 条，排在首页口播最前面轮播；闭馆时不播。</text>
+      </view>
       <text class="gm-hint" wx:if="{{view.config.updatedText}}">{{view.config.updatedText}}</text>
     </view>
 

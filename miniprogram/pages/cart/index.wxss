@@ -32,53 +32,58 @@ page {
   z-index: 10;
   background: var(--color-bg);
   flex-shrink: 0;
-}
-
-.cart-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-4) var(--space-3);
+  /* 2026-11-23：只留一条分隔线（原标题行 + 筛选行各一条，叠成两道） */
   border-bottom: 1px solid var(--color-border);
 }
 
-.header-left { flex: 1; min-width: 0; }
+/* 2026-11-23 顶部上移：标题行 = 胶囊行（高度 / 右侧让位由 wxml 行内 style 按胶囊实测给） */
+.cart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 104px 0 var(--space-4);
+  box-sizing: border-box;
+}
+
+.header-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 16rpx;
+}
 .header-actions { flex-shrink: 0; }
-.header-title { display: flex; flex-direction: column; }
 
 .title-cn {
-  font-size: var(--fs-36);
+  flex-shrink: 0;
+  font-size: var(--fs-34);
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-text-primary);
-}
-
-.title-en {
-  font-size: var(--fs-18);
-  color: var(--brass-400);
-  letter-spacing: 0.14em;
-  margin-top: 6rpx;
+  letter-spacing: 0.04em;
 }
 
 .header-meta {
-  display: block;
-  margin-top: 8rpx;
+  min-width: 0;
   font-size: var(--fs-22);
   color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .text-btn {
-  font-size: var(--fs-26);
-  color: var(--color-text-secondary);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  font-size: var(--fs-22);
+  color: var(--brass-300);
+  padding: 6rpx 18rpx;
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--r-pill);
 }
 
 .filter-bar {
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--space-2) 0;
+  padding: 4rpx 0 16rpx;
   width: 100%;
   box-sizing: border-box;
 }
@@ -95,13 +100,16 @@ page {
   align-items: center;
   flex-shrink: 0;
   gap: 6rpx;
-  padding: 10rpx 28rpx;
-  margin-right: var(--space-2);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full);
+  height: 56rpx;
+  padding: 0 26rpx;
+  margin-right: 14rpx;
+  box-sizing: border-box;
+  background: transparent;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--r-pill);
   color: var(--color-text-secondary);
   font-size: var(--fs-24);
+  transition: background var(--dur-base) var(--ease-standard), color var(--dur-base) var(--ease-standard), border-color var(--dur-base) var(--ease-standard);
 }
 
 .filter-chip.active {
@@ -163,7 +171,7 @@ page {
 .cart-scroll {
   /* height 由 inline style top/bottom 决定 */
 }
-.slot-list { padding: var(--space-4); }
+.slot-list { padding: 20rpx var(--space-4) var(--space-4); }
 
 .invalid-banner {
   display: flex;
@@ -206,8 +214,8 @@ page {
   width: 100%;
   box-sizing: border-box;
   display: flex;
-  align-items: flex-start;
-  padding: var(--space-3);
+  align-items: center;
+  padding: 20rpx 20rpx 20rpx 8rpx;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -216,8 +224,10 @@ page {
 
 .swipe-wrapper.active .cart-card { transform: translateX(-120rpx); }
 
+/* 选中：铜描边 + 左缘一道铜线（像标本柜里被抽出来的那格） */
 .cart-card.selected {
   border-color: var(--brass-800);
+  box-shadow: inset 4rpx 0 0 var(--brass-400);
   /* 必须用不透明底，避免透出背后的「移除」层 */
   background:
     linear-gradient(0deg, rgba(196, 167, 108, 0.1), rgba(196, 167, 108, 0.1)),
@@ -229,8 +239,7 @@ page {
 .gold-checkbox {
   width: 40rpx;
   height: 40rpx;
-  margin-right: var(--space-3);
-  margin-top: 4rpx;
+  margin: 0 18rpx 0 12rpx;
   flex-shrink: 0;
   border: 1rpx solid var(--brass-800);
   border-radius: 50%;
@@ -243,10 +252,17 @@ page {
 .gold-checkbox.checked {
   background: var(--brass-400);
   border-color: var(--brass-400);
+  animation: cart-tick-pop var(--dur-base) var(--ease-standard);
+}
+
+@keyframes cart-tick-pop {
+  0% { transform: scale(0.82); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
 }
 
 .gold-checkbox.disabled { opacity: 0.35; }
-.gold-checkbox.sm { width: 32rpx; height: 32rpx; margin-right: var(--space-2); margin-top: 0; }
+.gold-checkbox.sm { width: 34rpx; height: 34rpx; margin: 0 12rpx 0 0; }
 .tick { width: 22rpx; height: 22rpx; }
 .tick image { width: 100%; height: 100%; }
 
@@ -254,13 +270,14 @@ page {
 
 .thumb-wrap {
   position: relative;
-  width: 144rpx;
-  height: 144rpx;
+  width: 168rpx;
+  height: 168rpx;
   flex-shrink: 0;
-  margin-right: var(--space-3);
+  margin-right: 20rpx;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
 }
 
 .thumb { width: 100%; height: 100%; background: var(--color-bg-elevated); }
@@ -296,16 +313,20 @@ page {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 144rpx;
+  min-height: 168rpx;
 }
 
+/* 名称两行收口（原单行，长名只剩半截） */
 .name {
   font-size: var(--fs-28);
   font-weight: 500;
+  line-height: 1.4;
   color: var(--color-text-primary);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
 }
 
 .latin {
@@ -350,23 +371,33 @@ page {
   color: var(--brass-400);
 }
 
+/* 金额前的 ¥ 缩一号，数字做主角（清单单价与合计同一口径） */
+.price-sym {
+  font-size: 0.68em;
+  font-weight: 500;
+  margin-right: 2rpx;
+}
+
+/* 数量：胶囊形，两端按钮与数字之间不再各自带底色 */
 .qty-stepper {
   display: flex;
   align-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  height: 52rpx;
+  border: 1rpx solid var(--brass-800);
+  border-radius: var(--r-pill);
   overflow: hidden;
+  background: var(--color-bg-elevated);
 }
 
 .qty-btn {
-  width: 52rpx;
-  height: 48rpx;
+  width: 56rpx;
+  height: 52rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--brass-400);
   font-size: var(--fs-28);
-  background: var(--color-bg-elevated);
+  line-height: 1;
 }
 
 .qty-btn.disabled { opacity: 0.35; }
@@ -374,7 +405,7 @@ page {
 .qty-btn-press { background: rgba(196, 167, 108, 0.12); }
 
 .qty-val {
-  min-width: 48rpx;
+  min-width: 44rpx;
   text-align: center;
   font-size: var(--fs-24);
   color: var(--color-text-body);
@@ -653,7 +684,7 @@ page {
   right: 0;
   bottom: var(--tabbar-offset);
   z-index: 100;
-  padding: 0 var(--space-4) var(--space-3);
+  padding: 0 var(--space-4) 16rpx;
   /* 实色底：运费行与结算区同属一块，不再像挤在底栏与 tabBar 缝里 */
   background: var(--color-bg);
   box-sizing: border-box;
@@ -662,7 +693,8 @@ page {
 .coupon-chip {
   position: absolute;
   top: -44rpx;
-  right: var(--space-4);
+  /* 结算条改胶囊形（2026-11-23）：礼券页签往里收，落在直边上而不是圆角上 */
+  right: calc(var(--space-4) + 56rpx);
   z-index: 2;
   display: flex;
   align-items: center;
@@ -684,10 +716,11 @@ page {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: 14rpx 14rpx 14rpx var(--space-4);
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+  border-radius: var(--r-pill);
+  box-shadow: 0 -8rpx 32rpx rgba(0, 0, 0, 0.28);
 }
 
 .select-all { display: flex; align-items: center; flex-shrink: 0; }
@@ -733,12 +766,16 @@ page {
   display: flex;
   align-items: center;
   gap: 4rpx;
-  padding: var(--space-3) var(--space-4);
+  height: 80rpx;
+  padding: 0 36rpx;
+  box-sizing: border-box;
   background: var(--brass-400);
   color: var(--color-bg);
-  border-radius: var(--radius-md);
-  font-size: var(--fs-26);
-  font-weight: 500;
+  border-radius: var(--r-pill);
+  font-size: var(--fs-28);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  transition: background var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
 }
 
 .checkout-btn.disabled {
@@ -746,7 +783,7 @@ page {
   color: var(--color-text-muted);
 }
 
-.checkout-btn-hover { background: var(--brass-500); }
+.checkout-btn-hover { background: var(--brass-500); transform: scale(0.97); }
 .checkout-btn:active { background: var(--brass-500); }
 
 .checkout-count { font-size: var(--fs-22); opacity: 0.85; }
@@ -765,8 +802,8 @@ page {
   display: flex;
   align-items: center;
   gap: 16rpx;
-  margin-bottom: 14rpx;
-  padding: 14rpx 16rpx;
+  margin-bottom: 12rpx;
+  padding: 12rpx 14rpx;
   border: 1rpx solid var(--brass-800);
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, rgba(196, 167, 108, 0.12) 0%, rgba(196, 167, 108, 0.03) 100%);
@@ -934,7 +971,8 @@ page {
 
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {
-  .scanner {
+  .scanner,
+  .gold-checkbox.checked {
     animation: none;
   }
 }

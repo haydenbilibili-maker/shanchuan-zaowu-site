@@ -1094,19 +1094,67 @@ page {
 }
 
 /* 馆员问候（2026-10-18）：banner 上方一行，衬线问候 + 次级状态 */
-.home-greet {
+/* 博物君口播（2026-11-23）：一枚朱砂小印 + 两行（问候 / 竖向轮播），整体仍是顶部一条细带，不抢轮播图 */
+.home-cast {
   display: flex;
-  align-items: baseline;
-  gap: 16rpx;
-  padding: 12rpx 32rpx 16rpx;
+  align-items: center;
+  gap: 18rpx;
+  margin: 4rpx 32rpx 18rpx;
+  padding: 14rpx 20rpx 14rpx 16rpx;
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, rgba(196, 167, 108, 0.10) 0%, rgba(196, 167, 108, 0.02) 100%);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
 }
-.home-greet-w { flex-shrink: 0; font-family: var(--font-brand); font-size: var(--fs-26); color: var(--brass-200); }
-.home-greet-l {
+.home-cast-seal {
+  flex-shrink: 0;
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #8E3B2E;
+  box-shadow: inset 0 0 0 2rpx rgba(241, 230, 204, 0.35);
+  color: #F1E6CC;
+  font-family: var(--font-brand);
+  font-size: var(--fs-30);
+}
+.home-cast-main { flex: 1; min-width: 0; }
+.home-cast-head { display: flex; align-items: baseline; gap: 14rpx; }
+.home-cast-hello {
   flex: 1;
   min-width: 0;
-  font-size: var(--fs-22);
-  color: var(--color-text-secondary);
+  font-family: var(--font-brand);
+  font-size: var(--fs-26);
+  color: var(--brass-200);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.home-cast-by { flex-shrink: 0; font-size: var(--fs-20); color: var(--color-text-secondary); letter-spacing: 0.06em; }
+/* 每条最多两行（博物一知约 28 字，一行只放得下约 20 字）；高度固定，轮播不跳 */
+.home-cast-swiper { height: 68rpx; margin-top: 6rpx; }
+.home-cast-item { display: flex; align-items: flex-start; gap: 12rpx; height: 68rpx; }
+.home-cast-tag {
+  flex-shrink: 0;
+  padding: 0 10rpx;
+  border-radius: 6rpx;
+  margin-top: 2rpx;
+  font-size: var(--fs-18);
+  line-height: 30rpx;
+  color: var(--brass-300);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45);
+}
+.home-cast-tag.is-notice { color: #1A1814; background: var(--brass-400); box-shadow: none; }
+.home-cast-t {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-22);
+  line-height: 34rpx;
+  color: var(--color-text-body);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.home-cast-go { flex-shrink: 0; align-self: center; font-size: var(--fs-26); color: var(--brass-400); line-height: 1; }

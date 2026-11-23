@@ -2282,7 +2282,8 @@ eq('★ 入口数量唯一（不会既在头部又在参数区）', (detWxml.mat
     bodyAt > -1 && slotAt > bodyAt && entryAt > slotAt && cardAt > entryAt,
     `body=${bodyAt} slot=${slotAt} entry=${entryAt} card=${cardAt}`
   )
-  const paramsAt = detWxml.indexOf('PARAMETERS')
+  // 2026-11-23：「藏品参数」并入「标本档案」，以档案区标题为锚（判据不变：参数区到图文详情之间没有入口）
+  const paramsAt = detWxml.indexOf('SPECIMEN ARCHIVES')
   const detailsAt = detWxml.indexOf('<text class="st-en">DETAILS</text>')
   check(
     '★ 旧位置（藏品参数与图文详情之间）已无入口',

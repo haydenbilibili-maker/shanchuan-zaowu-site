@@ -108,19 +108,28 @@ Page(withAppModal({
     scrollTopPx: 140,
     scrollBottomPx: 200,
     scrollHeightPx: 500,
-    statusBarHeight: 20
+    statusBarHeight: 20,
+    /** 胶囊行高 / 右侧让出胶囊的宽度（px）；onLoad 按胶囊实测覆盖 */
+    navBarHeight: 44,
+    capsulePad: 104
   },
 
   onLoad() {
+    // 2026-11-23 顶部上移：标题行与胶囊同一行（原先整块压在胶囊下方 +6px，白白空出一行）。
+    // 页面只让出状态栏；标题行高 = 胶囊行高，右侧让出胶囊宽度，列表因此多出约一个导航行。
     try {
       const { getWindowInfo } = require('../../utils/systemInfo');
       const win = getWindowInfo();
-      let top = win.statusBarHeight || 20;
+      const top = win.statusBarHeight || 20;
+      const patch = { statusBarHeight: top };
       try {
         const menu = wx.getMenuButtonBoundingClientRect();
-        if (menu && menu.bottom) top = Math.ceil(menu.bottom + 6);
+        if (menu && menu.height && menu.top >= top) {
+          patch.navBarHeight = Math.ceil((menu.top - top) * 2 + menu.height);
+          patch.capsulePad = Math.ceil((win.windowWidth || 375) - menu.left + 8);
+        }
       } catch (e2) { /* ignore */ }
-      this.setData({ statusBarHeight: top });
+      this.setData(patch);
     } catch (e) {
       const appInst = getApp();
       this.setData({

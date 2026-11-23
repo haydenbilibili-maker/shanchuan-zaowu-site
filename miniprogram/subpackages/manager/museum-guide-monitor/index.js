@@ -25,7 +25,11 @@ Page({
     tipText: '',
     tipTone: 'info',
     confirmToggle: false,
-    limitOptions: V.DAILY_LIMIT_OPTIONS
+    limitOptions: V.DAILY_LIMIT_OPTIONS,
+    /** 首页口播 · 馆内通知草稿（3 格） */
+    noticeDrafts: V.noticeDrafts([]),
+    noticeLen: V.NOTICE_LEN,
+    noticeDirty: false
   },
 
   async onLoad() {
@@ -63,7 +67,10 @@ Page({
     this.setData({ loading: true, loadError: '' })
     try {
       const d = await this.callFn({ action: 'overview', days: this.data.days })
-      this.setData({ view: V.buildView(d), loading: false })
+      const view = V.buildView(d)
+      const patch = { view, loading: false }
+      if (!this.data.noticeDirty) patch.noticeDrafts = V.noticeDrafts(view.config.notices)
+      this.setData(patch)
     } catch (e) {
       this.setData({ loading: false, loadError: V.friendlyError(e) })
     }
@@ -95,14 +102,28 @@ Page({
     this.saveConfig({ dailyLimit: n })
   },
 
+  /** 口播通知：改哪格记哪格，点「保存口播」才提交（空格子 = 不播） */
+  onNoticeInput(e) {
+    const i = Number(e.currentTarget.dataset.i)
+    this.setData({ [`noticeDrafts[${i}]`]: e.detail.value, noticeDirty: true })
+  },
+
+  onSaveNotices() {
+    if (this.data.saving || !this.data.noticeDirty) return
+    this.saveConfig({ notices: this.data.noticeDrafts.map((t) => String(t || '').trim()).filter(Boolean) })
+  },
+
   async saveConfig(patch) {
     this.setData({ saving: true, confirmToggle: false })
     try {
       const cfg = await this.callFn(Object.assign({ action: 'setConfig' }, patch))
       const view = Object.assign({}, this.data.view, { config: V.buildView({ config: cfg }).config })
-      this.setData({ view, saving: false })
+      const done = { view, saving: false }
+      if (patch.notices) Object.assign(done, { noticeDirty: false, noticeDrafts: V.noticeDrafts(view.config.notices) })
+      this.setData(done)
       if (patch.enabled === false) this.showTip('已闭馆：「我的」里的入口会在下次刷新时隐藏，正在用的人提问会收到闭馆提示', 'warn')
       else if (patch.enabled === true) this.showTip('已开馆')
+      else if (patch.notices) this.showTip(patch.notices.length ? `口播通知已保存（${patch.notices.length} 条），首页下次刷新时播出` : '口播通知已清空')
       else this.showTip(`每日额度已改为 ${patch.dailyLimit} 问`)
     } catch (e) {
       this.setData({ saving: false })

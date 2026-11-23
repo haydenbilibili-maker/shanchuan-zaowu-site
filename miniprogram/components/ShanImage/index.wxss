@@ -1,8 +1,16 @@
-/* <shan-img>：外框 = 加载中 / 失败时的底；尺寸、圆角、滤镜由页面 ext-class 给 */
-.si {
+/* <shan-img>
+ * 外层 .si：只承接页面 ext-class，**不写 position / display / overflow / background / 尺寸**。
+ *   组件自己的类与外部样式类落在同一节点上、属性冲突时，微信不保证谁优先 ——
+ *   2026-11-23 真机：外层 position:relative 压过了首页 .atelier-hero-img 的 position:absolute，头图掉回文档流，
+ *   「标本工坊」卡只剩一张图、徽标 / 标语 / 两个入口都被挤出卡外。
+ * 内层 .si-in：组件全权负责 —— 铺满外层、承接圆角、裁切、加载中暖深底、给图与方印定位。
+ */
+.si-in {
   position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
-  display: block;
+  border-radius: inherit;
   /* 暖深底：比页面底（#1A1814）亮一档，看得出「这里有一张图」，又不抢眼 */
   background: #24211D;
 }

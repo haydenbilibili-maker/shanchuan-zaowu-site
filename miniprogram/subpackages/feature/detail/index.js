@@ -99,6 +99,9 @@ const HERO_VIEW_MAX = 0.50;
 const DETAIL_CTA_CACHE_PREFIX = 'detail_cta_v1_';
 const DETAIL_CTA_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/** 「其它 / 其他」这类兜底标签：档案里不出 */
+const OTHER_LABEL_RE = /^\s*(其它|其他|other)\s*$/i;
+
 function resolveOpenidSync() {
   try {
     return (app && app.globalData && app.globalData.openid) || '';
@@ -252,7 +255,10 @@ function buildArchiveDisplay(product, sizeOverride) {
     framingMethod: framingLabel,
     framingEmpty: !framingLabel,
     craftProcess: processLabel,
-    craftProcessEmpty: !processLabel
+    craftProcessEmpty: !processLabel,
+    // 2026-11-23：并进「标本档案」后，「其它 / 其他」不出（对顾客没有信息量，截图里两行「其它」）
+    craftProcessShow: !!processLabel && !OTHER_LABEL_RE.test(processLabel),
+    framingShow: !!framingLabel && !OTHER_LABEL_RE.test(framingLabel)
   };
 }
 
@@ -367,7 +373,9 @@ Page(withAppModal({
       framingMethod: '',
       framingEmpty: true,
       craftProcess: '',
-      craftProcessEmpty: true
+      craftProcessEmpty: true,
+      craftProcessShow: false,
+      framingShow: false
     },
     isOneOfAKind: false,
     uniqueBadgeLabel: '',

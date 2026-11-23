@@ -49,10 +49,26 @@
     bindrefresherrefresh="onHomeRefresherRefresh"
   >
     
-    <!-- 馆员问候（2026-10-18 方向池 ★★）：一行小字，时段问候 + 门店营业状态；门店数据到了才出现 -->
-    <view class="home-greet" wx:if="{{homeGreeting.word}}">
-      <text class="home-greet-w">{{homeGreeting.word}}</text>
-      <text class="home-greet-l" wx:if="{{homeGreeting.line}}">{{homeGreeting.line}}</text>
+    <!-- 博物君口播（2026-11-23，原馆员问候行升级）：博物君小印 + 「时段问候，藏家昵称」+ 竖向轮播一行
+         （馆内通知 / 今日开馆 / 博物一知 / 小提示）。条目来自 guideBroadcast.js；馆内通知由超管「博物君」页配置。
+         带 › 的条目可点：博物一知 / 小提示 → 博物君（只预填问题），今日开馆 → 门店。 -->
+    <view class="home-cast" wx:if="{{cast.hello}}">
+      <view class="home-cast-seal" aria-hidden="true"><text>博</text></view>
+      <view class="home-cast-main">
+        <view class="home-cast-head">
+          <text class="home-cast-hello">{{cast.hello}}</text>
+          <text class="home-cast-by">博物君 · 口播</text>
+        </view>
+        <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}">
+          <swiper-item wx:for="{{cast.items}}" wx:key="key">
+            <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store ? 'tap-press-soft' : ''}}" hover-stay-time="80">
+              <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text>
+              <text class="home-cast-t">{{item.text}}</text>
+              <text class="home-cast-go" wx:if="{{item.q || item.store}}">›</text>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
     </view>
 
     <!-- 轮播图模块：有直播时首位抢插「直播中」帧；无直播时恢复 baseBanners -->

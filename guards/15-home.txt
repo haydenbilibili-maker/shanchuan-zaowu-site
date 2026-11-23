@@ -25,3 +25,5 @@ npm run check:specimen-archive-seeds
 npm run check:product-external-videos
 # 2026-11-23：博物君（AI 馆员）—— 页面纯函数 / 云函数清洗与解析 / 内容安全双检 / 密钥与隐私（计数集合不存对话）/ 知识同源（图鉴摘要不过期、公益口径）/ 接线 / 页面行为；14 个内存注入
 npm run test:museum-guide
+# 2026-11-23：首页「博物君口播」—— 昵称问候 / 馆内通知（超管配置）/ 今日开馆 / 博物一知 / 小提示；17 个内存注入
+npm run test:home-broadcast

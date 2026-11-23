@@ -213,13 +213,23 @@ async function saveFlags(event, openid) {
  * 只有超管工作台「博物君」能改），不在本集合，save 也不写它：ERP / 店长端保存内容开关不会把它改回开启。
  * 读不到 → 开启（缺省开启口径）。
  */
-async function readMuseumGuideOpen() {
+async function readMuseumGuideOpen(box) {
   try {
     const r = await db.collection('museum_guide_config').doc('main').get()
+    if (box) box.doc = (r && r.data) || null
     return !(r && r.data && r.data.enabled === false)
   } catch (e) {
     return true
   }
+}
+
+/**
+ * 首页「博物君口播」的馆内通知（2026-11-23）：同一份 museum_guide_config/main 的 notices，只读带出；
+ * 闭馆时不带（口播里博物君不再出声）。最多 3 条、每条 36 字，写入侧 museumGuideMonitor 已校验，这里只兜底截断。
+ */
+function museumGuideNoticesFrom(doc, open) {
+  if (!open || !doc || !Array.isArray(doc.notices)) return []
+  return doc.notices.map((t) => String(t == null ? '' : t).trim().slice(0, 36)).filter(Boolean).slice(0, 3)
 }
 
 exports.main = async (event) => {
@@ -228,8 +238,11 @@ exports.main = async (event) => {
 
   try {
     if (action === 'save') return await saveFlags(event, openid)
-    const [res, museumGuideOpen] = await Promise.all([readFlags(), readMuseumGuideOpen()])
-    return Object.assign({}, res, { flags: Object.assign({}, res.flags, { museumGuideOpen }) })
+    const box = {}
+    const [res, museumGuideOpen] = await Promise.all([readFlags(), readMuseumGuideOpen(box)])
+    const out = Object.assign({}, res, { flags: Object.assign({}, res.flags, { museumGuideOpen }) })
+    out.flags.museumGuideNotices = museumGuideNoticesFrom(box.doc, museumGuideOpen)
+    return out
   } catch (e) {
     console.error('getContentDisplayFlags', e)
     return {
