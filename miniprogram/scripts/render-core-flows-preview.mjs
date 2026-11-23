@@ -175,8 +175,12 @@ function achievementsSceneData() {
     A('certificate_1', 'learning', '证书持有者', '获得 1 个证书', 1, 2, 20, '份'), A('certificate_5', 'learning', '证书收藏家', '获得 5 个证书', 5, 2, 50, '份')
   ]
   const unlocked = list.filter((a) => a.unlocked).length
+  page._freshLit = ['spend_500', 'certificate_1']
   page._applyAchievementData({ achievements: list, stats: { total: list.length, unlocked, locked: list.length - unlocked, totalRewards: 205 } })
-  return Object.assign({}, page.data, {
+  page.viewAchievement({ currentTarget: { dataset: { id: page.data.nextUp[0].id } } })
+  const demoTrack = page.data.selectedTrack
+  page.closeModal()
+  return Object.assign({}, page.data, { _demoTrack: demoTrack,
     relicsName: '山海拾遗', relicsFound: 2, relicsTotal: 5, relicsUnlocked: false,
     relicsCatalog: [
       { id: 'r1', roman: 'I', discovered: true, plateTitle: '吉量', plateHint: '山海经 · 海内北经' },
@@ -381,9 +385,9 @@ const SCENES = [
   },
   // 2026-10-17 成就重设计：场景数据由**真页面** _applyAchievementData 现算（成长线 / 下一枚 / 刻度不手抄）
   // 2026-11-23：未点亮徽章详情（带「去点亮」）
-  { name: 'achievements-modal', h: 1400, wxml: 'subpackages/extra/user/achievements/index', data: (() => { const d = achievementsSceneData(); const n = d.nextUp[0]; return { ...d, showModal: true, selectedAchievement: { ...n, statusLabel: '未点亮', typeEn: 'COLLECTION' } } })(),
+  { name: 'achievements-modal', h: 1400, wxml: 'subpackages/extra/user/achievements/index', data: (() => { const d = achievementsSceneData(); const n = d.nextUp[0]; return { ...d, showModal: true, selectedTrack: d._demoTrack, selectedAchievement: { ...n, statusLabel: '未点亮', typeEn: 'COLLECTION' } } })(),
     css: '.ui-pop-mask.achievement-modal.show, .ui-pop-mask.achievement-modal { display: flex !important; position: fixed; inset: 0; z-index: 50; background: rgba(10,9,7,0.72); align-items: center; justify-content: center; }' },
-  { name: 'achievements', h: 3400, wxml: 'subpackages/extra/user/achievements/index', data: achievementsSceneData() },
+  { name: 'achievements', h: 4200, wxml: 'subpackages/extra/user/achievements/index', data: achievementsSceneData() },
   { name: 'gift-mine-people', h: 1700, wxml: 'subpackages/feature/gift/my-gifts/index', base: 'gift-mine', data: { hubTab: 'people', contactsLoading: false,
       contacts: [{ id: 'c1', name: '阿禾', nameInitial: '禾', relationLabel: '挚友', note: '喜欢蓝色的东西', giftCountLabel: '送过 2 次 · 最近 10.15', sceneKey: 'birthday' },
         { id: 'c2', name: '林老师', nameInitial: '林', relationLabel: '师长', giftCountLabel: '还没送过' }] } },

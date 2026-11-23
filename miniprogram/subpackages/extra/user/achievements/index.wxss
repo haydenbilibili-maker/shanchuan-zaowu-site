@@ -764,3 +764,73 @@ page {
   color: var(--color-text-secondary);
   text-align: center;
 }
+
+/* 新点亮（2026-11-23）：卷首下一行铜字，左「新点亮」小签 */
+.fresh-note {
+  display: flex;
+  align-items: baseline;
+  gap: 14rpx;
+  margin-top: 24rpx;
+  padding: 16rpx 20rpx;
+  border-radius: var(--r-card, 16rpx);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
+}
+.fresh-k {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.16em;
+  color: var(--brass-300);
+}
+.fresh-v {
+  min-width: 0;
+  font-family: var(--font-brand);
+  font-size: var(--fs-26);
+  color: var(--brass-200);
+}
+
+/* 弹层里的成长线（2026-11-23）：小号节点一排，当前这枚铜框 */
+.modal-track {
+  align-self: stretch;
+  margin-top: 24rpx;
+  padding: 18rpx 0 4rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
+}
+.modal-track-t {
+  display: block;
+  font-size: var(--fs-20);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+.modal-track-nodes {
+  display: flex;
+  justify-content: center;
+  gap: 10rpx;
+  margin-top: 14rpx;
+}
+.mt-cell { display: flex; flex-direction: column; align-items: center; width: 84rpx; }
+.mt-node {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 2rpx solid rgba(196, 167, 108, 0.28);
+}
+.mt-node.is-lit { background: linear-gradient(180deg, #F3ECDD, #E8DFCB); border-color: #B08D57; }
+.mt-node.is-current { box-shadow: 0 0 0 4rpx rgba(196, 167, 108, 0.35); }
+.mt-roman { font-family: var(--font-latin); font-size: var(--fs-18); color: rgba(196, 167, 108, 0.6); }
+.mt-node.is-lit .mt-roman { color: #2E2618; font-weight: 600; }
+.mt-label {
+  margin-top: 6rpx;
+  max-width: 84rpx;
+  font-size: var(--fs-18);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mt-label.is-current { color: var(--brass-200); }

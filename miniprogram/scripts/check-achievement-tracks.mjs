@@ -85,6 +85,21 @@ async function run(inject) {
     `C 下一枚须为三枚未点亮、进度高者优先：${nu.map((a) => a.id + ':' + a.progressPercent).join(',')}`)
   ok(page.data.ticks.length === list.length && page.data.ticks.filter((t) => t.lit).length === 1, 'D 卷首刻度须每枚一格、亮格 = 已点亮数')
 
+  // F（2026-11-23）弹层成长线：标出当前这枚；单枚成线不出梯
+  page.viewAchievement({ currentTarget: { dataset: { id: 'explore_50' } } })
+  const st = page.data.selectedTrack
+  ok(!!st && st.nodes.map((n) => n.roman).join(',') === 'I,II,III' && st.nodes.filter((n) => n.current).map((n) => n.id).join() === 'explore_50',
+    'F 徽章弹层须带这条成长线并只标当前这一枚')
+  page.viewAchievement({ currentTarget: { dataset: { id: 'folder_3' } } })
+  ok(page.data.selectedTrack === null, 'F 单枚成线（收藏夹）不出成长线梯')
+  page.closeModal()
+  // G 新点亮一句话：只列本机新见到的那几枚，超过三枚写「等 N 枚」；没有新点亮时为空
+  ok(page.data.freshText === '', 'G 没有新点亮时不出「新点亮」')
+  page._freshLit = ['explore_10', 'collect_5', 'share_1', 'course_1']
+  page._applyAchievementData({ achievements: list.map((a) => (['collect_5', 'share_1', 'course_1'].includes(a.id) ? { ...a, progress: a.threshold, unlocked: true } : a)), stats: {} })
+  ok(page.data.freshText === 'explore_10、collect_5、share_1 等 4 枚', `G 新点亮一句话须列前三枚 + 等 N 枚，实际「${page.data.freshText}」`)
+  page._freshLit = null
+
   const wxml = read(P.wxml)
   ok(!/<scroll-view/.test(wxml) && /class="block relics-card"/.test(wxml), 'E 内容不得放进 scroll-view（pageScrollTo 滚不到 .relics-card）')
   ok(/"enablePullDownRefresh": true/.test(read(P.json)) && /onPullDownRefresh\(\)/.test(read(P.page)), 'E 改回页面滚动后须开启原生下拉刷新')
@@ -137,6 +152,7 @@ function apply(src, inj) {
 }
 
 const INJECTIONS = [
+  { name: '弹层成长线不标当前枚', file: P.page, find: 'current: n.id === id', replace: 'current: false' },
   { name: '未登记徽章被丢弃', file: P.page, find: "  all.filter((a) => a && a.id && !used[a.id]).forEach((a) => {", replace: "  [].forEach((a) => {" },
   { name: '登记表漏一个 id', file: P.page, find: "'atlas_mountain', 'atlas_volume'", replace: "'atlas_mountain'" },
   { name: '连线不按进度填', file: P.page, find: '    if (i + 1 === nextIndex && nodes[i].unlocked) return next.progressPercent;\n', replace: '' },

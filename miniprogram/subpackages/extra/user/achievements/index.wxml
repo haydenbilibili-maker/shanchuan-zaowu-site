@@ -37,6 +37,12 @@
       </block>
     </view>
 
+    <!-- 新点亮（2026-11-23）：上次来过之后点亮了哪几枚，用字写出来（射灯只在节点上扫一下）；本机首次进页不出 -->
+    <view class="fresh-note" wx:if="{{freshText}}">
+      <text class="fresh-k">新点亮</text>
+      <text class="fresh-v">{{freshText}}</text>
+    </view>
+
     <!-- 章目录（2026-11-22）：五章一排，各带进度弧；点一章直接滚到该章 —— 页面长，先给一张地图 -->
     <view class="toc" wx:if="{{chapters.length > 1}}">
       <view
@@ -187,6 +193,17 @@
       <text class="modal-overline">{{selectedAchievement.typeEn || 'BADGE'}} · {{selectedAchievement.statusLabel}}</text>
       <text class="modal-title">{{selectedAchievement.name}}</text>
       <text class="modal-cond">{{selectedAchievement.condition || selectedAchievement.desc}}</text>
+
+      <!-- 这条成长线（2026-11-23）：这一枚在梯上的位置，当前这枚铜框 -->
+      <view class="modal-track" wx:if="{{selectedTrack}}">
+        <text class="modal-track-t">{{selectedTrack.name}} · 成长线</text>
+        <view class="modal-track-nodes">
+          <view class="mt-cell" wx:for="{{selectedTrack.nodes}}" wx:key="id">
+            <view class="mt-node {{item.unlocked ? 'is-lit' : ''}} {{item.current ? 'is-current' : ''}}"><text class="mt-roman">{{item.roman}}</text></view>
+            <text class="mt-label {{item.current ? 'is-current' : ''}}">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
 
       <view class="modal-rows">
         <view class="modal-row" wx:if="{{!selectedAchievement.unlocked}}">

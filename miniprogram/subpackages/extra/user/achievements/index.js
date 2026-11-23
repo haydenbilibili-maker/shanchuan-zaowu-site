@@ -182,6 +182,22 @@ function buildNextUp(all) {
     .map((a) => ({ ...a, route: routeOf(a.id), routeHint: hintOf(a.id) }));
 }
 
+
+/**
+ * 弹层里的「这条成长线」（2026-11-23）：找到这枚所在的线，节点标出当前这枚；单枚成线不出（没有梯可看）。
+ */
+function trackOfAchievement(chapters, id) {
+  for (const c of chapters || []) {
+    for (const t of c.tracks || []) {
+      if (!(t.nodes || []).some((n) => n.id === id) || t.nodes.length < 2) continue;
+      return {
+        name: t.name,
+        nodes: t.nodes.map((n) => ({ id: n.id, roman: n.roman, label: n.label, unlocked: n.unlocked, current: n.id === id }))
+      };
+    }
+  }
+  return null;
+}
 Page({
   data: {
     loading: true,
@@ -192,6 +208,8 @@ Page({
     achievementStats: null,
     chapters: [],
     nextUp: [],
+    freshText: '',
+    selectedTrack: null,
     ticks: [],
     showModal: false,
     selectedAchievement: null,
@@ -348,6 +366,11 @@ Page({
     }
 
     this._rawByType = byType;
+    // 新点亮一句话（2026-11-23）：射灯只在节点上扫一下，这里用字写出来；最多列三枚，其余写「等 N 枚」
+    const freshNames = normalized.filter((a) => freshLit.indexOf(a.id) >= 0).map((a) => a.name).filter(Boolean);
+    const freshText = freshNames.length
+      ? freshNames.slice(0, 3).join('、') + (freshNames.length > 3 ? ` 等 ${freshNames.length} 枚` : '')
+      : '';
 
     this.setData({
       achievements: normalized,
@@ -355,6 +378,7 @@ Page({
       chapters,
       nextUp,
       ticks,
+      freshText,
       achievementStats: currentStats,
       loading: false,
       refreshing: false,
@@ -442,6 +466,7 @@ Page({
     const selected = normalizeAchievement(achievement);
     this.setData({
       selectedAchievement: { ...selected, route: selected.unlocked ? null : routeOf(selected.id), routeHint: selected.unlocked ? '' : hintOf(selected.id) },
+      selectedTrack: trackOfAchievement(this.data.chapters, selected.id),
       showModal: true
     });
   },
@@ -458,7 +483,8 @@ Page({
   closeModal() {
     this.setData({
       showModal: false,
-      selectedAchievement: null
+      selectedAchievement: null,
+      selectedTrack: null
     });
   },
 
