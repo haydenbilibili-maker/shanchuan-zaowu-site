@@ -6,3 +6,4 @@
 npm run check:daily-digest
 # 2026-09-28：超管数据报表「昨日 / 选某一天」单日视图（北京时间营业日、契约不动、对比诚实）
 npm run check:report-day
+npm run test:cart-badge

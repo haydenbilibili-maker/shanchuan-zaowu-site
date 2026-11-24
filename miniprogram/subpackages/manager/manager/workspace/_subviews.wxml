@@ -397,6 +397,27 @@
         <!-- ② 两条**独立**一键工具条（口径与动作与改前逐字一致，只换了页）——
              各自带自己的件数与方向按钮，方便分别操作（例如只清保护类、或只清动物类）；
              进行中只压暗正在跑的那一组。 -->
+        <!-- 上下架状态一键（2026-11-25 产品负责人点名）：与风险分层两条独立，不筛风险等级；
+             两条各自带自己的件数与方向按钮，口径对标「高风险 / 中等风险」那两条。 -->
+        <view class="risk-bar is-relist" wx:if="{{productShelfCounts.off > 0}}">
+          <view class="risk-bar-main">
+            <text class="risk-bar-label">已下架 {{productShelfCounts.off}} 件</text>
+            <text class="risk-bar-sub">下架不影响商品与订单数据 · 上架后立即对顾客可见</text>
+          </view>
+          <view class="risk-bar-actions">
+            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn {{bulkRiskRunning === 'off' ? 'is-disabled' : ''}}" bindtap="bulkRelistOffShelf">一键上架</view>
+          </view>
+        </view>
+        <view class="risk-bar is-onsale" wx:if="{{productShelfCounts.on > 0}}">
+          <view class="risk-bar-main">
+            <text class="risk-bar-label">在售 {{productShelfCounts.on}} 件</text>
+            <text class="risk-bar-sub">下架后顾客立即看不到 · 可随时用上面「已下架一键上架」恢复</text>
+          </view>
+          <view class="risk-bar-actions">
+            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn is-danger {{bulkRiskRunning === 'on' ? 'is-disabled' : ''}}" bindtap="bulkOffShelfOnSale">一键下架</view>
+          </view>
+        </view>
+
         <view class="risk-bar" wx:if="{{highRiskCount > 0}}">
           <view class="risk-bar-main">
             <text class="risk-bar-label">高风险 {{highRiskCount}} 件</text>

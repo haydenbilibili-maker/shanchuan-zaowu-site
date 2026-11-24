@@ -4164,6 +4164,27 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: rgba(198, 58, 63, 0.12);
   border: 1rpx solid rgba(198, 58, 63, 0.5);
 }
+/* 在售一键下架（2026-11-25）：中性底 + 红色按钮，语气比风险条克制 */
+.risk-bar.is-onsale {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(196, 167, 108, 0.28);
+}
+.risk-bar.is-onsale .risk-bar-label {
+  color: var(--color-text-primary);
+}
+/* 已下架一件键上架（2026-11-25）：与风险条同构，但用铜金而不是警示红 —— 它是「恢复」不是「风险」 */
+.risk-bar.is-relist {
+  background: rgba(196, 167, 108, 0.1);
+  border-color: rgba(196, 167, 108, 0.45);
+}
+.risk-bar.is-relist .risk-bar-label {
+  color: #E0CFA3;
+}
+.risk-bar.is-relist .risk-bar-btn {
+  color: #1B1916;
+  background: #E0CFA3;
+  border-color: #E0CFA3;
+}
 .risk-bar-main {
   display: flex;
   flex-direction: column;

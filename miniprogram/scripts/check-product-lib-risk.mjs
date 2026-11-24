@@ -83,9 +83,11 @@ export function run(src = {}) {
   /* ── A2/A3/A4 一键上下线 ──────────────────────────────────────── */
   const bulk = methodBody(cfg, 'bulkToggleRisk')
   ok(!!bulk, 'A2 找不到 bulkToggleRisk（一键上下线）')
-  ok(/action:\s*'submitProductShelf'/.test(bulk) && /name:\s*'manageApprovals'/.test(bulk),
+  // 2026-11-25：批量循环抽到 _applyShelfBulk（风险两条与上下架状态两条共用），校验范围随之覆盖到执行器
+  const bulkApply = methodBody(cfg, '_applyShelfBulk')
+  ok(/action:\s*'submitProductShelf'/.test(bulk + bulkApply) && /name:\s*'manageApprovals'/.test(bulk + bulkApply),
     'A2 一键上下线没有复用 manageApprovals.submitProductShelf（不许新增写库旁路）')
-  ok(!/\.collection\(/.test(bulk), 'A2 一键上下线里出现直接读写集合（绕过了审批接口）')
+  ok(!/\.collection\(/.test(bulk + bulkApply), 'A2 一键上下线里出现直接读写集合（绕过了审批接口）')
   ok(/this\._scanProductIds\(/.test(bulk), 'A3 作用域不是分页扫描（_scanProductIds）')
   ok(!/this\.data\.products/.test(bulk), 'A3 作用域用了当前页列表（this.data.products）——只处理第一页')
   const scan = methodBody(cfg, '_scanProductIds')
@@ -95,6 +97,21 @@ export function run(src = {}) {
   ok(/openAppModal\(/.test(bulk) && /\$\{ids\.length\}/.test(bulk),
     'A4 一键上下线没有确认弹窗或没带件数')
   ok(/#D64045/i.test(bulk), 'A4 一键下架没有用危险色（确认框缺危险语义）')
+  // 2026-11-25 产品负责人点名：藏品 · 风险管理 增加「已下架一键上架」与「在售一键下架」，能力对标风险分层两条
+  const relist = methodBody(cfg, 'bulkRelistOffShelf')
+  const offsale = methodBody(cfg, 'bulkOffShelfOnSale')
+  ok('A9 已下架一键上架：分页扫全库 shelfFilter=off、确认框写明来源许可、复用执行器、跑完刷新列表与概览',
+    !!relist && /shelfFilter:\s*'off'/.test(relist) && /_scanProductIds\(/.test(relist) && !/this\.data\.products/.test(relist) &&
+    /openAppModal\(/.test(relist) && /合法来源与许可/.test(relist) && /_applyShelfBulk\(ids, true/.test(relist) &&
+    /loadProducts\(\{ silent: true \}\)/.test(relist), fails)
+  ok('A9 在售一键下架：分页扫全库 shelfFilter=on、危险确认、复用执行器，文案提示可恢复',
+    !!offsale && /shelfFilter:\s*'on'/.test(offsale) && /_scanProductIds\(/.test(offsale) && /danger:\s*true/.test(offsale) &&
+    /_applyShelfBulk\(ids, false/.test(offsale) && /已下架一键上架/.test(offsale), fails)
+  const shelfWxml = read(F.wxml)
+  ok('A9 页面：两条状态条各自带件数与按钮（已下架→一键上架 / 在售→一键下架），进行中置灰',
+    /已下架 \{\{productShelfCounts\.off\}\} 件/.test(shelfWxml) && /bindtap="bulkRelistOffShelf"/.test(shelfWxml) &&
+    /在售 \{\{productShelfCounts\.on\}\} 件/.test(shelfWxml) && /bindtap="bulkOffShelfOnSale"/.test(shelfWxml) &&
+    /bulkRiskRunning === 'off'/.test(shelfWxml) && /bulkRiskRunning === 'on'/.test(shelfWxml), fails)
 
   /* ── A5/A6 中等风险（**动物馆分类**，2026-10-14 收窄）——两个独立入口 ──────
      产品负责人第二轮指令：「中等风险藏品仅限于分类中为动物馆中的藏品，**而非动物界**；缩小覆盖面」。

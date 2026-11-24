@@ -5087,6 +5087,139 @@ const managerPageConfig = {
    *   —— **不新增任何写库旁路**，流程与状态机一字未改
    * - 先确认（带件数与方向后果）再执行，分块上报进度，结束后**静默刷新**（不弹遮罩、不动滚动位置）
    */
+  /**
+   * 批量上/下架执行器（2026-11-25 抽出，供「风险分层」与「已下架一键上架」共用）
+   * 每批 8 个串行分块，避免一次打爆云函数；返回可直接展示的文案片段。
+   */
+  async _applyShelfBulk(ids, onShelf, label, runningKey) {
+    let okCount = 0;
+    let pendingCount = 0;
+    let failCount = 0;
+    const CHUNK = 8;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const chunk = ids.slice(i, i + CHUNK);
+      wx.showLoading({
+        title: `${onShelf ? '上架' : '下架'}中 ${Math.min(i + chunk.length, ids.length)}/${ids.length}`
+      });
+      const results = await Promise.all(chunk.map((id) => wx.cloud.callFunction({
+        name: 'manageApprovals',
+        data: { action: 'submitProductShelf', productId: id, onShelf }
+      }).then((res) => (res && res.result) || { success: false }).catch(() => ({ success: false }))));
+      results.forEach((r) => {
+        if (r && r.success) {
+          if (r.pendingApproval) pendingCount += 1;
+          else okCount += 1;
+        } else {
+          failCount += 1;
+        }
+      });
+    }
+    wx.hideLoading();
+    const parts = [`${label}${onShelf ? '上架' : '下架'}成功 ${okCount} 件`];
+    if (pendingCount) parts.push(`待超管审核 ${pendingCount} 件`);
+    if (failCount) parts.push(`失败 ${failCount} 件`);
+    parts.failed = failCount > 0;
+    return parts;
+  },
+
+  /**
+   * 在售商品**一键下架**（2026-11-25：与「已下架一键上架」配对，能力对标风险分层的两把按钮）
+   * - 作用域 = 全库 `shelfFilter: 'on'`；下架不影响数据与订单，可随时用上面的「已下架一键上架」恢复；
+   * - 二次确认文案写明「顾客立即看不到」，避免误触。
+   */
+  async bulkOffShelfOnSale() {
+    if (this.data.bulkRiskRunning) return;
+    const total = Number(this.data.productShelfCounts && this.data.productShelfCounts.on) || 0;
+    if (!total) {
+      this.showHubTip('当前没有在售藏品', 'info');
+      return;
+    }
+    this.setData({ bulkRiskRunning: 'on' });
+    wx.showLoading({ title: '统计在售藏品…' });
+    let ids = [];
+    try {
+      ids = await this._scanProductIds({ shelfFilter: 'on' });
+    } catch (err) {
+      wx.hideLoading();
+      this.setData({ bulkRiskRunning: '' });
+      this.showHubTip(formatCloudFnError(err, '统计失败'), 'warn');
+      return;
+    }
+    wx.hideLoading();
+    if (!ids.length) {
+      this.setData({ bulkRiskRunning: '' });
+      this.showHubTip('当前没有在售藏品', 'info');
+      return;
+    }
+    const ok = await new Promise((resolve) => {
+      openAppModal({
+        title: `一键下架 ${ids.length} 件在售藏品`,
+        content: `共 ${ids.length} 件在售藏品。\n\n下架后顾客立即看不到，商品与订单数据不受影响；之后可用「已下架一键上架」恢复全部。`,
+        confirmText: '全部下架',
+        danger: true,
+        success: (r) => resolve(!!r.confirm)
+      }, this);
+    });
+    if (!ok) {
+      this.setData({ bulkRiskRunning: '' });
+      return;
+    }
+    const parts = await this._applyShelfBulk(ids, false, '在售', 'bulkRiskRunning');
+    this.showHubTip(parts.join(' · '), parts.failed ? 'warn' : 'info');
+    this.setData({ bulkRiskRunning: '' });
+    this.loadProducts({ silent: true });
+    if (this.data.productLibTab === 'risk') this.loadRiskOverview();
+  },
+
+  /**
+   * 已下架商品**一键上架**（2026-11-25 产品负责人点名：超管工作台 · 藏品 · 风险管理）
+   * - 作用域 = 全库 `shelfFilter: 'off'`（分页取全量，不是当前页）；
+   * - 与风险分层两把按钮独立：这里不筛风险等级，纯粹把「已下架」的重新上架；
+   * - 上架后立即对顾客可见，确认框里写明来源与许可要求。
+   */
+  async bulkRelistOffShelf() {
+    if (this.data.bulkRiskRunning) return;
+    const total = Number(this.data.productShelfCounts && this.data.productShelfCounts.off) || 0;
+    if (!total) {
+      this.showHubTip('当前没有已下架的藏品', 'info');
+      return;
+    }
+    this.setData({ bulkRiskRunning: 'off' });
+    wx.showLoading({ title: '统计已下架藏品…' });
+    let ids = [];
+    try {
+      ids = await this._scanProductIds({ shelfFilter: 'off' });
+    } catch (err) {
+      wx.hideLoading();
+      this.setData({ bulkRiskRunning: '' });
+      this.showHubTip(formatCloudFnError(err, '统计失败'), 'warn');
+      return;
+    }
+    wx.hideLoading();
+    if (!ids.length) {
+      this.setData({ bulkRiskRunning: '' });
+      this.showHubTip('当前没有已下架的藏品', 'info');
+      return;
+    }
+    const ok = await new Promise((resolve) => {
+      openAppModal({
+        title: `一键上架 ${ids.length} 件已下架藏品`,
+        content: `共 ${ids.length} 件已下架藏品。\n\n上架后立即对顾客可见 —— 请先确认每件的合法来源与许可材料齐备。`,
+        confirmText: '全部上架',
+        success: (r) => resolve(!!r.confirm)
+      }, this);
+    });
+    if (!ok) {
+      this.setData({ bulkRiskRunning: '' });
+      return;
+    }
+    const parts = await this._applyShelfBulk(ids, true, '已下架', 'bulkRiskRunning');
+    this.showHubTip(parts.join(' · '), parts.failed ? 'warn' : 'info');
+    this.setData({ bulkRiskRunning: '' });
+    this.loadProducts({ silent: true });
+    if (this.data.productLibTab === 'risk') this.loadRiskOverview();
+  },
+
   async bulkToggleRisk(e) {
     const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
     const risk = String(ds.risk || 'high') === 'medium' ? 'medium' : 'high';
@@ -5129,33 +5262,8 @@ const managerPageConfig = {
       return;
     }
 
-    let okCount = 0;
-    let pendingCount = 0;
-    let failCount = 0;
-    const CHUNK = 8;
-    for (let i = 0; i < ids.length; i += CHUNK) {
-      const chunk = ids.slice(i, i + CHUNK);
-      wx.showLoading({
-        title: `${onShelf ? '上架' : '下架'}中 ${Math.min(i + chunk.length, ids.length)}/${ids.length}`
-      });
-      const results = await Promise.all(chunk.map((id) => wx.cloud.callFunction({
-        name: 'manageApprovals',
-        data: { action: 'submitProductShelf', productId: id, onShelf }
-      }).then((res) => (res && res.result) || { success: false }).catch(() => ({ success: false }))));
-      results.forEach((r) => {
-        if (r && r.success) {
-          if (r.pendingApproval) pendingCount += 1;
-          else okCount += 1;
-        } else {
-          failCount += 1;
-        }
-      });
-    }
-    wx.hideLoading();
-    const parts = [`${tier.label}${onShelf ? '上架' : '下架'}成功 ${okCount} 件`];
-    if (pendingCount) parts.push(`待超管审核 ${pendingCount} 件`);
-    if (failCount) parts.push(`失败 ${failCount} 件`);
-    this.showHubTip(parts.join(' · '), failCount ? 'warn' : 'info');
+    const parts = await this._applyShelfBulk(ids, onShelf, tier.label, 'bulkRiskRunning');
+    this.showHubTip(parts.join(' · '), parts.failed ? 'warn' : 'info');
     this.setData({ bulkRiskRunning: '' });
     this.loadProducts({ silent: true });
     // 概览上的分层件数与上下架态也变了 —— 不刷新就会出现「条上 11 件、概览还写 0 在架」

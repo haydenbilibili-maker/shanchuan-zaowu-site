@@ -923,6 +923,7 @@ Page(withAppModal({
       app.globalData.userInfo = null;
       app.globalData.userSession = null;
       app.globalData.cartBadgeCount = 0;
+      try { wx.removeStorageSync('cart_badge_count_v1'); } catch (e) { /* ignore */ }
     }
     clearMemberCardCache();
     clearWorkbenchBadgeCache();

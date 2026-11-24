@@ -310,6 +310,8 @@
     "test:wish-labels:selftest": "node miniprogram/scripts/test-wish-labels.mjs --selftest",
     "test:museum-guide": "node miniprogram/scripts/test-museum-guide.mjs",
     "test:ai-center": "node miniprogram/scripts/test-ai-center.mjs",
+    "test:cart-badge": "node miniprogram/scripts/test-cart-badge.mjs",
+    "test:cart-badge:selftest": "node miniprogram/scripts/test-cart-badge.mjs --selftest",
     "test:ai-center:selftest": "node miniprogram/scripts/test-ai-center.mjs --selftest",
     "test:museum-guide:selftest": "node miniprogram/scripts/test-museum-guide.mjs --selftest",
     "test:museum-guide-monitor": "node miniprogram/scripts/test-museum-guide-monitor.mjs",

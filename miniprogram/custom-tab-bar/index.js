@@ -73,7 +73,15 @@ Component({
     syncCartBadgeFromGlobal() {
       try {
         const app = getApp();
-        const count = (app.globalData && app.globalData.cartBadgeCount) || 0;
+        let count = (app.globalData && app.globalData.cartBadgeCount) || 0;
+        // 2026-11-25：各 tab 是不同的 tab-bar 实例，切页只能读 globalData；一次失败刷新把 globalData 写成 0，
+        // 角标就会在「我的」这类新实例上消失。globalData 为 0 时用本地最后一次确认值兜底（本机退出态除外）。
+        if (!count) {
+          const { readSavedBadge } = require('../utils/cartHelper');
+          let loggedOut = false;
+          try { loggedOut = require('../utils/userSession').isLocalLoggedOut(); } catch (err) { /* ignore */ }
+          if (!loggedOut) count = readSavedBadge();
+        }
         this.setCartBadge(count);
       } catch (e) { /* ignore */ }
     },
@@ -83,6 +91,9 @@ Component({
         const app = getApp();
         if (app.globalData) app.globalData.cartBadgeCount = n;
       } catch (e) { /* ignore */ }
+      if (n > 0) {
+        try { require('../utils/cartHelper').saveBadge(n); } catch (e) { /* ignore */ }
+      }
       const cartBadge = n > 99 ? '99+' : String(n);
       this.setData({
         cartBadge,
