@@ -159,12 +159,23 @@ async function runChecks() {
     /const left = Math\.max\(0, Number\(result\.unreadCount\) \|\| 0\)/.test(body) && /this\.loadMessages\(true, \{ silent: true \}\)/.test(body))
 
   // R5
+  // R7 兜底强标（2026-11-25 再一次「点了仍有 1 封」）：不看分类 / 队列，按本人把两个集合的未读全扫一遍；
+  // doc().update 失败再试 where(_id) 更新；只在「标记 + 重数后仍有未读」时触发。
+  const src = read(P.fn)
+  ok('R7 兜底强标：按本人扫两集合（不带分类 / 队列条件）、doc 失败回落 where 更新、仅在仍有未读时触发',
+    /async function forceMarkUnread\(openid\)/.test(src) &&
+    /const specs = \[\s*\n\s*\['user_messages', _\.and\(\[buildRecipientWhere\(openid, 'all'\)/.test(src) &&
+    /db\.collection\(col\)\.where\(\{ _id: id \}\)\.update\(patch\)/.test(src) &&
+    /const swept = await forceMarkUnread\(openid\)/.test(src) &&
+    !/forceMarkUnread\(openid, category/.test(src))
+
   ok('R5 列表响应不带内部字段', before.messages.every((m) => !('_members' in m) && !('_source' in m)))
   return fails
 }
 
 const INJECTIONS = [
   { name: '合并只记两个 id', file: P.fn, find: '    _members: [].concat(prev._members || [], item._members || [])\n      .filter((m, i, arr) => m && m.id && arr.findIndex((x) => x && x.col === m.col && x.id === m.id) === i)\n', replace: '    _members: (primary._members || []).slice(0, 1)\n' },
+  { name: '兜底不扫', file: P.fn, find: 'const swept = await forceMarkUnread(openid', replace: 'const swept = 0; void (openid' },
   { name: '改不上也报成功', file: P.fn, find: "    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated }", replace: "    return { success: true, msg: '全部标记成功', unreadCount: 0 }" },
   { name: '单条已读不带整组', file: P.fn, find: '      if (group && group._members && group._members.length > 1) await markMembersRead(group._members)\n', replace: '' },
   { name: '提示又被 hideLoading 吞掉', file: P.page, find: "    wx.hideLoading();\n    this._markingAll = false;\n", replace: "    this._markingAll = false;\n" },

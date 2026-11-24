@@ -773,6 +773,44 @@ async function loadUnreadMembers(openid, category, typeFilter, requestedQueue) {
   return out
 }
 
+/**
+ * 兜底强标（2026-11-25 产品负责人再次截图「点了全部已读仍有 1 封」）：
+ * 合并读取有分类 / 队列 / 160 条窗口 / 去重等条件，任何一条不满足就会留下一条「点不掉」的未读。
+ * 这里不看分类、不看队列，直接按**本人**在两个集合里扫所有 read !== true 的落点，逐条标；
+ * doc(id).update 失败再试 where(_id) 更新（某些历史文档 doc() 会抛，where() 能过）。
+ * 只有在「标记 + 重数后仍有未读」时才调用，正常已读路径不受影响。
+ */
+async function forceMarkUnread(openid) {
+  let marked = 0
+  const specs = [
+    ['user_messages', _.and([buildRecipientWhere(openid, 'all'), { read: _.neq(true) }])],
+    ['notification_logs', { recipient: openid, read: _.neq(true) }]
+  ]
+  for (const [col, where] of specs) {
+    for (let page = 0; page < 5; page += 1) {
+      let rows = []
+      try {
+        rows = ((await db.collection(col).where(where).limit(100).get()).data) || []
+      } catch (e) {
+        break
+      }
+      const ids = rows.map((d) => d && d._id).filter(Boolean)
+      if (!ids.length) break
+      for (const id of ids) {
+        const patch = { data: { read: true, readAt: db.serverDate() } }
+        try {
+          await db.collection(col).doc(id).update(patch)
+        } catch (e) {
+          try { await db.collection(col).where({ _id: id }).update(patch) } catch (e2) { /* 尽力而为 */ }
+        }
+      }
+      marked += ids.length
+      if (ids.length < 100) break
+    }
+  }
+  return marked
+}
+
 async function markAllRead(openid, category, typeFilter, requestedQueue, isStaff) {
   if (requestedQueue === QUEUE_WORKFLOW && !isStaff) {
     return { success: false, code: 'FORBIDDEN', msg: '工作流仅员工可见' }
@@ -791,9 +829,13 @@ async function markAllRead(openid, category, typeFilter, requestedQueue, isStaff
   const r = await markMembersRead(members)
 
   // 改完重新数一遍，如实回报：仍有未读就说清楚，并把卡住的那几封记进日志便于排查
-  const left = (await load()).filter(isUnread)
+  let left = (await load()).filter(isUnread)
   if (left.length) {
-    console.error('markAllRead 仍有未读', JSON.stringify(left.map((m) => ({ id: m._id, type: m.type, source: m._source, members: m._members }))), 'failed', JSON.stringify(r.failed))
+    const swept = await forceMarkUnread(openid)
+    left = (await load()).filter(isUnread)
+    console.error('markAllRead 仍有未读', JSON.stringify(left.map((m) => ({ id: m._id, type: m.type, source: m._source, members: m._members }))), 'swept', swept, 'failed', JSON.stringify(r.failed))
+  }
+  if (left.length) {
     return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated }
   }
   return { success: true, msg: '全部标记成功', unreadCount: 0, updated: r.updated }

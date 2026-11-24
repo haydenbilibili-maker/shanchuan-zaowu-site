@@ -815,6 +815,9 @@ Page({
     this.setData(patch);
     this.syncParentUnreadCount();
     wx.showToast({ title: '已全部读过', icon: 'none' });
+    // 2026-11-25：本地只 patch 了「看起来已读」，若库里还有兜底没清掉的落点，界面会继续显示未读；
+    // 静默重拉一次，让列表与未读数都回到云端真实状态（成功时一般无变化，失败时会如实显示剩下的）。
+    this.loadMessages(true, { silent: true });
     trackBehavior('message_mark_all_read', 'category', this.data.activeCategory);
   },
 
