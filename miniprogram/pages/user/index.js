@@ -218,8 +218,10 @@ function readWorkbenchBadgeCache() {
   try {
     const raw = wx.getStorageSync(WORKBENCH_BADGE_CACHE_KEY);
     if (!raw || typeof raw !== 'object') return null;
+    // 2026-11-25 产品负责人核查：工作台只给授权用户。快照必须**归属当前 openid** 才能首屏预渲染 ——
+    // 旧写法「openid 为空就放行」会让没登录 / 换号的首屏把上一位员工的工台画出来（C 端能看到）。
     const openid = currentOpenid();
-    if (openid && raw.openid && raw.openid !== openid) return null;
+    if (!openid || !raw.openid || raw.openid !== openid) return null;
     if (!Array.isArray(raw.entries) || !raw.entries.length) return null;
     return raw;
   } catch (e) {
@@ -2478,6 +2480,7 @@ Page(withAppModal({
         order: this.data.workbenchOrderUnread || (cached && cached.order) || 0,
         wishlist: this.data.workbenchWishlistUnread || (cached && cached.wishlist) || 0
       };
+      if (!entries.length) clearWorkbenchBadgeCache();
       const tiles = buildWorkbenchTilesFromCounts(entries, counts);
       const resolved = resolveWorkspaceRole(payload);
       return {
