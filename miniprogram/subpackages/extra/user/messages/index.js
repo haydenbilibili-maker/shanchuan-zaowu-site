@@ -825,19 +825,16 @@ Page({
   },
 
 
-  /** 诊断：把「点不掉的未读」的库内原貌弹出来（只有本人数据），便于产品负责人直接截图反馈 */
+  /**
+   * 未读诊断（2026-11-25 产品负责人：诊断弹窗不宜在 C 端展示，隐藏，仅留核查能力）
+   * 只写 DevTools Console，不弹任何界面；云端 `diagnoseUnread` 动作保留，便于后续核查。
+   */
   async diagnoseUnread(reason) {
     try {
       const res = await wx.cloud.callFunction({ name: 'getUserMessages', data: { action: 'diagnoseUnread' } });
       const d = (res && res.result) || {};
-      const items = Array.isArray(d.items) ? d.items : [];
-      if (!items.length) {
-        openAppModal({ title: '未读清空了', content: `${reason || '标记后'}，云端已无未读。若界面仍显示，下拉刷新即可。`, showCancel: false });
-        return;
-      }
-      const brief = items.slice(0, 3).map((x) => `${x.col}/${x.id} · ${x.type || '-'} · ${x.category || '-'}${x.error ? ' · ' + x.error : ''}`).join('\n');
-      openAppModal({ title: `还有 ${items.length} 封没标上`, content: `${reason ? reason + '\n' : ''}${brief}`, showCancel: false, confirmText: '知道了' });
-    } catch (e) { /* 诊断本身失败不再打扰 */ }
+      console.warn('[inbox] 未读诊断', reason || '', JSON.stringify({ count: d.count, items: d.items }).slice(0, 800));
+    } catch (e) { /* 诊断失败不打扰用户 */ }
   },
 
   syncParentUnreadCount() {

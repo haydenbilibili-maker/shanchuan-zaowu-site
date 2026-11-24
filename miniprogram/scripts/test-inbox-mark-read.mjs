@@ -170,9 +170,14 @@ async function runChecks() {
     !/forceMarkUnread\(openid, category/.test(src))
 
   // R8 诊断（2026-11-25「点了毫无反应」）：点不掉时把库内原貌回给页面弹窗，便于精确定位
-  ok('R8 诊断动作：只查本人未读、两集合都扫、返回 id/集合/类型/分类/读取字段；页面在失败与「仍有未读」时都调它',
+  const pageSrc = read(P.page)
+  const diagFn = (pageSrc.match(/async diagnoseUnread\(reason\) \{[\s\S]*?\n  \},/) || [''])[0]
+  ok('R8 诊断动作保留：只查本人未读、两集合都扫、返回 id/集合/类型/分类/读取字段',
     /case 'diagnoseUnread'/.test(src) && /col, id: String\(d\._id \|\| ''\)/.test(src) && /read: d\.read === true/.test(src) &&
-    /async diagnoseUnread\(reason\)/.test(read(P.page)) && /this\.diagnoseUnread\(failed \?/.test(read(P.page)) && /if \(left > 0\) this\.diagnoseUnread/.test(read(P.page)))
+    /async diagnoseUnread\(reason\)/.test(pageSrc) && /this\.diagnoseUnread\(failed \?/.test(pageSrc) && /if \(left > 0\) this\.diagnoseUnread/.test(pageSrc))
+  ok('R8 诊断在 C 端**不弹界面**（产品负责人 2026-11-25）：只写 console.warn，不用 Modal / Toast',
+    !!diagFn && /console\.warn\(/.test(diagFn) && !/openAppModal|wx\.showModal|wx\.showToast/.test(diagFn) &&
+    !/封没标上/.test(pageSrc))
 
   ok('R5 列表响应不带内部字段', before.messages.every((m) => !('_members' in m) && !('_source' in m)))
   return fails
@@ -180,6 +185,7 @@ async function runChecks() {
 
 const INJECTIONS = [
   { name: '合并只记两个 id', file: P.fn, find: '    _members: [].concat(prev._members || [], item._members || [])\n      .filter((m, i, arr) => m && m.id && arr.findIndex((x) => x && x.col === m.col && x.id === m.id) === i)\n', replace: '    _members: (primary._members || []).slice(0, 1)\n' },
+  { name: '诊断又弹窗', file: P.page, find: "console.warn('[inbox] 未读诊断'", replace: "openAppModal({ title: '还有', content: 'x' }); console.warn('[inbox] 未读诊断'" },
   { name: '诊断不查库', file: P.fn, find: "case 'diagnoseUnread': {", replace: 'case \'diagnoseUnreadX\': {' },
   { name: '兜底不扫', file: P.fn, find: 'const swept = await forceMarkUnread(openid', replace: 'const swept = 0; void (openid' },
   { name: '改不上也报成功', file: P.fn, find: "    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated }", replace: "    return { success: true, msg: '全部标记成功', unreadCount: 0 }" },
