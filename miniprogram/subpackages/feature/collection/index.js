@@ -34,6 +34,21 @@ function nextHintOf(cards, stats, offline) {
 
 
 const ONLY_LIT_KEY = 'atlas_only_lit_v1'
+/**
+ * 卷章刻度（2026-11-23 全册归章后最大一章 32 页）：最多 PIP_MAX 格、只占一行；页数多于格数时**按比例点亮**
+ * （翻开过至少亮 1 格，未翻满不全亮）。原写法格数封顶 12 但按原始页数点亮，32 页翻开 5 页会亮 5/12，比例不对，且 11–12 格折两行。
+ */
+const PIP_MAX = 8
+function chapterPips(got, total) {
+  const t = Math.max(0, Number(total) || 0)
+  const g = Math.min(t, Math.max(0, Number(got) || 0))
+  const n = Math.min(PIP_MAX, t)
+  let lit = t <= PIP_MAX ? g : Math.round((g / t) * n)
+  if (g > 0 && lit === 0) lit = 1
+  if (g < t && lit === n) lit = n - 1
+  return Array.from({ length: n }, (_, i) => ({ i, lit: i < lit }))
+}
+
 Page({
   data: {
     loading: true,
@@ -103,7 +118,7 @@ Page({
     // 卷章刻度（2026-11-22）：每章一排小格，亮 = 已翻开（原只有「1/4」分数）
     const stats = Object.assign({}, rawStats, {
       series: (rawStats.series || []).map((sr) => Object.assign({}, sr, {
-        pips: Array.from({ length: Math.min(12, Number(sr.total) || 0) }, (_, i) => ({ i, lit: i < (Number(sr.got) || 0) }))
+        pips: chapterPips(sr.got, sr.total)
       }))
     })
     const recentNotes = formatRecentLogs(pack.recentLogs || []).slice(0, 3)

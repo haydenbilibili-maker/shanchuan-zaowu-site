@@ -38,6 +38,8 @@ Page({
   data: {
     busy: false,
     loadingText: '',
+    /** 等待卡扫描框里显示的照片（本次刚拍 / 刚选的本地临时图；不上传、不入库） */
+    scanPhoto: '',
     uploadProgress: 0,
     loadingStep: 0,
     recentList: [],
@@ -219,6 +221,7 @@ Page({
 
     this.setData({
       busy: true,
+      scanPhoto: localPath,
       loadingText: '藏品入镜…',
       uploadProgress: 0,
       loadingStep: 1

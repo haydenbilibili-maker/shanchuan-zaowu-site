@@ -27,10 +27,16 @@
     <image class="frame-ico" src="/assets/icons/camera.png" mode="aspectFit"></image>
     <text class="frame-t">把标本放进框里</text>
     <text class="frame-s">正对 · 柔光 · 主体占满</text>
+    <!-- 2026-11-23 产品负责人截图「上面已有明显的拍照入口，下方拍照 button 整体重复」：
+         取景框就是唯一的拍照入口，原框下独立的「拍照鉴定」按钮并进框底，成为框的一部分（整框都可点，这枚胶囊只是标识）。
+         原按钮是 <button>，还被微信内置 184px 宽压窄，一并去掉。 -->
+    <view class="frame-cta" aria-hidden="true">
+      <image class="frame-cta-ico" src="/assets/icons/camera.png" mode="aspectFit"></image>
+      <text>{{busy ? '鉴定中…' : '拍照鉴定'}}</text>
+    </view>
   </view>
 
   <view class="actions">
-    <button class="btn primary" bindtap="onTakePhoto" disabled="{{busy}}">拍照鉴定</button>
     <view class="album-link" bindtap="onChooseAlbum" hover-class="tap-press" hover-stay-time="80" aria-role="button">从相册选一张 ›</view>
     <!-- 原独立「三步」区块收成一行小字（2026-11-23）：等待卡上仍有入镜 → 归档 → 解读三步 -->
     <text class="act-meta">入镜 → 归档 → 解读 · 约 15–60 秒给出物种与手记</text>
@@ -89,7 +95,10 @@
   <view class="ui-pop-mask is-center loading-mask" wx:if="{{busy}}" catchtouchmove="true">
     <!-- 步骤与进度放进加载卡：放在遮罩下面时被压暗，等待 15–60 秒只看得到一个转圈 -->
     <view class="loading-core">
-      <view class="scan" aria-hidden="true">
+      <view class="scan {{scanPhoto ? 'has-photo' : ''}}" aria-hidden="true">
+        <!-- 2026-11-23 产品负责人截图：等待时扫描框里放刚拍 / 刚选的那张照片，扫描线从照片上扫过 -->
+        <shan-img ext-class="scan-photo" wx:if="{{scanPhoto}}" src="{{scanPhoto}}" mode="aspectFill" mark="{{false}}" />
+        <view class="scan-veil" wx:if="{{scanPhoto}}"></view>
         <view class="scan-corner is-tl"></view>
         <view class="scan-corner is-tr"></view>
         <view class="scan-corner is-bl"></view>

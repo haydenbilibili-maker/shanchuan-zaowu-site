@@ -86,6 +86,13 @@ function runChecks() {
   ok('D6 拍摄建议可折叠（头部可点、按 tipsOpen 出）', /class="tips-head" bindtap="onToggleTips"/.test(ew) && /<view class="tip-grid" wx:if="\{\{tipsOpen\}\}">/.test(ew))
   ok('D6 首帧按本机记录决定收展；列表回来后对齐；手动点过不再自动改',
     /tipsOpen: !hasRecord/.test(ej) && /if \(!this\._tipsTouched\) patch\.tipsOpen = list\.length === 0/.test(ej) && /this\._tipsTouched = true/.test(ej) && /wx\.setStorageSync\(HAS_RECORD_KEY/.test(ej))
+
+  /* D7 等待卡里显示刚拍 / 刚选的照片（2026-11-23 产品负责人截图） */
+  const ewRaw = read(F.entryWxml)
+  ok('D7 鉴定中：扫描框里显示本次照片（进入鉴定的同一次 setData 记下本地临时图），扫描线压在照片上',
+    /this\.setData\(\{\n      busy: true,\n      scanPhoto: localPath,/.test(ej) &&
+    /<view class="scan \{\{scanPhoto \? 'has-photo' : ''\}\}" aria-hidden="true">[\s\S]*?<shan-img ext-class="scan-photo" wx:if="\{\{scanPhoto\}\}" src="\{\{scanPhoto\}\}"[\s\S]*?<view class="scan-line"><\/view>/.test(ewRaw) &&
+    !/scanPhoto[^\n]*(uploadFile|callFunction)/.test(ej), fails)
   return fails
 }
 
@@ -105,6 +112,8 @@ const INJECTIONS = [
   { name: '独立三步区块回来', file: F.entryWxml, find: '  <view class="recent"', replace: '  <view class="flow"></view>\n  <view class="recent"' },
   { name: '拍摄建议不能收', file: F.entryWxml, find: '<view class="tip-grid" wx:if="{{tipsOpen}}">', replace: '<view class="tip-grid">' },
   { name: '手动收起后又被改回', file: F.entryJs, find: 'if (!this._tipsTouched) patch.tipsOpen', replace: 'patch.tipsOpen' },
+  { name: '鉴定中不记照片', file: F.entryJs, find: '      scanPhoto: localPath,\n', replace: '' },
+  { name: '扫描框不显示照片', file: F.entryWxml, find: '<shan-img ext-class="scan-photo" wx:if="{{scanPhoto}}" src="{{scanPhoto}}" mode="aspectFill" mark="{{false}}" />', replace: '' },
   { name: '工具格没按压态', file: F.wxml, find: 'bindtap="onGoShare" hover-class="tool-press"', replace: 'bindtap="onGoShare"' }
 ]
 

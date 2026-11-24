@@ -1,0 +1,22 @@
+/**
+ * 发表评价 · 底部发布条的状态（2026-11-23）：与 submitComment() 里的校验同口径 ——
+ * 先评分；正文去空白后至少 5 字；图片可选。只在模板里用，不改提交逻辑。
+ */
+var MIN_LEN = 5
+
+function trimmedLen(content) {
+  return String(content || '').trim().length
+}
+
+function ready(rating, content) {
+  return rating > 0 && trimmedLen(content) >= MIN_LEN
+}
+
+function hint(rating, content, imageCount) {
+  if (!(rating > 0)) return '先点上面的星星打个分'
+  var n = trimmedLen(content)
+  if (n < MIN_LEN) return n ? '再写几个字（至少 ' + MIN_LEN + ' 字）' : '写下一点真实感受（至少 ' + MIN_LEN + ' 字）'
+  return rating + ' 星 · ' + n + ' 字' + (imageCount ? ' · ' + imageCount + ' 张图' : '') + '，可以发布了'
+}
+
+module.exports = { ready: ready, hint: hint, MIN_LEN: MIN_LEN }

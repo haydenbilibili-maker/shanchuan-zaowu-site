@@ -1,5 +1,6 @@
 <!--subpackages/feature/comment/index.wxml-->
 <wxs src="../../../utils/latinDisplay.wxs" module="latin" />
+<wxs src="./submitState.wxs" module="ss" />
 <view class="page-wrapper">
   <scroll-view
     scroll-y
@@ -85,11 +86,13 @@
                   class="star {{rating >= star ? 'active' : ''}}"
                   bindtap="selectRating"
                   data-rating="{{star}}"
+                  hover-class="star-press"
+                  hover-stay-time="80"
                 >★</text>
               </block>
             </view>
-            <text class="rating-hint" wx:if="{{rating > 0}}">
-              {{rating === 5 ? '很喜欢' : rating === 4 ? '满意' : rating === 3 ? '还行' : rating === 2 ? '有些失望' : '不太满意'}}
+            <text class="rating-hint {{rating > 0 ? '' : 'is-idle'}}">
+              {{rating === 5 ? '很喜欢' : rating === 4 ? '满意' : rating === 3 ? '还行' : rating === 2 ? '有些失望' : rating === 1 ? '不太满意' : '点星星打分'}}
             </text>
           </view>
 
@@ -104,11 +107,20 @@
               maxlength="500"
               show-confirm-bar="{{false}}"
             ></textarea>
+            <!-- 2026-11-23：常用说法，点一下接到正文后面（不替换已写的） -->
+            <scroll-view class="phrase-scroll" scroll-x enable-flex="true" show-scrollbar="{{false}}">
+              <view class="phrase-row">
+                <text class="phrase" wx:for="{{phrases}}" wx:key="*this" data-text="{{item}}" bindtap="onPhrase" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
+              </view>
+            </scroll-view>
             <text class="char-count">{{content.length}}/500</text>
           </view>
 
           <view class="image-section">
-            <text class="section-label">图片（可选，最多 3 张）</text>
+            <view class="section-head">
+              <text class="section-label">图片（可选）</text>
+              <text class="section-count">{{images.length}}/3</text>
+            </view>
             <view class="image-upload">
               <view class="image-list">
                 <block wx:for="{{images}}" wx:key="*this" wx:for-index="index">
@@ -131,13 +143,20 @@
     </view>
   </scroll-view>
 
+  <!-- 发布条（2026-11-23 产品负责人截图「特别是下方的发布 button」）：
+       原用 <button>，微信内置 `button:not([size=mini]) { width: 184px; margin: 0 auto }` 的优先级高于 .submit-btn，
+       真机上宽度被压成 184px、贴左。改为 view；上方一行说明还差什么，未就绪时按钮淡显但仍可点（点了按原逻辑提示）。 -->
   <view class="submit-section safe-area" wx:if="{{canReview && !loadingGate}}">
-    <button
-      class="submit-btn {{submitting ? 'submitting' : ''}}"
+    <text class="submit-hint {{ss.ready(rating, content) ? 'is-ready' : ''}}">{{ss.hint(rating, content, images.length)}}</text>
+    <view
+      class="submit-btn {{ss.ready(rating, content) ? '' : 'is-wait'}} {{submitting ? 'is-busy' : ''}}"
       bindtap="submitComment"
-      disabled="{{submitting}}"
+      hover-class="{{submitting ? '' : 'submit-btn-press'}}"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="发布评价"
     >
-      {{submitting ? '提交中…' : '提交评价'}}
-    </button>
+      <text>{{submitting ? '发布中…' : '发布评价'}}</text>
+    </view>
   </view>
 </view>

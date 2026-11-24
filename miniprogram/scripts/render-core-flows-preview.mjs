@@ -155,10 +155,22 @@ const atlasStats = { total: atlasCards.length, unlocked: atlasCards.filter((c) =
   { id: 'shellroad', name: '贝壳之路', got: 0, total: 6, complete: false },
   { id: 'deeptime', name: '深时', got: 0, total: 5, complete: false },
   { id: 'swallowtail', name: '燕尾', got: 0, total: 6, complete: false },
-  { id: 'refraction', name: '折光', got: 0, total: 6, complete: false }
+  { id: 'refraction', name: '折光', got: 0, total: 16, complete: false },
+  // 2026-11-23 全册归章：再加三章（总页数取真目录）
+  { id: 'wings', name: '翅影', got: 5, total: 32, complete: false },
+  { id: 'understory', name: '林下与孑遗', got: 0, total: 15, complete: false },
+  { id: 'lode', name: '矿脉', got: 2, total: 12, complete: false }
 ] }
 // 卷章刻度（2026-11-22，与页面 applyPack 同算法）
-atlasStats.series = atlasStats.series.map((sr) => ({ ...sr, pips: Array.from({ length: sr.total }, (_, i) => ({ i, lit: i < sr.got })) }))
+// 2026-11-23：刻度直接用页面的 chapterPips（最多 8 格、按比例点亮），各章总页数取真目录
+const atlasPageSrc = readFileSync(join(MP, 'subpackages/feature/collection/index.js'), 'utf8')
+const atlasPipAt = atlasPageSrc.indexOf('const PIP_MAX = ')
+const chapterPips = new Function(atlasPageSrc.slice(atlasPipAt, atlasPageSrc.indexOf('\nPage({', atlasPipAt)) + '\nreturn chapterPips')()
+atlasStats.series = atlasStats.series.map((sr) => {
+  const real = atlasCatalogMod.ATLAS_SERIES.find((x) => x.id === sr.id)
+  const total = real ? real.speciesIds.length : sr.total
+  return { ...sr, total, pips: chapterPips(sr.got, total) }
+})
 
 /** 2026-11-23 超管「博物君」：用真聚合（museumGuideMonitor.summarize）+ 真视图（monitorView.buildView）现算，样例日志为合成数据 */
 function museumGuideMonitorSceneData() {
@@ -311,6 +323,8 @@ const SCENES = [
       recentList: [{ _id: 'r1', name: '光明女神闪蝶', latin: 'Morpho helena', thumb: P[0], timeText: '2 小时前' }, { _id: 'r2', name: '血漪蝶', latin: 'Cethosia biblis', thumb: P[1], timeText: '昨天' }],
       tipsOpen: false, photoTips: [{ k: '正对', v: '正对藏品主体' }]
     } },
+  // 2026-11-23 鉴定中：扫描框里显示刚拍的照片
+  { name: 'identify-loading', base: 'identify', h: 1500, wxml: 'subpackages/feature/identify/index', data: { busy: true, scanPhoto: P[0], loadingText: '博物解读中，约需 15–60 秒…', loadingStep: 3, uploadProgress: 96 } },
   {
     name: 'identify-result', h: 2400, wxml: 'subpackages/feature/identify/result/index', data: {
       archiveEmpty: true, profileEnriching: false, profileEnrichError: false,
@@ -925,6 +939,13 @@ const SCENES = [
       productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
+  // 2026-11-23 发表评价：通栏发布按钮 + 状态说明 + 常用说法
+  { name: 'comment-compose', h: 1800, wxml: 'subpackages/content/comment/index', data: {
+    loadingGate: false, canReview: true, viewReview: null, productOptions: [], targetId: 'p1', submitting: false,
+    targetInfo: { title: '玫瑰俏眼蝶闹钟', images: [P[1]], latinName: '' },
+    rating: 4, content: '比图片更好看，摆在书房刚好', images: [P[0]],
+    phrases: ['包装很用心', '比图片更好看', '做工细致', '适合送人', '摆在书房刚好', '颜色很正']
+  } },
   // 2026-11-23 AI 智能中心第六轮：脉搏 / 同事们 / 注意到的问题 / 档案卡（收起）/ 对话（依据时间）
   { name: 'ai-center', h: 2600, wxml: 'subpackages/ai/ai-center/index', data: (() => {
     const R = loadCjsModule(join(MP, 'subpackages/ai/ai-center/roles.js'))

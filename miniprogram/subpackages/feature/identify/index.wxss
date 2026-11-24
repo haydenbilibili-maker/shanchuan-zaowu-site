@@ -62,8 +62,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 520rpx;
+  height: 600rpx;
   margin-top: 40rpx;
+  padding-bottom: 96rpx;
+  box-sizing: border-box;
   background: radial-gradient(circle at 50% 45%, rgba(196, 167, 108, 0.08), rgba(26, 24, 20, 0) 70%), #1D1B17;
   border-radius: 8rpx;
 }
@@ -88,7 +90,8 @@
 /* 中心十字：对焦点 */
 .frame-cross {
   position: absolute;
-  top: 50%;
+  /* 框底让出 96rpx 给拍照胶囊后，内容列整体上移 48rpx；十字跟着上移，仍落在图标与标题之间 */
+  top: calc(50% - 48rpx);
   left: 50%;
   width: 40rpx;
   height: 40rpx;
@@ -120,6 +123,38 @@
   color: var(--color-text-secondary);
 }
 
+/* 框底的拍照胶囊（2026-11-23 并入取景框）：鉴定台唯一一处实心金；整框可点，这里只是标识 */
+.frame-cta {
+  position: absolute;
+  left: 50%;
+  bottom: 48rpx;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  height: 80rpx;
+  padding: 0 48rpx;
+  border-radius: var(--r-pill, 999rpx);
+  background: var(--brass-400);
+  color: #1A1814;
+  font-size: var(--fs-28);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.frame-cta-ico {
+  width: 34rpx;
+  height: 34rpx;
+  filter: brightness(0);
+  opacity: 0.85;
+}
+
+.frame.is-busy .frame-cta {
+  background: rgba(196, 167, 108, 0.2);
+  color: var(--brass-200);
+}
+
 /* —— 动作 —— */
 .actions {
   display: flex;
@@ -128,27 +163,6 @@
   gap: 20rpx;
   margin-top: 28rpx;
 }
-
-.btn {
-  width: 100%;
-  height: 96rpx;
-  line-height: 96rpx;
-  padding: 0;
-  margin: 0;
-  font-size: var(--fs-30);
-  letter-spacing: 0.12em;
-  border-radius: var(--radius-md);
-}
-
-.btn::after { border: none; }
-
-.btn.primary {
-  background: var(--brass-400);
-  color: #1A1814;
-  font-weight: 600;
-}
-
-.btn[disabled] { opacity: 0.5; }
 
 .act-meta {
   font-size: var(--fs-22);
@@ -363,6 +377,53 @@
   overflow: hidden;
 }
 
+/* 有照片时扫描框放大成取景窗：照片铺满（四角括线压在照片上），一层薄暗幕让扫描线看得清 */
+.scan.has-photo {
+  width: 300rpx;
+  height: 300rpx;
+}
+
+.scan-photo {
+  position: absolute;
+  top: 10rpx;
+  left: 10rpx;
+  right: 10rpx;
+  bottom: 10rpx;
+  width: calc(100% - 20rpx);
+  height: calc(100% - 20rpx);
+  border-radius: 6rpx;
+  animation: scan-photo-in 360ms ease-out both;
+}
+
+.scan-veil {
+  position: absolute;
+  top: 10rpx;
+  left: 10rpx;
+  width: calc(100% - 20rpx);
+  height: calc(100% - 20rpx);
+  border-radius: 6rpx;
+  background: linear-gradient(180deg, rgba(26, 24, 20, 0.15), rgba(26, 24, 20, 0.45));
+}
+
+@keyframes scan-photo-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.scan.has-photo .scan-line {
+  z-index: 2;
+  height: 3rpx;
+  box-shadow: 0 0 12rpx rgba(0, 0, 0, 0.35);
+  animation-name: scan-sweep-photo;
+}
+
+.scan.has-photo .scan-corner { z-index: 2; }
+
+@keyframes scan-sweep-photo {
+  from { transform: translateY(0); }
+  to { transform: translateY(266rpx); }
+}
+
 .scan-corner {
   position: absolute;
   width: 40rpx;
@@ -452,6 +513,7 @@
 
 /* 减弱动效（契约 C7 §5.3 / VI 规范 v1 §10.3）：系统开启「减少动态效果」时，无限循环动画停在静止态 */
 @media (prefers-reduced-motion: reduce) {
+  .scan-photo { animation: none; }
   .scan-line {
     animation: none;
   }

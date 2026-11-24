@@ -154,13 +154,15 @@ page {
 
 .chapter-pips {
   display: flex;
-  flex-wrap: wrap;
+  /* 2026-11-23：最多 8 格按比例点亮，一行放下（不折行）；格宽 14rpx 让小屏也放得下 */
+  flex-wrap: nowrap;
   gap: 6rpx;
   margin-top: 14rpx;
 }
 
 .chapter-pip {
-  width: 18rpx;
+  flex-shrink: 0;
+  width: 14rpx;
   height: 6rpx;
   border-radius: 3rpx;
   background: rgba(196, 167, 108, 0.18);

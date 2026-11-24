@@ -763,11 +763,14 @@ function checks(s) {
     /<text class="mint-txt">\{\{printDone \? '打印完成' : '正在打印专属证书…'\}\}<\/text>/.test(s.certPageWxml) && !/铸造/.test(s.certPageWxml.replace(/<!--[\s\S]*?-->/g, '')) &&
       /<view class="cp-machine">[\s\S]*?<view class="cp-slot"><\/view>[\s\S]*?<view class="cp-lights">/.test(s.certPageWxml) &&
       /animation: cp-feed 3\.2s [^;]*infinite;/.test(s.certPageWxss) && !/mint-spinner/.test(s.certPageWxml))
-  add('R11-3 鉴定台实心金只有「拍照鉴定」一处',
+  // 2026-11-23：框下独立的「拍照鉴定」按钮并进取景框底（产品负责人「两个拍照入口重复」），唯一实心金改为 .frame-cta
+  add('R11-3 鉴定台实心金只有「拍照鉴定」一处（在取景框里），框外不再另有拍照按钮',
     // 只数「实心块」：进度条 / 步骤线 / 扫描线是细线，不算实心金
     [...s.identifyWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
       .filter((m) => /background: var\(--brass-400\)/.test(m[2]) && !/progress|step-line|scan/.test(m[1]))
-      .map((m) => m[1].trim()).join('|') === '.btn.primary')
+      .map((m) => m[1].trim()).join('|') === '.frame-cta' &&
+      !/bindtap="onTakePhoto"|<button class="btn primary"/.test(s.identifyWxml) &&
+      /bindtap="onFrameTap"[\s\S]*?<view class="frame-cta" aria-hidden="true">[\s\S]*?<\/view>\n  <\/view>\n\n  <view class="actions">/.test(s.identifyWxml))
 
   // R2-2 搜索：相关推荐图片失败退回占位块；标签不再重复「换个词试试」
   const relImgs = s.searchWxml.match(/wx:if="\{\{item\.image && !item\.imgBroken\}\}"[\s\S]*?binderror="onRelatedImgError"/g) || []
@@ -1264,6 +1267,7 @@ if (process.argv.includes('--selftest')) {
     ['取景框去掉忙时保护', 'identifyJs', (t) => t.replace('    if (this.data.busy) return\n    this.onTakePhoto()', '    this.onTakePhoto()')],
     ['最近鉴定缩略图去掉 binderror', 'identifyWxml', (t) => t.replace(' binderror="onRecentThumbError"', '')],
     ['鉴定台多一颗实心金', 'identifyWxss', (t) => t.replace('.album-link {\n', '.album-link {\n  background: var(--brass-400);\n')],
+    ['框外又加回拍照按钮', 'identifyWxml', (t) => t.replace('<view class="actions">\n', '<view class="actions">\n    <button class="btn primary" bindtap="onTakePhoto" disabled="{{busy}}">拍照鉴定</button>\n')],
     ['搜索相关卡图片去掉 binderror', 'searchWxml', (t) => t.replace('binderror="onRelatedImgError"', '')],
     ['搜索相关标签改回「换个词试试」', 'searchWxml', (t) => t.replace('<text class="related-label">相近线索</text>', '<text class="related-label">换个词试试</text>')],
     ['立即购买去按压态', 'detailWxml', (t) => t.replace('bindtap="handleBuyNow" hover-class="tap-press" hover-stay-time="80"', 'bindtap="handleBuyNow"')],
