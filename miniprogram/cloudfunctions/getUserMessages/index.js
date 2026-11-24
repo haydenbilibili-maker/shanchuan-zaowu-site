@@ -249,7 +249,10 @@ function normalizeMessage(doc, source = 'user_messages') {
     _createTime: doc._createTime || doc.sentAt || doc.createTime,
     dedupeKey: doc.dedupeKey || `${type}:${relatedId}:${doc.title || ''}`,
     _source: source,
-    _altId: ''
+    _altId: '',
+    // 2026-11-24：本条在库里的全部落点（合并后累积）。标已读要逐个落到**正确的集合**；
+    // 原先只记 _id + 一个 _altId，且一律当 _altId 在「另一张表」—— 同表新旧两条 / 三条同键时会漏改，表现为「始终有一封未读」
+    _members: doc._id ? [{ col: source, id: doc._id }] : []
   }
 }
 
@@ -435,8 +438,19 @@ function mergePair(prev, item) {
     payload: primary.payload || secondary.payload || null,
     _id: primary._id,
     _altId: secondary._id && secondary._id !== primary._id ? secondary._id : (primary._altId || ''),
-    _source: primary._source
+    _source: primary._source,
+    // 内联（不调外部函数）：test:message-products 会把 mergePair 单独切出来执行
+    _members: [].concat(prev._members || [], item._members || [])
+      .filter((m, i, arr) => m && m.id && arr.findIndex((x) => x && x.col === m.col && x.id === m.id) === i)
   }
+}
+
+function mergeMembers(a, b) {
+  const out = []
+  ;(a || []).concat(b || []).forEach((m) => {
+    if (m && m.id && !out.some((x) => x.col === m.col && x.id === m.id)) out.push(m)
+  })
+  return out
 }
 
 function dedupeMessages(list) {
@@ -454,8 +468,33 @@ function dedupeMessages(list) {
 }
 
 function stripInternalFields(msg) {
-  const { _source, ...rest } = msg
+  const { _source, _members, ...rest } = msg
   return rest
+}
+
+/**
+ * 把一组落点逐个标成已读（2026-11-24）。每条按它自己的集合改；改不上（stats.updated = 0，常见于来源标错）
+ * 再到另一张表试一次。返回实际改上的条数与失败清单 —— 不再 `.catch(() => null)` 把失败吞成「成功」。
+ */
+async function markMembersRead(members) {
+  let updated = 0
+  const failed = []
+  for (const m of members || []) {
+    const cols = [m.col, m.col === 'notification_logs' ? 'user_messages' : 'notification_logs']
+    let ok = false
+    for (const col of cols) {
+      try {
+        const r = await db.collection(col).doc(m.id).update({ data: { read: true, readAt: db.serverDate() } })
+        if (r && r.stats && r.stats.updated > 0) { ok = true; break }
+        // updated = 0 也可能是「本来就已读」：读回来确认
+        const got = await db.collection(col).doc(m.id).get().catch(() => null)
+        if (got && got.data && got.data.read === true) { ok = true; break }
+      } catch (e) { /* 这张表里没有这条，换另一张 */ }
+    }
+    if (ok) updated += 1
+    else failed.push(m)
+  }
+  return { updated, failed }
 }
 
 async function fetchUserMessagesRaw(where, limit = MERGE_FETCH_LIMIT) {
@@ -676,6 +715,14 @@ async function markRead(openid, messageId, isStaff) {
     if (!canAccessMessage(normalizeMessage(found), isStaff)) {
       return { success: false, msg: '消息不存在' }
     }
+    // 2026-11-24：同一封信在列表里是合并后的一组（两张表 / 同表新旧多条）；整组一起标，免得留下一条未读的「影子」
+    try {
+      const group = (await loadMergedMessages(openid, 'all')).find((m) =>
+        m._id === messageId || m._altId === messageId || (m._members || []).some((x) => x.id === messageId))
+      if (group && group._members && group._members.length > 1) await markMembersRead(group._members)
+    } catch (e) {
+      console.warn('markRead group sync failed:', e && e.message)
+    }
     const otherCol = userDoc ? 'notification_logs' : 'user_messages'
     const extraIds = []
     try {
@@ -705,38 +752,51 @@ async function markRead(openid, messageId, isStaff) {
   return { success: false, msg: '消息不存在' }
 }
 
+/** 本人在两张表里所有未读落点（按库直接查，最多各 UNREAD_SWEEP_LIMIT 条），按队列 / 类型过滤后返回 { col, id } */
+const UNREAD_SWEEP_LIMIT = 500
+async function loadUnreadMembers(openid, category, typeFilter, requestedQueue) {
+  const out = []
+  const cat = category && category !== 'all' ? { category } : null
+  const sources = [
+    ['user_messages', _.and([buildRecipientWhere(openid, 'all'), { read: _.neq(true) }].concat(cat ? [cat] : []))],
+    ['notification_logs', Object.assign({ recipient: openid, channel: _.in(['inapp', 'inapp_campaign']), read: _.neq(true) }, cat || {})]
+  ]
+  for (const [col, where] of sources) {
+    try {
+      const res = await db.collection(col).where(where).limit(UNREAD_SWEEP_LIMIT).get()
+      const rows = (res.data || []).map((d) => normalizeMessage(d, col))
+      filterMerged(rows, typeFilter, requestedQueue).forEach((m) => { if (m._id) out.push({ col, id: m._id }) })
+    } catch (e) {
+      console.warn('loadUnreadMembers', col, e && e.message)
+    }
+  }
+  return out
+}
+
 async function markAllRead(openid, category, typeFilter, requestedQueue, isStaff) {
   if (requestedQueue === QUEUE_WORKFLOW && !isStaff) {
     return { success: false, code: 'FORBIDDEN', msg: '工作流仅员工可见' }
   }
-  const merged = filterMerged(
-    await loadMergedMessages(openid, category),
-    typeFilter,
-    requestedQueue
-  )
-  const unread = merged.filter(isUnread)
-  if (!unread.length) {
-    return { success: true, msg: '全部标记成功' }
+  const load = async () => filterMerged(await loadMergedMessages(openid, category), typeFilter, requestedQueue)
+  const unread = (await load()).filter(isUnread)
+
+  // 每封未读的**全部**落点都标上（两张表、同表新旧多条都算）
+  // + 直接按库扫一遍本人的未读落点（不受合并读取 160 条窗口限制）：清掉历史上旧实现漏改、平时被同组已读那条盖住、
+  //   组成一变（窗口挤出 / 分类不同）就单独冒出来的「影子未读」
+  const ghosts = await loadUnreadMembers(openid, category, typeFilter, requestedQueue)
+  const members = mergeMembers([].concat(...unread.map((m) => m._members || [])), ghosts)
+  if (!members.length) {
+    return { success: true, msg: '全部标记成功', unreadCount: 0 }
   }
+  const r = await markMembersRead(members)
 
-  const ids = []
-  unread.forEach((m) => {
-    if (m._id) ids.push({ col: m._source === 'notification_logs' ? 'notification_logs' : 'user_messages', id: m._id })
-    if (m._altId) {
-      ids.push({
-        col: m._source === 'notification_logs' ? 'user_messages' : 'notification_logs',
-        id: m._altId
-      })
-    }
-  })
-
-  await Promise.all(ids.map((item) =>
-    db.collection(item.col).doc(item.id).update({
-      data: { read: true, readAt: db.serverDate() }
-    }).catch(() => null)
-  ))
-
-  return { success: true, msg: '全部标记成功' }
+  // 改完重新数一遍，如实回报：仍有未读就说清楚，并把卡住的那几封记进日志便于排查
+  const left = (await load()).filter(isUnread)
+  if (left.length) {
+    console.error('markAllRead 仍有未读', JSON.stringify(left.map((m) => ({ id: m._id, type: m.type, source: m._source, members: m._members }))), 'failed', JSON.stringify(r.failed))
+    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated }
+  }
+  return { success: true, msg: '全部标记成功', unreadCount: 0, updated: r.updated }
 }
 
 async function deleteMessage(openid, messageId, isStaff) {

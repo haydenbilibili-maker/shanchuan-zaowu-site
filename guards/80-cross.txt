@@ -92,3 +92,5 @@ npm run check:cloudfn-require-scope
 npm run check:undefined-names
 # 2026-10-11：小程序 require 到「导出对象」的模块却当函数调（礼赠领取页 trackBehavior 默认导入 → 所有受礼人打不开领取页，错题本 E32）
 npm run check:require-call-shape
+# 2026-11-24：山海有信「全部标为已读」真的落库（每处落点 / 影子未读 / 改不上如实报 / 页面提示不被 hideLoading 吞掉）；真跑 getUserMessages，6 个注入
+npm run test:inbox-mark-read

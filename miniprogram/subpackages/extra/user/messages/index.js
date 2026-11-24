@@ -752,6 +752,7 @@ Page({
   },
 
   async markAllRead() {
+    if (this._markingAll) return;
     if (this.data.unreadCount === 0) {
       wx.showToast({
         title: this.data.activeCategory === 'digest' ? '没有未读日报' : '没有未读来信',
@@ -760,9 +761,14 @@ Page({
       return;
     }
 
+    // 2026-11-24 修「点了无反应」：原来 showToast 之后 finally 里又 hideLoading —— 微信里 loading 与 toast 共用一个浮层，
+    // hideLoading 会把刚弹出的「已全部读过 / 操作失败」一并关掉。现在先关 loading 再提示；未读数以云端回报为准。
+    this._markingAll = true;
+    wx.showLoading({ title: '处理中' });
+    let res = null;
+    let failed = false;
     try {
-      wx.showLoading({ title: '处理中' });
-      const res = await wx.cloud.callFunction({
+      res = await wx.cloud.callFunction({
         name: 'getUserMessages',
         data: {
           action: 'markAllRead',
@@ -770,43 +776,48 @@ Page({
           queue: this.data.activeQueue
         }
       });
-
-      if (res && res.result && res.result.success) {
-        const messages = this.data.messages.map((msg) => withDigestCard({
-          ...msg,
-          read: true
-        }));
-
-        const patch = { messages, unreadCount: 0 };
-        if (this.data.activeQueue === 'customer') {
-          patch.customerUnread = 0;
-        } else {
-          patch.workflowUnread = 0;
-          const cat = this.data.activeCategory;
-          const categoryBadges = { ...this.data.categoryBadges };
-          if (cat === 'all') {
-            categoryBadges.digest = 0;
-            categoryBadges.ops = 0;
-            categoryBadges.system = 0;
-          } else if (categoryBadges[cat] != null) {
-            categoryBadges[cat] = 0;
-          }
-          patch.categoryBadges = categoryBadges;
-          patch.filterTabs = tabsWithBadges(WORKFLOW_FILTER_TABS, categoryBadges);
-        }
-        this.setData(patch);
-        this.syncParentUnreadCount();
-        wx.showToast({ title: '已全部读过', icon: 'none' });
-        trackBehavior('message_mark_all_read', 'category', this.data.activeCategory);
-      } else {
-        wx.showToast({ title: (res && res.result && res.result.msg) || '操作失败', icon: 'none' });
-      }
     } catch (e) {
-      wx.showToast({ title: '操作失败，请稍后重试', icon: 'none' });
-    } finally {
-      wx.hideLoading();
+      failed = true;
     }
+    wx.hideLoading();
+    this._markingAll = false;
+
+    const result = (res && res.result) || {};
+    if (failed || !result.success) {
+      wx.showToast({ title: failed ? '操作失败，请稍后重试' : (result.msg || '操作失败'), icon: 'none', duration: 2400 });
+      // 部分标上了：重新拉一遍，让列表与未读数回到云端的真实状态
+      if (!failed) this.loadMessages(true, { silent: true });
+      return;
+    }
+
+    const messages = this.data.messages.map((msg) => withDigestCard({
+      ...msg,
+      read: true
+    }));
+    const left = Math.max(0, Number(result.unreadCount) || 0);
+    const patch = { messages, unreadCount: left };
+    if (this.data.activeQueue === 'customer') {
+      patch.customerUnread = left;
+    } else {
+      patch.workflowUnread = left;
+      const cat = this.data.activeCategory;
+      const categoryBadges = { ...this.data.categoryBadges };
+      if (cat === 'all') {
+        categoryBadges.digest = 0;
+        categoryBadges.ops = 0;
+        categoryBadges.system = 0;
+      } else if (categoryBadges[cat] != null) {
+        categoryBadges[cat] = 0;
+      }
+      patch.categoryBadges = categoryBadges;
+      patch.filterTabs = tabsWithBadges(WORKFLOW_FILTER_TABS, categoryBadges);
+    }
+    this.setData(patch);
+    this.syncParentUnreadCount();
+    wx.showToast({ title: '已全部读过', icon: 'none' });
+    trackBehavior('message_mark_all_read', 'category', this.data.activeCategory);
   },
+
 
   syncParentUnreadCount() {
     const pages = getCurrentPages();

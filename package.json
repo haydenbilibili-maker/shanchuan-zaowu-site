@@ -316,6 +316,8 @@
     "check:image-quality": "node miniprogram/scripts/check-image-quality.mjs",
     "check:image-quality:selftest": "node miniprogram/scripts/check-image-quality.mjs --selftest",
     "test:museum-guide-monitor:selftest": "node miniprogram/scripts/test-museum-guide-monitor.mjs --selftest",
+    "test:inbox-mark-read": "node miniprogram/scripts/test-inbox-mark-read.mjs",
+    "test:inbox-mark-read:selftest": "node miniprogram/scripts/test-inbox-mark-read.mjs --selftest",
     "test:home-broadcast": "node miniprogram/scripts/test-home-broadcast.mjs",
     "test:home-broadcast:selftest": "node miniprogram/scripts/test-home-broadcast.mjs --selftest",
     "check:identify-dock": "node miniprogram/scripts/check-identify-dock.mjs",
