@@ -117,6 +117,27 @@ exports.main = async (event) => {
       case 'markAllRead':
         return await markAllRead(openid, category, typeFilter, requestedQueue, isStaff)
 
+      // 诊断（2026-11-25）：「还有 1 封点不掉」时页面自动调一次，把那条未读的库内原貌回给前端弹窗，
+      // 只返回**本人**的未读，字段仅 id / 集合 / 类型 / 分类 / 读取相关，便于定位而不扩大暴露。
+      case 'diagnoseUnread': {
+        const rows = []
+        const specs = [
+          ['user_messages', _.and([buildRecipientWhere(openid, 'all'), { read: _.neq(true) }])],
+          ['notification_logs', { recipient: openid, read: _.neq(true) }]
+        ]
+        for (const [col, where] of specs) {
+          try {
+            const r = await db.collection(col).where(where).limit(10).get()
+            ;(r.data || []).forEach((d) => rows.push({
+              col, id: String(d._id || ''), type: String(d.type || ''), category: String(d.category || ''),
+              channel: String(d.channel || ''), read: d.read === true, isRead: d.isRead === true,
+              hasCreateTime: d.createTime != null, keys: Object.keys(d).slice(0, 12)
+            }))
+          } catch (e) { rows.push({ col, error: String(e && e.message || e).slice(0, 80) }) }
+        }
+        return { success: true, count: rows.length, items: rows }
+      }
+
       case 'deleteMessage':
         return await deleteMessage(openid, messageId, isStaff)
 

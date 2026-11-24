@@ -787,6 +787,8 @@ Page({
       wx.showToast({ title: failed ? '操作失败，请稍后重试' : (result.msg || '操作失败'), icon: 'none', duration: 2400 });
       // 部分标上了：重新拉一遍，让列表与未读数回到云端的真实状态
       if (!failed) this.loadMessages(true, { silent: true });
+      // 2026-11-25：点不掉的那些，把库内原貌拉出来给用户看（截图即可定位），不只给一句「失败」
+      this.diagnoseUnread(failed ? '调用失败' : (result.msg || ''));
       return;
     }
 
@@ -818,9 +820,25 @@ Page({
     // 2026-11-25：本地只 patch 了「看起来已读」，若库里还有兜底没清掉的落点，界面会继续显示未读；
     // 静默重拉一次，让列表与未读数都回到云端真实状态（成功时一般无变化，失败时会如实显示剩下的）。
     this.loadMessages(true, { silent: true });
+    if (left > 0) this.diagnoseUnread('标记后仍有未读');
     trackBehavior('message_mark_all_read', 'category', this.data.activeCategory);
   },
 
+
+  /** 诊断：把「点不掉的未读」的库内原貌弹出来（只有本人数据），便于产品负责人直接截图反馈 */
+  async diagnoseUnread(reason) {
+    try {
+      const res = await wx.cloud.callFunction({ name: 'getUserMessages', data: { action: 'diagnoseUnread' } });
+      const d = (res && res.result) || {};
+      const items = Array.isArray(d.items) ? d.items : [];
+      if (!items.length) {
+        openAppModal({ title: '未读清空了', content: `${reason || '标记后'}，云端已无未读。若界面仍显示，下拉刷新即可。`, showCancel: false });
+        return;
+      }
+      const brief = items.slice(0, 3).map((x) => `${x.col}/${x.id} · ${x.type || '-'} · ${x.category || '-'}${x.error ? ' · ' + x.error : ''}`).join('\n');
+      openAppModal({ title: `还有 ${items.length} 封没标上`, content: `${reason ? reason + '\n' : ''}${brief}`, showCancel: false, confirmText: '知道了' });
+    } catch (e) { /* 诊断本身失败不再打扰 */ }
+  },
 
   syncParentUnreadCount() {
     const pages = getCurrentPages();
