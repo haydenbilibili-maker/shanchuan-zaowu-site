@@ -365,7 +365,7 @@
         </view>
         <view class="hub-grp" wx:if="{{hubSec.orders}}" id="hub-sec-orders">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="orders" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">订单履约</text>
+            <text class="hub-grp-title">订单与履约</text>
             <view class="hub-grp-fold" wx:if="{{hubCollapsed.orders}}">
               <text class="hub-grp-n">{{hubSecMeta.orders.n}} 项</text>
               <view class="hub-badge" wx:if="{{hubSecMeta.orders.badge}}">{{hubSecMeta.orders.badge}}</view>
@@ -415,7 +415,7 @@
 
         <view class="hub-grp" wx:if="{{hubSec.biz}}" id="hub-sec-biz">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="biz" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">经营数据</text>
+            <text class="hub-grp-title">经营与数据</text>
             <view class="hub-grp-fold" wx:if="{{hubCollapsed.biz}}">
               <text class="hub-grp-n">{{hubSecMeta.biz.n}} 项</text>
               <view class="hub-badge" wx:if="{{hubSecMeta.biz.badge}}">{{hubSecMeta.biz.badge}}</view>
@@ -431,16 +431,12 @@
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/trend.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">报表</text>
             </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="stores" wx:if="{{menu.stores}}" bindtap="switchTab" data-idx="12" data-title="门店管理">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/store.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">门店</text>
-            </view>
           </view>
         </view>
 
         <view class="hub-grp" wx:if="{{hubSec.goods}}" id="hub-sec-goods">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="goods" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">商品内容</text>
+            <text class="hub-grp-title">商品与上线</text>
             <view class="hub-grp-fold" wx:if="{{hubCollapsed.goods}}">
               <text class="hub-grp-n">{{hubSecMeta.goods.n}} 项</text>
               <view class="hub-badge" wx:if="{{hubSecMeta.goods.badge}}">{{hubSecMeta.goods.badge}}</view>
@@ -486,7 +482,7 @@
 
         <view class="hub-grp" wx:if="{{hubSec.members}}" id="hub-sec-members">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="members" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">会员触达</text>
+            <text class="hub-grp-title">会员</text>
             <view class="hub-grp-fold" wx:if="{{hubCollapsed.members}}">
               <text class="hub-grp-n">{{hubSecMeta.members.n}} 项</text>
               <view class="hub-badge" wx:if="{{hubSecMeta.members.badge}}">{{hubSecMeta.members.badge}}</view>
@@ -523,23 +519,19 @@
               <text class="hub-cell-name">积分</text>
             </view>
             <!-- 组合入口（2026-11-26 归并）：welcomeGift + birthdayGift → 组合页逐条平铺 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="giftPackKit" wx:if="{{menu.welcomeGift}}" bindtap="openHubKitPage" data-kit="giftPackKit">
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="giftPackKit" wx:if="{{menu.welcomeGift || menu.walletConfig}}" bindtap="openHubKitPage" data-kit="giftPackKit">
               <view class="hub-ico">
                 <image class="hub-ico-img" src="/assets/icons/cart.png" mode="aspectFit" />
               </view>
-              <text class="hub-cell-name">会员礼包</text>
-              <text class="hub-cell-sub">新人·生日</text>
-            </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="walletConfig" wx:if="{{menu.walletConfig}}" bindtap="goWalletConfig">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/wallet_gold.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">钱包配置</text>
+              <text class="hub-cell-name">礼包与钱包</text>
+              <text class="hub-cell-sub">新人·生日·充值</text>
             </view>
           </view>
         </view>
 
         <view class="hub-grp" wx:if="{{hubSec.studio}}" id="hub-sec-studio">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="studio" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">工作室</text>
+            <text class="hub-grp-title">工作室与门店</text>
             <view class="hub-grp-fold" wx:if="{{hubCollapsed.studio}}">
               <text class="hub-grp-n">{{hubSecMeta.studio.n}} 项</text>
               <view class="hub-badge" wx:if="{{hubSecMeta.studio.badge}}">{{hubSecMeta.studio.badge}}</view>
@@ -552,18 +544,14 @@
               <text class="hub-cell-name">仪表盘</text>
             </view>
             <!-- 组合入口（2026-11-26 归并）：supplier + purchase + inventory + skuMaintain → 组合页逐条平铺 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="goodsKit" wx:if="{{menu.supplierWorkbench || menu.purchaseOps || menu.inventoryOps || menu.rawInventoryOps || menu.shipmentSku}}" bindtap="openHubKitPage" data-kit="goodsKit">
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="goodsKit" wx:if="{{menu.supplierWorkbench || menu.purchaseOps || menu.inventoryOps || menu.rawInventoryOps || menu.shipmentSku || menu.shipmentOps}}" bindtap="openHubKitPage" data-kit="goodsKit">
               <view class="hub-ico">
                 <image class="hub-ico-img" src="/assets/icons/knowledge.png" mode="aspectFit" />
               </view>
               <text class="hub-cell-name">货品</text>
-              <text class="hub-cell-sub">供应·采购·库存</text>
+              <text class="hub-cell-sub">进货·库存·出货</text>
             </view>
             <!-- 出货中心 = 原「出货单」+「出货开单」（2026-09-28 合并）；超管持全部菜单键，故仅判 shipmentOps 即覆盖原两枚磁贴的可见性 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="shipment" wx:if="{{menu.shipmentOps}}" bindtap="goShipmentOps">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/ship.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">出货中心</text>
-            </view>
             <!-- 组合入口（2026-11-26 归并）：studioBills + property → 组合页逐条平铺 -->
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="costKit" wx:if="{{menu.studioBills || menu.propertyCost}}" bindtap="openHubKitPage" data-kit="costKit">
               <view class="hub-ico">
@@ -571,10 +559,6 @@
               </view>
               <text class="hub-cell-name">成本与账单</text>
               <text class="hub-cell-sub">账单·物业</text>
-            </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="feishu" wx:if="{{menu.feishuSync}}" bindtap="goFeishuSyncGuarded">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/deliver.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">飞书同步</text>
             </view>
             <!-- 组合入口（2026-11-26 归并）：framers + framerRecruit + artisanCommission → 组合页逐条平铺；角标 = 有权限的子功能角标之和 -->
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="framerKit" wx:if="{{menu.framers || menu.framerRecruit || menu.artisanCommission}}" bindtap="openHubKitPage" data-kit="framerKit">
@@ -585,19 +569,11 @@
               <text class="hub-cell-name">标本师</text>
               <text class="hub-cell-sub">名单·申请·提成</text>
             </view>
-          </view>
-        </view>
-
-        <view class="hub-grp" wx:if="{{hubSec.org}}" id="hub-sec-org">
-          <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="org" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">门店组织</text>
-            <view class="hub-grp-fold" wx:if="{{hubCollapsed.org}}">
-              <text class="hub-grp-n">{{hubSecMeta.org.n}} 项</text>
-              <view class="hub-badge" wx:if="{{hubSecMeta.org.badge}}">{{hubSecMeta.org.badge}}</view>
+                      <!-- 2026-11-26 归并：门店组织并入本区；「门店」资料从经营数据移来 -->
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="stores" wx:if="{{menu.stores}}" bindtap="switchTab" data-idx="12" data-title="门店管理">
+              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/store.png" mode="aspectFit" /></view>
+              <text class="hub-cell-name">门店</text>
             </view>
-            <view class="hub-grp-arrow {{hubCollapsed.org ? 'is-collapsed' : ''}}"></view>
-          </view>
-          <view class="hub-grid--cat" wx:if="{{!hubCollapsed.org}}">
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="verify" wx:if="{{menu.verify}}" bindtap="goStaffTab" data-tab="verify">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/qrcode.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">核销验票</text>
@@ -631,7 +607,7 @@
 
         <view class="hub-grp" wx:if="{{hubSec.system}}" id="hub-sec-system">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="system" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">系统监测</text>
+            <text class="hub-grp-title">系统</text>
             <view class="hub-grp-fold" wx:if="{{hubCollapsed.system}}">
               <text class="hub-grp-n">{{hubSecMeta.system.n}} 项</text>
               <view class="hub-badge" wx:if="{{hubSecMeta.system.badge}}">{{hubSecMeta.system.badge}}</view>
@@ -640,12 +616,12 @@
           </view>
           <view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">
             <!-- 组合入口（2026-11-26 归并）：shipping + bookingRules + supportConfig + wxNotify → 组合页逐条平铺 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="settingsKit" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig || menu.orders}}" bindtap="openHubKitPage" data-kit="settingsKit">
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="settingsKit" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig || menu.orders || menu.feishuSync}}" bindtap="openHubKitPage" data-kit="settingsKit">
               <view class="hub-ico">
                 <image class="hub-ico-img" src="/assets/icons/service.png" mode="aspectFit" />
               </view>
               <text class="hub-cell-name">设置</text>
-              <text class="hub-cell-sub">运费·预约·客服</text>
+              <text class="hub-cell-sub">运费·预约·通知</text>
             </view>
             <!-- 组合入口（2026-11-26 归并）：aiIdentify + museumGuide → 组合页逐条平铺；角标 = 有权限的子功能角标之和 -->
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="aiMonitorKit" wx:if="{{menu.aiIdentifyMonitor || menu.museumGuideMonitor}}" bindtap="openHubKitPage" data-kit="aiMonitorKit">

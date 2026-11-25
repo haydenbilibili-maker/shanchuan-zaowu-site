@@ -772,7 +772,7 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
     if (nav.searchEntries('SKU', { menu: menuOf(roles, MGR) }).some((x) => x.id === canon('skuMaintain'))) errs.push('N5「SKU 维护」仅超管：店长不得搜到')
     const studio = nav.searchEntries('工作室', sm).map((x) => x.id)
     if (!canonList(canon, ['studioDashboard', 'purchase', 'inventory']).every((id) => studio.includes(id))) errs.push('N5 超管搜分组名「工作室」须列出该组入口')
-    if (nav.searchEntries('飞书', { menu: menuOf(roles, MGR) }).length) errs.push('N5 搜索须只在有权限的入口里找（店长搜到了飞书同步）')
+    if (nav.searchEntries('CRM', { menu: menuOf(roles, MGR) }).length) errs.push('N5 搜索须只在有权限的入口里找（店长搜到了会员 CRM）')
     if (nav.searchEntries('  ', sm).length) errs.push('N5 空白搜索词不应出结果')
   } catch (e) {
     errs.push(`N5 searchEntries 执行失败：${e.message}`)
@@ -1017,12 +1017,12 @@ if (!selftest) {
   }
   const cases = [
     // 不误报对照：清单与磁贴同步改名、入口与权限仍在 → 必须仍通过
-    ['飞书同步同步改名', (s) => rep('hubNav', "label: '飞书同步'", "label: '飞书'")(rep('wxml', '<text class="hub-cell-name">飞书同步</text>', '<text class="hub-cell-name">飞书</text>')(s)), null],
+    ['荣誉馆长同步改名', (s) => rep('hubNav', "{ id: 'curators', label: '荣誉馆长'", "{ id: 'curators', label: '馆长'")(rep('wxml', '<text class="hub-cell-name">荣誉馆长</text>', '<text class="hub-cell-name">馆长</text>')(s)), null],
     ['直达磁贴整枚删除', (s) => {
-      const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="feishu"[\s\S]*?<text class="hub-cell-name">飞书同步<\/text>\s*<\/view>/)
-      if (!m) throw new Error('注入锚点失效：飞书同步磁贴')
+      const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="curators"[\s\S]*?<text class="hub-cell-name">荣誉馆长<\/text>\s*<\/view>/)
+      if (!m) throw new Error('注入锚点失效：荣誉馆长磁贴')
       return { ...s, wxml: s.wxml.replace(m[0], '') }
-    }, /入口丢失：改版前的「飞书同步」/],
+    }, /入口丢失：改版前的「荣誉馆长」/],
     ['股东磁贴被删', (s) => {
       const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="shareholderConfig"[\s\S]*?<text class="hub-cell-name">股东<\/text>\s*<\/view>/)
       if (!m) throw new Error('注入锚点失效：股东磁贴')
@@ -1035,7 +1035,7 @@ if (!selftest) {
     }, /重复磁贴/],
     ['直达磁贴权限被换', rep('wxml', 'wx:if="{{menu.depositOps}}"', 'wx:if="{{menu.orders}}"'), /权限条件变化：「售罄孤品定金」/],
     ['店员工作台权限被放宽', rep('wxml', 'data-fid="staffConsole" wx:if="{{menu.staffConsole}}"', 'data-fid="staffConsole" wx:if="{{menu.staffConsole || menu.verify}}"'), /权限条件变化：「店员工作台」|权限被放宽/],
-    ['分区 keys 漏一个', rep('hubNav', "'approvals', 'depositOps'] }", "'approvals'] }"), /分区「订单履约」/],
+    ['分区 keys 漏一个', rep('hubNav', "'approvals', 'depositOps'] }", "'approvals'] }"), /分区「订单与履约」/],
     ['sectionFlags 恒 false', rep('hubNav', 'out[s.id] = s.keys.some((k) => m[k] === true)', 'out[s.id] = false'), /改版后不可达/],
     ['入口 handler 写错', rep('wxml', 'bindtap="goDepositOps"', 'bindtap="goDepositOpsX"'), /goDepositOpsX 在页面上不存在/],
     ['磁贴移出分区', rep('wxml', '<view class="hub-todo" wx:if="{{hubTodo.items.length}}">', '<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" wx:if="{{menu.ledger}}" bindtap="goLedgerX"><text class="hub-cell-name">散落</text></view>\n      <view class="hub-todo" wx:if="{{hubTodo.items.length}}">'), /不在任何 hub-grp 分区内/],
@@ -1065,7 +1065,7 @@ if (!selftest) {
     ['N1 入口按压退回本地类', rep('wxml', 'hover-class="tap-press" hover-stay-time="80" data-fid="ledger"', 'hover-class="hub-press" hover-stay-time="80" data-fid="ledger"'), /N1 入口「账本」按压态/],
     // N2 每个入口都有说明
     ['N2 入口说明被清空', rep('hubNav', "desc: '卖完的孤品，顾客交的订金'", "desc: ''"), /N2 入口「孤品定金」没有说明/],
-    ['N2 说明里混进技术词', rep('hubNav', "desc: '工作室打包发货'", "desc: '工作室发货 SKU'"), /N2 入口「出货中心」说明里有技术词/],
+    ['N2 说明里混进技术词', rep('hubNav', "desc: '工作室打包发货'", "desc: '工作室发货 SKU'"), /N2 入口「出货中心」说明里有技术词|K 组合「货品」子功能「出货中心」须有/],
     ['N2 说明太长一行放不下', rep('hubNav', "desc: '定制和装裱的活儿，进度一目了然'", "desc: '定制和装裱的活儿，进度在这里一目了然'"), /N2 入口「工单」说明 \d+ 字/],
     ['N2 磁贴小字与清单漂移', rep('wxml', '<text class="hub-cell-sub">审核·回复</text>', '<text class="hub-cell-sub">回复</text>'), /N2 入口「评价」磁贴小字「回复」与清单/],
     ['N2 磁贴小字太长', (s) => rep('hubNav', "sub: '审核·回复'", "sub: '评价审核置顶与回复'")(rep('wxml', '<text class="hub-cell-sub">审核·回复</text>', '<text class="hub-cell-sub">评价审核置顶与回复</text>')(s)), /N2 入口「评价」磁贴小字 \d+ 字/],
@@ -1094,7 +1094,7 @@ if (!selftest) {
     // N6 分类宫格 + 可收起 + 默认展开 + 入口全部在
     ['N6 宫格不随收起隐藏', rep('wxml', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.biz}}">', '<view class="hub-grid--cat">'), /N6 分区 biz 须恰好一个宫格/],
     ['N6 标题行不能点', rep('wxml', 'bindtap="onHubCollapse" data-sec="studio" ', ''), /N6 分区 studio 标题行须点按收起/],
-    ['N6 收起时不显示红点合计', rep('wxml', '              <view class="hub-badge" wx:if="{{hubSecMeta.org.badge}}">{{hubSecMeta.org.badge}}</view>\n', ''), /N6 分区 org 收起时标题行须显示入口数/],
+    ['N6 收起时不显示红点合计', rep('wxml', '              <view class="hub-badge" wx:if="{{hubSecMeta.studio.badge}}">{{hubSecMeta.studio.badge}}</view>\n', ''), /N6 分区 studio 收起时标题行须显示入口数/],
     ['N6 箭头不随收起翻转', rep('wxml', "<view class=\"hub-grp-arrow {{hubCollapsed.goods ? 'is-collapsed' : ''}}\"></view>", '<view class="hub-grp-arrow"></view>'), /N6 分区 goods 标题行右侧须有随收起翻转的箭头/],
     ['N6 入口挪出宫格', (s) => {
       const m = s.wxml.match(/\n {12}<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="stores"[\s\S]*?<text class="hub-cell-name">门店<\/text>\n {12}<\/view>/)
@@ -1145,12 +1145,15 @@ if (!selftest) {
     ['K 组合磁贴权限键少一个子功能', rep('wxml', 'wx:if="{{menu.depositOps || menu.shareholderConfig}}" bindtap="openHubKitPage"', 'wx:if="{{menu.depositOps}}" bindtap="openHubKitPage"'), /K 组合「样本组合」磁贴权限键|改版前可见，改版后不可达/, true],
     ['K 子功能同时还是独立磁贴', (s) => {
       const k = kitSample(s)
-      return { ...k, wxml: k.wxml.replace('<view class="hub-grid--cat" wx:if="{{!hubCollapsed.org}}">', `<view class="hub-grid--cat" wx:if="{{!hubCollapsed.org}}">\n${SAMPLE_SHAREHOLDER_TILE}`) }
+      const grid = '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.studio}}">'
+      if (!k.wxml.includes(grid)) throw new Error('注入锚点失效：工作室与门店宫格')
+      return { ...k, wxml: k.wxml.replace(grid, `${grid}\n${SAMPLE_SHAREHOLDER_TILE}`) }
     }, /入口重复：「股东配置」|K 组合「样本组合」子功能「股东」同时还是独立磁贴/],
     ['K 组合页不按权限过滤', rep('groupJs', '.filter((c) => c.keys.some(', '.filter((c) => c.keys.every('), /K 组合页须按权限过滤子功能/, true],
     ['K 组合页另写跳转（不调原 handler）', rep('groupJs', 'hubNav.invokeItem(', 'wx.navigateTo('), /K 组合页点子功能须经 hubNav\.invokeItem/, true],
     ['K 组合页未注册', rep('appJson', '"group/index",', ''), /K 组合页未在 app\.json 注册/, true],
     ['K 组合搜索按看不到的子功能命中（店长搜 SKU 搜到货品）', rep('hubNav', "    ;(kit ? kit.children : []).filter((c) => c.keys.some((k) => m[k] === true)).forEach(", "    ;(kit ? kit.children : []).forEach("), /N5「SKU 维护」仅超管：店长不得搜到/],
+    ['K 旧常用落到看不见该子功能的组合（店长的飞书同步变成设置）', rep('hubNav', '      if (child && !child.keys.some((k) => m[k] === true)) return\n', ''), /常用区只含有权限入口：店长配置/],
     ['K 组合搜索不认子功能名称', rep('hubNav', 'alias.push(c.label, ...(c.alias || []))', 'alias.push(...(c.alias || []))'), /K 超管搜「股东」找不到组合「样本组合」/, true],
     // S2 真组合：角标 = 有权限子功能之和、随计数刷新、挂在该挂的组合上
     ['K 组合角标不再求和', rep('hubNav', '.reduce((sum, c) => sum + badgeValue(c.badge, d), 0)', '.reduce(() => 0, 0)'), /N3 超管：组合「审批与发票」角标/],

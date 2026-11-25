@@ -74,6 +74,7 @@ const FILES = {
   staffExtra: `${EXTRA}/utils/staffAuth.js`,
   staffManager: 'miniprogram/subpackages/manager/utils/staffAuth.js',
   hubWxml: 'miniprogram/subpackages/manager/manager/index.wxml',
+  hubNav: 'miniprogram/subpackages/manager/manager/hubNav.js',
   settle: 'miniprogram/cloudfunctions/manageStudioSettlement/index.js',
   refsJs: 'miniprogram/cloudfunctions/manageStudioSettlement/priceBookRefs.js',
   settleDefaults: 'miniprogram/cloudfunctions/manageStudioSettlement/settlementDefaults.js',
@@ -126,13 +127,20 @@ function collect(s) {
     errs.push('shipment-sku 重定向壳不得再调云函数（逻辑已并入出货中心）')
   }
   // A2 单一磁贴 + staffAuth 同步
+  // 2026-11-26 超管工作台归并：「出货中心」可为组合「货品」的子功能 —— 仍只有一个入口、仍按 shipmentOps 门禁、仍绑 goShipmentOps
   const tiles = s.hubWxml.match(/<text(?: class="hub-cell-name")?>出货中心<\/text>/g) || []
-  if (tiles.length !== 1) errs.push(`工作台须恰好一枚「出货中心」磁贴（现 ${tiles.length}）`)
-  if (/<text(?: class="hub-cell-name")?>(?:出货开单|出货单)<\/text>/.test(s.hubWxml)) {
+  const kitChildren = (s.hubNav.match(/\{ id: 'shipment', label: '出货中心',[^\n]*/g) || []).filter((l) => !/sec: '/.test(l))
+  const kitBlock = kitChildren.length ? (s.hubNav.split('\n  {\n    id: ').slice(1).find((b) => b.split('\n  }')[0].includes(kitChildren[0])) || '') : ''
+  const kitId = (kitBlock.match(/^'(\w+)'/) || [])[1]
+  const kitTile = kitId && new RegExp(`data-fid="${kitId}" wx:if="\\{\\{([^}]*)\\}\\}" bindtap="openHubKitPage" data-kit="${kitId}"`).exec(s.hubWxml)
+  const inKit = kitChildren.length === 1 && /keys: \['shipmentOps'\], tap: 'goShipmentOps'/.test(kitChildren[0]) &&
+    !!kitTile && kitTile[1].split('||').map((x) => x.trim()).includes('menu.shipmentOps')
+  if (tiles.length + kitChildren.length !== 1) errs.push(`工作台须恰好一枚「出货中心」磁贴（或恰好一个同名组合子功能；现磁贴 ${tiles.length}、组合子功能 ${kitChildren.length}）`)
+  if (/<text(?: class="hub-cell-name")?>(?:出货开单|出货单)<\/text>/.test(s.hubWxml) || /label: '(?:出货开单|出货单)'/.test(s.hubNav)) {
     errs.push('工作台不得再有独立「出货开单」/「出货单」磁贴')
   }
-  if (!/wx:if="\{\{menu\.shipmentOps\}\}"\s+bindtap="goShipmentOps">[\s\S]{0,200}出货中心/.test(s.hubWxml)) {
-    errs.push('「出货中心」磁贴须按 menu.shipmentOps 显示并绑 goShipmentOps')
+  if (!inKit && !/wx:if="\{\{menu\.shipmentOps\}\}"\s+bindtap="goShipmentOps">[\s\S]{0,200}出货中心/.test(s.hubWxml)) {
+    errs.push('「出货中心」磁贴须按 menu.shipmentOps 显示并绑 goShipmentOps（组合子功能则 keys=[shipmentOps]、tap=goShipmentOps，组合磁贴按 menu.shipmentOps 显示）')
   }
   if (s.staffExtra !== s.staffManager) errs.push('extra / manager 两份 staffAuth.js 须逐字一致')
   if (!/function goShipmentSku\(\)\s*\{\s*wx\.navigateTo\(\{\s*url:\s*`\$\{SHIPMENT_OPS_PATH\}\?tab=create&mode=sku`/.test(s.staffExtra)) {
@@ -807,6 +815,8 @@ if (selftest) {
     ['scroll-view 缺高度', (s) => ({ ...s, opsWxml: s.opsWxml.replace('scroll-y style="height: {{sheetBodyPx}}px;"', 'scroll-y') }), /scroll-view scroll-y 须内联/],
     ['写入后不切单据', (s) => ({ ...s, opsJs: s.opsJs.replace(/(revealAfterWrite\(opts\)[\s\S]*?)activeTab:\s*'list'/, "$1activeTab: 'create'") }), /activeTab list/],
     ['旧开单磁贴复活', (s) => ({ ...s, hubWxml: s.hubWxml + '\n<view><text>出货开单</text></view>' }), /不得再有独立/],
+    ['组合子功能「出货中心」门禁写宽', (s) => ({ ...s, hubNav: s.hubNav.replace("keys: ['shipmentOps'], tap: 'goShipmentOps'", "keys: ['shipmentOps', 'inventoryOps'], tap: 'goShipmentOps'") }), /须按 menu\.shipmentOps 显示并绑 goShipmentOps/],
+    ['出货中心既在组合里又有独立磁贴', (s) => ({ ...s, hubWxml: s.hubWxml + '\n<view><text class="hub-cell-name">出货中心</text></view>' }), /须恰好一枚「出货中心」/],
     ['重定向壳复活逻辑', (s) => ({ ...s, shellJs: s.shellJs + "\nwx.cloud.callFunction({ name: 'manageStoreShipment' })" }), /不得再调云函数/],
     ['资料暴露删除', (s) => ({ ...s, libraryJs: s.libraryJs + "\nconst x = { action: 'priceBook.remove' }" }), /priceBook\.remove/],
     ['单条丢原材料', (s) => ({ ...s, createJs: s.createJs.replace(/line\.materialName\s*=/g, 'line.matX =') }), /单条补录须可选带/],
