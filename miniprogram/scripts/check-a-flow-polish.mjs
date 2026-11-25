@@ -860,6 +860,17 @@ function checks(s) {
       !/indicator-dots="\{\{contentTotal > 1\}\}"/.test(s.catWxml) && /class="archive-progress"/.test(s.catWxml))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
 
+  // 2026-11-26 真机：确认订单弹「价格校验失败，请点击重试」，但遇到「已下架 / 库存不足」这类
+  // 单件商品问题，重试永远不会好。要求：把云端原话给用户，并能摘掉问题商品继续下单。
+  add('R4-6 价格校验失败要给云端原话，单件商品问题可「移除并继续」（不再只提示请点击重试）',
+    /handlePreviewFailure\(msg\)/.test(s.coJs) &&
+      /const text = String\(msg \|\| ''\)\.trim\(\)/.test(s.coJs) &&
+      /已下架\|库存不足\|不存在\|请选择规格/.test(s.coJs) &&
+      /移除并继续/.test(s.coJs) &&
+      /previewErrorMsg/.test(s.coJs) &&
+      /console\.warn\('syncServerPricingPreview failed', r\.msg \|\| r\)/.test(s.coJs) &&
+      /this\.handlePreviewFailure\(msg\)/.test(s.coJs))
+
   // R5-1 首页恰好一屏：容器 100vh 纵向 flex 且裁切，顶部占位 + 滚动区（flex:1）+ 底栏让位 = 视口；不再「占位 + 满屏滚动区」叠高
   const rule = (css, sel) => ((new RegExp(`\\n\\${sel} \\{([^}]*)\\}`).exec(css)) || [])[1] || ''
   const ct = rule(s.homeWxss, '.container'), ms = rule(s.homeWxss, '.main-scroll')

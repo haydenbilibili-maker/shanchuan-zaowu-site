@@ -385,6 +385,7 @@ Page(withAppModal({
     submitting: false,
     /** 服务端价格校验失败：阻断提交，避免按本地估算价确认后被按云端价扣款 */
     serverPreviewFailed: false,
+    previewErrorMsg: '',
     customMeta: null,
     customExtraPrice: 0,
     customPreviewLines: [],
@@ -1137,11 +1138,12 @@ Page(withAppModal({
           return
         }
         // 服务端价格校验失败：此前静默回落到本地估算，用户可能按「所见价」确认却被按云端价扣款。
-        // 现在标记为未就绪并阻断提交，给出明确重试入口。
-        this.setData({ serverPreviewReady: false, serverPreviewFailed: true })
+        // 现在标记为未就绪并阻断提交，并**把云端原话给出来**（原来只提示"请点击重试"，
+        // 遇到「已下架 / 库存不足」这类重试也不会好的情况，用户只能反复点）。
+        this.setData({ serverPreviewReady: false, serverPreviewFailed: true, previewErrorMsg: msg })
         this.applyProvisionalFromStats()
         this.recalculate(undefined, { silentDrop: true })
-        wx.showToast({ title: '价格校验失败，请点击重试', icon: 'none' })
+        this.handlePreviewFailure(msg)
         return
       }
       // 过期预览：用户已改选其它券
@@ -1446,6 +1448,43 @@ Page(withAppModal({
     this.recalculate(this.data.selectedCoupon)
     this.syncServerPricingPreview()
     this.closeCouponModal()
+  },
+
+  /**
+   * 预览失败的分诊（2026-11-26）：
+   * - 云端原话带「」商品名 + 已下架 / 库存不足 / 不存在 / 请选择规格 → 这是**单件商品**的问题，
+   *   重试永远不会好；直接把那件摘掉（用户确认后）并自动重新校验，不让整单卡死。
+   * - 其它（价格变动 / 券门槛 / 运费判定）→ 保留「重新校验」。
+   */
+  handlePreviewFailure(msg) {
+    const text = String(msg || '').trim()
+    const title = (text.match(/「([^」]+)」/) || [])[1] || ''
+    const itemBroken = !!title && /已下架|库存不足|不存在|请选择规格|规格不存在/.test(text)
+    if (!itemBroken) {
+      wx.showToast({ title: text.slice(0, 20) || '价格校验失败，请点击重试', icon: 'none', duration: 2600 })
+      return
+    }
+    this.modal({
+      title: '有商品不可购买',
+      overline: 'ORDER CHECK',
+      content: `${text}。移除它后可继续提交其它藏品。`,
+      confirmText: '移除并继续',
+      cancelText: '返回购物车'
+    }).then((r) => {
+      if (!r.confirm) {
+        wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/cart/index' }) })
+        return
+      }
+      const items = (this.data.items || []).filter((it) => String((it && it.title) || '').trim() !== title)
+      if (!items.length) {
+        wx.showToast({ title: '这一单已没有可提交的藏品', icon: 'none' })
+        setTimeout(() => wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/cart/index' }) }), 900)
+        return
+      }
+      this.setData({ items, serverPreviewFailed: false, previewErrorMsg: '' })
+      this.recalculate(undefined, { silentDrop: true })
+      if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
+    })
   },
 
   async submitOrder() {
