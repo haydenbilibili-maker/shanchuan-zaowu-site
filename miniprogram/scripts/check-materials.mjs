@@ -32,7 +32,7 @@ export const TOKENS = [
   '--mat-ink', '--mat-ink-body', '--mat-ink-soft', '--mat-ink-label',
   '--mat-brass', '--mat-brass-polished', '--mat-brass-edge', '--mat-brass-shadow', '--mat-brass-ink', '--mat-brass-pin',
   '--mat-blackgold', '--mat-blackgold-line', '--mat-porcelain',
-  '--mat-seal', '--mat-seal-ink', '--mat-seal-tint', '--mat-seal-line', '--mat-press-shift'
+  '--mat-seal', '--mat-seal-ink', '--mat-seal-tint', '--mat-seal-line', '--mat-seal-light', '--mat-seal-deep', '--mat-press-shift'
 ]
 
 /** 已接入规范的材质模块（新增材质模块在这里登记） */

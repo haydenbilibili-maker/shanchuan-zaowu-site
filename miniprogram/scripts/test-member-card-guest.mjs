@@ -403,7 +403,8 @@ function cssRpx(block, prop) {
       b: parseInt(hex.slice(5, 7), 16)
     }))
     .filter((c) => c.r > 150 && c.r - c.g > 60 && c.r - c.b > 60)
-  check('★ 封蜡是红色系（不是铜印 / 金印）', reds.length > 0, (seal.match(/#[0-9A-Fa-f]{6}/g) || []).join(' '))
+  // 2026-11-25 封蜡对齐材质规范：蜡色取 --mat-seal 系令牌（朱砂红），暗红阴影同步换成朱砂系
+  check('★ 封蜡是红色系（不是铜印 / 金印）', reds.length > 0 || /var\(--mat-seal(-light|-deep)?\) [0-9]+%/.test(seal), (seal.match(/#[0-9A-Fa-f]{6}/g) || []).join(' '))
   check('红蜡不直接用错误色 token（避免语义串味 #D64045）', !/#D64045/i.test(seal))
   check(
     '★ 蜡面有湿润高光（近白径向，且收得小 —— 大高光会把上半块冲成粉色）',
@@ -411,12 +412,12 @@ function cssRpx(block, prop) {
   )
   check(
     '★ 蜡体有冷蜡硬边（三层：暗红描边 + 外圈柔影）—— 没有它边缘会糊进信封',
-    /0 0 0 3rpx rgba\(74, 9, 15, 0\.75\)/.test(seal) && /0 0 0 7rpx rgba\(8, 5, 4, 0\.3\)/.test(seal)
+    /0 0 0 3rpx rgba\(72, 26, 18, 0\.75\)/.test(seal) && /0 0 0 7rpx rgba\(8, 5, 4, 0\.3\)/.test(seal)
   )
   check('★ 蜡体有实物落影（蜡是凸出纸面的）', /0 10rpx 20rpx rgba\(6, 4, 3, 0\.6\)/.test(seal))
   check(
     '压印圈是凹槽（暗线 + 紧邻亮边），不是一条浅色描边',
-    /\.ge-seal-ring \{[\s\S]*?border: 2rpx solid rgba\(62, 6, 10, 0\.55\);/.test(cardWxss) &&
+    /\.ge-seal-ring \{[\s\S]*?border: 2rpx solid rgba\(60, 22, 15, 0\.55\);/.test(cardWxss) &&
       /\.ge-seal-ring \{[\s\S]*?box-shadow:\n\s*0 1rpx 0 rgba\(255, 214, 204, 0\.22\)/.test(cardWxss)
   )
 
@@ -452,7 +453,7 @@ function cssRpx(block, prop) {
   check('蜡体与溢蜡尺寸成比例（溢蜡不得比蜡体还大）', bigW < sealWidth && bigH < sealHeight)
   check(
     '蜡面阴刻「山海」为双色阴影（上缘压痕 + 下缘受光）',
-    /\.ge-seal-glyph \{[\s\S]*?0 1rpx 0 rgba\(255, 236, 228, 0\.34\),\n\s*0 -1rpx 2rpx rgba\(56, 4, 8, 0\.72\)/.test(cardWxss)
+    /\.ge-seal-glyph \{[\s\S]*?0 1rpx 0 rgba\(255, 236, 228, 0\.34\),\n\s*0 -1rpx 2rpx rgba\(54, 18, 12, 0\.72\)/.test(cardWxss)
   )
 
   // 中轴：蜡印与蝴蝶都必须以容器中线为心（left:50% + margin-left:-宽/2）
