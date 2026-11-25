@@ -1,22 +1,27 @@
 <wxs src="../../utils/latinDisplay.wxs" module="latin" />
-<!-- 博物君口播的主体（2026-11-23）：叠在头图上 / 无头图时独立一条，两处共用一份结构 -->
-<template name="home-cast-body">
+<!-- 博物君口播（2026-11-25 第四版）：拆成两段，解决顶部拥挤 ——
+     ① greet：印章 + 问候 + 「口播」签，放**头图上方**（页面底色上）；
+     ② line：轮播里的「今日开馆 / 馆内通知 / 博物一知 / 趣味提示」，**叠在头图上**。
+     无头图时两段并回一条独立口播带。 -->
+<template name="home-cast-greet">
   <view class="home-cast-seal" aria-hidden="true"><image class="home-cast-seal-icon" src="{{cast.avatar}}" mode="aspectFit"></image></view>
   <view class="home-cast-main">
     <view class="home-cast-head">
       <text class="home-cast-hello">{{cast.hello}}</text>
       <view class="home-cast-live" aria-hidden="true"><view class="home-cast-dot"></view><text>口播</text></view>
     </view>
-    <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}">
-      <swiper-item wx:for="{{cast.items}}" wx:key="key">
-        <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store ? 'tap-press-soft' : ''}}" hover-stay-time="80">
-          <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text><text class="home-cast-sep">·</text>
-          <text class="home-cast-t">{{item.text}}</text>
-          <text class="home-cast-go" wx:if="{{item.q || item.store}}">›</text>
-        </view>
-      </swiper-item>
-    </swiper>
   </view>
+</template>
+<template name="home-cast-line">
+  <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}">
+    <swiper-item wx:for="{{cast.items}}" wx:key="key">
+      <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store ? 'tap-press-soft' : ''}}" hover-stay-time="80">
+        <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text><text class="home-cast-sep">·</text>
+        <text class="home-cast-t">{{item.text}}</text>
+        <text class="home-cast-go" wx:if="{{item.q || item.store}}">›</text>
+      </view>
+    </swiper-item>
+  </swiper>
 </template>
 
 <view class="container {{isSinglePage ? 'is-single-page' : ''}}">
@@ -73,7 +78,13 @@
          第三版（产品负责人「与顶部头图模块融合，部分内容叠加在图片上，提升头部空间利用率」）：
          有头图时叠在头图顶部（见 hero-section 内 is-on-hero）；头图关掉 / 无数据时才退回这条独立口播带。 -->
     <view class="home-cast" wx:if="{{cast.hello && !(showBanners || (showLive && liveSession && liveSession.pullUrl))}}">
-      <template is="home-cast-body" data="{{cast}}" />
+      <template is="home-cast-greet" data="{{cast}}" />
+      <template is="home-cast-line" data="{{cast}}" />
+    </view>
+
+    <!-- 头图上方：只留问候与「口播」签，和图片分开，缓解顶部拥挤 -->
+    <view class="home-cast is-above" wx:if="{{cast.hello && (showBanners || (showLive && liveSession && liveSession.pullUrl))}}">
+      <template is="home-cast-greet" data="{{cast}}" />
     </view>
 
     <!-- 轮播图模块：有直播时首位抢插「直播中」帧；无直播时恢复 baseBanners -->
@@ -132,8 +143,8 @@
       </swiper>
       <!-- 博物君口播叠在头图顶部：顶部压暗渐变把图融进导航区；口播层本身不拦点击，只有可点的那一行接手 -->
       <view class="hero-cast-scrim" wx:if="{{cast.hello}}"></view>
-      <view class="home-cast is-on-hero" wx:if="{{cast.hello}}">
-        <template is="home-cast-body" data="{{cast}}" />
+      <view class="hero-cast-line" wx:if="{{cast.hello}}">
+        <template is="home-cast-line" data="{{cast}}" />
       </view>
       <view class="dots-row">
         <block wx:for="{{banners}}" wx:key="id">

@@ -149,13 +149,20 @@ async function runChecks() {
   const heroCond = 'showBanners || (showLive && liveSession && liveSession.pullUrl)'
   const heroAt = wxml.indexOf('class="hero-section')
   const heroEnd = wxml.indexOf('class="dots-row"', heroAt)
-  const onHero = wxml.indexOf('<view class="home-cast is-on-hero" wx:if="{{cast.hello}}">')
-  ok('H4 口播叠在头图顶部（头图内、点位之前，带顶部压暗）、旧问候行已移除',
-    onHero > heroAt && onHero < heroEnd && /<view class="hero-cast-scrim" wx:if="\{\{cast\.hello\}\}"><\/view>/.test(wxml) && !/class="home-greet"/.test(wxml))
+  const onLine = wxml.indexOf('<view class="hero-cast-line" wx:if="{{cast.hello}}">')
+  // 2026-11-25 第四版：问候移到头图**上方**，只有轮播那一行压在图顶（解决顶部拥挤）
+  ok('H4 问候与轮播拆开：问候在头图上方、轮播行仍在头图内（点位之前）并带顶部压暗',
+    /<view class="home-cast is-above" wx:if="\{\{cast\.hello && \(showBanners/.test(wxml) &&
+    /<view class="hero-cast-line" wx:if="\{\{cast\.hello\}\}">/.test(wxml) &&
+    onLine > heroAt && onLine < heroEnd &&
+    /<view class="hero-cast-scrim" wx:if="\{\{cast\.hello\}\}"><\/view>/.test(wxml) && !/class="home-greet"/.test(wxml))
   ok('H4 无头图时退回独立口播带（与头图条件互斥）',
     wxml.includes(`<view class="home-cast" wx:if="{{cast.hello && !(${heroCond})}}">`) && wxml.includes(`<view class="hero-section {{cast.hello ? 'has-cast' : ''}}" wx:if="{{${heroCond}}}">`))
-  ok('H4 两处共用同一份口播结构（template）', (wxml.match(/<template is="home-cast-body" data="\{\{cast\}\}" \/>/g) || []).length === 2 && /<template name="home-cast-body">/.test(wxml))
-  ok('H4 叠层不拦头图点击（只有可点那一行接手）', /\.home-cast\.is-on-hero \{[^}]*pointer-events: none;/.test(wxss) && /\.home-cast\.is-on-hero \.home-cast-item \{ pointer-events: auto; \}/.test(wxss))
+  ok('H4 两段结构各自复用：问候 greet 两处（上方 / 无头图带）、轮播 line 两处（头图内 / 无头图带）',
+    (wxml.match(/<template is="home-cast-greet" data="\{\{cast\}\}" \/>/g) || []).length === 2 &&
+    (wxml.match(/<template is="home-cast-line" data="\{\{cast\}\}" \/>/g) || []).length === 2 &&
+    /<template name="home-cast-greet">/.test(wxml) && /<template name="home-cast-line">/.test(wxml))
+  ok('H4 叠层不拦头图点击（只有可点那一行接手）', /\.hero-cast-line \{[^}]*pointer-events: none;/.test(wxss) && /\.hero-cast-line \.home-cast-item \{ pointer-events: auto; \}/.test(wxss))
   ok('H4 头图加高、口播带取消后头部更省', /\.hero-section\.has-cast \{ height: 560rpx; \}/.test(wxss))
   ok('H4 点按走 onCastTap、可点条目带 ›', /bindtap="onCastTap"/.test(wxml) && /class="home-cast-go" wx:if="\{\{item\.q \|\| item\.store\}\}"/.test(wxml))
   ok('H4 回到首页重排（昵称 / 时段）', /onShow\(\) \{[\s\S]{0,400}this\.refreshCast\(\);/.test(js))
@@ -202,10 +209,10 @@ const INJECTIONS = [
   { name: '小程序端不归一通知', file: P.flagsUtil, find: ".filter((t) => typeof t === 'string' && t.trim())", replace: '' },
   { name: '回到首页不重排', file: P.homeJs, find: '    // 口播每次回到首页重排一次：昵称（刚登录 / 刚改名）与时段问候跟着变\n    this.refreshCast();\n', replace: '' },
   { name: '每次都 setData', file: P.homeJs, find: 'if (sig === this._castSig) return;', replace: '' },
-  { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast is-on-hero" wx:if="{{cast.hello}}">', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n      <view class="home-cast is-on-hero" wx:if="{{cast.hello}}">' },
+  { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast is-above" wx:if="{{cast.hello && (showBanners', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n    <view class="home-cast is-above" wx:if="{{cast.hello && (showBanners' },
   { name: '有头图时独立口播带也出（两条重复）', file: P.homeWxml, find: '<view class="home-cast" wx:if="{{cast.hello && !(showBanners || (showLive && liveSession && liveSession.pullUrl))}}">', replace: '<view class="home-cast" wx:if="{{cast.hello}}">' },
   { name: '叠层拦住头图点击', file: P.homeWxss, find: '  /* 口播层不拦头图点击：只有可点的那一行接手 */\n  pointer-events: none;\n', replace: '' },
-  { name: '口播不叠在头图上', file: P.homeWxml, find: '      <view class="home-cast is-on-hero" wx:if="{{cast.hello}}">\n        <template is="home-cast-body" data="{{cast}}" />\n      </view>\n', replace: '' },
+  { name: '口播不叠在头图上', file: P.homeWxml, find: '      <view class="hero-cast-line" wx:if="{{cast.hello}}">\n        <template is="home-cast-line" data="{{cast}}" />\n      </view>\n', replace: '' },
   { name: '口播文案折行', file: P.homeWxss, find: '  overflow: hidden;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.home-cast-go', replace: '  overflow: hidden;\n}\n.home-cast-go' },
   { name: '口播套回卡片底色', file: P.homeWxss, find: '  margin: 0 32rpx 20rpx;\n  padding: 10rpx 0 18rpx;\n}', replace: '  margin: 0 32rpx 20rpx;\n  padding: 10rpx 0 18rpx;\n  background: rgba(196, 167, 108, 0.1);\n}' },
   { name: '通知放宽到 36 字', file: P.monFn, find: 'const NOTICE_LEN = 22', replace: 'const NOTICE_LEN = 36' },

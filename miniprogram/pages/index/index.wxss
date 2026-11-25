@@ -1203,25 +1203,28 @@ page {
   pointer-events: none;
   background: linear-gradient(180deg, var(--color-bg) 0%, rgba(26, 24, 20, 0.78) 34%, rgba(26, 24, 20, 0.32) 70%, rgba(26, 24, 20, 0) 100%);
 }
-.home-cast.is-on-hero {
+/* 第四版（2026-11-25）：问候与轮播拆开 —— 问候放到头图上方，只有轮播那一行压在图顶 */
+.home-cast.is-above {
+  margin: 0 32rpx 10rpx;
+  padding: 4rpx 0 10rpx;
+}
+.home-cast.is-above::after { display: none; }
+.hero-cast-line {
   position: absolute;
-  top: 12rpx;
+  top: 16rpx;
   left: 32rpx;
   right: 32rpx;
   z-index: 4;
-  margin: 0;
-  padding: 0;
+  display: flex;
+  align-items: center;
   /* 口播层不拦头图点击：只有可点的那一行接手 */
   pointer-events: none;
 }
-.home-cast.is-on-hero::after { display: none; }
-.home-cast.is-on-hero .home-cast-item { pointer-events: auto; }
-.home-cast.is-on-hero .home-cast-seal {
-  background: radial-gradient(circle at 50% 35%, rgba(196, 167, 108, 0.22) 0%, rgba(26, 24, 20, 0.55) 75%);
-}
-.home-cast.is-on-hero .home-cast-hello,
-.home-cast.is-on-hero .home-cast-t,
-.home-cast.is-on-hero .home-cast-tag { text-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.55); }
+.hero-cast-line .home-cast-item { pointer-events: auto; }
+.hero-cast-line .home-cast-t,
+.hero-cast-line .home-cast-tag,
+.hero-cast-line .home-cast-sep,
+.hero-cast-line .home-cast-go { text-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.6); }
 
 /* 减弱动效：口播呼吸灯停在常亮 */
 @media (prefers-reduced-motion: reduce) {
