@@ -81,9 +81,12 @@ function load(db, superAdmin = true) {
     stubs: {
       'wx-server-sdk': { init() {}, DYNAMIC_CURRENT_ENV: 'x', database: () => db, getWXContext: () => ({ OPENID: 'admin1' }) },
       './staffGuard': {
-        assertStaff: async (d, openid, opts) => (opts && opts.requireSuperAdmin && !superAdmin
-          ? { ok: false, code: 'forbidden', msg: '仅超管' }
-          : { ok: true, actor: { openid, workspaceRole: 'super_admin' } })
+        assertStaff: async (d, openid, opts) => {
+          // 与真 staffGuard 同形：拿不到 openid 就「请先登录」（这样「取错鉴权键」的注入才会被检出）
+          if (!openid) return { ok: false, code: 'NOT_LOGGED_IN', msg: '请先登录' }
+          if (opts && opts.requireSuperAdmin && !superAdmin) return { ok: false, code: 'forbidden', msg: '仅超管' }
+          return { ok: true, actor: { openid, workspaceRole: 'super_admin' } }
+        }
       },
       './auditLog': { writeAuditLog: async () => {}, auditFromActor: (a, f) => Object.assign({ openid: a && a.openid }, f || {}) }
     },
@@ -119,7 +122,7 @@ async function main() {
   let r = await fn.main({ action: 'status' })
   ok('R1 status：白名单 0、在架 4 / 7、四馆各 ≥1', r.success && r.counts.on === 4 && r.counts.total === 7 && r.halls.every((h) => h.on >= 1))
   r = await fn.main({ action: 'buildWhitelist' })
-  const wl = db.docs.product_review_states.main.whitelistIds || []
+  const wl = db.docs.product_review_states?.main?.whitelistIds || []
   ok('R1 生成白名单 = 当前在架（4 件，不含 p5/p6 新增与 p7 已下架）', r.success && wl.length === 4 && !wl.includes('p5') && !wl.includes('p7'))
 
   // R2 空馆则拒绝生成
@@ -136,12 +139,12 @@ async function main() {
   db.docs.products.p5.isOffShelf = false
   db.docs.products.p6.isOffShelf = false
   r = await fn.main({ action: 'offShelfForReview' })
-  const st = db.docs.product_review_states.main
+  const st = db.docs.product_review_states?.main || {}
   ok('R3 审核下架：只下架 2 件新增，白名单 4 件仍在架',
     r.success && r.offCount === 2 && st.status === 'off' && st.reviewOffIds.sort().join() === 'p5,p6' &&
-    db.docs.products.p1.isOffShelf !== true && db.docs.products.p2.isOffShelf !== true &&
-    db.docs.products.p3.isOffShelf !== true && db.docs.products.p4.isOffShelf !== true &&
-    db.docs.products.p5.isOffShelf === true && db.docs.products.p6.isOffShelf === true && db.docs.products.p7.isOffShelf === true)
+    db.docs.products.p1?.isOffShelf !== true && db.docs.products.p2?.isOffShelf !== true &&
+    db.docs.products.p3?.isOffShelf !== true && db.docs.products.p4?.isOffShelf !== true &&
+    db.docs.products.p5?.isOffShelf === true && db.docs.products.p6?.isOffShelf === true && db.docs.products.p7?.isOffShelf === true)
 
   // R4 白名单里有馆为空 → 拒绝下架
   db = memDb({ products: seedProducts() })
@@ -152,7 +155,7 @@ async function main() {
   r = await fn.main({ action: 'offShelfForReview' })
   ok('R4 审核期白名单缺馆 → 拒绝下架并指出海洋馆',
     r.success === false && r.code === 'HALL_EMPTY' && r.emptyHalls.includes('海洋馆') &&
-    db.docs.products.p5.isOffShelf !== true)
+    db.docs.products.p5?.isOffShelf !== true)
 
   // R5 审核上架：只恢复 reviewOffIds，审核前已下架的不动
   db = memDb({ products: seedProducts() })
@@ -163,8 +166,8 @@ async function main() {
   await fn.main({ action: 'offShelfForReview' })
   r = await fn.main({ action: 'restoreAfterReview' })
   ok('R5 审核上架：恢复 2 件；审核前就下架的 p7 仍下架；状态回到 idle',
-    r.success && r.restored === 2 && db.docs.products.p5.isOffShelf === false && db.docs.products.p6.isOffShelf === false &&
-    db.docs.products.p7.isOffShelf === true && db.docs.product_review_states.main.status === 'idle')
+    r.success && r.restored === 2 && db.docs.products.p5?.isOffShelf === false && db.docs.products.p6?.isOffShelf === false &&
+    db.docs.products.p7?.isOffShelf === true && db.docs.product_review_states?.main?.status === 'idle')
 
   // R6 状态守卫：重复下架 / 未下架时恢复
   db = memDb({ products: seedProducts() })
@@ -196,9 +199,20 @@ async function main() {
   r = await fn.main({ action: 'offShelfForReview' })
   ok('R8 部分失败：failed 含 p6，reviewOffIds 只记成功的那件，partial=true',
     r.success && r.partial === true && r.failed.join() === 'p6' &&
-    db.docs.product_review_states.main.reviewOffIds.join() === 'p5' && db.docs.products.p6.isOffShelf !== true)
+    db.docs.product_review_states?.main?.reviewOffIds.join() === 'p5' && db.docs.products.p6?.isOffShelf !== true)
 
-  // R9 页面接线：仅超管、三按钮、四馆徽标、二次确认文案带件数
+  // R9 白名单缺省：首次读取就按当前在架自动落一份（「已在架 = 已审核」），不需要先点生成
+  db = memDb({ products: seedProducts() })
+  fn = load(db)
+  r = await fn.main({ action: 'status' })
+  ok('R9 首次读取自动把当前在架落成白名单（4 件），用户不必先点「生成白名单」',
+    r.success && r.whitelistCount === 4 &&
+    (db.docs.product_review_states?.main?.whitelistIds || []).slice().sort().join() === 'p1,p2,p3,p4')
+
+  // R10 鉴权取值：getWXContext() 的键是大写 OPENID（取小写会恒 undefined → 全部动作「请先登录」）
+  ok('R10 云函数用 OPENID（大写）取调用者身份', /getWXContext\(\)[\s\S]{0,60}OPENID/.test(read(FN)))
+
+  // R11 页面接线：仅超管、三按钮、四馆徽标、二次确认文案带件数
   const wxml = read(SUB)
   const cfg = read(CFG)
   ok('R9 页面：卡片仅超管可见 + 三个动作 + 四馆覆盖 + 空馆红字提示',
@@ -208,12 +222,12 @@ async function main() {
     /loadReviewShelf\(true\)/.test(cfg) && /manageProductReview/.test(cfg) &&
     /const HALLS = \['昆虫馆', '动物馆', '植物馆', '海洋馆'\]/.test(read(FN)))
 
-  // R10 云资源登记：函数清单 + 集合规则/schema/COLLECTIONS/serverOnly
+  // R12 云资源登记：函数清单 + 集合规则/schema/COLLECTIONS/serverOnly
   const rc = JSON.parse(read(RC))
   const names = (rc.functions || []).map((f) => f.name)
   const rule = JSON.parse(read(RULES))
   const sens = JSON.parse(read(SENS))
-  ok('R10 部署清单含 manageProductReview；集合 product_review_states 规则全拒 + schema + COLLECTIONS + serverOnly',
+  ok('R12 部署清单含 manageProductReview；集合 product_review_states 规则全拒 + schema + COLLECTIONS + serverOnly',
     names.includes('manageProductReview') && rule.read === false && rule.write === false &&
     read(SCHEMA).includes('product_review_states') && read(CLOUDJS).includes("product_review_states") &&
     (sens.serverOnly || []).includes('product_review_states') && /\.review-card \{/.test(read(WXSS)))
@@ -234,6 +248,12 @@ if (process.argv.includes('--selftest')) {
       file: FN,
       find: "  const candidates = (state.reviewOffIds || []).filter((id) => {",
       replace: "  const candidates = products.filter((p) => p.isOffShelf === true).map((p) => p._id); (function(){ return; })()\n  const candidatesX = (state.reviewOffIds || []).filter((id) => {"
+    },
+    {
+      name: '取调用者身份写成小写 openid',
+      file: FN,
+      find: "const { OPENID: openid } = cloud.getWXContext()",
+      replace: "const { openid } = cloud.getWXContext()"
     },
     {
       name: '审核下架不再只保留白名单（全部下架）',

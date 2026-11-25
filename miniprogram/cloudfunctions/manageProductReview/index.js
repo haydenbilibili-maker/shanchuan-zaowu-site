@@ -166,8 +166,27 @@ async function bulkShelf(ids, onShelf) {
 }
 
 async function status() {
-  const state = await readState()
+  let state = await readState()
   const products = await fetchAllProducts()
+  // 2026-11-25：「目前已经在架的商品即为已审核无风险」—— 还没有白名单时，首次读取就按当前在架落一份，
+  // 免得用户必须先点一次「生成白名单」；失败不影响状态读取。
+  if (state && state.status !== 'off' && !((state.whitelistIds || []).length)) state = null
+  if (!state) {
+    const on = products.filter((p) => p.isOffShelf !== true)
+    if (on.length) {
+      const hallOn = countHalls(on)
+      if (!emptyHallsOf(hallOn).length) {
+        const ids = on.map((p) => p._id)
+        try {
+          await writeState({ whitelistIds: ids, whitelistAt: db.serverDate(), whitelistBy: 'auto:first-open', status: 'idle' })
+          state = { whitelistIds: ids, status: 'idle', whitelistAt: Date.now() }
+        } catch (e) {
+          // 兜底：至少让页面看到"当前在架"这份集合
+          state = { whitelistIds: ids, status: 'idle' }
+        }
+      }
+    }
+  }
   const onProducts = products.filter((p) => p.isOffShelf !== true)
   const whitelistIds = (state && state.whitelistIds) || []
   const byId = new Map(products.map((p) => [p._id, p]))
@@ -302,7 +321,8 @@ async function restoreAfterReview(actor) {
 
 exports.main = async (event) => {
   const action = String((event && event.action) || 'status').trim()
-  const { openid } = cloud.getWXContext()
+  // ⚠️ getWXContext() 的键是 **OPENID**（大写）；取小写 openid 会恒 undefined → 所有动作都报「请先登录」
+  const { OPENID: openid } = cloud.getWXContext()
   const guard = await assertStaff(db, openid, { requireSuperAdmin: true })
   if (!guard.ok) return fail(guard.msg || '仅超管可操作版本审核', { code: guard.code || 'forbidden' })
   const actor = { openid, ...(guard.actor || {}) }
