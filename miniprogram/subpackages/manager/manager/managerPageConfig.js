@@ -1538,6 +1538,8 @@ const managerPageConfig = {
     // 三层与云函数 riskOverview.tiers 同一个划分：all | high | medium | normal（互斥穷尽）。
     productRiskFilter: 'all', // all | high | medium | normal
     productShelfFilter: 'all', // all | on | off | pending | rejected
+    productHallFilter: 'all', // all | 一级馆名（昆虫馆 / 动物馆 / 植物馆 / 海洋馆 / 矿石馆 / 首饰馆）
+    productHallOptions: ['昆虫馆', '动物馆', '植物馆', '海洋馆', '矿石馆', '首饰馆'],
     /** list 返回的 shelfCounts（与筛选同一套口径），用于筛选条上的计数 */
     productShelfCounts: { all: 0, on: 0, pending: 0, rejected: 0, off: 0 },
     /** 高风险藏品总数（保护类）—— 「风险管理」tab 打开时由 riskOverview 一次性给出 */
@@ -2376,6 +2378,7 @@ const managerPageConfig = {
       this.setData({
         productRiskFilter: 'all',
         productShelfFilter: 'all',
+        productHallFilter: 'all',
         productArchiveFilter: 'all',
         productPromoFilter: 'all',
         searchVal: ''
@@ -4746,6 +4749,7 @@ const managerPageConfig = {
         // 2026-10-13 新增筛选（不传 = all，与改前逐字兼容）
         riskFilter: this.data.productRiskFilter || 'all',
         shelfFilter: this.data.productShelfFilter || 'all',
+        hallFilter: this.data.productHallFilter || 'all',
         sortBy: this.data.productSort || 'new'
       };
       // 风险管理模块的清单要「凭什么算这一层」—— 只有这一页要，明细页不传（不为用不到的字段多打一次库）
@@ -4886,6 +4890,7 @@ const managerPageConfig = {
   resetProductFilters() {
     this.setData({
       productShelfFilter: 'all',
+      productHallFilter: 'all',
       productArchiveFilter: 'all',
       productRiskFilter: 'all',
       productPromoFilter: 'all'
@@ -5103,7 +5108,34 @@ const managerPageConfig = {
     const allowed = ['all', 'high', 'medium', 'normal'];
     const next = allowed.indexOf(val) >= 0 ? val : 'all';
     if (next === this.data.productRiskFilter) return;
-    this.setData({ productRiskFilter: next, productShelfFilter: 'all' });
+    // 2026-11-25：三组筛选统一为 AND —— 切风险**不再**顺带清掉上架态（那是改前的隐性规则，店主对不上数）
+    this.setData({ productRiskFilter: next });
+    this._recomputeRiskShelfCounts();
+    this.loadProducts({ silent: true });
+  },
+
+  /** 馆别筛选：一级馆名（all = 全部） */
+  setProductHallFilter(e) {
+    const val = String((e && e.currentTarget && e.currentTarget.dataset.val) || 'all');
+    if (val === this.data.productHallFilter) return;
+    this.setData({ productHallFilter: val });
+    this.loadProducts({ silent: true });
+  },
+
+  /** 四宫格点标题 = 按该格筛选（已下架 / 在售 / 高风险 / 中等风险） */
+  applyShelfCellFilter(e) {
+    const ds = (e && e.currentTarget && e.currentTarget.dataset) || {};
+    const risk = String(ds.risk || 'all');
+    const shelf = String(ds.shelf || 'all');
+    if (this.data.reviewShelf && this.data.reviewShelf.status === 'off') {
+      this.showHubTip('审核进行中：请先「审核上架」，再切分类查看', 'warn');
+      return;
+    }
+    const next = {};
+    if (risk !== this.data.productRiskFilter) next.productRiskFilter = risk;
+    if (shelf !== this.data.productShelfFilter) next.productShelfFilter = shelf;
+    if (!Object.keys(next).length) return;
+    this.setData(next);
     this._recomputeRiskShelfCounts();
     this.loadProducts({ silent: true });
   },

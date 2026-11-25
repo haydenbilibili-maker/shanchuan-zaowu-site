@@ -145,8 +145,10 @@ export function run(src = {}) {
     'A6 一键上下线没有按 data-risk 区分高/中等两个口径')
   ok(/mediumRiskCount: 0,/.test(cfg) && /highRiskCount: 0,/.test(cfg), 'A6 高/中等风险没有各自独立的件数（data 默认值）')
   // 两个口径各自**上架 + 下架**两只按钮 = 2 + 2，共 4 个独立入口
-  ok((wxml.match(/data-risk="high"/g) || []).length === 2 && (wxml.match(/data-risk="medium"/g) || []).length === 2,
-    'A6 高/中等风险的两个独立入口不完整（应各 2 颗：下架 / 上架）')
+  // 四宫格里每一格是「一个点击筛选项 + 两颗动作按钮」——动作按钮仍各 2 颗（下架 / 上架）
+  const riskBtnCount = (risk) => (wxml.match(new RegExp(`(?:bind|catch)tap="bulkToggleRisk"[^>]*data-risk="${risk}"`, 'g')) || []).length
+  ok(riskBtnCount('high') === 2 && riskBtnCount('medium') === 2,
+    `A6 高/中等风险的两个独立入口不完整（应各 2 颗：下架 / 上架；实得 high=${riskBtnCount('high')} medium=${riskBtnCount('medium')}）`)
   ok(/productRiskFilter==='medium'/.test(wxml), 'A6 筛选条缺「中等风险」chip')
 
   /* ── A7 风险三层：互斥穷尽 + 内存判据与 DB where 同源（2026-10-14）─────────
@@ -194,7 +196,7 @@ export function run(src = {}) {
   // （backfillMineProductLinks 另有两条扫描，但它们各带固定 where，不是通用扫描。）
   ok((fn.match(/if \(where\) query = query\.where\(where\)/g) || []).length === 1,
     `A7 通用全量扫描循环出现了 ${(fn.match(/if \(where\) query = query\.where\(where\)/g) || []).length} 处（只该有 scanProducts 一处）`)
-  ok(/await scanProducts\(where\)/.test(fn) && /await scanProducts\(scopeCond\)/.test(fn),
+  ok(/await scanProducts\(where(?:WithHall)?\)/.test(fn) && /await scanProducts\(scopeCond\)/.test(fn),
     'A7 list 与 riskOverview 没有共用 scanProducts')
   ok(/function buildScopeCondition\(event, actor, verifiedFramerId\)/.test(fn) &&
     (fn.match(/buildScopeCondition\(event, actor, verifiedFramerId\)/g) || []).length >= 3,
@@ -247,8 +249,9 @@ export function run(src = {}) {
   ok(/highRiskCount:/.test(ovMethod) && /mediumRiskCount:/.test(ovMethod),
     'A9 两条工具条的件数没有取自概览回包（同一份数字只能有一个来源）')
   const riskFilterMethod = methodBody(cfg, 'setProductRiskFilter')
-  ok(/productShelfFilter:\s*'all'/.test(riskFilterMethod),
-    'A9 切分层没有清掉上架态筛选（切到中等风险还留着「已下架」＝只看见 12 件，像是丢数据）')
+  // 2026-11-25：三组筛选统一为 AND —— 切分层**不得**再顺带清上架态（改前那条隐性规则让店主对不上数）
+  ok(!/productShelfFilter:\s*'all'/.test(riskFilterMethod) && !/productHallFilter:\s*'all'/.test(riskFilterMethod),
+    'A9 切分层又把上架态 / 馆别清空了（三组筛选应各自独立、组间 AND）')
   const recompute = methodBody(cfg, '_recomputeRiskShelfCounts')
   ok(!!recompute && /this\.data\.riskOverview/.test(recompute) && !/productShelfCounts/.test(recompute),
     '_recomputeRiskShelfCounts 没有从 riskOverview 取值（或又去读全局 productShelfCounts）')
@@ -301,14 +304,24 @@ export function run(src = {}) {
   }
 
   /* ── D 页面接线 ──────────────────────────────────────────────── */
-  ok(/bindtap="bulkToggleRisk"[^>]*data-risk="high"[^>]*data-on="0"/.test(wxml), 'D 工具条缺「高风险一键下架」按钮')
-  ok(/bindtap="bulkToggleRisk"[^>]*data-risk="medium"[^>]*data-on="x"?/.test(wxml) || /bindtap="bulkToggleRisk"[^>]*data-risk="medium"/.test(wxml), 'D 工具条缺「中等风险」入口')
+  ok(/(?:bind|catch)tap="bulkToggleRisk"[^>]*data-risk="high"[^>]*data-on="0"/.test(wxml), 'D 四宫格缺「高风险一键下架」按钮')
+  ok(/(?:bind|catch)tap="bulkToggleRisk"[^>]*data-risk="medium"[^>]*data-on="0"/.test(wxml), 'D 四宫格缺「中等风险一键下架」入口')
   ok(/bindtap="setProductRiskFilter"[^>]*data-val="high"/.test(wxml), 'D 筛选条缺「高风险」chip')
   ok(/item\.isHighRisk/.test(wxml), 'D 藏品卡没有高风险标签')
   ok(/productShelfCounts\.on/.test(wxml) && /productShelfCounts\.off/.test(wxml),
     'D 筛选条没有用上架态计数（productShelfCounts）')
   ok(/bindtap="resetProductFilters"/.test(wxml), 'D 「全部」没有走一键清空筛选')
   ok(/highRiskCount/.test(wxml), 'D 工具条没有显示高风险件数')
+  // 2026-11-25：四宫格专区 + 三组统一筛选 + 馆别筛选
+  ok((wxml.match(/class="shelf-cell(?:\s|")/g) || []).length === 4 && /\.shelf-grid \{[^}]*grid-template-columns: 1fr 1fr;/.test(wxss) &&
+    /\.shelf-btn \{/.test(wxss) && /\.shelf-btn\.is-primary/.test(wxss) && /\.shelf-btn\.is-danger/.test(wxss),
+    'D 四宫格专区不完整（4 格 / 2×2 栅格 / 统一 .shelf-btn 三态）')
+  ok(/class="filter-panel"/.test(wxml) && ['风险', '上架', '馆别'].every((k) => wxml.includes(`class="filter-k">${k}<`)) &&
+    /bindtap="setProductHallFilter"/.test(wxml) && /productHallOptions/.test(wxml),
+    'D 筛选没有统一成「风险 / 上架 / 馆别」三组')
+  ok(/hallFilter: this\.data\.productHallFilter/.test(cfg) && /const hallFilter = String\(\(event && event\.hallFilter\)/.test(fn) &&
+    /loadHallCategoryIds\('\)|await loadHallCategoryIds\(hallFilter\)/.test(fn) && /__hall_unavailable__/.test(fn),
+    'D 馆别筛选没有打通到云端（hallFilter / 分类子树 / 哨兵）')
 
   /* ── E 分类管理（第③项后半）展示层检索 / 排序 / 空分类 ────────────── */
   const catFn = (cfg.match(/rebuildCatTreeView\(\) \{[\s\S]*?\n  \},/) || [''])[0]
@@ -417,7 +430,7 @@ function selftest() {
     ['水印样式回到半透明斜字', (s) => ({ ...s, wxss: s.wxss.replace('.p-wm-text {\n  position: absolute;\n  left: 0; top: 0;', '.p-wm-text {\n  opacity: 0.55;\n  transform: rotate(-28deg);\n  position: absolute;\n  left: 0; top: 0;') }), /C2/],
     ['样式丢掉已下架配色', (s) => ({ ...s, wxss: s.wxss.replace(/\/\* 已下架：墨底浅字[\s\S]*?\n\}\n/, '') }), /C2/],
     ['页面去掉高风险 chip', (s) => ({ ...s, wxml: s.wxml.replace('bindtap="setProductRiskFilter" data-val="high"', 'bindtap="setProductRiskFilter" data-val="normal"') }), /D/],
-    ['工具条丢掉一键下架', (s) => ({ ...s, wxml: s.wxml.replace('bindtap="bulkToggleRisk" data-risk="high" data-on="0"', 'bindtap="bulkToggleRisk" data-risk="high" data-on="1"') }), /D/],
+    ['四宫格丢掉一键下架', (s) => ({ ...s, wxml: s.wxml.replace('catchtap="bulkToggleRisk" data-risk="high" data-on="0"', 'catchtap="bulkToggleRisk" data-risk="high" data-on="1"') }), /D/],
     ['卡片丢掉高风险标签', (s) => ({ ...s, wxml: s.wxml.replace('wx:if="{{item.isHighRisk}}"', 'wx:if="{{false}}"') }), /D/],
     /* ── A5/A6 中等风险（动物类）── */
     ['中等风险不再排除保护类（与高风险重叠）',
@@ -445,7 +458,7 @@ function selftest() {
     ['概览不注册进 action 路由（前端只会拿到「未知 action」）',
       (s) => ({ ...s, fn: s.fn.replace("      case 'riskOverview':\n", '') }), /A7/],
     ['list 与概览各写一套扫描循环',
-      (s) => ({ ...s, fn: s.fn.replace("  const { rows: scannedRows, scanned, truncated } = await scanProducts(where)", '  const scannedRows = []\n  let cursor2 = 0\n  while (cursor2 < 5000) { const r = await db.collection(\'products\').skip(cursor2).limit(100).get(); if (!r.data.length) break; scannedRows.push(...r.data); cursor2 += r.data.length }\n  const scanned = scannedRows.length\n  const truncated = false') }), /A7/],
+      (s) => ({ ...s, fn: s.fn.replace("  const { rows: scannedRows, scanned, truncated } = await scanProducts(whereWithHall)", '  const scannedRows = []\n  let cursor2 = 0\n  while (cursor2 < 5000) { const r = await db.collection(\'products\').skip(cursor2).limit(100).get(); if (!r.data.length) break; scannedRows.push(...r.data); cursor2 += r.data.length }\n  const scanned = scannedRows.length\n  const truncated = false') }), /A7/],
     ['概览不共用「本人藏品」作用域条件',
       (s) => ({ ...s, fn: s.fn.replace('  const scopeCond = buildScopeCondition(event, actor, verifiedFramerId)\n  const { rows, scanned, truncated } = await scanProducts(scopeCond)', '  const scopeCond = null\n  const { rows, scanned, truncated } = await scanProducts(scopeCond)') }), /A7/],
     ['合规提醒不分档（把做到位的保护类也说成没证书）',
@@ -468,8 +481,9 @@ function selftest() {
       (s) => ({ ...s, wxml: s.wxml.replace('<view class="search-box">\n        <input placeholder="搜索藏品…"', '<view class="risk-bar"><view class="risk-bar-btn is-danger" bindtap="bulkToggleRisk" data-risk="high" data-on="0">一键下架</view><view class="risk-bar-btn" bindtap="bulkToggleRisk" data-risk="high" data-on="1">一键上架</view></view>\n      <view class="search-box">\n        <input placeholder="搜索藏品…"') }), /A9/],
     ['明细页还留着风险筛选 chip',
       (s) => ({ ...s, wxml: s.wxml.replace('<view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productArchiveFilter===\'oneOfAKind\'?\'on\':\'\'}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>', '<view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productArchiveFilter===\'oneOfAKind\'?\'on\':\'\'}}" bindtap="setProductArchiveFilter" data-val="oneOfAKind">孤品</view>\n        <view class="pf-chip is-risk" bindtap="setProductRiskFilter" data-val="high">高风险</view>') }), /A9/],
-    ['切分层不清上架态（选高风险却只剩已下架的 11 件）',
-      (s) => ({ ...s, cfg: s.cfg.replace("    this.setData({ productRiskFilter: next, productShelfFilter: 'all' });", '    this.setData({ productRiskFilter: next });') }), /A9/],
+    ['切分层又顺手清掉上架态（三组筛选被打回单组）',
+      (s) => ({ ...s, cfg: s.cfg.replace("    this.setData({ productRiskFilter: next });", "    this.setData({ productRiskFilter: next, productShelfFilter: 'all' });") }), /A9/],
+    ['馆别筛选没传到云端', (s) => ({ ...s, cfg: s.cfg.replace("hallFilter: this.data.productHallFilter || 'all',", '') }), /D 馆别筛选/],
     ['分层 chip 少一颗（普通层点不着）',
       (s) => ({ ...s, wxml: s.wxml.replace('<view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productRiskFilter===\'normal\'?\'on\':\'\'}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>', '') }), /A9/],
     ['概览数字改由客户端重算（去掉服务端构成）',

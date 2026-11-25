@@ -4235,6 +4235,65 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* ══════════════ 「风险管理」独立 tab（2026-10-14）══════════════
    视觉沿用本页既有语言：发丝金边 + 淡底卡片（与「分类管理」返工后同一套），
    红 / 琥珀**只**用于风险等级语义，不铺满屏。 */
+/* 分类上下架专区（2026-11-25）：2×2 四宫格，统一按钮 */
+.shelf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+  margin: 0 8rpx 20rpx;
+}
+.shelf-grid.is-locked { opacity: .55; }
+.shelf-cell {
+  padding: 20rpx 22rpx;
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+.shelf-cell-press { opacity: .85; }
+.shelf-cell.is-risk { background: rgba(200, 84, 68, 0.08); box-shadow: inset 0 0 0 1rpx rgba(200, 84, 68, 0.34); }
+.shelf-cell.is-medium { background: rgba(217, 160, 91, 0.07); box-shadow: inset 0 0 0 1rpx rgba(217, 160, 91, 0.3); }
+.shelf-cell-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8rpx; }
+.shelf-cell-k { font-size: var(--fs-24); color: #E3D2AC; }
+.shelf-cell-v { font-size: var(--fs-34); font-family: var(--font-brand); color: #F1E6CC; }
+.shelf-cell-sub { font-size: var(--fs-20); color: #8C8579; }
+.shelf-cell-ops { display: flex; gap: 12rpx; margin-top: 10rpx; }
+/* 统一按钮：同高、同圆角、同字号；只有语义色不同 */
+.shelf-btn {
+  flex: 1;
+  height: 64rpx;
+  line-height: 64rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  font-size: var(--fs-22);
+  color: #E3D2AC;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45);
+}
+.shelf-btn.is-primary { background: var(--color-primary); color: #221E17; box-shadow: none; }
+.shelf-btn.is-danger { color: #D98374; box-shadow: inset 0 0 0 1rpx rgba(200, 84, 68, 0.5); }
+.shelf-btn.is-disabled { opacity: .5; }
+
+/* 统一筛选：三组（风险 / 上架 / 馆别）各一行，组间 AND */
+.filter-panel {
+  margin: 0 8rpx 20rpx;
+  padding: 18rpx 20rpx 8rpx;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.14);
+}
+.filter-row { display: flex; align-items: flex-start; gap: 12rpx; margin-bottom: 14rpx; }
+.filter-k {
+  flex-shrink: 0;
+  width: 68rpx;
+  padding-top: 12rpx;
+  font-size: var(--fs-20);
+  color: var(--brass-300, #D4BC8A);
+  letter-spacing: .06em;
+}
+.filter-chips { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 10rpx; }
+
 /* 版本审核快照卡（2026-11-25）：与风险分层/上下架条区分开，金线卡，审核中描红 */
 .review-card {
   margin: 0 8rpx 20rpx;

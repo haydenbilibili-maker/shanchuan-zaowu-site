@@ -428,66 +428,83 @@
         <!-- ② 两条**独立**一键工具条（口径与动作与改前逐字一致，只换了页）——
              各自带自己的件数与方向按钮，方便分别操作（例如只清保护类、或只清动物类）；
              进行中只压暗正在跑的那一组。 -->
-        <!-- 上下架状态一键（2026-11-25 产品负责人点名）：与风险分层两条独立，不筛风险等级；
-             两条各自带自己的件数与方向按钮，口径对标「高风险 / 中等风险」那两条。 -->
-        <view class="risk-bar is-relist {{reviewShelf.status === 'off' ? 'is-locked' : ''}}" wx:if="{{productShelfCounts.off > 0}}">
-          <view class="risk-bar-main">
-            <text class="risk-bar-label">已下架 {{productShelfCounts.off}} 件</text>
-            <text class="risk-bar-sub">{{reviewShelf.status === 'off' ? '审核进行中：请先「审核上架」或放弃，再动全库' : '下架不影响商品与订单数据 · 上架后立即对顾客可见'}}</text>
+        <!-- 分类上下架专区（2026-11-25 产品负责人：四宫格 + 统一按钮）——
+             四格 = 已下架 / 在售 / 高风险 / 中等风险；点格子的标题按该格筛选，格内只放该分类的一键动作。 -->
+        <view class="risk-sec-label">分类上下架</view>
+        <view class="shelf-grid {{reviewShelf.status === 'off' ? 'is-locked' : ''}}">
+          <view class="shelf-cell" bindtap="applyShelfCellFilter" data-risk="all" data-shelf="off" hover-class="shelf-cell-press" hover-stay-time="70">
+            <view class="shelf-cell-head">
+              <text class="shelf-cell-k">已下架</text>
+              <text class="shelf-cell-v">{{productShelfCounts.off}}</text>
+            </view>
+            <text class="shelf-cell-sub">可随时恢复上架</text>
+            <view class="shelf-cell-ops">
+              <view class="shelf-btn is-primary {{bulkRiskRunning === 'off' ? 'is-disabled' : ''}}" catchtap="bulkRelistOffShelf">一键上架</view>
+            </view>
           </view>
-          <view class="risk-bar-actions">
-            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn {{bulkRiskRunning === 'off' ? 'is-disabled' : ''}}" bindtap="bulkRelistOffShelf">一键上架</view>
+          <view class="shelf-cell" bindtap="applyShelfCellFilter" data-risk="all" data-shelf="on" hover-class="shelf-cell-press" hover-stay-time="70">
+            <view class="shelf-cell-head">
+              <text class="shelf-cell-k">在售</text>
+              <text class="shelf-cell-v">{{productShelfCounts.on}}</text>
+            </view>
+            <text class="shelf-cell-sub">顾客可见</text>
+            <view class="shelf-cell-ops">
+              <view class="shelf-btn is-danger {{bulkRiskRunning === 'on' ? 'is-disabled' : ''}}" catchtap="bulkOffShelfOnSale">一键下架</view>
+            </view>
           </view>
-        </view>
-        <view class="risk-bar is-onsale {{reviewShelf.status === 'off' ? 'is-locked' : ''}}" wx:if="{{productShelfCounts.on > 0}}">
-          <view class="risk-bar-main">
-            <text class="risk-bar-label">在售 {{productShelfCounts.on}} 件</text>
-            <text class="risk-bar-sub">{{reviewShelf.status === 'off' ? '审核进行中：请先「审核上架」，再动全库' : '下架后顾客立即看不到 · 可随时用上面「已下架一键上架」恢复'}}</text>
+          <view class="shelf-cell is-risk" bindtap="applyShelfCellFilter" data-risk="high" data-shelf="all" hover-class="shelf-cell-press" hover-stay-time="70">
+            <view class="shelf-cell-head">
+              <text class="shelf-cell-k">高风险</text>
+              <text class="shelf-cell-v">{{highRiskCount}}</text>
+            </view>
+            <text class="shelf-cell-sub">三有 / 保护类</text>
+            <view class="shelf-cell-ops">
+              <view class="shelf-btn is-danger {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" catchtap="bulkToggleRisk" data-risk="high" data-on="0">下架</view>
+              <view class="shelf-btn {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" catchtap="bulkToggleRisk" data-risk="high" data-on="1">上架</view>
+            </view>
           </view>
-          <view class="risk-bar-actions">
-            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn is-danger {{bulkRiskRunning === 'on' ? 'is-disabled' : ''}}" bindtap="bulkOffShelfOnSale">一键下架</view>
+          <view class="shelf-cell is-medium" bindtap="applyShelfCellFilter" data-risk="medium" data-shelf="all" hover-class="shelf-cell-press" hover-stay-time="70">
+            <view class="shelf-cell-head">
+              <text class="shelf-cell-k">中等风险</text>
+              <text class="shelf-cell-v">{{mediumRiskCount}}</text>
+            </view>
+            <text class="shelf-cell-sub">动物馆藏品</text>
+            <view class="shelf-cell-ops">
+              <view class="shelf-btn is-danger {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" catchtap="bulkToggleRisk" data-risk="medium" data-on="0">下架</view>
+              <view class="shelf-btn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" catchtap="bulkToggleRisk" data-risk="medium" data-on="1">上架</view>
+            </view>
           </view>
-        </view>
-
-        <view class="risk-bar" wx:if="{{highRiskCount > 0}}">
-          <view class="risk-bar-main">
-            <text class="risk-bar-label">高风险 {{highRiskCount}} 件</text>
-            <text class="risk-bar-sub">三有 / 保护类标本 · 来源与许可须齐备</text>
-          </view>
-          <view class="risk-bar-actions">
-            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn is-danger {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="0">一键下架</view>
-            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn {{bulkRiskRunning === 'high' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="high" data-on="1">一键上架</view>
-          </view>
-        </view>
-        <view class="risk-bar is-medium" wx:if="{{mediumRiskCount > 0}}">
-          <view class="risk-bar-main">
-            <text class="risk-bar-label">中等风险 {{mediumRiskCount}} 件</text>
-            <text class="risk-bar-sub">「动物馆」藏品（保护类已归入高风险）</text>
-          </view>
-          <view class="risk-bar-actions">
-            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn is-warn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="0">一键下架</view>
-            <view hover-class="tap-press" hover-stay-time="80" class="risk-bar-btn {{bulkRiskRunning === 'medium' ? 'is-disabled' : ''}}" bindtap="bulkToggleRisk" data-risk="medium" data-on="1">一键上架</view>
-          </view>
-        </view>
-
-        <!-- ③ 分层筛选（三层互斥穷尽） -->
-        <view class="risk-sec-label">按风险分层</view>
-        <view class="product-filter-row">
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productRiskFilter==='all'?'on':''}}" bindtap="setProductRiskFilter" data-val="all">全部</view>
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip is-risk {{productRiskFilter==='high'?'on':''}}" bindtap="setProductRiskFilter" data-val="high">高风险 {{highRiskCount}}</view>
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip is-warn {{productRiskFilter==='medium'?'on':''}}" bindtap="setProductRiskFilter" data-val="medium">中等风险 {{mediumRiskCount}}</view>
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productRiskFilter==='normal'?'on':''}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>
         </view>
 
-        <!-- 上架态：计数随所选分层变（选「高风险」就显示高风险这一层的在架 / 已下架）——
-             用全库计数会与上面的分层件数同屏打架。 -->
-        <view class="risk-sec-label">按上架态</view>
-        <view class="product-filter-row">
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='all'?'on':''}}" bindtap="setProductShelfFilter" data-val="all">全部 {{riskShelfCounts.all}}</view>
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='on'?'on':''}}" bindtap="setProductShelfFilter" data-val="on">在架 {{riskShelfCounts.on}}</view>
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='off'?'on':''}}" bindtap="setProductShelfFilter" data-val="off">已下架 {{riskShelfCounts.off}}</view>
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='pending'?'on':''}}" wx:if="{{riskShelfCounts.pending > 0}}" bindtap="setProductShelfFilter" data-val="pending">待审 {{riskShelfCounts.pending}}</view>
-          <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='rejected'?'on':''}}" wx:if="{{riskShelfCounts.rejected > 0}}" bindtap="setProductShelfFilter" data-val="rejected">已驳回 {{riskShelfCounts.rejected}}</view>
+        <!-- 筛选（2026-11-25 统一）：风险 / 上架态 / 馆别三组各选一，组间是 AND；
+             切换任一组都不清空别组（改前切风险会清上架态，店主常被这个搞混）。 -->
+        <view class="filter-panel">
+          <view class="filter-row">
+            <text class="filter-k">风险</text>
+            <view class="filter-chips">
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productRiskFilter==='all'?'on':''}}" bindtap="setProductRiskFilter" data-val="all">全部</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip is-risk {{productRiskFilter==='high'?'on':''}}" bindtap="setProductRiskFilter" data-val="high">高风险 {{highRiskCount}}</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip is-warn {{productRiskFilter==='medium'?'on':''}}" bindtap="setProductRiskFilter" data-val="medium">中等风险 {{mediumRiskCount}}</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productRiskFilter==='normal'?'on':''}}" bindtap="setProductRiskFilter" data-val="normal">普通 {{riskOverview.tiers.normal.total}}</view>
+            </view>
+          </view>
+          <view class="filter-row">
+            <text class="filter-k">上架</text>
+            <view class="filter-chips">
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='all'?'on':''}}" bindtap="setProductShelfFilter" data-val="all">全部 {{riskShelfCounts.all}}</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='on'?'on':''}}" bindtap="setProductShelfFilter" data-val="on">在架 {{riskShelfCounts.on}}</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='off'?'on':''}}" bindtap="setProductShelfFilter" data-val="off">已下架 {{riskShelfCounts.off}}</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='pending'?'on':''}}" wx:if="{{riskShelfCounts.pending > 0}}" bindtap="setProductShelfFilter" data-val="pending">待审 {{riskShelfCounts.pending}}</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productShelfFilter==='rejected'?'on':''}}" wx:if="{{riskShelfCounts.rejected > 0}}" bindtap="setProductShelfFilter" data-val="rejected">已驳回 {{riskShelfCounts.rejected}}</view>
+            </view>
+          </view>
+          <view class="filter-row">
+            <text class="filter-k">馆别</text>
+            <view class="filter-chips">
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productHallFilter==='all'?'on':''}}" bindtap="setProductHallFilter" data-val="all">全部</view>
+              <view hover-class="tap-press" hover-stay-time="80" class="pf-chip {{productHallFilter===item?'on':''}}" wx:for="{{productHallOptions}}" wx:key="*this" bindtap="setProductHallFilter" data-val="{{item}}">{{item}}</view>
+            </view>
+          </view>
         </view>
 
         <view class="search-box">

@@ -750,10 +750,12 @@ function compareProductsForSort(a, b, sortBy) {
  * 为什么按"一级分类名"找根：`categories` 里一级的 `parentId` 为空，二级带 `parentId`；
  * 先按名字取根，再取 `parentId === 根` 的二级 —— 两步都能命中索引，比一次全表读更省。
  */
-async function loadAnimalHallCategoryIds() {
+async function loadHallCategoryIds(hallName) {
+  const name = String(hallName || '').trim()
+  if (!name) return []
   try {
     const rootRes = await db.collection('categories')
-      .where({ name: ANIMAL_HALL_NAME })
+      .where({ name })
       .limit(20)
       .field({ _id: true, parentId: true })
       .get()
@@ -768,9 +770,14 @@ async function loadAnimalHallCategoryIds() {
     const children = ((childRes && childRes.data) || []).map((c) => (c && c._id) || '').filter(Boolean)
     return [root._id, ...children]
   } catch (e) {
-    console.warn('loadAnimalHallCategoryIds', e && e.message)
+    console.warn('loadHallCategoryIds', e && e.message)
     return []
   }
+}
+
+/** 「动物馆」子树 id（中等风险判据；保持原函数名，调用点不动） */
+async function loadAnimalHallCategoryIds() {
+  return loadHallCategoryIds(ANIMAL_HALL_NAME)
 }
 
 /**
@@ -1245,11 +1252,23 @@ async function listProducts(event, actor) {
     animalHallCategoryIds = await loadAnimalHallCategoryIds()
   }
   const { where, promoFilter, keyword } = buildListWhere(event, actor, verifiedFramerId, animalHallCategoryIds)
+  // 2026-11-25：按馆别筛（一级馆名，如「动物馆」「海洋馆」）。
+  // 分类查不到时用哨兵 id 命中零条 —— 不追加条件等于"全库"，那是把范围偷偷放大。
+  const hallFilter = String((event && event.hallFilter) || 'all').trim()
+  const _c = db.command
+  let whereWithHall = where
+  if (hallFilter && hallFilter !== 'all') {
+    const hallIds = await loadHallCategoryIds(hallFilter)
+    const hallCond = hallIds.length
+      ? _c.or([{ categoryId: _c.in(hallIds) }, { rootCategoryId: _c.in(hallIds) }])
+      : { _id: '__hall_unavailable__' }
+    whereWithHall = where ? _c.and([where, hallCond]) : hallCond
+  }
   const needsMemoryPromo =
     promoFilter === 'seckill' || promoFilter === 'seckill_expired'
   const now = Date.now()
 
-  const { rows: scannedRows, scanned, truncated } = await scanProducts(where)
+  const { rows: scannedRows, scanned, truncated } = await scanProducts(whereWithHall)
   const matched = needsMemoryPromo
     ? scannedRows.filter((row) => matchesPromoFilter(row, promoFilter, now))
     : scannedRows
