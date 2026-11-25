@@ -80,6 +80,51 @@ const HUB_KITS = [
       { id: 'aiIdentify', label: 'AI 鉴定', sub: '鉴定监测', desc: '拍照识别用得怎么样', alias: ['识别', '鉴定', '拍照'], icon: ICON + 'camera.png', keys: ['aiIdentifyMonitor'], tap: 'goIdentifyMonitorGuarded' },
       { id: 'museumGuide', label: '博物君', sub: '开关·监测', desc: '博物君开不开、问得怎么样', alias: ['博物君', 'AI 馆员', '问答'], icon: ICON + 'knowledge.png', keys: ['museumGuideMonitor'], tap: 'goMuseumGuideMonitorGuarded' }
     ]
+  },
+  {
+    id: 'giftPackKit', label: '会员礼包', sub: '新人·生日', desc: '新人礼包和生日礼包', icon: ICON + 'cart.png', sec: 'members',
+    children: [
+      { id: 'welcomeGift', label: '新人礼包', desc: '新会员注册就送的积分和礼券', alias: ['礼包', '新会员礼包', '新人', '注册礼'], icon: ICON + 'cart.png', keys: ['welcomeGift'], tap: 'goWelcomeGift' },
+      { id: 'birthdayGift', label: '生日礼包', desc: '会员生日当天送的积分和礼券', alias: ['礼包', '生日', '生日礼'], icon: ICON + 'booking.png', keys: ['welcomeGift'], tap: 'goBirthdayGift' }
+    ]
+  },
+  {
+    id: 'goodsKit', label: '货品', sub: '供应·采购·库存', desc: '进货、库存和出货商品', icon: ICON + 'knowledge.png', sec: 'studio',
+    children: [
+      { id: 'supplier', label: '供应商', desc: '进货的合作商家', alias: ['供货', '供应商', '厂家'], icon: ICON + 'group.png', keys: ['supplierWorkbench'], tap: 'goSupplierWorkbench' },
+      { id: 'purchase', label: '采购', desc: '给工作室下单进货', alias: ['进货', '采购单'], icon: ICON + 'cart.png', keys: ['purchaseOps'], tap: 'goPurchaseOps' },
+      { id: 'inventory', label: '库存', desc: '成品和原料还剩多少', alias: ['库存', '原料', '成品', '盘点'], icon: ICON + 'knowledge.png', keys: ['inventoryOps', 'rawInventoryOps'], tap: 'goInventoryOps' },
+      { id: 'skuMaintain', label: 'SKU 维护', desc: '出货商品的组合、价格和停用', alias: ['SKU', '商品', '价目', '出货 SKU', '定价'], icon: ICON + 'list.png', keys: ['shipmentSku'], tap: 'goSkuMaintain' }
+    ]
+  },
+  {
+    id: 'costKit', label: '成本与账单', sub: '账单·物业', desc: '工作室收支、房租水电', icon: ICON + 'pay.png', sec: 'studio',
+    children: [
+      { id: 'studioBills', label: '工作室账单', desc: '工作室的收入和支出', alias: ['账单', '收支', '支出'], icon: ICON + 'pay.png', keys: ['studioBills'], tap: 'goStudioBillsGuarded' },
+      { id: 'property', label: '物业', desc: '房租、水电和物业费', alias: ['房租', '水电', '物业费'], icon: MGR_ICON + 'location.png', keys: ['propertyCost'], tap: 'goPropertyCost' }
+    ]
+  },
+  {
+    id: 'framerKit', label: '标本师', sub: '名单·申请·提成', desc: '标本师名单、入驻和提成', icon: ICON + 'user.png', sec: 'studio',
+    children: [
+      { id: 'framers', label: '标本师', desc: '标本师名单、作品和状态', alias: ['标本师管理', '名册', '作品'], icon: ICON + 'user.png', keys: ['framers'], tap: 'switchTab', idx: 5, tabTitle: '标本师管理' },
+      { id: 'framerRecruit', label: '合作申请', desc: '想入驻的标本师，审核申请', alias: ['入驻', '申请', '标本师', '标本师合作'], icon: ICON + 'refund.png', keys: ['framerRecruit'], tap: 'switchTab', idx: 14, tabTitle: '标本师合作', badge: 'framerRecruitApps' },
+      { id: 'artisanCommission', label: '标本师提成', desc: '标本师提成比例和账目', alias: ['提成', '分成', '标本师'], icon: ICON + 'discount.png', keys: ['artisanCommission'], tap: 'goArtisanCommission' }
+    ]
+  },
+  {
+    id: 'staffKit', label: '员工与权限', sub: '名单·权限', desc: '员工名单和角色分配', icon: ICON + 'group.png', sec: 'org',
+    children: [
+      { id: 'staffDirectory', label: '员工', desc: '店员、店长、标本师和股东名单', alias: ['员工名单', '店员', '组织', '通讯录'], icon: ICON + 'group.png', keys: ['staffDirectory'], tap: 'goStaffDirectory' },
+      { id: 'staffPermissions', label: '权限', desc: '按手机号给员工分配角色', alias: ['权限配置', '角色', '组织'], icon: ICON + 'lock.png', keys: ['staffPermissions'], tap: 'goStoreStaffPermissions' }
+    ]
+  },
+  {
+    id: 'payKit', label: '工资', sub: '维护·工资条', desc: '录工资、看自己的工资条', icon: ICON + 'calendar_gold.png', sec: 'org',
+    children: [
+      { id: 'payslipAdmin', label: '工资维护', desc: '录入、修正和删除工资', alias: ['工资', '录工资', '薪资'], icon: MGR_ICON + 'edit.png', keys: ['payslipAdmin'], tap: 'goPayslipAdminGuarded' },
+      { id: 'myPayslip', label: '工资条', desc: '看每月应发、实发和分成', alias: ['工资', '工资条明细', '薪资'], icon: ICON + 'calendar_gold.png', keys: ['myPayslip'], tap: 'goMyPayslipGuarded' }
+    ]
   }
 ]
 
@@ -126,28 +171,19 @@ const HUB_ENTRIES = [
   { id: 'support', label: '有信', desc: '回复顾客的留言', alias: ['留言', '客服', '回复', '山海有信'], icon: ICON + 'message.png', sec: 'members', keys: ['support'], tap: 'switchTab', idx: 11, tabTitle: '山海有信', badge: 'supportTickets' },
   { id: 'curators', label: '荣誉馆长', desc: '荣誉馆长名单', alias: ['馆长', '荣誉'], icon: ICON + 'tab-collection.png', sec: 'members', keys: ['honoraryCurators'], tap: 'goHonoraryCurators' },
   { id: 'points', label: '积分', desc: '发积分、换礼品', alias: ['积分', '兑换'], icon: ICON + 'star.png', sec: 'members', keys: ['points'], tap: 'goStorePoints' },
-  { id: 'welcomeGift', label: '新人礼包', desc: '新会员注册就送的积分和礼券', alias: ['礼包', '新会员礼包', '新人', '注册礼'], icon: ICON + 'cart.png', sec: 'members', keys: ['welcomeGift'], tap: 'goWelcomeGift' },
-  { id: 'birthdayGift', label: '生日礼包', desc: '会员生日当天送的积分和礼券', alias: ['礼包', '生日', '生日礼'], icon: ICON + 'booking.png', sec: 'members', keys: ['welcomeGift'], tap: 'goBirthdayGift' },
+  kitEntry('giftPackKit'),
   { id: 'walletConfig', label: '钱包配置', desc: '充值档位和充值页文案', alias: ['钱包', '充值', '储值'], icon: ICON + 'wallet_gold.png', sec: 'members', keys: ['walletConfig'], tap: 'goWalletConfig' },
   { id: 'studioDashboard', label: '仪表盘', desc: '工作室整体情况', alias: ['工作室', '总览'], icon: ICON + 'studio-dashboard.png', sec: 'studio', keys: ['studioDashboard'], tap: 'goStudioDashboard' },
-  { id: 'supplier', label: '供应商', desc: '进货的合作商家', alias: ['供货', '供应商', '厂家'], icon: ICON + 'group.png', sec: 'studio', keys: ['supplierWorkbench'], tap: 'goSupplierWorkbench' },
-  { id: 'purchase', label: '采购', desc: '给工作室下单进货', alias: ['进货', '采购单'], icon: ICON + 'cart.png', sec: 'studio', keys: ['purchaseOps'], tap: 'goPurchaseOps' },
+  kitEntry('goodsKit'),
   { id: 'shipment', label: '出货中心', desc: '工作室打包发货', alias: ['发货', '出库', '出货单'], icon: ICON + 'ship.png', sec: 'studio', keys: ['shipmentOps'], tap: 'goShipmentOps' },
-  { id: 'skuMaintain', label: 'SKU 维护', desc: '出货商品的组合、价格和停用', alias: ['SKU', '商品', '价目', '出货 SKU', '定价'], icon: ICON + 'list.png', sec: 'studio', keys: ['shipmentSku'], tap: 'goSkuMaintain' },
-  { id: 'inventory', label: '库存', desc: '成品和原料还剩多少', alias: ['库存', '原料', '成品', '盘点'], icon: ICON + 'knowledge.png', sec: 'studio', keys: ['inventoryOps', 'rawInventoryOps'], tap: 'goInventoryOps' },
-  { id: 'studioBills', label: '工作室账单', desc: '工作室的收入和支出', alias: ['账单', '收支', '支出'], icon: ICON + 'pay.png', sec: 'studio', keys: ['studioBills'], tap: 'goStudioBillsGuarded' },
-  { id: 'property', label: '物业', desc: '房租、水电和物业费', alias: ['房租', '水电', '物业费'], icon: MGR_ICON + 'location.png', sec: 'studio', keys: ['propertyCost'], tap: 'goPropertyCost' },
+  kitEntry('costKit'),
   { id: 'feishu', label: '飞书同步', desc: '把数据自动抄到飞书表格', alias: ['飞书', '表格', '同步'], icon: ICON + 'deliver.png', sec: 'studio', keys: ['feishuSync'], tap: 'goFeishuSyncGuarded' },
-  { id: 'framers', label: '标本师', desc: '标本师名单、作品和状态', alias: ['标本师管理', '名册', '作品'], icon: ICON + 'user.png', sec: 'studio', keys: ['framers'], tap: 'switchTab', idx: 5, tabTitle: '标本师管理' },
-  { id: 'framerRecruit', label: '合作申请', desc: '想入驻的标本师，审核申请', alias: ['入驻', '申请', '标本师', '标本师合作'], icon: ICON + 'refund.png', sec: 'studio', keys: ['framerRecruit'], tap: 'switchTab', idx: 14, tabTitle: '标本师合作', badge: 'framerRecruitApps' },
-  { id: 'artisanCommission', label: '标本师提成', desc: '标本师提成比例和账目', alias: ['提成', '分成', '标本师'], icon: ICON + 'discount.png', sec: 'studio', keys: ['artisanCommission'], tap: 'goArtisanCommission' },
+  kitEntry('framerKit'),
   { id: 'verify', label: '核销验票', desc: '扫码核销会员券、门票和礼券', alias: ['核销', '扫码', '验票', '门票'], icon: ICON + 'qrcode.png', sec: 'org', keys: ['verify'], tap: 'goStaffTab', tab: 'verify' },
   { id: 'staffConsole', label: '店员工作台', desc: '打卡和店员每天要做的事', alias: ['店员', '打卡', '排班'], icon: ICON + 'tab-user.png', sec: 'org', keys: ['staffConsole'], tap: 'goStaffHome' },
-  { id: 'staffDirectory', label: '员工', desc: '店员、店长、标本师和股东名单', alias: ['员工名单', '店员', '组织', '通讯录'], icon: ICON + 'group.png', sec: 'org', keys: ['staffDirectory'], tap: 'goStaffDirectory' },
-  { id: 'staffPermissions', label: '权限', desc: '按手机号给员工分配角色', alias: ['权限配置', '角色', '组织'], icon: ICON + 'lock.png', sec: 'org', keys: ['staffPermissions'], tap: 'goStoreStaffPermissions' },
+  kitEntry('staffKit'),
   { id: 'shareholderConfig', label: '股东', desc: '门店占股和回本前后分成', alias: ['股东配置', '占股', '分成', '组织'], icon: ICON + 'coin_gold.png', sec: 'org', keys: ['shareholderConfig'], tap: 'goShareholderConfig' },
-  { id: 'myPayslip', label: '工资条', desc: '看每月应发、实发和分成', alias: ['工资', '工资条明细', '薪资'], icon: ICON + 'calendar_gold.png', sec: 'org', keys: ['myPayslip'], tap: 'goMyPayslipGuarded' },
-  { id: 'payslipAdmin', label: '工资维护', desc: '录入、修正和删除工资', alias: ['工资', '录工资', '薪资'], icon: MGR_ICON + 'edit.png', sec: 'org', keys: ['payslipAdmin'], tap: 'goPayslipAdminGuarded' },
+  kitEntry('payKit'),
   { id: 'shipping', label: '运费规则', desc: '按装裱方式算运费、包邮门槛', alias: ['运费', '包邮', '快递费', '规则配置'], icon: ICON + 'deliver.png', sec: 'system', keys: ['shipping'], tap: 'switchTab', idx: 15, tabTitle: '运费规则' },
   { id: 'bookingRules', label: '预约规则', desc: '可预约时段和闭店日', alias: ['预约', '时段', '闭店', '规则配置'], icon: MGR_ICON + 'clock.png', sec: 'system', keys: ['bookingRules'], tap: 'goBookingRules' },
   { id: 'supportConfig', label: '客服入口', desc: '客服电话和常见问题', alias: ['客服', '电话', '常见问题', '规则配置'], icon: ICON + 'phone.png', sec: 'system', keys: ['supportConfig'], tap: 'goSupportConfig' },
@@ -169,15 +205,22 @@ const FAV_ID_ALIASES = {
   activities: 'opsKit', live: 'opsKit',
   vip: 'memberLevelKit', memberLevel: 'memberLevelKit',
   aiIdentify: 'aiMonitorKit', museumGuide: 'aiMonitorKit', museumGuideMonitor: 'aiMonitorKit',
-  perks: ['welcomeGift', 'birthdayGift', 'walletConfig'],
-  artisan: ['framers', 'framerRecruit', 'artisanCommission'],
-  org: ['staffDirectory', 'staffPermissions', 'shareholderConfig'],
-  payslip: ['myPayslip', 'payslipAdmin'],
+  // S3：会员礼包 / 货品 / 成本与账单 / 标本师 / 员工与权限 / 工资
+  welcomeGift: 'giftPackKit', birthdayGift: 'giftPackKit',
+  supplier: 'goodsKit', purchase: 'goodsKit', inventory: 'goodsKit', skuMaintain: 'goodsKit',
+  studioBills: 'costKit', property: 'costKit',
+  framers: 'framerKit', framerRecruit: 'framerKit', artisanCommission: 'framerKit',
+  staffDirectory: 'staffKit', staffPermissions: 'staffKit',
+  payslipAdmin: 'payKit', myPayslip: 'payKit',
+  perks: ['giftPackKit', 'walletConfig'],
+  artisan: 'framerKit',
+  org: ['staffKit', 'shareholderConfig'],
+  payslip: 'payKit',
   rules: ['shipping', 'bookingRules', 'supportConfig'],
   memberCurator: 'memberLevelKit', memberLevelAdjust: 'memberLevelKit', honoraryCurators: 'curators',
   shipmentOps: 'shipment', shipmentSku: 'shipment',
-  inventoryOps: 'inventory', rawInventoryOps: 'inventory',
-  supplierWorkbench: 'supplier', purchaseOps: 'purchase', propertyCost: 'property',
+  inventoryOps: 'goodsKit', rawInventoryOps: 'goodsKit',
+  supplierWorkbench: 'goodsKit', purchaseOps: 'goodsKit', propertyCost: 'costKit',
   feishuSync: 'feishu', depositOps: 'deposit', aiIdentifyMonitor: 'aiMonitorKit'
 }
 /** 未配置时的角色默认（再按权限过滤） */
@@ -404,10 +447,20 @@ function buildHubView(favIds, data) {
 
 const normText = (s) => String(s || '').toLowerCase().replace(/\s+/g, '')
 
-/** 一个入口能被哪些词搜到：名称、别名、所在分区名（全称 / 简称） */
-function searchWords(e) {
+/**
+ * 一个入口能被哪些词搜到：名称、别名、所在分区名（全称 / 简称）。
+ * 组合入口的别名只取**当前角色看得到**的子功能（店长搜「SKU」不该搜到只有超管才有「SKU 维护」的货品组合）。
+ */
+function searchWords(e, menu) {
   const sec = HUB_SECTIONS.find((s) => s.id === e.sec) || {}
-  return [e.label, ...(e.alias || []), sec.title, sec.short].map(normText).filter(Boolean)
+  let alias = e.alias || []
+  if (e.kit && menu) {
+    const m = menu || {}
+    const kit = findKit(e.kit)
+    alias = []
+    ;(kit ? kit.children : []).filter((c) => c.keys.some((k) => m[k] === true)).forEach((c) => { alias.push(c.label, ...(c.alias || [])) })
+  }
+  return [e.label, ...alias, sec.title, sec.short].map(normText).filter(Boolean)
 }
 
 /** 搜索只在有权限的入口里找；名称命中排前，其次别名，最后分区名 */
@@ -420,8 +473,8 @@ function searchEntries(query, data) {
     const sec = HUB_SECTIONS.find((s) => s.id === e.sec) || {}
     let rank = -1
     if (normText(e.label).indexOf(q) !== -1) rank = 0
-    else if (searchWords(e).slice(1).some((w) => w.indexOf(q) !== -1 && w !== normText(sec.title) && w !== normText(sec.short))) rank = 1
-    else if (searchWords(e).some((w) => w.indexOf(q) !== -1)) rank = 2
+    else if (searchWords(e, d.menu).slice(1).some((w) => w.indexOf(q) !== -1 && w !== normText(sec.title) && w !== normText(sec.short))) rank = 1
+    else if (searchWords(e, d.menu).some((w) => w.indexOf(q) !== -1)) rank = 2
     if (rank >= 0) scored.push({ rank, i, e })
   })
   scored.sort((x, y) => x.rank - y.rank || x.i - y.i)

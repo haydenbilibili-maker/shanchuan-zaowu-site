@@ -1002,7 +1002,7 @@ if (!selftest) {
       ? hubNav.replace('const HUB_KITS = [', `const HUB_KITS = [\n${sampleKit},`)
       : hubNav.replace("/* ── 我的常用 ── */", `const HUB_KITS = [\n${sampleKit}\n]\nfunction findKit(id) { return HUB_KITS.find((k) => k.id === id) || null }\n\n/* ── 我的常用 ── */`)
     hubNav = hubNav.replace("depositOps: 'deposit',", "depositOps: 'sampleKit', deposit: 'sampleKit', shareholderConfig: 'sampleKit',")
-    hubNav = hubNav.replace("org: ['staffDirectory', 'staffPermissions', 'shareholderConfig'],", "org: ['staffDirectory', 'staffPermissions', 'sampleKit'],")
+    hubNav = hubNav.replace(/(\n  org: [^\n]*)'shareholderConfig'/, "$1'sampleKit'")
     if (!hadKits) hubNav = hubNav.replace("module.exports = {", "module.exports = {\n  HUB_KITS,\n  findKit,")
     // 分区 keys：股东从组织区移到订单区（组合磁贴落在订单区）
     hubNav = hubNav.replace("'staffPermissions', 'shareholderConfig', 'payslipAdmin'", "'staffPermissions', 'payslipAdmin'").replace("'approvals', 'depositOps'] }", "'approvals', 'depositOps', 'shareholderConfig'] }")
@@ -1087,8 +1087,8 @@ if (!selftest) {
     ['N5 搜索给所有角色', rep('hubNav', 'return { hubCat: { total: vis.length, search: vis.length > MANY_ENTRIES } }', 'return { hubCat: { total: vis.length, search: true } }'), /N5 店长：可见入口 \d+ 个，搜索框应隐藏/],
     ['N5 搜索框不再受开关控制', rep('wxml', '<view class="hub-search" wx:if="{{hubCat.search}}">', '<view class="hub-search">'), /N5 搜索框须 wx:if/],
     ['N5 搜索不按权限过滤', rep('hubNav', '  visibleEntries(d.menu).forEach((e, i) => {', '  HUB_ENTRIES.forEach((e, i) => {'), /N5 搜索须只在有权限的入口里找/],
-    ['N5 搜索不认别名', rep('hubNav', 'return [e.label, ...(e.alias || []), sec.title, sec.short]', 'return [e.label, sec.title, sec.short]'), /N5 超管搜「包邮」/],
-    ['N5 搜索不认分组名', rep('hubNav', 'return [e.label, ...(e.alias || []), sec.title, sec.short]', 'return [e.label, ...(e.alias || [])]'), /N5 超管搜分组名「工作室」/],
+    ['N5 搜索不认别名', rep('hubNav', 'return [e.label, ...alias, sec.title, sec.short]', 'return [e.label, sec.title, sec.short]'), /N5 超管搜「包邮」/],
+    ['N5 搜索不认分组名', rep('hubNav', 'return [e.label, ...alias, sec.title, sec.short]', 'return [e.label, ...alias]'), /N5 超管搜分组名「工作室」/],
     // N6 分类宫格 + 可收起 + 默认展开 + 入口全部在
     ['N6 宫格不随收起隐藏', rep('wxml', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.biz}}">', '<view class="hub-grid--cat">'), /N6 分区 biz 须恰好一个宫格/],
     ['N6 标题行不能点', rep('wxml', 'bindtap="onHubCollapse" data-sec="studio" ', ''), /N6 分区 studio 标题行须点按收起/],
@@ -1148,7 +1148,8 @@ if (!selftest) {
     ['K 组合页不按权限过滤', rep('groupJs', '.filter((c) => c.keys.some(', '.filter((c) => c.keys.every('), /K 组合页须按权限过滤子功能/, true],
     ['K 组合页另写跳转（不调原 handler）', rep('groupJs', 'hubNav.invokeItem(', 'wx.navigateTo('), /K 组合页点子功能须经 hubNav\.invokeItem/, true],
     ['K 组合页未注册', rep('appJson', '"group/index",', ''), /K 组合页未在 app\.json 注册/, true],
-    ['K 子功能名称搜不到组合', rep('hubNav', "alias: ['孤品定金', '股东', '订金', '占股']", "alias: ['订金']"), /K 超管搜「股东」找不到组合「样本组合」/, true],
+    ['K 组合搜索按看不到的子功能命中（店长搜 SKU 搜到货品）', rep('hubNav', "    ;(kit ? kit.children : []).filter((c) => c.keys.some((k) => m[k] === true)).forEach(", "    ;(kit ? kit.children : []).forEach("), /N5「SKU 维护」仅超管：店长不得搜到/],
+    ['K 组合搜索不认子功能名称', rep('hubNav', 'alias.push(c.label, ...(c.alias || []))', 'alias.push(...(c.alias || []))'), /K 超管搜「股东」找不到组合「样本组合」/, true],
     // S2 真组合：角标 = 有权限子功能之和、随计数刷新、挂在该挂的组合上
     ['K 组合角标不再求和', rep('hubNav', '.reduce((sum, c) => sum + badgeValue(c.badge, d), 0)', '.reduce(() => 0, 0)'), /N3 超管：组合「审批与发票」角标/],
     ['K 组合角标计入无权限子功能', rep('hubNav', "return (kit ? kit.children : []).filter((c) => c.badge && c.keys.some((k) => m[k] === true))", "return (kit ? kit.children : []).filter((c) => c.badge)"), /N3 (店长|店员)：组合「[^」]+」角标/],
