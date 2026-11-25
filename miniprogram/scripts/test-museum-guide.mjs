@@ -259,7 +259,8 @@ async function runChecks() {
     !/<view class="mg-seal"[^>]*><text>博<\/text>/.test(read(P.wxml)))
   ok('E7 askMuseumGuide 已登记 cloudbaserc（否则 tcb / deploy-drifted 永远不会部署它）',
     /"name":\s*"askMuseumGuide"/.test(read(P.cloudrc)))
-  ok('E4 页脚写明 AI 生成仅供参考、对话只存本机', /由 AI 生成，仅供参考/.test(read(P.wxml)) && /只存在这台手机上/.test(read(P.wxml)))
+  ok('E4 页脚写明 AI 生成仅供参考、对话只存本机（压缩成一行短句）',
+    /AI 生成，仅供参考/.test(read(P.wxml)) && /对话只存本机/.test(read(P.wxml)) && /\.mg-note \{[^}]*font-size: var\(--fs-18\)/.test(read(P.wxml.replace(/\.wxml$/, '.wxss'))))
 
   /* ---------------- F 页面行为 ---------------- */
   let cfg = null
@@ -571,7 +572,7 @@ const INJECTIONS = [
   { name: '超时也同模型重试', file: P.fn, find: '        if (!(jsonMode && e.statusCode === 400)) break', replace: '        if (!jsonMode) break' },
   { name: '提示词不禁英文单词', file: P.persona, find: '；除拉丁学名外不要夹带英文单词。', replace: '。' },
   { name: '点气泡不跳过', file: P.page, find: '    if (cur && cur.revealing) this.finishReveal(index)', replace: '' },
-  { name: '页脚丢了 AI 声明', file: P.wxml, find: '由 AI 生成，仅供参考', replace: '仅供参考' },
+  { name: '页脚丢了 AI 声明', file: P.wxml, find: 'AI 生成，仅供参考', replace: '仅供参考' },
   { name: '宫格博物君图标退回旧图', file: P.userWxml, find: 'src="/assets/icons/museum-guide.png"', replace: 'src="/assets/icons/knowledge.png"' },
   { name: 'askMuseumGuide 漏登记 cloudbaserc', file: P.cloudrc, find: '"name": "askMuseumGuide"', replace: '"name": "askMuseumGuideX"' },
   { name: '博物君头像退回「博」字', file: P.wxml, find: '<image class="mg-seal-icon" src="{{guideAvatar}}" mode="aspectFit"></image>', replace: '<text>博</text>' },

@@ -133,7 +133,8 @@
       </view>
     </view>
 
-    <text class="mg-note">博物君的回答由 AI 生成，仅供参考；馆藏、价格与开放时间以页面为准。对话只存在这台手机上。</text>
+    <!-- 2026-11-25 产品负责人：这段说明太长、折两行还抢注意力 → 压成一行短句（合规字样保留「AI 生成」「仅供参考」） -->
+    <text class="mg-note">AI 生成，仅供参考 · 馆藏与价格以页面为准 · 对话只存本机</text>
     <view id="mg-end" class="mg-end"></view>
   </scroll-view>
 

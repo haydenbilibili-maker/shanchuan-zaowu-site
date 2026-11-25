@@ -93,7 +93,7 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 .mg-starters { padding: 28rpx 32rpx 0; }
 .mg-starters-k { display: block; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .16em; color: var(--brass-300, #D4BC8A); }
 
-.mg-note { display: block; margin: 36rpx 32rpx 8rpx; font-size: var(--fs-20); line-height: 1.6; color: var(--color-text-secondary); text-align: center; }
+.mg-note { display: block; margin: 36rpx 32rpx 8rpx; font-size: var(--fs-18); line-height: 1.5; color: var(--color-text-secondary); opacity: .78; text-align: center; letter-spacing: .02em; }
 .mg-end { height: 32rpx; }
 
 /* 底部输入条 */
