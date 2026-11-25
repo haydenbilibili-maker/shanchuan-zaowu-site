@@ -48,8 +48,35 @@ function getDefaultFlags() {
     showRitualProfile: false,
     // 祈福墙「功德证」次级入口（创新钩子 H2，2026-09-20）：领证要身份（未注册会被引到注册门禁），
     // 属身份相关新能力 → 缺配置默认**关闭**，由超管显式开启（照 showRitualProfile / showMaShangYou 先例）
-    showMuyuCertificate: false
+    showMuyuCertificate: false,
+    // 审核一键（2026-11-25）：默认不在审核模式、无快照
+    reviewMode: false,
+    reviewSnapshot: null
   }
+}
+
+/**
+ * 「审核一键」受影响的开关（2026-11-25 产品负责人）：
+ * AI 相关（AI 标本鉴定 / 博物君）+ 内容相关（马上有 / 山海社区 / 标本档案 / 馆内直播）。
+ * 审核期一键把它们关掉，过审后一键恢复成按下之前的原值（快照存在 flags.reviewSnapshot）。
+ * ⚠️ 新增开关若要纳入审核一键，**只改这一处** + 店长端面板同一份清单（守卫 check:hook-registration 比对）。
+ */
+const REVIEW_FLAGS = [
+  'showAiIdentify',
+  'museumGuideOpen',
+  'showMaShangYou',
+  'showUserCommunity',
+  'showSpecimenArchive',
+  'showLive'
+]
+
+function sanitizeReviewSnapshot(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const out = {}
+  for (const k of REVIEW_FLAGS) {
+    if (typeof raw[k] === 'boolean') out[k] = raw[k]
+  }
+  return Object.keys(out).length ? out : null
 }
 
 function normalizeFlags(doc) {
@@ -89,7 +116,10 @@ function normalizeFlags(doc) {
     // 祈福墙连续记录云保存钩子：缺字段 / undefined → false；身份新能力默认关闭
     showRitualProfile: src.showRitualProfile === true,
     // 祈福墙功德证钩子（H2）：缺字段 / undefined → false；身份新能力默认关闭
-    showMuyuCertificate: src.showMuyuCertificate === true
+    showMuyuCertificate: src.showMuyuCertificate === true,
+    // 审核一键（2026-11-25）：是否处于「审核模式」+ 按下之前的原值快照（用于一键恢复）
+    reviewMode: src.reviewMode === true,
+    reviewSnapshot: sanitizeReviewSnapshot(src.reviewSnapshot)
   }
 }
 
@@ -171,7 +201,10 @@ async function saveFlags(event, openid) {
     // ⚠️ 漏这一行 = 店长端保存成功、但 showMuyuCertificate 被静默重置为默认（关）
     showMuyuCertificate: incoming.showMuyuCertificate,
     // ⚠️ 漏这一行 = 超管在后台保存成功、但 showRitualProfile 被静默重置为默认（关）
-    showRitualProfile: incoming.showRitualProfile
+    showRitualProfile: incoming.showRitualProfile,
+    // 审核一键：模式位 + 原值快照（新增字段是加法，不影响旧端）
+    reviewMode: incoming.reviewMode,
+    reviewSnapshot: incoming.reviewSnapshot
   })
 
   const docId = String((event && event.docId) || '').trim()

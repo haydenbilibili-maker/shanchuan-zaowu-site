@@ -803,6 +803,22 @@ const RISK_TIER_LABELS = {
   normal: '普通'
 };
 
+/**
+ * 「审核一键」受影响的开关（2026-11-25 产品负责人）：
+ * AI 相关（标本鉴定 / 博物君）+ 内容相关（马上有 / 山海社区 / 标本档案 / 馆内直播）。
+ * 审核期一键关掉，过审后一键恢复为按下之前的原值（快照随 flags 存云端）。
+ * ⚠️ 与云函数 getContentDisplayFlags 的 REVIEW_FLAGS 必须同一份（守卫比对）。
+ */
+const REVIEW_FLAGS = ['showAiIdentify', 'museumGuideOpen', 'showMaShangYou', 'showUserCommunity', 'showSpecimenArchive', 'showLive']
+const REVIEW_FLAG_ROWS = [
+  { key: 'showAiIdentify', label: 'AI 标本鉴定' },
+  { key: 'museumGuideOpen', label: '博物君（AI 馆员）' },
+  { key: 'showMaShangYou', label: '马上有 · 心愿签' },
+  { key: 'showUserCommunity', label: '我的山海社区' },
+  { key: 'showSpecimenArchive', label: '馆藏标本档案' },
+  { key: 'showLive', label: '馆内直播入口' }
+]
+
 /** 上架态的中文名（导出清单 / 文案复用；口径同 productShelfFilter） */
 const SHELF_FILTER_LABELS = {
   on: '在架',
@@ -1667,6 +1683,7 @@ const managerPageConfig = {
     },
 
     // 内容展示开关（curTab 16）
+    reviewFlagRows: REVIEW_FLAG_ROWS,
     contentFlagsLoading: false,
     contentFlagsSaving: false,
     // 有未保存的改动：开关是「先改本地、点保存才写云端」的，
@@ -1735,6 +1752,9 @@ const managerPageConfig = {
       showAiIdentify: true,
       // 博物君（AI 馆员）：缺字段默认开；与 ERP「商品内容-开关」同源，保存时原值回传
       museumGuideOpen: true,
+      // 审核一键（2026-11-25）：模式位 + 按下之前的原值快照
+      reviewMode: false,
+      reviewSnapshot: null,
       showStore: true,
       showStorePickup: true,
       showGift: false,
@@ -12628,6 +12648,8 @@ bindSubCatChange(e) {
           museumGuideOpen: typeof flags.museumGuideFlag === 'boolean'
             ? flags.museumGuideFlag
             : flags.museumGuideOpen !== false,
+          reviewMode: flags.reviewMode === true,
+          reviewSnapshot: flags.reviewSnapshot && typeof flags.reviewSnapshot === 'object' ? flags.reviewSnapshot : null,
           showStore: flags.showStore !== false,
           showStorePickup: flags.showStorePickup !== false,
           showGift: flags.showGift === true,
@@ -12654,6 +12676,33 @@ bindSubCatChange(e) {
     if (!field) return
     // 只改本地：必须点「保存开关」才写云端。标脏以免用户以为已经生效
     this.setData({ [`contentFlags.${field}`]: !!(e.detail && e.detail.value), contentFlagsDirty: true })
+  },
+
+  /**
+   * 审核一键（2026-11-25）：一次关掉 AI 与内容相关的六个入口；过审后一键恢复为按下之前的原值。
+   * - 开：先快照这六项的当前值，再全置 false（reviewMode = true）；
+   * - 关：按快照恢复（没有快照就保持现状），清掉快照；
+   * 与其它开关同一动线：必须点「保存开关」才写云端。
+   */
+  toggleReviewMode(e) {
+    const on = !!(e && e.detail && e.detail.value)
+    const cur = this.data.contentFlags || {}
+    if (on) {
+      const snapshot = {}
+      REVIEW_FLAGS.forEach((k) => { snapshot[k] = cur[k] !== false })
+      const patch = { 'contentFlags.reviewMode': true, 'contentFlags.reviewSnapshot': snapshot, contentFlagsDirty: true }
+      REVIEW_FLAGS.forEach((k) => { patch['contentFlags.' + k] = false })
+      this.setData(patch)
+      this.showHubTip('已进入审核模式：AI 与内容入口会在保存后关闭', 'info')
+      return
+    }
+    const snap = cur.reviewSnapshot
+    const patch = { 'contentFlags.reviewMode': false, 'contentFlags.reviewSnapshot': null, contentFlagsDirty: true }
+    if (snap && typeof snap === 'object') {
+      REVIEW_FLAGS.forEach((k) => { if (typeof snap[k] === 'boolean') patch['contentFlags.' + k] = snap[k] })
+    }
+    this.setData(patch)
+    this.showHubTip('已退出审核模式：按按下之前的原值恢复（记得保存）', 'info')
   },
 
   /**

@@ -3050,6 +3050,28 @@
       <text class="cfg-hint">加载中…</text>
     </view>
     <block wx:else>
+      <!-- 审核一键（2026-11-25 产品负责人）：一次关掉 AI 与内容相关入口；过审后再关掉即恢复原值 -->
+      <view class="card cfg-card review-mode-card">
+        <view class="card-top">
+          <text class="no">审核一键</text>
+          <text class="status gold">{{contentFlags.reviewMode ? '审核模式' : '正常'}}</text>
+        </view>
+        <text class="cfg-hint">提交新版本前打开：一次关掉 AI 与内容相关入口；过审后再关掉它即恢复按下之前的原值。任何一项改完都要点下方「保存开关」。</text>
+        <view class="cfg-rows">
+          <view class="cfg-row cfg-row-switch">
+            <view class="cfg-label-block">
+              <text class="cfg-label cfg-label-wide">审核模式（关闭 AI 与内容入口）</text>
+              <text class="cfg-switch-hint {{contentFlags.reviewMode ? 'on' : ''}}">{{contentFlags.reviewMode ? '已开启 · 保存后生效' : '未开启'}}</text>
+            </view>
+            <switch class="cfg-switch" checked="{{contentFlags.reviewMode}}" color="#C4A76C" bindchange="toggleReviewMode"/>
+          </view>
+          <view class="review-flag-row" wx:for="{{reviewFlagRows}}" wx:key="key">
+            <text class="review-flag-k">{{item.label}}</text>
+            <text class="review-flag-v {{contentFlags[item.key] ? 'is-on' : 'is-off'}}">{{contentFlags[item.key] ? '展示中' : '已隐藏'}}</text>
+          </view>
+        </view>
+      </view>
+
       <view class="card cfg-card cfg-edit">
         <view class="card-top">
           <text class="no">C 端入口</text>

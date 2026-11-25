@@ -59,6 +59,7 @@ const F = {
   fnFlags: 'miniprogram/cloudfunctions/getContentDisplayFlags/index.js',
   erpFlags: 'admin/src/components/ContentDisplayFlags.vue',
   mgrWxml: 'miniprogram/subpackages/manager/manager/workspace/_subviews.wxml',
+  mgrCfg: 'miniprogram/subpackages/manager/manager/managerPageConfig.js',
   mpSchema: 'miniprogram/utils/analytics/eventSchema.js',
   erpSchema: 'admin/src/utils/analyticsSchema.js',
   // 报表分桶那一侧的排除清单（`REPORT_EXCLUDED_GATES`）—— 用于 B4「两本账必须同源」
@@ -252,6 +253,34 @@ export function evalChainA(input, allowedOrphans = ADMIN_ORPHAN_ALLOWED, retired
   const staleAllowed = Object.keys(allowedOrphans).filter((f) => !admin.has(f) || mp.has(f))
   if (staleAllowed.length) {
     problems.push(`A5-stale: ADMIN_ORPHAN_ALLOWED 里有过期例外（该开关已不是孤儿）——例外只许变小：${staleAllowed.join(', ')}`)
+  }
+
+  // A6（2026-11-25）：审核一键 —— 面板与云函数必须**同一份**受影响开关清单，
+  // 且云函数的 normalize / saveFlags 都要带上 reviewMode + reviewSnapshot（漏一处就一键失效）。
+  const reviewOf = (src) => {
+    const m = /const REVIEW_FLAGS = \[([^\]]*)\]/.exec(src || '')
+    if (!m) return null
+    return m[1].split(',').map((x) => x.trim().replace(/['"\s]/g, '')).filter(Boolean).sort()
+  }
+  const panelReview = reviewOf(read(F.mgrCfg))
+  const cloudReview = reviewOf(read(F.fnFlags))
+  if (!panelReview) problems.push('A6: 店长端面板缺 REVIEW_FLAGS（审核一键没有受影响开关清单）')
+  if (!cloudReview) problems.push('A6: 云函数缺 REVIEW_FLAGS（审核一键没有受影响开关清单）')
+  if (panelReview && cloudReview && panelReview.join() !== cloudReview.join()) {
+    problems.push(`A6: 审核一键两端清单不一致（面板 ${panelReview.join('/')} vs 云函数 ${cloudReview.join('/')}）`)
+  }
+  const panelWxml = read(F.mgrWxml)
+  if (!/bindchange="toggleReviewMode"/.test(panelWxml) || !/wx:for="\{\{reviewFlagRows\}\}"/.test(panelWxml)) {
+    problems.push('A6: 内容开关页缺「审核一键」开关或受影响入口清单')
+  }
+  const cfgr = read(F.mgrCfg)
+  if (!/toggleReviewMode\(e\) \{/.test(cfgr) || !/REVIEW_FLAGS\.forEach\(\(k\) => \{ patch\['contentFlags\.' \+ k\] = false \}\)/.test(cfgr)) {
+    problems.push('A6: toggleReviewMode 没有把六项一并置 false（一键关闭不成立）')
+  }
+  const fnFlags = read(F.fnFlags)
+  if (!/reviewMode: src\.reviewMode === true/.test(fnFlags) || !/reviewMode: incoming\.reviewMode/.test(fnFlags) ||
+    !/reviewSnapshot: sanitizeReviewSnapshot\(src\.reviewSnapshot\)/.test(fnFlags) || !/reviewSnapshot: incoming\.reviewSnapshot/.test(fnFlags)) {
+    problems.push('A6: 云函数 normalizeFlags / saveFlags 没有成对带上 reviewMode + reviewSnapshot')
   }
   return problems
 }
@@ -489,8 +518,14 @@ function selftest() {
     {
       name: '把 showRitualProfile 从云函数 saveFlags 抽掉（任务点名的那一条）',
       file: F.fnFlags,
-      from: '    showRitualProfile: incoming.showRitualProfile\n',
+      from: '    showRitualProfile: incoming.showRitualProfile,\n',
       to: '',
+    },
+    {
+      name: '审核一键清单少一项（面板与云函数分叉）',
+      file: F.mgrCfg,
+      from: "const REVIEW_FLAGS = ['showAiIdentify', 'museumGuideOpen', 'showMaShangYou', 'showUserCommunity', 'showSpecimenArchive', 'showLive']",
+      to: "const REVIEW_FLAGS = ['showAiIdentify', 'museumGuideOpen', 'showMaShangYou', 'showUserCommunity', 'showSpecimenArchive']",
     },
     {
       name: '把 showGift 从店长端开关面板抽掉（该开关在后台消失）',
