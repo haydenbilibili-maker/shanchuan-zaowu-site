@@ -10695,7 +10695,9 @@ bindSubCatChange(e) {
       });
       if (!res.result || !res.result.success) throw new Error((res.result && res.result.msg) || '回复失败');
       this.closeCommentReplyModal();
-      this.showHubTip('回复成功', 'info');
+      // 云端会把「是否已发信通知顾客」带回来：没送达时别只说「回复成功」
+      const notified = !!(res.result && res.result.notified);
+      this.showHubTip(notified ? '回复成功，已发信通知顾客' : '回复成功（消息通知未送达）', notified ? 'info' : 'warn');
       this.loadComments();
     } catch (e) {
       this.showHubTip(e.message || '回复失败', 'warn');
@@ -10707,8 +10709,6 @@ bindSubCatChange(e) {
   async loadContent() {
     if (this.data.contentType === 'exhibition') {
       await this.loadExhibitions();
-    } else if (this.data.contentType === 'comment') {
-      await this.loadComments();
     } else if (this.data.contentType === 'care') {
       await this.loadCareGuides();
     } else {

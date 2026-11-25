@@ -67,8 +67,8 @@ export const OBSERVED_WRITERS = {
     'authPhone', 'bindPlatformOrder', 'cancelOrder', 'claimBirthdayGift', 'claimStoreReceipt',
     'confirmOrderReceipt', 'confirmPayment', 'createBooking', 'dispatchMessage', 'exchangeCoupon',
     'grantStorePoints', 'makeOrder', 'manageApprovals', 'manageGift', 'manageHonoraryCurators',
-    'manageInvoiceRequests', 'managerShipOrder', 'payCallback', 'refundOrder', 'submitCustomInquiry',
-    'submitInvoiceRequest', 'submitSupportTicket', 'sweepExpiredOrders', 'toggleCollection',
+    'manageInvoiceRequests', 'managerShipOrder', 'moderateComment', 'payCallback', 'refundOrder',
+    'submitCustomInquiry', 'submitInvoiceRequest', 'submitSupportTicket', 'sweepExpiredOrders', 'toggleCollection',
     // 每日日报（2026-09-21）：幂等键 daily_digest:<role>:<YYYY-MM-DD>:<openid>，
     // 同一天同一人同角色重复触发只写一条（dailyDigest/dailyDigestStore.js writeDigestMessage）
     'dailyDigest',

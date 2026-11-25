@@ -19,6 +19,7 @@ const MP = resolve(HERE, '..')
 const F = {
   wxml: join(MP, 'subpackages/manager/manager/workspace/_subviews.wxml'),
   cfg: join(MP, 'subpackages/manager/manager/managerPageConfig.js'),
+  fn: join(MP, 'cloudfunctions/moderateComment/index.js'),
   hub: join(MP, 'subpackages/manager/manager/hubNav.js'),
   roles: join(MP, 'utils/workspaceRoles.js')
 }
@@ -67,6 +68,20 @@ function runChecks() {
     /17: MENU_KEYS\.REVIEWS/.test(roles) && /REVIEWS: 'reviews'/.test(roles) &&
     !/STORE_MANAGER_MENUS = \[[\s\S]*?MENU_KEYS\.REVIEWS[\s\S]*?\]/.test(roles))
 
+  // R6（2026-11-25 核查补）：商家回复后，评价作者要收到「山海有信」（原来只写 comments.merchantReply，用户端无提醒）
+  const fn = read(F.fn)
+  const replyBlock = (fn.match(/if \(action === 'reply'\)[\s\S]*?\n    \}/) || [''])[0]
+  ok('R6 回复后会写「山海有信」：先读评价拿作者、更新后发信、消息带 targetType/targetId/orderId 深链',
+    /async function notifyCommentReplied\(comment, reply\)/.test(fn) &&
+    /collection\('user_messages'\)\.add\(/.test(fn) &&
+    /type: 'comment_replied'/.test(fn) && /queue: 'customer'/.test(fn) && /read: false/.test(fn) &&
+    /subpackages\/content\/comment\/index\?/.test(fn) &&
+    /await db\.collection\('comments'\)\.doc\(commentId\)\.get\(\)/.test(replyBlock) &&
+    /await notifyCommentReplied\(comment, replyText\)/.test(replyBlock) &&
+    /notified: !!notified\.success/.test(replyBlock))
+  ok('R6 面板如实反馈送达结果（未送达时不说「回复成功」了事）',
+    /res\.result\.notified/.test(cfg) && /消息通知未送达/.test(cfg))
+
   ok('R5 内容管理里删掉的只是这一项：专题 / 文章 / 养护三个子 Tab 仍在',
     ['exhibition', 'article', 'care'].every((t) => contentTab.includes(`data-type="${t}"`)))
 
@@ -77,7 +92,8 @@ if (process.argv.includes('--selftest')) {
   const cases = [
     { name: '内容管理又把用户评价塞回子 Tab', file: F.wxml, find: '<!-- [Tab 9] 内容管理 -->', replace: '<!-- [Tab 9] 内容管理 -->\n      <view class="sub-tab" bindtap="switchContentType" data-type="comment">用户评价</view>' },
     { name: 'Tab 17 不再拉评价', file: F.cfg, find: 'if(idx === 17) await this.loadComments();', replace: '' },
-    { name: 'Hub 入口丢了「评价」', file: F.hub, find: "keys: ['reviews'], tap: 'switchTab', idx: 17", replace: "keys: ['reviews'], tap: 'switchTab', idx: 18" }
+    { name: 'Hub 入口丢了「评价」', file: F.hub, find: "keys: ['reviews'], tap: 'switchTab', idx: 17", replace: "keys: ['reviews'], tap: 'switchTab', idx: 18" },
+    { name: '回复后不再发「山海有信」', file: F.fn, find: 'await notifyCommentReplied(comment, replyText)', replace: '' }
   ]
   let bad = 0
   const base = runChecks()
