@@ -21,7 +21,6 @@ const HUB_SECTIONS = [
   { id: 'orders', title: '订单与履约', short: '订单', keys: ['orders', 'workOrders', 'giftOps', 'giftManage', 'invoice', 'approvals', 'depositOps'] },
   { id: 'biz', title: '经营与数据', short: '经营', keys: ['ledger', 'analytics'] },
   { id: 'goods', title: '商品与上线', short: '商品', keys: ['products', 'content', 'reviews', 'contentFlags', 'reviewMode', 'decor', 'activities', 'live'] },
-  { id: 'members', title: '会员', short: '会员', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
   {
     // 2026-11-26 归并 S5：原「工作室」+「门店组织」合成一区，门店资料（原经营数据）也落在这里
     id: 'studio',
@@ -33,7 +32,8 @@ const HUB_SECTIONS = [
       'stores', 'verify', 'staffConsole', 'staffDirectory', 'staffPermissions', 'shareholderConfig', 'payslipAdmin', 'myPayslip'
     ]
   },
-  { id: 'system', title: '系统', short: '系统', keys: ['shipping', 'bookingRules', 'supportConfig', 'orders', 'feishuSync', 'aiIdentifyMonitor', 'museumGuideMonitor'] }
+    { id: 'members', title: '会员与触达', short: '会员', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
+  { id: 'system', title: '系统与设置', short: '系统', keys: ['shipping', 'bookingRules', 'supportConfig', 'orders', 'feishuSync', 'aiIdentifyMonitor', 'museumGuideMonitor'] }
 ]
 
 const ICON = '/assets/icons/'
