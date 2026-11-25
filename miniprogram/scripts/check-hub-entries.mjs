@@ -18,8 +18,14 @@
  *   9) 2026-10-01 展示改版·方案 A（产品负责人点名，见 judgeLayout）：N1 不再有小金点 / 双圈 / 长按这类要解释的暗号、
  *      N2 每个入口都有一句大白话说明、N3 待处理横条包含所有带角标的入口（同一种红色数字）、N4「编辑」是常用的显式入口、
  *      N5 搜索只在入口 > 20 的角色出现、N6 每个分区单独一块卡片、入口全部直接可见（2026-10-10 撤回手风琴）；常用本地 key 不变；
- *  10) N7（2026-10-10 产品负责人「类似功能折叠的全部展开单独展示」）：全部功能里没有「点开再选」的折叠磁贴（无 openHubGroup /
- *      data-group / › / 二级面板残留）、原折叠磁贴的 16 个子功能各自独立成磁贴、入口总数只许多不许少、常用里的旧折叠 id 平滑映射。
+ *  10) N7（2026-10-10 产品负责人「类似功能折叠的全部展开单独展示」）：全部功能里没有「点开再选」的折叠磁贴 / 二级面板残留（无 openHubGroup /
+ *      data-group / › / 弹层）、原折叠的子功能都仍可达、**功能总数（独立入口 + 组合子功能）只许多不许少**、常用里的旧 id 平滑映射。
+ *  11) K（2026-11-25 产品负责人「超管功能超过 52 个，合并同类项、大幅优化分类与数量」，方案见
+ *      miniprogram/docs/超管工作台_功能归并_2026-11-25.md）：同类功能归并为「组合入口」——一枚磁贴（bindtap="openHubKitPage"
+ *      data-kit="<id>"）→ 独立组合页 subpackages/manager/group/index?kit=<id>，页内逐条平铺子功能（不是弹层 / 二级面板，N7 仍成立）。
+ *      钉住：组合磁贴权限键 = 子功能权限键之并（只并入口、不放宽权限）；每个子功能保留原入口 handler 与原权限键，
+ *      改版前的入口经子功能仍可达、各角色可见性不变；子功能不得同时又是独立磁贴；组合页按权限过滤子功能并调原 handler；
+ *      组合入口能被任一子功能的名称搜到；组合页已在 app.json 注册。
  *
  * 用法：node miniprogram/scripts/check-hub-entries.mjs [--selftest]
  * 自检全部在内存副本上注入，不写盘。
@@ -39,6 +45,12 @@ const FILES = {
   indexJs: `${MGR}/index.js`,
   config: `${MGR}/managerPageConfig.js`,
   roles: 'miniprogram/utils/workspaceRoles.js'
+}
+/** 可选文件：组合页（S2 起才有）与 app.json —— 不存在时按空串处理，由 K 规则在「有组合入口」时要求它们存在 */
+const OPTIONAL_FILES = {
+  groupJs: 'miniprogram/subpackages/manager/group/index.js',
+  groupWxml: 'miniprogram/subpackages/manager/group/index.wxml',
+  appJson: 'miniprogram/app.json'
 }
 
 /**
@@ -112,6 +124,10 @@ function loadSrc() {
     }
     src[k] = readFileSync(p, 'utf8')
   }
+  for (const [k, rel] of Object.entries(OPTIONAL_FILES)) {
+    const p = resolve(ROOT, rel)
+    src[k] = existsSync(p) ? readFileSync(p, 'utf8') : ''
+  }
   return src
 }
 
@@ -180,6 +196,7 @@ function parseTiles(wxml, errs) {
       idx: attr(tag, 'data-idx'),
       tab: attr(tag, 'data-tab'),
       dataGroup: attr(tag, 'data-group'),
+      kit: attr(tag, 'data-kit'),
       fid: attr(tag, 'data-fid'),
       longpress: attr(tag, 'bindlongpress'),
       hover: attr(tag, 'hover-class'),
@@ -232,6 +249,106 @@ function hasMethod(code, name) {
   return re.test(code)
 }
 
+/** 磁贴 / 清单签名：入口 handler + tab 序号 + 深链 tab + 组合 id（组合磁贴共用 openHubKitPage，靠 data-kit 区分） */
+const tileSig = (t) => `${t.bindtap}|${t.idx || ''}|${t.tab || ''}|${t.kit || ''}`
+const entrySig = (e) => `${e.tap}|${e.idx != null ? String(e.idx) : ''}|${e.tab || ''}|${e.kit || ''}`
+const KIT_TAP = 'openHubKitPage'
+const KIT_ROUTE = '/subpackages/manager/group/index?kit='
+
+const kitsOf = (nav) => (Array.isArray(nav.HUB_KITS) ? nav.HUB_KITS : [])
+/** 子功能 id → 所在组合 id（独立入口原样返回）：断言里写原子功能 id，归并后自动换成组合入口 id */
+function canonOf(nav) {
+  const kits = kitsOf(nav)
+  return (id) => {
+    const k = kits.find((x) => (x.children || []).some((c) => c.id === id))
+    return k ? k.id : id
+  }
+}
+const canonList = (canon, ids) => uniq(ids.map(canon))
+
+/** 改版前入口 o 在磁贴 t 上的落点：独立磁贴直达 → [{direct}]；组合磁贴 → 命中的子功能 */
+function hitsOf(nav, o, t) {
+  const same = (tap, idx, tab) => o.handlers.includes(tap) && (o.idx ? String(idx || '') === o.idx : true) && (o.tab ? tab === o.tab : true)
+  if (t.kit) {
+    const k = kitsOf(nav).find((x) => x.id === t.kit)
+    return k ? (k.children || []).filter((c) => same(c.tap, c.idx, c.tab)).map((c) => ({ child: c, keys: uniq(c.keys || []) })) : []
+  }
+  return same(t.bindtap, t.idx, t.tab) ? [{ child: null, keys: t.keys }] : []
+}
+
+/** K：组合入口（一枚磁贴 → 组合页平铺子功能） */
+function judgeKits(src, nav, roles, tiles, errs) {
+  const kits = kitsOf(nav)
+  const entries = nav.HUB_ENTRIES || []
+  const pageCode = `${src.config}\n${src.indexJs}`
+  const kitIds = kits.map((k) => k.id)
+  if (uniq(kitIds).length !== kitIds.length) errs.push('K HUB_KITS 的 id 有重复')
+  for (const t of tiles) {
+    if (t.bindtap === KIT_TAP && !t.kit) errs.push(`K 磁贴「${t.label}」走组合页（${KIT_TAP}）却没有 data-kit —— 组合页不知道该列哪些功能`)
+    if (t.kit && t.bindtap !== KIT_TAP) errs.push(`K 磁贴「${t.label}」带 data-kit 却不走 ${KIT_TAP}`)
+    if (t.kit && !kitIds.includes(t.kit)) errs.push(`K 磁贴「${t.label}」的 data-kit="${t.kit}" 在 HUB_KITS 里没有定义`)
+  }
+  const childIds = []
+  for (const k of kits) {
+    const kids = k.children || []
+    if (kids.length < 2) errs.push(`K 组合「${k.label}」只有 ${kids.length} 个子功能 —— 组合至少两项，否则直接用独立磁贴`)
+    const e = entries.find((x) => x.id === k.id)
+    if (!e) errs.push(`K 组合「${k.label}」在 HUB_ENTRIES 里没有入口（id 须同为 ${k.id}）`)
+    else {
+      if (e.tap !== KIT_TAP || e.kit !== k.id) errs.push(`K 组合入口 ${k.id} 须 tap: '${KIT_TAP}', kit: '${k.id}'`)
+      if (!setEq(uniq(e.keys), uniq(kids.flatMap((c) => c.keys || [])))) errs.push(`K 组合入口 ${k.id} 的权限键 [${e.keys}] 须 = 子功能权限键之并 [${uniq(kids.flatMap((c) => c.keys || []))}]（只并入口，不放宽也不收紧）`)
+      if (e.sec !== k.sec || e.label !== k.label || e.icon !== k.icon) errs.push(`K 组合入口 ${k.id} 的名称 / 图标 / 分区须与 HUB_KITS 一致`)
+    }
+    const kt = tiles.filter((t) => t.kit === k.id)
+    if (kt.length !== 1) errs.push(`K 组合「${k.label}」在全部功能里应恰好一枚磁贴，实际 ${kt.length}`)
+    else if (!setEq(kt[0].keys, uniq(kids.flatMap((c) => c.keys || [])))) errs.push(`K 组合「${k.label}」磁贴权限键 [${kt[0].keys}] ≠ 子功能权限键之并 —— 只并入口，不放宽也不收紧`)
+    for (const c of kids) {
+      const where = `组合「${k.label}」子功能「${c.label || c.id}」`
+      childIds.push(c.id)
+      if (!c.id || !c.label || !c.tap || !(c.keys || []).length) { errs.push(`K ${where} 缺 id / label / tap / keys`); continue }
+      if (!hasMethod(pageCode, c.tap)) errs.push(`K ${where}的入口 ${c.tap} 在页面上不存在`)
+      if (c.tap === KIT_TAP) errs.push(`K ${where}又指向组合页（组合不嵌套）`)
+      const d = String(c.desc || '')
+      if (!d.trim() || d.length > 16 || /[A-Za-z]|云函数|接口|字段|集合|数据库|参数|缓存|配置项|权限键|同步率/.test(d)) errs.push(`K ${where}须有 ≤16 字、无技术词的大白话说明（当前「${d}」）`)
+      if (entries.some((x) => x.id === c.id)) errs.push(`K ${where}同时还是独立入口 ${c.id} —— 归并后只留组合一个入口`)
+      if (tiles.some((t) => t.fid === c.id)) errs.push(`K ${where}同时还是独立磁贴 —— 归并后只留组合一个入口`)
+    }
+  }
+  if (uniq(childIds).length !== childIds.length) errs.push('K 同一个子功能出现在多个组合里')
+  if (!kits.length) return
+  // 搜索：任一子功能的名称都能搜到它所在的组合（超管）
+  try {
+    const sm = menuOf(roles, roles.WORKSPACE_SUPER_ADMIN)
+    for (const k of kits) {
+      for (const c of k.children || []) {
+        if (!(c.keys || []).some((x) => sm[x])) continue
+        if (!nav.searchEntries(c.label, { menu: sm }).some((x) => x.id === k.id)) errs.push(`K 超管搜「${c.label}」找不到组合「${k.label}」—— 组合入口的 alias 须含子功能名称`)
+      }
+    }
+  } catch (e) {
+    errs.push(`K 组合搜索实跑失败：${e.message}`)
+  }
+  // 工作台 → 组合页
+  const open = (src.indexJs.match(new RegExp(`\\n  ${KIT_TAP}\\(e\\) \\{([\\s\\S]*?)\\n  \\},`)) || [])[1] || ''
+  if (!open.includes(KIT_ROUTE.replace('?kit=', '')) || !/dataset/.test(open)) errs.push(`K index.js 须有 ${KIT_TAP}(e)：取 dataset.kit → navigateTo('${KIT_ROUTE}' + kit)`)
+  // 组合页：按权限过滤子功能、调工作台页上的原 handler（权限 / 订阅弹窗等原逻辑一并保留）
+  if (!src.groupJs) errs.push('K 有组合入口，但组合页 subpackages/manager/group/index.js 不存在')
+  else {
+    if (!/hubNav\.findKit\(/.test(src.groupJs)) errs.push('K 组合页须用 hubNav.findKit 取组合定义（与工作台同一份清单）')
+    if (!/\.keys\.some\(/.test(src.groupJs)) errs.push('K 组合页须按权限过滤子功能（child.keys 对工作台 menu）—— 组合页不得放宽权限')
+    if (!/hubNav\.invokeItem\(/.test(src.groupJs)) errs.push('K 组合页点子功能须经 hubNav.invokeItem 调工作台页上的原 handler（不另写跳转，原门禁不丢）')
+    if (/wx\.showModal\s*\(/.test(src.groupJs)) errs.push('K 组合页不新增原生弹窗')
+  }
+  if (src.appJson) {
+    let ok = false
+    try {
+      const app = JSON.parse(src.appJson)
+      ok = (app.subpackages || []).some((p) => p.root === 'subpackages/manager' && (p.pages || []).includes('group/index'))
+    } catch (e) { ok = false }
+    if (!ok) errs.push('K 组合页未在 app.json 注册（subpackages/manager → group/index）')
+  }
+}
+
 function judge(src) {
   const errs = []
   let nav
@@ -254,7 +371,7 @@ function judge(src) {
   const sigs = new Map()
   const labels = new Map()
   for (const t of tiles) {
-    const sig = `${t.bindtap}|${t.idx || ''}|${t.tab || ''}`
+    const sig = tileSig(t)
     if (sigs.has(sig)) errs.push(`重复磁贴：「${t.label}」与「${sigs.get(sig)}」指向同一入口（${sig}）`)
     else sigs.set(sig, t.label)
     if (labels.has(t.label)) errs.push(`重复磁贴：名称「${t.label}」出现不止一次`)
@@ -267,17 +384,18 @@ function judge(src) {
     }
   }
 
-  // 1) + 2) 原有入口可达、权限不丢
-  const matchEntry = (o, handler, idx, tab) =>
-    o.handlers.includes(handler) && (o.idx ? String(idx || '') === o.idx : true) && (o.tab ? tab === o.tab : true)
+  // 1) + 2) 原有入口可达（独立磁贴直达，或组合磁贴里的子功能）、权限不丢、不重复
+  const placesOf = (o) => tiles.flatMap((t) => hitsOf(nav, o, t).map((h) => ({ t, ...h })))
   for (const o of ORIGINAL) {
-    const direct = tiles.filter((t) => matchEntry(o, t.bindtap, t.idx, t.tab))
-    if (!direct.length) {
-      errs.push(`入口丢失：改版前的「${o.name}」在全部功能里没有直达磁贴`)
+    const places = placesOf(o)
+    if (!places.length) {
+      errs.push(`入口丢失：改版前的「${o.name}」在全部功能里没有直达磁贴，也不在任何组合里`)
       continue
     }
-    for (const t of direct) {
-      if (!setEq(t.keys, o.keys)) errs.push(`权限条件变化：「${o.name}」磁贴 wx:if=[${t.keys}]，改版前=[${o.keys}]`)
+    if (places.length > 1) errs.push(`入口重复：「${o.name}」出现在 ${places.length} 处（${places.map((p) => p.t.label).join(' / ')}）—— 归并后只留一处`)
+    for (const p of places) {
+      if (!setEq(p.keys, o.keys)) errs.push(`权限条件变化：「${o.name}」${p.child ? `组合「${p.t.label}」子功能` : '磁贴'} 权限=[${p.keys}]，改版前=[${o.keys}]`)
+      if (p.child && !o.keys.every((k) => p.t.keys.includes(k))) errs.push(`权限条件变化：组合「${p.t.label}」磁贴权限 [${p.t.keys}] 没覆盖子功能「${o.name}」的 [${o.keys}]（有权限的人会看不到入口）`)
     }
   }
   // 扫码主按钮
@@ -312,10 +430,10 @@ function judge(src) {
       errs.push(`sectionFlags 执行失败：${e.message}`)
       break
     }
-    const visibleTile = (t) => t.keys.some((k) => menu[k]) && flags[t.sec] === true
     for (const o of ORIGINAL) {
       const before = o.keys.some((k) => menu[k])
-      const after = tiles.some((t) => matchEntry(o, t.bindtap, t.idx, t.tab) && visibleTile(t))
+      // 组合子功能按子功能自己的键判（组合页按它过滤），且组合磁贴本身可见
+      const after = placesOf(o).some((p) => p.keys.some((k) => menu[k]) && p.t.keys.some((k) => menu[k]) && flags[p.t.sec] === true)
       if (before && !after) errs.push(`角色 ${role}：「${o.name}」改版前可见，改版后不可达`)
       if (!before && after) errs.push(`角色 ${role}：「${o.name}」改版前不可见，改版后却能进入（权限被放宽）`)
     }
@@ -346,9 +464,8 @@ function judge(src) {
   const entries = nav.HUB_ENTRIES || []
   const ids = entries.map((e) => e.id)
   if (uniq(ids).length !== ids.length) errs.push('HUB_ENTRIES 的 id 有重复')
-  const entrySig = (e) => `${e.tap}|${e.idx != null ? String(e.idx) : ''}|${e.tab || ''}`
   for (const e of entries) {
-    const hit = tiles.filter((t) => `${t.bindtap}|${t.idx || ''}|${t.tab || ''}` === entrySig(e))
+    const hit = tiles.filter((t) => tileSig(t) === entrySig(e))
     if (hit.length !== 1) {
       errs.push(`清单入口 ${e.id}（${e.label}）在分区磁贴里应恰好一枚，实际 ${hit.length}`)
       continue
@@ -374,11 +491,12 @@ function judge(src) {
     const capped = nav.normalizeFavs(allIds, superMenu)
     if (capped.length > 8) errs.push(`常用上限未生效：超管全选后仍有 ${capped.length} 个`)
     const mgrOnly = nav.normalizeFavs(['memberCrm', 'feishu', 'orders', 'aiIdentify'], mgrMenu)
-    if (JSON.stringify(mgrOnly) !== JSON.stringify(['orders'])) {
+    if (JSON.stringify(mgrOnly) !== JSON.stringify([canonOf(nav)('orders')])) {
       errs.push(`常用区只含有权限入口：店长配置 [memberCrm, feishu, orders, aiIdentify] 应只剩 [orders]，实际 [${mgrOnly}]`)
     }
+    const canon = canonOf(nav)
     const mapped = nav.normalizeFavs(['gift', 'memberCurator', 'honoraryCurators', 'shipmentSku', 'giftManage', 'no_such_entry'], superMenu)
-    const want = ['giftOps', 'memberLevel', 'curators', 'shipment', 'giftManage']
+    const want = canonList(canon, ['giftOps', 'memberLevel', 'curators', 'shipment', 'giftManage'])
     if (JSON.stringify(mapped) !== JSON.stringify(want)) {
       errs.push(`失效 id 映射 / 过滤不对：[gift, memberCurator, honoraryCurators, shipmentSku, giftManage, no_such_entry] 应得 [${want}]，实际 [${mapped}]`)
     }
@@ -420,6 +538,7 @@ function judge(src) {
   if (nav.FAV_STORAGE_KEY !== 'manager_hub_favs_v1') errs.push(`常用本地 key 须保持 manager_hub_favs_v1（当前 ${nav.FAV_STORAGE_KEY}）—— 换 key 等于把已有收藏全部弄丢`)
   judgeLayout(src, nav, roles, tiles, secs, errs)
   judgeSplit(src, nav, roles, tiles, errs)
+  judgeKits(src, nav, roles, tiles, errs)
   return errs
 }
 
@@ -452,8 +571,7 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
   const css = src.hubWxss.replace(/\/\*[\s\S]*?\*\//g, '')
   const entries = nav.HUB_ENTRIES || []
   const pageCode = `${src.config}\n${src.indexJs}`
-  const sigOf = (t) => `${t.bindtap}|${t.idx || ''}|${t.tab || ''}`
-  const entrySig = (e) => `${e.tap}|${e.idx != null ? String(e.idx) : ''}|${e.tab || ''}`
+  const sigOf = tileSig
   const SUPER = roles.WORKSPACE_SUPER_ADMIN
   const MGR = roles.WORKSPACE_STORE_MANAGER
   const STAFF = roles.WORKSPACE_STORE_STAFF
@@ -591,16 +709,17 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
   try {
     const sm = { menu: menuOf(roles, SUPER) }
     const first = (q) => (nav.searchEntries(q, sm)[0] || {}).id
-    if (first('审批') !== 'approvals') errs.push('N5 超管搜「审批」首条须为审批（按名称）')
-    if (first('运费') !== 'shipping') errs.push('N5 超管搜「运费」首条须为运费规则')
-    if (first('包邮') !== 'shipping') errs.push('N5 超管搜「包邮」须找到运费规则（按别名）')
-    if (first('出货') !== 'shipment') errs.push('N5 超管搜「出货」首条须为出货中心')
+    const canon = canonOf(nav)
+    if (first('审批') !== canon('approvals')) errs.push('N5 超管搜「审批」首条须为审批（按名称）')
+    if (first('运费') !== canon('shipping')) errs.push('N5 超管搜「运费」首条须为运费规则')
+    if (first('包邮') !== canon('shipping')) errs.push('N5 超管搜「包邮」须找到运费规则（按别名）')
+    if (first('出货') !== canon('shipment')) errs.push('N5 超管搜「出货」首条须为出货中心')
     for (const q of ['SKU', 'sku', '商品', '价目']) {
-      if (!nav.searchEntries(q, sm).some((x) => x.id === 'skuMaintain')) errs.push(`N5 超管搜「${q}」须找到「SKU 维护」`)
+      if (!nav.searchEntries(q, sm).some((x) => x.id === canon('skuMaintain'))) errs.push(`N5 超管搜「${q}」须找到「SKU 维护」`)
     }
-    if (nav.searchEntries('SKU', { menu: menuOf(roles, MGR) }).some((x) => x.id === 'skuMaintain')) errs.push('N5「SKU 维护」仅超管：店长不得搜到')
+    if (nav.searchEntries('SKU', { menu: menuOf(roles, MGR) }).some((x) => x.id === canon('skuMaintain'))) errs.push('N5「SKU 维护」仅超管：店长不得搜到')
     const studio = nav.searchEntries('工作室', sm).map((x) => x.id)
-    if (!['studioDashboard', 'purchase', 'inventory'].every((id) => studio.includes(id))) errs.push('N5 超管搜分组名「工作室」须列出该组入口')
+    if (!canonList(canon, ['studioDashboard', 'purchase', 'inventory']).every((id) => studio.includes(id))) errs.push('N5 超管搜分组名「工作室」须列出该组入口')
     if (nav.searchEntries('飞书', { menu: menuOf(roles, MGR) }).length) errs.push('N5 搜索须只在有权限的入口里找（店长搜到了飞书同步）')
     if (nav.searchEntries('  ', sm).length) errs.push('N5 空白搜索词不应出结果')
   } catch (e) {
@@ -710,13 +829,19 @@ const SPLIT = {
   payslip: ['myPayslip', 'payslipAdmin'],
   rules: ['shipping', 'bookingRules', 'supportConfig']
 }
-/** 入口总数棘轮：只许多不许少（拆分后 48；2026-10-10 加「SKU 维护」→ 49；2026-11-23 加「博物君」开关·监测 → 50；删入口须产品负责人点名并在此改数） */
-const MIN_ENTRIES = 50
+/**
+ * 功能总数棘轮：独立入口 + 组合子功能，只许多不许少（拆分后 48；2026-10-10 加「SKU 维护」→ 49；2026-11-23 加「博物君」→ 50；
+ * 2026-11-25 加「评价」「审核」→ 52）。2026-11-25 起同类功能归并成组合入口，**磁贴数会变少，功能数不许少**；删功能须产品负责人点名并在此改数。
+ */
+const MIN_FUNCTIONS = 52
 
 function judgeSplit(src, nav, roles, tiles, errs) {
   const entries = nav.HUB_ENTRIES || []
   const wx = src.wxml.replace(/<!--[\s\S]*?-->/g, '')
   // 没有折叠磁贴 / 二级面板残留
+  const kits = kitsOf(nav)
+  const kitOf = (id) => kits.find((k) => k.id === id) || null
+  const inKit = (id) => kits.some((k) => (k.children || []).some((c) => c.id === id))
   for (const t of tiles) {
     if (t.bindtap === 'openHubGroup' || t.dataGroup != null) errs.push(`N7 磁贴「${t.label}」又是「点开再选」的折叠磁贴（openHubGroup / data-group）—— 每个功能单独一枚磁贴`)
   }
@@ -729,34 +854,43 @@ function judgeSplit(src, nav, roles, tiles, errs) {
   for (const e of entries) {
     if (e.group || e.tap === 'openHubGroup') errs.push(`N7 清单入口「${e.label}」又是折叠入口（group / openHubGroup）`)
   }
-  // 每个子功能独立存在：清单一条 + 磁贴一枚；父 id 不再是入口
+  // 原折叠的子功能仍可达：独立入口（清单一条 + 磁贴一枚）或组合子功能；父 id 只能以「组合入口」身份回到清单
   const fav = nav.FAV_ID_ALIASES || {}
   for (const [parent, kids] of Object.entries(SPLIT)) {
-    if (entries.some((e) => e.id === parent)) errs.push(`N7 被拆开的折叠入口「${parent}」又回到清单里`)
+    const back = entries.find((e) => e.id === parent)
+    if (back && !(back.tap === KIT_TAP && kitOf(parent))) errs.push(`N7 被拆开的折叠入口「${parent}」又回到清单里（只能以组合入口 + 组合页的形式回来，不能是点开再选）`)
     for (const id of kids) {
+      if (inKit(id)) continue
       const e = entries.find((x) => x.id === id)
-      if (!e) { errs.push(`N7 子功能 ${id} 不再是独立入口（清单里没有）`); continue }
+      if (!e) { errs.push(`N7 子功能 ${id} 不再可达（既不是独立入口，也不在任何组合里）`); continue }
       if (tiles.filter((t) => t.fid === id).length !== 1) errs.push(`N7 子功能「${e.label}」在全部功能里须恰好一枚独立磁贴`)
     }
-    if (JSON.stringify(fav[parent]) !== JSON.stringify(kids)) errs.push(`N7 常用里的旧折叠 id「${parent}」须映射到子入口 [${kids}]（当前 ${JSON.stringify(fav[parent])}）—— 否则旧收藏会变空位`)
+    const targets = [].concat(fav[parent] || [])
+    const covers = (k) => targets.includes(k) || targets.some((x) => ((kitOf(x) || {}).children || []).some((c) => c.id === k))
+    if (!kids.every(covers)) errs.push(`N7 常用里的旧折叠 id「${parent}」须映射到它的子功能 [${kids}] 或其所在组合（当前 ${JSON.stringify(fav[parent])}）—— 否则旧收藏会变空位`)
   }
-  if (entries.length < MIN_ENTRIES) errs.push(`N7 入口总数 ${entries.length} < ${MIN_ENTRIES} —— 入口只许多不许少`)
   const sm = menuOf(roles, roles.WORKSPACE_SUPER_ADMIN)
   const mm = menuOf(roles, roles.WORKSPACE_STORE_MANAGER)
-  const superN = entries.filter((e) => e.keys.some((k) => sm[k])).length
-  if (superN < MIN_ENTRIES) errs.push(`N7 超管可见入口 ${superN} < ${MIN_ENTRIES}`)
+  const leaves = (menu) => entries.flatMap((e) => (e.kit && kitOf(e.kit) ? kitOf(e.kit).children || [] : [e]))
+    .filter((x) => !menu || (x.keys || []).some((k) => menu[k]))
+  const total = leaves(null).length
+  if (total < MIN_FUNCTIONS) errs.push(`N7 功能总数 ${total} < ${MIN_FUNCTIONS} —— 功能（独立入口 + 组合子功能）只许多不许少`)
+  const superN = leaves(sm).length
+  if (superN < MIN_FUNCTIONS) errs.push(`N7 超管可用功能 ${superN} < ${MIN_FUNCTIONS}`)
   // 常用里的旧折叠 id：映射到当前角色第一个有权限的子入口；一个都没权限就丢掉（不留空位）
   try {
+    const canon = canonOf(nav)
     const sup = nav.normalizeFavs(['org', 'payslip', 'rules', 'artisan', 'perks'], sm)
-    const wantSup = ['staffDirectory', 'myPayslip', 'shipping', 'framers', 'welcomeGift']
+    const wantSup = canonList(canon, ['staffDirectory', 'myPayslip', 'shipping', 'framers', 'welcomeGift'])
     if (JSON.stringify(sup) !== JSON.stringify(wantSup)) errs.push(`N7 超管旧折叠常用 [org, payslip, rules, artisan, perks] 应映射为 [${wantSup}]，实际 [${sup}]`)
     const mgr = nav.normalizeFavs(['payslip', 'gift', 'org'], mm)
-    if (JSON.stringify(mgr) !== JSON.stringify(['myPayslip', 'giftOps'])) errs.push(`N7 店长旧折叠常用 [payslip, gift, org] 应映射为 [myPayslip, giftOps]（组织无权限须丢掉，不留空位），实际 [${mgr}]`)
+    const wantMgr = canonList(canon, ['myPayslip', 'giftOps'])
+    if (JSON.stringify(mgr) !== JSON.stringify(wantMgr)) errs.push(`N7 店长旧折叠常用 [payslip, gift, org] 应映射为 [${wantMgr}]（组织无权限须丢掉，不留空位），实际 [${mgr}]`)
     const partial = nav.normalizeFavs(['payslip', 'rules'], { payslipAdmin: true, supportConfig: true })
-    if (JSON.stringify(partial) !== JSON.stringify(['payslipAdmin', 'supportConfig'])) errs.push(`N7 只有部分子功能权限时，旧折叠常用须映射到第一个有权限的子入口：[payslip, rules] 应得 [payslipAdmin, supportConfig]，实际 [${partial}]`)
+    if (JSON.stringify(partial) !== JSON.stringify(canonList(canon, ['payslipAdmin', 'supportConfig']))) errs.push(`N7 只有部分子功能权限时，旧折叠常用须映射到第一个有权限的子入口：[payslip, rules] 应得 [payslipAdmin, supportConfig]，实际 [${partial}]`)
     const view = nav.buildFavView(['gift', 'payslip'], { menu: mm, giftTodoCount: 3 })
     if (!view.length || view.some((v) => !v.id || !v.label || !nav.findEntry(v.id))) errs.push('N7 旧折叠常用渲染出空位（常用磁贴缺 id / 名称）')
-    else if (view[0].badge !== '3') errs.push(`N7 旧「礼赠」常用映射到礼赠履约后须带上礼赠待办红点 3（当前「${view[0].badge}」）`)
+    else if ((view.find((v) => v.id === canon('giftOps')) || {}).badge !== '3') errs.push(`N7 旧「礼赠」常用映射后须带上礼赠待办红点 3（当前「${(view.find((v) => v.id === canon('giftOps')) || {}).badge}」）`)
   } catch (e) {
     errs.push(`N7 旧折叠常用映射实跑失败：${e.message}`)
   }
@@ -781,12 +915,46 @@ if (!selftest) {
     errs.forEach((e) => console.error('  -', e))
     process.exitCode = 1
   } else {
-    console.log(`${TAG} ✓ 改版前 ${ORIGINAL.length} 个入口均可达、权限条件未变、无重复磁贴、分区口径一致、无折叠磁贴且 ${Object.values(SPLIT).flat().length} 个子功能各自独立、清单 ↔ 磁贴 ${(loadNavEntries(base)).length} 枚逐枚一致、常用区权限 / 映射 / 上限 / 默认值成立（超管 / 店长 / 店员 / 标本师四角色实跑）；无暗号标记、每个入口有大白话说明、待处理横条含全部角标入口、「编辑」显式管理常用、搜索只给入口 > 20 的角色、按大分类宫格且可收起 / 默认展开 / 本机记住（三角色实跑）`)
+    const nav0 = evalCjs(base.hubNav)
+    console.log(`${TAG} ✓ 改版前 ${ORIGINAL.length} 个入口均可达（独立磁贴或组合子功能）、权限条件未变、无重复、分区口径一致、无折叠磁贴 / 二级面板、组合入口 ${kitsOf(nav0).length} 个（权限 = 子功能之并、组合页按权限过滤并调原入口）、清单 ↔ 磁贴 ${(loadNavEntries(base)).length} 枚逐枚一致、常用区权限 / 映射 / 上限 / 默认值成立（超管 / 店长 / 店员 / 标本师四角色实跑）；无暗号标记、每个入口有大白话说明、待处理横条含全部角标入口、「编辑」显式管理常用、搜索只给入口 > 20 的角色、按大分类宫格且可收起 / 默认展开 / 本机记住（三角色实跑）`)
   }
 } else {
   const rep = (key, from, to) => (s) => {
     if (!s[key].includes(from)) throw new Error(`注入锚点失效：${key} 里找不到 ${from.slice(0, 60)}`)
     return { ...s, [key]: s[key].replace(from, to) }
+  }
+  // 组合入口样本：把「孤品定金」「股东」并成组合 sampleKit（S2 起的真组合与此同构）
+  const SAMPLE_SHAREHOLDER_TILE = '            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="shareholderConfig" wx:if="{{menu.shareholderConfig}}" bindtap="goShareholderConfig">\n              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/coin_gold.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">股东</text>\n            </view>'
+  function kitSample(b) {
+    const cut = (wxml, fid, label) => {
+      const m = wxml.match(new RegExp(`\\n\\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="${fid}"[\\s\\S]*?<text class="hub-cell-name">${label}<\\/text>\\s*<\\/view>`))
+      if (!m) throw new Error(`注入锚点失效：${label}磁贴`)
+      return wxml.replace(m[0], '')
+    }
+    let wxml = cut(cut(b.wxml, 'deposit', '孤品定金'), 'shareholderConfig', '股东')
+    const tile = '\n            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="sampleKit" wx:if="{{menu.depositOps || menu.shareholderConfig}}" bindtap="openHubKitPage" data-kit="sampleKit">\n              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/discount.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">样本组合</text>\n              <text class="hub-cell-sub">定金·股东</text>\n            </view>'
+    const grid = '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.orders}}">'
+    if (!wxml.includes(grid)) throw new Error('注入锚点失效：订单分区宫格')
+    wxml = wxml.replace(grid, grid + tile)
+    let hubNav = b.hubNav
+    const cutLine = (code, id) => {
+      const m = code.match(new RegExp(`\\n  \\{ id: '${id}',[^\\n]*`))
+      if (!m) throw new Error(`注入锚点失效：清单 ${id}`)
+      return code.replace(m[0], '')
+    }
+    hubNav = cutLine(cutLine(hubNav, 'deposit'), 'shareholderConfig')
+    hubNav = hubNav.replace("const HUB_ENTRIES = [", "const HUB_ENTRIES = [\n  { id: 'sampleKit', label: '样本组合', sub: '定金·股东', desc: '定金和股东，一页切换', alias: ['孤品定金', '股东', '订金', '占股'], icon: ICON + 'discount.png', sec: 'orders', keys: ['depositOps', 'shareholderConfig'], tap: 'openHubKitPage', kit: 'sampleKit' },")
+    hubNav = hubNav.replace("/* ── 我的常用 ── */", "const HUB_KITS = [\n  { id: 'sampleKit', label: '样本组合', icon: ICON + 'discount.png', sec: 'orders', children: [\n    { id: 'deposit', label: '孤品定金', desc: '卖完的孤品，顾客交的订金', keys: ['depositOps'], tap: 'goDepositOps' },\n    { id: 'shareholderConfig', label: '股东', desc: '门店占股和回本前后分成', keys: ['shareholderConfig'], tap: 'goShareholderConfig', kitChild: 1 }\n  ] }\n]\nfunction findKit(id) { return HUB_KITS.find((k) => k.id === id) || null }\n\n/* ── 我的常用 ── */")
+    hubNav = hubNav.replace("depositOps: 'deposit',", "depositOps: 'sampleKit', deposit: 'sampleKit', shareholderConfig: 'sampleKit',")
+    hubNav = hubNav.replace("org: ['staffDirectory', 'staffPermissions', 'shareholderConfig'],", "org: ['staffDirectory', 'staffPermissions', 'sampleKit'],")
+    hubNav = hubNav.replace("module.exports = {", "module.exports = {\n  HUB_KITS,\n  findKit,")
+    // 分区 keys：股东从组织区移到订单区（组合磁贴落在订单区）
+    hubNav = hubNav.replace("'staffPermissions', 'shareholderConfig', 'payslipAdmin'", "'staffPermissions', 'payslipAdmin'").replace("'approvals', 'depositOps'] }", "'approvals', 'depositOps', 'shareholderConfig'] }")
+    const indexJs = b.indexJs.replace('  onHubSearchClear() {', "  openHubKitPage(e) {\n    const kit = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.kit) || '')\n    if (kit) wx.navigateTo({ url: '/subpackages/manager/group/index?kit=' + kit })\n  },\n\n  onHubSearchClear() {")
+    const groupJs = "const hubNav = require('../manager/hubNav')\nPage({\n  onLoad(q) {\n    const kit = hubNav.findKit(q.kit)\n    const host = getCurrentPages().slice(-2)[0]\n    const menu = (host && host.data && host.data.menu) || {}\n    this.setData({ rows: kit ? kit.children.filter((c) => c.keys.some((k) => menu[k] === true)) : [] })\n  },\n  onRow(e) {\n    const host = getCurrentPages().slice(-2)[0]\n    hubNav.invokeItem(host, this.data.rows[e.currentTarget.dataset.i])\n  }\n})\n"
+    const app = JSON.parse(b.appJson)
+    app.subpackages.forEach((p) => { if (p.root === 'subpackages/manager' && !p.pages.includes('group/index')) p.pages.splice(1, 0, 'group/index') })
+    return { ...b, wxml, hubNav, indexJs, groupJs, groupWxml: '<view></view>', appJson: JSON.stringify(app, null, 2) }
   }
   const cases = [
     // 不误报对照：清单与磁贴同步改名、入口与权限仍在 → 必须仍通过
@@ -796,18 +964,18 @@ if (!selftest) {
       if (!m) throw new Error('注入锚点失效：飞书同步磁贴')
       return { ...s, wxml: s.wxml.replace(m[0], '') }
     }, /入口丢失：改版前的「飞书同步」/],
-    ['生日礼包磁贴被删', (s) => {
-      const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="birthdayGift"[\s\S]*?<text class="hub-cell-name">生日礼包<\/text>\s*<\/view>/)
-      if (!m) throw new Error('注入锚点失效：生日礼包磁贴')
+    ['股东磁贴被删', (s) => {
+      const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="shareholderConfig"[\s\S]*?<text class="hub-cell-name">股东<\/text>\s*<\/view>/)
+      if (!m) throw new Error('注入锚点失效：股东磁贴')
       return { ...s, wxml: s.wxml.replace(m[0], '') }
-    }, /入口丢失：改版前的「生日礼包」/],
+    }, /入口丢失：改版前的「股东配置」/],
     ['重复磁贴（账本复制一枚）', (s) => {
       const m = s.wxml.match(/<view class="hub-cell"[^>]*data-idx="8"[^>]*>[\s\S]*?<text class="hub-cell-name">账本<\/text>\s*<\/view>/)
       if (!m) throw new Error('注入锚点失效：账本磁贴')
       return { ...s, wxml: s.wxml.replace(m[0], `${m[0]}\n${m[0]}`) }
     }, /重复磁贴/],
     ['直达磁贴权限被换', rep('wxml', 'wx:if="{{menu.depositOps}}"', 'wx:if="{{menu.orders}}"'), /权限条件变化：「售罄孤品定金」/],
-    ['工资维护权限被放宽', rep('wxml', 'wx:if="{{menu.payslipAdmin}}"', 'wx:if="{{menu.payslipAdmin || menu.myPayslip}}"'), /权限条件变化：「工资维护」|权限被放宽/],
+    ['店员工作台权限被放宽', rep('wxml', 'data-fid="staffConsole" wx:if="{{menu.staffConsole}}"', 'data-fid="staffConsole" wx:if="{{menu.staffConsole || menu.verify}}"'), /权限条件变化：「店员工作台」|权限被放宽/],
     ['分区 keys 漏一个', rep('hubNav', "'approvals', 'depositOps'] }", "'approvals'] }"), /分区「订单履约」/],
     ['sectionFlags 恒 false', rep('hubNav', 'out[s.id] = s.keys.some((k) => m[k] === true)', 'out[s.id] = false'), /改版后不可达/],
     ['入口 handler 写错', rep('wxml', 'bindtap="goDepositOps"', 'bindtap="goDepositOpsX"'), /goDepositOpsX 在页面上不存在/],
@@ -830,18 +998,18 @@ if (!selftest) {
     ['N1 常用小金点复活', rep('wxml', '<text class="hub-cell-name">账本</text>', '<text class="hub-cell-name">账本</text>\n              <view class="hub-pin" wx:if="{{hubPinned.orders}}"></view>'), /N1 工作台又出现常用小金点/],
     ['N1 双圈复活（常用区）', rep('wxml', '        <view class="hub-ico">\n          <image class="hub-ico-img" src="{{item.icon}}"', "        <view class=\"hub-ico {{item.group ? 'is-stack' : ''}}\">\n          <image class=\"hub-ico-img\" src=\"{{item.icon}}\""), /N1 工作台又出现双圈/],
     ['N1 双圈样式复活', (s) => ({ ...s, hubWxss: `${s.hubWxss}\n.hub-ico.is-stack { border: 2rpx solid #C4A76C; }\n` }), /N1 hubNav\.wxss 又出现 \.is-group/],
-    ['N1 长按加常用复活', rep('wxml', 'data-fid="points" wx:if', 'data-fid="points" bindlongpress="onHubPin" wx:if'), /N1 工作台又出现长按手势/],
+    ['N1 长按加常用复活', rep('wxml', 'data-fid="deposit" wx:if', 'data-fid="deposit" bindlongpress="onHubPin" wx:if'), /N1 工作台又出现长按手势/],
     ['N1 说明行又靠文字解释暗号', rep('wxml', '<text class="hub-cat-count">{{hubCat.total}} 项</text>', '<text class="hub-cat-count">{{hubCat.total}} 项 · 长按加入常用</text>'), /N1 可见文案里出现「长按」/],
     ['N1 磁贴多一个红点', rep('wxml', '<text class="hub-cell-name">账本</text>', '<text class="hub-cell-name">账本</text><view class="hub-dot"></view>'), /N1 入口「账本」内部须只有/],
     ['N1 磁贴又加 ›', rep('wxml', '<text class="hub-cell-name">账本</text>', '<text class="hub-cell-name">账本</text>\n              <text class="hub-cell-go">›</text>'), /N1 入口「账本」内部须只有/],
     ['N1 角标挪出图标', rep('wxml', "                <view class=\"hub-badge\" wx:if=\"{{customOrders.length > 0}}\">{{customOrders.length > 99 ? '99+' : customOrders.length}}</view>\n              </view>\n              <text class=\"hub-cell-name\">工单</text>", "              </view>\n              <text class=\"hub-cell-name\">工单</text>\n              <view class=\"hub-badge\" wx:if=\"{{customOrders.length > 0}}\">{{customOrders.length > 99 ? '99+' : customOrders.length}}</view>"), /N1 入口「工单」内部须只有/],
     ['N1 入口按压退回本地类', rep('wxml', 'hover-class="tap-press" hover-stay-time="80" data-fid="ledger"', 'hover-class="hub-press" hover-stay-time="80" data-fid="ledger"'), /N1 入口「账本」按压态/],
     // N2 每个入口都有说明
-    ['N2 入口说明被清空', rep('hubNav', "desc: '房租、水电和物业费'", "desc: ''"), /N2 入口「物业」没有说明/],
+    ['N2 入口说明被清空', rep('hubNav', "desc: '卖完的孤品，顾客交的订金'", "desc: ''"), /N2 入口「孤品定金」没有说明/],
     ['N2 说明里混进技术词', rep('hubNav', "desc: '工作室打包发货'", "desc: '工作室发货 SKU'"), /N2 入口「出货中心」说明里有技术词/],
-    ['N2 说明太长一行放不下', rep('hubNav', "desc: '顾客申请的发票，开好再回复'", "desc: '顾客申请的发票，开好之后再在这里回复顾客'"), /N2 入口「发票」说明 \d+ 字/],
-    ['N2 磁贴小字与清单漂移', rep('wxml', '<text class="hub-cell-sub">订单·工单提醒</text>', '<text class="hub-cell-sub">提醒</text>'), /N2 入口「微信通知」磁贴小字「提醒」与清单/],
-    ['N2 磁贴小字太长', (s) => rep('hubNav', "sub: '鉴定监测'", "sub: '拍照鉴定用量监测看板'")(rep('wxml', '<text class="hub-cell-sub">鉴定监测</text>', '<text class="hub-cell-sub">拍照鉴定用量监测看板</text>')(s)), /N2 入口「AI 鉴定」磁贴小字 \d+ 字/],
+    ['N2 说明太长一行放不下', rep('hubNav', "desc: '定制和装裱的活儿，进度一目了然'", "desc: '定制和装裱的活儿，进度在这里一目了然'"), /N2 入口「工单」说明 \d+ 字/],
+    ['N2 磁贴小字与清单漂移', rep('wxml', '<text class="hub-cell-sub">审核·回复</text>', '<text class="hub-cell-sub">回复</text>'), /N2 入口「评价」磁贴小字「回复」与清单/],
+    ['N2 磁贴小字太长', (s) => rep('hubNav', "sub: '审核·回复'", "sub: '评价审核置顶与回复'")(rep('wxml', '<text class="hub-cell-sub">审核·回复</text>', '<text class="hub-cell-sub">评价审核置顶与回复</text>')(s)), /N2 入口「评价」磁贴小字 \d+ 字/],
     // N3 待处理横条包含所有带角标的入口
     ['N3 待办漏掉发票', rep('hubNav', "  { id: 'invoice', label: '发票', keys: ['invoice'], badge: 'invoicePendingCount', tap: 'goInvoiceRequests' },\n", ''), /N3 待处理横条缺「发票」的角标/],
     ['N3 新单未读不再合并进待发', rep('hubNav', " merged: 'newOrderUnreadCount',", ''), /N3 待处理横条缺「订单」的角标（数据源 newOrderUnreadCount）|新单未读合并/],
@@ -859,7 +1027,7 @@ if (!selftest) {
     ['N4 编辑按钮被删', rep('wxml', '<view class="hub-fav-edit" bindtap="openFavEditor" hover-class="tap-press" hover-stay-time="80">编辑</view>', ''), /N4 常用区右上角须有「编辑」按钮/],
     ['N4 空态不再指向编辑', rep('wxml', '<text>还没有常用入口，点右上角「编辑」挑选</text>', '<text>还没有常用入口</text>'), /N4 常用为空时须指向「编辑」/],
     // N5 搜索只在入口 > 20 的角色出现
-    ['N5 搜索给所有角色', rep('hubNav', 'return { hubCat: { total: vis.length, search: vis.length > MANY_ENTRIES } }', 'return { hubCat: { total: vis.length, search: true } }'), /N5 店长：可见入口 17 个，搜索框应隐藏/],
+    ['N5 搜索给所有角色', rep('hubNav', 'return { hubCat: { total: vis.length, search: vis.length > MANY_ENTRIES } }', 'return { hubCat: { total: vis.length, search: true } }'), /N5 店长：可见入口 \d+ 个，搜索框应隐藏/],
     ['N5 搜索框不再受开关控制', rep('wxml', '<view class="hub-search" wx:if="{{hubCat.search}}">', '<view class="hub-search">'), /N5 搜索框须 wx:if/],
     ['N5 搜索不按权限过滤', rep('hubNav', '  visibleEntries(d.menu).forEach((e, i) => {', '  HUB_ENTRIES.forEach((e, i) => {'), /N5 搜索须只在有权限的入口里找/],
     ['N5 搜索不认别名', rep('hubNav', 'return [e.label, ...(e.alias || []), sec.title, sec.short]', 'return [e.label, sec.title, sec.short]'), /N5 超管搜「包邮」/],
@@ -887,28 +1055,43 @@ if (!selftest) {
     ['N6 角标不贴图标', rep('hubWxss', '.hub-cell .hub-badge {\n  position: absolute;', '.hub-cell .hub-badge {\n  position: static;'), /N6 磁贴红色数字角标须贴在图标右上角/],
     ['N6 又包回列表行', rep('wxml', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">\n            <view class="hub-list"></view>'), /N6 全部功能又出现整块面板 \/ 列表行容器/],
     ['N6 店员工作台换回实心圆素材', (s) => rep('hubNav', "icon: ICON + 'tab-user.png'", "icon: ICON + 'checkin.png'")(rep('wxml', 'src="/assets/icons/tab-user.png"', 'src="/assets/icons/checkin.png"')(s)), /N6 入口「店员工作台」用了实心素材/],
-    ['N6 图标文件不存在', (s) => rep('hubNav', "icon: ICON + 'camera.png'", "icon: ICON + 'camera-x.png'")(rep('wxml', 'src="/assets/icons/camera.png"', 'src="/assets/icons/camera-x.png"')(s)), /N6 入口「AI 鉴定」图标文件不存在/],
+    ['N6 图标文件不存在', (s) => rep('hubNav', "icon: ICON + 'discount.png', sec: 'orders'", "icon: ICON + 'discount-x.png', sec: 'orders'")(rep('wxml', 'src="/assets/icons/discount.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">孤品定金', 'src="/assets/icons/discount-x.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">孤品定金')(s)), /N6 入口「孤品定金」图标文件不存在/],
     ['N6 荣誉馆长换回实心方块素材', (s) => rep('hubNav', "icon: ICON + 'tab-collection.png', sec: 'members'", "icon: ICON + 'atlas.png', sec: 'members'")(rep('wxml', 'src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">荣誉馆长', 'src="/assets/icons/atlas.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">荣誉馆长')(s)), /N6 入口「荣誉馆长」用了实心素材/],
     ['N6 中英标题并成一行', rep('wxml', '<view class="hub-titles">\n            <text class="hub-en">ALL FUNCTIONS</text>\n            <text class="hub-cn">全部功能</text>\n          </view>', '<text class="hub-cn">全部功能 ALL FUNCTIONS</text>'), /N6 全部功能标题须为英文小标题/],
     // N7 没有折叠磁贴、每个子功能独立、入口只增不减、旧折叠常用平滑映射
-    ['N7 磁贴又改回点开再选', rep('wxml', 'data-fid="bookingRules" wx:if="{{menu.bookingRules}}" bindtap="goBookingRules"', 'data-fid="bookingRules" wx:if="{{menu.bookingRules}}" bindtap="openHubGroup" data-group="rules"'), /N7 磁贴「预约规则」又是「点开再选」的折叠磁贴/],
-    ['N7 清单又出现折叠入口', rep('hubNav', "tap: 'goBookingRules' }", "tap: 'goBookingRules', group: 'rules' }"), /N7 清单入口「预约规则」又是折叠入口/],
+    ['N7 磁贴又改回点开再选', rep('wxml', 'data-fid="deposit" wx:if="{{menu.depositOps}}" bindtap="goDepositOps"', 'data-fid="deposit" wx:if="{{menu.depositOps}}" bindtap="openHubGroup" data-group="orders"'), /N7 磁贴「孤品定金」又是「点开再选」的折叠磁贴/],
+    ['N7 清单又出现折叠入口', rep('hubNav', "tap: 'goDepositOps' }", "tap: 'goDepositOps', group: 'orders' }"), /N7 清单入口「孤品定金」又是折叠入口/],
     ['N7 二级面板代码复活', rep('indexJs', '  onHubSearchClear() {', '  openHubGroup(e) {\n    this.setData({ hubSheet: {} })\n  },\n\n  onHubSearchClear() {'), /N7 index\.js 仍有二级面板残留/],
-    ['N7 子功能被并回（员工磁贴与清单同删）', (s) => {
-      const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="staffDirectory"[\s\S]*?<text class="hub-cell-name">员工<\/text>\s*<\/view>/)
-      if (!m) throw new Error('注入锚点失效：员工磁贴')
-      return rep('hubNav', "  { id: 'staffDirectory',", "  // { id: 'staffDirectory',")({ ...s, wxml: s.wxml.replace(m[0], '') })
-    }, /N7 子功能 staffDirectory 不再是独立入口/],
-    ['N7 父入口回到清单', rep('hubNav', "  { id: 'giftManage',", "  { id: 'gift', label: '礼赠', desc: '礼赠', icon: ICON + 'gift.png', sec: 'orders', keys: ['giftOps'], tap: 'goGiftOpsGuarded' },\n  { id: 'giftManage',"), /N7 被拆开的折叠入口「gift」又回到清单里/],
-    ['N7 入口总数减少', (s) => {
-      const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="wxNotify"[\s\S]*?<text class="hub-cell-sub">订单·工单提醒<\/text>\s*<\/view>/)
-      if (!m) throw new Error('注入锚点失效：微信通知磁贴')
-      return rep('hubNav', "  { id: 'wxNotify',", "  // { id: 'wxNotify',")({ ...s, wxml: s.wxml.replace(m[0], '') })
-    }, /N7 入口总数 49 < 50/],
+    ['N7 子功能被并没了（股东磁贴与清单同删）', (s) => {
+      const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="shareholderConfig"[\s\S]*?<text class="hub-cell-name">股东<\/text>\s*<\/view>/)
+      if (!m) throw new Error('注入锚点失效：股东磁贴')
+      return rep('hubNav', "  { id: 'shareholderConfig',", "  // { id: 'shareholderConfig',")({ ...s, wxml: s.wxml.replace(m[0], '') })
+    }, /N7 子功能 shareholderConfig 不再可达/],
+    ['N7 父入口以点开再选回到清单', rep('hubNav', "  { id: 'deposit',", "  { id: 'perks', label: '礼包', desc: '礼包', icon: ICON + 'gift.png', sec: 'orders', keys: ['welcomeGift'], tap: 'goWelcomeGiftGuarded' },\n  { id: 'deposit',"), /N7 被拆开的折叠入口「perks」又回到清单里/],
+    ['N7 功能总数减少', (s) => {
+      const m = s.wxml.match(/\n\s*<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="deposit"[\s\S]*?<text class="hub-cell-name">孤品定金<\/text>\s*<\/view>/)
+      if (!m) throw new Error('注入锚点失效：孤品定金磁贴')
+      return rep('hubNav', "  { id: 'deposit',", "  // { id: 'deposit',")({ ...s, wxml: s.wxml.replace(m[0], '') })
+    }, /N7 功能总数 \d+ < \d+/],
     ['N5 SKU 维护搜不到', rep('hubNav', "alias: ['SKU', '商品', '价目', '出货 SKU', '定价']", "alias: ['出货 SKU']"), /N5 超管搜「商品」须找到「SKU 维护」/],
     ['N7 旧折叠常用映射到无权限子入口', rep('hubNav', 'Array.isArray(to) ? to.find((x) => entryVisible(findEntry(x), menu)) : to', 'Array.isArray(to) ? to[0] : to'), /N7 只有部分子功能权限时/],
-    ['N7 子入口丢了角标', rep('hubNav', "tap: 'goGiftOps', badge: 'giftTodoCount' }", "tap: 'goGiftOps' }"), /N7 旧「礼赠」常用映射到礼赠履约后须带上礼赠待办红点/],
-    ['N7 磁贴右上角 › 复活', rep('wxml', '<text class="hub-cell-name">预约规则</text>', '<text class="hub-cell-name">预约规则</text>\n              <text class="hub-cell-go">›</text>'), /N7 磁贴又出现右上角 ›/]
+    ['N7 子入口丢了角标', rep('hubNav', "tap: 'goGiftOps', badge: 'giftTodoCount' }", "tap: 'goGiftOps' }"), /N7 旧「礼赠」常用映射后须带上礼赠待办红点/],
+    ['N7 磁贴右上角 › 复活', rep('wxml', '<text class="hub-cell-name">孤品定金</text>', '<text class="hub-cell-name">孤品定金</text>\n              <text class="hub-cell-go">›</text>'), /N7 磁贴又出现右上角 ›/],
+    // K 组合入口（样本：在内存里把「孤品定金 + 股东」并成一个组合 —— 两者都不在归并计划里，归并推进时样本不失效）
+    ['K 组合样本：合法组合（不误报对照）', (s) => kitSample(s), null],
+    ['K 子功能丢 handler', (s) => rep('hubNav', "tap: 'goShareholderConfig', kitChild: 1", "tap: 'goShareholderConfigX', kitChild: 1")(kitSample(s)), /K 组合「样本组合」子功能「股东」的入口 goShareholderConfigX 在页面上不存在/],
+    ['K 子功能权限写宽', rep('hubNav', "keys: ['shareholderConfig'], tap: 'goShareholderConfig', kitChild: 1", "keys: ['shareholderConfig', 'depositOps'], tap: 'goShareholderConfig', kitChild: 1"), /权限条件变化：「股东配置」/, true],
+    ['K 组合磁贴丢 data-kit', rep('wxml', ' bindtap="openHubKitPage" data-kit="sampleKit"', ' bindtap="openHubKitPage"'), /K 磁贴「样本组合」走组合页（openHubKitPage）却没有 data-kit/, true],
+    ['K 组合入口名称漂移', rep('hubNav', "{ id: 'sampleKit', label: '样本组合', sub", "{ id: 'sampleKit', label: '样本合集', sub"), /清单与磁贴名称不一致：sampleKit|K 组合入口 sampleKit 的名称/, true],
+    ['K 组合磁贴权限键少一个子功能', rep('wxml', 'wx:if="{{menu.depositOps || menu.shareholderConfig}}" bindtap="openHubKitPage"', 'wx:if="{{menu.depositOps}}" bindtap="openHubKitPage"'), /K 组合「样本组合」磁贴权限键|改版前可见，改版后不可达/, true],
+    ['K 子功能同时还是独立磁贴', (s) => {
+      const k = kitSample(s)
+      return { ...k, wxml: k.wxml.replace('<view class="hub-grid--cat" wx:if="{{!hubCollapsed.org}}">', `<view class="hub-grid--cat" wx:if="{{!hubCollapsed.org}}">\n${SAMPLE_SHAREHOLDER_TILE}`) }
+    }, /入口重复：「股东配置」|K 组合「样本组合」子功能「股东」同时还是独立磁贴/],
+    ['K 组合页不按权限过滤', rep('groupJs', '.keys.some(', '.keys.every('), /K 组合页须按权限过滤子功能/, true],
+    ['K 组合页另写跳转（不调原 handler）', rep('groupJs', 'hubNav.invokeItem(', 'wx.navigateTo('), /K 组合页点子功能须经 hubNav\.invokeItem/, true],
+    ['K 组合页未注册', rep('appJson', '"group/index",', ''), /K 组合页未在 app\.json 注册/, true],
+    ['K 子功能名称搜不到组合', rep('hubNav', "alias: ['孤品定金', '股东', '订金', '占股']", "alias: ['订金']"), /K 超管搜「股东」找不到组合「样本组合」/, true]
   ]
   let bad = 0
   const baseline = run(base)
@@ -916,7 +1099,8 @@ if (!selftest) {
     console.error(`${TAG} selftest ✗ 基线本身不通过：`, baseline.errs)
     process.exit(1)
   }
-  for (const [name, mut, expect] of cases) {
+  for (const [name, mutRaw, expect, onKit] of cases) {
+    const mut = onKit ? (b) => mutRaw(kitSample(b)) : mutRaw
     let s
     try {
       s = mut(base)
@@ -926,8 +1110,8 @@ if (!selftest) {
       continue
     }
     const r = run(s)
-    if (name === '飞书同步同步改名') {
-      if (r.ok) console.log(`${TAG} selftest ✓ 不误报：${name}（清单与磁贴同步改名，入口与权限仍在）`)
+    if (expect === null) {
+      if (r.ok) console.log(`${TAG} selftest ✓ 不误报：${name}`)
       else { console.error(`${TAG} selftest ✗ 误报：${name} → ${r.errs[0]}`); bad += 1 }
       continue
     }
@@ -942,6 +1126,7 @@ if (!selftest) {
     console.error(`${TAG} selftest ✗ ${bad} 条注入未按预期`)
     process.exitCode = 1
   } else {
-    console.log(`${TAG} selftest ✓ ${cases.length - 1} 个回归注入全部检出 + 1 个不误报对照（内存副本，不写盘）`)
+    const n0 = cases.filter((c) => c[2] === null).length
+    console.log(`${TAG} selftest ✓ ${cases.length - n0} 个回归注入全部检出 + ${n0} 个不误报对照（含合法组合入口样本；内存副本，不写盘）`)
   }
 }
