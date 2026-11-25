@@ -12442,7 +12442,11 @@ bindSubCatChange(e) {
           showLive: flags.showLive === true,
           showStoredValue: flags.showStoredValue === true,
           showAiIdentify: flags.showAiIdentify !== false,
-          museumGuideOpen: flags.museumGuideOpen !== false,
+          // get 的 museumGuideOpen 已是「内容开关 AND 超管开馆」。写回去会在超管闭馆时把内容开关永久关掉。
+          // 有 museumGuideFlag 就用原值；旧云函数没有该字段时才退回 AND（与改前相同，不额外把开关打开）。
+          museumGuideOpen: typeof flags.museumGuideFlag === 'boolean'
+            ? flags.museumGuideFlag
+            : flags.museumGuideOpen !== false,
           showStore: flags.showStore !== false,
           showStorePickup: flags.showStorePickup !== false,
           showGift: flags.showGift === true,

@@ -6,11 +6,11 @@
  *   setConfig { enabled?, dailyLimit?, notices? }  改开关 / 每日额度 / 首页口播通知（先写审计，审计失败即拒绝）
  *
  * 口播通知（2026-11-23）：首页「博物君口播」里的「馆内通知」条，最多 3 条、每条 ≤ 22 字（首页一行放得下）；
- *   getContentDisplayFlags 只读带出 museumGuideNotices（与 museumGuideOpen 同一份文档）。
+ *   getContentDisplayFlags 只读带出 museumGuideNotices。C 端 museumGuideOpen 是内容开关与开馆状态的 AND，原值在 museumGuideFlag。
  *
  * 鉴权：staffGuard.assertStaff({ requireSuperAdmin: true })，只认小程序身份。
  * 数据：museum_guide_logs 由 askMuseumGuide 每次提问写一条（**不含问题与回答原文**）；
- *       museum_guide_config/main 是开关与额度（askMuseumGuide 读、getContentDisplayFlags 只读带出 museumGuideOpen）。
+ *       museum_guide_config/main 是开馆开关与额度（askMuseumGuide 读）。内容开关文档另有 museumGuideOpen。
  * 蓝图：miniprogram/docs/博物君_AI馆员_蓝图_2026-11-23.md §6
  */
 const cloud = require('wx-server-sdk')

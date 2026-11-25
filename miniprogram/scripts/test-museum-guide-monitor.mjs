@@ -6,8 +6,8 @@
  *   M2 配置入参：只认布尔开关与 5–200 整数额度；空 / 越界拒绝
  *   M3 云函数门禁与审计：非超管零读写；改设置先审计、审计失败即拒且不写配置；入参不合法不审计
  *   M4 视图：没有数据写「—」不编 0、按日新到旧、失败只列出现过的、去处 key 与博物君两端一致、界面无集合名与原生弹窗
- *   M5 开关落地：getContentDisplayFlags 只读带出 museumGuideOpen（闭馆 false / 读不到 true），save 不写它；
- *      小程序端开关归一与「我的」入口跟随
+ *   M5 开关落地：C 端 museumGuideOpen 是内容开关与开馆状态的 AND；museumGuideFlag 是内容开关原值；
+ *      save 写原值、不改开馆配置。小程序端开关归一与「我的」入口跟随
  *   M6 接线：页面注册在超管分包 / 菜单键仅超管 / 磁贴与处理函数带 canSeeMenu / 页内 guardStaffPage('super_admin') /
  *      两个新集合三处同步 + serverOnly / 部署清单
  *
@@ -182,7 +182,7 @@ async function runChecks() {
   ok('M4 开关两步确认（第一下只亮出确认）', /if \(!this\.data\.confirmToggle\) \{/.test(pageJs) && /再点一次确认闭馆/.test(wxml))
 
   /* ---------------- M5 开关落地 ---------------- */
-  const flagDb = (cfg, patch) => memDb(Object.assign({ content_display_flags: { f1: Object.assign({ status: 'active', priority: 100, showAiIdentify: true }, patch || {}) } }, cfg ? { museum_guide_config: { main: cfg } } : {}))
+  const flagDb = (cfg, patch) => memDb(Object.assign({ content_display_flags: { f1: Object.assign({ _id: 'f1', status: 'active', priority: 100, showAiIdentify: true }, patch || {}) } }, cfg ? { museum_guide_config: { main: cfg } } : {}))
   const loadFlags = (db) => loadCjsModule(P.flagsFn, {
     transform,
     stubs: { 'wx-server-sdk': { init() {}, DYNAMIC_CURRENT_ENV: 'x', database: () => db, getWXContext: () => ({ OPENID: 'u1' }), serverDate: () => 0 }, './staffGuard': { assertStaff: async () => ({ ok: true, actor: { openid: 'm' } }), ROLE_MANAGER: 'manager' } },
@@ -192,12 +192,23 @@ async function runChecks() {
   const fNone = await loadFlags(flagDb(null)).main({})
   const fFlagOff = await loadFlags(flagDb({ enabled: true }, { museumGuideOpen: false })).main({})
   const fBoth = await loadFlags(flagDb({ enabled: true }, { museumGuideOpen: true })).main({})
-  const saveDb = flagDb({ enabled: false })
-  await loadFlags(saveDb).main({ action: 'save', flags: { showAiIdentify: true, museumGuideOpen: true } })
-  ok('M5 两把开关取 AND：超管闭馆 → false；ERP 商品内容-开关关闭 → false；都没配 → true；两者都开 → true；save 不写它',
-    fOff.flags.museumGuideOpen === false && fNone.flags.museumGuideOpen === true && fFlagOff.flags.museumGuideOpen === false &&
-    fBoth.flags.museumGuideOpen === true && fOff.flags.showAiIdentify === true &&
-    saveDb.docs.museum_guide_config.main.enabled === false && !('museumGuideOpen' in saveDb.docs.content_display_flags.f1))
+  const saveDb = flagDb({ enabled: false }, { museumGuideOpen: true })
+  const saveRes = await loadFlags(saveDb).main({ action: 'save', flags: { showAiIdentify: true, museumGuideOpen: true } })
+  const roundDb = flagDb({ enabled: false }, { museumGuideOpen: true, showGift: false })
+  const roundView = await loadFlags(roundDb).main({})
+  await loadFlags(roundDb).main({ action: 'save', flags: { showGift: true, museumGuideOpen: roundView.flags.museumGuideFlag, showAiIdentify: true } })
+  ok('M5 两把开关取 AND 给 C 端，原值在 museumGuideFlag；保存写原值、不改开馆配置',
+    fOff.flags.museumGuideOpen === false && fOff.flags.museumGuideFlag === true &&
+    fNone.flags.museumGuideOpen === true && fNone.flags.museumGuideFlag === true &&
+    fFlagOff.flags.museumGuideOpen === false && fFlagOff.flags.museumGuideFlag === false &&
+    fBoth.flags.museumGuideOpen === true && fBoth.flags.museumGuideFlag === true &&
+    fOff.flags.showAiIdentify === true &&
+    saveDb.docs.museum_guide_config.main.enabled === false &&
+    saveRes.flags.museumGuideOpen === true &&
+    saveDb.docs.content_display_flags.f1.museumGuideOpen === true &&
+    roundView.flags.museumGuideOpen === false && roundView.flags.museumGuideFlag === true &&
+    roundDb.docs.content_display_flags.f1.museumGuideOpen === true &&
+    roundDb.docs.content_display_flags.f1.showGift === true)
   ok('M5 ERP「商品内容-开关」有博物君开关（读 / 写 / 默认三处齐全）',
     /v-model="form\.museumGuideOpen"/.test(read(P.erpFlags)) && /form\.museumGuideOpen = raw\.museumGuideOpen !== false/.test(read(P.erpFlags)) &&
     /museumGuideOpen: form\.museumGuideOpen !== false/.test(read(P.erpFlags)) && /museumGuideOpen: true/.test(read(P.erpFlags)))
@@ -215,10 +226,12 @@ async function runChecks() {
   const mgrCfg = read(P.mgrCfg)
   const mgrWxml = read(P.mgrWxml)
   const subviews = read(P.subviews)
-  ok('M7 内容开关页：博物君开关 + 「博物君管理详情」入口，且云端保存带上该字段（防静默重置）',
+  ok('M7 内容开关页：博物君开关 + 「博物君管理详情」入口，保存带上该字段，面板读原值不读 AND',
     /data-field="museumGuideOpen"/.test(subviews) && /bindtap="goMuseumGuideMonitorGuarded"/.test(subviews) &&
-    /museumGuideOpen: flags\.museumGuideOpen !== false/.test(mgrCfg) && /museumGuideOpen: true/.test(mgrCfg) &&
-    /museumGuideOpen: incoming\.museumGuideOpen/.test(read(P.flagsFn)))
+    /museumGuideOpen: typeof flags\.museumGuideFlag === 'boolean'[\s\S]{0,120}flags\.museumGuideFlag[\s\S]{0,80}flags\.museumGuideOpen !== false/.test(mgrCfg) &&
+    /museumGuideOpen: true/.test(mgrCfg) &&
+    /museumGuideOpen: incoming\.museumGuideOpen/.test(read(P.flagsFn)) &&
+    /museumGuideFlag: storedGuideOpen/.test(read(P.flagsFn)))
   /* ---------------- M6 接线 ---------------- */
   const app = JSON.parse(readFileSync(P.appJson, 'utf8'))
   const mgr = app.subpackages.find((x) => /subpackages\/manager\/?$/.test(x.root))
@@ -256,7 +269,8 @@ const INJECTIONS = [
   { name: '没数据编 0', file: P.view, find: "  return typeof r === 'number' ? `${r}%` : '—'", replace: "  return `${r || 0}%`" },
   { name: '开关一下就改', file: P.page, find: '    if (!this.data.confirmToggle) {', replace: '    if (false) {' },
   { name: '内容开关读不到就关', file: P.flagsFn, find: '  } catch (e) {\n    return true\n  }', replace: '  } catch (e) {\n    return false\n  }' },
-  { name: '内容开关不带出博物君', file: P.flagsFn, find: 'flags: Object.assign({}, res.flags, { museumGuideOpen })', replace: 'flags: res.flags' },
+  { name: '内容开关不带出博物君', file: P.flagsFn, find: 'flags: Object.assign({}, res.flags, { museumGuideOpen, museumGuideFlag: storedGuideOpen })', replace: 'flags: res.flags' },
+  { name: '内容开关面板把闭馆结果写回原值', file: P.mgrCfg, find: 'museumGuideOpen: typeof flags.museumGuideFlag === \'boolean\'\n            ? flags.museumGuideFlag\n            : flags.museumGuideOpen !== false,', replace: 'museumGuideOpen: flags.museumGuideOpen !== false,' },
   { name: '小程序端缺省关闭', file: P.flagsUtil, find: 'museumGuideOpen: src.museumGuideOpen !== false', replace: 'museumGuideOpen: src.museumGuideOpen === true' },
   { name: '错误原文又渲染给超管', file: P.page, find: 'loadError: V.friendlyError(e)', replace: 'loadError: `没能取回报表：${(e && e.message) || e}`' },
   { name: '内容开关漏了博物君字段（保存会把它重置）', file: P.flagsFn, find: '    museumGuideOpen: incoming.museumGuideOpen,\n', replace: '' },
