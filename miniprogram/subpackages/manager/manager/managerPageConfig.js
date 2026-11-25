@@ -1728,6 +1728,8 @@ const managerPageConfig = {
       showLive: false,
       showStoredValue: false,
       showAiIdentify: true,
+      // 博物君（AI 馆员）：缺字段默认开；与 ERP「商品内容-开关」同源，保存时原值回传
+      museumGuideOpen: true,
       showStore: true,
       showStorePickup: true,
       showGift: false,
@@ -12440,6 +12442,7 @@ bindSubCatChange(e) {
           showLive: flags.showLive === true,
           showStoredValue: flags.showStoredValue === true,
           showAiIdentify: flags.showAiIdentify !== false,
+          museumGuideOpen: flags.museumGuideOpen !== false,
           showStore: flags.showStore !== false,
           showStorePickup: flags.showStorePickup !== false,
           showGift: flags.showGift === true,

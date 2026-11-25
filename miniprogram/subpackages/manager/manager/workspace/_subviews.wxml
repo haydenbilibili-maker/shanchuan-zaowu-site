@@ -3065,6 +3065,22 @@
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showAiIdentify}}" data-field="showAiIdentify" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
+          <!-- 2026-11-25：博物君（AI 馆员）总开关并入内容开关（与 ERP 同一份 flags.museumGuideOpen）；
+               关掉后 C 端入口全部隐藏（首页口播 / 图鉴详情 / 鉴定结果），本机缓存立即失效 -->
+          <view class="cfg-row cfg-row-switch">
+            <view class="cfg-label-block">
+              <text class="cfg-label cfg-label-wide">博物君（AI 馆员）</text>
+              <text class="cfg-switch-hint {{contentFlags.museumGuideOpen ? 'on' : ''}}">{{contentFlags.museumGuideOpen ? '展示中' : '已隐藏'}}</text>
+            </view>
+            <switch class="cfg-switch" checked="{{contentFlags.museumGuideOpen}}" data-field="museumGuideOpen" color="#C4A76C" bindchange="onContentFlagToggle"/>
+          </view>
+          <view hover-class="tap-press-soft" hover-stay-time="80" class="cfg-row cfg-row-link" bindtap="goMuseumGuideMonitorGuarded">
+            <view class="cfg-label-block">
+              <text class="cfg-label cfg-label-wide">博物君管理详情</text>
+              <text class="cfg-switch-hint">开关与监测 · 人设 / 任务 / 巡检 / 转人工记录（仅超管）</text>
+            </view>
+            <text class="cfg-chevron">›</text>
+          </view>
           <view class="cfg-row cfg-row-switch">
             <view class="cfg-label-block">
               <text class="cfg-label cfg-label-wide">这有店展示</text>

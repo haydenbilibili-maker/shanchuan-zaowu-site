@@ -158,6 +158,8 @@ async function saveFlags(event, openid) {
     showLive: incoming.showLive,
     showStoredValue: incoming.showStoredValue,
     showAiIdentify: incoming.showAiIdentify,
+    // ⚠️ 漏这一行 = 店长端保存成功、但 ERP 设的「博物君关闭」被静默重置为默认（开）
+    museumGuideOpen: incoming.museumGuideOpen,
     showStore: incoming.showStore,
     showStorePickup: incoming.showStorePickup,
     showGift: incoming.showGift,

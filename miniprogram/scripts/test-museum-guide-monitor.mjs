@@ -38,6 +38,7 @@ const P = {
   hubNav: join(MP, 'subpackages/manager/manager/hubNav.js'),
   mgrCfg: join(MP, 'subpackages/manager/manager/managerPageConfig.js'),
   mgrWxml: join(MP, 'subpackages/manager/manager/index.wxml'),
+  subviews: join(MP, 'subpackages/manager/manager/workspace/_subviews.wxml'),
   userWxml: join(MP, 'pages/user/index.wxml'),
   userJs: join(MP, 'pages/user/index.js'),
   appJson: join(MP, 'app.json'),
@@ -210,6 +211,14 @@ async function runChecks() {
   ok('M5 小程序端开关归一（缺省开启）与「我的」入口跟随', /museumGuideOpen: src\.museumGuideOpen !== false/.test(read(P.flagsUtil)) &&
     /data-path="museumGuide" wx:if="\{\{museumGuideOpen\}\}"/.test(read(P.userWxml)) && /museumGuideOpen: flags\.museumGuideOpen !== false/.test(read(P.userJs)))
 
+  // M7（2026-11-25 产品负责人）：内容开关面板同步博物君开关 + 跳转管理详情
+  const mgrCfg = read(P.mgrCfg)
+  const mgrWxml = read(P.mgrWxml)
+  const subviews = read(P.subviews)
+  ok('M7 内容开关页：博物君开关 + 「博物君管理详情」入口，且云端保存带上该字段（防静默重置）',
+    /data-field="museumGuideOpen"/.test(subviews) && /bindtap="goMuseumGuideMonitorGuarded"/.test(subviews) &&
+    /museumGuideOpen: flags\.museumGuideOpen !== false/.test(mgrCfg) && /museumGuideOpen: true/.test(mgrCfg) &&
+    /museumGuideOpen: incoming\.museumGuideOpen/.test(read(P.flagsFn)))
   /* ---------------- M6 接线 ---------------- */
   const app = JSON.parse(readFileSync(P.appJson, 'utf8'))
   const mgr = app.subpackages.find((x) => /subpackages\/manager\/?$/.test(x.root))
@@ -250,6 +259,8 @@ const INJECTIONS = [
   { name: '内容开关不带出博物君', file: P.flagsFn, find: 'flags: Object.assign({}, res.flags, { museumGuideOpen })', replace: 'flags: res.flags' },
   { name: '小程序端缺省关闭', file: P.flagsUtil, find: 'museumGuideOpen: src.museumGuideOpen !== false', replace: 'museumGuideOpen: src.museumGuideOpen === true' },
   { name: '错误原文又渲染给超管', file: P.page, find: 'loadError: V.friendlyError(e)', replace: 'loadError: `没能取回报表：${(e && e.message) || e}`' },
+  { name: '内容开关漏了博物君字段（保存会把它重置）', file: P.flagsFn, find: '    museumGuideOpen: incoming.museumGuideOpen,\n', replace: '' },
+  { name: '内容开关页丢了博物君开关', file: P.subviews, find: 'data-field="museumGuideOpen"', replace: 'data-field="museumGuideOpenX"' },
   { name: '磁贴处理函数不判权限', file: P.mgrCfg, find: '    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.MUSEUM_GUIDE_MONITOR)) return;\n', replace: '' }
 ]
 
