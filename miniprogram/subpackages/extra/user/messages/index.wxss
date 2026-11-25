@@ -74,7 +74,9 @@ page {
 .sticky-header.tucked .queue-tab,
 .sticky-header.tucked .filter-scroll,
 .sticky-header.tucked .filter-row,
-.sticky-header.tucked .filter-pill {
+.sticky-header.tucked .filter-pill,
+.sticky-header.tucked .letters-head,
+.sticky-header.tucked .lh-mark {
   pointer-events: none;
 }
 
@@ -85,7 +87,11 @@ page {
 .sticky-header .workflow-context,
 .sticky-header .filter-scroll,
 .sticky-header .filter-row,
-.sticky-header .filter-pill {
+.sticky-header .filter-pill,
+/* 2026-11-26 根因：顾客信箱卷首的「全部标为已读」不在白名单里，
+   顶栏是 pointer-events:none、子元素逐个放行 → 点它永远穿透，表现为「无反应、Console 也没日志」 */
+.sticky-header .letters-head,
+.sticky-header .lh-mark {
   pointer-events: auto;
 }
 

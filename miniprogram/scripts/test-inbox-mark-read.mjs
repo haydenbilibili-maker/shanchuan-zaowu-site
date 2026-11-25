@@ -149,6 +149,13 @@ async function runChecks() {
   await fn6.main({ action: 'markAllRead', category: 'all', queue: 'customer' })
   ok('R6 被同组已读盖住的残留未读（影子）也在全部已读时清掉', b6.unreadCount === 0 && db6.docs.user_messages.um2.read === true)
 
+  // R11（2026-11-26 真机「无反应且 Console 无日志」）：顶栏 pointer-events:none + 子元素白名单，
+  //   「全部标为已读」如果不在白名单，点击会直接穿透 —— 这次必须把卷首与按钮都放行。
+  const msgWxss = read(join(MP, 'subpackages/extra/user/messages/index.wxss'))
+  ok('R11 顶栏「全部标为已读」可点击（letters-head / lh-mark 在 pointer-events 白名单，tucked 时收回）',
+    /\.sticky-header \.letters-head,\s*\n\.sticky-header \.lh-mark \{\s*\n\s*pointer-events: auto;/.test(msgWxss) &&
+    /\.sticky-header\.tucked \.letters-head,\s*\n\.sticky-header\.tucked \.lh-mark \{\s*\n\s*pointer-events: none;/.test(msgWxss))
+
   // R9（2026-11-26 根因）缺 read 字段的历史落点：列表按 JS 判未读、云端 neq(true) 不命中缺失字段，
   //    → 永远「1 封未读」且点不掉。修后应能清掉；notification_logs 只有 _openid 没有 recipient 也要清。
   const sd9 = seed()
@@ -231,10 +238,10 @@ const INJECTIONS = [
   { name: '诊断又弹窗', file: P.page, find: "console.warn('[inbox] 未读诊断'", replace: "openAppModal({ title: '还有', content: 'x' }); console.warn('[inbox] 未读诊断'" },
   { name: '诊断不查库', file: P.fn, find: "case 'diagnoseUnread': {", replace: 'case \'diagnoseUnreadX\': {' },
   { name: '兜底不扫', file: P.fn, find: 'const swept = await forceMarkUnread(openid', replace: 'const swept = 0; void (openid' },
-  { name: '改不上也报成功', file: P.fn, find: "    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated }", replace: "    return { success: true, msg: '全部标记成功', unreadCount: 0 }" },
+  { name: '改不上也报成功', file: P.fn, find: "    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated, swept }", replace: "    return { success: true, msg: '全部标记成功', unreadCount: 0 }" },
   { name: '单条已读不带整组', file: P.fn, find: '      if (group && group._members && group._members.length > 1) await markMembersRead(group._members)\n', replace: '' },
   { name: '提示又被 hideLoading 吞掉', file: P.page, find: "    wx.hideLoading();\n    this._markingAll = false;\n", replace: "    this._markingAll = false;\n" },
-  { name: '全部已读不扫影子', file: P.fn, find: '  const ghosts = await loadUnreadMembers(openid, category, typeFilter, requestedQueue)', replace: '  const ghosts = []' },
+  { name: '全部已读不扫影子', file: P.fn, find: '  const swept = await forceMarkUnread(openid)', replace: '  const swept = 0' },
   { name: '来信行脚又贴回正文（没有虚线分隔）', file: P.wxss, find: 'border-top: 1rpx dashed var(--mat-paper-rule);', replace: 'border-top: 0;' },
   { name: '水印又压在按钮上', file: P.wxss, find: "  position: relative;\n  z-index: 1;\n}\n.queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {\n  content: '山海';\n  position: absolute;\n  z-index: 0;", replace: "  position: relative;\n}\n.queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {\n  content: '山海';\n  position: absolute;\n  z-index: 2;" },
   { name: '内部字段漏到前端', file: P.fn, find: '  const { _source, _members, ...rest } = msg', replace: '  const { _source, ...rest } = msg' }
