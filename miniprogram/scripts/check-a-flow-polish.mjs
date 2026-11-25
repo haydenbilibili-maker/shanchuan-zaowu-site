@@ -591,7 +591,8 @@ function checks(s) {
     /if \(!this\._unsealDecided\) \{\s*this\._unsealDecided = true;\s*if \(wasUnread && !isDigest\) this\.playUnseal\(\);/.test(s.msgDetailJs) &&
       /onUnload\(\) \{\s*\(this\._unsealTimers \|\| \[\]\)\.forEach\(clearTimeout\);/.test(s.msgDetailJs) &&
       /<view class="unseal-envelope" wx:if="\{\{unsealing && unsealing !== 'done'\}\}" bindtap="skipUnseal">/.test(s.msgDetailWxml) &&
-      /class="env-mark \{\{item\.isUnread \? 'is-sealed' : 'is-opened'\}\}" wx:if="\{\{item\.isPaper && !workflowMode && activeQueue === 'customer'\}\}"/.test(s.msgListWxml))
+      // 2026-11-26：已读不再画「空信封框」（真机像一枚空勾选框），只给未读画封口信封
+      /class="env-mark is-sealed" wx:if="\{\{item\.isPaper && !workflowMode && activeQueue === 'customer' && item\.isUnread\}\}"/.test(s.msgListWxml))
   {
     const cs = loadCjs(s.certSealJs)
     let ok = false
