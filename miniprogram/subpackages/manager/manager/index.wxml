@@ -480,55 +480,6 @@
           </view>
         </view>
 
-        <view class="hub-grp" wx:if="{{hubSec.members}}" id="hub-sec-members">
-          <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="members" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">会员</text>
-            <view class="hub-grp-fold" wx:if="{{hubCollapsed.members}}">
-              <text class="hub-grp-n">{{hubSecMeta.members.n}} 项</text>
-              <view class="hub-badge" wx:if="{{hubSecMeta.members.badge}}">{{hubSecMeta.members.badge}}</view>
-            </view>
-            <view class="hub-grp-arrow {{hubCollapsed.members ? 'is-collapsed' : ''}}"></view>
-          </view>
-          <view class="hub-grid--cat {{hubSecMeta.members.grid}}" wx:if="{{!hubCollapsed.members}}">
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="memberCrm" wx:if="{{menu.memberCrm}}" bindtap="goMemberCrm">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/user_gold.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">会员 CRM</text>
-            </view>
-            <!-- 组合入口（2026-11-26 归并）：vip + memberLevel → 组合页逐条平铺；角标 = 有权限的子功能角标之和 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="memberLevelKit" wx:if="{{menu.vip || menu.memberLevelAdjust}}" bindtap="openHubKitPage" data-kit="memberLevelKit">
-              <view class="hub-ico">
-                <image class="hub-ico-img" src="/assets/icons/medal_gold.png" mode="aspectFit" />
-              </view>
-              <text class="hub-cell-name">会员等级</text>
-              <text class="hub-cell-sub">权益·调级</text>
-            </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="support" wx:if="{{menu.support}}" bindtap="switchTab" data-idx="11" data-title="山海有信">
-              <view class="hub-ico">
-                <image class="hub-ico-img" src="/assets/icons/message.png" mode="aspectFit" />
-                <view class="hub-badge" wx:if="{{supportTickets.length > 0}}">{{supportTickets.length > 99 ? '99+' : supportTickets.length}}</view>
-              </view>
-              <text class="hub-cell-name">有信</text>
-            </view>
-            <!-- 会员调级 / 荣誉馆长：2026-09-29 曾合并为一枚，2026-09-30 产品负责人要求重新拆成两枚独立入口，各按原权限键 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="curators" wx:if="{{menu.honoraryCurators}}" bindtap="goHonoraryCurators">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">荣誉馆长</text>
-            </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="points" wx:if="{{menu.points}}" bindtap="goStorePoints">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/star.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">积分</text>
-            </view>
-            <!-- 组合入口（2026-11-26 归并）：welcomeGift + birthdayGift → 组合页逐条平铺 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="giftPackKit" wx:if="{{menu.welcomeGift || menu.walletConfig}}" bindtap="openHubKitPage" data-kit="giftPackKit">
-              <view class="hub-ico">
-                <image class="hub-ico-img" src="/assets/icons/cart.png" mode="aspectFit" />
-              </view>
-              <text class="hub-cell-name">礼包与钱包</text>
-              <text class="hub-cell-sub">新人·生日·充值</text>
-            </view>
-          </view>
-        </view>
-
         <view class="hub-grp" wx:if="{{hubSec.studio}}" id="hub-sec-studio">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="studio" hover-class="tap-press-soft" hover-stay-time="80">
             <text class="hub-grp-title">工作室与门店</text>
@@ -605,9 +556,58 @@
           </view>
         </view>
 
+        <view class="hub-grp" wx:if="{{hubSec.members}}" id="hub-sec-members">
+          <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="members" hover-class="tap-press-soft" hover-stay-time="80">
+            <text class="hub-grp-title">会员与礼遇</text>
+            <view class="hub-grp-fold" wx:if="{{hubCollapsed.members}}">
+              <text class="hub-grp-n">{{hubSecMeta.members.n}} 项</text>
+              <view class="hub-badge" wx:if="{{hubSecMeta.members.badge}}">{{hubSecMeta.members.badge}}</view>
+            </view>
+            <view class="hub-grp-arrow {{hubCollapsed.members ? 'is-collapsed' : ''}}"></view>
+          </view>
+          <view class="hub-grid--cat {{hubSecMeta.members.grid}}" wx:if="{{!hubCollapsed.members}}">
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="memberCrm" wx:if="{{menu.memberCrm}}" bindtap="goMemberCrm">
+              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/user_gold.png" mode="aspectFit" /></view>
+              <text class="hub-cell-name">会员 CRM</text>
+            </view>
+            <!-- 组合入口（2026-11-26 归并）：vip + memberLevel → 组合页逐条平铺；角标 = 有权限的子功能角标之和 -->
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="memberLevelKit" wx:if="{{menu.vip || menu.memberLevelAdjust}}" bindtap="openHubKitPage" data-kit="memberLevelKit">
+              <view class="hub-ico">
+                <image class="hub-ico-img" src="/assets/icons/medal_gold.png" mode="aspectFit" />
+              </view>
+              <text class="hub-cell-name">会员等级</text>
+              <text class="hub-cell-sub">权益·调级</text>
+            </view>
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="support" wx:if="{{menu.support}}" bindtap="switchTab" data-idx="11" data-title="山海有信">
+              <view class="hub-ico">
+                <image class="hub-ico-img" src="/assets/icons/message.png" mode="aspectFit" />
+                <view class="hub-badge" wx:if="{{supportTickets.length > 0}}">{{supportTickets.length > 99 ? '99+' : supportTickets.length}}</view>
+              </view>
+              <text class="hub-cell-name">有信</text>
+            </view>
+            <!-- 会员调级 / 荣誉馆长：2026-09-29 曾合并为一枚，2026-09-30 产品负责人要求重新拆成两枚独立入口，各按原权限键 -->
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="curators" wx:if="{{menu.honoraryCurators}}" bindtap="goHonoraryCurators">
+              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>
+              <text class="hub-cell-name">荣誉馆长</text>
+            </view>
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="points" wx:if="{{menu.points}}" bindtap="goStorePoints">
+              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/star.png" mode="aspectFit" /></view>
+              <text class="hub-cell-name">积分</text>
+            </view>
+            <!-- 组合入口（2026-11-26 归并）：welcomeGift + birthdayGift → 组合页逐条平铺 -->
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="giftPackKit" wx:if="{{menu.welcomeGift || menu.walletConfig}}" bindtap="openHubKitPage" data-kit="giftPackKit">
+              <view class="hub-ico">
+                <image class="hub-ico-img" src="/assets/icons/cart.png" mode="aspectFit" />
+              </view>
+              <text class="hub-cell-name">礼包与钱包</text>
+              <text class="hub-cell-sub">新人·生日·充值</text>
+            </view>
+          </view>
+        </view>
+
         <view class="hub-grp" wx:if="{{hubSec.system}}" id="hub-sec-system">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="system" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">系统</text>
+            <text class="hub-grp-title">系统与设置</text>
             <view class="hub-grp-fold" wx:if="{{hubCollapsed.system}}">
               <text class="hub-grp-n">{{hubSecMeta.system.n}} 项</text>
               <view class="hub-badge" wx:if="{{hubSecMeta.system.badge}}">{{hubSecMeta.system.badge}}</view>
