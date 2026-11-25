@@ -183,9 +183,10 @@ function polishChecks(js, wxml, wxss, ok) {
   const s23 = a2 >= 0 && end > a2 ? wxml.slice(a2, end) : ''
 
   // P 隐价与包装在第 1 步
-  ok('P1 隐价开关与包装说明只在第 1 步「选礼」（第 2、3 步不再出现）',
-    s1.includes('bindtap="toggleHidePrice"') && s1.includes('wx:for="{{packagingItems}}"') && !s23.includes('toggleHidePrice') && !s23.includes('packagingItems') &&
-    js.includes('packagingItems: GIFT_PACKAGING_ITEMS') && !/packagingSummary/.test(js + wxml))
+  ok('P1 两步合一后隐价开关与包装说明全页各只有一处（不重复渲染、不再有按步分区）',
+    (wxml.match(/bindtap="toggleHidePrice"/g) || []).length === 1 && (wxml.match(/wx:for="\{\{packagingItems\}\}"/g) || []).length === 1 &&
+    js.includes('packagingItems: GIFT_PACKAGING_ITEMS') && !/packagingSummary/.test(js + wxml) &&
+    !/wx:if="\{\{activeStep === [12]\}\}"/.test(wxml))
   run('P2', () => {
     const on = render({ hidePrice: true })
     const off = render({ hidePrice: false })
@@ -240,9 +241,11 @@ function polishChecks(js, wxml, wxss, ok) {
       selfOn(h) && text(elem(h, 'for-tag is-self')) === '犒劳自己 · 寄给我' && text(elem(h, 'relation-self-note')).includes('收货地址') &&
       selfOn(e) && count(e, /class="note-preset on"/g) === 1 && text(elem(e, 'section-hint is-picked')).includes('犒劳自己') && e.includes('relation-self-note'))
   })
-  const wrapAt = s1.indexOf('<view class="note-preset-wrap">')
-  const selfAt = s1.indexOf('<view class="relation-self-note" wx:if="{{selfTreat}}">')
-  ok('S4 犒劳自己提示紧跟关系 chip（就近），在包装与价格之前，且只有一处', (wxml.match(/class="relation-self-note"/g) || []).length === 1 && wrapAt > 0 && selfAt > wrapAt && selfAt < s1.indexOf('<view class="section sec-wrap">'))
+  const wrapAt = wxml.indexOf('<view class="note-preset-wrap">')
+  const selfAt = wxml.indexOf('<view class="relation-self-note" wx:if="{{selfTreat}}">')
+  ok('S4 犒劳自己提示紧跟关系 chip（就近），在包装与价格之前，且只有一处',
+    (wxml.match(/class="relation-self-note"/g) || []).length === 1 && wrapAt > 0 && selfAt > wrapAt &&
+    (wxml.indexOf('<view class="section sec-wrap">') < 0 || selfAt < wxml.indexOf('<view class="section sec-wrap">')))
   const pre = rule(wxss, '.note-preset.on')
   // 2026-10-17 礼赠仪式感第 2 轮：产品负责人「再对齐」→ 选中态按 VI 规范 §6 改为金线环（原 10-12 版为实心金底）。
   //   判据随之换成「有金线环、且**不是**实心金底」—— 实心金只给底栏「下一步」（纪律 03）
@@ -314,12 +317,10 @@ function navChecks(js, wxml, ok) {
   ok('N5 实测前的占位高度也减掉顶栏（812 − 顶栏 87 − 152 = 573）', !!page && page.data.scrollHeightPx === 573)
   const run = (name, fn) => { try { fn() } catch (e) { ok(`${name}（抛错：${e.message}）`, false) } }
   run('N6', () => {
-    const r = makePage(js, { activeStep: 2, maxStep: 3 })
+    const r = makePage(js, { activeStep: 1 })
     r.page.onNavBack()
-    const s1 = r.page.data.activeStep
-    r.page.onNavBack()
-    ok('N6 左上返回：第 2 步回第 1 步（不离开），第 1 步才离开页面', s1 === 1 && r.calls.back === 1 && r.calls.tab.length === 0 &&
-      r.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 2 && t[3].to === 1 && t[3].via === 'nav'))
+    ok('N6 一屏编排没有「上一步」：左上返回直接离开页面（不再有步进与换步埋点）',
+      r.calls.back === 1 && !r.calls.track.some((t) => t[0] === 'gift_compose_step'))
     const d = makePage(js, { activeStep: 1 })
     d.calls.pages = 1
     d.page.onNavBack()
@@ -348,8 +349,8 @@ function declutterChecks(js, wxml, wxss, ok) {
   const bar = wxml.slice(wxml.indexOf('<view class="bottom-bar'), wxml.indexOf('<view class="page checking"'))
   ok('D8 送礼页不报价：底栏无金额 / 备妥应付 / 会员价，藏品卡也不标价（价格只在确认页说一次）',
     bar.length > 0 && !/¥|备妥应付|会员价|以结算页为准/.test(bar) && !/class="product-price"/.test(wxml))
-  ok('D9 底栏是「下一步」（第 1 步 · 写笺 / 第 2 步 · 交付与支付）；页内不再出现「支付并备妥」',
-    /<text>下一步 · \{\{activeStep === 1 \? '写笺' : '交付与支付'\}\}<\/text>/.test(wxml) && !wxml.includes('支付并备妥'))
+  ok('D9 底栏只有一个「去确认 · 交付与支付」；页内不再出现「支付并备妥」',
+    /<text>去确认 · 交付与支付<\/text>/.test(wxml) && !wxml.includes('支付并备妥'))
   // 2026-10-12 产品负责人真机：「下一步 · 交付与支付」在定宽 248rpx 里折成两行、靠左上；交付卡「邀请 TA 填地址 + 推荐」折行
   const btn = rule(wxss, '.pay-btn')
   const cw0 = read(P.confirmWxss)
@@ -428,154 +429,96 @@ function makePage(js, over = {}) {
 }
 
 function stepChecks(js, wxml, ok) {
-  // 版面：每块内容只在自己那一步出现；第 3 步（交付与支付）整块在确认订单页
-  const a1 = wxml.indexOf('<!-- ═══ 第 1 步')
-  const a2 = wxml.indexOf('<!-- ═══ 第 2 步')
-  const end = wxml.indexOf('<view class="scroll-pad">')
-  const s1 = a1 >= 0 && a2 > a1 ? wxml.slice(a1, a2) : ''
-  const s2 = a2 >= 0 && end > a2 ? wxml.slice(a2, end) : ''
-  ok('T1 两步分块且条件互斥（第 1 步 wx:if / 第 2 步 wx:else），送礼页不再有第 3 步块',
-    s1.includes('<block wx:if="{{activeStep === 1}}">') && /<block wx:else>/.test(s2) && wxml.indexOf('<!-- ═══ 第 3 步') < 0)
-  ok('T2 第 1 步：藏品 + 送给谁（关系标签）', s1.includes('class="product-row') && s1.includes('bindtap="onNotePresetTap"') && !s2.includes('bindtap="onNotePresetTap"'))
-  ok('T3 第 2 步：称呼 / 正文 / 署名 / 语音 / 换一句都在且只在这一步',
-    ['bindinput="onRecipientInput"', 'bindinput="onCardInput"', 'bindinput="onSigInput"', 'catchtouchstart="onVoiceHoldStart"', 'bindtap="onNoteShuffle"'].every((k) => s2.includes(k) && !s1.includes(k)))
-  ok('T4 交付 UI 整块已移出送礼页（交付方式 / 地址卡 / 门店 / 领取核验都不再在这里渲染）',
+  // 2026-11-25 产品负责人：三步压两步 —— 选礼与写笺二合一；本页只有「选礼 + 写笺」一屏，
+  // 第 2 格「交付与支付」直接去确认页（契约零变化，仍在 goPay 里一次校验完再跳）。
+  const body = wxml.slice(wxml.indexOf('<!-- ═══ 第 1 步'), wxml.indexOf('<view class="scroll-pad">'))
+  ok('T1 单屏编排：不再有分步条件块（第 1 步 wx:if / 第 2 步 wx:else），也没有第 3 步块',
+    !/wx:if="\{\{activeStep === 1\}\}"/.test(wxml) && !/wx:if="\{\{activeStep === 2\}\}"/.test(wxml) && wxml.indexOf('<!-- ═══ 第 3 步') < 0 &&
+    body.includes('class="product-row') && body.includes('bindtap="onNotePresetTap"'))
+  ok('T2 选礼与写笺在同一屏：藏品 / 关系标签 与 称呼 / 正文 / 署名 / 语音 / 换一句 都在',
+    ['class="product-row', 'bindtap="onNotePresetTap"'].every((k) => body.includes(k)) &&
+    ['bindinput="onRecipientInput"', 'bindinput="onCardInput"', 'bindinput="onSigInput"', 'catchtouchstart="onVoiceHoldStart"', 'bindtap="onNoteShuffle"'].every((k) => body.includes(k)))
+  ok('T3 交付 UI 整块仍不在送礼页（交付方式 / 地址卡 / 门店 / 领取核验）',
     ['bindtap="onSelectDelivery"', 'id="receiverPhoneField"', 'bindtap="onPickVerify"', 'id="shipAddressField"', 'bindtap="chooseShipAddress"', 'pickup-code-note', 'otherDeliveries', 'verify-seg']
       .every((k) => !wxml.includes(k)) &&
     !/delivery-opt|verify-set|ship-addr/.test(wxml))
-  ok('T5 支付按钮一个都没有（送礼页只有「下一步」；「支付并备妥」在确认页）',
+  ok('T4 支付按钮一个都没有：底栏只有「去确认 · 交付与支付」一个按钮',
     !/bindtap="goPay"/.test(wxml) && (wxml.match(/class="pay-btn[^"]*" bindtap="onStepNext"/g) || []).length === 1 &&
-    /<text>下一步 · \{\{activeStep === 1 \? '写笺' : '交付与支付'\}\}<\/text>/.test(wxml))
-  ok('T6 步骤轨仍画 3 格（第 3 格「交付与支付」= 进确认页）、可点（onRailTap），左上返回承担「上一步」，第 2 步换回顶部',
-    ['<text class="step-rail-num">01</text>', '<text class="step-rail-num">02</text>', '<text class="step-rail-num">03</text>'].every((k) => wxml.includes(k)) &&
-    /<text class="step-rail-label">交付与支付<\/text>/.test(wxml) && (wxml.match(/bindtap="onRailTap"/g) || []).length >= 3 &&
-    /<nav-back[^>]*bind:back="onNavBack"/.test(wxml) &&
-    wxml.includes('<view id="composeTop"></view>') && wxml.includes('scroll-into-view="{{phoneScrollId}}"'))
-  ok('T6b 步骤轨第 3 格是「去确认页」而非当前步高亮（送礼页永远不在第 3 步上）',
-    !/\{\{activeStep === 3/.test(wxml) && /class="step-rail-item step-rail-next"/.test(wxml) &&
-    js.includes('const to = Math.max(1, Math.min(2, Number(step) || 1))'))
+    /<text>去确认 · 交付与支付<\/text>/.test(wxml))
+  ok('T5 步骤轨两格：01 选礼与写笺（当前）/ 02 交付与支付（进确认页），可点、不是当前步高亮',
+    (wxml.match(/<text class="step-rail-num">0[12]<\/text>/g) || []).length === 2 && !/step-rail-num">03/.test(wxml) &&
+    /<text class="step-rail-label">选礼与写笺<\/text>/.test(wxml) && /<text class="step-rail-label">交付与支付<\/text>/.test(wxml) &&
+    /data-step="2"[\s\S]{0,200}bindtap="onRailTap"/.test(wxml) && /class="step-rail-item step-rail-next"/.test(wxml) &&
+    !/\{\{activeStep === 2/.test(wxml))
 
   let r
   const run = (name, fn) => { try { fn() } catch (e) { ok(`${name}（抛错：${e.message}）`, false) } }
-  run('T7', () => {
-    r = makePage(js, { activeStep: 1, maxStep: 3 })
+  run('T6', () => {
+    r = makePage(js, { recipientName: '', cardBody: '' })
     r.page.goPay()
-    ok('T7 第 1 步调 goPay 不得进入确认页（只有写笺那一步能进）', r.calls.nav.length === 0)
+    ok('T6 礼笺与语音都为空：调 goPay 不进确认页（就地校验写笺）', r.calls.nav.length === 0 && !!r.page.data.toastOverline)
+    r = makePage(js, { recipientName: '阿山', cardBody: '' })
+    r.page.onStepNext()
+    ok('T7 底栏「去确认」：只有称呼没有礼笺/语音 → 不进确认页并提示 LETTER', r.calls.nav.length === 0 && r.page.data.toastOverline === 'LETTER')
+    r = makePage(js, { recipientName: '', cardBody: '  ' })
+    r.page.onStepNext()
+    ok('T8 受礼人姓名为空 → 不进确认页、聚焦称呼并提示 RECIPIENT', r.calls.nav.length === 0 && r.page.data.recipientEditing === true && r.page.data.toastOverline === 'RECIPIENT')
+    r = makePage(js, { recipientName: '阿山', cardBody: '愿你安好' })
+    r.page.onStepNext()
+    const nav = r.calls.nav[0]
+    ok('T9 写笺齐备 → 进确认页；giftMeta 字段集合与改前一致、source=gift',
+      r.calls.nav.length === 1 && !!nav && !!nav.opts && !!nav.opts.giftMeta &&
+      Object.keys(nav.opts.giftMeta).sort().join(',') === GIFT_META_KEYS && nav.opts.source === 'gift' && nav.items[0].productId === 'p1')
+    r = makePage(js, { recipientName: '阿山', cardBody: '', voiceFileID: 'cloud://v', voiceDuration: 3 })
+    r.page.onStepNext()
+    ok('T10 只有语音也可以进确认页（带礼物草稿）', r.calls.nav.length === 1 && !!r.calls.nav[0].opts.giftDraft)
   })
-  run('T8', () => {
-    r = makePage(js, { activeStep: 1, recipientName: '', cardBody: '' })
-    r.page.onStepNext()
-    ok('T8 第 1 步「下一步」不校验写笺（称呼 / 礼笺还没到）', r.page.data.activeStep === 2 && r.page.data.maxStep === 2)
-    r = makePage(js, { activeStep: 2, maxStep: 2, recipientName: '' })
-    r.page.onStepNext()
-    ok('T9 第 2 步「下一步」：受礼人称呼为空 → 留在第 2 步、聚焦称呼并提示', r.page.data.activeStep === 2 && r.page.data.recipientEditing === true && r.page.data.toastOverline === 'RECIPIENT')
-    r = makePage(js, { activeStep: 2, maxStep: 2, cardBody: '  ' })
-    r.page.onStepNext()
-    ok('T10 第 2 步「下一步」：没有礼笺也没有语音 → 留在第 2 步并提示', r.page.data.activeStep === 2 && r.page.data.toastOverline === 'LETTER')
-    r = makePage(js, { activeStep: 2, maxStep: 2, cardBody: '', voiceFileID: 'cloud://v', voiceDuration: 3 })
-    r.page.onStepNext()
-    ok('T11 第 2 步：只有语音也可以进确认页（带礼物草稿）', r.calls.nav.length === 1 && !!r.calls.nav[0].opts.giftDraft && !r.page.data.activeStep || true)
-    ok('T11b 第 2 步「下一步」= 进确认页（不再停在页内第 3 步）', r.calls.nav.length === 1 && r.page.data.activeStep !== 3)
-  })
-  run('T12', () => {
-    r = makePage(js, { activeStep: 2, maxStep: 2, recipientName: '' })
-    r.page.goPay()
-    ok('T12 第 2 步进确认页前再过一遍写笺：称呼被清空 → 停在写笺、不进确认页', r.calls.nav.length === 0 && r.page.data.activeStep === 2 && r.page.data.recipientEditing === true)
-    r = makePage(js, { activeStep: 2, maxStep: 2, payment: true })
-    r.page.goPay()
-    ok('T12b 携上次草稿：交付方式沿用草稿里的（换藏品则丢弃）', (r.calls.nav[0] || {}).opts && r.calls.nav[0].opts.giftDraft.deliveryType === 'invite_address')
+  run('T11', () => {
+    r = makePage(js, { recipientName: '', cardBody: '' })
+    r.page.onRailTap({ currentTarget: { dataset: { step: 2 } } })
+    ok('T11 步骤轨第 2 格 = 去确认页，同样先过写笺必填（不通过不进确认页）', r.calls.nav.length === 0 && !!r.page.data.toastOverline)
+    r = makePage(js, { recipientName: '阿山', cardBody: '愿你安好' })
+    r.page.onRailTap({ currentTarget: { dataset: { step: 2 } } })
+    ok('T12 写笺就绪时点第 2 格 = 进确认页', r.calls.nav.length === 1)
+    r = makePage(js)
+    r.page.onRailTap({ currentTarget: { dataset: { step: 1 } } })
+    ok('T13 点第 1 格（本页）不跳任何地方', r.calls.nav.length === 0)
   })
   run('T14', () => {
-    r = makePage(js, { activeStep: 2, maxStep: 2 })
-    r.page.goPay()
-    const nav = r.calls.nav[0]
-    const meta = nav && nav.opts && nav.opts.giftMeta
-    ok('T15 契约不变：交给确认页的 giftMeta 字段集合与改前一致', !!meta && Object.keys(meta).sort().join(',') === GIFT_META_KEYS && nav.opts.source === 'gift' && nav.items[0].productId === 'p1')
-    ok('T16 交付方式不再经 globalData：giftReceiverPhone / giftShipAddress 都不再写（交付在确认页录入）',
-      r.app.globalData.giftReceiverPhone === undefined && r.app.globalData.giftShipAddress === undefined &&
-      !/globalData\.giftReceiverPhone\s*=/.test(js) && !/globalData\.giftShipAddress\s*=/.test(js))
-    const mine = { name: '阿山', phone: '13800001111', region: [], regionText: '', detail: 'x' }
-    r = makePage(js, { activeStep: 2, maxStep: 2, selfTreat: true, deliveryType: 'ship_to_self', selfAddress: mine })
-    r.page.goPay()
-    const n2 = r.calls.nav[0]
-    ok('T17 犒劳自己：交付仍是寄给我，草稿里带 selfTreat + 交付方式（地址在确认页录）',
-      !!n2 && n2.opts.giftMeta.deliveryType === 'ship_to_self' && n2.opts.giftDraft.selfTreat === true && n2.opts.giftDraft.deliveryType === 'ship_to_self')
-    r = makePage(js, { activeStep: 2, maxStep: 2, deliveryType: 'store_pickup' })
-    r.page.goPay()
-    ok('T18 门店自提：giftMeta 不带门店（门店在确认页选），交付方式带过去',
-      r.calls.nav.length === 1 && r.calls.nav[0].opts.giftMeta.storeId === '' && r.calls.nav[0].opts.giftDraft.deliveryType === 'store_pickup')
-  })
-  run('T19', () => {
-    r = makePage(js, { activeStep: 1, maxStep: 1 })
-    r.page.onRailTap({ currentTarget: { dataset: { step: 3 } } })
-    ok('T19 步骤轨：还没到过写笺，点第 3 格不去确认页', r.page.data.activeStep === 1 && r.calls.nav.length === 0)
-    r = makePage(js, { activeStep: 2, maxStep: 2 })
-    r.page.onRailTap({ currentTarget: { dataset: { step: 1 } } })
-    ok('T20 步骤轨可点回已到过的步，且换步调 scroll-into-view 回顶部（composeTop 两段式重设）', r.page.data.activeStep === 1 && r.page.data.phoneScrollId === 'composeTop' && r.calls.nav.length === 0)
-    r = makePage(js, { activeStep: 1, maxStep: 1 })
-    r.page.onRailTap({ currentTarget: { dataset: { step: 2 } } })
-    ok('T20b 步骤轨点没到过的第 2 格：不进第 2 步、也不把 maxStep 提前放宽（maxStep 只由真正到过的步决定）',
-      r.page.data.activeStep === 1 && r.page.data.maxStep === 1)
-    r = makePage(js, { activeStep: 1, maxStep: 2, recipientName: '' })
-    r.page.onRailTap({ currentTarget: { dataset: { step: 3 } } })
-    ok('T21 步骤轨点第 3 格也要过写笺必填（不通过停在写笺、不进确认页）', r.page.data.activeStep === 2 && r.calls.nav.length === 0)
-    r = makePage(js, { activeStep: 2, maxStep: 2 })
-    r.page.onRailTap({ currentTarget: { dataset: { step: 3 } } })
-    ok('T21b 写笺就绪时点第 3 格 = 进确认页', r.calls.nav.length === 1)
-    r = makePage(js, { activeStep: 2, maxStep: 2 })
-    r = makePage(js, { activeStep: 2, maxStep: 2 })
+    r = makePage(js)
     r.page.onNavBack()
-    ok('T22 左上返回：写笺回选礼（不离开）', r.page.data.activeStep === 1 && r.calls.back === 0)
+    ok('T14 一屏编排没有「上一步」：左上返回直接离开页面', r.calls.back === 1)
+    r = makePage(js)
     r.page.onEdgeBack()
-    ok('T23 左缘右滑：第 1 步才离开页面', r.calls.back === 1)
-    ok('T25 换步上报 gift_compose_step（from / to / via=nav）', r.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 2 && t[3].to === 1 && t[3].via === 'nav'))
-    const e = makePage(js, { activeStep: 2, maxStep: 2 })
-    e.page.onEdgeBack()
-    ok('T25b 左缘右滑同样上报（via=edge）', e.calls.track.some((t) => t[0] === 'gift_compose_step' && t[3] && t[3].from === 2 && t[3].to === 1 && t[3].via === 'edge'))
+    ok('T15 左缘右滑同口径：直接离开', r.calls.back === 1)
+    ok('T16 不再上报 gift_compose_step（一屏没有换步）；进入埋点仍在',
+      !r.calls.track.some((t) => t[0] === 'gift_compose_step') && js.includes("'gift_compose_enter'"))
   })
-  run('T26', () => {
-    r = makePage(js, { activeStep: 1 })
-    r.app.globalData.giftPhoneRefill = true
-    r.page.onShow()
-    ok('T26 确认页退回补填已不再回跳送礼页：送礼页不读 giftPhoneRefill、不动步（缺号就地写在确认页）',
-      r.page.data.activeStep === 1 && !js.includes('giftPhoneRefill'))
-  })
-  run('T27', () => {
-    r = makePage(js, { activeStep: 1 })
+  run('T17', () => {
+    r = makePage(js, {})
     r.page.startNoteWrite({ id: 'friend', body: '愿你安好' })
-    const early = r.calls.timers.includes(320)
-    r.page.onStepNext()
-    ok('T27 第 1 步点关系：先不落笔（不在看不见处响打字声），进第 2 步才落笔', !early && r.calls.timers.includes(320) && r.page.data.noteWriting === true)
-    r = makePage(js, { activeStep: 2, maxStep: 2 })
-    r.page.startNoteWrite({ id: 'friend', body: '愿你安好' })
-    ok('T28 第 2 步点「换一句」照常立即落笔', r.calls.timers.includes(320))
+    ok('T17 点关系立即落笔（写笺就在同一屏，不再等进第 2 步）', r.calls.timers.includes(320) && r.page.data.noteWriting === true)
   })
-  run('T31 交付草稿往返（第六轮）', () => {
-    r = makePage(js, { activeStep: 2, maxStep: 2 })
+  run('T18 交付草稿往返', () => {
+    r = makePage(js, {})
     r.page.saveGiftDeliveryDraft({ productId: 'p1', selfTreat: false, deliveryType: 'ship_to_receiver', storeId: '', storeName: '', receiverPhone: '', claimLink: false, claimPasscode: false, receiverAddress: null, selfAddress: null })
     r.page.goPay()
-    ok('T31 确认页交回的草稿：再进确认页时原样带回（交付方式 / 状态不丢）',
-      r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'ship_to_receiver' && r.calls.nav[0].opts.giftDraft.productId === 'p1')
-    r = makePage(js, { activeStep: 2, maxStep: 2 })
+    ok('T18 确认页交回的草稿：再进确认页时原样带回', r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'ship_to_receiver' && r.calls.nav[0].opts.giftDraft.productId === 'p1')
+    r = makePage(js, {})
     r.page.saveGiftDeliveryDraft({ productId: 'other', selfTreat: false, deliveryType: 'store_pickup' })
     r.page.goPay()
-    ok('T32 换了藏品：上一件藏品留下的草稿不套用（回到本页默认交付方式）',
-      r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'invite_address')
-    r = makePage(js, { activeStep: 2, maxStep: 2, storePickupEnabled: false })
+    ok('T19 换了藏品：上一件留下的草稿不套用', r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'invite_address')
+    r = makePage(js, { storePickupEnabled: false })
     r.page.saveGiftDeliveryDraft({ productId: 'p1', selfTreat: false, deliveryType: 'store_pickup' })
     r.page.goPay()
-    ok('T33 门店自提被后台关闭：草稿里的自提回落邀请填址（不把已关的交付带进确认页）',
-      r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'invite_address')
-    ok('T34 草稿只进 checkoutPayload 的可选字段（不动既有字段与旧客户端）',
-      read(P.checkout).includes('...(options.giftDraft ? { giftDraft: options.giftDraft } : {})'))
+    ok('T20 门店自提被后台关闭：草稿里的自提回落邀请填址', r.calls.nav.length === 1 && r.calls.nav[0].opts.giftDraft.deliveryType === 'invite_address')
+    ok('T21 草稿只进 checkoutPayload 的可选字段', read(P.checkout).includes('...(options.giftDraft ? { giftDraft: options.giftDraft } : {})'))
   })
-
   const json = JSON.parse(read(P.json))
-  ok('T29 关系统侧滑、改由左缘热区回上一步（否则 iOS 侧滑在写笺直接离开页面）',
-    json.disableSwipeBack === true && /<page-edge-back[^>]*bind:back="onEdgeBack"/.test(wxml))
+  ok('T22 关系统侧滑、左缘热区接管返回', json.disableSwipeBack === true && /<page-edge-back[^>]*bind:back="onEdgeBack"/.test(wxml))
   const mp = read(P.mpSchema)
   const ad = read(P.adminSchema)
-  ok('T30 新埋点 gift_compose_step 双端登记，旧埋点仍在',
+  ok('T23 埋点双端登记（gift_compose_step 保留登记，进入 / 支付 / 关系 / 语音仍在用）',
     ['gift_compose_step', 'gift_compose_enter', 'gift_pay_click', 'gift_note_preset', 'gift_voice_record'].every((e) => mp.includes(`  ${e}: {`) && ad.includes(`  ${e}: {`)) &&
     ['gift_compose_enter', 'gift_pay_click', 'gift_note_preset', 'gift_voice_record'].every((e) => js.includes(`'${e}'`)))
 }
@@ -587,14 +530,11 @@ const INJECTIONS = [
   { name: '底栏不再固定', file: P.wxss, find: '.bottom-bar {\n  position: fixed;', replace: '.bottom-bar {\n  position: relative;' },
   { name: '留白回到写死底栏估高', file: P.wxss, find: '.scroll-pad {\n  height: 48rpx;', replace: '.scroll-pad {\n  height: calc(160rpx + env(safe-area-inset-bottom));' },
   { name: '第 1、2 步底栏也是支付按钮', file: P.wxml, find: 'bindtap="onStepNext" hover-class="pay-btn-press"', replace: 'bindtap="goPay" hover-class="pay-btn-press"' },
-  { name: 'goPay 不限第 2 步', file: P.js, find: '    if (this.data.activeStep !== 2) return\n', replace: '' },
   // 退役（2026-10-15）：送礼页已改为两步，第 2 步即支付步、没有「下一步」——写笺校验由下一条「支付前不再过写笺」守住
   { name: '支付前不再过写笺', file: P.js, find: '    if (!this._checkLetter()) return\n    const selfTreat', replace: '    const selfTreat' },
-  { name: '步骤轨可跳到没到过的步（第 2 格）', file: P.js, find: '    if (step > (this.data.maxStep || 1)) return\n', replace: '    this.data.maxStep = 3\n' },
-  { name: '左上返回 / 左缘右滑第 2、3 步直接离开', file: P.js, find: '    if (this.data.activeStep > 1) {\n      this._goStep(this.data.activeStep - 1, via)', replace: '    if (false) {\n      this._goStep(this.data.activeStep - 1, via)' },
-  { name: '左缘右滑不走回上一步', file: P.js, find: "    this._backOrLeave('edge')", replace: '    this.leaveCompose()' },
-  { name: '左上返回不走回上一步', file: P.js, find: "    this._backOrLeave('nav')", replace: '    this.leaveCompose()' },
-  { name: '第 1 步左上返回不离开', file: P.js, find: '    this.leaveCompose()\n  },\n\n  onHide', replace: '  },\n\n  onHide' },
+  { name: '左缘右滑不处理（什么都不发生）', file: P.js, find: "    this._backOrLeave('edge')", replace: '    void 0' },
+  { name: '左上返回不处理（什么都不发生）', file: P.js, find: "    this._backOrLeave('nav')", replace: '    void 0' },
+  { name: '返回不离开页面', file: P.js, find: '    this.leaveCompose(via)', replace: '    void via' },
   { name: '直达无上一页不回馆藏', file: P.js, find: 'if (getCurrentPages().length <= 1) {', replace: 'if (false) {' },
   { name: '没设自定义顶栏', file: P.json, find: '  "navigationStyle": "custom",\n', replace: '' },
   { name: '胶囊变黑', file: P.json, find: '"navigationBarTextStyle": "white"', replace: '"navigationBarTextStyle": "black"' },
@@ -606,13 +546,11 @@ const INJECTIONS = [
   { name: '步骤轨又放一个上一步', file: P.wxml, find: '  <view class="step-rail sticky">\n', replace: '  <view class="step-rail sticky">\n    <view bindtap="onStepBack"></view>\n' },
   // 退役（2026-10-15）：源码里已无 _goStep(2, 'refill') 调用（只剩埋点注释里的 via 名），该路径随两步化移除
   { name: 'giftMeta 多带一个字段（改契约）', file: P.js, find: "        phase: 'mvp'\n", replace: "        phase: 'mvp',\n        step: this.data.activeStep\n" },
-  { name: '第 1 步点关系就在看不见处落笔', file: P.js, find: '    if (this.data.activeStep !== 2) {\n      this._noteWritePending = true', replace: '    if (false) {\n      this._noteWritePending = true' },
   { name: '隐价开关挪回第 2 步', file: P.wxml, find: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n', replace: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n        <view bindtap="toggleHidePrice"></view>\n' },
-  { name: '第 2 步条件写宽（与第 1 步重叠）', file: P.wxml, find: '<block wx:else>', replace: '<block wx:else wx:if="{{activeStep >= 1}}">' },
   { name: '没关系统侧滑', file: P.json, find: '  "disableSwipeBack": true,\n', replace: '' },
   { name: 'ERP 端漏登记新埋点', file: P.adminSchema, find: '  gift_compose_step: {', replace: '  gift_compose_step_x: {' },
-  { name: '交付方式在送礼页复活（未搬走）', file: P.wxml, find: '<!-- ═══ 第 2 步', replace: '<view class="delivery-opt" bindtap="onSelectDelivery"></view>\n<!-- ═══ 第 2 步' },
-  { name: '送礼页又渲染领取核验', file: P.wxml, find: '<!-- ═══ 第 2 步', replace: '<view id="receiverPhoneField" class="verify-set"></view>\n<!-- ═══ 第 2 步' },
+  { name: '交付方式在送礼页复活（未搬走）', file: P.wxml, find: '<!-- ═══ 第 1 步 · 选礼 ═══ -->', replace: '<view class="delivery-opt" bindtap="onSelectDelivery"></view>\n    <!-- ═══ 第 1 步 · 选礼 ═══ -->' },
+  { name: '送礼页又渲染领取核验', file: P.wxml, find: '<!-- ═══ 第 1 步 · 选礼 ═══ -->', replace: '<view id="receiverPhoneField" class="verify-set"></view>\n    <!-- ═══ 第 1 步 · 选礼 ═══ -->' },
   { name: '确认页交回的草稿被丢掉', file: P.js, find: '    this._giftDeliveryDraft = draft', replace: '    this._giftDeliveryDraft = null' },
   { name: '草稿不随换藏品失效', file: P.js, find: 'this._giftDeliveryDraft && this._giftDeliveryDraft.productId === p._id', replace: 'this._giftDeliveryDraft' },
   { name: '草稿把已关的自提带进确认页', file: P.js, find: "deliveryType === 'store_pickup' && this.data.storePickupEnabled === false", replace: 'false' },
@@ -636,7 +574,7 @@ const INJECTIONS = [
   { name: '小签无入场动画', file: P.wxss, find: '  font-weight: 500;\n  animation: pick-in 0.24s ease-out;\n}\n.for-tag-dot', replace: '  font-weight: 500;\n}\n.for-tag-dot' },
   { name: '选中反馈另起新状态字段', file: P.js, find: '    activeNotePresetId: \'\',\n', replace: '    activeNotePresetId: \'\',\n    forWhom: \'\',\n' },
   // 交付 / 核验已搬到确认页（这里只证明「送礼页不得复活」）
-  { name: '送礼页又渲染手机号用途长说明', file: P.wxml, find: '<!-- ═══ 第 2 步', replace: '<text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于</text>\n<!-- ═══ 第 2 步' },
+  { name: '送礼页又渲染手机号用途长说明', file: P.wxml, find: '<!-- ═══ 第 1 步 · 选礼 ═══ -->', replace: '<text class="verify-set-hint" wx:if="{{verifyWhyOpen}}">用于</text>\n    <!-- ═══ 第 1 步 · 选礼 ═══ -->' },
   { name: '送礼页又给交付卡描边', file: P.wxss, find: '.wrap-list { display: flex;', replace: '.verify-set {\n  border: 1px solid #C4A76C;\n  display: flex;\n}\n.wrap-list { display: flex;' },
   { name: '礼笺块又加框（只给可选项描边的反面）', file: P.wxss, find: '.wrap-list { display: flex;', replace: '.wrap-list { border: 1px solid #C4A76C; display: flex;' },
   { name: '隐价回到勾选大框', file: P.wxml, find: 'class="switch-row"', replace: 'class="privacy-row"' },

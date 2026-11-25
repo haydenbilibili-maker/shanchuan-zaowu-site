@@ -143,13 +143,16 @@ Page({
     paying: false,
     /** 礼笺已封缄（交付后返回本页时仍显示火漆；点卡面拆封） */
     letterSealed: false,
-    /** 分步编排（2026-10-12，§15 起两步）：当前步 1 选礼 / 2 写笺（交付与支付在确认页）；maxStep = 已到过的最远一步（步骤轨只能点回 ≤ 它的步） */
+    /**
+     * 礼赠编排（2026-11-25 产品负责人：三步压成两步 —— 选礼与写笺二合一）
+     * 本页只剩「选礼 + 写笺」一屏；第二格「交付与支付」直接跳确认页。
+     * activeStep 保留为常量 1（埋点 / 旧数据兼容），不再有 maxStep。
+     */
     statusBarHeight: 20,
     navBarHeight: 44,
     navPaddingRight: 96,
     navTotal: 64,
     activeStep: 1,
-    maxStep: 1,
     /** 主滚动区高度（iOS 显式 px） */
     scrollHeightPx: 0,
     scrollStyle: ''
@@ -340,48 +343,24 @@ Page({
    * 切到第 n 步。离开「写笺」时收笔、停试听；进入「写笺」时补上第 1 步点关系后待落的笔。
    * via 只进埋点：next / back / rail / edge / pay_check / refill
    */
-  _goStep(step, via, opts) {
-    const from = this.data.activeStep
-    const to = Math.max(1, Math.min(2, Number(step) || 1))
-    if (to === from) return
-    const patch = { activeStep: to, maxStep: Math.max(this.data.maxStep || 1, to) }
-    if (from === 2) {
-      if (this.data.noteWriting) this.finishNoteWrite()
-      this._stopVoicePreview()
-      patch.cardFocused = false
-      if (to !== 2) patch.recipientEditing = false
-    }
-    this.setData(patch)
-    if (!(opts && opts.keepScroll)) {
-      this.setData({ phoneScrollId: '' }, () => this.setData({ phoneScrollId: 'composeTop' }))
-    }
-    if (to === 2 && this._noteWritePending && this.data.noteWriting) this._scheduleNoteWrite()
-    this.syncScrollPane()
-    trackBehavior('gift_compose_step', 'product', this._productId || '', { from, to, via: via || '' })
+  /**
+   * 兼容壳（2026-11-25 两步合一）：旧的步进调用点 / 历史测试仍会调 `_goStep`；
+   * 现在只有一屏，任何步进都收敛为「本页」，不再切视图。
+   */
+  _goStep() {
+    if (typeof this.setData === 'function' && this.data.activeStep !== 1) this.setData({ activeStep: 1 })
   },
 
-  /** 底栏「下一步」：第 1 步 → 写笺；第 2 步 → 确认页「交付与支付」（goPay 里校验写笺必填） */
+  /** 底栏「去确认」：选礼与写笺在同一屏，直接过必填校验进确认页 */
   onStepNext() {
-    if (this.data.activeStep >= 2) {
-      this.goPay()
-      return
-    }
-    this._goStep(2, 'next')
+    this.goPay()
   },
 
 
-  /** 步骤轨：只能点回已到过的步；第 3 格「交付与支付」= 去确认页（到过写笺才可点，同样先过写笺必填） */
+  /** 步骤轨：第 1 格是本页（选礼与写笺），第 2 格「交付与支付」= 去确认页 */
   onRailTap(e) {
     const step = Number(e.currentTarget.dataset.step) || 0
-    if (!step || step === this.data.activeStep) return
-    if (step === 3) {
-      if ((this.data.maxStep || 1) < 2) return
-      if (this.data.activeStep !== 2) this._goStep(2, 'rail')
-      this.goPay()
-      return
-    }
-    if (step > (this.data.maxStep || 1)) return
-    this._goStep(step, 'rail')
+    if (step === 2) this.goPay()
   },
 
   /** 左上返回（自定义顶栏）与左缘右滑（页面关了系统侧滑）同一口径：第 2 步回第 1 步，第 1 步离开；
@@ -395,11 +374,8 @@ Page({
   },
 
   _backOrLeave(via) {
-    if (this.data.activeStep > 1) {
-      this._goStep(this.data.activeStep - 1, via)
-      return
-    }
-    this.leaveCompose()
+    // 一屏编排没有「上一步」，返回即离开（保留 via 形参，埋点口径不变）
+    this.leaveCompose(via)
   },
 
   onHide() {
@@ -1014,11 +990,7 @@ Page({
     if (preset.id === 'self') this.enterSelfTreat()
     else if (this.data.selfTreat && getPresetById(preset.id)) this.exitSelfTreat()
 
-    // 第 1 步点关系时礼笺还看不见：先记下，进第 2 步再落笔（免得在看不见的地方响打字声）
-    if (this.data.activeStep !== 2) {
-      this._noteWritePending = true
-      return
-    }
+    // 写笺与选礼同屏，点关系就直接落笔
     this._scheduleNoteWrite()
   },
 
@@ -1211,7 +1183,6 @@ Page({
 
   goPay() {
     if (this.data.paying || this.data.voiceUploading) return
-    if (this.data.activeStep !== 2) return
     const p = this.data.product
     if (!p || !p._id) {
       wx.showToast({ title: '藏品信息异常', icon: 'none' })

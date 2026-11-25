@@ -19,43 +19,24 @@
 
   <!-- 步骤轨：当前步高亮；已到过的步可点回；第 3 格「交付与支付」在确认页（到过写笺才可点）。「上一步」就是左上返回；右端音效开关
        （2026-09-19：与收礼页共用同一个静音偏好，存储键 gift_receive_sfx_muted） -->
+  <!-- 步骤轨（2026-11-25：三步压两步 —— 选礼与写笺合并）：
+       第 1 格是本页「选礼与写笺」，第 2 格「交付与支付」直接去确认页；右端音效开关仍与收礼页共用同一静音偏好 -->
   <view class="step-rail sticky">
-    <view
-      class="step-rail-item {{activeStep === 1 ? 'on' : ''}} {{activeStep !== 1 ? 'done' : ''}}"
-      data-step="1"
-      bindtap="onRailTap"
-      hover-class="{{activeStep !== 1 ? 'tap-press' : 'none'}}"
-      hover-stay-time="80"
-      aria-role="button"
-      aria-label="第 1 步 选礼"
-    >
+    <view class="step-rail-item on" aria-role="button" aria-label="第 1 步 选礼与写笺">
       <text class="step-rail-num">01</text>
-      <text class="step-rail-label">选礼</text>
+      <text class="step-rail-label">选礼与写笺</text>
     </view>
-    <view class="step-rail-line {{maxStep > 1 ? 'on' : ''}}"></view>
-    <view
-      class="step-rail-item {{activeStep === 2 ? 'on' : ''}} {{maxStep >= 2 && activeStep !== 2 ? 'done' : ''}}"
-      data-step="2"
-      bindtap="onRailTap"
-      hover-class="{{maxStep >= 2 && activeStep !== 2 ? 'tap-press' : 'none'}}"
-      hover-stay-time="80"
-      aria-role="button"
-      aria-label="第 2 步 写笺"
-    >
-      <text class="step-rail-num">02</text>
-      <text class="step-rail-label">写笺</text>
-    </view>
-    <view class="step-rail-line"></view>
+    <view class="step-rail-line on"></view>
     <view
       class="step-rail-item step-rail-next"
-      data-step="3"
+      data-step="2"
       bindtap="onRailTap"
-      hover-class="{{maxStep >= 2 ? 'tap-press' : 'none'}}"
+      hover-class="tap-press"
       hover-stay-time="80"
       aria-role="button"
-      aria-label="第 3 步 交付与支付"
+      aria-label="第 2 步 交付与支付"
     >
-      <text class="step-rail-num">03</text>
+      <text class="step-rail-num">02</text>
       <text class="step-rail-label">交付与支付</text>
     </view>
     <view class="rail-tool rail-sfx" catchtap="toggleSfxMute" hover-class="tap-press" hover-stay-time="80" aria-role="button" aria-label="{{sfxMuted ? '开启音效' : '静音'}}">
@@ -75,7 +56,6 @@
   >
     <view id="composeTop"></view>
     <!-- ═══ 第 1 步 · 选礼 ═══ -->
-    <block wx:if="{{activeStep === 1}}">
     <view class="rite-intro">
       <text class="rite-overline">FROM THE CABINET</text>
       <text class="rite-title">从柜中取出，封笺赠予</text>
@@ -180,10 +160,6 @@
         <view class="switch {{hidePrice ? 'on' : ''}}" aria-hidden="true"><view class="switch-knob"></view></view>
       </view>
     </view>
-    </block>
-
-    <!-- ═══ 第 2 步 · 写笺 ═══ -->
-    <block wx:else>
     <!-- 02 礼笺：信封外壳包裹（不改 textarea / 落笔动画结构） -->
     <view class="section sec-letter">
       <text class="section-overline">LETTER</text>
@@ -379,7 +355,6 @@
         <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>
       </view>
     </view>
-    </block>
 
     <view class="scroll-pad"></view>
   </scroll-view>
@@ -387,7 +362,7 @@
   <view class="bottom-bar safe-area">
     <!-- 送礼页只有「下一步」、不报价：价格与会员折扣只在第 3 步确认页给一次（2026-10-12 产品负责人撤回裁决 46-a 的编排页报价） -->
     <view class="pay-btn {{paying ? 'disabled' : ''}}" bindtap="onStepNext" hover-class="pay-btn-press" hover-stay-time="80">
-      <text>下一步 · {{activeStep === 1 ? '写笺' : '交付与支付'}}</text>
+      <text>去确认 · 交付与支付</text>
     </view>
   </view>
 </view>

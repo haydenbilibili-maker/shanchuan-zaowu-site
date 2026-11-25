@@ -612,8 +612,8 @@ async function runChecks() {
   // 这里钉住送礼页不复活交付 UI，以及确认页承接「缺号不下单 + 就地描红」的口径。
   ok(!/flagReceiverPhone|flagShipAddress|receiverPhoneError|shipAddressError/.test(cjs + cw) &&
     !/id="receiverPhoneField"|id="shipAddressField"|delivery-opt|pickup-code/.test(cw) &&
-    cw.includes("{{activeStep === 1 ? '写笺' : '交付与支付'}}"),
-    'J 送礼页：交付方式 / 地址 / 领取核验整块不在这里（唯一入口在确认页），底栏只有「下一步 · 交付与支付」')
+    cw.includes('去确认 · 交付与支付'),
+    'J 送礼页：交付方式 / 地址 / 领取核验整块不在这里（唯一入口在确认页），底栏只有「去确认 · 交付与支付」')
   ok(!/wx\.show(Toast|Modal)\([^)]*手机号/.test(cjs), 'J 送礼页：不得用原生弹窗报缺号（该口径随核验搬到确认页，见 J 确认页）')
   const co = read(P.confirmOrder)
   const gc = read(P.giftCheckout)

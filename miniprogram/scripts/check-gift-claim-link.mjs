@@ -470,8 +470,8 @@ async function runChecks() {
     'G 确认页：只在问出凭礼笺领取时带 giftClaimMode，clientCaps 与 giftDraft 原样交给云端')
   const cw = read(P.composeWxml)
   ok(!/receiverPhoneField|verify-set|delivery-opt|shipAddressField|pickup-code|claim-switch/.test(cw) &&
-    cw.includes("{{activeStep === 1 ? '写笺' : '交付与支付'}}") && read(P.composeJs).includes('saveGiftDeliveryDraft'),
-    'G 送礼页：不再渲染领取核验 / 地址 / 交付（唯一入口在确认页），只剩「下一步 · 交付与支付」与草稿交回')
+    cw.includes('去确认 · 交付与支付') && read(P.composeJs).includes('saveGiftDeliveryDraft'),
+    'G 送礼页：不再渲染领取核验 / 地址 / 交付（唯一入口在确认页），只剩「去确认 · 交付与支付」与草稿交回')
   ok(read(P.claimSheetWxml).includes("{{state.resetHint || "), 'G 管理面板：作废时限说明取云端 resetHint（寄给我与其它交付方式不同）')
   const succ = read(P.successJs)
   ok(/if \(gift\.claimMode === 'link'\) wx\.hideShareMenu\(\{ menus: \['shareTimeline'\] \}\)/.test(succ) && succ.includes("const token = this.data.claimLink ? '' :"), 'G 送礼成功页：凭礼笺领取不发朋友圈，朋友圈卡不带领取凭证')
