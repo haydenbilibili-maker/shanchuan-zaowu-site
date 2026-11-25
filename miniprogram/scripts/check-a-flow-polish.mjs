@@ -866,7 +866,7 @@ function checks(s) {
     /handlePreviewFailure\(msg\)/.test(s.coJs) &&
       /const text = String\(msg \|\| ''\)\.trim\(\)/.test(s.coJs) &&
       /已下架\|库存不足\|不存在\|请选择规格/.test(s.coJs) &&
-      /移除并继续/.test(s.coJs) &&
+      /移除并继续/.test(s.coWxml) && /removeBadItemAndContinue/.test(s.coJs) &&
       /previewErrorMsg/.test(s.coJs) &&
       /console\.warn\('syncServerPricingPreview failed', r\.msg \|\| r\)/.test(s.coJs) &&
       /this\.handlePreviewFailure\(msg\)/.test(s.coJs))
