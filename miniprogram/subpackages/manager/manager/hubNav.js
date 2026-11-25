@@ -32,7 +32,7 @@ const HUB_SECTIONS = [
       'stores', 'verify', 'staffConsole', 'staffDirectory', 'staffPermissions', 'shareholderConfig', 'payslipAdmin', 'myPayslip'
     ]
   },
-    { id: 'members', title: '会员与触达', short: '会员', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
+    { id: 'members', title: '会员与礼遇', short: '会员', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
   { id: 'system', title: '系统与设置', short: '系统', keys: ['shipping', 'bookingRules', 'supportConfig', 'orders', 'feishuSync', 'aiIdentifyMonitor', 'museumGuideMonitor'] }
 ]
 

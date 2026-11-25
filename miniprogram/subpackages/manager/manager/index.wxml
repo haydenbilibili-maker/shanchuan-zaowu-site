@@ -558,7 +558,7 @@
 
         <view class="hub-grp" wx:if="{{hubSec.members}}" id="hub-sec-members">
           <view class="hub-grp-head" bindtap="onHubCollapse" data-sec="members" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="hub-grp-title">会员与触达</text>
+            <text class="hub-grp-title">会员与礼遇</text>
             <view class="hub-grp-fold" wx:if="{{hubCollapsed.members}}">
               <text class="hub-grp-n">{{hubSecMeta.members.n}} 项</text>
               <view class="hub-badge" wx:if="{{hubSecMeta.members.badge}}">{{hubSecMeta.members.badge}}</view>
