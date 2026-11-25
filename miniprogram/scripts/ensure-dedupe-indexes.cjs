@@ -121,7 +121,7 @@ const SPECS = [
       'confirmOrderReceipt', 'confirmPayment', 'createBooking', 'dailyDigest', 'dispatchMessage',
       'exchangeCoupon', 'grantStorePoints', 'makeOrder', 'manageApprovals', 'manageGift',
       'manageHonoraryCurators', 'manageInvoiceRequests', 'managerShipOrder', 'moderateComment',
-      'payCallback', 'refundOrder', 'submitCustomInquiry', 'submitInvoiceRequest', 'submitSupportTicket',
+      'payCallback', 'refundOrder', 'submitComment', 'submitCustomInquiry', 'submitInvoiceRequest', 'submitSupportTicket',
       'sweepExpiredOrders', 'toggleCollection',
     ],
   },

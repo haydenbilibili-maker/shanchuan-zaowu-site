@@ -10,6 +10,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 const { checkText, checkFileImage } = require('./contentSecurity')
+const { notifyStaffNewComment } = require('./staffNotify')
 
 const ALLOWED_TARGET_TYPES = new Set(['product', 'activity', 'course'])
 const MAX_IMAGES = 3
@@ -405,6 +406,20 @@ async function submitProductReview(event, openid) {
     })
   } catch (e) {
     console.warn('发放评价奖励失败:', e)
+  }
+
+  // 2026-11-25：给能处理评价的员工发一条「工作信息」——收到用户商品评价，记得及时回复。
+  // 失败不阻断评价提交（通知与提交解耦）。
+  try {
+    await notifyStaffNewComment(db, {
+      commentId: result._id,
+      rating: Math.round(rating),
+      content,
+      productTitle: (product && product.title) || '',
+      orderId
+    })
+  } catch (e) {
+    console.warn('评价员工提醒失败:', e && e.message)
   }
 
   return submitResult(result._id, moderation.status)

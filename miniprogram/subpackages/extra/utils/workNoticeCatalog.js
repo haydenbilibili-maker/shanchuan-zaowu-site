@@ -55,6 +55,15 @@ const NOTICE_TYPES = [
     source: 'opsOrderCounts.aftersale'
   },
   {
+    type: 'comment',
+    label: '商品评价',
+    text: '收到一条用户商品评价，请记得及时回复',
+    file: 'comment.m4a',
+    priority: 25,
+    roles: [ROLE.SUPER_ADMIN, ROLE.STORE_MANAGER],
+    source: 'commentNoticeUnread'
+  },
+  {
     type: 'workOrder',
     label: '客服工单',
     text: '您有新的工单需要处理',

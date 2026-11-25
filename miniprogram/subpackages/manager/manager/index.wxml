@@ -149,6 +149,27 @@
       </view>
     </view>
     </view>
+    <!-- 商品评价提醒（2026-11-25）：来一条「收到用户商品评价」的工作信息就亮一行；点直达评价页回复。
+         与待处理横条里的「评价待回」同源（同读 commentNoticeUnread），语音播报见 workNoticeCatalog 的 comment 类型。 -->
+    <view
+      class="hub-comment-notice"
+      wx:if="{{commentNoticeUnread > 0}}"
+      bindtap="switchTab"
+      data-idx="17"
+      data-title="用户评价"
+      hover-class="tap-press"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="收到 {{commentNoticeUnread}} 条商品评价，点此回复"
+    >
+      <view class="hub-comment-notice-lamp"></view>
+      <view class="hub-comment-notice-main">
+        <text class="hub-comment-notice-t">收到 {{commentNoticeUnread}} 条商品评价</text>
+        <text class="hub-comment-notice-s">记得及时回复 · 顾客在等馆员回信</text>
+      </view>
+      <text class="hub-comment-notice-go">去回复 ›</text>
+    </view>
+
     <!-- 待处理横条（2026-10-01 待办优先）：带角标入口的计数都汇总成一排红色数字（hubNav.HUB_TODOS，check:hub-entries 守），点按直达原入口；
          2026-11-22 屏效：标题与合计并进上方状态条，这里只剩一排签；清零时不再单占一张卡 -->
     <view class="hub-todo" wx:if="{{hubTodo.items.length}}">

@@ -5,7 +5,7 @@
   "rate": 190,
   "sampleRate": 22050,
   "bitrate": "48k",
-  "generatedAt": "2026-09-16T13:36:32.093Z",
+  "generatedAt": "2026-11-25T15:18:29.450Z",
   "entries": {
     "order": {
       "file": "order.mp3",
@@ -134,6 +134,14 @@
       "bytes": 21385,
       "durationMs": 3467,
       "path": "/subpackages/manager/assets/audio/work-notice/sample.mp3"
+    },
+    "comment": {
+      "file": "comment.m4a",
+      "text": "收到一条用户商品评价，请记得及时回复",
+      "textHash": "0c483021f94c183b",
+      "bytes": 30921,
+      "durationMs": null,
+      "path": "/subpackages/manager/assets/audio/work-notice/comment.m4a"
     }
   }
 }

@@ -4,7 +4,7 @@
  *
  * 为什么需要它：这个功能有四类东西必须永远对齐，而它们分散在四个地方：
  *   ① 语料清单  `utils/workNoticeCatalog.js`（文案 + 角色 + 计数来源）
- *   ② 音频资产  `subpackages/manager/assets/audio/work-notice/*.mp3` + `manifest.json`
+ *   ② 音频资产  `subpackages/manager/assets/audio/work-notice/*.mp3|*.m4a` + `manifest.json`
  *   ③ 页面接线  工作台 hub / 标本师工作台（`syncWorkNoticeVoice` + 组件注册）
  *   ④ 判定逻辑  `utils/workNoticeVoice.js` 的 `diffNoticeSnapshot`（只播新增）
  * 任何一处漏改都不会报错，只会「安静地不响」或「每次都响」——正是最难发现的那类故障。
@@ -74,7 +74,8 @@ function catalogProblems(entries) {
     if (seen[who]) problems.push(`${who}: type 重复`)
     seen[who] = true
     if (!String(t.text || '').trim()) problems.push(`${who}: 文案为空`)
-    if (!/\.mp3$/.test(String(t.file || ''))) problems.push(`${who}: file 不是 .mp3`)
+    // 2026-11-25：允许 .mp3 / .m4a —— 无 ffmpeg 的机器用 afconvert 出 AAC，小程序两种都能播
+    if (!/\.(mp3|m4a)$/.test(String(t.file || ''))) problems.push(`${who}: file 不是 .mp3/.m4a`)
     if (!(Number(t.priority) > 0)) problems.push(`${who}: priority 非法`)
     if (!Array.isArray(t.roles) || !t.roles.length) problems.push(`${who}: roles 为空`)
     else {

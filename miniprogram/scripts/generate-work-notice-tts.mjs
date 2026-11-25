@@ -122,8 +122,13 @@ function synthMacos(text, outFile) {
   try {
     run('ffmpeg', ['-y', '-loglevel', 'error', '-i', aiff, '-codec:a', 'libmp3lame', '-b:a', BITRATE, '-ar', String(SAMPLE_RATE), '-ac', '1', outFile])
   } catch (e) {
-    run('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '48000', aiff, outFile.replace(/\.mp3$/, '.m4a')])
-    throw new Error('ffmpeg 不可用，已回退 afconvert（产物为 .m4a，请把清单 file 改成 .m4a 后重跑）')
+    // 2026-11-25：本机没有 ffmpeg 时用系统 afconvert 出 AAC(.m4a)；
+    // 清单里把该条的 file 写成 .m4a 即可（小程序 InnerAudioContext 支持 m4a）。
+    const m4a = /\.m4a$/.test(outFile) ? outFile : outFile.replace(/\.mp3$/, '.m4a')
+    run('afconvert', ['-f', 'm4af', '-d', 'aac', '-b', '48000', aiff, m4a])
+    if (m4a !== outFile) {
+      throw new Error(`ffmpeg 不可用，已回退 afconvert 产出 ${m4a}（请把清单 file 改成 .m4a 后重跑）`)
+    }
   } finally {
     rmSync(aiff, { force: true })
   }

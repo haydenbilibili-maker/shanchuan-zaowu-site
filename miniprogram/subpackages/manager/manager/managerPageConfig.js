@@ -1684,6 +1684,8 @@ const managerPageConfig = {
 
     // 内容展示开关（curTab 16）
     reviewFlagRows: REVIEW_FLAG_ROWS,
+    /** 未读的「收到商品评价」工作信息条数（语音播报的计数来源 commentNoticeUnread） */
+    commentNoticeUnread: 0,
     contentFlagsLoading: false,
     contentFlagsSaving: false,
     // 有未保存的改动：开关是「先改本地、点保存才写云端」的，
@@ -3214,6 +3216,9 @@ const managerPageConfig = {
     }
     if (menu.invoice) {
       jobs.push(safe('invoice', () => this.loadInvoiceHubBadge()));
+    }
+    if (menu.reviews) {
+      jobs.push(safe('commentNotice', () => this.loadCommentNoticeBadge()));
     }
 
     if (!jobs.length) {
@@ -4964,6 +4969,21 @@ const managerPageConfig = {
    * ① 白名单 = 当前在架集合（已审核无风险）；② 审核下架 = 白名单保留、其余全下；③ 审核上架 = 恢复②下架的。
    * 硬规则：首页四馆（昆虫馆/动物馆/植物馆/海洋馆）每个都要有在架商品，空馆则拒绝并指出是哪一馆。
    */
+  /** 工作信息：未读的「商品评价」提醒（语音播报计数来源） */
+  async loadCommentNoticeBadge() {
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'getUserMessages',
+        data: { action: 'getUnreadCount', queue: 'workflow', types: ['staff_comment_new'] }
+      });
+      const out = (res && res.result) || {};
+      const count = Math.max(0, Number(out.count) || 0);
+      if (count !== this.data.commentNoticeUnread) this.setData({ commentNoticeUnread: count });
+    } catch (e) {
+      // 静默：角标取不到不影响工作台
+    }
+  },
+
   async loadReviewShelf(silent) {
     if (this.data.reviewShelf.loading) return;
     if (!silent) this.setData({ 'reviewShelf.loading': true, 'reviewShelf.error': false });

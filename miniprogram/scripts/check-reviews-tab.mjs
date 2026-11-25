@@ -20,8 +20,13 @@ const F = {
   wxml: join(MP, 'subpackages/manager/manager/workspace/_subviews.wxml'),
   cfg: join(MP, 'subpackages/manager/manager/managerPageConfig.js'),
   fn: join(MP, 'cloudfunctions/moderateComment/index.js'),
+  submitFn: join(MP, 'cloudfunctions/submitComment/index.js'),
+  staffNotify: join(MP, 'cloudfunctions/submitComment/staffNotify.js'),
   hub: join(MP, 'subpackages/manager/manager/hubNav.js'),
-  roles: join(MP, 'utils/workspaceRoles.js')
+  roles: join(MP, 'utils/workspaceRoles.js'),
+  catalog: join(MP, 'subpackages/manager/utils/workNoticeCatalog.js'),
+  hubWxml: join(MP, 'subpackages/manager/manager/index.wxml'),
+  hubNav: join(MP, 'subpackages/manager/manager/hubNav.js')
 }
 
 let INJECT = null
@@ -63,10 +68,12 @@ function runChecks() {
       return m ? !/loadComments\(\)/.test(m[0]) : false
     })())
 
-  ok('R4 Hub：磁贴「评价」→ switchTab idx=17；菜单键 reviews 落 TAB_MENU_KEY 且只进超管',
+  ok('R4 Hub：磁贴「评价」→ switchTab idx=17；菜单键 reviews 落 TAB_MENU_KEY；超管与店长可进（店员 / 标本师不进）',
     /id: 'reviews'[^\n]*keys: \['reviews'\][^\n]*tap: 'switchTab', idx: 17, tabTitle: '用户评价'/.test(hub) &&
     /17: MENU_KEYS\.REVIEWS/.test(roles) && /REVIEWS: 'reviews'/.test(roles) &&
-    !/STORE_MANAGER_MENUS = \[[\s\S]*?MENU_KEYS\.REVIEWS[\s\S]*?\]/.test(roles))
+    /STORE_MANAGER_MENUS = \[[\s\S]*?MENU_KEYS\.REVIEWS[\s\S]*?\]/.test(roles) &&
+    !/STORE_STAFF_MENUS = \[[\s\S]*?MENU_KEYS\.REVIEWS[\s\S]*?\]/.test(roles) &&
+    !/SPECIMEN_ARTISAN_MENUS = \[[\s\S]*?MENU_KEYS\.REVIEWS[\s\S]*?\]/.test(roles))
 
   // R6（2026-11-25 核查补）：商家回复后，评价作者要收到「山海有信」（原来只写 comments.merchantReply，用户端无提醒）
   const fn = read(F.fn)
@@ -82,6 +89,36 @@ function runChecks() {
   ok('R6 面板如实反馈送达结果（未送达时不说「回复成功」了事）',
     /res\.result\.notified/.test(cfg) && /消息通知未送达/.test(cfg))
 
+  // R7（2026-11-25）：用户提交商品评价后，员工「工作信息」要收到一条待回复提醒
+  const submitFn = read(F.submitFn)
+  const staffNotify = read(F.staffNotify)
+  ok('R7 新评价会发「工作信息」：workflow 队列 + ops 待办分类 + 深链到用户评价 + 文案含星级与「记得及时回复」',
+    /notifyStaffNewComment\(db, \{/.test(submitFn) &&
+    /queue: 'workflow'/.test(staffNotify) && /category: 'ops'/.test(staffNotify) &&
+    /type: 'staff_comment_new'/.test(staffNotify) && /read: false/.test(staffNotify) &&
+    /tab=17/.test(staffNotify) && /记得及时回复/.test(staffNotify) &&
+    /staff_members/.test(staffNotify) && /isAdmin: true/.test(staffNotify) &&
+    /collection\('user_messages'\)\.add\(/.test(staffNotify))
+
+  // R8（2026-11-25）：超管 / 店长工作台要有「收到商品评价」消息提示 + 语音播报
+  const catalog = read(F.catalog)
+  const hubWxml = read(F.hubWxml)
+  const hubNav = read(F.hubNav)
+  const commentType = (catalog.match(/type: 'comment'[\s\S]*?source: 'commentNoticeUnread'/) || [''])[0]
+  ok('R8 语音播报：workNoticeCatalog 有 comment 类型（超管 + 店长），文案与计数来源就位',
+    !!commentType &&
+    /text: '收到一条用户商品评价，请记得及时回复'/.test(commentType) &&
+    /ROLE\.SUPER_ADMIN/.test(commentType) && /ROLE\.STORE_MANAGER/.test(commentType) &&
+    /file: 'comment\.(mp3|m4a)'/.test(commentType) && /priority: 25/.test(commentType))
+  ok('R8 工作台消息提示：数据字段 + 拉未读 + 预取 + 提醒条 + 待处理项',
+    /commentNoticeUnread: 0/.test(cfg) &&
+    /getUnreadCount', queue: 'workflow', types: \['staff_comment_new'\]/.test(cfg) &&
+    /safe\('commentNotice', \(\) => this\.loadCommentNoticeBadge\(\)\)/.test(cfg) &&
+    /hub-comment-notice/.test(hubWxml) && /去回复 ›/.test(hubWxml) &&
+    /id: 'comments', label: '评价待回', keys: \['reviews'\], badge: 'commentNoticeUnread'/.test(hubNav))
+  ok('R8 店长也能进「评价」并听到播报（菜单 + 角色）',
+    /STORE_MANAGER_MENUS = \[[\s\S]*?MENU_KEYS\.REVIEWS[\s\S]*?\]/.test(roles))
+
   ok('R5 内容管理里删掉的只是这一项：专题 / 文章 / 养护三个子 Tab 仍在',
     ['exhibition', 'article', 'care'].every((t) => contentTab.includes(`data-type="${t}"`)))
 
@@ -93,7 +130,9 @@ if (process.argv.includes('--selftest')) {
     { name: '内容管理又把用户评价塞回子 Tab', file: F.wxml, find: '<!-- [Tab 9] 内容管理 -->', replace: '<!-- [Tab 9] 内容管理 -->\n      <view class="sub-tab" bindtap="switchContentType" data-type="comment">用户评价</view>' },
     { name: 'Tab 17 不再拉评价', file: F.cfg, find: 'if(idx === 17) await this.loadComments();', replace: '' },
     { name: 'Hub 入口丢了「评价」', file: F.hub, find: "keys: ['reviews'], tap: 'switchTab', idx: 17", replace: "keys: ['reviews'], tap: 'switchTab', idx: 18" },
-    { name: '回复后不再发「山海有信」', file: F.fn, find: 'await notifyCommentReplied(comment, replyText)', replace: '' }
+    { name: '回复后不再发「山海有信」', file: F.fn, find: 'await notifyCommentReplied(comment, replyText)', replace: '' },
+    { name: '新评价不再提醒员工（工作信息）', file: F.submitFn, find: 'await notifyStaffNewComment(db, {', replace: 'await Promise.resolve({ ok: true }); void ({' },
+    { name: '工作台不再预取评价未读（语音也没数可播）', file: F.cfg, find: "safe('commentNotice', () => this.loadCommentNoticeBadge())", replace: "safe('commentNoticeX', () => this.loadCommentNoticeBadge())" }
   ]
   let bad = 0
   const base = runChecks()

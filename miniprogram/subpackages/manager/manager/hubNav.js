@@ -224,7 +224,9 @@ const HUB_TODOS = [
   { id: 'approvals', label: '审批', keys: ['approvals'], badge: 'approvalPendingCount', tap: 'goApprovals' },
   { id: 'invoice', label: '发票', keys: ['invoice'], badge: 'invoicePendingCount', tap: 'goInvoiceRequests' },
   { id: 'gift', label: '礼赠', keys: ['giftOps'], badge: 'giftTodoCount', tap: 'goGiftOps' },
-  { id: 'recruit', label: '合作申请', keys: ['framerRecruit'], badge: 'framerRecruitApps', tap: 'switchTab', idx: 14, tabTitle: '标本师合作' }
+  { id: 'recruit', label: '合作申请', keys: ['framerRecruit'], badge: 'framerRecruitApps', tap: 'switchTab', idx: 14, tabTitle: '标本师合作' },
+  // 2026-11-25：收到用户商品评价的「工作信息」提醒（超管 / 店长都收；点直达用户评价）
+  { id: 'comments', label: '评价待回', keys: ['reviews'], badge: 'commentNoticeUnread', tap: 'switchTab', idx: 17, tabTitle: '用户评价' }
 ]
 
 function buildTodos(data) {
