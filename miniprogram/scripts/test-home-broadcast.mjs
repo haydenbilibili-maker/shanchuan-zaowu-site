@@ -92,6 +92,8 @@ async function runChecks() {
   const all = C.FACTS.concat(C.TIPS.morning, C.TIPS.day, C.TIPS.night)
   ok('H1 每条文案 ≤ 22 字（首页单行放得下，不折行）', C.LINE_MAX === 22 && all.every((x) => x.t && x.t.length <= C.LINE_MAX))
   ok('H1 每条一知都带问题', C.FACTS.every((x) => x.q && x.q.length <= 40))
+  // 2026-11-25 产品负责人：博物一知要多一些内容 → 至少 20 条（棘轮：只许增不许减）
+  ok('H1 博物一知至少 20 条，且每条文案不超长', C.FACTS.length >= 20 && C.FACTS.every((x) => x.t && x.t.length <= 40))
   ok('H1 去博物君只预填（from=home，不带 auto=1）', C.guideUrl('为什么？') === '/subpackages/feature/museum-guide/index?from=home&q=' + encodeURIComponent('为什么？'))
   const castSrc = read(P.cast)
   ok('H1 纯函数：不碰 wx', !/\bwx\./.test(castSrc))
@@ -219,6 +221,7 @@ const INJECTIONS = [
   { name: '昵称不截断', file: P.cast, find: "return s.length > NICK_MAX ? s.slice(0, NICK_MAX) + '…' : s;", replace: 'return s;' },
   { name: '闭馆仍播通知', file: P.cast, find: '  if (open) {\n    (Array.isArray', replace: '  if (true) {\n    (Array.isArray' },
   { name: '闭馆仍带问题', file: P.cast, find: 'q: open && q ? q : \'\'', replace: "q: q || ''" },
+  { name: '一知条数回落到 19', file: P.cast, find: "  { t: '琥珀是树脂化石，常把远古昆虫封在里面', q: '琥珀里的昆虫是怎么保存下来的？' }\n", replace: '' },
   { name: '同日两条一知相同', file: P.cast, find: 'FACTS[(di + 5) % FACTS.length]', replace: 'FACTS[di % FACTS.length]' },
   { name: '点口播直接提问', file: P.cast, find: '?from=home&q=${encodeURIComponent(q)}', replace: '?from=home&auto=1&q=${encodeURIComponent(q)}' },
   { name: '一知写超长（会折行）', file: P.cast, find: "{ t: '大蓝闪蝶的蓝来自鳞片结构，不是色素'", replace: "{ t: '大蓝闪蝶的蓝来自鳞片上的微结构对光的干涉，不是色素'" },
