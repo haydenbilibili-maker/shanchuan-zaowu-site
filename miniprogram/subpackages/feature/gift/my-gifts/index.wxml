@@ -93,7 +93,7 @@
 
 <view class="page {{paneReady ? 'pane-ready' : ''}}" wx:if="{{allowed}}">
   <!-- 顶区：标本纸页头 + 摘要芯片 + 信号灯 -->
-  <view class="hero-plate">
+  <view class="hero-plate {{heroCompact ? 'is-compact' : ''}}">
     <view class="hero-content">
       <view class="hero-over-row">
         <text class="hero-over">NATURE'S CREATIONS · LEDGER</text>
@@ -243,6 +243,7 @@
       refresher-triggered="{{refresherTriggered}}"
       bindrefresherrefresh="onRefresherRefresh"
       bindscrolltolower="onReachBottom"
+      bindscroll="onPaneScroll"
     >
       <view class="skel-list" wx:if="{{loading && !list.length}}">
         <view class="skel-card" wx:for="{{skelRows}}" wx:key="*this">
@@ -382,6 +383,7 @@
     refresher-default-style="white"
     refresher-background="#1A1814"
     refresher-triggered="{{refresherTriggered}}"
+    bindscroll="onPaneScroll"
     bindrefresherrefresh="onRefresherRefresh"
   >
     <view class="panel-head people-head">
@@ -471,6 +473,7 @@
     refresher-default-style="white"
     refresher-background="#1A1814"
     refresher-triggered="{{refresherTriggered}}"
+    bindscroll="onPaneScroll"
     bindrefresherrefresh="onRefresherRefresh"
   >
     <view class="panel-head dates-head">

@@ -110,6 +110,34 @@ page {
   background: radial-gradient(circle at 35% 30%, #F4ECD4, #A8903C 70%);
   box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.4);
 }
+/* 页头随滚动收起（2026-11-25）：滚动后只留一行标题，把高度还给列表。
+   用 max-height / opacity 过渡（不用 display，避免跳变与重排抖动）。 */
+.hero-plate { transition: margin var(--dur-base) var(--ease-standard), padding var(--dur-base) var(--ease-standard); }
+.hero-plate .hero-brand,
+.hero-plate .hero-desc,
+.hero-plate .hero-stats,
+.hero-plate .todo-focus {
+  max-height: 400rpx;
+  overflow: hidden;
+  transition: max-height var(--dur-base) var(--ease-standard), opacity 0.16s var(--ease-standard), margin var(--dur-base) var(--ease-standard), padding var(--dur-base) var(--ease-standard);
+}
+.hero-plate .hero-title { transition: font-size var(--dur-base) var(--ease-standard); }
+.hero-plate.is-compact {
+  margin: 10rpx 32rpx 6rpx;
+  padding: 16rpx 26rpx;
+}
+.hero-plate.is-compact .hero-brand,
+.hero-plate.is-compact .hero-desc,
+.hero-plate.is-compact .hero-stats,
+.hero-plate.is-compact .todo-focus {
+  max-height: 0;
+  opacity: 0;
+  margin: 0;
+  padding: 0;
+  border-top: 0;
+}
+.hero-plate.is-compact .hero-title { font-size: var(--fs-28); }
+
 .hero-content { position: relative; z-index: 2; }
 /* overline + 状态灯 + 右铜钉同一行，钉不悬空 */
 .hero-over-row {

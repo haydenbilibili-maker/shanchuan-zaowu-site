@@ -74,6 +74,12 @@ const INJECTIONS = {
     from: '  const fallback = inactive && !actions.length && item.deepLink',
     to: '  const fallback = item.deepLink ? [{ key: \'order\', label: \'订单详情\', type: \'nav\', path: item.deepLink }] : []'
   },
+  // 页头又变回固定不动 → 列表被压到一屏只剩一张半卡
+  'hero-never-collapses': {
+    file: WXML,
+    from: 'bindscroll="onPaneScroll"',
+    to: 'bindscrollx="onPaneScroll"'
+  },
   // 计数口径说谎：只加载了一页也说「共」
   'cap-lies': {
     file: PAGE,
@@ -527,6 +533,13 @@ const tplBlock = (wxml.match(/<template name="gift-card">[\s\S]*?<\/template>/) 
 
 check('★ 卡片模板用 item.flowTab（不再引用页面 data）', /class="role-chip \{\{item\.flowTab\}\}"/.test(tplBlock))
 check('★ 「致 XX」用 item.flowTab 判定送出侧', /item\.flowTab === 'sent' && item\.recipientName/.test(tplBlock))
+// 2026-11-25（产品负责人）：页头固定不动、一屏只剩一张半卡 → 滚动时页头收起，把高度还给列表
+check('★ 页头随滚动收起：三个滚动区都接 bindscroll，滚动后加 is-compact，样式里把品牌/摘要/统计/待办收起',
+  (wxml.match(/bindscroll="onPaneScroll"/g) || []).length === 3 &&
+  /class="hero-plate \{\{heroCompact \? 'is-compact' : ''\}\}"/.test(wxml) &&
+  /\.hero-plate\.is-compact \.hero-brand/.test(wxss) && /\.hero-plate\.is-compact \.hero-stats/.test(wxss) &&
+  /\.hero-plate\.is-compact \.hero-title \{ font-size: var\(--fs-28\); \}/.test(wxss) &&
+  /onPaneScroll\(e\) \{/.test(js) && /heroCompact: false/.test(js))
 eq('模板体内不再出现裸 {{flowTab}}', (tplBlock.match(/\{\{flowTab\}\}/g) || []).length, 0)
 {
   // 礼笺摘句不得再把「致 XX」顶掉：摘句用 wx:if，致 XX 是独立的 wx:if（不是同一链的 elif）

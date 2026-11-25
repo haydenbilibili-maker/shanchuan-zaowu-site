@@ -348,6 +348,8 @@ function foldedCapText(count, hasMore) {
 
 Page({
   data: {
+    /** 页头随滚动收起（2026-11-25：原来页头固定不动，一屏只剩 1.5 张卡） */
+    heroCompact: false,
     checking: true,
     allowed: false,
     paneReady: false,
@@ -481,6 +483,14 @@ Page({
     }
     if (typeof wx.nextTick === 'function') wx.nextTick(runQuery)
     else setTimeout(runQuery, 16)
+  },
+
+  /** 页面滚动 → 页头收起 / 展开（阈值 24px；状态不变不 setData） */
+  onPaneScroll(e) {
+    const top = Number((e && e.detail && e.detail.scrollTop) || 0)
+    const next = top > 24
+    if (next === this.data.heroCompact) return
+    this.setData({ heroCompact: next })
   },
 
   onLoad(options) {
