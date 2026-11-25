@@ -239,6 +239,9 @@ function buildArchiveDisplay(product, sizeOverride) {
   const sizeEmpty = override
     ? !override
     : isEmptySizeValue(p.size);
+  const sizeText = sizeEmpty ? ARCHIVE_EMPTY_PLACEHOLDER : String(sizeRaw).trim();
+  // 2026-11-25：三维都带维度词后尺寸变长（长 20 × 宽 15 × 厚 2 厘米）—— 长文本让卡片跨两列，避免被截断
+  const sizeLong = !sizeEmpty && sizeText.length > 14;
   const framerEmpty = isEmptyArchiveFramer(p);
   const framingLabel = craftTypeLabel(p.craftType) || '';
   const processLabel = craftProcessLabel(p.craftProcess) || '';
@@ -247,8 +250,9 @@ function buildArchiveDisplay(product, sizeOverride) {
     originEmpty,
     date: dateEmpty ? ARCHIVE_EMPTY_PLACEHOLDER : String(dateRaw).trim(),
     dateEmpty,
-    size: sizeEmpty ? ARCHIVE_EMPTY_PLACEHOLDER : String(sizeRaw).trim(),
+    size: sizeText,
     sizeEmpty,
+    sizeLong,
     framerName: framerEmpty ? ARCHIVE_EMPTY_PLACEHOLDER : String(p.framerName).trim(),
     framerEmpty,
     framerId: framerEmpty ? '' : (p.framerId || ''),

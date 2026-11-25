@@ -373,9 +373,9 @@ module.exports.saveLabel = saveLabel;
           <text class="lbl">采集时间 DATE</text>
           <text class="val {{archiveDisplay.dateEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.date}}</text>
         </view>
-        <view class="archive-item" wx:if="{{!archiveDisplay.sizeEmpty}}">
+        <view class="archive-item {{archiveDisplay.sizeLong ? 'is-wide' : ''}}" wx:if="{{!archiveDisplay.sizeEmpty}}">
           <text class="lbl">装裱尺寸 SIZE</text>
-          <text class="val {{archiveDisplay.sizeEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.size}}</text>
+          <text class="val is-wrap {{archiveDisplay.sizeEmpty ? 'is-placeholder' : ''}}">{{archiveDisplay.size}}</text>
         </view>
         <view class="archive-item" wx:if="{{archiveDisplay.craftProcessShow}}">
           <text class="lbl">制作工艺 CRAFT</text>

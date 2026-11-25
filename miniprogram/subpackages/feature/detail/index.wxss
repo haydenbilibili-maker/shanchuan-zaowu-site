@@ -968,6 +968,9 @@ button.nav-share-btn::after { display: none; border: none; }
   font-size: var(--fs-26); color: var(--color-text-body); font-weight: 600; 
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
 }
+/* 2026-11-25：装裱尺寸这种长值——允许两行、必要时整卡跨两列，不再显示省略号 */
+.val.is-wrap { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.45; word-break: break-word; }
+.archive-item.is-wide { grid-column: span 2; }
 .val.gold { color: var(--color-primary); }
 .val.is-placeholder {
   color: var(--color-text-secondary);
