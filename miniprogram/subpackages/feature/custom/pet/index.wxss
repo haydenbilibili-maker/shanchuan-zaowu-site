@@ -24,7 +24,7 @@
   font-weight: 600;
   line-height: 1.4;
   letter-spacing: 0.04em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 /* 「无需立即支付」是本页最重要的安心信息（顾客最怕点一下就被扣钱）：

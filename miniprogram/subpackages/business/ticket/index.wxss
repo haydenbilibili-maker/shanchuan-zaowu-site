@@ -160,7 +160,7 @@ page {
   padding: 20rpx;
   margin-bottom: 24rpx;
   border-radius: 4rpx;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: inset 0 0 0 1rpx rgba(46, 38, 24, 0.22), 0 10rpx 24rpx rgba(0, 0, 0, 0.36);
 }
 
@@ -269,7 +269,7 @@ page {
   font-size: var(--fs-28);
   line-height: 1.5;
   text-align: right;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   word-break: break-word;
 }
 

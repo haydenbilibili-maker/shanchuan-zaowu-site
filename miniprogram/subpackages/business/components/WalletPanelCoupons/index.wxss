@@ -41,7 +41,7 @@ view, text { box-sizing: border-box; }
   font-size: 38rpx;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .sub {

@@ -76,7 +76,7 @@ page {
   margin-left: 12rpx;
   background: transparent;
   font-size: var(--fs-28);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   line-height: 1.2;
 }
 
@@ -174,7 +174,7 @@ page {
 
 .scope-name {
   font-size: var(--fs-24);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -332,7 +332,7 @@ page {
   font-size: var(--fs-30);
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .identify-plate-desc {
@@ -493,7 +493,7 @@ page {
   font-size: var(--fs-30);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .idle-desc,
@@ -549,7 +549,7 @@ page {
 }
 
 .filter-pill.active .filter-label {
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   font-family: var(--font-brand);
   font-weight: 600;
 }
@@ -689,7 +689,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

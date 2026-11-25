@@ -7,9 +7,9 @@
    只改本页样式（覆盖共享 ritual-play.wxss，其余玩法不受影响）；结构类名、事件、数据一律不动。 */
 
 .rp-page {
-  --paper: #F3ECDD;
-  --paper-2: #E8DFCB;
-  --ink: #2E2618;
+  --paper: var(--mat-paper-tone);
+  --paper-2: var(--mat-paper-tone-deep);
+  --ink: var(--mat-ink);
   background: #151412;
 }
 

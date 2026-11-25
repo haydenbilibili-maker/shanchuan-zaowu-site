@@ -12,9 +12,9 @@ page { background: var(--color-bg, #1A1814); }
   margin-top: 32rpx;
   padding: 36rpx 32rpx 32rpx;
   border-radius: var(--r-card, 16rpx);
-  background: linear-gradient(180deg, #F3ECDD, #E9DFCA);
+  background: linear-gradient(180deg, var(--mat-paper-tone), #E9DFCA);
   box-shadow: inset 0 0 0 1rpx rgba(176, 141, 87, 0.35), 0 12rpx 32rpx rgba(0, 0, 0, 0.35);
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 .nt-paper::before {
   content: '';
@@ -24,10 +24,10 @@ page { background: var(--color-bg, #1A1814); }
   border-radius: var(--r-thumb-sm, 8rpx);
   pointer-events: none;
 }
-.nt-paper-top { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--fs-20); letter-spacing: .12em; color: #8A6F45; }
+.nt-paper-top { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--fs-20); letter-spacing: .12em; color: var(--mat-ink-label); }
 .nt-rule { height: 1rpx; margin: 24rpx 0; background: rgba(138, 111, 69, 0.3); }
-.nt-k { font-size: var(--fs-20); letter-spacing: .1em; color: #8A6F45; }
-.nt-v { display: block; margin-top: 6rpx; font-size: var(--fs-26); line-height: 1.7; color: #2E2618; }
+.nt-k { font-size: var(--fs-20); letter-spacing: .1em; color: var(--mat-ink-label); }
+.nt-v { display: block; margin-top: 6rpx; font-size: var(--fs-26); line-height: 1.7; color: var(--mat-ink); }
 
 /* 按钮 */
 .nt-btns { display: flex; gap: 20rpx; margin-top: 32rpx; }

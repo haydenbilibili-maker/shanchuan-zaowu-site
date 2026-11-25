@@ -570,7 +570,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .section {
   background: rgba(243, 236, 221, 0.02);
@@ -581,7 +581,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-30);
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .row { border-bottom-color: rgba(196, 167, 108, 0.14); }
 .btn-primary {
@@ -615,7 +615,7 @@ page {
 .feature-group-title {
   font-family: var(--font-brand);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .feature-group-en {
   font-family: var(--font-mono);

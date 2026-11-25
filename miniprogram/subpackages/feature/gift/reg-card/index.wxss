@@ -2,7 +2,7 @@
 .rc-head{display:flex;justify-content:space-between;align-items:center}
 .rc-over{font-size:var(--fs-20);letter-spacing:6rpx;color:var(--color-primary)}
 .rc-x{font-size:var(--fs-24);color:#9A8F7C;padding:8rpx 0 8rpx 24rpx}
-.rc-title{margin-top:12rpx;font-size:var(--fs-30);font-weight:600;color:#F3ECDD;line-height:1.5}
+.rc-title{margin-top:12rpx;font-size:var(--fs-30);font-weight:600;color:var(--mat-paper-tone);line-height:1.5}
 .rc-perks{margin-top:18rpx}
 .rc-perk{display:flex;align-items:center;margin-top:10rpx}
 .rc-dot{width:10rpx;height:10rpx;border-radius:50%;background:var(--color-primary);margin-right:16rpx;flex-shrink:0}

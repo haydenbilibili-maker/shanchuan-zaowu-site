@@ -44,7 +44,7 @@
   font-size: 56rpx;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .head-sub {
@@ -113,7 +113,7 @@
   font-family: var(--font-brand);
   font-size: var(--fs-30);
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .frame-s {
@@ -248,7 +248,7 @@
   font-family: var(--font-brand);
   font-size: var(--fs-34);
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .recent-link {

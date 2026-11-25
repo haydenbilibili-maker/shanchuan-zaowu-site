@@ -43,7 +43,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .scene-header .role-badge {
@@ -77,7 +77,7 @@ page {
 .scene-header .picker-value {
   font-family: var(--font-brand);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .scene-header .picker-arrow {
   margin-left: var(--space-2);
@@ -111,7 +111,7 @@ page {
   font-size: 34rpx;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 /* 场景格：方角发丝账格（原 brass-800 描边大圆角卡） */
@@ -145,7 +145,7 @@ page {
   font-size: var(--fs-30);
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .link-btn .lb-desc { padding-right: 28rpx; }
 .lb-arrow {

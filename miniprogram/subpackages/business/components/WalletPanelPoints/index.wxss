@@ -116,7 +116,7 @@
   text-align: center; white-space: nowrap;
 }
 .tab-item text { white-space: nowrap; }
-.tab-item.active { color: #F3ECDD; font-family: var(--font-brand); font-weight: 600; }
+.tab-item.active { color: var(--mat-paper-tone); font-family: var(--font-brand); font-weight: 600; }
 .indicator {
   position: absolute; bottom: -1rpx; left: 24%; right: 24%;
   height: 3rpx; background: var(--brass-400);
@@ -126,7 +126,7 @@
 .content-area { width: 100%; }
 .section-header { margin-bottom: 40rpx; text-align: center; }
 .title-group .en { display: block; font-family: var(--font-mono); font-size: var(--fs-18); color: var(--brass-300); letter-spacing: 0.24em; }
-.title-group .cn { display: block; margin-top: 10rpx; font-family: var(--font-brand); font-size: 38rpx; font-weight: 500; letter-spacing: 0.12em; color: #F3ECDD; }
+.title-group .cn { display: block; margin-top: 10rpx; font-family: var(--font-brand); font-size: 38rpx; font-weight: 500; letter-spacing: 0.12em; color: var(--mat-paper-tone); }
 
 /* 兑换品：图版（发丝框）+ 图下图注；兑换钮为金线环 —— 一屏多颗实心金药丸 → 收口（实心金不给列表项） */
 .reward-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 36rpx 20rpx; }
@@ -148,7 +148,7 @@
 }
 
 .info-box { padding: 16rpx 2rpx 0; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-.r-title { font-family: var(--font-brand); font-size: var(--fs-26); color: #F3ECDD; font-weight: 600; margin-bottom: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-title { font-family: var(--font-brand); font-size: var(--fs-26); color: var(--mat-paper-tone); font-weight: 600; margin-bottom: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .r-desc { font-size: var(--fs-20); color: var(--color-text-secondary); margin-bottom: 20rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .r-footer { display: flex; justify-content: space-between; align-items: center; }
@@ -181,7 +181,7 @@
 .my-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 
 .my-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8rpx; }
-.my-title { font-family: var(--font-brand); font-size: var(--fs-26); color: #F3ECDD; font-weight: 600; }
+.my-title { font-family: var(--font-brand); font-size: var(--fs-26); color: var(--mat-paper-tone); font-weight: 600; }
 .my-meta { font-size: var(--fs-20); color: var(--color-text-secondary); font-family: var(--font-mono); }
 
 .my-action-row { display: flex; justify-content: space-between; align-items: center; margin-top: 12rpx; }
@@ -421,7 +421,7 @@
   margin-top: 8rpx;
   font-size: var(--fs-30);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   font-family: var(--font-brand);
 }
 .claim-entry-desc {

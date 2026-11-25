@@ -1,8 +1,8 @@
 @import '../naturalist.wxss';
 /* 今日一物：大名宋体、学名斜体、短文缩进一档 */
-.dl-name { display: block; margin-top: 24rpx; font-family: var(--font-brand); font-size: 52rpx; letter-spacing: .1em; color: #2E2618; }
-.dl-latin { display: block; margin-top: 8rpx; font-family: var(--font-latin); font-style: italic; font-size: var(--fs-26); color: #6B5A3E; }
+.dl-name { display: block; margin-top: 24rpx; font-family: var(--font-brand); font-size: 52rpx; letter-spacing: .1em; color: var(--mat-ink); }
+.dl-latin { display: block; margin-top: 8rpx; font-family: var(--font-latin); font-style: italic; font-size: var(--fs-26); color: var(--mat-ink-soft); }
 .dl-field + .dl-field { margin-top: 20rpx; }
 .dl-essay { margin-top: 28rpx; padding: 20rpx 0 4rpx 22rpx; border-left: 2rpx solid rgba(138, 111, 69, 0.45); }
 .dl-essay-t { display: block; margin-top: 8rpx; font-family: var(--font-brand); font-size: var(--fs-28); line-height: 1.9; color: #3A2F1E; }
-.dl-sign { display: block; margin-top: 28rpx; text-align: right; font-size: var(--fs-20); letter-spacing: .12em; color: #8A6F45; }
+.dl-sign { display: block; margin-top: 28rpx; text-align: right; font-size: var(--fs-20); letter-spacing: .12em; color: var(--mat-ink-label); }

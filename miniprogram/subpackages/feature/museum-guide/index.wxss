@@ -24,7 +24,7 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
   height: 52rpx;
   margin-top: 6rpx;
   border-radius: var(--r-thumb-sm, 8rpx);
-  background: #8E3B2E;
+  background: var(--mat-seal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,8 +51,8 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 }
 .mg-bubble.is-guide {
   border-radius: 4rpx var(--r-card, 16rpx) var(--r-card, 16rpx) var(--r-card, 16rpx);
-  background: linear-gradient(180deg, #F3ECDD, #E9DFCA);
-  color: #2E2618;
+  background: linear-gradient(180deg, var(--mat-paper-tone), #E9DFCA);
+  color: var(--mat-ink);
   box-shadow: inset 0 0 0 1rpx rgba(176, 141, 87, 0.35);
 }
 .mg-bubble.is-guide.is-error { background: rgba(196, 167, 108, 0.08); color: var(--brass-200, #E3D2AC); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28); }
@@ -66,9 +66,9 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 
 /* 翻书中 */
 .mg-bubble.is-pending { display: flex; align-items: center; gap: 14rpx; }
-.mg-pending-t { font-size: var(--fs-24); color: #6B5A3E; }
+.mg-pending-t { font-size: var(--fs-24); color: var(--mat-ink-soft); }
 .mg-dots { display: flex; gap: 8rpx; }
-.mg-dot { width: 10rpx; height: 10rpx; border-radius: 50%; background: #B08D57; animation: mg-dot 1.2s ease-in-out infinite; }
+.mg-dot { width: 10rpx; height: 10rpx; border-radius: 50%; background: var(--mat-brass-pin); animation: mg-dot 1.2s ease-in-out infinite; }
 .mg-dot:nth-child(2) { animation-delay: .15s; }
 .mg-dot:nth-child(3) { animation-delay: .3s; }
 @keyframes mg-dot { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-6rpx); } }
@@ -139,7 +139,7 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 /* 图鉴物种链接（2026-11-23）：回答下方一枚小标本签 */
 
 /* 逐字显示中（2026-11-23）：末尾一枚铜色光标（嵌套 text：真机 text 组件上 ::after 不可靠） */
-.mg-caret { margin-left: 2rpx; color: #B08D57; animation: mg-caret 0.8s steps(1) infinite; }
+.mg-caret { margin-left: 2rpx; color: var(--mat-brass-pin); animation: mg-caret 0.8s steps(1) infinite; }
 @keyframes mg-caret { 50% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .mg-caret { animation: none; } }
 
@@ -176,10 +176,10 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
   box-shadow: inset 0 0 0 1rpx rgba(176, 141, 87, 0.35);
 }
 .mg-fb-l, .mg-fb-r { display: flex; align-items: center; gap: 12rpx; }
-.mg-fb-btn { padding: 10rpx 4rpx; font-size: var(--fs-22); color: #8A6F45; }
-.mg-fb-btn.is-saved { color: #8E3B2E; }
+.mg-fb-btn { padding: 10rpx 4rpx; font-size: var(--fs-22); color: var(--mat-ink-label); }
+.mg-fb-btn.is-saved { color: var(--mat-seal); }
 .mg-fb-sep { font-size: var(--fs-20); color: rgba(138, 111, 69, 0.5); }
-.mg-fb-done { padding: 10rpx 0; font-size: var(--fs-22); color: #6B5A3E; }
+.mg-fb-done { padding: 10rpx 0; font-size: var(--fs-22); color: var(--mat-ink-soft); }
 
 .mg-strip-box { align-self: stretch; display: flex; align-items: center; gap: 14rpx; margin-top: 20rpx; }
 .mg-strip-k { flex-shrink: 0; width: 76rpx; font-size: var(--fs-20); letter-spacing: .08em; color: var(--brass-300, #D4BC8A); }

@@ -93,7 +93,7 @@ page {
   font-size: 64rpx;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .cover-count {
@@ -170,7 +170,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-34);
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .sec-count {
@@ -642,7 +642,7 @@ page {
   font-size: var(--fs-36);
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .modal-cond {

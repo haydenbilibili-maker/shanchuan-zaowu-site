@@ -1057,7 +1057,7 @@ page {
   margin-top: 8rpx;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .overview-panel {
@@ -1098,7 +1098,7 @@ page {
   font-family: var(--font-brand);
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .status-pill,
 .type-tag,
@@ -1152,7 +1152,7 @@ page {
   margin-top: 6rpx;
   font-size: var(--fs-26);
   line-height: 1.5;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .reject-sheet .page-tip { margin-top: 16rpx; }
 

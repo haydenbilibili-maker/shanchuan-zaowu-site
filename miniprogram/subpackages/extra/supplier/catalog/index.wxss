@@ -164,7 +164,7 @@
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   line-height: 1.35;
 }
 
@@ -332,7 +332,7 @@
   font-family: var(--font-brand);
   font-size: var(--fs-26);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .cart-bar-count {

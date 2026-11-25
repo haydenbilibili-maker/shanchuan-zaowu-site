@@ -418,7 +418,7 @@ page {
   margin-top: 8rpx;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .link-chip {
   padding: 8rpx 18rpx;
@@ -472,7 +472,7 @@ page {
   font-family: var(--font-brand);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .status-tag {
   border-radius: var(--r-pill, 999rpx);
@@ -512,7 +512,7 @@ page {
   font-family: var(--font-brand);
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .sheet-close { color: var(--brass-200); }
 .field-label { letter-spacing: 0.04em; }

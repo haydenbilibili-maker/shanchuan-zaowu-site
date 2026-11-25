@@ -526,7 +526,7 @@
 .hero-card.level-skin-2 .hero-overline,
 .hero-card.level-skin-2 .hero-growth,
 .hero-card.level-skin-2 .hero-progress-text,
-.hero-card.level-skin-2 .hero-next { color: #6B5A3E; }
+.hero-card.level-skin-2 .hero-next { color: var(--mat-ink-soft); }
 .hero-card.level-skin-2 .hero-badge {
   background: rgba(139, 111, 71, 0.12);
   border-color: rgba(139, 111, 71, 0.34);
@@ -539,7 +539,7 @@
 .plate.level-skin-2 .plate-lv,
 .plate.level-skin-2 .plate-discount,
 .plate.level-skin-2 .plate-name { color: #33302C; }
-.plate.level-skin-2 .plate-threshold { color: #6B5A3E; }
+.plate.level-skin-2 .plate-threshold { color: var(--mat-ink-soft); }
 .plate.level-skin-2 .plate-status { color: #2D5A3F; }
 .plate.level-skin-2 .plate-status.is-current { color: #8B6F47; }
 

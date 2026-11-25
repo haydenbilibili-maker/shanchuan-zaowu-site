@@ -42,7 +42,7 @@ page {
   gap: 28rpx;
   padding: 44rpx 36rpx 36rpx;
   /* radius:object */ border-radius: 4rpx;  /* 养护牌：顶部带钉的奶白铭牌，属物件，保持直角 */
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.42);
 }
 
@@ -62,7 +62,7 @@ page {
   height: 16rpx;
   margin-left: -8rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
 }
 
 .cat-hero-plate {
@@ -88,7 +88,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .cat-hero-lead {
@@ -126,7 +126,7 @@ page {
   margin-top: 6rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-32);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .context-tags {
@@ -175,7 +175,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-34);
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .plate-summary {
@@ -273,7 +273,7 @@ page {
   margin-top: 4rpx;
   font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .block-toggle {
@@ -370,7 +370,7 @@ page {
 .warning-label {
   font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .warning-body {
@@ -431,7 +431,7 @@ page {
 .framing-title {
   font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .framing-badge {

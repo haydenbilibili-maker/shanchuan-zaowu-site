@@ -32,7 +32,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .intro-text {
@@ -155,7 +155,7 @@ page {
 .empty-title {
   font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .empty-desc {

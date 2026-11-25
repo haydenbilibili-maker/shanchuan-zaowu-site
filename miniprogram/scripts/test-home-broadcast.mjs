@@ -211,7 +211,7 @@ async function runChecks() {
   ok('H4 开馆条走 goToBooking（门店开关在那里判）', /if \(item\.store\) \{ this\.goToBooking\(\); return; \}/.test(js))
   const castT = wxss.slice(wxss.indexOf('.home-cast-t {'), wxss.indexOf('}', wxss.indexOf('.home-cast-t {')))
   ok('H4 单行定高、不折行（轮播不跳）', /\.home-cast-swiper \{ height: 40rpx;/.test(wxss) && /white-space: nowrap;/.test(castT) && /text-overflow: ellipsis;/.test(castT))
-  ok('H4 无框口播带：不再套卡片底色 / 实心红印', !/#8E3B2E/.test(wxss) && !/\.home-cast \{[^}]*background:/.test(wxss))
+  ok('H4 无框口播带：不再套卡片底色 / 实心红印', !/#8E3B2E|--mat-seal\)/.test(wxss) && !/\.home-cast \{[^}]*background:/.test(wxss))
   ok('H4 小程序端 / 超管页通知截断与云端同口径（22 字）', /\.slice\(0, 22\)\)\.slice\(0, 3\)/.test(read(P.flagsUtil)) && /const NOTICE_LEN = 22/.test(read(P.monView)))
   ok('H4 from=home 三端登记（页面白名单 / 云函数入口 / 超管报表标签）',
     /'workshop', 'home'\]\.indexOf\(options && options\.from\)/.test(read(P.guidePage)) &&

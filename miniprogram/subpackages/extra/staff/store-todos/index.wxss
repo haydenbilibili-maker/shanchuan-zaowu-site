@@ -43,7 +43,7 @@
   font-size: var(--fs-36);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .cer-sub {
   position: relative;

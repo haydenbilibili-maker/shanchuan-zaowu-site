@@ -1116,7 +1116,7 @@
 .vip-card.level-skin-2 .growth-target,
 .vip-card.level-skin-2 .cb-row-label,
 .vip-card.level-skin-2 .cb-tags-label,
-.vip-card.level-skin-2 .cb-since { color: #6B5A3E; }
+.vip-card.level-skin-2 .cb-since { color: var(--mat-ink-soft); }
 .vip-card.level-skin-2 .growth-gap-line,
 .vip-card.level-skin-2 .growth-status,
 .vip-card.level-skin-2 .growth-perk-delta,
@@ -1145,7 +1145,7 @@
   color: #F2EDE4;
 }
 .vip-card.level-skin-2 .rate-tag {
-  color: #6B5A3E;
+  color: var(--mat-ink-soft);
   border-color: rgba(139, 111, 71, 0.36);
   background: rgba(255, 252, 245, 0.4);
 }
@@ -1188,7 +1188,7 @@
 .vip-card.level-skin-2 .cb-stat-label,
 .vip-card.level-skin-2 .cb-persona,
 .vip-card.level-skin-2 .cb-tags-empty,
-.vip-card.level-skin-2 .cb-specimen { color: #6B5A3E; }
+.vip-card.level-skin-2 .cb-specimen { color: var(--mat-ink-soft); }
 .vip-card.level-skin-2 .card-back-foot { border-top-color: rgba(139, 111, 71, 0.2); }
 .vip-card.level-skin-2 .cb-birthday-row.today {
   background: rgba(45, 90, 63, 0.08);

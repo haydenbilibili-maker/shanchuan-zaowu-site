@@ -83,7 +83,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .welcome { font-size: var(--fs-24); color: var(--brass-200); letter-spacing: 0.08em; font-weight: 500; text-transform: uppercase; display: block; margin-bottom: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 /* 问候行尾的分钟级时钟（原右上角日期胶囊） */
 .welcome-clock { font-family: var(--font-mono); color: var(--color-text-secondary); letter-spacing: 0.02em; text-transform: none; }
-.sub-welcome { font-family: var(--font-brand); font-size: var(--fs-40); color: #F3ECDD; font-weight: 600; letter-spacing: 0.1em; white-space: nowrap; }
+.sub-welcome { font-family: var(--font-brand); font-size: var(--fs-40); color: var(--mat-paper-tone); font-weight: 600; letter-spacing: 0.1em; white-space: nowrap; }
 
 /* 金卡 KPI */
 .kpi-card {

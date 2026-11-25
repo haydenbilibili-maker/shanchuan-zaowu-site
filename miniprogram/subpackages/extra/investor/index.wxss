@@ -49,7 +49,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .boot-hint {
@@ -107,7 +107,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   word-break: break-word;
 }
 
@@ -126,7 +126,7 @@ page {
   min-width: 0;
   font-size: var(--fs-26);
   font-weight: 500;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -259,7 +259,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-32);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   line-height: 1.35;
   word-break: break-word;
 }
@@ -267,7 +267,7 @@ page {
 .verdict-title.up { color: var(--color-success, #52B788); }
 .verdict-title.warn { color: var(--color-warning, #E9A23B); }
 .verdict-title.down { color: var(--color-error, #D64045); }
-.verdict-title.flat { color: #F3ECDD; }
+.verdict-title.flat { color: var(--mat-paper-tone); }
 
 .verdict-badge {
   flex: 0 0 auto;
@@ -418,7 +418,7 @@ page {
   font-size: var(--fs-28);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -530,7 +530,7 @@ page {
   font-size: var(--fs-26);
   font-family: var(--font-mono);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -575,7 +575,7 @@ page {
   font-size: 34rpx;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .hero-card {
@@ -617,7 +617,7 @@ page {
   font-family: var(--font-mono);
   font-size: var(--fs-48);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   letter-spacing: 0.01em;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -649,7 +649,7 @@ page {
   margin-top: 6rpx;
   font-family: var(--font-mono);
   font-size: var(--fs-22);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -688,7 +688,7 @@ page {
   font-family: var(--font-mono);
   font-size: var(--fs-24);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -800,7 +800,7 @@ page {
   font-family: var(--font-mono);
   font-size: var(--fs-26);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -998,7 +998,7 @@ page {
 .empty-title {
   display: block;
   font-size: var(--fs-28);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .empty-desc {

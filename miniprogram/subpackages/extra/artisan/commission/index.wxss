@@ -28,7 +28,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .header-note {
   display: block;
@@ -44,7 +44,7 @@ page {
   padding: 40rpx 32rpx 28rpx;
   margin-bottom: var(--space-5);
   border-radius: var(--r-card, 16rpx);
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
 }
 .summary-card::before {
@@ -65,7 +65,7 @@ page {
   margin-top: 10rpx;
   font-family: var(--font-mono);
   font-size: var(--fs-48);
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 .summary-sub {
   margin-top: 10rpx;
@@ -81,7 +81,7 @@ page {
   font-size: 34rpx;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   background: linear-gradient(90deg, rgba(196, 167, 108, 0.55), rgba(196, 167, 108, 0.12) 60%, transparent) left bottom / 100% 1px no-repeat;
 }
 
@@ -112,7 +112,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-26);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .ledger-meta {
   margin-top: 6rpx;

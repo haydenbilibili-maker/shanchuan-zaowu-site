@@ -8,7 +8,7 @@
   flex-direction:column;
 }
 .ps-desc{margin-top:14rpx;font-size:var(--fs-24);line-height:1.7;color:#B8AD98}
-.ps-input{margin-top:32rpx;height:92rpx;padding:0 28rpx;border:2rpx solid rgba(196,167,108,0.5);border-radius:var(--radius-md);background:#2A2621;color:#F3ECDD;font-size:var(--fs-34);letter-spacing:4rpx}
+.ps-input{margin-top:32rpx;height:92rpx;padding:0 28rpx;border:2rpx solid rgba(196,167,108,0.5);border-radius:var(--radius-md);background:#2A2621;color:var(--mat-paper-tone);font-size:var(--fs-34);letter-spacing:4rpx}
 .ps-ph{color:#7D7466;letter-spacing:0;font-size:var(--fs-28)}
 .ps-error{margin-top:14rpx;font-size:var(--fs-24);color:#E8927C}
 .ps-btn {

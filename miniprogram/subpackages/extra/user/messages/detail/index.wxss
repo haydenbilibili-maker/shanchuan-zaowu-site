@@ -895,7 +895,7 @@ page {
   font-size: var(--fs-22);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .letter-seal.seal-campaign { background: #9E3B2E; }
@@ -1020,7 +1020,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-20);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 .unseal-open .ue-flap,
 .unseal-out .ue-flap { transform: rotateX(180deg); }

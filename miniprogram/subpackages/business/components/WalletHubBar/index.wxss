@@ -100,7 +100,7 @@
 }
 
 .whb-item.is-on .whb-cn {
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   font-family: var(--font-brand);
   font-weight: 600;
 }

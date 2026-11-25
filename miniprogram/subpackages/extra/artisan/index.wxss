@@ -37,7 +37,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .greeting {
@@ -46,7 +46,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-30);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .header-note {
@@ -88,7 +88,7 @@ page {
   font-size: 34rpx;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 /* 今日待办：方角发丝账格；有待办的格 = 暖金底 + 金线环，零的格退到发丝框 */
@@ -187,7 +187,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-26);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -255,7 +255,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .module-desc {

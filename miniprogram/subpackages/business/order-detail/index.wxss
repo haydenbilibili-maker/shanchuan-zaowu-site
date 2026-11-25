@@ -1018,7 +1018,7 @@ view, text, image, button { box-sizing: border-box; }
   width: 560rpx;
   padding: 48rpx 44rpx 40rpx;
   box-sizing: border-box;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   /* radius:object */ border-radius: 4rpx;
   box-shadow: inset 0 0 0 14rpx #F0E8D6, inset 0 0 0 15rpx rgba(46, 38, 24, 0.22), 0 24rpx 60rpx rgba(0, 0, 0, 0.55);
   animation: ac-rise 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) both;
@@ -1038,12 +1038,12 @@ view, text, image, button { box-sizing: border-box; }
   font-size: var(--fs-34);
   font-weight: 700;
   line-height: 1.35;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
-.ac-rule { width: 72rpx; height: 2rpx; margin: 20rpx 0 14rpx; background: #B08D57; }
+.ac-rule { width: 72rpx; height: 2rpx; margin: 20rpx 0 14rpx; background: var(--mat-brass-pin); }
 .ac-row { display: flex; gap: 20rpx; padding: 6rpx 0; font-size: var(--fs-24); }
 .ac-k { flex-shrink: 0; color: #8A7F6C; letter-spacing: 0.1em; }
-.ac-v { color: #2E2618; }
+.ac-v { color: var(--mat-ink); }
 .ac-v.mono { font-family: var(--font-mono); letter-spacing: 0.06em; }
 .ac-seal {
   position: absolute;
@@ -1071,8 +1071,8 @@ view, text, image, button { box-sizing: border-box; }
   text-align: center;
   border-radius: var(--r-control, 16rpx);
   font-size: var(--fs-26);
-  background: #2E2618;
-  color: #F3ECDD;
+  background: var(--mat-ink);
+  color: var(--mat-paper-tone);
 }
 .ac-btn.is-ghost { background: transparent; color: #5C513D; box-shadow: inset 0 0 0 1rpx rgba(46, 38, 24, 0.35); }
 @keyframes ac-rise { from { opacity: 0; transform: translateY(48rpx); } to { opacity: 1; transform: translateY(0); } }

@@ -1301,7 +1301,7 @@ page {
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-title {
   font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .message-title {

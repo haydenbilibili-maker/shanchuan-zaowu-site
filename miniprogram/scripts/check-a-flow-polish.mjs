@@ -324,7 +324,7 @@ function checks(s) {
   add('R13-1 门店名片是浅纸标本签，地图在签外独立成图版（不再塞进深色卡里）',
     /class="info-map-wrap"[\s\S]*?<view class="store-card">\s*<view class="card-pin"/.test(s.storeWxml) &&
       !/<view class="store-card">[\s\S]*?<map[\s\S]*?class="checkin-inline/.test(s.storeWxml) &&
-      /\n\.store-card \{[^}]*background: linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.storeWxss))
+      /\n\.store-card \{[^}]*background: (?:linear-gradient\(180deg, #F3ECDD, #E8DFCB\)|var\(--mat-paper-label\))/.test(s.storeWxss))
   add('R13-2 门店页实心金只有「预约参观」一处（「我已到店」行内 / 浮钮都是金线环）',
     [...s.storeWxss.matchAll(/\n(\.[^{\n]+) \{([^}]*)\}/g)]
       .filter(([, sel, body]) => /background: var\(--brass-400\)/.test(body) && !/press|disabled/.test(sel)).map(([, sel]) => sel.trim()).join(',') === '.booking-btn')
@@ -368,7 +368,7 @@ function checks(s) {
   add('R17-1 联系专员实心金只给「开始对话」（微信专员是主路径），留言提交为金线环',
     solidGold(s.supportWxss) === '.channel-btn' && /\n\.submit-btn \{[^}]*background: transparent !important;/.test(s.supportWxss))
   add('R17-2 联系专员留言写在浅纸便笺上、无 grain-overlay、联系方式为发丝线行（不再是圆角卡）',
-    /\n\.form-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
+    /\n\.form-card \{[^}]*(?:linear-gradient\(180deg, #F3ECDD, #E8DFCB\)|var\(--mat-paper-label\))/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
       !/\n\.channel-item \{[^}]*border-radius/.test(s.supportWxss))
   // 2026-10-18 搜索「检索台」
   // 2026-11-22 圆角融合（产品负责人确认方向）：签由方角改为胶囊（var(--r-pill)），结果行与页签不变
@@ -377,7 +377,7 @@ function checks(s) {
       /\n\.chip \{[^}]*border-radius: var\(--r-pill, 999rpx\);/.test(s.searchWxss) && !/grain-overlay/.test(s.searchWxml) && !/font-style: italic;\n  color: var\(--brass-400/.test(s.searchWxss))
   // 2026-10-18 主播工作台（员工端，产品负责人点名）
   add('R19-1 主播工作台：主播职责为发丝线行（非圆角卡）、「下一步」为浅纸指引签、流程为下划线；员工端红 / 黄语义色保留',
-    !/\n\.module-card \{[^}]*border-radius/.test(s.liveWxss) && /\n\.next-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.liveWxss) &&
+    !/\n\.module-card \{[^}]*border-radius/.test(s.liveWxss) && /\n\.next-card \{[^}]*(?:linear-gradient\(180deg, #F3ECDD, #E8DFCB\)|var\(--mat-paper-label\))/.test(s.liveWxss) &&
       /\.flow-step-btn\.hot \{\s*border-bottom-color: var\(--brass-400\);/.test(s.liveWxss) && /\.flow-step-btn\.on-air \{\s*border-bottom-color: var\(--color-error\);/.test(s.liveWxss) &&
       /\.footer-end \{[^}]*var\(--color-error\)/.test(s.liveWxss))
   // 2026-10-18 标本师工作台（员工端，产品负责人点名）
@@ -391,8 +391,8 @@ function checks(s) {
     add(`R21-1 标本师子页按圆角融合取角色令牌（2026-11-22 圆角融合：原「方角 / 无胶囊」口径作废，按角色取 --r-* 令牌；直角越线由 check:radius-roles 统一管）${unfused.length ? '（未取令牌：' + unfused.join(',') + '）' : ''}`, unfused.length === 0)
   }
   add('R21-2 标本师子页：提成 / 伴宠汇总为浅纸账签，概念卡为浅纸标本签，档案选项签选中不再实心金',
-    ['artCommission', 'artPet'].every((k) => /\n\.summary-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s[k])) &&
-      /\n\.plate-card \{[^}]*linear-gradient\(180deg, #F3ECDD, #E8DFCB\)/.test(s.artConcept) &&
+    ['artCommission', 'artPet'].every((k) => /\n\.summary-card \{[^}]*(?:linear-gradient\(180deg, #F3ECDD, #E8DFCB\)|var\(--mat-paper-label\))/.test(s[k])) &&
+      /\n\.plate-card \{[^}]*(?:linear-gradient\(180deg, #F3ECDD, #E8DFCB\)|var\(--mat-paper-label\))/.test(s.artConcept) &&
       !/\.type-chip\.is-on \{[^}]*background: var\(--brass-400\)/.test(s.artProfile))
   // 2026-10-18 采购商工作台（共享 supplier-common，含六个子页的公共零件）
   add('R22-1 采购商工作台：入口为发丝线行、流程为下划线、行内动作非实心金药丸、签为胶囊（圆角融合）；演示橙保留',
@@ -1178,7 +1178,7 @@ if (process.argv.includes('--selftest')) {
     ['预约票翻面处理器丢失', 'bookingJs', (t) => t.replace('isFlipped: !this.data.isFlipped', 'isFlipped: false')],
     ['预约票水印又换成文字', 'bookingWxml', (t) => t.replace('<view class="watermark">🦋</view>', '<text class="watermark">山海</text>')],
     ['门店地图塞回名片', 'storeWxml', (t) => t.replace('<view class="card-pin" aria-hidden="true"></view>', '<view class="card-pin" aria-hidden="true"></view><map class="info-map"></map>')],
-    ['门店名片回到深色卡', 'storeWxss', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx', '  background: #1F1D1A;\n  box-shadow: 0 12rpx 28rpx')],
+    ['门店名片回到深色卡', 'storeWxss', (t) => t.replace('  background: var(--mat-paper-label);\n  box-shadow: 0 12rpx 28rpx', '  background: #1F1D1A;\n  box-shadow: 0 12rpx 28rpx')],
     ['签到浮钮回到实心金', 'storeWxss', (t) => t.replace('  background: #1F1D1A;\n  box-shadow: var(--ring-brass), 0 12rpx', '  background: var(--brass-400);\n  box-shadow: var(--ring-brass), 0 12rpx')],
     ['预览库忘了 map', 'previewLib', (t) => t.replace("map: 'div', ", '')],
     ['入馆券页头回到实心金带', 'ticketWxss', (t) => t.replace('.ticket-header {\n  padding: 44rpx 32rpx 8rpx;', '.ticket-header {\n  background: linear-gradient(135deg, #A8903C 0%, #C4A76C 100%);\n  padding: 44rpx 32rpx 8rpx;')],
@@ -1203,7 +1203,7 @@ if (process.argv.includes('--selftest')) {
     ['在播步骤丢了红色语义', 'liveWxss', (t) => t.replace('.flow-step-btn.on-air {\n  border-bottom-color: var(--color-error);', '.flow-step-btn.on-air {\n  border-bottom-color: var(--brass-400);')],
     ['标本师入口回到大圆角卡', 'artisanWxss', (t) => t.replace('  padding: 24rpx 4rpx;\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);', '  padding: 24rpx 4rpx;\n  border-radius: var(--radius-lg);\n  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);')],
     ['标本师作品库整页退回方角', 'artWorks', (t) => t.replace(/var\(--r-[a-z-]+, [^)]+\)/g, '2rpx')],
-    ['概念卡回到深色铜牌', 'artConcept', (t) => t.replace('  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;', '  background: var(--color-bg-card);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;')],
+    ['概念卡回到深色铜牌', 'artConcept', (t) => t.replace('  background: var(--mat-paper-label);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: var(--mat-ink);', '  background: var(--color-bg-card);\n  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);\n  color: #2E2618;')],
     ['采购商行内动作回到实心金', 'supplierCommon', (t) => t.replace('  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-22);', '  background: var(--brass-500);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-22);')],
     ['加入采购车回到实心金药丸', 'buyCatalog', (t) => t.replace('  border-radius: var(--r-control, 16rpx);\n  background: rgba(196, 167, 108, 0.1);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);', '  border-radius: 999rpx;\n  background: var(--brass-400);\n  box-shadow: var(--ring-brass);\n  color: var(--brass-200);\n  font-size: var(--fs-24);')],
     ['供应商管理整页退回方角', 'deskCommon', (t) => t.replace(/var\(--r-[a-z-]+, [^)]+\)/g, '2rpx')],

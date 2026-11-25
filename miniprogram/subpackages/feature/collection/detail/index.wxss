@@ -104,7 +104,7 @@ page { background: #1A1814; }
 }
 
 .plate.is-lit {
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.45);
 }
 
@@ -126,7 +126,7 @@ page { background: #1A1814; }
   height: 20rpx;
   margin-left: -10rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
 }
 
 .plate-top {
@@ -165,7 +165,7 @@ page { background: #1A1814; }
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #2E2618;
+  color: var(--mat-ink);
   text-align: center;
 }
 
@@ -441,7 +441,7 @@ page { background: #1A1814; }
   font-family: var(--font-brand);
   font-size: var(--fs-30);
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .logs > .sec-t {
@@ -704,7 +704,7 @@ button.btn-share::after {
   display: block;
   font-family: var(--font-brand);
   font-size: var(--fs-32);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   margin-bottom: 12rpx;
 }
 .way {
@@ -746,7 +746,7 @@ button.btn-share::after {
   justify-content: space-between;
   margin-bottom: 16rpx;
 }
-.chapter-strip-t { font-family: var(--font-brand); font-size: var(--fs-28); color: #F3ECDD; }
+.chapter-strip-t { font-family: var(--font-brand); font-size: var(--fs-28); color: var(--mat-paper-tone); }
 .chapter-strip-n { font-family: var(--font-mono); font-size: var(--fs-22); color: var(--color-text-secondary); }
 .chapter-strip-row { white-space: nowrap; }
 .cs-cell {
@@ -764,7 +764,7 @@ button.btn-share::after {
 }
 .cs-cell.is-lit {
   border: none;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
 }
 .cs-cell.is-current { box-shadow: 0 0 0 3rpx var(--brass-400, #C4A76C); }
 .cs-art { width: 72rpx; height: 72rpx; }
@@ -774,7 +774,7 @@ button.btn-share::after {
   max-width: 116rpx;
   margin-top: 2rpx;
   font-size: var(--fs-18);
-  color: #2E2618;
+  color: var(--mat-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -782,7 +782,7 @@ button.btn-share::after {
 
 /* 问问博物君（2026-11-23）：短文下一行，朱色「博」方寸印 + 铜字 */
 .ask-guide { display: flex; align-items: center; gap: 16rpx; margin-top: 28rpx; padding: 22rpx 24rpx; border-radius: var(--r-card, 16rpx); background: rgba(196, 167, 108, 0.08); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28); }
-.ask-guide-seal-icon { flex-shrink: 0; width: 40rpx; height: 40rpx; padding: 6rpx; box-sizing: border-box; border-radius: var(--r-thumb-sm, 8rpx); background: #8E3B2E; }
+.ask-guide-seal-icon { flex-shrink: 0; width: 40rpx; height: 40rpx; padding: 6rpx; box-sizing: border-box; border-radius: var(--r-thumb-sm, 8rpx); background: var(--mat-seal); }
 .ask-guide-t { flex: 1; min-width: 0; font-size: var(--fs-26); color: var(--brass-200, #E3D2AC); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ask-guide-go { flex-shrink: 0; font-size: var(--fs-26); color: var(--brass-300, #D4BC8A); }
 

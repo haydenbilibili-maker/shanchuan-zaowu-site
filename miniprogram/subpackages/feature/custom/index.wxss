@@ -2,7 +2,7 @@
    页头眉标 + 宋体主标；五步进度 = 等宽编号 + 下划线（不用实心金圆点）；藏品图版 + 图下图注、选中金线环；
    装裱 / 包装 / 标本师 / 升级入口为发丝线行；第 5 步方案签 = 浅纸标本签；实心金只给底栏主按钮。
    页头三段高度与 subpackages/feature/utils/customNav.js 的 mottoHeight(88rpx) / stepBarHeight(148rpx) 对齐，勿改。 */
-page { background: #1A1814; color: #F3ECDD; }
+page { background: #1A1814; color: var(--mat-paper-tone); }
 
 view, text, image { box-sizing: border-box; }
 
@@ -44,7 +44,7 @@ view, text, image { box-sizing: border-box; }
   font-size: var(--fs-34);
   font-weight: 600;
   letter-spacing: 0.16em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 /* 与 customNav.mottoHeight 对齐 */
@@ -122,7 +122,7 @@ view, text, image { box-sizing: border-box; }
 }
 
 .rail-dot.filled .rail-num { color: var(--brass-300); }
-.rail-dot.active .rail-num { color: #F3ECDD; font-weight: 600; }
+.rail-dot.active .rail-num { color: var(--mat-paper-tone); font-weight: 600; }
 
 .rail-line {
   position: absolute;
@@ -179,7 +179,7 @@ view, text, image { box-sizing: border-box; }
   font-size: 38rpx;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 
@@ -223,7 +223,7 @@ view, text, image { box-sizing: border-box; }
   font-family: var(--font-brand);
   font-size: var(--fs-24);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -251,7 +251,7 @@ view, text, image { box-sizing: border-box; }
   border-bottom: 1rpx solid rgba(196, 167, 108, 0.24);
 }
 
-.search-input { flex: 1; background: transparent; font-size: var(--fs-26); color: #F3ECDD; }
+.search-input { flex: 1; background: transparent; font-size: var(--fs-26); color: var(--mat-paper-tone); }
 
 .search-clear {
   display: flex;
@@ -276,7 +276,7 @@ view, text, image { box-sizing: border-box; }
   color: var(--color-text-secondary, #A09A90);
 }
 
-.pill.active { border-bottom-color: var(--brass-400); color: #F3ECDD; font-weight: 500; }
+.pill.active { border-bottom-color: var(--brass-400); color: var(--mat-paper-tone); font-weight: 500; }
 
 /* 藏品：图版 + 图下图注；选中 = 金线环 */
 .product-grid {
@@ -332,7 +332,7 @@ view, text, image { box-sizing: border-box; }
   font-size: var(--fs-26);
   font-weight: 600;
   line-height: 1.35;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .product-latin {
@@ -372,7 +372,7 @@ view, text, image { box-sizing: border-box; }
   pointer-events: none;
   border: 4rpx solid #8B6F47;
   border-radius: 2rpx;
-  box-shadow: inset 0 0 0 10rpx #E8DFCB;
+  box-shadow: inset 0 0 0 10rpx var(--mat-paper-tone-deep);
 }
 
 .workbench-img {
@@ -399,7 +399,7 @@ view, text, image { box-sizing: border-box; }
   font-size: var(--fs-30);
   font-weight: 600;
   line-height: 1.35;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .workbench-latin {
@@ -471,7 +471,7 @@ view, text, image { box-sizing: border-box; }
 
 .config-card.active { background: rgba(196, 167, 108, 0.06); box-shadow: var(--ring-brass); border-bottom-color: transparent; }
 
-.config-name { display: block; font-family: var(--font-brand); font-size: var(--fs-28); font-weight: 600; color: #F3ECDD; }
+.config-name { display: block; font-family: var(--font-brand); font-size: var(--fs-28); font-weight: 600; color: var(--mat-paper-tone); }
 .config-desc { display: block; margin-top: 6rpx; font-size: var(--fs-22); color: var(--color-text-secondary, #A09A90); }
 .config-price { flex-shrink: 0; font-family: var(--font-mono); font-size: var(--fs-24); color: var(--brass-200); }
 
@@ -546,11 +546,11 @@ view, text, image { box-sizing: border-box; }
   margin: 20rpx 0 24rpx;
   padding: 24rpx;
   border-radius: var(--r-control, 16rpx);
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   font-family: var(--font-brand);
   font-size: var(--fs-26);
   line-height: 1.7;
-  color: #2E2618;
+  color: var(--mat-ink);
   box-sizing: border-box;
 }
 
@@ -570,7 +570,7 @@ view, text, image { box-sizing: border-box; }
   padding: 12rpx;
   border: 4rpx solid #8B6F47;
   border-radius: 2rpx;
-  background: #E8DFCB;
+  background: var(--mat-paper-tone-deep);
 }
 
 .preview-hero-img { display: block; width: 100%; height: 100%; background: #262320; }
@@ -583,7 +583,7 @@ view, text, image { box-sizing: border-box; }
   font-size: var(--fs-32);
   font-weight: 600;
   line-height: 1.35;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .preview-hero-latin {
@@ -601,7 +601,7 @@ view, text, image { box-sizing: border-box; }
   margin-bottom: 36rpx;
   padding: 44rpx 36rpx 28rpx;
   border-radius: 4rpx;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
 }
 
@@ -621,7 +621,7 @@ view, text, image { box-sizing: border-box; }
   height: 14rpx;
   margin-left: -7rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
 }
 
 .plate-eyebrow {
@@ -644,7 +644,7 @@ view, text, image { box-sizing: border-box; }
 .preview-row:last-child { border-bottom: none; }
 
 .preview-label { flex-shrink: 0; font-size: var(--fs-22); color: #8A7F6C; }
-.preview-value { flex: 1; text-align: right; font-size: var(--fs-24); color: #2E2618; }
+.preview-value { flex: 1; text-align: right; font-size: var(--fs-24); color: var(--mat-ink); }
 .preview-value.latin { font-family: var(--font-latin); font-style: italic; color: #5A4E3A; }
 
 .price-breakdown { padding: 4rpx 0 0; border-top: 1rpx solid rgba(196, 167, 108, 0.14); }
@@ -677,7 +677,7 @@ view, text, image { box-sizing: border-box; }
 .escalation-section .section-label + .escalation-card { border-top: 1rpx solid rgba(196, 167, 108, 0.14); }
 
 .esc-main { flex: 1; min-width: 0; }
-.esc-title { display: block; font-family: var(--font-brand); font-size: var(--fs-28); font-weight: 600; color: #F3ECDD; }
+.esc-title { display: block; font-family: var(--font-brand); font-size: var(--fs-28); font-weight: 600; color: var(--mat-paper-tone); }
 .escalation-card.ghost .esc-title { font-family: inherit; font-weight: 400; color: var(--color-text-body, #D5D1C8); }
 .esc-desc { display: block; margin-top: 6rpx; font-size: var(--fs-22); line-height: 1.5; color: var(--color-text-secondary, #A09A90); }
 .esc-arrow { flex-shrink: 0; font-size: var(--fs-28); color: var(--brass-300); }

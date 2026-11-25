@@ -7,7 +7,7 @@
 
 page {
   background: #1A1814;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .page-support {
@@ -53,7 +53,7 @@ page {
   font-size: var(--fs-36);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .main-scroll {
@@ -125,7 +125,7 @@ page {
   flex: 1;
   text-align: right;
   font-size: var(--fs-26);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .service-val.muted {
@@ -228,7 +228,7 @@ page {
   font-size: var(--fs-28);
   font-weight: 600;
   line-height: 1.35;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -310,7 +310,7 @@ page {
   font-size: var(--fs-26);
   font-weight: 600;
   line-height: 1.35;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .topic-item.active .topic-label { color: var(--brass-200); }
@@ -342,7 +342,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .channel-desc {
@@ -381,9 +381,9 @@ page {
   position: relative;
   padding: 32rpx 28rpx 28rpx;
   border-radius: var(--r-card, 16rpx);
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .message-input {
@@ -392,7 +392,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   line-height: 1.75;
-  color: #2E2618;
+  color: var(--mat-ink);
   box-sizing: border-box;
 }
 
@@ -428,7 +428,7 @@ page {
   background: transparent;
   font-family: var(--font-mono);
   font-size: var(--fs-26);
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .form-actions {
@@ -487,7 +487,7 @@ page {
   gap: 16rpx;
   font-size: var(--fs-26);
   line-height: 1.5;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .faq-toggle {
@@ -524,7 +524,7 @@ page {
   min-width: 0;
   font-size: var(--fs-24);
   line-height: 1.6;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .visit-link {
@@ -583,7 +583,7 @@ page {
   height: 360rpx;
   padding: 16rpx;
   border-radius: var(--r-thumb-sm, 8rpx);
-  background: #F3ECDD;
+  background: var(--mat-paper-tone);
   box-sizing: border-box;
 }
 

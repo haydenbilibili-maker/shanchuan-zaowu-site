@@ -37,7 +37,7 @@ page {
   font-size: 64rpx;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .cover-count {
@@ -102,7 +102,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-34);
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .chapters .sec-head { display: block; }
@@ -266,7 +266,7 @@ page {
 
 /* 点亮：浅纸标本签（内发丝框 + 顶边铜别针） */
 .slot.is-lit {
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.35);
 }
 
@@ -286,7 +286,7 @@ page {
   height: 14rpx;
   margin-left: -7rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
 }
 
 .slot-no {
@@ -326,7 +326,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-24);
   font-weight: 600;
-  color: #2E2618;
+  color: var(--mat-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -359,7 +359,7 @@ page {
   width: 540rpx;
   padding: 44rpx 44rpx 40rpx;
   box-sizing: border-box;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   /* radius:object */ border-radius: 4rpx;
   box-shadow: inset 0 0 0 14rpx #F0E8D6, inset 0 0 0 15rpx rgba(46, 38, 24, 0.22), 0 24rpx 60rpx rgba(0, 0, 0, 0.55);
   animation: ex-rise 0.36s cubic-bezier(0.2, 0.8, 0.3, 1) both;
@@ -373,12 +373,12 @@ page {
   font-size: var(--fs-32);
   font-weight: 700;
   line-height: 1.35;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
-.ex-rule { width: 72rpx; height: 2rpx; margin: 18rpx 0 14rpx; background: #B08D57; }
+.ex-rule { width: 72rpx; height: 2rpx; margin: 18rpx 0 14rpx; background: var(--mat-brass-pin); }
 .ex-row { display: flex; gap: 20rpx; padding: 6rpx 0; font-size: var(--fs-24); }
 .ex-k { flex-shrink: 0; color: #8A7F6C; letter-spacing: 0.1em; }
-.ex-v { color: #2E2618; }
+.ex-v { color: var(--mat-ink); }
 .ex-v.mono { font-family: var(--font-mono); letter-spacing: 0.06em; }
 .ex-seal {
   position: absolute;

@@ -22,7 +22,7 @@ page { background: #1A1814; }
   font-family: var(--font-brand);
   font-size: var(--fs-44);
   letter-spacing: 0.1em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   font-weight: 600;
 }
 

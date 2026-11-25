@@ -24,7 +24,7 @@
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .header .sub {
@@ -67,7 +67,7 @@
   font-family: var(--font-brand);
   font-size: var(--fs-30);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .visibility-status {
@@ -131,7 +131,7 @@
   font-family: var(--font-brand);
   font-size: var(--fs-30);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .qualify-status {

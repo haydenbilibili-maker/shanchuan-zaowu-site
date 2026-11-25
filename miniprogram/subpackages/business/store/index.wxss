@@ -86,7 +86,7 @@ page {
   font-size: var(--fs-32);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .switcher-sub {
@@ -133,7 +133,7 @@ page {
   color: var(--color-text-secondary, #A09A90);
 }
 
-.store-pill.active .pill-name { color: #F3ECDD; font-weight: 500; }
+.store-pill.active .pill-name { color: var(--mat-paper-tone); font-weight: 500; }
 
 .pill-loc {
   font-size: var(--fs-20);
@@ -314,7 +314,7 @@ page {
   font-family: var(--font-mono);
   font-size: var(--fs-20);
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .hero-text {
@@ -339,7 +339,7 @@ page {
   font-size: var(--fs-48);
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .hero-tagline {
@@ -457,9 +457,9 @@ page {
   position: relative;
   padding: 44rpx 36rpx 28rpx;
   border-radius: 4rpx;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .store-card::before {
@@ -478,7 +478,7 @@ page {
   height: 14rpx;
   margin-left: -7rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
 }
 
 .store-card-head {
@@ -509,7 +509,7 @@ page {
   font-size: var(--fs-36);
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .store-card-floor {
@@ -592,7 +592,7 @@ page {
   min-width: 0;
   font-size: var(--fs-26);
   line-height: 1.5;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .fact-val-mono { font-family: var(--font-mono); letter-spacing: 0.02em; }
@@ -789,7 +789,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .zone-desc {
@@ -840,7 +840,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-24);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -906,7 +906,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-30);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -955,7 +955,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-30);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .walking-peer {

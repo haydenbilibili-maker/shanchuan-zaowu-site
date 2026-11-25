@@ -130,6 +130,9 @@ page {
   --pop-danger-to: #93321F;
   /* 材质令牌（docs/材质规范_纸与金属_2026-11-25.md）：值取自已落地的标本签 / 礼笺 / 铜钮，新模块只取令牌不再自调色。
      纸三档：标本签纸（默认）/ 信笺纸（礼笺、来信正文）/ 牛皮回执纸；纸上的字只用 ink 四档，不用 --color-text-*（那是暗底色） */
+  /* 纸本色（实色）：渐变里取色 / 纸上实心块 / 暗底上的「纸白」暖白字都用它，不再手写 #F3ECDD / #E8DFCB */
+  --mat-paper-tone: #F3ECDD;
+  --mat-paper-tone-deep: #E8DFCB;
   --mat-paper-label: linear-gradient(180deg, #F3ECDD 0%, #E8DFCB 100%);
   --mat-paper-letter: linear-gradient(180deg, #FAF6ED 0%, #F2EDE4 100%);
   --mat-paper-kraft: linear-gradient(180deg, #E6DAC2 0%, #D9CAAD 100%);

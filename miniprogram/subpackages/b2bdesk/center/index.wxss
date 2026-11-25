@@ -33,7 +33,7 @@
   font-size: var(--fs-48);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .hero-sub {

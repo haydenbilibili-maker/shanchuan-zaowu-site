@@ -30,7 +30,7 @@ page {
   font-size: 56rpx;
   font-weight: 600;
   letter-spacing: 0.1em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .head-sub {
@@ -47,7 +47,7 @@ page {
   margin-top: 40rpx;
   padding: 40rpx 36rpx 32rpx;
   border-radius: 4rpx;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.4);
 }
 
@@ -67,7 +67,7 @@ page {
   height: 16rpx;
   margin-left: -8rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
 }
 
 .season-eyebrow { color: #8B6F47; }
@@ -78,7 +78,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-32);
   font-weight: 600;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .season-desc {
@@ -106,7 +106,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-34);
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .sec-link {
@@ -195,7 +195,7 @@ page {
   display: block;
   font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .empty-desc {
@@ -227,7 +227,7 @@ page {
   padding: 24rpx 24rpx 28rpx;
   box-sizing: border-box;
   border-radius: 4rpx;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.3);
 }
 
@@ -270,7 +270,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .cat-desc {
@@ -341,7 +341,7 @@ page {
   display: block;
   font-family: var(--font-brand);
   font-size: var(--fs-28);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .support-desc {

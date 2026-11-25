@@ -126,8 +126,8 @@ view, text, image, button { box-sizing: border-box; }
   animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) infinite;
 }
 .cp-en { font-family: var(--font-mono); font-size: var(--fs-16); letter-spacing: 0.22em; color: #8B6F47; }
-.cp-rule { width: 64rpx; height: 2rpx; margin: 14rpx 0; background: #B08D57; }
-.cp-title { font-family: var(--font-brand); font-size: var(--fs-30); font-weight: 700; letter-spacing: 0.1em; color: #2E2618; }
+.cp-rule { width: 64rpx; height: 2rpx; margin: 14rpx 0; background: var(--mat-brass-pin); }
+.cp-title { font-family: var(--font-brand); font-size: var(--fs-30); font-weight: 700; letter-spacing: 0.1em; color: var(--mat-ink); }
 .cp-ink { width: 80%; height: 8rpx; margin-top: 18rpx; border-radius: 4rpx; background: rgba(46, 38, 24, 0.16); }
 .cp-ink.is-short { width: 56%; }
 .cp-seal {

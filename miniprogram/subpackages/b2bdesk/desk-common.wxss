@@ -32,7 +32,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .head-note {
@@ -69,7 +69,7 @@ page {
 }
 
 .tab.on .tab-text {
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   font-family: var(--font-brand);
   font-weight: 600;
 }

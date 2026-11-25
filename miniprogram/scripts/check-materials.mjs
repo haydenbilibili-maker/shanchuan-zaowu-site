@@ -25,7 +25,7 @@ const BASELINE = join(HERE, 'materials-baseline.json')
 const SKIP = new Set(['node_modules', 'miniprogram_npm', '.git', 'scripts', '.tmp'])
 
 export const TOKENS = [
-  '--mat-paper-label', '--mat-paper-letter', '--mat-paper-kraft', '--mat-paper-grain', '--mat-paper-edge',
+  '--mat-paper-tone', '--mat-paper-tone-deep', '--mat-paper-label', '--mat-paper-letter', '--mat-paper-kraft', '--mat-paper-grain', '--mat-paper-edge',
   '--mat-paper-frame', '--mat-paper-rule', '--mat-paper-shadow', '--mat-paper-shadow-press',
   '--mat-ink', '--mat-ink-body', '--mat-ink-soft', '--mat-ink-label',
   '--mat-brass', '--mat-brass-polished', '--mat-brass-edge', '--mat-brass-shadow', '--mat-brass-ink', '--mat-brass-pin',

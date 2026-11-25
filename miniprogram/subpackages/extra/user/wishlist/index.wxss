@@ -25,7 +25,7 @@ page {
   font-size: 56rpx;
   font-weight: 600;
   letter-spacing: 0.08em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 /* —— 下划线页签 —— */
@@ -96,7 +96,7 @@ page {
   display: block;
   font-family: var(--font-brand);
   font-size: var(--fs-28);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -183,7 +183,7 @@ page {
   display: block;
   font-family: var(--font-brand);
   font-size: var(--fs-30);
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .empty-sub {

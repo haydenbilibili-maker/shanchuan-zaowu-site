@@ -42,7 +42,7 @@ page {
   font-size: var(--fs-40);
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .header-row {
@@ -57,7 +57,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .preview-chip,
@@ -164,7 +164,7 @@ page {
 }
 
 .flow-step-btn.hot .flow-label,
-.flow-step-btn.on-air .flow-label { color: #F3ECDD; font-family: var(--font-brand); font-weight: 600; }
+.flow-step-btn.on-air .flow-label { color: var(--mat-paper-tone); font-family: var(--font-brand); font-weight: 600; }
 
 .flow-sep {
   flex-shrink: 0;
@@ -179,7 +179,7 @@ page {
   margin-bottom: var(--space-5);
   padding: 40rpx 32rpx 28rpx;
   border-radius: var(--r-card, 16rpx);
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.42);
 }
 
@@ -200,7 +200,7 @@ page {
   height: 14rpx;
   margin-left: -7rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
 }
 
 .next-card-head {
@@ -222,7 +222,7 @@ page {
   font-size: var(--fs-32);
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .next-body {
@@ -269,7 +269,7 @@ page {
   font-size: 34rpx;
   font-weight: 500;
   letter-spacing: 0.12em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .warn-banner {
@@ -353,7 +353,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-32);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .status-card-empty {
@@ -487,7 +487,7 @@ page {
   font-size: var(--fs-30);
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 /* 主播职责：发丝线行（原六张大圆角卡），开播控制台一行淡金底 */
@@ -550,7 +550,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .module-desc {
@@ -610,7 +610,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-26);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .shelf-chip-meta {
@@ -767,7 +767,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-28);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .session-meta {

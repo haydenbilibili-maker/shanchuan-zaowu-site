@@ -88,7 +88,7 @@
   font-family: var(--font-brand);
   font-size: var(--fs-26);
   font-weight: 600;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
 }
 
 .link-copy {
@@ -175,7 +175,7 @@
   font-family: var(--font-mono);
   font-size: var(--fs-26);
   letter-spacing: 0.04em;
-  color: #F3ECDD;
+  color: var(--mat-paper-tone);
   font-variant-numeric: tabular-nums;
 }
 
