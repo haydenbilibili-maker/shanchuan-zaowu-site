@@ -34,12 +34,12 @@ page {
 /* 资产行：一条发丝线夹住的四格（icon / label；角标在 icon 容器内出血） */
 .assets-panel {
   /* 2026-11-25 团块化微调：资产行也是一张卡（与下方各分区同一卡面），不再是两条发丝线夹住的平铺条 */
-  padding: 26rpx 8rpx 20rpx;
+  /* 2026-11-25 产品负责人对标线上版：「团块底色要内敛」—— 卡面回到线上口径：纯卡底 + 中性深色 1px 描边、无投影、无铜金光 */
+  padding: 32rpx 12rpx 24rpx;
   margin-top: 20rpx;
   border-radius: var(--radius-lg, 24rpx);
-  background: linear-gradient(180deg, rgba(196, 167, 108, 0.035) 0%, rgba(196, 167, 108, 0) 42%), var(--color-bg-card);
-  border: 1rpx solid rgba(196, 167, 108, 0.14);
-  box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.24);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-bg-elevated);
   box-sizing: border-box;
   overflow: visible;
 }
@@ -58,17 +58,17 @@ page {
 /* 2026-11-25 产品负责人：恢复「模块化 / 团块化」——每个面板是一张独立圆角卡，
    卡片之间留呼吸，内部统一 24rpx 内边距；标题用的发丝分隔线降到更淡一档，避免卡片里再切一刀 */
 .panel-box {
-  margin-top: 28rpx;
-  padding: 26rpx 24rpx 24rpx;
+  /* 2026-11-25 对标线上版（产品负责人：右侧团块底色太突出、不内敛）：与线上同一卡面 ——
+     纯 --color-bg-card 底（比页面底只亮一档）+ 中性深色 1px 描边（--color-bg-elevated，不用铜金）+ 无投影 + 32rpx 内边距 */
+  margin-top: 30rpx;
+  padding: 32rpx;
   border-radius: var(--radius-lg, 24rpx);
-  /* 2026-11-25：卡面顶部一层极淡的铜金光（3.5%），整组卡片有统一的「打光方向」 */
-  background: linear-gradient(180deg, rgba(196, 167, 108, 0.035) 0%, rgba(196, 167, 108, 0) 42%), var(--color-bg-card);
-  border: 1rpx solid rgba(196, 167, 108, 0.14);
-  box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.24);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-bg-elevated);
   box-sizing: border-box;
 }
 /* 列表卡：行自带高度，卡底少留一点，上下视觉留白对齐 */
-.panel-box.svc-group { padding-top: 24rpx; padding-bottom: 8rpx; }
+.panel-box.svc-group { padding-top: 32rpx; padding-bottom: 12rpx; }
 .panel-box:last-of-type { margin-bottom: 8rpx; }
 .panel-head {
   display: grid;
@@ -77,11 +77,8 @@ page {
   align-items: end;
   column-gap: 24rpx;
   padding-bottom: 18rpx;
-  /* 2026-11-25：卡头下沿由实线改为自左向右淡出的发丝线 —— 卡片里不再硬切一刀（与首页口播底线同一语言） */
-  background-image: linear-gradient(90deg, rgba(196, 167, 108, 0.28) 0%, rgba(196, 167, 108, 0.1) 55%, rgba(196, 167, 108, 0) 100%);
-  background-size: 100% 1rpx;
-  background-repeat: no-repeat;
-  background-position: left bottom;
+  /* 对标线上：一道很淡的通栏发丝线（不加渐隐、不加亮） */
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 .ph-title { grid-area: cn; margin-top: 6rpx; font-size: var(--fs-32); line-height: 1.4; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; }
 .ph-en { grid-area: en; font-size: var(--fs-16); line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
@@ -104,8 +101,8 @@ page {
 .order-matrix { display: flex; justify-content: space-between; padding: 26rpx 0 4rpx; }
 .om-item { display: flex; flex-direction: column; align-items: center; width: 20%; }
 .om-icon-wrap { position: relative; margin-bottom: 14rpx; }
-/* 2026-11-25：订单图标与其它分区同为品牌铜金（原为反白灰白，与馆藏 / 履约两卡的金色图标不一致） */
-.om-icon { width: 44rpx; height: 44rpx; filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%); opacity: 0.95; }
+/* 对标线上：订单图标保持低调灰线（不着铜金），只靠角标提示待办 */
+.om-icon { width: 48rpx; height: 48rpx; filter: invert(1); opacity: 0.7; }
 .om-item text { font-size: var(--fs-22); color: var(--color-text-body); }
 
 /* 服务图标统一品牌金：先压成纯黑剪影再着色到 #C4A76C */
@@ -124,8 +121,9 @@ page {
   min-height: 148rpx;
   box-sizing: border-box;
   border-radius: var(--radius-md, 16rpx);
-  background: rgba(255, 255, 255, 0.025);
-  border: 1rpx solid rgba(196, 167, 108, 0.1);
+  /* 内敛：小块只用比卡底再暗一点的底 + 中性描边，不发亮 */
+  background: rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--color-bg-elevated);
 }
 .svc-grid .m-img { width: 44rpx; height: 44rpx; }
 .svc-cn { font-size: var(--fs-24); color: var(--color-text-body); white-space: nowrap; }
