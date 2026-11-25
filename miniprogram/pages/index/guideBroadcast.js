@@ -177,9 +177,10 @@ const TONE_META = {
   open: { tone: 'open', label: '开馆' },
   notice: { tone: 'notice', label: '通知' },
   fact: { tone: 'fact', label: '博物' },
-  tip: { tone: 'tip', label: '提示' }
+  tip: { tone: 'tip', label: '提示' },
+  mail: { tone: 'mail', label: '来信' }
 }
-const TONE_OF_KIND = { store: 'open', notice: 'notice', fact: 'fact', tip: 'tip' }
+const TONE_OF_KIND = { store: 'open', notice: 'notice', fact: 'fact', tip: 'tip', mail: 'mail' }
 
 function toneOfKind(kind) {
   return TONE_OF_KIND[String(kind || '')] || 'tip'
@@ -213,6 +214,20 @@ function buildBroadcast(o) {
     });
   };
 
+  // 2026-11-25：山海有信有未读时，口播第一条就提示（点一下进信箱）
+  const mailUnread = Math.max(0, Math.floor(Number(opt.mailUnread) || 0));
+  if (open && mailUnread > 0) {
+    items.push({
+      key: 'mail-unread',
+      kind: 'mail',
+      tag: '山海有信',
+      text: mailUnread === 1 ? '你有 1 封未读来信' : `你有 ${mailUnread} 封未读来信`,
+      q: '',
+      store: false,
+      path: '/subpackages/extra/user/messages/index',
+      tone: 'mail'
+    });
+  }
   if (open) {
     (Array.isArray(opt.notices) ? opt.notices : []).slice(0, 3).forEach((t) => push('notice', '馆内通知', String(t || '').trim(), '', false));
   }

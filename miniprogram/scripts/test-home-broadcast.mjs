@@ -91,7 +91,16 @@ async function runChecks() {
   ok('H1 提示按时段分组（早 / 午 / 夜 不同组）', C.TIPS.morning.some((t) => t.t === tipAt(8)) && C.TIPS.day.some((t) => t.t === tipAt(15)) && C.TIPS.night.some((t) => t.t === tipAt(23)))
   const all = C.FACTS.concat(C.TIPS.morning, C.TIPS.day, C.TIPS.night)
   ok('H1 每条文案 ≤ 22 字（首页单行放得下，不折行）', C.LINE_MAX === 22 && all.every((x) => x.t && x.t.length <= C.LINE_MAX))
-  // 2026-11-25 产品负责人：趣味提示里要带上代金券 / 积分 / 钱包 / 1% 捐赠
+  // 2026-11-25 产品负责人：山海有信有未读时，也在口播这里提示
+  const mail = C.buildBroadcast({ mailUnread: 2 })
+  const mailItem = (mail.items || [])[0] || {}
+  const noMail = C.buildBroadcast({ mailUnread: 0 })
+  ok('H8 山海有信未读：置顶一条「山海有信 · 你有 N 封未读来信」，点击进信箱；0 封时不出现',
+    mailItem.kind === 'mail' && mailItem.tag === '山海有信' && /2 封未读来信/.test(mailItem.text) &&
+    mailItem.path === '/subpackages/extra/user/messages/index' && mailItem.tone === 'mail' &&
+    !(noMail.items || []).some((i) => i.kind === 'mail') &&
+    /mailUnread === 1 \? '你有 1 封未读来信'/.test(read(P.cast)))
+  // 2026-11-25 产品负责人：趣味提示里要带上代金券 / 积分 / 钱包 / 1% 捐赠  // 2026-11-25 产品负责人：趣味提示里要带上代金券 / 积分 / 钱包 / 1% 捐赠
   const tipsAll = C.TIPS.morning.concat(C.TIPS.day, C.TIPS.night)
   const hasPath = (p) => tipsAll.some((t) => t && t.path === p)
   ok('H7 趣味提示覆盖代金券 / 积分 / 钱包 / 1% 捐赠，且都带目标页',
@@ -229,6 +238,7 @@ const INJECTIONS = [
   { name: '昵称不截断', file: P.cast, find: "return s.length > NICK_MAX ? s.slice(0, NICK_MAX) + '…' : s;", replace: 'return s;' },
   { name: '闭馆仍播通知', file: P.cast, find: '  if (open) {\n    (Array.isArray', replace: '  if (true) {\n    (Array.isArray' },
   { name: '闭馆仍带问题', file: P.cast, find: 'q: open && q ? q : \'\'', replace: "q: q || ''" },
+  { name: '未读来信不提示', file: P.cast, find: "if (open && mailUnread > 0) {", replace: 'if (false) {' },
   { name: '券提示丢目标页', file: P.cast, find: "path: '/subpackages/business/coupons/index'", replace: "path: ''" },
   { name: '一知条数回落到 99', file: P.cast, find: "  { t: '蝌蚪用鳃呼吸，长成蛙后改用肺和皮肤', q: '青蛙小时候为什么生活在水里？' }\n", replace: '' },
   { name: '同日两条一知相同', file: P.cast, find: 'FACTS[(di + 5) % FACTS.length]', replace: 'FACTS[di % FACTS.length]' },

@@ -1170,6 +1170,8 @@ page {
 .home-cast-live.is-notice text { color: #D9A05B; }
 .home-cast-live.is-fact .home-cast-dot { background: var(--brass-400); box-shadow: 0 0 0 4rpx rgba(196, 167, 108, 0.16); }
 .home-cast-live.is-fact text { color: var(--brass-200); }
+.home-cast-live.is-mail .home-cast-dot { background: #7FA3B8; box-shadow: 0 0 0 4rpx rgba(127, 163, 184, 0.18); }
+.home-cast-live.is-mail text { color: #A9C4D4; }
 .home-cast-live.is-tip .home-cast-dot { background: #948C80; box-shadow: none; animation: none; }
 .home-cast-live.is-tip text { color: #A79E90; }
 .home-cast-live.is-idle .home-cast-dot { animation: none; opacity: 0.6; }

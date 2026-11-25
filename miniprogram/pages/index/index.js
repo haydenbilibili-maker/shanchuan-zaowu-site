@@ -165,6 +165,7 @@ Page({
     newArrivals: [],
     currentBannerIndex: 0,
     heroAutoplay: true,
+    mailUnread: 0,
     
     // 模块显示控制（专题展览/近期活动：仅 enabled === true 才展示，缺省关闭）
     showBanners: true,
@@ -408,6 +409,7 @@ Page({
     if (!this.data.heroAutoplay) this.setData({ heroAutoplay: true });
     // 口播每次回到首页重排一次：昵称（刚登录 / 刚改名）与时段问候跟着变
     this.refreshCast();
+    this.loadMailUnread();
     if (this.data.showLive) this.loadActiveLive();
     wx.nextTick(() => this._setupFeedScrollGuard());
   },
@@ -1417,7 +1419,8 @@ Page({
         nick: resolvePrefillNickName(getApp()),
         greeting: this.data.homeGreeting,
         notices: flags.museumGuideNotices,
-        guideOpen: flags.museumGuideOpen !== false
+        guideOpen: flags.museumGuideOpen !== false,
+        mailUnread: this.data.mailUnread || 0
       });
       // 信号灯：默认指向第一条（开馆 / 通知 / 博物 / 提示 由条目 kind 决定）
       const { signalOf } = require('./guideBroadcast');
@@ -1444,6 +1447,26 @@ Page({
       const cast = Object.assign({}, this.data.cast, { signal: signalOf(this.data.cast && this.data.cast.items, i) });
       this.setData({ cast });
     } catch (err) { /* ignore */ }
+  },
+
+  /**
+   * 山海有信未读（2026-11-25）：回到首页轻量取一次未读数，有新信就在口播第一条提示。
+   * 60 秒内不重复打云函数；取不到就沿用旧值（不把「失败」显示成 0 封）。
+   */
+  loadMailUnread() {
+    const now = Date.now();
+    if (this._mailAt && now - this._mailAt < 60000) return Promise.resolve();
+    this._mailAt = now;
+    return wx.cloud.callFunction({
+      name: 'getUserMessages',
+      data: { action: 'getMessages', category: 'all', queue: 'customer', page: 0, pageSize: 1 }
+    }).then((res) => {
+      const r = (res && res.result) || {};
+      if (!r.success) return;
+      const n = Math.max(0, Number(r.unreadCount) || 0);
+      if (n === this.data.mailUnread) return;
+      this.setData({ mailUnread: n }, () => this.refreshCast());
+    }).catch(() => {});
   },
 
   onCastSealTap() {
