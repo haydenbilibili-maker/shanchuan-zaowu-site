@@ -82,6 +82,16 @@ function walk(dir, out = []) {
   return out
 }
 
+function walkByExt(dir, ext, out = []) {
+  for (const name of readdirSync(dir)) {
+    if (SKIP_DIRS.has(name) || name.startsWith('.')) continue
+    const p = join(dir, name)
+    if (statSync(p).isDirectory()) walkByExt(p, ext, out)
+    else if (name.endsWith(ext)) out.push(relative(MP, p).replace(/\\/g, '/'))
+  }
+  return out
+}
+
 const stripComments = (s) => String(s)
   .replace(/\/\*[\s\S]*?\*\//g, ' ')
   .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
@@ -122,6 +132,22 @@ export function scan(files) {
       problems.push('[组件残缺] AppModal 缺少确认/取消入口')
     }
   }
+  // 2026-11-25 真机 bug：`.modal-mask` 全仓没有定义，弹层只是被 wx:if 插进页面末尾的普通 div
+  // → 点「评价回复」看起来毫无反应。凡是 wxml 里用了 .modal-mask，就必须有一份带 position:fixed 的基类。
+  // ⚠️ walk() 只收 .js —— 这里必须按扩展名重新走一遍（踩过一次：maskUsers 恒为 0，注入测不出来）
+  const maskUsers = walkByExt(MP, '.wxml').filter((rel) => readFileSync(join(MP, rel), 'utf8').includes('class="modal-mask'))
+  if (maskUsers.length) {
+    const baseDefined = walkByExt(MP, '.wxss')
+      .some((rel) => {
+        // ⚠️ 先去掉注释：注释里写着 `.modal-mask` 与 fixed 也会被正则命中（本守卫踩过一次）
+        const css = readFileSync(join(MP, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
+        return /\.modal-mask\s*\{[^}]*position:\s*fixed/.test(css)
+      })
+    if (!baseDefined) {
+      problems.push('[弹层无基类] wxml 用了 .modal-mask，但全仓 wxss 没有 `\.modal-mask { … position: fixed }` —— 弹层会变成页面里一段看不见的 div（表现为「点了没反应」）')
+    }
+  }
+
   return { total, byFile, problems }
 }
 
@@ -155,11 +181,21 @@ function selftest() {
   } finally { writeFileSync(helperAbs, helperBefore) }
   t('★ 注入 2 还原字节一致', sha(readFileSync(helperAbs)) === sha(helperBefore))
 
+  // 注入 3：把弹层基类里的 position:fixed 抽掉 → 必须被抓（2026-11-25 真机「点回复没反应」的根因）
+  const maskAbs = join(MP, 'subpackages/manager/manager/index.wxss')
+  const maskBefore = readFileSync(maskAbs)
+  try {
+    writeFileSync(maskAbs, maskBefore.toString().replace('.modal-mask {\n  position: fixed;', '.modal-mask {\n  position: relative;'))
+    const r = scan()
+    t('★ 弹层基类缺失被检出', r.problems.some((p) => p.includes('[弹层无基类]')))
+  } finally { writeFileSync(maskAbs, maskBefore) }
+  t('★ 注入 3 还原字节一致', sha(readFileSync(maskAbs)) === sha(maskBefore))
+
   const after = scan()
   t('★ 还原后守卫恢复通过', after.problems.length === 0)
 
   if (bad) { console.error(`\n自检失败 ${bad} 项——守卫不可信`); process.exit(1) }
-  console.log(`\n自检通过：棘轮、迁移回退、兜底缺失三类都能被检出，且还原字节一致`)
+  console.log(`\n自检通过：棘轮、迁移回退、兜底缺失、弹层基类四类都能被检出，且还原字节一致`)
 }
 
 if (process.argv.includes('--selftest')) {

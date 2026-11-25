@@ -3461,6 +3461,22 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 @keyframes slideUpPanel { to { transform: translateY(0); } }
 
+/* 弹层基类（2026-11-25 修）：`.modal-mask` 此前**全仓没有定义** —— 「评价回复」「商品选择器」两个弹层
+   只是被 wx:if 插进页面末尾的普通 div，没有 fixed / 遮罩 / z-index，点「回复」等于什么都没发生。
+   这里补上基类；具体弹层只需覆盖 align / z-index / padding（见 .comment-reply-mask / .picker-mask）。 */
+.modal-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 800;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--pop-mask, rgba(0, 0, 0, 0.62));
+}
+
 .modal-panel {
   width: 100%;
   max-height: 85vh;
@@ -4844,7 +4860,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   justify-content: center;
   padding: 48rpx 32rpx;
   box-sizing: border-box;
-  z-index: 350;
+  /* 高于底栏 / 贴边条（基类 800），避免被遮住看不到 */
+  z-index: 900;
 }
 
 .comment-reply-panel {
