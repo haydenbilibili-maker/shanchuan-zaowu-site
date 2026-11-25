@@ -73,6 +73,33 @@ function cleanNick(nick) {
  * @param {boolean} [o.guideOpen]   博物君是否开馆；闭馆时不带去博物君的问题、不播通知
  * @returns {{ hello: string, items: Array<{key:string, kind:string, tag:string, text:string, q:string, store:boolean}> }}
  */
+/**
+ * 信号灯口径（2026-11-25 产品负责人：口播这一个类型不够，升级成红绿灯）
+ *   open  → 开馆（绿）：今天在营业   notice → 通知（琥珀）：馆内要事
+ *   fact  → 知识（铜金）：博物一知   tip    → 提示（灰）：趣味小知识
+ * 灯色只表达「这条是什么性质」，不改文案；文案仍在 tag + text 里。
+ */
+const TONE_META = {
+  open: { tone: 'open', label: '开馆' },
+  notice: { tone: 'notice', label: '通知' },
+  fact: { tone: 'fact', label: '博物' },
+  tip: { tone: 'tip', label: '提示' }
+}
+const TONE_OF_KIND = { store: 'open', notice: 'notice', fact: 'fact', tip: 'tip' }
+
+function toneOfKind(kind) {
+  return TONE_OF_KIND[String(kind || '')] || 'tip'
+}
+
+/** 当前条目的信号灯（列表为空时给一个中性「口播」） */
+function signalOf(items, index) {
+  const list = Array.isArray(items) ? items : []
+  if (!list.length) return { tone: 'idle', label: '口播' }
+  const i = Math.max(0, Math.min(list.length - 1, Number(index) || 0))
+  const tone = toneOfKind(list[i] && list[i].kind)
+  return TONE_META[tone] || TONE_META.tip
+}
+
 function buildBroadcast(o) {
   const opt = o || {};
   const now = opt.now instanceof Date ? opt.now : new Date();
@@ -80,9 +107,10 @@ function buildBroadcast(o) {
   const nick = cleanNick(opt.nick);
   const hello = `${timeWord(now.getHours())}，${nick || '欢迎来馆'}`;
   const items = [];
+  // 2026-11-25：口播升级为「信号灯」——每条带 tone（开馆 / 通知 / 知识 / 提示），灯色与右侧短标随条目切换
   const push = (kind, tag, text, q, store) => {
     if (!text) return;
-    items.push({ key: `${kind}-${items.length}`, kind, tag, text, q: open && q ? q : '', store: !!store });
+    items.push({ key: `${kind}-${items.length}`, kind, tag, text, q: open && q ? q : '', store: !!store, tone: toneOfKind(kind) });
   };
 
   if (open) {
@@ -109,4 +137,4 @@ function guideUrl(q) {
   return `/subpackages/feature/museum-guide/index?from=home&q=${encodeURIComponent(q)}`;
 }
 
-module.exports = { buildBroadcast, guideUrl, cleanNick, FACTS, TIPS, NICK_MAX, LINE_MAX };
+module.exports = { buildBroadcast, guideUrl, cleanNick, signalOf, toneOfKind, TONE_META, FACTS, TIPS, NICK_MAX, LINE_MAX };

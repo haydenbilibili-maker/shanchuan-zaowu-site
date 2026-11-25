@@ -8,12 +8,12 @@
   <view class="home-cast-main">
     <view class="home-cast-head">
       <text class="home-cast-hello">{{cast.hello}}</text>
-      <view class="home-cast-live" aria-hidden="true"><view class="home-cast-dot"></view><text>口播</text></view>
+      <view class="home-cast-live is-{{cast.signal.tone}}" aria-hidden="true"><view class="home-cast-dot"></view><text>{{cast.signal.label}}</text></view>
     </view>
   </view>
 </template>
 <template name="home-cast-line">
-  <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}">
+  <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}" bindchange="onCastSwiperChange">
     <swiper-item wx:for="{{cast.items}}" wx:key="key">
       <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store ? 'tap-press-soft' : ''}}" hover-stay-time="80">
         <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text><text class="home-cast-sep">·</text>

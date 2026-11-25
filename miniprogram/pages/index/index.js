@@ -1409,7 +1409,7 @@ Page({
       if (flags.museumGuideOpen === false) {
         if (this._castSig !== '{"closed":true}') {
           this._castSig = '{"closed":true}';
-          this.setData({ cast: { hello: '', items: [] } });
+          this.setData({ cast: { hello: '', items: [], signal: { tone: 'idle', label: '口播' } } });
         }
         return;
       }
@@ -1419,17 +1419,33 @@ Page({
         notices: flags.museumGuideNotices,
         guideOpen: flags.museumGuideOpen !== false
       });
+      // 信号灯：默认指向第一条（开馆 / 通知 / 博物 / 提示 由条目 kind 决定）
+      const { signalOf } = require('./guideBroadcast');
       const sig = JSON.stringify(cast);
       if (sig === this._castSig) return;
       // 头像不进签名（8KB data URI 会让每次刷新都重算签名），只在真正 setData 时挂上
       cast.avatar = this.data.castAvatar;
       this._castSig = sig;
+      this._castIndex = 0;
+      cast.signal = signalOf(cast.items, 0);
       this.setData({ cast });
     } catch (e) { /* 口播是装饰层，出错不影响首页 */ }
   },
 
   /** 点口播：博物一知 / 小提示 → 博物君（只预填问题）；今日开馆 → 门店；馆内通知只读 */
   /** 点口播头像 = 进博物君（2026-11-25 产品负责人：这个头像可以跳转到博物君入口） */
+  /** 口播轮播切换 → 信号灯跟着当前条目变（开馆 / 通知 / 博物 / 提示） */
+  onCastSwiperChange(e) {
+    const i = Number(e && e.detail && e.detail.current) || 0;
+    if (i === this._castIndex) return;
+    this._castIndex = i;
+    try {
+      const { signalOf } = require('./guideBroadcast');
+      const cast = Object.assign({}, this.data.cast, { signal: signalOf(this.data.cast && this.data.cast.items, i) });
+      this.setData({ cast });
+    } catch (err) { /* ignore */ }
+  },
+
   onCastSealTap() {
     const flags = this._castFlags || {};
     if (flags.museumGuideOpen === false) return;

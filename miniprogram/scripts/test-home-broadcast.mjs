@@ -166,6 +166,19 @@ async function runChecks() {
     /\.hero-cast-line \{[^}]*display: block;/.test(wxss) && !/\.hero-cast-line \{[^}]*display: flex;/.test(wxss))
   ok('H4 叠层不拦头图点击（只有可点那一行接手）', /\.hero-cast-line \{[^}]*pointer-events: none;/.test(wxss) && /\.hero-cast-line \.home-cast-item \{ pointer-events: auto; \}/.test(wxss))
   ok('H4 头图加高、口播带取消后头部更省', /\.hero-section\.has-cast \{ height: 560rpx; \}/.test(wxss))
+  // 2026-11-25 产品负责人：口播这一个类型不够，升级成「信号灯」（不同颜色代表不同性质）
+  const G2 = loadCjsModule(P.cast, { transform })
+  const b2 = G2.buildBroadcast({ nick: '阿', greeting: { line: '营业中' }, notices: ['公告'] })
+  const toneOf = (kind) => (b2.items.find((x) => x.kind === kind) || {}).tone
+  ok('H6 信号灯：条目带 tone（开馆=open / 通知=notice / 博物=fact / 提示=tip），signalOf 给对应短标',
+    toneOf('store') === 'open' && toneOf('notice') === 'notice' && toneOf('fact') === 'fact' && toneOf('tip') === 'tip' &&
+    G2.signalOf(b2.items, 0).label === G2.TONE_META[G2.signalOf(b2.items, 0).tone].label &&
+    G2.signalOf([], 0).tone === 'idle' && G2.signalOf([], 0).label === '口播')
+  ok('H6 信号灯接线：胶囊绑 castSignal、轮播切换更新、关闭时复位；样式按 tone 分色',
+    /class="home-cast-live is-\{\{cast\.signal\.tone\}\}"/.test(wxml) && /\{\{cast\.signal\.label\}\}/.test(wxml) &&
+    /bindchange="onCastSwiperChange"/.test(wxml) && /signalOf\(this\.data\.cast && this\.data\.cast\.items, i\)/.test(js) &&
+    /signal: \{ tone: 'idle', label: '口播' \}/.test(js) &&
+    /\.home-cast-live\.is-open \.home-cast-dot[^}]*#7FA97A/.test(wxss) && /\.home-cast-live\.is-notice \.home-cast-dot[^}]*#D9A05B/.test(wxss))
   ok('H4 点头像进博物君（开关关闭时不出、也不跳）',
     /<view class="home-cast-seal is-link" bindtap="onCastSealTap"/.test(wxml) &&
     /onCastSealTap\(\) \{[\s\S]{0,220}museumGuideOpen === false\) return/.test(js) &&
@@ -215,6 +228,8 @@ const INJECTIONS = [
   { name: '小程序端不归一通知', file: P.flagsUtil, find: ".filter((t) => typeof t === 'string' && t.trim())", replace: '' },
   { name: '回到首页不重排', file: P.homeJs, find: '    // 口播每次回到首页重排一次：昵称（刚登录 / 刚改名）与时段问候跟着变\n    this.refreshCast();\n', replace: '' },
   { name: '每次都 setData', file: P.homeJs, find: 'if (sig === this._castSig) return;', replace: '' },
+  { name: '开馆灯变提示色', file: P.cast, find: "const TONE_OF_KIND = { store: 'open'", replace: "const TONE_OF_KIND = { store: 'tip'" },
+  { name: '胶囊写死口播', file: P.homeWxml, find: '<text>{{cast.signal.label}}</text>', replace: '<text>口播</text>' },
   { name: '头像不可点', file: P.homeWxml, find: 'class="home-cast-seal is-link" bindtap="onCastSealTap"', replace: 'class="home-cast-seal"' },
   { name: '轮播层改回 flex', file: P.homeWxss, find: '  display: block;\n  /* 口播层不拦头图点击', replace: '  display: flex;\n  /* 口播层不拦头图点击' },
   { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast is-above" wx:if="{{cast.hello && (showBanners', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n    <view class="home-cast is-above" wx:if="{{cast.hello && (showBanners' },

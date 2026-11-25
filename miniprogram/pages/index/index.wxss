@@ -1162,6 +1162,17 @@ page {
   background: var(--brass-400);
   animation: home-cast-breath 2.4s ease-in-out infinite;
 }
+/* 信号灯（2026-11-25）：灯色表达「这条是什么性质」，右侧短标同步 ——
+   open 开馆（绿）/ notice 通知（琥珀）/ fact 博物（铜金）/ tip 提示（灰）/ idle 无条目（口播） */
+.home-cast-live.is-open .home-cast-dot { background: #7FA97A; box-shadow: 0 0 0 4rpx rgba(127, 169, 122, 0.16); }
+.home-cast-live.is-open text { color: #A8C6A2; }
+.home-cast-live.is-notice .home-cast-dot { background: #D9A05B; box-shadow: 0 0 0 4rpx rgba(217, 160, 91, 0.16); }
+.home-cast-live.is-notice text { color: #D9A05B; }
+.home-cast-live.is-fact .home-cast-dot { background: var(--brass-400); box-shadow: 0 0 0 4rpx rgba(196, 167, 108, 0.16); }
+.home-cast-live.is-fact text { color: var(--brass-200); }
+.home-cast-live.is-tip .home-cast-dot { background: #948C80; box-shadow: none; animation: none; }
+.home-cast-live.is-tip text { color: #A79E90; }
+.home-cast-live.is-idle .home-cast-dot { animation: none; opacity: 0.6; }
 @keyframes home-cast-breath {
   0%, 100% { opacity: 0.35; box-shadow: 0 0 0 0 rgba(196, 167, 108, 0); }
   50% { opacity: 1; box-shadow: 0 0 0 6rpx rgba(196, 167, 108, 0.16); }
