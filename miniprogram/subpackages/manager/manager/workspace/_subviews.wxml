@@ -1905,6 +1905,45 @@
   <!-- [Tab 17] 用户评价（2026-11-25 从「内容管理」子 Tab 提为「商品内容」一级磁贴）——
        审核 / 置顶 / 回复 / 隐藏 / 删除都在这里，不再和专题、文章、养护挤一个子 Tab 行。 -->
   <block wx:if="{{curTab===17}}">
+      <!-- 评价总览（2026-11-26）：待审核为 0 时也有数可看，不再是整页空白 -->
+      <view class="cm-dash">
+        <view class="cm-dash-head">
+          <text class="cm-dash-title">评价总览</text>
+          <text class="cm-dash-note" wx:if="{{commentStats}}">共 {{commentStats.counts.all}} 条{{commentStats.truncated ? ' · 近 ' + commentStats.sampled + ' 条统计' : ''}}</text>
+        </view>
+        <view class="cm-dash-tiles" wx:if="{{commentStats}}">
+          <view class="cm-tile {{commentFilter==='all'?'on':''}}" bindtap="switchCommentFilter" data-filter="all" hover-class="tap-press-soft" hover-stay-time="80">
+            <text class="cm-tile-n">{{commentStats.counts.all}}</text><text class="cm-tile-l">全部</text>
+          </view>
+          <view class="cm-tile is-warn {{commentFilter==='pending'?'on':''}}" bindtap="switchCommentFilter" data-filter="pending" hover-class="tap-press-soft" hover-stay-time="80">
+            <text class="cm-tile-n">{{commentStats.counts.pending}}</text><text class="cm-tile-l">待审核</text>
+          </view>
+          <view class="cm-tile is-ok {{commentFilter==='approved'?'on':''}}" bindtap="switchCommentFilter" data-filter="approved" hover-class="tap-press-soft" hover-stay-time="80">
+            <text class="cm-tile-n">{{commentStats.counts.approved}}</text><text class="cm-tile-l">已通过</text>
+          </view>
+          <view class="cm-tile {{commentFilter==='hidden'?'on':''}}" bindtap="switchCommentFilter" data-filter="hidden" hover-class="tap-press-soft" hover-stay-time="80">
+            <text class="cm-tile-n">{{commentStats.counts.hidden}}</text><text class="cm-tile-l">已隐藏</text>
+          </view>
+        </view>
+        <view class="cm-dash-body" wx:if="{{commentStats}}">
+          <view class="cm-bars">
+            <view class="cm-bar" wx:for="{{commentStats.days}}" wx:key="date">
+              <view class="cm-bar-well"><view class="cm-bar-fill" style="height: {{item.h}}%;"></view></view>
+              <text class="cm-bar-l">{{item.label}}</text>
+            </view>
+          </view>
+          <view class="cm-dash-meta">
+            <text class="cm-meta-k">近 7 天新增</text>
+            <text class="cm-meta-v">均分 {{commentStats.avgRating}} · 回复率 {{commentStats.replyRate}}%<text wx:if="{{commentStats.pinned}}"> · 置顶 {{commentStats.pinned}}</text></text>
+          </view>
+        </view>
+        <view class="cm-dash-skel" wx:elif="{{commentStatsLoading}}">统计中…</view>
+        <view class="cm-dash-empty" wx:else>
+          <text>还没有评价</text>
+          <text class="cm-dash-empty-sub">顾客晒单后会在这里按评分与状态汇总</text>
+        </view>
+      </view>
+
       <view class="sub-tab-row inner-filter">
         <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='pending'?'active':''}}" bindtap="switchCommentFilter" data-filter="pending">待审核</view>
         <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='approved'?'active':''}}" bindtap="switchCommentFilter" data-filter="approved">已通过</view>

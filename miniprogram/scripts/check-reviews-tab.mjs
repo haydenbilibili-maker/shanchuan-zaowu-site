@@ -62,7 +62,7 @@ function runChecks() {
     ['approve', 'pin', 'reply', 'hide', 'delete'].every((a) => reviewsTab.includes(`data-action="${a}"`)))
 
   ok('R3 进 Tab 17 会拉评价；内容管理不再拉',
-    /if\(idx === 17\) await this\.loadComments\(\)/.test(cfg) &&
+    /if\(idx === 17\)/.test(cfg) && /this\.loadComments\(\)/.test(cfg) &&
     (() => {
       const m = cfg.match(/if\(idx === 9\) \{[\s\S]*?\n      \}/)
       return m ? !/loadComments\(\)/.test(m[0]) : false
@@ -119,6 +119,15 @@ function runChecks() {
   ok('R8 店长也能进「评价」并听到播报（菜单 + 角色）',
     /STORE_MANAGER_MENUS = \[[\s\S]*?MENU_KEYS\.REVIEWS[\s\S]*?\]/.test(roles))
 
+  // R9（2026-11-26 产品负责人）：用户评价要有全局看板 —— 待审为 0 也不能是空白页
+  ok('R9 评价总览看板：云端 stats（各状态计数 / 均分 / 回复率 / 近 7 天）+ 页面看板与筛选联动',
+    /async function commentStats\(\)/.test(fn) && /action === 'stats'/.test(fn) &&
+    /collection\('comments'\)\.count\(\)/.test(fn) && /replyRate/.test(fn) && /days\.push\(/.test(fn) &&
+    /async loadCommentStats\(\)/.test(cfg) && /action: 'stats'/.test(cfg) &&
+    /Promise\.all\(\[this\.loadComments\(\), this\.loadCommentStats\(\)\]\)/.test(cfg) &&
+    /class="cm-dash"/.test(wxml) && /cm-dash-tiles/.test(wxml) && /cm-bars/.test(wxml) &&
+    /bindtap="switchCommentFilter" data-filter="pending"/.test(wxml))
+
   ok('R5 内容管理里删掉的只是这一项：专题 / 文章 / 养护三个子 Tab 仍在',
     ['exhibition', 'article', 'care'].every((t) => contentTab.includes(`data-type="${t}"`)))
 
@@ -131,6 +140,7 @@ if (process.argv.includes('--selftest')) {
     { name: 'Tab 17 不再拉评价', file: F.cfg, find: 'if(idx === 17) await this.loadComments();', replace: '' },
     { name: 'Hub 入口丢了「评价」', file: F.hub, find: "keys: ['reviews'], tap: 'switchTab', idx: 17", replace: "keys: ['reviews'], tap: 'switchTab', idx: 18" },
     { name: '回复后不再发「山海有信」', file: F.fn, find: 'await notifyCommentReplied(comment, replyText)', replace: '' },
+    { name: '看板 stats 动作被删', file: F.fn, find: "    if (action === 'stats') {", replace: "    if (action === 'statsX') {" },
     { name: '新评价不再提醒员工（工作信息）', file: F.submitFn, find: 'await notifyStaffNewComment(db, {', replace: 'await Promise.resolve({ ok: true }); void ({' },
     { name: '工作台不再预取评价未读（语音也没数可播）', file: F.cfg, find: "safe('commentNotice', () => this.loadCommentNoticeBadge())", replace: "safe('commentNoticeX', () => this.loadCommentNoticeBadge())" }
   ]

@@ -4327,6 +4327,49 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   color: var(--brass-300, #D4BC8A);
 }
 
+/* 评价总览看板（2026-11-26）：四格状态 + 近 7 天柱 + 均分/回复率；空态也有内容 */
+.cm-dash {
+  margin: 0 0 18rpx;
+  padding: 22rpx 22rpx 18rpx;
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.24);
+}
+.cm-dash-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12rpx; }
+.cm-dash-title { font-family: var(--font-brand); font-size: var(--fs-28); color: #F1E6CC; }
+.cm-dash-note { font-size: var(--fs-20); color: #8C8579; }
+.cm-dash-tiles { display: flex; gap: 10rpx; margin-top: 14rpx; }
+.cm-tile {
+  flex: 1;
+  min-width: 0;
+  padding: 12rpx 6rpx;
+  border-radius: var(--radius-sm, 8rpx);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rpx;
+}
+.cm-tile.on { background: rgba(196, 167, 108, 0.14); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45); }
+.cm-tile-n { font-family: var(--font-mono); font-size: var(--fs-30); color: #F1E6CC; }
+.cm-tile.is-warn .cm-tile-n { color: #D9A05B; }
+.cm-tile.is-ok .cm-tile-n { color: #7FA97A; }
+.cm-tile-l { font-size: var(--fs-18); color: #8C8579; }
+.cm-dash-body { margin-top: 16rpx; }
+.cm-bars { display: flex; align-items: flex-end; gap: 10rpx; height: 108rpx; }
+.cm-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6rpx; height: 100%; }
+.cm-bar-well { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.cm-bar-fill { width: 100%; border-radius: 4rpx 4rpx 0 0; background: linear-gradient(180deg, #E8D7AE, var(--mat-brass)); min-height: 0; }
+.cm-bar-l { font-family: var(--font-mono); font-size: var(--fs-16); color: #8C8579; }
+.cm-dash-meta { display: flex; align-items: baseline; gap: 12rpx; margin-top: 10rpx; }
+.cm-meta-k { font-size: var(--fs-18); color: #8C8579; }
+.cm-meta-v { font-size: var(--fs-20); color: #B9B2A6; }
+.cm-dash-skel, .cm-dash-empty { padding: 18rpx 0 6rpx; }
+.cm-dash-skel { font-size: var(--fs-20); color: #8C8579; }
+.cm-dash-empty text { display: block; font-size: var(--fs-22); color: #A09A90; }
+.cm-dash-empty-sub { display: block; margin-top: 4rpx; font-size: var(--fs-18); color: #7C776F; }
+
 /* 分类上下架专区（2026-11-25）：2×2 四宫格，统一按钮 */
 .shelf-grid {
   display: grid;

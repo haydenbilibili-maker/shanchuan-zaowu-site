@@ -1686,6 +1686,9 @@ const managerPageConfig = {
     reviewFlagRows: REVIEW_FLAG_ROWS,
     /** 未读的「收到商品评价」工作信息条数（语音播报的计数来源 commentNoticeUnread） */
     commentNoticeUnread: 0,
+    /** 用户评价全局看板（2026-11-26）：待审为 0 时也不至于一片空白 */
+    commentStats: null,
+    commentStatsLoading: false,
     contentFlagsLoading: false,
     contentFlagsSaving: false,
     // 有未保存的改动：开关是「先改本地、点保存才写云端」的，
@@ -3308,7 +3311,7 @@ const managerPageConfig = {
         await this.loadExhibitions();
       }
       // 2026-11-25：用户评价从「内容管理」子 Tab 提为一级磁贴（tab 17）
-      if(idx === 17) await this.loadComments();
+      if(idx === 17) await Promise.all([this.loadComments(), this.loadCommentStats()]);
       if(idx === 10) { await this.loadCustomOrders(); await this.loadCustomConfigs(); await this.loadCustomInquiries(); await this.loadPetMemorialOrders(); }
       if(idx === 14) { await this.loadFramerRecruitApps(); }
       if(idx === 11) {
@@ -10641,6 +10644,25 @@ bindSubCatChange(e) {
     const filter = e.currentTarget.dataset.filter;
     this.setData({ commentFilter: filter }, () => this.loadComments());
   },
+  /** 用户评价全局看板：总数 / 各状态 / 均分 / 回复率 / 近 7 天走势（云端一次算好） */
+  async loadCommentStats() {
+    if (this.data.commentStatsLoading) return;
+    this.setData({ commentStatsLoading: true });
+    try {
+      const res = await wx.cloud.callFunction({ name: 'moderateComment', data: { action: 'stats' } });
+      const out = (res && res.result) || {};
+      if (!out.success) throw new Error(out.msg || '看板读取失败');
+      const days = (out.days || []).map((d) => ({ ...d, count: Number(d.count) || 0 }));
+      const max = days.reduce((n, d) => Math.max(n, d.count), 0);
+      this.setData({
+        commentStatsLoading: false,
+        commentStats: { ...out, days: days.map((d) => ({ ...d, h: max ? Math.max(d.count ? 8 : 0, Math.round((d.count / max) * 100)) : 0 })) }
+      });
+    } catch (e) {
+      this.setData({ commentStatsLoading: false });
+    }
+  },
+
   async loadComments() {
     try {
       wx.showNavigationBarLoading();
@@ -10689,6 +10711,7 @@ bindSubCatChange(e) {
       if (!res.result || !res.result.success) throw new Error((res.result && res.result.msg) || '操作失败');
       this.showHubTip(res.result.msg || '完成', 'info');
       this.loadComments();
+      this.loadCommentStats();
     } catch (err) {
       this.showHubTip(err.message || '操作失败', 'warn');
     } finally {
@@ -10719,6 +10742,7 @@ bindSubCatChange(e) {
       const notified = !!(res.result && res.result.notified);
       this.showHubTip(notified ? '回复成功，已发信通知顾客' : '回复成功（消息通知未送达）', notified ? 'info' : 'warn');
       this.loadComments();
+      this.loadCommentStats();
     } catch (e) {
       this.showHubTip(e.message || '回复失败', 'warn');
     } finally {

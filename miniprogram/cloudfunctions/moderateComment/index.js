@@ -83,6 +83,75 @@ async function notifyCommentReplied(comment, reply) {
   }
 }
 
+
+/**
+ * 全局看板（2026-11-26 产品负责人）：待审核为 0 时进页面不该是一片空白。
+ * 口径与 listComments 完全一致：status 缺省按 pending 处理（normalizeRow 同口径）。
+ * 只读，不写审计；一次最多扫 500 条近况算均分 / 回复率 / 近 7 天走势（超出截断，前端标注）。
+ */
+async function commentStats() {
+  const STATUSES = ['pending', 'approved', 'hidden']
+  const counts = { all: 0, pending: 0, approved: 0, hidden: 0 }
+  const totalRes = await db.collection('comments').count()
+  counts.all = Number((totalRes && totalRes.total) || 0)
+  for (const st of STATUSES) {
+    const r = await db.collection('comments').where({ status: st }).count()
+    counts[st] = Number((r && r.total) || 0)
+  }
+  // status 缺省的那些按 pending 计（listComments 里 normalizeRow 也是 pending）
+  counts.pending += Math.max(0, counts.all - counts.pending - counts.approved - counts.hidden)
+
+  let rows = []
+  try {
+    const res = await db.collection('comments')
+      .field({ rating: true, merchantReply: true, status: true, createTime: true, createdAt: true, _createTime: true })
+      .orderBy('createTime', 'desc')
+      .limit(500)
+      .get()
+    rows = (res.data || []).map(normalizeRow)
+  } catch (e) {
+    try {
+      const res = await db.collection('comments').limit(500).get()
+      rows = (res.data || []).map(normalizeRow).sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
+    } catch (e2) { rows = [] }
+  }
+
+  const rated = rows.filter((r) => Number(r.rating) >= 1)
+  const avg = rated.length ? Math.round((rated.reduce((n, r) => n + Number(r.rating), 0) / rated.length) * 10) / 10 : 0
+  const replied = rows.filter((r) => String(r.merchantReply || '').trim()).length
+  const replyRate = rows.length ? Math.round((replied / rows.length) * 100) : 0
+  const pinned = rows.filter((r) => r.isPinned).length
+
+  // 近 7 天（北京时间）新评价数
+  const days = []
+  const dayKey = (ms) => {
+    const d = new Date(ms + 8 * 3600 * 1000)
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+  }
+  const now = Date.now()
+  for (let i = 6; i >= 0; i -= 1) {
+    const key = dayKey(now - i * 86400000)
+    days.push({ date: key, label: key.slice(5).replace('-', '/'), count: 0 })
+  }
+  const idx = new Map(days.map((d) => [d.date, d]))
+  rows.forEach((r) => {
+    if (!r.createTime) return
+    const d = idx.get(dayKey(r.createTime))
+    if (d) d.count += 1
+  })
+  return {
+    success: true,
+    counts,
+    avgRating: avg,
+    replyRate,
+    replied,
+    pinned,
+    sampled: rows.length,
+    truncated: counts.all > rows.length,
+    days
+  }
+}
+
 async function listComments(event) {
   const listFilter = String((event && event.listFilter) || 'all').trim() || 'all'
   const limit = Math.min(Math.max(Number(event && event.limit) || 50, 1), PAGE_SIZE_MAX)
@@ -138,6 +207,10 @@ exports.main = async (event = {}) => {
   try {
     if (action === 'list') {
       return await listComments(event)
+    }
+
+    if (action === 'stats') {
+      return await commentStats()
     }
 
     if (!commentId) return fail('缺少 commentId')
