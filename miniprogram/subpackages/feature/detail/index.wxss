@@ -970,7 +970,9 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 /* 2026-11-25：装裱尺寸这种长值——允许两行、必要时整卡跨两列，不再显示省略号 */
 .val.is-wrap { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.45; word-break: break-word; }
-.archive-item.is-wide { grid-column: span 2; }
+/* 长尺寸卡跨两列时，整张网格切成单列：其它卡片跟着变满宽，不会在右侧留空 */
+.archive-grid.is-stacked { grid-template-columns: 1fr; }
+.archive-grid.is-stacked .archive-item.is-wide { grid-column: auto; }
 .val.gold { color: var(--color-primary); }
 .val.is-placeholder {
   color: var(--color-text-secondary);

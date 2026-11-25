@@ -360,7 +360,7 @@ module.exports.saveLabel = saveLabel;
 
       <!-- 标本档案：采集地 / 时间 / 尺寸 / 标本师 + 原「藏品参数」（品类 / 制作工艺 / 装裱方式）合成一张格；空字段与「其它」不出 -->
       <view class="section-title" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty) || product.category || archiveDisplay.craftProcessShow || archiveDisplay.framingShow}}"><text class="st-en">SPECIMEN ARCHIVES</text><text class="st-zh">标本档案</text></view>
-      <view class="archive-grid" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty) || product.category || archiveDisplay.craftProcessShow || archiveDisplay.framingShow}}">
+      <view class="archive-grid {{archiveDisplay.sizeLong ? 'is-stacked' : ''}}" wx:if="{{!(archiveDisplay.originEmpty && archiveDisplay.dateEmpty && archiveDisplay.sizeEmpty && archiveDisplay.framerEmpty) || product.category || archiveDisplay.craftProcessShow || archiveDisplay.framingShow}}">
         <view class="archive-item" wx:if="{{product.category}}">
           <text class="lbl">品类 CATEGORY</text>
           <text class="val">{{product.category}}</text>
