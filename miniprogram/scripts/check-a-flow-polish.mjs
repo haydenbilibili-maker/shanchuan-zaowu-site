@@ -849,11 +849,14 @@ function checks(s) {
     /\n\.ui-pop-empty \{[^}]*color: var\(--color-text-secondary\);/.test(s.appWxss))
   // 2026-10-19 产品负责人「继续优化馆藏页顶部筛选器样式」
   // 2026-11-25 产品负责人：恢复线上两行换行版（原「一行横滑」下线），筛选钮固定在右上
-  add('R4-5 馆藏品类两行换行（恢复线上版）、筛选钮右上固定；档案横滑去掉压边圆点，改「04 / 13」+ 细进度线',
+  add('R4-5 馆藏品类四列两行（长馆名省略）、筛选钮移到标题行（不再压住第一行）；档案横滑去掉压边圆点',
     /<view class="cat-filter-grid">/.test(s.catWxml) && /<view class="category-wrap is-grid">/.test(s.catWxml) &&
       /id="hall-\{\{index\}\}"/.test(s.catWxml) && !/class="category-scroll"/.test(s.catWxml) &&
-      /\.category-wrap \{ display: flex; flex-wrap: wrap;/.test(s.catWxss) &&
-      /\.filter-entry-wrap \{[^}]*position: absolute; right: 24rpx/.test(s.catWxss) &&
+      /\.category-wrap\.is-grid \{[^}]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/.test(s.catWxss) &&
+      /<view class="nav-row">[\s\S]{0,400}class="filter-entry-wrap"/.test(s.catWxml) &&
+      !/\.filter-entry-wrap \{[^}]*position: absolute/.test(s.catWxss) &&
+      !/\.category-wrap[^{]*\{[^}]*flex-wrap: nowrap/.test(s.catWxss) &&
+      !/\.category-wrap[^{]*\{[^}]*overflow-x: auto/.test(s.catWxss) &&
       !/indicator-dots="\{\{contentTotal > 1\}\}"/.test(s.catWxml) && /class="archive-progress"/.test(s.catWxml))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
 
