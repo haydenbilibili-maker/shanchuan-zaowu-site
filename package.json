@@ -314,6 +314,8 @@
     "test:workbench-gate": "node miniprogram/scripts/test-workbench-gate.mjs",
     "check:modal-textarea-fixed": "node miniprogram/scripts/check-modal-textarea-fixed.mjs",
     "check:review-shelf": "node miniprogram/scripts/check-review-shelf.mjs",
+    "check:reviews-tab": "node miniprogram/scripts/check-reviews-tab.mjs",
+    "check:reviews-tab:selftest": "node miniprogram/scripts/check-reviews-tab.mjs --selftest",
     "check:review-shelf:selftest": "node miniprogram/scripts/check-review-shelf.mjs --selftest",
     "check:modal-textarea-fixed:selftest": "node miniprogram/scripts/check-modal-textarea-fixed.mjs --selftest",
     "test:workbench-gate:selftest": "node miniprogram/scripts/test-workbench-gate.mjs --selftest",

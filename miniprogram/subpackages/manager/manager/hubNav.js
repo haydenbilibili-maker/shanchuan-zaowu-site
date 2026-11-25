@@ -20,7 +20,7 @@
 const HUB_SECTIONS = [
   { id: 'orders', title: '订单履约', short: '订单', keys: ['orders', 'workOrders', 'giftOps', 'giftManage', 'invoice', 'approvals', 'depositOps'] },
   { id: 'biz', title: '经营数据', short: '经营', keys: ['ledger', 'analytics', 'stores'] },
-  { id: 'goods', title: '商品内容', short: '商品', keys: ['products', 'content', 'contentFlags', 'reviewMode', 'decor', 'activities', 'live'] },
+  { id: 'goods', title: '商品内容', short: '商品', keys: ['products', 'content', 'reviews', 'contentFlags', 'reviewMode', 'decor', 'activities', 'live'] },
   { id: 'members', title: '会员触达', short: '会员', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
   {
     id: 'studio',
@@ -55,6 +55,8 @@ const HUB_ENTRIES = [
   { id: 'stores', label: '门店', desc: '门店资料和营业时间', alias: ['门店', '店铺', '营业'], icon: ICON + 'store.png', sec: 'biz', keys: ['stores'], tap: 'switchTab', idx: 12, tabTitle: '门店管理' },
   { id: 'products', label: '藏品', desc: '藏品上架、下架和改价', alias: ['商品', '上架', '下架', '价格', '藏品库'], icon: ICON + 'tab-collection.png', sec: 'goods', keys: ['products'], tap: 'switchTab', idx: 1, tabTitle: '藏品库' },
   { id: 'content', label: '内容', desc: '文章和视频', alias: ['文章', '视频', '图文'], icon: ICON + 'article-tab.png', sec: 'goods', keys: ['content'], tap: 'switchTab', idx: 9, tabTitle: '内容管理' },
+  // 2026-11-25：用户评价从「内容管理」子 Tab 提为一级磁贴（原入口已无，不算重复入口）
+  { id: 'reviews', label: '评价', sub: '审核·回复', desc: '顾客评价审核、置顶与回复', alias: ['评价', '评论', '晒单', '回复'], icon: ICON + 'star.png', sec: 'goods', keys: ['reviews'], tap: 'switchTab', idx: 17, tabTitle: '用户评价' },
   { id: 'contentFlags', label: '开关', desc: '页面上哪些栏目显示', alias: ['开关', '栏目', '显示', '内容开关'], icon: ICON + 'eye.png', sec: 'goods', keys: ['contentFlags'], tap: 'switchTab', idx: 16, tabTitle: '内容开关' },
   // 2026-11-25：审核模式 = 功能开关 + 藏品上下架聚合页（仅超管）；原「开关」「藏品」两个入口都保留
   { id: 'reviewMode', label: '审核', sub: '提审关闸', desc: '提审前关掉功能与商品', alias: ['审核', '提审', '上线', '审核模式'], icon: ICON + 'done.png', sec: 'goods', keys: ['reviewMode'], tap: 'goReviewModeGuarded' },

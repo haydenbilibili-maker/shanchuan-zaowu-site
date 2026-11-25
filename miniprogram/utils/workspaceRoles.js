@@ -80,7 +80,9 @@ const MENU_KEYS = {
   /** 博物君（AI 馆员）开关 / 额度 / 使用监测 —— 仅超管（不进任何非超管菜单，2026-11-23） */
   MUSEUM_GUIDE_MONITOR: 'museumGuideMonitor',
   /** 审核模式（功能开关 + 藏品上下架聚合页）—— 仅超管（2026-11-25） */
-  REVIEW_MODE: 'reviewMode'
+  REVIEW_MODE: 'reviewMode',
+  /** 用户评价（2026-11-25 从「内容管理」子 Tab 提为商品内容一级磁贴；仅超管，与内容管理同口径） */
+  REVIEWS: 'reviews'
 }
 
 /** curTab idx → menu key（仅 manager 页内 switchTab） */
@@ -99,7 +101,8 @@ const TAB_MENU_KEY = {
   13: MENU_KEYS.ANALYTICS,
   14: MENU_KEYS.FRAMER_RECRUIT,
   15: MENU_KEYS.SHIPPING,
-  16: MENU_KEYS.CONTENT_FLAGS
+  16: MENU_KEYS.CONTENT_FLAGS,
+  17: MENU_KEYS.REVIEWS
   // ⚠️ 17（字段维护）已于 2026-09-20 撤销：它自成一个 Tab，但产品负责人在开发仓里**找不到**这个入口
   //（入口只在超管工作台 Hub 的 OPS 分组里，而"改字段"这件事用户是在「藏品库」里找的）。
   // 现在它并入 **藏品库 → 分类管理** 里的「字段维护专区」；权限仍用 MENU_KEYS.PRODUCT_FIELDS 判，

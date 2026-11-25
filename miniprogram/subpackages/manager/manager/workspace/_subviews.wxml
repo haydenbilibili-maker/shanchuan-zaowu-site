@@ -1793,7 +1793,6 @@
     <view class="sub-tab-row">
       <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{contentType==='exhibition'?'active':''}}" bindtap="switchContentType" data-type="exhibition">专题策展</view>
       <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{contentType==='article'?'active':''}}" bindtap="switchContentType" data-type="article">知识文章</view>
-      <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{contentType==='comment'?'active':''}}" bindtap="switchContentType" data-type="comment">用户评价</view>
       <view hover-class="tap-press" hover-stay-time="80" class="sub-tab {{contentType==='care'?'active':''}}" bindtap="switchContentType" data-type="care">标本养护</view>
     </view>
     <!-- 心愿签同属 C 端展示内容，故「内容管理」里也放一个直达入口。
@@ -1805,7 +1804,7 @@
         <view class="seed-btn outline">签条复核 ›</view>
       </view>
     </view>
-    <view class="content-seed-bar" wx:if="{{contentType!=='care' && contentType!=='comment'}}">
+    <view class="content-seed-bar" wx:if="{{contentType!=='care'}}">
       <text class="seed-hint">社区内容种子</text>
       <view class="seed-actions">
         <view hover-class="tap-press" hover-stay-time="80" class="seed-btn" bindtap="seedCommunityTestData">导入种子</view>
@@ -1901,7 +1900,11 @@
     </block>
 
     <!-- 评价审核 -->
-    <block wx:if="{{contentType==='comment'}}">
+  </block>
+
+  <!-- [Tab 17] 用户评价（2026-11-25 从「内容管理」子 Tab 提为「商品内容」一级磁贴）——
+       审核 / 置顶 / 回复 / 隐藏 / 删除都在这里，不再和专题、文章、养护挤一个子 Tab 行。 -->
+  <block wx:if="{{curTab===17}}">
       <view class="sub-tab-row inner-filter">
         <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='pending'?'active':''}}" bindtap="switchCommentFilter" data-filter="pending">待审核</view>
         <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='approved'?'active':''}}" bindtap="switchCommentFilter" data-filter="approved">已通过</view>
@@ -1932,7 +1935,6 @@
         </view>
       </block>
       <view class="empty-tip" wx:if="{{commentList.length===0}}">暂无评价</view>
-    </block>
   </block>
 
   <!-- [Tab 10] 工单 -->

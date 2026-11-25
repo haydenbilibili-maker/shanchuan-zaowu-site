@@ -443,6 +443,12 @@
               <text class="hub-cell-name">内容</text>
             </view>
             <!-- 磁贴名按产品口径用短名「开关」；可发现性靠「内容管理」(tab 9) 顶部的直达条 —— 见 _subviews.wxml 与 test-wish-wall 可达性断言 -->
+            <!-- 用户评价（2026-11-25）：从「内容管理」子 Tab 提为一级磁贴 -->
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="reviews" wx:if="{{menu.reviews}}" bindtap="switchTab" data-idx="17" data-title="用户评价">
+              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/star.png" mode="aspectFit" /></view>
+              <text class="hub-cell-name">评价</text>
+              <text class="hub-cell-sub">审核·回复</text>
+            </view>
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="contentFlags" wx:if="{{menu.contentFlags}}" bindtap="switchTab" data-idx="16" data-title="内容开关">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/eye.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">开关</text>

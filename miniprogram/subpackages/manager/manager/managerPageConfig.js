@@ -3301,8 +3301,9 @@ const managerPageConfig = {
       if(idx === 9) {
         await this.loadArticles();
         await this.loadExhibitions();
-        if (this.data.contentType === 'comment') await this.loadComments();
       }
+      // 2026-11-25：用户评价从「内容管理」子 Tab 提为一级磁贴（tab 17）
+      if(idx === 17) await this.loadComments();
       if(idx === 10) { await this.loadCustomOrders(); await this.loadCustomConfigs(); await this.loadCustomInquiries(); await this.loadPetMemorialOrders(); }
       if(idx === 14) { await this.loadFramerRecruitApps(); }
       if(idx === 11) {
@@ -10401,8 +10402,10 @@ bindSubCatChange(e) {
       }
     }, this)
   },
-  switchContentType(e) { 
-    const type = e.currentTarget.dataset.type;
+  switchContentType(e) {
+    const type = String((e && e.currentTarget && e.currentTarget.dataset.type) || '');
+    // 用户评价已迁出为一级磁贴（tab 17）；旧入口/旧状态落到 comment 时不再当作子 Tab 处理
+    if (!['exhibition', 'article', 'care'].includes(type)) return;
     this.setData({ contentType: type });
     this.loadContent();
   },

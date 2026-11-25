@@ -33,3 +33,4 @@ npm run check:identify-dock
 npm run test:ai-center
 npm run test:workbench-gate
 npm run check:review-shelf
+npm run check:reviews-tab
