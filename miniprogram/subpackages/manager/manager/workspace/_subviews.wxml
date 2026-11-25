@@ -4319,19 +4319,25 @@
     </view>
   </view>
 
-  <!-- 评价回复弹窗（居中对话框，避免键盘顶起误触顶部返回） -->
+  <!-- 评价回复弹窗（2026-11-25 重做：改用全站标准 ui-pop 层）——
+       原先用的 `.modal-mask`/`.modal-foot` 私有件没有基类，真机上只看得见输入框、看不到「提交回复」。
+       现在：标准居中弹层 + 明确的双按钮（取消 / 提交回复），按钮走 .ui-pop-btn 品牌金平涂。 -->
   <view
-    class="modal-mask comment-reply-mask"
+    class="ui-pop-mask is-center comment-reply-mask"
     wx:if="{{showCommentReplyModal}}"
     catchtap="closeCommentReplyModal"
     catchtouchmove="noop"
   >
-    <view class="comment-reply-panel" catchtap="noop">
-      <view class="modal-head"><text>回复评价</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closeCommentReplyModal">✕</view></view>
-      <view class="modal-body">
+    <view class="ui-pop-dialog comment-reply-dialog" catchtap="noop">
+      <view class="ui-pop-head">
+        <text class="ui-pop-kicker">REPLY</text>
+        <text class="ui-pop-title">回复评价</text>
+      </view>
+      <view class="comment-reply-body">
         <textarea fixed="{{true}}" cursor-spacing="120"
           class="textarea comment-reply-input"
           placeholder="输入商家回复…"
+          placeholder-class="comment-reply-ph"
           value="{{tempCommentReply.content}}"
           bindinput="bindCommentReplyInput"
           adjust-position="{{false}}"
@@ -4340,8 +4346,12 @@
           maxlength="500"
           show-confirm-bar="{{true}}"
         ></textarea>
+        <text class="comment-reply-count">{{tempCommentReply.content.length}}/500</text>
       </view>
-      <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" catchtap="submitCommentReply">提交回复</view></view>
+      <view class="ui-pop-foot">
+        <view class="ui-pop-btn is-ghost" catchtap="closeCommentReplyModal" hover-class="tap-press" hover-stay-time="80">取消</view>
+        <view class="ui-pop-btn is-primary" catchtap="submitCommentReply" hover-class="tap-press" hover-stay-time="80">提交回复</view>
+      </view>
     </view>
   </view>
 
