@@ -51,7 +51,19 @@ page {
 .v-divider { width: 1rpx; height: 40rpx; margin-top: 40rpx; background: rgba(196, 167, 108, 0.18); flex-shrink: 0; }
 
 /* 分组：不再是卡片 —— 只有组头（眉标在上、主标在下）与组内发丝线 */
-.panel-box { margin-top: 56rpx; }
+/* 2026-11-25 产品负责人：恢复「模块化 / 团块化」——每个面板是一张独立圆角卡，
+   卡片之间留呼吸，内部统一 24rpx 内边距；标题用的发丝分隔线降到更淡一档，避免卡片里再切一刀 */
+.panel-box {
+  margin-top: 28rpx;
+  padding: 26rpx 24rpx 24rpx;
+  border-radius: var(--radius-lg, 24rpx);
+  background: var(--color-bg-card);
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
+  box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.24);
+  box-sizing: border-box;
+}
+.panel-box.svc-group { padding-top: 24rpx; }
+.panel-box:last-of-type { margin-bottom: 8rpx; }
 .panel-head {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -59,7 +71,7 @@ page {
   align-items: end;
   column-gap: 24rpx;
   padding-bottom: 18rpx;
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.22);
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.16);
 }
 .ph-title { grid-area: cn; margin-top: 6rpx; font-size: var(--fs-32); line-height: 1.4; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; }
 .ph-en { grid-area: en; font-size: var(--fs-16); line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
