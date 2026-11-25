@@ -3078,122 +3078,99 @@
           <text class="status gold">{{contentFlagsFromDefault ? '默认值' : '云端配置'}}</text>
         </view>
         <text class="cfg-hint">关闭后对应入口对用户隐藏；预约、伴宠记忆、AI 鉴定、这有店与到店自取缺配置时默认开启；标本定制、直播与我的钱包缺配置时默认关闭。关闭到店自取后，结算页不再提供自取、礼赠自提代赠同步移除，存量自取订单仍可查看凭证并到店核销。</text>
-        <view class="cfg-rows">
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">馆藏标本档案</text>
-              <text class="cfg-switch-hint {{contentFlags.showSpecimenArchive ? 'on' : ''}}">{{contentFlags.showSpecimenArchive ? '展示中' : '已隐藏'}}</text>
+                <view class="sw-list">
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">馆藏标本档案</text>
+              <text class="sw-state {{contentFlags.showSpecimenArchive ? 'on' : ''}}">{{contentFlags.showSpecimenArchive ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showSpecimenArchive}}" data-field="showSpecimenArchive" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">我的山海社区</text>
-              <text class="cfg-switch-hint {{contentFlags.showUserCommunity ? 'on' : ''}}">{{contentFlags.showUserCommunity ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">我的山海社区</text>
+              <text class="sw-state {{contentFlags.showUserCommunity ? 'on' : ''}}">{{contentFlags.showUserCommunity ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showUserCommunity}}" data-field="showUserCommunity" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">预约入口</text>
-              <text class="cfg-switch-hint {{contentFlags.showBookingEntry ? 'on' : ''}}">{{contentFlags.showBookingEntry ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">预约入口</text>
+              <text class="sw-state {{contentFlags.showBookingEntry ? 'on' : ''}}">{{contentFlags.showBookingEntry ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showBookingEntry}}" data-field="showBookingEntry" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">标本定制入口</text>
-              <text class="cfg-switch-hint {{contentFlags.showSpecimenCustom ? 'on' : ''}}">{{contentFlags.showSpecimenCustom ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">标本定制入口</text>
+              <text class="sw-state {{contentFlags.showSpecimenCustom ? 'on' : ''}}">{{contentFlags.showSpecimenCustom ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showSpecimenCustom}}" data-field="showSpecimenCustom" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">伴宠记忆入口</text>
-              <text class="cfg-switch-hint {{contentFlags.showPetMemorial ? 'on' : ''}}">{{contentFlags.showPetMemorial ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">伴宠记忆入口</text>
+              <text class="sw-state {{contentFlags.showPetMemorial ? 'on' : ''}}">{{contentFlags.showPetMemorial ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showPetMemorial}}" data-field="showPetMemorial" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">馆内直播入口</text>
-              <text class="cfg-switch-hint {{contentFlags.showLive ? 'on' : ''}}">{{contentFlags.showLive ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">馆内直播入口</text>
+              <text class="sw-state {{contentFlags.showLive ? 'on' : ''}}">{{contentFlags.showLive ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showLive}}" data-field="showLive" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">我的钱包入口</text>
-              <text class="cfg-switch-hint {{contentFlags.showStoredValue ? 'on' : ''}}">{{contentFlags.showStoredValue ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">我的钱包入口</text>
+              <text class="sw-state {{contentFlags.showStoredValue ? 'on' : ''}}">{{contentFlags.showStoredValue ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showStoredValue}}" data-field="showStoredValue" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">AI 标本鉴定</text>
-              <text class="cfg-switch-hint {{contentFlags.showAiIdentify ? 'on' : ''}}">{{contentFlags.showAiIdentify ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">AI 标本鉴定</text>
+              <text class="sw-state {{contentFlags.showAiIdentify ? 'on' : ''}}">{{contentFlags.showAiIdentify ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showAiIdentify}}" data-field="showAiIdentify" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <!-- 2026-11-25：博物君（AI 馆员）总开关并入内容开关（与 ERP 同一份文档字段）；
-               关掉后 C 端入口全部隐藏（首页口播 / 图鉴详情 / 鉴定结果 / 对话页），本机缓存立即失效。
-               这里显示的是内容开关原值，不是和超管「开馆/闭馆」取与之后的结果。 -->
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">博物君（AI 馆员）</text>
-              <text class="cfg-switch-hint {{contentFlags.museumGuideOpen ? 'on' : ''}}">{{contentFlags.museumGuideOpen ? '展示中' : '已隐藏'}}</text>
-              <text class="cfg-switch-hint">与超管开馆是两把开关，这里只保存这一把</text>
+          <view class="sw-row is-parent">
+            <view class="sw-main">
+              <text class="sw-label">博物君（AI 馆员）</text>
+              <text class="sw-state {{contentFlags.museumGuideOpen ? 'on' : ''}}">{{contentFlags.museumGuideOpen ? '展示中' : '已隐藏'}}</text>
+              <text class="sw-link" catchtap="goMuseumGuideMonitorGuarded" hover-class="tap-press-soft" hover-stay-time="80">管理 ›</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.museumGuideOpen}}" data-field="museumGuideOpen" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view hover-class="tap-press-soft" hover-stay-time="80" class="cfg-row cfg-row-link" bindtap="goMuseumGuideMonitorGuarded">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">博物君管理详情</text>
-              <text class="cfg-switch-hint">开关与监测 · 人设 / 任务 / 巡检 / 转人工记录（仅超管）</text>
-            </view>
-            <text class="cfg-chevron">›</text>
-          </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">这有店展示</text>
-              <text class="cfg-switch-hint {{contentFlags.showStore ? 'on' : ''}}">{{contentFlags.showStore ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">这有店展示</text>
+              <text class="sw-state {{contentFlags.showStore ? 'on' : ''}}">{{contentFlags.showStore ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showStore}}" data-field="showStore" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">到店自取</text>
-              <text class="cfg-switch-hint {{contentFlags.showStorePickup ? 'on' : ''}}">{{contentFlags.showStorePickup ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">到店自取</text>
+              <text class="sw-state {{contentFlags.showStorePickup ? 'on' : ''}}">{{contentFlags.showStorePickup ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showStorePickup}}" data-field="showStorePickup" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">礼赠入口</text>
-              <text class="cfg-switch-hint {{contentFlags.showGift ? 'on' : ''}}">{{contentFlags.showGift ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row">
+            <view class="sw-main">
+              <text class="sw-label">礼赠入口</text>
+              <text class="sw-state {{contentFlags.showGift ? 'on' : ''}}">{{contentFlags.showGift ? '展示中' : '已隐藏'}}</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showGift}}" data-field="showGift" color="#C4A76C" bindchange="onContentFlagToggle"/>
           </view>
-          <!-- 马上有 · 心愿签（原「祈福墙」）C 端入口总闸。UGC 新能力 → 缺配置默认关；关闭后 C 端入口消失且不发请求 -->
-          <view class="cfg-row cfg-row-switch">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">马上有 · 心愿签</text>
-              <text class="cfg-switch-hint {{contentFlags.showMaShangYou ? 'on' : ''}}">{{contentFlags.showMaShangYou ? '展示中' : '已隐藏'}}</text>
+          <view class="sw-row is-parent">
+            <view class="sw-main">
+              <text class="sw-label">马上有 · 心愿签</text>
+              <text class="sw-state {{contentFlags.showMaShangYou ? 'on' : ''}}">{{contentFlags.showMaShangYou ? '展示中' : '已隐藏'}}</text>
+              <text class="sw-link" catchtap="goWishWallManage" hover-class="tap-press-soft" hover-stay-time="80">内容管理 ›</text>
             </view>
             <switch class="cfg-switch" checked="{{contentFlags.showMaShangYou}}" data-field="showMaShangYou" color="#C4A76C" bindchange="onContentFlagToggle"/>
-          </view>
-          <!-- 2026-10-13 产品负责人点名：祈福墙已全面升级为「马上有 · 心愿签」，
-               两个历史注册钩子开关（连灯记录云存 showRitualProfile / 功德证 showMuyuCertificate）
-               从超管面板移除 —— 面板不再出现祈福墙历史功能信息。
-               云端字段与旧祈福墙页接线**保留**（稳定期不改契约；旧页仍被门店码与玩法回跳使用），
-               两者缺字段默认关 → 旧页行为不变（始终不展示），无需再从后台开关。 -->
-          <!-- 心愿签治理入口。签条（含语音）不接自动审核 → 必须能在此复核全部内容（含已隐藏） -->
-          <view hover-class="tap-press-soft" hover-stay-time="80" class="cfg-row cfg-row-link" bindtap="goWishWallManage">
-            <view class="cfg-label-block">
-              <text class="cfg-label cfg-label-wide">心愿签内容管理</text>
-              <text class="cfg-switch-hint">查看全部签条 · 隐藏 / 恢复 / 置顶 / 删除 · 语音试听</text>
-            </view>
-            <text class="cfg-chevron">›</text>
           </view>
         </view>
         <!-- 未保存提示：开关是「先改本地、点保存才写云端」，没有这句超管会以为已经生效 -->

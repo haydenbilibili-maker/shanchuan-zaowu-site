@@ -227,7 +227,7 @@ async function runChecks() {
   const mgrWxml = read(P.mgrWxml)
   const subviews = read(P.subviews)
   ok('M7 内容开关页：博物君开关 + 「博物君管理详情」入口，保存带上该字段，面板读原值不读 AND',
-    /data-field="museumGuideOpen"/.test(subviews) && /bindtap="goMuseumGuideMonitorGuarded"/.test(subviews) &&
+    /data-field="museumGuideOpen"/.test(subviews) && /(?:bind|catch)tap="goMuseumGuideMonitorGuarded"/.test(subviews) &&
     /museumGuideOpen: typeof flags\.museumGuideFlag === 'boolean'[\s\S]{0,120}flags\.museumGuideFlag[\s\S]{0,80}flags\.museumGuideOpen !== false/.test(mgrCfg) &&
     /museumGuideOpen: true/.test(mgrCfg) &&
     /museumGuideOpen: incoming\.museumGuideOpen/.test(read(P.flagsFn)) &&

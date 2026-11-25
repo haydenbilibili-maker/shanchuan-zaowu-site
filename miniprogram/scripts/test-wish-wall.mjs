@@ -1684,16 +1684,18 @@ check('管理页默认「全部」状态（看得到 hidden）', /id: '', label:
 // ① 可达性
 // 断言必须匹配**真实的绑定**（`bindtap="..."`），不能只匹配裸词 ——
 // 注释里也写着这个函数名，只搜裸词的话"入口被摘掉"照样通过（本轮就被自己抓到一次）。
-const ENTRY_BIND = 'bindtap="goWishWallManage"'
+const ENTRY_BIND = '(?:bind|catch)tap="goWishWallManage"'
+const ENTRY_RE = new RegExp(ENTRY_BIND)
 const tab16At = subviews.indexOf('curTab===16')
-const entryInTab16At = tab16At === -1 ? -1 : subviews.indexOf(ENTRY_BIND, tab16At)
+const tab16Area = tab16At === -1 ? '' : subviews.slice(tab16At)
+const entryInTab16At = (() => { const m = ENTRY_RE.exec(tab16Area); return m ? tab16At + m.index : -1 })()
 check('内容开关面板 (tab 16) 存在', tab16At !== -1)
 check(
   '★ 祈福墙治理行确实在「内容开关」面板内（不是漂在别处）',
   entryInTab16At !== -1 && subviews.slice(tab16At, entryInTab16At).indexOf('{{curTab===') === -1
 )
 const tab9Area = subviews.slice(subviews.indexOf('curTab===9'), subviews.indexOf('curTab===10'))
-check('★「内容管理」(tab 9) 也有祈福墙直达入口（反馈的落点）', tab9Area.indexOf(ENTRY_BIND) !== -1)
+check('★「内容管理」(tab 9) 也有祈福墙直达入口（反馈的落点）', ENTRY_RE.test(tab9Area))
 
 const hubWxml = readSrc('miniprogram/subpackages/manager/manager/index.wxml')
 // 磁贴名由产品定：**短名「开关」**（曾按"可发现性"改成全称「内容开关」，产品要求改回）。
