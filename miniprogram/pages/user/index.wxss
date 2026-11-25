@@ -33,10 +33,14 @@ page {
 
 /* 资产行：一条发丝线夹住的四格（icon / label；角标在 icon 容器内出血） */
 .assets-panel {
-  padding: 28rpx 0 20rpx;
-  margin-top: 8rpx;
-  border-top: 1rpx solid rgba(196, 167, 108, 0.18);
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.18);
+  /* 2026-11-25 团块化微调：资产行也是一张卡（与下方各分区同一卡面），不再是两条发丝线夹住的平铺条 */
+  padding: 26rpx 8rpx 20rpx;
+  margin-top: 20rpx;
+  border-radius: var(--radius-lg, 24rpx);
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.035) 0%, rgba(196, 167, 108, 0) 42%), var(--color-bg-card);
+  border: 1rpx solid rgba(196, 167, 108, 0.14);
+  box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.24);
+  box-sizing: border-box;
   overflow: visible;
 }
 .assets-track { display: flex; justify-content: space-between; align-items: flex-start; overflow: visible; }
@@ -57,12 +61,14 @@ page {
   margin-top: 28rpx;
   padding: 26rpx 24rpx 24rpx;
   border-radius: var(--radius-lg, 24rpx);
-  background: var(--color-bg-card);
+  /* 2026-11-25：卡面顶部一层极淡的铜金光（3.5%），整组卡片有统一的「打光方向」 */
+  background: linear-gradient(180deg, rgba(196, 167, 108, 0.035) 0%, rgba(196, 167, 108, 0) 42%), var(--color-bg-card);
   border: 1rpx solid rgba(196, 167, 108, 0.14);
   box-shadow: 0 10rpx 28rpx rgba(0, 0, 0, 0.24);
   box-sizing: border-box;
 }
-.panel-box.svc-group { padding-top: 24rpx; }
+/* 列表卡：行自带高度，卡底少留一点，上下视觉留白对齐 */
+.panel-box.svc-group { padding-top: 24rpx; padding-bottom: 8rpx; }
 .panel-box:last-of-type { margin-bottom: 8rpx; }
 .panel-head {
   display: grid;
@@ -71,14 +77,18 @@ page {
   align-items: end;
   column-gap: 24rpx;
   padding-bottom: 18rpx;
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.16);
+  /* 2026-11-25：卡头下沿由实线改为自左向右淡出的发丝线 —— 卡片里不再硬切一刀（与首页口播底线同一语言） */
+  background-image: linear-gradient(90deg, rgba(196, 167, 108, 0.28) 0%, rgba(196, 167, 108, 0.1) 55%, rgba(196, 167, 108, 0) 100%);
+  background-size: 100% 1rpx;
+  background-repeat: no-repeat;
+  background-position: left bottom;
 }
 .ph-title { grid-area: cn; margin-top: 6rpx; font-size: var(--fs-32); line-height: 1.4; color: var(--color-text-primary); font-family: var(--font-brand); letter-spacing: .12em; }
 .ph-en { grid-area: en; font-size: var(--fs-16); line-height: 26rpx; color: var(--brass-400); font-family: var(--font-mono); letter-spacing: .32em; }
 .ph-more { grid-area: more; padding-bottom: 6rpx; font-size: var(--fs-22); color: var(--brass-300); letter-spacing: .08em; white-space: nowrap; }
 
 /* 我的数据：四格等宽数字 */
-.stats-preview { display: flex; align-items: center; padding: 28rpx 0 8rpx; }
+.stats-preview { display: flex; align-items: center; padding: 26rpx 0 6rpx; }
 .stat-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 10rpx; min-width: 0; }
 .stat-val { font-size: var(--fs-36); font-weight: 600; color: var(--color-text-primary); font-family: var(--font-mono); line-height: 1; }
 .stat-label { font-size: var(--fs-22); color: var(--color-text-secondary); }
@@ -91,17 +101,19 @@ page {
 }
 
 /* 订单五格 */
-.order-matrix { display: flex; justify-content: space-between; padding: 28rpx 0 4rpx; }
+.order-matrix { display: flex; justify-content: space-between; padding: 26rpx 0 4rpx; }
 .om-item { display: flex; flex-direction: column; align-items: center; width: 20%; }
 .om-icon-wrap { position: relative; margin-bottom: 14rpx; }
-.om-icon { width: 48rpx; height: 48rpx; filter: invert(1); opacity: 0.7; }
+/* 2026-11-25：订单图标与其它分区同为品牌铜金（原为反白灰白，与馆藏 / 履约两卡的金色图标不一致） */
+.om-icon { width: 44rpx; height: 44rpx; filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%); opacity: 0.95; }
 .om-item text { font-size: var(--fs-22); color: var(--color-text-body); }
 
 /* 服务图标统一品牌金：先压成纯黑剪影再着色到 #C4A76C */
 .m-img { width: 36rpx; height: 36rpx; flex-shrink: 0; filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%); }
 
 /* 馆藏与内容：三列宫格（格间发丝线） */
-.svc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+/* 2026-11-25 团块化微调：宫格不再用贯穿的格线切开，改为卡中小块 —— 每格一块淡底圆角，格间留缝 */
+.svc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14rpx; padding-top: 22rpx; }
 .svc-tile {
   position: relative;
   display: flex;
@@ -109,11 +121,12 @@ page {
   align-items: center;
   justify-content: center;
   gap: 14rpx;
-  min-height: 156rpx;
+  min-height: 148rpx;
   box-sizing: border-box;
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
+  border-radius: var(--radius-md, 16rpx);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1rpx solid rgba(196, 167, 108, 0.1);
 }
-.svc-tile:not(:nth-child(3n)) { border-right: 1rpx solid rgba(196, 167, 108, 0.12); }
 .svc-grid .m-img { width: 44rpx; height: 44rpx; }
 .svc-cn { font-size: var(--fs-24); color: var(--color-text-body); white-space: nowrap; }
 /* 右上角标：信息性（进度 / 免费），发丝描边小签 —— 不用实心红（待办）也不用描边金胶囊（新点亮） */
@@ -122,8 +135,9 @@ page {
 .svc-badge { position: absolute; top: 20rpx; right: 24rpx; }
 
 /* 两栏行：图标 / 中文 / 角标 / › */
-.menu-row { display: flex; align-items: center; gap: 24rpx; min-height: 104rpx; border-bottom: 1rpx solid rgba(196, 167, 108, 0.12); }
-.menu-row:last-child { border-bottom: none; }
+/* 2026-11-25：行间分隔线从文字起、不横穿图标也不贴卡边（内缩），行高 104 → 96rpx */
+.menu-row { position: relative; display: flex; align-items: center; gap: 24rpx; min-height: 96rpx; }
+.menu-row + .menu-row::before { content: ''; position: absolute; top: 0; left: 60rpx; right: 0; height: 1rpx; background: rgba(196, 167, 108, 0.1); }
 .m-cn { flex: 1; min-width: 0; font-size: var(--fs-28); color: var(--color-text-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .m-arr { color: var(--color-text-secondary); font-size: var(--fs-32); line-height: 1; flex-shrink: 0; }
 

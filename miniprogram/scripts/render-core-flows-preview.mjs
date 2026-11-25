@@ -456,7 +456,9 @@ const SCENES = [
       showStoredValue: true, showGift: true, showStore: true, showAchievements: true, showAtlas: true, showAiIdentify: true, showUserCommunity: true, showMyDataModule: true,
       certificateCount: 2, profileScore: 52, couponBadgeText: '2', giftTodoCount: 1, messageBadgeText: '3', achievementBadgeText: '新', atlasStats: { total: 12, lit: 3 },
       orderBadges: { pay: 1, shipped: 1 }, workbenchTiles: [], cardPending: false, cardGuest: false, bookingCount: 1,
-      myData: { collections: 6, courses: 2, days: 38 }
+      myData: { collections: 6, courses: 2, days: 38 },
+      // 2026-11-25：「我的数据」四格的真实绑定名（原样例缺，渲染成 undefined）
+      statistics: { viewCount: 128, collectCount: 6, shareCount: 3, orderCount: 4 }
     }
   },
   {
