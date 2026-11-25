@@ -148,6 +148,11 @@ Page({
     }, TICK_MS)
   },
 
+  /** 图形解码失败就收起（保持卡片排版不塌），别在真机上留一块破图 */
+  onWorkGraphicError() {
+    this.setData({ workGraphic: '' })
+  },
+
   onPinTap() {
     if (this.data.pinStopped) return
     clearInterval(this._pinTimer)
