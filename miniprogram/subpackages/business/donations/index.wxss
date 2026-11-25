@@ -219,11 +219,14 @@ page { background: var(--color-bg, #1A1814); }
   margin-top: 14rpx;
   font-size: var(--fs-24, 24rpx);
   color: var(--color-text-primary, #F5F1E8);
+  /* 三站等宽，主标一律不折行（真机曾把「山海造物公益基金」挤成两行） */
+  white-space: nowrap;
 }
 .dn-flow-v {
   margin-top: 6rpx;
   font-size: var(--fs-20, 20rpx);
   color: var(--color-text-secondary, #A09A90);
+  white-space: nowrap;
 }
 .dn-flow-link {
   flex: none;

@@ -14,7 +14,8 @@ module.exports = {
   FLOW: [
     { key: 'pay', k: '每一笔实付', v: '扣券后、含运费' },
     { key: 'pct', k: '取其 1%', v: '退款同步扣回' },
-    { key: 'fund', k: FUND_NAME, v: '年度统一拨付' }
+    // 2026-11-25：真机「山海造物公益基金」三列放不下会折行 → 主标用短名，全称放到副行
+    { key: 'fund', k: '公益基金', v: '山海造物 · 年度拨付' }
   ],
   /** 去向：与品牌承诺（onePercentPledge.ONE_PERCENT_PLEDGE_NOTE）同四个方向 */
   DIRECTIONS: [
