@@ -184,6 +184,8 @@
 
 
 .act {
+  /* 2026-11-25：<button> 默认 inline-flex，没有 width 会被内容撑窄、左对齐 —— 主行动一律满宽 */
+  width: 100%;
   height: 88rpx;
   line-height: 88rpx;
   margin: 0;
@@ -1029,6 +1031,17 @@
   padding: 22rpx 8rpx 20rpx;
   position: relative;
 }
+/* 只有一个工具时（低置信 / 非标本），横向排成一条次按钮 */
+.tool:only-child {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  min-height: 88rpx;
+  padding: 0 24rpx;
+}
+.tool:only-child .tool-en { display: none; }
+
 .tool + .tool::before {
   content: '';
   position: absolute;

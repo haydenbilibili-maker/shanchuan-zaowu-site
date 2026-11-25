@@ -67,6 +67,8 @@ function runChecks() {
   ok('D4 旧页脚链 / 双描边钮不回来', !/class="foot-links"|class="act-grid"|act ghost compact/.test(wxml))
   ok('D4 死样式已清（foot-link / act-grid / .act.compact）', !/\.foot-link|\.act-grid|\.act\.compact/.test(wxss))
   ok('D4 工具带样式齐备', ['.tool-grid {', '.tool {', '.tool-press {', '.tool-en {', '.tool-t {'].every((c) => wxss.includes(c)))
+  ok('D4 主行动按钮满宽（button 默认 inline-flex，缺 width 会被内容撑窄），单格工具按次按钮横排',
+    /\.act \{[^}]*width: 100%;/.test(wxss) && /\.tool:only-child \{[^}]*flex-direction: row;/.test(wxss))
 
   /* D5 百科空态 */
   const emptyAt = js.indexOf('function archiveIsEmpty(profile)')
@@ -106,6 +108,7 @@ const INJECTIONS = [
   { name: '没物种也出问问博物君', file: F.wxml, find: 'wx:if="{{guideOpen && speciesInfo.species_name_zh && speciesInfo.is_specimen !== false}}" bindtap="onAskGuide"', replace: 'bindtap="onAskGuide"' },
   { name: '非标本也出馆藏同类', file: F.wxml, find: 'wx:if="{{speciesInfo.is_specimen !== false}}" bindtap="onGoGallery"', replace: 'bindtap="onGoGallery"' },
   { name: '页脚链回来', file: F.wxml, find: '<view class="action-group-meta">', replace: '<view class="foot-links"></view>\n      <view class="action-group-meta">' },
+  { name: '主按钮又变窄', file: F.wxss, find: '  width: 100%;\n  height: 88rpx;\n  line-height: 88rpx;', replace: '  height: 88rpx;\n  line-height: 88rpx;' },
   { name: '死样式回来', file: F.wxss, find: '.tool-grid {', replace: '.foot-links { display: flex; }\n.tool-grid {' },
   { name: '来源块也算正文', file: F.js, find: "b && b.visible && b.type !== 'source'", replace: 'b && b.visible' },
   { name: '补全后不重算空态', file: F.js, find: '        archiveEmpty: archiveIsEmpty(next),\n', replace: '' },
