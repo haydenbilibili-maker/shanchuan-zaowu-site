@@ -397,6 +397,32 @@
         <!-- ② 两条**独立**一键工具条（口径与动作与改前逐字一致，只换了页）——
              各自带自己的件数与方向按钮，方便分别操作（例如只清保护类、或只清动物类）；
              进行中只压暗正在跑的那一组。 -->
+        <!-- 版本审核快照（2026-11-25 产品负责人）：白名单 = 当前在架（已审核无风险）；
+             审核下架只留白名单，审核上架恢复审核前的在架状态。仅超管，硬规则：四馆各需 ≥1 件在架。 -->
+        <view class="review-card {{reviewShelf.status === 'off' ? 'is-off' : ''}}" wx:if="{{isSuperAdmin}}">
+          <view class="review-head">
+            <text class="review-overline">REVIEW MODE</text>
+            <view class="review-head-row">
+              <text class="review-title">版本审核 · 快照上下架</text>
+              <text class="review-state {{reviewShelf.status === 'off' ? 'is-live' : ''}}">{{reviewShelf.status === 'off' ? '审核中 · 已下架 ' + reviewShelf.reviewOffCount + ' 件' : '未进入审核'}}</text>
+            </view>
+          </view>
+          <view class="review-meta">
+            <text class="review-meta-k">白名单 {{reviewShelf.whitelistCount}} 件</text>
+            <text class="review-meta-k">当前在架 {{reviewShelf.on}} / {{reviewShelf.total}}</text>
+          </view>
+          <view class="review-halls">
+            <text class="review-hall {{item.on ? '' : 'is-empty'}}" wx:for="{{reviewShelf.halls}}" wx:key="name">{{item.name}} {{item.on}}</text>
+          </view>
+          <text class="review-warn" wx:if="{{reviewShelf.emptyHalls.length}}">有馆没有在架商品：{{reviewShelf.emptyHalls}} —— 先给这些馆上架至少 1 件，再生成白名单。</text>
+          <view class="review-actions">
+            <view hover-class="tap-press" hover-stay-time="80" class="review-btn {{reviewShelfRunning === 'whitelist' ? 'is-disabled' : ''}}" bindtap="buildReviewWhitelist">生成 / 更新白名单</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="review-btn is-danger {{reviewShelfRunning === 'off' ? 'is-disabled' : ''}}" wx:if="{{reviewShelf.status !== 'off'}}" bindtap="offShelfForReview">审核下架</view>
+            <view hover-class="tap-press" hover-stay-time="80" class="review-btn is-primary {{reviewShelfRunning === 'on' ? 'is-disabled' : ''}}" wx:else bindtap="restoreAfterReview">审核上架</view>
+          </view>
+          <text class="review-hint">审核期只保留白名单商品，其余全部下架；审核通过后点「审核上架」恢复审核前的在架状态（审核前已下架的不动）。</text>
+        </view>
+
         <!-- 上下架状态一键（2026-11-25 产品负责人点名）：与风险分层两条独立，不筛风险等级；
              两条各自带自己的件数与方向按钮，口径对标「高风险 / 中等风险」那两条。 -->
         <view class="risk-bar is-relist" wx:if="{{productShelfCounts.off > 0}}">

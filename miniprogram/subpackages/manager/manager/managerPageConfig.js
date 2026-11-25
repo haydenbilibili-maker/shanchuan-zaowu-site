@@ -1719,6 +1719,9 @@ const managerPageConfig = {
     taxonomySaving: false,
     /** 云端字典通路是否可用（云函数未部署 → false：只能看，不能存） */
     taxonomyCloudReady: false,
+    // 版本审核快照（2026-11-25）：白名单 = 已审核无风险集合；审核下架只留白名单，审核上架恢复
+    reviewShelf: { loading: false, status: 'idle', whitelistCount: 0, whitelistAt: null, reviewOffCount: 0, on: 0, total: 0, halls: [], emptyHalls: [], whitelistEmptyHalls: [] },
+    reviewShelfRunning: '',
     contentFlags: {
       showSpecimenArchive: false,
       showUserCommunity: false,
@@ -2358,13 +2361,13 @@ const managerPageConfig = {
     const enter = (t) => {
       if (t === 'stats') this.loadProductStats();
       if (t === 'category') { this.loadCategoriesManage(); this.maybeLoadProductFields(); }
-      if (t === 'risk') { this.loadRiskOverview(); this.loadProducts({ silent: true }); }
+      if (t === 'risk') { this.loadRiskOverview(); this.loadReviewShelf(true); this.loadProducts({ silent: true }); }
     };
     if (this.data.productLibTab === next) {
       if (next === 'stats' && !this.data.productStats && !this.data.productStatsLoading) this.loadProductStats();
       if (next === 'category') { this.loadCategoriesManage(); this.maybeLoadProductFields(); }
       // 「风险管理」重复点：概览缓存还在就不重拉，只保证清单与当前分层一致
-      if (next === 'risk') { if (!this.data.riskOverview) this.loadRiskOverview(); this.loadProducts({ silent: true }); }
+      if (next === 'risk') { if (!this.data.riskOverview) this.loadRiskOverview(); this.loadReviewShelf(true); this.loadProducts({ silent: true }); }
       return;
     }
     // 一个能力只有一个入口：明细页不带风险筛选，「风险管理」页不带在档 / 促销筛选 / 搜索词。
@@ -4903,6 +4906,141 @@ const managerPageConfig = {
    * ══════════════════════════════════════════════════════════════════════════════ */
 
   /** 拉一次分层概览（含各层上架态拆分 / 保护类细分 / 中等风险命中原因） */
+  /* ---------------- 版本审核快照上架 / 下架（2026-11-25，仅超管） ----------------
+   * ① 白名单 = 当前在架集合（已审核无风险）；② 审核下架 = 白名单保留、其余全下；③ 审核上架 = 恢复②下架的。
+   * 硬规则：首页四馆（昆虫馆/动物馆/植物馆/海洋馆）每个都要有在架商品，空馆则拒绝并指出是哪一馆。
+   */
+  async loadReviewShelf(silent) {
+    if (this.data.reviewShelf.loading) return;
+    if (!silent) this.setData({ 'reviewShelf.loading': true });
+    try {
+      const res = await wx.cloud.callFunction({ name: 'manageProductReview', data: { action: 'status' } });
+      const r = (res && res.result) || {};
+      if (!r.success) throw new Error(r.msg || '读取失败');
+      this.setData({
+        'reviewShelf.loading': false,
+        'reviewShelf.status': r.status || 'idle',
+        'reviewShelf.whitelistCount': r.whitelistCount || 0,
+        'reviewShelf.whitelistAt': r.whitelistAt || null,
+        'reviewShelf.reviewOffCount': r.reviewOffCount || 0,
+        'reviewShelf.on': (r.counts && r.counts.on) || 0,
+        'reviewShelf.total': (r.counts && r.counts.total) || 0,
+        'reviewShelf.halls': r.halls || [],
+        'reviewShelf.emptyHalls': r.emptyHalls || [],
+        'reviewShelf.whitelistEmptyHalls': r.whitelistEmptyHalls || []
+      });
+    } catch (e) {
+      this.setData({ 'reviewShelf.loading': false });
+      if (!silent) this.showHubTip(formatCloudFnError(e, '审核状态读取失败'), 'warn');
+    }
+  },
+
+  /** ① 生成 / 更新审核白名单（当前在架 = 已审核无风险） */
+  buildReviewWhitelist() {
+    if (this.data.reviewShelfRunning) return;
+    const on = this.data.reviewShelf.on || 0;
+    openAppModal({
+      title: '生成审核白名单',
+      overline: 'REVIEW',
+      content: `把当前在架的 ${on} 件记为「已审核无风险」？审核下架时只保留这一批，其余商品全部下架。四个馆都必须各有在架商品，否则不予生成。`,
+      confirmText: '生成',
+      success: async (r) => {
+        if (!r.confirm) return;
+        this.setData({ reviewShelfRunning: 'whitelist' });
+        try {
+          const res = await wx.cloud.callFunction({ name: 'manageProductReview', data: { action: 'buildWhitelist' } });
+          const out = (res && res.result) || {};
+          if (!out.success) this.showHubTip(out.msg || '生成失败', 'warn');
+          else this.showHubTip(`审核白名单已更新：${out.whitelistCount} 件`, 'info');
+          await this.loadReviewShelf(true);
+        } catch (e) {
+          this.showHubTip(formatCloudFnError(e, '生成失败'), 'warn');
+        } finally {
+          this.setData({ reviewShelfRunning: '' });
+        }
+      }
+    }, this);
+  },
+
+  /** ② 审核下架：白名单保持上架，其余全部下架 */
+  offShelfForReview() {
+    if (this.data.reviewShelfRunning) return;
+    if (!this.data.reviewShelf.whitelistCount) {
+      this.showHubTip('先「生成审核白名单」，再点审核下架', 'warn');
+      return;
+    }
+    const keep = this.data.reviewShelf.whitelistCount;
+    const toOff = Math.max(0, (this.data.reviewShelf.on || 0) - keep);
+    openAppModal({
+      title: '审核下架',
+      overline: 'REVIEW',
+      content: `审核期只保留白名单的 ${keep} 件在架，其余 ${toOff} 件全部下架；审核通过后点「审核上架」原样恢复。确定执行？`,
+      confirmText: '审核下架',
+      success: async (r) => {
+        if (!r.confirm) return;
+        this.setData({ reviewShelfRunning: 'off' });
+        wx.showLoading({ title: '下架中…' });
+        try {
+          const res = await wx.cloud.callFunction({ name: 'manageProductReview', data: { action: 'offShelfForReview' } });
+          wx.hideLoading();
+          const out = (res && res.result) || {};
+          if (!out.success) {
+            this.showHubTip(out.msg || '审核下架失败', 'warn');
+          } else {
+            const parts = [`审核下架完成：保留 ${out.whitelistCount} 件，下架 ${out.offCount} 件`];
+            if (out.failed && out.failed.length) parts.push(`失败 ${out.failed.length} 件（可再点一次重试）`);
+            this.showHubTip(parts.join(' · '), out.partial ? 'warn' : 'info');
+          }
+          await this.loadReviewShelf(true);
+          this.loadProducts({ silent: true });
+          if (this.data.productLibTab === 'risk') this.loadRiskOverview();
+        } catch (e) {
+          wx.hideLoading();
+          this.showHubTip(formatCloudFnError(e, '审核下架失败'), 'warn');
+        } finally {
+          this.setData({ reviewShelfRunning: '' });
+        }
+      }
+    }, this);
+  },
+
+  /** ③ 审核上架：恢复审核下架前的在架状态 */
+  restoreAfterReview() {
+    if (this.data.reviewShelfRunning) return;
+    const off = this.data.reviewShelf.reviewOffCount || 0;
+    openAppModal({
+      title: '审核上架',
+      overline: 'REVIEW',
+      content: `把审核时下架的 ${off} 件恢复上架（审核前就已下架的商品不动）。确定执行？`,
+      confirmText: '审核上架',
+      success: async (r) => {
+        if (!r.confirm) return;
+        this.setData({ reviewShelfRunning: 'on' });
+        wx.showLoading({ title: '恢复中…' });
+        try {
+          const res = await wx.cloud.callFunction({ name: 'manageProductReview', data: { action: 'restoreAfterReview' } });
+          wx.hideLoading();
+          const out = (res && res.result) || {};
+          if (!out.success) {
+            this.showHubTip(out.msg || '审核上架失败', 'warn');
+          } else {
+            const parts = [`已恢复 ${out.restored} 件`];
+            if (out.failed && out.failed.length) parts.push(`失败 ${out.failed.length} 件（可再点一次重试）`);
+            this.showHubTip(parts.join(' · '), out.partial ? 'warn' : 'info');
+          }
+          await this.loadReviewShelf(true);
+          this.loadProducts({ silent: true });
+          if (this.data.productLibTab === 'risk') this.loadRiskOverview();
+        } catch (e) {
+          wx.hideLoading();
+          this.showHubTip(formatCloudFnError(e, '审核上架失败'), 'warn');
+        } finally {
+          this.setData({ reviewShelfRunning: '' });
+        }
+      }
+    }, this);
+  },
+
   async loadRiskOverview() {
     if (this.data.riskOverviewLoading) return;
     this.setData({ riskOverviewLoading: true, riskOverviewError: false });

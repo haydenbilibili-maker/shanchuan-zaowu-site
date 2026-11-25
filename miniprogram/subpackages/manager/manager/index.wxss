@@ -4235,6 +4235,55 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 /* ══════════════ 「风险管理」独立 tab（2026-10-14）══════════════
    视觉沿用本页既有语言：发丝金边 + 淡底卡片（与「分类管理」返工后同一套），
    红 / 琥珀**只**用于风险等级语义，不铺满屏。 */
+/* 版本审核快照卡（2026-11-25）：与风险分层/上下架条区分开，金线卡，审核中描红 */
+.review-card {
+  margin: 0 8rpx 20rpx;
+  padding: 24rpx 26rpx;
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3);
+}
+.review-card.is-off { background: rgba(200, 84, 68, 0.07); box-shadow: inset 0 0 0 1rpx rgba(200, 84, 68, 0.42); }
+.review-overline {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: .3em;
+  color: var(--brass-400, #C4A76C);
+  margin-bottom: 8rpx;
+}
+.review-head-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12rpx; }
+.review-title { font-size: var(--fs-30); font-family: var(--font-brand); color: #F1E6CC; }
+.review-state { flex-shrink: 0; font-size: var(--fs-22); color: #A09A90; }
+.review-state.is-live { color: #D98374; }
+.review-meta { display: flex; gap: 24rpx; margin-top: 14rpx; }
+.review-meta-k { font-size: var(--fs-22); color: #B9B2A6; }
+.review-halls { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 14rpx; }
+.review-hall {
+  font-size: var(--fs-20);
+  padding: 6rpx 14rpx;
+  border-radius: 999rpx;
+  color: #E3D2AC;
+  background: rgba(196, 167, 108, 0.12);
+}
+.review-hall.is-empty { color: #D98374; background: rgba(200, 84, 68, 0.14); }
+.review-warn { display: block; margin-top: 12rpx; font-size: var(--fs-22); line-height: 1.5; color: #D98374; }
+.review-actions { display: flex; gap: 16rpx; margin-top: 18rpx; }
+.review-btn {
+  flex: 1;
+  height: 76rpx;
+  line-height: 76rpx;
+  text-align: center;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-24);
+  color: #E3D2AC;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.5);
+}
+.review-btn.is-primary { background: var(--color-primary); color: #221E17; box-shadow: none; }
+.review-btn.is-danger { color: #D98374; box-shadow: inset 0 0 0 1rpx rgba(200, 84, 68, 0.55); }
+.review-btn.is-disabled { opacity: .5; }
+.review-hint { display: block; margin-top: 14rpx; font-size: var(--fs-20); line-height: 1.55; color: #8C8579; }
+
 .risk-page {
   padding: 0 0 40rpx;
 }

@@ -402,6 +402,13 @@
       "installDependency": true
     },
     {
+      "name": "manageProductReview",
+      "timeout": 60,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "installDependency": true
+    },
+    {
       "name": "aiIdentifyMonitor",
       "timeout": 20,
       "runtime": "Nodejs16.13",

@@ -1,0 +1,9 @@
+{
+  "name": "manageProductReview",
+  "version": "1.0.0",
+  "description": "藏品「版本审核」快照上架/下架：白名单 + 审核下架 + 审核上架（仅超管）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

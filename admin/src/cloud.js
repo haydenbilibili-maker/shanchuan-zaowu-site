@@ -570,7 +570,8 @@ export const COLLECTIONS = {
   STORED_VALUE_RECHARGE_ORDERS: 'stored_value_recharge_orders', // 储值充值订单（manageStoredValue）
   AI_IDENTIFY_LOGS: 'ai_identify_logs',                         // AI 鉴定调用日志：含用户照片，仅云函数可读写（identifySpecimen 写 / aiIdentifyMonitor 超管读）
   MUSEUM_GUIDE_LOGS: 'museum_guide_logs',                       // 博物君每次提问一条运营日志（状态 / 耗时 / 模型 / 命中物种 / 去处，不含问答原文）：仅云函数（askMuseumGuide 写 / museumGuideMonitor 超管读，2026-11-23）
-  MUSEUM_GUIDE_CONFIG: 'museum_guide_config',                   // 博物君开关与每日额度（doc main）：仅云函数（museumGuideMonitor 写 / askMuseumGuide、getContentDisplayFlags 读，2026-11-23）
+  MUSEUM_GUIDE_CONFIG: 'museum_guide_config',
+  PRODUCT_REVIEW_STATES: 'product_review_states',          // 藏品版本审核快照（doc main）：仅云函数（manageProductReview 读写，仅超管；2026-11-25）                   // 博物君开关与每日额度（doc main）：仅云函数（museumGuideMonitor 写 / askMuseumGuide、getContentDisplayFlags 读，2026-11-23）
   MUSEUM_GUIDE_USAGE: 'museum_guide_usage',                     // 博物君每日提问计数（openid_YYYYMMDD → count，不存对话内容）：仅云函数可读写（askMuseumGuide，2026-11-23）
 };
 
