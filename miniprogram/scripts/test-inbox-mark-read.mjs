@@ -165,6 +165,16 @@ async function runChecks() {
     /function isUnreadDoc\(d\)/.test(read(P.fn)) && /rows\.filter\(isUnreadDoc\)/.test(read(P.fn)) &&
     !/where\(\{ recipient: openid, read: _\.neq\(true\) \}\)/.test(read(P.fn)))
 
+  // R10（2026-11-26 根因②）分类/队列/合并窗口任一对不上时，也必须在「全部已读」里清干净：
+  //   云端不允许在 members 为空时提前 return，必须无条件强扫本人两集合，并按全量口径回报未读数。
+  const src10 = read(P.fn)
+  const body10 = (src10.match(/async function markAllRead\([\s\S]*?\n\}/) || [''])[0]
+  ok('R10 全部已读无条件强扫 + 全量回报（不再「分类对不上 → 直接回成功但仍剩 1 封」）',
+    /const swept = await forceMarkUnread\(openid\)/.test(body10) &&
+    /const all = await loadMergedMessages\(openid, 'all'\)/.test(body10) &&
+    /const left = all\.filter\(isUnread\)/.test(body10) &&
+    !/if \(!members\.length\) \{\s*return \{ success: true/.test(body10))
+
   // R4
   const page = read(P.page)
   const at = page.indexOf('  async markAllRead() {')

@@ -857,22 +857,20 @@ async function markAllRead(openid, category, typeFilter, requestedQueue, isStaff
   //   组成一变（窗口挤出 / 分类不同）就单独冒出来的「影子未读」
   const ghosts = await loadUnreadMembers(openid, category, typeFilter, requestedQueue)
   const members = mergeMembers([].concat(...unread.map((m) => m._members || [])), ghosts)
-  if (!members.length) {
-    return { success: true, msg: '全部标记成功', unreadCount: 0 }
-  }
-  const r = await markMembersRead(members)
+  const r = members.length ? await markMembersRead(members) : { updated: 0, failed: [] }
 
-  // 改完重新数一遍，如实回报：仍有未读就说清楚，并把卡住的那几封记进日志便于排查
-  let left = (await load()).filter(isUnread)
+  // 2026-11-26 根因修复②：**无论上面命中几封，都按「本人」强扫一遍两个集合**。
+  // 之前 members 为空就直接 return 成功 —— 分类 / 队列 / 合并窗口任一对不上，就会「回成功但页面仍是 1 封未读」。
+  const swept = await forceMarkUnread(openid)
+
+  // 未读数按**全量**算（与头部计数同口径，不受本页 activeCategory / queue 影响），如实回报
+  const all = await loadMergedMessages(openid, 'all')
+  const left = all.filter(isUnread)
   if (left.length) {
-    const swept = await forceMarkUnread(openid)
-    left = (await load()).filter(isUnread)
     console.error('markAllRead 仍有未读', JSON.stringify(left.map((m) => ({ id: m._id, type: m.type, source: m._source, members: m._members }))), 'swept', swept, 'failed', JSON.stringify(r.failed))
+    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated, swept }
   }
-  if (left.length) {
-    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated }
-  }
-  return { success: true, msg: '全部标记成功', unreadCount: 0, updated: r.updated }
+  return { success: true, msg: '全部标记成功', unreadCount: 0, updated: r.updated, swept }
 }
 
 async function deleteMessage(openid, messageId, isStaff) {
