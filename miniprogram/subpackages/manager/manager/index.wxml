@@ -372,7 +372,7 @@
             </view>
             <view class="hub-grp-arrow {{hubCollapsed.orders ? 'is-collapsed' : ''}}"></view>
           </view>
-          <view class="hub-grid--cat" wx:if="{{!hubCollapsed.orders}}">
+          <view class="hub-grid--cat {{hubSecMeta.orders.grid}}" wx:if="{{!hubCollapsed.orders}}">
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="orders" wx:if="{{menu.orders}}" bindtap="onOrdersMenuTap" data-idx="2" data-title="订单管理">
               <view class="hub-ico">
                 <image class="hub-ico-img" src="/assets/icons/box.png" mode="aspectFit" />
@@ -422,7 +422,7 @@
             </view>
             <view class="hub-grp-arrow {{hubCollapsed.biz ? 'is-collapsed' : ''}}"></view>
           </view>
-          <view class="hub-grid--cat" wx:if="{{!hubCollapsed.biz}}">
+          <view class="hub-grid--cat {{hubSecMeta.biz.grid}}" wx:if="{{!hubCollapsed.biz}}">
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="ledger" wx:if="{{menu.ledger}}" bindtap="switchTab" data-idx="8" data-title="营收账本">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/coin_gold.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">账本</text>
@@ -443,7 +443,7 @@
             </view>
             <view class="hub-grp-arrow {{hubCollapsed.goods ? 'is-collapsed' : ''}}"></view>
           </view>
-          <view class="hub-grid--cat" wx:if="{{!hubCollapsed.goods}}">
+          <view class="hub-grid--cat {{hubSecMeta.goods.grid}}" wx:if="{{!hubCollapsed.goods}}">
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="products" wx:if="{{menu.products}}" bindtap="switchTab" data-idx="1" data-title="藏品库">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">藏品</text>
@@ -489,7 +489,7 @@
             </view>
             <view class="hub-grp-arrow {{hubCollapsed.members ? 'is-collapsed' : ''}}"></view>
           </view>
-          <view class="hub-grid--cat" wx:if="{{!hubCollapsed.members}}">
+          <view class="hub-grid--cat {{hubSecMeta.members.grid}}" wx:if="{{!hubCollapsed.members}}">
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="memberCrm" wx:if="{{menu.memberCrm}}" bindtap="goMemberCrm">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/user_gold.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">会员 CRM</text>
@@ -538,7 +538,7 @@
             </view>
             <view class="hub-grp-arrow {{hubCollapsed.studio ? 'is-collapsed' : ''}}"></view>
           </view>
-          <view class="hub-grid--cat" wx:if="{{!hubCollapsed.studio}}">
+          <view class="hub-grid--cat {{hubSecMeta.studio.grid}}" wx:if="{{!hubCollapsed.studio}}">
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="studioDashboard" wx:if="{{menu.studioDashboard}}" bindtap="goStudioDashboard">
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/studio-dashboard.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">仪表盘</text>
@@ -614,7 +614,7 @@
             </view>
             <view class="hub-grp-arrow {{hubCollapsed.system ? 'is-collapsed' : ''}}"></view>
           </view>
-          <view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">
+          <view class="hub-grid--cat {{hubSecMeta.system.grid}}" wx:if="{{!hubCollapsed.system}}">
             <!-- 组合入口（2026-11-26 归并）：shipping + bookingRules + supportConfig + wxNotify → 组合页逐条平铺 -->
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="settingsKit" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig || menu.orders || menu.feishuSync}}" bindtap="openHubKitPage" data-kit="settingsKit">
               <view class="hub-ico">

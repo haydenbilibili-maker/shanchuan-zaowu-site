@@ -953,6 +953,13 @@ const SCENES = [
     const kit = nav.findKit('approvalsKit')
     return [
       { name: 'mgr-hub', h: 5200, wxml: 'subpackages/manager/manager/index', data: { ...counts, menu, ...view, hubCollapsed: {}, hubAllCollapsed: false, hubQuery: '', hubFound: [], workspaceRole: 'super_admin', curTab: 0, workspaceReady: true, artisanEmbed: false, greeting: '晚上好', staffName: '馆长' } },
+      // 店长：可见入口少，分类里的数量不同 → 宫格自适应（宽卡 / 3 列 / 末行拉宽）
+      (() => {
+        const mm = {}
+        Object.values(roles.MENU_KEYS).forEach((k) => { mm[k] = roles.canSeeMenu('store_manager', k) })
+        const mv = nav.buildHubView(['orders', 'ledger', 'gift'], { ...counts, menu: mm })
+        return { name: 'mgr-hub-mgr', h: 3600, wxml: 'subpackages/manager/manager/index', data: { ...counts, menu: mm, ...mv, hubCollapsed: {}, hubAllCollapsed: false, hubQuery: '', hubFound: [], workspaceRole: 'store_manager', curTab: 0, workspaceReady: true, artisanEmbed: false, greeting: '晚上好', staffName: '店长' } }
+      })(),
       { name: 'mgr-kit', h: 900, wxml: 'subpackages/manager/group/index', data: { ready: true, kitId: kit.id, title: kit.label, sub: kit.sub, desc: kit.desc, lost: false,
         rows: kit.children.map((c) => ({ id: c.id, label: c.label, desc: c.desc, icon: c.icon, badge: nav.childBadge(c, counts) })) } }
     ]

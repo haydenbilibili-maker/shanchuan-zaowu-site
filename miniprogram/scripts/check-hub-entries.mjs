@@ -800,9 +800,9 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
       errs.push(`N6 分区 ${id} 收起时标题行须显示入口数（hubSecMeta.${id}.n）与红点合计（hubSecMeta.${id}.badge）`)
     }
     if (!headBody.includes(`<view class="hub-grp-arrow {{hubCollapsed.${id} ? 'is-collapsed' : ''}}"></view>`)) errs.push(`N6 分区 ${id} 标题行右侧须有随收起翻转的箭头`)
-    const grids = body.match(/<view class="hub-grid--cat"[^>]*>/g) || []
-    if (grids.length !== 1 || grids[0] !== `<view class="hub-grid--cat" wx:if="{{!hubCollapsed.${id}}}">`) {
-      errs.push(`N6 分区 ${id} 须恰好一个宫格，且只在未收起时显示（<view class="hub-grid--cat" wx:if="{{!hubCollapsed.${id}}}">）`)
+    const grids = body.match(/<view class="hub-grid--cat[^"]*"[^>]*>/g) || []
+    if (grids.length !== 1 || grids[0] !== `<view class="hub-grid--cat {{hubSecMeta.${id}.grid}}" wx:if="{{!hubCollapsed.${id}}}">`) {
+      errs.push(`N6 分区 ${id} 须恰好一个宫格，按可见入口数自适应列数、且只在未收起时显示（<view class="hub-grid--cat {{hubSecMeta.${id}.grid}}" wx:if="{{!hubCollapsed.${id}}}">）`)
     } else {
       const gAt = s.at + body.indexOf(grids[0])
       const gEnd = closeOf(src.wxml, gAt)
@@ -817,7 +817,59 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
   }
   const rules = cssRules(src.hubWxss)
   const decl = (sel, prop) => (rules.filter((r) => r.sel === sel).map((r) => r.decls[prop]).filter(Boolean).pop() || '')
-  if (decl('.hub-grid--cat', 'grid-template-columns').replace(/\s+/g, '') !== 'repeat(4,minmax(0,1fr))') errs.push('N6 宫格须 4 列（grid-template-columns: repeat(4, minmax(0, 1fr))）')
+  // 2026-11-26 宫格自适应（产品负责人「根据功能的数量不同来优化交互展示方案」）：12 栅格 + span，列数 / 末行铺法由 hubNav.gridClass 给出
+  if (decl('.hub-grid--cat', 'grid-template-columns').replace(/\s+/g, '') !== 'repeat(12,minmax(0,1fr))') errs.push('N6 宫格须为 12 栅格（grid-template-columns: repeat(12, minmax(0, 1fr))），列数由 cols-N 的 span 决定 —— 不用百分比宽（错题本 E26）')
+  const SPAN_RULES = [
+    ['.hub-grid--cat .hub-cell', 'span 3'], ['.hub-grid--cat.cols-3 .hub-cell', 'span 4'], ['.hub-grid--cat.cols-2 .hub-cell', 'span 6'],
+    ['.hub-grid--cat.cols-4.rem-3 .hub-cell:nth-last-child(-n+3)', 'span 4'], ['.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2)', 'span 6'],
+    ['.hub-grid--cat.rem-1 .hub-cell:last-child', 'span 12']
+  ]
+  for (const [sel, want] of SPAN_RULES) {
+    if (decl(sel, 'grid-column') !== want) errs.push(`N6 宫格自适应样式缺「${sel} { grid-column: ${want} }」—— 末行会铺不满`)
+  }
+  for (const sel of ['.hub-grid--cat.cols-2 .hub-cell', '.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2)', '.hub-grid--cat.rem-1 .hub-cell:last-child']) {
+    if (decl(sel, 'grid-template-columns').replace(/\s+/g, '') !== '80rpxminmax(0,1fr)') errs.push(`N6 半行 / 整行宽的格子（${sel}）须切成横向宽卡（图标在左，名称与小字在右）`)
+  }
+  // 实跑：各角色每个分类按 gridClass 排版后，每一行都恰好铺满 12 栏（没有孤儿格 / 半空行），且一行不超过 4 格
+  try {
+    const spansOf = (n, cls) => {
+      const has = (c) => cls.split(/\s+/).includes(c)
+      const base = has('cols-2') ? 6 : has('cols-3') ? 4 : 3
+      return Array.from({ length: n }, (_, i) => {
+        const fromEnd = n - i
+        if (has('rem-1') && fromEnd === 1) return 12
+        if (has('rem-2') && fromEnd <= 2) return 6
+        if (has('cols-4') && has('rem-3') && fromEnd <= 3) return 4
+        return base
+      })
+    }
+    for (const [role, label] of ROLES3) {
+      const meta = nav.buildSecMeta({ menu: menuOf(roles, role) })
+      for (const [sid, m] of Object.entries(meta)) {
+        if (!m.grid) { errs.push(`N6 ${label}：分类 ${sid} 没有给出宫格排法（hubSecMeta.${sid}.grid）`); continue }
+        let row = 0
+        let cells = 0
+        let ok = true
+        for (const sp of spansOf(m.n, m.grid)) {
+          row += sp
+          cells += 1
+          if (row > 12 || cells > 4) { ok = false; break }
+          if (row === 12) { row = 0; cells = 0 }
+        }
+        if (!ok || row !== 0) errs.push(`N6 ${label}：分类 ${sid} 有 ${m.n} 项，排法「${m.grid}」铺不满末行（或一行超过 4 格）`)
+      }
+    }
+    for (let n = 1; n <= 16; n += 1) {
+      const cls = nav.gridClass(n)
+      const sp = spansOf(n, cls)
+      let row = 0
+      for (const x of sp) { row += x; if (row === 12) row = 0 }
+      if (row !== 0) errs.push(`N6 gridClass(${n}) = 「${cls}」铺不满末行`)
+      if (n >= 3 && n % 4 === 1 && n % 3 === 2 && !/cols-3/.test(cls)) errs.push(`N6 ${n} 项应排 3 列（${n % 3} 格末行比 4 列的 1 格孤儿更满）`)
+    }
+  } catch (e) {
+    errs.push(`N6 宫格排法实跑失败：${e.message}`)
+  }
   if (decl('.hub-cell .hub-badge', 'position') !== 'absolute') errs.push('N6 磁贴红色数字角标须贴在图标右上角（.hub-cell .hub-badge 绝对定位）')
   if (decl('.hub-cell .hub-ico', 'border-radius') !== '50%') errs.push('N6 磁贴图标底须是圆形（.hub-cell .hub-ico border-radius: 50%）')
   if (!/\.hub-grid--cat \{[^}]*animation:[^;]*0\.\d+s/.test(css)) errs.push('N6 宫格展开须有轻量动画（.hub-grid--cat animation，< 1s）')
@@ -987,7 +1039,7 @@ if (!selftest) {
     }
     let wxml = cut(cut(b.wxml, 'deposit', '孤品定金'), 'shareholderConfig', '股东')
     const tile = '\n            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="sampleKit" wx:if="{{menu.depositOps || menu.shareholderConfig}}" bindtap="openHubKitPage" data-kit="sampleKit">\n              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/discount.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">样本组合</text>\n              <text class="hub-cell-sub">定金·股东</text>\n            </view>'
-    const grid = '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.orders}}">'
+    const grid = '<view class="hub-grid--cat {{hubSecMeta.orders.grid}}" wx:if="{{!hubCollapsed.orders}}">'
     if (!wxml.includes(grid)) throw new Error('注入锚点失效：订单分区宫格')
     wxml = wxml.replace(grid, grid + tile)
     let hubNav = b.hubNav
@@ -1092,14 +1144,19 @@ if (!selftest) {
     ['N5 搜索不认别名', rep('hubNav', 'return [e.label, ...alias, sec.title, sec.short]', 'return [e.label, sec.title, sec.short]'), /N5 超管搜「包邮」/],
     ['N5 搜索不认分组名', rep('hubNav', 'return [e.label, ...alias, sec.title, sec.short]', 'return [e.label, ...alias]'), /N5 超管搜分组名「工作室」/],
     // N6 分类宫格 + 可收起 + 默认展开 + 入口全部在
-    ['N6 宫格不随收起隐藏', rep('wxml', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.biz}}">', '<view class="hub-grid--cat">'), /N6 分区 biz 须恰好一个宫格/],
+    ['N6 宫格不随收起隐藏', rep('wxml', '<view class="hub-grid--cat {{hubSecMeta.biz.grid}}" wx:if="{{!hubCollapsed.biz}}">', '<view class="hub-grid--cat {{hubSecMeta.biz.grid}}">'), /N6 分区 biz 须恰好一个宫格/],
+    ['N6 宫格不再按数量自适应（写死 4 列）', rep('wxml', '<view class="hub-grid--cat {{hubSecMeta.goods.grid}}" wx:if="{{!hubCollapsed.goods}}">', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.goods}}">'), /N6 分区 goods 须恰好一个宫格，按可见入口数自适应/],
+    ['N6 排法不算末行（一律 4 列）', rep('hubNav', '  const cols = fill(3) > fill(4) ? 3 : 4\n', '  const cols = 4\n'), /N6 (超管|店长|店员)：分类 \w+ 有 \d+ 项，排法「[^」]+」铺不满末行|N6 \d+ 项应排 3 列/],
+    ['N6 末行两格不拉宽', rep('hubWxss', '.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) { grid-column: span 6; }', ''), /N6 宫格自适应样式缺「\.hub-grid--cat\.rem-2/],
+    ['N6 宽格不切横向卡', rep('hubWxss', '  grid-template-columns: 80rpx minmax(0, 1fr);\n', ''), /须切成横向宽卡/],
+    ['N6 排法丢掉末行标记', rep('hubNav', "  return `cols-${g.cols}${g.rem ? ` rem-${g.rem}` : ''}`", '  return `cols-${g.cols}`'), /铺不满末行/],
     ['N6 标题行不能点', rep('wxml', 'bindtap="onHubCollapse" data-sec="studio" ', ''), /N6 分区 studio 标题行须点按收起/],
     ['N6 收起时不显示红点合计', rep('wxml', '              <view class="hub-badge" wx:if="{{hubSecMeta.studio.badge}}">{{hubSecMeta.studio.badge}}</view>\n', ''), /N6 分区 studio 收起时标题行须显示入口数/],
     ['N6 箭头不随收起翻转', rep('wxml', "<view class=\"hub-grp-arrow {{hubCollapsed.goods ? 'is-collapsed' : ''}}\"></view>", '<view class="hub-grp-arrow"></view>'), /N6 分区 goods 标题行右侧须有随收起翻转的箭头/],
     ['N6 入口挪出宫格', (s) => {
       const m = s.wxml.match(/\n {12}<view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="stores"[\s\S]*?<text class="hub-cell-name">门店<\/text>\n {12}<\/view>/)
       if (!m) throw new Error('注入锚点失效：门店磁贴')
-      return { ...s, wxml: s.wxml.replace(m[0], '').replace('<view class="hub-grid--cat" wx:if="{{!hubCollapsed.biz}}">', `<view class="hub-grid--cat" wx:if="{{!hubCollapsed.biz}}">\n          </view>${m[0]}\n          <view>`) }
+      return { ...s, wxml: s.wxml.replace(m[0], '').replace('<view class="hub-grid--cat {{hubSecMeta.biz.grid}}" wx:if="{{!hubCollapsed.biz}}">', `<view class="hub-grid--cat {{hubSecMeta.biz.grid}}" wx:if="{{!hubCollapsed.biz}}">\n          </view>${m[0]}\n          <view>`) }
     }, /N6 分区 biz 的入口「[^」]*门店[^」]*」不在宫格里/],
     ['N6 默认就收起', rep('hubNav', '  HUB_SECTIONS.forEach((s) => { if (src[s.id] === true) out[s.id] = true })', '  HUB_SECTIONS.forEach((s) => { out[s.id] = true })'), /N6 没有收起记录时须全部展开/],
     ['N6 收起记录 key 被换', rep('hubNav', "const COLLAPSE_STORAGE_KEY = 'manager_hub_collapsed_v1'", "const COLLAPSE_STORAGE_KEY = 'manager_hub_favs_v1'"), /N6 分类收起记录的本机 key 须为 manager_hub_collapsed_v1/],
@@ -1110,9 +1167,9 @@ if (!selftest) {
     ['N6 全部收起不收', rep('hubNav', '    if (fold) out[s.id] = true\n', ''), /N6 .*「全部收起」须收起全部可见分类/],
     ['N6 全部展开开关被删', rep('wxml', "            <view class=\"hub-cat-toggle\" bindtap=\"onHubCollapseAll\" hover-class=\"tap-press-soft\" hover-stay-time=\"80\">{{hubAllCollapsed ? '全部展开' : '全部收起'}}</view>\n", ''), /N6 「全部功能」标题右侧须有「全部展开 \/ 全部收起」开关/],
     ['N6 角标不再刷新到标题行', rep('indexJs', ', hubSecMeta: hubNav.buildSecMeta(this.data),', ','), /N6 角标变化后须刷新收起标题行的红点合计/],
-    ['N6 宫格改成 3 列', rep('hubWxss', 'grid-template-columns: repeat(4, minmax(0, 1fr));\n  gap: 14rpx 12rpx;\n  padding-bottom: 18rpx;', 'grid-template-columns: repeat(3, minmax(0, 1fr));\n  gap: 14rpx 12rpx;\n  padding-bottom: 18rpx;'), /N6 宫格须 4 列/],
+    ['N6 宫格退回写死 4 列', rep('hubWxss', 'grid-template-columns: repeat(12, minmax(0, 1fr));\n  gap: 14rpx 12rpx;', 'grid-template-columns: repeat(4, minmax(0, 1fr));\n  gap: 14rpx 12rpx;'), /N6 宫格须为 12 栅格/],
     ['N6 角标不贴图标', rep('hubWxss', '.hub-cell .hub-badge {\n  position: absolute;', '.hub-cell .hub-badge {\n  position: static;'), /N6 磁贴红色数字角标须贴在图标右上角/],
-    ['N6 又包回列表行', rep('wxml', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">\n            <view class="hub-list"></view>'), /N6 全部功能又出现整块面板 \/ 列表行容器/],
+    ['N6 又包回列表行', rep('wxml', '<view class="hub-grid--cat {{hubSecMeta.system.grid}}" wx:if="{{!hubCollapsed.system}}">', '<view class="hub-grid--cat {{hubSecMeta.system.grid}}" wx:if="{{!hubCollapsed.system}}">\n            <view class="hub-list"></view>'), /N6 全部功能又出现整块面板 \/ 列表行容器/],
     ['N6 店员工作台换回实心圆素材', (s) => rep('hubNav', "icon: ICON + 'tab-user.png'", "icon: ICON + 'checkin.png'")(rep('wxml', 'src="/assets/icons/tab-user.png"', 'src="/assets/icons/checkin.png"')(s)), /N6 入口「店员工作台」用了实心素材/],
     ['N6 图标文件不存在', (s) => rep('hubNav', "icon: ICON + 'discount.png', sec: 'orders'", "icon: ICON + 'discount-x.png', sec: 'orders'")(rep('wxml', 'src="/assets/icons/discount.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">孤品定金', 'src="/assets/icons/discount-x.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">孤品定金')(s)), /N6 入口「孤品定金」图标文件不存在/],
     ['N6 荣誉馆长换回实心方块素材', (s) => rep('hubNav', "icon: ICON + 'tab-collection.png', sec: 'members'", "icon: ICON + 'atlas.png', sec: 'members'")(rep('wxml', 'src="/assets/icons/tab-collection.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">荣誉馆长', 'src="/assets/icons/atlas.png" mode="aspectFit" /></view>\n              <text class="hub-cell-name">荣誉馆长')(s)), /N6 入口「荣誉馆长」用了实心素材/],
@@ -1145,7 +1202,7 @@ if (!selftest) {
     ['K 组合磁贴权限键少一个子功能', rep('wxml', 'wx:if="{{menu.depositOps || menu.shareholderConfig}}" bindtap="openHubKitPage"', 'wx:if="{{menu.depositOps}}" bindtap="openHubKitPage"'), /K 组合「样本组合」磁贴权限键|改版前可见，改版后不可达/, true],
     ['K 子功能同时还是独立磁贴', (s) => {
       const k = kitSample(s)
-      const grid = '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.studio}}">'
+      const grid = '<view class="hub-grid--cat {{hubSecMeta.studio.grid}}" wx:if="{{!hubCollapsed.studio}}">'
       if (!k.wxml.includes(grid)) throw new Error('注入锚点失效：工作室与门店宫格')
       return { ...k, wxml: k.wxml.replace(grid, `${grid}\n${SAMPLE_SHAREHOLDER_TILE}`) }
     }, /入口重复：「股东配置」|K 组合「样本组合」子功能「股东」同时还是独立磁贴/],
