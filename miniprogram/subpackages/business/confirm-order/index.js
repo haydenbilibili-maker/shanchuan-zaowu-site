@@ -1146,7 +1146,7 @@ Page(withAppModal({
         this.setData({ serverPreviewReady: false, serverPreviewFailed: true, previewErrorMsg: msg })
         this.applyProvisionalFromStats()
         this.recalculate(undefined, { silentDrop: true })
-        this.handlePreviewFailure(msg)
+        this.handlePreviewFailure(r)
         return
       }
       // 过期预览：用户已改选其它券
@@ -1465,50 +1465,57 @@ Page(withAppModal({
     return String(t || '').replace(/[「」『』\s·・\-—_]/g, '').trim();
   },
 
-  handlePreviewFailure(msg) {
-    const text = String(msg || '').trim()
+  handlePreviewFailure(result) {
+    const r = typeof result === 'string' ? { msg: result } : (result || {})
+    const text = String(r.msg || '').trim()
     const title = (text.match(/「([^」]+)」/) || [])[1] || ''
-    const itemBroken = !!title && /已下架|库存不足|不存在|请选择规格|规格不存在/.test(text)
-    // 已经移除过这件还报同样的错 → 说明列表里没匹配上，别再给「移除并继续」（点了会原地循环）
-    const alreadyRemoved = itemBroken && (this._removedTitles || {})[this._normItemTitle(title)]
+    const badProductId = String(r.productId || '').trim()
+    const itemBroken = (!!title || !!badProductId) && /已下架|库存不足|不存在|请选择规格|规格不存在/.test(text)
+    // 已摘过同一件（按 id 或标题）还报错 → 不再给「移除并继续」，断掉原地循环
+    const key = badProductId || this._normItemTitle(title)
+    const alreadyRemoved = itemBroken && !!(this._removedTitles || {})[key]
     this.setData({
       previewErrorMsg: text,
       previewBadTitle: itemBroken && !alreadyRemoved ? title : '',
+      previewBadProductId: itemBroken && !alreadyRemoved ? badProductId : '',
       previewEmpty: false,
       previewLoopHint: !!alreadyRemoved
     })
   },
 
-  /** 摘掉预览报错的那件商品，自动重新计价与校验（提示条即反馈，不弹 toast） */
+  /** 摘掉预览报错的那件商品（优先按 productId 精确匹配），自动重新计价与校验 */
   removeBadItemAndContinue() {
     const title = String(this.data.previewBadTitle || '').trim()
-    if (!title) return
+    const badId = String(this.data.previewBadProductId || '').trim()
+    if (!title && !badId) return
     const target = this._normItemTitle(title)
     const before = (this.data.items || []).length
     const items = (this.data.items || []).filter((it) => {
-      const t = this._normItemTitle((it && (it.title || it.name)) || '')
-      if (!t) return true
+      if (!it) return true
+      if (badId && String(it.productId || it.id || it._id || '') === badId) return false
+      const t = this._normItemTitle(it.title || it.name)
+      if (!t || !target) return true
       return !(t === target || t.indexOf(target) >= 0 || target.indexOf(t) >= 0)
     })
-    // 记下「这件已经摘过」：若云端还报同一件，不再反复给移除按钮，改为重新校验
     this._removedTitles = this._removedTitles || {}
-    this._removedTitles[target] = true
+    this._removedTitles[badId || target] = true
     if (items.length === before) {
-      this.setData({ previewBadTitle: '', previewLoopHint: true })
+      // 一件没摘掉：说明清单里确实没有它（缓存里的旧结算单）→ 直接按「已不在清单」处理
+      this.setData({ previewBadTitle: '', previewBadProductId: '', previewLoopHint: true })
       return
     }
     if (!items.length) {
-      this.setData({ items, previewBadTitle: '', previewEmpty: true })
+      this.setData({ items, previewBadTitle: '', previewBadProductId: '', previewEmpty: true })
       return
     }
-    this.setData({ items, previewBadTitle: '', previewErrorMsg: '', previewEmpty: false, serverPreviewFailed: false, previewLoopHint: false })
+    this.setData({ items, previewBadTitle: '', previewBadProductId: '', previewErrorMsg: '', previewEmpty: false, serverPreviewFailed: false, previewLoopHint: false })
     this.recalculate(undefined, { silentDrop: true })
     if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
   },
 
   /** 其它原因（价格变动 / 券门槛 / 运费 / 已移除仍报错）：重新校验一次 */
   retryPreview() {
-    this.setData({ serverPreviewFailed: false, previewErrorMsg: '', previewBadTitle: '', previewLoopHint: false })
+    this.setData({ serverPreviewFailed: false, previewErrorMsg: '', previewBadTitle: '', previewBadProductId: '', previewLoopHint: false })
     if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
   },
 
