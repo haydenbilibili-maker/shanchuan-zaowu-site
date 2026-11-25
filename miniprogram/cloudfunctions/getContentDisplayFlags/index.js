@@ -213,9 +213,8 @@ async function saveFlags(event, openid) {
 }
 
 /**
- * 博物君开关（2026-11-23）：**只读**带出 museumGuideOpen —— 开关存在博物君自己的配置里（museum_guide_config/main，
- * 只有超管工作台「博物君」能改），不在本集合，save 也不写它：ERP / 店长端保存内容开关不会把它改回开启。
- * 读不到 → 开启（缺省开启口径）。
+ * 超管「开馆 / 闭馆」（museum_guide_config/main.enabled）。读不到 → 开启。
+ * 这把开关不写进内容开关文档。内容开关自己的 museumGuideOpen 由 saveFlags 写入。
  */
 async function readMuseumGuideOpen(box) {
   try {
@@ -244,9 +243,12 @@ exports.main = async (event) => {
     if (action === 'save') return await saveFlags(event, openid)
     const box = {}
     const [res, configOpen] = await Promise.all([readFlags(), readMuseumGuideOpen(box)])
-    // 两处开关取 AND：ERP 商品内容-开关（展示）与 超管「开馆/闭馆」（服务）任一关闭即视为关闭
-    const museumGuideOpen = configOpen && res.flags.museumGuideOpen !== false
-    const out = Object.assign({}, res, { flags: Object.assign({}, res.flags, { museumGuideOpen }) })
+    // C 端看 AND：内容开关（展示）与超管「开馆/闭馆」（服务）任一关闭即视为关闭。
+    // museumGuideFlag 是文档里的原值，给编辑面板回写。若把 AND 塞进 museumGuideOpen 再让面板保存，
+    // 超管一闭馆，保存其它开关就会把「展示」永久写成关闭。
+    const storedGuideOpen = res.flags.museumGuideOpen !== false
+    const museumGuideOpen = configOpen && storedGuideOpen
+    const out = Object.assign({}, res, { flags: Object.assign({}, res.flags, { museumGuideOpen, museumGuideFlag: storedGuideOpen }) })
     out.flags.museumGuideNotices = museumGuideNoticesFrom(box.doc, museumGuideOpen)
     return out
   } catch (e) {

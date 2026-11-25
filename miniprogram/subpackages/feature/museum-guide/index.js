@@ -40,16 +40,32 @@ Page({
     const welcome = G.makeMessage('guide', G.WELCOME, { isWelcome: true })
     this.setData({ messages: [welcome].concat(stored), hasAsked: stored.some((m) => m.role === 'user') }, () => this.scrollToEnd())
     this._from = ['user', 'atlas', 'identify', 'share', 'daily', 'quiz', 'notes', 'workshop', 'home'].indexOf(options && options.from) >= 0 ? options.from : 'direct'
-    this.loadStatus()
-    // 带着问题进来（AI 鉴定结果 / 图鉴页「问问博物君」）：auto=1 直接发问，否则只预填
+    // 带着问题进来：不带 auto 的预填立刻写上（测试与首屏都不等开关）；
+    // auto=1 要等开关，闭馆就不再自动发问
     const q = G.entryQuestion(options)
-    if (q && options.auto === '1') this.ask(q)
-    else if (q) this.setData({ draft: q })
+    if (q && !(options && options.auto === '1')) this.setData({ draft: q })
+    this._openWithQuestion(q, options)
     // 埋点（打开 / 提问 / 去处）待产品负责人点名后登记进埋点双端 schema 再接（稳定期共享件，见蓝图 §5）
   },
 
-  /** 进页取一次状态：开没开、今天还剩几问（不计次） */
+  /**
+   * 先确认内容开关与开馆状态，再决定要不要自动发问。
+   * 内容开关关掉时对话页按闭馆处理，不能先把问题发出去。
+   */
+  async _openWithQuestion(q, options) {
+    await this.loadStatus()
+    if (this.data.closed) return
+    if (q && options.auto === '1') this.ask(q)
+  },
+
+  /** 进页取一次状态：开没开、今天还剩几问（不计次）。内容开关关闭同样收起输入条。 */
   async loadStatus() {
+    if (this._statusFlight) return this._statusFlight
+    this._statusFlight = this._loadStatus().finally(() => { this._statusFlight = null })
+    return this._statusFlight
+  },
+
+  async _loadStatus() {
     let v
     try {
       const res = await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { action: 'status' } })
@@ -57,9 +73,26 @@ Page({
     } catch (e) {
       v = G.statusView(null)
     }
+    const flagClosed = await this._contentFlagClosed()
+    if (flagClosed) v = { closed: true, closedText: v.closedText || G.ERROR_COPY.off, quota: v.quota }
     const patch = { closed: v.closed, closedText: v.closedText }
     if (v.quota && !this.data.quota) Object.assign(patch, { quota: v.quota, quotaText: G.quotaText(v.quota) })
     this.setData(patch)
+  },
+
+  /**
+   * 内容开关关掉 → 对话页闭馆。直接问 getContentDisplayFlags，不走本机 SWR：
+   * 这把开关关掉后不能再被 10 分钟缓存挡在「仍然开着」。读不到不额外关门。
+   */
+  async _contentFlagClosed() {
+    try {
+      const { normalizeContentDisplayFlags } = require('../../../utils/contentDisplayFlags')
+      const res = await wx.cloud.callFunction({ name: 'getContentDisplayFlags' })
+      const flags = normalizeContentDisplayFlags((res && res.result && res.result.flags) || {})
+      return flags.museumGuideOpen === false
+    } catch (e) {
+      return false
+    }
   },
 
   onShareAppMessage() {
