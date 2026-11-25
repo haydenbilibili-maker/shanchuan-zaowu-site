@@ -316,6 +316,19 @@ function judgeKits(src, nav, roles, tiles, errs) {
   }
   if (uniq(childIds).length !== childIds.length) errs.push('K 同一个子功能出现在多个组合里')
   if (!kits.length) return
+  // 旧常用里存的是子功能 id（归并前的独立入口）：须平滑落到它所在的组合，不变空位
+  try {
+    const sm = menuOf(roles, roles.WORKSPACE_SUPER_ADMIN)
+    for (const k of kits) {
+      for (const c of k.children || []) {
+        if (!(c.keys || []).some((x) => sm[x])) continue
+        const got = nav.normalizeFavs([c.id], sm)
+        if (JSON.stringify(got) !== JSON.stringify([k.id])) errs.push(`K 常用里的旧入口「${c.label}」（${c.id}）须映射到组合「${k.label}」，实际 [${got}] —— 否则归并后旧收藏变空位`)
+      }
+    }
+  } catch (e) {
+    errs.push(`K 旧常用映射实跑失败：${e.message}`)
+  }
   // 搜索：任一子功能的名称都能搜到它所在的组合（超管）
   try {
     const sm = menuOf(roles, roles.WORKSPACE_SUPER_ADMIN)
@@ -328,6 +341,11 @@ function judgeKits(src, nav, roles, tiles, errs) {
   } catch (e) {
     errs.push(`K 组合搜索实跑失败：${e.message}`)
   }
+  // 组合角标随计数刷新：进页（buildHubView）与每次角标变化（refreshOpsSignals）都要重算
+  try {
+    if (!('hubKitBadge' in nav.buildHubView([], { menu: {} }))) errs.push('K buildHubView 须带上组合角标 hubKitBadge')
+  } catch (e) { errs.push(`K buildHubView 执行失败：${e.message}`) }
+  if (!/refreshOpsSignals\(\) \{[\s\S]{0,500}hubKitBadge: hubNav\.buildKitBadges\(this\.data\)/.test(src.indexJs)) errs.push('K 角标变化后须刷新组合磁贴角标（refreshOpsSignals → hubKitBadge: hubNav.buildKitBadges(this.data)）')
   // 工作台 → 组合页
   const open = (src.indexJs.match(new RegExp(`\\n  ${KIT_TAP}\\(e\\) \\{([\\s\\S]*?)\\n  \\},`)) || [])[1] || ''
   if (!open.includes(KIT_ROUTE.replace('?kit=', '')) || !/dataset/.test(open)) errs.push(`K index.js 须有 ${KIT_TAP}(e)：取 dataset.kit → navigateTo('${KIT_ROUTE}' + kit)`)
@@ -335,7 +353,7 @@ function judgeKits(src, nav, roles, tiles, errs) {
   if (!src.groupJs) errs.push('K 有组合入口，但组合页 subpackages/manager/group/index.js 不存在')
   else {
     if (!/hubNav\.findKit\(/.test(src.groupJs)) errs.push('K 组合页须用 hubNav.findKit 取组合定义（与工作台同一份清单）')
-    if (!/\.keys\.some\(/.test(src.groupJs)) errs.push('K 组合页须按权限过滤子功能（child.keys 对工作台 menu）—— 组合页不得放宽权限')
+    if (!/children\.filter\(\(c\) => c\.keys\.some\(/.test(src.groupJs)) errs.push('K 组合页须按权限过滤子功能（child.keys 对工作台 menu）—— 组合页不得放宽权限')
     if (!/hubNav\.invokeItem\(/.test(src.groupJs)) errs.push('K 组合页点子功能须经 hubNav.invokeItem 调工作台页上的原 handler（不另写跳转，原门禁不丢）')
     if (/wx\.showModal\s*\(/.test(src.groupJs)) errs.push('K 组合页不新增原生弹窗')
   }
@@ -626,10 +644,29 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
   const todos = nav.HUB_TODOS || []
   const sourceOf = (expr) => (expr.replace(/menu\.\w+ &&/, '').match(/([A-Za-z_]\w*)(?:\.length)? > 0/) || [])[1]
   const todoOf = (v) => todos.find((x) => x.badge === v || x.merged === v)
+  const kitOfBadge = (expr) => {
+    const m = String(expr || '').trim().match(/^hubKitBadge\.(\w+)$/)
+    return m ? kitsOf(nav).find((k) => k.id === m[1]) || { id: m[1], children: [], missing: true } : null
+  }
   for (const t of tiles) {
     const badges = t.body.match(/<view class="hub-badge"[^>]*?wx:(?:el)?if="\{\{([^}]*)\}\}"/g) || []
+    const kitHasBadge = t.kit && kitsOf(nav).some((k) => k.id === t.kit && (k.children || []).some((c) => c.badge))
+    if (t.kit && kitHasBadge !== badges.some((b) => b.includes(`hubKitBadge.${t.kit}`))) {
+      errs.push(`N3 组合「${t.label}」${kitHasBadge ? '有带角标的子功能，磁贴却没有 hubKitBadge 角标' : '没有带角标的子功能，磁贴不该挂角标'}`)
+    }
     for (const b of badges) {
       const expr = b.match(/wx:(?:el)?if="\{\{([^}]*)\}\}"/)[1]
+      const kb = kitOfBadge(expr)
+      if (kb) {
+        if (kb.missing || kb.id !== t.kit) { errs.push(`N3 入口「${t.label}」的组合角标 hubKitBadge.${kb.id} 与磁贴的 data-kit 不一致`); continue }
+        for (const c of kb.children.filter((x) => x.badge)) {
+          const td = todoOf(c.badge)
+          if (!td) { errs.push(`N3 待处理横条缺组合「${t.label}」子功能「${c.label}」的角标（数据源 ${c.badge}）`); continue }
+          if (!setEq(uniq(td.keys), uniq(c.keys))) errs.push(`N3 待办「${td.label}」权限键 [${td.keys}] 与组合「${t.label}」子功能「${c.label}」[${c.keys}] 不一致`)
+          if (!hasMethod(pageCode, td.tap)) errs.push(`N3 待办「${td.label}」入口 ${td.tap} 不存在`)
+        }
+        continue
+      }
       const gate = (expr.match(/menu\.(\w+) &&/) || [])[1]
       const v = sourceOf(expr)
       if (!v) { errs.push(`N3 入口「${t.label}」角标条件「${expr}」读不出数据源`); continue }
@@ -656,6 +693,21 @@ function judgeLayout(src, nav, roles, tiles, secs, errs) {
     for (const t of tiles) {
       if (!/class="hub-badge"/.test(t.body) || !t.keys.some((k) => menu[k])) continue
       const expr = (t.body.match(/<view class="hub-badge"[^>]*?wx:(?:el)?if="\{\{([^}]*)\}\}"/) || [])[1] || ''
+      const kb = kitOfBadge(expr)
+      if (kb) {
+        let kitTxt = ''
+        try { kitTxt = (nav.buildKitBadges({ ...allCounts, menu }) || {})[kb.id] } catch (e) { errs.push(`N3 buildKitBadges 执行失败：${e.message}`) }
+        const want = kb.children.filter((c) => c.badge && c.keys.some((k) => menu[k])).reduce((n, c) => {
+          const v = allCounts[c.badge]
+          return n + (Array.isArray(v) ? v.length : Number(v) || 0)
+        }, 0)
+        if (String(kitTxt || '') !== (want > 0 ? String(want) : '')) errs.push(`N3 ${label}：组合「${t.label}」角标 ${kitTxt || '（空）'} ≠ 有权限的子功能角标之和 ${want}`)
+        for (const c of kb.children.filter((x) => x.badge && x.keys.some((k) => menu[k]))) {
+          const td = todoOf(c.badge)
+          if (td && !todo.items.some((it) => it.id === td.id)) errs.push(`N3 ${label}：组合「${t.label}」子功能「${c.label}」有角标，待处理横条却没有「${td.label}」`)
+        }
+        continue
+      }
       const gate = (expr.match(/menu\.(\w+) &&/) || [])[1]
       if (gate && !menu[gate]) continue
       const td = todoOf(sourceOf(expr))
@@ -944,17 +996,22 @@ if (!selftest) {
     }
     hubNav = cutLine(cutLine(hubNav, 'deposit'), 'shareholderConfig')
     hubNav = hubNav.replace("const HUB_ENTRIES = [", "const HUB_ENTRIES = [\n  { id: 'sampleKit', label: '样本组合', sub: '定金·股东', desc: '定金和股东，一页切换', alias: ['孤品定金', '股东', '订金', '占股'], icon: ICON + 'discount.png', sec: 'orders', keys: ['depositOps', 'shareholderConfig'], tap: 'openHubKitPage', kit: 'sampleKit' },")
-    hubNav = hubNav.replace("/* ── 我的常用 ── */", "const HUB_KITS = [\n  { id: 'sampleKit', label: '样本组合', icon: ICON + 'discount.png', sec: 'orders', children: [\n    { id: 'deposit', label: '孤品定金', desc: '卖完的孤品，顾客交的订金', keys: ['depositOps'], tap: 'goDepositOps' },\n    { id: 'shareholderConfig', label: '股东', desc: '门店占股和回本前后分成', keys: ['shareholderConfig'], tap: 'goShareholderConfig', kitChild: 1 }\n  ] }\n]\nfunction findKit(id) { return HUB_KITS.find((k) => k.id === id) || null }\n\n/* ── 我的常用 ── */")
+    const sampleKit = "  { id: 'sampleKit', label: '样本组合', icon: ICON + 'discount.png', sec: 'orders', children: [\n    { id: 'deposit', label: '孤品定金', desc: '卖完的孤品，顾客交的订金', keys: ['depositOps'], tap: 'goDepositOps' },\n    { id: 'shareholderConfig', label: '股东', desc: '门店占股和回本前后分成', keys: ['shareholderConfig'], tap: 'goShareholderConfig', kitChild: 1 }\n  ] }"
+    const hadKits = hubNav.includes('const HUB_KITS = [')
+    hubNav = hadKits
+      ? hubNav.replace('const HUB_KITS = [', `const HUB_KITS = [\n${sampleKit},`)
+      : hubNav.replace("/* ── 我的常用 ── */", `const HUB_KITS = [\n${sampleKit}\n]\nfunction findKit(id) { return HUB_KITS.find((k) => k.id === id) || null }\n\n/* ── 我的常用 ── */`)
     hubNav = hubNav.replace("depositOps: 'deposit',", "depositOps: 'sampleKit', deposit: 'sampleKit', shareholderConfig: 'sampleKit',")
     hubNav = hubNav.replace("org: ['staffDirectory', 'staffPermissions', 'shareholderConfig'],", "org: ['staffDirectory', 'staffPermissions', 'sampleKit'],")
-    hubNav = hubNav.replace("module.exports = {", "module.exports = {\n  HUB_KITS,\n  findKit,")
+    if (!hadKits) hubNav = hubNav.replace("module.exports = {", "module.exports = {\n  HUB_KITS,\n  findKit,")
     // 分区 keys：股东从组织区移到订单区（组合磁贴落在订单区）
     hubNav = hubNav.replace("'staffPermissions', 'shareholderConfig', 'payslipAdmin'", "'staffPermissions', 'payslipAdmin'").replace("'approvals', 'depositOps'] }", "'approvals', 'depositOps', 'shareholderConfig'] }")
-    const indexJs = b.indexJs.replace('  onHubSearchClear() {', "  openHubKitPage(e) {\n    const kit = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.kit) || '')\n    if (kit) wx.navigateTo({ url: '/subpackages/manager/group/index?kit=' + kit })\n  },\n\n  onHubSearchClear() {")
+    const indexJs = /\n  openHubKitPage\(e\) \{/.test(b.indexJs) ? b.indexJs : b.indexJs.replace('  onHubSearchClear() {', "  openHubKitPage(e) {\n    const kit = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.kit) || '')\n    if (kit) wx.navigateTo({ url: '/subpackages/manager/group/index?kit=' + kit })\n  },\n\n  onHubSearchClear() {")
     const groupJs = "const hubNav = require('../manager/hubNav')\nPage({\n  onLoad(q) {\n    const kit = hubNav.findKit(q.kit)\n    const host = getCurrentPages().slice(-2)[0]\n    const menu = (host && host.data && host.data.menu) || {}\n    this.setData({ rows: kit ? kit.children.filter((c) => c.keys.some((k) => menu[k] === true)) : [] })\n  },\n  onRow(e) {\n    const host = getCurrentPages().slice(-2)[0]\n    hubNav.invokeItem(host, this.data.rows[e.currentTarget.dataset.i])\n  }\n})\n"
     const app = JSON.parse(b.appJson)
     app.subpackages.forEach((p) => { if (p.root === 'subpackages/manager' && !p.pages.includes('group/index')) p.pages.splice(1, 0, 'group/index') })
-    return { ...b, wxml, hubNav, indexJs, groupJs, groupWxml: '<view></view>', appJson: JSON.stringify(app, null, 2) }
+    // 真组合页已存在（S2 起）就用真的，只在没有时给一个同构桩
+    return { ...b, wxml, hubNav, indexJs, groupJs: b.groupJs || groupJs, groupWxml: b.groupWxml || '<view></view>', appJson: JSON.stringify(app, null, 2) }
   }
   const cases = [
     // 不误报对照：清单与磁贴同步改名、入口与权限仍在 → 必须仍通过
@@ -985,10 +1042,10 @@ if (!selftest) {
     ['扫码主按钮丢失', rep('wxml', 'bindtap="goScanMember"', 'bindtap="goScanMemberOff"'), /扫顾客会员码/],
     ['清单名称与磁贴漂移', rep('hubNav', "{ id: 'ledger', label: '账本'", "{ id: 'ledger', label: '营收'"), /清单与磁贴名称不一致/],
     ['常用不按权限过滤', rep('hubNav', 'if (!entryVisible(findEntry(id), menu)) return', 'if (!findEntry(id)) return'), /常用区只含有权限入口/],
-    ['旧折叠 id 映射丢失', rep('hubNav', "  gift: ['giftOps', 'giftManage'],\n", ''), /失效 id 映射|N7 常用里的旧折叠 id「gift」/],
-    ['旧合并入口 memberCurator 映射丢失', rep('hubNav', "memberCurator: 'memberLevel', ", ''), /失效 id 映射/],
+    ['旧折叠 id 映射丢失', rep('hubNav', "  gift: 'gift', giftOps: 'gift', giftManage: 'gift',\n", ''), /失效 id 映射|N7 常用里的旧折叠 id「gift」/],
+    ['旧合并入口 memberCurator 映射丢失', rep('hubNav', "memberCurator: 'memberLevelKit', ", ''), /失效 id 映射/],
     ['常用上限失效', rep('hubNav', 'return out.slice(0, FAV_MAX)', 'return out'), /常用上限未生效/],
-    ['店长默认常用被清空', rep('hubNav', "store_manager: ['orders', 'ledger', 'verify', 'approvals', 'workOrders', 'giftOps', 'products', 'points'],", 'store_manager: [],'), /没有默认常用/],
+    ['店长默认常用被清空', rep('hubNav', "store_manager: ['orders', 'ledger', 'verify', 'approvalsKit', 'workOrders', 'gift', 'products', 'points'],", 'store_manager: [],'), /没有默认常用/],
     ['点常用不再判权限', rep('indexJs', 'if (!entry || !entry.keys.some((k) => this.data.menu && this.data.menu[k])) {', 'if (!entry) {'), /onHubFav 须在进入前再判一次权限/],
     ['保存不归一化', rep('indexJs', 'const clean = hubNav.normalizeFavs(ids, page.data.menu)', 'const clean = ids'), /onFavSave 须先归一化/],
     ['保存覆盖其它角色的常用', rep('indexJs', '  const store = readFavStore()\n  store[page.data.workspaceRole', '  const store = {}\n  store[page.data.workspaceRole'), /onFavSave 须先归一化/],
@@ -1011,7 +1068,7 @@ if (!selftest) {
     ['N2 磁贴小字与清单漂移', rep('wxml', '<text class="hub-cell-sub">审核·回复</text>', '<text class="hub-cell-sub">回复</text>'), /N2 入口「评价」磁贴小字「回复」与清单/],
     ['N2 磁贴小字太长', (s) => rep('hubNav', "sub: '审核·回复'", "sub: '评价审核置顶与回复'")(rep('wxml', '<text class="hub-cell-sub">审核·回复</text>', '<text class="hub-cell-sub">评价审核置顶与回复</text>')(s)), /N2 入口「评价」磁贴小字 \d+ 字/],
     // N3 待处理横条包含所有带角标的入口
-    ['N3 待办漏掉发票', rep('hubNav', "  { id: 'invoice', label: '发票', keys: ['invoice'], badge: 'invoicePendingCount', tap: 'goInvoiceRequests' },\n", ''), /N3 待处理横条缺「发票」的角标/],
+    ['N3 待办漏掉发票', rep('hubNav', "  { id: 'invoice', label: '发票', keys: ['invoice'], badge: 'invoicePendingCount', tap: 'goInvoiceRequests' },\n", ''), /N3 待处理横条缺(组合「[^」]+」子功能)?「发票」的角标/],
     ['N3 新单未读不再合并进待发', rep('hubNav', " merged: 'newOrderUnreadCount',", ''), /N3 待处理横条缺「订单」的角标（数据源 newOrderUnreadCount）|新单未读合并/],
     ['N3 待办权限键写宽', rep('hubNav', "{ id: 'recruit', label: '合作申请', keys: ['framerRecruit']", "{ id: 'recruit', label: '合作申请', keys: ['framers', 'framerRecruit']"), /N3 待办「合作申请」权限键/],
     ['N3 计数为 1 的项被吞', rep('hubNav', '    if (n <= 0) return\n', '    if (n <= 1) return\n'), /N3 .*待处理横条却没有/],
@@ -1050,7 +1107,7 @@ if (!selftest) {
     ['N6 入口数算错', rep('hubNav', "    out[s.id] = { n: entries.length, badge:", "    out[s.id] = { n: entries.length - 1, badge:"), /N6 超管：分类「.*」收起时入口数/],
     ['N6 全部收起不收', rep('hubNav', '    if (fold) out[s.id] = true\n', ''), /N6 .*「全部收起」须收起全部可见分类/],
     ['N6 全部展开开关被删', rep('wxml', "            <view class=\"hub-cat-toggle\" bindtap=\"onHubCollapseAll\" hover-class=\"tap-press-soft\" hover-stay-time=\"80\">{{hubAllCollapsed ? '全部展开' : '全部收起'}}</view>\n", ''), /N6 「全部功能」标题右侧须有「全部展开 \/ 全部收起」开关/],
-    ['N6 角标不再刷新到标题行', rep('indexJs', ', hubSecMeta: hubNav.buildSecMeta(this.data) }', ' }'), /N6 角标变化后须刷新收起标题行的红点合计/],
+    ['N6 角标不再刷新到标题行', rep('indexJs', ', hubSecMeta: hubNav.buildSecMeta(this.data),', ','), /N6 角标变化后须刷新收起标题行的红点合计/],
     ['N6 宫格改成 3 列', rep('hubWxss', 'grid-template-columns: repeat(4, minmax(0, 1fr));\n  gap: 14rpx 12rpx;\n  padding-bottom: 18rpx;', 'grid-template-columns: repeat(3, minmax(0, 1fr));\n  gap: 14rpx 12rpx;\n  padding-bottom: 18rpx;'), /N6 宫格须 4 列/],
     ['N6 角标不贴图标', rep('hubWxss', '.hub-cell .hub-badge {\n  position: absolute;', '.hub-cell .hub-badge {\n  position: static;'), /N6 磁贴红色数字角标须贴在图标右上角/],
     ['N6 又包回列表行', rep('wxml', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">', '<view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">\n            <view class="hub-list"></view>'), /N6 全部功能又出现整块面板 \/ 列表行容器/],
@@ -1088,10 +1145,21 @@ if (!selftest) {
       const k = kitSample(s)
       return { ...k, wxml: k.wxml.replace('<view class="hub-grid--cat" wx:if="{{!hubCollapsed.org}}">', `<view class="hub-grid--cat" wx:if="{{!hubCollapsed.org}}">\n${SAMPLE_SHAREHOLDER_TILE}`) }
     }, /入口重复：「股东配置」|K 组合「样本组合」子功能「股东」同时还是独立磁贴/],
-    ['K 组合页不按权限过滤', rep('groupJs', '.keys.some(', '.keys.every('), /K 组合页须按权限过滤子功能/, true],
+    ['K 组合页不按权限过滤', rep('groupJs', '.filter((c) => c.keys.some(', '.filter((c) => c.keys.every('), /K 组合页须按权限过滤子功能/, true],
     ['K 组合页另写跳转（不调原 handler）', rep('groupJs', 'hubNav.invokeItem(', 'wx.navigateTo('), /K 组合页点子功能须经 hubNav\.invokeItem/, true],
     ['K 组合页未注册', rep('appJson', '"group/index",', ''), /K 组合页未在 app\.json 注册/, true],
-    ['K 子功能名称搜不到组合', rep('hubNav', "alias: ['孤品定金', '股东', '订金', '占股']", "alias: ['订金']"), /K 超管搜「股东」找不到组合「样本组合」/, true]
+    ['K 子功能名称搜不到组合', rep('hubNav', "alias: ['孤品定金', '股东', '订金', '占股']", "alias: ['订金']"), /K 超管搜「股东」找不到组合「样本组合」/, true],
+    // S2 真组合：角标 = 有权限子功能之和、随计数刷新、挂在该挂的组合上
+    ['K 组合角标不再求和', rep('hubNav', '.reduce((sum, c) => sum + badgeValue(c.badge, d), 0)', '.reduce(() => 0, 0)'), /N3 超管：组合「审批与发票」角标/],
+    ['K 组合角标计入无权限子功能', rep('hubNav', "return (kit ? kit.children : []).filter((c) => c.badge && c.keys.some((k) => m[k] === true))", "return (kit ? kit.children : []).filter((c) => c.badge)"), /N3 (店长|店员)：组合「[^」]+」角标/],
+    ['K 礼赠组合丢了角标', (s) => {
+      const m = s.wxml.match(/\n *<view class="hub-badge" wx:if="\{\{hubKitBadge\.gift\}\}">\{\{hubKitBadge\.gift\}\}<\/view>/)
+      if (!m) throw new Error('注入锚点失效：礼赠组合角标')
+      return { ...s, wxml: s.wxml.replace(m[0], '') }
+    }, /N3 组合「礼赠」有带角标的子功能，磁贴却没有 hubKitBadge 角标/],
+    ['K 角标变化不刷新组合', rep('indexJs', ', hubKitBadge: hubNav.buildKitBadges(this.data) }', ' }'), /K 角标变化后须刷新组合磁贴角标/],
+    ['K 审批与发票的发票子功能被删', rep('hubNav', "      { id: 'invoice', label: '发票',", "      // { id: 'invoice', label: '发票',"), /入口丢失：改版前的「发票管理」/],
+    ['K 常用里的旧「审批」不再落到组合', rep('hubNav', "approvals: 'approvalsKit', invoice: 'approvalsKit',", ''), /K 常用里的旧入口「审批」（approvals）须映射到组合「审批与发票」/]
   ]
   let bad = 0
   const baseline = run(base)

@@ -942,6 +942,21 @@ const SCENES = [
       productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
+  // 2026-11-26 超管工作台归并：全部功能宫格（超管权限）+ 组合页（审批与发票）
+  ...(() => {
+    const nav = loadCjsModule(join(MP, 'subpackages/manager/manager/hubNav.js'))
+    const roles = loadCjsModule(join(MP, 'utils/workspaceRoles.js'))
+    const menu = {}
+    Object.values(roles.MENU_KEYS).forEach((k) => { menu[k] = roles.canSeeMenu('super_admin', k) })
+    const counts = { orders: [1, 2], customOrders: [1], supportTickets: [1], approvalPendingCount: 2, invoicePendingCount: 1, giftTodoCount: 4, framerRecruitApps: [1] }
+    const view = nav.buildHubView(['orders', 'ledger', 'approvalsKit', 'gift'], { ...counts, menu })
+    const kit = nav.findKit('approvalsKit')
+    return [
+      { name: 'mgr-hub', h: 5200, wxml: 'subpackages/manager/manager/index', data: { ...counts, menu, ...view, hubCollapsed: {}, hubAllCollapsed: false, hubQuery: '', hubFound: [], workspaceRole: 'super_admin', curTab: 0, workspaceReady: true, artisanEmbed: false, greeting: '晚上好', staffName: '馆长' } },
+      { name: 'mgr-kit', h: 900, wxml: 'subpackages/manager/group/index', data: { ready: true, kitId: kit.id, title: kit.label, sub: kit.sub, desc: kit.desc, lost: false,
+        rows: kit.children.map((c) => ({ id: c.id, label: c.label, desc: c.desc, icon: c.icon, badge: nav.childBadge(c, counts) })) } }
+    ]
+  })(),
   // 2026-11-25 会员卡按材质规范：七档卡面 + 背板铭牌（组件直出；离线工具不加载 /assets 图标、头像为占位）
   ...[[1, '🍀', '四叶草', 'Trifolium repens', '见习藏家'], [2, '🦀', '招潮蟹', 'Uca pugilator', '入门藏家'], [3, '🐞', '瓢虫', 'Coccinella septempunctata', '资深藏家'],
     [4, '🦋', '凤蝶', 'Papilio maackii', '典藏家'], [5, '🦎', '绿鬣蜥', 'Iguana iguana', '鉴藏家'], [6, '💎', '紫晶簇', 'Quartz var. Amethyst', '馆藏家'],

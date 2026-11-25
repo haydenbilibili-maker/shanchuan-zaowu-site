@@ -90,6 +90,7 @@ Page({
       hubFavEdit: HUB_FAV_EDIT_CLOSED,
       hubCat: HUB_CAT_EMPTY,
       hubSecMeta: {},
+      hubKitBadge: {},
       hubCollapsed: {},
       hubAllCollapsed: false,
       hubQuery: '',
@@ -110,7 +111,7 @@ Page({
   /** 角标计数每次变化后都会走这里，顺带汇总顶部待办条 */
   refreshOpsSignals() {
     baseRefreshOpsSignals.call(this)
-    const patch = { hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data), hubSecMeta: hubNav.buildSecMeta(this.data) }
+    const patch = { hubTodo: hubNav.buildTodos(this.data), hubFav: hubNav.buildFavView(this._favIds || [], this.data), hubSecMeta: hubNav.buildSecMeta(this.data), hubKitBadge: hubNav.buildKitBadges(this.data) }
     if (this.data.hubQuery) patch.hubFound = hubNav.searchEntries(this.data.hubQuery, this.data)
     this.setData(patch)
   },
@@ -178,6 +179,17 @@ Page({
   onHubSearch(e) {
     const q = String((e && e.detail && e.detail.value) || '').slice(0, 20)
     this.setData({ hubQuery: q, hubFound: hubNav.searchEntries(q, this.data) })
+  },
+
+  /**
+   * 组合入口（2026-11-26 归并）：一枚磁贴 → 组合页逐条平铺子功能。组合页按本页 menu 过滤、点子功能时调本页的原 handler
+   * （hubNav.invokeItem），所以权限门禁 / 订阅授权与原磁贴完全一致。
+   */
+  openHubKitPage(e) {
+    const kit = String((e && e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.kit) || '')
+    if (!kit || !hubNav.findKit(kit)) return
+    wx.vibrateShort({ type: 'light' })
+    wx.navigateTo({ url: '/subpackages/manager/group/index?kit=' + kit })
   },
 
   onHubSearchClear() {

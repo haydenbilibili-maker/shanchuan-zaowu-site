@@ -14,6 +14,9 @@
  *   3) 旧路径与深链不变：app.json extra 分包登记两页；两份 staffAuth 路径常量不变；messageHelper 旧 manager 路径映射仍在
  *   4) 两页页顶不再有 .hub-seg 分段 / onHubSegTap；调级页不再写「切到页顶」，改为指向工作台「荣誉馆长」入口
  *   5) 统一清单 hubNav：memberLevel / curators 两条独立、各自权限键；「我的常用」旧合并 id memberCurator 映射到 memberLevel
+ *   2026-11-26 超管工作台功能归并（miniprogram/docs/超管工作台_功能归并_2026-11-25.md）：「会员调级」并进组合入口「会员等级」
+ *   （权益 + 调级）。本守卫的本意不变 ——「会员调级」与「荣誉馆长」**不得互相合并**、各自权限键与门禁不变、都在会员分区；
+ *   「会员调级」可以是独立磁贴，也可以是组合子功能（hubNav.HUB_KITS，keys / tap 不变，组合磁贴按 menu.memberLevelAdjust 显示）。
  *
  * 用法：node miniprogram/scripts/check-member-curator-hub.mjs [--selftest]
  */
@@ -75,7 +78,29 @@ function sectionOf(wxml, at) {
   return sec
 }
 
+/** 组合子功能：hubNav.HUB_KITS 里 label / keys / tap 都对得上的那一项，连同所在组合 */
+function kitChildOf(s, label) {
+  let nav = null
+  try { nav = evalCjs(s.hubNav) } catch (e) { return null }
+  for (const k of nav.HUB_KITS || []) {
+    const c = (k.children || []).find((x) => x.label === label)
+    if (c) return { kit: k, child: c }
+  }
+  return null
+}
+
 function checkTile(errs, s, label, key, handler) {
+  const kc = kitChildOf(s, label)
+  if (kc) {
+    if (JSON.stringify(kc.child.keys) !== JSON.stringify([key]) || kc.child.tap !== handler) {
+      errs.push(`「${label}」（组合「${kc.kit.label}」子功能）须 keys=[${key}]、tap=${handler}（恢复合并前的权限判断）`)
+    }
+    if (kc.kit.sec !== 'members') errs.push(`「${label}」所在组合「${kc.kit.label}」须在「会员触达」分区（members），现在 ${kc.kit.sec}`)
+    const tile = s.hubWxml.match(new RegExp(`data-fid="${kc.kit.id}" wx:if="\\{\\{([^}]*)\\}\\}" bindtap="openHubKitPage" data-kit="${kc.kit.id}"`))
+    if (!tile || !tile[1].split('||').map((x) => x.trim()).includes(`menu.${key}`)) errs.push(`「${label}」所在组合「${kc.kit.label}」的磁贴须按 menu.${key} 显示（有调级权限的人要看得到入口）`)
+    if ((s.hubWxml.match(new RegExp(`<text class="hub-cell-name">${label}</text>`, 'g')) || []).length) errs.push(`「${label}」已在组合「${kc.kit.label}」里，工作台不得再有同名独立磁贴`)
+    return
+  }
   const tiles = s.hubWxml.match(new RegExp(`<text class="hub-cell-name">${label}</text>`, 'g')) || []
   if (tiles.length !== 1) errs.push(`工作台须恰好一枚「${label}」磁贴（现 ${tiles.length}）`)
   const re = new RegExp(`wx:if="\\{\\{menu\\.${key}\\}\\}"\\s+bindtap="${handler}">[\\s\\S]{0,240}<text class="hub-cell-name">${label}</text>`)
@@ -150,7 +175,8 @@ function collect(s) {
   let nav = null
   try { nav = evalCjs(s.hubNav) } catch (e) { errs.push(`hubNav.js 加载失败：${e.message}`) }
   if (nav) {
-    const lvl = nav.findEntry('memberLevel')
+    const lvlKit = (nav.HUB_KITS || []).find((k) => (k.children || []).some((c) => c.id === 'memberLevel'))
+    const lvl = lvlKit ? lvlKit.children.find((c) => c.id === 'memberLevel') : nav.findEntry('memberLevel')
     const cur = nav.findEntry('curators')
     if (!lvl || JSON.stringify(lvl.keys) !== JSON.stringify(['memberLevelAdjust']) || lvl.tap !== 'goMemberLevelAdjust') {
       errs.push('入口清单 memberLevel 须独立：keys=[memberLevelAdjust]、tap=goMemberLevelAdjust')
@@ -159,7 +185,8 @@ function collect(s) {
       errs.push('入口清单 curators 须独立：keys=[honoraryCurators]、tap=goHonoraryCurators')
     }
     if (nav.findEntry('memberCurator')) errs.push('入口清单里不应再有合并入口 memberCurator')
-    if ((nav.FAV_ID_ALIASES || {}).memberCurator !== 'memberLevel') errs.push('「我的常用」旧合并 id memberCurator 须映射到 memberLevel（会员调级）')
+    if ((nav.FAV_ID_ALIASES || {}).memberCurator !== (lvlKit ? lvlKit.id : 'memberLevel')) errs.push(`「我的常用」旧合并 id memberCurator 须映射到${lvlKit ? `组合「${lvlKit.label}」（含会员调级）` : ' memberLevel（会员调级）'}`)
+    if (lvlKit && (lvlKit.children || []).some((c) => c.id === 'curators')) errs.push('「会员调级」与「荣誉馆长」不得并进同一个组合（2026-09-30 已拆开）')
   }
   return errs
 }
@@ -169,7 +196,9 @@ if (selftest) {
   const cases = [
     ['合并磁贴复活', (s) => ({ ...s, hubWxml: s.hubWxml + '\n<view class="menu-btn" wx:if="{{menu.memberLevelAdjust || menu.honoraryCurators}}" bindtap="goMemberCuratorHub"><text>会员</text></view>' }), /合并磁贴/],
     ['馆长磁贴丢失', (s) => ({ ...s, hubWxml: s.hubWxml.replace('<text class="hub-cell-name">荣誉馆长</text>', '<text class="hub-cell-name">馆长</text>') }), /恰好一枚「荣誉馆长」/],
-    ['调级磁贴权限写宽', (s) => ({ ...s, hubWxml: s.hubWxml.replace('wx:if="{{menu.memberLevelAdjust}}" bindtap="goMemberLevelAdjust"', 'wx:if="{{menu.memberLevelAdjust || menu.honoraryCurators}}" bindtap="goMemberLevelAdjust"') }), /按 menu\.memberLevelAdjust 单独显示|合并磁贴/],
+    ['调级子功能权限写宽', (s) => ({ ...s, hubNav: s.hubNav.replace("keys: ['memberLevelAdjust'], tap: 'goMemberLevelAdjust'", "keys: ['memberLevelAdjust', 'honoraryCurators'], tap: 'goMemberLevelAdjust'") }), /须 keys=\[memberLevelAdjust\]|memberLevel 须独立/],
+    ['组合磁贴不再按调级权限显示', (s) => ({ ...s, hubWxml: s.hubWxml.replace('wx:if="{{menu.vip || menu.memberLevelAdjust}}" bindtap="openHubKitPage"', 'wx:if="{{menu.vip}}" bindtap="openHubKitPage"') }), /的磁贴须按 menu\.memberLevelAdjust 显示/],
+    ['调级与馆长并进同一组合', (s) => ({ ...s, hubNav: s.hubNav.replace("      { id: 'memberLevel',", "      { id: 'curators', label: '馆长', desc: 'x', keys: ['honoraryCurators'], tap: 'goHonoraryCurators' },\n      { id: 'memberLevel',") }), /不得并进同一个组合/],
     ['馆长磁贴绑错入口', (s) => ({ ...s, hubWxml: s.hubWxml.replace('bindtap="goHonoraryCurators"', 'bindtap="goMemberLevelAdjust"') }), /按 menu\.honoraryCurators 单独显示/],
     ['馆长磁贴移出会员分区', (s) => ({ ...s, hubWxml: s.hubWxml.replace(/<view class="hub-grp[^"]*" wx:if="\{\{hubSec\.members\}\}" id="hub-sec-members">/, '<view class="hub-grp" wx:if="{{hubSec.memberz}}" id="hub-sec-members">') }), /须在「会员触达」分区/],
     ['馆长门禁判错权限', (s) => ({ ...s, hubJs: s.hubJs.replace(/(goHonoraryCuratorsGuarded\(\) \{\n\s+if \(!canSeeMenu\(this\.data\.workspaceRole, MENU_KEYS\.)HONORARY_CURATORS/, '$1MEMBER_LEVEL_ADJUST') }), /须按 MENU_KEYS\.HONORARY_CURATORS/],
@@ -181,7 +210,7 @@ if (selftest) {
     ['馆长页切换方法残留', (s) => ({ ...s, curatorJs: s.curatorJs.replace('  noop() {}', "  noop() {},\n\n  onHubSegTap() {\n    wx.redirectTo({ url: 'x' });\n  }") }), /honorary-curators：onHubSegTap 应已移除/],
     ['旧提示文案回流', (s) => ({ ...s, levelWxml: s.levelWxml.replace('荣誉馆长名单请从工作台「荣誉馆长」进入', '荣誉馆长请切到页顶「荣誉馆长」') }), /切到页顶/],
     ['清单又合并', (s) => ({ ...s, hubNav: s.hubNav.replace("keys: ['honoraryCurators'], tap: 'goHonoraryCurators'", "keys: ['memberLevelAdjust', 'honoraryCurators'], tap: 'goHonoraryCurators'") }), /curators 须独立/],
-    ['常用旧 id 映射丢失', (s) => ({ ...s, hubNav: s.hubNav.replace("memberCurator: 'memberLevel', ", '') }), /memberCurator 须映射到 memberLevel/]
+    ['常用旧 id 映射丢失', (s) => ({ ...s, hubNav: s.hubNav.replace("memberCurator: 'memberLevelKit', ", '') }), /memberCurator 须映射到/]
   ]
   const base = collect(src)
   if (base.length) {
@@ -208,4 +237,4 @@ if (errs.length) {
   errs.forEach((e) => console.error(TAG, e))
   process.exit(1)
 }
-console.log(TAG, 'pass（会员调级 / 荣誉馆长两枚独立入口、各自权限、旧路径与消息深链不变、两页无分段）')
+console.log(TAG, 'pass（会员调级 / 荣誉馆长互不合并、各自权限、旧路径与消息深链不变、两页无分段；调级可为组合「会员等级」子功能）')

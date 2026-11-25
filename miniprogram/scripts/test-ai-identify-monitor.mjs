@@ -57,6 +57,7 @@ const PATHS = {
   roles: join(MP, 'utils/workspaceRoles.js'),
   mpc: join(MP, 'subpackages/manager/manager/managerPageConfig.js'),
   hubWxml: join(MP, 'subpackages/manager/manager/index.wxml'),
+  hubNav: join(MP, 'subpackages/manager/manager/hubNav.js'),
   retentionIndex: join(MP, 'cloudfunctions/aiIdentifyRetention/index.js'),
   retentionConfig: join(MP, 'cloudfunctions/aiIdentifyRetention/config.json'),
   sourceOrigin: join(MP, 'cloudfunctions/aiIdentifyRetention/sourceOrigin.js')
@@ -554,7 +555,11 @@ function checkPage(src, t) {
   const seen = roles.filter((r) => roleMod.canSeeMenu(r, key))
   t.ok('D4 只有超管可见', seen.length === 1 && seen[0] === 'super_admin', seen.join(','))
   t.ok('D4 Hub 分区含该入口', roleMod.HUB_MENU_SECTIONS && Object.values(roleMod.HUB_MENU_SECTIONS).some((arr) => arr.includes(key)))
-  t.ok('D5 磁贴判同一菜单键', /wx:if="\{\{menu\.aiIdentifyMonitor\}\}" bindtap="goIdentifyMonitorGuarded"/.test(src.hubWxml || ''))
+  // 2026-11-26 超管工作台归并：AI 鉴定可为组合「AI 监测」子功能 —— 子功能 keys / tap 不变，组合磁贴按同一菜单键显示
+  const kitTile = /data-fid="(\w+)" wx:if="\{\{([^}]*)\}\}" bindtap="openHubKitPage" data-kit="\1"/g
+  const inKit = [...String(src.hubWxml || '').matchAll(kitTile)].some((m) => m[2].split('||').map((x) => x.trim()).includes('menu.aiIdentifyMonitor')) &&
+    /\{ id: 'aiIdentify',[^\n]*keys: \['aiIdentifyMonitor'\], tap: 'goIdentifyMonitorGuarded'/.test(src.hubNav || '')
+  t.ok('D5 磁贴判同一菜单键（独立磁贴，或组合磁贴 + 子功能同键同入口）', inKit || /wx:if="\{\{menu\.aiIdentifyMonitor\}\}" bindtap="goIdentifyMonitorGuarded"/.test(src.hubWxml || ''))
   const go = /goIdentifyMonitorGuarded\(\) \{([\s\S]*?)\n {2}\},/.exec(src.mpc || '')
   t.ok('D5 跳转前再判菜单键', !!go && /canSeeMenu\(this\.data\.workspaceRole, MENU_KEYS\.AI_IDENTIFY_MONITOR\)\) return/.test(go[1]) && /identify-monitor\/index/.test(go[1]))
 }

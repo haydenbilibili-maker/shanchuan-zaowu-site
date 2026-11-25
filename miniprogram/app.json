@@ -107,6 +107,7 @@
       "name": "manager",
       "pages": [
         "manager/index",
+        "group/index",
         "manager/workspace/index",
         "studio-bills/index",
         "invoice-requests/index",

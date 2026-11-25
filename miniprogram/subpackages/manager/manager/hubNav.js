@@ -39,16 +39,75 @@ const ICON = '/assets/icons/'
 const MGR_ICON = '/subpackages/manager/assets/icons/'
 
 /**
+ * 组合入口（2026-11-25 产品负责人「超管功能超过 52 个，合并同类项、大幅优化分类与数量」，
+ * 方案 miniprogram/docs/超管工作台_功能归并_2026-11-25.md）：同类功能共用一枚磁贴 → 组合页 subpackages/manager/group/index?kit=<id>
+ * 逐条平铺子功能（不是弹层 / 二级面板）。子功能保留原 id、原入口 handler、原权限键与角标；组合页按权限过滤后调工作台页上的
+ * 原 handler（hubNav.invokeItem），原门禁、订阅授权都不变。组合入口的权限键 = 子功能之并，搜索别名 = 子功能名称与别名之并。
+ * 一致性由 check:hub-entries 的 K 规则校验。
+ */
+const HUB_KITS = [
+  {
+    id: 'gift', label: '礼赠', sub: '履约·规则', desc: '礼赠履约和礼赠规则，一页切换', icon: ICON + 'gift.png', sec: 'orders',
+    children: [
+      { id: 'giftOps', label: '礼赠履约', desc: '待填址、待发货和自提核销', alias: ['礼赠', '礼物', '送礼', '自提', '核销'], icon: ICON + 'gift.png', keys: ['giftOps'], tap: 'goGiftOps', badge: 'giftTodoCount' },
+      { id: 'giftManage', label: '礼赠管理', desc: '礼赠待办概况、规则和提醒', alias: ['礼赠', '礼物', '礼赠规则'], icon: ICON + 'care.png', keys: ['giftManage'], tap: 'goGiftManage' }
+    ]
+  },
+  {
+    id: 'approvalsKit', label: '审批与发票', sub: '审批·发票', desc: '等你点头的申请和顾客发票', icon: ICON + 'done.png', sec: 'orders',
+    children: [
+      { id: 'approvals', label: '审批', desc: '等你点头的申请', alias: ['审核', '申请', '批准'], icon: ICON + 'done.png', keys: ['approvals'], tap: 'goApprovals', badge: 'approvalPendingCount' },
+      { id: 'invoice', label: '发票', desc: '顾客申请的发票，开好再回复', alias: ['开票', '报销'], icon: ICON + 'refund.png', keys: ['invoice'], tap: 'goInvoiceRequests', badge: 'invoicePendingCount' }
+    ]
+  },
+  {
+    id: 'opsKit', label: '馆内运营', sub: '活动·直播', desc: '活动课程和直播间', icon: ICON + 'booking.png', sec: 'goods',
+    children: [
+      { id: 'activities', label: '活动', desc: '活动和课程怎么排', alias: ['课程', '报名', '活动课程'], icon: ICON + 'booking.png', keys: ['activities'], tap: 'switchTab', idx: 7, tabTitle: '活动课程' },
+      { id: 'live', label: '主播', desc: '直播间和主播', alias: ['直播', '开播', '主播工作台'], icon: ICON + 'video-tab.png', keys: ['live'], tap: 'goLiveStudio' }
+    ]
+  },
+  {
+    id: 'memberLevelKit', label: '会员等级', sub: '权益·调级', desc: '会员权益和升降级', icon: ICON + 'medal_gold.png', sec: 'members',
+    children: [
+      { id: 'vip', label: '权益', desc: '会员能享受的好处', alias: ['权益', '会员卡', '礼券'], icon: ICON + 'coupon.png', keys: ['vip'], tap: 'switchTab', idx: 6, tabTitle: '权益会员' },
+      { id: 'memberLevel', label: '会员调级', desc: '给会员升级或降级', alias: ['等级', '升级', '降级', '调级'], icon: ICON + 'medal_gold.png', keys: ['memberLevelAdjust'], tap: 'goMemberLevelAdjust' }
+    ]
+  },
+  {
+    id: 'aiMonitorKit', label: 'AI 监测', sub: '鉴定·博物君', desc: '拍照鉴定和博物君用得怎么样', icon: ICON + 'camera.png', sec: 'system',
+    children: [
+      { id: 'aiIdentify', label: 'AI 鉴定', sub: '鉴定监测', desc: '拍照识别用得怎么样', alias: ['识别', '鉴定', '拍照'], icon: ICON + 'camera.png', keys: ['aiIdentifyMonitor'], tap: 'goIdentifyMonitorGuarded' },
+      { id: 'museumGuide', label: '博物君', sub: '开关·监测', desc: '博物君开不开、问得怎么样', alias: ['博物君', 'AI 馆员', '问答'], icon: ICON + 'knowledge.png', keys: ['museumGuideMonitor'], tap: 'goMuseumGuideMonitorGuarded' }
+    ]
+  }
+]
+
+function findKit(id) {
+  return HUB_KITS.find((k) => k.id === id) || null
+}
+
+/** 组合在清单里的那一条：权限键 / 别名由子功能汇总（不手写，免得漂移） */
+function kitEntry(id) {
+  const k = findKit(id)
+  const keys = []
+  const alias = []
+  k.children.forEach((c) => {
+    c.keys.forEach((x) => { if (keys.indexOf(x) === -1) keys.push(x) })
+    ;[c.label].concat(c.alias || []).forEach((w) => { if (alias.indexOf(w) === -1) alias.push(w) })
+  })
+  return { id: k.id, label: k.label, sub: k.sub, desc: k.desc, alias, icon: k.icon, sec: k.sec, keys, tap: 'openHubKitPage', kit: k.id }
+}
+
+/**
  * 工作台入口统一清单（稳定 id，不用显示名）。分区磁贴（index.wxml 静态标记）与「我的常用」都以它为准；
  * 两者逐枚一致（入口 / 名称 / 图标 / 权限 / 分区）由 check:hub-entries 校验。
  */
 const HUB_ENTRIES = [
   { id: 'orders', label: '订单', desc: '看新订单、安排发货和售后', alias: ['发货', '售后', '退款', '物流', '快递'], icon: ICON + 'box.png', sec: 'orders', keys: ['orders'], tap: 'onOrdersMenuTap', idx: 2, tabTitle: '订单管理', badge: 'orders' },
   { id: 'workOrders', label: '工单', desc: '定制和装裱的活儿，进度一目了然', alias: ['定制', '装裱', '伴宠'], icon: ICON + 'list.png', sec: 'orders', keys: ['workOrders'], tap: 'switchTab', idx: 10, tabTitle: '工单', badge: 'customOrders' },
-  { id: 'giftOps', label: '礼赠履约', desc: '待填址、待发货和自提核销', alias: ['礼赠', '礼物', '送礼', '自提', '核销'], icon: ICON + 'gift.png', sec: 'orders', keys: ['giftOps'], tap: 'goGiftOps', badge: 'giftTodoCount' },
-  { id: 'giftManage', label: '礼赠管理', desc: '礼赠待办概况、规则和提醒', alias: ['礼赠', '礼物', '礼赠规则'], icon: ICON + 'care.png', sec: 'orders', keys: ['giftManage'], tap: 'goGiftManage' },
-  { id: 'invoice', label: '发票', desc: '顾客申请的发票，开好再回复', alias: ['开票', '报销'], icon: ICON + 'refund.png', sec: 'orders', keys: ['invoice'], tap: 'goInvoiceRequests', badge: 'invoicePendingCount' },
-  { id: 'approvals', label: '审批', desc: '等你点头的申请', alias: ['审核', '申请', '批准'], icon: ICON + 'done.png', sec: 'orders', keys: ['approvals'], tap: 'goApprovals', badge: 'approvalPendingCount' },
+  kitEntry('gift'),
+  kitEntry('approvalsKit'),
   { id: 'deposit', label: '孤品定金', desc: '卖完的孤品，顾客交的订金', alias: ['订金', '定金', '孤品'], icon: ICON + 'discount.png', sec: 'orders', keys: ['depositOps'], tap: 'goDepositOps' },
   { id: 'ledger', label: '账本', desc: '每天收了多少钱，一笔笔对得上', alias: ['营收', '流水', '对账', '收入'], icon: ICON + 'coin_gold.png', sec: 'biz', keys: ['ledger'], tap: 'switchTab', idx: 8, tabTitle: '营收账本' },
   { id: 'analytics', label: '报表', desc: '卖得怎么样、谁来过', alias: ['数据', '统计', '销量', '报表'], icon: ICON + 'trend.png', sec: 'biz', keys: ['analytics'], tap: 'switchTab', idx: 13, tabTitle: '数据报表' },
@@ -61,12 +120,10 @@ const HUB_ENTRIES = [
   // 2026-11-25：审核模式 = 功能开关 + 藏品上下架聚合页（仅超管）；原「开关」「藏品」两个入口都保留
   { id: 'reviewMode', label: '审核', sub: '提审关闸', desc: '提审前关掉功能与商品', alias: ['审核', '提审', '上线', '审核模式'], icon: ICON + 'done.png', sec: 'goods', keys: ['reviewMode'], tap: 'goReviewModeGuarded' },
   { id: 'decor', label: '装修', desc: '首页和店铺的布置', alias: ['装修', '首页', '横幅'], icon: MGR_ICON + 'edit.png', sec: 'goods', keys: ['decor'], tap: 'switchTab', idx: 4, tabTitle: '店铺装修' },
-  { id: 'activities', label: '活动', desc: '活动和课程怎么排', alias: ['课程', '报名', '活动课程'], icon: ICON + 'booking.png', sec: 'goods', keys: ['activities'], tap: 'switchTab', idx: 7, tabTitle: '活动课程' },
-  { id: 'live', label: '主播', desc: '直播间和主播', alias: ['直播', '开播', '主播工作台'], icon: ICON + 'video-tab.png', sec: 'goods', keys: ['live'], tap: 'goLiveStudio' },
+  kitEntry('opsKit'),
   { id: 'memberCrm', label: '会员 CRM', desc: '会员是谁、多久没来、谁该回访', alias: ['会员', '顾客', '客户', '回访'], icon: ICON + 'user_gold.png', sec: 'members', keys: ['memberCrm'], tap: 'goMemberCrm' },
-  { id: 'vip', label: '权益', desc: '会员能享受的好处', alias: ['权益', '会员卡', '礼券'], icon: ICON + 'coupon.png', sec: 'members', keys: ['vip'], tap: 'switchTab', idx: 6, tabTitle: '权益会员' },
+  kitEntry('memberLevelKit'),
   { id: 'support', label: '有信', desc: '回复顾客的留言', alias: ['留言', '客服', '回复', '山海有信'], icon: ICON + 'message.png', sec: 'members', keys: ['support'], tap: 'switchTab', idx: 11, tabTitle: '山海有信', badge: 'supportTickets' },
-  { id: 'memberLevel', label: '会员调级', desc: '给会员升级或降级', alias: ['等级', '升级', '降级', '调级'], icon: ICON + 'medal_gold.png', sec: 'members', keys: ['memberLevelAdjust'], tap: 'goMemberLevelAdjust' },
   { id: 'curators', label: '荣誉馆长', desc: '荣誉馆长名单', alias: ['馆长', '荣誉'], icon: ICON + 'tab-collection.png', sec: 'members', keys: ['honoraryCurators'], tap: 'goHonoraryCurators' },
   { id: 'points', label: '积分', desc: '发积分、换礼品', alias: ['积分', '兑换'], icon: ICON + 'star.png', sec: 'members', keys: ['points'], tap: 'goStorePoints' },
   { id: 'welcomeGift', label: '新人礼包', desc: '新会员注册就送的积分和礼券', alias: ['礼包', '新会员礼包', '新人', '注册礼'], icon: ICON + 'cart.png', sec: 'members', keys: ['welcomeGift'], tap: 'goWelcomeGift' },
@@ -95,8 +152,7 @@ const HUB_ENTRIES = [
   { id: 'bookingRules', label: '预约规则', desc: '可预约时段和闭店日', alias: ['预约', '时段', '闭店', '规则配置'], icon: MGR_ICON + 'clock.png', sec: 'system', keys: ['bookingRules'], tap: 'goBookingRules' },
   { id: 'supportConfig', label: '客服入口', desc: '客服电话和常见问题', alias: ['客服', '电话', '常见问题', '规则配置'], icon: ICON + 'phone.png', sec: 'system', keys: ['supportConfig'], tap: 'goSupportConfig' },
   { id: 'wxNotify', label: '微信通知', sub: '订单·工单提醒', desc: '来新订单时微信提醒我', alias: ['通知', '提醒', '微信'], icon: ICON + 'service.png', sec: 'system', keys: ['orders'], tap: 'enableStaffOrderWxNotify' },
-  { id: 'aiIdentify', label: 'AI 鉴定', sub: '鉴定监测', desc: '拍照识别用得怎么样', alias: ['识别', '鉴定', '拍照'], icon: ICON + 'camera.png', sec: 'system', keys: ['aiIdentifyMonitor'], tap: 'goIdentifyMonitorGuarded' },
-  { id: 'museumGuide', label: '博物君', sub: '开关·监测', desc: '博物君开不开、问得怎么样', alias: ['博物君', 'AI 馆员', '问答'], icon: ICON + 'knowledge.png', sec: 'system', keys: ['museumGuideMonitor'], tap: 'goMuseumGuideMonitorGuarded' }
+  kitEntry('aiMonitorKit'),
 ]
 
 /* ── 我的常用 ── */
@@ -107,23 +163,28 @@ const FAV_STORAGE_KEY = 'manager_hub_favs_v1'
  * 值为数组 = 2026-10-10 拆开的旧折叠磁贴：映射到当前角色**第一个有权限**的子入口（都没权限就丢掉，不留空位）。
  */
 const FAV_ID_ALIASES = {
-  gift: ['giftOps', 'giftManage'],
+  // 2026-11-26 归并 S2：被并进组合的子功能 → 组合入口（旧「礼赠」折叠 id 也落到礼赠组合）
+  gift: 'gift', giftOps: 'gift', giftManage: 'gift',
+  approvals: 'approvalsKit', invoice: 'approvalsKit',
+  activities: 'opsKit', live: 'opsKit',
+  vip: 'memberLevelKit', memberLevel: 'memberLevelKit',
+  aiIdentify: 'aiMonitorKit', museumGuide: 'aiMonitorKit', museumGuideMonitor: 'aiMonitorKit',
   perks: ['welcomeGift', 'birthdayGift', 'walletConfig'],
   artisan: ['framers', 'framerRecruit', 'artisanCommission'],
   org: ['staffDirectory', 'staffPermissions', 'shareholderConfig'],
   payslip: ['myPayslip', 'payslipAdmin'],
   rules: ['shipping', 'bookingRules', 'supportConfig'],
-  memberCurator: 'memberLevel', memberLevelAdjust: 'memberLevel', honoraryCurators: 'curators',
+  memberCurator: 'memberLevelKit', memberLevelAdjust: 'memberLevelKit', honoraryCurators: 'curators',
   shipmentOps: 'shipment', shipmentSku: 'shipment',
   inventoryOps: 'inventory', rawInventoryOps: 'inventory',
   supplierWorkbench: 'supplier', purchaseOps: 'purchase', propertyCost: 'property',
-  feishuSync: 'feishu', depositOps: 'deposit', aiIdentifyMonitor: 'aiIdentify'
+  feishuSync: 'feishu', depositOps: 'deposit', aiIdentifyMonitor: 'aiMonitorKit'
 }
 /** 未配置时的角色默认（再按权限过滤） */
 const FAV_DEFAULTS = {
-  super_admin: ['orders', 'ledger', 'analytics', 'approvals', 'support', 'products', 'verify', 'memberCrm'],
-  store_manager: ['orders', 'ledger', 'verify', 'approvals', 'workOrders', 'giftOps', 'products', 'points'],
-  store_staff: ['verify', 'approvals', 'staffConsole'],
+  super_admin: ['orders', 'ledger', 'analytics', 'approvalsKit', 'support', 'products', 'verify', 'memberCrm'],
+  store_manager: ['orders', 'ledger', 'verify', 'approvalsKit', 'workOrders', 'gift', 'products', 'points'],
+  store_staff: ['verify', 'approvalsKit', 'staffConsole'],
   specimen_artisan: ['products']
 }
 
@@ -154,7 +215,33 @@ function defaultFavs(role, menu) {
 }
 
 /** 入口角标数字（订单有新单未读时显示未读数，与磁贴角标同口径） */
+/** 组合角标 = 当前角色有权限的子功能角标之和（看不到的子功能不计数） */
+function kitBadgeNum(kit, data) {
+  const d = data || {}
+  const m = d.menu || {}
+  return (kit ? kit.children : []).filter((c) => c.badge && c.keys.some((k) => m[k] === true))
+    .reduce((sum, c) => sum + badgeValue(c.badge, d), 0)
+}
+
+function badgeText(n) {
+  if (n <= 0) return ''
+  return n > 99 ? '99+' : String(n)
+}
+
+/** 全部功能里组合磁贴的角标文字：{ [组合 id]: '3' | '' } */
+function buildKitBadges(data) {
+  const out = {}
+  HUB_KITS.forEach((k) => { out[k.id] = badgeText(kitBadgeNum(k, data)) })
+  return out
+}
+
+/** 组合页每一行的角标（与工作台同一数据源） */
+function childBadge(child, data) {
+  return badgeText(child && child.badge ? badgeValue(child.badge, data) : 0)
+}
+
 function entryBadgeNum(entry, data) {
+  if (entry && entry.kit) return kitBadgeNum(findKit(entry.kit), data)
   if (!entry || !entry.badge) return 0
   const d = data || {}
   let n = badgeValue(entry.badge, d)
@@ -310,6 +397,7 @@ function buildHubView(favIds, data) {
     hubTodo: buildTodos(d),
     hubFav: buildFavView(favIds, d),
     hubSecMeta: buildSecMeta(d),
+    hubKitBadge: buildKitBadges(d),
     ...buildCatalog(d.menu)
   }
 }
@@ -365,7 +453,8 @@ function invokeItem(page, item) {
   if (!page || !item || typeof page[item.tap] !== 'function') return false
   let dataset = item.dataset || {}
   if (!item.dataset) {
-    if (item.tab) dataset = { tab: item.tab }
+    if (item.kit) dataset = { kit: item.kit }
+    else if (item.tab) dataset = { tab: item.tab }
     else if (item.idx) dataset = { idx: String(item.idx), title: item.tabTitle || item.label }
   }
   const evt = { currentTarget: { dataset } }
@@ -374,6 +463,10 @@ function invokeItem(page, item) {
 }
 
 module.exports = {
+  HUB_KITS,
+  findKit,
+  buildKitBadges,
+  childBadge,
   HUB_SECTIONS,
   HUB_ENTRIES,
   FAV_MAX,

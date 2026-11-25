@@ -1,0 +1,36 @@
+<view class="ops-page" wx:if="{{ready}}">
+  <view class="ops-container">
+    <view class="ops-header">
+      <text class="ops-eyebrow">WORKBENCH</text>
+      <text class="ops-title">{{title || '工作台'}}</text>
+      <text class="ops-note" wx:if="{{desc}}">{{desc}}</text>
+    </view>
+
+    <view class="kit-list" wx:if="{{rows.length}}">
+      <view
+        class="kit-row"
+        wx:for="{{rows}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onRow"
+        hover-class="tap-press"
+        hover-stay-time="80"
+      >
+        <view class="kit-ico">
+          <image class="kit-ico-img" src="{{item.icon}}" mode="aspectFit" />
+          <view class="kit-badge" wx:if="{{item.badge}}">{{item.badge}}</view>
+        </view>
+        <view class="kit-main">
+          <text class="kit-name">{{item.label}}</text>
+          <text class="kit-desc">{{item.desc}}</text>
+        </view>
+        <text class="kit-go">›</text>
+      </view>
+    </view>
+
+    <view class="kit-empty" wx:if="{{lost || !rows.length}}">
+      <text class="kit-empty-text">{{lost ? '请从工作台重新进入这一组功能' : '这一组功能你暂时没有权限'}}</text>
+      <view class="kit-empty-btn" bindtap="goBack" hover-class="tap-press" hover-stay-time="80">回到工作台</view>
+    </view>
+  </view>
+</view>

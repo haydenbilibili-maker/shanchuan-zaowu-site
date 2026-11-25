@@ -238,10 +238,16 @@ async function runChecks() {
   ok('M6 页面在超管分包', !!mgr && mgr.pages.includes('museum-guide-monitor/index'))
   const roles = read(P.roles)
   ok('M6 菜单键只在超管（不进任何角色分组）', /MUSEUM_GUIDE_MONITOR: 'museumGuideMonitor'/.test(roles) && (roles.match(/MENU_KEYS\.MUSEUM_GUIDE_MONITOR/g) || []).length === 0)
-  ok('M6 磁贴：系统监测分区 + 处理函数先 canSeeMenu + 跳超管页；wxml 磁贴按菜单显隐',
-    /id: 'museumGuide'[^\n]*sec: 'system', keys: \['museumGuideMonitor'\], tap: 'goMuseumGuideMonitorGuarded'/.test(read(P.hubNav)) &&
-    /goMuseumGuideMonitorGuarded\(\) \{\s*\n\s*if \(!canSeeMenu\(this\.data\.workspaceRole, MENU_KEYS\.MUSEUM_GUIDE_MONITOR\)\) return;/.test(read(P.mgrCfg)) &&
-    /wx:if="\{\{menu\.museumGuideMonitor\}\}" bindtap="goMuseumGuideMonitorGuarded"/.test(read(P.mgrWxml)))
+  // 2026-11-26 超管工作台归并：博物君可为系统分区组合「AI 监测」的子功能 —— keys / tap 不变，组合磁贴按同一菜单键显示
+  const navSrc = read(P.hubNav)
+  const kitBlock = (navSrc.match(/\n  \{\n    id: '\w+',[^\n]*sec: 'system',\n    children: \[[\s\S]*?\n    \]\n  \}/g) || []).find((b) => /\{ id: 'museumGuide',[^\n]*keys: \['museumGuideMonitor'\], tap: 'goMuseumGuideMonitorGuarded'/.test(b))
+  const kitId = kitBlock && (kitBlock.match(/id: '(\w+)'/) || [])[1]
+  const kitTile = kitId && new RegExp(`data-fid="${kitId}" wx:if="\\{\\{([^}]*)\\}\\}" bindtap="openHubKitPage" data-kit="${kitId}"`).exec(read(P.mgrWxml))
+  const viaKit = !!kitTile && kitTile[1].split('||').map((x) => x.trim()).includes('menu.museumGuideMonitor')
+  ok('M6 磁贴：系统监测分区 + 处理函数先 canSeeMenu + 跳超管页；wxml 磁贴按菜单显隐（独立磁贴，或系统分区组合的子功能）',
+    (viaKit || (/id: 'museumGuide'[^\n]*sec: 'system', keys: \['museumGuideMonitor'\], tap: 'goMuseumGuideMonitorGuarded'/.test(navSrc) &&
+      /wx:if="\{\{menu\.museumGuideMonitor\}\}" bindtap="goMuseumGuideMonitorGuarded"/.test(read(P.mgrWxml)))) &&
+    /goMuseumGuideMonitorGuarded\(\) \{\s*\n\s*if \(!canSeeMenu\(this\.data\.workspaceRole, MENU_KEYS\.MUSEUM_GUIDE_MONITOR\)\) return;/.test(read(P.mgrCfg)))
   ok('M6 页内 guardStaffPage(super_admin)、云函数 requireSuperAdmin', /await guardStaffPage\('super_admin'\)/.test(pageJs) && /assertStaff\(db, openid, \{ requireSuperAdmin: true \}\)/.test(read(P.fn)))
   const sens = JSON.parse(readFileSync(P.sensitive, 'utf8'))
   const cloudJs = readFileSync(P.cloudJs, 'utf8')

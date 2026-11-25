@@ -1,0 +1,109 @@
+@import '../utils/ops-museum.wxss';
+
+/* 组合页：与工作台「全部功能」同一套图标语言（圆形铜底图标 + 红色数字角标），行式平铺，一行一个功能 */
+.kit-list {
+  margin-top: 8rpx;
+  border-radius: var(--r-card, 16rpx);
+  background: var(--color-bg-card, #1F1D1A);
+  box-shadow: var(--hairline-brass-inset);
+  overflow: hidden;
+}
+
+.kit-row {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  min-height: 128rpx;
+  padding: 24rpx 28rpx;
+  box-sizing: border-box;
+}
+
+.kit-row + .kit-row {
+  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+}
+
+.kit-ico {
+  position: relative;
+  flex-shrink: 0;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: var(--ring-brass-soft);
+}
+
+.kit-ico-img {
+  width: 40rpx;
+  height: 40rpx;
+  /* 与工作台磁贴图标同一金色单色滤镜（hubNav.wxss .hub-ico-img） */
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
+
+.kit-badge {
+  position: absolute;
+  top: -6rpx;
+  right: -10rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  box-sizing: border-box;
+  border-radius: var(--r-pill, 999rpx);
+  background: var(--color-error-solid, #C9373C);
+  color: #FFFFFF;
+  font-size: var(--fs-18);
+  font-family: var(--font-mono);
+  line-height: 32rpx;
+  text-align: center;
+}
+
+.kit-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+}
+
+.kit-name {
+  font-size: var(--fs-30);
+  font-weight: 600;
+  color: var(--color-text-primary, #FFFFFF);
+}
+
+.kit-desc {
+  font-size: var(--fs-22);
+  color: var(--color-text-secondary, #A09A90);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.kit-go {
+  flex-shrink: 0;
+  font-size: var(--fs-32);
+  color: var(--brass-400, #C4A76C);
+}
+
+.kit-empty {
+  margin-top: 48rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.kit-empty-text {
+  font-size: var(--fs-24);
+  color: var(--color-text-secondary, #A09A90);
+}
+
+.kit-empty-btn {
+  padding: 16rpx 40rpx;
+  border-radius: var(--r-pill, 999rpx);
+  box-shadow: var(--ring-brass-soft);
+  color: var(--brass-200, #E0CFA3);
+  font-size: var(--fs-24);
+}
