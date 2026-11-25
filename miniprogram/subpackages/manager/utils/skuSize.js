@@ -67,7 +67,7 @@ function isEmptySizeValue(size) {
     .replace(/\s+/g, '')
     .replace(/[×✕✖*]/g, 'x')
     .replace(/(厘米|cm|毫米|mm)$/i, '')
-    .replace(/(厚度|长度|宽度|高度|尺寸|长|宽|高|直径)/g, 'x')
+    .replace(/(厚度|厚|长度|宽度|高度|尺寸|长|宽|高|直径)/g, 'x')
     .replace(/x+/g, 'x')
     .replace(/^x|x$/g, '');
   // 仍有非数字非分隔符的字符（如 `A4`）→ 不当空
@@ -164,29 +164,27 @@ function formatSizeFromParts(sizeL, sizeW, sizeH, mode) {
     return `直径 ${L}${NBSP}厘米`;
   }
   if (formMode === 'diameter_height') {
-    if (L && H) return `直径 ${L}×高度 ${H}${NBSP}厘米`;
+    if (L && H) return `直径 ${L} × 高 ${H}${NBSP}厘米`;
     if (L) return `直径 ${L}${NBSP}厘米`;
     if (H) return `高度 ${H}${NBSP}厘米`;
     return '';
   }
   if (formMode === 'frame') {
     const parts = [];
-    if (L) parts.push(L);
-    if (W) parts.push(W);
-    if (H) parts.push(H);
+    if (L) parts.push(`长 ${L}`);
+    if (W) parts.push(`宽 ${W}`);
+    if (H) parts.push(`厚 ${H}`);
     if (!parts.length) return '';
-    if (L && W && H) return `${L}×${W}×厚度 ${H}${NBSP}厘米`;
-    if (L && W) return `${L}×${W}${NBSP}厘米`;
-    return `${parts.join('×')}${NBSP}厘米`;
+    return `${parts.join(' × ')}${NBSP}厘米`;
   }
 
   // box 方形玻璃罩 / 默认
   const parts = [];
-  if (L) parts.push(L);
-  if (W) parts.push(W);
-  if (H) parts.push(H);
+  if (L) parts.push(`长 ${L}`);
+  if (W) parts.push(`宽 ${W}`);
+  if (H) parts.push(`高 ${H}`);
   if (!parts.length) return '';
-  return `${parts.join('×')}${NBSP}厘米`;
+  return `${parts.join(' × ')}${NBSP}厘米`;
 }
 
 function formatSizeCanonical(sizeL, sizeW, sizeH) {
@@ -215,6 +213,8 @@ function beautifySizeString(raw) {
     .replace(/\s*cm\b/gi, `${NBSP}厘米`)
     .replace(/\s*厘米/g, `${NBSP}厘米`)
     .trim();
+  // 2026-11-25 产品负责人：装裱尺寸只标了「厚度」，看不出长宽 —— 旧文案「A×B×厚度 C」统一成带维度词
+  s = s.replace(/^(\d+(?:\.\d+)?)×(\d+(?:\.\d+)?)×厚度\s*(\d+(?:\.\d+)?)/, '长 $1 × 宽 $2 × 厚 $3');
   return s;
 }
 
@@ -250,7 +250,9 @@ function formatSkuSizeDisplay(sku, ctx) {
     f.sizeText
   ].join(' ');
   const mode = resolveSizeFormMode((ctx && ctx.craftType) || '', hint);
-  const fromParts = formatSizeFromParts(f.sizeL, f.sizeW, f.sizeH, mode);
+  // 2026-11-25：库内自由文本明确写了「厚度」→ 按相框口径（长/宽/厚），别把厚度当高度
+  const effectiveMode = !f.sizeText && f.size && /厚度/.test(f.size) ? 'frame' : mode;
+  const fromParts = formatSizeFromParts(f.sizeL, f.sizeW, f.sizeH, effectiveMode);
   if (fromParts) return fromParts;
   if (f.size && !isEmptySizeValue(f.size)) return beautifySizeString(f.size);
   return '';
@@ -302,11 +304,13 @@ function resolveDisplaySize(product, sku) {
       `${title} ${product.sizeText || ''}`
     );
     const fields = getSkuSizeFields(product);
+    // 2026-11-25：自由文本里写了「厚度」但没填装裱方式 → 仍按相框口径（长/宽/厚）
+    const effectiveMode = !fields.sizeText && product.size && /厚度/.test(product.size) ? 'frame' : mode;
     const fromProductParts = formatSizeFromParts(
       fields.sizeL,
       fields.sizeW,
       fields.sizeH,
-      mode
+      effectiveMode
     );
     if (fromProductParts) return finishDisplaySize(fromProductParts);
   }

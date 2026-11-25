@@ -254,32 +254,33 @@ for (const [raw, want, label] of SIZE_EMPTY_CASES) {
 }
 
 // 展示文案：相框（长×宽×厚度）是设计口径，但数值必须归一
-eq('★ 相框展示：数值尾零归一并保留「厚度」说明',
+// 2026-11-25 产品负责人：只标「厚度」看不出长宽 → 三维都带维度词
+eq('★ 相框展示：数值尾零归一，长 / 宽 / 厚 全部标明',
   skuSize.formatSizeFromParts('29.7', '21.0', '4.50', 'frame'),
-  `29.7×21×厚度 4.5${String.fromCharCode(0xa0)}厘米`)
-eq('方形罩展示：长×宽', skuSize.formatSizeFromParts('20', '30', '', 'box'),
-  `20×30${String.fromCharCode(0xa0)}厘米`)
+  `长 29.7 × 宽 21 × 厚 4.5${String.fromCharCode(0xa0)}厘米`)
+eq('方形罩展示：长 / 宽 / 高 全部标明', skuSize.formatSizeFromParts('20', '30', '', 'box'),
+  `长 20 × 宽 30${String.fromCharCode(0xa0)}厘米`)
 eq('圆形罩展示：仅直径', skuSize.formatSizeFromParts('8', '', '', 'diameter'),
   `直径 8${String.fromCharCode(0xa0)}厘米`)
-eq('圆柱罩展示：直径×高度', skuSize.formatSizeFromParts('8', '', '12.0', 'diameter_height'),
-  `直径 8×高度 12${String.fromCharCode(0xa0)}厘米`)
-eq('★ 原始文本形态也归一（报告里的那条字符串）',
+eq('圆柱罩展示：直径 / 高度', skuSize.formatSizeFromParts('8', '', '12.0', 'diameter_height'),
+  `直径 8 × 高 12${String.fromCharCode(0xa0)}厘米`)
+eq('★ 原始文本形态也归一（报告里的那条字符串 → 带维度词）',
   skuSize.beautifySizeString('29.7×21.0×厚度 4.5 厘米'),
-  `29.7×21×厚度 4.5${String.fromCharCode(0xa0)}厘米`)
+  `长 29.7 × 宽 21 × 厚 4.5${String.fromCharCode(0xa0)}厘米`)
 // 库里只有自由文本、且没有装裱方式 → 按默认方罩（长×宽×高）展示；数值仍须归一
-eq('★ 端到端：只有自由文本（无装裱方式）→ 默认方罩口径 + 数值归一',
+eq('★ 端到端：只有自由文本（无装裱方式）→ 保留维度词 + 数值归一',
   skuSize.resolveDisplaySize({ size: '29.7×21.0×厚度 4.5 厘米' }, null),
-  `29.7×21×4.5${String.fromCharCode(0xa0)}厘米`)
+  `长 29.7 × 宽 21 × 厚 4.5${String.fromCharCode(0xa0)}厘米`)
 // 真实数据形态：有装裱方式（相框）+ 库里只有自由文本 → 必须保留「厚度」说明且数值归一
 eq('★ 端到端：相框 + 库内自由文本（报告里那条商品的真实形态）',
   skuSize.resolveDisplaySize({ size: '29.7×21.0×厚度 4.5 厘米', craftType: 'frame', title: '天堂凤蝶爱神凤蝶组合' }, null),
-  `29.7×21×厚度 4.5${String.fromCharCode(0xa0)}厘米`)
+  `长 29.7 × 宽 21 × 厚 4.5${String.fromCharCode(0xa0)}厘米`)
 eq('★ 保存侧产物归一（超管编辑后落库不再带尾零）',
   skuSize.normalizeSkuSizeForSave({ sizeL: '29.7', sizeW: '21.0', sizeH: '4.50' }, { craftType: 'frame' }).size,
   '29.7x21x4.5 cm')
 eq('★ 端到端：结构化字段（相框）展示正确',
   skuSize.resolveDisplaySize({ sizeL: '29.7', sizeW: '21.0', sizeH: '4.5', craftType: 'frame', title: '天堂凤蝶' }, null),
-  `29.7×21×厚度 4.5${String.fromCharCode(0xa0)}厘米`)
+  `长 29.7 × 宽 21 × 厚 4.5${String.fromCharCode(0xa0)}厘米`)
 
 // 出口兜底：selectedSkuSizeText 在详情页有 3 处直接上屏，未著录必须给空串
 eq('★ 端到端：全零自由文本 → 空串（不显示 0×0×厚度 0 厘米）',
