@@ -15,10 +15,10 @@
 <template name="home-cast-line">
   <swiper class="home-cast-swiper" vertical autoplay="{{cast.items.length > 1}}" circular interval="4200" duration="520" wx:if="{{cast.items.length}}" bindchange="onCastSwiperChange">
     <swiper-item wx:for="{{cast.items}}" wx:key="key">
-      <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store ? 'tap-press-soft' : ''}}" hover-stay-time="80">
+      <view class="home-cast-item" data-i="{{index}}" bindtap="onCastTap" hover-class="{{item.q || item.store || item.path ? 'tap-press-soft' : ''}}" hover-stay-time="80">
         <text class="home-cast-tag is-{{item.kind}}">{{item.tag}}</text><text class="home-cast-sep">·</text>
         <text class="home-cast-t">{{item.text}}</text>
-        <text class="home-cast-go" wx:if="{{item.q || item.store}}">›</text>
+        <text class="home-cast-go" wx:if="{{item.q || item.store || item.path}}">›</text>
       </view>
     </swiper-item>
   </swiper>

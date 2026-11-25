@@ -91,6 +91,13 @@ async function runChecks() {
   ok('H1 提示按时段分组（早 / 午 / 夜 不同组）', C.TIPS.morning.some((t) => t.t === tipAt(8)) && C.TIPS.day.some((t) => t.t === tipAt(15)) && C.TIPS.night.some((t) => t.t === tipAt(23)))
   const all = C.FACTS.concat(C.TIPS.morning, C.TIPS.day, C.TIPS.night)
   ok('H1 每条文案 ≤ 22 字（首页单行放得下，不折行）', C.LINE_MAX === 22 && all.every((x) => x.t && x.t.length <= C.LINE_MAX))
+  // 2026-11-25 产品负责人：趣味提示里要带上代金券 / 积分 / 钱包 / 1% 捐赠
+  const tipsAll = C.TIPS.morning.concat(C.TIPS.day, C.TIPS.night)
+  const hasPath = (p) => tipsAll.some((t) => t && t.path === p)
+  ok('H7 趣味提示覆盖代金券 / 积分 / 钱包 / 1% 捐赠，且都带目标页',
+    hasPath('/subpackages/business/coupons/index') && hasPath('/subpackages/business/points/index') &&
+    hasPath('/subpackages/business/wallet-hub/index') && hasPath('/subpackages/business/donations/index') &&
+    tipsAll.filter((t) => t && t.path).every((t) => /^\/subpackages\/business\//.test(t.path)), fails)
   ok('H1 每条一知都带问题', C.FACTS.every((x) => x.q && x.q.length <= 40))
   // 2026-11-25 产品负责人：博物一知要多一些内容 → 至少 20 条（棘轮：只许增不许减）
   ok('H1 博物一知至少 100 条，且每条文案不超长', C.FACTS.length >= 100 && C.FACTS.every((x) => x.t && x.t.length <= 40))
@@ -185,7 +192,8 @@ async function runChecks() {
     /<view class="home-cast-seal is-link" bindtap="onCastSealTap"/.test(wxml) &&
     /onCastSealTap\(\) \{[\s\S]{0,220}museumGuideOpen === false\) return/.test(js) &&
     /museum-guide\/index\?from=home/.test(js))
-  ok('H4 点按走 onCastTap、可点条目带 ›', /bindtap="onCastTap"/.test(wxml) && /class="home-cast-go" wx:if="\{\{item\.q \|\| item\.store\}\}"/.test(wxml))
+  ok('H4 点按走 onCastTap、可点条目带 ›（问答 / 门店 / 目标页三类都可点）',
+    /bindtap="onCastTap"/.test(wxml) && /class="home-cast-go" wx:if="\{\{item\.q \|\| item\.store \|\| item\.path\}\}"/.test(wxml))
   ok('H4 回到首页重排（昵称 / 时段）', /onShow\(\) \{[\s\S]{0,400}this\.refreshCast\(\);/.test(js))
   ok('H4 门店状态到了重排', /homeGreeting: buildHomeGreeting\(store\),[\s\S]{0,120}this\.refreshCast\(\);/.test(js))
   ok('H4 开关到了重排（带通知与开馆状态）', /this\._castFlags = flags;\s*this\.refreshCast\(\);/.test(js) && /notices: flags\.museumGuideNotices,/.test(js) && /guideOpen: flags\.museumGuideOpen !== false/.test(js))
@@ -221,6 +229,7 @@ const INJECTIONS = [
   { name: '昵称不截断', file: P.cast, find: "return s.length > NICK_MAX ? s.slice(0, NICK_MAX) + '…' : s;", replace: 'return s;' },
   { name: '闭馆仍播通知', file: P.cast, find: '  if (open) {\n    (Array.isArray', replace: '  if (true) {\n    (Array.isArray' },
   { name: '闭馆仍带问题', file: P.cast, find: 'q: open && q ? q : \'\'', replace: "q: q || ''" },
+  { name: '券提示丢目标页', file: P.cast, find: "path: '/subpackages/business/coupons/index'", replace: "path: ''" },
   { name: '一知条数回落到 99', file: P.cast, find: "  { t: '蝌蚪用鳃呼吸，长成蛙后改用肺和皮肤', q: '青蛙小时候为什么生活在水里？' }\n", replace: '' },
   { name: '同日两条一知相同', file: P.cast, find: 'FACTS[(di + 5) % FACTS.length]', replace: 'FACTS[di % FACTS.length]' },
   { name: '点口播直接提问', file: P.cast, find: '?from=home&q=${encodeURIComponent(q)}', replace: '?from=home&auto=1&q=${encodeURIComponent(q)}' },

@@ -1456,6 +1456,12 @@ Page({
     const item = (this.data.cast.items || [])[Number(e.currentTarget.dataset.i)];
     if (!item) return;
     if (item.store) { this.goToBooking(); return; }
+    // 代金券 / 积分 / 钱包 / 1% 捐赠这类提示：直接去对应页面
+    if (item.path) {
+      if (blockIfSinglePage()) return;
+      wx.navigateTo({ url: item.path });
+      return;
+    }
     if (!item.q || blockIfSinglePage()) return;
     const { guideUrl } = require('./guideBroadcast');
     wx.navigateTo({ url: guideUrl(item.q) });

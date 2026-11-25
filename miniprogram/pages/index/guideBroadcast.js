@@ -119,15 +119,21 @@ const FACTS = [
 const TIPS = {
   morning: [
     { t: '早上光线柔，最适合给标本柜拍照', q: '' },
-    { t: '还没点亮的物种，先去博物小测认一认', q: '' }
+    { t: '还没点亮的物种，先去博物小测认一认', q: '' },
+    { t: '券包里有快过期的代金券，顺手看看', q: '', path: '/subpackages/business/coupons/index' },
+    { t: '本月积分到账了吗？去积分页对一对', q: '', path: '/subpackages/business/points/index' }
   ],
   day: [
     { t: '标本怕潮也怕晒，避开直射颜色更久', q: '标本平时要怎么养护？' },
-    { t: '拿不准是哪一种？拍张照去鉴定认一认', q: '' }
+    { t: '拿不准是哪一种？拍张照去鉴定认一认', q: '' },
+    { t: '钱包的余额与抵扣规则，在钱包页能看全', q: '', path: '/subpackages/business/wallet-hub/index' },
+    { t: '每笔订单的 1% 会进公益池，去捐赠页看进度', q: '', path: '/subpackages/business/donations/index' }
   ],
   night: [
     { t: '夜里把柜灯调暗些，强光会让颜色变淡', q: '为什么强光会让标本褪色？' },
-    { t: '睡前问博物君：萤火虫为什么会发光', q: '萤火虫为什么会发光？' }
+    { t: '睡前问博物君：萤火虫为什么会发光', q: '萤火虫为什么会发光？' },
+    { t: '睡前看一眼积分与券，别让它们过期', q: '', path: '/subpackages/business/points/index' },
+    { t: '今天买的东西，1% 已经记进捐赠页', q: '', path: '/subpackages/business/donations/index' }
   ]
 };
 
@@ -196,9 +202,15 @@ function buildBroadcast(o) {
   const hello = `${timeWord(now.getHours())}，${nick || '欢迎来馆'}`;
   const items = [];
   // 2026-11-25：口播升级为「信号灯」——每条带 tone（开馆 / 通知 / 知识 / 提示），灯色与右侧短标随条目切换
-  const push = (kind, tag, text, q, store) => {
+  const push = (kind, tag, text, q, store, path) => {
     if (!text) return;
-    items.push({ key: `${kind}-${items.length}`, kind, tag, text, q: open && q ? q : '', store: !!store, tone: toneOfKind(kind) });
+    items.push({
+      key: `${kind}-${items.length}`, kind, tag, text,
+      q: open && q ? q : '',
+      store: !!store,
+      path: String(path || ''),
+      tone: toneOfKind(kind)
+    });
   };
 
   if (open) {
@@ -215,7 +227,7 @@ function buildBroadcast(o) {
 
   const band = TIPS[tipBand(now.getHours())];
   const tip = band[di % band.length];
-  push('tip', '趣味提示', tip.t, tip.q, false);
+  push('tip', '趣味提示', tip.t, tip.q, false, tip && tip.path);
 
   return { hello, items };
 }
