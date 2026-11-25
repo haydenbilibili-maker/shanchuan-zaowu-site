@@ -1,0 +1,59 @@
+<!-- 审核模式（2026-11-25）：一页把「功能开关」与「藏品上下架」提到手边；
+     原有完整入口（内容开关 / 藏品库→风险管理）都保留，本页只是快捷聚合。 -->
+<view class="rv-page">
+  <view class="rv-head">
+    <text class="rv-overline">REVIEW MODE</text>
+    <text class="rv-title">提审前，把店铺收到「只留已审内容」</text>
+    <text class="rv-desc">功能入口一键关闭 + 藏品审核上下架；过审后一键恢复。下面两块与「内容开关 / 风险管理」共用同一份数据，不另存一份。</text>
+  </view>
+
+  <!-- ① 功能开关 -->
+  <view class="rv-card">
+    <view class="rv-card-top">
+      <text class="rv-card-title">功能开关</text>
+      <text class="rv-card-link" bindtap="goContentFlags" hover-class="tap-press-soft" hover-stay-time="80">完整内容开关 ›</text>
+    </view>
+    <view class="rv-row">
+      <view class="rv-row-main">
+        <text class="rv-row-label">审核模式（关闭 AI 与内容入口）</text>
+        <text class="rv-row-sub {{reviewMode ? 'is-warn' : ''}}">{{reviewMode ? '已开启 · AI 与内容入口已关' : '未开启'}}</text>
+      </view>
+      <switch class="rv-switch" checked="{{reviewMode}}" disabled="{{saving}}" color="#C4A76C" bindchange="onToggleReviewMode"/>
+    </view>
+    <view class="rv-flag-row" wx:for="{{reviewRows}}" wx:key="key">
+      <text class="rv-flag-k">{{item.label}}</text>
+      <text class="rv-flag-v {{flags[item.key] === false ? 'is-off' : 'is-on'}}">{{flags[item.key] === false ? '已隐藏' : '展示中'}}</text>
+    </view>
+  </view>
+
+  <!-- ② 藏品上下架 -->
+  <view class="rv-card">
+    <view class="rv-card-top">
+      <text class="rv-card-title">藏品上下架</text>
+      <text class="rv-card-link" bindtap="goRisk" hover-class="tap-press-soft" hover-stay-time="80">风险管理 ›</text>
+    </view>
+    <view class="rv-meta">
+      <text class="rv-meta-k">白名单 {{shelf.whitelistCount}} 件</text>
+      <text class="rv-meta-k">当前在架 {{shelf.on}} / {{shelf.total}}</text>
+      <text class="rv-meta-k {{shelf.status === 'off' ? 'is-warn' : ''}}">{{shelf.status === 'off' ? '审核中 · 已下架 ' + shelf.reviewOffCount + ' 件' : '未进入审核'}}</text>
+    </view>
+    <view class="rv-halls">
+      <text class="rv-hall {{item.on ? '' : 'is-empty'}}" wx:for="{{shelf.halls}}" wx:key="name">{{item.name}} {{item.on}}</text>
+    </view>
+    <text class="rv-warn" wx:if="{{shelf.emptyHalls.length}}">有馆没有在架商品：{{shelf.emptyHalls}} —— 先补货再操作。</text>
+    <view class="rv-actions">
+      <view class="rv-btn {{shelfRunning === 'buildWhitelist' ? 'is-disabled' : ''}}" bindtap="onBuildWhitelist" hover-class="rv-btn-press" hover-stay-time="80">生成 / 更新白名单</view>
+      <view class="rv-btn is-danger {{shelfRunning === 'offShelfForReview' ? 'is-disabled' : ''}}" wx:if="{{shelf.status !== 'off'}}" bindtap="onOffShelf" hover-class="rv-btn-press" hover-stay-time="80">审核下架</view>
+      <view class="rv-btn is-primary {{shelfRunning === 'restoreAfterReview' ? 'is-disabled' : ''}}" wx:else bindtap="onRestore" hover-class="rv-btn-press" hover-stay-time="80">审核上架</view>
+    </view>
+    <text class="rv-hint">审核期只保留白名单商品；通过后「审核上架」恢复审核前的在架状态（审核前已下架的不动）。</text>
+  </view>
+
+  <view class="rv-foot">
+    <text>两块仍是同一份开关与同一份快照：本页改、别处看，反过来也一样。</text>
+  </view>
+</view>
+
+<view class="rv-hintbar" wx:if="{{hint}}">{{hint}}</view>
+
+<app-modal id="appModal" />

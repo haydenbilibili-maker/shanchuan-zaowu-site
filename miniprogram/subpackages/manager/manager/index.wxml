@@ -447,6 +447,12 @@
               <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/eye.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">开关</text>
             </view>
+            <!-- 审核模式（2026-11-25）：功能开关 + 藏品上下架聚合页；原有「开关」「藏品」两个入口都保留 -->
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="reviewMode" wx:if="{{menu.reviewMode}}" bindtap="goReviewModeGuarded">
+              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/done.png" mode="aspectFit" /></view>
+              <text class="hub-cell-name">审核</text>
+              <text class="hub-cell-sub">提审关闸</text>
+            </view>
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="decor" wx:if="{{menu.decor}}" bindtap="switchTab" data-idx="4" data-title="店铺装修">
               <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/edit.png" mode="aspectFit" /></view>
               <text class="hub-cell-name">装修</text>

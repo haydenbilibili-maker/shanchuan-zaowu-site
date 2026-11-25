@@ -2038,6 +2038,7 @@ const managerPageConfig = {
     }
     this.applyWorkspaceRole(roleForMenu);
     this.applyProductLibDeepLink(this._bootOptions);
+    this.applyTabDeepLink(this._bootOptions);
     // 标本师 create/productId 深链改由 workspace/index 在 refreshSubData 后触发，
     // 避免与 baseOnLoad 双重 openProductModal 清空概念预填
     if (
@@ -2648,6 +2649,7 @@ const managerPageConfig = {
     const map = {
       list: 'list', detail: 'list', products: 'list', create: 'list',
       stats: 'stats', overview: 'stats', inventory: 'stats',
+      risk: 'risk',
       category: 'category', cat: 'category', categories: 'category'
     };
     const embed = !!this.data.artisanEmbed;
@@ -2658,6 +2660,20 @@ const managerPageConfig = {
       productLibTab: lib
     });
     this.refreshSubData(1);
+  },
+
+  /** 通用 tab 深链（?tab=16 等）：只放行角色可达的 tab，页面标题沿用既有 tabTitle 规则 */
+  applyTabDeepLink(options) {
+    const opts = options || {}
+    const raw = String(opts.tab || '').trim()
+    if (!/^\d+$/.test(raw)) return
+    const idx = Number(raw)
+    if (!idx || idx === 1) return // 1 已由 applyProductLibDeepLink 处理
+    if (!canAccessManagerTab(this.data.workspaceRole, idx)) return
+    let entry = null
+    try { entry = require('./hubNav').HUB_ENTRIES.find((e) => Number(e.idx) === idx) } catch (e) { entry = null }
+    this.setData({ curTab: idx, pageTitle: (entry && entry.tabTitle) || this.data.pageTitle })
+    this.refreshSubData(idx)
   },
 
   /** 带权限校验的外链入口 */
@@ -2868,6 +2884,18 @@ const managerPageConfig = {
   },
 
   /** 博物君开关与监测 —— **仅超管**（2026-11-23）。同形：磁贴由 menu.museumGuideMonitor 控制，页内与云函数各自再判 */
+  /** 审核模式（2026-11-25 产品负责人）：功能开关 + 藏品上下架的聚合页，仅超管；原两个入口保留 */
+  goReviewModeGuarded() {
+    if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.REVIEW_MODE)) {
+      this.showHubTip('无此功能权限', 'warn');
+      return;
+    }
+    wx.navigateTo({
+      url: '/subpackages/manager/review-mode/index',
+      fail: () => this.showHubTip('页面暂不可用', 'warn')
+    });
+  },
+
   goMuseumGuideMonitorGuarded() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.MUSEUM_GUIDE_MONITOR)) return;
     wx.navigateTo({

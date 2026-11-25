@@ -20,7 +20,7 @@
 const HUB_SECTIONS = [
   { id: 'orders', title: '订单履约', short: '订单', keys: ['orders', 'workOrders', 'giftOps', 'giftManage', 'invoice', 'approvals', 'depositOps'] },
   { id: 'biz', title: '经营数据', short: '经营', keys: ['ledger', 'analytics', 'stores'] },
-  { id: 'goods', title: '商品内容', short: '商品', keys: ['products', 'content', 'contentFlags', 'decor', 'activities', 'live'] },
+  { id: 'goods', title: '商品内容', short: '商品', keys: ['products', 'content', 'contentFlags', 'reviewMode', 'decor', 'activities', 'live'] },
   { id: 'members', title: '会员触达', short: '会员', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
   {
     id: 'studio',
@@ -56,6 +56,8 @@ const HUB_ENTRIES = [
   { id: 'products', label: '藏品', desc: '藏品上架、下架和改价', alias: ['商品', '上架', '下架', '价格', '藏品库'], icon: ICON + 'tab-collection.png', sec: 'goods', keys: ['products'], tap: 'switchTab', idx: 1, tabTitle: '藏品库' },
   { id: 'content', label: '内容', desc: '文章和视频', alias: ['文章', '视频', '图文'], icon: ICON + 'article-tab.png', sec: 'goods', keys: ['content'], tap: 'switchTab', idx: 9, tabTitle: '内容管理' },
   { id: 'contentFlags', label: '开关', desc: '页面上哪些栏目显示', alias: ['开关', '栏目', '显示', '内容开关'], icon: ICON + 'eye.png', sec: 'goods', keys: ['contentFlags'], tap: 'switchTab', idx: 16, tabTitle: '内容开关' },
+  // 2026-11-25：审核模式 = 功能开关 + 藏品上下架聚合页（仅超管）；原「开关」「藏品」两个入口都保留
+  { id: 'reviewMode', label: '审核', sub: '提审关闸', desc: '提审前关掉功能与商品', alias: ['审核', '提审', '上线', '审核模式'], icon: ICON + 'done.png', sec: 'goods', keys: ['reviewMode'], tap: 'goReviewModeGuarded' },
   { id: 'decor', label: '装修', desc: '首页和店铺的布置', alias: ['装修', '首页', '横幅'], icon: MGR_ICON + 'edit.png', sec: 'goods', keys: ['decor'], tap: 'switchTab', idx: 4, tabTitle: '店铺装修' },
   { id: 'activities', label: '活动', desc: '活动和课程怎么排', alias: ['课程', '报名', '活动课程'], icon: ICON + 'booking.png', sec: 'goods', keys: ['activities'], tap: 'switchTab', idx: 7, tabTitle: '活动课程' },
   { id: 'live', label: '主播', desc: '直播间和主播', alias: ['直播', '开播', '主播工作台'], icon: ICON + 'video-tab.png', sec: 'goods', keys: ['live'], tap: 'goLiveStudio' },
