@@ -24,9 +24,9 @@
     <view class="cat-filter-block">
       <!-- 2026-10-19 产品负责人「继续优化馆藏页顶部筛选器样式」：九个馆原先折成三行占掉近四分之一屏 →
            一行横滑（切换时选中项自动滑入视野），筛选钮固定在右侧并带渐隐；「定制」是跳转入口，用分隔线 + 「›」与筛选区分 -->
-      <view class="cat-filter-row">
-        <scroll-view scroll-x class="category-scroll" enable-flex show-scrollbar="{{false}}" scroll-into-view="{{hallIntoView}}" scroll-with-animation>
-        <view class="category-wrap">
+      <!-- 2026-11-25 产品负责人：分类筛选恢复线上两行换行版（原一行横滑） -->
+      <view class="cat-filter-grid">
+        <view class="category-wrap is-grid">
           <view
             id="hall-{{index}}"
             class="cat-pill cat-pill-l1 {{currentId === item._id ? 'active' : ''}}"
@@ -44,9 +44,7 @@
             <text>定制</text>
             <text class="cat-pill-arr">›</text>
           </view>
-          <view class="category-pad" aria-hidden="true"></view>
         </view>
-        </scroll-view>
         <view class="filter-entry-wrap">
           <view
             class="filter-entry {{filterActiveCount > 0 ? 'on' : ''}}"

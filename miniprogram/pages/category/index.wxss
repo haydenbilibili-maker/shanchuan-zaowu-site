@@ -15,7 +15,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .sticky-header .filter-entry-wrap,
 .sticky-header .cat-filter-row,
 .sticky-header .cat-filter-block,
-.sticky-header .category-scroll { pointer-events: auto; }
+.sticky-header .cat-filter-grid { pointer-events: auto; }
 .nav-row { padding: 16rpx 32rpx 4rpx; }
 .nav-brand { display: flex; align-items: baseline; gap: 16rpx; }
 .nav-title { font-size: var(--fs-40); font-weight: 600; color: var(--color-text-primary); letter-spacing: 0.08em; font-family: var(--font-brand, serif); }
@@ -29,9 +29,10 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .search-identify text { font-size: var(--fs-22); color: var(--color-primary); font-weight: 500; }
 .search-identify-ico { width: 28rpx; height: 28rpx; }
 .search-placeholder { font-size: var(--fs-26); color: var(--color-text-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
-.category-scroll { flex: 1; min-width: 0; white-space: nowrap; }
-/* 2026-10-19：一行横滑（原 flex-wrap 折三行）；左右留白由首尾 padding / 尾垫承担 */
-.category-wrap { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: 14rpx; padding: 14rpx 0 12rpx 32rpx; box-sizing: border-box; }
+/* 2026-11-25：恢复线上两行换行版（产品负责人「恢复到线上版本的样子」） */
+.cat-filter-grid { position: relative; padding: 10rpx 100rpx 6rpx 32rpx; }
+.category-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx 14rpx; padding: 0; box-sizing: border-box; }
+.category-wrap.is-grid { max-width: 100%; }
 .category-pad { flex-shrink: 0; width: 12rpx; height: 1rpx; }
 .cat-pill-sep { flex-shrink: 0; width: 1rpx; height: 32rpx; margin: 0 4rpx; background: rgba(196,167,108,.28); }
 .cat-pill-arr { margin-left: 6rpx; font-size: var(--fs-26); color: var(--color-primary); }
@@ -52,9 +53,8 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .cat-chip-l2.active { background: rgba(196,167,108,.06); border-color: rgba(196,167,108,.45); }
 .cat-chip-l2.active text { color: var(--color-primary); font-weight: 500; }
 .cat-chip-l2-press { opacity: 0.88; transform: scale(0.98); }
-.filter-entry-wrap { flex-shrink: 0; display: flex; align-items: center; padding: 14rpx 24rpx 12rpx 16rpx; position: relative; z-index: 2; }
-/* 左缘渐隐：提示品类还能往右滑，也让横滑的标签「藏」到筛选钮后面而不是被硬切 */
-.filter-entry-wrap::before { content: ''; position: absolute; left: -40rpx; top: 0; bottom: 0; width: 40rpx; background: linear-gradient(90deg, rgba(26,24,20,0), rgba(26,24,20,.98)); pointer-events: none; }
+/* 筛选钮固定在筛选区右上角：右侧留 100rpx 给它，标签换行不会压到它下面 */
+.filter-entry-wrap { flex-shrink: 0; display: flex; align-items: center; padding: 0; position: absolute; right: 24rpx; top: 8rpx; z-index: 2; }
 .filter-entry { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 60rpx; height: 60rpx; padding: 0; border-radius: 9999px; background: var(--color-bg-elevated); border: 1px solid rgba(38,35,32,.9); position: relative; }
 .filter-entry-ico { width: 36rpx; height: 36rpx; display: block; }
 .filter-entry.on { background: rgba(196,167,108,.18); border-color: var(--color-primary); }

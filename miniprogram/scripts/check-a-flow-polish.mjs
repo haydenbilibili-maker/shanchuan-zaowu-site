@@ -847,10 +847,12 @@ function checks(s) {
     ['.gift-panel-sub', '.gift-scene-label', '.lbl'].every((x) => colorOf(s.detailWxss, x) === SEC) &&
     /\n\.ui-pop-empty \{[^}]*color: var\(--color-text-secondary\);/.test(s.appWxss))
   // 2026-10-19 产品负责人「继续优化馆藏页顶部筛选器样式」
-  add('R4-5 馆藏品类一行横滑（不再折行），切换时选中项滑入视野；档案横滑去掉压边圆点，改「04 / 13」+ 细进度线',
-    /<scroll-view scroll-x class="category-scroll"[^>]*scroll-into-view="\{\{hallIntoView\}\}"/.test(s.catWxml) &&
-      /id="hall-\{\{index\}\}"/.test(s.catWxml) && /hallIntoView: `hall-\$\{Math\.max\(0, idx - 1\)\}`/.test(s.catJs) &&
-      /\.category-wrap \{ display: inline-flex; flex-wrap: nowrap;/.test(s.catWxss) &&
+  // 2026-11-25 产品负责人：恢复线上两行换行版（原「一行横滑」下线），筛选钮固定在右上
+  add('R4-5 馆藏品类两行换行（恢复线上版）、筛选钮右上固定；档案横滑去掉压边圆点，改「04 / 13」+ 细进度线',
+    /<view class="cat-filter-grid">/.test(s.catWxml) && /<view class="category-wrap is-grid">/.test(s.catWxml) &&
+      /id="hall-\{\{index\}\}"/.test(s.catWxml) && !/class="category-scroll"/.test(s.catWxml) &&
+      /\.category-wrap \{ display: flex; flex-wrap: wrap;/.test(s.catWxss) &&
+      /\.filter-entry-wrap \{[^}]*position: absolute; right: 24rpx/.test(s.catWxss) &&
       !/indicator-dots="\{\{contentTotal > 1\}\}"/.test(s.catWxml) && /class="archive-progress"/.test(s.catWxml))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
 
@@ -1237,7 +1239,7 @@ if (process.argv.includes('--selftest')) {
     ['短文一打开就盖读毕', 'artJs', (t) => t.replace(' || this.data.readDone || !this._scrolled) return', ' || this.data.readDone) return')],
     ['定制页标题行又让胶囊', 'customWxml', (t) => t.replace('<view class="nav-row">', '<view class="nav-row" style="padding-right: {{navPaddingRight}}px;">')],
     ['定制页顶距又含系统导航', 'customJs', (t) => t.replace('headerHeight: nav.headerHeight - nav.statusBarHeight - nav.navBarHeight + Math.round((nav.mottoHeight / 88) * 110),', 'headerHeight: nav.headerHeight,')],
-    ['馆藏品类又折行', 'catWxss', (t) => t.replace('.category-wrap { display: inline-flex; flex-wrap: nowrap;', '.category-wrap { display: flex; flex-wrap: wrap;')],
+    ['馆藏品类又变回一行横滑', 'catWxss', (t) => t.replace('.category-wrap { display: flex; flex-wrap: wrap;', '.category-wrap { display: flex; flex-wrap: nowrap;')],
     ['档案圆点回来', 'catWxml', (t) => t.replace('current="{{archiveIndex}}"', 'current="{{archiveIndex}}"\n          indicator-dots="{{contentTotal > 1}}"')],
     ['证书加载改回铸造', 'certPageWxml', (t) => t.replace('正在打印专属证书…', '正在铸造专属证书…')],
     ['证书纸只出一次不循环', 'certPageWxss', (t) => t.replace('animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) infinite;', 'animation: cp-feed 3.2s cubic-bezier(0.22, 0.82, 0.28, 1) forwards;')],
