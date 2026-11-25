@@ -1905,18 +1905,20 @@
   <!-- [Tab 17] 用户评价（2026-11-25 从「内容管理」子 Tab 提为「商品内容」一级磁贴）——
        审核 / 置顶 / 回复 / 隐藏 / 删除都在这里，不再和专题、文章、养护挤一个子 Tab 行。 -->
   <block wx:if="{{curTab===17}}">
-      <!-- 评价总览（2026-11-26）：待审核为 0 时也有数可看，不再是整页空白 -->
+      <!-- 评价总览（2026-11-26）：口径见 reviewView.js -->
       <view class="cm-dash">
         <view class="cm-dash-head">
           <text class="cm-dash-title">评价总览</text>
-          <text class="cm-dash-note" wx:if="{{commentStats}}">共 {{commentStats.counts.all}} 条{{commentStats.truncated ? ' · 近 ' + commentStats.sampled + ' 条统计' : ''}}</text>
+          <view class="cm-all {{commentFilter==='all'?'on':''}}" wx:if="{{commentStats}}" bindtap="switchCommentFilter" data-filter="all" hover-class="tap-press-soft" hover-stay-time="80">
+            <text>全部 {{commentStats.counts.all}}{{commentStats.truncated ? ' · 近 ' + commentStats.sampled + ' 条统计' : ''}}</text><text class="cm-all-go">›</text>
+          </view>
         </view>
         <view class="cm-dash-tiles" wx:if="{{commentStats}}">
-          <view class="cm-tile {{commentFilter==='all'?'on':''}}" bindtap="switchCommentFilter" data-filter="all" hover-class="tap-press-soft" hover-stay-time="80">
-            <text class="cm-tile-n">{{commentStats.counts.all}}</text><text class="cm-tile-l">全部</text>
-          </view>
           <view class="cm-tile is-warn {{commentFilter==='pending'?'on':''}}" bindtap="switchCommentFilter" data-filter="pending" hover-class="tap-press-soft" hover-stay-time="80">
             <text class="cm-tile-n">{{commentStats.counts.pending}}</text><text class="cm-tile-l">待审核</text>
+          </view>
+          <view class="cm-tile is-todo {{commentFilter==='unreplied'?'on':''}}" bindtap="switchCommentFilter" data-filter="unreplied" hover-class="tap-press-soft" hover-stay-time="80">
+            <text class="cm-tile-n">{{commentStats.unrepliedText}}</text><text class="cm-tile-l">待回复</text>
           </view>
           <view class="cm-tile is-ok {{commentFilter==='approved'?'on':''}}" bindtap="switchCommentFilter" data-filter="approved" hover-class="tap-press-soft" hover-stay-time="80">
             <text class="cm-tile-n">{{commentStats.counts.approved}}</text><text class="cm-tile-l">已通过</text>
@@ -1926,14 +1928,15 @@
           </view>
         </view>
         <view class="cm-dash-body" wx:if="{{commentStats}}">
-          <view class="cm-bars">
+          <view class="cm-bars" wx:if="{{commentStats.weekTotal > 0}}">
             <view class="cm-bar" wx:for="{{commentStats.days}}" wx:key="date">
-              <view class="cm-bar-well"><view class="cm-bar-fill" style="height: {{item.h}}%;"></view></view>
+              <view class="cm-bar-well"><text class="cm-bar-n" wx:if="{{item.count}}">{{item.count}}</text><view class="cm-bar-fill" style="height: {{item.h}}%;"></view></view>
               <text class="cm-bar-l">{{item.label}}</text>
             </view>
           </view>
+          <view class="cm-week-quiet" wx:else><text>近 7 天没有新评价</text></view>
           <view class="cm-dash-meta">
-            <text class="cm-meta-k">近 7 天新增</text>
+            <text class="cm-meta-k" wx:if="{{commentStats.weekTotal > 0}}">近 7 天新增 {{commentStats.weekTotal}} 条</text>
             <text class="cm-meta-v">均分 {{commentStats.avgRating}} · 回复率 {{commentStats.replyRate}}%<text wx:if="{{commentStats.pinned}}"> · 置顶 {{commentStats.pinned}}</text></text>
           </view>
         </view>
@@ -1944,36 +1947,54 @@
         </view>
       </view>
 
-      <view class="sub-tab-row inner-filter">
+      <!-- 看板读不到时退回页签 -->
+      <view class="sub-tab-row inner-filter" wx:if="{{!commentStats && !commentStatsLoading}}">
         <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='pending'?'active':''}}" bindtap="switchCommentFilter" data-filter="pending">待审核</view>
+        <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='unreplied'?'active':''}}" bindtap="switchCommentFilter" data-filter="unreplied">待回复</view>
         <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='approved'?'active':''}}" bindtap="switchCommentFilter" data-filter="approved">已通过</view>
         <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='hidden'?'active':''}}" bindtap="switchCommentFilter" data-filter="hidden">已隐藏</view>
         <view hover-class="tap-press" hover-stay-time="80" class="sub-tab sm {{commentFilter==='all'?'active':''}}" bindtap="switchCommentFilter" data-filter="all">全部</view>
       </view>
+
       <block wx:for="{{commentList}}" wx:key="_id">
-        <view class="comment-admin-card">
-          <view class="c-head">
-            <text class="c-rating">{{item.rating}} ★</text>
-            <text class="c-status">{{item.statusLabel}}</text>
-            <text class="c-pin" wx:if="{{item.isPinned}}">置顶</text>
+        <view class="cm-card is-{{item.status}}">
+          <view class="cm-card-head">
+            <text class="cm-card-title">{{item.targetText}}</text>
+            <text class="cm-chip is-{{item.status}}">{{item.statusLabel}}</text>
           </view>
-          <text class="c-content">{{item.content}}</text>
-          <text class="c-meta">{{item.timeText}} · {{item.targetLabel || item.targetType}} · {{item.targetId}}</text>
-          <text class="c-meta" wx:if="{{item.orderId}}">订单 {{item.orderId}}</text>
-          <view class="c-reply" wx:if="{{item.merchantReply}}">
-            <text class="c-reply-label">商家回复：</text>
-            <text>{{item.merchantReply}}</text>
+          <view class="cm-card-sub">
+            <text class="cm-stars">{{item.stars}}</text>
+            <text class="cm-time">{{item.timeText}}</text>
+            <text class="cm-pin" wx:if="{{item.isPinned}}">置顶</text>
           </view>
-          <view class="c-actions">
-            <text class="c-act" wx:if="{{item.status==='pending'}}" bindtap="moderateComment" data-id="{{item._id}}" data-action="approve">通过</text>
-            <text class="c-act" bindtap="moderateComment" data-id="{{item._id}}" data-action="pin">{{item.isPinned ? '取消置顶' : '置顶'}}</text>
-            <text class="c-act" bindtap="moderateComment" data-id="{{item._id}}" data-action="reply">回复</text>
-            <text class="c-act" wx:if="{{item.status!=='hidden'}}" bindtap="moderateComment" data-id="{{item._id}}" data-action="hide">隐藏</text>
-            <text class="c-act danger" bindtap="moderateComment" data-id="{{item._id}}" data-action="delete">删除</text>
+          <text class="cm-card-text">{{item.content}}</text>
+          <view class="cm-photos" wx:if="{{item.imageCount}}" bindtap="previewCommentImages" data-id="{{item._id}}" hover-class="tap-press-soft" hover-stay-time="80">
+            <text>附图 {{item.imageCount}} 张 · 点按查看</text>
+          </view>
+          <view class="cm-reply" wx:if="{{item.replied}}">
+            <text class="cm-reply-k">商家回复</text>
+            <text class="cm-reply-v">{{item.merchantReply}}</text>
+          </view>
+          <view class="cm-card-foot">
+            <text class="cm-order" wx:if="{{item.orderId}}">订单 {{item.orderShort}}</text>
+            <view class="cm-acts">
+              <text class="cm-act" bindtap="moderateComment" data-id="{{item._id}}" data-action="pin" hover-class="tap-press-soft" hover-stay-time="80">{{item.isPinned ? '取消置顶' : '置顶'}}</text>
+              <text class="cm-act" wx:if="{{item.status!=='hidden'}}" bindtap="moderateComment" data-id="{{item._id}}" data-action="hide" hover-class="tap-press-soft" hover-stay-time="80">隐藏</text>
+              <text class="cm-act is-danger" bindtap="moderateComment" data-id="{{item._id}}" data-action="delete" hover-class="tap-press-soft" hover-stay-time="80">删除</text>
+              <text class="cm-act is-secondary" wx:if="{{item.primary.action!=='reply'}}" bindtap="moderateComment" data-id="{{item._id}}" data-action="reply" hover-class="tap-press-soft" hover-stay-time="80">{{item.replied ? '改回复' : '回复'}}</text>
+              <view class="cm-go" bindtap="moderateComment" data-id="{{item._id}}" data-action="{{item.primary.action}}" hover-class="tap-press" hover-stay-time="80">{{item.primary.label}}</view>
+            </view>
           </view>
         </view>
       </block>
-      <view class="empty-tip" wx:if="{{commentList.length===0}}">暂无评价</view>
+      <view class="cm-loading" wx:if="{{commentListLoading && commentList.length===0}}">加载中…</view>
+      <view class="cm-empty" wx:elif="{{commentList.length===0}}">
+        <text class="cm-empty-t">{{commentEmpty.title || '暂无评价'}}</text>
+        <text class="cm-empty-s" wx:if="{{commentEmpty.sub}}">{{commentEmpty.sub}}</text>
+        <view class="cm-empty-next" wx:if="{{commentEmpty.next.length}}">
+          <view class="cm-empty-btn" wx:for="{{commentEmpty.next}}" wx:key="filter" bindtap="switchCommentFilter" data-filter="{{item.filter}}" hover-class="tap-press" hover-stay-time="80">{{item.label}}</view>
+        </view>
+      </view>
   </block>
 
   <!-- [Tab 10] 工单 -->
@@ -4372,7 +4393,11 @@
     <view class="ui-pop-dialog comment-reply-dialog" catchtap="noop">
       <view class="ui-pop-head">
         <text class="ui-pop-kicker">REPLY</text>
-        <text class="ui-pop-title">回复评价</text>
+        <text class="ui-pop-title">{{tempCommentReply.editing ? '修改回复' : '回复评价'}}</text>
+      </view>
+      <view class="comment-reply-quote" wx:if="{{tempCommentReply.excerpt}}">
+        <text class="comment-reply-stars">{{tempCommentReply.stars}}</text>
+        <text class="comment-reply-excerpt">{{tempCommentReply.excerpt}}</text>
       </view>
       <view class="comment-reply-body">
         <textarea fixed="{{true}}" cursor-spacing="120"
@@ -4388,6 +4413,9 @@
           show-confirm-bar="{{true}}"
         ></textarea>
         <text class="comment-reply-count">{{tempCommentReply.content.length}}/500</text>
+      </view>
+      <view class="comment-reply-phrases">
+        <view class="comment-reply-phrase" wx:for="{{commentReplyPhrases}}" wx:key="*this" catchtap="pickCommentReplyPhrase" data-text="{{item}}" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</view>
       </view>
       <view class="ui-pop-foot">
         <view class="ui-pop-btn is-ghost" catchtap="closeCommentReplyModal" hover-class="tap-press" hover-stay-time="80">取消</view>

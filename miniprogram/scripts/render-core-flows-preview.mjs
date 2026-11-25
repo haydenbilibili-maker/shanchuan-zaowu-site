@@ -942,6 +942,25 @@ const SCENES = [
       productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
+  // 2026-11-26 评价审核二改：看板四格即筛选 + 待回复 + 卡片按状态主动作；另一张是「待审核已清空」的空态
+  ...(() => {
+    const RV = loadCjsModule(join(MP, 'subpackages/manager/manager/reviewView.js'))
+    const raw = { success: true, counts: { all: 19, pending: 1, approved: 17, hidden: 1 }, avgRating: 4.9, replyRate: 21, replied: 4, unreplied: 13, pinned: 1, sampled: 19, truncated: false,
+      days: ['11/20', '11/21', '11/22', '11/23', '11/24', '11/25', '11/26'].map((label, i) => ({ date: String(i), label, count: [0, 1, 0, 2, 3, 0, 1][i] })) }
+    const stats = RV.statsView(raw)
+    const t0 = Date.UTC(2026, 10, 25, 13, 20)
+    const list = [
+      { _id: 'c1', status: 'pending', rating: 5, productTitle: '光明女神闪蝶 · 玻璃罩', content: '比图片还要好看，光线下蓝色会变，送给朋友她很喜欢。', images: ['https://x/1.jpg', 'https://x/2.jpg'], orderId: 'SH20261124093011', createTime: t0 },
+      { _id: 'c2', status: 'approved', rating: 5, productTitle: '创意贝壳标本框', content: '这个标本作品有着海边的感觉，有治愈的感觉，我非常喜欢。', images: ['https://x/3.jpg'], orderId: 'SH20261113201145', createTime: t0 - 86400000 * 2, isPinned: true },
+      { _id: 'c3', status: 'approved', rating: 4, productTitle: '蓝闪蝶 · 胡桃木框', content: '做工细致，包装也很用心。', merchantReply: '谢谢喜欢，记得避开阳光直射。', createTime: t0 - 86400000 * 5 },
+      { _id: 'c4', status: 'hidden', rating: 1, productTitle: '', targetType: 'product', targetId: 'prod_9f8e7d', targetLabel: 'product · prod_9f8e7d', content: '（广告内容）', createTime: t0 - 86400000 * 6 }
+    ].map(RV.decorateComment)
+    const base = { workspaceReady: true, curTab: 17, commentStatsLoading: false, commentListLoading: false, commentReplyPhrases: RV.REPLY_PHRASES, menu: {} }
+    return [
+      { name: 'mgr-reviews', h: 2600, wxml: 'subpackages/manager/manager/workspace/index', data: { ...base, commentStats: stats, commentFilter: 'all', commentList: list, commentEmpty: RV.emptyCopy('all', stats) } },
+      { name: 'mgr-reviews-empty', h: 1200, wxml: 'subpackages/manager/manager/workspace/index', data: { ...base, commentStats: RV.statsView({ ...raw, counts: { all: 19, pending: 0, approved: 18, hidden: 1 }, days: raw.days.map((d) => ({ ...d, count: 0 })) }), commentFilter: 'pending', commentList: [], commentEmpty: RV.emptyCopy('pending', stats) } }
+    ]
+  })(),
   // 2026-11-26 超管工作台归并：全部功能宫格（超管权限）+ 组合页（审批与发票）
   ...(() => {
     const nav = loadCjsModule(join(MP, 'subpackages/manager/manager/hubNav.js'))
@@ -1084,7 +1103,11 @@ const SCENES = [
 
 async function shoot(s) {
   const missing = new Set()
-  let wxml = inlineTemplates(read(join(MP, s.wxml + '.wxml')))
+  // <include src> 按引用方所在目录内联（工作台模块页 workspace/index 就是 include _subviews.wxml）
+  const inlineIncludes = (file, depth = 0) => read(file).replace(/<include\s+src="([^"]+)"\s*\/>/g, (_, src) =>
+    depth > 4 ? '' : inlineIncludes(join(dirname(file), src), depth + 1))
+  const withIncludes = inlineIncludes(join(MP, s.wxml + '.wxml'))
+  let wxml = inlineTemplates(withIncludes)
     .replace(/<wxs[^>]*\/>/g, '').replace(/<wxs\b[^>]*>[\s\S]*?<\/wxs>/g, '')
     .replace(/<checkbox-group\b/g, '<view').replace(/<\/checkbox-group>/g, '</view>').replace(/<checkbox\b[^>]*?\/>/g, '<view class="__cb"></view>').replace(/<checkbox\b([^>]*)>[\s\S]*?<\/checkbox>/g, '<view class="__cb"></view>')
     // picker → view 时保留条件链（picker 上的 wx:if 丢了，后面的 wx:else 会悬空）

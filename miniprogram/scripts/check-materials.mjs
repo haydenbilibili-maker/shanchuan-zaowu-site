@@ -10,6 +10,7 @@
  *   M5 纸笺水印（content 为文字的 ::after）必须 z-index:0，且同文件正文抬层 z-index:1 —— 否则水印压住按钮
  *   M6 裸写的纸 / 墨 / 印色值（已有令牌的那几种）按文件棘轮只减不增
  *   M8 选择器里同一复合（如 `.vip-card.level-skin-3`）首尾相接写两遍 = 永不命中（会员卡七档「签到」字色曾因此全部失效）
+ *   M9 渐变类令牌（纸 / 黄铜 / 黑金 / 白瓷）只能当整层背景，不能塞进另一个 *-gradient() 当色标 —— 整条声明会失效（评价看板柱子画不出来）
  *   M7 画布色板（canvas 读不到 WXSS 令牌）与 app.wxss 同名令牌逐字同值；证书绘制只取色板、不自调色
  *
  * 用法：
@@ -82,6 +83,20 @@ export function checkFile(rel, src) {
         if (/^\.[\w-]+\.[\w-]+/.test(parts[i]) && parts[i] === parts[i - 1]) out.push(`M8 ${rel} 选择器重复复合「${one.trim()}」（自己套自己，永不命中）`)
       }
     }
+  }
+  // M9：括号配平地取出每个 *-gradient(...) 的参数，里面不许出现渐变类令牌
+  const GRAD_TOKENS = /var\(--mat-(paper-label|paper-letter|paper-kraft|paper-grain|brass|brass-polished|blackgold|porcelain)\)/
+  const plain = strip(src)
+  for (const m of plain.matchAll(/[a-z-]*gradient\(/g)) {
+    let depth = 0
+    let end = -1
+    for (let i = m.index + m[0].length - 1; i < plain.length; i += 1) {
+      if (plain[i] === '(') depth += 1
+      else if (plain[i] === ')') { depth -= 1; if (depth === 0) { end = i; break } }
+    }
+    const inner = end > 0 ? plain.slice(m.index + m[0].length, end) : ''
+    const hit = inner.match(GRAD_TOKENS)
+    if (hit) out.push(`M9 ${rel}：${hit[0]} 是渐变，不能当 ${m[0]}…) 的色标（整条 background 会失效）—— 直接用该令牌作背景层，或改用实色令牌`)
   }
   if (MODULES.includes(rel)) {
     const marks = rs.filter(({ sel, body }) => /::after$/.test(sel) && /content:\s*'[^']+'/.test(body) && /position:\s*absolute/.test(body))
@@ -161,6 +176,8 @@ if (process.argv.includes('--selftest')) {
     ['画布色板与令牌漂移', PALETTE, (t) => t.replace("INK: '#2E2618'", "INK: '#2A2114'"), true],
     ['证书绘制又自调色', 'subpackages/business/certificate/certDraw.js', (t) => t.replace('const CINNABAR = MAT.SEAL', "const CINNABAR = '#9E3B2E'"), true],
     ['选择器重复复合（会员卡签到字色事故）', 'components/UserVipCard/index.wxss', (t) => t.replace('.vip-card.level-skin-3 .ap-text,', '.vip-card.level-skin-3 .vip-card.level-skin-3 .ap-text,'), true],
+    ['渐变令牌塞进渐变当色标（评价看板柱子事故）', det, (t) => t + '\n.x-bar { background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), var(--mat-brass)); }\n', true],
+    ['对照：渐变令牌作整层背景叠在渐变上不误报', det, (t) => t + '\n.x-ok2 { background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), transparent), var(--mat-paper-label); }\n', false],
     ['新写裸纸色', det, (t) => t + '\n.x-label { background: #F3ECDD; color: #2E2618; }\n', true],
     ['对照：令牌写法不误报', det, (t) => t + '\n.x-ok { background: var(--mat-paper-label); color: var(--mat-ink); box-shadow: var(--mat-paper-shadow); }\n', false],
     ['对照：暗底按钮黑投影不误报', det, (t) => t + '\n.x-dark-btn { background: var(--brass-400); box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3); }\n', false]

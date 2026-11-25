@@ -121,6 +121,8 @@ async function commentStats() {
   const replied = rows.filter((r) => String(r.merchantReply || '').trim()).length
   const replyRate = rows.length ? Math.round((replied / rows.length) * 100) : 0
   const pinned = rows.filter((r) => r.isPinned).length
+  // 2026-11-26：「待回复」= 已通过且商家还没回复（运营真正要做的那一队；只读近况样本同口径）
+  const unreplied = rows.filter((r) => r.status === 'approved' && !String(r.merchantReply || '').trim()).length
 
   // 近 7 天（北京时间）新评价数
   const days = []
@@ -145,6 +147,7 @@ async function commentStats() {
     avgRating: avg,
     replyRate,
     replied,
+    unreplied,
     pinned,
     sampled: rows.length,
     truncated: counts.all > rows.length,
@@ -164,11 +167,15 @@ async function listComments(event) {
     query = query.where({ status: 'approved' })
   } else if (listFilter === 'hidden') {
     query = query.where({ status: 'hidden' })
+  } else if (listFilter === 'unreplied') {
+    // 2026-11-26 新增旁路：已通过、还没回复（不改其它筛选的口径）
+    query = query.where({ status: 'approved' })
   }
 
   // 不用 orderBy，避免缺索引；内存按时间倒序
   const res = await query.skip(skip).limit(limit).get()
-  const rows = (res.data || []).map(normalizeRow)
+  let rows = (res.data || []).map(normalizeRow)
+  if (listFilter === 'unreplied') rows = rows.filter((r) => !String(r.merchantReply || '').trim())
   rows.sort((a, b) => (b.createTime || 0) - (a.createTime || 0))
 
   let pendingCount = 0

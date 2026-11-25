@@ -26,7 +26,15 @@ const F = {
   roles: join(MP, 'utils/workspaceRoles.js'),
   catalog: join(MP, 'subpackages/manager/utils/workNoticeCatalog.js'),
   hubWxml: join(MP, 'subpackages/manager/manager/index.wxml'),
-  hubNav: join(MP, 'subpackages/manager/manager/hubNav.js')
+  hubNav: join(MP, 'subpackages/manager/manager/hubNav.js'),
+  view: join(MP, 'subpackages/manager/manager/reviewView.js')
+}
+
+/** reviewView.js 是纯 CJS 模块：按当前（可能被注入的）源码求值 */
+function loadView(src) {
+  const mod = { exports: {} }
+  new Function('module', 'exports', 'require', src)(mod, mod.exports, () => { throw new Error('reviewView 不应 require') })
+  return mod.exports
 }
 
 let INJECT = null
@@ -56,10 +64,18 @@ function runChecks() {
   ok('R1 「内容管理」子 Tab 不再有「用户评价」，也不再有 contentType===\'comment\' 分支',
     contentTab.indexOf('用户评价') === -1 && !/contentType==='comment'/.test(wxml))
 
-  ok('R2 用户评价是独立 Tab 17：curTab===17 块里有列表与五个审核动作',
+  // 2026-11-26：通过 / 恢复 / 回复成了卡片的「主动作」（data-action 随状态由 reviewView.primaryAction 给出），
+  // 所以 approve / reply 既可能写死，也可能经主动作出现 —— 两种都认，但主动作的映射必须真对
+  let view = null
+  try { view = loadView(read(F.view)) } catch (e) { fails.push('reviewView.js 加载失败：' + e.message) }
+  const viaPrimary = /data-action="\{\{item\.primary\.action\}\}"/.test(reviewsTab) && !!view &&
+    view.primaryAction({ status: 'pending' }).action === 'approve' && view.primaryAction({ status: 'hidden' }).action === 'approve' &&
+    view.primaryAction({ status: 'approved' }).action === 'reply' && view.primaryAction({ status: 'approved', merchantReply: 'x' }).action === 'reply'
+  ok('R2 用户评价是独立 Tab 17：curTab===17 块里有列表与五个审核动作（通过 / 回复可经按状态的主动作）',
     /<block wx:if="\{\{curTab===17\}\}">/.test(wxml) &&
     /wx:for="\{\{commentList\}\}"/.test(reviewsTab) &&
-    ['approve', 'pin', 'reply', 'hide', 'delete'].every((a) => reviewsTab.includes(`data-action="${a}"`)))
+    ['pin', 'hide', 'delete'].every((a) => reviewsTab.includes(`data-action="${a}"`)) &&
+    ['approve', 'reply'].every((a) => reviewsTab.includes(`data-action="${a}"`) || viaPrimary))
 
   ok('R3 进 Tab 17 会拉评价；内容管理不再拉',
     /if\(idx === 17\)/.test(cfg) && /this\.loadComments\(\)/.test(cfg) &&
@@ -128,6 +144,39 @@ function runChecks() {
     /class="cm-dash"/.test(wxml) && /cm-dash-tiles/.test(wxml) && /cm-bars/.test(wxml) &&
     /bindtap="switchCommentFilter" data-filter="pending"/.test(wxml))
 
+  // R10（2026-11-26 产品负责人「继续优化评价审核页面」）
+  ok('R10-1 看板四格即筛选（待审核 / 待回复 / 已通过 / 已隐藏）+ 标题行「全部」；页签行只在看板读不到时兜底出现',
+    ['pending', 'unreplied', 'approved', 'hidden'].every((f) => new RegExp(`class="cm-tile[^"]*" bindtap="switchCommentFilter" data-filter="${f}"`).test(reviewsTab)) &&
+    /class="cm-all[^"]*" wx:if="\{\{commentStats\}\}" bindtap="switchCommentFilter" data-filter="all"/.test(reviewsTab) &&
+    /<view class="sub-tab-row inner-filter" wx:if="\{\{!commentStats && !commentStatsLoading\}\}">/.test(reviewsTab))
+  let behave = false
+  try {
+    const st = view.statsView({ counts: { all: 3, pending: 0, approved: 3, hidden: 0 }, unreplied: 2, days: [{ date: 'a', count: 0 }, { date: 'b', count: 2 }] })
+    const st0 = view.statsView({ counts: { all: 0, pending: 0, approved: 0, hidden: 0 }, days: [{ date: 'a', count: 0 }] })
+    const row = view.decorateComment({ _id: 'c1', status: 'approved', rating: 4, targetType: 'product', targetId: 'prod_9f8e7d', targetLabel: 'product · prod_9f8e7d', content: 'x', images: ['cloud://a', ''], createTime: Date.UTC(2026, 10, 24, 13, 3) })
+    behave = st.weekTotal === 2 && st.unreplied === 2 && st0.unreplied === null && st0.unrepliedText === '–' && st0.weekTotal === 0 &&
+      view.pickDefaultFilter({ counts: { pending: 2 }, unreplied: 5 }, 'pending') === 'pending' &&
+      view.pickDefaultFilter({ counts: { pending: 0 }, unreplied: 5 }, 'pending') === 'unreplied' &&
+      view.pickDefaultFilter({ counts: { pending: 0 }, unreplied: 0 }, 'pending') === 'all' &&
+      view.pickDefaultFilter({ counts: { pending: 0 }, unreplied: 5 }, 'hidden') === 'hidden' &&
+      row.stars === '★★★★☆' && row.timeText === '11-24 21:03' && row.imageCount === 1 && row.primary.label === '回复' &&
+      !row.targetText.includes('prod_9f8e7d') &&
+      view.filterRows([{ status: 'approved' }, { status: 'approved', merchantReply: '好' }, { status: 'pending' }], 'unreplied').length === 1 &&
+      view.listQuery('unreplied').listFilter === 'unreplied' && view.listQuery('nope').listFilter === 'all' &&
+      view.emptyCopy('pending', st).next.some((n) => n.filter === 'unreplied')
+  } catch (e) { behave = false }
+  ok('R10-2 展示口径实跑：默认筛选落在有活干的一队、近 7 天合计 / 无新增、待回复缺数不编 0、星级与北京时间、不露原始商品 id、待回复兜底本地筛、空态给下一步', behave)
+  ok('R10-3 页面：用户手动选过筛选就不再自动改；进页默认筛选只改一次；切筛选期间的旧结果丢弃；卡片不再展示 targetId',
+    /switchCommentFilter\(e\) \{[\s\S]{0,200}this\._commentFilterPicked = true/.test(cfg) &&
+    /if \(!this\._commentFilterPicked\) \{[\s\S]{0,200}reviewView\.pickDefaultFilter\(/.test(cfg) &&
+    /if \(filter !== this\.data\.commentFilter\) return/.test(cfg) &&
+    !/item\.targetId/.test(reviewsTab))
+  ok('R10-4 云端：看板带「待回复」数、列表支持 unreplied 筛选（已通过且未回复）；回复弹层带原评价摘要与常用说法',
+    /const unreplied = rows\.filter\(\(r\) => r\.status === 'approved' && !String\(r\.merchantReply/.test(fn) && /\n    unreplied,\n/.test(fn) &&
+    /\} else if \(listFilter === 'unreplied'\) \{\n[^\n]*\n\s*query = query\.where\(\{ status: 'approved' \}\)/.test(fn) &&
+    /if \(listFilter === 'unreplied'\) rows = rows\.filter\(\(r\) => !String\(r\.merchantReply/.test(fn) &&
+    /comment-reply-quote/.test(wxml) && /bindtap|catchtap="pickCommentReplyPhrase"/.test(wxml) && /async previewCommentImages\(e\)/.test(cfg))
+
   ok('R5 内容管理里删掉的只是这一项：专题 / 文章 / 养护三个子 Tab 仍在',
     ['exhibition', 'article', 'care'].every((t) => contentTab.includes(`data-type="${t}"`)))
 
@@ -137,11 +186,18 @@ function runChecks() {
 if (process.argv.includes('--selftest')) {
   const cases = [
     { name: '内容管理又把用户评价塞回子 Tab', file: F.wxml, find: '<!-- [Tab 9] 内容管理 -->', replace: '<!-- [Tab 9] 内容管理 -->\n      <view class="sub-tab" bindtap="switchContentType" data-type="comment">用户评价</view>' },
-    { name: 'Tab 17 不再拉评价', file: F.cfg, find: 'if(idx === 17) await this.loadComments();', replace: '' },
+    { name: 'Tab 17 不再拉评价', file: F.cfg, find: 'if(idx === 17) await Promise.all([this.loadComments(), this.loadCommentStats()]);', replace: '' },
     { name: 'Hub 入口丢了「评价」', file: F.hub, find: "keys: ['reviews'], tap: 'switchTab', idx: 17", replace: "keys: ['reviews'], tap: 'switchTab', idx: 18" },
     { name: '回复后不再发「山海有信」', file: F.fn, find: 'await notifyCommentReplied(comment, replyText)', replace: '' },
     { name: '看板 stats 动作被删', file: F.fn, find: "    if (action === 'stats') {", replace: "    if (action === 'statsX') {" },
     { name: '新评价不再提醒员工（工作信息）', file: F.submitFn, find: 'await notifyStaffNewComment(db, {', replace: 'await Promise.resolve({ ok: true }); void ({' },
+    { name: '待审核为 0 仍停在空的待审核', file: F.view, find: "  if (Number(stats.unreplied) > 0) return 'unreplied'\n  return 'all'", replace: "  return current" },
+    { name: '手动选过筛选还被自动改回', file: F.cfg, find: '    this._commentFilterPicked = true; // 用户手动选过', replace: '    // 用户手动选过' },
+    { name: '卡片又露出原始商品 id', file: F.view, find: "  if (lbl && !/·/.test(lbl)) return lbl", replace: '  if (lbl) return lbl' },
+    { name: '待回复缺数时编成 0', file: F.view, find: "    unrepliedText: unreplied === null ? '–' : String(unreplied),", replace: "    unrepliedText: String(unreplied || 0)," },
+    { name: '看板与页签又重复两排', file: F.wxml, find: '<view class="sub-tab-row inner-filter" wx:if="{{!commentStats && !commentStatsLoading}}">', replace: '<view class="sub-tab-row inner-filter">' },
+    { name: '通过 / 恢复主动作映射错', file: F.view, find: "  if (st === 'hidden') return { action: 'approve', label: '恢复' }", replace: "  if (st === 'hidden') return { action: 'hide', label: '恢复' }" },
+    { name: '云端待回复筛选丢失', file: F.fn, find: "  } else if (listFilter === 'unreplied') {", replace: "  } else if (listFilter === 'unrepliedX') {" },
     { name: '工作台不再预取评价未读（语音也没数可播）', file: F.cfg, find: "safe('commentNotice', () => this.loadCommentNoticeBadge())", replace: "safe('commentNoticeX', () => this.loadCommentNoticeBadge())" }
   ]
   let bad = 0
@@ -152,6 +208,8 @@ if (process.argv.includes('--selftest')) {
     let fails = []
     try { fails = runChecks() } catch (e) { fails = [String(e.message || e)] }
     INJECT = null
+    // 锚点失效不算「检出」（2026-11-26 修：原来会把失效锚点当成检出，假绿）
+    if (fails.length === 1 && /^注入锚点失效/.test(fails[0])) { console.error(`✗ 注入「${c.name}」→ ${fails[0]}`); bad += 1; continue }
     if (!fails.length) { console.error(`✗ 注入「${c.name}」→ 未检出`); bad += 1 }
   }
   if (bad) process.exit(1)
@@ -163,5 +221,5 @@ if (process.argv.includes('--selftest')) {
     fails.forEach((f) => console.error('  - ' + f))
     process.exit(1)
   }
-  console.log('✓ check:reviews-tab：内容管理不再承载评价 / 评价为 Tab 17（列表与五个动作）/ 懒加载 / Hub 磁贴与菜单键')
+  console.log('✓ check:reviews-tab：内容管理不再承载评价 / 评价为 Tab 17（列表与五个动作）/ 懒加载 / Hub 磁贴与菜单键 / 看板四格即筛选 + 待回复 + 默认落在有活干的一队')
 }
