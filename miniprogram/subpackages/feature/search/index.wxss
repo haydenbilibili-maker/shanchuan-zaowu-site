@@ -101,31 +101,7 @@ page {
   background: rgba(196, 167, 108, 0.1);
 }
 
-.identify-divider {
-  width: 1rpx;
-  height: 28rpx;
-  margin: 0 10rpx 0 4rpx;
-  flex-shrink: 0;
-  background: rgba(196, 167, 108, 0.3);
-}
-
-/* 「鉴」= 方印（铜框方章），检索条与空闲区同一枚 */
-.identify-btn {
-  flex-shrink: 0;
-  width: 46rpx;
-  height: 46rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* radius:object */ border-radius: 2rpx;
-  box-shadow: inset 0 0 0 2rpx rgba(212, 188, 133, 0.6);
-}
-
-.identify-btn-press {
-  opacity: 0.85;
-  background: rgba(196, 167, 108, 0.14);
-}
-
+/* 「鉴」方印的字（大卡里还在用） */
 .identify-glyph {
   font-family: var(--font-brand);
   font-size: var(--fs-22);
@@ -283,13 +259,15 @@ page {
 
 /* 识图鉴定入口：发丝线行 + 方印（原圆角卡 + 圆章） */
 .identify-plate {
+  /* 2026-11-26：检索条里那枚挤在一角的「鉴」已去掉，识图鉴定只保留这一张主行动卡 */
   display: flex;
   align-items: center;
   gap: 24rpx;
-  margin: 8rpx 0 48rpx;
-  padding: 28rpx 4rpx;
-  border-top: 1rpx solid rgba(196, 167, 108, 0.14);
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
+  margin: 12rpx 0 44rpx;
+  padding: 26rpx 24rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.22);
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.05);
   box-sizing: border-box;
 }
 

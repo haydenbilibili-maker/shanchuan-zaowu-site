@@ -28,18 +28,6 @@
             hover-stay-time="80"
             catchtap="clearInput"
           >清空</view>
-          <block wx:if="{{showAiIdentify}}">
-            <view class="identify-divider"></view>
-            <view
-              class="identify-btn"
-              hover-class="identify-btn-press"
-              hover-stay-time="80"
-              catchtap="goToIdentify"
-              data-source="search_bar"
-            >
-              <text class="identify-glyph">鉴</text>
-            </view>
-          </block>
         </view>
 
         <view class="suggest-panel" wx:if="{{showSuggestions && suggestions.length > 0}}">
