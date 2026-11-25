@@ -4912,13 +4912,14 @@ const managerPageConfig = {
    */
   async loadReviewShelf(silent) {
     if (this.data.reviewShelf.loading) return;
-    if (!silent) this.setData({ 'reviewShelf.loading': true });
+    if (!silent) this.setData({ 'reviewShelf.loading': true, 'reviewShelf.error': false });
     try {
       const res = await wx.cloud.callFunction({ name: 'manageProductReview', data: { action: 'status' } });
       const r = (res && res.result) || {};
       if (!r.success) throw new Error(r.msg || '读取失败');
       this.setData({
         'reviewShelf.loading': false,
+        'reviewShelf.error': false,
         'reviewShelf.status': r.status || 'idle',
         'reviewShelf.whitelistCount': r.whitelistCount || 0,
         'reviewShelf.whitelistAt': r.whitelistAt || null,
@@ -4930,7 +4931,7 @@ const managerPageConfig = {
         'reviewShelf.whitelistEmptyHalls': r.whitelistEmptyHalls || []
       });
     } catch (e) {
-      this.setData({ 'reviewShelf.loading': false });
+      this.setData({ 'reviewShelf.loading': false, 'reviewShelf.error': true });
       if (!silent) this.showHubTip(formatCloudFnError(e, '审核状态读取失败'), 'warn');
     }
   },
@@ -4986,6 +4987,8 @@ const managerPageConfig = {
           const out = (res && res.result) || {};
           if (!out.success) {
             this.showHubTip(out.msg || '审核下架失败', 'warn');
+          } else if (out.noop) {
+            this.showHubTip(out.msg || '没有需要下架的商品', 'info');
           } else {
             const parts = [`审核下架完成：保留 ${out.whitelistCount} 件，下架 ${out.offCount} 件`];
             if (out.failed && out.failed.length) parts.push(`失败 ${out.failed.length} 件（可再点一次重试）`);
@@ -5269,6 +5272,10 @@ const managerPageConfig = {
    */
   async bulkOffShelfOnSale() {
     if (this.data.bulkRiskRunning) return;
+    if (this.data.reviewShelf && this.data.reviewShelf.status === 'off') {
+      this.showHubTip('审核进行中：请先在「版本审核」里点「审核上架」，再动全库上下架', 'warn');
+      return;
+    }
     const total = Number(this.data.productShelfCounts && this.data.productShelfCounts.on) || 0;
     if (!total) {
       this.showHubTip('当前没有在售藏品', 'info');
@@ -5319,6 +5326,10 @@ const managerPageConfig = {
    */
   async bulkRelistOffShelf() {
     if (this.data.bulkRiskRunning) return;
+    if (this.data.reviewShelf && this.data.reviewShelf.status === 'off') {
+      this.showHubTip('审核进行中：请先在「版本审核」里点「审核上架」，再动全库上下架', 'warn');
+      return;
+    }
     const total = Number(this.data.productShelfCounts && this.data.productShelfCounts.off) || 0;
     if (!total) {
       this.showHubTip('当前没有已下架的藏品', 'info');

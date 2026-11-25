@@ -4243,7 +4243,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: rgba(196, 167, 108, 0.06);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.3);
 }
-.review-card.is-off { background: rgba(200, 84, 68, 0.07); box-shadow: inset 0 0 0 1rpx rgba(200, 84, 68, 0.42); }
+.review-card.is-off { background: rgba(217, 160, 91, 0.07); box-shadow: inset 0 0 0 1rpx rgba(217, 160, 91, 0.45); }
 .review-overline {
   display: block;
   font-family: var(--font-mono);
@@ -4255,7 +4255,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .review-head-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12rpx; }
 .review-title { font-size: var(--fs-30); font-family: var(--font-brand); color: #F1E6CC; }
 .review-state { flex-shrink: 0; font-size: var(--fs-22); color: #A09A90; }
-.review-state.is-live { color: #D98374; }
+.review-state.is-live { color: #D9A05B; }
 .review-meta { display: flex; gap: 24rpx; margin-top: 14rpx; }
 .review-meta-k { font-size: var(--fs-22); color: #B9B2A6; }
 .review-halls { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 14rpx; }
@@ -4267,6 +4267,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   background: rgba(196, 167, 108, 0.12);
 }
 .review-hall.is-empty { color: #D98374; background: rgba(200, 84, 68, 0.14); }
+.review-hall-hint { display: block; margin-top: 10rpx; font-size: var(--fs-20); color: #8C8579; }
 .review-warn { display: block; margin-top: 12rpx; font-size: var(--fs-22); line-height: 1.5; color: #D98374; }
 .review-actions { display: flex; gap: 16rpx; margin-top: 18rpx; }
 .review-btn {
@@ -4282,6 +4283,13 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .review-btn.is-primary { background: var(--color-primary); color: #221E17; box-shadow: none; }
 .review-btn.is-danger { color: #D98374; box-shadow: inset 0 0 0 1rpx rgba(200, 84, 68, 0.55); }
 .review-btn.is-disabled { opacity: .5; }
+/* 读取失败：给一条可点的重试，而不是把 0 当真值展示 */
+.review-load-error { display: flex; align-items: center; justify-content: space-between; padding: 10rpx 0 14rpx; }
+.review-load-error-t { font-size: var(--fs-22); color: #D98374; }
+.review-load-error-b { font-size: var(--fs-22); color: var(--color-primary); padding: 4rpx 12rpx; }
+/* 审核进行中：全库一键上/下架两条不许点（避免和快照互相踩） */
+.risk-bar.is-locked { opacity: .55; }
+.risk-bar.is-locked .risk-bar-btn { pointer-events: none; }
 .review-hint { display: block; margin-top: 14rpx; font-size: var(--fs-20); line-height: 1.55; color: #8C8579; }
 
 .risk-page {

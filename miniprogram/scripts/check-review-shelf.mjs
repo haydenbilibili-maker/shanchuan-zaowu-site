@@ -212,6 +212,21 @@ async function main() {
   // R10 鉴权取值：getWXContext() 的键是大写 OPENID（取小写会恒 undefined → 全部动作「请先登录」）
   ok('R10 云函数用 OPENID（大写）取调用者身份', /getWXContext\(\)[\s\S]{0,60}OPENID/.test(read(FN)))
 
+  // R11 没有可下架的就不要进「审核中」（避免出现「审核中 · 已下架 0 件」）
+  db = memDb({ products: seedProducts() })
+  fn = load(db)
+  await fn.main({ action: 'status' }) // 自动落白名单 = 当前在架
+  r = await fn.main({ action: 'offShelfForReview' })
+  ok('R11 在架全在白名单里时：返回 noop、不进入审核中、状态仍 idle',
+    r.success && r.noop === true && r.offCount === 0 && (db.docs.product_review_states?.main?.status || 'idle') === 'idle')
+
+  // R12 交互：读取失败可重试、审核中锁住全库两条 bar、卡片在分层概览之前
+  ok('R12 交互加固：读取失败有重试态 / 审核中全库上下架被拦 / 审核卡在分层概览之前',
+    /reviewShelf\.error/.test(read(SUB)) && /(?:bind|catch)tap="loadReviewShelf"/.test(read(SUB)) &&
+    /reviewShelf\.status === 'off'[\s\S]{0,220}审核进行中/.test(read(CFG)) &&
+    read(CFG).indexOf("审核进行中：请先在「版本审核」里点「审核上架」") > 0 &&
+    read(SUB).indexOf('class="review-card') < read(SUB).indexOf('class="risk-hero"'))
+
   // R11 页面接线：仅超管、三按钮、四馆徽标、二次确认文案带件数
   const wxml = read(SUB)
   const cfg = read(CFG)
@@ -248,6 +263,12 @@ if (process.argv.includes('--selftest')) {
       file: FN,
       find: "  const candidates = (state.reviewOffIds || []).filter((id) => {",
       replace: "  const candidates = products.filter((p) => p.isOffShelf === true).map((p) => p._id); (function(){ return; })()\n  const candidatesX = (state.reviewOffIds || []).filter((id) => {"
+    },
+    {
+      name: '没有可下架的商品也进入审核中',
+      file: FN,
+      find: "  if (!toOff.length) {",
+      replace: "  if (false) {"
     },
     {
       name: '取调用者身份写成小写 openid',

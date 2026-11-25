@@ -266,6 +266,18 @@ async function offShelfForReview(actor) {
   const whiteSet = new Set(whitelistAlive)
   const onProducts = products.filter((p) => p.isOffShelf !== true)
   const toOff = onProducts.filter((p) => !whiteSet.has(p._id)).map((p) => p._id)
+  // 2026-11-25：在架商品全在白名单里时没有可下架的 —— 不要进入「审核中」（否则会出现「审核中 · 已下架 0 件」）
+  if (!toOff.length) {
+    return {
+      success: true,
+      noop: true,
+      msg: '当前在架的商品都在白名单里，没有需要下架的商品。上新之后再点「审核下架」。',
+      whitelistCount: whitelistAlive.length,
+      offCount: 0,
+      failed: [],
+      halls: HALLS.map((h) => ({ name: h, on: hallWhite[h] || 0 }))
+    }
+  }
   const failed = await bulkShelf(toOff, false)
   const offDone = toOff.filter((id) => !failed.includes(id))
   await writeState({
