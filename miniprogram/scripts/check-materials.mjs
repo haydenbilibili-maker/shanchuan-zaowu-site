@@ -9,6 +9,7 @@
  *   M4 纸上的黄铜实心面不配黑投影（纸上的黑影像贴了一块塑料；用 --mat-brass-shadow）
  *   M5 纸笺水印（content 为文字的 ::after）必须 z-index:0，且同文件正文抬层 z-index:1 —— 否则水印压住按钮
  *   M6 裸写的纸 / 墨 / 印色值（已有令牌的那几种）按文件棘轮只减不增
+ *   M8 选择器里同一复合（如 `.vip-card.level-skin-3`）首尾相接写两遍 = 永不命中（会员卡七档「签到」字色曾因此全部失效）
  *   M7 画布色板（canvas 读不到 WXSS 令牌）与 app.wxss 同名令牌逐字同值；证书绘制只取色板、不自调色
  *
  * 用法：
@@ -45,7 +46,8 @@ export const MODULES = [
   'subpackages/feature/gift/my-gifts/index.wxss', // 礼赠 · 人情账本
   'subpackages/feature/gift/compose/index.wxss', // 礼笺编排
   'subpackages/feature/gift/receive/index.wxss', // 礼笺拆封
-  'subpackages/feature/components/CommentList/index.wxss' // 用户评价 · 评分签 + 信笺评价
+  'subpackages/feature/components/CommentList/index.wxss', // 用户评价 · 评分签 + 信笺评价
+  'components/UserVipCard/index.wxss' // 会员卡 · 七档材质卡面（纸档字用墨令牌）
 ]
 
 /** M6：已有令牌的裸色值（纸 / 墨 / 印 / 别针） */
@@ -72,6 +74,14 @@ export function checkFile(rel, src) {
     const onPaper = /background[^;]*var\(--mat-paper-(label|letter|kraft)\)/.test(body)
     if (onPaper && /(^|[^-])color:\s*var\(--color-text-/.test(body)) out.push(`M3 ${rel} ${sel}：纸面规则用了暗底文字色 --color-text-*`)
     if (/background[^;]*var\(--mat-brass\)/.test(body) && /box-shadow:[^;]*rgba\(0, 0, 0,/.test(body)) out.push(`M4 ${rel} ${sel}：纸上黄铜面配了黑投影`)
+  }
+  for (const { sel } of rs) {
+    for (const one of sel.split(',')) {
+      const parts = one.trim().split(/\s+/)
+      for (let i = 1; i < parts.length; i++) {
+        if (/^\.[\w-]+\.[\w-]+/.test(parts[i]) && parts[i] === parts[i - 1]) out.push(`M8 ${rel} 选择器重复复合「${one.trim()}」（自己套自己，永不命中）`)
+      }
+    }
   }
   if (MODULES.includes(rel)) {
     const marks = rs.filter(({ sel, body }) => /::after$/.test(sel) && /content:\s*'[^']+'/.test(body) && /position:\s*absolute/.test(body))
@@ -150,6 +160,7 @@ if (process.argv.includes('--selftest')) {
     ['水印浮到正文之上', msg, (t) => t.replace(/(content: '山海';\n  position: absolute;\n  )z-index: 0;/, '$1z-index: 2;'), true],
     ['画布色板与令牌漂移', PALETTE, (t) => t.replace("INK: '#2E2618'", "INK: '#2A2114'"), true],
     ['证书绘制又自调色', 'subpackages/business/certificate/certDraw.js', (t) => t.replace('const CINNABAR = MAT.SEAL', "const CINNABAR = '#9E3B2E'"), true],
+    ['选择器重复复合（会员卡签到字色事故）', 'components/UserVipCard/index.wxss', (t) => t.replace('.vip-card.level-skin-3 .ap-text,', '.vip-card.level-skin-3 .vip-card.level-skin-3 .ap-text,'), true],
     ['新写裸纸色', det, (t) => t + '\n.x-label { background: #F3ECDD; color: #2E2618; }\n', true],
     ['对照：令牌写法不误报', det, (t) => t + '\n.x-ok { background: var(--mat-paper-label); color: var(--mat-ink); box-shadow: var(--mat-paper-shadow); }\n', false],
     ['对照：暗底按钮黑投影不误报', det, (t) => t + '\n.x-dark-btn { background: var(--brass-400); box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3); }\n', false]
