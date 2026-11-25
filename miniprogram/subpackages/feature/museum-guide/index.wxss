@@ -78,6 +78,10 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 
 /* 追问 / 开场问题：描边小签 */
 .mg-chip {
+  max-width: 520rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   padding: 12rpx 22rpx;
   border-radius: var(--r-pill, 999rpx);
   font-size: var(--fs-24);
@@ -89,7 +93,7 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 .mg-starters { padding: 28rpx 32rpx 0; }
 .mg-starters-k { display: block; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .16em; color: var(--brass-300, #D4BC8A); }
 
-.mg-note { display: block; margin: 40rpx 32rpx 0; font-size: var(--fs-20); line-height: 1.6; color: var(--color-text-secondary); text-align: center; }
+.mg-note { display: block; margin: 36rpx 32rpx 8rpx; font-size: var(--fs-20); line-height: 1.6; color: var(--color-text-secondary); text-align: center; }
 .mg-end { height: 32rpx; }
 
 /* 底部输入条 */
@@ -177,8 +181,8 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 .mg-fb-sep { font-size: var(--fs-20); color: rgba(138, 111, 69, 0.5); }
 .mg-fb-done { padding: 10rpx 0; font-size: var(--fs-22); color: #6B5A3E; }
 
-.mg-strip-box { align-self: stretch; display: flex; align-items: center; gap: 14rpx; margin-top: 18rpx; }
-.mg-strip-k { flex-shrink: 0; width: 72rpx; font-size: var(--fs-20); letter-spacing: .08em; color: var(--brass-300, #D4BC8A); }
+.mg-strip-box { align-self: stretch; display: flex; align-items: center; gap: 14rpx; margin-top: 20rpx; }
+.mg-strip-k { flex-shrink: 0; width: 76rpx; font-size: var(--fs-20); letter-spacing: .08em; color: var(--brass-300, #D4BC8A); }
 .mg-strip { flex: 1; min-width: 0; white-space: nowrap; }
 .mg-strip-row { display: inline-flex; align-items: center; gap: 12rpx; padding-right: 32rpx; }
 .mg-sp { flex-shrink: 0; display: flex; align-items: center; gap: 10rpx; padding: 12rpx 20rpx; border-radius: var(--r-pill, 999rpx); background: rgba(196, 167, 108, 0.1); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.32); }
@@ -210,21 +214,23 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 .mg-latin { font-family: var(--font-latin, Georgia, serif); font-style: italic; color: #7A5A2B; letter-spacing: 0.01em; }
 
 /* —— 馆里有这件（2026-11-23）：回答点到的图鉴物种在馆里有藏品 —— 横滑小卡，点进详情走原购买动线 —— */
-.mg-goods { align-self: stretch; margin-top: 18rpx; }
+.mg-goods { align-self: stretch; margin-top: 20rpx; position: relative; }
+/* 行尾渐隐：卡片滑到边上不是被硬切 */
+.mg-goods::after { content: ''; position: absolute; right: 0; top: 34rpx; bottom: 0; width: 48rpx; background: linear-gradient(90deg, rgba(26, 24, 20, 0), var(--color-bg, #1A1814)); pointer-events: none; }
 .mg-goods-k { display: block; margin-bottom: 10rpx; font-size: var(--fs-20); letter-spacing: .08em; color: var(--brass-300, #D4BC8A); }
 .mg-good {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 14rpx;
-  width: 340rpx;
+  width: 320rpx;
   padding: 10rpx 16rpx 10rpx 10rpx;
   box-sizing: border-box;
   border-radius: var(--r-card, 16rpx);
   background: rgba(196, 167, 108, 0.08);
   box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
 }
-.mg-good-img { flex-shrink: 0; width: 88rpx; height: 88rpx; border-radius: 10rpx; }
+.mg-good-img { flex-shrink: 0; width: 80rpx; height: 80rpx; border-radius: 10rpx; }
 .mg-good-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
 .mg-good-t { font-size: var(--fs-24); color: var(--brass-100, #F1E6CC); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .mg-good-p { font-family: var(--font-mono); font-size: var(--fs-22); color: var(--brass-400, #C4A76C); }

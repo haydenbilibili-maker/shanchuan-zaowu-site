@@ -305,7 +305,7 @@ async function runChecks() {
     /class="mg-strip-box" wx:if="\{\{item\.followUps\.length && !sending && !item\.revealing\}\}"/.test(mgWxml) &&
     /class="mg-fb" wx:if="\{\{!item\.isError && !item\.isWelcome && !item\.pending && !item\.revealing && item\.text\}\}"/.test(mgWxml))
   // F8 回答区重排（2026-11-23 产品负责人截图）：签脚贴在回答底边；延伸 / 接着问各一行横滑（不再竖着叠一屏按钮）
-  const mgWxss = readFileSync(P.wxml.replace(/\.wxml$/, '.wxss'), 'utf8')
+  const mgWxss = read(P.wxml.replace(/\.wxml$/, '.wxss'))
   // 2026-11-25 产品负责人：下针动画太快（40ms×4% 一趟 1 秒）→ 现在约 2.4 秒一趟 + 两端缓动停顿
   const wsJs = read(P.wsJs)
   const GRAPHIC_HEX_INK = '#1B1916'
@@ -324,6 +324,11 @@ async function runChecks() {
     !/pos \+= dir \* 4/.test(wsJs))
   ok('E8 底部输入条抬到安全区之上（真机曾被 Home 指示条遮住）',
     /\.mg-bar \{[^}]*padding-bottom: calc\(20rpx \+ env\(safe-area-inset-bottom/.test(mgWxss))
+  // 2026-11-25：底部三排（馆里有这件 / 延伸 / 接着问）统一节奏：行距 20rpx、行尾渐隐、追问限宽
+  ok('E11 底部三排统一：馆藏与另两排同行距、都有行尾渐隐；追问胶囊限宽省略（长问题不再挤出屏幕）',
+    /\.mg-strip-box \{[^}]*margin-top: 20rpx;/.test(mgWxss) && /\.mg-goods \{[^}]*margin-top: 20rpx;/.test(mgWxss) &&
+    /\.mg-goods::after \{[^}]*linear-gradient\(90deg/.test(mgWxss) && /\.mg-strip-box::after \{[^}]*linear-gradient\(90deg/.test(mgWxss) &&
+    /\.mg-chip \{[^}]*max-width: 520rpx;/.test(mgWxss) && /\.mg-chip \{[^}]*text-overflow: ellipsis;/.test(mgWxss))
   const strips = (mgWxml.match(/<scroll-view class="mg-strip" scroll-x/g) || []).length
   ok('F8 回答区：签脚贴底（回答签底角取直 + 签脚同色纸面）；延伸与接着问各一行横滑、单行不换行',
     strips === 3 && /\.mg-bubble\.is-guide\.has-foot \{[^}]*border-bottom-left-radius: 0;/.test(mgWxss) && /\.mg-fb \{[^}]*background: #E6DBC4;/.test(mgWxss) &&
@@ -596,6 +601,7 @@ const INJECTIONS = [
   { name: '数字 answer 又回落成 JSON 原文', file: P.fn, find: '  if (obj && typeof obj.answer !== \'string\') return { answer: \'\', followUps: [], actions: [] }', replace: "  if (obj && typeof obj.answer !== 'string') obj = null" },
   { name: '纯数字也当回答', file: P.fn, find: '  if (PURE_NUM.test(s)) return false', replace: '  if (false) return false' },
   { name: '物种又拿历史与回答一起排', file: P.fn, find: '  const fromQ = matchSpecies(question, 3)\n  if (fromQ.length) return fromQ\n', replace: "  const fromQ = matchSpecies(question + '\\n' + (history || []).map((h) => h.content).join('\\n'), 3)\n  if (fromQ.length) return fromQ\n" },
+  { name: '追问不再限宽', file: P.wxml.replace(/\.wxml$/, '.wxss'), find: '  max-width: 520rpx;\n', replace: '' },
   { name: '追问又竖着叠', file: P.wxml, find: '<scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"', replace: '<view class="mg-strip">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"' },
   { name: '滚一下就 setData', file: P.page, find: '    if (far !== this.data.showJump) this.setData({ showJump: far })', replace: '    this.setData({ showJump: far })' },
   { name: '下针又变成一秒扫完', file: P.wsJs, find: 'TICKS_PER_PASS = 50', replace: 'TICKS_PER_PASS = 5' },
