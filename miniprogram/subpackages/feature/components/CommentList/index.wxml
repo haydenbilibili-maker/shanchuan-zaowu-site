@@ -4,8 +4,9 @@
   <view class="comment-stats" wx:if="{{showStats && stats.total > 0}}">
     <view class="stats-header">
       <view class="stats-title">
-        <text class="title-cn">用户评价</text>
-        <text class="title-en">REVIEWS</text>
+        <!-- 2026-11-25 材质规范：评分签（页面分区标题已是「用户评价」，这里不再重复） -->
+        <text class="title-en">COLLECTORS' RATING</text>
+        <text class="title-cn">藏家评分</text>
       </view>
       <view class="stats-rating">
         <text class="rating-value">{{stats.averageRating}}</text>
@@ -16,7 +17,7 @@
           <text class="star {{stats.averageRating >= 4 ? 'active' : ''}}">★</text>
           <text class="star {{stats.averageRating >= 5 ? 'active' : ''}}">★</text>
         </view>
-        <text class="stats-count">（{{stats.total}}条评价）</text>
+        <text class="stats-count">共 {{stats.total}} 条</text>
       </view>
     </view>
   </view>

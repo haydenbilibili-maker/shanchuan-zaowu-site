@@ -146,6 +146,8 @@ page {
 .share-btn::after { border: none; }
 
 .comment-section {
+  /* 2026-11-25 评价改纸笺后组件不再自带左右内边距（与详情页卡片同宽），这里补页边 */
+  padding: 32rpx 30rpx 40rpx;
   border-top: 1px solid var(--color-border);
   background: var(--color-bg);
 }

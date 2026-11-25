@@ -9,6 +9,7 @@
  *   M4 纸上的黄铜实心面不配黑投影（纸上的黑影像贴了一块塑料；用 --mat-brass-shadow）
  *   M5 纸笺水印（content 为文字的 ::after）必须 z-index:0，且同文件正文抬层 z-index:1 —— 否则水印压住按钮
  *   M6 裸写的纸 / 墨 / 印色值（已有令牌的那几种）按文件棘轮只减不增
+ *   M7 画布色板（canvas 读不到 WXSS 令牌）与 app.wxss 同名令牌逐字同值；证书绘制只取色板、不自调色
  *
  * 用法：
  *   node miniprogram/scripts/check-materials.mjs             校验
@@ -43,7 +44,8 @@ export const MODULES = [
   'subpackages/feature/gift/hub/index.wxss', // 礼赠 · 页头纸签
   'subpackages/feature/gift/my-gifts/index.wxss', // 礼赠 · 人情账本
   'subpackages/feature/gift/compose/index.wxss', // 礼笺编排
-  'subpackages/feature/gift/receive/index.wxss' // 礼笺拆封
+  'subpackages/feature/gift/receive/index.wxss', // 礼笺拆封
+  'subpackages/feature/components/CommentList/index.wxss' // 用户评价 · 评分签 + 信笺评价
 ]
 
 /** M6：已有令牌的裸色值（纸 / 墨 / 印 / 别针） */
@@ -91,8 +93,29 @@ export function checkTokens(app) {
   return out
 }
 
+export const PALETTE = 'subpackages/business/utils/materialPalette.js'
+export const CANVAS_USERS = ['subpackages/business/certificate/certDraw.js']
+export function checkPalette(app, palette, users) {
+  const out = []
+  const pairs = [...palette.matchAll(/^\s*[A-Z_]+: '([^']+)',? \/\/ (--mat-[a-z-]+)/gm)]
+  if (pairs.length < 9) out.push(`M7 ${PALETTE} 色板条目不足（${pairs.length}）或注释里没写对应令牌`)
+  for (const [, v, t] of pairs) {
+    const m = app.match(new RegExp(`\\n\\s*${t}:\\s*([^;\\n]+);`))
+    if (!m) out.push(`M7 色板引用了不存在的令牌 ${t}`)
+    else if (m[1].trim() !== v) out.push(`M7 色板 ${t} = ${v}，与 app.wxss 的 ${m[1].trim()} 不一致（两处一起改）`)
+  }
+  for (const [rel, src] of users) {
+    if (!/require\('\.\.\/utils\/materialPalette'\)/.test(src)) out.push(`M7 ${rel} 没取材质色板`)
+    const raw = (src.replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '').match(/'#[0-9A-Fa-f]{6}'/g) || []).filter((x) => x !== "'#EEE6D4'")
+    if (raw.length) out.push(`M7 ${rel} 自调色 ${raw.join(' ')}（改取 materialPalette）`)
+  }
+  return out
+}
+
 function scan(read) {
-  const problems = [...checkTokens(read(join(MP, 'app.wxss'), 'app.wxss'))]
+  const appSrc = read(join(MP, 'app.wxss'), 'app.wxss')
+  const problems = [...checkTokens(appSrc),
+    ...checkPalette(appSrc, read(join(MP, PALETTE), PALETTE), CANVAS_USERS.map((r) => [r, read(join(MP, r), r)]))]
   const counts = {}
   for (const abs of walk(MP)) {
     const rel = relative(MP, abs).split('\\').join('/')
@@ -125,6 +148,8 @@ if (process.argv.includes('--selftest')) {
     ['纸卡用了暗底字色', det, (t) => t + '\n.x-paper-note { background: var(--mat-paper-label); color: var(--color-text-secondary); }\n', true],
     ['纸上黄铜钮配黑投影', msg, (t) => t + '\n.x-go { background: var(--mat-brass); box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.25); }\n', true],
     ['水印浮到正文之上', msg, (t) => t.replace(/(content: '山海';\n  position: absolute;\n  )z-index: 0;/, '$1z-index: 2;'), true],
+    ['画布色板与令牌漂移', PALETTE, (t) => t.replace("INK: '#2E2618'", "INK: '#2A2114'"), true],
+    ['证书绘制又自调色', 'subpackages/business/certificate/certDraw.js', (t) => t.replace('const CINNABAR = MAT.SEAL', "const CINNABAR = '#9E3B2E'"), true],
     ['新写裸纸色', det, (t) => t + '\n.x-label { background: #F3ECDD; color: #2E2618; }\n', true],
     ['对照：令牌写法不误报', det, (t) => t + '\n.x-ok { background: var(--mat-paper-label); color: var(--mat-ink); box-shadow: var(--mat-paper-shadow); }\n', false],
     ['对照：暗底按钮黑投影不误报', det, (t) => t + '\n.x-dark-btn { background: var(--brass-400); box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.3); }\n', false]
