@@ -4360,7 +4360,8 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .cm-bars { display: flex; align-items: flex-end; gap: 10rpx; height: 108rpx; }
 .cm-bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6rpx; height: 100%; }
 .cm-bar-well { flex: 1; width: 100%; display: flex; align-items: flex-end; }
-.cm-bar-fill { width: 100%; border-radius: 4rpx 4rpx 0 0; background: linear-gradient(180deg, #E8D7AE, var(--mat-brass)); min-height: 0; }
+/* 2026-11-26 修：原写 linear-gradient(180deg, #E8D7AE, var(--mat-brass)) —— --mat-brass 本身是渐变，塞进色标整条声明失效，柱子画不出来 */
+.cm-bar-fill { width: 100%; border-radius: 4rpx 4rpx 0 0; background: var(--mat-brass); min-height: 0; }
 .cm-bar-l { font-family: var(--font-mono); font-size: var(--fs-16); color: #8C8579; }
 .cm-dash-meta { display: flex; align-items: baseline; gap: 12rpx; margin-top: 10rpx; }
 .cm-meta-k { font-size: var(--fs-18); color: #8C8579; }
@@ -4369,6 +4370,152 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .cm-dash-skel { font-size: var(--fs-20); color: #8C8579; }
 .cm-dash-empty text { display: block; font-size: var(--fs-22); color: #A09A90; }
 .cm-dash-empty-sub { display: block; margin-top: 4rpx; font-size: var(--fs-18); color: #7C776F; }
+
+/* 评价审核二改（2026-11-26）：见 reviewView.js */
+.cm-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 4rpx 14rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-20);
+  color: #B9B2A6;
+}
+.cm-all.on { color: var(--brass-200, #E0CFA3); background: rgba(196, 167, 108, 0.12); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.4); }
+.cm-all-go { font-size: var(--fs-24); line-height: 1; }
+.cm-tile.is-todo .cm-tile-n { color: var(--brass-300, #D4BC85); }
+.cm-bars { height: 124rpx; }
+/* 柱上数字贴着柱顶：井改成纵向、底对齐，数字在柱子上方 */
+.cm-bars .cm-bar-well { flex-direction: column; align-items: stretch; justify-content: flex-end; }
+.cm-bar-n { display: block; margin-bottom: 4rpx; font-family: var(--font-mono); font-size: var(--fs-16); line-height: 22rpx; text-align: center; color: var(--brass-200, #E0CFA3); }
+.cm-week-quiet {
+  padding: 18rpx 0 8rpx;
+  font-size: var(--fs-22);
+  color: #A09A90;
+}
+.cm-dash-meta { justify-content: space-between; flex-wrap: wrap; }
+.cm-meta-k { color: #B9B2A6; }
+
+.cm-card {
+  margin-bottom: 18rpx;
+  padding: 24rpx 24rpx 20rpx;
+  border-radius: var(--r-card, 16rpx);
+  background: var(--color-bg-card, #1F1D1A);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.14);
+}
+.cm-card.is-pending { box-shadow: inset 0 0 0 1rpx rgba(217, 160, 91, 0.4); }
+.cm-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16rpx; }
+.cm-card-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-26);
+  font-weight: 600;
+  color: #F1E6CC;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.cm-chip {
+  flex-shrink: 0;
+  padding: 2rpx 14rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-18);
+  line-height: 32rpx;
+  color: #B9B2A6;
+  box-shadow: inset 0 0 0 1rpx rgba(185, 178, 166, 0.35);
+}
+.cm-chip.is-pending { color: #D9A05B; box-shadow: inset 0 0 0 1rpx rgba(217, 160, 91, 0.5); }
+.cm-chip.is-approved { color: #7FA97A; box-shadow: inset 0 0 0 1rpx rgba(127, 169, 122, 0.45); }
+.cm-card-sub { display: flex; align-items: center; gap: 14rpx; margin-top: 8rpx; }
+.cm-stars { font-size: var(--fs-22); letter-spacing: 2rpx; color: var(--brass-400, #C4A76C); }
+.cm-time { font-family: var(--font-mono); font-size: var(--fs-18); color: #8C8579; }
+.cm-pin {
+  padding: 0 10rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-18);
+  line-height: 30rpx;
+  color: var(--brass-200, #E0CFA3);
+  background: rgba(196, 167, 108, 0.12);
+}
+.cm-card-text {
+  display: block;
+  margin-top: 14rpx;
+  font-size: var(--fs-26);
+  line-height: 1.6;
+  color: var(--color-text-body, #D5D1C8);
+  word-break: break-word;
+}
+.cm-photos {
+  display: inline-flex;
+  margin-top: 12rpx;
+  padding: 6rpx 16rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-20);
+  color: var(--brass-200, #E0CFA3);
+  background: rgba(196, 167, 108, 0.08);
+}
+.cm-reply {
+  margin-top: 14rpx;
+  padding: 14rpx 16rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 3rpx 0 0 rgba(196, 167, 108, 0.5);
+}
+.cm-reply-k { display: block; font-size: var(--fs-18); color: var(--brass-300, #D4BC85); letter-spacing: 0.06em; }
+.cm-reply-v { display: block; margin-top: 4rpx; font-size: var(--fs-24); line-height: 1.55; color: #B9B2A6; }
+.cm-card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12rpx;
+  margin-top: 16rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.1);
+}
+.cm-order { flex-shrink: 1; min-width: 0; font-family: var(--font-mono); font-size: var(--fs-18); color: #8C8579; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.cm-acts { display: flex; align-items: center; gap: 4rpx; margin-left: auto; flex-shrink: 0; }
+.cm-act { padding: 10rpx 12rpx; font-size: var(--fs-22); color: #A09A90; }
+.cm-act.is-secondary { color: var(--brass-300, #D4BC85); }
+.cm-act.is-danger { color: var(--color-error-on-tint, #EE8A8D); }
+.cm-go {
+  margin-left: 8rpx;
+  padding: 10rpx 30rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-24);
+  font-weight: 600;
+  color: var(--brass-200, #E0CFA3);
+  background: rgba(196, 167, 108, 0.14);
+  box-shadow: var(--ring-brass-soft);
+}
+.cm-loading { padding: 60rpx 0; text-align: center; font-size: var(--fs-22); color: #8C8579; }
+.cm-empty { display: flex; flex-direction: column; align-items: center; gap: 8rpx; padding: 64rpx 24rpx 40rpx; }
+.cm-empty-t { font-size: var(--fs-28); color: #D5D1C8; }
+.cm-empty-s { font-size: var(--fs-22); color: #A09A90; }
+.cm-empty-next { display: flex; gap: 16rpx; margin-top: 20rpx; }
+.cm-empty-btn {
+  padding: 12rpx 28rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-24);
+  color: var(--brass-200, #E0CFA3);
+  box-shadow: var(--ring-brass-soft);
+}
+.comment-reply-quote {
+  margin: 0 var(--pop-pad-x, 40rpx) 16rpx;
+  padding: 14rpx 18rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
+  background: rgba(255, 255, 255, 0.03);
+}
+.comment-reply-stars { display: block; font-size: var(--fs-20); color: var(--brass-400, #C4A76C); }
+.comment-reply-excerpt { display: block; margin-top: 4rpx; font-size: var(--fs-22); line-height: 1.5; color: #B9B2A6; }
+.comment-reply-phrases { display: flex; flex-wrap: wrap; gap: 12rpx; padding: 0 var(--pop-pad-x, 40rpx) 20rpx; }
+.comment-reply-phrase {
+  padding: 8rpx 18rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-20);
+  color: #D5D1C8;
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
+}
 
 /* 分类上下架专区（2026-11-25）：2×2 四宫格，统一按钮 */
 .shelf-grid {
@@ -4906,24 +5053,6 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .sub-tab.sm { font-size: var(--fs-22); padding: 12rpx 20rpx; }
 .inner-filter { margin-bottom: 16rpx; }
 
-.comment-admin-card {
-  background: var(--color-bg-card);
-  border: 1rpx solid rgba(196, 167, 108, 0.15);
-  border-radius: var(--radius-md);
-  padding: 24rpx;
-  margin-bottom: 20rpx;
-}
-.c-head { display: flex; align-items: center; gap: 16rpx; margin-bottom: 12rpx; }
-.c-rating { color: var(--color-primary); font-weight: 700; font-size: var(--fs-26); }
-.c-status { font-size: var(--fs-22); color: var(--color-text-secondary); }
-.c-pin { font-size: var(--fs-20); color: var(--color-success); border: 1px solid var(--color-success); padding: 2rpx 8rpx; border-radius: var(--radius-sm); }
-.c-content { display: block; color: var(--color-text-body); font-size: var(--fs-26); line-height: 1.5; margin-bottom: 12rpx; }
-.c-meta { display: block; font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); margin-bottom: 12rpx; }
-.c-reply { background: rgba(196, 167, 108, 0.08); padding: 12rpx; border-radius: var(--radius-sm); margin-bottom: 12rpx; font-size: var(--fs-24); color: var(--color-text-secondary); }
-.c-reply-label { color: var(--color-primary); }
-.c-actions { display: flex; flex-wrap: wrap; gap: 16rpx; }
-.c-act { font-size: var(--fs-22); color: var(--color-primary); padding: 8rpx 16rpx; border: 1rpx solid rgba(196, 167, 108, 0.3); border-radius: var(--radius-sm); }
-.c-act.danger { color: #D64045; border-color: rgba(214, 64, 69, 0.4); }
 
 /* 评价回复弹窗（2026-11-25 重做）：壳层用全站标准 .ui-pop-mask.is-center + .ui-pop-dialog，
    这里只写内容区（输入框 / 字数 / 提示）。底部两个按钮走 .ui-pop-btn，品牌金平涂，不再自造 .modal-mask。 */

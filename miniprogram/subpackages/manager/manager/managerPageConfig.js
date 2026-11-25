@@ -153,6 +153,7 @@ const {
   DEFAULT_MALL_RATE
 } = require('../utils/mallCommission');
 const { goManagerModule } = require('./moduleRoutes');
+const reviewView = require('./reviewView');
 const {
   CHANNEL_OPTIONS,
   // ⚠️ 不要再导入 `CRAFT_TYPE_OPTIONS` / `CRAFT_PROCESS_OPTIONS`（冻结常量）：
@@ -1689,6 +1690,10 @@ const managerPageConfig = {
     /** 用户评价全局看板（2026-11-26）：待审为 0 时也不至于一片空白 */
     commentStats: null,
     commentStatsLoading: false,
+    /** 评价审核：当前筛选的空态文案与下一步（reviewView.emptyCopy） */
+    commentEmpty: null,
+    commentListLoading: false,
+    commentReplyPhrases: reviewView.REPLY_PHRASES,
     contentFlagsLoading: false,
     contentFlagsSaving: false,
     // 有未保存的改动：开关是「先改本地、点保存才写云端」的，
@@ -10642,6 +10647,8 @@ bindSubCatChange(e) {
   },
   switchCommentFilter(e) {
     const filter = e.currentTarget.dataset.filter;
+    if (!filter) return;
+    this._commentFilterPicked = true; // 用户手动选过，之后不再自动改默认筛选
     this.setData({ commentFilter: filter }, () => this.loadComments());
   },
   /** 用户评价全局看板：总数 / 各状态 / 均分 / 回复率 / 近 7 天走势（云端一次算好） */
@@ -10652,12 +10659,14 @@ bindSubCatChange(e) {
       const res = await wx.cloud.callFunction({ name: 'moderateComment', data: { action: 'stats' } });
       const out = (res && res.result) || {};
       if (!out.success) throw new Error(out.msg || '看板读取失败');
-      const days = (out.days || []).map((d) => ({ ...d, count: Number(d.count) || 0 }));
-      const max = days.reduce((n, d) => Math.max(n, d.count), 0);
-      this.setData({
-        commentStatsLoading: false,
-        commentStats: { ...out, days: days.map((d) => ({ ...d, h: max ? Math.max(d.count ? 8 : 0, Math.round((d.count / max) * 100)) : 0 })) }
-      });
+      const stats = reviewView.statsView(out);
+      this.setData({ commentStatsLoading: false, commentStats: stats, commentEmpty: reviewView.emptyCopy(this.data.commentFilter, stats) });
+      // 进页默认落在「有活干」的那一队（待审核为 0 时不再一进来就是空列表）；用户手动选过就不动
+      if (!this._commentFilterPicked) {
+        this._commentFilterPicked = true;
+        const next = reviewView.pickDefaultFilter(stats, this.data.commentFilter);
+        if (next !== this.data.commentFilter) this.setData({ commentFilter: next }, () => this.loadComments());
+      }
     } catch (e) {
       this.setData({ commentStatsLoading: false });
     }
@@ -10666,21 +10675,22 @@ bindSubCatChange(e) {
   async loadComments() {
     try {
       wx.showNavigationBarLoading();
+      const filter = this.data.commentFilter;
+      this.setData({ commentListLoading: true });
       const res = await wx.cloud.callFunction({
         name: 'moderateComment',
-        data: { action: 'list', listFilter: this.data.commentFilter, limit: 50 }
+        data: { action: 'list', ...reviewView.listQuery(filter) }
       });
-      const list = (res.result && res.result.data) || [];
+      const list = reviewView.filterRows((res.result && res.result.data) || [], filter);
+      if (filter !== this.data.commentFilter) return; // 期间切了筛选，丢弃旧结果
       this.setData({
-        commentList: list.map((c) => ({
-          ...c,
-          timeText: c.createdAt ? new Date(c.createdAt).toLocaleString() : '',
-          targetLabel: c.targetLabel || c.productTitle || [c.targetType, c.targetId].filter(Boolean).join(' · '),
-          statusLabel: c.status === 'approved' ? '已通过' : c.status === 'hidden' ? '已隐藏' : c.status === 'rejected' ? '已拒绝' : '待审核'
-        }))
+        commentListLoading: false,
+        commentList: list.map(reviewView.decorateComment),
+        commentEmpty: reviewView.emptyCopy(filter, this.data.commentStats)
       });
     } catch (e) {
       console.error('loadComments', e);
+      this.setData({ commentListLoading: false });
       this.showHubTip('加载评价失败', 'warn');
     } finally {
       wx.hideNavigationBarLoading();
@@ -10690,9 +10700,18 @@ bindSubCatChange(e) {
     const { id, action } = e.currentTarget.dataset;
     if (!id || !action) return;
     if (action === 'reply') {
+      // 改回复时带上原文；顶部给出被回复的那条评价摘要，回复时不用凭记忆
+      const row = (this.data.commentList || []).find((c) => c._id === id) || {};
+      const excerpt = String(row.content || '').replace(/\s+/g, ' ').trim();
       this.setData({
         showCommentReplyModal: true,
-        tempCommentReply: { commentId: id, content: '' }
+        tempCommentReply: {
+          commentId: id,
+          content: String(row.merchantReply || ''),
+          editing: !!row.replied,
+          excerpt: excerpt.length > 40 ? `${excerpt.slice(0, 40)}…` : excerpt,
+          stars: row.stars || ''
+        }
       });
       return;
     }
@@ -10720,6 +10739,34 @@ bindSubCatChange(e) {
   },
   bindCommentReplyInput(e) {
     this.setData({ 'tempCommentReply.content': e.detail.value });
+  },
+  /** 常用说法：空着就填入，已有内容就接在后面 */
+  pickCommentReplyPhrase(e) {
+    const phrase = String((e && e.currentTarget && e.currentTarget.dataset.text) || '');
+    if (!phrase) return;
+    const cur = String((this.data.tempCommentReply && this.data.tempCommentReply.content) || '').trim();
+    const next = (cur ? `${cur}${phrase}` : phrase).slice(0, 500);
+    this.setData({ 'tempCommentReply.content': next });
+  },
+  /** 附图：换成临时链接后整组预览 */
+  async previewCommentImages(e) {
+    const id = e && e.currentTarget && e.currentTarget.dataset.id;
+    const row = (this.data.commentList || []).find((c) => c._id === id);
+    const imgs = (row && Array.isArray(row.images) ? row.images : []).filter(Boolean);
+    if (!imgs.length) return;
+    try {
+      const cloudIds = imgs.filter((u) => /^cloud:\/\//.test(u));
+      let map = {};
+      if (cloudIds.length) {
+        const r = await wx.cloud.getTempFileURL({ fileList: cloudIds });
+        (r.fileList || []).forEach((f) => { if (f.tempFileURL) map[f.fileID] = f.tempFileURL; });
+      }
+      const urls = imgs.map((u) => map[u] || u).filter((u) => /^https?:\/\//.test(u));
+      if (!urls.length) throw new Error('图片暂时打不开');
+      wx.previewImage({ urls, current: urls[0] });
+    } catch (err) {
+      this.showHubTip(err.message || '图片暂时打不开', 'warn');
+    }
   },
   closeCommentReplyModal() {
     this.setData({
