@@ -95,7 +95,10 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 /* 底部输入条 */
 .mg-bar {
   flex-shrink: 0;
+  /* 2026-11-25：真机底部输入条被 Home 指示条 / 圆角遮住 —— 用安全区把整条抬起来
+     （.safe-area 只是个标记类，全仓没有定义，别指望它） */
   padding: 16rpx 32rpx 20rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom, 0px));
   background: var(--color-bg, #1A1814);
   border-top: 1rpx solid rgba(196, 167, 108, 0.18);
 }

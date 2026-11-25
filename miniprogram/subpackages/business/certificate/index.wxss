@@ -197,7 +197,8 @@ view, text, image, button { box-sizing: border-box; }
 /* 底部按钮 */
 .action-bar {
   position: absolute;
-  bottom: 60rpx;
+  /* 2026-11-25：60rpx 在带 Home 指示条的机型上仍会被压住，再叠一层安全区 */
+  bottom: calc(60rpx + env(safe-area-inset-bottom, 0px));
   left: 0;
   right: 0;
   padding: 0 40rpx;

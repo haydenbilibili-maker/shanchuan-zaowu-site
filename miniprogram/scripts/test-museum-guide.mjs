@@ -306,6 +306,8 @@ async function runChecks() {
     /class="mg-fb" wx:if="\{\{!item\.isError && !item\.isWelcome && !item\.pending && !item\.revealing && item\.text\}\}"/.test(mgWxml))
   // F8 回答区重排（2026-11-23 产品负责人截图）：签脚贴在回答底边；延伸 / 接着问各一行横滑（不再竖着叠一屏按钮）
   const mgWxss = readFileSync(P.wxml.replace(/\.wxml$/, '.wxss'), 'utf8')
+  ok('E8 底部输入条抬到安全区之上（真机曾被 Home 指示条遮住）',
+    /\.mg-bar \{[^}]*padding-bottom: calc\(20rpx \+ env\(safe-area-inset-bottom/.test(mgWxss))
   const strips = (mgWxml.match(/<scroll-view class="mg-strip" scroll-x/g) || []).length
   ok('F8 回答区：签脚贴底（回答签底角取直 + 签脚同色纸面）；延伸与接着问各一行横滑、单行不换行',
     strips === 3 && /\.mg-bubble\.is-guide\.has-foot \{[^}]*border-bottom-left-radius: 0;/.test(mgWxss) && /\.mg-fb \{[^}]*background: #E6DBC4;/.test(mgWxss) &&
