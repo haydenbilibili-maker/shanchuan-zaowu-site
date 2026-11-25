@@ -138,6 +138,65 @@ function buildWork(species, results, craftKey, backdropKey, now) {
   }
 }
 
+/**
+ * 作品图形（2026-11-25 产品负责人：做好了之后最好有一个图形展示）
+ * 纯函数生成内联 SVG（data:image/svg+xml）：衬底取 backdrop，外框取 craft，中间一只蝶。
+ * 不引入任何位图资源，颜色全部走品牌铜金 + 纸色/墨色/木色三档衬底。
+ */
+const GRAPHIC_BG = { linen: '#EFE6D2', ink: '#1B1916', wood: '#B98E63' }
+const GRAPHIC_LINE = '#B08D57'
+
+function butterfly(cx, cy, scale, color) {
+  const s = (n) => Math.round(n * scale * 10) / 10
+  const wing = (dx, dy, rx, ry, rot) =>
+    `<ellipse cx="${cx + s(dx)}" cy="${cy + s(dy)}" rx="${s(rx)}" ry="${s(ry)}" transform="rotate(${rot} ${cx + s(dx)} ${cy + s(dy)})" fill="${color}" opacity="0.92"/>`
+  return [
+    wing(-26, -14, 26, 16, -22),
+    wing(26, -14, 26, 16, 22),
+    wing(-22, 16, 20, 14, 14),
+    wing(22, 16, 20, 14, -14),
+    `<rect x="${cx - s(3)}" y="${cy - s(26)}" width="${s(6)}" height="${s(52)}" rx="${s(3)}" fill="#2E2618" opacity="0.8"/>`,
+    `<path d="M${cx - s(2)} ${cy - s(26)} q ${-s(10)} ${-s(12)} ${-s(16)} ${-s(16)}" stroke="#2E2618" stroke-width="1.6" fill="none" opacity="0.7"/>`,
+    `<path d="M${cx + s(2)} ${cy - s(26)} q ${s(10)} ${-s(12)} ${s(16)} ${-s(16)}" stroke="#2E2618" stroke-width="1.6" fill="none" opacity="0.7"/>`
+  ].join('')
+}
+
+function workGraphic(work) {
+  const w = work || {}
+  const bg = GRAPHIC_BG[(w.backdrop && w.backdrop.key) || 'linen'] || GRAPHIC_BG.linen
+  const craft = (w.craft && w.craft.key) || 'cloche'
+  const dark = bg === GRAPHIC_BG.ink
+  const mat = dark ? '#26231F' : '#F7F0E0'
+  const parts = []
+  parts.push(`<rect x="0" y="0" width="320" height="200" fill="${bg}"/>`)
+
+  if (craft === 'frame') {
+    parts.push(`<rect x="26" y="22" width="268" height="156" rx="4" fill="none" stroke="${GRAPHIC_LINE}" stroke-width="5"/>`)
+    parts.push(`<rect x="40" y="36" width="240" height="128" fill="${mat}" stroke="${GRAPHIC_LINE}" stroke-width="1.5" opacity="0.9"/>`)
+    parts.push(butterfly(160, 100, 1, '#C9A227'))
+  } else if (craft === 'cloche_round') {
+    parts.push(`<circle cx="160" cy="102" r="76" fill="${mat}" stroke="${GRAPHIC_LINE}" stroke-width="3"/>`)
+    parts.push(`<path d="M96 62 q 22 -26 52 -30" stroke="#FFFFFF" stroke-width="4" fill="none" opacity="0.5"/>`)
+    parts.push(butterfly(160, 104, 0.82, '#C9A227'))
+  } else if (craft === 'wing_art') {
+    parts.push(`<rect x="30" y="24" width="260" height="152" rx="4" fill="${mat}" stroke="${GRAPHIC_LINE}" stroke-width="2"/>`)
+    parts.push(butterfly(104, 100, 0.7, '#C9A227'))
+    parts.push(butterfly(216, 100, 0.7, '#B08D57'))
+  } else if (craft === 'diorama') {
+    parts.push(`<rect x="26" y="22" width="268" height="156" rx="6" fill="${mat}" stroke="${GRAPHIC_LINE}" stroke-width="3"/>`)
+    parts.push(`<path d="M26 150 q 60 -26 134 -24 q 74 2 134 24 l0 28 l-268 0 z" fill="#6E7F52" opacity="0.55"/>`)
+    parts.push(`<path d="M60 150 q 6 -30 18 -44 M250 152 q -8 -28 -20 -42" stroke="#4E5A3A" stroke-width="3" fill="none" opacity="0.8"/>`)
+    parts.push(butterfly(160, 96, 0.72, '#C9A227'))
+  } else {
+    // cloche 方形玻璃罩（默认）
+    parts.push(`<rect x="46" y="26" width="228" height="148" rx="6" fill="${mat}" stroke="${GRAPHIC_LINE}" stroke-width="3"/>`)
+    parts.push(`<path d="M62 40 q 18 -8 40 -8" stroke="#FFFFFF" stroke-width="4" fill="none" opacity="0.45"/>`)
+    parts.push(butterfly(160, 100, 0.86, '#C9A227'))
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">${parts.join('')}</svg>`
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
+}
+
 /* ------------------------------ 陈列体验 ------------------------------ */
 
 function buildDisplayPlan(spaceKey, moodKey, budgetKey) {
@@ -227,6 +286,8 @@ function mergeProducts(batches, toImage) {
 }
 
 module.exports = {
+  workGraphic,
+  GRAPHIC_BG,
   CRAFTS,
   BACKDROPS,
   PROCESSES,

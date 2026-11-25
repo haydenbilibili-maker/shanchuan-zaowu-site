@@ -98,6 +98,7 @@
     <!-- 作品卡 -->
     <block wx:elif="{{phase === 'done' && work}}">
       <view class="ws-work bd-{{work.backdrop.key}}">
+        <image class="ws-work-graphic" src="{{workGraphic}}" mode="widthFix" aria-hidden="true" />
         <view class="ws-work-in">
           <view class="ws-work-top"><text>No.{{work.no}} · {{work.craft.label}}</text><text>{{work.dateText}}</text></view>
           <text class="ws-work-name">{{work.nameZh}}</text>

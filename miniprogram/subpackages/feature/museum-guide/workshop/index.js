@@ -31,6 +31,7 @@ Page({
     craftKey: '',
     backdropKey: 'linen',
     work: null,
+    workGraphic: '',
     // 陈列
     spaces: W.SPACES,
     moods: W.MOODS,
@@ -95,7 +96,7 @@ Page({
     const sp = ATLAS_SPECIES.find((s) => s.no === e.currentTarget.dataset.no)
     if (!sp) return
     this._species = sp
-    this.setData({ species: { no: sp.no, nameZh: sp.nameZh, nameLatin: sp.nameLatin }, phase: 'step', stepIdx: 0, results: [], stepResult: null, work: null, products: [], holdSec: '0.0', spreadDeg: 70, dryDays: 3, craftKey: '', pinStopped: false })
+    this.setData({ species: { no: sp.no, nameZh: sp.nameZh, nameLatin: sp.nameLatin }, phase: 'step', stepIdx: 0, results: [], stepResult: null, work: null, workGraphic: '', products: [], holdSec: '0.0', spreadDeg: 70, dryDays: 3, craftKey: '', pinStopped: false })
   },
 
   /** 回软：按住计时，松手判分 */
@@ -182,14 +183,16 @@ Page({
       return
     }
     const work = W.buildWork(this._species, this.data.results, this.data.craftKey, this.data.backdropKey, Date.now())
-    this.setData({ phase: 'done', work })
+    // 2026-11-25：作品卡加一张图形（衬底取 backdrop、外框取 craft，内联 SVG，无位图资源）
+    const workGraphic = W.workGraphic(work)
+    this.setData({ phase: 'done', workGraphic, work })
     this.loadProducts(work.intent)
   },
 
   onRemake() {
     this.stopTimers()
     this.newChoices()
-    this.setData({ phase: 'pick', species: null, work: null, products: [], productsEmpty: false })
+    this.setData({ phase: 'pick', species: null, work: null, workGraphic: '', products: [], productsEmpty: false })
   },
 
   /* ------------------------------ 陈列体验 ------------------------------ */

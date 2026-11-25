@@ -308,6 +308,17 @@ async function runChecks() {
   const mgWxss = readFileSync(P.wxml.replace(/\.wxml$/, '.wxss'), 'utf8')
   // 2026-11-25 产品负责人：下针动画太快（40ms×4% 一趟 1 秒）→ 现在约 2.4 秒一趟 + 两端缓动停顿
   const wsJs = read(P.wsJs)
+  const GRAPHIC_HEX_INK = '#1B1916'
+  // 2026-11-25 产品负责人：作品卡要有图形展示（内联 SVG，衬底取 backdrop、外框取 craft）
+  const WK = loadCjsModule(P.workshop)
+  const demoWork = WK.buildWork({ no: '042', nameZh: '大帛斑蝶', nameLatin: 'Idea leuconoe' }, [{ score: 20 }, { score: 20 }, { score: 14 }, { score: 13 }, { score: 20 }], 'frame', 'ink', Date.now())
+  const gFrame = decodeURIComponent(WK.workGraphic(demoWork).split(',')[1] || '')
+  const gCloche = decodeURIComponent(WK.workGraphic(Object.assign({}, demoWork, { craft: WK.CRAFTS.find((c) => c.key === 'cloche') })).split(',')[1] || '')
+  ok('E10 作品卡图形：内联 SVG（无位图）、衬底随 backdrop、外框随 craft、始终有一只蝶',
+    /^data:image\/svg\+xml/.test(WK.workGraphic(demoWork)) && gFrame.includes(GRAPHIC_HEX_INK) &&
+    gFrame.includes('<rect x="26" y="22"') && gCloche.includes('<rect x="46"') &&
+    gFrame.includes('<ellipse') && gFrame !== gCloche &&
+    /class="ws-work-graphic"/.test(read(P.wsWxml)) && /workGraphic = W\.workGraphic\(work\)/.test(read(P.wsJs)) && /workGraphic, work \}/.test(read(P.wsJs)))
   ok('E9 下针动画够慢：一趟 ≥ 2 秒，且用缓动（两端放慢），不再是一秒扫一个来回',
     /TICK_MS = 4[0-9]/.test(wsJs) && /TICKS_PER_PASS = 50/.test(wsJs) && /Math\.cos\(Math\.PI \* tri\)/.test(wsJs) &&
     !/pos \+= dir \* 4/.test(wsJs))
@@ -588,6 +599,7 @@ const INJECTIONS = [
   { name: '追问又竖着叠', file: P.wxml, find: '<scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"', replace: '<view class="mg-strip">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"' },
   { name: '滚一下就 setData', file: P.page, find: '    if (far !== this.data.showJump) this.setData({ showJump: far })', replace: '    this.setData({ showJump: far })' },
   { name: '下针又变成一秒扫完', file: P.wsJs, find: 'TICKS_PER_PASS = 50', replace: 'TICKS_PER_PASS = 5' },
+  { name: '作品卡丢了图形', file: P.wsWxml, find: '<image class="ws-work-graphic"', replace: '<image class="ws-work-graphic-x"' },
   { name: '开场卡科普不置顶', file: P.chat, find: "  return cards.filter((c) => c.key === 'nature').concat(cards.filter((c) => c.key !== 'nature'))", replace: '  return cards' },
 ]
 
