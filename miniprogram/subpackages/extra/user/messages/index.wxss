@@ -1387,89 +1387,168 @@ page {
   color: var(--color-text-secondary);
 }
 
-/* ── 顾客来信 · 行内交互与阅读节奏（2026-11-25）────────────────────────────
-   问题：每封信是「发丝线 + 四段文字」平铺，标题/寄件/正文/状态/动作五层同一灰度，
-   手指落点只有整行，动作字又细又长；日期只是小字，翻起来没有锚点。
-   做法：日期变胶囊锚点；行脚与正文用虚线分开；状态变胶囊、动作变按钮（点击域变大）；
-   未读与已读只差标题色与那颗铜点，不额外加噪声。 */
+/* ── 顾客来信 · 纸笺卡（2026-11-25 第二轮：博物自然审美 + 纸质感）────────────
+   第一轮只做了胶囊与分隔线，暗底上仍是「一片灰文字」。
+   这一轮把每封信变成一张**真的纸笺**：米色纸底、内框发丝线、宋体标题、朱砂印章式类别、
+   铜金实心动作按钮；未读在左侧一枚朱砂火漆点。日期用铜金胶囊做锚点，与纸卡形成明暗节奏。 */
+.queue-customer .message-list {
+  padding: 6rpx 28rpx calc(48rpx + env(safe-area-inset-bottom));
+}
 .queue-customer .day-rail {
-  padding: 30rpx 0 10rpx;
+  padding: 30rpx 2rpx 12rpx;
   gap: 14rpx;
 }
 .queue-customer .day-rail-t {
-  padding: 6rpx 16rpx;
+  padding: 5rpx 16rpx;
   border-radius: 999rpx;
   background: rgba(196, 167, 108, 0.1);
-  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.24);
   color: var(--brass-200, #E3D2AC);
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
 }
 .queue-customer .day-rail::after {
   background: rgba(196, 167, 108, 0.12);
 }
 
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) {
-  padding: 28rpx 2rpx 24rpx;
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.1);
+  position: relative;
+  margin-bottom: 18rpx;
+  padding: 26rpx 26rpx 22rpx;
+  gap: 16rpx;
+  background: linear-gradient(168deg, #F5EEDE 0%, #E9DEC6 100%);
+  border: none;
+  border-radius: 10rpx;
+  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.4), inset 0 0 0 1rpx rgba(138, 117, 48, 0.22);
+  color: #2E2618;
+}
+/* 纸的内框（像信笺的边框线）；右下角压一枚淡「山海」水印 */
+.queue-customer .message-item:not(.workflow-card):not(.digest-card)::before {
+  content: '';
+  position: absolute;
+  inset: 8rpx;
+  border: 1rpx solid rgba(138, 117, 48, 0.22);
+  border-radius: 6rpx;
+  pointer-events: none;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {
+  content: '山海';
+  position: absolute;
+  right: 18rpx;
+  bottom: 6rpx;
+  font-family: var(--font-brand);
+  font-size: 56rpx;
+  letter-spacing: 0.08em;
+  color: rgba(138, 117, 48, 0.08);
+  pointer-events: none;
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card):last-child {
-  border-bottom: none;
+  margin-bottom: 0;
+}
+.queue-customer .message-item-press:not(.workflow-card):not(.digest-card) {
+  transform: scale(0.992);
+  opacity: 0.96;
 }
 
-/* 类别眉标做成小印章：一眼分辨「回执 / 通知 / 活动」，又比彩色大字安静 */
+/* 未读：左侧一枚朱砂火漆点（原来是 14rpx 宽的灯柱） */
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .lamp-col {
+  width: 16rpx;
+  padding-top: 12rpx;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .lamp-col .lamp {
+  width: 12rpx;
+  height: 12rpx;
+  background: #8E3B2E;
+  box-shadow: 0 0 0 4rpx rgba(142, 59, 46, 0.12);
+}
+.queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .lamp-col .lamp {
+  visibility: hidden;
+}
+
+/* 类别：朱砂小印章（纸上的印章，比彩色字更像博物档案） */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .kind-tag {
-  padding: 2rpx 12rpx;
-  border-radius: 6rpx;
-  background: rgba(196, 167, 108, 0.1);
-  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.24);
-  letter-spacing: 0.16em;
+  padding: 3rpx 12rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
+  font-family: var(--font-brand);
+  font-size: var(--fs-18);
+  letter-spacing: 0.14em;
+  color: #8E3B2E;
+  background: rgba(142, 59, 46, 0.07);
+  box-shadow: inset 0 0 0 1rpx rgba(142, 59, 46, 0.3);
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .type-tag {
+  color: #7A6440;
+  font-size: var(--fs-18);
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-time {
+  color: #8A7A5E;
+  font-size: var(--fs-18);
 }
 
+/* 标题与正文：宋体标题压在纸上，正文用墨灰；两行截断 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-title {
+  font-family: var(--font-brand);
+  font-size: var(--fs-32);
+  font-weight: 600;
+  color: #2A2114;
+  letter-spacing: 0.02em;
   margin-bottom: 4rpx;
   line-height: 1.35;
 }
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-sender {
-  margin-bottom: 6rpx;
-  font-size: var(--fs-18);
-  color: #8C8579;
+.queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .message-title {
+  color: #4A3E28;
+  font-weight: 500;
 }
-.queue-customer .message-preview {
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-sender {
+  color: #8A7350;
+  font-size: var(--fs-18);
+  margin-bottom: 6rpx;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-preview {
+  color: #4A3E28;
+  font-size: var(--fs-24);
+  line-height: 1.6;
   -webkit-line-clamp: 2;
 }
+.queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .message-preview {
+  color: #6B5B3E;
+}
 
-/* 行脚：与正文用虚线分开；状态变胶囊，动作变按钮（点击域从 5 个字变成一颗小药丸） */
+/* 信封记号：纸上用墨线 */
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .env-mark {
+  border-color: #8A7530;
+}
+.queue-customer .env-mark.is-opened { opacity: 0.35; }
+
+/* 行脚：纸上虚线 + 状态墨字 + 铜金实心按钮 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-foot {
   margin-top: 16rpx;
   padding-top: 14rpx;
-  border-top: 1rpx dashed rgba(196, 167, 108, 0.16);
+  border-top: 1rpx dashed rgba(138, 117, 48, 0.32);
 }
 .queue-customer .status-chip {
-  padding: 6rpx 14rpx;
+  padding: 5rpx 14rpx;
   border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.16);
+  background: rgba(138, 117, 48, 0.1);
+  box-shadow: inset 0 0 0 1rpx rgba(138, 117, 48, 0.28);
 }
 .queue-customer .status-chip .lamp {
-  width: 10rpx;
-  height: 10rpx;
+  width: 8rpx;
+  height: 8rpx;
 }
 .queue-customer .status-chip text {
   font-size: var(--fs-18);
-  color: #B9B2A6;
-}
-.queue-customer .action-hint.is-go {
-  padding: 10rpx 20rpx;
-  border-radius: 999rpx;
-  font-size: var(--fs-20);
-  color: var(--brass-100, #F1E6CC);
-  background: rgba(196, 167, 108, 0.1);
-  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.4);
+  color: #5B4A22;
 }
 .queue-customer .action-hint {
   font-size: var(--fs-20);
-  color: var(--brass-300, #D4BC8A);
+  color: #8A7530;
 }
-
-/* 信封记号：已读只留轮廓，未读才实心一点火漆（原来两种都是同色描边） */
-.queue-customer .env-mark.is-opened { opacity: 0.35; }
+.queue-customer .action-hint.is-go {
+  padding: 9rpx 20rpx;
+  border-radius: 999rpx;
+  font-size: var(--fs-20);
+  font-weight: 500;
+  color: #241E14;
+  background: linear-gradient(180deg, #D8BE86, #C4A76C);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.25);
+}
