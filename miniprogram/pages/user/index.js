@@ -541,8 +541,8 @@ Page(withAppModal({
     giftDateBadge: 0,
     /** AI 标本鉴定入口；缺配置默认开启（现网已开放） */
     showAiIdentify: true,
-    /** 博物君入口：超管工作台闭馆时隐藏；缺配置默认开启（2026-11-23） */
-    museumGuideOpen: true,
+    /** 博物君入口（2026-11-26 审核驳回后改 fail-closed）：未拿到 "内容开关 AND 开馆" 的确认前一律不显示 */
+    museumGuideOpen: false,
     /** 这有店入口；缺配置默认开启（现网已有门店） */
     showStore: true,
     showLevelModal: false, // 等级权益弹窗
@@ -733,7 +733,7 @@ Page(withAppModal({
           showBookingEntry: flags.showBookingEntry !== false,
           showStoredValue: flags.showStoredValue === true,
           showAiIdentify: flags.showAiIdentify !== false,
-          museumGuideOpen: flags.museumGuideOpen !== false,
+          museumGuideOpen: flags.museumGuideOpen === true,
           // 需求 22/23：缺字段 → 开启；仅显式 false 关闭
           showAtlas: flags.showAtlas !== false,
           showAchievements: flags.showAchievements !== false,

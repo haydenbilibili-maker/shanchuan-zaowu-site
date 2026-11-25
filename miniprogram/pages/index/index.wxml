@@ -4,7 +4,7 @@
      ② line：轮播里的「今日开馆 / 馆内通知 / 博物一知 / 趣味提示」，**叠在头图上**。
      无头图时两段并回一条独立口播带。 -->
 <template name="home-cast-greet">
-  <view class="home-cast-seal is-link" bindtap="onCastSealTap" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button" aria-label="打开博物君"><image class="home-cast-seal-icon" src="{{cast.avatar}}" mode="aspectFit"></image></view>
+  <view class="home-cast-seal is-link" wx:if="{{cast.hello}}" bindtap="onCastSealTap" hover-class="tap-press-soft" hover-stay-time="80" aria-role="button" aria-label="打开博物君"><image class="home-cast-seal-icon" src="{{cast.avatar}}" mode="aspectFit"></image></view>
   <view class="home-cast-main">
     <view class="home-cast-head">
       <text class="home-cast-hello">{{cast.hello}}</text>

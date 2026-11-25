@@ -198,14 +198,14 @@ async function runChecks() {
     /signal: \{ tone: 'idle', label: '口播' \}/.test(js) &&
     /\.home-cast-live\.is-open \.home-cast-dot[^}]*#7FA97A/.test(wxss) && /\.home-cast-live\.is-notice \.home-cast-dot[^}]*#D9A05B/.test(wxss))
   ok('H4 点头像进博物君（开关关闭时不出、也不跳）',
-    /<view class="home-cast-seal is-link" bindtap="onCastSealTap"/.test(wxml) &&
+    /<view class="home-cast-seal is-link" wx:if="\{\{cast\.hello\}\}" bindtap="onCastSealTap"/.test(wxml) &&
     /onCastSealTap\(\) \{[\s\S]{0,220}museumGuideOpen === false\) return/.test(js) &&
     /museum-guide\/index\?from=home/.test(js))
   ok('H4 点按走 onCastTap、可点条目带 ›（问答 / 门店 / 目标页三类都可点）',
     /bindtap="onCastTap"/.test(wxml) && /class="home-cast-go" wx:if="\{\{item\.q \|\| item\.store \|\| item\.path\}\}"/.test(wxml))
   ok('H4 回到首页重排（昵称 / 时段）', /onShow\(\) \{[\s\S]{0,400}this\.refreshCast\(\);/.test(js))
   ok('H4 门店状态到了重排', /homeGreeting: buildHomeGreeting\(store\),[\s\S]{0,120}this\.refreshCast\(\);/.test(js))
-  ok('H4 开关到了重排（带通知与开馆状态）', /this\._castFlags = flags;\s*this\.refreshCast\(\);/.test(js) && /notices: flags\.museumGuideNotices,/.test(js) && /guideOpen: flags\.museumGuideOpen !== false/.test(js))
+  ok('H4 开关到了重排（带通知与开馆状态）', /this\._castFlags = flags;\s*this\.refreshCast\(\);/.test(js) && /notices: flags\.museumGuideNotices,/.test(js) && /guideOpen: flags\.museumGuideOpen === true/.test(js))
   ok('H4 内容没变不 setData（不让轮播跳回第一条）', /if \(sig === this\._castSig\) return;/.test(js))
   ok('H4 昵称来自 resolvePrefillNickName', /nick: resolvePrefillNickName\(getApp\(\)\)/.test(js))
   ok('H4 开馆条走 goToBooking（门店开关在那里判）', /if \(item\.store\) \{ this\.goToBooking\(\); return; \}/.test(js))
@@ -252,7 +252,7 @@ const INJECTIONS = [
   { name: '每次都 setData', file: P.homeJs, find: 'if (sig === this._castSig) return;', replace: '' },
   { name: '开馆灯变提示色', file: P.cast, find: "const TONE_OF_KIND = { store: 'open'", replace: "const TONE_OF_KIND = { store: 'tip'" },
   { name: '胶囊写死口播', file: P.homeWxml, find: '<text>{{cast.signal.label}}</text>', replace: '<text>口播</text>' },
-  { name: '头像不可点', file: P.homeWxml, find: 'class="home-cast-seal is-link" bindtap="onCastSealTap"', replace: 'class="home-cast-seal"' },
+  { name: '头像不可点', file: P.homeWxml, find: 'class="home-cast-seal is-link" wx:if="{{cast.hello}}" bindtap="onCastSealTap"', replace: 'class="home-cast-seal"' },
   { name: '轮播层改回 flex', file: P.homeWxss, find: '  display: block;\n  /* 口播层不拦头图点击', replace: '  display: flex;\n  /* 口播层不拦头图点击' },
   { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast is-above" wx:if="{{cast.hello && (showBanners', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n    <view class="home-cast is-above" wx:if="{{cast.hello && (showBanners' },
   { name: '有头图时独立口播带也出（两条重复）', file: P.homeWxml, find: '<view class="home-cast" wx:if="{{cast.hello && !(showBanners || (showLive && liveSession && liveSession.pullUrl))}}">', replace: '<view class="home-cast" wx:if="{{cast.hello}}">' },

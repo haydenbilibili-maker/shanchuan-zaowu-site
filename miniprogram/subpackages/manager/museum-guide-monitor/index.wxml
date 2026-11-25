@@ -12,6 +12,9 @@
       <text class="ops-note">AI 馆员的开关、每日额度与使用情况。只统计次数与状态，不记录问题与回答原文。</text>
     </view>
 
+    <view class="ops-tip is-warn" wx:if="{{guideFlagOff}}">
+      <text>审核开关里的「博物君」已关闭：顾客端入口（首页口播 / 我的 / 藏品详情 / 识别结果）全部隐藏，这里显示的开馆状态不生效。</text>
+    </view>
     <view class="ops-tip is-{{tipTone}}" wx:if="{{tipText}}"><text>{{tipText}}</text></view>
 
     <!-- 开关与额度 -->
