@@ -21,7 +21,8 @@ import { loadCjsModule } from './lib/cjs-loader.mjs'
 const MP = join(dirname(fileURLToPath(import.meta.url)), '..')
 const P = {
   fn: join(MP, 'cloudfunctions/getUserMessages/index.js'),
-  page: join(MP, 'subpackages/extra/user/messages/index.js')
+  page: join(MP, 'subpackages/extra/user/messages/index.js'),
+  wxss: join(MP, 'subpackages/extra/user/messages/index.wxss')
 }
 
 let INJECT = null
@@ -180,6 +181,15 @@ async function runChecks() {
     !/封没标上/.test(pageSrc))
 
   ok('R5 列表响应不带内部字段', before.messages.every((m) => !('_members' in m) && !('_source' in m)))
+
+  // R9（2026-11-25 产品负责人「优化下方交互样式」）：顾客来信行改成可点的信笺：
+  // 日期变胶囊锚点、行脚与正文用虚线分开、状态变胶囊、动作变按钮（点击域从小字变成药丸）
+  const wxss = read(P.wxss)
+  ok('R9 顾客来信行：日期胶囊 / 行脚虚线分隔 / 状态胶囊 / 动作按钮',
+    /\.queue-customer \.day-rail-t \{[^}]*border-radius: 999rpx;/.test(wxss) &&
+    /\.queue-customer \.message-item[^{]*\.message-foot \{[^}]*border-top: 1rpx dashed/.test(wxss) &&
+    /\.queue-customer \.status-chip \{[^}]*border-radius: 999rpx;/.test(wxss) &&
+    /\.queue-customer \.action-hint\.is-go \{[^}]*border-radius: 999rpx;/.test(wxss))
   return fails
 }
 
@@ -192,6 +202,7 @@ const INJECTIONS = [
   { name: '单条已读不带整组', file: P.fn, find: '      if (group && group._members && group._members.length > 1) await markMembersRead(group._members)\n', replace: '' },
   { name: '提示又被 hideLoading 吞掉', file: P.page, find: "    wx.hideLoading();\n    this._markingAll = false;\n", replace: "    this._markingAll = false;\n" },
   { name: '全部已读不扫影子', file: P.fn, find: '  const ghosts = await loadUnreadMembers(openid, category, typeFilter, requestedQueue)', replace: '  const ghosts = []' },
+  { name: '来信行脚又贴回正文（没有虚线分隔）', file: P.wxss, find: 'border-top: 1rpx dashed rgba(196, 167, 108, 0.16);', replace: 'border-top: 0;' },
   { name: '内部字段漏到前端', file: P.fn, find: '  const { _source, _members, ...rest } = msg', replace: '  const { _source, ...rest } = msg' }
 ]
 
