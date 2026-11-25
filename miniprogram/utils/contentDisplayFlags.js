@@ -34,11 +34,11 @@ function normalizeContentDisplayFlags(raw) {
     showStoredValue: src.showStoredValue === true,
     // 缺字段 / undefined → 开启；现网已开放，仅显式 false 关闭
     showAiIdentify: src.showAiIdentify !== false,
-    // 博物君开馆状态（2026-11-23）：缺字段 / undefined → 开启；超管工作台「博物君」闭馆时为 false。
-    // 刻意不叫 showXxx：它不在 content_display_flags 里、ERP / 店长端也不写它（唯一写入方是超管「博物君」页），
-    // 不属于 check:hook-registration 管的「展示开关」一族；端到端由 test:museum-guide-monitor 的 M5 钉住。
+    // C 端看到的是两把开关的 AND（2026-11-23）：内容开关文档里的 museumGuideOpen，以及超管「开馆/闭馆」。
+    // 缺字段 / undefined → 开启。编辑面板回写原值要用响应里的 museumGuideFlag，不能把这个 AND 再存回去。
+    // 刻意不叫 showXxx：不属于 check:hook-registration 的「展示开关」一族；端到端由 test:museum-guide-monitor 的 M5 钉住。
     museumGuideOpen: src.museumGuideOpen !== false,
-    // 首页「博物君口播」的馆内通知（2026-11-23）：只读，唯一写入方同上；最多 3 条，非字符串 / 空串丢掉
+    // 首页「博物君口播」的馆内通知（2026-11-23）：只读，唯一写入方是超管「博物君」页；最多 3 条，非字符串 / 空串丢掉
     museumGuideNotices: Array.isArray(src.museumGuideNotices)
       ? src.museumGuideNotices.filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim().slice(0, 22)).slice(0, 3)
       : [],

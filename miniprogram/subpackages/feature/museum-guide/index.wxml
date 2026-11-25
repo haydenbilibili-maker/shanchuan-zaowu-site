@@ -116,7 +116,7 @@
       </block>
     </view>
 
-    <!-- 闭馆（超管工作台关掉博物君，2026-11-23）：一句说明，开场问题与输入条收起；本机旧对话仍可回看 -->
+    <!-- 闭馆（内容开关或超管开馆任一关闭，2026-11-23）：一句说明，开场问题与输入条收起；本机旧对话仍可回看 -->
     <view class="mg-closed" wx:if="{{closed}}">
       <text class="mg-closed-k">CLOSED · 闭馆整理中</text>
       <text class="mg-closed-t">{{closedText}}</text>

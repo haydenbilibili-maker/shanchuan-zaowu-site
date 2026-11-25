@@ -371,7 +371,12 @@ async function runChecks() {
     /class="mg-jump[^"]*" wx:if="\{\{showJump\}\}" bindtap="onJump"/.test(mgWxml))
   // F6 闭馆：进页 status 报闭馆 → 输入条与开场问题收起，ask 不发云调用
   let askCalls = 0
-  wxStub.cloud.callFunction = async (o) => { if (o && o.data && o.data.action === 'status') return { result: { success: true, enabled: false, msg: '闭馆整理中', quota: { left: 30, cap: 30 } } }; askCalls++; return reply }
+  wxStub.cloud.callFunction = async (o) => {
+    if (o && o.name === 'getContentDisplayFlags') return { result: { success: true, flags: { museumGuideOpen: true } } }
+    if (o && o.data && o.data.action === 'status') return { result: { success: true, enabled: false, msg: '闭馆整理中', quota: { left: 30, cap: 30 } } }
+    askCalls++
+    return reply
+  }
   const pc = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
   pc.onLoad({})
   await new Promise((r) => setTimeout(r, 0))
@@ -379,6 +384,18 @@ async function runChecks() {
   const mgW = read(P.wxml)
   ok('F6 闭馆：页面收起输入条与开场问题、提问不发云调用', pc.data.closed === true && pc.data.closedText === '闭馆整理中' && askCalls === 0 &&
     /<view class="mg-bar safe-area" wx:if="\{\{!closed\}\}">/.test(mgW) && /class="mg-starters" wx:if="\{\{!hasAsked && !closed\}\}"/.test(mgW))
+  // 内容开关关掉、超管仍开馆：对话页同样闭馆，自动提问也不发出去
+  let flagAsk = 0
+  wxStub.cloud.callFunction = async (o) => {
+    if (o && o.name === 'getContentDisplayFlags') return { result: { success: true, flags: { museumGuideOpen: false } } }
+    if (o && o.data && o.data.action === 'status') return { result: { success: true, enabled: true, quota: { left: 30, cap: 30 } } }
+    flagAsk++
+    return reply
+  }
+  const pf = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
+  pf.onLoad({ from: 'atlas', auto: '1', q: encodeURIComponent('闭馆了还能问吗') })
+  await new Promise((r) => setTimeout(r, 0))
+  ok('F6b 内容开关关闭 → 对话页闭馆，自动提问不发云调用', pf.data.closed === true && pf.data.closedText === G.ERROR_COPY.off && flagAsk === 0 && pf.data.draft === '')
   // F7 反馈：投一次就记在本机、只发一次；没有日志号的回答不出票（只留复制）
   let fbCalls = 0
   wxStub.cloud.callFunction = async (o) => { if (o && o.data && o.data.action === 'feedback') fbCalls++; return { result: { success: true } } }
@@ -395,7 +412,11 @@ async function runChecks() {
   // F4 带着问题进来：auto=1 直接发问并带回图鉴物种链接；不带 auto 只预填
   let calls = 0
   reply = { result: { success: true, answer: '闪蝶的蓝来自鳞片。', species: [{ no: '001', zh: '大蓝闪蝶' }], quota: { left: 28, cap: 30 } } }
-  wxStub.cloud.callFunction = async (o) => { if (!(o && o.data && o.data.action === 'status')) calls++; return reply }
+  wxStub.cloud.callFunction = async (o) => {
+    if (o && o.name === 'getContentDisplayFlags') return { result: { success: true, flags: { museumGuideOpen: true } } }
+    if (!(o && o.data && o.data.action === 'status')) calls++
+    return reply
+  }
   const p2 = Object.assign({}, cfg, { data: JSON.parse(JSON.stringify(cfg.data)), setData(p, cb) { Object.assign(this.data, p); if (cb) cb() } })
   p2.onLoad({ from: 'atlas', auto: '1', q: encodeURIComponent('大蓝闪蝶有什么有意思的地方？') })
   await new Promise((r) => setTimeout(r, 0))
@@ -554,6 +575,7 @@ const INJECTIONS = [
   { name: '页面不存本机', file: P.page, find: '    this.persist(messages)\n', replace: '' },
   { name: '物种编号不校验', file: P.chat, find: ".filter((s) => s && /^\\d{3}$/.test(String(s.no || '')) && s.zh)", replace: ".filter((s) => s && s.zh)" },
   { name: '带问题进来不自动发', file: P.page, find: "if (q && options.auto === '1') this.ask(q)", replace: "if (false) this.ask(q)" },
+  { name: '内容开关关掉仍可问', file: P.page, find: 'if (flagClosed) v = { closed: true, closedText: v.closedText || G.ERROR_COPY.off, quota: v.quota }', replace: 'if (false) v = { closed: true, closedText: v.closedText || G.ERROR_COPY.off, quota: v.quota }' },
   { name: '未翻开的页也出问问博物君', file: P.atlasJs, find: 'if (this.data.locked || !card.nameZh) return', replace: 'if (!card.nameZh) return' },
   { name: '开场问题不轮换', file: P.chat, find: 'return pool[(d + i * 3) % pool.length]', replace: 'return pool[0]' },
   { name: '逐字显示太慢', file: P.chat, find: 'Math.min(Math.ceil(n / 3), Math.floor(REVEAL_MAX_MS / REVEAL_TICK_MS))', replace: 'Math.ceil(n / 3)' },
