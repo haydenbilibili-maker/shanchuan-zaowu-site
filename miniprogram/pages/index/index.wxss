@@ -1215,8 +1215,8 @@ page {
   left: 32rpx;
   right: 32rpx;
   z-index: 4;
-  display: flex;
-  align-items: center;
+  /* 必须是块级：里面的 swiper 没有内在宽度，放进 flex 会被压成 0 宽 → 轮播整行不可见 */
+  display: block;
   /* 口播层不拦头图点击：只有可点的那一行接手 */
   pointer-events: none;
 }

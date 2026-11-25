@@ -162,6 +162,8 @@ async function runChecks() {
     (wxml.match(/<template is="home-cast-greet" data="\{\{cast\}\}" \/>/g) || []).length === 2 &&
     (wxml.match(/<template is="home-cast-line" data="\{\{cast\}\}" \/>/g) || []).length === 2 &&
     /<template name="home-cast-greet">/.test(wxml) && /<template name="home-cast-line">/.test(wxml))
+  ok('H4 轮播层必须是块级（swiper 无内在宽度，放进 flex 会被压成 0 宽 → 整行消失）',
+    /\.hero-cast-line \{[^}]*display: block;/.test(wxss) && !/\.hero-cast-line \{[^}]*display: flex;/.test(wxss))
   ok('H4 叠层不拦头图点击（只有可点那一行接手）', /\.hero-cast-line \{[^}]*pointer-events: none;/.test(wxss) && /\.hero-cast-line \.home-cast-item \{ pointer-events: auto; \}/.test(wxss))
   ok('H4 头图加高、口播带取消后头部更省', /\.hero-section\.has-cast \{ height: 560rpx; \}/.test(wxss))
   ok('H4 点按走 onCastTap、可点条目带 ›', /bindtap="onCastTap"/.test(wxml) && /class="home-cast-go" wx:if="\{\{item\.q \|\| item\.store\}\}"/.test(wxml))
@@ -209,6 +211,7 @@ const INJECTIONS = [
   { name: '小程序端不归一通知', file: P.flagsUtil, find: ".filter((t) => typeof t === 'string' && t.trim())", replace: '' },
   { name: '回到首页不重排', file: P.homeJs, find: '    // 口播每次回到首页重排一次：昵称（刚登录 / 刚改名）与时段问候跟着变\n    this.refreshCast();\n', replace: '' },
   { name: '每次都 setData', file: P.homeJs, find: 'if (sig === this._castSig) return;', replace: '' },
+  { name: '轮播层改回 flex', file: P.homeWxss, find: '  display: block;\n  /* 口播层不拦头图点击', replace: '  display: flex;\n  /* 口播层不拦头图点击' },
   { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast is-above" wx:if="{{cast.hello && (showBanners', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n    <view class="home-cast is-above" wx:if="{{cast.hello && (showBanners' },
   { name: '有头图时独立口播带也出（两条重复）', file: P.homeWxml, find: '<view class="home-cast" wx:if="{{cast.hello && !(showBanners || (showLive && liveSession && liveSession.pullUrl))}}">', replace: '<view class="home-cast" wx:if="{{cast.hello}}">' },
   { name: '叠层拦住头图点击', file: P.homeWxss, find: '  /* 口播层不拦头图点击：只有可点的那一行接手 */\n  pointer-events: none;\n', replace: '' },
