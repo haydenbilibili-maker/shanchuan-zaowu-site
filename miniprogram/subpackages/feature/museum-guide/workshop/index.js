@@ -124,17 +124,27 @@ Page({
     this.finishStep(W.scoreSpread(this.data.spreadDeg))
   },
 
-  /** 下针：针左右来回，点「下针」时停住判分 */
+  /**
+   * 下针：针左右来回，点「下针」时停住判分。
+   * 2026-11-25 产品负责人：原来的速度太快（40ms × 4% = 一趟 1 秒），根本来不及对准 —
+   * 改成约 2.4 秒一趟，并按余弦做缓入缓出：两端慢、中间快，判分窗口更好掐。
+   */
   startPin() {
     clearInterval(this._pinTimer)
-    let pos = 0
-    let dir = 1
+    this._pinT = 0
+    this._pinDir = 1
+    const TICK_MS = 48
+    const TICKS_PER_PASS = 50           // 一趟（0→100）约 2.4 秒；两端因缓动会明显放慢
+    const toPos = (t) => {
+      // 三角波 0→1→0，再过一次缓动：两端停得久，判断时间更从容
+      const tri = t % 2 < 1 ? t % 2 : 2 - (t % 2)
+      const eased = (1 - Math.cos(Math.PI * tri)) / 2
+      return Math.round(eased * 100)
+    }
     this._pinTimer = setInterval(() => {
-      pos += dir * 4
-      if (pos >= 100) { pos = 100; dir = -1 }
-      if (pos <= 0) { pos = 0; dir = 1 }
-      this.setData({ pinPos: pos })
-    }, 40)
+      this._pinT += 1 / TICKS_PER_PASS
+      this.setData({ pinPos: toPos(this._pinT) })
+    }, TICK_MS)
   },
 
   onPinTap() {

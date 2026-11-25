@@ -306,6 +306,11 @@ async function runChecks() {
     /class="mg-fb" wx:if="\{\{!item\.isError && !item\.isWelcome && !item\.pending && !item\.revealing && item\.text\}\}"/.test(mgWxml))
   // F8 回答区重排（2026-11-23 产品负责人截图）：签脚贴在回答底边；延伸 / 接着问各一行横滑（不再竖着叠一屏按钮）
   const mgWxss = readFileSync(P.wxml.replace(/\.wxml$/, '.wxss'), 'utf8')
+  // 2026-11-25 产品负责人：下针动画太快（40ms×4% 一趟 1 秒）→ 现在约 2.4 秒一趟 + 两端缓动停顿
+  const wsJs = read(P.wsJs)
+  ok('E9 下针动画够慢：一趟 ≥ 2 秒，且用缓动（两端放慢），不再是一秒扫一个来回',
+    /TICK_MS = 4[0-9]/.test(wsJs) && /TICKS_PER_PASS = 50/.test(wsJs) && /Math\.cos\(Math\.PI \* tri\)/.test(wsJs) &&
+    !/pos \+= dir \* 4/.test(wsJs))
   ok('E8 底部输入条抬到安全区之上（真机曾被 Home 指示条遮住）',
     /\.mg-bar \{[^}]*padding-bottom: calc\(20rpx \+ env\(safe-area-inset-bottom/.test(mgWxss))
   const strips = (mgWxml.match(/<scroll-view class="mg-strip" scroll-x/g) || []).length
@@ -582,6 +587,7 @@ const INJECTIONS = [
   { name: '物种又拿历史与回答一起排', file: P.fn, find: '  const fromQ = matchSpecies(question, 3)\n  if (fromQ.length) return fromQ\n', replace: "  const fromQ = matchSpecies(question + '\\n' + (history || []).map((h) => h.content).join('\\n'), 3)\n  if (fromQ.length) return fromQ\n" },
   { name: '追问又竖着叠', file: P.wxml, find: '<scroll-view class="mg-strip" scroll-x enhanced show-scrollbar="{{false}}">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"', replace: '<view class="mg-strip">\n                  <view class="mg-strip-row">\n                    <text class="mg-chip"' },
   { name: '滚一下就 setData', file: P.page, find: '    if (far !== this.data.showJump) this.setData({ showJump: far })', replace: '    this.setData({ showJump: far })' },
+  { name: '下针又变成一秒扫完', file: P.wsJs, find: 'TICKS_PER_PASS = 50', replace: 'TICKS_PER_PASS = 5' },
   { name: '开场卡科普不置顶', file: P.chat, find: "  return cards.filter((c) => c.key === 'nature').concat(cards.filter((c) => c.key !== 'nature'))", replace: '  return cards' },
 ]
 
