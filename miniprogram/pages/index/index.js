@@ -1429,6 +1429,13 @@ Page({
   },
 
   /** 点口播：博物一知 / 小提示 → 博物君（只预填问题）；今日开馆 → 门店；馆内通知只读 */
+  /** 点口播头像 = 进博物君（2026-11-25 产品负责人：这个头像可以跳转到博物君入口） */
+  onCastSealTap() {
+    const flags = this._castFlags || {};
+    if (flags.museumGuideOpen === false) return;
+    wx.navigateTo({ url: '/subpackages/feature/museum-guide/index?from=home' });
+  },
+
   onCastTap(e) {
     const item = (this.data.cast.items || [])[Number(e.currentTarget.dataset.i)];
     if (!item) return;

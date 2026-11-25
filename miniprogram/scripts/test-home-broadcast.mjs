@@ -166,6 +166,10 @@ async function runChecks() {
     /\.hero-cast-line \{[^}]*display: block;/.test(wxss) && !/\.hero-cast-line \{[^}]*display: flex;/.test(wxss))
   ok('H4 叠层不拦头图点击（只有可点那一行接手）', /\.hero-cast-line \{[^}]*pointer-events: none;/.test(wxss) && /\.hero-cast-line \.home-cast-item \{ pointer-events: auto; \}/.test(wxss))
   ok('H4 头图加高、口播带取消后头部更省', /\.hero-section\.has-cast \{ height: 560rpx; \}/.test(wxss))
+  ok('H4 点头像进博物君（开关关闭时不出、也不跳）',
+    /<view class="home-cast-seal is-link" bindtap="onCastSealTap"/.test(wxml) &&
+    /onCastSealTap\(\) \{[\s\S]{0,220}museumGuideOpen === false\) return/.test(js) &&
+    /museum-guide\/index\?from=home/.test(js))
   ok('H4 点按走 onCastTap、可点条目带 ›', /bindtap="onCastTap"/.test(wxml) && /class="home-cast-go" wx:if="\{\{item\.q \|\| item\.store\}\}"/.test(wxml))
   ok('H4 回到首页重排（昵称 / 时段）', /onShow\(\) \{[\s\S]{0,400}this\.refreshCast\(\);/.test(js))
   ok('H4 门店状态到了重排', /homeGreeting: buildHomeGreeting\(store\),[\s\S]{0,120}this\.refreshCast\(\);/.test(js))
@@ -187,11 +191,11 @@ async function runChecks() {
   const avatarMod = loadCjsModule(P.avatar)
   const brassAvatar = avatarMod.avatarOf('#E0CFA3')
   ok('H5 口播印章用「科学家」头像（不是「博」字），颜色随印章铜金',
-    /<view class="home-cast-seal"[^>]*><image class="home-cast-seal-icon" src="\{\{cast\.avatar\}\}"/.test(read(P.homeWxml)) &&
+    /<view class="home-cast-seal[^"]*"[^>]*><image class="home-cast-seal-icon" src="\{\{cast\.avatar\}\}"/.test(read(P.homeWxml)) &&
     /castAvatar: avatarOf\('#E0CFA3'\)/.test(read(P.homeJs)) && /cast\.avatar = this\.data\.castAvatar;/.test(read(P.homeJs)) &&
     /\.home-cast-seal-icon \{[^}]*width: 36rpx;/.test(read(P.homeWxss)) &&
     /^data:image\/svg\+xml/.test(brassAvatar) && decodeURIComponent(brassAvatar.split(',')[1] || '').includes('fill="#E0CFA3"') &&
-    !/<view class="home-cast-seal"[^>]*><text>博<\/text>/.test(read(P.homeWxml)))
+    !/<view class="home-cast-seal[^"]*"[^>]*><text>博<\/text>/.test(read(P.homeWxml)))
   ok('H4 刷新报表不冲掉正在编辑的草稿', /if \(!this\.data\.noticeDirty\) patch\.noticeDrafts/.test(monPage))
   return fails
 }
@@ -211,6 +215,7 @@ const INJECTIONS = [
   { name: '小程序端不归一通知', file: P.flagsUtil, find: ".filter((t) => typeof t === 'string' && t.trim())", replace: '' },
   { name: '回到首页不重排', file: P.homeJs, find: '    // 口播每次回到首页重排一次：昵称（刚登录 / 刚改名）与时段问候跟着变\n    this.refreshCast();\n', replace: '' },
   { name: '每次都 setData', file: P.homeJs, find: 'if (sig === this._castSig) return;', replace: '' },
+  { name: '头像不可点', file: P.homeWxml, find: 'class="home-cast-seal is-link" bindtap="onCastSealTap"', replace: 'class="home-cast-seal"' },
   { name: '轮播层改回 flex', file: P.homeWxss, find: '  display: block;\n  /* 口播层不拦头图点击', replace: '  display: flex;\n  /* 口播层不拦头图点击' },
   { name: '旧问候行回来', file: P.homeWxml, find: '<view class="home-cast is-above" wx:if="{{cast.hello && (showBanners', replace: '<view class="home-greet" wx:if="{{homeGreeting.word}}"></view>\n    <view class="home-cast is-above" wx:if="{{cast.hello && (showBanners' },
   { name: '有头图时独立口播带也出（两条重复）', file: P.homeWxml, find: '<view class="home-cast" wx:if="{{cast.hello && !(showBanners || (showLive && liveSession && liveSession.pullUrl))}}">', replace: '<view class="home-cast" wx:if="{{cast.hello}}">' },
