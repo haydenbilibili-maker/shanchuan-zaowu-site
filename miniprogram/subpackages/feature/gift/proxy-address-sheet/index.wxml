@@ -13,7 +13,7 @@
         <text class="pa-label">粘贴整段地址自动识别</text>
         <text class="pa-paste-clip" bindtap="pasteClipboard" hover-class="tap-press" hover-stay-time="80">从剪贴板粘贴</text>
       </view>
-      <textarea class="pa-paste-box" maxlength="300" placeholder="如：上海市杨浦区政悦路500弄21号301 惠惠 15901285772" placeholder-class="pa-placeholder" value="{{pasteText}}" bindinput="onPasteInput" />
+      <textarea fixed="{{true}}" cursor-spacing="120" class="pa-paste-box" maxlength="300" placeholder="如：上海市杨浦区政悦路500弄21号301 惠惠 15901285772" placeholder-class="pa-placeholder" value="{{pasteText}}" bindinput="onPasteInput" />
       <view class="pa-paste-foot">
         <text class="pa-paste-tip {{pasteMissing ? 'is-partial' : ''}}" wx:if="{{pasteTip}}">{{pasteTip}}</text>
         <text class="pa-paste-btn" bindtap="parsePaste" hover-class="tap-press" hover-stay-time="80">识别</text>
@@ -41,7 +41,7 @@
     </picker>
     <view class="pa-field">
       <text class="pa-label">详细地址</text>
-      <textarea class="pa-textarea" maxlength="120" placeholder="街道、门牌号" placeholder-class="pa-placeholder" value="{{detail}}" bindinput="onDetail" />
+      <textarea fixed="{{true}}" cursor-spacing="120" class="pa-textarea" maxlength="120" placeholder="街道、门牌号" placeholder-class="pa-placeholder" value="{{detail}}" bindinput="onDetail" />
     </view>
     <view class="pa-field" wx:if="{{by === 'staff'}}">
       <text class="pa-label">原因（选填）</text>

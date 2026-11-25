@@ -94,3 +94,4 @@ npm run check:undefined-names
 npm run check:require-call-shape
 # 2026-11-24：山海有信「全部标为已读」真的落库（每处落点 / 影子未读 / 改不上如实报 / 页面提示不被 hideLoading 吞掉）；真跑 getUserMessages，6 个注入
 npm run test:inbox-mark-read
+npm run check:modal-textarea-fixed

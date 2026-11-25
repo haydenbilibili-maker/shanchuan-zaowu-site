@@ -208,7 +208,7 @@
     </view>
     <view class="field">
       <text class="field-label">开票备注（可选）</text>
-      <textarea class="textarea" placeholder="如：已发至邮箱" value="{{staffNote}}" bindinput="onStaffNoteInput" maxlength="500" />
+      <textarea fixed="{{true}}" cursor-spacing="120" class="textarea" placeholder="如：已发至邮箱" value="{{staffNote}}" bindinput="onStaffNoteInput" maxlength="500" />
     </view>
     <view class="modal-actions">
       <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" bindtap="closeModals">取消</view>
@@ -225,7 +225,7 @@
     <view class="page-tip is-warn" wx:if="{{formTip}}"><text>{{formTip}}</text></view>
     <view class="field">
       <text class="field-label">驳回原因（必填）</text>
-      <textarea class="textarea" placeholder="如：税号有误、订单未完成支付" value="{{rejectReason}}" bindinput="onRejectReasonInput" maxlength="500" />
+      <textarea fixed="{{true}}" cursor-spacing="120" class="textarea" placeholder="如：税号有误、订单未完成支付" value="{{rejectReason}}" bindinput="onRejectReasonInput" maxlength="500" />
     </view>
     <view class="modal-actions">
       <view hover-class="wb-press" hover-stay-time="80" class="btn-outline" bindtap="closeModals">取消</view>

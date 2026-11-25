@@ -3184,7 +3184,7 @@
       <view class="form-group">
         <view class="form-row"><text>金额（元）</text><input type="digit" value="{{tempPetQuote.amount}}" bindinput="bindPetQuoteInput" data-field="amount" placeholder="如 5800"/></view>
         <view class="form-row"><text>有效期</text><picker mode="date" bindchange="onPetQuoteDateChange"><view class="picker">{{tempPetQuote.validUntil || '选填'}}</view></picker></view>
-        <view class="form-row"><text>说明</text><textarea class="textarea" value="{{tempPetQuote.note}}" bindinput="bindPetQuoteInput" data-field="note" placeholder="工艺说明、周期等" style="height:120rpx"/></view>
+        <view class="form-row"><text>说明</text><textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempPetQuote.note}}" bindinput="bindPetQuoteInput" data-field="note" placeholder="工艺说明、周期等" style="height:120rpx"/></view>
       </view>
     </scroll-view>
     <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitPetQuote">发送报价</view></view>
@@ -3198,7 +3198,7 @@
   <view class="ui-pop-sheet modal-panel">
     <view class="modal-head"><text>录入营收 · {{ledgerStoreName}}</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" bindtap="closeModal">✕</view></view>
     <scroll-view scroll-y class="modal-body">
-      <view class="smart-box"><textarea placeholder="粘贴营收信息自动解析（入账门店以顶部选中为准）…" bindinput="parseRevenueText" value="{{tempRevenue.rawText}}"></textarea></view>
+      <view class="smart-box"><textarea fixed="{{true}}" cursor-spacing="120" placeholder="粘贴营收信息自动解析（入账门店以顶部选中为准）…" bindinput="parseRevenueText" value="{{tempRevenue.rawText}}"></textarea></view>
       <view class="form-group">
          <view class="form-row"><text>日期</text><picker mode="date" bindchange="bindRevInput" data-field="date"><view class="picker">{{tempRevenue.date}}</view></picker></view>
          <view class="form-row"><text>刷卡｜POS</text><input type="digit" value="{{tempRevenue.pos}}" bindinput="bindRevInput" data-field="pos"/></view>
@@ -3650,7 +3650,7 @@
           <view class="form-row"><text>属</text><input value="{{tempProduct.taxonomy.genus}}" bindinput="bindTaxonomyInput" data-field="genus" placeholder="可选"/></view>
 
           <view class="form-label">藏品简介</view>
-          <textarea
+          <textarea fixed="{{true}}" cursor-spacing="120"
             class="textarea"
             placeholder="请输入藏品简介…"
             value="{{tempProduct.description}}"
@@ -3681,7 +3681,7 @@
           </view>
 
           <view class="form-label">详情 HTML（可选，保存时自动消毒）</view>
-          <textarea class="textarea" placeholder="可粘贴 HTML 片段…" value="{{tempProduct.detailHtml}}" bindinput="bindPInput" data-field="detailHtml" style="height:200rpx; font-family:monospace; font-size:22rpx;"></textarea>
+          <textarea fixed="{{true}}" cursor-spacing="120" class="textarea" placeholder="可粘贴 HTML 片段…" value="{{tempProduct.detailHtml}}" bindinput="bindPInput" data-field="detailHtml" style="height:200rpx; font-family:monospace; font-size:22rpx;"></textarea>
         </view>
         </view>
         </block>
@@ -3752,7 +3752,7 @@
             <switch color="#C4A76C" checked="{{tempFramer.active}}" bindchange="bindFActiveChange" />
           </view>
           <view class="form-label">简介</view>
-          <textarea class="textarea" value="{{tempFramer.bio}}" bindinput="bindFInput" data-field="bio" style="height:160rpx" placeholder="访客可见的简短介绍"/>
+          <textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempFramer.bio}}" bindinput="bindFInput" data-field="bio" style="height:160rpx" placeholder="访客可见的简短介绍"/>
           <view class="form-row"><text>定制加价</text><input type="digit" value="{{tempFramer.priceDelta}}" bindinput="bindFInput" data-field="priceDelta" placeholder="0"/></view>
           <view class="form-row"><text>额外交期（天）</text><input type="number" value="{{tempFramer.extraDays}}" bindinput="bindFInput" data-field="extraDays" placeholder="0"/></view>
 
@@ -3822,7 +3822,7 @@
           <view class="form-row"><text>加价</text><input type="digit" value="{{tempCustomConfig.priceDelta}}" bindinput="bindCCInput" data-field="priceDelta"/></view>
           <view class="form-row"><text>排序</text><input type="number" value="{{tempCustomConfig.sort}}" bindinput="bindCCInput" data-field="sort"/></view>
           <view class="form-label">描述</view>
-          <textarea class="textarea" value="{{tempCustomConfig.desc}}" bindinput="bindCCInput" data-field="desc" style="height:120rpx"/>
+          <textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempCustomConfig.desc}}" bindinput="bindCCInput" data-field="desc" style="height:120rpx"/>
         </view>
       </scroll-view>
       <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitCustomConfig">保存</view></view>
@@ -3960,7 +3960,7 @@
               <radio color="#C4A76C" value="all" checked="{{tempReward.channel==='all'}}"/>线上+门店
            </radio-group>
            <view class="form-label">描述</view>
-           <textarea class="textarea" value="{{tempReward.description}}" bindinput="bindRInput" data-field="description" style="height:120rpx"/>
+           <textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempReward.description}}" bindinput="bindRInput" data-field="description" style="height:120rpx"/>
         </view>
       </scroll-view>
       <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitReward">保存</view></view>
@@ -3980,7 +3980,7 @@
             <view class="form-hint">折扣率为结算乘数 ∈ (0,1]，如 0.98 = 9.8 折；1 = 无折扣</view>
             <view class="form-row form-row-col vip-benefits-row">
               <text>特权列表</text>
-              <textarea
+              <textarea fixed="{{true}}" cursor-spacing="120"
                 class="textarea vip-benefits-textarea"
                 value="{{tempVip.benefitsStr}}"
                 bindinput="bindVInput"
@@ -4148,7 +4148,7 @@
             </radio-group>
           </view>
           
-          <view class="form-row"><text>摘要</text><textarea class="textarea" value="{{tempContent.brief || ''}}" bindinput="bindContentInput" data-field="brief" placeholder="简短介绍" style="height:120rpx"/></view>
+          <view class="form-row"><text>摘要</text><textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempContent.brief || ''}}" bindinput="bindContentInput" data-field="brief" placeholder="简短介绍" style="height:120rpx"/></view>
           <view class="form-row"><text>标签</text><input value="{{tempContent.tagsStr || ''}}" bindinput="bindContentInput" data-field="tagsStr" placeholder="用逗号分隔，如：昆虫,历史"/></view>
           <view class="form-row form-row-col" wx:if="{{contentType==='exhibition'}}">
             <text>关联藏品</text>
@@ -4171,7 +4171,7 @@
           </view>
           <view class="form-row" wx:if="{{contentType==='article'}}"><text>视频链接</text><input value="{{tempContent.videoUrl || ''}}" bindinput="bindContentInput" data-field="videoUrl" placeholder="可选：文章视频链接"/></view>
           <view class="form-label">内容 (HTML)</view>
-          <textarea class="textarea" value="{{tempContent.content || ''}}" bindinput="bindContentInput" data-field="content" placeholder="在此输入 HTML 内容…" style="height:400rpx; font-family:monospace; font-size:24rpx;"/>
+          <textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempContent.content || ''}}" bindinput="bindContentInput" data-field="content" placeholder="在此输入 HTML 内容…" style="height:400rpx; font-family:monospace; font-size:24rpx;"/>
         </view>
       </scroll-view>
       <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitContent">保存</view></view>
@@ -4236,8 +4236,8 @@
           <view class="form-row"><text>标题</text><input value="{{tempCareGuide.title || ''}}" bindinput="bindCareGuideInput" data-field="title" placeholder="如：蝴蝶昆虫 · 框画与展柜藏品"/></view>
           <view class="form-row"><text>英文副标</text><input value="{{tempCareGuide.overline || ''}}" bindinput="bindCareGuideInput" data-field="overline" placeholder="INSECTA"/></view>
           <view class="form-row"><text>指南编号</text><input value="{{tempCareGuide.guideId || ''}}" bindinput="bindCareGuideInput" data-field="guideId" placeholder="留空自动生成"/></view>
-          <view class="form-row form-row-col"><text>养护摘要</text><textarea class="textarea" value="{{tempCareGuide.summary || ''}}" bindinput="bindCareGuideInput" data-field="summary" placeholder="一句话摘要" style="height:120rpx"/></view>
-          <view class="form-row form-row-col"><text>免责声明</text><textarea class="textarea" value="{{tempCareGuide.disclaimer || ''}}" bindinput="bindCareGuideInput" data-field="disclaimer" placeholder="可选" style="height:100rpx"/></view>
+          <view class="form-row form-row-col"><text>养护摘要</text><textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempCareGuide.summary || ''}}" bindinput="bindCareGuideInput" data-field="summary" placeholder="一句话摘要" style="height:120rpx"/></view>
+          <view class="form-row form-row-col"><text>免责声明</text><textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempCareGuide.disclaimer || ''}}" bindinput="bindCareGuideInput" data-field="disclaimer" placeholder="可选" style="height:100rpx"/></view>
           <view class="form-row">
             <text>状态</text>
             <radio-group class="radio-row" bindchange="bindCareGuideStatusChange">
@@ -4247,7 +4247,7 @@
           </view>
           <view class="form-label">内容板块</view>
           <text class="form-hint">按示例格式填写：[{"key":"environment","title":"适宜环境","body":"…","tips":["…"]}]</text>
-          <textarea class="textarea mono" value="{{tempCareGuide.sectionsJson || ''}}" bindinput="bindCareGuideInput" data-field="sectionsJson" placeholder="[]" style="height:360rpx; font-family:monospace; font-size:22rpx;"/>
+          <textarea fixed="{{true}}" cursor-spacing="120" class="textarea mono" value="{{tempCareGuide.sectionsJson || ''}}" bindinput="bindCareGuideInput" data-field="sectionsJson" placeholder="[]" style="height:360rpx; font-family:monospace; font-size:22rpx;"/>
         </view>
       </scroll-view>
       <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitCareGuide">保存</view></view>
@@ -4264,7 +4264,7 @@
     <view class="comment-reply-panel" catchtap="noop">
       <view class="modal-head"><text>回复评价</text><view hover-class="tap-press" hover-stay-time="80" class="close-btn" catchtap="closeCommentReplyModal">✕</view></view>
       <view class="modal-body">
-        <textarea
+        <textarea fixed="{{true}}" cursor-spacing="120"
           class="textarea comment-reply-input"
           placeholder="输入商家回复…"
           value="{{tempCommentReply.content}}"
@@ -4301,7 +4301,7 @@
         <view class="form-row"><text>名称</text><input value="{{tempStoreEdit.name}}" bindinput="bindStoreEditInput" data-field="name" placeholder="门店名称"/></view>
         <view class="form-row"><text>电话</text><input value="{{tempStoreEdit.phone}}" bindinput="bindStoreEditInput" data-field="phone" placeholder="联系电话"/></view>
         <view class="form-row"><text>楼层/铺位</text><input value="{{tempStoreEdit.floor}}" bindinput="bindStoreEditInput" data-field="floor" placeholder="如：山坡 X-06-1"/></view>
-        <view class="form-row"><text>地址</text><textarea class="textarea" value="{{tempStoreEdit.address}}" bindinput="bindStoreEditInput" data-field="address" placeholder="完整地址" style="height:100rpx"/></view>
+        <view class="form-row"><text>地址</text><textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempStoreEdit.address}}" bindinput="bindStoreEditInput" data-field="address" placeholder="完整地址" style="height:100rpx"/></view>
         <view class="form-row"><text>营业开始</text><input value="{{tempStoreEdit.hoursOpen}}" bindinput="bindStoreEditInput" data-field="hoursOpen" placeholder="10:00"/></view>
         <view class="form-row"><text>营业结束</text><input value="{{tempStoreEdit.hoursClose}}" bindinput="bindStoreEditInput" data-field="hoursClose" placeholder="22:00"/></view>
         <view class="form-row form-row-switch">
@@ -4312,8 +4312,8 @@
           </view>
         </view>
         <view class="form-row"><text>一句话</text><input value="{{tempStoreEdit.heroTagline}}" bindinput="bindStoreEditInput" data-field="heroTagline" placeholder="英雄区短句"/></view>
-        <view class="form-row"><text>简介</text><textarea class="textarea" value="{{tempStoreEdit.intro}}" bindinput="bindStoreEditInput" data-field="intro" style="height:120rpx"/></view>
-        <view class="form-row"><text>到店提示</text><textarea class="textarea" value="{{tempStoreEdit.visitTipsText}}" bindinput="bindStoreEditInput" data-field="visitTipsText" placeholder="每行一条" style="height:160rpx"/></view>
+        <view class="form-row"><text>简介</text><textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempStoreEdit.intro}}" bindinput="bindStoreEditInput" data-field="intro" style="height:120rpx"/></view>
+        <view class="form-row"><text>到店提示</text><textarea fixed="{{true}}" cursor-spacing="120" class="textarea" value="{{tempStoreEdit.visitTipsText}}" bindinput="bindStoreEditInput" data-field="visitTipsText" placeholder="每行一条" style="height:160rpx"/></view>
       </scroll-view>
       <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="saveStoreEdit">保存</view></view>
     </view>
@@ -4335,7 +4335,7 @@
           <text class="ticket-phone" wx:if="{{tempTicketReply.contactPhone}}">联系电话 {{tempTicketReply.contactPhone}} · {{tempTicketReply.formatTime}}</text>
           <text class="ticket-phone" wx:else>{{tempTicketReply.formatTime}}</text>
         </view>
-        <textarea class="textarea" maxlength="500" value="{{tempTicketReply.content}}" bindinput="bindTicketReplyInput" placeholder="回复内容将推送到用户山海有信" style="height:200rpx"/>
+        <textarea fixed="{{true}}" cursor-spacing="120" class="textarea" maxlength="500" value="{{tempTicketReply.content}}" bindinput="bindTicketReplyInput" placeholder="回复内容将推送到用户山海有信" style="height:200rpx"/>
       </scroll-view>
       <view class="modal-foot"><view hover-class="tap-press" hover-stay-time="80" class="btn-full" bindtap="submitTicketReply">发送回复</view></view>
     </view>

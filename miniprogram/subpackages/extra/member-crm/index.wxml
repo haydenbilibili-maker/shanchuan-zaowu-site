@@ -456,7 +456,7 @@
         bindinput="onYouxinTitleInput"
         maxlength="30"
       />
-      <textarea
+      <textarea fixed="{{true}}" cursor-spacing="120"
         class="modal-textarea"
         placeholder="正文"
         value="{{youxinContent}}"

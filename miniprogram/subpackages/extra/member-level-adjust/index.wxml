@@ -166,7 +166,7 @@
       </view>
       <view class="field">
         <text class="field-label">备注（可选）</text>
-        <textarea
+        <textarea fixed="{{true}}" cursor-spacing="120"
           class="field-textarea"
           maxlength="200"
           placeholder="如：客诉补偿 / 测试账号"

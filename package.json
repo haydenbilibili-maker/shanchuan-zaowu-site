@@ -312,6 +312,8 @@
     "test:ai-center": "node miniprogram/scripts/test-ai-center.mjs",
     "test:cart-badge": "node miniprogram/scripts/test-cart-badge.mjs",
     "test:workbench-gate": "node miniprogram/scripts/test-workbench-gate.mjs",
+    "check:modal-textarea-fixed": "node miniprogram/scripts/check-modal-textarea-fixed.mjs",
+    "check:modal-textarea-fixed:selftest": "node miniprogram/scripts/check-modal-textarea-fixed.mjs --selftest",
     "test:workbench-gate:selftest": "node miniprogram/scripts/test-workbench-gate.mjs --selftest",
     "test:cart-badge:selftest": "node miniprogram/scripts/test-cart-badge.mjs --selftest",
     "test:ai-center:selftest": "node miniprogram/scripts/test-ai-center.mjs --selftest",

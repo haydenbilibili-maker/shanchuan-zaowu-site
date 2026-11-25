@@ -295,7 +295,7 @@
       </view>
       <view class="field">
         <text class="field-label">备注（可选）</text>
-        <textarea
+        <textarea fixed="{{true}}" cursor-spacing="120"
           class="field-textarea"
           maxlength="200"
           placeholder="如：创始会员 / 活动赠予"

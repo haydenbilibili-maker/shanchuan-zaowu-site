@@ -5456,6 +5456,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .product-entry-body {
   /* 父级 88vh；预留 head+tabs+foot+safe-area。仍勿用 height:0，部分 iPhone scroll-view 会塌 */
+  padding-bottom: 32rpx;
   flex-shrink: 0;
   width: 100%;
   height: calc(88vh - 360rpx - constant(safe-area-inset-bottom));

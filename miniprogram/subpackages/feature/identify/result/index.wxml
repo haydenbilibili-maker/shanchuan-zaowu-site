@@ -373,7 +373,7 @@
         value="{{feedbackZh}}"
         bindinput="onFeedbackZh"
       />
-      <textarea
+      <textarea fixed="{{true}}" cursor-spacing="120"
         class="fb-area"
         placeholder="补充说明（可选）"
         value="{{feedbackNote}}"

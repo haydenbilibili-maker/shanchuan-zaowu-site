@@ -8,7 +8,7 @@
       <view class="pm-chips">
         <view wx:for="{{petSheet.chips}}" wx:key="*this" class="pm-chip" hover-class="tap-press-soft" hover-stay-time="80" bindtap="pickPetSheetChip" data-text="{{item}}">{{item}}</view>
       </view>
-      <textarea class="pm-sheet-input {{petSheet.error ? 'has-error' : ''}}" value="{{petSheet.text}}" maxlength="{{petSheet.max}}" placeholder="{{petSheet.placeholder}}" placeholder-class="pm-sheet-ph" bindinput="onPetSheetInput" disabled="{{petSheet.busy}}" auto-height="{{false}}" />
+      <textarea fixed="{{true}}" cursor-spacing="120" class="pm-sheet-input {{petSheet.error ? 'has-error' : ''}}" value="{{petSheet.text}}" maxlength="{{petSheet.max}}" placeholder="{{petSheet.placeholder}}" placeholder-class="pm-sheet-ph" bindinput="onPetSheetInput" disabled="{{petSheet.busy}}" auto-height="{{false}}" />
       <view class="pm-sheet-foot-line">
         <text class="pm-sheet-error" wx:if="{{petSheet.error}}">{{petSheet.error}}</text>
         <text class="pm-sheet-hint" wx:else>{{petSheet.hint}}</text>

@@ -67,7 +67,7 @@
         </view>
         <view class="form-field">
           <text class="form-label">详细地址</text>
-          <textarea
+          <textarea fixed="{{true}}" cursor-spacing="120"
             class="form-textarea"
             placeholder="街道门牌等"
             value="{{form.detail}}"

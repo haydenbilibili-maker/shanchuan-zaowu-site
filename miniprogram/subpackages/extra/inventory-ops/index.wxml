@@ -458,7 +458,7 @@
     <scroll-view scroll-y class="ui-pop-body ops-sheet-body">
       <view class="ops-paste-card">
         <text class="ops-paste-hint">可忽略「群公告」；含「库存」作来源；日期行 YYYY年M月D日；明细「品名+数量+个」；⬇️ 结尾为分组行。</text>
-        <textarea
+        <textarea fixed="{{true}}" cursor-spacing="120"
           class="ops-paste-area"
           value="{{pasteText}}"
           bindinput="onPasteInput"

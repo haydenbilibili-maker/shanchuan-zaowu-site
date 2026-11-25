@@ -359,7 +359,7 @@
       </view>
       <view class="field">
         <text class="field-label">补充说明{{rejectSheet.requireReason ? '' : '（选填）'}}</text>
-        <textarea class="input reject-note" value="{{rejectSheet.note}}" bindinput="onRejectNoteInput" maxlength="120"
+        <textarea fixed="{{true}}" cursor-spacing="120" class="input reject-note" value="{{rejectSheet.note}}" bindinput="onRejectNoteInput" maxlength="120"
           placeholder="{{rejectSheet.requireReason ? '必填：点选常用原因或写明至少 2 个字' : '写给提交人的话'}}" placeholder-class="ph" auto-height="{{false}}" />
       </view>
       <view class="reject-preview" wx:if="{{rejectSheet.preview}}">
