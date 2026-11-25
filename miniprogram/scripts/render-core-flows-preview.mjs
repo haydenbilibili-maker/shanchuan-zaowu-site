@@ -942,6 +942,24 @@ const SCENES = [
       productTypes: [{ id: 't1', name: '蝶翅画', priceRange: '¥680–2,800' }, { id: 't2', name: '玻璃罩', priceRange: '¥268–1,280' }, { id: 't3', name: '木框标本', priceRange: '¥380–1,600' }], typeScrollInto: '',
       categoryOptions: [{ label: '鳞翅目' }], categoryIndex: 0, audienceOptions: [{ label: '礼赠' }], audienceIndex: 0, channelOptions: [{ label: '门店' }], channelIndex: 0, innovationOptions: [{ label: '中' }], innovationIndex: 0, examples: ['秋林', '晨雾', '星河'],
       concept: { name: '蝶翅画 · 秋林晚照', position: '礼赠主力款', price: '¥1,280', margin: '毛利约 58%', filterTags: ['礼赠', '鳞翅目', '暖色'], sellingPoints: ['真蝶翅拼贴，每幅纹样唯一', '胡桃木浅框，适合书房与玄关'], targetAudience: '30–45 岁礼赠客群', strategy: '秋季主推，门店陈列在入口第二柜', materials: ['蝶翅 · 枯叶蛱蝶', '胡桃木框'], hasRisks: true, risks: ['蝶翅来源需随附检疫证明'], hasNextActions: true, nextActions: ['打样 2 幅给店长确认'], hasChannels: true, channels: ['门店', '小程序'] } } },
+  // 2026-11-25 会员卡按材质规范：七档卡面 + 背板铭牌（组件直出；离线工具不加载 /assets 图标、头像为占位）
+  ...[[1, '🍀', '四叶草', 'Trifolium repens', '见习藏家'], [2, '🦀', '招潮蟹', 'Uca pugilator', '入门藏家'], [3, '🐞', '瓢虫', 'Coccinella septempunctata', '资深藏家'],
+    [4, '🦋', '凤蝶', 'Papilio maackii', '典藏家'], [5, '🦎', '绿鬣蜥', 'Iguana iguana', '鉴藏家'], [6, '💎', '紫晶簇', 'Quartz var. Amethyst', '馆藏家'],
+    [99, '🏵', '蔷薇章', 'Rosa gallica', '荣誉藏家']].flatMap(([lv, emoji, name, latin, levelName]) => [false, lv === 2 || lv === 5].filter((x, i) => i === 0 || x).map((flipped) => ({
+    name: `vip-${lv}${flipped ? '-back' : ''}`, h: 620, wxml: 'components/UserVipCard/index', data: {
+      cardGuest: false, cardPending: false, cardFlipped: flipped, cardSkinClass: `level-skin-${lv}`, specimenEmoji: emoji, specimenName: name, specimenLatin: latin,
+      levelName, hasCheckedIn: lv % 2 === 0, userInfo: { nickName: '山海收藏家', avatarUrl: '' }, discountRate: lv >= 3 ? 0.95 : 1, discountText: lv >= 3 ? '9.5 折' : '',
+      profileScore: 80, growthIsMax: lv === 99, growthValueDisplay: '1,280', nextThreshold: 2000, nextThresholdDisplay: '2,000', growthGapLine: '再积 720 成长值升档',
+      growthPerkDelta: '升档后 9 折', progressWidth: '64%', memberNo: 'SH-0042-1180', cardBirthday: { hasBirthday: true, headline: '生日 · 03-21', subline: '生日月享双倍积分', isToday: false },
+      cardConsumptionDisplay: '¥ 3,560', statistics: { orderCount: 7 }, cardPointsDisplay: '1,280', cardInterestTags: [{ label: '鳞翅目', color: '' }, { label: '玻璃罩', color: '' }], cardPersona: '' } }))),
+  // 2026-11-25 用户评价纸质化（材质规范）：评分签 + 信笺评价 + 晒图贴照 + 牛皮回执附条；筛选留在暗底
+  { name: 'comment-list', h: 1700, wxml: 'subpackages/feature/components/CommentList/index', data: {
+    showStats: true, stats: { total: 3, averageRating: 4.7 }, sortBy: 'time', filter: 'all', hasMore: true, loading: false,
+    comments: [
+      { _id: 'c1', rating: 5, timeText: '11-13', content: '这个标本作品有着海边的感觉，有治愈的感觉，我非常喜欢，感觉到了标本师的用心制作，这个标本作品值得购买！', images: [P[0]], likes: 3, userLiked: true, userInfo: { nickName: '标本收藏者阿庶' } },
+      { _id: 'c2', rating: 5, timeText: '11-08', isPinned: true, content: '包装很用心，比图片更好看，摆在书房刚好。', images: [], likes: 0, userLiked: false, userInfo: { nickName: '林间小满' }, merchantReply: '谢谢喜欢，书房光线柔和正合适，记得避开直晒。' },
+      { _id: 'c3', rating: 4, timeText: '10-30', content: '颜色很正，玻璃罩略小一点。', images: [P[1], P[2]], likes: 1, userLiked: false, userInfo: { nickName: '' } }
+    ] } },
   // 2026-11-23 发表评价：通栏发布按钮 + 状态说明 + 常用说法
   { name: 'comment-compose', h: 1800, wxml: 'subpackages/content/comment/index', data: {
     loadingGate: false, canReview: true, viewReview: null, productOptions: [], targetId: 'p1', submitting: false,

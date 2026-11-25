@@ -56,6 +56,9 @@ if (!chrome) {
 /* ---------- WXSS → CSS（只取信封段；rpx 按 1:1 当 px，750 设计稿宽 ↔ 686px 卡） ---------- */
 const wxss = readFileSync(WXSS, 'utf8')
 const guestCss = wxss.slice(wxss.indexOf('/* === 需求 20')).replace(/(\d*\.?\d+)rpx/g, '$1px')
+// 材质令牌（2026-11-25）：真机里组件经 page 继承 app.wxss 的 --mat-*（封蜡 = --mat-seal 系）；离线页没有 page，抄过来
+const matTokens = (readFileSync(resolve(ROOT, 'miniprogram/app.wxss'), 'utf8').match(/^\s*--mat-[\w-]+:[^;\n]+;/gm) || [])
+  .map((l) => l.trim().replace(/(\d*\.?\d+)rpx/g, '$1px')).join('\n  ')
 
 /* ---------- WXML → HTML（解绑定 + 换标签） ---------- */
 let markup = readFileSync(WXML, 'utf8')
@@ -91,6 +94,7 @@ const html = `<!doctype html>
   --brass-100: #F0E6CC;
   --brass-300: #D4BC85;
   --brass-400: #C4A76C;
+  ${matTokens}
 }
 html, body { margin: 0; padding: 0; }
 body { background: #1A1814; padding: 26px; }

@@ -760,7 +760,7 @@ const INJECTIONS = [
   { name: '领取后仍可改号', file: P.gift, find: "  if (meta.receiverOpenid) return { success: false, code: 'ALREADY_BOUND', msg: 'TA 已领取，核验手机号不能再改' }\n", replace: '' },
   { name: '未设号的礼赠也被拦', file: P.gift, find: '  if (!meta.receiverVerify) return null\n  if (meta.receiverOpenid && meta.receiverOpenid === openid) return null\n  const doc = await loadVerifyDoc(order._id)\n  if (!doc || !doc.phoneHash) return null', replace: "  const doc = await loadVerifyDoc(order._id)\n  if (!doc || !doc.phoneHash) return { success: false, code: 'VERIFY_REQUIRED' }" },
   { name: '送礼页又复活交付 / 核验接线', file: P.composeJs, find: "  goPay() {\n", replace: "  goPay() {\n    this.flagReceiverPhone()\n" },
-  { name: '送礼页又渲染地址卡 / 核验块', file: P.composeWxml, find: '<!-- ═══ 第 2 步', replace: '<view id="shipAddressField" class="ship-addr"></view>\n<!-- ═══ 第 2 步' },
+  { name: '送礼页又渲染地址卡 / 核验块', file: P.composeWxml, find: '<!-- ═══ 第 1 步 · 选礼 ═══ -->', replace: '<view id="shipAddressField" class="ship-addr"></view>\n<!-- ═══ 第 1 步 · 选礼 ═══ -->' }, // 锚点随「三步压两步」后移（原「第 2 步」注释已不在）
   { name: '确认页快递 / 犒劳自己不校验收货手机号', file: P.giftCheckout, find: "        if (!PHONE_RE.test(phone)) {\n          this._flagGiftField('giftAddressError', '收货手机号需为 11 位手机号", replace: "        if (false) {\n          this._flagGiftField('giftAddressError', '收货手机号需为 11 位手机号" },
   { name: '确认页缺地址不再就地描红', file: P.giftCheckout, find: "        this._flagGiftField('giftAddressError', forReceiver ? '请选择或新增 TA 的收货地址'", replace: "        void (forReceiver ? '请选择或新增 TA 的收货地址'" },
   { name: '确认页不带能力标记', file: P.confirmOrder, find: "clientCaps: this.data.isGiftOrder ? ['gift_receiver_phone_v1', 'gift_claim_link_v1', 'gift_delivery_v2'] : undefined,", replace: 'clientCaps: undefined,' },

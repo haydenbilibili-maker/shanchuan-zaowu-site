@@ -2,7 +2,7 @@
  * 证书绘制（纯函数，不依赖 wx —— check:gift-holder 在 Node 里录制指令 / 离线出图）
  *
  * 2026-10-17 按新视觉规范重绘（产品负责人点名）：三种证书统一成**纸质标本签**一种纸 ——
- * 浅纸渐变 #F3ECDD → #E8DFCB + 墨色 #2E2618 + 内发丝框 + 顶上一枚铜别针；
+ * 浅纸渐变（标本签纸）+ 墨色 + 内发丝框 + 顶上一枚铜别针；
  * 眉标（等宽英文）+ 主标（宋体）+ 藏品实拍（标本框）+ 发丝线两栏行 + 方寸篆印（全张唯一一处实色）。
  * 与礼笺、心愿签、藏家档案是同一种纸；旧版的深底金框 / 朱砂双框 / 英文花体已退场。
  *
@@ -17,15 +17,19 @@ const { drawBrandSeal } = require('../utils/brandSeal')
 
 const DESIGN_W = 300
 const DESIGN_H = 480
-const PAPER_TOP = '#F3ECDD'
-const PAPER_BOTTOM = '#E8DFCB'
-const INK = '#2E2618'
-const INK_SOFT = '#5E5444'
-const INK_MUTE = '#8A7F6C'
-const BRASS = '#8B6F47'
-const BRASS_PIN = '#B08D57'
-const HAIR = 'rgba(46, 38, 24, 0.22)'
-const CINNABAR = '#9E3B2E'
+// 2026-11-25 材质规范对齐（产品负责人「证书画布颜色也按材质规范对齐」）：色值一律取材质色板（与 WXSS --mat-* 同值），
+// 不再自调：副墨 #5E5444 → ink-body、注记灰 #8A7F6C 与眉标铜 #8B6F47 → ink-label、发丝 → paper-frame、朱 #9E3B2E → seal。
+// 只换颜色，版式 / 字号 / 坐标不动（金样 fixtures/certHolderGolden.json 同步重录，差异仅颜色）。
+const MAT = require('../utils/materialPalette')
+const PAPER_TOP = MAT.PAPER_TONE
+const PAPER_BOTTOM = MAT.PAPER_TONE_DEEP
+const INK = MAT.INK
+const INK_SOFT = MAT.INK_BODY
+const INK_MUTE = MAT.INK_LABEL
+const BRASS = MAT.INK_LABEL
+const BRASS_PIN = MAT.BRASS_PIN
+const HAIR = MAT.PAPER_FRAME
+const CINNABAR = MAT.SEAL
 
 async function loadImage(canvas, getImagePath, src) {
   const url = await getImagePath(src)

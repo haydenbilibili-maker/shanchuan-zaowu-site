@@ -978,7 +978,7 @@
 }
 .vip-card.level-skin-1 .org-name .en,
 .vip-card.level-skin-1 .growth-link-hint,
-.vip-card.level-skin-1 .vip-card.level-skin-1 .ap-text,
+.vip-card.level-skin-1 .ap-text,
 .vip-card.level-skin-1 .cb-overline,
 .vip-card.level-skin-1 .cb-row-link { color: #8A7530; }
 .vip-card.level-skin-1 .org-name .tagline,
@@ -1107,7 +1107,7 @@
 }
 .vip-card.level-skin-2 .org-name .en,
 .vip-card.level-skin-2 .growth-link-hint,
-.vip-card.level-skin-2 .vip-card.level-skin-2 .ap-text,
+.vip-card.level-skin-2 .ap-text,
 .vip-card.level-skin-2 .cb-overline,
 .vip-card.level-skin-2 .cb-row-link { color: #8A7530; }
 .vip-card.level-skin-2 .org-name .tagline,
@@ -1322,7 +1322,7 @@
 }
 .vip-card.level-skin-3 .org-name .en,
 .vip-card.level-skin-3 .growth-link-hint,
-.vip-card.level-skin-3 .vip-card.level-skin-3 .ap-text,
+.vip-card.level-skin-3 .ap-text,
 .vip-card.level-skin-3 .cb-overline,
 .vip-card.level-skin-3 .cb-row-link,
 .vip-card.level-skin-3 .cb-specimen-latin { color: #F0DCAE; }
@@ -1490,7 +1490,7 @@
 }
 .vip-card.level-skin-4 .org-name .en,
 .vip-card.level-skin-4 .growth-link-hint,
-.vip-card.level-skin-4 .vip-card.level-skin-4 .ap-text,
+.vip-card.level-skin-4 .ap-text,
 .vip-card.level-skin-4 .cb-overline,
 .vip-card.level-skin-4 .cb-row-link { color: #D4B0B0; }
 .vip-card.level-skin-4 .org-name .tagline,
@@ -1681,7 +1681,7 @@
 }
 .vip-card.level-skin-5 .org-name .en,
 .vip-card.level-skin-5 .growth-link-hint,
-.vip-card.level-skin-5 .vip-card.level-skin-5 .ap-text,
+.vip-card.level-skin-5 .ap-text,
 .vip-card.level-skin-5 .cb-overline,
 .vip-card.level-skin-5 .cb-row-link { color: #E3EAEF; }
 .vip-card.level-skin-5 .org-name .tagline,
@@ -1901,7 +1901,7 @@
 }
 .vip-card.level-skin-6 .org-name .en,
 .vip-card.level-skin-6 .growth-link-hint,
-.vip-card.level-skin-6 .vip-card.level-skin-6 .ap-text,
+.vip-card.level-skin-6 .ap-text,
 .vip-card.level-skin-6 .cb-overline,
 .vip-card.level-skin-6 .cb-row-link,
 .vip-card.level-skin-6 .cb-specimen-latin { color: #F2E4B8; }
@@ -2117,7 +2117,7 @@
 }
 .vip-card.level-skin-99 .org-name .en,
 .vip-card.level-skin-99 .growth-link-hint,
-.vip-card.level-skin-99 .vip-card.level-skin-99 .ap-text,
+.vip-card.level-skin-99 .ap-text,
 .vip-card.level-skin-99 .cb-overline,
 .vip-card.level-skin-99 .cb-row-link,
 .vip-card.level-skin-99 .cb-specimen-latin { color: var(--color-primary); }
@@ -2949,6 +2949,9 @@
 }
 
 /* —— 封缄红蜡：钉在封盖尖端（红蜡压印，非金属铜印） ——
+ * 2026-11-25 材质规范对齐（产品负责人「信封态的封蜡也对齐到 --mat-seal」）：蜡色从深绯红（#BE3038→#47070D）
+ * 改为全站朱砂同一色相 —— 中段 = --mat-seal，受光 / 沉边 = --mat-seal-light / --mat-seal-deep；
+ * 明暗阴影的暗红一并换成朱砂系。厚料、冷蜡硬边、凹槽压印、溢蜡融成一坨四件事的结构不变。
  * 真实封蜡的四件事，缺一件就变「红圆片」：
  *   ① 蜡体是**厚料**：中心受光上浮、边缘沉下去（多段径向渐变，不是单色填充）；
  *   ② 边缘有**冷蜡硬边**（0 0 0 2rpx 暗红描边）+ 蜡块落影（蜡是凸出纸面的实物）；
@@ -2969,14 +2972,14 @@
   border-radius: 46% 54% 51% 49% / 52% 48% 54% 46%;
   background:
     radial-gradient(24% 18% at 34% 22%, rgba(255, 244, 238, 0.5) 0%, rgba(255, 244, 238, 0) 100%),
-    radial-gradient(20% 16% at 74% 74%, rgba(255, 178, 168, 0.2) 0%, rgba(255, 178, 168, 0) 100%),
-    radial-gradient(70% 70% at 42% 34%, #BE3038 0%, #961E29 40%, #70121B 74%, #47070D 100%);
+    radial-gradient(20% 16% at 74% 74%, rgba(255, 192, 168, 0.2) 0%, rgba(255, 192, 168, 0) 100%),
+    radial-gradient(70% 70% at 42% 34%, var(--mat-seal-light) 0%, var(--mat-seal) 40%, var(--mat-seal-deep) 76%, var(--mat-seal-deep) 100%);
   box-shadow:
     0 10rpx 20rpx rgba(6, 4, 3, 0.6),
-    0 0 0 3rpx rgba(74, 9, 15, 0.75),
+    0 0 0 3rpx rgba(72, 26, 18, 0.75),
     0 0 0 7rpx rgba(8, 5, 4, 0.3),
     inset 0 3rpx 5rpx rgba(255, 216, 206, 0.34),
-    inset 0 -9rpx 14rpx rgba(42, 3, 7, 0.68);
+    inset 0 -9rpx 14rpx rgba(42, 14, 9, 0.68);
   transition: opacity var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard);
   pointer-events: none;
 }
@@ -2985,7 +2988,7 @@
 .ge-seal::after {
   content: '';
   position: absolute;
-  background: radial-gradient(58% 58% at 40% 30%, #B62C36 0%, #8A1A24 54%, #620F18 100%);
+  background: radial-gradient(58% 58% at 40% 30%, var(--mat-seal-light) 0%, var(--mat-seal) 54%, var(--mat-seal-deep) 100%);
   box-shadow:
     inset 0 2rpx 3rpx rgba(255, 216, 206, 0.3),
     0 5rpx 10rpx rgba(6, 4, 3, 0.45);
@@ -3012,7 +3015,7 @@
   bottom: 12rpx;
   left: 12rpx;
   border-radius: 50%;
-  border: 2rpx solid rgba(62, 6, 10, 0.55);
+  border: 2rpx solid rgba(60, 22, 15, 0.55);
   box-shadow:
     0 1rpx 0 rgba(255, 214, 204, 0.22),
     inset 0 1rpx 1rpx rgba(255, 214, 204, 0.18);
@@ -3028,8 +3031,8 @@
   color: rgba(255, 232, 224, 0.92);
   text-shadow:
     0 1rpx 0 rgba(255, 236, 228, 0.34),
-    0 -1rpx 2rpx rgba(56, 4, 8, 0.72),
-    0 2rpx 3rpx rgba(56, 4, 8, 0.45);
+    0 -1rpx 2rpx rgba(54, 18, 12, 0.72),
+    0 2rpx 3rpx rgba(54, 18, 12, 0.45);
 }
 .phase-seal .ge-seal,
 .phase-lid .ge-seal,
@@ -3193,3 +3196,86 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+ * 会员卡 · 材质规范收口（2026-11-25 产品负责人「会员卡也按材质规范优化一下」，
+ * 规范 docs/材质规范_纸与金属_2026-11-25.md §会员卡）
+ * 七档卡面的底材（道林纸 / 云龙纸 / 胡桃木 / 紫檀 / 白银 / 黄金 / 黑蟒皮）是各档身份，不动；
+ * 这里只把「材质上的字与控件」按规范收口：
+ *   1) 纸档（Lv1 / Lv2）纸上的字只用墨四档（--mat-ink*），不再混用暗底令牌 --color-text-muted / 铜金字；
+ *   2) 「签到 / 亮码」字色：各档原规则的选择器写成了 `.level-skin-N .vip-card.level-skin-N .ap-text`（重复复合，永不命中），
+ *      七档全部回落成暗底铜金 —— 纸上糊、金上糊。已在各档原处修正选择器；纸档在这里再落到墨色；
+ *   3) 黄金档（Lv6）次级字是浅金字压亮金底、没有刻影，几乎读不出 → 与主字同一套「镭雕上暗下亮」刻影；
+ *   4) 背板「完善藏家档案」只有暗底铜金一套 → 纸档 / 黄金档按材质给墨字与底。
+ * ========================================================================== */
+.vip-card.level-skin-1 .org-name .cn,
+.vip-card.level-skin-2 .org-name .cn,
+.vip-card.level-skin-1 .nick-display,
+.vip-card.level-skin-2 .nick-display,
+.vip-card.level-skin-1 .growth-num,
+.vip-card.level-skin-2 .growth-num,
+.vip-card.level-skin-1 .cb-title,
+.vip-card.level-skin-2 .cb-title,
+.vip-card.level-skin-1 .cb-stat-val,
+.vip-card.level-skin-2 .cb-stat-val { color: var(--mat-ink); }
+.vip-card.level-skin-1 .org-name .en,
+.vip-card.level-skin-2 .org-name .en,
+.vip-card.level-skin-1 .growth-link-hint,
+.vip-card.level-skin-2 .growth-link-hint,
+.vip-card.level-skin-1 .ap-text,
+.vip-card.level-skin-2 .ap-text,
+.vip-card.level-skin-1 .cb-overline,
+.vip-card.level-skin-2 .cb-overline,
+.vip-card.level-skin-1 .cb-row-link,
+.vip-card.level-skin-2 .cb-row-link,
+.vip-card.level-skin-1 .org-name .tagline,
+.vip-card.level-skin-1 .growth-overline,
+.vip-card.level-skin-1 .growth-label,
+.vip-card.level-skin-1 .growth-target,
+.vip-card.level-skin-1 .cb-row-label,
+.vip-card.level-skin-1 .cb-tags-label,
+.vip-card.level-skin-1 .cb-since { color: var(--mat-ink-label); }
+.vip-card.level-skin-1 .growth-gap-line,
+.vip-card.level-skin-1 .growth-status,
+.vip-card.level-skin-1 .growth-perk-delta,
+.vip-card.level-skin-1 .cb-row-val,
+.vip-card.level-skin-2 .cb-row-val { color: var(--mat-ink-body); }
+.vip-card.level-skin-1 .cb-specimen-latin,
+.vip-card.level-skin-2 .cb-specimen-latin,
+.vip-card.level-skin-1 .cb-row-sub,
+.vip-card.level-skin-1 .cb-stat-label,
+.vip-card.level-skin-1 .cb-persona,
+.vip-card.level-skin-1 .cb-tags-empty,
+.vip-card.level-skin-1 .cb-specimen { color: var(--mat-ink-soft); }
+
+.vip-card.level-skin-6 .org-name .tagline,
+.vip-card.level-skin-6 .org-name .en,
+.vip-card.level-skin-6 .ap-text,
+.vip-card.level-skin-6 .growth-link-hint,
+.vip-card.level-skin-6 .growth-overline,
+.vip-card.level-skin-6 .growth-label,
+.vip-card.level-skin-6 .growth-target,
+.vip-card.level-skin-6 .cb-overline,
+.vip-card.level-skin-6 .cb-row-label,
+.vip-card.level-skin-6 .cb-tags-label,
+.vip-card.level-skin-6 .cb-since,
+.vip-card.level-skin-6 .cb-row-sub,
+.vip-card.level-skin-6 .cb-stat-label {
+  color: #F7EBC9;
+  text-shadow: 0 1rpx 2rpx rgba(28, 19, 4, 0.78);
+}
+
+.vip-card.level-skin-1 .cb-profile-cta,
+.vip-card.level-skin-2 .cb-profile-cta {
+  color: var(--mat-ink-body);
+  border-color: var(--mat-paper-frame);
+  background: rgba(255, 255, 255, 0.4);
+}
+.vip-card.level-skin-1 .cb-profile-cta-press,
+.vip-card.level-skin-2 .cb-profile-cta-press { background: rgba(138, 111, 69, 0.12); }
+.vip-card.level-skin-6 .cb-profile-cta {
+  color: #3A2A0E;
+  border-color: rgba(58, 42, 14, 0.4);
+  background: rgba(240, 230, 204, 0.82);
+}
+.vip-card.level-skin-6 .cb-profile-cta-press { background: rgba(240, 230, 204, 0.6); }
