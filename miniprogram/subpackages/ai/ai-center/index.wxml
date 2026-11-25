@@ -180,7 +180,10 @@
       <view class="ac-row {{item.role === 'user' ? 'is-user' : 'is-ai'}}" wx:for="{{messages}}" wx:key="index" id="m{{index}}">
         <view class="ac-seal is-sm" wx:if="{{item.role !== 'user'}}" style="background: {{role.tone}};" bindtap="onToggleProfile"><text>{{role.seal}}</text></view>
         <view class="ac-col">
-          <text class="ac-who" wx:if="{{item.role !== 'user'}}">{{role.person}}</text>
+          <view class="ac-who-row" wx:if="{{item.role !== 'user'}}">
+            <text class="ac-who">{{role.person}}</text>
+            <text class="ac-ai-tag" wx:if="{{item.role === 'assistant' && !item.pending}}">AI 生成</text>
+          </view>
           <text class="ac-relay" wx:if="{{item.relayFrom}}">{{item.relayFrom}} 转来的问题</text>
           <view class="ac-bubble {{item.role === 'user' ? 'is-user' : 'is-ai'}} {{item.isError ? 'is-error' : ''}}">
             <view wx:if="{{item.pending}}" class="ac-pending">

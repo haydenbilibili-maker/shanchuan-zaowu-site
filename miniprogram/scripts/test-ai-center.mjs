@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url'
 import { loadCjsModule } from './lib/cjs-loader.mjs'
 
 const MP = join(dirname(fileURLToPath(import.meta.url)), '..')
+const DEBATE_WXML = join(MP, 'subpackages/ai/ai-debate/index.wxml')
 const ROOT = join(MP, '..')
 const P = {
   appJson: join(MP, 'app.json'),
@@ -292,6 +293,10 @@ function runChecks() {
     ma.list && ma.list[0].text === '周六 有课' && ma.list[0].until === '2026-12-12' && !!V.memoAdd([], '', '').error &&
     !!V.memoAdd([], '字'.repeat(61), '').error && !!V.memoAdd(Array.from({ length: 6 }, () => ({})), 'a', '').error && V.MEMO_LEN === MM.MEMO_LEN && V.MEMO_MAX === MM.MEMO_MAX &&
     /class="ac-memo-edit" wx:if="\{\{isSuper && !memoEdit\}\}"/.test(wxml) && /mode: 'staffMemo', items: this\.data\.memoDraft/.test(page) && /if \(!this\.data\.isSuper\) return/.test(page), fails)
+  // A10 审核要求（2026-11-25）：AI 生成页面须有显著「AI 生成」标识
+  ok('A10 AI 生成标识：AI 智能中心的每条 AI 回答、董事会辩论的发言与收口都有「AI 生成」字样',
+    /class="ac-ai-tag"[^>]*>AI 生成</.test(read(P.wxml)) && /item\.role === 'assistant' && !item\.pending/.test(read(P.wxml)) &&
+    /class="db-ai-tag">AI 生成</.test(read(DEBATE_WXML)), fails)
   return fails
 }
 

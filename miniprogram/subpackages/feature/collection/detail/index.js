@@ -31,6 +31,7 @@ function unlockWaysOf(card) {
 Page({
   data: {
     guideAvatar: GUIDE_AVATAR,
+    guideOpen: true,
     loading: true,
     loadError: false,
     locked: true,
@@ -47,7 +48,23 @@ Page({
     shareImageUrl: ''
   },
 
+  /**
+   * 博物君开关（2026-11-25 审核驳回）：关掉后 C 端不得残留任何 AI 问答入口 ——
+   * 图鉴详情这枚「问问博物君」也要一起隐藏。缓存先水合（避免闪烁），再后台取最新。
+   */
+  loadGuideOpen() {
+    try {
+      const { getCachedContentDisplayFlags, fetchContentDisplayFlags } = require('../../../../utils/contentDisplayFlags')
+      const cached = getCachedContentDisplayFlags()
+      if (cached && cached.flags) this.setData({ guideOpen: cached.flags.museumGuideOpen !== false })
+      fetchContentDisplayFlags().then((payload) => {
+        if (payload && payload.flags) this.setData({ guideOpen: payload.flags.museumGuideOpen !== false })
+      }).catch(() => {})
+    } catch (e) { /* 取不到就按默认开启 */ }
+  },
+
   onLoad(options) {
+    this.loadGuideOpen();
     this.speciesId = options.id || options.speciesId || ''
     // 翻页条（2026-11-22）：首页记下的标本册顺序里找邻页；分享直达没有顺序 → 不出
     const nb = neighbors(readOrder(getApp()), this.speciesId)

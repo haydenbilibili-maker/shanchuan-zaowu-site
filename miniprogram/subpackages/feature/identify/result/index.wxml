@@ -133,7 +133,7 @@
         <text class="ency-empty-d">{{isOwner && recordId ? '可以让 AI 再整理一次物种档案，或者直接问问博物君。' : '可以问问博物君，听它讲讲这个物种。'}}</text>
         <view class="ency-empty-acts">
           <view class="ency-empty-btn" wx:if="{{isOwner && recordId}}" bindtap="retryEnrichProfile" hover-class="tap-press" hover-stay-time="80">整理档案</view>
-          <view class="ency-empty-btn is-ghost" wx:if="{{speciesInfo.species_name_zh}}" bindtap="onAskGuide" hover-class="tap-press" hover-stay-time="80">问问博物君</view>
+          <view class="ency-empty-btn is-ghost" wx:if="{{guideOpen && speciesInfo.species_name_zh}}" bindtap="onAskGuide" hover-class="tap-press" hover-stay-time="80">问问博物君</view>
         </view>
       </view>
 
@@ -324,7 +324,7 @@
 
       <view class="tool-grid">
         <!-- 问问博物君（2026-11-23）：识别出物种才出，带着物种名去追问 -->
-        <view class="tool" wx:if="{{speciesInfo.species_name_zh && speciesInfo.is_specimen !== false}}" bindtap="onAskGuide" hover-class="tool-press" hover-stay-time="80" aria-role="button">
+        <view class="tool" wx:if="{{guideOpen && speciesInfo.species_name_zh && speciesInfo.is_specimen !== false}}" bindtap="onAskGuide" hover-class="tool-press" hover-stay-time="80" aria-role="button">
           <text class="tool-en">ASK</text>
           <text class="tool-t">问问博物君</text>
         </view>

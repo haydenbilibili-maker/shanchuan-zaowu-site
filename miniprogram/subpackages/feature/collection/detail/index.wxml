@@ -125,7 +125,7 @@
       </view>
 
       <!-- 问问博物君（2026-11-23）：只在已翻开的页出现（未翻开不露名字） -->
-      <view class="ask-guide" bindtap="askGuide" hover-class="tap-press-soft" hover-stay-time="80">
+      <view class="ask-guide" wx:if="{{guideOpen}}" bindtap="askGuide" hover-class="tap-press-soft" hover-stay-time="80">
         <image class="ask-guide-seal-icon" src="{{guideAvatar}}" mode="aspectFit" aria-hidden="true"></image>
         <text class="ask-guide-t">问问博物君：关于{{card.nameZh}}</text>
         <text class="ask-guide-go">›</text>

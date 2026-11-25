@@ -57,7 +57,8 @@ function runChecks() {
   ok('D2 再拍一张：低置信 / 非标本时不出（不与「重新拍摄」重复）', /wx:if="\{\{confidenceLevel !== 'low' && speciesInfo\.is_specimen !== false\}\}"/.test(again) &&
     /<view class="retake-block" wx:if="\{\{confidenceLevel === 'low' \|\| speciesInfo\.is_specimen === false\}\}">/.test(wxml))
   const ask = tools.find((t) => /bindtap="onAskGuide"/.test(t)) || ''
-  ok('D3 问问博物君只在识别出物种时出', /wx:if="\{\{speciesInfo\.species_name_zh && speciesInfo\.is_specimen !== false\}\}"/.test(ask))
+  // 2026-11-25 审核驳回：博物君关掉后 C 端不得残留入口 → 条件前面多一层 guideOpen
+  ok('D3 问问博物君只在识别出物种、且博物君开馆时出', /wx:if="\{\{guideOpen && speciesInfo\.species_name_zh && speciesInfo\.is_specimen !== false\}\}"/.test(ask))
   const cab = tools.find((t) => /bindtap="onGoGallery"/.test(t)) || ''
   ok('D3 馆藏同类：非标本不出', /wx:if="\{\{speciesInfo\.is_specimen !== false\}\}"/.test(cab))
   ok('D3 识别纠错只在有记录时出、相关藏品只在有藏品时出', /<block wx:if="\{\{recordId\}\}">\s*<text class="meta-link" bindtap="openFeedback"/.test(dock) &&
@@ -76,7 +77,8 @@ function runChecks() {
     archiveIsEmpty(null) === true && archiveIsEmpty({ blocks: [{ visible: true, type: 'text' }] }) === false)
   ok('D5 首次加载与补全成功都重算空态', /archiveEmpty: archiveIsEmpty\(speciesProfile\),/.test(js) && /archiveEmpty: archiveIsEmpty\(next\),/.test(js))
   ok('D5 空态卡：不在补全 / 没失败时才出；整理档案只给本人', /<view class="ency-empty-card" wx:if="\{\{archiveEmpty && !profileEnriching && !profileEnrichError\}\}">/.test(wxml) &&
-    /class="ency-empty-btn" wx:if="\{\{isOwner && recordId\}\}" bindtap="retryEnrichProfile"/.test(wxml) && /class="ency-empty-btn is-ghost" wx:if="\{\{speciesInfo\.species_name_zh\}\}" bindtap="onAskGuide"/.test(wxml))
+    /class="ency-empty-btn" wx:if="\{\{isOwner && recordId\}\}" bindtap="retryEnrichProfile"/.test(wxml) && // 2026-11-25 审核驳回：空态里的「问问博物君」同样跟开关
+    /class="ency-empty-btn is-ghost" wx:if="\{\{guideOpen && speciesInfo\.species_name_zh\}\}" bindtap="onAskGuide"/.test(wxml))
 
   /* D6 鉴定台 */
   const ew = read(F.entryWxml).replace(/<!--[\s\S]*?-->/g, '')
@@ -101,7 +103,7 @@ const INJECTIONS = [
   { name: '处理函数被删', file: F.js, find: '\n  onViewProducts(', replace: '\n  onViewProductsOld(' },
   { name: '工具带塞第五格', file: F.wxml, find: '<view class="tool-grid">', replace: '<view class="tool-grid">\n        <view class="tool" bindtap="onExpertHelp" hover-class="tool-press" hover-stay-time="80"><text class="tool-t">鉴定疑问</text></view>' },
   { name: '低置信时再拍一张重复出', file: F.wxml, find: `wx:if="{{confidenceLevel !== 'low' && speciesInfo.is_specimen !== false}}" bindtap="onRetake"`, replace: 'bindtap="onRetake"' },
-  { name: '没物种也出问问博物君', file: F.wxml, find: 'wx:if="{{speciesInfo.species_name_zh && speciesInfo.is_specimen !== false}}" bindtap="onAskGuide"', replace: 'bindtap="onAskGuide"' },
+  { name: '没物种也出问问博物君', file: F.wxml, find: 'wx:if="{{guideOpen && speciesInfo.species_name_zh && speciesInfo.is_specimen !== false}}" bindtap="onAskGuide"', replace: 'bindtap="onAskGuide"' },
   { name: '非标本也出馆藏同类', file: F.wxml, find: 'wx:if="{{speciesInfo.is_specimen !== false}}" bindtap="onGoGallery"', replace: 'bindtap="onGoGallery"' },
   { name: '页脚链回来', file: F.wxml, find: '<view class="action-group-meta">', replace: '<view class="foot-links"></view>\n      <view class="action-group-meta">' },
   { name: '死样式回来', file: F.wxss, find: '.tool-grid {', replace: '.foot-links { display: flex; }\n.tool-grid {' },

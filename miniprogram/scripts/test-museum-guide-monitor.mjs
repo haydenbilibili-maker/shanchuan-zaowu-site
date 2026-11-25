@@ -29,6 +29,11 @@ const P = {
   wxml: join(MP, 'subpackages/manager/museum-guide-monitor/index.wxml'),
   flagsUtil: join(MP, 'utils/contentDisplayFlags.js'),
   erpFlags: join(ROOT, 'admin/src/components/ContentDisplayFlags.vue'),
+  atlasWxml: join(MP, 'subpackages/feature/collection/detail/index.wxml'),
+  atlasJs: join(MP, 'subpackages/feature/collection/detail/index.js'),
+  identifyWxml: join(MP, 'subpackages/feature/identify/result/index.wxml'),
+  identifyJs: join(MP, 'subpackages/feature/identify/result/index.js'),
+  homeJs: join(MP, 'pages/index/index.js'),
   roles: join(MP, 'utils/workspaceRoles.js'),
   hubNav: join(MP, 'subpackages/manager/manager/hubNav.js'),
   mgrCfg: join(MP, 'subpackages/manager/manager/managerPageConfig.js'),
@@ -195,6 +200,13 @@ async function runChecks() {
   ok('M5 ERP「商品内容-开关」有博物君开关（读 / 写 / 默认三处齐全）',
     /v-model="form\.museumGuideOpen"/.test(read(P.erpFlags)) && /form\.museumGuideOpen = raw\.museumGuideOpen !== false/.test(read(P.erpFlags)) &&
     /museumGuideOpen: form\.museumGuideOpen !== false/.test(read(P.erpFlags)) && /museumGuideOpen: true/.test(read(P.erpFlags)))
+  ok('M5 关闭后 C 端不残留 AI 入口：图鉴详情 / 识别结果都按 guideOpen 隐藏，并各自拉取开关',
+    /wx:if="\{\{guideOpen\}\}"[^>]*bindtap="askGuide"/.test(read(P.atlasWxml)) &&
+    /loadGuideOpen\(\)/.test(read(P.atlasJs)) && /museumGuideOpen !== false/.test(read(P.atlasJs)) &&
+    /wx:if="\{\{guideOpen && speciesInfo\.species_name_zh/.test(read(P.identifyWxml)) &&
+    /loadGuideOpen\(\)/.test(read(P.identifyJs)) && /museumGuideOpen !== false/.test(read(P.identifyJs)))
+  ok('M5 关闭后首页口播整条清空（不留任何 AI 内容）',
+    /if \(flags\.museumGuideOpen === false\)/.test(read(P.homeJs)) && /cast: \{ hello: '', items: \[\] \}/.test(read(P.homeJs)))
   ok('M5 小程序端开关归一（缺省开启）与「我的」入口跟随', /museumGuideOpen: src\.museumGuideOpen !== false/.test(read(P.flagsUtil)) &&
     /data-path="museumGuide" wx:if="\{\{museumGuideOpen\}\}"/.test(read(P.userWxml)) && /museumGuideOpen: flags\.museumGuideOpen !== false/.test(read(P.userJs)))
 

@@ -1405,6 +1405,14 @@ Page({
       const { buildBroadcast } = require('./guideBroadcast');
       const { resolvePrefillNickName } = require('../../utils/profileHelper');
       const flags = this._castFlags || {};
+      // 2026-11-25 审核驳回：博物君关掉后，首页不得残留任何 AI 入口（含口播带）→ 直接清空
+      if (flags.museumGuideOpen === false) {
+        if (this._castSig !== '{"closed":true}') {
+          this._castSig = '{"closed":true}';
+          this.setData({ cast: { hello: '', items: [] } });
+        }
+        return;
+      }
       const cast = buildBroadcast({
         nick: resolvePrefillNickName(getApp()),
         greeting: this.data.homeGreeting,
