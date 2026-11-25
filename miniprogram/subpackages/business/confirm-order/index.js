@@ -388,6 +388,7 @@ Page(withAppModal({
     previewErrorMsg: '',
     previewBadTitle: '',
     previewEmpty: false,
+    previewLoopHint: false,
     customMeta: null,
     customExtraPrice: 0,
     customPreviewLines: [],
@@ -1459,15 +1460,22 @@ Page(withAppModal({
    * - 其它（价格变动 / 券门槛 / 运费）→ 提示原话，用户点「重新校验」。
    * 注：走页面内提示条而不是弹窗 —— 弹窗规范禁止新增原生 showModal，按钮文案也限 4 字。
    */
+  /** 标题归一：去掉引号 / 空白 / 间隔符，避免「已下架」文案里的商品名与列表标题差一个空格就匹配不上 */
+  _normItemTitle(t) {
+    return String(t || '').replace(/[「」『』\s·・\-—_]/g, '').trim();
+  },
+
   handlePreviewFailure(msg) {
     const text = String(msg || '').trim()
     const title = (text.match(/「([^」]+)」/) || [])[1] || ''
     const itemBroken = !!title && /已下架|库存不足|不存在|请选择规格|规格不存在/.test(text)
-    // 提示就地展示在提交栏上方（不加 toast：弹窗棘轮对 showToast / showModal 只减不增）
+    // 已经移除过这件还报同样的错 → 说明列表里没匹配上，别再给「移除并继续」（点了会原地循环）
+    const alreadyRemoved = itemBroken && (this._removedTitles || {})[this._normItemTitle(title)]
     this.setData({
       previewErrorMsg: text,
-      previewBadTitle: itemBroken ? title : '',
-      previewEmpty: false
+      previewBadTitle: itemBroken && !alreadyRemoved ? title : '',
+      previewEmpty: false,
+      previewLoopHint: !!alreadyRemoved
     })
   },
 
@@ -1475,19 +1483,32 @@ Page(withAppModal({
   removeBadItemAndContinue() {
     const title = String(this.data.previewBadTitle || '').trim()
     if (!title) return
-    const items = (this.data.items || []).filter((it) => String((it && it.title) || '').trim() !== title)
+    const target = this._normItemTitle(title)
+    const before = (this.data.items || []).length
+    const items = (this.data.items || []).filter((it) => {
+      const t = this._normItemTitle((it && (it.title || it.name)) || '')
+      if (!t) return true
+      return !(t === target || t.indexOf(target) >= 0 || target.indexOf(t) >= 0)
+    })
+    // 记下「这件已经摘过」：若云端还报同一件，不再反复给移除按钮，改为重新校验
+    this._removedTitles = this._removedTitles || {}
+    this._removedTitles[target] = true
+    if (items.length === before) {
+      this.setData({ previewBadTitle: '', previewLoopHint: true })
+      return
+    }
     if (!items.length) {
       this.setData({ items, previewBadTitle: '', previewEmpty: true })
       return
     }
-    this.setData({ items, previewBadTitle: '', previewErrorMsg: '', previewEmpty: false, serverPreviewFailed: false })
+    this.setData({ items, previewBadTitle: '', previewErrorMsg: '', previewEmpty: false, serverPreviewFailed: false, previewLoopHint: false })
     this.recalculate(undefined, { silentDrop: true })
     if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
   },
 
-  /** 其它原因（价格变动 / 券门槛 / 运费）：重新校验一次 */
+  /** 其它原因（价格变动 / 券门槛 / 运费 / 已移除仍报错）：重新校验一次 */
   retryPreview() {
-    this.setData({ serverPreviewFailed: false, previewErrorMsg: '', previewBadTitle: '' })
+    this.setData({ serverPreviewFailed: false, previewErrorMsg: '', previewBadTitle: '', previewLoopHint: false })
     if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
   },
 

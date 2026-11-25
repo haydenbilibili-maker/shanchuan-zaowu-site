@@ -543,8 +543,9 @@
     <view class="pb-text">
       <text class="pb-t" wx:if="{{previewEmpty}}">这一单已没有可提交的藏品</text>
       <text class="pb-t" wx:elif="{{previewBadTitle}}">「{{previewBadTitle}}」当前不可购买</text>
+      <text class="pb-t" wx:elif="{{previewLoopHint}}">这件商品已移除，仍未通过校验</text>
       <text class="pb-t" wx:else>价格校验未通过</text>
-      <text class="pb-s">{{previewEmpty ? '返回购物车重新挑选后再结算' : (previewBadTitle ? (previewErrorMsg || '已下架或库存不足，移除后可继续提交其它藏品') : (previewErrorMsg || '点「重新校验」再试一次'))}}</text>
+      <text class="pb-s">{{previewEmpty ? '返回购物车重新挑选后再结算' : (previewBadTitle ? (previewErrorMsg || '已下架或库存不足，移除后可继续提交其它藏品') : (previewLoopHint ? '可能是列表里没找到这件（名称不一致），请返回购物车移除后再结算' : (previewErrorMsg || '点「重新校验」再试一次')))}}</text>
     </view>
     <view class="pb-actions">
       <view class="pb-btn" bindtap="goBackToCart" hover-class="pb-btn-press" hover-stay-time="80">返回购物车</view>

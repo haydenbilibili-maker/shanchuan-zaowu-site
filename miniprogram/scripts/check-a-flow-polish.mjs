@@ -867,6 +867,8 @@ function checks(s) {
       /const text = String\(msg \|\| ''\)\.trim\(\)/.test(s.coJs) &&
       /已下架\|库存不足\|不存在\|请选择规格/.test(s.coJs) &&
       /移除并继续/.test(s.coWxml) && /removeBadItemAndContinue/.test(s.coJs) &&
+      // 2026-11-26：点「移除并继续」原地循环（标题对不上 / 移除后仍报同一件）必须被防住
+      /_normItemTitle\(t\)/.test(s.coJs) && /this\._removedTitles/.test(s.coJs) && /previewLoopHint/.test(s.coWxml) &&
       /previewErrorMsg/.test(s.coJs) &&
       /console\.warn\('syncServerPricingPreview failed', r\.msg \|\| r\)/.test(s.coJs) &&
       /this\.handlePreviewFailure\(msg\)/.test(s.coJs))
