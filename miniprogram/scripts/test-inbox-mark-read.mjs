@@ -190,6 +190,12 @@ async function runChecks() {
     /\.queue-customer \.message-item[^{]*\.message-foot \{[^}]*border-top: 1rpx dashed/.test(wxss) &&
     /\.queue-customer \.status-chip \{[^}]*border-radius: 999rpx;/.test(wxss) &&
     /\.queue-customer \.action-hint\.is-go \{[^}]*border-radius: 999rpx;/.test(wxss))
+  // R10（2026-11-25 第三轮）：「山海」水印沉在纸里、正文抬一层 —— 否则水印压住状态与按钮
+  const P3 = '.queue-customer .message-item:not(.workflow-card):not(.digest-card)'
+  const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  ok('R10 纸笺水印在正文之下（正文 z-index:1、水印 z-index:0）',
+    new RegExp(esc(P3 + ' .message-body') + '[^{]*\\{[^}]*z-index: 1;').test(wxss) &&
+    new RegExp(esc(P3 + '::after') + ' \\{[^}]*z-index: 0;').test(wxss))
   return fails
 }
 
@@ -202,7 +208,8 @@ const INJECTIONS = [
   { name: '单条已读不带整组', file: P.fn, find: '      if (group && group._members && group._members.length > 1) await markMembersRead(group._members)\n', replace: '' },
   { name: '提示又被 hideLoading 吞掉', file: P.page, find: "    wx.hideLoading();\n    this._markingAll = false;\n", replace: "    this._markingAll = false;\n" },
   { name: '全部已读不扫影子', file: P.fn, find: '  const ghosts = await loadUnreadMembers(openid, category, typeFilter, requestedQueue)', replace: '  const ghosts = []' },
-  { name: '来信行脚又贴回正文（没有虚线分隔）', file: P.wxss, find: 'border-top: 1rpx dashed rgba(196, 167, 108, 0.16);', replace: 'border-top: 0;' },
+  { name: '来信行脚又贴回正文（没有虚线分隔）', file: P.wxss, find: 'border-top: 1rpx dashed rgba(138, 117, 48, 0.32);', replace: 'border-top: 0;' },
+  { name: '水印又压在按钮上', file: P.wxss, find: '  position: relative;\n  z-index: 1;\n}\n.queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {\n  z-index: 0;', replace: '  position: relative;\n}\n.queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {\n  z-index: 2;' },
   { name: '内部字段漏到前端', file: P.fn, find: '  const { _source, _members, ...rest } = msg', replace: '  const { _source, ...rest } = msg' }
 ]
 
