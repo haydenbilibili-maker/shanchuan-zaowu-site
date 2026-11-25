@@ -404,13 +404,75 @@
   transform: rotate(45deg);
 }
 
-/* 四列：fr 分配剩余宽度，不存在「百分比 + 间距恰好 100%」的真机取整换行（错题本 E26） */
+/* 宫格自适应（2026-11-26）：12 栅格 + span，列数与末行铺法由 hubNav.gridClass(当前角色可见入口数) 给出：
+ *   cols-4 → 每格 3 栏；cols-3 → 每格 4 栏；cols-2 → 每格 6 栏（横向宽卡）；
+ *   rem-N = 末行只剩 N 格：rem-3（4 列）各 4 栏、rem-2 各 6 栏、rem-1 整行 12 栏 —— 末行永远铺满，不留孤儿格。
+ * fr 分配剩余宽度，不存在「百分比 + 间距恰好 100%」的真机取整换行（错题本 E26）。
+ * 末行用 :nth-last-child 认：wx:if 隐掉的磁贴不进节点树，数到的就是当前角色看得到的格子。 */
 .hub-grid--cat {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 14rpx 12rpx;
   padding-bottom: 18rpx;
   animation: hub-cat-in 0.18s ease-out;
+}
+.hub-grid--cat .hub-cell { grid-column: span 3; }
+.hub-grid--cat.cols-3 .hub-cell { grid-column: span 4; }
+.hub-grid--cat.cols-2 .hub-cell { grid-column: span 6; }
+.hub-grid--cat.cols-4.rem-3 .hub-cell:nth-last-child(-n+3) { grid-column: span 4; }
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) { grid-column: span 6; }
+.hub-grid--cat.rem-1 .hub-cell:last-child { grid-column: span 12; }
+
+/* 半行 / 整行宽的格子：横向宽卡（图标在左，名称 + 小字在右），比一枚拉宽的竖卡省高度、读起来像一行功能 */
+.hub-grid--cat.cols-2 .hub-cell,
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2),
+.hub-grid--cat.rem-1 .hub-cell:last-child {
+  display: grid;
+  grid-template-columns: 80rpx minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  align-items: center;
+  column-gap: 20rpx;
+  min-height: 120rpx;
+  padding: 18rpx 24rpx;
+}
+.hub-grid--cat.cols-2 .hub-cell .hub-ico,
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) .hub-ico,
+.hub-grid--cat.rem-1 .hub-cell:last-child .hub-ico {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+.hub-grid--cat.cols-2 .hub-cell .hub-cell-name,
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) .hub-cell-name,
+.hub-grid--cat.rem-1 .hub-cell:last-child .hub-cell-name,
+.hub-grid--cat.cols-2 .hub-cell .hub-cell-sub,
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) .hub-cell-sub,
+.hub-grid--cat.rem-1 .hub-cell:last-child .hub-cell-sub {
+  grid-column: 2;
+  margin-top: 0;
+  text-align: left;
+}
+.hub-grid--cat.cols-2 .hub-cell .hub-cell-name,
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) .hub-cell-name,
+.hub-grid--cat.rem-1 .hub-cell:last-child .hub-cell-name {
+  font-size: var(--fs-26);
+}
+/* 有小字：名称压在上半、小字在下半，合起来垂直居中；没有小字：名称独占两行高度、垂直居中（否则会顶在卡片上沿） */
+.hub-grid--cat.cols-2 .hub-cell .hub-cell-name,
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) .hub-cell-name,
+.hub-grid--cat.rem-1 .hub-cell:last-child .hub-cell-name {
+  align-self: end;
+}
+.hub-grid--cat.cols-2 .hub-cell .hub-cell-sub,
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) .hub-cell-sub,
+.hub-grid--cat.rem-1 .hub-cell:last-child .hub-cell-sub {
+  align-self: start;
+}
+.hub-grid--cat.cols-2 .hub-cell .hub-cell-name:last-child,
+.hub-grid--cat.rem-2 .hub-cell:nth-last-child(-n+2) .hub-cell-name:last-child,
+.hub-grid--cat.rem-1 .hub-cell:last-child .hub-cell-name:last-child {
+  grid-row: 1 / span 2;
+  align-self: center;
 }
 @keyframes hub-cat-in {
   from { opacity: 0; transform: translateY(-8rpx); }

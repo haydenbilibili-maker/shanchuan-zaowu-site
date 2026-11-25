@@ -417,7 +417,27 @@ function buildCatalog(menu) {
   return { hubCat: { total: vis.length, search: vis.length > MANY_ENTRIES } }
 }
 
-/** 收起时标题行要显示的：该分类可见入口数 + 红点合计 */
+/**
+ * 宫格自适应（2026-11-26 产品负责人「根据功能的数量不同来优化交互展示方案」）：按**当前角色在该分类看得到的入口数 n** 选列数，
+ * 末行永远铺满 —— 不再出现「一行四格只占一格」的孤儿行。
+ *   n ≤ 2：横向宽卡（图标在左、名称与小字在右），一行 1–2 张；
+ *   n ≥ 3：在 3 列 / 4 列里选「末行最满」的（并列取 4 列）—— 3 / 6 / 9 → 3 列，4 / 8 → 4 列，5 → 3+2，7 → 4+3，10 → 4+4+2；
+ *   末行不满时剩下的几格拉宽铺满（rem-1 整行、rem-2 各半行；宽到半行以上的格子切成横向宽卡）。
+ * 落到样式上是 12 栅格 + span（hubNav.wxss），不用「百分比 + 间距」，避开真机取整换行（错题本 E26）。
+ */
+function gridOf(n) {
+  if (n <= 2) return { cols: 2, rem: n === 1 ? 1 : 0 }
+  const fill = (c) => { const r = n % c; return r === 0 ? 1 : r / c }
+  const cols = fill(3) > fill(4) ? 3 : 4
+  return { cols, rem: n % cols }
+}
+
+function gridClass(n) {
+  const g = gridOf(n)
+  return `cols-${g.cols}${g.rem ? ` rem-${g.rem}` : ''}`
+}
+
+/** 收起时标题行要显示的：该分类可见入口数 + 红点合计；展开时宫格的列数 / 末行铺法（grid） */
 function buildSecMeta(data) {
   const d = data || {}
   const vis = visibleEntries(d.menu)
@@ -426,7 +446,7 @@ function buildSecMeta(data) {
     const entries = vis.filter((e) => e.sec === s.id)
     if (!entries.length) return
     const n = entries.reduce((sum, e) => sum + entryBadgeNum(e, d), 0)
-    out[s.id] = { n: entries.length, badge: n > 0 ? (n > 99 ? '99+' : String(n)) : '' }
+    out[s.id] = { n: entries.length, badge: n > 0 ? (n > 99 ? '99+' : String(n)) : '', grid: gridClass(entries.length) }
   })
   return out
 }
@@ -565,6 +585,8 @@ module.exports = {
   COLLAPSE_STORAGE_KEY,
   buildCatalog,
   buildSecMeta,
+  gridOf,
+  gridClass,
   normalizeCollapsed,
   allCollapsed,
   toggleAllCollapsed,
