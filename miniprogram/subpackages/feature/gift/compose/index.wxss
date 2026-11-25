@@ -400,6 +400,35 @@ page {
   font-family: var(--font-brand);
 }
 
+/* 送予谁（2026-11-25 产品负责人：支持隐藏与展开）——标题行常驻、可点，右侧给一句摘要 + 折角 */
+.relation-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+.relation-head .section-title { margin-bottom: 0; }
+.relation-head-r {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  margin-top: 12rpx;
+  flex-shrink: 0;
+}
+.relation-sum {
+  font-size: var(--fs-24);
+  color: var(--brass-300, #D4BC8A);
+}
+.relation-sum.is-empty { color: #A09A90; }
+.relation-chevron {
+  font-size: var(--fs-28);
+  line-height: 1;
+  color: var(--brass-400);
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+.sec-relation.is-open .relation-chevron { transform: rotate(180deg); }
+.relation-body { margin-top: 20rpx; }
+
 /* 第 1 步「包装与价格」：包装逐项（左列项名、右列内容，不加框）+ 隐价开关行（右侧开关，开 = 金色底） */
 .wrap-list { display: flex; flex-direction: column; gap: 12rpx; }
 .wrap-item { display: flex; align-items: baseline; gap: 20rpx; }

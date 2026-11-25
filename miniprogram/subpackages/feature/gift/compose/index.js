@@ -153,6 +153,8 @@ Page({
     navPaddingRight: 96,
     navTotal: 64,
     activeStep: 1,
+    /** 送予谁：默认收起（礼笺是首屏焦点），标题行给一句摘要 */
+    relationOpen: false,
     /** 主滚动区高度（iOS 显式 px） */
     scrollHeightPx: 0,
     scrollStyle: ''
@@ -356,6 +358,21 @@ Page({
     this.goPay()
   },
 
+
+  /** 送予谁：展开 / 收起（标题行常驻，摘要显示当前关系） */
+  toggleRelation() {
+    const open = !this.data.relationOpen
+    this.setData({ relationOpen: open })
+    trackBehavior('gift_relation_toggle', 'product', this._productId || '', { open })
+  },
+
+  /** 礼笺里的「挑个关系」：展开并滚到关系区 */
+  openRelation() {
+    this.setData({ relationOpen: true, phoneScrollId: '' }, () => {
+      this.setData({ phoneScrollId: 'secRelation' })
+      this.syncScrollPane()
+    })
+  },
 
   /** 步骤轨：第 1 格是本页（选礼与写笺），第 2 格「交付与支付」= 去确认页 */
   onRailTap(e) {

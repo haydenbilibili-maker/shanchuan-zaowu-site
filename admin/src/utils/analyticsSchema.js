@@ -165,6 +165,8 @@ export const EVENTS = {
   gift_voice_record: { module: MODULE.GIFT, desc: '录制礼赠语音', targetType: 'voice' },
   gift_pay_click: { module: MODULE.GIFT, desc: '礼赠下单支付点击', targetType: 'order' },
   gift_compose_step: { module: MODULE.GIFT, desc: '礼赠编排切换步骤', targetType: 'product' },
+  // 2026-11-25（加法）：送予谁可收起 / 展开
+  gift_relation_toggle: { module: MODULE.GIFT, desc: '礼赠「这份礼送给谁」展开或收起（open）', targetType: 'product' },
   // 凭礼笺领取（2026-10-11，加法）：受礼人漏斗 + 领取后注册引导
   gift_receive_open: { module: MODULE.GIFT, desc: '受礼人打开礼笺', targetType: 'order' },
   gift_receive_verify: { module: MODULE.GIFT, desc: '受礼人手机号核验（ok）', targetType: 'order' },

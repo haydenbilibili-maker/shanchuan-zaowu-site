@@ -146,7 +146,7 @@ async function runChecks() {
 const RENDER_BASE = {
   allowed: true, checking: false, loading: false, navTotal: 64, statusBarHeight: 20, navBarHeight: 44, navPaddingRight: 96,
   product: { _id: 'p1', title: '独角仙', latinName: '' }, latin: { display: (s) => s || '' }, cover: '', displayPrice: '299.00', payablePrice: '299.00',
-  memberDiscounted: false, skuLabel: '', count: 1, sfxMuted: false, activeStep: 1, maxStep: 1,
+  memberDiscounted: false, skuLabel: '', count: 1, sfxMuted: false, activeStep: 1, maxStep: 1, relationOpen: true,
   notePresets: [{ id: 'friend', label: '朋友' }, { id: 'lover', label: '恋人' }, { id: 'self', label: '犒劳自己' }],
   activeNotePresetId: '', selfTreat: false, hidePrice: true, allowHidePriceToggle: true, packagingItems: [],
   deliveryType: 'invite_address', storePickupEnabled: true
@@ -183,6 +183,13 @@ function polishChecks(js, wxml, wxss, ok) {
   const s23 = a2 >= 0 && end > a2 ? wxml.slice(a2, end) : ''
 
   // P 隐价与包装在第 1 步
+  // 2026-11-25 产品负责人：写笺提到首屏焦点，送予谁可收起，包装与价格沉到最下方
+  ok('P6 版面顺序与收放：写笺 → 送予谁（可收起，默认收起）→ 包装与价格（最下方）；礼笺里的「挑个关系」就地展开',
+    wxml.indexOf('class="section sec-letter"') > 0 && wxml.indexOf('class="section sec-letter"') < wxml.indexOf('class="section sec-relation') &&
+    wxml.indexOf('class="section sec-relation') < wxml.indexOf('class="section sec-wrap"') &&
+    /bindtap="toggleRelation"/.test(wxml) && /wx:if="\{\{relationOpen\}\}"/.test(wxml) &&
+    /relationOpen: false/.test(js) && /toggleRelation\(\) \{/.test(js) && /openRelation\(\) \{/.test(js) &&
+    /bindtap="openRelation"/.test(wxml))
   ok('P1 两步合一后隐价开关与包装说明全页各只有一处（不重复渲染、不再有按步分区）',
     (wxml.match(/bindtap="toggleHidePrice"/g) || []).length === 1 && (wxml.match(/wx:for="\{\{packagingItems\}\}"/g) || []).length === 1 &&
     js.includes('packagingItems: GIFT_PACKAGING_ITEMS') && !/packagingSummary/.test(js + wxml) &&
@@ -546,6 +553,8 @@ const INJECTIONS = [
   { name: '步骤轨又放一个上一步', file: P.wxml, find: '  <view class="step-rail sticky">\n', replace: '  <view class="step-rail sticky">\n    <view bindtap="onStepBack"></view>\n' },
   // 退役（2026-10-15）：源码里已无 _goStep(2, 'refill') 调用（只剩埋点注释里的 via 名），该路径随两步化移除
   { name: 'giftMeta 多带一个字段（改契约）', file: P.js, find: "        phase: 'mvp'\n", replace: "        phase: 'mvp',\n        step: this.data.activeStep\n" },
+  { name: '送予谁又变成常驻展开', file: P.js, find: 'relationOpen: false', replace: 'relationOpen: true' },
+  { name: '礼笺里的挑关系不再就地展开', file: P.wxml, find: 'bindtap="openRelation"', replace: 'bindtap="noop"' },
   { name: '隐价开关挪回第 2 步', file: P.wxml, find: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n', replace: '        <text class="envelope-caption">藏品纸礼笺 · 封缄后再交付</text>\n        <view bindtap="toggleHidePrice"></view>\n' },
   { name: '没关系统侧滑', file: P.json, find: '  "disableSwipeBack": true,\n', replace: '' },
   { name: 'ERP 端漏登记新埋点', file: P.adminSchema, find: '  gift_compose_step: {', replace: '  gift_compose_step_x: {' },

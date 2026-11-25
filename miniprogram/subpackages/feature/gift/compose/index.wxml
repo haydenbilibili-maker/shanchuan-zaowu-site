@@ -89,77 +89,6 @@
       </view>
     </view>
 
-    <!-- 01 送给谁：关系决定第 2 步起草的推荐礼笺；「犒劳自己」让确认页的交付固定为寄给我 -->
-    <view class="section sec-relation">
-      <text class="section-overline">FOR WHOM</text>
-      <text class="section-title">这份礼送给谁</text>
-      <text class="section-hint" wx:if="{{!activeNotePresetId && !selfTreat}}">下一步按它起草礼笺，可改写；不选也行</text>
-      <block wx:else>
-        <block wx:for="{{notePresets}}" wx:key="id">
-          <text class="section-hint is-picked" wx:if="{{item.id === activeNotePresetId || (selfTreat && !activeNotePresetId && item.id === 'self')}}">已选「{{item.label}}」· 下一步按它起草礼笺，可改写</text>
-        </block>
-      </block>
-      <!-- 2026-09-21：关系从 8 个扩到 20 个（giftNotePresets.js 实为 20 组 × 3 句）。
-           原来这里是**横向 scroll**（white-space: nowrap），一屏只露得出前 5–6 个 ——
-           后面新增的「老师 / 领导 / 长辈」等于藏起来了，那「拓展角色」就白做。
-           改成**换行铺开**，一屏看得见（⚠️ 原注释写「两行」与实测不符：20 个 chip 换行后
-           窄屏**实测约 4 行**，见 2026-09-21 审计 P3-23 —— 已订正）。 -->
-      <view class="note-preset-wrap">
-        <view class="note-preset-row">
-          <view
-            class="note-preset {{activeNotePresetId === item.id || (selfTreat && item.id === 'self') ? 'on' : ''}}"
-            wx:for="{{notePresets}}"
-            wx:key="id"
-            data-id="{{item.id}}"
-            bindtap="onNotePresetTap" hover-class="note-preset-press" hover-stay-time="80"
-            aria-role="radio"
-            aria-checked="{{activeNotePresetId === item.id || (selfTreat && item.id === 'self')}}"
-          >
-            <view class="note-preset-check" aria-hidden="true"></view>
-            <text>{{item.label}}</text>
-          </view>
-        </view>
-      </view>
-      <view class="relation-self-note" wx:if="{{selfTreat}}">
-        <text class="relation-self-k">犒劳自己</text>
-        <text class="relation-self-v">寄到你的收货地址（下一步选择），无需受礼人手机号</text>
-      </view>
-    </view>
-
-    <!-- 01 包装与价格（2026-10-12 产品负责人改口：隐价从第 3 步挪到选礼）。
-         包装逐项说清（文案在 giftPackaging.js，只写代码里确有的：牛皮纸 + 雪梨纸 / 印制礼笺 / 其它包装找专员）；
-         隐价开关仍写 hidePrice、交给 makeOrder 的入参与语义不变 -->
-    <view class="section sec-wrap">
-      <text class="section-overline">WRAP</text>
-      <text class="section-title">包装与价格</text>
-      <view class="wrap-list">
-        <view class="wrap-item" wx:for="{{packagingItems}}" wx:key="k">
-          <text class="wrap-k">{{item.k}}</text>
-          <text class="wrap-v">{{item.v}}</text>
-        </view>
-      </view>
-      <view class="switch-row is-locked" wx:if="{{allowHidePriceToggle === false}}">
-        <view class="switch-main">
-          <text class="switch-label">成交价已对受礼人隐藏</text>
-          <text class="switch-sub">平台设定，不可更改 · TA 收礼时看不到价格</text>
-        </view>
-      </view>
-      <view
-        class="switch-row"
-        bindtap="toggleHidePrice"
-        hover-class="tap-press-soft"
-        hover-stay-time="80"
-        aria-role="switch"
-        aria-checked="{{hidePrice}}"
-        wx:else
-      >
-        <view class="switch-main">
-          <text class="switch-label">对受礼人隐藏成交价 <text class="switch-tip">推荐</text></text>
-          <text class="switch-sub {{hidePrice ? '' : 'is-off'}}">{{hidePrice ? 'TA 收礼时看不到价格' : 'TA 收礼时会看到成交价'}}</text>
-        </view>
-        <view class="switch {{hidePrice ? 'on' : ''}}" aria-hidden="true"><view class="switch-knob"></view></view>
-      </view>
-    </view>
     <!-- 02 礼笺：信封外壳包裹（不改 textarea / 落笔动画结构） -->
     <view class="section sec-letter">
       <text class="section-overline">LETTER</text>
@@ -183,7 +112,7 @@
         <block wx:for="{{notePresets}}" wx:key="id">
           <text class="note-relation" wx:if="{{item.id === activeNotePresetId}}">按「{{item.label}}」起草</text>
         </block>
-        <text class="note-relation-back" wx:if="{{!activeNotePresetId}}" data-step="1" bindtap="onRailTap" hover-class="tap-press" hover-stay-time="80">想要推荐句？回「选礼」挑个关系 ›</text>
+        <text class="note-relation-back" wx:if="{{!activeNotePresetId}}" bindtap="openRelation" hover-class="tap-press" hover-stay-time="80">想要推荐句？挑个关系 ›</text>
         <!-- 2026-09-17：一个关系现在有多句候选 —— 这里给出「换一句」与句序（第 2/3 句）。
              顾客原话：「点进去好几次都是同样一段话，也没有更新的标」。与关系同一行，少占一行 -->
         <view class="note-shuffle-row" wx:if="{{activeNotePresetId && noteVariantTotal > 1}}">
@@ -356,6 +285,102 @@
       </view>
     </view>
 
+    <!-- 01 送给谁：关系决定第 2 步起草的推荐礼笺；「犒劳自己」让确认页的交付固定为寄给我 -->
+    <view class="section sec-relation {{relationOpen ? 'is-open' : ''}}" id="secRelation">
+      <!-- 2026-11-25 产品负责人：送予谁可隐藏/展开（默认收起，礼笺才是首屏焦点）；标题行常驻，给一句摘要 -->
+      <view
+        class="relation-head"
+        bindtap="toggleRelation"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        aria-role="button"
+        aria-expanded="{{relationOpen}}"
+        aria-label="{{relationOpen ? '收起关系选择' : '展开关系选择'}}"
+      >
+        <view class="relation-head-l">
+          <text class="section-overline">FOR WHOM</text>
+          <text class="section-title">这份礼送给谁</text>
+        </view>
+        <view class="relation-head-r">
+          <text class="relation-sum is-empty" wx:if="{{!activeNotePresetId && !selfTreat}}">可选</text>
+          <block wx:else>
+            <block wx:for="{{notePresets}}" wx:key="id">
+              <text class="relation-sum" wx:if="{{selfTreat && item.id === 'self'}}">犒劳自己</text>
+              <text class="relation-sum" wx:elif="{{item.id === activeNotePresetId}}">{{item.label}}</text>
+            </block>
+          </block>
+          <text class="relation-chevron" aria-hidden="true">⌄</text>
+        </view>
+      </view>
+      <view class="relation-body" wx:if="{{relationOpen}}">
+      <text class="section-hint" wx:if="{{!activeNotePresetId && !selfTreat}}">按它起草礼笺，可改写；不选也行</text>
+      <block wx:else>
+        <block wx:for="{{notePresets}}" wx:key="id">
+          <text class="section-hint is-picked" wx:if="{{item.id === activeNotePresetId || (selfTreat && !activeNotePresetId && item.id === 'self')}}">已选「{{item.label}}」· 下一步按它起草礼笺，可改写</text>
+        </block>
+      </block>
+      <!-- 2026-09-21：关系从 8 个扩到 20 个（giftNotePresets.js 实为 20 组 × 3 句）。
+           原来这里是**横向 scroll**（white-space: nowrap），一屏只露得出前 5–6 个 ——
+           后面新增的「老师 / 领导 / 长辈」等于藏起来了，那「拓展角色」就白做。
+           改成**换行铺开**，一屏看得见（⚠️ 原注释写「两行」与实测不符：20 个 chip 换行后
+           窄屏**实测约 4 行**，见 2026-09-21 审计 P3-23 —— 已订正）。 -->
+      <view class="note-preset-wrap">
+        <view class="note-preset-row">
+          <view
+            class="note-preset {{activeNotePresetId === item.id || (selfTreat && item.id === 'self') ? 'on' : ''}}"
+            wx:for="{{notePresets}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="onNotePresetTap" hover-class="note-preset-press" hover-stay-time="80"
+            aria-role="radio"
+            aria-checked="{{activeNotePresetId === item.id || (selfTreat && item.id === 'self')}}"
+          >
+            <view class="note-preset-check" aria-hidden="true"></view>
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+      <view class="relation-self-note" wx:if="{{selfTreat}}">
+        <text class="relation-self-k">犒劳自己</text>
+        <text class="relation-self-v">寄到你的收货地址（下一步选择），无需受礼人手机号</text>
+      </view>
+      </view>
+    </view>
+
+    <!-- 01 包装与价格（2026-10-12 产品负责人改口：隐价从第 3 步挪到选礼）。
+         包装逐项说清（文案在 giftPackaging.js，只写代码里确有的：牛皮纸 + 雪梨纸 / 印制礼笺 / 其它包装找专员）；
+         隐价开关仍写 hidePrice、交给 makeOrder 的入参与语义不变 -->
+    <view class="section sec-wrap">
+      <text class="section-overline">WRAP</text>
+      <text class="section-title">包装与价格</text>
+      <view class="wrap-list">
+        <view class="wrap-item" wx:for="{{packagingItems}}" wx:key="k">
+          <text class="wrap-k">{{item.k}}</text>
+          <text class="wrap-v">{{item.v}}</text>
+        </view>
+      </view>
+      <view class="switch-row is-locked" wx:if="{{allowHidePriceToggle === false}}">
+        <view class="switch-main">
+          <text class="switch-label">成交价已对受礼人隐藏</text>
+          <text class="switch-sub">平台设定，不可更改 · TA 收礼时看不到价格</text>
+        </view>
+      </view>
+      <view
+        class="switch-row"
+        bindtap="toggleHidePrice"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        aria-role="switch"
+        aria-checked="{{hidePrice}}"
+        wx:else
+      >
+        <view class="switch-main">
+          <text class="switch-label">对受礼人隐藏成交价 <text class="switch-tip">推荐</text></text>
+          <text class="switch-sub {{hidePrice ? '' : 'is-off'}}">{{hidePrice ? 'TA 收礼时看不到价格' : 'TA 收礼时会看到成交价'}}</text>
+        </view>
+        <view class="switch {{hidePrice ? 'on' : ''}}" aria-hidden="true"><view class="switch-knob"></view></view>
+      </view>
+    </view>
     <view class="scroll-pad"></view>
   </scroll-view>
 
