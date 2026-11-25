@@ -122,13 +122,13 @@ exports.main = async (event) => {
       case 'diagnoseUnread': {
         const rows = []
         const specs = [
-          ['user_messages', _.and([buildRecipientWhere(openid, 'all'), { read: _.neq(true) }])],
-          ['notification_logs', { recipient: openid, read: _.neq(true) }]
+          ['user_messages', buildRecipientWhere(openid, 'all')],
+          ['notification_logs', buildRecipientWhere(openid, 'all')]
         ]
         for (const [col, where] of specs) {
           try {
-            const r = await db.collection(col).where(where).limit(10).get()
-            ;(r.data || []).forEach((d) => rows.push({
+            const r = await db.collection(col).where(where).limit(50).get()
+            ;(r.data || []).filter(isUnreadDoc).slice(0, 10).forEach((d) => rows.push({
               col, id: String(d._id || ''), type: String(d.type || ''), category: String(d.category || ''),
               channel: String(d.channel || ''), read: d.read === true, isRead: d.isRead === true,
               hasCreateTime: d.createTime != null, keys: Object.keys(d).slice(0, 12)
@@ -779,13 +779,13 @@ async function loadUnreadMembers(openid, category, typeFilter, requestedQueue) {
   const out = []
   const cat = category && category !== 'all' ? { category } : null
   const sources = [
-    ['user_messages', _.and([buildRecipientWhere(openid, 'all'), { read: _.neq(true) }].concat(cat ? [cat] : []))],
-    ['notification_logs', Object.assign({ recipient: openid, channel: _.in(['inapp', 'inapp_campaign']), read: _.neq(true) }, cat || {})]
+    ['user_messages', _.and([buildRecipientWhere(openid, 'all')].concat(cat ? [cat] : []))],
+    ['notification_logs', _.and([buildRecipientWhere(openid, 'all')].concat(cat ? [cat] : []))]
   ]
   for (const [col, where] of sources) {
     try {
       const res = await db.collection(col).where(where).limit(UNREAD_SWEEP_LIMIT).get()
-      const rows = (res.data || []).map((d) => normalizeMessage(d, col))
+      const rows = (res.data || []).filter(isUnreadDoc).map((d) => normalizeMessage(d, col))
       filterMerged(rows, typeFilter, requestedQueue).forEach((m) => { if (m._id) out.push({ col, id: m._id }) })
     } catch (e) {
       console.warn('loadUnreadMembers', col, e && e.message)
@@ -801,11 +801,24 @@ async function loadUnreadMembers(openid, category, typeFilter, requestedQueue) {
  * doc(id).update 失败再试 where(_id) 更新（某些历史文档 doc() 会抛，where() 能过）。
  * 只有在「标记 + 重数后仍有未读」时才调用，正常已读路径不受影响。
  */
+/**
+ * 未读落点判据（2026-11-26 根因修复）：
+ * 列表里 isUnread() 用 JS 判 `read !== true`，缺失字段算未读；
+ * 但云端 where({ read: _.neq(true) }) **不会命中缺失字段**（neq 要求字段存在）。
+ * 两者口径不一致 → 缺少 read 的历史文档会永远留在「1 封未读」且点不掉。
+ */
+function isUnreadDoc(d) {
+  if (!d) return false
+  if (d.read === true) return false
+  if (d.isRead === true) return false
+  return true
+}
+
 async function forceMarkUnread(openid) {
   let marked = 0
   const specs = [
-    ['user_messages', _.and([buildRecipientWhere(openid, 'all'), { read: _.neq(true) }])],
-    ['notification_logs', { recipient: openid, read: _.neq(true) }]
+    ['user_messages', buildRecipientWhere(openid, 'all')],
+    ['notification_logs', buildRecipientWhere(openid, 'all')]
   ]
   for (const [col, where] of specs) {
     for (let page = 0; page < 5; page += 1) {
@@ -815,10 +828,10 @@ async function forceMarkUnread(openid) {
       } catch (e) {
         break
       }
-      const ids = rows.map((d) => d && d._id).filter(Boolean)
+      const ids = rows.filter(isUnreadDoc).map((d) => d && d._id).filter(Boolean)
       if (!ids.length) break
       for (const id of ids) {
-        const patch = { data: { read: true, readAt: db.serverDate() } }
+        const patch = { data: { read: true, isRead: true, readAt: db.serverDate() } }
         try {
           await db.collection(col).doc(id).update(patch)
         } catch (e) {
@@ -826,7 +839,7 @@ async function forceMarkUnread(openid) {
         }
       }
       marked += ids.length
-      if (ids.length < 100) break
+      if (rows.length < 100) break
     }
   }
   return marked

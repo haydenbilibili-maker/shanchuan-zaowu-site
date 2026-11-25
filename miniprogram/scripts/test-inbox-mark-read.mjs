@@ -149,6 +149,22 @@ async function runChecks() {
   await fn6.main({ action: 'markAllRead', category: 'all', queue: 'customer' })
   ok('R6 被同组已读盖住的残留未读（影子）也在全部已读时清掉', b6.unreadCount === 0 && db6.docs.user_messages.um2.read === true)
 
+  // R9（2026-11-26 根因）缺 read 字段的历史落点：列表按 JS 判未读、云端 neq(true) 不命中缺失字段，
+  //    → 永远「1 封未读」且点不掉。修后应能清掉；notification_logs 只有 _openid 没有 recipient 也要清。
+  const sd9 = seed()
+  delete sd9.user_messages.um3.read
+  sd9.notification_logs.nl2 = { _id: 'nl2', _openid: ME, channel: 'inapp', type: 'booking_created', relatedId: 'b2', title: '预约已记下', category: 'booking', sentAt: 1795000000000 }
+  const db9 = memDb(sd9)
+  const fn9 = loadFn(db9)
+  const b9 = await fn9.main({ action: 'getMessages', category: 'all', queue: 'customer' })
+  const r9 = await fn9.main({ action: 'markAllRead', category: 'all', queue: 'customer' })
+  ok('R9 缺 read 字段 / 只有 _openid 的落点也能被「全部已读」清掉（不再永久 1 封未读）',
+    b9.unreadCount >= 1 && r9.success === true && r9.unreadCount === 0 &&
+    db9.docs.user_messages.um3.read === true && db9.docs.notification_logs.nl2.read === true)
+  ok('R9 云端扫未读按 JS 口径（read/isRead !== true），不依赖云端 neq（漏缺失字段）',
+    /function isUnreadDoc\(d\)/.test(read(P.fn)) && /rows\.filter\(isUnreadDoc\)/.test(read(P.fn)) &&
+    !/where\(\{ recipient: openid, read: _\.neq\(true\) \}\)/.test(read(P.fn)))
+
   // R4
   const page = read(P.page)
   const at = page.indexOf('  async markAllRead() {')
@@ -165,7 +181,8 @@ async function runChecks() {
   const src = read(P.fn)
   ok('R7 兜底强标：按本人扫两集合（不带分类 / 队列条件）、doc 失败回落 where 更新、仅在仍有未读时触发',
     /async function forceMarkUnread\(openid\)/.test(src) &&
-    /const specs = \[\s*\n\s*\['user_messages', _\.and\(\[buildRecipientWhere\(openid, 'all'\)/.test(src) &&
+    /const specs = \[\s*\n\s*\['user_messages', buildRecipientWhere\(openid, 'all'\)\]/.test(src) &&
+    /const specs = \[[\s\S]{0,200}\['notification_logs', buildRecipientWhere\(openid, 'all'\)\]/.test(src) &&
     /db\.collection\(col\)\.where\(\{ _id: id \}\)\.update\(patch\)/.test(src) &&
     /const swept = await forceMarkUnread\(openid\)/.test(src) &&
     !/forceMarkUnread\(openid, category/.test(src))
