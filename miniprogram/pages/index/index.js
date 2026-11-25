@@ -180,7 +180,7 @@ Page({
     /** 馆员问候（homeGreeting.js）：门店数据到了才有 word */
     homeGreeting: { word: '', line: '' },
     /** 博物君口播（guideBroadcast.js，2026-11-23）：问候 + 昵称 + 轮播（馆内通知 / 今日开馆 / 博物一知 / 小提示） */
-    cast: { hello: '', items: [] },
+    cast: { hello: '', items: [], signal: { tone: 'idle', label: '口播' } },
     showExploreStore: false,
     loadingExploreStore: false,
 
@@ -1457,6 +1457,7 @@ Page({
     const now = Date.now();
     if (this._mailAt && now - this._mailAt < 60000) return Promise.resolve();
     this._mailAt = now;
+    if (!wx.cloud || typeof wx.cloud.callFunction !== 'function') return Promise.resolve();
     return wx.cloud.callFunction({
       name: 'getUserMessages',
       data: { action: 'getMessages', category: 'all', queue: 'customer', page: 0, pageSize: 1 }
@@ -1472,6 +1473,8 @@ Page({
   onCastSealTap() {
     const flags = this._castFlags || {};
     if (flags.museumGuideOpen === false) return;
+    // 朋友圈单页模式不能 navigateTo（与 onCastTap 同口径）
+    if (blockIfSinglePage()) return;
     wx.navigateTo({ url: '/subpackages/feature/museum-guide/index?from=home' });
   },
 

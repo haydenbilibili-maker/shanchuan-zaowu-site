@@ -371,6 +371,7 @@ Page(withAppModal({
       dateEmpty: true,
       size: '—',
       sizeEmpty: true,
+      sizeLong: false,
       framerName: '—',
       framerEmpty: true,
       framerId: '',

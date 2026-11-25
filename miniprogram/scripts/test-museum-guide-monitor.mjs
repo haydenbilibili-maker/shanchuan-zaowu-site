@@ -206,7 +206,7 @@ async function runChecks() {
     /wx:if="\{\{guideOpen && speciesInfo\.species_name_zh/.test(read(P.identifyWxml)) &&
     /loadGuideOpen\(\)/.test(read(P.identifyJs)) && /museumGuideOpen !== false/.test(read(P.identifyJs)))
   ok('M5 关闭后首页口播整条清空（不留任何 AI 内容）',
-    /if \(flags\.museumGuideOpen === false\)/.test(read(P.homeJs)) && /cast: \{ hello: '', items: \[\] \}/.test(read(P.homeJs)))
+    /if \(flags\.museumGuideOpen === false\)/.test(read(P.homeJs)) && /cast: \{ hello: '', items: \[\]/.test(read(P.homeJs)))
   ok('M5 小程序端开关归一（缺省开启）与「我的」入口跟随', /museumGuideOpen: src\.museumGuideOpen !== false/.test(read(P.flagsUtil)) &&
     /data-path="museumGuide" wx:if="\{\{museumGuideOpen\}\}"/.test(read(P.userWxml)) && /museumGuideOpen: flags\.museumGuideOpen !== false/.test(read(P.userJs)))
 
