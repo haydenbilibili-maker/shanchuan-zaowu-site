@@ -278,10 +278,11 @@ const INJECTIONS = {
     to: 'node "$CHECKER" --json > "$AFTER_JSON"'
   },
   // 磁贴名被改回全称（产品已定为短名「开关」）→ 名字漂移必须被拦下
+  // 2026-11-26 归并后「开关」是组合「上线准备」的子功能：名称漂移注入改到 hubNav 子功能上
   'tile-label-drift': {
-    file: 'miniprogram/subpackages/manager/manager/index.wxml',
-    from: '<text class="hub-cell-name">开关</text>',
-    to: '<text class="hub-cell-name">内容开关</text>'
+    file: 'miniprogram/subpackages/manager/manager/hubNav.js',
+    from: "{ id: 'contentFlags', label: '开关',",
+    to: "{ id: 'contentFlags', label: '内容开关',"
   },
   // 轨道占用退回「固定间隔」→ 同轨叠成一片（这就是业务方说的灾难现场）
   'lane-overlap': {
@@ -1701,10 +1702,17 @@ const hubWxml = readSrc('miniprogram/subpackages/manager/manager/index.wxml')
 // 磁贴名由产品定：**短名「开关」**（曾按"可发现性"改成全称「内容开关」，产品要求改回）。
 // 所以这里锁两件事：① 名字就是产品口径的「开关」，别再反复来回改；
 // ② 门禁仍是 menu.contentFlags。可发现性不靠磁贴名，靠 tab 9 的直达条（见上一节断言）。
-check('工作台有 tab 16「开关」磁贴（产品口径短名）', /data-idx="16"[\s\S]{0,400}<text(?: class="hub-cell-name")?>开关<\/text>/.test(hubWxml))
+// 2026-11-26 超管工作台归并：「开关」可为组合「上线准备」的子功能 —— 名字仍是「开关」、仍是 tab 16、仍按 contentFlags 门禁，
+// 组合磁贴按 menu.contentFlags 显示（只并入口，不改名、不放宽）
+const hubNavSrc = readSrc('miniprogram/subpackages/manager/manager/hubNav.js')
+const flagChild = /\{ id: 'contentFlags', label: '开关',[^\n]*keys: \['contentFlags'\], tap: 'switchTab', idx: 16,/.test(hubNavSrc)
+const flagKitId = flagChild && ((hubNavSrc.split('\n  {\n    id: ').slice(1).find((b) => /\{ id: 'contentFlags', label: '开关'/.test(b.split('\n  }')[0])) || '').match(/^'(\w+)'/) || [])[1]
+const flagKitTile = flagKitId && new RegExp(`data-fid="${flagKitId}" wx:if="\\{\\{([^}]*)\\}\\}" bindtap="openHubKitPage" data-kit="${flagKitId}"`).exec(hubWxml)
+check('工作台有 tab 16「开关」磁贴（产品口径短名；或组合子功能「开关」）', !!flagKitTile || /data-idx="16"[\s\S]{0,400}<text(?: class="hub-cell-name")?>开关<\/text>/.test(hubWxml))
 check(
   'tab 16 磁贴仍受 menu.contentFlags 门禁（不能顺手把门禁删了）',
-  /wx:if="\{\{menu\.contentFlags\}\}"[\s\S]{0,120}data-idx="16"/.test(hubWxml)
+  (!!flagKitTile && flagKitTile[1].split('||').map((x) => x.trim()).includes('menu.contentFlags')) ||
+    /wx:if="\{\{menu\.contentFlags\}\}"[\s\S]{0,120}data-idx="16"/.test(hubWxml)
 )
 
 // ② 字段齐备（结构一致性：云函数 save 读什么，小程序端就必须带什么）

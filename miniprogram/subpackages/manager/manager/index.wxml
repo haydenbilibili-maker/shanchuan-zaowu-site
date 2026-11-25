@@ -463,19 +463,14 @@
               <text class="hub-cell-name">评价</text>
               <text class="hub-cell-sub">审核·回复</text>
             </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="contentFlags" wx:if="{{menu.contentFlags}}" bindtap="switchTab" data-idx="16" data-title="内容开关">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/eye.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">开关</text>
-            </view>
             <!-- 审核模式（2026-11-25）：功能开关 + 藏品上下架聚合页；原有「开关」「藏品」两个入口都保留 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="reviewMode" wx:if="{{menu.reviewMode}}" bindtap="goReviewModeGuarded">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/done.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">审核</text>
-              <text class="hub-cell-sub">提审关闸</text>
-            </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="decor" wx:if="{{menu.decor}}" bindtap="switchTab" data-idx="4" data-title="店铺装修">
-              <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/edit.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">装修</text>
+            <!-- 组合入口（2026-11-26 归并）：decor + contentFlags + reviewMode → 组合页逐条平铺 -->
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="launchKit" wx:if="{{menu.decor || menu.contentFlags || menu.reviewMode}}" bindtap="openHubKitPage" data-kit="launchKit">
+              <view class="hub-ico">
+                <image class="hub-ico-img" src="/assets/icons/eye.png" mode="aspectFit" />
+              </view>
+              <text class="hub-cell-name">上线准备</text>
+              <text class="hub-cell-sub">装修·开关·审核</text>
             </view>
             <!-- 组合入口（2026-11-26 归并）：activities + live → 组合页逐条平铺；角标 = 有权限的子功能角标之和 -->
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="opsKit" wx:if="{{menu.activities || menu.live}}" bindtap="openHubKitPage" data-kit="opsKit">
@@ -644,22 +639,13 @@
             <view class="hub-grp-arrow {{hubCollapsed.system ? 'is-collapsed' : ''}}"></view>
           </view>
           <view class="hub-grid--cat" wx:if="{{!hubCollapsed.system}}">
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="shipping" wx:if="{{menu.shipping}}" bindtap="switchTab" data-idx="15" data-title="运费规则">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/deliver.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">运费规则</text>
-            </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="bookingRules" wx:if="{{menu.bookingRules}}" bindtap="goBookingRules">
-              <view class="hub-ico"><image class="hub-ico-img" src="/subpackages/manager/assets/icons/clock.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">预约规则</text>
-            </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="supportConfig" wx:if="{{menu.supportConfig}}" bindtap="goSupportConfig">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/phone.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">客服入口</text>
-            </view>
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="wxNotify" wx:if="{{menu.orders}}" bindtap="enableStaffOrderWxNotify">
-              <view class="hub-ico"><image class="hub-ico-img" src="/assets/icons/service.png" mode="aspectFit" /></view>
-              <text class="hub-cell-name">微信通知</text>
-              <text class="hub-cell-sub">订单·工单提醒</text>
+            <!-- 组合入口（2026-11-26 归并）：shipping + bookingRules + supportConfig + wxNotify → 组合页逐条平铺 -->
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="settingsKit" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig || menu.orders}}" bindtap="openHubKitPage" data-kit="settingsKit">
+              <view class="hub-ico">
+                <image class="hub-ico-img" src="/assets/icons/service.png" mode="aspectFit" />
+              </view>
+              <text class="hub-cell-name">设置</text>
+              <text class="hub-cell-sub">运费·预约·客服</text>
             </view>
             <!-- 组合入口（2026-11-26 归并）：aiIdentify + museumGuide → 组合页逐条平铺；角标 = 有权限的子功能角标之和 -->
             <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="aiMonitorKit" wx:if="{{menu.aiIdentifyMonitor || menu.museumGuideMonitor}}" bindtap="openHubKitPage" data-kit="aiMonitorKit">

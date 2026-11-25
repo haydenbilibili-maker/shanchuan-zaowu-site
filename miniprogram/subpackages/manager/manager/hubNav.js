@@ -125,6 +125,23 @@ const HUB_KITS = [
       { id: 'payslipAdmin', label: '工资维护', desc: '录入、修正和删除工资', alias: ['工资', '录工资', '薪资'], icon: MGR_ICON + 'edit.png', keys: ['payslipAdmin'], tap: 'goPayslipAdminGuarded' },
       { id: 'myPayslip', label: '工资条', desc: '看每月应发、实发和分成', alias: ['工资', '工资条明细', '薪资'], icon: ICON + 'calendar_gold.png', keys: ['myPayslip'], tap: 'goMyPayslipGuarded' }
     ]
+  },
+  {
+    id: 'launchKit', label: '上线准备', sub: '装修·开关·审核', desc: '上线前的布置、栏目和提审', icon: ICON + 'eye.png', sec: 'goods',
+    children: [
+      { id: 'decor', label: '装修', desc: '首页和店铺的布置', alias: ['装修', '首页', '横幅'], icon: MGR_ICON + 'edit.png', keys: ['decor'], tap: 'switchTab', idx: 4, tabTitle: '店铺装修' },
+      { id: 'contentFlags', label: '开关', desc: '页面上哪些栏目显示', alias: ['开关', '栏目', '显示', '内容开关'], icon: ICON + 'eye.png', keys: ['contentFlags'], tap: 'switchTab', idx: 16, tabTitle: '内容开关' },
+      { id: 'reviewMode', label: '审核', sub: '提审关闸', desc: '提审前关掉功能与商品', alias: ['审核', '提审', '上线', '审核模式'], icon: ICON + 'done.png', keys: ['reviewMode'], tap: 'goReviewModeGuarded' }
+    ]
+  },
+  {
+    id: 'settingsKit', label: '设置', sub: '运费·预约·客服', desc: '运费、预约、客服和微信通知', icon: ICON + 'service.png', sec: 'system',
+    children: [
+      { id: 'shipping', label: '运费规则', desc: '按装裱方式算运费、包邮门槛', alias: ['运费', '包邮', '快递费', '规则配置'], icon: ICON + 'deliver.png', keys: ['shipping'], tap: 'switchTab', idx: 15, tabTitle: '运费规则' },
+      { id: 'bookingRules', label: '预约规则', desc: '可预约时段和闭店日', alias: ['预约', '时段', '闭店', '规则配置'], icon: MGR_ICON + 'clock.png', keys: ['bookingRules'], tap: 'goBookingRules' },
+      { id: 'supportConfig', label: '客服入口', desc: '客服电话和常见问题', alias: ['客服', '电话', '常见问题', '规则配置'], icon: ICON + 'phone.png', keys: ['supportConfig'], tap: 'goSupportConfig' },
+      { id: 'wxNotify', label: '微信通知', sub: '订单·工单提醒', desc: '来新订单时微信提醒我', alias: ['通知', '提醒', '微信'], icon: ICON + 'service.png', keys: ['orders'], tap: 'enableStaffOrderWxNotify' }
+    ]
   }
 ]
 
@@ -161,10 +178,8 @@ const HUB_ENTRIES = [
   { id: 'content', label: '内容', desc: '文章和视频', alias: ['文章', '视频', '图文'], icon: ICON + 'article-tab.png', sec: 'goods', keys: ['content'], tap: 'switchTab', idx: 9, tabTitle: '内容管理' },
   // 2026-11-25：用户评价从「内容管理」子 Tab 提为一级磁贴（原入口已无，不算重复入口）
   { id: 'reviews', label: '评价', sub: '审核·回复', desc: '顾客评价审核、置顶与回复', alias: ['评价', '评论', '晒单', '回复'], icon: ICON + 'star.png', sec: 'goods', keys: ['reviews'], tap: 'switchTab', idx: 17, tabTitle: '用户评价' },
-  { id: 'contentFlags', label: '开关', desc: '页面上哪些栏目显示', alias: ['开关', '栏目', '显示', '内容开关'], icon: ICON + 'eye.png', sec: 'goods', keys: ['contentFlags'], tap: 'switchTab', idx: 16, tabTitle: '内容开关' },
   // 2026-11-25：审核模式 = 功能开关 + 藏品上下架聚合页（仅超管）；原「开关」「藏品」两个入口都保留
-  { id: 'reviewMode', label: '审核', sub: '提审关闸', desc: '提审前关掉功能与商品', alias: ['审核', '提审', '上线', '审核模式'], icon: ICON + 'done.png', sec: 'goods', keys: ['reviewMode'], tap: 'goReviewModeGuarded' },
-  { id: 'decor', label: '装修', desc: '首页和店铺的布置', alias: ['装修', '首页', '横幅'], icon: MGR_ICON + 'edit.png', sec: 'goods', keys: ['decor'], tap: 'switchTab', idx: 4, tabTitle: '店铺装修' },
+  kitEntry('launchKit'),
   kitEntry('opsKit'),
   { id: 'memberCrm', label: '会员 CRM', desc: '会员是谁、多久没来、谁该回访', alias: ['会员', '顾客', '客户', '回访'], icon: ICON + 'user_gold.png', sec: 'members', keys: ['memberCrm'], tap: 'goMemberCrm' },
   kitEntry('memberLevelKit'),
@@ -184,10 +199,7 @@ const HUB_ENTRIES = [
   kitEntry('staffKit'),
   { id: 'shareholderConfig', label: '股东', desc: '门店占股和回本前后分成', alias: ['股东配置', '占股', '分成', '组织'], icon: ICON + 'coin_gold.png', sec: 'org', keys: ['shareholderConfig'], tap: 'goShareholderConfig' },
   kitEntry('payKit'),
-  { id: 'shipping', label: '运费规则', desc: '按装裱方式算运费、包邮门槛', alias: ['运费', '包邮', '快递费', '规则配置'], icon: ICON + 'deliver.png', sec: 'system', keys: ['shipping'], tap: 'switchTab', idx: 15, tabTitle: '运费规则' },
-  { id: 'bookingRules', label: '预约规则', desc: '可预约时段和闭店日', alias: ['预约', '时段', '闭店', '规则配置'], icon: MGR_ICON + 'clock.png', sec: 'system', keys: ['bookingRules'], tap: 'goBookingRules' },
-  { id: 'supportConfig', label: '客服入口', desc: '客服电话和常见问题', alias: ['客服', '电话', '常见问题', '规则配置'], icon: ICON + 'phone.png', sec: 'system', keys: ['supportConfig'], tap: 'goSupportConfig' },
-  { id: 'wxNotify', label: '微信通知', sub: '订单·工单提醒', desc: '来新订单时微信提醒我', alias: ['通知', '提醒', '微信'], icon: ICON + 'service.png', sec: 'system', keys: ['orders'], tap: 'enableStaffOrderWxNotify' },
+  kitEntry('settingsKit'),
   kitEntry('aiMonitorKit'),
 ]
 
@@ -216,7 +228,10 @@ const FAV_ID_ALIASES = {
   artisan: 'framerKit',
   org: ['staffKit', 'shareholderConfig'],
   payslip: 'payKit',
-  rules: ['shipping', 'bookingRules', 'supportConfig'],
+  // S4：上线准备 / 设置
+  decor: 'launchKit', contentFlags: 'launchKit', reviewMode: 'launchKit',
+  shipping: 'settingsKit', bookingRules: 'settingsKit', supportConfig: 'settingsKit', wxNotify: 'settingsKit',
+  rules: 'settingsKit',
   memberCurator: 'memberLevelKit', memberLevelAdjust: 'memberLevelKit', honoraryCurators: 'curators',
   shipmentOps: 'shipment', shipmentSku: 'shipment',
   inventoryOps: 'goodsKit', rawInventoryOps: 'goodsKit',

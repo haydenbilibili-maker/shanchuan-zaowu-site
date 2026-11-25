@@ -938,8 +938,10 @@ function judgeSplit(src, nav, roles, tiles, errs) {
     const mgr = nav.normalizeFavs(['payslip', 'gift', 'org'], mm)
     const wantMgr = canonList(canon, ['myPayslip', 'giftOps'])
     if (JSON.stringify(mgr) !== JSON.stringify(wantMgr)) errs.push(`N7 店长旧折叠常用 [payslip, gift, org] 应映射为 [${wantMgr}]（组织无权限须丢掉，不留空位），实际 [${mgr}]`)
-    const partial = nav.normalizeFavs(['payslip', 'rules'], { payslipAdmin: true, supportConfig: true })
-    if (JSON.stringify(partial) !== JSON.stringify(canonList(canon, ['payslipAdmin', 'supportConfig']))) errs.push(`N7 只有部分子功能权限时，旧折叠常用须映射到第一个有权限的子入口：[payslip, rules] 应得 [payslipAdmin, supportConfig]，实际 [${partial}]`)
+    // 只有部分子功能权限：旧折叠 id 须落到第一个**有权限**的去处（礼包只给了钱包配置、组织只给了股东）
+    const partial = nav.normalizeFavs(['perks', 'org'], { walletConfig: true, shareholderConfig: true })
+    const wantPartial = canonList(canon, ['walletConfig', 'shareholderConfig'])
+    if (JSON.stringify(partial) !== JSON.stringify(wantPartial)) errs.push(`N7 只有部分子功能权限时，旧折叠常用须映射到第一个有权限的子入口：[perks, org] 应得 [${wantPartial}]，实际 [${partial}]`)
     const view = nav.buildFavView(['gift', 'payslip'], { menu: mm, giftTodoCount: 3 })
     if (!view.length || view.some((v) => !v.id || !v.label || !nav.findEntry(v.id))) errs.push('N7 旧折叠常用渲染出空位（常用磁贴缺 id / 名称）')
     else if ((view.find((v) => v.id === canon('giftOps')) || {}).badge !== '3') errs.push(`N7 旧「礼赠」常用映射后须带上礼赠待办红点 3（当前「${(view.find((v) => v.id === canon('giftOps')) || {}).badge}」）`)
