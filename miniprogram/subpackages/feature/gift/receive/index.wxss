@@ -268,7 +268,7 @@ page { background: var(--color-bg); color: #fff; }
   bottom: 36rpx;
   border: 1rpx solid rgba(196, 167, 108, 0.35);
   border-radius: var(--radius-sm);
-  background: linear-gradient(180deg, #FAF6ED 0%, #F2EDE4 100%);
+  background: var(--mat-paper-letter);
   padding: 28rpx 24rpx;
   box-sizing: border-box;
   opacity: 0.55;

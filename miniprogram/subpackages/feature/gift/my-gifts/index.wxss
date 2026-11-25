@@ -87,7 +87,7 @@ page {
   flex-shrink: 0;
   margin: 24rpx 32rpx 8rpx;
   padding: 30rpx 32rpx 22rpx;
-  background: linear-gradient(170deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   border-radius: var(--radius-sm);
   box-shadow: 0 24rpx 52rpx rgba(0, 0, 0, 0.42);
 }
@@ -518,7 +518,7 @@ page {
   border-radius: var(--radius-md);
 }
 .empty-mark.paper-empty {
-  background: linear-gradient(160deg, #FAF6ED 0%, #F2EDE4 100%);
+  background: var(--mat-paper-letter);
   border: 1px solid #E0CFA3;
 }
 .empty-ring {
@@ -1087,7 +1087,7 @@ page {
   width: 80rpx;
   height: 80rpx;
   border-radius: var(--radius-md);
-  background: linear-gradient(160deg, #FAF6ED 0%, #F2EDE4 100%);
+  background: var(--mat-paper-letter);
   border: 1px solid #E0CFA3;
   color: #8A7530;
   font-size: var(--fs-32);

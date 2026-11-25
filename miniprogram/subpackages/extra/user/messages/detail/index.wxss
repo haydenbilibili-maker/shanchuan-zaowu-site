@@ -70,7 +70,8 @@ page {
 
 .paper-stage .letter-card.paper {
   overflow: hidden;
-  background: #F2EDE4;
+  /* 材质规范：信笺纸 + 纸纹（原为平涂 #F2EDE4） */
+  background: var(--mat-paper-grain), var(--mat-paper-letter);
   border: 1rpx solid var(--color-primary);
   border-radius: var(--radius-lg, 24rpx);
   transform: translateY(16rpx);
@@ -86,7 +87,7 @@ page {
 
 .paper-stage .letter-card.paper-receipt,
 .paper-stage .letter-card.paper-notice {
-  background: #EDE6D8;
+  background: var(--mat-paper-grain), linear-gradient(180deg, #F2EDE4 0%, #EDE6D8 100%);
   box-shadow:
     0 18rpx 36rpx rgba(26, 24, 20, 0.42),
     0 4rpx 10rpx rgba(26, 24, 20, 0.28),
@@ -844,7 +845,7 @@ page {
 .paper-stage .letter-card.paper-receipt,
 .paper-stage .letter-card.paper-notice {
   position: relative;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   border: none;
   border-radius: 4rpx;
   /* 内边距写在这里（不靠 @import 进来的列表页 .letter-card），纸边与内发丝框之间留足呼吸 */
@@ -867,7 +868,7 @@ page {
   height: 18rpx;
   margin-left: -9rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
   z-index: 3;
 }
 
@@ -884,7 +885,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
   border-radius: 4rpx;
   transform: rotate(-6deg);
 }
@@ -926,7 +927,7 @@ page {
   margin-top: 8rpx;
   font-size: var(--fs-36);
   line-height: 1.4;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 
 .paper-mode .letter-time {
@@ -948,7 +949,7 @@ page {
   color: #3E3626;
 }
 
-.sign-line { color: #2E2618; }
+.sign-line { color: var(--mat-ink); }
 .sign-mark { color: #8B6F47; }
 
 /* ── 拆信仪式（2026-10-18）────────────────────────────────────────────
@@ -971,7 +972,7 @@ page {
   flex-direction: column;
   justify-content: flex-end;
   padding: 0 36rpx 36rpx;
-  background: linear-gradient(180deg, #E6DAC2, #D9CAAD);
+  background: var(--mat-paper-kraft);
   border-radius: 6rpx;
   box-shadow: inset 0 0 0 1rpx rgba(46, 38, 24, 0.18), 0 20rpx 44rpx rgba(0, 0, 0, 0.5);
 }
@@ -979,7 +980,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-26);
   letter-spacing: 0.12em;
-  color: #2E2618;
+  color: var(--mat-ink);
 }
 .ue-en {
   margin-top: 8rpx;

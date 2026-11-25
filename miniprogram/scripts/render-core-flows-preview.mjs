@@ -736,7 +736,8 @@ const SCENES = [
         taxonomy: { kingdom: '动物界', phylum: '节肢动物门', class: '昆虫纲', order: '鳞翅目', family: '蛱蝶科', genus: '闪蝶属' } }),
       archiveDisplay: { origin: '南美 · 秘鲁', originEmpty: false, size: '18 × 24 cm', sizeEmpty: false, date: '2026.09', dateEmpty: false, framerName: '林一', framerEmpty: false, framerId: 'f1',
         framingMethod: '其它', framingEmpty: false, framingShow: false, craftProcess: '针插标本', craftProcessEmpty: false, craftProcessShow: true },
-      showCareStrip: true, careSummary: '干燥防虫、避晒、不湿擦', careCategoryLabel: '昆虫标本', careCategoryColor: '#C4A76C' } },
+      showCareStrip: true, careSummary: '干燥防虫、避晒、不湿擦', careCategoryLabel: '昆虫标本', careCategoryColor: '#C4A76C',
+      showProtectionCert: true, protectionLabel: 'CITES 附录 II · 合法来源', certificateUrl: '' } },
   { name: 'detail-films', h: 3000, wxml: 'subpackages/feature/detail/index', base: 'detail', data: {
       heroVideoCount: 1, filmLead: true,
       externalVideos: [

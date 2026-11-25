@@ -1005,55 +1005,97 @@ button.nav-share-btn::after { display: none; border: none; }
 }
 .taxonomy-empty .muted { font-size: var(--fs-24); color: var(--color-text-muted); }
 
+/* 来源说明（2026-11-25 材质规范）：随附的来源 / 合规文件本身就是一张纸 → 标本签纸 + 内框 + 黄铜别针，
+   文件图像像贴在档案纸上的附页；标签是朱砂细框（纸上不用亮金，守 L1 黄金规则）。
+   按压 = 纸下沉 2rpx + 投影收短（材质规范 §交互）。 */
 .cert-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--brass-800);
-  border-radius: var(--radius-md);
-  overflow: hidden;
+  position: relative;
   margin-bottom: 60rpx;
+  padding: 34rpx 30rpx 28rpx;
+  box-sizing: border-box;
+  border-radius: var(--r-card, 16rpx);
+  background: var(--mat-paper-grain), var(--mat-paper-label);
+  box-shadow: var(--mat-paper-shadow), var(--mat-paper-edge);
+  color: var(--mat-ink);
+  overflow: hidden;
+  transition: transform var(--dur-instant) var(--ease-standard), box-shadow var(--dur-instant) var(--ease-standard);
+}
+.cert-card::before {
+  content: '';
+  position: absolute;
+  inset: 14rpx;
+  border: 1rpx solid var(--mat-paper-frame);
+  border-radius: var(--r-thumb-sm, 8rpx);
+  pointer-events: none;
+}
+.cert-card::after {
+  content: '';
+  position: absolute;
+  top: 6rpx;
+  left: 50%;
+  width: 14rpx;
+  height: 14rpx;
+  margin-left: -7rpx;
+  border-radius: 50%;
+  background: var(--mat-brass-pin);
+  box-shadow: 0 2rpx 3rpx rgba(92, 70, 28, 0.3);
 }
 
 .cert-badge {
-  padding: 16rpx 30rpx;
-  font-size: var(--fs-22);
-  color: var(--color-primary);
-  letter-spacing: 0.08em;
-  border-bottom: 1px solid var(--color-bg-elevated);
-  background: rgba(196, 167, 108, 0.08);
+  position: relative;
+  display: inline-block;
+  padding: 4rpx 14rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
+  font-family: var(--font-brand);
+  font-size: var(--fs-20);
+  letter-spacing: 0.14em;
+  color: var(--mat-seal);
+  background: var(--mat-seal-tint);
+  box-shadow: inset 0 0 0 1rpx var(--mat-seal-line);
 }
 
 .cert-body {
-  padding: 24rpx;
+  position: relative;
+  margin-top: 18rpx;
 }
 
 .cert-image {
+  display: block;
   width: 100%;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-bg-elevated);
+  padding: 8rpx;
+  box-sizing: border-box;
+  border-radius: 4rpx;
+  background: #FBF8F1;
+  box-shadow: 0 2rpx 6rpx rgba(92, 70, 28, 0.18), inset 0 0 0 1rpx var(--mat-paper-frame);
 }
 
 .cert-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20rpx;
+  margin-top: 18rpx;
+  padding-top: 14rpx;
   gap: 16rpx;
+  border-top: 1rpx dashed var(--mat-paper-rule);
 }
 
 .cert-tip {
   font-size: var(--fs-22);
-  color: var(--color-text-secondary);
+  color: var(--mat-ink-soft);
   flex: 1;
 }
 
 .cert-action {
   font-size: var(--fs-22);
-  color: var(--color-primary);
+  font-weight: 600;
+  color: var(--mat-ink-body);
   flex-shrink: 0;
 }
 
-.cert-card:active {
-  opacity: 0.92;
+.cert-card.tap-press-soft {
+  transform: var(--mat-press-shift);
+  box-shadow: var(--mat-paper-shadow-press), var(--mat-paper-edge);
+  opacity: 1;
 }
 
 /* 故事卡 */
@@ -1839,24 +1881,24 @@ button.nav-share-btn::after { display: none; border: none; }
   padding: 32rpx 32rpx 36rpx;
   box-sizing: border-box;
   border-radius: var(--r-card, 16rpx);
-  background: linear-gradient(180deg, #F3ECDD, #E9DFCA);
-  box-shadow: inset 0 0 0 1rpx rgba(176, 141, 87, 0.35), 0 12rpx 32rpx rgba(0, 0, 0, 0.35);
-  color: #2E2618;
+  background: var(--mat-paper-grain), var(--mat-paper-label);
+  box-shadow: var(--mat-paper-edge), var(--mat-paper-shadow);
+  color: var(--mat-ink);
   overflow: hidden;
 }
-.tax-card::before { content: ''; position: absolute; left: 14rpx; right: 14rpx; top: 14rpx; bottom: 14rpx; border: 1rpx solid rgba(176, 141, 87, 0.32); border-radius: var(--r-thumb-sm, 8rpx); pointer-events: none; }
-.tax-card-top { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .12em; color: #8A6F45; }
-.tax-card-name { display: block; margin-top: 22rpx; font-family: var(--font-brand); font-size: 44rpx; letter-spacing: .1em; color: #2E2618; }
-.tax-card-latin { display: block; margin-top: 6rpx; font-family: var(--font-latin); font-style: italic; font-size: var(--fs-28); color: #6B5A3E; }
-.tax-card-rule { height: 1rpx; margin: 24rpx 0 8rpx; background: rgba(138, 111, 69, 0.35); }
+.tax-card::before { content: ''; position: absolute; left: 14rpx; right: 14rpx; top: 14rpx; bottom: 14rpx; border: 1rpx solid var(--mat-paper-frame); border-radius: var(--r-thumb-sm, 8rpx); pointer-events: none; }
+.tax-card-top { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .12em; color: var(--mat-ink-label); }
+.tax-card-name { display: block; margin-top: 22rpx; font-family: var(--font-brand); font-size: 44rpx; letter-spacing: .1em; color: var(--mat-ink); }
+.tax-card-latin { display: block; margin-top: 6rpx; font-family: var(--font-latin); font-style: italic; font-size: var(--fs-28); color: var(--mat-ink-soft); }
+.tax-card-rule { height: 1rpx; margin: 24rpx 0 8rpx; background: var(--mat-paper-rule); }
 .tax-grid { display: flex; flex-wrap: wrap; justify-content: space-between; }
-.tax-cell { width: 48%; display: flex; align-items: baseline; gap: 14rpx; padding: 16rpx 0; border-bottom: 1rpx dashed rgba(138, 111, 69, 0.3); }
-.tax-rank { flex-shrink: 0; width: 38rpx; height: 38rpx; line-height: 38rpx; text-align: center; border-radius: 50%; font-family: var(--font-brand); font-size: var(--fs-20); color: #8A6F45; box-shadow: inset 0 0 0 1rpx rgba(138, 111, 69, 0.5); }
-.tax-name { flex: 1; min-width: 0; font-family: var(--font-brand); font-size: var(--fs-26); color: #2E2618; }
+.tax-cell { width: 48%; display: flex; align-items: baseline; gap: 14rpx; padding: 16rpx 0; border-bottom: 1rpx dashed var(--mat-paper-rule); }
+.tax-rank { flex-shrink: 0; width: 38rpx; height: 38rpx; line-height: 38rpx; text-align: center; border-radius: 50%; font-family: var(--font-brand); font-size: var(--fs-20); color: var(--mat-ink-label); box-shadow: inset 0 0 0 1rpx rgba(138, 111, 69, 0.5); }
+.tax-name { flex: 1; min-width: 0; font-family: var(--font-brand); font-size: var(--fs-26); color: var(--mat-ink); }
 .tax-card-foot { display: flex; align-items: baseline; gap: 18rpx; margin-top: 22rpx; padding-right: 110rpx; }
-.tax-foot-k { flex-shrink: 0; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .14em; color: #8A6F45; }
-.tax-foot-v { font-family: var(--font-latin); font-style: italic; font-size: var(--fs-30, 30rpx); color: #2E2618; }
-.tax-seal { position: absolute; right: 30rpx; bottom: 30rpx; padding: 8rpx 10rpx; border-radius: var(--r-thumb-sm, 8rpx); background: #8E3B2E; color: #F3E7D3; font-family: var(--font-brand); font-size: var(--fs-22); letter-spacing: .1em; transform: rotate(-6deg); opacity: .9; }
+.tax-foot-k { flex-shrink: 0; font-family: var(--font-mono); font-size: var(--fs-18); letter-spacing: .14em; color: var(--mat-ink-label); }
+.tax-foot-v { font-family: var(--font-latin); font-style: italic; font-size: var(--fs-30, 30rpx); color: var(--mat-ink); }
+.tax-seal { position: absolute; right: 30rpx; bottom: 30rpx; padding: 8rpx 10rpx; border-radius: var(--r-thumb-sm, 8rpx); background: var(--mat-seal); color: var(--mat-seal-ink); font-family: var(--font-brand); font-size: var(--fs-22); letter-spacing: .1em; transform: rotate(-6deg); opacity: .9; }
 
 /* 养护说明（2026-11-23）：与标本档案同一种深卡（不再左侧金条 + 图标自成一格） */
 .care-card { width: 100%; margin-bottom: 48rpx; padding: 26rpx 28rpx; box-sizing: border-box; display: flex; align-items: center; gap: 20rpx; background: var(--color-bg-card); border-radius: var(--radius-md); border: 1px solid rgba(38, 35, 32, 0.8); }

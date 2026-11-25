@@ -348,8 +348,8 @@ page {
 
 /* 点亮：纸面铭牌（浅纸 + 铜圈 + 墨色罗马数字） */
 .node.is-lit {
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
-  border: 3rpx solid #B08D57;
+  background: var(--mat-paper-label);
+  border: 3rpx solid var(--mat-brass-pin);
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.35);
 }
 
@@ -359,7 +359,7 @@ page {
   color: rgba(196, 167, 108, 0.5);
 }
 
-.node.is-lit .node-roman { color: #2E2618; font-weight: 600; }
+.node.is-lit .node-roman { color: var(--mat-ink); font-weight: 600; }
 
 .node-label {
   margin-top: 10rpx;
@@ -414,14 +414,14 @@ page {
   justify-content: center;
 }
 .toc-cell.is-done .toc-ring-in {
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
 }
 .toc-no {
   font-family: var(--font-latin);
   font-size: var(--fs-20);
   color: var(--brass-300);
 }
-.toc-cell.is-done .toc-no { color: #2E2618; font-weight: 600; }
+.toc-cell.is-done .toc-no { color: var(--mat-ink); font-weight: 600; }
 .toc-name {
   margin-top: 10rpx;
   font-family: var(--font-brand);
@@ -482,7 +482,7 @@ page {
 }
 
 .relic.is-lit {
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.3);
 }
 
@@ -513,7 +513,7 @@ page {
   color: var(--color-text-secondary);
 }
 
-.relic.is-lit .relic-title { color: #2E2618; font-weight: 600; }
+.relic.is-lit .relic-title { color: var(--mat-ink); font-weight: 600; }
 
 .relic-hint {
   display: block;
@@ -608,8 +608,8 @@ page {
 }
 
 .medal.is-lit {
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
-  border: 4rpx solid #B08D57;
+  background: var(--mat-paper-label);
+  border: 4rpx solid var(--mat-brass-pin);
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.4);
 }
 
@@ -820,10 +820,10 @@ page {
   box-sizing: border-box;
   border: 2rpx solid rgba(196, 167, 108, 0.28);
 }
-.mt-node.is-lit { background: linear-gradient(180deg, #F3ECDD, #E8DFCB); border-color: #B08D57; }
+.mt-node.is-lit { background: var(--mat-paper-label); border-color: var(--mat-brass-pin); }
 .mt-node.is-current { box-shadow: 0 0 0 4rpx rgba(196, 167, 108, 0.35); }
 .mt-roman { font-family: var(--font-latin); font-size: var(--fs-18); color: rgba(196, 167, 108, 0.6); }
-.mt-node.is-lit .mt-roman { color: #2E2618; font-weight: 600; }
+.mt-node.is-lit .mt-roman { color: var(--mat-ink); font-weight: 600; }
 .mt-label {
   margin-top: 6rpx;
   max-width: 84rpx;

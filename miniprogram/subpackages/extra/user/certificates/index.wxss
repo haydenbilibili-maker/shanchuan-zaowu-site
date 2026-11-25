@@ -76,7 +76,7 @@ page {
   padding: 36rpx 20rpx 24rpx;
   box-sizing: border-box;
   border-radius: 4rpx;
-  background: linear-gradient(180deg, #F3ECDD, #E8DFCB);
+  background: var(--mat-paper-label);
   box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.4);
 }
 
@@ -96,7 +96,7 @@ page {
   height: 14rpx;
   margin-left: -7rpx;
   border-radius: 50%;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
 }
 
 .c-eyebrow {
@@ -130,7 +130,7 @@ page {
   font-family: var(--font-brand);
   font-size: var(--fs-24);
   font-weight: 600;
-  color: #2E2618;
+  color: var(--mat-ink);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -170,7 +170,7 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #B08D57;
+  background: var(--mat-brass-pin);
   border-radius: 4rpx;
   transform: rotate(-6deg);
   opacity: 0.92;

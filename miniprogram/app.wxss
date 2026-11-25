@@ -128,6 +128,38 @@ page {
   --pop-pad-x: 40rpx;
   --pop-danger-from: #B4432F;
   --pop-danger-to: #93321F;
+  /* 材质令牌（docs/材质规范_纸与金属_2026-11-25.md）：值取自已落地的标本签 / 礼笺 / 铜钮，新模块只取令牌不再自调色。
+     纸三档：标本签纸（默认）/ 信笺纸（礼笺、来信正文）/ 牛皮回执纸；纸上的字只用 ink 四档，不用 --color-text-*（那是暗底色） */
+  --mat-paper-label: linear-gradient(180deg, #F3ECDD 0%, #E8DFCB 100%);
+  --mat-paper-letter: linear-gradient(180deg, #FAF6ED 0%, #F2EDE4 100%);
+  --mat-paper-kraft: linear-gradient(180deg, #E6DAC2 0%, #D9CAAD 100%);
+  --mat-paper-grain: repeating-linear-gradient(0deg, rgba(138, 111, 69, 0.022) 0, rgba(138, 111, 69, 0.022) 1rpx, transparent 1rpx, transparent 6rpx);
+  --mat-paper-edge: inset 0 0 0 1rpx rgba(176, 141, 87, 0.35);
+  --mat-paper-frame: rgba(138, 111, 69, 0.3);
+  --mat-paper-rule: rgba(138, 111, 69, 0.3);
+  --mat-paper-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.35);
+  --mat-paper-shadow-press: 0 6rpx 16rpx rgba(0, 0, 0, 0.3);
+  --mat-ink: #2E2618;
+  --mat-ink-body: #4A3E28;
+  --mat-ink-soft: #6B5A3E;
+  --mat-ink-label: #8A6F45;
+  /* 金属：黄铜实心面只给「纸上的主动作 / 铭牌」；暗底上的主按钮仍走 --brass-400 实心（VIS3），不用本组 */
+  --mat-brass: linear-gradient(180deg, #DCC38E 0%, #C6A86D 100%);
+  --mat-brass-polished: linear-gradient(155deg, #E6D3A1 0%, #C4A76C 55%, #A8903C 100%);
+  --mat-brass-edge: inset 0 1rpx 0 rgba(255, 248, 228, 0.55), inset 0 0 0 1rpx rgba(122, 96, 44, 0.35);
+  --mat-brass-shadow: 0 3rpx 8rpx rgba(92, 70, 28, 0.22);
+  --mat-brass-ink: #2A2114;
+  --mat-brass-pin: #B08D57;
+  --mat-blackgold: radial-gradient(circle at 50% -20%, #333333 0%, #1A1814 70%);
+  --mat-blackgold-line: rgba(196, 167, 108, 0.3);
+  --mat-porcelain: linear-gradient(170deg, #FFFEFB 0%, #F7F5F0 48%, #EEEBE4 100%);
+  /* 朱砂印 / 火漆：纸上唯一的红；实心印字用 seal-ink */
+  --mat-seal: #8E3B2E;
+  --mat-seal-ink: #F3E7D3;
+  --mat-seal-tint: rgba(142, 59, 46, 0.07);
+  --mat-seal-line: rgba(142, 59, 46, 0.3);
+  /* 按压：纸 = 下沉 2rpx + 投影收短；金属 = 下沉 1rpx + 去高光；不缩放（缩放会让纸边发虚） */
+  --mat-press-shift: translateY(2rpx);
 
   background-color: #1A1814;
   color: var(--color-text-primary);

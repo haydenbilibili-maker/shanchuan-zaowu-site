@@ -1387,10 +1387,15 @@ page {
   color: var(--color-text-secondary);
 }
 
-/* ── 顾客来信 · 纸笺卡（2026-11-25 第二轮：博物自然审美 + 纸质感）────────────
-   第一轮只做了胶囊与分隔线，暗底上仍是「一片灰文字」。
-   这一轮把每封信变成一张**真的纸笺**：米色纸底、内框发丝线、宋体标题、朱砂印章式类别、
-   铜金实心动作按钮；未读在左侧一枚朱砂火漆点。日期用铜金胶囊做锚点，与纸卡形成明暗节奏。 */
+/* ── 顾客来信 · 纸笺卡（2026-11-25，第二轮产品负责人定稿 + 第三轮细节 + 材质规范收口）──────
+   每封信是一张**标本签纸**（材质规范 docs/材质规范_纸与金属_2026-11-25.md：--mat-paper-label），
+   内框发丝线、宋体标题、朱砂印章式类别、黄铜实心动作钮；未读在左侧一枚朱砂火漆点。
+   日期用铜金胶囊做锚点，与纸卡形成明暗节奏。
+
+   ⚠️ 特异性：文件前段（2026-10/11 暗底时代）有同前缀的旧规则（状态胶囊 padding:0 + 透明底、
+   动作字浅金无内边距、已读灯 visibility:hidden）。本段一律写**同一前缀**（同特异性、后写者胜），
+   不要退回 `.queue-customer .status-chip` 这种短前缀 —— 那会输给旧规则，纸上变成「浅字贴边」。
+   ⚠️ 层级：「山海」水印是 ::after 绝对定位，默认画在正文之上；正文必须抬一层（z-index:1）、水印沉底（z-index:0）。 */
 .queue-customer .message-list {
   padding: 6rpx 28rpx calc(48rpx + env(safe-area-inset-bottom));
 }
@@ -1410,46 +1415,55 @@ page {
   background: rgba(196, 167, 108, 0.12);
 }
 
+/* 纸面：标本签纸 + 极淡纸纹；内框 inset 8rpx；按压 = 下沉 + 投影收短（不缩放） */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) {
   position: relative;
   margin-bottom: 18rpx;
   padding: 26rpx 26rpx 22rpx;
   gap: 16rpx;
-  background: linear-gradient(168deg, #F5EEDE 0%, #E9DEC6 100%);
+  background: var(--mat-paper-grain), var(--mat-paper-label);
   border: none;
   border-radius: 10rpx;
-  box-shadow: 0 12rpx 28rpx rgba(0, 0, 0, 0.4), inset 0 0 0 1rpx rgba(138, 117, 48, 0.22);
-  color: #2E2618;
+  box-shadow: var(--mat-paper-shadow), var(--mat-paper-edge);
+  color: var(--mat-ink);
+  transition: transform var(--dur-instant) var(--ease-standard), box-shadow var(--dur-instant) var(--ease-standard);
 }
-/* 纸的内框（像信笺的边框线）；右下角压一枚淡「山海」水印 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card)::before {
   content: '';
   position: absolute;
   inset: 8rpx;
-  border: 1rpx solid rgba(138, 117, 48, 0.22);
+  border: 1rpx solid var(--mat-paper-frame);
   border-radius: 6rpx;
   pointer-events: none;
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-body,
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .lamp-col {
+  position: relative;
+  z-index: 1;
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {
   content: '山海';
   position: absolute;
-  right: 18rpx;
-  bottom: 6rpx;
+  z-index: 0;
+  right: 22rpx;
+  bottom: 14rpx;
   font-family: var(--font-brand);
-  font-size: 56rpx;
+  font-size: 44rpx;
+  line-height: 1;
   letter-spacing: 0.08em;
-  color: rgba(138, 117, 48, 0.08);
+  color: rgba(138, 111, 69, 0.06);
   pointer-events: none;
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card):last-child {
   margin-bottom: 0;
 }
 .queue-customer .message-item-press:not(.workflow-card):not(.digest-card) {
-  transform: scale(0.992);
-  opacity: 0.96;
+  transform: var(--mat-press-shift);
+  box-shadow: var(--mat-paper-shadow-press), var(--mat-paper-edge);
+  opacity: 1;
 }
 
-/* 未读：左侧一枚朱砂火漆点（原来是 14rpx 宽的灯柱） */
+/* 未读：左侧一枚朱砂火漆点（已读留位不显示，保证各卡正文左缘对齐） */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .lamp-col {
   width: 16rpx;
   padding-top: 12rpx;
@@ -1457,162 +1471,121 @@ page {
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .lamp-col .lamp {
   width: 12rpx;
   height: 12rpx;
-  background: #8E3B2E;
+  background: var(--mat-seal);
   box-shadow: 0 0 0 4rpx rgba(142, 59, 46, 0.12);
 }
 .queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .lamp-col .lamp {
   visibility: hidden;
 }
 
-/* 类别：朱砂小印章（纸上的印章，比彩色字更像博物档案） */
+/* 类别：朱砂小印章 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .kind-tag {
   padding: 3rpx 12rpx;
   border-radius: var(--r-thumb-sm, 8rpx);
   font-family: var(--font-brand);
   font-size: var(--fs-18);
   letter-spacing: 0.14em;
-  color: #8E3B2E;
-  background: rgba(142, 59, 46, 0.07);
-  box-shadow: inset 0 0 0 1rpx rgba(142, 59, 46, 0.3);
+  color: var(--mat-seal);
+  background: var(--mat-seal-tint);
+  box-shadow: inset 0 0 0 1rpx var(--mat-seal-line);
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .type-tag {
-  color: #7A6440;
+  color: var(--mat-ink-soft);
   font-size: var(--fs-18);
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-time {
-  color: #8A7A5E;
+  color: var(--mat-ink-label);
   font-size: var(--fs-18);
 }
 
-/* 标题与正文：宋体标题压在纸上，正文用墨灰；两行截断 */
+/* 标题与正文：宋体标题压在纸上，正文用墨色；两行截断 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-title {
   font-family: var(--font-brand);
   font-size: var(--fs-32);
   font-weight: 600;
-  color: #2A2114;
+  color: var(--mat-ink);
   letter-spacing: 0.02em;
   margin-bottom: 4rpx;
   line-height: 1.35;
 }
 .queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .message-title {
-  color: #4A3E28;
+  color: var(--mat-ink-body);
   font-weight: 500;
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-sender {
-  color: #8A7350;
+  color: var(--mat-ink-label);
   font-size: var(--fs-18);
   margin-bottom: 6rpx;
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-preview {
-  color: #4A3E28;
+  color: var(--mat-ink-body);
   font-size: var(--fs-24);
   line-height: 1.6;
   -webkit-line-clamp: 2;
 }
 .queue-customer .message-item.read:not(.workflow-card):not(.digest-card) .message-preview {
-  color: #6B5B3E;
+  color: var(--mat-ink-soft);
 }
 
-/* 信封记号：纸上用墨线 */
+/* 商品 / 实拍线索：纸上用墨棕；缩略图加一圈纸色衬边，像贴在信上的小照片 */
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mg-thumb {
+  border-radius: var(--r-thumb-sm, 8rpx);
+  background: #E2D6BB;
+  border: 1rpx solid var(--mat-paper-frame);
+  box-shadow: 0 2rpx 4rpx rgba(92, 70, 28, 0.15);
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mg-text,
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mph-text {
+  color: var(--mat-ink-soft);
+}
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mph-lamp {
+  background: var(--mat-ink-label);
+}
+
+/* 信封记号：墨线；离内框一点；已读封口敞开、退一档 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .env-mark {
-  border-color: #8A7530;
+  margin-top: 4rpx;
+  margin-right: 2rpx;
+  border-color: var(--mat-ink-label);
 }
-.queue-customer .env-mark.is-opened { opacity: 0.35; }
+.queue-customer .message-item:not(.workflow-card):not(.digest-card) .env-mark.is-opened {
+  opacity: 0.5;
+}
 
-/* 行脚：纸上虚线 + 状态墨字 + 铜金实心按钮 */
+/* 行脚：纸上虚线 + 状态签条 + 黄铜实心钮 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-foot {
   margin-top: 16rpx;
   padding-top: 14rpx;
-  border-top: 1rpx dashed rgba(138, 117, 48, 0.32);
+  align-items: center;
+  border-top: 1rpx dashed var(--mat-paper-rule);
 }
-.queue-customer .status-chip {
-  padding: 5rpx 14rpx;
-  border-radius: 999rpx;
-  background: rgba(138, 117, 48, 0.1);
-  box-shadow: inset 0 0 0 1rpx rgba(138, 117, 48, 0.28);
-}
-.queue-customer .status-chip .lamp {
-  width: 8rpx;
-  height: 8rpx;
-}
-.queue-customer .status-chip text {
-  font-size: var(--fs-18);
-  color: #5B4A22;
-}
-.queue-customer .action-hint {
-  font-size: var(--fs-20);
-  color: #8A7530;
-}
-.queue-customer .action-hint.is-go {
-  padding: 9rpx 20rpx;
-  border-radius: 999rpx;
-  font-size: var(--fs-20);
-  font-weight: 500;
-  color: #241E14;
-  background: linear-gradient(180deg, #D8BE86, #C4A76C);
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.25);
-}
-
-/* ── 纸笺卡 · 细节质感（2026-11-25 第三轮）──────────────────────────────
-   第二轮的纸笺打底保留，只修「看起来没做完」的细节：
-   1) 「山海」水印是 ::after 绝对定位，默认画在正文之上 → 压住了状态与按钮。
-      正文抬一层（z-index:1），水印沉到纸里（z-index:0），并缩小、下移到角落。
-   2) 文件前段（2026-10/11 暗底时代）有同前缀、更高特异性的旧规则：
-      状态胶囊 padding:0 + 透明底、状态字浅灰、按钮字浅金 + 无左右内边距 →
-      纸上变成「浅字贴边」。这里用**同一前缀**（同特异性、后写者胜）把它们按纸笺口径落定。
-   3) 商品线索 / 实拍线索原是暗底金字，纸上对比不足 → 换墨棕。
-   4) 按钮阴影从黑 0.25 改为暖棕浅影：纸上的黑影像「贴了一块塑料」。 */
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-body,
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .lamp-col {
-  position: relative;
-  z-index: 1;
-}
-.queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {
-  z-index: 0;
-  right: 22rpx;
-  bottom: 14rpx;
-  font-size: 44rpx;
-  line-height: 1;
-  color: rgba(138, 117, 48, 0.06);
-}
-/* 纸纹：极淡的横向纹理，让米色底不是一块「平涂」 */
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) {
-  background:
-    repeating-linear-gradient(0deg, rgba(138, 117, 48, 0.018) 0, rgba(138, 117, 48, 0.018) 1rpx, transparent 1rpx, transparent 6rpx),
-    linear-gradient(168deg, #F6F0E1 0%, #EADFC8 100%);
-  box-shadow: 0 10rpx 26rpx rgba(0, 0, 0, 0.38), 0 1rpx 0 rgba(255, 250, 236, 0.5) inset, inset 0 0 0 1rpx rgba(138, 117, 48, 0.22);
-}
-
-/* 状态：纸上的小签条 —— 有底、有发丝边、墨字、带一枚小灯 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .status-chip {
   gap: 8rpx;
   padding: 6rpx 16rpx 6rpx 14rpx;
   border-radius: 999rpx;
-  background: rgba(138, 117, 48, 0.08);
-  box-shadow: inset 0 0 0 1rpx rgba(138, 117, 48, 0.26);
+  background: rgba(138, 111, 69, 0.08);
+  box-shadow: inset 0 0 0 1rpx rgba(138, 111, 69, 0.26);
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .status-chip .lamp {
   display: block;
   width: 8rpx;
   height: 8rpx;
   border-radius: 50%;
-  background: #8A7530;
+  background: var(--mat-ink-label);
   box-shadow: none;
 }
 .queue-customer .message-item.unread:not(.workflow-card):not(.digest-card) .status-chip .lamp {
-  background: #8E3B2E;
+  background: var(--mat-seal);
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .status-chip text {
   font-size: var(--fs-18);
   line-height: 1.4;
   letter-spacing: 0.08em;
-  color: #5B4A22;
+  color: var(--mat-ink-body);
 }
-
-/* 动作：铜金实心药丸，留在内框以内；字是深墨，不再是浅金 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .action-hint {
   font-size: var(--fs-20);
-  color: #7A6440;
+  color: var(--mat-ink-soft);
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .action-hint.is-go {
   margin: 0 4rpx 0 0;
@@ -1622,37 +1595,11 @@ page {
   font-weight: 600;
   line-height: 1.4;
   letter-spacing: 0.06em;
-  color: #2A2114;
-  background: linear-gradient(180deg, #DCC38E 0%, #C6A86D 100%);
-  box-shadow: 0 3rpx 8rpx rgba(92, 70, 28, 0.22), inset 0 1rpx 0 rgba(255, 248, 228, 0.55), inset 0 0 0 1rpx rgba(122, 96, 44, 0.35);
+  color: var(--mat-brass-ink);
+  background: var(--mat-brass);
+  box-shadow: var(--mat-brass-shadow), var(--mat-brass-edge);
 }
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .action-hint.is-go.tap-press {
   transform: translateY(1rpx);
   box-shadow: 0 1rpx 3rpx rgba(92, 70, 28, 0.2), inset 0 0 0 1rpx rgba(122, 96, 44, 0.4);
-}
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .message-foot {
-  align-items: center;
-}
-
-/* 商品 / 实拍线索：纸上换墨棕；缩略图加一圈纸色衬边，像贴在信上的小照片 */
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mg-thumb {
-  background: #E2D6BB;
-  border: 1rpx solid rgba(138, 117, 48, 0.3);
-  box-shadow: 0 2rpx 4rpx rgba(92, 70, 28, 0.15);
-}
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mg-text,
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mph-text {
-  color: #7A6440;
-}
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .mph-lamp {
-  background: #8A7530;
-}
-
-/* 信封记号：离开内框一点，已读的不再淡到看不见 */
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .env-mark {
-  margin-top: 4rpx;
-  margin-right: 2rpx;
-}
-.queue-customer .message-item:not(.workflow-card):not(.digest-card) .env-mark.is-opened {
-  opacity: 0.5;
 }

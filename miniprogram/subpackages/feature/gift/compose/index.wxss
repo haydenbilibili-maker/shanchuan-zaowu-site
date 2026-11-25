@@ -758,7 +758,8 @@ page {
 
 .card-plate {
   padding: 32rpx;
-  background: #F2EDE4;
+  /* 材质规范：礼笺 = 信笺纸 + 纸纹（原为平涂 #F2EDE4；稳定期只改展示值） */
+  background: var(--mat-paper-grain), var(--mat-paper-letter);
   border: 1px solid #E0CFA3;
   border-radius: var(--radius-md);
   transform-origin: 50% 40%;

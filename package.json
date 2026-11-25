@@ -407,6 +407,8 @@
     "check:mp-caption-color:selftest": "node miniprogram/scripts/check-mp-caption-color.mjs --selftest",
     "check:radius-roles": "node miniprogram/scripts/check-radius-roles.mjs",
     "check:radius-roles:selftest": "node miniprogram/scripts/check-radius-roles.mjs --selftest",
+    "check:materials": "node miniprogram/scripts/check-materials.mjs",
+    "check:materials:selftest": "node miniprogram/scripts/check-materials.mjs --selftest",
     "check:hover-stay": "node miniprogram/scripts/check-hover-stay.mjs",
     "check:hover-stay:selftest": "node miniprogram/scripts/check-hover-stay.mjs --selftest",
     "check:care-common-mirrors": "node miniprogram/scripts/check-care-common-mirrors.mjs",
