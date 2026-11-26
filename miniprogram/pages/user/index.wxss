@@ -213,23 +213,14 @@ page {
   }
 }
 .wb-matrix {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 16rpx;
   padding: 8rpx 0 0;
   box-sizing: border-box;
 }
-/* 数量自适应（2026-11-26 产品负责人）：只有 4 个就 4 宫格，3 个就 3 列；5 个以上回到 4 列 */
-.wb-matrix.is-n1, .wb-matrix.is-n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.wb-matrix.is-n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.wb-matrix.is-n4, .wb-matrix.is-n5, .wb-matrix.is-n6,
-.wb-matrix.is-n7, .wb-matrix.is-n8, .wb-matrix.is-n9, .wb-matrix.is-n10 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.wb-matrix.is-n3 .wb-tile, .wb-matrix.is-n4 .wb-tile { padding: 20rpx 16rpx 18rpx; }
-.wb-matrix.is-n3 .wb-tile-top, .wb-matrix.is-n4 .wb-tile-top { margin-bottom: 12rpx; }
-.wb-matrix.is-n3 .wb-cn, .wb-matrix.is-n4 .wb-cn { font-size: var(--fs-22); }
-.wb-matrix.is-n3 .wb-en, .wb-matrix.is-n4 .wb-en { font-size: var(--fs-16); }
 .wb-tile {
-  width: 100%;
+  width: calc((100% - 16rpx) / 2);
   box-sizing: border-box;
   min-height: 148rpx;
   padding: 24rpx 22rpx 20rpx;
@@ -242,6 +233,18 @@ page {
   position: relative;
   transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
+/* 工作信息：文字最长，单独占一行（2026-11-26 产品负责人：其它卡回到两列，只让这一张自适应整行） */
+.wb-tile.is-full {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 18rpx;
+  min-height: 120rpx;
+  padding: 20rpx 24rpx;
+}
+.wb-tile.is-full .wb-tile-top { width: auto; margin-bottom: 0; gap: 12rpx; }
+.wb-tile.is-full .wb-cn { font-size: var(--fs-28); white-space: nowrap; }
+.wb-tile.is-full .wb-en { margin-top: 2rpx; }
 .wb-tile-info {
   border-color: rgba(45, 90, 63, 0.55);
   background: linear-gradient(160deg, rgba(45, 90, 63, 0.14) 0%, var(--color-bg-card) 58%);

@@ -266,9 +266,9 @@
         </view>
       </view>
     </view>
-    <view class="wb-matrix is-n{{workbenchTiles.length}}">
+    <view class="wb-matrix">
       <view
-        class="wb-tile {{item.key === 'workflow' ? 'wb-tile-info' : ''}}"
+        class="wb-tile {{item.key === 'workflow' ? 'wb-tile-info is-full' : ''}}"
         hover-class="wb-tile-press"
         hover-stay-time="80"
         bindtap="onWorkbenchTileTap"
