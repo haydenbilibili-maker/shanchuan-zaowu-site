@@ -88,7 +88,7 @@ page {
 }
 
 /* —— 分区 —— */
-.section { padding: 0 32rpx 48rpx; }
+.section { padding: 0 32rpx 40rpx; }
 
 .section-hint {
   display: block;
@@ -100,7 +100,7 @@ page {
 
 /* —— 服务信息：发丝线两栏行 —— */
 .service-card {
-  margin: 28rpx 32rpx 44rpx;
+  margin: 0 32rpx 36rpx;
   border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
@@ -600,3 +600,33 @@ page {
 
 /* 2026-11-22 交互巡查：可点区域扩到约 64rpx（视觉不变；透明 ::after 外扩，事件冒泡到本元素） */
 .modal-close::after { content: ''; position: absolute; top: -12rpx; right: -12rpx; bottom: -12rpx; left: -12rpx; }
+
+/* 首屏主行动（2026-11-26）：开始对话上移到第一屏，类型选择结果在这里回显 */
+.hero-talk {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 20rpx 32rpx 26rpx;
+  padding: 26rpx 24rpx;
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.34);
+}
+.hero-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.hero-k { font-size: var(--fs-18); letter-spacing: 0.2em; color: var(--brass-300); }
+.hero-t { font-family: var(--font-brand); font-size: var(--fs-34); color: var(--mat-paper-tone); }
+.hero-s { font-size: var(--fs-20); line-height: 1.45; color: var(--mat-ink-soft); }
+.hero-btn {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 30rpx;
+  height: 76rpx;
+  line-height: 76rpx;
+  border: none;
+  border-radius: var(--r-pill, 999rpx);
+  background: var(--mat-brass);
+  color: var(--mat-ink);
+  font-size: var(--fs-24);
+  font-weight: 600;
+}
+.hero-btn::after { border: none; }

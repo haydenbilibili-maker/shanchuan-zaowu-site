@@ -102,6 +102,7 @@ Page({
     expandedFaq: -1,
 
     activeTopic: 'other',
+    activeTopicLabel: '其他问题',
     contextSummary: '',
 
     sessionFrom: '',
@@ -491,7 +492,8 @@ Page({
       return;
     }
     if (topic === this.data.activeTopic) return;
-    this.setData({ activeTopic: topic });
+    const label = ((this.data.topics || []).filter((t) => t.id === topic)[0] || {}).label || '其他问题';
+    this.setData({ activeTopic: topic, activeTopicLabel: label });
     this.refreshContactContext();
     trackBehavior('support_topic_select', 'topic', topic);
   },
