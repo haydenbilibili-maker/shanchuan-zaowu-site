@@ -27,7 +27,7 @@
       <view class="context-card-main">
         <shan-img ext-class="context-thumb" wx:if="{{contextCard.image}}" src="{{contextCard.image}}" mode="aspectFill" mark="{{false}}" />
         <view class="context-thumb placeholder" wx:else>
-          <shan-img ext-class="context-thumb-ico" src="{{contextCard.kind === 'order' ? '/assets/icons/cart.png' : '/assets/icons/knowledge.png'}}" mode="aspectFit" mark="{{false}}" />
+          <image class="context-thumb-ico" src="{{contextCard.kind === 'order' ? '/assets/icons/list.png' : '/assets/icons/knowledge.png'}}" mode="aspectFit" binderror="onIconError" aria-hidden="true" />
         </view>
         <view class="context-meta">
           <text class="context-kind">{{contextCard.kindLabel}}</text>
@@ -139,7 +139,7 @@
             aria-role="button"
             aria-label="{{item.label}}"
           >
-            <shan-img ext-class="direct-icon" src="{{item.icon}}" mode="aspectFit" mark="{{false}}" />
+            <image class="direct-icon" src="{{item.icon}}" mode="aspectFit" binderror="onIconError" aria-hidden="true" />
             <view class="direct-copy">
               <text class="direct-l">{{item.label}}</text>
               <text class="direct-d">{{item.desc}}</text>

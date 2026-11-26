@@ -560,6 +560,9 @@ Page({
     this.refreshContactContext();
   },
 
+  /** 本地图标加载失败：静默（不给破图，也不弹提示） */
+  onIconError() {},
+
   goInvoiceRequest() {
     const qs = [];
     if (this.data.orderId) qs.push(`orderId=${encodeURIComponent(this.data.orderId)}`);
