@@ -69,6 +69,18 @@
           show-message-card="{{showMessageCard}}"
           bindcontact="onContactTap"
         >开始对话</button>
+        <!-- 订单类咨询：让顾客直接指定哪一单（2026-11-26），专员在会话标签与卡片里就能看到 -->
+        <view class="hero-order" wx:if="{{activeTopic === 'order' || activeTopic === 'refund' || activeTopic === 'invoice'}}">
+          <block wx:if="{{pickedOrderNo}}">
+            <text class="hero-order-t">已选订单 · {{pickedOrderNo}}</text>
+            <text class="hero-order-a" bindtap="openOrderPicker" hover-class="tap-press-soft" hover-stay-time="80">换一单</text>
+            <text class="hero-order-x" bindtap="clearPickedOrder" hover-class="tap-press-soft" hover-stay-time="80">✕</text>
+          </block>
+          <block wx:else>
+            <text class="hero-order-t is-empty">还没指定订单</text>
+            <text class="hero-order-a" bindtap="openOrderPicker" hover-class="tap-press-soft" hover-stay-time="80">选择订单 ›</text>
+          </block>
+        </view>
       </view>
 
       <!-- 服务信息 -->
@@ -241,6 +253,37 @@
       <text class="modal-sub">COMMUNITY</text>
       <shan-img ext-class="community-qr" src="{{config.communityQr}}" mode="aspectFit" show-menu-by-longpress="{{true}}" />
       <text class="modal-tip">长按识别添加微信助手，随后拉入官方服务微信群</text>
+    </view>
+  </view>
+
+  <!-- 选择咨询订单（2026-11-26）：订单 / 退款 / 发票类咨询指定具体一单 -->
+  <view class="ui-pop-mask" wx:if="{{orderPickerOpen}}" catchtap="closeOrderPicker" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel" catchtap="true">
+      <view class="modal-head">
+        <text>选择咨询的订单</text>
+        <view class="close-btn" hover-class="tap-press" hover-stay-time="80" catchtap="closeOrderPicker">✕</view>
+      </view>
+      <scroll-view scroll-y class="order-picker-body">
+        <view class="order-picker-tip" wx:if="{{orderPickerLoading}}">正在读取订单…</view>
+        <view class="order-picker-tip" wx:elif="{{!orderOptions.length}}">还没有可选的订单，可直接开始对话说明情况。</view>
+        <view
+          class="order-pick-row"
+          wx:for="{{orderOptions}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          data-no="{{item.no}}"
+          data-title="{{item.title}}"
+          catchtap="pickOrder"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+        >
+          <view class="op-main">
+            <text class="op-title">{{item.title}}</text>
+            <text class="op-sub">单号 {{item.no}} · ¥{{item.amount}} · {{item.time}}</text>
+          </view>
+          <text class="op-go">›</text>
+        </view>
+      </scroll-view>
     </view>
   </view>
 </view>

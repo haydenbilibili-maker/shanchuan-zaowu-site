@@ -631,3 +631,33 @@ page {
   font-weight: 600;
 }
 .hero-btn::after { border: none; }
+
+/* 订单类咨询：指定具体订单（2026-11-26） */
+.hero-order {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 14rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.18);
+}
+.hero-talk { display: flex; flex-wrap: wrap; }
+.hero-order-t { flex: 1; min-width: 0; font-size: var(--fs-22); color: var(--mat-paper-tone); }
+.hero-order-t.is-empty { color: var(--mat-ink-soft); }
+.hero-order-a { flex-shrink: 0; font-size: var(--fs-22); color: var(--brass-200); }
+.hero-order-x { flex-shrink: 0; font-size: var(--fs-20); color: var(--mat-ink-soft); padding: 0 4rpx; }
+
+.order-picker-body { max-height: 60vh; padding: 0 0 24rpx; }
+.order-picker-tip { padding: 24rpx; font-size: var(--fs-22); color: var(--mat-ink-soft); }
+.order-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
+}
+.op-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.op-title { font-size: var(--fs-24); color: var(--mat-paper-tone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.op-sub { font-size: var(--fs-20); color: var(--mat-ink-soft); }
+.op-go { flex-shrink: 0; color: var(--brass-300); }
