@@ -611,7 +611,28 @@ page {
 .hero-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
 .hero-k { font-size: var(--fs-18); letter-spacing: 0.2em; color: var(--brass-300); }
 .hero-t { font-family: var(--font-brand); font-size: var(--fs-34); color: var(--mat-paper-tone); }
-.hero-s { font-size: var(--fs-20); line-height: 1.45; color: var(--mat-ink-soft); }
+/* 2026-11-26：暗底上的说明字改用暗底次级字（原 --mat-ink-soft 是纸上的墨，放暗底上对比不足） */
+.hero-k-row { display: flex; align-items: center; gap: 12rpx; }
+.hero-live {
+  padding: 0 12rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-18);
+  line-height: 30rpx;
+  color: var(--color-text-secondary, #A09A90);
+  box-shadow: inset 0 0 0 1rpx rgba(160, 154, 144, 0.4);
+}
+.hero-live.is-on { color: var(--color-success, #52B788); box-shadow: inset 0 0 0 1rpx rgba(82, 183, 136, 0.45); }
+.hero-s {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 2rpx;
+  font-size: var(--fs-22);
+  line-height: 1.45;
+  color: var(--color-text-secondary, #A09A90);
+}
+.hero-s.is-off { color: var(--color-text-secondary, #A09A90); }
+.hero-s-go { flex-shrink: 0; color: var(--brass-200, #E0CFA3); }
 .hero-btn {
   flex-shrink: 0;
   margin: 0;
@@ -626,6 +647,8 @@ page {
   font-weight: 600;
 }
 .hero-btn::after { border: none; }
+/* 微信内置 button:not([size=mini]) { width: 184px } 比单类名优先，两层类名压回自适应宽 */
+.hero-talk .hero-btn { width: auto; }
 
 /* 订单类咨询：指定具体订单（2026-11-26） */
 .hero-order {
@@ -639,12 +662,12 @@ page {
 }
 .hero-talk { display: flex; flex-wrap: wrap; }
 .hero-order-t { flex: 1; min-width: 0; font-size: var(--fs-22); color: var(--mat-paper-tone); }
-.hero-order-t.is-empty { color: var(--mat-ink-soft); }
+.hero-order-t.is-empty { color: var(--color-text-secondary, #A09A90); }
 .hero-order-a { flex-shrink: 0; font-size: var(--fs-22); color: var(--brass-200); }
-.hero-order-x { flex-shrink: 0; font-size: var(--fs-20); color: var(--mat-ink-soft); padding: 0 4rpx; }
+.hero-order-x { flex-shrink: 0; font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); padding: 0 4rpx; }
 
 .order-picker-body { max-height: 60vh; padding: 0 0 24rpx; }
-.order-picker-tip { padding: 24rpx; font-size: var(--fs-22); color: var(--mat-ink-soft); }
+.order-picker-tip { padding: 24rpx; font-size: var(--fs-22); color: var(--color-text-secondary, #A09A90); }
 .order-pick-row {
   display: flex;
   align-items: center;
@@ -654,7 +677,7 @@ page {
 }
 .op-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
 .op-title { font-size: var(--fs-24); color: var(--mat-paper-tone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.op-sub { font-size: var(--fs-20); color: var(--mat-ink-soft); }
+.op-sub { font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); }
 .op-go { flex-shrink: 0; color: var(--brass-300); }
 
 /* 上下文卡占位图标（2026-11-26：不再用「单 / 藏」文字当图标） */
@@ -677,5 +700,58 @@ page {
 .direct-icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
 .direct-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2rpx; }
 .direct-l { font-size: var(--fs-26); color: var(--mat-paper-tone); }
-.direct-d { font-size: var(--fs-20); color: var(--mat-ink-soft); }
+.direct-d { font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); }
+/* 直接办理与即时联系同一种行：圆形铜底图标 + 名称 / 说明 + › */
+.row-ico {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(196, 167, 108, 0.1);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
+}
+.row-ico .direct-icon {
+  width: 34rpx;
+  height: 34rpx;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
+.channel-item { justify-content: flex-start; }
+.direct-item { gap: 20rpx; }
+
+/* 选完就地开聊：发丝金描边（页面唯一实心金留给首屏「开始对话」） */
+.topic-go {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 18rpx;
+  padding: 16rpx 16rpx 16rpx 22rpx;
+  border-radius: var(--r-card, 16rpx);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.22);
+}
+.topic-go-copy { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10rpx; }
+.topic-go-k { flex-shrink: 0; font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); }
+.topic-go-t { min-width: 0; font-size: var(--fs-26); color: var(--mat-paper-tone); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.topic-go .topic-go-btn {
+  flex-shrink: 0;
+  width: auto;
+  margin: 0;
+  padding: 0 28rpx;
+  height: 64rpx;
+  line-height: 64rpx;
+  border: none;
+  border-radius: var(--r-pill, 999rpx);
+  background: rgba(196, 167, 108, 0.14);
+  box-shadow: var(--ring-brass-soft);
+  color: var(--brass-200, #E0CFA3);
+  font-size: var(--fs-24);
+  font-weight: 600;
+}
+.topic-go .topic-go-btn::after { border: none; }
+
+/* 留言字数 */
+.message-count { display: block; margin-top: 4rpx; text-align: right; font-family: var(--font-mono); font-size: var(--fs-18); color: var(--mat-ink-label); }
 .direct-go { flex-shrink: 0; color: var(--brass-300); }

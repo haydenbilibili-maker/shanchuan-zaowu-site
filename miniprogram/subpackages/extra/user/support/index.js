@@ -12,6 +12,7 @@ const { trackBehavior } = require('../../../../utils/trackBehavior');
 const { getPageNavInsets } = require('../../utils/pageNav');
 const { getFirstImage, batchTempFileURLs } = require('../../../../utils/util');
 const { MAX_TICKET_IMAGES, ticketImageState, ticketImageMethods } = require('../../utils/ticketImages');
+const { serviceStatus } = require('./serviceHours');
 
 /** 含主行 + 发送卡片提示行；与 .context-strip 实际高度对齐 */
 const CONTEXT_STRIP_RPX = 220;
@@ -105,6 +106,10 @@ Page({
 
     activeTopic: 'other',
     activeTopicLabel: '其他问题',
+    /** 现在在不在服务时间：{ open, label }；服务时间认不出时为 null（不显示，不猜） */
+    serviceNow: null,
+    /** scroll-view 跳转锚点（换类型 / 去留言） */
+    scrollInto: '',
     /** 订单类咨询：让顾客挑具体订单（2026-11-26 产品负责人：类型要真的传到专员那里） */
     orderPickerOpen: false,
     orderPickerLoading: false,
@@ -293,7 +298,8 @@ Page({
         directActions,
         faqs,
         memberNo,
-        loading: false
+        loading: false,
+        serviceNow: serviceStatus(config.hours || FALLBACK_CONFIG.hours)
       });
 
       if (this.data.storeId && !this.data.storeName) {
@@ -314,7 +320,8 @@ Page({
         config: FALLBACK_CONFIG,
         topics: FALLBACK_CONFIG.topics.filter((t) => !['invoice', 'framer_recruit'].includes(t.id)),
         directActions: FALLBACK_CONFIG.topics.filter((t) => ['invoice', 'framer_recruit'].includes(t.id)),
-        faqs: FALLBACK_CONFIG.faqs
+        faqs: FALLBACK_CONFIG.faqs,
+        serviceNow: serviceStatus(FALLBACK_CONFIG.hours)
       });
       this.refreshContactContext();
       // 本地默认配置已覆盖主路径，不弹错误 toast，避免商详进客服误报
@@ -492,6 +499,19 @@ Page({
       url: path,
       fail: () => wx.showToast({ title: '暂时无法打开', icon: 'none' })
     });
+  },
+
+  /** 回到本页时重算「服务中 / 非服务时间」（页面可能挂着跨过了下班点） */
+  onShow() {
+    const hours = this.data.config && this.data.config.hours;
+    if (hours) this.setData({ serviceNow: serviceStatus(hours) });
+  },
+
+  /** 首屏「换类型 ›」/「先留言 ›」：滚到对应分区（先清空再设，同一锚点可重复跳） */
+  scrollToSection(e) {
+    const id = String((e && e.currentTarget && e.currentTarget.dataset.to) || '');
+    if (!id) return;
+    this.setData({ scrollInto: '' }, () => this.setData({ scrollInto: id }));
   },
 
   selectTopic(e) {

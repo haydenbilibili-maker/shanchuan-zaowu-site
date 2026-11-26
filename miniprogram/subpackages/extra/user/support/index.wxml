@@ -45,7 +45,7 @@
     </view>
   </view>
 
-  <scroll-view scroll-y class="main-scroll" style="top: {{scrollTop}}px;">
+  <scroll-view scroll-y class="main-scroll" style="top: {{scrollTop}}px;" scroll-into-view="{{scrollInto}}" scroll-with-animation="{{true}}">
     <view class="skeleton-wrap" wx:if="{{loading}}">
       <view class="sk-card sk-shine"></view>
       <view class="sk-card sk-shine short"></view>
@@ -54,10 +54,20 @@
     <block wx:else>
       <!-- 首屏主行动（2026-11-26 产品负责人：开始对话要在第一屏显著位置） -->
       <view class="hero-talk">
+        <!-- 2026-11-26 细节：主标不再与按钮同字；类型一行可点去换；在线状态按服务时间实算（认不出就不显示）；
+             响应说明只留在下方服务卡，不在这里套句子（原「专员会在{响应说明}回复」读起来不通） -->
         <view class="hero-copy">
-          <text class="hero-k">微信专员</text>
-          <text class="hero-t">开始对话</text>
-          <text class="hero-s">已选：{{activeTopicLabel}} · 专员会在 {{config.responseHint || '工作时间内 30 分钟'}} 回复</text>
+          <view class="hero-k-row">
+            <text class="hero-k">微信专员</text>
+            <text class="hero-live {{serviceNow.open ? 'is-on' : ''}}" wx:if="{{serviceNow}}">{{serviceNow.label}}</text>
+          </view>
+          <text class="hero-t">有问题，直接问专员</text>
+          <view class="hero-s" bindtap="scrollToSection" data-to="sec-topics" hover-class="tap-press-soft" hover-stay-time="80">
+            <text>咨询类型 · {{activeTopicLabel}}</text><text class="hero-s-go">换类型 ›</text>
+          </view>
+          <view class="hero-s is-off" wx:if="{{serviceNow && !serviceNow.open}}" bindtap="scrollToSection" data-to="sec-note" hover-class="tap-press-soft" hover-stay-time="80">
+            <text>现在不在服务时间，可以先留言</text><text class="hero-s-go">去留言 ›</text>
+          </view>
         </view>
         <button
           class="hero-btn"
@@ -102,9 +112,9 @@
       </view>
 
       <!-- 咨询主题 -->
-      <view class="section">
+      <view class="section" id="sec-topics">
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">TOPICS</text><text class="mu-cn">选择咨询类型</text></view></view>
-        <text class="section-hint">选中的类型会写进会话标签，专员一进来就知道你在问什么（也会带进下面的留言）。</text>
+        <text class="section-hint">选好再开始对话，专员一进来就知道你在问什么。</text>
         <view class="topic-grid">
           <view
             class="topic-item {{activeTopic === item.id ? 'active' : ''}}"
@@ -121,6 +131,23 @@
             <text class="topic-label">{{item.label}}</text>
             <text class="topic-desc">{{item.desc}}</text>
           </view>
+        </view>
+        <!-- 选完就地开聊（2026-11-26）：不用再滚回顶部；与首屏同一个客服按钮、同一组会话参数 -->
+        <view class="topic-go">
+          <view class="topic-go-copy">
+            <text class="topic-go-k">已选</text>
+            <text class="topic-go-t">{{activeTopicLabel}}{{pickedOrderNo ? ' · ' + pickedOrderNo : ''}}</text>
+          </view>
+          <button
+            class="topic-go-btn"
+            open-type="contact"
+            session-from="{{sessionFrom}}"
+            send-message-title="{{sendMessageTitle}}"
+            send-message-path="{{sendMessagePath}}"
+            send-message-img="{{sendMessageImg}}"
+            show-message-card="{{showMessageCard}}"
+            bindcontact="onContactTap"
+          >开始对话</button>
         </view>
       </view>
 
@@ -139,7 +166,7 @@
             aria-role="button"
             aria-label="{{item.label}}"
           >
-            <image class="direct-icon" src="{{item.icon}}" mode="aspectFit" binderror="onIconError" aria-hidden="true" />
+            <view class="row-ico"><image class="direct-icon" src="{{item.icon}}" mode="aspectFit" binderror="onIconError" aria-hidden="true" /></view>
             <view class="direct-copy">
               <text class="direct-l">{{item.label}}</text>
               <text class="direct-d">{{item.desc}}</text>
@@ -154,6 +181,7 @@
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">CONTACT</text><text class="mu-cn">即时联系</text></view></view>
         <view class="channel-list">
           <view class="channel-item" hover-class="tap-press-soft" hover-stay-time="80" bindtap="callPhone">
+            <view class="row-ico"><image class="direct-icon" src="/assets/icons/phone.png" mode="aspectFit" binderror="onIconError" aria-hidden="true" /></view>
             <view class="channel-info">
               <text class="channel-name">电话专线</text>
               <text class="channel-desc">{{config.phone}}</text>
@@ -162,6 +190,7 @@
           </view>
 
           <view class="channel-item" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goMessages">
+            <view class="row-ico"><image class="direct-icon" src="/assets/icons/message.png" mode="aspectFit" binderror="onIconError" aria-hidden="true" /></view>
             <view class="channel-info">
               <text class="channel-name">山海有信</text>
               <text class="channel-desc">查看系统通知与留言回执</text>
@@ -170,6 +199,7 @@
           </view>
 
           <view class="channel-item" hover-class="tap-press-soft" hover-stay-time="80" bindtap="openCommunity">
+            <view class="row-ico"><image class="direct-icon" src="/assets/icons/group.png" mode="aspectFit" binderror="onIconError" aria-hidden="true" /></view>
             <view class="channel-info">
               <text class="channel-name">官方社群</text>
               <text class="channel-desc">添加微信助手后入群</text>
@@ -180,19 +210,20 @@
       </view>
 
       <!-- 留言表单 -->
-      <view class="section">
+      <view class="section" id="sec-note">
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">LEAVE A NOTE</text><text class="mu-cn">留言给专员</text></view></view>
         <text class="section-hint">若暂时无法接入微信客服，可留下文字说明，专员会通过山海有信回复</text>
         <view class="form-card">
           <textarea
             class="message-input"
-            placeholder="请描述您的问题（至少 5 字）"
+            placeholder="说说「{{activeTopicLabel}}」的具体情况（至少 5 字）"
             placeholder-class="ph"
             maxlength="500"
             value="{{messageText}}"
             bindinput="onMessageInput"
             bindblur="onMessageInput"
           ></textarea>
+          <text class="message-count">{{messageText.length}}/500</text>
           <view class="ti-block">
             <view class="ti-head">
               <text class="ti-label">附图（选填，最多 {{maxTicketImages}} 张）</text>

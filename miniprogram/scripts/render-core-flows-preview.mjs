@@ -896,6 +896,8 @@ const SCENES = [
       contextCard: { visible: false }, contextSummary: '', hasConsultContext: false, sessionFrom: '', showMessageCard: false,
       config: { hours: '每日 10:00 – 22:00', responseHint: '工作时间内约 10 分钟回复；夜间留言次日处理', phone: '185 1911 0274', address: '吉林省长春市朝阳区红旗街 959 号这有山商场山坡 X-06-1', communityQr: '' },
       topics: [{ id: 'order', label: '订单与物流', desc: '发货、签收、改地址' }, { id: 'aftersale', label: '售后与退换', desc: '破损、退款、换货' }, { id: 'custom', label: '定制咨询', desc: '框型、交期、报价' }, { id: 'care', label: '标本养护', desc: '防潮、清洁、摆放' }], activeTopic: 'custom',
+      activeTopic: 'order', activeTopicLabel: '订单与物流', pickedOrderNo: '', orderPickerOpen: false, statusBarHeight: 20, serviceNow: { open: false, label: '非服务时间' }, scrollInto: '',
+      directActions: [{ id: 'invoice', label: '开具发票', desc: '按订单申请电子发票', icon: '/assets/icons/refund.png' }, { id: 'framer_recruit', label: '标本师招募', desc: '想入驻的标本师从这里申请', icon: '/assets/icons/user.png' }],
       messageText: '', contactPhone: '', ticketImages: [], maxTicketImages: 3, ticketImgFailed: 0, ticketImgBusy: false, submitting: false,
       faqs: [{ q: '标本可以退换吗？', a: '未拆封且签收 7 日内可申请；定制藏品按确认方案制作，不接受退款。' }, { q: '多久可以发货？', a: '现货 48 小时内发出；定制按方案页交期。' }, { q: '门店可以自取吗？', a: '下单时选择门店自取，备妥后凭自取码到店领取。' }], expandedFaq: 0, showCommunity: false } },
   // 2026-10-18 搜索「检索台」（空闲 / 结果）
