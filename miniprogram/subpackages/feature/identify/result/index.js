@@ -43,6 +43,8 @@ Page({
     // 博物君开关（2026-11-25 审核驳回：关掉后不得残留 AI 问答入口）
     /** 2026-11-26 审核驳回：AI 入口默认**关闭**，拿到云端确认（内容开关 AND 开馆）才露出 */
     guideOpen: false,
+    /** AI 鉴定已关闭（内容开关）：整页不展示 AI 结论，避免分享/深链残留 */
+    aiClosed: false,
     // 仪式感（2026-10-18）：刚鉴定完 → 标本牌上的学名逐字敲出（SpeciesCard typewriter）
     typewriter: false,
     loading: true,
@@ -86,6 +88,18 @@ Page({
   },
 
   /** 博物君开关：识别结果页的两处「问问博物君」都要跟着隐藏（2026-11-25 审核驳回） */
+  /** AI 鉴定是否已关闭（先看缓存，再以云端为准；关闭即整页拦截） */
+  checkAiClosed() {
+    try {
+      const { getCachedContentDisplayFlags, fetchContentDisplayFlags } = require('../../../../utils/contentDisplayFlags')
+      const cached = getCachedContentDisplayFlags()
+      if (cached && cached.flags && cached.flags.showAiIdentify === false) this.setData({ aiClosed: true, loading: false })
+      fetchContentDisplayFlags().then((payload) => {
+        if (payload && payload.flags && payload.flags.showAiIdentify === false) this.setData({ aiClosed: true, loading: false })
+      }).catch(() => {})
+    } catch (e) { /* 取不到就不额外拦 */ }
+  },
+
   loadGuideOpen() {
     try {
       const { getCachedContentDisplayFlags, fetchContentDisplayFlags } = require('../../../../utils/contentDisplayFlags')
@@ -99,6 +113,7 @@ Page({
 
   onLoad(options) {
     this.loadGuideOpen()
+    this.checkAiClosed()
     if (options.fresh === '1') this.setData({ typewriter: true })
     if (options.from_cache === '1') {
       setTimeout(() => {

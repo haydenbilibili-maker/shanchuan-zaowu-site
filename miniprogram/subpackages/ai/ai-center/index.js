@@ -141,7 +141,11 @@ Page({
     memoBusy: false
   },
 
-  onLoad(options) {
+  async onLoad(options) {
+    // 2026-11-26 上线巡查：页面此前没有客户端门禁，顾客从历史链接/深链能直接看到整页 AI 痕迹
+    const { guardAiStaffPage } = require('../utils/staffGate')
+    const staffRoles = await guardAiStaffPage()
+    if (!staffRoles) return
     const role = options && options.roleId ? byId(options.roleId) : ROLES[0]
     this.switchRole(role.id)
     // 从工作信息点进来：问题预填好，不自动发（让人看一眼再问）

@@ -255,7 +255,15 @@ async function checkIdentify(src, t) {
       out && out.success === false && out.code === 'AI_CLOSED' && calls.filter((c) => c.op === 'add').length === 0, JSON.stringify(out))
   }
 
-  // A2 成功（mock 识别）
+  // A00（2026-11-26 上线巡查）：识别结果页在 AI 鉴定关闭时整页拦截（分享/深链直达不残留 AI 结论）
+  {
+    const pageJs = readFileSync(join(MP, 'subpackages/feature/identify/result/index.js'), 'utf8')
+    const pageWxml = readFileSync(join(MP, 'subpackages/feature/identify/result/index.wxml'), 'utf8')
+    t.ok('A00 识别结果页 AI 关闭即拦截（aiClosed + 关闭文案）',
+      /aiClosed/.test(pageJs) && /showAiIdentify === false/.test(pageJs) && /AI 鉴定暂未开放/.test(pageWxml))
+  }
+
+  // A2 成功（mock 识别）  // A2 成功（mock 识别）
   {
     const { db, calls } = makeDb({ resolveGet: () => [] })
     const fn = loadIdentify(src, makeCloud(db))

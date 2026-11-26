@@ -310,6 +310,14 @@ function runChecks() {
     if (!/智能运营中心/.test(hubNoComment) || /AI 智能中心/.test(hubNoComment)) fails.push('工作台文案须改名为「智能运营中心」')
   }
 
+  // 2026-11-26 上线巡查：AI 中心 / 董事辩论页必须有客户端员工门禁（否则深链能看到整页 AI 痕迹）
+  {
+    const centerJs = read(P.page)
+    const debateJs = read(join(MP, 'subpackages/ai/ai-debate/index.js'))
+    if (!/guardAiStaffPage/.test(centerJs) || !/await guardAiStaffPage\(\)/.test(centerJs)) fails.push('AI 中心页缺少客户端员工门禁')
+    if (!/guardAiStaffPage/.test(debateJs)) fails.push('董事辩论页缺少客户端员工门禁')
+  }
+
   return fails
 }
 

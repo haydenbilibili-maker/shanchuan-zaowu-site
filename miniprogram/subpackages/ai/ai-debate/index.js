@@ -34,7 +34,11 @@ Page({
     hint: ''
   },
 
-  onLoad() {
+  async onLoad() {
+    // 2026-11-26 上线巡查：与 AI 中心一样补上员工门禁
+    const { guardAiStaffPage } = require('../utils/staffGate')
+    const staffRole = await guardAiStaffPage()
+    if (!staffRole) return
     this.restoreLast()
   },
 
