@@ -336,6 +336,12 @@ exports.main = async (event) => {
         ready_pickup: '待自提', shipped: '已发货', received: '已签收', refunding: '退款中', expired_refunding: '退款中',
         refunded: '已退款', aftersales: '售后中', exchanged: '已换货', unverified: '待核验', void: '已作废'
       }
+      // 2026-11-26：选择咨询订单时剔除「代金券 / 兑换券 / 礼品卡 / 储值」这类电子券订单
+      const isVoucherLike = (p) => {
+        const t = String((p && (p.title || p.name || p.productTitle || p.productName)) || '')
+        const ty = String((p && (p.productType || p.type || p.categoryType)) || '')
+        return /代金券|兑换券|礼品卡|储值卡|充值卡|提货券|券$/.test(t) || /voucher|coupon|giftcard|storedvalue/i.test(ty)
+      }
       const orders = await Promise.all((res.data || []).map(async (o) => {
         const goods = (Array.isArray(o.products) && o.products.length ? o.products : (Array.isArray(o.items) ? o.items : []))
           .filter((p) => p && typeof p === 'object')
@@ -365,6 +371,7 @@ exports.main = async (event) => {
           }
         }
         products = products.map((p) => ({ title: p.title, image: p.image, spec: p.spec }))
+        const voucherOnly = goods.length > 0 && goods.every(isVoucherLike)
         const itemCount = goods.reduce((n, p) => n + (Number(p.quantity || p.count) || 1), 0)
         return {
           id: o._id,
@@ -376,9 +383,11 @@ exports.main = async (event) => {
           status: o.status || '',
           statusText: STATUS_TEXT[o.status] || '',
           amount: Number(o.totalPrice || o.payAmount || 0),
-          createTime: o.createTime || o.createdAt || null
+          createTime: o.createTime || o.createdAt || null,
+          voucherOnly
         }
       }))
+        .then((rows) => rows.filter((r) => !r.voucherOnly).map(({ voucherOnly, ...rest }) => rest))
       return { success: true, orders }
     } catch (e) {
       return { success: false, msg: (e && e.message) || '读取订单失败', orders: [] }

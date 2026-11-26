@@ -17,9 +17,18 @@ function money(n) {
 }
 
 /** 云端 recentOrders → 面板行；urlMap = cloud:// → 临时链接 */
+const VOUCHER_RE = /代金券|兑换券|礼品卡|储值卡|充值卡|提货券|券$/
+
+/** 纯电子券订单不放进「选择咨询的订单」（2026-11-26 产品负责人：代金券混在里面） */
+function isVoucherOnly(products, title) {
+  const list = (Array.isArray(products) ? products : []).map((p) => String((p && p.title) || ''))
+  const names = list.length ? list : [String(title || '')]
+  return names.length > 0 && names.every((n) => VOUCHER_RE.test(String(n || '')))
+}
+
 function toRows(orders, urlMap) {
   const map = urlMap || {}
-  return (Array.isArray(orders) ? orders : []).map((o) => {
+  return (Array.isArray(orders) ? orders : []).filter((o) => !isVoucherOnly(o && o.products, o && o.title)).map((o) => {
     const products = Array.isArray(o.products) ? o.products : []
     const first = products[0] || {}
     const name = String(first.title || o.title || '').trim() || '订单'
@@ -54,4 +63,4 @@ function thumbIds(orders) {
   return (Array.isArray(orders) ? orders : []).map((o) => (o.products && o.products[0] && o.products[0].image) || '').filter((u) => /^cloud:\/\//.test(u))
 }
 
-module.exports = { toRows, filterRows, thumbIds, dateText }
+module.exports = { toRows, filterRows, thumbIds, dateText, isVoucherOnly }
