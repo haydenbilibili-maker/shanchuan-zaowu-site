@@ -50,6 +50,8 @@ exports.main = async (event) => {
         return await updateTemplate(event, operatorOpenid)
       case 'listSupportTickets':
         return await listSupportTickets(event)
+      case 'getSupportTicket':
+        return await getSupportTicket(event)
       case 'replySupportTicket':
         return await replySupportTicket(event, operatorOpenid)
       case 'setSupportTicketStatus':
@@ -144,12 +146,26 @@ async function updateTemplate(event, operatorOpenid) {
 
 async function listSupportTickets(event) {
   const status = event.status || 'pending'
-  const res = await db.collection('support_tickets')
-    .where({ status })
-    .orderBy('createTime', 'desc')
-    .limit(50)
-    .get()
+  // 2026-11-26：客服工作台需要「全部（含已回复）」与待处理两档
+  const col = db.collection('support_tickets')
+  const query = status === 'all' ? col : col.where({ status })
+  const res = await query.orderBy('createTime', 'desc').limit(50).get()
   return { success: true, list: await attachMemberLabels(res.data || []) }
+}
+
+/** 客服工作台：单条留言详情（含历史回复） */
+async function getSupportTicket(event) {
+  const id = String(event.ticketId || '').trim()
+  if (!id) return { success: false, msg: '缺少 ticketId' }
+  try {
+    const res = await db.collection('support_tickets').doc(id).get()
+    const doc = res.data
+    if (!doc) return { success: false, msg: '留言不存在' }
+    const rows = await attachMemberLabels([doc])
+    return { success: true, ticket: rows[0] }
+  } catch (e) {
+    return { success: false, msg: '留言不存在' }
+  }
 }
 
 /** 与积分 / 储值 / 定金同算法：openid 末 8 位 → MT-XXXX-XXXX */
@@ -220,16 +236,21 @@ async function replySupportTicket(event, operatorOpenid) {
   const ticket = ticketRes.data
   if (!ticket) return { success: false, msg: '工单不存在' }
 
+  // 2026-11-26：留言回复保留历史（客服工作台要看到全部往来），最新一条仍写 replyContent 兼容旧读取
+  const history = Array.isArray(ticket.replies) ? ticket.replies.slice(-19) : []
+  history.push({ content, at: Date.now(), by: String(operatorOpenid || '') })
   await db.collection('support_tickets').doc(ticketId).update({
     data: {
       status: 'replied',
       replyContent: content,
+      replies: history,
       repliedAt: db.serverDate(),
       repliedBy: operatorOpenid
     }
   })
 
-  const preview = content.length > 120 ? content.slice(0, 120) + '…' : content
+  // 给顾客的「山海有信」带完整回复正文（原实现只带 120 字预览，详情看不到）
+  const detail = content.length > 500 ? content.slice(0, 500) : content
   await cloud.callFunction({
     name: 'dispatchMessage',
     data: {
@@ -237,7 +258,7 @@ async function replySupportTicket(event, operatorOpenid) {
       eventType: 'support_ticket_replied',
       openid: ticket._openid,
       relatedId: ticketId,
-      vars: { replyContent: preview, topicLabel: ticket.topicLabel || '咨询' }
+      vars: { replyContent: detail, topicLabel: ticket.topicLabel || '咨询' }
     }
   })
 

@@ -186,6 +186,16 @@ function buildWorkbenchTilesFromCounts(entries, counts = {}) {
        · 进去之后「日报」档就在筛选分栏上，历史日报照旧可翻。 */
   // 2026-11-26 产品负责人：移除「我的-工作台-AI 智能中心」独立入口 ——
   // 它已改名「智能运营中心」并作为独立模块放进超管工作台（功能区与图表区之间），不再在这里重复一个入口。
+  // 客服工作台（2026-11-26 产品负责人）：把「山海有信-留言回复」升级成独立工作台，挂在工作台第二格
+  tiles.push({
+    key: 'support_desk',
+    kind: 'support_desk',
+    title: '客服工作台',
+    en: 'SUPPORT DESK',
+    workspace: '',
+    icon: '/assets/icons/message.png',
+    ...decorate(0)
+  });
   list.forEach((e) => {
     let badgeCount = 0;
     if (e.kind === 'super_admin' || e.kind === 'manager') {
@@ -2624,8 +2634,8 @@ Page(withAppModal({
       this.goToWorkflowMessages();
       return;
     }
-    if (key === 'ai_center') {
-      wx.navigateTo({ url: '/subpackages/ai/ai-center/index' });
+    if (key === 'support_desk') {
+      wx.navigateTo({ url: '/subpackages/manager/support-desk/index' });
       return;
     }
     requestWorkspaceAccess(String(ds.kind || '').trim(), ds.workspace || '');

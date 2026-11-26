@@ -572,7 +572,20 @@ function check(src) {
   ok(guardAt > 0 && guardAt < submit.indexOf("name: 'submitSupportTicket'"), 'R7-5 顾客端只提交预填前缀（没写正文）仍能提交')
   ok(/data: \{\n\s*topic: this\.data\.activeTopic,\n\s*message,\n\s*orderId: this\.data\.orderId,\n\s*orderNo: this\.data\.orderNo,\n\s*productId: this\.data\.productId,\n\s*productName: this\.data\.productName,\n\s*contactPhone: phone,\n\s*\.\.\.\(imageIDs\.length \? \{ images: imageIDs \} : \{\}\)\n\s*\}/.test(submit), 'R7-5 submitSupportTicket 入参被改（原有键须逐字不变，只许追加可选 images）')
 
-  // R8：留言附图（产品负责人 2026-10-01 点名，顾客端新增旁路）
+  // R9（2026-11-26 产品负责人）：留言后链路 — 员工通知 / 回复历史 / 客服工作台
+  {
+    const submitFn = readRel('miniprogram/cloudfunctions/submitSupportTicket/index.js') + readRel('miniprogram/cloudfunctions/submitSupportTicket/staffNotify.js')
+    const adminFn = readRel('miniprogram/cloudfunctions/messageAdmin/index.js')
+    const deskJs = readRel('miniprogram/subpackages/manager/support-desk/index.js')
+    const deskWxml = readRel('miniprogram/subpackages/manager/support-desk/index.wxml')
+    const appJson = readRel('miniprogram/app.json')
+    ok(/notifyStaffNewTicket/.test(submitFn) && /staff_support_ticket/.test(submitFn), 'R9-1 顾客留言后给超管/店长发工作信息')
+    ok(/replies/.test(adminFn) && /getSupportTicket/.test(adminFn) && /vars: \{ replyContent: detail/.test(adminFn), 'R9-2 回复写历史 + 给顾客发完整详情')
+    ok(/history/.test(deskWxml) && /replySupportTicket/.test(deskJs) && /guardStaffPage/.test(deskJs), 'R9-3 客服工作台：门禁 + 历史回复 + 直接回复')
+    ok(/support-desk\/index/.test(appJson), 'R9-4 客服工作台已注册页面')
+  }
+
+  // R8  // R8：留言附图（产品负责人 2026-10-01 点名，顾客端新增旁路）
   const base8 = { message: '想问问这只蝴蝶的产地' }
   const noImg = runTicketFn(src.ticketFn, base8)
   ok(noImg.calls.length === 1 && !Object.prototype.hasOwnProperty.call(noImg.calls[0], 'images'), `R8-2 不传 images 时也写了 images 字段（或没写库：${noImg.error || noImg.calls.length}）`)

@@ -1,0 +1,50 @@
+<view class="sd-page">
+  <view class="sd-head">
+    <text class="sd-eyebrow">SUPPORT DESK</text>
+    <text class="sd-title">客服工作台</text>
+    <text class="sd-sub">顾客留言、历史往来与回复 · 回复会发到对方的「山海有信」</text>
+  </view>
+
+  <view class="sd-tabs">
+    <view class="sd-tab {{tab === 'pending' ? 'on' : ''}}" data-tab="pending" bindtap="switchTab" hover-class="tap-press" hover-stay-time="80">待回复</view>
+    <view class="sd-tab {{tab === 'all' ? 'on' : ''}}" data-tab="all" bindtap="switchTab" hover-class="tap-press" hover-stay-time="80">全部</view>
+  </view>
+
+  <view class="sd-hint" wx:if="{{hint}}">{{hint}}</view>
+  <view class="sd-empty" wx:if="{{!loading && !rows.length}}">还没有留言。顾客在「联系专员」留言后会出现在这里。</view>
+
+  <view class="sd-list">
+    <view class="sd-row {{openId === item.id ? 'is-open' : ''}}" wx:for="{{rows}}" wx:key="id" data-id="{{item.id}}" bindtap="onRowTap" hover-class="tap-press-soft" hover-stay-time="80">
+      <view class="sd-row-head">
+        <text class="sd-topic">{{item.topicLabel}}</text>
+        <text class="sd-status {{item.status === 'replied' ? 'is-done' : ''}}">{{item.statusText}}{{item.replyCount ? ' · ' + item.replyCount + ' 次' : ''}}</text>
+      </view>
+      <text class="sd-msg">{{item.message || '（没有正文）'}}</text>
+      <text class="sd-meta">{{item.time}}{{item.orderNo ? ' · 订单 ' + item.orderNo : ''}}{{item.who ? ' · ' + item.who : ''}}</text>
+    </view>
+  </view>
+
+  <view class="sd-detail" wx:if="{{detail}}">
+    <view class="sd-detail-head">
+      <text class="sd-detail-t">{{detail.topicLabel}}</text>
+      <text class="sd-detail-close" catchtap="onRowTap" data-id="{{detail.id}}">收起</text>
+    </view>
+    <text class="sd-detail-msg" user-select>{{detail.message || '（顾客没有写正文）'}}</text>
+    <view class="sd-detail-imgs" wx:if="{{detail.images.length}}">
+      <image class="sd-detail-img" wx:for="{{detail.images}}" wx:for-item="url" wx:key="*this" src="{{url}}" mode="aspectFill" data-url="{{url}}" bindtap="previewImage" binderror="onImageError" />
+    </view>
+    <text class="sd-detail-meta">{{detail.time}}{{detail.orderNo ? ' · 订单 ' + detail.orderNo : ''}}{{detail.productName ? ' · ' + detail.productName : ''}}{{detail.contactPhone ? ' · ' + detail.contactPhone : ''}}</text>
+
+    <view class="sd-history" wx:if="{{detail.history.length}}">
+      <text class="sd-history-t">历史回复</text>
+      <view class="sd-history-item" wx:for="{{detail.history}}" wx:key="time">
+        <text class="sd-history-time">{{item.time}}</text>
+        <text class="sd-history-body" user-select>{{item.content}}</text>
+      </view>
+    </view>
+    <text class="sd-history-empty" wx:else>还没有回复过</text>
+
+    <textarea class="sd-input" value="{{replyText}}" bindinput="onReplyInput" maxlength="500" placeholder="写回复，发送后顾客会在「山海有信」收到详情" placeholder-class="sd-ph"></textarea>
+    <view class="sd-send {{sending ? 'is-off' : ''}}" bindtap="sendReply" hover-class="tap-press" hover-stay-time="80">{{sending ? '发送中…' : '发送回复'}}</view>
+  </view>
+</view>

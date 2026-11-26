@@ -129,7 +129,8 @@
         "feishu-sync/index",
         "identify-monitor/index",
         "museum-guide-monitor/index",
-        "review-mode/index"
+        "review-mode/index",
+        "support-desk/index"
       ]
     },
     {

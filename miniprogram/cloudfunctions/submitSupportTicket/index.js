@@ -2,6 +2,7 @@
  * 提交专员留言（离线工单 + 站内信回执）
  */
 const cloud = require('wx-server-sdk');
+const { notifyStaffNewTicket } = require('./staffNotify')
 const { dispatchInAppMessage } = require('./inAppMessage');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
@@ -86,6 +87,15 @@ exports.main = async (event) => {
         _createTime: db.serverDate()
       }
     });
+
+    // 2026-11-26：留言后链路 —— 给超管/店长发「工作信息」（失败不阻断留言）
+    await notifyStaffNewTicket(db, {
+      ticketId: ticketRes._id,
+      topicLabel: topicLabels[topic] || '其他问题',
+      content,
+      productName: productName || '',
+      orderNo: orderNo || ''
+    }).catch(() => {})
 
     await dispatchInAppMessage(db, {
       eventType: 'support_ticket_received',
