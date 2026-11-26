@@ -33,11 +33,13 @@ function normalizeContentDisplayFlags(raw) {
     // 缺字段 / undefined → 关闭；我的钱包默认不展示
     showStoredValue: src.showStoredValue === true,
     // 缺字段 / undefined → 开启；现网已开放，仅显式 false 关闭
-    showAiIdentify: src.showAiIdentify !== false,
+    showAiIdentify: src.showAiIdentify === true,
     // C 端看到的是两把开关的 AND（2026-11-23）：内容开关文档里的 museumGuideOpen，以及超管「开馆/闭馆」。
     // 缺字段 / undefined → 开启。编辑面板回写原值要用响应里的 museumGuideFlag，不能把这个 AND 再存回去。
     // 刻意不叫 showXxx：不属于 check:hook-registration 的「展示开关」一族；端到端由 test:museum-guide-monitor 的 M5 钉住。
-    museumGuideOpen: src.museumGuideOpen !== false,
+    // 2026-11-26 审核驳回后改 fail-closed：缺字段 / 取不到云端时一律按「关」处理，
+    // 宁可少显示，也不能让 AI 问答入口在审核期露出来。
+    museumGuideOpen: src.museumGuideOpen === true,
     // 首页「博物君口播」的馆内通知（2026-11-23）：只读，唯一写入方是超管「博物君」页；最多 3 条，非字符串 / 空串丢掉
     museumGuideNotices: Array.isArray(src.museumGuideNotices)
       ? src.museumGuideNotices.filter((t) => typeof t === 'string' && t.trim()).map((t) => t.trim().slice(0, 22)).slice(0, 3)

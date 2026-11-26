@@ -1162,7 +1162,21 @@ const identifyMain = async (event, context, trace = {}) => {
 
 // 旁路：鉴定调用写一条 ai_identify_logs（超管「AI 鉴定监测」）。
 // 返回值必须是 identifyMain 的原对象；日志的任何失败都不得改变出参或抛出。
+async function aiIdentifyFlagOpen() {
+  try {
+    const res = await db.collection('content_display_flags').where({ status: 'active' }).limit(1).get()
+    const doc = (res.data || [])[0] || {}
+    // fail-closed：缺字段按关处理
+    return doc.showAiIdentify === true
+  } catch (e) {
+    return false
+  }
+}
+
 exports.main = async (event, context) => {
+  // 2026-11-26 审核驳回（深度合成）：AI 鉴定关掉后服务端也要拒绝，老客户端 / 深链不能绕过
+  const flagOpen = await aiIdentifyFlagOpen()
+  if (!flagOpen) return { success: false, code: 'AI_CLOSED', msg: 'AI 鉴定暂未开放' }
   if (!isIdentifyCall(event)) return identifyMain(event, context)
   const startedAt = Date.now()
   let openid = ''

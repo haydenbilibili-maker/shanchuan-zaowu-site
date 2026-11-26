@@ -4414,6 +4414,20 @@
         ></textarea>
         <text class="comment-reply-count">{{tempCommentReply.content.length}}/500</text>
       </view>
+      <!-- 参考文案按情境分组（2026-11-26）：好评 / 中评 / 差评售后 / 养护答疑 / 定制伴宠 / 老客会员 -->
+      <view class="comment-reply-groups">
+        <view
+          class="comment-reply-group {{commentReplyGroup === item.id ? 'on' : ''}}"
+          wx:for="{{commentReplyGroups}}"
+          wx:key="id"
+          catchtap="switchCommentReplyGroup"
+          data-group="{{item.id}}"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+          aria-role="button"
+          aria-label="{{item.label}}"
+        >{{item.label}}</view>
+      </view>
       <view class="comment-reply-phrases">
         <view class="comment-reply-phrase" wx:for="{{commentReplyPhrases}}" wx:key="*this" catchtap="pickCommentReplyPhrase" data-text="{{item}}" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</view>
       </view>

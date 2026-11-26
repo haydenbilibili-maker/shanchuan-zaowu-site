@@ -122,6 +122,10 @@ async function runChecks() {
   } catch (e) {
     fails.push('L0 syncScrollPane 跑不起来：' + e.message)
   }
+  ok('选了「送给谁」→ 自动滚到信纸再落笔（动画+音效不被藏在屏外）',
+    /scrollToLetter\(\) \{/.test(js) && /selector: '#secLetter'/.test(js) &&
+    /id="secLetter"/.test(read(P.wxml)) && /if \(this\.data\.relationOpen\) this\.setData\(\{ relationOpen: false \}\)/.test(js))
+
   ok(`L1 滚动区底边 = 底栏顶边（底栏 96：期望 565，实得 ${h1}）`, h1 === 753 - 92 - 96)
   ok(`L2 底栏变高（会员价 + 安全区 158）滚动区随之变矮（期望 503，实得 ${h2}）`, h2 === 753 - 92 - 158)
   // 2026-10-12 产品负责人撤回裁决 46-a 的编排页报价：送礼页不再取会员等级、不再算价（价格只在第 3 步确认页）

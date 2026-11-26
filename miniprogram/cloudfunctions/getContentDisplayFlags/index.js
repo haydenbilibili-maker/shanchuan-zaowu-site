@@ -216,15 +216,26 @@ async function saveFlags(event, openid) {
     updateTime: db.serverDate()
   }
 
+  // ⚠️ 2026-11-26 真机报错修复：`document.update:fail -502001 … Cannot create field 'museumGuideOpen'
+  // in element {reviewSnapshot: null}`。云端 update 会把嵌套对象展开成点路径（reviewSnapshot.museumGuideOpen），
+  // 而历史文档里 reviewSnapshot 是 null → 无法在 null 上建子字段。
+  // 修法：显式整字段替换（_.set），null 用 _.remove() 删掉字段，绝不让它走点路径合并。
+  // null 直接写 null（无嵌套字段，不会被展开成点路径）；对象必须整字段替换，否则云端会
+  // 展开成 reviewSnapshot.museumGuideOpen 并撞上旧文档里的 null（-502001）。
+  const snapWritable = flags.reviewSnapshot == null
+    ? null
+    : (db.command && db.command.set ? db.command.set(flags.reviewSnapshot) : flags.reviewSnapshot)
+  const updatePayload = { ...payload, reviewSnapshot: snapWritable }
+
   try {
     if (docId) {
-      await db.collection(COLLECTION).doc(docId).update({ data: payload })
+      await db.collection(COLLECTION).doc(docId).update({ data: updatePayload })
       return { success: true, flags, docId }
     }
 
     const existing = await loadActiveDoc()
     if (existing && existing._id) {
-      await db.collection(COLLECTION).doc(existing._id).update({ data: payload })
+      await db.collection(COLLECTION).doc(existing._id).update({ data: updatePayload })
       return { success: true, flags, docId: existing._id }
     }
 

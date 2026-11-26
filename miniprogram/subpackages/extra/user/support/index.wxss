@@ -88,7 +88,7 @@ page {
 }
 
 /* —— 分区 —— */
-.section { padding: 0 32rpx 48rpx; }
+.section { padding: 0 32rpx 40rpx; }
 
 .section-hint {
   display: block;
@@ -100,7 +100,7 @@ page {
 
 /* —— 服务信息：发丝线两栏行 —— */
 .service-card {
-  margin: 28rpx 32rpx 44rpx;
+  margin: 0 32rpx 36rpx;
   border-top: 1rpx solid rgba(196, 167, 108, 0.14);
 }
 
@@ -201,11 +201,6 @@ page {
   justify-content: center;
 }
 
-.context-thumb-mark {
-  font-family: var(--font-brand);
-  font-size: var(--fs-30);
-  color: var(--brass-300);
-}
 
 .context-meta {
   flex: 1;
@@ -301,9 +296,27 @@ page {
   box-sizing: border-box;
 }
 
-.topic-item.active { background: rgba(196, 167, 108, 0.08); box-shadow: var(--ring-brass); }
+.topic-item.active { background: rgba(196, 167, 108, 0.12); box-shadow: var(--ring-brass); }
+.topic-item:active { transform: scale(0.985); }
 
-.topic-icon { width: 36rpx; height: 36rpx; opacity: 0.85; }
+/* 图标统一成同一种黄铜色（各主题 icon 来源不同、深浅不一 → 用滤镜统一，选中再提亮一档） */
+.topic-head { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.topic-pick {
+  font-size: var(--fs-18);
+  line-height: 1.4;
+  color: var(--mat-ink);
+  background: var(--mat-brass);
+  border-radius: var(--r-thumb-sm, 4rpx);
+  padding: 1rpx 8rpx;
+}
+
+.topic-icon {
+  width: 40rpx;
+  height: 40rpx;
+  opacity: 0.92;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
+.topic-item.active .topic-icon { opacity: 1; filter: brightness(0) saturate(100%) invert(84%) sepia(28%) saturate(700%) hue-rotate(2deg) brightness(104%) contrast(96%); }
 
 .topic-label {
   font-family: var(--font-brand);
@@ -352,23 +365,6 @@ page {
 }
 
 .channel-item.primary .channel-desc { color: var(--brass-200); }
-
-.channel-btn {
-  flex-shrink: 0;
-  height: 68rpx;
-  line-height: 68rpx;
-  margin: 0;
-  padding: 0 30rpx;
-  border: none;
-  border-radius: var(--r-control, 16rpx);
-  background: var(--brass-400);
-  font-size: var(--fs-24);
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: #1A1814;
-}
-
-.channel-btn::after { border: none; }
 
 .channel-arrow {
   flex-shrink: 0;
@@ -600,3 +596,86 @@ page {
 
 /* 2026-11-22 交互巡查：可点区域扩到约 64rpx（视觉不变；透明 ::after 外扩，事件冒泡到本元素） */
 .modal-close::after { content: ''; position: absolute; top: -12rpx; right: -12rpx; bottom: -12rpx; left: -12rpx; }
+
+/* 首屏主行动（2026-11-26）：开始对话上移到第一屏，类型选择结果在这里回显 */
+.hero-talk {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 20rpx 32rpx 26rpx;
+  padding: 26rpx 24rpx;
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.08);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.34);
+}
+.hero-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.hero-k { font-size: var(--fs-18); letter-spacing: 0.2em; color: var(--brass-300); }
+.hero-t { font-family: var(--font-brand); font-size: var(--fs-34); color: var(--mat-paper-tone); }
+.hero-s { font-size: var(--fs-20); line-height: 1.45; color: var(--mat-ink-soft); }
+.hero-btn {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 30rpx;
+  height: 76rpx;
+  line-height: 76rpx;
+  border: none;
+  border-radius: var(--r-pill, 999rpx);
+  background: var(--mat-brass);
+  color: var(--mat-ink);
+  font-size: var(--fs-24);
+  font-weight: 600;
+}
+.hero-btn::after { border: none; }
+
+/* 订单类咨询：指定具体订单（2026-11-26） */
+.hero-order {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  margin-top: 14rpx;
+  padding-top: 14rpx;
+  border-top: 1rpx solid rgba(196, 167, 108, 0.18);
+}
+.hero-talk { display: flex; flex-wrap: wrap; }
+.hero-order-t { flex: 1; min-width: 0; font-size: var(--fs-22); color: var(--mat-paper-tone); }
+.hero-order-t.is-empty { color: var(--mat-ink-soft); }
+.hero-order-a { flex-shrink: 0; font-size: var(--fs-22); color: var(--brass-200); }
+.hero-order-x { flex-shrink: 0; font-size: var(--fs-20); color: var(--mat-ink-soft); padding: 0 4rpx; }
+
+.order-picker-body { max-height: 60vh; padding: 0 0 24rpx; }
+.order-picker-tip { padding: 24rpx; font-size: var(--fs-22); color: var(--mat-ink-soft); }
+.order-pick-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
+}
+.op-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.op-title { font-size: var(--fs-24); color: var(--mat-paper-tone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.op-sub { font-size: var(--fs-20); color: var(--mat-ink-soft); }
+.op-go { flex-shrink: 0; color: var(--brass-300); }
+
+/* 上下文卡占位图标（2026-11-26：不再用「单 / 藏」文字当图标） */
+.context-thumb-ico {
+  width: 34rpx;
+  height: 34rpx;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
+
+/* 直接办理（发票 / 标本师招募）：发丝线行，不占咨询类型宫格 */
+.direct-list { border-top: 1rpx solid rgba(196, 167, 108, 0.14); }
+.direct-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-height: 96rpx;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.1);
+}
+.direct-icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
+.direct-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2rpx; }
+.direct-l { font-size: var(--fs-26); color: var(--mat-paper-tone); }
+.direct-d { font-size: var(--fs-20); color: var(--mat-ink-soft); }
+.direct-go { flex-shrink: 0; color: var(--brass-300); }

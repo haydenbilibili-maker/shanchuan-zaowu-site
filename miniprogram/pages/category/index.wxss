@@ -16,8 +16,8 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .sticky-header .cat-filter-row,
 .sticky-header .cat-filter-block,
 .sticky-header .cat-filter-grid { pointer-events: auto; }
-.nav-row { padding: 16rpx 32rpx 4rpx; }
-.nav-brand { display: flex; align-items: baseline; gap: 16rpx; }
+.nav-row { display: flex; align-items: center; gap: 16rpx; padding: 16rpx 32rpx 4rpx; }
+.nav-brand { display: flex; align-items: baseline; gap: 16rpx; flex: 1; min-width: 0; }
 .nav-title { font-size: var(--fs-40); font-weight: 600; color: var(--color-text-primary); letter-spacing: 0.08em; font-family: var(--font-brand, serif); }
 .nav-sub { font-size: var(--fs-22); color: var(--color-text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-row { margin: 12rpx 32rpx 0; height: 72rpx; min-height: 72rpx; background: var(--color-bg-card); border: 1px solid rgba(38,35,32,.5); border-radius: var(--radius-md); display: flex; align-items: center; padding: 0 8rpx 0 24rpx; gap: 12rpx; overflow: hidden; flex-shrink: 0; }
@@ -30,9 +30,15 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .search-identify-ico { width: 28rpx; height: 28rpx; }
 .search-placeholder { font-size: var(--fs-26); color: var(--color-text-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
 /* 2026-11-25：恢复线上两行换行版（产品负责人「恢复到线上版本的样子」） */
-.cat-filter-grid { position: relative; padding: 10rpx 100rpx 6rpx 32rpx; }
+.cat-filter-grid { position: relative; padding: 10rpx 32rpx 6rpx; }
 .category-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 12rpx 14rpx; padding: 0; box-sizing: border-box; }
-.category-wrap.is-grid { max-width: 100%; }
+.category-wrap.is-grid {
+  /* 2026-11-26 产品负责人：真机 8 个馆原先折成 3 行 → 改 4 列等宽两行（每格 1fr，长馆名省略号） */
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10rpx 12rpx;
+  max-width: 100%;
+}
 .category-pad { flex-shrink: 0; width: 12rpx; height: 1rpx; }
 .cat-pill-sep { flex-shrink: 0; width: 1rpx; height: 32rpx; margin: 0 4rpx; background: rgba(196,167,108,.28); }
 .cat-pill-arr { margin-left: 6rpx; font-size: var(--fs-26); color: var(--color-primary); }
@@ -43,8 +49,8 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .sub-category-label { font-size: var(--fs-20); font-weight: 500; color: var(--color-text-secondary); letter-spacing: 0.14em; flex-shrink: 0; }
 .sub-category-rule { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(77,64,26,.55) 0%, rgba(38,35,32,.2) 100%); }
 .sub-category-wrap { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 8rpx 12rpx; }
-.cat-pill.cat-pill-l1 { height: 60rpx; padding: 0 28rpx; background: transparent; border-color: rgba(196,167,108,.18); }
-.cat-pill-l1 text { font-size: var(--fs-26); font-weight: 400; letter-spacing: 0.06em; }
+.cat-pill.cat-pill-l1 { height: 58rpx; padding: 0 6rpx; background: transparent; border-color: rgba(196,167,108,.18); }
+.cat-pill-l1 text { font-size: var(--fs-24); font-weight: 400; letter-spacing: 0.02em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .cat-pill.cat-pill-l1.active { background: rgba(196,167,108,.14); border-color: var(--color-primary); }
 
 /* 二级：小圆角 chip，弱对比，选中仅描边+字色 */
@@ -54,7 +60,7 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .cat-chip-l2.active text { color: var(--color-primary); font-weight: 500; }
 .cat-chip-l2-press { opacity: 0.88; transform: scale(0.98); }
 /* 筛选钮固定在筛选区右上角：右侧留 100rpx 给它，标签换行不会压到它下面 */
-.filter-entry-wrap { flex-shrink: 0; display: flex; align-items: center; padding: 0; position: absolute; right: 24rpx; top: 8rpx; z-index: 2; }
+.filter-entry-wrap { flex-shrink: 0; display: flex; align-items: center; padding: 0; }
 .filter-entry { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 60rpx; height: 60rpx; padding: 0; border-radius: 9999px; background: var(--color-bg-elevated); border: 1px solid rgba(38,35,32,.9); position: relative; }
 .filter-entry-ico { width: 36rpx; height: 36rpx; display: block; }
 .filter-entry.on { background: rgba(196,167,108,.18); border-color: var(--color-primary); }
@@ -68,6 +74,8 @@ view, text, image, scroll-view { box-sizing: border-box; }
 .cat-pill:active { opacity: 1; transform: scale(0.96); }
 .cat-pill-press { opacity: 1; transform: scale(0.96); border-color: rgba(196,167,108,.55); }
 .cat-pill.cat-pill-custom { border-color: rgba(196,167,108,.45); border-style: dashed; background: transparent; }
+/* 定制是跳转动作，不占馆名格：单独一行靠右，保持四列网格整齐 */
+.category-wrap.is-grid .cat-pill-custom { grid-column: 1 / -1; justify-self: end; height: 52rpx; margin-top: 2rpx; }
 .cat-pill-custom text { color: var(--color-primary); font-weight: 500; }
 
 /* ===== 主滚动区 ===== */

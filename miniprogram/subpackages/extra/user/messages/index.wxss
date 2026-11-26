@@ -74,7 +74,9 @@ page {
 .sticky-header.tucked .queue-tab,
 .sticky-header.tucked .filter-scroll,
 .sticky-header.tucked .filter-row,
-.sticky-header.tucked .filter-pill {
+.sticky-header.tucked .filter-pill,
+.sticky-header.tucked .letters-head,
+.sticky-header.tucked .lh-mark {
   pointer-events: none;
 }
 
@@ -85,7 +87,11 @@ page {
 .sticky-header .workflow-context,
 .sticky-header .filter-scroll,
 .sticky-header .filter-row,
-.sticky-header .filter-pill {
+.sticky-header .filter-pill,
+/* 2026-11-26 根因：顾客信箱卷首的「全部标为已读」不在白名单里，
+   顶栏是 pointer-events:none、子元素逐个放行 → 点它永远穿透，表现为「无反应、Console 也没日志」 */
+.sticky-header .letters-head,
+.sticky-header .lh-mark {
   pointer-events: auto;
 }
 
@@ -1342,38 +1348,38 @@ page {
   position: relative;
   width: 34rpx;
   height: 24rpx;
-  margin-top: 8rpx;
+  margin-top: 6rpx;
   flex-shrink: 0;
   box-sizing: border-box;
   border: 2rpx solid var(--brass-300);
   border-radius: 2rpx;
+  background: rgba(196, 167, 108, 0.08);
 }
+/* 封盖：一个盖下来的三角，代替原来「转 45° 的空心方块」——后者在浅纸上就是一只空框 */
 .env-mark::before {
   content: '';
   position: absolute;
-  left: 50%;
-  top: -11rpx;
-  width: 20rpx;
-  height: 20rpx;
-  margin-left: -10rpx;
-  box-sizing: border-box;
-  border: 0 solid var(--brass-300);
-  transform: rotate(45deg);
+  left: -1rpx;
+  top: -2rpx;
+  width: 0;
+  height: 0;
+  border-left: 15rpx solid transparent;
+  border-right: 15rpx solid transparent;
+  border-top: 9rpx solid var(--brass-300);
 }
-.env-mark.is-sealed::before { border-right-width: 2rpx; border-bottom-width: 2rpx; }
-.env-mark.is-sealed::after {
+/* 火漆：信封下沿一枚朱砂点（未读才有这个记号，已读不再画空框） */
+.env-mark::after {
   content: '';
   position: absolute;
   left: 50%;
-  top: 9rpx;
-  width: 10rpx;
-  height: 10rpx;
-  margin-left: -5rpx;
+  bottom: -4rpx;
+  width: 9rpx;
+  height: 9rpx;
+  margin-left: -4.5rpx;
   border-radius: 50%;
-  background: #B5483A;
+  background: var(--mat-seal);
+  box-shadow: 0 0 0 2rpx rgba(196, 167, 108, 0.35);
 }
-.env-mark.is-opened { border-color: rgba(196, 167, 108, 0.45); }
-.env-mark.is-opened::before { border-color: rgba(196, 167, 108, 0.45); border-top-width: 2rpx; border-left-width: 2rpx; }
 
 /* 列表直达（2026-11-23）：动作字可点 —— 加「›」与命中区（上下 12rpx、左 16rpx），视觉位置不变 */
 .queue-customer .message-item:not(.workflow-card):not(.digest-card) .action-hint.is-go {

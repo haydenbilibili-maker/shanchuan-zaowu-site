@@ -4507,7 +4507,25 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .comment-reply-stars { display: block; font-size: var(--fs-20); color: var(--brass-400, #C4A76C); }
 .comment-reply-excerpt { display: block; margin-top: 4rpx; font-size: var(--fs-22); line-height: 1.5; color: #B9B2A6; }
-.comment-reply-phrases { display: flex; flex-wrap: wrap; gap: 12rpx; padding: 0 var(--pop-pad-x, 40rpx) 20rpx; }
+.comment-reply-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  padding: 0 var(--pop-pad-x, 40rpx) 12rpx;
+}
+.comment-reply-group {
+  padding: 6rpx 16rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-20);
+  color: #A09A90;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.18);
+}
+.comment-reply-group.on {
+  color: var(--mat-ink);
+  background: var(--mat-brass);
+  box-shadow: none;
+}
+.comment-reply-phrases { display: flex; flex-wrap: wrap; gap: 12rpx; padding: 0 var(--pop-pad-x, 40rpx) 20rpx; max-height: 260rpx; overflow-y: auto; }
 .comment-reply-phrase {
   padding: 8rpx 18rpx;
   border-radius: var(--r-pill, 999rpx);
@@ -6568,3 +6586,41 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 .trend-today-d { font-size: var(--fs-22); color: var(--color-text-secondary); }
 .trend-today-d.up { color: var(--color-success); }
 .trend-today-d.down { color: #D64045; }
+
+/* 智能运营中心（2026-11-26）：功能区与图表区之间的独立模块卡 */
+.smart-ops {
+  grid-column: 1 / -1;
+  padding: 22rpx 24rpx;
+  border-radius: var(--radius-md);
+  background: rgba(196, 167, 108, 0.06);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
+}
+.so-head { display: flex; align-items: center; gap: 18rpx; }
+.so-mark {
+  flex-shrink: 0;
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-thumb-sm, 4rpx);
+  box-shadow: inset 0 0 0 2rpx rgba(212, 188, 133, 0.6);
+}
+.so-mark-img {
+  width: 44rpx;
+  height: 44rpx;
+  display: block;
+  /* 图标已在生成时刷成黄铜色并带透明底（原 SVG 是白底深墨，直接加滤镜会变成一整块实心金） */
+}
+.so-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.so-t { font-family: var(--font-brand); font-size: var(--fs-30); color: var(--mat-paper-tone); }
+.so-s { font-size: var(--fs-20); line-height: 1.45; color: var(--mat-ink-soft); }
+.so-go { flex-shrink: 0; font-size: var(--fs-22); color: var(--brass-300); }
+.so-tags { display: flex; gap: 10rpx; margin-top: 14rpx; }
+.so-tag {
+  padding: 4rpx 14rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-18);
+  color: var(--brass-200);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.25);
+}

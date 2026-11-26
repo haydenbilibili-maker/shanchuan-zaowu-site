@@ -61,7 +61,7 @@ Page({
     nextHint: '',
     categories: [],
     filter: 'all',
-    showAiIdentify: true,
+    showAiIdentify: false,
     seriesFilter: '',
     seriesBlurb: '',
     recentNotes: [],
@@ -95,9 +95,9 @@ Page({
     try {
       const { fetchContentDisplayFlags } = require('../../../utils/contentDisplayFlags')
       const { flags } = await fetchContentDisplayFlags()
-      this.setData({ showAiIdentify: flags.showAiIdentify !== false })
+      this.setData({ showAiIdentify: flags.showAiIdentify === true })
     } catch (e) {
-      this.setData({ showAiIdentify: true })
+      this.setData({ showAiIdentify: false })
     }
   },
 

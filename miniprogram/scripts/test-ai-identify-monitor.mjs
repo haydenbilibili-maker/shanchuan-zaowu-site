@@ -83,7 +83,7 @@ function compile(filename, source, requireHook) {
 }
 
 /** 通用内存库：记录调用顺序；resolvers 决定返回 */
-function makeDb({ resolveGet = () => [], addBehavior = () => 'ok' } = {}) {
+function makeDb({ resolveGet = () => [], addBehavior = () => 'ok', flagOpen = true } = {}) {
   const calls = []
   function chain(name, kind) {
     const state = { name, where: null }
@@ -101,7 +101,14 @@ function makeDb({ resolveGet = () => [], addBehavior = () => 'ok' } = {}) {
         return Promise.resolve({ total: 3 })
       },
       async end() { calls.push({ coll: name, op: 'aggregate' }); return { list: [{ n: 2 }] } },
-      async get() { calls.push({ coll: name, op: 'get', where: state.where }); return { data: resolveGet(name, state.where) } },
+      async get() {
+        calls.push({ coll: name, op: 'get', where: state.where })
+        // 2026-11-26：AI 鉴定服务端现在先查内容开关（fail-closed），测试默认给一份「已开」的文档
+        if (name === 'content_display_flags') {
+          return { data: flagOpen ? [{ _id: 'f1', status: 'active', showAiIdentify: true }] : [{ _id: 'f1', status: 'active', showAiIdentify: false }] }
+        }
+        return { data: resolveGet(name, state.where) }
+      },
       add(arg) {
         calls.push({ coll: name, op: 'add', data: arg && arg.data })
         const b = addBehavior(name)
@@ -237,6 +244,15 @@ async function checkIdentify(src, t) {
     t.ok('A1 失败也落一条日志', logs.length === 1, `实际 ${logs.length}`)
     const l = logs[0] || {}
     t.ok('A1 日志字段', l.status === 'failed' && l.success === false && l.error_msg === '无法读取云存储图片' && l.openid === USER_OPENID && /missing\.jpg$/.test(l.image_file_id) && l.entry_source === 'gallery_search' && typeof l.duration_ms === 'number' && /^\d{4}-\d{2}-\d{2}$/.test(l.day) && l.source === 'live', JSON.stringify(l))
+  }
+
+  // A0（2026-11-26 审核驳回）：内容开关关掉 AI 鉴定 → 服务端拒绝（不写日志、不调模型）
+  {
+    const { db, calls } = makeDb({ resolveGet: () => [], flagOpen: false })
+    const fn = loadIdentify(src, makeCloud(db))
+    const out = await withTimeout(fn.main({ image: 'cloud://env.b/identify/a.jpg', use_ai: true }), 1500)
+    t.ok('A0 AI 鉴定关闭时服务端直接拒绝（code=AI_CLOSED）、不写日志',
+      out && out.success === false && out.code === 'AI_CLOSED' && calls.filter((c) => c.op === 'add').length === 0, JSON.stringify(out))
   }
 
   // A2 成功（mock 识别）

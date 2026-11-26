@@ -98,10 +98,18 @@ Page({
     loading: true,
     config: {},
     topics: [],
+    /** 直接办理入口（发票 / 标本师招募），不混进咨询类型 */
+    directActions: [],
     faqs: [],
     expandedFaq: -1,
 
     activeTopic: 'other',
+    activeTopicLabel: '其他问题',
+    /** 订单类咨询：让顾客挑具体订单（2026-11-26 产品负责人：类型要真的传到专员那里） */
+    orderPickerOpen: false,
+    orderPickerLoading: false,
+    orderOptions: [],
+    pickedOrderNo: '',
     contextSummary: '',
 
     sessionFrom: '',
@@ -241,6 +249,10 @@ Page({
       ensureTopic('framer_recruit');
       const active = this.data.activeTopic;
       if (active) ensureTopic(active);
+      // 2026-11-26 产品负责人：发票开具、标本师招募是「直接办理」的入口，不是咨询类型 → 从类型里拆出去
+      const DIRECT_ACTION_IDS = ['invoice', 'framer_recruit'];
+      const directActions = topics.filter((t) => t && DIRECT_ACTION_IDS.includes(t.id));
+      const consultTopics = topics.filter((t) => t && !DIRECT_ACTION_IDS.includes(t.id));
 
       // 本地文案覆盖：标本师招募入口统一跳转招募页
       topics = topics.map((t) => {
@@ -277,7 +289,8 @@ Page({
           // 服务时间以云端 support_configs.hours 为准（超管可在后台修改）
           hours: config.hours || FALLBACK_CONFIG.hours
         },
-        topics,
+        topics: consultTopics,
+        directActions,
         faqs,
         memberNo,
         loading: false
@@ -299,7 +312,8 @@ Page({
       this.setData({
         loading: false,
         config: FALLBACK_CONFIG,
-        topics: FALLBACK_CONFIG.topics,
+        topics: FALLBACK_CONFIG.topics.filter((t) => !['invoice', 'framer_recruit'].includes(t.id)),
+        directActions: FALLBACK_CONFIG.topics.filter((t) => ['invoice', 'framer_recruit'].includes(t.id)),
         faqs: FALLBACK_CONFIG.faqs
       });
       this.refreshContactContext();
@@ -491,10 +505,63 @@ Page({
       return;
     }
     if (topic === this.data.activeTopic) return;
-    this.setData({ activeTopic: topic });
+    const label = ((this.data.topics || []).filter((t) => t.id === topic)[0] || {}).label || '其他问题';
+    this.setData({ activeTopic: topic, activeTopicLabel: label });
+    // 订单 / 退款 / 发票：让顾客直接挑是哪一单，专员在会话里才看得到具体订单
+    if (['order', 'refund', 'invoice'].includes(topic) && !this.data.orderId && !this.data.pickedOrderNo) {
+      this.openOrderPicker();
+    }
     this.refreshContactContext();
     trackBehavior('support_topic_select', 'topic', topic);
   },
+
+  /** 打开「选择咨询的具体订单」面板（最近 20 单；由云函数只读返回，客户端不直读 orders） */
+  async openOrderPicker() {
+    this.setData({ orderPickerOpen: true, orderPickerLoading: true, orderOptions: [] });
+    try {
+      const res = await wx.cloud.callFunction({ name: 'getUserSession', data: { action: 'recentOrders' } });
+      const out = (res && res.result) || {};
+      const rows = (out.orders || []).map((o) => ({
+        id: o.id,
+        no: o.orderNo,
+        title: o.title,
+        amount: Number(o.amount) || 0,
+        time: o.createTime ? String(o.createTime).slice(5, 10).replace('-', '/') : ''
+      }));
+      this.setData({ orderPickerLoading: false, orderOptions: rows });
+    } catch (e) {
+      this.setData({ orderPickerLoading: false, orderOptions: [] });
+    }
+  },
+
+  closeOrderPicker() {
+    this.setData({ orderPickerOpen: false });
+  },
+
+  /** 选中某一单 → 写进上下文（会话标签 / 卡片 / 留言草稿都会带上） */
+  pickOrder(e) {
+    const id = String((e.currentTarget.dataset || {}).id || '');
+    const no = String((e.currentTarget.dataset || {}).no || '');
+    const title = String((e.currentTarget.dataset || {}).title || '');
+    if (!id) return;
+    this.setData({
+      orderPickerOpen: false,
+      orderId: id,
+      orderNo: no,
+      productName: this.data.productName || title,
+      pickedOrderNo: no
+    });
+    this.refreshContactContext();
+    trackBehavior('support_order_pick', 'topic', this.data.activeTopic);
+  },
+
+  clearPickedOrder() {
+    this.setData({ orderId: '', orderNo: '', pickedOrderNo: '' });
+    this.refreshContactContext();
+  },
+
+  /** 本地图标加载失败：静默（不给破图，也不弹提示） */
+  onIconError() {},
 
   goInvoiceRequest() {
     const qs = [];

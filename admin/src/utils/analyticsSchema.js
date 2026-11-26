@@ -133,6 +133,7 @@ export const EVENTS = {
   message_delete: { module: MODULE.MESSAGE, desc: '删除消息', targetType: 'message' },
   // 客服
   support_topic_select: { module: MODULE.SUPPORT, desc: '选择咨询主题', targetType: 'topic' },
+  support_order_pick: { module: MODULE.SUPPORT, desc: '选择咨询的订单', targetType: 'topic' },
   support_call: { module: MODULE.SUPPORT, desc: '专员拨号', targetType: 'phone' },
   support_wechat_contact: { module: MODULE.SUPPORT, desc: '微信联系专员', targetType: 'topic' },
   support_ticket_submit: { module: MODULE.SUPPORT, desc: '提交工单', targetType: 'topic' },

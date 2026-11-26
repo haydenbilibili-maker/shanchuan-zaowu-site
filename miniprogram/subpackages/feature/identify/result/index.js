@@ -41,7 +41,8 @@ function archiveIsEmpty(profile) {
 Page({
   data: {
     // 博物君开关（2026-11-25 审核驳回：关掉后不得残留 AI 问答入口）
-    guideOpen: true,
+    /** 2026-11-26 审核驳回：AI 入口默认**关闭**，拿到云端确认（内容开关 AND 开馆）才露出 */
+    guideOpen: false,
     // 仪式感（2026-10-18）：刚鉴定完 → 标本牌上的学名逐字敲出（SpeciesCard typewriter）
     typewriter: false,
     loading: true,
@@ -89,9 +90,9 @@ Page({
     try {
       const { getCachedContentDisplayFlags, fetchContentDisplayFlags } = require('../../../../utils/contentDisplayFlags')
       const cached = getCachedContentDisplayFlags()
-      if (cached && cached.flags) this.setData({ guideOpen: cached.flags.museumGuideOpen !== false })
+      if (cached && cached.flags) this.setData({ guideOpen: cached.flags.museumGuideOpen === true })
       fetchContentDisplayFlags().then((payload) => {
-        if (payload && payload.flags) this.setData({ guideOpen: payload.flags.museumGuideOpen !== false })
+        if (payload && payload.flags) this.setData({ guideOpen: payload.flags.museumGuideOpen === true })
       }).catch(() => {})
     } catch (e) { /* 取不到就按默认开启 */ }
   },

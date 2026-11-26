@@ -366,7 +366,13 @@ function checks(s) {
       !/box-shadow: 0 0 10rpx var\(--color-primary\)/.test(s.pointsWxss))
   // 2026-10-17 联系专员「专员服务台」
   add('R17-1 联系专员实心金只给「开始对话」（微信专员是主路径），留言提交为金线环',
-    solidGold(s.supportWxss) === '.channel-btn' && /\n\.submit-btn \{[^}]*background: transparent !important;/.test(s.supportWxss))
+    /\.hero-btn \{[^}]*background: var\(--mat-brass\)/.test(s.supportWxss) &&
+      !/\.channel-btn \{/.test(s.supportWxss) &&
+      /\n\.submit-btn \{[^}]*background: transparent !important;/.test(s.supportWxss))
+  // 2026-11-26 产品负责人：主题图标颜色不一致 → 统一黄铜滤镜；选中要有「已选」反馈
+  add('R17-3 联系专员主题图标统一黄铜色（filter 统一）、选中项有「已选」签',
+    /\.topic-icon \{[^}]*filter: brightness\(0\) saturate\(100%\) invert\(/.test(s.supportWxss) &&
+      /wx:if="\{\{activeTopic === item.id\}\}">已选</.test(s.supportWxml))
   add('R17-2 联系专员留言写在浅纸便笺上、无 grain-overlay、联系方式为发丝线行（不再是圆角卡）',
     /\n\.form-card \{[^}]*(?:linear-gradient\(180deg, #F3ECDD, #E8DFCB\)|var\(--mat-paper-label\))/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
       !/\n\.channel-item \{[^}]*border-radius/.test(s.supportWxss))
@@ -591,7 +597,8 @@ function checks(s) {
     /if \(!this\._unsealDecided\) \{\s*this\._unsealDecided = true;\s*if \(wasUnread && !isDigest\) this\.playUnseal\(\);/.test(s.msgDetailJs) &&
       /onUnload\(\) \{\s*\(this\._unsealTimers \|\| \[\]\)\.forEach\(clearTimeout\);/.test(s.msgDetailJs) &&
       /<view class="unseal-envelope" wx:if="\{\{unsealing && unsealing !== 'done'\}\}" bindtap="skipUnseal">/.test(s.msgDetailWxml) &&
-      /class="env-mark \{\{item\.isUnread \? 'is-sealed' : 'is-opened'\}\}" wx:if="\{\{item\.isPaper && !workflowMode && activeQueue === 'customer'\}\}"/.test(s.msgListWxml))
+      // 2026-11-26：已读不再画「空信封框」（真机像一枚空勾选框），只给未读画封口信封
+      /class="env-mark is-sealed" wx:if="\{\{item\.isPaper && !workflowMode && activeQueue === 'customer' && item\.isUnread\}\}"/.test(s.msgListWxml))
   {
     const cs = loadCjs(s.certSealJs)
     let ok = false
@@ -848,13 +855,30 @@ function checks(s) {
     /\n\.ui-pop-empty \{[^}]*color: var\(--color-text-secondary\);/.test(s.appWxss))
   // 2026-10-19 产品负责人「继续优化馆藏页顶部筛选器样式」
   // 2026-11-25 产品负责人：恢复线上两行换行版（原「一行横滑」下线），筛选钮固定在右上
-  add('R4-5 馆藏品类两行换行（恢复线上版）、筛选钮右上固定；档案横滑去掉压边圆点，改「04 / 13」+ 细进度线',
+  add('R4-5 馆藏品类四列两行（长馆名省略）、筛选钮移到标题行（不再压住第一行）；档案横滑去掉压边圆点',
     /<view class="cat-filter-grid">/.test(s.catWxml) && /<view class="category-wrap is-grid">/.test(s.catWxml) &&
       /id="hall-\{\{index\}\}"/.test(s.catWxml) && !/class="category-scroll"/.test(s.catWxml) &&
-      /\.category-wrap \{ display: flex; flex-wrap: wrap;/.test(s.catWxss) &&
-      /\.filter-entry-wrap \{[^}]*position: absolute; right: 24rpx/.test(s.catWxss) &&
+      /\.category-wrap\.is-grid \{[^}]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/.test(s.catWxss) &&
+      /<view class="nav-row">[\s\S]{0,400}class="filter-entry-wrap"/.test(s.catWxml) &&
+      !/\.filter-entry-wrap \{[^}]*position: absolute/.test(s.catWxss) &&
+      !/\.category-wrap[^{]*\{[^}]*flex-wrap: nowrap/.test(s.catWxss) &&
+      !/\.category-wrap[^{]*\{[^}]*overflow-x: auto/.test(s.catWxss) &&
       !/indicator-dots="\{\{contentTotal > 1\}\}"/.test(s.catWxml) && /class="archive-progress"/.test(s.catWxml))
   add('R4-3 馆藏搜索占位提示保留 muted（占位不属于说明字）', /^var\(--color-text-muted/.test(colorOf(s.catWxss, '.search-placeholder') || ''))
+
+  // 2026-11-26 真机：确认订单弹「价格校验失败，请点击重试」，但遇到「已下架 / 库存不足」这类
+  // 单件商品问题，重试永远不会好。要求：把云端原话给用户，并能摘掉问题商品继续下单。
+  add('R4-6 价格校验失败要给云端原话，单件商品问题可「移除并继续」（不再只提示请点击重试）',
+    /handlePreviewFailure\(result\)/.test(s.coJs) &&
+      /const text = String\(r\.msg \|\| ''\)\.trim\(\)/.test(s.coJs) &&
+      /已下架\|库存不足\|不存在\|请选择规格/.test(s.coJs) &&
+      /移除并继续/.test(s.coWxml) && /removeBadItemAndContinue/.test(s.coJs) &&
+      // 2026-11-26：点「移除并继续」原地循环（标题对不上 / 移除后仍报同一件）必须被防住
+      /_normItemTitle\(t\)/.test(s.coJs) && /this\._removedTitles/.test(s.coJs) && /previewLoopHint/.test(s.coWxml) &&
+      /previewBadProductId/.test(s.coJs) &&
+      /previewErrorMsg/.test(s.coJs) &&
+      /console\.warn\('syncServerPricingPreview failed', r\.msg \|\| r\)/.test(s.coJs) &&
+      /this\.handlePreviewFailure\(r\)/.test(s.coJs))
 
   // R5-1 首页恰好一屏：容器 100vh 纵向 flex 且裁切，顶部占位 + 滚动区（flex:1）+ 底栏让位 = 视口；不再「占位 + 满屏滚动区」叠高
   const rule = (css, sel) => ((new RegExp(`\\n\\${sel} \\{([^}]*)\\}`).exec(css)) || [])[1] || ''

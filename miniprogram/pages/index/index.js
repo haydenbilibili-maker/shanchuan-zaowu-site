@@ -1419,7 +1419,7 @@ Page({
         nick: resolvePrefillNickName(getApp()),
         greeting: this.data.homeGreeting,
         notices: flags.museumGuideNotices,
-        guideOpen: flags.museumGuideOpen !== false,
+        guideOpen: flags.museumGuideOpen === true,
         mailUnread: this.data.mailUnread || 0
       });
       // 信号灯：默认指向第一条（开馆 / 通知 / 博物 / 提示 由条目 kind 决定）

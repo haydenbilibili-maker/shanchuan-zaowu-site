@@ -135,6 +135,19 @@ function runChecks() {
   ok('R8 店长也能进「评价」并听到播报（菜单 + 角色）',
     /STORE_MANAGER_MENUS = \[[\s\S]*?MENU_KEYS\.REVIEWS[\s\S]*?\]/.test(roles))
 
+  // R12（2026-11-26 产品负责人）：回复参考文案要更多、更丰富、更有人情味（按情境分组）
+  const vw = read(F.view)
+  const groupCount = (vw.match(/id: '(praise|neutral|negative|care|custom|regular)'/g) || []).length
+  const phraseCount = (vw.match(/^\s+'[^']+[。！？]',?$/gm) || []).length
+  ok('R12 回复参考文案：6 组情境、≥24 句、按星级默认组、弹层可切组',
+    groupCount === 6 && phraseCount >= 24 &&
+    /function replyGroupForRating\(rating\)/.test(vw) &&
+    /if \(r >= 4\) return 'praise'/.test(vw))
+  ok('R12 弹层接线：分组导航 + 切组方法 + 打开时按评分选组',
+    /comment-reply-groups/.test(wxml) && /switchCommentReplyGroup/.test(cfg) &&
+    /reviewView\.replyGroupForRating\(row\.rating\)/.test(cfg) &&
+    /commentReplyGroups: reviewView\.REPLY_PHRASE_GROUPS/.test(cfg))
+
   // R9（2026-11-26 产品负责人）：用户评价要有全局看板 —— 待审为 0 也不能是空白页
   ok('R9 评价总览看板：云端 stats（各状态计数 / 均分 / 回复率 / 近 7 天）+ 页面看板与筛选联动',
     /async function commentStats\(\)/.test(fn) && /action === 'stats'/.test(fn) &&

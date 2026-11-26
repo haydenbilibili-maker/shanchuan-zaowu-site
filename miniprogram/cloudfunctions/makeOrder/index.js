@@ -182,7 +182,14 @@ exports.main = async (event, context) => {
       }
     } catch (err) {
       console.error('makeOrder preview error:', err)
-      return { success: false, msg: err.message || '计价预览失败' }
+      return {
+        success: false,
+        msg: err.message || '计价预览失败',
+        // 2026-11-26：把不可购买的那件商品精确回给前端，避免「按标题猜」摘错 / 摘不到
+        code: err.code || 'PRICE_CHECK_FAILED',
+        productId: err.productId || '',
+        skuId: err.skuId || ''
+      }
     }
   }
 

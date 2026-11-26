@@ -29,7 +29,9 @@ Page({
     /** 首页口播 · 馆内通知草稿（3 格） */
     noticeDrafts: V.noticeDrafts([]),
     noticeLen: V.NOTICE_LEN,
-    noticeDirty: false
+    noticeDirty: false,
+    /** 审核开关（内容开关）里的博物君是否开着；关掉时告知「开馆状态不生效」 */
+    guideFlagOff: false
   },
 
   async onLoad() {
@@ -37,6 +39,17 @@ Page({
     if (!role) return
     this.setData({ ready: true })
     this.load()
+    this.loadGuideFlag()
+  },
+
+  /** 审核开关（内容开关）与开馆是两把开关取 AND：这里把「审核开关关了」明确说出来，
+   *  否则管理页仍显示开馆，容易被误读成顾客端还看得到（2026-11-26 审核驳回后补）。 */
+  async loadGuideFlag() {
+    try {
+      const res = await wx.cloud.callFunction({ name: 'getContentDisplayFlags' })
+      const flags = (res && res.result && res.result.flags) || {}
+      this.setData({ guideFlagOff: flags.museumGuideOpen === false })
+    } catch (e) { /* 读不到不误报 */ }
   },
 
   onPullDownRefresh() {

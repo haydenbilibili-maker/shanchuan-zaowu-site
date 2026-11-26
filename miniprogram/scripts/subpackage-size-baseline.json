@@ -1,41 +1,40 @@
 {
   "_doc": "分包编译后体积实测基线（check:subpackage-size 用）。只能用 --measure 重写，不要手改数字。",
-  "measuredAt": "2026-10-11",
+  "measuredAt": "2026-11-26",
   "method": "微信开发者工具 CLI preview --info-output（与上传同一编译器）",
-  "commit": "5bb5e18c",
+  "commit": "",
   "packages": {
     "subpackages/business": {
-      "compiledBytes": 1664586,
-      "rawBytes": 1172575
+      "compiledBytes": 1772706,
+      "rawBytes": 1315747
     },
     "subpackages/manager": {
-      "compiledBytes": 1685605,
-      "rawBytes": 2174944
+      "compiledBytes": 1878460,
+      "rawBytes": 2443350
     },
     "subpackages/feature": {
-      "compiledBytes": 1539519,
-      "rawBytes": 2174847
+      "compiledBytes": 1709608,
+      "rawBytes": 2262832
     },
     "subpackages/plays": {
-      "compiledBytes": 116168,
-      "rawBytes": 174939
+      "compiledBytes": 58917,
+      "rawBytes": 102392
     },
     "subpackages/content": {
-      "compiledBytes": 146277,
-      "rawBytes": 170878
+      "compiledBytes": 155513,
+      "rawBytes": 182730
     },
     "subpackages/extra": {
-      "compiledBytes": 1753696,
-      "rawBytes": 2200265
+      "compiledBytes": 1834589,
+      "rawBytes": 2333055
     },
     "subpackages/b2bdesk": {
-      "compiledBytes": 114529,
-      "rawBytes": 139225
+      "compiledBytes": 116505,
+      "rawBytes": 142047
     },
     "subpackages/ai": {
-      "compiledBytes": 60620,
-      "rawBytes": 60620,
-      "provisional": "2026-11-23 AI 智能中心迁出 extra 时本环境无微信开发者工具，按「编译后 = 源码原始字节」上界临时登记（历史实测编译后均小于源码）；须本机 --measure 实测覆盖"
+      "compiledBytes": 65146,
+      "rawBytes": 81259
     }
   }
 }

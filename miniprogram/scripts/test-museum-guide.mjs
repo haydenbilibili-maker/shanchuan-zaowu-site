@@ -123,7 +123,17 @@ async function runChecks() {
         update: async ({ data }) => { usageWrites++; const d = dbStore[name] && dbStore[name][id]; if (d && name === 'museum_guide_logs') Object.assign(d, data); return { stats: { updated: d ? 1 : 0 } } },
         set: async ({ data }) => { usageWrites++; (dbStore[name] = dbStore[name] || {})[id] = data }
       }),
-      add: async ({ data }) => { if (name === 'museum_guide_logs') { logs.push(data); (dbStore[name] = dbStore[name] || {})['l' + logs.length] = data } return { _id: 'l' + logs.length } }
+      add: async ({ data }) => { if (name === 'museum_guide_logs') { logs.push(data); (dbStore[name] = dbStore[name] || {})['l' + logs.length] = data } return { _id: 'l' + logs.length } },
+      // 2026-11-26：服务端新增内容开关闸（fail-closed）→ 模拟库要能回答 where 查询
+      where: () => ({
+        limit: () => ({
+          get: async () => ({
+            data: name === 'content_display_flags'
+              ? [dbStore.content_display_flags || { _id: 'f1', status: 'active', museumGuideOpen: true }]
+              : []
+          })
+        })
+      })
     }),
     command: { inc: (n) => n },
     serverDate: () => 0
@@ -195,6 +205,13 @@ async function runChecks() {
   ok('C8 闭馆：error_type off、不过内容安全不调模型、日志记 off 与入口；status 报闭馆且额度取超管配置',
     off.success === false && off.error_type === 'off' && secCalls.length === secN && modelCalls === 0 && logs[logs.length - 1].status === 'off' && logs[logs.length - 1].entry === 'atlas' &&
     stB.enabled === false && stB.quota.cap === 12)
+  // C8b（2026-11-26 审核驳回）：内容开关关掉博物君 → 服务端拒答（模型不调用、status 报闭馆）
+  dbStore.content_display_flags = { _id: 'f1', status: 'active', museumGuideOpen: false }
+  const flagOff = await fn.main({ question: '蝴蝶是什么', from: 'atlas' })
+  const stC = await fn.main({ action: 'status' })
+  ok('C8b 内容开关关闭：服务端拒答、不调模型、status 报闭馆（不靠页面藏入口）',
+    flagOff.success === false && flagOff.error_type === 'off' && modelCalls === 0 && stC.enabled === false)
+  dbStore.content_display_flags = { _id: 'f1', status: 'active', museumGuideOpen: true }
   dbStore.museum_guide_config.main = undefined
   // C10 回答反馈：只认本人、只记一次、只认两种票；日志号只随真正的回答返回
   dbStore.museum_guide_logs = Object.assign(dbStore.museum_guide_logs || {}, { L1: { openid: 'o1', status: 'ok' }, L2: { openid: 'someone-else', status: 'ok' } })
@@ -249,7 +266,7 @@ async function runChecks() {
   ok('E5 入口：图鉴页「问问博物君」只在已翻开分支、带名自动发问；AI 鉴定结果页识别出物种才出',
     lockedElse > 0 && askAt > lockedElse && /if \(this\.data\.locked \|\| !card\.nameZh\) return/.test(read(P.atlasJs)) && /museum-guide\/index\?from=atlas&auto=1&q=\$\{encodeURIComponent\(q\)\}/.test(read(P.atlasJs)) &&
     /<view class="tool" wx:if="\{\{guideOpen && speciesInfo\.species_name_zh && speciesInfo\.is_specimen !== false\}\}" bindtap="onAskGuide"/.test(read(P.idWxml)) && /museum-guide\/index\?from=identify&auto=1/.test(read(P.idJs)) &&
-    /wx:if="\{\{guideOpen\}\}"[^>]*bindtap="askGuide"/.test(atlasWxml) && /museumGuideOpen !== false/.test(read(P.atlasJs)))
+    /wx:if="\{\{guideOpen\}\}"[^>]*bindtap="askGuide"/.test(atlasWxml) && /museumGuideOpen === true/.test(read(P.atlasJs)))
   const avatar = loadCjsModule(P.avatar).GUIDE_AVATAR || ''
   const avatarSvg = decodeURIComponent(avatar.split(',')[1] || '')
   ok('E6 博物君头像 = 附件「科学家」icon（方印内是内联 svg，两处入口都换，不是「博」字）',

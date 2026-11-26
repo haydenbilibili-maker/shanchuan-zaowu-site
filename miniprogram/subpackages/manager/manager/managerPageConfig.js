@@ -1694,6 +1694,9 @@ const managerPageConfig = {
     commentEmpty: null,
     commentListLoading: false,
     commentReplyPhrases: reviewView.REPLY_PHRASES,
+    /** 回复参考文案分组（2026-11-26）：按情境切换，默认按星级选组 */
+    commentReplyGroups: reviewView.REPLY_PHRASE_GROUPS,
+    commentReplyGroup: 'praise',
     contentFlagsLoading: false,
     contentFlagsSaving: false,
     // 有未保存的改动：开关是「先改本地、点保存才写云端」的，
@@ -2971,6 +2974,15 @@ const managerPageConfig = {
       return;
     }
     goPayslipAdmin();
+  },
+
+  /** 智能运营中心（原 AI 智能中心，2026-11-26 改名并上移到工作台功能区与图表区之间） */
+  goSmartOpsCenter() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({
+      url: '/subpackages/ai/ai-center/index?from=workspace',
+      fail: () => this.showHubTip('页面暂不可用', 'warn')
+    });
   },
 
   goLiveStudio() {
@@ -10703,8 +10715,11 @@ bindSubCatChange(e) {
       // 改回复时带上原文；顶部给出被回复的那条评价摘要，回复时不用凭记忆
       const row = (this.data.commentList || []).find((c) => c._id === id) || {};
       const excerpt = String(row.content || '').replace(/\s+/g, ' ').trim();
+      const group = reviewView.replyGroupForRating(row.rating);
       this.setData({
         showCommentReplyModal: true,
+        commentReplyGroup: group,
+        commentReplyPhrases: this._replyPhrasesOf(group),
         tempCommentReply: {
           commentId: id,
           content: String(row.merchantReply || ''),
@@ -10740,6 +10755,19 @@ bindSubCatChange(e) {
   bindCommentReplyInput(e) {
     this.setData({ 'tempCommentReply.content': e.detail.value });
   },
+  /** 某一组参考文案（找不到组就退回全部） */
+  _replyPhrasesOf(groupId) {
+    const g = (this.data.commentReplyGroups || []).filter((x) => x.id === groupId)[0];
+    return g ? g.phrases : reviewView.REPLY_PHRASES;
+  },
+
+  /** 切换参考文案分组（好评 / 中评 / 差评售后 / 养护答疑 / 定制伴宠 / 老客会员） */
+  switchCommentReplyGroup(e) {
+    const group = String((e && e.currentTarget && e.currentTarget.dataset.group) || '');
+    if (!group || group === this.data.commentReplyGroup) return;
+    this.setData({ commentReplyGroup: group, commentReplyPhrases: this._replyPhrasesOf(group) });
+  },
+
   /** 常用说法：空着就填入，已有内容就接在后面 */
   pickCommentReplyPhrase(e) {
     const phrase = String((e && e.currentTarget && e.currentTarget.dataset.text) || '');

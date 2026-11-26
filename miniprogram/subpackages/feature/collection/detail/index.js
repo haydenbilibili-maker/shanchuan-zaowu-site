@@ -31,7 +31,8 @@ function unlockWaysOf(card) {
 Page({
   data: {
     guideAvatar: GUIDE_AVATAR,
-    guideOpen: true,
+    /** 2026-11-26 审核驳回：AI 入口默认**关闭**，拿到云端确认（内容开关 AND 开馆）才露出 */
+    guideOpen: false,
     loading: true,
     loadError: false,
     locked: true,
@@ -56,9 +57,9 @@ Page({
     try {
       const { getCachedContentDisplayFlags, fetchContentDisplayFlags } = require('../../../../utils/contentDisplayFlags')
       const cached = getCachedContentDisplayFlags()
-      if (cached && cached.flags) this.setData({ guideOpen: cached.flags.museumGuideOpen !== false })
+      if (cached && cached.flags) this.setData({ guideOpen: cached.flags.museumGuideOpen === true })
       fetchContentDisplayFlags().then((payload) => {
-        if (payload && payload.flags) this.setData({ guideOpen: payload.flags.museumGuideOpen !== false })
+        if (payload && payload.flags) this.setData({ guideOpen: payload.flags.museumGuideOpen === true })
       }).catch(() => {})
     } catch (e) { /* 取不到就按默认开启 */ }
   },

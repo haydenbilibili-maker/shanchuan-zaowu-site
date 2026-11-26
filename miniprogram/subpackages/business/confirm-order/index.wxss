@@ -1186,3 +1186,29 @@ view, text, scroll-view { box-sizing: border-box; }
   .paid-label,
   .paid-seal { animation: none; }
 }
+
+/* 预览报错条（2026-11-26）：单件商品不可购买时，底部给「返回购物车 / 移除并继续」 */
+.preview-bad {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: calc(150rpx + env(safe-area-inset-bottom));
+  z-index: 60;
+  padding: 18rpx 20rpx;
+  border-radius: var(--radius-md);
+  background: rgba(42, 36, 27, 0.97);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.4), 0 12rpx 30rpx rgba(0, 0, 0, 0.35);
+}
+.pb-text { display: flex; flex-direction: column; gap: 4rpx; }
+.pb-t { font-size: var(--fs-24); color: var(--mat-paper-tone); }
+.pb-s { font-size: var(--fs-20); color: var(--mat-ink-soft); }
+.pb-actions { display: flex; justify-content: flex-end; gap: 12rpx; margin-top: 12rpx; }
+.pb-btn {
+  padding: 10rpx 22rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-22);
+  color: var(--mat-brass-polished);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45);
+}
+.pb-btn.is-primary { background: var(--mat-brass); color: var(--mat-ink); box-shadow: none; }
+.pb-btn-press { opacity: 0.88; }

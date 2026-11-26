@@ -321,6 +321,28 @@ exports.main = async (event) => {
     return { success: false, msg: '未登录', authState: 'guest' }
   }
 
+  // 2026-11-26：联系专员「选择咨询订单」用 —— 只读本人最近 20 单，
+  // 客户端不得直读 orders（check:sensitive-direct-read），统一走这里。
+  if (event && event.action === 'recentOrders') {
+    try {
+      const res = await db.collection('orders')
+        .where({ _openid: openid })
+        .orderBy('createTime', 'desc')
+        .limit(20)
+        .get()
+      const orders = (res.data || []).map((o) => ({
+        id: o._id,
+        orderNo: o.orderNo || String(o._id || '').slice(-8),
+        title: (o.items && o.items[0] && (o.items[0].title || o.items[0].name)) || '订单',
+        amount: Number(o.totalPrice || o.payAmount || 0),
+        createTime: o.createTime || o.createdAt || null
+      }))
+      return { success: true, orders }
+    } catch (e) {
+      return { success: false, msg: (e && e.message) || '读取订单失败', orders: [] }
+    }
+  }
+
   try {
     const userRes = await db.collection('users').where({ _openid: openid }).limit(1).get()
     const rawUser = userRes.data && userRes.data[0] ? userRes.data[0] : null

@@ -783,6 +783,8 @@ Page({
     this._markingAll = false;
 
     const result = (res && res.result) || {};
+    // 2026-11-26：真机 Console 里要能看到「点完之后云端到底改了几条、还剩几条」
+    console.log('[markAllRead]', JSON.stringify({ failed, success: result.success, unreadCount: result.unreadCount, updated: result.updated, swept: result.swept, msg: result.msg }));
     if (failed || !result.success) {
       wx.showToast({ title: failed ? '操作失败，请稍后重试' : (result.msg || '操作失败'), icon: 'none', duration: 2400 });
       // 部分标上了：重新拉一遍，让列表与未读数回到云端的真实状态

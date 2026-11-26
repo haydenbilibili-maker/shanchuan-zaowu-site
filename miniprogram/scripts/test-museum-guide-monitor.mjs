@@ -181,6 +181,25 @@ async function runChecks() {
   ok('M4 界面无集合名 / 字段名、页面无原生弹窗、页内说明不记原文', !/museum_guide|openid|_id\b|created_at/.test(wxml) && !/wx\.show(Modal|Toast)/.test(pageJs) && /不记录问题与回答原文/.test(wxml))
   ok('M4 开关两步确认（第一下只亮出确认）', /if \(!this\.data\.confirmToggle\) \{/.test(pageJs) && /再点一次确认闭馆/.test(wxml))
 
+  /* ---------------- M7 审核驳回（2026-11-26）：内容开关关掉后 C 端不得残留任何 AI 入口 ---------------- */
+  const readM = (rel) => read(join(MP, rel))
+  const detailJs = readM('subpackages/feature/collection/detail/index.js')
+  const identifyJs = readM('subpackages/feature/identify/result/index.js')
+  const userJs = readM('pages/user/index.js')
+  const homeJs = readM('pages/index/index.js')
+  const homeWxml = readM('pages/index/index.wxml')
+  ok('M7 AI 入口 fail-closed：默认关闭，只有云端确认 museumGuideOpen===true 才露出（详情 / 识别 / 我的 / 首页）',
+    /guideOpen: false,/.test(detailJs) && /guideOpen: false,/.test(identifyJs) &&
+    /guideOpen: cached\.flags\.museumGuideOpen === true/.test(detailJs) &&
+    /guideOpen: payload\.flags\.museumGuideOpen === true/.test(detailJs) &&
+    /museumGuideOpen: false,/.test(userJs) && /museumGuideOpen: flags\.museumGuideOpen === true/.test(userJs) &&
+    /guideOpen: flags\.museumGuideOpen === true/.test(homeJs))
+  ok('M7 首页头像印章随口播出现（闭馆时不留 AI 入口）',
+    /wx:if="\{\{cast\.hello\}\}"[^>]*bindtap="onCastSealTap"/.test(homeWxml))
+  ok('M7 管理页说明「审核开关已关闭 → 开馆状态不生效」',
+    /guideFlagOff/.test(readM('subpackages/manager/museum-guide-monitor/index.js')) &&
+    /审核开关里的「博物君」已关闭/.test(readM('subpackages/manager/museum-guide-monitor/index.wxml')))
+
   /* ---------------- M5 开关落地 ---------------- */
   const flagDb = (cfg, patch) => memDb(Object.assign({ content_display_flags: { f1: Object.assign({ _id: 'f1', status: 'active', priority: 100, showAiIdentify: true }, patch || {}) } }, cfg ? { museum_guide_config: { main: cfg } } : {}))
   const loadFlags = (db) => loadCjsModule(P.flagsFn, {
@@ -214,13 +233,14 @@ async function runChecks() {
     /museumGuideOpen: form\.museumGuideOpen !== false/.test(read(P.erpFlags)) && /museumGuideOpen: true/.test(read(P.erpFlags)))
   ok('M5 关闭后 C 端不残留 AI 入口：图鉴详情 / 识别结果都按 guideOpen 隐藏，并各自拉取开关',
     /wx:if="\{\{guideOpen\}\}"[^>]*bindtap="askGuide"/.test(read(P.atlasWxml)) &&
-    /loadGuideOpen\(\)/.test(read(P.atlasJs)) && /museumGuideOpen !== false/.test(read(P.atlasJs)) &&
+    /loadGuideOpen\(\)/.test(read(P.atlasJs)) && /museumGuideOpen === true/.test(read(P.atlasJs)) &&
     /wx:if="\{\{guideOpen && speciesInfo\.species_name_zh/.test(read(P.identifyWxml)) &&
-    /loadGuideOpen\(\)/.test(read(P.identifyJs)) && /museumGuideOpen !== false/.test(read(P.identifyJs)))
+    /loadGuideOpen\(\)/.test(read(P.identifyJs)) && /museumGuideOpen === true/.test(read(P.identifyJs)))
   ok('M5 关闭后首页口播整条清空（不留任何 AI 内容）',
     /if \(flags\.museumGuideOpen === false\)/.test(read(P.homeJs)) && /cast: \{ hello: '', items: \[\]/.test(read(P.homeJs)))
-  ok('M5 小程序端开关归一（缺省开启）与「我的」入口跟随', /museumGuideOpen: src\.museumGuideOpen !== false/.test(read(P.flagsUtil)) &&
-    /data-path="museumGuide" wx:if="\{\{museumGuideOpen\}\}"/.test(read(P.userWxml)) && /museumGuideOpen: flags\.museumGuideOpen !== false/.test(read(P.userJs)))
+  ok('M5 小程序端开关归一与「我的」入口跟随（2026-11-26 改 fail-closed：确认开才显示）',
+    /museumGuideOpen: src\.museumGuideOpen === true/.test(read(P.flagsUtil)) &&
+    /data-path="museumGuide" wx:if="\{\{museumGuideOpen\}\}"/.test(read(P.userWxml)) && /museumGuideOpen: flags\.museumGuideOpen === true/.test(read(P.userJs)))
 
   // M7（2026-11-25 产品负责人）：内容开关面板同步博物君开关 + 跳转管理详情
   const mgrCfg = read(P.mgrCfg)
@@ -277,7 +297,7 @@ const INJECTIONS = [
   { name: '内容开关读不到就关', file: P.flagsFn, find: '  } catch (e) {\n    return true\n  }', replace: '  } catch (e) {\n    return false\n  }' },
   { name: '内容开关不带出博物君', file: P.flagsFn, find: 'flags: Object.assign({}, res.flags, { museumGuideOpen, museumGuideFlag: storedGuideOpen })', replace: 'flags: res.flags' },
   { name: '内容开关面板把闭馆结果写回原值', file: P.mgrCfg, find: 'museumGuideOpen: typeof flags.museumGuideFlag === \'boolean\'\n            ? flags.museumGuideFlag\n            : flags.museumGuideOpen !== false,', replace: 'museumGuideOpen: flags.museumGuideOpen !== false,' },
-  { name: '小程序端缺省关闭', file: P.flagsUtil, find: 'museumGuideOpen: src.museumGuideOpen !== false', replace: 'museumGuideOpen: src.museumGuideOpen === true' },
+  { name: '小程序端缺省打开（审核期会露出 AI 入口）', file: P.flagsUtil, find: 'museumGuideOpen: src.museumGuideOpen === true', replace: 'museumGuideOpen: src.museumGuideOpen !== false' },
   { name: '错误原文又渲染给超管', file: P.page, find: 'loadError: V.friendlyError(e)', replace: 'loadError: `没能取回报表：${(e && e.message) || e}`' },
   { name: '内容开关漏了博物君字段（保存会把它重置）', file: P.flagsFn, find: '    museumGuideOpen: incoming.museumGuideOpen,\n', replace: '' },
   { name: '内容开关页丢了博物君开关', file: P.subviews, find: 'data-field="museumGuideOpen"', replace: 'data-field="museumGuideOpenX"' },

@@ -53,7 +53,8 @@ function buildSessionFrom(ctx = {}) {
   if (ctx.memberNo) parts.push(`会员 ${ctx.memberNo}`);
   if (ctx.storeName) parts.push(truncate(ctx.storeName, 16));
 
-  const meta = [];
+  // 2026-11-26：把咨询类型做成机器可读字段（客服工具/后台可直接取），不再只靠人读的标题
+  const meta = [`topic=${ctx.topic || 'other'}`];
   if (ctx.orderId) meta.push(`oid=${ctx.orderId}`);
   if (ctx.productId) meta.push(`pid=${ctx.productId}`);
 

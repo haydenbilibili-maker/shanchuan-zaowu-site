@@ -293,6 +293,17 @@ async function bumpUsage(id, openid, day, delta) {
 
 /* ------------------------------ 入口 ------------------------------ */
 
+async function contentFlagOpen() {
+  try {
+    const res = await db.collection('content_display_flags').where({ status: 'active' }).limit(1).get()
+    const doc = (res.data || [])[0] || {}
+    // 缺字段按「关」处理（fail-closed），与管理页口径一致
+    return doc.museumGuideOpen === true
+  } catch (e) {
+    return false
+  }
+}
+
 async function readConfig() {
   try {
     const r = await db.collection(CONFIG_COLLECTION).doc(CONFIG_DOC).get()
@@ -351,9 +362,9 @@ async function staffGate(openid, options) {
   try {
     const g = await assertStaff(db, openid, options || {})
     if (g && g.ok) return { ok: true, actor: g.actor }
-    return { ok: false, out: { success: false, error_type: 'forbidden', msg: (g && g.msg) || 'AI 智能中心仅限员工使用' } }
+    return { ok: false, out: { success: false, error_type: 'forbidden', msg: (g && g.msg) || '智能运营中心仅限员工使用' } }
   } catch (e) {
-    return { ok: false, out: { success: false, error_type: 'forbidden', msg: 'AI 智能中心仅限员工使用' } }
+    return { ok: false, out: { success: false, error_type: 'forbidden', msg: '智能运营中心仅限员工使用' } }
   }
 }
 
@@ -644,6 +655,16 @@ exports.main = async (event) => {
   if (event && event.mode === 'staffBrief') return staffBrief(event, OPENID)
   if (event && event.mode === 'staffPatrol') return staffPatrol(event, OPENID)
   if (event && event.mode === 'staffMemo') return staffMemo(event, OPENID)
+
+  // 2026-11-26 审核驳回（深度合成）：内容开关里的博物君关掉时，**服务端**也必须拒答，
+  // 不能只靠页面藏入口 —— 老客户端 / 分享链接 / 深链仍可能直接调到这里。
+  const flagOpen = await contentFlagOpen()
+  if (!flagOpen) {
+    if (event && event.action === 'status') {
+      return { success: true, enabled: false, msg: CLOSED_MSG, quota: { left: 0, cap: 0 } }
+    }
+    return { success: false, error_type: 'off', msg: CLOSED_MSG }
+  }
 
   const t0 = Date.now()
   const cfg = effectiveConfig(await readConfig(), process.env.MUSEUM_GUIDE_DAILY_LIMIT)

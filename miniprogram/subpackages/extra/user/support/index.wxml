@@ -3,7 +3,7 @@
      联系方式发丝线行，实心金只给「开始对话」（微信专员 = 主路径）；留言写在浅纸便笺上，提交为金线环；FAQ / 到店为发丝线行。数据与交互不变。 -->
 <view class="page-support">
 
-  <view class="sticky-header" style="padding-right: {{navPaddingRight}}px;">
+  <view class="sticky-header" style="padding-top: {{statusBarHeight}}px; padding-right: {{navPaddingRight}}px;">
     <view class="nav-row">
       <view class="nav-brand">
         <text class="nav-sub">SUPPORT DESK · 专员服务台</text>
@@ -27,7 +27,7 @@
       <view class="context-card-main">
         <shan-img ext-class="context-thumb" wx:if="{{contextCard.image}}" src="{{contextCard.image}}" mode="aspectFill" mark="{{false}}" />
         <view class="context-thumb placeholder" wx:else>
-          <text class="context-thumb-mark">{{contextCard.kind === 'order' ? '单' : '藏'}}</text>
+          <image class="context-thumb-ico" src="{{contextCard.kind === 'order' ? '/assets/icons/list.png' : '/assets/icons/knowledge.png'}}" mode="aspectFit" binderror="onIconError" aria-hidden="true" />
         </view>
         <view class="context-meta">
           <text class="context-kind">{{contextCard.kindLabel}}</text>
@@ -52,6 +52,37 @@
     </view>
 
     <block wx:else>
+      <!-- 首屏主行动（2026-11-26 产品负责人：开始对话要在第一屏显著位置） -->
+      <view class="hero-talk">
+        <view class="hero-copy">
+          <text class="hero-k">微信专员</text>
+          <text class="hero-t">开始对话</text>
+          <text class="hero-s">已选：{{activeTopicLabel}} · 专员会在 {{config.responseHint || '工作时间内 30 分钟'}} 回复</text>
+        </view>
+        <button
+          class="hero-btn"
+          open-type="contact"
+          session-from="{{sessionFrom}}"
+          send-message-title="{{sendMessageTitle}}"
+          send-message-path="{{sendMessagePath}}"
+          send-message-img="{{sendMessageImg}}"
+          show-message-card="{{showMessageCard}}"
+          bindcontact="onContactTap"
+        >开始对话</button>
+        <!-- 订单类咨询：让顾客直接指定哪一单（2026-11-26），专员在会话标签与卡片里就能看到 -->
+        <view class="hero-order" wx:if="{{activeTopic === 'order' || activeTopic === 'refund' || activeTopic === 'invoice'}}">
+          <block wx:if="{{pickedOrderNo}}">
+            <text class="hero-order-t">已选订单 · {{pickedOrderNo}}</text>
+            <text class="hero-order-a" bindtap="openOrderPicker" hover-class="tap-press-soft" hover-stay-time="80">换一单</text>
+            <text class="hero-order-x" bindtap="clearPickedOrder" hover-class="tap-press-soft" hover-stay-time="80">✕</text>
+          </block>
+          <block wx:else>
+            <text class="hero-order-t is-empty">还没指定订单</text>
+            <text class="hero-order-a" bindtap="openOrderPicker" hover-class="tap-press-soft" hover-stay-time="80">选择订单 ›</text>
+          </block>
+        </view>
+      </view>
+
       <!-- 服务信息 -->
       <view class="service-card">
         <view class="service-row">
@@ -73,6 +104,7 @@
       <!-- 咨询主题 -->
       <view class="section">
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">TOPICS</text><text class="mu-cn">选择咨询类型</text></view></view>
+        <text class="section-hint">选中的类型会写进会话标签，专员一进来就知道你在问什么（也会带进下面的留言）。</text>
         <view class="topic-grid">
           <view
             class="topic-item {{activeTopic === item.id ? 'active' : ''}}"
@@ -82,9 +114,37 @@
             bindtap="selectTopic"
             data-id="{{item.id}}"
           >
-            <image class="topic-icon" src="{{item.icon}}" mode="aspectFit"></image>
+            <view class="topic-head">
+              <image class="topic-icon" src="{{item.icon}}" mode="aspectFit"></image>
+              <text class="topic-pick" wx:if="{{activeTopic === item.id}}">已选</text>
+            </view>
             <text class="topic-label">{{item.label}}</text>
             <text class="topic-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 直接办理（2026-11-26 产品负责人：发票 / 标本师招募是功能入口，不混在咨询类型里） -->
+      <view class="section" wx:if="{{directActions.length}}">
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">DIRECT</text><text class="mu-cn">直接办理</text></view></view>
+        <view class="direct-list">
+          <view
+            class="direct-item"
+            wx:for="{{directActions}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="selectTopic"
+            hover-class="tap-press-soft"
+            hover-stay-time="80"
+            aria-role="button"
+            aria-label="{{item.label}}"
+          >
+            <image class="direct-icon" src="{{item.icon}}" mode="aspectFit" binderror="onIconError" aria-hidden="true" />
+            <view class="direct-copy">
+              <text class="direct-l">{{item.label}}</text>
+              <text class="direct-d">{{item.desc}}</text>
+            </view>
+            <text class="direct-go">›</text>
           </view>
         </view>
       </view>
@@ -93,23 +153,6 @@
       <view class="section">
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">CONTACT</text><text class="mu-cn">即时联系</text></view></view>
         <view class="channel-list">
-          <view class="channel-item primary">
-            <view class="channel-info">
-              <text class="channel-name">微信专员</text>
-              <text class="channel-desc">{{hasConsultContext ? '推荐 · 将带上订单/藏品卡片' : '推荐 · 可发送订单/藏品卡片'}}</text>
-            </view>
-            <button
-              class="channel-btn"
-              open-type="contact"
-              session-from="{{sessionFrom}}"
-              send-message-title="{{sendMessageTitle}}"
-              send-message-path="{{sendMessagePath}}"
-              send-message-img="{{sendMessageImg}}"
-              show-message-card="{{showMessageCard}}"
-              bindcontact="onContactTap"
-            >开始对话</button>
-          </view>
-
           <view class="channel-item" hover-class="tap-press-soft" hover-stay-time="80" bindtap="callPhone">
             <view class="channel-info">
               <text class="channel-name">电话专线</text>
@@ -235,6 +278,37 @@
       <text class="modal-sub">COMMUNITY</text>
       <shan-img ext-class="community-qr" src="{{config.communityQr}}" mode="aspectFit" show-menu-by-longpress="{{true}}" />
       <text class="modal-tip">长按识别添加微信助手，随后拉入官方服务微信群</text>
+    </view>
+  </view>
+
+  <!-- 选择咨询订单（2026-11-26）：订单 / 退款 / 发票类咨询指定具体一单 -->
+  <view class="ui-pop-mask" wx:if="{{orderPickerOpen}}" catchtap="closeOrderPicker" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel" catchtap="true">
+      <view class="modal-head">
+        <text>选择咨询的订单</text>
+        <view class="close-btn" hover-class="tap-press" hover-stay-time="80" catchtap="closeOrderPicker">✕</view>
+      </view>
+      <scroll-view scroll-y class="order-picker-body">
+        <view class="order-picker-tip" wx:if="{{orderPickerLoading}}">正在读取订单…</view>
+        <view class="order-picker-tip" wx:elif="{{!orderOptions.length}}">还没有可选的订单，可直接开始对话说明情况。</view>
+        <view
+          class="order-pick-row"
+          wx:for="{{orderOptions}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          data-no="{{item.no}}"
+          data-title="{{item.title}}"
+          catchtap="pickOrder"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+        >
+          <view class="op-main">
+            <text class="op-title">{{item.title}}</text>
+            <text class="op-sub">单号 {{item.no}} · ¥{{item.amount}} · {{item.time}}</text>
+          </view>
+          <text class="op-go">›</text>
+        </view>
+      </scroll-view>
     </view>
   </view>
 </view>

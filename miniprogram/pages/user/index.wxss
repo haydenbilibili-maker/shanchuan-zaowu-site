@@ -111,6 +111,13 @@ page {
 /* 馆藏与内容：三列宫格（格间发丝线） */
 /* 2026-11-25 团块化微调：宫格不再用贯穿的格线切开，改为卡中小块 —— 每格一块淡底圆角，格间留缝 */
 .svc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14rpx; padding-top: 22rpx; }
+/* 数量自适应（2026-11-26）：4 个就 4 宫格；5–6 个回到 3 列；7 个以上 4 列 */
+.svc-grid.is-n1, .svc-grid.is-n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.svc-grid.is-n3, .svc-grid.is-n5, .svc-grid.is-n6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.svc-grid.is-n4, .svc-grid.is-n7, .svc-grid.is-n8 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.svc-grid.is-n4 .svc-tile { min-height: 132rpx; gap: 10rpx; padding: 12rpx 6rpx; }
+.svc-grid.is-n4 .m-img { width: 40rpx; height: 40rpx; }
+.svc-grid.is-n4 .svc-cn { font-size: var(--fs-22); }
 .svc-tile {
   position: relative;
   display: flex;
@@ -226,6 +233,18 @@ page {
   position: relative;
   transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
+/* 工作信息：文字最长，单独占一行（2026-11-26 产品负责人：其它卡回到两列，只让这一张自适应整行） */
+.wb-tile.is-full {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  gap: 18rpx;
+  min-height: 120rpx;
+  padding: 20rpx 24rpx;
+}
+.wb-tile.is-full .wb-tile-top { width: auto; margin-bottom: 0; gap: 12rpx; }
+.wb-tile.is-full .wb-cn { font-size: var(--fs-28); white-space: nowrap; }
+.wb-tile.is-full .wb-en { margin-top: 2rpx; }
 .wb-tile-info {
   border-color: rgba(45, 90, 63, 0.55);
   background: linear-gradient(160deg, rgba(45, 90, 63, 0.14) 0%, var(--color-bg-card) 58%);

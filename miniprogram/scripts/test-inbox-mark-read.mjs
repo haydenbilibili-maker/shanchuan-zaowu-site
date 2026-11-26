@@ -149,6 +149,39 @@ async function runChecks() {
   await fn6.main({ action: 'markAllRead', category: 'all', queue: 'customer' })
   ok('R6 被同组已读盖住的残留未读（影子）也在全部已读时清掉', b6.unreadCount === 0 && db6.docs.user_messages.um2.read === true)
 
+  // R11（2026-11-26 真机「无反应且 Console 无日志」）：顶栏 pointer-events:none + 子元素白名单，
+  //   「全部标为已读」如果不在白名单，点击会直接穿透 —— 这次必须把卷首与按钮都放行。
+  const msgWxss = read(join(MP, 'subpackages/extra/user/messages/index.wxss'))
+  ok('R11 顶栏「全部标为已读」可点击（letters-head / lh-mark 在 pointer-events 白名单，tucked 时收回）',
+    /\.sticky-header \.letters-head,\s*\n\.sticky-header \.lh-mark \{\s*\n\s*pointer-events: auto;/.test(msgWxss) &&
+    /\.sticky-header\.tucked \.letters-head,\s*\n\.sticky-header\.tucked \.lh-mark \{\s*\n\s*pointer-events: none;/.test(msgWxss))
+
+  // R9（2026-11-26 根因）缺 read 字段的历史落点：列表按 JS 判未读、云端 neq(true) 不命中缺失字段，
+  //    → 永远「1 封未读」且点不掉。修后应能清掉；notification_logs 只有 _openid 没有 recipient 也要清。
+  const sd9 = seed()
+  delete sd9.user_messages.um3.read
+  sd9.notification_logs.nl2 = { _id: 'nl2', _openid: ME, channel: 'inapp', type: 'booking_created', relatedId: 'b2', title: '预约已记下', category: 'booking', sentAt: 1795000000000 }
+  const db9 = memDb(sd9)
+  const fn9 = loadFn(db9)
+  const b9 = await fn9.main({ action: 'getMessages', category: 'all', queue: 'customer' })
+  const r9 = await fn9.main({ action: 'markAllRead', category: 'all', queue: 'customer' })
+  ok('R9 缺 read 字段 / 只有 _openid 的落点也能被「全部已读」清掉（不再永久 1 封未读）',
+    b9.unreadCount >= 1 && r9.success === true && r9.unreadCount === 0 &&
+    db9.docs.user_messages.um3.read === true && db9.docs.notification_logs.nl2.read === true)
+  ok('R9 云端扫未读按 JS 口径（read/isRead !== true），不依赖云端 neq（漏缺失字段）',
+    /function isUnreadDoc\(d\)/.test(read(P.fn)) && /rows\.filter\(isUnreadDoc\)/.test(read(P.fn)) &&
+    !/where\(\{ recipient: openid, read: _\.neq\(true\) \}\)/.test(read(P.fn)))
+
+  // R10（2026-11-26 根因②）分类/队列/合并窗口任一对不上时，也必须在「全部已读」里清干净：
+  //   云端不允许在 members 为空时提前 return，必须无条件强扫本人两集合，并按全量口径回报未读数。
+  const src10 = read(P.fn)
+  const body10 = (src10.match(/async function markAllRead\([\s\S]*?\n\}/) || [''])[0]
+  ok('R10 全部已读无条件强扫 + 全量回报（不再「分类对不上 → 直接回成功但仍剩 1 封」）',
+    /const swept = await forceMarkUnread\(openid\)/.test(body10) &&
+    /const all = await loadMergedMessages\(openid, 'all'\)/.test(body10) &&
+    /const left = all\.filter\(isUnread\)/.test(body10) &&
+    !/if \(!members\.length\) \{\s*return \{ success: true/.test(body10))
+
   // R4
   const page = read(P.page)
   const at = page.indexOf('  async markAllRead() {')
@@ -165,7 +198,8 @@ async function runChecks() {
   const src = read(P.fn)
   ok('R7 兜底强标：按本人扫两集合（不带分类 / 队列条件）、doc 失败回落 where 更新、仅在仍有未读时触发',
     /async function forceMarkUnread\(openid\)/.test(src) &&
-    /const specs = \[\s*\n\s*\['user_messages', _\.and\(\[buildRecipientWhere\(openid, 'all'\)/.test(src) &&
+    /const specs = \[\s*\n\s*\['user_messages', buildRecipientWhere\(openid, 'all'\)\]/.test(src) &&
+    /const specs = \[[\s\S]{0,200}\['notification_logs', buildRecipientWhere\(openid, 'all'\)\]/.test(src) &&
     /db\.collection\(col\)\.where\(\{ _id: id \}\)\.update\(patch\)/.test(src) &&
     /const swept = await forceMarkUnread\(openid\)/.test(src) &&
     !/forceMarkUnread\(openid, category/.test(src))
@@ -204,10 +238,10 @@ const INJECTIONS = [
   { name: '诊断又弹窗', file: P.page, find: "console.warn('[inbox] 未读诊断'", replace: "openAppModal({ title: '还有', content: 'x' }); console.warn('[inbox] 未读诊断'" },
   { name: '诊断不查库', file: P.fn, find: "case 'diagnoseUnread': {", replace: 'case \'diagnoseUnreadX\': {' },
   { name: '兜底不扫', file: P.fn, find: 'const swept = await forceMarkUnread(openid', replace: 'const swept = 0; void (openid' },
-  { name: '改不上也报成功', file: P.fn, find: "    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated }", replace: "    return { success: true, msg: '全部标记成功', unreadCount: 0 }" },
+  { name: '改不上也报成功', file: P.fn, find: "    return { success: false, msg: `还有 ${left.length} 封没标上，已记录，稍后再试`, unreadCount: left.length, updated: r.updated, swept }", replace: "    return { success: true, msg: '全部标记成功', unreadCount: 0 }" },
   { name: '单条已读不带整组', file: P.fn, find: '      if (group && group._members && group._members.length > 1) await markMembersRead(group._members)\n', replace: '' },
   { name: '提示又被 hideLoading 吞掉', file: P.page, find: "    wx.hideLoading();\n    this._markingAll = false;\n", replace: "    this._markingAll = false;\n" },
-  { name: '全部已读不扫影子', file: P.fn, find: '  const ghosts = await loadUnreadMembers(openid, category, typeFilter, requestedQueue)', replace: '  const ghosts = []' },
+  { name: '全部已读不扫影子', file: P.fn, find: '  const swept = await forceMarkUnread(openid)', replace: '  const swept = 0' },
   { name: '来信行脚又贴回正文（没有虚线分隔）', file: P.wxss, find: 'border-top: 1rpx dashed var(--mat-paper-rule);', replace: 'border-top: 0;' },
   { name: '水印又压在按钮上', file: P.wxss, find: "  position: relative;\n  z-index: 1;\n}\n.queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {\n  content: '山海';\n  position: absolute;\n  z-index: 0;", replace: "  position: relative;\n}\n.queue-customer .message-item:not(.workflow-card):not(.digest-card)::after {\n  content: '山海';\n  position: absolute;\n  z-index: 2;" },
   { name: '内部字段漏到前端', file: P.fn, find: '  const { _source, _members, ...rest } = msg', replace: '  const { _source, ...rest } = msg' }

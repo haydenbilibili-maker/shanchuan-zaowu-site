@@ -268,7 +268,7 @@
     </view>
     <view class="wb-matrix">
       <view
-        class="wb-tile {{item.key === 'workflow' ? 'wb-tile-info' : ''}}"
+        class="wb-tile {{item.key === 'workflow' ? 'wb-tile-info is-full' : ''}}"
         hover-class="wb-tile-press"
         hover-stay-time="80"
         bindtap="onWorkbenchTileTap"
@@ -298,7 +298,7 @@
       <text class="ph-title">馆藏与内容</text>
       <text class="ph-en">COLLECTION</text>
     </view>
-    <view class="svc-grid">
+    <view class="svc-grid is-n{{svcCount}}">
       <view class="svc-tile" hover-class="tap-press-soft" hover-stay-time="80" bindtap="handleMenuClick" data-path="collection" wx:if="{{showAtlas}}">
         <image class="m-img" src="/assets/icons/atlas.png" mode="aspectFit"></image>
         <text class="svc-cn">山海图鉴</text>

@@ -10,6 +10,24 @@
         <text class="nav-title">馆藏</text>
         <text class="nav-sub" wx:if="{{!listLoading}}">{{currentSubtitle}}</text>
       </view>
+      <view class="filter-entry-wrap">
+        <view
+          class="filter-entry {{filterActiveCount > 0 ? 'on' : ''}}"
+          bindtap="openFilterPanel"
+          hover-class="filter-entry-press"
+          hover-stay-time="80"
+          aria-role="button"
+          aria-label="筛选"
+        >
+          <image
+            class="filter-entry-ico"
+            src="{{filterActiveCount > 0 ? '/assets/icons/filter-on.png' : '/assets/icons/filter.png'}}"
+            mode="aspectFit"
+            aria-hidden="true"
+          />
+          <view class="filter-badge" wx:if="{{filterActiveCount > 0}}">{{filterActiveCount}}</view>
+        </view>
+      </view>
     </view>
     <view class="search-row">
       <view class="search-main" bindtap="goSearch" hover-class="search-main-press" hover-stay-time="80">
@@ -43,24 +61,6 @@
           <view class="cat-pill cat-pill-custom" bindtap="goCustom" hover-class="cat-pill-press" hover-stay-time="80" wx:if="{{showSpecimenCustom}}">
             <text>定制</text>
             <text class="cat-pill-arr">›</text>
-          </view>
-        </view>
-        <view class="filter-entry-wrap">
-          <view
-            class="filter-entry {{filterActiveCount > 0 ? 'on' : ''}}"
-            bindtap="openFilterPanel"
-            hover-class="filter-entry-press"
-            hover-stay-time="80"
-            aria-role="button"
-            aria-label="筛选"
-          >
-            <image
-              class="filter-entry-ico"
-              src="{{filterActiveCount > 0 ? '/assets/icons/filter-on.png' : '/assets/icons/filter.png'}}"
-              mode="aspectFit"
-              aria-hidden="true"
-            />
-            <view class="filter-badge" wx:if="{{filterActiveCount > 0}}">{{filterActiveCount}}</view>
           </view>
         </view>
       </view>

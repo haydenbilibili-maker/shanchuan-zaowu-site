@@ -22,7 +22,7 @@ const WORKBENCH_TILE_ICONS = {
   super_admin: '/assets/icons/lock.png',
   manager: '/assets/icons/store.png',
   supplier: '/assets/icons/cart.png',
-  staff: '/assets/icons/checkin.png',
+  staff: '/assets/icons/staff-console.png',
   specimen_artisan: '/assets/icons/care.png',
   live_host: '/assets/icons/video-tab.png',
   investor: '/assets/icons/trend.png',
@@ -106,6 +106,8 @@ function emptyWorkbenchBadgeState() {
   return {
     workbenchEntries: [],
     workbenchTiles: [],
+    /** 馆藏与内容宫格可见数（自适应列数用） */
+    svcCount: 4,
     workflowUnreadCount: 0,
     workbenchDigestUnread: 0,
     workbenchOrderUnread: 0,
@@ -182,18 +184,8 @@ function buildWorkbenchTilesFromCounts(entries, counts = {}) {
      工作台再开一个入口是重复入口。可达性不受影响：
        · 工作信息瓦片的角标本来就统计整个 workflow 队列（日报也在里面）；
        · 进去之后「日报」档就在筛选分栏上，历史日报照旧可翻。 */
-  // AI 智能中心（2026-11-23）：与超管 / 投资观测台并列的一级员工入口，不挂角标
-  tiles.push({
-    key: 'ai_center',
-    kind: 'ai_center',
-    title: 'AI 智能中心',
-    en: 'AI CENTER',
-    workspace: '',
-    icon: '/assets/icons/knowledge.png',
-    badgeCount: 0,
-    badgeText: '',
-    badgeWide: false
-  });
+  // 2026-11-26 产品负责人：移除「我的-工作台-AI 智能中心」独立入口 ——
+  // 它已改名「智能运营中心」并作为独立模块放进超管工作台（功能区与图表区之间），不再在这里重复一个入口。
   list.forEach((e) => {
     let badgeCount = 0;
     if (e.kind === 'super_admin' || e.kind === 'manager') {
@@ -540,9 +532,9 @@ Page(withAppModal({
     /** 近 7 日日子数，用于深链 hub=dates */
     giftDateBadge: 0,
     /** AI 标本鉴定入口；缺配置默认开启（现网已开放） */
-    showAiIdentify: true,
-    /** 博物君入口：超管工作台闭馆时隐藏；缺配置默认开启（2026-11-23） */
-    museumGuideOpen: true,
+    showAiIdentify: false,
+    /** 博物君入口（2026-11-26 审核驳回后改 fail-closed）：未拿到 "内容开关 AND 开馆" 的确认前一律不显示 */
+    museumGuideOpen: false,
     /** 这有店入口；缺配置默认开启（现网已有门店） */
     showStore: true,
     showLevelModal: false, // 等级权益弹窗
@@ -728,12 +720,20 @@ Page(withAppModal({
       const { fetchContentDisplayFlags, getCachedContentDisplayFlags } = require('../../utils/contentDisplayFlags');
       const applyFlags = (flags) => {
         const showGift = flags.showGift === true
+        // 2026-11-26：宫格按「实际可见格数」自适应（4 个就 4 宫格），这里先算出来
+        const svcCount = 2 /* 收藏与候补 / 标本养护始终在 */
+          + (flags.showAtlas !== false ? 1 : 0)
+          + (flags.showAchievements !== false ? 1 : 0)
+          + (flags.showAiIdentify === true ? 1 : 0)
+          + (flags.museumGuideOpen === true ? 1 : 0)
+          + (flags.showUserCommunity === true ? 1 : 0)
         this.setData({
+          svcCount,
           showUserCommunity: flags.showUserCommunity === true,
           showBookingEntry: flags.showBookingEntry !== false,
           showStoredValue: flags.showStoredValue === true,
-          showAiIdentify: flags.showAiIdentify !== false,
-          museumGuideOpen: flags.museumGuideOpen !== false,
+          showAiIdentify: flags.showAiIdentify === true,
+          museumGuideOpen: flags.museumGuideOpen === true,
           // 需求 22/23：缺字段 → 开启；仅显式 false 关闭
           showAtlas: flags.showAtlas !== false,
           showAchievements: flags.showAchievements !== false,
@@ -761,7 +761,7 @@ Page(withAppModal({
         showUserCommunity: false,
         showBookingEntry: true,
         showStoredValue: false,
-        showAiIdentify: true,
+        showAiIdentify: false,
         showStore: true,
         showGift: false,
         giftTodoCount: 0,

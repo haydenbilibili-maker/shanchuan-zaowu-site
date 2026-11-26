@@ -13,11 +13,19 @@ const { clampCouponAgainstOriginal, couponDiscountMultiplier: discountMultiplier
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const _ = cloud.database().command
 
+function itemError(product, message, skuId) {
+  const err = new Error(message)
+  err.productId = (product && product._id) || ''
+  err.skuId = String(skuId || '')
+  err.code = 'ITEM_NOT_PURCHASABLE'
+  return err
+}
+
 function resolveUnitPrice(product, skuId) {
   if (hasSkus(product)) {
-    if (!skuId) throw new Error(`「${product.title}」请选择规格`)
+    if (!skuId) throw itemError(product, `「${product.title}」请选择规格`, skuId)
     const sku = product.skus.find((s) => s && s.id === skuId)
-    if (!sku) throw new Error(`「${product.title}」规格不存在`)
+    if (!sku) throw itemError(product, `「${product.title}」规格不存在`, skuId)
     return {
       unitPrice: parseFloat(sku.price) || 0,
       skuLabel: sku.specLabel || '',
@@ -255,19 +263,19 @@ async function calculateOrderPricing(db, openid, rawItems, couponId, customExtra
 
   for (const item of items) {
     const p = productMap[item.productId]
-    if (!p) throw new Error('商品不存在或已下架')
-    if (p.isOffShelf) throw new Error(`「${p.title}」已下架`)
+    if (!p) throw itemError(null, '商品不存在或已下架', item.skuId)
+    if (p.isOffShelf) throw itemError(p, `「${p.title}」已下架`, item.skuId)
 
     // 定金优先锁：尾款窗口内仅锁定用户可购
     const lockOpenid = String(p.depositLockOpenid || '').trim()
     const lockUntil = p.depositLockUntil ? new Date(p.depositLockUntil).getTime() : 0
     if (lockOpenid && lockUntil && Date.now() < lockUntil && lockOpenid !== openid) {
-      throw new Error(`「${p.title}」定金优先期内仅候补用户可购，请稍后再试`)
+      throw itemError(p, `「${p.title}」定金优先期内仅候补用户可购，请稍后再试`, item.skuId)
     }
 
     const { unitPrice, skuLabel, skuStock, skuImage } = resolveUnitPrice(p, item.skuId)
     const stock = resolveStock(p, item.skuId, skuStock)
-    if (stock < item.count) throw new Error(`「${p.title}」库存不足`)
+    if (stock < item.count) throw itemError(p, `「${p.title}」库存不足`, item.skuId)
 
     const lineTotal = unitPrice * item.count
     originalPrice += lineTotal

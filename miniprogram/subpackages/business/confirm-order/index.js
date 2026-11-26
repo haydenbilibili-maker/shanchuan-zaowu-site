@@ -385,6 +385,10 @@ Page(withAppModal({
     submitting: false,
     /** 服务端价格校验失败：阻断提交，避免按本地估算价确认后被按云端价扣款 */
     serverPreviewFailed: false,
+    previewErrorMsg: '',
+    previewBadTitle: '',
+    previewEmpty: false,
+    previewLoopHint: false,
     customMeta: null,
     customExtraPrice: 0,
     customPreviewLines: [],
@@ -1137,11 +1141,12 @@ Page(withAppModal({
           return
         }
         // 服务端价格校验失败：此前静默回落到本地估算，用户可能按「所见价」确认却被按云端价扣款。
-        // 现在标记为未就绪并阻断提交，给出明确重试入口。
-        this.setData({ serverPreviewReady: false, serverPreviewFailed: true })
+        // 现在标记为未就绪并阻断提交，并**把云端原话给出来**（原来只提示"请点击重试"，
+        // 遇到「已下架 / 库存不足」这类重试也不会好的情况，用户只能反复点）。
+        this.setData({ serverPreviewReady: false, serverPreviewFailed: true, previewErrorMsg: msg })
         this.applyProvisionalFromStats()
         this.recalculate(undefined, { silentDrop: true })
-        wx.showToast({ title: '价格校验失败，请点击重试', icon: 'none' })
+        this.handlePreviewFailure(r)
         return
       }
       // 过期预览：用户已改选其它券
@@ -1446,6 +1451,76 @@ Page(withAppModal({
     this.recalculate(this.data.selectedCoupon)
     this.syncServerPricingPreview()
     this.closeCouponModal()
+  },
+
+  /**
+   * 预览失败的分诊（2026-11-26）：
+   * - 云端原话带「」商品名 + 已下架 / 库存不足 / 不存在 / 请选择规格 → **单件商品**问题，
+   *   重试永远不会好：在提交栏上方给一条可操作提示（移除并继续 / 返回购物车），不整单卡死；
+   * - 其它（价格变动 / 券门槛 / 运费）→ 提示原话，用户点「重新校验」。
+   * 注：走页面内提示条而不是弹窗 —— 弹窗规范禁止新增原生 showModal，按钮文案也限 4 字。
+   */
+  /** 标题归一：去掉引号 / 空白 / 间隔符，避免「已下架」文案里的商品名与列表标题差一个空格就匹配不上 */
+  _normItemTitle(t) {
+    return String(t || '').replace(/[「」『』\s·・\-—_]/g, '').trim();
+  },
+
+  handlePreviewFailure(result) {
+    const r = typeof result === 'string' ? { msg: result } : (result || {})
+    const text = String(r.msg || '').trim()
+    const title = (text.match(/「([^」]+)」/) || [])[1] || ''
+    const badProductId = String(r.productId || '').trim()
+    const itemBroken = (!!title || !!badProductId) && /已下架|库存不足|不存在|请选择规格|规格不存在/.test(text)
+    // 已摘过同一件（按 id 或标题）还报错 → 不再给「移除并继续」，断掉原地循环
+    const key = badProductId || this._normItemTitle(title)
+    const alreadyRemoved = itemBroken && !!(this._removedTitles || {})[key]
+    this.setData({
+      previewErrorMsg: text,
+      previewBadTitle: itemBroken && !alreadyRemoved ? title : '',
+      previewBadProductId: itemBroken && !alreadyRemoved ? badProductId : '',
+      previewEmpty: false,
+      previewLoopHint: !!alreadyRemoved
+    })
+  },
+
+  /** 摘掉预览报错的那件商品（优先按 productId 精确匹配），自动重新计价与校验 */
+  removeBadItemAndContinue() {
+    const title = String(this.data.previewBadTitle || '').trim()
+    const badId = String(this.data.previewBadProductId || '').trim()
+    if (!title && !badId) return
+    const target = this._normItemTitle(title)
+    const before = (this.data.items || []).length
+    const items = (this.data.items || []).filter((it) => {
+      if (!it) return true
+      if (badId && String(it.productId || it.id || it._id || '') === badId) return false
+      const t = this._normItemTitle(it.title || it.name)
+      if (!t || !target) return true
+      return !(t === target || t.indexOf(target) >= 0 || target.indexOf(t) >= 0)
+    })
+    this._removedTitles = this._removedTitles || {}
+    this._removedTitles[badId || target] = true
+    if (items.length === before) {
+      // 一件没摘掉：说明清单里确实没有它（缓存里的旧结算单）→ 直接按「已不在清单」处理
+      this.setData({ previewBadTitle: '', previewBadProductId: '', previewLoopHint: true })
+      return
+    }
+    if (!items.length) {
+      this.setData({ items, previewBadTitle: '', previewBadProductId: '', previewEmpty: true })
+      return
+    }
+    this.setData({ items, previewBadTitle: '', previewBadProductId: '', previewErrorMsg: '', previewEmpty: false, serverPreviewFailed: false, previewLoopHint: false })
+    this.recalculate(undefined, { silentDrop: true })
+    if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
+  },
+
+  /** 其它原因（价格变动 / 券门槛 / 运费 / 已移除仍报错）：重新校验一次 */
+  retryPreview() {
+    this.setData({ serverPreviewFailed: false, previewErrorMsg: '', previewBadTitle: '', previewBadProductId: '', previewLoopHint: false })
+    if (typeof this.syncServerPricingPreview === 'function') this.syncServerPricingPreview()
+  },
+
+  goBackToCart() {
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/cart/index' }) })
   },
 
   async submitOrder() {

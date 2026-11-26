@@ -114,7 +114,7 @@ Page({
     showPetMemorial: true,
     showGift: false,
     // 需求：AI 鉴定入口随 showAiIdentify 开关；现网已开放 → 缺配置默认开
-    showAiIdentify: true,
+    showAiIdentify: false,
     tiles: [],
     introText: ''
   },
@@ -143,7 +143,7 @@ Page({
       showSpecimenCustom: f.showSpecimenCustom === true,
       showPetMemorial: f.showPetMemorial !== false,
       showGift: f.showGift === true,
-      showAiIdentify: f.showAiIdentify !== false,
+      showAiIdentify: f.showAiIdentify === true,
       tiles: buildTiles(f),
       introText: buildIntroText(openKeysOf(f))
     })
@@ -162,7 +162,7 @@ Page({
       this.applyFlags(flags)
     } catch (e) {
       // 读不到开关 → 保守：只保留「现网已开放」的两项
-      this.applyFlags({ showSpecimenCustom: false, showPetMemorial: true, showGift: false, showAiIdentify: true })
+      this.applyFlags({ showSpecimenCustom: false, showPetMemorial: true, showGift: false, showAiIdentify: false })
     } finally {
       this._displayFlagsLoading = false
     }
