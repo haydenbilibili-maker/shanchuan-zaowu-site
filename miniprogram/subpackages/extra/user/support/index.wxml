@@ -27,7 +27,7 @@
       <view class="context-card-main">
         <shan-img ext-class="context-thumb" wx:if="{{contextCard.image}}" src="{{contextCard.image}}" mode="aspectFill" mark="{{false}}" />
         <view class="context-thumb placeholder" wx:else>
-          <text class="context-thumb-mark">{{contextCard.kind === 'order' ? '单' : '藏'}}</text>
+          <shan-img ext-class="context-thumb-ico" src="{{contextCard.kind === 'order' ? '/assets/icons/cart.png' : '/assets/icons/knowledge.png'}}" mode="aspectFit" mark="{{false}}" />
         </view>
         <view class="context-meta">
           <text class="context-kind">{{contextCard.kindLabel}}</text>
@@ -120,6 +120,31 @@
             </view>
             <text class="topic-label">{{item.label}}</text>
             <text class="topic-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 直接办理（2026-11-26 产品负责人：发票 / 标本师招募是功能入口，不混在咨询类型里） -->
+      <view class="section" wx:if="{{directActions.length}}">
+        <view class="mu-head"><view class="mu-head-t"><text class="mu-en">DIRECT</text><text class="mu-cn">直接办理</text></view></view>
+        <view class="direct-list">
+          <view
+            class="direct-item"
+            wx:for="{{directActions}}"
+            wx:key="id"
+            data-id="{{item.id}}"
+            bindtap="selectTopic"
+            hover-class="tap-press-soft"
+            hover-stay-time="80"
+            aria-role="button"
+            aria-label="{{item.label}}"
+          >
+            <shan-img ext-class="direct-icon" src="{{item.icon}}" mode="aspectFit" mark="{{false}}" />
+            <view class="direct-copy">
+              <text class="direct-l">{{item.label}}</text>
+              <text class="direct-d">{{item.desc}}</text>
+            </view>
+            <text class="direct-go">›</text>
           </view>
         </view>
       </view>

@@ -201,11 +201,6 @@ page {
   justify-content: center;
 }
 
-.context-thumb-mark {
-  font-family: var(--font-brand);
-  font-size: var(--fs-30);
-  color: var(--brass-300);
-}
 
 .context-meta {
   flex: 1;
@@ -661,3 +656,26 @@ page {
 .op-title { font-size: var(--fs-24); color: var(--mat-paper-tone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .op-sub { font-size: var(--fs-20); color: var(--mat-ink-soft); }
 .op-go { flex-shrink: 0; color: var(--brass-300); }
+
+/* 上下文卡占位图标（2026-11-26：不再用「单 / 藏」文字当图标） */
+.context-thumb-ico {
+  width: 34rpx;
+  height: 34rpx;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
+
+/* 直接办理（发票 / 标本师招募）：发丝线行，不占咨询类型宫格 */
+.direct-list { border-top: 1rpx solid rgba(196, 167, 108, 0.14); }
+.direct-item {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  min-height: 96rpx;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid rgba(196, 167, 108, 0.1);
+}
+.direct-icon { width: 36rpx; height: 36rpx; flex-shrink: 0; }
+.direct-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2rpx; }
+.direct-l { font-size: var(--fs-26); color: var(--mat-paper-tone); }
+.direct-d { font-size: var(--fs-20); color: var(--mat-ink-soft); }
+.direct-go { flex-shrink: 0; color: var(--brass-300); }

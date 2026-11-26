@@ -98,6 +98,8 @@ Page({
     loading: true,
     config: {},
     topics: [],
+    /** 直接办理入口（发票 / 标本师招募），不混进咨询类型 */
+    directActions: [],
     faqs: [],
     expandedFaq: -1,
 
@@ -247,6 +249,10 @@ Page({
       ensureTopic('framer_recruit');
       const active = this.data.activeTopic;
       if (active) ensureTopic(active);
+      // 2026-11-26 产品负责人：发票开具、标本师招募是「直接办理」的入口，不是咨询类型 → 从类型里拆出去
+      const DIRECT_ACTION_IDS = ['invoice', 'framer_recruit'];
+      const directActions = topics.filter((t) => t && DIRECT_ACTION_IDS.includes(t.id));
+      const consultTopics = topics.filter((t) => t && !DIRECT_ACTION_IDS.includes(t.id));
 
       // 本地文案覆盖：标本师招募入口统一跳转招募页
       topics = topics.map((t) => {
@@ -283,7 +289,8 @@ Page({
           // 服务时间以云端 support_configs.hours 为准（超管可在后台修改）
           hours: config.hours || FALLBACK_CONFIG.hours
         },
-        topics,
+        topics: consultTopics,
+        directActions,
         faqs,
         memberNo,
         loading: false
@@ -305,7 +312,8 @@ Page({
       this.setData({
         loading: false,
         config: FALLBACK_CONFIG,
-        topics: FALLBACK_CONFIG.topics,
+        topics: FALLBACK_CONFIG.topics.filter((t) => !['invoice', 'framer_recruit'].includes(t.id)),
+        directActions: FALLBACK_CONFIG.topics.filter((t) => ['invoice', 'framer_recruit'].includes(t.id)),
         faqs: FALLBACK_CONFIG.faqs
       });
       this.refreshContactContext();
