@@ -132,7 +132,7 @@ Page({
     /** 标本定制入口；缺配置默认关闭 */
     showSpecimenCustom: false,
     /** AI 鉴定入口；缺配置默认开启 */
-    showAiIdentify: true,
+    showAiIdentify: false,
     fallbackImg: cdnPath('stores/store_shanhaizaowu.png'),
     filterPanelVisible: false,
     filterRootName: '全部',
@@ -205,7 +205,7 @@ Page({
         this.setData({
           showSpecimenArchive: cached.flags.showSpecimenArchive === true,
           showSpecimenCustom: cached.flags.showSpecimenCustom === true,
-          showAiIdentify: cached.flags.showAiIdentify !== false
+          showAiIdentify: cached.flags.showAiIdentify === true
         });
       }
       const { flags } = await fetchContentDisplayFlags({
@@ -214,18 +214,18 @@ Page({
           this.setData({
             showSpecimenArchive: f.showSpecimenArchive === true,
             showSpecimenCustom: f.showSpecimenCustom === true,
-            showAiIdentify: f.showAiIdentify !== false
+            showAiIdentify: f.showAiIdentify === true
           });
         }
       });
       this.setData({
         showSpecimenArchive: flags.showSpecimenArchive === true,
         showSpecimenCustom: flags.showSpecimenCustom === true,
-        showAiIdentify: flags.showAiIdentify !== false
+        showAiIdentify: flags.showAiIdentify === true
       });
     } catch (e) {
       console.warn('loadDisplayFlags', e);
-      this.setData({ showSpecimenArchive: false, showSpecimenCustom: false, showAiIdentify: true });
+      this.setData({ showSpecimenArchive: false, showSpecimenCustom: false, showAiIdentify: false });
     }
   },
 

@@ -130,7 +130,7 @@ Page(withAppModal({
     relatedList: [],
     relatedLoading: false,
     /** AI 鉴定入口；缺配置默认开启 */
-    showAiIdentify: true,
+    showAiIdentify: false,
     showStore: true,
     /** 馆藏标本档案；缺配置默认关闭 */
     showSpecimenArchive: false
@@ -156,17 +156,17 @@ Page(withAppModal({
 
   async loadDisplayFlags() {
     let showSpecimenArchive = false;
-    let showAiIdentify = true;
+    let showAiIdentify = false;
     let showStore = true;
     try {
       const { fetchContentDisplayFlags } = require('../../../utils/contentDisplayFlags');
       const { flags } = await fetchContentDisplayFlags();
       showSpecimenArchive = flags.showSpecimenArchive === true;
-      showAiIdentify = flags.showAiIdentify !== false;
+      showAiIdentify = flags.showAiIdentify === true;
       showStore = flags.showStore !== false;
     } catch (e) {
       showSpecimenArchive = false;
-      showAiIdentify = true;
+      showAiIdentify = false;
       showStore = true;
     }
 

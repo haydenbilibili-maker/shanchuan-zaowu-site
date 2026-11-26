@@ -73,7 +73,7 @@ Page({
     stats: { total: 0, bookmarked: 0 },
     recordsEmpty: false,
     logsEmpty: false,
-    showAiIdentify: true
+    showAiIdentify: false
   },
 
   onLoad(options) {
@@ -89,9 +89,9 @@ Page({
     try {
       const { fetchContentDisplayFlags } = require('../../../../utils/contentDisplayFlags')
       const { flags } = await fetchContentDisplayFlags()
-      this.setData({ showAiIdentify: flags.showAiIdentify !== false })
+      this.setData({ showAiIdentify: flags.showAiIdentify === true })
     } catch (e) {
-      this.setData({ showAiIdentify: true })
+      this.setData({ showAiIdentify: false })
     }
   },
 

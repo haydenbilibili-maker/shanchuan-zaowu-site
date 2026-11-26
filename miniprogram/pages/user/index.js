@@ -540,7 +540,7 @@ Page(withAppModal({
     /** 近 7 日日子数，用于深链 hub=dates */
     giftDateBadge: 0,
     /** AI 标本鉴定入口；缺配置默认开启（现网已开放） */
-    showAiIdentify: true,
+    showAiIdentify: false,
     /** 博物君入口（2026-11-26 审核驳回后改 fail-closed）：未拿到 "内容开关 AND 开馆" 的确认前一律不显示 */
     museumGuideOpen: false,
     /** 这有店入口；缺配置默认开启（现网已有门店） */
@@ -732,7 +732,7 @@ Page(withAppModal({
           showUserCommunity: flags.showUserCommunity === true,
           showBookingEntry: flags.showBookingEntry !== false,
           showStoredValue: flags.showStoredValue === true,
-          showAiIdentify: flags.showAiIdentify !== false,
+          showAiIdentify: flags.showAiIdentify === true,
           museumGuideOpen: flags.museumGuideOpen === true,
           // 需求 22/23：缺字段 → 开启；仅显式 false 关闭
           showAtlas: flags.showAtlas !== false,
@@ -761,7 +761,7 @@ Page(withAppModal({
         showUserCommunity: false,
         showBookingEntry: true,
         showStoredValue: false,
-        showAiIdentify: true,
+        showAiIdentify: false,
         showStore: true,
         showGift: false,
         giftTodoCount: 0,

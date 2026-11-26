@@ -234,3 +234,15 @@ page { background: var(--color-bg, #1A1814); height: 100%; }
 .mg-good-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
 .mg-good-t { font-size: var(--fs-24); color: var(--brass-100, #F1E6CC); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .mg-good-p { font-family: var(--font-mono); font-size: var(--fs-22); color: var(--brass-400, #C4A76C); }
+
+/* AI 生成标注（2026-11-26 审核驳回：逐条回答也要显著说明） */
+.mg-ai-tag {
+  align-self: flex-start;
+  margin: 0 0 4rpx 4rpx;
+  padding: 2rpx 10rpx;
+  border-radius: var(--r-thumb-sm, 4rpx);
+  font-size: var(--fs-18);
+  line-height: 1.5;
+  color: var(--mat-ink);
+  background: var(--mat-brass);
+}

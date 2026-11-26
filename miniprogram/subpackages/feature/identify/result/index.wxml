@@ -31,6 +31,11 @@
     否则 filter 会为它们创建新的包含块，fixed 定位会被带偏、浮层本身也会被模糊。
   -->
   <view class="rg-gate {{registerGated ? 'is-gated' : ''}}">
+    <!-- 2026-11-26 审核驳回（深度合成）：AI 生成内容要有显著说明 -->
+    <view class="ai-gen-note">
+      <text class="ai-gen-tag">AI 生成</text>
+      <text class="ai-gen-text">鉴定结论与物种说明由人工智能生成，仅供参考；标本信息以馆藏档案与实物为准。</text>
+    </view>
     <view class="guest-share-banner" wx:if="{{!isOwner}}" bindtap="goIdentifyHome" hover-class="guest-share-press" hover-stay-time="80">
       <view class="guest-share-copy">
         <text class="guest-share-en">FROM A FRIEND</text>

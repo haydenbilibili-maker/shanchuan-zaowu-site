@@ -33,7 +33,7 @@ function normalizeContentDisplayFlags(raw) {
     // 缺字段 / undefined → 关闭；我的钱包默认不展示
     showStoredValue: src.showStoredValue === true,
     // 缺字段 / undefined → 开启；现网已开放，仅显式 false 关闭
-    showAiIdentify: src.showAiIdentify !== false,
+    showAiIdentify: src.showAiIdentify === true,
     // C 端看到的是两把开关的 AND（2026-11-23）：内容开关文档里的 museumGuideOpen，以及超管「开馆/闭馆」。
     // 缺字段 / undefined → 开启。编辑面板回写原值要用响应里的 museumGuideFlag，不能把这个 AND 再存回去。
     // 刻意不叫 showXxx：不属于 check:hook-registration 的「展示开关」一族；端到端由 test:museum-guide-monitor 的 M5 钉住。
