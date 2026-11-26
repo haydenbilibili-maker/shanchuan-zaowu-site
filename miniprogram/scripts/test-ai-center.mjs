@@ -297,6 +297,19 @@ function runChecks() {
   ok('A10 AI 生成标识：AI 智能中心的每条 AI 回答、董事会辩论的发言与收口都有「AI 生成」字样',
     /class="ac-ai-tag"[^>]*>AI 生成</.test(read(P.wxml)) && /item\.role === 'assistant' && !item\.pending/.test(read(P.wxml)) &&
     /class="db-ai-tag">AI 生成</.test(read(DEBATE_WXML)), fails)
+  // 2026-11-26 产品负责人：改名「智能运营中心」，并作为独立模块放进超管工作台（功能区与图表区之间）
+  {
+    const hubWxml = read(join(MP, 'subpackages/manager/manager/index.wxml'))
+    const hubCfg = read(join(MP, 'subpackages/manager/manager/managerPageConfig.js'))
+    const gridAt = hubWxml.indexOf('hub-grid--cat')
+    const soAt = hubWxml.indexOf('class=\"grid-item smart-ops\"')
+    const chartAt = hubWxml.indexOf('<!-- 数据图表')
+    if (!(soAt > gridAt && chartAt > soAt)) fails.push('智能运营中心模块须在功能区宫格之后、数据图表之前')
+    if (!/goSmartOpsCenter\(\) \{/.test(hubCfg) || !/\/subpackages\/ai\/ai-center\/index/.test(hubCfg)) fails.push('工作台缺少进入智能运营中心的处理函数')
+    const hubNoComment = hubWxml.replace(/<!--[\s\S]*?-->/g, '')
+    if (!/智能运营中心/.test(hubNoComment) || /AI 智能中心/.test(hubNoComment)) fails.push('工作台文案须改名为「智能运营中心」')
+  }
+
   return fails
 }
 

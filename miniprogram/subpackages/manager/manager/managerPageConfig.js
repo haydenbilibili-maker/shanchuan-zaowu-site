@@ -2976,6 +2976,15 @@ const managerPageConfig = {
     goPayslipAdmin();
   },
 
+  /** 智能运营中心（原 AI 智能中心，2026-11-26 改名并上移到工作台功能区与图表区之间） */
+  goSmartOpsCenter() {
+    wx.vibrateShort({ type: 'light' });
+    wx.navigateTo({
+      url: '/subpackages/ai/ai-center/index?from=workspace',
+      fail: () => this.showHubTip('页面暂不可用', 'warn')
+    });
+  },
+
   goLiveStudio() {
     if (!canSeeMenu(this.data.workspaceRole, MENU_KEYS.LIVE)) {
       this.showHubTip('无此功能权限', 'warn');

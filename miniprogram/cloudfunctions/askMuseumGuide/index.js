@@ -362,9 +362,9 @@ async function staffGate(openid, options) {
   try {
     const g = await assertStaff(db, openid, options || {})
     if (g && g.ok) return { ok: true, actor: g.actor }
-    return { ok: false, out: { success: false, error_type: 'forbidden', msg: (g && g.msg) || 'AI 智能中心仅限员工使用' } }
+    return { ok: false, out: { success: false, error_type: 'forbidden', msg: (g && g.msg) || '智能运营中心仅限员工使用' } }
   } catch (e) {
-    return { ok: false, out: { success: false, error_type: 'forbidden', msg: 'AI 智能中心仅限员工使用' } }
+    return { ok: false, out: { success: false, error_type: 'forbidden', msg: '智能运营中心仅限员工使用' } }
   }
 }
 

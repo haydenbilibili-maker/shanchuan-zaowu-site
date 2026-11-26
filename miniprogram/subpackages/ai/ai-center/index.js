@@ -1,5 +1,5 @@
 /**
- * AI 智能中心（员工端 · 2026-11-23）
+ * 智能运营中心（员工端 · 2026-11-23）
  *
  * 与 ERP 的差异：只搬「虚拟员工对话」，不搬工具链 / OpenClaw；辩论单独成页（ai-debate）。
  * 基础能力：多会话（新建 / 切换 / 重命名 / 复制全文 / 删除）、复制回答、重试、停止、一键任务。
@@ -166,7 +166,7 @@ Page({
       const res = await wx.cloud.callFunction({ name: 'askMuseumGuide', data: { mode: 'staffBrief' } })
       const body = (res && res.result) || {}
       if (!body.success) {
-        if (body.error_type === 'forbidden') this.setData({ forbidden: body.msg || 'AI 智能中心仅限员工使用' })
+        if (body.error_type === 'forbidden') this.setData({ forbidden: body.msg || '智能运营中心仅限员工使用' })
         return
       }
       const issues = Array.isArray(body.issues) ? body.issues : []
@@ -586,7 +586,7 @@ Page({
       })
       if (this._abort || reqId !== this._reqId) return
       const body = (res && res.result) || {}
-      if (body.error_type === 'forbidden') this.setData({ forbidden: body.msg || 'AI 智能中心仅限员工使用' })
+      if (body.error_type === 'forbidden') this.setData({ forbidden: body.msg || '智能运营中心仅限员工使用' })
       reply = body.success && body.answer
         ? { role: 'assistant', text: String(body.answer), asOf: String(body.asOf || ''), needsVerify: body.needsVerify === true, verifyFlags: Array.isArray(body.verifyFlags) ? body.verifyFlags : [] }
         : { role: 'assistant', text: body.msg || `${role.person}一时没接上话，稍后再试`, isError: true }

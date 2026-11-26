@@ -636,6 +636,31 @@
       </view>
     </view>
 
+    <!-- 智能运营中心（2026-11-26 产品负责人：原「AI 智能中心」改名并作为独立模块，放在功能区与图表区之间） -->
+    <view
+      class="grid-item smart-ops"
+      wx:if="{{workspaceRole === 'super_admin' || workspaceRole === 'store_manager' || workspaceRole === 'store_staff'}}"
+      bindtap="goSmartOpsCenter"
+      hover-class="tap-press"
+      hover-stay-time="80"
+      aria-role="button"
+      aria-label="智能运营中心"
+    >
+      <view class="so-head">
+        <view class="so-mark" aria-hidden="true"><text>智</text></view>
+        <view class="so-copy">
+          <text class="so-t">智能运营中心</text>
+          <text class="so-s">七位虚拟同事 · 经营问答、主动巡检与团队备忘</text>
+        </view>
+        <text class="so-go">进入 ›</text>
+      </view>
+      <view class="so-tags">
+        <text class="so-tag">问经营</text>
+        <text class="so-tag">一键巡检</text>
+        <text class="so-tag">团队备忘</text>
+      </view>
+    </view>
+
     <!-- 数据图表：渠道占比 + 本月订单（并排，避免半空行） -->
     <view class="grid-item" wx:if="{{menu.dashboardKpi}}">
        <view class="panel-title"><text class="panel-en">RATIO</text><text class="panel-cn">渠道占比</text></view>
