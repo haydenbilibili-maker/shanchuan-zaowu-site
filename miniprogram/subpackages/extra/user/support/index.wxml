@@ -290,9 +290,30 @@
       <!-- 到店信息 -->
       <view class="section visit-section">
         <view class="mu-head"><view class="mu-head-t"><text class="mu-en">VISIT US</text><text class="mu-cn">到店咨询</text></view></view>
+        <!-- 到店咨询（2026-11-26：参考品牌故事，改成「小地图 + 地址 + 导航」） -->
         <view class="visit-card" hover-class="tap-press-soft" hover-stay-time="80" bindtap="openMap">
-          <text class="visit-addr">{{config.address || '门店地址加载中'}}</text>
-          <text class="visit-link">导航前往 ›</text>
+          <view class="visit-map-box" wx:if="{{markers.length}}">
+            <map
+              class="visit-map"
+              latitude="{{mapCenter.latitude}}"
+              longitude="{{mapCenter.longitude}}"
+              markers="{{markers}}"
+              scale="16"
+              enable-scroll="{{false}}"
+              enable-zoom="{{false}}"
+              enable-rotate="{{false}}"
+            ></map>
+            <view class="visit-map-mask"><text>点此导航</text></view>
+          </view>
+          <view class="visit-body">
+            <view class="visit-row">
+              <text class="visit-addr">{{config.address || '门店地址加载中'}}</text>
+            </view>
+            <view class="visit-meta">
+              <text class="visit-hours">营业 {{config.hours || '10:00-22:00'}}</text>
+              <text class="visit-link">导航前往 ›</text>
+            </view>
+          </view>
         </view>
       </view>
 

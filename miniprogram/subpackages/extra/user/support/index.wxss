@@ -812,3 +812,31 @@ page {
 
 /* 首屏信号灯：绿=服务时间、红=非服务时间（颜色走全局 .lamp-forest / .lamp-error 令牌） */
 .hero-lamp { margin-right: 2rpx; }
+
+/* 到店咨询卡（2026-11-26，参考品牌故事的地图模块）：小地图 + 地址 + 营业时间 + 导航 */
+.visit-card { display: flex; flex-direction: column; gap: 16rpx; }
+.visit-map-box {
+  position: relative;
+  width: 100%;
+  height: 240rpx;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28);
+}
+.visit-map { width: 100%; height: 100%; filter: brightness(0.78) contrast(1.15) saturate(0.9) sepia(0.12); }
+.visit-map-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 12rpx 16rpx;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 40%, rgba(0, 0, 0, 0.45) 100%);
+}
+.visit-map-mask text { font-size: var(--fs-18); letter-spacing: 0.14em; color: var(--mat-paper-tone); }
+.visit-body { display: flex; flex-direction: column; gap: 8rpx; }
+.visit-row { display: flex; align-items: flex-start; gap: 12rpx; }
+.visit-addr { flex: 1; min-width: 0; font-size: var(--fs-24); line-height: 1.5; color: var(--mat-paper-tone); }
+.visit-meta { display: flex; align-items: center; justify-content: space-between; gap: 12rpx; }
+.visit-hours { font-size: var(--fs-20); color: var(--mat-ink-soft); }
+.visit-link { flex-shrink: 0; font-size: var(--fs-22); color: var(--brass-200); }

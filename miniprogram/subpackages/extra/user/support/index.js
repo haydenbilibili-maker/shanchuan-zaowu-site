@@ -337,6 +337,7 @@ Page({
         } catch (e) {}
       }
 
+      this.buildMapMarker();
       this.refreshContactContext();
     } catch (e) {
       console.warn('loadConfig fallback to local defaults:', e);
@@ -348,6 +349,7 @@ Page({
         faqs: FALLBACK_CONFIG.faqs,
         serviceNow: serviceStatus(FALLBACK_CONFIG.hours)
       });
+      this.buildMapMarker();
       this.refreshContactContext();
       // 本地默认配置已覆盖主路径，不弹错误 toast，避免商详进客服误报
     }
@@ -694,6 +696,25 @@ Page({
 
   closeCommunity() {
     this.setData({ showCommunity: false });
+  },
+
+  /** 到店咨询的小地图 marker（2026-11-26：参考品牌故事的地图模块） */
+  buildMapMarker() {
+    const cfg = this.data.config || {};
+    const lat = Number(cfg.latitude);
+    const lng = Number(cfg.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || !lat || !lng) return;
+    this.setData({
+      markers: [{
+        id: 1,
+        latitude: lat,
+        longitude: lng,
+        width: 28,
+        height: 28,
+        callout: { content: '山海造物', color: '#2E2618', fontSize: 12, borderRadius: 6, padding: 6, display: 'ALWAYS', bgColor: '#F3ECDD' }
+      }],
+      mapCenter: { latitude: lat, longitude: lng }
+    });
   },
 
   openMap() {
