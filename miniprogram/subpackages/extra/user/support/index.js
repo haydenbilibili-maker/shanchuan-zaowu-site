@@ -27,13 +27,11 @@ const FALLBACK_CONFIG = {
   // 微信助手个人名片码；与 assets/qrcode/wechat-assistant-qr.png 保持同步
   communityQr: '/assets/qrcode/wechat-assistant-qr.png',
   topics: [
-    { id: 'order', label: '订单咨询', desc: '支付、物流、售后', icon: '/assets/icons/cart.png' },
+    { id: 'order', label: '订单咨询', desc: '支付、物流、售后', icon: '/assets/icons/list.png' },
     { id: 'booking', label: '预约改期', desc: '到店预约与变更', icon: '/assets/icons/calendar_gold.png' },
-    { id: 'product', label: '藏品鉴赏', desc: '选品与规格咨询', icon: '/assets/icons/knowledge.png' },
     { id: 'custom', label: '标本定制', desc: '标本工坊与伴宠记忆', icon: '/assets/icons/gift.png' },
     { id: 'specimen_care', label: '标本养护', desc: '安放、清洁与异常咨询', icon: '/assets/icons/care.png' },
     { id: 'pet_memorial', label: '伴宠记忆', desc: '宠物藏品制作意向', icon: '/assets/icons/knowledge.png' },
-    { id: 'identify', label: '鉴定疑问', desc: 'AI 鉴定结果咨询', icon: '/assets/icons/camera.png' },
     { id: 'refund', label: '售后退款', desc: '退款进度与凭证', icon: '/assets/icons/discount.png' },
     { id: 'invoice', label: '发票开具', desc: '电子发票与抬头', icon: '/assets/icons/coupon.png' },
     { id: 'other', label: '其他问题', desc: '品牌与合作等', icon: '/assets/icons/message.png' },
@@ -232,6 +230,7 @@ Page({
       });
     }
 
+    this.measureHeader();
     this.refreshContactContext();
     this.loadConfig();
     this.enrichConsultContext();
@@ -252,12 +251,15 @@ Page({
       };
       ensureTopic('invoice');
       ensureTopic('framer_recruit');
+      // 注意：ensureTopic(active) 之后仍会被上面两个过滤，隐藏类型不会因历史选中又冒出来
       const active = this.data.activeTopic;
       if (active) ensureTopic(active);
       // 2026-11-26 产品负责人：发票开具、标本师招募是「直接办理」的入口，不是咨询类型 → 从类型里拆出去
+      // 2026-11-26 产品负责人：鉴定疑问（AI 鉴定相关）与藏品鉴赏不再作为咨询类型
+      const HIDDEN_TOPIC_IDS = ['identify', 'product'];
       const DIRECT_ACTION_IDS = ['invoice', 'framer_recruit'];
       const directActions = topics.filter((t) => t && DIRECT_ACTION_IDS.includes(t.id));
-      const consultTopics = topics.filter((t) => t && !DIRECT_ACTION_IDS.includes(t.id));
+      const consultTopics = topics.filter((t) => t && !DIRECT_ACTION_IDS.includes(t.id) && !HIDDEN_TOPIC_IDS.includes(t.id));
 
       // 本地文案覆盖：标本师招募入口统一跳转招募页
       topics = topics.map((t) => {
@@ -318,7 +320,7 @@ Page({
       this.setData({
         loading: false,
         config: FALLBACK_CONFIG,
-        topics: FALLBACK_CONFIG.topics.filter((t) => !['invoice', 'framer_recruit'].includes(t.id)),
+        topics: FALLBACK_CONFIG.topics.filter((t) => !['invoice', 'framer_recruit', 'identify', 'product'].includes(t.id)),
         directActions: FALLBACK_CONFIG.topics.filter((t) => ['invoice', 'framer_recruit'].includes(t.id)),
         faqs: FALLBACK_CONFIG.faqs,
         serviceNow: serviceStatus(FALLBACK_CONFIG.hours)
@@ -366,6 +368,20 @@ Page({
 
     this.setData(patch);
     this.updateScrollOffset(contextCard.visible);
+  },
+
+  /** 实测页头高度（2026-11-26：固定页头用 statusBar+72 估算，机型不同会多出一截空白） */
+  measureHeader() {
+    try {
+      const q = wx.createSelectorQuery().in(this);
+      q.select('.sticky-header').boundingClientRect();
+      q.exec((res) => {
+        const h = res && res[0] && Math.round(res[0].height);
+        if (h > 0 && Math.abs(h - (this.data.headerHeight || 0)) > 1) {
+          this.setData({ headerHeight: h, scrollTop: h + (this.data.contextStripHeight || 0) });
+        }
+      });
+    } catch (e) { /* 量不到就沿用估算 */ }
   },
 
   updateScrollOffset(hasStrip) {
