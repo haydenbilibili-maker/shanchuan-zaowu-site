@@ -336,14 +336,35 @@ exports.main = async (event) => {
         ready_pickup: '待自提', shipped: '已发货', received: '已签收', refunding: '退款中', expired_refunding: '退款中',
         refunded: '已退款', aftersales: '售后中', exchanged: '已换货', unverified: '待核验', void: '已作废'
       }
-      const orders = (res.data || []).map((o) => {
+      const orders = await Promise.all((res.data || []).map(async (o) => {
         const goods = (Array.isArray(o.products) && o.products.length ? o.products : (Array.isArray(o.items) ? o.items : []))
           .filter((p) => p && typeof p === 'object')
-        const products = goods.slice(0, 3).map((p) => ({
-          title: String(p.title || p.name || '').trim(),
-          image: (Array.isArray(p.images) && p.images[0]) || p.image || p.cover || '',
-          spec: String(p.skuName || p.specName || p.spec || '').trim()
+        let products = goods.slice(0, 3).map((p) => ({
+          title: String(p.title || p.name || p.productTitle || p.productName || p.goodsTitle || '').trim(),
+          image: (Array.isArray(p.images) && p.images[0]) || p.image || p.cover || p.coverImage || p.imageUrl || p.thumb || '',
+          spec: String(p.skuName || p.specName || p.spec || p.skuLabel || '').trim(),
+          pid: p.productId || p.id || p._id || ''
         }))
+        // 老订单的商品条目可能只有 productId（没有标题/图）→ 用 ids 回查 products 补全
+        if (!products.some((p) => p.title)) {
+          const ids = products.map((p) => p.pid).filter(Boolean).slice(0, 6)
+          if (ids.length) {
+            try {
+              const pr = await db.collection('products').where({ _id: _.in(ids) }).get()
+              const byId = {}
+              ;(pr.data || []).forEach((d) => { byId[d._id] = d })
+              products = products.map((p) => {
+                const doc = byId[p.pid] || {}
+                return {
+                  title: p.title || String(doc.title || doc.name || '').trim(),
+                  image: p.image || (Array.isArray(doc.images) && doc.images[0]) || doc.image || doc.cover || '',
+                  spec: p.spec || String(doc.skuLabel || '').trim()
+                }
+              })
+            } catch (e) { /* 补全失败就保持原样 */ }
+          }
+        }
+        products = products.map((p) => ({ title: p.title, image: p.image, spec: p.spec }))
         const itemCount = goods.reduce((n, p) => n + (Number(p.quantity || p.count) || 1), 0)
         return {
           id: o._id,
@@ -357,7 +378,7 @@ exports.main = async (event) => {
           amount: Number(o.totalPrice || o.payAmount || 0),
           createTime: o.createTime || o.createdAt || null
         }
-      })
+      }))
       return { success: true, orders }
     } catch (e) {
       return { success: false, msg: (e && e.message) || '读取订单失败', orders: [] }
