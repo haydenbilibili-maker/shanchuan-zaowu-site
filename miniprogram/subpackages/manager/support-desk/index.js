@@ -130,6 +130,11 @@ Page({
     this.fetchDetail(id)
   },
 
+  /** 关掉底部详情弹层 */
+  closeDetail() {
+    this.setData({ openId: '', detail: null })
+  },
+
   onRowTap(e) {
     const id = String((e.currentTarget.dataset || {}).id || '')
     if (!id) return
