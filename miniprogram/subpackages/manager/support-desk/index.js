@@ -27,7 +27,10 @@ Page({
     detail: null,
     replyText: '',
     sending: false,
-    hint: ''
+    hint: '',
+    notes: [],
+    noteText: '',
+    customer: null
   },
 
   async onLoad(options) {
@@ -39,7 +42,17 @@ Page({
   },
 
   onShow() {
-    if (this.data.ready) this.load({ silent: true })
+    if (this.data.ready) {
+      this.load({ silent: true })
+      this.remindOnce()
+    }
+  },
+
+  /** 超时未回复提醒：每次进入工作台最多触发一次（云端按 12h + remindedAt 去重） */
+  remindOnce() {
+    if (this._reminded) return
+    this._reminded = true
+    try { wx.cloud.callFunction({ name: 'messageAdmin', data: { action: 'remindOverdue', hours: 12 } }) } catch (e) { /* 忽略 */ }
   },
 
   async load(opts = {}) {
@@ -131,6 +144,8 @@ Page({
       const t = ((res && res.result) || {}).ticket
       if (!t) { this.setData({ hint: '这条留言不存在或已删除' }); return }
       this.setData({
+        notes: (t.notes || []).map((n) => ({ text: n.text || '', time: n.at ? new Date(Number(n.at)).toISOString().slice(5, 16).replace('T', ' ') : '' })),
+        customer: null,
         detail: {
           id,
           topicLabel: t.topicLabel || '留言',
@@ -146,9 +161,43 @@ Page({
           }))
         }
       })
+      this.loadCustomer(t._openid)
     } catch (e) {
       this.setData({ hint: '这条留言读取失败' })
     }
+  },
+
+  /** 顾客 360：订单数 / 最近订单 / 评价数 / 留言数 */
+  async loadCustomer(openid) {
+    if (!openid) return
+    try {
+      const res = await wx.cloud.callFunction({ name: 'messageAdmin', data: { action: 'getCustomerContext', openid } })
+      const out = (res && res.result) || {}
+      if (out.success) this.setData({ customer: { orderCount: out.orderCount || 0, orders: out.orders || [], commentCount: out.commentCount || 0, ticketCount: out.ticketCount || 0 } })
+    } catch (e) { /* 顾客档案读不到不影响回复 */ }
+  },
+
+  onNoteInput(e) { this.setData({ noteText: e.detail.value }) },
+
+  async addNote() {
+    const id = this.data.openId
+    const note = String(this.data.noteText || '').trim()
+    if (!id || !note) return
+    try {
+      const res = await wx.cloud.callFunction({ name: 'messageAdmin', data: { action: 'addSupportNote', ticketId: id, note } })
+      const out = (res && res.result) || {}
+      if (!out.success) { this.setData({ hint: out.msg || '备注失败' }); return }
+      this.setData({
+        noteText: '',
+        notes: (out.notes || []).map((n) => ({ text: n.text || '', time: n.at ? new Date(Number(n.at)).toISOString().slice(5, 16).replace('T', ' ') : '' })),
+        hint: '备注已保存（仅员工可见）'
+      })
+    } catch (e) { this.setData({ hint: '备注失败，稍后再试' }) }
+  },
+
+  openOrderDetail(e) {
+    const id = String((e.currentTarget.dataset || {}).id || '')
+    if (id) wx.navigateTo({ url: `/subpackages/business/order-detail/index?id=${encodeURIComponent(id)}` })
   },
 
   onReplyInput(e) { this.setData({ replyText: e.detail.value }) },

@@ -97,6 +97,7 @@ Page({
       hubFound: []
     })
     await baseOnLoad.call(this, options)
+    if (typeof this.loadSupportPendingCount === 'function') this.loadSupportPendingCount()
     redirectEmbeddedModule(this, options)
   },
 

@@ -1694,6 +1694,8 @@ const managerPageConfig = {
     commentEmpty: null,
     commentListLoading: false,
     commentReplyPhrases: reviewView.REPLY_PHRASES,
+    /** 客服工作台待回复留言数（2026-11-27）：语音播报「收到一条顾客留言」的数据源 */
+    supportPendingCount: 0,
     /** 回复参考文案分组（2026-11-26）：按情境切换，默认按星级选组 */
     commentReplyGroups: reviewView.REPLY_PHRASE_GROUPS,
     commentReplyGroup: 'praise',
@@ -10663,6 +10665,15 @@ bindSubCatChange(e) {
     this._commentFilterPicked = true; // 用户手动选过，之后不再自动改默认筛选
     this.setData({ commentFilter: filter }, () => this.loadComments());
   },
+  /** 待回复留言数（客服工作台）——工作通知语音按它的增量播报 */
+  async loadSupportPendingCount() {
+    try {
+      const res = await wx.cloud.callFunction({ name: 'messageAdmin', data: { action: 'countSupportPending' } });
+      const out = (res && res.result) || {};
+      if (out.success) this.setData({ supportPendingCount: Number(out.count) || 0 });
+    } catch (e) { /* 读不到不播报 */ }
+  },
+
   /** 用户评价全局看板：总数 / 各状态 / 均分 / 回复率 / 近 7 天走势（云端一次算好） */
   async loadCommentStats() {
     if (this.data.commentStatsLoading) return;

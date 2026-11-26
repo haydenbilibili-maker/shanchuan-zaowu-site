@@ -50,6 +50,14 @@ exports.main = async (event) => {
         return await updateTemplate(event, operatorOpenid)
       case 'listSupportTickets':
         return await listSupportTickets(event)
+      case 'countSupportPending':
+        return await countSupportPending()
+      case 'addSupportNote':
+        return await addSupportNote(event, operatorOpenid)
+      case 'getCustomerContext':
+        return await getCustomerContext(event)
+      case 'remindOverdue':
+        return await remindOverdue(event)
       case 'getSupportTicket':
         return await getSupportTicket(event)
       case 'replySupportTicket':
@@ -201,6 +209,142 @@ async function attachMemberLabels(list) {
       memberNo: (u && u.memberNo) ? String(u.memberNo) : buildMemberNo(r._openid)
     }
   })
+}
+
+const SUPPORT_MAX_RECIPIENTS = 50
+function uniqOpenids(list) { return Array.from(new Set((list || []).filter(Boolean))) }
+function envAdminOpenids() {
+  return String(process.env.MESSAGE_ADMIN_OPENIDS || '').split(',').map((x) => x.trim()).filter(Boolean)
+}
+function staffRolesOfRow(row) {
+  const out = []
+  if (!row) return out
+  if (Array.isArray(row.roles)) out.push(...row.roles)
+  if (row.role) out.push(String(row.role))
+  if (row.workspaceRole) out.push(String(row.workspaceRole))
+  return out.map((r) => String(r || '').trim()).filter(Boolean)
+}
+/** 能处理留言的人：env 管理员 / users.isAdmin / staff_members 的 super_admin·manager·store_manager */
+async function listSupportStaffOpenids() {
+  const openids = envAdminOpenids()
+  try {
+    const res = await db.collection('users').where({ isAdmin: true }).limit(50).get()
+    ;(res.data || []).forEach((u) => { const oid = (u && (u._openid || u.openid)) || ''; if (oid) openids.push(oid) })
+  } catch (e) { /* 可选 */ }
+  try {
+    const res = await db.collection('staff_members').where({ status: 'active' }).limit(200).get()
+    ;(res.data || []).forEach((row) => {
+      const oid = (row && row.openid) || ''
+      if (!oid) return
+      if (staffRolesOfRow(row).some((r) => r === 'super_admin' || r === 'manager' || r === 'store_manager')) openids.push(oid)
+    })
+  } catch (e) { console.warn('listSupportStaffOpenids', e && e.message) }
+  return uniqOpenids(openids).slice(0, SUPPORT_MAX_RECIPIENTS)
+}
+
+/**
+ * 客服工作台 2026-11-27 升级：
+ *  · countSupportPending  待回复数量（我的·工作台瓦片角标 + 语音播报）
+ *  · addSupportNote       内部备注（只员工可见，永不发给顾客）
+ *  · getCustomerContext   顾客 360（订单 / 评价 / 留言 计数与最近记录）
+ *  · remindOverdue        超时未回复提醒（12 小时仍未回 → 再发一条工作信息，置 remindedAt）
+ */
+async function countSupportPending() {
+  try {
+    const res = await db.collection('support_tickets').where({ status: 'pending' }).count()
+    return { success: true, count: Number((res && res.total) || 0) }
+  } catch (e) {
+    return { success: true, count: 0 }
+  }
+}
+
+async function addSupportNote(event, operatorOpenid) {
+  const ticketId = String((event && event.ticketId) || '').trim()
+  const note = String((event && event.note) || '').trim()
+  if (!ticketId || note.length < 1) return { success: false, msg: '请填写备注' }
+  if (note.length > 300) return { success: false, msg: '备注不超过 300 字' }
+  try {
+    const doc = await db.collection('support_tickets').doc(ticketId).get()
+    const t = doc.data
+    if (!t) return { success: false, msg: '留言不存在' }
+    const notes = Array.isArray(t.notes) ? t.notes.slice(-29) : []
+    notes.push({ text: note, at: Date.now(), by: String(operatorOpenid || '') })
+    await db.collection('support_tickets').doc(ticketId).update({ data: { notes } })
+    return { success: true, notes }
+  } catch (e) {
+    return { success: false, msg: '备注保存失败' }
+  }
+}
+
+async function getCustomerContext(event) {
+  const openid = String((event && event.openid) || '').trim()
+  if (!openid) return { success: false, msg: '缺少顾客标识' }
+  const _ = db.command
+  let orders = []
+  let orderCount = 0
+  try {
+    const r = await db.collection('orders').where({ _openid: openid }).orderBy('createTime', 'desc').limit(5).get()
+    orders = (r.data || []).map((o) => ({
+      id: o._id,
+      no: o.orderNo || String(o._id || '').slice(-8),
+      title: (o.products && o.products[0] && (o.products[0].title || o.products[0].name)) || '订单',
+      amount: Number(o.totalPrice || o.payAmount || 0),
+      status: o.status || ''
+    }))
+    const c = await db.collection('orders').where({ _openid: openid }).count()
+    orderCount = Number((c && c.total) || 0)
+  } catch (e) { /* 可选 */ }
+  let commentCount = 0
+  let ticketCount = 0
+  try { commentCount = Number(((await db.collection('comments').where({ _openid: openid }).count()) || {}).total || 0) } catch (e) {}
+  try { ticketCount = Number(((await db.collection('support_tickets').where({ _openid: openid }).count()) || {}).total || 0) } catch (e) {}
+  return { success: true, orderCount, orders, commentCount, ticketCount }
+}
+
+async function remindOverdue(event) {
+  const hours = Math.max(1, Math.min(72, Number((event && event.hours) || 12)))
+  const cutoff = Date.now() - hours * 3600 * 1000
+  let reminded = 0
+  try {
+    const res = await db.collection('support_tickets')
+      .where({ status: 'pending' })
+      .orderBy('createTime', 'asc')
+      .limit(20)
+      .get()
+    const rows = (res.data || []).filter((t) => {
+      const created = t.createTime ? new Date(t.createTime).getTime() : 0
+      return created && created < cutoff && !t.remindedAt
+    })
+    if (!rows.length) return { success: true, reminded: 0 }
+    const openids = await listSupportStaffOpenids()
+    const now = Date.now()
+    for (const t of rows) {
+      for (const oid of openids) {
+        try {
+          await db.collection('user_messages').add({
+            data: {
+              _openid: oid, openid: oid, recipient: oid,
+              category: 'ops', queue: 'workflow', type: 'staff_support_overdue',
+              title: '留言还没回复',
+              content: `「${t.topicLabel || '顾客留言'}」已超过 ${hours} 小时未回复，记得处理`,
+              relatedId: t._id,
+              actionUrl: `/subpackages/manager/support-desk/index?ticketId=${encodeURIComponent(t._id)}`,
+              templateCode: 'staff_support_overdue',
+              dedupeKey: `staff_support_overdue:${t._id}:${oid}:${now}`,
+              read: false, createTime: db.serverDate(), _createTime: db.serverDate()
+            }
+          })
+        } catch (e) { /* 尽力而为 */ }
+      }
+      try {
+        await db.collection('support_tickets').doc(t._id).update({ data: { remindedAt: db.serverDate() } })
+        reminded += 1
+      } catch (e) { /* ignore */ }
+    }
+    return { success: true, reminded }
+  } catch (e) {
+    return { success: false, reminded: 0, msg: (e && e.message) || '提醒失败' }
+  }
 }
 
 /** ERP 工单页：标记已处理 / 归档（support_tickets 客户端 write:false） */

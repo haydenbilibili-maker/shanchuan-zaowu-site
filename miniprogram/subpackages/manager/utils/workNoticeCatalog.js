@@ -55,6 +55,15 @@ const NOTICE_TYPES = [
     source: 'opsOrderCounts.aftersale'
   },
   {
+    type: 'support',
+    label: '顾客留言',
+    text: '收到一条顾客留言，请记得及时回复',
+    file: 'support.m4a',
+    priority: 24,
+    roles: [ROLE.SUPER_ADMIN, ROLE.STORE_MANAGER],
+    source: 'supportPendingCount'
+  },
+  {
     type: 'comment',
     label: '商品评价',
     text: '收到一条用户商品评价，请记得及时回复',

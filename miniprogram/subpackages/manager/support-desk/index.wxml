@@ -39,6 +39,29 @@
     </view>
     <text class="sd-detail-meta">{{detail.time}}{{detail.orderNo ? ' · 订单 ' + detail.orderNo : ''}}{{detail.productName ? ' · ' + detail.productName : ''}}{{detail.contactPhone ? ' · ' + detail.contactPhone : ''}}</text>
 
+    <!-- 顾客 360（2026-11-27）：订单 / 评价 / 留言 一屏看完 -->
+    <view class="sd-customer" wx:if="{{customer}}">
+      <text class="sd-customer-k">这位顾客 · {{customer.orderCount}} 单 / {{customer.commentCount}} 条评价 / {{customer.ticketCount}} 次留言</text>
+      <view class="sd-customer-order" wx:for="{{customer.orders}}" wx:key="id" data-id="{{item.id}}" catchtap="openOrderDetail" hover-class="tap-press-soft" hover-stay-time="80">
+        <text class="sd-co-t">{{item.title}}</text>
+        <text class="sd-co-s">订单 {{item.no}} · ¥{{item.amount}} · {{item.status}}</text>
+        <text class="sd-co-go">›</text>
+      </view>
+    </view>
+
+    <!-- 内部备注（只员工可见，不发给顾客） -->
+    <view class="sd-notes">
+      <text class="sd-notes-t">内部备注（顾客看不到）</text>
+      <view class="sd-note" wx:for="{{notes}}" wx:key="time">
+        <text class="sd-note-time">{{item.time}}</text>
+        <text class="sd-note-text" user-select>{{item.text}}</text>
+      </view>
+      <view class="sd-note-input-row">
+        <input class="sd-note-input" value="{{noteText}}" bindinput="onNoteInput" maxlength="300" placeholder="记一笔，比如：已电话联系 / 等顾客补图" placeholder-class="sd-ph" />
+        <view class="sd-note-save" catchtap="addNote" hover-class="tap-press" hover-stay-time="80">保存备注</view>
+      </view>
+    </view>
+
     <view class="sd-history" wx:if="{{detail.history.length}}">
       <text class="sd-history-t">历史回复</text>
       <view class="sd-history-item" wx:for="{{detail.history}}" wx:key="time">

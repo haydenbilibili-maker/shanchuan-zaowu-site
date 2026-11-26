@@ -106,6 +106,8 @@ function emptyWorkbenchBadgeState() {
   return {
     workbenchEntries: [],
     workbenchTiles: [],
+    /** 客服工作台待回复数（2026-11-27） */
+    supportPendingCount: 0,
     /** 馆藏与内容宫格可见数（自适应列数用） */
     svcCount: 4,
     workflowUnreadCount: 0,
@@ -650,6 +652,7 @@ Page(withAppModal({
     try {
       require('../../utils/museumPageChrome').applyMuseumPageChrome();
     } catch (e) { /* ignore */ }
+    if ((this.data.workbenchTiles || []).length) this.loadSupportPending()
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 4 });
     }
@@ -2644,6 +2647,19 @@ Page(withAppModal({
   /* 2026-09-21：`goToDigestMessages()` 随工作台那张独立「日报」瓦片一起去掉了。
      日报的入口现在是**工作信息里的「日报」档**（`WORKFLOW_FILTER_TABS` 的 digest），
      进工作信息后点那一栏即可，深链参数由消息页自己处理。 */
+
+  /** 客服工作台待回复角标（员工才有工作台） */
+  async loadSupportPending() {
+    if (this._supportPendingAt && Date.now() - this._supportPendingAt < 60000) return
+    this._supportPendingAt = Date.now()
+    try {
+      const res = await wx.cloud.callFunction({ name: 'messageAdmin', data: { action: 'countSupportPending' } })
+      const n = Math.max(0, Number(((res && res.result) || {}).count) || 0)
+      const text = n > 99 ? '99+' : (n ? String(n) : '')
+      const tiles = (this.data.workbenchTiles || []).map((t) => (t.key === 'support_desk' ? { ...t, badgeCount: n, badgeText: text, badgeWide: text === '99+' } : t))
+      this.setData({ supportPendingCount: n, workbenchTiles: tiles })
+    } catch (e) { /* 静默 */ }
+  },
 
   goToWorkflowMessages() {
     try {

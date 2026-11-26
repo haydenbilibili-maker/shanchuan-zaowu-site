@@ -142,6 +142,14 @@
       "bytes": 30921,
       "durationMs": null,
       "path": "/subpackages/manager/assets/audio/work-notice/comment.m4a"
+    },
+    "support": {
+      "file": "support.m4a",
+      "text": "收到一条顾客留言，请记得及时回复",
+      "textHash": "1e648585f229cc7d",
+      "bytes": 21676,
+      "durationMs": 2400,
+      "path": "/subpackages/manager/assets/audio/work-notice/support.m4a"
     }
   }
 }
