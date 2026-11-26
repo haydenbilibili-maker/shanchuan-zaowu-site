@@ -6610,8 +6610,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   width: 44rpx;
   height: 44rpx;
   display: block;
-  /* 与工作台同类图标同一套黄铜滤镜（原始 SVG 是深墨色，暗底上会看不见） */
-  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+  /* 图标已在生成时刷成黄铜色并带透明底（原 SVG 是白底深墨，直接加滤镜会变成一整块实心金） */
 }
 .so-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
 .so-t { font-family: var(--font-brand); font-size: var(--fs-30); color: var(--mat-paper-tone); }
