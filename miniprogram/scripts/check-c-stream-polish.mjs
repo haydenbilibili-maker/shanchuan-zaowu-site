@@ -588,6 +588,8 @@ function check(src) {
     ok(/relatedId: `\$\{ticketId\}#\$\{now\}`/.test(adminFn), 'R9-2c 同一工单的多次回复不会被山海有信按 type::relatedId 合并（每次带时间戳）')
     ok(/history/.test(deskWxml) && /replySupportTicket/.test(deskJs) && /guardStaffPage/.test(deskJs), 'R9-3 客服工作台：门禁 + 历史回复 + 直接回复')
     ok(/support-desk\/index/.test(appJson), 'R9-4 客服工作台已注册页面')
+    ok(!/AI 鉴定结果准确吗/.test(readRel('miniprogram/cloudfunctions/getSupportConfig/index.js')) && /AI_FAQ_RE/.test(readRel('miniprogram/subpackages/extra/user/support/index.js')),
+      'R9-6 联系专员 FAQ 不再下发 AI 相关问题（云端默认 + 客户端过滤）')
     ok(/data-tab="replied"/.test(deskWxml) && /onSearch/.test(deskJs) && /pickPhrase/.test(deskJs) && /markResolved/.test(deskJs) && /sd-phrases/.test(deskWxml),
       'R9-5 客服工作台升级：已回复档 / 搜索 / 快捷回复 / 标记已解决')
     // R9-7（2026-11-27 产品负责人「客服工作台交互视觉弹窗动效质感对齐与升级，并完善缺失功能」）

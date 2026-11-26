@@ -293,7 +293,10 @@ Page({
         return t;
       });
 
-      const remoteFaqs = Array.isArray(config.faqs) ? config.faqs : [];
+      // 2026-11-27：AI 相关问题不下发（历史云端配置里可能还留着）
+      const AI_FAQ_RE = /AI\s*鉴定|人工智能|AI\s*生成/
+      const remoteFaqs = (Array.isArray(config.faqs) ? config.faqs : [])
+        .filter((f) => !AI_FAQ_RE.test(`${(f && f.q) || ''} ${(f && f.a) || ''}`));
       const faqs = remoteFaqs.length
         ? (() => {
             const fallbackInvoice = FALLBACK_CONFIG.faqs.find((f) => /发票/.test(f.q));
@@ -346,7 +349,7 @@ Page({
         config: FALLBACK_CONFIG,
         topics: FALLBACK_CONFIG.topics.filter((t) => !['invoice', 'framer_recruit', 'identify', 'product'].includes(t.id)),
         directActions: FALLBACK_CONFIG.topics.filter((t) => ['invoice', 'framer_recruit'].includes(t.id)),
-        faqs: FALLBACK_CONFIG.faqs,
+        faqs: FALLBACK_CONFIG.faqs.filter((f) => !/AI\s*鉴定|人工智能|AI\s*生成/.test(`${(f && f.q) || ''} ${(f && f.a) || ''}`)),
         serviceNow: serviceStatus(FALLBACK_CONFIG.hours)
       });
       this.buildMapMarker();
