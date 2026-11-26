@@ -54,6 +54,8 @@
              响应说明只留在下方服务卡，不在这里套句子（原「专员会在{响应说明}回复」读起来不通） -->
         <view class="hero-copy">
           <view class="hero-k-row">
+            <!-- 信号灯（2026-11-26）：服务时间绿、非服务时间红；认不出时段就不显示（与状态签同源） -->
+            <view class="lamp {{serviceNow.open ? 'lamp-forest' : 'lamp-error'}} hero-lamp" wx:if="{{serviceNow}}" aria-hidden="true"></view>
             <text class="hero-k">微信专员</text>
             <text class="hero-live {{serviceNow.open ? 'is-on' : ''}}" wx:if="{{serviceNow}}">{{serviceNow.label}}</text>
           </view>

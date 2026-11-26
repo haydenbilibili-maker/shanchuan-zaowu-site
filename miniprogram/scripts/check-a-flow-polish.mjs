@@ -376,6 +376,10 @@ function checks(s) {
   add('R17-2 联系专员留言写在浅纸便笺上、无 grain-overlay、联系方式为发丝线行（不再是圆角卡）',
     /\n\.form-card \{[^}]*(?:linear-gradient\(180deg, #F3ECDD, #E8DFCB\)|var\(--mat-paper-label\))/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
       !/\n\.channel-item \{[^}]*border-radius/.test(s.supportWxss))
+  // 2026-11-26 产品负责人：联系专员首屏信号灯（服务时间绿 / 非服务时间红，与状态签同源）
+  add('R17-4 联系专员信号灯：绿=服务时间、红=非服务时间、认不出不显示',
+    /class="lamp \{\{serviceNow\.open \? 'lamp-forest' : 'lamp-error'\}\} hero-lamp" wx:if="\{\{serviceNow\}\}"/.test(s.supportWxml))
+
   // 2026-10-18 搜索「检索台」
   // 2026-11-22 圆角融合（产品负责人确认方向）：签由方角改为胶囊（var(--r-pill)），结果行与页签不变
   add('R18-1 搜索结果为发丝线行、分类为下划线页签、签为胶囊（圆角融合：标签一律胶囊），颗粒层退场',

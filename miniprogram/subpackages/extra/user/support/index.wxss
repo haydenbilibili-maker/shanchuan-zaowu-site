@@ -809,3 +809,6 @@ page {
 .hero-s { display: flex; align-items: baseline; gap: 10rpx; min-width: 0; }
 .hero-s text:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hero-s-go { flex-shrink: 0; }
+
+/* 首屏信号灯：绿=服务时间、红=非服务时间（颜色走全局 .lamp-forest / .lamp-error 令牌） */
+.hero-lamp { margin-right: 2rpx; }
