@@ -59,13 +59,11 @@
           </view>
           <text class="hero-t">有问题，直接问专员</text>
           <view class="hero-s" bindtap="scrollToSection" data-to="sec-topics" hover-class="tap-press-soft" hover-stay-time="80">
-            <text>咨询类型 · {{activeTopicLabel}}</text><text class="hero-s-go">换类型 ›</text>
-          </view>
-          <view class="hero-s is-off" wx:if="{{serviceNow && !serviceNow.open}}" bindtap="scrollToSection" data-to="sec-note" hover-class="tap-press-soft" hover-stay-time="80">
-            <text>现在不在服务时间，可以先留言</text><text class="hero-s-go">去留言 ›</text>
+            <text>{{activeTopicLabel}}</text><text class="hero-s-go">换类型 ›</text>
           </view>
         </view>
         <button
+          wx:if="{{!serviceNow || serviceNow.open}}"
           class="hero-btn"
           open-type="contact"
           session-from="{{sessionFrom}}"
@@ -75,6 +73,8 @@
           show-message-card="{{showMessageCard}}"
           bindcontact="onContactTap"
         >开始对话</button>
+        <!-- 非服务时间：不再堆第二行说明，按钮直接变「先留言」（状态签已写非服务时间） -->
+        <view wx:else class="hero-btn" bindtap="scrollToSection" data-to="sec-note" hover-class="tap-press" hover-stay-time="80">先留言</view>
         <!-- 订单类咨询：让顾客直接指定哪一单（2026-11-26），专员在会话标签与卡片里就能看到 -->
         <view class="hero-order" wx:if="{{activeTopic === 'order' || activeTopic === 'refund' || activeTopic === 'invoice'}}">
           <block wx:if="{{pickedOrderNo}}">

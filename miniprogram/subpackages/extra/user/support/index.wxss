@@ -804,3 +804,8 @@ page {
 /* 留言字数 */
 .message-count { display: block; margin-top: 4rpx; text-align: right; font-family: var(--font-mono); font-size: var(--fs-18); color: var(--mat-ink-label); }
 .direct-go { flex-shrink: 0; color: var(--brass-300); }
+
+/* 类型一行：长了就省略，别把「换类型」挤掉 */
+.hero-s { display: flex; align-items: baseline; gap: 10rpx; min-width: 0; }
+.hero-s text:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero-s-go { flex-shrink: 0; }
