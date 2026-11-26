@@ -1,12 +1,16 @@
 <wxs src="../../../../utils/latinDisplay.wxs" module="latin" />
 <view class="page">
-  <!-- AI 鉴定关闭（2026-11-26 上线巡查）：分享/深链直达也不展示任何 AI 结论 -->
-  <view class="load-error" wx:if="{{aiClosed}}">
-    <text class="load-error-en">CLOSED</text>
-    <text class="load-error-title">AI 鉴定暂未开放</text>
-    <text class="load-error-desc">该功能已关闭，馆藏与商品信息仍可在「馆藏」里查看。</text>
-    <view class="load-error-actions is-single">
-      <view class="act primary" bindtap="goHomeTab" hover-class="act-primary-press" hover-stay-time="80">回到探索</view>
+  <!-- AI 鉴定关闭（2026-11-26 上线巡查；2026-11-27 交互重做）：居中空态 + 胶囊双按钮 -->
+  <view class="closed-view" wx:if="{{aiClosed}}">
+    <view class="closed-seal" aria-hidden="true">
+      <image class="closed-seal-ico" src="/assets/icons/camera.png" mode="aspectFit" />
+    </view>
+    <text class="closed-eyebrow">CLOSED</text>
+    <text class="closed-title">AI 鉴定暂未开放</text>
+    <text class="closed-desc">该功能已关闭。馆藏与商品信息仍可在「馆藏」里查看。</text>
+    <view class="closed-actions">
+      <view class="closed-btn is-primary" bindtap="goHomeTab" hover-class="closed-btn-press" hover-stay-time="80">回到探索</view>
+      <view class="closed-btn is-ghost" bindtap="goBackPage" hover-class="closed-btn-press" hover-stay-time="80">返回上一页</view>
     </view>
   </view>
 

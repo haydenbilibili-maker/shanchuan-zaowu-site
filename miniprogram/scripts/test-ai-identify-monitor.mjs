@@ -261,6 +261,13 @@ async function checkIdentify(src, t) {
     const pageWxml = readFileSync(join(MP, 'subpackages/feature/identify/result/index.wxml'), 'utf8')
     t.ok('A00 识别结果页 AI 关闭即拦截（aiClosed + 关闭文案）',
       /aiClosed/.test(pageJs) && /showAiIdentify === false/.test(pageJs) && /AI 鉴定暂未开放/.test(pageWxml))
+    // 2026-11-27：图鉴采集记录 / 图鉴卡片页的 AI 入口也要阻断（不能只靠落地页拦）
+    const logJs = readFileSync(join(MP, 'subpackages/feature/collection/log/index.js'), 'utf8')
+    const cardJs = readFileSync(join(MP, 'subpackages/feature/collection/detail/index.js'), 'utf8')
+    const cardWxml = readFileSync(join(MP, 'subpackages/feature/collection/detail/index.wxml'), 'utf8')
+    t.ok('A00b AI 关闭后图鉴入口阻断：采集记录不跳结果页、卡片页隐藏「拍照采集」',
+      /showAiIdentify/.test(logJs) && /onOpenRecord[\s\S]{0,300}showAiIdentify/.test(logJs) &&
+      /showAiIdentify/.test(cardJs) && /wx:if="\{\{showAiIdentify\}\}"[^>]*bindtap="goIdentify"/.test(cardWxml))
   }
 
   // A2 成功（mock 识别）  // A2 成功（mock 识别）

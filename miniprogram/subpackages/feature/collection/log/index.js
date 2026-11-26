@@ -216,6 +216,12 @@ Page({
   onOpenRecord(e) {
     const id = e.currentTarget.dataset.id
     if (!id) return
+    // 2026-11-27：AI 下线后采集记录不再跳 AI 识别结果页（审核期入口必须阻断，不只靠落地页拦截）
+    if (!this.data.showAiIdentify) {
+      const { toastAiIdentifyClosed } = require('../../../../utils/contentDisplayFlags')
+      toastAiIdentifyClosed()
+      return
+    }
     wx.navigateTo({
       url: `/subpackages/feature/identify/result/index?record_id=${id}`
     })
@@ -225,6 +231,16 @@ Page({
     const recordId = e.currentTarget.dataset.recordId
     const speciesId = e.currentTarget.dataset.speciesId
     if (recordId) {
+      if (!this.data.showAiIdentify) {
+        // AI 下线：有物种页就去物种页，没有就提示，不再进 AI 结果页
+        if (speciesId) {
+          wx.navigateTo({ url: `/subpackages/feature/collection/detail/index?id=${speciesId}` })
+          return
+        }
+        const { toastAiIdentifyClosed } = require('../../../../utils/contentDisplayFlags')
+        toastAiIdentifyClosed()
+        return
+      }
       wx.navigateTo({
         url: `/subpackages/feature/identify/result/index?record_id=${recordId}`
       })

@@ -450,6 +450,11 @@ Page({
     this.loadRecord(this.data.recordId)
   },
 
+  /** 关闭态：返回上一页（没有上一页就回探索） */
+  goBackPage() {
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/index/index' }) })
+  },
+
   goIdentifyHome() {
     wx.redirectTo({
       url: '/subpackages/feature/identify/index',

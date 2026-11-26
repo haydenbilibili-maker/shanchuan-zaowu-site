@@ -527,6 +527,17 @@ page { background: #1A1814; }
   display: flex;
 }
 
+.collect-dock.single .dock-half {
+  flex: 1;
+  min-width: 0;
+  height: 88rpx;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  border: none;
+}
 .collect-dock.dual .dock-half {
   flex: 1;
   min-width: 0;

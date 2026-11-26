@@ -109,11 +109,12 @@
       </scroll-view>
     </view>
 
-    <view class="collect-dock dual" wx:if="{{locked}}">
-      <view class="dock-half" bindtap="onScan" hover-class="tap-press-soft" hover-stay-time="80">
-        <text class="collect-dock-t ghost">发现印记</text>
+    <view class="collect-dock {{showAiIdentify ? 'dual' : 'single'}}" wx:if="{{locked}}">
+      <view class="dock-half {{showAiIdentify ? '' : 'primary'}}" bindtap="onScan" hover-class="tap-press-soft" hover-stay-time="80">
+        <text class="collect-dock-t {{showAiIdentify ? 'ghost' : ''}}">发现印记</text>
       </view>
-      <view class="dock-half primary" bindtap="goIdentify" hover-class="tap-press-soft" hover-stay-time="80">
+      <!-- 2026-11-27：AI 鉴定关闭时不显示「拍照采集」，也不给跳转（审核期入口必须不存在） -->
+      <view class="dock-half primary" wx:if="{{showAiIdentify}}" bindtap="goIdentify" hover-class="tap-press-soft" hover-stay-time="80">
         <text class="collect-dock-t">拍照采集</text>
       </view>
     </view>

@@ -33,6 +33,8 @@ Page({
     guideAvatar: GUIDE_AVATAR,
     /** 2026-11-26 审核驳回：AI 入口默认**关闭**，拿到云端确认（内容开关 AND 开馆）才露出 */
     guideOpen: false,
+    /** AI 鉴定开关（2026-11-27）：关闭时卡片页的「去鉴定」也要阻断 */
+    showAiIdentify: false,
     loading: true,
     loadError: false,
     locked: true,
@@ -57,9 +59,9 @@ Page({
     try {
       const { getCachedContentDisplayFlags, fetchContentDisplayFlags } = require('../../../../utils/contentDisplayFlags')
       const cached = getCachedContentDisplayFlags()
-      if (cached && cached.flags) this.setData({ guideOpen: cached.flags.museumGuideOpen === true })
+      if (cached && cached.flags) this.setData({ guideOpen: cached.flags.museumGuideOpen === true, showAiIdentify: cached.flags.showAiIdentify === true })
       fetchContentDisplayFlags().then((payload) => {
-        if (payload && payload.flags) this.setData({ guideOpen: payload.flags.museumGuideOpen === true })
+        if (payload && payload.flags) this.setData({ guideOpen: payload.flags.museumGuideOpen === true, showAiIdentify: payload.flags.showAiIdentify === true })
       }).catch(() => {})
     } catch (e) { /* 取不到就按默认开启 */ }
   },
@@ -185,6 +187,11 @@ Page({
   },
 
   goIdentify() {
+    if (!this.data.showAiIdentify) {
+      const { toastAiIdentifyClosed } = require('../../../../utils/contentDisplayFlags')
+      toastAiIdentifyClosed()
+      return
+    }
     wx.navigateTo({ url: '/subpackages/feature/identify/index?from=atlas_card' })
   },
 

@@ -1090,3 +1090,49 @@
   padding: 2rpx 8rpx;
 }
 .ai-gen-text { font-size: var(--fs-20); line-height: 1.5; color: var(--mat-ink-body); }
+
+/* AI 鉴定关闭页（2026-11-27）：居中空态，按钮做胶囊而不是通栏色块 */
+.closed-view {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 48rpx 56rpx;
+  box-sizing: border-box;
+  text-align: center;
+}
+.closed-seal {
+  width: 112rpx;
+  height: 112rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 2rpx rgba(196, 167, 108, 0.4);
+  margin-bottom: 10rpx;
+}
+.closed-seal-ico {
+  width: 56rpx;
+  height: 56rpx;
+  opacity: 0.85;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
+.closed-eyebrow { font-family: var(--font-mono); font-size: var(--fs-20); letter-spacing: .28em; color: var(--brass-300); }
+.closed-title { font-family: var(--font-brand); font-size: var(--fs-40); color: var(--mat-paper-tone); letter-spacing: .06em; }
+.closed-desc { font-size: var(--fs-22); line-height: 1.6; color: var(--mat-ink-soft); max-width: 520rpx; }
+.closed-actions { display: flex; flex-direction: column; gap: 16rpx; width: 100%; max-width: 420rpx; margin-top: 24rpx; }
+.closed-btn {
+  height: 84rpx;
+  line-height: 84rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-26);
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-align: center;
+  transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+}
+.closed-btn.is-primary { background: var(--mat-brass); color: var(--mat-ink); }
+.closed-btn.is-ghost { color: var(--brass-200); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.35); }
+.closed-btn-press { opacity: 0.86; transform: scale(0.98); }
