@@ -418,7 +418,10 @@ async function replySupportTicket(event, operatorOpenid) {
         type: 'support_ticket_replied',
         title: '专员已回复',
         content: `${topicLabel}\n${detail}`,
-        relatedId: ticketId,
+        // 2026-11-27 修复「追加回复不通知」：山海有信按 `type::relatedId` 合并同事件，
+        // 同一工单第二次回复会被并进第一条 → relatedId 每次回复带时间戳，去重键仍可追溯工单
+        relatedId: `${ticketId}#${now}`,
+        ticketId,
         actionUrl: '/subpackages/extra/user/support/index',
         templateCode: 'support_ticket_replied',
         dedupeKey: `support_ticket_replied:${ticketId}:${now}`,

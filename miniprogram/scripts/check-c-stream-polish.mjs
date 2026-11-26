@@ -585,6 +585,7 @@ function check(src) {
     ok(/notifyStaffNewTicket/.test(submitFn) && /staff_support_ticket/.test(submitFn), 'R9-1 顾客留言后给超管/店长发工作信息')
     ok(/replies/.test(adminFn) && /getSupportTicket/.test(adminFn) && /vars: \{ replyContent: detail/.test(adminFn), 'R9-2 回复写历史 + 给顾客发完整详情')
     ok(/support_ticket_replied:\$\{ticketId\}/.test(adminFn) && /queue: 'customer'/.test(adminFn) && /delivered/.test(adminFn), 'R9-2b 回复直接写顾客 user_messages（不再只靠模板派发）')
+    ok(/relatedId: `\$\{ticketId\}#\$\{now\}`/.test(adminFn), 'R9-2c 同一工单的多次回复不会被山海有信按 type::relatedId 合并（每次带时间戳）')
     ok(/history/.test(deskWxml) && /replySupportTicket/.test(deskJs) && /guardStaffPage/.test(deskJs), 'R9-3 客服工作台：门禁 + 历史回复 + 直接回复')
     ok(/support-desk\/index/.test(appJson), 'R9-4 客服工作台已注册页面')
     ok(/data-tab="replied"/.test(deskWxml) && /onSearch/.test(deskJs) && /pickPhrase/.test(deskJs) && /markResolved/.test(deskJs) && /sd-phrases/.test(deskWxml),
