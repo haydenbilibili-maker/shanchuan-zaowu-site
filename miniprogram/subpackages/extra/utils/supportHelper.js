@@ -11,6 +11,7 @@ const TOPIC_LABELS = {
   pet_memorial: '伴宠记忆',
   specimen_care: '标本养护',
   identify: '鉴定疑问',
+  assets: '钱包与券',
   wallet: '钱包储值',
   voucher: '代金券',
   points: '积分',

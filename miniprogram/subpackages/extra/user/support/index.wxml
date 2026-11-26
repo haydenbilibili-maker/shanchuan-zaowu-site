@@ -114,7 +114,7 @@
         <text class="section-hint">选好再开始对话，专员一进来就知道你在问什么。</text>
         <view class="topic-grid">
           <view
-            class="topic-item {{activeTopic === item.id ? 'active' : ''}}"
+            class="topic-item {{(activeTopic === item.id || (item.id === 'assets' && (activeTopic === 'wallet' || activeTopic === 'voucher' || activeTopic === 'points'))) ? 'active' : ''}}"
             wx:for="{{topics}}"
             wx:key="id"
             hover-class="tap-press-soft" hover-stay-time="80"
@@ -123,7 +123,7 @@
           >
             <view class="topic-head">
               <image class="topic-icon" src="{{item.icon}}" mode="aspectFit"></image>
-              <text class="topic-pick" wx:if="{{activeTopic === item.id}}">已选</text>
+              <text class="topic-pick" wx:if="{{(activeTopic === item.id || (item.id === 'assets' && (activeTopic === 'wallet' || activeTopic === 'voucher' || activeTopic === 'points')))}}">已选</text>
             </view>
             <text class="topic-label">{{item.label}}</text>
             <text class="topic-desc">{{item.desc}}</text>
@@ -306,6 +306,22 @@
       <text class="modal-sub">COMMUNITY</text>
       <shan-img ext-class="community-qr" src="{{config.communityQr}}" mode="aspectFit" show-menu-by-longpress="{{true}}" />
       <text class="modal-tip">长按识别添加微信助手，随后拉入官方服务微信群</text>
+    </view>
+  </view>
+
+  <!-- 钱包与券（2026-11-26）：储值 / 代金券 / 积分 合成一个入口，点开再选具体类别 -->
+  <view class="ui-pop-mask" wx:if="{{assetPickerOpen}}" catchtap="closeAssetPicker" catchtouchmove="true">
+    <view class="ui-pop-sheet modal-panel" catchtap="true">
+      <view class="modal-head">
+        <text>钱包与券 · 具体问题</text>
+        <view class="close-btn" hover-class="tap-press" hover-stay-time="80" catchtap="closeAssetPicker">✕</view>
+      </view>
+      <view class="order-picker-body">
+        <view class="order-pick-row" wx:for="{{assetKinds}}" wx:key="id" data-id="{{item.id}}" catchtap="pickAssetKind" hover-class="tap-press-soft" hover-stay-time="80">
+          <view class="op-main"><text class="op-title">{{item.label}}</text><text class="op-sub">{{item.desc}}</text></view>
+          <text class="op-go">›</text>
+        </view>
+      </view>
     </view>
   </view>
 

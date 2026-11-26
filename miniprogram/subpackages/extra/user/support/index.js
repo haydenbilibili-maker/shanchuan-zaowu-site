@@ -31,9 +31,7 @@ const FALLBACK_CONFIG = {
     { id: 'custom', label: '标本定制', desc: '标本工坊与伴宠记忆', icon: '/assets/icons/gift.png' },
     { id: 'specimen_care', label: '标本养护', desc: '安放、清洁与异常咨询', icon: '/assets/icons/care.png' },
     { id: 'pet_memorial', label: '伴宠记忆', desc: '宠物藏品制作意向', icon: '/assets/icons/knowledge.png' },
-    { id: 'wallet', label: '钱包储值', desc: '充值、余额与储值卡', icon: '/assets/icons/wallet_gold.png' },
-    { id: 'voucher', label: '代金券', desc: '券的使用、核销与过期', icon: '/assets/icons/coupon.png' },
-    { id: 'points', label: '积分', desc: '积分获取、兑换与清零', icon: '/assets/icons/coin_gold.png' },
+    { id: 'assets', label: '钱包与券', desc: '储值、代金券与积分', icon: '/assets/icons/wallet_gold.png' },
     { id: 'business', label: '商务合作', desc: '品牌、渠道与异业合作', icon: '/assets/icons/store.png' },
     { id: 'refund', label: '售后退款', desc: '退款进度与凭证', icon: '/assets/icons/discount.png' },
     { id: 'invoice', label: '发票开具', desc: '电子发票与抬头', icon: '/assets/icons/coupon.png' },
@@ -100,6 +98,15 @@ Page({
     loading: true,
     config: {},
     topics: [],
+    /** 「钱包与券」子类型（储值 / 代金券 / 积分） */
+    assetKinds: [
+      { id: 'wallet', label: '钱包储值', desc: '充值、余额与储值卡' },
+      { id: 'voucher', label: '代金券', desc: '券的使用、核销与过期' },
+      { id: 'points', label: '积分', desc: '积分获取、兑换与清零' }
+    ],
+    assetPickerOpen: false,
+    activeAssetKind: '',
+    assetKindLabel: '',
     /** 直接办理入口（发票 / 标本师招募），不混进咨询类型 */
     directActions: [],
     faqs: [],
@@ -252,12 +259,15 @@ Page({
       };
       ensureTopic('invoice');
       ensureTopic('framer_recruit');
+      ensureTopic('assets');
+      ensureTopic('business');
       // 注意：ensureTopic(active) 之后仍会被上面两个过滤，隐藏类型不会因历史选中又冒出来
       const active = this.data.activeTopic;
       if (active) ensureTopic(active);
       // 2026-11-26 产品负责人：发票开具、标本师招募是「直接办理」的入口，不是咨询类型 → 从类型里拆出去
       // 2026-11-26 产品负责人：鉴定疑问（AI 鉴定相关）与藏品鉴赏不再作为咨询类型
-      const HIDDEN_TOPIC_IDS = ['identify', 'product'];
+      // 2026-11-26：钱包储值 / 代金券 / 积分 合成一个「钱包与券」入口，点开再选具体是哪类
+      const HIDDEN_TOPIC_IDS = ['identify', 'product', 'wallet', 'voucher', 'points'];
       const DIRECT_ACTION_IDS = ['invoice', 'framer_recruit'];
       const directActions = topics.filter((t) => t && DIRECT_ACTION_IDS.includes(t.id));
       const consultTopics = topics.filter((t) => t && !DIRECT_ACTION_IDS.includes(t.id) && !HIDDEN_TOPIC_IDS.includes(t.id));
@@ -510,7 +520,13 @@ Page({
       return;
     }
     if (topic === this.data.activeTopic) return;
+    // 钱包与券：先选具体子类（储值 / 代金券 / 积分），会话标签里带具体那一类
+    if (topic === 'assets') {
+      this.setData({ activeTopic: 'assets', activeTopicLabel: '钱包与券', assetPickerOpen: true });
+      return;
+    }
     const label = ((this.data.topics || []).filter((t) => t.id === topic)[0] || {}).label || '其他问题';
+    if (topic !== 'assets') this.setData({ activeAssetKind: '', assetKindLabel: '' });
     this.setData({ activeTopic: topic, activeTopicLabel: label });
     // 订单 / 退款 / 发票：让顾客直接挑是哪一单，专员在会话里才看得到具体订单
     if (['order', 'refund', 'invoice'].includes(topic) && !this.data.orderId && !this.data.pickedOrderNo) {
@@ -540,6 +556,27 @@ Page({
   onOrderSearch(e) {
     const q = String((e && e.detail && e.detail.value) || '');
     this.setData({ orderQuery: q, orderShown: orderPick.filterRows(this.data.orderOptions, q) });
+  },
+
+  /** 选择「钱包与券」的具体子类 */
+  pickAssetKind(e) {
+    const id = String((e.currentTarget.dataset || {}).id || '');
+    const item = (this.data.assetKinds || []).filter((k) => k.id === id)[0];
+    if (!item) return;
+    // 子类选定后把 activeTopic 落到具体 id（工单 / 会话标签都按它走，工单 schema 不用改）
+    this.setData({
+      assetPickerOpen: false,
+      activeAssetKind: id,
+      assetKindLabel: item.label,
+      activeTopic: id,
+      activeTopicLabel: `钱包与券 · ${item.label}`
+    });
+    this.refreshContactContext();
+    trackBehavior('support_topic_select', 'topic', id);
+  },
+
+  closeAssetPicker() {
+    this.setData({ assetPickerOpen: false });
   },
 
   closeOrderPicker() {
