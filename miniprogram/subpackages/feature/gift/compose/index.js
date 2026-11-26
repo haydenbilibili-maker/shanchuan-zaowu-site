@@ -1007,8 +1007,22 @@ Page({
     if (preset.id === 'self') this.enterSelfTreat()
     else if (this.data.selfTreat && getPresetById(preset.id)) this.exitSelfTreat()
 
+    // 2026-11-26 产品负责人：选了「送给谁」之后自动跳到信纸位置，再落笔（动画 + 音效）。
+    // 关系区在礼笺下方，不滚上去顾客只会听到声音、看不到字在长出来。
+    if (this.data.relationOpen) this.setData({ relationOpen: false })
+    if (typeof this.scrollToLetter === 'function') this.scrollToLetter()
+
     // 写笺与选礼同屏，点关系就直接落笔
     this._scheduleNoteWrite()
+  },
+
+  /** 滚到礼笺（动画开始前先让纸进视野；取不到锚点时退回页面顶部附近） */
+  scrollToLetter() {
+    try {
+      wx.pageScrollTo({ selector: '#secLetter', offsetTop: -12, duration: 320 });
+    } catch (e) {
+      try { wx.pageScrollTo({ scrollTop: 220, duration: 320 }); } catch (e2) { /* 忽略 */ }
+    }
   },
 
   _scheduleNoteWrite() {

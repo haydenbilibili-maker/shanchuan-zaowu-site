@@ -90,7 +90,7 @@
     </view>
 
     <!-- 02 礼笺：信封外壳包裹（不改 textarea / 落笔动画结构） -->
-    <view class="section sec-letter">
+    <view class="section sec-letter" id="secLetter">
       <text class="section-overline">LETTER</text>
       <text class="section-title">写下礼笺</text>
 
