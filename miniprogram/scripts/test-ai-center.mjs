@@ -62,9 +62,9 @@ function runChecks() {
     return t.includes(`wx.redirectTo({ url: \`/subpackages/ai/${n}/index`) && /encodeURIComponent\(options\[k\]\)/.test(t) && !/callFunction|setStorageSync/.test(t)
   }), fails)
   const userJs = read(P.userJs)
-  ok('A1 我的·工作台有 ai_center 磁贴，点了进 AI 智能中心',
-    /key: 'ai_center'/.test(userJs) && /title: 'AI 智能中心'/.test(userJs) &&
-    /if \(key === 'ai_center'\) \{\s*\n\s*wx\.navigateTo\(\{ url: '\/subpackages\/ai\/ai-center\/index' \}\)/.test(userJs), fails)
+  // 2026-11-26：不再从「我的-工作台」进（改到超管工作台独立模块卡），这里断言旧入口已移除
+  ok('A1 我的·工作台不再有 AI 智能中心磁贴（入口已迁到超管工作台）',
+    !/key: 'ai_center'/.test(userJs) && !/title: 'AI 智能中心'/.test(userJs), fails)
 
   const client = loadCjsModule(P.roles, { transform })
   const server = loadCjsModule(P.personas, { transform })
@@ -317,7 +317,7 @@ if (process.argv.includes('--selftest')) {
   const base = runChecks()
   if (base.length) { console.error('✗ 自检前提：真源须先通过\n  - ' + base.join('\n  - ')); process.exit(1) }
   const INJ = [
-    { name: '入口磁贴被删', file: P.userJs, find: "key: 'ai_center'", replace: "key: 'ai_center_x'" },
+    { name: '旧入口又回到「我的」工作台', file: P.userJs, find: "    key: 'workflow',", replace: "    key: 'ai_center',\n    kind: 'ai_center',\n    title: 'AI 智能中心',\n    en: 'AI CENTER',\n    workspace: '',\n    icon: '/assets/icons/knowledge.png',\n    badgeCount: 0,\n    badgeText: '',\n    badgeWide: false,\n  }, { key: 'workflow'," },
     { name: '页面没注册', file: P.page, find: '', replace: '' },
     { name: '角色表与云端不一致', file: P.roles, find: "id: 'cfo'", replace: "id: 'cfo2'" },
     { name: '云端不校验 roleId', file: P.fn, find: 'if (ROLE_IDS.indexOf(roleId) < 0) return', replace: 'if (false) return' },

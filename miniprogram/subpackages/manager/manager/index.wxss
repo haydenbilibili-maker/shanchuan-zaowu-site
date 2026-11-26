@@ -6589,6 +6589,7 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 
 /* 智能运营中心（2026-11-26）：功能区与图表区之间的独立模块卡 */
 .smart-ops {
+  grid-column: 1 / -1;
   padding: 22rpx 24rpx;
   border-radius: var(--radius-md);
   background: rgba(196, 167, 108, 0.06);
