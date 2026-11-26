@@ -581,6 +581,7 @@ function check(src) {
     const appJson = readRel('miniprogram/app.json')
     ok(/notifyStaffNewTicket/.test(submitFn) && /staff_support_ticket/.test(submitFn), 'R9-1 顾客留言后给超管/店长发工作信息')
     ok(/replies/.test(adminFn) && /getSupportTicket/.test(adminFn) && /vars: \{ replyContent: detail/.test(adminFn), 'R9-2 回复写历史 + 给顾客发完整详情')
+    ok(/support_ticket_replied:\$\{ticketId\}/.test(adminFn) && /queue: 'customer'/.test(adminFn) && /delivered/.test(adminFn), 'R9-2b 回复直接写顾客 user_messages（不再只靠模板派发）')
     ok(/history/.test(deskWxml) && /replySupportTicket/.test(deskJs) && /guardStaffPage/.test(deskJs), 'R9-3 客服工作台：门禁 + 历史回复 + 直接回复')
     ok(/support-desk\/index/.test(appJson), 'R9-4 客服工作台已注册页面')
   }

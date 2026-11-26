@@ -250,17 +250,57 @@ async function replySupportTicket(event, operatorOpenid) {
   })
 
   // 给顾客的「山海有信」带完整回复正文（原实现只带 120 字预览，详情看不到）
+  //
+  // ⚠️ 2026-11-26 修复「客服工作台回复后用户收不到」：
+  // 原实现只靠 `cloud.callFunction('dispatchMessage')` 模板派发；模板行缺失 / 模板被改坏 /
+  // 组件内调用失败时**静默不落库**（返回值也没检查），用户侧什么都收不到。
+  // 现在**直接写 user_messages（customer 队列）**作为主路径，模板派发退化为 best-effort。
   const detail = content.length > 500 ? content.slice(0, 500) : content
-  await cloud.callFunction({
-    name: 'dispatchMessage',
-    data: {
-      action: 'dispatch',
-      eventType: 'support_ticket_replied',
-      openid: ticket._openid,
-      relatedId: ticketId,
-      vars: { replyContent: detail, topicLabel: ticket.topicLabel || '咨询' }
-    }
-  })
+  const topicLabel = ticket.topicLabel || '咨询'
+  let delivered = false
+  try {
+    const now = Date.now()
+    await db.collection('user_messages').add({
+      data: {
+        _openid: ticket._openid,
+        openid: ticket._openid,
+        recipient: ticket._openid,
+        category: 'system',
+        queue: 'customer',
+        type: 'support_ticket_replied',
+        title: '专员已回复',
+        content: `${topicLabel}\n${detail}`,
+        relatedId: ticketId,
+        actionUrl: '/subpackages/extra/user/support/index',
+        templateCode: 'support_ticket_replied',
+        dedupeKey: `support_ticket_replied:${ticketId}:${now}`,
+        read: false,
+        createTime: db.serverDate(),
+        _createTime: db.serverDate()
+      }
+    })
+    delivered = true
+  } catch (e) {
+    console.error('support reply direct message failed:', e && e.message)
+  }
 
-  return { success: true }
+  if (!delivered) {
+    try {
+      await cloud.callFunction({
+        name: 'dispatchMessage',
+        data: {
+          action: 'dispatch',
+          eventType: 'support_ticket_replied',
+          openid: ticket._openid,
+          relatedId: ticketId,
+          vars: { replyContent: detail, topicLabel }
+        }
+      })
+      delivered = true
+    } catch (e) {
+      console.error('support reply dispatch failed:', e && e.message)
+    }
+  }
+
+  return { success: true, delivered }
 }
