@@ -382,11 +382,12 @@ function reviewPanels() {
   const orders = [
     card('1', '自然小匣（未评价）', { reviewCanWrite: true, reviewChip: '' }),
     card('2', '印尼金锹（审核中）', { reviewCanWrite: false, reviewChip: '审核中' }),
-    card('3', '蒲公英标本（已评价 / 已隐藏）', { reviewCanWrite: false, reviewChip: '✓ 已评价' })
+    card('3', '蒲公英标本（已评价 / 已隐藏）', { reviewCanWrite: false, reviewChip: '✓ 已评价' }),
+    card('4', '光明女神闪蝶（已评价 · 可追评）', { reviewCanWrite: false, reviewChip: '✓ 已评价', reviewAppend: true, reviewAppendId: 'p4' })
   ]
   const listData = { tabs: [{ name: '全部' }, { name: '待付款' }, { name: '待发货' }, { name: '待收货' }, { name: '已签收' }, { name: '售后/退款' }], curTab: 4, loading: false, orders }
-  const panels = [panel('订单列表 · 已签收（上 未评 / 中 审核中 / 下 已评价）', ['subpackages/business/orders/index.wxss'],
-    renderNodes(listTree.children, listData), 1300, 'div,span{box-sizing:border-box}')]
+  const panels = [panel('订单列表 · 已签收（未评 / 审核中 / 已评价 / 可追评）', ['subpackages/business/orders/index.wxss'],
+    renderNodes(listTree.children, listData), 1700, 'div,span{box-sizing:border-box}')]
 
   const odTree = parseWxml(readFileSync(resolve(MP, 'subpackages/business/order-detail/index.wxml'), 'utf8'))
   const odBase = {
@@ -396,9 +397,9 @@ function reviewPanels() {
       logistics: { carrier: '顺丰速运', trackingNumber: 'SF0213728671548' }, address: { name: '李月', phone: '181****8650' }, addressLine: '吉林省 辽源市' }
   }
   const footerOnly = 'div,span{box-sizing:border-box}.archive-folder{display:none}'
-  for (const [title, pending] of [['订单详情底栏 · 评完且有审核中', true], ['订单详情底栏 · 评完且均已展示 / 隐藏', false]]) {
+  for (const [title, pending, appendable] of [['订单详情底栏 · 评完且有审核中', true, false], ['订单详情底栏 · 评完且均已展示 / 隐藏', false, false], ['订单详情底栏 · 评完且可追评', false, true]]) {
     panels.push(panel(title, ['subpackages/business/order-detail/index.wxss'],
-      renderNodes(odTree.children, { ...odBase, reviewChipPending: pending }), 560, footerOnly))
+      renderNodes(odTree.children, { ...odBase, reviewChipPending: pending, reviewAppendable: appendable }), 560, footerOnly))
   }
 
   const cmDir = 'subpackages/content/comment'

@@ -161,7 +161,8 @@ Page(withAppModal({
     reviewPendingCount: 0,
     reviewProducts: [],
     /** 已评完时底栏标签：有审核中的显示「审核中」，否则「✓ 已评价」 */
-    reviewChipPending: false
+    reviewChipPending: false,
+    reviewAppendable: false
   },
 
   onLoad(options) {
@@ -640,7 +641,8 @@ Page(withAppModal({
         reviewCanAny: false,
         reviewPendingCount: 0,
         reviewProducts: [],
-        reviewChipPending: false
+        reviewChipPending: false,
+        reviewAppendable: false
       });
       // 凭礼笺领取的礼笺不进朋友圈（2026-10-11）
       if (this.data.giftClaimLink) wx.hideShareMenu({ menus: ['shareTimeline'] });
@@ -1137,7 +1139,9 @@ Page(withAppModal({
         reviewCanAny: !!result.canReviewAny,
         reviewPendingCount: result.pendingCount || 0,
         reviewProducts,
-        reviewChipPending: reviewProducts.some((p) => p && p.reviewStatus === 'pending')
+        reviewChipPending: reviewProducts.some((p) => p && p.reviewStatus === 'pending'),
+        // 2026-11-27 追加评价：评完后还有可追评的藏品 → 底栏多一个「追加评价」
+        reviewAppendable: reviewProducts.some((p) => p && p.canAppend)
       });
     } catch (e) {
       console.warn('loadReviewStatus', e);
@@ -1159,7 +1163,7 @@ Page(withAppModal({
     const products = this.data.reviewProducts || [];
     let productId = fromTap || '';
     if (!productId) {
-      const pending = products.find((p) => p.canReview);
+      const pending = products.find((p) => p.canReview) || products.find((p) => p.canAppend);
       productId = (pending && pending.productId) || (products[0] && products[0].productId) || '';
     }
     if (!productId && order.products && order.products[0]) {

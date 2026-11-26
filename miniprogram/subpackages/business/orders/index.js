@@ -273,6 +273,7 @@ Page(withAppModal({
     if (!ids.length) return;
     const seq = (this._reviewSeq = (this._reviewSeq || 0) + 1);
     const map = {};
+    const appendMap = {}; // 2026-11-27 可追评：orderId → 第一件可追评藏品 id
     for (let i = 0; i < ids.length; i += REVIEW_MAP_BATCH) {
       const orderIds = ids.slice(i, i + REVIEW_MAP_BATCH);
       try {
@@ -281,6 +282,7 @@ Page(withAppModal({
         orderIds.forEach((id) => {
           const hit = result.success && result.map && result.map[id];
           map[id] = hit ? hit.reviewState : 'unknown';
+          if (hit && hit.canAppend) appendMap[id] = hit.appendProductId || '';
         });
       } catch (e) {
         console.warn('orders loadReviewStates', e);
@@ -294,6 +296,8 @@ Page(withAppModal({
       const flags = reviewFlags(map[o._id]);
       patch[`orders[${idx}].reviewCanWrite`] = flags.reviewCanWrite;
       patch[`orders[${idx}].reviewChip`] = flags.reviewChip;
+      patch[`orders[${idx}].reviewAppend`] = !flags.reviewCanWrite && !!flags.reviewChip && o._id in appendMap;
+      patch[`orders[${idx}].reviewAppendId`] = appendMap[o._id] || '';
     });
     if (Object.keys(patch).length) this.setData(patch);
   },
@@ -585,7 +589,8 @@ Page(withAppModal({
     }
     const products = (item && item.products) || [];
     const first = products.find((p) => p && (p.id || p._id || p.productId)) || products[0];
-    const productId = first ? (first.id || first._id || first.productId || '') : '';
+    // 可追评：直接落到那一件（2026-11-27）
+    const productId = (item && item.reviewAppend && item.reviewAppendId) || (first ? (first.id || first._id || first.productId || '') : '');
     let url = `/subpackages/content/comment/index?targetType=product&orderId=${encodeURIComponent(id)}`;
     if (productId) url += `&targetId=${encodeURIComponent(productId)}`;
     wx.vibrateShort({ type: 'light' });

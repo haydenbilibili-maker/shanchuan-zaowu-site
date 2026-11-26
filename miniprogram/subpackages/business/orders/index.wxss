@@ -148,6 +148,8 @@ view, text, image, scroll-view { box-sizing: border-box; }
 /* 评完的状态标签（不占按钮）：已评价 secondary、审核中金色 */
 .review-chip { display: flex; align-items: center; padding: 10rpx 8rpx; font-size: var(--fs-22); color: #A09A90; letter-spacing: 1rpx; white-space: nowrap; }
 .review-chip.is-pending { color: var(--color-primary); }
+/* 可追评（2026-11-27）：评完后仍可追加一次 → 描边小签，比「✓ 已评价」更像一个可点的入口 */
+.review-chip.is-append { margin: 10rpx 0; padding: 0 18rpx; border-radius: var(--r-pill, 999rpx); color: var(--color-primary); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.45); }
 .total-box .val.muted { color: #A09A90; font-size: var(--fs-24); font-weight: 400; letter-spacing: 0.04em; }
 
 .end-mark { text-align: center; margin-top: 40rpx; display: flex; flex-direction: column; align-items: center; }

@@ -33,7 +33,11 @@ const F = {
   getFn: join(MP, 'cloudfunctions/getComments/index.js'),
   pageJs: join(MP, 'subpackages/content/comment/index.js'),
   pageWxml: join(MP, 'subpackages/content/comment/index.wxml'),
-  listWxml: join(MP, 'subpackages/feature/components/CommentList/index.wxml')
+  listWxml: join(MP, 'subpackages/feature/components/CommentList/index.wxml'),
+  ordersJs: join(MP, 'subpackages/business/orders/index.js'),
+  ordersWxml: join(MP, 'subpackages/business/orders/index.wxml'),
+  odJs: join(MP, 'subpackages/business/order-detail/index.js'),
+  odWxml: join(MP, 'subpackages/business/order-detail/index.wxml')
 }
 
 /** reviewView.js 是纯 CJS 模块：按当前（可能被注入的）源码求值 */
@@ -243,6 +247,25 @@ function runChecks() {
     /async submitAppend\(\) \{[\s\S]{0,900}action: 'append'/.test(pageJs) && /canAppend: !!selected\.canAppend && !mine\.append/.test(pageJs) &&
     /wx:if="\{\{item\.append && item\.append\.content\}\}"/.test(listWxml))
 
+  // R11-7 订单列表 / 详情的「可追评」（2026-11-27 产品负责人「订单列表也加上可追评标识」）
+  const ordersJs = read(F.ordersJs)
+  const ordersWxml = read(F.ordersWxml)
+  const odJs = read(F.odJs)
+  const odWxml = read(F.odWxml)
+  ok('R11-7 订单页可追评：orderReviewMap 只在评完 / 审核中的单上给 canAppend + 第一件可追评藏品；列表在「写下感受」不出现时把状态签换成「可追评」并直达那一件；详情底栏多「追加评价」；评价页默认先落可评价、其次可追评',
+    /const appendable = reviewState === 'done' \|\| reviewState === 'pending'\n\s*\? reviewable\.filter\(\(p\) => appendStateOf\(byProduct\[p\.productId\], nowMs\)\.canAppend\)/.test(submitFn) &&
+    /map\[order\._id\] = \{ reviewState, canAppend: appendable\.length > 0, appendProductId:/.test(submitFn) &&
+    /\.field\(\{ orderId: true, targetId: true, status: true, createdAt: true, updatedAt: true, append: true \}\)/.test(submitFn) &&
+    /patch\[`orders\[\$\{idx\}\]\.reviewAppend`\] = !flags\.reviewCanWrite && !!flags\.reviewChip && o\._id in appendMap/.test(ordersJs) &&
+    /item\.reviewAppend && item\.reviewAppendId/.test(ordersJs) &&
+    /\{\{item\.reviewAppend \? '可追评' : item\.reviewChip\}\}/.test(ordersWxml) &&
+    /reviewAppendable: reviewProducts\.some\(\(p\) => p && p\.canAppend\)/.test(odJs) &&
+    /wx:if="\{\{order\.status === 'received' && !isVoucherOrder && !reviewCanAny && reviewAppendable\}\}"\n\s*>追加评价</.test(odWxml) &&
+    /products\.find\(\(p\) => p\.canReview\) \|\| products\.find\(\(p\) => p\.canAppend\)/.test(odJs) &&
+    // 「追加评价」必须在「已评价 / 写下感受」的 if-elif 链之后（插在中间会让 elif 断链）
+    /'已评价'\}\}<\/text>\n\s*<\/view>\n\s*<view\n\s*class="btn-text comment-after"/.test(odWxml) &&
+    /products\.find\(\(p\) => p\.canReview\) \|\| products\.find\(\(p\) => p\.canAppend\)/.test(pageJs))
+
   ok('R5 内容管理里删掉的只是这一项：专题 / 文章 / 养护三个子 Tab 仍在',
     ['exhibition', 'article', 'care'].every((t) => contentTab.includes(`data-type="${t}"`)))
 
@@ -275,6 +298,13 @@ if (process.argv.includes('--selftest')) {
     { name: '用户端发布条不切追评', file: F.pageWxml, find: "bindtap=\"{{appendMode ? 'submitAppend' : 'submitComment'}}\"", replace: 'bindtap="submitComment"' },
     { name: '已追评仍显示追加入口', file: F.pageJs, find: 'canAppend: !!selected.canAppend && !mine.append', replace: 'canAppend: !!selected.canAppend' },
     { name: '藏品页不展示追评', file: F.listWxml, find: '<view class="comment-append" wx:if="{{item.append && item.append.content}}">', replace: '<view class="comment-append" wx:if="{{false}}">' },
+    { name: '未评完的单也标可追评（与写下感受打架）', file: F.ordersJs, find: '= !flags.reviewCanWrite && !!flags.reviewChip && o._id in appendMap', replace: '= o._id in appendMap' },
+    { name: '列表可追评不直达那一件', file: F.ordersJs, find: '(item && item.reviewAppend && item.reviewAppendId) || ', replace: '' },
+    { name: 'reviewMap 不再取 append（永远判可追评）', file: F.submitFn, find: 'updatedAt: true, append: true })', replace: 'updatedAt: true })' },
+    { name: '列表不显示可追评', file: F.ordersWxml, find: "{{item.reviewAppend ? '可追评' : item.reviewChip}}", replace: '{{item.reviewChip}}' },
+    { name: '追加评价插进 if-elif 链中间', file: F.odWxml, find: '      <view\n        class="btn-text comment-after"', replace: '      <view class="btn-text brass" wx:if="{{reviewAppendable}}">追加评价</view>\n      <view\n        class="btn-text comment-after"' },
+    { name: '详情底栏丢了追加评价', file: F.odWxml, find: '!reviewCanAny && reviewAppendable}}"', replace: 'false}}"' },
+    { name: '评价页默认不落可追评那一件', file: F.pageJs, find: 'const pending = products.find((p) => p.canReview) || products.find((p) => p.canAppend)', replace: 'const pending = products.find((p) => p.canReview)' },
     { name: '工作台不再预取评价未读（语音也没数可播）', file: F.cfg, find: "safe('commentNotice', () => this.loadCommentNoticeBadge())", replace: "safe('commentNoticeX', () => this.loadCommentNoticeBadge())" }
   ]
   let bad = 0

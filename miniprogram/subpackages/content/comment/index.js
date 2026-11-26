@@ -173,7 +173,8 @@ Page({
     const products = Array.isArray(result.products) ? result.products : []
     let selectedId = targetId
     if (!selectedId) {
-      const pending = products.find((p) => p.canReview)
+      // 先落可评价的，其次可追评的（订单列表「可追评」点进来）
+      const pending = products.find((p) => p.canReview) || products.find((p) => p.canAppend)
       selectedId = (pending && pending.productId) || (products[0] && products[0].productId) || ''
     }
 

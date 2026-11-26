@@ -234,7 +234,7 @@ async function buildOrderReviewMap(event, openid) {
       .get(),
     db.collection('comments')
       .where({ orderId: _.in(ids), userId: openid, targetType: 'product', status: _.neq('rejected') })
-      .field({ orderId: true, targetId: true, status: true, createdAt: true, updatedAt: true })
+      .field({ orderId: true, targetId: true, status: true, createdAt: true, updatedAt: true, append: true })
       .limit(1000)
       .get()
   ])
@@ -264,7 +264,13 @@ async function buildOrderReviewMap(event, openid) {
         : statuses.includes('pending')
           ? 'pending'
           : 'done'
-    map[order._id] = { reviewState }
+    // 2026-11-27 追加评价（产品负责人「订单列表也加上可追评标识」）：只在评完 / 审核中的单上标，
+    // 附第一件可追评藏品 id，列表点进去直接落到那一件
+    const nowMs = Date.now()
+    const appendable = reviewState === 'done' || reviewState === 'pending'
+      ? reviewable.filter((p) => appendStateOf(byProduct[p.productId], nowMs).canAppend)
+      : []
+    map[order._id] = { reviewState, canAppend: appendable.length > 0, appendProductId: appendable.length ? appendable[0].productId : '' }
   })
   return { success: true, map }
 }

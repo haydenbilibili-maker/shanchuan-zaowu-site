@@ -382,6 +382,14 @@
         catchtap="goToComment"
         wx:elif="{{order.status === 'received' && order.products && order.products.length > 0 && !isVoucherOrder}}"
       >{{reviewPendingCount > 1 ? '继续评价' : '写下感受'}}</view>
+      <!-- 追加评价（2026-11-27）：放在 wx:if / wx:elif 链之后，不能插在两者中间（否则 elif 断链，评完也出「写下感受」） -->
+      <view
+        class="btn-text brass"
+        hover-class="tap-press-soft"
+        hover-stay-time="80"
+        catchtap="goToComment"
+        wx:if="{{order.status === 'received' && !isVoucherOrder && !reviewCanAny && reviewAppendable}}"
+      >追加评价</view>
       <block wx:if="{{showRefundEntry}}">
         <view class="btn-text" hover-class="tap-press-soft" hover-stay-time="80" bindtap="requestRefund">{{refundEntryLabel}}</view>
         <view class="btn-text" hover-class="tap-press-soft" hover-stay-time="80" bindtap="goToSupport">联系专员</view>

@@ -121,12 +121,12 @@
                       data-item="{{item}}">
                   写下感受
                 </view>
-                <view class="review-chip {{item.reviewChip === '审核中' ? 'is-pending' : ''}}"
+                <view class="review-chip {{item.reviewAppend ? 'is-append' : item.reviewChip === '审核中' ? 'is-pending' : ''}}"
                       wx:elif="{{(item.status === 'received' || item.status === 'signed') && !item.isVoucherOrder && item.reviewChip}}"
                       hover-class="tap-press-soft" hover-stay-time="80"
                       catchtap="goToReview"
                       data-id="{{item._id}}"
-                      data-item="{{item}}">{{item.reviewChip}}</view>
+                      data-item="{{item}}">{{item.reviewAppend ? '可追评' : item.reviewChip}}</view>
                 <view class="btn-action gold" hover-class="btn-action-press" hover-stay-time="80" 
                       wx:if="{{item.status === 'received' || item.status === 'signed'}}" 
                       catchtap="handleOrderClick" 
