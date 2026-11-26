@@ -22,7 +22,7 @@ const WORKBENCH_TILE_ICONS = {
   super_admin: '/assets/icons/lock.png',
   manager: '/assets/icons/store.png',
   supplier: '/assets/icons/cart.png',
-  staff: '/assets/icons/checkin.png',
+  staff: '/assets/icons/staff-console.png',
   specimen_artisan: '/assets/icons/care.png',
   live_host: '/assets/icons/video-tab.png',
   investor: '/assets/icons/trend.png',
