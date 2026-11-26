@@ -35,3 +35,12 @@
 .sd-ph { color: rgba(160, 154, 144, 0.8); }
 .sd-send { margin-top: 14rpx; height: 76rpx; line-height: 76rpx; text-align: center; border-radius: var(--r-pill, 999rpx); background: var(--mat-brass); color: var(--mat-ink); font-size: var(--fs-24); font-weight: 600; }
 .sd-send.is-off { opacity: 0.6; }
+
+/* 客服工作台升级（2026-11-26）：搜索、快捷回复、已解决 */
+.sd-search { padding: 0 4rpx 14rpx; }
+.sd-search-input { height: 72rpx; padding: 0 20rpx; border-radius: var(--r-pill, 999rpx); background: rgba(0, 0, 0, 0.2); font-size: var(--fs-22); color: var(--mat-paper-tone); box-sizing: border-box; }
+.sd-phrases { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 14rpx; max-height: 200rpx; overflow-y: auto; }
+.sd-phrase { padding: 8rpx 18rpx; border-radius: var(--r-pill, 999rpx); font-size: var(--fs-20); color: var(--brass-200); box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.28); }
+.sd-actions { display: flex; align-items: center; justify-content: space-between; gap: 12rpx; margin-top: 10rpx; }
+.sd-resolve { font-size: var(--fs-20); color: var(--brass-200); padding: 8rpx 4rpx; }
+.sd-count { font-size: var(--fs-18); color: var(--mat-ink-soft); }

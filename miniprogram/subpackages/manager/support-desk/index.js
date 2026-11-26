@@ -11,6 +11,16 @@ Page({
   data: {
     ready: false,
     tab: 'pending',
+    query: '',
+    /** 快捷回复（2026-11-26 客服工作台升级）：点一下插入，可再改 */
+    phrases: [
+      '已经收到，我先帮您核对，稍后在这里回复。',
+      '这件是手工制作，颜色与纹理会有细微差异，属于正常。',
+      '已为您登记，处理好会在「山海有信」通知您。',
+      '麻烦补一张照片，看得更清楚些，我们好判断。',
+      '养护上避开阳光直射、保持干燥通风即可。',
+      '给您添麻烦了，这件我们按售后流程处理。'
+    ],
     loading: false,
     rows: [],
     openId: '',
@@ -45,13 +55,53 @@ Page({
         who: t.memberNickName || t.memberNo || '',
         orderNo: t.orderNo || '',
         status: t.status || 'pending',
-        statusText: t.status === 'replied' ? '已回复' : '待回复',
+        statusText: t.status === 'replied' ? '已回复' : (t.status === 'resolved' ? '已解决' : (t.status === 'archived' ? '已归档' : '待回复')),
+        whoKey: t._openid || '',
+        customer: t.memberNickName || t.memberNo || '',
         replyCount: Array.isArray(t.replies) ? t.replies.length : (t.replyContent ? 1 : 0),
         time: t.createTime ? String(t.createTime).slice(5, 16).replace('T', ' ') : ''
       }))
-      this.setData({ loading: false, rows })
+      // 同一顾客的历史留言数（按 openid 聚合，帮客服看「这位之前问过什么」）
+      const counts = {}
+      rows.forEach((r) => { if (r.whoKey) counts[r.whoKey] = (counts[r.whoKey] || 0) + 1 })
+      rows.forEach((r) => { r.customerCount = r.whoKey ? counts[r.whoKey] : 0 })
+      this._allRows = rows
+      this.setData({ loading: false, rows: this.filterRows(rows) })
     } catch (e) {
       this.setData({ loading: false, hint: '留言读取失败，稍后再试' })
+    }
+  },
+
+  filterRows(rows) {
+    const q = String(this.data.query || '').trim().toLowerCase()
+    if (!q) return rows || []
+    return (rows || []).filter((r) => `${r.topicLabel} ${r.message} ${r.orderNo} ${r.customer}`.toLowerCase().indexOf(q) !== -1)
+  },
+
+  onSearch(e) {
+    const query = String((e.detail && e.detail.value) || '')
+    this.setData({ query, rows: this.filterRows(this._allRows || this.data.rows) })
+  },
+
+  /** 快捷回复插入（保留已写内容，接在后面） */
+  pickPhrase(e) {
+    const text = String((e.currentTarget.dataset || {}).text || '')
+    if (!text) return
+    const cur = String(this.data.replyText || '').trim()
+    this.setData({ replyText: (cur ? `${cur}\n${text}` : text).slice(0, 500) })
+  },
+
+  /** 标记已解决（云函数 setSupportTicketStatus） */
+  async markResolved() {
+    const id = this.data.openId
+    if (!id) return
+    try {
+      const res = await wx.cloud.callFunction({ name: 'messageAdmin', data: { action: 'setSupportTicketStatus', ticketId: id, status: 'resolved' } })
+      const out = (res && res.result) || {}
+      this.setData({ hint: out.success ? '已标记为已解决' : (out.msg || '操作失败') })
+      if (out.success) { this.setData({ openId: '', detail: null }); this.load({ silent: true }) }
+    } catch (e) {
+      this.setData({ hint: '操作失败，稍后再试' })
     }
   },
 
@@ -114,7 +164,7 @@ Page({
       const res = await wx.cloud.callFunction({ name: 'messageAdmin', data: { action: 'replySupportTicket', ticketId: id, replyContent: content } })
       const out = (res && res.result) || {}
       if (!out.success) { this.setData({ sending: false, hint: out.msg || '发送失败' }); return }
-      this.setData({ sending: false, replyText: '', hint: '已回复，顾客会在「山海有信」收到详情' })
+      this.setData({ sending: false, replyText: '', hint: out.delivered === false ? '已回复，但通知未送达（已记录，可稍后重发）' : '已回复，顾客会在「山海有信」收到详情' })
       this.fetchDetail(id)
       this.load({ silent: true })
     } catch (e) {

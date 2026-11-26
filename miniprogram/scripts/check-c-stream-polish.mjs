@@ -584,6 +584,8 @@ function check(src) {
     ok(/support_ticket_replied:\$\{ticketId\}/.test(adminFn) && /queue: 'customer'/.test(adminFn) && /delivered/.test(adminFn), 'R9-2b 回复直接写顾客 user_messages（不再只靠模板派发）')
     ok(/history/.test(deskWxml) && /replySupportTicket/.test(deskJs) && /guardStaffPage/.test(deskJs), 'R9-3 客服工作台：门禁 + 历史回复 + 直接回复')
     ok(/support-desk\/index/.test(appJson), 'R9-4 客服工作台已注册页面')
+    ok(/data-tab="replied"/.test(deskWxml) && /onSearch/.test(deskJs) && /pickPhrase/.test(deskJs) && /markResolved/.test(deskJs) && /sd-phrases/.test(deskWxml),
+      'R9-5 客服工作台升级：已回复档 / 搜索 / 快捷回复 / 标记已解决')
   }
 
   // R8  // R8：留言附图（产品负责人 2026-10-01 点名，顾客端新增旁路）

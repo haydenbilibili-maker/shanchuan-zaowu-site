@@ -7,7 +7,11 @@
 
   <view class="sd-tabs">
     <view class="sd-tab {{tab === 'pending' ? 'on' : ''}}" data-tab="pending" bindtap="switchTab" hover-class="tap-press" hover-stay-time="80">待回复</view>
+    <view class="sd-tab {{tab === 'replied' ? 'on' : ''}}" data-tab="replied" bindtap="switchTab" hover-class="tap-press" hover-stay-time="80">已回复</view>
     <view class="sd-tab {{tab === 'all' ? 'on' : ''}}" data-tab="all" bindtap="switchTab" hover-class="tap-press" hover-stay-time="80">全部</view>
+  </view>
+  <view class="sd-search">
+    <input class="sd-search-input" value="{{query}}" bindinput="onSearch" placeholder="搜类型 / 内容 / 订单号 / 会员" placeholder-class="sd-ph" confirm-type="search" />
   </view>
 
   <view class="sd-hint" wx:if="{{hint}}">{{hint}}</view>
@@ -20,7 +24,7 @@
         <text class="sd-status {{item.status === 'replied' ? 'is-done' : ''}}">{{item.statusText}}{{item.replyCount ? ' · ' + item.replyCount + ' 次' : ''}}</text>
       </view>
       <text class="sd-msg">{{item.message || '（没有正文）'}}</text>
-      <text class="sd-meta">{{item.time}}{{item.orderNo ? ' · 订单 ' + item.orderNo : ''}}{{item.who ? ' · ' + item.who : ''}}</text>
+      <text class="sd-meta">{{item.time}}{{item.orderNo ? ' · 订单 ' + item.orderNo : ''}}{{item.customer ? ' · ' + item.customer : ''}}{{item.customerCount > 1 ? ' · 第 ' + item.customerCount + ' 次咨询' : ''}}</text>
     </view>
   </view>
 
@@ -44,7 +48,14 @@
     </view>
     <text class="sd-history-empty" wx:else>还没有回复过</text>
 
+    <view class="sd-phrases">
+      <view class="sd-phrase" wx:for="{{phrases}}" wx:key="*this" data-text="{{item}}" catchtap="pickPhrase" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</view>
+    </view>
     <textarea class="sd-input" value="{{replyText}}" bindinput="onReplyInput" maxlength="500" placeholder="写回复，发送后顾客会在「山海有信」收到详情" placeholder-class="sd-ph"></textarea>
+    <view class="sd-actions">
+      <view class="sd-resolve" catchtap="markResolved" hover-class="tap-press" hover-stay-time="80">标记已解决</view>
+      <text class="sd-count">{{replyText.length}}/500</text>
+    </view>
     <view class="sd-send {{sending ? 'is-off' : ''}}" bindtap="sendReply" hover-class="tap-press" hover-stay-time="80">{{sending ? '发送中…' : '发送回复'}}</view>
   </view>
 </view>
