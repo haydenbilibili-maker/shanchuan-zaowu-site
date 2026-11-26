@@ -135,7 +135,22 @@ page {
 .svc-grid .m-img { width: 44rpx; height: 44rpx; }
 .svc-cn { font-size: var(--fs-24); color: var(--color-text-body); white-space: nowrap; }
 /* 右上角标：信息性（进度 / 免费），发丝描边小签 —— 不用实心红（待办）也不用描边金胶囊（新点亮） */
-.svc-corner { position: absolute; top: 16rpx; right: 16rpx; padding: 0 10rpx; line-height: 30rpx; font-size: var(--fs-18); color: var(--brass-300); border: 1rpx solid rgba(196, 167, 108, 0.32); border-radius: 4rpx; letter-spacing: .06em; }
+.svc-corner { position: absolute; top: 12rpx; right: 12rpx; padding: 0 8rpx; line-height: 28rpx; font-size: var(--fs-16, 16rpx); color: var(--brass-300); border: 1rpx solid rgba(196, 167, 108, 0.32); border-radius: var(--r-thumb-sm, 4rpx); letter-spacing: .04em; background: rgba(26, 24, 20, 0.72); }
+/* 2026-11-27：四列时格窄，绝对定位的「9/200」会压住图标 → 进度改为标题下的小字（不遮挡） */
+.svc-corner.is-mono {
+  position: static;
+  display: block;
+  margin-top: 2rpx;
+  padding: 0;
+  line-height: 1.2;
+  border: none;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-16, 16rpx);
+  letter-spacing: .02em;
+  color: var(--brass-300);
+}
+.svc-grid.is-n4 .svc-corner:not(.is-mono) { top: 6rpx; right: 6rpx; padding: 0 6rpx; line-height: 24rpx; }
 .svc-corner.is-mono { font-family: var(--font-mono); letter-spacing: .02em; }
 .svc-badge { position: absolute; top: 20rpx; right: 24rpx; }
 
