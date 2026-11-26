@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "客服工作台",
+  "navigationBarBackgroundColor": "#1A1814",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#1A1814",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "light",
+  "onReachBottomDistance": 120,
+  "usingComponents": {}
+}

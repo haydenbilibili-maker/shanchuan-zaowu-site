@@ -2638,7 +2638,7 @@ Page(withAppModal({
       return;
     }
     if (key === 'support_desk') {
-      wx.navigateTo({ url: '/subpackages/manager/support-desk/index' });
+      wx.navigateTo({ url: '/subpackages/ai/support-desk/index' });
       return;
     }
     requestWorkspaceAccess(String(ds.kind || '').trim(), ds.workspace || '');

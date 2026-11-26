@@ -900,8 +900,31 @@ const SCENES = [
       directActions: [{ id: 'invoice', label: '开具发票', desc: '按订单申请电子发票', icon: '/assets/icons/refund.png' }, { id: 'framer_recruit', label: '标本师招募', desc: '想入驻的标本师从这里申请', icon: '/assets/icons/user.png' }],
       messageText: '', contactPhone: '', ticketImages: [], maxTicketImages: 3, ticketImgFailed: 0, ticketImgBusy: false, submitting: false,
       faqs: [{ q: '标本可以退换吗？', a: '未拆封且签收 7 日内可申请；定制藏品按确认方案制作，不接受退款。' }, { q: '多久可以发货？', a: '现货 48 小时内发出；定制按方案页交期。' }, { q: '门店可以自取吗？', a: '下单时选择门店自取，备妥后凭自取码到店领取。' }], expandedFaq: 0, showCommunity: false } },
+  // 2026-11-27 客服工作台对齐与升级：列表（待回复 · 超时）+ 详情弹层（对话 / 顾客 360 / 备注 / 回复）
+  ...(() => {
+    const DV = loadCjsModule(join(MP, 'subpackages/ai/support-desk/deskView.js'))
+    const now = Date.UTC(2026, 10, 27, 6, 0)
+    const raw = [
+      { _id: 't1', status: 'pending', topicLabel: '订单咨询', message: '下单三天了还没发货，想问一下大概什么时候能寄出？', orderNo: 'ORDMU8MRV6K137', memberNickName: '林间小满', _openid: 'u1', createTime: '2026-11-25T23:10:00.000Z', images: ['https://x/1.jpg'] },
+      { _id: 't2', status: 'pending', topicLabel: '标本养护', message: '玻璃罩里起了一点雾气，需要怎么处理？', memberNickName: '山海收藏家', _openid: 'u2', createTime: '2026-11-27T04:40:00.000Z' },
+      { _id: 't3', status: 'pending', topicLabel: '售后退款', message: '收到时底座有裂纹，已拍照。', orderNo: 'ORDMUATN6S4352', memberNickName: '林间小满', _openid: 'u1', createTime: '2026-11-27T05:20:00.000Z' }
+    ].map((t) => DV.decorateTicket(t, now))
+    const rows = DV.markRepeat(DV.sortRows(raw, 'pending'))
+    const t = { status: 'replied', topicLabel: '订单咨询', message: '下单三天了还没发货，想问一下大概什么时候能寄出？', createTime: '2026-11-25T23:10:00.000Z', images: [P[0]],
+      replies: [{ content: '已经收到，我先帮您核对，稍后在这里回复。', at: Date.UTC(2026, 10, 26, 1, 30) }], orderNo: 'ORDMU8MRV6K137', orderId: 'o1', contactPhone: '185 1911 0274' }
+    const th = DV.buildThread(t)
+    const d = DV.decorateTicket({ _id: 't1', ...t, memberNickName: '林间小满' }, now)
+    const base = { ready: true, tab: 'pending', query: '', pendingCount: 3, loading: false, loadingMore: false, hasMore: false, rows, hint: '', hintTone: 'info', phrases: ['已经收到，我先帮您核对，稍后在这里回复。', '麻烦补一张照片，看得更清楚些，我们好判断。', '养护上避开阳光直射、保持干燥通风即可。'] }
+    return [
+      { name: 'support-desk', h: 1700, wxml: 'subpackages/ai/support-desk/index', data: { ...base, openId: '', detail: null } },
+      { name: 'support-desk-sheet', h: 1700, wxml: 'subpackages/ai/support-desk/index', css: '.ui-pop-mask.ui-pop-mask { display: block !important; }', data: { ...base, openId: 't1', replyText: '', noteText: '', resolveArmed: false, sending: false,
+        notes: [{ key: 'n0', text: '已电话联系，顾客说周五前收到就行', time: '11-26 10:05' }],
+        customer: { orderCount: 6, commentCount: 2, ticketCount: 3, orders: [{ id: 'o1', title: '光明女神闪蝶 · 玻璃罩', amount: 128.6, status: '待发货' }] },
+        detail: { id: 't1', topicLabel: d.topicLabel, customer: '林间小满', status: d.status, statusText: d.statusText, tone: d.tone, waitedText: '', time: d.time, ago: DV.agoText(t.createTime, now), images: t.images, orderNo: t.orderNo, orderId: 'o1', productName: '光明女神闪蝶 · 玻璃罩', contactPhone: t.contactPhone, thread: th, history: th.filter((m) => m.side === 'staff'), replied: true } } }
+    ]
+  })(),
   // 2026-11-26 联系专员二改：选择咨询的订单（按商品认单 + 搜索 + 已选）
-  { name: 'support-orders', h: 1500, wxml: 'subpackages/extra/user/support/index', base: 'support', data: (() => {
+  { name: 'support-orders', h: 1500, wxml: 'subpackages/extra/user/support/index', base: 'support', css: '.ui-pop-mask.ui-pop-mask { display: block !important; }', data: (() => {
     const OP = loadCjsModule(join(MP, 'subpackages/extra/user/support/orderPick.js'))
     const d = (m, day) => Date.UTC(2026, m - 1, day, 4)
     const rows = OP.toRows([

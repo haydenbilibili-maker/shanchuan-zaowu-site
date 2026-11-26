@@ -98,6 +98,9 @@ const FILES = {
   supportHours: `${EXTRA}/user/support/serviceHours.js`,
   supportOrderPick: `${EXTRA}/user/support/orderPick.js`,
   sessionFn: 'miniprogram/cloudfunctions/getUserSession/index.js',
+  deskWxml: 'miniprogram/subpackages/ai/support-desk/index.wxml',
+  deskWxss: 'miniprogram/subpackages/ai/support-desk/index.wxss',
+  deskView: 'miniprogram/subpackages/ai/support-desk/deskView.js',
   feedbackJs: `${EXTRA}/user/feedback/index.js`,
   feedbackWxml: `${EXTRA}/user/feedback/index.wxml`,
   ticketImagesJs: `${EXTRA}/utils/ticketImages.js`,
@@ -576,8 +579,8 @@ function check(src) {
   {
     const submitFn = readRel('miniprogram/cloudfunctions/submitSupportTicket/index.js') + readRel('miniprogram/cloudfunctions/submitSupportTicket/staffNotify.js')
     const adminFn = readRel('miniprogram/cloudfunctions/messageAdmin/index.js')
-    const deskJs = readRel('miniprogram/subpackages/manager/support-desk/index.js')
-    const deskWxml = readRel('miniprogram/subpackages/manager/support-desk/index.wxml')
+    const deskJs = readRel('miniprogram/subpackages/ai/support-desk/index.js')
+    const deskWxml = src.deskWxml || readRel('miniprogram/subpackages/ai/support-desk/index.wxml')
     const appJson = readRel('miniprogram/app.json')
     ok(/notifyStaffNewTicket/.test(submitFn) && /staff_support_ticket/.test(submitFn), 'R9-1 顾客留言后给超管/店长发工作信息')
     ok(/replies/.test(adminFn) && /getSupportTicket/.test(adminFn) && /vars: \{ replyContent: detail/.test(adminFn), 'R9-2 回复写历史 + 给顾客发完整详情')
@@ -586,6 +589,40 @@ function check(src) {
     ok(/support-desk\/index/.test(appJson), 'R9-4 客服工作台已注册页面')
     ok(/data-tab="replied"/.test(deskWxml) && /onSearch/.test(deskJs) && /pickPhrase/.test(deskJs) && /markResolved/.test(deskJs) && /sd-phrases/.test(deskWxml),
       'R9-5 客服工作台升级：已回复档 / 搜索 / 快捷回复 / 标记已解决')
+    // R9-7（2026-11-27 产品负责人「客服工作台交互视觉弹窗动效质感对齐与升级，并完善缺失功能」）
+    const deskWxss = src.deskWxss || readRel('miniprogram/subpackages/ai/support-desk/index.wxss')
+    const deskJson = readRel('miniprogram/subpackages/ai/support-desk/index.json')
+    const stubJs = readRel('miniprogram/subpackages/manager/support-desk/index.js')
+    const dv = loadTicketView(src.deskView || readRel('miniprogram/subpackages/ai/support-desk/deskView.js'))
+    let dvOk = false
+    try {
+      const now = Date.UTC(2026, 10, 27, 6, 0)
+      const t = dv.decorateTicket({ _id: 'a', status: 'pending', createTime: '2026-11-26T05:12:00.000Z', message: 'x' }, now)
+      const th = dv.buildThread({ message: 'hi', createTime: '2026-11-26T05:12:00.000Z', replies: [{ content: 'ok', at: Date.UTC(2026, 10, 26, 6, 0) }] })
+      dvOk = t.time === '11-26 13:12' && t.overdue === true && /已等/.test(t.waitedText) &&
+        dv.decorateTicket({ _id: 'b', status: 'pending', createTime: '2026-11-27T05:00:00.000Z' }, now).overdue === false &&
+        JSON.stringify(dv.sortRows([{ created: 2 }, { created: 1 }], 'pending').map((r) => r.created)) === '[1,2]' &&
+        JSON.stringify(dv.sortRows([{ created: 1 }, { created: 2 }], 'all').map((r) => r.created)) === '[2,1]' &&
+        th.length === 2 && th[0].side === 'customer' && th[1].side === 'staff' && th[1].time === '11-26 14:00'
+    } catch (e) { dvOk = false }
+    ok(dvOk, 'R9-7a 客服工作台展示口径：北京时间（原早 8 小时）/ 待回复等得最久在前 / 超 12 小时标已等 / 对话按时间（顾客 → 专员）')
+    ok(/^<!--[\s\S]*?-->\s*<page-meta page-style="\{\{openId \? 'overflow: hidden;' : ''\}\}" \/>/.test(deskWxml) &&
+      /<view class="ui-pop-mask" wx:if="\{\{openId\}\}" bindtap="closeDetail" catchtouchmove="true">/.test(deskWxml) &&
+      /<view class="sd-sheet-head" catchtouchmove="noop">/.test(deskWxml) && /<view class="sd-sheet-foot" wx:if="\{\{detail\}\}" catchtouchmove="noop">/.test(deskWxml) &&
+      !/<scroll-view[^>]*catchtouchmove/.test(deskWxml),
+      'R9-7b 详情弹层滚动口径：page-meta 锁背后页面、遮罩 / 头 / 底 catchtouchmove、正文 scroll-view 不加')
+    ok(/async reopenTicket\(\)/.test(deskJs) && /pending: 'reopenedAt'/.test(adminFn) &&
+      /async loadMore\(\)/.test(deskJs) && /\.skip\(skip\)\.limit\(PAGE\)/.test(adminFn) && /hasMore:/.test(adminFn) &&
+      /stashDraft\(\)/.test(deskJs) && /resolveArmed/.test(deskJs) && /!this\.data\.detail\.replied && !this\.data\.resolveArmed/.test(deskJs) &&
+      /onPullDownRefresh\(\)/.test(deskJs) && /"enablePullDownRefresh": true/.test(deskJson) &&
+      /copyOrderNo\(\)/.test(deskJs) && /callCustomer\(\)/.test(deskJs),
+      'R9-7c 客服工作台补齐：重新打开 / 分页加载更多 / 回复草稿按条保留 / 没回复过直接解决要二次确认 / 下拉刷新 / 复制单号 · 拨打')
+    const solidGold = [...deskWxss.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/(^|\n)([^{}\n]+)\{[^}]*background: var\(--brass-400/g)].map((m) => m[2].trim())
+    ok(!/--mat-ink-soft/.test(deskWxss) && !/background: var\(--mat-brass\)/.test(deskWxss) &&
+      solidGold.includes('.sd-send') && solidGold.every((sel) => sel === '.sd-send' || sel === '.sd-rule'),
+      'R9-7d 暗底不用纸墨色、实心金只给弹层主动作（--brass-400 一处，不用纸上黄铜 --mat-brass）')
+    ok(/redirectTo\(\{ url,/.test(stubJs) && /subpackages\/ai\/support-desk\/index/.test(stubJs) && /Object\.keys\(options \|\| \{\}\)/.test(stubJs),
+      'R9-7e 旧路径 manager/support-desk 留跳转壳并原样带参数（已发出的消息深链不失效）')
   }
 
   // R8  // R8：留言附图（产品负责人 2026-10-01 点名，顾客端新增旁路）
@@ -824,6 +861,11 @@ function selftest() {
     ['选单不能按商品搜', (s) => ({ ...s, supportOrderPick: s.supportOrderPick.replace("search: products.map((p) => `${p.title || ''} ${p.spec || ''}`).concat(no).join(' ').toLowerCase()", 'search: no.toLowerCase()') }), /R9-4 选单面板按商品认单/],
     ['云端又从 items 取商品', (s) => ({ ...s, sessionFn: s.sessionFn.replace('const goods = (Array.isArray(o.products) && o.products.length ? o.products', 'const goods = (Array.isArray(o.items) && o.items.length ? o.items') }), /R9-5 云端 recentOrders/],
     ['已选订单又只摆长单号', (s) => ({ ...s, supportWxml: s.supportWxml.replace('<text class="hero-order-t">已选 · {{pickedOrderLabel || pickedOrderNo}}</text>', '<text class="hero-order-t">已选订单 · {{pickedOrderNo}}</text>') }), /R9-6 选单行有商品缩略图/],
+    ['客服工作台时间又按 UTC 截', (s) => ({ ...s, deskView: s.deskView.replace('const d = new Date(t + 8 * 3600 * 1000)', 'const d = new Date(t)') }), /R9-7a 客服工作台展示口径/],
+    ['待回复又是最新在前', (s) => ({ ...s, deskView: s.deskView.replace("tab === 'pending' ? a.created - b.created : b.created - a.created", 'b.created - a.created') }), /R9-7a 客服工作台展示口径/],
+    ['弹层不锁背后页面', (s) => ({ ...s, deskWxml: s.deskWxml.replace(`<page-meta page-style="{{openId ? 'overflow: hidden;' : ''}}" />`, '') }), /R9-7b 详情弹层滚动口径/],
+    ['弹层正文 scroll-view 挂 catchtouchmove', (s) => ({ ...s, deskWxml: s.deskWxml.replace('<scroll-view scroll-y class="sd-sheet-body">', '<scroll-view scroll-y class="sd-sheet-body" catchtouchmove="noop">') }), /R9-7b 详情弹层滚动口径/],
+    ['实心金又多一处', (s) => ({ ...s, deskWxss: s.deskWxss.replace('.sd-note-save { flex-shrink: 0;', '.sd-note-save { background: var(--brass-400); flex-shrink: 0;') }), /R9-7d 暗底不用纸墨色/],
     ['图片上传中按钮可点', (s) => ({ ...s, supportWxml: s.supportWxml.replace('disabled="{{submitting || ticketImgBusy}}"', 'disabled="{{submitting}}"') }), /R8-3 提交按钮在图片上传完之前仍可点/],
     ['反馈页上传中可提交', (s) => ({ ...s, feedbackJs: s.feedbackJs.replace('if (this.data.submitting || this.data.ticketImgBusy) return', 'if (this.data.submitting) return') }), /R8-3 图片没传完也能提交/],
     ['反馈页失败不能重试', (s) => ({ ...s, feedbackWxml: s.feedbackWxml.replace(' catchtap="retryTicketImage"', '') }), /R8-3 feedback 附图缺/],

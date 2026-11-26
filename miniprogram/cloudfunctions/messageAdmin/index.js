@@ -157,8 +157,11 @@ async function listSupportTickets(event) {
   // 2026-11-26：客服工作台需要「全部（含已回复）」与待处理两档
   const col = db.collection('support_tickets')
   const query = status === 'all' ? col : col.where({ status })
-  const res = await query.orderBy('createTime', 'desc').limit(50).get()
-  return { success: true, list: await attachMemberLabels(res.data || []) }
+  // 2026-11-27 客服工作台：分页（skip，旁路新增；不传时与原来一致取最新 50 条）
+  const PAGE = 50
+  const skip = Math.max(0, Math.min(Number(event.skip) || 0, 2000))
+  const res = await query.orderBy('createTime', 'desc').skip(skip).limit(PAGE).get()
+  return { success: true, list: await attachMemberLabels(res.data || []), hasMore: (res.data || []).length === PAGE }
 }
 
 /** 客服工作台：单条留言详情（含历史回复） */
@@ -328,7 +331,7 @@ async function remindOverdue(event) {
               title: '留言还没回复',
               content: `「${t.topicLabel || '顾客留言'}」已超过 ${hours} 小时未回复，记得处理`,
               relatedId: t._id,
-              actionUrl: `/subpackages/manager/support-desk/index?ticketId=${encodeURIComponent(t._id)}`,
+              actionUrl: `/subpackages/ai/support-desk/index?ticketId=${encodeURIComponent(t._id)}`,
               templateCode: 'staff_support_overdue',
               dedupeKey: `staff_support_overdue:${t._id}:${oid}:${now}`,
               read: false, createTime: db.serverDate(), _createTime: db.serverDate()
@@ -348,7 +351,8 @@ async function remindOverdue(event) {
 }
 
 /** ERP 工单页：标记已处理 / 归档（support_tickets 客户端 write:false） */
-const TICKET_STATUS_STAMP = { resolved: 'resolveTime', archived: 'archivedAt' }
+// 2026-11-27 客服工作台：已解决的可以「重新打开」回到待回复（pending → reopenedAt）
+const TICKET_STATUS_STAMP = { resolved: 'resolveTime', archived: 'archivedAt', pending: 'reopenedAt' }
 
 async function setSupportTicketStatus(event, operatorOpenid) {
   const ticketId = String((event && event.ticketId) || '').trim()

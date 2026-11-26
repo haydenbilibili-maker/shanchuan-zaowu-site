@@ -42,7 +42,7 @@ function buildMessage({ ticketId, topicLabel, content, productName, orderNo }) {
   return {
     title: '收到一条顾客留言',
     content: lines.join('\n'),
-    actionUrl: `/subpackages/manager/support-desk/index?ticketId=${encodeURIComponent(ticketId || '')}`,
+    actionUrl: `/subpackages/ai/support-desk/index?ticketId=${encodeURIComponent(ticketId || '')}`,
     relatedId: ticketId || ''
   }
 }

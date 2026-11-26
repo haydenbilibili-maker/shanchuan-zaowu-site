@@ -269,7 +269,8 @@
       "name": "ai",
       "pages": [
         "ai-center/index",
-        "ai-debate/index"
+        "ai-debate/index",
+        "support-desk/index"
       ]
     }
   ],
