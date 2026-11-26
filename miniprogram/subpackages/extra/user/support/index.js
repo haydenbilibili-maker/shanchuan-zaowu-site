@@ -31,9 +31,10 @@ const FALLBACK_CONFIG = {
     { id: 'custom', label: '标本定制', desc: '标本工坊与伴宠记忆', icon: '/assets/icons/gift.png' },
     { id: 'specimen_care', label: '标本养护', desc: '安放、清洁与异常咨询', icon: '/assets/icons/care.png' },
     { id: 'pet_memorial', label: '伴宠记忆', desc: '宠物藏品制作意向', icon: '/assets/icons/knowledge.png' },
+    { id: 'refund', label: '售后退款', desc: '退款进度与凭证', icon: '/assets/icons/discount.png' },
     { id: 'assets', label: '钱包与券', desc: '储值、代金券与积分', icon: '/assets/icons/wallet_gold.png' },
     { id: 'business', label: '商务合作', desc: '品牌、渠道与异业合作', icon: '/assets/icons/store.png' },
-    { id: 'refund', label: '售后退款', desc: '退款进度与凭证', icon: '/assets/icons/discount.png' },
+    { id: 'feedback', label: '反馈与建议', desc: '功能体验与内容建议', icon: '/assets/icons/message.png' },
     { id: 'invoice', label: '发票开具', desc: '电子发票与抬头', icon: '/assets/icons/coupon.png' },
     { id: 'other', label: '其他问题', desc: '品牌与合作等', icon: '/assets/icons/message.png' },
     { id: 'framer_recruit', label: '标本师招募', desc: '合作意向与分成咨询', icon: '/subpackages/feature/assets/icons/edit.png' }
@@ -270,7 +271,18 @@ Page({
       const HIDDEN_TOPIC_IDS = ['identify', 'product', 'wallet', 'voucher', 'points'];
       const DIRECT_ACTION_IDS = ['invoice', 'framer_recruit'];
       const directActions = topics.filter((t) => t && DIRECT_ACTION_IDS.includes(t.id));
-      const consultTopics = topics.filter((t) => t && !DIRECT_ACTION_IDS.includes(t.id) && !HIDDEN_TOPIC_IDS.includes(t.id));
+      const consultTopics = topics
+        .filter((t) => t && !DIRECT_ACTION_IDS.includes(t.id) && !HIDDEN_TOPIC_IDS.includes(t.id))
+        // 2026-11-26 产品负责人：反馈与建议 / 其他问题固定在最后两个，其余按业务顺序
+        .sort((a, b) => {
+          const order = ['order', 'booking', 'custom', 'specimen_care', 'pet_memorial', 'refund', 'assets', 'business'];
+          const ia = order.indexOf(a.id);
+          const ib = order.indexOf(b.id);
+          const tail = (id) => (id === 'feedback' ? 90 : id === 'other' ? 91 : 50);
+          const ra = ia >= 0 ? ia : tail(a.id);
+          const rb = ib >= 0 ? ib : tail(b.id);
+          return ra - rb;
+        });
 
       // 本地文案覆盖：标本师招募入口统一跳转招募页
       topics = topics.map((t) => {
