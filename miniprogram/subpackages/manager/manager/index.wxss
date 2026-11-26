@@ -4507,7 +4507,25 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
 }
 .comment-reply-stars { display: block; font-size: var(--fs-20); color: var(--brass-400, #C4A76C); }
 .comment-reply-excerpt { display: block; margin-top: 4rpx; font-size: var(--fs-22); line-height: 1.5; color: #B9B2A6; }
-.comment-reply-phrases { display: flex; flex-wrap: wrap; gap: 12rpx; padding: 0 var(--pop-pad-x, 40rpx) 20rpx; }
+.comment-reply-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  padding: 0 var(--pop-pad-x, 40rpx) 12rpx;
+}
+.comment-reply-group {
+  padding: 6rpx 16rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-20);
+  color: #A09A90;
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.18);
+}
+.comment-reply-group.on {
+  color: var(--mat-ink);
+  background: var(--mat-brass);
+  box-shadow: none;
+}
+.comment-reply-phrases { display: flex; flex-wrap: wrap; gap: 12rpx; padding: 0 var(--pop-pad-x, 40rpx) 20rpx; max-height: 260rpx; overflow-y: auto; }
 .comment-reply-phrase {
   padding: 8rpx 18rpx;
   border-radius: var(--r-pill, 999rpx);
