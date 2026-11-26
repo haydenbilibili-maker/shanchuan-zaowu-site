@@ -233,18 +233,6 @@ page {
   position: relative;
   transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
 }
-/* 工作信息：文字最长，单独占一行（2026-11-26 产品负责人：其它卡回到两列，只让这一张自适应整行） */
-.wb-tile.is-full {
-  width: 100%;
-  flex-direction: row;
-  align-items: center;
-  gap: 18rpx;
-  min-height: 120rpx;
-  padding: 20rpx 24rpx;
-}
-.wb-tile.is-full .wb-tile-top { width: auto; margin-bottom: 0; gap: 12rpx; }
-.wb-tile.is-full .wb-cn { font-size: var(--fs-28); white-space: nowrap; }
-.wb-tile.is-full .wb-en { margin-top: 2rpx; }
 .wb-tile-info {
   border-color: rgba(45, 90, 63, 0.55);
   background: linear-gradient(160deg, rgba(45, 90, 63, 0.14) 0%, var(--color-bg-card) 58%);
