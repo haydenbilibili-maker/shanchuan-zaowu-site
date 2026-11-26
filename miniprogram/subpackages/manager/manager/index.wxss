@@ -6606,7 +6606,13 @@ view, text, image, input, textarea, button { box-sizing: border-box; }
   border-radius: var(--r-thumb-sm, 4rpx);
   box-shadow: inset 0 0 0 2rpx rgba(212, 188, 133, 0.6);
 }
-.so-mark text { font-family: var(--font-brand); font-size: var(--fs-32); color: var(--mat-paper-tone); }
+.so-mark-img {
+  width: 44rpx;
+  height: 44rpx;
+  display: block;
+  /* 与工作台同类图标同一套黄铜滤镜（原始 SVG 是深墨色，暗底上会看不见） */
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
 .so-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
 .so-t { font-family: var(--font-brand); font-size: var(--fs-30); color: var(--mat-paper-tone); }
 .so-s { font-size: var(--fs-20); line-height: 1.45; color: var(--mat-ink-soft); }

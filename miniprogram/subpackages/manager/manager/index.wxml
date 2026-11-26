@@ -647,7 +647,7 @@
       aria-label="智能运营中心"
     >
       <view class="so-head">
-        <view class="so-mark" aria-hidden="true"><text>智</text></view>
+        <view class="so-mark" aria-hidden="true"><image class="so-mark-img" src="/subpackages/manager/assets/icons/smart-ops.png" mode="aspectFit" /></view>
         <view class="so-copy">
           <text class="so-t">智能运营中心</text>
           <text class="so-s">七位虚拟同事 · 经营问答、主动巡检与团队备忘</text>
