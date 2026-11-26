@@ -330,13 +330,34 @@ exports.main = async (event) => {
         .orderBy('createTime', 'desc')
         .limit(20)
         .get()
-      const orders = (res.data || []).map((o) => ({
-        id: o._id,
-        orderNo: o.orderNo || String(o._id || '').slice(-8),
-        title: (o.items && o.items[0] && (o.items[0].title || o.items[0].name)) || '订单',
-        amount: Number(o.totalPrice || o.payAmount || 0),
-        createTime: o.createTime || o.createdAt || null
-      }))
+      // 2026-11-26 联系专员·选择订单：按商品认单（原只取 o.items —— 订单的商品实际在 o.products，标题恒为「订单」）
+      const STATUS_TEXT = {
+        pending_pay: '待付款', paid: '待发货', paid_awaiting_address: '待填地址', fulfilling: '制作中',
+        ready_pickup: '待自提', shipped: '已发货', received: '已签收', refunding: '退款中', expired_refunding: '退款中',
+        refunded: '已退款', aftersales: '售后中', exchanged: '已换货', unverified: '待核验', void: '已作废'
+      }
+      const orders = (res.data || []).map((o) => {
+        const goods = (Array.isArray(o.products) && o.products.length ? o.products : (Array.isArray(o.items) ? o.items : []))
+          .filter((p) => p && typeof p === 'object')
+        const products = goods.slice(0, 3).map((p) => ({
+          title: String(p.title || p.name || '').trim(),
+          image: (Array.isArray(p.images) && p.images[0]) || p.image || p.cover || '',
+          spec: String(p.skuName || p.specName || p.spec || '').trim()
+        }))
+        const itemCount = goods.reduce((n, p) => n + (Number(p.quantity || p.count) || 1), 0)
+        return {
+          id: o._id,
+          orderNo: o.orderNo || String(o._id || '').slice(-8),
+          title: (products[0] && products[0].title) || '订单',
+          products,
+          kinds: goods.length,
+          itemCount,
+          status: o.status || '',
+          statusText: STATUS_TEXT[o.status] || '',
+          amount: Number(o.totalPrice || o.payAmount || 0),
+          createTime: o.createTime || o.createdAt || null
+        }
+      })
       return { success: true, orders }
     } catch (e) {
       return { success: false, msg: (e && e.message) || '读取订单失败', orders: [] }

@@ -900,6 +900,19 @@ const SCENES = [
       directActions: [{ id: 'invoice', label: '开具发票', desc: '按订单申请电子发票', icon: '/assets/icons/refund.png' }, { id: 'framer_recruit', label: '标本师招募', desc: '想入驻的标本师从这里申请', icon: '/assets/icons/user.png' }],
       messageText: '', contactPhone: '', ticketImages: [], maxTicketImages: 3, ticketImgFailed: 0, ticketImgBusy: false, submitting: false,
       faqs: [{ q: '标本可以退换吗？', a: '未拆封且签收 7 日内可申请；定制藏品按确认方案制作，不接受退款。' }, { q: '多久可以发货？', a: '现货 48 小时内发出；定制按方案页交期。' }, { q: '门店可以自取吗？', a: '下单时选择门店自取，备妥后凭自取码到店领取。' }], expandedFaq: 0, showCommunity: false } },
+  // 2026-11-26 联系专员二改：选择咨询的订单（按商品认单 + 搜索 + 已选）
+  { name: 'support-orders', h: 1500, wxml: 'subpackages/extra/user/support/index', base: 'support', data: (() => {
+    const OP = loadCjsModule(join(MP, 'subpackages/extra/user/support/orderPick.js'))
+    const d = (m, day) => Date.UTC(2026, m - 1, day, 4)
+    const rows = OP.toRows([
+      { id: 'o1', orderNo: 'ORDMUATN6S4352', products: [{ title: '光明女神闪蝶 · 玻璃罩', image: P[0], spec: '小号 · 胡桃木底座' }, { title: '蓝闪蝶' }], kinds: 2, itemCount: 2, statusText: '已签收', amount: 128.6, createTime: d(9, 21) },
+      { id: 'o2', orderNo: 'ORDMU8MRV6K137', products: [{ title: '创意贝壳标本框', image: P[2] }], kinds: 1, itemCount: 1, statusText: '已发货', amount: 345, createTime: d(9, 19) },
+      { id: 'o3', orderNo: 'ORDMU6UY6IN952', products: [{ title: '蝶翅画 · 秋林晚照', image: P[4], spec: 'A4' }], kinds: 1, itemCount: 1, statusText: '制作中', amount: 45.3, createTime: d(9, 18) },
+      { id: 'o4', orderNo: 'EX1791808012573', products: [{ title: '新人礼券', image: '' }], kinds: 1, itemCount: 1, statusText: '已签收', amount: 0, createTime: d(10, 12) },
+      { id: 'o5', orderNo: 'ORDMU5TY5LH174', products: [{ title: '玫瑰俏眼蝶闹钟', image: P[1] }], kinds: 1, itemCount: 3, statusText: '待发货', amount: 59.3, createTime: d(9, 17) }
+    ], {})
+    return { orderPickerOpen: true, orderPickerLoading: false, orderOptions: rows, orderShown: rows, orderQuery: '', pickedOrderNo: 'ORDMU8MRV6K137' }
+  })() },
   // 2026-10-18 搜索「检索台」（空闲 / 结果）
   { name: 'search', h: 1500, wxml: 'subpackages/feature/search/index', data: { headerHeight: 64, keyword: '', inputFocused: false, isSearching: false, showAiIdentify: true, scopeCategoryName: '', showSpecimenArchive: true,
       hotKeys: ['闪蝶', '鹦鹉螺', '紫水晶', '蝴蝶标本框', '押花', '甲虫'], loadingHotKeys: false, historyList: [{ keyword: '光明女神闪蝶' }, { keyword: 'Morpho' }, { keyword: '玻璃罩' }],

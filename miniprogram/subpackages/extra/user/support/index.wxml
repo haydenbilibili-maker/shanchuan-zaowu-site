@@ -3,21 +3,17 @@
      联系方式发丝线行，实心金只给「开始对话」（微信专员 = 主路径）；留言写在浅纸便笺上，提交为金线环；FAQ / 到店为发丝线行。数据与交互不变。 -->
 <view class="page-support">
 
-  <view class="sticky-header" style="padding-top: {{statusBarHeight}}px; padding-right: {{navPaddingRight}}px;">
-    <view class="nav-row">
-      <view class="nav-brand">
-        <text class="nav-sub">SUPPORT DESK · 专员服务台</text>
-        <text class="nav-title">联系专员</text>
-      </view>
-    </view>
+  <!-- 2026-11-26 产品负责人「与订单认领交互统一，头部向订单认领靠齐」：系统导航栏已有标题，
+       页内不再叠一层固定页头；改成与订单认领同构的品牌头（短金线 + 眉标 + 宋体主标 + 一句说明），整页自然滚动 -->
+  <view class="sp-head">
+    <view class="sp-rule"></view>
+    <text class="sp-en">SUPPORT DESK</text>
+    <text class="sp-cn">联系专员</text>
+    <text class="sp-desc">订单、售后、定制与养护问题，微信专员在 {{config.hours || '服务时间'}} 在线回复；不在线时可先留言。</text>
   </view>
 
   <!-- 会话上下文卡：订单/藏品进线时固定展示，便于用户与专员对齐 -->
-  <view
-    class="context-strip"
-    wx:if="{{contextCard.visible}}"
-    style="top: {{headerHeight}}px;"
-  >
+  <view class="context-strip" wx:if="{{contextCard.visible}}">
     <view
       class="context-card {{contextCard.tapPath ? 'is-tappable' : ''}}"
       hover-class="{{contextCard.tapPath ? 'context-card-press' : ''}}"
@@ -45,7 +41,7 @@
     </view>
   </view>
 
-  <scroll-view scroll-y class="main-scroll" style="top: {{scrollTop}}px;" scroll-into-view="{{scrollInto}}" scroll-with-animation="{{true}}">
+  <view class="main-flow">
     <view class="skeleton-wrap" wx:if="{{loading}}">
       <view class="sk-card sk-shine"></view>
       <view class="sk-card sk-shine short"></view>
@@ -82,7 +78,7 @@
         <!-- 订单类咨询：让顾客直接指定哪一单（2026-11-26），专员在会话标签与卡片里就能看到 -->
         <view class="hero-order" wx:if="{{activeTopic === 'order' || activeTopic === 'refund' || activeTopic === 'invoice'}}">
           <block wx:if="{{pickedOrderNo}}">
-            <text class="hero-order-t">已选订单 · {{pickedOrderNo}}</text>
+            <text class="hero-order-t">已选 · {{pickedOrderLabel || pickedOrderNo}}</text>
             <text class="hero-order-a" bindtap="openOrderPicker" hover-class="tap-press-soft" hover-stay-time="80">换一单</text>
             <text class="hero-order-x" bindtap="clearPickedOrder" hover-class="tap-press-soft" hover-stay-time="80">✕</text>
           </block>
@@ -103,7 +99,8 @@
           <text class="service-label">响应说明</text>
           <text class="service-val muted">{{config.responseHint}}</text>
         </view>
-        <view class="context-banner" wx:if="{{contextSummary && !contextCard.visible}}">
+        <!-- 只有订单 / 藏品上下文时才出（单纯「咨询类型：X」与首屏类型行重复，不再出） -->
+        <view class="context-banner" wx:if="{{contextSummary && hasConsultContext && !contextCard.visible}}">
           <text class="context-text">{{contextSummary}}</text>
         </view>
         <view class="context-banner soft" wx:if="{{hasConsultContext && !contextCard.visible}}">
@@ -136,7 +133,7 @@
         <view class="topic-go">
           <view class="topic-go-copy">
             <text class="topic-go-k">已选</text>
-            <text class="topic-go-t">{{activeTopicLabel}}{{pickedOrderNo ? ' · ' + pickedOrderNo : ''}}</text>
+            <text class="topic-go-t">{{activeTopicLabel}}{{pickedOrderNo ? ' · ' + (pickedOrderLabel || pickedOrderNo) : ''}}</text>
           </view>
           <button
             class="topic-go-btn"
@@ -299,7 +296,7 @@
 
       <view class="footer-pad"></view>
     </block>
-  </scroll-view>
+  </view>
 
   <!-- 社群弹窗 -->
   <view class="ui-pop-mask is-center modal-mask {{showCommunity ? 'active' : ''}}" bindtap="closeCommunity" wx:if="{{showCommunity}}" catchtouchmove="true">
@@ -312,19 +309,26 @@
     </view>
   </view>
 
-  <!-- 选择咨询订单（2026-11-26）：订单 / 退款 / 发票类咨询指定具体一单 -->
+  <!-- 选择咨询订单（2026-11-26；同日二改：按商品认单 —— 缩略图 + 商品名 + 规格 + 状态 · 金额 · 日期，可按商品名 / 单号搜） -->
   <view class="ui-pop-mask" wx:if="{{orderPickerOpen}}" catchtap="closeOrderPicker" catchtouchmove="true">
-    <view class="ui-pop-sheet modal-panel" catchtap="true">
-      <view class="modal-head">
-        <text>选择咨询的订单</text>
-        <view class="close-btn" hover-class="tap-press" hover-stay-time="80" catchtap="closeOrderPicker">✕</view>
+    <view class="ui-pop-sheet op-sheet" catchtap="true">
+      <view class="op-head">
+        <view class="op-head-t">
+          <text class="op-kicker">ORDERS</text>
+          <text class="op-title-main">选择要咨询的订单</text>
+        </view>
+        <view class="op-close" hover-class="tap-press" hover-stay-time="80" catchtap="closeOrderPicker">✕</view>
+      </view>
+      <view class="op-search" wx:if="{{orderOptions.length > 4}}">
+        <input class="op-search-input" placeholder="搜商品名、规格或单号" placeholder-class="op-ph" value="{{orderQuery}}" bindinput="onOrderSearch" confirm-type="search" />
       </view>
       <scroll-view scroll-y class="order-picker-body">
         <view class="order-picker-tip" wx:if="{{orderPickerLoading}}">正在读取订单…</view>
         <view class="order-picker-tip" wx:elif="{{!orderOptions.length}}">还没有可选的订单，可直接开始对话说明情况。</view>
+        <view class="order-picker-tip" wx:elif="{{!orderShown.length}}">没有找到「{{orderQuery}}」相关的订单</view>
         <view
-          class="order-pick-row"
-          wx:for="{{orderOptions}}"
+          class="order-pick-row {{pickedOrderNo === item.no ? 'is-picked' : ''}}"
+          wx:for="{{orderShown}}"
           wx:key="id"
           data-id="{{item.id}}"
           data-no="{{item.no}}"
@@ -333,11 +337,20 @@
           hover-class="tap-press-soft"
           hover-stay-time="80"
         >
-          <view class="op-main">
-            <text class="op-title">{{item.title}}</text>
-            <text class="op-sub">单号 {{item.no}} · ¥{{item.amount}} · {{item.time}}</text>
+          <view class="op-thumb">
+            <image class="op-thumb-img" wx:if="{{item.thumb}}" src="{{item.thumb}}" mode="aspectFill" binderror="onIconError" />
+            <image class="op-thumb-ico" wx:else src="/assets/icons/list.png" mode="aspectFit" binderror="onIconError" aria-hidden="true" />
           </view>
-          <text class="op-go">›</text>
+          <view class="op-main">
+            <view class="op-line1">
+              <text class="op-title">{{item.title}}</text>
+              <text class="op-more" wx:if="{{item.more}}">{{item.more}}</text>
+            </view>
+            <text class="op-spec" wx:if="{{item.spec}}">{{item.spec}}</text>
+            <text class="op-sub"><text class="op-status" wx:if="{{item.status}}">{{item.status}} · </text>¥{{item.amount}}{{item.time ? ' · ' + item.time : ''}} · 尾号 {{item.noTail}}</text>
+          </view>
+          <text class="op-check" wx:if="{{pickedOrderNo === item.no}}">已选</text>
+          <text class="op-go" wx:else>›</text>
         </view>
       </scroll-view>
     </view>

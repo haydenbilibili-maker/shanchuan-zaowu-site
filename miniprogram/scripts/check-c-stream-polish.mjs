@@ -94,6 +94,10 @@ const FILES = {
   msgAdminFn: 'miniprogram/cloudfunctions/messageAdmin/index.js',
   supportJs: `${EXTRA}/user/support/index.js`,
   supportWxml: `${EXTRA}/user/support/index.wxml`,
+  supportWxss: `${EXTRA}/user/support/index.wxss`,
+  supportHours: `${EXTRA}/user/support/serviceHours.js`,
+  supportOrderPick: `${EXTRA}/user/support/orderPick.js`,
+  sessionFn: 'miniprogram/cloudfunctions/getUserSession/index.js',
   feedbackJs: `${EXTRA}/user/feedback/index.js`,
   feedbackWxml: `${EXTRA}/user/feedback/index.wxml`,
   ticketImagesJs: `${EXTRA}/utils/ticketImages.js`,
@@ -677,6 +681,32 @@ function check(src) {
     }
   }
 
+  // R9（2026-11-26 产品负责人：联系专员与订单认领交互统一、头部向订单认领靠齐；订单选择按商品认；细节继续）
+  ok(!/class="sticky-header"/.test(src.supportWxml) && !/<scroll-view scroll-y class="main-scroll"/.test(src.supportWxml) &&
+    /<view class="sp-head">\s*<view class="sp-rule"><\/view>\s*<text class="sp-en">SUPPORT DESK<\/text>\s*<text class="sp-cn">联系专员<\/text>\s*<text class="sp-desc">/.test(src.supportWxml) &&
+    /\.sp-cn \{[^}]*font-size: var\(--fs-48\)/.test(src.supportWxss || '') && /\.sp-rule \{[^}]*width: 48rpx/.test(src.supportWxss || ''),
+    'R9-1 联系专员页头须与订单认领同构（短金线 + 眉标 + 宋体主标 48 + 说明），不再在系统导航栏下叠固定页头 / 偏移滚动区')
+  ok(/wx:if="\{\{contextSummary && hasConsultContext && !contextCard\.visible\}\}"/.test(src.supportWxml),
+    'R9-2 只有「咨询类型」时不再出重复的上下文横幅（首屏已有类型行）')
+  const hours = loadTicketView(src.supportHours || '')
+  const at = (hh, mm) => Date.UTC(2026, 10, 26, hh - 8, mm)
+  ok(!!hours && JSON.stringify(hours.parseHours('上午10点至下午5点')) === '{"start":600,"end":1020}' &&
+    JSON.stringify(hours.parseHours('每日 10:00 – 22:00')) === '{"start":600,"end":1320}' &&
+    hours.parseHours('全天') === null && hours.parseHours('9:00-12:00 14:00-18:00') === null &&
+    hours.serviceStatus('10:00-22:00', at(21, 59)).open === true && hours.serviceStatus('10:00-22:00', at(22, 0)).open === false,
+    'R9-3 服务时间判断：两种写法认得出、认不出的不猜（null）、按北京时间判在线')
+  const op = loadTicketView(src.supportOrderPick || '')
+  let rows = []
+  try {
+    rows = op.toRows([{ id: 'a', orderNo: 'ORDMUATN6S4352', products: [{ title: '光明女神闪蝶', image: 'cloud://x', spec: '小号' }, { title: '蓝闪蝶' }], kinds: 2, itemCount: 2, statusText: '已签收', amount: 128.6, createTime: Date.UTC(2026, 8, 21, 4) }], { 'cloud://x': 'https://t/x' })
+  } catch (e) { rows = [] }
+  ok(rows.length === 1 && rows[0].title === '光明女神闪蝶' && rows[0].more === ' 等 2 件' && rows[0].thumb === 'https://t/x' && rows[0].noTail === '6S4352' &&
+    op.filterRows(rows, '蓝闪').length === 1 && op.filterRows(rows, '4352').length === 1 && op.filterRows(rows, '鹦鹉螺').length === 0,
+    'R9-4 选单面板按商品认单：首件商品名 + 「等 N 件」+ 缩略图 + 尾号；可按商品名 / 单号搜')
+  ok(/const goods = \(Array\.isArray\(o\.products\) && o\.products\.length \? o\.products/.test(src.sessionFn || '') && /statusText: STATUS_TEXT\[o\.status\]/.test(src.sessionFn || ''),
+    'R9-5 云端 recentOrders 须从 o.products 取商品（原取 o.items 恒为「订单」）并给出状态文字')
+  ok(/class="op-thumb"/.test(src.supportWxml) && /bindinput="onOrderSearch"/.test(src.supportWxml) && /pickedOrderLabel/.test(src.supportWxml) && !/已选订单 · \{\{pickedOrderNo\}\}/.test(src.supportWxml),
+    'R9-6 选单行有商品缩略图、可搜索；已选订单显示商品名 + 尾号，不再只摆长单号')
   return fails
 }
 
@@ -770,6 +800,14 @@ function selftest() {
     ['服务端放行路径穿越', (s) => ({ ...s, ticketFn: s.ticketFn.replace(" || id.indexOf('..') !== -1", '') }), /R8-1 服务端放行了非法 images（路径穿越）/],
     ['不传 images 也写字段', (s) => ({ ...s, ticketFn: s.ticketFn.replace('...(hasImages ? { images } : {}),', 'images: images || [],') }), /R8-2 不传 images 时也写了/],
     ['联系专员不带 images', (s) => ({ ...s, supportJs: s.supportJs.replace('contactPhone: phone,\n          ...(imageIDs.length ? { images: imageIDs } : {})', 'contactPhone: phone') }), /R7-5 submitSupportTicket 入参被改/],
+    ['联系专员又叠回固定页头', (s) => ({ ...s, supportWxml: s.supportWxml.replace('<view class="sp-head">', '<view class="sticky-header"></view>\n  <view class="sp-head">') }), /R9-1 联系专员页头须与订单认领同构/],
+    ['只有类型也出上下文横幅', (s) => ({ ...s, supportWxml: s.supportWxml.replace('wx:if="{{contextSummary && hasConsultContext && !contextCard.visible}}"', 'wx:if="{{contextSummary && !contextCard.visible}}"') }), /R9-2 只有「咨询类型」时/],
+    ['认不出的服务时间也硬判', (s) => ({ ...s, supportHours: s.supportHours.replace('  if (hits.length !== 2) return null', '  if (hits.length < 2) return null') }), /R9-3 服务时间判断/],
+    ['服务时间按手机本地时区判', (s) => ({ ...s, supportHours: s.supportHours.replace('new Date((Number(nowMs) || Date.now()) + 8 * 3600 * 1000)', 'new Date((Number(nowMs) || Date.now()))') }), /R9-3 服务时间判断/],
+    ['选单行又只有单号', (s) => ({ ...s, supportOrderPick: s.supportOrderPick.replace("const name = String(first.title || o.title || '').trim() || '订单'", "const name = '订单'") }), /R9-4 选单面板按商品认单/],
+    ['选单不能按商品搜', (s) => ({ ...s, supportOrderPick: s.supportOrderPick.replace("search: products.map((p) => `${p.title || ''} ${p.spec || ''}`).concat(no).join(' ').toLowerCase()", 'search: no.toLowerCase()') }), /R9-4 选单面板按商品认单/],
+    ['云端又从 items 取商品', (s) => ({ ...s, sessionFn: s.sessionFn.replace('const goods = (Array.isArray(o.products) && o.products.length ? o.products', 'const goods = (Array.isArray(o.items) && o.items.length ? o.items') }), /R9-5 云端 recentOrders/],
+    ['已选订单又只摆长单号', (s) => ({ ...s, supportWxml: s.supportWxml.replace('<text class="hero-order-t">已选 · {{pickedOrderLabel || pickedOrderNo}}</text>', '<text class="hero-order-t">已选订单 · {{pickedOrderNo}}</text>') }), /R9-6 选单行有商品缩略图/],
     ['图片上传中按钮可点', (s) => ({ ...s, supportWxml: s.supportWxml.replace('disabled="{{submitting || ticketImgBusy}}"', 'disabled="{{submitting}}"') }), /R8-3 提交按钮在图片上传完之前仍可点/],
     ['反馈页上传中可提交', (s) => ({ ...s, feedbackJs: s.feedbackJs.replace('if (this.data.submitting || this.data.ticketImgBusy) return', 'if (this.data.submitting) return') }), /R8-3 图片没传完也能提交/],
     ['反馈页失败不能重试', (s) => ({ ...s, feedbackWxml: s.feedbackWxml.replace(' catchtap="retryTicketImage"', '') }), /R8-3 feedback 附图缺/],

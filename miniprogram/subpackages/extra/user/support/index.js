@@ -13,9 +13,8 @@ const { getPageNavInsets } = require('../../utils/pageNav');
 const { getFirstImage, batchTempFileURLs } = require('../../../../utils/util');
 const { MAX_TICKET_IMAGES, ticketImageState, ticketImageMethods } = require('../../utils/ticketImages');
 const { serviceStatus } = require('./serviceHours');
+const orderPick = require('./orderPick');
 
-/** 含主行 + 发送卡片提示行；与 .context-strip 实际高度对齐 */
-const CONTEXT_STRIP_RPX = 220;
 
 const FALLBACK_CONFIG = {
   phone: '19917242871',
@@ -106,13 +105,16 @@ Page({
     activeTopicLabel: '其他问题',
     /** 现在在不在服务时间：{ open, label }；服务时间认不出时为 null（不显示，不猜） */
     serviceNow: null,
-    /** scroll-view 跳转锚点（换类型 / 去留言） */
-    scrollInto: '',
     /** 订单类咨询：让顾客挑具体订单（2026-11-26 产品负责人：类型要真的传到专员那里） */
     orderPickerOpen: false,
     orderPickerLoading: false,
     orderOptions: [],
+    /** 选单面板：搜索词与过滤后的行（按商品名 / 规格 / 单号） */
+    orderQuery: '',
+    orderShown: [],
     pickedOrderNo: '',
+    /** 已选订单的人话：首件商品名（多件带「等 N 件」）+ 单号尾号 —— 不再只摆一长串单号 */
+    pickedOrderLabel: '',
     contextSummary: '',
 
     sessionFrom: '',
@@ -132,8 +134,6 @@ Page({
       tapPath: '',
       actionLabel: '查看'
     },
-    scrollTop: 88,
-    contextStripHeight: 0,
 
     orderId: '',
     orderNo: '',
@@ -217,7 +217,6 @@ Page({
         statusBarHeight: nav.statusBarHeight,
         navPaddingRight: nav.navPaddingRight,
         headerHeight,
-        scrollTop: headerHeight,
         ...base
       });
     } catch (e) {
@@ -225,12 +224,10 @@ Page({
         statusBarHeight: 0,
         navPaddingRight: 96,
         headerHeight: 72,
-        scrollTop: 72,
         ...base
       });
     }
 
-    this.measureHeader();
     this.refreshContactContext();
     this.loadConfig();
     this.enrichConsultContext();
@@ -367,39 +364,6 @@ Page({
     }
 
     this.setData(patch);
-    this.updateScrollOffset(contextCard.visible);
-  },
-
-  /** 实测页头高度（2026-11-26：固定页头用 statusBar+72 估算，机型不同会多出一截空白） */
-  measureHeader() {
-    try {
-      const q = wx.createSelectorQuery().in(this);
-      q.select('.sticky-header').boundingClientRect();
-      q.exec((res) => {
-        const h = res && res[0] && Math.round(res[0].height);
-        if (h > 0 && Math.abs(h - (this.data.headerHeight || 0)) > 1) {
-          this.setData({ headerHeight: h, scrollTop: h + (this.data.contextStripHeight || 0) });
-        }
-      });
-    } catch (e) { /* 量不到就沿用估算 */ }
-  },
-
-  updateScrollOffset(hasStrip) {
-    const headerHeight = this.data.headerHeight || 72;
-    let stripPx = 0;
-    if (hasStrip) {
-      try {
-        const win = wx.getWindowInfo ? wx.getWindowInfo() : wx.getSystemInfoSync();
-        const w = Number(win.windowWidth) || 375;
-        stripPx = Math.round((CONTEXT_STRIP_RPX * w) / 750);
-      } catch (e) {
-        stripPx = 60;
-      }
-    }
-    this.setData({
-      contextStripHeight: stripPx,
-      scrollTop: headerHeight + stripPx
-    });
   },
 
   async resolveImageUrl(src) {
@@ -527,7 +491,8 @@ Page({
   scrollToSection(e) {
     const id = String((e && e.currentTarget && e.currentTarget.dataset.to) || '');
     if (!id) return;
-    this.setData({ scrollInto: '' }, () => this.setData({ scrollInto: id }));
+    // 2026-11-26 页面改为整页滚动（页头与订单认领同构），跳转走 pageScrollTo
+    wx.pageScrollTo({ selector: `#${id}`, offsetTop: -12, duration: 280 });
   },
 
   selectTopic(e) {
@@ -553,21 +518,24 @@ Page({
 
   /** 打开「选择咨询的具体订单」面板（最近 20 单；由云函数只读返回，客户端不直读 orders） */
   async openOrderPicker() {
-    this.setData({ orderPickerOpen: true, orderPickerLoading: true, orderOptions: [] });
+    this.setData({ orderPickerOpen: true, orderPickerLoading: true, orderOptions: [], orderShown: [], orderQuery: '' });
     try {
       const res = await wx.cloud.callFunction({ name: 'getUserSession', data: { action: 'recentOrders' } });
       const out = (res && res.result) || {};
-      const rows = (out.orders || []).map((o) => ({
-        id: o.id,
-        no: o.orderNo,
-        title: o.title,
-        amount: Number(o.amount) || 0,
-        time: o.createTime ? String(o.createTime).slice(5, 10).replace('-', '/') : ''
-      }));
-      this.setData({ orderPickerLoading: false, orderOptions: rows });
+      const orders = out.orders || [];
+      // 商品图换临时链接（失败就不出图，行仍可选）
+      let urlMap = {};
+      try { urlMap = await batchTempFileURLs(orderPick.thumbIds(orders)); } catch (e) { urlMap = {}; }
+      const rows = orderPick.toRows(orders, urlMap);
+      this.setData({ orderPickerLoading: false, orderOptions: rows, orderShown: rows });
     } catch (e) {
-      this.setData({ orderPickerLoading: false, orderOptions: [] });
+      this.setData({ orderPickerLoading: false, orderOptions: [], orderShown: [] });
     }
+  },
+
+  onOrderSearch(e) {
+    const q = String((e && e.detail && e.detail.value) || '');
+    this.setData({ orderQuery: q, orderShown: orderPick.filterRows(this.data.orderOptions, q) });
   },
 
   closeOrderPicker() {
@@ -580,19 +548,21 @@ Page({
     const no = String((e.currentTarget.dataset || {}).no || '');
     const title = String((e.currentTarget.dataset || {}).title || '');
     if (!id) return;
+    const row = (this.data.orderOptions || []).find((r) => r.id === id) || {};
     this.setData({
       orderPickerOpen: false,
       orderId: id,
       orderNo: no,
       productName: this.data.productName || title,
-      pickedOrderNo: no
+      pickedOrderNo: no,
+      pickedOrderLabel: `${title || '订单'}${row.more || ''}（尾号 ${row.noTail || no.slice(-6)}）`
     });
     this.refreshContactContext();
     trackBehavior('support_order_pick', 'topic', this.data.activeTopic);
   },
 
   clearPickedOrder() {
-    this.setData({ orderId: '', orderNo: '', pickedOrderNo: '' });
+    this.setData({ orderId: '', orderNo: '', pickedOrderNo: '', pickedOrderLabel: '' });
     this.refreshContactContext();
   },
 

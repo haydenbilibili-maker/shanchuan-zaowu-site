@@ -16,53 +16,42 @@ page {
   background: #1A1814;
 }
 
-/* —— 页头 —— */
-.sticky-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: rgba(26, 24, 20, 0.97);
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
+/* —— 页头（2026-11-26 与订单认领同构：短金线 + 眉标 + 宋体主标 + 一句说明；不再有固定页头叠在系统导航栏下） —— */
+.sp-head {
+  padding: 52rpx 40rpx 30rpx;
 }
-
-.nav-row {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  padding: 18rpx 32rpx 20rpx;
+.sp-rule {
+  width: 48rpx;
+  height: 4rpx;
+  margin-bottom: 28rpx;
+  border-radius: 2rpx;
+  background: var(--brass-400, #C4A76C);
 }
-
-.nav-brand {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
+.sp-en {
+  display: block;
+  font-size: var(--fs-20);
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--brass-600, #8A7530);
 }
-
-.nav-sub {
-  font-family: var(--font-mono);
-  font-size: var(--fs-18);
-  letter-spacing: 0.24em;
-  color: var(--brass-300);
-}
-
-.nav-title {
+.sp-cn {
+  display: block;
+  margin-top: 12rpx;
   font-family: var(--font-brand);
-  font-size: var(--fs-36);
+  font-size: var(--fs-48);
   font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--mat-paper-tone);
+  line-height: 1.2;
+  color: var(--color-text-primary, #FFFFFF);
 }
-
-.main-scroll {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  box-sizing: border-box;
+.sp-desc {
+  display: block;
+  max-width: 620rpx;
+  margin-top: 20rpx;
+  font-size: var(--fs-24);
+  line-height: 1.65;
+  color: var(--color-text-secondary, #A09A90);
 }
+.main-flow { padding-bottom: env(safe-area-inset-bottom); }
 
 /* —— 骨架 —— */
 .skeleton-wrap { padding: 32rpx; }
@@ -153,16 +142,11 @@ page {
 
 .context-banner.soft .context-text { color: var(--color-text-secondary, #A09A90); }
 
-/* —— 会话上下文条（订单 / 藏品进线时固定） —— */
+/* —— 会话上下文条（订单 / 藏品进线时） —— */
+/* 2026-11-26：随页面流动，落在品牌头下面（原固定在自绘页头下） */
 .context-strip {
-  position: fixed;
-  left: 0;
-  right: 0;
-  z-index: 99;
   box-sizing: border-box;
-  padding: 12rpx 32rpx 16rpx;
-  background: rgba(26, 24, 20, 0.97);
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.14);
+  padding: 0 32rpx 8rpx;
 }
 
 .context-card {
@@ -661,24 +645,89 @@ page {
   border-top: 1rpx solid rgba(196, 167, 108, 0.18);
 }
 .hero-talk { display: flex; flex-wrap: wrap; }
-.hero-order-t { flex: 1; min-width: 0; font-size: var(--fs-22); color: var(--mat-paper-tone); }
+.hero-order-t { flex: 1; min-width: 0; font-size: var(--fs-22); color: var(--mat-paper-tone); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .hero-order-t.is-empty { color: var(--color-text-secondary, #A09A90); }
 .hero-order-a { flex-shrink: 0; font-size: var(--fs-22); color: var(--brass-200); }
 .hero-order-x { flex-shrink: 0; font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); padding: 0 4rpx; }
 
 .order-picker-body { max-height: 60vh; padding: 0 0 24rpx; }
 .order-picker-tip { padding: 24rpx; font-size: var(--fs-22); color: var(--color-text-secondary, #A09A90); }
+/* 选择咨询订单（2026-11-26 二改：按商品认单） */
+.op-sheet { padding-bottom: env(safe-area-inset-bottom); }
+.op-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 32rpx var(--pop-pad-x, 40rpx) 18rpx;
+}
+.op-head-t { display: flex; flex-direction: column; gap: 6rpx; }
+.op-kicker { font-size: var(--fs-18); letter-spacing: 0.2em; color: var(--brass-600, #8A7530); }
+.op-title-main { font-family: var(--font-brand); font-size: var(--fs-34); font-weight: 600; color: var(--color-text-primary, #FFFFFF); }
+.op-close {
+  flex-shrink: 0;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs-24);
+  color: var(--color-text-secondary, #A09A90);
+  background: rgba(255, 255, 255, 0.04);
+}
+.op-search { padding: 0 var(--pop-pad-x, 40rpx) 14rpx; }
+.op-search-input {
+  height: 72rpx;
+  padding: 0 24rpx;
+  border-radius: var(--r-pill, 999rpx);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1rpx rgba(196, 167, 108, 0.2);
+  font-size: var(--fs-24);
+  color: var(--color-text-primary, #FFFFFF);
+}
+.op-ph { color: var(--color-text-secondary, #A09A90); }
 .order-pick-row {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  padding: 20rpx 24rpx;
-  border-bottom: 1rpx solid rgba(196, 167, 108, 0.12);
+  gap: 20rpx;
+  padding: 20rpx var(--pop-pad-x, 40rpx);
+  border-top: 1rpx solid rgba(196, 167, 108, 0.08);
 }
-.op-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4rpx; }
-.op-title { font-size: var(--fs-24); color: var(--mat-paper-tone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.op-sub { font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); }
+.order-pick-row.is-picked { background: rgba(196, 167, 108, 0.08); }
+.op-thumb {
+  flex-shrink: 0;
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: var(--r-thumb-sm, 8rpx);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(196, 167, 108, 0.08);
+}
+.op-thumb-img { width: 104rpx; height: 104rpx; }
+.op-thumb-ico {
+  width: 40rpx;
+  height: 40rpx;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
+.op-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
+.op-line1 { display: flex; align-items: baseline; gap: 8rpx; min-width: 0; }
+.op-title { min-width: 0; font-size: var(--fs-26); font-weight: 600; color: var(--mat-paper-tone); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.op-more { flex-shrink: 0; font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); }
+.op-spec { font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.op-sub { font-family: var(--font-mono); font-size: var(--fs-20); color: var(--color-text-secondary, #A09A90); }
+.op-status { color: var(--brass-200, #E0CFA3); }
 .op-go { flex-shrink: 0; color: var(--brass-300); }
+.op-check {
+  flex-shrink: 0;
+  padding: 2rpx 14rpx;
+  border-radius: var(--r-pill, 999rpx);
+  font-size: var(--fs-20);
+  color: var(--brass-200, #E0CFA3);
+  box-shadow: var(--ring-brass-soft);
+}
 
 /* 上下文卡占位图标（2026-11-26：不再用「单 / 藏」文字当图标） */
 .context-thumb-ico {
