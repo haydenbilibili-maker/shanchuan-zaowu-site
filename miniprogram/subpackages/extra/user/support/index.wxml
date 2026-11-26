@@ -309,19 +309,30 @@
     </view>
   </view>
 
-  <!-- 钱包与券（2026-11-26）：储值 / 代金券 / 积分 合成一个入口，点开再选具体类别 -->
+  <!-- 钱包与券（2026-11-26；样式与「选择要咨询的订单」弹层一致） -->
   <view class="ui-pop-mask" wx:if="{{assetPickerOpen}}" catchtap="closeAssetPicker" catchtouchmove="true">
-    <view class="ui-pop-sheet modal-panel" catchtap="true">
-      <view class="modal-head">
-        <text>钱包与券 · 具体问题</text>
-        <view class="close-btn" hover-class="tap-press" hover-stay-time="80" catchtap="closeAssetPicker">✕</view>
+    <view class="ui-pop-sheet op-sheet" catchtap="true">
+      <view class="op-head">
+        <view class="op-head-t">
+          <text class="op-overline">TOPICS</text>
+          <text class="op-title-main">钱包与券 · 具体问题</text>
+        </view>
+        <view class="op-close" hover-class="tap-press" hover-stay-time="80" catchtap="closeAssetPicker">✕</view>
       </view>
-      <view class="order-picker-body">
-        <view class="order-pick-row" wx:for="{{assetKinds}}" wx:key="id" data-id="{{item.id}}" catchtap="pickAssetKind" hover-class="tap-press-soft" hover-stay-time="80">
+      <scroll-view scroll-y class="order-picker-body">
+        <view
+          class="order-pick-row"
+          wx:for="{{assetKinds}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          catchtap="pickAssetKind"
+          hover-class="tap-press-soft"
+          hover-stay-time="80"
+        >
           <view class="op-main"><text class="op-title">{{item.label}}</text><text class="op-sub">{{item.desc}}</text></view>
           <text class="op-go">›</text>
         </view>
-      </view>
+      </scroll-view>
     </view>
   </view>
 
