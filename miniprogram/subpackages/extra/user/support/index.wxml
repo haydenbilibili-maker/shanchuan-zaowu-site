@@ -102,7 +102,10 @@
             bindtap="selectTopic"
             data-id="{{item.id}}"
           >
-            <image class="topic-icon" src="{{item.icon}}" mode="aspectFit"></image>
+            <view class="topic-head">
+              <image class="topic-icon" src="{{item.icon}}" mode="aspectFit"></image>
+              <text class="topic-pick" wx:if="{{activeTopic === item.id}}">已选</text>
+            </view>
             <text class="topic-label">{{item.label}}</text>
             <text class="topic-desc">{{item.desc}}</text>
           </view>

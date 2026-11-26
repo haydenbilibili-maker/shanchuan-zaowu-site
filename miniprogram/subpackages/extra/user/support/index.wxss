@@ -301,9 +301,27 @@ page {
   box-sizing: border-box;
 }
 
-.topic-item.active { background: rgba(196, 167, 108, 0.08); box-shadow: var(--ring-brass); }
+.topic-item.active { background: rgba(196, 167, 108, 0.12); box-shadow: var(--ring-brass); }
+.topic-item:active { transform: scale(0.985); }
 
-.topic-icon { width: 36rpx; height: 36rpx; opacity: 0.85; }
+/* 图标统一成同一种黄铜色（各主题 icon 来源不同、深浅不一 → 用滤镜统一，选中再提亮一档） */
+.topic-head { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+.topic-pick {
+  font-size: var(--fs-18);
+  line-height: 1.4;
+  color: var(--mat-ink);
+  background: var(--mat-brass);
+  border-radius: var(--r-thumb-sm, 4rpx);
+  padding: 1rpx 8rpx;
+}
+
+.topic-icon {
+  width: 40rpx;
+  height: 40rpx;
+  opacity: 0.92;
+  filter: brightness(0) saturate(100%) invert(72%) sepia(14%) saturate(1004%) hue-rotate(2deg) brightness(92%) contrast(92%);
+}
+.topic-item.active .topic-icon { opacity: 1; filter: brightness(0) saturate(100%) invert(84%) sepia(28%) saturate(700%) hue-rotate(2deg) brightness(104%) contrast(96%); }
 
 .topic-label {
   font-family: var(--font-brand);
@@ -352,23 +370,6 @@ page {
 }
 
 .channel-item.primary .channel-desc { color: var(--brass-200); }
-
-.channel-btn {
-  flex-shrink: 0;
-  height: 68rpx;
-  line-height: 68rpx;
-  margin: 0;
-  padding: 0 30rpx;
-  border: none;
-  border-radius: var(--r-control, 16rpx);
-  background: var(--brass-400);
-  font-size: var(--fs-24);
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: #1A1814;
-}
-
-.channel-btn::after { border: none; }
 
 .channel-arrow {
   flex-shrink: 0;

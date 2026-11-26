@@ -366,7 +366,13 @@ function checks(s) {
       !/box-shadow: 0 0 10rpx var\(--color-primary\)/.test(s.pointsWxss))
   // 2026-10-17 联系专员「专员服务台」
   add('R17-1 联系专员实心金只给「开始对话」（微信专员是主路径），留言提交为金线环',
-    solidGold(s.supportWxss) === '.channel-btn' && /\n\.submit-btn \{[^}]*background: transparent !important;/.test(s.supportWxss))
+    /\.hero-btn \{[^}]*background: var\(--mat-brass\)/.test(s.supportWxss) &&
+      !/\.channel-btn \{/.test(s.supportWxss) &&
+      /\n\.submit-btn \{[^}]*background: transparent !important;/.test(s.supportWxss))
+  // 2026-11-26 产品负责人：主题图标颜色不一致 → 统一黄铜滤镜；选中要有「已选」反馈
+  add('R17-3 联系专员主题图标统一黄铜色（filter 统一）、选中项有「已选」签',
+    /\.topic-icon \{[^}]*filter: brightness\(0\) saturate\(100%\) invert\(/.test(s.supportWxss) &&
+      /wx:if="\{\{activeTopic === item.id\}\}">已选</.test(s.supportWxml))
   add('R17-2 联系专员留言写在浅纸便笺上、无 grain-overlay、联系方式为发丝线行（不再是圆角卡）',
     /\n\.form-card \{[^}]*(?:linear-gradient\(180deg, #F3ECDD, #E8DFCB\)|var\(--mat-paper-label\))/.test(s.supportWxss) && !/grain-overlay/.test(s.supportWxml) &&
       !/\n\.channel-item \{[^}]*border-radius/.test(s.supportWxss))
