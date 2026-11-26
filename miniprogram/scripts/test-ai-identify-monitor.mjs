@@ -260,7 +260,7 @@ async function checkIdentify(src, t) {
     const pageJs = readFileSync(join(MP, 'subpackages/feature/identify/result/index.js'), 'utf8')
     const pageWxml = readFileSync(join(MP, 'subpackages/feature/identify/result/index.wxml'), 'utf8')
     t.ok('A00 识别结果页 AI 关闭即拦截（aiClosed + 关闭文案）',
-      /aiClosed/.test(pageJs) && /showAiIdentify === false/.test(pageJs) && /AI 鉴定暂未开放/.test(pageWxml))
+      /aiClosed/.test(pageJs) && /showAiIdentify === false/.test(pageJs) && /标本鉴定暂未开放/.test(pageWxml))
     // 2026-11-27：图鉴采集记录 / 图鉴卡片页的 AI 入口也要阻断（不能只靠落地页拦）
     const logJs = readFileSync(join(MP, 'subpackages/feature/collection/log/index.js'), 'utf8')
     const cardJs = readFileSync(join(MP, 'subpackages/feature/collection/detail/index.js'), 'utf8')

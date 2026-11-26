@@ -36,7 +36,7 @@
       </view>
       <view class="search-identify" bindtap="goIdentify" hover-class="search-identify-active" hover-stay-time="80" wx:if="{{showAiIdentify}}">
         <image class="search-identify-ico" src="/assets/icons/camera.png" mode="aspectFit" />
-        <text>AI 鉴定</text>
+        <text>标本鉴定</text>
       </view>
     </view>
     <view class="cat-filter-block">
