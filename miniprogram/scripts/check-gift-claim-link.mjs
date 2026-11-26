@@ -829,7 +829,7 @@ const INJECTIONS = [
   { name: '注册引导卡不留协议同意时间', file: P.regCardJs, find: "patch: { agreedTermsAt }, completeOnboarding: true", replace: "patch: {}, completeOnboarding: true" },
   { name: 'ERP 漏登记注册引导完成事件', file: P.adminSchema, find: '  gift_reg_guide_done: {', replace: '  gift_reg_guide_done_x: {' },
   { name: '送礼页「犒劳自己」不再固定寄给我', file: P.composeJs, find: "      selfTreat: true,\n      deliveryType: 'ship_to_self'", replace: '      selfTreat: true' },
-  { name: '送礼页又渲染交付 UI（未搬干净）', file: P.composeWxml, find: '<!-- ═══ 第 2 步', replace: '<view class="delivery-opt" bindtap="onSelectDelivery"></view>\n<!-- ═══ 第 2 步' },
+  { name: '送礼页又渲染交付 UI（未搬干净）', file: P.composeWxml, find: '<!-- ═══ 第 1 步 · 选礼 ═══ -->', replace: '<view class="delivery-opt" bindtap="onSelectDelivery"></view>\n    <!-- ═══ 第 1 步 · 选礼 ═══ -->' },
   { name: '确认页自提不校验门店', file: P.giftCheckout, find: '      if (!this.data.giftStoreId) {', replace: '      if (false) {' },
   { name: '确认页快递给 TA 不校验收货手机号', file: P.giftCheckout, find: '        if (!PHONE_RE.test(phone)) {', replace: '        if (false) {' },
   { name: '确认页邀请填址不再核验', file: P.giftCheckout, find: '    const phone = digits(this.data.giftReceiverPhone)\n    if (!PHONE_RE.test(phone)) {', replace: '    const phone = digits(this.data.giftReceiverPhone)\n    if (false) {' },

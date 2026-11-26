@@ -205,7 +205,8 @@ const INJECTIONS = {
   // 丢掉「马上有XX」句式闸 → AI 写「祝你暴富」也上墙，整面墙不成句式
   'seed-allows-off-pattern': {
     file: 'miniprogram/cloudfunctions/manageWishWall/wishSeeds.js',
-    from: '    if (requirePrefix && (text.indexOf(SEED_PREFIX) !== 0 || text.length <= SEED_PREFIX.length)) continue',
+    // 2026-11-27 修锚点：句式闸改为按 opts.prefix 判（默认仍是 SEED_PREFIX）
+    from: '    if (requirePrefix && (text.indexOf(prefix) !== 0 || text.length <= prefix.length)) continue',
     to: '    if (false) continue'
   },
   // 播种不校验身份 → 任何人可让 AI 往公开墙面批量写入
@@ -421,7 +422,8 @@ const INJECTIONS = {
   // 商品字段没进 manageProducts 白名单 → 保存时被静默丢弃，界面还提示"已保存"
   'product-field-not-allowlisted': {
     file: 'miniprogram/cloudfunctions/manageProducts/index.js',
-    from: "  'wishWallEnabled', 'wishWallKey'\n",
+    // 2026-11-27 修锚点：白名单数组重构后该行末尾带逗号
+    from: "  'wishWallEnabled', 'wishWallKey',\n",
     to: ''
   },
   // 载入时不按"实际是否挂墙"回填 → 打开任意藏品保存一次就把墙摘了
@@ -622,11 +624,12 @@ const INJECTIONS = {
     from: "    .map((r) => leanProduct(r, explicitIds.has(String(r._id)) ? 'tag' : 'scene'))",
     to: "    .map((r) => leanProduct(r, 'tag'))"
   },
-  // 文案不再随依据走 → 页面永远显示"同好也在看"
+  // 标题丢了这面墙的真实标签 → 推荐看起来与心愿无关（2026-11-27 修锚点：原「按匹配来源分两句」的写法已统一为 recoLabel，
+  // 「同好也在看」复活由下面 social-proof-resurrected 管；这条改守「真实标签必须进标题」）
   'reco-label-hardcoded': {
     file: 'miniprogram/subpackages/plays/utils/blessProducts.js',
-    from: "  if (s === 'scene') return '这类心愿常配这件'",
-    to: "  if (s === 'scene') return '同好也在看'"
+    from: "  return label ? `偏「${label}」· 为你配一件` : '为你配一件'",
+    to: "  return '为你配一件'"
   },
 
 
@@ -689,7 +692,8 @@ const INJECTIONS = {
 
   'ritual-save-drops-field': {
     file: 'miniprogram/cloudfunctions/getContentDisplayFlags/index.js',
-    from: '    // ⚠️ 漏这一行 = 超管在后台保存成功、但 showRitualProfile 被静默重置为默认（关）\n    showRitualProfile: incoming.showRitualProfile\n',
+    // 2026-11-27 修锚点：该行后面已补了其它字段，末尾带逗号
+    from: '    // ⚠️ 漏这一行 = 超管在后台保存成功、但 showRitualProfile 被静默重置为默认（关）\n    showRitualProfile: incoming.showRitualProfile,\n',
     to: ''
   },
   // 2026-10-13（产品负责人点名）：祈福墙已全面升级为「马上有 · 心愿签」，
@@ -697,13 +701,15 @@ const INJECTIONS = {
   // 断言随之改成「不得复活」—— 下面两条注入就是它的可证伪性证明：把开关行加回去必须变红。
   'ritual-switch-row-revived': {
     file: 'miniprogram/subpackages/manager/manager/workspace/_subviews.wxml',
-    from: '          <!-- 心愿签治理入口。签条（含语音）不接自动审核',
-    to: '          <switch class="cfg-switch" checked="{{contentFlags.showRitualProfile}}" data-field="showRitualProfile" color="#C4A76C" bindchange="onContentFlagToggle"/>\n          <!-- 心愿签治理入口。签条（含语音）不接自动审核'
+    // 2026-11-27 修锚点：原「心愿签治理入口」注释已随面板改版删除，改挂在「门店」开关行（内容开关面板里稳定存在）
+    from: '            <switch class="cfg-switch" checked="{{contentFlags.showStore}}"',
+    to: '            <switch class="cfg-switch" checked="{{contentFlags.showRitualProfile}}" data-field="showRitualProfile" color="#C4A76C" bindchange="onContentFlagToggle"/>\n            <switch class="cfg-switch" checked="{{contentFlags.showStore}}"'
   },
   'muyu-cert-switch-row-revived': {
     file: 'miniprogram/subpackages/manager/manager/workspace/_subviews.wxml',
-    from: '          <!-- 心愿签治理入口。签条（含语音）不接自动审核',
-    to: '          <switch class="cfg-switch" checked="{{contentFlags.showMuyuCertificate}}" data-field="showMuyuCertificate" color="#C4A76C" bindchange="onContentFlagToggle"/>\n          <!-- 心愿签治理入口。签条（含语音）不接自动审核'
+    // 2026-11-27 修锚点：原「心愿签治理入口」注释已随面板改版删除，改挂在「门店」开关行（内容开关面板里稳定存在）
+    from: '            <switch class="cfg-switch" checked="{{contentFlags.showStore}}"',
+    to: '            <switch class="cfg-switch" checked="{{contentFlags.showMuyuCertificate}}" data-field="showMuyuCertificate" color="#C4A76C" bindchange="onContentFlagToggle"/>\n            <switch class="cfg-switch" checked="{{contentFlags.showStore}}"'
   },
 
 
@@ -4204,9 +4210,7 @@ if (process.argv.includes('--selftest') && !INJECT) {
      处理：把「已确认失效」的锚点显式登记（债务留痕，不许装作没有），并要求名单**只许变小** ——
      哪条锚点哪天恢复了却还留在名单里，直接失败，逼人删登记、让它回到真防线里。 */
   const KNOWN_DEAD_ANCHORS = new Set([
-    'seed-allows-off-pattern',      // wishSeeds.js：句式闸写法已变
-    'product-field-not-allowlisted',// manageProducts：白名单数组已重构
-    'reco-label-hardcoded'          // blessProducts.js：文案已改
+    // 2026-11-27：原登记的 3 条（seed-allows-off-pattern / product-field-not-allowlisted / reco-label-hardcoded）已修锚点并回到真防线
     // 2026-10-17：旧祈福墙退场，指向旧页 / 已删文件的注入整条移除，名单里对应 7 条一并删去
   ])
   const anchorAlive = (inj) => {

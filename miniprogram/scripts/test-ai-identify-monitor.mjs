@@ -771,7 +771,8 @@ const INJECTIONS = [
   ['详情跳过审计', 'monitorIndex', (s) => s.replace("    await audit(actor, 'view_identify_detail', { id })\n", '')],
   ['规则放开本人可读', 'rules', (s) => s.replace('"read": false', '"read": "doc.openid == auth.openid"')],
   // 2026-11-23：serverOnly 里加了博物君三个集合，改成只拿掉 ai_identify_logs 这一项
-  ['敏感清单漏登记', 'sensitive', (s) => s.replace('"serverOnly": ["ai_identify_logs", ', '"serverOnly": [')],
+  // 2026-11-27 修锚点：sensitive-collections.json 已改为一行一项（原单行写法不再命中）
+  ['敏感清单漏登记', 'sensitive', (s) => s.replace('"serverOnly": [\n    "ai_identify_logs",\n', '"serverOnly": [\n')],
   ['店长菜单加入该入口', 'roles', (s) => s.replace('const STORE_MANAGER_MENUS = [\n', 'const STORE_MANAGER_MENUS = [\n  MENU_KEYS.AI_IDENTIFY_MONITOR,\n')],
   ['页面新增原生弹窗', 'pageJs', (s) => s.replace('  closeDetail() {\n', "  closeDetail() {\n    wx.showModal({ title: '确认关闭' })\n")],
   ['页面直读日志集合', 'pageJs', (s) => s.replace('  noop() {},', "  noop() {},\n  peek() { return wx.cloud.database().collection('ai_identify_logs').get() },")],
