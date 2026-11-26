@@ -99,6 +99,20 @@
           </block>
         </view>
 
+        <!-- 追加评价（2026-11-27）：同一张笺纸下方的续笺，云端只下发已通过的追评 -->
+        <view class="comment-append" wx:if="{{item.append && item.append.content}}">
+          <view class="append-head">
+            <text class="append-label">追评</text>
+            <text class="append-days">{{item.append.daysAfter > 0 ? item.append.daysAfter + ' 天后' : '当天'}}</text>
+          </view>
+          <text class="append-text">{{item.append.content}}</text>
+          <view class="comment-images append-images" wx:if="{{item.append.images && item.append.images.length > 0}}">
+            <block wx:for="{{item.append.images}}" wx:key="*this" wx:for-item="img" wx:for-index="imgIndex">
+              <shan-img ext-class="comment-image" src="{{img}}" mode="aspectFill" bindtap="previewImage" data-index="{{imgIndex}}" data-urls="{{item.append.images}}" />
+            </block>
+          </view>
+        </view>
+
         <view class="comment-footer">
           <view 
             class="comment-like {{item.userLiked ? 'liked' : ''}}" 

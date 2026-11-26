@@ -276,6 +276,86 @@ page {
   font-size: var(--fs-26);
 }
 
+/* 追加评价（2026-11-27）：卡内续笔用虚线分隔；入口与「去藏品页」同一档描边按钮 */
+.review-append {
+  padding-top: 24rpx;
+  border-top: 1rpx dashed #3A3631;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.review-append-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.review-append-label {
+  font-size: var(--fs-24);
+  color: var(--color-primary);
+  letter-spacing: 0.08em;
+}
+
+.review-append-cta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16rpx 20rpx;
+}
+
+.review-append-btn {
+  padding: 16rpx 32rpx;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #1A1814;
+  font-size: var(--fs-26);
+  font-weight: 500;
+}
+
+.review-append-hint {
+  font-size: var(--fs-22);
+  color: #A09A90;
+}
+
+.append-intro {
+  margin: 0 32rpx 24rpx;
+  padding: 24rpx 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  border: 1rpx solid rgba(196, 167, 108, 0.3);
+  border-radius: var(--radius-lg);
+  background: rgba(196, 167, 108, 0.06);
+}
+
+.append-intro-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  min-width: 0;
+}
+
+.append-intro-title {
+  font-size: var(--fs-28);
+  color: var(--color-primary);
+  letter-spacing: 0.06em;
+}
+
+.append-intro-sub {
+  font-size: var(--fs-22);
+  color: #A09A90;
+}
+
+.append-intro-cancel {
+  flex-shrink: 0;
+  padding: 10rpx 20rpx;
+  font-size: var(--fs-24);
+  color: #A09A90;
+}
+
 .rating-section,
 .content-section,
 .image-section {

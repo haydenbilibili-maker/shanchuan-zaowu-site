@@ -1,6 +1,10 @@
 /**
  * 提交评价 / 查询订单评价资格
- * action: submit（默认）| check | orderStatus
+ * action: submit（默认）| check | orderStatus | orderReviewMap | append
+ *
+ * 2026-11-27 追加评价（产品负责人「商品评价模块支持追加评价功能」）：每条商品评价可追评一次，
+ * 只限评价作者、原评价未被拒且未隐藏、原评价后 180 天内；不能改星级，不再发积分；
+ * 追评与原评价同一套内容安全（明确通过即展示，否则待人工审核），写在原评价文档的 append 字段上。
  *
  * 商品评价必须绑定已签收订单：orderId + productId，防重复。
  */
@@ -16,6 +20,9 @@ const ALLOWED_TARGET_TYPES = new Set(['product', 'activity', 'course'])
 const MAX_IMAGES = 3
 const MIN_CONTENT = 5
 const MAX_CONTENT = 500
+/** 追评窗口：原评价后 180 天内 */
+const APPEND_WINDOW_DAYS = 180
+const DAY_MS = 86400000
 
 function fail(msg, extra) {
   return { success: false, msg, ...(extra || {}) }
@@ -81,10 +88,34 @@ function toMs(value) {
   return Number.isFinite(n) ? n : 0
 }
 
+/** 追评（本人视角，含审核状态） */
+function myAppendOf(comment) {
+  const a = comment && comment.append
+  if (!a || !String(a.content || '').trim()) return null
+  return {
+    content: String(a.content || ''),
+    images: Array.isArray(a.images) ? a.images.filter(Boolean).slice(0, MAX_IMAGES) : [],
+    status: a.status || 'pending',
+    createdAt: toMs(a.createdAt),
+    daysAfter: Number(a.daysAfter) || 0
+  }
+}
+
+/** 这条评价还能不能追评：本人 / 未追评过 / 原评价已展示或审核中 / 180 天内 */
+function appendStateOf(comment, nowMs) {
+  if (!comment) return { canAppend: false, appendDeadline: 0 }
+  const created = toMs(comment.createdAt)
+  const deadline = created ? created + APPEND_WINDOW_DAYS * DAY_MS : 0
+  const okStatus = comment.status === 'approved' || comment.status === 'pending'
+  const canAppend = !comment.append && okStatus && !!deadline && (Number(nowMs) || Date.now()) < deadline
+  return { canAppend, appendDeadline: deadline }
+}
+
 /** 本人评价的只读快照（评价页「我的评价」查看态用）；只给本人自己的那条 */
 function myReviewOf(comment) {
   if (!comment) return null
   return {
+    append: myAppendOf(comment),
     status: comment.status || 'pending',
     rating: Number(comment.rating) || 0,
     content: String(comment.content || ''),
@@ -250,11 +281,15 @@ async function buildOrderStatus(orderId, openid) {
   const existing = received && !voucher ? await findCommentsForOrder(orderId, openid) : []
   const byProduct = latestByProduct(existing)
 
+  const nowMs = Date.now()
   const products = reviewable.map((p) => {
     const comment = byProduct[p.productId]
     const status = comment ? comment.status || 'pending' : 'none'
+    const appendState = received && !voucher ? appendStateOf(comment, nowMs) : { canAppend: false, appendDeadline: 0 }
     return {
       ...p,
+      canAppend: appendState.canAppend,
+      appendDeadline: appendState.appendDeadline,
       reviewStatus: status,
       statusLabel: statusLabel(status),
       canReview: received && !voucher && status === 'none',
@@ -425,6 +460,77 @@ async function submitProductReview(event, openid) {
   return submitResult(result._id, moderation.status)
 }
 
+/**
+ * 追加评价（2026-11-27）：只追加正文 / 图片，不改星级、不发积分。
+ * 用带条件的 update（userId = 本人、append 不存在）写入，两次并发点击只会成功一次。
+ */
+async function appendProductReview(event, openid) {
+  const orderId = String(event.orderId || '').trim()
+  const targetId = String(event.targetId || event.productId || '').trim()
+  const content = String(event.content || '').trim()
+  const images = Array.isArray(event.images) ? event.images.filter(Boolean).slice(0, MAX_IMAGES) : []
+
+  if (!orderId) return fail('请从订单进入追评', { code: 'NEED_ORDER' })
+  if (!targetId) return fail('缺少商品 ID')
+  if (!content) return fail('写下用了一段时间后的感受吧')
+  if (content.length < MIN_CONTENT) return fail(`追评至少 ${MIN_CONTENT} 个字`)
+  if (content.length > MAX_CONTENT) return fail(`追评不超过 ${MAX_CONTENT} 字`)
+  if (Array.isArray(event.images) && event.images.filter(Boolean).length > MAX_IMAGES) return fail(`最多上传 ${MAX_IMAGES} 张图片`)
+
+  const statusRes = await buildOrderStatus(orderId, openid)
+  if (!statusRes.success) return statusRes
+  const hit = (statusRes.products || []).find((p) => p.productId === targetId)
+  if (!hit) return fail('该订单中没有这件商品', { code: 'NOT_IN_ORDER' })
+  if (!hit.commentId) return fail('先发表评价，之后才能追评', { code: 'NOT_REVIEWED' })
+  if (hit.myReview && hit.myReview.append) return fail('这条评价已经追评过了', { code: 'APPEND_DONE' })
+  if (!hit.canAppend) {
+    const expired = hit.appendDeadline && Date.now() >= hit.appendDeadline
+    return fail(expired ? `已超过 ${APPEND_WINDOW_DAYS} 天追评期` : '这条评价暂时不能追评', { code: expired ? 'APPEND_EXPIRED' : 'APPEND_CLOSED' })
+  }
+
+  const secCheck = await runCommentChecks(openid, content, images)
+  if (!secCheck.ok) return fail(secCheck.msg)
+  const moderation = moderationFields(secCheck)
+
+  const now = new Date()
+  const createdMs = toMs((hit.myReview && hit.myReview.createdAt) || 0)
+  const daysAfter = createdMs ? Math.max(0, Math.floor((now.getTime() - createdMs) / DAY_MS)) : 0
+  const res = await db.collection('comments')
+    .where({ _id: hit.commentId, userId: openid, append: _.exists(false) })
+    .update({
+      data: {
+        append: {
+          content,
+          images,
+          status: moderation.status,
+          autoApproved: moderation.autoApproved,
+          reviewReasons: moderation.reviewReasons,
+          daysAfter,
+          createdAt: now
+        },
+        appendedAt: now
+      }
+    })
+  if (!res || !res.stats || res.stats.updated !== 1) return fail('这条评价已经追评过了', { code: 'APPEND_DONE' })
+
+  try {
+    await notifyStaffNewComment(db, {
+      commentId: hit.commentId,
+      rating: hit.rating,
+      content,
+      productTitle: hit.title || '',
+      orderId,
+      kind: 'append'
+    })
+  } catch (e) {
+    console.warn('追评员工提醒失败:', e && e.message)
+  }
+
+  return moderation.status === 'approved'
+    ? { success: true, msg: '追评已展示在藏品页', commentId: hit.commentId, status: 'approved' }
+    : { success: true, msg: '已收到追评，内容检测后会展示', commentId: hit.commentId, status: 'pending' }
+}
+
 async function submitGenericReview(event, openid) {
   const targetType = String(event.targetType || '').trim()
   const targetId = String(event.targetId || '').trim()
@@ -508,6 +614,9 @@ exports.main = async (event = {}, context) => {
     }
     if (action === 'orderReviewMap') {
       return await buildOrderReviewMap(event, openid)
+    }
+    if (action === 'append') {
+      return await appendProductReview(event, openid)
     }
     if (action === 'submit') {
       const targetType = String(event.targetType || 'product').trim() || 'product'

@@ -7,6 +7,8 @@
  *   ② 用户评价是独立 Tab 17：curTab===17 块里有列表与审核动作（通过 / 置顶 / 回复 / 隐藏 / 删除）；
  *   ③ 入口：Hub 磁贴「评价」→ switchTab idx=17；菜单键 reviews 只进超管；
  *   ④ 进 Tab 17 要 loadComments（否则白屏）；TAB_MENU_KEY[17] 必须是 reviews。
+ *   ⑤ R11 追加评价（2026-11-27）：作者本人一次、带条件写入防并发、同一套内容安全；
+ *      藏品页只露已通过追评的公开字段；审核页追评独立状态 / 独立动作 / 独立待审队列。
  *
  * 用法：node miniprogram/scripts/check-reviews-tab.mjs [--selftest]
  */
@@ -27,7 +29,11 @@ const F = {
   catalog: join(MP, 'subpackages/manager/utils/workNoticeCatalog.js'),
   hubWxml: join(MP, 'subpackages/manager/manager/index.wxml'),
   hubNav: join(MP, 'subpackages/manager/manager/hubNav.js'),
-  view: join(MP, 'subpackages/manager/manager/reviewView.js')
+  view: join(MP, 'subpackages/manager/manager/reviewView.js'),
+  getFn: join(MP, 'cloudfunctions/getComments/index.js'),
+  pageJs: join(MP, 'subpackages/content/comment/index.js'),
+  pageWxml: join(MP, 'subpackages/content/comment/index.wxml'),
+  listWxml: join(MP, 'subpackages/feature/components/CommentList/index.wxml')
 }
 
 /** reviewView.js 是纯 CJS 模块：按当前（可能被注入的）源码求值 */
@@ -109,7 +115,8 @@ function runChecks() {
   const submitFn = read(F.submitFn)
   const staffNotify = read(F.staffNotify)
   ok('R7 新评价会发「工作信息」：workflow 队列 + ops 待办分类 + 深链到用户评价 + 文案含星级与「记得及时回复」',
-    /notifyStaffNewComment\(db, \{/.test(submitFn) &&
+    // 新评价那一路（追评函数之外）必须自己发提醒；追评的提醒由 R11 另管
+    /notifyStaffNewComment\(db, \{/.test(submitFn.replace(/async function appendProductReview\(event, openid\) \{[\s\S]*?\n\}/, '')) &&
     /queue: 'workflow'/.test(staffNotify) && /category: 'ops'/.test(staffNotify) &&
     /type: 'staff_comment_new'/.test(staffNotify) && /read: false/.test(staffNotify) &&
     /tab=17/.test(staffNotify) && /记得及时回复/.test(staffNotify) &&
@@ -190,6 +197,52 @@ function runChecks() {
     /if \(listFilter === 'unreplied'\) rows = rows\.filter\(\(r\) => !String\(r\.merchantReply/.test(fn) &&
     /comment-reply-quote/.test(wxml) && /bindtap|catchtap="pickCommentReplyPhrase"/.test(wxml) && /async previewCommentImages\(e\)/.test(cfg))
 
+  // R11 追加评价（2026-11-27 产品负责人「商品评价模块支持追加评价功能」）
+  const appendFn = (submitFn.match(/async function appendProductReview\(event, openid\) \{[\s\S]*?\n\}/) || [''])[0]
+  ok('R11-1 submitComment：append 动作只给评价作者、只能一次（带 userId + append 不存在的条件写入）、180 天内、走同一套内容安全、不发积分',
+    /if \(action === 'append'\) \{\n\s*return await appendProductReview\(event, openid\)/.test(submitFn) &&
+    /const APPEND_WINDOW_DAYS = 180\n/.test(submitFn) &&
+    /\.where\(\{ _id: hit\.commentId, userId: openid, append: _\.exists\(false\) \}\)/.test(appendFn) &&
+    /if \(!res \|\| !res\.stats \|\| res\.stats\.updated !== 1\)/.test(appendFn) &&
+    /await runCommentChecks\(openid, content, images\)/.test(appendFn) && /moderationFields\(secCheck\)/.test(appendFn) &&
+    !/points|awardPoints|addPoints/i.test(appendFn) && /kind: 'append'/.test(appendFn) && !/rating:\s*Math/.test(appendFn) &&
+    /const canAppend = !comment\.append && okStatus && !!deadline/.test(submitFn) &&
+    /canAppend: appendState\.canAppend,/.test(submitFn) && /\n    append: myAppendOf\(comment\),/.test(submitFn))
+  const getFn = read(F.getFn)
+  const pubFn = (getFn.match(/function publicAppend\(append\) \{[\s\S]*?\n\}/) || [''])[0]
+  ok('R11-2 getComments：藏品页只下发已通过的追评，且只给 content / images / daysAfter / timeText（审核原因不出云端）',
+    /if \(!append \|\| append\.status !== 'approved'\) return null/.test(pubFn) &&
+    !/reviewReasons|autoApproved|\.\.\.append/.test(pubFn) &&
+    (getFn.match(/\n\s*append: publicAppend\(comment\.append\),/g) || []).length === 2)
+  ok('R11-3 审核云端：approveAppend / hideAppend 只改 append.status（无追评不写）、appendPending 队列、看板追评待审数',
+    /if \(action === 'approveAppend' \|\| action === 'hideAppend'\) \{[\s\S]{0,400}if \(!doc \|\| !doc\.append[\s\S]{0,200}'append\.status': next/.test(fn) &&
+    /\} else if \(listFilter === 'appendPending'\) \{\n[^\n]*\n\s*query = query\.where\(\{ 'append\.status': 'pending' \}\)/.test(fn) &&
+    /counts\.appendPending = Number/.test(fn))
+  let appendBehave = false
+  try {
+    const p = view.decorateComment({ _id: 'a', status: 'approved', append: { content: '用了三个月依旧好看', status: 'pending', daysAfter: 92, images: ['x'] } })
+    const h = view.decorateComment({ _id: 'b', status: 'approved', append: { content: '还行', status: 'hidden' } })
+    const n = view.decorateComment({ _id: 'c', status: 'approved' })
+    appendBehave = p.appendInfo && p.appendInfo.daysText === '92 天后追评' && p.appendInfo.imageCount === 1 &&
+      p.appendInfo.acts.some((a) => a.action === 'approveAppend' && a.go) && p.appendInfo.acts.some((a) => a.action === 'hideAppend') &&
+      h.appendInfo.acts.length === 1 && h.appendInfo.acts[0].action === 'approveAppend' && n.appendInfo === null &&
+      view.pickDefaultFilter({ counts: { pending: 0, appendPending: 2 }, unreplied: 5 }, 'pending') === 'appendPending' &&
+      view.listQuery('appendPending').listFilter === 'appendPending' &&
+      view.emptyCopy('pending', { counts: { appendPending: 1 } }).next.some((x) => x.filter === 'appendPending')
+  } catch (e) { appendBehave = false }
+  ok('R11-4 审核页口径实跑：追评待审给「通过 / 隐藏」、已隐藏给「恢复」、无追评不出块；待审核清空后默认落到追评待审', appendBehave)
+  ok('R11-5 审核页：卡内追评块用独立动作（data-action 来自 appendInfo.acts），看板下有追评待审入口',
+    /wx:if="\{\{item\.appendInfo\}\}"/.test(reviewsTab) && /data-action="\{\{act\.action\}\}"/.test(reviewsTab) &&
+    /data-filter="appendPending"/.test(reviewsTab))
+  const pageJs = read(F.pageJs)
+  const pageWxml = read(F.pageWxml)
+  const listWxml = read(F.listWxml)
+  ok('R11-6 用户端：我的评价卡有追加评价入口与追评展示，发布条切到 submitAppend（action: append）；藏品页评价下展示追评',
+    /bindtap="startAppend"/.test(pageWxml) && /wx:if="\{\{viewReview\.canAppend\}\}"/.test(pageWxml) &&
+    /wx:if="\{\{viewReview\.append\}\}"/.test(pageWxml) && /bindtap="\{\{appendMode \? 'submitAppend' : 'submitComment'\}\}"/.test(pageWxml) &&
+    /async submitAppend\(\) \{[\s\S]{0,900}action: 'append'/.test(pageJs) && /canAppend: !!selected\.canAppend && !mine\.append/.test(pageJs) &&
+    /wx:if="\{\{item\.append && item\.append\.content\}\}"/.test(listWxml))
+
   ok('R5 内容管理里删掉的只是这一项：专题 / 文章 / 养护三个子 Tab 仍在',
     ['exhibition', 'article', 'care'].every((t) => contentTab.includes(`data-type="${t}"`)))
 
@@ -211,6 +264,17 @@ if (process.argv.includes('--selftest')) {
     { name: '看板与页签又重复两排', file: F.wxml, find: '<view class="sub-tab-row inner-filter" wx:if="{{!commentStats && !commentStatsLoading}}">', replace: '<view class="sub-tab-row inner-filter">' },
     { name: '通过 / 恢复主动作映射错', file: F.view, find: "  if (st === 'hidden') return { action: 'approve', label: '恢复' }", replace: "  if (st === 'hidden') return { action: 'hide', label: '恢复' }" },
     { name: '云端待回复筛选丢失', file: F.fn, find: "  } else if (listFilter === 'unreplied') {", replace: "  } else if (listFilter === 'unrepliedX') {" },
+    { name: '追评不再限制只能一次（去掉 append 不存在条件）', file: F.submitFn, find: 'userId: openid, append: _.exists(false) })', replace: 'userId: openid })' },
+    { name: '追评跳过内容安全', file: F.submitFn, find: '  const secCheck = await runCommentChecks(openid, content, images)\n  if (!secCheck.ok) return fail(secCheck.msg)\n  const moderation = moderationFields(secCheck)\n\n  const now = new Date()\n  const createdMs', replace: '  const moderation = { status: \'approved\', autoApproved: true, reviewReasons: [] }\n\n  const now = new Date()\n  const createdMs' },
+    { name: '追评窗口被放宽成永久', file: F.submitFn, find: 'const APPEND_WINDOW_DAYS = 180\n', replace: 'const APPEND_WINDOW_DAYS = 36500\n' },
+    { name: '藏品页下发待审追评', file: F.getFn, find: "  if (!append || append.status !== 'approved') return null", replace: '  if (!append) return null' },
+    { name: '藏品页追评带出审核原因', file: F.getFn, find: "    daysAfter: Math.max(0, Number(append.daysAfter) || 0),", replace: "    daysAfter: Math.max(0, Number(append.daysAfter) || 0),\n    reviewReasons: append.reviewReasons," },
+    { name: '追评审核动作改到原评价状态', file: F.fn, find: "data: { 'append.status': next, 'append.reviewedAt': now, updatedAt: now }", replace: "data: { status: next, updatedAt: now }" },
+    { name: '追评待审队列丢失', file: F.fn, find: "  } else if (listFilter === 'appendPending') {", replace: "  } else if (listFilter === 'appendPendingX') {" },
+    { name: '待审追评只给隐藏不给通过', file: F.view, find: "[{ action: 'hideAppend', label: '隐藏追评' }, { action: 'approveAppend', label: '通过追评', go: true }]", replace: "[{ action: 'hideAppend', label: '隐藏追评' }]" },
+    { name: '用户端发布条不切追评', file: F.pageWxml, find: "bindtap=\"{{appendMode ? 'submitAppend' : 'submitComment'}}\"", replace: 'bindtap="submitComment"' },
+    { name: '已追评仍显示追加入口', file: F.pageJs, find: 'canAppend: !!selected.canAppend && !mine.append', replace: 'canAppend: !!selected.canAppend' },
+    { name: '藏品页不展示追评', file: F.listWxml, find: '<view class="comment-append" wx:if="{{item.append && item.append.content}}">', replace: '<view class="comment-append" wx:if="{{false}}">' },
     { name: '工作台不再预取评价未读（语音也没数可播）', file: F.cfg, find: "safe('commentNotice', () => this.loadCommentNoticeBadge())", replace: "safe('commentNoticeX', () => this.loadCommentNoticeBadge())" }
   ]
   let bad = 0
@@ -234,5 +298,5 @@ if (process.argv.includes('--selftest')) {
     fails.forEach((f) => console.error('  - ' + f))
     process.exit(1)
   }
-  console.log('✓ check:reviews-tab：内容管理不再承载评价 / 评价为 Tab 17（列表与五个动作）/ 懒加载 / Hub 磁贴与菜单键 / 看板四格即筛选 + 待回复 + 默认落在有活干的一队')
+  console.log('✓ check:reviews-tab：内容管理不再承载评价 / 评价为 Tab 17（列表与五个动作）/ 懒加载 / Hub 磁贴与菜单键 / 看板四格即筛选 + 待回复 + 默认落在有活干的一队 / 追加评价（作者一次 · 内容安全 · 只露已通过 · 独立审核）')
 }

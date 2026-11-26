@@ -35,6 +35,22 @@ function normalizeCommentLikes(comment = {}, openid = '') {
   }
 }
 
+/**
+ * 追加评价（2026-11-27）：只下发**已通过**的追评，且只给公开字段；
+ * 待审 / 已隐藏的追评与审核原因（reviewReasons / autoApproved）一律不出云端。
+ */
+function publicAppend(append) {
+  if (!append || append.status !== 'approved') return null
+  const content = String(append.content || '').trim()
+  if (!content) return null
+  return {
+    content,
+    images: Array.isArray(append.images) ? append.images.filter(Boolean).slice(0, 3) : [],
+    daysAfter: Math.max(0, Number(append.daysAfter) || 0),
+    timeText: formatTime(append.createdAt)
+  }
+}
+
 function likeCountForSort(comment = {}) {
   if (Array.isArray(comment.likes)) return comment.likes.length
   if (typeof comment.likes === 'number' && Number.isFinite(comment.likes)) {
@@ -136,6 +152,7 @@ exports.main = async (event, context) => {
           const { likedBy: _omitLikedBy, ...safeComment } = comment
           return {
             ...safeComment,
+            append: publicAppend(comment.append),
             likes: likeFields.likes,
             userLiked: likeFields.userLiked,
             userInfo,
@@ -146,6 +163,7 @@ exports.main = async (event, context) => {
           const { likedBy: _omitLikedBy, ...safeComment } = comment
           return {
             ...safeComment,
+            append: publicAppend(comment.append),
             likes: likeFields.likes,
             userLiked: likeFields.userLiked,
             userInfo: null,

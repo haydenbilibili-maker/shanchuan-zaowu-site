@@ -4,6 +4,8 @@
   "navigationBarBackgroundColor": "#1A1814",
   "navigationBarTextStyle": "white",
   "usingComponents": {
-    "shan-img": "/components/ShanImage/index"
+    "shan-img": "/components/ShanImage/index",
+    "app-modal": "/components/AppModal/index",
+    "app-toast": "/components/AppToast/index"
   }
 }

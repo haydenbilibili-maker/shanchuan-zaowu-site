@@ -4,7 +4,7 @@
 <view class="page-wrapper">
   <scroll-view
     scroll-y
-    class="scroll-container {{canReview && !loadingGate ? '' : 'is-full'}}"
+    class="scroll-container {{(canReview || appendMode) && !loadingGate ? '' : 'is-full'}}"
     enable-flex="true">
 
     <view class="content-wrapper">
@@ -24,7 +24,7 @@
             <view class="target-details">
               <text class="target-title">{{targetInfo.title || targetInfo.name}}</text>
               <text class="target-subtitle" wx:if="{{latin.display(targetInfo.latinName)}}">{{latin.display(targetInfo.latinName)}}</text>
-              <text class="target-hint">{{viewReview ? '这是你写下的感受' : '分享你看到它时的第一印象'}}</text>
+              <text class="target-hint">{{appendMode ? '用了一段时间，再说说它' : viewReview ? '这是你写下的感受' : '分享你看到它时的第一印象'}}</text>
             </view>
           </view>
         </view>
@@ -65,7 +65,19 @@
             <text class="review-reply-label">山海造物回复</text>
             <text class="review-reply-text">{{viewReview.merchantReply}}</text>
           </view>
-          <view class="review-foot">
+          <!-- 追加评价（2026-11-27）：同一张卡里的续笔，带自己的审核状态 -->
+          <view class="review-append" wx:if="{{viewReview.append}}">
+            <view class="review-append-head">
+              <text class="review-append-label">追评{{viewReview.append.daysText ? ' · ' + viewReview.append.daysText : ''}}</text>
+              <text class="review-status is-{{viewReview.append.status}}">{{viewReview.append.statusText}}</text>
+            </view>
+            <text class="review-content" user-select="{{true}}">{{viewReview.append.content}}</text>
+            <view class="review-images" wx:if="{{viewReview.append.images.length}}">
+              <shan-img ext-class="review-image" wx:for="{{viewReview.append.images}}" wx:key="*this" src="{{item}}" mode="aspectFill" bindtap="previewAppendImage" data-index="{{index}}" />
+            </view>
+            <text class="review-note" wx:if="{{viewReview.append.statusNote}}">{{viewReview.append.statusNote}}</text>
+          </view>
+          <view class="review-foot" wx:if="{{!appendMode}}">
             <text class="review-note" wx:if="{{viewReview.statusNote}}">{{viewReview.statusNote}}</text>
             <view
               class="review-visit"
@@ -74,11 +86,30 @@
               hover-class="tap-press"
               hover-stay-time="80"
             >去藏品页看看 ›</view>
+            <view class="review-append-cta" wx:if="{{viewReview.canAppend}}">
+              <view
+                class="review-append-btn"
+                bindtap="startAppend"
+                hover-class="tap-press"
+                hover-stay-time="80"
+                aria-role="button"
+                aria-label="追加评价"
+              >追加评价</view>
+              <text class="review-append-hint">{{viewReview.appendHint}}</text>
+            </view>
           </view>
         </view>
 
-        <block wx:else>
-          <view class="rating-section">
+        <view class="append-intro" wx:if="{{viewReview && appendMode}}">
+          <view class="append-intro-text">
+            <text class="append-intro-title">追加评价</text>
+            <text class="append-intro-sub">不改星级，每条评价可追评一次</text>
+          </view>
+          <text class="append-intro-cancel" bindtap="cancelAppend" hover-class="tap-press-soft" hover-stay-time="80">取消</text>
+        </view>
+
+        <block wx:if="{{!viewReview || appendMode}}">
+          <view class="rating-section" wx:if="{{!viewReview}}">
             <text class="section-label">评分</text>
             <view class="rating-stars">
               <block wx:for="{{[1,2,3,4,5]}}" wx:key="*this" wx:for-item="star">
@@ -97,10 +128,10 @@
           </view>
 
           <view class="content-section">
-            <text class="section-label">感受</text>
+            <text class="section-label">{{appendMode ? '追评' : '感受'}}</text>
             <textarea
               class="content-input"
-              placeholder="颜色、质感、摆放位置……写给同样喜欢它的人听。"
+              placeholder="{{appendMode ? '用了一段时间：颜色、状态、摆放后的样子……' : '颜色、质感、摆放位置……写给同样喜欢它的人听。'}}"
               placeholder-class="input-placeholder"
               value="{{content}}"
               bindinput="onContentInput"
@@ -110,7 +141,7 @@
             <!-- 2026-11-23：常用说法，点一下接到正文后面（不替换已写的） -->
             <scroll-view class="phrase-scroll" scroll-x enable-flex="true" show-scrollbar="{{false}}">
               <view class="phrase-row">
-                <text class="phrase" wx:for="{{phrases}}" wx:key="*this" data-text="{{item}}" bindtap="onPhrase" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
+                <text class="phrase" wx:for="{{appendMode ? appendPhrases : phrases}}" wx:key="*this" data-text="{{item}}" bindtap="onPhrase" hover-class="tap-press-soft" hover-stay-time="80">{{item}}</text>
               </view>
             </scroll-view>
             <text class="char-count">{{content.length}}/500</text>
@@ -146,17 +177,21 @@
   <!-- 发布条（2026-11-23 产品负责人截图「特别是下方的发布 button」）：
        原用 <button>，微信内置 `button:not([size=mini]) { width: 184px; margin: 0 auto }` 的优先级高于 .submit-btn，
        真机上宽度被压成 184px、贴左。改为 view；上方一行说明还差什么，未就绪时按钮淡显但仍可点（点了按原逻辑提示）。 -->
-  <view class="submit-section safe-area" wx:if="{{canReview && !loadingGate}}">
-    <text class="submit-hint {{ss.ready(rating, content) ? 'is-ready' : ''}}">{{ss.hint(rating, content, images.length)}}</text>
+  <!-- 追加评价时同一条发布条切到 submitAppend：不要求评分，其余口径同 submitState.wxs -->
+  <view class="submit-section safe-area" wx:if="{{(canReview || appendMode) && !loadingGate}}">
+    <text class="submit-hint {{ss.readyFor(appendMode, rating, content) ? 'is-ready' : ''}}">{{appendMode ? ss.appendHint(content, images.length) : ss.hint(rating, content, images.length)}}</text>
     <view
-      class="submit-btn {{ss.ready(rating, content) ? '' : 'is-wait'}} {{submitting ? 'is-busy' : ''}}"
-      bindtap="submitComment"
+      class="submit-btn {{ss.readyFor(appendMode, rating, content) ? '' : 'is-wait'}} {{submitting ? 'is-busy' : ''}}"
+      bindtap="{{appendMode ? 'submitAppend' : 'submitComment'}}"
       hover-class="{{submitting ? '' : 'submit-btn-press'}}"
       hover-stay-time="80"
       aria-role="button"
-      aria-label="发布评价"
+      aria-label="{{appendMode ? '发布追评' : '发布评价'}}"
     >
-      <text>{{submitting ? '发布中…' : '发布评价'}}</text>
+      <text>{{submitting ? '发布中…' : appendMode ? '发布追评' : '发布评价'}}</text>
     </view>
   </view>
 </view>
+<!-- 追加评价的反馈与确认（2026-11-27）：走站内铭牌样式，不新增原生 toast / modal -->
+<app-toast show="{{toastShow}}" overline="{{toastOverline}}" title="{{toastTitle}}" desc="{{toastDesc}}" bind:close="onToastClose" />
+<app-modal id="appModal" />

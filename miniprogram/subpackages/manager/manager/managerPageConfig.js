@@ -10791,7 +10791,9 @@ bindSubCatChange(e) {
   async previewCommentImages(e) {
     const id = e && e.currentTarget && e.currentTarget.dataset.id;
     const row = (this.data.commentList || []).find((c) => c._id === id);
-    const imgs = (row && Array.isArray(row.images) ? row.images : []).filter(Boolean);
+    // data-append：看追评的附图（2026-11-27）
+    const src = e.currentTarget.dataset.append ? row && row.append && row.append.images : row && row.images;
+    const imgs = (Array.isArray(src) ? src : []).filter(Boolean);
     if (!imgs.length) return;
     try {
       const cloudIds = imgs.filter((u) => /^cloud:\/\//.test(u));

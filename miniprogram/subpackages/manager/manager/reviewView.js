@@ -3,7 +3,7 @@
  * 2026-11-26：看板四格即筛选 + 待回复；默认落在有活干的一队；卡片主动作随状态。说明见 miniprogram/docs/超管工作台_功能归并_2026-11-25.md §S7。
  */
 
-const FILTERS = ['pending', 'unreplied', 'approved', 'hidden', 'all']
+const FILTERS = ['pending', 'appendPending', 'unreplied', 'approved', 'hidden', 'all']
 
 const STATUS_LABEL = { pending: '待审核', approved: '已通过', hidden: '已隐藏', rejected: '已拒绝' }
 
@@ -112,6 +112,25 @@ function primaryAction(c) {
   return { action: 'reply', label: '改回复' }
 }
 
+/** 追评（2026-11-27）：状态 + 本条卡片上的追评动作（通过 / 隐藏 / 恢复） */
+function appendView(c) {
+  const a = c && c.append
+  if (!a || !String(a.content || '').trim()) return null
+  const st = a.status || 'pending'
+  const days = Number(a.daysAfter) || 0
+  const acts = st === 'pending'
+    ? [{ action: 'hideAppend', label: '隐藏追评' }, { action: 'approveAppend', label: '通过追评', go: true }]
+    : st === 'hidden' ? [{ action: 'approveAppend', label: '恢复追评' }] : [{ action: 'hideAppend', label: '隐藏追评' }]
+  return {
+    status: st,
+    statusLabel: STATUS_LABEL[st] || '待审核',
+    content: String(a.content),
+    imageCount: Array.isArray(a.images) ? a.images.filter(Boolean).length : 0,
+    daysText: days > 0 ? `${days} 天后追评` : '当天追评',
+    acts
+  }
+}
+
 function decorateComment(c) {
   const status = (c && c.status) || 'pending'
   const imgs = Array.isArray(c && c.images) ? c.images.filter(Boolean) : []
@@ -126,7 +145,8 @@ function decorateComment(c) {
     imageCount: imgs.length,
     orderShort: order.length > 12 ? `…${order.slice(-10)}` : order,
     replied: !!String((c && c.merchantReply) || '').trim(),
-    primary: primaryAction(c)
+    primary: primaryAction(c),
+    appendInfo: appendView(c)
   }
 }
 
@@ -162,6 +182,7 @@ function statsView(out) {
 function pickDefaultFilter(stats, current) {
   if (current !== 'pending' || !stats || !stats.counts) return current
   if (Number(stats.counts.pending) > 0) return 'pending'
+  if (Number(stats.counts.appendPending) > 0) return 'appendPending'
   if (Number(stats.unreplied) > 0) return 'unreplied'
   return 'all'
 }
@@ -173,9 +194,11 @@ function emptyCopy(filter, stats) {
   const next = []
   if (filter !== 'unreplied' && Number(s.unreplied) > 0) next.push({ filter: 'unreplied', label: `去回复 ${s.unreplied} 条` })
   if (filter !== 'pending' && Number(c.pending) > 0) next.push({ filter: 'pending', label: `去审核 ${c.pending} 条` })
+  if (filter !== 'appendPending' && Number(c.appendPending) > 0) next.push({ filter: 'appendPending', label: `去审追评 ${c.appendPending} 条` })
   if (filter !== 'all' && Number(c.all) > 0) next.push({ filter: 'all', label: '看全部评价' })
   const map = {
     pending: ['待审核已清空', '新评价进来会先出现在这里'],
+    appendPending: ['追评都审完了', '顾客追加的评价没通过检测时会排在这里'],
     unreplied: ['评价都回复过了', '顾客收到回复会在「山海有信」里看到'],
     approved: ['还没有已通过的评价', '审核通过的评价会展示在商品详情页'],
     hidden: ['没有隐藏的评价', '隐藏的评价不在商品页展示'],
@@ -194,6 +217,7 @@ module.exports = {
   stars,
   targetText,
   primaryAction,
+  appendView,
   decorateComment,
   filterRows,
   listQuery,

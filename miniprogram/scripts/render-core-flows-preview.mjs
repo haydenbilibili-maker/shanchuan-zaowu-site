@@ -983,13 +983,14 @@ const SCENES = [
   // 2026-11-26 评价审核二改：看板四格即筛选 + 待回复 + 卡片按状态主动作；另一张是「待审核已清空」的空态
   ...(() => {
     const RV = loadCjsModule(join(MP, 'subpackages/manager/manager/reviewView.js'))
-    const raw = { success: true, counts: { all: 19, pending: 1, approved: 17, hidden: 1 }, avgRating: 4.9, replyRate: 21, replied: 4, unreplied: 13, pinned: 1, sampled: 19, truncated: false,
+    const raw = { success: true, counts: { all: 19, pending: 1, approved: 17, hidden: 1, appendPending: 1 }, avgRating: 4.9, replyRate: 21, replied: 4, unreplied: 13, pinned: 1, sampled: 19, truncated: false,
       days: ['11/20', '11/21', '11/22', '11/23', '11/24', '11/25', '11/26'].map((label, i) => ({ date: String(i), label, count: [0, 1, 0, 2, 3, 0, 1][i] })) }
     const stats = RV.statsView(raw)
     const t0 = Date.UTC(2026, 10, 25, 13, 20)
     const list = [
       { _id: 'c1', status: 'pending', rating: 5, productTitle: '光明女神闪蝶 · 玻璃罩', content: '比图片还要好看，光线下蓝色会变，送给朋友她很喜欢。', images: ['https://x/1.jpg', 'https://x/2.jpg'], orderId: 'SH20261124093011', createTime: t0 },
-      { _id: 'c2', status: 'approved', rating: 5, productTitle: '创意贝壳标本框', content: '这个标本作品有着海边的感觉，有治愈的感觉，我非常喜欢。', images: ['https://x/3.jpg'], orderId: 'SH20261113201145', createTime: t0 - 86400000 * 2, isPinned: true },
+      { _id: 'c2', status: 'approved', rating: 5, productTitle: '创意贝壳标本框', content: '这个标本作品有着海边的感觉，有治愈的感觉，我非常喜欢。', images: ['https://x/3.jpg'], orderId: 'SH20261113201145', createTime: t0 - 86400000 * 2, isPinned: true,
+        append: { content: '放了两个月，贝壳颜色一点没变，朋友来家里都会问。', images: ['https://x/5.jpg'], status: 'pending', daysAfter: 61 } },
       { _id: 'c3', status: 'approved', rating: 4, productTitle: '蓝闪蝶 · 胡桃木框', content: '做工细致，包装也很用心。', merchantReply: '谢谢喜欢，记得避开阳光直射。', createTime: t0 - 86400000 * 5 },
       { _id: 'c4', status: 'hidden', rating: 1, productTitle: '', targetType: 'product', targetId: 'prod_9f8e7d', targetLabel: 'product · prod_9f8e7d', content: '（广告内容）', createTime: t0 - 86400000 * 6 }
     ].map(RV.decorateComment)
@@ -1035,7 +1036,8 @@ const SCENES = [
   { name: 'comment-list', h: 1700, wxml: 'subpackages/feature/components/CommentList/index', data: {
     showStats: true, stats: { total: 3, averageRating: 4.7 }, sortBy: 'time', filter: 'all', hasMore: true, loading: false,
     comments: [
-      { _id: 'c1', rating: 5, timeText: '11-13', content: '这个标本作品有着海边的感觉，有治愈的感觉，我非常喜欢，感觉到了标本师的用心制作，这个标本作品值得购买！', images: [P[0]], likes: 3, userLiked: true, userInfo: { nickName: '标本收藏者阿庶' } },
+      { _id: 'c1', rating: 5, timeText: '11-13', content: '这个标本作品有着海边的感觉，有治愈的感觉，我非常喜欢，感觉到了标本师的用心制作，这个标本作品值得购买！', images: [P[0]], likes: 3, userLiked: true, userInfo: { nickName: '标本收藏者阿庶' },
+        append: { content: '放了两个月，贝壳颜色一点没变，朋友来家里都会问在哪买的。', images: [P[2]], daysAfter: 61, timeText: '11-24' } },
       { _id: 'c2', rating: 5, timeText: '11-08', isPinned: true, content: '包装很用心，比图片更好看，摆在书房刚好。', images: [], likes: 0, userLiked: false, userInfo: { nickName: '林间小满' }, merchantReply: '谢谢喜欢，书房光线柔和正合适，记得避开直晒。' },
       { _id: 'c3', rating: 4, timeText: '10-30', content: '颜色很正，玻璃罩略小一点。', images: [P[1], P[2]], likes: 1, userLiked: false, userInfo: { nickName: '' } }
     ] } },
@@ -1045,6 +1047,19 @@ const SCENES = [
     targetInfo: { title: '玫瑰俏眼蝶闹钟', images: [P[1]], latinName: '' },
     rating: 4, content: '比图片更好看，摆在书房刚好', images: [P[0]],
     phrases: ['包装很用心', '比图片更好看', '做工细致', '适合送人', '摆在书房刚好', '颜色很正']
+  } },
+  // 2026-11-27 追加评价：我的评价卡（已有追评 · 审核中）+ 追评撰写态
+  { name: 'comment-view-append', h: 1500, wxml: 'subpackages/content/comment/index', data: {
+    loadingGate: false, canReview: false, appendMode: false, productOptions: [], targetId: 'p1', submitting: false,
+    targetInfo: { title: '创意贝壳标本框', images: [P[1]], latinName: '' }, rating: 0, content: '', images: [],
+    viewReview: { status: 'approved', statusText: '已展示', statusNote: '这条评价已展示在藏品页。', rating: 5, content: '这个标本作品有着海边的感觉，有治愈的感觉，我非常喜欢。', images: [P[0]], timeText: '2026-09-24 21:03', merchantReply: '谢谢喜欢，记得避开阳光直射。', canVisit: true,
+      append: { status: 'pending', statusText: '审核中', statusNote: '追评正在检测内容，通过后展示在原评价下方。', content: '放了两个月，贝壳颜色一点没变，朋友来家里都会问。', images: [P[2]], daysText: '61 天后' }, canAppend: false, appendHint: '' }
+  } },
+  { name: 'comment-append', h: 1900, wxml: 'subpackages/content/comment/index', data: {
+    loadingGate: false, canReview: false, appendMode: true, productOptions: [], targetId: 'p1', submitting: false,
+    targetInfo: { title: '创意贝壳标本框', images: [P[1]], latinName: '' }, rating: 0, content: '放了两个月，颜色没有变化', images: [],
+    viewReview: { status: 'approved', statusText: '已展示', statusNote: '这条评价已展示在藏品页。', rating: 5, content: '这个标本作品有着海边的感觉，我非常喜欢。', images: [], timeText: '2026-09-24 21:03', merchantReply: '', canVisit: true, append: null, canAppend: true, appendHint: '用了一段时间？还可追评 12 天' },
+    appendPhrases: ['用了一段时间依旧好看', '颜色没有变化', '养护很简单', '朋友来家里都会问', '越看越喜欢'], phrases: []
   } },
   // 2026-11-23 AI 智能中心第六轮：脉搏 / 同事们 / 注意到的问题 / 档案卡（收起）/ 对话（依据时间）
   { name: 'ai-center', h: 2600, wxml: 'subpackages/ai/ai-center/index', data: (() => {

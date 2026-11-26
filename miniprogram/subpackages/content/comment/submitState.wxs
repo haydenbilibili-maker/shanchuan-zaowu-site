@@ -19,4 +19,19 @@ function hint(rating, content, imageCount) {
   return rating + ' 星 · ' + n + ' 字' + (imageCount ? ' · ' + imageCount + ' 张图' : '') + '，可以发布了'
 }
 
-module.exports = { ready: ready, hint: hint, MIN_LEN: MIN_LEN }
+/** 追加评价（2026-11-27）：不评分，只看正文 */
+function appendReady(content) {
+  return trimmedLen(content) >= MIN_LEN
+}
+
+function appendHint(content, imageCount) {
+  var n = trimmedLen(content)
+  if (n < MIN_LEN) return n ? '再写几个字（至少 ' + MIN_LEN + ' 字）' : '说说用了一段时间后的样子（至少 ' + MIN_LEN + ' 字）'
+  return '追评 · ' + n + ' 字' + (imageCount ? ' · ' + imageCount + ' 张图' : '') + '，可以发布了'
+}
+
+function readyFor(appendMode, rating, content) {
+  return appendMode ? appendReady(content) : ready(rating, content)
+}
+
+module.exports = { ready: ready, hint: hint, appendReady: appendReady, appendHint: appendHint, readyFor: readyFor, MIN_LEN: MIN_LEN }

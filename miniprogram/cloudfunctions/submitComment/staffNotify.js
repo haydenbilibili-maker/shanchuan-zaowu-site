@@ -57,12 +57,15 @@ async function listReviewStaffOpenids(db) {
   return uniq(openids).slice(0, MAX_RECIPIENTS)
 }
 
-function buildMessage({ commentId, rating, content, productTitle, orderId }) {
+function buildMessage({ commentId, rating, content, productTitle, orderId, kind }) {
   const excerpt = String(content || '').replace(/\s+/g, ' ').trim()
   const clipped = excerpt.length > 40 ? `${excerpt.slice(0, 40)}…` : excerpt
-  const title = '收到一条商品评价'
+  // 2026-11-27：追加评价复用同一条通知链路，标题与首行区分
+  const isAppend = kind === 'append'
+  const title = isAppend ? '收到一条追加评价' : '收到一条商品评价'
   const lines = []
-  lines.push(`${'★'.repeat(Math.max(0, Math.min(5, Number(rating) || 0)))}${rating ? ` ${rating} 星` : ''}${productTitle ? ` · ${productTitle}` : ''}`)
+  if (isAppend) lines.push(`追评${productTitle ? ` · ${productTitle}` : ''}`)
+  else lines.push(`${'★'.repeat(Math.max(0, Math.min(5, Number(rating) || 0)))}${rating ? ` ${rating} 星` : ''}${productTitle ? ` · ${productTitle}` : ''}`)
   if (clipped) lines.push(`「${clipped}」`)
   lines.push('记得及时回复')
   return {

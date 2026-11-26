@@ -1,5 +1,7 @@
 /**
  * 评价审核：列表 / 通过 / 隐藏 / 置顶 / 回复 / 删除
+ * 2026-11-27 追加评价：approveAppend / hideAppend 只动 comments.append.status，不碰原评价；
+ *   listFilter 'appendPending' 列出追评待审；stats.appendPending 计数。
  * 鉴权：staffGuard — manager；Admin Web 可用 ADMIN_OPS_KEY
  */
 const cloud = require('wx-server-sdk')
@@ -100,6 +102,13 @@ async function commentStats() {
   }
   // status 缺省的那些按 pending 计（listComments 里 normalizeRow 也是 pending）
   counts.pending += Math.max(0, counts.all - counts.pending - counts.approved - counts.hidden)
+  // 追评待审（独立于原评价状态：原评价已通过，追评仍可能在等审核）
+  try {
+    const r = await db.collection('comments').where({ 'append.status': 'pending' }).count()
+    counts.appendPending = Number((r && r.total) || 0)
+  } catch (e) {
+    counts.appendPending = 0
+  }
 
   let rows = []
   try {
@@ -170,6 +179,9 @@ async function listComments(event) {
   } else if (listFilter === 'unreplied') {
     // 2026-11-26 新增旁路：已通过、还没回复（不改其它筛选的口径）
     query = query.where({ status: 'approved' })
+  } else if (listFilter === 'appendPending') {
+    // 2026-11-27 追加评价：追评待审（原评价状态不限）
+    query = query.where({ 'append.status': 'pending' })
   }
 
   // 不用 orderBy，避免缺索引；内存按时间倒序
@@ -236,6 +248,18 @@ exports.main = async (event = {}) => {
         data: { status: 'hidden', updatedAt: now }
       })
       return { success: true, msg: '已隐藏', status: 'hidden' }
+    }
+
+    // 追加评价审核：只改 append.status；没有追评的文档不会被写出一个空 append
+    if (action === 'approveAppend' || action === 'hideAppend') {
+      const next = action === 'approveAppend' ? 'approved' : 'hidden'
+      const one = await db.collection('comments').doc(commentId).get().catch(() => null)
+      const doc = (one && one.data) || null
+      if (!doc || !doc.append || !String(doc.append.content || '').trim()) return fail('这条评价没有追评')
+      await db.collection('comments').doc(commentId).update({
+        data: { 'append.status': next, 'append.reviewedAt': now, updatedAt: now }
+      })
+      return { success: true, msg: next === 'approved' ? '追评已通过' : '追评已隐藏', appendStatus: next }
     }
 
     if (action === 'pin') {

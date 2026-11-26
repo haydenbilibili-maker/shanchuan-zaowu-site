@@ -225,6 +225,45 @@
   color: var(--mat-ink-body);
 }
 
+/* 追加评价：同一张笺纸的续笺 —— 虚线裁切 + 墨色小签，不另起卡片 */
+.comment-append {
+  position: relative;
+  margin: 4rpx 0 18rpx;
+  padding-top: 18rpx;
+  border-top: 1rpx dashed var(--mat-paper-rule);
+}
+.append-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+.append-label {
+  padding: 2rpx 10rpx;
+  border: 1rpx solid var(--mat-seal-line);
+  border-radius: 4rpx;
+  background: var(--mat-seal-tint);
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.14em;
+  color: var(--mat-seal);
+}
+.append-days {
+  font-family: var(--font-mono);
+  font-size: var(--fs-18);
+  letter-spacing: 0.08em;
+  color: var(--mat-ink-label);
+}
+.append-text {
+  display: block;
+  font-size: var(--fs-26);
+  line-height: 1.7;
+  color: var(--mat-ink-body);
+}
+.append-images {
+  margin: 14rpx 0 0;
+}
+
 /* 晒图：贴在笺上的小照片 */
 .comment-images {
   position: relative;

@@ -15,6 +15,36 @@ const REVIEW_VIEW = {
   hidden: { statusText: '未展示', statusNote: '这条评价暂未展示在藏品页，如有疑问可联系专员。' }
 }
 
+/** 追评的审核状态文案（与原评价同口径；追评审核中不影响原评价的展示） */
+const APPEND_VIEW = {
+  pending: { statusText: '审核中', statusNote: '追评正在检测内容，通过后展示在原评价下方。' },
+  approved: { statusText: '已展示', statusNote: '' },
+  hidden: { statusText: '未展示', statusNote: '这条追评暂未展示，如有疑问可联系专员。' }
+}
+const DAY_MS = 86400000
+
+function buildAppendView(append) {
+  if (!append || !append.content) return null
+  const status = append.status || 'pending'
+  const copy = APPEND_VIEW[status] || APPEND_VIEW.pending
+  const days = Number(append.daysAfter) || 0
+  return {
+    status,
+    statusText: copy.statusText,
+    statusNote: copy.statusNote,
+    content: append.content,
+    images: Array.isArray(append.images) ? append.images : [],
+    daysText: days > 0 ? `${days} 天后` : '当天'
+  }
+}
+
+/** 「追加评价」入口下的小字：还剩几天（≤30 天时才提醒，避免每条都催） */
+function appendHintOf(deadline, nowMs) {
+  const left = deadline ? Math.ceil((deadline - (nowMs || Date.now())) / DAY_MS) : 0
+  if (left > 0 && left <= 30) return `用了一段时间？还可追评 ${left} 天`
+  return '用了一段时间？说说它现在的样子'
+}
+
 /**
  * 已评价藏品 → 「我的评价」查看态；未评价 / 无评价记录 → null（走撰写态或资格提示）。
  * 状态只认 submitComment.orderStatus 回来的 reviewStatus（即 comments.status），不在前端推断。
@@ -35,7 +65,10 @@ function buildViewReview(selected) {
     images: Array.isArray(mine.images) ? mine.images : [],
     timeText: formatTime(mine.createdAt),
     merchantReply: mine.merchantReply || '',
-    canVisit: status === 'approved' && !!selected.productId
+    canVisit: status === 'approved' && !!selected.productId,
+    append: buildAppendView(mine.append),
+    canAppend: !!selected.canAppend && !mine.append,
+    appendHint: appendHintOf(selected.appendDeadline)
   }
 }
 
@@ -59,6 +92,13 @@ Page({
     summaryLabel: '',
     alreadyRating: 0,
     viewReview: null,
+    /** 追加评价撰写态（2026-11-27）：复用正文 / 图片 / 发布条，不要求评分 */
+    appendMode: false,
+    toastShow: false,
+    toastOverline: '',
+    toastTitle: '',
+    toastDesc: '',
+    appendPhrases: ['用了一段时间依旧好看', '颜色没有变化', '养护很简单', '朋友来家里都会问', '越看越喜欢', '包装和做工都经得起时间'],
     /** 常用说法（2026-11-23）：点一下接到正文后面 */
     phrases: ['包装很用心', '比图片更好看', '做工细致', '适合送人', '摆在书房刚好', '颜色很正']
   },
@@ -77,7 +117,7 @@ Page({
 
   syncTitle() {
     const { loadingGate, canReview, viewReview } = this.data
-    const title = loadingGate ? '评价' : viewReview ? '我的评价' : canReview ? '发表评价' : '评价'
+    const title = loadingGate ? '评价' : this.data.appendMode ? '追加评价' : viewReview ? '我的评价' : canReview ? '发表评价' : '评价'
     wx.setNavigationBarTitle({ title })
   },
 
@@ -142,6 +182,7 @@ Page({
     const viewReview = buildViewReview(selected)
 
     this.setData({
+      appendMode: false,
       loadingGate: false,
       targetId: selectedId,
       productOptions: products,
@@ -200,6 +241,7 @@ Page({
     const canReview = !!selected.canReview
     const viewReview = buildViewReview(selected)
     this.setData({
+      appendMode: false,
       targetId: productId,
       canReview,
       viewReview,
@@ -224,6 +266,47 @@ Page({
     if ((canReview || viewReview) && !selected.image) this.loadTargetInfo()
   },
 
+  /** 能写正文 / 传图：发表评价或追加评价 */
+  isEditing() {
+    return !!(this.data.canReview || this.data.appendMode)
+  },
+
+  startAppend() {
+    const view = this.data.viewReview
+    if (!view || !view.canAppend || this.data.submitting) return
+    wx.vibrateShort({ type: 'light' })
+    this.setData({ appendMode: true, content: '', images: [] })
+    this.syncTitle()
+  },
+
+  cancelAppend() {
+    if (this.data.submitting) return
+    const dirty = String(this.data.content || '').trim() || (this.data.images || []).length
+    const leave = () => {
+      this.setData({ appendMode: false, content: '', images: [] })
+      this.syncTitle()
+    }
+    if (!dirty) return leave()
+    // 在方法里 require：页面顶层（Page 之前）要保持纯函数，check:bflow-polish 会单独真跑那一段
+    const { openAppModal } = require('../../../utils/appModal')
+    openAppModal({
+      title: '放弃这条追评？',
+      content: '已写的内容不会保存。',
+      confirmText: '放弃',
+      cancelText: '继续写',
+      success: (r) => { if (r.confirm) leave() }
+    }, this)
+  },
+
+  /** 追评反馈：站内铭牌轻提示（AppToast），不再新增原生 toast */
+  tip(title, desc, overline) {
+    this.setData({ toastShow: true, toastOverline: overline || 'FOLLOW-UP', toastTitle: title || '', toastDesc: desc || '' })
+  },
+
+  onToastClose() {
+    this.setData({ toastShow: false })
+  },
+
   selectRating(e) {
     if (!this.data.canReview) return
     const rating = e.currentTarget.dataset.rating
@@ -237,7 +320,7 @@ Page({
 
   /** 常用说法：接在已写内容后面（中间补一个逗号），不超过 500 字；已经写过这一句就不重复 */
   onPhrase(e) {
-    if (!this.data.canReview) return
+    if (!this.isEditing()) return
     const p = String(e.currentTarget.dataset.text || '')
     const cur = String(this.data.content || '')
     if (!p || cur.indexOf(p) >= 0) return
@@ -247,7 +330,7 @@ Page({
   },
 
   chooseImage() {
-    if (!this.data.canReview) return
+    if (!this.isEditing()) return
     const remain = 3 - this.data.images.length
     if (remain <= 0) {
       wx.showToast({ title: '最多 3 张图片', icon: 'none' })
@@ -295,6 +378,13 @@ Page({
     if (images && images.length > 0) {
       wx.previewImage({ current: images[index], urls: images })
     }
+  },
+
+  previewAppendImage(e) {
+    const ap = this.data.viewReview && this.data.viewReview.append
+    const urls = (ap && ap.images) || []
+    const index = e.currentTarget.dataset.index
+    if (urls.length) wx.previewImage({ current: urls[index], urls })
   },
 
   previewMyImage(e) {
@@ -395,6 +485,55 @@ Page({
       console.error('提交评价失败:', e)
       wx.hideLoading()
       wx.showToast({ title: '提交失败，请重试', icon: 'none' })
+      this.setData({ submitting: false })
+    }
+  },
+
+  /** 追加评价：成功后留在本页，重新拉一次订单评价状态，卡片里直接出现这条追评 */
+  async submitAppend() {
+    if (this.data.submitting || !this.data.appendMode) return
+    const content = (this.data.content || '').trim()
+    if (content.length < 5) {
+      // 发布条上方那行已写明还差什么（submitState.wxs appendHint），这里只震一下
+      wx.vibrateShort({ type: 'medium' })
+      return
+    }
+
+    wx.vibrateShort({ type: 'medium' })
+    this.setData({ submitting: true })
+    wx.showLoading({ title: '提交中…', mask: true })
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'submitComment',
+        data: {
+          action: 'append',
+          orderId: this.data.orderId,
+          targetId: this.data.targetId,
+          content,
+          images: this.data.images
+        }
+      })
+      wx.hideLoading()
+      const r = (res && res.result) || {}
+      if (r.success) {
+        wx.vibrateShort({ type: 'heavy' })
+        if (r.status === 'approved') this.tip('追评已展示', '会出现在藏品页你的评价下方')
+        else this.tip('追评已提交', '内容检测通过后展示在藏品页')
+        this.setData({ submitting: false, appendMode: false, content: '', images: [] })
+        await this.prepareProductReview()
+        this.syncTitle()
+        return
+      }
+      this.tip(r.msg || '提交失败', '', 'NOT SENT')
+      this.setData({ submitting: false })
+      if (r.code === 'APPEND_DONE' || r.code === 'APPEND_EXPIRED' || r.code === 'APPEND_CLOSED') {
+        await this.prepareProductReview()
+        this.syncTitle()
+      }
+    } catch (e) {
+      console.error('提交追评失败:', e)
+      wx.hideLoading()
+      this.tip('提交失败', '网络不太稳，稍后再试', 'NOT SENT')
       this.setData({ submitting: false })
     }
   }

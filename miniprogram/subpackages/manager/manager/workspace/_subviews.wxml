@@ -1927,6 +1927,9 @@
             <text class="cm-tile-n">{{commentStats.counts.hidden}}</text><text class="cm-tile-l">已隐藏</text>
           </view>
         </view>
+        <view class="cm-append-bar {{commentFilter==='appendPending'?'on':''}}" wx:if="{{commentStats.counts.appendPending > 0 || commentFilter==='appendPending'}}" bindtap="switchCommentFilter" data-filter="appendPending" hover-class="tap-press-soft" hover-stay-time="80">
+          <text>追评待审 {{commentStats.counts.appendPending || 0}} 条</text><text class="cm-all-go">›</text>
+        </view>
         <view class="cm-dash-body" wx:if="{{commentStats}}">
           <view class="cm-bars" wx:if="{{commentStats.weekTotal > 0}}">
             <view class="cm-bar" wx:for="{{commentStats.days}}" wx:key="date">
@@ -1974,6 +1977,18 @@
           <view class="cm-reply" wx:if="{{item.replied}}">
             <text class="cm-reply-k">商家回复</text>
             <text class="cm-reply-v">{{item.merchantReply}}</text>
+          </view>
+          <!-- 追加评价（2026-11-27）：独立状态 / 独立动作，不影响原评价 -->
+          <view class="cm-append is-{{item.appendInfo.status}}" wx:if="{{item.appendInfo}}">
+            <view class="cm-append-head">
+              <text class="cm-reply-k">{{item.appendInfo.daysText}}</text>
+              <text class="cm-chip is-{{item.appendInfo.status}}">{{item.appendInfo.statusLabel}}</text>
+            </view>
+            <text class="cm-reply-v">{{item.appendInfo.content}}</text>
+            <view class="cm-photos" wx:if="{{item.appendInfo.imageCount}}" bindtap="previewCommentImages" data-id="{{item._id}}" data-append="1" hover-class="tap-press-soft" hover-stay-time="80"><text>追评附图 {{item.appendInfo.imageCount}} 张 · 点按查看</text></view>
+            <view class="cm-append-acts">
+              <text class="{{act.go ? 'cm-go' : 'cm-act'}}" wx:for="{{item.appendInfo.acts}}" wx:for-item="act" wx:key="action" bindtap="moderateComment" data-id="{{item._id}}" data-action="{{act.action}}" hover-class="tap-press-soft" hover-stay-time="80">{{act.label}}</text>
+            </view>
           </view>
           <view class="cm-card-foot">
             <text class="cm-order" wx:if="{{item.orderId}}">订单 {{item.orderShort}}</text>
