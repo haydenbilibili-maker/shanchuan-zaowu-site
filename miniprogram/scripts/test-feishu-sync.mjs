@@ -183,12 +183,23 @@ function runOnce (file) {
    * 「成品库的库存以小程序-超管工作台-工作室-库存管理的数据为准」
    * ⇒ 成品库存真源是小程序里人工盘点的数据，**不由飞书同步**。
    */
-  eq('G1 同步目标只有两个（成品库存已按口径移出）', Object.keys(M.TARGETS).sort(), ['purchase', 'rawInventory'])
+  // 2026-11-27 产品负责人：重新启用成品库存同步，并新增员工薪酬表
+  eq('G1 同步目标四个（采购 / 原材料 / 成品库存 / 员工薪酬）', Object.keys(M.TARGETS).sort(), ['inventory', 'payroll', 'purchase', 'rawInventory'])
   eq('G2 原材料写入口', M.TARGETS.rawInventory.fn, 'manageStudioRawInventory')
-  ok('G3 成品库存不在同步目标里（不会被飞书覆盖）', M.TARGETS.inventory === undefined)
+  ok('G3 成品库存重新进入同步目标（2026-11-27 产品负责人）', !!M.TARGETS.inventory && M.TARGETS.inventory.fn === 'manageStudioInventory')
   eq('G4 采购写入口', M.TARGETS.purchase.fn, 'managePurchaseOrder')
   ok('G5 每个目标都有 items 构造器', Object.values(M.TARGETS).every((t) => typeof t.build === 'function'), JSON.stringify(Object.keys(M.TARGETS)))
   ok('G6 每个目标都声明签名列（表身份校验）', Object.values(M.TARGETS).every((t) => Array.isArray(t.signature) && t.signature.length >= 1), JSON.stringify(Object.keys(M.TARGETS)))
+
+  // 2026-11-27：新增「员工薪酬」同步目标 + 成品库存恢复；ERP 配置也要有同一张表
+  {
+    const erp = readFileSync(resolve(ROOT, 'admin/src/utils/feishuSync.js'), 'utf8')
+    eq('G7 员工薪酬写入口', M.TARGETS.payroll.fn, 'manageStaffWorkspace')
+    eq('G8 员工薪酬签名列（姓名 + 月份）', JSON.stringify(M.TARGETS.payroll.signature), JSON.stringify(['姓名', '月份']))
+    ok('G9 员工薪酬表定义与 ERP 一致（字段键集合相同）',
+      /payroll: \{/.test(erp) && /staffName: '姓名'/.test(erp) && /net: '实发'/.test(erp) &&
+      Object.keys(M.DEFAULT_TABLES.payroll.fields).length === 9)
+  }
 
   return { passes, failures }
 }

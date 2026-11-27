@@ -69,6 +69,21 @@ function defaultFeishuConfig() {
           amount: '总价',
         },
       },
+      /** 员工薪酬 → staff_payslips（飞书表名「员工薪酬」；2026-11-27 新增，表 id 在同步中心里选） */
+      payroll: {
+        tableId: '',
+        fields: {
+          staffName: '姓名',
+          phone: '手机号',
+          month: '月份',
+          base: '基本工资',
+          bonus: '提成奖金',
+          deduction: '扣款',
+          gross: '应发',
+          net: '实发',
+          remark: '备注'
+        }
+      },
       /** 成品库存 → studio_inventory（飞书表名「成品库存」） */
       inventory: {
         tableId: 'tblh9wqtrQmZgRO5',
@@ -126,7 +141,7 @@ function normalizeTables(raw) {
   const base = defaultFeishuConfig().tables
   const src = raw && typeof raw === 'object' ? raw : {}
   const out = deepClone(base)
-  for (const key of ['purchase', 'inventory', 'rawInventory', 'shipment']) {
+  for (const key of ['purchase', 'inventory', 'rawInventory', 'payroll', 'shipment']) {
     if (!src[key]) continue
     out[key].tableId = String(src[key].tableId || '').trim()
     out[key].fields = { ...out[key].fields, ...(src[key].fields || {}) }

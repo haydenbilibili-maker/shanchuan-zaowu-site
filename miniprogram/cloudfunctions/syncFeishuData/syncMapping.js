@@ -51,6 +51,23 @@ const DEFAULT_TABLES = {
       note: '备注'
     }
   },
+  payroll: {
+    // 2026-11-27 产品负责人：飞书同步新增「员工薪酬」表。
+    // 表 id 未写死（在 ERP / 小程序飞书同步页里选表后保存到 configs/feishu_bitable），
+    // 签名列 = 姓名 + 月份：两列都在才认为这是薪酬表，列名对不上会拒绝同步而不是灌错数据。
+    tableId: '',
+    fields: {
+      staffName: '姓名',
+      phone: '手机号',
+      month: '月份',
+      base: '基本工资',
+      bonus: '提成奖金',
+      deduction: '扣款',
+      gross: '应发',
+      net: '实发',
+      remark: '备注'
+    }
+  },
   rawInventory: {
     tableId: 'tblekBh0CRPMa7ie',
     fields: {
@@ -200,6 +217,34 @@ function toInventoryItems (records, fieldMap) {
 }
 
 /** 飞书记录 → `managePurchaseOrder.upsertFromFeishu` 的 items（与 ERP `toOpsPurchaseItem` 对齐） */
+/**
+ * 飞书「员工薪酬」→ 工资条 items（2026-11-27）
+ * 只做字段整形；staffOpenid 由云函数按手机号/姓名回查 staff_members（这里不碰库）。
+ */
+function toPayrollItems (records, fieldMap) {
+  return (Array.isArray(records) ? records : []).map((rec) => {
+    const m = mapRecord(rec, fieldMap)
+    const month = String(m.month || '').trim().slice(0, 7).replace('/', '-').replace('.', '-')
+    const base = Number(m.base) || 0
+    const bonus = Number(m.bonus) || 0
+    const deduction = Number(m.deduction) || 0
+    const gross = Number(m.gross) || (base + bonus)
+    const net = Number(m.net) || Math.round((gross - deduction) * 100) / 100
+    return {
+      feishuRecordId: String(rec.record_id || rec.recordId || ''),
+      staffName: String(m.staffName || '').trim(),
+      phone: String(m.phone || '').trim(),
+      month,
+      base,
+      bonus,
+      deduction,
+      gross,
+      net,
+      remark: String(m.remark || '').trim()
+    }
+  }).filter((it) => it.staffName && /^\d{4}-\d{2}$/.test(it.month))
+}
+
 function toPurchaseItems (records, fieldMap) {
   return (records || []).map((rec) => {
     const m = mapRecord(rec, fieldMap)
@@ -376,6 +421,21 @@ function toBudgetPools (records) {
 }
 
 const TARGETS = {
+  // 2026-11-27：产品负责人要求成品库存恢复同步（此前 09-19 曾因「以小程序盘点为准」而移出）
+  inventory: {
+    label: '成品库存',
+    fn: 'manageStudioInventory',
+    build: toInventoryItems,
+    note: '飞书「成品库存」',
+    signature: ['物品名称', '数量']
+  },
+  payroll: {
+    label: '员工薪酬',
+    fn: 'manageStaffWorkspace',
+    build: toPayrollItems,
+    note: '飞书「员工薪酬」',
+    signature: ['姓名', '月份']
+  },
   rawInventory: {
     label: '原材料库存',
     fn: 'manageStudioRawInventory',
@@ -414,5 +474,6 @@ module.exports = {
   isActivePurchaseOf,
   toRawInventoryItems,
   toInventoryItems,
+  toPayrollItems,
   toPurchaseItems
 }

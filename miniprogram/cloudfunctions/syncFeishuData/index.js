@@ -42,7 +42,8 @@ const SYNC_ID = 'feishu_sync'
 const LOCAL_COLLECTION = {
   rawInventory: 'studio_raw_inventory',
   inventory: 'studio_inventory',
-  purchase: 'ops_purchases'
+  purchase: 'ops_purchases',
+  payroll: 'staff_payslips'
 }
 
 function ok (data) {

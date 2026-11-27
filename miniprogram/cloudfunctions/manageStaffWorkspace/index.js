@@ -680,6 +680,73 @@ function totalsFromPayslipPayload(event) {
   return { items: [], base, bonus, deduction, gross, net, useItems: false }
 }
 
+/**
+ * 飞书「员工薪酬」→ 工资条（2026-11-27 产品负责人：飞书同步新增两张表之一）
+ * - 只超管可写；按「手机号 → 姓名」回查 staff_members 拿 openid；
+ * - 文档 id 仍是 `${openid}_${month}`（与人工录入同一张工资条，不会重复出两条）；
+ * - 认不出员工的行走 skipped，不猜、不落库。
+ */
+async function payslipUpsertFromFeishu(event, openid) {
+  const guard = await assertStaff(db, openid, { requireSuperAdmin: true })
+  if (!guard.ok) return fail(guard.msg, { code: guard.code })
+  const items = Array.isArray(event.items) ? event.items : []
+  let created = 0
+  let updated = 0
+  let skipped = 0
+  const unmatched = []
+  const now = new Date()
+  for (const it of items) {
+    const month = String((it && it.month) || '').trim()
+    const staffName = String((it && it.staffName) || '').trim()
+    const phone = String((it && it.phone) || '').trim()
+    if (!month || !staffName) { skipped += 1; continue }
+    let staffOpenid = String((it && it.staffOpenid) || '').trim()
+    if (!staffOpenid) {
+      try {
+        let res = null
+        if (phone) res = await db.collection('staff_members').where({ phone }).limit(1).get()
+        if ((!res || !(res.data || []).length) && staffName) {
+          res = await db.collection('staff_members').where({ name: staffName }).limit(1).get()
+        }
+        const row = ((res && res.data) || [])[0]
+        staffOpenid = (row && row.openid) || ''
+      } catch (e) { staffOpenid = '' }
+    }
+    if (!staffOpenid) { skipped += 1; if (unmatched.length < 5) unmatched.push(staffName); continue }
+    const docId = `${staffOpenid}_${month}`
+    const doc = {
+      staffOpenid,
+      staffName,
+      month,
+      base: Number(it.base) || 0,
+      bonus: Number(it.bonus) || 0,
+      deduction: Number(it.deduction) || 0,
+      gross: Number(it.gross) || 0,
+      net: Number(it.net) || 0,
+      remark: String(it.remark || '').slice(0, 200),
+      feishuRecordId: String(it.feishuRecordId || ''),
+      updatedAt: now,
+      updatedBy: openid,
+      updatedByName: (guard.actor && guard.actor.name) || '飞书同步'
+    }
+    try {
+      const got = await db.collection(COL_PAY).doc(docId).get().catch(() => null)
+      const exists = !!(got && got.data)
+      await db.collection(COL_PAY).doc(docId).set({ data: doc })
+      if (exists) updated += 1
+      else created += 1
+    } catch (e) {
+      try {
+        await db.collection(COL_PAY).add({ data: { _id: docId, ...doc, createTime: now } })
+        created += 1
+      } catch (e2) {
+        skipped += 1
+      }
+    }
+  }
+  return { success: true, stats: { created, updated, skipped }, unmatched }
+}
+
 async function payslipAdminList(event, openid) {
   const guard = await assertStaff(db, openid, { requireSuperAdmin: true })
   if (!guard.ok) return fail(guard.msg, { code: guard.code })
@@ -930,6 +997,8 @@ exports.main = async (event) => {
       return payslipSalesShare(event, openid)
     case 'payslipUpsert':
       return payslipUpsert(event, openid)
+    case 'upsertFromFeishu':
+      return payslipUpsertFromFeishu(event, openid)
     case 'payslipAdminList':
       return payslipAdminList(event, openid)
     case 'payslipSiPreview':
