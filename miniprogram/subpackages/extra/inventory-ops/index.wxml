@@ -317,7 +317,8 @@
           <picker mode="selector" range="{{groupFilterNames}}" value="{{groupFilterIndex}}" bindchange="onGroupFilter">
             <view class="ops-filter-chip">{{groupFilterNames[groupFilterIndex]}}</view>
           </picker>
-          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-add" bindtap="openPaste">粘贴入库</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-add" bindtap="openPaste">粘贴盘点</view>
+          <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-add inv-btn-ghost" bindtap="openUnique">登记唯一件</view>
         </view>
 
         <view class="ops-skeleton" wx:if="{{loading && !groups.length && !finishedListError}}">
@@ -348,9 +349,10 @@
               </view>
             </view>
             <view class="ops-group-body" wx:if="{{!item.collapsed}}">
-              <view class="ops-line-row" wx:for="{{item.items}}" wx:key="_id" wx:for-item="sku">
+              <view class="ops-line-row" wx:for="{{item.items}}" wx:key="_id" wx:for-item="sku" data-id="{{sku._id}}" bindtap="openMoves" hover-class="tap-press-soft" hover-stay-time="80">
                 <view class="ops-line-name">
                   {{sku.skuName || sku.itemName}}
+                  <text class="ops-line-sub inv-sn" wx:if="{{sku.serialNo}}">唯一件 {{sku.serialNo}}</text>
                   <text class="ops-line-sub" wx:if="{{sku.framingSpec || sku.spec}}">{{sku.framingSpec || sku.spec}}</text>
                   <text class="ops-line-sub" wx:if="{{sku.inventoryDate}}">盘点 {{sku.inventoryDate}}</text>
                 </view>
@@ -452,7 +454,7 @@
   <view class="ui-pop-sheet ops-sheet" catchtap="true">
     <view class="ui-pop-grip"></view>
     <view class="ui-pop-head ops-sheet-head">
-      <text class="ui-pop-title ops-sheet-title">粘贴群公告入库 · 成品</text>
+      <text class="ui-pop-title ops-sheet-title">粘贴盘点 · 成品</text>
       <view class="ui-pop-close" catchtap="closePaste" hover-class="tap-press" hover-stay-time="80">✕</view>
     </view>
     <scroll-view scroll-y class="ui-pop-body ops-sheet-body">
@@ -469,7 +471,7 @@
         <view class="ops-actions">
           <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-secondary" bindtap="runPreview">解析预览</view>
           <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-primary {{committing ? 'disabled' : ''}}" bindtap="confirmCommit">
-            {{committing ? '写入中…' : (commitPending ? '再点确认覆盖' : '确认覆盖写入')}}
+            {{committing ? '写入中…' : (commitPending ? '再点确认写入' : '确认写入')}}
           </view>
         </view>
       </view>
@@ -477,6 +479,34 @@
       <view class="ops-issue-block" wx:if="{{previewError}}">
         <text class="ops-issue-label">{{commitPending ? '待确认' : '提示'}}</text>
         <text class="ops-issue-msg">{{previewError}}</text>
+      </view>
+
+      <!-- 2026-11-27 盘点差异：写入前先看这次会改掉什么（新增 / 清零 / 改数） -->
+      <view class="inv-diff" wx:if="{{preview && (diff || diffLoading)}}">
+        <text class="ops-section-label">这次盘点会改什么</text>
+        <text class="ops-meta" wx:if="{{diffLoading}}">正在比对当前台账…</text>
+        <block wx:elif="{{diff}}">
+          <view class="inv-diff-chips">
+            <text class="inv-diff-chip is-add">新增 {{diff.counts.added}}</text>
+            <text class="inv-diff-chip is-cut">清零 {{diff.counts.cleared}}</text>
+            <text class="inv-diff-chip is-chg">改数 {{diff.counts.changed}}</text>
+            <text class="inv-diff-chip">不变 {{diff.counts.unchanged}}</text>
+          </view>
+          <text class="ops-meta-inline warn inv-diff-warn" wx:if="{{diff.counts.feishuCleared}}">其中 {{diff.counts.feishuCleared}} 条飞书同步的成品这次没出现，会被清零 —— 确认是真卖完了再写入</text>
+          <block wx:for="{{diff.cleared}}" wx:key="itemName" wx:for-item="d">
+            <view class="ops-line-row" wx:if="{{index < 8}}">
+              <text class="ops-line-name">{{d.itemName}}<text class="ops-line-sub" wx:if="{{d.spec}}">{{d.spec}}</text></text>
+              <text class="inv-diff-delta is-cut">{{d.before}} → 0</text>
+            </view>
+          </block>
+          <block wx:for="{{diff.changed}}" wx:key="itemName" wx:for-item="d">
+            <view class="ops-line-row" wx:if="{{index < 12}}">
+              <text class="ops-line-name">{{d.itemName}}<text class="ops-line-sub" wx:if="{{d.spec}}">{{d.spec}}</text></text>
+              <text class="inv-diff-delta">{{d.before}} → {{d.after}}</text>
+            </view>
+          </block>
+          <text class="ops-meta" wx:if="{{diff.uniqueKept}}">唯一件 {{diff.uniqueKept}} 件按序列号单独管理，不受这次盘点影响</text>
+        </block>
       </view>
 
       <view wx:if="{{preview}}">
@@ -510,7 +540,7 @@
         <text class="ops-meta" wx:if="{{preview.skippedCount}}">跳过 {{preview.skippedCount}} 行（公告头等）</text>
       </view>
 
-      <text class="ops-meta" style="margin-top: 24rpx;">按盘点日整体覆盖当前成品库存，历史盘点记录会保留。</text>
+      <text class="ops-meta" style="margin-top: 24rpx;">按盘点结果把差额记入出入库流水（不再删表重建），历史盘点记录会保留；没出现在这次盘点里的成品按 0 处理。</text>
     </scroll-view>
 </view>
 </view>
@@ -561,4 +591,76 @@
       </view>
     </scroll-view>
 </view>
+</view>
+
+<!-- 单品流水（2026-11-27「库存以出入库流水为准」）：这件货每一次进出 + 手工调整 -->
+<view class="ui-pop-mask" wx:if="{{showMoves}}" bindtap="closeMoves" catchtouchmove="true">
+  <view class="ui-pop-sheet ops-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ops-sheet-head">
+      <text class="ui-pop-title ops-sheet-title">{{movesRow.skuName || movesRow.itemName || '出入库流水'}}</text>
+      <view class="ui-pop-close" catchtap="closeMoves" hover-class="tap-press" hover-stay-time="80">✕</view>
+    </view>
+    <scroll-view scroll-y class="ui-pop-body ops-sheet-body">
+      <text class="ops-meta">现存 {{movesRow.qty}}{{movesRow.framingSpec ? ' · ' + movesRow.framingSpec : ''}}{{movesRow.serialNo ? ' · 唯一件 ' + movesRow.serialNo : ''}}</text>
+      <text class="ops-meta" wx:if="{{movesLoading}}">正在取流水…</text>
+      <view class="inv-moves-empty" wx:elif="{{!movesList.length}}">
+        <text class="ops-meta">还没有流水 —— 这条台账自接入流水以来没有变化过；下次盘点 / 出货 / 调整后会从这里开始记</text>
+      </view>
+      <view class="inv-move" wx:for="{{movesList}}" wx:key="_id">
+        <view class="inv-move-main">
+          <text class="inv-move-type is-{{item.type}}">{{item.typeLabel}}</text>
+          <text class="inv-move-note">{{item.note || item.refLabel}}</text>
+          <text class="inv-move-meta">{{item.timeText}}{{item.operator ? ' · ' + item.operator : ''}}{{item.refNo ? ' · ' + item.refNo : ''}}</text>
+        </view>
+        <view class="inv-move-side">
+          <text class="inv-move-delta {{item.delta < 0 ? 'is-out' : 'is-in'}}">{{item.deltaText}}</text>
+          <text class="inv-move-after">→ {{item.after}}</text>
+        </view>
+      </view>
+      <view class="inv-adjust">
+        <text class="ops-section-label">手工调整（报损 / 更正）</text>
+        <view class="ops-field">
+          <text class="ops-field-label">数量</text>
+          <input class="ops-field-input" type="text" value="{{adjustDelta}}" data-field="delta" bindinput="onAdjustInput" placeholder="+2 或 -1" placeholder-class="ops-ph" />
+        </view>
+        <view class="ops-field">
+          <text class="ops-field-label">原因</text>
+          <input class="ops-field-input" value="{{adjustReason}}" data-field="reason" bindinput="onAdjustInput" placeholder="必填：报损 / 盘错更正 / 自用…" placeholder-class="ops-ph" />
+        </view>
+        <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-primary {{adjustBusy ? 'disabled' : ''}}" bindtap="submitAdjust">{{adjustBusy ? '提交中…' : '记一条调整'}}</view>
+      </view>
+    </scroll-view>
+  </view>
+</view>
+
+<!-- 唯一件登记（2026-11-27 产品负责人「引入 serialNo」）：孤品一件一条，出货 / 回库按序列号定位 -->
+<view class="ui-pop-mask" wx:if="{{showUnique}}" bindtap="closeUnique" catchtouchmove="true">
+  <view class="ui-pop-sheet ops-sheet" catchtap="true">
+    <view class="ui-pop-grip"></view>
+    <view class="ui-pop-head ops-sheet-head">
+      <text class="ui-pop-title ops-sheet-title">登记唯一件</text>
+      <view class="ui-pop-close" catchtap="closeUnique" hover-class="tap-press" hover-stay-time="80">✕</view>
+    </view>
+    <scroll-view scroll-y class="ui-pop-body ops-sheet-body">
+      <text class="ops-meta">孤品 / 镇店之宝这类独一件的货，一件一个序列号：出货单选到它时扣的就是这一件，退回时也知道回来的是哪一件。</text>
+      <view class="ops-field">
+        <text class="ops-field-label">品名</text>
+        <input class="ops-field-input" value="{{uniqueForm.itemName}}" data-field="itemName" bindinput="onUniqueInput" placeholder="如 光明女神闪蝶" placeholder-class="ops-ph" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">规格装裱</text>
+        <input class="ops-field-input" value="{{uniqueForm.spec}}" data-field="spec" bindinput="onUniqueInput" placeholder="可空" placeholder-class="ops-ph" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">序列号</text>
+        <input class="ops-field-input" value="{{uniqueForm.serialNo}}" data-field="serialNo" bindinput="onUniqueInput" placeholder="如 SN-20261127-01" placeholder-class="ops-ph" />
+      </view>
+      <view class="ops-field">
+        <text class="ops-field-label">备注</text>
+        <input class="ops-field-input" value="{{uniqueForm.note}}" data-field="note" bindinput="onUniqueInput" placeholder="来源 / 特征，可空" placeholder-class="ops-ph" />
+      </view>
+      <view hover-class="tap-press" hover-stay-time="80" class="ops-btn-primary {{uniqueBusy ? 'disabled' : ''}}" bindtap="submitUnique">{{uniqueBusy ? '登记中…' : '登记入库'}}</view>
+    </scroll-view>
+  </view>
 </view>

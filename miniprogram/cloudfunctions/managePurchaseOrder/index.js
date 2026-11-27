@@ -24,6 +24,7 @@ const {
   SYNC_LOG_COLLECTION,
   ENTITIES,
   SOURCE,
+  STATUS,
   STATUS_LABEL,
   STATUS_FLOW,
   entitiesByScope,
@@ -35,6 +36,8 @@ const {
   buildSummary,
   feishuItemToPayload
 } = require('./purchaseDefaults')
+const { shouldStockIn } = require('./purchaseDefaults')
+const moves = require('./inventoryMoves')
 const { buildPurchaseDashboard } = require('./purchaseDashboard')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -290,7 +293,43 @@ async function handleUpdate(event, actor) {
     deleted: false
   })
   await withCollectionRetry(() => db.collection(COLLECTION).doc(id).update({ data: patch }))
-  return ok({ item: mapRow(Object.assign({ _id: id }, patch)) })
+  const stockIn = await stockInIfNeeded(id, Object.assign({}, prev, patch, { status: prev.status }), normalized.row.status, actor)
+  return ok({ item: mapRow(Object.assign({ _id: id }, patch)), stockIn })
+}
+
+/**
+ * 采购到库 → 原材料 in 流水（口径见 purchaseDefaults.shouldStockIn）。失败不回滚状态，
+ * 但把原因写回单据（stockMoveError），观测台能看到「这张单到库了却没入账」。
+ */
+async function stockInIfNeeded(id, prev, nextStatus, actor) {
+  const doc = Object.assign({}, prev, { _id: id })
+  if (!shouldStockIn(prev.status, nextStatus, doc)) return null
+  try {
+    const res = await moves.applyMove(db, {
+      ledger: 'raw',
+      type: moves.MOVE_TYPE.IN,
+      delta: Math.round(Number(doc.qty)),
+      itemName: doc.itemName,
+      spec: doc.spec || '',
+      refType: 'purchase',
+      refId: id,
+      refNo: doc.orderNo || '',
+      idemKey: `purchase-in:${id}`,
+      operator: (actor && (actor.name || actor.openid)) || '',
+      note: `采购入库 ${doc.orderNo || ''}${doc.supplier ? ' · ' + doc.supplier : ''}`,
+      seed: {
+        itemName: doc.itemName, spec: doc.spec || '', category: '标本', unit: doc.unit || '件',
+        unitPrice: Number(doc.unitPrice) || 0, minQty: 0, outboundTotal: 0, inventoryRole: 'raw',
+        note: '由采购单入库自动建档', feishuRecordId: '', createdBy: 'purchase_stock_in'
+      }
+    })
+    await db.collection(COLLECTION).doc(id).update({ data: { stockMoveId: res.moveId, stockLedgerId: res.ledgerId, stockedAt: Date.now(), stockMoveError: '' } })
+    return { ok: true, ledgerId: res.ledgerId, after: res.after }
+  } catch (e) {
+    console.error('[managePurchaseOrder] stock-in failed', id, e)
+    await db.collection(COLLECTION).doc(id).update({ data: { stockMoveError: String((e && e.message) || e).slice(0, 200) } }).catch(() => null)
+    return { ok: false, msg: (e && e.message) || '入库流水写入失败' }
+  }
 }
 
 async function handleSetStatus(event, actor) {
@@ -311,7 +350,8 @@ async function handleSetStatus(event, actor) {
     updatedBy: (actor && (actor.name || actor.openid)) || ''
   }
   await withCollectionRetry(() => db.collection(COLLECTION).doc(id).update({ data: patch }))
-  return ok({ item: mapRow(Object.assign({}, prev, patch, { _id: id })) })
+  const stockIn = await stockInIfNeeded(id, prev, next, actor)
+  return ok({ item: mapRow(Object.assign({}, prev, patch, { _id: id })), stockIn })
 }
 
 /** 批量快捷流转：同一目标状态，逐条校验可流转 */
@@ -323,6 +363,7 @@ async function handleBatchSetStatus(event, actor) {
 
   const now = Date.now()
   let okCount = 0
+  let stockedIn = 0
   let skipped = 0
   const errors = []
 
@@ -354,6 +395,8 @@ async function handleBatchSetStatus(event, actor) {
           }
         })
       )
+      const stockIn = await stockInIfNeeded(id, prev, next, actor)
+      if (stockIn) stockedIn += stockIn.ok ? 1 : 0
       okCount += 1
     } catch (err) {
       skipped += 1
@@ -364,8 +407,47 @@ async function handleBatchSetStatus(event, actor) {
   return ok({
     stats: { ok: okCount, skipped, total: ids.length },
     errors: errors.slice(0, 20),
-    msg: `已流转 ${okCount} 条` + (skipped ? `，跳过 ${skipped} 条` : '')
+    stockedIn,
+    msg: `已流转 ${okCount} 条` + (stockedIn ? `，${stockedIn} 条已记入原材料库存` : '') + (skipped ? `，跳过 ${skipped} 条` : '')
   })
+}
+
+/**
+ * 确认 / 驳回「出货单运费草稿」（仅超管）：确认 = 入账（已完成，计入预算）；驳回 = 取消。
+ * 只处理 pendingConfirm 的单，不能借这个口子跳过普通采购单的状态机。
+ */
+async function handleConfirmDraft(event, actor) {
+  const id = String(event.id || event._id || '').trim()
+  const accept = event.accept !== false
+  if (!id) return fail('缺少 id')
+  const cur = await withCollectionRetry(() => db.collection(COLLECTION).doc(id).get())
+  const prev = cur.data
+  if (!prev || prev.deleted) return fail('记录不存在', 'NOT_FOUND')
+  if (prev.pendingConfirm !== true) return fail('这张单不是待确认的运费草稿', 'NOT_DRAFT')
+  const now = Date.now()
+  const next = accept ? STATUS.COMPLETED : STATUS.CANCELLED
+  const patch = {
+    pendingConfirm: false,
+    status: next,
+    statusLabel: STATUS_LABEL[next],
+    confirmedAt: now,
+    confirmedBy: (actor && (actor.name || actor.openid)) || '',
+    updatedAt: now,
+    updatedBy: (actor && (actor.name || actor.openid)) || ''
+  }
+  if (accept && event.amount != null && event.amount !== '') {
+    const amount = Math.round(Number(event.amount) * 100) / 100
+    if (!Number.isFinite(amount) || amount < 0) return fail('金额不合法')
+    patch.amount = amount
+    patch.unitPrice = amount
+  }
+  await withCollectionRetry(() => db.collection(COLLECTION).doc(id).update({ data: patch }))
+  // 回写出货单上的运费状态（出货详情「运费 · 已入账」）；失败不影响确认本身
+  if (prev.refShipmentId) {
+    await db.collection('ops_shipments').doc(prev.refShipmentId)
+      .update({ data: { freightState: accept ? 'confirmed' : 'rejected' } }).catch(() => null)
+  }
+  return ok({ item: mapRow(Object.assign({}, prev, patch, { _id: id })), msg: accept ? '运费已确认入账' : '已驳回这条运费草稿' })
 }
 
 async function handleRemove(event, actor) {
@@ -652,6 +734,7 @@ exports.main = async (event = {}) => {
     setStatus: 1,
     batchSetStatus: 1,
     remove: 1,
+    confirmDraft: 1,
     upsertFromFeishu: 1,
     bindFeishuRecord: 1
   }
@@ -665,6 +748,7 @@ exports.main = async (event = {}) => {
       if (action === 'setStatus') return await handleSetStatus(event, auth.actor)
       if (action === 'batchSetStatus') return await handleBatchSetStatus(event, auth.actor)
       if (action === 'remove') return await handleRemove(event, auth.actor)
+      if (action === 'confirmDraft') return await handleConfirmDraft(event, auth.actor)
       if (action === 'upsertFromFeishu') return await handleUpsertFromFeishu(event, auth.actor)
       if (action === 'bindFeishuRecord') return await handleBindFeishuRecord(event, auth.actor)
     }

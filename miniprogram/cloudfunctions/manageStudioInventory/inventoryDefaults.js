@@ -80,6 +80,10 @@ function mapInventoryRow(doc) {
     productId: doc.productId || null,
     feishuRecordId: doc.feishuRecordId || null,
     inventoryRole: 'finished',
+    // 2026-11-27 流水口径：唯一件序列号 / 是否已接入流水（有流水才能看「这件货怎么来的」）
+    serialNo: doc.serialNo || '',
+    isUnique: !!doc.serialNo,
+    movesOpened: !!doc.movesOpenedAt,
     updatedAt: doc.updatedAt || 0
   }
 }

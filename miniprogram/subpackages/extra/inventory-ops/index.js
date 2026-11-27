@@ -138,6 +138,19 @@ Page({
     sourceLabel: '',
     snapshots: [],
     showPaste: false,
+    // 2026-11-27 出入库流水：盘点差异 / 单品流水 / 唯一件登记
+    diff: null,
+    diffLoading: false,
+    showMoves: false,
+    movesRow: null,
+    movesList: [],
+    movesLoading: false,
+    adjustDelta: '',
+    adjustReason: '',
+    adjustBusy: false,
+    showUnique: false,
+    uniqueForm: { itemName: '', spec: '', serialNo: '', note: '' },
+    uniqueBusy: false,
     pasteText: '',
     preview: null,
     previewError: '',
@@ -602,7 +615,8 @@ Page({
       pasteText: '',
       preview: null,
       previewError: '',
-      commitPending: false
+      commitPending: false,
+      diff: null
     })
   },
 
@@ -661,6 +675,103 @@ Page({
         skippedCount: (parsed.skipped || []).length
       }
     })
+    this.loadDiff()
+  },
+
+  /** 盘点差异（云端只读）：这次盘点会给台账带来什么变化 —— 写入前先看清，不再盲覆盖 */
+  async loadDiff() {
+    this.setData({ diffLoading: true, diff: null })
+    try {
+      const out = await this.callFinished({ action: 'diffSnapshot', text: this.data.pasteText })
+      this.setData({ diff: out, diffLoading: false })
+    } catch (e) {
+      this.setData({ diffLoading: false, diff: null })
+    }
+  },
+
+  /** 单品流水：点台账行看「这件货怎么来的、怎么走的」，并可手工调整（报损 / 更正，必须写原因） */
+  async openMoves(e) {
+    const id = String((e.currentTarget.dataset || {}).id || '')
+    // 历史快照行是只读拼出来的（id 形如 <快照>_<行号>），没有流水
+    const row = this.findFinishedRow(id)
+    if (!id || (row && row.readOnly)) return
+    this.setData({ showMoves: true, movesRow: row || { _id: id }, movesList: [], movesLoading: true, adjustDelta: '', adjustReason: '' })
+    try {
+      const out = await this.callFinished({ action: 'listMoves', ledgerId: id, limit: 50 })
+      this.setData({ movesList: (out.list || []).map((m) => Object.assign({}, m, {
+        deltaText: (m.delta > 0 ? '+' : '') + m.delta,
+        timeText: m.createdAt ? new Date(m.createdAt + 8 * 3600000).toISOString().slice(5, 16).replace('T', ' ') : ''
+      })), movesLoading: false })
+    } catch (err) {
+      this.setData({ movesLoading: false, tipTone: 'warn', tipText: formatCloudFnError(err, '流水未能取回') })
+    }
+  },
+
+  findFinishedRow(id) {
+    for (const g of this.data.groups || []) {
+      const hit = (g.items || []).find((x) => x._id === id)
+      if (hit) return hit
+    }
+    return null
+  },
+
+  closeMoves() {
+    if (this.data.adjustBusy) return
+    this.setData({ showMoves: false, movesRow: null, movesList: [] })
+  },
+
+  onAdjustInput(e) {
+    const field = String((e.currentTarget.dataset || {}).field || '')
+    if (field === 'delta') this.setData({ adjustDelta: e.detail.value || '' })
+    if (field === 'reason') this.setData({ adjustReason: e.detail.value || '' })
+  },
+
+  async submitAdjust() {
+    if (this.data.adjustBusy || !this.data.movesRow) return
+    const delta = Math.round(Number(this.data.adjustDelta))
+    const reason = String(this.data.adjustReason || '').trim()
+    if (!delta) { this.setData({ tipTone: 'warn', tipText: '调整数量填 +N 或 -N' }); return }
+    if (!reason) { this.setData({ tipTone: 'warn', tipText: '请写调整原因（报损 / 更正 / 自用…）' }); return }
+    this.setData({ adjustBusy: true })
+    try {
+      const out = await this.callFinished({ action: 'adjust', ledgerId: this.data.movesRow._id, delta, reason })
+      this.setData({ adjustBusy: false, tipTone: 'info', tipText: out.msg || '已调整' })
+      await this.loadFinishedList()
+      this.openMoves({ currentTarget: { dataset: { id: this.data.movesRow._id } } })
+    } catch (err) {
+      this.setData({ adjustBusy: false, tipTone: 'warn', tipText: formatCloudFnError(err, '调整未成') })
+    }
+  },
+
+  openUnique() {
+    this.setData({ showUnique: true, uniqueForm: { itemName: '', spec: '', serialNo: '', note: '' } })
+  },
+
+  closeUnique() {
+    if (this.data.uniqueBusy) return
+    this.setData({ showUnique: false })
+  },
+
+  onUniqueInput(e) {
+    const field = String((e.currentTarget.dataset || {}).field || '')
+    if (!field) return
+    this.setData({ [`uniqueForm.${field}`]: field === 'serialNo' ? String(e.detail.value || '').toUpperCase() : (e.detail.value || '') })
+  },
+
+  /** 唯一件（孤品）登记：一件一条，带序列号入库（产品负责人 2026-11-27「引入 serialNo」） */
+  async submitUnique() {
+    if (this.data.uniqueBusy) return
+    const f = this.data.uniqueForm || {}
+    if (!String(f.itemName || '').trim()) { this.setData({ tipTone: 'warn', tipText: '请填品名' }); return }
+    if (!/^[A-Z0-9][A-Z0-9-]{2,39}$/.test(String(f.serialNo || '').trim())) { this.setData({ tipTone: 'warn', tipText: '序列号 3–40 位字母 / 数字 / 短横线' }); return }
+    this.setData({ uniqueBusy: true })
+    try {
+      const out = await this.callFinished(Object.assign({ action: 'registerUnique' }, f))
+      this.setData({ uniqueBusy: false, showUnique: false, tipTone: 'info', tipText: out.msg || '已登记' })
+      await this.loadFinishedList()
+    } catch (err) {
+      this.setData({ uniqueBusy: false, tipTone: 'warn', tipText: formatCloudFnError(err, '登记未成') })
+    }
   },
 
   togglePreviewGroup(e) {
@@ -684,10 +795,14 @@ Page({
     }
 
     if (!this.data.commitPending) {
+      const c = this.data.diff && this.data.diff.counts
       this.setData({
         commitPending: true,
-        previewError: `再点一次即覆盖：${parsed.inventoryDate} · ${parsed.stats.lineCount} SKU / ${parsed.stats.totalQty} 件`
+        previewError: c
+          ? `再点一次即写入：${parsed.inventoryDate} · 新增 ${c.added} / 清零 ${c.cleared} / 改数 ${c.changed}（不变 ${c.unchanged}），差额记入出入库流水`
+          : `再点一次即写入：${parsed.inventoryDate} · ${parsed.stats.lineCount} SKU / ${parsed.stats.totalQty} 件，差额记入出入库流水`
       })
+      if (!this.data.diff) this.loadDiff()
       return
     }
 

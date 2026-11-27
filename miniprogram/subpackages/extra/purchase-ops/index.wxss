@@ -116,3 +116,11 @@
 .sync-body .ops-btn-primary {
   margin-top: 28rpx;
 }
+
+/* 2026-11-27 出入库流水 / 运费草稿 */
+.ops-card .ops-meta-inline.ok,
+.ops-card .ops-meta-inline.warn { display: block; margin-top: 8rpx; }
+.ops-meta-inline.ok { color: #9cc29a; }
+.ops-meta-inline.warn { color: #e3a99e; }
+.po-draft { flex-wrap: wrap; align-items: center; gap: 12rpx; padding: 12rpx 16rpx; border-radius: var(--r-thumb-sm, 8rpx); background: rgba(227, 169, 158, 0.08); }
+.po-draft .ops-meta-inline { flex: 1 1 100%; margin-top: 0; }

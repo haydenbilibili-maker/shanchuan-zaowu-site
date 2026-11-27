@@ -1230,6 +1230,7 @@
         <view class="sc-detail-line" wx:for="{{detail.items}}" wx:key="itemName">
           <view class="sc-detail-line-main">
             <text class="ops-line-name">{{item.itemName}}{{item.spec ? ' · ' + item.spec : ''}}</text>
+            <text class="sc-detail-mat" wx:if="{{item.serialNo}}">唯一件 {{item.serialNo}}</text>
             <text class="sc-detail-mat" wx:if="{{item.matLine}}">{{item.matLine}}</text>
           </view>
           <text class="ops-qty-badge">{{item.qty}}</text>
@@ -1246,7 +1247,23 @@
             <input class="ops-field-input" value="{{shipForm.trackingNo}}" data-field="trackingNo" bindinput="onShipFormInput" placeholder="运单号" placeholder-class="ops-ph" />
           </view>
         </view>
+        <view class="ops-field-row">
+          <view class="ops-field half">
+            <input class="ops-field-input" type="digit" value="{{shipForm.freight}}" data-field="freight" bindinput="onShipFormInput" placeholder="运费（元，可空）" placeholder-class="ops-ph" />
+          </view>
+          <text class="ops-field-hint half">填了运费，采购账会生成一条「物流运费 · 待确认」，确认后才计入预算</text>
+        </view>
         <view hover-class="tap-press" hover-stay-time="80" class="ops-chip-btn brass" bindtap="saveLogistics">{{detailBusy ? '保存中…' : '保存物流'}}</view>
+      </view>
+      <!-- 出入库流水（2026-11-27）：发货即扣成品库存；对不上库存 / 扣成负数的行在这里点名 -->
+      <view class="ops-detail-section sc-stock" wx:if="{{detail.stockOutAt || detail.freightState}}">
+        <text class="ops-section-label">库存与运费</text>
+        <text class="ops-meta" wx:if="{{detail.stockOutAt && !detail.stockReturnedAt}}">成品库存：发货时已出库</text>
+        <text class="ops-meta" wx:if="{{detail.stockReturnedAt}}">成品库存：单据作废，已回库</text>
+        <text class="ops-meta-inline warn" wx:if="{{detail.stockUnlinked.length}}">{{detail.stockUnlinked.length}} 行没对上成品库存（未扣）：{{detail.stockUnlinked[0]}}{{detail.stockUnlinked.length > 1 ? ' 等' : ''}}</text>
+        <text class="ops-meta-inline warn" wx:if="{{detail.stockShortage.length}}">库存不足：{{detail.stockShortage[0]}}{{detail.stockShortage.length > 1 ? ' 等' : ''}}</text>
+        <text class="ops-meta" wx:if="{{detail.freightState === 'pending'}}">运费 ¥{{detail.freight}} · 采购账待确认</text>
+        <text class="ops-meta" wx:if="{{detail.freightState === 'confirmed'}}">运费 ¥{{detail.freight}} · 已入账</text>
       </view>
       <text class="ops-meta" wx:elif="{{detail.expressCompany || detail.trackingNo}}">物流 {{detail.expressCompany || '—'}} {{detail.trackingNo || ''}}</text>
 

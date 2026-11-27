@@ -22,3 +22,8 @@
 ## 关联
 
 - 规则：[`../rules/studio_raw_inventory.json`](../rules/studio_raw_inventory.json)
+
+## 出入库流水（2026-11-27）
+
+数量（`qty` / `currentQty` / 入出库累计）只经 [`inventory_moves`](./inventory_moves.md) 改：建档 `in`、手工改数与飞书同步 `count`、
+工作室标本 / 原材料采购单到库（`managePurchaseOrder`）`in`。

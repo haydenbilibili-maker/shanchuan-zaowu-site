@@ -97,6 +97,8 @@ function purchaseMonthKey(row) {
 
 function isActivePurchase(row) {
   if (!row || row.deleted) return false
+  // 出货单运费自动草稿：人工确认前不算已用预算（2026-11-27 产品负责人「生成草稿，人工确认」）
+  if (row.pendingConfirm === true) return false
   return String(row.status || '') !== STATUS.CANCELLED && String(row.status || '') !== 'cancelled'
 }
 

@@ -56,6 +56,159 @@ const {
 } = require('./settlementNotify')
 const { createMemoHandlers, countSkuRefsInMemos } = require('./shipmentMemos')
 const { createSkuAdminHandlers } = require('./skuAdmin')
+const moves = require('./inventoryMoves')
+
+/* ═══ 出入库流水（2026-11-27 产品负责人「库存以出入库流水为准」）═══
+ * 出货单变成「已发货 / 已签收 / 已完成」（之前不是）→ 每行记一条成品 out 流水；
+ * 已发出的单被删除（作废）→ 每行 return 回库；已发出后改了明细 → 只按差额补 out / return。
+ * 只认能对上成品台账的行（inventoryRecordId / 唯一件 serialNo / 品名+规格），对不上的行**不臆造台账**，
+ * 记在单据 stockUnlinked 上让人补关联；扣成负数的行记 stockShortage（不拦发货：线下货已经走了）。
+ * 飞书同步与粘贴导入不触发（历史单早已在盘点里体现，首次同步会把旧单全部再扣一遍）。 */
+const OUT_STATUSES = ['shipped', 'received', 'completed']
+function isOutStatus(s) {
+  return OUT_STATUSES.indexOf(normalizeStatus(s)) !== -1
+}
+
+async function resolveLedgerRow(it) {
+  if (it.inventoryRecordId) {
+    const r = await db.collection(moves.LEDGER.finished.collection).doc(it.inventoryRecordId).get().catch(() => null)
+    if (r && r.data) return r.data
+  }
+  return moves.findLedgerRow(db, 'finished', { serialNo: it.serialNo || '', itemName: it.itemName, spec: it.spec || '' })
+}
+
+/** lines: [{ it, qty(正数), idx }]；mode: out | return；tag 区分幂等键批次 */
+async function applyShipmentMoves(id, doc, lines, mode, tag, actor) {
+  const unlinked = []
+  const shortage = []
+  let moved = 0
+  for (const ln of lines) {
+    const it = ln.it || {}
+    const row = await resolveLedgerRow(it)
+    if (!row) { unlinked.push(`${it.itemName}${it.spec ? ' · ' + it.spec : ''}`); continue }
+    const qty = Math.abs(Math.round(Number(ln.qty) || 0))
+    if (!qty) continue
+    const res = await moves.applyMove(db, {
+      ledger: 'finished',
+      type: mode === 'out' ? moves.MOVE_TYPE.OUT : moves.MOVE_TYPE.RETURN,
+      delta: mode === 'out' ? -qty : qty,
+      ledgerId: row._id,
+      row,
+      itemName: it.itemName,
+      spec: it.spec || '',
+      serialNo: it.serialNo || '',
+      refType: 'shipment',
+      refId: id,
+      refNo: doc.shipmentNo || '',
+      idemKey: `ship-${tag}:${id}:${ln.idx}:${moves.itemKey(it.itemName, it.spec)}:${it.serialNo || ''}`,
+      operator: (actor && (actor.name || actor.openid)) || '',
+      note: `${mode === 'out' ? '出货' : '回库'} ${doc.shipmentNo || ''} → ${doc.storeName || ''}`
+    })
+    if (!res.duplicate) moved += 1
+    if (mode === 'out' && res.after < 0) shortage.push(`${it.itemName}（缺 ${-res.after}）`)
+  }
+  return { moved, unlinked, shortage }
+}
+
+/** 状态 / 明细变化后同步库存：返回给前端的摘要（null = 本次与库存无关） */
+async function syncShipmentStock(id, prev, next, actor, opts) {
+  const o = opts || {}
+  const wasOut = !!(prev && prev.stockOutAt) && !(prev && prev.stockReturnedAt)
+  const items = (next && next.items) || []
+  const now = Date.now()
+  let r = null
+  let patch = null
+  if (o.removed) {
+    if (!wasOut) return null
+    r = await applyShipmentMoves(id, prev, (prev.items || []).map((it, idx) => ({ it, qty: it.qty, idx })), 'return', 'return', actor)
+    patch = { stockReturnedAt: now }
+  } else if (!wasOut && isOutStatus(next.status)) {
+    r = await applyShipmentMoves(id, next, items.map((it, idx) => ({ it, qty: it.qty, idx })), 'out', 'out', actor)
+    patch = { stockOutAt: now, stockUnlinked: r.unlinked.slice(0, 30), stockShortage: r.shortage.slice(0, 30) }
+  } else if (wasOut && o.itemsChanged) {
+    // 已发出后改明细：按品项算差额，多的补出、少的回库
+    const sum = (list) => {
+      const m = new Map()
+      ;(list || []).forEach((it) => {
+        const k = `${moves.itemKey(it.itemName, it.spec)}|${it.serialNo || ''}|${it.inventoryRecordId || ''}`
+        const cur = m.get(k) || { it, qty: 0 }
+        cur.qty += Number(it.qty) || 0
+        m.set(k, cur)
+      })
+      return m
+    }
+    const a = sum(prev.items)
+    const b = sum(items)
+    const outs = []
+    const backs = []
+    new Set([...a.keys(), ...b.keys()]).forEach((k, i) => {
+      const d = ((b.get(k) || {}).qty || 0) - ((a.get(k) || {}).qty || 0)
+      const it = (b.get(k) || a.get(k)).it
+      if (d > 0) outs.push({ it, qty: d, idx: `e${i}` })
+      if (d < 0) backs.push({ it, qty: -d, idx: `e${i}` })
+    })
+    if (!outs.length && !backs.length) return null
+    const tag = `edit-${now}`
+    const r1 = await applyShipmentMoves(id, next, outs, 'out', tag, actor)
+    const r2 = await applyShipmentMoves(id, next, backs, 'return', tag, actor)
+    r = { moved: r1.moved + r2.moved, unlinked: r1.unlinked.concat(r2.unlinked), shortage: r1.shortage }
+    patch = { stockUnlinked: r.unlinked.slice(0, 30), stockShortage: r.shortage.slice(0, 30) }
+  } else {
+    return null
+  }
+  await db.collection(COLLECTION).doc(id).update({ data: patch }).catch(() => null)
+  const parts = []
+  if (r.moved) parts.push(`${o.removed ? '回库' : '库存'}已记 ${r.moved} 行`)
+  if (r.unlinked.length) parts.push(`${r.unlinked.length} 行没对上成品库存`)
+  if (r.shortage.length) parts.push(`${r.shortage.length} 行库存不足（已记为负）`)
+  return { moved: r.moved, unlinked: r.unlinked, shortage: r.shortage, text: parts.join('，') }
+}
+
+/**
+ * 运费草稿：出货单有运费 → 采购账（ops_purchases）里一条「物流运费 · 待确认」，确认前不计入预算。
+ * 草稿未确认时跟着运费改金额；已确认 / 已驳回的不再动（以账为准），运费清空则驳回未确认的草稿。
+ */
+async function syncFreightDraft(id, doc, actor) {
+  const freight = doc.freight != null ? Math.round(Number(doc.freight) * 100) / 100 : 0
+  const who = (actor && (actor.name || actor.openid)) || ''
+  const now = Date.now()
+  const col = db.collection('ops_purchases')
+  let draft = null
+  if (doc.freightDraftId) {
+    const r = await col.doc(doc.freightDraftId).get().catch(() => null)
+    draft = (r && r.data) || null
+  }
+  if (draft) {
+    if (draft.pendingConfirm !== true) return { state: 'confirmed', id: draft._id }
+    if (!(freight > 0)) {
+      await col.doc(draft._id).update({ data: { pendingConfirm: false, status: 'cancelled', statusLabel: '已取消', updatedAt: now, updatedBy: who, note: '出货单运费已清空，草稿自动作废' } })
+      await db.collection(COLLECTION).doc(id).update({ data: { freightState: 'voided' } }).catch(() => null)
+      return { state: 'voided', id: draft._id }
+    }
+    if (Number(draft.amount) !== freight) {
+      await col.doc(draft._id).update({ data: { amount: freight, unitPrice: freight, updatedAt: now, updatedBy: who } })
+    }
+    return { state: 'pending', id: draft._id }
+  }
+  if (!(freight > 0)) return null
+  const ymd = String(doc.shipmentDate || new Date(now + 8 * 3600000).toISOString().slice(0, 10))
+  const data = {
+    orderNo: `WS${ymd.replace(/-/g, '')}${String(Math.floor(Math.random() * 9000) + 1000)}`,
+    scope: 'studio', entityId: 'studio_specimen', entityName: '标本工作室',
+    itemName: `运费 · 出货单 ${doc.shipmentNo || ''}`.trim(), spec: doc.storeName || '',
+    category: '', budgetType: '物流运费', platform: '', platformOrderNo: '',
+    qty: 1, unit: '单', unitPrice: freight, amount: freight,
+    supplier: doc.expressCompany || '', purchaseDate: ymd, expectedArrival: '',
+    expressCompany: doc.expressCompany || '', trackingNo: doc.trackingNo || '', invoiceNo: '',
+    status: 'draft', statusLabel: '草稿', note: '由出货单运费自动生成，确认后计入预算',
+    source: 'erp', sourceLabel: 'ERP', feishuRecordId: '', syncedAt: null,
+    pendingConfirm: true, refShipmentId: id, refShipmentNo: doc.shipmentNo || '',
+    createdAt: now, updatedAt: now, createdBy: who, updatedBy: who, deleted: false
+  }
+  const added = await col.add({ data })
+  await db.collection(COLLECTION).doc(id).update({ data: { freightDraftId: added._id, freightState: 'pending' } }).catch(() => null)
+  return { state: 'pending', id: added._id }
+}
 
 /**
  * 算价的三个外部数据源（蓝图 §4）。
@@ -825,6 +978,7 @@ async function handleSearchSku(event) {
         unitPrice: roundMoney(r.unitPrice != null ? r.unitPrice : r.price),
         stockQty: Number(r.qty) || 0,
         inventoryRecordId: String(r._id || ''),
+        serialNo: String(r.serialNo || ''),
         productId: String(r.productId || '').trim(),
         skuId: String(r.skuId || '').trim()
       })
@@ -929,7 +1083,9 @@ async function handleCreate(event, actor) {
   const addRes = await withCollectionRetry(() => db.collection(COLLECTION).add({ data }))
   const item = mapRow(Object.assign({ _id: addRes._id }, data))
   const notify = await notifyShipmentPricedQuietly([item])
-  return ok({ id: addRes._id, item, notify })
+  const stock = await syncShipmentStock(addRes._id, null, data, actor)
+  const freight = await syncFreightDraft(addRes._id, data, actor)
+  return ok({ id: addRes._id, item, notify, stock, freight })
 }
 
 /**
@@ -1058,7 +1214,11 @@ async function handleUpdate(event, actor) {
     deleted: false
   })
   await withCollectionRetry(() => db.collection(COLLECTION).doc(id).update({ data: patch }))
-  return ok({ item: mapRow(Object.assign({ _id: id }, patch)) })
+  const itemsChanged = JSON.stringify((prev.items || []).map((it) => [it.itemName, it.spec, it.qty, it.serialNo || '', it.inventoryRecordId || ''])) !==
+    JSON.stringify((patch.items || []).map((it) => [it.itemName, it.spec, it.qty, it.serialNo || '', it.inventoryRecordId || '']))
+  const stock = await syncShipmentStock(id, prev, patch, actor, { itemsChanged })
+  const freight = await syncFreightDraft(id, Object.assign({}, prev, patch), actor)
+  return ok({ item: mapRow(Object.assign({ _id: id }, patch)), stock, freight })
 }
 
 async function handleSetStatus(event, actor) {
@@ -1082,7 +1242,8 @@ async function handleSetStatus(event, actor) {
     updatedBy: (actor && (actor.name || actor.openid)) || ''
   }
   await withCollectionRetry(() => db.collection(COLLECTION).doc(id).update({ data: patch }))
-  return ok({ item: mapRow(Object.assign({}, prev, patch, { _id: id })) })
+  const stock = await syncShipmentStock(id, prev, Object.assign({}, prev, patch), actor)
+  return ok({ item: mapRow(Object.assign({}, prev, patch, { _id: id })), stock })
 }
 
 async function handleRemove(event, actor) {
@@ -1104,7 +1265,10 @@ async function handleRemove(event, actor) {
       }
     })
   )
-  return ok({ id })
+  // 已发出的单作废 → 成品回库；运费草稿未确认的一并作废
+  const stock = await syncShipmentStock(id, prev, prev, actor, { removed: true })
+  const freight = prev.freightDraftId ? await syncFreightDraft(id, Object.assign({}, prev, { freight: 0 }), actor) : null
+  return ok({ id, stock, freight })
 }
 
 async function findByFeishuRecordId(feishuRecordId) {

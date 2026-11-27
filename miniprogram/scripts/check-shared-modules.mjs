@@ -56,6 +56,8 @@ export const FAMILIES = [
     why: '审批桥接：入队字段与通知挂钩点必须同口径' },
   { module: 'auditLog.js', kind: 'identical', canonical: 'manageStaff/auditLog.js',
     why: '审计留痕：字段结构不一致会让台账缺列' },
+  { module: 'inventoryMoves.js', kind: 'identical', canonical: 'manageStudioInventory/inventoryMoves.js',
+    why: '出入库流水：库存唯一事实（2026-11-27），幂等键 / 开账 / 台账作用口径必须一致，否则同一单据在两个函数里记出两种数' },
   { module: 'pointsBalance.js', kind: 'identical', canonical: 'getPointRecords/pointsBalance.js',
     why: '积分余额：读写口径不一致会算错可用积分' },
   { module: 'contentSecurity.js', kind: 'identical', canonical: 'submitCommunityPost/contentSecurity.js',

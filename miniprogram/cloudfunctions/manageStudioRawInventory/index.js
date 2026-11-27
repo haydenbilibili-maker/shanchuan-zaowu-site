@@ -6,6 +6,9 @@
  *
  * action: meta | list | get | create | update | remove | upsertFromFeishu
  * 权限：超管 / 店长
+ *
+ * 2026-11-27「库存以出入库流水为准」：数量（qty / currentQty / 入出库累计）只经 inventoryMoves 改 ——
+ * 手工改数 / 飞书同步是「观测值」，与台账的差额记 count 流水；采购入库由 managePurchaseOrder 记 in 流水。
  */
 const cloud = require('wx-server-sdk')
 const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
@@ -20,6 +23,7 @@ const {
   feishuItemToPayload,
   buildSummary
 } = require('./rawDefaults')
+const moves = require('./inventoryMoves')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -116,6 +120,30 @@ async function handleList(event) {
   return ok({ list: rows, summary: buildSummary(rows) })
 }
 
+/** 数量相关字段只经流水改；其余字段照常写 */
+const QTY_FIELDS = ['qty', 'currentQty', 'stockValue', 'inboundTotal', 'outboundTotal']
+function withoutQty(row) {
+  const out = Object.assign({}, row)
+  QTY_FIELDS.forEach((k) => { delete out[k] })
+  return out
+}
+
+/** 把台账行的数量调到 target（差额记 count 流水），再按单价刷新库存金额 */
+async function syncQtyByMove(prev, target, ctx) {
+  const before = moves.rowQty(prev)
+  const delta = Math.round(Number(target) || 0) - before
+  if (delta !== 0) {
+    await moves.applyMove(db, {
+      ledger: 'raw', type: ctx.type || moves.MOVE_TYPE.COUNT, delta, ledgerId: prev._id, row: prev,
+      itemName: prev.itemName, spec: prev.spec, refType: ctx.refType || 'manual', refId: ctx.refId || '',
+      idemKey: `${ctx.dedupe}:${prev._id}:${Date.now()}`, operator: ctx.operator || '', note: ctx.note || `${before} → ${before + delta}`
+    })
+  }
+  const unitPrice = Number(ctx.unitPrice != null ? ctx.unitPrice : prev.unitPrice) || 0
+  await db.collection(COLLECTION).doc(prev._id).update({ data: { stockValue: Math.round((before + delta) * unitPrice * 100) / 100 } })
+  return before + delta
+}
+
 async function handleGet(event) {
   const id = String((event && event.id) || '').trim()
   if (!id) return fail('缺少 id')
@@ -135,7 +163,14 @@ async function handleCreate(event, actor) {
     createdBy: (actor && (actor.name || actor.openid)) || '',
     updatedBy: (actor && (actor.name || actor.openid)) || ''
   })
-  const addRes = await withCollectionRetry(() => db.collection(COLLECTION).add({ data }))
+  // 先建 0 数量的行，再用一条 in 流水把初始数量记进来（建档即开账）
+  const initial = data.qty
+  const addRes = await withCollectionRetry(() => db.collection(COLLECTION).add({ data: Object.assign({}, data, { qty: 0, currentQty: 0, stockValue: 0, inboundTotal: 0 }) }))
+  if (initial) {
+    await syncQtyByMove(Object.assign({ _id: addRes._id }, data, { qty: 0, currentQty: 0 }), initial, {
+      type: moves.MOVE_TYPE.IN, dedupe: 'raw-create', operator: data.createdBy, note: '建档入库'
+    })
+  }
   return ok({ id: addRes._id, item: mapRow(Object.assign({ _id: addRes._id }, data)) })
 }
 
@@ -148,14 +183,18 @@ async function handleUpdate(event, actor) {
   const normalized = buildRow(event.item || event, prev)
   if (!normalized.ok) return fail(normalized.msg)
   const now = Date.now()
-  const patch = Object.assign({}, normalized.row, {
+  const patch = Object.assign({}, withoutQty(normalized.row), {
     updatedAt: now,
     updatedBy: (actor && (actor.name || actor.openid)) || '',
     createdAt: prev.createdAt || now,
     createdBy: prev.createdBy || ''
   })
   await withCollectionRetry(() => db.collection(COLLECTION).doc(id).update({ data: patch }))
-  return ok({ item: mapRow(Object.assign({ _id: id }, patch)) })
+  const qty = await syncQtyByMove(Object.assign({}, prev, { _id: id }), normalized.row.qty, {
+    dedupe: 'raw-edit', operator: patch.updatedBy, unitPrice: normalized.row.unitPrice,
+    note: String((event && event.reason) || '手工改数').slice(0, 120)
+  })
+  return ok({ item: mapRow(Object.assign({ _id: id }, prev, patch, { qty, currentQty: qty })) })
 }
 
 async function handleRemove(event, actor) {
@@ -207,10 +246,11 @@ async function handleUpsertFromFeishu(event, actor) {
         errors.push({ index: i, msg: normalized.msg })
         continue
       }
+      const syncCtx = { refType: 'feishu', refId: payload.feishuRecordId || '', dedupe: 'raw-feishu', operator: 'feishu_sync', unitPrice: normalized.row.unitPrice, note: '飞书同步' }
       if (prev && prev._id) {
         await withCollectionRetry(() =>
           db.collection(COLLECTION).doc(prev._id).update({
-            data: Object.assign({}, normalized.row, {
+            data: Object.assign({}, withoutQty(normalized.row), {
               updatedAt: now,
               updatedBy: (actor && (actor.name || actor.openid)) || 'feishu_sync',
               createdAt: prev.createdAt || now,
@@ -218,11 +258,13 @@ async function handleUpsertFromFeishu(event, actor) {
             })
           })
         )
+        await syncQtyByMove(prev, normalized.row.qty, syncCtx)
         updated += 1
       } else {
-        await withCollectionRetry(() =>
+        const addRes = await withCollectionRetry(() =>
           db.collection(COLLECTION).add({
             data: Object.assign({}, normalized.row, {
+              qty: 0, currentQty: 0, stockValue: 0,
               createdAt: now,
               updatedAt: now,
               createdBy: 'feishu_sync',
@@ -230,6 +272,7 @@ async function handleUpsertFromFeishu(event, actor) {
             })
           })
         )
+        if (normalized.row.qty) await syncQtyByMove(Object.assign({}, normalized.row, { _id: addRes._id, qty: 0, currentQty: 0 }), normalized.row.qty, syncCtx)
         created += 1
       }
     } catch (err) {

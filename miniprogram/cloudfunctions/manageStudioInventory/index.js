@@ -6,7 +6,11 @@
  * 原材料（多平台进货）见 manageStudioRawInventory → studio_raw_inventory。
  *
  * action:
- *   parse | commitSnapshot | list | listSnapshots | getSnapshot | meta | dashboard | upsertFromFeishu
+ *   parse | diffSnapshot | commitSnapshot | list | listSnapshots | getSnapshot | meta | dashboard | upsertFromFeishu
+ *   listMoves | verifyLedger | registerUnique | adjust（2026-11-27 出入库流水）
+ *
+ * 2026-11-27 产品负责人拍板「库存以出入库流水为准」：盘点 / 飞书同步不再整表删除重建，
+ * 而是把「观测到的数」与台账的差额写成 count 流水（inventoryMoves.js），台账 qty 原子累加。
  */
 const cloud = require('wx-server-sdk')
 const { assertStaff, ROLE_MANAGER } = require('./staffGuard')
@@ -25,6 +29,7 @@ const {
   FEISHU_TABLE_NAME
 } = require('./inventoryDefaults')
 const { buildInventoryDashboard } = require('./inventoryDashboard')
+const moves = require('./inventoryMoves')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
@@ -98,29 +103,6 @@ async function fetchAllWhere(collection, where, limit = 500) {
   return out
 }
 
-async function removeDocsByIds(collection, ids) {
-  const col = db.collection(collection)
-  const chunk = 20
-  for (let i = 0; i < ids.length; i += chunk) {
-    const slice = ids.slice(i, i + chunk)
-    await Promise.all(slice.map((id) => col.doc(id).remove().catch(() => null)))
-  }
-}
-
-async function addDocs(collection, docs) {
-  const col = db.collection(collection)
-  const chunk = 20
-  const ids = []
-  for (let i = 0; i < docs.length; i += chunk) {
-    const slice = docs.slice(i, i + chunk)
-    const results = await Promise.all(slice.map((doc) => col.add({ data: doc })))
-    results.forEach((r) => {
-      if (r && r._id) ids.push(r._id)
-    })
-  }
-  return ids
-}
-
 function actorName(actor) {
   return String((actor && (actor.name || actor.displayName || actor.nickname)) || '').trim()
 }
@@ -181,29 +163,45 @@ async function handleCommitSnapshot(event, actor) {
   )
   const snapshotId = snapRes._id
 
-  // 覆盖当前工作室台账（全量替换，保留历史快照）
+  // 2026-11-27：不再整表删除重建 —— 观测值与台账的差额写成 count 流水，台账原子累加
   const existing = await withCollectionRetry(COLLECTION, () =>
     fetchAllWhere(COLLECTION, { location: LOCATION_STUDIO }, 2000)
   )
-  await removeDocsByIds(COLLECTION, existing.map((d) => d._id).filter(Boolean))
-
-  const lineDocs = parsed.lines.map((line) =>
-    buildLineDoc(line, {
-      now,
-      inventoryDate,
-      sourceLabel,
-      location: LOCATION_STUDIO,
-      snapshotId,
-      operatorOpenid: openid,
-      operatorName: name
+  const meta = { now, inventoryDate, sourceLabel, location: LOCATION_STUDIO, snapshotId, operatorOpenid: openid, operatorName: name }
+  const plan = moves.planCount('finished', existing, parsed.lines, { zeroMissing: true })
+  const rowsById = new Map(existing.map((r) => [r._id, r]))
+  const applied = await runChunks(plan.filter((p) => p.delta !== 0), 8, (p) =>
+    moves.applyMove(db, {
+      ledger: 'finished',
+      type: moves.MOVE_TYPE.COUNT,
+      delta: p.delta,
+      itemName: p.itemName,
+      spec: p.spec,
+      ledgerId: p.ledgerId,
+      row: p.ledgerId ? rowsById.get(p.ledgerId) : null,
+      refType: 'snapshot',
+      refId: snapshotId,
+      refNo: inventoryDate,
+      idemKey: `count:${snapshotId}:${p.key}`,
+      operator: name,
+      note: `盘点 ${inventoryDate}：${p.before} → ${p.after}`,
+      seed: buildLineDoc(p.line || { skuName: p.itemName, qty: 0 }, meta)
     })
   )
-  await withCollectionRetry(COLLECTION, () => addDocs(COLLECTION, lineDocs))
+  // 台账行的盘点元信息（日期 / 分组 / 快照）跟着本次盘点走；数量只经流水改
+  await runChunks(plan.filter((p) => p.ledgerId), 20, (p) => {
+    const patch = { inventoryDate, snapshotId, sourceLabel, updatedAt: now, operatorOpenid: openid, operatorName: name }
+    if (p.line) { patch.groupName = String(p.line.groupName || '').trim(); patch.lineNo = p.line.lineNo || 0 }
+    return db.collection(COLLECTION).doc(p.ledgerId).update({ data: patch })
+  })
+  const summary = moves.summarizePlan(plan)
 
   return ok({
-    msg: `已写入盘点快照 ${inventoryDate}，覆盖当前库存 ${lineDocs.length} 条`,
+    msg: `已写入盘点 ${inventoryDate}：变化 ${applied.length} 项（新增 ${summary.added.length} / 清零 ${summary.cleared.length} / 改数 ${summary.changed.length}），已记入出入库流水`,
     snapshotId,
     writeMode: WRITE_MODE.SNAPSHOT_OVERWRITE,
+    moveCount: applied.length,
+    diff: { added: summary.added.length, cleared: summary.cleared.length, changed: summary.changed.length, unchanged: summary.unchanged, netDelta: summary.netDelta },
     parsed: {
       inventoryDate,
       sourceLabel,
@@ -211,9 +209,120 @@ async function handleCommitSnapshot(event, actor) {
       groups: parsed.groups,
       skippedCount: (parsed.skipped || []).length
     },
-    replaced: existing.length,
-    written: lineDocs.length
+    replaced: 0,
+    written: applied.length
   })
+}
+
+/** 小并发执行（盘点一次可能上百行；串行会撞 60s 超时，全并发会撞数据库限流） */
+async function runChunks(list, size, fn) {
+  const out = []
+  for (let i = 0; i < list.length; i += size) {
+    const part = await Promise.all(list.slice(i, i + size).map(fn))
+    out.push(...part)
+  }
+  return out
+}
+
+/**
+ * 盘点差异预览（只读）：粘贴文本 vs 当前台账 → 新增 / 清零 / 改数。
+ * 前端「再点一次即覆盖」之前先看清这次盘点会改掉什么（原来是盲覆盖，连飞书同步行也一起删掉）。
+ */
+async function handleDiffSnapshot(event) {
+  const parsed = parseStudioInventoryText(event && event.text)
+  if (!parsed.ok) return fail(parsed.error || '解析失败', 'PARSE_FAIL')
+  const existing = await withCollectionRetry(COLLECTION, () =>
+    fetchAllWhere(COLLECTION, { location: LOCATION_STUDIO }, 2000)
+  )
+  const plan = moves.planCount('finished', existing, parsed.lines, { zeroMissing: true })
+  const s = moves.summarizePlan(plan)
+  const feishuCleared = plan.filter((p) => p.after === 0 && p.before > 0 && p.ledgerId &&
+    existing.some((r) => r._id === p.ledgerId && r.feishuRecordId)).length
+  return ok({
+    inventoryDate: parsed.inventoryDate || '',
+    counts: { added: s.added.length, cleared: s.cleared.length, changed: s.changed.length, unchanged: s.unchanged, netDelta: s.netDelta, feishuCleared },
+    added: s.added.slice(0, 60),
+    cleared: s.cleared.slice(0, 60),
+    changed: s.changed.slice(0, 80),
+    uniqueKept: existing.filter((r) => r.serialNo).length
+  })
+}
+
+/** 某条台账 / 某张单据的流水 */
+async function handleListMoves(event) {
+  const where = {}
+  const ledgerId = String((event && event.ledgerId) || '').trim()
+  const refId = String((event && event.refId) || '').trim()
+  if (ledgerId) where.ledgerId = ledgerId
+  if (refId) where.refId = refId
+  if (event && (event.ledger === 'raw' || event.ledger === 'finished')) where.ledger = event.ledger
+  try {
+    const list = await moves.listMoves(db, where, parseInt(event && event.limit, 10) || 50)
+    return ok({ list })
+  } catch (err) {
+    if (isMissingCollectionError(err)) return ok({ list: [] })
+    throw err
+  }
+}
+
+async function handleVerifyLedger(event) {
+  const ledgerId = String((event && event.ledgerId) || '').trim()
+  if (!ledgerId) return fail('缺少 ledgerId', 'BAD_PARAM')
+  return ok(await moves.verifyLedger(db, event.ledger === 'raw' ? 'raw' : 'finished', ledgerId))
+}
+
+/** 唯一件（孤品）登记：一件一条，带序列号入库（产品负责人 2026-11-27「引入 serialNo」） */
+async function handleRegisterUnique(event, actor) {
+  const itemName = String((event && event.itemName) || '').trim()
+  const serialNo = String((event && event.serialNo) || '').trim().toUpperCase()
+  if (!itemName) return fail('请填写品名', 'BAD_PARAM')
+  if (!/^[A-Z0-9][A-Z0-9-]{2,39}$/.test(serialNo)) return fail('序列号为 3–40 位字母 / 数字 / 短横线', 'BAD_PARAM')
+  const dup = await withCollectionRetry(COLLECTION, () =>
+    db.collection(COLLECTION).where({ location: LOCATION_STUDIO, serialNo }).limit(1).get()
+  )
+  if (dup.data && dup.data[0] && moves.rowQty(dup.data[0]) > 0) return fail(`序列号 ${serialNo} 已在库`, 'DUP_SERIAL')
+  const now = Date.now()
+  const name = actorName(actor)
+  const spec = String((event && event.spec) || '').trim()
+  const res = await moves.applyMove(db, {
+    ledger: 'finished',
+    type: moves.MOVE_TYPE.IN,
+    delta: 1,
+    itemName,
+    spec,
+    serialNo,
+    ledgerId: dup.data && dup.data[0] ? dup.data[0]._id : '',
+    refType: 'manual',
+    idemKey: `unique:${serialNo}:${now}`,
+    operator: name,
+    note: String((event && event.note) || '唯一件登记').slice(0, 200),
+    seed: buildLineDoc({ skuName: itemName, framingSpec: spec, qty: 0, groupName: String((event && event.groupName) || '').trim(), note: String((event && event.note) || '') }, {
+      now, inventoryDate: new Date(now + 8 * 3600000).toISOString().slice(0, 10), sourceLabel: '唯一件登记', location: LOCATION_STUDIO, operatorOpenid: (actor && actor.openid) || '', operatorName: name
+    })
+  })
+  return ok({ ledgerId: res.ledgerId, msg: `已登记唯一件 ${serialNo}` })
+}
+
+/** 手工调整（报损 / 更正）：必须写原因，记 adjust 流水 */
+async function handleAdjust(event, actor) {
+  const ledgerId = String((event && event.ledgerId) || '').trim()
+  const delta = Math.round(Number(event && event.delta))
+  const reason = String((event && event.reason) || '').trim()
+  if (!ledgerId) return fail('缺少 ledgerId', 'BAD_PARAM')
+  if (!Number.isFinite(delta) || delta === 0) return fail('调整数量不能为 0', 'BAD_PARAM')
+  if (!reason) return fail('请写明调整原因（报损 / 更正 / 自用…）', 'BAD_PARAM')
+  const now = Date.now()
+  const res = await moves.applyMove(db, {
+    ledger: 'finished',
+    type: moves.MOVE_TYPE.ADJUST,
+    delta,
+    ledgerId,
+    refType: 'manual',
+    idemKey: `adjust:${ledgerId}:${now}:${Math.random().toString(36).slice(2, 8)}`,
+    operator: actorName(actor),
+    note: reason.slice(0, 200)
+  })
+  return ok({ ledgerId: res.ledgerId, before: res.before, after: res.after, msg: `已调整 ${delta > 0 ? '+' : ''}${delta}，现 ${res.after}` })
 }
 
 async function handleList(event) {
@@ -311,6 +420,8 @@ async function handleList(event) {
   if (hasGroupFilter) where.groupName = groupName
 
   let rows = await withCollectionRetry(COLLECTION, () => fetchAllWhere(COLLECTION, where, 1000))
+  // 2026-11-27：盘点清零 / 唯一件出库后台账行保留（流水要挂在它上面），列表默认不显示 0 的行
+  if (!(event && event.showZero)) rows = rows.filter((r) => Number(r.qty) !== 0)
   if (keyword) {
     rows = rows.filter((r) => String(r.skuName || '').indexOf(keyword) !== -1)
   }
@@ -438,7 +549,7 @@ async function handleMeta() {
       { value: 'store', label: '门店成品（二期）', enabled: false }
     ],
     writeMode: WRITE_MODE.SNAPSHOT_OVERWRITE,
-    writeModeLabel: '盘点日快照覆盖当前成品台账，并保留历史',
+    writeModeLabel: '盘点按差额记入出入库流水（不再整表覆盖），并保留历史快照',
     schemaNote:
       '成品库存字段对齐飞书「成品库存」：物品名称 / 规格装裱 / 数量 / 盘点日期 / 备注。原材料请走「原材料库存」。',
     current: {
@@ -488,6 +599,14 @@ async function handleRemoveFeishuSynced (event, actor) {
     if (String(doc.sourceLabel || '') !== '飞书成品库存') { skipped.push({ id, why: '来源不是飞书同步' }); continue }
     if (doc.snapshotId) { skipped.push({ id, why: '属于盘点快照，拒绝删除' }); continue }
     try {
+      // 流水口径：先把数量调到 0（留一条 adjust 流水说明为什么没了），再删行
+      if (moves.rowQty(doc) !== 0) {
+        await moves.applyMove(db, {
+          ledger: 'finished', type: moves.MOVE_TYPE.ADJUST, delta: -moves.rowQty(doc), ledgerId: id, row: doc,
+          refType: 'feishu', refId: doc.feishuRecordId, idemKey: `feishu-clean:${id}`, operator: actorName(actor),
+          note: '清理误同步的飞书行'
+        })
+      }
       await withCollectionRetry(COLLECTION, () => db.collection(COLLECTION).doc(id).remove())
       removed.push(id)
     } catch (e) {
@@ -531,22 +650,34 @@ async function handleUpsertFromFeishu(event, actor) {
         operatorOpenid: (actor && actor.openid) || '',
         operatorName: (actor && (actor.name || actor.openid)) || 'feishu_sync'
       })
+      // 2026-11-27：数量只经流水改（飞书给的是观测值 → 与台账的差额记 count 流水），其余字段照旧覆盖
+      const { qty: observedQty, ...meta } = doc
       if (prev && prev._id) {
         await withCollectionRetry(COLLECTION, () =>
           db.collection(COLLECTION).doc(prev._id).update({
-            data: Object.assign({}, doc, {
+            data: Object.assign({}, meta, {
               createdAt: prev.createdAt || now,
               createdBy: prev.createdBy || 'feishu_sync'
             })
           })
         )
+        const delta = observedQty - moves.rowQty(prev)
+        if (delta !== 0) {
+          await moves.applyMove(db, {
+            ledger: 'finished', type: moves.MOVE_TYPE.COUNT, delta, ledgerId: prev._id, row: prev,
+            itemName: doc.itemName, spec: doc.framingSpec, refType: 'feishu', refId: line.feishuRecordId,
+            idemKey: `feishu:${line.feishuRecordId}:${now}`, operator: 'feishu_sync',
+            note: `飞书同步：${moves.rowQty(prev)} → ${observedQty}`
+          })
+        }
         updated += 1
       } else {
-        await withCollectionRetry(COLLECTION, () =>
-          db.collection(COLLECTION).add({
-            data: Object.assign({}, doc, { createdBy: 'feishu_sync' })
-          })
-        )
+        await moves.applyMove(db, {
+          ledger: 'finished', type: moves.MOVE_TYPE.COUNT, delta: observedQty,
+          itemName: doc.itemName, spec: doc.framingSpec, refType: 'feishu', refId: line.feishuRecordId || '',
+          idemKey: `feishu:${line.feishuRecordId || doc.itemName}:new:${now}`, operator: 'feishu_sync',
+          note: '飞书同步新增', seed: Object.assign({}, meta, { createdBy: 'feishu_sync' })
+        })
         created += 1
       }
     } catch (err) {
@@ -579,8 +710,18 @@ exports.main = async (event) => {
     switch (action) {
       case 'parse':
         return await handleParse(event)
+      case 'diffSnapshot':
+        return await handleDiffSnapshot(event)
       case 'commitSnapshot':
         return await handleCommitSnapshot(event, auth.actor)
+      case 'listMoves':
+        return await handleListMoves(event)
+      case 'verifyLedger':
+        return await handleVerifyLedger(event)
+      case 'registerUnique':
+        return await handleRegisterUnique(event, auth.actor)
+      case 'adjust':
+        return await handleAdjust(event, auth.actor)
       case 'list':
         return await handleList(event)
       case 'listSnapshots':

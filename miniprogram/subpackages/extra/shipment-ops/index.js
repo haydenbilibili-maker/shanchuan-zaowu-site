@@ -143,7 +143,7 @@ const baseData = {
   /** 发货封条落贴动画只播一次（亲手发货的那一刻） */
   sealLive: false,
   detailTipTone: 'info',
-  shipForm: { expressCompany: '', trackingNo: '' },
+  shipForm: { expressCompany: '', trackingNo: '', freight: '' },
   nextActions: [],
 
   sourceOpen: false,
@@ -673,7 +673,7 @@ const coreMethods = {
       showDetail: true,
       detail: decorated,
       nextActions: decorated.nextActions || [],
-      shipForm: { expressCompany: row.expressCompany || '', trackingNo: row.trackingNo || '' },
+      shipForm: { expressCompany: row.expressCompany || '', trackingNo: row.trackingNo || '', freight: row.freight != null ? String(row.freight) : '' },
       detailTip: '',
       detailTipTone: 'info',
       detailBusy: false,
@@ -703,13 +703,15 @@ const coreMethods = {
       if (status === 'shipped') {
         const expressCompany = String(this.data.shipForm.expressCompany || '').trim()
         const trackingNo = String(this.data.shipForm.trackingNo || '').trim()
-        if (expressCompany || trackingNo) {
+        const freightText = String(this.data.shipForm.freight || '').trim()
+        if (expressCompany || trackingNo || freightText) {
           await callCloud(SHIPMENT_FN, {
             action: 'update',
             id,
             item: {
               expressCompany,
               trackingNo,
+              freight: freightText === '' ? null : Number(freightText),
               storeId: this.data.detail.storeId,
               shipmentDate: this.data.detail.shipmentDate,
               status: this.data.detail.status
@@ -722,9 +724,10 @@ const coreMethods = {
       this.setData({
         detail: item,
         nextActions: item.nextActions || [],
-        shipForm: { expressCompany: item.expressCompany || '', trackingNo: item.trackingNo || '' },
-        detailTip: `已流转为「${item.statusLabel}」`,
-        detailTipTone: 'info',
+        shipForm: { expressCompany: item.expressCompany || '', trackingNo: item.trackingNo || '', freight: item.freight != null ? String(item.freight) : '' },
+        // 2026-11-27：发货即记成品出库流水 —— 把「记了几行 / 哪些没对上库存」直接告诉操作的人
+        detailTip: `已流转为「${item.statusLabel}」` + (res.stock && res.stock.text ? `；${res.stock.text}` : ''),
+        detailTipTone: res.stock && (res.stock.unlinked.length || res.stock.shortage.length) ? 'warn' : 'info',
         // 封条（2026-10-18 方向池 ★★）：只在本页亲手点「已发货」那一刻贴封条；之后打开是静态封条
         sealLive: status === 'shipped',
         detailBusy: false,
@@ -741,6 +744,11 @@ const coreMethods = {
     const id = this.data.detail._id
     const expressCompany = String(this.data.shipForm.expressCompany || '').trim()
     const trackingNo = String(this.data.shipForm.trackingNo || '').trim()
+    const freightText = String(this.data.shipForm.freight || '').trim()
+    if (freightText && !(Number(freightText) >= 0)) {
+      this.setData({ detailTip: '运费请填数字（元）', detailTipTone: 'warn' })
+      return
+    }
     this.setData({ detailBusy: true, detailTip: '保存物流…', detailTipTone: 'info' })
     try {
       const res = await callCloud(SHIPMENT_FN, {
@@ -749,6 +757,7 @@ const coreMethods = {
         item: {
           expressCompany,
           trackingNo,
+          freight: freightText === '' ? null : Number(freightText),
           storeId: this.data.detail.storeId,
           shipmentDate: this.data.detail.shipmentDate,
           status: this.data.detail.status,
@@ -756,7 +765,9 @@ const coreMethods = {
         }
       })
       const item = this.decorateRow(res.item || this.data.detail)
-      this.setData({ detail: item, nextActions: item.nextActions || [], detailTip: '物流信息已保存', detailTipTone: 'info', detailBusy: false })
+      const fr = res.freight
+      const frTip = fr && fr.state === 'pending' ? '；运费已在采购账生成待确认草稿' : fr && fr.state === 'confirmed' ? '；运费草稿已确认入账，改动请到采购账' : fr && fr.state === 'voided' ? '；运费已清空，草稿作废' : ''
+      this.setData({ detail: item, nextActions: item.nextActions || [], detailTip: '物流信息已保存' + frTip, detailTipTone: 'info', detailBusy: false })
       await this.loadList()
     } catch (err) {
       this.setData({ detailBusy: false, detailTip: formatCloudFnError(err, '保存物流失败'), detailTipTone: 'warn' })

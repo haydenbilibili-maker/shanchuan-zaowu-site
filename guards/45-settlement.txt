@@ -15,3 +15,4 @@ npm run test:feishu-sync
 npm run check:shipment-sku-page
 npm run test:shipment-parse
 npm run check:pricebook-image
+npm run test:inventory-moves

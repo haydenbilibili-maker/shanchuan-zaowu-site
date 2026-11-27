@@ -1048,6 +1048,34 @@ const SCENES = [
     rating: 4, content: '比图片更好看，摆在书房刚好', images: [P[0]],
     phrases: ['包装很用心', '比图片更好看', '做工细致', '适合送人', '摆在书房刚好', '颜色很正']
   } },
+  // 2026-11-27 出入库流水：盘点差异预览 / 单品流水 / 出货详情（库存与运费）
+  { name: 'inv-diff', h: 1700, wxml: 'subpackages/extra/inventory-ops/index', css: '.ui-pop-mask.ui-pop-mask { display: block !important; }', data: {
+    ready: true, tab: 'finished', groups: [], showPaste: true, pasteText: '工作室库存\n2026年11月27日\n蓝闪蝶 5个', committing: false, commitPending: true,
+    previewError: '再点一次即写入：2026-11-27 · 新增 1 / 清零 2 / 改数 3（不变 18），差额记入出入库流水',
+    preview: { inventoryDate: '2026-11-27', sourceLabel: '工作室库存', lineCount: 22, totalQty: 86, groupCount: 3, groups: [], groupBlocks: [], skippedCount: 1 },
+    diff: { counts: { added: 1, cleared: 2, changed: 3, unchanged: 18, netDelta: 2, feishuCleared: 1 }, uniqueKept: 2,
+      cleared: [{ itemName: '光明女神闪蝶', spec: '胡桃木框', before: 2, after: 0 }, { itemName: '枯叶蛱蝶', spec: '', before: 1, after: 0 }],
+      changed: [{ itemName: '蓝闪蝶', spec: '', before: 3, after: 5 }, { itemName: '玉带凤蝶', spec: '玻璃罩', before: 6, after: 4 }, { itemName: '天堂凤蝶', spec: '', before: 2, after: 3 }],
+      added: [{ itemName: '新品甲', spec: '', before: 0, after: 1 }] }
+  } },
+  { name: 'inv-moves', h: 1500, wxml: 'subpackages/extra/inventory-ops/index', css: '.ui-pop-mask.ui-pop-mask { display: block !important; }', data: {
+    ready: true, tab: 'finished', groups: [], showMoves: true, adjustDelta: '', adjustReason: '', adjustBusy: false, movesLoading: false,
+    movesRow: { _id: 'a', skuName: '蓝闪蝶', qty: 4, framingSpec: '胡桃木框' },
+    movesList: [
+      { _id: 'm4', type: 'out', typeLabel: '出库', note: '出货 SH20261127001 → 星宸标本', timeText: '11-27 15:20', operator: '林晓棠', refNo: 'SH20261127001', deltaText: '-1', delta: -1, after: 4 },
+      { _id: 'm3', type: 'adjust', typeLabel: '调整', note: '运输破损', timeText: '11-27 11:02', operator: '馆长', refNo: '', deltaText: '-1', delta: -1, after: 5 },
+      { _id: 'm2', type: 'count', typeLabel: '盘点', note: '盘点 2026-11-27：3 → 6', timeText: '11-27 09:30', operator: '周砚', refNo: '2026-11-27', deltaText: '+3', delta: 3, after: 6 },
+      { _id: 'm1', type: 'opening', typeLabel: '开账', note: '首次接入流水时的存量', timeText: '11-27 09:30', operator: 'system', refNo: '', deltaText: '+3', delta: 3, after: 3 }
+    ]
+  } },
+  { name: 'ship-detail-stock', h: 1900, wxml: 'subpackages/extra/shipment-ops/index', css: '.ui-pop-mask.ui-pop-mask { display: block !important; }', data: {
+    ready: true, canWrite: true, showDetail: true, sheetBodyPx: 820, detailBusy: false, sealLive: false, nextActions: [{ value: 'received', label: '已签收' }],
+    shipForm: { expressCompany: '顺丰', trackingNo: 'SF0213728671548', freight: '18' },
+    detailTip: '已流转为「已发货」；库存已记 2 行，1 行没对上成品库存', detailTipTone: 'warn',
+    detail: { _id: 's1', customerLine: '星宸标本', storeName: '星宸标本', status: 'shipped', statusLabel: '已发货', statusTone: 'brass', sourceLabel: '小程序', shipmentNo: 'SH20261127001', shipmentDate: '2026-11-27',
+      totalQty: 4, itemCount: 3, amountText: '520.00', items: [{ itemName: '蓝闪蝶', spec: '胡桃木框', qty: 2 }, { itemName: '光明女神闪蝶', spec: '', qty: 1, serialNo: 'SN-0001' }, { itemName: '手作小匣', spec: '', qty: 1 }],
+      stockOutAt: 1, stockReturnedAt: 0, stockUnlinked: ['手作小匣'], stockShortage: [], freight: 18, freightState: 'pending' }
+  } },
   // 2026-11-27 追加评价：我的评价卡（已有追评 · 审核中）+ 追评撰写态
   { name: 'comment-view-append', h: 1500, wxml: 'subpackages/content/comment/index', data: {
     loadingGate: false, canReview: false, appendMode: false, productOptions: [], targetId: 'p1', submitting: false,

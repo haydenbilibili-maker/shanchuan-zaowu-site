@@ -10,6 +10,9 @@
 云端读写：`manageStudioInventory` / `getStudioDashboard` / `manageStoreShipment`（SKU 搜索）。
 **客户端不得直连**（规则 `read/write: false`）。
 
+**2026-11-27 起数量只经出入库流水改**（[`inventory_moves`](./inventory_moves.md)）：盘点 / 飞书同步写差额 `count` 流水、出货 `out` / 回库 `return`、唯一件 `in`、手工 `adjust`；
+盘点**不再整表删除重建**。新增字段：`itemKey`（品名+规格归一键）、`serialNo`（唯一件）、`movesOpenedAt`（首次接入流水时间）。
+
 ## 主要字段
 
 | 字段 | 类型 | 说明 |

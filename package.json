@@ -315,6 +315,8 @@
     "check:modal-textarea-fixed": "node miniprogram/scripts/check-modal-textarea-fixed.mjs",
     "check:review-shelf": "node miniprogram/scripts/check-review-shelf.mjs",
     "check:reviews-tab": "node miniprogram/scripts/check-reviews-tab.mjs",
+    "test:inventory-moves": "node miniprogram/scripts/test-inventory-moves.mjs",
+    "test:inventory-moves:selftest": "node miniprogram/scripts/test-inventory-moves.mjs --selftest",
     "check:reviews-tab:selftest": "node miniprogram/scripts/check-reviews-tab.mjs --selftest",
     "check:review-shelf:selftest": "node miniprogram/scripts/check-review-shelf.mjs --selftest",
     "check:modal-textarea-fixed:selftest": "node miniprogram/scripts/check-modal-textarea-fixed.mjs --selftest",

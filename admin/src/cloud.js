@@ -492,6 +492,7 @@ export const COLLECTIONS = {
   PURCHASE_ORDERS: 'purchase_orders', // 正式订货单（门店/渠道）
   OPS_PURCHASES: 'ops_purchases', // 超管采购管理（门店+工作室，managePurchaseOrder）
   OPS_SHIPMENTS: 'ops_shipments', // 门店出货单 SSOT（manageStoreShipment；小程序主录入）
+  INVENTORY_MOVES: 'inventory_moves', // 出入库流水（库存唯一事实；2026-11-27 产品负责人点名，各库存/采购/出货云函数经 inventoryMoves.js 写入）
   STUDIO_MATERIAL_PRICES: 'studio_material_prices', // 原材料价目表（出货算价，manageStudioSettlement）
   STUDIO_PACKAGING_PRICES: 'studio_packaging_prices', // 包装价目表（出货算价，manageStudioSettlement）
   OPS_SETTLEMENT_BILLS: 'ops_settlement_bills', // 工作室账单（结算唯一权威，manageStudioSettlement）

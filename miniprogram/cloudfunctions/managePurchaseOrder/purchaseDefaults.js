@@ -84,6 +84,7 @@ const BUDGET_TYPE_OPTIONS = [
   '水电杂费',
   '宽带',
   '安全资金',
+  '物流运费',
   '其他'
 ]
 const PLATFORM_OPTIONS = ['1688', '淘宝', '京东', '拼多多']
@@ -339,7 +340,16 @@ function mapRow(doc) {
     createdAt: doc.createdAt || null,
     updatedAt: doc.updatedAt || null,
     createdBy: doc.createdBy || '',
-    updatedBy: doc.updatedBy || ''
+    updatedBy: doc.updatedBy || '',
+    // 2026-11-27：出货单运费自动生成的待确认草稿（确认前不计入已用预算）
+    pendingConfirm: doc.pendingConfirm === true,
+    refShipmentId: doc.refShipmentId || '',
+    refShipmentNo: doc.refShipmentNo || '',
+    // 采购入库流水（原材料）
+    stockMoveId: doc.stockMoveId || '',
+    stockLedgerId: doc.stockLedgerId || '',
+    stockMoveError: doc.stockMoveError || '',
+    stockable: isStockable(doc)
   }
 }
 
@@ -441,7 +451,31 @@ function feishuItemToPayload(item, defaultEntityId) {
   }
 }
 
+/**
+ * 采购 → 原材料入库（2026-11-27「库存以出入库流水为准」）：哪些采购单在「到库」时记一条原材料 in 流水。
+ *   · 只认**工作室**主体（门店没有原材料台账）；
+ *   · 只认标本 / 原材料类（工具、房租、水电、薪酬……不是库存）；
+ *   · 只在**状态真的变成**已入库 / 已完成（且之前不是）时触发 —— 飞书同步不触发（历史单在飞书原材料表里早已计入，
+ *     首次同步会把几百张旧单全部重复入库）；流水幂等键 `purchase-in:<单据 id>` 再兜一层。
+ */
+const STOCK_IN_BUDGET_TYPES = ['标本采购', '标本原材料与耗材']
+const STOCKED_STATUSES = ['stocked', 'completed']
+function isStockable(doc) {
+  const d = doc || {}
+  if (d.scope !== 'studio') return false
+  return d.category === '标本' || STOCK_IN_BUDGET_TYPES.indexOf(d.budgetType) !== -1
+}
+function shouldStockIn(prevStatus, nextStatus, doc) {
+  const p = normalizeStatus(prevStatus)
+  const n = normalizeStatus(nextStatus)
+  if (STOCKED_STATUSES.indexOf(n) === -1 || STOCKED_STATUSES.indexOf(p) !== -1) return false
+  if (doc && doc.stockMoveId) return false
+  return isStockable(doc) && Number(doc.qty) > 0
+}
+
 module.exports = {
+  isStockable,
+  shouldStockIn,
   COLLECTION,
   SYNC_META_COLLECTION,
   SYNC_META_ID,

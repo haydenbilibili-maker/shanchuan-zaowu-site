@@ -796,8 +796,13 @@ Page({
       success: async (res) => {
         const status = next[res.tapIndex]
         try {
-          await this.callFn({ action: 'setStatus', id, status })
-          this.setData({ tipTone: 'info', tipText: '状态已更迭' })
+          const out = await this.callFn({ action: 'setStatus', id, status })
+          // 2026-11-27：工作室标本 / 原材料单到库即记原材料入库流水
+          const si = out && out.stockIn
+          this.setData({
+            tipTone: si && !si.ok ? 'warn' : 'info',
+            tipText: si ? (si.ok ? `状态已更迭，已记入原材料库存（现 ${si.after}）` : `状态已更迭，但入库流水没写上：${si.msg}`) : '状态已更迭'
+          })
           this.loadList()
         } catch (err) {
           this.setData({
@@ -807,6 +812,23 @@ Page({
         }
       }
     })
+  },
+
+  /** 出货单运费草稿：确认入账 / 驳回（2026-11-27 产品负责人「生成草稿，人工确认」） */
+  async onConfirmDraft(e) {
+    const id = e.currentTarget.dataset.id
+    const accept = e.currentTarget.dataset.accept !== 'no'
+    if (!id || this._confirming) return
+    this._confirming = true
+    try {
+      const out = await this.callFn({ action: 'confirmDraft', id, accept })
+      this.setData({ tipTone: 'info', tipText: (out && out.msg) || (accept ? '运费已确认入账' : '已驳回') })
+      this.loadList()
+    } catch (err) {
+      this.setData({ tipTone: 'warn', tipText: formatCloudFnError(err, '确认未成') })
+    } finally {
+      this._confirming = false
+    }
   },
 
   onBatchTransit() {

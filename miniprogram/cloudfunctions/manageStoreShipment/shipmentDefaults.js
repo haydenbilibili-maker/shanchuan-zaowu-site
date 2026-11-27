@@ -543,6 +543,8 @@ function normalizeItems(rawItems) {
         row.inventoryRecordId || row.inventoryId || ''
       ).trim(),
       feishuRecordId: String(row.feishuRecordId || '').trim(),
+      // 唯一件（孤品）序列号：出库 / 回库按它定位到那一件（2026-11-27）
+      serialNo: optText(row.serialNo).toUpperCase(),
 
       // ── 结构化定价快照（蓝图 §4.4 / §5.5）──
       // 命中的价目行 + 金额，**写进单据**：价目表以后改价不影响已出货的单。
@@ -726,6 +728,8 @@ function normalizePayload(input, existing) {
     trackingNo: String(
       src.trackingNo != null ? src.trackingNo : src.运单号 != null ? src.运单号 : prev.trackingNo || ''
     ).trim(),
+    // 运费（元，可空）：保存后自动在采购账生成「待确认」的物流运费草稿（2026-11-27 产品负责人「生成草稿，人工确认」）
+    freight: src.freight !== undefined ? optMoney(src.freight) : (prev.freight != null ? optMoney(prev.freight) : null),
     expressCompany: String(
       src.expressCompany != null
         ? src.expressCompany
@@ -784,6 +788,14 @@ function mapRow(doc) {
     unitPrice: doc.unitPrice === null || doc.unitPrice === undefined ? null : roundMoney(doc.unitPrice),
     trackingNo: doc.trackingNo || '',
     expressCompany: doc.expressCompany || '',
+    freight: doc.freight != null ? roundMoney(doc.freight) : null,
+    freightDraftId: doc.freightDraftId || '',
+    freightState: doc.freightState || '',
+    // 出入库流水（成品）：发出时扣、发出后作废时回
+    stockOutAt: doc.stockOutAt || 0,
+    stockReturnedAt: doc.stockReturnedAt || 0,
+    stockUnlinked: Array.isArray(doc.stockUnlinked) ? doc.stockUnlinked : [],
+    stockShortage: Array.isArray(doc.stockShortage) ? doc.stockShortage : [],
     productId: doc.productId || (items[0] && items[0].productId) || '',
     skuId: doc.skuId || (items[0] && items[0].skuId) || '',
     inventoryRecordId: doc.inventoryRecordId || (items[0] && items[0].inventoryRecordId) || '',
