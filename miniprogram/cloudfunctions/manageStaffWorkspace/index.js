@@ -690,27 +690,56 @@ async function payslipUpsertFromFeishu(event, openid) {
   const guard = await assertStaff(db, openid, { requireSuperAdmin: true })
   if (!guard.ok) return fail(guard.msg, { code: guard.code })
   const items = Array.isArray(event.items) ? event.items : []
+  if (!items.length) return { success: true, stats: { created: 0, updated: 0, skipped: 0 }, unmatched: [] }
+
+  // 2026-11-27：原实现每行都查一次 staff_members + 一次工资条是否存在，
+  // 一个月的薪酬表就上百行 → 30s 超时（飞书侧报「同步失败/无反应」）。
+  // 改成：员工表只读一次建映射；已有工资条按月份一次读回；写库并发 8。
+  const staffMap = new Map()
+  const nameMap = new Map()
+  try {
+    const res = await db.collection('staff_members').limit(500).get()
+    ;(res.data || []).forEach((row) => {
+      if (!row) return
+      const oid = String(row.openid || '').trim()
+      if (!oid) return
+      const phone = String(row.phone || row.mobile || '').trim()
+      const name = String(row.name || '').trim()
+      if (phone) staffMap.set(phone, oid)
+      if (name) nameMap.set(name, oid)
+    })
+  } catch (e) { /* 读不到员工表就全部 skipped */ }
+
+  const months = Array.from(new Set(items.map((it) => String((it && it.month) || '').trim()).filter(Boolean)))
+  const existing = new Set()
+  try {
+    if (months.length) {
+      const res = await db.collection(COL_PAY).where({ month: _.in(months) }).limit(500).get()
+      ;(res.data || []).forEach((r) => { if (r && r._id) existing.add(r._id) })
+    }
+  } catch (e) { /* 读不到就按 created 计 */ }
+
   let created = 0
   let updated = 0
   let skipped = 0
   const unmatched = []
   const now = new Date()
+  const jobs = []
+  const staffCache = new Map()
   for (const it of items) {
     const month = String((it && it.month) || '').trim()
     const staffName = String((it && it.staffName) || '').trim()
     const phone = String((it && it.phone) || '').trim()
     if (!month || !staffName) { skipped += 1; continue }
     let staffOpenid = String((it && it.staffOpenid) || '').trim()
-    if (!staffOpenid) {
-      try {
-        let res = null
-        if (phone) res = await db.collection('staff_members').where({ phone }).limit(1).get()
-        if ((!res || !(res.data || []).length) && staffName) {
-          res = await db.collection('staff_members').where({ name: staffName }).limit(1).get()
-        }
-        const row = ((res && res.data) || [])[0]
-        staffOpenid = (row && row.openid) || ''
-      } catch (e) { staffOpenid = '' }
+    if (!staffOpenid) staffOpenid = staffCache.get(phone) || staffCache.get(staffName) || ''
+    if (!staffOpenid && phone) {
+      staffOpenid = staffMap.get(phone) || ''
+      if (staffOpenid) staffCache.set(phone, staffOpenid)
+    }
+    if (!staffOpenid && staffName) {
+      staffOpenid = nameMap.get(staffName) || ''
+      if (staffOpenid) staffCache.set(staffName, staffOpenid)
     }
     if (!staffOpenid) { skipped += 1; if (unmatched.length < 5) unmatched.push(staffName); continue }
     const docId = `${staffOpenid}_${month}`
@@ -729,21 +758,23 @@ async function payslipUpsertFromFeishu(event, openid) {
       updatedBy: openid,
       updatedByName: (guard.actor && guard.actor.name) || '飞书同步'
     }
+    jobs.push({ docId, doc })
+  }
+
+  const runOne = async (job) => {
     try {
-      const got = await db.collection(COL_PAY).doc(docId).get().catch(() => null)
-      const exists = !!(got && got.data)
-      await db.collection(COL_PAY).doc(docId).set({ data: doc })
-      if (exists) updated += 1
+      await db.collection(COL_PAY).doc(job.docId).set({ data: job.doc })
+      if (existing.has(job.docId)) updated += 1
       else created += 1
     } catch (e) {
-      try {
-        await db.collection(COL_PAY).add({ data: { _id: docId, ...doc, createTime: now } })
-        created += 1
-      } catch (e2) {
-        skipped += 1
-      }
+      skipped += 1
     }
   }
+  const CONCURRENCY = 8
+  for (let i = 0; i < jobs.length; i += CONCURRENCY) {
+    await Promise.all(jobs.slice(i, i + CONCURRENCY).map(runOne))
+  }
+
   return { success: true, stats: { created, updated, skipped }, unmatched }
 }
 

@@ -423,6 +423,7 @@ function toBudgetPools (records) {
 const TARGETS = {
   // 2026-11-27：产品负责人要求成品库存恢复同步（此前 09-19 曾因「以小程序盘点为准」而移出）
   inventory: {
+    chunk: 20,
     label: '成品库存',
     fn: 'manageStudioInventory',
     build: toInventoryItems,
@@ -430,6 +431,7 @@ const TARGETS = {
     signature: ['物品名称', '数量']
   },
   payroll: {
+    chunk: 20,
     label: '员工薪酬',
     fn: 'manageStaffWorkspace',
     build: toPayrollItems,

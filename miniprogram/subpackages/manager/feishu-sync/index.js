@@ -146,7 +146,11 @@ Page({
   },
 
   runSync(targets, label) {
-    if (this.data.busy || this.data.loading) return
+    // 2026-11-27：原来这里静默 return —— 上一次超时后 busy 还挂着时，再点「同步」就像没反应
+    if (this.data.busy || this.data.loading) {
+      this.setData({ tipTone: 'warn', tipText: this.data.busy ? `正在同步${this.data.busy}，请等它结束` : '正在刷新，请稍等' })
+      return
+    }
     if (!this.data.creds.configured) {
       this.setData({
         tipTone: 'warn',

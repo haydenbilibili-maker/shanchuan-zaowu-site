@@ -188,7 +188,7 @@ async function pullOne (role, mapping, opsKey) {
    * （服务间调用的内部超时比函数自身 60s 短得多，实测就是这么挂的）。
    * 50 条一批，既避开超时，也让单次失败不必重跑整表。
    */
-  const CHUNK = 50
+  const CHUNK = target.chunk || 50
   const totals = { created: 0, updated: 0, skipped: 0, failedBatches: 0 }
   let lastMsg = ''
   for (let i = 0; i < items.length; i += CHUNK) {
