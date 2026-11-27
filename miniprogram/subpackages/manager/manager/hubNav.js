@@ -28,12 +28,12 @@ const HUB_SECTIONS = [
     short: '工作室',
     keys: [
       'studioDashboard', 'supplierWorkbench', 'purchaseOps', 'shipmentOps', 'shipmentSku', 'inventoryOps', 'rawInventoryOps',
-      'studioBills', 'propertyCost', 'framers', 'framerRecruit', 'artisanCommission',
+      'studioBills', 'propertyCost', 'feishuSync', 'framers', 'framerRecruit', 'artisanCommission',
       'stores', 'verify', 'staffConsole', 'staffDirectory', 'staffPermissions', 'shareholderConfig', 'payslipAdmin', 'myPayslip'
     ]
   },
     { id: 'members', title: '会员与礼遇', short: '会员', keys: ['memberCrm', 'vip', 'support', 'memberLevelAdjust', 'honoraryCurators', 'points', 'welcomeGift', 'walletConfig'] },
-  { id: 'system', title: '系统与设置', short: '系统', keys: ['shipping', 'bookingRules', 'supportConfig', 'orders', 'feishuSync', 'aiIdentifyMonitor', 'museumGuideMonitor'] }
+  { id: 'system', title: '系统与设置', short: '系统', keys: ['shipping', 'bookingRules', 'supportConfig', 'orders', 'aiIdentifyMonitor', 'museumGuideMonitor'] }
 ]
 
 const ICON = '/assets/icons/'
@@ -91,13 +91,14 @@ const HUB_KITS = [
     ]
   },
   {
-    id: 'goodsKit', label: '货品', sub: '进货·库存·出货', desc: '进货、库存、出货与定价', icon: ICON + 'knowledge.png', sec: 'studio',
+    id: 'goodsKit', label: '货品', sub: '进货·库存·出货', desc: '进货、库存、出货与飞书同步', icon: ICON + 'knowledge.png', sec: 'studio',
     children: [
       { id: 'supplier', label: '供应商', desc: '进货的合作商家', alias: ['供货', '供应商', '厂家'], icon: ICON + 'group.png', keys: ['supplierWorkbench'], tap: 'goSupplierWorkbench' },
       { id: 'purchase', label: '采购', desc: '给工作室下单进货', alias: ['进货', '采购单'], icon: ICON + 'cart.png', keys: ['purchaseOps'], tap: 'goPurchaseOps' },
       { id: 'inventory', label: '库存', desc: '成品和原料还剩多少', alias: ['库存', '原料', '成品', '盘点'], icon: ICON + 'knowledge.png', keys: ['inventoryOps', 'rawInventoryOps'], tap: 'goInventoryOps' },
       { id: 'skuMaintain', label: 'SKU 维护', desc: '出货商品的组合、价格和停用', alias: ['SKU', '商品', '价目', '出货 SKU', '定价'], icon: ICON + 'list.png', keys: ['shipmentSku'], tap: 'goSkuMaintain' },
-      { id: 'shipment', label: '出货中心', desc: '工作室打包发货', alias: ['发货', '出库', '出货单'], icon: ICON + 'ship.png', keys: ['shipmentOps'], tap: 'goShipmentOps' }
+      { id: 'shipment', label: '出货中心', desc: '工作室打包发货', alias: ['发货', '出库', '出货单'], icon: ICON + 'ship.png', keys: ['shipmentOps'], tap: 'goShipmentOps' },
+      { id: 'feishu', label: '飞书同步', desc: '把库存、采购、薪酬抄到飞书表格', alias: ['飞书', '表格', '同步'], icon: ICON + 'deliver.png', keys: ['feishuSync'], tap: 'goFeishuSyncGuarded' }
     ]
   },
   {
@@ -138,13 +139,12 @@ const HUB_KITS = [
     ]
   },
   {
-    id: 'settingsKit', label: '设置', sub: '运费·预约·通知', desc: '运费、预约、客服、通知和飞书', icon: ICON + 'service.png', sec: 'system',
+    id: 'settingsKit', label: '设置', sub: '运费·预约·通知', desc: '运费、预约、客服与通知', icon: ICON + 'service.png', sec: 'system',
     children: [
       { id: 'shipping', label: '运费规则', desc: '按装裱方式算运费、包邮门槛', alias: ['运费', '包邮', '快递费', '规则配置'], icon: ICON + 'deliver.png', keys: ['shipping'], tap: 'switchTab', idx: 15, tabTitle: '运费规则' },
       { id: 'bookingRules', label: '预约规则', desc: '可预约时段和闭店日', alias: ['预约', '时段', '闭店', '规则配置'], icon: MGR_ICON + 'clock.png', keys: ['bookingRules'], tap: 'goBookingRules' },
       { id: 'supportConfig', label: '客服入口', desc: '客服电话和常见问题', alias: ['客服', '电话', '常见问题', '规则配置'], icon: ICON + 'phone.png', keys: ['supportConfig'], tap: 'goSupportConfig' },
-      { id: 'wxNotify', label: '微信通知', sub: '订单·工单提醒', desc: '来新订单时微信提醒我', alias: ['通知', '提醒', '微信'], icon: ICON + 'service.png', keys: ['orders'], tap: 'enableStaffOrderWxNotify' },
-      { id: 'feishu', label: '飞书同步', desc: '把数据自动抄到飞书表格', alias: ['飞书', '表格', '同步'], icon: ICON + 'deliver.png', keys: ['feishuSync'], tap: 'goFeishuSyncGuarded' }
+      { id: 'wxNotify', label: '微信通知', sub: '订单·工单提醒', desc: '来新订单时微信提醒我', alias: ['通知', '提醒', '微信'], icon: ICON + 'service.png', keys: ['orders'], tap: 'enableStaffOrderWxNotify' }
     ]
   }
 ]
@@ -225,7 +225,7 @@ const FAV_ID_ALIASES = {
   framers: 'framerKit', framerRecruit: 'framerKit', artisanCommission: 'framerKit',
   staffDirectory: 'staffKit', staffPermissions: 'staffKit',
   payslipAdmin: 'payKit', myPayslip: 'payKit',
-  walletConfig: 'giftPackKit', shipment: 'goodsKit', feishu: 'settingsKit',
+  walletConfig: 'giftPackKit', shipment: 'goodsKit', feishu: 'goodsKit',
   perks: 'giftPackKit',
   artisan: 'framerKit',
   org: ['staffKit', 'shareholderConfig'],
@@ -238,7 +238,7 @@ const FAV_ID_ALIASES = {
   shipmentOps: 'goodsKit', shipmentSku: 'goodsKit',
   inventoryOps: 'goodsKit', rawInventoryOps: 'goodsKit',
   supplierWorkbench: 'goodsKit', purchaseOps: 'goodsKit', propertyCost: 'costKit',
-  feishuSync: 'settingsKit', depositOps: 'deposit', aiIdentifyMonitor: 'aiMonitorKit'
+  feishuSync: 'goodsKit', depositOps: 'deposit', aiIdentifyMonitor: 'aiMonitorKit'
 }
 /** 未配置时的角色默认（再按权限过滤） */
 const FAV_DEFAULTS = {

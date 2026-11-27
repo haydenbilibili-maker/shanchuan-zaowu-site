@@ -495,7 +495,7 @@
               <text class="hub-cell-name">仪表盘</text>
             </view>
             <!-- 组合入口（2026-11-26 归并）：supplier + purchase + inventory + skuMaintain → 组合页逐条平铺 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="goodsKit" wx:if="{{menu.supplierWorkbench || menu.purchaseOps || menu.inventoryOps || menu.rawInventoryOps || menu.shipmentSku || menu.shipmentOps}}" bindtap="openHubKitPage" data-kit="goodsKit">
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="goodsKit" wx:if="{{menu.supplierWorkbench || menu.purchaseOps || menu.inventoryOps || menu.rawInventoryOps || menu.shipmentSku || menu.shipmentOps || menu.feishuSync}}" bindtap="openHubKitPage" data-kit="goodsKit">
               <view class="hub-ico">
                 <image class="hub-ico-img" src="/assets/icons/knowledge.png" mode="aspectFit" />
               </view>
@@ -616,7 +616,7 @@
           </view>
           <view class="hub-grid--cat {{hubSecMeta.system.grid}}" wx:if="{{!hubCollapsed.system}}">
             <!-- 组合入口（2026-11-26 归并）：shipping + bookingRules + supportConfig + wxNotify → 组合页逐条平铺 -->
-            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="settingsKit" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig || menu.orders || menu.feishuSync}}" bindtap="openHubKitPage" data-kit="settingsKit">
+            <view class="hub-cell" hover-class="tap-press" hover-stay-time="80" data-fid="settingsKit" wx:if="{{menu.shipping || menu.bookingRules || menu.supportConfig || menu.orders}}" bindtap="openHubKitPage" data-kit="settingsKit">
               <view class="hub-ico">
                 <image class="hub-ico-img" src="/assets/icons/service.png" mode="aspectFit" />
               </view>
