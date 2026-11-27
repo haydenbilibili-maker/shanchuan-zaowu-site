@@ -492,7 +492,7 @@
             <text class="inv-diff-chip is-chg">改数 {{diff.counts.changed}}</text>
             <text class="inv-diff-chip">不变 {{diff.counts.unchanged}}</text>
           </view>
-          <text class="ops-meta-inline warn inv-diff-warn" wx:if="{{diff.counts.feishuCleared}}">其中 {{diff.counts.feishuCleared}} 条飞书同步的成品这次没出现，会被清零 —— 确认是真卖完了再写入</text>
+          <text class="ops-meta inv-diff-note" wx:if="{{diff.counts.feishuKept}}">另有 {{diff.counts.feishuKept}} 条由飞书同步管理的成品这次没盘到，保持原数（以飞书同步为准）</text>
           <block wx:for="{{diff.cleared}}" wx:key="itemName" wx:for-item="d">
             <view class="ops-line-row" wx:if="{{index < 8}}">
               <text class="ops-line-name">{{d.itemName}}<text class="ops-line-sub" wx:if="{{d.spec}}">{{d.spec}}</text></text>

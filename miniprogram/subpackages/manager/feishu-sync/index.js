@@ -67,6 +67,8 @@ Page({
     const ok = Number(lastRun.okCount) || 0
     const fail = Number(lastRun.failCount) || 0
     const failPart = fail ? `，失败 ${fail} 项` : ''
+    const skip = Number(lastRun.skipCount) || 0
+    const skipPart = skip ? `，跳过 ${skip} 项（未选表）` : ''
     let when = ''
     const ts = Number(lastRun.at || lastRun.finishedAt || lastRun.startedAt) || 0
     if (ts) {
@@ -76,7 +78,7 @@ Page({
         when = ` · ${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
       }
     }
-    return `${by} · 成功 ${ok} 项${failPart}${when}`
+    return `${by} · 成功 ${ok} 项${failPart}${skipPart}${when}`
   },
 
   refresh() {
@@ -115,6 +117,9 @@ Page({
    */
   summarize(t) {
     if (t.localCount === -1) return '本地还没有这张表（首次同步会新建）'
+    if (!t.tableId) return '还没选飞书表（到 ERP 同步中心选表后保存）'
+    // 2026-11-27：localCount 改为「来自飞书的本地行」；手工录入 / 小程序盘点的行另计，不再算成「不一致」
+    const extra = t.localTotal > t.localCount ? '（另有 ' + (t.localTotal - t.localCount) + ' 条本地录入）' : ''
     if (t.remoteCount === null || t.remoteCount === undefined) {
       return t.remoteError ? '飞书读取失败：' + t.remoteError : '未读取飞书'
     }
@@ -122,13 +127,14 @@ Page({
       return '飞书有 ' + t.remoteCount + ' 条，本地 0 条 —— 从没同步过'
     }
     if (t.localCount !== t.remoteCount) {
-      return '本地 ' + t.localCount + ' 条 / 飞书 ' + t.remoteCount + ' 条（不一致）'
+      return '飞书 ' + t.remoteCount + ' 条 / 本地已同步 ' + t.localCount + ' 条（不一致）' + extra
     }
-    return '本地 ' + t.localCount + ' 条，与飞书一致'
+    return '已同步 ' + t.localCount + ' 条，与飞书一致' + extra
   },
 
   summaryTone(t) {
     if (t.localCount === -1) return 'warn'
+    if (!t.tableId) return 'muted'
     if (t.remoteCount === null || t.remoteCount === undefined) return t.remoteError ? 'danger' : 'muted'
     if (t.localCount === 0 && t.remoteCount > 0) return 'danger'
     if (t.localCount !== t.remoteCount) return 'warn'
@@ -166,6 +172,7 @@ Page({
           const x = results[k] || {}
           const t = (this.data.targets || []).find((y) => y.role === k)
           const name = (t && t.label) || k
+          if (x.skipped) return name + '：' + (x.msg || '已跳过')
           return x.success === false
             ? name + '：失败（' + (x.msg || '') + '）'
             : name + '：' + (x.msg || '完成')

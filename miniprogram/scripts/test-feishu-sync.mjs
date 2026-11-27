@@ -74,6 +74,8 @@ function runOnce (file) {
   eq('B6b 秒时间戳（10 位）→ 同一天', M.cellDate(1789813346), '2026-09-19')
   eq('B7 文本日期 → 归一', M.cellDate('2026/9/1'), '2026-09-01')
   eq('B8 空日期 → 空串', M.cellDate(''), '')
+  eq('B9 北京时间 0 点的时间戳 → 当天（与 ERP formatShanghaiYmd 同口径，不是 UTC 前一天）', M.cellDate(Date.UTC(2026, 10, 26, 16, 0)), '2026-11-27')
+  eq('B10 薪酬月份：「2026年11月」/「2026/3」/ 日期列时间戳都认', [M.monthOf('2026年11月'), M.monthOf('2026/3'), M.monthOf(Date.UTC(2026, 9, 31, 16, 0))], ['2026-11', '2026-03', '2026-11'])
 
   // ── C. 取列名：精确优先，宽松匹配只在唯一命中时用 ──
   eq('C1 精确命中', M.pickField({ 数量: 3 }, '数量'), 3)
@@ -228,7 +230,9 @@ const INJECTIONS = [
     (s2) => s2.replace('  const mismatch = missingSignature.length > 0 || (dropped.length >= 2 && missRatio >= 0.5)', '  const mismatch = dropped.length >= 2 && missRatio >= 0.5')
   ],
   ['数字解析把空当 null（写库会写进 undefined）', (s) => s.replace("  if (!t) return 0", "  if (!t) return null")],
-  ['日期不再区分秒/毫秒（10 位秒被当毫秒 → 1970 年）', (s) => s.replace('const d = new Date(ms < 1e12 ? ms * 1000 : ms)', 'const d = new Date(ms)')],
+  ['日期不再区分秒/毫秒（10 位秒被当毫秒 → 1970 年）', (s) => s.replace('const d = new Date((ms < 1e12 ? ms * 1000 : ms) + SHANGHAI_OFFSET_MS)', 'const d = new Date(ms + SHANGHAI_OFFSET_MS)')],
+  ['日期回到 UTC（北京 0 点的日期早一天，与 ERP 不一致）', (s) => s.replace('const d = new Date((ms < 1e12 ? ms * 1000 : ms) + SHANGHAI_OFFSET_MS)', 'const d = new Date(ms < 1e12 ? ms * 1000 : ms)')],
+  ['薪酬月份只截前 7 位（「2026年11月」/ 日期列整行丢）', (s) => s.replace("  const m = t.match(/^(\\d{4})\\s*[-/.年]\\s*(\\d{1,2})/)", "  const m = null")],
   ['宽松列名匹配改成"第一个像的就用"（近名列会互相抢）', (s) => s.replace('  if (loose.length === 1) return f[loose[0]]', '  if (loose.length) return f[loose[0]]')],
   ['写库载荷漏掉 feishuRecordId（去重失效 → 每次同步都新增）', (s) => s.replace("      feishuRecordId: rec.record_id || rec.recordId || '',\n      inventoryNo:", "      inventoryNo:")],
   ['配置不再覆盖默认列名（ERP 改过的映射不生效）', (s) => s.replace('  return Object.assign({}, base, cfg)', '  return Object.assign({}, base)')],

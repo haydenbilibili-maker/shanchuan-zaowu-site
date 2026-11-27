@@ -86,12 +86,45 @@ async function fetchAll (collection, where) {
   return rows
 }
 
+/** 「来自飞书」的本地行：有 feishuRecordId 且未删（手工录入 / 小程序盘点的行不算） */
+function feishuRowsWhere () {
+  return { feishuRecordId: _.exists(true).and(_.nin(['', null])), deleted: _.neq(true) }
+}
+
+/**
+ * 本地行数（2026-11-27 改）：原来数**整张表**去和飞书比 —— 小程序盘点 / 手工录的行、软删的行都算进去，
+ * 于是「本地 N 条 / 飞书 M 条（不一致）」几乎永远亮黄，真正的不一致反而看不出来。
+ * 现在分开：`fromFeishu` = 来自飞书且未删的行（拿它与飞书比），`total` = 整表（只作参考）。
+ */
 async function countLocal (collection) {
   try {
-    const res = await db.collection(collection).count()
-    return Number(res && res.total) || 0
+    const total = await db.collection(collection).count()
+    let fromFeishu = 0
+    try {
+      const r = await db.collection(collection).where(feishuRowsWhere()).count()
+      fromFeishu = Number(r && r.total) || 0
+    } catch (e) { fromFeishu = 0 }
+    return { total: Number(total && total.total) || 0, fromFeishu }
   } catch (e) {
-    return -1 // 集合不存在：与"0 条"区分开（0 条是"同步过但为空"，-1 是"根本没这张表"）
+    return { total: -1, fromFeishu: -1 } // 集合不存在：与"0 条"区分开（0 条是"同步过但为空"，-1 是"根本没这张表"）
+  }
+}
+
+/**
+ * 合并写 `configs/feishu_sync`（2026-11-27 修）：原来 `saveLastRun` 与 `config.save` 都用 `doc.set()`
+ * —— set 是**整文档替换**：每同步一次就把 `autoSync` 抹掉（自动同步跑完第一次就自己关了），
+ * 反过来拨开关又把「上次结果」抹掉。改为先 update（只改给出的字段），文档不存在再 set。
+ */
+async function patchSyncDoc (patch) {
+  const col = db.collection(CONFIGS)
+  try {
+    const r = await col.doc(SYNC_ID).update({ data: patch })
+    if (r && r.stats && r.stats.updated === 0) {
+      const got = await col.doc(SYNC_ID).get().catch(() => null)
+      if (!(got && got.data)) await col.doc(SYNC_ID).set({ data: patch })
+    }
+  } catch (e) {
+    await col.doc(SYNC_ID).set({ data: patch })
   }
 }
 
@@ -184,6 +217,20 @@ async function pullOne (role, mapping, opsKey) {
   }
 
   /**
+   * 飞书里已删、本地还留着的行（2026-11-27 加）：upsert 只增改不删，飞书那边删掉的行在本地永远在。
+   * 这里**只报告、不删**（删数据是人的决定），让人知道「本地多出来的是哪些」。
+   */
+  let staleLocal = 0
+  let staleSample = []
+  try {
+    const remoteIds = new Set(records.map((r) => String(r.record_id || r.recordId || '')).filter(Boolean))
+    const localRows = await fetchAll(LOCAL_COLLECTION[role], feishuRowsWhere())
+    const stale = localRows.filter((r) => !remoteIds.has(String(r.feishuRecordId)))
+    staleLocal = stale.length
+    staleSample = stale.slice(0, 5).map((r) => r.itemName || r.skuName || r.staffName || r.orderNo || r._id)
+  } catch (e) { /* 读不到本地就不报 */ }
+
+  /**
    * **分批写**：205 行一次 `cloud.callFunction` 会 `ESOCKETTIMEDOUT`
    * （服务间调用的内部超时比函数自身 60s 短得多，实测就是这么挂的）。
    * 50 条一批，既避开超时，也让单次失败不必重跑整表。
@@ -191,6 +238,7 @@ async function pullOne (role, mapping, opsKey) {
   const CHUNK = target.chunk || 50
   const totals = { created: 0, updated: 0, skipped: 0, failedBatches: 0 }
   let lastMsg = ''
+  const notes = []
   for (let i = 0; i < items.length; i += CHUNK) {
     const part = items.slice(i, i + CHUNK)
     let res
@@ -215,6 +263,8 @@ async function pullOne (role, mapping, opsKey) {
       continue
     }
     const st = body.stats || {}
+    // 写入口的补充说明（如「N 条手工录入的工资条未被覆盖」）要带回给人看，不能吞掉
+    if (Array.isArray(body.kept) && body.kept.length && body.msg && notes.indexOf(body.msg) === -1 && notes.length < 3) notes.push(body.msg)
     totals.created += st.created || 0
     totals.updated += st.updated || 0
     totals.skipped += st.skipped || 0
@@ -230,30 +280,44 @@ async function pullOne (role, mapping, opsKey) {
     skipped: totals.skipped,
     failedBatches: totals.failedBatches,
     droppedColumns: dropped.map((d) => d.column),
-    msg: okAll
+    staleLocal,
+    staleSample,
+    msg: (okAll
       ? `飞书 ${records.length} 条 → 新建 ${totals.created} / 更新 ${totals.updated}`
-      : `飞书 ${records.length} 条，其中 ${totals.failedBatches} 批写入失败：${lastMsg}`
+      : `飞书 ${records.length} 条，其中 ${totals.failedBatches} 批写入失败：${lastMsg}`) +
+      (totals.skipped ? `，跳过 ${totals.skipped}` : '') +
+      (notes.length ? `（${notes.join('；')}）` : '') +
+      (staleLocal ? `；本地有 ${staleLocal} 条在飞书已删除（未自动删）` : '')
   }
 }
 
-/** 一次跑多个目标；返回逐目标结果 + 汇总（单个目标失败不阻断其它目标） */
-async function pullMany (roles, mapping, opsKey) {
+/**
+ * 一次跑多个目标；返回逐目标结果 + 汇总（单个目标失败不阻断其它目标）。
+ * `implicit`（「全部」/ 定时）时，还没配表 id 的目标记为**跳过**而不是失败 ——
+ * 2026-11-27：员工薪酬的表 id 要在同步中心选表后才有，没配之前每天定时都报「失败 1 项」，真失败反而被淹没。
+ */
+async function pullMany (roles, mapping, opsKey, implicit) {
   const results = {}
   for (const role of roles) {
-    results[role] = await pullOne(role, mapping, opsKey)
+    const r = await pullOne(role, mapping, opsKey)
+    results[role] = implicit && r && r.code === 'NO_TABLE'
+      ? { success: true, skipped: true, msg: '还没选飞书表，已跳过' }
+      : r
   }
-  const okCount = Object.values(results).filter((r) => r.success !== false).length
+  const okCount = Object.values(results).filter((r) => r.success !== false && !r.skipped).length
+  const skipCount = Object.values(results).filter((r) => r.skipped).length
   return {
     results,
     okCount,
-    failCount: roles.length - okCount,
+    skipCount,
+    failCount: roles.length - okCount - skipCount,
     at: Date.now()
   }
 }
 
 async function saveLastRun (summary) {
   try {
-    await db.collection(CONFIGS).doc(SYNC_ID).set({ data: { lastRun: summary, updatedAt: Date.now() } })
+    await patchSyncDoc({ lastRun: summary, updatedAt: Date.now() })
   } catch (e) {
     // 配置集合一定存在（configs 是全站通用），写失败只影响"上次结果"的展示，不该让同步本身失败
     console.error('[syncFeishuData] 写 lastRun 失败', e && e.message)
@@ -276,7 +340,7 @@ exports.main = async (event, context) => {
     const opsKey = process.env.ADMIN_OPS_KEY || ''
     if (!opsKey) return fail('云函数未配置 ADMIN_OPS_KEY，无法服务间写库', 'NO_OPS_KEY')
     const mapping = await loadMapping()
-    const summary = await pullMany(Object.keys(M.TARGETS), mapping, opsKey)
+    const summary = await pullMany(Object.keys(M.TARGETS), mapping, opsKey, true)
     await saveLastRun(Object.assign({ by: 'timer' }, summary))
     return ok(summary)
   }
@@ -326,7 +390,8 @@ exports.main = async (event, context) => {
             tableId: mapping[role].tableId,
             fromSavedConfig: mapping[role].fromSavedConfig,
             fieldCount: Object.keys(mapping[role].fields).length,
-            localCount: local,
+            localCount: local.fromFeishu,
+            localTotal: local.total,
             remoteCount: remote,
             remoteError,
             missingColumns,
@@ -344,7 +409,7 @@ exports.main = async (event, context) => {
         const roles = wanted.length ? wanted : Object.keys(M.TARGETS)
         const bad = roles.filter((r) => !M.TARGETS[r])
         if (bad.length) return fail(`未知同步目标：${bad.join('、')}`, 'BAD_TARGET')
-        const summary = await pullMany(roles, mapping, opsKey)
+        const summary = await pullMany(roles, mapping, opsKey, !wanted.length)
         await saveLastRun(Object.assign({ by: 'manual' }, summary))
         return ok(summary)
       }
@@ -477,9 +542,7 @@ exports.main = async (event, context) => {
 
       case 'config.save': {
         const autoSync = e.autoSync === true
-        await db.collection(CONFIGS).doc(SYNC_ID).set({
-          data: { autoSync, autoSyncAt: Date.now(), by: (auth.actor && auth.actor.name) || '' }
-        })
+        await patchSyncDoc({ autoSync, autoSyncAt: Date.now(), by: (auth.actor && auth.actor.name) || '' })
         return ok({ config: await loadSyncConfig(), msg: autoSync ? '已开启自动同步（每天一次）' : '已关闭自动同步' })
       }
 

@@ -89,6 +89,8 @@ function rowKey(ledger, doc) {
 /**
  * 盘点计划（纯函数）：台账现状 + 观测行 → 每个品项的 before / after / delta。
  * opts.zeroMissing：观测里没出现的台账行按 0 处理（整表盘点的语义；飞书逐条同步时为 false）。
+ * opts.keepMissing(row)：返回 true 的台账行即使没出现也**不清零**（2026-11-27：飞书同步管理的成品行
+ *   由飞书负责，粘贴盘点没写到它不代表卖完了 —— 原来会被清零，下次飞书同步又加回来，两边来回打架）。
  * 唯一件（有 serialNo 的台账行）不参与按品名盘点，单独管理。
  */
 function planCount(ledger, rows, observed, opts) {
@@ -103,7 +105,7 @@ function planCount(ledger, rows, observed, opts) {
       cur.before += rowQty(r)
       cur.dupIds.push(r._id)
     } else {
-      byKey.set(k, { key: k, ledgerId: r._id, dupIds: [], itemName: r.itemName || r.skuName || '', spec: r[cfg.specField] || r.spec || '', before: rowQty(r), after: null, line: null })
+      byKey.set(k, { key: k, ledgerId: r._id, row: r, dupIds: [], itemName: r.itemName || r.skuName || '', spec: r[cfg.specField] || r.spec || '', before: rowQty(r), after: null, line: null })
     }
   })
   const seen = new Set()
@@ -126,6 +128,7 @@ function planCount(ledger, rows, observed, opts) {
   byKey.forEach((v) => {
     if (v.after === null) {
       if (!o.zeroMissing) return
+      if (typeof o.keepMissing === 'function' && v.row && o.keepMissing(v.row)) return
       v.after = 0
     }
     plan.push(Object.assign(v, { delta: v.after - v.before }))

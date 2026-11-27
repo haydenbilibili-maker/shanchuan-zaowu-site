@@ -711,13 +711,16 @@ async function payslipUpsertFromFeishu(event, openid) {
   } catch (e) { /* 读不到员工表就全部 skipped */ }
 
   const months = Array.from(new Set(items.map((it) => String((it && it.month) || '').trim()).filter(Boolean)))
-  const existing = new Set()
+  const existing = new Map()
   try {
     if (months.length) {
       const res = await db.collection(COL_PAY).where({ month: _.in(months) }).limit(500).get()
-      ;(res.data || []).forEach((r) => { if (r && r._id) existing.add(r._id) })
+      ;(res.data || []).forEach((r) => { if (r && r._id) existing.set(r._id, r) })
     }
   } catch (e) { /* 读不到就按 created 计 */ }
+  // 2026-11-27：人工在工作台录的工资条（没有 feishuRecordId，常带明细 items / 社保快照）**不被飞书覆盖**，
+  // 原来 doc.set() 整条替换会把明细与社保快照一起抹掉；这些行计入 kept 并点名，要以飞书为准请先删掉那条再同步。
+  const kept = []
 
   let created = 0
   let updated = 0
@@ -743,6 +746,8 @@ async function payslipUpsertFromFeishu(event, openid) {
     }
     if (!staffOpenid) { skipped += 1; if (unmatched.length < 5) unmatched.push(staffName); continue }
     const docId = `${staffOpenid}_${month}`
+    const prevDoc = existing.get(docId)
+    if (prevDoc && !prevDoc.feishuRecordId) { if (kept.length < 10) kept.push(`${staffName} ${month}`); continue }
     const doc = {
       staffOpenid,
       staffName,
@@ -763,9 +768,14 @@ async function payslipUpsertFromFeishu(event, openid) {
 
   const runOne = async (job) => {
     try {
-      await db.collection(COL_PAY).doc(job.docId).set({ data: job.doc })
-      if (existing.has(job.docId)) updated += 1
-      else created += 1
+      if (existing.has(job.docId)) {
+        // 合并更新：只改飞书给的字段，保留 createTime 等其它字段
+        await db.collection(COL_PAY).doc(job.docId).update({ data: job.doc })
+        updated += 1
+      } else {
+        await db.collection(COL_PAY).doc(job.docId).set({ data: Object.assign({}, job.doc, { createTime: now, source: 'feishu' }) })
+        created += 1
+      }
     } catch (e) {
       skipped += 1
     }
@@ -775,7 +785,13 @@ async function payslipUpsertFromFeishu(event, openid) {
     await Promise.all(jobs.slice(i, i + CONCURRENCY).map(runOne))
   }
 
-  return { success: true, stats: { created, updated, skipped }, unmatched }
+  return {
+    success: true,
+    stats: { created, updated, skipped: skipped + kept.length },
+    unmatched,
+    kept,
+    msg: kept.length ? `${kept.length} 条工作台手工录入的工资条未被覆盖（${kept.slice(0, 3).join('、')}${kept.length > 3 ? ' 等' : ''}）` : ''
+  }
 }
 
 async function payslipAdminList(event, openid) {

@@ -168,7 +168,7 @@ async function handleCommitSnapshot(event, actor) {
     fetchAllWhere(COLLECTION, { location: LOCATION_STUDIO }, 2000)
   )
   const meta = { now, inventoryDate, sourceLabel, location: LOCATION_STUDIO, snapshotId, operatorOpenid: openid, operatorName: name }
-  const plan = moves.planCount('finished', existing, parsed.lines, { zeroMissing: true })
+  const plan = moves.planCount('finished', existing, parsed.lines, { zeroMissing: true, keepMissing: isFeishuManaged })
   const rowsById = new Map(existing.map((r) => [r._id, r]))
   const applied = await runChunks(plan.filter((p) => p.delta !== 0), 8, (p) =>
     moves.applyMove(db, {
@@ -214,6 +214,11 @@ async function handleCommitSnapshot(event, actor) {
   })
 }
 
+/** 飞书同步管理的成品行（有 feishuRecordId、不是唯一件）：粘贴盘点没写到它时不清零 */
+function isFeishuManaged(row) {
+  return !!(row && row.feishuRecordId && !row.serialNo)
+}
+
 /** 小并发执行（盘点一次可能上百行；串行会撞 60s 超时，全并发会撞数据库限流） */
 async function runChunks(list, size, fn) {
   const out = []
@@ -234,13 +239,15 @@ async function handleDiffSnapshot(event) {
   const existing = await withCollectionRetry(COLLECTION, () =>
     fetchAllWhere(COLLECTION, { location: LOCATION_STUDIO }, 2000)
   )
-  const plan = moves.planCount('finished', existing, parsed.lines, { zeroMissing: true })
+  const plan = moves.planCount('finished', existing, parsed.lines, { zeroMissing: true, keepMissing: isFeishuManaged })
   const s = moves.summarizePlan(plan)
-  const feishuCleared = plan.filter((p) => p.after === 0 && p.before > 0 && p.ledgerId &&
-    existing.some((r) => r._id === p.ledgerId && r.feishuRecordId)).length
+  const listed = new Set(plan.map((p) => p.ledgerId).filter(Boolean))
+  // 飞书管理、这次没盘到的行：保持原数（由飞书同步负责），只告诉人有多少条
+  const feishuKept = existing.filter((r) => isFeishuManaged(r) && !listed.has(r._id) && moves.rowQty(r) !== 0).length
+  const feishuCleared = 0
   return ok({
     inventoryDate: parsed.inventoryDate || '',
-    counts: { added: s.added.length, cleared: s.cleared.length, changed: s.changed.length, unchanged: s.unchanged, netDelta: s.netDelta, feishuCleared },
+    counts: { added: s.added.length, cleared: s.cleared.length, changed: s.changed.length, unchanged: s.unchanged, netDelta: s.netDelta, feishuCleared, feishuKept },
     added: s.added.slice(0, 60),
     cleared: s.cleared.slice(0, 60),
     changed: s.changed.slice(0, 80),
@@ -672,6 +679,25 @@ async function handleUpsertFromFeishu(event, actor) {
         }
         updated += 1
       } else {
+        // 2026-11-27 修：台账里已有同名同规格（盘点建的）行 → 绑定 feishuRecordId 并把数量**调到**飞书值；
+        // 原来直接按 +observedQty 记流水，会叠加在同名行上（重复计数）
+        const same = await moves.findLedgerRow(db, 'finished', { itemName: doc.itemName, spec: doc.framingSpec })
+        if (same && !same.feishuRecordId && !same.serialNo) {
+          await withCollectionRetry(COLLECTION, () => db.collection(COLLECTION).doc(same._id).update({
+            data: Object.assign({}, meta, { createdAt: same.createdAt || now, createdBy: same.createdBy || 'feishu_sync' })
+          }))
+          const d2 = observedQty - moves.rowQty(same)
+          if (d2 !== 0) {
+            await moves.applyMove(db, {
+              ledger: 'finished', type: moves.MOVE_TYPE.COUNT, delta: d2, ledgerId: same._id, row: same,
+              itemName: doc.itemName, spec: doc.framingSpec, refType: 'feishu', refId: line.feishuRecordId || '',
+              idemKey: `feishu:${line.feishuRecordId || doc.itemName}:bind:${now}`, operator: 'feishu_sync',
+              note: `飞书同步（绑定已有行）：${moves.rowQty(same)} → ${observedQty}`
+            })
+          }
+          updated += 1
+          continue
+        }
         await moves.applyMove(db, {
           ledger: 'finished', type: moves.MOVE_TYPE.COUNT, delta: observedQty,
           itemName: doc.itemName, spec: doc.framingSpec, refType: 'feishu', refId: line.feishuRecordId || '',

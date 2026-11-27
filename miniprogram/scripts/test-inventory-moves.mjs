@@ -11,6 +11,9 @@
  *      已发出的单作废 → 回库；草稿单删除不动库存
  *   M5 运费：出货单填运费 → 采购账一条「待确认」草稿（不计预算）；改运费跟着改；确认后计入并回写出货单
  *   M6 共享模块四份副本逐字节一致；集合三处同步（COLLECTIONS / rules / schema）
+ *   F  飞书同步（2026-11-27 修）：自动同步开关不被同步结果抹掉、未选表记跳过、日期按北京时间、
+ *      飞书新行绑定同名台账行不叠加、粘贴盘点不清零飞书行、状态只比来自飞书的行、飞书已删只报告；
+ *      员工薪酬金额 / 月份解析、手工工资条不被覆盖、飞书工资条合并更新
  *
  * 用法：node miniprogram/scripts/test-inventory-moves.mjs [--selftest]
  */
@@ -60,13 +63,16 @@ function makeDb(seed = {}) {
   let seq = 0
   const col = (n) => (cols[n] = cols[n] || new Map())
   for (const [n, rows] of Object.entries(seed)) rows.forEach((r) => col(n).set(r._id, JSON.parse(JSON.stringify(r))))
-  const op = (name) => (v) => ({ $op: name, v })
+  const withAnd = (o) => Object.assign(o, { and: (other) => withAnd({ $op: 'and', v: [o, other] }) })
+  const op = (name) => (v) => withAnd({ $op: name, v })
   const cmd = new Proxy({}, { get: (o, k) => op(k) })
   const test = (val, c) => {
     if (c && typeof c === 'object' && c.$op) {
       switch (c.$op) {
+        case 'and': return c.v.every((x) => test(val, x))
         case 'neq': return val !== c.v
         case 'in': return c.v.includes(val)
+        case 'nin': return !c.v.includes(val)
         case 'exists': return c.v ? val !== undefined : val === undefined
         case 'gte': return val >= c.v
         default: return false
@@ -121,7 +127,8 @@ function makeDb(seed = {}) {
               apply(d, data)
               return { stats: { updated: 1 } }
             },
-            remove: async () => { col(n).delete(id); return { stats: { removed: 1 } } }
+            remove: async () => { col(n).delete(id); return { stats: { removed: 1 } } },
+            set: async ({ data }) => { col(n).set(id, { ...data, _id: id }); return { stats: { updated: 1 } } }
           }),
           add: async ({ data }) => {
             const _id = data._id || `${n}_${++seq}`
@@ -136,6 +143,33 @@ function makeDb(seed = {}) {
     }
   }
   return db
+}
+
+/** 飞书同步链路：syncFeishuData 真源（飞书 API 打桩）→ 经 cloud.callFunction 调真写入口 */
+function loadSync(db, feishuTables, fnMains) {
+  const sdk = {
+    DYNAMIC_CURRENT_ENV: 'env', init() {}, database: () => db, getWXContext: () => ({ OPENID: 'u1' }),
+    callFunction: async ({ name, data }) => ({ result: await fnMains[name](data) })
+  }
+  const feishu = {
+    DEFAULT_APP_TOKEN: 'app',
+    credsStatus: () => ({ configured: true, hasAppId: true, hasAppSecret: true }),
+    listAllRecords: async (tid) => (feishuTables[tid] || { records: [] }).records,
+    listFieldNames: async (tid) => (feishuTables[tid] || { cols: [] }).cols,
+    countRecords: async (tid) => ((feishuTables[tid] || { records: [] }).records || []).length
+  }
+  const cache = new Map()
+  const realGuard = loadCjs(join(CF, 'syncFeishuData', 'staffGuard.js'), { 'wx-server-sdk': sdk }, cache)
+  const guard = Object.assign({}, realGuard, { assertStaff: async () => ({ ok: true, actor: ACTOR }) })
+  process.env.ADMIN_OPS_KEY = process.env.ADMIN_OPS_KEY || 'test-ops-key'
+  return loadCjs(join(CF, 'syncFeishuData', 'index.js'), { 'wx-server-sdk': sdk, './staffGuard': guard, './feishuClient': feishu }, cache).main
+}
+function loadStaffWs(db) {
+  const sdk = { DYNAMIC_CURRENT_ENV: 'env', init() {}, database: () => db, getWXContext: () => ({ OPENID: 'u1' }), callFunction: async () => ({ result: {} }) }
+  const cache = new Map()
+  const realGuard = loadCjs(join(CF, 'manageStaffWorkspace', 'staffGuard.js'), { 'wx-server-sdk': sdk }, cache)
+  const guard = Object.assign({}, realGuard, { assertStaff: async () => ({ ok: true, actor: ACTOR }) })
+  return loadCjs(join(CF, 'manageStaffWorkspace', 'index.js'), { 'wx-server-sdk': sdk, './staffGuard': guard }, cache).main
 }
 
 const ACTOR = { openid: 'u1', name: '测试员', superAdmin: true, role: 'super_admin', roles: ['super_admin'], storeIds: [] }
@@ -163,35 +197,36 @@ async function runChecks() {
     const db = makeDb({ studio_inventory: [
       { _id: 'a', itemName: '蓝闪蝶', skuName: '蓝闪蝶', framingSpec: '', qty: 3, location: 'studio', inventoryDate: '2026-11-20', groupName: '' },
       { _id: 'b', itemName: '光明女神', skuName: '光明女神', framingSpec: '', qty: 2, location: 'studio', feishuRecordId: 'rec1', sourceLabel: '飞书成品库存' },
-      { _id: 'u', itemName: '孤品甲', skuName: '孤品甲', framingSpec: '', qty: 1, location: 'studio', serialNo: 'SN-1' }
+      { _id: 'u', itemName: '孤品甲', skuName: '孤品甲', framingSpec: '', qty: 1, location: 'studio', serialNo: 'SN-1' },
+      { _id: 'c', itemName: '枯叶蛱蝶', skuName: '枯叶蛱蝶', framingSpec: '', qty: 1, location: 'studio' }
     ] })
     const fn = loadFns(db).manageStudioInventory
     const text = '群公告\n工作室库存\n2026年11月27日\n蓝闪蝶 5个\n新品甲 1个'
     const before = JSON.stringify(rows(db, 'studio_inventory'))
     const diff = res(await fn({ action: 'diffSnapshot', text }))
-    ok('M1-1 差异预览只读：新增 1 / 清零 1 / 改数 1，点出飞书行会被清零，唯一件不参与',
-      diff.success && diff.counts.added === 1 && diff.counts.cleared === 1 && diff.counts.changed === 1 && diff.counts.feishuCleared === 1 && diff.uniqueKept === 1 &&
+    ok('M1-1 差异预览只读：新增 1 / 清零 1 / 改数 1；飞书管理的行没盘到 → 保持（点名 1 条），唯一件不参与',
+      diff.success && diff.counts.added === 1 && diff.counts.cleared === 1 && diff.counts.changed === 1 && diff.counts.feishuKept === 1 && diff.uniqueKept === 1 &&
       JSON.stringify(rows(db, 'studio_inventory')) === before && !rows(db, 'inventory_moves').length, JSON.stringify(diff.counts))
     const c = res(await fn({ action: 'commitSnapshot', text }))
     const inv = rows(db, 'studio_inventory')
     const get = (id) => inv.find((r) => r._id === id)
     const added = inv.find((r) => r.itemName === '新品甲')
-    ok('M1-2 写入不删表：原行仍在（清零而不是删除），唯一件原样，新品建行；数量 = 盘点值',
-      c.success && get('a') && get('a').qty === 5 && get('b') && get('b').qty === 0 && get('u') && get('u').qty === 1 && added && added.qty === 1 && inv.length === 4,
+    ok('M1-2 写入不删表：没盘到的行清零而不是删除，飞书行保持、唯一件原样，新品建行；数量 = 盘点值',
+      c.success && get('a') && get('a').qty === 5 && get('c') && get('c').qty === 0 && get('b') && get('b').qty === 2 && get('u') && get('u').qty === 1 && added && added.qty === 1 && inv.length === 5,
       JSON.stringify(inv.map((r) => [r.itemName, r.qty])))
     const mv = rows(db, 'inventory_moves')
     ok('M1-3 流水：首次触达补 opening；count 流水记差额且带快照引用；流水合计 = 台账',
       mv.filter((m) => m.type === 'opening').length === 2 && mv.filter((m) => m.type === 'count').length === 3 &&
       mv.every((m) => m.type !== 'count' || (m.refType === 'snapshot' && m.refId === c.snapshotId)) &&
-      sumMoves(db, 'a') === 5 && sumMoves(db, 'b') === 0 && sumMoves(db, added._id) === 1)
-    ok('M1-4 盘点元信息跟着走：被清零的行也更新盘点日（列表按当前日取数不串日）', get('b').inventoryDate === '2026-11-27' && get('a').inventoryDate === '2026-11-27')
+      sumMoves(db, 'a') === 5 && sumMoves(db, 'c') === 0 && sumMoves(db, added._id) === 1)
+    ok('M1-4 盘点元信息跟着走：被清零的行也更新盘点日（列表按当前日取数不串日）', get('c').inventoryDate === '2026-11-27' && get('a').inventoryDate === '2026-11-27')
     const list = res(await fn({ action: 'list' }))
-    ok('M1-5 列表默认不显示 0 的行；showZero 才显示', list.success && !list.list.some((r) => r.itemName === '光明女神') &&
-      res(await fn({ action: 'list', showZero: true })).list.some((r) => r.itemName === '光明女神'))
+    ok('M1-5 列表默认不显示 0 的行；showZero 才显示', list.success && !list.list.some((r) => r.itemName === '枯叶蛱蝶') &&
+      res(await fn({ action: 'list', showZero: true })).list.some((r) => r.itemName === '枯叶蛱蝶'))
     // 飞书同步：观测值 → 差额 count 流水，其它字段照旧
     const fs = res(await fn({ action: 'upsertFromFeishu', items: [{ feishuRecordId: 'rec1', 物品名称: '光明女神', 数量: 4 }] }))
-    ok('M1-6 飞书同步改数量走 count 流水（+4），不直接覆盖', fs.success && get('b') && rows(db, 'studio_inventory').find((r) => r._id === 'b').qty === 4 &&
-      rows(db, 'inventory_moves').some((m) => m.refType === 'feishu' && m.delta === 4 && m.ledgerId === 'b'))
+    ok('M1-6 飞书同步改数量走 count 流水（2 → 4 记 +2），不直接覆盖', fs.success && get('b') && rows(db, 'studio_inventory').find((r) => r._id === 'b').qty === 4 &&
+      rows(db, 'inventory_moves').some((m) => m.refType === 'feishu' && m.delta === 2 && m.ledgerId === 'b'))
   }
 
   /* ── M1-7 幂等：同一 idemKey 记两次只生效一次 ── */
@@ -296,6 +331,76 @@ async function runChecks() {
     ok('M5-4 confirmDraft 只认待确认的运费草稿（不能借它跳过普通采购单状态机）', !again.success)
   }
 
+  /* ── F 飞书同步（2026-11-27「继续修飞书同步模块」）── */
+  {
+    // F1 自动同步开关不被「上次结果」抹掉；未选表的目标在「全部」里记跳过而不是失败
+    const db = makeDb({ studio_inventory: [
+      { _id: 'p1', itemName: '蓝闪蝶', skuName: '蓝闪蝶', framingSpec: '', qty: 3, location: 'studio' }
+    ] })
+    const fns = loadFns(db)
+    const tables = {
+      tblh9wqtrQmZgRO5: { cols: ['物品名称', '规格装裱', '数量', '盘点日期', '备注'], records: [
+        { record_id: 'recA', fields: { 物品名称: '蓝闪蝶', 数量: 5, 盘点日期: Date.UTC(2026, 10, 26, 16, 0) } },
+        { record_id: 'recB', fields: { 物品名称: '凤蝶', 数量: 2 } }
+      ] },
+      tblekBh0CRPMa7ie: { cols: ['库存编号', '物品名称', '规格型号', '分类', '当前库存', '最低库存预警', '单价', '累计入库', '累计出库', '存放位置', '备注'], records: [] },
+      tblMHhGXhpmGTiI5: { cols: ['采购编号', '物品名称', '数量', '单价', '供应商', '状态', '采购日期', '归属', '规格型号', '分类', '预算类型', '采购平台', '平台订单号', '预计到货', '快递公司', '运单号', '发票号', '备注', '总价'], records: [] }
+    }
+    const sync = loadSync(db, tables, fns)
+    await sync({ action: 'config.save', autoSync: true })
+    const pulled = res(await sync({ action: 'pull' }))
+    const cfg = (db.cols.configs || new Map()).get('feishu_sync') || {}
+    ok('F1 同步跑完后自动同步开关仍是开（原来 set() 整文档替换会把 autoSync 抹掉）；上次结果也在', cfg.autoSync === true && !!cfg.lastRun, JSON.stringify(cfg).slice(0, 200))
+    ok('F2 「全部」里员工薪酬没选表 → 记跳过不记失败', pulled.success && pulled.results.payroll && pulled.results.payroll.skipped === true && pulled.failCount === 0 && pulled.skipCount === 1,
+      JSON.stringify({ fail: pulled.failCount, skip: pulled.skipCount, r: Object.fromEntries(Object.entries(pulled.results || {}).map(([k, v]) => [k, v.msg])) }))
+    const one = res(await sync({ action: 'pull', target: 'payroll' }))
+    ok('F3 单独点员工薪酬（未选表）仍明确报错，不静默', one.success && one.results.payroll.success === false && one.results.payroll.code === 'NO_TABLE')
+    const inv = rows(db, 'studio_inventory')
+    const a = inv.find((r) => r._id === 'p1')
+    ok('F4 飞书新行与盘点建的同名行：绑定到原行并调到飞书数（5），不叠加成 8、不另建一行',
+      a.qty === 5 && a.feishuRecordId === 'recA' && inv.filter((r) => r.itemName === '蓝闪蝶').length === 1 && inv.find((r) => r.itemName === '凤蝶').qty === 2,
+      JSON.stringify(inv.map((r) => [r.itemName, r.qty, r.feishuRecordId])))
+    ok('F5 飞书日期按北京时间取（北京 11-27 0 点 → 2026-11-27，不是 11-26）', a.inventoryDate === '2026-11-27', a.inventoryDate)
+    // F6 粘贴盘点不清零飞书管理的行
+    const c = res(await fns.manageStudioInventory({ action: 'commitSnapshot', text: '工作室库存\n2026年11月28日\n新品乙 1个' }))
+    const inv2 = rows(db, 'studio_inventory')
+    ok('F6 粘贴盘点没写到的飞书管理行保持原数（不再清零后被飞书加回来来回打架）', c.success && inv2.find((r) => r._id === 'p1').qty === 5 && inv2.find((r) => r.itemName === '凤蝶').qty === 2)
+    const st = res(await sync({ action: 'status' }))
+    const tInv = (st.targets || []).find((t) => t.role === 'inventory')
+    ok('F7 状态对比只数「来自飞书」的本地行（2 条），整表另给（3 条）', tInv && tInv.localCount === 2 && tInv.localTotal === 3, JSON.stringify(tInv))
+    tables.tblh9wqtrQmZgRO5.records = tables.tblh9wqtrQmZgRO5.records.slice(0, 1)
+    const p2 = res(await sync({ action: 'pull', target: 'inventory' }))
+    ok('F8 飞书已删的行只报告不删（本地 1 条在飞书已删除）', p2.results.inventory.staleLocal === 1 && rows(db, 'studio_inventory').some((r) => r.itemName === '凤蝶'), JSON.stringify(p2.results.inventory))
+  }
+  {
+    // F9 员工薪酬：手工录的工资条不被覆盖；飞书来的合并更新；金额与月份解析
+    const db = makeDb({
+      staff_members: [{ _id: 's1', openid: 'o1', name: '张三', phone: '13800000001' }, { _id: 's2', openid: 'o2', name: '李四' }],
+      staff_payslips: [{ _id: 'o2_2026-11', staffOpenid: 'o2', staffName: '李四', month: '2026-11', base: 4000, net: 4000, items: [{ k: '底薪', v: 4000 }], socialInsurance: { personalTotal: 300 } }]
+    })
+    const ws = loadStaffWs(db)
+    const syncDb = makeDb({ configs: [{ _id: 'feishu_bitable', tables: { payroll: { tableId: 'tblPay' } } }] })
+    const tables = { tblPay: { cols: ['姓名', '手机号', '月份', '基本工资', '提成奖金', '扣款', '应发', '实发', '备注'], records: [
+      { record_id: 'p1', fields: { 姓名: '张三', 手机号: '13800000001', 月份: '2026年11月', 基本工资: '¥5,000', 提成奖金: 1200, 扣款: '300' } },
+      { record_id: 'p2', fields: { 姓名: '李四', 月份: Date.UTC(2026, 9, 31, 16, 0), 基本工资: 6000 } }
+    ] } }
+    const sync = loadSync(syncDb, tables, { manageStaffWorkspace: ws })
+    const r = res(await sync({ action: 'pull', target: 'payroll' }))
+    const pay = rows(db, 'staff_payslips')
+    const zs = pay.find((x) => x._id === 'o1_2026-11')
+    const ls = pay.find((x) => x._id === 'o2_2026-11')
+    ok('F9 薪酬金额「¥5,000」按 5000 解析、「2026年11月」认得出（原来变 0 / 整行丢）', zs && zs.base === 5000 && zs.net === 5900 && zs.source === 'feishu', JSON.stringify(zs))
+    ok('F10 工作台手工录的工资条（带明细 / 社保）不被飞书覆盖，结果里点名', ls && ls.base === 4000 && Array.isArray(ls.items) && ls.socialInsurance &&
+      /手工录入/.test(r.results.payroll.msg || ''), JSON.stringify(r.results.payroll))
+    ok('F11 日期列的「月份」（北京 11-01 0 点时间戳）认作 2026-11 —— 李四那条因手工条存在而保留', pay.length === 2)
+    // 再同步一次：飞书来的那条合并更新（保留 createTime）
+    const ct = zs.createTime
+    tables.tblPay.records[0].fields.提成奖金 = 2000
+    await sync({ action: 'pull', target: 'payroll' })
+    const zs2 = rows(db, 'staff_payslips').find((x) => x._id === 'o1_2026-11')
+    ok('F12 飞书来的工资条再次同步：合并更新金额、保留 createTime', zs2.bonus === 2000 && String(zs2.createTime) === String(ct))
+  }
+
   /* ── M6 结构 ── */
   const canon = readFileSync(join(CF, 'manageStudioInventory', 'inventoryMoves.js'), 'utf8')
   ok('M6-1 inventoryMoves.js 四份副本逐字节一致', FNS.every((f) => readFileSync(join(CF, f, 'inventoryMoves.js'), 'utf8') === canon))
@@ -307,7 +412,7 @@ async function runChecks() {
 }
 
 const CASES = [
-  { name: '盘点又回到删表重建', file: join(CF, 'manageStudioInventory/index.js'), find: "  const plan = moves.planCount('finished', existing, parsed.lines, { zeroMissing: true })\n  const rowsById", replace: "  await Promise.all(existing.map((d) => db.collection(COLLECTION).doc(d._id).remove()))\n  const plan = moves.planCount('finished', [], parsed.lines, { zeroMissing: true })\n  const rowsById" },
+  { name: '盘点又回到删表重建', file: join(CF, 'manageStudioInventory/index.js'), find: "  const plan = moves.planCount('finished', existing, parsed.lines, { zeroMissing: true, keepMissing: isFeishuManaged })\n  const rowsById", replace: "  await Promise.all(existing.map((d) => db.collection(COLLECTION).doc(d._id).remove()))\n  const plan = moves.planCount('finished', [], parsed.lines, { zeroMissing: true })\n  const rowsById" },
   { name: '盘点把唯一件也按品名清零', file: join(CF, 'manageStudioInventory/inventoryMoves.js'), find: '    if (!r || r.serialNo || r.deleted) return', replace: '    if (!r || r.deleted) return' },
   { name: '幂等失效（流水主键带时间戳）', file: join(CF, 'manageStudioInventory/inventoryMoves.js'), find: "  const id = moveId(move.idemKey)\n", replace: "  const id = moveId(move.idemKey + ':' + Math.random())\n" },
   { name: '不再懒开账', file: join(CF, 'manageStudioInventory/inventoryMoves.js'), find: '  if (row && !row.movesOpenedAt) {', replace: '  if (false) {' },
@@ -318,6 +423,14 @@ const CASES = [
   { name: '作废不回库', file: join(CF, 'manageStoreShipment/index.js'), find: "  const stock = await syncShipmentStock(id, prev, prev, actor, { removed: true })\n", replace: '  const stock = null\n' },
   { name: '运费草稿计入预算', file: join(CF, 'managePurchaseOrder/purchaseDashboard.js'), find: '  if (row.pendingConfirm === true) return false\n', replace: '' },
   { name: '运费改了草稿不跟', file: join(CF, 'manageStoreShipment/index.js'), find: '    if (Number(draft.amount) !== freight) {', replace: '    if (false) {' },
+  { name: '同步结果整文档覆盖配置（自动同步被抹掉）', file: join(CF, 'syncFeishuData/index.js'), find: "    await patchSyncDoc({ lastRun: summary, updatedAt: Date.now() })", replace: "    await db.collection(CONFIGS).doc(SYNC_ID).set({ data: { lastRun: summary, updatedAt: Date.now() } })" },
+  { name: '未选表在「全部」里记失败', file: join(CF, 'syncFeishuData/index.js'), find: "    results[role] = implicit && r && r.code === 'NO_TABLE'", replace: "    results[role] = false && r && r.code === 'NO_TABLE'" },
+  { name: '飞书日期回到 UTC（早一天）', file: join(CF, 'syncFeishuData/syncMapping.js'), find: '    const d = new Date((ms < 1e12 ? ms * 1000 : ms) + SHANGHAI_OFFSET_MS)', replace: '    const d = new Date(ms < 1e12 ? ms * 1000 : ms)' },
+  { name: '飞书新行叠加到同名行', file: join(CF, 'manageStudioInventory/index.js'), find: '        if (same && !same.feishuRecordId && !same.serialNo) {', replace: '        if (false) {' },
+  { name: '粘贴盘点又清零飞书行', file: join(CF, 'manageStudioInventory/inventoryMoves.js'), find: "      if (typeof o.keepMissing === 'function' && v.row && o.keepMissing(v.row)) return\n", replace: '' },
+  { name: '状态又拿整表去比', file: join(CF, 'syncFeishuData/index.js'), find: '            localCount: local.fromFeishu,', replace: '            localCount: local.total,' },
+  { name: '薪酬金额按文本取', file: join(CF, 'syncFeishuData/syncMapping.js'), find: '    const money = (key) => cellNumber(pickField(f, (fieldMap || {})[key]))', replace: '    const money = (key) => Number(m[key]) || 0' },
+  { name: '手工工资条又被飞书覆盖', file: join(CF, 'manageStaffWorkspace/index.js'), find: "    if (prevDoc && !prevDoc.feishuRecordId) { if (kept.length < 10) kept.push(`${staffName} ${month}`); continue }\n", replace: '' },
   { name: 'confirmDraft 不校验草稿', file: join(CF, 'managePurchaseOrder/index.js'), find: "  if (prev.pendingConfirm !== true) return fail('这张单不是待确认的运费草稿', 'NOT_DRAFT')\n", replace: '' }
 ]
 

@@ -89,6 +89,12 @@ const DEFAULT_TABLES = {
 
 /** 这些字段按数字解析（其余按文本/日期）——与 ERP `mapRecord` 同一张名单 */
 const NUMBER_KEYS = ['qty', 'unitPrice', 'minQty', 'inboundTotal', 'outboundTotal']
+/**
+ * 员工薪酬的金额列（2026-11-27 修）：原来按文本取再 `Number()`，飞书「货币」列或手填的「¥5,000」
+ * 会变成 NaN → 0，工资条静默写成 0 元。改为与数量 / 单价同一套 `cellNumber`（去 ¥ 与千分位）。
+ * 只用于薪酬的 toPayrollItems，不进 NUMBER_KEYS（那张名单要与 ERP mapRecord 逐字一致）。
+ */
+const PAYROLL_MONEY_KEYS = ['base', 'bonus', 'deduction', 'gross', 'net']
 const DATE_KEYS = ['date', 'expectedArrival', 'inventoryDate', 'shipmentDate']
 
 /** 飞书单元格 → 文本。多维表的值可能是字符串/数组/对象（人员、关联、公式） */
@@ -123,13 +129,20 @@ function cellNumber (v) {
   return Number.isFinite(n) ? n : 0
 }
 
-/** 飞书日期单元格（毫秒时间戳或 `YYYY-MM-DD` 文本）→ `YYYY-MM-DD` */
+/**
+ * 飞书日期单元格（毫秒时间戳或 `YYYY-MM-DD` 文本）→ `YYYY-MM-DD`（**北京时间**）
+ *
+ * 2026-11-27 修：原来用 `toISOString()` 取 **UTC** 日期。飞书日期列存的是「北京时间当天 0 点」的时间戳，
+ * 换成 UTC 是前一天 16:00 —— 于是**服务端同步（小程序 / 每日定时）写进来的日期全部早一天**，
+ * 而 ERP 前端那份 `cellDate` 按 Asia/Shanghai 取日期是对的：同一张飞书表两条路同步出两个日期。
+ */
+const SHANGHAI_OFFSET_MS = 8 * 3600 * 1000
 function cellDate (v) {
   if (v === null || v === undefined || v === '') return ''
   if (typeof v === 'number' || /^\d{10,}$/.test(String(v))) {
     const ms = Number(v)
     if (!Number.isFinite(ms) || ms <= 0) return ''
-    const d = new Date(ms < 1e12 ? ms * 1000 : ms)
+    const d = new Date((ms < 1e12 ? ms * 1000 : ms) + SHANGHAI_OFFSET_MS)
     if (Number.isNaN(d.getTime())) return ''
     return d.toISOString().slice(0, 10)
   }
@@ -221,15 +234,29 @@ function toInventoryItems (records, fieldMap) {
  * 飞书「员工薪酬」→ 工资条 items（2026-11-27）
  * 只做字段整形；staffOpenid 由云函数按手机号/姓名回查 staff_members（这里不碰库）。
  */
+/**
+ * 「月份」单元格 → `YYYY-MM`。飞书里这一列可能是：日期列（时间戳）/「2026-11」/「2026/11」/「2026.11」/「2026年11月」。
+ * 2026-11-27 修：原来只截前 7 个字符再换分隔符 —— 日期列（时间戳）与「2026年11月」都对不上，整行被**静默丢掉**。
+ */
+function monthOf (v) {
+  if (v === null || v === undefined || v === '') return ''
+  if (typeof v === 'number' || /^\d{10,}$/.test(cellText(v))) return cellDate(typeof v === 'number' ? v : cellText(v)).slice(0, 7)
+  const t = cellText(v)
+  const m = t.match(/^(\d{4})\s*[-/.年]\s*(\d{1,2})/)
+  return m ? `${m[1]}-${String(m[2]).padStart(2, '0')}` : ''
+}
+
 function toPayrollItems (records, fieldMap) {
   return (Array.isArray(records) ? records : []).map((rec) => {
     const m = mapRecord(rec, fieldMap)
-    const month = String(m.month || '').trim().slice(0, 7).replace('/', '-').replace('.', '-')
-    const base = Number(m.base) || 0
-    const bonus = Number(m.bonus) || 0
-    const deduction = Number(m.deduction) || 0
-    const gross = Number(m.gross) || (base + bonus)
-    const net = Number(m.net) || Math.round((gross - deduction) * 100) / 100
+    const f = (rec && rec.fields) || {}
+    const money = (key) => cellNumber(pickField(f, (fieldMap || {})[key]))
+    const month = monthOf(pickField(f, (fieldMap || {}).month))
+    const base = money('base')
+    const bonus = money('bonus')
+    const deduction = money('deduction')
+    const gross = money('gross') || (base + bonus)
+    const net = money('net') || Math.round((gross - deduction) * 100) / 100
     return {
       feishuRecordId: String(rec.record_id || rec.recordId || ''),
       staffName: String(m.staffName || '').trim(),
@@ -458,7 +485,9 @@ const TARGETS = {
 module.exports = {
   DEFAULT_TABLES,
   NUMBER_KEYS,
+  PAYROLL_MONEY_KEYS,
   DATE_KEYS,
+  monthOf,
   TARGETS,
   cellText,
   cellNumber,
